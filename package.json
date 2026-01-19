@@ -1,0 +1,72 @@
+{
+  "name": "inkx",
+  "version": "0.0.1",
+  "description": "Next-gen terminal UI renderer with layout feedback - Ink-compatible",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js"
+    }
+  },
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "test": "bun test tests/",
+    "test:fast": "bun test tests/ --timeout 5000",
+    "test:compat": "bun test tests/compat/",
+    "test:visual": "playwright test",
+    "test:visual:update": "playwright test --update-snapshots",
+    "bench": "bun run benchmarks/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src tests",
+    "fix": "biome check --write src tests",
+    "docs:dev": "vitepress dev docs/site",
+    "docs:build": "vitepress build docs/site",
+    "docs:preview": "vitepress preview docs/site",
+    "example:dashboard": "bun run examples/dashboard/index.tsx",
+    "example:task-list": "bun run examples/task-list/index.tsx",
+    "example:kanban": "bun run examples/kanban/index.tsx",
+    "example:scroll": "bun run examples/scroll/index.tsx"
+  },
+  "keywords": [
+    "terminal",
+    "tui",
+    "cli",
+    "react",
+    "ink",
+    "flexbox",
+    "layout"
+  ],
+  "author": "beorn",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beorn/inkx.git"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "graphemer": "^1.4.0",
+    "react-reconciler": "^0.33.0",
+    "string-width": "^7.0.0",
+    "yoga-wasm-web": "^0.3.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/bun": "^1.1.0",
+    "@types/react": "^19.0.0",
+    "mitata": "^0.1.11",
+    "react": "^19.0.0",
+    "typescript": "^5.5.0",
+    "vitepress": "^1.5.0",
+    "vitepress-plugin-llms": "^1.0.0"
+  }
+}

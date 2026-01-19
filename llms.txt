@@ -1,0 +1,51 @@
+# InkZ
+
+> Ink, but components know their size
+
+A terminal UI framework for React with two-phase rendering
+
+## Table of Contents
+
+### Introduction
+
+- [Getting Started](/inkz/guide/getting-started.md)
+- [Installation](/inkz/guide/installation.md)
+- [Why InkZ?](/inkz/guide/why-inkz.md)
+
+### Core Concepts
+
+- [Components](/inkz/guide/components.md)
+- [Hooks](/inkz/guide/hooks.md)
+- [Scrolling](/inkz/guide/scrolling.md)
+
+### Migration
+
+- [Migration from Ink](/inkz/guide/migration.md)
+
+### Components
+
+- [Box](/inkz/api/box.md)
+- [Text](/inkz/api/text.md)
+- [Newline](/inkz/api/newline.md)
+- [Spacer](/inkz/api/spacer.md)
+- [Static](/inkz/api/static.md)
+
+### Hooks
+
+- [useLayout](/inkz/api/use-layout.md)
+- [useInput](/inkz/api/use-input.md)
+- [useApp](/inkz/api/use-app.md)
+- [useStdout](/inkz/api/use-stdout.md)
+- [useFocus / useFocusManager](/inkz/api/use-focus.md)
+
+### Functions
+
+- [render](/inkz/api/render.md)
+
+### Examples
+
+- [Examples](/inkz/examples.md)
+- [Dashboard Example](/inkz/examples/dashboard.md)
+- [Task List Example](/inkz/examples/task-list.md)
+- [Kanban Board Example](/inkz/examples/kanban.md)
+
