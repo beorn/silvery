@@ -860,6 +860,7 @@ const LAYOUT_PROPS = new Set([
 	'display',
 	'position',
 	'overflow',
+	'scrollTo',
 ]);
 
 /**
