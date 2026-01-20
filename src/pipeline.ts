@@ -35,6 +35,7 @@ import {
 	styleEquals,
 } from './buffer.js';
 import type { BoxProps, ComputedLayout, InkxNode, TextProps } from './types.js';
+import { type StyledSegment, displayWidthAnsi, hasAnsi, parseAnsiText } from './unicode.js';
 
 // ============================================================================
 // Phase 1: Measure Phase
@@ -628,7 +629,8 @@ function renderText(
 	scrollOffset = 0,
 	clipBounds?: { top: number; bottom: number },
 ): void {
-	let { x, y, width, height } = layout;
+	const { x, width, height } = layout;
+	let { y } = layout;
 
 	// Apply scroll offset
 	y -= scrollOffset;
@@ -755,8 +757,15 @@ function renderTextLine(
 	x: number,
 	y: number,
 	text: string,
-	style: Style,
+	baseStyle: Style,
 ): void {
+	// Check if text contains ANSI escape sequences
+	if (hasAnsi(text)) {
+		renderAnsiTextLine(buffer, x, y, text, baseStyle);
+		return;
+	}
+
+	// Regular text without ANSI codes
 	let col = x;
 
 	for (const char of text) {
@@ -766,9 +775,9 @@ function renderTextLine(
 
 		buffer.setCell(col, y, {
 			char,
-			fg: style.fg,
-			bg: style.bg,
-			attrs: style.attrs,
+			fg: baseStyle.fg,
+			bg: baseStyle.bg,
+			attrs: baseStyle.attrs,
 			wide: charWidth === 2,
 			continuation: false,
 		});
@@ -777,9 +786,9 @@ function renderTextLine(
 			// Wide character continuation cell
 			buffer.setCell(col + 1, y, {
 				char: '',
-				fg: style.fg,
-				bg: style.bg,
-				attrs: style.attrs,
+				fg: baseStyle.fg,
+				bg: baseStyle.bg,
+				attrs: baseStyle.attrs,
 				wide: false,
 				continuation: true,
 			});
@@ -788,6 +797,144 @@ function renderTextLine(
 			col++;
 		}
 	}
+}
+
+/**
+ * Render text line with ANSI escape sequences.
+ * Parses ANSI codes and applies styles to individual segments.
+ */
+function renderAnsiTextLine(
+	buffer: TerminalBuffer,
+	x: number,
+	y: number,
+	text: string,
+	baseStyle: Style,
+): void {
+	const segments = parseAnsiText(text);
+	let col = x;
+
+	for (const segment of segments) {
+		// Merge segment style with base style
+		const style = mergeAnsiStyle(baseStyle, segment);
+
+		for (const char of segment.text) {
+			if (col >= buffer.width) break;
+
+			const charWidth = getCharWidth(char);
+
+			buffer.setCell(col, y, {
+				char,
+				fg: style.fg,
+				bg: style.bg,
+				attrs: style.attrs,
+				wide: charWidth === 2,
+				continuation: false,
+			});
+
+			if (charWidth === 2 && col + 1 < buffer.width) {
+				buffer.setCell(col + 1, y, {
+					char: '',
+					fg: style.fg,
+					bg: style.bg,
+					attrs: style.attrs,
+					wide: false,
+					continuation: true,
+				});
+				col += 2;
+			} else {
+				col++;
+			}
+		}
+	}
+}
+
+/**
+ * Merge ANSI segment style with base style.
+ * ANSI styles override base styles where specified.
+ */
+function mergeAnsiStyle(base: Style, segment: StyledSegment): Style {
+	let fg = base.fg;
+	let bg = base.bg;
+
+	// Convert ANSI SGR code to our color format
+	if (segment.fg !== undefined && segment.fg !== null) {
+		fg = ansiColorToColor(segment.fg, false);
+	}
+	if (segment.bg !== undefined && segment.bg !== null) {
+		bg = ansiColorToColor(segment.bg, true);
+	}
+
+	// Merge attributes - start with base, then apply ANSI overrides
+	const attrs = {
+		...base.attrs,
+		bold: segment.bold || base.attrs.bold,
+		dim: segment.dim || base.attrs.dim,
+		italic: segment.italic || base.attrs.italic,
+		underline: segment.underline || base.attrs.underline,
+		inverse: segment.inverse || base.attrs.inverse,
+	};
+
+	return { fg, bg, attrs };
+}
+
+/**
+ * Convert ANSI SGR color code to our Color type.
+ * Color is: number (256-color index) | { r, g, b } (true color) | null
+ */
+function ansiColorToColor(code: number, _isBg: boolean): Color {
+	// True color (packed RGB with 0x1000000 marker from parseAnsiText)
+	if (code >= 0x1000000) {
+		const r = (code >> 16) & 0xff;
+		const g = (code >> 8) & 0xff;
+		const b = code & 0xff;
+		return { r, g, b };
+	}
+
+	// 256 color palette index (0-255)
+	if (code < 30 || (code >= 38 && code < 40) || (code >= 48 && code < 90)) {
+		// Direct palette index - map common ones
+		const paletteMap: Record<number, number> = {
+			0: 0, // black
+			1: 1, // red
+			2: 2, // green
+			3: 3, // yellow
+			4: 4, // blue
+			5: 5, // magenta
+			6: 6, // cyan
+			7: 7, // white
+			8: 8, // gray
+			9: 9, // redBright
+			10: 10, // greenBright
+			11: 11, // yellowBright
+			12: 12, // blueBright
+			13: 13, // magentaBright
+			14: 14, // cyanBright
+			15: 15, // whiteBright
+		};
+		return paletteMap[code] ?? code;
+	}
+
+	// Standard foreground colors (30-37) map to palette 0-7
+	if (code >= 30 && code <= 37) {
+		return code - 30;
+	}
+
+	// Standard background colors (40-47) map to palette 0-7
+	if (code >= 40 && code <= 47) {
+		return code - 40;
+	}
+
+	// Bright foreground colors (90-97) map to palette 8-15
+	if (code >= 90 && code <= 97) {
+		return code - 90 + 8;
+	}
+
+	// Bright background colors (100-107) map to palette 8-15
+	if (code >= 100 && code <= 107) {
+		return code - 100 + 8;
+	}
+
+	return null;
 }
 
 /**
@@ -839,7 +986,9 @@ function renderBorder(
 	// Bottom border
 	const bottomY = y + height - 1;
 	if (showBottom && isRowVisible(bottomY)) {
-		if (showLeft) buffer.setCell(x, bottomY, { char: chars.bottomLeft, fg: color });
+		if (showLeft) {
+			buffer.setCell(x, bottomY, { char: chars.bottomLeft, fg: color });
+		}
 		for (let col = x + 1; col < x + width - 1 && col < buffer.width; col++) {
 			buffer.setCell(col, bottomY, { char: chars.horizontal, fg: color });
 		}
@@ -960,12 +1109,10 @@ function changesToAnsi(changes: CellChange[]): string {
 		// Skip continuation cells
 		if (cell.continuation) continue;
 
-		// Move cursor if needed
+		// Move cursor if needed (cursor must be exactly at target position)
 		if (y !== cursorY || x !== cursorX) {
-			if (y === cursorY && x === cursorX + 1) {
-				// Cursor naturally advances, no move needed
-			} else if (y === cursorY + 1 && x === 0) {
-				// Next line, use newline
+			if (y === cursorY + 1 && x === 0) {
+				// Next line at column 0, use newline (more efficient)
 				output += '\r\n';
 			} else {
 				// Absolute position (1-indexed)
@@ -1075,15 +1222,11 @@ function traverseTree(node: InkxNode, callback: (node: InkxNode) => void): void 
 }
 
 /**
- * Get text display width (accounting for wide characters).
- * Simplified implementation - use string-width for full support.
+ * Get text display width (accounting for wide characters and ANSI codes).
+ * Uses ANSI-aware width calculation to handle styled text.
  */
 function getTextWidth(text: string): number {
-	let width = 0;
-	for (const char of text) {
-		width += getCharWidth(char);
-	}
-	return width;
+	return displayWidthAnsi(text);
 }
 
 /**

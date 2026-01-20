@@ -48,10 +48,18 @@ async function createMockNode(
 	if (type === 'inkx-box' || type === 'inkx-text') {
 		const boxProps = props as BoxProps;
 		if (typeof boxProps.width === 'number') layoutNode.setWidth(boxProps.width);
-		if (typeof boxProps.height === 'number') layoutNode.setHeight(boxProps.height);
-		if (boxProps.flexDirection === 'row') layoutNode.setFlexDirection(c.FLEX_DIRECTION_ROW);
-		if (boxProps.flexDirection === 'column') layoutNode.setFlexDirection(c.FLEX_DIRECTION_COLUMN);
-		if (typeof boxProps.padding === 'number') layoutNode.setPadding(c.EDGE_ALL, boxProps.padding);
+		if (typeof boxProps.height === 'number') {
+			layoutNode.setHeight(boxProps.height);
+		}
+		if (boxProps.flexDirection === 'row') {
+			layoutNode.setFlexDirection(c.FLEX_DIRECTION_ROW);
+		}
+		if (boxProps.flexDirection === 'column') {
+			layoutNode.setFlexDirection(c.FLEX_DIRECTION_COLUMN);
+		}
+		if (typeof boxProps.padding === 'number') {
+			layoutNode.setPadding(c.EDGE_ALL, boxProps.padding);
+		}
 	}
 
 	const node: InkxNode = {
@@ -282,7 +290,9 @@ describe('Pipeline', () => {
 		test('skips non-scroll containers', async () => {
 			const { scrollPhase } = await import('../src/pipeline.js');
 
-			const container = await createMockNode('inkx-box', { overflow: 'hidden' } as BoxProps);
+			const container = await createMockNode('inkx-box', {
+				overflow: 'hidden',
+			} as BoxProps);
 			container.computedLayout = { x: 0, y: 0, width: 10, height: 5 };
 
 			scrollPhase(container);
@@ -489,6 +499,40 @@ describe('Pipeline', () => {
 
 			// Should be minimal or empty (no changes)
 			expect(output2.length).toBeLessThanOrEqual(10);
+		});
+
+		test('renders text with ANSI escape sequences', async () => {
+			// Create a text node with ANSI-styled content (like chalk output)
+			const textNode = await createMockNode('inkx-text', {}, [], '\x1b[31mred text\x1b[0m');
+			textNode.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+
+			const root = await createMockNode('inkx-box', { width: 20, height: 3 }, [textNode]);
+			root.computedLayout = { x: 0, y: 0, width: 20, height: 3 };
+
+			const buffer = contentPhase(root);
+
+			// The text "red text" should be in the buffer (without ANSI codes)
+			const cell = buffer.getCell(0, 0);
+			expect(cell.char).toBe('r');
+			// The foreground color should be set (red = palette index 1)
+			expect(cell.fg).toBe(1);
+		});
+
+		test('calculates ANSI text width correctly', async () => {
+			// ANSI codes should not affect measured text width
+			const textNode = await createMockNode('inkx-text', {}, [], '\x1b[1;34mhello\x1b[0m');
+			textNode.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+
+			const root = await createMockNode('inkx-box', { width: 20, height: 1 }, [textNode]);
+			root.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+
+			const buffer = contentPhase(root);
+
+			// Should render "hello" (5 chars) not the full ANSI string
+			expect(buffer.getCell(0, 0).char).toBe('h');
+			expect(buffer.getCell(4, 0).char).toBe('o');
+			// Position 5 should be empty (space)
+			expect(buffer.getCell(5, 0).char).toBe(' ');
 		});
 	});
 });

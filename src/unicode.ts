@@ -450,6 +450,182 @@ export function truncateAnsi(text: string, maxWidth: number, ellipsis = '\u2026'
 }
 
 // ============================================================================
+// ANSI Parsing
+// ============================================================================
+
+/** Styled text segment with associated ANSI colors/attributes */
+export interface StyledSegment {
+	text: string;
+	fg?: number | null; // SGR color code (30-37, 90-97, or 38;5;N / 38;2;r;g;b)
+	bg?: number | null; // SGR color code (40-47, 100-107, or 48;5;N / 48;2;r;g;b)
+	bold?: boolean;
+	dim?: boolean;
+	italic?: boolean;
+	underline?: boolean;
+	inverse?: boolean;
+}
+
+/**
+ * Parse text with ANSI escape sequences into styled segments.
+ * Handles basic SGR (Select Graphic Rendition) codes.
+ */
+export function parseAnsiText(text: string): StyledSegment[] {
+	const segments: StyledSegment[] = [];
+	// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape requires control chars
+	const ansiPattern = /\x1b\[([0-9;]*)m/g;
+
+	let currentStyle: Omit<StyledSegment, 'text'> = {};
+	let lastIndex = 0;
+	let match: RegExpExecArray | null;
+
+	// biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec pattern
+	while ((match = ansiPattern.exec(text)) !== null) {
+		// Add text before this escape sequence
+		if (match.index > lastIndex) {
+			const content = text.slice(lastIndex, match.index);
+			if (content.length > 0) {
+				segments.push({ text: content, ...currentStyle });
+			}
+		}
+
+		// Parse SGR codes
+		const codes = match[1].split(';').map(Number);
+		for (let i = 0; i < codes.length; i++) {
+			const code = codes[i];
+			switch (code) {
+				case 0:
+					// Reset
+					currentStyle = {};
+					break;
+				case 1:
+					currentStyle.bold = true;
+					break;
+				case 2:
+					currentStyle.dim = true;
+					break;
+				case 3:
+					currentStyle.italic = true;
+					break;
+				case 4:
+					currentStyle.underline = true;
+					break;
+				case 7:
+					currentStyle.inverse = true;
+					break;
+				case 22:
+					currentStyle.bold = false;
+					currentStyle.dim = false;
+					break;
+				case 23:
+					currentStyle.italic = false;
+					break;
+				case 24:
+					currentStyle.underline = false;
+					break;
+				case 27:
+					currentStyle.inverse = false;
+					break;
+				case 30:
+				case 31:
+				case 32:
+				case 33:
+				case 34:
+				case 35:
+				case 36:
+				case 37:
+					currentStyle.fg = code;
+					break;
+				case 38:
+					// Extended color: 38;5;N (256 color) or 38;2;r;g;b (true color)
+					if (codes[i + 1] === 5 && codes[i + 2] !== undefined) {
+						currentStyle.fg = codes[i + 2];
+						i += 2;
+					} else if (codes[i + 1] === 2 && codes[i + 4] !== undefined) {
+						// True color - store as RGB values packed
+						currentStyle.fg =
+							0x1000000 |
+							((codes[i + 2] & 0xff) << 16) |
+							((codes[i + 3] & 0xff) << 8) |
+							(codes[i + 4] & 0xff);
+						i += 4;
+					}
+					break;
+				case 39:
+					currentStyle.fg = null; // Default foreground
+					break;
+				case 40:
+				case 41:
+				case 42:
+				case 43:
+				case 44:
+				case 45:
+				case 46:
+				case 47:
+					currentStyle.bg = code;
+					break;
+				case 48:
+					// Extended color: 48;5;N (256 color) or 48;2;r;g;b (true color)
+					if (codes[i + 1] === 5 && codes[i + 2] !== undefined) {
+						currentStyle.bg = codes[i + 2];
+						i += 2;
+					} else if (codes[i + 1] === 2 && codes[i + 4] !== undefined) {
+						// True color - store as RGB values packed
+						currentStyle.bg =
+							0x1000000 |
+							((codes[i + 2] & 0xff) << 16) |
+							((codes[i + 3] & 0xff) << 8) |
+							(codes[i + 4] & 0xff);
+						i += 4;
+					}
+					break;
+				case 49:
+					currentStyle.bg = null; // Default background
+					break;
+				case 90:
+				case 91:
+				case 92:
+				case 93:
+				case 94:
+				case 95:
+				case 96:
+				case 97:
+					currentStyle.fg = code; // Bright foreground colors
+					break;
+				case 100:
+				case 101:
+				case 102:
+				case 103:
+				case 104:
+				case 105:
+				case 106:
+				case 107:
+					currentStyle.bg = code; // Bright background colors
+					break;
+			}
+		}
+
+		lastIndex = match.index + match[0].length;
+	}
+
+	// Add remaining text
+	if (lastIndex < text.length) {
+		const content = text.slice(lastIndex);
+		if (content.length > 0) {
+			segments.push({ text: content, ...currentStyle });
+		}
+	}
+
+	return segments;
+}
+
+/**
+ * Check if text contains ANSI escape sequences.
+ */
+export function hasAnsi(text: string): boolean {
+	return ANSI_REGEX.test(text);
+}
+
+// ============================================================================
 // Measurement Utilities
 // ============================================================================
 
