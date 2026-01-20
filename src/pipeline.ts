@@ -35,7 +35,14 @@ import {
 	styleEquals,
 } from './buffer.js';
 import type { BoxProps, ComputedLayout, InkxNode, TextProps } from './types.js';
-import { type StyledSegment, displayWidthAnsi, hasAnsi, parseAnsiText } from './unicode.js';
+import {
+	type StyledSegment,
+	displayWidthAnsi,
+	graphemeWidth,
+	hasAnsi,
+	parseAnsiText,
+	splitGraphemes,
+} from './unicode.js';
 
 // ============================================================================
 // Phase 1: Measure Phase
@@ -133,8 +140,12 @@ function measureIntrinsicSize(node: InkxNode): {
  * @param height Terminal height in rows
  */
 export function layoutPhase(root: InkxNode, width: number, height: number): void {
-	// Only recalculate if something changed
-	if (!hasLayoutDirtyNodes(root)) {
+	// Check if dimensions changed from previous layout
+	const prevLayout = root.computedLayout;
+	const dimensionsChanged = prevLayout && (prevLayout.width !== width || prevLayout.height !== height);
+
+	// Only recalculate if something changed (dirty nodes or dimensions)
+	if (!dimensionsChanged && !hasLayoutDirtyNodes(root)) {
 		return;
 	}
 
@@ -766,35 +777,48 @@ function renderTextLine(
 	}
 
 	// Regular text without ANSI codes
+	// Use grapheme segmentation to properly handle:
+	// - Emoji (width 2)
+	// - Combining characters (width 0, merged with base char)
+	// - CJK characters (width 2)
 	let col = x;
+	const graphemes = splitGraphemes(text);
 
-	for (const char of text) {
+	for (const grapheme of graphemes) {
 		if (col >= buffer.width) break;
 
-		const charWidth = getCharWidth(char);
+		const width = graphemeWidth(grapheme);
+
+		// Skip zero-width graphemes (should be merged by graphemer, but just in case)
+		if (width === 0) continue;
+
+		// Preserve existing background color if text style doesn't specify one
+		// This allows Text inside Box with backgroundColor to inherit the bg
+		const existingBg = baseStyle.bg === null ? buffer.getCell(col, y).bg : baseStyle.bg;
 
 		buffer.setCell(col, y, {
-			char,
+			char: grapheme,
 			fg: baseStyle.fg,
-			bg: baseStyle.bg,
+			bg: existingBg,
 			attrs: baseStyle.attrs,
-			wide: charWidth === 2,
+			wide: width === 2,
 			continuation: false,
 		});
 
-		if (charWidth === 2 && col + 1 < buffer.width) {
+		if (width === 2 && col + 1 < buffer.width) {
 			// Wide character continuation cell
+			const existingBg2 = baseStyle.bg === null ? buffer.getCell(col + 1, y).bg : baseStyle.bg;
 			buffer.setCell(col + 1, y, {
 				char: '',
 				fg: baseStyle.fg,
-				bg: baseStyle.bg,
+				bg: existingBg2,
 				attrs: baseStyle.attrs,
 				wide: false,
 				continuation: true,
 			});
 			col += 2;
 		} else {
-			col++;
+			col += width;
 		}
 	}
 }
@@ -817,32 +841,43 @@ function renderAnsiTextLine(
 		// Merge segment style with base style
 		const style = mergeAnsiStyle(baseStyle, segment);
 
-		for (const char of segment.text) {
+		// Use grapheme segmentation for proper Unicode handling
+		const graphemes = splitGraphemes(segment.text);
+
+		for (const grapheme of graphemes) {
 			if (col >= buffer.width) break;
 
-			const charWidth = getCharWidth(char);
+			const width = graphemeWidth(grapheme);
+
+			// Skip zero-width graphemes
+			if (width === 0) continue;
+
+			// Preserve existing background color if style doesn't specify one
+			// This allows Text inside Box with backgroundColor to inherit the bg
+			const existingBg = style.bg === null ? buffer.getCell(col, y).bg : style.bg;
 
 			buffer.setCell(col, y, {
-				char,
+				char: grapheme,
 				fg: style.fg,
-				bg: style.bg,
+				bg: existingBg,
 				attrs: style.attrs,
-				wide: charWidth === 2,
+				wide: width === 2,
 				continuation: false,
 			});
 
-			if (charWidth === 2 && col + 1 < buffer.width) {
+			if (width === 2 && col + 1 < buffer.width) {
+				const existingBg2 = style.bg === null ? buffer.getCell(col + 1, y).bg : style.bg;
 				buffer.setCell(col + 1, y, {
 					char: '',
 					fg: style.fg,
-					bg: style.bg,
+					bg: existingBg2,
 					attrs: style.attrs,
 					wide: false,
 					continuation: true,
 				});
 				col += 2;
 			} else {
-				col++;
+				col += width;
 			}
 		}
 	}
@@ -1230,40 +1265,19 @@ function getTextWidth(text: string): number {
 }
 
 /**
- * Get single character width.
- */
-function getCharWidth(char: string): number {
-	const code = char.codePointAt(0) ?? 0;
-
-	// Wide characters (simplified CJK detection)
-	if (
-		(code >= 0x1100 && code <= 0x115f) ||
-		(code >= 0x2e80 && code <= 0x9fff) ||
-		(code >= 0xac00 && code <= 0xd7af) ||
-		(code >= 0xf900 && code <= 0xfaff) ||
-		(code >= 0xfe10 && code <= 0xfe6f) ||
-		(code >= 0xff00 && code <= 0xff60) ||
-		(code >= 0xffe0 && code <= 0xffe6) ||
-		(code >= 0x20000 && code <= 0x3fffd)
-	) {
-		return 2;
-	}
-
-	return 1;
-}
-
-/**
  * Slice text by display width (from start).
+ * Uses grapheme segmentation for proper Unicode handling.
  */
 function sliceByWidth(text: string, maxWidth: number): string {
 	let width = 0;
 	let result = '';
+	const graphemes = splitGraphemes(text);
 
-	for (const char of text) {
-		const charWidth = getCharWidth(char);
-		if (width + charWidth > maxWidth) break;
-		result += char;
-		width += charWidth;
+	for (const grapheme of graphemes) {
+		const gWidth = graphemeWidth(grapheme);
+		if (width + gWidth > maxWidth) break;
+		result += grapheme;
+		width += gWidth;
 	}
 
 	return result;
@@ -1271,20 +1285,21 @@ function sliceByWidth(text: string, maxWidth: number): string {
 
 /**
  * Slice text by display width (from end).
+ * Uses grapheme segmentation for proper Unicode handling.
  */
 function sliceByWidthFromEnd(text: string, maxWidth: number): string {
-	const chars = [...text];
+	const graphemes = splitGraphemes(text);
 	let width = 0;
-	let startIdx = chars.length;
+	let startIdx = graphemes.length;
 
-	for (let i = chars.length - 1; i >= 0; i--) {
-		const charWidth = getCharWidth(chars[i]);
-		if (width + charWidth > maxWidth) break;
-		width += charWidth;
+	for (let i = graphemes.length - 1; i >= 0; i--) {
+		const gWidth = graphemeWidth(graphemes[i]);
+		if (width + gWidth > maxWidth) break;
+		width += gWidth;
 		startIdx = i;
 	}
 
-	return chars.slice(startIdx).join('');
+	return graphemes.slice(startIdx).join('');
 }
 
 /**

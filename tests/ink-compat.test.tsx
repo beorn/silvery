@@ -46,7 +46,7 @@ import {
 	useStdout,
 } from '../src/index.js';
 
-import { createTestRenderer } from '../src/testing/index.js';
+import { createTestRenderer, stripAnsi } from '../src/testing/index.js';
 
 const testRender = createTestRenderer();
 
@@ -239,6 +239,31 @@ describe('Ink API Compatibility', () => {
 		test('Text accepts wrap prop', () => {
 			const { lastFrame } = testRender(<Text wrap="truncate">LongTextHere</Text>);
 			expect(lastFrame()).toContain('Long');
+		});
+
+		test('Text truncate-start shows end of text with ellipsis at start', () => {
+			const { lastFrame } = testRender(
+				<Box width={10}>
+					<Text wrap="truncate-start">Hello World Test</Text>
+				</Box>,
+			);
+			const frame = stripAnsi(lastFrame() ?? '');
+			// Should show ellipsis at start followed by end portion
+			expect(frame).toContain('…');
+			expect(frame).toContain('Test');
+		});
+
+		test('Text truncate-middle shows start and end with ellipsis in middle', () => {
+			const { lastFrame } = testRender(
+				<Box width={12}>
+					<Text wrap="truncate-middle">Hello World Test</Text>
+				</Box>,
+			);
+			const frame = stripAnsi(lastFrame() ?? '');
+			// Should show start, ellipsis, then end
+			expect(frame).toContain('…');
+			expect(frame).toContain('Hell'); // Start portion
+			expect(frame).toContain('est'); // End portion
 		});
 	});
 

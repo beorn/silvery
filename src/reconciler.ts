@@ -674,12 +674,15 @@ const hostConfig = {
 		return !propsEqual(oldProps as Record<string, unknown>, newProps as Record<string, unknown>);
 	},
 
+	// Note: react-reconciler 0.33+ changed the signature from
+	// commitUpdate(instance, updatePayload, type, oldProps, newProps) to
+	// commitUpdate(instance, type, oldProps, newProps, finishedWork)
 	commitUpdate(
 		instance: InkxNode,
-		_updatePayload: boolean,
 		_type: InkxNodeType,
 		oldProps: BoxProps | TextProps,
 		newProps: BoxProps | TextProps,
+		_finishedWork: unknown,
 	) {
 		// Check if layout-affecting props changed
 		if (

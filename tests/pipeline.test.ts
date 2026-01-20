@@ -534,5 +534,74 @@ describe('Pipeline', () => {
 			// Position 5 should be empty (space)
 			expect(buffer.getCell(5, 0).char).toBe(' ');
 		});
+
+		test('handles emoji width correctly (wide characters)', async () => {
+			// Emoji like 😀 take 2 terminal columns
+			// Test: "A😀B" should occupy 4 columns: A(1) + 😀(2) + B(1) = 4
+			const textNode = await createMockNode('inkx-text', {}, [], 'A😀B');
+			textNode.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+
+			const root = await createMockNode('inkx-box', { width: 10, height: 1 }, [textNode]);
+			root.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+
+			const buffer = contentPhase(root);
+
+			// A at position 0
+			expect(buffer.getCell(0, 0).char).toBe('A');
+			// 😀 at position 1, should be marked as wide
+			expect(buffer.getCell(1, 0).char).toBe('😀');
+			expect(buffer.getCell(1, 0).wide).toBe(true);
+			// Position 2 should be continuation cell for wide emoji
+			expect(buffer.getCell(2, 0).continuation).toBe(true);
+			// B at position 3
+			expect(buffer.getCell(3, 0).char).toBe('B');
+		});
+
+		test('handles combining characters correctly (zero-width)', async () => {
+			// café with combining acute accent: "cafe\u0301"
+			// The e + combining accent should be treated as one grapheme
+			// Total: c(1) + a(1) + f(1) + é(1) = 4 columns
+			const textNode = await createMockNode('inkx-text', {}, [], 'cafe\u0301');
+			textNode.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+
+			const root = await createMockNode('inkx-box', { width: 10, height: 1 }, [textNode]);
+			root.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+
+			const buffer = contentPhase(root);
+
+			// c, a, f at positions 0, 1, 2
+			expect(buffer.getCell(0, 0).char).toBe('c');
+			expect(buffer.getCell(1, 0).char).toBe('a');
+			expect(buffer.getCell(2, 0).char).toBe('f');
+			// é (e + combining accent) should be at position 3
+			expect(buffer.getCell(3, 0).char).toBe('e\u0301');
+			// Position 4 should be space (not the combining accent as separate char)
+			expect(buffer.getCell(4, 0).char).toBe(' ');
+		});
+
+		test('handles CJK characters correctly (wide)', async () => {
+			// CJK characters take 2 columns each
+			// 中 (U+4E2D) should be width 2
+			const textNode = await createMockNode('inkx-text', {}, [], '中文');
+			textNode.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+
+			const root = await createMockNode('inkx-box', { width: 10, height: 1 }, [textNode]);
+			root.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+
+			const buffer = contentPhase(root);
+
+			// 中 at position 0, wide
+			expect(buffer.getCell(0, 0).char).toBe('中');
+			expect(buffer.getCell(0, 0).wide).toBe(true);
+			// Position 1 is continuation
+			expect(buffer.getCell(1, 0).continuation).toBe(true);
+			// 文 at position 2, wide
+			expect(buffer.getCell(2, 0).char).toBe('文');
+			expect(buffer.getCell(2, 0).wide).toBe(true);
+			// Position 3 is continuation
+			expect(buffer.getCell(3, 0).continuation).toBe(true);
+			// Position 4 should be space
+			expect(buffer.getCell(4, 0).char).toBe(' ');
+		});
 	});
 });
