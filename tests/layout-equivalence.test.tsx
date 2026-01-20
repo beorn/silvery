@@ -134,8 +134,7 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 	});
 
 	describe('Nested Boxes with flexDirection row/column', () => {
-		// Skip: Flexx shows only last child in column layout
-		test.skip('column direction (default) with multiple children', () => {
+		test('column direction (default) with multiple children', () => {
 			const element = (
 				<Box flexDirection="column" width={20}>
 					<Text>Line 1</Text>
@@ -157,8 +156,7 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 			expectEquivalent(element, { columns: 40, rows: 5 });
 		});
 
-		// Skip: Depends on column direction working
-		test.skip('nested row inside column', () => {
+		test('nested row inside column', () => {
 			const element = (
 				<Box flexDirection="column" width={30}>
 					<Text>Header</Text>
@@ -172,8 +170,7 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 			expectEquivalent(element, { columns: 40, rows: 10 });
 		});
 
-		// Skip: Depends on column direction working
-		test.skip('nested column inside row', () => {
+		test('nested column inside row', () => {
 			const element = (
 				<Box flexDirection="row" width={40}>
 					<Box flexDirection="column">
@@ -189,8 +186,7 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 			expectEquivalent(element, { columns: 50, rows: 10 });
 		});
 
-		// Skip: Depends on column direction working
-		test.skip('deeply nested boxes', () => {
+		test('deeply nested boxes', () => {
 			const element = (
 				<Box flexDirection="column" width={40}>
 					<Box flexDirection="row">
@@ -263,23 +259,7 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 			expectEquivalent(element, { columns: 50, rows: 10 });
 		});
 
-		// Skip: Different wrapping behavior between engines
-		test.skip('flexShrink with overflow (row)', () => {
-			const element = (
-				<Box flexDirection="row" width={20} height={3}>
-					<Box width={15} flexShrink={1}>
-						<Text>Shrinkable</Text>
-					</Box>
-					<Box width={15} flexShrink={1}>
-						<Text>Also shrinks</Text>
-					</Box>
-				</Box>
-			);
-			expectEquivalent(element, { columns: 30, rows: 10 });
-		});
-
-		// Skip: Depends on column direction working
-		test.skip('flexGrow in column direction', () => {
+		test('flexGrow in column direction', () => {
 			const element = (
 				<Box flexDirection="column" width={20} height={10}>
 					<Box height={2}>
@@ -332,8 +312,7 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 			expectEquivalent(element, { columns: 30, rows: 12 });
 		});
 
-		// Skip: Depends on column direction working
-		test.skip('margin between siblings (column)', () => {
+		test('margin between siblings (column)', () => {
 			const element = (
 				<Box flexDirection="column" width={20}>
 					<Box marginBottom={1}>
@@ -347,8 +326,7 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 			expectEquivalent(element, { columns: 30, rows: 10 });
 		});
 
-		// Skip: Different margin calculation
-		test.skip('marginX and marginY', () => {
+		test('marginX and marginY', () => {
 			const element = (
 				<Box width={30} height={8}>
 					<Box marginX={2} marginY={1}>
@@ -359,8 +337,7 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 			expectEquivalent(element, { columns: 40, rows: 12 });
 		});
 
-		// Skip: Different padding + margin calculation
-		test.skip('padding and margin combined', () => {
+		test('padding and margin combined', () => {
 			const element = (
 				<Box width={30} height={8} padding={1}>
 					<Box margin={1}>
@@ -533,8 +510,7 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 			expectEquivalent(element, { columns: 40, rows: 5 });
 		});
 
-		// Skip: Depends on column direction working
-		test.skip('gap in column direction', () => {
+		test('gap in column direction', () => {
 			const element = (
 				<Box flexDirection="column" width={20} gap={1}>
 					<Text>Line 1</Text>
@@ -576,8 +552,7 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 			expectEquivalent(element, { columns: 30, rows: 10 });
 		});
 
-		// Skip: Depends on column direction working
-		test.skip('many siblings (column)', () => {
+		test('many siblings (column)', () => {
 			const items = Array.from({ length: 10 }, (_, i) => <Text key={i}>Item {i}</Text>);
 			const element = (
 				<Box flexDirection="column" width={20}>
@@ -603,7 +578,9 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 	// ========================================================================
 
 	describe('Known Differences (both engines work, outputs differ)', () => {
-		test('column layout: Flexx only shows last child (regression test)', () => {
+		// Note: The column layout bug has been fixed. Both engines now produce
+		// identical output for basic column layouts. This test verifies the fix.
+		test('column layout: both engines produce identical output (was: regression test)', () => {
 			const element = (
 				<Box flexDirection="column" width={20}>
 					<Text>Line 1</Text>
@@ -621,13 +598,31 @@ describe('Layout Engine Equivalence (km-zofe)', () => {
 				rows: 10,
 			});
 
-			// Yoga shows all three lines
+			// Both engines show all three lines now
 			expect(yogaNormalized).toContain('Line 1');
 			expect(yogaNormalized).toContain('Line 2');
 			expect(yogaNormalized).toContain('Line 3');
 
-			// Flexx currently only shows the last line (known bug)
+			// Flexx now shows all lines too (bug fixed)
+			expect(flexxNormalized).toContain('Line 1');
+			expect(flexxNormalized).toContain('Line 2');
 			expect(flexxNormalized).toContain('Line 3');
+		});
+
+		// Skip: Different text wrapping behavior - Flexx layout is correct,
+		// but text rendering differs when text overflows its container
+		test.skip('flexShrink with text overflow - different wrapping behavior', () => {
+			const element = (
+				<Box flexDirection="row" width={20} height={3}>
+					<Box width={15} flexShrink={1}>
+						<Text>Shrinkable</Text>
+					</Box>
+					<Box width={15} flexShrink={1}>
+						<Text>Also shrinks</Text>
+					</Box>
+				</Box>
+			);
+			expectEquivalent(element, { columns: 30, rows: 10 });
 		});
 	});
 });
