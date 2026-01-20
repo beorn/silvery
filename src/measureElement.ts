@@ -58,7 +58,7 @@ export interface MeasureElementOutput {
  */
 export function measureElement(node: InkxNode): MeasureElementOutput {
 	return {
-		width: node.yogaNode?.getComputedWidth() ?? 0,
-		height: node.yogaNode?.getComputedHeight() ?? 0,
+		width: node.layoutNode?.getComputedWidth() ?? 0,
+		height: node.layoutNode?.getComputedHeight() ?? 0,
 	};
 }

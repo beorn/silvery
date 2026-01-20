@@ -4,7 +4,7 @@
  * Core types for the Inkx renderer architecture.
  */
 
-import type { Node as YogaNode } from 'yoga-wasm-web';
+import type { LayoutNode } from './layout-engine.js';
 
 // ============================================================================
 // Layout Types
@@ -172,8 +172,8 @@ export interface InkxNode {
 	/** Parent node (null for root) */
 	parent: InkxNode | null;
 
-	/** The Yoga node for layout calculation (null for raw text nodes) */
-	yogaNode: YogaNode | null;
+	/** The layout node for layout calculation (null for raw text nodes) */
+	layoutNode: LayoutNode | null;
 
 	/** Computed layout from previous render (for change detection) */
 	prevLayout: ComputedLayout | null;

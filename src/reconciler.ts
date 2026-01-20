@@ -9,12 +9,12 @@
  * but actual terminal content is rendered later after Yoga computes layout.
  */
 
+import { createContext } from 'react';
 // @ts-expect-error - react-reconciler has no type declarations
 import Reconciler from 'react-reconciler';
 // @ts-expect-error - react-reconciler constants not typed
 import { DefaultEventPriority, NoEventPriority } from 'react-reconciler/constants.js';
-import { createContext } from 'react';
-import type { Yoga, Node as YogaNode } from 'yoga-wasm-web';
+import { type LayoutNode, getConstants, getLayoutEngine } from './layout-engine.js';
 import type { BoxProps, ComputedLayout, InkxNode, InkxNodeType, TextProps } from './types.js';
 
 // ============================================================================
@@ -24,59 +24,24 @@ import type { BoxProps, ComputedLayout, InkxNode, InkxNodeType, TextProps } from
 let currentUpdatePriority = NoEventPriority;
 
 // ============================================================================
-// Yoga Instance Management
-// ============================================================================
-
-/**
- * The global Yoga instance. Must be initialized before rendering.
- * This is set by initYoga() or loadYoga().
- */
-let yoga: Yoga | null = null;
-
-/**
- * Initialize Inkx with a Yoga instance.
- * Call this before render().
- */
-export function setYoga(instance: Yoga): void {
-	yoga = instance;
-}
-
-/**
- * Get the current Yoga instance. Throws if not initialized.
- */
-export function getYoga(): Yoga {
-	if (!yoga) {
-		throw new Error('Yoga not initialized. Call initYoga() or setYoga() before rendering.');
-	}
-	return yoga;
-}
-
-/**
- * Check if Yoga is initialized.
- */
-export function isYogaInitialized(): boolean {
-	return yoga !== null;
-}
-
-// ============================================================================
 // Node Creation Helpers
 // ============================================================================
 
 /**
- * Create a new InkxNode with a fresh Yoga node.
+ * Create a new InkxNode with a fresh layout node.
  */
 export function createNode(
 	type: InkxNodeType,
 	props: BoxProps | TextProps | Record<string, unknown>,
 ): InkxNode {
-	const yogaNode = getYoga().Node.create();
+	const layoutNode = getLayoutEngine().createNode();
 
 	const node: InkxNode = {
 		type,
 		props,
 		children: [],
 		parent: null,
-		yogaNode,
+		layoutNode,
 		computedLayout: null,
 		prevLayout: null,
 		layoutDirty: true,
@@ -84,15 +49,15 @@ export function createNode(
 		layoutSubscribers: new Set(),
 	};
 
-	// Apply initial flexbox props to Yoga node
+	// Apply initial flexbox props to layout node
 	if (type === 'inkx-box') {
-		applyBoxProps(yogaNode, props as BoxProps);
+		applyBoxProps(layoutNode, props as BoxProps);
 	}
 
 	// Set up measure function for text nodes
-	// This tells Yoga how to calculate the text's intrinsic size
+	// This tells the layout engine how to calculate the text's intrinsic size
 	if (type === 'inkx-text') {
-		yogaNode.setMeasureFunc((width, widthMode, _height, _heightMode) => {
+		layoutNode.setMeasureFunc((width, widthMode, _height, _heightMode) => {
 			// Collect text content from this node and its raw text children
 			const text = collectNodeTextContent(node);
 			if (!text) {
@@ -101,8 +66,7 @@ export function createNode(
 
 			// Calculate text dimensions
 			const lines = text.split('\n');
-			const y = getYoga();
-			const maxWidth = widthMode === y.MEASURE_MODE_UNDEFINED ? Number.POSITIVE_INFINITY : width;
+			const maxWidth = widthMode === 'undefined' ? Number.POSITIVE_INFINITY : width;
 
 			// Calculate actual dimensions based on wrapping
 			let totalHeight = 0;
@@ -171,7 +135,6 @@ function measureTextWidth(text: string): number {
 	return width;
 }
 
-
 /**
  * Create the root node for the Inkx tree.
  */
@@ -181,7 +144,7 @@ export function createRootNode(): InkxNode {
 
 /**
  * Create a virtual text node (for nested text elements).
- * Virtual text nodes don't have Yoga nodes and don't participate in layout.
+ * Virtual text nodes don't have layout nodes and don't participate in layout.
  * They're used when Text is nested inside another Text.
  */
 function createVirtualTextNode(props: TextProps): InkxNode {
@@ -190,7 +153,7 @@ function createVirtualTextNode(props: TextProps): InkxNode {
 		props,
 		children: [],
 		parent: null,
-		yogaNode: null, // No Yoga node for virtual text
+		layoutNode: null, // No layout node for virtual text
 		computedLayout: null,
 		prevLayout: null,
 		layoutDirty: false,
@@ -205,183 +168,177 @@ function createVirtualTextNode(props: TextProps): InkxNode {
 // ============================================================================
 
 /**
- * Apply BoxProps to a Yoga node.
- * This maps Ink/Inkx props to Yoga's API.
+ * Apply BoxProps to a layout node.
+ * This maps Ink/Inkx props to the layout engine API.
  */
-function applyBoxProps(yogaNode: YogaNode, props: BoxProps): void {
-	const y = getYoga();
+function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
+	const c = getConstants();
 
 	// Dimensions
 	if (props.width !== undefined) {
 		if (typeof props.width === 'string' && props.width.endsWith('%')) {
-			yogaNode.setWidthPercent(Number.parseFloat(props.width));
+			layoutNode.setWidthPercent(Number.parseFloat(props.width));
 		} else if (typeof props.width === 'number') {
-			yogaNode.setWidth(props.width);
+			layoutNode.setWidth(props.width);
 		} else if (props.width === 'auto') {
-			yogaNode.setWidthAuto();
+			layoutNode.setWidthAuto();
 		}
 	}
 
 	if (props.height !== undefined) {
 		if (typeof props.height === 'string' && props.height.endsWith('%')) {
-			yogaNode.setHeightPercent(Number.parseFloat(props.height));
+			layoutNode.setHeightPercent(Number.parseFloat(props.height));
 		} else if (typeof props.height === 'number') {
-			yogaNode.setHeight(props.height);
+			layoutNode.setHeight(props.height);
 		} else if (props.height === 'auto') {
-			yogaNode.setHeightAuto();
+			layoutNode.setHeightAuto();
 		}
 	}
 
 	// Min/Max dimensions
 	if (props.minWidth !== undefined) {
 		if (typeof props.minWidth === 'string' && props.minWidth.endsWith('%')) {
-			yogaNode.setMinWidthPercent(Number.parseFloat(props.minWidth));
+			layoutNode.setMinWidthPercent(Number.parseFloat(props.minWidth));
 		} else if (typeof props.minWidth === 'number') {
-			yogaNode.setMinWidth(props.minWidth);
+			layoutNode.setMinWidth(props.minWidth);
 		}
 	}
 
 	if (props.minHeight !== undefined) {
 		if (typeof props.minHeight === 'string' && props.minHeight.endsWith('%')) {
-			yogaNode.setMinHeightPercent(Number.parseFloat(props.minHeight));
+			layoutNode.setMinHeightPercent(Number.parseFloat(props.minHeight));
 		} else if (typeof props.minHeight === 'number') {
-			yogaNode.setMinHeight(props.minHeight);
+			layoutNode.setMinHeight(props.minHeight);
 		}
 	}
 
 	if (props.maxWidth !== undefined) {
 		if (typeof props.maxWidth === 'string' && props.maxWidth.endsWith('%')) {
-			yogaNode.setMaxWidthPercent(Number.parseFloat(props.maxWidth));
+			layoutNode.setMaxWidthPercent(Number.parseFloat(props.maxWidth));
 		} else if (typeof props.maxWidth === 'number') {
-			yogaNode.setMaxWidth(props.maxWidth);
+			layoutNode.setMaxWidth(props.maxWidth);
 		}
 	}
 
 	if (props.maxHeight !== undefined) {
 		if (typeof props.maxHeight === 'string' && props.maxHeight.endsWith('%')) {
-			yogaNode.setMaxHeightPercent(Number.parseFloat(props.maxHeight));
+			layoutNode.setMaxHeightPercent(Number.parseFloat(props.maxHeight));
 		} else if (typeof props.maxHeight === 'number') {
-			yogaNode.setMaxHeight(props.maxHeight);
+			layoutNode.setMaxHeight(props.maxHeight);
 		}
 	}
 
 	// Flex properties
 	if (props.flexGrow !== undefined) {
-		yogaNode.setFlexGrow(props.flexGrow);
+		layoutNode.setFlexGrow(props.flexGrow);
 	}
 
 	if (props.flexShrink !== undefined) {
-		yogaNode.setFlexShrink(props.flexShrink);
+		layoutNode.setFlexShrink(props.flexShrink);
 	}
 
 	if (props.flexBasis !== undefined) {
 		if (typeof props.flexBasis === 'string' && props.flexBasis.endsWith('%')) {
-			yogaNode.setFlexBasisPercent(Number.parseFloat(props.flexBasis));
+			layoutNode.setFlexBasisPercent(Number.parseFloat(props.flexBasis));
 		} else if (props.flexBasis === 'auto') {
-			yogaNode.setFlexBasisAuto();
+			layoutNode.setFlexBasisAuto();
 		} else if (typeof props.flexBasis === 'number') {
-			yogaNode.setFlexBasis(props.flexBasis);
+			layoutNode.setFlexBasis(props.flexBasis);
 		}
 	}
 
 	// Flex direction
 	if (props.flexDirection !== undefined) {
 		const directionMap: Record<string, number> = {
-			row: y.FLEX_DIRECTION_ROW,
-			column: y.FLEX_DIRECTION_COLUMN,
-			'row-reverse': y.FLEX_DIRECTION_ROW_REVERSE,
-			'column-reverse': y.FLEX_DIRECTION_COLUMN_REVERSE,
+			row: c.FLEX_DIRECTION_ROW,
+			column: c.FLEX_DIRECTION_COLUMN,
+			'row-reverse': c.FLEX_DIRECTION_ROW_REVERSE,
+			'column-reverse': c.FLEX_DIRECTION_COLUMN_REVERSE,
 		};
-		yogaNode.setFlexDirection(
-			// biome-ignore lint/suspicious/noExplicitAny: Yoga enum type mismatch
-			(directionMap[props.flexDirection] ?? y.FLEX_DIRECTION_COLUMN) as any,
-		);
+		layoutNode.setFlexDirection(directionMap[props.flexDirection] ?? c.FLEX_DIRECTION_COLUMN);
 	}
 
 	// Flex wrap
 	if (props.flexWrap !== undefined) {
 		const wrapMap: Record<string, number> = {
-			nowrap: y.WRAP_NO_WRAP,
-			wrap: y.WRAP_WRAP,
-			'wrap-reverse': y.WRAP_WRAP_REVERSE,
+			nowrap: c.WRAP_NO_WRAP,
+			wrap: c.WRAP_WRAP,
+			'wrap-reverse': c.WRAP_WRAP_REVERSE,
 		};
-		// biome-ignore lint/suspicious/noExplicitAny: Yoga enum type mismatch
-		yogaNode.setFlexWrap((wrapMap[props.flexWrap] ?? y.WRAP_NO_WRAP) as any);
+		layoutNode.setFlexWrap(wrapMap[props.flexWrap] ?? c.WRAP_NO_WRAP);
 	}
 
 	// Alignment
 	if (props.alignItems !== undefined) {
-		// biome-ignore lint/suspicious/noExplicitAny: Yoga enum type mismatch
-		yogaNode.setAlignItems(alignToYoga(props.alignItems) as any);
+		layoutNode.setAlignItems(alignToConstant(props.alignItems));
 	}
 
 	if (props.alignSelf !== undefined && props.alignSelf !== 'auto') {
-		// biome-ignore lint/suspicious/noExplicitAny: Yoga enum type mismatch
-		yogaNode.setAlignSelf(alignToYoga(props.alignSelf) as any);
+		layoutNode.setAlignSelf(alignToConstant(props.alignSelf));
 	}
 
 	if (props.alignContent !== undefined) {
-		// biome-ignore lint/suspicious/noExplicitAny: Yoga enum type mismatch
-		yogaNode.setAlignContent(alignToYoga(props.alignContent) as any);
+		layoutNode.setAlignContent(alignToConstant(props.alignContent));
 	}
 
 	if (props.justifyContent !== undefined) {
-		// biome-ignore lint/suspicious/noExplicitAny: Yoga enum type mismatch
-		yogaNode.setJustifyContent(justifyToYoga(props.justifyContent) as any);
+		layoutNode.setJustifyContent(justifyToConstant(props.justifyContent));
 	}
 
 	// Padding
-	applySpacing(yogaNode, 'padding', props);
+	applySpacing(layoutNode, 'padding', props);
 
 	// Margin
-	applySpacing(yogaNode, 'margin', props);
+	applySpacing(layoutNode, 'margin', props);
 
 	// Gap
 	if (props.gap !== undefined) {
-		yogaNode.setGap(y.GUTTER_ALL, props.gap);
+		layoutNode.setGap(c.GUTTER_ALL, props.gap);
 	}
 
 	// Display
 	if (props.display !== undefined) {
-		yogaNode.setDisplay(props.display === 'none' ? y.DISPLAY_NONE : y.DISPLAY_FLEX);
+		layoutNode.setDisplay(props.display === 'none' ? c.DISPLAY_NONE : c.DISPLAY_FLEX);
 	}
 
 	// Position
-	// Note: 'sticky' is handled at render-time, not by Yoga. For layout purposes, treat as relative.
+	// Note: 'sticky' is handled at render-time, not by layout engine. For layout purposes, treat as relative.
 	if (props.position !== undefined) {
-		yogaNode.setPositionType(
-			props.position === 'absolute' ? y.POSITION_TYPE_ABSOLUTE : y.POSITION_TYPE_RELATIVE,
+		layoutNode.setPositionType(
+			props.position === 'absolute' ? c.POSITION_TYPE_ABSOLUTE : c.POSITION_TYPE_RELATIVE,
 		);
 	}
 
 	// Overflow
 	if (props.overflow !== undefined) {
 		if (props.overflow === 'hidden') {
-			yogaNode.setOverflow(y.OVERFLOW_HIDDEN);
+			layoutNode.setOverflow(c.OVERFLOW_HIDDEN);
 		} else if (props.overflow === 'scroll') {
-			yogaNode.setOverflow(y.OVERFLOW_SCROLL);
+			layoutNode.setOverflow(c.OVERFLOW_SCROLL);
 		} else {
-			yogaNode.setOverflow(y.OVERFLOW_VISIBLE);
+			layoutNode.setOverflow(c.OVERFLOW_VISIBLE);
 		}
 	}
 
 	// Border (affects layout - 1 cell per border side)
 	if (props.borderStyle) {
 		const borderWidth = 1;
-		if (props.borderTop !== false) yogaNode.setBorder(y.EDGE_TOP, borderWidth);
-		if (props.borderBottom !== false) yogaNode.setBorder(y.EDGE_BOTTOM, borderWidth);
-		if (props.borderLeft !== false) yogaNode.setBorder(y.EDGE_LEFT, borderWidth);
-		if (props.borderRight !== false) yogaNode.setBorder(y.EDGE_RIGHT, borderWidth);
+		if (props.borderTop !== false) layoutNode.setBorder(c.EDGE_TOP, borderWidth);
+		if (props.borderBottom !== false) layoutNode.setBorder(c.EDGE_BOTTOM, borderWidth);
+		if (props.borderLeft !== false) layoutNode.setBorder(c.EDGE_LEFT, borderWidth);
+		if (props.borderRight !== false) layoutNode.setBorder(c.EDGE_RIGHT, borderWidth);
 	}
 }
 
 /**
- * Apply padding or margin to a Yoga node.
+ * Apply padding or margin to a layout node.
  */
-function applySpacing(yogaNode: YogaNode, type: 'padding' | 'margin', props: BoxProps): void {
-	const y = getYoga();
+function applySpacing(layoutNode: LayoutNode, type: 'padding' | 'margin', props: BoxProps): void {
+	const c = getConstants();
 	const set =
-		type === 'padding' ? yogaNode.setPadding.bind(yogaNode) : yogaNode.setMargin.bind(yogaNode);
+		type === 'padding'
+			? layoutNode.setPadding.bind(layoutNode)
+			: layoutNode.setMargin.bind(layoutNode);
 
 	const all = props[type];
 	const x = props[`${type}X` as keyof BoxProps] as number | undefined;
@@ -393,59 +350,59 @@ function applySpacing(yogaNode: YogaNode, type: 'padding' | 'margin', props: Box
 
 	// Apply in order of specificity
 	if (all !== undefined) {
-		set(y.EDGE_ALL, all);
+		set(c.EDGE_ALL, all);
 	}
 	if (x !== undefined) {
-		set(y.EDGE_HORIZONTAL, x);
+		set(c.EDGE_HORIZONTAL, x);
 	}
 	if (yy !== undefined) {
-		set(y.EDGE_VERTICAL, yy);
+		set(c.EDGE_VERTICAL, yy);
 	}
 	if (top !== undefined) {
-		set(y.EDGE_TOP, top);
+		set(c.EDGE_TOP, top);
 	}
 	if (bottom !== undefined) {
-		set(y.EDGE_BOTTOM, bottom);
+		set(c.EDGE_BOTTOM, bottom);
 	}
 	if (left !== undefined) {
-		set(y.EDGE_LEFT, left);
+		set(c.EDGE_LEFT, left);
 	}
 	if (right !== undefined) {
-		set(y.EDGE_RIGHT, right);
+		set(c.EDGE_RIGHT, right);
 	}
 }
 
 /**
- * Convert align value to Yoga constant.
+ * Convert align value to layout constant.
  */
-function alignToYoga(align: string): number {
-	const y = getYoga();
+function alignToConstant(align: string): number {
+	const c = getConstants();
 	const map: Record<string, number> = {
-		'flex-start': y.ALIGN_FLEX_START,
-		'flex-end': y.ALIGN_FLEX_END,
-		center: y.ALIGN_CENTER,
-		stretch: y.ALIGN_STRETCH,
-		baseline: y.ALIGN_BASELINE,
-		'space-between': y.ALIGN_SPACE_BETWEEN,
-		'space-around': y.ALIGN_SPACE_AROUND,
+		'flex-start': c.ALIGN_FLEX_START,
+		'flex-end': c.ALIGN_FLEX_END,
+		center: c.ALIGN_CENTER,
+		stretch: c.ALIGN_STRETCH,
+		baseline: c.ALIGN_BASELINE,
+		'space-between': c.ALIGN_SPACE_BETWEEN,
+		'space-around': c.ALIGN_SPACE_AROUND,
 	};
-	return map[align] ?? y.ALIGN_STRETCH;
+	return map[align] ?? c.ALIGN_STRETCH;
 }
 
 /**
- * Convert justify value to Yoga constant.
+ * Convert justify value to layout constant.
  */
-function justifyToYoga(justify: string): number {
-	const y = getYoga();
+function justifyToConstant(justify: string): number {
+	const c = getConstants();
 	const map: Record<string, number> = {
-		'flex-start': y.JUSTIFY_FLEX_START,
-		'flex-end': y.JUSTIFY_FLEX_END,
-		center: y.JUSTIFY_CENTER,
-		'space-between': y.JUSTIFY_SPACE_BETWEEN,
-		'space-around': y.JUSTIFY_SPACE_AROUND,
-		'space-evenly': y.JUSTIFY_SPACE_EVENLY,
+		'flex-start': c.JUSTIFY_FLEX_START,
+		'flex-end': c.JUSTIFY_FLEX_END,
+		center: c.JUSTIFY_CENTER,
+		'space-between': c.JUSTIFY_SPACE_BETWEEN,
+		'space-around': c.JUSTIFY_SPACE_AROUND,
+		'space-evenly': c.JUSTIFY_SPACE_EVENLY,
 	};
-	return map[justify] ?? y.JUSTIFY_FLEX_START;
+	return map[justify] ?? c.JUSTIFY_FLEX_START;
 }
 
 // ============================================================================
@@ -456,24 +413,31 @@ function justifyToYoga(justify: string): number {
  * Calculate layout for the entire tree starting from root.
  */
 export function calculateLayout(root: InkxNode, width: number, height: number): void {
-	const y = getYoga();
-	root.yogaNode.calculateLayout(width, height, y.DIRECTION_LTR);
+	const c = getConstants();
+	if (!root.layoutNode) {
+		throw new Error('Root node must have a layout node');
+	}
+	root.layoutNode.calculateLayout(width, height, c.DIRECTION_LTR);
 	propagateLayout(root, 0, 0);
 	notifyLayoutSubscribers(root);
 }
 
 /**
- * Propagate computed layout from Yoga nodes to InkxNodes.
+ * Propagate computed layout from layout nodes to InkxNodes.
  */
 function propagateLayout(node: InkxNode, parentX: number, parentY: number): void {
 	// Save previous layout for change detection
 	node.prevLayout = node.computedLayout;
 
-	// Get computed layout from Yoga
-	const left = node.yogaNode.getComputedLeft();
-	const top = node.yogaNode.getComputedTop();
-	const width = node.yogaNode.getComputedWidth();
-	const height = node.yogaNode.getComputedHeight();
+	// Get computed layout from layout node
+	if (!node.layoutNode) {
+		// Virtual nodes (raw text, nested text) inherit parent layout
+		return;
+	}
+	const left = node.layoutNode.getComputedLeft();
+	const top = node.layoutNode.getComputedTop();
+	const width = node.layoutNode.getComputedWidth();
+	const height = node.layoutNode.getComputedHeight();
 
 	node.computedLayout = {
 		x: parentX + left,
@@ -574,7 +538,7 @@ const hostConfig = {
 		_rootContainer: unknown,
 		hostContext: { isInsideText: boolean },
 	): InkxNode {
-		// Nested text nodes become "virtual" - no Yoga node
+		// Nested text nodes become "virtual" - no layout node
 		if (type === 'inkx-text' && hostContext.isInsideText) {
 			return createVirtualTextNode(props as TextProps);
 		}
@@ -582,14 +546,14 @@ const hostConfig = {
 	},
 
 	createTextInstance(text: string): InkxNode {
-		// Raw text nodes don't have Yoga nodes - they're just data nodes
+		// Raw text nodes don't have layout nodes - they're just data nodes
 		// Their content is rendered by their parent inkx-text element
 		const node: InkxNode = {
 			type: 'inkx-text',
 			props: { children: text } as TextProps,
 			children: [],
 			parent: null,
-			yogaNode: null, // No Yoga node for raw text
+			layoutNode: null, // No layout node for raw text
 			computedLayout: null,
 			prevLayout: null,
 			layoutDirty: false,
@@ -605,11 +569,11 @@ const hostConfig = {
 	appendChild(parentInstance: InkxNode, child: InkxNode) {
 		child.parent = parentInstance;
 		parentInstance.children.push(child);
-		// Only add to Yoga tree if both nodes have Yoga nodes
-		if (parentInstance.yogaNode && child.yogaNode) {
-			// Count non-raw-text children for proper Yoga index
-			const yogaIndex = parentInstance.children.filter((c) => c.yogaNode !== null).length - 1;
-			parentInstance.yogaNode.insertChild(child.yogaNode, yogaIndex);
+		// Only add to layout tree if both nodes have layout nodes
+		if (parentInstance.layoutNode && child.layoutNode) {
+			// Count non-raw-text children for proper layout index
+			const layoutIndex = parentInstance.children.filter((c) => c.layoutNode !== null).length - 1;
+			parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex);
 		}
 		parentInstance.layoutDirty = true;
 	},
@@ -617,19 +581,19 @@ const hostConfig = {
 	appendInitialChild(parentInstance: InkxNode, child: InkxNode) {
 		child.parent = parentInstance;
 		parentInstance.children.push(child);
-		// Only add to Yoga tree if both nodes have Yoga nodes
-		if (parentInstance.yogaNode && child.yogaNode) {
-			const yogaIndex = parentInstance.children.filter((c) => c.yogaNode !== null).length - 1;
-			parentInstance.yogaNode.insertChild(child.yogaNode, yogaIndex);
+		// Only add to layout tree if both nodes have layout nodes
+		if (parentInstance.layoutNode && child.layoutNode) {
+			const layoutIndex = parentInstance.children.filter((c) => c.layoutNode !== null).length - 1;
+			parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex);
 		}
 	},
 
 	appendChildToContainer(container: Container, child: InkxNode) {
 		child.parent = container.root;
 		container.root.children.push(child);
-		if (container.root.yogaNode && child.yogaNode) {
-			const yogaIndex = container.root.children.filter((c) => c.yogaNode !== null).length - 1;
-			container.root.yogaNode.insertChild(child.yogaNode, yogaIndex);
+		if (container.root.layoutNode && child.layoutNode) {
+			const layoutIndex = container.root.children.filter((c) => c.layoutNode !== null).length - 1;
+			container.root.layoutNode.insertChild(child.layoutNode, layoutIndex);
 		}
 		container.root.layoutDirty = true;
 	},
@@ -638,9 +602,9 @@ const hostConfig = {
 		const index = parentInstance.children.indexOf(child);
 		if (index !== -1) {
 			parentInstance.children.splice(index, 1);
-			if (parentInstance.yogaNode && child.yogaNode) {
-				parentInstance.yogaNode.removeChild(child.yogaNode);
-				child.yogaNode.free();
+			if (parentInstance.layoutNode && child.layoutNode) {
+				parentInstance.layoutNode.removeChild(child.layoutNode);
+				child.layoutNode.free();
 			}
 			child.parent = null;
 			parentInstance.layoutDirty = true;
@@ -651,9 +615,9 @@ const hostConfig = {
 		const index = container.root.children.indexOf(child);
 		if (index !== -1) {
 			container.root.children.splice(index, 1);
-			if (container.root.yogaNode && child.yogaNode) {
-				container.root.yogaNode.removeChild(child.yogaNode);
-				child.yogaNode.free();
+			if (container.root.layoutNode && child.layoutNode) {
+				container.root.layoutNode.removeChild(child.layoutNode);
+				child.layoutNode.free();
 			}
 			child.parent = null;
 			container.root.layoutDirty = true;
@@ -665,12 +629,12 @@ const hostConfig = {
 		if (beforeIndex !== -1) {
 			child.parent = parentInstance;
 			parentInstance.children.splice(beforeIndex, 0, child);
-			if (parentInstance.yogaNode && child.yogaNode) {
-				// Count non-raw-text children before this position for proper Yoga index
-				const yogaIndex = parentInstance.children
+			if (parentInstance.layoutNode && child.layoutNode) {
+				// Count non-raw-text children before this position for proper layout index
+				const layoutIndex = parentInstance.children
 					.slice(0, beforeIndex)
-					.filter((c) => c.yogaNode !== null).length;
-				parentInstance.yogaNode.insertChild(child.yogaNode, yogaIndex);
+					.filter((c) => c.layoutNode !== null).length;
+				parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex);
 			}
 			parentInstance.layoutDirty = true;
 		}
@@ -681,11 +645,11 @@ const hostConfig = {
 		if (beforeIndex !== -1) {
 			child.parent = container.root;
 			container.root.children.splice(beforeIndex, 0, child);
-			if (container.root.yogaNode && child.yogaNode) {
-				const yogaIndex = container.root.children
+			if (container.root.layoutNode && child.layoutNode) {
+				const layoutIndex = container.root.children
 					.slice(0, beforeIndex)
-					.filter((c) => c.yogaNode !== null).length;
-				container.root.yogaNode.insertChild(child.yogaNode, yogaIndex);
+					.filter((c) => c.layoutNode !== null).length;
+				container.root.layoutNode.insertChild(child.layoutNode, layoutIndex);
 			}
 			container.root.layoutDirty = true;
 		}
@@ -713,8 +677,8 @@ const hostConfig = {
 		if (
 			layoutPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
 		) {
-			if (instance.yogaNode) {
-				applyBoxProps(instance.yogaNode, newProps as BoxProps);
+			if (instance.layoutNode) {
+				applyBoxProps(instance.layoutNode, newProps as BoxProps);
 			}
 			instance.layoutDirty = true;
 		}
@@ -760,9 +724,9 @@ const hostConfig = {
 
 	clearContainer(container: Container) {
 		for (const child of container.root.children) {
-			if (container.root.yogaNode && child.yogaNode) {
-				container.root.yogaNode.removeChild(child.yogaNode);
-				child.yogaNode.free();
+			if (container.root.layoutNode && child.layoutNode) {
+				container.root.layoutNode.removeChild(child.layoutNode);
+				child.layoutNode.free();
 			}
 		}
 		container.root.children = [];

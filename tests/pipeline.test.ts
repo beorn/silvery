@@ -4,8 +4,16 @@
  * Tests for the render pipeline phases: measure, layout, content, output.
  */
 
-import { describe, expect, test } from 'bun:test';
+import { beforeAll, describe, expect, test } from 'bun:test';
+import { initYogaEngine } from '../src/adapters/yoga-adapter.js';
 import { TerminalBuffer } from '../src/buffer.js';
+import {
+	type LayoutEngine,
+	type LayoutNode,
+	getConstants,
+	getLayoutEngine,
+	setLayoutEngine,
+} from '../src/layout-engine.js';
 import {
 	type CellChange,
 	contentPhase,
@@ -17,8 +25,13 @@ import {
 } from '../src/pipeline.js';
 import type { BoxProps, ComputedLayout, InkxNode, TextProps } from '../src/types.js';
 
-// Import Yoga for creating mock nodes
-import { default as initYoga } from 'yoga-wasm-web/auto';
+// Initialize layout engine before tests run
+let layoutEngine: LayoutEngine;
+
+beforeAll(async () => {
+	layoutEngine = await initYogaEngine();
+	setLayoutEngine(layoutEngine);
+});
 
 // Helper to create mock InkxNode
 async function createMockNode(
@@ -27,17 +40,18 @@ async function createMockNode(
 	children: InkxNode[] = [],
 	textContent?: string,
 ): Promise<InkxNode> {
-	const yoga = await initYoga;
-	const yogaNode = yoga.Node.create();
+	const engine = getLayoutEngine();
+	const c = getConstants();
+	const layoutNode = engine.createNode();
 
-	// Apply props to yoga node
+	// Apply props to layout node
 	if (type === 'inkx-box' || type === 'inkx-text') {
 		const boxProps = props as BoxProps;
-		if (typeof boxProps.width === 'number') yogaNode.setWidth(boxProps.width);
-		if (typeof boxProps.height === 'number') yogaNode.setHeight(boxProps.height);
-		if (boxProps.flexDirection === 'row') yogaNode.setFlexDirection(yoga.FLEX_DIRECTION_ROW);
-		if (boxProps.flexDirection === 'column') yogaNode.setFlexDirection(yoga.FLEX_DIRECTION_COLUMN);
-		if (typeof boxProps.padding === 'number') yogaNode.setPadding(yoga.EDGE_ALL, boxProps.padding);
+		if (typeof boxProps.width === 'number') layoutNode.setWidth(boxProps.width);
+		if (typeof boxProps.height === 'number') layoutNode.setHeight(boxProps.height);
+		if (boxProps.flexDirection === 'row') layoutNode.setFlexDirection(c.FLEX_DIRECTION_ROW);
+		if (boxProps.flexDirection === 'column') layoutNode.setFlexDirection(c.FLEX_DIRECTION_COLUMN);
+		if (typeof boxProps.padding === 'number') layoutNode.setPadding(c.EDGE_ALL, boxProps.padding);
 	}
 
 	const node: InkxNode = {
@@ -45,7 +59,7 @@ async function createMockNode(
 		props,
 		children,
 		parent: null,
-		yogaNode,
+		layoutNode,
 		computedLayout: null,
 		prevLayout: null,
 		layoutDirty: true,
@@ -58,22 +72,22 @@ async function createMockNode(
 	// Link children
 	for (let i = 0; i < children.length; i++) {
 		children[i].parent = node;
-		if (children[i].yogaNode) {
-			yogaNode.insertChild(children[i].yogaNode!, i);
+		if (children[i].layoutNode) {
+			layoutNode.insertChild(children[i].layoutNode!, i);
 		}
 	}
 
 	return node;
 }
 
-// Helper to create raw text node (no yoga)
+// Helper to create raw text node (no layout node)
 function createRawTextNode(text: string): InkxNode {
 	return {
 		type: 'inkx-text',
 		props: {},
 		children: [],
 		parent: null,
-		yogaNode: null,
+		layoutNode: null,
 		computedLayout: null,
 		prevLayout: null,
 		layoutDirty: false,
@@ -119,21 +133,19 @@ describe('Pipeline', () => {
 		test('processes fit-content nodes', async () => {
 			// Create a box with fit-content width containing text
 			const textNode = await createMockNode('inkx-text', {}, [], 'Hello');
-			const root = await createMockNode(
-				'inkx-box',
-				{ width: 'fit-content' as unknown as number },
-				[textNode],
-			);
+			const root = await createMockNode('inkx-box', { width: 'fit-content' as unknown as number }, [
+				textNode,
+			]);
 
 			// Should not throw
 			measurePhase(root);
 		});
 
-		test('skips nodes without yogaNode', async () => {
+		test('skips nodes without layoutNode', async () => {
 			const rawText = createRawTextNode('Hello');
 			const root = await createMockNode('inkx-box', { width: 20, height: 5 }, [rawText]);
 
-			// Should not throw even though rawText has no yogaNode
+			// Should not throw even though rawText has no layoutNode
 			measurePhase(root);
 		});
 	});
@@ -173,7 +185,7 @@ describe('Pipeline', () => {
 			expect(root.computedLayout?.width).toBe(80);
 		});
 
-		test('handles virtual text nodes (no yogaNode)', async () => {
+		test('handles virtual text nodes (no layoutNode)', async () => {
 			const rawText = createRawTextNode('Hello');
 			const root = await createMockNode('inkx-box', { width: 80, height: 24 }, [rawText]);
 			root.layoutDirty = true;
@@ -237,7 +249,7 @@ describe('Pipeline', () => {
 		});
 	});
 
-describe('scrollPhase', () => {
+	describe('scrollPhase', () => {
 		test('calculates scroll state for overflow=scroll containers', async () => {
 			const { scrollPhase } = await import('../src/pipeline.js');
 

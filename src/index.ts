@@ -18,8 +18,29 @@ export { useFocus } from './hooks/useFocus.js';
 export { useFocusManager } from './hooks/useFocusManager.js';
 
 // Render
-export { render, renderSync, setYoga } from './render.js';
+export {
+	render,
+	renderSync,
+	setLayoutEngine,
+	isLayoutEngineInitialized,
+	// Yoga adapter
+	createYogaEngine,
+	initYogaEngine,
+	YogaLayoutEngine,
+	// Flexx adapter
+	createFlexxEngine,
+	FlexxLayoutEngine,
+} from './render.js';
 export { measureElement } from './measureElement.js';
+
+// Layout engine types
+export type {
+	LayoutEngine,
+	LayoutNode,
+	LayoutConstants,
+	MeasureFunc,
+	MeasureMode,
+} from './layout-engine.js';
 
 // Types
 export type { BoxProps } from './components/Box.js';

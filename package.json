@@ -54,6 +54,7 @@
     "react": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
+    "@beorn/flexx": "workspace:*",
     "chalk": "^5.3.0",
     "graphemer": "^1.4.0",
     "react-reconciler": "^0.33.0",

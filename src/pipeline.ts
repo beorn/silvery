@@ -49,7 +49,7 @@ import type { BoxProps, ComputedLayout, InkxNode, TextProps } from './types.js';
 export function measurePhase(root: InkxNode): void {
 	traverseTree(root, (node) => {
 		// Skip nodes without Yoga (raw text nodes)
-		if (!node.yogaNode) return;
+		if (!node.layoutNode) return;
 
 		const props = node.props as BoxProps;
 
@@ -57,10 +57,10 @@ export function measurePhase(root: InkxNode): void {
 			const intrinsicSize = measureIntrinsicSize(node);
 
 			if (props.width === 'fit-content') {
-				node.yogaNode.setWidth(intrinsicSize.width);
+				node.layoutNode.setWidth(intrinsicSize.width);
 			}
 			if (props.height === 'fit-content') {
-				node.yogaNode.setHeight(intrinsicSize.height);
+				node.layoutNode.setHeight(intrinsicSize.height);
 			}
 		}
 	});
@@ -137,9 +137,9 @@ export function layoutPhase(root: InkxNode, width: number, height: number): void
 		return;
 	}
 
-	// Run Yoga layout calculation (root always has a yogaNode)
-	if (root.yogaNode) {
-		root.yogaNode.calculateLayout(width, height);
+	// Run Yoga layout calculation (root always has a layoutNode)
+	if (root.layoutNode) {
+		root.layoutNode.calculateLayout(width, height);
 	}
 
 	// Propagate computed dimensions to all nodes
@@ -171,8 +171,8 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number): void
 	// Save previous layout for change detection
 	node.prevLayout = node.computedLayout;
 
-	// Virtual/raw text nodes (no yogaNode) inherit parent's position
-	if (!node.yogaNode) {
+	// Virtual/raw text nodes (no layoutNode) inherit parent's position
+	if (!node.layoutNode) {
 		node.computedLayout = {
 			x: parentX,
 			y: parentY,
@@ -189,10 +189,10 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number): void
 
 	// Compute absolute position from Yoga
 	node.computedLayout = {
-		x: parentX + node.yogaNode.getComputedLeft(),
-		y: parentY + node.yogaNode.getComputedTop(),
-		width: node.yogaNode.getComputedWidth(),
-		height: node.yogaNode.getComputedHeight(),
+		x: parentX + node.layoutNode.getComputedLeft(),
+		y: parentY + node.layoutNode.getComputedTop(),
+		width: node.layoutNode.getComputedWidth(),
+		height: node.layoutNode.getComputedHeight(),
 	};
 
 	// Clear layout dirty flag
@@ -260,10 +260,12 @@ export function scrollPhase(root: InkxNode): void {
  */
 function calculateScrollState(node: InkxNode, props: BoxProps): void {
 	const layout = node.computedLayout;
-	if (!layout || !node.yogaNode) return;
+	if (!layout || !node.layoutNode) return;
 
 	// Calculate viewport (container minus borders/padding)
-	const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 };
+	const border = props.borderStyle
+		? getBorderSize(props)
+		: { top: 0, bottom: 0, left: 0, right: 0 };
 	const padding = getPadding(props);
 
 	const viewportHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom;
@@ -282,7 +284,7 @@ function calculateScrollState(node: InkxNode, props: BoxProps): void {
 
 	for (let i = 0; i < node.children.length; i++) {
 		const child = node.children[i];
-		if (!child.yogaNode || !child.computedLayout) continue;
+		if (!child.layoutNode || !child.computedLayout) continue;
 
 		const childTop = child.computedLayout.y - layout.y - border.top - padding.top;
 		const childBottom = childTop + child.computedLayout.height;
@@ -432,7 +434,7 @@ function renderNodeToBuffer(
 
 	// Skip nodes without Yoga (raw text and virtual text nodes)
 	// Their content is rendered by their parent inkx-text via collectTextContent()
-	if (!node.yogaNode) return;
+	if (!node.layoutNode) return;
 
 	const props = node.props as BoxProps & TextProps;
 

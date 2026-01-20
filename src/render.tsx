@@ -14,7 +14,6 @@
 import { EventEmitter } from 'node:events';
 import process from 'node:process';
 import React, { useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react';
-import type { Yoga } from 'yoga-wasm-web';
 import {
 	AppContext,
 	FocusContext,
@@ -23,8 +22,9 @@ import {
 	StdinContext,
 	StdoutContext,
 } from './context.js';
+import { isLayoutEngineInitialized, setLayoutEngine } from './layout-engine.js';
 import { enterAlternateScreen, leaveAlternateScreen } from './output.js';
-import { createContainer, getContainerRoot, reconciler, setYoga } from './reconciler.js';
+import { createContainer, getContainerRoot, reconciler } from './reconciler.js';
 import { RenderScheduler } from './scheduler.js';
 
 // ============================================================================
@@ -67,33 +67,26 @@ export interface Instance {
 // Global State
 // ============================================================================
 
-/** Global Yoga instance (initialized once) */
-let yogaInstance: Yoga | null = null;
-
 /** Map of stdout streams to instances (for reuse) */
 const instances = new Map<NodeJS.WriteStream, InkxInstance>();
 
 // ============================================================================
-// Yoga Initialization
+// Layout Engine Initialization
 // ============================================================================
 
 /**
- * Initialize Yoga if not already initialized.
- * Uses the pre-loaded Yoga instance from yoga-wasm-web/auto.
+ * Initialize layout engine if not already initialized.
+ * By default, uses Yoga via yoga-wasm-web/auto.
  */
-async function ensureYogaInitialized(): Promise<Yoga> {
-	if (yogaInstance) {
-		return yogaInstance;
+async function ensureLayoutEngineInitialized(): Promise<void> {
+	if (isLayoutEngineInitialized()) {
+		return;
 	}
 
-	// Import the pre-initialized Yoga from yoga-wasm-web/auto
-	// This automatically selects the right implementation (node.js in Node/Bun, browser.js in browsers)
-	const { default: yoga } = (await import('yoga-wasm-web/auto')) as {
-		default: Yoga;
-	};
-	yogaInstance = yoga;
-	setYoga(yoga);
-	return yoga;
+	// Import the Yoga adapter and initialize
+	const { initYogaEngine } = await import('./adapters/yoga-adapter.js');
+	const engine = await initYogaEngine();
+	setLayoutEngine(engine);
 }
 
 // ============================================================================
@@ -600,8 +593,8 @@ export async function render(
 	element: ReactElement,
 	options: RenderOptions = {},
 ): Promise<Instance> {
-	// Ensure Yoga is initialized
-	await ensureYogaInitialized();
+	// Ensure layout engine is initialized
+	await ensureLayoutEngineInitialized();
 
 	// Merge with defaults
 	const resolvedOptions = {
@@ -632,19 +625,19 @@ export async function render(
 }
 
 /**
- * Synchronous render function for use when Yoga is already initialized.
+ * Synchronous render function for use when layout engine is already initialized.
  *
- * This is useful when you've already called initYoga() or setYoga() elsewhere.
- * If Yoga is not initialized, this will throw an error.
+ * This is useful when you've already called setLayoutEngine() elsewhere.
+ * If no layout engine is initialized, this will throw an error.
  *
  * @param element - The React element to render
  * @param options - Render options
  * @returns An Instance object with control methods
  */
 export function renderSync(element: ReactElement, options: RenderOptions = {}): Instance {
-	if (!yogaInstance) {
+	if (!isLayoutEngineInitialized()) {
 		throw new Error(
-			'Yoga is not initialized. Call render() (async) first, or initialize Yoga manually with setYoga().',
+			'Layout engine is not initialized. Call render() (async) first, or initialize manually with setLayoutEngine().',
 		);
 	}
 
@@ -676,5 +669,9 @@ export function renderSync(element: ReactElement, options: RenderOptions = {}): 
 	};
 }
 
-// Re-export for convenience
-export { setYoga } from './reconciler.js';
+// Re-export layout engine management for convenience
+export { setLayoutEngine, isLayoutEngineInitialized } from './layout-engine.js';
+
+// Re-export adapters for custom engine initialization
+export { createYogaEngine, initYogaEngine, YogaLayoutEngine } from './adapters/yoga-adapter.js';
+export { createFlexxEngine, FlexxLayoutEngine } from './adapters/flexx-adapter.js';

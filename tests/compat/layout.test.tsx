@@ -10,7 +10,7 @@
 
 import { describe, expect, test } from 'bun:test';
 import React from 'react';
-import { Box, Text, Spacer, Newline } from '../../src/index.js';
+import { Box, Newline, Spacer, Text } from '../../src/index.js';
 import { render } from '../../src/testing/index.js';
 
 describe('Layout API Compatibility', () => {
@@ -250,7 +250,14 @@ describe('Layout API Compatibility', () => {
 		});
 
 		test('accepts justifyContent', () => {
-			const values = ['flex-start', 'flex-end', 'center', 'space-between', 'space-around', 'space-evenly'] as const;
+			const values = [
+				'flex-start',
+				'flex-end',
+				'center',
+				'space-between',
+				'space-around',
+				'space-evenly',
+			] as const;
 			for (const justifyContent of values) {
 				const { lastFrame } = render(
 					<Box justifyContent={justifyContent} width={20}>
@@ -347,7 +354,13 @@ describe('Layout API Compatibility', () => {
 
 		test('accepts borderTop/Bottom/Left/Right', () => {
 			const { lastFrame } = render(
-				<Box borderStyle="single" borderTop={true} borderBottom={true} borderLeft={false} borderRight={false}>
+				<Box
+					borderStyle="single"
+					borderTop={true}
+					borderBottom={true}
+					borderLeft={false}
+					borderRight={false}
+				>
 					<Text>Content</Text>
 				</Box>,
 			);

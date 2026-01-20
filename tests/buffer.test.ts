@@ -171,8 +171,22 @@ describe('Buffer', () => {
 		});
 
 		test('different char not equal', () => {
-			const a: Cell = { char: 'A', fg: null, bg: null, attrs: {}, wide: false, continuation: false };
-			const b: Cell = { char: 'B', fg: null, bg: null, attrs: {}, wide: false, continuation: false };
+			const a: Cell = {
+				char: 'A',
+				fg: null,
+				bg: null,
+				attrs: {},
+				wide: false,
+				continuation: false,
+			};
+			const b: Cell = {
+				char: 'B',
+				fg: null,
+				bg: null,
+				attrs: {},
+				wide: false,
+				continuation: false,
+			};
 			expect(cellEquals(a, b)).toBe(false);
 		});
 	});
