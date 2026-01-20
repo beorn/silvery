@@ -5,6 +5,8 @@
  * elements to opposite ends of a container.
  */
 
+import type { JSX } from 'react';
+
 /**
  * Fills available space in the parent container.
  *

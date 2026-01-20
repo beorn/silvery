@@ -9,7 +9,7 @@
  * - Text content collection (collectTextContent)
  */
 
-import { type Color, type Style, TerminalBuffer } from '../buffer.js';
+import type { Color, Style, TerminalBuffer } from '../buffer.js';
 import type { InkxNode, TextProps } from '../types.js';
 import {
 	type StyledSegment,
@@ -141,7 +141,11 @@ export function formatTextLines(text: string, width: number, wrap: TextProps['wr
 /**
  * Truncate text to fit within width.
  */
-export function truncateText(text: string, width: number, mode: 'start' | 'middle' | 'end'): string {
+export function truncateText(
+	text: string,
+	width: number,
+	mode: 'start' | 'middle' | 'end',
+): string {
 	const textWidth = getTextWidth(text);
 	if (textWidth <= width) return text;
 
@@ -268,11 +272,7 @@ export function renderAnsiTextLine(
 
 			if (hasExistingBg) {
 				const preview = segment.text.slice(0, 30);
-				const msg =
-					`[inkx] Background conflict: chalk.bg* on text that already has inkx background. ` +
-					`Chalk bg will override only text characters, causing visual gaps in padding. ` +
-					`Use chalkx.bgOverride() to suppress if intentional. ` +
-					`Text: "${preview}${segment.text.length > 30 ? '...' : ''}"`;
+				const msg = `[inkx] Background conflict: chalk.bg* on text that already has inkx background. Chalk bg will override only text characters, causing visual gaps in padding. Use chalkx.bgOverride() to suppress if intentional. Text: "${preview}${segment.text.length > 30 ? '...' : ''}"`;
 
 				if (bgConflictMode === 'throw') {
 					throw new Error(msg);

@@ -992,7 +992,7 @@ describe('Unicode', () => {
 			test('truncates ZWJ family sequence correctly', () => {
 				const family = '👨‍👩‍👧‍👦';
 				// Family is 2 cols, so with ellipsis fits in 3
-				const result = truncateText(family + '🎉', 3);
+				const result = truncateText(`${family}🎉`, 3);
 				expect(displayWidth(result)).toBeLessThanOrEqual(3);
 			});
 

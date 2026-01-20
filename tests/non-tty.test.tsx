@@ -103,7 +103,7 @@ describe('Non-TTY environments (km-wvgu)', () => {
 		test('handles empty content', () => {
 			const { lastFrame } = render(
 				<Box>
-					<Text></Text>
+					<Text />
 				</Box>,
 			);
 			expect(lastFrame()).toBeDefined();

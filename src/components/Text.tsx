@@ -8,7 +8,7 @@
  * to an InkxNode containing the text content.
  */
 
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import type { TextProps as TextPropsType } from '../types.js';
 
 // ============================================================================

@@ -6,7 +6,7 @@
  * visible after being rendered.
  */
 
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 
 export interface StaticProps<T> {
 	/** Items to render */

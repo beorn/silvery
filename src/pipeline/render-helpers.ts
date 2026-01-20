@@ -11,7 +11,7 @@
  * - getPadding, getBorderSize
  */
 
-import { type Color, type Style } from '../buffer.js';
+import type { Color, Style } from '../buffer.js';
 import type { BoxProps, TextProps } from '../types.js';
 import { displayWidthAnsi, graphemeWidth, splitGraphemes } from '../unicode.js';
 import type { BorderChars } from './types.js';

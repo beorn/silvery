@@ -5,13 +5,14 @@
  * React reconciler handles. These are custom host elements, not DOM elements.
  */
 
+import type { ReactNode } from 'react';
 import type { BoxProps, TextProps } from './types.js';
 
-declare global {
+declare module 'react' {
 	namespace JSX {
 		interface IntrinsicElements {
-			'inkx-box': BoxProps & { children?: React.ReactNode };
-			'inkx-text': TextProps & { children?: React.ReactNode };
+			'inkx-box': BoxProps & { children?: ReactNode };
+			'inkx-text': TextProps & { children?: ReactNode };
 		}
 	}
 }

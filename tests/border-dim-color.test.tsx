@@ -26,7 +26,6 @@ const render = createTestRenderer({ columns: 40, rows: 15 });
 function hasBold(str: string): boolean {
 	// Match SGR sequences containing bold code (1) as a distinct segment
 	// Handles: [1m, [0;1m, [1;38;5;2m, etc.
-	// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI codes use control chars
 	return /\x1b\[([0-9]*;)*1(;[0-9]+)*m/.test(str);
 }
 
@@ -36,7 +35,6 @@ function hasBold(str: string): boolean {
  */
 function hasDim(str: string): boolean {
 	// Match SGR sequences containing dim code (2) as a distinct segment
-	// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI codes use control chars
 	return /\x1b\[([0-9]*;)*2(;[0-9]+)*m/.test(str);
 }
 
@@ -46,7 +44,6 @@ function hasDim(str: string): boolean {
  */
 function hasGreen(str: string): boolean {
 	// Check for basic green (32) or 256-color green (38;5;2)
-	// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI codes use control chars
 	return /\x1b\[([0-9]*;)*32(;[0-9]+)*m/.test(str) || str.includes('38;5;2');
 }
 

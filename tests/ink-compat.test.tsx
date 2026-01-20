@@ -1216,9 +1216,10 @@ describe('Edge Cases', () => {
 	});
 
 	test('mixed children types render correctly', () => {
+		const isActive = true; // Testing ternary expression handling
 		const { lastFrame } = render(
 			<Text>
-				Count: {10} - Status: {'ok'} - Active: {true ? 'yes' : 'no'}
+				Count: {10} - Status: {'ok'} - Active: {isActive ? 'yes' : 'no'}
 			</Text>,
 		);
 		const frame = stripAnsi(lastFrame() ?? '');

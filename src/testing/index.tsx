@@ -141,6 +141,17 @@ export interface RenderResult {
 	 * Useful for testing sequences of renders.
 	 */
 	clear: () => void;
+
+	/**
+	 * Check if exit() was called by the component.
+	 * Useful for testing exit behavior.
+	 */
+	exitCalled: () => boolean;
+
+	/**
+	 * Get the error passed to exit(), if any.
+	 */
+	exitError: () => Error | undefined;
 }
 
 /**
@@ -241,13 +252,13 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 		);
 
 		// Track if exit was called (for testing exit behavior)
-		let exitCalled = false;
-		let exitError: Error | undefined;
+		let exitCalledFlag = false;
+		let exitErrorValue: Error | undefined;
 
 		// Exit handler for useApp hook
 		const handleExit = (error?: Error) => {
-			exitCalled = true;
-			exitError = error;
+			exitCalledFlag = true;
+			exitErrorValue = error;
 			if (debug) {
 				console.log('[inkx-test] exit() called', error ? `with error: ${error.message}` : '');
 			}
@@ -373,6 +384,14 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 				instance.frames.length = 0;
 				instance.prevBuffer = null;
 			},
+
+			exitCalled() {
+				return exitCalledFlag;
+			},
+
+			exitError() {
+				return exitErrorValue;
+			},
 		};
 
 		// Track current instance for auto-cleanup on next render
@@ -393,7 +412,6 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
  * Strip ANSI escape codes from a string for easier assertions.
  */
 export function stripAnsi(str: string): string {
-	// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI codes use control chars
 	return str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
 }
 

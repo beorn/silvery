@@ -190,9 +190,7 @@ const CTRL_CODES = new Set([
 	'[8^',
 ]);
 
-// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequences require control chars
 const META_KEY_CODE_RE = /^(?:\x1b)([a-zA-Z0-9])$/;
-// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequences require control chars
 const FN_KEY_RE = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+)?([a-zA-Z]))/;
 
 interface ParsedKeypress {

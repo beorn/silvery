@@ -9,7 +9,7 @@
  * InkxNode with an associated Yoga layout node.
  */
 
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 import type { BoxProps as BoxPropsType, ComputedLayout } from '../types.js';
 
 // ============================================================================

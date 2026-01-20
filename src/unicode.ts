@@ -543,7 +543,6 @@ export function writeLinesToBuffer(
 // ANSI-Aware Operations
 // ============================================================================
 
-// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequences require control chars
 const ANSI_REGEX = /\x1b\[[0-9;:]*m|\x1b\]8;;[^\x1b]*\x1b\\/g;
 
 /**
@@ -601,7 +600,6 @@ export interface StyledSegment {
  */
 export function parseAnsiText(text: string): StyledSegment[] {
 	const segments: StyledSegment[] = [];
-	// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape requires control chars
 	const ansiPattern = /\x1b\[([0-9;]*)m/g;
 
 	let currentStyle: Omit<StyledSegment, 'text'> = {};
@@ -752,7 +750,6 @@ export function parseAnsiText(text: string): StyledSegment[] {
 	return segments;
 }
 
-// biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequences require control chars
 const ANSI_TEST_REGEX = /\x1b\[[0-9;]*[A-Za-z]/;
 
 /**

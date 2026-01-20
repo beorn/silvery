@@ -267,7 +267,7 @@ describe('Performance (km-ed63)', () => {
 			});
 
 			// Rerender with content change (tests diff + layout + painting)
-			const modifiedItems = items.map((item) => item + ' modified');
+			const modifiedItems = items.map((item) => `${item} modified`);
 			const { elapsed: rerenderModified } = timed(() => {
 				result.rerender(
 					<Box flexDirection="column">

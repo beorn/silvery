@@ -198,7 +198,6 @@ describe('tmux Passthrough Mode', () => {
 	test('escapes ESC characters in passthrough content', () => {
 		const escapeForTmux = (content: string): string => {
 			// Double all ESC characters within passthrough
-			// biome-ignore lint/suspicious/noControlCharactersInRegex: ESC is the target
 			return content.replace(/\x1b/g, '\x1b\x1b');
 		};
 
@@ -209,7 +208,6 @@ describe('tmux Passthrough Mode', () => {
 
 	test('wraps sequences for tmux passthrough', () => {
 		const wrapForTmuxPassthrough = (content: string): string => {
-			// biome-ignore lint/suspicious/noControlCharactersInRegex: ESC is the target
 			const escaped = content.replace(/\x1b/g, '\x1b\x1b');
 			return `${TMUX_PASSTHROUGH.begin}${escaped}${TMUX_PASSTHROUGH.end}`;
 		};

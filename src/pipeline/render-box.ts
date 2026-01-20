@@ -7,7 +7,7 @@
  * - Scroll indicators (renderScrollIndicators)
  */
 
-import { type Style, TerminalBuffer } from '../buffer.js';
+import type { Style, TerminalBuffer } from '../buffer.js';
 import type { BoxProps, ComputedLayout, InkxNode } from '../types.js';
 import { getBorderChars, getBorderSize, parseColor } from './render-helpers.js';
 import { renderTextLine } from './render-text.js';

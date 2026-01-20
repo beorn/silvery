@@ -4,6 +4,8 @@
  * Renders a newline character. Useful for adding vertical spacing in text.
  */
 
+import type { JSX } from 'react';
+
 export interface NewlineProps {
 	/** Number of newlines to render (default: 1) */
 	count?: number;

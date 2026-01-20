@@ -382,7 +382,6 @@ class InkxInstance {
 
 	private scheduler: RenderScheduler | null = null;
 	private container: ReturnType<typeof createContainer> | null = null;
-	// biome-ignore lint/suspicious/noExplicitAny: React reconciler internal type
 	private fiberRoot: any = null;
 	private isUnmounted = false;
 

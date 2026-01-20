@@ -414,8 +414,9 @@ export function bufferToAnsi(buffer: TerminalBuffer): string {
 		}
 	}
 
-	// Reset style (cursor stays hidden - components must explicitly show it)
-	output += RESET;
+	// Reset style and move cursor to home position
+	// This avoids visual artifacts when terminal loses focus (cursor outline visible)
+	output += RESET + CURSOR_HOME;
 
 	return output;
 }
@@ -516,8 +517,12 @@ export function changesToAnsi(changes: CellChange[]): string {
 	if (currentStyle) {
 		output += RESET;
 	}
-	// Note: cursor is NOT shown here by default. Applications that need
-	// a visible cursor (e.g., text input) should use ANSI.CURSOR_SHOW.
+
+	// Move cursor to home position to avoid visual artifacts.
+	// Even with cursor hidden, some terminals show the cursor position
+	// when the terminal loses focus (e.g., as an outline block).
+	// Parking it at 0,0 prevents artifacts appearing at arbitrary positions.
+	output += CURSOR_HOME;
 
 	return output;
 }

@@ -16,7 +16,7 @@ import { type Container, hostConfig } from './host-config.js';
 import { createRootNode } from './nodes.js';
 
 // Re-export only what's needed by render.tsx and testing/index.tsx
-export { type Container } from './host-config.js';
+export type { Container } from './host-config.js';
 
 // ============================================================================
 // Reconciler Export
