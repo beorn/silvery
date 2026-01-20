@@ -63,6 +63,18 @@ import { Box } from "inkx";
 | `marginY`       | `number` | `0`     | Vertical margin                   |
 | `gap`           | `number` | `0`     | Gap between children              |
 
+### Style (Inkx Only)
+
+| Prop              | Type     | Default | Description                                      |
+| ----------------- | -------- | ------- | ------------------------------------------------ |
+| `backgroundColor` | `string` | -       | Fill the entire box area with a background color |
+
+::: tip Box vs Text backgroundColor
+Unlike Ink, inkx's Box supports `backgroundColor` directly. The background fills
+the entire computed layout area, so you don't need Text elements with spaces to
+create filled regions.
+:::
+
 ### Border
 
 | Prop           | Type                                                                                         | Default | Description        |
@@ -176,5 +188,27 @@ const [selected, setSelected] = useState(0);
 // Colored border
 <Box borderStyle="single" borderColor="green">
   <Text>Content</Text>
+</Box>
+```
+
+### Filled Background
+
+```tsx
+// Header bar with cyan background
+<Box backgroundColor="cyan" paddingX={1}>
+  <Text color="black" bold>
+    Title
+  </Text>
+</Box>
+
+// Sidebar indicator that fills available height
+<Box
+  width={1}
+  flexGrow={1}
+  backgroundColor="gray"
+  justifyContent="center"
+  alignItems="center"
+>
+  <Text color="white">›</Text>
 </Box>
 ```
