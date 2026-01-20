@@ -16,6 +16,8 @@ export {
 	scrollPhase,
 	contentPhase,
 	outputPhase,
+	// Utilities
+	clearBgConflictWarnings,
 	// Orchestration
 	executeRender,
 } from './pipeline/index.js';

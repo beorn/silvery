@@ -9,6 +9,21 @@ import { useContext, useEffect, useMemo } from 'react';
 import { FocusContext, StdinContext } from '../context.js';
 
 // ============================================================================
+// Focus ID Generator
+// ============================================================================
+
+let focusIdCounter = 0;
+
+function generateFocusId(): string {
+	return `focus-${++focusIdCounter}`;
+}
+
+/** Reset the focus ID counter (for testing only) */
+export function resetFocusIdCounter(): void {
+	focusIdCounter = 0;
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -28,7 +43,7 @@ export interface UseFocusOptions {
 
 	/**
 	 * Custom ID for this focusable element.
-	 * If not provided, a random ID will be generated.
+	 * If not provided, a unique ID will be generated.
 	 */
 	id?: string;
 }
@@ -71,7 +86,7 @@ export function useFocus(options: UseFocusOptions = {}): UseFocusResult {
 
 	// Generate stable ID
 	const id = useMemo(() => {
-		return customId ?? Math.random().toString().slice(2, 7);
+		return customId ?? generateFocusId();
 	}, [customId]);
 
 	// Register/unregister this focusable element

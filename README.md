@@ -357,6 +357,9 @@ The `bgOverride()` wrapper tells inkx "I know what I'm doing" and skips detectio
 
 Based on real-world Ink issues, these areas need attention:
 
+### Text Wrapping
+- **Character-based wrapping** — Text wraps at exact column boundaries, not word boundaries. Long words may be split mid-word. For word-aware wrapping, pre-process text with `wrap-ansi` or similar library.
+
 ### Being Investigated
 - **CJK/IME input** — Ink's #1 pain point. Testing in progress.
 - **Terminal multiplexers** — tmux/Zellij have unique challenges.

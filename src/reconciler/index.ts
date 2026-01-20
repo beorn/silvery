@@ -15,16 +15,8 @@ import type { InkxNode } from '../types.js';
 import { type Container, hostConfig } from './host-config.js';
 import { createRootNode } from './nodes.js';
 
-// Re-export helpers for consumers
-export { LAYOUT_PROPS, layoutPropsChanged, contentPropsChanged, propsEqual } from './helpers.js';
-export {
-	createNode,
-	createRootNode,
-	createVirtualTextNode,
-	applyBoxProps,
-	calculateLayout,
-} from './nodes.js';
-export { hostConfig, type Container } from './host-config.js';
+// Re-export only what's needed by render.tsx and testing/index.tsx
+export { type Container } from './host-config.js';
 
 // ============================================================================
 // Reconciler Export

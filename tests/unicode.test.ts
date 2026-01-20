@@ -458,6 +458,20 @@ describe('Unicode', () => {
 		});
 	});
 
+	describe('stripAnsi with extended codes', () => {
+		test('strips extended SGR codes (underline styles)', () => {
+			expect(stripAnsi('\x1b[4:3mwavy\x1b[4:0m')).toBe('wavy');
+		});
+
+		test('strips underline color codes', () => {
+			expect(stripAnsi('\x1b[58:2::255:0:0mcolored\x1b[59m')).toBe('colored');
+		});
+
+		test('strips OSC 8 hyperlinks', () => {
+			expect(stripAnsi('\x1b]8;;https://example.com\x1b\\link\x1b]8;;\x1b\\')).toBe('link');
+		});
+	});
+
 	describe('displayWidthAnsi', () => {
 		test('ignores ANSI in width calculation', () => {
 			expect(displayWidthAnsi('\x1b[31mhello\x1b[0m')).toBe(5);

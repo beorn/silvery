@@ -14,7 +14,7 @@ export { useInput } from './hooks/useInput.js';
 export { useApp } from './hooks/useApp.js';
 export { useStdout } from './hooks/useStdout.js';
 export { useStdin } from './hooks/useStdin.js';
-export { useFocus } from './hooks/useFocus.js';
+export { useFocus, resetFocusIdCounter } from './hooks/useFocus.js';
 export { useFocusManager } from './hooks/useFocusManager.js';
 
 // Render
@@ -32,6 +32,9 @@ export {
 	FlexxLayoutEngine,
 } from './render.js';
 export { measureElement } from './measureElement.js';
+
+// ANSI escape sequences for terminal control
+export { ANSI } from './output.js';
 
 // Layout engine types
 export type {

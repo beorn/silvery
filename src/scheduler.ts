@@ -177,8 +177,8 @@ export class RenderScheduler {
 	clear(): void {
 		if (this.disposed) return;
 
-		// Clear screen
-		this.stdout.write('\x1b[2J\x1b[H');
+		// Clear screen and keep cursor hidden
+		this.stdout.write('\x1b[2J\x1b[H\x1b[?25l');
 
 		// Reset buffer so next render outputs everything
 		this.prevBuffer = null;

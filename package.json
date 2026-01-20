@@ -60,6 +60,7 @@
     "yoga-wasm-web": { "optional": true }
   },
   "dependencies": {
+    "@beorn/chalkx": "workspace:*",
     "graphemer": "^1.4.0",
     "react-reconciler": "^0.33.0",
     "string-width": "^7.0.0"

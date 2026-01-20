@@ -11,9 +11,13 @@
  * - Combining characters: Diacritics, emoji modifiers that take 0 columns
  */
 
+import { BG_OVERRIDE_CODE } from '@beorn/chalkx';
 import Graphemer from 'graphemer';
 import stringWidth from 'string-width';
 import type { Style, TerminalBuffer } from './buffer.js';
+
+// Re-export for consumers of inkx
+export { BG_OVERRIDE_CODE };
 
 // ============================================================================
 // Grapheme Segmentation
@@ -540,7 +544,7 @@ export function writeLinesToBuffer(
 // ============================================================================
 
 // biome-ignore lint/suspicious/noControlCharactersInRegex: ANSI escape sequences require control chars
-const ANSI_REGEX = /\x1b\[[0-9;]*[A-Za-z]/g;
+const ANSI_REGEX = /\x1b\[[0-9;:]*m|\x1b\]8;;[^\x1b]*\x1b\\/g;
 
 /**
  * Strip ANSI escape sequences from a string.
@@ -576,12 +580,7 @@ export function truncateAnsi(text: string, maxWidth: number, ellipsis = '\u2026'
 // ANSI Parsing
 // ============================================================================
 
-/**
- * Private SGR code used to signal intentional bg override.
- * When this code is present, inkx won't warn/throw about chalk bg + inkx bg conflicts.
- * Use via chalkx.bgOverride() wrapper function.
- */
-export const BG_OVERRIDE_CODE = 9999;
+// BG_OVERRIDE_CODE is imported from @beorn/chalkx and re-exported at top of file
 
 /** Styled text segment with associated ANSI colors/attributes */
 export interface StyledSegment {

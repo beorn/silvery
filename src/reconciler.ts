@@ -14,17 +14,6 @@ export {
 	reconciler,
 	createContainer,
 	getContainerRoot,
-	// Node creation
-	createNode,
-	createRootNode,
-	createVirtualTextNode,
-	applyBoxProps,
-	calculateLayout,
-	// Helpers
-	LAYOUT_PROPS,
-	layoutPropsChanged,
-	contentPropsChanged,
-	propsEqual,
 	// Types
 	type Container,
 } from './reconciler/index.js';
