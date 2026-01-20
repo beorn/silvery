@@ -41,7 +41,11 @@ function bufferToAnsi(buffer: TerminalBuffer): string {
 	output += '\x1b[H';
 
 	for (let y = 0; y < buffer.height; y++) {
-		if (y > 0) output += '\n';
+		// IMPORTANT: Use \r\n (carriage return + line feed), not just \n
+		// A bare \n moves the cursor down but does NOT reset to column 0
+		// This was the root cause of bug km-x7ih where row 0 content
+		// appeared at the bottom of the screen
+		if (y > 0) output += '\r\n';
 
 		for (let x = 0; x < buffer.width; x++) {
 			const cell = buffer.getCell(x, y);
@@ -125,7 +129,11 @@ function changesToAnsi(changes: CellChange[]): string {
 
 		// Move cursor if needed (cursor must be exactly at target position)
 		if (y !== cursorY || x !== cursorX) {
-			if (y === cursorY + 1 && x === 0) {
+			// Use \r\n optimization only if cursor is initialized AND we're moving
+			// to the next line at column 0. Don't use it when cursorY is -1
+			// (uninitialized) because that would incorrectly emit a newline at start.
+			// Bug km-x7ih: This was causing the first row to appear at the bottom.
+			if (cursorY >= 0 && y === cursorY + 1 && x === 0) {
 				// Next line at column 0, use newline (more efficient)
 				output += '\r\n';
 			} else {

@@ -414,8 +414,8 @@ export function bufferToAnsi(buffer: TerminalBuffer): string {
 		}
 	}
 
-	// Reset style and show cursor
-	output += RESET + CURSOR_SHOW;
+	// Reset style (cursor stays hidden - components must explicitly show it)
+	output += RESET;
 
 	return output;
 }
@@ -512,11 +512,12 @@ export function changesToAnsi(changes: CellChange[]): string {
 		cursorY = y;
 	}
 
-	// Reset style and show cursor
+	// Reset style (cursor stays hidden - components must explicitly show it)
 	if (currentStyle) {
 		output += RESET;
 	}
-	output += CURSOR_SHOW;
+	// Note: cursor is NOT shown here by default. Applications that need
+	// a visible cursor (e.g., text input) should use ANSI.CURSOR_SHOW.
 
 	return output;
 }
@@ -561,17 +562,23 @@ export function clearLine(): string {
 }
 
 /**
- * Enter alternate screen buffer.
+ * Enter alternate screen buffer, clear screen, and hide cursor.
+ * Cursor is hidden by default - applications must explicitly show it for text input.
+ *
+ * The clear screen (\x1b[2J) and cursor home (\x1b[H) are essential after entering
+ * the alternate buffer to ensure a clean slate. Without this, the terminal may have
+ * leftover content from previous sessions that causes rendering artifacts like
+ * content appearing at wrong Y positions (bug km-x7ih).
  */
 export function enterAlternateScreen(): string {
-	return `${CSI}?1049h`;
+	return `${CSI}?1049h${CSI}2J${CURSOR_HOME}${CURSOR_HIDE}`;
 }
 
 /**
- * Leave alternate screen buffer.
+ * Leave alternate screen buffer and restore cursor.
  */
 export function leaveAlternateScreen(): string {
-	return `${CSI}?1049l`;
+	return `${CURSOR_SHOW}${CSI}?1049l`;
 }
 
 /**
