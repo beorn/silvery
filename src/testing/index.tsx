@@ -47,7 +47,7 @@
  */
 
 import { EventEmitter } from 'node:events';
-import React, { type ReactElement } from 'react';
+import React, { type ReactElement, act } from 'react';
 import { initYogaEngine } from '../adapters/yoga-adapter.js';
 import type { TerminalBuffer } from '../buffer.js';
 import { InputContext } from '../context.js';
@@ -59,6 +59,11 @@ import { createContainer, getContainerRoot, reconciler } from '../reconciler.js'
 // ============================================================================
 // Module Initialization
 // ============================================================================
+
+// Configure React to recognize this as a testing environment for act() support
+// This suppresses the "testing environment not configured" warning
+// @ts-expect-error - React internal flag for testing environments
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 // Initialize default yoga engine at module load time via top-level await.
 // This cached engine is used by createTestRenderer() when no engine is provided.
@@ -259,9 +264,11 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 			return output;
 		}
 
-		// Synchronously update React tree and flush work
-		reconciler.updateContainerSync(wrapWithInputContext(element), instance.fiberRoot, null, null);
-		reconciler.flushSyncWork();
+		// Synchronously update React tree within act() to ensure all state updates are flushed
+		act(() => {
+			reconciler.updateContainerSync(wrapWithInputContext(element), instance.fiberRoot, null, null);
+			reconciler.flushSyncWork();
+		});
 
 		// Execute the render pipeline
 		const output = doRender();
@@ -286,9 +293,16 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 					throw new Error('Cannot rerender after unmount');
 				}
 
-				// Synchronously update React tree and flush work (wrapped with InputContext)
-				reconciler.updateContainerSync(wrapWithInputContext(newElement), instance.fiberRoot, null, null);
-				reconciler.flushSyncWork();
+				// Synchronously update React tree within act() to ensure all state updates are flushed
+				act(() => {
+					reconciler.updateContainerSync(
+						wrapWithInputContext(newElement),
+						instance.fiberRoot,
+						null,
+						null,
+					);
+					reconciler.flushSyncWork();
+				});
 
 				// Execute render pipeline
 				const newFrame = doRender();
@@ -318,7 +332,19 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 					if (!instance.mounted) {
 						throw new Error('Cannot write to stdin after unmount');
 					}
-					instance.inputEmitter.emit('input', data);
+					// Use React's act() to ensure state updates are flushed synchronously
+					// This is necessary because useInput hooks call setState from an event callback
+					act(() => {
+						instance.inputEmitter.emit('input', data);
+					});
+
+					// Capture a new frame with the updated state
+					const newFrame = doRender();
+					instance.frames.push(newFrame);
+
+					if (debug) {
+						console.log('[inkx-test] stdin.write:', newFrame);
+					}
 				},
 			},
 
