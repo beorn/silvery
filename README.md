@@ -30,6 +30,28 @@ function Card() {
 | Visual regression tests                        | Planned     |
 | Ink API compatibility                          | In progress |
 
+## Why Inkx Over Ink?
+
+Based on analysis of Ink's [100+ open issues](https://github.com/vadimdemedes/ink/issues) and recent PRs, Inkx solves problems Ink architecturally cannot:
+
+| Pain Point | Ink Status | Inkx Status |
+|------------|------------|-------------|
+| **Scrolling** | [Open since 2019](https://github.com/vadimdemedes/ink/issues/222) (5.5+ years!) | ✅ `overflow="scroll"` just works |
+| **Layout feedback** | [Architecturally impossible](https://github.com/vadimdemedes/ink/issues/5) | ✅ `useLayout()` returns actual dimensions |
+| **Text overflow** | [Multiple issues](https://github.com/vadimdemedes/ink/issues/584) - breaks layout | ✅ Auto-truncates by default |
+| **Cursor API** | [Open since 2019](https://github.com/vadimdemedes/ink/issues/251) (6+ years!) | 🔜 Planned - layout feedback enables this |
+
+**What Ink gets right** (and Inkx maintains):
+- React-based declarative API
+- Flexbox layout via Yoga
+- Chalk compatibility
+- `useInput()` keyboard handling
+
+**Where Inkx can do better**:
+- Components know their dimensions without prop threading
+- Scrolling without manual virtualization
+- Text truncation that preserves ANSI codes
+
 ## The Problem
 
 Ink renders components _before_ layout. Components can't know their dimensions, so you manually calculate and pass widths everywhere:
@@ -268,6 +290,27 @@ Full documentation at `docs/site/` (VitePress):
 - **Architecture** — render pipeline, reconciler internals
 
 Run locally: `cd docs/site && bun run dev`
+
+## Known Limitations & Roadmap
+
+Based on real-world Ink issues, these areas need attention:
+
+### Being Investigated
+- **CJK/IME input** — Ink's #1 pain point. Testing in progress.
+- **Terminal multiplexers** — tmux/Zellij have unique challenges.
+
+### Planned Improvements
+- **Kitty keyboard protocol** — Better modifier key handling
+- **Cursor API** (`useCursor()`) — Ink issue open 6+ years
+- **Multi-line TextInput** — Common request for chat-like apps
+
+### Testing Coverage Needed
+- CJK character width calculation
+- Emoji with ZWJ sequences
+- Rapid keystroke handling
+- Large component counts (100+)
+
+See [docs/ink-comparison.md](docs/ink-comparison.md) for detailed analysis.
 
 ## License
 
