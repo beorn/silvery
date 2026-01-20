@@ -16,6 +16,7 @@ import Reconciler from 'react-reconciler';
 import { DefaultEventPriority, NoEventPriority } from 'react-reconciler/constants.js';
 import { type LayoutNode, getConstants, getLayoutEngine } from './layout-engine.js';
 import type { BoxProps, ComputedLayout, InkxNode, InkxNodeType, TextProps } from './types.js';
+import { displayWidth } from './unicode.js';
 
 // ============================================================================
 // Update Priority Management (for react-reconciler 0.33+)
@@ -73,7 +74,7 @@ export function createNode(
 			let actualWidth = 0;
 
 			for (const line of lines) {
-				const lineWidth = measureTextWidth(line);
+				const lineWidth = displayWidth(line);
 				if (lineWidth <= maxWidth) {
 					totalHeight += 1;
 					actualWidth = Math.max(actualWidth, lineWidth);
@@ -107,32 +108,6 @@ function collectNodeTextContent(node: InkxNode): string {
 		result += collectNodeTextContent(child);
 	}
 	return result;
-}
-
-/**
- * Measure text display width (simplified for measure function).
- */
-function measureTextWidth(text: string): number {
-	let width = 0;
-	for (const char of text) {
-		const code = char.codePointAt(0) ?? 0;
-		// Wide characters (simplified CJK detection)
-		if (
-			(code >= 0x1100 && code <= 0x115f) ||
-			(code >= 0x2e80 && code <= 0x9fff) ||
-			(code >= 0xac00 && code <= 0xd7af) ||
-			(code >= 0xf900 && code <= 0xfaff) ||
-			(code >= 0xfe10 && code <= 0xfe6f) ||
-			(code >= 0xff00 && code <= 0xff60) ||
-			(code >= 0xffe0 && code <= 0xffe6) ||
-			(code >= 0x20000 && code <= 0x3fffd)
-		) {
-			width += 2;
-		} else {
-			width += 1;
-		}
-	}
-	return width;
 }
 
 /**

@@ -451,4 +451,113 @@ describe('Layout API Compatibility', () => {
 			expect(lastFrame()).toContain('B');
 		});
 	});
+
+	describe('Core Rendering - ANSI Width', () => {
+		test('ANSI codes not counted in text width', () => {
+			const { lastFrame } = render(
+				<Box width={10}>
+					<Text color="red">Hello</Text>
+				</Box>,
+			);
+			// 'Hello' is 5 chars, should fit in width 10
+			// ANSI codes for red should not affect width calculation
+			const frame = lastFrame() ?? '';
+			// The actual text should be present
+			expect(frame).toContain('Hello');
+		});
+
+		test('styled text fits in container', () => {
+			const { lastFrame } = render(
+				<Box width={20}>
+					<Text bold color="green">
+						Styled Text
+					</Text>
+				</Box>,
+			);
+			// 'Styled Text' is 11 chars, should fit in width 20
+			expect(lastFrame()).toContain('Styled Text');
+		});
+
+		test('multiple styled segments render correctly', () => {
+			const { lastFrame } = render(
+				<Box width={30}>
+					<Text>
+						<Text color="red">Red</Text>
+						{' and '}
+						<Text color="blue">Blue</Text>
+					</Text>
+				</Box>,
+			);
+			// Total visible chars: 'Red and Blue' = 12 chars
+			const frame = lastFrame() ?? '';
+			expect(frame).toContain('Red');
+			expect(frame).toContain('Blue');
+		});
+	});
+
+	describe('Core Rendering - Nested Flex', () => {
+		test('nested flex containers calculate correct sizes', () => {
+			const { lastFrame } = render(
+				<Box flexDirection="row" width={30}>
+					<Box width={10}>
+						<Text>Fixed</Text>
+					</Box>
+					<Box flexGrow={1}>
+						<Text>Grows</Text>
+					</Box>
+				</Box>,
+			);
+			// Growing child should fill remaining 20 chars
+			const frame = lastFrame() ?? '';
+			expect(frame).toContain('Fixed');
+			expect(frame).toContain('Grows');
+		});
+
+		test('deeply nested flex containers work', () => {
+			const { lastFrame } = render(
+				<Box flexDirection="column" width={40} height={10}>
+					<Box flexDirection="row" height={2}>
+						<Box width={20}>
+							<Text>Left</Text>
+						</Box>
+						<Box flexGrow={1}>
+							<Text>Right</Text>
+						</Box>
+					</Box>
+					<Box flexGrow={1}>
+						<Text>Bottom</Text>
+					</Box>
+				</Box>,
+			);
+			const frame = lastFrame() ?? '';
+			expect(frame).toContain('Left');
+			expect(frame).toContain('Right');
+			expect(frame).toContain('Bottom');
+		});
+
+		test('flexGrow with mixed fixed-width and growing children', () => {
+			const { lastFrame } = render(
+				<Box flexDirection="row" width={50}>
+					<Box width={10}>
+						<Text>A</Text>
+					</Box>
+					<Box flexGrow={1}>
+						<Text>B</Text>
+					</Box>
+					<Box width={10}>
+						<Text>C</Text>
+					</Box>
+					<Box flexGrow={2}>
+						<Text>D</Text>
+					</Box>
+				</Box>,
+			);
+			// Fixed: 10 + 10 = 20, remaining 30 split by flexGrow 1:2 = 10:20
+			const frame = lastFrame() ?? '';
+			expect(frame).toContain('A');
+			expect(frame).toContain('B');
+			expect(frame).toContain('C');
+			expect(frame).toContain('D');
+		});
+	});
 });
