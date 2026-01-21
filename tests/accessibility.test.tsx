@@ -333,20 +333,22 @@ describe('Accessibility (km-017z)', () => {
 
 		test('selection state uses both color AND formatting', () => {
 			// Document the km pattern: selected items use both color change AND potentially other cues
+			// Use explicit prefix characters (not leading spaces) for alignment indicators
 			const { lastFrame } = render(
 				<Box flexDirection="column">
 					<Text backgroundColor="cyan" color="black">
 						&gt; Selected item
 					</Text>
-					<Text> Normal item</Text>
+					<Text>· Normal item</Text>
 				</Box>,
 			);
 
 			const stripped = stripAnsi(lastFrame()!);
 
 			// The ">" prefix provides a non-color indicator of selection
+			// Unselected items use "·" (middle dot) as a visible but subtle prefix
 			expect(stripped).toContain('> Selected');
-			expect(stripped).toContain(' Normal');
+			expect(stripped).toContain('· Normal');
 		});
 
 		test('text contrast is maintained with background colors', () => {

@@ -244,16 +244,8 @@ export function formatTextLines(text: string, width: number, wrap: TextProps['wr
 	// trim: true removes leading/trailing spaces from wrapped lines
 	// This prevents extra leading spaces on continuation lines when wrapping
 	// mid-sentence (e.g., "word1 word2" wrapped → "word1" and "word2", not " word2")
-	// However, we need to preserve intentional leading spaces on the first line
-	const leadingSpaceMatch = normalizedText.match(/^(\s*)/);
-	const leadingSpace = leadingSpaceMatch ? leadingSpaceMatch[1] : '';
 	const wrapped = wrapAnsi(normalizedText, width, { hard: true, trim: true });
-	const wrappedLines = wrapped.split('\n');
-	// Restore leading whitespace to the first line if it was trimmed
-	if (leadingSpace && wrappedLines.length > 0 && !wrappedLines[0].startsWith(leadingSpace)) {
-		wrappedLines[0] = leadingSpace + wrappedLines[0];
-	}
-	return wrappedLines;
+	return wrapped.split('\n');
 }
 
 /**
