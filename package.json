@@ -72,6 +72,7 @@
     "wrap-ansi": "^9.0.2"
   },
   "devDependencies": {
+    "@beorn/flexx": "github:beorn/flexx",
     "@biomejs/biome": "^1.9.0",
     "@types/bun": "^1.1.0",
     "@types/react": "^19.0.0",
@@ -79,6 +80,7 @@
     "react": "^19.0.0",
     "typescript": "^5.5.0",
     "vitepress": "^1.5.0",
-    "vitepress-plugin-llms": "^1.0.0"
+    "vitepress-plugin-llms": "^1.0.0",
+    "yoga-wasm-web": "^0.3.3"
   }
 }
