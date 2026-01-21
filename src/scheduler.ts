@@ -196,8 +196,12 @@ export class RenderScheduler {
 	dispose(): void {
 		if (this.disposed) return;
 
-		debug('dispose: renders=%d, skipped=%d, avg=%dms',
-			this.stats.renderCount, this.stats.skippedCount, Math.round(this.stats.avgRenderTime));
+		debug(
+			'dispose: renders=%d, skipped=%d, avg=%dms',
+			this.stats.renderCount,
+			this.stats.skippedCount,
+			Math.round(this.stats.avgRenderTime),
+		);
 		this.disposed = true;
 
 		// Cancel pending renders
@@ -265,7 +269,12 @@ export class RenderScheduler {
 				this.stats.renderCount;
 			this.lastRenderTime = Date.now();
 
-			debug('render #%d complete: %dms, output: %d bytes', this.stats.renderCount, renderTime, output.length);
+			debug(
+				'render #%d complete: %dms, output: %d bytes',
+				this.stats.renderCount,
+				renderTime,
+				output.length,
+			);
 
 			if (this.debug) {
 				this.logDebug(`Render #${this.stats.renderCount} took ${renderTime}ms`);

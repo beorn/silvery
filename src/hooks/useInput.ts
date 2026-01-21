@@ -5,8 +5,11 @@
  * Compatible with Ink's useInput API.
  */
 
+import createDebug from 'debug';
 import { useContext, useEffect } from 'react';
 import { InputContext, StdinContext } from '../context.js';
+
+const debug = createDebug('inkx:useInput');
 
 // ============================================================================
 // Types
@@ -319,15 +322,31 @@ export function useInput(inputHandler: InputHandler, options: UseInputOptions = 
 
 	const { isActive = true } = options;
 
+	debug(
+		'useInput called: isActive=%s stdinContext=%s isRawModeSupported=%s',
+		isActive,
+		!!stdinContext,
+		stdinContext?.isRawModeSupported,
+	);
+
 	// Set raw mode when active (only if stdin is a TTY)
 	useEffect(() => {
+		debug(
+			'useInput effect: isActive=%s stdinContext=%s isRawModeSupported=%s',
+			isActive,
+			!!stdinContext,
+			stdinContext?.isRawModeSupported,
+		);
 		if (!isActive || !stdinContext || !stdinContext.isRawModeSupported) {
+			debug('useInput effect: skipping raw mode setup');
 			return;
 		}
 
 		// Only set raw mode if stdin is a TTY - avoids crash in non-interactive contexts
+		debug('useInput effect: setting raw mode true');
 		stdinContext.setRawMode(true);
 		return () => {
+			debug('useInput effect cleanup: setting raw mode false');
 			stdinContext.setRawMode(false);
 		};
 	}, [isActive, stdinContext]);

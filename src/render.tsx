@@ -13,7 +13,10 @@
 
 import { EventEmitter } from 'node:events';
 import process from 'node:process';
+import createDebug from 'debug';
 import React, { useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react';
+
+const debug = createDebug('inkx:render');
 import {
 	AppContext,
 	FocusContext,
@@ -80,13 +83,27 @@ const instances = new Map<NodeJS.WriteStream, InkxInstance>();
  */
 async function ensureLayoutEngineInitialized(): Promise<void> {
 	if (isLayoutEngineInitialized()) {
+		debug('Layout engine already initialized');
 		return;
 	}
 
+	debug('Initializing layout engine...');
+	const startTime = Date.now();
+
 	// Import the Yoga adapter and initialize
 	const { initYogaEngine } = await import('./adapters/yoga-adapter.js');
+	debug('Yoga adapter imported in %dms', Date.now() - startTime);
+
+	const engineStartTime = Date.now();
 	const engine = await initYogaEngine();
+	debug(
+		'Yoga engine initialized in %dms (total: %dms)',
+		Date.now() - engineStartTime,
+		Date.now() - startTime,
+	);
+
 	setLayoutEngine(engine);
+	debug('Layout engine set');
 }
 
 // ============================================================================
@@ -134,6 +151,13 @@ function InkxApp({ children, stdin, stdout, exitOnCtrlC, onExit }: AppProps): Re
 
 	// Raw mode support check
 	const isRawModeSupported = stdin.isTTY === true;
+	debug(
+		'InkxApp: stdin=%s, stdin.isTTY=%s, process.stdin.isTTY=%s, isRawModeSupported=%s',
+		stdin === process.stdin ? 'process.stdin' : 'other',
+		stdin.isTTY,
+		process.stdin.isTTY,
+		isRawModeSupported,
+	);
 
 	// Focus management functions (defined before handleReadable since it depends on them)
 	const addFocusable = useCallback((id: string, options?: { autoFocus?: boolean }) => {
@@ -217,10 +241,12 @@ function InkxApp({ children, stdin, stdout, exitOnCtrlC, onExit }: AppProps): Re
 
 	// Handle readable input
 	const handleReadable = useCallback(() => {
+		debug('handleReadable called');
 		processInput();
 
 		function processInput() {
 			const chunk = stdin.read() as string | null;
+			debug('stdin.read() returned: %s', chunk === null ? 'null' : JSON.stringify(chunk));
 			if (chunk === null) return;
 
 			handleChunk(chunk);
@@ -228,6 +254,7 @@ function InkxApp({ children, stdin, stdout, exitOnCtrlC, onExit }: AppProps): Re
 		}
 
 		function handleChunk(chunk: string) {
+			debug('handleChunk: %s', JSON.stringify(chunk));
 			// Handle Ctrl+C
 			if (chunk === '\x03' && exitOnCtrlC) {
 				handleExit();
@@ -265,6 +292,12 @@ function InkxApp({ children, stdin, stdout, exitOnCtrlC, onExit }: AppProps): Re
 	// Set raw mode handler
 	const setRawMode = useCallback(
 		(enabled: boolean) => {
+			debug(
+				'setRawMode called: enabled=%s, rawModeCount=%d, isRawModeSupported=%s',
+				enabled,
+				rawModeCountRef.current,
+				isRawModeSupported,
+			);
 			if (!isRawModeSupported) {
 				if (stdin === process.stdin) {
 					throw new Error(
@@ -279,14 +312,23 @@ function InkxApp({ children, stdin, stdout, exitOnCtrlC, onExit }: AppProps): Re
 
 			if (enabled) {
 				if (rawModeCountRef.current === 0) {
+					debug('setRawMode: enabling raw mode, adding readable listener');
 					stdin.ref();
 					stdin.setRawMode(true);
 					stdin.on('readable', handleReadable);
+					debug(
+						'setRawMode: stdin.isRaw=%s, listenerCount=%d',
+						stdin.isRaw,
+						stdin.listenerCount('readable'),
+					);
 				}
 				rawModeCountRef.current++;
+				debug('setRawMode: rawModeCount incremented to %d', rawModeCountRef.current);
 			} else {
 				rawModeCountRef.current = Math.max(0, rawModeCountRef.current - 1);
+				debug('setRawMode: rawModeCount decremented to %d', rawModeCountRef.current);
 				if (rawModeCountRef.current === 0) {
+					debug('setRawMode: disabling raw mode, removing readable listener');
 					stdin.setRawMode(false);
 					stdin.off('readable', handleReadable);
 					stdin.unref();
@@ -393,6 +435,9 @@ class InkxInstance {
 	private signalCleanup: (() => void) | null = null;
 
 	constructor(options: Required<Omit<RenderOptions, 'patchConsole'>>) {
+		debug('InkxInstance constructor start');
+		const startTime = Date.now();
+
 		this.stdout = options.stdout;
 		this.stdin = options.stdin;
 		this.exitOnCtrlC = options.exitOnCtrlC;
@@ -439,12 +484,17 @@ class InkxInstance {
 
 		// Set up signal handlers
 		this.setupSignalHandlers();
+
+		debug('InkxInstance constructor complete in %dms', Date.now() - startTime);
 	}
 
 	/**
 	 * Render a React element.
 	 */
 	render(element: ReactNode): void {
+		debug('InkxInstance.render() start');
+		const startTime = Date.now();
+
 		if (this.isUnmounted || !this.fiberRoot) return;
 
 		const tree = (
@@ -461,8 +511,18 @@ class InkxInstance {
 		// Use synchronous update to ensure React commits the work immediately
 		// This is necessary because the async updateContainer doesn't flush work
 		// in environments like Bun where the event loop may not be pumped
+		debug('InkxInstance.render() calling updateContainerSync');
 		reconciler.updateContainerSync(tree, this.fiberRoot, null, null);
+		debug('InkxInstance.render() updateContainerSync complete in %dms', Date.now() - startTime);
+
+		debug('InkxInstance.render() calling flushSyncWork');
+		const flushStart = Date.now();
 		reconciler.flushSyncWork();
+		debug(
+			'InkxInstance.render() flushSyncWork complete in %dms (total: %dms)',
+			Date.now() - flushStart,
+			Date.now() - startTime,
+		);
 	}
 
 	/**
@@ -595,8 +655,12 @@ export async function render(
 	element: ReactElement,
 	options: RenderOptions = {},
 ): Promise<Instance> {
+	debug('render() called');
+	const renderStart = Date.now();
+
 	// Ensure layout engine is initialized
 	await ensureLayoutEngineInitialized();
+	debug('render(): layout engine ready in %dms', Date.now() - renderStart);
 
 	// Merge with defaults
 	const resolvedOptions = {
@@ -611,12 +675,16 @@ export async function render(
 	// Get or create instance for this stdout
 	let instance = instances.get(resolvedOptions.stdout);
 	if (!instance) {
+		debug('render(): creating new InkxInstance');
 		instance = new InkxInstance(resolvedOptions);
 		instances.set(resolvedOptions.stdout, instance);
+		debug('render(): InkxInstance created in %dms', Date.now() - renderStart);
 	}
 
 	// Render the element
+	debug('render(): calling instance.render()');
 	instance.render(element);
+	debug('render(): instance.render() complete, total: %dms', Date.now() - renderStart);
 
 	return {
 		rerender: instance.rerender,

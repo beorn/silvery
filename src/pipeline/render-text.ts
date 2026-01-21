@@ -63,7 +63,6 @@ export function clearBgConflictWarnings(): void {
 // Text Content Collection
 // ============================================================================
 
-
 /**
  * Style context for nested Text elements.
  * Tracks cumulative styles through the tree to enable proper push/pop behavior.
@@ -242,8 +241,10 @@ export function formatTextLines(text: string, width: number, wrap: TextProps['wr
 
 	// wrap === true or wrap === 'wrap' - word-aware wrapping using wrap-ansi
 	// This breaks at word boundaries when possible, preserving ANSI styles
-	// trim: false preserves leading/trailing spaces (important for indented content)
-	const wrapped = wrapAnsi(normalizedText, width, { hard: true, trim: false });
+	// trim: true removes leading/trailing spaces from wrapped lines
+	// This prevents extra leading spaces on continuation lines when wrapping
+	// mid-sentence (e.g., "word1 word2" wrapped → "word1" and "word2", not " word2")
+	const wrapped = wrapAnsi(normalizedText, width, { hard: true, trim: true });
 	return wrapped.split('\n');
 }
 
