@@ -81,10 +81,11 @@ describe('Buffer', () => {
 				continuation: false,
 			};
 			const packed = packCell(cell);
-			// FG should be in low 8 bits
-			expect(packed & 0xff).toBe(196);
-			// BG should be in bits 8-15
-			expect((packed >> 8) & 0xff).toBe(21);
+			// Colors are stored with +1 offset to distinguish 0 (null) from black (index 0)
+			// FG should be in low 8 bits: 196 + 1 = 197
+			expect(packed & 0xff).toBe(197);
+			// BG should be in bits 8-15: 21 + 1 = 22
+			expect((packed >> 8) & 0xff).toBe(22);
 		});
 
 		test('packs wide flag', () => {

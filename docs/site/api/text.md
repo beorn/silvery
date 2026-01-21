@@ -120,6 +120,32 @@ By default, Text truncates at the container boundary (Inkx improvement over Ink)
 // "text"
 ```
 
+## Nested Text Elements
+
+Text elements can be nested, with child styles properly overriding and then restoring parent styles:
+
+```tsx
+// Child color overrides parent, then restores
+<Text color="black">
+  before <Text color="red">RED</Text> after
+</Text>
+// Output: black "before ", red "RED", black " after"
+
+// Parent bold + white, child adds dim for count
+<Text bold color="white">
+  Title<Text dimColor> (5)</Text> more
+</Text>
+// Output: bold white "Title", bold white dim " (5)", bold white " more"
+
+// Deep nesting with proper restoration
+<Text color="white">
+  W<Text color="red">R<Text color="blue">B</Text>R</Text>W
+</Text>
+// Output: white "W", red "R", blue "B", red "R", white "W"
+```
+
+This is an Inkx improvement over Ink. Nested styles use a push/pop mechanism that properly restores parent styles after each nested element.
+
 ## Chalk Compatibility
 
 Text preserves Chalk ANSI escape codes:

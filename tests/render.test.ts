@@ -214,4 +214,199 @@ describe('test utilities', () => {
 			expectFrame(undefined).toBeEmpty();
 		});
 	});
+
+	describe('nested Text styling', () => {
+		it('nested Text color overrides parent color', () => {
+			const element = createElement(
+				Text,
+				{ color: 'black' },
+				'before ',
+				createElement(Text, { color: 'red' }, 'RED'),
+				' after',
+			);
+
+			const { lastFrame } = render(element);
+			const frame = lastFrame() ?? '';
+
+			// Verify text content is present
+			expectFrame(frame).toContain('before');
+			expectFrame(frame).toContain('RED');
+			expectFrame(frame).toContain('after');
+
+			// Verify red ANSI code is present (38;5;1 is red in 256-color mode)
+			// The code may appear with other modifiers, so use regex
+			expect(frame).toMatch(/\x1b\[[\d;]*38;5;1[\d;]*m/);
+		});
+
+		it('nested Text can have different background color', () => {
+			const element = createElement(
+				Text,
+				null,
+				'normal ',
+				createElement(Text, { backgroundColor: 'yellow' }, 'highlighted'),
+			);
+
+			const { lastFrame } = render(element);
+			const frame = lastFrame() ?? '';
+
+			expectFrame(frame).toContain('normal');
+			expectFrame(frame).toContain('highlighted');
+
+			// Verify yellow background ANSI code (48;5;3 is yellow)
+			expect(frame).toMatch(/\x1b\[[\d;]*48;5;3[\d;]*m/);
+		});
+
+		it('nested Text can have multiple styles', () => {
+			const element = createElement(
+				Text,
+				null,
+				'start ',
+				createElement(Text, { color: 'blue', bold: true }, 'bold blue'),
+				' end',
+			);
+
+			const { lastFrame } = render(element);
+			const frame = lastFrame() ?? '';
+
+			expectFrame(frame).toContain('bold blue');
+
+			// Verify blue (38;5;4) is present somewhere
+			expect(frame).toMatch(/38;5;4/);
+			// Verify bold (1) is present somewhere
+			expect(frame).toMatch(/[;\[]1[;\dm]/);
+		});
+
+		it('deeply nested Text applies all styles', () => {
+			const element = createElement(
+				Text,
+				null,
+				createElement(
+					Text,
+					{ color: 'green' },
+					'green ',
+					createElement(Text, { bold: true }, 'green+bold'),
+				),
+			);
+
+			const { lastFrame } = render(element);
+			const frame = lastFrame() ?? '';
+
+			expectFrame(frame).toContain('green');
+			expectFrame(frame).toContain('green+bold');
+
+			// Verify green color (38;5;2) is present
+			expect(frame).toMatch(/38;5;2/);
+		});
+
+		it('should render black foreground color (color index 0)', () => {
+			// This is a regression test for the bug where black (color index 0)
+			// was being treated as null/default because 0 was used as the sentinel
+			// value for "no color". Fixed by using +1 offset in color packing.
+			const element = createElement(
+				Box,
+				{ backgroundColor: 'yellow' },
+				createElement(Text, { color: 'black' }, 'BLACK'),
+			);
+
+			const { lastFrame } = render(element);
+			const frame = lastFrame() ?? '';
+
+			expectFrame(frame).toContain('BLACK');
+
+			// Verify black foreground (38;5;0) is present
+			expect(frame).toMatch(/38;5;0/);
+			// Verify yellow background (48;5;3) is present
+			expect(frame).toMatch(/48;5;3/);
+		});
+
+		it('should render black background color (color index 0)', () => {
+			const element = createElement(
+				Box,
+				{ backgroundColor: 'black' },
+				createElement(Text, { color: 'white' }, 'WHITE'),
+			);
+
+			const { lastFrame } = render(element);
+			const frame = lastFrame() ?? '';
+
+			expectFrame(frame).toContain('WHITE');
+
+			// Verify white foreground (38;5;7) is present
+			expect(frame).toMatch(/38;5;7/);
+			// Verify black background (48;5;0) is present
+			expect(frame).toMatch(/48;5;0/);
+		});
+
+		it('should restore parent style after nested Text (push/pop)', () => {
+			// Parent has black color, child overrides to red, text after should be black again
+			const element = createElement(
+				Text,
+				{ color: 'black' },
+				'before ',
+				createElement(Text, { color: 'red' }, 'RED'),
+				' after',
+			);
+
+			const { lastFrame } = render(element);
+			const frame = lastFrame() ?? '';
+
+			expectFrame(frame).toContain('before');
+			expectFrame(frame).toContain('RED');
+			expectFrame(frame).toContain('after');
+
+			// Should see: black code, then red code, then reset+black code again
+			// The pattern should show restoration of black (38;5;0) after red (38;5;1)
+			expect(frame).toMatch(/38;5;0.*38;5;1.*38;5;0/);
+		});
+
+		it('should restore bold after nested dim (style stack)', () => {
+			// Parent is bold+white, child adds dim for count, text after should be bold+white
+			const element = createElement(
+				Text,
+				{ bold: true, color: 'white' },
+				'Title',
+				createElement(Text, { dimColor: true }, ' (5)'),
+				' more',
+			);
+
+			const { lastFrame } = render(element);
+			const frame = lastFrame() ?? '';
+
+			expectFrame(frame).toContain('Title');
+			expectFrame(frame).toContain('(5)');
+			expectFrame(frame).toContain('more');
+
+			// After the dim section, bold should be restored
+			// Look for: white+bold, then white+bold+dim, then white+bold again
+			// The frame should contain bold (1) being reapplied after dim section
+			expect(frame).toMatch(/;1m.*;1;2m.*;1m/);
+		});
+
+		it('should handle deep nesting with proper restoration', () => {
+			// white > red > blue > back to red > back to white
+			const element = createElement(
+				Text,
+				{ color: 'white' },
+				'W',
+				createElement(
+					Text,
+					{ color: 'red' },
+					'R',
+					createElement(Text, { color: 'blue' }, 'B'),
+					'R',
+				),
+				'W',
+			);
+
+			const { lastFrame } = render(element);
+			const frame = lastFrame() ?? '';
+
+			expectFrame(frame).toContain('W');
+			expectFrame(frame).toContain('R');
+			expectFrame(frame).toContain('B');
+
+			// Pattern: white(7) > red(1) > blue(4) > red(1) > white(7)
+			expect(frame).toMatch(/38;5;7.*38;5;1.*38;5;4.*38;5;1.*38;5;7/);
+		});
+	});
 });

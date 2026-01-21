@@ -9,6 +9,7 @@
  * - Text content collection (collectTextContent)
  */
 
+import wrapAnsi from 'wrap-ansi';
 import type { Color, Style, TerminalBuffer } from '../buffer.js';
 import type { InkxNode, TextProps } from '../types.js';
 import {
@@ -62,12 +63,127 @@ export function clearBgConflictWarnings(): void {
 // Text Content Collection
 // ============================================================================
 
+
+/**
+ * Style context for nested Text elements.
+ * Tracks cumulative styles through the tree to enable proper push/pop behavior.
+ */
+interface StyleContext {
+	color?: string;
+	backgroundColor?: string;
+	bold?: boolean;
+	dim?: boolean;
+	italic?: boolean;
+	underline?: boolean;
+	inverse?: boolean;
+	strikethrough?: boolean;
+}
+
+/**
+ * Build ANSI escape sequence for a style context.
+ */
+function styleToAnsi(style: StyleContext): string {
+	const codes: number[] = [];
+
+	// Foreground color
+	if (style.color) {
+		const color = getTextStyle({ color: style.color } as TextProps).fg;
+		if (color !== null) {
+			if (typeof color === 'number') {
+				codes.push(38, 5, color);
+			} else {
+				codes.push(38, 2, color.r, color.g, color.b);
+			}
+		}
+	}
+
+	// Background color
+	if (style.backgroundColor) {
+		const color = getTextStyle({ backgroundColor: style.backgroundColor } as TextProps).bg;
+		if (color !== null) {
+			if (typeof color === 'number') {
+				codes.push(48, 5, color);
+			} else {
+				codes.push(48, 2, color.r, color.g, color.b);
+			}
+		}
+	}
+
+	// Attributes
+	if (style.bold) codes.push(1);
+	if (style.dim) codes.push(2);
+	if (style.italic) codes.push(3);
+	if (style.underline) codes.push(4);
+	if (style.inverse) codes.push(7);
+	if (style.strikethrough) codes.push(9);
+
+	if (codes.length === 0) {
+		return '';
+	}
+
+	return `\x1b[${codes.join(';')}m`;
+}
+
+/**
+ * Merge child props into parent context.
+ * Child values override parent values when specified.
+ */
+function mergeStyleContext(parent: StyleContext, childProps: TextProps): StyleContext {
+	return {
+		color: childProps.color ?? parent.color,
+		backgroundColor: childProps.backgroundColor ?? parent.backgroundColor,
+		bold: childProps.bold ?? parent.bold,
+		dim: childProps.dim ?? childProps.dimColor ?? parent.dim,
+		italic: childProps.italic ?? parent.italic,
+		underline: childProps.underline ?? parent.underline,
+		inverse: childProps.inverse ?? parent.inverse,
+		strikethrough: childProps.strikethrough ?? parent.strikethrough,
+	};
+}
+
+/**
+ * Apply text styles as ANSI escape codes with proper push/pop behavior.
+ * After the child text, restores the parent context's styles.
+ *
+ * @param text - The text content to wrap
+ * @param childStyle - The merged style for this child (child overrides parent)
+ * @param parentStyle - The parent's style context to restore after
+ */
+function applyTextStyleAnsi(
+	text: string,
+	childStyle: StyleContext,
+	parentStyle: StyleContext,
+): string {
+	if (!text) {
+		return text;
+	}
+
+	const childAnsi = styleToAnsi(childStyle);
+	const parentAnsi = styleToAnsi(parentStyle);
+
+	// If child has no style changes, just return text
+	if (!childAnsi) {
+		return text;
+	}
+
+	// Apply child style, then reset and re-apply parent style
+	// We use \x1b[0m to reset, then re-apply parent styles
+	return `${childAnsi}${text}\x1b[0m${parentAnsi}`;
+}
+
 /**
  * Recursively collect text content from a node and its children.
  * Handles both raw text nodes (textContent set directly) and
  * Text component wrappers (text in children).
+ *
+ * For nested Text nodes with style props (color, bold, etc.),
+ * applies ANSI codes so the styles are preserved when rendered.
+ * Uses a style stack to properly restore parent styles after nested elements.
+ *
+ * @param node - The node to collect text from
+ * @param parentContext - The inherited style context from parent (used for restoration)
  */
-export function collectTextContent(node: InkxNode): string {
+export function collectTextContent(node: InkxNode, parentContext: StyleContext = {}): string {
 	// If this node has direct text content, return it
 	if (node.textContent !== undefined) {
 		return node.textContent;
@@ -76,7 +192,19 @@ export function collectTextContent(node: InkxNode): string {
 	// Otherwise, collect from children
 	let result = '';
 	for (const child of node.children) {
-		result += collectTextContent(child);
+		// If child is a Text node (virtual/nested) with style props, apply ANSI codes
+		if (child.type === 'inkx-text' && child.props && !child.layoutNode) {
+			const childProps = child.props as TextProps;
+			// Merge child props with parent context to get effective child style
+			const childContext = mergeStyleContext(parentContext, childProps);
+			// Recursively collect with child's context
+			const childContent = collectTextContent(child, childContext);
+			// Apply styles with proper push/pop (child style, then restore parent)
+			result += applyTextStyleAnsi(childContent, childContext, parentContext);
+		} else {
+			// Not a styled Text node, just collect recursively
+			result += collectTextContent(child, parentContext);
+		}
 	}
 	return result;
 }
@@ -99,7 +227,7 @@ export function formatTextLines(text: string, width: number, wrap: TextProps['wr
 	const normalizedText = text.replace(/\t/g, '    ');
 	const lines = normalizedText.split('\n');
 
-	// No wrapping, just return lines
+	// No wrapping, just truncate at end
 	if (wrap === false || wrap === 'truncate-end' || wrap === 'truncate') {
 		return lines.map((line) => truncateText(line, width, 'end'));
 	}
@@ -112,30 +240,11 @@ export function formatTextLines(text: string, width: number, wrap: TextProps['wr
 		return lines.map((line) => truncateText(line, width, 'middle'));
 	}
 
-	// wrap === true or wrap === 'wrap' - word wrap
-	const wrappedLines: string[] = [];
-	for (const line of lines) {
-		if (getTextWidth(line) <= width) {
-			wrappedLines.push(line);
-		} else {
-			/**
-			 * Character-based wrapping: text wraps at exact column boundaries,
-			 * not word boundaries. Long words may be split mid-word.
-			 * For word-aware wrapping, pre-process text with `wrap-ansi` or similar.
-			 */
-			let remaining = line;
-			while (remaining.length > 0) {
-				const chunk = sliceByWidth(remaining, width);
-				// Guard against infinite loop if sliceByWidth returns empty string
-				if (chunk.length === 0) {
-					break;
-				}
-				wrappedLines.push(chunk);
-				remaining = remaining.slice(chunk.length);
-			}
-		}
-	}
-	return wrappedLines;
+	// wrap === true or wrap === 'wrap' - word-aware wrapping using wrap-ansi
+	// This breaks at word boundaries when possible, preserving ANSI styles
+	// trim: false preserves leading/trailing spaces (important for indented content)
+	const wrapped = wrapAnsi(normalizedText, width, { hard: true, trim: false });
+	return wrapped.split('\n');
 }
 
 /**

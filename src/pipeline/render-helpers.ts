@@ -11,9 +11,10 @@
  * - getPadding, getBorderSize
  */
 
+import sliceAnsi from 'slice-ansi';
 import type { Color, Style } from '../buffer.js';
 import type { BoxProps, TextProps } from '../types.js';
-import { displayWidthAnsi, graphemeWidth, splitGraphemes } from '../unicode.js';
+import { displayWidthAnsi, graphemeWidth, hasAnsi, splitGraphemes } from '../unicode.js';
 import type { BorderChars } from './types.js';
 
 // Re-export shared layout helpers
@@ -190,9 +191,15 @@ export function getTextWidth(text: string): number {
 
 /**
  * Slice text by display width (from start).
- * Uses grapheme segmentation for proper Unicode handling.
+ * Uses slice-ansi for ANSI-aware slicing, falls back to grapheme segmentation for plain text.
  */
 export function sliceByWidth(text: string, maxWidth: number): string {
+	// Use slice-ansi for ANSI-aware slicing (handles escape codes correctly)
+	if (hasAnsi(text)) {
+		return sliceAnsi(text, 0, maxWidth);
+	}
+
+	// Plain text: use grapheme segmentation
 	let width = 0;
 	let result = '';
 	const graphemes = splitGraphemes(text);
@@ -209,9 +216,19 @@ export function sliceByWidth(text: string, maxWidth: number): string {
 
 /**
  * Slice text by display width (from end).
- * Uses grapheme segmentation for proper Unicode handling.
+ * Uses slice-ansi for ANSI-aware slicing, falls back to grapheme segmentation for plain text.
  */
 export function sliceByWidthFromEnd(text: string, maxWidth: number): string {
+	const totalWidth = displayWidthAnsi(text);
+	if (totalWidth <= maxWidth) return text;
+
+	// Use slice-ansi for ANSI-aware slicing
+	if (hasAnsi(text)) {
+		const startIndex = totalWidth - maxWidth;
+		return sliceAnsi(text, startIndex);
+	}
+
+	// Plain text: use grapheme segmentation
 	const graphemes = splitGraphemes(text);
 	let width = 0;
 	let startIdx = graphemes.length;

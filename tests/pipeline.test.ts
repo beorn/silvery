@@ -561,6 +561,7 @@ describe('Pipeline', () => {
 			// café with combining acute accent: "cafe\u0301"
 			// The e + combining accent should be treated as one grapheme
 			// Total: c(1) + a(1) + f(1) + é(1) = 4 columns
+			// Note: wrap-ansi normalizes decomposed chars to precomposed form
 			const textNode = await createMockNode('inkx-text', {}, [], 'cafe\u0301');
 			textNode.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
 
@@ -573,8 +574,9 @@ describe('Pipeline', () => {
 			expect(buffer.getCell(0, 0).char).toBe('c');
 			expect(buffer.getCell(1, 0).char).toBe('a');
 			expect(buffer.getCell(2, 0).char).toBe('f');
-			// é (e + combining accent) should be at position 3
-			expect(buffer.getCell(3, 0).char).toBe('e\u0301');
+			// é should be at position 3 (may be precomposed '\u00e9' or decomposed 'e\u0301')
+			const eChar = buffer.getCell(3, 0).char;
+			expect(eChar === '\u00e9' || eChar === 'e\u0301').toBe(true);
 			// Position 4 should be space (not the combining accent as separate char)
 			expect(buffer.getCell(4, 0).char).toBe(' ');
 		});

@@ -133,12 +133,13 @@ export function numberToAttrs(n: number): CellAttrs {
 
 /**
  * Convert a color to an index value for packing.
- * Returns 0 for null (default), or the index for 256-color.
+ * Returns 0 for null (default), or (index + 1) for 256-color.
+ * This +1 offset allows distinguishing null from black (color index 0).
  * True color is handled separately via flags and auxiliary storage.
  */
 function colorToIndex(color: Color): number {
 	if (color === null) return 0;
-	if (typeof color === 'number') return color & 0xff;
+	if (typeof color === 'number') return (color & 0xff) + 1; // +1 to distinguish from null
 	// True color - return 0, handle via flag
 	return 0;
 }
@@ -284,12 +285,13 @@ export class TerminalBuffer {
 		const char = this.chars[idx];
 
 		// Determine foreground color
+		// Color indices are stored with +1 offset (0=null, 1=black, 2=red, etc.)
 		let fg: Color = null;
 		if (unpackTrueColorFg(packed)) {
 			fg = this.fgColors.get(idx) ?? null;
 		} else {
 			const fgIndex = unpackFgIndex(packed);
-			fg = fgIndex > 0 ? fgIndex : null;
+			fg = fgIndex > 0 ? fgIndex - 1 : null; // -1 to restore actual color index
 		}
 
 		// Determine background color
@@ -298,7 +300,7 @@ export class TerminalBuffer {
 			bg = this.bgColors.get(idx) ?? null;
 		} else {
 			const bgIndex = unpackBgIndex(packed);
-			bg = bgIndex > 0 ? bgIndex : null;
+			bg = bgIndex > 0 ? bgIndex - 1 : null; // -1 to restore actual color index
 		}
 
 		return {

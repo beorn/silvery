@@ -12,10 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scroll indicator display (`scrollTo` prop change detection improvement)
 - Documentation for `Box` background colors and layout guides
 - Ink compatibility analysis documentation
+- **Nested Text styling with push/pop semantics**: Child Text elements properly override parent styles and restore them after. E.g., `<Text color="black">before <Text color="red">RED</Text> after</Text>` correctly renders "after" in black.
 
 ### Fixed
 
 - `scrollTo` prop changes now correctly trigger layout recalculation
+- **Black color (index 0) now renders correctly**: Fixed bug where `color="black"` was treated as no color due to using 0 as the sentinel value. Colors are now stored with +1 offset to distinguish null from black.
 
 ## [0.0.1] - 2025-01-19
 

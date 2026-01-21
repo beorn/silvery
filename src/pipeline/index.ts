@@ -26,8 +26,11 @@
  *   Emit minimal ANSI sequences for changes
  */
 
+import createDebug from 'debug';
 import type { TerminalBuffer } from '../buffer.js';
 import type { InkxNode } from '../types.js';
+
+const debug = createDebug('inkx:pipeline');
 
 // Re-export types
 export type { CellChange, BorderChars } from './types.js';
@@ -63,23 +66,35 @@ export function executeRender(
 	height: number,
 	prevBuffer: TerminalBuffer | null,
 ): { output: string; buffer: TerminalBuffer } {
+	const start = Date.now();
+
 	// Clear per-render caches
 	clearBgConflictWarnings();
 
 	// Phase 1: Measure (for fit-content nodes)
+	const t1 = Date.now();
 	measurePhase(root);
+	debug('measure: %dms', Date.now() - t1);
 
 	// Phase 2: Layout
+	const t2 = Date.now();
 	layoutPhase(root, width, height);
+	debug('layout: %dms', Date.now() - t2);
 
 	// Phase 2.5: Scroll calculation (for overflow='scroll' containers)
 	scrollPhase(root);
 
 	// Phase 3: Content render
+	const t3 = Date.now();
 	const buffer = contentPhase(root);
+	debug('content: %dms', Date.now() - t3);
 
 	// Phase 4: Diff and output
+	const t4 = Date.now();
 	const output = outputPhase(prevBuffer, buffer);
+	debug('output: %dms (%d bytes)', Date.now() - t4, output.length);
+
+	debug('total pipeline: %dms', Date.now() - start);
 
 	return { output, buffer };
 }

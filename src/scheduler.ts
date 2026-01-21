@@ -12,9 +12,12 @@
  * - Clean shutdown
  */
 
+import createDebug from 'debug';
 import type { TerminalBuffer } from './buffer.js';
 import { executeRender } from './pipeline.js';
 import type { InkxNode } from './types.js';
+
+const debug = createDebug('inkx:scheduler');
 
 // ============================================================================
 // Types
@@ -124,10 +127,12 @@ export class RenderScheduler {
 
 		if (this.renderScheduled) {
 			this.stats.skippedCount++;
+			debug('render skipped (batched), total: %d', this.stats.skippedCount);
 			return;
 		}
 
 		this.renderScheduled = true;
+		debug('render scheduled');
 
 		// Use queueMicrotask for batching synchronous updates
 		queueMicrotask(() => {
@@ -141,6 +146,7 @@ export class RenderScheduler {
 
 			if (timeSinceLastRender < this.minFrameTime) {
 				// Schedule for next frame
+				debug('frame limited, delay: %dms', this.minFrameTime - timeSinceLastRender);
 				this.scheduleNextFrame(this.minFrameTime - timeSinceLastRender);
 			} else {
 				this.executeRender();
@@ -190,6 +196,8 @@ export class RenderScheduler {
 	dispose(): void {
 		if (this.disposed) return;
 
+		debug('dispose: renders=%d, skipped=%d, avg=%dms',
+			this.stats.renderCount, this.stats.skippedCount, Math.round(this.stats.avgRenderTime));
 		this.disposed = true;
 
 		// Cancel pending renders
@@ -235,6 +243,8 @@ export class RenderScheduler {
 			const width = this.stdout.columns ?? 80;
 			const height = this.stdout.rows ?? 24;
 
+			debug('render #%d: %dx%d', this.stats.renderCount + 1, width, height);
+
 			// Run render pipeline
 			const { output, buffer } = executeRender(this.root, width, height, this.prevBuffer);
 
@@ -255,11 +265,14 @@ export class RenderScheduler {
 				this.stats.renderCount;
 			this.lastRenderTime = Date.now();
 
+			debug('render #%d complete: %dms, output: %d bytes', this.stats.renderCount, renderTime, output.length);
+
 			if (this.debug) {
 				this.logDebug(`Render #${this.stats.renderCount} took ${renderTime}ms`);
 			}
 		} catch (error) {
 			// Don't crash on render errors - log and continue
+			debug('render error: %O', error);
 			this.logError('Render error:', error);
 
 			// Show error indicator in terminal
