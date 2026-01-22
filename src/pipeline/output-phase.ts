@@ -4,8 +4,24 @@
  * Diff two buffers and produce minimal ANSI output.
  */
 
-import { type Color, type Style, type TerminalBuffer, styleEquals } from '../buffer.js';
+import { type CellAttrs, type Color, type Style, type TerminalBuffer, styleEquals } from '../buffer.js';
 import type { CellChange } from './types.js';
+
+/**
+ * Check if any text attributes are active.
+ */
+function hasActiveAttrs(attrs: CellAttrs): boolean {
+	return !!(
+		attrs.bold ||
+		attrs.dim ||
+		attrs.italic ||
+		attrs.underline ||
+		attrs.blink ||
+		attrs.inverse ||
+		attrs.hidden ||
+		attrs.strikethrough
+	);
+}
 
 /**
  * Diff two buffers and produce minimal ANSI output.
@@ -45,7 +61,18 @@ function bufferToAnsi(buffer: TerminalBuffer): string {
 		// A bare \n moves the cursor down but does NOT reset to column 0
 		// This was the root cause of bug km-x7ih where row 0 content
 		// appeared at the bottom of the screen
-		if (y > 0) output += '\r\n';
+		//
+		// IMPORTANT: Reset style before newline to prevent background color bleeding.
+		// Without this reset, terminals may extend the current background color
+		// to the edge of the terminal when outputting the newline, causing visual
+		// artifacts like blank highlighted lines. (fix for km-2wh0)
+		if (y > 0) {
+			if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
+				output += '\x1b[0m';
+				currentStyle = null;
+			}
+			output += '\r\n';
+		}
 
 		for (let x = 0; x < buffer.width; x++) {
 			const cell = buffer.getCell(x, y);

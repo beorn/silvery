@@ -164,6 +164,22 @@ function attrsToSgrParams(attrs: CellAttrs): number[] {
 }
 
 /**
+ * Check if any attributes are active.
+ */
+function hasActiveAttrs(attrs: CellAttrs): boolean {
+	return !!(
+		attrs.bold ||
+		attrs.dim ||
+		attrs.italic ||
+		attrs.underline ||
+		attrs.blink ||
+		attrs.inverse ||
+		attrs.hidden ||
+		attrs.strikethrough
+	);
+}
+
+/**
  * Convert a style to ANSI escape sequence.
  *
  * @param style - The style to convert
@@ -409,7 +425,15 @@ export function bufferToAnsi(buffer: TerminalBuffer): string {
 		}
 
 		// Newline at end of each row (except last)
+		// IMPORTANT: Reset style before newline to prevent background color bleeding.
+		// Without this reset, terminals may extend the current background color
+		// to the edge of the terminal when outputting the newline, causing visual
+		// artifacts like blank highlighted lines. (fix for km-2wh0)
 		if (y < buffer.height - 1) {
+			if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
+				output += RESET;
+				currentStyle = null;
+			}
 			output += '\r\n';
 		}
 	}
