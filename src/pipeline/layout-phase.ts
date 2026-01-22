@@ -191,19 +191,31 @@ function calculateScrollState(node: InkxNode, props: BoxProps): void {
 	}
 
 	// Calculate scroll offset based on scrollTo prop
-	let scrollOffset = 0;
+	// Use "ensure visible" scrolling: only scroll when target would be off-screen
+	// Preserve previous offset when target is already visible
+	let scrollOffset = node.scrollState?.offset ?? 0;
 	const scrollTo = props.scrollTo;
 
 	if (scrollTo !== undefined && scrollTo >= 0 && scrollTo < childPositions.length) {
 		// Find the target child
 		const target = childPositions.find((c) => c.index === scrollTo);
 		if (target) {
-			// Center the target child in the viewport (if possible)
-			const targetMid = (target.top + target.bottom) / 2;
-			const viewportMid = viewportHeight / 2;
-			scrollOffset = Math.max(0, targetMid - viewportMid);
+			// Calculate current visible range
+			const visibleTop = scrollOffset;
+			const visibleBottom = scrollOffset + viewportHeight;
+
+			// Only scroll if target is outside visible range
+			if (target.top < visibleTop) {
+				// Target is above viewport - scroll up to show it at top
+				scrollOffset = target.top;
+			} else if (target.bottom > visibleBottom) {
+				// Target is below viewport - scroll down to show it at bottom
+				scrollOffset = target.bottom - viewportHeight;
+			}
+			// Otherwise, keep current scroll position (target is visible)
 
 			// Clamp to valid range
+			scrollOffset = Math.max(0, scrollOffset);
 			scrollOffset = Math.min(scrollOffset, Math.max(0, contentHeight - viewportHeight));
 		}
 	}
