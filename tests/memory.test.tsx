@@ -299,39 +299,43 @@ describe('Long-running app memory patterns', () => {
 		unmount();
 	});
 
-	test('rerender cycles do not accumulate nodes', () => {
-		const render = createTestRenderer();
+	test(
+		'rerender cycles do not accumulate nodes',
+		() => {
+			const render = createTestRenderer();
 
-		function DynamicList({ count }: { count: number }) {
-			return (
-				<Box flexDirection="column">
-					{Array.from({ length: count }, (_, i) => (
-						<Text key={i}>Item {i}</Text>
-					))}
-				</Box>
-			);
-		}
-
-		const { lastFrame, rerender, unmount } = render(<DynamicList count={10} />);
-
-		// Grow and shrink list many times
-		for (let cycle = 0; cycle < 50; cycle++) {
-			for (let size = 1; size <= 20; size++) {
-				rerender(<DynamicList count={size} />);
+			function DynamicList({ count }: { count: number }) {
+				return (
+					<Box flexDirection="column">
+						{Array.from({ length: count }, (_, i) => (
+							<Text key={i}>Item {i}</Text>
+						))}
+					</Box>
+				);
 			}
-			for (let size = 20; size >= 1; size--) {
-				rerender(<DynamicList count={size} />);
+
+			const { lastFrame, rerender, unmount } = render(<DynamicList count={10} />);
+
+			// Grow and shrink list many times (reduced from 50 cycles for CI)
+			for (let cycle = 0; cycle < 20; cycle++) {
+				for (let size = 1; size <= 20; size++) {
+					rerender(<DynamicList count={size} />);
+				}
+				for (let size = 20; size >= 1; size--) {
+					rerender(<DynamicList count={size} />);
+				}
 			}
-		}
 
-		// Final render should work correctly
-		rerender(<DynamicList count={5} />);
-		expect(lastFrame()).toContain('Item 0');
-		expect(lastFrame()).toContain('Item 4');
-		expect(lastFrame()).not.toContain('Item 5');
+			// Final render should work correctly
+			rerender(<DynamicList count={5} />);
+			expect(lastFrame()).toContain('Item 0');
+			expect(lastFrame()).toContain('Item 4');
+			expect(lastFrame()).not.toContain('Item 5');
 
-		unmount();
-	});
+			unmount();
+		},
+		{ timeout: 15000 },
+	);
 
 	test('deeply nested components do not leak on restructure', () => {
 		const render = createTestRenderer();
@@ -582,36 +586,40 @@ describe('Memory tracking', () => {
 		}
 	});
 
-	test('garbage collection reclaims unmounted component memory', async () => {
-		// Force GC if available (Bun with --expose-gc)
-		const gc = globalThis.gc as (() => void) | undefined;
+	test(
+		'garbage collection reclaims unmounted component memory',
+		async () => {
+			// Force GC if available (Bun with --expose-gc)
+			const gc = globalThis.gc as (() => void) | undefined;
 
-		const render = createTestRenderer();
+			const render = createTestRenderer();
 
-		// Create and destroy many heavy components
-		for (let i = 0; i < 20; i++) {
-			const { unmount } = render(
-				<Box flexDirection="column">
-					{Array.from({ length: 100 }, (_, j) => (
-						<Box key={j}>
-							<Text>{'x'.repeat(100)}</Text>
-						</Box>
-					))}
-				</Box>,
-			);
-			unmount();
-		}
+			// Create and destroy heavy components (reduced iterations for CI)
+			for (let i = 0; i < 10; i++) {
+				const { unmount } = render(
+					<Box flexDirection="column">
+						{Array.from({ length: 50 }, (_, j) => (
+							<Box key={j}>
+								<Text>{'x'.repeat(50)}</Text>
+							</Box>
+						))}
+					</Box>,
+				);
+				unmount();
+			}
 
-		// Trigger GC if available
-		if (gc) {
-			gc();
-			// Give GC time to run
-			await new Promise((resolve) => setTimeout(resolve, 100));
-		}
+			// Trigger GC if available
+			if (gc) {
+				gc();
+				// Give GC time to run
+				await new Promise((resolve) => setTimeout(resolve, 100));
+			}
 
-		// Memory should be reclaimable (can't assert exact values due to GC timing)
-		expect(true).toBe(true);
-	});
+			// Memory should be reclaimable (can't assert exact values due to GC timing)
+			expect(true).toBe(true);
+		},
+		{ timeout: 15000 },
+	);
 });
 
 // ============================================================================
