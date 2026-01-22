@@ -68,7 +68,7 @@
     "graphemer": "^1.4.0",
     "react-reconciler": "^0.33.0",
     "slice-ansi": "^7.1.2",
-    "string-width": "^7.0.0",
+    "string-width": "^8.0.0",
     "wrap-ansi": "^9.0.2"
   },
   "devDependencies": {
@@ -76,6 +76,7 @@
     "@biomejs/biome": "^1.9.0",
     "@types/bun": "^1.1.0",
     "@types/react": "^19.0.0",
+    "chalk": "^5.6.2",
     "mitata": "^0.1.11",
     "react": "^19.0.0",
     "typescript": "^5.5.0",
