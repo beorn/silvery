@@ -9,7 +9,16 @@ export { Spacer } from "./components/Spacer.js";
 export { Static } from "./components/Static.js";
 
 // Hooks
-export { useLayout, useLayoutCallback } from "./hooks/useLayout.js";
+export {
+  // New API (preferred)
+  useContentRect,
+  useContentRectCallback,
+  useScreenRect,
+  useScreenRectCallback,
+  // Deprecated aliases (backwards compatibility)
+  useLayout,
+  useLayoutCallback,
+} from "./hooks/useLayout.js";
 export { useInput } from "./hooks/useInput.js";
 export { useApp } from "./hooks/useApp.js";
 export { useStdout } from "./hooks/useStdout.js";
@@ -48,7 +57,7 @@ export type {
 // Types
 export type { BoxProps } from "./components/Box.js";
 export type { TextProps } from "./components/Text.js";
-export type { ComputedLayout } from "./hooks/useLayout.js";
+export type { Rect, ComputedLayout } from "./hooks/useLayout.js";
 export type { Key, InputHandler, UseInputOptions } from "./hooks/useInput.js";
 export type { UseAppResult } from "./hooks/useApp.js";
 export type { UseStdoutResult } from "./hooks/useStdout.js";

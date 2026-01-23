@@ -11,19 +11,24 @@ import type { LayoutNode } from "./layout-engine.js";
 // ============================================================================
 
 /**
- * Computed layout dimensions returned by Yoga after layout calculation.
+ * A rectangle with position and size.
  * All values are in terminal columns/rows (integers).
  */
-export interface ComputedLayout {
-  /** X position relative to root (0-indexed terminal column) */
+export interface Rect {
+  /** X position (0-indexed terminal column) */
   x: number;
-  /** Y position relative to root (0-indexed terminal row) */
+  /** Y position (0-indexed terminal row) */
   y: number;
-  /** Computed width in terminal columns */
+  /** Width in terminal columns */
   width: number;
-  /** Computed height in terminal rows */
+  /** Height in terminal rows */
   height: number;
 }
+
+/**
+ * @deprecated Use Rect instead. Alias kept for backwards compatibility.
+ */
+export type ComputedLayout = Rect;
 
 // ============================================================================
 // Node Types
@@ -145,7 +150,7 @@ export interface BoxProps extends FlexboxProps, StyleProps {
   borderBottom?: boolean;
   borderLeft?: boolean;
   borderRight?: boolean;
-  onLayout?: (layout: ComputedLayout) => void;
+  onLayout?: (layout: Rect) => void;
 }
 
 /**
@@ -188,10 +193,26 @@ export interface InkxNode {
   layoutNode: LayoutNode | null;
 
   /** Computed layout from previous render (for change detection) */
-  prevLayout: ComputedLayout | null;
+  prevLayout: Rect | null;
 
-  /** Current computed layout (set after layout phase) */
-  computedLayout: ComputedLayout | null;
+  /**
+   * Content-relative position (like CSS offsetTop/offsetLeft).
+   * Position within the scrollable content, ignoring scroll offsets.
+   * Set after layout phase.
+   */
+  contentRect: Rect | null;
+
+  /**
+   * Screen-relative position (like CSS getBoundingClientRect).
+   * Actual position on the terminal screen, accounting for scroll offsets.
+   * Set after screen rect phase.
+   */
+  screenRect: Rect | null;
+
+  /**
+   * @deprecated Use contentRect instead. Alias kept for backwards compatibility.
+   */
+  computedLayout: Rect | null;
 
   /** True if layout-affecting props changed and Yoga needs recalculation */
   layoutDirty: boolean;

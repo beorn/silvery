@@ -37,12 +37,18 @@ export type { CellChange, BorderChars } from "./types.js";
 
 // Re-export phase functions
 export { measurePhase } from "./measure-phase.js";
-export { layoutPhase, layoutEqual, scrollPhase } from "./layout-phase.js";
+export {
+  layoutPhase,
+  layoutEqual,
+  rectEqual,
+  scrollPhase,
+  screenRectPhase,
+} from "./layout-phase.js";
 export { contentPhase, clearBgConflictWarnings } from "./content-phase.js";
 export { outputPhase } from "./output-phase.js";
 
 import { clearBgConflictWarnings, contentPhase } from "./content-phase.js";
-import { layoutPhase, scrollPhase } from "./layout-phase.js";
+import { layoutPhase, scrollPhase, screenRectPhase } from "./layout-phase.js";
 // Import for orchestration
 import { measurePhase } from "./measure-phase.js";
 import { outputPhase } from "./output-phase.js";
@@ -83,6 +89,9 @@ export function executeRender(
 
   // Phase 2.5: Scroll calculation (for overflow='scroll' containers)
   scrollPhase(root);
+
+  // Phase 2.6: Screen rect calculation (screen-relative positions)
+  screenRectPhase(root);
 
   // Phase 3: Content render
   const t3 = Date.now();

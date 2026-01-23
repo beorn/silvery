@@ -11,7 +11,7 @@ import {
 } from "../layout-engine.js";
 import type {
   BoxProps,
-  ComputedLayout,
+  Rect,
   InkxNode,
   InkxNodeType,
   TextProps,
@@ -37,6 +37,8 @@ export function createNode(
     children: [],
     parent: null,
     layoutNode,
+    contentRect: null,
+    screenRect: null,
     computedLayout: null,
     prevLayout: null,
     layoutDirty: true,
@@ -124,6 +126,8 @@ export function createVirtualTextNode(props: TextProps): InkxNode {
     children: [],
     parent: null,
     layoutNode: null, // No layout node for virtual text
+    contentRect: null,
+    screenRect: null,
     computedLayout: null,
     prevLayout: null,
     layoutDirty: false,
@@ -472,12 +476,9 @@ function notifyLayoutSubscribers(node: InkxNode): void {
 }
 
 /**
- * Check if two layouts are equal.
+ * Check if two rects are equal.
  */
-function layoutEqual(
-  a: ComputedLayout | null,
-  b: ComputedLayout | null,
-): boolean {
+function layoutEqual(a: Rect | null, b: Rect | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   return (

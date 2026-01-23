@@ -4,7 +4,7 @@
  * Run Yoga layout calculation and propagate dimensions to all nodes.
  */
 
-import type { BoxProps, ComputedLayout, InkxNode } from "../types.js";
+import type { BoxProps, Rect, InkxNode } from "../types.js";
 
 /**
  * Run Yoga layout calculation and propagate dimensions to all nodes.
@@ -19,7 +19,7 @@ export function layoutPhase(
   height: number,
 ): void {
   // Check if dimensions changed from previous layout
-  const prevLayout = root.computedLayout;
+  const prevLayout = root.contentRect;
   const dimensionsChanged =
     prevLayout && (prevLayout.width !== width || prevLayout.height !== height);
 
@@ -53,6 +53,7 @@ function hasLayoutDirtyNodes(node: InkxNode): boolean {
 
 /**
  * Propagate computed layout from Yoga nodes to InkxNodes.
+ * Sets contentRect (content-relative position) on each node.
  *
  * @param node The node to process
  * @param parentX Absolute X position of parent
@@ -64,16 +65,18 @@ function propagateLayout(
   parentY: number,
 ): void {
   // Save previous layout for change detection
-  node.prevLayout = node.computedLayout;
+  node.prevLayout = node.contentRect;
 
   // Virtual/raw text nodes (no layoutNode) inherit parent's position
   if (!node.layoutNode) {
-    node.computedLayout = {
+    const rect: Rect = {
       x: parentX,
       y: parentY,
       width: 0,
       height: 0,
     };
+    node.contentRect = rect;
+    node.computedLayout = rect; // Backwards compatibility alias
     node.layoutDirty = false;
     // Still recurse to children (virtual text nodes can have raw text children)
     for (const child of node.children) {
@@ -82,25 +85,27 @@ function propagateLayout(
     return;
   }
 
-  // Compute absolute position from Yoga
-  node.computedLayout = {
+  // Compute absolute position from Yoga (content-relative)
+  const rect: Rect = {
     x: parentX + node.layoutNode.getComputedLeft(),
     y: parentY + node.layoutNode.getComputedTop(),
     width: node.layoutNode.getComputedWidth(),
     height: node.layoutNode.getComputedHeight(),
   };
+  node.contentRect = rect;
+  node.computedLayout = rect; // Backwards compatibility alias
 
   // Clear layout dirty flag
   node.layoutDirty = false;
 
   // If dimensions changed, mark content as dirty
-  if (!layoutEqual(node.prevLayout, node.computedLayout)) {
+  if (!rectEqual(node.prevLayout, node.contentRect)) {
     node.contentDirty = true;
   }
 
   // Recurse to children
   for (const child of node.children) {
-    propagateLayout(child, node.computedLayout.x, node.computedLayout.y);
+    propagateLayout(child, node.contentRect.x, node.contentRect.y);
   }
 }
 
@@ -109,7 +114,7 @@ function propagateLayout(
  */
 function notifyLayoutSubscribers(node: InkxNode): void {
   // Only notify if dimensions actually changed
-  if (!layoutEqual(node.prevLayout, node.computedLayout)) {
+  if (!rectEqual(node.prevLayout, node.contentRect)) {
     for (const subscriber of node.layoutSubscribers) {
       subscriber();
     }
@@ -122,18 +127,20 @@ function notifyLayoutSubscribers(node: InkxNode): void {
 }
 
 /**
- * Check if two layouts are equal.
+ * Check if two rects are equal.
  */
-export function layoutEqual(
-  a: ComputedLayout | null,
-  b: ComputedLayout | null,
-): boolean {
+export function rectEqual(a: Rect | null, b: Rect | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   return (
     a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
   );
 }
+
+/**
+ * @deprecated Use rectEqual instead.
+ */
+export const layoutEqual = rectEqual;
 
 // ============================================================================
 // Phase 2.5: Scroll Phase (for overflow='scroll' containers)
@@ -159,6 +166,7 @@ export function scrollPhase(root: InkxNode): void {
  * Calculate scroll state for a single scrollable container.
  */
 function calculateScrollState(node: InkxNode, props: BoxProps): void {
+  // Use computedLayout for backwards compatibility (tests set this directly)
   const layout = node.computedLayout;
   if (!layout || !node.layoutNode) return;
 
@@ -372,4 +380,57 @@ function getBorderSize(props: BoxProps): {
     left: props.borderLeft !== false ? 1 : 0,
     right: props.borderRight !== false ? 1 : 0,
   };
+}
+
+// ============================================================================
+// Phase 2.6: Screen Rect Phase
+// ============================================================================
+
+/**
+ * Calculate screen-relative positions for all nodes.
+ *
+ * This phase runs after scroll phase to compute where each node actually
+ * appears on the terminal screen, accounting for all ancestor scroll offsets.
+ *
+ * Screen position = content position - sum of ancestor scroll offsets
+ */
+export function screenRectPhase(root: InkxNode): void {
+  propagateScreenRect(root, 0);
+}
+
+/**
+ * Propagate screen-relative positions through the tree.
+ *
+ * @param node The node to process
+ * @param ancestorScrollOffset Sum of all ancestor scroll offsets
+ */
+function propagateScreenRect(
+  node: InkxNode,
+  ancestorScrollOffset: number,
+): void {
+  const content = node.contentRect;
+  if (!content) {
+    node.screenRect = null;
+    for (const child of node.children) {
+      propagateScreenRect(child, ancestorScrollOffset);
+    }
+    return;
+  }
+
+  // Compute screen position by subtracting ancestor scroll offsets
+  node.screenRect = {
+    x: content.x,
+    y: content.y - ancestorScrollOffset,
+    width: content.width,
+    height: content.height,
+  };
+
+  // If this node is a scroll container, add its offset for children
+  const scrollOffset = node.scrollState?.offset ?? 0;
+  const childScrollOffset = ancestorScrollOffset + scrollOffset;
+
+  // Recurse to children
+  for (const child of node.children) {
+    propagateScreenRect(child, childScrollOffset);
+  }
 }
