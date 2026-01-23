@@ -34,20 +34,22 @@ function Card() {
 
 Based on analysis of Ink's [100+ open issues](https://github.com/vadimdemedes/ink/issues) and recent PRs, Inkx solves problems Ink architecturally cannot:
 
-| Pain Point | Ink Status | Inkx Status |
-|------------|------------|-------------|
-| **Scrolling** | [Open since 2019](https://github.com/vadimdemedes/ink/issues/222) (5.5+ years!) | ✅ `overflow="scroll"` just works |
-| **Layout feedback** | [Architecturally impossible](https://github.com/vadimdemedes/ink/issues/5) | ✅ `useLayout()` returns actual dimensions |
-| **Text overflow** | [Multiple issues](https://github.com/vadimdemedes/ink/issues/584) - breaks layout | ✅ Auto-truncates by default |
-| **Cursor API** | [Open since 2019](https://github.com/vadimdemedes/ink/issues/251) (6+ years!) | 🔜 Planned - layout feedback enables this |
+| Pain Point          | Ink Status                                                                        | Inkx Status                                |
+| ------------------- | --------------------------------------------------------------------------------- | ------------------------------------------ |
+| **Scrolling**       | [Open since 2019](https://github.com/vadimdemedes/ink/issues/222) (5.5+ years!)   | ✅ `overflow="scroll"` just works          |
+| **Layout feedback** | [Architecturally impossible](https://github.com/vadimdemedes/ink/issues/5)        | ✅ `useLayout()` returns actual dimensions |
+| **Text overflow**   | [Multiple issues](https://github.com/vadimdemedes/ink/issues/584) - breaks layout | ✅ Auto-truncates by default               |
+| **Cursor API**      | [Open since 2019](https://github.com/vadimdemedes/ink/issues/251) (6+ years!)     | 🔜 Planned - layout feedback enables this  |
 
 **What Ink gets right** (and Inkx maintains):
+
 - React-based declarative API
 - Flexbox layout via Yoga
 - Chalk compatibility
 - `useInput()` keyboard handling
 
 **Where Inkx can do better**:
+
 - Components know their dimensions without prop threading
 - Scrolling without manual virtualization
 - Text truncation that preserves ANSI codes
@@ -240,22 +242,22 @@ Inkx builds on and learns from many projects. Credit where due:
 
 ### Direct Foundation
 
-| Project                                                                                   | Relationship                                                                                                                        |
-| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [Ink](https://github.com/vadimdemedes/ink)                                                | API compatibility target. Inkx aims to be a drop-in replacement. Ink pioneered React-in-terminal and proved the model works.        |
-| [Yoga](https://yogalayout.dev/)                                                           | Default layout engine. Facebook's flexbox implementation via WASM.                                                                  |
-| [Flexx](../beorn-flexx/)                                                                  | Alternative layout engine. Pure JS, 2.5x faster, 5x smaller than Yoga. See below.                                                   |
-| [Chalk](https://github.com/chalk/chalk)                                                   | ANSI styling (same as Ink). Inkx preserves Chalk strings through truncation and wrapping.                                           |
-| [React Reconciler](https://github.com/facebook/react/tree/main/packages/react-reconciler) | Custom renderer API. How both Ink and Inkx integrate with React.                                                                    |
+| Project                                                                                   | Relationship                                                                                                                 |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| [Ink](https://github.com/vadimdemedes/ink)                                                | API compatibility target. Inkx aims to be a drop-in replacement. Ink pioneered React-in-terminal and proved the model works. |
+| [Yoga](https://yogalayout.dev/)                                                           | Default layout engine. Facebook's flexbox implementation via WASM.                                                           |
+| [Flexx](../beorn-flexx/)                                                                  | Alternative layout engine. Pure JS, 2.5x faster, 5x smaller than Yoga. See below.                                            |
+| [Chalk](https://github.com/chalk/chalk)                                                   | ANSI styling (same as Ink). Inkx preserves Chalk strings through truncation and wrapping.                                    |
+| [React Reconciler](https://github.com/facebook/react/tree/main/packages/react-reconciler) | Custom renderer API. How both Ink and Inkx integrate with React.                                                             |
 
 ### Layout Engine Options
 
 Inkx supports two layout engines:
 
-| Engine | Bundle (gzip) | Performance | Initialization | Use When |
-|--------|---------------|-------------|----------------|----------|
-| **Yoga** (default) | 38 KB | 316 µs | Async | Need RTL, baseline, aspect-ratio |
-| **Flexx** | 7 KB | 125 µs | Sync | Want smaller bundles, faster startup |
+| Engine             | Bundle (gzip) | Performance | Initialization | Use When                             |
+| ------------------ | ------------- | ----------- | -------------- | ------------------------------------ |
+| **Yoga** (default) | 38 KB         | 316 µs      | Async          | Need RTL, baseline, aspect-ratio     |
+| **Flexx**          | 7 KB          | 125 µs      | Sync           | Want smaller bundles, faster startup |
 
 Flexx is **2.5x faster** and **5x smaller**, but doesn't support RTL or baseline alignment. For terminal UIs, both are fast enough—choose based on bundle size and feature needs.
 
@@ -306,6 +308,7 @@ Run locally: `cd docs/site && bun run dev`
 ## Chalk/ANSI Compatibility
 
 Inkx fully supports chalk/ANSI styling in text content. The render pipeline:
+
 1. `hasAnsi()` detects ANSI codes in text
 2. `parseAnsiText()` extracts styled segments
 3. `mergeAnsiStyle()` merges ANSI styles with inkx base styles
@@ -320,11 +323,12 @@ Inkx detects this conflict and **throws by default**:
 ```tsx
 // This throws - chalk.bg* + inkx backgroundColor = visual bugs
 <Box backgroundColor="cyan">
-  <Text>{chalk.bgBlack('text')}</Text>
+  <Text>{chalk.bgBlack("text")}</Text>
 </Box>
 ```
 
 **Safe patterns:**
+
 ```tsx
 // OK: chalk bg without inkx bg
 <Text>{chalk.bgYellow('highlighted')}</Text>
@@ -337,18 +341,20 @@ Inkx detects this conflict and **throws by default**:
 ```
 
 **Configuration** via `INKX_BG_CONFLICT` environment variable:
+
 - `throw` (default) — Throw error on conflict (fail fast for programming errors)
 - `warn` — Console warning (deduplicated)
 - `ignore` — No detection
 
 **Intentional override** with `@beorn/chalkx`:
+
 ```tsx
-import { bgOverride } from '@beorn/chalkx';
+import { bgOverride } from "@beorn/chalkx";
 
 // When you deliberately want both backgrounds:
 <Box backgroundColor="cyan">
-  <Text>{bgOverride(chalk.bgBlack('intentional'))}</Text>
-</Box>
+  <Text>{bgOverride(chalk.bgBlack("intentional"))}</Text>
+</Box>;
 ```
 
 The `bgOverride()` wrapper tells inkx "I know what I'm doing" and skips detection.
@@ -358,18 +364,22 @@ The `bgOverride()` wrapper tells inkx "I know what I'm doing" and skips detectio
 Based on real-world Ink issues, these areas need attention:
 
 ### Text Wrapping
+
 - **Character-based wrapping** — Text wraps at exact column boundaries, not word boundaries. Long words may be split mid-word. For word-aware wrapping, pre-process text with `wrap-ansi` or similar library.
 
 ### Being Investigated
+
 - **CJK/IME input** — Ink's #1 pain point. Testing in progress.
 - **Terminal multiplexers** — tmux/Zellij have unique challenges.
 
 ### Planned Improvements
+
 - **Kitty keyboard protocol** — Better modifier key handling
 - **Cursor API** (`useCursor()`) — Ink issue open 6+ years
 - **Multi-line TextInput** — Common request for chat-like apps
 
 ### Testing Coverage Needed
+
 - CJK character width calculation
 - Emoji with ZWJ sequences
 - Rapid keystroke handling

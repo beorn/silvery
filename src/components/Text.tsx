@@ -8,16 +8,16 @@
  * to an InkxNode containing the text content.
  */
 
-import type { JSX, ReactNode } from 'react';
-import type { TextProps as TextPropsType } from '../types.js';
+import type { JSX, ReactNode } from "react";
+import type { TextProps as TextPropsType } from "../types.js";
 
 // ============================================================================
 // Props
 // ============================================================================
 
 export interface TextProps extends TextPropsType {
-	/** Text content (string, number, or nested Text elements) */
-	children?: ReactNode;
+  /** Text content (string, number, or nested Text elements) */
+  children?: ReactNode;
 }
 
 // ============================================================================
@@ -54,9 +54,9 @@ export interface TextProps extends TextPropsType {
  * ```
  */
 export function Text(props: TextProps): JSX.Element {
-	const { children, ...styleProps } = props;
+  const { children, ...styleProps } = props;
 
-	// Render as inkx-text host element
-	// The reconciler will create an InkxNode and store text content
-	return <inkx-text {...styleProps}>{children}</inkx-text>;
+  // Render as inkx-text host element
+  // The reconciler will create an InkxNode and store text content
+  return <inkx-text {...styleProps}>{children}</inkx-text>;
 }

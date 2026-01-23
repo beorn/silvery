@@ -469,6 +469,7 @@ test('wide render', () => {
 ```
 
 **Key features:**
+
 - Auto-cleanup: Each `render()` call automatically unmounts the previous render
 - `stdin.write()`: Connects to `useInput` hooks via `InputContext`
 - Per-render dimensions: Override `columns` and `rows` for individual renders

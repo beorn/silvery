@@ -21,10 +21,10 @@ import { Box } from "inkx";
 
 ### Layout - Flex Direction
 
-| Prop            | Type                                                     | Default    | Description                    |
-| --------------- | -------------------------------------------------------- | ---------- | ------------------------------ |
-| `flexDirection` | `"row" \| "column" \| "row-reverse" \| "column-reverse"` | `"column"` | Main axis direction            |
-| `flexWrap`      | `"wrap" \| "nowrap" \| "wrap-reverse"`                   | `"nowrap"` | Whether to wrap children       |
+| Prop            | Type                                                     | Default    | Description                               |
+| --------------- | -------------------------------------------------------- | ---------- | ----------------------------------------- |
+| `flexDirection` | `"row" \| "column" \| "row-reverse" \| "column-reverse"` | `"column"` | Main axis direction                       |
+| `flexWrap`      | `"wrap" \| "nowrap" \| "wrap-reverse"`                   | `"nowrap"` | Whether to wrap children                  |
 | `gap`           | `number`                                                 | `0`        | Gap between children (in both directions) |
 
 ### Layout - Flex Item
@@ -69,29 +69,29 @@ import { Box } from "inkx";
 
 ### Spacing - Margin
 
-| Prop           | Type     | Default | Description           |
-| -------------- | -------- | ------- | --------------------- |
-| `margin`       | `number` | `0`     | Margin on all sides   |
-| `marginTop`    | `number` | `0`     | Top margin            |
-| `marginBottom` | `number` | `0`     | Bottom margin         |
-| `marginLeft`   | `number` | `0`     | Left margin           |
-| `marginRight`  | `number` | `0`     | Right margin          |
-| `marginX`      | `number` | `0`     | Horizontal margin     |
-| `marginY`      | `number` | `0`     | Vertical margin       |
+| Prop           | Type     | Default | Description         |
+| -------------- | -------- | ------- | ------------------- |
+| `margin`       | `number` | `0`     | Margin on all sides |
+| `marginTop`    | `number` | `0`     | Top margin          |
+| `marginBottom` | `number` | `0`     | Bottom margin       |
+| `marginLeft`   | `number` | `0`     | Left margin         |
+| `marginRight`  | `number` | `0`     | Right margin        |
+| `marginX`      | `number` | `0`     | Horizontal margin   |
+| `marginY`      | `number` | `0`     | Vertical margin     |
 
 ### Position
 
-| Prop           | Type                                    | Default      | Description                                                    |
-| -------------- | --------------------------------------- | ------------ | -------------------------------------------------------------- |
-| `position`     | `"relative" \| "absolute" \| "sticky"`  | `"relative"` | Positioning mode                                               |
-| `stickyTop`    | `number`                                | `0`          | Offset from top when sticky (only with `position="sticky"`)    |
-| `stickyBottom` | `number`                                | -            | Offset from bottom when sticky (only with `position="sticky"`) |
+| Prop           | Type                                   | Default      | Description                                                    |
+| -------------- | -------------------------------------- | ------------ | -------------------------------------------------------------- |
+| `position`     | `"relative" \| "absolute" \| "sticky"` | `"relative"` | Positioning mode                                               |
+| `stickyTop`    | `number`                               | `0`          | Offset from top when sticky (only with `position="sticky"`)    |
+| `stickyBottom` | `number`                               | -            | Offset from bottom when sticky (only with `position="sticky"`) |
 
 ### Display
 
-| Prop      | Type                | Default  | Description                    |
-| --------- | ------------------- | -------- | ------------------------------ |
-| `display` | `"flex" \| "none"`  | `"flex"` | Whether to display the element |
+| Prop      | Type               | Default  | Description                    |
+| --------- | ------------------ | -------- | ------------------------------ |
+| `display` | `"flex" \| "none"` | `"flex"` | Whether to display the element |
 
 ### Border
 
@@ -133,32 +133,32 @@ create filled regions.
 
 ### Callbacks
 
-| Prop       | Type                              | Default | Description                           |
-| ---------- | --------------------------------- | ------- | ------------------------------------- |
-| `onLayout` | `(layout: ComputedLayout) => void` | -       | Called when layout is computed        |
+| Prop       | Type                               | Default | Description                    |
+| ---------- | ---------------------------------- | ------- | ------------------------------ |
+| `onLayout` | `(layout: ComputedLayout) => void` | -       | Called when layout is computed |
 
 The `ComputedLayout` type:
 
 ```ts
 interface ComputedLayout {
-  x: number;      // X position relative to root
-  y: number;      // Y position relative to root
-  width: number;  // Computed width in columns
+  x: number; // X position relative to root
+  y: number; // Y position relative to root
+  width: number; // Computed width in columns
   height: number; // Computed height in rows
 }
 ```
 
 ## Border Styles Reference
 
-| Style          | Example                          | Characters Used                    |
-| -------------- | -------------------------------- | ---------------------------------- |
-| `single`       | `┌─┐`<br>`│ │`<br>`└─┘`          | Light box-drawing characters       |
-| `double`       | `╔═╗`<br>`║ ║`<br>`╚═╝`          | Double-line box-drawing            |
-| `round`        | `╭─╮`<br>`│ │`<br>`╰─╯`          | Rounded corners, single lines      |
-| `bold`         | `┏━┓`<br>`┃ ┃`<br>`┗━┛`          | Heavy/bold box-drawing             |
-| `singleDouble` | `╓─╖`<br>`║ ║`<br>`╙─╜`          | Single horizontal, double vertical |
-| `doubleSingle` | `╒═╕`<br>`│ │`<br>`╘═╛`          | Double horizontal, single vertical |
-| `classic`      | `+-+`<br>`\| \|`<br>`+-+`        | ASCII characters only              |
+| Style          | Example                   | Characters Used                    |
+| -------------- | ------------------------- | ---------------------------------- |
+| `single`       | `┌─┐`<br>`│ │`<br>`└─┘`   | Light box-drawing characters       |
+| `double`       | `╔═╗`<br>`║ ║`<br>`╚═╝`   | Double-line box-drawing            |
+| `round`        | `╭─╮`<br>`│ │`<br>`╰─╯`   | Rounded corners, single lines      |
+| `bold`         | `┏━┓`<br>`┃ ┃`<br>`┗━┛`   | Heavy/bold box-drawing             |
+| `singleDouble` | `╓─╖`<br>`║ ║`<br>`╙─╜`   | Single horizontal, double vertical |
+| `doubleSingle` | `╒═╕`<br>`│ │`<br>`╘═╛`   | Double horizontal, single vertical |
+| `classic`      | `+-+`<br>`\| \|`<br>`+-+` | ASCII characters only              |
 
 ## Examples
 
@@ -228,7 +228,9 @@ Use `flexShrink={0}` for fixed elements and `flexGrow={1}` for flexible areas:
 <Box flexDirection="column" height="100%">
   {/* Fixed header - won't shrink */}
   <Box height={1} flexShrink={0} backgroundColor="blue">
-    <Text color="white" bold>Header</Text>
+    <Text color="white" bold>
+      Header
+    </Text>
   </Box>
 
   {/* Flexible content - fills remaining space */}
@@ -263,7 +265,9 @@ const [selected, setSelected] = useState(0);
 <Box flexDirection="column" height={10} overflow="scroll" scrollTo={selected}>
   {/* This header stays visible when scrolling */}
   <Box position="sticky" stickyTop={0} backgroundColor="blue">
-    <Text color="white" bold>Pinned Header</Text>
+    <Text color="white" bold>
+      Pinned Header
+    </Text>
   </Box>
 
   {items.map((item, i) => (
@@ -347,9 +351,13 @@ function MeasuredBox() {
   return (
     <Box
       flexGrow={1}
-      onLayout={(layout) => setSize({ width: layout.width, height: layout.height })}
+      onLayout={(layout) =>
+        setSize({ width: layout.width, height: layout.height })
+      }
     >
-      <Text>Size: {size.width}x{size.height}</Text>
+      <Text>
+        Size: {size.width}x{size.height}
+      </Text>
     </Box>
   );
 }

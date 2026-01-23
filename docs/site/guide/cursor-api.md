@@ -68,10 +68,10 @@ An input field with autocomplete suggestions:
 
 ```tsx
 function CommandPalette() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [cursorIndex, setCursorIndex] = useState(0);
   const { isFocused } = useFocus({ autoFocus: true });
-  const { cursor, setStyle } = useCursor({ style: 'bar' });
+  const { cursor, setStyle } = useCursor({ style: "bar" });
 
   // Insert cursor character at position
   const displayValue = useMemo(() => {
@@ -109,7 +109,7 @@ interface CursorState {
   y: number;
 
   /** Cursor appearance style */
-  style: 'block' | 'underline' | 'bar';
+  style: "block" | "underline" | "bar";
 }
 ```
 
@@ -121,7 +121,7 @@ interface UseCursorOptions {
   initialVisible?: boolean;
 
   /** Initial cursor style (default: 'block') */
-  style?: CursorState['style'];
+  style?: CursorState["style"];
 
   /**
    * Blink rate in milliseconds (default: 530, matching xterm)
@@ -147,7 +147,7 @@ interface UseCursorResult {
   moveBy: (dx: number, dy: number) => void;
 
   /** Change cursor style */
-  setStyle: (style: CursorState['style']) => void;
+  setStyle: (style: CursorState["style"]) => void;
 }
 
 function useCursor(options?: UseCursorOptions): UseCursorResult;
@@ -155,13 +155,13 @@ function useCursor(options?: UseCursorOptions): UseCursorResult;
 
 ## Integration with Layout
 
-The key insight is that `useLayout()` provides *absolute* terminal coordinates via `x` and `y`. This allows cursor positioning relative to a component:
+The key insight is that `useLayout()` provides _absolute_ terminal coordinates via `x` and `y`. This allows cursor positioning relative to a component:
 
 ```tsx
 function PositionedInput() {
   const { x, y, width } = useLayout();
   const { moveTo } = useCursor();
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [cursorCol, setCursorCol] = useState(0);
 
   // The cursor position is:
@@ -173,10 +173,10 @@ function PositionedInput() {
 
   useInput((input, key) => {
     if (key.leftArrow && cursorCol > 0) {
-      setCursorCol(c => c - 1);
+      setCursorCol((c) => c - 1);
     }
     if (key.rightArrow && cursorCol < text.length) {
-      setCursorCol(c => c + 1);
+      setCursorCol((c) => c + 1);
     }
     // ... handle typing
   });
@@ -209,7 +209,7 @@ Terminal (0,0) ─────────────────────�
 
 ### Terminal Cursor
 
-The *terminal cursor* is the actual cursor controlled by ANSI escape sequences:
+The _terminal cursor_ is the actual cursor controlled by ANSI escape sequences:
 
 ```
 ESC[?25h  - Show cursor (DECTCEM)
@@ -223,18 +223,20 @@ ESC[nD    - Move left n columns
 ```
 
 **Pros:**
+
 - Automatically blinks (no extra code)
 - Native look and feel
 - Works with screen readers
 
 **Cons:**
+
 - Only one cursor per terminal
 - Positioning requires knowing absolute coordinates
 - Style options vary by terminal
 
 ### Rendered Cursor
 
-A *rendered cursor* is a styled character in the output:
+A _rendered cursor_ is a styled character in the output:
 
 ```tsx
 // Common patterns:
@@ -245,11 +247,13 @@ A *rendered cursor* is a styled character in the output:
 ```
 
 **Pros:**
+
 - Full styling control
 - Can have multiple cursors
 - Works anywhere in the layout
 
 **Cons:**
+
 - Must implement blinking manually
 - May look different from native cursor
 - Accessibility concerns
@@ -276,7 +280,7 @@ function TextInput({ value }: { value: string }) {
 
   // Rendered cursor for visual feedback
   const before = value.slice(0, cursorCol);
-  const at = value[cursorCol] ?? ' ';
+  const at = value[cursorCol] ?? " ";
   const after = value.slice(cursorCol + 1);
 
   return (
@@ -293,27 +297,27 @@ function TextInput({ value }: { value: string }) {
 
 ANSI provides cursor shape escape sequences (DECSCUSR):
 
-| Code | Style | Description |
-|------|-------|-------------|
-| `ESC[0 q` | Default | Terminal default |
-| `ESC[1 q` | Blinking block | █ blinking |
-| `ESC[2 q` | Steady block | █ steady |
-| `ESC[3 q` | Blinking underline | _ blinking |
-| `ESC[4 q` | Steady underline | _ steady |
-| `ESC[5 q` | Blinking bar | │ blinking |
-| `ESC[6 q` | Steady bar | │ steady |
+| Code      | Style              | Description      |
+| --------- | ------------------ | ---------------- |
+| `ESC[0 q` | Default            | Terminal default |
+| `ESC[1 q` | Blinking block     | █ blinking       |
+| `ESC[2 q` | Steady block       | █ steady         |
+| `ESC[3 q` | Blinking underline | \_ blinking      |
+| `ESC[4 q` | Steady underline   | \_ steady        |
+| `ESC[5 q` | Blinking bar       | │ blinking       |
+| `ESC[6 q` | Steady bar         | │ steady         |
 
 **Terminal support:**
 
-| Terminal | DECSCUSR Support |
-|----------|------------------|
-| xterm | Full |
-| iTerm2 | Full |
-| Kitty | Full |
-| WezTerm | Full |
-| macOS Terminal | Partial (no bar) |
-| GNOME Terminal | Full |
-| Windows Terminal | Full |
+| Terminal         | DECSCUSR Support |
+| ---------------- | ---------------- |
+| xterm            | Full             |
+| iTerm2           | Full             |
+| Kitty            | Full             |
+| WezTerm          | Full             |
+| macOS Terminal   | Partial (no bar) |
+| GNOME Terminal   | Full             |
+| Windows Terminal | Full             |
 
 ## Blink Rate
 
@@ -321,7 +325,7 @@ The `useCursor` hook optionally manages cursor blinking:
 
 ```tsx
 const { cursor } = useCursor({
-  blinkRate: 530  // xterm default is 530ms
+  blinkRate: 530, // xterm default is 530ms
 });
 ```
 
@@ -384,21 +388,21 @@ function EditableText({ value, onChange }: Props) {
 
   useInput((input, key) => {
     if (key.leftArrow) {
-      setCursorPos(p => Math.max(0, p - 1));
+      setCursorPos((p) => Math.max(0, p - 1));
     } else if (key.rightArrow) {
-      setCursorPos(p => Math.min(value.length, p + 1));
+      setCursorPos((p) => Math.min(value.length, p + 1));
     } else if (key.home) {
       setCursorPos(0);
     } else if (key.end) {
       setCursorPos(value.length);
     } else if (key.backspace && cursorPos > 0) {
       onChange(value.slice(0, cursorPos - 1) + value.slice(cursorPos));
-      setCursorPos(p => p - 1);
+      setCursorPos((p) => p - 1);
     } else if (key.delete && cursorPos < value.length) {
       onChange(value.slice(0, cursorPos) + value.slice(cursorPos + 1));
     } else if (input && !key.ctrl && !key.meta) {
       onChange(value.slice(0, cursorPos) + input + value.slice(cursorPos));
-      setCursorPos(p => p + input.length);
+      setCursorPos((p) => p + input.length);
     }
   });
 
@@ -406,7 +410,7 @@ function EditableText({ value, onChange }: Props) {
   return (
     <Box>
       <Text>{value.slice(0, cursorPos)}</Text>
-      <Text inverse>{value[cursorPos] ?? ' '}</Text>
+      <Text inverse>{value[cursorPos] ?? " "}</Text>
       <Text>{value.slice(cursorPos + 1)}</Text>
     </Box>
   );
@@ -418,9 +422,12 @@ function EditableText({ value, onChange }: Props) {
 CJK and emoji characters occupy two terminal columns. Cursor positioning must account for this:
 
 ```tsx
-import { stringWidth } from 'string-width';
+import { stringWidth } from "string-width";
 
-function wideAwareSlice(str: string, cursorCol: number): {
+function wideAwareSlice(
+  str: string,
+  cursorCol: number,
+): {
   before: string;
   at: string;
   after: string;
@@ -438,7 +445,7 @@ function wideAwareSlice(str: string, cursorCol: number): {
   }
 
   const before = str.slice(0, beforeEnd);
-  const atChar = str[beforeEnd] ?? ' ';
+  const atChar = str[beforeEnd] ?? " ";
   const after = str.slice(beforeEnd + 1);
 
   return { before, at: atChar, after };
@@ -496,8 +503,8 @@ useEffect(() => {
 ## Example: Complete TextInput Component
 
 ```tsx
-import { useState, useEffect, useMemo } from 'react';
-import { Box, Text, useFocus, useCursor, useInput, useLayout } from 'inkx';
+import { useState, useEffect, useMemo } from "react";
+import { Box, Text, useFocus, useCursor, useInput, useLayout } from "inkx";
 
 interface TextInputProps {
   value: string;
@@ -505,10 +512,14 @@ interface TextInputProps {
   placeholder?: string;
 }
 
-export function TextInput({ value, onChange, placeholder = '' }: TextInputProps) {
+export function TextInput({
+  value,
+  onChange,
+  placeholder = "",
+}: TextInputProps) {
   const { isFocused } = useFocus();
   const { x, y } = useLayout();
-  const { show, hide, moveTo } = useCursor({ style: 'bar' });
+  const { show, hide, moveTo } = useCursor({ style: "bar" });
   const [cursorPos, setCursorPos] = useState(value.length);
 
   // Keep cursor within bounds when value changes externally
@@ -529,27 +540,30 @@ export function TextInput({ value, onChange, placeholder = '' }: TextInputProps)
   }, [isFocused, x, y, cursorPos]);
 
   // Handle keyboard input
-  useInput((input, key) => {
-    if (!isFocused) return;
+  useInput(
+    (input, key) => {
+      if (!isFocused) return;
 
-    if (key.leftArrow) {
-      setCursorPos(p => Math.max(0, p - 1));
-    } else if (key.rightArrow) {
-      setCursorPos(p => Math.min(value.length, p + 1));
-    } else if (key.home) {
-      setCursorPos(0);
-    } else if (key.end) {
-      setCursorPos(value.length);
-    } else if (key.backspace && cursorPos > 0) {
-      onChange(value.slice(0, cursorPos - 1) + value.slice(cursorPos));
-      setCursorPos(p => p - 1);
-    } else if (key.delete && cursorPos < value.length) {
-      onChange(value.slice(0, cursorPos) + value.slice(cursorPos + 1));
-    } else if (input && !key.ctrl && !key.meta) {
-      onChange(value.slice(0, cursorPos) + input + value.slice(cursorPos));
-      setCursorPos(p => p + input.length);
-    }
-  }, { isActive: isFocused });
+      if (key.leftArrow) {
+        setCursorPos((p) => Math.max(0, p - 1));
+      } else if (key.rightArrow) {
+        setCursorPos((p) => Math.min(value.length, p + 1));
+      } else if (key.home) {
+        setCursorPos(0);
+      } else if (key.end) {
+        setCursorPos(value.length);
+      } else if (key.backspace && cursorPos > 0) {
+        onChange(value.slice(0, cursorPos - 1) + value.slice(cursorPos));
+        setCursorPos((p) => p - 1);
+      } else if (key.delete && cursorPos < value.length) {
+        onChange(value.slice(0, cursorPos) + value.slice(cursorPos + 1));
+      } else if (input && !key.ctrl && !key.meta) {
+        onChange(value.slice(0, cursorPos) + input + value.slice(cursorPos));
+        setCursorPos((p) => p + input.length);
+      }
+    },
+    { isActive: isFocused },
+  );
 
   // Render text with visual cursor indicator
   const displayContent = useMemo(() => {
@@ -558,7 +572,7 @@ export function TextInput({ value, onChange, placeholder = '' }: TextInputProps)
     }
 
     const before = value.slice(0, cursorPos);
-    const at = value[cursorPos] ?? ' ';
+    const at = value[cursorPos] ?? " ";
     const after = value.slice(cursorPos + 1);
 
     return (
@@ -571,9 +585,7 @@ export function TextInput({ value, onChange, placeholder = '' }: TextInputProps)
   }, [value, cursorPos, isFocused, placeholder]);
 
   return (
-    <Box borderStyle={isFocused ? 'round' : 'single'}>
-      {displayContent}
-    </Box>
+    <Box borderStyle={isFocused ? "round" : "single"}>{displayContent}</Box>
   );
 }
 ```

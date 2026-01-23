@@ -246,18 +246,18 @@ When `selection={true}`:
 
 ### Cursor Movement
 
-| Key         | Action                              |
-| ----------- | ----------------------------------- |
-| Left        | Move left one grapheme              |
-| Right       | Move right one grapheme             |
-| Up          | Move to same column in line above   |
-| Down        | Move to same column in line below   |
-| Home        | Move to start of line               |
-| End         | Move to end of line                 |
-| Ctrl+Home   | Move to start of document           |
-| Ctrl+End    | Move to end of document             |
-| Ctrl+Left   | Move to previous word boundary      |
-| Ctrl+Right  | Move to next word boundary          |
+| Key        | Action                            |
+| ---------- | --------------------------------- |
+| Left       | Move left one grapheme            |
+| Right      | Move right one grapheme           |
+| Up         | Move to same column in line above |
+| Down       | Move to same column in line below |
+| Home       | Move to start of line             |
+| End        | Move to end of line               |
+| Ctrl+Home  | Move to start of document         |
+| Ctrl+End   | Move to end of document           |
+| Ctrl+Left  | Move to previous word boundary    |
+| Ctrl+Right | Move to next word boundary        |
 
 With `selection={true}`, add Shift to extend selection.
 
@@ -374,7 +374,7 @@ The viewport follows the cursor:
 function adjustScroll(
   cursor: CursorPosition,
   scrollTop: number,
-  visibleLines: number
+  visibleLines: number,
 ): number {
   const cursorLine = cursor.line;
 
@@ -417,7 +417,7 @@ if (cursorLine >= scrollTop + visibleLines - SCROLL_MARGIN) {
 function insertChar(
   value: string,
   cursor: CursorPosition,
-  char: string
+  char: string,
 ): { value: string; cursor: CursorPosition } {
   const offset = positionToOffset(value, cursor);
   const newValue = value.slice(0, offset) + char + value.slice(offset);
@@ -434,7 +434,7 @@ function insertChar(
 ```typescript
 function insertNewline(
   value: string,
-  cursor: CursorPosition
+  cursor: CursorPosition,
 ): { value: string; cursor: CursorPosition } {
   const offset = positionToOffset(value, cursor);
   const newValue = value.slice(0, offset) + "\n" + value.slice(offset);
@@ -451,7 +451,7 @@ function insertNewline(
 ```typescript
 function deleteBackward(
   value: string,
-  cursor: CursorPosition
+  cursor: CursorPosition,
 ): { value: string; cursor: CursorPosition } {
   if (cursor.line === 0 && cursor.column === 0) {
     return { value, cursor }; // Nothing to delete
@@ -480,7 +480,7 @@ function deleteBackward(
 ```typescript
 function deleteForward(
   value: string,
-  cursor: CursorPosition
+  cursor: CursorPosition,
 ): { value: string; cursor: CursorPosition } {
   const offset = positionToOffset(value, cursor);
   if (offset >= value.length) {
@@ -504,7 +504,7 @@ When `selection={true}`:
 ```typescript
 function extendSelection(
   selection: Selection,
-  direction: "left" | "right" | "up" | "down"
+  direction: "left" | "right" | "up" | "down",
 ): Selection {
   // Anchor stays fixed, cursor moves
   return {
@@ -519,7 +519,7 @@ function extendSelection(
 ```typescript
 function deleteSelection(
   value: string,
-  selection: Selection
+  selection: Selection,
 ): { value: string; cursor: CursorPosition } {
   const [start, end] = normalizeSelection(selection);
   const startOffset = positionToOffset(value, start);
@@ -547,46 +547,46 @@ function selectAll(value: string): Selection {
 
 ### Standard Editing
 
-| Key       | Action                      |
-| --------- | --------------------------- |
-| Printable | Insert character at cursor  |
-| Enter     | Insert newline OR submit    |
-| Backspace | Delete character before     |
-| Delete    | Delete character after      |
-| Tab       | Insert tab OR focus next    |
+| Key       | Action                     |
+| --------- | -------------------------- |
+| Printable | Insert character at cursor |
+| Enter     | Insert newline OR submit   |
+| Backspace | Delete character before    |
+| Delete    | Delete character after     |
+| Tab       | Insert tab OR focus next   |
 
 ### Navigation
 
-| Key        | Action                    |
-| ---------- | ------------------------- |
-| Arrows     | Move cursor               |
-| Home       | Start of line             |
-| End        | End of line               |
-| Ctrl+Home  | Start of document         |
-| Ctrl+End   | End of document           |
-| Ctrl+Arrow | Word-wise movement        |
-| Page Up    | Scroll up one screen      |
-| Page Down  | Scroll down one screen    |
+| Key        | Action                 |
+| ---------- | ---------------------- |
+| Arrows     | Move cursor            |
+| Home       | Start of line          |
+| End        | End of line            |
+| Ctrl+Home  | Start of document      |
+| Ctrl+End   | End of document        |
+| Ctrl+Arrow | Word-wise movement     |
+| Page Up    | Scroll up one screen   |
+| Page Down  | Scroll down one screen |
 
 ### Selection (when enabled)
 
-| Key            | Action                    |
-| -------------- | ------------------------- |
-| Shift+Arrow    | Extend selection          |
-| Shift+Home     | Select to line start      |
-| Shift+End      | Select to line end        |
-| Ctrl+A         | Select all                |
-| Ctrl+Shift+Arr | Select word-wise          |
+| Key            | Action               |
+| -------------- | -------------------- |
+| Shift+Arrow    | Extend selection     |
+| Shift+Home     | Select to line start |
+| Shift+End      | Select to line end   |
+| Ctrl+A         | Select all           |
+| Ctrl+Shift+Arr | Select word-wise     |
 
 ### Submit Behavior
 
 The `submitKey` prop controls Enter behavior:
 
-| submitKey       | Enter        | Shift+Enter  | Ctrl+Enter   |
-| --------------- | ------------ | ------------ | ------------ |
-| `"enter"`       | Submit       | Newline      | Newline      |
-| `"ctrl+enter"`  | Newline      | Newline      | Submit       |
-| `"meta+enter"`  | Newline      | Newline      | Submit (Mac) |
+| submitKey      | Enter   | Shift+Enter | Ctrl+Enter   |
+| -------------- | ------- | ----------- | ------------ |
+| `"enter"`      | Submit  | Newline     | Newline      |
+| `"ctrl+enter"` | Newline | Newline     | Submit       |
+| `"meta+enter"` | Newline | Newline     | Submit (Mac) |
 
 ## CJK and Unicode Handling
 
@@ -741,14 +741,13 @@ function renderLine(
   line: string,
   cursor: CursorPosition,
   selection: Selection | null,
-  lineIndex: number
+  lineIndex: number,
 ): string {
   let result = "";
 
   for (let col = 0; col < line.length; col++) {
     const char = line[col];
-    const isUnderCursor =
-      lineIndex === cursor.line && col === cursor.column;
+    const isUnderCursor = lineIndex === cursor.line && col === cursor.column;
     const isSelected = selection && isInSelection(lineIndex, col, selection);
 
     if (isUnderCursor) {

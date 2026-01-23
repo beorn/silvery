@@ -120,7 +120,7 @@ function App() {
 render(
   <StrictMode>
     <App />
-  </StrictMode>
+  </StrictMode>,
 );
 ```
 

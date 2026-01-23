@@ -116,7 +116,11 @@ function isLayoutEngineInitialized(): boolean;
 Checks if a layout engine has been set:
 
 ```tsx
-import { isLayoutEngineInitialized, setLayoutEngine, createFlexxEngine } from "inkx";
+import {
+  isLayoutEngineInitialized,
+  setLayoutEngine,
+  createFlexxEngine,
+} from "inkx";
 
 if (!isLayoutEngineInitialized()) {
   setLayoutEngine(createFlexxEngine());
@@ -125,13 +129,13 @@ if (!isLayoutEngineInitialized()) {
 
 ## Engine Comparison
 
-| Feature              | Yoga (WASM)             | Flexx (Pure JS)       |
-| -------------------- | ----------------------- | --------------------- |
-| Initialization       | Async (WASM loading)    | Sync                  |
-| Performance          | Faster for large trees  | Good for small-medium |
-| Bundle size          | ~170KB (WASM)           | ~30KB                 |
-| Environment support  | Needs WASM runtime      | Works everywhere      |
-| Spec compliance      | Reference implementation| Yoga-compatible       |
+| Feature             | Yoga (WASM)              | Flexx (Pure JS)       |
+| ------------------- | ------------------------ | --------------------- |
+| Initialization      | Async (WASM loading)     | Sync                  |
+| Performance         | Faster for large trees   | Good for small-medium |
+| Bundle size         | ~170KB (WASM)            | ~30KB                 |
+| Environment support | Needs WASM runtime       | Works everywhere      |
+| Spec compliance     | Reference implementation | Yoga-compatible       |
 
 ### When to Use Yoga
 

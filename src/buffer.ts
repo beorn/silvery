@@ -14,14 +14,14 @@
  * Text attributes that can be applied to a cell.
  */
 export interface CellAttrs {
-	bold?: boolean;
-	dim?: boolean;
-	italic?: boolean;
-	underline?: boolean;
-	blink?: boolean;
-	inverse?: boolean;
-	hidden?: boolean;
-	strikethrough?: boolean;
+  bold?: boolean;
+  dim?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  blink?: boolean;
+  inverse?: boolean;
+  hidden?: boolean;
+  strikethrough?: boolean;
 }
 
 /**
@@ -36,27 +36,27 @@ export type Color = number | { r: number; g: number; b: number } | null;
  * A single cell in the terminal buffer.
  */
 export interface Cell {
-	/** The character/grapheme in this cell */
-	char: string;
-	/** Foreground color */
-	fg: Color;
-	/** Background color */
-	bg: Color;
-	/** Text attributes */
-	attrs: CellAttrs;
-	/** True if this is a wide character (CJK, emoji, etc.) */
-	wide: boolean;
-	/** True if this is the continuation cell after a wide character */
-	continuation: boolean;
+  /** The character/grapheme in this cell */
+  char: string;
+  /** Foreground color */
+  fg: Color;
+  /** Background color */
+  bg: Color;
+  /** Text attributes */
+  attrs: CellAttrs;
+  /** True if this is a wide character (CJK, emoji, etc.) */
+  wide: boolean;
+  /** True if this is the continuation cell after a wide character */
+  continuation: boolean;
 }
 
 /**
  * Style information for a cell (excludes char and position flags).
  */
 export interface Style {
-	fg: Color;
-	bg: Color;
-	attrs: CellAttrs;
+  fg: Color;
+  bg: Color;
+  attrs: CellAttrs;
 }
 
 // ============================================================================
@@ -87,12 +87,12 @@ const TRUE_COLOR_BG_FLAG = 1 << 27;
 
 // Default empty cell
 const EMPTY_CELL: Cell = {
-	char: ' ',
-	fg: null,
-	bg: null,
-	attrs: {},
-	wide: false,
-	continuation: false,
+  char: " ",
+  fg: null,
+  bg: null,
+  attrs: {},
+  wide: false,
+  continuation: false,
 };
 
 // ============================================================================
@@ -103,32 +103,32 @@ const EMPTY_CELL: Cell = {
  * Convert CellAttrs to a number for bit packing.
  */
 export function attrsToNumber(attrs: CellAttrs): number {
-	let n = 0;
-	if (attrs.bold) n |= ATTR_BOLD;
-	if (attrs.dim) n |= ATTR_DIM;
-	if (attrs.italic) n |= ATTR_ITALIC;
-	if (attrs.underline) n |= ATTR_UNDERLINE;
-	if (attrs.blink) n |= ATTR_BLINK;
-	if (attrs.inverse) n |= ATTR_INVERSE;
-	if (attrs.hidden) n |= ATTR_HIDDEN;
-	if (attrs.strikethrough) n |= ATTR_STRIKETHROUGH;
-	return n;
+  let n = 0;
+  if (attrs.bold) n |= ATTR_BOLD;
+  if (attrs.dim) n |= ATTR_DIM;
+  if (attrs.italic) n |= ATTR_ITALIC;
+  if (attrs.underline) n |= ATTR_UNDERLINE;
+  if (attrs.blink) n |= ATTR_BLINK;
+  if (attrs.inverse) n |= ATTR_INVERSE;
+  if (attrs.hidden) n |= ATTR_HIDDEN;
+  if (attrs.strikethrough) n |= ATTR_STRIKETHROUGH;
+  return n;
 }
 
 /**
  * Convert a number back to CellAttrs.
  */
 export function numberToAttrs(n: number): CellAttrs {
-	const attrs: CellAttrs = {};
-	if (n & ATTR_BOLD) attrs.bold = true;
-	if (n & ATTR_DIM) attrs.dim = true;
-	if (n & ATTR_ITALIC) attrs.italic = true;
-	if (n & ATTR_UNDERLINE) attrs.underline = true;
-	if (n & ATTR_BLINK) attrs.blink = true;
-	if (n & ATTR_INVERSE) attrs.inverse = true;
-	if (n & ATTR_HIDDEN) attrs.hidden = true;
-	if (n & ATTR_STRIKETHROUGH) attrs.strikethrough = true;
-	return attrs;
+  const attrs: CellAttrs = {};
+  if (n & ATTR_BOLD) attrs.bold = true;
+  if (n & ATTR_DIM) attrs.dim = true;
+  if (n & ATTR_ITALIC) attrs.italic = true;
+  if (n & ATTR_UNDERLINE) attrs.underline = true;
+  if (n & ATTR_BLINK) attrs.blink = true;
+  if (n & ATTR_INVERSE) attrs.inverse = true;
+  if (n & ATTR_HIDDEN) attrs.hidden = true;
+  if (n & ATTR_STRIKETHROUGH) attrs.strikethrough = true;
+  return attrs;
 }
 
 /**
@@ -138,90 +138,92 @@ export function numberToAttrs(n: number): CellAttrs {
  * True color is handled separately via flags and auxiliary storage.
  */
 function colorToIndex(color: Color): number {
-	if (color === null) return 0;
-	if (typeof color === 'number') return (color & 0xff) + 1; // +1 to distinguish from null
-	// True color - return 0, handle via flag
-	return 0;
+  if (color === null) return 0;
+  if (typeof color === "number") return (color & 0xff) + 1; // +1 to distinguish from null
+  // True color - return 0, handle via flag
+  return 0;
 }
 
 /**
  * Check if a color is true color (RGB).
  */
-function isTrueColor(color: Color): color is { r: number; g: number; b: number } {
-	return color !== null && typeof color === 'object';
+function isTrueColor(
+  color: Color,
+): color is { r: number; g: number; b: number } {
+  return color !== null && typeof color === "object";
 }
 
 /**
  * Pack cell metadata into a 32-bit number.
  */
 export function packCell(cell: Cell): number {
-	let packed = 0;
+  let packed = 0;
 
-	// Foreground color index (bits 0-7)
-	packed |= colorToIndex(cell.fg) & 0xff;
+  // Foreground color index (bits 0-7)
+  packed |= colorToIndex(cell.fg) & 0xff;
 
-	// Background color index (bits 8-15)
-	packed |= (colorToIndex(cell.bg) & 0xff) << 8;
+  // Background color index (bits 8-15)
+  packed |= (colorToIndex(cell.bg) & 0xff) << 8;
 
-	// Attributes (bits 16-23)
-	packed |= (attrsToNumber(cell.attrs) & 0xff) << 16;
+  // Attributes (bits 16-23)
+  packed |= (attrsToNumber(cell.attrs) & 0xff) << 16;
 
-	// Flags (bits 24-31)
-	if (cell.wide) packed |= WIDE_FLAG;
-	if (cell.continuation) packed |= CONTINUATION_FLAG;
-	if (isTrueColor(cell.fg)) packed |= TRUE_COLOR_FG_FLAG;
-	if (isTrueColor(cell.bg)) packed |= TRUE_COLOR_BG_FLAG;
+  // Flags (bits 24-31)
+  if (cell.wide) packed |= WIDE_FLAG;
+  if (cell.continuation) packed |= CONTINUATION_FLAG;
+  if (isTrueColor(cell.fg)) packed |= TRUE_COLOR_FG_FLAG;
+  if (isTrueColor(cell.bg)) packed |= TRUE_COLOR_BG_FLAG;
 
-	return packed;
+  return packed;
 }
 
 /**
  * Unpack foreground color index from packed value.
  */
 function unpackFgIndex(packed: number): number {
-	return packed & 0xff;
+  return packed & 0xff;
 }
 
 /**
  * Unpack background color index from packed value.
  */
 function unpackBgIndex(packed: number): number {
-	return (packed >> 8) & 0xff;
+  return (packed >> 8) & 0xff;
 }
 
 /**
  * Unpack attributes from packed value.
  */
 function unpackAttrs(packed: number): CellAttrs {
-	return numberToAttrs((packed >> 16) & 0xff);
+  return numberToAttrs((packed >> 16) & 0xff);
 }
 
 /**
  * Check if wide flag is set.
  */
 function unpackWide(packed: number): boolean {
-	return (packed & WIDE_FLAG) !== 0;
+  return (packed & WIDE_FLAG) !== 0;
 }
 
 /**
  * Check if continuation flag is set.
  */
 function unpackContinuation(packed: number): boolean {
-	return (packed & CONTINUATION_FLAG) !== 0;
+  return (packed & CONTINUATION_FLAG) !== 0;
 }
 
 /**
  * Check if true color foreground flag is set.
  */
 function unpackTrueColorFg(packed: number): boolean {
-	return (packed & TRUE_COLOR_FG_FLAG) !== 0;
+  return (packed & TRUE_COLOR_FG_FLAG) !== 0;
 }
 
 /**
  * Check if true color background flag is set.
  */
 function unpackTrueColorBg(packed: number): boolean {
-	return (packed & TRUE_COLOR_BG_FLAG) !== 0;
+  return (packed & TRUE_COLOR_BG_FLAG) !== 0;
 }
 
 // ============================================================================
@@ -236,224 +238,230 @@ function unpackTrueColorBg(packed: number): boolean {
  * full Unicode grapheme clusters.
  */
 export class TerminalBuffer {
-	/** Packed cell metadata */
-	private cells: Uint32Array;
-	/** Character storage (one per cell, may be multi-byte grapheme) */
-	private chars: string[];
-	/** True color foreground storage (only for cells with true color fg) */
-	private fgColors: Map<number, { r: number; g: number; b: number }>;
-	/** True color background storage (only for cells with true color bg) */
-	private bgColors: Map<number, { r: number; g: number; b: number }>;
+  /** Packed cell metadata */
+  private cells: Uint32Array;
+  /** Character storage (one per cell, may be multi-byte grapheme) */
+  private chars: string[];
+  /** True color foreground storage (only for cells with true color fg) */
+  private fgColors: Map<number, { r: number; g: number; b: number }>;
+  /** True color background storage (only for cells with true color bg) */
+  private bgColors: Map<number, { r: number; g: number; b: number }>;
 
-	readonly width: number;
-	readonly height: number;
+  readonly width: number;
+  readonly height: number;
 
-	constructor(width: number, height: number) {
-		this.width = width;
-		this.height = height;
-		const size = width * height;
-		this.cells = new Uint32Array(size);
-		this.chars = new Array<string>(size).fill(' ');
-		this.fgColors = new Map();
-		this.bgColors = new Map();
-	}
+  constructor(width: number, height: number) {
+    this.width = width;
+    this.height = height;
+    const size = width * height;
+    this.cells = new Uint32Array(size);
+    this.chars = new Array<string>(size).fill(" ");
+    this.fgColors = new Map();
+    this.bgColors = new Map();
+  }
 
-	/**
-	 * Get the index for a cell position.
-	 */
-	private index(x: number, y: number): number {
-		return y * this.width + x;
-	}
+  /**
+   * Get the index for a cell position.
+   */
+  private index(x: number, y: number): number {
+    return y * this.width + x;
+  }
 
-	/**
-	 * Check if coordinates are within bounds.
-	 */
-	inBounds(x: number, y: number): boolean {
-		return x >= 0 && x < this.width && y >= 0 && y < this.height;
-	}
+  /**
+   * Check if coordinates are within bounds.
+   */
+  inBounds(x: number, y: number): boolean {
+    return x >= 0 && x < this.width && y >= 0 && y < this.height;
+  }
 
-	/**
-	 * Get a cell at the given position.
-	 */
-	getCell(x: number, y: number): Cell {
-		if (!this.inBounds(x, y)) {
-			return { ...EMPTY_CELL };
-		}
+  /**
+   * Get a cell at the given position.
+   */
+  getCell(x: number, y: number): Cell {
+    if (!this.inBounds(x, y)) {
+      return { ...EMPTY_CELL };
+    }
 
-		const idx = this.index(x, y);
-		const packed = this.cells[idx];
-		const char = this.chars[idx];
+    const idx = this.index(x, y);
+    const packed = this.cells[idx];
+    const char = this.chars[idx];
 
-		// Determine foreground color
-		// Color indices are stored with +1 offset (0=null, 1=black, 2=red, etc.)
-		let fg: Color = null;
-		if (unpackTrueColorFg(packed)) {
-			fg = this.fgColors.get(idx) ?? null;
-		} else {
-			const fgIndex = unpackFgIndex(packed);
-			fg = fgIndex > 0 ? fgIndex - 1 : null; // -1 to restore actual color index
-		}
+    // Determine foreground color
+    // Color indices are stored with +1 offset (0=null, 1=black, 2=red, etc.)
+    let fg: Color = null;
+    if (unpackTrueColorFg(packed)) {
+      fg = this.fgColors.get(idx) ?? null;
+    } else {
+      const fgIndex = unpackFgIndex(packed);
+      fg = fgIndex > 0 ? fgIndex - 1 : null; // -1 to restore actual color index
+    }
 
-		// Determine background color
-		let bg: Color = null;
-		if (unpackTrueColorBg(packed)) {
-			bg = this.bgColors.get(idx) ?? null;
-		} else {
-			const bgIndex = unpackBgIndex(packed);
-			bg = bgIndex > 0 ? bgIndex - 1 : null; // -1 to restore actual color index
-		}
+    // Determine background color
+    let bg: Color = null;
+    if (unpackTrueColorBg(packed)) {
+      bg = this.bgColors.get(idx) ?? null;
+    } else {
+      const bgIndex = unpackBgIndex(packed);
+      bg = bgIndex > 0 ? bgIndex - 1 : null; // -1 to restore actual color index
+    }
 
-		return {
-			char,
-			fg,
-			bg,
-			attrs: unpackAttrs(packed),
-			wide: unpackWide(packed),
-			continuation: unpackContinuation(packed),
-		};
-	}
+    return {
+      char,
+      fg,
+      bg,
+      attrs: unpackAttrs(packed),
+      wide: unpackWide(packed),
+      continuation: unpackContinuation(packed),
+    };
+  }
 
-	/**
-	 * Set a cell at the given position.
-	 */
-	setCell(x: number, y: number, cell: Partial<Cell>): void {
-		if (!this.inBounds(x, y)) {
-			return;
-		}
+  /**
+   * Set a cell at the given position.
+   */
+  setCell(x: number, y: number, cell: Partial<Cell>): void {
+    if (!this.inBounds(x, y)) {
+      return;
+    }
 
-		const idx = this.index(x, y);
+    const idx = this.index(x, y);
 
-		// Merge with defaults for any missing properties
-		const fullCell: Cell = {
-			char: cell.char ?? ' ',
-			fg: cell.fg ?? null,
-			bg: cell.bg ?? null,
-			attrs: cell.attrs ?? {},
-			wide: cell.wide ?? false,
-			continuation: cell.continuation ?? false,
-		};
+    // Merge with defaults for any missing properties
+    const fullCell: Cell = {
+      char: cell.char ?? " ",
+      fg: cell.fg ?? null,
+      bg: cell.bg ?? null,
+      attrs: cell.attrs ?? {},
+      wide: cell.wide ?? false,
+      continuation: cell.continuation ?? false,
+    };
 
-		// Store character
-		this.chars[idx] = fullCell.char;
+    // Store character
+    this.chars[idx] = fullCell.char;
 
-		// Handle true color storage
-		if (isTrueColor(fullCell.fg)) {
-			this.fgColors.set(idx, fullCell.fg);
-		} else {
-			this.fgColors.delete(idx);
-		}
+    // Handle true color storage
+    if (isTrueColor(fullCell.fg)) {
+      this.fgColors.set(idx, fullCell.fg);
+    } else {
+      this.fgColors.delete(idx);
+    }
 
-		if (isTrueColor(fullCell.bg)) {
-			this.bgColors.set(idx, fullCell.bg);
-		} else {
-			this.bgColors.delete(idx);
-		}
+    if (isTrueColor(fullCell.bg)) {
+      this.bgColors.set(idx, fullCell.bg);
+    } else {
+      this.bgColors.delete(idx);
+    }
 
-		// Pack and store metadata
-		this.cells[idx] = packCell(fullCell);
-	}
+    // Pack and store metadata
+    this.cells[idx] = packCell(fullCell);
+  }
 
-	/**
-	 * Fill a region with a cell.
-	 */
-	fill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
-		const endX = Math.min(x + width, this.width);
-		const endY = Math.min(y + height, this.height);
-		const startX = Math.max(0, x);
-		const startY = Math.max(0, y);
+  /**
+   * Fill a region with a cell.
+   */
+  fill(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    cell: Partial<Cell>,
+  ): void {
+    const endX = Math.min(x + width, this.width);
+    const endY = Math.min(y + height, this.height);
+    const startX = Math.max(0, x);
+    const startY = Math.max(0, y);
 
-		for (let cy = startY; cy < endY; cy++) {
-			for (let cx = startX; cx < endX; cx++) {
-				this.setCell(cx, cy, cell);
-			}
-		}
-	}
+    for (let cy = startY; cy < endY; cy++) {
+      for (let cx = startX; cx < endX; cx++) {
+        this.setCell(cx, cy, cell);
+      }
+    }
+  }
 
-	/**
-	 * Clear the buffer (fill with empty cells).
-	 */
-	clear(): void {
-		this.cells.fill(0);
-		this.chars.fill(' ');
-		this.fgColors.clear();
-		this.bgColors.clear();
-	}
+  /**
+   * Clear the buffer (fill with empty cells).
+   */
+  clear(): void {
+    this.cells.fill(0);
+    this.chars.fill(" ");
+    this.fgColors.clear();
+    this.bgColors.clear();
+  }
 
-	/**
-	 * Copy a region from another buffer.
-	 */
-	copyFrom(
-		source: TerminalBuffer,
-		srcX: number,
-		srcY: number,
-		destX: number,
-		destY: number,
-		width: number,
-		height: number,
-	): void {
-		for (let dy = 0; dy < height; dy++) {
-			for (let dx = 0; dx < width; dx++) {
-				const sx = srcX + dx;
-				const sy = srcY + dy;
-				const dstX = destX + dx;
-				const dstY = destY + dy;
+  /**
+   * Copy a region from another buffer.
+   */
+  copyFrom(
+    source: TerminalBuffer,
+    srcX: number,
+    srcY: number,
+    destX: number,
+    destY: number,
+    width: number,
+    height: number,
+  ): void {
+    for (let dy = 0; dy < height; dy++) {
+      for (let dx = 0; dx < width; dx++) {
+        const sx = srcX + dx;
+        const sy = srcY + dy;
+        const dstX = destX + dx;
+        const dstY = destY + dy;
 
-				if (source.inBounds(sx, sy) && this.inBounds(dstX, dstY)) {
-					this.setCell(dstX, dstY, source.getCell(sx, sy));
-				}
-			}
-		}
-	}
+        if (source.inBounds(sx, sy) && this.inBounds(dstX, dstY)) {
+          this.setCell(dstX, dstY, source.getCell(sx, sy));
+        }
+      }
+    }
+  }
 
-	/**
-	 * Clone this buffer.
-	 */
-	clone(): TerminalBuffer {
-		const copy = new TerminalBuffer(this.width, this.height);
-		copy.cells.set(this.cells);
-		copy.chars = [...this.chars];
-		copy.fgColors = new Map(this.fgColors);
-		copy.bgColors = new Map(this.bgColors);
-		return copy;
-	}
+  /**
+   * Clone this buffer.
+   */
+  clone(): TerminalBuffer {
+    const copy = new TerminalBuffer(this.width, this.height);
+    copy.cells.set(this.cells);
+    copy.chars = [...this.chars];
+    copy.fgColors = new Map(this.fgColors);
+    copy.bgColors = new Map(this.bgColors);
+    return copy;
+  }
 
-	/**
-	 * Check if two cells at given positions are equal.
-	 * Used for diffing.
-	 */
-	cellEquals(x: number, y: number, other: TerminalBuffer): boolean {
-		if (!this.inBounds(x, y) || !other.inBounds(x, y)) {
-			return false;
-		}
+  /**
+   * Check if two cells at given positions are equal.
+   * Used for diffing.
+   */
+  cellEquals(x: number, y: number, other: TerminalBuffer): boolean {
+    if (!this.inBounds(x, y) || !other.inBounds(x, y)) {
+      return false;
+    }
 
-		const idx = this.index(x, y);
-		const otherIdx = other.index(x, y);
+    const idx = this.index(x, y);
+    const otherIdx = other.index(x, y);
 
-		// Quick check: packed metadata must match
-		if (this.cells[idx] !== other.cells[otherIdx]) {
-			return false;
-		}
+    // Quick check: packed metadata must match
+    if (this.cells[idx] !== other.cells[otherIdx]) {
+      return false;
+    }
 
-		// Character must match
-		if (this.chars[idx] !== other.chars[otherIdx]) {
-			return false;
-		}
+    // Character must match
+    if (this.chars[idx] !== other.chars[otherIdx]) {
+      return false;
+    }
 
-		// If true color flags are set, check the color values
-		const packed = this.cells[idx];
-		if (unpackTrueColorFg(packed)) {
-			const a = this.fgColors.get(idx);
-			const b = other.fgColors.get(otherIdx);
-			if (!colorEquals(a, b)) return false;
-		}
-		if (unpackTrueColorBg(packed)) {
-			const a = this.bgColors.get(idx);
-			const b = other.bgColors.get(otherIdx);
-			if (!colorEquals(a, b)) return false;
-		}
+    // If true color flags are set, check the color values
+    const packed = this.cells[idx];
+    if (unpackTrueColorFg(packed)) {
+      const a = this.fgColors.get(idx);
+      const b = other.fgColors.get(otherIdx);
+      if (!colorEquals(a, b)) return false;
+    }
+    if (unpackTrueColorBg(packed)) {
+      const a = this.bgColors.get(idx);
+      const b = other.bgColors.get(otherIdx);
+      if (!colorEquals(a, b)) return false;
+    }
 
-		return true;
-	}
+    return true;
+  }
 }
 
 // ============================================================================
@@ -463,61 +471,72 @@ export class TerminalBuffer {
 /**
  * Compare two colors for equality.
  */
-export function colorEquals(a: Color | undefined, b: Color | undefined): boolean {
-	if (a === b) return true;
-	if (a === null || a === undefined) return b === null || b === undefined;
-	if (b === null || b === undefined) return false;
-	if (typeof a === 'number') return a === b;
-	if (typeof b === 'number') return false;
-	return a.r === b.r && a.g === b.g && a.b === b.b;
+export function colorEquals(
+  a: Color | undefined,
+  b: Color | undefined,
+): boolean {
+  if (a === b) return true;
+  if (a === null || a === undefined) return b === null || b === undefined;
+  if (b === null || b === undefined) return false;
+  if (typeof a === "number") return a === b;
+  if (typeof b === "number") return false;
+  return a.r === b.r && a.g === b.g && a.b === b.b;
 }
 
 /**
  * Compare two cells for equality.
  */
 export function cellEquals(a: Cell, b: Cell): boolean {
-	return (
-		a.char === b.char &&
-		colorEquals(a.fg, b.fg) &&
-		colorEquals(a.bg, b.bg) &&
-		a.wide === b.wide &&
-		a.continuation === b.continuation &&
-		attrsEquals(a.attrs, b.attrs)
-	);
+  return (
+    a.char === b.char &&
+    colorEquals(a.fg, b.fg) &&
+    colorEquals(a.bg, b.bg) &&
+    a.wide === b.wide &&
+    a.continuation === b.continuation &&
+    attrsEquals(a.attrs, b.attrs)
+  );
 }
 
 /**
  * Compare two CellAttrs for equality.
  */
 export function attrsEquals(a: CellAttrs, b: CellAttrs): boolean {
-	return (
-		Boolean(a.bold) === Boolean(b.bold) &&
-		Boolean(a.dim) === Boolean(b.dim) &&
-		Boolean(a.italic) === Boolean(b.italic) &&
-		Boolean(a.underline) === Boolean(b.underline) &&
-		Boolean(a.blink) === Boolean(b.blink) &&
-		Boolean(a.inverse) === Boolean(b.inverse) &&
-		Boolean(a.hidden) === Boolean(b.hidden) &&
-		Boolean(a.strikethrough) === Boolean(b.strikethrough)
-	);
+  return (
+    Boolean(a.bold) === Boolean(b.bold) &&
+    Boolean(a.dim) === Boolean(b.dim) &&
+    Boolean(a.italic) === Boolean(b.italic) &&
+    Boolean(a.underline) === Boolean(b.underline) &&
+    Boolean(a.blink) === Boolean(b.blink) &&
+    Boolean(a.inverse) === Boolean(b.inverse) &&
+    Boolean(a.hidden) === Boolean(b.hidden) &&
+    Boolean(a.strikethrough) === Boolean(b.strikethrough)
+  );
 }
 
 /**
  * Compare two styles for equality.
  */
 export function styleEquals(a: Style | null, b: Style | null): boolean {
-	if (a === b) return true;
-	if (!a || !b) return false;
-	return colorEquals(a.fg, b.fg) && colorEquals(a.bg, b.bg) && attrsEquals(a.attrs, b.attrs);
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    colorEquals(a.fg, b.fg) &&
+    colorEquals(a.bg, b.bg) &&
+    attrsEquals(a.attrs, b.attrs)
+  );
 }
 
 /**
  * Create a buffer initialized with a specific character.
  */
-export function createBuffer(width: number, height: number, char = ' '): TerminalBuffer {
-	const buffer = new TerminalBuffer(width, height);
-	if (char !== ' ') {
-		buffer.fill(0, 0, width, height, { char });
-	}
-	return buffer;
+export function createBuffer(
+  width: number,
+  height: number,
+  char = " ",
+): TerminalBuffer {
+  const buffer = new TerminalBuffer(width, height);
+  if (char !== " ") {
+    buffer.fill(0, 0, width, height, { char });
+  }
+  return buffer;
 }

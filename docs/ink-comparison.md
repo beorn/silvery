@@ -2,7 +2,7 @@
 
 This document analyzes Ink's real-world issues and PRs to understand where Inkx can provide value.
 
-*Last updated: January 2026 (based on analysis of ink's last 100 PRs and issues)*
+_Last updated: January 2026 (based on analysis of ink's last 100 PRs and issues)_
 
 ---
 
@@ -17,9 +17,10 @@ Ink is in maintenance mode with a stable but limited architecture. Many long-sta
 ### 1. Layout Feedback (Ink's Architectural Limitation)
 
 **Ink issue [#5](https://github.com/vadimdemedes/ink/issues/5)** (opened 2016, still open):
+
 > "Is there a way to know the width/height of a Box?"
 
-**Why Ink can't fix it**: Ink renders components *before* Yoga calculates layout. By the time dimensions are known, React is done rendering.
+**Why Ink can't fix it**: Ink renders components _before_ Yoga calculates layout. By the time dimensions are known, React is done rendering.
 
 **Inkx solution**: Two-phase rendering. Layout calculates first, then components render with `useLayout()` providing actual dimensions.
 
@@ -100,6 +101,7 @@ function Card() {
 **Ink PR [#852](https://github.com/vadimdemedes/ink/pull/852)** (actively reviewed)
 
 **Problem**: Can't differentiate:
+
 - `shift+enter` vs `enter`
 - `ctrl+i` vs `tab`
 - Other modifier combinations
@@ -134,14 +136,15 @@ function Card() {
 
 These PRs show what matters to users:
 
-| PR | Feature | Status |
-|----|---------|--------|
-| #823 | Screen reader accessibility | ✅ Merged |
-| #829 | Home/End key support | ✅ Merged |
+| PR   | Feature                            | Status    |
+| ---- | ---------------------------------- | --------- |
+| #823 | Screen reader accessibility        | ✅ Merged |
+| #829 | Home/End key support               | ✅ Merged |
 | #836 | Incremental rendering optimization | ✅ Merged |
-| #854 | Non-TTY environment fallback | In review |
+| #854 | Non-TTY environment fallback       | In review |
 
 **Inkx must verify**:
+
 - Screen reader output works
 - Home/End keys are handled
 - Incremental rendering is efficient
@@ -154,20 +157,24 @@ These PRs show what matters to users:
 Analysis of PR merge patterns reveals:
 
 ### What Gets Merged Quickly
+
 - Small, focused bug fixes
 - Documentation improvements
 - Community component additions to README
 
 ### What Takes Months
+
 - Complex input handling (PR #782: 4+ months, 22 comments, still open)
 - Architectural changes
 
 ### What Gets Rejected
+
 - Experimental features without clear use case
 - Broad architectural changes
 - Features that only work in specific terminals
 
 ### Reviewer Expectations
+
 - Proper Unicode handling (variation selectors, surrogate pairs)
 - No CI pollution (no escape sequences in logs)
 - Performance-conscious (batch writes)
@@ -179,34 +186,37 @@ Analysis of PR merge patterns reveals:
 
 Based on Ink issues, Inkx should test:
 
-| Test Case | Ink Issue | Priority | Inkx Status |
-|-----------|-----------|----------|-------------|
-| CJK character rendering | #759 | P0 | ⚠️ Needs test |
-| Double-width char alignment | #759 | P0 | ⚠️ Needs test |
-| Emoji ZWJ sequences | - | P1 | ⚠️ Needs test |
-| ANSI truncation | #584 | P1 | ⚠️ Needs test |
-| Rapid keystrokes | PR #782 | P1 | ⚠️ Needs test |
-| borderDimColor | #840 | P2 | ⚠️ Needs test |
-| Large component counts | #694 | P2 | ⚠️ Needs test |
-| Home/End keys | PR #829 | P2 | ⚠️ Needs test |
-| Process exit timing | #796 | P1 | ⚠️ Needs test |
-| tmux rendering | PR #846 | P0 | ⚠️ Needs test |
-| Zellij rendering | PR #846 | P0 | ⚠️ Needs test |
+| Test Case                   | Ink Issue | Priority | Inkx Status   |
+| --------------------------- | --------- | -------- | ------------- |
+| CJK character rendering     | #759      | P0       | ⚠️ Needs test |
+| Double-width char alignment | #759      | P0       | ⚠️ Needs test |
+| Emoji ZWJ sequences         | -         | P1       | ⚠️ Needs test |
+| ANSI truncation             | #584      | P1       | ⚠️ Needs test |
+| Rapid keystrokes            | PR #782   | P1       | ⚠️ Needs test |
+| borderDimColor              | #840      | P2       | ⚠️ Needs test |
+| Large component counts      | #694      | P2       | ⚠️ Needs test |
+| Home/End keys               | PR #829   | P2       | ⚠️ Needs test |
+| Process exit timing         | #796      | P1       | ⚠️ Needs test |
+| tmux rendering              | PR #846   | P0       | ⚠️ Needs test |
+| Zellij rendering            | PR #846   | P0       | ⚠️ Needs test |
 
 ---
 
 ## Strategic Recommendations
 
 ### Short Term (Testing Focus)
+
 1. **CJK/IME testing** — This is Ink's #1 pain point. If Inkx handles it well, that's a major differentiator.
 2. **Terminal multiplexer testing** — tmux is ubiquitous. Zellij is growing.
 3. **Emoji/Unicode edge cases** — Common source of rendering bugs.
 
 ### Medium Term (Feature Parity+)
+
 4. **Kitty keyboard protocol** — Growing expectation in modern terminals.
 5. **Document all limitations** — Users appreciate honesty about what doesn't work.
 
 ### Long Term (Differentiation)
+
 6. **Cursor API** — Solve the 6-year-old issue Ink can't fix.
 7. **TextArea component** — Enable chat-like applications.
 8. **React 19 concurrent rendering** — Future-proof the reconciler.
@@ -239,26 +249,26 @@ Do you need scrolling or dimension queries?
 
 ### Quick Reference
 
-| If you need... | Use |
-|----------------|-----|
-| Native scrolling (`overflow="scroll"`) | Inkx |
-| Component dimension queries (`useLayout()`) | Inkx |
-| ANSI-aware text truncation | Inkx |
-| Smaller bundle size | Inkx + Flexx |
-| Maximum ecosystem compatibility | Ink |
-| Battle-tested stability | Ink |
-| Smallest risk for production | Ink |
+| If you need...                              | Use          |
+| ------------------------------------------- | ------------ |
+| Native scrolling (`overflow="scroll"`)      | Inkx         |
+| Component dimension queries (`useLayout()`) | Inkx         |
+| ANSI-aware text truncation                  | Inkx         |
+| Smaller bundle size                         | Inkx + Flexx |
+| Maximum ecosystem compatibility             | Ink          |
+| Battle-tested stability                     | Ink          |
+| Smallest risk for production                | Ink          |
 
 ### Layout Engine Comparison
 
 Inkx supports two layout engines. Both use the same flexbox API:
 
-| Engine | Bundle (gzip) | Performance* | Initialization |
-|--------|---------------|--------------|----------------|
-| **Yoga** (WASM) | 38 KB | 316 µs | Async |
-| **Flexx** (pure JS) | 7 KB | 125 µs | Sync |
+| Engine              | Bundle (gzip) | Performance\* | Initialization |
+| ------------------- | ------------- | ------------- | -------------- |
+| **Yoga** (WASM)     | 38 KB         | 316 µs        | Async          |
+| **Flexx** (pure JS) | 7 KB          | 125 µs        | Sync           |
 
-*Kanban 3×50 benchmark (~150 nodes), Apple M1 Max
+\*Kanban 3×50 benchmark (~150 nodes), Apple M1 Max
 
 **Flexx is 2.5x faster and 5x smaller.** Trade-off: no RTL or baseline alignment.
 
@@ -267,11 +277,13 @@ For terminal UIs, both are fast enough for 60fps. Choose based on bundle size an
 ### Maturity Considerations
 
 **Ink**: Production-ready, battle-tested, maintenance mode
+
 - Millions of users via React Native, CLI tools
 - 100+ open issues (some architectural, unfixable)
 - Stable API, low churn
 
 **Inkx**: Functionally complete, seeking real-world feedback
+
 - Used in production by the authors
 - Comprehensive test suite
 - Not yet battle-tested across diverse environments
@@ -292,13 +304,13 @@ If you're on Ink and considering Inkx:
 
 Inkx is well-positioned to capture users frustrated with Ink's limitations:
 
-| User Pain | Ink's Answer | Inkx's Answer |
-|-----------|--------------|---------------|
-| "I need scrolling" | "Use a third-party library" | `overflow="scroll"` |
-| "How do I get component dimensions?" | "Thread width props manually" | `useLayout()` |
-| "Text breaks my layout" | "Calculate and truncate yourself" | Auto-truncation |
-| "I need a cursor" | "Open issue since 2019" | `useCursor()` (planned) |
-| "CJK input is broken" | "We're working on it" | ⚠️ TBD |
+| User Pain                            | Ink's Answer                      | Inkx's Answer           |
+| ------------------------------------ | --------------------------------- | ----------------------- |
+| "I need scrolling"                   | "Use a third-party library"       | `overflow="scroll"`     |
+| "How do I get component dimensions?" | "Thread width props manually"     | `useLayout()`           |
+| "Text breaks my layout"              | "Calculate and truncate yourself" | Auto-truncation         |
+| "I need a cursor"                    | "Open issue since 2019"           | `useCursor()` (planned) |
+| "CJK input is broken"                | "We're working on it"             | ⚠️ TBD                  |
 
 The key is to **nail the fundamentals** (scrolling, layout feedback) while **testing the edge cases** (CJK, multiplexers) that trip up real users.
 
@@ -307,6 +319,7 @@ The key is to **nail the fundamentals** (scrolling, layout feedback) while **tes
 ## References
 
 ### Ink Issues Analyzed
+
 - [#5 - Box dimensions](https://github.com/vadimdemedes/ink/issues/5) (2016)
 - [#222 - Scrolling](https://github.com/vadimdemedes/ink/issues/222) (2019)
 - [#251 - Cursor support](https://github.com/vadimdemedes/ink/issues/251) (2019)
@@ -322,6 +335,7 @@ The key is to **nail the fundamentals** (scrolling, layout feedback) while **tes
 - [#840 - borderDimColor](https://github.com/vadimdemedes/ink/issues/840)
 
 ### Ink PRs Analyzed
+
 - [#782 - Rapid input](https://github.com/vadimdemedes/ink/pull/782)
 - [#823 - Screen reader](https://github.com/vadimdemedes/ink/pull/823)
 - [#829 - Home/End keys](https://github.com/vadimdemedes/ink/pull/829)

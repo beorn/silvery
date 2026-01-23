@@ -7,9 +7,9 @@
  * - StdioContext: Access to stdin/stdout
  */
 
-import type { EventEmitter } from 'node:events';
-import { createContext } from 'react';
-import type { InkxNode } from './types.js';
+import type { EventEmitter } from "node:events";
+import { createContext } from "react";
+import type { InkxNode } from "./types.js";
 
 // ============================================================================
 // Node Context
@@ -29,8 +29,8 @@ export const NodeContext = createContext<InkxNode | null>(null);
 // ============================================================================
 
 export interface AppContextValue {
-	/** Exit the application with optional error */
-	exit: (error?: Error) => void;
+  /** Exit the application with optional error */
+  exit: (error?: Error) => void;
 }
 
 /**
@@ -44,10 +44,10 @@ export const AppContext = createContext<AppContextValue | null>(null);
 // ============================================================================
 
 export interface StdoutContextValue {
-	/** Standard output stream */
-	stdout: NodeJS.WriteStream;
-	/** Write to stdout */
-	write: (data: string) => void;
+  /** Standard output stream */
+  stdout: NodeJS.WriteStream;
+  /** Write to stdout */
+  write: (data: string) => void;
 }
 
 /**
@@ -61,12 +61,12 @@ export const StdoutContext = createContext<StdoutContextValue | null>(null);
 // ============================================================================
 
 export interface StdinContextValue {
-	/** Standard input stream */
-	stdin: NodeJS.ReadStream;
-	/** Whether raw mode is supported */
-	isRawModeSupported: boolean;
-	/** Set raw mode on stdin */
-	setRawMode: (value: boolean) => void;
+  /** Standard input stream */
+  stdin: NodeJS.ReadStream;
+  /** Whether raw mode is supported */
+  isRawModeSupported: boolean;
+  /** Set raw mode on stdin */
+  setRawMode: (value: boolean) => void;
 }
 
 /**
@@ -80,10 +80,10 @@ export const StdinContext = createContext<StdinContextValue | null>(null);
 // ============================================================================
 
 export interface InputContextValue {
-	/** Event emitter for input events */
-	eventEmitter: EventEmitter;
-	/** Whether to exit on Ctrl+C */
-	exitOnCtrlC: boolean;
+  /** Event emitter for input events */
+  eventEmitter: EventEmitter;
+  /** Whether to exit on Ctrl+C */
+  exitOnCtrlC: boolean;
 }
 
 /**
@@ -97,28 +97,28 @@ export const InputContext = createContext<InputContextValue | null>(null);
 // ============================================================================
 
 export interface FocusContextValue {
-	/** Currently focused element ID */
-	activeId: string | null;
-	/** Add a focusable element */
-	add: (id: string, options?: { autoFocus?: boolean }) => void;
-	/** Remove a focusable element */
-	remove: (id: string) => void;
-	/** Activate a focusable element (make it eligible for focus) */
-	activate: (id: string) => void;
-	/** Deactivate a focusable element (make it ineligible for focus) */
-	deactivate: (id: string) => void;
-	/** Set focus to element by ID */
-	focus: (id: string) => void;
-	/** Focus next element */
-	focusNext: () => void;
-	/** Focus previous element */
-	focusPrevious: () => void;
-	/** Enable focus management */
-	enableFocus: () => void;
-	/** Disable focus management */
-	disableFocus: () => void;
-	/** Is focus management enabled */
-	isFocusEnabled: boolean;
+  /** Currently focused element ID */
+  activeId: string | null;
+  /** Add a focusable element */
+  add: (id: string, options?: { autoFocus?: boolean }) => void;
+  /** Remove a focusable element */
+  remove: (id: string) => void;
+  /** Activate a focusable element (make it eligible for focus) */
+  activate: (id: string) => void;
+  /** Deactivate a focusable element (make it ineligible for focus) */
+  deactivate: (id: string) => void;
+  /** Set focus to element by ID */
+  focus: (id: string) => void;
+  /** Focus next element */
+  focusNext: () => void;
+  /** Focus previous element */
+  focusPrevious: () => void;
+  /** Enable focus management */
+  enableFocus: () => void;
+  /** Disable focus management */
+  disableFocus: () => void;
+  /** Is focus management enabled */
+  isFocusEnabled: boolean;
 }
 
 /**

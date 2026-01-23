@@ -6,18 +6,18 @@
  */
 
 export {
-	// Types
-	type CellChange,
-	type BorderChars,
-	// Phase functions
-	measurePhase,
-	layoutPhase,
-	layoutEqual,
-	scrollPhase,
-	contentPhase,
-	outputPhase,
-	// Utilities
-	clearBgConflictWarnings,
-	// Orchestration
-	executeRender,
-} from './pipeline/index.js';
+  // Types
+  type CellChange,
+  type BorderChars,
+  // Phase functions
+  measurePhase,
+  layoutPhase,
+  layoutEqual,
+  scrollPhase,
+  contentPhase,
+  outputPhase,
+  // Utilities
+  clearBgConflictWarnings,
+  // Orchestration
+  executeRender,
+} from "./pipeline/index.js";

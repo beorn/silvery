@@ -881,7 +881,7 @@ Explicit expectations for what works and what doesn't:
 | **Terminal multiplexer rendering**      | Medium     | High   | Test in tmux/Zellij; may need special handling                |
 | **Keyboard protocol limitations**       | Medium     | Medium | Document limitations; plan Kitty protocol support             |
 
-*Note: CJK/IME and terminal multiplexer risks added based on analysis of Ink's real-world issues (January 2026). These are Ink's top pain points and likely to affect Inkx users too.*
+_Note: CJK/IME and terminal multiplexer risks added based on analysis of Ink's real-world issues (January 2026). These are Ink's top pain points and likely to affect Inkx users too._
 
 ---
 
@@ -951,15 +951,18 @@ See also [README.md](../README.md) for a comprehensive "Related Work" section wi
 ### Related GitHub Issues
 
 **Layout feedback (core problem Inkx solves)**:
+
 - [Ink #5](https://github.com/vadimdemedes/ink/issues/5) (2016) - Original "is there a way to know width/height?" issue
 - [Ink #387](https://github.com/vadimdemedes/ink/issues/387) (2020) - Discussion of layout feedback limitations
 
 **Long-standing issues Inkx can address**:
+
 - [Ink #222](https://github.com/vadimdemedes/ink/issues/222) (2019) - Scrolling request (5.5+ years open)
 - [Ink #251](https://github.com/vadimdemedes/ink/issues/251) (2019) - Cursor support (6+ years open)
 - [Ink #765](https://github.com/vadimdemedes/ink/issues/765) - Scrolling primitives (repeatedly reopened)
 
 **Current pain points to learn from**:
+
 - [Ink #759](https://github.com/vadimdemedes/ink/issues/759) - CJK/IME input issues (Ink's #1 pain point)
 - [Ink #824](https://github.com/vadimdemedes/ink/issues/824) - Kitty keyboard protocol
 - [Ink #796](https://github.com/vadimdemedes/ink/issues/796) - Process exit timing

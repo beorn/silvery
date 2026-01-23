@@ -10,13 +10,13 @@ Traditional terminals use a simple protocol where each keypress is sent as a cha
 
 Several key combinations produce identical byte sequences:
 
-| Keys | Both Send | Reason |
-|------|-----------|--------|
-| `Ctrl+I` / `Tab` | `0x09` | Tab is ASCII character 9, same as Ctrl+I |
-| `Ctrl+M` / `Enter` | `0x0D` | Carriage return is ASCII 13, same as Ctrl+M |
-| `Ctrl+[` / `Escape` | `0x1B` | Escape is ASCII 27, same as Ctrl+[ |
-| `Ctrl+H` / `Backspace` | `0x08` | Backspace is ASCII 8, same as Ctrl+H |
-| `Shift+Enter` / `Enter` | `\r` | Most terminals don't distinguish |
+| Keys                    | Both Send | Reason                                      |
+| ----------------------- | --------- | ------------------------------------------- |
+| `Ctrl+I` / `Tab`        | `0x09`    | Tab is ASCII character 9, same as Ctrl+I    |
+| `Ctrl+M` / `Enter`      | `0x0D`    | Carriage return is ASCII 13, same as Ctrl+M |
+| `Ctrl+[` / `Escape`     | `0x1B`    | Escape is ASCII 27, same as Ctrl+[          |
+| `Ctrl+H` / `Backspace`  | `0x08`    | Backspace is ASCII 8, same as Ctrl+H        |
+| `Shift+Enter` / `Enter` | `\r`      | Most terminals don't distinguish            |
 
 This means your `useInput` handler cannot tell these apart:
 
@@ -92,11 +92,11 @@ Different terminals send different escape sequences for the same keys. Inkx hand
 
 Function keys F1-F12 have multiple encodings:
 
-| Terminal Style | F1 | F5 |
-|----------------|-----|-----|
-| xterm (O-style) | `\x1bOP` | - |
+| Terminal Style  | F1         | F5         |
+| --------------- | ---------- | ---------- |
+| xterm (O-style) | `\x1bOP`   | -          |
 | xterm ([~style) | `\x1b[11~` | `\x1b[15~` |
-| Cygwin/libuv | `\x1b[[A` | `\x1b[[E` |
+| Cygwin/libuv    | `\x1b[[A`  | `\x1b[[E`  |
 
 Inkx recognizes all these variants, but some obscure terminals may use others.
 
@@ -104,22 +104,22 @@ Inkx recognizes all these variants, but some obscure terminals may use others.
 
 Home/End keys also vary:
 
-| Terminal | Home | End |
-|----------|------|-----|
-| xterm (standard) | `\x1b[H` | `\x1b[F` |
+| Terminal          | Home      | End       |
+| ----------------- | --------- | --------- |
+| xterm (standard)  | `\x1b[H`  | `\x1b[F`  |
 | xterm (alternate) | `\x1b[1~` | `\x1b[4~` |
-| rxvt | `\x1b[7~` | `\x1b[8~` |
+| rxvt              | `\x1b[7~` | `\x1b[8~` |
 
 ### Terminal Comparison
 
-| Feature | macOS Terminal | iTerm2 | Kitty | WezTerm |
-|---------|---------------|--------|-------|---------|
-| Synchronized Update | No | Yes | Yes | Yes |
-| Kitty Protocol | No | No | Yes | Yes |
-| Function keys F1-F12 | Yes | Yes | Yes | Yes |
-| Function keys F13-F24 | Partial | Yes | Yes | Yes |
-| Meta/Alt key | Option+Esc | Configurable | Yes | Yes |
-| IME support | Basic | Good | Good | Good |
+| Feature               | macOS Terminal | iTerm2       | Kitty | WezTerm |
+| --------------------- | -------------- | ------------ | ----- | ------- |
+| Synchronized Update   | No             | Yes          | Yes   | Yes     |
+| Kitty Protocol        | No             | No           | Yes   | Yes     |
+| Function keys F1-F12  | Yes            | Yes          | Yes   | Yes     |
+| Function keys F13-F24 | Partial        | Yes          | Yes   | Yes     |
+| Meta/Alt key          | Option+Esc     | Configurable | Yes   | Yes     |
+| IME support           | Basic          | Good         | Good  | Good    |
 
 ## Modifier Key Handling
 
@@ -135,7 +135,7 @@ Inkx detects meta when it receives `\x1b` followed by a character:
 
 ```tsx
 useInput((input, key) => {
-  if (key.meta && input === 'a') {
+  if (key.meta && input === "a") {
     // Alt+A or Option+A (when configured to send escape)
   }
 });
@@ -148,7 +148,7 @@ Most terminals cannot distinguish Ctrl+Shift+Letter from Ctrl+Letter:
 ```tsx
 useInput((input, key) => {
   // key.shift may be false even if Shift was held with Ctrl
-  if (key.ctrl && input === 'a') {
+  if (key.ctrl && input === "a") {
     // Could be Ctrl+A OR Ctrl+Shift+A
   }
 });
@@ -160,7 +160,7 @@ Shift is reliably detected for regular letter input (uppercase vs lowercase):
 
 ```tsx
 useInput((input, key) => {
-  if (input === 'A' && key.shift) {
+  if (input === "A" && key.shift) {
     // Shift+A - this works reliably
   }
 });
@@ -187,21 +187,21 @@ Using tmux, screen, or similar multiplexers adds another layer:
 
 Despite these limitations, many keys work reliably everywhere:
 
-| Key | Reliability |
-|-----|-------------|
-| Arrow keys | Excellent |
-| Enter/Return | Excellent |
-| Escape | Excellent |
-| Tab | Excellent (but indistinguishable from Ctrl+I) |
-| Backspace | Excellent |
-| Delete | Good |
-| Home/End | Good |
-| Page Up/Down | Good |
-| F1-F12 | Good |
-| Ctrl+A through Ctrl+Z | Good (except Ctrl+I, Ctrl+M, Ctrl+[) |
-| Shift+Tab | Good |
-| Letters and numbers | Excellent |
-| Common punctuation | Excellent |
+| Key                   | Reliability                                   |
+| --------------------- | --------------------------------------------- |
+| Arrow keys            | Excellent                                     |
+| Enter/Return          | Excellent                                     |
+| Escape                | Excellent                                     |
+| Tab                   | Excellent (but indistinguishable from Ctrl+I) |
+| Backspace             | Excellent                                     |
+| Delete                | Good                                          |
+| Home/End              | Good                                          |
+| Page Up/Down          | Good                                          |
+| F1-F12                | Good                                          |
+| Ctrl+A through Ctrl+Z | Good (except Ctrl+I, Ctrl+M, Ctrl+[)          |
+| Shift+Tab             | Good                                          |
+| Letters and numbers   | Excellent                                     |
+| Common punctuation    | Excellent                                     |
 
 ## Best Practices
 
@@ -210,15 +210,15 @@ Despite these limitations, many keys work reliably everywhere:
 ```tsx
 // Good: Use keys that work everywhere
 useInput((input, key) => {
-  if (key.upArrow || input === 'k') moveUp();
-  if (key.downArrow || input === 'j') moveDown();
+  if (key.upArrow || input === "k") moveUp();
+  if (key.downArrow || input === "j") moveDown();
   if (key.return) select();
-  if (key.escape || input === 'q') quit();
+  if (key.escape || input === "q") quit();
 });
 
 // Risky: Relies on Ctrl combinations that may conflict
 useInput((input, key) => {
-  if (key.ctrl && input === 'i') {
+  if (key.ctrl && input === "i") {
     // User pressing Tab will trigger this too!
   }
 });
@@ -231,7 +231,7 @@ When using keys with known limitations, offer alternatives:
 ```tsx
 useInput((input, key) => {
   // Multiple ways to trigger the same action
-  if (input === '?' || input === 'h' || (key.ctrl && input === 'h')) {
+  if (input === "?" || input === "h" || (key.ctrl && input === "h")) {
     showHelp();
   }
 });
@@ -246,10 +246,10 @@ function HelpScreen() {
   return (
     <Box flexDirection="column">
       <Text bold>Keybindings:</Text>
-      <Text>j/Down  - Move down</Text>
-      <Text>k/Up    - Move up</Text>
-      <Text>Enter   - Select</Text>
-      <Text>Escape  - Back</Text>
+      <Text>j/Down - Move down</Text>
+      <Text>k/Up - Move up</Text>
+      <Text>Enter - Select</Text>
+      <Text>Escape - Back</Text>
       <Text dimColor>Note: Ctrl+M is the same as Enter</Text>
     </Box>
   );

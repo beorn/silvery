@@ -4,14 +4,14 @@
 
 ### Summary (After Optimizations)
 
-| Operation | Time | Notes |
-|-----------|------|-------|
-| Full render (simple, first) | 54us | First render, no diff |
-| Full render (simple, diff) | 25us | With buffer diffing |
-| Full render (50 items, first) | 159us | Complex tree |
-| Full render (50 items, diff) | 88us | Complex tree with diff |
-| contentPhase (100 children) | 26us | Optimized with caching |
-| layoutPhase (100 children) | 25us | Yoga is fast |
+| Operation                     | Time  | Notes                  |
+| ----------------------------- | ----- | ---------------------- |
+| Full render (simple, first)   | 54us  | First render, no diff  |
+| Full render (simple, diff)    | 25us  | With buffer diffing    |
+| Full render (50 items, first) | 159us | Complex tree           |
+| Full render (50 items, diff)  | 88us  | Complex tree with diff |
+| contentPhase (100 children)   | 26us  | Optimized with caching |
+| layoutPhase (100 children)    | 25us  | Yoga is fast           |
 
 ### Key Optimizations Implemented
 
@@ -27,15 +27,15 @@
 
 ### Performance Improvements
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| `displayWidth ASCII` | 8,181ns | 181ns | **45x faster** |
-| `displayWidth mixed` | 3,016ns | 173ns | **17x faster** |
-| `outputPhase (no changes)` | 76,191ns | 23,276ns | **3.3x faster** |
-| `outputPhase (10% changes)` | 85,229ns | 36,906ns | **2.3x faster** |
-| `contentPhase (100 children)` | 503,000ns | 26,011ns | **19x faster** |
-| `executeRender (simple, diff)` | 76,601ns | 25,230ns | **3x faster** |
-| `executeRender (50 items, diff)` | 362,000ns | 87,953ns | **4x faster** |
+| Metric                           | Before    | After    | Improvement     |
+| -------------------------------- | --------- | -------- | --------------- |
+| `displayWidth ASCII`             | 8,181ns   | 181ns    | **45x faster**  |
+| `displayWidth mixed`             | 3,016ns   | 173ns    | **17x faster**  |
+| `outputPhase (no changes)`       | 76,191ns  | 23,276ns | **3.3x faster** |
+| `outputPhase (10% changes)`      | 85,229ns  | 36,906ns | **2.3x faster** |
+| `contentPhase (100 children)`    | 503,000ns | 26,011ns | **19x faster**  |
+| `executeRender (simple, diff)`   | 76,601ns  | 25,230ns | **3x faster**   |
+| `executeRender (50 items, diff)` | 362,000ns | 87,953ns | **4x faster**   |
 
 ### Key Findings
 
@@ -85,7 +85,9 @@
 ### Medium-Effort Improvements
 
 #### 1. Spatial Skip in contentPhase
+
 Currently renders all nodes. Could skip nodes entirely outside viewport:
+
 ```typescript
 // In renderNodeToBuffer
 if (layout.y + layout.height < 0 || layout.y >= buffer.height) {
@@ -94,14 +96,18 @@ if (layout.y + layout.height < 0 || layout.y >= buffer.height) {
 ```
 
 #### 2. Incremental Content Rendering
+
 Only re-render nodes with `contentDirty=true` instead of recreating entire buffer:
+
 ```typescript
 // Instead of: new TerminalBuffer()
 // Reuse previous buffer and only update dirty regions
 ```
 
 #### 3. Row-Based Diff in outputPhase
+
 Current diff is cell-by-cell. Could batch by row:
+
 ```typescript
 // Compare entire rows first using Uint32Array.equals
 // Only do cell-by-cell comparison if row differs
@@ -110,43 +116,57 @@ Current diff is cell-by-cell. Could batch by row:
 ### Major Optimizations (Future)
 
 #### 1. Virtual Scrolling
+
 For scroll containers with many children:
+
 - Only create/render visible children
 - Use placeholder nodes for off-screen items
 - Recycle nodes as user scrolls
 
 #### 2. Layout Caching
+
 Cache Yoga layout results when dimensions don't change:
+
 ```typescript
 // Key: (props_hash, available_width, available_height)
 // Value: computed_layout
 ```
 
 #### 3. Worker Thread for Layout
+
 Move Yoga calculation to worker thread for large trees.
 
 #### 4. Content Buffer Pooling
+
 Reuse TerminalBuffer instances instead of allocating new ones each render.
 
 ## Profiling Guide
 
 ### Run Benchmarks
+
 ```bash
 cd /Users/beorn/Code/pim/km/vendor/beorn-inkx
 bun run bench
 ```
 
 ### Profile Specific Phases
+
 ```typescript
-import { measurePhase, layoutPhase, contentPhase, outputPhase } from 'inkx/pipeline';
+import {
+  measurePhase,
+  layoutPhase,
+  contentPhase,
+  outputPhase,
+} from "inkx/pipeline";
 
 const start = performance.now();
 measurePhase(root);
-console.log('measure:', performance.now() - start);
+console.log("measure:", performance.now() - start);
 // ... etc
 ```
 
 ### Memory Profiling
+
 ```bash
 bun --inspect run examples/dashboard/index.tsx
 # Open chrome://inspect in Chrome

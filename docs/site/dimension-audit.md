@@ -8,11 +8,11 @@ This audit identifies manual dimension calculations that could potentially be re
 
 ## Summary
 
-| Status | Count | Description |
-|--------|-------|-------------|
-| Acceptable | 8 | Required for virtualization, centering, or content truncation |
-| Refactorable | 3 | Could use flexbox instead |
-| Questionable | 2 | May need investigation |
+| Status       | Count | Description                                                   |
+| ------------ | ----- | ------------------------------------------------------------- |
+| Acceptable   | 8     | Required for virtualization, centering, or content truncation |
+| Refactorable | 3     | Could use flexbox instead                                     |
+| Questionable | 2     | May need investigation                                        |
 
 ---
 
@@ -29,6 +29,7 @@ const contentHeight = termHeight - TOP_BAR_HEIGHT - BOTTOM_BAR_HEIGHT;
 **Can use flexbox?** **No** - This is acceptable.
 
 **Reason:** The `contentHeight` value is passed to child components for:
+
 - Virtualized scrolling calculations
 - Overlay positioning (modal centering)
 - Scroll indicator height
@@ -80,10 +81,19 @@ height={Math.floor(contentHeight / 2)}
 **Reason:** The centering could use `justifyContent="center"` and `alignItems="center"` on a fullscreen overlay. However, the explicit width/height for the modal itself is acceptable - it's defining the modal's intrinsic size, not working around layout limitations.
 
 **Recommendation:** Wrap in a centered flexbox container:
+
 ```tsx
-<Box position="absolute" width="100%" height="100%"
-     justifyContent="center" alignItems="center">
-  <ProjectPicker width={Math.floor(termWidth / 2)} height={Math.floor(contentHeight / 2)} />
+<Box
+  position="absolute"
+  width="100%"
+  height="100%"
+  justifyContent="center"
+  alignItems="center"
+>
+  <ProjectPicker
+    width={Math.floor(termWidth / 2)}
+    height={Math.floor(contentHeight / 2)}
+  />
 </Box>
 ```
 
@@ -166,6 +176,7 @@ const marginTop = Math.floor((height - boxHeight) / 2);
 **Reason:** This could use a wrapper with `justifyContent="center"` and `alignItems="center"`.
 
 **Recommendation:**
+
 ```tsx
 <Box position="absolute" width="100%" height="100%"
      justifyContent="center" alignItems="center">
@@ -197,7 +208,11 @@ const maxVisible = Math.max(1, height - 6);
 ```typescript
 const contentLines = Math.max(
   1,
-  height - estimatedHeaderLines - Math.min(subtasks.length, maxSubtasks) - Math.min(backlinkNodes.length, maxBacklinks) - 4,
+  height -
+    estimatedHeaderLines -
+    Math.min(subtasks.length, maxSubtasks) -
+    Math.min(backlinkNodes.length, maxBacklinks) -
+    4,
 );
 ```
 

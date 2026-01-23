@@ -10,14 +10,15 @@ The [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/
 
 Traditional terminals encode keypresses using ASCII control codes and escape sequences. This creates ambiguities:
 
-| Keys | Both Send | Why? |
-|------|-----------|------|
-| `Ctrl+I` / `Tab` | `0x09` | Tab is ASCII character 9, same as Ctrl+I |
-| `Ctrl+M` / `Enter` | `0x0D` | Carriage return is ASCII 13, same as Ctrl+M |
-| `Ctrl+[` / `Escape` | `0x1B` | Escape is ASCII 27, same as Ctrl+[ |
-| `Ctrl+H` / `Backspace` | `0x08` | Backspace is ASCII 8, same as Ctrl+H |
+| Keys                   | Both Send | Why?                                        |
+| ---------------------- | --------- | ------------------------------------------- |
+| `Ctrl+I` / `Tab`       | `0x09`    | Tab is ASCII character 9, same as Ctrl+I    |
+| `Ctrl+M` / `Enter`     | `0x0D`    | Carriage return is ASCII 13, same as Ctrl+M |
+| `Ctrl+[` / `Escape`    | `0x1B`    | Escape is ASCII 27, same as Ctrl+[          |
+| `Ctrl+H` / `Backspace` | `0x08`    | Backspace is ASCII 8, same as Ctrl+H        |
 
 Additionally, many key combinations are simply undetectable:
+
 - `Ctrl+Shift+<letter>` - Shift state is lost
 - `Ctrl+<number>` - Most produce no output
 - Key release events - Not reported at all
@@ -33,13 +34,13 @@ The Kitty protocol uses **progressive enhancement** - applications opt-in to enh
 
 Enhancement flags (binary bitmask):
 
-| Bit | Value | Feature |
-|-----|-------|---------|
-| 0b1 | 1 | **Disambiguate escape codes** - All keys use unambiguous `CSI u` format |
-| 0b10 | 2 | **Report event types** - Distinguish press, repeat, and release |
-| 0b100 | 4 | **Report alternate keys** - Include shifted/alternate key variants |
-| 0b1000 | 8 | **Report all keys as escape codes** - Even plain letters |
-| 0b10000 | 16 | **Report associated text** - Include Unicode text for the key |
+| Bit     | Value | Feature                                                                 |
+| ------- | ----- | ----------------------------------------------------------------------- |
+| 0b1     | 1     | **Disambiguate escape codes** - All keys use unambiguous `CSI u` format |
+| 0b10    | 2     | **Report event types** - Distinguish press, repeat, and release         |
+| 0b100   | 4     | **Report alternate keys** - Include shifted/alternate key variants      |
+| 0b1000  | 8     | **Report all keys as escape codes** - Even plain letters                |
+| 0b10000 | 16    | **Report associated text** - Include Unicode text for the key           |
 
 For inkx, flags `1` (disambiguate) and `2` (event types) are the most valuable.
 
@@ -82,11 +83,11 @@ For example, `Ctrl+Shift` = `1 + 1 + 4 = 6`.
 
 When flag 2 is enabled, event types are reported:
 
-| Type | Code | Description |
-|------|------|-------------|
-| Press | 1 | Key pressed (default, often omitted) |
-| Repeat | 2 | Key held down, repeating |
-| Release | 3 | Key released |
+| Type    | Code | Description                          |
+| ------- | ---- | ------------------------------------ |
+| Press   | 1    | Key pressed (default, often omitted) |
+| Repeat  | 2    | Key held down, repeating             |
+| Release | 3    | Key released                         |
 
 Example: `CSI 97 ; 1 : 3 u` = 'a' key released.
 
@@ -94,36 +95,37 @@ Example: `CSI 97 ; 1 : 3 u` = 'a' key released.
 
 ### Terminals with Full Support
 
-| Terminal | Platform | Notes |
-|----------|----------|-------|
-| [Kitty](https://sw.kovidgoyal.net/kitty/) | Linux, macOS | The reference implementation |
-| [WezTerm](https://wezfurlong.org/wezterm/) | Linux, macOS, Windows | Full support |
-| [foot](https://codeberg.org/dnkl/foot) | Linux (Wayland) | Full support |
-| [Ghostty](https://ghostty.org/) | macOS, Linux | Full support |
-| [Alacritty](https://alacritty.org/) | Cross-platform | Full support (added 2024) |
-| [iTerm2](https://iterm2.com/) | macOS | Full support |
-| [rio](https://raphamorim.io/rio/) | Cross-platform | Full support |
+| Terminal                                   | Platform              | Notes                        |
+| ------------------------------------------ | --------------------- | ---------------------------- |
+| [Kitty](https://sw.kovidgoyal.net/kitty/)  | Linux, macOS          | The reference implementation |
+| [WezTerm](https://wezfurlong.org/wezterm/) | Linux, macOS, Windows | Full support                 |
+| [foot](https://codeberg.org/dnkl/foot)     | Linux (Wayland)       | Full support                 |
+| [Ghostty](https://ghostty.org/)            | macOS, Linux          | Full support                 |
+| [Alacritty](https://alacritty.org/)        | Cross-platform        | Full support (added 2024)    |
+| [iTerm2](https://iterm2.com/)              | macOS                 | Full support                 |
+| [rio](https://raphamorim.io/rio/)          | Cross-platform        | Full support                 |
 
 ### Terminals Without Support
 
-| Terminal | Platform | Notes |
-|----------|----------|-------|
-| macOS Terminal.app | macOS | No plans for support |
-| GNOME Terminal | Linux | Uses VTE, no support yet |
-| Konsole | Linux | No support |
-| Windows Terminal | Windows | No support (may add in future) |
+| Terminal           | Platform | Notes                          |
+| ------------------ | -------- | ------------------------------ |
+| macOS Terminal.app | macOS    | No plans for support           |
+| GNOME Terminal     | Linux    | Uses VTE, no support yet       |
+| Konsole            | Linux    | No support                     |
+| Windows Terminal   | Windows  | No support (may add in future) |
 
 ### Terminal Multiplexers
 
-| Multiplexer | Support | Notes |
-|-------------|---------|-------|
-| tmux | Partial | Must enable passthrough mode |
-| screen | No | Legacy protocol only |
-| Zellij | Yes | Full passthrough support |
+| Multiplexer | Support | Notes                        |
+| ----------- | ------- | ---------------------------- |
+| tmux        | Partial | Must enable passthrough mode |
+| screen      | No      | Legacy protocol only         |
+| Zellij      | Yes     | Full passthrough support     |
 
 ### Applications Using the Protocol
 
 Major applications that have adopted the protocol:
+
 - **Editors**: Neovim, Vim, Helix, Kakoune, dte
 - **Shells**: fish, nushell
 - **File managers**: Yazi, far2l
@@ -137,7 +139,7 @@ Send the query sequence and check for a response:
 
 ```typescript
 // Query current keyboard mode
-stdout.write('\x1b[?u');
+stdout.write("\x1b[?u");
 
 // Terminal will respond with:
 // CSI ? flags u   (if supported)
@@ -165,13 +167,13 @@ async function detectKittyProtocol(stdin, stdout): Promise<boolean> {
 
     function cleanup() {
       clearTimeout(timeout);
-      stdin.removeListener('data', onData);
+      stdin.removeListener("data", onData);
     }
 
-    stdin.on('data', onData);
+    stdin.on("data", onData);
 
     // Query current mode, then query device attributes (fallback)
-    stdout.write('\x1b[?u\x1b[c');
+    stdout.write("\x1b[?u\x1b[c");
   });
 }
 ```
@@ -193,19 +195,21 @@ Add protocol detection at render initialization:
 ```typescript
 interface KittyProtocolOptions {
   /** Enable Kitty keyboard protocol if supported */
-  kittyKeyboard?: boolean | {
-    /** Request key release events */
-    reportRelease?: boolean;
-    /** Request key repeat events */
-    reportRepeat?: boolean;
-    /** Report all keys (including plain letters) as CSI sequences */
-    reportAllKeys?: boolean;
-  };
+  kittyKeyboard?:
+    | boolean
+    | {
+        /** Request key release events */
+        reportRelease?: boolean;
+        /** Request key repeat events */
+        reportRepeat?: boolean;
+        /** Report all keys (including plain letters) as CSI sequences */
+        reportAllKeys?: boolean;
+      };
 }
 
 interface RenderOptions {
   // ... existing options ...
-  kittyKeyboard?: KittyProtocolOptions['kittyKeyboard'];
+  kittyKeyboard?: KittyProtocolOptions["kittyKeyboard"];
 }
 ```
 
@@ -249,7 +253,7 @@ export interface Key {
    * Only available when Kitty protocol is enabled with reportRelease/reportRepeat
    * @default 'press'
    */
-  eventType?: 'press' | 'repeat' | 'release';
+  eventType?: "press" | "repeat" | "release";
 
   // New: Disambiguation (Kitty protocol)
   /**
@@ -274,7 +278,7 @@ function enableKittyProtocol(flags: number): void {
 // On render unmount (CRITICAL: must always run)
 function disableKittyProtocol(): void {
   // Pop from stack to restore previous mode
-  stdout.write('\x1b[<u');
+  stdout.write("\x1b[<u");
 }
 ```
 
@@ -286,7 +290,8 @@ Add Kitty protocol parsing to `parseKeypress`:
 
 ```typescript
 // New regex for CSI u format
-const KITTY_KEY_RE = /^\x1b\[(\d+)(?::(\d+))?(?:;(\d+)(?::(\d+))?)?(?:;([^u]*))?u$/;
+const KITTY_KEY_RE =
+  /^\x1b\[(\d+)(?::(\d+))?(?:;(\d+)(?::(\d+))?)?(?:;([^u]*))?u$/;
 
 function parseKittyKeypress(s: string): ParsedKeypress | null {
   const match = KITTY_KEY_RE.exec(s);
@@ -302,12 +307,13 @@ function parseKittyKeypress(s: string): ParsedKeypress | null {
     name: keyCodeToName(keyCode),
     ctrl: !!(modifiers & 4),
     shift: !!(modifiers & 1),
-    meta: !!(modifiers & 2),  // Alt
+    meta: !!(modifiers & 2), // Alt
     super: !!(modifiers & 8),
     hyper: !!(modifiers & 16),
     capsLock: !!(modifiers & 64),
     numLock: !!(modifiers & 128),
-    eventType: eventType === 1 ? 'press' : eventType === 2 ? 'repeat' : 'release',
+    eventType:
+      eventType === 1 ? "press" : eventType === 2 ? "repeat" : "release",
     sequence: s,
     keyCode,
     kittyProtocol: true,
@@ -334,7 +340,7 @@ interface InputContextValue {
 ### Basic Usage (Auto-detection)
 
 ```tsx
-import { render, useInput } from 'inkx';
+import { render, useInput } from "inkx";
 
 function App() {
   useInput((input, key) => {
@@ -342,7 +348,7 @@ function App() {
     if (key.tab && !key.ctrl) {
       // User pressed Tab
     }
-    if (key.ctrl && input === 'i') {
+    if (key.ctrl && input === "i") {
       // User pressed Ctrl+I (NOT Tab!)
     }
   });
@@ -361,20 +367,20 @@ function Game() {
   const [isJumping, setIsJumping] = useState(false);
 
   useInput((input, key) => {
-    if (input === ' ') {
-      if (key.eventType === 'press') {
+    if (input === " ") {
+      if (key.eventType === "press") {
         setIsJumping(true);
-      } else if (key.eventType === 'release') {
+      } else if (key.eventType === "release") {
         setIsJumping(false);
       }
     }
   });
 
-  return <Text>{isJumping ? 'Jumping!' : 'On ground'}</Text>;
+  return <Text>{isJumping ? "Jumping!" : "On ground"}</Text>;
 }
 
 render(<Game />, {
-  kittyKeyboard: { reportRelease: true }
+  kittyKeyboard: { reportRelease: true },
 });
 ```
 
@@ -387,7 +393,7 @@ function App() {
   return (
     <Box flexDirection="column">
       <Text>
-        Kitty protocol: {kittyProtocolEnabled ? 'enabled' : 'not available'}
+        Kitty protocol: {kittyProtocolEnabled ? "enabled" : "not available"}
       </Text>
       {!kittyProtocolEnabled && (
         <Text dimColor>
@@ -439,17 +445,17 @@ useInput((input, key) => {
   // PROBLEM: Cannot distinguish these
   if (key.tab) {
     // Could be Tab OR Ctrl+I - no way to know
-    handleIndent();  // User wanted Ctrl+I for something else!
+    handleIndent(); // User wanted Ctrl+I for something else!
   }
 
   // PROBLEM: Cannot detect key release
-  if (input === 'w') {
-    moveForward();  // Keeps triggering on repeat
+  if (input === "w") {
+    moveForward(); // Keeps triggering on repeat
     // No way to know when user lifts finger
   }
 
   // PROBLEM: No Super/Hyper modifiers
-  if (key.meta && input === 's') {
+  if (key.meta && input === "s") {
     // This is Alt+S, but user pressed Cmd+S
     // Cmd is intercepted by terminal
   }
@@ -464,22 +470,22 @@ useInput((input, key) => {
   if (key.tab && !key.ctrl) {
     handleIndent();
   }
-  if (key.ctrl && input === 'i') {
-    showInfo();  // Separate action!
+  if (key.ctrl && input === "i") {
+    showInfo(); // Separate action!
   }
 
   // SOLVED: Key release detection
-  if (input === 'w') {
-    if (key.eventType === 'press') {
+  if (input === "w") {
+    if (key.eventType === "press") {
       startMovingForward();
-    } else if (key.eventType === 'release') {
+    } else if (key.eventType === "release") {
       stopMovingForward();
     }
   }
 
   // SOLVED: Super modifier available (if terminal supports)
-  if (key.super && input === 's') {
-    save();  // Actually Cmd+S on macOS
+  if (key.super && input === "s") {
+    save(); // Actually Cmd+S on macOS
   }
 });
 ```

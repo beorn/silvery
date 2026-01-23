@@ -53,13 +53,17 @@ console.log("=== Raw output ===");
 console.log(frame);
 
 console.log("\n=== Escaped ===");
-console.log(frame.replace(/\x1b\[/g, 'ESC['));
+console.log(frame.replace(/\x1b\[/g, "ESC["));
 
 // Find the "To Do" line and analyze it
-const lines = frame.split('\n');
+const lines = frame.split("\n");
 console.log("\n=== Line-by-line analysis ===");
 lines.forEach((line, i) => {
-  if (line.includes('To Do') || line.includes('In Progress') || line.includes('Done')) {
-    console.log(`Line ${i}: ${line.replace(/\x1b\[/g, 'ESC[')}`);
+  if (
+    line.includes("To Do") ||
+    line.includes("In Progress") ||
+    line.includes("Done")
+  ) {
+    console.log(`Line ${i}: ${line.replace(/\x1b\[/g, "ESC[")}`);
   }
 });
