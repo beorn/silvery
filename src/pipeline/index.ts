@@ -43,12 +43,18 @@ export {
 	rectEqual,
 	scrollPhase,
 	screenRectPhase,
+	notifyLayoutSubscribers,
 } from './layout-phase.js';
 export { contentPhase, clearBgConflictWarnings } from './content-phase.js';
 export { outputPhase } from './output-phase.js';
 
 import { clearBgConflictWarnings, contentPhase } from './content-phase.js';
-import { layoutPhase, screenRectPhase, scrollPhase } from './layout-phase.js';
+import {
+	layoutPhase,
+	notifyLayoutSubscribers,
+	screenRectPhase,
+	scrollPhase,
+} from './layout-phase.js';
 // Import for orchestration
 import { measurePhase } from './measure-phase.js';
 import { outputPhase } from './output-phase.js';
@@ -92,6 +98,10 @@ export function executeRender(
 
 	// Phase 2.6: Screen rect calculation (screen-relative positions)
 	screenRectPhase(root);
+
+	// Phase 2.7: Notify layout subscribers
+	// This runs AFTER screenRectPhase so useScreenRectCallback reads correct positions
+	notifyLayoutSubscribers(root);
 
 	// Phase 3: Content render
 	const t3 = Date.now();

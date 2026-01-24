@@ -521,3 +521,194 @@ export function createBuffer(width: number, height: number, char = ' '): Termina
 	}
 	return buffer;
 }
+
+// ============================================================================
+// Buffer Conversion Utilities
+// ============================================================================
+
+/**
+ * Convert a terminal buffer to plain text (no ANSI codes).
+ * Useful for snapshot testing and text-based assertions.
+ *
+ * @param buffer The buffer to convert
+ * @param options.trimTrailingWhitespace Remove trailing spaces from each line (default: true)
+ * @param options.trimEmptyLines Remove trailing empty lines (default: true)
+ * @returns Plain text representation of the buffer
+ */
+export function bufferToText(
+	buffer: TerminalBuffer,
+	options: {
+		trimTrailingWhitespace?: boolean;
+		trimEmptyLines?: boolean;
+	} = {},
+): string {
+	const { trimTrailingWhitespace = true, trimEmptyLines = true } = options;
+
+	const lines: string[] = [];
+
+	for (let y = 0; y < buffer.height; y++) {
+		let line = '';
+		for (let x = 0; x < buffer.width; x++) {
+			const cell = buffer.getCell(x, y);
+			// Skip continuation cells (part of wide character)
+			if (cell.continuation) continue;
+			line += cell.char;
+		}
+		if (trimTrailingWhitespace) {
+			line = line.trimEnd();
+		}
+		lines.push(line);
+	}
+
+	let result = lines.join('\n');
+	if (trimEmptyLines) {
+		result = result.trimEnd();
+	}
+	return result;
+}
+
+/**
+ * Convert a terminal buffer to styled ANSI text.
+ * Unlike bufferToAnsi, this doesn't include cursor control sequences,
+ * making it suitable for displaying in terminals or saving to files.
+ *
+ * @param buffer The buffer to convert
+ * @param options.trimTrailingWhitespace Remove trailing spaces from each line (default: true)
+ * @param options.trimEmptyLines Remove trailing empty lines (default: true)
+ * @returns ANSI-styled text (no cursor control)
+ */
+export function bufferToStyledText(
+	buffer: TerminalBuffer,
+	options: {
+		trimTrailingWhitespace?: boolean;
+		trimEmptyLines?: boolean;
+	} = {},
+): string {
+	const { trimTrailingWhitespace = true, trimEmptyLines = true } = options;
+
+	const lines: string[] = [];
+	let currentStyle: Style | null = null;
+
+	for (let y = 0; y < buffer.height; y++) {
+		let line = '';
+
+		for (let x = 0; x < buffer.width; x++) {
+			const cell = buffer.getCell(x, y);
+			// Skip continuation cells (part of wide character)
+			if (cell.continuation) continue;
+
+			// Check if style changed
+			const cellStyle: Style = { fg: cell.fg, bg: cell.bg, attrs: cell.attrs };
+			if (!styleEquals(currentStyle, cellStyle)) {
+				line += styleToAnsiCodes(cellStyle);
+				currentStyle = cellStyle;
+			}
+
+			line += cell.char;
+		}
+
+		// Reset style at end of line to prevent background color bleeding
+		if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
+			line += '\x1b[0m';
+			currentStyle = null;
+		}
+
+		if (trimTrailingWhitespace) {
+			// Need to be careful not to strip ANSI codes
+			// Only trim actual whitespace at the end
+			line = trimTrailingWhitespacePreservingAnsi(line);
+		}
+		lines.push(line);
+	}
+
+	// Final reset
+	let result = lines.join('\n');
+	if (currentStyle) {
+		result += '\x1b[0m';
+	}
+
+	if (trimEmptyLines) {
+		// Remove empty lines at the end (but preserve ANSI resets)
+		result = result.replace(/\n+$/, '');
+	}
+
+	return result;
+}
+
+/**
+ * Check if any text attributes are active.
+ */
+function hasActiveAttrs(attrs: CellAttrs): boolean {
+	return !!(
+		attrs.bold ||
+		attrs.dim ||
+		attrs.italic ||
+		attrs.underline ||
+		attrs.blink ||
+		attrs.inverse ||
+		attrs.hidden ||
+		attrs.strikethrough
+	);
+}
+
+/**
+ * Convert style to ANSI escape sequence.
+ */
+function styleToAnsiCodes(style: Style): string {
+	const codes: number[] = [0]; // Reset first
+
+	// Foreground color
+	if (style.fg !== null) {
+		if (typeof style.fg === 'number') {
+			codes.push(38, 5, style.fg);
+		} else {
+			codes.push(38, 2, style.fg.r, style.fg.g, style.fg.b);
+		}
+	}
+
+	// Background color
+	if (style.bg !== null) {
+		if (typeof style.bg === 'number') {
+			codes.push(48, 5, style.bg);
+		} else {
+			codes.push(48, 2, style.bg.r, style.bg.g, style.bg.b);
+		}
+	}
+
+	// Attributes
+	if (style.attrs.bold) codes.push(1);
+	if (style.attrs.dim) codes.push(2);
+	if (style.attrs.italic) codes.push(3);
+	if (style.attrs.underline) codes.push(4);
+	if (style.attrs.inverse) codes.push(7);
+	if (style.attrs.strikethrough) codes.push(9);
+
+	return `\x1b[${codes.join(';')}m`;
+}
+
+/**
+ * Trim trailing whitespace from a string while preserving ANSI codes.
+ */
+function trimTrailingWhitespacePreservingAnsi(str: string): string {
+	// Find the last non-whitespace character or ANSI escape
+	let lastContentIndex = -1;
+	let i = 0;
+
+	while (i < str.length) {
+		if (str[i] === '\x1b') {
+			// Found ANSI escape - skip the entire sequence
+			const end = str.indexOf('m', i);
+			if (end !== -1) {
+				lastContentIndex = end;
+				i = end + 1;
+				continue;
+			}
+		}
+		if (str[i] !== ' ' && str[i] !== '\t') {
+			lastContentIndex = i;
+		}
+		i++;
+	}
+
+	return str.slice(0, lastContentIndex + 1);
+}

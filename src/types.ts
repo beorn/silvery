@@ -121,6 +121,17 @@ export interface FlexboxProps {
 }
 
 /**
+ * Props for testing and identification.
+ * These props are stored in the node for DOM query access.
+ */
+export interface TestProps {
+	/** Test ID for querying nodes (like Playwright's data-testid) */
+	testID?: string;
+	/** Allow arbitrary data-* attributes for testing */
+	[key: `data-${string}`]: unknown;
+}
+
+/**
  * Style properties for text rendering.
  */
 export interface StyleProps {
@@ -139,7 +150,7 @@ export interface StyleProps {
 /**
  * Props for Box component.
  */
-export interface BoxProps extends FlexboxProps, StyleProps {
+export interface BoxProps extends FlexboxProps, StyleProps, TestProps {
 	borderStyle?:
 		| 'single'
 		| 'double'
@@ -159,7 +170,7 @@ export interface BoxProps extends FlexboxProps, StyleProps {
 /**
  * Props for Text component.
  */
-export interface TextProps extends StyleProps {
+export interface TextProps extends StyleProps, TestProps {
 	children?: React.ReactNode;
 	wrap?: 'wrap' | 'truncate' | 'truncate-start' | 'truncate-middle' | 'truncate-end' | boolean;
 }

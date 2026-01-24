@@ -49,7 +49,15 @@
 import { EventEmitter } from 'node:events';
 import React, { type ReactElement, act } from 'react';
 import { initYogaEngine } from '../adapters/yoga-adapter.js';
-import type { TerminalBuffer } from '../buffer.js';
+import { type TerminalBuffer, bufferToStyledText, bufferToText } from '../buffer.js';
+
+// Re-export buffer utilities for testing convenience
+export { bufferToText, bufferToStyledText } from '../buffer.js';
+export type { TerminalBuffer } from '../buffer.js';
+
+// Re-export locator API for DOM queries
+export { createLocator, type InkxLocator } from './locator.js';
+export type { Rect } from '../types.js';
 import { AppContext, InputContext } from '../context.js';
 import type { LayoutEngine } from '../layout-engine.js';
 import { setLayoutEngine } from '../layout-engine.js';
@@ -110,6 +118,28 @@ export interface RenderResult {
 	lastFrame: () => string | undefined;
 
 	/**
+	 * Returns the last rendered buffer for direct inspection.
+	 * Returns undefined if no frames have been rendered.
+	 *
+	 * @example
+	 * ```tsx
+	 * const { lastBuffer } = render(<MyComponent />);
+	 * const buffer = lastBuffer();
+	 * if (buffer) {
+	 *   const plainText = bufferToText(buffer);
+	 *   expect(plainText).toContain('Hello');
+	 * }
+	 * ```
+	 */
+	lastBuffer: () => TerminalBuffer | undefined;
+
+	/**
+	 * Returns the last rendered frame as plain text (no ANSI codes).
+	 * Convenience method equivalent to bufferToText(lastBuffer()).
+	 */
+	lastFrameText: () => string | undefined;
+
+	/**
 	 * Array of all rendered frames in order.
 	 * Each frame is a string snapshot of the terminal output with ANSI codes.
 	 */
@@ -152,6 +182,19 @@ export interface RenderResult {
 	 * Get the error passed to exit(), if any.
 	 */
 	exitError: () => Error | undefined;
+
+	/**
+	 * Get the container root node for DOM queries.
+	 * Use with createLocator() for Playwright-style queries.
+	 *
+	 * @example
+	 * ```tsx
+	 * const { getContainer } = render(<MyComponent />);
+	 * const locator = createLocator(getContainer());
+	 * expect(locator.getByText("Hello").count()).toBe(1);
+	 * ```
+	 */
+	getContainer: () => import('../types.js').InkxNode;
 }
 
 /**
@@ -318,6 +361,16 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 				return instance.frames[instance.frames.length - 1];
 			},
 
+			lastBuffer() {
+				return instance.prevBuffer ?? undefined;
+			},
+
+			lastFrameText() {
+				const buffer = instance.prevBuffer;
+				if (!buffer) return undefined;
+				return bufferToText(buffer);
+			},
+
 			frames: instance.frames,
 
 			rerender(newElement: ReactElement) {
@@ -394,6 +447,10 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 
 			exitError() {
 				return exitErrorValue;
+			},
+
+			getContainer() {
+				return getContainerRoot(instance.container);
 			},
 		};
 

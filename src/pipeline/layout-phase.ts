@@ -32,8 +32,9 @@ export function layoutPhase(root: InkxNode, width: number, height: number): void
 	// Propagate computed dimensions to all nodes
 	propagateLayout(root, 0, 0);
 
-	// Notify subscribers (triggers useLayout re-renders)
-	notifyLayoutSubscribers(root);
+	// NOTE: Subscribers are NOT notified here anymore.
+	// They are notified in executeRender AFTER screenRectPhase completes,
+	// so useScreenRectCallback can read the correct screen positions.
 }
 
 /**
@@ -103,8 +104,11 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number): void
 
 /**
  * Notify all layout subscribers of dimension changes.
+ *
+ * Called from executeRender AFTER screenRectPhase completes,
+ * so useScreenRectCallback can read correct screen positions.
  */
-function notifyLayoutSubscribers(node: InkxNode): void {
+export function notifyLayoutSubscribers(node: InkxNode): void {
 	// Only notify if dimensions actually changed
 	if (!rectEqual(node.prevLayout, node.contentRect)) {
 		for (const subscriber of node.layoutSubscribers) {

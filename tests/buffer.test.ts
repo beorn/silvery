@@ -12,6 +12,8 @@ import {
 	TerminalBuffer,
 	attrsEquals,
 	attrsToNumber,
+	bufferToStyledText,
+	bufferToText,
 	cellEquals,
 	colorEquals,
 	createBuffer,
@@ -348,6 +350,99 @@ describe('Buffer', () => {
 			const buffer = createBuffer(10, 5, '.');
 			expect(buffer.getCell(0, 0).char).toBe('.');
 			expect(buffer.getCell(9, 4).char).toBe('.');
+		});
+	});
+
+	describe('bufferToText', () => {
+		test('converts simple buffer to text', () => {
+			const buffer = new TerminalBuffer(10, 3);
+			buffer.setCell(0, 0, { char: 'H' });
+			buffer.setCell(1, 0, { char: 'i' });
+			buffer.setCell(0, 1, { char: '!' });
+
+			const text = bufferToText(buffer);
+			expect(text).toBe('Hi\n!');
+		});
+
+		test('trims trailing whitespace by default', () => {
+			const buffer = new TerminalBuffer(10, 2);
+			buffer.setCell(0, 0, { char: 'A' });
+			buffer.setCell(1, 0, { char: 'B' });
+			// Rest is spaces
+
+			const text = bufferToText(buffer);
+			expect(text).toBe('AB');
+		});
+
+		test('preserves trailing whitespace when disabled', () => {
+			const buffer = new TerminalBuffer(5, 1);
+			buffer.setCell(0, 0, { char: 'A' });
+
+			const text = bufferToText(buffer, {
+				trimTrailingWhitespace: false,
+				trimEmptyLines: false,
+			});
+			expect(text).toBe('A    ');
+		});
+
+		test('handles wide characters', () => {
+			const buffer = new TerminalBuffer(10, 1);
+			buffer.setCell(0, 0, { char: '한', wide: true });
+			buffer.setCell(1, 0, { char: '', continuation: true });
+			buffer.setCell(2, 0, { char: '글' });
+
+			const text = bufferToText(buffer);
+			expect(text).toBe('한글');
+		});
+
+		test('trims empty trailing lines by default', () => {
+			const buffer = new TerminalBuffer(10, 5);
+			buffer.setCell(0, 0, { char: 'X' });
+			// Lines 1-4 are empty
+
+			const text = bufferToText(buffer);
+			expect(text).toBe('X');
+		});
+	});
+
+	describe('bufferToStyledText', () => {
+		test('includes ANSI codes for colored text', () => {
+			const buffer = new TerminalBuffer(10, 1);
+			buffer.setCell(0, 0, { char: 'R', fg: 1 }); // Red (color index 1)
+
+			const text = bufferToStyledText(buffer);
+			// Should contain ANSI escape for color
+			expect(text).toContain('\x1b[');
+			expect(text).toContain('R');
+		});
+
+		test('includes ANSI codes for bold text', () => {
+			const buffer = new TerminalBuffer(10, 1);
+			buffer.setCell(0, 0, { char: 'B', attrs: { bold: true } });
+
+			const text = bufferToStyledText(buffer);
+			// Should contain ANSI escape for bold (code 1)
+			expect(text).toContain('\x1b[');
+			expect(text).toContain('B');
+		});
+
+		test('resets style at end of line with background color', () => {
+			const buffer = new TerminalBuffer(5, 2);
+			buffer.setCell(0, 0, { char: 'X', bg: 4 }); // Blue background
+			buffer.setCell(0, 1, { char: 'Y' });
+
+			const text = bufferToStyledText(buffer);
+			// Should contain reset sequence before newline
+			expect(text).toContain('\x1b[0m');
+		});
+
+		test('handles true color', () => {
+			const buffer = new TerminalBuffer(5, 1);
+			buffer.setCell(0, 0, { char: 'T', fg: { r: 255, g: 128, b: 64 } });
+
+			const text = bufferToStyledText(buffer);
+			// Should contain 24-bit color escape: 38;2;R;G;B
+			expect(text).toContain('38;2;255;128;64');
 		});
 	});
 });

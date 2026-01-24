@@ -150,4 +150,36 @@ describe('Inkx Integration', () => {
 			expect(lastFrame()).toContain('Content');
 		});
 	});
+
+	describe('Buffer Access', () => {
+		test('lastBuffer returns the terminal buffer', () => {
+			const { lastBuffer } = render(<Text>Buffer Test</Text>);
+			const buffer = lastBuffer();
+
+			expect(buffer).toBeDefined();
+			expect(buffer!.width).toBe(80); // Default test width
+			expect(buffer!.height).toBe(24); // Default test height
+		});
+
+		test('lastFrameText returns plain text without ANSI', () => {
+			const { lastFrameText } = render(<Text color="red">Plain Text</Text>);
+			const text = lastFrameText();
+
+			expect(text).toBeDefined();
+			expect(text).toContain('Plain Text');
+			// Should NOT contain ANSI escape codes
+			expect(text).not.toContain('\x1b[');
+		});
+
+		test('lastFrameText trims whitespace by default', () => {
+			const { lastFrameText } = render(
+				<Box width={20}>
+					<Text>Short</Text>
+				</Box>,
+			);
+			const text = lastFrameText();
+
+			expect(text).toBe('Short');
+		});
+	});
 });

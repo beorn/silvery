@@ -947,7 +947,103 @@ describe('Long-running stability', () => {
 
 ---
 
-## 9. References
+## 9. InkxLocator: DOM Queries for Tests
+
+inkx provides Playwright-inspired DOM queries for testing. Access the InkxNode tree
+and query elements by text, testID, or attribute selectors.
+
+### 9.1 Quick Start
+
+```typescript
+import { createTestRenderer, createLocator } from "inkx/testing";
+import { Box, Text } from "inkx";
+
+const render = createTestRenderer({ columns: 80, rows: 24 });
+
+test("finds elements by text", () => {
+  const { getContainer } = render(
+    <Box>
+      <Text>Task 1</Text>
+      <Text>Task 2</Text>
+    </Box>
+  );
+
+  const locator = createLocator(getContainer());
+  expect(locator.getByText("Task 1").count()).toBe(1);
+});
+```
+
+### 9.2 testID Props
+
+Add `testID` props for reliable querying:
+
+```tsx
+<Box testID="sidebar">
+  <Text testID="header">Tasks</Text>
+  <Text testID="task-1" data-status="done">
+    Task 1
+  </Text>
+</Box>;
+
+// In test
+expect(locator.getByTestId("sidebar").count()).toBe(1);
+expect(locator.getByTestId("task-1").textContent()).toBe("Task 1");
+```
+
+### 9.3 Attribute Selectors
+
+CSS-like selectors for flexible querying:
+
+```typescript
+// Presence: [attr]
+locator.locator("[data-selected]");
+
+// Exact match: [attr="value"]
+locator.locator('[data-status="done"]');
+
+// Prefix: [attr^="prefix"]
+locator.locator('[testID^="task-"]');
+
+// Suffix: [attr$="suffix"]
+locator.locator('[testID$="-column"]');
+
+// Contains: [attr*="substring"]
+locator.locator('[testID*="task"]');
+```
+
+### 9.4 Layout Assertions
+
+Use `boundingBox()` for position and size:
+
+```typescript
+const sidebar = locator.getByTestId("sidebar");
+const box = sidebar.boundingBox();
+
+expect(box?.x).toBe(0); // At left edge
+expect(box?.width).toBe(20); // 20 chars wide
+```
+
+### 9.5 InkxLocator API
+
+| Method               | Returns               | Description                            |
+| -------------------- | --------------------- | -------------------------------------- |
+| `getByText(text)`    | `InkxLocator`         | Find by text content (string or regex) |
+| `getByTestId(id)`    | `InkxLocator`         | Find by testID prop                    |
+| `locator(selector)`  | `InkxLocator`         | CSS-like attribute selector            |
+| `first()`            | `InkxLocator`         | First matching element                 |
+| `last()`             | `InkxLocator`         | Last matching element                  |
+| `nth(index)`         | `InkxLocator`         | Element at index                       |
+| `resolve()`          | `InkxNode \| null`    | Get first matching node                |
+| `resolveAll()`       | `InkxNode[]`          | Get all matching nodes                 |
+| `count()`            | `number`              | Count matches                          |
+| `textContent()`      | `string`              | Get text content                       |
+| `getAttribute(name)` | `string \| undefined` | Get attribute value                    |
+| `boundingBox()`      | `Rect \| null`        | Get {x, y, width, height}              |
+| `isVisible()`        | `boolean`             | Check if has dimensions                |
+
+---
+
+## 10. References
 
 - [Ink Test Suite](https://github.com/vadimdemedes/ink/tree/master/test) - 31 test files
 - [Ink Testing Library](https://github.com/vadimdemedes/ink-testing-library) - Test utilities
@@ -956,3 +1052,4 @@ describe('Long-running stability', () => {
 - [xterm-benchmark](https://github.com/xtermjs/xterm-benchmark) - Performance benchmarking
 - [AVA](https://github.com/avajs/ava) - Test framework used by Ink/Chalk
 - [mitata](https://github.com/evanwashere/mitata) - Benchmarking library
+- [Playwright Locators](https://playwright.dev/docs/locators) - Inspiration for InkxLocator API
