@@ -8,9 +8,9 @@
  * - Screen rect: Position on terminal screen (like CSS getBoundingClientRect)
  */
 
-import { useContext, useLayoutEffect, useReducer, useRef } from 'react';
-import { NodeContext } from '../context.js';
-import { type InkxNode, type Rect, rectEqual } from '../types.js';
+import { useContext, useLayoutEffect, useReducer, useRef } from "react";
+import { NodeContext } from "../context.js";
+import { type InkxNode, type Rect, rectEqual } from "../types.js";
 
 /**
  * @deprecated Use Rect instead. Alias kept for backwards compatibility.
@@ -38,23 +38,23 @@ export type { Rect };
  * ```
  */
 export function useContentRect(): Rect {
-	const node = useInkxNode();
-	const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+  const node = useInkxNode();
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
 
-	useLayoutEffect(() => {
-		const handleLayoutComplete = () => {
-			if (!rectEqual(node.prevLayout, node.contentRect)) {
-				forceUpdate();
-			}
-		};
+  useLayoutEffect(() => {
+    const handleLayoutComplete = () => {
+      if (!rectEqual(node.prevLayout, node.contentRect)) {
+        forceUpdate();
+      }
+    };
 
-		node.layoutSubscribers.add(handleLayoutComplete);
-		return () => {
-			node.layoutSubscribers.delete(handleLayoutComplete);
-		};
-	}, [node]);
+    node.layoutSubscribers.add(handleLayoutComplete);
+    return () => {
+      node.layoutSubscribers.delete(handleLayoutComplete);
+    };
+  }, [node]);
 
-	return node.contentRect ?? { x: 0, y: 0, width: 0, height: 0 };
+  return node.contentRect ?? { x: 0, y: 0, width: 0, height: 0 };
 }
 
 /**
@@ -72,28 +72,28 @@ export function useContentRect(): Rect {
  * ```
  */
 export function useContentRectCallback(callback: (rect: Rect) => void): void {
-	const node = useContext(NodeContext);
+  const node = useContext(NodeContext);
 
-	useLayoutEffect(() => {
-		if (!node) return;
+  useLayoutEffect(() => {
+    if (!node) return;
 
-		const handleLayoutComplete = () => {
-			if (node.contentRect) {
-				callback(node.contentRect);
-			}
-		};
+    const handleLayoutComplete = () => {
+      if (node.contentRect) {
+        callback(node.contentRect);
+      }
+    };
 
-		node.layoutSubscribers.add(handleLayoutComplete);
+    node.layoutSubscribers.add(handleLayoutComplete);
 
-		// Also call immediately if layout already computed
-		if (node.contentRect) {
-			callback(node.contentRect);
-		}
+    // Also call immediately if layout already computed
+    if (node.contentRect) {
+      callback(node.contentRect);
+    }
 
-		return () => {
-			node.layoutSubscribers.delete(handleLayoutComplete);
-		};
-	}, [node, callback]);
+    return () => {
+      node.layoutSubscribers.delete(handleLayoutComplete);
+    };
+  }, [node, callback]);
 }
 
 // ============================================================================
@@ -120,27 +120,27 @@ export function useContentRectCallback(callback: (rect: Rect) => void): void {
  * ```
  */
 export function useScreenRect(): Rect {
-	const node = useInkxNode();
-	const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
-	const prevScreenRectRef = useRef<Rect | null>(null);
+  const node = useInkxNode();
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+  const prevScreenRectRef = useRef<Rect | null>(null);
 
-	useLayoutEffect(() => {
-		const handleLayoutComplete = () => {
-			// Re-render when screenRect changes (can happen from scroll offset changes
-			// even when contentRect stays the same)
-			if (!rectEqual(prevScreenRectRef.current, node.screenRect)) {
-				prevScreenRectRef.current = node.screenRect;
-				forceUpdate();
-			}
-		};
+  useLayoutEffect(() => {
+    const handleLayoutComplete = () => {
+      // Re-render when screenRect changes (can happen from scroll offset changes
+      // even when contentRect stays the same)
+      if (!rectEqual(prevScreenRectRef.current, node.screenRect)) {
+        prevScreenRectRef.current = node.screenRect;
+        forceUpdate();
+      }
+    };
 
-		node.layoutSubscribers.add(handleLayoutComplete);
-		return () => {
-			node.layoutSubscribers.delete(handleLayoutComplete);
-		};
-	}, [node]);
+    node.layoutSubscribers.add(handleLayoutComplete);
+    return () => {
+      node.layoutSubscribers.delete(handleLayoutComplete);
+    };
+  }, [node]);
 
-	return node.screenRect ?? { x: 0, y: 0, width: 0, height: 0 };
+  return node.screenRect ?? { x: 0, y: 0, width: 0, height: 0 };
 }
 
 /**
@@ -163,28 +163,28 @@ export function useScreenRect(): Rect {
  * ```
  */
 export function useScreenRectCallback(callback: (rect: Rect) => void): void {
-	const node = useContext(NodeContext);
+  const node = useContext(NodeContext);
 
-	useLayoutEffect(() => {
-		if (!node) return;
+  useLayoutEffect(() => {
+    if (!node) return;
 
-		const handleLayoutComplete = () => {
-			if (node.screenRect) {
-				callback(node.screenRect);
-			}
-		};
+    const handleLayoutComplete = () => {
+      if (node.screenRect) {
+        callback(node.screenRect);
+      }
+    };
 
-		node.layoutSubscribers.add(handleLayoutComplete);
+    node.layoutSubscribers.add(handleLayoutComplete);
 
-		// Also call immediately if screen rect already computed
-		if (node.screenRect) {
-			callback(node.screenRect);
-		}
+    // Also call immediately if screen rect already computed
+    if (node.screenRect) {
+      callback(node.screenRect);
+    }
 
-		return () => {
-			node.layoutSubscribers.delete(handleLayoutComplete);
-		};
-	}, [node, callback]);
+    return () => {
+      node.layoutSubscribers.delete(handleLayoutComplete);
+    };
+  }, [node, callback]);
 }
 
 // ============================================================================
@@ -206,9 +206,9 @@ export const useLayoutCallback = useContentRectCallback;
 // ============================================================================
 
 function useInkxNode(): InkxNode {
-	const node = useContext(NodeContext);
-	if (!node) {
-		throw new Error('useLayout must be used within an Inkx component');
-	}
-	return node;
+  const node = useContext(NodeContext);
+  if (!node) {
+    throw new Error("useLayout must be used within an Inkx component");
+  }
+  return node;
 }

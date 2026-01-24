@@ -6,15 +6,15 @@
  * visible after being rendered.
  */
 
-import type { JSX, ReactNode } from 'react';
+import type { JSX, ReactNode } from "react";
 
 export interface StaticProps<T> {
-	/** Items to render */
-	items: T[];
-	/** Render function for each item */
-	children: (item: T, index: number) => ReactNode;
-	/** Style to apply to the container */
-	style?: Record<string, unknown>;
+  /** Items to render */
+  items: T[];
+  /** Render function for each item */
+  children: (item: T, index: number) => ReactNode;
+  /** Style to apply to the container */
+  style?: Record<string, unknown>;
 }
 
 /**
@@ -38,10 +38,14 @@ export interface StaticProps<T> {
  * </Box>
  * ```
  */
-export function Static<T>({ items, children, style }: StaticProps<T>): JSX.Element {
-	return (
-		<inkx-box flexDirection="column" {...style}>
-			{items.map((item, index) => children(item, index))}
-		</inkx-box>
-	);
+export function Static<T>({
+  items,
+  children,
+  style,
+}: StaticProps<T>): JSX.Element {
+  return (
+    <inkx-box flexDirection="column" {...style}>
+      {items.map((item, index) => children(item, index))}
+    </inkx-box>
+  );
 }
