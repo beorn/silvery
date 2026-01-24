@@ -9,16 +9,16 @@
  * InkxNode with an associated Yoga layout node.
  */
 
-import type { JSX, ReactNode } from "react";
-import type { BoxProps as BoxPropsType, ComputedLayout } from "../types.js";
+import type { JSX, ReactNode } from 'react';
+import type { BoxProps as BoxPropsType, ComputedLayout } from '../types.js';
 
 // ============================================================================
 // Props
 // ============================================================================
 
 export interface BoxProps extends BoxPropsType {
-  /** Child elements */
-  children?: ReactNode;
+	/** Child elements */
+	children?: ReactNode;
 }
 
 // ============================================================================
@@ -50,11 +50,11 @@ export interface BoxProps extends BoxPropsType {
  * ```
  */
 export function Box(props: BoxProps): JSX.Element {
-  const { children, ...restProps } = props;
+	const { children, ...restProps } = props;
 
-  // Render as inkx-box host element
-  // The reconciler will create an InkxNode and apply props to the Yoga node
-  return <inkx-box {...restProps}>{children}</inkx-box>;
+	// Render as inkx-box host element
+	// The reconciler will create an InkxNode and apply props to the Yoga node
+	return <inkx-box {...restProps}>{children}</inkx-box>;
 }
 
 // Re-export ComputedLayout for convenience

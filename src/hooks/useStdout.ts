@@ -5,18 +5,18 @@
  * Compatible with Ink's useStdout API.
  */
 
-import { useContext } from "react";
-import { StdoutContext } from "../context.js";
+import { useContext } from 'react';
+import { StdoutContext } from '../context.js';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface UseStdoutResult {
-  /** The stdout stream */
-  stdout: NodeJS.WriteStream;
-  /** Write to stdout */
-  write: (data: string) => void;
+	/** The stdout stream */
+	stdout: NodeJS.WriteStream;
+	/** Write to stdout */
+	write: (data: string) => void;
 }
 
 // ============================================================================
@@ -40,14 +40,14 @@ export interface UseStdoutResult {
  * ```
  */
 export function useStdout(): UseStdoutResult {
-  const context = useContext(StdoutContext);
+	const context = useContext(StdoutContext);
 
-  if (!context) {
-    throw new Error("useStdout must be used within an Inkx application");
-  }
+	if (!context) {
+		throw new Error('useStdout must be used within an Inkx application');
+	}
 
-  return {
-    stdout: context.stdout,
-    write: context.write,
-  };
+	return {
+		stdout: context.stdout,
+		write: context.write,
+	};
 }
