@@ -108,7 +108,7 @@ class LocatorImpl implements InkxLocator {
   }
 
   locator(selector: string): InkxLocator {
-    const predicate = parseAttributeSelector(selector);
+    const predicate = parseSelector(selector);
     if (!predicate) {
       // Invalid selector - return locator that matches nothing
       return new LocatorImpl(this.root, [() => false]);
@@ -225,42 +225,212 @@ function getNodeProp(node: InkxNode, name: string): string | undefined {
 }
 
 /**
- * Parse CSS-like attribute selector into predicate
- * Supports: [attr], [attr="value"], [attr^="prefix"], [attr$="suffix"], [attr*="contains"]
+ * Parse CSS-like selector into predicate
+ * Supports:
+ * - ID selectors: #id
+ * - Attribute selectors: [attr], [attr="value"], [attr^="prefix"], [attr$="suffix"], [attr*="contains"]
+ * - Combinators: > (child), + (adjacent sibling), space (descendant)
  */
-function parseAttributeSelector(selector: string): NodePredicate | null {
-  // Match [attr] for presence check
-  const presenceMatch = selector.match(/^\[([a-zA-Z_][a-zA-Z0-9_-]*)\]$/);
-  if (presenceMatch) {
-    const attr = presenceMatch[1]!;
-    return (node: InkxNode) => getNodeProp(node, attr) !== undefined;
+function parseSelector(selector: string): NodePredicate | null {
+  const trimmed = selector.trim();
+
+  // Detect unsupported selectors and throw helpful errors
+  detectUnsupportedSelectors(trimmed);
+
+  // Check for combinators
+  if (trimmed.includes(">")) {
+    return parseChildCombinator(trimmed);
+  }
+  if (trimmed.includes("+")) {
+    return parseAdjacentSiblingCombinator(trimmed);
+  }
+  if (trimmed.includes(" ") && !trimmed.startsWith("[")) {
+    return parseDescendantCombinator(trimmed);
   }
 
-  // Match [attr="value"], [attr^="prefix"], [attr$="suffix"], [attr*="contains"]
-  const valueMatch = selector.match(
-    /^\[([a-zA-Z_][a-zA-Z0-9_-]*)([~^$*]?)=["']([^"']*)["']\]$/,
-  );
-  if (!valueMatch) return null;
+  // Single selector
+  return parseSingleSelector(trimmed);
+}
 
-  const [, attr, op, value] = valueMatch;
-  if (!attr) return null;
+/**
+ * Detect unsupported CSS selector patterns and throw informative errors
+ */
+function detectUnsupportedSelectors(selector: string): void {
+  // Pseudo-elements (::before, ::after) - check BEFORE pseudo-classes
+  if (selector.includes("::")) {
+    throw new Error(
+      `Unsupported selector: pseudo-elements like "${selector}" are not supported.\n` +
+      `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
+      `If you need pseudo-element support, see bead km-inkx-css-select for discussion about switching to css-select library.`
+    );
+  }
+
+  // Pseudo-classes (:hover, :nth-child, :not, etc.)
+  if (selector.includes(":")) {
+    throw new Error(
+      `Unsupported selector: pseudo-classes like "${selector}" are not supported.\n` +
+      `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
+      `If you need pseudo-class support, see bead km-inkx-css-select for discussion about switching to css-select library.`
+    );
+  }
+
+  // Class selectors (.class)
+  if (/\.[a-zA-Z]/.test(selector)) {
+    throw new Error(
+      `Unsupported selector: class selectors like "${selector}" are not supported.\n` +
+      `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
+      `Tip: Use [class="myclass"] or [class*="myclass"] instead, or see bead km-inkx-css-select for css-select library.`
+    );
+  }
+
+  // Tag/type selectors (div, span, etc.)
+  // Allow single character selectors (might be valid IDs or edge cases)
+  if (/^[a-z][a-z0-9-]*$/i.test(selector) && selector.length > 1) {
+    throw new Error(
+      `Unsupported selector: tag/type selectors like "${selector}" are not supported.\n` +
+      `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
+      `Tip: Use [data-view="${selector}"] or similar attribute selector, or see bead km-inkx-css-select for css-select library.`
+    );
+  }
+
+  // Universal selector (*)
+  if (selector.trim() === "*") {
+    throw new Error(
+      `Unsupported selector: universal selector "*" is not supported.\n` +
+      `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
+      `If you need universal selector support, see bead km-inkx-css-select for css-select library.`
+    );
+  }
+}
+
+/**
+ * Parse a single selector (no combinators)
+ * Supports compound selectors: #id[attr="value"][attr2]
+ */
+function parseSingleSelector(selector: string): NodePredicate | null {
+  // Parse compound selector into parts
+  const parts: NodePredicate[] = [];
+
+  // Extract ID if present
+  const idMatch = selector.match(/^#([a-zA-Z0-9_-]+)/);
+  if (idMatch) {
+    const id = idMatch[1]!;
+    parts.push((node: InkxNode) => getNodeProp(node, "id") === id);
+    // Remove ID from selector string
+    selector = selector.slice(idMatch[0].length);
+  }
+
+  // Extract all attribute selectors
+  const attrRegex =
+    /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g;
+  let match;
+  while ((match = attrRegex.exec(selector)) !== null) {
+    const [, attr, op, value] = match;
+    if (!attr) continue;
+
+    if (value === undefined) {
+      // Presence check [attr] - value group didn't match
+      parts.push((node: InkxNode) => getNodeProp(node, attr) !== undefined);
+    } else {
+      // Value check [attr="value"] - value group matched
+      parts.push((node: InkxNode) => {
+        const nodeValue = getNodeProp(node, attr);
+        if (nodeValue === undefined) return false;
+        switch (op) {
+          case "":
+            return nodeValue === value;
+          case "^":
+            return nodeValue.startsWith(value ?? "");
+          case "$":
+            return nodeValue.endsWith(value ?? "");
+          case "*":
+            return nodeValue.includes(value ?? "");
+          default:
+            return false;
+        }
+      });
+    }
+  }
+
+  // If no parts matched, invalid selector
+  if (parts.length === 0) return null;
+
+  // Compound selector - all parts must match
+  return (node: InkxNode) => parts.every((pred) => pred(node));
+}
+
+/**
+ * Parse child combinator: A > B (B is direct child of A)
+ */
+function parseChildCombinator(selector: string): NodePredicate | null {
+  const parts = selector.split(">").map((s) => s.trim());
+  if (parts.length !== 2) return null;
+
+  const [parentSel, childSel] = parts;
+  const parentPred = parseSingleSelector(parentSel!);
+  const childPred = parseSingleSelector(childSel!);
+
+  if (!parentPred || !childPred) return null;
 
   return (node: InkxNode) => {
-    const nodeValue = getNodeProp(node, attr);
-    if (nodeValue === undefined) return false;
+    if (!childPred(node)) return false;
+    // Check if parent matches
+    return node.parent !== null && parentPred(node.parent);
+  };
+}
 
-    // op is empty string for [attr="value"] (exact match)
-    switch (op) {
-      case "":
-        return nodeValue === value;
-      case "^":
-        return nodeValue.startsWith(value ?? "");
-      case "$":
-        return nodeValue.endsWith(value ?? "");
-      case "*":
-        return nodeValue.includes(value ?? "");
-      default:
-        return false;
+/**
+ * Parse adjacent sibling combinator: A + B (B immediately follows A)
+ */
+function parseAdjacentSiblingCombinator(
+  selector: string,
+): NodePredicate | null {
+  const parts = selector.split("+").map((s) => s.trim());
+  if (parts.length !== 2) return null;
+
+  const [prevSel, nextSel] = parts;
+  const prevPred = parseSingleSelector(prevSel!);
+  const nextPred = parseSingleSelector(nextSel!);
+
+  if (!prevPred || !nextPred) return null;
+
+  return (node: InkxNode) => {
+    if (!nextPred(node)) return false;
+    if (!node.parent) return false;
+
+    // Find this node's index in parent's children
+    const siblings = node.parent.children;
+    const index = siblings.indexOf(node);
+    if (index <= 0) return false;
+
+    // Check if previous sibling matches
+    const prevSibling = siblings[index - 1];
+    return prevSibling !== undefined && prevPred(prevSibling);
+  };
+}
+
+/**
+ * Parse descendant combinator: A B (B is descendant of A)
+ */
+function parseDescendantCombinator(selector: string): NodePredicate | null {
+  const parts = selector.split(/\s+/).filter((s) => s.length > 0);
+  if (parts.length !== 2) return null;
+
+  const [ancestorSel, descendantSel] = parts;
+  const ancestorPred = parseSingleSelector(ancestorSel!);
+  const descendantPred = parseSingleSelector(descendantSel!);
+
+  if (!ancestorPred || !descendantPred) return null;
+
+  return (node: InkxNode) => {
+    if (!descendantPred(node)) return false;
+
+    // Walk up the tree to find ancestor
+    let current = node.parent;
+    while (current) {
+      if (ancestorPred(current)) return true;
+      current = current.parent;
     }
+    return false;
   };
 }

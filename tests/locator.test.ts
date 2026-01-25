@@ -189,12 +189,12 @@ describe("InkxLocator", () => {
       expect(locator.locator('[testID*="task"]').count()).toBe(2);
     });
 
-    test("returns 0 for invalid selector", () => {
+    test("throws for invalid tag selector", () => {
       const { getContainer } = render(
         React.createElement(Box, null, React.createElement(Text, null, "Test")),
       );
       const locator = createLocator(getContainer());
-      expect(locator.locator("invalid").count()).toBe(0);
+      expect(() => locator.locator("invalid")).toThrow(/tag\/type selectors/);
     });
   });
 
@@ -427,6 +427,61 @@ describe("InkxLocator", () => {
       );
       const locator = createLocator(getContainer());
       expect(locator.getByTestId("nonexistent").resolve()).toBeNull();
+    });
+  });
+
+  describe("unsupported selectors", () => {
+    test("throws on pseudo-class selectors", () => {
+      const { getContainer } = render(
+        React.createElement(Box, null, React.createElement(Text, null, "Test")),
+      );
+      const locator = createLocator(getContainer());
+
+      expect(() => locator.locator(":hover")).toThrow(/pseudo-classes/);
+      expect(() => locator.locator("#id:nth-child(2)")).toThrow(/pseudo-classes/);
+      expect(() => locator.locator(":not(.foo)")).toThrow(/km-inkx-css-select/);
+    });
+
+    test("throws on pseudo-element selectors", () => {
+      const { getContainer } = render(
+        React.createElement(Box, null, React.createElement(Text, null, "Test")),
+      );
+      const locator = createLocator(getContainer());
+
+      expect(() => locator.locator("::before")).toThrow(/pseudo-elements/);
+      expect(() => locator.locator("#id::after")).toThrow(/km-inkx-css-select/);
+    });
+
+    test("throws on class selectors", () => {
+      const { getContainer } = render(
+        React.createElement(Box, null, React.createElement(Text, null, "Test")),
+      );
+      const locator = createLocator(getContainer());
+
+      expect(() => locator.locator(".myclass")).toThrow(/class selectors/);
+      expect(() => locator.locator("#id.class")).toThrow(/class selectors/);
+      expect(() => locator.locator(".foo")).toThrow(/\[class="myclass"\]/);
+    });
+
+    test("throws on tag selectors", () => {
+      const { getContainer } = render(
+        React.createElement(Box, null, React.createElement(Text, null, "Test")),
+      );
+      const locator = createLocator(getContainer());
+
+      expect(() => locator.locator("div")).toThrow(/tag\/type selectors/);
+      expect(() => locator.locator("span")).toThrow(/\[data-view=/);
+      expect(() => locator.locator("button")).toThrow(/km-inkx-css-select/);
+    });
+
+    test("throws on universal selector", () => {
+      const { getContainer } = render(
+        React.createElement(Box, null, React.createElement(Text, null, "Test")),
+      );
+      const locator = createLocator(getContainer());
+
+      expect(() => locator.locator("*")).toThrow(/universal selector/);
+      expect(() => locator.locator("*")).toThrow(/km-inkx-css-select/);
     });
   });
 });

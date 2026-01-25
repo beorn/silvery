@@ -133,6 +133,8 @@ export interface FlexboxProps {
  * These props are stored in the node for DOM query access.
  */
 export interface TestProps {
+  /** Element ID for DOM queries and visual debugging */
+  id?: string;
   /** Test ID for querying nodes (like Playwright's data-testid) */
   testID?: string;
   /** Allow arbitrary data-* attributes for testing */

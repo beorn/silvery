@@ -973,21 +973,24 @@ test("finds elements by text", () => {
 });
 ```
 
-### 9.2 testID Props
+### 9.2 Element IDs
 
-Add `testID` props for reliable querying:
+Add `id` props for reliable querying:
 
 ```tsx
-<Box testID="sidebar">
-  <Text testID="header">Tasks</Text>
-  <Text testID="task-1" data-status="done">
+<Box id="sidebar">
+  <Text id="header">Tasks</Text>
+  <Text id="task-1" data-status="done">
     Task 1
   </Text>
 </Box>;
 
-// In test
+// In test - use CSS #id selector
+expect(locator.locator("#sidebar").count()).toBe(1);
+expect(locator.locator("#task-1").textContent()).toBe("Task 1");
+
+// Or use getByTestId (legacy - prefer #id selectors)
 expect(locator.getByTestId("sidebar").count()).toBe(1);
-expect(locator.getByTestId("task-1").textContent()).toBe("Task 1");
 ```
 
 ### 9.3 Attribute Selectors
@@ -1002,13 +1005,13 @@ locator.locator("[data-selected]");
 locator.locator('[data-status="done"]');
 
 // Prefix: [attr^="prefix"]
-locator.locator('[testID^="task-"]');
+locator.locator('[id^="task-"]');
 
 // Suffix: [attr$="suffix"]
-locator.locator('[testID$="-column"]');
+locator.locator('[id$="-column"]');
 
 // Contains: [attr*="substring"]
-locator.locator('[testID*="task"]');
+locator.locator('[id*="task"]');
 ```
 
 ### 9.4 Layout Assertions
