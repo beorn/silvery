@@ -11,17 +11,27 @@
  * Box provides NodeContext to its children, enabling useLayout/useScreenRect hooks.
  */
 
-import { type JSX, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
-import { NodeContext } from '../context.js';
-import type { BoxProps as BoxPropsType, ComputedLayout, InkxNode } from '../types.js';
+import {
+  type JSX,
+  type ReactNode,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { NodeContext } from "../context.js";
+import type {
+  BoxProps as BoxPropsType,
+  ComputedLayout,
+  InkxNode,
+} from "../types.js";
 
 // ============================================================================
 // Props
 // ============================================================================
 
 export interface BoxProps extends BoxPropsType {
-	/** Child elements */
-	children?: ReactNode;
+  /** Child elements */
+  children?: ReactNode;
 }
 
 // ============================================================================
@@ -55,25 +65,25 @@ export interface BoxProps extends BoxPropsType {
  * ```
  */
 export function Box(props: BoxProps): JSX.Element {
-	const { children, ...restProps } = props;
-	const nodeRef = useRef<InkxNode | null>(null);
-	const [node, setNode] = useState<InkxNode | null>(null);
+  const { children, ...restProps } = props;
+  const nodeRef = useRef<InkxNode | null>(null);
+  const [node, setNode] = useState<InkxNode | null>(null);
 
-	// After mount, ref points to the InkxNode (via getPublicInstance in reconciler).
-	// Update state to provide the node to children via context.
-	useLayoutEffect(() => {
-		if (nodeRef.current && nodeRef.current !== node) {
-			setNode(nodeRef.current);
-		}
-	});
+  // After mount, ref points to the InkxNode (via getPublicInstance in reconciler).
+  // Update state to provide the node to children via context.
+  useLayoutEffect(() => {
+    if (nodeRef.current && nodeRef.current !== node) {
+      setNode(nodeRef.current);
+    }
+  });
 
-	// Render inkx-box with ref, wrap children in NodeContext
-	// The reconciler creates an InkxNode, ref gives us access to it
-	return (
-		<inkx-box ref={nodeRef} {...restProps}>
-			<NodeContext.Provider value={node}>{children}</NodeContext.Provider>
-		</inkx-box>
-	);
+  // Render inkx-box with ref, wrap children in NodeContext
+  // The reconciler creates an InkxNode, ref gives us access to it
+  return (
+    <inkx-box ref={nodeRef} {...restProps}>
+      <NodeContext.Provider value={node}>{children}</NodeContext.Provider>
+    </inkx-box>
+  );
 }
 
 // Re-export ComputedLayout for convenience
