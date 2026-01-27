@@ -4,9 +4,9 @@
  * Handle fit-content nodes by measuring their intrinsic content size.
  */
 
-import type { BoxProps, InkxNode } from "../types.js";
-import { displayWidthAnsi } from "../unicode.js";
-import { getBorderSize, getPadding } from "./helpers.js";
+import type { BoxProps, InkxNode } from '../types.js';
+import { displayWidthAnsi } from '../unicode.js';
+import { getBorderSize, getPadding } from './helpers.js';
 
 /**
  * Handle fit-content nodes by measuring their intrinsic content size.
@@ -15,23 +15,23 @@ import { getBorderSize, getPadding } from "./helpers.js";
  * height="fit-content", measures the content and sets the Yoga constraint.
  */
 export function measurePhase(root: InkxNode): void {
-  traverseTree(root, (node) => {
-    // Skip nodes without Yoga (raw text nodes)
-    if (!node.layoutNode) return;
+	traverseTree(root, (node) => {
+		// Skip nodes without Yoga (raw text nodes)
+		if (!node.layoutNode) return;
 
-    const props = node.props as BoxProps;
+		const props = node.props as BoxProps;
 
-    if (props.width === "fit-content" || props.height === "fit-content") {
-      const intrinsicSize = measureIntrinsicSize(node);
+		if (props.width === 'fit-content' || props.height === 'fit-content') {
+			const intrinsicSize = measureIntrinsicSize(node);
 
-      if (props.width === "fit-content") {
-        node.layoutNode.setWidth(intrinsicSize.width);
-      }
-      if (props.height === "fit-content") {
-        node.layoutNode.setHeight(intrinsicSize.height);
-      }
-    }
-  });
+			if (props.width === 'fit-content') {
+				node.layoutNode.setWidth(intrinsicSize.width);
+			}
+			if (props.height === 'fit-content') {
+				node.layoutNode.setHeight(intrinsicSize.height);
+			}
+		}
+	});
 }
 
 /**
@@ -41,71 +41,67 @@ export function measurePhase(root: InkxNode): void {
  * For box nodes: recursively measures children based on flex direction.
  */
 function measureIntrinsicSize(node: InkxNode): {
-  width: number;
-  height: number;
+	width: number;
+	height: number;
 } {
-  const props = node.props as BoxProps;
+	const props = node.props as BoxProps;
 
-  // display="none" nodes have 0x0 intrinsic size
-  if (props.display === "none") {
-    return { width: 0, height: 0 };
-  }
+	// display="none" nodes have 0x0 intrinsic size
+	if (props.display === 'none') {
+		return { width: 0, height: 0 };
+	}
 
-  if (node.type === "inkx-text") {
-    const text = node.textContent ?? "";
-    const lines = text.split("\n");
-    const width = Math.max(...lines.map((line) => getTextWidth(line)));
-    return {
-      width,
-      height: lines.length,
-    };
-  }
+	if (node.type === 'inkx-text') {
+		const text = node.textContent ?? '';
+		const lines = text.split('\n');
+		const width = Math.max(...lines.map((line) => getTextWidth(line)));
+		return {
+			width,
+			height: lines.length,
+		};
+	}
 
-  // For boxes, measure based on flex direction
-  const isRow =
-    props.flexDirection === "row" || props.flexDirection === "row-reverse";
+	// For boxes, measure based on flex direction
+	const isRow = props.flexDirection === 'row' || props.flexDirection === 'row-reverse';
 
-  let width = 0;
-  let height = 0;
+	let width = 0;
+	let height = 0;
 
-  for (const child of node.children) {
-    const childSize = measureIntrinsicSize(child);
+	for (const child of node.children) {
+		const childSize = measureIntrinsicSize(child);
 
-    if (isRow) {
-      width += childSize.width;
-      height = Math.max(height, childSize.height);
-    } else {
-      width = Math.max(width, childSize.width);
-      height += childSize.height;
-    }
-  }
+		if (isRow) {
+			width += childSize.width;
+			height = Math.max(height, childSize.height);
+		} else {
+			width = Math.max(width, childSize.width);
+			height += childSize.height;
+		}
+	}
 
-  // Add padding
-  const padding = getPadding(props);
-  width += padding.left + padding.right;
-  height += padding.top + padding.bottom;
+	// Add padding
+	const padding = getPadding(props);
+	width += padding.left + padding.right;
+	height += padding.top + padding.bottom;
 
-  // Add border
-  if (props.borderStyle) {
-    const border = getBorderSize(props);
-    width += border.left + border.right;
-    height += border.top + border.bottom;
-  }
+	// Add border
+	if (props.borderStyle) {
+		const border = getBorderSize(props);
+		width += border.left + border.right;
+		height += border.top + border.bottom;
+	}
 
-  return { width, height };
+	return { width, height };
 }
 
 /**
  * Traverse tree in depth-first order.
  */
-function traverseTree(
-  node: InkxNode,
-  callback: (node: InkxNode) => void,
-): void {
-  callback(node);
-  for (const child of node.children) {
-    traverseTree(child, callback);
-  }
+function traverseTree(node: InkxNode, callback: (node: InkxNode) => void): void {
+	callback(node);
+	for (const child of node.children) {
+		traverseTree(child, callback);
+	}
 }
 
 /**
@@ -113,5 +109,5 @@ function traverseTree(
  * Uses ANSI-aware width calculation to handle styled text.
  */
 function getTextWidth(text: string): number {
-  return displayWidthAnsi(text);
+	return displayWidthAnsi(text);
 }

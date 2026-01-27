@@ -35,16 +35,16 @@
  * ```
  */
 
-import type { InkxNode } from "./types.js";
+import type { InkxNode } from './types.js';
 
 /**
  * Output from measureElement.
  */
 export interface MeasureElementOutput {
-  /** Element width in terminal columns */
-  width: number;
-  /** Element height in terminal rows */
-  height: number;
+	/** Element width in terminal columns */
+	width: number;
+	/** Element height in terminal rows */
+	height: number;
 }
 
 /**
@@ -57,23 +57,23 @@ export interface MeasureElementOutput {
  * For automatic re-rendering on dimension changes, use the useLayout() hook instead.
  */
 export function measureElement(node: InkxNode): MeasureElementOutput {
-  // Prefer computedLayout (set by inkx pipeline after layout phase)
-  // This is the canonical source of truth after a render
-  if (node.computedLayout) {
-    return {
-      width: node.computedLayout.width,
-      height: node.computedLayout.height,
-    };
-  }
+	// Prefer computedLayout (set by inkx pipeline after layout phase)
+	// This is the canonical source of truth after a render
+	if (node.computedLayout) {
+		return {
+			width: node.computedLayout.width,
+			height: node.computedLayout.height,
+		};
+	}
 
-  // Fall back to layoutNode for backward compatibility
-  // (handles case where measureElement is called before inkx pipeline runs)
-  const width = node.layoutNode?.getComputedWidth() ?? 0;
-  const height = node.layoutNode?.getComputedHeight() ?? 0;
+	// Fall back to layoutNode for backward compatibility
+	// (handles case where measureElement is called before inkx pipeline runs)
+	const width = node.layoutNode?.getComputedWidth() ?? 0;
+	const height = node.layoutNode?.getComputedHeight() ?? 0;
 
-  return {
-    // Handle NaN from Yoga (returned before calculateLayout is called)
-    width: Number.isNaN(width) ? 0 : width,
-    height: Number.isNaN(height) ? 0 : height,
-  };
+	return {
+		// Handle NaN from Yoga (returned before calculateLayout is called)
+		width: Number.isNaN(width) ? 0 : width,
+		height: Number.isNaN(height) ? 0 : height,
+	};
 }

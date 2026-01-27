@@ -5,24 +5,24 @@
  * Compatible with Ink's useFocusManager API.
  */
 
-import { useContext } from "react";
-import { FocusContext } from "../context.js";
+import { useContext } from 'react';
+import { FocusContext } from '../context.js';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface UseFocusManagerResult {
-  /** Enable focus management for all components */
-  enableFocus: () => void;
-  /** Disable focus management for all components */
-  disableFocus: () => void;
-  /** Focus the next focusable component */
-  focusNext: () => void;
-  /** Focus the previous focusable component */
-  focusPrevious: () => void;
-  /** Focus a specific component by ID */
-  focus: (id: string) => void;
+	/** Enable focus management for all components */
+	enableFocus: () => void;
+	/** Disable focus management for all components */
+	disableFocus: () => void;
+	/** Focus the next focusable component */
+	focusNext: () => void;
+	/** Focus the previous focusable component */
+	focusPrevious: () => void;
+	/** Focus a specific component by ID */
+	focus: (id: string) => void;
 }
 
 // ============================================================================
@@ -56,17 +56,17 @@ export interface UseFocusManagerResult {
  * ```
  */
 export function useFocusManager(): UseFocusManagerResult {
-  const context = useContext(FocusContext);
+	const context = useContext(FocusContext);
 
-  if (!context) {
-    throw new Error("useFocusManager must be used within an Inkx application");
-  }
+	if (!context) {
+		throw new Error('useFocusManager must be used within an Inkx application');
+	}
 
-  return {
-    enableFocus: context.enableFocus,
-    disableFocus: context.disableFocus,
-    focusNext: context.focusNext,
-    focusPrevious: context.focusPrevious,
-    focus: context.focus,
-  };
+	return {
+		enableFocus: context.enableFocus,
+		disableFocus: context.disableFocus,
+		focusNext: context.focusNext,
+		focusPrevious: context.focusPrevious,
+		focus: context.focus,
+	};
 }

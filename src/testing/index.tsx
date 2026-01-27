@@ -46,27 +46,23 @@
  * ```
  */
 
-import { EventEmitter } from "node:events";
-import React, { type ReactElement, act } from "react";
-import { initYogaEngine } from "../adapters/yoga-adapter.js";
-import { type TerminalBuffer, bufferToText } from "../buffer.js";
+import { EventEmitter } from 'node:events';
+import React, { type ReactElement, act } from 'react';
+import { initYogaEngine } from '../adapters/yoga-adapter.js';
+import { type TerminalBuffer, bufferToText } from '../buffer.js';
 
 // Re-export buffer utilities for testing convenience
-export { bufferToText, bufferToStyledText } from "../buffer.js";
-export type { TerminalBuffer } from "../buffer.js";
+export { bufferToText, bufferToStyledText } from '../buffer.js';
+export type { TerminalBuffer } from '../buffer.js';
 
 // Re-export locator API for DOM queries
-export { createLocator, type InkxLocator } from "./locator.js";
-export type { Rect } from "../types.js";
-import { AppContext, InputContext, StdoutContext } from "../context.js";
-import type { LayoutEngine } from "../layout-engine.js";
-import { setLayoutEngine } from "../layout-engine.js";
-import { executeRender } from "../pipeline.js";
-import {
-  createContainer,
-  getContainerRoot,
-  reconciler,
-} from "../reconciler.js";
+export { createLocator, type InkxLocator } from './locator.js';
+export type { Rect } from '../types.js';
+import { AppContext, InputContext, StdoutContext } from '../context.js';
+import type { LayoutEngine } from '../layout-engine.js';
+import { setLayoutEngine } from '../layout-engine.js';
+import { executeRender } from '../pipeline.js';
+import { createContainer, getContainerRoot, reconciler } from '../reconciler.js';
 
 // ============================================================================
 // Module Initialization
@@ -89,141 +85,138 @@ const defaultLayoutEngine = await initYogaEngine();
  * Options for creating a test renderer.
  */
 export interface TestRendererOptions {
-  /** Terminal width for layout calculations. Default: 80 */
-  columns?: number;
-  /** Terminal height. Default: 24 */
-  rows?: number;
-  /** Layout engine to use (yoga or flexx). Default: yoga */
-  layoutEngine?: LayoutEngine;
-  /** Enable debug output. Default: false */
-  debug?: boolean;
+	/** Terminal width for layout calculations. Default: 80 */
+	columns?: number;
+	/** Terminal height. Default: 24 */
+	rows?: number;
+	/** Layout engine to use (yoga or flexx). Default: yoga */
+	layoutEngine?: LayoutEngine;
+	/** Enable debug output. Default: false */
+	debug?: boolean;
 }
 
 /**
  * Options for individual render calls.
  */
 export interface RenderOptions {
-  /** Enable debug output for this render. Default: false */
-  debug?: boolean;
-  /** Override terminal width for this render. Default: use renderer default (80) */
-  columns?: number;
-  /** Override terminal height for this render. Default: use renderer default (24) */
-  rows?: number;
+	/** Enable debug output for this render. Default: false */
+	debug?: boolean;
+	/** Override terminal width for this render. Default: use renderer default (80) */
+	columns?: number;
+	/** Override terminal height for this render. Default: use renderer default (24) */
+	rows?: number;
 }
 
 /**
  * Result returned by the render function.
  */
 export interface RenderResult {
-  /**
-   * Returns the last rendered frame as a string (with ANSI codes).
-   * Returns undefined if no frames have been rendered.
-   */
-  lastFrame: () => string | undefined;
+	/**
+	 * Returns the last rendered frame as a string (with ANSI codes).
+	 * Returns undefined if no frames have been rendered.
+	 */
+	lastFrame: () => string | undefined;
 
-  /**
-   * Returns the last rendered buffer for direct inspection.
-   * Returns undefined if no frames have been rendered.
-   *
-   * @example
-   * ```tsx
-   * const { lastBuffer } = render(<MyComponent />);
-   * const buffer = lastBuffer();
-   * if (buffer) {
-   *   const plainText = bufferToText(buffer);
-   *   expect(plainText).toContain('Hello');
-   * }
-   * ```
-   */
-  lastBuffer: () => TerminalBuffer | undefined;
+	/**
+	 * Returns the last rendered buffer for direct inspection.
+	 * Returns undefined if no frames have been rendered.
+	 *
+	 * @example
+	 * ```tsx
+	 * const { lastBuffer } = render(<MyComponent />);
+	 * const buffer = lastBuffer();
+	 * if (buffer) {
+	 *   const plainText = bufferToText(buffer);
+	 *   expect(plainText).toContain('Hello');
+	 * }
+	 * ```
+	 */
+	lastBuffer: () => TerminalBuffer | undefined;
 
-  /**
-   * Returns the last rendered frame as plain text (no ANSI codes).
-   * Convenience method equivalent to bufferToText(lastBuffer()).
-   */
-  lastFrameText: () => string | undefined;
+	/**
+	 * Returns the last rendered frame as plain text (no ANSI codes).
+	 * Convenience method equivalent to bufferToText(lastBuffer()).
+	 */
+	lastFrameText: () => string | undefined;
 
-  /**
-   * Array of all rendered frames in order.
-   * Each frame is a string snapshot of the terminal output with ANSI codes.
-   */
-  frames: string[];
+	/**
+	 * Array of all rendered frames in order.
+	 * Each frame is a string snapshot of the terminal output with ANSI codes.
+	 */
+	frames: string[];
 
-  /**
-   * Re-render with a new element.
-   * The new frame will be appended to the frames array.
-   * This is synchronous - the frame is available immediately after calling.
-   */
-  rerender: (element: ReactElement) => void;
+	/**
+	 * Re-render with a new element.
+	 * The new frame will be appended to the frames array.
+	 * This is synchronous - the frame is available immediately after calling.
+	 */
+	rerender: (element: ReactElement) => void;
 
-  /**
-   * Unmount the component and clean up.
-   * After unmount, lastFrame() will return the last rendered state.
-   */
-  unmount: () => void;
+	/**
+	 * Unmount the component and clean up.
+	 * After unmount, lastFrame() will return the last rendered state.
+	 */
+	unmount: () => void;
 
-  /**
-   * Send stdin input to the rendered component.
-   * Useful for testing keyboard input handling.
-   */
-  stdin: {
-    write: (data: string) => void;
-  };
+	/**
+	 * Send stdin input to the rendered component.
+	 * Useful for testing keyboard input handling.
+	 */
+	stdin: {
+		write: (data: string) => void;
+	};
 
-  /**
-   * Clear all captured frames.
-   * Useful for testing sequences of renders.
-   */
-  clear: () => void;
+	/**
+	 * Clear all captured frames.
+	 * Useful for testing sequences of renders.
+	 */
+	clear: () => void;
 
-  /**
-   * Check if exit() was called by the component.
-   * Useful for testing exit behavior.
-   */
-  exitCalled: () => boolean;
+	/**
+	 * Check if exit() was called by the component.
+	 * Useful for testing exit behavior.
+	 */
+	exitCalled: () => boolean;
 
-  /**
-   * Get the error passed to exit(), if any.
-   */
-  exitError: () => Error | undefined;
+	/**
+	 * Get the error passed to exit(), if any.
+	 */
+	exitError: () => Error | undefined;
 
-  /**
-   * Get the container root node for DOM queries.
-   * Use with createLocator() for Playwright-style queries.
-   *
-   * @example
-   * ```tsx
-   * const { getContainer } = render(<MyComponent />);
-   * const locator = createLocator(getContainer());
-   * expect(locator.getByText("Hello").count()).toBe(1);
-   * ```
-   */
-  getContainer: () => import("../types.js").InkxNode;
+	/**
+	 * Get the container root node for DOM queries.
+	 * Use with createLocator() for Playwright-style queries.
+	 *
+	 * @example
+	 * ```tsx
+	 * const { getContainer } = render(<MyComponent />);
+	 * const locator = createLocator(getContainer());
+	 * expect(locator.getByText("Hello").count()).toBe(1);
+	 * ```
+	 */
+	getContainer: () => import('../types.js').InkxNode;
 }
 
 /**
  * Test render function type.
  * Auto-cleans previous render when called again.
  */
-export type TestRender = (
-  element: ReactElement,
-  options?: RenderOptions,
-) => RenderResult;
+export type TestRender = (element: ReactElement, options?: RenderOptions) => RenderResult;
 
 /**
  * Internal state for a render instance.
  */
 interface RenderInstance {
-  frames: string[];
-  container: ReturnType<typeof createContainer>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React reconciler internal type
-  fiberRoot: any;
-  prevBuffer: TerminalBuffer | null;
-  mounted: boolean;
-  columns: number;
-  rows: number;
-  inputEmitter: EventEmitter;
-  debug: boolean;
+	frames: string[];
+	container: ReturnType<typeof createContainer>;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- React reconciler internal type
+	fiberRoot: any;
+	prevBuffer: TerminalBuffer | null;
+	mounted: boolean;
+	columns: number;
+	rows: number;
+	inputEmitter: EventEmitter;
+	debug: boolean;
 }
 
 // ============================================================================
@@ -246,273 +239,255 @@ interface RenderInstance {
  * const render = createTestRenderer({ layoutEngine: flexx });
  * ```
  */
-export function createTestRenderer(
-  options: TestRendererOptions = {},
-): TestRender {
-  const {
-    columns = 80,
-    rows = 24,
-    layoutEngine = defaultLayoutEngine,
-    debug: defaultDebug = false,
-  } = options;
+export function createTestRenderer(options: TestRendererOptions = {}): TestRender {
+	const {
+		columns = 80,
+		rows = 24,
+		layoutEngine = defaultLayoutEngine,
+		debug: defaultDebug = false,
+	} = options;
 
-  // Set the layout engine for this renderer
-  setLayoutEngine(layoutEngine);
+	// Set the layout engine for this renderer
+	setLayoutEngine(layoutEngine);
 
-  // Track current instance for auto-cleanup
-  let currentInstance: RenderResult | null = null;
+	// Track current instance for auto-cleanup
+	let currentInstance: RenderResult | null = null;
 
-  function render(
-    element: ReactElement,
-    renderOptions: RenderOptions = {},
-  ): RenderResult {
-    // Auto-cleanup previous render before creating new one
-    if (currentInstance) {
-      try {
-        currentInstance.unmount();
-      } catch {
-        // Already unmounted, ignore
-      }
-    }
+	function render(element: ReactElement, renderOptions: RenderOptions = {}): RenderResult {
+		// Auto-cleanup previous render before creating new one
+		if (currentInstance) {
+			try {
+				currentInstance.unmount();
+			} catch {
+				// Already unmounted, ignore
+			}
+		}
 
-    const debug = renderOptions.debug ?? defaultDebug;
-    // Allow per-render column/row overrides
-    const renderColumns = renderOptions.columns ?? columns;
-    const renderRows = renderOptions.rows ?? rows;
+		const debug = renderOptions.debug ?? defaultDebug;
+		// Allow per-render column/row overrides
+		const renderColumns = renderOptions.columns ?? columns;
+		const renderRows = renderOptions.rows ?? rows;
 
-    const instance: RenderInstance = {
-      frames: [],
-      container: null as unknown as ReturnType<typeof createContainer>,
-      fiberRoot: null,
-      prevBuffer: null,
-      mounted: true,
-      columns: renderColumns,
-      rows: renderRows,
-      inputEmitter: new EventEmitter(),
-      debug,
-    };
+		const instance: RenderInstance = {
+			frames: [],
+			container: null as unknown as ReturnType<typeof createContainer>,
+			fiberRoot: null,
+			prevBuffer: null,
+			mounted: true,
+			columns: renderColumns,
+			rows: renderRows,
+			inputEmitter: new EventEmitter(),
+			debug,
+		};
 
-    // Create container (onRender callback not needed for sync rendering)
-    instance.container = createContainer(() => {});
+		// Create container (onRender callback not needed for sync rendering)
+		instance.container = createContainer(() => {});
 
-    instance.fiberRoot = reconciler.createContainer(
-      instance.container,
-      0, // LegacyRoot
-      null, // hydrationCallbacks
-      false, // isStrictMode
-      null, // concurrentUpdatesByDefaultOverride
-      "", // identifierPrefix
-      () => {}, // onRecoverableError
-      null, // transitionCallbacks
-    );
+		instance.fiberRoot = reconciler.createContainer(
+			instance.container,
+			0, // LegacyRoot
+			null, // hydrationCallbacks
+			false, // isStrictMode
+			null, // concurrentUpdatesByDefaultOverride
+			'', // identifierPrefix
+			() => {}, // onRecoverableError
+			null, // transitionCallbacks
+		);
 
-    // Track if exit was called (for testing exit behavior)
-    let exitCalledFlag = false;
-    let exitErrorValue: Error | undefined;
+		// Track if exit was called (for testing exit behavior)
+		let exitCalledFlag = false;
+		let exitErrorValue: Error | undefined;
 
-    // Exit handler for useApp hook
-    const handleExit = (error?: Error) => {
-      exitCalledFlag = true;
-      exitErrorValue = error;
-      if (debug) {
-        console.log(
-          "[inkx-test] exit() called",
-          error ? `with error: ${error.message}` : "",
-        );
-      }
-    };
+		// Exit handler for useApp hook
+		const handleExit = (error?: Error) => {
+			exitCalledFlag = true;
+			exitErrorValue = error;
+			if (debug) {
+				console.log('[inkx-test] exit() called', error ? `with error: ${error.message}` : '');
+			}
+		};
 
-    // Create a mock stdout for useStdout hook
-    // Provides columns/rows from test config and a no-op write function
-    // Also includes on/off methods for resize event listeners (required by layout systems)
-    const mockStdout = {
-      columns: instance.columns,
-      rows: instance.rows,
-      write: () => true,
-      // Add required WriteStream properties for type compatibility
-      isTTY: true,
-      // Event listener methods (no-op since tests don't resize)
-      on: () => mockStdout,
-      off: () => mockStdout,
-      once: () => mockStdout,
-      removeListener: () => mockStdout,
-      addListener: () => mockStdout,
-    } as unknown as NodeJS.WriteStream;
+		// Create a mock stdout for useStdout hook
+		// Provides columns/rows from test config and a no-op write function
+		// Also includes on/off methods for resize event listeners (required by layout systems)
+		const mockStdout = {
+			columns: instance.columns,
+			rows: instance.rows,
+			write: () => true,
+			// Add required WriteStream properties for type compatibility
+			isTTY: true,
+			// Event listener methods (no-op since tests don't resize)
+			on: () => mockStdout,
+			off: () => mockStdout,
+			once: () => mockStdout,
+			removeListener: () => mockStdout,
+			addListener: () => mockStdout,
+		} as unknown as NodeJS.WriteStream;
 
-    // Wrap element with contexts to enable useApp, useInput, and useStdout hooks
-    function wrapWithContexts(el: ReactElement): ReactElement {
-      return React.createElement(
-        AppContext.Provider,
-        {
-          value: {
-            exit: handleExit,
-          },
-        },
-        React.createElement(
-          StdoutContext.Provider,
-          {
-            value: {
-              stdout: mockStdout,
-              write: () => {},
-            },
-          },
-          React.createElement(
-            InputContext.Provider,
-            {
-              value: {
-                eventEmitter: instance.inputEmitter,
-                exitOnCtrlC: false,
-              },
-            },
-            el,
-          ),
-        ),
-      );
-    }
+		// Wrap element with contexts to enable useApp, useInput, and useStdout hooks
+		function wrapWithContexts(el: ReactElement): ReactElement {
+			return React.createElement(
+				AppContext.Provider,
+				{
+					value: {
+						exit: handleExit,
+					},
+				},
+				React.createElement(
+					StdoutContext.Provider,
+					{
+						value: {
+							stdout: mockStdout,
+							write: () => {},
+						},
+					},
+					React.createElement(
+						InputContext.Provider,
+						{
+							value: {
+								eventEmitter: instance.inputEmitter,
+								exitOnCtrlC: false,
+							},
+						},
+						el,
+					),
+				),
+			);
+		}
 
-    // Render function that executes the pipeline
-    // Note: We pass null for prevBuffer to always get full frame output (not diffs)
-    // This is important for testing where we want to inspect complete frames
-    function doRender(): string {
-      const root = getContainerRoot(instance.container);
-      const { output, buffer } = executeRender(
-        root,
-        instance.columns,
-        instance.rows,
-        null,
-      );
-      instance.prevBuffer = buffer;
-      return output;
-    }
+		// Render function that executes the pipeline
+		// Note: We pass null for prevBuffer to always get full frame output (not diffs)
+		// This is important for testing where we want to inspect complete frames
+		function doRender(): string {
+			const root = getContainerRoot(instance.container);
+			const { output, buffer } = executeRender(root, instance.columns, instance.rows, null);
+			instance.prevBuffer = buffer;
+			return output;
+		}
 
-    // Synchronously update React tree within act() to ensure all state updates are flushed
-    act(() => {
-      reconciler.updateContainerSync(
-        wrapWithContexts(element),
-        instance.fiberRoot,
-        null,
-        null,
-      );
-      reconciler.flushSyncWork();
-    });
+		// Synchronously update React tree within act() to ensure all state updates are flushed
+		act(() => {
+			reconciler.updateContainerSync(wrapWithContexts(element), instance.fiberRoot, null, null);
+			reconciler.flushSyncWork();
+		});
 
-    // Execute the render pipeline
-    const output = doRender();
-    instance.frames.push(output);
+		// Execute the render pipeline
+		const output = doRender();
+		instance.frames.push(output);
 
-    if (debug) {
-      console.log("[inkx-test] Initial render:", output);
-    }
+		if (debug) {
+			console.log('[inkx-test] Initial render:', output);
+		}
 
-    const result: RenderResult = {
-      lastFrame() {
-        if (instance.frames.length === 0) {
-          return undefined;
-        }
-        return instance.frames[instance.frames.length - 1];
-      },
+		const result: RenderResult = {
+			lastFrame() {
+				if (instance.frames.length === 0) {
+					return undefined;
+				}
+				return instance.frames[instance.frames.length - 1];
+			},
 
-      lastBuffer() {
-        return instance.prevBuffer ?? undefined;
-      },
+			lastBuffer() {
+				return instance.prevBuffer ?? undefined;
+			},
 
-      lastFrameText() {
-        const buffer = instance.prevBuffer;
-        if (!buffer) return undefined;
-        return bufferToText(buffer);
-      },
+			lastFrameText() {
+				const buffer = instance.prevBuffer;
+				if (!buffer) return undefined;
+				return bufferToText(buffer);
+			},
 
-      frames: instance.frames,
+			frames: instance.frames,
 
-      rerender(newElement: ReactElement) {
-        if (!instance.mounted) {
-          throw new Error("Cannot rerender after unmount");
-        }
+			rerender(newElement: ReactElement) {
+				if (!instance.mounted) {
+					throw new Error('Cannot rerender after unmount');
+				}
 
-        // Synchronously update React tree within act() to ensure all state updates are flushed
-        act(() => {
-          reconciler.updateContainerSync(
-            wrapWithContexts(newElement),
-            instance.fiberRoot,
-            null,
-            null,
-          );
-          reconciler.flushSyncWork();
-        });
+				// Synchronously update React tree within act() to ensure all state updates are flushed
+				act(() => {
+					reconciler.updateContainerSync(
+						wrapWithContexts(newElement),
+						instance.fiberRoot,
+						null,
+						null,
+					);
+					reconciler.flushSyncWork();
+				});
 
-        // Execute render pipeline
-        const newFrame = doRender();
-        instance.frames.push(newFrame);
+				// Execute render pipeline
+				const newFrame = doRender();
+				instance.frames.push(newFrame);
 
-        if (debug) {
-          console.log("[inkx-test] Rerender:", newFrame);
-        }
-      },
+				if (debug) {
+					console.log('[inkx-test] Rerender:', newFrame);
+				}
+			},
 
-      unmount() {
-        if (!instance.mounted) {
-          throw new Error("Already unmounted");
-        }
+			unmount() {
+				if (!instance.mounted) {
+					throw new Error('Already unmounted');
+				}
 
-        // Wrap unmount in act() to ensure cleanup effects complete without warnings
-        act(() => {
-          reconciler.updateContainer(null, instance.fiberRoot, null, () => {});
-        });
-        instance.mounted = false;
-        instance.inputEmitter.removeAllListeners();
+				// Wrap unmount in act() to ensure cleanup effects complete without warnings
+				act(() => {
+					reconciler.updateContainer(null, instance.fiberRoot, null, () => {});
+				});
+				instance.mounted = false;
+				instance.inputEmitter.removeAllListeners();
 
-        if (debug) {
-          console.log("[inkx-test] Unmounted");
-        }
-      },
+				if (debug) {
+					console.log('[inkx-test] Unmounted');
+				}
+			},
 
-      stdin: {
-        write(data: string) {
-          if (!instance.mounted) {
-            throw new Error("Cannot write to stdin after unmount");
-          }
-          // Use React's act() to ensure state updates are flushed synchronously
-          // This is necessary because useInput hooks call setState from an event callback
-          act(() => {
-            instance.inputEmitter.emit("input", data);
-          });
+			stdin: {
+				write(data: string) {
+					if (!instance.mounted) {
+						throw new Error('Cannot write to stdin after unmount');
+					}
+					// Use React's act() to ensure state updates are flushed synchronously
+					// This is necessary because useInput hooks call setState from an event callback
+					act(() => {
+						instance.inputEmitter.emit('input', data);
+					});
 
-          // Capture a new frame with the updated state
-          const newFrame = doRender();
-          instance.frames.push(newFrame);
+					// Capture a new frame with the updated state
+					const newFrame = doRender();
+					instance.frames.push(newFrame);
 
-          if (debug) {
-            console.log("[inkx-test] stdin.write:", newFrame);
-          }
-        },
-      },
+					if (debug) {
+						console.log('[inkx-test] stdin.write:', newFrame);
+					}
+				},
+			},
 
-      clear() {
-        instance.frames.length = 0;
-        instance.prevBuffer = null;
-      },
+			clear() {
+				instance.frames.length = 0;
+				instance.prevBuffer = null;
+			},
 
-      exitCalled() {
-        return exitCalledFlag;
-      },
+			exitCalled() {
+				return exitCalledFlag;
+			},
 
-      exitError() {
-        return exitErrorValue;
-      },
+			exitError() {
+				return exitErrorValue;
+			},
 
-      getContainer() {
-        return getContainerRoot(instance.container);
-      },
-    };
+			getContainer() {
+				return getContainerRoot(instance.container);
+			},
+		};
 
-    // Track current instance for auto-cleanup on next render
-    currentInstance = result;
+		// Track current instance for auto-cleanup on next render
+		currentInstance = result;
 
-    return result;
-  }
+		return result;
+	}
 
-  // Return render function directly - auto-cleans previous render on each call
-  return render;
+	// Return render function directly - auto-cleans previous render on each call
+	return render;
 }
 
 // ============================================================================
@@ -523,7 +498,7 @@ export function createTestRenderer(
  * Strip ANSI escape codes from a string for easier assertions.
  */
 export function stripAnsi(str: string): string {
-  return str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
+	return str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
 }
 
 /**
@@ -533,11 +508,11 @@ export function stripAnsi(str: string): string {
  * - Removes empty trailing lines
  */
 export function normalizeFrame(frame: string): string {
-  return stripAnsi(frame)
-    .split("\n")
-    .map((line) => line.trimEnd())
-    .join("\n")
-    .trimEnd();
+	return stripAnsi(frame)
+		.split('\n')
+		.map((line) => line.trimEnd())
+		.join('\n')
+		.trimEnd();
 }
 
 /**
@@ -545,16 +520,16 @@ export function normalizeFrame(frame: string): string {
  * Useful for waiting for async state updates.
  */
 export async function waitFor(
-  condition: () => boolean,
-  { timeout = 1000, interval = 10 } = {},
+	condition: () => boolean,
+	{ timeout = 1000, interval = 10 } = {},
 ): Promise<void> {
-  const start = Date.now();
-  while (!condition()) {
-    if (Date.now() - start > timeout) {
-      throw new Error(`waitFor timed out after ${timeout}ms`);
-    }
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, interval);
-    });
-  }
+	const start = Date.now();
+	while (!condition()) {
+		if (Date.now() - start > timeout) {
+			throw new Error(`waitFor timed out after ${timeout}ms`);
+		}
+		await new Promise<void>((resolve) => {
+			setTimeout(resolve, interval);
+		});
+	}
 }

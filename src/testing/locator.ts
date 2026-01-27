@@ -23,34 +23,34 @@
  * ```
  */
 
-import type { InkxNode, Rect } from "../types.ts";
+import type { InkxNode, Rect } from '../types.ts';
 
 /**
  * Locator interface - lazy reference to nodes matching a query
  */
 export interface InkxLocator {
-  // Core queries (return new Locators)
-  getByText(text: string | RegExp): InkxLocator;
-  getByTestId(id: string): InkxLocator;
+	// Core queries (return new Locators)
+	getByText(text: string | RegExp): InkxLocator;
+	getByTestId(id: string): InkxLocator;
 
-  // Attribute selector (CSS-like: '[data-selected="true"]')
-  locator(selector: string): InkxLocator;
+	// Attribute selector (CSS-like: '[data-selected="true"]')
+	locator(selector: string): InkxLocator;
 
-  // Narrowing
-  first(): InkxLocator;
-  last(): InkxLocator;
-  nth(index: number): InkxLocator;
+	// Narrowing
+	first(): InkxLocator;
+	last(): InkxLocator;
+	nth(index: number): InkxLocator;
 
-  // Resolution (actually finds nodes)
-  resolve(): InkxNode | null;
-  resolveAll(): InkxNode[];
-  count(): number;
+	// Resolution (actually finds nodes)
+	resolve(): InkxNode | null;
+	resolveAll(): InkxNode[];
+	count(): number;
 
-  // Utilities
-  textContent(): string;
-  getAttribute(name: string): string | undefined;
-  boundingBox(): Rect | null;
-  isVisible(): boolean;
+	// Utilities
+	textContent(): string;
+	getAttribute(name: string): string | undefined;
+	boundingBox(): Rect | null;
+	isVisible(): boolean;
 }
 
 // Query predicate type
@@ -60,168 +60,168 @@ type NodePredicate = (node: InkxNode) => boolean;
  * Create a locator rooted at the given container node
  */
 export function createLocator(root: InkxNode): InkxLocator {
-  return new LocatorImpl(root, []);
+	return new LocatorImpl(root, []);
 }
 
 /**
  * Internal locator implementation
  */
 class LocatorImpl implements InkxLocator {
-  constructor(
-    private root: InkxNode,
-    private predicates: NodePredicate[],
-    private indexSelector?: { type: "first" | "last" | "nth"; index?: number },
-  ) {}
+	constructor(
+		private root: InkxNode,
+		private predicates: NodePredicate[],
+		private indexSelector?: { type: 'first' | 'last' | 'nth'; index?: number },
+	) {}
 
-  getByText(text: string | RegExp): InkxLocator {
-    const predicate: NodePredicate = (node) => {
-      // Match nodes that have text content directly (raw text nodes)
-      // OR Text nodes that contain text (but not their parent containers)
-      const content = getNodeTextContent(node);
-      if (!content) return false;
+	getByText(text: string | RegExp): InkxLocator {
+		const predicate: NodePredicate = (node) => {
+			// Match nodes that have text content directly (raw text nodes)
+			// OR Text nodes that contain text (but not their parent containers)
+			const content = getNodeTextContent(node);
+			if (!content) return false;
 
-      // Only match if this node directly contains text or is an inkx-text
-      // Skip inkx-box and inkx-root which contain text via children
-      if (node.type !== "inkx-text") {
-        return false;
-      }
+			// Only match if this node directly contains text or is an inkx-text
+			// Skip inkx-box and inkx-root which contain text via children
+			if (node.type !== 'inkx-text') {
+				return false;
+			}
 
-      // Skip raw text nodes if their parent also matches (match parent Text instead)
-      // This prevents matching both the Text component AND its raw text child
-      if (node.isRawText && node.parent?.type === "inkx-text") {
-        return false;
-      }
+			// Skip raw text nodes if their parent also matches (match parent Text instead)
+			// This prevents matching both the Text component AND its raw text child
+			if (node.isRawText && node.parent?.type === 'inkx-text') {
+				return false;
+			}
 
-      if (typeof text === "string") {
-        return content.includes(text);
-      }
-      return text.test(content);
-    };
-    return new LocatorImpl(this.root, [...this.predicates, predicate]);
-  }
+			if (typeof text === 'string') {
+				return content.includes(text);
+			}
+			return text.test(content);
+		};
+		return new LocatorImpl(this.root, [...this.predicates, predicate]);
+	}
 
-  getByTestId(id: string): InkxLocator {
-    const predicate: NodePredicate = (node) => {
-      return getNodeProp(node, "testID") === id;
-    };
-    return new LocatorImpl(this.root, [...this.predicates, predicate]);
-  }
+	getByTestId(id: string): InkxLocator {
+		const predicate: NodePredicate = (node) => {
+			return getNodeProp(node, 'testID') === id;
+		};
+		return new LocatorImpl(this.root, [...this.predicates, predicate]);
+	}
 
-  locator(selector: string): InkxLocator {
-    const predicate = parseSelector(selector);
-    if (!predicate) {
-      // Invalid selector - return locator that matches nothing
-      return new LocatorImpl(this.root, [() => false]);
-    }
-    return new LocatorImpl(this.root, [...this.predicates, predicate]);
-  }
+	locator(selector: string): InkxLocator {
+		const predicate = parseSelector(selector);
+		if (!predicate) {
+			// Invalid selector - return locator that matches nothing
+			return new LocatorImpl(this.root, [() => false]);
+		}
+		return new LocatorImpl(this.root, [...this.predicates, predicate]);
+	}
 
-  first(): InkxLocator {
-    return new LocatorImpl(this.root, this.predicates, { type: "first" });
-  }
+	first(): InkxLocator {
+		return new LocatorImpl(this.root, this.predicates, { type: 'first' });
+	}
 
-  last(): InkxLocator {
-    return new LocatorImpl(this.root, this.predicates, { type: "last" });
-  }
+	last(): InkxLocator {
+		return new LocatorImpl(this.root, this.predicates, { type: 'last' });
+	}
 
-  nth(index: number): InkxLocator {
-    return new LocatorImpl(this.root, this.predicates, {
-      type: "nth",
-      index,
-    });
-  }
+	nth(index: number): InkxLocator {
+		return new LocatorImpl(this.root, this.predicates, {
+			type: 'nth',
+			index,
+		});
+	}
 
-  resolve(): InkxNode | null {
-    const nodes = this.resolveAll();
-    if (this.indexSelector) {
-      switch (this.indexSelector.type) {
-        case "first":
-          return nodes[0] ?? null;
-        case "last":
-          return nodes[nodes.length - 1] ?? null;
-        case "nth":
-          return nodes[this.indexSelector.index ?? 0] ?? null;
-      }
-    }
-    return nodes[0] ?? null;
-  }
+	resolve(): InkxNode | null {
+		const nodes = this.resolveAll();
+		if (this.indexSelector) {
+			switch (this.indexSelector.type) {
+				case 'first':
+					return nodes[0] ?? null;
+				case 'last':
+					return nodes[nodes.length - 1] ?? null;
+				case 'nth':
+					return nodes[this.indexSelector.index ?? 0] ?? null;
+			}
+		}
+		return nodes[0] ?? null;
+	}
 
-  resolveAll(): InkxNode[] {
-    if (this.predicates.length === 0) {
-      // No predicates - return root's children (or root if querying root)
-      return [this.root];
-    }
+	resolveAll(): InkxNode[] {
+		if (this.predicates.length === 0) {
+			// No predicates - return root's children (or root if querying root)
+			return [this.root];
+		}
 
-    const matches: InkxNode[] = [];
-    walkTree(this.root, (node) => {
-      if (this.predicates.every((p) => p(node))) {
-        matches.push(node);
-      }
-    });
-    return matches;
-  }
+		const matches: InkxNode[] = [];
+		walkTree(this.root, (node) => {
+			if (this.predicates.every((p) => p(node))) {
+				matches.push(node);
+			}
+		});
+		return matches;
+	}
 
-  count(): number {
-    return this.resolveAll().length;
-  }
+	count(): number {
+		return this.resolveAll().length;
+	}
 
-  textContent(): string {
-    const node = this.resolve();
-    if (!node) return "";
-    return getNodeTextContent(node);
-  }
+	textContent(): string {
+		const node = this.resolve();
+		if (!node) return '';
+		return getNodeTextContent(node);
+	}
 
-  getAttribute(name: string): string | undefined {
-    const node = this.resolve();
-    if (!node) return undefined;
-    return getNodeProp(node, name);
-  }
+	getAttribute(name: string): string | undefined {
+		const node = this.resolve();
+		if (!node) return undefined;
+		return getNodeProp(node, name);
+	}
 
-  boundingBox(): Rect | null {
-    const node = this.resolve();
-    if (!node) return null;
-    return node.screenRect ?? null;
-  }
+	boundingBox(): Rect | null {
+		const node = this.resolve();
+		if (!node) return null;
+		return node.screenRect ?? null;
+	}
 
-  isVisible(): boolean {
-    const box = this.boundingBox();
-    if (!box) return false;
-    // Check if any part of the node is within viewport
-    // Note: We don't have viewport bounds here, so just check if it has dimensions
-    return box.width > 0 && box.height > 0;
-  }
+	isVisible(): boolean {
+		const box = this.boundingBox();
+		if (!box) return false;
+		// Check if any part of the node is within viewport
+		// Note: We don't have viewport bounds here, so just check if it has dimensions
+		return box.width > 0 && box.height > 0;
+	}
 }
 
 /**
  * Walk tree depth-first, calling visitor for each node
  */
 function walkTree(node: InkxNode, visitor: (node: InkxNode) => void): void {
-  visitor(node);
-  for (const child of node.children) {
-    walkTree(child, visitor);
-  }
+	visitor(node);
+	for (const child of node.children) {
+		walkTree(child, visitor);
+	}
 }
 
 /**
  * Get text content of a node (concatenated from all text descendants)
  */
 function getNodeTextContent(node: InkxNode): string {
-  // Raw text nodes have textContent set directly
-  if (node.textContent !== undefined) {
-    return node.textContent;
-  }
-  // Concatenate children's text content
-  return node.children.map(getNodeTextContent).join("");
+	// Raw text nodes have textContent set directly
+	if (node.textContent !== undefined) {
+		return node.textContent;
+	}
+	// Concatenate children's text content
+	return node.children.map(getNodeTextContent).join('');
 }
 
 /**
  * Get a prop value from node
  */
 function getNodeProp(node: InkxNode, name: string): string | undefined {
-  const props = node.props as Record<string, unknown>;
-  const value = props[name];
-  if (value === undefined || value === null) return undefined;
-  return String(value);
+	const props = node.props as Record<string, unknown>;
+	const value = props[name];
+	if (value === undefined || value === null) return undefined;
+	return String(value);
 }
 
 /**
@@ -232,75 +232,67 @@ function getNodeProp(node: InkxNode, name: string): string | undefined {
  * - Combinators: > (child), + (adjacent sibling), space (descendant)
  */
 function parseSelector(selector: string): NodePredicate | null {
-  const trimmed = selector.trim();
+	const trimmed = selector.trim();
 
-  // Detect unsupported selectors and throw helpful errors
-  detectUnsupportedSelectors(trimmed);
+	// Detect unsupported selectors and throw helpful errors
+	detectUnsupportedSelectors(trimmed);
 
-  // Check for combinators
-  if (trimmed.includes(">")) {
-    return parseChildCombinator(trimmed);
-  }
-  if (trimmed.includes("+")) {
-    return parseAdjacentSiblingCombinator(trimmed);
-  }
-  if (trimmed.includes(" ") && !trimmed.startsWith("[")) {
-    return parseDescendantCombinator(trimmed);
-  }
+	// Check for combinators
+	if (trimmed.includes('>')) {
+		return parseChildCombinator(trimmed);
+	}
+	if (trimmed.includes('+')) {
+		return parseAdjacentSiblingCombinator(trimmed);
+	}
+	if (trimmed.includes(' ') && !trimmed.startsWith('[')) {
+		return parseDescendantCombinator(trimmed);
+	}
 
-  // Single selector
-  return parseSingleSelector(trimmed);
+	// Single selector
+	return parseSingleSelector(trimmed);
 }
 
 /**
  * Detect unsupported CSS selector patterns and throw informative errors
  */
 function detectUnsupportedSelectors(selector: string): void {
-  // Pseudo-elements (::before, ::after) - check BEFORE pseudo-classes
-  if (selector.includes("::")) {
-    throw new Error(
-      `Unsupported selector: pseudo-elements like "${selector}" are not supported.\n` +
-      `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
-      `If you need pseudo-element support, see bead km-inkx-css-select for discussion about switching to css-select library.`
-    );
-  }
+	// Pseudo-elements (::before, ::after) - check BEFORE pseudo-classes
+	if (selector.includes('::')) {
+		throw new Error(
+			`Unsupported selector: pseudo-elements like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nIf you need pseudo-element support, see bead km-inkx-css-select for discussion about switching to css-select library.`,
+		);
+	}
 
-  // Pseudo-classes (:hover, :nth-child, :not, etc.)
-  if (selector.includes(":")) {
-    throw new Error(
-      `Unsupported selector: pseudo-classes like "${selector}" are not supported.\n` +
-      `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
-      `If you need pseudo-class support, see bead km-inkx-css-select for discussion about switching to css-select library.`
-    );
-  }
+	// Pseudo-classes (:hover, :nth-child, :not, etc.)
+	if (selector.includes(':')) {
+		throw new Error(
+			`Unsupported selector: pseudo-classes like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nIf you need pseudo-class support, see bead km-inkx-css-select for discussion about switching to css-select library.`,
+		);
+	}
 
-  // Class selectors (.class)
-  if (/\.[a-zA-Z]/.test(selector)) {
-    throw new Error(
-      `Unsupported selector: class selectors like "${selector}" are not supported.\n` +
-      `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
-      `Tip: Use [class="myclass"] or [class*="myclass"] instead, or see bead km-inkx-css-select for css-select library.`
-    );
-  }
+	// Class selectors (.class)
+	if (/\.[a-zA-Z]/.test(selector)) {
+		throw new Error(
+			`Unsupported selector: class selectors like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nTip: Use [class="myclass"] or [class*="myclass"] instead, or see bead km-inkx-css-select for css-select library.`,
+		);
+	}
 
-  // Tag/type selectors (div, span, etc.)
-  // Allow single character selectors (might be valid IDs or edge cases)
-  if (/^[a-z][a-z0-9-]*$/i.test(selector) && selector.length > 1) {
-    throw new Error(
-      `Unsupported selector: tag/type selectors like "${selector}" are not supported.\n` +
-      `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
-      `Tip: Use [data-view="${selector}"] or similar attribute selector, or see bead km-inkx-css-select for css-select library.`
-    );
-  }
+	// Tag/type selectors (div, span, etc.)
+	// Allow single character selectors (might be valid IDs or edge cases)
+	if (/^[a-z][a-z0-9-]*$/i.test(selector) && selector.length > 1) {
+		throw new Error(
+			`Unsupported selector: tag/type selectors like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nTip: Use [data-view="${selector}"] or similar attribute selector, or see bead km-inkx-css-select for css-select library.`,
+		);
+	}
 
-  // Universal selector (*)
-  if (selector.trim() === "*") {
-    throw new Error(
-      `Unsupported selector: universal selector "*" is not supported.\n` +
-      `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
-      `If you need universal selector support, see bead km-inkx-css-select for css-select library.`
-    );
-  }
+	// Universal selector (*)
+	if (selector.trim() === '*') {
+		throw new Error(
+			`Unsupported selector: universal selector "*" is not supported.\n` +
+				`The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
+				'If you need universal selector support, see bead km-inkx-css-select for css-select library.',
+		);
+	}
 }
 
 /**
@@ -308,129 +300,126 @@ function detectUnsupportedSelectors(selector: string): void {
  * Supports compound selectors: #id[attr="value"][attr2]
  */
 function parseSingleSelector(selector: string): NodePredicate | null {
-  // Parse compound selector into parts
-  const parts: NodePredicate[] = [];
+	// Parse compound selector into parts
+	const parts: NodePredicate[] = [];
 
-  // Extract ID if present
-  const idMatch = selector.match(/^#([a-zA-Z0-9_-]+)/);
-  if (idMatch) {
-    const id = idMatch[1]!;
-    parts.push((node: InkxNode) => getNodeProp(node, "id") === id);
-    // Remove ID from selector string
-    selector = selector.slice(idMatch[0].length);
-  }
+	// Extract ID if present
+	const idMatch = selector.match(/^#([a-zA-Z0-9_-]+)/);
+	if (idMatch) {
+		const id = idMatch[1]!;
+		parts.push((node: InkxNode) => getNodeProp(node, 'id') === id);
+		// Remove ID from selector string
+		selector = selector.slice(idMatch[0].length);
+	}
 
-  // Extract all attribute selectors
-  const attrRegex =
-    /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g;
-  let match;
-  while ((match = attrRegex.exec(selector)) !== null) {
-    const [, attr, op, value] = match;
-    if (!attr) continue;
+	// Extract all attribute selectors
+	const attrRegex = /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g;
+	let match;
+	while ((match = attrRegex.exec(selector)) !== null) {
+		const [, attr, op, value] = match;
+		if (!attr) continue;
 
-    if (value === undefined) {
-      // Presence check [attr] - value group didn't match
-      parts.push((node: InkxNode) => getNodeProp(node, attr) !== undefined);
-    } else {
-      // Value check [attr="value"] - value group matched
-      parts.push((node: InkxNode) => {
-        const nodeValue = getNodeProp(node, attr);
-        if (nodeValue === undefined) return false;
-        switch (op) {
-          case "":
-            return nodeValue === value;
-          case "^":
-            return nodeValue.startsWith(value ?? "");
-          case "$":
-            return nodeValue.endsWith(value ?? "");
-          case "*":
-            return nodeValue.includes(value ?? "");
-          default:
-            return false;
-        }
-      });
-    }
-  }
+		if (value === undefined) {
+			// Presence check [attr] - value group didn't match
+			parts.push((node: InkxNode) => getNodeProp(node, attr) !== undefined);
+		} else {
+			// Value check [attr="value"] - value group matched
+			parts.push((node: InkxNode) => {
+				const nodeValue = getNodeProp(node, attr);
+				if (nodeValue === undefined) return false;
+				switch (op) {
+					case '':
+						return nodeValue === value;
+					case '^':
+						return nodeValue.startsWith(value ?? '');
+					case '$':
+						return nodeValue.endsWith(value ?? '');
+					case '*':
+						return nodeValue.includes(value ?? '');
+					default:
+						return false;
+				}
+			});
+		}
+	}
 
-  // If no parts matched, invalid selector
-  if (parts.length === 0) return null;
+	// If no parts matched, invalid selector
+	if (parts.length === 0) return null;
 
-  // Compound selector - all parts must match
-  return (node: InkxNode) => parts.every((pred) => pred(node));
+	// Compound selector - all parts must match
+	return (node: InkxNode) => parts.every((pred) => pred(node));
 }
 
 /**
  * Parse child combinator: A > B (B is direct child of A)
  */
 function parseChildCombinator(selector: string): NodePredicate | null {
-  const parts = selector.split(">").map((s) => s.trim());
-  if (parts.length !== 2) return null;
+	const parts = selector.split('>').map((s) => s.trim());
+	if (parts.length !== 2) return null;
 
-  const [parentSel, childSel] = parts;
-  const parentPred = parseSingleSelector(parentSel!);
-  const childPred = parseSingleSelector(childSel!);
+	const [parentSel, childSel] = parts;
+	const parentPred = parseSingleSelector(parentSel!);
+	const childPred = parseSingleSelector(childSel!);
 
-  if (!parentPred || !childPred) return null;
+	if (!parentPred || !childPred) return null;
 
-  return (node: InkxNode) => {
-    if (!childPred(node)) return false;
-    // Check if parent matches
-    return node.parent !== null && parentPred(node.parent);
-  };
+	return (node: InkxNode) => {
+		if (!childPred(node)) return false;
+		// Check if parent matches
+		return node.parent !== null && parentPred(node.parent);
+	};
 }
 
 /**
  * Parse adjacent sibling combinator: A + B (B immediately follows A)
  */
-function parseAdjacentSiblingCombinator(
-  selector: string,
-): NodePredicate | null {
-  const parts = selector.split("+").map((s) => s.trim());
-  if (parts.length !== 2) return null;
+function parseAdjacentSiblingCombinator(selector: string): NodePredicate | null {
+	const parts = selector.split('+').map((s) => s.trim());
+	if (parts.length !== 2) return null;
 
-  const [prevSel, nextSel] = parts;
-  const prevPred = parseSingleSelector(prevSel!);
-  const nextPred = parseSingleSelector(nextSel!);
+	const [prevSel, nextSel] = parts;
+	const prevPred = parseSingleSelector(prevSel!);
+	const nextPred = parseSingleSelector(nextSel!);
 
-  if (!prevPred || !nextPred) return null;
+	if (!prevPred || !nextPred) return null;
 
-  return (node: InkxNode) => {
-    if (!nextPred(node)) return false;
-    if (!node.parent) return false;
+	return (node: InkxNode) => {
+		if (!nextPred(node)) return false;
+		if (!node.parent) return false;
 
-    // Find this node's index in parent's children
-    const siblings = node.parent.children;
-    const index = siblings.indexOf(node);
-    if (index <= 0) return false;
+		// Find this node's index in parent's children
+		const siblings = node.parent.children;
+		const index = siblings.indexOf(node);
+		if (index <= 0) return false;
 
-    // Check if previous sibling matches
-    const prevSibling = siblings[index - 1];
-    return prevSibling !== undefined && prevPred(prevSibling);
-  };
+		// Check if previous sibling matches
+		const prevSibling = siblings[index - 1];
+		return prevSibling !== undefined && prevPred(prevSibling);
+	};
 }
 
 /**
  * Parse descendant combinator: A B (B is descendant of A)
  */
 function parseDescendantCombinator(selector: string): NodePredicate | null {
-  const parts = selector.split(/\s+/).filter((s) => s.length > 0);
-  if (parts.length !== 2) return null;
+	const parts = selector.split(/\s+/).filter((s) => s.length > 0);
+	if (parts.length !== 2) return null;
 
-  const [ancestorSel, descendantSel] = parts;
-  const ancestorPred = parseSingleSelector(ancestorSel!);
-  const descendantPred = parseSingleSelector(descendantSel!);
+	const [ancestorSel, descendantSel] = parts;
+	const ancestorPred = parseSingleSelector(ancestorSel!);
+	const descendantPred = parseSingleSelector(descendantSel!);
 
-  if (!ancestorPred || !descendantPred) return null;
+	if (!ancestorPred || !descendantPred) return null;
 
-  return (node: InkxNode) => {
-    if (!descendantPred(node)) return false;
+	return (node: InkxNode) => {
+		if (!descendantPred(node)) return false;
 
-    // Walk up the tree to find ancestor
-    let current = node.parent;
-    while (current) {
-      if (ancestorPred(current)) return true;
-      current = current.parent;
-    }
-    return false;
-  };
+		// Walk up the tree to find ancestor
+		let current = node.parent;
+		while (current) {
+			if (ancestorPred(current)) return true;
+			current = current.parent;
+		}
+		return false;
+	};
 }
