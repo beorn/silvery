@@ -15,6 +15,7 @@ import { EventEmitter } from 'node:events';
 import process from 'node:process';
 import createDebug from 'debug';
 import React, { useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react';
+import type { Term } from '@beorn/chalkx';
 
 const debug = createDebug('inkx:render');
 import {
@@ -24,6 +25,7 @@ import {
 	InputContext,
 	StdinContext,
 	StdoutContext,
+	TermContext,
 } from './context.js';
 import { isLayoutEngineInitialized, setLayoutEngine } from './layout-engine.js';
 import { enterAlternateScreen, leaveAlternateScreen } from './output.js';
@@ -38,6 +40,17 @@ import { RenderScheduler } from './scheduler.js';
  * Render mode for the terminal.
  */
 export type RenderMode = 'fullscreen' | 'inline';
+
+/**
+ * Non-TTY mode for rendering in non-interactive environments.
+ *
+ * - 'auto': Auto-detect based on environment (default)
+ * - 'tty': Force TTY mode with cursor positioning
+ * - 'line-by-line': Output lines without cursor repositioning
+ * - 'static': Single final output only (no intermediate updates)
+ * - 'plain': Strip all ANSI escape codes
+ */
+export type NonTTYMode = 'auto' | 'tty' | 'line-by-line' | 'static' | 'plain';
 
 /**
  * Options for the render function.
@@ -61,6 +74,20 @@ export interface RenderOptions {
 	 * - 'inline': Renders inline from current cursor position (for progress bars)
 	 */
 	mode?: RenderMode;
+	/**
+	 * Non-TTY mode for non-interactive environments (default: 'auto')
+	 *
+	 * When running in a non-TTY environment (piped output, CI, TERM=dumb),
+	 * inkx will automatically detect this and use 'line-by-line' mode.
+	 * You can override this behavior by explicitly setting the mode.
+	 *
+	 * - 'auto': Detect based on environment (TTY -> 'tty', non-TTY -> 'line-by-line')
+	 * - 'tty': Force TTY mode with cursor positioning
+	 * - 'line-by-line': Simple newline-separated output, updates in place
+	 * - 'static': Only output final frame (no intermediate renders)
+	 * - 'plain': Strip all ANSI codes, output plain text
+	 */
+	nonTTYMode?: NonTTYMode;
 }
 
 /**
@@ -433,6 +460,7 @@ class InkxInstance {
 	private readonly debug: boolean;
 	private readonly alternateScreen: boolean;
 	private readonly mode: RenderMode;
+	private readonly nonTTYMode: NonTTYMode;
 
 	private scheduler: RenderScheduler | null = null;
 	private container: ReturnType<typeof createContainer> | null = null;
@@ -456,6 +484,7 @@ class InkxInstance {
 		this.debug = options.debug;
 		this.alternateScreen = options.alternateScreen;
 		this.mode = options.mode;
+		this.nonTTYMode = options.nonTTYMode;
 
 		// Set up exit promise
 		this.exitPromise = new Promise<void>((resolve, reject) => {
@@ -491,6 +520,7 @@ class InkxInstance {
 			root: getContainerRoot(this.container),
 			debug: this.debug,
 			mode: this.mode,
+			nonTTYMode: this.nonTTYMode,
 		});
 
 		// Set up resize listener
@@ -648,26 +678,80 @@ class InkxInstance {
 /**
  * Render a React element to the terminal.
  *
- * @example
+ * NewWay (preferred): Pass term first for access to terminal capabilities
+ * ```tsx
+ * import { render, Box, Text, useTerm } from 'inkx';
+ * import { createTerm } from '@beorn/chalkx';
+ *
+ * using term = createTerm();
+ * await render(term, <App />);
+ * ```
+ *
+ * OldWay (deprecated): Without term
  * ```tsx
  * import { render, Box, Text } from 'inkx';
  *
- * const { waitUntilExit } = render(
- *   <Box>
- *     <Text>Hello, Inkx!</Text>
- *   </Box>
- * );
- *
- * await waitUntilExit();
+ * await render(<App />);
  * ```
  *
- * @param element - The React element to render
- * @param options - Render options
+ * @param termOrElement - Term instance (NewWay) or React element (OldWay)
+ * @param elementOrOptions - React element (NewWay) or options (OldWay)
+ * @param maybeOptions - Options (NewWay only)
  * @returns An Instance object with control methods
  */
 export async function render(
+	term: Term,
+	element: ReactElement,
+	options?: RenderOptions,
+): Promise<Instance>;
+export async function render(
+	element: ReactElement,
+	options?: RenderOptions,
+): Promise<Instance>;
+export async function render(
+	termOrElement: Term | ReactElement,
+	elementOrOptions?: ReactElement | RenderOptions,
+	maybeOptions?: RenderOptions,
+): Promise<Instance> {
+	// Detect which overload was called
+	const isTerm = (obj: unknown): obj is Term =>
+		obj !== null &&
+		typeof obj === 'object' &&
+		'hasCursor' in obj &&
+		'hasColor' in obj &&
+		'stdout' in obj;
+
+	let term: Term | null = null;
+	let element: ReactElement;
+	let options: RenderOptions;
+
+	if (isTerm(termOrElement)) {
+		// NewWay: render(term, element, options?)
+		term = termOrElement;
+		element = elementOrOptions as ReactElement;
+		options = maybeOptions ?? {};
+		// Use term's streams
+		options = {
+			...options,
+			stdout: options.stdout ?? term.stdout,
+			stdin: options.stdin ?? term.stdin,
+		};
+	} else {
+		// OldWay: render(element, options?)
+		element = termOrElement;
+		options = (elementOrOptions as RenderOptions) ?? {};
+	}
+
+	return renderImpl(element, options, term);
+}
+
+/**
+ * Internal render implementation.
+ */
+async function renderImpl(
 	element: ReactElement,
 	options: RenderOptions = {},
+	term: Term | null = null,
 ): Promise<Instance> {
 	debug('render() called');
 	const renderStart = Date.now();
@@ -685,6 +769,7 @@ export async function render(
 		patchConsole: options.patchConsole ?? true,
 		alternateScreen: options.alternateScreen ?? false,
 		mode: options.mode ?? ('fullscreen' as RenderMode),
+		nonTTYMode: options.nonTTYMode ?? ('auto' as NonTTYMode),
 	};
 
 	// Get or create instance for this stdout
@@ -696,13 +781,25 @@ export async function render(
 		debug('render(): InkxInstance created in %dms', Date.now() - renderStart);
 	}
 
+	// Wrap element with TermContext if term provided
+	const wrappedElement = term
+		? <TermContext.Provider value={term}>{element}</TermContext.Provider>
+		: element;
+
 	// Render the element
 	debug('render(): calling instance.render()');
-	instance.render(element);
+	instance.render(wrappedElement);
 	debug('render(): instance.render() complete, total: %dms', Date.now() - renderStart);
 
+	// Wrap rerender to also include TermContext
+	const rerender = term
+		? (newElement: ReactNode) => instance.rerender(
+				<TermContext.Provider value={term}>{newElement}</TermContext.Provider>
+			)
+		: instance.rerender;
+
 	return {
-		rerender: instance.rerender,
+		rerender,
 		unmount: instance.unmount,
 		waitUntilExit: instance.waitUntilExit,
 		clear: instance.clear,
@@ -712,18 +809,71 @@ export async function render(
 /**
  * Synchronous render function for use when layout engine is already initialized.
  *
- * This is useful when you've already called setLayoutEngine() elsewhere.
- * If no layout engine is initialized, this will throw an error.
+ * NewWay (preferred): Pass term first for access to terminal capabilities
+ * ```tsx
+ * import { renderSync, Box, Text, useTerm, initYogaEngine, setLayoutEngine } from 'inkx';
+ * import { createTerm } from '@beorn/chalkx';
  *
- * @param element - The React element to render
- * @param options - Render options
+ * const engine = await initYogaEngine();
+ * setLayoutEngine(engine);
+ * using term = createTerm();
+ * renderSync(term, <App />);
+ * ```
+ *
+ * OldWay (deprecated): Without term
+ * ```tsx
+ * renderSync(<App />);
+ * ```
+ *
  * @returns An Instance object with control methods
  */
-export function renderSync(element: ReactElement, options: RenderOptions = {}): Instance {
+export function renderSync(
+	term: Term,
+	element: ReactElement,
+	options?: RenderOptions,
+): Instance;
+export function renderSync(
+	element: ReactElement,
+	options?: RenderOptions,
+): Instance;
+export function renderSync(
+	termOrElement: Term | ReactElement,
+	elementOrOptions?: ReactElement | RenderOptions,
+	maybeOptions?: RenderOptions,
+): Instance {
 	if (!isLayoutEngineInitialized()) {
 		throw new Error(
 			'Layout engine is not initialized. Call render() (async) first, or initialize manually with setLayoutEngine().',
 		);
+	}
+
+	// Detect which overload was called
+	const isTerm = (obj: unknown): obj is Term =>
+		obj !== null &&
+		typeof obj === 'object' &&
+		'hasCursor' in obj &&
+		'hasColor' in obj &&
+		'stdout' in obj;
+
+	let term: Term | null = null;
+	let element: ReactElement;
+	let options: RenderOptions;
+
+	if (isTerm(termOrElement)) {
+		// NewWay: renderSync(term, element, options?)
+		term = termOrElement;
+		element = elementOrOptions as ReactElement;
+		options = maybeOptions ?? {};
+		// Use term's streams
+		options = {
+			...options,
+			stdout: options.stdout ?? term.stdout,
+			stdin: options.stdin ?? term.stdin,
+		};
+	} else {
+		// OldWay: renderSync(element, options?)
+		element = termOrElement;
+		options = (elementOrOptions as RenderOptions) ?? {};
 	}
 
 	// Merge with defaults
@@ -735,6 +885,7 @@ export function renderSync(element: ReactElement, options: RenderOptions = {}): 
 		patchConsole: options.patchConsole ?? true,
 		alternateScreen: options.alternateScreen ?? false,
 		mode: options.mode ?? ('fullscreen' as RenderMode),
+		nonTTYMode: options.nonTTYMode ?? ('auto' as NonTTYMode),
 	};
 
 	// Get or create instance for this stdout
@@ -744,11 +895,23 @@ export function renderSync(element: ReactElement, options: RenderOptions = {}): 
 		instances.set(resolvedOptions.stdout, instance);
 	}
 
+	// Wrap element with TermContext if term provided
+	const wrappedElement = term
+		? <TermContext.Provider value={term}>{element}</TermContext.Provider>
+		: element;
+
 	// Render the element
-	instance.render(element);
+	instance.render(wrappedElement);
+
+	// Wrap rerender to also include TermContext
+	const rerender = term
+		? (newElement: ReactNode) => instance!.rerender(
+				<TermContext.Provider value={term}>{newElement}</TermContext.Provider>
+			)
+		: instance.rerender;
 
 	return {
-		rerender: instance.rerender,
+		rerender,
 		unmount: instance.unmount,
 		waitUntilExit: instance.waitUntilExit,
 		clear: instance.clear,

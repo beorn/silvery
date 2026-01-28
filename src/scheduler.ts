@@ -14,6 +14,13 @@
 
 import createDebug from 'debug';
 import type { TerminalBuffer } from './buffer.js';
+import {
+	type ResolvedNonTTYMode as ResolvedMode,
+	countLines,
+	createOutputTransformer,
+	resolveNonTTYMode,
+	stripAnsi,
+} from './non-tty.js';
 import { executeRender } from './pipeline.js';
 import type { InkxNode } from './types.js';
 
@@ -22,6 +29,16 @@ const debug = createDebug('inkx:scheduler');
 // ============================================================================
 // Types
 // ============================================================================
+
+/**
+ * Non-TTY mode for rendering in non-interactive environments.
+ */
+export type NonTTYMode = 'auto' | 'tty' | 'line-by-line' | 'static' | 'plain';
+
+/**
+ * Resolved non-TTY mode after auto-detection.
+ */
+export type ResolvedNonTTYMode = Exclude<NonTTYMode, 'auto'>;
 
 export interface SchedulerOptions {
 	/** stdout stream for writing output */
@@ -34,6 +51,16 @@ export interface SchedulerOptions {
 	minFrameTime?: number;
 	/** Render mode: fullscreen (absolute positioning) or inline (relative positioning) */
 	mode?: 'fullscreen' | 'inline';
+	/**
+	 * Non-TTY mode for non-interactive environments (default: 'auto')
+	 *
+	 * - 'auto': Detect based on environment
+	 * - 'tty': Force TTY mode
+	 * - 'line-by-line': Simple line output
+	 * - 'static': Only output final frame
+	 * - 'plain': Strip all ANSI codes
+	 */
+	nonTTYMode?: NonTTYMode;
 }
 
 export interface RenderStats {
@@ -78,9 +105,17 @@ export class RenderScheduler {
 	private debug: boolean;
 	private minFrameTime: number;
 	private mode: 'fullscreen' | 'inline';
+	private nonTTYMode: ResolvedMode;
+	private outputTransformer: (content: string, prevLineCount: number) => string;
 
 	/** Previous buffer for diffing */
 	private prevBuffer: TerminalBuffer | null = null;
+
+	/** Line count of previous render (for non-TTY modes) */
+	private prevLineCount = 0;
+
+	/** Accumulated output for static mode */
+	private staticOutput = '';
 
 	/** Is a render currently scheduled? */
 	private renderScheduled = false;
@@ -112,8 +147,26 @@ export class RenderScheduler {
 		this.minFrameTime = options.minFrameTime ?? 16;
 		this.mode = options.mode ?? 'fullscreen';
 
-		// Listen for terminal resize
-		this.setupResizeListener();
+		// Resolve non-TTY mode based on environment
+		this.nonTTYMode = resolveNonTTYMode({
+			mode: options.nonTTYMode,
+			stdout: this.stdout,
+		});
+		this.outputTransformer = createOutputTransformer(this.nonTTYMode);
+
+		debug('non-TTY mode resolved to: %s', this.nonTTYMode);
+
+		// Listen for terminal resize (only in TTY mode)
+		if (this.nonTTYMode === 'tty') {
+			this.setupResizeListener();
+		}
+	}
+
+	/**
+	 * Get the resolved non-TTY mode.
+	 */
+	getNonTTYMode(): ResolvedMode {
+		return this.nonTTYMode;
 	}
 
 	// ==========================================================================
@@ -220,6 +273,20 @@ export class RenderScheduler {
 			this.resizeCleanup();
 			this.resizeCleanup = null;
 		}
+
+		// In static mode, output the final frame on dispose
+		if (this.nonTTYMode === 'static' && this.staticOutput) {
+			this.stdout.write(this.staticOutput);
+			this.stdout.write('\n');
+		}
+	}
+
+	/**
+	 * Get the last rendered output (for static mode).
+	 * Returns the plain text output that would be written on dispose.
+	 */
+	getStaticOutput(): string {
+		return this.staticOutput;
 	}
 
 	// ==========================================================================
@@ -251,7 +318,7 @@ export class RenderScheduler {
 			const width = this.stdout.columns ?? 80;
 			const height = this.stdout.rows ?? 24;
 
-			debug('render #%d: %dx%d', this.stats.renderCount + 1, width, height);
+			debug('render #%d: %dx%d, nonTTYMode=%s', this.stats.renderCount + 1, width, height, this.nonTTYMode);
 
 			// Run render pipeline
 			const { output, buffer } = executeRender(
@@ -262,9 +329,24 @@ export class RenderScheduler {
 				this.mode,
 			);
 
+			// Transform output based on non-TTY mode
+			let transformedOutput: string;
+			if (this.nonTTYMode === 'tty') {
+				// Pass through unchanged
+				transformedOutput = output;
+			} else if (this.nonTTYMode === 'static') {
+				// Store for final output, don't write yet
+				this.staticOutput = stripAnsi(output);
+				transformedOutput = '';
+			} else {
+				// Apply line-by-line or plain transformation
+				transformedOutput = this.outputTransformer(output, this.prevLineCount);
+				this.prevLineCount = countLines(output);
+			}
+
 			// Write output if there's any
-			if (output.length > 0) {
-				this.stdout.write(output);
+			if (transformedOutput.length > 0) {
+				this.stdout.write(transformedOutput);
 			}
 
 			// Save buffer for next diff
@@ -283,7 +365,7 @@ export class RenderScheduler {
 				'render #%d complete: %dms, output: %d bytes',
 				this.stats.renderCount,
 				renderTime,
-				output.length,
+				transformedOutput.length,
 			);
 
 			if (this.debug) {
@@ -294,8 +376,12 @@ export class RenderScheduler {
 			debug('render error: %O', error);
 			this.logError('Render error:', error);
 
-			// Show error indicator in terminal
-			this.stdout.write('\x1b[0m\x1b[31mRender error (see console)\x1b[0m');
+			// Show error indicator in terminal (only in TTY mode)
+			if (this.nonTTYMode === 'tty') {
+				this.stdout.write('\x1b[0m\x1b[31mRender error (see console)\x1b[0m');
+			} else {
+				this.stdout.write('Render error (see console)\n');
+			}
 		}
 	}
 

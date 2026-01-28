@@ -4,45 +4,66 @@
  * ink-testing-library compatible API for testing Inkx components.
  * Uses the actual inkx render pipeline for accurate ANSI output.
  *
- * Auto-cleanup: Each render() call automatically unmounts the previous render,
+ * ## Import Syntax
+ *
+ * ```tsx
+ * import { createTestRenderer, createLocator, bufferToText, stripAnsi } from 'inkx/testing';
+ * ```
+ *
+ * ## Auto-cleanup
+ *
+ * Each render() call automatically unmounts the previous render,
  * so you don't need explicit cleanup.
+ *
+ * ## Basic Testing
  *
  * @example
  * ```tsx
  * import { createTestRenderer } from 'inkx/testing';
- * import { Text } from 'inkx';
+ * import { Text, Box } from 'inkx';
  *
- * const render = createTestRenderer();
+ * const render = createTestRenderer({ columns: 80, rows: 24 });
  *
  * test('renders text', () => {
- *   const { lastFrame } = render(<Text>Hello</Text>);
+ *   const { lastFrame, lastFrameText } = render(<Text>Hello</Text>);
+ *
+ *   // With ANSI codes
  *   expect(lastFrame()).toContain('Hello');
- * });
  *
- * test('renders more text', () => {
- *   // Previous render is auto-cleaned when render() is called again
- *   const { lastFrame } = render(<Text>World</Text>);
- *   expect(lastFrame()).toContain('World');
+ *   // Plain text (no ANSI)
+ *   expect(lastFrameText()).toContain('Hello');
  * });
  * ```
  *
+ * ## DOM-style Queries
+ *
  * @example
  * ```tsx
- * // Testing keyboard input (stdin.write connects to useInput hooks)
- * const render = createTestRenderer();
+ * import { createTestRenderer, createLocator } from 'inkx/testing';
  *
- * test('handles keyboard input', () => {
- *   const { stdin } = render(<MyComponent />);
- *   stdin.write('\x1b');  // Send Escape key
- *   stdin.write('q');     // Send 'q' key
+ * test('queries elements', () => {
+ *   const { getContainer } = render(<Box testID="main"><Text>Hello</Text></Box>);
+ *   const locator = createLocator(getContainer());
+ *
+ *   expect(locator.getByText('Hello').count()).toBe(1);
+ *   expect(locator.getByTestId('main').boundingBox()?.width).toBe(80);
  * });
  * ```
  *
+ * ## Keyboard Input Testing
+ *
  * @example
  * ```tsx
- * // Custom dimensions per render
- * const render = createTestRenderer();
- * const { lastFrame } = render(<WideComponent />, { columns: 120, rows: 40 });
+ * test('handles keyboard', () => {
+ *   const { stdin, lastFrameText } = render(<MyComponent />);
+ *
+ *   stdin.write('j');           // Letter key
+ *   stdin.write('\x1b[A');      // Up arrow
+ *   stdin.write('\x1b');        // Escape
+ *   stdin.write('\r');          // Enter
+ *
+ *   expect(lastFrameText()).toContain('expected result');
+ * });
  * ```
  */
 
@@ -224,19 +245,34 @@ interface RenderInstance {
 // ============================================================================
 
 /**
- * Create a test render function with custom configuration.
+ * Create a test render function for testing inkx components.
+ *
+ * The returned render function auto-cleans previous renders on each call.
  *
  * @param options - Renderer configuration (dimensions, layout engine, debug)
- * @returns Render function that auto-cleans previous render on each call
+ * @returns Render function that returns { lastFrame, lastFrameText, stdin, getContainer, ... }
  *
  * @example
  * ```tsx
- * // Custom dimensions
- * const render = createTestRenderer({ columns: 120, rows: 40 });
+ * import { createTestRenderer, createLocator } from 'inkx/testing';
+ * import { Box, Text } from 'inkx';
  *
- * // Custom layout engine
- * const flexx = await initFlexxEngine();
- * const render = createTestRenderer({ layoutEngine: flexx });
+ * // Create renderer (typically once per test file)
+ * const render = createTestRenderer({ columns: 80, rows: 24 });
+ *
+ * test('my test', () => {
+ *   const { lastFrameText, stdin, getContainer } = render(<MyComponent />);
+ *
+ *   // Check output
+ *   expect(lastFrameText()).toContain('expected');
+ *
+ *   // Send input
+ *   stdin.write('q');
+ *
+ *   // DOM queries
+ *   const locator = createLocator(getContainer());
+ *   expect(locator.getByText('Hello').count()).toBe(1);
+ * });
  * ```
  */
 export function createTestRenderer(options: TestRendererOptions = {}): TestRender {

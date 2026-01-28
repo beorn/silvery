@@ -2,6 +2,7 @@
  * Inkx React Contexts
  *
  * Provides contexts for:
+ * - TermContext: Access to Term instance (for styling/detection)
  * - NodeContext: Access to the current InkxNode (for useLayout)
  * - AppContext: App-level controls (exit, etc.)
  * - StdioContext: Access to stdin/stdout
@@ -10,6 +11,17 @@
 import type { EventEmitter } from 'node:events';
 import { createContext } from 'react';
 import type { InkxNode } from './types.js';
+import type { Term } from '@beorn/chalkx';
+
+// ============================================================================
+// Term Context
+// ============================================================================
+
+/**
+ * Context that provides access to the Term instance.
+ * Used by useTerm() hook to access terminal capabilities and styling.
+ */
+export const TermContext = createContext<Term | null>(null);
 
 // ============================================================================
 // Node Context
