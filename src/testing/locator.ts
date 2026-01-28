@@ -302,20 +302,20 @@ function detectUnsupportedSelectors(selector: string): void {
 function parseSingleSelector(selector: string): NodePredicate | null {
 	// Parse compound selector into parts
 	const parts: NodePredicate[] = [];
+	let remaining = selector;
 
 	// Extract ID if present
-	const idMatch = selector.match(/^#([a-zA-Z0-9_-]+)/);
+	const idMatch = remaining.match(/^#([a-zA-Z0-9_-]+)/);
 	if (idMatch) {
 		const id = idMatch[1]!;
 		parts.push((node: InkxNode) => getNodeProp(node, 'id') === id);
 		// Remove ID from selector string
-		selector = selector.slice(idMatch[0].length);
+		remaining = remaining.slice(idMatch[0].length);
 	}
 
 	// Extract all attribute selectors
 	const attrRegex = /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g;
-	let match;
-	while ((match = attrRegex.exec(selector)) !== null) {
+	for (const match of remaining.matchAll(attrRegex)) {
 		const [, attr, op, value] = match;
 		if (!attr) continue;
 
