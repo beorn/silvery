@@ -24,12 +24,7 @@
  * ```
  */
 
-import React, { type ReactElement, act } from 'react'
-
-// Configure React to recognize this as a testing environment for act() support
-// This suppresses the "testing environment not configured" warning
-// @ts-expect-error - React internal flag for testing environments
-globalThis.IS_REACT_ACT_ENVIRONMENT = true
+import React, { type ReactElement } from 'react'
 
 import { bufferToText, bufferToStyledText } from './buffer.js'
 import { AppContext, StdoutContext } from './context.js'
@@ -187,19 +182,17 @@ export function renderStringSync(
 	)
 
 	// Mount and flush synchronously
-	act(() => {
-		reconciler.updateContainerSync(wrapped, fiberRoot, null, null)
-		reconciler.flushSyncWork()
-	})
+	// Note: We don't use act() here because this is production rendering code,
+	// not a test environment. The reconciler calls are synchronous.
+	reconciler.updateContainerSync(wrapped, fiberRoot, null, null)
+	reconciler.flushSyncWork()
 
 	// Execute render pipeline
 	const root = getContainerRoot(container)
 	const { buffer } = executeRender(root, width, height, null)
 
 	// Unmount (cleanup)
-	act(() => {
-		reconciler.updateContainer(null, fiberRoot, null, () => {})
-	})
+	reconciler.updateContainer(null, fiberRoot, null, () => {})
 
 	// Convert buffer to string
 	if (plain) {
