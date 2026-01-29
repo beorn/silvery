@@ -17,7 +17,6 @@ import { beforeAll, describe, expect, test } from 'bun:test';
 
 // Skip in CI - Yoga WASM has platform-specific behavior on Linux runners
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
-const describeEquivalence = isCI ? describe.skip : describe;
 import type React from 'react';
 import { createFlexxEngine } from '../src/adapters/flexx-adapter.js';
 import { initYogaEngine } from '../src/adapters/yoga-adapter.js';
@@ -113,7 +112,7 @@ function expectBothRender(
 // Test Cases
 // ============================================================================
 
-describeEquivalence('Layout Engine Equivalence (km-zofe)', () => {
+describe.skipIf(isCI)('Layout Engine Equivalence (km-zofe)', () => {
 	describe('Simple Box with fixed dimensions', () => {
 		test('Box with explicit width and height', () => {
 			const element = (
