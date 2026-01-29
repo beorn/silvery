@@ -14,7 +14,7 @@ import { Box, Text, Newline, Spacer, Static, Console } from 'inkx'
 import { useContentRect, useScreenRect, useInput, useApp, useTerm, useConsole } from 'inkx'
 
 // Render functions
-import { render, renderSync, setLayoutEngine, initYogaEngine, createFlexxEngine } from 'inkx'
+import { render, renderSync, renderString, setLayoutEngine, initYogaEngine, createFlexxEngine } from 'inkx'
 
 // Term primitives (re-exported from @beorn/chalkx)
 import { createTerm, patchConsole, type Term, type PatchedConsole } from 'inkx'
@@ -74,6 +74,24 @@ function App({ console: patched }: { console: PatchedConsole }) {
 
   await app.run()
 }
+```
+
+### Static Rendering (No Terminal)
+
+For one-shot CLI output, CI, or piped output where you don't need a terminal:
+
+```tsx
+import { renderString, Box, Text } from 'inkx'
+
+// Basic usage - returns string with ANSI codes
+const output = await renderString(<Summary stats={stats} />)
+console.log(output)
+
+// Plain text (no ANSI codes) for piped output
+const plain = await renderString(<Report />, { plain: true })
+
+// Custom width for layout
+const wide = await renderString(<Table />, { width: 120 })
 ```
 
 ### Layout Feedback (Main Feature)
@@ -268,6 +286,7 @@ expect(cursor.textContent()).toBe('item2')  // Same locator, fresh result!
 |--------|-------------|
 | `render(term, element)` | Render with Term - NewWay |
 | `renderSync(term, element)` | Sync render with Term |
+| `renderString(element, opts)` | Static render to string (no terminal needed) |
 | `Console` | Renders captured console output |
 | `useTerm()` | Access Term in components |
 | `useConsole(patched)` | Subscribe to console entries |

@@ -211,6 +211,7 @@ export {
 	createFlexxEngine,
 	FlexxLayoutEngine,
 } from './render.js';
+export { renderString, renderStringSync, type RenderStringOptions } from './render-string.js';
 export { measureElement } from './measureElement.js';
 
 // ANSI escape sequences for terminal control
