@@ -15,7 +15,7 @@ import { EventEmitter } from 'node:events';
 import process from 'node:process';
 import createDebug from 'debug';
 import React, { useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react';
-import type { Term } from '@beorn/chalkx';
+import type { Term } from 'chalkx';
 
 const debug = createDebug('inkx:render');
 import {

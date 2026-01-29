@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react'
-import type { PatchedConsole, ConsoleEntry } from '@beorn/chalkx'
+import type { PatchedConsole, ConsoleEntry } from 'chalkx'
 
 /**
  * Hook to subscribe to console entries from a PatchedConsole.
@@ -8,7 +8,7 @@ import type { PatchedConsole, ConsoleEntry } from '@beorn/chalkx'
  * @example
  * ```tsx
  * import { useConsole, Box, Text } from 'inkx'
- * import { patchConsole } from '@beorn/chalkx'
+ * import { patchConsole } from 'chalkx'
  *
  * function ConsoleViewer({ patched }: { patched: PatchedConsole }) {
  *   const entries = useConsole(patched)

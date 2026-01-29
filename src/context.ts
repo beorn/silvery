@@ -11,7 +11,7 @@
 import type { EventEmitter } from 'node:events';
 import { createContext } from 'react';
 import type { InkxNode } from './types.js';
-import type { Term } from '@beorn/chalkx';
+import type { Term } from 'chalkx';
 
 // ============================================================================
 // Term Context

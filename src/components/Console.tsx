@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react'
 import { Box } from './Box.js'
 import { Text } from './Text.js'
-import type { PatchedConsole, ConsoleEntry } from '@beorn/chalkx'
+import type { PatchedConsole, ConsoleEntry } from 'chalkx'
 import { useConsole } from '../hooks/useConsole.js'
 
 interface ConsoleProps {
@@ -41,7 +41,7 @@ function formatArgs(args: unknown[]): string {
  * @example Default rendering
  * ```tsx
  * import { Console } from 'inkx'
- * import { patchConsole } from '@beorn/chalkx'
+ * import { patchConsole } from 'chalkx'
  *
  * using patched = patchConsole(console)
  * <Console console={patched} />

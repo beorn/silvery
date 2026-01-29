@@ -11,7 +11,7 @@
  * - Combining characters: Diacritics, emoji modifiers that take 0 columns
  */
 
-import { BG_OVERRIDE_CODE } from '@beorn/chalkx';
+import { BG_OVERRIDE_CODE } from 'chalkx';
 import Graphemer from 'graphemer';
 import stringWidth from 'string-width';
 import type { Style, TerminalBuffer } from './buffer.js';
@@ -579,7 +579,7 @@ export function truncateAnsi(text: string, maxWidth: number, ellipsis = '\u2026'
 // ANSI Parsing
 // ============================================================================
 
-// BG_OVERRIDE_CODE is imported from @beorn/chalkx and re-exported at top of file
+// BG_OVERRIDE_CODE is imported from chalkx and re-exported at top of file
 
 /** Styled text segment with associated ANSI colors/attributes */
 export interface StyledSegment {

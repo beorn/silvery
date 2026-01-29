@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import type { Term } from '@beorn/chalkx'
+import type { Term } from 'chalkx'
 import { TermContext } from '../context.js'
 
 /**

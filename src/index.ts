@@ -153,12 +153,12 @@ export { useConsole } from './hooks/useConsole.js';
 export { TermContext } from './context.js';
 
 // =============================================================================
-// Re-exports from @beorn/chalkx
+// Re-exports from chalkx
 // =============================================================================
 
 // Term primitives (so consumers don't need to import from chalkx directly)
-export { createTerm, term, patchConsole } from '@beorn/chalkx';
-export type { Term, StyleChain, PatchedConsole, ColorLevel, ConsoleEntry } from '@beorn/chalkx';
+export { createTerm, term, patchConsole } from 'chalkx';
+export type { Term, StyleChain, PatchedConsole, ColorLevel, ConsoleEntry } from 'chalkx';
 
 // Hit Registry (mouse support)
 export {
