@@ -64,13 +64,31 @@ import { outputPhase } from './output-phase.js';
 // ============================================================================
 
 /**
+ * Options for executeRender.
+ */
+export interface ExecuteRenderOptions {
+	/**
+	 * Render mode: fullscreen or inline.
+	 * Default: 'fullscreen'
+	 */
+	mode?: 'fullscreen' | 'inline';
+
+	/**
+	 * Skip notifying layout subscribers.
+	 * Use for static/one-shot renders where layout feedback isn't needed.
+	 * Default: false
+	 */
+	skipLayoutNotifications?: boolean;
+}
+
+/**
  * Execute the full render pipeline.
  *
  * @param root The root InkxNode
  * @param width Terminal width
  * @param height Terminal height
  * @param prevBuffer Previous buffer for diffing (null on first render)
- * @param mode Render mode: fullscreen or inline
+ * @param options Render options
  * @returns Object with ANSI output and current buffer
  */
 export function executeRender(
@@ -78,8 +96,12 @@ export function executeRender(
 	width: number,
 	height: number,
 	prevBuffer: TerminalBuffer | null,
-	mode: 'fullscreen' | 'inline' = 'fullscreen',
+	options: ExecuteRenderOptions | 'fullscreen' | 'inline' = 'fullscreen',
 ): { output: string; buffer: TerminalBuffer } {
+	// Normalize options (string shorthand for mode)
+	const opts: ExecuteRenderOptions =
+		typeof options === 'string' ? { mode: options } : options;
+	const { mode = 'fullscreen', skipLayoutNotifications = false } = opts;
 	const start = Date.now();
 
 	// Clear per-render caches
@@ -103,7 +125,10 @@ export function executeRender(
 
 	// Phase 2.7: Notify layout subscribers
 	// This runs AFTER screenRectPhase so useScreenRectCallback reads correct positions
-	notifyLayoutSubscribers(root);
+	// Skip for static renders where no one will respond to the feedback
+	if (!skipLayoutNotifications) {
+		notifyLayoutSubscribers(root);
+	}
 
 	// Phase 3: Content render
 	const t3 = Date.now();

@@ -86,11 +86,12 @@ If you don't have exclusive stdout, use the `<Console />` component to handle in
 
 ## Render Functions
 
-### `render(term, element)` - Interactive Rendering
+### `render(element, term)` - Interactive Rendering
 
 ```ts
-using app = await render(term, <App />)
-using app = await render(term, <App />, { fullscreen: true })
+using term = createTerm()
+using app = await render(<App />, term)
+using app = await render(<App />, term, { fullscreen: true })
 ```
 
 - Default: **inline mode** (updates in place from current cursor)
@@ -137,8 +138,8 @@ const output: string = renderString(<Summary />, { width: 80, plain: true })
 
 | Situation | Function | Why |
 |-----------|----------|-----|
-| Fullscreen TUI | `render(term, <App />, { fullscreen: true })` | Takes over terminal |
-| Progress bar | `render(term, <Progress />)` | Updates in place |
+| Fullscreen TUI | `render(<App />, { fullscreen: true })` | Takes over terminal |
+| Progress bar | `render(<Progress />)` | Updates in place |
 | Worker output handling | `<Console />` component | Composition pattern |
 | CI / no cursor | `renderString(<Summary />)` | Always safe |
 | Streaming output | `renderString()` in a loop | Append-only |
@@ -216,11 +217,11 @@ using term = createTerm()
 
 if (term.hasCursor() && term.hasInput()) {
   // Full interactive TUI
-  using app = await render(term, <InteractiveApp />, { fullscreen: true })
+  using app = await render(<InteractiveApp />, { fullscreen: true })
   await app.waitUntilExit()
 } else if (term.hasCursor()) {
   // Output-only live updates
-  using app = await render(term, <ProgressDisplay />)
+  using app = await render(<ProgressDisplay />)
 } else {
   // Static output
   console.log(renderString(<SimpleOutput />, { width: term.cols }))
@@ -254,7 +255,7 @@ import { render, Console, Box, Text } from '@beorn/tui'
 
 using term = createTerm()
 
-using app = await render(term, (
+using app = await render((
   <Box flexDirection="column">
     <Console />           {/* Worker output appears here */}
     <Text>My UI below</Text>
@@ -308,7 +309,7 @@ class Reporter {
 // Automatic cleanup with `using`
 {
   using term = createTerm()
-  using app = await render(term, <App />)
+  using app = await render(<App />)
 
   // ... app runs ...
 
@@ -316,7 +317,7 @@ class Reporter {
 
 // Manual cleanup
 const term = createTerm()
-const app = await render(term, <App />)
+const app = await render(<App />)
 // ...
 app.dispose()
 term.dispose()

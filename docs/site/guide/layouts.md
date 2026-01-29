@@ -286,7 +286,7 @@ function Board() {
 }
 
 using term = createTerm();
-await render(term, <Board />);
+await render(<Board />, term);
 ```
 
 ## Anti-Patterns to Avoid

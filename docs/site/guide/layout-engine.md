@@ -1,28 +1,31 @@
 # Layout Engine
 
-Inkx uses a pluggable layout engine architecture. By default, it uses [Yoga](https://yogalayout.dev/) (Facebook's flexbox implementation), but you can switch to [Flexx](https://github.com/aspect-build/aspect) (a pure JavaScript alternative) or implement your own.
+Inkx uses a pluggable layout engine architecture. It supports [Flexx](../../../beorn-flexx/) (pure JavaScript, recommended) and [Yoga](https://yogalayout.dev/) (Facebook's WASM-based flexbox implementation).
 
 ## Quick Start
 
-For most apps, you don't need to configure anything. Inkx auto-initializes Yoga when you call `render()`:
+For most apps, you don't need to configure anything. Inkx auto-initializes the default layout engine when you call `render()`:
 
 ```tsx
 import { render, Box, Text, createTerm } from "inkx";
 
-// Yoga is initialized automatically
+// Layout engine is initialized automatically
 using term = createTerm();
-await render(term, <App />);
+await render(<App />, term);
 ```
 
-## Switching to Flexx
+## Flexx (Recommended)
 
-Flexx is a pure JavaScript layout engine with a Yoga-compatible API. It's useful when:
+Flexx is a pure JavaScript layout engine with a Yoga-compatible API. It's the recommended choice because:
 
-- You want to avoid WASM
-- You need synchronous initialization
-- You're in an environment where WASM doesn't work
+- **No WASM** - Works everywhere, no binary dependencies
+- **Smaller bundle** - ~30KB vs ~170KB for Yoga
+- **Synchronous initialization** - No async dance needed
+- **Better for testing** - Deterministic, no platform-specific WASM behavior
 
-### Using Flexx
+### Explicit Flexx Setup
+
+If you want to explicitly set up Flexx (not usually necessary):
 
 ```tsx
 import { render, setLayoutEngine, createFlexxEngine, Box, Text } from "inkx";
@@ -32,7 +35,7 @@ setLayoutEngine(createFlexxEngine());
 
 // Now render uses Flexx for layout
 using term = createTerm();
-await render(term, <App />);
+await render(<App />, term);
 ```
 
 ### Using renderSync with Flexx
@@ -311,7 +314,7 @@ renderSync(term, <App />); // Error!
 
 // Right - use async render (auto-initializes Yoga)
 using term = createTerm();
-await render(term, <App />);
+await render(<App />, term);
 
 // Right - manually set engine first
 setLayoutEngine(createFlexxEngine());
@@ -334,7 +337,7 @@ import {
 using term = createTerm();
 
 try {
-  await render(term, <App />);
+  await render(<App />, term);
 } catch (e) {
   if (!isLayoutEngineInitialized()) {
     console.warn("Falling back to Flexx engine");

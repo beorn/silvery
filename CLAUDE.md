@@ -14,7 +14,7 @@ import { Box, Text, Newline, Spacer, Static, Console } from 'inkx'
 import { useContentRect, useScreenRect, useInput, useApp, useTerm, useConsole } from 'inkx'
 
 // Render functions
-import { render, renderSync, renderString, setLayoutEngine, initYogaEngine, createFlexxEngine } from 'inkx'
+import { render, renderSync, renderStatic, renderString, setLayoutEngine, initYogaEngine, createFlexxEngine } from 'inkx'
 
 // Term primitives (re-exported from chalkx - prefer importing from inkx)
 import { createTerm, patchConsole, type Term, type StyleChain, type PatchedConsole } from 'inkx'
@@ -25,7 +25,7 @@ import { createTestRenderer, bufferToText, stripAnsi, keyToAnsi, debugTree } fro
 
 ## Common Patterns
 
-### Basic App with Term
+### Basic Interactive App
 
 ```tsx
 import { render, Box, Text, useInput, useApp, useTerm, createTerm } from 'inkx'
@@ -45,9 +45,9 @@ function App() {
   )
 }
 
-// NewWay: render with term
+// Element first, then term
 using term = createTerm()
-await render(term, <App />)
+await render(<App />, term)
 ```
 
 ### Console Capture
@@ -67,12 +67,12 @@ function App({ console: patched }: { console: PatchedConsole }) {
 {
   using term = createTerm()
   using patched = patchConsole(console)
-  using app = await render(term, <App console={patched} />)
+  const app = await render(<App console={patched} />, term)
 
   // Console.log calls now appear in <Console />
   console.log('This appears above the status line')
 
-  await app.run()
+  await app.waitUntilExit()
 }
 ```
 
@@ -81,17 +81,20 @@ function App({ console: patched }: { console: PatchedConsole }) {
 For one-shot CLI output, CI, or piped output where you don't need a terminal:
 
 ```tsx
-import { renderString, Box, Text } from 'inkx'
+import { render, renderStatic, Box, Text } from 'inkx'
 
-// Basic usage - returns string with ANSI codes
-const output = await renderString(<Summary stats={stats} />)
+// Option 1: render() without term - auto-detects static mode
+const output = await render(<Summary stats={stats} />)
+
+// Option 2: renderStatic() - explicit convenience function
+const output = await renderStatic(<Summary stats={stats} />)
 console.log(output)
 
 // Plain text (no ANSI codes) for piped output
-const plain = await renderString(<Report />, { plain: true })
+const plain = await renderStatic(<Report />, { plain: true })
 
 // Custom width for layout
-const wide = await renderString(<Table />, { width: 120 })
+const wide = await renderStatic(<Table />, { width: 120 })
 ```
 
 ### Layout Feedback (Main Feature)
@@ -228,17 +231,6 @@ test('debugging example', () => {
 
 ## Anti-Patterns
 
-### Wrong: Not passing term to render
-
-```tsx
-// WRONG - useTerm() will throw
-await render(<App />)
-
-// RIGHT - pass term first
-using term = createTerm()
-await render(term, <App />)
-```
-
 ### Wrong: Mixing chalk backgrounds with Box backgroundColor
 
 ```tsx
@@ -285,10 +277,10 @@ import { curlyUnderline, hyperlink } from 'chalkx'
 
 ```tsx
 // WRONG - render() is async
-render(term, <App />)
+render(<App />, term)
 
 // RIGHT
-await render(term, <App />)
+await render(<App />, term)
 ```
 
 ### Wrong: Using old createLocator pattern
@@ -307,13 +299,24 @@ await app.press('j')
 expect(cursor.textContent()).toBe('item2')  // Same locator, fresh result!
 ```
 
+### Wrong: Old term-first render order
+
+```tsx
+// WRONG - old API (term first)
+await render(term, <App />)
+
+// RIGHT - new API (element first)
+await render(<App />, term)
+```
+
 ## Key Exports
 
 | Export | Description |
 |--------|-------------|
-| `render(term, element)` | Render with Term - NewWay |
-| `renderSync(term, element)` | Sync render with Term |
-| `renderString(element, opts)` | Static render to string (no terminal needed) |
+| `render(element, term?)` | Render element; term optional for static mode |
+| `renderSync(element, term?)` | Sync render (requires layout engine initialized) |
+| `renderStatic(element, opts?)` | Convenience for static one-shot rendering |
+| `renderString(element, opts?)` | Render to string (alias for static mode) |
 | `Console` | Renders captured console output |
 | `useTerm()` | Access Term in components |
 | `useConsole(patched)` | Subscribe to console entries |
@@ -326,8 +329,9 @@ expect(cursor.textContent()).toBe('item2')  // Same locator, fresh result!
 
 ## Key Differences from Ink
 
-1. **Term-first rendering**: `render(term, <App />)` - term is required
-2. **Layout feedback**: `useContentRect()` / `useScreenRect()` give actual dimensions
-3. **Term context**: `useTerm()` provides terminal capabilities to components
-4. **Console capture**: `<Console />` component displays captured output
-5. **Named exports only**: No default export
+1. **Element-first rendering**: `render(<App />, term)` - element first, term optional
+2. **Static mode**: `render(<App />)` without term renders once and exits
+3. **Layout feedback**: `useContentRect()` / `useScreenRect()` give actual dimensions
+4. **Term context**: `useTerm()` provides terminal capabilities to components
+5. **Console capture**: `<Console />` component displays captured output
+6. **Named exports only**: No default export

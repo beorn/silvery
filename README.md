@@ -5,13 +5,22 @@
 ## Quick Start
 
 ```tsx
-// Basic app with term (NewWay)
+// Interactive app with term
 import { render, Box, Text, createTerm } from 'inkx'
 
 using term = createTerm()
-await render(term, (
-  <Box><Text>{term.green('Hello')} world</Text></Box>
-))
+await render(
+  <Box><Text>{term.green('Hello')} world</Text></Box>,
+  term
+)
+```
+
+```tsx
+// Static rendering (no terminal needed)
+import { renderStatic, Box, Text } from 'inkx'
+
+const output = await renderStatic(<Box><Text>Hello world</Text></Box>)
+console.log(output)
 ```
 
 ```tsx
@@ -20,12 +29,13 @@ import { render, Box, Text, Console, createTerm, patchConsole } from 'inkx'
 
 using term = createTerm()
 using console = patchConsole(globalThis.console)
-await render(term, (
+await render(
   <Box flexDirection="column">
     <Console console={console} />
     <Text>Status: running</Text>
-  </Box>
-))
+  </Box>,
+  term
+)
 
 console.log('This appears above status line')
 ```
@@ -158,7 +168,7 @@ Drop-in Ink replacement with term injection:
 import { Box, Text, render, useInput, useApp, createTerm, useTerm } from "inkx";
 
 using term = createTerm()
-await render(term, <App />)
+await render(<App />, term)
 ```
 
 **Core hooks**:
@@ -198,14 +208,14 @@ Inkx prefers **explicit term injection** over implicit globals. This makes code 
 **Rendering**
 
 ```tsx
-// OldWay - render without term
+// Static mode - no term needed, renders once
 import { render, Box, Text } from 'inkx'
-await render(<App />)  // ❌ useTerm() will throw
+const output = await render(<App />)  // renders to string
 
-// NewWay - explicit term injection
+// Interactive mode - pass term for live updates
 import { render, Box, Text, createTerm } from 'inkx'
 using term = createTerm()
-await render(term, <App />)  // ✅ components can useTerm()
+await render(<App />, term)  // ✅ components can useTerm()
 ```
 
 **Styling**
@@ -240,11 +250,8 @@ term.hasUnicode()  // Can render unicode?
 ### Anti-Patterns to Avoid
 
 ```tsx
-// ❌ Rendering without term - useTerm() throws
-await render(<App />)
-
 // ❌ Not awaiting async render
-render(term, <App />)
+render(<App />, term)
 
 // ❌ Mixing chalk backgrounds with Box backgroundColor
 <Box backgroundColor="cyan">
@@ -255,9 +262,9 @@ render(term, <App />)
 **Correct patterns:**
 
 ```tsx
-// ✅ Always pass term to render
+// ✅ Pass term for interactive mode
 using term = createTerm()
-await render(term, <App />)
+await render(<App />, term)
 
 // ✅ Use bgOverride for intentional background mixing
 import { bgOverride } from '@beorn/chalkx'
@@ -279,7 +286,8 @@ import { bgOverride } from '@beorn/chalkx'
 | API | Description |
 |-----|-------------|
 | `createTerm()` | Create a Term instance (Disposable) |
-| `render(term, element)` | Render with term injection |
+| `render(element, term?)` | Render element; term optional for static mode |
+| `renderStatic(element)` | One-shot static render to string |
 | `useTerm()` | Access term in components |
 | `Console` | Render captured console output |
 | `patchConsole(console)` | Capture console calls (Disposable) |
@@ -365,7 +373,7 @@ Inkx uses **two-phase rendering** (the standard approach in browsers, Flutter, S
 | Project                                         | Role                                                     |
 | ----------------------------------------------- | -------------------------------------------------------- |
 | [Ink](https://github.com/vadimdemedes/ink)      | API compatibility target. Inkx is a drop-in replacement. |
-| [Yoga](https://yogalayout.dev/)                 | Default layout engine (WASM).                            |
+| [Yoga](https://yogalayout.dev/)                 | Layout engine option (WASM).                             |
 | [Flexx](../beorn-flexx/)                        | Alternative layout engine (2.5x faster, 5x smaller).     |
 | [Chalk](https://github.com/chalk/chalk)         | ANSI styling. Inkx preserves chalk strings.              |
 | [Textual](https://textual.textualize.io/)       | Python TUI with proper layout. Major inspiration.        |

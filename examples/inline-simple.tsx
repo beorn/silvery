@@ -34,7 +34,7 @@ async function main() {
 	console.log('Before\n');
 
 	using term = createTerm();
-	const { waitUntilExit } = await render(term, <Counter />, {
+	const { waitUntilExit } = await render(<Counter />, term, {
 		mode: 'inline',
 	});
 

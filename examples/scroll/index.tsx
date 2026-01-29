@@ -73,4 +73,4 @@ function ScrollExample() {
 
 // Run the app
 using term = createTerm();
-await render(term, <ScrollExample />);
+await render(<ScrollExample />, term);

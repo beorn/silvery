@@ -63,16 +63,16 @@ export interface RenderStringOptions {
 // Module State
 // ============================================================================
 
-// Lazy-initialized yoga engine
+// Track if we've initialized to avoid redundant imports
 let engineInitialized = false
 
 async function ensureLayoutEngine(): Promise<void> {
 	if (engineInitialized || isLayoutEngineInitialized()) {
 		return
 	}
-	const { initYogaEngine } = await import('./adapters/yoga-adapter.js')
-	const engine = await initYogaEngine()
-	setLayoutEngine(engine)
+	// Use centralized default engine initialization
+	const { ensureDefaultLayoutEngine } = await import('./layout-engine.js')
+	await ensureDefaultLayoutEngine()
 	engineInitialized = true
 }
 
@@ -181,22 +181,41 @@ export function renderStringSync(
 		),
 	)
 
-	// Mount and flush synchronously
-	// Note: We don't use act() here because this is production rendering code,
-	// not a test environment. The reconciler calls are synchronous.
-	reconciler.updateContainerSync(wrapped, fiberRoot, null, null)
-	reconciler.flushSyncWork()
+	// Mount, render, and unmount - all without act warnings
+	withoutActWarnings(() => {
+		reconciler.updateContainerSync(wrapped, fiberRoot, null, null)
+		reconciler.flushSyncWork()
+	})
 
-	// Execute render pipeline
+	// Execute render pipeline (skip layout notifications for static renders)
 	const root = getContainerRoot(container)
-	const { buffer } = executeRender(root, width, height, null)
+	const { buffer } = executeRender(root, width, height, null, {
+		skipLayoutNotifications: true,
+	})
 
 	// Unmount (cleanup)
-	reconciler.updateContainer(null, fiberRoot, null, () => {})
+	withoutActWarnings(() => {
+		reconciler.updateContainerSync(null, fiberRoot, null, null)
+		reconciler.flushSyncWork()
+	})
 
-	// Convert buffer to string
-	if (plain) {
-		return bufferToText(buffer)
+	return plain ? bufferToText(buffer) : bufferToStyledText(buffer)
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Run a function with React act warnings disabled.
+ * Used for static renders where we don't use act() and don't need layout feedback.
+ */
+function withoutActWarnings(fn: () => void): void {
+	const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
+	globalThis.IS_REACT_ACT_ENVIRONMENT = false
+	try {
+		fn()
+	} finally {
+		globalThis.IS_REACT_ACT_ENVIRONMENT = prev
 	}
-	return bufferToStyledText(buffer)
 }

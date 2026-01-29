@@ -383,7 +383,7 @@ function HelpBar() {
 }
 
 using term = createTerm();
-await render(term, <App />);
+await render(<App />, term);
 ```
 
 :::

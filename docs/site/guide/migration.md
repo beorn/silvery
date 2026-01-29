@@ -27,7 +27,7 @@ bun add inkx inkx-testing-library
 ```diff
 - render(<App />);
 + using term = createTerm();
-+ await render(term, <App />);
++ await render(<App />, term);
 ```
 
 ### Step 4: Run Tests
@@ -66,7 +66,7 @@ render(<App />);
 ```tsx
 // Inkx
 using term = createTerm();
-await render(term, <App />);
+await render(<App />, term);
 ```
 
 This enables `useTerm()` in components for terminal capabilities.

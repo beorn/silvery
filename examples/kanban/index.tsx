@@ -373,7 +373,7 @@ function KanbanBoard(): JSX.Element {
 
 async function main() {
   using term = createTerm();
-  const { waitUntilExit } = await render(term, <KanbanBoard />);
+  const { waitUntilExit } = await render(<KanbanBoard />, term);
   await waitUntilExit();
 }
 

@@ -198,7 +198,7 @@ function Dashboard(): JSX.Element {
 
 async function main() {
   using term = createTerm();
-  const { waitUntilExit } = await render(term, <Dashboard />);
+  const { waitUntilExit } = await render(<Dashboard />, term);
   await waitUntilExit();
 }
 

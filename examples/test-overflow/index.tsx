@@ -30,7 +30,7 @@ function App() {
 
 async function main() {
   using term = createTerm();
-  const { waitUntilExit } = await render(term, <App />);
+  const { waitUntilExit } = await render(<App />, term);
   await waitUntilExit();
 }
 

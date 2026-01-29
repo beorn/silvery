@@ -19,7 +19,7 @@ import { TermContext } from '../context.js'
 export function useTerm(): Term {
   const term = useContext(TermContext)
   if (!term) {
-    throw new Error('useTerm must be used within a render(term, element) context')
+    throw new Error('useTerm must be used within a render(element, term) context')
   }
   return term
 }

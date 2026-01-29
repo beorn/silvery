@@ -10,13 +10,13 @@
  * @example
  * ```tsx
  * // Both production and testing
- * const app = await render(term, <App />)
+ * const app = await render(<App />, term)
  *
  * // Query and interact
  * app.text                          // rendered text (no ANSI)
  * app.getByTestId('modal')          // auto-refreshing locator
  * await app.press('ArrowUp')        // send key
- * await app.run()                   // wait until exit
+ * await app.waitUntilExit()         // wait until exit
  *
  * // Terminal access
  * app.term.cell(x, y)               // { char, fg, bg, attrs }

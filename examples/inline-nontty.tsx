@@ -67,7 +67,7 @@ async function main() {
 	console.log('---\n');
 
 	using term = createTerm();
-	const { waitUntilExit } = await render(term, <ProgressExample />, {
+	const { waitUntilExit } = await render(<ProgressExample />, term, {
 		mode: 'inline',
 		nonTTYMode,
 	});

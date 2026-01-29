@@ -358,7 +358,7 @@ function App() {
 
 // Enable Kitty protocol (falls back gracefully)
 using term = createTerm();
-await render(term, <App />, { kittyKeyboard: true });
+await render(<App />, { kittyKeyboard: true });
 ```
 
 ### Key Release Events
@@ -381,7 +381,7 @@ function Game() {
 }
 
 using term = createTerm();
-await render(term, <Game />, {
+await render(<Game />, {
   kittyKeyboard: { reportRelease: true },
 });
 ```

@@ -29,16 +29,21 @@
  *   return <Box><Text>Press q to quit</Text></Box>;
  * }
  *
+ * // Interactive rendering with Term
  * using term = createTerm();
- * await render(term, <App />);
+ * await render(<App />, term);
  * ```
  *
- * Or use the default term for simple scripts:
+ * Static rendering (no terminal needed):
  *
  * ```tsx
- * import { render, Box, Text, term } from 'inkx';
+ * import { render, Box, Text } from 'inkx';
  *
- * await render(term, <Box><Text>Hello</Text></Box>);
+ * // Renders once and returns when stable
+ * await render(<Box><Text>Hello</Text></Box>);
+ *
+ * // With custom dimensions
+ * await render(<Report />, { width: 120 });
  * ```
  *
  * @packageDocumentation
@@ -149,8 +154,8 @@ export { useFocusManager } from './hooks/useFocusManager.js';
 export { useTerm } from './hooks/useTerm.js';
 export { useConsole } from './hooks/useConsole.js';
 
-// TermContext for advanced usage (usually useTerm() is preferred)
-export { TermContext } from './context.js';
+// Contexts for advanced usage (usually hooks are preferred)
+export { TermContext, EventsContext } from './context.js';
 
 // =============================================================================
 // Re-exports from chalkx
@@ -185,22 +190,27 @@ export {
  * ```tsx
  * import { render, Box, Text, createTerm } from 'inkx';
  *
- * // Async render (initializes layout engine)
+ * // Interactive render with Term
  * using term = createTerm();
- * const { waitUntilExit, unmount, rerender } = await render(term, <App />);
+ * const { waitUntilExit, unmount, rerender } = await render(<App />, term);
  * await waitUntilExit();
+ *
+ * // Static render (no terminal needed)
+ * await render(<Summary />);
+ * await render(<Report />, { width: 120 });
  *
  * // Sync render (layout engine must be initialized)
  * import { renderSync, initYogaEngine, setLayoutEngine, createTerm } from 'inkx';
  * const engine = await initYogaEngine();
  * setLayoutEngine(engine);
  * using term = createTerm();
- * renderSync(term, <App />);
+ * renderSync(<App />, term);
  * ```
  */
 export {
 	render,
 	renderSync,
+	renderStatic,
 	setLayoutEngine,
 	isLayoutEngineInitialized,
 	// Yoga adapter
@@ -213,6 +223,16 @@ export {
 } from './render.js';
 export { renderString, renderStringSync, type RenderStringOptions } from './render-string.js';
 export { measureElement } from './measureElement.js';
+
+// TermDef resolution utilities
+export {
+	resolveTermDef,
+	resolveFromTerm,
+	isTerm,
+	isTermDef,
+	createInputEvents,
+	type ResolvedTermDef,
+} from './term-def.js';
 
 // ANSI escape sequences for terminal control
 export { ANSI, enableMouse, disableMouse } from './output.js';
@@ -243,7 +263,21 @@ export type { UseFocusOptions, UseFocusResult } from './hooks/useFocus.js';
 export type { UseFocusManagerResult } from './hooks/useFocusManager.js';
 export type { RenderOptions, Instance, RenderMode, NonTTYMode } from './render.js';
 export type { MeasureElementOutput } from './measureElement.js';
-export type { InkxNode } from './types.js';
+export type {
+	InkxNode,
+	// Event types
+	Event,
+	KeyEvent,
+	MouseEvent,
+	ResizeEvent,
+	FocusEvent,
+	BlurEvent,
+	SignalEvent,
+	CustomEvent,
+	EventSource,
+	// TermDef for render configuration
+	TermDef,
+} from './types.js';
 export type { HitTarget, HitRegion } from './hit-registry.js';
 
 // Non-TTY utilities

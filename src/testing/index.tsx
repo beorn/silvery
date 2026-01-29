@@ -68,7 +68,7 @@
 
 import { EventEmitter } from 'node:events';
 import React, { type ReactElement, act } from 'react';
-import { initYogaEngine } from '../adapters/yoga-adapter.js';
+import { ensureDefaultLayoutEngine, getLayoutEngine, isLayoutEngineInitialized } from '../layout-engine.js';
 import { type TerminalBuffer, bufferToText } from '../buffer.js';
 import { createApp, type App } from '../app.js';
 
@@ -105,9 +105,10 @@ import { createContainer, getContainerRoot, reconciler } from '../reconciler.js'
 // @ts-expect-error - React internal flag for testing environments
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-// Initialize default yoga engine at module load time via top-level await.
+// Initialize default layout engine via top-level await.
 // This cached engine is used by createTestRenderer() when no engine is provided.
-const defaultLayoutEngine = await initYogaEngine();
+await ensureDefaultLayoutEngine();
+const defaultLayoutEngine = getLayoutEngine();
 
 // ============================================================================
 // Types
@@ -121,7 +122,7 @@ export interface TestRendererOptions {
 	columns?: number;
 	/** Terminal height. Default: 24 */
 	rows?: number;
-	/** Layout engine to use (yoga or flexx). Default: yoga */
+	/** Layout engine to use (yoga or flexx). Default: yoga (temporarily, will switch to flexx) */
 	layoutEngine?: LayoutEngine;
 	/** Enable debug output. Default: false */
 	debug?: boolean;

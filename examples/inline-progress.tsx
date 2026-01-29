@@ -49,7 +49,7 @@ async function main() {
   console.log("This is regular console output before the progress bar.\n")
 
   using term = createTerm()
-  const { waitUntilExit } = await render(term, <InlineProgress />, {
+  const { waitUntilExit } = await render(<InlineProgress />, term, {
     mode: "inline",
     exitOnCtrlC: true,
   })

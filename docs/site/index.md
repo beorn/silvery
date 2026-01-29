@@ -56,7 +56,7 @@ function App() {
 }
 
 using term = createTerm();
-await render(term, <App />);
+await render(<App />, term);
 ```
 
 ## The Problem Inkx Solves

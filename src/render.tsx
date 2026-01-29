@@ -15,11 +15,12 @@ import { EventEmitter } from 'node:events';
 import process from 'node:process';
 import createDebug from 'debug';
 import React, { useCallback, useMemo, useState, type ReactElement, type ReactNode } from 'react';
-import type { Term } from 'chalkx';
+import { createTerm, type Term } from 'chalkx';
 
 const debug = createDebug('inkx:render');
 import {
 	AppContext,
+	EventsContext,
 	FocusContext,
 	type FocusContextValue,
 	InputContext,
@@ -27,6 +28,9 @@ import {
 	StdoutContext,
 	TermContext,
 } from './context.js';
+import type { TermDef } from './types.js';
+import { isTerm, isTermDef, resolveTermDef, resolveFromTerm, type ResolvedTermDef } from './term-def.js';
+import { renderStringSync } from './render-string.js';
 import { isLayoutEngineInitialized, setLayoutEngine } from './layout-engine.js';
 import { enterAlternateScreen, leaveAlternateScreen } from './output.js';
 import { createContainer, getContainerRoot, reconciler } from './reconciler.js';
@@ -117,7 +121,7 @@ const instances = new Map<NodeJS.WriteStream, InkxInstance>();
 
 /**
  * Initialize layout engine if not already initialized.
- * By default, uses Yoga via yoga-wasm-web/auto.
+ * By default, uses Flexx (pure JS, synchronous, smaller bundle).
  */
 async function ensureLayoutEngineInitialized(): Promise<void> {
 	if (isLayoutEngineInitialized()) {
@@ -128,20 +132,11 @@ async function ensureLayoutEngineInitialized(): Promise<void> {
 	debug('Initializing layout engine...');
 	const startTime = Date.now();
 
-	// Import the Yoga adapter and initialize
-	const { initYogaEngine } = await import('./adapters/yoga-adapter.js');
-	debug('Yoga adapter imported in %dms', Date.now() - startTime);
+	// Use centralized default engine initialization
+	const { ensureDefaultLayoutEngine } = await import('./layout-engine.js');
+	await ensureDefaultLayoutEngine();
 
-	const engineStartTime = Date.now();
-	const engine = await initYogaEngine();
-	debug(
-		'Yoga engine initialized in %dms (total: %dms)',
-		Date.now() - engineStartTime,
-		Date.now() - startTime,
-	);
-
-	setLayoutEngine(engine);
-	debug('Layout engine set');
+	debug('Layout engine initialized in %dms', Date.now() - startTime);
 }
 
 // ============================================================================
@@ -678,39 +673,85 @@ class InkxInstance {
 /**
  * Render a React element to the terminal.
  *
- * @example
+ * The second argument determines the render mode:
+ * - **Term instance**: Interactive mode with full terminal capabilities
+ * - **TermDef with events/stdin**: Interactive mode
+ * - **TermDef without events**: Static mode (renders until stable, then returns)
+ * - **Omitted**: Static mode with default dimensions (80x24)
+ *
+ * @example Interactive rendering with Term
  * ```tsx
- * import { render, Box, Text, useTerm, createTerm } from 'inkx';
+ * import { render, Box, Text, createTerm } from 'inkx';
  *
  * using term = createTerm();
- * await render(term, <App />);
+ * const { waitUntilExit } = await render(<App />, term);
+ * await waitUntilExit();
  * ```
  *
- * @example Using the default term for simple scripts
+ * @example Static rendering (no terminal needed)
  * ```tsx
- * import { render, Box, Text, term } from 'inkx';
+ * import { render, Box, Text } from 'inkx';
  *
- * await render(term, <App />);
+ * // Renders once, returns when stable
+ * const { lastFrame } = await render(<Summary stats={stats} />);
+ * console.log(lastFrame);
+ *
+ * // With custom dimensions
+ * await render(<Report />, { width: 120, height: 40 });
  * ```
  *
- * @param term - Term instance for terminal capabilities
+ * @example Interactive with TermDef
+ * ```tsx
+ * import { render, Box, Text } from 'inkx';
+ *
+ * await render(<App />, {
+ *   stdin: process.stdin,
+ *   stdout: process.stdout,
+ * });
+ * ```
+ *
  * @param element - React element to render
- * @param options - Optional render options
+ * @param termOrDef - Term instance, TermDef config, or omitted for static mode
+ * @param options - Additional render options (merged with TermDef if provided)
  * @returns An Instance object with control methods
  */
 export async function render(
-	term: Term,
 	element: ReactElement,
+	termOrDef?: Term | TermDef,
 	options?: RenderOptions,
 ): Promise<Instance> {
-	// Use term's streams by default
+	// Resolve termOrDef to get configuration
+	let resolved: ResolvedTermDef;
+	let term: Term;
+
+	if (!termOrDef) {
+		// No term/def provided - static mode with defaults
+		resolved = resolveTermDef({});
+		term = createTerm({ color: resolved.colors ?? undefined });
+	} else if (isTerm(termOrDef)) {
+		// Full Term instance provided
+		resolved = resolveFromTerm(termOrDef);
+		term = termOrDef;
+	} else if (isTermDef(termOrDef)) {
+		// TermDef provided
+		resolved = resolveTermDef(termOrDef);
+		term = createTerm({
+			stdout: termOrDef.stdout,
+			stdin: termOrDef.stdin,
+			color: resolved.colors ?? undefined,
+		});
+	} else {
+		throw new Error('Invalid second argument: expected Term, TermDef, or undefined');
+	}
+
+	// Merge options
 	const mergedOptions: RenderOptions = {
 		...options,
-		stdout: options?.stdout ?? term.stdout,
-		stdin: options?.stdin ?? term.stdin,
+		stdout: options?.stdout ?? resolved.stdout ?? term.stdout,
+		stdin: options?.stdin ?? (resolved.isStatic ? undefined : term.stdin),
 	};
 
-	return renderImpl(element, mergedOptions, term);
+	return renderImpl(element, mergedOptions, term, resolved);
 }
 
 /**
@@ -720,15 +761,21 @@ async function renderImpl(
 	element: ReactElement,
 	options: RenderOptions,
 	term: Term,
+	resolved: ResolvedTermDef,
 ): Promise<Instance> {
-	debug('render() called');
+	debug('render() called, isStatic=%s', resolved.isStatic);
 	const renderStart = Date.now();
 
 	// Ensure layout engine is initialized
 	await ensureLayoutEngineInitialized();
 	debug('render(): layout engine ready in %dms', Date.now() - renderStart);
 
-	// Merge with defaults
+	// For static mode, use renderString-style rendering
+	if (resolved.isStatic) {
+		return renderStaticImpl(element, term, resolved);
+	}
+
+	// Merge with defaults for interactive mode
 	const resolvedOptions = {
 		stdout: options.stdout ?? process.stdout,
 		stdin: options.stdin ?? process.stdin,
@@ -749,17 +796,27 @@ async function renderImpl(
 		debug('render(): InkxInstance created in %dms', Date.now() - renderStart);
 	}
 
-	// Wrap element with TermContext
-	const wrappedElement = <TermContext.Provider value={term}>{element}</TermContext.Provider>;
+	// Wrap element with TermContext and EventsContext
+	const wrappedElement = (
+		<TermContext.Provider value={term}>
+			<EventsContext.Provider value={resolved.events}>
+				{element}
+			</EventsContext.Provider>
+		</TermContext.Provider>
+	);
 
 	// Render the element
 	debug('render(): calling instance.render()');
 	instance.render(wrappedElement);
 	debug('render(): instance.render() complete, total: %dms', Date.now() - renderStart);
 
-	// Wrap rerender to also include TermContext
+	// Wrap rerender to also include contexts
 	const rerender = (newElement: ReactNode) => instance.rerender(
-		<TermContext.Provider value={term}>{newElement}</TermContext.Provider>
+		<TermContext.Provider value={term}>
+			<EventsContext.Provider value={resolved.events}>
+				{newElement}
+			</EventsContext.Provider>
+		</TermContext.Provider>
 	);
 
 	return {
@@ -771,23 +828,93 @@ async function renderImpl(
 }
 
 /**
+ * Render in static mode (no events, render until stable).
+ * Internal implementation for render() when no events are present.
+ */
+async function renderStaticImpl(
+	element: ReactElement,
+	term: Term,
+	resolved: ResolvedTermDef,
+): Promise<Instance> {
+	debug('renderStatic() called, dimensions: %dx%d', resolved.width, resolved.height);
+
+	// Import renderString functionality
+	const { renderStringSync } = await import('./render-string.js');
+
+	// Wrap element with contexts for static rendering
+	const wrappedElement = (
+		<TermContext.Provider value={term}>
+			<EventsContext.Provider value={null}>
+				{element}
+			</EventsContext.Provider>
+		</TermContext.Provider>
+	);
+
+	// Render to string
+	const output = renderStringSync(wrappedElement, {
+		width: resolved.width,
+		height: resolved.height,
+		plain: resolved.colors === null,
+	});
+
+	// Write output if we have a stdout
+	if (resolved.stdout) {
+		resolved.stdout.write(output);
+		resolved.stdout.write('\n');
+	}
+
+	// Return a minimal Instance for static mode
+	let lastFrame = output;
+	return {
+		rerender: (newElement: ReactNode) => {
+			const newWrapped = (
+				<TermContext.Provider value={term}>
+					<EventsContext.Provider value={null}>
+						{newElement}
+					</EventsContext.Provider>
+				</TermContext.Provider>
+			);
+			lastFrame = renderStringSync(newWrapped as ReactElement, {
+				width: resolved.width,
+				height: resolved.height,
+				plain: resolved.colors === null,
+			});
+			if (resolved.stdout) {
+				resolved.stdout.write(lastFrame);
+				resolved.stdout.write('\n');
+			}
+		},
+		unmount: () => {},
+		waitUntilExit: () => Promise.resolve(),
+		clear: () => {},
+		// Extra property for accessing last rendered frame
+		get lastFrame() {
+			return lastFrame;
+		},
+	} as Instance & { lastFrame: string };
+}
+
+/**
  * Synchronous render function for use when layout engine is already initialized.
  *
  * @example
  * ```tsx
- * import { renderSync, Box, Text, useTerm, initYogaEngine, setLayoutEngine, createTerm } from 'inkx';
+ * import { renderSync, Box, Text, initYogaEngine, setLayoutEngine, createTerm } from 'inkx';
  *
  * const engine = await initYogaEngine();
  * setLayoutEngine(engine);
  * using term = createTerm();
- * renderSync(term, <App />);
+ * renderSync(<App />, term);
  * ```
  *
+ * @param element - React element to render
+ * @param termOrDef - Term instance or TermDef config
+ * @param options - Additional render options
  * @returns An Instance object with control methods
  */
 export function renderSync(
-	term: Term,
 	element: ReactElement,
+	termOrDef?: Term | TermDef,
 	options?: RenderOptions,
 ): Instance {
 	if (!isLayoutEngineInitialized()) {
@@ -796,14 +923,60 @@ export function renderSync(
 		);
 	}
 
-	// Use term's streams by default
+	// Resolve termOrDef
+	let resolved: ResolvedTermDef;
+	let term: Term;
+
+	if (!termOrDef) {
+		resolved = resolveTermDef({});
+		term = createTerm({ color: resolved.colors ?? undefined });
+	} else if (isTerm(termOrDef)) {
+		resolved = resolveFromTerm(termOrDef);
+		term = termOrDef;
+	} else if (isTermDef(termOrDef)) {
+		resolved = resolveTermDef(termOrDef);
+		term = createTerm({
+			stdout: termOrDef.stdout,
+			stdin: termOrDef.stdin,
+			color: resolved.colors ?? undefined,
+		});
+	} else {
+		throw new Error('Invalid second argument: expected Term, TermDef, or undefined');
+	}
+
+	// For static mode, use sync string rendering
+	if (resolved.isStatic) {
+		const wrappedElement = (
+			<TermContext.Provider value={term}>
+				<EventsContext.Provider value={null}>
+					{element}
+				</EventsContext.Provider>
+			</TermContext.Provider>
+		);
+		let lastFrame = renderStringSync(wrappedElement, {
+			width: resolved.width,
+			height: resolved.height,
+			plain: resolved.colors === null,
+		});
+		if (resolved.stdout) {
+			resolved.stdout.write(lastFrame);
+			resolved.stdout.write('\n');
+		}
+		return {
+			rerender: () => {},
+			unmount: () => {},
+			waitUntilExit: () => Promise.resolve(),
+			clear: () => {},
+		};
+	}
+
+	// Merge options for interactive mode
 	const mergedOptions: RenderOptions = {
 		...options,
-		stdout: options?.stdout ?? term.stdout,
+		stdout: options?.stdout ?? resolved.stdout ?? term.stdout,
 		stdin: options?.stdin ?? term.stdin,
 	};
 
-	// Merge with defaults
 	const resolvedOptions = {
 		stdout: mergedOptions.stdout ?? process.stdout,
 		stdin: mergedOptions.stdin ?? process.stdin,
@@ -822,15 +995,25 @@ export function renderSync(
 		instances.set(resolvedOptions.stdout, instance);
 	}
 
-	// Wrap element with TermContext
-	const wrappedElement = <TermContext.Provider value={term}>{element}</TermContext.Provider>;
+	// Wrap element with contexts
+	const wrappedElement = (
+		<TermContext.Provider value={term}>
+			<EventsContext.Provider value={resolved.events}>
+				{element}
+			</EventsContext.Provider>
+		</TermContext.Provider>
+	);
 
 	// Render the element
 	instance.render(wrappedElement);
 
-	// Wrap rerender to also include TermContext
+	// Wrap rerender to also include contexts
 	const rerender = (newElement: ReactNode) => instance!.rerender(
-		<TermContext.Provider value={term}>{newElement}</TermContext.Provider>
+		<TermContext.Provider value={term}>
+			<EventsContext.Provider value={resolved.events}>
+				{newElement}
+			</EventsContext.Provider>
+		</TermContext.Provider>
 	);
 
 	return {
@@ -839,6 +1022,40 @@ export function renderSync(
 		waitUntilExit: instance.waitUntilExit,
 		clear: instance.clear,
 	};
+}
+
+// ============================================================================
+// Convenience Functions
+// ============================================================================
+
+/**
+ * Static render - convenience function for one-shot renders.
+ *
+ * This is equivalent to `render(element)` without a Term - it renders
+ * once and returns immediately without starting an event loop.
+ *
+ * @example
+ * ```tsx
+ * import { renderStatic, Box, Text } from 'inkx';
+ *
+ * // Render a summary to stdout
+ * await renderStatic(<Summary stats={stats} />);
+ *
+ * // With options
+ * await renderStatic(<Report />, { width: 120 });
+ * ```
+ *
+ * @param element - React element to render
+ * @param options - Optional width, height, and other static render options
+ * @returns Promise that resolves when rendering is complete
+ */
+export async function renderStatic(
+	element: ReactElement,
+	options?: { width?: number; height?: number; plain?: boolean },
+): Promise<string> {
+	await ensureLayoutEngineInitialized();
+	const { renderStringSync } = await import('./render-string.js');
+	return renderStringSync(element, options);
 }
 
 // Re-export layout engine management for convenience

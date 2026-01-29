@@ -247,3 +247,65 @@ export function isLayoutEngineInitialized(): boolean {
 export function getConstants(): LayoutConstants {
 	return getLayoutEngine().constants;
 }
+
+// ============================================================================
+// Default Engine Initialization
+// ============================================================================
+
+// ============================================================================
+// Default Engine Configuration
+// ============================================================================
+
+// TODO (km-inkx-flexx-default): Switch default to Flexx once layout differences are fixed.
+// Flexx has known layout differences with Newline and some column layouts.
+// See tests/layout-equivalence.test.tsx for details.
+const USE_FLEXX_DEFAULT = false;
+
+/**
+ * Initialize the default layout engine if none is set.
+ * Currently uses Yoga for compatibility. Will switch to Flexx (pure JS,
+ * synchronous, smaller bundle) once layout differences are resolved.
+ * Call this function instead of duplicating initialization logic.
+ */
+export async function ensureDefaultLayoutEngine(): Promise<void> {
+	if (isLayoutEngineInitialized()) {
+		return;
+	}
+
+	if (USE_FLEXX_DEFAULT) {
+		const { createFlexxEngine } = await import('./adapters/flexx-adapter.js');
+		const engine = createFlexxEngine();
+		setLayoutEngine(engine);
+	} else {
+		const { initYogaEngine } = await import('./adapters/yoga-adapter.js');
+		const engine = await initYogaEngine();
+		setLayoutEngine(engine);
+	}
+}
+
+/**
+ * Get or create the default layout engine synchronously.
+ * Returns the engine instance for immediate use.
+ *
+ * Note: Currently requires Yoga to be pre-initialized for sync usage.
+ * When USE_FLEXX_DEFAULT is true, Flexx can be created synchronously.
+ */
+export function getOrCreateDefaultLayoutEngine(): LayoutEngine {
+	if (isLayoutEngineInitialized()) {
+		return getLayoutEngine();
+	}
+
+	if (USE_FLEXX_DEFAULT) {
+		// Flexx is synchronous
+		const { createFlexxEngine } = require('./adapters/flexx-adapter.js');
+		const engine = createFlexxEngine();
+		setLayoutEngine(engine);
+		return engine;
+	} else {
+		// Yoga requires async initialization - can't be done synchronously
+		// Callers using sync API should ensure engine is pre-initialized
+		throw new Error(
+			'Layout engine not initialized. Call ensureDefaultLayoutEngine() first, or use createFlexxEngine() for sync initialization.',
+		);
+	}
+}

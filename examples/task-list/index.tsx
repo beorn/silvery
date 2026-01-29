@@ -301,7 +301,7 @@ function TaskList(): JSX.Element {
 
 async function main() {
   using term = createTerm();
-  const { waitUntilExit } = await render(term, <TaskList />);
+  const { waitUntilExit } = await render(<TaskList />, term);
   await waitUntilExit();
 }
 

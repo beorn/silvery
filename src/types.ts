@@ -315,6 +315,187 @@ export interface TerminalBuffer {
 }
 
 // ============================================================================
+// Event Types
+// ============================================================================
+
+/**
+ * Keyboard event with key information and modifiers.
+ */
+export interface KeyEvent {
+	type: 'key';
+	/** The key pressed (character or key name like 'ArrowUp') */
+	key: string;
+	/** Ctrl modifier was held */
+	ctrl?: boolean;
+	/** Meta/Cmd modifier was held */
+	meta?: boolean;
+	/** Shift modifier was held */
+	shift?: boolean;
+	/** Alt/Option modifier was held */
+	alt?: boolean;
+}
+
+/**
+ * Mouse event with position and button information.
+ */
+export interface MouseEvent {
+	type: 'mouse';
+	/** X position in terminal columns (0-indexed) */
+	x: number;
+	/** Y position in terminal rows (0-indexed) */
+	y: number;
+	/** Mouse button (0=left, 1=middle, 2=right) */
+	button: number;
+	/** Event action */
+	action: 'down' | 'up' | 'move' | 'wheel';
+	/** Wheel delta for scroll events */
+	delta?: number;
+}
+
+/**
+ * Terminal resize event.
+ */
+export interface ResizeEvent {
+	type: 'resize';
+	/** New width in columns */
+	width: number;
+	/** New height in rows */
+	height: number;
+}
+
+/**
+ * Terminal focus event.
+ */
+export interface FocusEvent {
+	type: 'focus';
+}
+
+/**
+ * Terminal blur event.
+ */
+export interface BlurEvent {
+	type: 'blur';
+}
+
+/**
+ * Signal event (SIGINT, SIGTERM, etc.).
+ */
+export interface SignalEvent {
+	type: 'signal';
+	/** Signal name (e.g., 'SIGINT', 'SIGTERM') */
+	signal: string;
+}
+
+/**
+ * Custom event for extensibility.
+ */
+export interface CustomEvent {
+	type: 'custom';
+	/** Event name */
+	name: string;
+	/** Event data */
+	data: unknown;
+}
+
+/**
+ * Union of all event types.
+ *
+ * Events drive the render loop in interactive mode. When events are present,
+ * the render loop runs until exit() is called. When events are absent,
+ * the render completes when the UI is stable.
+ */
+export type Event =
+	| KeyEvent
+	| MouseEvent
+	| ResizeEvent
+	| FocusEvent
+	| BlurEvent
+	| SignalEvent
+	| CustomEvent;
+
+/**
+ * Event source that can be subscribed to and unsubscribed from.
+ */
+export interface EventSource {
+	/** Subscribe to events, returns unsubscribe function */
+	subscribe(handler: (event: Event) => void): () => void;
+	/** Convert to async iterable */
+	[Symbol.asyncIterator](): AsyncIterator<Event>;
+}
+
+// ============================================================================
+// TermDef - Minimal Render Configuration
+// ============================================================================
+
+// ColorLevel is re-exported from chalkx in index.ts
+// Import here for use in TermDef
+import type { ColorLevel } from 'chalkx';
+
+/**
+ * Minimal surface for configuring render().
+ *
+ * TermDef provides a simple way to configure rendering without requiring
+ * a full Term instance. It's useful for:
+ * - Static rendering (just width/height, no events)
+ * - Testing (mock dimensions and events)
+ * - Quick scripts (auto-detect everything from stdin/stdout)
+ *
+ * The presence of `events` (or `stdin` which auto-creates events)
+ * determines the render mode:
+ * - No events → static mode (render until stable)
+ * - Has events → interactive mode (render until exit() called)
+ *
+ * @example
+ * ```tsx
+ * // Static render with custom width
+ * const output = await render(<App />, { width: 100 })
+ *
+ * // Interactive with stdin/stdout
+ * await render(<App />, { stdin: process.stdin, stdout: process.stdout })
+ *
+ * // Custom events
+ * await render(<App />, { events: myEventSource })
+ * ```
+ */
+export interface TermDef {
+	// -------------------------------------------------------------------------
+	// Output Configuration
+	// -------------------------------------------------------------------------
+
+	/** Output stream (used for dimensions if not specified) */
+	stdout?: NodeJS.WriteStream;
+
+	/** Width in columns (default: stdout?.columns ?? 80) */
+	width?: number;
+
+	/** Height in rows (default: stdout?.rows ?? 24) */
+	height?: number;
+
+	/** Color support (true=detect, false=none, or specific level) */
+	colors?: boolean | ColorLevel | null;
+
+	// -------------------------------------------------------------------------
+	// Input Configuration
+	// -------------------------------------------------------------------------
+
+	/**
+	 * Event source for interactive mode.
+	 *
+	 * When present, render runs until exit() is called.
+	 * When absent, render completes when UI is stable.
+	 */
+	events?: AsyncIterable<Event> | EventSource;
+
+	/**
+	 * Standard input stream.
+	 *
+	 * When provided (and events is not), automatically creates input events
+	 * from stdin, enabling interactive mode.
+	 */
+	stdin?: NodeJS.ReadStream;
+}
+
+// ============================================================================
 // Render Context Types
 // ============================================================================
 

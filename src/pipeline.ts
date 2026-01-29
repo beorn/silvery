@@ -9,6 +9,7 @@ export {
 	// Types
 	type CellChange,
 	type BorderChars,
+	type ExecuteRenderOptions,
 	// Phase functions
 	measurePhase,
 	layoutPhase,

@@ -90,7 +90,7 @@ import { render, Text, createTerm } from "inkx";
 
 using term = createTerm();
 
-const { rerender } = await render(term, <Text>Count: 0</Text>);
+const { rerender } = await render(<Text>Count: 0</Text>, term);
 
 let count = 0;
 setInterval(() => {
@@ -123,7 +123,7 @@ function App() {
 async function main() {
   using term = createTerm();
 
-  const { waitUntilExit } = await render(term, <App />);
+  const { waitUntilExit } = await render(<App />, term);
 
   await waitUntilExit();
   console.log("App exited!");
@@ -168,7 +168,7 @@ function ColoredOutput() {
 }
 
 using term = createTerm();
-await render(term, <ColoredOutput />);
+await render(<ColoredOutput />, term);
 ```
 
 ## Synchronous Variant
@@ -181,7 +181,7 @@ import { render, renderSync, Text, createTerm } from "inkx";
 using term = createTerm();
 
 // Initialize Yoga with first render
-await render(term, <Text>Loading...</Text>);
+await render(<Text>Loading...</Text>, term);
 
 // Subsequent renders can be synchronous
 const instance = renderSync(term, <Text>Ready!</Text>);

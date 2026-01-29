@@ -40,7 +40,7 @@ function App() {
 }
 
 using term = createTerm();
-await render(term, <App />);
+await render(<App />, term);
 ```
 
 Run it:
@@ -81,7 +81,7 @@ function App() {
 }
 
 using term = createTerm();
-await render(term, <App />);
+await render(<App />, term);
 ```
 
 Each `SizedBox` will display its actual computed dimensions. No prop threading needed!
@@ -121,7 +121,7 @@ function App() {
 }
 
 using term = createTerm();
-await render(term, <App />);
+await render(<App />, term);
 ```
 
 Inkx measures all children, calculates which are visible, and only renders content for visible items. No height estimation or virtualization config needed.
