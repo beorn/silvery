@@ -120,6 +120,7 @@ export const hostConfig = {
 			parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex);
 		}
 		parentInstance.layoutDirty = true;
+		parentInstance.layoutNode?.markDirty();
 	},
 
 	appendInitialChild(parentInstance: InkxNode, child: InkxNode) {
@@ -140,6 +141,7 @@ export const hostConfig = {
 			container.root.layoutNode.insertChild(child.layoutNode, layoutIndex);
 		}
 		container.root.layoutDirty = true;
+		container.root.layoutNode?.markDirty();
 	},
 
 	removeChild(parentInstance: InkxNode, child: InkxNode) {
@@ -152,6 +154,7 @@ export const hostConfig = {
 			}
 			child.parent = null;
 			parentInstance.layoutDirty = true;
+			parentInstance.layoutNode?.markDirty();
 		}
 	},
 
@@ -165,6 +168,7 @@ export const hostConfig = {
 			}
 			child.parent = null;
 			container.root.layoutDirty = true;
+			container.root.layoutNode?.markDirty();
 		}
 	},
 
@@ -181,6 +185,7 @@ export const hostConfig = {
 				parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex);
 			}
 			parentInstance.layoutDirty = true;
+			parentInstance.layoutNode?.markDirty();
 		}
 	},
 
@@ -196,6 +201,7 @@ export const hostConfig = {
 				container.root.layoutNode.insertChild(child.layoutNode, layoutIndex);
 			}
 			container.root.layoutDirty = true;
+			container.root.layoutNode?.markDirty();
 		}
 	},
 
@@ -226,6 +232,7 @@ export const hostConfig = {
 		) {
 			if (instance.layoutNode) {
 				applyBoxProps(instance.layoutNode, newProps as BoxProps);
+				instance.layoutNode.markDirty();
 			}
 			instance.layoutDirty = true;
 		}
@@ -244,6 +251,16 @@ export const hostConfig = {
 		textInstance.textContent = newText;
 		textInstance.props = { children: newText } as TextProps;
 		textInstance.contentDirty = true;
+		// Text content change affects layout (measure function will return different size)
+		// Find the nearest ancestor with a layout node and mark it dirty
+		let node: InkxNode | null = textInstance;
+		while (node && !node.layoutNode) {
+			node = node.parent;
+		}
+		if (node?.layoutNode) {
+			node.layoutDirty = true;
+			node.layoutNode.markDirty();
+		}
 	},
 
 	// Finalization

@@ -24,8 +24,12 @@ export function layoutPhase(root: InkxNode, width: number, height: number): void
 		return;
 	}
 
-	// Run Yoga layout calculation (root always has a layoutNode)
+	// Run layout calculation (root always has a layoutNode)
 	if (root.layoutNode) {
+		// Set explicit dimensions on root to fill available space
+		// (Yoga does this implicitly, Flexx needs explicit sizing)
+		root.layoutNode.setWidth(width);
+		root.layoutNode.setHeight(height);
 		root.layoutNode.calculateLayout(width, height);
 	}
 

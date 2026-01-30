@@ -42,6 +42,9 @@ export interface LayoutNode {
 	// Measure function
 	setMeasureFunc(measureFunc: MeasureFunc): void;
 
+	// Dirty tracking
+	markDirty(): void;
+
 	// Dimension setters
 	setWidth(value: number): void;
 	setWidthPercent(value: number): void;
@@ -256,56 +259,28 @@ export function getConstants(): LayoutConstants {
 // Default Engine Configuration
 // ============================================================================
 
-// TODO (km-inkx-flexx-default): Switch default to Flexx once layout differences are fixed.
-// Flexx has known layout differences with Newline and some column layouts.
-// See tests/layout-equivalence.test.tsx for details.
-const USE_FLEXX_DEFAULT = false;
-
 /**
- * Initialize the default layout engine if none is set.
- * Currently uses Yoga for compatibility. Will switch to Flexx (pure JS,
- * synchronous, smaller bundle) once layout differences are resolved.
- * Call this function instead of duplicating initialization logic.
+ * Initialize the default layout engine (Flexx) if none is set.
+ * Flexx is pure JS, synchronous, and has a smaller bundle than Yoga.
  */
 export async function ensureDefaultLayoutEngine(): Promise<void> {
 	if (isLayoutEngineInitialized()) {
 		return;
 	}
-
-	if (USE_FLEXX_DEFAULT) {
-		const { createFlexxEngine } = await import('./adapters/flexx-adapter.js');
-		const engine = createFlexxEngine();
-		setLayoutEngine(engine);
-	} else {
-		const { initYogaEngine } = await import('./adapters/yoga-adapter.js');
-		const engine = await initYogaEngine();
-		setLayoutEngine(engine);
-	}
+	const { createFlexxEngine } = await import('./adapters/flexx-adapter.js');
+	setLayoutEngine(createFlexxEngine());
 }
 
 /**
- * Get or create the default layout engine.
+ * Get or create the default layout engine (Flexx).
  * Returns the engine instance for immediate use.
- *
- * Note: This function is async because both Yoga and Flexx use dynamic imports.
- * For sync usage, call ensureDefaultLayoutEngine() first, then getLayoutEngine().
  */
 export async function getOrCreateDefaultLayoutEngine(): Promise<LayoutEngine> {
 	if (isLayoutEngineInitialized()) {
 		return getLayoutEngine();
 	}
-
-	if (USE_FLEXX_DEFAULT) {
-		// Flexx is synchronous after import
-		const { createFlexxEngine } = await import('./adapters/flexx-adapter.js');
-		const engine = createFlexxEngine();
-		setLayoutEngine(engine);
-		return engine;
-	} else {
-		// Yoga requires async initialization
-		const { initYogaEngine } = await import('./adapters/yoga-adapter.js');
-		const engine = await initYogaEngine();
-		setLayoutEngine(engine);
-		return engine;
-	}
+	const { createFlexxEngine } = await import('./adapters/flexx-adapter.js');
+	const engine = createFlexxEngine();
+	setLayoutEngine(engine);
+	return engine;
 }

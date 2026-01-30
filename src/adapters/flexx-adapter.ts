@@ -113,6 +113,11 @@ class FlexxNodeAdapter implements LayoutNode {
 		});
 	}
 
+	// Dirty tracking - forces layout recalculation
+	markDirty(): void {
+		this.node.markDirty();
+	}
+
 	private measureModeToString(mode: number): MeasureMode {
 		if (mode === MEASURE_MODE_EXACTLY) return 'exactly';
 		if (mode === MEASURE_MODE_AT_MOST) return 'at-most';

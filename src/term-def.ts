@@ -49,7 +49,8 @@ const DEFAULT_HEIGHT = 24;
  * Check if a value is a Term instance (duck typing).
  */
 export function isTerm(value: unknown): value is Term {
-	if (!value || typeof value !== 'object') return false;
+	// Term can be a callable Proxy (typeof === 'function') or object
+	if (!value || (typeof value !== 'object' && typeof value !== 'function')) return false;
 	const obj = value as Record<string, unknown>;
 	return (
 		typeof obj.hasCursor === 'function' &&

@@ -47,6 +47,7 @@ import type {
 class YogaNodeAdapter implements LayoutNode {
 	private node: YogaNode;
 	private yoga: Yoga;
+	private hasMeasureFunc = false;
 
 	constructor(node: YogaNode, yoga: Yoga) {
 		this.node = node;
@@ -75,11 +76,20 @@ class YogaNodeAdapter implements LayoutNode {
 
 	// Measure function
 	setMeasureFunc(measureFunc: MeasureFunc): void {
+		this.hasMeasureFunc = true;
 		this.node.setMeasureFunc((width, widthMode, height, heightMode) => {
 			const widthModeStr = this.measureModeToString(widthMode);
 			const heightModeStr = this.measureModeToString(heightMode);
 			return measureFunc(width, widthModeStr, height, heightModeStr);
 		});
+	}
+
+	// Dirty tracking - forces layout recalculation
+	// Yoga only allows markDirty() on leaf nodes with measure functions
+	markDirty(): void {
+		if (this.hasMeasureFunc) {
+			this.node.markDirty();
+		}
 	}
 
 	private measureModeToString(mode: number): MeasureMode {

@@ -142,7 +142,7 @@ export interface TestRendererOptions {
 	columns?: number;
 	/** Terminal height. Default: 24 */
 	rows?: number;
-	/** Layout engine to use (yoga or flexx). Default: yoga (temporarily, will switch to flexx) */
+	/** Layout engine to use (yoga or flexx). Default: flexx */
 	layoutEngine?: LayoutEngine;
 	/** Enable debug output. Default: false */
 	debug?: boolean;
