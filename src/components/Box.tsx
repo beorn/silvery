@@ -13,7 +13,7 @@
 
 import { type JSX, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
 import { NodeContext } from '../context.js';
-import type { BoxProps as BoxPropsType, ComputedLayout, InkxNode } from '../types.js';
+import type { BoxProps as BoxPropsType, InkxNode } from '../types.js';
 
 // ============================================================================
 // Props
@@ -76,5 +76,3 @@ export function Box(props: BoxProps): JSX.Element {
 	);
 }
 
-// Re-export ComputedLayout for convenience
-export type { ComputedLayout };

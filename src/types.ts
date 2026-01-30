@@ -26,11 +26,6 @@ export interface Rect {
 }
 
 /**
- * @deprecated Use Rect instead. Alias kept for backwards compatibility.
- */
-export type ComputedLayout = Rect;
-
-/**
  * Check if two rects are equal (same position and size).
  */
 export function rectEqual(a: Rect | null, b: Rect | null): boolean {

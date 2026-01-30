@@ -140,8 +140,11 @@ test('renders content', () => {
     </Box>
   )
 
-  // Plain text (no ANSI)
+  // Plain text (no ANSI) - use for assertions
   expect(app.text).toContain('Hello')
+
+  // ANSI output (with colors) - use for debugging with visual inspection
+  console.log(app.html)
 
   // Auto-refreshing locators (no stale locator problem!)
   expect(app.getByText('Hello').count()).toBe(1)
@@ -238,11 +241,14 @@ const render = createTestRenderer({ columns: 80, rows: 24 })
 test('debugging example', () => {
   const app = render(<MyComponent />)
 
-  // Print current frame
+  // Print current frame (plain text)
   app.debug()
 
-  // Get screenshot
-  console.log(app.screenshot())
+  // For colored output (debugging visual issues)
+  console.log(app.html)
+
+  // For plain text output (assertions, comparisons)
+  console.log(app.text)
 })
 ```
 
@@ -352,6 +358,43 @@ await render(term, <App />)
 
 // RIGHT - new API (element first)
 await render(<App />, term)
+```
+
+### Wrong: Using lastFrame() or frames array
+
+```tsx
+// WRONG - old way, returns ANSI from frames array
+const frame = app.lastFrame()
+const text = stripAnsi(frame)
+const allFrames = app.frames  // also deprecated
+
+// RIGHT - use app.text or app.html directly
+const text = app.text   // plain text (no ANSI)
+const ansi = app.html   // with ANSI styling
+```
+
+### Wrong: Using stdin.write() for keyboard input
+
+```tsx
+// WRONG - manual ANSI sequences
+app.stdin.write('\x1b[A')  // up arrow
+app.stdin.write('j')
+
+// RIGHT - Playwright-style API
+await app.press('ArrowUp')
+await app.press('j')
+```
+
+### Wrong: Using getContainer() for locators
+
+```tsx
+// WRONG - stale results, manual refresh needed
+const root = app.getContainer()
+const locator = createLocator(root)
+
+// RIGHT - auto-refreshing locators via app
+const locator = app.locator('#main')
+const item = app.getByTestId('item')
 ```
 
 ## Key Exports

@@ -5,7 +5,7 @@
  */
 
 // Layout
-export { useLayout, type ComputedLayout } from './useLayout.js';
+export { useContentRect, useContentRectCallback, useScreenRect, type Rect } from './useLayout.js';
 
 // Input
 export {

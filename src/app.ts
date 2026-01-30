@@ -94,9 +94,6 @@ export interface App {
 	/** Print component tree to console */
 	debug(): void;
 
-	/** Get screenshot (alias for text) */
-	screenshot(): string;
-
 	// === Testing extras ===
 
 	/** Check if exit() was called */
@@ -105,33 +102,24 @@ export interface App {
 	/** Get error passed to exit() */
 	exitError(): Error | undefined;
 
-	/** All rendered frames */
-	readonly frames: string[];
-
-	/** Get last frame with ANSI codes */
-	lastFrame(): string | undefined;
-
-	/** Send raw stdin input */
+	/** Send raw stdin input (for sync test helpers; prefer app.press() for new code) */
 	readonly stdin: { write: (data: string) => void };
 
-	// === RenderResult compatibility (for migration) ===
+	// === Internal/Legacy (kept for inkx test compatibility, not for external use) ===
 
-	/**
-	 * Get last buffer for direct inspection.
-	 * @deprecated Use app.term.buffer instead
-	 */
+	/** All rendered frames (internal) */
+	readonly frames: string[];
+
+	/** Get last frame with ANSI codes (internal - use app.html instead) */
+	lastFrame(): string | undefined;
+
+	/** Get last buffer (internal - use app.term.buffer instead) */
 	lastBuffer(): TerminalBuffer | undefined;
 
-	/**
-	 * Get last frame as plain text.
-	 * @deprecated Use app.text instead
-	 */
+	/** Get last frame as plain text (internal - use app.text instead) */
 	lastFrameText(): string | undefined;
 
-	/**
-	 * Get the container root node.
-	 * @deprecated Use app.locator() instead - auto-refreshes on each access
-	 */
+	/** Get container root node (internal - use app.locator() instead) */
 	getContainer(): InkxNode;
 }
 
@@ -166,11 +154,11 @@ export interface AppOptions {
 	/** Function to get exit error */
 	exitError?: () => Error | undefined;
 
-	/** Captured frames array */
-	frames?: string[];
-
 	/** Debug print function */
 	debugFn?: () => void;
+
+	/** Captured frames array (internal) */
+	frames?: string[];
 
 	/** Terminal dimensions */
 	columns: number;
@@ -191,8 +179,8 @@ export function createApp(options: AppOptions): App {
 		clear,
 		exitCalled = () => false,
 		exitError = () => undefined,
-		frames = [],
 		debugFn,
+		frames = [],
 		columns,
 		rows,
 	} = options;
@@ -313,25 +301,22 @@ export function createApp(options: AppOptions): App {
 			}
 		},
 
-		screenshot(): string {
-			return app.text;
-		},
-
 		// === Testing extras ===
 
 		exitCalled,
 		exitError,
+
+		stdin: {
+			write: sendInput,
+		},
+
+		// Internal/Legacy (kept for inkx test compatibility)
 		frames,
 
 		lastFrame(): string | undefined {
 			return frames[frames.length - 1];
 		},
 
-		stdin: {
-			write: sendInput,
-		},
-
-		// RenderResult compatibility
 		lastBuffer(): TerminalBuffer | undefined {
 			return getBuffer() ?? undefined;
 		},

@@ -8,7 +8,7 @@
  */
 
 import type { Style, TerminalBuffer } from '../buffer.js';
-import type { BoxProps, ComputedLayout, InkxNode } from '../types.js';
+import type { BoxProps, InkxNode, Rect } from '../types.js';
 import { getBorderChars, getBorderSize, parseColor } from './render-helpers.js';
 import { renderTextLine } from './render-text.js';
 
@@ -22,7 +22,7 @@ import { renderTextLine } from './render-text.js';
 export function renderBox(
 	_node: InkxNode,
 	buffer: TerminalBuffer,
-	layout: ComputedLayout,
+	layout: Rect,
 	props: BoxProps,
 	clipBounds?: { top: number; bottom: number },
 	scrollOffset = 0,
@@ -136,7 +136,7 @@ export function renderBorder(
 export function renderScrollIndicators(
 	_node: InkxNode,
 	buffer: TerminalBuffer,
-	layout: ComputedLayout,
+	layout: Rect,
 	props: BoxProps,
 	ss: NonNullable<InkxNode['scrollState']>,
 ): void {

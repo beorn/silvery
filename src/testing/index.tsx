@@ -161,62 +161,8 @@ export interface RenderOptions {
 }
 
 /**
- * Result returned by the render function.
- * @deprecated Use App interface instead. RenderResult is kept for backward compatibility.
- */
-export interface RenderResult {
-	/**
-	 * Returns the last rendered frame as a string (with ANSI codes).
-	 * Returns undefined if no frames have been rendered.
-	 */
-	lastFrame: () => string | undefined;
-
-	/**
-	 * Returns the last rendered buffer for direct inspection.
-	 * Returns undefined if no frames have been rendered.
-	 */
-	lastBuffer: () => TerminalBuffer | undefined;
-
-	/**
-	 * Returns the last rendered frame as plain text (no ANSI codes).
-	 * @deprecated Use app.text instead
-	 */
-	lastFrameText: () => string | undefined;
-
-	/** Array of all rendered frames */
-	frames: string[];
-
-	/** Re-render with a new element */
-	rerender: (element: ReactElement) => void;
-
-	/** Unmount the component */
-	unmount: () => void;
-
-	/** Send stdin input */
-	stdin: { write: (data: string) => void };
-
-	/** Clear all captured frames */
-	clear: () => void;
-
-	/** Check if exit() was called */
-	exitCalled: () => boolean;
-
-	/** Get the error passed to exit() */
-	exitError: () => Error | undefined;
-
-	/**
-	 * Get the container root node for DOM queries.
-	 * @deprecated Use app.locator() instead - auto-refreshes on each access
-	 */
-	getContainer: () => import('../types.js').InkxNode;
-
-	/** Print the component tree for debugging */
-	debug: () => void;
-}
-
-/**
  * Test render function type.
- * Returns App which extends RenderResult for backward compatibility.
+ * Returns App for querying and interacting with the rendered component.
  */
 export type TestRender = (element: ReactElement, options?: RenderOptions) => App;
 
@@ -246,28 +192,27 @@ interface RenderInstance {
  * The returned render function auto-cleans previous renders on each call.
  *
  * @param options - Renderer configuration (dimensions, layout engine, debug)
- * @returns Render function that returns { lastFrame, lastFrameText, stdin, getContainer, ... }
+ * @returns Render function that returns an App instance
  *
  * @example
  * ```tsx
- * import { createTestRenderer, createLocator } from 'inkx/testing';
+ * import { createTestRenderer } from 'inkx/testing';
  * import { Box, Text } from 'inkx';
  *
  * // Create renderer (typically once per test file)
  * const render = createTestRenderer({ columns: 80, rows: 24 });
  *
- * test('my test', () => {
- *   const { lastFrameText, stdin, getContainer } = render(<MyComponent />);
+ * test('my test', async () => {
+ *   const app = render(<MyComponent />);
  *
  *   // Check output
- *   expect(lastFrameText()).toContain('expected');
+ *   expect(app.text).toContain('expected');
  *
  *   // Send input
- *   stdin.write('q');
+ *   await app.press('q');
  *
- *   // DOM queries
- *   const locator = createLocator(getContainer());
- *   expect(locator.getByText('Hello').count()).toBe(1);
+ *   // DOM queries (auto-refreshing locators)
+ *   expect(app.getByText('Hello').count()).toBe(1);
  * });
  * ```
  */
@@ -490,8 +435,8 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 			clear: clearFn,
 			exitCalled: () => exitCalledFlag,
 			exitError: () => exitErrorValue,
-			frames: instance.frames,
 			debugFn,
+			frames: instance.frames,
 			columns: renderColumns,
 			rows: renderRows,
 		});

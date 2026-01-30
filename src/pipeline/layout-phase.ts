@@ -26,10 +26,6 @@ export function layoutPhase(root: InkxNode, width: number, height: number): void
 
 	// Run layout calculation (root always has a layoutNode)
 	if (root.layoutNode) {
-		// Set explicit dimensions on root to fill available space
-		// (Yoga does this implicitly, Flexx needs explicit sizing)
-		root.layoutNode.setWidth(width);
-		root.layoutNode.setHeight(height);
 		root.layoutNode.calculateLayout(width, height);
 	}
 
@@ -126,12 +122,10 @@ export function notifyLayoutSubscribers(node: InkxNode): void {
 	}
 }
 
-// Re-export from types for backwards compatibility
+// Re-export from types
 export { rectEqual } from '../types.js';
 
-/**
- * @deprecated Use rectEqual instead.
- */
+// Backwards compatibility alias (internal)
 export { rectEqual as layoutEqual } from '../types.js';
 
 // ============================================================================

@@ -12,10 +12,6 @@ import { useContext, useLayoutEffect, useReducer, useRef } from 'react';
 import { NodeContext } from '../context.js';
 import { type Rect, rectEqual } from '../types.js';
 
-/**
- * @deprecated Use Rect instead. Alias kept for backwards compatibility.
- */
-export type ComputedLayout = Rect;
 export type { Rect };
 
 // ============================================================================
@@ -211,16 +207,6 @@ export function useScreenRectCallback(callback: (rect: Rect) => void): void {
 	}, [node]); // Re-run when node becomes available
 }
 
-// ============================================================================
-// Deprecated Aliases (backwards compatibility)
-// ============================================================================
 
-/**
- * @deprecated Use useContentRect instead.
- */
+// Backwards compatibility alias (internal - use useContentRect instead)
 export const useLayout = useContentRect;
-
-/**
- * @deprecated Use useContentRectCallback instead.
- */
-export const useLayoutCallback = useContentRectCallback;
