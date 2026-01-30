@@ -17,6 +17,8 @@
  * - 'plain': Strip all ANSI codes
  */
 
+import { stripAnsi } from './unicode.js';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -104,28 +106,8 @@ export function resolveNonTTYMode(options: NonTTYOptions = {}): ResolvedNonTTYMo
 	return isTTY(stdout) ? 'tty' : 'line-by-line';
 }
 
-// ============================================================================
-// ANSI Stripping
-// ============================================================================
-
-/**
- * Strip all ANSI escape codes from a string.
- *
- * Handles:
- * - CSI sequences (cursor movement, colors, etc.)
- * - OSC sequences (window titles, hyperlinks)
- * - Single-character escape sequences
- */
-export function stripAnsi(str: string): string {
-	// CSI sequences: ESC [ ... letter
-	// OSC sequences: ESC ] ... BEL or ESC ] ... ESC \
-	// Single-char escapes: ESC followed by specific chars
-	return str
-		.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '') // CSI sequences
-		.replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '') // OSC sequences
-		.replace(/\x1b[DME78]/g, '') // Single-char sequences
-		.replace(/\x1b\(B/g, ''); // Character set selection
-}
+// Re-export stripAnsi from unicode.ts (canonical implementation)
+export { stripAnsi } from './unicode.js';
 
 // ============================================================================
 // Line-by-Line Output

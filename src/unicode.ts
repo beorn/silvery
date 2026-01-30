@@ -587,17 +587,28 @@ export function writeLinesToBuffer(
 // ============================================================================
 
 /**
- * ANSI escape code pattern for stripping.
- * Matches SGR escape sequences, extended SGR codes, and OSC 8 hyperlinks.
- */
-export const ANSI_REGEX = /\x1b\[[0-9;:]*m|\x1b\]8;;[^\x1b]*\x1b\\/g;
-
-/**
- * Strip ANSI escape sequences from a string.
+ * Strip all ANSI escape codes from a string.
+ *
+ * Handles:
+ * - CSI sequences (cursor movement, colors, SGR, etc.)
+ * - OSC sequences (window titles, hyperlinks)
+ * - Single-character escape sequences
+ * - Character set selection
  */
 export function stripAnsi(text: string): string {
-	return text.replace(ANSI_REGEX, '');
+	return text
+		.replace(/\x1b\[[0-9;:?]*[A-Za-z]/g, '') // CSI sequences (including SGR with colons)
+		.replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '') // OSC sequences
+		.replace(/\x1b[DME78]/g, '') // Single-char sequences
+		.replace(/\x1b\(B/g, ''); // Character set selection
 }
+
+/**
+ * Regex for SGR sequences (colors and attributes) plus OSC 8 hyperlinks.
+ * Used by parseAnsiText() for parsing. For stripping, use stripAnsi().
+ * @deprecated Use stripAnsi() for stripping; this regex doesn't cover all ANSI codes
+ */
+export const ANSI_REGEX = /\x1b\[[0-9;:]*m|\x1b\]8;;[^\x1b]*\x1b\\/g;
 
 /**
  * Get display width of text with ANSI sequences.

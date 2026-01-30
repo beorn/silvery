@@ -455,12 +455,8 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 // Utility Functions
 // ============================================================================
 
-/**
- * Strip ANSI escape codes from a string for easier assertions.
- */
-export function stripAnsi(str: string): string {
-	return str.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
-}
+// Re-export stripAnsi from unicode.ts (canonical implementation)
+export { stripAnsi } from '../unicode.js';
 
 /**
  * Normalize frame output for comparison.
