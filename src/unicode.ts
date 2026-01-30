@@ -234,6 +234,49 @@ export function padText(
 }
 
 /**
+ * Constrain text to width and height limits.
+ * Combines wrapping and truncation to fit text in a box.
+ *
+ * @param text - Text to constrain (may contain ANSI codes)
+ * @param width - Maximum display width per line
+ * @param maxLines - Maximum number of lines
+ * @param pad - If true, pad lines to full width
+ * @param ellipsis - Custom ellipsis character (default: "…")
+ * @returns Object with lines array and truncated flag
+ */
+export function constrainText(
+	text: string,
+	width: number,
+	maxLines: number,
+	pad = false,
+	ellipsis = '…',
+): { lines: string[]; truncated: boolean } {
+	const allLines = wrapText(text, width);
+	const truncated = allLines.length > maxLines;
+	let lines = allLines.slice(0, maxLines);
+
+	if (truncated && lines.length > 0) {
+		const lastIdx = lines.length - 1;
+		const lastLine = lines[lastIdx];
+		if (lastLine) {
+			const ellipsisLen = displayWidth(ellipsis);
+			const lastLineLen = displayWidth(lastLine);
+			if (lastLineLen + ellipsisLen <= width) {
+				lines[lastIdx] = lastLine + ellipsis;
+			} else {
+				lines[lastIdx] = truncateText(lastLine, width, ellipsis);
+			}
+		}
+	}
+
+	if (pad) {
+		lines = lines.map((line) => padText(line, width));
+	}
+
+	return { lines, truncated };
+}
+
+/**
  * Check if a grapheme is a word boundary character (space, hyphen, etc.)
  */
 function isWordBoundary(grapheme: string): boolean {
@@ -543,7 +586,11 @@ export function writeLinesToBuffer(
 // ANSI-Aware Operations
 // ============================================================================
 
-const ANSI_REGEX = /\x1b\[[0-9;:]*m|\x1b\]8;;[^\x1b]*\x1b\\/g;
+/**
+ * ANSI escape code pattern for stripping.
+ * Matches SGR escape sequences, extended SGR codes, and OSC 8 hyperlinks.
+ */
+export const ANSI_REGEX = /\x1b\[[0-9;:]*m|\x1b\]8;;[^\x1b]*\x1b\\/g;
 
 /**
  * Strip ANSI escape sequences from a string.

@@ -107,14 +107,11 @@ export { Static } from './components/Static.js';
  * ```
  */
 export {
-	// New API (preferred)
 	useContentRect,
 	useContentRectCallback,
 	useScreenRect,
 	useScreenRectCallback,
-	// Deprecated aliases (backwards compatibility)
-	useLayout,
-	useLayoutCallback,
+	useLayout, // backwards compat alias (internal)
 } from './hooks/useLayout.js';
 
 /**
@@ -254,7 +251,7 @@ export type { BoundTerm } from './bound-term.js';
 // Types
 export type { BoxProps } from './components/Box.js';
 export type { TextProps } from './components/Text.js';
-export type { Rect, ComputedLayout } from './hooks/useLayout.js';
+export type { Rect } from './hooks/useLayout.js';
 export type { Key, InputHandler, UseInputOptions } from './hooks/useInput.js';
 export type { UseAppResult } from './hooks/useApp.js';
 export type { UseStdoutResult } from './hooks/useStdout.js';
@@ -287,3 +284,50 @@ export {
 	stripAnsi,
 } from './non-tty.js';
 export type { NonTTYOptions, ResolvedNonTTYMode } from './non-tty.js';
+
+// =============================================================================
+// Unicode Text Utilities
+// =============================================================================
+
+/**
+ * Unicode-aware text manipulation functions.
+ * Handle ANSI codes, wide characters (CJK), and emoji correctly.
+ */
+export {
+	// Measurement
+	displayWidth,
+	displayWidthAnsi,
+	measureText,
+	// Manipulation
+	wrapText,
+	truncateText,
+	padText,
+	constrainText,
+	sliceByWidth,
+	// ANSI handling
+	ANSI_REGEX,
+	hasAnsi,
+	parseAnsiText,
+	stripAnsi as stripAnsiUnicode,
+	truncateAnsi,
+	// Grapheme operations
+	splitGraphemes,
+	graphemeCount,
+	graphemeWidth,
+	// Character detection
+	isWideGrapheme,
+	isZeroWidthGrapheme,
+	isCJK,
+	isLikelyEmoji,
+	hasWideCharacters,
+	hasZeroWidthCharacters,
+	// Buffer writing
+	writeTextToBuffer,
+	writeTextTruncated,
+	writeLinesToBuffer,
+	// Utilities
+	normalizeText,
+	getFirstCodePoint,
+} from './unicode.js';
+
+export type { StyledSegment } from './unicode.js';
