@@ -28,7 +28,7 @@ import {
 	StdoutContext,
 	TermContext,
 } from './context.js';
-import { isLayoutEngineInitialized, setLayoutEngine } from './layout-engine.js';
+import { isLayoutEngineInitialized, type LayoutEngineType } from './layout-engine.js';
 import { enterAlternateScreen, leaveAlternateScreen } from './output.js';
 import { createContainer, getContainerRoot, reconciler } from './reconciler.js';
 import { renderStringSync } from './render-string.js';
@@ -98,6 +98,12 @@ export interface RenderOptions {
 	 * - 'plain': Strip all ANSI codes, output plain text
 	 */
 	nonTTYMode?: NonTTYMode;
+	/**
+	 * Layout engine to use (default: 'flexx', or INKX_ENGINE env var)
+	 * - 'flexx': Pure JS, synchronous, smaller bundle
+	 * - 'yoga': Facebook's WASM-based flexbox (more mature)
+	 */
+	layoutEngine?: LayoutEngineType;
 }
 
 /**
@@ -127,20 +133,19 @@ const instances = new Map<NodeJS.WriteStream, InkxInstance>();
 
 /**
  * Initialize layout engine if not already initialized.
- * By default, uses Flexx (pure JS, synchronous, smaller bundle).
+ * @param engineType - 'flexx' or 'yoga'. Falls back to INKX_ENGINE env, then 'flexx'.
  */
-async function ensureLayoutEngineInitialized(): Promise<void> {
+async function ensureLayoutEngineInitialized(engineType?: LayoutEngineType): Promise<void> {
 	if (isLayoutEngineInitialized()) {
 		debug('Layout engine already initialized');
 		return;
 	}
 
-	debug('Initializing layout engine...');
+	debug('Initializing layout engine (%s)...', engineType ?? 'default');
 	const startTime = Date.now();
 
-	// Use centralized default engine initialization
 	const { ensureDefaultLayoutEngine } = await import('./layout-engine.js');
-	await ensureDefaultLayoutEngine();
+	await ensureDefaultLayoutEngine(engineType);
 
 	debug('Layout engine initialized in %dms', Date.now() - startTime);
 }
@@ -475,7 +480,7 @@ class InkxInstance {
 	private resizeCleanup: (() => void) | null = null;
 	private signalCleanup: (() => void) | null = null;
 
-	constructor(options: Required<Omit<RenderOptions, 'patchConsole'>>) {
+	constructor(options: Required<Omit<RenderOptions, 'patchConsole' | 'layoutEngine'>>) {
 		debug('InkxInstance constructor start');
 		const startTime = Date.now();
 
@@ -773,7 +778,7 @@ async function renderImpl(
 	const renderStart = Date.now();
 
 	// Ensure layout engine is initialized
-	await ensureLayoutEngineInitialized();
+	await ensureLayoutEngineInitialized(options.layoutEngine);
 	debug('render(): layout engine ready in %dms', Date.now() - renderStart);
 
 	// For static mode, use renderString-style rendering
@@ -1045,15 +1050,15 @@ export function renderSync(
  */
 export async function renderStatic(
 	element: ReactElement,
-	options?: { width?: number; height?: number; plain?: boolean },
+	options?: { width?: number; height?: number; plain?: boolean; layoutEngine?: LayoutEngineType },
 ): Promise<string> {
-	await ensureLayoutEngineInitialized();
+	await ensureLayoutEngineInitialized(options?.layoutEngine);
 	const { renderStringSync } = await import('./render-string.js');
 	return renderStringSync(element, options);
 }
 
 // Re-export layout engine management for convenience
-export { setLayoutEngine, isLayoutEngineInitialized } from './layout-engine.js';
+export { setLayoutEngine, isLayoutEngineInitialized, type LayoutEngineType } from './layout-engine.js';
 
 // Re-export adapters for custom engine initialization
 export {

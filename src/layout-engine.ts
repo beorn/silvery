@@ -255,32 +255,33 @@ export function getConstants(): LayoutConstants {
 // Default Engine Initialization
 // ============================================================================
 
-// ============================================================================
-// Default Engine Configuration
-// ============================================================================
+/**
+ * Layout engine type for configuration.
+ */
+export type LayoutEngineType = 'flexx' | 'yoga';
 
 /**
- * Initialize the default layout engine (Flexx) if none is set.
- * Flexx is pure JS, synchronous, and has a smaller bundle than Yoga.
+ * Initialize the layout engine if not already set.
+ *
+ * @param engineType - 'flexx' or 'yoga'. If not provided, checks INKX_ENGINE
+ *                     env var, then defaults to 'flexx'.
  */
-export async function ensureDefaultLayoutEngine(): Promise<void> {
+export async function ensureDefaultLayoutEngine(
+	engineType?: LayoutEngineType,
+): Promise<void> {
 	if (isLayoutEngineInitialized()) {
 		return;
 	}
-	const { createFlexxEngine } = await import('./adapters/flexx-adapter.js');
-	setLayoutEngine(createFlexxEngine());
-}
 
-/**
- * Get or create the default layout engine (Flexx).
- * Returns the engine instance for immediate use.
- */
-export async function getOrCreateDefaultLayoutEngine(): Promise<LayoutEngine> {
-	if (isLayoutEngineInitialized()) {
-		return getLayoutEngine();
+	// Resolve engine type: option → env → 'flexx'
+	const resolved =
+		engineType ?? (process.env.INKX_ENGINE?.toLowerCase() as LayoutEngineType) ?? 'flexx';
+
+	if (resolved === 'yoga') {
+		const { initYogaEngine } = await import('./adapters/yoga-adapter.js');
+		setLayoutEngine(await initYogaEngine());
+	} else {
+		const { createFlexxEngine } = await import('./adapters/flexx-adapter.js');
+		setLayoutEngine(createFlexxEngine());
 	}
-	const { createFlexxEngine } = await import('./adapters/flexx-adapter.js');
-	const engine = createFlexxEngine();
-	setLayoutEngine(engine);
-	return engine;
 }

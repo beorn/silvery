@@ -2,6 +2,29 @@
 
 React-based terminal UI framework with layout feedback. Ink-compatible API with components that know their size.
 
+## Layout Engine
+
+inkx supports two layout engines:
+
+| Engine | Description |
+|--------|-------------|
+| `flexx` (default) | Pure JS, synchronous, smaller bundle |
+| `yoga` | Facebook's WASM-based flexbox (more mature) |
+
+**Option 1: Pass to render()**
+```tsx
+await render(<App />, term, { layoutEngine: 'yoga' })
+await renderStatic(<Report />, { layoutEngine: 'flexx' })
+```
+
+**Option 2: Environment variable** (fallback when option not provided)
+```bash
+INKX_ENGINE=yoga bun run app.ts
+INKX_ENGINE=flexx bun test
+```
+
+Priority: `render({ layoutEngine })` → `INKX_ENGINE` env → `'flexx'`
+
 ## Imports
 
 All exports are **named exports**:
@@ -14,7 +37,10 @@ import { Box, Text, Newline, Spacer, Static, Console } from 'inkx'
 import { useContentRect, useScreenRect, useInput, useApp, useTerm, useConsole } from 'inkx'
 
 // Render functions
-import { render, renderSync, renderStatic, renderString, setLayoutEngine, initYogaEngine, createFlexxEngine } from 'inkx'
+import { render, renderSync, renderStatic, renderString } from 'inkx'
+
+// Layout engine (for manual control - usually not needed)
+import { setLayoutEngine, initYogaEngine, createFlexxEngine } from 'inkx'
 
 // Term primitives (re-exported from chalkx - prefer importing from inkx)
 import { createTerm, patchConsole, type Term, type StyleChain, type PatchedConsole } from 'inkx'
@@ -480,6 +506,7 @@ inkx uses category-based style merging that preserves semantic information:
 | `patchConsole()` | Capture console output (re-exported from chalkx) |
 | `mergeStyles()` | Category-based style merging function |
 | `Term`, `StyleChain` | Types (re-exported from chalkx) |
+| `setLayoutEngine(engine)` | Manually set layout engine instance |
 
 ## Key Differences from Ink
 
