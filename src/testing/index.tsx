@@ -456,7 +456,8 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 // ============================================================================
 
 // Re-export stripAnsi from unicode.ts (canonical implementation)
-export { stripAnsi } from '../unicode.js';
+import { stripAnsi as stripAnsiImpl } from '../unicode.js';
+export const stripAnsi = stripAnsiImpl;
 
 /**
  * Normalize frame output for comparison.

@@ -59,7 +59,8 @@ export function createNode(
 
 			// Calculate text dimensions
 			const lines = text.split('\n');
-			const maxWidth = widthMode === 'undefined' ? Number.POSITIVE_INFINITY : width;
+			// Treat NaN width the same as unconstrained (can happen with auto-sized parents)
+			const maxWidth = widthMode === 'undefined' || Number.isNaN(width) ? Number.POSITIVE_INFINITY : width;
 
 			// Calculate actual dimensions based on wrapping
 			let totalHeight = 0;
