@@ -229,6 +229,34 @@ test('debugging example', () => {
 })
 ```
 
+### Debugging TUI at Runtime
+
+When debugging a live TUI app, use `DEBUG_LOG` to write debug output to a file (since the terminal is occupied by the TUI):
+
+```bash
+# Write debug output to file instead of terminal
+DEBUG=inkx:* DEBUG_LOG=/tmp/inkx.log bun km view /path
+
+# In another terminal, watch the log
+tail -f /tmp/inkx.log
+```
+
+**Debug namespaces:**
+- `inkx:*` - All inkx internals
+- `inkx:render` - Render cycle
+- `inkx:useInput` - Keyboard input handling
+- `inkx:scheduler` - React scheduler
+- `inkx:pipeline` - Render pipeline
+- `flexx:layout` - Layout calculations (in flexx, not inkx)
+
+**Adding debug statements:**
+```typescript
+import createDebug from 'debug'
+const debug = createDebug('inkx:myfeature')
+
+debug('state change', { before, after })
+```
+
 ## Anti-Patterns
 
 ### Wrong: Mixing chalk backgrounds with Box backgroundColor
