@@ -31,3 +31,6 @@ benchmarks/results/
 # Playwright
 test-results/
 playwright-report/
+
+# Beads archive
+.beads.archived/
