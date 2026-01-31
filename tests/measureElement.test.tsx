@@ -10,7 +10,8 @@
  */
 
 import { describe, expect, test } from 'bun:test';
-import { type InkxNode, measureElement } from '../src/index.js';
+import type { InkxNode } from '../src/index.js';
+import { measureElement } from '../src/measureElement.js';
 
 // Helper to create a mock layout node that returns specific values
 function createMockLayoutNode(width: number, height: number) {

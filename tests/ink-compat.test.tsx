@@ -24,7 +24,6 @@ import {
 	type InputHandler,
 	type Instance,
 	type Key,
-	type MeasureElementOutput,
 	Newline,
 	type RenderOptions,
 	Spacer,
@@ -39,17 +38,19 @@ import {
 	type UseStdinResult,
 	type UseStdoutResult,
 	// Render
-	measureElement,
 	render,
 	// Hooks
 	useApp,
+	useContentRect,
 	useFocus,
 	useFocusManager,
 	useInput,
-	useLayout,
 	useStdin,
 	useStdout,
 } from '../src/index.js';
+// Deprecated exports - test directly from source
+import { measureElement, type MeasureElementOutput } from '../src/measureElement.js';
+import { useLayout } from '../src/hooks/useLayout.js';
 
 import { FocusContext, type FocusContextValue } from '../src/context.js';
 import { createTestRenderer, stripAnsi } from '../src/testing/index.js';

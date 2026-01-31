@@ -37,7 +37,7 @@ import { Box, Text, Newline, Spacer, Static, Console } from 'inkx'
 import { useContentRect, useScreenRect, useInput, useApp, useTerm, useConsole } from 'inkx'
 
 // Render functions
-import { render, renderSync, renderStatic, renderString } from 'inkx'
+import { render, renderSync, renderStatic } from 'inkx'
 
 // Layout engine (for manual control - usually not needed)
 import { setLayoutEngine, initYogaEngine, createFlexxEngine } from 'inkx'
@@ -491,7 +491,6 @@ inkx uses category-based style merging that preserves semantic information:
 | `render(element, term?)` | Render element; term optional for static mode |
 | `renderSync(element, term?)` | Sync render (requires layout engine initialized) |
 | `renderStatic(element, opts?)` | Convenience for static one-shot rendering |
-| `renderString(element, opts?)` | Render to string (alias for static mode) |
 | `Console` | Renders captured console output |
 | `useTerm()` | Access Term in components |
 | `useConsole(patched)` | Subscribe to console entries |

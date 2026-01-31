@@ -13,7 +13,7 @@
  * import { Box, Text, useContentRect, useInput, useApp, render, createTerm, term } from 'inkx';
  *
  * // Testing utilities
- * import { createTestRenderer, createLocator } from 'inkx/testing';
+ * import { createTestRenderer } from 'inkx/testing';
  * ```
  *
  * ## Quick Example
@@ -111,7 +111,6 @@ export {
 	useContentRectCallback,
 	useScreenRect,
 	useScreenRectCallback,
-	useLayout, // backwards compat alias (internal)
 } from './hooks/useLayout.js';
 
 /**
@@ -218,8 +217,6 @@ export {
 	createFlexxEngine,
 	FlexxLayoutEngine,
 } from './render.js';
-export { renderString, renderStringSync, type RenderStringOptions } from './render-string.js';
-export { measureElement } from './measureElement.js';
 
 // TermDef resolution utilities
 export {
@@ -259,7 +256,6 @@ export type { UseStdinResult } from './hooks/useStdin.js';
 export type { UseFocusOptions, UseFocusResult } from './hooks/useFocus.js';
 export type { UseFocusManagerResult } from './hooks/useFocusManager.js';
 export type { RenderOptions, Instance, RenderMode, NonTTYMode } from './render.js';
-export type { MeasureElementOutput } from './measureElement.js';
 export type {
 	InkxNode,
 	// Event types
