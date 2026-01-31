@@ -28,9 +28,10 @@ import React, { type ReactElement } from 'react';
 
 import { createTerm } from 'chalkx';
 
+import { type App, createApp } from './app.js';
 import { bufferToStyledText, bufferToText } from './buffer.js';
 import { AppContext, StdoutContext, TermContext } from './context.js';
-import { isLayoutEngineInitialized, setLayoutEngine } from './layout-engine.js';
+import { isLayoutEngineInitialized } from './layout-engine.js';
 import { executeRender } from './pipeline.js';
 import { createContainer, getContainerRoot, reconciler } from './reconciler.js';
 
@@ -161,7 +162,7 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
 	} as unknown as NodeJS.WriteStream;
 
 	// Create mock term for components that use useTerm()
-	const mockTerm = createTerm({ level: plain ? 0 : 3, columns: width });
+	const mockTerm = createTerm({ color: plain ? null : 'truecolor' });
 
 	// Wrap with minimal contexts (no input handling needed)
 	const wrapped = React.createElement(
@@ -208,9 +209,137 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
 	return plain ? bufferToText(buffer) : bufferToStyledText(buffer);
 }
 
+/**
+ * Render a React element to an App instance for static output.
+ *
+ * Returns a full App with text, html, locator, etc. but no input handling.
+ * Used internally by render() for static mode.
+ */
+export function renderStaticToApp(element: ReactElement, options: RenderStringOptions = {}): App {
+	if (!isLayoutEngineInitialized()) {
+		throw new Error(
+			'Layout engine not initialized. Use render() (async) or initialize with setLayoutEngine().',
+		);
+	}
+
+	const { width = 80, height = 24, plain = false } = options;
+
+	// Create container for React reconciliation
+	const container = createContainer(() => {});
+
+	// Create fiber root
+	const fiberRoot = reconciler.createContainer(
+		container,
+		0, // LegacyRoot
+		null, // hydrationCallbacks
+		false, // isStrictMode
+		null, // concurrentUpdatesByDefaultOverride
+		'', // identifierPrefix
+		() => {}, // onRecoverableError
+		null, // transitionCallbacks
+	);
+
+	// Create minimal mock stdout for components that use useStdout
+	const mockStdout = {
+		columns: width,
+		rows: height,
+		write: () => true,
+		isTTY: false,
+		on: () => mockStdout,
+		off: () => mockStdout,
+		once: () => mockStdout,
+		removeListener: () => mockStdout,
+		addListener: () => mockStdout,
+	} as unknown as NodeJS.WriteStream;
+
+	// Create mock term for components that use useTerm()
+	const mockTerm = createTerm({ color: plain ? null : 'truecolor' });
+
+	// Wrap with minimal contexts (no input handling needed)
+	const wrapped = React.createElement(
+		TermContext.Provider,
+		{ value: mockTerm },
+		React.createElement(
+			AppContext.Provider,
+			{
+				value: {
+					exit: () => {}, // No-op for static render
+				},
+			},
+			React.createElement(
+				StdoutContext.Provider,
+				{
+					value: {
+						stdout: mockStdout,
+						write: () => {},
+					},
+				},
+				element,
+			),
+		),
+	);
+
+	// Mount and render
+	withoutActWarnings(() => {
+		reconciler.updateContainerSync(wrapped, fiberRoot, null, null);
+		reconciler.flushSyncWork();
+	});
+
+	// Execute render pipeline
+	const root = getContainerRoot(container);
+	let { buffer } = executeRender(root, width, height, null, {
+		skipLayoutNotifications: true,
+	});
+
+	// Create App instance
+	const app = createApp({
+		getContainer: () => getContainerRoot(container),
+		getBuffer: () => buffer,
+		sendInput: () => {}, // No-op for static mode
+		rerender: (newElement) => {
+			withoutActWarnings(() => {
+				const newWrapped = React.createElement(
+					TermContext.Provider,
+					{ value: mockTerm },
+					React.createElement(
+						AppContext.Provider,
+						{ value: { exit: () => {} } },
+						React.createElement(
+							StdoutContext.Provider,
+							{ value: { stdout: mockStdout, write: () => {} } },
+							newElement,
+						),
+					),
+				);
+				reconciler.updateContainerSync(newWrapped, fiberRoot, null, null);
+				reconciler.flushSyncWork();
+			});
+			const result = executeRender(getContainerRoot(container), width, height, null, {
+				skipLayoutNotifications: true,
+			});
+			buffer = result.buffer;
+		},
+		unmount: () => {
+			withoutActWarnings(() => {
+				reconciler.updateContainerSync(null, fiberRoot, null, null);
+				reconciler.flushSyncWork();
+			});
+		},
+		waitUntilExit: () => Promise.resolve(),
+		clear: () => {},
+		columns: width,
+		rows: height,
+	});
+
+	return app;
+}
+
 // ============================================================================
 // Helpers
 // ============================================================================
+
+// Extend globalThis type for React testing flag
+declare const globalThis: { IS_REACT_ACT_ENVIRONMENT?: boolean };
 
 /**
  * Run a function with React act warnings disabled.

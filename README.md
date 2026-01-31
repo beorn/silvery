@@ -302,16 +302,14 @@ import { bgOverride } from '@beorn/chalkx'
 Inkx provides a Playwright-inspired testing API with **auto-refreshing locators** that eliminate stale reference bugs:
 
 ```tsx
-import { createTestRenderer } from 'inkx/testing'
-import { Box, Text } from 'inkx'
-
-const render = createTestRenderer({ columns: 80, rows: 24 })
+import { render, Box, Text } from 'inkx'
 
 test('renders and responds to input', async () => {
-  const app = render(
+  const app = await render(
     <Box testID="main">
       <Text>Hello World</Text>
-    </Box>
+    </Box>,
+    { columns: 80, rows: 24 }
   )
 
   // Plain text assertions (no ANSI codes)
@@ -340,12 +338,7 @@ test('renders and responds to input', async () => {
 The auto-refresh eliminates a common testing pain point:
 
 ```tsx
-// Old pattern (stale locators)
-const locator = createLocator(getContainer())
-stdin.write('j')
-// locator is stale! Must manually refresh
-
-// New pattern (auto-refresh)
+// Same locator object works after state changes
 const cursor = app.locator('[data-cursor]')
 await app.press('j')
 expect(cursor.textContent()).toBe('item2')  // Same locator, fresh result

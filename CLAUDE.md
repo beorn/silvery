@@ -46,7 +46,7 @@ import { setLayoutEngine, initYogaEngine, createFlexxEngine } from 'inkx'
 import { createTerm, patchConsole, type Term, type StyleChain, type PatchedConsole } from 'inkx'
 
 // Testing
-import { createTestRenderer, bufferToText, stripAnsi, keyToAnsi, debugTree } from 'inkx/testing'
+import { render, bufferToText, stripAnsi, keyToAnsi, debugTree } from 'inkx/testing'
 ```
 
 ## Common Patterns
@@ -154,16 +154,15 @@ function ColoredOutput() {
 ### Testing Components (App API)
 
 ```tsx
-import { createTestRenderer } from 'inkx/testing'
+import { render } from 'inkx'
 import { Text, Box } from 'inkx'
 
-const render = createTestRenderer({ columns: 80, rows: 24 })
-
-test('renders content', () => {
-  const app = render(
+test('renders content', async () => {
+  const app = await render(
     <Box id="main">
       <Text>Hello</Text>
-    </Box>
+    </Box>,
+    { columns: 80, rows: 24 }
   )
 
   // Plain text (no ANSI) - use for assertions
@@ -203,12 +202,10 @@ Both work identically. Use `id` for consistency with CSS selectors, or `testID` 
 Use `app.press()` for Playwright-style keyboard input:
 
 ```tsx
-import { createTestRenderer } from 'inkx/testing'
-
-const render = createTestRenderer({ columns: 80, rows: 24 })
+import { render } from 'inkx'
 
 test('handles keyboard input', async () => {
-  const app = render(<MyComponent />)
+  const app = await render(<MyComponent />, { columns: 80, rows: 24 })
 
   // Single keys (awaitable, chainable)
   await app.press('Enter')
@@ -232,7 +229,7 @@ The key innovation: locators re-evaluate on every access, eliminating stale loca
 
 ```tsx
 test('locators auto-refresh after input', async () => {
-  const app = render(<Board />)
+  const app = await render(<Board />, { columns: 80, rows: 24 })
   const cursor = app.locator('[data-cursor]')
 
   // Same locator object, but result updates after state change
@@ -245,8 +242,8 @@ test('locators auto-refresh after input', async () => {
 ### Terminal Access
 
 ```tsx
-test('inspect terminal buffer', () => {
-  const app = render(<MyComponent />)
+test('inspect terminal buffer', async () => {
+  const app = await render(<MyComponent />, { columns: 80, rows: 24 })
 
   // Screen-space access via app.term
   const cell = app.term.cell(10, 5)
@@ -260,12 +257,11 @@ test('inspect terminal buffer', () => {
 ### Debugging Tests
 
 ```tsx
-import { createTestRenderer, debugTree } from 'inkx/testing'
+import { render } from 'inkx'
+import { debugTree } from 'inkx/testing'
 
-const render = createTestRenderer({ columns: 80, rows: 24 })
-
-test('debugging example', () => {
-  const app = render(<MyComponent />)
+test('debugging example', async () => {
+  const app = await render(<MyComponent />, { columns: 80, rows: 24 })
 
   // Print current frame (plain text)
   app.debug()
@@ -370,7 +366,7 @@ stdin.write('j')
 const freshLocator = createLocator(getContainer())  // Must manually refresh!
 
 // RIGHT - auto-refreshing locators
-const app = render(<App />)
+const app = await render(<App />, { columns: 80, rows: 24 })
 const cursor = app.locator('[data-cursor]')
 await app.press('j')
 expect(cursor.textContent()).toBe('item2')  // Same locator, fresh result!

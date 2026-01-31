@@ -218,20 +218,18 @@ Use inkx testing API with text snapshots:
 
 ```typescript
 // tests/visual/visual.test.ts
-import { createTestRenderer } from 'inkx/testing';
-import { Box, Text } from 'inkx';
+import { render, Box, Text } from 'inkx';
 
-const render = createTestRenderer({ columns: 80, rows: 24 });
-
-test('basic layout renders correctly', () => {
-  const app = render(
+test('basic layout renders correctly', async () => {
+  const app = await render(
     <Box flexDirection="column" width={40}>
       <Text color="green">Header</Text>
       <Box flexDirection="row">
         <Text>Left</Text>
         <Text>Right</Text>
       </Box>
-    </Box>
+    </Box>,
+    { columns: 80, rows: 24 }
   );
 
   expect(app.text).toMatchSnapshot();
@@ -432,16 +430,14 @@ async function recordMetrics() {
 Inkx provides a Playwright-inspired testing API with **auto-refreshing locators**:
 
 ```typescript
-import { createTestRenderer } from 'inkx/testing';
-import { Box, Text } from 'inkx';
-
-const render = createTestRenderer({ columns: 80, rows: 24 });
+import { render, Box, Text } from 'inkx';
 
 test('renders and responds to input', async () => {
-  const app = render(
+  const app = await render(
     <Box testID="main">
       <Text>Hello</Text>
-    </Box>
+    </Box>,
+    { columns: 80, rows: 24 }
   );
 
   // Plain text assertions (no ANSI)
@@ -459,9 +455,8 @@ test('renders and responds to input', async () => {
   app.debug();
 });
 
-test('another test', () => {
-  // Previous render is auto-cleaned when render() is called again
-  const app = render(<Text>Fresh start</Text>);
+test('another test', async () => {
+  const app = await render(<Text>Fresh start</Text>, { columns: 80, rows: 24 });
   expect(app.text).toContain('Fresh start');
 });
 ```
@@ -473,7 +468,6 @@ test('another test', () => {
 - `app.locator('[selector]')` — CSS-style attribute selectors
 - `app.press()` — async keyboard input
 - `app.term` — terminal buffer access
-- Auto-cleanup: Each `render()` call automatically unmounts the previous render
 
 ### 5.2 Test Fixtures
 
@@ -653,38 +647,38 @@ Terminal Unicode handling is complex. Test comprehensively:
 
 ```typescript
 // tests/unicode/unicode.test.ts
-import { createTestRenderer } from 'inkx/testing';
-import { Box, Text } from 'inkx';
-
-const render = createTestRenderer({ columns: 80, rows: 24 });
+import { render, Box, Text } from 'inkx';
 
 describe('Unicode handling', () => {
   describe('Wide characters (CJK)', () => {
-    test('Chinese characters take 2 cells', () => {
-      const app = render(
+    test('Chinese characters take 2 cells', async () => {
+      const app = await render(
         <Box width={10}>
           <Text>你好世界</Text>
-        </Box>
+        </Box>,
+        { columns: 80, rows: 24 }
       );
       // "你好世界" = 8 cells (4 chars × 2)
       expect(app.text).toMatchSnapshot();
     });
 
-    test('Mixed ASCII and CJK', () => {
-      const app = render(
+    test('Mixed ASCII and CJK', async () => {
+      const app = await render(
         <Box width={10}>
           <Text>Hi你好</Text>
-        </Box>
+        </Box>,
+        { columns: 80, rows: 24 }
       );
       // "Hi" = 2 cells, "你好" = 4 cells = 6 total
       expect(app.text).toMatchSnapshot();
     });
 
-    test('CJK truncation respects cell width', () => {
-      const app = render(
+    test('CJK truncation respects cell width', async () => {
+      const app = await render(
         <Box width={5}>
           <Text>你好世界</Text>
-        </Box>
+        </Box>,
+        { columns: 80, rows: 24 }
       );
       // Can fit 2 CJK chars (4 cells) + ellipsis
       expect(app.text).toMatchSnapshot();
@@ -692,51 +686,50 @@ describe('Unicode handling', () => {
   });
 
   describe('Emoji', () => {
-    test('Basic emoji', () => {
-      const { lastFrame } = render(<Text>Hello 👋</Text>);
-      expect(lastFrame()).toContain('👋');
+    test('Basic emoji', async () => {
+      const app = await render(<Text>Hello 👋</Text>, { columns: 80, rows: 24 });
+      expect(app.text).toContain('👋');
     });
 
-    test('Emoji with skin tone', () => {
-      const { lastFrame } = render(<Text>👋🏽</Text>);
-      expect(lastFrame()).toMatchSnapshot();
+    test('Emoji with skin tone', async () => {
+      const app = await render(<Text>👋🏽</Text>, { columns: 80, rows: 24 });
+      expect(app.text).toMatchSnapshot();
     });
 
-    test('Emoji ZWJ sequence', () => {
-      const { lastFrame } = render(<Text>👨‍👩‍👧‍👦</Text>);
+      const app = await render(<Text>👨‍👩‍👧‍👦</Text>, { columns: 80, rows: 24 });
       // Family emoji is single grapheme
-      expect(lastFrame()).toMatchSnapshot();
+      expect(app.text).toMatchSnapshot();
     });
 
-    test('Flag emoji', () => {
-      const { lastFrame } = render(<Text>🇺🇸🇬🇧</Text>);
-      expect(lastFrame()).toMatchSnapshot();
+    test('Flag emoji', async () => {
+      const app = await render(<Text>🇺🇸🇬🇧</Text>, { columns: 80, rows: 24 });
+      expect(app.text).toMatchSnapshot();
     });
   });
 
   describe('Combining characters', () => {
-    test('Combining acute accent', () => {
-      const { lastFrame } = render(<Text>café</Text>);
+    test('Combining acute accent', async () => {
+      const app = await render(<Text>café</Text>, { columns: 80, rows: 24 });
       // é can be e + combining acute
-      expect(lastFrame()).toBe('café');
+      expect(app.text).toBe('café');
     });
 
-    test('Multiple combining marks', () => {
-      const { lastFrame } = render(<Text>ḁ̴̢̛</Text>);
+    test('Multiple combining marks', async () => {
+      const app = await render(<Text>ḁ̴̢̛</Text>, { columns: 80, rows: 24 });
       // Heavily combined character
-      expect(lastFrame()).toMatchSnapshot();
+      expect(app.text).toMatchSnapshot();
     });
   });
 
   describe('RTL text', () => {
-    test('Arabic text', () => {
-      const { lastFrame } = render(<Text>مرحبا</Text>);
-      expect(lastFrame()).toMatchSnapshot();
+    test('Arabic text', async () => {
+      const app = await render(<Text>مرحبا</Text>, { columns: 80, rows: 24 });
+      expect(app.text).toMatchSnapshot();
     });
 
-    test('Hebrew text', () => {
-      const { lastFrame } = render(<Text>שלום</Text>);
-      expect(lastFrame()).toMatchSnapshot();
+    test('Hebrew text', async () => {
+      const app = await render(<Text>שלום</Text>, { columns: 80, rows: 24 });
+      expect(app.text).toMatchSnapshot();
     });
   });
 });
@@ -960,17 +953,15 @@ inkx provides Playwright-inspired locators that **auto-refresh on every access**
 ### 9.1 Quick Start
 
 ```typescript
-import { createTestRenderer } from "inkx/testing";
-import { Box, Text } from "inkx";
-
-const render = createTestRenderer({ columns: 80, rows: 24 });
+import { render, Box, Text } from "inkx";
 
 test("locators auto-refresh after state changes", async () => {
-  const app = render(
+  const app = await render(
     <Box>
       <Text testID="cursor">Task 1</Text>
       <Text>Task 2</Text>
-    </Box>
+    </Box>,
+    { columns: 80, rows: 24 }
   );
 
   // Get a locator (lazy - doesn't query yet)
@@ -988,11 +979,12 @@ test("locators auto-refresh after state changes", async () => {
 ### 9.2 Querying Elements
 
 ```tsx
-const app = render(
+const app = await render(
   <Box testID="sidebar">
     <Text testID="header">Tasks</Text>
     <Text testID="task-1" data-status="done">Task 1</Text>
-  </Box>
+  </Box>,
+  { columns: 80, rows: 24 }
 );
 
 // By testID

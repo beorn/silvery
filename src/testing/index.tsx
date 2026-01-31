@@ -84,12 +84,8 @@
 import { EventEmitter } from 'node:events';
 import React, { type ReactElement, act } from 'react';
 import { type App, createApp } from '../app.js';
-import { type TerminalBuffer, bufferToText } from '../buffer.js';
-import {
-	ensureDefaultLayoutEngine,
-	getLayoutEngine,
-	isLayoutEngineInitialized,
-} from '../layout-engine.js';
+import type { TerminalBuffer } from '../buffer.js';
+import { ensureDefaultLayoutEngine, getLayoutEngine } from '../layout-engine.js';
 
 // Re-export App for type usage
 export type { App } from '../app.js';
@@ -109,6 +105,7 @@ export { keyToAnsi, CODE_TO_KEY } from '../keys.js';
 
 // Re-export debug utilities
 export { debugTree, type DebugTreeOptions } from './debug.js';
+import { debugTree } from './debug.js';
 import { AppContext, InputContext, StdoutContext, TermContext } from '../context.js';
 import { createTerm } from 'chalkx';
 import type { LayoutEngine } from '../layout-engine.js';
@@ -302,7 +299,7 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 		} as unknown as NodeJS.WriteStream;
 
 		// Create a mock term for useTerm hook (no actual terminal, but provides styling API)
-		const mockTerm = createTerm({ level: 3, columns: renderColumns });
+		const mockTerm = createTerm({ color: 'truecolor' });
 
 		// Wrap element with contexts to enable useApp, useInput, useStdout, and useTerm hooks
 		function wrapWithContexts(el: ReactElement): ReactElement {

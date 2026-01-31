@@ -169,6 +169,13 @@ export class RenderScheduler {
 		return this.nonTTYMode;
 	}
 
+	/**
+	 * Get the last rendered buffer.
+	 */
+	getBuffer(): TerminalBuffer | null {
+		return this.prevBuffer;
+	}
+
 	// ==========================================================================
 	// Public API
 	// ==========================================================================

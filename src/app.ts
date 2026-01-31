@@ -24,13 +24,13 @@
  * ```
  */
 
-import type { ReactElement, ReactNode } from 'react';
-import { type AutoLocator, type FilterOptions, createAutoLocator } from './auto-locator.js';
+import type { ReactNode } from 'react';
+import { type AutoLocator, createAutoLocator } from './auto-locator.js';
 import { type BoundTerm, createBoundTerm } from './bound-term.js';
 import type { TerminalBuffer } from './buffer.js';
 import { bufferToStyledText, bufferToText } from './buffer.js';
 import { keyToAnsi } from './keys.js';
-import type { InkxNode, Rect } from './types.js';
+import type { InkxNode } from './types.js';
 
 /**
  * App interface - unified return type from render()

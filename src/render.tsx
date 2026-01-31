@@ -31,7 +31,7 @@ import {
 import { isLayoutEngineInitialized, type LayoutEngineType } from './layout-engine.js';
 import { enterAlternateScreen, leaveAlternateScreen } from './output.js';
 import { createContainer, getContainerRoot, reconciler } from './reconciler.js';
-import { renderStringSync } from './render-string.js';
+import { renderStaticToApp } from './render-string.js';
 import { RenderScheduler } from './scheduler.js';
 import {
 	type ResolvedTermDef,
@@ -40,7 +40,9 @@ import {
 	resolveFromTerm,
 	resolveTermDef,
 } from './term-def.js';
-import type { TermDef } from './types.js';
+import type { InkxNode, TermDef } from './types.js';
+import { type App, createApp } from './app.js';
+import { debugTree } from './testing/debug.js';
 
 // ============================================================================
 // Types
@@ -160,6 +162,8 @@ interface AppProps {
 	stdout: NodeJS.WriteStream;
 	exitOnCtrlC: boolean;
 	onExit: (error?: Error) => void;
+	/** External event emitter for programmatic input (optional, uses internal if not provided) */
+	eventEmitter?: EventEmitter;
 }
 
 /**
@@ -167,7 +171,14 @@ interface AppProps {
  * This is a functional component that manages focus state and provides
  * all the context values needed by hooks.
  */
-function InkxApp({ children, stdin, stdout, exitOnCtrlC, onExit }: AppProps): ReactElement {
+function InkxApp({
+	children,
+	stdin,
+	stdout,
+	exitOnCtrlC,
+	onExit,
+	eventEmitter: externalEmitter,
+}: AppProps): ReactElement {
 	// Focus state
 	const [focusState, setFocusState] = useState<{
 		activeId: string | null;
@@ -182,8 +193,9 @@ function InkxApp({ children, stdin, stdout, exitOnCtrlC, onExit }: AppProps): Re
 	// Raw mode reference count
 	const rawModeCountRef = React.useRef(0);
 
-	// Input event emitter
-	const eventEmitter = useMemo(() => new EventEmitter(), []);
+	// Input event emitter (use external if provided, otherwise create internal)
+	const internalEmitter = useMemo(() => new EventEmitter(), []);
+	const eventEmitter = externalEmitter ?? internalEmitter;
 
 	// Exit handler
 	const handleExit = useCallback(
@@ -480,6 +492,13 @@ class InkxInstance {
 	private resizeCleanup: (() => void) | null = null;
 	private signalCleanup: (() => void) | null = null;
 
+	/** Event emitter for programmatic input */
+	readonly inputEmitter = new EventEmitter();
+
+	/** Track if exit was called */
+	private exitCalledFlag = false;
+	private exitErrorValue: Error | undefined;
+
 	constructor(options: Required<Omit<RenderOptions, 'patchConsole' | 'layoutEngine'>>) {
 		debug('InkxInstance constructor start');
 		const startTime = Date.now();
@@ -553,6 +572,7 @@ class InkxInstance {
 				stdout={this.stdout}
 				exitOnCtrlC={this.exitOnCtrlC}
 				onExit={this.handleExit}
+				eventEmitter={this.inputEmitter}
 			>
 				{element}
 			</InkxApp>
@@ -636,11 +656,60 @@ class InkxInstance {
 	private handleExit = (error?: Error): void => {
 		if (this.isUnmounted) return;
 
+		this.exitCalledFlag = true;
+		this.exitErrorValue = error;
+
 		if (error) {
 			this.rejectExit?.(error);
 		}
 
 		this.unmount();
+	};
+
+	/**
+	 * Get the container root node.
+	 */
+	getContainer = (): InkxNode => {
+		return getContainerRoot(this.container!);
+	};
+
+	/**
+	 * Get the current terminal buffer.
+	 */
+	getBuffer = () => {
+		return this.scheduler?.getBuffer() ?? null;
+	};
+
+	/**
+	 * Send input to the app.
+	 */
+	sendInput = (data: string): void => {
+		this.inputEmitter.emit('input', data);
+	};
+
+	/**
+	 * Check if exit was called.
+	 */
+	exitCalled = (): boolean => {
+		return this.exitCalledFlag;
+	};
+
+	/**
+	 * Get the exit error.
+	 */
+	exitError = (): Error | undefined => {
+		return this.exitErrorValue;
+	};
+
+	/**
+	 * Get terminal dimensions.
+	 */
+	getColumns = (): number => {
+		return this.stdout.columns ?? 80;
+	};
+
+	getRows = (): number => {
+		return this.stdout.rows ?? 24;
 	};
 
 	/**
@@ -730,7 +799,7 @@ export async function render(
 	element: ReactElement,
 	termOrDef?: Term | TermDef,
 	options?: RenderOptions,
-): Promise<Instance> {
+): Promise<App> {
 	// Resolve termOrDef to get configuration
 	let resolved: ResolvedTermDef;
 	let term: Term;
@@ -773,7 +842,7 @@ async function renderImpl(
 	options: RenderOptions,
 	term: Term,
 	resolved: ResolvedTermDef,
-): Promise<Instance> {
+): Promise<App> {
 	debug('render() called, isStatic=%s', resolved.isStatic);
 	const renderStart = Date.now();
 
@@ -827,12 +896,23 @@ async function renderImpl(
 			</TermContext.Provider>,
 		);
 
-	return {
+	// Create App instance with full capabilities
+	const app = createApp({
+		getContainer: instance.getContainer,
+		getBuffer: instance.getBuffer,
+		sendInput: instance.sendInput,
 		rerender,
 		unmount: instance.unmount,
 		waitUntilExit: instance.waitUntilExit,
 		clear: instance.clear,
-	};
+		exitCalled: instance.exitCalled,
+		exitError: instance.exitError,
+		debugFn: () => console.log(debugTree(instance.getContainer())),
+		columns: instance.getColumns(),
+		rows: instance.getRows(),
+	});
+
+	return app;
 }
 
 /**
@@ -843,11 +923,11 @@ async function renderStaticImpl(
 	element: ReactElement,
 	term: Term,
 	resolved: ResolvedTermDef,
-): Promise<Instance> {
+): Promise<App> {
 	debug('renderStatic() called, dimensions: %dx%d', resolved.width, resolved.height);
 
-	// Import renderString functionality
-	const { renderStringSync } = await import('./render-string.js');
+	// Import static rendering functionality
+	const { renderStaticToApp } = await import('./render-string.js');
 
 	// Wrap element with contexts for static rendering
 	const wrappedElement = (
@@ -856,8 +936,8 @@ async function renderStaticImpl(
 		</TermContext.Provider>
 	);
 
-	// Render to string
-	const output = renderStringSync(wrappedElement, {
+	// Create App via renderStaticToApp
+	const app = renderStaticToApp(wrappedElement, {
 		width: resolved.width,
 		height: resolved.height,
 		plain: resolved.colors === null,
@@ -865,37 +945,11 @@ async function renderStaticImpl(
 
 	// Write output if we have a stdout
 	if (resolved.stdout) {
-		resolved.stdout.write(output);
+		resolved.stdout.write(app.text);
 		resolved.stdout.write('\n');
 	}
 
-	// Return a minimal Instance for static mode
-	let lastFrame = output;
-	return {
-		rerender: (newElement: ReactNode) => {
-			const newWrapped = (
-				<TermContext.Provider value={term}>
-					<EventsContext.Provider value={null}>{newElement}</EventsContext.Provider>
-				</TermContext.Provider>
-			);
-			lastFrame = renderStringSync(newWrapped as ReactElement, {
-				width: resolved.width,
-				height: resolved.height,
-				plain: resolved.colors === null,
-			});
-			if (resolved.stdout) {
-				resolved.stdout.write(lastFrame);
-				resolved.stdout.write('\n');
-			}
-		},
-		unmount: () => {},
-		waitUntilExit: () => Promise.resolve(),
-		clear: () => {},
-		// Extra property for accessing last rendered frame
-		get lastFrame() {
-			return lastFrame;
-		},
-	} as Instance & { lastFrame: string };
+	return app;
 }
 
 /**
@@ -914,13 +968,13 @@ async function renderStaticImpl(
  * @param element - React element to render
  * @param termOrDef - Term instance or TermDef config
  * @param options - Additional render options
- * @returns An Instance object with control methods
+ * @returns An App object with control methods
  */
 export function renderSync(
 	element: ReactElement,
 	termOrDef?: Term | TermDef,
 	options?: RenderOptions,
-): Instance {
+): App {
 	if (!isLayoutEngineInitialized()) {
 		throw new Error(
 			'Layout engine is not initialized. Call render() (async) first, or initialize manually with setLayoutEngine().',
@@ -948,28 +1002,23 @@ export function renderSync(
 		throw new Error('Invalid second argument: expected Term, TermDef, or undefined');
 	}
 
-	// For static mode, use sync string rendering
+	// For static mode, use renderStaticToApp
 	if (resolved.isStatic) {
 		const wrappedElement = (
 			<TermContext.Provider value={term}>
 				<EventsContext.Provider value={null}>{element}</EventsContext.Provider>
 			</TermContext.Provider>
 		);
-		const lastFrame = renderStringSync(wrappedElement, {
+		const app = renderStaticToApp(wrappedElement, {
 			width: resolved.width,
 			height: resolved.height,
 			plain: resolved.colors === null,
 		});
 		if (resolved.stdout) {
-			resolved.stdout.write(lastFrame);
+			resolved.stdout.write(app.text);
 			resolved.stdout.write('\n');
 		}
-		return {
-			rerender: () => {},
-			unmount: () => {},
-			waitUntilExit: () => Promise.resolve(),
-			clear: () => {},
-		};
+		return app;
 	}
 
 	// Merge options for interactive mode
@@ -1015,12 +1064,23 @@ export function renderSync(
 			</TermContext.Provider>,
 		);
 
-	return {
+	// Create App instance with full capabilities
+	const app = createApp({
+		getContainer: instance.getContainer,
+		getBuffer: instance.getBuffer,
+		sendInput: instance.sendInput,
 		rerender,
 		unmount: instance.unmount,
 		waitUntilExit: instance.waitUntilExit,
 		clear: instance.clear,
-	};
+		exitCalled: instance.exitCalled,
+		exitError: instance.exitError,
+		debugFn: () => console.log(debugTree(instance!.getContainer())),
+		columns: instance.getColumns(),
+		rows: instance.getRows(),
+	});
+
+	return app;
 }
 
 // ============================================================================
