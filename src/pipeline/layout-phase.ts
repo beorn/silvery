@@ -6,6 +6,7 @@
 
 import createDebug from 'debug';
 import { type BoxProps, type InkxNode, type Rect, rectEqual } from '../types.js';
+import { measureStats } from '../reconciler/nodes.js';
 
 const debug = createDebug('inkx:layout');
 
@@ -30,9 +31,19 @@ export function layoutPhase(root: InkxNode, width: number, height: number): void
 	// Run layout calculation (root always has a layoutNode)
 	if (root.layoutNode) {
 		const nodeCount = countNodes(root);
+		measureStats.reset();
 		const t0 = Date.now();
 		root.layoutNode.calculateLayout(width, height);
-		debug('calculateLayout: %dms (%d nodes)', Date.now() - t0, nodeCount);
+		const elapsed = Date.now() - t0;
+		debug(
+			'calculateLayout: %dms (%d nodes) measure: calls=%d hits=%d collects=%d displayWidth=%d',
+			elapsed,
+			nodeCount,
+			measureStats.calls,
+			measureStats.cacheHits,
+			measureStats.textCollects,
+			measureStats.displayWidthCalls,
+		);
 	}
 
 	// Propagate computed dimensions to all nodes
