@@ -258,16 +258,16 @@ export function getConstants(): LayoutConstants {
 /**
  * Layout engine type for configuration.
  *
- * - 'flexx': Classic Flexx algorithm (pure JS, more compatible)
- * - 'flexx-zero': Zero-allocation Flexx (optimized for high-frequency layout)
+ * - 'flexx': Zero-allocation Flexx (default, optimized for high-frequency layout)
+ * - 'flexx-classic': Classic Flexx algorithm (for debugging/compatibility)
  * - 'yoga': Facebook's WASM-based flexbox (most mature)
  */
-export type LayoutEngineType = 'flexx' | 'flexx-zero' | 'yoga';
+export type LayoutEngineType = 'flexx' | 'flexx-classic' | 'yoga';
 
 /**
  * Initialize the layout engine if not already set.
  *
- * @param engineType - 'flexx', 'flexx-zero', or 'yoga'. If not provided, checks
+ * @param engineType - 'flexx', 'flexx-classic', or 'yoga'. If not provided, checks
  *                     INKX_ENGINE env var, then defaults to 'flexx'.
  */
 export async function ensureDefaultLayoutEngine(
@@ -284,11 +284,12 @@ export async function ensureDefaultLayoutEngine(
 	if (resolved === 'yoga') {
 		const { initYogaEngine } = await import('./adapters/yoga-adapter.js');
 		setLayoutEngine(await initYogaEngine());
-	} else if (resolved === 'flexx-zero') {
-		const { createFlexxZeroEngine } = await import('./adapters/flexx-zero-adapter.js');
-		setLayoutEngine(createFlexxZeroEngine());
-	} else {
+	} else if (resolved === 'flexx-classic') {
 		const { createFlexxEngine } = await import('./adapters/flexx-adapter.js');
 		setLayoutEngine(createFlexxEngine());
+	} else {
+		// 'flexx' (default) uses zero-allocation engine
+		const { createFlexxZeroEngine } = await import('./adapters/flexx-zero-adapter.js');
+		setLayoutEngine(createFlexxZeroEngine());
 	}
 }

@@ -4,12 +4,13 @@ React-based terminal UI framework with layout feedback. Ink-compatible API with 
 
 ## Layout Engine
 
-inkx supports two layout engines:
+inkx supports multiple layout engines:
 
 | Engine | Description |
 |--------|-------------|
-| `flexx` (default) | Pure JS, synchronous, smaller bundle |
-| `yoga` | Facebook's WASM-based flexbox (more mature) |
+| `flexx` (default) | Zero-allocation Flexx, optimized for high-frequency layout |
+| `flexx-classic` | Classic Flexx algorithm, for debugging/compatibility |
+| `yoga` | Facebook's WASM-based flexbox (most mature) |
 
 **Option 1: Pass to render()**
 ```tsx
