@@ -160,7 +160,7 @@ export { TermContext, EventsContext } from './context.js';
 
 // Term primitives (so consumers don't need to import from chalkx directly)
 export { createTerm, term, patchConsole } from 'chalkx';
-export type { Term, StyleChain, PatchedConsole, ColorLevel, ConsoleEntry } from 'chalkx';
+export type { Term, StyleChain, PatchedConsole, PatchConsoleOptions, ColorLevel, ConsoleEntry } from 'chalkx';
 
 // Hit Registry (mouse support)
 export {
