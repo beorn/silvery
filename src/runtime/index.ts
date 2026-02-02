@@ -30,6 +30,14 @@ export type {
 export { layout, layoutSync, ensureLayoutEngine, type LayoutOptions } from './layout.js';
 export { diff, render, type DiffMode } from './diff.js';
 
+// Time/tick sources
+export {
+	createTick,
+	createFrameTick,
+	createSecondTick,
+	createAdaptiveTick,
+} from './tick.js';
+
 // Stream helpers (re-export from streams module)
 export {
 	merge,
