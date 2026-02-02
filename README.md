@@ -55,6 +55,49 @@ function Card() {
 }
 ```
 
+## inkx/runtime (New API)
+
+The new `inkx/runtime` module provides a layered, AsyncIterable-first architecture. **Use this for new development.**
+
+```tsx
+import { run, useInput, type Key } from 'inkx/runtime';
+import { Text } from 'inkx';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  useInput((input, key) => {
+    if (input === 'j' || key.downArrow) setCount(c => c + 1);
+    if (input === 'k' || key.upArrow) setCount(c => c - 1);
+    if (input === 'q') return 'exit';
+  });
+
+  return <Text>Count: {count}</Text>;
+}
+
+await run(<Counter />);
+```
+
+**Three layers to choose from:**
+
+| Layer | Entry | Best For |
+|-------|-------|----------|
+| 1 | `createRuntime()` | Maximum control, Elm-style |
+| 2 | `run()` | React hooks (recommended) |
+| 3 | `createApp()` | Complex apps with Zustand |
+
+**Rich Key object** with arrow keys, modifiers, navigation:
+
+```tsx
+useInput((input, key) => {
+  if (key.upArrow) moveCursor(-1);
+  if (key.ctrl && input === 'c') return 'exit';
+  if (key.return) submit();
+});
+```
+
+See `docs/getting-started.md` and `docs/runtime-migration.md` for details.
+
 ## Status
 
 **Alpha** — core functionality complete, used in production apps.

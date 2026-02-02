@@ -2,6 +2,111 @@
 
 React-based terminal UI framework with layout feedback. Ink-compatible API with components that know their size.
 
+## inkx/runtime (Recommended)
+
+The new `inkx/runtime` API provides a layered, AsyncIterable-first architecture. **Use this for new development.**
+
+### Quick Start (Layer 2)
+
+```tsx
+import { run, useInput, type Key } from 'inkx/runtime';
+import { Text } from 'inkx';
+
+function Counter() {
+  const [count, setCount] = useState(0);
+
+  useInput((input, key) => {
+    if (input === 'j' || key.downArrow) setCount(c => c + 1);
+    if (input === 'k' || key.upArrow) setCount(c => c - 1);
+    if (input === 'q') return 'exit';  // Return 'exit' to exit
+  });
+
+  return <Text>Count: {count}</Text>;
+}
+
+await run(<Counter />);
+```
+
+### Layers
+
+| Layer | Entry Point | Best For | State Management |
+|-------|-------------|----------|------------------|
+| 1 | `createRuntime()` | Maximum control, Elm-style | Your choice |
+| 2 | `run()` | React hooks (recommended) | `useState/useEffect` |
+| 3 | `createApp()` | Complex apps | Zustand store |
+
+### Layer 3: Zustand Store
+
+```tsx
+import { createApp, useApp, type Key } from 'inkx/runtime';
+
+const app = createApp(
+  () => (set, get) => ({
+    cursor: 0,
+    moveCursor: (d) => set(s => ({ cursor: s.cursor + d })),
+  }),
+  {
+    key: (input, key, { get }) => {
+      if (input === 'j' || key.downArrow) get().moveCursor(1);
+      if (input === 'k' || key.upArrow) get().moveCursor(-1);
+      if (input === 'q') return 'exit';
+    },
+  }
+);
+
+function App() {
+  const cursor = useApp(s => s.cursor);  // Fine-grained subscription
+  return <Text>Cursor: {cursor}</Text>;
+}
+
+await app.run(<App />);
+```
+
+### Key Object
+
+The `Key` object provides rich key parsing:
+
+```typescript
+interface Key {
+  upArrow: boolean;      downArrow: boolean;
+  leftArrow: boolean;    rightArrow: boolean;
+  pageUp: boolean;       pageDown: boolean;
+  home: boolean;         end: boolean;
+  return: boolean;       escape: boolean;
+  tab: boolean;          backspace: boolean;
+  delete: boolean;
+  ctrl: boolean;         shift: boolean;       meta: boolean;
+}
+```
+
+### Imports
+
+```tsx
+// Layer 2 (recommended)
+import { run, useInput, useExit, type Key } from 'inkx/runtime';
+
+// Layer 3 (complex apps)
+import { createApp, useApp, type Key } from 'inkx/runtime';
+
+// Layer 1 (full control)
+import { createRuntime, layout, ensureLayoutEngine, merge } from 'inkx/runtime';
+
+// Components (same as always)
+import { Box, Text } from 'inkx';
+```
+
+### Testing
+
+```tsx
+const handle = await run(<Counter />, { cols: 80, rows: 24 });
+expect(handle.text).toContain('Count: 0');
+await handle.press('j');
+expect(handle.text).toContain('Count: 1');
+handle.unmount();
+```
+
+See `docs/getting-started.md` for full documentation.
+
 ## Layout Engine
 
 inkx supports multiple layout engines:
