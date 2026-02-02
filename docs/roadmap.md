@@ -4,13 +4,14 @@ This document outlines the maximum vision for inkx — not a commitment, but an 
 
 ## Value Analysis Summary
 
-| Platform | Value Level | Why |
-|----------|-------------|-----|
-| Terminal | **High** (proven) | Original use case, working in production |
-| Canvas/WebGL | **High** | No existing React layout solution for canvas |
-| React Native | **High** | FlatList pain is real, Litho/ComponentKit prove the approach |
-| Web DOM | **Low-Medium** | CSS already handles most cases well |
-| PDF/Email | **Medium** | Niche but useful for reports |
+| Platform | Value Level | Status | Why |
+|----------|-------------|--------|-----|
+| Terminal | **High** (proven) | ✅ Complete | Original use case, working in production |
+| Canvas 2D | **High** | ✅ Implemented | No existing React layout solution for canvas |
+| DOM | **Medium** | ✅ Implemented | Accessibility, text selection (xterm.js pattern) |
+| WebGL | **High** | 🔮 Future | 900% faster than canvas (per xterm.js) |
+| React Native | **High** | 🔮 Future | FlatList pain is real, Litho/ComponentKit prove the approach |
+| PDF/Email | **Medium** | 🔮 Future | Niche but useful for reports |
 
 ## Tier 1: Terminal (Current - Complete)
 
@@ -61,9 +62,41 @@ function TextInput() {
 }
 ```
 
-## Tier 3: Canvas/WebGL (Next Validation Target)
+## Tier 3: Canvas/WebGL/DOM (Web Targets)
 
-**Recommended first prototype** for validating the multi-target architecture.
+**Canvas and DOM adapters are now implemented**, validating the multi-target architecture.
+
+### Implementation Status
+
+| Adapter | Status | Entry Point | Demo |
+|---------|--------|-------------|------|
+| Canvas 2D | ✅ Complete | `inkx/canvas` | `examples/canvas-test.html` |
+| DOM | ✅ Complete | `inkx/dom` | `examples/dom-test.html` |
+| WebGL | 🔮 Future | - | - |
+
+### Quick Start
+
+```tsx
+// Canvas rendering (pixel-based)
+import { renderToCanvas, Box, Text } from 'inkx/canvas';
+const canvas = document.getElementById('canvas');
+renderToCanvas(<App />, canvas, { fontSize: 14 });
+
+// DOM rendering (accessible, text-selectable)
+import { renderToDOM, Box, Text } from 'inkx/dom';
+const container = document.getElementById('app');
+renderToDOM(<App />, container, { fontSize: 14 });
+```
+
+### Architecture
+
+Based on research into [xterm.js renderer architecture](https://github.com/xtermjs/xterm.js/issues/3271):
+
+| Renderer | Performance | Text Selection | Accessibility |
+|----------|-------------|----------------|---------------|
+| WebGL | Best (900% faster) | ❌ | ❌ |
+| Canvas | Good | ❌ | ❌ |
+| DOM | Slowest | ✅ | ✅ |
 
 ### Why Canvas First?
 

@@ -119,36 +119,51 @@ const terminalAdapter: RenderAdapter = {
 };
 ```
 
-### Canvas Adapter (Future)
+### Canvas Adapter ✅ Implemented
+
+**File:** `src/adapters/canvas-adapter.ts`
 
 ```typescript
-const canvasAdapter: RenderAdapter = {
-  measureText: (text, style) => {
-    ctx.font = styleToFont(style);
-    const metrics = ctx.measureText(text);
-    return {
-      width: metrics.width,                              // Pixels
-      height: metrics.actualBoundingBoxAscent +
-              metrics.actualBoundingBoxDescent,
-    };
-  },
+import { createCanvasAdapter, renderToCanvas } from 'inkx/canvas';
 
-  createBuffer: (w, h) => new OffscreenCanvas(w, h),
+// Create adapter with configuration
+const adapter = createCanvasAdapter({
+  fontSize: 14,
+  fontFamily: 'monospace',
+  lineHeight: 1.2,
+});
 
-  writeText: (buf, x, y, text, style) => {
-    const ctx = buf.getContext('2d');
-    ctx.font = styleToFont(style);
-    ctx.fillStyle = style.color;
-    ctx.fillText(text, x, y);
-  },
+// Or use the high-level API
+const canvas = document.getElementById('canvas');
+const instance = renderToCanvas(<App />, canvas, { fontSize: 14 });
 
-  flush: (buf) => {
-    mainCtx.drawImage(buf, 0, 0);
-  },
-
-  events: domEventsToInkx(canvas),
-};
+// Update later
+instance.rerender(<App newProps />);
+instance.unmount();
 ```
+
+### DOM Adapter ✅ Implemented
+
+**File:** `src/adapters/dom-adapter.ts`
+
+Advantages over Canvas:
+- Native text selection and copying
+- Screen reader accessibility
+- Browser font rendering (subpixel antialiasing)
+- CSS integration and DevTools inspection
+
+```typescript
+import { createDOMAdapter, renderToDOM } from 'inkx/dom';
+
+// Line-based DOM rendering (following xterm.js pattern)
+const container = document.getElementById('app');
+const instance = renderToDOM(<App />, container, { fontSize: 14 });
+```
+
+### WebGL Adapter (Future)
+
+Based on xterm.js research, WebGL provides ~900% performance improvement over Canvas.
+Would follow the same `RenderAdapter` interface when implemented.
 
 ## The Two-Phase Pipeline
 
