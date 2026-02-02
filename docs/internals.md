@@ -650,6 +650,127 @@ test("diff emits minimal changes", () => {
 
 ---
 
+## Suspense Support (hideInstance/unhideInstance)
+
+React Suspense requires the renderer to hide and unhide subtrees when components suspend. inkx implements this via the `hideInstance` and `unhideInstance` host config methods.
+
+### How Suspension Works
+
+1. Component throws a promise (suspends)
+2. React calls `hideInstance(instance)` on suspended nodes
+3. Suspense boundary's fallback renders
+4. When promise resolves, React calls `unhideInstance(instance)`
+5. Original content becomes visible again
+
+### Implementation
+
+```typescript
+const hostConfig: HostConfig = {
+  // Called when a subtree suspends
+  hideInstance(instance: InkxNode) {
+    instance.hidden = true;
+    instance.layoutDirty = true;
+    // Hidden nodes excluded from layout and rendering
+  },
+
+  // Called when suspension ends
+  unhideInstance(instance: InkxNode) {
+    instance.hidden = false;
+    instance.layoutDirty = true;
+    instance.contentDirty = true;
+  },
+
+  // Also need hideTextInstance/unhideTextInstance for Text nodes
+  hideTextInstance(textInstance: InkxTextNode) {
+    textInstance.hidden = true;
+  },
+
+  unhideTextInstance(textInstance: InkxTextNode) {
+    textInstance.hidden = false;
+  },
+};
+```
+
+### Layout Phase Integration
+
+The layout phase skips hidden nodes:
+
+```typescript
+function propagateLayout(node: InkxNode, parentX: number, parentY: number) {
+  // Skip hidden nodes - they don't participate in layout
+  if (node.hidden) {
+    return;
+  }
+
+  // Normal layout calculation...
+  node.computedLayout = {
+    x: parentX + yoga.getComputedLeft(),
+    y: parentY + yoga.getComputedTop(),
+    width: yoga.getComputedWidth(),
+    height: yoga.getComputedHeight(),
+  };
+
+  for (const child of node.children) {
+    propagateLayout(child, node.computedLayout.x, node.computedLayout.y);
+  }
+}
+```
+
+### Render Phase Integration
+
+The content phase skips hidden nodes:
+
+```typescript
+function renderNodeToBuffer(node: InkxNode, buffer: TerminalBuffer) {
+  // Don't render hidden nodes
+  if (node.hidden) {
+    return;
+  }
+
+  // Normal rendering...
+}
+```
+
+### Key Behavior
+
+- **State preserved**: Hidden components aren't unmounted, so `useState`, `useRef`, etc. retain their values
+- **Effects paused**: `useEffect` cleanup runs when hidden, effect runs again when unhidden
+- **Layout excluded**: Hidden nodes don't contribute to parent dimensions
+- **Children hidden**: Hiding a parent hides all descendants
+
+### Testing Suspense
+
+```typescript
+test("Suspense shows fallback while loading", async () => {
+  let resolve: () => void;
+  const promise = new Promise<void>((r) => { resolve = r; });
+
+  function AsyncContent() {
+    if (!resolved) throw promise;
+    return <Text>Loaded!</Text>;
+  }
+
+  const app = render(
+    <Suspense fallback={<Text>Loading...</Text>}>
+      <AsyncContent />
+    </Suspense>
+  );
+
+  // Fallback visible while suspended
+  expect(app.text).toContain("Loading...");
+  expect(app.text).not.toContain("Loaded!");
+
+  // Resolve and verify content appears
+  resolve!();
+  await settled();
+
+  expect(app.text).toContain("Loaded!");
+  expect(app.text).not.toContain("Loading...");
+});
+```
+
+---
+
 ## Contributing
 
 1. **Read the tests first** - They document expected behavior

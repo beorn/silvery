@@ -2,58 +2,58 @@
 
 **Ink, but components know their size.**
 
+A React-based terminal UI framework where components can query their computed dimensions via `useContentRect()`. Drop-in Ink replacement with layout feedback.
+
+## Installation
+
+```bash
+bun add inkx
+```
+
 ## Quick Start
 
 ```tsx
-// Interactive app with term
-import { render, Box, Text, createTerm } from 'inkx'
+import { render, Box, Text, useContentRect, createTerm } from 'inkx'
+
+function Card() {
+  const { width } = useContentRect()  // Components know their size!
+  return <Text>{truncate(title, width)}</Text>
+}
 
 using term = createTerm()
-await render(
-  <Box><Text>{term.green('Hello')} world</Text></Box>,
-  term
-)
-```
-
-```tsx
-// Static rendering (no terminal needed)
-import { renderStatic, Box, Text } from 'inkx'
-
-const output = await renderStatic(<Box><Text>Hello world</Text></Box>)
-console.log(output)
-```
-
-```tsx
-// Console capture - logs appear above status line
-import { render, Box, Text, Console, createTerm, patchConsole } from 'inkx'
-
-using term = createTerm()
-using console = patchConsole(globalThis.console)
-await render(
-  <Box flexDirection="column">
-    <Console console={console} />
-    <Text>Status: running</Text>
-  </Box>,
-  term
-)
-
-console.log('This appears above status line')
+await render(<App />, term)
 ```
 
 ## The Problem Inkx Solves
 
+Ink renders components _before_ layout calculation. Components can't know their dimensions, forcing you to manually thread width props through every layer:
+
 ```tsx
-// Ink: manually thread width through every component
-function Card({ width }: { width: number }) {
-  return <Text>{truncate(title, width)}</Text>;
-}
+// Ink: width props cascade through entire tree
+<Board width={80}>
+  <Column width={26}>
+    <Card width={24} />
+  </Column>
+</Board>
 
 // Inkx: just ask
-function Card() {
-  const { width } = useContentRect();
-  return <Text>{truncate(title, width)}</Text>;
-}
+<Board>
+  <Column>
+    <Card />  {/* useContentRect() inside */}
+  </Column>
+</Board>
 ```
+
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Layout feedback** | `useContentRect()` returns `{ width, height, x, y }` |
+| **Scrolling** | `overflow="scroll"` with `scrollTo={index}` |
+| **Term injection** | `useTerm()` for styling and capability detection |
+| **Console capture** | `<Console />` component for log output |
+| **React 19** | forwardRef, ErrorBoundary, Suspense, useTransition |
+| **Flexx layout** | 2.5x faster than Yoga, 5x smaller bundle |
 
 ## inkx/runtime (New API)
 
@@ -102,352 +102,58 @@ See `docs/getting-started.md` and `docs/runtime-migration.md` for details.
 
 **Alpha** — core functionality complete, used in production apps.
 
-| Component                                      | Status      |
-| ---------------------------------------------- | ----------- |
-| Core components (Box, Text)                    | Complete    |
-| Hooks (useContentRect, useInput, useApp, useTerm) | Complete    |
-| React reconciler (React 19 compatible)         | Complete    |
-| Flexx layout engine (default, 2.5x faster)     | Complete    |
-| Yoga layout engine (WASM, optional)            | Complete    |
-| Terminal output (double-buffered diffing)      | Complete    |
-| `overflow="scroll"`                            | Complete    |
-| Unicode/emoji/CJK handling                     | Complete    |
-| Style layering (preserve underlines)           | Complete    |
-| Visual regression tests                        | Planned     |
-| Ink API compatibility                          | In progress |
+- Core components (Box, Text) - Complete
+- Hooks (useContentRect, useInput, useApp, useTerm) - Complete
+- React reconciler (React 19 compatible) - Complete
+- Flexx layout engine (default) - Complete
+- Yoga layout engine (WASM, optional) - Complete
+- Visual regression tests - Planned
 
-## Inkx vs Ink
+## Web Targets (Experimental)
 
-Based on analysis of Ink's [100+ open issues](https://github.com/vadimdemedes/ink/issues) and recent PRs, Inkx solves problems Ink architecturally cannot:
-
-| Pain Point          | Ink Status                                                                        | Inkx Status                                |
-| ------------------- | --------------------------------------------------------------------------------- | ------------------------------------------ |
-| **Scrolling**       | [Open since 2019](https://github.com/vadimdemedes/ink/issues/222) (5.5+ years!)   | ✅ `overflow="scroll"` just works          |
-| **Layout feedback** | [Architecturally impossible](https://github.com/vadimdemedes/ink/issues/5)        | ✅ `useContentRect()` returns dimensions |
-| **Text overflow**   | [Multiple issues](https://github.com/vadimdemedes/ink/issues/584) - breaks layout | ✅ Auto-truncates by default               |
-| **Cursor API**      | [Open since 2019](https://github.com/vadimdemedes/ink/issues/251) (6+ years!)     | 🔜 Planned - layout feedback enables this  |
-
-**What Ink gets right** (and Inkx maintains):
-
-- React-based declarative API
-- Flexbox layout (Flexx default, Yoga optional)
-- Chalk compatibility
-- `useInput()` keyboard handling
-
-**Where Inkx strives to do better**:
-
-- Components know their dimensions without prop threading
-- Scrolling without manual virtualization
-- Text truncation that preserves ANSI codes
-
-## The Problem
-
-Ink renders components _before_ layout. Components can't know their dimensions, so you manually calculate and pass widths everywhere:
+inkx can render to Canvas and DOM in addition to terminal:
 
 ```tsx
-// Ink: width props cascade through the entire tree
-function Board({ width }: { width: number }) {
-  const colWidth = Math.floor((width - 2) / 3);
-  return (
-    <Box flexDirection="row">
-      <Column width={colWidth} items={todo} />
-      <Column width={colWidth} items={doing} />
-      <Column width={colWidth} items={done} />
-    </Box>
-  );
-}
+// Canvas rendering
+import { renderToCanvas, Box, Text } from 'inkx/canvas';
+renderToCanvas(<App />, canvas, { fontSize: 14 });
 
-function Column({ width, items }: { width: number; items: Item[] }) {
-  return (
-    <Box width={width}>
-      {items.map((item) => (
-        <Card width={width - 2} item={item} />
-      ))}
-    </Box>
-  );
-}
-
-function Card({ width, item }: { width: number; item: Item }) {
-  return <Text>{truncate(item.title, width - 4)}</Text>;
-}
+// DOM rendering (text-selectable, accessible)
+import { renderToDOM, Box, Text } from 'inkx/dom';
+renderToDOM(<App />, container, { fontSize: 14 });
 ```
 
-Real apps have 100+ lines of this. Every layout change means updating arithmetic everywhere.
+See [docs/roadmap.md](docs/roadmap.md) for the full vision including WebGL and React Native.
 
-## The Solution
+## Documentation
 
-Inkx calculates layout first, then renders. Components query their size:
+| Resource | Description |
+|----------|-------------|
+| [CLAUDE.md](CLAUDE.md) | Full API reference with all patterns |
+| [examples/](examples/) | Runnable examples with source code |
+| [docs/internals.md](docs/internals.md) | Architecture for contributors |
+| [docs/ink-comparison.md](docs/ink-comparison.md) | Detailed Ink comparison |
 
-```tsx
-// Inkx: no width props needed
-function Board() {
-  return (
-    <Box flexDirection="row">
-      <Column items={todo} />
-      <Column items={doing} />
-      <Column items={done} />
-    </Box>
-  );
-}
+## Examples
 
-function Column({ items }: { items: Item[] }) {
-  return (
-    <Box flexGrow={1}>
-      {items.map((item) => (
-        <Card item={item} />
-      ))}
-    </Box>
-  );
-}
-
-function Card({ item }: { item: Item }) {
-  const { width } = useContentRect(); // ← just ask
-  return <Text>{truncate(item.title, width - 4)}</Text>;
-}
-```
-
-## API
-
-Drop-in Ink replacement with term injection:
-
-```tsx
-import { Box, Text, render, useInput, useApp, createTerm, useTerm } from "inkx";
-
-using term = createTerm()
-await render(<App />, term)
-```
-
-**Core hooks**:
-- `useContentRect()` — returns `{ width, height, x, y }` (component's computed dimensions)
-- `useTerm()` — returns the `Term` instance for styling and capability detection
-
-**Implemented**: `overflow="scroll"` with `scrollTo={index}` for automatic scrolling:
-
-```tsx
-// Just works - no height estimation, no virtualization config
-<Box overflow="scroll" scrollTo={selectedIdx}>
-  {items.map((item) => (
-    <Card key={item.id} item={item} />
-  ))}
-</Box>
-```
-
-Scroll containers show visual indicators on borders (e.g., `▼3` showing 3 items below).
-
-**Coming soon**: Text auto-truncation (opt out with `wrap="truncate"`).
-
-## NewWay vs OldWay
-
-Inkx prefers **explicit term injection** over implicit globals. This makes code more testable, dependencies clearer, and cleanup automatic via `Disposable`.
-
-### Why NewWay?
-
-| Aspect | OldWay | NewWay |
-|--------|--------|--------|
-| **Dependencies** | Implicit globals | Explicit injection |
-| **Testing** | Mock globals | Inject test term |
-| **Cleanup** | Manual | Automatic via `using` |
-| **Terminal detection** | Global functions | Instance methods |
-
-### Migration Patterns
-
-**Rendering**
-
-```tsx
-// Static mode - no term needed, renders once
-import { render, Box, Text } from 'inkx'
-const output = await render(<App />)  // renders to string
-
-// Interactive mode - pass term for live updates
-import { render, Box, Text, createTerm } from 'inkx'
-using term = createTerm()
-await render(<App />, term)  // ✅ components can useTerm()
-```
-
-**Styling**
-
-```tsx
-// OldWay - global chalk instance
-import chalk from 'chalk'
-console.log(chalk.red('error'))
-
-// NewWay - flattened styling via term
-import { createTerm } from 'inkx'
-using term = createTerm()
-console.log(term.red('error'))
-console.log(term.bold.green('success'))
-```
-
-**Terminal Detection**
-
-```tsx
-// OldWay - global detection functions
-import { isTTY } from 'some-package'
-if (isTTY()) { ... }
-
-// NewWay - instance-based detection
-using term = createTerm()
-term.hasCursor()   // Can reposition cursor?
-term.hasInput()    // Can read raw keystrokes?
-term.hasColor()    // 'basic' | '256' | 'truecolor' | null
-term.hasUnicode()  // Can render unicode?
-```
-
-### Anti-Patterns to Avoid
-
-```tsx
-// ❌ Not awaiting async render
-render(<App />, term)
-
-// ❌ Mixing chalk backgrounds with Box backgroundColor
-<Box backgroundColor="cyan">
-  <Text>{chalk.bgBlack('text')}</Text>  // Visual artifacts
-</Box>
-```
-
-**Correct patterns:**
-
-```tsx
-// ✅ Pass term for interactive mode
-using term = createTerm()
-await render(<App />, term)
-
-// ✅ Use bgOverride for intentional background mixing
-import { bgOverride } from '@beorn/chalkx'
-<Box backgroundColor="cyan">
-  <Text>{bgOverride(chalk.bgBlack('intentional'))}</Text>
-</Box>
-```
-
-### Why Term Matters
-
-- **Testability**: Inject mock term with specific capabilities, no global mocking needed
-- **Multiple contexts**: Each render can have different terminal configurations
-- **Consistent styling**: Components share term via React context (`useTerm()`)
-- **Explicit cleanup**: Disposable pattern with `using` keyword ensures proper teardown
-- **No global state**: Detection cached per-term instance, not globally
-
-### Key APIs for NewWay
-
-| API | Description |
-|-----|-------------|
-| `createTerm()` | Create a Term instance (Disposable) |
-| `render(element, term?)` | Render element; term optional for static mode |
-| `renderStatic(element)` | One-shot static render to string |
-| `useTerm()` | Access term in components |
-| `Console` | Render captured console output |
-| `patchConsole(console)` | Capture console calls (Disposable) |
-
-**Note**: `useLayout` is a deprecated alias for `useContentRect`. Use `useContentRect` in new code.
-
-## Testing
-
-Inkx provides a Playwright-inspired testing API with **auto-refreshing locators** that eliminate stale reference bugs:
-
-```tsx
-import { createTestRenderer } from 'inkx/testing'
-import { Box, Text } from 'inkx'
-
-const render = createTestRenderer({ columns: 80, rows: 24 })
-
-test('renders and responds to input', async () => {
-  const app = render(
-    <Box testID="main">
-      <Text>Hello World</Text>
-    </Box>
-  )
-
-  // Plain text assertions (no ANSI codes)
-  expect(app.text).toContain('Hello World')
-
-  // Auto-refreshing locators - same object, fresh results after state changes
-  expect(app.getByTestId('main').boundingBox()?.width).toBe(80)
-  expect(app.getByText('Hello').count()).toBe(1)
-
-  // Playwright-style keyboard input
-  await app.press('ArrowDown')
-  await app.press('Enter')
-
-  // Debug output
-  app.debug()
-})
-```
-
-**Key features:**
-- `app.text` — plain text output (no ANSI)
-- `app.getByTestId()` / `app.getByText()` — auto-refreshing locators
-- `app.locator('[selector]')` — CSS-style selectors
-- `app.press()` — async keyboard input with await
-- `app.term.cell(x, y)` — terminal buffer inspection
-
-The auto-refresh eliminates a common testing pain point:
-
-```tsx
-// Old pattern (stale locators)
-const locator = createLocator(getContainer())
-stdin.write('j')
-// locator is stale! Must manually refresh
-
-// New pattern (auto-refresh)
-const cursor = app.locator('[data-cursor]')
-await app.press('j')
-expect(cursor.textContent()).toBe('item2')  // Same locator, fresh result
-```
-
-## Why a New Project?
-
-**Ink's limitation is architectural, not a missing feature.**
-
-Ink renders components _before_ Yoga calculates layout. By the time dimensions are known, React is done. This has been a [known issue](https://github.com/vadimdemedes/ink/issues/5) since 2016.
-
-```
-Ink:   React render → VDOM → Yoga layout → Terminal output
-                                   ↓
-                              (too late!)
-
-Inkx:  React render → VDOM → Yoga layout → React re-render with sizes → Terminal output
-                                   ↓                ↑
-                                   └────────────────┘
-```
-
-Inkx uses **two-phase rendering** (the standard approach in browsers, Flutter, SwiftUI). First pass builds the tree, Yoga calculates layout, second pass lets components use their actual sizes via `useContentRect()`.
-
-**For detailed comparison**: See [docs/ink-comparison.md](docs/ink-comparison.md) for analysis of Ink's 100+ open issues and how Inkx addresses them.
-
-## Layout Engine Selection
-
-Inkx supports two layout engines:
-
-| Engine | Bundle | Speed | Initialization |
-|--------|--------|-------|----------------|
-| **Flexx** (default) | 7 KB gzip | 2.5x faster | Synchronous |
-| **Yoga** (optional) | 38 KB gzip | Baseline | Async (WASM) |
-
-**Select engine via render option:**
-
-```tsx
-await render(<App />, term, { layoutEngine: 'yoga' })  // Use Yoga
-await render(<App />, term, { layoutEngine: 'flexx' }) // Use Flexx (default)
-```
-
-**Or via environment variable:**
-
+**Terminal:**
 ```bash
-INKX_ENGINE=yoga bun run app.ts   # Force Yoga
-INKX_ENGINE=flexx bun test        # Force Flexx
+bun run examples/dashboard/index.tsx      # Multi-pane dashboard
+bun run examples/kanban/index.tsx         # 3-column kanban board
+bun run examples/task-list/index.tsx      # Scrollable task list
+bun run examples/search-filter/index.tsx  # useTransition + useDeferredValue
+bun run examples/async-data/index.tsx     # Suspense + async loading
+bun run examples/layout-ref/index.tsx     # forwardRef + onLayout
 ```
 
-Priority: `render({ layoutEngine })` → `INKX_ENGINE` env → `'flexx'` (default)
+**Web (Canvas/DOM):**
+```bash
+bun run build:web                         # Build browser bundles
+open examples/web/canvas.html             # Canvas adapter demo
+open examples/web/dom.html                # DOM adapter demo
+```
 
-**When to use Yoga:**
-- Need RTL text direction support
-- Require battle-tested stability in complex layouts
-- Already using Yoga in React Native ecosystem
-
-**When to use Flexx:**
-- Building terminal UIs (simpler layouts)
-- Want faster startup and smaller bundles
-- Prefer synchronous initialization
+See [examples/index.md](examples/index.md) for descriptions.
 
 ## Related Projects
 
@@ -469,6 +175,13 @@ Full documentation at `docs/site/` (VitePress):
 - **API Reference** — Box, Text, hooks (useContentRect, useInput, useApp, useTerm)
 - **Guides** — scrolling, text handling, migration from Ink
 - **Architecture** — render pipeline, reconciler internals
+
+**Architecture Deep Dives:**
+
+- [docs/architecture.md](docs/architecture.md) — Core innovation, layer diagram, RenderAdapter interface
+- [docs/roadmap.md](docs/roadmap.md) — Maximum roadmap for Canvas, React Native, and beyond
+- [docs/design.md](docs/design.md) — Terminal implementation details
+- [docs/internals.md](docs/internals.md) — React reconciler internals
 
 Run locally: `cd docs/site && bun run dev`
 

@@ -9,11 +9,21 @@
  * InkxNode with an associated Yoga layout node.
  *
  * Box provides NodeContext to its children, enabling useLayout/useScreenRect hooks.
+ * It also supports forwardRef for imperative access and onLayout for layout callbacks.
  */
 
-import { type JSX, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
+import {
+	type ForwardedRef,
+	type JSX,
+	type ReactNode,
+	forwardRef,
+	useImperativeHandle,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from 'react';
 import { NodeContext } from '../context.js';
-import type { BoxProps as BoxPropsType, InkxNode } from '../types.js';
+import type { BoxProps as BoxPropsType, InkxNode, Rect } from '../types.js';
 
 // ============================================================================
 // Props
@@ -24,6 +34,18 @@ export interface BoxProps extends BoxPropsType {
 	children?: ReactNode;
 }
 
+/**
+ * Methods exposed via ref on Box component.
+ */
+export interface BoxHandle {
+	/** Get the underlying InkxNode */
+	getNode(): InkxNode | null;
+	/** Get the current content-relative layout rect */
+	getContentRect(): Rect | null;
+	/** Get the current screen-relative layout rect */
+	getScreenRect(): Rect | null;
+}
+
 // ============================================================================
 // Component
 // ============================================================================
@@ -32,6 +54,7 @@ export interface BoxProps extends BoxPropsType {
  * Flexbox container component for terminal UIs.
  *
  * Provides NodeContext to children, enabling useLayout/useScreenRect hooks.
+ * Supports forwardRef for imperative access and onLayout for layout callbacks.
  *
  * @example
  * ```tsx
@@ -52,12 +75,27 @@ export interface BoxProps extends BoxPropsType {
  * <Box borderStyle="single" borderColor="green" padding={1}>
  *   <Text>Boxed content</Text>
  * </Box>
+ *
+ * // With ref and onLayout
+ * const boxRef = useRef<BoxHandle>(null);
+ * <Box
+ *   ref={boxRef}
+ *   onLayout={(layout) => console.log('Size:', layout.width, layout.height)}
+ * >
+ *   <Text>Content</Text>
+ * </Box>
  * ```
  */
-export function Box(props: BoxProps): JSX.Element {
-	const { children, ...restProps } = props;
+export const Box = forwardRef(function Box(
+	props: BoxProps,
+	ref: ForwardedRef<BoxHandle>,
+): JSX.Element {
+	const { children, onLayout, ...restProps } = props;
 	const nodeRef = useRef<InkxNode | null>(null);
 	const [node, setNode] = useState<InkxNode | null>(null);
+
+	// Track the last layout we reported to onLayout to avoid duplicate calls
+	const lastReportedLayout = useRef<Rect | null>(null);
 
 	// After mount, ref points to the InkxNode (via getPublicInstance in reconciler).
 	// Update state to provide the node to children via context.
@@ -67,6 +105,53 @@ export function Box(props: BoxProps): JSX.Element {
 		}
 	});
 
+	// Wire up onLayout callback - subscribe to layout changes
+	useLayoutEffect(() => {
+		if (!onLayout || !node) return;
+
+		// Create subscriber callback
+		const handleLayoutChange = () => {
+			const layout = node.contentRect;
+			if (!layout) return;
+
+			// Only call onLayout if layout actually changed
+			const last = lastReportedLayout.current;
+			if (
+				!last ||
+				last.x !== layout.x ||
+				last.y !== layout.y ||
+				last.width !== layout.width ||
+				last.height !== layout.height
+			) {
+				lastReportedLayout.current = layout;
+				onLayout(layout);
+			}
+		};
+
+		// Subscribe to layout changes
+		node.layoutSubscribers.add(handleLayoutChange);
+
+		// Call immediately if we already have layout
+		if (node.contentRect) {
+			handleLayoutChange();
+		}
+
+		return () => {
+			node.layoutSubscribers.delete(handleLayoutChange);
+		};
+	}, [node, onLayout]);
+
+	// Expose imperative methods via ref
+	useImperativeHandle(
+		ref,
+		() => ({
+			getNode: () => nodeRef.current,
+			getContentRect: () => nodeRef.current?.contentRect ?? null,
+			getScreenRect: () => nodeRef.current?.screenRect ?? null,
+		}),
+		[],
+	);
+
 	// Render inkx-box with ref, wrap children in NodeContext
 	// The reconciler creates an InkxNode, ref gives us access to it
 	return (
@@ -74,4 +159,4 @@ export function Box(props: BoxProps): JSX.Element {
 			<NodeContext.Provider value={node}>{children}</NodeContext.Provider>
 		</inkx-box>
 	);
-}
+});

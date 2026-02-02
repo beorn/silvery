@@ -2,6 +2,20 @@
 
 React-based terminal UI framework with layout feedback. Ink-compatible API with components that know their size.
 
+## Architecture Overview
+
+inkx's core innovation is **two-phase rendering with synchronous layout feedback** — components know their size during render, not after.
+
+See [docs/architecture.md](docs/architecture.md) for:
+- Layer diagram (@inkx/core → RenderAdapter → targets)
+- RenderAdapter interface for future targets (Canvas, React Native)
+- Infinite loop prevention and containment rules
+
+See [docs/roadmap.md](docs/roadmap.md) for the maximum vision:
+- Tier 2: Enhanced Terminal (Cursor API, mouse support)
+- Tier 3: Canvas/WebGL (recommended next validation target)
+- Tier 4: React Native (high value - FlatList replacement)
+
 ## inkx/runtime (Recommended)
 
 The new `inkx/runtime` API provides a layered, AsyncIterable-first architecture. **Use this for new development.**
@@ -412,6 +426,102 @@ const debug = createDebug('inkx:myfeature')
 debug('state change', { before, after })
 ```
 
+## React Compatibility
+
+### forwardRef on Box/Text
+
+Box and Text support `forwardRef` for imperative access to layout information:
+
+```tsx
+import { useRef } from 'react'
+import { Box, Text, type BoxHandle, type TextHandle } from 'inkx'
+
+function MyComponent() {
+  const boxRef = useRef<BoxHandle>(null)
+  const textRef = useRef<TextHandle>(null)
+
+  useEffect(() => {
+    // BoxHandle methods
+    const node = boxRef.current?.getNode()           // Yoga/Flexx node
+    const content = boxRef.current?.getContentRect() // { x, y, width, height }
+    const screen = boxRef.current?.getScreenRect()   // absolute screen coords
+
+    // TextHandle methods
+    const textNode = textRef.current?.getNode()
+  }, [])
+
+  return (
+    <Box ref={boxRef}>
+      <Text ref={textRef}>Content</Text>
+    </Box>
+  )
+}
+```
+
+### onLayout Callback
+
+Box accepts an `onLayout` prop called when layout changes:
+
+```tsx
+<Box onLayout={(layout) => console.log('Size:', layout.width, layout.height)}>
+  <Text>Resizable content</Text>
+</Box>
+```
+
+The `layout` object contains `{ x, y, width, height }` in content coordinates.
+
+### ErrorBoundary Component
+
+Catch render errors with the built-in ErrorBoundary:
+
+```tsx
+import { ErrorBoundary, Box, Text } from 'inkx'
+
+<ErrorBoundary fallback={<Text color="red">Something went wrong</Text>}>
+  <MyComponent />
+</ErrorBoundary>
+```
+
+For custom error handling, pass a render function:
+
+```tsx
+<ErrorBoundary fallback={(error) => <Text color="red">{error.message}</Text>}>
+  <MyComponent />
+</ErrorBoundary>
+```
+
+### Concurrent Features
+
+Re-exports from React for TUI responsiveness:
+
+```tsx
+import { useTransition, useDeferredValue, useId } from 'inkx'
+
+function Search() {
+  const [query, setQuery] = useState('')
+  const deferredQuery = useDeferredValue(query)  // Typing stays responsive
+  const [isPending, startTransition] = useTransition()
+
+  // Heavy updates marked as low-priority
+  startTransition(() => loadMoreData())
+}
+```
+
+### Suspense Support
+
+Full React Suspense support for data fetching with `hideInstance`/`unhideInstance` implementation:
+
+```tsx
+import { Suspense } from 'react'
+import { Box, Text } from 'inkx'
+
+<Suspense fallback={<Text>Loading...</Text>}>
+  <AsyncDataComponent />
+</Suspense>
+```
+
+Components that throw promises will show the fallback until resolved. The suspended component is hidden (not unmounted), preserving state.
+
 ## Anti-Patterns
 
 ### Wrong: Mixing chalk backgrounds with Box backgroundColor
@@ -613,6 +723,34 @@ inkx uses category-based style merging that preserves semantic information:
 | `mergeStyles()` | Category-based style merging function |
 | `Term`, `StyleChain` | Types (re-exported from chalkx) |
 | `setLayoutEngine(engine)` | Manually set layout engine instance |
+
+## Background Conflict Detection
+
+When using **both** chalk background colors **and** inkx `backgroundColor` on the same text, visual artifacts occur: chalk only colors text characters, while inkx fills the entire box area.
+
+inkx detects this conflict and **throws by default**:
+
+```tsx
+// This throws - chalk.bg* + inkx backgroundColor = visual bugs
+<Box backgroundColor="cyan">
+  <Text>{chalk.bgBlack("text")}</Text>
+</Box>
+```
+
+**Configuration** via `INKX_BG_CONFLICT` environment variable:
+- `throw` (default) — Throw error on conflict
+- `warn` — Console warning (deduplicated)
+- `ignore` — No detection
+
+**Intentional override** with `@beorn/chalkx`:
+
+```tsx
+import { bgOverride } from "@beorn/chalkx";
+
+<Box backgroundColor="cyan">
+  <Text>{bgOverride(chalk.bgBlack("intentional"))}</Text>
+</Box>
+```
 
 ## Key Differences from Ink
 

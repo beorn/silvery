@@ -6,10 +6,12 @@
  *
  * Text renders to an 'inkx-text' host element that the reconciler converts
  * to an InkxNode containing the text content.
+ *
+ * Supports forwardRef for imperative access to the underlying node.
  */
 
-import type { JSX, ReactNode } from 'react';
-import type { TextProps as TextPropsType } from '../types.js';
+import { type ForwardedRef, type JSX, type ReactNode, forwardRef } from 'react';
+import type { InkxNode, TextProps as TextPropsType } from '../types.js';
 
 // ============================================================================
 // Props
@@ -20,12 +22,22 @@ export interface TextProps extends TextPropsType {
 	children?: ReactNode;
 }
 
+/**
+ * Methods exposed via ref on Text component.
+ */
+export interface TextHandle {
+	/** Get the underlying InkxNode */
+	getNode(): InkxNode | null;
+}
+
 // ============================================================================
 // Component
 // ============================================================================
 
 /**
  * Text rendering component for terminal UIs.
+ *
+ * Supports forwardRef for imperative access to the underlying node.
  *
  * @example
  * ```tsx
@@ -51,12 +63,34 @@ export interface TextProps extends TextPropsType {
  * // Truncation modes
  * <Text wrap="truncate">This long text will be truncated...</Text>
  * <Text wrap="truncate-middle">Long...text</Text>
+ *
+ * // With ref
+ * const textRef = useRef<TextHandle>(null);
+ * <Text ref={textRef}>Hello</Text>
  * ```
  */
-export function Text(props: TextProps): JSX.Element {
+export const Text = forwardRef(function Text(
+	props: TextProps,
+	ref: ForwardedRef<TextHandle>,
+): JSX.Element {
 	const { children, ...styleProps } = props;
 
-	// Render as inkx-text host element
-	// The reconciler will create an InkxNode and store text content
-	return <inkx-text {...styleProps}>{children}</inkx-text>;
-}
+	// For Text, we need to pass the ref through to the host element
+	// The reconciler's getPublicInstance will return the InkxNode
+	// We wrap it in a TextHandle for type safety
+	return (
+		<inkx-text
+			ref={(node: InkxNode | null) => {
+				// Handle both callback refs and RefObjects
+				if (typeof ref === 'function') {
+					ref(node ? { getNode: () => node } : null);
+				} else if (ref) {
+					ref.current = node ? { getNode: () => node } : null;
+				}
+			}}
+			{...styleProps}
+		>
+			{children}
+		</inkx-text>
+	);
+});

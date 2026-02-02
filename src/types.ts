@@ -256,6 +256,9 @@ export interface InkxNode {
 	/** True if this is a raw text node (created by createTextInstance) */
 	isRawText?: boolean;
 
+	/** True if this node is hidden (for Suspense support) */
+	hidden?: boolean;
+
 	/** Scroll state for overflow='scroll' containers */
 	scrollState?: {
 		/** Current scroll offset (in terminal rows) */

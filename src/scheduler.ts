@@ -12,8 +12,7 @@
  * - Clean shutdown
  */
 
-import { type Logger, createLogger } from '@beorn/logger';
-import createDebug from 'debug';
+import { type Logger, createConditionalLogger, createLogger } from '@beorn/logger';
 import type { TerminalBuffer } from './buffer.js';
 import {
 	type ResolvedNonTTYMode as ResolvedMode,
@@ -25,7 +24,7 @@ import {
 import { executeRender } from './pipeline.js';
 import type { InkxNode } from './types.js';
 
-const debug = createDebug('inkx:scheduler');
+const log = createConditionalLogger('inkx:scheduler');
 
 // ============================================================================
 // Types
@@ -157,7 +156,7 @@ export class RenderScheduler {
 		});
 		this.outputTransformer = createOutputTransformer(this.nonTTYMode);
 
-		debug('non-TTY mode resolved to: %s', this.nonTTYMode);
+		log.debug?.(`non-TTY mode resolved to: ${this.nonTTYMode}`);
 
 		// Listen for terminal resize (only in TTY mode)
 		if (this.nonTTYMode === 'tty') {
@@ -187,13 +186,12 @@ export class RenderScheduler {
 
 		if (this.renderScheduled) {
 			this.stats.skippedCount++;
-			this.log.debug('render batched');
-			debug('render skipped (batched), total: %d', this.stats.skippedCount);
+			log.debug?.(`render skipped (batched), total: ${this.stats.skippedCount}`);
 			return;
 		}
 
 		this.renderScheduled = true;
-		debug('render scheduled');
+		log.debug?.('render scheduled');
 
 		// Use queueMicrotask for batching synchronous updates
 		queueMicrotask(() => {
@@ -207,7 +205,7 @@ export class RenderScheduler {
 
 			if (timeSinceLastRender < this.minFrameTime) {
 				// Schedule for next frame
-				debug('frame limited, delay: %dms', this.minFrameTime - timeSinceLastRender);
+				log.debug?.(`frame limited, delay: ${this.minFrameTime - timeSinceLastRender}ms`);
 				this.scheduleNextFrame(this.minFrameTime - timeSinceLastRender);
 			} else {
 				this.executeRender();
@@ -257,17 +255,7 @@ export class RenderScheduler {
 	dispose(): void {
 		if (this.disposed) return;
 
-		this.log.info('scheduler disposed', {
-			renderCount: this.stats.renderCount,
-			skippedCount: this.stats.skippedCount,
-			avgRenderTime: Math.round(this.stats.avgRenderTime),
-		});
-		debug(
-			'dispose: renders=%d, skipped=%d, avg=%dms',
-			this.stats.renderCount,
-			this.stats.skippedCount,
-			Math.round(this.stats.avgRenderTime),
-		);
+		log.info?.(`dispose: renders=${this.stats.renderCount}, skipped=${this.stats.skippedCount}, avg=${Math.round(this.stats.avgRenderTime)}ms`);
 		this.disposed = true;
 
 		// Cancel pending renders
@@ -328,13 +316,7 @@ export class RenderScheduler {
 			const width = this.stdout.columns ?? 80;
 			const height = this.stdout.rows ?? 24;
 
-			debug(
-				'render #%d: %dx%d, nonTTYMode=%s',
-				this.stats.renderCount + 1,
-				width,
-				height,
-				this.nonTTYMode,
-			);
+			log.debug?.(`render #${this.stats.renderCount + 1}: ${width}x${height}, nonTTYMode=${this.nonTTYMode}`);
 
 			// Run render pipeline
 			const { output, buffer } = executeRender(
@@ -382,19 +364,14 @@ export class RenderScheduler {
 			render.spanData.renderTime = renderTime;
 			render.spanData.bytes = transformedOutput.length;
 
-			debug(
-				'render #%d complete: %dms, output: %d bytes',
-				this.stats.renderCount,
-				renderTime,
-				transformedOutput.length,
-			);
+			log.debug?.(`render #${this.stats.renderCount} complete: ${renderTime}ms, output: ${transformedOutput.length} bytes`);
 
 			if (this.debugMode) {
 				this.logDebug(`Render #${this.stats.renderCount} took ${renderTime}ms`);
 			}
 		} catch (error) {
 			// Don't crash on render errors - log and continue
-			debug('render error: %O', error);
+			log.error(`render error: ${error}`);
 			this.logError('Render error:', error);
 
 			// Show error indicator in terminal (only in TTY mode)

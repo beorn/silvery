@@ -1,5 +1,7 @@
 # Inkx: Next-Generation Terminal UI Renderer
 
+> **Note**: For high-level architecture and future targets (Canvas, React Native), see [architecture.md](architecture.md) and [roadmap.md](roadmap.md). This document focuses on terminal-specific implementation details.
+
 ## Executive Summary
 
 Ink's single-pass rendering architecture prevents components from knowing their computed size, forcing pervasive width-prop threading in every application. This document designs **Inkx** - a terminal UI renderer that maintains Ink/Chalk API compatibility while solving the layout feedback problem through a two-phase render architecture.

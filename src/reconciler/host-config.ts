@@ -243,11 +243,16 @@ export const hostConfig = {
 			instance.layoutDirty = true;
 		}
 
-		// Check if content changed
+		// Check if content changed (text children)
 		if (
 			contentPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
 		) {
 			instance.contentDirty = true;
+			// Content change affects layout size (measure function returns different result)
+			// Mark layout dirty to clear flexx's measure cache
+			if (instance.layoutNode) {
+				instance.layoutNode.markDirty();
+			}
 		}
 
 		instance.props = newProps;
@@ -396,5 +401,57 @@ export const hostConfig = {
 
 	waitForCommitToBeReady() {
 		return null;
+	},
+
+	// ========================================================================
+	// Suspense Support (hide/unhide)
+	// ========================================================================
+
+	/**
+	 * Hide an instance during Suspense.
+	 * Called when React needs to hide content while showing a fallback.
+	 */
+	hideInstance(instance: InkxNode) {
+		instance.hidden = true;
+		instance.contentDirty = true;
+		// Mark parent dirty to trigger re-render
+		if (instance.parent) {
+			instance.parent.contentDirty = true;
+		}
+	},
+
+	/**
+	 * Unhide an instance after Suspense resolves.
+	 * Called when the suspended content is ready to show.
+	 */
+	unhideInstance(instance: InkxNode, _props: BoxProps | TextProps) {
+		instance.hidden = false;
+		instance.contentDirty = true;
+		// Mark parent dirty to trigger re-render
+		if (instance.parent) {
+			instance.parent.contentDirty = true;
+		}
+	},
+
+	/**
+	 * Hide a text instance during Suspense.
+	 */
+	hideTextInstance(textInstance: InkxNode) {
+		textInstance.hidden = true;
+		textInstance.contentDirty = true;
+		if (textInstance.parent) {
+			textInstance.parent.contentDirty = true;
+		}
+	},
+
+	/**
+	 * Unhide a text instance after Suspense resolves.
+	 */
+	unhideTextInstance(textInstance: InkxNode, _text: string) {
+		textInstance.hidden = false;
+		textInstance.contentDirty = true;
+		if (textInstance.parent) {
+			textInstance.parent.contentDirty = true;
+		}
 	},
 };

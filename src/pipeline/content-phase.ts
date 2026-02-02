@@ -49,6 +49,10 @@ function renderNodeToBuffer(
 	// Their content is rendered by their parent inkx-text via collectTextContent()
 	if (!node.layoutNode) return;
 
+	// Skip hidden nodes (Suspense support)
+	// When a Suspense boundary shows a fallback, the hidden subtree is not rendered
+	if (node.hidden) return;
+
 	const props = node.props as BoxProps & TextProps;
 
 	// Skip display="none" nodes - they have 0x0 dimensions and shouldn't render

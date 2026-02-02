@@ -18,6 +18,14 @@
     "./runtime": {
       "types": "./src/runtime/index.ts",
       "import": "./src/runtime/index.ts"
+    },
+    "./canvas": {
+      "types": "./src/canvas/index.ts",
+      "import": "./src/canvas/index.ts"
+    },
+    "./dom": {
+      "types": "./src/dom/index.ts",
+      "import": "./src/dom/index.ts"
     }
   },
   "scripts": {
@@ -34,6 +42,7 @@
     "docs:dev": "vitepress dev docs/site",
     "docs:build": "vitepress build docs/site",
     "docs:preview": "vitepress preview docs/site",
+    "build:web": "bun run examples/web/build.ts",
     "example:dashboard": "bun run examples/dashboard/index.tsx",
     "example:task-list": "bun run examples/task-list/index.tsx",
     "example:kanban": "bun run examples/kanban/index.tsx",

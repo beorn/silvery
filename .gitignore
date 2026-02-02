@@ -34,3 +34,7 @@ playwright-report/
 
 # Beads archive
 .beads.archived/
+examples/web/dist/
+# Generated LLM context
+llms.txt
+llms-full.txt
