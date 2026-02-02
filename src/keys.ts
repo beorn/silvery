@@ -83,6 +83,12 @@ export function keyToAnsi(key: string): string {
 		if (code >= 1 && code <= 26) return String.fromCharCode(code);
 	}
 
+	// Alt+key → ESC prefix (standard terminal convention)
+	// Alt/Meta/Option keys send ESC followed by the key
+	if ((modifiers.includes('Alt') || modifiers.includes('Meta')) && mainKey.length === 1) {
+		return `\x1b${mainKey}`;
+	}
+
 	// Look up base key in map
 	const base = KEY_MAP[mainKey];
 	if (base !== undefined && base !== null) return base;

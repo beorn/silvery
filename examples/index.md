@@ -59,6 +59,51 @@ bun run examples/kanban/index.tsx
 - Color-coded tags
 - Dynamic state management across columns
 
+### Search Filter (React Concurrent Features)
+
+Interactive search with responsive typing using React concurrent features.
+
+```bash
+bun run examples/search-filter/index.tsx
+```
+
+**Demonstrates:**
+
+- `useDeferredValue` for deferred query filtering
+- `useTransition` for low-priority state updates
+- Typing remains responsive during heavy filtering
+- Pending state indicator
+
+### Async Data (Suspense)
+
+Async data loading with independent Suspense boundaries.
+
+```bash
+bun run examples/async-data/index.tsx
+```
+
+**Demonstrates:**
+
+- React `use()` hook for data fetching
+- Multiple independent Suspense boundaries
+- Staggered loading with fallback UI
+- ErrorBoundary integration
+
+### Layout Ref (forwardRef + onLayout)
+
+Imperative access to layout information via refs and callbacks.
+
+```bash
+bun run examples/layout-ref/index.tsx
+```
+
+**Demonstrates:**
+
+- `forwardRef` on Box components
+- `BoxHandle` with `getContentRect()`, `getScreenRect()`, `getNode()`
+- `onLayout` callback for size change notifications
+- Declarative vs imperative layout access
+
 ## Common Patterns
 
 ### Keyboard Handling

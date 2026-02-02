@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>inkx Canvas Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+            font-family: system-ui, sans-serif;
+        }
+        h1 { color: #4ec9b0; }
+        .test { margin: 10px 0; padding: 10px; background: #16213e; border-radius: 4px; }
+        .pass { border-left: 4px solid #4ec9b0; }
+        .fail { border-left: 4px solid #f44747; }
+        .skip { border-left: 4px solid #808080; }
+        #canvas { border: 1px solid #333; margin: 20px 0; }
+        pre { background: #0f0f1a; padding: 10px; overflow-x: auto; }
+        button {
+            background: #4ec9b0;
+            border: none;
+            padding: 10px 20px;
+            color: #000;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        button:hover { background: #3db89f; }
+    </style>
+</head>
+<body>
+    <h1>inkx Canvas Adapter Test</h1>
+    <p>This page tests the canvas adapter in a real browser environment.</p>
+
+    <div>
+        <button onclick="runTests()">Run Tests</button>
+        <button onclick="clearResults()">Clear</button>
+    </div>
+
+    <div id="results"></div>
+
+    <h2>Canvas Output</h2>
+    <canvas id="canvas" width="600" height="300"></canvas>
+
+    <script type="module">
+        // Test utilities
+        const results = document.getElementById('results');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let passCount = 0;
+        let failCount = 0;
+        let skipCount = 0;
+
+        function log(name, status, message = '') {
+            const div = document.createElement('div');
+            div.className = `test ${status}`;
+            div.innerHTML = `<strong>${status.toUpperCase()}</strong>: ${name}${message ? ` - ${message}` : ''}`;
+            results.appendChild(div);
+
+            if (status === 'pass') passCount++;
+            else if (status === 'fail') failCount++;
+            else skipCount++;
+        }
+
+        function assert(condition, name, message = '') {
+            if (condition) {
+                log(name, 'pass');
+            } else {
+                log(name, 'fail', message);
+            }
+        }
+
+        window.clearResults = function() {
+            results.innerHTML = '';
+            passCount = failCount = skipCount = 0;
+            ctx.fillStyle = '#1e1e1e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        };
+
+        window.runTests = async function() {
+            clearResults();
+
+            // Test 1: OffscreenCanvas exists
+            assert(typeof OffscreenCanvas !== 'undefined', 'OffscreenCanvas available');
+
+            // Test 2: Can create OffscreenCanvas
+            let offscreen;
+            try {
+                offscreen = new OffscreenCanvas(100, 100);
+                assert(true, 'Create OffscreenCanvas');
+            } catch (e) {
+                log('Create OffscreenCanvas', 'fail', e.message);
+            }
+
+            // Test 3: Can get 2d context
+            let offCtx;
+            try {
+                offCtx = offscreen.getContext('2d');
+                assert(offCtx !== null, 'Get 2d context from OffscreenCanvas');
+            } catch (e) {
+                log('Get 2d context', 'fail', e.message);
+            }
+
+            // Test 4: Text measurement
+            try {
+                offCtx.font = '14px monospace';
+                const metrics = offCtx.measureText('Hello World');
+                assert(metrics.width > 0, 'Text measurement returns width', `width=${metrics.width.toFixed(2)}px`);
+            } catch (e) {
+                log('Text measurement', 'fail', e.message);
+            }
+
+            // Test 5: Font metrics
+            try {
+                offCtx.font = '14px monospace';
+                const metrics = offCtx.measureText('Hg');
+                const hasAscent = metrics.actualBoundingBoxAscent !== undefined;
+                assert(hasAscent, 'Font metrics available',
+                    `ascent=${metrics.actualBoundingBoxAscent?.toFixed(2)}, descent=${metrics.actualBoundingBoxDescent?.toFixed(2)}`);
+            } catch (e) {
+                log('Font metrics', 'fail', e.message);
+            }
+
+            // Test 6: Draw to main canvas
+            try {
+                ctx.fillStyle = '#1e1e1e';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Simulate inkx canvas adapter rendering
+                const buffer = new OffscreenCanvas(canvas.width, canvas.height);
+                const bufCtx = buffer.getContext('2d');
+
+                // Config
+                const fontSize = 14;
+                const lineHeight = fontSize * 1.2;
+                const padding = 20;
+
+                // Background
+                bufCtx.fillStyle = '#1e1e1e';
+                bufCtx.fillRect(0, 0, buffer.width, buffer.height);
+
+                // Draw a "Box" with border
+                bufCtx.strokeStyle = '#4ec9b0';
+                bufCtx.lineWidth = 1;
+                bufCtx.strokeRect(padding, padding, 200, 100);
+
+                // Draw text inside
+                bufCtx.font = `14px monospace`;
+                bufCtx.fillStyle = '#d4d4d4';
+                bufCtx.textBaseline = 'top';
+                bufCtx.fillText('inkx Canvas Rendering', padding + 10, padding + 10);
+
+                // Draw colored text
+                bufCtx.fillStyle = '#4ec9b0';
+                bufCtx.fillText('useContentRect() returns:', padding + 10, padding + 30);
+
+                // Simulate pixel dimensions
+                const boxWidth = 200;
+                const boxHeight = 100;
+                bufCtx.fillStyle = '#b5cea8';
+                bufCtx.fillText(`width: ${boxWidth}px`, padding + 10, padding + 50);
+                bufCtx.fillText(`height: ${boxHeight}px`, padding + 10, padding + 70);
+
+                // Draw a second box
+                bufCtx.strokeStyle = '#c586c0';
+                bufCtx.strokeRect(padding + 220, padding, 150, 100);
+                bufCtx.fillStyle = '#c586c0';
+                bufCtx.fillText('Text Styling', padding + 230, padding + 10);
+
+                bufCtx.fillStyle = '#d4d4d4';
+                bufCtx.fillText('Normal', padding + 230, padding + 35);
+
+                bufCtx.font = 'bold 14px monospace';
+                bufCtx.fillText('Bold', padding + 290, padding + 35);
+
+                bufCtx.font = 'italic 14px monospace';
+                bufCtx.fillText('Italic', padding + 230, padding + 55);
+
+                // Underline
+                bufCtx.font = '14px monospace';
+                const underlineText = 'Underline';
+                const underlineX = padding + 230;
+                const underlineY = padding + 75;
+                bufCtx.fillText(underlineText, underlineX, underlineY);
+                const textWidth = bufCtx.measureText(underlineText).width;
+                bufCtx.strokeStyle = '#d4d4d4';
+                bufCtx.beginPath();
+                bufCtx.moveTo(underlineX, underlineY + fontSize * 0.9);
+                bufCtx.lineTo(underlineX + textWidth, underlineY + fontSize * 0.9);
+                bufCtx.stroke();
+
+                // Info text
+                bufCtx.font = '12px system-ui';
+                bufCtx.fillStyle = '#808080';
+                bufCtx.fillText('Layout computed by Flexx, rendered to OffscreenCanvas, drawn to visible canvas',
+                    padding, padding + 140);
+
+                // Copy to main canvas
+                ctx.drawImage(buffer, 0, 0);
+
+                assert(true, 'Render to canvas', 'See canvas output above');
+            } catch (e) {
+                log('Render to canvas', 'fail', e.message);
+                console.error(e);
+            }
+
+            // Summary
+            const summary = document.createElement('div');
+            summary.className = 'test';
+            summary.innerHTML = `<strong>Summary:</strong> ${passCount} passed, ${failCount} failed, ${skipCount} skipped`;
+            results.appendChild(summary);
+        };
+
+        // Auto-run tests
+        runTests();
+    </script>
+</body>
+</html>

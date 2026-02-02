@@ -619,6 +619,34 @@ inkx uses category-based style merging that preserves semantic information:
 | `Term`, `StyleChain` | Types (re-exported from chalkx) |
 | `setLayoutEngine(engine)` | Manually set layout engine instance |
 
+## Background Conflict Detection
+
+When using **both** chalk background colors **and** inkx `backgroundColor` on the same text, visual artifacts occur: chalk only colors text characters, while inkx fills the entire box area.
+
+inkx detects this conflict and **throws by default**:
+
+```tsx
+// This throws - chalk.bg* + inkx backgroundColor = visual bugs
+<Box backgroundColor="cyan">
+  <Text>{chalk.bgBlack("text")}</Text>
+</Box>
+```
+
+**Configuration** via `INKX_BG_CONFLICT` environment variable:
+- `throw` (default) — Throw error on conflict
+- `warn` — Console warning (deduplicated)
+- `ignore` — No detection
+
+**Intentional override** with `@beorn/chalkx`:
+
+```tsx
+import { bgOverride } from "@beorn/chalkx";
+
+<Box backgroundColor="cyan">
+  <Text>{bgOverride(chalk.bgBlack("intentional"))}</Text>
+</Box>
+```
+
 ## Key Differences from Ink
 
 1. **Element-first rendering**: `render(<App />, term)` - element first, term optional

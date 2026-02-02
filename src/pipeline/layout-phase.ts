@@ -4,11 +4,11 @@
  * Run Yoga layout calculation and propagate dimensions to all nodes.
  */
 
-import createDebug from 'debug';
+import { createConditionalLogger } from '@beorn/logger';
 import { measureStats } from '../reconciler/nodes.js';
 import { type BoxProps, type InkxNode, type Rect, rectEqual } from '../types.js';
 
-const debug = createDebug('inkx:layout');
+const log = createConditionalLogger('inkx:layout');
 
 /**
  * Run Yoga layout calculation and propagate dimensions to all nodes.
@@ -35,15 +35,7 @@ export function layoutPhase(root: InkxNode, width: number, height: number): void
 		const t0 = Date.now();
 		root.layoutNode.calculateLayout(width, height);
 		const elapsed = Date.now() - t0;
-		debug(
-			'calculateLayout: %dms (%d nodes) measure: calls=%d hits=%d collects=%d displayWidth=%d',
-			elapsed,
-			nodeCount,
-			measureStats.calls,
-			measureStats.cacheHits,
-			measureStats.textCollects,
-			measureStats.displayWidthCalls,
-		);
+		log.debug?.(`calculateLayout: ${elapsed}ms (${nodeCount} nodes) measure: calls=${measureStats.calls} hits=${measureStats.cacheHits} collects=${measureStats.textCollects} displayWidth=${measureStats.displayWidthCalls}`);
 	}
 
 	// Propagate computed dimensions to all nodes
@@ -71,7 +63,7 @@ function countNodes(node: InkxNode): number {
 function hasLayoutDirtyNodes(node: InkxNode, path = 'root'): boolean {
 	if (node.layoutDirty) {
 		const props = node.props as BoxProps;
-		debug('dirty node found: %s (id=%s, type=%s)', path, props.id ?? '?', node.type);
+		log.debug?.(`dirty node found: ${path} (id=${props.id ?? '?'}, type=${node.type})`);
 		return true;
 	}
 	for (let i = 0; i < node.children.length; i++) {

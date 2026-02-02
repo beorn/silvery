@@ -202,7 +202,14 @@ export { TermContext, EventsContext } from './context.js';
 
 // Term primitives (so consumers don't need to import from chalkx directly)
 export { createTerm, term, patchConsole } from 'chalkx';
-export type { Term, StyleChain, PatchedConsole, PatchConsoleOptions, ColorLevel, ConsoleEntry } from 'chalkx';
+export type {
+	Term,
+	StyleChain,
+	PatchedConsole,
+	PatchConsoleOptions,
+	ColorLevel,
+	ConsoleEntry,
+} from 'chalkx';
 
 // Hit Registry (mouse support)
 export {
@@ -284,6 +291,24 @@ export type {
 	MeasureFunc,
 	MeasureMode,
 } from './layout-engine.js';
+
+// Render adapter (for canvas, etc.)
+export {
+	setRenderAdapter,
+	getRenderAdapter,
+	hasRenderAdapter,
+	getTextMeasurer,
+	ensureRenderAdapterInitialized,
+} from './render-adapter.js';
+export type {
+	RenderAdapter,
+	RenderBuffer,
+	RenderStyle,
+	TextMeasurer,
+	TextMeasureResult,
+	TextMeasureStyle,
+	BorderChars,
+} from './render-adapter.js';
 
 // App types (unified render API)
 export type { App } from './app.js';

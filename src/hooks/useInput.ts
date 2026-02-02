@@ -5,12 +5,12 @@
  * Compatible with Ink's useInput API.
  */
 
-import createDebug from 'debug';
+import { createConditionalLogger } from '@beorn/logger';
 import { useContext, useEffect } from 'react';
 import { EventsContext, InputContext, StdinContext } from '../context.js';
 import { CODE_TO_KEY } from '../keys.js';
 
-const debug = createDebug('inkx:useInput');
+const log = createConditionalLogger('inkx:useInput');
 
 // ============================================================================
 // Types
@@ -245,37 +245,27 @@ export function useInput(inputHandler: InputHandler, options: UseInputOptions = 
 	// In this mode, useInput becomes a no-op (no raw mode, no event subscription)
 	const isStaticMode = events === null;
 
-	debug('useInput called', {
-		isActive,
-		isStaticMode,
-		events: !!events,
-		stdinContext: !!stdinContext,
-		isRawModeSupported: stdinContext?.isRawModeSupported,
-	});
+	log.debug?.(`useInput called: isActive=${isActive}, isStaticMode=${isStaticMode}, events=${!!events}, stdinContext=${!!stdinContext}, isRawModeSupported=${stdinContext?.isRawModeSupported}`);
 
 	// Set raw mode when active (only if stdin is a TTY and not in static mode)
 	useEffect(() => {
 		// No-op in static mode
 		if (isStaticMode) {
-			debug('useInput effect: static mode, skipping raw mode setup');
+			log.debug?.('useInput effect: static mode, skipping raw mode setup');
 			return;
 		}
 
-		debug('useInput effect', {
-			isActive,
-			stdinContext: !!stdinContext,
-			isRawModeSupported: stdinContext?.isRawModeSupported,
-		});
+		log.debug?.(`useInput effect: isActive=${isActive}, stdinContext=${!!stdinContext}, isRawModeSupported=${stdinContext?.isRawModeSupported}`);
 		if (!isActive || !stdinContext || !stdinContext.isRawModeSupported) {
-			debug('useInput effect: skipping raw mode setup');
+			log.debug?.('useInput effect: skipping raw mode setup');
 			return;
 		}
 
 		// Only set raw mode if stdin is a TTY - avoids crash in non-interactive contexts
-		debug('useInput effect: setting raw mode true');
+		log.debug?.('useInput effect: setting raw mode true');
 		stdinContext.setRawMode(true);
 		return () => {
-			debug('useInput effect cleanup: setting raw mode false');
+			log.debug?.('useInput effect cleanup: setting raw mode false');
 			stdinContext.setRawMode(false);
 		};
 	}, [isActive, isStaticMode, stdinContext]);
@@ -284,7 +274,7 @@ export function useInput(inputHandler: InputHandler, options: UseInputOptions = 
 	useEffect(() => {
 		// No-op in static mode
 		if (isStaticMode) {
-			debug('useInput effect: static mode, skipping input subscription');
+			log.debug?.('useInput effect: static mode, skipping input subscription');
 			return;
 		}
 
