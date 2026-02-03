@@ -25,6 +25,95 @@ import { takeUntil } from '../streams/index.js';
 import { diff } from './diff.js';
 import type { Buffer, Dims, Event, Runtime, RuntimeOptions } from './types.js';
 
+// =============================================================================
+// Event Channel - unified async iterable for all internal events
+// =============================================================================
+
+interface EventChannel {
+	push(event: Event): void;
+	events(): AsyncIterable<Event>;
+	dispose(): void;
+}
+
+/**
+ * Create an event channel that bridges callbacks to AsyncIterable.
+ *
+ * This is the single point where callbacks (resize, effect completion)
+ * are converted to the async iterable pattern. External sources like
+ * keyboard events are already AsyncIterable and merged at a higher level.
+ */
+function createEventChannel(signal: AbortSignal): EventChannel {
+	const queue: Event[] = [];
+	let resolve: ((event: Event | null) => void) | undefined;
+	let disposed = false;
+
+	// Resolve pending waiter on abort
+	const onAbort = () => {
+		if (resolve) {
+			resolve(null);
+			resolve = undefined;
+		}
+	};
+	signal.addEventListener('abort', onAbort, { once: true });
+
+	return {
+		push(event: Event): void {
+			if (disposed || signal.aborted) return;
+
+			if (resolve) {
+				const r = resolve;
+				resolve = undefined;
+				r(event);
+			} else {
+				queue.push(event);
+			}
+		},
+
+		events(): AsyncIterable<Event> {
+			return {
+				[Symbol.asyncIterator](): AsyncIterator<Event> {
+					return {
+						async next(): Promise<IteratorResult<Event>> {
+							if (disposed || signal.aborted) {
+								return { done: true, value: undefined };
+							}
+
+							// Return queued event if available
+							if (queue.length > 0) {
+								return { done: false, value: queue.shift()! };
+							}
+
+							// Wait for next event or abort
+							const event = await new Promise<Event | null>((r) => {
+								resolve = r;
+							});
+
+							if (event === null || disposed || signal.aborted) {
+								return { done: true, value: undefined };
+							}
+
+							return { done: false, value: event };
+						},
+					};
+				},
+			};
+		},
+
+		dispose(): void {
+			disposed = true;
+			signal.removeEventListener('abort', onAbort);
+			if (resolve) {
+				resolve(null);
+				resolve = undefined;
+			}
+		},
+	};
+}
+
+// =============================================================================
+// Runtime Factory
+// =============================================================================
+
 /**
  * Create a runtime kernel.
  *
@@ -55,74 +144,24 @@ export function createRuntime(options: RuntimeOptions): Runtime {
 	// Track if disposed
 	let disposed = false;
 
-	// Event queue for scheduled effects and resize events
-	const eventQueue: Event[] = [];
-	let eventResolve: ((event: Event) => void) | null = null;
-
-	// Push event to queue or resolve pending waiter
-	function pushEvent(event: Event): void {
-		if (disposed) return;
-
-		if (eventResolve) {
-			const resolve = eventResolve;
-			eventResolve = null;
-			resolve(event);
-		} else {
-			eventQueue.push(event);
-		}
-	}
-
-	// Wait for next event (from queue or future push)
-	function waitForEvent(): Promise<Event> {
-		if (eventQueue.length > 0) {
-			return Promise.resolve(eventQueue.shift()!);
-		}
-
-		return new Promise<Event>((resolve) => {
-			eventResolve = resolve;
-		});
-	}
+	// Unified event channel for resize and effect events
+	const eventChannel = createEventChannel(signal);
 
 	// Subscribe to resize events if supported
 	let unsubscribeResize: (() => void) | undefined;
 	if (target.onResize) {
 		unsubscribeResize = target.onResize((dims) => {
-			pushEvent({ type: 'resize', cols: dims.cols, rows: dims.rows });
+			eventChannel.push({ type: 'resize', cols: dims.cols, rows: dims.rows });
 		});
 	}
 
 	// Effect ID counter
 	let effectId = 0;
 
-	// Single abort listener for the event loop (created once, not per iteration)
-	let abortResolve: (() => void) | undefined;
-	const abortPromise = new Promise<null>((resolve) => {
-		abortResolve = () => resolve(null);
-	});
-
-	// Attach abort listener once
-	if (!signal.aborted) {
-		signal.addEventListener('abort', () => abortResolve?.(), { once: true });
-	}
-
-	// Create internal event source (resize + effects)
-	async function* internalEvents(): AsyncGenerator<Event, void, undefined> {
-		// If already aborted, exit immediately
-		if (signal.aborted) return;
-
-		while (!disposed && !signal.aborted) {
-			// Race between abort and next event
-			const result = await Promise.race([waitForEvent(), abortPromise]);
-
-			if (result === null) break;
-			yield result;
-		}
-	}
-
 	return {
 		events(): AsyncIterable<Event> {
-			// Return fresh iterable each call, wrapped with takeUntil for cleanup
-			return takeUntil(internalEvents(), signal);
+			// Return channel events wrapped with takeUntil for cleanup
+			return takeUntil(eventChannel.events(), signal);
 		},
 
 		schedule<T>(effect: () => Promise<T>, opts?: { signal?: AbortSignal }): void {
@@ -138,13 +177,11 @@ export function createRuntime(options: RuntimeOptions): Runtime {
 			const execute = async () => {
 				// Track abort handler for cleanup
 				let abortHandler: (() => void) | undefined;
-				let abortReject: ((error: Error) => void) | undefined;
 
 				try {
 					if (effectSignal) {
 						// Create abort race with cleanup
 						const aborted = new Promise<never>((_, reject) => {
-							abortReject = reject;
 							abortHandler = () => reject(new Error('Effect aborted'));
 							effectSignal.addEventListener('abort', abortHandler, { once: true });
 						});
@@ -156,10 +193,10 @@ export function createRuntime(options: RuntimeOptions): Runtime {
 							effectSignal.removeEventListener('abort', abortHandler);
 						}
 
-						pushEvent({ type: 'effect', id, result });
+						eventChannel.push({ type: 'effect', id, result });
 					} else {
 						const result = await effect();
-						pushEvent({ type: 'effect', id, result });
+						eventChannel.push({ type: 'effect', id, result });
 					}
 				} catch (error) {
 					// Clean up abort listener on error too
@@ -175,7 +212,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
 						// Silently ignore aborted effects
 						return;
 					}
-					pushEvent({
+					eventChannel.push({
 						type: 'error',
 						error: error instanceof Error ? error : new Error(String(error)),
 					});
@@ -218,10 +255,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
 				unsubscribeResize();
 			}
 
-			// Resolve any pending event waiter
-			if (eventResolve) {
-				eventResolve = null;
-			}
+			// Dispose event channel
+			eventChannel.dispose();
 		},
 	};
 }
