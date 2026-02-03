@@ -70,6 +70,8 @@ export { Box } from './components/Box.js';
 export { Console } from './components/Console.js';
 export { VirtualList } from './components/VirtualList.js';
 export type { VirtualListProps, VirtualListHandle } from './components/VirtualList.js';
+export { HorizontalVirtualList } from './components/HorizontalVirtualList.js';
+export type { HorizontalVirtualListProps, HorizontalVirtualListHandle } from './components/HorizontalVirtualList.js';
 
 /**
  * Re-export Text component - renders text content.
