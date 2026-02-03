@@ -121,12 +121,12 @@ handle.unmount();
 
 ### Frame Iteration
 
-`AppRunner` is both `PromiseLike` and `AsyncIterable` — you can iterate frames for fuzz testing:
+`AppRunner` (returned by `createApp().run()`) is both `PromiseLike` and `AsyncIterable` — iterate frames for fuzz testing:
 
 ```tsx
-const app = run(<Counter />, { cols: 80, rows: 24 });
-for await (const frame of app) {
-  // frame contains rendered output after each state change
+const app = createApp((inject) => ({ count: 0 }), { onKey: (s) => ({ count: s.count + 1 }) });
+for await (const frame of app.run(<Counter />, { cols: 80, rows: 24 })) {
+  // frame is a Buffer with rendered output after each event
   expect(frame.text).toBeDefined();
 }
 ```
