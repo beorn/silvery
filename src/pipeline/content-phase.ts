@@ -144,7 +144,7 @@ function renderScrollContainerChildren(
 	buffer: TerminalBuffer,
 	props: BoxProps,
 	clipBounds?: { top: number; bottom: number },
-	_hasPrevBuffer = false,
+	hasPrevBuffer = false,
 ): void {
 	const layout = node.computedLayout;
 	const ss = node.scrollState;
@@ -173,6 +173,22 @@ function renderScrollContainerChildren(
 	// scrollOffset changes. The fast-path would incorrectly skip rendering them
 	// at their new screen positions, causing visual corruption.
 	// TODO: Track prevScrollOffset and only disable fast-path when it changes.
+
+	// Clear the scroll container's viewport area before re-rendering children.
+	// Children are forced to hasPrevBuffer=false (disabling fast-path), but the
+	// buffer IS a clone from the previous frame. Without clearing, stale pixels
+	// (e.g. old cursor highlight backgroundColor) bleed through in boxes that
+	// no longer have their own backgroundColor.
+	if (hasPrevBuffer && node.subtreeDirty) {
+		const clearY = childClipBounds.top;
+		const clearHeight = childClipBounds.bottom - childClipBounds.top;
+		if (clearHeight > 0) {
+			const contentX = layout.x + border.left + padding.left;
+			const contentWidth =
+				layout.width - border.left - border.right - padding.left - padding.right;
+			buffer.fill(contentX, clearY, contentWidth, clearHeight, { char: ' ' });
+		}
+	}
 
 	// First pass: render non-sticky visible children with scroll offset
 	for (let i = 0; i < node.children.length; i++) {

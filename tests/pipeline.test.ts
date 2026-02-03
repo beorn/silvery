@@ -580,6 +580,84 @@ describe('Pipeline', () => {
 			// card2 should be at y=0 now, not card1's stale blue.
 		});
 
+		test('cursor highlight cleared when moving between cards in scroll container', async () => {
+			// Exact reproduction of the cards-view bug:
+			// 1. Card A has cursor → backgroundColor='yellow'
+			// 2. Cursor moves to Card B → Card A loses backgroundColor, Card B gets it
+			// 3. On cloned buffer, Card A's old yellow pixels must be cleared
+
+			// Card A: initially selected (yellow background)
+			const cardA = await createMockNode('inkx-box', {
+				width: 8,
+				height: 2,
+				backgroundColor: 'yellow',
+			} as BoxProps);
+			setNodeLayout(cardA, { x: 1, y: 0, width: 8, height: 2 });
+
+			// Card B: initially not selected (no background)
+			const cardB = await createMockNode('inkx-box', {
+				width: 8,
+				height: 2,
+			} as BoxProps);
+			setNodeLayout(cardB, { x: 1, y: 2, width: 8, height: 2 });
+
+			const scrollContainer = await createMockNode(
+				'inkx-box',
+				{ overflow: 'scroll', height: 4, width: 10 } as BoxProps,
+				[cardA, cardB],
+			);
+			setNodeLayout(scrollContainer, { x: 0, y: 0, width: 10, height: 4 });
+			scrollContainer.scrollState = {
+				offset: 0,
+				contentHeight: 4,
+				viewportHeight: 4,
+				firstVisibleChild: 0,
+				lastVisibleChild: 1,
+				hiddenAbove: 0,
+				hiddenBelow: 0,
+			};
+
+			const root = await createMockNode('inkx-box', { width: 10, height: 4 }, [scrollContainer]);
+			setNodeLayout(root, { x: 0, y: 0, width: 10, height: 4 });
+
+			// First render: Card A has yellow background
+			const buffer1 = contentPhase(root);
+			expect(buffer1.getCell(2, 0).bg).not.toBeNull(); // Card A's yellow
+			expect(buffer1.getCell(2, 2).bg).toBeNull(); // Card B has no bg
+
+			// Cursor moves: Card A loses yellow, Card B gains yellow
+			cardA.props = { width: 8, height: 2 } as BoxProps; // No backgroundColor
+			cardA.contentDirty = true;
+			cardA.subtreeDirty = true;
+			cardA.prevLayout = cardA.computedLayout;
+
+			cardB.props = { width: 8, height: 2, backgroundColor: 'yellow' } as BoxProps;
+			cardB.contentDirty = true;
+			cardB.subtreeDirty = true;
+			cardB.prevLayout = cardB.computedLayout;
+
+			// Scroll container: subtreeDirty (children changed) but NOT contentDirty
+			// (no scroll position change - both cards are visible)
+			scrollContainer.contentDirty = false;
+			scrollContainer.subtreeDirty = true;
+			scrollContainer.prevLayout = scrollContainer.computedLayout;
+
+			root.contentDirty = false;
+			root.subtreeDirty = true;
+			root.prevLayout = root.computedLayout;
+
+			// Second render with prevBuffer
+			const buffer2 = contentPhase(root, buffer1);
+
+			// CRITICAL: Card A's yellow must be gone (no stale cursor highlight)
+			expect(buffer2.getCell(2, 0).bg).toBeNull();
+			expect(buffer2.getCell(2, 1).bg).toBeNull();
+
+			// Card B should now have yellow
+			expect(buffer2.getCell(2, 2).bg).not.toBeNull();
+			expect(buffer2.getCell(2, 3).bg).not.toBeNull();
+		});
+
 		test('scroll container children always re-render even with hasPrevBuffer', async () => {
 			// Create a scroll container with children
 			const child1 = await createMockNode('inkx-text', {}, [], 'A');
