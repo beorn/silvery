@@ -4,6 +4,8 @@
  * React-level virtualization for horizontal lists. Only renders items within the
  * visible viewport plus overscan, using placeholder boxes for virtual width.
  *
+ * Uses the shared useVirtualization hook for consistency with VirtualList.
+ *
  * @example
  * ```tsx
  * import { HorizontalVirtualList } from 'inkx';
@@ -19,10 +21,10 @@
  * />
  * ```
  */
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import { Box } from './Box.js';
 import { Text } from './Text.js';
-import { calcEdgeBasedScrollOffset } from '../scroll-utils.js';
+import { useVirtualization } from '../hooks/useVirtualization.js';
 
 // =============================================================================
 // Types
@@ -89,43 +91,6 @@ const DEFAULT_MAX_RENDERED = 20;
 const SCROLL_PADDING = 1;
 
 // =============================================================================
-// Helpers
-// =============================================================================
-
-/**
- * Get width for a specific item.
- */
-function getItemWidth<T>(
-	item: T,
-	index: number,
-	itemWidth: number | ((item: T, index: number) => number),
-): number {
-	return typeof itemWidth === 'function' ? itemWidth(item, index) : itemWidth;
-}
-
-/**
- * Calculate how many items fit in the viewport starting from a given index.
- */
-function calcVisibleCount<T>(
-	items: T[],
-	startIndex: number,
-	viewportWidth: number,
-	itemWidth: number | ((item: T, index: number) => number),
-	gap: number,
-): number {
-	let usedWidth = 0;
-	let count = 0;
-
-	for (let i = startIndex; i < items.length && usedWidth < viewportWidth; i++) {
-		const width = getItemWidth(items[i], i, itemWidth);
-		usedWidth += width + (count > 0 ? gap : 0);
-		count++;
-	}
-
-	return Math.max(1, count);
-}
-
-// =============================================================================
 // Component
 // =============================================================================
 
@@ -134,7 +99,7 @@ function calcVisibleCount<T>(
  *
  * Only renders items within the visible viewport plus overscan.
  *
- * Scroll state management:
+ * Scroll state management (via useVirtualization hook):
  * - When scrollTo is defined: actively track and scroll to that index
  * - When scrollTo is undefined: completely freeze scroll state (do nothing)
  *
@@ -159,72 +124,22 @@ function HorizontalVirtualListInner<T>(
 	}: HorizontalVirtualListProps<T>,
 	ref: React.ForwardedRef<HorizontalVirtualListHandle>,
 ): React.ReactElement {
-	// Scroll state: the selected index and computed scroll offset
-	// Using state (not refs) to ensure React re-renders when we scroll imperatively
-	const [scrollState, setScrollState] = useState<{ selectedIndex: number; scrollOffset: number }>({
-		selectedIndex: scrollTo ?? 0,
-		scrollOffset: 0,
+	// Use shared virtualization hook
+	const { startIndex, endIndex, hiddenBefore, hiddenAfter, scrollToItem } = useVirtualization({
+		items,
+		viewportSize: width,
+		itemSize: itemWidth,
+		scrollTo,
+		scrollPadding: SCROLL_PADDING,
+		overscan,
+		maxRendered,
+		gap,
 	});
 
-	// Estimate how many items fit in viewport
-	const avgItemWidth =
-		items.length > 0
-			? typeof itemWidth === 'function'
-				? items.reduce((sum, item, i) => sum + getItemWidth(item, i, itemWidth), 0) / items.length
-				: itemWidth
-			: 1;
-	const estimatedVisibleCount = Math.max(1, Math.floor(width / (avgItemWidth + gap)));
-
 	// Expose scrollToItem method via ref for imperative scrolling
-	useImperativeHandle(
-		ref,
-		() => ({
-			scrollToItem(index: number) {
-				const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
-				setScrollState((prev) => {
-					const newOffset = calcEdgeBasedScrollOffset(
-						clampedIndex,
-						prev.scrollOffset,
-						estimatedVisibleCount,
-						items.length,
-						SCROLL_PADDING,
-					);
-					return { selectedIndex: clampedIndex, scrollOffset: newOffset };
-				});
-			},
-		}),
-		[items.length, estimatedVisibleCount],
-	);
+	useImperativeHandle(ref, () => ({ scrollToItem }), [scrollToItem]);
 
-	// Update scroll state when scrollTo prop changes (only when defined)
-	// This is the key fix: we only update state when scrollTo is defined
-	// When scrollTo becomes undefined, we do NOTHING - state is frozen
-	useEffect(() => {
-		if (scrollTo === undefined) {
-			// Frozen: do not update state at all
-			return;
-		}
-
-		const clampedIndex = Math.max(0, Math.min(scrollTo, items.length - 1));
-		setScrollState((prev) => {
-			const newOffset = calcEdgeBasedScrollOffset(
-				clampedIndex,
-				prev.scrollOffset,
-				estimatedVisibleCount,
-				items.length,
-				SCROLL_PADDING,
-			);
-
-			// Only update if something actually changed
-			if (prev.selectedIndex === clampedIndex && prev.scrollOffset === newOffset) {
-				return prev;
-			}
-
-			return { selectedIndex: clampedIndex, scrollOffset: newOffset };
-		});
-	}, [scrollTo, items.length, estimatedVisibleCount]);
-
-	// Empty state - handle early
+	// Empty state
 	if (items.length === 0) {
 		return (
 			<Box flexDirection="row" width={width} height={height}>
@@ -233,60 +148,19 @@ function HorizontalVirtualListInner<T>(
 		);
 	}
 
-	// Determine the current selected index to use for rendering
-	// When scrollTo is defined, use it directly (for immediate visual feedback)
-	// When undefined, use the frozen state
-	const currentSelectedIndex =
-		scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, items.length - 1)) : scrollState.selectedIndex;
-	const currentScrollOffset = scrollState.scrollOffset;
-
-	// Calculate virtualization window
-	const totalItems = items.length;
-	let startIndex: number;
-	let endIndex: number;
-
-	// For small lists, render everything
-	if (totalItems <= maxRendered) {
-		startIndex = 0;
-		endIndex = totalItems;
-	} else {
-		// Start from scroll offset, add overscan
-		startIndex = Math.max(0, currentScrollOffset - overscan);
-
-		// Calculate how many items we can render
-		const visibleFromStart = calcVisibleCount(items, startIndex, width, itemWidth, gap);
-		endIndex = Math.min(totalItems, startIndex + visibleFromStart + overscan * 2);
-
-		// Cap at maxRendered - center around target
-		if (endIndex - startIndex > maxRendered) {
-			const halfWindow = Math.floor(maxRendered / 2);
-			startIndex = Math.max(0, currentSelectedIndex - halfWindow);
-			endIndex = Math.min(totalItems, startIndex + maxRendered);
-
-			// Adjust if we hit the end
-			if (endIndex === totalItems) {
-				startIndex = Math.max(0, endIndex - maxRendered);
-			}
-		}
-	}
-
-	// Count hidden items
-	const hiddenLeft = startIndex;
-	const hiddenRight = items.length - endIndex;
-
 	// Get visible items
 	const visibleItems = items.slice(startIndex, endIndex);
 
 	// Determine if we need to show overflow indicators
-	const showLeftIndicator = overflowIndicator && hiddenLeft > 0;
-	const showRightIndicator = overflowIndicator && hiddenRight > 0;
+	const showLeftIndicator = overflowIndicator && hiddenBefore > 0;
+	const showRightIndicator = overflowIndicator && hiddenAfter > 0;
 
 	return (
 		<Box flexDirection="row" width={width} height={height} overflow="hidden">
 			{/* Left overflow indicator */}
 			{showLeftIndicator && (
 				<Box flexShrink={0}>
-					<Text dimColor>◀{hiddenLeft}</Text>
+					<Text dimColor>◀{hiddenBefore}</Text>
 				</Box>
 			)}
 
@@ -308,7 +182,7 @@ function HorizontalVirtualListInner<T>(
 			{/* Right overflow indicator */}
 			{showRightIndicator && (
 				<Box flexShrink={0}>
-					<Text dimColor>{hiddenRight}▶</Text>
+					<Text dimColor>{hiddenAfter}▶</Text>
 				</Box>
 			)}
 		</Box>

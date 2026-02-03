@@ -21,9 +21,9 @@
  * />
  * ```
  */
-import React, { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import { Box } from './Box.js';
-import { calcEdgeBasedScrollOffset } from '../scroll-utils.js';
+import { useVirtualization } from '../hooks/useVirtualization.js';
 import createDebug from 'debug';
 
 const debug = createDebug('inkx:virtuallist');
@@ -39,8 +39,8 @@ export interface VirtualListProps<T> {
 	/** Height of the list viewport in rows */
 	height: number;
 
-	/** Height of each item in rows (default: 1) */
-	itemHeight?: number;
+	/** Height of each item in rows (fixed or function for variable heights) */
+	itemHeight?: number | ((item: T, index: number) => number);
 
 	/** Index to keep visible (scrolls if off-screen) */
 	scrollTo?: number;
@@ -62,6 +62,12 @@ export interface VirtualListProps<T> {
 
 	/** Width of the list (optional, uses parent width if not specified) */
 	width?: number;
+
+	/** Gap between items in rows (default: 0) */
+	gap?: number;
+
+	/** Render separator between items (alternative to gap) */
+	renderSeparator?: () => React.ReactNode;
 }
 
 export interface VirtualListHandle {
@@ -80,12 +86,8 @@ const DEFAULT_MAX_RENDERED = 100;
 /**
  * Padding from edge before scrolling (in items).
  *
- * When the selected item is within SCROLL_PADDING of the viewport edge,
- * the viewport scrolls to keep the item visible with this margin.
- *
  * Vertical lists use padding=2 for more context visibility (you typically
  * want to see what's coming when scrolling through a long list).
- * Horizontal lists use padding=1 since columns are wider and fewer fit on screen.
  *
  * @see calcEdgeBasedScrollOffset in scroll-utils.ts for the algorithm
  */
@@ -121,103 +123,32 @@ function VirtualListInner<T>(
 		overflowIndicator,
 		keyExtractor,
 		width,
+		gap = 0,
+		renderSeparator,
 	}: VirtualListProps<T>,
 	ref: React.ForwardedRef<VirtualListHandle>,
 ): React.ReactElement {
-	// Scroll state: the selected index and computed scroll offset
-	// Using state (not refs) to ensure React re-renders when we scroll imperatively
-	const [scrollState, setScrollState] = useState<{ selectedIndex: number; scrollOffset: number }>({
-		selectedIndex: scrollTo ?? 0,
-		scrollOffset: 0,
+	// Use shared virtualization hook
+	const {
+		startIndex,
+		endIndex,
+		currentSelectedIndex,
+		leadingPlaceholderSize,
+		trailingPlaceholderSize,
+		scrollToItem,
+	} = useVirtualization({
+		items,
+		viewportSize: height,
+		itemSize: itemHeight,
+		scrollTo,
+		scrollPadding: SCROLL_PADDING,
+		overscan,
+		maxRendered,
+		gap,
 	});
 
-	// Calculate how many items fit in the viewport
-	const visibleItemCount = Math.max(1, Math.floor(height / itemHeight));
-
 	// Expose scrollToItem method via ref for imperative scrolling
-	useImperativeHandle(
-		ref,
-		() => ({
-			scrollToItem(index: number) {
-				const clampedIndex = Math.max(0, Math.min(index, items.length - 1));
-				setScrollState((prev) => {
-					const newOffset = calcEdgeBasedScrollOffset(clampedIndex, prev.scrollOffset, visibleItemCount, items.length, SCROLL_PADDING);
-					return { selectedIndex: clampedIndex, scrollOffset: newOffset };
-				});
-			},
-		}),
-		[items.length, visibleItemCount],
-	);
-
-	// Update scroll state when scrollTo prop changes (only when defined)
-	// This is the key fix: we only update state when scrollTo is defined
-	// When scrollTo becomes undefined, we do NOTHING - state is frozen
-	useEffect(() => {
-		if (scrollTo === undefined) {
-			// Frozen: do not update state at all
-			return;
-		}
-
-		const clampedIndex = Math.max(0, Math.min(scrollTo, items.length - 1));
-		setScrollState((prev) => {
-			const newOffset = calcEdgeBasedScrollOffset(clampedIndex, prev.scrollOffset, visibleItemCount, items.length, SCROLL_PADDING);
-
-			// Only update if something actually changed
-			if (prev.selectedIndex === clampedIndex && prev.scrollOffset === newOffset) {
-				debug('VirtualList no change: scrollTo=%d offset=%d', scrollTo, prev.scrollOffset);
-				return prev;
-			}
-
-			debug('VirtualList scrollTo changed: %d -> offset=%d (was %d)', scrollTo, newOffset, prev.scrollOffset);
-			return { selectedIndex: clampedIndex, scrollOffset: newOffset };
-		});
-	}, [scrollTo, items.length, visibleItemCount]);
-
-	// Determine the current selected index to use for rendering
-	// When scrollTo is defined, use it directly (for immediate visual feedback)
-	// When undefined, use the frozen state
-	const currentSelectedIndex =
-		scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, items.length - 1)) : scrollState.selectedIndex;
-
-	// Calculate virtualization window
-	const { startIndex, endIndex, topPlaceholderHeight, bottomPlaceholderHeight } = useMemo(() => {
-		const totalItems = items.length;
-
-		// For small lists, render everything
-		if (totalItems <= maxRendered) {
-			return {
-				startIndex: 0,
-				endIndex: totalItems,
-				topPlaceholderHeight: 0,
-				bottomPlaceholderHeight: 0,
-			};
-		}
-
-		// Center the window around the selected item
-		const halfWindow = Math.floor(maxRendered / 2);
-		let start = Math.max(0, currentSelectedIndex - halfWindow);
-		let end = Math.min(totalItems, start + maxRendered);
-
-		// Adjust start if we hit the end
-		if (end === totalItems) {
-			start = Math.max(0, end - maxRendered);
-		}
-
-		// Add overscan
-		start = Math.max(0, start - overscan);
-		end = Math.min(totalItems, end + overscan);
-
-		// Calculate placeholder heights
-		const topHeight = start * itemHeight;
-		const bottomHeight = (totalItems - end) * itemHeight;
-
-		return {
-			startIndex: start,
-			endIndex: end,
-			topPlaceholderHeight: topHeight,
-			bottomPlaceholderHeight: bottomHeight,
-		};
-	}, [items.length, currentSelectedIndex, maxRendered, overscan, itemHeight]);
+	useImperativeHandle(ref, () => ({ scrollToItem }), [scrollToItem]);
 
 	// Empty state
 	if (items.length === 0) {
@@ -234,9 +165,8 @@ function VirtualListInner<T>(
 	// Calculate scrollTo index for inkx Box
 	// inkx scrollTo expects the INDEX of the child to scroll into view
 	// Account for top placeholder being child 0 when present
-	const hasTopPlaceholder = topPlaceholderHeight > 0;
+	const hasTopPlaceholder = leadingPlaceholderSize > 0;
 	const selectedIndexInSlice = currentSelectedIndex - startIndex;
-	// Ensure the index is valid (within the rendered slice)
 	const isSelectedInSlice = selectedIndexInSlice >= 0 && selectedIndexInSlice < visibleItems.length;
 	const scrollToIndex = hasTopPlaceholder ? selectedIndexInSlice + 1 : selectedIndexInSlice;
 
@@ -244,6 +174,8 @@ function VirtualListInner<T>(
 	// 1. scrollTo prop is defined (we're actively scrolling)
 	// 2. The selected index is within the rendered slice
 	const boxScrollTo = scrollTo !== undefined && isSelectedInSlice ? Math.max(0, scrollToIndex) : undefined;
+
+	debug('VirtualList render: scrollTo=%s boxScrollTo=%s start=%d end=%d', scrollTo, boxScrollTo, startIndex, endIndex);
 
 	return (
 		<Box
@@ -255,17 +187,25 @@ function VirtualListInner<T>(
 			overflowIndicator={overflowIndicator}
 		>
 			{/* Top placeholder for virtual height */}
-			{topPlaceholderHeight > 0 && <Box height={topPlaceholderHeight} flexShrink={0} />}
+			{leadingPlaceholderSize > 0 && <Box height={leadingPlaceholderSize} flexShrink={0} />}
 
 			{/* Render visible items */}
 			{visibleItems.map((item, i) => {
 				const actualIndex = startIndex + i;
 				const key = keyExtractor ? keyExtractor(item, actualIndex) : actualIndex;
-				return <React.Fragment key={key}>{renderItem(item, actualIndex)}</React.Fragment>;
+				const isLast = i === visibleItems.length - 1;
+
+				return (
+					<React.Fragment key={key}>
+						{renderItem(item, actualIndex)}
+						{!isLast && renderSeparator && renderSeparator()}
+						{!isLast && gap > 0 && !renderSeparator && <Box height={gap} flexShrink={0} />}
+					</React.Fragment>
+				);
 			})}
 
 			{/* Bottom placeholder for virtual height */}
-			{bottomPlaceholderHeight > 0 && <Box height={bottomPlaceholderHeight} flexShrink={0} />}
+			{trailingPlaceholderSize > 0 && <Box height={trailingPlaceholderSize} flexShrink={0} />}
 		</Box>
 	);
 }
