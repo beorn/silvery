@@ -576,6 +576,8 @@ describe('IME Considerations (Documentation)', () => {
 
 describe('CJK Input Edge Cases', () => {
 	const render = createTestRenderer({ columns: 80, rows: 30 });
+	// Wide render for tests with long content that exceeds 80 columns
+	const wideRender = createTestRenderer({ columns: 160, rows: 30 });
 
 	test('handles empty input gracefully', () => {
 		const { lastFrame } = render(<CJKInputCapture />);
@@ -585,7 +587,8 @@ describe('CJK Input Edge Cases', () => {
 	});
 
 	test('handles very long CJK string', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		// Need wide terminal for 50 CJK chars (100 columns) + formatting text
+		const { lastFrame, stdin } = wideRender(<CJKInputCapture />);
 
 		// 50 Chinese characters
 		const longText = '中'.repeat(50);

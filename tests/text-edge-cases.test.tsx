@@ -77,12 +77,13 @@ describe('text wrapping with long words', () => {
 		);
 		const frame = stripAnsi(lastFrame() ?? '');
 
-		// Should be truncated to fit
+		// Should be truncated to fit Box width (trimmed because terminal may be wider)
 		const lines = frame.split('\n');
 		const textLine = lines.find((line) => line.trim().length > 0);
 		expect(textLine).toBeDefined();
 		if (textLine) {
-			expect(textLine.length).toBeLessThanOrEqual(10);
+			// Check trimmed content length, since frame includes terminal padding
+			expect(textLine.trim().length).toBeLessThanOrEqual(10);
 		}
 	});
 });

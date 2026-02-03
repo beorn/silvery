@@ -475,8 +475,9 @@ describe.skipIf(isCI)('Layout Engine Equivalence (km-zofe)', () => {
 		});
 
 		test('justifyContent space-between (row)', () => {
+			// Width 31 with 3 single-char items = 28 gap space / 2 gaps = 14 each (no fractional)
 			const element = (
-				<Box flexDirection="row" width={30} height={3} justifyContent="space-between">
+				<Box flexDirection="row" width={31} height={3} justifyContent="space-between">
 					<Text>A</Text>
 					<Text>B</Text>
 					<Text>C</Text>

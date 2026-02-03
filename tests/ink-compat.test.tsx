@@ -62,12 +62,16 @@ const testRender = createTestRenderer();
 
 describe('Ink API Compatibility', () => {
 	describe('Component Exports', () => {
-		test('Box component exists and is a function', () => {
-			expect(typeof Box).toBe('function');
+		test('Box component exists and is a valid React component', () => {
+			// Box uses forwardRef, so typeof is 'object', but it's a valid component
+			expect(Box).toBeDefined();
+			expect(typeof Box === 'function' || typeof Box === 'object').toBe(true);
 		});
 
-		test('Text component exists and is a function', () => {
-			expect(typeof Text).toBe('function');
+		test('Text component exists and is a valid React component', () => {
+			// Text uses forwardRef, so typeof is 'object', but it's a valid component
+			expect(Text).toBeDefined();
+			expect(typeof Text === 'function' || typeof Text === 'object').toBe(true);
 		});
 
 		test('Newline component exists and is a function', () => {
