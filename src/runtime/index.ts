@@ -69,6 +69,7 @@ export {
 	type AppDefinition,
 	type AppHandle,
 	type AppRunOptions,
+	type AppRunner,
 	type EventHandler,
 	type EventHandlers,
 	type EventHandlerContext,
