@@ -119,6 +119,18 @@ expect(handle.text).toContain('Count: 1');
 handle.unmount();
 ```
 
+### Frame Iteration
+
+`AppRunner` is both `PromiseLike` and `AsyncIterable` — you can iterate frames for fuzz testing:
+
+```tsx
+const app = run(<Counter />, { cols: 80, rows: 24 });
+for await (const frame of app) {
+  // frame contains rendered output after each state change
+  expect(frame.text).toBeDefined();
+}
+```
+
 See `docs/getting-started.md` for full documentation.
 
 ## Layout Engine
@@ -290,7 +302,7 @@ test('renders content', () => {
   expect(app.text).toContain('Hello')
 
   // ANSI output (with colors) - use for debugging with visual inspection
-  console.log(app.html)
+  console.log(app.ansi)
 
   // Auto-refreshing locators (no stale locator problem!)
   expect(app.getByText('Hello').count()).toBe(1)
@@ -391,7 +403,7 @@ test('debugging example', () => {
   app.debug()
 
   // For colored output (debugging visual issues)
-  console.log(app.html)
+  console.log(app.ansi)
 
   // For plain text output (assertions, comparisons)
   console.log(app.text)
@@ -610,9 +622,9 @@ const frame = app.lastFrame()
 const text = stripAnsi(frame)
 const allFrames = app.frames  // also deprecated
 
-// RIGHT - use app.text or app.html directly
+// RIGHT - use app.text or app.ansi directly
 const text = app.text   // plain text (no ANSI)
-const ansi = app.html   // with ANSI styling
+const ansi = app.ansi   // with ANSI styling
 ```
 
 ### Wrong: Using stdin.write() for keyboard input
