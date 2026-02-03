@@ -246,11 +246,6 @@ export interface InkxNode {
 	 */
 	screenRect: Rect | null;
 
-	/**
-	 * @deprecated Use contentRect instead. Alias kept for backwards compatibility.
-	 */
-	computedLayout: Rect | null;
-
 	/** True if layout-affecting props changed and Yoga needs recalculation */
 	layoutDirty: boolean;
 
@@ -263,7 +258,7 @@ export interface InkxNode {
 	/** True if this node or any descendant has dirty content/layout */
 	subtreeDirty: boolean;
 
-	/** Callbacks subscribed to layout changes (used by useLayout) */
+	/** Callbacks subscribed to layout changes (used by useContentRect) */
 	layoutSubscribers: Set<() => void>;
 
 	/** Text content for text nodes */

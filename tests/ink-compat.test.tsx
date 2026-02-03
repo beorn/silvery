@@ -46,7 +46,7 @@ import {
 	useFocus,
 	useFocusManager,
 	useInput,
-	useLayout,
+	useContentRect,
 	useStdin,
 	useStdout,
 } from '../src/index.js';
@@ -112,8 +112,8 @@ describe('Ink API Compatibility', () => {
 			expect(typeof useFocusManager).toBe('function');
 		});
 
-		test('useLayout hook exists and is a function (Inkx-specific)', () => {
-			expect(typeof useLayout).toBe('function');
+		test('useContentRect hook exists and is a function (Inkx-specific)', () => {
+			expect(typeof useContentRect).toBe('function');
 		});
 	});
 

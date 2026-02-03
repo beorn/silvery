@@ -42,7 +42,7 @@ export interface App {
 	readonly text: string;
 
 	/** Full rendered text with ANSI styling */
-	readonly html: string;
+	readonly ansi: string;
 
 	/** Get node at content coordinates */
 	nodeAt(x: number, y: number): InkxNode | null;
@@ -204,7 +204,7 @@ export function createApp(options: AppOptions): App {
 			return getText();
 		},
 
-		get html(): string {
+		get ansi(): string {
 			const buffer = getBuffer();
 			return buffer ? bufferToStyledText(buffer) : '';
 		},

@@ -50,7 +50,6 @@ function createMockNode(
     children,
     parent: null,
     layoutNode,
-    computedLayout: null,
     contentRect: null,
     screenRect: null,
     prevLayout: null,

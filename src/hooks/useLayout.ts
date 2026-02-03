@@ -206,6 +206,3 @@ export function useScreenRectCallback(callback: (rect: Rect) => void): void {
 		};
 	}, [node]); // Re-run when node becomes available
 }
-
-// Backwards compatibility alias (internal - use useContentRect instead)
-export const useLayout = useContentRect;

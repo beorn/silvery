@@ -49,7 +49,6 @@ export function createNode(
 		layoutNode,
 		contentRect: null,
 		screenRect: null,
-		computedLayout: null,
 		prevLayout: null,
 		layoutDirty: true,
 		contentDirty: true,
@@ -184,7 +183,6 @@ export function createVirtualTextNode(props: TextProps): InkxNode {
 		layoutNode: null, // No layout node for virtual text
 		contentRect: null,
 		screenRect: null,
-		computedLayout: null,
 		prevLayout: null,
 		layoutDirty: false,
 		contentDirty: true,
@@ -467,7 +465,7 @@ export function calculateLayout(root: InkxNode, width: number, height: number): 
  */
 function propagateLayout(node: InkxNode, parentX: number, parentY: number): void {
 	// Save previous layout for change detection
-	node.prevLayout = node.computedLayout;
+	node.prevLayout = node.contentRect;
 
 	// Get computed layout from layout node
 	if (!node.layoutNode) {
@@ -479,7 +477,7 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number): void
 	const width = node.layoutNode.getComputedWidth();
 	const height = node.layoutNode.getComputedHeight();
 
-	node.computedLayout = {
+	node.contentRect = {
 		x: parentX + left,
 		y: parentY + top,
 		width,
@@ -490,13 +488,13 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number): void
 	node.layoutDirty = false;
 
 	// If dimensions changed, content needs re-render
-	if (!rectEqual(node.prevLayout, node.computedLayout)) {
+	if (!rectEqual(node.prevLayout, node.contentRect)) {
 		node.contentDirty = true;
 	}
 
 	// Recursively propagate to children
 	for (const child of node.children) {
-		propagateLayout(child, node.computedLayout.x, node.computedLayout.y);
+		propagateLayout(child, node.contentRect.x, node.contentRect.y);
 	}
 }
 
@@ -504,7 +502,7 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number): void
  * Notify all layout subscribers of layout changes.
  */
 function notifyLayoutSubscribers(node: InkxNode): void {
-	if (!rectEqual(node.prevLayout, node.computedLayout)) {
+	if (!rectEqual(node.prevLayout, node.contentRect)) {
 		for (const subscriber of node.layoutSubscribers) {
 			subscriber();
 		}

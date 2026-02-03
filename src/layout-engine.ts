@@ -262,7 +262,7 @@ export function getConstants(): LayoutConstants {
  * - 'flexx-classic': Classic Flexx algorithm (for debugging/compatibility)
  * - 'yoga': Facebook's WASM-based flexbox (most mature)
  */
-export type LayoutEngineType = 'flexx' | 'flexx-classic' | 'yoga';
+export type LayoutEngineType = 'flexx' | 'yoga';
 
 /**
  * Initialize the layout engine if not already set.
@@ -282,9 +282,6 @@ export async function ensureDefaultLayoutEngine(engineType?: LayoutEngineType): 
 	if (resolved === 'yoga') {
 		const { initYogaEngine } = await import('./adapters/yoga-adapter.js');
 		setLayoutEngine(await initYogaEngine());
-	} else if (resolved === 'flexx-classic') {
-		const { createFlexxEngine } = await import('./adapters/flexx-adapter.js');
-		setLayoutEngine(createFlexxEngine());
 	} else {
 		// 'flexx' (default) uses zero-allocation engine
 		const { createFlexxZeroEngine } = await import('./adapters/flexx-zero-adapter.js');

@@ -606,13 +606,6 @@ export function stripAnsi(text: string): string {
 }
 
 /**
- * Regex for SGR sequences (colors and attributes) plus OSC 8 hyperlinks.
- * Used by parseAnsiText() for parsing. For stripping, use stripAnsi().
- * @deprecated Use stripAnsi() for stripping; this regex doesn't cover all ANSI codes
- */
-export const ANSI_REGEX = /\x1b\[[0-9;:]*m|\x1b\]8;;[^\x1b]*\x1b\\/g;
-
-/**
  * Get display width of text with ANSI sequences.
  * ANSI sequences don't contribute to display width.
  */

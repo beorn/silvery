@@ -1127,6 +1127,6 @@ export {
 	YogaLayoutEngine,
 } from './adapters/yoga-adapter.js';
 export {
-	createFlexxEngine,
-	FlexxLayoutEngine,
-} from './adapters/flexx-adapter.js';
+	createFlexxZeroEngine as createFlexxEngine,
+	FlexxZeroLayoutEngine as FlexxLayoutEngine,
+} from './adapters/flexx-zero-adapter.js';

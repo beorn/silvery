@@ -30,7 +30,7 @@ import {
 } from '../adapters/canvas-adapter.js';
 import { setRenderAdapter } from '../render-adapter.js';
 import { setLayoutEngine } from '../layout-engine.js';
-import { createFlexxEngine } from '../adapters/flexx-adapter.js';
+import { createFlexxZeroEngine } from '../adapters/flexx-zero-adapter.js';
 import { createContainer, getContainerRoot, reconciler } from '../reconciler.js';
 import { executeRenderAdapter } from '../pipeline/index.js';
 import type { RenderBuffer } from '../render-adapter.js';
@@ -84,7 +84,7 @@ export function initCanvasRenderer(config: CanvasAdapterConfig = {}): void {
 	if (initialized) return;
 
 	// Set up layout engine (Flexx is sync, no WASM needed)
-	setLayoutEngine(createFlexxEngine());
+	setLayoutEngine(createFlexxZeroEngine());
 
 	// Set up canvas adapter
 	setRenderAdapter(createCanvasAdapter(config));

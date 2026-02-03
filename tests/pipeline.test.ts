@@ -18,14 +18,13 @@ import {
 	type CellChange,
 	contentPhase,
 	executeRender,
-	layoutEqual,
 	layoutPhase,
 	measurePhase,
 	outputPhase,
 	screenRectPhase,
 	scrollPhase,
 } from '../src/pipeline.js';
-import type { BoxProps, ComputedLayout, InkxNode, TextProps } from '../src/types.js';
+import { type BoxProps, type InkxNode, type TextProps, rectEqual } from '../src/types.js';
 
 // Initialize layout engine before tests run
 let layoutEngine: LayoutEngine;
@@ -72,7 +71,7 @@ async function createMockNode(
 		layoutNode,
 		contentRect: null,
 		screenRect: null,
-		computedLayout: null,
+		contentRect: null,
 		prevLayout: null,
 		layoutDirty: true,
 		contentDirty: true,
@@ -104,7 +103,7 @@ function createRawTextNode(text: string): InkxNode {
 		layoutNode: null,
 		contentRect: null,
 		screenRect: null,
-		computedLayout: null,
+		contentRect: null,
 		prevLayout: null,
 		layoutDirty: false,
 		contentDirty: true,
@@ -116,43 +115,43 @@ function createRawTextNode(text: string): InkxNode {
 	};
 }
 
-// Helper to set layout on a node (sets both contentRect and computedLayout for compatibility)
+// Helper to set layout on a node (sets both contentRect and contentRect for compatibility)
 function setNodeLayout(
 	node: InkxNode,
 	layout: { x: number; y: number; width: number; height: number },
 ): void {
 	node.contentRect = layout;
-	node.computedLayout = layout;
+	node.contentRect = layout;
 }
 
 describe('Pipeline', () => {
-	describe('layoutEqual', () => {
+	describe('rectEqual', () => {
 		test('null equals null', () => {
-			expect(layoutEqual(null, null)).toBe(true);
+			expect(rectEqual(null, null)).toBe(true);
 		});
 
 		test('null !== non-null', () => {
 			const layout: ComputedLayout = { x: 0, y: 0, width: 10, height: 5 };
-			expect(layoutEqual(null, layout)).toBe(false);
-			expect(layoutEqual(layout, null)).toBe(false);
+			expect(rectEqual(null, layout)).toBe(false);
+			expect(rectEqual(layout, null)).toBe(false);
 		});
 
 		test('same layout equals', () => {
 			const a: ComputedLayout = { x: 5, y: 10, width: 20, height: 15 };
 			const b: ComputedLayout = { x: 5, y: 10, width: 20, height: 15 };
-			expect(layoutEqual(a, b)).toBe(true);
+			expect(rectEqual(a, b)).toBe(true);
 		});
 
 		test('different x not equal', () => {
 			const a: ComputedLayout = { x: 0, y: 0, width: 10, height: 5 };
 			const b: ComputedLayout = { x: 1, y: 0, width: 10, height: 5 };
-			expect(layoutEqual(a, b)).toBe(false);
+			expect(rectEqual(a, b)).toBe(false);
 		});
 
 		test('different width not equal', () => {
 			const a: ComputedLayout = { x: 0, y: 0, width: 10, height: 5 };
 			const b: ComputedLayout = { x: 0, y: 0, width: 11, height: 5 };
-			expect(layoutEqual(a, b)).toBe(false);
+			expect(rectEqual(a, b)).toBe(false);
 		});
 	});
 
@@ -184,9 +183,9 @@ describe('Pipeline', () => {
 
 			layoutPhase(root, 80, 24);
 
-			expect(root.computedLayout).not.toBeNull();
-			expect(root.computedLayout?.width).toBe(80);
-			expect(root.computedLayout?.height).toBe(24);
+			expect(root.contentRect).not.toBeNull();
+			expect(root.contentRect?.width).toBe(80);
+			expect(root.contentRect?.height).toBe(24);
 		});
 
 		test('propagates layout to children', async () => {
@@ -196,8 +195,8 @@ describe('Pipeline', () => {
 
 			layoutPhase(root, 80, 24);
 
-			expect(child.computedLayout).not.toBeNull();
-			expect(child.computedLayout?.width).toBe(20);
+			expect(child.contentRect).not.toBeNull();
+			expect(child.contentRect?.width).toBe(20);
 		});
 
 		test('skips when no dirty nodes', async () => {
@@ -220,7 +219,7 @@ describe('Pipeline', () => {
 			layoutPhase(root, 80, 24);
 
 			// Virtual text inherits parent position
-			expect(rawText.computedLayout).not.toBeNull();
+			expect(rawText.contentRect).not.toBeNull();
 		});
 	});
 
@@ -261,7 +260,7 @@ describe('Pipeline', () => {
 				height: 3,
 				borderStyle: 'single',
 			});
-			root.computedLayout = { x: 0, y: 0, width: 10, height: 3 };
+			root.contentRect = { x: 0, y: 0, width: 10, height: 3 };
 
 			const buffer = contentPhase(root);
 
@@ -289,7 +288,7 @@ describe('Pipeline', () => {
 			root.contentDirty = false;
 			root.paintDirty = false;
 			root.subtreeDirty = false;
-			root.prevLayout = root.computedLayout;
+			root.prevLayout = root.contentRect;
 
 			// Second render with prevBuffer
 			const buffer2 = contentPhase(root, buffer1);
@@ -345,11 +344,11 @@ describe('Pipeline', () => {
 			root.contentDirty = false;
 			root.paintDirty = false;
 			root.subtreeDirty = true;
-			root.prevLayout = root.computedLayout; // No layout change on root
+			root.prevLayout = root.contentRect; // No layout change on root
 			child1.contentDirty = false;
 			child1.paintDirty = false;
 			child1.subtreeDirty = false;
-			child1.prevLayout = child1.computedLayout; // No layout change
+			child1.prevLayout = child1.contentRect; // No layout change
 
 			// Second render - child1 should be skipped, keeping 'Z'
 			const buffer2 = contentPhase(root, buffer1);
@@ -377,7 +376,7 @@ describe('Pipeline', () => {
 			textNode.paintDirty = false;
 			textNode.subtreeDirty = false;
 			textNode.prevLayout = { x: 0, y: 0, width: 4, height: 1 }; // Old position
-			textNode.computedLayout = { x: 5, y: 0, width: 4, height: 1 }; // New position
+			textNode.contentRect = { x: 5, y: 0, width: 4, height: 1 }; // New position
 
 			root.contentDirty = false;
 			root.paintDirty = false;
@@ -425,7 +424,7 @@ describe('Pipeline', () => {
 				backgroundColor: 'blue',
 			} as BoxProps);
 			setNodeLayout(child, { x: 2, y: 1, width: 10, height: 3 });
-			child.prevLayout = child.computedLayout;
+			child.prevLayout = child.contentRect;
 
 			const root = await createMockNode('inkx-box', { width: 20, height: 5 }, [child]);
 			setNodeLayout(root, { x: 0, y: 0, width: 20, height: 5 });
@@ -442,12 +441,12 @@ describe('Pipeline', () => {
 			child.contentDirty = true;
 			child.paintDirty = true;
 			child.subtreeDirty = true;
-			child.prevLayout = child.computedLayout; // Layout unchanged
+			child.prevLayout = child.contentRect; // Layout unchanged
 
 			root.contentDirty = false;
 			root.paintDirty = false;
 			root.subtreeDirty = true;
-			root.prevLayout = root.computedLayout;
+			root.prevLayout = root.contentRect;
 
 			// Second render with prevBuffer - should clear child's region
 			const buffer2 = contentPhase(root, buffer1);
@@ -473,7 +472,7 @@ describe('Pipeline', () => {
 
 			// Simulate layout change: child moved from y=0 to y=2
 			child.prevLayout = { x: 0, y: 0, width: 5, height: 2 };
-			child.computedLayout = { x: 0, y: 2, width: 5, height: 2 };
+			child.contentRect = { x: 0, y: 2, width: 5, height: 2 };
 			child.contentDirty = false; // Not content-dirty, but layout changed
 			child.paintDirty = false;
 			child.subtreeDirty = false;
@@ -481,7 +480,7 @@ describe('Pipeline', () => {
 			root.contentDirty = false;
 			root.paintDirty = false;
 			root.subtreeDirty = true;
-			root.prevLayout = root.computedLayout;
+			root.prevLayout = root.contentRect;
 
 			// Second render - should detect layout change and clear new region
 			const buffer2 = contentPhase(root, buffer1);
@@ -501,7 +500,7 @@ describe('Pipeline', () => {
 				backgroundColor: 'blue',
 			} as BoxProps);
 			setNodeLayout(child, { x: 2, y: 1, width: 10, height: 4 });
-			child.prevLayout = child.computedLayout;
+			child.prevLayout = child.contentRect;
 
 			const root = await createMockNode('inkx-box', { width: 20, height: 8 }, [child]);
 			setNodeLayout(root, { x: 0, y: 0, width: 20, height: 8 });
@@ -517,7 +516,7 @@ describe('Pipeline', () => {
 			// Now shrink: child goes from 10x4 → 6x2
 			child.props = { width: 6, height: 2 } as BoxProps; // No more blue bg
 			child.prevLayout = { x: 2, y: 1, width: 10, height: 4 }; // Old size
-			child.computedLayout = { x: 2, y: 1, width: 6, height: 2 }; // New size
+			child.contentRect = { x: 2, y: 1, width: 6, height: 2 }; // New size
 			child.contentDirty = true;
 			child.paintDirty = true;
 			child.subtreeDirty = true;
@@ -525,7 +524,7 @@ describe('Pipeline', () => {
 			root.contentDirty = false;
 			root.paintDirty = false;
 			root.subtreeDirty = true;
-			root.prevLayout = root.computedLayout;
+			root.prevLayout = root.contentRect;
 
 			// Second render with prevBuffer
 			const buffer2 = contentPhase(root, buffer1);
@@ -564,17 +563,17 @@ describe('Pipeline', () => {
 			// Simulate content change on textChild (e.g., style changed)
 			textChild.contentDirty = true;
 			textChild.paintDirty = true;
-			textChild.prevLayout = textChild.computedLayout; // No layout change
+			textChild.prevLayout = textChild.contentRect; // No layout change
 
 			parentBox.contentDirty = false;
 			parentBox.paintDirty = false;
 			parentBox.subtreeDirty = true;
-			parentBox.prevLayout = parentBox.computedLayout;
+			parentBox.prevLayout = parentBox.contentRect;
 
 			root.contentDirty = false;
 			root.paintDirty = false;
 			root.subtreeDirty = true;
-			root.prevLayout = root.computedLayout;
+			root.prevLayout = root.contentRect;
 
 			// Second render — textChild clearing should use inherited white bg
 			const buffer2 = contentPhase(root, buffer1);
@@ -654,25 +653,25 @@ describe('Pipeline', () => {
 			root.contentDirty = false;
 			root.paintDirty = false;
 			root.subtreeDirty = true;
-			root.prevLayout = root.computedLayout;
+			root.prevLayout = root.contentRect;
 			scrollContainer.contentDirty = true; // scrollState changed
 			scrollContainer.paintDirty = true;
 			scrollContainer.subtreeDirty = true;
-			scrollContainer.prevLayout = scrollContainer.computedLayout;
+			scrollContainer.prevLayout = scrollContainer.contentRect;
 
 			// Children are clean (their content didn't change, but positions will shift)
 			card1.contentDirty = false;
 			card1.paintDirty = false;
 			card1.subtreeDirty = false;
-			card1.prevLayout = card1.computedLayout;
+			card1.prevLayout = card1.contentRect;
 			card2.contentDirty = false;
 			card2.paintDirty = false;
 			card2.subtreeDirty = false;
-			card2.prevLayout = card2.computedLayout;
+			card2.prevLayout = card2.contentRect;
 			card3.contentDirty = false;
 			card3.paintDirty = false;
 			card3.subtreeDirty = false;
-			card3.prevLayout = card3.computedLayout;
+			card3.prevLayout = card3.contentRect;
 
 			// Second render with prevBuffer - scroll container forces child re-render
 			const buffer2 = contentPhase(root, buffer1);
@@ -740,25 +739,25 @@ describe('Pipeline', () => {
 			cardA.contentDirty = true;
 			cardA.paintDirty = true;
 			cardA.subtreeDirty = true;
-			cardA.prevLayout = cardA.computedLayout;
+			cardA.prevLayout = cardA.contentRect;
 
 			cardB.props = { width: 8, height: 2, backgroundColor: 'yellow' } as BoxProps;
 			cardB.contentDirty = true;
 			cardB.paintDirty = true;
 			cardB.subtreeDirty = true;
-			cardB.prevLayout = cardB.computedLayout;
+			cardB.prevLayout = cardB.contentRect;
 
 			// Scroll container: subtreeDirty (children changed) but NOT contentDirty
 			// (no scroll position change - both cards are visible)
 			scrollContainer.contentDirty = false;
 			scrollContainer.paintDirty = false;
 			scrollContainer.subtreeDirty = true;
-			scrollContainer.prevLayout = scrollContainer.computedLayout;
+			scrollContainer.prevLayout = scrollContainer.contentRect;
 
 			root.contentDirty = false;
 			root.paintDirty = false;
 			root.subtreeDirty = true;
-			root.prevLayout = root.computedLayout;
+			root.prevLayout = root.contentRect;
 
 			// Second render with prevBuffer
 			const buffer2 = contentPhase(root, buffer1);
@@ -841,20 +840,20 @@ describe('Pipeline', () => {
 			const { scrollPhase } = await import('../src/pipeline.js');
 
 			const child1 = await createMockNode('inkx-box', { height: 1 });
-			child1.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			child1.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			const child2 = await createMockNode('inkx-box', { height: 1 });
-			child2.computedLayout = { x: 0, y: 1, width: 10, height: 1 };
+			child2.contentRect = { x: 0, y: 1, width: 10, height: 1 };
 
 			const child3 = await createMockNode('inkx-box', { height: 1 });
-			child3.computedLayout = { x: 0, y: 2, width: 10, height: 1 };
+			child3.contentRect = { x: 0, y: 2, width: 10, height: 1 };
 
 			const scrollContainer = await createMockNode(
 				'inkx-box',
 				{ overflow: 'scroll', height: 2 } as BoxProps,
 				[child1, child2, child3],
 			);
-			scrollContainer.computedLayout = { x: 0, y: 0, width: 10, height: 2 };
+			scrollContainer.contentRect = { x: 0, y: 0, width: 10, height: 2 };
 
 			scrollPhase(scrollContainer);
 
@@ -872,7 +871,7 @@ describe('Pipeline', () => {
 			const container = await createMockNode('inkx-box', {
 				overflow: 'hidden',
 			} as BoxProps);
-			container.computedLayout = { x: 0, y: 0, width: 10, height: 5 };
+			container.contentRect = { x: 0, y: 0, width: 10, height: 5 };
 
 			scrollPhase(container);
 
@@ -888,23 +887,23 @@ describe('Pipeline', () => {
 				position: 'sticky',
 				stickyTop: 0,
 			} as BoxProps);
-			stickyHeader.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			stickyHeader.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			const item1 = await createMockNode('inkx-box', { height: 1 });
-			item1.computedLayout = { x: 0, y: 1, width: 10, height: 1 };
+			item1.contentRect = { x: 0, y: 1, width: 10, height: 1 };
 
 			const item2 = await createMockNode('inkx-box', { height: 1 });
-			item2.computedLayout = { x: 0, y: 2, width: 10, height: 1 };
+			item2.contentRect = { x: 0, y: 2, width: 10, height: 1 };
 
 			const item3 = await createMockNode('inkx-box', { height: 1 });
-			item3.computedLayout = { x: 0, y: 3, width: 10, height: 1 };
+			item3.contentRect = { x: 0, y: 3, width: 10, height: 1 };
 
 			const scrollContainer = await createMockNode(
 				'inkx-box',
 				{ overflow: 'scroll', height: 3, scrollTo: 2 } as BoxProps,
 				[stickyHeader, item1, item2, item3],
 			);
-			scrollContainer.computedLayout = { x: 0, y: 0, width: 10, height: 3 };
+			scrollContainer.contentRect = { x: 0, y: 0, width: 10, height: 3 };
 
 			scrollPhase(scrollContainer);
 
@@ -923,13 +922,13 @@ describe('Pipeline', () => {
 				position: 'sticky',
 				stickyTop: 0,
 			} as BoxProps);
-			stickyHeader.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			stickyHeader.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			// Many items below it
 			const items: InkxNode[] = [stickyHeader];
 			for (let i = 1; i <= 10; i++) {
 				const item = await createMockNode('inkx-box', { height: 1 });
-				item.computedLayout = { x: 0, y: i, width: 10, height: 1 };
+				item.contentRect = { x: 0, y: i, width: 10, height: 1 };
 				items.push(item);
 			}
 
@@ -939,7 +938,7 @@ describe('Pipeline', () => {
 				{ overflow: 'scroll', height: 5, scrollTo: 5 } as BoxProps,
 				items,
 			);
-			scrollContainer.computedLayout = { x: 0, y: 0, width: 10, height: 5 };
+			scrollContainer.contentRect = { x: 0, y: 0, width: 10, height: 5 };
 
 			scrollPhase(scrollContainer);
 
@@ -958,10 +957,10 @@ describe('Pipeline', () => {
 				position: 'sticky',
 				stickyTop: 0,
 			} as BoxProps);
-			stickyHeader.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			stickyHeader.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			const item1 = await createMockNode('inkx-box', { height: 1 });
-			item1.computedLayout = { x: 0, y: 1, width: 10, height: 1 };
+			item1.contentRect = { x: 0, y: 1, width: 10, height: 1 };
 
 			// Viewport of 5 rows, no scroll (scrollTo first item)
 			const scrollContainer = await createMockNode(
@@ -969,7 +968,7 @@ describe('Pipeline', () => {
 				{ overflow: 'scroll', height: 5, scrollTo: 0 } as BoxProps,
 				[stickyHeader, item1],
 			);
-			scrollContainer.computedLayout = { x: 0, y: 0, width: 10, height: 5 };
+			scrollContainer.contentRect = { x: 0, y: 0, width: 10, height: 5 };
 
 			scrollPhase(scrollContainer);
 
@@ -988,13 +987,13 @@ describe('Pipeline', () => {
 				position: 'sticky',
 				stickyTop: 0,
 			} as BoxProps);
-			stickyHeader.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			stickyHeader.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			// 20 items below it
 			const items: InkxNode[] = [stickyHeader];
 			for (let i = 1; i <= 20; i++) {
 				const item = await createMockNode('inkx-box', { height: 1 });
-				item.computedLayout = { x: 0, y: i, width: 10, height: 1 };
+				item.contentRect = { x: 0, y: i, width: 10, height: 1 };
 				items.push(item);
 			}
 
@@ -1004,7 +1003,7 @@ describe('Pipeline', () => {
 				{ overflow: 'scroll', height: 5, scrollTo: 18 } as BoxProps,
 				items,
 			);
-			scrollContainer.computedLayout = { x: 0, y: 0, width: 10, height: 5 };
+			scrollContainer.contentRect = { x: 0, y: 0, width: 10, height: 5 };
 
 			scrollPhase(scrollContainer);
 
@@ -1018,7 +1017,7 @@ describe('Pipeline', () => {
 			const items: InkxNode[] = [];
 			for (let i = 0; i < 10; i++) {
 				const item = await createMockNode('inkx-box', { height: 1 });
-				item.computedLayout = { x: 0, y: i, width: 10, height: 1 };
+				item.contentRect = { x: 0, y: i, width: 10, height: 1 };
 				items.push(item);
 			}
 
@@ -1028,7 +1027,7 @@ describe('Pipeline', () => {
 				{ overflow: 'scroll', height: 5, scrollTo: 5, overflowIndicator: true } as BoxProps,
 				items,
 			);
-			scrollContainer.computedLayout = { x: 0, y: 0, width: 10, height: 5 };
+			scrollContainer.contentRect = { x: 0, y: 0, width: 10, height: 5 };
 
 			scrollPhase(scrollContainer);
 
@@ -1065,7 +1064,7 @@ describe('Pipeline', () => {
 			const items: InkxNode[] = [];
 			for (let i = 0; i < 10; i++) {
 				const item = await createMockNode('inkx-box', { height: 1 });
-				item.computedLayout = { x: 0, y: i, width: 10, height: 1 };
+				item.contentRect = { x: 0, y: i, width: 10, height: 1 };
 				items.push(item);
 			}
 
@@ -1075,7 +1074,7 @@ describe('Pipeline', () => {
 				{ overflow: 'scroll', height: 5, scrollTo: 5 } as BoxProps,
 				items,
 			);
-			scrollContainer.computedLayout = { x: 0, y: 0, width: 10, height: 5 };
+			scrollContainer.contentRect = { x: 0, y: 0, width: 10, height: 5 };
 
 			scrollPhase(scrollContainer);
 
@@ -1100,7 +1099,7 @@ describe('Pipeline', () => {
 		test('computes screen positions accounting for scroll offset', async () => {
 			// Create a child at content y=10
 			const child = await createMockNode('inkx-box', { height: 3 });
-			child.contentRect = child.computedLayout = {
+			child.contentRect = child.contentRect = {
 				x: 0,
 				y: 10,
 				width: 10,
@@ -1113,7 +1112,7 @@ describe('Pipeline', () => {
 				{ overflow: 'scroll', height: 10, scrollTo: 1 } as BoxProps,
 				[child],
 			);
-			scrollContainer.contentRect = scrollContainer.computedLayout = {
+			scrollContainer.contentRect = scrollContainer.contentRect = {
 				x: 0,
 				y: 0,
 				width: 10,
@@ -1147,7 +1146,7 @@ describe('Pipeline', () => {
 		test('accumulates scroll offsets from nested containers', async () => {
 			// Inner child at content y=20
 			const innerChild = await createMockNode('inkx-box', { height: 2 });
-			innerChild.contentRect = innerChild.computedLayout = {
+			innerChild.contentRect = innerChild.contentRect = {
 				x: 0,
 				y: 20,
 				width: 10,
@@ -1160,7 +1159,7 @@ describe('Pipeline', () => {
 				{ overflow: 'scroll', height: 10 } as BoxProps,
 				[innerChild],
 			);
-			innerScroll.contentRect = innerScroll.computedLayout = {
+			innerScroll.contentRect = innerScroll.contentRect = {
 				x: 0,
 				y: 5,
 				width: 10,
@@ -1182,7 +1181,7 @@ describe('Pipeline', () => {
 				{ overflow: 'scroll', height: 15 } as BoxProps,
 				[innerScroll],
 			);
-			outerScroll.contentRect = outerScroll.computedLayout = {
+			outerScroll.contentRect = outerScroll.contentRect = {
 				x: 0,
 				y: 0,
 				width: 10,
@@ -1215,7 +1214,7 @@ describe('Pipeline', () => {
 			// Simulate two columns with different scroll offsets
 			// Column 1: scrolled down, card at content y=50 appears at screen y=10
 			const col1Card = await createMockNode('inkx-box', { height: 3 });
-			col1Card.contentRect = col1Card.computedLayout = {
+			col1Card.contentRect = col1Card.contentRect = {
 				x: 0,
 				y: 50,
 				width: 20,
@@ -1227,7 +1226,7 @@ describe('Pipeline', () => {
 				{ overflow: 'scroll', height: 20 } as BoxProps,
 				[col1Card],
 			);
-			col1.contentRect = col1.computedLayout = {
+			col1.contentRect = col1.contentRect = {
 				x: 0,
 				y: 0,
 				width: 20,
@@ -1245,7 +1244,7 @@ describe('Pipeline', () => {
 
 			// Column 2: not scrolled, card at content y=10 appears at screen y=10
 			const col2Card = await createMockNode('inkx-box', { height: 3 });
-			col2Card.contentRect = col2Card.computedLayout = {
+			col2Card.contentRect = col2Card.contentRect = {
 				x: 20,
 				y: 10,
 				width: 20,
@@ -1257,7 +1256,7 @@ describe('Pipeline', () => {
 				{ overflow: 'scroll', height: 20 } as BoxProps,
 				[col2Card],
 			);
-			col2.contentRect = col2.computedLayout = {
+			col2.contentRect = col2.contentRect = {
 				x: 20,
 				y: 0,
 				width: 20,
@@ -1278,7 +1277,7 @@ describe('Pipeline', () => {
 				col1,
 				col2,
 			]);
-			root.contentRect = root.computedLayout = {
+			root.contentRect = root.contentRect = {
 				x: 0,
 				y: 0,
 				width: 40,
@@ -1369,10 +1368,10 @@ describe('Pipeline', () => {
 		test('renders text with ANSI escape sequences', async () => {
 			// Create a text node with ANSI-styled content (like chalk output)
 			const textNode = await createMockNode('inkx-text', {}, [], '\x1b[31mred text\x1b[0m');
-			textNode.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			textNode.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			const root = await createMockNode('inkx-box', { width: 20, height: 3 }, [textNode]);
-			root.computedLayout = { x: 0, y: 0, width: 20, height: 3 };
+			root.contentRect = { x: 0, y: 0, width: 20, height: 3 };
 
 			const buffer = contentPhase(root);
 
@@ -1386,10 +1385,10 @@ describe('Pipeline', () => {
 		test('calculates ANSI text width correctly', async () => {
 			// ANSI codes should not affect measured text width
 			const textNode = await createMockNode('inkx-text', {}, [], '\x1b[1;34mhello\x1b[0m');
-			textNode.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			textNode.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			const root = await createMockNode('inkx-box', { width: 20, height: 1 }, [textNode]);
-			root.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			root.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			const buffer = contentPhase(root);
 
@@ -1404,10 +1403,10 @@ describe('Pipeline', () => {
 			// Emoji like 😀 take 2 terminal columns
 			// Test: "A😀B" should occupy 4 columns: A(1) + 😀(2) + B(1) = 4
 			const textNode = await createMockNode('inkx-text', {}, [], 'A😀B');
-			textNode.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			textNode.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			const root = await createMockNode('inkx-box', { width: 10, height: 1 }, [textNode]);
-			root.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			root.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			const buffer = contentPhase(root);
 
@@ -1428,10 +1427,10 @@ describe('Pipeline', () => {
 			// Total: c(1) + a(1) + f(1) + é(1) = 4 columns
 			// Note: wrap-ansi normalizes decomposed chars to precomposed form
 			const textNode = await createMockNode('inkx-text', {}, [], 'cafe\u0301');
-			textNode.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			textNode.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			const root = await createMockNode('inkx-box', { width: 10, height: 1 }, [textNode]);
-			root.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			root.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			const buffer = contentPhase(root);
 
@@ -1450,10 +1449,10 @@ describe('Pipeline', () => {
 			// CJK characters take 2 columns each
 			// 中 (U+4E2D) should be width 2
 			const textNode = await createMockNode('inkx-text', {}, [], '中文');
-			textNode.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			textNode.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			const root = await createMockNode('inkx-box', { width: 10, height: 1 }, [textNode]);
-			root.computedLayout = { x: 0, y: 0, width: 10, height: 1 };
+			root.contentRect = { x: 0, y: 0, width: 10, height: 1 };
 
 			const buffer = contentPhase(root);
 
@@ -1485,10 +1484,10 @@ describe('Pipeline', () => {
 				[],
 				'\x1b[44mconflict\x1b[0m', // chalk.bgBlue output
 			);
-			textNode.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			textNode.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			const root = await createMockNode('inkx-box', { width: 20, height: 1 }, [textNode]);
-			root.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			root.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			expect(() => contentPhase(root)).toThrow(/Background conflict/);
 
@@ -1505,7 +1504,7 @@ describe('Pipeline', () => {
 				[],
 				'\x1b[44mconflict\x1b[0m', // chalk.bgBlue output
 			);
-			textNode.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			textNode.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			// Parent box with backgroundColor - will fill buffer before text renders
 			const root = await createMockNode(
@@ -1513,7 +1512,7 @@ describe('Pipeline', () => {
 				{ width: 20, height: 1, backgroundColor: 'cyan' } as BoxProps,
 				[textNode],
 			);
-			root.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			root.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			expect(() => contentPhase(root)).toThrow(/Background conflict/);
 
@@ -1530,10 +1529,10 @@ describe('Pipeline', () => {
 				[],
 				'\x1b[44mno conflict\x1b[0m',
 			);
-			textNode.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			textNode.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			const root = await createMockNode('inkx-box', { width: 20, height: 1 }, [textNode]);
-			root.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			root.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			// Should not throw
 			expect(() => contentPhase(root)).not.toThrow();
@@ -1551,10 +1550,10 @@ describe('Pipeline', () => {
 				[],
 				'\x1b[9999m\x1b[44mintentional\x1b[0m', // bgOverride + chalk.bgBlue
 			);
-			textNode.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			textNode.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			const root = await createMockNode('inkx-box', { width: 20, height: 1 }, [textNode]);
-			root.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			root.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			// Should not throw due to bgOverride
 			expect(() => contentPhase(root)).not.toThrow();
@@ -1571,10 +1570,10 @@ describe('Pipeline', () => {
 				[],
 				'\x1b[44mignored\x1b[0m',
 			);
-			textNode.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			textNode.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			const root = await createMockNode('inkx-box', { width: 20, height: 1 }, [textNode]);
-			root.computedLayout = { x: 0, y: 0, width: 20, height: 1 };
+			root.contentRect = { x: 0, y: 0, width: 20, height: 1 };
 
 			// Should not throw in ignore mode
 			expect(() => contentPhase(root)).not.toThrow();

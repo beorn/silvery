@@ -3,7 +3,7 @@
  *
  * These tests verify that inkx works correctly with React 19 features:
  * - Basic component rendering
- * - Hooks (useState, useEffect, useInput, useLayout)
+ * - Hooks (useState, useEffect, useInput, useContentRect)
  * - Suspense boundaries
  * - StrictMode compatibility (no double-render issues)
  * - Concurrent rendering features (useTransition, useDeferredValue)
@@ -23,7 +23,7 @@ import React, {
 	useDeferredValue,
 } from 'react';
 import { NodeContext } from '../src/context.ts';
-import { Box, Text, useInput, useLayout } from '../src/index.ts';
+import { Box, Text, useInput, useContentRect } from '../src/index.ts';
 import { createTestRenderer, stripAnsi } from '../src/testing/index.tsx';
 import type { InkxNode } from '../src/types.ts';
 
@@ -34,7 +34,7 @@ import type { InkxNode } from '../src/types.ts';
 const render = createTestRenderer();
 
 /**
- * Create a mock InkxNode for testing useLayout
+ * Create a mock InkxNode for testing useContentRect
  */
 function createMockInkxNode(layout: {
 	x: number;
@@ -50,7 +50,6 @@ function createMockInkxNode(layout: {
 		layoutNode: null,
 		contentRect: layout,
 		screenRect: layout,
-		computedLayout: layout,
 		prevLayout: null,
 		layoutDirty: false,
 		contentDirty: false,
@@ -153,7 +152,7 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 			expect(receivedInput).toBe('x');
 		});
 
-		test('useLayout hook works correctly in React 19', () => {
+		test('useContentRect hook works correctly in React 19', () => {
 			let capturedLayout: {
 				width: number;
 				height: number;
@@ -168,12 +167,12 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 			});
 
 			function LayoutTest() {
-				const layout = useLayout();
+				const layout = useContentRect();
 				capturedLayout = layout;
 				return <Text>Layout Test</Text>;
 			}
 
-			// useLayout requires NodeContext, provide it via mock
+			// useContentRect requires NodeContext, provide it via mock
 			render(
 				<NodeContext.Provider value={mockNode}>
 					<LayoutTest />

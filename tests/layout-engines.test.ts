@@ -6,7 +6,7 @@
  */
 
 import { beforeEach, describe, expect, test } from 'bun:test';
-import { createFlexxEngine } from '../src/adapters/flexx-adapter.js';
+import { createFlexxZeroEngine } from '../src/adapters/flexx-zero-adapter.js';
 import { initYogaEngine } from '../src/adapters/yoga-adapter.js';
 import {
 	type LayoutEngine,
@@ -127,7 +127,7 @@ describe('Layout Engines', () => {
 		let engine: LayoutEngine;
 
 		beforeEach(() => {
-			engine = createFlexxEngine();
+			engine = createFlexxZeroEngine();
 			setLayoutEngine(engine);
 		});
 
@@ -225,14 +225,14 @@ describe('Layout Engines', () => {
 		});
 
 		test('exposes correct engine name', () => {
-			expect(engine.name).toBe('flexx');
+			expect(engine.name).toBe('flexx-zero');
 		});
 	});
 
 	describe('Engine Interchangeability', () => {
 		test('both engines produce same layout for simple box', async () => {
 			const yogaEngine = await initYogaEngine();
-			const flexxEngine = createFlexxEngine();
+			const flexxEngine = createFlexxZeroEngine();
 
 			// Create same layout with Yoga
 			setLayoutEngine(yogaEngine);
@@ -278,13 +278,13 @@ describe('Layout Engines', () => {
 
 		test('global setLayoutEngine/getLayoutEngine works', async () => {
 			const yogaEngine = await initYogaEngine();
-			const flexxEngine = createFlexxEngine();
+			const flexxEngine = createFlexxZeroEngine();
 
 			setLayoutEngine(yogaEngine);
 			expect(getLayoutEngine().name).toBe('yoga');
 
 			setLayoutEngine(flexxEngine);
-			expect(getLayoutEngine().name).toBe('flexx');
+			expect(getLayoutEngine().name).toBe('flexx-zero');
 
 			// Switch back to yoga for other tests
 			setLayoutEngine(yogaEngine);

@@ -121,25 +121,10 @@ export type EventHandler<T, S> = (
 ) => void | 'exit';
 
 /**
- * Legacy key handler for backwards compatibility.
- */
-export type KeyHandler<S> = (
-	input: string,
-	key: Key,
-	ctx: EventHandlerContext<S>
-) => void | 'exit';
-
-/**
  * Event handlers map.
- * Keys are either:
- * - 'provider:event' for new namespaced handlers
- * - 'key' / 'resize' for legacy handlers (auto-maps to 'term:key', 'term:resize')
+ * Keys are namespaced as 'provider:event' (e.g., 'term:key', 'term:resize').
  */
 export type EventHandlers<S> = {
-	// Legacy handlers (backwards compat)
-	key?: KeyHandler<S>;
-	resize?: EventHandler<{ cols: number; rows: number }, S>;
-	// Namespaced handlers
 	[event: `${string}:${string}`]: EventHandler<unknown, S> | undefined;
 };
 
@@ -618,33 +603,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
 		if (namespacedHandler && typeof namespacedHandler === 'function') {
 			const result = (namespacedHandler as EventHandler<unknown, S & I>)(event.data, {
-				set: store.setState,
-				get: store.getState,
-			});
-			if (result === 'exit') {
-				exit();
-				return null;
-			}
-		}
-
-		// Legacy handler support: 'key' maps to 'term:key'
-		if (event.type === 'term:key' && handlers?.key) {
-			const keyData = event.data as { input: string; key: Key };
-			const result = handlers.key(keyData.input, keyData.key, {
-				set: store.setState,
-				get: store.getState,
-			});
-			if (result === 'exit') {
-				exit();
-				return null;
-			}
-		}
-
-		// Legacy handler support: 'resize' maps to 'term:resize'
-		if (event.type === 'term:resize' && handlers?.resize) {
-			const resizeData = event.data as { cols: number; rows: number };
-			currentDims = resizeData;
-			const result = handlers.resize(resizeData, {
 				set: store.setState,
 				get: store.getState,
 			});

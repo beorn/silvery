@@ -40,7 +40,6 @@ export type { CellChange, BorderChars } from './types.js';
 export { measurePhase } from './measure-phase.js';
 export {
 	layoutPhase,
-	layoutEqual,
 	rectEqual,
 	scrollPhase,
 	screenRectPhase,

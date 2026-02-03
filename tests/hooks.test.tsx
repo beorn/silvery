@@ -2,7 +2,7 @@
  * Inkx Hooks Tests
  *
  * Tests for public hook APIs:
- * - useLayout: Returns computed layout dimensions
+ * - useContentRect: Returns computed layout dimensions
  * - useFocus: Makes components focusable
  * - useFocusManager: Focus management controls
  * - useStdin: Access to stdin stream
@@ -18,7 +18,7 @@ import {
 	StdinContext,
 	StdoutContext,
 } from '../src/context.ts';
-import { Text, useFocus, useFocusManager, useLayout, useStdin, useStdout } from '../src/index.ts';
+import { Text, useFocus, useFocusManager, useContentRect, useStdin, useStdout } from '../src/index.ts';
 import { createTestRenderer } from '../src/testing/index.tsx';
 import type { InkxNode } from '../src/types.ts';
 
@@ -29,7 +29,7 @@ const render = createTestRenderer();
 // ============================================================================
 
 /**
- * Create a mock InkxNode for testing useLayout
+ * Create a mock InkxNode for testing useContentRect
  */
 function createMockInkxNode(layout: {
 	x: number;
@@ -45,7 +45,6 @@ function createMockInkxNode(layout: {
 		layoutNode: null,
 		contentRect: layout,
 		screenRect: layout,
-		computedLayout: layout,
 		prevLayout: null,
 		layoutDirty: false,
 		contentDirty: false,
@@ -92,10 +91,10 @@ function createMockFocusContext(activeId: string | null = null): FocusContextVal
 }
 
 // ============================================================================
-// useLayout Tests
+// useContentRect Tests
 // ============================================================================
 
-describe('useLayout', () => {
+describe('useContentRect', () => {
 	test('returns default rect when used outside Inkx component', () => {
 		let capturedRect: { x: number; y: number; width: number; height: number } = {
 			x: -1,
@@ -105,7 +104,7 @@ describe('useLayout', () => {
 		};
 
 		function InvalidUsage() {
-			capturedRect = useLayout();
+			capturedRect = useContentRect();
 			return <Text>Should render with defaults</Text>;
 		}
 
@@ -123,7 +122,7 @@ describe('useLayout', () => {
 		const mockNode = createMockInkxNode({ x: 10, y: 5, width: 40, height: 20 });
 
 		function LayoutCapture() {
-			const layout = useLayout();
+			const layout = useContentRect();
 			capturedLayout = layout;
 			return <Text>Content</Text>;
 		}
@@ -145,7 +144,7 @@ describe('useLayout', () => {
 		expect(capturedLayout!.height).toBe(20);
 	});
 
-	test('returns zeros when computedLayout is null', () => {
+	test('returns zeros when contentRect is null', () => {
 		let capturedLayout: {
 			width: number;
 			height: number;
@@ -160,7 +159,6 @@ describe('useLayout', () => {
 			layoutNode: null,
 			contentRect: null,
 			screenRect: null,
-			computedLayout: null, // null layout
 			prevLayout: null,
 			layoutDirty: false,
 			contentDirty: false,
@@ -168,7 +166,7 @@ describe('useLayout', () => {
 		};
 
 		function LayoutCapture() {
-			const layout = useLayout();
+			const layout = useContentRect();
 			capturedLayout = layout;
 			return <Text>Content</Text>;
 		}
@@ -196,7 +194,7 @@ describe('useLayout', () => {
 		const mockNode = createMockInkxNode({ x: 1, y: 2, width: 3, height: 4 });
 
 		function LayoutCapture() {
-			const layout = useLayout();
+			const layout = useContentRect();
 			capturedLayout = layout;
 			return <Text>Content</Text>;
 		}

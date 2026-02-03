@@ -62,7 +62,7 @@ function createMockLayoutNode(width: number, height: number) {
 
 // Helper to create a minimal InkxNode for testing
 function createTestNode(options: {
-	computedLayout?: {
+	contentRect?: {
 		x: number;
 		y: number;
 		width: number;
@@ -70,7 +70,7 @@ function createTestNode(options: {
 	} | null;
 	layoutNode?: ReturnType<typeof createMockLayoutNode> | null;
 }): InkxNode {
-	const layout = options.computedLayout ?? null;
+	const layout = options.contentRect ?? null;
 	return {
 		type: 'inkx-box',
 		props: {},
@@ -79,7 +79,7 @@ function createTestNode(options: {
 		layoutNode: options.layoutNode ?? null,
 		contentRect: layout,
 		screenRect: layout,
-		computedLayout: layout,
+		contentRect: layout,
 		prevLayout: null,
 		layoutDirty: false,
 		contentDirty: false,
@@ -88,10 +88,10 @@ function createTestNode(options: {
 }
 
 describe('measureElement', () => {
-	describe('with computedLayout (inkx pipeline)', () => {
-		test('returns dimensions from computedLayout', () => {
+	describe('with contentRect (inkx pipeline)', () => {
+		test('returns dimensions from contentRect', () => {
 			const node = createTestNode({
-				computedLayout: { x: 0, y: 0, width: 42, height: 17 },
+				contentRect: { x: 0, y: 0, width: 42, height: 17 },
 			});
 
 			const result = measureElement(node);
@@ -100,22 +100,22 @@ describe('measureElement', () => {
 			expect(result.height).toBe(17);
 		});
 
-		test('ignores layoutNode when computedLayout is present', () => {
+		test('ignores layoutNode when contentRect is present', () => {
 			const node = createTestNode({
-				computedLayout: { x: 0, y: 0, width: 100, height: 50 },
+				contentRect: { x: 0, y: 0, width: 100, height: 50 },
 				layoutNode: createMockLayoutNode(999, 888),
 			});
 
 			const result = measureElement(node);
 
-			// Should use computedLayout, not layoutNode
+			// Should use contentRect, not layoutNode
 			expect(result.width).toBe(100);
 			expect(result.height).toBe(50);
 		});
 
 		test('handles zero dimensions', () => {
 			const node = createTestNode({
-				computedLayout: { x: 0, y: 0, width: 0, height: 0 },
+				contentRect: { x: 0, y: 0, width: 0, height: 0 },
 			});
 
 			const result = measureElement(node);
@@ -126,7 +126,7 @@ describe('measureElement', () => {
 
 		test('handles large dimensions', () => {
 			const node = createTestNode({
-				computedLayout: { x: 0, y: 0, width: 1000, height: 500 },
+				contentRect: { x: 0, y: 0, width: 1000, height: 500 },
 			});
 
 			const result = measureElement(node);
@@ -137,9 +137,9 @@ describe('measureElement', () => {
 	});
 
 	describe('with layoutNode only (fallback)', () => {
-		test('falls back to layoutNode when computedLayout is null', () => {
+		test('falls back to layoutNode when contentRect is null', () => {
 			const node = createTestNode({
-				computedLayout: null,
+				contentRect: null,
 				layoutNode: createMockLayoutNode(30, 20),
 			});
 
@@ -151,7 +151,7 @@ describe('measureElement', () => {
 
 		test('handles NaN from layoutNode (before calculateLayout)', () => {
 			const node = createTestNode({
-				computedLayout: null,
+				contentRect: null,
 				layoutNode: createMockLayoutNode(Number.NaN, Number.NaN),
 			});
 
@@ -166,7 +166,7 @@ describe('measureElement', () => {
 	describe('edge cases', () => {
 		test('returns zeros when no layout info available', () => {
 			const node = createTestNode({
-				computedLayout: null,
+				contentRect: null,
 				layoutNode: null,
 			});
 
@@ -178,7 +178,7 @@ describe('measureElement', () => {
 
 		test('returns object with only width and height properties', () => {
 			const node = createTestNode({
-				computedLayout: { x: 10, y: 20, width: 30, height: 40 },
+				contentRect: { x: 10, y: 20, width: 30, height: 40 },
 			});
 
 			const result = measureElement(node);
@@ -191,7 +191,7 @@ describe('measureElement', () => {
 
 		test('returns number types', () => {
 			const node = createTestNode({
-				computedLayout: { x: 0, y: 0, width: 50, height: 25 },
+				contentRect: { x: 0, y: 0, width: 50, height: 25 },
 			});
 
 			const result = measureElement(node);
@@ -204,7 +204,7 @@ describe('measureElement', () => {
 	describe('MeasureElementOutput interface', () => {
 		test('width property is numeric', () => {
 			const node = createTestNode({
-				computedLayout: { x: 0, y: 0, width: 123, height: 456 },
+				contentRect: { x: 0, y: 0, width: 123, height: 456 },
 			});
 
 			const result = measureElement(node);
@@ -215,7 +215,7 @@ describe('measureElement', () => {
 
 		test('height property is numeric', () => {
 			const node = createTestNode({
-				computedLayout: { x: 0, y: 0, width: 123, height: 456 },
+				contentRect: { x: 0, y: 0, width: 123, height: 456 },
 			});
 
 			const result = measureElement(node);
@@ -235,7 +235,7 @@ describe('measureElement', () => {
 				layoutNode: null,
 				contentRect: { x: 0, y: 0, width: 80, height: 24 },
 				screenRect: { x: 0, y: 0, width: 80, height: 24 },
-				computedLayout: { x: 0, y: 0, width: 80, height: 24 },
+				contentRect: { x: 0, y: 0, width: 80, height: 24 },
 				prevLayout: null,
 				layoutDirty: false,
 				contentDirty: false,
@@ -257,7 +257,7 @@ describe('measureElement', () => {
 				layoutNode: null,
 				contentRect: { x: 0, y: 0, width: 11, height: 1 },
 				screenRect: { x: 0, y: 0, width: 11, height: 1 },
-				computedLayout: { x: 0, y: 0, width: 11, height: 1 },
+				contentRect: { x: 0, y: 0, width: 11, height: 1 },
 				prevLayout: null,
 				layoutDirty: false,
 				contentDirty: false,
@@ -280,7 +280,7 @@ describe('measureElement', () => {
 				layoutNode: null,
 				contentRect: { x: 0, y: 0, width: 120, height: 40 },
 				screenRect: { x: 0, y: 0, width: 120, height: 40 },
-				computedLayout: { x: 0, y: 0, width: 120, height: 40 },
+				contentRect: { x: 0, y: 0, width: 120, height: 40 },
 				prevLayout: null,
 				layoutDirty: false,
 				contentDirty: false,

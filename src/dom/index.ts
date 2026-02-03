@@ -35,7 +35,7 @@ import {
 	createDOMAdapter,
 	injectDOMStyles,
 } from '../adapters/dom-adapter.js';
-import { createFlexxEngine } from '../adapters/flexx-adapter.js';
+import { createFlexxZeroEngine } from '../adapters/flexx-zero-adapter.js';
 import { setLayoutEngine } from '../layout-engine.js';
 import { executeRenderAdapter } from '../pipeline/index.js';
 import { createContainer, getContainerRoot, reconciler } from '../reconciler.js';
@@ -96,7 +96,7 @@ export function initDOMRenderer(config: DOMAdapterConfig = {}): void {
 	if (initialized) return;
 
 	// Set up layout engine (Flexx is sync, no WASM needed)
-	setLayoutEngine(createFlexxEngine());
+	setLayoutEngine(createFlexxZeroEngine());
 
 	// Set up DOM adapter
 	setRenderAdapter(createDOMAdapter(config));

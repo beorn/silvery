@@ -93,7 +93,6 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number): void
 			height: 0,
 		};
 		node.contentRect = rect;
-		node.computedLayout = rect; // Backwards compatibility alias
 		node.layoutDirty = false;
 		// Still recurse to children (virtual text nodes can have raw text children)
 		for (const child of node.children) {
@@ -110,7 +109,6 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number): void
 		height: node.layoutNode.getComputedHeight(),
 	};
 	node.contentRect = rect;
-	node.computedLayout = rect; // Backwards compatibility alias
 
 	// Clear layout dirty flag
 	node.layoutDirty = false;
@@ -148,8 +146,6 @@ export function notifyLayoutSubscribers(node: InkxNode): void {
 // Re-export from types
 export { rectEqual } from '../types.js';
 
-// Backwards compatibility alias (internal)
-export { rectEqual as layoutEqual } from '../types.js';
 
 // ============================================================================
 // Phase 2.5: Scroll Phase (for overflow='scroll' containers)
@@ -175,8 +171,7 @@ export function scrollPhase(root: InkxNode): void {
  * Calculate scroll state for a single scrollable container.
  */
 function calculateScrollState(node: InkxNode, props: BoxProps): void {
-	// Prefer contentRect, fall back to computedLayout for test compatibility
-	const layout = node.contentRect ?? node.computedLayout;
+	const layout = node.contentRect;
 	if (!layout || !node.layoutNode) return;
 
 	// Calculate viewport (container minus borders/padding)
@@ -201,10 +196,10 @@ function calculateScrollState(node: InkxNode, props: BoxProps): void {
 
 	for (let i = 0; i < node.children.length; i++) {
 		const child = node.children[i]!;
-		if (!child.layoutNode || !child.computedLayout) continue;
+		if (!child.layoutNode || !child.contentRect) continue;
 
-		const childTop = child.computedLayout.y - layout.y - border.top - padding.top;
-		const childBottom = childTop + child.computedLayout.height;
+		const childTop = child.contentRect.y - layout.y - border.top - padding.top;
+		const childBottom = childTop + child.contentRect.height;
 		const childProps = child.props as BoxProps;
 
 		childPositions.push({

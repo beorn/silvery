@@ -13,7 +13,6 @@ export {
 	// Phase functions
 	measurePhase,
 	layoutPhase,
-	layoutEqual,
 	rectEqual,
 	scrollPhase,
 	screenRectPhase,

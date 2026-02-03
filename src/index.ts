@@ -130,7 +130,6 @@ export {
 	useContentRectCallback,
 	useScreenRect,
 	useScreenRectCallback,
-	useLayout, // backwards compat alias (internal)
 } from './hooks/useLayout.js';
 
 /**
@@ -384,7 +383,6 @@ export {
 	constrainText,
 	sliceByWidth,
 	// ANSI handling
-	ANSI_REGEX,
 	hasAnsi,
 	parseAnsiText,
 	stripAnsi as stripAnsiUnicode,

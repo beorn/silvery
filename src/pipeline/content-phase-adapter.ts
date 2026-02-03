@@ -34,7 +34,7 @@ export function contentPhaseAdapter(root: InkxNode): RenderBuffer {
 		throw new Error('contentPhaseAdapter called without a render adapter set');
 	}
 
-	const layout = root.computedLayout;
+	const layout = root.contentRect;
 	if (!layout) {
 		throw new Error('contentPhaseAdapter called before layout phase');
 	}
@@ -59,7 +59,7 @@ function renderNodeToBuffer(
 	scrollOffset = 0,
 	clipBounds?: { top: number; bottom: number },
 ): void {
-	const layout = node.computedLayout;
+	const layout = node.contentRect;
 	if (!layout) return;
 
 	// Skip nodes without layout (raw text and virtual text nodes)
@@ -347,7 +347,7 @@ function renderScrollContainerChildren(
 	props: BoxProps,
 	clipBounds?: { top: number; bottom: number },
 ): void {
-	const layout = node.computedLayout;
+	const layout = node.contentRect;
 	const ss = node.scrollState as ScrollState | undefined;
 	if (!layout || !ss) return;
 
@@ -384,7 +384,7 @@ function renderScrollContainerChildren(
 	if (ss.stickyChildren) {
 		for (const sticky of ss.stickyChildren) {
 			const child = node.children[sticky.index];
-			if (!child?.computedLayout) continue;
+			if (!child?.contentRect) continue;
 
 			const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset;
 			renderNodeToBuffer(child, buffer, stickyScrollOffset, childClipBounds);
@@ -402,7 +402,7 @@ function renderNormalChildren(
 	props: BoxProps,
 	clipBounds?: { top: number; bottom: number },
 ): void {
-	const layout = node.computedLayout;
+	const layout = node.contentRect;
 	if (!layout) return;
 
 	let effectiveClipBounds = clipBounds;

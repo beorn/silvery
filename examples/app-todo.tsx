@@ -86,7 +86,8 @@ const app = createApp<Record<string, unknown>, State>(
 
 	// Event handlers
 	{
-		key: (k, { get }) => {
+		'term:key': (data: unknown, { get }: { get: () => State }) => {
+			const { input: k } = data as { input: string };
 			const state = get();
 			switch (k) {
 				case 'j':

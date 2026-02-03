@@ -10,7 +10,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import React, { useState, useEffect } from 'react';
 import { createCanvasAdapter } from '../src/adapters/canvas-adapter.js';
-import { createFlexxEngine } from '../src/adapters/flexx-adapter.js';
+import { createFlexxZeroEngine } from '../src/adapters/flexx-zero-adapter.js';
 import {
 	Box,
 	CanvasRenderBuffer,
@@ -35,7 +35,7 @@ describe.skipIf(!hasCanvas)('Canvas E2E - React Rendering', () => {
 	beforeEach(() => {
 		// Initialize fresh for each test
 		if (!isLayoutEngineInitialized()) {
-			setLayoutEngine(createFlexxEngine());
+			setLayoutEngine(createFlexxZeroEngine());
 		}
 		setRenderAdapter(createCanvasAdapter({ fontSize: 14 }));
 	});
@@ -141,7 +141,7 @@ describe.skipIf(!hasCanvas)('Canvas E2E - React Rendering', () => {
 describe.skipIf(!hasCanvas)('Canvas E2E - useContentRect', () => {
 	beforeEach(() => {
 		if (!isLayoutEngineInitialized()) {
-			setLayoutEngine(createFlexxEngine());
+			setLayoutEngine(createFlexxZeroEngine());
 		}
 		setRenderAdapter(createCanvasAdapter({ fontSize: 14 }));
 	});
@@ -224,7 +224,7 @@ describe.skipIf(!hasCanvas)('Canvas E2E - useContentRect', () => {
 describe.skipIf(!hasCanvas)('Canvas E2E - Layout Engine Integration', () => {
 	beforeEach(() => {
 		if (!isLayoutEngineInitialized()) {
-			setLayoutEngine(createFlexxEngine());
+			setLayoutEngine(createFlexxZeroEngine());
 		}
 		setRenderAdapter(createCanvasAdapter({ fontSize: 14 }));
 	});
@@ -317,7 +317,7 @@ describe.skipIf(!hasCanvas)('Canvas E2E - Layout Engine Integration', () => {
 describe.skipIf(!hasCanvas)('Canvas E2E - Edge Cases', () => {
 	beforeEach(() => {
 		if (!isLayoutEngineInitialized()) {
-			setLayoutEngine(createFlexxEngine());
+			setLayoutEngine(createFlexxZeroEngine());
 		}
 		setRenderAdapter(createCanvasAdapter({ fontSize: 14 }));
 	});

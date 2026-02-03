@@ -18,7 +18,7 @@ import { beforeAll, describe, expect, test } from 'bun:test';
 // Skip in CI - Yoga WASM has platform-specific behavior on Linux runners
 const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 import type React from 'react';
-import { createFlexxEngine } from '../src/adapters/flexx-adapter.js';
+import { createFlexxZeroEngine } from '../src/adapters/flexx-zero-adapter.js';
 import { initYogaEngine } from '../src/adapters/yoga-adapter.js';
 import { Box, Text } from '../src/index.js';
 import type { LayoutEngine } from '../src/layout-engine.js';
@@ -33,7 +33,7 @@ let flexxEngine: LayoutEngine;
 
 beforeAll(async () => {
 	yogaEngine = await initYogaEngine();
-	flexxEngine = createFlexxEngine();
+	flexxEngine = createFlexxZeroEngine();
 });
 
 /**

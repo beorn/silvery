@@ -24,7 +24,7 @@ import { clearBgConflictWarnings, renderText } from './render-text.js';
  * @returns A TerminalBuffer with the rendered content
  */
 export function contentPhase(root: InkxNode, prevBuffer?: TerminalBuffer | null): TerminalBuffer {
-	const layout = root.computedLayout;
+	const layout = root.contentRect;
 	if (!layout) {
 		throw new Error('contentPhase called before layout phase');
 	}
@@ -78,7 +78,7 @@ function renderNodeToBuffer(
 	clipBounds?: { top: number; bottom: number },
 	hasPrevBuffer = false,
 ): void {
-	const layout = node.computedLayout;
+	const layout = node.contentRect;
 	if (!layout) return;
 
 	// Skip nodes without Yoga (raw text and virtual text nodes)
@@ -97,7 +97,7 @@ function renderNodeToBuffer(
 
 	// FAST PATH: Skip entire subtree if unchanged and we have a previous buffer
 	// The buffer was cloned from prevBuffer, so skipped nodes keep their rendered output
-	const layoutChanged = !rectEqual(node.prevLayout, node.computedLayout);
+	const layoutChanged = !rectEqual(node.prevLayout, node.contentRect);
 	if (hasPrevBuffer && !node.contentDirty && !node.paintDirty && !layoutChanged && !node.subtreeDirty) {
 		clearDirtyFlags(node);
 		return;
@@ -202,7 +202,7 @@ function renderScrollContainerChildren(
 	clipBounds?: { top: number; bottom: number },
 	hasPrevBuffer = false,
 ): void {
-	const layout = node.computedLayout;
+	const layout = node.contentRect;
 	const ss = node.scrollState;
 	if (!layout || !ss) return;
 
@@ -275,7 +275,7 @@ function renderScrollContainerChildren(
 	if (ss.stickyChildren) {
 		for (const sticky of ss.stickyChildren) {
 			const child = node.children[sticky.index];
-			if (!child || !child.computedLayout) continue;
+			if (!child || !child.contentRect) continue;
 
 			// Calculate the scroll offset that would place the child at its sticky position
 			// stickyOffset = naturalTop - renderOffset
@@ -298,7 +298,7 @@ function renderNormalChildren(
 	clipBounds?: { top: number; bottom: number },
 	hasPrevBuffer = false,
 ): void {
-	const layout = node.computedLayout;
+	const layout = node.contentRect;
 	if (!layout) return;
 
 	// For overflow='hidden' containers, calculate clip bounds

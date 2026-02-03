@@ -2,7 +2,7 @@
  * Inkx measureElement
  *
  * Backward-compatible API for measuring element dimensions.
- * This is provided for Ink compatibility - prefer using the useLayout() hook instead.
+ * This is provided for Ink compatibility - prefer using the useContentRect() hook instead.
  *
  * @example
  * ```tsx
@@ -24,12 +24,12 @@
  * }
  * ```
  *
- * Note: The useLayout() hook is preferred as it automatically re-renders
+ * Note: The useContentRect() hook is preferred as it automatically re-renders
  * when dimensions change:
  *
  * ```tsx
  * function MyComponent() {
- *   const { width } = useLayout();
+ *   const { width } = useContentRect();
  *   return <Text>Width: {width}</Text>;
  * }
  * ```
@@ -54,15 +54,15 @@ export interface MeasureElementOutput {
  * @returns The computed width and height of the element
  *
  * Note: Returns { width: 0, height: 0 } if the element hasn't been laid out yet.
- * For automatic re-rendering on dimension changes, use the useLayout() hook instead.
+ * For automatic re-rendering on dimension changes, use the useContentRect() hook instead.
  */
 export function measureElement(node: InkxNode): MeasureElementOutput {
-	// Prefer computedLayout (set by inkx pipeline after layout phase)
+	// Prefer contentRect (set by inkx pipeline after layout phase)
 	// This is the canonical source of truth after a render
-	if (node.computedLayout) {
+	if (node.contentRect) {
 		return {
-			width: node.computedLayout.width,
-			height: node.computedLayout.height,
+			width: node.contentRect.width,
+			height: node.contentRect.height,
 		};
 	}
 

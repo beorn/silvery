@@ -10,7 +10,7 @@
 
 import { beforeAll, describe, expect, test } from 'bun:test';
 import * as fc from 'fast-check';
-import { createFlexxEngine } from '../src/adapters/flexx-adapter.js';
+import { createFlexxZeroEngine } from '../src/adapters/flexx-zero-adapter.js';
 import { initYogaEngine } from '../src/adapters/yoga-adapter.js';
 import type { LayoutConstants, LayoutEngine, LayoutNode } from '../src/layout-engine.js';
 
@@ -26,7 +26,7 @@ let flexxEngine: LayoutEngine;
 
 beforeAll(async () => {
 	yogaEngine = await initYogaEngine();
-	flexxEngine = createFlexxEngine();
+	flexxEngine = createFlexxZeroEngine();
 });
 
 // ============================================================================
