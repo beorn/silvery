@@ -17,222 +17,236 @@
  * ```
  */
 
-import type { InkxNode, Rect } from './types.js';
+import type { InkxNode, Rect } from "./types.js"
 
 /**
  * Filter options for locator narrowing
  */
 export interface FilterOptions {
-	/** Match nodes containing this text */
-	hasText?: string | RegExp;
-	/** Match nodes with this testID */
-	hasTestId?: string;
-	/** Match nodes with this attribute value */
-	has?: { attr: string; value?: string };
+  /** Match nodes containing this text */
+  hasText?: string | RegExp
+  /** Match nodes with this testID */
+  hasTestId?: string
+  /** Match nodes with this attribute value */
+  has?: { attr: string; value?: string }
 }
 
 /**
  * AutoLocator interface - lazy, self-refreshing reference to nodes
  */
 export interface AutoLocator {
-	// Core queries (return new AutoLocators)
-	getByText(text: string | RegExp): AutoLocator;
-	getByTestId(id: string): AutoLocator;
-	locator(selector: string): AutoLocator;
+  // Core queries (return new AutoLocators)
+  getByText(text: string | RegExp): AutoLocator
+  getByTestId(id: string): AutoLocator
+  locator(selector: string): AutoLocator
 
-	// Filtering
-	filter(options: FilterOptions): AutoLocator;
-	filter(predicate: (node: InkxNode) => boolean): AutoLocator;
+  // Filtering
+  filter(options: FilterOptions): AutoLocator
+  filter(predicate: (node: InkxNode) => boolean): AutoLocator
 
-	// Narrowing
-	first(): AutoLocator;
-	last(): AutoLocator;
-	nth(index: number): AutoLocator;
+  // Narrowing
+  first(): AutoLocator
+  last(): AutoLocator
+  nth(index: number): AutoLocator
 
-	// Resolution (actually finds nodes - re-evaluates on each call)
-	resolve(): InkxNode | null;
-	resolveAll(): InkxNode[];
-	count(): number;
+  // Resolution (actually finds nodes - re-evaluates on each call)
+  resolve(): InkxNode | null
+  resolveAll(): InkxNode[]
+  count(): number
 
-	// Utilities (resolve then read)
-	textContent(): string;
-	getAttribute(name: string): string | undefined;
-	boundingBox(): Rect | null;
-	isVisible(): boolean;
+  // Utilities (resolve then read)
+  textContent(): string
+  getAttribute(name: string): string | undefined
+  boundingBox(): Rect | null
+  isVisible(): boolean
 }
 
 // Query predicate type
-type NodePredicate = (node: InkxNode) => boolean;
+type NodePredicate = (node: InkxNode) => boolean
 
 /**
  * Create an AutoLocator from a container getter function.
  * The getter is called fresh on each resolution.
  */
 export function createAutoLocator(getContainer: () => InkxNode): AutoLocator {
-	return new AutoLocatorImpl(getContainer, []);
+  return new AutoLocatorImpl(getContainer, [])
 }
 
 /**
  * AutoLocator implementation
  */
 class AutoLocatorImpl implements AutoLocator {
-	constructor(
-		private getContainer: () => InkxNode,
-		private predicates: NodePredicate[],
-		private indexSelector?: { type: 'first' | 'last' | 'nth'; index?: number },
-	) {}
+  constructor(
+    private getContainer: () => InkxNode,
+    private predicates: NodePredicate[],
+    private indexSelector?: { type: "first" | "last" | "nth"; index?: number },
+  ) {}
 
-	getByText(text: string | RegExp): AutoLocator {
-		const predicate: NodePredicate = (node) => {
-			const content = getNodeTextContent(node);
-			if (!content) return false;
+  getByText(text: string | RegExp): AutoLocator {
+    const predicate: NodePredicate = (node) => {
+      const content = getNodeTextContent(node)
+      if (!content) return false
 
-			// Only match inkx-text nodes (not containers)
-			if (node.type !== 'inkx-text') {
-				return false;
-			}
+      // Only match inkx-text nodes (not containers)
+      if (node.type !== "inkx-text") {
+        return false
+      }
 
-			// Skip raw text nodes if their parent also matches
-			if (node.isRawText && node.parent?.type === 'inkx-text') {
-				return false;
-			}
+      // Skip raw text nodes if their parent also matches
+      if (node.isRawText && node.parent?.type === "inkx-text") {
+        return false
+      }
 
-			if (typeof text === 'string') {
-				return content.includes(text);
-			}
-			return text.test(content);
-		};
-		return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate]);
-	}
+      if (typeof text === "string") {
+        return content.includes(text)
+      }
+      return text.test(content)
+    }
+    return new AutoLocatorImpl(this.getContainer, [
+      ...this.predicates,
+      predicate,
+    ])
+  }
 
-	getByTestId(id: string): AutoLocator {
-		const predicate: NodePredicate = (node) => {
-			return getNodeProp(node, 'testID') === id;
-		};
-		return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate]);
-	}
+  getByTestId(id: string): AutoLocator {
+    const predicate: NodePredicate = (node) => {
+      return getNodeProp(node, "testID") === id
+    }
+    return new AutoLocatorImpl(this.getContainer, [
+      ...this.predicates,
+      predicate,
+    ])
+  }
 
-	locator(selector: string): AutoLocator {
-		const predicate = parseSelector(selector);
-		if (!predicate) {
-			// Invalid selector - return locator that matches nothing
-			return new AutoLocatorImpl(this.getContainer, [() => false]);
-		}
-		return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate]);
-	}
+  locator(selector: string): AutoLocator {
+    const predicate = parseSelector(selector)
+    if (!predicate) {
+      // Invalid selector - return locator that matches nothing
+      return new AutoLocatorImpl(this.getContainer, [() => false])
+    }
+    return new AutoLocatorImpl(this.getContainer, [
+      ...this.predicates,
+      predicate,
+    ])
+  }
 
-	filter(optionsOrPredicate: FilterOptions | ((node: InkxNode) => boolean)): AutoLocator {
-		let predicate: NodePredicate;
+  filter(
+    optionsOrPredicate: FilterOptions | ((node: InkxNode) => boolean),
+  ): AutoLocator {
+    let predicate: NodePredicate
 
-		if (typeof optionsOrPredicate === 'function') {
-			predicate = optionsOrPredicate;
-		} else {
-			const opts = optionsOrPredicate;
-			predicate = (node: InkxNode) => {
-				if (opts.hasText !== undefined) {
-					const content = getNodeTextContent(node);
-					if (typeof opts.hasText === 'string') {
-						if (!content.includes(opts.hasText)) return false;
-					} else {
-						if (!opts.hasText.test(content)) return false;
-					}
-				}
-				if (opts.hasTestId !== undefined) {
-					if (getNodeProp(node, 'testID') !== opts.hasTestId) return false;
-				}
-				if (opts.has !== undefined) {
-					const value = getNodeProp(node, opts.has.attr);
-					if (opts.has.value !== undefined) {
-						if (value !== opts.has.value) return false;
-					} else {
-						if (value === undefined) return false;
-					}
-				}
-				return true;
-			};
-		}
+    if (typeof optionsOrPredicate === "function") {
+      predicate = optionsOrPredicate
+    } else {
+      const opts = optionsOrPredicate
+      predicate = (node: InkxNode) => {
+        if (opts.hasText !== undefined) {
+          const content = getNodeTextContent(node)
+          if (typeof opts.hasText === "string") {
+            if (!content.includes(opts.hasText)) return false
+          } else {
+            if (!opts.hasText.test(content)) return false
+          }
+        }
+        if (opts.hasTestId !== undefined) {
+          if (getNodeProp(node, "testID") !== opts.hasTestId) return false
+        }
+        if (opts.has !== undefined) {
+          const value = getNodeProp(node, opts.has.attr)
+          if (opts.has.value !== undefined) {
+            if (value !== opts.has.value) return false
+          } else {
+            if (value === undefined) return false
+          }
+        }
+        return true
+      }
+    }
 
-		return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate]);
-	}
+    return new AutoLocatorImpl(this.getContainer, [
+      ...this.predicates,
+      predicate,
+    ])
+  }
 
-	first(): AutoLocator {
-		return new AutoLocatorImpl(this.getContainer, this.predicates, {
-			type: 'first',
-		});
-	}
+  first(): AutoLocator {
+    return new AutoLocatorImpl(this.getContainer, this.predicates, {
+      type: "first",
+    })
+  }
 
-	last(): AutoLocator {
-		return new AutoLocatorImpl(this.getContainer, this.predicates, {
-			type: 'last',
-		});
-	}
+  last(): AutoLocator {
+    return new AutoLocatorImpl(this.getContainer, this.predicates, {
+      type: "last",
+    })
+  }
 
-	nth(index: number): AutoLocator {
-		return new AutoLocatorImpl(this.getContainer, this.predicates, {
-			type: 'nth',
-			index,
-		});
-	}
+  nth(index: number): AutoLocator {
+    return new AutoLocatorImpl(this.getContainer, this.predicates, {
+      type: "nth",
+      index,
+    })
+  }
 
-	resolve(): InkxNode | null {
-		const nodes = this.resolveAll();
-		if (this.indexSelector) {
-			switch (this.indexSelector.type) {
-				case 'first':
-					return nodes[0] ?? null;
-				case 'last':
-					return nodes[nodes.length - 1] ?? null;
-				case 'nth':
-					return nodes[this.indexSelector.index ?? 0] ?? null;
-			}
-		}
-		return nodes[0] ?? null;
-	}
+  resolve(): InkxNode | null {
+    const nodes = this.resolveAll()
+    if (this.indexSelector) {
+      switch (this.indexSelector.type) {
+        case "first":
+          return nodes[0] ?? null
+        case "last":
+          return nodes[nodes.length - 1] ?? null
+        case "nth":
+          return nodes[this.indexSelector.index ?? 0] ?? null
+      }
+    }
+    return nodes[0] ?? null
+  }
 
-	resolveAll(): InkxNode[] {
-		// Get fresh container on each resolution
-		const container = this.getContainer();
+  resolveAll(): InkxNode[] {
+    // Get fresh container on each resolution
+    const container = this.getContainer()
 
-		if (this.predicates.length === 0) {
-			return [container];
-		}
+    if (this.predicates.length === 0) {
+      return [container]
+    }
 
-		const matches: InkxNode[] = [];
-		walkTree(container, (node) => {
-			if (this.predicates.every((p) => p(node))) {
-				matches.push(node);
-			}
-		});
-		return matches;
-	}
+    const matches: InkxNode[] = []
+    walkTree(container, (node) => {
+      if (this.predicates.every((p) => p(node))) {
+        matches.push(node)
+      }
+    })
+    return matches
+  }
 
-	count(): number {
-		return this.resolveAll().length;
-	}
+  count(): number {
+    return this.resolveAll().length
+  }
 
-	textContent(): string {
-		const node = this.resolve();
-		if (!node) return '';
-		return getNodeTextContent(node);
-	}
+  textContent(): string {
+    const node = this.resolve()
+    if (!node) return ""
+    return getNodeTextContent(node)
+  }
 
-	getAttribute(name: string): string | undefined {
-		const node = this.resolve();
-		if (!node) return undefined;
-		return getNodeProp(node, name);
-	}
+  getAttribute(name: string): string | undefined {
+    const node = this.resolve()
+    if (!node) return undefined
+    return getNodeProp(node, name)
+  }
 
-	boundingBox(): Rect | null {
-		const node = this.resolve();
-		if (!node) return null;
-		return node.screenRect ?? null;
-	}
+  boundingBox(): Rect | null {
+    const node = this.resolve()
+    if (!node) return null
+    return node.screenRect ?? null
+  }
 
-	isVisible(): boolean {
-		const box = this.boundingBox();
-		if (!box) return false;
-		return box.width > 0 && box.height > 0;
-	}
+  isVisible(): boolean {
+    const box = this.boundingBox()
+    if (!box) return false
+    return box.width > 0 && box.height > 0
+  }
 }
 
 // ============================================================================
@@ -243,30 +257,30 @@ class AutoLocatorImpl implements AutoLocator {
  * Walk tree depth-first, calling visitor for each node
  */
 function walkTree(node: InkxNode, visitor: (node: InkxNode) => void): void {
-	visitor(node);
-	for (const child of node.children) {
-		walkTree(child, visitor);
-	}
+  visitor(node)
+  for (const child of node.children) {
+    walkTree(child, visitor)
+  }
 }
 
 /**
  * Get text content of a node (concatenated from all text descendants)
  */
 function getNodeTextContent(node: InkxNode): string {
-	if (node.textContent !== undefined) {
-		return node.textContent;
-	}
-	return node.children.map(getNodeTextContent).join('');
+  if (node.textContent !== undefined) {
+    return node.textContent
+  }
+  return node.children.map(getNodeTextContent).join("")
 }
 
 /**
  * Get a prop value from node
  */
 function getNodeProp(node: InkxNode, name: string): string | undefined {
-	const props = node.props as Record<string, unknown>;
-	const value = props[name];
-	if (value === undefined || value === null) return undefined;
-	return String(value);
+  const props = node.props as Record<string, unknown>
+  const value = props[name]
+  if (value === undefined || value === null) return undefined
+  return String(value)
 }
 
 // ============================================================================
@@ -277,141 +291,144 @@ function getNodeProp(node: InkxNode, name: string): string | undefined {
  * Parse CSS-like selector into predicate
  */
 function parseSelector(selector: string): NodePredicate | null {
-	const trimmed = selector.trim();
+  const trimmed = selector.trim()
 
-	// Check for combinators
-	if (trimmed.includes('>')) {
-		return parseChildCombinator(trimmed);
-	}
-	if (trimmed.includes('+')) {
-		return parseAdjacentSiblingCombinator(trimmed);
-	}
-	if (trimmed.includes(' ') && !trimmed.startsWith('[')) {
-		return parseDescendantCombinator(trimmed);
-	}
+  // Check for combinators
+  if (trimmed.includes(">")) {
+    return parseChildCombinator(trimmed)
+  }
+  if (trimmed.includes("+")) {
+    return parseAdjacentSiblingCombinator(trimmed)
+  }
+  if (trimmed.includes(" ") && !trimmed.startsWith("[")) {
+    return parseDescendantCombinator(trimmed)
+  }
 
-	return parseSingleSelector(trimmed);
+  return parseSingleSelector(trimmed)
 }
 
 /**
  * Parse a single selector (no combinators)
  */
 function parseSingleSelector(selector: string): NodePredicate | null {
-	const parts: NodePredicate[] = [];
-	let remaining = selector;
+  const parts: NodePredicate[] = []
+  let remaining = selector
 
-	// Universal selector - matches all nodes
-	if (remaining === '*') {
-		return () => true;
-	}
+  // Universal selector - matches all nodes
+  if (remaining === "*") {
+    return () => true
+  }
 
-	// Extract ID if present
-	const idMatch = remaining.match(/^#([a-zA-Z0-9_-]+)/);
-	if (idMatch) {
-		const id = idMatch[1]!;
-		parts.push((node: InkxNode) => getNodeProp(node, 'id') === id);
-		remaining = remaining.slice(idMatch[0].length);
-	}
+  // Extract ID if present
+  const idMatch = remaining.match(/^#([a-zA-Z0-9_-]+)/)
+  if (idMatch) {
+    const id = idMatch[1]!
+    parts.push((node: InkxNode) => getNodeProp(node, "id") === id)
+    remaining = remaining.slice(idMatch[0].length)
+  }
 
-	// Extract all attribute selectors
-	const attrRegex = /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g;
-	for (const match of remaining.matchAll(attrRegex)) {
-		const [, attr, op, value] = match;
-		if (!attr) continue;
+  // Extract all attribute selectors
+  const attrRegex =
+    /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g
+  for (const match of remaining.matchAll(attrRegex)) {
+    const [, attr, op, value] = match
+    if (!attr) continue
 
-		if (value === undefined) {
-			parts.push((node: InkxNode) => getNodeProp(node, attr) !== undefined);
-		} else {
-			parts.push((node: InkxNode) => {
-				const nodeValue = getNodeProp(node, attr);
-				if (nodeValue === undefined) return false;
-				switch (op) {
-					case '':
-						return nodeValue === value;
-					case '^':
-						return nodeValue.startsWith(value ?? '');
-					case '$':
-						return nodeValue.endsWith(value ?? '');
-					case '*':
-						return nodeValue.includes(value ?? '');
-					default:
-						return false;
-				}
-			});
-		}
-	}
+    if (value === undefined) {
+      parts.push((node: InkxNode) => getNodeProp(node, attr) !== undefined)
+    } else {
+      parts.push((node: InkxNode) => {
+        const nodeValue = getNodeProp(node, attr)
+        if (nodeValue === undefined) return false
+        switch (op) {
+          case "":
+            return nodeValue === value
+          case "^":
+            return nodeValue.startsWith(value ?? "")
+          case "$":
+            return nodeValue.endsWith(value ?? "")
+          case "*":
+            return nodeValue.includes(value ?? "")
+          default:
+            return false
+        }
+      })
+    }
+  }
 
-	if (parts.length === 0) return null;
+  if (parts.length === 0) return null
 
-	return (node: InkxNode) => parts.every((pred) => pred(node));
+  return (node: InkxNode) => parts.every((pred) => pred(node))
 }
 
 /**
  * Parse child combinator: A > B
  */
 function parseChildCombinator(selector: string): NodePredicate | null {
-	const parts = selector.split('>').map((s) => s.trim());
-	if (parts.length !== 2) return null;
+  const parts = selector.split(">").map((s) => s.trim())
+  if (parts.length !== 2) return null
 
-	const [parentSel, childSel] = parts;
-	const parentPred = parseSingleSelector(parentSel!);
-	const childPred = parseSingleSelector(childSel!);
+  const [parentSel, childSel] = parts
+  const parentPred = parseSingleSelector(parentSel!)
+  const childPred = parseSingleSelector(childSel!)
 
-	if (!parentPred || !childPred) return null;
+  if (!parentPred || !childPred) return null
 
-	return (node: InkxNode) => {
-		if (!childPred(node)) return false;
-		return node.parent !== null && parentPred(node.parent);
-	};
+  return (node: InkxNode) => {
+    if (!childPred(node)) return false
+    return node.parent !== null && parentPred(node.parent)
+  }
 }
 
 /**
  * Parse adjacent sibling combinator: A + B
  */
-function parseAdjacentSiblingCombinator(selector: string): NodePredicate | null {
-	const parts = selector.split('+').map((s) => s.trim());
-	if (parts.length !== 2) return null;
+function parseAdjacentSiblingCombinator(
+  selector: string,
+): NodePredicate | null {
+  const parts = selector.split("+").map((s) => s.trim())
+  if (parts.length !== 2) return null
 
-	const [prevSel, nextSel] = parts;
-	const prevPred = parseSingleSelector(prevSel!);
-	const nextPred = parseSingleSelector(nextSel!);
+  const [prevSel, nextSel] = parts
+  const prevPred = parseSingleSelector(prevSel!)
+  const nextPred = parseSingleSelector(nextSel!)
 
-	if (!prevPred || !nextPred) return null;
+  if (!prevPred || !nextPred) return null
 
-	return (node: InkxNode) => {
-		if (!nextPred(node)) return false;
-		if (!node.parent) return false;
+  return (node: InkxNode) => {
+    if (!nextPred(node)) return false
+    if (!node.parent) return false
 
-		const siblings = node.parent.children;
-		const index = siblings.indexOf(node);
-		if (index <= 0) return false;
+    const siblings = node.parent.children
+    const index = siblings.indexOf(node)
+    if (index <= 0) return false
 
-		const prevSibling = siblings[index - 1];
-		return prevSibling !== undefined && prevPred(prevSibling);
-	};
+    const prevSibling = siblings[index - 1]
+    return prevSibling !== undefined && prevPred(prevSibling)
+  }
 }
 
 /**
  * Parse descendant combinator: A B
  */
 function parseDescendantCombinator(selector: string): NodePredicate | null {
-	const parts = selector.split(/\s+/).filter((s) => s.length > 0);
-	if (parts.length !== 2) return null;
+  const parts = selector.split(/\s+/).filter((s) => s.length > 0)
+  if (parts.length !== 2) return null
 
-	const [ancestorSel, descendantSel] = parts;
-	const ancestorPred = parseSingleSelector(ancestorSel!);
-	const descendantPred = parseSingleSelector(descendantSel!);
+  const [ancestorSel, descendantSel] = parts
+  const ancestorPred = parseSingleSelector(ancestorSel!)
+  const descendantPred = parseSingleSelector(descendantSel!)
 
-	if (!ancestorPred || !descendantPred) return null;
+  if (!ancestorPred || !descendantPred) return null
 
-	return (node: InkxNode) => {
-		if (!descendantPred(node)) return false;
+  return (node: InkxNode) => {
+    if (!descendantPred(node)) return false
 
-		let current = node.parent;
-		while (current) {
-			if (ancestorPred(current)) return true;
-			current = current.parent;
-		}
-		return false;
-	};
+    let current = node.parent
+    while (current) {
+      if (ancestorPred(current)) return true
+      current = current.parent
+    }
+    return false
+  }
 }

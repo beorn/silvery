@@ -5,14 +5,14 @@
  * React reconciler handles. These are custom host elements, not DOM elements.
  */
 
-import type { ReactNode, Ref } from 'react';
-import type { BoxProps, InkxNode, TextProps } from './types.js';
+import type { ReactNode, Ref } from "react"
+import type { BoxProps, InkxNode, TextProps } from "./types.js"
 
-declare module 'react' {
-	namespace JSX {
-		interface IntrinsicElements {
-			'inkx-box': BoxProps & { children?: ReactNode; ref?: Ref<InkxNode> };
-			'inkx-text': TextProps & { children?: ReactNode; ref?: Ref<InkxNode> };
-		}
-	}
+declare module "react" {
+  namespace JSX {
+    interface IntrinsicElements {
+      "inkx-box": BoxProps & { children?: ReactNode; ref?: Ref<InkxNode> }
+      "inkx-text": TextProps & { children?: ReactNode; ref?: Ref<InkxNode> }
+    }
+  }
 }

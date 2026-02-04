@@ -41,21 +41,33 @@
  * ```
  */
 
-import process from 'node:process';
-import React, { createContext, useContext, useEffect, useRef, type ReactElement } from 'react';
-import { type StateCreator, type StoreApi, createStore } from 'zustand';
+import process from "node:process"
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  type ReactElement,
+} from "react"
+import { type StateCreator, type StoreApi, createStore } from "zustand"
 
-import { createTerm } from 'chalkx';
-import { AppContext, StdoutContext, TermContext } from '../context.js';
-import { executeRender } from '../pipeline/index.js';
-import { createContainer, getContainerRoot, reconciler } from '../reconciler.js';
-import { map, merge, takeUntil } from '../streams/index.js';
-import { createBuffer } from './create-buffer.js';
-import { createRuntime } from './create-runtime.js';
-import { type Key, parseKey } from './keys.js';
-import { ensureLayoutEngine } from './layout.js';
-import { type TermProvider, createTermProvider } from './term-provider.js';
-import type { Buffer, Dims, Provider, ProviderEvent, RenderTarget } from './types.js';
+import { createTerm } from "chalkx"
+import { AppContext, StdoutContext, TermContext } from "../context.js"
+import { executeRender } from "../pipeline/index.js"
+import { createContainer, getContainerRoot, reconciler } from "../reconciler.js"
+import { map, merge, takeUntil } from "../streams/index.js"
+import { createBuffer } from "./create-buffer.js"
+import { createRuntime } from "./create-runtime.js"
+import { type Key, parseKey } from "./keys.js"
+import { ensureLayoutEngine } from "./layout.js"
+import { type TermProvider, createTermProvider } from "./term-provider.js"
+import type {
+  Buffer,
+  Dims,
+  Provider,
+  ProviderEvent,
+  RenderTarget,
+} from "./types.js"
 
 // ============================================================================
 // Types
@@ -64,73 +76,78 @@ import type { Buffer, Dims, Provider, ProviderEvent, RenderTarget } from './type
 /**
  * Check if value is a Provider with events (full interface).
  */
-function isFullProvider(value: unknown): value is Provider<unknown, Record<string, unknown>> {
-	return (
-		value !== null &&
-		typeof value === 'object' &&
-		'getState' in value &&
-		'subscribe' in value &&
-		'events' in value &&
-		typeof (value as Provider).getState === 'function' &&
-		typeof (value as Provider).subscribe === 'function' &&
-		typeof (value as Provider).events === 'function'
-	);
+function isFullProvider(
+  value: unknown,
+): value is Provider<unknown, Record<string, unknown>> {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "getState" in value &&
+    "subscribe" in value &&
+    "events" in value &&
+    typeof (value as Provider).getState === "function" &&
+    typeof (value as Provider).subscribe === "function" &&
+    typeof (value as Provider).events === "function"
+  )
 }
 
 /**
  * Check if value is a basic Provider (just getState/subscribe, Zustand-compatible).
  */
 function isBasicProvider(value: unknown): value is {
-	getState(): unknown;
-	subscribe(l: (s: unknown) => void): () => void;
+  getState(): unknown
+  subscribe(l: (s: unknown) => void): () => void
 } {
-	return (
-		value !== null &&
-		typeof value === 'object' &&
-		'getState' in value &&
-		'subscribe' in value &&
-		typeof (value as { getState: unknown }).getState === 'function' &&
-		typeof (value as { subscribe: unknown }).subscribe === 'function'
-	);
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "getState" in value &&
+    "subscribe" in value &&
+    typeof (value as { getState: unknown }).getState === "function" &&
+    typeof (value as { subscribe: unknown }).subscribe === "function"
+  )
 }
 
 /**
  * Event handler context passed to handlers.
  */
 export interface EventHandlerContext<S> {
-	set: StoreApi<S>['setState'];
-	get: StoreApi<S>['getState'];
+  set: StoreApi<S>["setState"]
+  get: StoreApi<S>["getState"]
 }
 
 /**
  * Generic event handler function.
  * Return 'exit' to exit the app.
  */
-export type EventHandler<T, S> = (data: T, ctx: EventHandlerContext<S>) => void | 'exit';
+export type EventHandler<T, S> = (
+  data: T,
+  ctx: EventHandlerContext<S>,
+) => void | "exit"
 
 /**
  * Event handlers map.
  * Keys are namespaced as 'provider:event' (e.g., 'term:key', 'term:resize').
  */
 export type EventHandlers<S> = {
-	[event: `${string}:${string}`]: EventHandler<unknown, S> | undefined;
-};
+  [event: `${string}:${string}`]: EventHandler<unknown, S> | undefined
+}
 
 /**
  * Options for app.run().
  */
 export interface AppRunOptions {
-	/** Terminal dimensions (default: from process.stdout) */
-	cols?: number;
-	rows?: number;
-	/** Standard output (default: process.stdout) */
-	stdout?: NodeJS.WriteStream;
-	/** Standard input (default: process.stdin) */
-	stdin?: NodeJS.ReadStream;
-	/** Abort signal for external cleanup */
-	signal?: AbortSignal;
-	/** Providers and plain values to inject */
-	[key: string]: unknown;
+  /** Terminal dimensions (default: from process.stdout) */
+  cols?: number
+  rows?: number
+  /** Standard output (default: process.stdout) */
+  stdout?: NodeJS.WriteStream
+  /** Standard input (default: process.stdin) */
+  stdin?: NodeJS.ReadStream
+  /** Abort signal for external cleanup */
+  signal?: AbortSignal
+  /** Providers and plain values to inject */
+  [key: string]: unknown
 }
 
 /**
@@ -144,25 +161,25 @@ export interface AppRunOptions {
  * ```
  */
 export interface AppHandle<S> {
-	/** Current rendered text (no ANSI) */
-	readonly text: string;
-	/** Access to the Zustand store */
-	readonly store: StoreApi<S>;
-	/** Wait until the app exits */
-	waitUntilExit(): Promise<void>;
-	/** Unmount and cleanup */
-	unmount(): void;
-	/** Send a key press (simulates term:key event) */
-	press(key: string): Promise<void>;
-	/** Iterate frames yielded after each event */
-	[Symbol.asyncIterator](): AsyncIterator<Buffer>;
+  /** Current rendered text (no ANSI) */
+  readonly text: string
+  /** Access to the Zustand store */
+  readonly store: StoreApi<S>
+  /** Wait until the app exits */
+  waitUntilExit(): Promise<void>
+  /** Unmount and cleanup */
+  unmount(): void
+  /** Send a key press (simulates term:key event) */
+  press(key: string): Promise<void>
+  /** Iterate frames yielded after each event */
+  [Symbol.asyncIterator](): AsyncIterator<Buffer>
 }
 
 /**
  * App definition returned by createApp().
  */
 export interface AppDefinition<S> {
-	run(element: ReactElement, options?: AppRunOptions): AppRunner<S>;
+  run(element: ReactElement, options?: AppRunOptions): AppRunner<S>
 }
 
 /**
@@ -171,13 +188,14 @@ export interface AppDefinition<S> {
  * - `await app.run(el)` → AppHandle (backward compat)
  * - `for await (const frame of app.run(el))` → iterate frames
  */
-export interface AppRunner<S> extends AsyncIterable<Buffer>, PromiseLike<AppHandle<S>> {}
+export interface AppRunner<S>
+  extends AsyncIterable<Buffer>, PromiseLike<AppHandle<S>> {}
 
 // ============================================================================
 // Store Context
 // ============================================================================
 
-const StoreContext = createContext<StoreApi<unknown> | null>(null);
+const StoreContext = createContext<StoreApi<unknown> | null>(null)
 
 /**
  * Hook for accessing app state with selectors.
@@ -189,20 +207,20 @@ const StoreContext = createContext<StoreApi<unknown> | null>(null);
  * ```
  */
 export function useApp<S, T>(selector: (state: S) => T): T {
-	const store = useContext(StoreContext) as StoreApi<S> | null;
-	if (!store) throw new Error('useApp must be used within createApp().run()');
+  const store = useContext(StoreContext) as StoreApi<S> | null
+  if (!store) throw new Error("useApp must be used within createApp().run()")
 
-	const [state, setState] = React.useState(() => selector(store.getState()));
-	const selectorRef = useRef(selector);
-	selectorRef.current = selector;
+  const [state, setState] = React.useState(() => selector(store.getState()))
+  const selectorRef = useRef(selector)
+  selectorRef.current = selector
 
-	useEffect(() => {
-		return store.subscribe((newState) => {
-			setState(selectorRef.current(newState));
-		});
-	}, [store]);
+  useEffect(() => {
+    return store.subscribe((newState) => {
+      setState(selectorRef.current(newState))
+    })
+  }, [store])
 
-	return state;
+  return state
 }
 
 // ============================================================================
@@ -213,10 +231,10 @@ export function useApp<S, T>(selector: (state: S) => T): T {
  * Namespaced event from a provider.
  */
 interface NamespacedEvent {
-	type: string;
-	provider: string;
-	event: string;
-	data: unknown;
+  type: string
+  provider: string
+  event: string
+  data: unknown
 }
 
 /**
@@ -230,518 +248,541 @@ interface NamespacedEvent {
  * @param factory Store factory function that receives providers
  * @param handlers Optional event handlers (namespaced as 'provider:event')
  */
-export function createApp<I extends Record<string, unknown>, S extends Record<string, unknown>>(
-	factory: (inject: I) => StateCreator<S>,
-	handlers?: EventHandlers<S & I>,
+export function createApp<
+  I extends Record<string, unknown>,
+  S extends Record<string, unknown>,
+>(
+  factory: (inject: I) => StateCreator<S>,
+  handlers?: EventHandlers<S & I>,
 ): AppDefinition<S & I> {
-	return {
-		run(element: ReactElement, options: AppRunOptions = {}): AppRunner<S & I> {
-			// Lazy-init: the actual setup happens once, on first access
-			let handlePromise: Promise<AppHandle<S & I>> | null = null;
+  return {
+    run(element: ReactElement, options: AppRunOptions = {}): AppRunner<S & I> {
+      // Lazy-init: the actual setup happens once, on first access
+      let handlePromise: Promise<AppHandle<S & I>> | null = null
 
-			const init = (): Promise<AppHandle<S & I>> => {
-				if (handlePromise) return handlePromise;
-				handlePromise = initApp(factory, handlers, element, options);
-				return handlePromise;
-			};
+      const init = (): Promise<AppHandle<S & I>> => {
+        if (handlePromise) return handlePromise
+        handlePromise = initApp(factory, handlers, element, options)
+        return handlePromise
+      }
 
-			return {
-				// PromiseLike — makes `await app.run(el)` work
-				then<TResult1 = AppHandle<S & I>, TResult2 = never>(
-					onfulfilled?: ((value: AppHandle<S & I>) => TResult1 | PromiseLike<TResult1>) | null,
-					onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
-				): Promise<TResult1 | TResult2> {
-					return init().then(onfulfilled, onrejected);
-				},
+      return {
+        // PromiseLike — makes `await app.run(el)` work
+        then<TResult1 = AppHandle<S & I>, TResult2 = never>(
+          onfulfilled?:
+            | ((value: AppHandle<S & I>) => TResult1 | PromiseLike<TResult1>)
+            | null,
+          onrejected?:
+            | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+            | null,
+        ): Promise<TResult1 | TResult2> {
+          return init().then(onfulfilled, onrejected)
+        },
 
-				// AsyncIterable — makes `for await (const frame of app.run(el))` work
-				[Symbol.asyncIterator](): AsyncIterator<Buffer> {
-					let handle: AppHandle<S & I> | null = null;
-					let iterator: AsyncIterator<Buffer> | null = null;
-					let started = false;
+        // AsyncIterable — makes `for await (const frame of app.run(el))` work
+        [Symbol.asyncIterator](): AsyncIterator<Buffer> {
+          let handle: AppHandle<S & I> | null = null
+          let iterator: AsyncIterator<Buffer> | null = null
+          let started = false
 
-					return {
-						async next(): Promise<IteratorResult<Buffer>> {
-							if (!started) {
-								started = true;
-								handle = await init();
-								iterator = handle[Symbol.asyncIterator]();
-							}
-							return iterator!.next();
-						},
-						async return(): Promise<IteratorResult<Buffer>> {
-							if (handle) handle.unmount();
-							return { done: true, value: undefined as unknown as Buffer };
-						},
-					};
-				},
-			};
-		},
-	};
+          return {
+            async next(): Promise<IteratorResult<Buffer>> {
+              if (!started) {
+                started = true
+                handle = await init()
+                iterator = handle[Symbol.asyncIterator]()
+              }
+              return iterator!.next()
+            },
+            async return(): Promise<IteratorResult<Buffer>> {
+              if (handle) handle.unmount()
+              return { done: true, value: undefined as unknown as Buffer }
+            },
+          }
+        },
+      }
+    },
+  }
 }
 
 /**
  * Initialize the app — extracted from run() for clarity.
  */
-async function initApp<I extends Record<string, unknown>, S extends Record<string, unknown>>(
-	factory: (inject: I) => StateCreator<S>,
-	handlers: EventHandlers<S & I> | undefined,
-	element: ReactElement,
-	options: AppRunOptions,
+async function initApp<
+  I extends Record<string, unknown>,
+  S extends Record<string, unknown>,
+>(
+  factory: (inject: I) => StateCreator<S>,
+  handlers: EventHandlers<S & I> | undefined,
+  element: ReactElement,
+  options: AppRunOptions,
 ): Promise<AppHandle<S & I>> {
-	const {
-		cols: explicitCols,
-		rows: explicitRows,
-		stdout: explicitStdout,
-		stdin = process.stdin,
-		signal: externalSignal,
-		...injectValues
-	} = options;
+  const {
+    cols: explicitCols,
+    rows: explicitRows,
+    stdout: explicitStdout,
+    stdin = process.stdin,
+    signal: externalSignal,
+    ...injectValues
+  } = options
 
-	const headless = explicitCols != null && explicitRows != null && !explicitStdout;
-	const cols = explicitCols ?? process.stdout.columns ?? 80;
-	const rows = explicitRows ?? process.stdout.rows ?? 24;
-	const stdout = explicitStdout ?? process.stdout;
+  const headless =
+    explicitCols != null && explicitRows != null && !explicitStdout
+  const cols = explicitCols ?? process.stdout.columns ?? 80
+  const rows = explicitRows ?? process.stdout.rows ?? 24
+  const stdout = explicitStdout ?? process.stdout
 
-	// Initialize layout engine
-	await ensureLayoutEngine();
+  // Initialize layout engine
+  await ensureLayoutEngine()
 
-	// Create abort controller for cleanup
-	const controller = new AbortController();
-	const signal = controller.signal;
+  // Create abort controller for cleanup
+  const controller = new AbortController()
+  const signal = controller.signal
 
-	// Wire external signal
-	if (externalSignal) {
-		if (externalSignal.aborted) {
-			controller.abort();
-		} else {
-			externalSignal.addEventListener('abort', () => controller.abort(), {
-				once: true,
-			});
-		}
-	}
+  // Wire external signal
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort()
+    } else {
+      externalSignal.addEventListener("abort", () => controller.abort(), {
+        once: true,
+      })
+    }
+  }
 
-	// Separate providers from plain values
-	const providers: Record<string, Provider<unknown, Record<string, unknown>>> = {};
-	const plainValues: Record<string, unknown> = {};
-	const providerCleanups: (() => void)[] = [];
+  // Separate providers from plain values
+  const providers: Record<
+    string,
+    Provider<unknown, Record<string, unknown>>
+  > = {}
+  const plainValues: Record<string, unknown> = {}
+  const providerCleanups: (() => void)[] = []
 
-	// Create term provider if not provided
-	let termProvider: TermProvider | null = null;
-	if (!('term' in injectValues) || !isFullProvider(injectValues.term)) {
-		// In headless mode, provide mock streams so termProvider doesn't touch real stdin/stdout
-		const termStdout = headless
-			? ({
-					columns: cols,
-					rows,
-					write: () => true,
-					isTTY: false,
-					on: () => termStdout,
-					off: () => termStdout,
-				} as unknown as NodeJS.WriteStream)
-			: stdout;
-		const termStdin = headless
-			? ({
-					isTTY: false,
-					on: () => termStdin,
-					off: () => termStdin,
-					setRawMode: () => {},
-					resume: () => {},
-					pause: () => {},
-					setEncoding: () => {},
-				} as unknown as NodeJS.ReadStream)
-			: stdin;
-		termProvider = createTermProvider(termStdin, termStdout, { cols, rows });
-		providers.term = termProvider;
-		providerCleanups.push(() => termProvider![Symbol.dispose]());
-	}
+  // Create term provider if not provided
+  let termProvider: TermProvider | null = null
+  if (!("term" in injectValues) || !isFullProvider(injectValues.term)) {
+    // In headless mode, provide mock streams so termProvider doesn't touch real stdin/stdout
+    const termStdout = headless
+      ? ({
+          columns: cols,
+          rows,
+          write: () => true,
+          isTTY: false,
+          on: () => termStdout,
+          off: () => termStdout,
+        } as unknown as NodeJS.WriteStream)
+      : stdout
+    const termStdin = headless
+      ? ({
+          isTTY: false,
+          on: () => termStdin,
+          off: () => termStdin,
+          setRawMode: () => {},
+          resume: () => {},
+          pause: () => {},
+          setEncoding: () => {},
+        } as unknown as NodeJS.ReadStream)
+      : stdin
+    termProvider = createTermProvider(termStdin, termStdout, { cols, rows })
+    providers.term = termProvider
+    providerCleanups.push(() => termProvider![Symbol.dispose]())
+  }
 
-	// Categorize injected values
-	for (const [name, value] of Object.entries(injectValues)) {
-		if (isFullProvider(value)) {
-			providers[name] = value;
-		} else {
-			plainValues[name] = value;
-		}
-	}
+  // Categorize injected values
+  for (const [name, value] of Object.entries(injectValues)) {
+    if (isFullProvider(value)) {
+      providers[name] = value
+    } else {
+      plainValues[name] = value
+    }
+  }
 
-	// Build inject object (providers + plain values)
-	const inject = { ...providers, ...plainValues } as I;
+  // Build inject object (providers + plain values)
+  const inject = { ...providers, ...plainValues } as I
 
-	// Subscribe to provider state changes
-	const stateUnsubscribes: (() => void)[] = [];
+  // Subscribe to provider state changes
+  const stateUnsubscribes: (() => void)[] = []
 
-	// Create store
-	const store = createStore<S & I>((set, get, api) => {
-		// Get base state from factory
-		const baseState = factory(inject)(
-			set as StoreApi<S>['setState'],
-			get as StoreApi<S>['getState'],
-			api as StoreApi<S>,
-		);
+  // Create store
+  const store = createStore<S & I>((set, get, api) => {
+    // Get base state from factory
+    const baseState = factory(inject)(
+      set as StoreApi<S>["setState"],
+      get as StoreApi<S>["getState"],
+      api as StoreApi<S>,
+    )
 
-		// Merge provider references into state (for access via selectors)
-		const mergedState: Record<string, unknown> = { ...baseState };
+    // Merge provider references into state (for access via selectors)
+    const mergedState: Record<string, unknown> = { ...baseState }
 
-		for (const [name, provider] of Object.entries(providers)) {
-			mergedState[name] = provider;
+    for (const [name, provider] of Object.entries(providers)) {
+      mergedState[name] = provider
 
-			// Subscribe to provider state changes (basic providers only)
-			if (isBasicProvider(provider)) {
-				const unsub = provider.subscribe((providerState) => {
-					// Could flatten provider state here if desired
-					// For now, just trigger a re-check
-				});
-				stateUnsubscribes.push(unsub);
-			}
-		}
+      // Subscribe to provider state changes (basic providers only)
+      if (isBasicProvider(provider)) {
+        const unsub = provider.subscribe((providerState) => {
+          // Could flatten provider state here if desired
+          // For now, just trigger a re-check
+        })
+        stateUnsubscribes.push(unsub)
+      }
+    }
 
-		// Add plain values
-		for (const [name, value] of Object.entries(plainValues)) {
-			mergedState[name] = value;
-		}
+    // Add plain values
+    for (const [name, value] of Object.entries(plainValues)) {
+      mergedState[name] = value
+    }
 
-		return mergedState as S & I;
-	});
+    return mergedState as S & I
+  })
 
-	// Track current dimensions
-	let currentDims: Dims = { cols, rows };
-	let shouldExit = false;
+  // Track current dimensions
+  let currentDims: Dims = { cols, rows }
+  let shouldExit = false
 
-	// Create render target
-	const target: RenderTarget = headless
-		? {
-				write() {},
-				getDims: () => currentDims,
-			}
-		: {
-				write(frame: string): void {
-					stdout.write(frame);
-				},
-				getDims(): Dims {
-					return currentDims;
-				},
-				onResize(handler: (dims: Dims) => void): () => void {
-					const onResize = () => {
-						currentDims = {
-							cols: stdout.columns || 80,
-							rows: stdout.rows || 24,
-						};
-						handler(currentDims);
-					};
-					stdout.on('resize', onResize);
-					return () => stdout.off('resize', onResize);
-				},
-			};
+  // Create render target
+  const target: RenderTarget = headless
+    ? {
+        write() {},
+        getDims: () => currentDims,
+      }
+    : {
+        write(frame: string): void {
+          stdout.write(frame)
+        },
+        getDims(): Dims {
+          return currentDims
+        },
+        onResize(handler: (dims: Dims) => void): () => void {
+          const onResize = () => {
+            currentDims = {
+              cols: stdout.columns || 80,
+              rows: stdout.rows || 24,
+            }
+            handler(currentDims)
+          }
+          stdout.on("resize", onResize)
+          return () => stdout.off("resize", onResize)
+        },
+      }
 
-	// Create runtime
-	const runtime = createRuntime({ target, signal });
+  // Create runtime
+  const runtime = createRuntime({ target, signal })
 
-	// Cleanup state
-	let cleanedUp = false;
-	let storeUnsubscribeFn: (() => void) | null = null;
+  // Cleanup state
+  let cleanedUp = false
+  let storeUnsubscribeFn: (() => void) | null = null
 
-	// Cleanup function - idempotent, can be called from exit() or finally
-	const cleanup = () => {
-		if (cleanedUp) return;
-		cleanedUp = true;
+  // Cleanup function - idempotent, can be called from exit() or finally
+  const cleanup = () => {
+    if (cleanedUp) return
+    cleanedUp = true
 
-		// Unsubscribe from store
-		if (storeUnsubscribeFn) {
-			storeUnsubscribeFn();
-		}
+    // Unsubscribe from store
+    if (storeUnsubscribeFn) {
+      storeUnsubscribeFn()
+    }
 
-		// Unsubscribe from provider state changes
-		stateUnsubscribes.forEach((unsub) => {
-			try {
-				unsub();
-			} catch {
-				// Ignore
-			}
-		});
+    // Unsubscribe from provider state changes
+    stateUnsubscribes.forEach((unsub) => {
+      try {
+        unsub()
+      } catch {
+        // Ignore
+      }
+    })
 
-		// Cleanup providers (including termProvider)
-		providerCleanups.forEach((fn) => {
-			try {
-				fn();
-			} catch {
-				// Ignore
-			}
-		});
+    // Cleanup providers (including termProvider)
+    providerCleanups.forEach((fn) => {
+      try {
+        fn()
+      } catch {
+        // Ignore
+      }
+    })
 
-		// Dispose runtime
-		runtime[Symbol.dispose]();
+    // Dispose runtime
+    runtime[Symbol.dispose]()
 
-		// Restore cursor
-		if (!headless) stdout.write('\x1b[?25h\x1b[0m\n');
-	};
+    // Restore cursor
+    if (!headless) stdout.write("\x1b[?25h\x1b[0m\n")
+  }
 
-	// Exit function - defined early so components can reference it
-	let exit: () => void;
+  // Exit function - defined early so components can reference it
+  let exit: () => void
 
-	// Create InkxNode container
-	const container = createContainer(() => {});
+  // Create InkxNode container
+  const container = createContainer(() => {})
 
-	// Create React fiber root
-	const fiberRoot = reconciler.createContainer(
-		container,
-		0,
-		null,
-		false,
-		null,
-		'',
-		() => {},
-		() => {},
-		() => {},
-		null,
-	);
+  // Create React fiber root
+  const fiberRoot = reconciler.createContainer(
+    container,
+    0,
+    null,
+    false,
+    null,
+    "",
+    () => {},
+    () => {},
+    () => {},
+    null,
+  )
 
-	// Track current buffer for text access
-	let currentBuffer: Buffer;
+  // Track current buffer for text access
+  let currentBuffer: Buffer
 
-	// Create mock stdout for contexts
-	const mockStdout = {
-		columns: cols,
-		rows: rows,
-		write: () => true,
-		isTTY: false,
-		on: () => mockStdout,
-		off: () => mockStdout,
-		once: () => mockStdout,
-		removeListener: () => mockStdout,
-		addListener: () => mockStdout,
-	} as unknown as NodeJS.WriteStream;
+  // Create mock stdout for contexts
+  const mockStdout = {
+    columns: cols,
+    rows: rows,
+    write: () => true,
+    isTTY: false,
+    on: () => mockStdout,
+    off: () => mockStdout,
+    once: () => mockStdout,
+    removeListener: () => mockStdout,
+    addListener: () => mockStdout,
+  } as unknown as NodeJS.WriteStream
 
-	// Create mock term
-	const mockTerm = createTerm({ level: 3, columns: cols });
+  // Create mock term
+  const mockTerm = createTerm({ level: 3, columns: cols })
 
-	// Wrap element with all required providers
-	const wrappedElement = (
-		<TermContext.Provider value={mockTerm}>
-			<AppContext.Provider value={{ exit }}>
-				<StdoutContext.Provider value={{ stdout: mockStdout, write: () => {} }}>
-					<StoreContext.Provider value={store as StoreApi<unknown>}>
-						{element}
-					</StoreContext.Provider>
-				</StdoutContext.Provider>
-			</AppContext.Provider>
-		</TermContext.Provider>
-	);
+  // Wrap element with all required providers
+  const wrappedElement = (
+    <TermContext.Provider value={mockTerm}>
+      <AppContext.Provider value={{ exit }}>
+        <StdoutContext.Provider value={{ stdout: mockStdout, write: () => {} }}>
+          <StoreContext.Provider value={store as StoreApi<unknown>}>
+            {element}
+          </StoreContext.Provider>
+        </StdoutContext.Provider>
+      </AppContext.Provider>
+    </TermContext.Provider>
+  )
 
-	// Helper to render and get text
-	function doRender(): Buffer {
-		reconciler.updateContainerSync(wrappedElement, fiberRoot, null, () => {});
-		reconciler.flushSyncWork();
+  // Helper to render and get text
+  function doRender(): Buffer {
+    reconciler.updateContainerSync(wrappedElement, fiberRoot, null, () => {})
+    reconciler.flushSyncWork()
 
-		const rootNode = getContainerRoot(container);
-		const dims = runtime.getDims();
-		const { buffer: termBuffer } = executeRender(rootNode, dims.cols, dims.rows, null, {
-			skipLayoutNotifications: true,
-		});
+    const rootNode = getContainerRoot(container)
+    const dims = runtime.getDims()
+    const { buffer: termBuffer } = executeRender(
+      rootNode,
+      dims.cols,
+      dims.rows,
+      null,
+      {
+        skipLayoutNotifications: true,
+      },
+    )
 
-		return createBuffer(termBuffer, rootNode);
-	}
+    return createBuffer(termBuffer, rootNode)
+  }
 
-	// Initial render
-	currentBuffer = doRender();
+  // Initial render
+  currentBuffer = doRender()
 
-	// Clear screen and hide cursor
-	if (!headless) stdout.write('\x1b[2J\x1b[H\x1b[?25l');
-	runtime.render(currentBuffer);
+  // Clear screen and hide cursor
+  if (!headless) stdout.write("\x1b[2J\x1b[H\x1b[?25l")
+  runtime.render(currentBuffer)
 
-	// Exit promise
-	let exitResolve: () => void;
-	let exitResolved = false;
-	const exitPromise = new Promise<void>((resolve) => {
-		exitResolve = () => {
-			if (!exitResolved) {
-				exitResolved = true;
-				resolve();
-			}
-		};
-	});
+  // Exit promise
+  let exitResolve: () => void
+  let exitResolved = false
+  const exitPromise = new Promise<void>((resolve) => {
+    exitResolve = () => {
+      if (!exitResolved) {
+        exitResolved = true
+        resolve()
+      }
+    }
+  })
 
-	// Now define exit function (needs exitResolve and cleanup)
-	exit = () => {
-		if (shouldExit) return; // Already exiting
-		shouldExit = true;
-		controller.abort();
-		cleanup();
-		exitResolve();
-	};
+  // Now define exit function (needs exitResolve and cleanup)
+  exit = () => {
+    if (shouldExit) return // Already exiting
+    shouldExit = true
+    controller.abort()
+    cleanup()
+    exitResolve()
+  }
 
-	// Frame listeners for async iteration
-	let frameResolve: ((buffer: Buffer) => void) | null = null;
-	let framesDone = false;
+  // Frame listeners for async iteration
+  let frameResolve: ((buffer: Buffer) => void) | null = null
+  let framesDone = false
 
-	// Notify frame listeners
-	function emitFrame(buf: Buffer) {
-		if (frameResolve) {
-			const resolve = frameResolve;
-			frameResolve = null;
-			resolve(buf);
-		}
-	}
+  // Notify frame listeners
+  function emitFrame(buf: Buffer) {
+    if (frameResolve) {
+      const resolve = frameResolve
+      frameResolve = null
+      resolve(buf)
+    }
+  }
 
-	// Subscribe to store for re-renders
-	storeUnsubscribeFn = store.subscribe(() => {
-		if (!shouldExit) {
-			currentBuffer = doRender();
-			runtime.render(currentBuffer);
-		}
-	});
+  // Subscribe to store for re-renders
+  storeUnsubscribeFn = store.subscribe(() => {
+    if (!shouldExit) {
+      currentBuffer = doRender()
+      runtime.render(currentBuffer)
+    }
+  })
 
-	// Create namespaced event streams from all providers
-	function createProviderEventStream(
-		name: string,
-		provider: Provider<unknown, Record<string, unknown>>,
-	): AsyncIterable<NamespacedEvent> {
-		return map(provider.events(), (event) => ({
-			type: `${name}:${String(event.type)}`,
-			provider: name,
-			event: String(event.type),
-			data: event.data,
-		}));
-	}
+  // Create namespaced event streams from all providers
+  function createProviderEventStream(
+    name: string,
+    provider: Provider<unknown, Record<string, unknown>>,
+  ): AsyncIterable<NamespacedEvent> {
+    return map(provider.events(), (event) => ({
+      type: `${name}:${String(event.type)}`,
+      provider: name,
+      event: String(event.type),
+      data: event.data,
+    }))
+  }
 
-	// Process a single event through handlers, return the resulting buffer
-	function processEvent(event: NamespacedEvent): Buffer | null {
-		if (shouldExit) return null;
+  // Process a single event through handlers, return the resulting buffer
+  function processEvent(event: NamespacedEvent): Buffer | null {
+    if (shouldExit) return null
 
-		// Try namespaced handler first: 'provider:event'
-		const namespacedKey = event.type;
-		const namespacedHandler = handlers?.[namespacedKey as keyof typeof handlers];
+    // Try namespaced handler first: 'provider:event'
+    const namespacedKey = event.type
+    const namespacedHandler = handlers?.[namespacedKey as keyof typeof handlers]
 
-		if (namespacedHandler && typeof namespacedHandler === 'function') {
-			const result = (namespacedHandler as EventHandler<unknown, S & I>)(event.data, {
-				set: store.setState,
-				get: store.getState,
-			});
-			if (result === 'exit') {
-				exit();
-				return null;
-			}
-		}
+    if (namespacedHandler && typeof namespacedHandler === "function") {
+      const result = (namespacedHandler as EventHandler<unknown, S & I>)(
+        event.data,
+        {
+          set: store.setState,
+          get: store.getState,
+        },
+      )
+      if (result === "exit") {
+        exit()
+        return null
+      }
+    }
 
-		// Re-render
-		currentBuffer = doRender();
-		runtime.render(currentBuffer);
+    // Re-render
+    currentBuffer = doRender()
+    runtime.render(currentBuffer)
 
-		return currentBuffer;
-	}
+    return currentBuffer
+  }
 
-	// Start event loop
-	const eventLoop = async () => {
-		// Merge all provider event streams
-		const providerEventStreams = Object.entries(providers).map(([name, provider]) =>
-			createProviderEventStream(name, provider),
-		);
+  // Start event loop
+  const eventLoop = async () => {
+    // Merge all provider event streams
+    const providerEventStreams = Object.entries(providers).map(
+      ([name, provider]) => createProviderEventStream(name, provider),
+    )
 
-		const allEvents = merge(...providerEventStreams);
+    const allEvents = merge(...providerEventStreams)
 
-		try {
-			for await (const event of takeUntil(allEvents, signal)) {
-				const buf = processEvent(event);
-				if (buf) emitFrame(buf);
-				if (shouldExit) break;
-			}
-		} finally {
-			// Mark frames as done and notify waiters
-			framesDone = true;
-			if (frameResolve) {
-				const resolve = frameResolve;
-				frameResolve = null;
-				// Signal completion — resolve with a sentinel that next() will detect
-				resolve(null as unknown as Buffer);
-			}
-			// Cleanup and resolve exit promise
-			cleanup();
-			exitResolve();
-		}
-	};
+    try {
+      for await (const event of takeUntil(allEvents, signal)) {
+        const buf = processEvent(event)
+        if (buf) emitFrame(buf)
+        if (shouldExit) break
+      }
+    } finally {
+      // Mark frames as done and notify waiters
+      framesDone = true
+      if (frameResolve) {
+        const resolve = frameResolve
+        frameResolve = null
+        // Signal completion — resolve with a sentinel that next() will detect
+        resolve(null as unknown as Buffer)
+      }
+      // Cleanup and resolve exit promise
+      cleanup()
+      exitResolve()
+    }
+  }
 
-	// Start loop in background
-	eventLoop().catch(console.error);
+  // Start loop in background
+  eventLoop().catch(console.error)
 
-	// Return handle with async iteration
-	const handle: AppHandle<S & I> = {
-		get text() {
-			return currentBuffer.text;
-		},
-		get store() {
-			return store;
-		},
-		waitUntilExit() {
-			return exitPromise;
-		},
-		unmount() {
-			exit();
-		},
-		async press(rawKey: string) {
-			// Parse the key
-			const [input, parsedKey] = parseKey(rawKey);
+  // Return handle with async iteration
+  const handle: AppHandle<S & I> = {
+    get text() {
+      return currentBuffer.text
+    },
+    get store() {
+      return store
+    },
+    waitUntilExit() {
+      return exitPromise
+    },
+    unmount() {
+      exit()
+    },
+    async press(rawKey: string) {
+      // Parse the key
+      const [input, parsedKey] = parseKey(rawKey)
 
-			// Simulate term:key event through handlers
-			const namespacedHandler = handlers?.['term:key' as keyof typeof handlers];
-			if (namespacedHandler && typeof namespacedHandler === 'function') {
-				const result = (namespacedHandler as EventHandler<unknown, S & I>)(
-					{ input, key: parsedKey },
-					{ set: store.setState, get: store.getState },
-				);
-				if (result === 'exit') {
-					exit();
-					return;
-				}
-			}
+      // Simulate term:key event through handlers
+      const namespacedHandler = handlers?.["term:key" as keyof typeof handlers]
+      if (namespacedHandler && typeof namespacedHandler === "function") {
+        const result = (namespacedHandler as EventHandler<unknown, S & I>)(
+          { input, key: parsedKey },
+          { set: store.setState, get: store.getState },
+        )
+        if (result === "exit") {
+          exit()
+          return
+        }
+      }
 
-			// Legacy handler
-			if (handlers?.key) {
-				const result = handlers.key(input, parsedKey, {
-					set: store.setState,
-					get: store.getState,
-				});
-				if (result === 'exit') {
-					exit();
-					return;
-				}
-			}
+      // Legacy handler
+      if (handlers?.key) {
+        const result = handlers.key(input, parsedKey, {
+          set: store.setState,
+          get: store.getState,
+        })
+        if (result === "exit") {
+          exit()
+          return
+        }
+      }
 
-			// Trigger re-render
-			currentBuffer = doRender();
-			await Promise.resolve();
-		},
+      // Trigger re-render
+      currentBuffer = doRender()
+      await Promise.resolve()
+    },
 
-		[Symbol.asyncIterator](): AsyncIterator<Buffer> {
-			return {
-				async next(): Promise<IteratorResult<Buffer>> {
-					if (framesDone || shouldExit) {
-						return { done: true, value: undefined as unknown as Buffer };
-					}
+    [Symbol.asyncIterator](): AsyncIterator<Buffer> {
+      return {
+        async next(): Promise<IteratorResult<Buffer>> {
+          if (framesDone || shouldExit) {
+            return { done: true, value: undefined as unknown as Buffer }
+          }
 
-					// Wait for next frame from event loop
-					const buf = await new Promise<Buffer>((resolve) => {
-						// If already done, resolve immediately
-						if (framesDone || shouldExit) {
-							resolve(null as unknown as Buffer);
-							return;
-						}
-						frameResolve = resolve;
-					});
+          // Wait for next frame from event loop
+          const buf = await new Promise<Buffer>((resolve) => {
+            // If already done, resolve immediately
+            if (framesDone || shouldExit) {
+              resolve(null as unknown as Buffer)
+              return
+            }
+            frameResolve = resolve
+          })
 
-					// null sentinel means done
-					if (!buf) {
-						return { done: true, value: undefined as unknown as Buffer };
-					}
+          // null sentinel means done
+          if (!buf) {
+            return { done: true, value: undefined as unknown as Buffer }
+          }
 
-					return { done: false, value: buf };
-				},
-				async return(): Promise<IteratorResult<Buffer>> {
-					exit();
-					return { done: true, value: undefined as unknown as Buffer };
-				},
-			};
-		},
-	};
+          return { done: false, value: buf }
+        },
+        async return(): Promise<IteratorResult<Buffer>> {
+          exit()
+          return { done: true, value: undefined as unknown as Buffer }
+        },
+      }
+    },
+  }
 
-	return handle;
+  return handle
 }

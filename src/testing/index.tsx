@@ -81,51 +81,51 @@
  * ```
  */
 
-import { ensureDefaultLayoutEngine } from '../layout-engine.js';
+import { ensureDefaultLayoutEngine } from "../layout-engine.js"
 
 // Re-export App for type usage
-export type { App } from '../app.js';
+export type { App } from "../app.js"
 export {
-	createAutoLocator,
-	type AutoLocator,
-	type FilterOptions,
-} from '../auto-locator.js';
-export type { BoundTerm } from '../bound-term.js';
+  createAutoLocator,
+  type AutoLocator,
+  type FilterOptions,
+} from "../auto-locator.js"
+export type { BoundTerm } from "../bound-term.js"
 
 // Re-export buffer utilities for testing convenience
-export { bufferToText, bufferToStyledText } from '../buffer.js';
-export type { TerminalBuffer } from '../buffer.js';
+export { bufferToText, bufferToStyledText } from "../buffer.js"
+export type { TerminalBuffer } from "../buffer.js"
 
 // Re-export locator API for DOM queries (legacy, prefer App.locator())
-export { createLocator, type InkxLocator } from './locator.js';
-export type { Rect } from '../types.js';
+export { createLocator, type InkxLocator } from "./locator.js"
+export type { Rect } from "../types.js"
 
 // Re-export keyboard utilities
-export { keyToAnsi, CODE_TO_KEY } from '../keys.js';
+export { keyToAnsi, CODE_TO_KEY } from "../keys.js"
 
 // Re-export debug utilities
-export { debugTree, type DebugTreeOptions } from './debug.js';
+export { debugTree, type DebugTreeOptions } from "./debug.js"
 
 // Re-export buffer comparison utilities
 export {
-	compareBuffers,
-	formatMismatch,
-	type BufferMismatch,
-} from './compare-buffers.js';
+  compareBuffers,
+  formatMismatch,
+  type BufferMismatch,
+} from "./compare-buffers.js"
 
 // Re-export render API
 export {
-	render,
-	createRenderer,
-	createStore,
-	run,
-	ensureEngine,
-	getActiveRenderCount,
-	type RenderOptions,
-	type PerRenderOptions,
-	type Store,
-	type StoreOptions,
-} from '../renderer.js';
+  render,
+  createRenderer,
+  createStore,
+  run,
+  ensureEngine,
+  getActiveRenderCount,
+  type RenderOptions,
+  type PerRenderOptions,
+  type Store,
+  type StoreOptions,
+} from "../renderer.js"
 
 // ============================================================================
 // Module Initialization
@@ -134,19 +134,19 @@ export {
 // Configure React to recognize this as a testing environment for act() support
 // This suppresses the "testing environment not configured" warning
 // @ts-expect-error - React internal flag for testing environments
-globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 // Initialize default layout engine via top-level await.
 // This ensures render()/createRenderer() work immediately after import.
-await ensureDefaultLayoutEngine();
+await ensureDefaultLayoutEngine()
 
 // ============================================================================
 // Utility Functions
 // ============================================================================
 
 // Re-export stripAnsi from unicode.ts (canonical implementation)
-import { stripAnsi as stripAnsiImpl } from '../unicode.js';
-export const stripAnsi = stripAnsiImpl;
+import { stripAnsi as stripAnsiImpl } from "../unicode.js"
+export const stripAnsi = stripAnsiImpl
 
 /**
  * Normalize frame output for comparison.
@@ -155,11 +155,11 @@ export const stripAnsi = stripAnsiImpl;
  * - Removes empty trailing lines
  */
 export function normalizeFrame(frame: string): string {
-	return stripAnsi(frame)
-		.split('\n')
-		.map((line) => line.trimEnd())
-		.join('\n')
-		.trimEnd();
+  return stripAnsi(frame)
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .trimEnd()
 }
 
 /**
@@ -167,16 +167,16 @@ export function normalizeFrame(frame: string): string {
  * Useful for waiting for async state updates.
  */
 export async function waitFor(
-	condition: () => boolean,
-	{ timeout = 1000, interval = 10 } = {},
+  condition: () => boolean,
+  { timeout = 1000, interval = 10 } = {},
 ): Promise<void> {
-	const start = Date.now();
-	while (!condition()) {
-		if (Date.now() - start > timeout) {
-			throw new Error(`waitFor timed out after ${timeout}ms`);
-		}
-		await new Promise<void>((resolve) => {
-			setTimeout(resolve, interval);
-		});
-	}
+  const start = Date.now()
+  while (!condition()) {
+    if (Date.now() - start > timeout) {
+      throw new Error(`waitFor timed out after ${timeout}ms`)
+    }
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, interval)
+    })
+  }
 }
