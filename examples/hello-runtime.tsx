@@ -7,62 +7,62 @@
  * Usage: bun examples/hello-runtime.tsx
  */
 
-import React from 'react';
-import { Box, Text } from '../src/index.js';
+import React from "react"
+import { Box, Text } from "../src/index.js"
 import {
-	createRuntime,
-	ensureLayoutEngine,
-	layout,
-	type Dims,
-	type RenderTarget,
-} from '../src/runtime/index.js';
+  createRuntime,
+  ensureLayoutEngine,
+  layout,
+  type Dims,
+  type RenderTarget,
+} from "../src/runtime/index.js"
 
 // Simple terminal target
 const termTarget: RenderTarget = {
-	write: (frame) => process.stdout.write(frame),
-	getDims: () => ({
-		cols: process.stdout.columns || 80,
-		rows: process.stdout.rows || 24,
-	}),
-};
+  write: (frame) => process.stdout.write(frame),
+  getDims: () => ({
+    cols: process.stdout.columns || 80,
+    rows: process.stdout.rows || 24,
+  }),
+}
 
 // Simple view
 function HelloView({ name }: { name: string }): React.ReactElement {
-	return (
-		<Box flexDirection="column" padding={1}>
-			<Text bold color="green">
-				Hello, {name}!
-			</Text>
-			<Text dimColor>Welcome to inkx-loop</Text>
-		</Box>
-	);
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Text bold color="green">
+        Hello, {name}!
+      </Text>
+      <Text dimColor>Welcome to inkx-loop</Text>
+    </Box>
+  )
 }
 
 async function main() {
-	// Initialize layout engine (required once)
-	await ensureLayoutEngine();
+  // Initialize layout engine (required once)
+  await ensureLayoutEngine()
 
-	// Create runtime
-	const runtime = createRuntime({ target: termTarget });
+  // Create runtime
+  const runtime = createRuntime({ target: termTarget })
 
-	// Render
-	const buffer = layout(<HelloView name="World" />, runtime.getDims());
-	runtime.render(buffer);
+  // Render
+  const buffer = layout(<HelloView name="World" />, runtime.getDims())
+  runtime.render(buffer)
 
-	// Wait a moment to see the output
-	await new Promise((r) => setTimeout(r, 1000));
+  // Wait a moment to see the output
+  await new Promise((r) => setTimeout(r, 1000))
 
-	// Update with new content
-	const buffer2 = layout(<HelloView name="inkx-loop" />, runtime.getDims());
-	runtime.render(buffer2);
+  // Update with new content
+  const buffer2 = layout(<HelloView name="inkx-loop" />, runtime.getDims())
+  runtime.render(buffer2)
 
-	// Wait again
-	await new Promise((r) => setTimeout(r, 1000));
+  // Wait again
+  await new Promise((r) => setTimeout(r, 1000))
 
-	// Cleanup
-	runtime[Symbol.dispose]();
+  // Cleanup
+  runtime[Symbol.dispose]()
 
-	console.log('\nDone!');
+  console.log("\nDone!")
 }
 
-main().catch(console.error);
+main().catch(console.error)

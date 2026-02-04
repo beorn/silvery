@@ -45,10 +45,10 @@ Ink's `render` function is synchronous:
 ```typescript
 // ink/src/render.ts (simplified)
 function render(element) {
-  const yogaNode = buildYogaTree(element);
-  yogaNode.calculateLayout(); // Dimensions computed here
-  const output = renderToString(element); // But element already rendered!
-  stdout.write(output);
+  const yogaNode = buildYogaTree(element)
+  yogaNode.calculateLayout() // Dimensions computed here
+  const output = renderToString(element) // But element already rendered!
+  stdout.write(output)
 }
 ```
 
@@ -161,21 +161,21 @@ Components have two render modes:
 ```typescript
 interface LayoutSpec {
   // Constraints (Phase 1)
-  width?: number | string | "auto" | "fit-content";
-  height?: number | string | "auto" | "fit-content";
-  flex?: number;
-  flexDirection?: "row" | "column";
+  width?: number | string | "auto" | "fit-content"
+  height?: number | string | "auto" | "fit-content"
+  flex?: number
+  flexDirection?: "row" | "column"
   // ... other flexbox props
 
   // Content renderer (Phase 3)
-  render: (computed: ComputedLayout) => TerminalContent;
+  render: (computed: ComputedLayout) => TerminalContent
 }
 
 interface ComputedLayout {
-  width: number;
-  height: number;
-  x: number; // Position relative to parent
-  y: number;
+  width: number
+  height: number
+  x: number // Position relative to parent
+  y: number
 }
 ```
 
@@ -339,15 +339,15 @@ useFocusManager();
 
 ```typescript
 // The key addition
-const { width, height, x, y } = useLayout();
+const { width, height, x, y } = useLayout()
 
 // Terminal capabilities
-const caps = useTerminalCapabilities();
+const caps = useTerminalCapabilities()
 // { trueColor: boolean, unicode: boolean, sixel: boolean, ... }
 
 // Derived from useLayout
-const { width } = useWidth(); // Just the width
-const { height } = useHeight(); // Just the height
+const { width } = useWidth() // Just the width
+const { height } = useHeight() // Just the height
 ```
 
 ---
@@ -383,25 +383,25 @@ import chalk from 'chalk';
 
 ```typescript
 interface Cell {
-  char: string; // Single grapheme
-  fg: Color | null; // Foreground color
-  bg: Color | null; // Background color
-  attrs: Set<Attr>; // bold, italic, underline, etc.
+  char: string // Single grapheme
+  fg: Color | null // Foreground color
+  bg: Color | null // Background color
+  attrs: Set<Attr> // bold, italic, underline, etc.
 }
 
-type TerminalBuffer = Cell[][]; // [y][x]
+type TerminalBuffer = Cell[][] // [y][x]
 
 function diff(prev: TerminalBuffer, next: TerminalBuffer): string {
-  let output = "";
+  let output = ""
   for (let y = 0; y < next.length; y++) {
     for (let x = 0; x < next[y].length; x++) {
       if (!cellEqual(prev[y]?.[x], next[y][x])) {
-        output += moveCursor(x, y);
-        output += renderCell(next[y][x]);
+        output += moveCursor(x, y)
+        output += renderCell(next[y][x])
       }
     }
   }
-  return output;
+  return output
 }
 ```
 
@@ -412,11 +412,11 @@ Naive diffing emits `\x1b[{y};{x}H` for every changed cell. Optimize:
 ```typescript
 function optimizeCursorMoves(changes: CellChange[]): string {
   // Sort by position
-  changes.sort((a, b) => a.y - b.y || a.x - b.x);
+  changes.sort((a, b) => a.y - b.y || a.x - b.x)
 
-  let output = "";
+  let output = ""
   let cursorX = 0,
-    cursorY = 0;
+    cursorY = 0
 
   for (const { x, y, cell } of changes) {
     if (y === cursorY && x === cursorX) {
@@ -424,16 +424,16 @@ function optimizeCursorMoves(changes: CellChange[]): string {
     } else if (y === cursorY && x === cursorX + 1) {
       // Adjacent, no move needed (cursor advances after write)
     } else if (y === cursorY + 1 && x === 0) {
-      output += "\n"; // Newline cheaper than absolute move
+      output += "\n" // Newline cheaper than absolute move
     } else {
-      output += moveCursor(x, y);
+      output += moveCursor(x, y)
     }
-    output += renderCell(cell);
-    cursorX = x + 1;
-    cursorY = y;
+    output += renderCell(cell)
+    cursorX = x + 1
+    cursorY = y
   }
 
-  return output;
+  return output
 }
 ```
 
@@ -476,8 +476,8 @@ function textToCells(text: string): Cell[] {
 
 ```typescript
 interface InkxNode {
-  layoutDirty: boolean; // Structure changed, needs re-layout
-  contentDirty: boolean; // Content changed, layout unchanged
+  layoutDirty: boolean // Structure changed, needs re-layout
+  contentDirty: boolean // Content changed, layout unchanged
 }
 
 // On state change:
@@ -489,17 +489,17 @@ interface InkxNode {
 
 ```typescript
 class RenderScheduler {
-  private pending = false;
+  private pending = false
 
   scheduleRender() {
-    if (this.pending) return;
-    this.pending = true;
+    if (this.pending) return
+    this.pending = true
 
     // Use setImmediate to batch synchronous state changes
     setImmediate(() => {
-      this.pending = false;
-      this.executeRender();
-    });
+      this.pending = false
+      this.executeRender()
+    })
   }
 }
 ```
@@ -511,8 +511,8 @@ class RenderScheduler {
 // Only update changed props and recalculate
 function updateYogaNode(node: InkxNode, prevProps: Props, nextProps: Props) {
   if (prevProps.width !== nextProps.width) {
-    node.yogaNode.setWidth(nextProps.width);
-    node.layoutDirty = true;
+    node.yogaNode.setWidth(nextProps.width)
+    node.layoutDirty = true
   }
   // ... only update what changed
 }
@@ -716,20 +716,20 @@ function calculateVisibleWindow(
   scrollToIndex: number,
 ): { scrollTop: number; firstVisible: number; lastVisible: number } {
   // Compute cumulative offsets
-  const offsets = cumulativeSum(childHeights);
-  const totalHeight = offsets[offsets.length - 1] ?? 0;
+  const offsets = cumulativeSum(childHeights)
+  const totalHeight = offsets[offsets.length - 1] ?? 0
 
   // Center the scrollTo child
-  const targetOffset = offsets[scrollToIndex] ?? 0;
-  const targetHeight = childHeights[scrollToIndex] ?? 0;
-  let scrollTop = targetOffset - (containerHeight - targetHeight) / 2;
-  scrollTop = clamp(scrollTop, 0, Math.max(0, totalHeight - containerHeight));
+  const targetOffset = offsets[scrollToIndex] ?? 0
+  const targetHeight = childHeights[scrollToIndex] ?? 0
+  let scrollTop = targetOffset - (containerHeight - targetHeight) / 2
+  scrollTop = clamp(scrollTop, 0, Math.max(0, totalHeight - containerHeight))
 
   // Find visible range
-  const firstVisible = findFirstVisible(offsets, scrollTop);
-  const lastVisible = findLastVisible(offsets, scrollTop + containerHeight);
+  const firstVisible = findFirstVisible(offsets, scrollTop)
+  const lastVisible = findLastVisible(offsets, scrollTop + containerHeight)
 
-  return { scrollTop, firstVisible, lastVisible };
+  return { scrollTop, firstVisible, lastVisible }
 }
 ```
 
@@ -766,7 +766,7 @@ function TaskList({ tasks, selectedIndex, onSelect }) {
         />
       ))}
     </Box>
-  );
+  )
 }
 
 function TaskRow({ task, isSelected }) {
@@ -787,7 +787,7 @@ function TaskRow({ task, isSelected }) {
         </Text>
       ))}
     </Box>
-  );
+  )
 }
 ```
 

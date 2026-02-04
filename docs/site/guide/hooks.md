@@ -7,10 +7,10 @@ Inkx provides the same hooks as Ink, plus layout feedback hooks.
 **Inkx only** - The key addition. Returns the computed dimensions of the component's container.
 
 ```tsx
-import { Box, Text, useContentRect } from "inkx";
+import { Box, Text, useContentRect } from "inkx"
 
 function SizedBox() {
-  const { width, height, x, y } = useContentRect();
+  const { width, height, x, y } = useContentRect()
 
   return (
     <Box borderStyle="single">
@@ -21,7 +21,7 @@ function SizedBox() {
         Position: ({x}, {y})
       </Text>
     </Box>
-  );
+  )
 }
 ```
 
@@ -44,12 +44,12 @@ On the first render, dimensions are `{ width: 0, height: 0, x: 0, y: 0 }`. This 
 
 ```tsx
 function Header() {
-  const { width } = useContentRect();
+  const { width } = useContentRect()
 
   // Guard against first render if needed
-  if (width === 0) return null;
+  if (width === 0) return null
 
-  return <Text>{"=".repeat(width)}</Text>;
+  return <Text>{"=".repeat(width)}</Text>
 }
 ```
 
@@ -60,17 +60,19 @@ In practice, both renders happen before the first paint, so this is usually invi
 **Inkx only** - Access the Term instance for terminal capabilities and styling.
 
 ```tsx
-import { useTerm } from "inkx";
+import { useTerm } from "inkx"
 
 function ColoredOutput() {
-  const term = useTerm();
+  const term = useTerm()
 
   return (
     <Box>
       <Text>{term.green("Success!")} Operation completed.</Text>
-      <Text>Terminal size: {term.columns}x{term.rows}</Text>
+      <Text>
+        Terminal size: {term.columns}x{term.rows}
+      </Text>
     </Box>
-  );
+  )
 }
 ```
 
@@ -78,30 +80,30 @@ function ColoredOutput() {
 
 Returns the `Term` instance passed to `render()`. Provides:
 
-| Property/Method | Description                           |
-| --------------- | ------------------------------------- |
-| `columns`       | Terminal width                        |
-| `rows`          | Terminal height                       |
-| `hasColor()`    | Check if terminal supports colors     |
-| Color methods   | `red()`, `green()`, `bold()`, etc.    |
+| Property/Method | Description                        |
+| --------------- | ---------------------------------- |
+| `columns`       | Terminal width                     |
+| `rows`          | Terminal height                    |
+| `hasColor()`    | Check if terminal supports colors  |
+| Color methods   | `red()`, `green()`, `bold()`, etc. |
 
 ## useInput
 
 Handle keyboard input.
 
 ```tsx
-import { useInput } from "inkx";
+import { useInput } from "inkx"
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(0)
 
   useInput((input, key) => {
-    if (key.upArrow) setCount((c) => c + 1);
-    if (key.downArrow) setCount((c) => c - 1);
-    if (input === "q") process.exit();
-  });
+    if (key.upArrow) setCount((c) => c + 1)
+    if (key.downArrow) setCount((c) => c - 1)
+    if (input === "q") process.exit()
+  })
 
-  return <Text>Count: {count}</Text>;
+  return <Text>Count: {count}</Text>
 }
 ```
 
@@ -136,16 +138,16 @@ useInput(
 Access app-level controls.
 
 ```tsx
-import { useApp } from "inkx";
+import { useApp } from "inkx"
 
 function App() {
-  const { exit } = useApp();
+  const { exit } = useApp()
 
   useInput((input) => {
-    if (input === "q") exit();
-  });
+    if (input === "q") exit()
+  })
 
-  return <Text>Press q to quit</Text>;
+  return <Text>Press q to quit</Text>
 }
 ```
 
@@ -160,16 +162,16 @@ function App() {
 Access stdout stream and dimensions.
 
 ```tsx
-import { useStdout } from "inkx";
+import { useStdout } from "inkx"
 
 function App() {
-  const { stdout, write } = useStdout();
+  const { stdout, write } = useStdout()
 
   return (
     <Text>
       Terminal: {stdout.columns}x{stdout.rows}
     </Text>
-  );
+  )
 }
 ```
 
@@ -185,10 +187,10 @@ function App() {
 Access stdin stream.
 
 ```tsx
-import { useStdin } from "inkx";
+import { useStdin } from "inkx"
 
 function App() {
-  const { stdin, setRawMode, isRawModeSupported } = useStdin();
+  const { stdin, setRawMode, isRawModeSupported } = useStdin()
   // ...
 }
 ```
@@ -206,16 +208,16 @@ function App() {
 Manage focus state for a component.
 
 ```tsx
-import { useFocus, Box, Text } from "inkx";
+import { useFocus, Box, Text } from "inkx"
 
 function FocusableItem({ label }: { label: string }) {
-  const { isFocused } = useFocus();
+  const { isFocused } = useFocus()
 
   return (
     <Box borderStyle={isFocused ? "double" : "single"}>
       <Text>{label}</Text>
     </Box>
-  );
+  )
 }
 ```
 
@@ -240,15 +242,15 @@ useFocus({
 Control focus programmatically.
 
 ```tsx
-import { useFocusManager } from "inkx";
+import { useFocusManager } from "inkx"
 
 function App() {
-  const { focusNext, focusPrevious, focus } = useFocusManager();
+  const { focusNext, focusPrevious, focus } = useFocusManager()
 
   useInput((input, key) => {
-    if (key.tab && key.shift) focusPrevious();
-    else if (key.tab) focusNext();
-  });
+    if (key.tab && key.shift) focusPrevious()
+    else if (key.tab) focusNext()
+  })
 
   return (
     <Box flexDirection="column">
@@ -256,7 +258,7 @@ function App() {
       <FocusableItem label="Second" />
       <FocusableItem label="Third" />
     </Box>
-  );
+  )
 }
 ```
 

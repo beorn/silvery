@@ -91,7 +91,7 @@ Currently renders all nodes. Could skip nodes entirely outside viewport:
 ```typescript
 // In renderNodeToBuffer
 if (layout.y + layout.height < 0 || layout.y >= buffer.height) {
-  return; // Completely outside viewport
+  return // Completely outside viewport
 }
 ```
 
@@ -157,11 +157,11 @@ import {
   layoutPhase,
   contentPhase,
   outputPhase,
-} from "inkx/pipeline";
+} from "inkx/pipeline"
 
-const start = performance.now();
-measurePhase(root);
-console.log("measure:", performance.now() - start);
+const start = performance.now()
+measurePhase(root)
+console.log("measure:", performance.now() - start)
 // ... etc
 ```
 

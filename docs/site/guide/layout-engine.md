@@ -7,11 +7,11 @@ Inkx uses a pluggable layout engine architecture. It supports [Flexx](../../../b
 For most apps, you don't need to configure anything. Inkx auto-initializes the default layout engine when you call `render()`:
 
 ```tsx
-import { render, Box, Text, createTerm } from "inkx";
+import { render, Box, Text, createTerm } from "inkx"
 
 // Layout engine is initialized automatically
-using term = createTerm();
-await render(<App />, term);
+using term = createTerm()
+await render(<App />, term)
 ```
 
 ## Flexx (Recommended)
@@ -28,14 +28,14 @@ Flexx is a pure JavaScript layout engine with a Yoga-compatible API. It's the re
 If you want to explicitly set up Flexx (not usually necessary):
 
 ```tsx
-import { render, setLayoutEngine, createFlexxEngine, Box, Text } from "inkx";
+import { render, setLayoutEngine, createFlexxEngine, Box, Text } from "inkx"
 
 // Initialize Flexx (synchronous - no await needed)
-setLayoutEngine(createFlexxEngine());
+setLayoutEngine(createFlexxEngine())
 
 // Now render uses Flexx for layout
-using term = createTerm();
-await render(<App />, term);
+using term = createTerm()
+await render(<App />, term)
 ```
 
 ### Using renderSync with Flexx
@@ -43,13 +43,13 @@ await render(<App />, term);
 Since Flexx doesn't require async initialization, you can use `renderSync()`:
 
 ```tsx
-import { renderSync, setLayoutEngine, createFlexxEngine } from "inkx";
+import { renderSync, setLayoutEngine, createFlexxEngine } from "inkx"
 
-setLayoutEngine(createFlexxEngine());
+setLayoutEngine(createFlexxEngine())
 
 // No await needed for renderSync
-using term = createTerm();
-const instance = renderSync(term, <App />);
+using term = createTerm()
+const instance = renderSync(term, <App />)
 ```
 
 ## API Reference
@@ -57,66 +57,66 @@ const instance = renderSync(term, <App />);
 ### setLayoutEngine()
 
 ```ts
-function setLayoutEngine(engine: LayoutEngine): void;
+function setLayoutEngine(engine: LayoutEngine): void
 ```
 
 Sets the global layout engine instance. Must be called before rendering if you want to use a non-default engine.
 
 ```tsx
-import { setLayoutEngine, createFlexxEngine } from "inkx";
+import { setLayoutEngine, createFlexxEngine } from "inkx"
 
-setLayoutEngine(createFlexxEngine());
+setLayoutEngine(createFlexxEngine())
 ```
 
 ### createYogaEngine()
 
 ```ts
-function createYogaEngine(yoga: Yoga): YogaLayoutEngine;
+function createYogaEngine(yoga: Yoga): YogaLayoutEngine
 ```
 
 Creates a Yoga layout engine from an already-initialized Yoga instance. Use this when you've loaded Yoga yourself:
 
 ```tsx
-import { setLayoutEngine, createYogaEngine } from "inkx";
-import initYoga from "yoga-wasm-web";
+import { setLayoutEngine, createYogaEngine } from "inkx"
+import initYoga from "yoga-wasm-web"
 
-const yoga = await initYoga();
-setLayoutEngine(createYogaEngine(yoga));
+const yoga = await initYoga()
+setLayoutEngine(createYogaEngine(yoga))
 ```
 
 ### initYogaEngine()
 
 ```ts
-function initYogaEngine(): Promise<YogaLayoutEngine>;
+function initYogaEngine(): Promise<YogaLayoutEngine>
 ```
 
 Initializes Yoga using `yoga-wasm-web/auto` and returns a ready-to-use engine. This is what `render()` uses internally:
 
 ```tsx
-import { setLayoutEngine, initYogaEngine } from "inkx";
+import { setLayoutEngine, initYogaEngine } from "inkx"
 
-const engine = await initYogaEngine();
-setLayoutEngine(engine);
+const engine = await initYogaEngine()
+setLayoutEngine(engine)
 ```
 
 ### createFlexxEngine()
 
 ```ts
-function createFlexxEngine(): FlexxLayoutEngine;
+function createFlexxEngine(): FlexxLayoutEngine
 ```
 
 Creates a Flexx layout engine. Unlike Yoga, this is synchronous:
 
 ```tsx
-import { setLayoutEngine, createFlexxEngine } from "inkx";
+import { setLayoutEngine, createFlexxEngine } from "inkx"
 
-setLayoutEngine(createFlexxEngine());
+setLayoutEngine(createFlexxEngine())
 ```
 
 ### isLayoutEngineInitialized()
 
 ```ts
-function isLayoutEngineInitialized(): boolean;
+function isLayoutEngineInitialized(): boolean
 ```
 
 Checks if a layout engine has been set:
@@ -126,10 +126,10 @@ import {
   isLayoutEngineInitialized,
   setLayoutEngine,
   createFlexxEngine,
-} from "inkx";
+} from "inkx"
 
 if (!isLayoutEngineInitialized()) {
-  setLayoutEngine(createFlexxEngine());
+  setLayoutEngine(createFlexxEngine())
 }
 ```
 
@@ -182,13 +182,13 @@ You can implement your own layout engine by satisfying the `LayoutEngine` interf
 ```ts
 interface LayoutEngine {
   /** Create a new layout node */
-  createNode(): LayoutNode;
+  createNode(): LayoutNode
 
   /** Layout constants for this engine */
-  readonly constants: LayoutConstants;
+  readonly constants: LayoutConstants
 
   /** Engine name for debugging */
-  readonly name: string;
+  readonly name: string
 }
 ```
 
@@ -199,28 +199,28 @@ Each node must implement tree operations, property setters, and layout calculati
 ```ts
 interface LayoutNode {
   // Tree operations
-  insertChild(child: LayoutNode, index: number): void;
-  removeChild(child: LayoutNode): void;
-  free(): void;
+  insertChild(child: LayoutNode, index: number): void
+  removeChild(child: LayoutNode): void
+  free(): void
 
   // Measure function for intrinsic sizing
-  setMeasureFunc(measureFunc: MeasureFunc): void;
+  setMeasureFunc(measureFunc: MeasureFunc): void
 
   // Dimension setters
-  setWidth(value: number): void;
-  setWidthPercent(value: number): void;
-  setWidthAuto(): void;
-  setHeight(value: number): void;
+  setWidth(value: number): void
+  setWidthPercent(value: number): void
+  setWidthAuto(): void
+  setHeight(value: number): void
   // ... (full interface has ~30 property setters)
 
   // Layout calculation
-  calculateLayout(width: number, height: number, direction?: number): void;
+  calculateLayout(width: number, height: number, direction?: number): void
 
   // Layout results
-  getComputedLeft(): number;
-  getComputedTop(): number;
-  getComputedWidth(): number;
-  getComputedHeight(): number;
+  getComputedLeft(): number
+  getComputedTop(): number
+  getComputedWidth(): number
+  getComputedHeight(): number
 }
 ```
 
@@ -231,8 +231,8 @@ Your engine must provide numeric constants for flexbox properties:
 ```ts
 interface LayoutConstants {
   // Flex Direction
-  FLEX_DIRECTION_COLUMN: number;
-  FLEX_DIRECTION_ROW: number;
+  FLEX_DIRECTION_COLUMN: number
+  FLEX_DIRECTION_ROW: number
   // ... alignment, edges, display, etc.
 }
 ```
@@ -242,28 +242,28 @@ See the [Flexx adapter source](https://github.com/beorn/inkx/blob/main/src/adapt
 ### Example: Minimal Custom Engine
 
 ```ts
-import type { LayoutEngine, LayoutNode, LayoutConstants } from "inkx";
+import type { LayoutEngine, LayoutNode, LayoutConstants } from "inkx"
 
 class SimpleNode implements LayoutNode {
-  private width = 0;
-  private height = 0;
-  private children: SimpleNode[] = [];
+  private width = 0
+  private height = 0
+  private children: SimpleNode[] = []
 
   insertChild(child: LayoutNode, index: number) {
-    this.children.splice(index, 0, child as SimpleNode);
+    this.children.splice(index, 0, child as SimpleNode)
   }
 
   removeChild(child: LayoutNode) {
-    const idx = this.children.indexOf(child as SimpleNode);
-    if (idx !== -1) this.children.splice(idx, 1);
+    const idx = this.children.indexOf(child as SimpleNode)
+    if (idx !== -1) this.children.splice(idx, 1)
   }
 
   free() {
-    this.children = [];
+    this.children = []
   }
 
   setWidth(value: number) {
-    this.width = value;
+    this.width = value
   }
 
   // ... implement all required methods
@@ -273,7 +273,7 @@ class SimpleNode implements LayoutNode {
   }
 
   getComputedWidth() {
-    return this.width;
+    return this.width
   }
 
   // ... other getters
@@ -281,7 +281,7 @@ class SimpleNode implements LayoutNode {
 
 class SimpleEngine implements LayoutEngine {
   createNode(): LayoutNode {
-    return new SimpleNode();
+    return new SimpleNode()
   }
 
   get constants(): LayoutConstants {
@@ -289,16 +289,16 @@ class SimpleEngine implements LayoutEngine {
       FLEX_DIRECTION_COLUMN: 0,
       FLEX_DIRECTION_ROW: 1,
       // ... all required constants
-    };
+    }
   }
 
   get name(): string {
-    return "simple";
+    return "simple"
   }
 }
 
 // Use it
-setLayoutEngine(new SimpleEngine());
+setLayoutEngine(new SimpleEngine())
 ```
 
 ## Troubleshooting
@@ -309,17 +309,17 @@ This error means you called `renderSync()` without setting up an engine first:
 
 ```tsx
 // Wrong - no engine set
-using term = createTerm();
-renderSync(term, <App />); // Error!
+using term = createTerm()
+renderSync(term, <App />) // Error!
 
 // Right - use async render (auto-initializes Yoga)
-using term = createTerm();
-await render(<App />, term);
+using term = createTerm()
+await render(<App />, term)
 
 // Right - manually set engine first
-setLayoutEngine(createFlexxEngine());
-using term = createTerm();
-renderSync(term, <App />);
+setLayoutEngine(createFlexxEngine())
+using term = createTerm()
+renderSync(term, <App />)
 ```
 
 ### WASM loading fails
@@ -332,19 +332,19 @@ import {
   setLayoutEngine,
   createFlexxEngine,
   isLayoutEngineInitialized,
-} from "inkx";
+} from "inkx"
 
-using term = createTerm();
+using term = createTerm()
 
 try {
-  await render(<App />, term);
+  await render(<App />, term)
 } catch (e) {
   if (!isLayoutEngineInitialized()) {
-    console.warn("Falling back to Flexx engine");
-    setLayoutEngine(createFlexxEngine());
-    renderSync(term, <App />);
+    console.warn("Falling back to Flexx engine")
+    setLayoutEngine(createFlexxEngine())
+    renderSync(term, <App />)
   } else {
-    throw e;
+    throw e
   }
 }
 ```

@@ -43,15 +43,15 @@ The `createRenderer` function provides an ink-testing-library compatible API for
 ### Basic Usage
 
 ```tsx
-import { createRenderer } from "inkx/testing";
-import { Text } from "inkx";
+import { createRenderer } from "inkx/testing"
+import { Text } from "inkx"
 
-const render = createRenderer();
+const render = createRenderer()
 
 test("renders text", () => {
-  const { lastFrame } = render(<Text>Hello</Text>);
-  expect(lastFrame()).toContain("Hello");
-});
+  const { lastFrame } = render(<Text>Hello</Text>)
+  expect(lastFrame()).toContain("Hello")
+})
 ```
 
 ### Auto-Cleanup
@@ -59,18 +59,18 @@ test("renders text", () => {
 Each `render()` call automatically unmounts the previous render, so you don't need explicit cleanup:
 
 ```tsx
-const render = createRenderer();
+const render = createRenderer()
 
 test("first test", () => {
-  const { lastFrame } = render(<Text>First</Text>);
-  expect(lastFrame()).toContain("First");
-});
+  const { lastFrame } = render(<Text>First</Text>)
+  expect(lastFrame()).toContain("First")
+})
 
 test("second test", () => {
   // Previous render is auto-cleaned
-  const { lastFrame } = render(<Text>Second</Text>);
-  expect(lastFrame()).toContain("Second");
-});
+  const { lastFrame } = render(<Text>Second</Text>)
+  expect(lastFrame()).toContain("Second")
+})
 ```
 
 ### Testing Keyboard Input
@@ -78,30 +78,30 @@ test("second test", () => {
 Use `stdin.write()` to simulate keyboard input:
 
 ```tsx
-import { useState } from "react";
-import { Box, Text, useInput } from "inkx";
+import { useState } from "react"
+import { Box, Text, useInput } from "inkx"
 
 function Counter() {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(0)
 
   useInput((input, key) => {
-    if (input === "+" || key.upArrow) setCount((c) => c + 1);
-    if (input === "-" || key.downArrow) setCount((c) => c - 1);
-  });
+    if (input === "+" || key.upArrow) setCount((c) => c + 1)
+    if (input === "-" || key.downArrow) setCount((c) => c - 1)
+  })
 
-  return <Text>Count: {count}</Text>;
+  return <Text>Count: {count}</Text>
 }
 
 test("increments with arrow keys", () => {
-  const render = createRenderer();
-  const { lastFrame, stdin } = render(<Counter />);
+  const render = createRenderer()
+  const { lastFrame, stdin } = render(<Counter />)
 
-  stdin.write("\x1b[A"); // Up arrow
-  stdin.write("\x1b[A"); // Up arrow
-  stdin.write("\x1b[B"); // Down arrow
+  stdin.write("\x1b[A") // Up arrow
+  stdin.write("\x1b[A") // Up arrow
+  stdin.write("\x1b[B") // Down arrow
 
-  expect(lastFrame()).toContain("Count: 1");
-});
+  expect(lastFrame()).toContain("Count: 1")
+})
 ```
 
 ### Common Escape Sequences
@@ -129,18 +129,18 @@ Use `rerender()` to update props and verify state changes:
 
 ```tsx
 function Greeter({ name }: { name: string }) {
-  return <Text>Hello, {name}!</Text>;
+  return <Text>Hello, {name}!</Text>
 }
 
 test("updates on prop change", () => {
-  const render = createRenderer();
-  const { lastFrame, rerender } = render(<Greeter name="Alice" />);
+  const render = createRenderer()
+  const { lastFrame, rerender } = render(<Greeter name="Alice" />)
 
-  expect(lastFrame()).toContain("Hello, Alice!");
+  expect(lastFrame()).toContain("Hello, Alice!")
 
-  rerender(<Greeter name="Bob" />);
-  expect(lastFrame()).toContain("Hello, Bob!");
-});
+  rerender(<Greeter name="Bob" />)
+  expect(lastFrame()).toContain("Hello, Bob!")
+})
 ```
 
 ### Custom Dimensions
@@ -148,13 +148,13 @@ test("updates on prop change", () => {
 Specify terminal dimensions per render:
 
 ```tsx
-const render = createRenderer();
+const render = createRenderer()
 
 // Default is 80x24
 const { lastFrame } = render(<WideComponent />, {
   cols: 120,
   rows: 40,
-});
+})
 ```
 
 Or set defaults at renderer creation:
@@ -163,7 +163,7 @@ Or set defaults at renderer creation:
 const render = createRenderer({
   cols: 120,
   rows: 40,
-});
+})
 ```
 
 ### Frame Inspection
@@ -171,16 +171,16 @@ const render = createRenderer({
 Access all rendered frames for detailed testing:
 
 ```tsx
-const { frames, lastFrame, clear } = render(<MyComponent />);
+const { frames, lastFrame, clear } = render(<MyComponent />)
 
 // frames is an array of all rendered outputs
-console.log(frames.length);
+console.log(frames.length)
 
 // lastFrame() returns the most recent frame
-const current = lastFrame();
+const current = lastFrame()
 
 // clear() resets the frame history
-clear();
+clear()
 ```
 
 ## Test Utilities
@@ -190,11 +190,11 @@ clear();
 Remove ANSI escape codes for easier assertions:
 
 ```tsx
-import { stripAnsi } from "inkx/testing";
+import { stripAnsi } from "inkx/testing"
 
-const { lastFrame } = render(<Text color="red">Hello</Text>);
-const text = stripAnsi(lastFrame()!);
-expect(text).toBe("Hello");
+const { lastFrame } = render(<Text color="red">Hello</Text>)
+const text = stripAnsi(lastFrame()!)
+expect(text).toBe("Hello")
 ```
 
 ### normalizeFrame
@@ -202,10 +202,10 @@ expect(text).toBe("Hello");
 Strip ANSI codes and normalize whitespace:
 
 ```tsx
-import { normalizeFrame } from "inkx/testing";
+import { normalizeFrame } from "inkx/testing"
 
-const { lastFrame } = render(<MyComponent />);
-const normalized = normalizeFrame(lastFrame()!);
+const { lastFrame } = render(<MyComponent />)
+const normalized = normalizeFrame(lastFrame()!)
 // Strips ANSI, trims trailing whitespace, removes empty trailing lines
 ```
 
@@ -214,18 +214,18 @@ const normalized = normalizeFrame(lastFrame()!);
 Wait for async conditions:
 
 ```tsx
-import { waitFor } from "inkx/testing";
+import { waitFor } from "inkx/testing"
 
 test("async update", async () => {
-  const { lastFrame } = render(<AsyncComponent />);
+  const { lastFrame } = render(<AsyncComponent />)
 
   await waitFor(() => lastFrame()?.includes("Loaded"), {
     timeout: 1000,
     interval: 10,
-  });
+  })
 
-  expect(lastFrame()).toContain("Loaded");
-});
+  expect(lastFrame()).toContain("Loaded")
+})
 ```
 
 ## Test Patterns
@@ -233,76 +233,76 @@ test("async update", async () => {
 ### Testing Focus Management
 
 ```tsx
-import { useFocus, useFocusManager, FocusContext } from "inkx";
+import { useFocus, useFocusManager, FocusContext } from "inkx"
 
 function FocusableItem({ id }: { id: string }) {
-  const { isFocused } = useFocus({ id });
-  return <Text backgroundColor={isFocused ? "cyan" : undefined}>{id}</Text>;
+  const { isFocused } = useFocus({ id })
+  return <Text backgroundColor={isFocused ? "cyan" : undefined}>{id}</Text>
 }
 
 test("focus navigation", () => {
-  const render = createRenderer();
+  const render = createRenderer()
   const { stdin, lastFrame } = render(
     <Box flexDirection="column">
       <FocusableItem id="item1" />
       <FocusableItem id="item2" />
     </Box>,
-  );
+  )
 
   // Tab to move focus
-  stdin.write("\t");
+  stdin.write("\t")
   // Verify focus moved (check for cyan background in ANSI output)
-});
+})
 ```
 
 ### Testing Layout Dimensions
 
 ```tsx
-import { useContentRect, NodeContext } from "inkx";
+import { useContentRect, NodeContext } from "inkx"
 
 function LayoutCapture({ onLayout }: { onLayout: (l: any) => void }) {
-  const layout = useContentRect();
-  React.useEffect(() => onLayout(layout), [layout]);
-  return <Text>Content</Text>;
+  const layout = useContentRect()
+  React.useEffect(() => onLayout(layout), [layout])
+  return <Text>Content</Text>
 }
 
 test("layout provides dimensions", () => {
-  let capturedLayout = null;
-  const render = createRenderer();
+  let capturedLayout = null
+  const render = createRenderer()
 
   render(
     <Box width={40} height={10}>
       <LayoutCapture onLayout={(l) => (capturedLayout = l)} />
     </Box>,
-  );
+  )
 
-  expect(capturedLayout).toHaveProperty("width");
-  expect(capturedLayout).toHaveProperty("height");
-});
+  expect(capturedLayout).toHaveProperty("width")
+  expect(capturedLayout).toHaveProperty("height")
+})
 ```
 
 ### Testing with Mock Contexts
 
 ```tsx
-import { AppContext, StdinContext, FocusContext } from "inkx/context";
+import { AppContext, StdinContext, FocusContext } from "inkx/context"
 
 test("useApp exit function", () => {
-  let exitCalled = false;
+  let exitCalled = false
   const mockAppContext = {
     exit: () => {
-      exitCalled = true;
+      exitCalled = true
     },
-  };
+  }
 
-  const render = createRenderer();
+  const render = createRenderer()
   render(
     <AppContext.Provider value={mockAppContext}>
       <ComponentThatCallsExit />
     </AppContext.Provider>,
-  );
+  )
 
-  expect(exitCalled).toBe(true);
-});
+  expect(exitCalled).toBe(true)
+})
 ```
 
 ## Running Tests
@@ -331,8 +331,8 @@ Bug fixes include regression tests named after issue IDs:
 describe("Bug km-r0nz: Columns view vertical spacing", () => {
   it("items should have consistent vertical spacing", () => {
     // Reproduction of original bug
-  });
-});
+  })
+})
 ```
 
 ### Compatibility Tests
@@ -343,10 +343,10 @@ Ink API compatibility is verified through:
 describe("Ink API Compatibility", () => {
   describe("Component Exports", () => {
     test("Box component exists and is a function", () => {
-      expect(typeof Box).toBe("function");
-    });
-  });
-});
+      expect(typeof Box).toBe("function")
+    })
+  })
+})
 ```
 
 ### Performance Tests
@@ -355,20 +355,20 @@ Performance benchmarks use timing utilities:
 
 ```tsx
 function benchmark(fn: () => void, iterations = 5) {
-  const runs = [];
+  const runs = []
   for (let i = 0; i < iterations; i++) {
-    const start = performance.now();
-    fn();
-    runs.push(performance.now() - start);
+    const start = performance.now()
+    fn()
+    runs.push(performance.now() - start)
   }
   return {
     min: Math.min(...runs),
     avg: runs.reduce((a, b) => a + b) / runs.length,
-  };
+  }
 }
 
 test("renders 200 components efficiently", () => {
-  const stats = benchmark(() => render(<LargeList items={200} />));
-  expect(stats.avg).toBeLessThan(100); // ms
-});
+  const stats = benchmark(() => render(<LargeList items={200} />))
+  expect(stats.avg).toBeLessThan(100) // ms
+})
 ```

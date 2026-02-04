@@ -27,13 +27,13 @@ Ink is in maintenance mode with a stable but limited architecture. Many long-sta
 ```tsx
 // Ink: 147 lines of width-threading code in real apps
 function Card({ width }: { width: number }) {
-  return <Text>{truncate(title, width)}</Text>;
+  return <Text>{truncate(title, width)}</Text>
 }
 
 // Inkx: Zero width props needed
 function Card() {
-  const { width } = useLayout();
-  return <Text>{truncate(title, width)}</Text>;
+  const { width } = useLayout()
+  return <Text>{truncate(title, width)}</Text>
 }
 ```
 

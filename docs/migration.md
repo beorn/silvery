@@ -170,8 +170,8 @@ Inkx measures all children via Yoga (fast), then only renders content for visibl
 
 ```typescript
 // Ink: Measure after render
-const ref = useRef();
-const { width } = measureElement(ref.current);
+const ref = useRef()
+const { width } = measureElement(ref.current)
 // Need to manually trigger re-render if you want to use width
 ```
 
@@ -179,7 +179,7 @@ const { width } = measureElement(ref.current);
 
 ```typescript
 // Inkx: Just use the hook
-const { width } = useLayout();
+const { width } = useLayout()
 // Automatically re-renders with correct dimensions
 ```
 

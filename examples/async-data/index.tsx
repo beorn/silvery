@@ -7,7 +7,7 @@
  * - Error handling with ErrorBoundary
  */
 
-import React, { Suspense, useState, use } from "react";
+import React, { Suspense, useState, use } from "react"
 import {
   render,
   Box,
@@ -17,27 +17,27 @@ import {
   createTerm,
   ErrorBoundary,
   type Key,
-} from "../../src/index.js";
+} from "../../src/index.js"
 
 // ============================================================================
 // Data Fetching (simulated)
 // ============================================================================
 
 // Cache for promises (React's use() requires stable promise references)
-const cache = new Map<string, Promise<unknown>>();
+const cache = new Map<string, Promise<unknown>>()
 
 function fetchData<T>(key: string, ms: number, data: T): Promise<T> {
   if (!cache.has(key)) {
     cache.set(
       key,
-      new Promise<T>((resolve) => setTimeout(() => resolve(data), ms))
-    );
+      new Promise<T>((resolve) => setTimeout(() => resolve(data), ms)),
+    )
   }
-  return cache.get(key) as Promise<T>;
+  return cache.get(key) as Promise<T>
 }
 
 function clearCache() {
-  cache.clear();
+  cache.clear()
 }
 
 // ============================================================================
@@ -45,9 +45,9 @@ function clearCache() {
 // ============================================================================
 
 interface UserData {
-  name: string;
-  email: string;
-  role: string;
+  name: string
+  email: string
+  role: string
 }
 
 function UserProfile() {
@@ -56,23 +56,30 @@ function UserProfile() {
       name: "Alice Chen",
       email: "alice@example.com",
       role: "Developer",
-    })
-  );
+    }),
+  )
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="green" padding={1}>
-      <Text bold color="green">User Profile</Text>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor="green"
+      padding={1}
+    >
+      <Text bold color="green">
+        User Profile
+      </Text>
       <Text>Name: {user.name}</Text>
       <Text>Email: {user.email}</Text>
       <Text>Role: {user.role}</Text>
     </Box>
-  );
+  )
 }
 
 interface StatsData {
-  projects: number;
-  commits: number;
-  reviews: number;
+  projects: number
+  commits: number
+  reviews: number
 }
 
 function Statistics() {
@@ -81,23 +88,30 @@ function Statistics() {
       projects: 12,
       commits: 847,
       reviews: 156,
-    })
-  );
+    }),
+  )
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1}>
-      <Text bold color="blue">Statistics</Text>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor="blue"
+      padding={1}
+    >
+      <Text bold color="blue">
+        Statistics
+      </Text>
       <Text>Projects: {stats.projects}</Text>
       <Text>Commits: {stats.commits}</Text>
       <Text>Reviews: {stats.reviews}</Text>
     </Box>
-  );
+  )
 }
 
 interface Activity {
-  id: number;
-  action: string;
-  time: string;
+  id: number
+  action: string
+  time: string
 }
 
 function RecentActivity() {
@@ -106,19 +120,26 @@ function RecentActivity() {
       { id: 1, action: "Merged PR #423", time: "2h ago" },
       { id: 2, action: "Reviewed PR #421", time: "4h ago" },
       { id: 3, action: "Created issue #89", time: "1d ago" },
-    ])
-  );
+    ]),
+  )
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="yellow" padding={1}>
-      <Text bold color="yellow">Recent Activity</Text>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor="yellow"
+      padding={1}
+    >
+      <Text bold color="yellow">
+        Recent Activity
+      </Text>
       {activities.map((a) => (
         <Text key={a.id}>
           <Text dim>{a.time}</Text> {a.action}
         </Text>
       ))}
     </Box>
-  );
+  )
 }
 
 // Loading fallbacks
@@ -127,7 +148,7 @@ function LoadingBox({ label, color }: { label: string; color: string }) {
     <Box borderStyle="round" borderColor="gray" padding={1}>
       <Text dim>Loading {label}...</Text>
     </Box>
-  );
+  )
 }
 
 // ============================================================================
@@ -135,25 +156,27 @@ function LoadingBox({ label, color }: { label: string; color: string }) {
 // ============================================================================
 
 function AsyncDataApp(): JSX.Element {
-  const { exit } = useApp();
-  const [refreshKey, setRefreshKey] = useState(0);
+  const { exit } = useApp()
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useInput((input: string, key: Key) => {
     if (key.escape || (key.ctrl && input === "c")) {
-      exit();
-      return;
+      exit()
+      return
     }
     if (input === "r") {
       // Refresh: clear cache and force re-render
-      clearCache();
-      setRefreshKey((k) => k + 1);
+      clearCache()
+      setRefreshKey((k) => k + 1)
     }
-  });
+  })
 
   return (
     <Box flexDirection="column" padding={1} key={refreshKey}>
       <Box marginBottom={1}>
-        <Text bold color="yellow">Async Data Demo</Text>
+        <Text bold color="yellow">
+          Async Data Demo
+        </Text>
         <Text dim> | Suspense + use() | r to refresh | Esc to quit</Text>
       </Box>
 
@@ -188,7 +211,7 @@ function AsyncDataApp(): JSX.Element {
         </Box>
       </Box>
     </Box>
-  );
+  )
 }
 
 // ============================================================================
@@ -196,9 +219,9 @@ function AsyncDataApp(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm();
-  const { waitUntilExit } = await render(<AsyncDataApp />, term);
-  await waitUntilExit();
+  using term = createTerm()
+  const { waitUntilExit } = await render(<AsyncDataApp />, term)
+  await waitUntilExit()
 }
 
-main().catch(console.error);
+main().catch(console.error)

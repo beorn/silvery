@@ -19,8 +19,8 @@ bun run examples/async-data/index.tsx
 
 ```tsx
 function UserProfile() {
-  const user = use(fetchData('user', 1500, userData));
-  return <Text>{user.name}</Text>;
+  const user = use(fetchData("user", 1500, userData))
+  return <Text>{user.name}</Text>
 }
 ```
 

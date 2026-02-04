@@ -6,11 +6,11 @@ inkx/runtime is a layered TUI framework built on AsyncIterables. It's like a gam
 
 inkx/runtime has three layers. Pick the one that matches your needs:
 
-| Layer | Entry Point | Best For | State Management |
-|-------|------------|----------|------------------|
-| 1 | `createRuntime()` | Maximum control, Elm-style | Your choice |
-| 2 | `run()` | React hooks | `useState/useEffect` |
-| 3 | `createApp()` | Complex apps | Zustand store |
+| Layer | Entry Point       | Best For                   | State Management     |
+| ----- | ----------------- | -------------------------- | -------------------- |
+| 1     | `createRuntime()` | Maximum control, Elm-style | Your choice          |
+| 2     | `run()`           | React hooks                | `useState/useEffect` |
+| 3     | `createApp()`     | Complex apps               | Zustand store        |
 
 **Start with Layer 2** (`run()`) for most apps. Move to Layer 1 for control or Layer 3 for complex state.
 
@@ -100,22 +100,22 @@ The `Key` object tells you which special keys were pressed:
 
 ```typescript
 interface Key {
-  upArrow: boolean;
-  downArrow: boolean;
-  leftArrow: boolean;
-  rightArrow: boolean;
-  pageDown: boolean;
-  pageUp: boolean;
-  home: boolean;
-  end: boolean;
-  return: boolean;     // Enter key
-  escape: boolean;
-  ctrl: boolean;       // Ctrl modifier
-  shift: boolean;      // Shift modifier
-  tab: boolean;
-  backspace: boolean;
-  delete: boolean;
-  meta: boolean;       // Alt/Option modifier
+  upArrow: boolean
+  downArrow: boolean
+  leftArrow: boolean
+  rightArrow: boolean
+  pageDown: boolean
+  pageUp: boolean
+  home: boolean
+  end: boolean
+  return: boolean // Enter key
+  escape: boolean
+  ctrl: boolean // Ctrl modifier
+  shift: boolean // Shift modifier
+  tab: boolean
+  backspace: boolean
+  delete: boolean
+  meta: boolean // Alt/Option modifier
 }
 ```
 
@@ -124,35 +124,36 @@ Example usage:
 ```typescript
 useInput((input, key) => {
   // Check modifiers
-  if (key.ctrl && input === 'c') return 'exit';  // Ctrl+C
+  if (key.ctrl && input === "c") return "exit" // Ctrl+C
 
   // Check special keys
-  if (key.return) submit();
-  if (key.escape) cancel();
+  if (key.return) submit()
+  if (key.escape) cancel()
 
   // Check arrow keys
-  if (key.upArrow) moveCursor(-1);
-  if (key.downArrow) moveCursor(1);
+  if (key.upArrow) moveCursor(-1)
+  if (key.downArrow) moveCursor(1)
 
   // Check regular input
-  if (input.length === 1) addChar(input);
-});
+  if (input.length === 1) addChar(input)
+})
 ```
 
 ### RunHandle API
 
 ```typescript
 interface RunHandle {
-  text: string;           // Current rendered text (no ANSI)
-  waitUntilExit(): Promise<void>;
-  unmount(): void;
-  press(key: string): Promise<void>;  // For testing
+  text: string // Current rendered text (no ANSI)
+  waitUntilExit(): Promise<void>
+  unmount(): void
+  press(key: string): Promise<void> // For testing
 }
 ```
 
 ## Layer 3: Zustand Store (`createApp()`)
 
 Use `createApp()` when you need:
+
 - Shared state across many components
 - Fine-grained subscriptions (no prop drilling)
 - Complex state logic
@@ -227,25 +228,26 @@ console.log('Final items:', handle.store.getState().items);
 type KeyHandler<S> = (
   input: string,
   key: Key,
-  ctx: { set: SetState<S>; get: GetState<S> }
-) => void | 'exit';
+  ctx: { set: SetState<S>; get: GetState<S> },
+) => void | "exit"
 ```
 
 ### AppHandle API
 
 ```typescript
 interface AppHandle<S> {
-  text: string;
-  store: StoreApi<S>;     // Full Zustand store access
-  waitUntilExit(): Promise<void>;
-  unmount(): void;
-  press(key: string): Promise<void>;
+  text: string
+  store: StoreApi<S> // Full Zustand store access
+  waitUntilExit(): Promise<void>
+  unmount(): void
+  press(key: string): Promise<void>
 }
 ```
 
 ## Layer 1: Full Control (`createRuntime()`)
 
 Use `createRuntime()` when you want:
+
 - Full control over the event loop
 - Elm-style architecture (Model-Update-View)
 - Custom event sources
@@ -310,24 +312,21 @@ for await (const event of allEvents) {
 ```typescript
 // Schedule async work
 runtime.schedule(async () => {
-  const data = await fetchData();
-  return data;
-});
+  const data = await fetchData()
+  return data
+})
 
 // Receive result as event
 for await (const event of runtime.events()) {
-  if (event.type === 'effect') {
-    console.log('Data:', event.result);
+  if (event.type === "effect") {
+    console.log("Data:", event.result)
   }
 }
 
 // Cancel with AbortSignal
-const controller = new AbortController();
-runtime.schedule(
-  async () => await longTask(),
-  { signal: controller.signal }
-);
-controller.abort(); // Cancels the effect
+const controller = new AbortController()
+runtime.schedule(async () => await longTask(), { signal: controller.signal })
+controller.abort() // Cancels the effect
 ```
 
 ## Stream Helpers
@@ -335,22 +334,22 @@ controller.abort(); // Cancels the effect
 All layers use AsyncIterable streams. Compose them with helpers:
 
 ```typescript
-import { merge, map, filter, takeUntil, throttle } from 'inkx/runtime';
+import { merge, map, filter, takeUntil, throttle } from "inkx/runtime"
 
 // Merge multiple sources
-const events = merge(keyboardEvents, timerEvents);
+const events = merge(keyboardEvents, timerEvents)
 
 // Transform
-const keyEvents = map(rawKeys, k => ({ type: 'key', key: k }));
+const keyEvents = map(rawKeys, (k) => ({ type: "key", key: k }))
 
 // Filter
-const letters = filter(keyEvents, e => e.key.length === 1);
+const letters = filter(keyEvents, (e) => e.key.length === 1)
 
 // Stop on signal
-const bounded = takeUntil(events, abortSignal);
+const bounded = takeUntil(events, abortSignal)
 
 // Throttle
-const throttled = throttle(mouseMoves, 16); // ~60fps
+const throttled = throttle(mouseMoves, 16) // ~60fps
 ```
 
 ## Tick Sources
@@ -358,21 +357,21 @@ const throttled = throttle(mouseMoves, 16); // ~60fps
 For animations and periodic updates:
 
 ```typescript
-import { createTick, createFrameTick, createAdaptiveTick } from 'inkx/runtime';
+import { createTick, createFrameTick, createAdaptiveTick } from "inkx/runtime"
 
 // Fixed interval
-const everySecond = createTick(1000);
+const everySecond = createTick(1000)
 
 // 60fps
-const frames = createFrameTick();
+const frames = createFrameTick()
 
 // Adaptive (slows when idle)
-const adaptive = createAdaptiveTick();
+const adaptive = createAdaptiveTick()
 
 // Use with merge
-const events = merge(keyboard, createTick(100));
+const events = merge(keyboard, createTick(100))
 for await (const event of events) {
-  if (event.type === 'tick') {
+  if (event.type === "tick") {
     // Update animation
   }
 }
@@ -380,15 +379,16 @@ for await (const event of events) {
 
 ## Examples
 
-| File | Layer | Description |
-|------|-------|-------------|
-| `hello-runtime.tsx` | 1 | Minimal static render |
-| `runtime-counter.tsx` | 1 | Counter with schedule() |
-| `mode3-counter.tsx` | 1 | Elm-style with keyboard |
-| `run-counter.tsx` | 2 | React hooks counter |
-| `app-todo.tsx` | 3 | Todo list with Zustand |
+| File                  | Layer | Description             |
+| --------------------- | ----- | ----------------------- |
+| `hello-runtime.tsx`   | 1     | Minimal static render   |
+| `runtime-counter.tsx` | 1     | Counter with schedule() |
+| `mode3-counter.tsx`   | 1     | Elm-style with keyboard |
+| `run-counter.tsx`     | 2     | React hooks counter     |
+| `app-todo.tsx`        | 3     | Todo list with Zustand  |
 
 Run examples:
+
 ```bash
 bun examples/run-counter.tsx
 bun examples/app-todo.tsx
@@ -418,11 +418,11 @@ handle.unmount();
 
 inkx/runtime is compatible with existing inkx components. Key differences:
 
-| Ink | inkx/runtime |
-|-----|-----------|
-| `useInput(input, key)` | `useInput(input, key)` (same signature!) |
-| `useApp().exit()` | `return 'exit'` from handler or `useExit()` |
-| Props for callbacks | Store actions (Layer 3) |
+| Ink                    | inkx/runtime                                |
+| ---------------------- | ------------------------------------------- |
+| `useInput(input, key)` | `useInput(input, key)` (same signature!)    |
+| `useApp().exit()`      | `return 'exit'` from handler or `useExit()` |
+| Props for callbacks    | Store actions (Layer 3)                     |
 
 ## Next Steps
 

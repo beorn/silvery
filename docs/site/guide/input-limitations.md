@@ -29,7 +29,7 @@ useInput((input, key) => {
   if (key.return) {
     // Could be Enter OR Ctrl+M
   }
-});
+})
 ```
 
 ### Kitty Keyboard Protocol
@@ -138,7 +138,7 @@ useInput((input, key) => {
   if (key.meta && input === "a") {
     // Alt+A or Option+A (when configured to send escape)
   }
-});
+})
 ```
 
 ### Ctrl+Shift Combinations
@@ -151,7 +151,7 @@ useInput((input, key) => {
   if (key.ctrl && input === "a") {
     // Could be Ctrl+A OR Ctrl+Shift+A
   }
-});
+})
 ```
 
 ### Shift Detection for Letters
@@ -163,7 +163,7 @@ useInput((input, key) => {
   if (input === "A" && key.shift) {
     // Shift+A - this works reliably
   }
-});
+})
 ```
 
 ## Terminal Multiplexers
@@ -210,18 +210,18 @@ Despite these limitations, many keys work reliably everywhere:
 ```tsx
 // Good: Use keys that work everywhere
 useInput((input, key) => {
-  if (key.upArrow || input === "k") moveUp();
-  if (key.downArrow || input === "j") moveDown();
-  if (key.return) select();
-  if (key.escape || input === "q") quit();
-});
+  if (key.upArrow || input === "k") moveUp()
+  if (key.downArrow || input === "j") moveDown()
+  if (key.return) select()
+  if (key.escape || input === "q") quit()
+})
 
 // Risky: Relies on Ctrl combinations that may conflict
 useInput((input, key) => {
   if (key.ctrl && input === "i") {
     // User pressing Tab will trigger this too!
   }
-});
+})
 ```
 
 ### Provide Alternative Bindings
@@ -232,9 +232,9 @@ When using keys with known limitations, offer alternatives:
 useInput((input, key) => {
   // Multiple ways to trigger the same action
   if (input === "?" || input === "h" || (key.ctrl && input === "h")) {
-    showHelp();
+    showHelp()
   }
-});
+})
 ```
 
 ### Document Your Keybindings
@@ -252,7 +252,7 @@ function HelpScreen() {
       <Text>Escape - Back</Text>
       <Text dimColor>Note: Ctrl+M is the same as Enter</Text>
     </Box>
-  );
+  )
 }
 ```
 

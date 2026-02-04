@@ -38,19 +38,27 @@ bun run examples/kanban/app.tsx
 ::: code-group
 
 ```tsx [app.tsx]
-import { Box, Text, render, useContentRect, useInput, useApp, createTerm } from "inkx";
-import { useState } from "react";
+import {
+  Box,
+  Text,
+  render,
+  useContentRect,
+  useInput,
+  useApp,
+  createTerm,
+} from "inkx"
+import { useState } from "react"
 
 interface Card {
-  id: string;
-  title: string;
-  tags?: string[];
+  id: string
+  title: string
+  tags?: string[]
 }
 
 interface Column {
-  id: string;
-  name: string;
-  cards: Card[];
+  id: string
+  name: string
+  cards: Card[]
 }
 
 const initialColumns: Column[] = [
@@ -88,131 +96,131 @@ const initialColumns: Column[] = [
       { id: "16", title: "Flexbox layout" },
     ],
   },
-];
+]
 
 interface CursorPosition {
-  columnIndex: number;
-  cardIndex: number;
+  columnIndex: number
+  cardIndex: number
 }
 
 function App() {
-  const { exit } = useApp();
-  const [columns, setColumns] = useState(initialColumns);
+  const { exit } = useApp()
+  const [columns, setColumns] = useState(initialColumns)
   const [cursor, setCursor] = useState<CursorPosition>({
     columnIndex: 0,
     cardIndex: 0,
-  });
+  })
 
   useInput((input, key) => {
     if (input === "q" || key.escape) {
-      exit();
+      exit()
     }
 
-    const currentColumn = columns[cursor.columnIndex];
-    const maxCardIndex = Math.max(0, currentColumn.cards.length - 1);
+    const currentColumn = columns[cursor.columnIndex]
+    const maxCardIndex = Math.max(0, currentColumn.cards.length - 1)
 
     // Vertical navigation (j/k or arrows)
     if (input === "j" || key.downArrow) {
       setCursor((c) => ({
         ...c,
         cardIndex: Math.min(c.cardIndex + 1, maxCardIndex),
-      }));
+      }))
     }
 
     if (input === "k" || key.upArrow) {
       setCursor((c) => ({
         ...c,
         cardIndex: Math.max(c.cardIndex - 1, 0),
-      }));
+      }))
     }
 
     // Horizontal navigation (h/l or arrows)
     if (input === "l" || key.rightArrow) {
       setCursor((c) => {
-        const newColIndex = Math.min(c.columnIndex + 1, columns.length - 1);
-        const newColCards = columns[newColIndex].cards.length;
+        const newColIndex = Math.min(c.columnIndex + 1, columns.length - 1)
+        const newColCards = columns[newColIndex].cards.length
         return {
           columnIndex: newColIndex,
           cardIndex: Math.min(c.cardIndex, Math.max(0, newColCards - 1)),
-        };
-      });
+        }
+      })
     }
 
     if (input === "h" || key.leftArrow) {
       setCursor((c) => {
-        const newColIndex = Math.max(c.columnIndex - 1, 0);
-        const newColCards = columns[newColIndex].cards.length;
+        const newColIndex = Math.max(c.columnIndex - 1, 0)
+        const newColCards = columns[newColIndex].cards.length
         return {
           columnIndex: newColIndex,
           cardIndex: Math.min(c.cardIndex, Math.max(0, newColCards - 1)),
-        };
-      });
+        }
+      })
     }
 
     // Move card to next column
     if (input === "m" || key.return) {
-      moveCardRight();
+      moveCardRight()
     }
 
     // Move card to previous column
     if (input === "M") {
-      moveCardLeft();
+      moveCardLeft()
     }
-  });
+  })
 
   function moveCardRight() {
-    if (cursor.columnIndex >= columns.length - 1) return;
+    if (cursor.columnIndex >= columns.length - 1) return
 
-    const sourceCol = columns[cursor.columnIndex];
-    if (sourceCol.cards.length === 0) return;
+    const sourceCol = columns[cursor.columnIndex]
+    if (sourceCol.cards.length === 0) return
 
-    const card = sourceCol.cards[cursor.cardIndex];
-    const targetColIndex = cursor.columnIndex + 1;
+    const card = sourceCol.cards[cursor.cardIndex]
+    const targetColIndex = cursor.columnIndex + 1
 
     setColumns((cols) =>
       cols.map((col, i) => {
         if (i === cursor.columnIndex) {
-          return { ...col, cards: col.cards.filter((c) => c.id !== card.id) };
+          return { ...col, cards: col.cards.filter((c) => c.id !== card.id) }
         }
         if (i === targetColIndex) {
-          return { ...col, cards: [...col.cards, card] };
+          return { ...col, cards: [...col.cards, card] }
         }
-        return col;
+        return col
       }),
-    );
+    )
 
     // Adjust cursor if we removed the last card
     setCursor((c) => ({
       ...c,
       cardIndex: Math.min(c.cardIndex, Math.max(0, sourceCol.cards.length - 2)),
-    }));
+    }))
   }
 
   function moveCardLeft() {
-    if (cursor.columnIndex <= 0) return;
+    if (cursor.columnIndex <= 0) return
 
-    const sourceCol = columns[cursor.columnIndex];
-    if (sourceCol.cards.length === 0) return;
+    const sourceCol = columns[cursor.columnIndex]
+    if (sourceCol.cards.length === 0) return
 
-    const card = sourceCol.cards[cursor.cardIndex];
-    const targetColIndex = cursor.columnIndex - 1;
+    const card = sourceCol.cards[cursor.cardIndex]
+    const targetColIndex = cursor.columnIndex - 1
 
     setColumns((cols) =>
       cols.map((col, i) => {
         if (i === cursor.columnIndex) {
-          return { ...col, cards: col.cards.filter((c) => c.id !== card.id) };
+          return { ...col, cards: col.cards.filter((c) => c.id !== card.id) }
         }
         if (i === targetColIndex) {
-          return { ...col, cards: [...col.cards, card] };
+          return { ...col, cards: [...col.cards, card] }
         }
-        return col;
+        return col
       }),
-    );
+    )
 
     setCursor((c) => ({
       ...c,
       cardIndex: Math.min(c.cardIndex, Math.max(0, sourceCol.cards.length - 2)),
-    }));
+    }))
   }
 
   return (
@@ -220,15 +228,15 @@ function App() {
       <Board columns={columns} cursor={cursor} />
       <HelpBar />
     </Box>
-  );
+  )
 }
 
 function Board({
   columns,
   cursor,
 }: {
-  columns: Column[];
-  cursor: CursorPosition;
+  columns: Column[]
+  cursor: CursorPosition
 }) {
   return (
     <Box flexDirection="row" flexGrow={1}>
@@ -243,7 +251,7 @@ function Board({
         />
       ))}
     </Box>
-  );
+  )
 }
 
 function KanbanColumn({
@@ -251,9 +259,9 @@ function KanbanColumn({
   isSelected,
   selectedCardIndex,
 }: {
-  column: Column;
-  isSelected: boolean;
-  selectedCardIndex: number;
+  column: Column
+  isSelected: boolean
+  selectedCardIndex: number
 }) {
   return (
     <Box
@@ -269,7 +277,7 @@ function KanbanColumn({
       />
       <CardList cards={column.cards} selectedIndex={selectedCardIndex} />
     </Box>
-  );
+  )
 }
 
 function ColumnHeader({
@@ -277,17 +285,17 @@ function ColumnHeader({
   count,
   isSelected,
 }: {
-  name: string;
-  count: number;
-  isSelected: boolean;
+  name: string
+  count: number
+  isSelected: boolean
 }) {
-  const { width } = useContentRect();
+  const { width } = useContentRect()
 
   // Truncate name if needed
-  const countStr = ` (${count})`;
-  const maxNameWidth = Math.max(0, width - countStr.length);
+  const countStr = ` (${count})`
+  const maxNameWidth = Math.max(0, width - countStr.length)
   const truncatedName =
-    name.length > maxNameWidth ? name.slice(0, maxNameWidth - 1) + "..." : name;
+    name.length > maxNameWidth ? name.slice(0, maxNameWidth - 1) + "..." : name
 
   return (
     <Box paddingX={1} marginBottom={1}>
@@ -296,15 +304,15 @@ function ColumnHeader({
       </Text>
       <Text dimColor>{countStr}</Text>
     </Box>
-  );
+  )
 }
 
 function CardList({
   cards,
   selectedIndex,
 }: {
-  cards: Card[];
-  selectedIndex: number;
+  cards: Card[]
+  selectedIndex: number
 }) {
   if (cards.length === 0) {
     return (
@@ -313,7 +321,7 @@ function CardList({
           No cards
         </Text>
       </Box>
-    );
+    )
   }
 
   return (
@@ -328,19 +336,19 @@ function CardList({
         <CardRow key={card.id} card={card} isSelected={i === selectedIndex} />
       ))}
     </Box>
-  );
+  )
 }
 
 function CardRow({ card, isSelected }: { card: Card; isSelected: boolean }) {
-  const { width } = useContentRect();
+  const { width } = useContentRect()
 
-  const prefix = isSelected ? "> " : "  ";
-  const titleWidth = Math.max(0, width - 2);
+  const prefix = isSelected ? "> " : "  "
+  const titleWidth = Math.max(0, width - 2)
 
   const truncatedTitle =
     card.title.length > titleWidth
       ? card.title.slice(0, titleWidth - 1) + "..."
-      : card.title;
+      : card.title
 
   return (
     <Box flexDirection="column">
@@ -355,7 +363,7 @@ function CardRow({ card, isSelected }: { card: Card; isSelected: boolean }) {
         <TagRow tags={card.tags} isSelected={isSelected} />
       )}
     </Box>
-  );
+  )
 }
 
 function TagRow({ tags, isSelected }: { tags: string[]; isSelected: boolean }) {
@@ -368,7 +376,7 @@ function TagRow({ tags, isSelected }: { tags: string[]; isSelected: boolean }) {
       {"  "}
       {tags.map((tag) => `[${tag}]`).join(" ")}
     </Text>
-  );
+  )
 }
 
 function HelpBar() {
@@ -379,11 +387,11 @@ function HelpBar() {
         | q: quit
       </Text>
     </Box>
-  );
+  )
 }
 
-using term = createTerm();
-await render(<App />, term);
+using term = createTerm()
+await render(<App />, term)
 ```
 
 :::
@@ -399,8 +407,8 @@ function CardList({
   cards,
   selectedIndex,
 }: {
-  cards: Card[];
-  selectedIndex: number;
+  cards: Card[]
+  selectedIndex: number
 }) {
   return (
     <Box
@@ -414,7 +422,7 @@ function CardList({
         <CardRow key={card.id} card={card} isSelected={i === selectedIndex} />
       ))}
     </Box>
-  );
+  )
 }
 ```
 
@@ -429,8 +437,8 @@ function Board({
   columns,
   cursor,
 }: {
-  columns: Column[];
-  cursor: CursorPosition;
+  columns: Column[]
+  cursor: CursorPosition
 }) {
   return (
     <Box flexDirection="row" flexGrow={1}>
@@ -443,7 +451,7 @@ function Board({
         />
       ))}
     </Box>
-  );
+  )
 }
 ```
 
@@ -453,14 +461,14 @@ The cursor tracks both column and card position:
 
 ```tsx
 interface CursorPosition {
-  columnIndex: number;
-  cardIndex: number;
+  columnIndex: number
+  cardIndex: number
 }
 
 const [cursor, setCursor] = useState<CursorPosition>({
   columnIndex: 0,
   cardIndex: 0,
-});
+})
 ```
 
 ### Two-Axis Navigation
@@ -471,14 +479,14 @@ Horizontal navigation moves between columns, vertical within a column:
 // Horizontal: h/l or left/right arrows
 if (input === "l" || key.rightArrow) {
   setCursor((c) => {
-    const newColIndex = Math.min(c.columnIndex + 1, columns.length - 1);
-    const newColCards = columns[newColIndex].cards.length;
+    const newColIndex = Math.min(c.columnIndex + 1, columns.length - 1)
+    const newColCards = columns[newColIndex].cards.length
     return {
       columnIndex: newColIndex,
       // Clamp card index to new column's bounds
       cardIndex: Math.min(c.cardIndex, Math.max(0, newColCards - 1)),
-    };
-  });
+    }
+  })
 }
 
 // Vertical: j/k or up/down arrows
@@ -486,7 +494,7 @@ if (input === "j" || key.downArrow) {
   setCursor((c) => ({
     ...c,
     cardIndex: Math.min(c.cardIndex + 1, maxCardIndex),
-  }));
+  }))
 }
 ```
 
@@ -496,33 +504,33 @@ Cards move between columns while maintaining cursor validity:
 
 ```tsx
 function moveCardRight() {
-  if (cursor.columnIndex >= columns.length - 1) return;
+  if (cursor.columnIndex >= columns.length - 1) return
 
-  const sourceCol = columns[cursor.columnIndex];
-  if (sourceCol.cards.length === 0) return;
+  const sourceCol = columns[cursor.columnIndex]
+  if (sourceCol.cards.length === 0) return
 
-  const card = sourceCol.cards[cursor.cardIndex];
-  const targetColIndex = cursor.columnIndex + 1;
+  const card = sourceCol.cards[cursor.cardIndex]
+  const targetColIndex = cursor.columnIndex + 1
 
   setColumns((cols) =>
     cols.map((col, i) => {
       if (i === cursor.columnIndex) {
         // Remove from source
-        return { ...col, cards: col.cards.filter((c) => c.id !== card.id) };
+        return { ...col, cards: col.cards.filter((c) => c.id !== card.id) }
       }
       if (i === targetColIndex) {
         // Add to target
-        return { ...col, cards: [...col.cards, card] };
+        return { ...col, cards: [...col.cards, card] }
       }
-      return col;
+      return col
     }),
-  );
+  )
 
   // Adjust cursor if we removed the last card
   setCursor((c) => ({
     ...c,
     cardIndex: Math.min(c.cardIndex, Math.max(0, sourceCol.cards.length - 2)),
-  }));
+  }))
 }
 ```
 
@@ -565,13 +573,13 @@ The state is designed for easy updates:
 
 ```tsx
 // Columns array - each column owns its cards
-const [columns, setColumns] = useState<Column[]>(initialColumns);
+const [columns, setColumns] = useState<Column[]>(initialColumns)
 
 // Cursor is separate - just indices
 const [cursor, setCursor] = useState<CursorPosition>({
   columnIndex: 0,
   cardIndex: 0,
-});
+})
 ```
 
 This makes moving cards a simple filter/concat operation.
@@ -592,7 +600,7 @@ if (cards.length === 0) {
         No cards
       </Text>
     </Box>
-  );
+  )
 }
 ```
 

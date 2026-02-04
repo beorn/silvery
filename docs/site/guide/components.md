@@ -7,12 +7,12 @@ Inkx provides the same components as Ink, with some enhancements.
 The primary layout component. Uses Yoga (flexbox) for layout.
 
 ```tsx
-import { Box, Text } from "inkx";
+import { Box, Text } from "inkx"
 
-<Box flexDirection="row" justifyContent="space-between">
+;<Box flexDirection="row" justifyContent="space-between">
   <Text>Left</Text>
   <Text>Right</Text>
-</Box>;
+</Box>
 ```
 
 ### New in Inkx: Scrolling
@@ -113,13 +113,13 @@ import { Newline, Text } from "inkx";
 Flexible space that expands to fill available room.
 
 ```tsx
-import { Box, Spacer, Text } from "inkx";
+import { Box, Spacer, Text } from "inkx"
 
-<Box>
+;<Box>
   <Text>Left</Text>
   <Spacer />
   <Text>Right</Text>
-</Box>;
+</Box>
 ```
 
 ## Static
@@ -127,17 +127,17 @@ import { Box, Spacer, Text } from "inkx";
 Renders content that won't be updated. Useful for logs or output that scrolls up.
 
 ```tsx
-import { Static, Box, Text } from "inkx";
+import { Static, Box, Text } from "inkx"
 
 function App() {
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<string[]>([])
 
   return (
     <Box flexDirection="column">
       <Static items={logs}>{(log, i) => <Text key={i}>{log}</Text>}</Static>
       <Text>Current status...</Text>
     </Box>
-  );
+  )
 }
 ```
 

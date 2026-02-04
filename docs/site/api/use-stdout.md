@@ -5,20 +5,20 @@ Access the stdout stream for terminal dimensions and direct output.
 ## Import
 
 ```tsx
-import { useStdout } from "inkx";
+import { useStdout } from "inkx"
 ```
 
 ## Usage
 
 ```tsx
 function TerminalInfo() {
-  const { stdout } = useStdout();
+  const { stdout } = useStdout()
 
   return (
     <Text>
       Terminal: {stdout.columns}x{stdout.rows}
     </Text>
-  );
+  )
 }
 ```
 
@@ -35,13 +35,13 @@ function TerminalInfo() {
 
 ```tsx
 function TerminalSize() {
-  const { stdout } = useStdout();
+  const { stdout } = useStdout()
 
   return (
     <Text>
       {stdout.columns} columns x {stdout.rows} rows
     </Text>
-  );
+  )
 }
 ```
 
@@ -49,9 +49,9 @@ function TerminalSize() {
 
 ```tsx
 function ResponsiveApp() {
-  const { stdout } = useStdout();
+  const { stdout } = useStdout()
 
-  const isNarrow = stdout.columns < 80;
+  const isNarrow = stdout.columns < 80
 
   return (
     <Box flexDirection={isNarrow ? "column" : "row"}>
@@ -62,7 +62,7 @@ function ResponsiveApp() {
         <Text>Panel 2</Text>
       </Box>
     </Box>
-  );
+  )
 }
 ```
 
@@ -70,16 +70,16 @@ function ResponsiveApp() {
 
 ```tsx
 function DirectOutput() {
-  const { write } = useStdout();
+  const { write } = useStdout()
 
   useEffect(() => {
-    write("\x1b[?25l"); // Hide cursor
+    write("\x1b[?25l") // Hide cursor
     return () => {
-      write("\x1b[?25h"); // Show cursor on unmount
-    };
-  }, []);
+      write("\x1b[?25h") // Show cursor on unmount
+    }
+  }, [])
 
-  return <Text>Cursor hidden</Text>;
+  return <Text>Cursor hidden</Text>
 }
 ```
 
@@ -87,14 +87,14 @@ function DirectOutput() {
 
 ```tsx
 function DebugComponent() {
-  const { write } = useStdout();
+  const { write } = useStdout()
 
   useInput((input, key) => {
     // Write debug info outside the rendered area
-    write(`\x1b[1;1H[DEBUG] Key: ${input}\x1b[0m`);
-  });
+    write(`\x1b[1;1H[DEBUG] Key: ${input}\x1b[0m`)
+  })
 
-  return <Text>Press keys to debug</Text>;
+  return <Text>Press keys to debug</Text>
 }
 ```
 

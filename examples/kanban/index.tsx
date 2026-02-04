@@ -8,7 +8,7 @@
  * - Flexbox layout for proportional sizing
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react"
 import {
   render,
   Box,
@@ -17,24 +17,24 @@ import {
   useApp,
   createTerm,
   type Key,
-} from "../../src/index.js";
+} from "../../src/index.js"
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type ColumnId = "todo" | "inProgress" | "done";
+type ColumnId = "todo" | "inProgress" | "done"
 
 interface Card {
-  id: number;
-  title: string;
-  tags: string[];
+  id: number
+  title: string
+  tags: string[]
 }
 
 interface Column {
-  id: ColumnId;
-  title: string;
-  cards: Card[];
+  id: ColumnId
+  title: string
+  cards: Card[]
 }
 
 // ============================================================================
@@ -75,7 +75,7 @@ const initialColumns: Column[] = [
       { id: 15, title: "Database schema", tags: ["backend"] },
     ],
   },
-];
+]
 
 // ============================================================================
 // Components
@@ -89,23 +89,23 @@ const tagColors: Record<string, string> = {
   docs: "blue",
   ux: "white",
   security: "red",
-};
+}
 
 function Tag({ name }: { name: string }): JSX.Element {
-  const color = tagColors[name] ?? "gray";
+  const color = tagColors[name] ?? "gray"
   return (
     <Text color={color} dim>
       #{name}
     </Text>
-  );
+  )
 }
 
 function CardComponent({
   card,
   isSelected,
 }: {
-  card: Card;
-  isSelected: boolean;
+  card: Card
+  isSelected: boolean
 }): JSX.Element {
   return (
     <Box
@@ -128,7 +128,7 @@ function CardComponent({
         ))}
       </Box>
     </Box>
-  );
+  )
 }
 
 function ColumnComponent({
@@ -138,18 +138,18 @@ function ColumnComponent({
   scrollOffset,
   visibleCount,
 }: {
-  column: Column;
-  isSelected: boolean;
-  selectedCardIndex: number;
-  scrollOffset: number;
-  visibleCount: number;
+  column: Column
+  isSelected: boolean
+  selectedCardIndex: number
+  scrollOffset: number
+  visibleCount: number
 }): JSX.Element {
   const visibleCards = column.cards.slice(
     scrollOffset,
     scrollOffset + visibleCount,
-  );
-  const hasMoreAbove = scrollOffset > 0;
-  const hasMoreBelow = scrollOffset + visibleCount < column.cards.length;
+  )
+  const hasMoreAbove = scrollOffset > 0
+  const hasMoreBelow = scrollOffset + visibleCount < column.cards.length
 
   return (
     <Box
@@ -183,14 +183,14 @@ function ColumnComponent({
         )}
 
         {visibleCards.map((card, visibleIndex) => {
-          const actualIndex = scrollOffset + visibleIndex;
+          const actualIndex = scrollOffset + visibleIndex
           return (
             <CardComponent
               key={card.id}
               card={card}
               isSelected={isSelected && actualIndex === selectedCardIndex}
             />
-          );
+          )
         })}
 
         {column.cards.length === 0 && (
@@ -207,7 +207,7 @@ function ColumnComponent({
         )}
       </Box>
     </Box>
-  );
+  )
 }
 
 function HelpBar(): JSX.Element {
@@ -226,51 +226,51 @@ function HelpBar(): JSX.Element {
         <Text bold>q</Text> quit
       </Text>
     </Box>
-  );
+  )
 }
 
 function KanbanBoard(): JSX.Element {
-  const { exit } = useApp();
-  const [columns, setColumns] = useState<Column[]>(initialColumns);
-  const [selectedColumn, setSelectedColumn] = useState(0);
-  const [selectedCard, setSelectedCard] = useState(0);
-  const [scrollOffsets, setScrollOffsets] = useState<number[]>([0, 0, 0]);
+  const { exit } = useApp()
+  const [columns, setColumns] = useState<Column[]>(initialColumns)
+  const [selectedColumn, setSelectedColumn] = useState(0)
+  const [selectedCard, setSelectedCard] = useState(0)
+  const [scrollOffsets, setScrollOffsets] = useState<number[]>([0, 0, 0])
 
   // Fixed visible cards per column (in a real app, this would use useLayout)
-  const visibleCardsPerColumn = 5;
+  const visibleCardsPerColumn = 5
 
   // Current column data
-  const currentColumn = columns[selectedColumn];
-  const currentColumnCards = currentColumn?.cards ?? [];
+  const currentColumn = columns[selectedColumn]
+  const currentColumnCards = currentColumn?.cards ?? []
 
   // Ensure selected card is within bounds
   const boundedSelectedCard = Math.min(
     selectedCard,
     Math.max(0, currentColumnCards.length - 1),
-  );
+  )
 
   // Update scroll offset to keep selected card visible
   useMemo(() => {
-    if (currentColumnCards.length === 0) return;
+    if (currentColumnCards.length === 0) return
 
-    const currentOffset = scrollOffsets[selectedColumn] ?? 0;
-    let newOffset = currentOffset;
+    const currentOffset = scrollOffsets[selectedColumn] ?? 0
+    let newOffset = currentOffset
 
     // If selected card is above visible area, scroll up
     if (boundedSelectedCard < currentOffset) {
-      newOffset = boundedSelectedCard;
+      newOffset = boundedSelectedCard
     }
     // If selected card is below visible area, scroll down
     else if (boundedSelectedCard >= currentOffset + visibleCardsPerColumn) {
-      newOffset = boundedSelectedCard - visibleCardsPerColumn + 1;
+      newOffset = boundedSelectedCard - visibleCardsPerColumn + 1
     }
 
     if (newOffset !== currentOffset) {
       setScrollOffsets((prev) => {
-        const next = [...prev];
-        next[selectedColumn] = newOffset;
-        return next;
-      });
+        const next = [...prev]
+        next[selectedColumn] = newOffset
+        return next
+      })
     }
   }, [
     boundedSelectedCard,
@@ -278,65 +278,65 @@ function KanbanBoard(): JSX.Element {
     visibleCardsPerColumn,
     scrollOffsets,
     currentColumnCards.length,
-  ]);
+  ])
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) {
-      exit();
+      exit()
     }
 
     // Column navigation
     if (key.leftArrow || input === "h") {
-      setSelectedColumn((prev) => Math.max(0, prev - 1));
-      setSelectedCard(0);
+      setSelectedColumn((prev) => Math.max(0, prev - 1))
+      setSelectedCard(0)
     }
     if (key.rightArrow || input === "l") {
-      setSelectedColumn((prev) => Math.min(columns.length - 1, prev + 1));
-      setSelectedCard(0);
+      setSelectedColumn((prev) => Math.min(columns.length - 1, prev + 1))
+      setSelectedCard(0)
     }
 
     // Card navigation
     if (key.upArrow || input === "k") {
-      setSelectedCard((prev) => Math.max(0, prev - 1));
+      setSelectedCard((prev) => Math.max(0, prev - 1))
     }
     if (key.downArrow || input === "j") {
       setSelectedCard((prev) =>
         Math.min(currentColumnCards.length - 1, prev + 1),
-      );
+      )
     }
 
     // Move card between columns
     if (input === "<" || input === ",") {
-      moveCard(-1);
+      moveCard(-1)
     }
     if (input === ">" || input === ".") {
-      moveCard(1);
+      moveCard(1)
     }
-  });
+  })
 
   function moveCard(direction: number): void {
-    const targetColumnIndex = selectedColumn + direction;
-    if (targetColumnIndex < 0 || targetColumnIndex >= columns.length) return;
-    if (currentColumnCards.length === 0) return;
+    const targetColumnIndex = selectedColumn + direction
+    if (targetColumnIndex < 0 || targetColumnIndex >= columns.length) return
+    if (currentColumnCards.length === 0) return
 
-    const cardToMove = currentColumnCards[boundedSelectedCard];
-    if (!cardToMove) return;
+    const cardToMove = currentColumnCards[boundedSelectedCard]
+    if (!cardToMove) return
 
     setColumns((prev) => {
-      const next = prev.map((col) => ({ ...col, cards: [...col.cards] }));
+      const next = prev.map((col) => ({ ...col, cards: [...col.cards] }))
 
       // Remove from current column
-      next[selectedColumn]!.cards.splice(boundedSelectedCard, 1);
+      next[selectedColumn]!.cards.splice(boundedSelectedCard, 1)
 
       // Add to target column
-      next[targetColumnIndex]!.cards.push(cardToMove);
+      next[targetColumnIndex]!.cards.push(cardToMove)
 
-      return next;
-    });
+      return next
+    })
 
     // Move focus to target column and select the moved card
-    setSelectedColumn(targetColumnIndex);
-    setSelectedCard(columns[targetColumnIndex]!.cards.length); // Will be at end
+    setSelectedColumn(targetColumnIndex)
+    setSelectedCard(columns[targetColumnIndex]!.cards.length) // Will be at end
   }
 
   return (
@@ -364,7 +364,7 @@ function KanbanBoard(): JSX.Element {
 
       <HelpBar />
     </Box>
-  );
+  )
 }
 
 // ============================================================================
@@ -372,9 +372,9 @@ function KanbanBoard(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm();
-  const { waitUntilExit } = await render(<KanbanBoard />, term);
-  await waitUntilExit();
+  using term = createTerm()
+  const { waitUntilExit } = await render(<KanbanBoard />, term)
+  await waitUntilExit()
 }
 
-main().catch(console.error);
+main().catch(console.error)

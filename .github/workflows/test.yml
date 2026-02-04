@@ -24,12 +24,12 @@ jobs:
 
       - name: Type check
         run: bun run typecheck
-        continue-on-error: true  # Pre-existing errors, don't block CI
+        continue-on-error: true # Pre-existing errors, don't block CI
 
       - name: Lint
         run: bun run lint
-        continue-on-error: true  # Pre-existing warnings
+        continue-on-error: true # Pre-existing warnings
 
       - name: Run tests
         run: bun run test
-        continue-on-error: true  # Pre-existing test failures
+        continue-on-error: true # Pre-existing test failures

@@ -35,15 +35,15 @@ bun add inkx
 ```
 
 ```tsx
-import { Box, Text, render, useContentRect, createTerm } from "inkx";
+import { Box, Text, render, useContentRect, createTerm } from "inkx"
 
 function Card({ title }) {
-  const { width } = useContentRect(); // Components know their size!
+  const { width } = useContentRect() // Components know their size!
   return (
     <Box borderStyle="round" width={width}>
       <Text>{title}</Text>
     </Box>
-  );
+  )
 }
 
 function App() {
@@ -52,11 +52,11 @@ function App() {
       <Card title="First Card" />
       <Card title="Second Card" />
     </Box>
-  );
+  )
 }
 
-using term = createTerm();
-await render(<App />, term);
+using term = createTerm()
+await render(<App />, term)
 ```
 
 ## The Problem Inkx Solves
@@ -66,14 +66,14 @@ In Ink, components render _before_ layout is computed. You can't know a componen
 ```tsx
 // Ink: width props cascade through the entire tree
 function Board({ width }) {
-  const colWidth = Math.floor((width - 2) / 3);
+  const colWidth = Math.floor((width - 2) / 3)
   return (
     <Box flexDirection="row">
       <Column width={colWidth} items={todo} />
       <Column width={colWidth} items={doing} />
       <Column width={colWidth} items={done} />
     </Box>
-  );
+  )
 }
 ```
 
@@ -84,13 +84,13 @@ Real apps have 100+ lines of this. Every layout change means updating arithmetic
 ```tsx
 // Inkx: no width props needed
 function Column({ items }) {
-  const { width } = useContentRect();
+  const { width } = useContentRect()
   return (
     <Box flexGrow={1}>
       {items.map((item) => (
         <Card item={item} />
       ))}
     </Box>
-  );
+  )
 }
 ```

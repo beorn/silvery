@@ -17,14 +17,14 @@ Pure functions for composing AsyncIterables. No EventEmitters, no callbacks.
 Merge multiple AsyncIterables into one. Values emit in arrival order.
 
 ```typescript
-import { merge, map } from 'inkx/streams'
+import { merge, map } from "inkx/streams"
 
 const keys = term.keys()
 const resizes = term.resizes()
 
 const events = merge(
-  map(keys, k => ({ type: 'key', ...k })),
-  map(resizes, r => ({ type: 'resize', ...r }))
+  map(keys, (k) => ({ type: "key", ...k })),
+  map(resizes, (r) => ({ type: "resize", ...r })),
 )
 
 for await (const event of events) {
@@ -33,6 +33,7 @@ for await (const event of events) {
 ```
 
 **Behavior:**
+
 - First-come ordering (non-deterministic if simultaneous)
 - Completes when ALL sources complete
 - Errors propagate, remaining sources cleaned up
@@ -43,7 +44,7 @@ for await (const event of events) {
 Transform each value.
 
 ```typescript
-const keyEvents = map(keys, k => ({ type: 'key', key: k }))
+const keyEvents = map(keys, (k) => ({ type: "key", key: k }))
 ```
 
 ### filter(source, predicate)
@@ -51,7 +52,7 @@ const keyEvents = map(keys, k => ({ type: 'key', key: k }))
 Keep values matching predicate.
 
 ```typescript
-const letters = filter(keys, k => /^[a-z]$/.test(k.key))
+const letters = filter(keys, (k) => /^[a-z]$/.test(k.key))
 ```
 
 ### filterMap(source, fn)
@@ -59,9 +60,7 @@ const letters = filter(keys, k => /^[a-z]$/.test(k.key))
 Filter + map in one pass. Return `undefined` to skip.
 
 ```typescript
-const keyEvents = filterMap(events, e =>
-  e.type === 'key' ? e : undefined
-)
+const keyEvents = filterMap(events, (e) => (e.type === "key" ? e : undefined))
 ```
 
 ### takeUntil(source, signal)
@@ -100,7 +99,7 @@ const all = concat(header, body, footer)
 Zip together. Completes at shortest source.
 
 ```typescript
-const pairs = zip(keys, timestamps)  // [key, timestamp][]
+const pairs = zip(keys, timestamps) // [key, timestamp][]
 ```
 
 ### batch(source, size)
@@ -108,7 +107,7 @@ const pairs = zip(keys, timestamps)  // [key, timestamp][]
 Collect into arrays of size n.
 
 ```typescript
-const batched = batch(events, 10)  // AsyncIterable<Event[]>
+const batched = batch(events, 10) // AsyncIterable<Event[]>
 ```
 
 ## Rate Limiting
@@ -118,7 +117,7 @@ const batched = batch(events, 10)  // AsyncIterable<Event[]>
 Emit first, then ignore for duration.
 
 ```typescript
-const throttled = throttle(mouseMoves, 16)  // ~60fps
+const throttled = throttle(mouseMoves, 16) // ~60fps
 ```
 
 ### debounce(source, ms)
@@ -126,7 +125,7 @@ const throttled = throttle(mouseMoves, 16)  // ~60fps
 **Note**: True debouncing is complex with pull-based iterables. This implementation yields only the final value after source completes.
 
 ```typescript
-const debounced = debounce(source, 300)  // Last value after source ends
+const debounced = debounce(source, 300) // Last value after source ends
 ```
 
 ## Testing Helpers
@@ -137,8 +136,8 @@ Create AsyncIterable from array.
 
 ```typescript
 const events = fromArray([
-  { type: 'key', key: 'j' },
-  { type: 'key', key: 'k' },
+  { type: "key", key: "j" },
+  { type: "key", key: "k" },
 ])
 ```
 
@@ -147,19 +146,20 @@ const events = fromArray([
 Create with delay between items.
 
 ```typescript
-const slow = fromArrayWithDelay([1, 2, 3], 100)  // 100ms gaps
+const slow = fromArrayWithDelay([1, 2, 3], 100) // 100ms gaps
 ```
 
 ## Cleanup Guarantee
 
 All helpers clean up properly on:
+
 - Normal completion (source exhausted)
 - Early break (`break` in `for await`)
 - Errors (thrown and propagated)
 
 ```typescript
 for await (const event of merge(a, b, c)) {
-  if (done) break  // All 3 sources get return() called
+  if (done) break // All 3 sources get return() called
 }
 ```
 
@@ -168,11 +168,13 @@ for await (const event of merge(a, b, c)) {
 1. **Multiple consumers**: Don't share merged iterables. Each `merge()` call creates fresh iterable.
 
 2. **Slow consumer blocks producer**: If you await slow work, next event is blocked.
+
    ```typescript
    for await (const e of events) {
-     await slowWork()  // Blocks next event
+     await slowWork() // Blocks next event
    }
    ```
+
    Mitigation: Use separate async task for slow work.
 
 3. **Debounce is limited**: Pull-based iterables can't do real-time debouncing. Use push-based patterns for that.
@@ -190,7 +192,7 @@ useEffect(() => {
 
   ;(async () => {
     for await (const event of events) {
-      if (event.type === 'key') handler(event.key)
+      if (event.type === "key") handler(event.key)
     }
   })()
 

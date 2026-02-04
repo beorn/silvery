@@ -21,64 +21,64 @@
  * />
  * ```
  */
-import React, { forwardRef, useImperativeHandle } from 'react';
-import { useVirtualization } from '../hooks/useVirtualization.js';
-import { Box } from './Box.js';
-import { Text } from './Text.js';
+import React, { forwardRef, useImperativeHandle } from "react"
+import { useVirtualization } from "../hooks/useVirtualization.js"
+import { Box } from "./Box.js"
+import { Text } from "./Text.js"
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface HorizontalVirtualListProps<T> {
-	/** Array of items to render */
-	items: T[];
+  /** Array of items to render */
+  items: T[]
 
-	/** Width of the list viewport in columns */
-	width: number;
+  /** Width of the list viewport in columns */
+  width: number
 
-	/** Width of each item (fixed number or function for variable widths) */
-	itemWidth: number | ((item: T, index: number) => number);
+  /** Width of each item (fixed number or function for variable widths) */
+  itemWidth: number | ((item: T, index: number) => number)
 
-	/** Index to keep visible (scrolls if off-screen) */
-	scrollTo?: number;
+  /** Index to keep visible (scrolls if off-screen) */
+  scrollTo?: number
 
-	/** Extra items to render left/right of viewport for smooth scrolling (default: 1) */
-	overscan?: number;
+  /** Extra items to render left/right of viewport for smooth scrolling (default: 1) */
+  overscan?: number
 
-	/** Maximum items to render at once (default: 20) */
-	maxRendered?: number;
+  /** Maximum items to render at once (default: 20) */
+  maxRendered?: number
 
-	/** Render function for each item */
-	renderItem: (item: T, index: number) => React.ReactNode;
+  /** Render function for each item */
+  renderItem: (item: T, index: number) => React.ReactNode
 
-	/** Show overflow indicators (◀N/▶N) */
-	overflowIndicator?: boolean;
+  /** Show overflow indicators (◀N/▶N) */
+  overflowIndicator?: boolean
 
-	/** Optional key extractor (defaults to index) */
-	keyExtractor?: (item: T, index: number) => string | number;
+  /** Optional key extractor (defaults to index) */
+  keyExtractor?: (item: T, index: number) => string | number
 
-	/** Height of the list (optional, uses parent height if not specified) */
-	height?: number;
+  /** Height of the list (optional, uses parent height if not specified) */
+  height?: number
 
-	/** Gap between items in columns (default: 0) */
-	gap?: number;
+  /** Gap between items in columns (default: 0) */
+  gap?: number
 
-	/** Render separator between items (alternative to gap) */
-	renderSeparator?: () => React.ReactNode;
+  /** Render separator between items (alternative to gap) */
+  renderSeparator?: () => React.ReactNode
 }
 
 export interface HorizontalVirtualListHandle {
-	/** Scroll to a specific item index */
-	scrollToItem(index: number): void;
+  /** Scroll to a specific item index */
+  scrollToItem(index: number): void
 }
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const DEFAULT_OVERSCAN = 1;
-const DEFAULT_MAX_RENDERED = 20;
+const DEFAULT_OVERSCAN = 1
+const DEFAULT_MAX_RENDERED = 20
 
 /**
  * Padding from edge before scrolling (in items).
@@ -88,7 +88,7 @@ const DEFAULT_MAX_RENDERED = 20;
  *
  * @see calcEdgeBasedScrollOffset in scroll-utils.ts for the algorithm
  */
-const SCROLL_PADDING = 1;
+const SCROLL_PADDING = 1
 
 // =============================================================================
 // Component
@@ -108,88 +108,95 @@ const SCROLL_PADDING = 1;
  * their scroll position.
  */
 function HorizontalVirtualListInner<T>(
-	{
-		items,
-		width,
-		itemWidth,
-		scrollTo,
-		overscan = DEFAULT_OVERSCAN,
-		maxRendered = DEFAULT_MAX_RENDERED,
-		renderItem,
-		overflowIndicator,
-		keyExtractor,
-		height,
-		gap = 0,
-		renderSeparator,
-	}: HorizontalVirtualListProps<T>,
-	ref: React.ForwardedRef<HorizontalVirtualListHandle>,
+  {
+    items,
+    width,
+    itemWidth,
+    scrollTo,
+    overscan = DEFAULT_OVERSCAN,
+    maxRendered = DEFAULT_MAX_RENDERED,
+    renderItem,
+    overflowIndicator,
+    keyExtractor,
+    height,
+    gap = 0,
+    renderSeparator,
+  }: HorizontalVirtualListProps<T>,
+  ref: React.ForwardedRef<HorizontalVirtualListHandle>,
 ): React.ReactElement {
-	// Use shared virtualization hook
-	const { startIndex, endIndex, hiddenBefore, hiddenAfter, scrollToItem } = useVirtualization({
-		items,
-		viewportSize: width,
-		itemSize: itemWidth,
-		scrollTo,
-		scrollPadding: SCROLL_PADDING,
-		overscan,
-		maxRendered,
-		gap,
-	});
+  // Use shared virtualization hook
+  const { startIndex, endIndex, hiddenBefore, hiddenAfter, scrollToItem } =
+    useVirtualization({
+      items,
+      viewportSize: width,
+      itemSize: itemWidth,
+      scrollTo,
+      scrollPadding: SCROLL_PADDING,
+      overscan,
+      maxRendered,
+      gap,
+    })
 
-	// Expose scrollToItem method via ref for imperative scrolling
-	useImperativeHandle(ref, () => ({ scrollToItem }), [scrollToItem]);
+  // Expose scrollToItem method via ref for imperative scrolling
+  useImperativeHandle(ref, () => ({ scrollToItem }), [scrollToItem])
 
-	// Empty state
-	if (items.length === 0) {
-		return (
-			<Box flexDirection="row" width={width} height={height}>
-				{/* Empty - nothing to render */}
-			</Box>
-		);
-	}
+  // Empty state
+  if (items.length === 0) {
+    return (
+      <Box flexDirection="row" width={width} height={height}>
+        {/* Empty - nothing to render */}
+      </Box>
+    )
+  }
 
-	// Get visible items
-	const visibleItems = items.slice(startIndex, endIndex);
+  // Get visible items
+  const visibleItems = items.slice(startIndex, endIndex)
 
-	// Determine if we need to show overflow indicators
-	const showLeftIndicator = overflowIndicator && hiddenBefore > 0;
-	const showRightIndicator = overflowIndicator && hiddenAfter > 0;
+  // Determine if we need to show overflow indicators
+  const showLeftIndicator = overflowIndicator && hiddenBefore > 0
+  const showRightIndicator = overflowIndicator && hiddenAfter > 0
 
-	return (
-		<Box flexDirection="row" width={width} height={height} overflow="hidden">
-			{/* Left overflow indicator */}
-			{showLeftIndicator && (
-				<Box flexShrink={0}>
-					<Text dimColor>◀{hiddenBefore}</Text>
-				</Box>
-			)}
+  return (
+    <Box flexDirection="row" width={width} height={height} overflow="hidden">
+      {/* Left overflow indicator */}
+      {showLeftIndicator && (
+        <Box flexShrink={0}>
+          <Text dimColor>◀{hiddenBefore}</Text>
+        </Box>
+      )}
 
-			{/* Render visible items */}
-			{visibleItems.map((item, i) => {
-				const actualIndex = startIndex + i;
-				const key = keyExtractor ? keyExtractor(item, actualIndex) : actualIndex;
-				const isLast = i === visibleItems.length - 1;
+      {/* Render visible items */}
+      {visibleItems.map((item, i) => {
+        const actualIndex = startIndex + i
+        const key = keyExtractor ? keyExtractor(item, actualIndex) : actualIndex
+        const isLast = i === visibleItems.length - 1
 
-				return (
-					<React.Fragment key={key}>
-						{renderItem(item, actualIndex)}
-						{!isLast && renderSeparator && renderSeparator()}
-						{!isLast && gap > 0 && !renderSeparator && <Box width={gap} flexShrink={0} />}
-					</React.Fragment>
-				);
-			})}
+        return (
+          <React.Fragment key={key}>
+            {renderItem(item, actualIndex)}
+            {!isLast && renderSeparator && renderSeparator()}
+            {!isLast && gap > 0 && !renderSeparator && (
+              <Box width={gap} flexShrink={0} />
+            )}
+          </React.Fragment>
+        )
+      })}
 
-			{/* Right overflow indicator */}
-			{showRightIndicator && (
-				<Box flexShrink={0}>
-					<Text dimColor>{hiddenAfter}▶</Text>
-				</Box>
-			)}
-		</Box>
-	);
+      {/* Right overflow indicator */}
+      {showRightIndicator && (
+        <Box flexShrink={0}>
+          <Text dimColor>{hiddenAfter}▶</Text>
+        </Box>
+      )}
+    </Box>
+  )
 }
 
 // Export with forwardRef - use type assertion for generic component
-export const HorizontalVirtualList = forwardRef(HorizontalVirtualListInner) as <T>(
-	props: HorizontalVirtualListProps<T> & { ref?: React.ForwardedRef<HorizontalVirtualListHandle> },
-) => React.ReactElement;
+export const HorizontalVirtualList = forwardRef(HorizontalVirtualListInner) as <
+  T,
+>(
+  props: HorizontalVirtualListProps<T> & {
+    ref?: React.ForwardedRef<HorizontalVirtualListHandle>
+  },
+) => React.ReactElement

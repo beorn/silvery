@@ -2,9 +2,24 @@
   "name": "inkx",
   "version": "0.0.1",
   "description": "Next-gen terminal UI renderer with layout feedback - Ink-compatible",
+  "keywords": [
+    "cli",
+    "flexbox",
+    "ink",
+    "layout",
+    "react",
+    "terminal",
+    "tui"
+  ],
+  "license": "MIT",
+  "author": "beorn",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beorn/inkx.git"
+  },
   "type": "module",
-  "module": "src/index.ts",
   "main": "src/index.ts",
+  "module": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": {
@@ -52,34 +67,6 @@
     "example:kanban": "bun run examples/kanban/index.tsx",
     "example:scroll": "bun run examples/scroll/index.tsx"
   },
-  "keywords": [
-    "terminal",
-    "tui",
-    "cli",
-    "react",
-    "ink",
-    "flexbox",
-    "layout"
-  ],
-  "author": "beorn",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/beorn/inkx.git"
-  },
-  "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0",
-    "@beorn/flexx": "github:beorn/flexx",
-    "yoga-wasm-web": "^0.3.3"
-  },
-  "peerDependenciesMeta": {
-    "@beorn/flexx": {
-      "optional": true
-    },
-    "yoga-wasm-web": {
-      "optional": true
-    }
-  },
   "dependencies": {
     "chalkx": "github:beorn/chalkx",
     "graphemer": "^1.4.0",
@@ -101,5 +88,18 @@
     "vitepress": "^1.5.0",
     "vitepress-plugin-llms": "^1.0.0",
     "yoga-wasm-web": "^0.3.3"
+  },
+  "peerDependencies": {
+    "@beorn/flexx": "github:beorn/flexx",
+    "react": "^18.0.0 || ^19.0.0",
+    "yoga-wasm-web": "^0.3.3"
+  },
+  "peerDependenciesMeta": {
+    "@beorn/flexx": {
+      "optional": true
+    },
+    "yoga-wasm-web": {
+      "optional": true
+    }
   }
 }

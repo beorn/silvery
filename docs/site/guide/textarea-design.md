@@ -12,10 +12,10 @@ TextArea provides multi-line text editing in terminal applications. It combines:
 - Optional text selection
 
 ```tsx
-import { TextArea } from "inkx";
+import { TextArea } from "inkx"
 
 function App() {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState("")
 
   return (
     <TextArea
@@ -24,7 +24,7 @@ function App() {
       height={5}
       placeholder="Type your message..."
     />
-  );
+  )
 }
 ```
 
@@ -57,66 +57,66 @@ Unlike web text inputs, terminal TextArea must handle:
 ```typescript
 interface TextAreaProps {
   /** Current text value */
-  value: string;
+  value: string
 
   /** Called when value changes */
-  onChange: (value: string) => void;
+  onChange: (value: string) => void
 
   /** Fixed width in characters (default: fills container) */
-  width?: number;
+  width?: number
 
   /** Fixed height in lines (default: 3) */
-  height?: number;
+  height?: number
 
   /** Placeholder text when empty */
-  placeholder?: string;
+  placeholder?: string
 
   /** Disable editing */
-  disabled?: boolean;
+  disabled?: boolean
 
   /** Maximum character count */
-  maxLength?: number;
+  maxLength?: number
 
   /** Enable text selection (default: false) */
-  selection?: boolean;
+  selection?: boolean
 
   /** Called when user presses the submit key combination */
-  onSubmit?: (value: string) => void;
+  onSubmit?: (value: string) => void
 
   /** Submit key combo (default: "ctrl+enter") */
-  submitKey?: "ctrl+enter" | "meta+enter" | "enter";
+  submitKey?: "ctrl+enter" | "meta+enter" | "enter"
 
   /** Auto-focus on mount (default: false) */
-  autoFocus?: boolean;
+  autoFocus?: boolean
 }
 
-function TextArea(props: TextAreaProps): JSX.Element;
+function TextArea(props: TextAreaProps): JSX.Element
 ```
 
 ### Minimal Example
 
 ```tsx
-const [text, setText] = useState("");
+const [text, setText] = useState("")
 
-<TextArea value={text} onChange={setText} height={5} />;
+;<TextArea value={text} onChange={setText} height={5} />
 ```
 
 ### Chat Input Example
 
 ```tsx
-const [message, setMessage] = useState("");
+const [message, setMessage] = useState("")
 
-<TextArea
+;<TextArea
   value={message}
   onChange={setMessage}
   height={3}
   placeholder="Type a message..."
   submitKey="enter"
   onSubmit={(msg) => {
-    sendMessage(msg);
-    setMessage("");
+    sendMessage(msg)
+    setMessage("")
   }}
-/>;
+/>
 ```
 
 Note: `submitKey="enter"` means Enter submits, Shift+Enter inserts newline. This is the chat convention.
@@ -124,15 +124,15 @@ Note: `submitKey="enter"` means Enter submits, Shift+Enter inserts newline. This
 ### Code Editor Example
 
 ```tsx
-const [code, setCode] = useState("");
+const [code, setCode] = useState("")
 
-<TextArea
+;<TextArea
   value={code}
   onChange={setCode}
   height={10}
   selection={true}
   submitKey="ctrl+enter"
-/>;
+/>
 ```
 
 ## Visual Design
@@ -213,10 +213,10 @@ Disabled:
 ```typescript
 interface CursorPosition {
   /** Line index (0-based) */
-  line: number;
+  line: number
 
   /** Column index (0-based, in grapheme clusters) */
-  column: number;
+  column: number
 }
 ```
 
@@ -313,30 +313,30 @@ Wrapping prefers breaking at:
 ```typescript
 function findWrapPoint(line: string, width: number): number {
   // 1. If line fits, no wrap needed
-  if (visualWidth(line) <= width) return line.length;
+  if (visualWidth(line) <= width) return line.length
 
   // 2. Find last breakable point within width
-  let lastBreak = -1;
-  let currentWidth = 0;
+  let lastBreak = -1
+  let currentWidth = 0
 
   for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    const charWidth = getCharWidth(char);
+    const char = line[i]
+    const charWidth = getCharWidth(char)
 
     if (currentWidth + charWidth > width) {
       // Would exceed width
-      return lastBreak >= 0 ? lastBreak + 1 : i;
+      return lastBreak >= 0 ? lastBreak + 1 : i
     }
 
-    currentWidth += charWidth;
+    currentWidth += charWidth
 
     // Track break opportunities
     if (isWhitespace(char) || isPunctuation(char) || isCJK(char)) {
-      lastBreak = i;
+      lastBreak = i
     }
   }
 
-  return line.length;
+  return line.length
 }
 ```
 
@@ -362,7 +362,7 @@ Cursor at end of "world":
 ```typescript
 interface ScrollState {
   /** First visible line (0-based) */
-  scrollTop: number;
+  scrollTop: number
 }
 ```
 
@@ -376,20 +376,20 @@ function adjustScroll(
   scrollTop: number,
   visibleLines: number,
 ): number {
-  const cursorLine = cursor.line;
+  const cursorLine = cursor.line
 
   // Cursor above viewport
   if (cursorLine < scrollTop) {
-    return cursorLine;
+    return cursorLine
   }
 
   // Cursor below viewport
   if (cursorLine >= scrollTop + visibleLines) {
-    return cursorLine - visibleLines + 1;
+    return cursorLine - visibleLines + 1
   }
 
   // Cursor visible, no change
-  return scrollTop;
+  return scrollTop
 }
 ```
 
@@ -398,14 +398,14 @@ function adjustScroll(
 Optional padding to keep cursor away from edges:
 
 ```typescript
-const SCROLL_MARGIN = 1; // Keep 1 line of context
+const SCROLL_MARGIN = 1 // Keep 1 line of context
 
 // Scroll when cursor is within margin of edge
 if (cursorLine < scrollTop + SCROLL_MARGIN) {
-  scrollTop = Math.max(0, cursorLine - SCROLL_MARGIN);
+  scrollTop = Math.max(0, cursorLine - SCROLL_MARGIN)
 }
 if (cursorLine >= scrollTop + visibleLines - SCROLL_MARGIN) {
-  scrollTop = cursorLine - visibleLines + SCROLL_MARGIN + 1;
+  scrollTop = cursorLine - visibleLines + SCROLL_MARGIN + 1
 }
 ```
 
@@ -419,13 +419,13 @@ function insertChar(
   cursor: CursorPosition,
   char: string,
 ): { value: string; cursor: CursorPosition } {
-  const offset = positionToOffset(value, cursor);
-  const newValue = value.slice(0, offset) + char + value.slice(offset);
+  const offset = positionToOffset(value, cursor)
+  const newValue = value.slice(0, offset) + char + value.slice(offset)
 
   return {
     value: newValue,
     cursor: { line: cursor.line, column: cursor.column + 1 },
-  };
+  }
 }
 ```
 
@@ -436,13 +436,13 @@ function insertNewline(
   value: string,
   cursor: CursorPosition,
 ): { value: string; cursor: CursorPosition } {
-  const offset = positionToOffset(value, cursor);
-  const newValue = value.slice(0, offset) + "\n" + value.slice(offset);
+  const offset = positionToOffset(value, cursor)
+  const newValue = value.slice(0, offset) + "\n" + value.slice(offset)
 
   return {
     value: newValue,
     cursor: { line: cursor.line + 1, column: 0 },
-  };
+  }
 }
 ```
 
@@ -454,13 +454,13 @@ function deleteBackward(
   cursor: CursorPosition,
 ): { value: string; cursor: CursorPosition } {
   if (cursor.line === 0 && cursor.column === 0) {
-    return { value, cursor }; // Nothing to delete
+    return { value, cursor } // Nothing to delete
   }
 
-  const offset = positionToOffset(value, cursor);
-  const prevGrapheme = getPreviousGrapheme(value, offset);
+  const offset = positionToOffset(value, cursor)
+  const prevGrapheme = getPreviousGrapheme(value, offset)
   const newValue =
-    value.slice(0, offset - prevGrapheme.length) + value.slice(offset);
+    value.slice(0, offset - prevGrapheme.length) + value.slice(offset)
 
   // Calculate new cursor position
   const newCursor =
@@ -469,9 +469,9 @@ function deleteBackward(
       : {
           line: cursor.line - 1,
           column: getLineLength(value, cursor.line - 1),
-        };
+        }
 
-  return { value: newValue, cursor: newCursor };
+  return { value: newValue, cursor: newCursor }
 }
 ```
 
@@ -482,16 +482,16 @@ function deleteForward(
   value: string,
   cursor: CursorPosition,
 ): { value: string; cursor: CursorPosition } {
-  const offset = positionToOffset(value, cursor);
+  const offset = positionToOffset(value, cursor)
   if (offset >= value.length) {
-    return { value, cursor }; // Nothing to delete
+    return { value, cursor } // Nothing to delete
   }
 
-  const nextGrapheme = getNextGrapheme(value, offset);
+  const nextGrapheme = getNextGrapheme(value, offset)
   const newValue =
-    value.slice(0, offset) + value.slice(offset + nextGrapheme.length);
+    value.slice(0, offset) + value.slice(offset + nextGrapheme.length)
 
-  return { value: newValue, cursor }; // Cursor stays in place
+  return { value: newValue, cursor } // Cursor stays in place
 }
 ```
 
@@ -510,7 +510,7 @@ function extendSelection(
   return {
     anchor: selection.anchor,
     cursor: moveCursor(selection.cursor, direction),
-  };
+  }
 }
 ```
 
@@ -521,14 +521,14 @@ function deleteSelection(
   value: string,
   selection: Selection,
 ): { value: string; cursor: CursorPosition } {
-  const [start, end] = normalizeSelection(selection);
-  const startOffset = positionToOffset(value, start);
-  const endOffset = positionToOffset(value, end);
+  const [start, end] = normalizeSelection(selection)
+  const startOffset = positionToOffset(value, start)
+  const endOffset = positionToOffset(value, end)
 
   return {
     value: value.slice(0, startOffset) + value.slice(endOffset),
     cursor: start,
-  };
+  }
 }
 ```
 
@@ -539,7 +539,7 @@ function selectAll(value: string): Selection {
   return {
     anchor: { line: 0, column: 0 },
     cursor: getEndPosition(value),
-  };
+  }
 }
 ```
 
@@ -594,10 +594,10 @@ The `submitKey` prop controls Enter behavior:
 
 ```typescript
 // Use string-width or similar library
-import stringWidth from "string-width";
+import stringWidth from "string-width"
 
 function getCharWidth(char: string): number {
-  return stringWidth(char); // Returns 1 or 2
+  return stringWidth(char) // Returns 1 or 2
 }
 ```
 
@@ -610,11 +610,11 @@ Use a grapheme splitter to handle:
 - Regional indicators (flags)
 
 ```typescript
-import Graphemer from "graphemer";
-const splitter = new Graphemer();
+import Graphemer from "graphemer"
+const splitter = new Graphemer()
 
 function splitGraphemes(text: string): string[] {
-  return splitter.splitGraphemes(text);
+  return splitter.splitGraphemes(text)
 }
 ```
 
@@ -637,19 +637,19 @@ Invalid: 7 (would be "inside" 世)
 ```typescript
 interface TextAreaState {
   // Cursor position (always tracked)
-  cursor: CursorPosition;
+  cursor: CursorPosition
 
   // Selection anchor (only when selection enabled and active)
-  selectionAnchor: CursorPosition | null;
+  selectionAnchor: CursorPosition | null
 
   // Scroll position
-  scrollTop: number;
+  scrollTop: number
 
   // Column memory for vertical movement
-  targetColumn: number;
+  targetColumn: number
 
   // Focus state
-  isFocused: boolean;
+  isFocused: boolean
 }
 ```
 
@@ -659,34 +659,34 @@ TextArea can be built with a custom hook for flexibility:
 
 ```typescript
 interface UseTextAreaOptions {
-  value: string;
-  onChange: (value: string) => void;
-  selection?: boolean;
-  onSubmit?: (value: string) => void;
-  submitKey?: "ctrl+enter" | "meta+enter" | "enter";
+  value: string
+  onChange: (value: string) => void
+  selection?: boolean
+  onSubmit?: (value: string) => void
+  submitKey?: "ctrl+enter" | "meta+enter" | "enter"
 }
 
 interface UseTextAreaReturn {
   // Computed from value
-  lines: string[];
-  visualLines: VisualLine[];
+  lines: string[]
+  visualLines: VisualLine[]
 
   // Cursor/selection state
-  cursor: CursorPosition;
-  selection: Selection | null;
+  cursor: CursorPosition
+  selection: Selection | null
 
   // Scroll state
-  scrollTop: number;
+  scrollTop: number
 
   // Event handlers
-  handleInput: (input: string, key: Key) => void;
+  handleInput: (input: string, key: Key) => void
 
   // Imperative API
-  moveCursor: (direction: Direction) => void;
-  selectAll: () => void;
+  moveCursor: (direction: Direction) => void
+  selectAll: () => void
 }
 
-function useTextArea(options: UseTextAreaOptions): UseTextAreaReturn;
+function useTextArea(options: UseTextAreaOptions): UseTextAreaReturn
 ```
 
 This allows building custom TextArea variants while reusing the core logic.
@@ -697,10 +697,10 @@ TextArea benefits from Inkx's `useContentRect()`:
 
 ```tsx
 function TextArea({ value, onChange, height = 3 }: TextAreaProps) {
-  const { width } = useContentRect();
+  const { width } = useContentRect()
 
   // Calculate visible lines based on actual width
-  const visualLines = useMemo(() => wrapText(value, width), [value, width]);
+  const visualLines = useMemo(() => wrapText(value, width), [value, width])
 
   return (
     <Box flexDirection="column" height={height}>
@@ -708,7 +708,7 @@ function TextArea({ value, onChange, height = 3 }: TextAreaProps) {
         <Text key={i}>{renderLine(line, cursor, selection)}</Text>
       ))}
     </Box>
-  );
+  )
 }
 ```
 
@@ -719,19 +719,19 @@ Without `useContentRect()`, we'd need to thread width props down, complicating t
 ### 1. Split into Lines
 
 ```typescript
-const lines = value.split("\n");
+const lines = value.split("\n")
 ```
 
 ### 2. Wrap Lines
 
 ```typescript
-const visualLines = lines.flatMap((line) => wrapLine(line, width));
+const visualLines = lines.flatMap((line) => wrapLine(line, width))
 ```
 
 ### 3. Slice to Viewport
 
 ```typescript
-const visibleLines = visualLines.slice(scrollTop, scrollTop + height);
+const visibleLines = visualLines.slice(scrollTop, scrollTop + height)
 ```
 
 ### 4. Render Each Line
@@ -743,28 +743,28 @@ function renderLine(
   selection: Selection | null,
   lineIndex: number,
 ): string {
-  let result = "";
+  let result = ""
 
   for (let col = 0; col < line.length; col++) {
-    const char = line[col];
-    const isUnderCursor = lineIndex === cursor.line && col === cursor.column;
-    const isSelected = selection && isInSelection(lineIndex, col, selection);
+    const char = line[col]
+    const isUnderCursor = lineIndex === cursor.line && col === cursor.column
+    const isSelected = selection && isInSelection(lineIndex, col, selection)
 
     if (isUnderCursor) {
-      result += chalk.inverse(char || " ");
+      result += chalk.inverse(char || " ")
     } else if (isSelected) {
-      result += chalk.inverse(char);
+      result += chalk.inverse(char)
     } else {
-      result += char;
+      result += char
     }
   }
 
   // Render cursor at end of line if needed
   if (lineIndex === cursor.line && cursor.column === line.length) {
-    result += chalk.inverse(" ");
+    result += chalk.inverse(" ")
   }
 
-  return result;
+  return result
 }
 ```
 
@@ -805,13 +805,13 @@ Use requestAnimationFrame/setImmediate to batch updates:
 
 ```typescript
 function handleInput(char: string) {
-  pendingInput += char;
+  pendingInput += char
   if (!rafScheduled) {
-    rafScheduled = true;
+    rafScheduled = true
     setImmediate(() => {
-      flushInput();
-      rafScheduled = false;
-    });
+      flushInput()
+      rafScheduled = false
+    })
   }
 }
 ```

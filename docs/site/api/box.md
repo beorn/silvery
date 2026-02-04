@@ -5,7 +5,7 @@ The primary layout component. Uses Yoga (flexbox) for layout.
 ## Import
 
 ```tsx
-import { Box } from "inkx";
+import { Box } from "inkx"
 ```
 
 ## Usage
@@ -141,10 +141,10 @@ The `ComputedLayout` type:
 
 ```ts
 interface ComputedLayout {
-  x: number; // X position relative to root
-  y: number; // Y position relative to root
-  width: number; // Computed width in columns
-  height: number; // Computed height in rows
+  x: number // X position relative to root
+  y: number // Y position relative to root
+  width: number // Computed width in columns
+  height: number // Computed height in rows
 }
 ```
 
@@ -248,15 +248,15 @@ Use `flexShrink={0}` for fixed elements and `flexGrow={1}` for flexible areas:
 ### Scrollable List
 
 ```tsx
-const [selected, setSelected] = useState(0);
+const [selected, setSelected] = useState(0)
 
-<Box flexDirection="column" height={5} overflow="scroll" scrollTo={selected}>
+;<Box flexDirection="column" height={5} overflow="scroll" scrollTo={selected}>
   {items.map((item, i) => (
     <Text key={i} inverse={i === selected}>
       {item}
     </Text>
   ))}
-</Box>;
+</Box>
 ```
 
 ### Sticky Header in Scrollable Container
@@ -346,7 +346,7 @@ const [selected, setSelected] = useState(0);
 
 ```tsx
 function MeasuredBox() {
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [size, setSize] = useState({ width: 0, height: 0 })
 
   return (
     <Box
@@ -359,7 +359,7 @@ function MeasuredBox() {
         Size: {size.width}x{size.height}
       </Text>
     </Box>
-  );
+  )
 }
 ```
 

@@ -58,15 +58,15 @@ These APIs are 100% compatible:
 
 ```tsx
 // Ink
-render(<App />);
+render(<App />)
 ```
 
 **Inkx**: Create a term first.
 
 ```tsx
 // Inkx
-using term = createTerm();
-await render(<App />, term);
+using term = createTerm()
+await render(<App />, term)
 ```
 
 This enables `useTerm()` in components for terminal capabilities.
@@ -78,10 +78,10 @@ This enables `useTerm()` in components for terminal capabilities.
 ```tsx
 // Ink: Width must be passed down
 function Card({ width }: { width: number }) {
-  return <Text>{truncate(title, width)}</Text>;
+  return <Text>{truncate(title, width)}</Text>
 }
 
-<Card width={availableWidth - padding * 2} />;
+;<Card width={availableWidth - padding * 2} />
 ```
 
 **Inkx**: Components can ask for their size.
@@ -89,11 +89,11 @@ function Card({ width }: { width: number }) {
 ```tsx
 // Inkx: Just ask
 function Card() {
-  const { width } = useContentRect();
-  return <Text>{truncate(title, width)}</Text>;
+  const { width } = useContentRect()
+  return <Text>{truncate(title, width)}</Text>
 }
 
-<Card />;
+;<Card />
 ```
 
 ### 3. Text Auto-Truncates
@@ -131,10 +131,10 @@ function Card() {
 
 ```tsx
 function Header() {
-  const { width } = useContentRect();
+  const { width } = useContentRect()
   // First render: width=0
   // Second render: width=80
-  return <Text>{"=".repeat(width)}</Text>;
+  return <Text>{"=".repeat(width)}</Text>
 }
 ```
 
@@ -142,9 +142,9 @@ This is usually invisible (both renders happen before first paint). Add a guard 
 
 ```tsx
 function Header() {
-  const { width } = useContentRect();
-  if (width === 0) return null;
-  return <Text>{"=".repeat(width)}</Text>;
+  const { width } = useContentRect()
+  if (width === 0) return null
+  return <Text>{"=".repeat(width)}</Text>
 }
 ```
 
@@ -180,15 +180,15 @@ function Header() {
 **Ink**: Use `measureElement()` after render.
 
 ```tsx
-const ref = useRef();
-const { width } = measureElement(ref.current);
+const ref = useRef()
+const { width } = measureElement(ref.current)
 // Need manual re-render to use width
 ```
 
 **Inkx**: `measureElement()` works for compatibility, but `useContentRect()` is simpler.
 
 ```tsx
-const { width } = useContentRect();
+const { width } = useContentRect()
 // Automatically re-renders with correct values
 ```
 
@@ -229,14 +229,14 @@ After migrating, you can simplify your code by removing manual width calculation
 
 ```tsx
 function Board({ width }: { width: number }) {
-  const colWidth = Math.floor((width - 2) / 3);
+  const colWidth = Math.floor((width - 2) / 3)
   return (
     <Box>
       <Column width={colWidth} />
       <Column width={colWidth} />
       <Column width={colWidth} />
     </Box>
-  );
+  )
 }
 
 function Column({ width, items }) {
@@ -246,7 +246,7 @@ function Column({ width, items }) {
         <Card width={width - 2} item={item} />
       ))}
     </Box>
-  );
+  )
 }
 ```
 
@@ -260,7 +260,7 @@ function Board() {
       <Column />
       <Column />
     </Box>
-  );
+  )
 }
 
 function Column({ items }) {
@@ -270,11 +270,11 @@ function Column({ items }) {
         <Card item={item} />
       ))}
     </Box>
-  );
+  )
 }
 
 function Card({ item }) {
-  const { width } = useContentRect();
+  const { width } = useContentRect()
   // Use width only where actually needed
 }
 ```

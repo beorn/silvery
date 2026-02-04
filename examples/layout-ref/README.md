@@ -18,12 +18,12 @@ bun run examples/layout-ref/index.tsx
 ### forwardRef on Box
 
 ```tsx
-import { Box, type BoxHandle } from 'inkx';
+import { Box, type BoxHandle } from "inkx"
 
 function MyComponent() {
-  const boxRef = useRef<BoxHandle>(null);
+  const boxRef = useRef<BoxHandle>(null)
 
-  return <Box ref={boxRef}>Content</Box>;
+  return <Box ref={boxRef}>Content</Box>
 }
 ```
 
@@ -32,12 +32,12 @@ Box (and Text) support `forwardRef`, allowing you to attach a ref and access the
 ### BoxHandle Methods
 
 ```tsx
-const boxRef = useRef<BoxHandle>(null);
+const boxRef = useRef<BoxHandle>(null)
 
 // After render:
-const content = boxRef.current?.getContentRect();  // { x, y, width, height }
-const screen = boxRef.current?.getScreenRect();    // Absolute screen coordinates
-const node = boxRef.current?.getNode();            // Underlying Yoga/Flexx node
+const content = boxRef.current?.getContentRect() // { x, y, width, height }
+const screen = boxRef.current?.getScreenRect() // Absolute screen coordinates
+const node = boxRef.current?.getNode() // Underlying Yoga/Flexx node
 ```
 
 - `getContentRect()`: Returns the component's dimensions in content coordinates (relative to parent padding)
@@ -47,7 +47,7 @@ const node = boxRef.current?.getNode();            // Underlying Yoga/Flexx node
 ### onLayout Callback
 
 ```tsx
-<Box onLayout={(layout) => console.log('Size:', layout.width, layout.height)}>
+<Box onLayout={(layout) => console.log("Size:", layout.width, layout.height)}>
   <Text>Resizable content</Text>
 </Box>
 ```
@@ -67,12 +67,13 @@ Most of the time, use `useContentRect()` for declarative access:
 
 ```tsx
 function ResponsiveComponent() {
-  const { width } = useContentRect();
-  return <Text>{width > 40 ? 'Wide' : 'Narrow'}</Text>;
+  const { width } = useContentRect()
+  return <Text>{width > 40 ? "Wide" : "Narrow"}</Text>
 }
 ```
 
 Use refs and `onLayout` when you need:
+
 - Access from outside React's render cycle
 - To pass dimensions to parent components
 - Integration with imperative APIs

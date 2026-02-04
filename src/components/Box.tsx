@@ -13,37 +13,37 @@
  */
 
 import {
-	type ForwardedRef,
-	type JSX,
-	type ReactNode,
-	forwardRef,
-	useImperativeHandle,
-	useLayoutEffect,
-	useRef,
-	useState,
-} from 'react';
-import { NodeContext } from '../context.js';
-import type { BoxProps as BoxPropsType, InkxNode, Rect } from '../types.js';
+  type ForwardedRef,
+  type JSX,
+  type ReactNode,
+  forwardRef,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react"
+import { NodeContext } from "../context.js"
+import type { BoxProps as BoxPropsType, InkxNode, Rect } from "../types.js"
 
 // ============================================================================
 // Props
 // ============================================================================
 
 export interface BoxProps extends BoxPropsType {
-	/** Child elements */
-	children?: ReactNode;
+  /** Child elements */
+  children?: ReactNode
 }
 
 /**
  * Methods exposed via ref on Box component.
  */
 export interface BoxHandle {
-	/** Get the underlying InkxNode */
-	getNode(): InkxNode | null;
-	/** Get the current content-relative layout rect */
-	getContentRect(): Rect | null;
-	/** Get the current screen-relative layout rect */
-	getScreenRect(): Rect | null;
+  /** Get the underlying InkxNode */
+  getNode(): InkxNode | null
+  /** Get the current content-relative layout rect */
+  getContentRect(): Rect | null
+  /** Get the current screen-relative layout rect */
+  getScreenRect(): Rect | null
 }
 
 // ============================================================================
@@ -87,76 +87,76 @@ export interface BoxHandle {
  * ```
  */
 export const Box = forwardRef(function Box(
-	props: BoxProps,
-	ref: ForwardedRef<BoxHandle>,
+  props: BoxProps,
+  ref: ForwardedRef<BoxHandle>,
 ): JSX.Element {
-	const { children, onLayout, ...restProps } = props;
-	const nodeRef = useRef<InkxNode | null>(null);
-	const [node, setNode] = useState<InkxNode | null>(null);
+  const { children, onLayout, ...restProps } = props
+  const nodeRef = useRef<InkxNode | null>(null)
+  const [node, setNode] = useState<InkxNode | null>(null)
 
-	// Track the last layout we reported to onLayout to avoid duplicate calls
-	const lastReportedLayout = useRef<Rect | null>(null);
+  // Track the last layout we reported to onLayout to avoid duplicate calls
+  const lastReportedLayout = useRef<Rect | null>(null)
 
-	// After mount, ref points to the InkxNode (via getPublicInstance in reconciler).
-	// Update state to provide the node to children via context.
-	useLayoutEffect(() => {
-		if (nodeRef.current && nodeRef.current !== node) {
-			setNode(nodeRef.current);
-		}
-	});
+  // After mount, ref points to the InkxNode (via getPublicInstance in reconciler).
+  // Update state to provide the node to children via context.
+  useLayoutEffect(() => {
+    if (nodeRef.current && nodeRef.current !== node) {
+      setNode(nodeRef.current)
+    }
+  })
 
-	// Wire up onLayout callback - subscribe to layout changes
-	useLayoutEffect(() => {
-		if (!onLayout || !node) return;
+  // Wire up onLayout callback - subscribe to layout changes
+  useLayoutEffect(() => {
+    if (!onLayout || !node) return
 
-		// Create subscriber callback
-		const handleLayoutChange = () => {
-			const layout = node.contentRect;
-			if (!layout) return;
+    // Create subscriber callback
+    const handleLayoutChange = () => {
+      const layout = node.contentRect
+      if (!layout) return
 
-			// Only call onLayout if layout actually changed
-			const last = lastReportedLayout.current;
-			if (
-				!last ||
-				last.x !== layout.x ||
-				last.y !== layout.y ||
-				last.width !== layout.width ||
-				last.height !== layout.height
-			) {
-				lastReportedLayout.current = layout;
-				onLayout(layout);
-			}
-		};
+      // Only call onLayout if layout actually changed
+      const last = lastReportedLayout.current
+      if (
+        !last ||
+        last.x !== layout.x ||
+        last.y !== layout.y ||
+        last.width !== layout.width ||
+        last.height !== layout.height
+      ) {
+        lastReportedLayout.current = layout
+        onLayout(layout)
+      }
+    }
 
-		// Subscribe to layout changes
-		node.layoutSubscribers.add(handleLayoutChange);
+    // Subscribe to layout changes
+    node.layoutSubscribers.add(handleLayoutChange)
 
-		// Call immediately if we already have layout
-		if (node.contentRect) {
-			handleLayoutChange();
-		}
+    // Call immediately if we already have layout
+    if (node.contentRect) {
+      handleLayoutChange()
+    }
 
-		return () => {
-			node.layoutSubscribers.delete(handleLayoutChange);
-		};
-	}, [node, onLayout]);
+    return () => {
+      node.layoutSubscribers.delete(handleLayoutChange)
+    }
+  }, [node, onLayout])
 
-	// Expose imperative methods via ref
-	useImperativeHandle(
-		ref,
-		() => ({
-			getNode: () => nodeRef.current,
-			getContentRect: () => nodeRef.current?.contentRect ?? null,
-			getScreenRect: () => nodeRef.current?.screenRect ?? null,
-		}),
-		[],
-	);
+  // Expose imperative methods via ref
+  useImperativeHandle(
+    ref,
+    () => ({
+      getNode: () => nodeRef.current,
+      getContentRect: () => nodeRef.current?.contentRect ?? null,
+      getScreenRect: () => nodeRef.current?.screenRect ?? null,
+    }),
+    [],
+  )
 
-	// Render inkx-box with ref, wrap children in NodeContext
-	// The reconciler creates an InkxNode, ref gives us access to it
-	return (
-		<inkx-box ref={nodeRef} {...restProps}>
-			<NodeContext.Provider value={node}>{children}</NodeContext.Provider>
-		</inkx-box>
-	);
-});
+  // Render inkx-box with ref, wrap children in NodeContext
+  // The reconciler creates an InkxNode, ref gives us access to it
+  return (
+    <inkx-box ref={nodeRef} {...restProps}>
+      <NodeContext.Provider value={node}>{children}</NodeContext.Provider>
+    </inkx-box>
+  )
+})

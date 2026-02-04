@@ -1,5 +1,5 @@
-import { defineConfig } from "vitepress";
-import llmstxt from "vitepress-plugin-llms";
+import { defineConfig } from "vitepress"
+import llmstxt from "vitepress-plugin-llms"
 
 export default defineConfig({
   vite: {
@@ -117,4 +117,4 @@ export default defineConfig({
       copyright: "Copyright © 2024-present",
     },
   },
-});
+})

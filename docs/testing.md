@@ -145,7 +145,7 @@ export const COMPAT_STATUS = {
 
   // Tier 4 - Won't pass
   "transform.test.tsx": "wont-pass",
-} as const;
+} as const
 ```
 
 **Step 3: CI Dashboard**
@@ -254,14 +254,14 @@ Different terminals render ANSI differently. Use PTY-based testing:
 
 ```typescript
 // tests/visual/terminals/cross-terminal.test.ts
-import { spawn } from "node-pty";
-import { toMatchImageSnapshot } from "jest-image-snapshot";
+import { spawn } from "node-pty"
+import { toMatchImageSnapshot } from "jest-image-snapshot"
 
 const TERMINALS = [
   { name: "xterm", env: { TERM: "xterm-256color" } },
   { name: "vt100", env: { TERM: "vt100" } },
   { name: "dumb", env: { TERM: "dumb" } },
-];
+]
 
 for (const terminal of TERMINALS) {
   test(`renders correctly in ${terminal.name}`, async () => {
@@ -269,11 +269,11 @@ for (const terminal of TERMINALS) {
       env: { ...process.env, ...terminal.env },
       cols: 80,
       rows: 24,
-    });
+    })
 
-    const output = await captureOutput(pty, 1000);
-    expect(output).toMatchSnapshot(`${terminal.name}`);
-  });
+    const output = await captureOutput(pty, 1000)
+    expect(output).toMatchSnapshot(`${terminal.name}`)
+  })
 }
 ```
 
@@ -283,7 +283,7 @@ Use Microsoft's tui-test for comprehensive E2E testing:
 
 ```typescript
 // tests/visual/e2e.test.ts
-import { Terminal } from "@anthropic-ai/tui-test";
+import { Terminal } from "@anthropic-ai/tui-test"
 
 test("interactive app works end-to-end", async () => {
   const terminal = new Terminal({
@@ -291,14 +291,14 @@ test("interactive app works end-to-end", async () => {
     args: ["./fixtures/interactive-app.js"],
     cols: 80,
     rows: 24,
-  });
+  })
 
-  await terminal.waitForText("Select an option:");
-  await terminal.write("j"); // Move down
-  await terminal.write("\r"); // Enter
+  await terminal.waitForText("Select an option:")
+  await terminal.write("j") // Move down
+  await terminal.write("\r") // Enter
 
-  await expect(terminal).toMatchSnapshot();
-});
+  await expect(terminal).toMatchSnapshot()
+})
 ```
 
 ### 3.4 Visual Diff Tool
@@ -398,26 +398,26 @@ const METRICS = [
   "render_complex_p50",
   "memory_peak",
   "layout_100_nodes",
-];
+]
 
 async function recordMetrics() {
-  const results = await runBenchmarks();
+  const results = await runBenchmarks()
 
   // Store in SQLite or JSON for trending
   await db.insert("perf_metrics", {
     timestamp: new Date(),
     commit: process.env.GITHUB_SHA,
     ...results,
-  });
+  })
 
   // Alert if regression detected
-  const baseline = await db.getBaseline();
+  const baseline = await db.getBaseline()
   for (const metric of METRICS) {
     if (results[metric] > baseline[metric] * 1.2) {
       console.error(
         `REGRESSION: ${metric} is ${results[metric]}ms (was ${baseline[metric]}ms)`,
-      );
-      process.exit(1);
+      )
+      process.exit(1)
     }
   }
 }
@@ -479,13 +479,13 @@ test('another test', () => {
 
 ```typescript
 // tests/fixtures/index.ts
-export { SimpleBox } from "./simple-box";
-export { ComplexLayout } from "./complex-layout";
-export { NestedFlex } from "./nested-flex";
-export { InteractiveForm } from "./interactive-form";
-export { LargeList } from "./large-list"; // 1000+ items
-export { UnicodeContent } from "./unicode-content";
-export { ChalkStyledContent } from "./chalk-styled";
+export { SimpleBox } from "./simple-box"
+export { ComplexLayout } from "./complex-layout"
+export { NestedFlex } from "./nested-flex"
+export { InteractiveForm } from "./interactive-form"
+export { LargeList } from "./large-list" // 1000+ items
+export { UnicodeContent } from "./unicode-content"
+export { ChalkStyledContent } from "./chalk-styled"
 ```
 
 ### 5.3 CI Pipeline
@@ -991,19 +991,21 @@ test("locators auto-refresh after state changes", async () => {
 const app = render(
   <Box testID="sidebar">
     <Text testID="header">Tasks</Text>
-    <Text testID="task-1" data-status="done">Task 1</Text>
-  </Box>
-);
+    <Text testID="task-1" data-status="done">
+      Task 1
+    </Text>
+  </Box>,
+)
 
 // By testID
-expect(app.getByTestId("sidebar").count()).toBe(1);
+expect(app.getByTestId("sidebar").count()).toBe(1)
 
 // By text content
-expect(app.getByText("Task 1").count()).toBe(1);
-expect(app.getByText(/Task \d/).count()).toBe(1);  // regex
+expect(app.getByText("Task 1").count()).toBe(1)
+expect(app.getByText(/Task \d/).count()).toBe(1) // regex
 
 // CSS-style attribute selectors
-expect(app.locator('[data-status="done"]').textContent()).toBe("Task 1");
+expect(app.locator('[data-status="done"]').textContent()).toBe("Task 1")
 ```
 
 ### 9.3 Attribute Selectors
@@ -1012,19 +1014,19 @@ CSS-like selectors for flexible querying:
 
 ```typescript
 // Presence: [attr]
-app.locator("[data-selected]");
+app.locator("[data-selected]")
 
 // Exact match: [attr="value"]
-app.locator('[data-status="done"]');
+app.locator('[data-status="done"]')
 
 // Prefix: [attr^="prefix"]
-app.locator('[testID^="task-"]');
+app.locator('[testID^="task-"]')
 
 // Suffix: [attr$="suffix"]
-app.locator('[testID$="-column"]');
+app.locator('[testID$="-column"]')
 
 // Contains: [attr*="substring"]
-app.locator('[testID*="task"]');
+app.locator('[testID*="task"]')
 ```
 
 ### 9.4 Layout Assertions
@@ -1032,9 +1034,9 @@ app.locator('[testID*="task"]');
 Use `boundingBox()` for position and size:
 
 ```typescript
-const sidebar = app.getByTestId("sidebar");
-expect(sidebar.boundingBox()?.x).toBe(0);      // At left edge
-expect(sidebar.boundingBox()?.width).toBe(20); // 20 chars wide
+const sidebar = app.getByTestId("sidebar")
+expect(sidebar.boundingBox()?.x).toBe(0) // At left edge
+expect(sidebar.boundingBox()?.width).toBe(20) // 20 chars wide
 ```
 
 ### 9.5 AutoLocator API

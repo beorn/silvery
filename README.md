@@ -13,10 +13,10 @@ bun add inkx
 ## Quick Start
 
 ```tsx
-import { render, Box, Text, useContentRect, createTerm } from 'inkx'
+import { render, Box, Text, useContentRect, createTerm } from "inkx"
 
 function Card() {
-  const { width } = useContentRect()  // Components know their size!
+  const { width } = useContentRect() // Components know their size!
   return <Text>{truncate(title, width)}</Text>
 }
 
@@ -46,54 +46,54 @@ Ink renders components _before_ layout calculation. Components can't know their 
 
 ## Key Features
 
-| Feature | Description |
-|---------|-------------|
+| Feature             | Description                                          |
+| ------------------- | ---------------------------------------------------- |
 | **Layout feedback** | `useContentRect()` returns `{ width, height, x, y }` |
-| **Scrolling** | `overflow="scroll"` with `scrollTo={index}` |
-| **Term injection** | `useTerm()` for styling and capability detection |
-| **Console capture** | `<Console />` component for log output |
-| **React 19** | forwardRef, ErrorBoundary, Suspense, useTransition |
-| **Flexx layout** | 2.5x faster than Yoga, 5x smaller bundle |
+| **Scrolling**       | `overflow="scroll"` with `scrollTo={index}`          |
+| **Term injection**  | `useTerm()` for styling and capability detection     |
+| **Console capture** | `<Console />` component for log output               |
+| **React 19**        | forwardRef, ErrorBoundary, Suspense, useTransition   |
+| **Flexx layout**    | 2.5x faster than Yoga, 5x smaller bundle             |
 
 ## inkx/runtime (New API)
 
 The new `inkx/runtime` module provides a layered, AsyncIterable-first architecture. **Use this for new development.**
 
 ```tsx
-import { run, useInput, type Key } from 'inkx/runtime';
-import { Text } from 'inkx';
+import { run, useInput, type Key } from "inkx/runtime"
+import { Text } from "inkx"
 
 function Counter() {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(0)
 
   useInput((input, key) => {
-    if (input === 'j' || key.downArrow) setCount(c => c + 1);
-    if (input === 'k' || key.upArrow) setCount(c => c - 1);
-    if (input === 'q') return 'exit';
-  });
+    if (input === "j" || key.downArrow) setCount((c) => c + 1)
+    if (input === "k" || key.upArrow) setCount((c) => c - 1)
+    if (input === "q") return "exit"
+  })
 
-  return <Text>Count: {count}</Text>;
+  return <Text>Count: {count}</Text>
 }
 
-await run(<Counter />);
+await run(<Counter />)
 ```
 
 **Three layers to choose from:**
 
-| Layer | Entry | Best For |
-|-------|-------|----------|
-| 1 | `createRuntime()` | Maximum control, Elm-style |
-| 2 | `run()` | React hooks (recommended) |
-| 3 | `createApp()` | Complex apps with Zustand |
+| Layer | Entry             | Best For                   |
+| ----- | ----------------- | -------------------------- |
+| 1     | `createRuntime()` | Maximum control, Elm-style |
+| 2     | `run()`           | React hooks (recommended)  |
+| 3     | `createApp()`     | Complex apps with Zustand  |
 
 **Rich Key object** with arrow keys, modifiers, navigation:
 
 ```tsx
 useInput((input, key) => {
-  if (key.upArrow) moveCursor(-1);
-  if (key.ctrl && input === 'c') return 'exit';
-  if (key.return) submit();
-});
+  if (key.upArrow) moveCursor(-1)
+  if (key.ctrl && input === "c") return "exit"
+  if (key.return) submit()
+})
 ```
 
 See `docs/getting-started.md` and `docs/runtime-migration.md` for details.
@@ -115,28 +115,29 @@ inkx can render to Canvas and DOM in addition to terminal:
 
 ```tsx
 // Canvas rendering
-import { renderToCanvas, Box, Text } from 'inkx/canvas';
-renderToCanvas(<App />, canvas, { fontSize: 14 });
+import { renderToCanvas, Box, Text } from "inkx/canvas"
+renderToCanvas(<App />, canvas, { fontSize: 14 })
 
 // DOM rendering (text-selectable, accessible)
-import { renderToDOM, Box, Text } from 'inkx/dom';
-renderToDOM(<App />, container, { fontSize: 14 });
+import { renderToDOM, Box, Text } from "inkx/dom"
+renderToDOM(<App />, container, { fontSize: 14 })
 ```
 
 See [docs/roadmap.md](docs/roadmap.md) for the full vision including WebGL and React Native.
 
 ## Documentation
 
-| Resource | Description |
-|----------|-------------|
-| [CLAUDE.md](CLAUDE.md) | Full API reference with all patterns |
-| [examples/](examples/) | Runnable examples with source code |
-| [docs/internals.md](docs/internals.md) | Architecture for contributors |
-| [docs/ink-comparison.md](docs/ink-comparison.md) | Detailed Ink comparison |
+| Resource                                         | Description                          |
+| ------------------------------------------------ | ------------------------------------ |
+| [CLAUDE.md](CLAUDE.md)                           | Full API reference with all patterns |
+| [examples/](examples/)                           | Runnable examples with source code   |
+| [docs/internals.md](docs/internals.md)           | Architecture for contributors        |
+| [docs/ink-comparison.md](docs/ink-comparison.md) | Detailed Ink comparison              |
 
 ## Examples
 
 **Terminal:**
+
 ```bash
 bun run examples/dashboard/index.tsx      # Multi-pane dashboard
 bun run examples/kanban/index.tsx         # 3-column kanban board
@@ -147,6 +148,7 @@ bun run examples/layout-ref/index.tsx     # forwardRef + onLayout
 ```
 
 **Web (Canvas/DOM):**
+
 ```bash
 bun run build:web                         # Build browser bundles
 open examples/web/canvas.html             # Canvas adapter demo
@@ -157,15 +159,15 @@ See [examples/index.md](examples/index.md) for descriptions.
 
 ## Related Projects
 
-| Project                                         | Role                                                     |
-| ----------------------------------------------- | -------------------------------------------------------- |
-| [Ink](https://github.com/vadimdemedes/ink)      | API compatibility target. Inkx is a drop-in replacement. |
-| [Flexx](../beorn-flexx/)                        | Default layout engine (2.5x faster, 5x smaller).         |
-| [Yoga](https://yogalayout.dev/)                 | Optional layout engine (WASM, more mature).              |
-| [Chalk](https://github.com/chalk/chalk)         | ANSI styling. Inkx preserves chalk strings.              |
-| [Textual](https://textual.textualize.io/)       | Python TUI with proper layout. Major inspiration.        |
-| [Ratatui](https://ratatui.rs/)                  | Rust TUI with layout feedback.                           |
-| [Bubbletea](https://github.com/charmbracelet/bubbletea) | Go TUI with dimension awareness.                 |
+| Project                                                 | Role                                                     |
+| ------------------------------------------------------- | -------------------------------------------------------- |
+| [Ink](https://github.com/vadimdemedes/ink)              | API compatibility target. Inkx is a drop-in replacement. |
+| [Flexx](../beorn-flexx/)                                | Default layout engine (2.5x faster, 5x smaller).         |
+| [Yoga](https://yogalayout.dev/)                         | Optional layout engine (WASM, more mature).              |
+| [Chalk](https://github.com/chalk/chalk)                 | ANSI styling. Inkx preserves chalk strings.              |
+| [Textual](https://textual.textualize.io/)               | Python TUI with proper layout. Major inspiration.        |
+| [Ratatui](https://ratatui.rs/)                          | Rust TUI with layout feedback.                           |
+| [Bubbletea](https://github.com/charmbracelet/bubbletea) | Go TUI with dimension awareness.                         |
 
 ## Docs
 
@@ -191,13 +193,13 @@ Inkx implements **category-based style merging** that preserves semantic informa
 
 ### Style Categories
 
-| Category | Properties | Merge Behavior |
-|----------|------------|----------------|
-| **Container** | `bg` | Replace (overlay wins) |
-| **Text** | `fg` | Replace (overlay wins) |
-| **Decorations** | `underline`, `underlineStyle`, `underlineColor`, `strikethrough` | Preserved (OR merge) |
-| **Emphasis** | `bold`, `dim`, `italic` | Preserved (OR merge) |
-| **Transform** | `inverse` | Applied last, not inherited |
+| Category        | Properties                                                       | Merge Behavior              |
+| --------------- | ---------------------------------------------------------------- | --------------------------- |
+| **Container**   | `bg`                                                             | Replace (overlay wins)      |
+| **Text**        | `fg`                                                             | Replace (overlay wins)      |
+| **Decorations** | `underline`, `underlineStyle`, `underlineColor`, `strikethrough` | Preserved (OR merge)        |
+| **Emphasis**    | `bold`, `dim`, `italic`                                          | Preserved (OR merge)        |
+| **Transform**   | `inverse`                                                        | Applied last, not inherited |
 
 ### Example: Selection Preserves Underlines
 
@@ -208,10 +210,10 @@ Inkx implements **category-based style merging** that preserves semantic informa
 // With inkx style layering:
 // Selection preserves the red underline!
 <Text
-  color={isSelected ? 'black' : 'white'}
-  backgroundColor={isSelected ? 'yellow' : undefined}
+  color={isSelected ? "black" : "white"}
+  backgroundColor={isSelected ? "yellow" : undefined}
   underlineStyle="curly"
-  underlineColor="red"  // Preserved through selection!
+  underlineColor="red" // Preserved through selection!
 >
   overdue task
 </Text>
@@ -249,11 +251,11 @@ For advanced use cases, style merging behavior can be controlled:
 
 ```tsx
 // In custom components using mergeStyles():
-import { mergeStyles } from 'inkx'
+import { mergeStyles } from "inkx"
 
 const result = mergeStyles(baseStyle, overlayStyle, {
-  preserveDecorations: false,  // Overlay can clear decorations
-  preserveEmphasis: false,     // Overlay can clear emphasis
+  preserveDecorations: false, // Overlay can clear decorations
+  preserveEmphasis: false, // Overlay can clear emphasis
 })
 ```
 
@@ -301,12 +303,12 @@ Inkx detects this conflict and **throws by default**:
 **Intentional override** with `@beorn/chalkx`:
 
 ```tsx
-import { bgOverride } from "@beorn/chalkx";
+import { bgOverride } from "@beorn/chalkx"
 
 // When you deliberately want both backgrounds:
-<Box backgroundColor="cyan">
+;<Box backgroundColor="cyan">
   <Text>{bgOverride(chalk.bgBlack("intentional"))}</Text>
-</Box>;
+</Box>
 ```
 
 The `bgOverride()` wrapper tells inkx "I know what I'm doing" and skips detection.

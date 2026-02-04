@@ -111,21 +111,21 @@ bun run examples/layout-ref/index.tsx
 All examples use `useInput()` for keyboard interaction:
 
 ```tsx
-import { useInput, useApp, type Key } from "inkx";
+import { useInput, useApp, type Key } from "inkx"
 
 function MyComponent() {
-  const { exit } = useApp();
+  const { exit } = useApp()
 
   useInput((input: string, key: Key) => {
     if (key.upArrow) {
       /* move up */
     }
     if (input === "q") {
-      exit();
+      exit()
     }
-  });
+  })
 
-  return <Text>Press q to quit</Text>;
+  return <Text>Press q to quit</Text>
 }
 ```
 
@@ -134,9 +134,9 @@ function MyComponent() {
 For lists that exceed available height:
 
 ```tsx
-const visibleCount = 15; // Fixed or calculated from terminal height
-const scrollOffset = calculateScrollOffset(cursor, visibleCount, totalItems);
-const visibleItems = items.slice(scrollOffset, scrollOffset + visibleCount);
+const visibleCount = 15 // Fixed or calculated from terminal height
+const scrollOffset = calculateScrollOffset(cursor, visibleCount, totalItems)
+const visibleItems = items.slice(scrollOffset, scrollOffset + visibleCount)
 
 return (
   <Box overflow="hidden" height={visibleCount}>
@@ -144,7 +144,7 @@ return (
       <Item key={item.id} item={item} />
     ))}
   </Box>
-);
+)
 ```
 
 ### Flexbox Layouts
@@ -175,7 +175,7 @@ Equal-width columns:
     </Text>
   ) : (
     <Text>Normal item</Text>
-  );
+  )
 }
 ```
 

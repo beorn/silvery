@@ -73,9 +73,9 @@ The design uses `setImmediate` for frame coalescing:
 
 ```typescript
 setImmediate(() => {
-  this.pending = false;
-  this.executeRender();
-});
+  this.pending = false
+  this.executeRender()
+})
 ```
 
 **Issue**: `setImmediate` schedules after I/O callbacks but before timers. If there's heavy I/O, frames may be delayed.
@@ -84,29 +84,29 @@ setImmediate(() => {
 
 ```typescript
 queueMicrotask(() => {
-  this.pending = false;
-  this.executeRender();
-});
+  this.pending = false
+  this.executeRender()
+})
 ```
 
 **Or**: Use a dedicated render loop with explicit timing control:
 
 ```typescript
-const TARGET_FPS = 60;
-const FRAME_MS = 1000 / TARGET_FPS;
+const TARGET_FPS = 60
+const FRAME_MS = 1000 / TARGET_FPS
 
 class RenderScheduler {
-  private lastFrame = 0;
+  private lastFrame = 0
 
   scheduleRender() {
-    const now = performance.now();
-    const elapsed = now - this.lastFrame;
+    const now = performance.now()
+    const elapsed = now - this.lastFrame
 
     if (elapsed >= FRAME_MS) {
-      this.executeRender();
-      this.lastFrame = now;
+      this.executeRender()
+      this.lastFrame = now
     } else {
-      setTimeout(() => this.scheduleRender(), FRAME_MS - elapsed);
+      setTimeout(() => this.scheduleRender(), FRAME_MS - elapsed)
     }
   }
 }
@@ -174,7 +174,7 @@ function computeStyle(node: InkxNode, parentStyle: Style): Style {
     color: node.props.color ?? parentStyle.color,
     bold: node.props.bold ?? parentStyle.bold,
     // etc.
-  };
+  }
 }
 ```
 
@@ -194,20 +194,20 @@ The design mentions resize in tests but doesn't show implementation.
 ```typescript
 class InkxRoot {
   constructor() {
-    process.stdout.on("resize", this.handleResize);
+    process.stdout.on("resize", this.handleResize)
   }
 
   handleResize = () => {
-    this.rootNode.yogaNode.setWidth(process.stdout.columns);
-    this.rootNode.yogaNode.setHeight(process.stdout.rows);
-    this.markAllLayoutDirty(this.rootNode);
-    this.scheduleRender();
-  };
+    this.rootNode.yogaNode.setWidth(process.stdout.columns)
+    this.rootNode.yogaNode.setHeight(process.stdout.rows)
+    this.markAllLayoutDirty(this.rootNode)
+    this.scheduleRender()
+  }
 
   markAllLayoutDirty(node: InkxNode) {
-    node.layoutDirty = true;
+    node.layoutDirty = true
     for (const child of node.children) {
-      this.markAllLayoutDirty(child);
+      this.markAllLayoutDirty(child)
     }
   }
 }
@@ -230,11 +230,11 @@ function renderNodeToBuffer(node: InkxNode, buffer: TerminalBuffer) {
     // ... normal render ...
   } catch (error) {
     // Render error message in place of component
-    const errorText = `[Error: ${error.message}]`;
-    writeToBuffer(buffer, node.computedLayout, errorText, { color: "red" });
+    const errorText = `[Error: ${error.message}]`
+    writeToBuffer(buffer, node.computedLayout, errorText, { color: "red" })
 
     // Log full error to stderr (not stdout, would corrupt TUI)
-    console.error("Inkx render error:", error);
+    console.error("Inkx render error:", error)
   }
 }
 ```

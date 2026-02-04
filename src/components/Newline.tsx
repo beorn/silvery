@@ -4,11 +4,11 @@
  * Renders a newline character. Useful for adding vertical spacing in text.
  */
 
-import type { JSX } from 'react';
+import type { JSX } from "react"
 
 export interface NewlineProps {
-	/** Number of newlines to render (default: 1) */
-	count?: number;
+  /** Number of newlines to render (default: 1) */
+  count?: number
 }
 
 /**
@@ -24,5 +24,5 @@ export interface NewlineProps {
  * ```
  */
 export function Newline({ count = 1 }: NewlineProps): JSX.Element {
-	return <inkx-text>{'\n'.repeat(count)}</inkx-text>;
+  return <inkx-text>{"\n".repeat(count)}</inkx-text>
 }

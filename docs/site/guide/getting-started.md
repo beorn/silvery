@@ -29,18 +29,18 @@ pnpm add inkx
 Create a file called `app.tsx`:
 
 ```tsx
-import { Box, Text, render, createTerm } from "inkx";
+import { Box, Text, render, createTerm } from "inkx"
 
 function App() {
   return (
     <Box borderStyle="round" padding={1}>
       <Text>Hello from Inkx!</Text>
     </Box>
-  );
+  )
 }
 
-using term = createTerm();
-await render(<App />, term);
+using term = createTerm()
+await render(<App />, term)
 ```
 
 Run it:
@@ -57,17 +57,17 @@ You should see a rounded box with "Hello from Inkx!" inside.
 The key feature of Inkx is `useContentRect()`. Components can query their computed dimensions:
 
 ```tsx
-import { Box, Text, render, useContentRect, createTerm } from "inkx";
+import { Box, Text, render, useContentRect, createTerm } from "inkx"
 
 function SizedBox() {
-  const { width, height } = useContentRect();
+  const { width, height } = useContentRect()
   return (
     <Box borderStyle="single" flexGrow={1}>
       <Text>
         I am {width}x{height}
       </Text>
     </Box>
-  );
+  )
 }
 
 function App() {
@@ -77,11 +77,11 @@ function App() {
       <SizedBox />
       <SizedBox />
     </Box>
-  );
+  )
 }
 
-using term = createTerm();
-await render(<App />, term);
+using term = createTerm()
+await render(<App />, term)
 ```
 
 Each `SizedBox` will display its actual computed dimensions. No prop threading needed!
@@ -91,18 +91,18 @@ Each `SizedBox` will display its actual computed dimensions. No prop threading n
 Inkx handles scrolling automatically. Just use `overflow="scroll"`:
 
 ```tsx
-import { Box, Text, render, useInput, createTerm } from "inkx";
-import { useState } from "react";
+import { Box, Text, render, useInput, createTerm } from "inkx"
+import { useState } from "react"
 
-const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`);
+const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`)
 
 function App() {
-  const [selected, setSelected] = useState(0);
+  const [selected, setSelected] = useState(0)
 
   useInput((input, key) => {
-    if (key.downArrow) setSelected((s) => Math.min(s + 1, items.length - 1));
-    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0));
-  });
+    if (key.downArrow) setSelected((s) => Math.min(s + 1, items.length - 1))
+    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0))
+  })
 
   return (
     <Box
@@ -117,11 +117,11 @@ function App() {
         </Text>
       ))}
     </Box>
-  );
+  )
 }
 
-using term = createTerm();
-await render(<App />, term);
+using term = createTerm()
+await render(<App />, term)
 ```
 
 Inkx measures all children, calculates which are visible, and only renders content for visible items. No height estimation or virtualization config needed.

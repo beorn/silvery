@@ -7,7 +7,7 @@
  * - onLayout callback for responding to size changes
  */
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react"
 import {
   render,
   Box,
@@ -17,17 +17,17 @@ import {
   createTerm,
   type BoxHandle,
   type Key,
-} from "../../src/index.js";
+} from "../../src/index.js"
 
 // ============================================================================
 // Components
 // ============================================================================
 
 interface LayoutInfo {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  x: number
+  y: number
+  width: number
+  height: number
 }
 
 function ResizablePane({
@@ -35,11 +35,11 @@ function ResizablePane({
   color,
   onLayoutChange,
 }: {
-  title: string;
-  color: string;
-  onLayoutChange: (info: LayoutInfo) => void;
+  title: string
+  color: string
+  onLayoutChange: (info: LayoutInfo) => void
 }) {
-  const boxRef = useRef<BoxHandle>(null);
+  const boxRef = useRef<BoxHandle>(null)
 
   // onLayout callback fires when this Box's dimensions change
   return (
@@ -51,31 +51,33 @@ function ResizablePane({
       padding={1}
       onLayout={(layout) => onLayoutChange(layout)}
     >
-      <Text bold color={color}>{title}</Text>
+      <Text bold color={color}>
+        {title}
+      </Text>
     </Box>
-  );
+  )
 }
 
 function ImperativeAccessDemo() {
-  const boxRef = useRef<BoxHandle>(null);
-  const [info, setInfo] = useState<string>("Click 'i' to inspect");
+  const boxRef = useRef<BoxHandle>(null)
+  const [info, setInfo] = useState<string>("Click 'i' to inspect")
 
   const inspect = () => {
     if (!boxRef.current) {
-      setInfo("No ref attached");
-      return;
+      setInfo("No ref attached")
+      return
     }
 
-    const content = boxRef.current.getContentRect();
-    const screen = boxRef.current.getScreenRect();
-    const node = boxRef.current.getNode();
+    const content = boxRef.current.getContentRect()
+    const screen = boxRef.current.getScreenRect()
+    const node = boxRef.current.getNode()
 
     setInfo(
       `Content: ${content?.width}x${content?.height} at (${content?.x},${content?.y})\n` +
-      `Screen: ${screen?.width}x${screen?.height} at (${screen?.x},${screen?.y})\n` +
-      `Node: ${node ? "available" : "null"}`
-    );
-  };
+        `Screen: ${screen?.width}x${screen?.height} at (${screen?.x},${screen?.y})\n` +
+        `Node: ${node ? "available" : "null"}`,
+    )
+  }
 
   return (
     <Box
@@ -85,7 +87,9 @@ function ImperativeAccessDemo() {
       borderColor="magenta"
       padding={1}
     >
-      <Text bold color="magenta">Imperative Access (BoxHandle)</Text>
+      <Text bold color="magenta">
+        Imperative Access (BoxHandle)
+      </Text>
       <Text dim>Press 'i' to inspect this box</Text>
       <Box marginTop={1}>
         <Text>{info}</Text>
@@ -93,38 +97,43 @@ function ImperativeAccessDemo() {
       {/* Expose inspect function via closure */}
       <InspectTrigger onInspect={inspect} />
     </Box>
-  );
+  )
 }
 
 // Hidden component to trigger inspect on keypress
 function InspectTrigger({ onInspect }: { onInspect: () => void }) {
   useInput((input: string) => {
     if (input === "i") {
-      onInspect();
+      onInspect()
     }
-  });
-  return null;
+  })
+  return null
 }
 
 function LayoutRefApp(): JSX.Element {
-  const { exit } = useApp();
-  const [layouts, setLayouts] = useState<Record<string, LayoutInfo>>({});
+  const { exit } = useApp()
+  const [layouts, setLayouts] = useState<Record<string, LayoutInfo>>({})
 
   useInput((input: string, key: Key) => {
     if (key.escape || (key.ctrl && input === "c")) {
-      exit();
+      exit()
     }
-  });
+  })
 
   const handleLayoutChange = (pane: string) => (info: LayoutInfo) => {
-    setLayouts((prev) => ({ ...prev, [pane]: info }));
-  };
+    setLayouts((prev) => ({ ...prev, [pane]: info }))
+  }
 
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
-        <Text bold color="yellow">Layout Ref Demo</Text>
-        <Text dim> | forwardRef + onLayout + BoxHandle | i to inspect | Esc to quit</Text>
+        <Text bold color="yellow">
+          Layout Ref Demo
+        </Text>
+        <Text dim>
+          {" "}
+          | forwardRef + onLayout + BoxHandle | i to inspect | Esc to quit
+        </Text>
       </Box>
 
       {/* Row of resizable panes with onLayout callbacks */}
@@ -149,14 +158,19 @@ function LayoutRefApp(): JSX.Element {
       {/* Show layout info from onLayout callbacks */}
       <Box marginTop={1} borderStyle="single" borderColor="gray" padding={1}>
         <Box flexDirection="column">
-          <Text bold dim>onLayout Results:</Text>
+          <Text bold dim>
+            onLayout Results:
+          </Text>
           {Object.entries(layouts).map(([pane, info]) => (
             <Text key={pane} dim>
-              Pane {pane.toUpperCase()}: {info.width}x{info.height} at ({info.x},{info.y})
+              Pane {pane.toUpperCase()}: {info.width}x{info.height} at ({info.x}
+              ,{info.y})
             </Text>
           ))}
           {Object.keys(layouts).length === 0 && (
-            <Text dim italic>Waiting for layout...</Text>
+            <Text dim italic>
+              Waiting for layout...
+            </Text>
           )}
         </Box>
       </Box>
@@ -169,13 +183,17 @@ function LayoutRefApp(): JSX.Element {
       <Box marginTop={1} borderStyle="single" borderColor="gray" padding={1}>
         <Box flexDirection="column">
           <Text dim>This example demonstrates:</Text>
-          <Text dim>- forwardRef: Box accepts ref prop for imperative access</Text>
+          <Text dim>
+            - forwardRef: Box accepts ref prop for imperative access
+          </Text>
           <Text dim>- onLayout: Callback fires when dimensions change</Text>
-          <Text dim>- BoxHandle: getContentRect(), getScreenRect(), getNode()</Text>
+          <Text dim>
+            - BoxHandle: getContentRect(), getScreenRect(), getNode()
+          </Text>
         </Box>
       </Box>
     </Box>
-  );
+  )
 }
 
 // ============================================================================
@@ -183,9 +201,9 @@ function LayoutRefApp(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm();
-  const { waitUntilExit } = await render(<LayoutRefApp />, term);
-  await waitUntilExit();
+  using term = createTerm()
+  const { waitUntilExit } = await render(<LayoutRefApp />, term)
+  await waitUntilExit()
 }
 
-main().catch(console.error);
+main().catch(console.error)

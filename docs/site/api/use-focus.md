@@ -5,7 +5,7 @@ Create focusable components and manage focus navigation.
 ## Import
 
 ```tsx
-import { useFocus, useFocusManager } from "inkx";
+import { useFocus, useFocusManager } from "inkx"
 ```
 
 ## useFocus
@@ -16,14 +16,14 @@ Makes a component focusable within the focus system.
 
 ```tsx
 function FocusableItem({ label }: { label: string }) {
-  const { isFocused } = useFocus();
+  const { isFocused } = useFocus()
 
   return (
     <Text color={isFocused ? "green" : undefined}>
       {isFocused ? "> " : "  "}
       {label}
     </Text>
-  );
+  )
 }
 ```
 
@@ -50,15 +50,15 @@ Control focus management across all focusable components.
 
 ```tsx
 function App() {
-  const { focusNext, focusPrevious } = useFocusManager();
+  const { focusNext, focusPrevious } = useFocusManager()
 
   useInput((input, key) => {
     if (key.tab && key.shift) {
-      focusPrevious();
+      focusPrevious()
     } else if (key.tab) {
-      focusNext();
+      focusNext()
     }
-  });
+  })
 
   return (
     <Box flexDirection="column">
@@ -66,7 +66,7 @@ function App() {
       <FocusableItem label="Second" />
       <FocusableItem label="Third" />
     </Box>
-  );
+  )
 }
 ```
 
@@ -86,25 +86,25 @@ function App() {
 
 ```tsx
 function Button({ label }: { label: string }) {
-  const { isFocused } = useFocus();
+  const { isFocused } = useFocus()
 
   return (
     <Box borderStyle={isFocused ? "double" : "single"}>
       <Text inverse={isFocused}>{label}</Text>
     </Box>
-  );
+  )
 }
 
 function Form() {
-  const { focusNext, focusPrevious } = useFocusManager();
+  const { focusNext, focusPrevious } = useFocusManager()
 
   useInput((input, key) => {
     if (key.tab && key.shift) {
-      focusPrevious();
+      focusPrevious()
     } else if (key.tab) {
-      focusNext();
+      focusNext()
     }
-  });
+  })
 
   return (
     <Box flexDirection="column" gap={1}>
@@ -112,7 +112,7 @@ function Form() {
       <Button label="Cancel" />
       <Button label="Help" />
     </Box>
-  );
+  )
 }
 ```
 
@@ -120,14 +120,14 @@ function Form() {
 
 ```tsx
 function SearchInput() {
-  const { isFocused } = useFocus({ autoFocus: true });
+  const { isFocused } = useFocus({ autoFocus: true })
 
   return (
     <Box borderStyle={isFocused ? "double" : "single"}>
       <Text>Search: </Text>
       <Text inverse={isFocused}>_</Text>
     </Box>
-  );
+  )
 }
 ```
 
@@ -138,10 +138,10 @@ function DisableableButton({
   label,
   disabled,
 }: {
-  label: string;
-  disabled: boolean;
+  label: string
+  disabled: boolean
 }) {
-  const { isFocused } = useFocus({ isActive: !disabled });
+  const { isFocused } = useFocus({ isActive: !disabled })
 
   return (
     <Text
@@ -151,7 +151,7 @@ function DisableableButton({
       {isFocused ? "> " : "  "}
       {label}
     </Text>
-  );
+  )
 }
 ```
 
@@ -159,13 +159,13 @@ function DisableableButton({
 
 ```tsx
 function Navigation() {
-  const { focus } = useFocusManager();
+  const { focus } = useFocusManager()
 
   useInput((input) => {
-    if (input === "1") focus("first");
-    if (input === "2") focus("second");
-    if (input === "3") focus("third");
-  });
+    if (input === "1") focus("first")
+    if (input === "2") focus("second")
+    if (input === "3") focus("third")
+  })
 
   return (
     <Box flexDirection="column">
@@ -173,13 +173,13 @@ function Navigation() {
       <FocusableWithId id="second" label="Second (2)" />
       <FocusableWithId id="third" label="Third (3)" />
     </Box>
-  );
+  )
 }
 
 function FocusableWithId({ id, label }: { id: string; label: string }) {
-  const { isFocused } = useFocus({ id });
+  const { isFocused } = useFocus({ id })
 
-  return <Text inverse={isFocused}>{label}</Text>;
+  return <Text inverse={isFocused}>{label}</Text>
 }
 ```
 
@@ -190,23 +190,23 @@ function MenuItem({
   label,
   onSelect,
 }: {
-  label: string;
-  onSelect: () => void;
+  label: string
+  onSelect: () => void
 }) {
-  const { isFocused } = useFocus();
+  const { isFocused } = useFocus()
 
   useInput((input, key) => {
     if (isFocused && key.return) {
-      onSelect();
+      onSelect()
     }
-  });
+  })
 
   return (
     <Text color={isFocused ? "cyan" : undefined}>
       {isFocused ? "> " : "  "}
       {label}
     </Text>
-  );
+  )
 }
 ```
 

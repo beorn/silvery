@@ -9,23 +9,29 @@
  * - createRenderer(opts | store) — factory with auto-cleanup
  */
 
-import { EventEmitter } from 'node:events';
-import React, { type ReactElement, type ReactNode, act } from 'react';
-import { type App, buildApp } from './app.js';
-import { type TerminalBuffer, cellEquals } from './buffer.js';
-import { AppContext, EventsContext, InputContext, StdoutContext, TermContext } from './context.js';
+import { EventEmitter } from "node:events"
+import React, { type ReactElement, type ReactNode, act } from "react"
+import { type App, buildApp } from "./app.js"
+import { type TerminalBuffer, cellEquals } from "./buffer.js"
 import {
-	type LayoutEngine,
-	ensureDefaultLayoutEngine,
-	isLayoutEngineInitialized,
-	setLayoutEngine,
-} from './layout-engine.js';
-import { executeRender } from './pipeline.js';
-import { createContainer, getContainerRoot, reconciler } from './reconciler.js';
+  AppContext,
+  EventsContext,
+  InputContext,
+  StdoutContext,
+  TermContext,
+} from "./context.js"
+import {
+  type LayoutEngine,
+  ensureDefaultLayoutEngine,
+  isLayoutEngineInitialized,
+  setLayoutEngine,
+} from "./layout-engine.js"
+import { executeRender } from "./pipeline.js"
+import { createContainer, getContainerRoot, reconciler } from "./reconciler.js"
 
-import { createTerm } from 'chalkx';
-import { keyToAnsi } from './keys.js';
-import { debugTree } from './testing/debug.js';
+import { createTerm } from "chalkx"
+import { keyToAnsi } from "./keys.js"
+import { debugTree } from "./testing/debug.js"
 
 // ============================================================================
 // Defensive Guards
@@ -35,29 +41,29 @@ import { debugTree } from './testing/debug.js';
  * Track all active (mounted) render instances to detect leaks.
  * Uses a Set of WeakRefs so GC can clean up unreferenced apps.
  */
-const activeRenders = new Set<WeakRef<{ unmount: () => void; id: number }>>();
-let renderIdCounter = 0;
+const activeRenders = new Set<WeakRef<{ unmount: () => void; id: number }>>()
+let renderIdCounter = 0
 
 /**
  * Maximum number of active render instances before throwing.
  * Set high to allow large test files (each test may create a render without unmount),
  * but catch genuine leaks like infinite loops creating renders.
  */
-const ACTIVE_RENDER_LEAK_THRESHOLD = 1000;
+const ACTIVE_RENDER_LEAK_THRESHOLD = 1000
 
 /**
  * Prune GC'd entries from activeRenders and return live count.
  */
 function pruneAndCountActiveRenders(): number {
-	let count = 0;
-	for (const ref of activeRenders) {
-		if (ref.deref() === undefined) {
-			activeRenders.delete(ref);
-		} else {
-			count++;
-		}
-	}
-	return count;
+  let count = 0
+  for (const ref of activeRenders) {
+    if (ref.deref() === undefined) {
+      activeRenders.delete(ref)
+    } else {
+      count++
+    }
+  }
+  return count
 }
 
 /**
@@ -65,13 +71,13 @@ function pruneAndCountActiveRenders(): number {
  * This catches the common mistake of calling render() without await ensureEngine().
  */
 function assertLayoutEngine(): void {
-	if (!isLayoutEngineInitialized()) {
-		throw new Error(
-			'inkx: Layout engine not initialized. ' +
-				'Call `await ensureEngine()` before render(), or use the testing module ' +
-				'which initializes it automatically via top-level await.',
-		);
-	}
+  if (!isLayoutEngineInitialized()) {
+    throw new Error(
+      "inkx: Layout engine not initialized. " +
+        "Call `await ensureEngine()` before render(), or use the testing module " +
+        "which initializes it automatically via top-level await.",
+    )
+  }
 }
 
 // ============================================================================
@@ -82,16 +88,16 @@ function assertLayoutEngine(): void {
  * Options for headless render (no terminal).
  */
 export interface RenderOptions {
-	/** Terminal width for layout. Default: 80 */
-	cols?: number;
-	/** Terminal height for layout. Default: 24 */
-	rows?: number;
-	/** Layout engine to use. Default: current global engine */
-	layoutEngine?: LayoutEngine;
-	/** Enable debug output. Default: false */
-	debug?: boolean;
-	/** Enable incremental rendering. Default: false */
-	incremental?: boolean;
+  /** Terminal width for layout. Default: 80 */
+  cols?: number
+  /** Terminal height for layout. Default: 24 */
+  rows?: number
+  /** Layout engine to use. Default: current global engine */
+  layoutEngine?: LayoutEngine
+  /** Enable debug output. Default: false */
+  debug?: boolean
+  /** Enable incremental rendering. Default: false */
+  incremental?: boolean
 }
 
 /**
@@ -99,32 +105,32 @@ export interface RenderOptions {
  * Provides cols, rows, and optionally an event stream for interactive mode.
  */
 export interface Store {
-	/** Terminal columns */
-	readonly cols: number;
-	/** Terminal rows */
-	readonly rows: number;
-	/** Async event stream (if present, enables interactive mode) */
-	events?(): AsyncIterable<StoreEvent>;
+  /** Terminal columns */
+  readonly cols: number
+  /** Terminal rows */
+  readonly rows: number
+  /** Async event stream (if present, enables interactive mode) */
+  events?(): AsyncIterable<StoreEvent>
 }
 
 /**
  * Event from a store's event stream.
  */
 export interface StoreEvent {
-	type: string;
-	data: unknown;
+  type: string
+  data: unknown
 }
 
 /**
  * Provider options for createStore().
  */
 export interface StoreOptions {
-	/** Terminal columns. Default: 80 */
-	cols?: number;
-	/** Terminal rows. Default: 24 */
-	rows?: number;
-	/** Event source for interactive mode */
-	events?: AsyncIterable<StoreEvent>;
+  /** Terminal columns. Default: 80 */
+  cols?: number
+  /** Terminal rows. Default: 24 */
+  rows?: number
+  /** Event source for interactive mode */
+  events?: AsyncIterable<StoreEvent>
 }
 
 // ============================================================================
@@ -132,17 +138,17 @@ export interface StoreOptions {
 // ============================================================================
 
 // Layout engine initialization promise (lazy)
-let engineReady: Promise<void> | null = null;
+let engineReady: Promise<void> | null = null
 
 /**
  * Ensure layout engine is initialized (async, cached).
  */
 export async function ensureEngine(): Promise<void> {
-	if (isLayoutEngineInitialized()) return;
-	if (!engineReady) {
-		engineReady = ensureDefaultLayoutEngine();
-	}
-	await engineReady;
+  if (isLayoutEngineInitialized()) return
+  if (!engineReady) {
+    engineReady = ensureDefaultLayoutEngine()
+  }
+  await engineReady
 }
 
 // ============================================================================
@@ -153,34 +159,34 @@ export async function ensureEngine(): Promise<void> {
  * Internal state for a render instance.
  */
 interface RenderInstance {
-	frames: string[];
-	container: ReturnType<typeof createContainer>;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- React reconciler internal type
-	fiberRoot: any;
-	prevBuffer: TerminalBuffer | null;
-	mounted: boolean;
-	/** True while inside act() or doRender() — detects re-entrant calls */
-	rendering: boolean;
-	columns: number;
-	rows: number;
-	inputEmitter: EventEmitter;
-	debug: boolean;
-	incremental: boolean;
+  frames: string[]
+  container: ReturnType<typeof createContainer>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React reconciler internal type
+  fiberRoot: any
+  prevBuffer: TerminalBuffer | null
+  mounted: boolean
+  /** True while inside act() or doRender() — detects re-entrant calls */
+  rendering: boolean
+  columns: number
+  rows: number
+  inputEmitter: EventEmitter
+  debug: boolean
+  incremental: boolean
 }
 
 function isStore(arg: unknown): arg is Store {
-	// Store has cols and rows as required (not optional) properties.
-	// RenderOptions has them as optional. Disambiguate by checking for
-	// Store-only traits: no layoutEngine, no debug, no incremental.
-	if (arg === null || typeof arg !== 'object') return false;
-	const obj = arg as Record<string, unknown>;
-	return (
-		typeof obj.cols === 'number' &&
-		typeof obj.rows === 'number' &&
-		!('layoutEngine' in obj) &&
-		!('debug' in obj) &&
-		!('incremental' in obj)
-	);
+  // Store has cols and rows as required (not optional) properties.
+  // RenderOptions has them as optional. Disambiguate by checking for
+  // Store-only traits: no layoutEngine, no debug, no incremental.
+  if (arg === null || typeof arg !== "object") return false
+  const obj = arg as Record<string, unknown>
+  return (
+    typeof obj.cols === "number" &&
+    typeof obj.rows === "number" &&
+    !("layoutEngine" in obj) &&
+    !("debug" in obj) &&
+    !("incremental" in obj)
+  )
 }
 
 /**
@@ -202,307 +208,331 @@ function isStore(arg: unknown): arg is Store {
  * expect(app.text).toContain('Count: 1')
  * ```
  */
-export function render(element: ReactElement, optsOrStore: RenderOptions | Store = {}): App {
-	// Guard: layout engine must be initialized
-	assertLayoutEngine();
+export function render(
+  element: ReactElement,
+  optsOrStore: RenderOptions | Store = {},
+): App {
+  // Guard: layout engine must be initialized
+  assertLayoutEngine()
 
-	const storeMode = isStore(optsOrStore);
-	const cols = storeMode ? optsOrStore.cols : (optsOrStore.cols ?? 80);
-	const rows = storeMode ? optsOrStore.rows : (optsOrStore.rows ?? 24);
-	const debug = storeMode ? false : (optsOrStore.debug ?? false);
-	const incremental = storeMode ? false : (optsOrStore.incremental ?? false);
+  const storeMode = isStore(optsOrStore)
+  const cols = storeMode ? optsOrStore.cols : (optsOrStore.cols ?? 80)
+  const rows = storeMode ? optsOrStore.rows : (optsOrStore.rows ?? 24)
+  const debug = storeMode ? false : (optsOrStore.debug ?? false)
+  const incremental = storeMode ? false : (optsOrStore.incremental ?? false)
 
-	// Guard: detect render leaks (absurd number of active instances)
-	const liveCount = pruneAndCountActiveRenders();
-	if (liveCount >= ACTIVE_RENDER_LEAK_THRESHOLD) {
-		throw new Error(
-			`inkx: ${liveCount} active render instances without unmount(). ` +
-				'This is a render leak. Use createRenderer() for auto-cleanup, ' +
-				'or call unmount() when done with each render.',
-		);
-	}
+  // Guard: detect render leaks (absurd number of active instances)
+  const liveCount = pruneAndCountActiveRenders()
+  if (liveCount >= ACTIVE_RENDER_LEAK_THRESHOLD) {
+    throw new Error(
+      `inkx: ${liveCount} active render instances without unmount(). ` +
+        "This is a render leak. Use createRenderer() for auto-cleanup, " +
+        "or call unmount() when done with each render.",
+    )
+  }
 
-	// Set layout engine if provided
-	if (!storeMode && optsOrStore.layoutEngine) {
-		setLayoutEngine(optsOrStore.layoutEngine);
-	}
+  // Set layout engine if provided
+  if (!storeMode && optsOrStore.layoutEngine) {
+    setLayoutEngine(optsOrStore.layoutEngine)
+  }
 
-	// Unique ID for this render instance (for tracking/debugging)
-	const renderId = ++renderIdCounter;
+  // Unique ID for this render instance (for tracking/debugging)
+  const renderId = ++renderIdCounter
 
-	const instance: RenderInstance = {
-		frames: [],
-		container: null as unknown as ReturnType<typeof createContainer>,
-		fiberRoot: null,
-		prevBuffer: null,
-		mounted: true,
-		rendering: false,
-		columns: cols,
-		rows: rows,
-		inputEmitter: new EventEmitter(),
-		debug,
-		incremental,
-	};
+  const instance: RenderInstance = {
+    frames: [],
+    container: null as unknown as ReturnType<typeof createContainer>,
+    fiberRoot: null,
+    prevBuffer: null,
+    mounted: true,
+    rendering: false,
+    columns: cols,
+    rows: rows,
+    inputEmitter: new EventEmitter(),
+    debug,
+    incremental,
+  }
 
-	// Create container (onRender callback not needed for sync rendering)
-	instance.container = createContainer(() => {});
+  // Create container (onRender callback not needed for sync rendering)
+  instance.container = createContainer(() => {})
 
-	instance.fiberRoot = reconciler.createContainer(
-		instance.container,
-		0, // LegacyRoot
-		null, // hydrationCallbacks
-		false, // isStrictMode
-		null, // concurrentUpdatesByDefaultOverride
-		'', // identifierPrefix
-		() => {}, // onUncaughtError
-		() => {}, // onCaughtError
-		() => {}, // onRecoverableError
-		null, // onDefaultTransitionIndicator
-	);
+  instance.fiberRoot = reconciler.createContainer(
+    instance.container,
+    0, // LegacyRoot
+    null, // hydrationCallbacks
+    false, // isStrictMode
+    null, // concurrentUpdatesByDefaultOverride
+    "", // identifierPrefix
+    () => {}, // onUncaughtError
+    () => {}, // onCaughtError
+    () => {}, // onRecoverableError
+    null, // onDefaultTransitionIndicator
+  )
 
-	// Track exit state
-	let exitCalledFlag = false;
-	let exitErrorValue: Error | undefined;
+  // Track exit state
+  let exitCalledFlag = false
+  let exitErrorValue: Error | undefined
 
-	const handleExit = (error?: Error) => {
-		exitCalledFlag = true;
-		exitErrorValue = error;
-		if (debug) {
-			console.log('[inkx] exit() called', error ? `with error: ${error.message}` : '');
-		}
-	};
+  const handleExit = (error?: Error) => {
+    exitCalledFlag = true
+    exitErrorValue = error
+    if (debug) {
+      console.log(
+        "[inkx] exit() called",
+        error ? `with error: ${error.message}` : "",
+      )
+    }
+  }
 
-	// Create mock stdout
-	const mockStdout = {
-		columns: instance.columns,
-		rows: instance.rows,
-		write: () => true,
-		isTTY: true,
-		on: () => mockStdout,
-		off: () => mockStdout,
-		once: () => mockStdout,
-		removeListener: () => mockStdout,
-		addListener: () => mockStdout,
-	} as unknown as NodeJS.WriteStream;
+  // Create mock stdout
+  const mockStdout = {
+    columns: instance.columns,
+    rows: instance.rows,
+    write: () => true,
+    isTTY: true,
+    on: () => mockStdout,
+    off: () => mockStdout,
+    once: () => mockStdout,
+    removeListener: () => mockStdout,
+    addListener: () => mockStdout,
+  } as unknown as NodeJS.WriteStream
 
-	// Create mock term
-	const mockTerm = createTerm({ level: 3, columns: cols });
+  // Create mock term
+  const mockTerm = createTerm({ level: 3, columns: cols })
 
-	// Mock events for interactive mode (signals to useInput that input is enabled)
-	const mockEvents: AsyncIterable<import('./types.js').Event> = {
-		[Symbol.asyncIterator]: () => ({
-			next: () => new Promise<IteratorResult<import('./types.js').Event>>(() => {}),
-		}),
-	};
+  // Mock events for interactive mode (signals to useInput that input is enabled)
+  const mockEvents: AsyncIterable<import("./types.js").Event> = {
+    [Symbol.asyncIterator]: () => ({
+      next: () =>
+        new Promise<IteratorResult<import("./types.js").Event>>(() => {}),
+    }),
+  }
 
-	// Wrap element with contexts
-	function wrapWithContexts(el: ReactElement): ReactElement {
-		return React.createElement(
-			TermContext.Provider,
-			{ value: mockTerm },
-			React.createElement(
-				EventsContext.Provider,
-				{ value: mockEvents },
-				React.createElement(
-					AppContext.Provider,
-					{ value: { exit: handleExit } },
-					React.createElement(
-						StdoutContext.Provider,
-						{ value: { stdout: mockStdout, write: () => {} } },
-						React.createElement(
-							InputContext.Provider,
-							{ value: { eventEmitter: instance.inputEmitter, exitOnCtrlC: false } },
-							el,
-						),
-					),
-				),
-			),
-		);
-	}
+  // Wrap element with contexts
+  function wrapWithContexts(el: ReactElement): ReactElement {
+    return React.createElement(
+      TermContext.Provider,
+      { value: mockTerm },
+      React.createElement(
+        EventsContext.Provider,
+        { value: mockEvents },
+        React.createElement(
+          AppContext.Provider,
+          { value: { exit: handleExit } },
+          React.createElement(
+            StdoutContext.Provider,
+            { value: { stdout: mockStdout, write: () => {} } },
+            React.createElement(
+              InputContext.Provider,
+              {
+                value: {
+                  eventEmitter: instance.inputEmitter,
+                  exitOnCtrlC: false,
+                },
+              },
+              el,
+            ),
+          ),
+        ),
+      ),
+    )
+  }
 
-	// Render function that executes the pipeline
-	function doRender(): string {
-		const root = getContainerRoot(instance.container);
-		const { output, buffer } = executeRender(
-			root,
-			instance.columns,
-			instance.rows,
-			incremental ? instance.prevBuffer : null,
-		);
-		instance.prevBuffer = buffer;
-		return output;
-	}
+  // Render function that executes the pipeline
+  function doRender(): string {
+    const root = getContainerRoot(instance.container)
+    const { output, buffer } = executeRender(
+      root,
+      instance.columns,
+      instance.rows,
+      incremental ? instance.prevBuffer : null,
+    )
+    instance.prevBuffer = buffer
+    return output
+  }
 
-	// Fresh render: renders from scratch without updating incremental state
-	function doFreshRender(): TerminalBuffer {
-		const root = getContainerRoot(instance.container);
-		const { buffer } = executeRender(root, instance.columns, instance.rows, null, {
-			skipLayoutNotifications: true,
-		});
-		return buffer;
-	}
+  // Fresh render: renders from scratch without updating incremental state
+  function doFreshRender(): TerminalBuffer {
+    const root = getContainerRoot(instance.container)
+    const { buffer } = executeRender(
+      root,
+      instance.columns,
+      instance.rows,
+      null,
+      {
+        skipLayoutNotifications: true,
+      },
+    )
+    return buffer
+  }
 
-	// Synchronously update React tree within act()
-	instance.rendering = true;
-	try {
-		withActEnvironment(() => {
-			act(() => {
-				reconciler.updateContainerSync(wrapWithContexts(element), instance.fiberRoot, null, null);
-				reconciler.flushSyncWork();
-			});
-		});
-	} finally {
-		instance.rendering = false;
-	}
+  // Synchronously update React tree within act()
+  instance.rendering = true
+  try {
+    withActEnvironment(() => {
+      act(() => {
+        reconciler.updateContainerSync(
+          wrapWithContexts(element),
+          instance.fiberRoot,
+          null,
+          null,
+        )
+        reconciler.flushSyncWork()
+      })
+    })
+  } finally {
+    instance.rendering = false
+  }
 
-	// Execute the render pipeline
-	const output = doRender();
-	instance.frames.push(output);
+  // Execute the render pipeline
+  const output = doRender()
+  instance.frames.push(output)
 
-	if (debug) {
-		console.log('[inkx] Initial render:', output);
-	}
+  if (debug) {
+    console.log("[inkx] Initial render:", output)
+  }
 
-	// Helper functions for App
-	const getContainer = () => getContainerRoot(instance.container);
-	const getBuffer = () => instance.prevBuffer;
+  // Helper functions for App
+  const getContainer = () => getContainerRoot(instance.container)
+  const getBuffer = () => instance.prevBuffer
 
-	// Auto-check incremental rendering
-	const autoCheckIncremental = incremental && !!process.env.INKX_CHECK_INCREMENTAL;
+  // Auto-check incremental rendering
+  const autoCheckIncremental =
+    incremental && !!process.env.INKX_CHECK_INCREMENTAL
 
-	const sendInput = (data: string) => {
-		if (!instance.mounted) {
-			throw new Error('Cannot write to stdin after unmount');
-		}
-		if (instance.rendering) {
-			throw new Error(
-				'inkx: Re-entrant render detected. ' +
-					'Cannot call press()/stdin.write() from inside a React render or effect. ' +
-					'Use setTimeout or an event handler instead.',
-			);
-		}
-		instance.rendering = true;
-		try {
-			withActEnvironment(() => {
-				act(() => {
-					instance.inputEmitter.emit('input', data);
-				});
-			});
-		} finally {
-			instance.rendering = false;
-		}
-		const newFrame = doRender();
-		instance.frames.push(newFrame);
-		if (debug) {
-			console.log('[inkx] stdin.write:', newFrame);
-		}
-		if (autoCheckIncremental) {
-			const freshBuffer = doFreshRender();
-			const currentBuffer = instance.prevBuffer;
-			if (currentBuffer) {
-				for (let y = 0; y < currentBuffer.height; y++) {
-					for (let x = 0; x < currentBuffer.width; x++) {
-						const a = currentBuffer.getCell(x, y);
-						const b = freshBuffer.getCell(x, y);
-						if (!cellEquals(a, b)) {
-							const inputDesc = JSON.stringify(data);
-							throw new Error(
-								`INKX_CHECK_INCREMENTAL: Buffer mismatch at (${x}, ${y}) after input ${inputDesc}\n` +
-									`  incremental: char=${JSON.stringify(a.char)} fg=${JSON.stringify(a.fg)} bg=${JSON.stringify(a.bg)}\n` +
-									`  fresh:       char=${JSON.stringify(b.char)} fg=${JSON.stringify(b.fg)} bg=${JSON.stringify(b.bg)}`,
-							);
-						}
-					}
-				}
-			}
-		}
-	};
+  const sendInput = (data: string) => {
+    if (!instance.mounted) {
+      throw new Error("Cannot write to stdin after unmount")
+    }
+    if (instance.rendering) {
+      throw new Error(
+        "inkx: Re-entrant render detected. " +
+          "Cannot call press()/stdin.write() from inside a React render or effect. " +
+          "Use setTimeout or an event handler instead.",
+      )
+    }
+    instance.rendering = true
+    try {
+      withActEnvironment(() => {
+        act(() => {
+          instance.inputEmitter.emit("input", data)
+        })
+      })
+    } finally {
+      instance.rendering = false
+    }
+    const newFrame = doRender()
+    instance.frames.push(newFrame)
+    if (debug) {
+      console.log("[inkx] stdin.write:", newFrame)
+    }
+    if (autoCheckIncremental) {
+      const freshBuffer = doFreshRender()
+      const currentBuffer = instance.prevBuffer
+      if (currentBuffer) {
+        for (let y = 0; y < currentBuffer.height; y++) {
+          for (let x = 0; x < currentBuffer.width; x++) {
+            const a = currentBuffer.getCell(x, y)
+            const b = freshBuffer.getCell(x, y)
+            if (!cellEquals(a, b)) {
+              const inputDesc = JSON.stringify(data)
+              throw new Error(
+                `INKX_CHECK_INCREMENTAL: Buffer mismatch at (${x}, ${y}) after input ${inputDesc}\n` +
+                  `  incremental: char=${JSON.stringify(a.char)} fg=${JSON.stringify(a.fg)} bg=${JSON.stringify(a.bg)}\n` +
+                  `  fresh:       char=${JSON.stringify(b.char)} fg=${JSON.stringify(b.fg)} bg=${JSON.stringify(b.bg)}`,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
 
-	const rerenderFn = (newElement: ReactNode) => {
-		if (!instance.mounted) {
-			throw new Error('Cannot rerender after unmount');
-		}
-		if (instance.rendering) {
-			throw new Error(
-				'inkx: Re-entrant render detected. ' +
-					'Cannot call rerender() from inside a React render or effect.',
-			);
-		}
-		instance.rendering = true;
-		try {
-			withActEnvironment(() => {
-				act(() => {
-					reconciler.updateContainerSync(
-						wrapWithContexts(newElement as ReactElement),
-						instance.fiberRoot,
-						null,
-						null,
-					);
-					reconciler.flushSyncWork();
-				});
-			});
-		} finally {
-			instance.rendering = false;
-		}
-		const newFrame = doRender();
-		instance.frames.push(newFrame);
-		if (debug) {
-			console.log('[inkx] Rerender:', newFrame);
-		}
-	};
+  const rerenderFn = (newElement: ReactNode) => {
+    if (!instance.mounted) {
+      throw new Error("Cannot rerender after unmount")
+    }
+    if (instance.rendering) {
+      throw new Error(
+        "inkx: Re-entrant render detected. " +
+          "Cannot call rerender() from inside a React render or effect.",
+      )
+    }
+    instance.rendering = true
+    try {
+      withActEnvironment(() => {
+        act(() => {
+          reconciler.updateContainerSync(
+            wrapWithContexts(newElement as ReactElement),
+            instance.fiberRoot,
+            null,
+            null,
+          )
+          reconciler.flushSyncWork()
+        })
+      })
+    } finally {
+      instance.rendering = false
+    }
+    const newFrame = doRender()
+    instance.frames.push(newFrame)
+    if (debug) {
+      console.log("[inkx] Rerender:", newFrame)
+    }
+  }
 
-	// Track this render for leak detection
-	const renderTracker = { unmount: () => {}, id: renderId };
-	const renderRef = new WeakRef(renderTracker);
-	activeRenders.add(renderRef);
+  // Track this render for leak detection
+  const renderTracker = { unmount: () => {}, id: renderId }
+  const renderRef = new WeakRef(renderTracker)
+  activeRenders.add(renderRef)
 
-	const unmountFn = () => {
-		if (!instance.mounted) {
-			throw new Error('Already unmounted');
-		}
-		withActEnvironment(() => {
-			act(() => {
-				reconciler.updateContainer(null, instance.fiberRoot, null, () => {});
-			});
-		});
-		instance.mounted = false;
-		instance.inputEmitter.removeAllListeners();
+  const unmountFn = () => {
+    if (!instance.mounted) {
+      throw new Error("Already unmounted")
+    }
+    withActEnvironment(() => {
+      act(() => {
+        reconciler.updateContainer(null, instance.fiberRoot, null, () => {})
+      })
+    })
+    instance.mounted = false
+    instance.inputEmitter.removeAllListeners()
 
-		// Untrack this render
-		activeRenders.delete(renderRef);
+    // Untrack this render
+    activeRenders.delete(renderRef)
 
-		if (debug) {
-			console.log('[inkx] Unmounted');
-		}
-	};
-	renderTracker.unmount = unmountFn;
+    if (debug) {
+      console.log("[inkx] Unmounted")
+    }
+  }
+  renderTracker.unmount = unmountFn
 
-	const clearFn = () => {
-		instance.frames.length = 0;
-		instance.prevBuffer = null;
-	};
+  const clearFn = () => {
+    instance.frames.length = 0
+    instance.prevBuffer = null
+  }
 
-	const debugFn = () => {
-		console.log(debugTree(getContainerRoot(instance.container)));
-	};
+  const debugFn = () => {
+    console.log(debugTree(getContainerRoot(instance.container)))
+  }
 
-	// Build unified App instance
-	return buildApp({
-		getContainer,
-		getBuffer,
-		sendInput,
-		rerender: rerenderFn,
-		unmount: unmountFn,
-		waitUntilExit: () => Promise.resolve(),
-		clear: clearFn,
-		exitCalled: () => exitCalledFlag,
-		exitError: () => exitErrorValue,
-		freshRender: doFreshRender,
-		debugFn,
-		frames: instance.frames,
-		columns: cols,
-		rows: rows,
-	});
+  // Build unified App instance
+  return buildApp({
+    getContainer,
+    getBuffer,
+    sendInput,
+    rerender: rerenderFn,
+    unmount: unmountFn,
+    waitUntilExit: () => Promise.resolve(),
+    clear: clearFn,
+    exitCalled: () => exitCalledFlag,
+    exitError: () => exitErrorValue,
+    freshRender: doFreshRender,
+    debugFn,
+    frames: instance.frames,
+    columns: cols,
+    rows: rows,
+  })
 }
 
 // ============================================================================
@@ -521,18 +551,18 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
  * ```
  */
 export function createStore(options: StoreOptions = {}): Store {
-	const { cols = 80, rows = 24, events: eventsSource } = options;
+  const { cols = 80, rows = 24, events: eventsSource } = options
 
-	const store: Store = {
-		cols,
-		rows,
-	};
+  const store: Store = {
+    cols,
+    rows,
+  }
 
-	if (eventsSource) {
-		store.events = () => eventsSource;
-	}
+  if (eventsSource) {
+    store.events = () => eventsSource
+  }
 
-	return store;
+  return store
 }
 
 // ============================================================================
@@ -543,8 +573,8 @@ export function createStore(options: StoreOptions = {}): Store {
  * Per-render overrides for createRenderer's returned function.
  */
 export interface PerRenderOptions {
-	/** Enable incremental rendering for this render. */
-	incremental?: boolean;
+  /** Enable incremental rendering for this render. */
+  incremental?: boolean
 }
 
 /**
@@ -561,25 +591,25 @@ export interface PerRenderOptions {
  * ```
  */
 export function createRenderer(
-	optsOrStore: RenderOptions | Store = {},
+  optsOrStore: RenderOptions | Store = {},
 ): (el: ReactElement, overrides?: PerRenderOptions) => App {
-	let current: App | null = null;
+  let current: App | null = null
 
-	return (element: ReactElement, overrides?: PerRenderOptions): App => {
-		if (current) {
-			try {
-				current.unmount();
-			} catch {
-				// Already unmounted
-			}
-		}
-		let opts = optsOrStore;
-		if (overrides && !isStore(opts)) {
-			opts = { ...opts, ...overrides };
-		}
-		current = render(element, opts);
-		return current;
-	};
+  return (element: ReactElement, overrides?: PerRenderOptions): App => {
+    if (current) {
+      try {
+        current.unmount()
+      } catch {
+        // Already unmounted
+      }
+    }
+    let opts = optsOrStore
+    if (overrides && !isStore(opts)) {
+      opts = { ...opts, ...overrides }
+    }
+    current = render(element, opts)
+    return current
+  }
 }
 
 // ============================================================================
@@ -590,22 +620,23 @@ export function createRenderer(
  * Result of run() with sync events — iterable over events.
  */
 export interface SyncRunResult extends Iterable<string> {
-	/** Current rendered text */
-	readonly text: string;
-	/** The app being driven */
-	readonly app: App;
+  /** Current rendered text */
+  readonly text: string
+  /** The app being driven */
+  readonly app: App
 }
 
 /**
  * Result of run() with async events — async iterable and awaitable.
  */
-export interface AsyncRunResult extends AsyncIterable<string>, PromiseLike<void> {
-	/** Current rendered text */
-	readonly text: string;
-	/** The app being driven */
-	readonly app: App;
-	/** Unmount and stop the event loop */
-	unmount(): void;
+export interface AsyncRunResult
+  extends AsyncIterable<string>, PromiseLike<void> {
+  /** Current rendered text */
+  readonly text: string
+  /** The app being driven */
+  readonly app: App
+  /** Unmount and stop the event loop */
+  unmount(): void
 }
 
 /**
@@ -623,111 +654,115 @@ export interface AsyncRunResult extends AsyncIterable<string>, PromiseLike<void>
  * expect(app.text).toContain('Count: 2')
  * ```
  */
-export function run(app: App, events: string[]): SyncRunResult;
-export function run(app: App, events: Iterable<string>): SyncRunResult;
-export function run(app: App, events?: AsyncIterable<string>): AsyncRunResult;
+export function run(app: App, events: string[]): SyncRunResult
+export function run(app: App, events: Iterable<string>): SyncRunResult
+export function run(app: App, events?: AsyncIterable<string>): AsyncRunResult
 export function run(
-	app: App,
-	events?: string[] | Iterable<string> | AsyncIterable<string>,
+  app: App,
+  events?: string[] | Iterable<string> | AsyncIterable<string>,
 ): SyncRunResult | AsyncRunResult {
-	// Sync path: array or sync iterable
-	if (events !== undefined && !isAsyncIterable(events)) {
-		const iter = Array.isArray(events) ? events : events;
-		const processedEvents: string[] = [];
+  // Sync path: array or sync iterable
+  if (events !== undefined && !isAsyncIterable(events)) {
+    const iter = Array.isArray(events) ? events : events
+    const processedEvents: string[] = []
 
-		for (const key of iter) {
-			app.stdin.write(keyToAnsi(key));
-			processedEvents.push(key);
-		}
+    for (const key of iter) {
+      app.stdin.write(keyToAnsi(key))
+      processedEvents.push(key)
+    }
 
-		return {
-			get text() {
-				return app.text;
-			},
-			app,
-			[Symbol.iterator]() {
-				return processedEvents[Symbol.iterator]();
-			},
-		};
-	}
+    return {
+      get text() {
+        return app.text
+      },
+      app,
+      [Symbol.iterator]() {
+        return processedEvents[Symbol.iterator]()
+      },
+    }
+  }
 
-	// Async path
-	let stopped = false;
-	const unmount = () => {
-		stopped = true;
-		app.unmount();
-	};
+  // Async path
+  let stopped = false
+  const unmount = () => {
+    stopped = true
+    app.unmount()
+  }
 
-	const asyncResult: AsyncRunResult = {
-		get text() {
-			return app.text;
-		},
-		app,
-		unmount,
+  const asyncResult: AsyncRunResult = {
+    get text() {
+      return app.text
+    },
+    app,
+    unmount,
 
-		// PromiseLike — `await run(app)` or `await run(app, asyncEvents)`
-		// biome-ignore lint/suspicious/noThenProperty: implements PromiseLike
-		then<TResult1 = void, TResult2 = never>(
-			// biome-ignore lint/suspicious/noConfusingVoidType: required by PromiseLike
-			onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null,
-			onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
-		): Promise<TResult1 | TResult2> {
-			const promise = (async () => {
-				if (events) {
-					for await (const key of events) {
-						if (stopped) break;
-						await app.press(key);
-					}
-				} else {
-					// No events — wait until exit
-					await app.run();
-				}
-			})();
-			return promise.then(onfulfilled, onrejected);
-		},
+    // PromiseLike — `await run(app)` or `await run(app, asyncEvents)`
+    // biome-ignore lint/suspicious/noThenProperty: implements PromiseLike
+    then<TResult1 = void, TResult2 = never>(
+      // biome-ignore lint/suspicious/noConfusingVoidType: required by PromiseLike
+      onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null,
+      onrejected?:
+        | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
+        | null,
+    ): Promise<TResult1 | TResult2> {
+      const promise = (async () => {
+        if (events) {
+          for await (const key of events) {
+            if (stopped) break
+            await app.press(key)
+          }
+        } else {
+          // No events — wait until exit
+          await app.run()
+        }
+      })()
+      return promise.then(onfulfilled, onrejected)
+    },
 
-		// AsyncIterable — `for await (const text of run(app, asyncEvents))`
-		[Symbol.asyncIterator](): AsyncIterator<string> {
-			if (!events) {
-				// No events source — yield current text, then done
-				let yielded = false;
-				return {
-					async next(): Promise<IteratorResult<string>> {
-						if (yielded || stopped) {
-							return { done: true, value: undefined as unknown as string };
-						}
-						yielded = true;
-						return { done: false, value: app.text };
-					},
-				};
-			}
+    // AsyncIterable — `for await (const text of run(app, asyncEvents))`
+    [Symbol.asyncIterator](): AsyncIterator<string> {
+      if (!events) {
+        // No events source — yield current text, then done
+        let yielded = false
+        return {
+          async next(): Promise<IteratorResult<string>> {
+            if (yielded || stopped) {
+              return { done: true, value: undefined as unknown as string }
+            }
+            yielded = true
+            return { done: false, value: app.text }
+          },
+        }
+      }
 
-			const iter = (events as AsyncIterable<string>)[Symbol.asyncIterator]();
-			return {
-				async next(): Promise<IteratorResult<string>> {
-					if (stopped) {
-						return { done: true, value: undefined as unknown as string };
-					}
-					const result = await iter.next();
-					if (result.done) {
-						return { done: true, value: undefined as unknown as string };
-					}
-					await app.press(result.value);
-					return { done: false, value: app.text };
-				},
-				async return(): Promise<IteratorResult<string>> {
-					unmount();
-					return { done: true, value: undefined as unknown as string };
-				},
-			};
-		},
-	};
+      const iter = (events as AsyncIterable<string>)[Symbol.asyncIterator]()
+      return {
+        async next(): Promise<IteratorResult<string>> {
+          if (stopped) {
+            return { done: true, value: undefined as unknown as string }
+          }
+          const result = await iter.next()
+          if (result.done) {
+            return { done: true, value: undefined as unknown as string }
+          }
+          await app.press(result.value)
+          return { done: false, value: app.text }
+        },
+        async return(): Promise<IteratorResult<string>> {
+          unmount()
+          return { done: true, value: undefined as unknown as string }
+        },
+      }
+    },
+  }
 
-	return asyncResult;
+  return asyncResult
 }
 
 function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
-	return value !== null && typeof value === 'object' && Symbol.asyncIterator in value;
+  return (
+    value !== null && typeof value === "object" && Symbol.asyncIterator in value
+  )
 }
 
 /**
@@ -735,15 +770,15 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
  * This ensures act() works correctly without polluting the global scope.
  */
 function withActEnvironment(fn: () => void): void {
-	const prev = globalThis.IS_REACT_ACT_ENVIRONMENT;
-	// @ts-expect-error - React internal flag
-	globalThis.IS_REACT_ACT_ENVIRONMENT = true;
-	try {
-		fn();
-	} finally {
-		// @ts-expect-error - React internal flag
-		globalThis.IS_REACT_ACT_ENVIRONMENT = prev;
-	}
+  const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
+  // @ts-expect-error - React internal flag
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  try {
+    fn()
+  } finally {
+    // @ts-expect-error - React internal flag
+    globalThis.IS_REACT_ACT_ENVIRONMENT = prev
+  }
 }
 
 // ============================================================================
@@ -755,12 +790,12 @@ function withActEnvironment(fn: () => void): void {
  * Useful for tests to verify cleanup.
  */
 export function getActiveRenderCount(): number {
-	return pruneAndCountActiveRenders();
+  return pruneAndCountActiveRenders()
 }
 
 // ============================================================================
 // Re-exports
 // ============================================================================
 
-export { keyToAnsi } from './keys.js';
-export type { App } from './app.js';
+export { keyToAnsi } from "./keys.js"
+export type { App } from "./app.js"

@@ -1,11 +1,18 @@
-import React from "react";
-import { render, Box, Text, useApp, useInput, createTerm } from "../../src/index.js";
+import React from "react"
+import {
+  render,
+  Box,
+  Text,
+  useApp,
+  useInput,
+  createTerm,
+} from "../../src/index.js"
 
 function App() {
-  const { exit } = useApp();
+  const { exit } = useApp()
   useInput((input) => {
-    if (input === "q") exit();
-  });
+    if (input === "q") exit()
+  })
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -25,13 +32,13 @@ function App() {
 
       <Text color="green">This should NOT be corrupted</Text>
     </Box>
-  );
+  )
 }
 
 async function main() {
-  using term = createTerm();
-  const { waitUntilExit } = await render(<App />, term);
-  await waitUntilExit();
+  using term = createTerm()
+  const { waitUntilExit } = await render(<App />, term)
+  await waitUntilExit()
 }
 
-main().catch(console.error);
+main().catch(console.error)

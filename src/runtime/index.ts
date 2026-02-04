@@ -18,88 +18,93 @@
 
 // Types
 export type {
-	Buffer,
-	Dims,
-	Event,
-	RenderTarget,
-	Runtime,
-	RuntimeOptions,
-	// Provider types
-	Provider,
-	ProviderEvent,
-	NamespacedEvent,
-	ProviderEventKey,
-	EventData,
-} from './types.js';
+  Buffer,
+  Dims,
+  Event,
+  RenderTarget,
+  Runtime,
+  RuntimeOptions,
+  // Provider types
+  Provider,
+  ProviderEvent,
+  NamespacedEvent,
+  ProviderEventKey,
+  EventData,
+} from "./types.js"
 
 // Terminal provider
 export {
-	createTermProvider,
-	type TermProvider,
-	type TermState,
-	type TermEvents,
-	type TermProviderOptions,
-} from './term-provider.js';
+  createTermProvider,
+  type TermProvider,
+  type TermState,
+  type TermEvents,
+  type TermProviderOptions,
+} from "./term-provider.js"
 
 // Layer 0: Pure render functions
-export { layout, layoutSync, ensureLayoutEngine, type LayoutOptions } from './layout.js';
-export { diff, render, type DiffMode } from './diff.js';
+export {
+  layout,
+  layoutSync,
+  ensureLayoutEngine,
+  type LayoutOptions,
+} from "./layout.js"
+export { diff, render, type DiffMode } from "./diff.js"
 
 // Buffer helper
-export { createBuffer } from './create-buffer.js';
+export { createBuffer } from "./create-buffer.js"
 
 // Layer 1: Runtime kernel
-export { createRuntime } from './create-runtime.js';
+export { createRuntime } from "./create-runtime.js"
 
 // Layer 2: React integration
 export {
-	run,
-	useInput,
-	useExit,
-	type RunOptions,
-	type RunHandle,
-	type InputHandler,
-	type Key,
-} from './run.js';
+  run,
+  useInput,
+  useExit,
+  type RunOptions,
+  type RunHandle,
+  type InputHandler,
+  type Key,
+} from "./run.js"
 
 // Key parsing utilities
-export { parseKey, emptyKey } from './keys.js';
+export { parseKey, emptyKey } from "./keys.js"
 
 // Layer 3: Store integration
 export {
-	createApp,
-	useApp,
-	type AppDefinition,
-	type AppHandle,
-	type AppRunOptions,
-	type AppRunner,
-	type EventHandler,
-	type EventHandlers,
-	type EventHandlerContext,
-	type Provider,
-} from './create-app.js';
+  createApp,
+  useApp,
+  type AppDefinition,
+  type AppHandle,
+  type AppRunOptions,
+  type AppRunner,
+  type EventHandler,
+  type EventHandlers,
+  type EventHandlerContext,
+  type Provider,
+} from "./create-app.js"
 
 // Time/tick sources
 export {
-	createTick,
-	createFrameTick,
-	createSecondTick,
-	createAdaptiveTick,
-} from './tick.js';
+  createTick,
+  createFrameTick,
+  createSecondTick,
+  createAdaptiveTick,
+} from "./tick.js"
 
 // Stream helpers (re-export from streams module)
 export {
-	merge,
-	map,
-	filter,
-	filterMap,
-	takeUntil,
-	take,
-	throttle,
-	debounce,
-	batch,
-	concat,
-	zip,
-	fromArray,
-	fromArrayWithDelay,
-} from '../streams/index.js';
+  merge,
+  map,
+  filter,
+  filterMap,
+  takeUntil,
+  take,
+  throttle,
+  debounce,
+  batch,
+  concat,
+  zip,
+  fromArray,
+  fromArrayWithDelay,
+} from "../streams/index.js"

@@ -5,7 +5,7 @@ Renders newline characters for vertical spacing in text content.
 ## Import
 
 ```tsx
-import { Newline } from "inkx";
+import { Newline } from "inkx"
 ```
 
 ## Usage
@@ -73,11 +73,11 @@ function Header({ title }: { title: string }) {
       <Text color="gray">{"─".repeat(40)}</Text>
       <Newline />
     </>
-  );
+  )
 }
 
-<Box flexDirection="column">
+;<Box flexDirection="column">
   <Header title="My App" />
   <Text>Content goes here</Text>
-</Box>;
+</Box>
 ```

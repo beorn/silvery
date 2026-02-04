@@ -5,22 +5,22 @@ Access app-level controls like exiting the application.
 ## Import
 
 ```tsx
-import { useApp } from "inkx";
+import { useApp } from "inkx"
 ```
 
 ## Usage
 
 ```tsx
 function App() {
-  const { exit } = useApp();
+  const { exit } = useApp()
 
   useInput((input) => {
     if (input === "q") {
-      exit();
+      exit()
     }
-  });
+  })
 
-  return <Text>Press q to quit</Text>;
+  return <Text>Press q to quit</Text>
 }
 ```
 
@@ -38,15 +38,15 @@ The `exit` function accepts an optional `Error` argument. When called with an er
 
 ```tsx
 function QuitOnQ() {
-  const { exit } = useApp();
+  const { exit } = useApp()
 
   useInput((input) => {
     if (input === "q") {
-      exit();
+      exit()
     }
-  });
+  })
 
-  return <Text>Press q to quit</Text>;
+  return <Text>Press q to quit</Text>
 }
 ```
 
@@ -54,21 +54,21 @@ function QuitOnQ() {
 
 ```tsx
 function CriticalOperation() {
-  const { exit } = useApp();
+  const { exit } = useApp()
 
   async function runOperation() {
     try {
-      await riskyOperation();
+      await riskyOperation()
     } catch (err) {
-      exit(err as Error);
+      exit(err as Error)
     }
   }
 
   useEffect(() => {
-    runOperation();
-  }, []);
+    runOperation()
+  }, [])
 
-  return <Text>Running...</Text>;
+  return <Text>Running...</Text>
 }
 ```
 
@@ -76,23 +76,23 @@ function CriticalOperation() {
 
 ```tsx
 function ConfirmExit() {
-  const { exit } = useApp();
-  const [confirmQuit, setConfirmQuit] = useState(false);
+  const { exit } = useApp()
+  const [confirmQuit, setConfirmQuit] = useState(false)
 
   useInput((input) => {
     if (confirmQuit) {
-      if (input === "y") exit();
-      if (input === "n") setConfirmQuit(false);
+      if (input === "y") exit()
+      if (input === "n") setConfirmQuit(false)
     } else if (input === "q") {
-      setConfirmQuit(true);
+      setConfirmQuit(true)
     }
-  });
+  })
 
   if (confirmQuit) {
-    return <Text>Really quit? (y/n)</Text>;
+    return <Text>Really quit? (y/n)</Text>
   }
 
-  return <Text>Press q to quit</Text>;
+  return <Text>Press q to quit</Text>
 }
 ```
 
@@ -100,14 +100,14 @@ function ConfirmExit() {
 
 ```tsx
 function App() {
-  const { exit } = useApp();
+  const { exit } = useApp()
 
   useInput((input, key) => {
     if (input === "c" && key.ctrl) {
-      exit();
+      exit()
     }
-  });
+  })
 
-  return <Text>Press Ctrl+C to exit</Text>;
+  return <Text>Press Ctrl+C to exit</Text>
 }
 ```

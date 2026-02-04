@@ -8,11 +8,11 @@
  * - Screen rect: Position on terminal screen (like CSS getBoundingClientRect)
  */
 
-import { useContext, useLayoutEffect, useReducer, useRef } from 'react';
-import { NodeContext } from '../context.js';
-import { type Rect, rectEqual } from '../types.js';
+import { useContext, useLayoutEffect, useReducer, useRef } from "react"
+import { NodeContext } from "../context.js"
+import { type Rect, rectEqual } from "../types.js"
 
-export type { Rect };
+export type { Rect }
 
 // ============================================================================
 // Content Rect Hooks (position within scrollable content)
@@ -34,27 +34,27 @@ export type { Rect };
  * ```
  */
 export function useContentRect(): Rect {
-	const node = useContext(NodeContext);
-	const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+  const node = useContext(NodeContext)
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
 
-	useLayoutEffect(() => {
-		// Node may be null on first render before Box's useLayoutEffect sets it.
-		// The effect re-runs when node changes.
-		if (!node) return;
+  useLayoutEffect(() => {
+    // Node may be null on first render before Box's useLayoutEffect sets it.
+    // The effect re-runs when node changes.
+    if (!node) return
 
-		const handleLayoutComplete = () => {
-			if (!rectEqual(node.prevLayout, node.contentRect)) {
-				forceUpdate();
-			}
-		};
+    const handleLayoutComplete = () => {
+      if (!rectEqual(node.prevLayout, node.contentRect)) {
+        forceUpdate()
+      }
+    }
 
-		node.layoutSubscribers.add(handleLayoutComplete);
-		return () => {
-			node.layoutSubscribers.delete(handleLayoutComplete);
-		};
-	}, [node]);
+    node.layoutSubscribers.add(handleLayoutComplete)
+    return () => {
+      node.layoutSubscribers.delete(handleLayoutComplete)
+    }
+  }, [node])
 
-	return node?.contentRect ?? { x: 0, y: 0, width: 0, height: 0 };
+  return node?.contentRect ?? { x: 0, y: 0, width: 0, height: 0 }
 }
 
 /**
@@ -72,36 +72,36 @@ export function useContentRect(): Rect {
  * ```
  */
 export function useContentRectCallback(callback: (rect: Rect) => void): void {
-	const node = useContext(NodeContext);
+  const node = useContext(NodeContext)
 
-	// Use ref to always have current callback without re-subscribing
-	const callbackRef = useRef(callback);
-	callbackRef.current = callback;
+  // Use ref to always have current callback without re-subscribing
+  const callbackRef = useRef(callback)
+  callbackRef.current = callback
 
-	useLayoutEffect(() => {
-		// Node may be null on first render before Box's useLayoutEffect sets it.
-		// The effect re-runs when node changes, so we'll subscribe on second render.
-		if (!node) {
-			return;
-		}
+  useLayoutEffect(() => {
+    // Node may be null on first render before Box's useLayoutEffect sets it.
+    // The effect re-runs when node changes, so we'll subscribe on second render.
+    if (!node) {
+      return
+    }
 
-		const handleLayoutComplete = () => {
-			if (node.contentRect) {
-				callbackRef.current(node.contentRect);
-			}
-		};
+    const handleLayoutComplete = () => {
+      if (node.contentRect) {
+        callbackRef.current(node.contentRect)
+      }
+    }
 
-		node.layoutSubscribers.add(handleLayoutComplete);
+    node.layoutSubscribers.add(handleLayoutComplete)
 
-		// Also call immediately if layout already computed
-		if (node.contentRect) {
-			callbackRef.current(node.contentRect);
-		}
+    // Also call immediately if layout already computed
+    if (node.contentRect) {
+      callbackRef.current(node.contentRect)
+    }
 
-		return () => {
-			node.layoutSubscribers.delete(handleLayoutComplete);
-		};
-	}, [node]); // Re-run when node becomes available
+    return () => {
+      node.layoutSubscribers.delete(handleLayoutComplete)
+    }
+  }, [node]) // Re-run when node becomes available
 }
 
 // ============================================================================
@@ -128,31 +128,31 @@ export function useContentRectCallback(callback: (rect: Rect) => void): void {
  * ```
  */
 export function useScreenRect(): Rect {
-	const node = useContext(NodeContext);
-	const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
-	const prevScreenRectRef = useRef<Rect | null>(null);
+  const node = useContext(NodeContext)
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
+  const prevScreenRectRef = useRef<Rect | null>(null)
 
-	useLayoutEffect(() => {
-		// Node may be null on first render before Box's useLayoutEffect sets it.
-		// The effect re-runs when node changes.
-		if (!node) return;
+  useLayoutEffect(() => {
+    // Node may be null on first render before Box's useLayoutEffect sets it.
+    // The effect re-runs when node changes.
+    if (!node) return
 
-		const handleLayoutComplete = () => {
-			// Re-render when screenRect changes (can happen from scroll offset changes
-			// even when contentRect stays the same)
-			if (!rectEqual(prevScreenRectRef.current, node.screenRect)) {
-				prevScreenRectRef.current = node.screenRect;
-				forceUpdate();
-			}
-		};
+    const handleLayoutComplete = () => {
+      // Re-render when screenRect changes (can happen from scroll offset changes
+      // even when contentRect stays the same)
+      if (!rectEqual(prevScreenRectRef.current, node.screenRect)) {
+        prevScreenRectRef.current = node.screenRect
+        forceUpdate()
+      }
+    }
 
-		node.layoutSubscribers.add(handleLayoutComplete);
-		return () => {
-			node.layoutSubscribers.delete(handleLayoutComplete);
-		};
-	}, [node]);
+    node.layoutSubscribers.add(handleLayoutComplete)
+    return () => {
+      node.layoutSubscribers.delete(handleLayoutComplete)
+    }
+  }, [node])
 
-	return node?.screenRect ?? { x: 0, y: 0, width: 0, height: 0 };
+  return node?.screenRect ?? { x: 0, y: 0, width: 0, height: 0 }
 }
 
 /**
@@ -175,34 +175,34 @@ export function useScreenRect(): Rect {
  * ```
  */
 export function useScreenRectCallback(callback: (rect: Rect) => void): void {
-	const node = useContext(NodeContext);
+  const node = useContext(NodeContext)
 
-	// Use ref to always have current callback without re-subscribing
-	const callbackRef = useRef(callback);
-	callbackRef.current = callback;
+  // Use ref to always have current callback without re-subscribing
+  const callbackRef = useRef(callback)
+  callbackRef.current = callback
 
-	useLayoutEffect(() => {
-		// Node may be null on first render before Box's useLayoutEffect sets it.
-		// The effect re-runs when node changes, so we'll subscribe on second render.
-		if (!node) {
-			return;
-		}
+  useLayoutEffect(() => {
+    // Node may be null on first render before Box's useLayoutEffect sets it.
+    // The effect re-runs when node changes, so we'll subscribe on second render.
+    if (!node) {
+      return
+    }
 
-		const handleLayoutComplete = () => {
-			if (node.screenRect) {
-				callbackRef.current(node.screenRect);
-			}
-		};
+    const handleLayoutComplete = () => {
+      if (node.screenRect) {
+        callbackRef.current(node.screenRect)
+      }
+    }
 
-		node.layoutSubscribers.add(handleLayoutComplete);
+    node.layoutSubscribers.add(handleLayoutComplete)
 
-		// Also call immediately if screen rect already computed
-		if (node.screenRect) {
-			callbackRef.current(node.screenRect);
-		}
+    // Also call immediately if screen rect already computed
+    if (node.screenRect) {
+      callbackRef.current(node.screenRect)
+    }
 
-		return () => {
-			node.layoutSubscribers.delete(handleLayoutComplete);
-		};
-	}, [node]); // Re-run when node becomes available
+    return () => {
+      node.layoutSubscribers.delete(handleLayoutComplete)
+    }
+  }, [node]) // Re-run when node becomes available
 }

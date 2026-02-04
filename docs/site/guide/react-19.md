@@ -48,22 +48,22 @@ These are all implemented in inkx's reconciler, ensuring compatibility with Reac
 All standard React hooks work correctly:
 
 ```tsx
-import { useState, useEffect, useTransition, useDeferredValue } from "react";
-import { Box, Text, useInput, useContentRect } from "inkx";
+import { useState, useEffect, useTransition, useDeferredValue } from "react"
+import { Box, Text, useInput, useContentRect } from "inkx"
 
 function App() {
-  const [count, setCount] = useState(0);
-  const [isPending, startTransition] = useTransition();
-  const deferredCount = useDeferredValue(count);
-  const { width, height } = useContentRect();
+  const [count, setCount] = useState(0)
+  const [isPending, startTransition] = useTransition()
+  const deferredCount = useDeferredValue(count)
+  const { width, height } = useContentRect()
 
   useInput((input, key) => {
     if (key.return) {
       startTransition(() => {
-        setCount((c) => c + 1);
-      });
+        setCount((c) => c + 1)
+      })
     }
-  });
+  })
 
   return (
     <Box flexDirection="column">
@@ -74,7 +74,7 @@ function App() {
         {width}x{height}
       </Text>
     </Box>
-  );
+  )
 }
 ```
 
@@ -83,17 +83,17 @@ function App() {
 Suspense boundaries work for lazy loading and data fetching patterns:
 
 ```tsx
-import { Suspense, lazy } from "react";
-import { Box, Text } from "inkx";
+import { Suspense, lazy } from "react"
+import { Box, Text } from "inkx"
 
-const HeavyComponent = lazy(() => import("./HeavyComponent"));
+const HeavyComponent = lazy(() => import("./HeavyComponent"))
 
 function App() {
   return (
     <Suspense fallback={<Text>Loading...</Text>}>
       <HeavyComponent />
     </Suspense>
-  );
+  )
 }
 ```
 
@@ -106,24 +106,24 @@ Terminal UIs typically don't benefit as much from Suspense as web apps, but it's
 StrictMode works correctly with inkx. Double-rendering in development mode (for detecting side effects) doesn't cause output issues:
 
 ```tsx
-import { StrictMode } from "react";
-import { Box, Text, render, createTerm } from "inkx";
+import { StrictMode } from "react"
+import { Box, Text, render, createTerm } from "inkx"
 
 function App() {
   return (
     <Box>
       <Text>Hello World</Text>
     </Box>
-  );
+  )
 }
 
-using term = createTerm();
+using term = createTerm()
 await render(
   term,
   <StrictMode>
     <App />
   </StrictMode>,
-);
+)
 ```
 
 ### Concurrent Rendering
@@ -136,26 +136,26 @@ Inkx supports React's concurrent rendering features. The reconciler properly han
 
 ```tsx
 function SearchResults() {
-  const [query, setQuery] = useState("");
-  const [isPending, startTransition] = useTransition();
-  const deferredQuery = useDeferredValue(query);
+  const [query, setQuery] = useState("")
+  const [isPending, startTransition] = useTransition()
+  const deferredQuery = useDeferredValue(query)
 
   useInput((input) => {
     // Immediate feedback
-    setQuery((q) => q + input);
+    setQuery((q) => q + input)
 
     // Deferred expensive operation
     startTransition(() => {
       // Heavy computation here
-    });
-  });
+    })
+  })
 
   return (
     <Box flexDirection="column">
       <Text>Query: {query}</Text>
       <Text dim={isPending}>Results for: {deferredQuery}</Text>
     </Box>
-  );
+  )
 }
 ```
 
@@ -164,14 +164,14 @@ function SearchResults() {
 The inkx testing library is configured for React 19's act() requirements:
 
 ```tsx
-import { createRenderer } from "inkx/testing";
+import { createRenderer } from "inkx/testing"
 
-const render = createRenderer();
+const render = createRenderer()
 
 test("component renders correctly", () => {
-  const { lastFrame } = render(<MyComponent />);
-  expect(lastFrame()).toContain("expected content");
-});
+  const { lastFrame } = render(<MyComponent />)
+  expect(lastFrame()).toContain("expected content")
+})
 ```
 
 The testing environment automatically:

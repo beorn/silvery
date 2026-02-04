@@ -15,6 +15,7 @@ ESC [ <params> <command>
 ```
 
 If **yes**, ALL cursor operations work:
+
 - Move cursor: `\x1b[A` (up), `\x1b[B` (down), `\x1b[H` (home)
 - Clear: `\x1b[2J` (screen), `\x1b[K` (line)
 - Alternate screen: `\x1b[?1049h` (enter), `\x1b[?1049l` (leave)
@@ -23,24 +24,26 @@ If **yes**, ALL cursor operations work:
 If **no**, only append-only output works (use `renderString()`).
 
 **Detection:**
+
 ```ts
-term.hasCursor()  // stdout.isTTY && TERM !== 'dumb'
+term.hasCursor() // stdout.isTTY && TERM !== 'dumb'
 ```
 
 ### 2. Color Level (`term.hasColor()`)
 
 What color codes does the terminal support?
 
-| Level | Detection | Codes |
-|-------|-----------|-------|
-| `null` | `NO_COLOR` set or `TERM=dumb` | None |
-| `'basic'` | Most terminals | 16 ANSI colors |
-| `'256'` | `TERM` contains `256color` | `\x1b[38;5;Nm` |
-| `'truecolor'` | `COLORTERM=truecolor` | `\x1b[38;2;R;G;Bm` |
+| Level         | Detection                     | Codes              |
+| ------------- | ----------------------------- | ------------------ |
+| `null`        | `NO_COLOR` set or `TERM=dumb` | None               |
+| `'basic'`     | Most terminals                | 16 ANSI colors     |
+| `'256'`       | `TERM` contains `256color`    | `\x1b[38;5;Nm`     |
+| `'truecolor'` | `COLORTERM=truecolor`         | `\x1b[38;2;R;G;Bm` |
 
 **Detection:**
+
 ```ts
-term.hasColor()  // null | 'basic' | '256' | 'truecolor'
+term.hasColor() // null | 'basic' | '256' | 'truecolor'
 ```
 
 ### 3. Input Capability (`term.hasInput()`)
@@ -48,7 +51,7 @@ term.hasColor()  // null | 'basic' | '256' | 'truecolor'
 Can the app read individual keystrokes (raw mode)?
 
 ```ts
-term.hasInput()  // stdin.isTTY && setRawMode available
+term.hasInput() // stdin.isTTY && setRawMode available
 ```
 
 Required for: `useInput`, keyboard navigation, interactive TUIs.
@@ -64,10 +67,11 @@ Beyond raw capabilities, the **environment** affects what's practical:
 ### TTY Status
 
 ```ts
-process.stdout.isTTY  // true if connected to terminal
+process.stdout.isTTY // true if connected to terminal
 ```
 
 When `false` (piped, redirected, CI):
+
 - Cursor control codes are written but ignored/garbled
 - Output may be buffered differently
 - No resize events
@@ -76,11 +80,11 @@ When `false` (piped, redirected, CI):
 
 Does your app have exclusive access to stdout?
 
-| Situation | Exclusive? | Safe Strategies |
-|-----------|------------|-----------------|
-| Standalone CLI | Yes | fullscreen, inline, stream |
-| Test reporter (worker output) | No | stream or `<Console />` |
-| Subprocess | Maybe | depends on parent |
+| Situation                     | Exclusive? | Safe Strategies            |
+| ----------------------------- | ---------- | -------------------------- |
+| Standalone CLI                | Yes        | fullscreen, inline, stream |
+| Test reporter (worker output) | No         | stream or `<Console />`    |
+| Subprocess                    | Maybe      | depends on parent          |
 
 If you don't have exclusive stdout, use the `<Console />` component to handle interleaved output.
 
@@ -100,6 +104,7 @@ using app = await render(<App />, term, { fullscreen: true })
 - Returns a Disposable
 
 **Options:**
+
 ```ts
 {
   fullscreen?: boolean    // Use alternate screen (default: false)
@@ -108,6 +113,7 @@ using app = await render(<App />, term, { fullscreen: true })
 ```
 
 **Instance methods:**
+
 ```ts
 app.rerender(<App newProps />)
 app.clear()
@@ -127,6 +133,7 @@ const output: string = renderString(<Summary />, { width: 80, plain: true })
 - Use for: logging, streaming, static output, testing
 
 **Options:**
+
 ```ts
 {
   width?: number    // Default: 80
@@ -136,14 +143,14 @@ const output: string = renderString(<Summary />, { width: 80, plain: true })
 
 ### When to Use Which
 
-| Situation | Function | Why |
-|-----------|----------|-----|
-| Fullscreen TUI | `render(<App />, { fullscreen: true })` | Takes over terminal |
-| Progress bar | `render(<Progress />)` | Updates in place |
-| Worker output handling | `<Console />` component | Composition pattern |
-| CI / no cursor | `renderString(<Summary />)` | Always safe |
-| Streaming output | `renderString()` in a loop | Append-only |
-| Piped output | `renderString(<X />, { plain: true })` | No ANSI codes |
+| Situation              | Function                                | Why                 |
+| ---------------------- | --------------------------------------- | ------------------- |
+| Fullscreen TUI         | `render(<App />, { fullscreen: true })` | Takes over terminal |
+| Progress bar           | `render(<Progress />)`                  | Updates in place    |
+| Worker output handling | `<Console />` component                 | Composition pattern |
+| CI / no cursor         | `renderString(<Summary />)`             | Always safe         |
+| Streaming output       | `renderString()` in a loop              | Append-only         |
+| Piped output           | `renderString(<X />, { plain: true })`  | No ANSI codes       |
 
 ## Console Patching
 
@@ -154,6 +161,7 @@ await render(<App />, { patchConsole: true })
 ```
 
 Behavior:
+
 1. Intercepts `console.log`, `console.error`, etc.
 2. Pauses UI rendering
 3. Outputs console content above the UI
@@ -166,7 +174,7 @@ This is how Ink handles the same problem.
 ## Creating a Term
 
 ```ts
-import { createTerm } from '@beorn/term'
+import { createTerm } from "@beorn/term"
 
 // Default (process.stdout/stdin) - Disposable
 using term = createTerm()
@@ -185,24 +193,24 @@ using term = createTerm({
 
 ```ts
 // Detection
-term.hasCursor()      // boolean - can use cursor control?
-term.hasInput()       // boolean - can read keystrokes (raw mode)?
-term.hasColor()       // null | 'basic' | '256' | 'truecolor'
+term.hasCursor() // boolean - can use cursor control?
+term.hasInput() // boolean - can read keystrokes (raw mode)?
+term.hasColor() // null | 'basic' | '256' | 'truecolor'
 
 // Dimensions
-term.cols             // number | undefined
-term.rows             // number | undefined
+term.cols // number | undefined
+term.rows // number | undefined
 
 // Styling
-term.chalk.red('error')
-term.chalk.bold.green('success')
+term.chalk.red("error")
+term.chalk.bold.green("success")
 
 // Utilities
 term.stripAnsi(str)
 term.write(str)
 
 // Cleanup
-term.dispose()        // or let `using` handle it
+term.dispose() // or let `using` handle it
 ```
 
 ## Code Examples
@@ -231,13 +239,13 @@ if (term.hasCursor() && term.hasInput()) {
 ### Adaptive Components
 
 ```tsx
-import { useTerm, Box, Text } from '@beorn/tui'
+import { useTerm, Box, Text } from "@beorn/tui"
 
 function StatusLine({ status }: { status: string }) {
   const term = useTerm()
 
   // Same component, adapts to capabilities
-  const color = term.hasColor() ? 'green' : undefined
+  const color = term.hasColor() ? "green" : undefined
 
   return (
     <Box>
@@ -250,27 +258,27 @@ function StatusLine({ status }: { status: string }) {
 ### Console Component
 
 ```tsx
-import { createTerm } from '@beorn/term'
-import { render, Console, Box, Text } from '@beorn/tui'
+import { createTerm } from "@beorn/term"
+import { render, Console, Box, Text } from "@beorn/tui"
 
 using term = createTerm()
 
-using app = await render((
+using app = await render(
   <Box flexDirection="column">
-    <Console />           {/* Worker output appears here */}
+    <Console /> {/* Worker output appears here */}
     <Text>My UI below</Text>
-  </Box>
-))
+  </Box>,
+)
 
 // Now console.log() calls appear in the Console component
-console.log('This shows in <Console />')
+console.log("This shows in <Console />")
 ```
 
 ### Test Reporter Pattern
 
 ```tsx
-import { createTerm } from '@beorn/term'
-import { render, renderString, Console, Box } from '@beorn/tui'
+import { createTerm } from "@beorn/term"
+import { render, renderString, Console, Box } from "@beorn/tui"
 
 class Reporter {
   private term = createTerm()
@@ -278,12 +286,13 @@ class Reporter {
 
   async onTestRunStart() {
     if (this.term.hasCursor()) {
-      this.app = await render(this.term, (
+      this.app = await render(
+        this.term,
         <Box flexDirection="column">
           <Console />
           <ReporterUI state={this.state} />
-        </Box>
-      ))
+        </Box>,
+      )
     }
   }
 
@@ -335,6 +344,7 @@ The standard defining CSI and OSC sequences. Published 1976, still the foundatio
 ### XTerm Control Sequences
 
 De facto standard for modern terminals. Extends ECMA-48 with:
+
 - Mouse reporting
 - Bracketed paste
 - Window manipulation
@@ -347,6 +357,7 @@ Documentation: https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 Database of terminal capabilities. Largely obsolete for modern apps - most now assume xterm-compatible baseline.
 
 Key capability names:
+
 - `cup` - cursor position
 - `clear` - clear screen
 - `smcup`/`rmcup` - enter/exit alternate screen

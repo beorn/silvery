@@ -68,19 +68,19 @@ npx ts-node --esm app.tsx
 Inkx includes a testing library with auto-cleanup between renders:
 
 ```tsx
-import { createRenderer } from "inkx/testing";
-import { Text } from "inkx";
+import { createRenderer } from "inkx/testing"
+import { Text } from "inkx"
 
-const render = createRenderer();
+const render = createRenderer()
 
 test("renders hello", () => {
-  const { lastFrame } = render(<Text>Hello</Text>);
-  expect(lastFrame()).toContain("Hello");
-});
+  const { lastFrame } = render(<Text>Hello</Text>)
+  expect(lastFrame()).toContain("Hello")
+})
 
 test("renders world", () => {
   // Previous render is auto-cleaned when render() is called again
-  const { lastFrame } = render(<Text>World</Text>);
-  expect(lastFrame()).toContain("World");
-});
+  const { lastFrame } = render(<Text>World</Text>)
+  expect(lastFrame()).toContain("World")
+})
 ```

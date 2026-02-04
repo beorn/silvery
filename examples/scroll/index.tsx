@@ -4,30 +4,30 @@
  * Demonstrates overflow="scroll" with keyboard navigation.
  */
 
-import React, { useState } from "react";
-import { Box, Text, render, useInput, createTerm } from "../../src/index.js";
+import React, { useState } from "react"
+import { Box, Text, render, useInput, createTerm } from "../../src/index.js"
 
 // Generate sample items
 const items = Array.from({ length: 50 }, (_, i) => ({
   id: i,
   title: `Item ${i + 1}`,
   description: `This is the description for item number ${i + 1}`,
-}));
+}))
 
 function ScrollExample() {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(0)
 
   useInput((input, key) => {
     if (key.upArrow) {
-      setSelectedIndex((prev) => Math.max(0, prev - 1));
+      setSelectedIndex((prev) => Math.max(0, prev - 1))
     }
     if (key.downArrow) {
-      setSelectedIndex((prev) => Math.min(items.length - 1, prev + 1));
+      setSelectedIndex((prev) => Math.min(items.length - 1, prev + 1))
     }
     if (input === "q") {
-      process.exit(0);
+      process.exit(0)
     }
-  });
+  })
 
   return (
     <Box flexDirection="column" width={60} height={20}>
@@ -68,9 +68,9 @@ function ScrollExample() {
         </Text>
       </Box>
     </Box>
-  );
+  )
 }
 
 // Run the app
-using term = createTerm();
-await render(<ScrollExample />, term);
+using term = createTerm()
+await render(<ScrollExample />, term)

@@ -21,7 +21,7 @@ This audit identifies manual dimension calculations that could potentially be re
 ### 1. Main contentHeight calculation (Lines 1181-1182)
 
 ```typescript
-const contentHeight = termHeight - TOP_BAR_HEIGHT - BOTTOM_BAR_HEIGHT;
+const contentHeight = termHeight - TOP_BAR_HEIGHT - BOTTOM_BAR_HEIGHT
 ```
 
 **Purpose:** Calculates available height between fixed top bar (1 row) and bottom bar (1 row).
@@ -41,7 +41,7 @@ The parent Box does use `flexGrow={1}` but children still need the numeric heigh
 ### 2. Scroll indicator height (Line 1184)
 
 ```typescript
-const scrollIndicatorHeight = contentHeight - 1;
+const scrollIndicatorHeight = contentHeight - 1
 ```
 
 **Purpose:** Scroll indicators are 1 row shorter to avoid overlapping the header row.
@@ -118,7 +118,7 @@ height={10}
 ### 6. Test wrapper contentHeight (Line 1644)
 
 ```typescript
-const testContentHeight = termHeight - TOP_BAR_HEIGHT - BOTTOM_BAR_HEIGHT;
+const testContentHeight = termHeight - TOP_BAR_HEIGHT - BOTTOM_BAR_HEIGHT
 ```
 
 **Purpose:** Same as main contentHeight but for test wrapper.
@@ -132,7 +132,7 @@ const testContentHeight = termHeight - TOP_BAR_HEIGHT - BOTTOM_BAR_HEIGHT;
 ### 7. Scroll indicator height (Line 166)
 
 ```typescript
-const scrollIndicatorHeight = height - 1;
+const scrollIndicatorHeight = height - 1
 ```
 
 **Purpose:** Same pattern as Board.tsx - scroll indicators skip the header row area.
@@ -151,7 +151,7 @@ const scrollIndicatorHeight = height - 1;
 const boxHeight = Math.min(
   shortcuts.reduce((acc, cat) => acc + cat.keys.length + 3, 4),
   height - 6,
-);
+)
 ```
 
 **Purpose:** Calculate help overlay height based on content, capped at available space minus margins.
@@ -165,8 +165,8 @@ const boxHeight = Math.min(
 ### 9. Centering margins (Lines 84-85)
 
 ```typescript
-const marginLeft = Math.floor((width - boxWidth) / 2);
-const marginTop = Math.floor((height - boxHeight) / 2);
+const marginLeft = Math.floor((width - boxWidth) / 2)
+const marginTop = Math.floor((height - boxHeight) / 2)
 ```
 
 **Purpose:** Center the help overlay box.
@@ -190,7 +190,7 @@ const marginTop = Math.floor((height - boxHeight) / 2);
 ### 10. Max visible items (Line 196)
 
 ```typescript
-const maxVisible = Math.max(1, height - 6);
+const maxVisible = Math.max(1, height - 6)
 ```
 
 **Purpose:** Calculate how many list items fit in the picker, reserving space for header (1), separator (1), search input (1), hints footer (2), plus padding (1).
@@ -213,7 +213,7 @@ const contentLines = Math.max(
     Math.min(subtasks.length, maxSubtasks) -
     Math.min(backlinkNodes.length, maxBacklinks) -
     4,
-);
+)
 ```
 
 **Purpose:** Calculate how many lines of content to show after reserving space for title, fields, subtasks, and backlinks sections.

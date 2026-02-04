@@ -7,7 +7,7 @@
  * - Styled borders and conditional highlighting
  */
 
-import React, { useState } from "react";
+import React, { useState } from "react"
 import {
   render,
   Box,
@@ -16,22 +16,22 @@ import {
   useApp,
   createTerm,
   type Key,
-} from "../../src/index.js";
+} from "../../src/index.js"
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface StatItem {
-  label: string;
-  value: string | number;
-  change?: string;
+  label: string
+  value: string | number
+  change?: string
 }
 
 interface PaneProps {
-  title: string;
-  isSelected: boolean;
-  children: React.ReactNode;
+  title: string
+  isSelected: boolean
+  children: React.ReactNode
 }
 
 // ============================================================================
@@ -54,7 +54,7 @@ function Pane({ title, isSelected, children }: PaneProps): JSX.Element {
       </Box>
       {children}
     </Box>
-  );
+  )
 }
 
 function StatsList({ stats }: { stats: StatItem[] }): JSX.Element {
@@ -77,7 +77,7 @@ function StatsList({ stats }: { stats: StatItem[] }): JSX.Element {
         </Box>
       ))}
     </Box>
-  );
+  )
 }
 
 function ActivityList({ activities }: { activities: string[] }): JSX.Element {
@@ -89,21 +89,21 @@ function ActivityList({ activities }: { activities: string[] }): JSX.Element {
         </Text>
       ))}
     </Box>
-  );
+  )
 }
 
 function ProgressBars({
   items,
 }: {
-  items: { label: string; percent: number }[];
+  items: { label: string; percent: number }[]
 }): JSX.Element {
-  const barWidth = 20; // Fixed width for simplicity
+  const barWidth = 20 // Fixed width for simplicity
 
   return (
     <Box flexDirection="column" gap={1}>
       {items.map((item, index) => {
-        const filled = Math.round((item.percent / 100) * barWidth);
-        const empty = barWidth - filled;
+        const filled = Math.round((item.percent / 100) * barWidth)
+        const empty = barWidth - filled
         return (
           <Box key={index} flexDirection="column">
             <Box justifyContent="space-between">
@@ -115,34 +115,34 @@ function ProgressBars({
               <Text dim>{"░".repeat(empty)}</Text>
             </Text>
           </Box>
-        );
+        )
       })}
     </Box>
-  );
+  )
 }
 
 function Dashboard(): JSX.Element {
-  const { exit } = useApp();
-  const [selectedPane, setSelectedPane] = useState(0);
+  const { exit } = useApp()
+  const [selectedPane, setSelectedPane] = useState(0)
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) {
-      exit();
+      exit()
     }
     if (key.leftArrow || input === "h") {
-      setSelectedPane((prev) => (prev - 1 + 3) % 3);
+      setSelectedPane((prev) => (prev - 1 + 3) % 3)
     }
     if (key.rightArrow || input === "l") {
-      setSelectedPane((prev) => (prev + 1) % 3);
+      setSelectedPane((prev) => (prev + 1) % 3)
     }
-  });
+  })
 
   const systemStats: StatItem[] = [
     { label: "CPU Usage", value: "45%", change: "+2%" },
     { label: "Memory", value: "8.2 GB", change: "-0.3" },
     { label: "Disk", value: "234 GB" },
     { label: "Network", value: "1.2 Mb/s", change: "+0.5" },
-  ];
+  ]
 
   const recentActivities = [
     "User login: admin",
@@ -150,14 +150,14 @@ function Dashboard(): JSX.Element {
     "Config updated",
     "Service restarted",
     "Cache cleared",
-  ];
+  ]
 
   const projectProgress = [
     { label: "Frontend", percent: 85 },
     { label: "Backend", percent: 72 },
     { label: "Testing", percent: 45 },
     { label: "Docs", percent: 30 },
-  ];
+  ]
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -189,7 +189,7 @@ function Dashboard(): JSX.Element {
         </Text>
       </Box>
     </Box>
-  );
+  )
 }
 
 // ============================================================================
@@ -197,9 +197,9 @@ function Dashboard(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm();
-  const { waitUntilExit } = await render(<Dashboard />, term);
-  await waitUntilExit();
+  using term = createTerm()
+  const { waitUntilExit } = await render(<Dashboard />, term)
+  await waitUntilExit()
 }
 
-main().catch(console.error);
+main().catch(console.error)

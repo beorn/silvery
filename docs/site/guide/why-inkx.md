@@ -9,14 +9,14 @@ In Ink, components render _before_ Yoga computes layout. By the time layout is c
 ```tsx
 // Ink: Width props cascade everywhere
 function Board({ width }: { width: number }) {
-  const colWidth = Math.floor((width - 2) / 3);
+  const colWidth = Math.floor((width - 2) / 3)
   return (
     <Box flexDirection="row">
       <Column width={colWidth} items={todo} />
       <Column width={colWidth} items={doing} />
       <Column width={colWidth} items={done} />
     </Box>
-  );
+  )
 }
 
 function Column({ width, items }: { width: number; items: Item[] }) {
@@ -26,11 +26,11 @@ function Column({ width, items }: { width: number; items: Item[] }) {
         <Card width={width - 2} item={item} />
       ))}
     </Box>
-  );
+  )
 }
 
 function Card({ width, item }: { width: number; item: Item }) {
-  return <Text>{truncate(item.title, width - 4)}</Text>;
+  return <Text>{truncate(item.title, width - 4)}</Text>
 }
 ```
 
@@ -55,7 +55,7 @@ function Board() {
       <Column items={doing} />
       <Column items={done} />
     </Box>
-  );
+  )
 }
 
 function Column({ items }: { items: Item[] }) {
@@ -65,12 +65,12 @@ function Column({ items }: { items: Item[] }) {
         <Card item={item} />
       ))}
     </Box>
-  );
+  )
 }
 
 function Card({ item }: { item: Item }) {
-  const { width } = useContentRect(); // Just ask!
-  return <Text>{truncate(item.title, width - 4)}</Text>;
+  const { width } = useContentRect() // Just ask!
+  return <Text>{truncate(item.title, width - 4)}</Text>
 }
 ```
 
@@ -96,12 +96,12 @@ This is a breaking API change. Ink's maintainer has shown no interest in major a
 
 ## Inkx vs Ink Comparison
 
-| Feature           | Ink                        | Inkx                   |
-| ----------------- | -------------------------- | ---------------------- |
-| Layout feedback   | ❌ Must thread width props | ✅ `useContentRect()` hook  |
-| Text truncation   | ❌ Overflows container     | ✅ Auto-truncates      |
-| Scrolling         | ❌ Manual virtualization   | ✅ `overflow="scroll"` |
-| API compatibility | -                          | ✅ Drop-in replacement |
+| Feature           | Ink                        | Inkx                       |
+| ----------------- | -------------------------- | -------------------------- |
+| Layout feedback   | ❌ Must thread width props | ✅ `useContentRect()` hook |
+| Text truncation   | ❌ Overflows container     | ✅ Auto-truncates          |
+| Scrolling         | ❌ Manual virtualization   | ✅ `overflow="scroll"`     |
+| API compatibility | -                          | ✅ Drop-in replacement     |
 
 ## Who Should Use Inkx?
 

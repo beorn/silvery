@@ -8,7 +8,7 @@
  * - Variable height items (some with subtasks)
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react"
 import {
   render,
   Box,
@@ -17,18 +17,18 @@ import {
   useApp,
   createTerm,
   type Key,
-} from "../../src/index.js";
+} from "../../src/index.js"
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface Task {
-  id: number;
-  title: string;
-  completed: boolean;
-  priority: "high" | "medium" | "low";
-  subtasks?: string[];
+  id: number
+  title: string
+  completed: boolean
+  priority: "high" | "medium" | "low"
+  subtasks?: string[]
 }
 
 // ============================================================================
@@ -36,11 +36,7 @@ interface Task {
 // ============================================================================
 
 function generateTasks(count: number): Task[] {
-  const priorities: Array<"high" | "medium" | "low"> = [
-    "high",
-    "medium",
-    "low",
-  ];
+  const priorities: Array<"high" | "medium" | "low"> = ["high", "medium", "low"]
   const taskTemplates = [
     "Review pull request",
     "Update documentation",
@@ -57,13 +53,13 @@ function generateTasks(count: number): Task[] {
     "Write integration tests",
     "Code review feedback",
     "Deploy to staging",
-  ];
+  ]
 
   const subtaskTemplates = [
     ["Research solutions", "Implement changes", "Test thoroughly"],
     ["Check requirements", "Update code"],
     ["Review with team", "Make adjustments", "Get approval", "Merge"],
-  ];
+  ]
 
   return Array.from({ length: count }, (_, i) => ({
     id: i + 1,
@@ -73,7 +69,7 @@ function generateTasks(count: number): Task[] {
     // Every 5th task has subtasks
     subtasks:
       i % 5 === 0 ? subtaskTemplates[i % subtaskTemplates.length] : undefined,
-  }));
+  }))
 }
 
 // ============================================================================
@@ -83,24 +79,24 @@ function generateTasks(count: number): Task[] {
 function PriorityBadge({
   priority,
 }: {
-  priority: "high" | "medium" | "low";
+  priority: "high" | "medium" | "low"
 }): JSX.Element {
   const colors = {
     high: "red",
     medium: "yellow",
     low: "green",
-  };
+  }
   const symbols = {
     high: "!!!",
     medium: "!!",
     low: "!",
-  };
+  }
 
   return (
     <Text color={colors[priority]} bold>
       [{symbols[priority]}]
     </Text>
-  );
+  )
 }
 
 function TaskItem({
@@ -108,12 +104,12 @@ function TaskItem({
   isSelected,
   isExpanded,
 }: {
-  task: Task;
-  isSelected: boolean;
-  isExpanded: boolean;
+  task: Task
+  isSelected: boolean
+  isExpanded: boolean
 }): JSX.Element {
-  const checkbox = task.completed ? "[x]" : "[ ]";
-  const hasSubtasks = task.subtasks && task.subtasks.length > 0;
+  const checkbox = task.completed ? "[x]" : "[ ]"
+  const hasSubtasks = task.subtasks && task.subtasks.length > 0
 
   return (
     <Box flexDirection="column">
@@ -141,7 +137,7 @@ function TaskItem({
         </Box>
       )}
     </Box>
-  );
+  )
 }
 
 function StatusBar({
@@ -150,14 +146,14 @@ function StatusBar({
   scrollOffset,
   visibleCount,
 }: {
-  tasks: Task[];
-  cursor: number;
-  scrollOffset: number;
-  visibleCount: number;
+  tasks: Task[]
+  cursor: number
+  scrollOffset: number
+  visibleCount: number
 }): JSX.Element {
-  const completed = tasks.filter((t) => t.completed).length;
-  const total = tasks.length;
-  const percent = Math.round((completed / total) * 100);
+  const completed = tasks.filter((t) => t.completed).length
+  const total = tasks.length
+  const percent = Math.round((completed / total) * 100)
 
   return (
     <Box
@@ -177,55 +173,55 @@ function StatusBar({
         {Math.min(scrollOffset + visibleCount, total)}
       </Text>
     </Box>
-  );
+  )
 }
 
 function TaskList(): JSX.Element {
-  const { exit } = useApp();
-  const [tasks, setTasks] = useState(() => generateTasks(60));
-  const [cursor, setCursor] = useState(0);
-  const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
+  const { exit } = useApp()
+  const [tasks, setTasks] = useState(() => generateTasks(60))
+  const [cursor, setCursor] = useState(0)
+  const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set())
 
   // Fixed visible count (in a real app, this would use useLayout)
-  const visibleCount = 15;
+  const visibleCount = 15
 
   // Calculate scroll offset to keep cursor visible
   const scrollOffset = useMemo(() => {
-    const halfVisible = Math.floor(visibleCount / 2);
-    const maxOffset = Math.max(0, tasks.length - visibleCount);
+    const halfVisible = Math.floor(visibleCount / 2)
+    const maxOffset = Math.max(0, tasks.length - visibleCount)
 
     // Keep cursor centered when possible
-    let offset = cursor - halfVisible;
-    offset = Math.max(0, Math.min(offset, maxOffset));
-    return offset;
-  }, [cursor, visibleCount, tasks.length]);
+    let offset = cursor - halfVisible
+    offset = Math.max(0, Math.min(offset, maxOffset))
+    return offset
+  }, [cursor, visibleCount, tasks.length])
 
   // Get visible tasks
   const visibleTasks = useMemo(() => {
-    return tasks.slice(scrollOffset, scrollOffset + visibleCount);
-  }, [tasks, scrollOffset, visibleCount]);
+    return tasks.slice(scrollOffset, scrollOffset + visibleCount)
+  }, [tasks, scrollOffset, visibleCount])
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) {
-      exit();
+      exit()
     }
     if (key.upArrow || input === "k") {
-      setCursor((prev) => Math.max(0, prev - 1));
+      setCursor((prev) => Math.max(0, prev - 1))
     }
     if (key.downArrow || input === "j") {
-      setCursor((prev) => Math.min(tasks.length - 1, prev + 1));
+      setCursor((prev) => Math.min(tasks.length - 1, prev + 1))
     }
     if (key.pageUp) {
-      setCursor((prev) => Math.max(0, prev - visibleCount));
+      setCursor((prev) => Math.max(0, prev - visibleCount))
     }
     if (key.pageDown) {
-      setCursor((prev) => Math.min(tasks.length - 1, prev + visibleCount));
+      setCursor((prev) => Math.min(tasks.length - 1, prev + visibleCount))
     }
     if (key.home) {
-      setCursor(0);
+      setCursor(0)
     }
     if (key.end) {
-      setCursor(tasks.length - 1);
+      setCursor(tasks.length - 1)
     }
     if (input === " ") {
       // Toggle completion
@@ -233,24 +229,24 @@ function TaskList(): JSX.Element {
         prev.map((task, idx) =>
           idx === cursor ? { ...task, completed: !task.completed } : task,
         ),
-      );
+      )
     }
     if (key.return || input === "e") {
       // Toggle expand/collapse subtasks
-      const taskId = tasks[cursor]?.id;
+      const taskId = tasks[cursor]?.id
       if (taskId !== undefined && tasks[cursor]?.subtasks) {
         setExpandedTasks((prev) => {
-          const next = new Set(prev);
+          const next = new Set(prev)
           if (next.has(taskId)) {
-            next.delete(taskId);
+            next.delete(taskId)
           } else {
-            next.add(taskId);
+            next.add(taskId)
           }
-          return next;
-        });
+          return next
+        })
       }
     }
-  });
+  })
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -273,7 +269,7 @@ function TaskList(): JSX.Element {
         height={visibleCount + 2}
       >
         {visibleTasks.map((task, visibleIndex) => {
-          const actualIndex = scrollOffset + visibleIndex;
+          const actualIndex = scrollOffset + visibleIndex
           return (
             <TaskItem
               key={task.id}
@@ -281,7 +277,7 @@ function TaskList(): JSX.Element {
               isSelected={actualIndex === cursor}
               isExpanded={expandedTasks.has(task.id)}
             />
-          );
+          )
         })}
       </Box>
 
@@ -292,7 +288,7 @@ function TaskList(): JSX.Element {
         visibleCount={visibleCount}
       />
     </Box>
-  );
+  )
 }
 
 // ============================================================================
@@ -300,9 +296,9 @@ function TaskList(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm();
-  const { waitUntilExit } = await render(<TaskList />, term);
-  await waitUntilExit();
+  using term = createTerm()
+  const { waitUntilExit } = await render(<TaskList />, term)
+  await waitUntilExit()
 }
 
-main().catch(console.error);
+main().catch(console.error)

@@ -139,7 +139,7 @@ Send the query sequence and check for a response:
 
 ```typescript
 // Query current keyboard mode
-stdout.write("\x1b[?u");
+stdout.write("\x1b[?u")
 
 // Terminal will respond with:
 // CSI ? flags u   (if supported)
@@ -152,29 +152,29 @@ stdout.write("\x1b[?u");
 async function detectKittyProtocol(stdin, stdout): Promise<boolean> {
   return new Promise((resolve) => {
     const timeout = setTimeout(() => {
-      cleanup();
-      resolve(false);
-    }, 100);
+      cleanup()
+      resolve(false)
+    }, 100)
 
     function onData(data: Buffer) {
-      const str = data.toString();
+      const str = data.toString()
       // Look for CSI ? <number> u response
       if (/\x1b\[\?\d+u/.test(str)) {
-        cleanup();
-        resolve(true);
+        cleanup()
+        resolve(true)
       }
     }
 
     function cleanup() {
-      clearTimeout(timeout);
-      stdin.removeListener("data", onData);
+      clearTimeout(timeout)
+      stdin.removeListener("data", onData)
     }
 
-    stdin.on("data", onData);
+    stdin.on("data", onData)
 
     // Query current mode, then query device attributes (fallback)
-    stdout.write("\x1b[?u\x1b[c");
-  });
+    stdout.write("\x1b[?u\x1b[c")
+  })
 }
 ```
 
@@ -199,17 +199,17 @@ interface KittyProtocolOptions {
     | boolean
     | {
         /** Request key release events */
-        reportRelease?: boolean;
+        reportRelease?: boolean
         /** Request key repeat events */
-        reportRepeat?: boolean;
+        reportRepeat?: boolean
         /** Report all keys (including plain letters) as CSI sequences */
-        reportAllKeys?: boolean;
-      };
+        reportAllKeys?: boolean
+      }
 }
 
 interface RenderOptions {
   // ... existing options ...
-  kittyKeyboard?: KittyProtocolOptions["kittyKeyboard"];
+  kittyKeyboard?: KittyProtocolOptions["kittyKeyboard"]
 }
 ```
 
@@ -220,32 +220,32 @@ Extend the `Key` interface to expose new capabilities:
 ```typescript
 export interface Key {
   // Existing properties
-  upArrow: boolean;
-  downArrow: boolean;
-  leftArrow: boolean;
-  rightArrow: boolean;
-  return: boolean;
-  escape: boolean;
-  ctrl: boolean;
-  shift: boolean;
-  meta: boolean;
-  tab: boolean;
-  backspace: boolean;
-  delete: boolean;
-  pageUp: boolean;
-  pageDown: boolean;
-  home: boolean;
-  end: boolean;
+  upArrow: boolean
+  downArrow: boolean
+  leftArrow: boolean
+  rightArrow: boolean
+  return: boolean
+  escape: boolean
+  ctrl: boolean
+  shift: boolean
+  meta: boolean
+  tab: boolean
+  backspace: boolean
+  delete: boolean
+  pageUp: boolean
+  pageDown: boolean
+  home: boolean
+  end: boolean
 
   // New: Enhanced modifier support (Kitty protocol)
   /** Super/Windows/Command key (distinct from meta in Kitty) */
-  super?: boolean;
+  super?: boolean
   /** Hyper modifier */
-  hyper?: boolean;
+  hyper?: boolean
   /** Caps Lock state */
-  capsLock?: boolean;
+  capsLock?: boolean
   /** Num Lock state */
-  numLock?: boolean;
+  numLock?: boolean
 
   // New: Event type (Kitty protocol with flag 2)
   /**
@@ -253,14 +253,14 @@ export interface Key {
    * Only available when Kitty protocol is enabled with reportRelease/reportRepeat
    * @default 'press'
    */
-  eventType?: "press" | "repeat" | "release";
+  eventType?: "press" | "repeat" | "release"
 
   // New: Disambiguation (Kitty protocol)
   /**
    * Whether this key event came from Kitty protocol (unambiguous)
    * When true, Ctrl+I and Tab are distinguishable
    */
-  kittyProtocol?: boolean;
+  kittyProtocol?: boolean
 }
 ```
 
@@ -272,13 +272,13 @@ Enable/disable the protocol with proper cleanup:
 // On render start (if kittyKeyboard enabled)
 function enableKittyProtocol(flags: number): void {
   // Push current mode to stack, set new mode
-  stdout.write(`\x1b[>${flags}u`);
+  stdout.write(`\x1b[>${flags}u`)
 }
 
 // On render unmount (CRITICAL: must always run)
 function disableKittyProtocol(): void {
   // Pop from stack to restore previous mode
-  stdout.write("\x1b[<u");
+  stdout.write("\x1b[<u")
 }
 ```
 
@@ -291,17 +291,17 @@ Add Kitty protocol parsing to `parseKeypress`:
 ```typescript
 // New regex for CSI u format
 const KITTY_KEY_RE =
-  /^\x1b\[(\d+)(?::(\d+))?(?:;(\d+)(?::(\d+))?)?(?:;([^u]*))?u$/;
+  /^\x1b\[(\d+)(?::(\d+))?(?:;(\d+)(?::(\d+))?)?(?:;([^u]*))?u$/
 
 function parseKittyKeypress(s: string): ParsedKeypress | null {
-  const match = KITTY_KEY_RE.exec(s);
-  if (!match) return null;
+  const match = KITTY_KEY_RE.exec(s)
+  if (!match) return null
 
-  const keyCode = parseInt(match[1], 10);
-  const shiftedKey = match[2] ? parseInt(match[2], 10) : undefined;
-  const modifiers = match[3] ? parseInt(match[3], 10) - 1 : 0;
-  const eventType = match[4] ? parseInt(match[4], 10) : 1;
-  const text = match[5];
+  const keyCode = parseInt(match[1], 10)
+  const shiftedKey = match[2] ? parseInt(match[2], 10) : undefined
+  const modifiers = match[3] ? parseInt(match[3], 10) - 1 : 0
+  const eventType = match[4] ? parseInt(match[4], 10) : 1
+  const text = match[5]
 
   return {
     name: keyCodeToName(keyCode),
@@ -317,7 +317,7 @@ function parseKittyKeypress(s: string): ParsedKeypress | null {
     sequence: s,
     keyCode,
     kittyProtocol: true,
-  };
+  }
 }
 ```
 
@@ -327,11 +327,11 @@ Add protocol state to the input context:
 
 ```typescript
 interface InputContextValue {
-  eventEmitter: EventEmitter;
-  exitOnCtrlC: boolean;
+  eventEmitter: EventEmitter
+  exitOnCtrlC: boolean
   // New
-  kittyProtocolEnabled: boolean;
-  kittyProtocolFlags: number;
+  kittyProtocolEnabled: boolean
+  kittyProtocolFlags: number
 }
 ```
 
@@ -340,7 +340,7 @@ interface InputContextValue {
 ### Basic Usage (Auto-detection)
 
 ```tsx
-import { render, useInput } from "inkx";
+import { render, useInput } from "inkx"
 
 function App() {
   useInput((input, key) => {
@@ -351,46 +351,46 @@ function App() {
     if (key.ctrl && input === "i") {
       // User pressed Ctrl+I (NOT Tab!)
     }
-  });
+  })
 
-  return <Text>Tab and Ctrl+I are now different!</Text>;
+  return <Text>Tab and Ctrl+I are now different!</Text>
 }
 
 // Enable Kitty protocol (falls back gracefully)
-using term = createTerm();
-await render(<App />, { kittyKeyboard: true });
+using term = createTerm()
+await render(<App />, { kittyKeyboard: true })
 ```
 
 ### Key Release Events
 
 ```tsx
 function Game() {
-  const [isJumping, setIsJumping] = useState(false);
+  const [isJumping, setIsJumping] = useState(false)
 
   useInput((input, key) => {
     if (input === " ") {
       if (key.eventType === "press") {
-        setIsJumping(true);
+        setIsJumping(true)
       } else if (key.eventType === "release") {
-        setIsJumping(false);
+        setIsJumping(false)
       }
     }
-  });
+  })
 
-  return <Text>{isJumping ? "Jumping!" : "On ground"}</Text>;
+  return <Text>{isJumping ? "Jumping!" : "On ground"}</Text>
 }
 
-using term = createTerm();
+using term = createTerm()
 await render(<Game />, {
   kittyKeyboard: { reportRelease: true },
-});
+})
 ```
 
 ### Checking Protocol Support
 
 ```tsx
 function App() {
-  const { kittyProtocolEnabled } = useStdin();
+  const { kittyProtocolEnabled } = useStdin()
 
   return (
     <Box flexDirection="column">
@@ -403,7 +403,7 @@ function App() {
         </Text>
       )}
     </Box>
-  );
+  )
 }
 ```
 
@@ -428,14 +428,14 @@ useInput((input, key) => {
   if (key.tab) {
     // Still works - might be Tab or Ctrl+I
   }
-});
+})
 
 // Enhanced code can check for disambiguation
 useInput((input, key) => {
   if (key.kittyProtocol) {
     // Can trust that Tab and Ctrl+I are distinct
   }
-});
+})
 ```
 
 ## Before/After Comparison
@@ -447,12 +447,12 @@ useInput((input, key) => {
   // PROBLEM: Cannot distinguish these
   if (key.tab) {
     // Could be Tab OR Ctrl+I - no way to know
-    handleIndent(); // User wanted Ctrl+I for something else!
+    handleIndent() // User wanted Ctrl+I for something else!
   }
 
   // PROBLEM: Cannot detect key release
   if (input === "w") {
-    moveForward(); // Keeps triggering on repeat
+    moveForward() // Keeps triggering on repeat
     // No way to know when user lifts finger
   }
 
@@ -461,7 +461,7 @@ useInput((input, key) => {
     // This is Alt+S, but user pressed Cmd+S
     // Cmd is intercepted by terminal
   }
-});
+})
 ```
 
 ### After (Kitty Protocol)
@@ -470,26 +470,26 @@ useInput((input, key) => {
 useInput((input, key) => {
   // SOLVED: Tab and Ctrl+I are distinct
   if (key.tab && !key.ctrl) {
-    handleIndent();
+    handleIndent()
   }
   if (key.ctrl && input === "i") {
-    showInfo(); // Separate action!
+    showInfo() // Separate action!
   }
 
   // SOLVED: Key release detection
   if (input === "w") {
     if (key.eventType === "press") {
-      startMovingForward();
+      startMovingForward()
     } else if (key.eventType === "release") {
-      stopMovingForward();
+      stopMovingForward()
     }
   }
 
   // SOLVED: Super modifier available (if terminal supports)
   if (key.super && input === "s") {
-    save(); // Actually Cmd+S on macOS
+    save() // Actually Cmd+S on macOS
   }
-});
+})
 ```
 
 ## Implementation Checklist

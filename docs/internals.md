@@ -47,24 +47,24 @@ React's reconciler builds the component tree. Our custom reconciler creates `Ink
 
 ```typescript
 interface InkxNode {
-  type: "box" | "text" | "root";
-  props: BoxProps | TextProps;
-  children: InkxNode[];
+  type: "box" | "text" | "root"
+  props: BoxProps | TextProps
+  children: InkxNode[]
 
   // Yoga integration
-  yogaNode: Yoga.Node;
+  yogaNode: Yoga.Node
 
   // Layout state
-  computedLayout: ComputedLayout | null;
-  prevLayout: ComputedLayout | null;
-  layoutDirty: boolean;
-  contentDirty: boolean;
+  computedLayout: ComputedLayout | null
+  prevLayout: ComputedLayout | null
+  layoutDirty: boolean
+  contentDirty: boolean
 
   // Content rendering
-  contentCallback: ((layout: ComputedLayout) => TerminalContent) | null;
+  contentCallback: ((layout: ComputedLayout) => TerminalContent) | null
 
   // Subscriptions
-  layoutSubscribers: Set<() => void>;
+  layoutSubscribers: Set<() => void>
 }
 ```
 
@@ -73,8 +73,8 @@ The reconciler hooks:
 ```typescript
 const hostConfig: HostConfig = {
   createInstance(type, props): InkxNode {
-    const yogaNode = Yoga.Node.create();
-    applyFlexboxProps(yogaNode, props);
+    const yogaNode = Yoga.Node.create()
+    applyFlexboxProps(yogaNode, props)
 
     return {
       type,
@@ -87,49 +87,49 @@ const hostConfig: HostConfig = {
       contentDirty: true,
       contentCallback: null,
       layoutSubscribers: new Set(),
-    };
+    }
   },
 
   appendChild(parent, child) {
-    parent.children.push(child);
-    parent.yogaNode.insertChild(child.yogaNode, parent.children.length - 1);
-    parent.layoutDirty = true;
+    parent.children.push(child)
+    parent.yogaNode.insertChild(child.yogaNode, parent.children.length - 1)
+    parent.layoutDirty = true
   },
 
   removeChild(parent, child) {
-    const index = parent.children.indexOf(child);
-    parent.children.splice(index, 1);
-    parent.yogaNode.removeChild(child.yogaNode);
-    child.yogaNode.free();
-    parent.layoutDirty = true;
+    const index = parent.children.indexOf(child)
+    parent.children.splice(index, 1)
+    parent.yogaNode.removeChild(child.yogaNode)
+    child.yogaNode.free()
+    parent.layoutDirty = true
   },
 
   commitUpdate(node, updatePayload, type, oldProps, newProps) {
     // Check if layout-affecting props changed
     if (layoutPropsChanged(oldProps, newProps)) {
-      applyFlexboxProps(node.yogaNode, newProps);
-      node.layoutDirty = true;
+      applyFlexboxProps(node.yogaNode, newProps)
+      node.layoutDirty = true
     }
 
     // Check if content-affecting props changed
     if (contentPropsChanged(oldProps, newProps)) {
-      node.contentDirty = true;
+      node.contentDirty = true
     }
 
-    node.props = newProps;
+    node.props = newProps
   },
 
   prepareForCommit(containerInfo) {
     // This is where we trigger layout calculation
     // Called after React finishes reconciliation
-    return null;
+    return null
   },
 
   resetAfterCommit(containerInfo) {
     // After React commits, run our pipeline
-    runPipeline(containerInfo.rootNode);
+    runPipeline(containerInfo.rootNode)
   },
-};
+}
 ```
 
 ### Phase 1: Measure (for fit-content)
@@ -143,44 +143,44 @@ function measurePhase(root: InkxNode) {
       node.props.width === "fit-content" ||
       node.props.height === "fit-content"
     ) {
-      const intrinsicSize = measureIntrinsicSize(node);
+      const intrinsicSize = measureIntrinsicSize(node)
 
       if (node.props.width === "fit-content") {
-        node.yogaNode.setWidth(intrinsicSize.width);
+        node.yogaNode.setWidth(intrinsicSize.width)
       }
       if (node.props.height === "fit-content") {
-        node.yogaNode.setHeight(intrinsicSize.height);
+        node.yogaNode.setHeight(intrinsicSize.height)
       }
     }
-  });
+  })
 }
 
 function measureIntrinsicSize(node: InkxNode): {
-  width: number;
-  height: number;
+  width: number
+  height: number
 } {
   if (node.type === "text") {
-    const text = getTextContent(node);
+    const text = getTextContent(node)
     return {
       width: stringWidth(text),
       height: text.split("\n").length,
-    };
+    }
   }
 
   // For boxes, measure children
   let width = 0,
-    height = 0;
+    height = 0
   for (const child of node.children) {
-    const childSize = measureIntrinsicSize(child);
+    const childSize = measureIntrinsicSize(child)
     if (node.props.flexDirection === "row") {
-      width += childSize.width;
-      height = Math.max(height, childSize.height);
+      width += childSize.width
+      height = Math.max(height, childSize.height)
     } else {
-      width = Math.max(width, childSize.width);
-      height += childSize.height;
+      width = Math.max(width, childSize.width)
+      height += childSize.height
     }
   }
-  return { width, height };
+  return { width, height }
 }
 ```
 
@@ -196,7 +196,7 @@ function layoutPhase(
 ) {
   // Only recalculate if something changed
   if (!hasLayoutDirtyNodes(root)) {
-    return;
+    return
   }
 
   // Calculate layout
@@ -204,47 +204,47 @@ function layoutPhase(
     terminalWidth,
     terminalHeight,
     Yoga.DIRECTION_LTR,
-  );
+  )
 
   // Propagate computed dimensions
-  propagateLayout(root, 0, 0);
+  propagateLayout(root, 0, 0)
 
   // Notify subscribers
-  notifyLayoutSubscribers(root);
+  notifyLayoutSubscribers(root)
 }
 
 function propagateLayout(node: InkxNode, parentX: number, parentY: number) {
-  const yoga = node.yogaNode;
+  const yoga = node.yogaNode
 
-  node.prevLayout = node.computedLayout;
+  node.prevLayout = node.computedLayout
   node.computedLayout = {
     x: parentX + yoga.getComputedLeft(),
     y: parentY + yoga.getComputedTop(),
     width: yoga.getComputedWidth(),
     height: yoga.getComputedHeight(),
-  };
+  }
 
-  node.layoutDirty = false;
+  node.layoutDirty = false
 
   // If dimensions changed, content needs re-render
   if (!layoutEqual(node.prevLayout, node.computedLayout)) {
-    node.contentDirty = true;
+    node.contentDirty = true
   }
 
   for (const child of node.children) {
-    propagateLayout(child, node.computedLayout.x, node.computedLayout.y);
+    propagateLayout(child, node.computedLayout.x, node.computedLayout.y)
   }
 }
 
 function notifyLayoutSubscribers(node: InkxNode) {
   if (!layoutEqual(node.prevLayout, node.computedLayout)) {
     for (const subscriber of node.layoutSubscribers) {
-      subscriber(); // Triggers React re-render
+      subscriber() // Triggers React re-render
     }
   }
 
   for (const child of node.children) {
-    notifyLayoutSubscribers(child);
+    notifyLayoutSubscribers(child)
   }
 }
 ```
@@ -258,56 +258,56 @@ function contentPhase(root: InkxNode): TerminalBuffer {
   const buffer = createBuffer(
     root.computedLayout.width,
     root.computedLayout.height,
-  );
+  )
 
-  renderNodeToBuffer(root, buffer);
+  renderNodeToBuffer(root, buffer)
 
-  return buffer;
+  return buffer
 }
 
 function renderNodeToBuffer(node: InkxNode, buffer: TerminalBuffer) {
   if (!node.contentDirty && !node.layoutDirty) {
     // Content unchanged, skip
-    return;
+    return
   }
 
-  const { x, y, width, height } = node.computedLayout;
+  const { x, y, width, height } = node.computedLayout
 
   if (node.type === "text") {
-    const content = renderTextContent(node, width);
-    writeToBuffer(buffer, x, y, content);
+    const content = renderTextContent(node, width)
+    writeToBuffer(buffer, x, y, content)
   } else if (node.type === "box") {
     // Render border if present
     if (node.props.borderStyle) {
-      renderBorder(buffer, x, y, width, height, node.props.borderStyle);
+      renderBorder(buffer, x, y, width, height, node.props.borderStyle)
     }
 
     // Render background if present
     if (node.props.backgroundColor) {
-      fillBackground(buffer, x, y, width, height, node.props.backgroundColor);
+      fillBackground(buffer, x, y, width, height, node.props.backgroundColor)
     }
   }
 
   // Render children
   for (const child of node.children) {
-    renderNodeToBuffer(child, buffer);
+    renderNodeToBuffer(child, buffer)
   }
 
-  node.contentDirty = false;
+  node.contentDirty = false
 }
 
 function renderTextContent(
   node: InkxNode,
   availableWidth: number,
 ): StyledString {
-  const text = node.props.children;
+  const text = node.props.children
 
   // Auto-truncate by default
   if (node.props.wrap !== false) {
-    return truncateAnsi(text, availableWidth);
+    return truncateAnsi(text, availableWidth)
   }
 
-  return text;
+  return text
 }
 ```
 
@@ -322,34 +322,34 @@ function outputPhase(
 ): string {
   if (!prevBuffer) {
     // First render: output entire buffer
-    return bufferToAnsi(nextBuffer);
+    return bufferToAnsi(nextBuffer)
   }
 
   // Diff and emit only changes
-  const changes: CellChange[] = [];
+  const changes: CellChange[] = []
 
   for (let y = 0; y < nextBuffer.height; y++) {
     for (let x = 0; x < nextBuffer.width; x++) {
-      const prevCell = prevBuffer.getCell(x, y);
-      const nextCell = nextBuffer.getCell(x, y);
+      const prevCell = prevBuffer.getCell(x, y)
+      const nextCell = nextBuffer.getCell(x, y)
 
       if (!cellEqual(prevCell, nextCell)) {
-        changes.push({ x, y, cell: nextCell });
+        changes.push({ x, y, cell: nextCell })
       }
     }
   }
 
-  return changesToAnsi(changes);
+  return changesToAnsi(changes)
 }
 
 function changesToAnsi(changes: CellChange[]): string {
   // Sort by position for optimal cursor movement
-  changes.sort((a, b) => a.y - b.y || a.x - b.x);
+  changes.sort((a, b) => a.y - b.y || a.x - b.x)
 
-  let output = "";
+  let output = ""
   let cursorX = 0,
-    cursorY = 0;
-  let currentStyle: Style | null = null;
+    cursorY = 0
+  let currentStyle: Style | null = null
 
   for (const { x, y, cell } of changes) {
     // Move cursor (optimize for adjacent cells)
@@ -357,30 +357,30 @@ function changesToAnsi(changes: CellChange[]): string {
       if (y === cursorY && x === cursorX + 1) {
         // Cursor advances automatically
       } else if (y === cursorY + 1 && x === 0) {
-        output += "\n";
+        output += "\n"
       } else {
-        output += `\x1b[${y + 1};${x + 1}H`;
+        output += `\x1b[${y + 1};${x + 1}H`
       }
     }
 
     // Change style if needed
     if (!styleEqual(currentStyle, cell.style)) {
-      output += styleToAnsi(cell.style);
-      currentStyle = cell.style;
+      output += styleToAnsi(cell.style)
+      currentStyle = cell.style
     }
 
     // Write character
-    output += cell.char;
-    cursorX = x + 1;
-    cursorY = y;
+    output += cell.char
+    cursorX = x + 1
+    cursorY = y
   }
 
   // Reset style at end
   if (currentStyle) {
-    output += "\x1b[0m";
+    output += "\x1b[0m"
   }
 
-  return output;
+  return output
 }
 ```
 
@@ -391,32 +391,32 @@ function changesToAnsi(changes: CellChange[]): string {
 The hook subscribes to layout completion:
 
 ```typescript
-const NodeContext = createContext<InkxNode | null>(null);
+const NodeContext = createContext<InkxNode | null>(null)
 
 function useInkxNode(): InkxNode {
-  const node = useContext(NodeContext);
-  if (!node) throw new Error("useLayout must be used within Inkx");
-  return node;
+  const node = useContext(NodeContext)
+  if (!node) throw new Error("useLayout must be used within Inkx")
+  return node
 }
 
 function useLayout(): ComputedLayout {
-  const node = useInkxNode();
-  const [, forceUpdate] = useReducer((x) => x + 1, 0);
+  const node = useInkxNode()
+  const [, forceUpdate] = useReducer((x) => x + 1, 0)
 
   useLayoutEffect(() => {
     // Subscribe to layout changes
     const handleLayoutComplete = () => {
       if (!layoutEqual(node.prevLayout, node.computedLayout)) {
-        forceUpdate();
+        forceUpdate()
       }
-    };
+    }
 
-    node.layoutSubscribers.add(handleLayoutComplete);
-    return () => node.layoutSubscribers.delete(handleLayoutComplete);
-  }, [node]);
+    node.layoutSubscribers.add(handleLayoutComplete)
+    return () => node.layoutSubscribers.delete(handleLayoutComplete)
+  }, [node])
 
   // Return current dimensions (may be zeros on first render)
-  return node.computedLayout ?? { x: 0, y: 0, width: 0, height: 0 };
+  return node.computedLayout ?? { x: 0, y: 0, width: 0, height: 0 }
 }
 ```
 
@@ -440,36 +440,36 @@ Batches rapid updates:
 
 ```typescript
 class RenderScheduler {
-  private pending = false;
-  private root: InkxNode;
-  private stdout: NodeJS.WriteStream;
-  private prevBuffer: TerminalBuffer | null = null;
+  private pending = false
+  private root: InkxNode
+  private stdout: NodeJS.WriteStream
+  private prevBuffer: TerminalBuffer | null = null
 
   scheduleRender() {
-    if (this.pending) return;
-    this.pending = true;
+    if (this.pending) return
+    this.pending = true
 
     // Batch synchronous updates
     setImmediate(() => {
-      this.pending = false;
-      this.executeRender();
-    });
+      this.pending = false
+      this.executeRender()
+    })
   }
 
   executeRender() {
-    const { columns, rows } = this.stdout;
+    const { columns, rows } = this.stdout
 
     // Run pipeline
-    measurePhase(this.root);
-    layoutPhase(this.root, columns, rows);
-    const buffer = contentPhase(this.root);
-    const output = outputPhase(this.prevBuffer, buffer);
+    measurePhase(this.root)
+    layoutPhase(this.root, columns, rows)
+    const buffer = contentPhase(this.root)
+    const output = outputPhase(this.prevBuffer, buffer)
 
     // Write to terminal
-    this.stdout.write(output);
+    this.stdout.write(output)
 
     // Save for next diff
-    this.prevBuffer = buffer;
+    this.prevBuffer = buffer
   }
 }
 ```
@@ -482,22 +482,22 @@ Efficient cell storage:
 
 ```typescript
 class TerminalBuffer {
-  private cells: Uint32Array; // Packed cell data
-  private chars: string[]; // Character storage (for wide chars)
+  private cells: Uint32Array // Packed cell data
+  private chars: string[] // Character storage (for wide chars)
 
-  readonly width: number;
-  readonly height: number;
+  readonly width: number
+  readonly height: number
 
   constructor(width: number, height: number) {
-    this.width = width;
-    this.height = height;
-    this.cells = new Uint32Array(width * height);
-    this.chars = new Array(width * height).fill(" ");
+    this.width = width
+    this.height = height
+    this.cells = new Uint32Array(width * height)
+    this.chars = new Array(width * height).fill(" ")
   }
 
   getCell(x: number, y: number): Cell {
-    const index = y * this.width + x;
-    const packed = this.cells[index];
+    const index = y * this.width + x
+    const packed = this.cells[index]
 
     return {
       char: this.chars[index],
@@ -506,13 +506,13 @@ class TerminalBuffer {
       attrs: unpackAttrs(packed),
       wide: (packed & WIDE_FLAG) !== 0,
       continuation: (packed & CONTINUATION_FLAG) !== 0,
-    };
+    }
   }
 
   setCell(x: number, y: number, cell: Cell) {
-    const index = y * this.width + x;
-    this.chars[index] = cell.char;
-    this.cells[index] = packCell(cell);
+    const index = y * this.width + x
+    this.chars[index] = cell.char
+    this.cells[index] = packCell(cell)
   }
 }
 
@@ -522,13 +522,13 @@ class TerminalBuffer {
 // [16-23]: attributes (bold, italic, etc.)
 // [24-31]: flags (wide, continuation, etc.)
 function packCell(cell: Cell): number {
-  let packed = 0;
-  packed |= (cell.fg ?? 0) & 0xff;
-  packed |= ((cell.bg ?? 0) & 0xff) << 8;
-  packed |= (attrsToNumber(cell.attrs) & 0xff) << 16;
-  if (cell.wide) packed |= WIDE_FLAG;
-  if (cell.continuation) packed |= CONTINUATION_FLAG;
-  return packed;
+  let packed = 0
+  packed |= (cell.fg ?? 0) & 0xff
+  packed |= ((cell.bg ?? 0) & 0xff) << 8
+  packed |= (attrsToNumber(cell.attrs) & 0xff) << 16
+  if (cell.wide) packed |= WIDE_FLAG
+  if (cell.continuation) packed |= CONTINUATION_FLAG
+  return packed
 }
 ```
 
@@ -539,10 +539,10 @@ function packCell(cell: Cell): number {
 Proper grapheme segmentation:
 
 ```typescript
-import Graphemer from "graphemer";
-import stringWidth from "string-width";
+import Graphemer from "graphemer"
+import stringWidth from "string-width"
 
-const graphemer = new Graphemer();
+const graphemer = new Graphemer()
 
 function writeTextToBuffer(
   buffer: TerminalBuffer,
@@ -551,27 +551,27 @@ function writeTextToBuffer(
   text: string,
   style: Style,
 ) {
-  const graphemes = graphemer.splitGraphemes(text);
-  let col = x;
+  const graphemes = graphemer.splitGraphemes(text)
+  let col = x
 
   for (const grapheme of graphemes) {
-    const width = stringWidth(grapheme);
+    const width = stringWidth(grapheme)
 
     if (width === 0) {
       // Combining character: append to previous cell
-      const prevChar = buffer.getCell(col - 1, y).char;
-      buffer.setCell(col - 1, y, { char: prevChar + grapheme, ...style });
+      const prevChar = buffer.getCell(col - 1, y).char
+      buffer.setCell(col - 1, y, { char: prevChar + grapheme, ...style })
     } else if (width === 1) {
-      buffer.setCell(col, y, { char: grapheme, ...style });
-      col++;
+      buffer.setCell(col, y, { char: grapheme, ...style })
+      col++
     } else if (width === 2) {
       // Wide character takes 2 cells
-      buffer.setCell(col, y, { char: grapheme, wide: true, ...style });
-      buffer.setCell(col + 1, y, { char: "", continuation: true, ...style });
-      col += 2;
+      buffer.setCell(col, y, { char: grapheme, wide: true, ...style })
+      buffer.setCell(col + 1, y, { char: "", continuation: true, ...style })
+      col += 2
     }
 
-    if (col >= buffer.width) break;
+    if (col >= buffer.width) break
   }
 }
 ```
@@ -585,18 +585,18 @@ Graceful degradation:
 ```typescript
 function runPipeline(root: InkxNode) {
   try {
-    measurePhase(root);
-    layoutPhase(root, process.stdout.columns, process.stdout.rows);
-    const buffer = contentPhase(root);
-    const output = outputPhase(prevBuffer, buffer);
-    process.stdout.write(output);
-    prevBuffer = buffer;
+    measurePhase(root)
+    layoutPhase(root, process.stdout.columns, process.stdout.rows)
+    const buffer = contentPhase(root)
+    const output = outputPhase(prevBuffer, buffer)
+    process.stdout.write(output)
+    prevBuffer = buffer
   } catch (error) {
     // Don't crash the app on render errors
-    console.error("Inkx render error:", error);
+    console.error("Inkx render error:", error)
 
     // Try to show error in terminal
-    process.stdout.write("\x1b[0m\x1b[31mRender error (see console)\x1b[0m");
+    process.stdout.write("\x1b[0m\x1b[31mRender error (see console)\x1b[0m")
   }
 }
 ```
@@ -610,42 +610,42 @@ Unit tests for each phase:
 ```typescript
 // Phase 2: Layout
 test("layout computes dimensions", () => {
-  const root = createNode("box", { width: 100, height: 50 });
-  const child = createNode("box", { width: "50%", height: "50%" });
-  appendChild(root, child);
+  const root = createNode("box", { width: 100, height: 50 })
+  const child = createNode("box", { width: "50%", height: "50%" })
+  appendChild(root, child)
 
-  layoutPhase(root, 100, 50);
+  layoutPhase(root, 100, 50)
 
   expect(child.computedLayout).toEqual({
     x: 0,
     y: 0,
     width: 50,
     height: 25,
-  });
-});
+  })
+})
 
 // Phase 3: Content
 test("text truncates to available width", () => {
-  const node = createNode("text", { children: "Hello World" });
-  node.computedLayout = { x: 0, y: 0, width: 5, height: 1 };
+  const node = createNode("text", { children: "Hello World" })
+  node.computedLayout = { x: 0, y: 0, width: 5, height: 1 }
 
-  const content = renderTextContent(node, 5);
+  const content = renderTextContent(node, 5)
 
-  expect(content).toBe("Hell…");
-});
+  expect(content).toBe("Hell…")
+})
 
 // Phase 4: Diff
 test("diff emits minimal changes", () => {
-  const prev = createBuffer(10, 1);
-  const next = createBuffer(10, 1);
+  const prev = createBuffer(10, 1)
+  const next = createBuffer(10, 1)
 
-  prev.setCell(0, 0, { char: "A" });
-  next.setCell(0, 0, { char: "B" });
+  prev.setCell(0, 0, { char: "A" })
+  next.setCell(0, 0, { char: "B" })
 
-  const output = outputPhase(prev, next);
+  const output = outputPhase(prev, next)
 
-  expect(output).toBe("\x1b[1;1HB"); // Move to (0,0), write 'B'
-});
+  expect(output).toBe("\x1b[1;1HB") // Move to (0,0), write 'B'
+})
 ```
 
 ---
@@ -668,27 +668,27 @@ React Suspense requires the renderer to hide and unhide subtrees when components
 const hostConfig: HostConfig = {
   // Called when a subtree suspends
   hideInstance(instance: InkxNode) {
-    instance.hidden = true;
-    instance.layoutDirty = true;
+    instance.hidden = true
+    instance.layoutDirty = true
     // Hidden nodes excluded from layout and rendering
   },
 
   // Called when suspension ends
   unhideInstance(instance: InkxNode) {
-    instance.hidden = false;
-    instance.layoutDirty = true;
-    instance.contentDirty = true;
+    instance.hidden = false
+    instance.layoutDirty = true
+    instance.contentDirty = true
   },
 
   // Also need hideTextInstance/unhideTextInstance for Text nodes
   hideTextInstance(textInstance: InkxTextNode) {
-    textInstance.hidden = true;
+    textInstance.hidden = true
   },
 
   unhideTextInstance(textInstance: InkxTextNode) {
-    textInstance.hidden = false;
+    textInstance.hidden = false
   },
-};
+}
 ```
 
 ### Layout Phase Integration
@@ -699,7 +699,7 @@ The layout phase skips hidden nodes:
 function propagateLayout(node: InkxNode, parentX: number, parentY: number) {
   // Skip hidden nodes - they don't participate in layout
   if (node.hidden) {
-    return;
+    return
   }
 
   // Normal layout calculation...
@@ -708,10 +708,10 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number) {
     y: parentY + yoga.getComputedTop(),
     width: yoga.getComputedWidth(),
     height: yoga.getComputedHeight(),
-  };
+  }
 
   for (const child of node.children) {
-    propagateLayout(child, node.computedLayout.x, node.computedLayout.y);
+    propagateLayout(child, node.computedLayout.x, node.computedLayout.y)
   }
 }
 ```
@@ -724,7 +724,7 @@ The content phase skips hidden nodes:
 function renderNodeToBuffer(node: InkxNode, buffer: TerminalBuffer) {
   // Don't render hidden nodes
   if (node.hidden) {
-    return;
+    return
   }
 
   // Normal rendering...

@@ -19,8 +19,8 @@ bun run examples/search-filter/index.tsx
 ### useDeferredValue
 
 ```tsx
-const deferredQuery = useDeferredValue(query);
-<FilteredList query={deferredQuery} />
+const deferredQuery = useDeferredValue(query)
+;<FilteredList query={deferredQuery} />
 ```
 
 The filtered list uses a deferred version of the query. When you type quickly, React prioritizes updating the input display over re-filtering the list. The list catches up during idle time.
@@ -28,11 +28,11 @@ The filtered list uses a deferred version of the query. When you type quickly, R
 ### useTransition
 
 ```tsx
-const [isPending, startTransition] = useTransition();
+const [isPending, startTransition] = useTransition()
 
 startTransition(() => {
-  setQuery(newValue);
-});
+  setQuery(newValue)
+})
 ```
 
 State updates wrapped in `startTransition` are marked as low-priority. The `isPending` flag shows "filtering..." while the transition is in progress.
