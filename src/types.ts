@@ -277,6 +277,8 @@ export interface InkxNode {
 	scrollState?: {
 		/** Current scroll offset (in terminal rows) */
 		offset: number;
+		/** Previous scroll offset from last render (for incremental rendering) */
+		prevOffset: number;
 		/** Total content height (all children) */
 		contentHeight: number;
 		/** Visible height (container height minus borders/padding) */

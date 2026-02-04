@@ -235,18 +235,22 @@ function renderScrollContainerChildren(
 			}
 		: nodeClip;
 
-	// IMPORTANT: Never use hasPrevBuffer for scroll container children.
-	// Even if child content hasn't changed, their SCREEN position changes when
-	// scrollOffset changes. The fast-path would incorrectly skip rendering them
-	// at their new screen positions, causing visual corruption.
-	// TODO: Track prevScrollOffset and only disable fast-path when it changes.
+	// Determine if scroll offset changed since last render.
+	// When offset is unchanged, children's screen positions haven't moved,
+	// so we can safely use the fast-path (hasPrevBuffer) for unchanged children.
+	// When offset changed, all children must re-render at new screen positions.
+	// Also disable fast-path when children were added/removed/reordered
+	// (same as renderNormalChildren does for non-scroll containers).
+	const scrollOffsetChanged = ss.offset !== ss.prevOffset;
+	const childHasPrev = scrollOffsetChanged || node.childrenDirty ? false : hasPrevBuffer;
 
 	// Clear the scroll container's viewport area before re-rendering children.
-	// Children are forced to hasPrevBuffer=false (disabling fast-path), but the
-	// buffer IS a clone from the previous frame. Without clearing, stale pixels
-	// (e.g. old cursor highlight backgroundColor) bleed through in boxes that
-	// no longer have their own backgroundColor.
-	if (hasPrevBuffer && node.subtreeDirty) {
+	// When scroll offset changed, children are forced to hasPrevBuffer=false
+	// (disabling fast-path), but the buffer IS a clone from the previous frame.
+	// Without clearing, stale pixels (e.g. old cursor highlight backgroundColor)
+	// bleed through in boxes that no longer have their own backgroundColor.
+	// When offset is unchanged, only clear if subtree is dirty (content changed).
+	if (hasPrevBuffer && (scrollOffsetChanged || node.subtreeDirty) && !childHasPrev) {
 		const clearY = childClipBounds.top;
 		const clearHeight = childClipBounds.bottom - childClipBounds.top;
 		if (clearHeight > 0) {
@@ -278,9 +282,9 @@ function renderScrollContainerChildren(
 			continue;
 		}
 
-		// Render visible children with scroll offset applied
-		// Pass hasPrevBuffer=false to force re-rendering at new screen positions
-		renderNodeToBuffer(child, buffer, ss.offset, childClipBounds, false);
+		// Render visible children with scroll offset applied.
+		// Use fast-path (childHasPrev) when scroll offset is unchanged.
+		renderNodeToBuffer(child, buffer, ss.offset, childClipBounds, childHasPrev);
 	}
 
 	// Second pass: render sticky children at their computed positions
@@ -295,6 +299,8 @@ function renderScrollContainerChildren(
 			// This makes the child render at renderOffset instead of its natural position
 			const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset;
 
+			// Sticky children always re-render since their effective scroll offset
+			// may change even when the container's scroll offset doesn't
 			renderNodeToBuffer(child, buffer, stickyScrollOffset, childClipBounds, false);
 		}
 	}
