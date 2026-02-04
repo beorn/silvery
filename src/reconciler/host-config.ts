@@ -128,6 +128,15 @@ export const hostConfig = {
 
 	// Tree operations
 	appendChild(parentInstance: InkxNode, child: InkxNode) {
+		// React calls appendChild to move an existing child during keyed reorder.
+		// Remove from old position first to avoid duplicating in the children array.
+		const existingIndex = parentInstance.children.indexOf(child);
+		if (existingIndex !== -1) {
+			parentInstance.children.splice(existingIndex, 1);
+			if (parentInstance.layoutNode && child.layoutNode) {
+				parentInstance.layoutNode.removeChild(child.layoutNode);
+			}
+		}
 		child.parent = parentInstance;
 		parentInstance.children.push(child);
 		// Only add to layout tree if both nodes have layout nodes
@@ -153,6 +162,14 @@ export const hostConfig = {
 	},
 
 	appendChildToContainer(container: Container, child: InkxNode) {
+		// Remove from old position if already a child (keyed reorder)
+		const existingIndex = container.root.children.indexOf(child);
+		if (existingIndex !== -1) {
+			container.root.children.splice(existingIndex, 1);
+			if (container.root.layoutNode && child.layoutNode) {
+				container.root.layoutNode.removeChild(child.layoutNode);
+			}
+		}
 		child.parent = container.root;
 		container.root.children.push(child);
 		if (container.root.layoutNode && child.layoutNode) {
@@ -198,6 +215,15 @@ export const hostConfig = {
 	},
 
 	insertBefore(parentInstance: InkxNode, child: InkxNode, beforeChild: InkxNode) {
+		// React calls insertBefore to move an existing child during keyed reorder.
+		// Remove from old position first to avoid duplicating in the children array.
+		const existingIndex = parentInstance.children.indexOf(child);
+		if (existingIndex !== -1) {
+			parentInstance.children.splice(existingIndex, 1);
+			if (parentInstance.layoutNode && child.layoutNode) {
+				parentInstance.layoutNode.removeChild(child.layoutNode);
+			}
+		}
 		const beforeIndex = parentInstance.children.indexOf(beforeChild);
 		if (beforeIndex !== -1) {
 			child.parent = parentInstance;
@@ -217,6 +243,14 @@ export const hostConfig = {
 	},
 
 	insertInContainerBefore(container: Container, child: InkxNode, beforeChild: InkxNode) {
+		// Remove from old position if already a child (keyed reorder)
+		const existingIndex = container.root.children.indexOf(child);
+		if (existingIndex !== -1) {
+			container.root.children.splice(existingIndex, 1);
+			if (container.root.layoutNode && child.layoutNode) {
+				container.root.layoutNode.removeChild(child.layoutNode);
+			}
+		}
 		const beforeIndex = container.root.children.indexOf(beforeChild);
 		if (beforeIndex !== -1) {
 			child.parent = container.root;
