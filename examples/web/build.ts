@@ -15,6 +15,29 @@ const distDir = join(__dirname, "dist")
 // Ensure dist directory exists
 await mkdir(distDir, { recursive: true })
 
+// Browser-safe defines for Node.js globals.
+// @beorn/logger and @beorn/chalkx access process.env at module init,
+// which throws ReferenceError in browsers where `process` is undefined.
+const browserDefines: Record<string, string> = {
+  "process.env.NODE_ENV": '"production"',
+  "process.env.LOG_LEVEL": "undefined",
+  "process.env.TRACE": "undefined",
+  "process.env.TRACE_FORMAT": "undefined",
+  "process.env.DEBUG": "undefined",
+  "process.env.NO_COLOR": "undefined",
+  "process.env.FORCE_COLOR": "undefined",
+  "process.env.TERM": "undefined",
+  "process.env.TERM_PROGRAM": "undefined",
+  "process.env.COLORTERM": "undefined",
+  "process.env.CI": "undefined",
+  "process.env.GITHUB_ACTIONS": "undefined",
+  "process.env.KITTY_WINDOW_ID": "undefined",
+  "process.env.WT_SESSION": "undefined",
+  "process.env.LANG": "undefined",
+  "process.env.LC_ALL": "undefined",
+  "process.env.LC_CTYPE": "undefined",
+}
+
 // Build canvas app
 const canvasResult = await Bun.build({
   entrypoints: [join(__dirname, "canvas-app.tsx")],
@@ -23,9 +46,7 @@ const canvasResult = await Bun.build({
   format: "esm",
   minify: false,
   sourcemap: "external",
-  define: {
-    "process.env.NODE_ENV": '"production"',
-  },
+  define: browserDefines,
 })
 
 if (!canvasResult.success) {
@@ -44,9 +65,7 @@ const domResult = await Bun.build({
   format: "esm",
   minify: false,
   sourcemap: "external",
-  define: {
-    "process.env.NODE_ENV": '"production"',
-  },
+  define: browserDefines,
 })
 
 if (!domResult.success) {
