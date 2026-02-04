@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 /**
  * Tests for example cursor movements
  *
- * These tests verify that stdin.write() properly triggers useInput hooks
+ * These tests verify that app.stdin.write() properly triggers useInput hooks
  * and that state updates are reflected in the rendered output.
  */
 import { describe, expect, it } from 'vitest';
 import { Box, type Key, Text, useInput } from '../src/index.js';
-import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer } from '../src/testing/index.tsx';
 
 // Simplified Dashboard component for testing
 function TestDashboard() {
@@ -51,67 +51,67 @@ describe('Dashboard cursor movement', () => {
 	const render = createRenderer({ cols: 100, rows: 20 });
 
 	it('renders initial state with pane 1 selected', () => {
-		const { lastFrame } = render(<TestDashboard />);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const app = render(<TestDashboard />);
+		const frame = app.text;
 		expect(frame).toContain('Pane 1 [SEL]');
 		expect(frame).not.toContain('Pane 2 [SEL]');
 		expect(frame).not.toContain('Pane 3 [SEL]');
 	});
 
 	it("moves right when 'l' is pressed via stdin", () => {
-		const { lastFrame, stdin } = render(<TestDashboard />);
+		const app = render(<TestDashboard />);
 
 		// Initial state
-		let frame = stripAnsi(lastFrame() ?? '');
+		let frame = app.text;
 		expect(frame).toContain('Pane 1 [SEL]');
 
 		// Send 'l' to move right - state should update
-		stdin.write('l');
-		frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('l');
+		frame = app.text;
 		expect(frame).toContain('Pane 2 [SEL]');
 		expect(frame).not.toContain('Pane 1 [SEL]');
 	});
 
 	it("moves left when 'h' is pressed via stdin", () => {
-		const { lastFrame, stdin } = render(<TestDashboard />);
+		const app = render(<TestDashboard />);
 
 		// Move to pane 2 first
-		stdin.write('l');
-		let frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('l');
+		let frame = app.text;
 		expect(frame).toContain('Pane 2 [SEL]');
 
 		// Move left back to pane 1
-		stdin.write('h');
-		frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('h');
+		frame = app.text;
 		expect(frame).toContain('Pane 1 [SEL]');
 	});
 
 	it('wraps around when navigating past boundaries', () => {
-		const { lastFrame, stdin } = render(<TestDashboard />);
+		const app = render(<TestDashboard />);
 
 		// Move left from pane 1 - should wrap to pane 3
-		stdin.write('h');
-		let frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('h');
+		let frame = app.text;
 		expect(frame).toContain('Pane 3 [SEL]');
 
 		// Move right from pane 3 - should wrap to pane 1
-		stdin.write('l');
-		frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('l');
+		frame = app.text;
 		expect(frame).toContain('Pane 1 [SEL]');
 	});
 
 	it('handles multiple rapid inputs', () => {
-		const { lastFrame, stdin } = render(<TestDashboard />);
+		const app = render(<TestDashboard />);
 
 		// Move right twice quickly
-		stdin.write('l');
-		stdin.write('l');
-		let frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('l');
+		app.stdin.write('l');
+		let frame = app.text;
 		expect(frame).toContain('Pane 3 [SEL]');
 
 		// Move left once
-		stdin.write('h');
-		frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('h');
+		frame = app.text;
 		expect(frame).toContain('Pane 2 [SEL]');
 	});
 });
@@ -150,60 +150,60 @@ describe('Scroll list cursor movement', () => {
 	const render = createRenderer({ cols: 60, rows: 15 });
 
 	it('renders initial state with first item selected', () => {
-		const { lastFrame } = render(<TestScrollList />);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const app = render(<TestScrollList />);
+		const frame = app.text;
 		expect(frame).toContain('> Item A');
 		expect(frame).not.toContain('> Item B');
 	});
 
 	it("moves down when 'j' is pressed via stdin", () => {
-		const { lastFrame, stdin } = render(<TestScrollList />);
+		const app = render(<TestScrollList />);
 
 		// Initial state
-		let frame = stripAnsi(lastFrame() ?? '');
+		let frame = app.text;
 		expect(frame).toContain('> Item A');
 
 		// Send 'j' to move down - state should update
-		stdin.write('j');
-		frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('j');
+		frame = app.text;
 		expect(frame).toContain('> Item B');
 		expect(frame).not.toContain('> Item A');
 	});
 
 	it("moves up when 'k' is pressed via stdin", () => {
-		const { lastFrame, stdin } = render(<TestScrollList />);
+		const app = render(<TestScrollList />);
 
 		// Move down first
-		stdin.write('j');
-		stdin.write('j');
-		let frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('j');
+		app.stdin.write('j');
+		let frame = app.text;
 		expect(frame).toContain('> Item C');
 
 		// Move up
-		stdin.write('k');
-		frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('k');
+		frame = app.text;
 		expect(frame).toContain('> Item B');
 	});
 
 	it('clamps at list boundaries', () => {
-		const { lastFrame, stdin } = render(<TestScrollList />);
+		const app = render(<TestScrollList />);
 
 		// Try to move up from first item - should stay at first
-		stdin.write('k');
-		let frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('k');
+		let frame = app.text;
 		expect(frame).toContain('> Item A');
 
 		// Move to last item
-		stdin.write('j');
-		stdin.write('j');
-		stdin.write('j');
-		stdin.write('j');
-		frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('j');
+		app.stdin.write('j');
+		app.stdin.write('j');
+		app.stdin.write('j');
+		frame = app.text;
 		expect(frame).toContain('> Item E');
 
 		// Try to move past last - should stay at last
-		stdin.write('j');
-		frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('j');
+		frame = app.text;
 		expect(frame).toContain('> Item E');
 	});
 });

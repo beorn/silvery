@@ -15,39 +15,39 @@ const render = createRenderer({ cols: 80, rows: 24 });
 describe('InkxLocator', () => {
 	describe('getByText', () => {
 		test('finds element by exact text', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Hello')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByText('Hello').count()).toBe(1);
 		});
 
 		test('finds element by partial text', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Hello World')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByText('World').count()).toBe(1);
 		});
 
 		test('finds element by regex', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Task 123')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByText(/Task \d+/).count()).toBe(1);
 		});
 
 		test('returns 0 count for non-matching text', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Hello')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByText('Goodbye').count()).toBe(0);
 		});
 
 		test('finds multiple elements with same text', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -56,38 +56,38 @@ describe('InkxLocator', () => {
 					React.createElement(Text, null, 'Item'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByText('Item').count()).toBe(3);
 		});
 	});
 
 	describe('getByTestId', () => {
 		test('finds element by testID prop', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					{ testID: 'container' },
 					React.createElement(Text, null, 'Content'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('container').count()).toBe(1);
 		});
 
 		test('returns 0 count for non-matching testID', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					{ testID: 'container' },
 					React.createElement(Text, null, 'Content'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('other').count()).toBe(0);
 		});
 
 		test('finds nested element by testID', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -98,14 +98,14 @@ describe('InkxLocator', () => {
 					),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('deep-text').count()).toBe(1);
 		});
 	});
 
 	describe('locator (attribute selectors)', () => {
 		test('finds by attribute presence [attr]', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -113,12 +113,12 @@ describe('InkxLocator', () => {
 					React.createElement(Text, null, 'Not selected'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.locator('[data-selected]').count()).toBe(1);
 		});
 
 		test("finds by attribute value [attr='value']", () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -126,13 +126,13 @@ describe('InkxLocator', () => {
 					React.createElement(Text, { 'data-status': 'todo' }, 'Todo task'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.locator('[data-status="done"]').count()).toBe(1);
 			expect(locator.locator('[data-status="todo"]').count()).toBe(1);
 		});
 
 		test("finds by attribute prefix [attr^='prefix']", () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -141,12 +141,12 @@ describe('InkxLocator', () => {
 					React.createElement(Text, { testID: 'other' }, 'Other'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.locator('[testID^="task-"]').count()).toBe(2);
 		});
 
 		test("finds by attribute suffix [attr$='suffix']", () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -155,12 +155,12 @@ describe('InkxLocator', () => {
 					React.createElement(Text, { testID: 'header' }, 'Header'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.locator('[testID$="-column"]').count()).toBe(2);
 		});
 
 		test("finds by attribute contains [attr*='contains']", () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -169,22 +169,22 @@ describe('InkxLocator', () => {
 					React.createElement(Text, { testID: 'header' }, 'Header'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.locator('[testID*="task"]').count()).toBe(2);
 		});
 
 		test('throws for invalid tag selector', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Test')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(() => locator.locator('invalid')).toThrow(/tag\/type selectors/);
 		});
 	});
 
 	describe('narrowing (first, last, nth)', () => {
 		test('first() returns first matching element', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -193,12 +193,12 @@ describe('InkxLocator', () => {
 					React.createElement(Text, { testID: 'item' }, 'Third'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('item').first().textContent()).toBe('First');
 		});
 
 		test('last() returns last matching element', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -207,12 +207,12 @@ describe('InkxLocator', () => {
 					React.createElement(Text, { testID: 'item' }, 'Third'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('item').last().textContent()).toBe('Third');
 		});
 
 		test('nth() returns element at index', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -221,34 +221,34 @@ describe('InkxLocator', () => {
 					React.createElement(Text, { testID: 'item' }, 'Third'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('item').nth(1).textContent()).toBe('Second');
 		});
 	});
 
 	describe('textContent', () => {
 		test('returns text content of element', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					{ testID: 'container' },
 					React.createElement(Text, null, 'Hello World'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('container').textContent()).toBe('Hello World');
 		});
 
 		test('returns empty string for non-matching locator', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Test')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('nonexistent').textContent()).toBe('');
 		});
 
 		test('concatenates text from nested children', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					{ testID: 'parent' },
@@ -256,43 +256,43 @@ describe('InkxLocator', () => {
 					React.createElement(Text, null, 'World'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('parent').textContent()).toBe('Hello World');
 		});
 	});
 
 	describe('getAttribute', () => {
 		test('returns attribute value', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
 					React.createElement(Text, { testID: 'task', 'data-status': 'done' }, 'Task'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('task').getAttribute('data-status')).toBe('done');
 		});
 
 		test('returns undefined for missing attribute', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, { testID: 'task' }, 'Task')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('task').getAttribute('data-status')).toBeUndefined();
 		});
 	});
 
 	describe('boundingBox', () => {
 		test('returns bounding box with position and dimensions', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					{ testID: 'container', width: 40, height: 10 },
 					React.createElement(Text, null, 'Content'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			const box = locator.getByTestId('container').boundingBox();
 			expect(box).not.toBeNull();
 			expect(box!.width).toBe(40);
@@ -302,39 +302,39 @@ describe('InkxLocator', () => {
 		});
 
 		test('returns null for non-matching locator', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Test')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('nonexistent').boundingBox()).toBeNull();
 		});
 	});
 
 	describe('isVisible', () => {
 		test('returns true for element with dimensions', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					{ testID: 'visible', width: 10, height: 5 },
 					React.createElement(Text, null, 'Content'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('visible').isVisible()).toBe(true);
 		});
 
 		test('returns false for non-matching locator', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Test')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('nonexistent').isVisible()).toBe(false);
 		});
 	});
 
 	describe('chaining queries', () => {
 		test('chains getByText after getByTestId', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -350,7 +350,7 @@ describe('InkxLocator', () => {
 					),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			// Note: chaining currently searches from root, not scoped
 			// This tests that queries can be chained syntactically
 			expect(locator.getByTestId('sidebar').count()).toBe(1);
@@ -360,17 +360,17 @@ describe('InkxLocator', () => {
 
 	describe('resolve and resolveAll', () => {
 		test('resolve returns single node', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, { testID: 'target' }, 'Target')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			const node = locator.getByTestId('target').resolve();
 			expect(node).not.toBeNull();
 			expect(node!.type).toBe('inkx-text');
 		});
 
 		test('resolveAll returns array of nodes', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(
 					Box,
 					null,
@@ -378,7 +378,7 @@ describe('InkxLocator', () => {
 					React.createElement(Text, { testID: 'item' }, 'Two'),
 				),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			const nodes = locator.getByTestId('item').resolveAll();
 			expect(nodes.length).toBe(2);
 			// Use locator textContent for proper text extraction
@@ -388,20 +388,20 @@ describe('InkxLocator', () => {
 		});
 
 		test('resolve returns null for non-matching', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Test')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 			expect(locator.getByTestId('nonexistent').resolve()).toBeNull();
 		});
 	});
 
 	describe('unsupported selectors', () => {
 		test('throws on pseudo-class selectors', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Test')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 
 			expect(() => locator.locator(':hover')).toThrow(/pseudo-classes/);
 			expect(() => locator.locator('#id:nth-child(2)')).toThrow(/pseudo-classes/);
@@ -409,20 +409,20 @@ describe('InkxLocator', () => {
 		});
 
 		test('throws on pseudo-element selectors', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Test')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 
 			expect(() => locator.locator('::before')).toThrow(/pseudo-elements/);
 			expect(() => locator.locator('#id::after')).toThrow(/km-inkx-css-select/);
 		});
 
 		test('throws on class selectors', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Test')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 
 			expect(() => locator.locator('.myclass')).toThrow(/class selectors/);
 			expect(() => locator.locator('#id.class')).toThrow(/class selectors/);
@@ -430,10 +430,10 @@ describe('InkxLocator', () => {
 		});
 
 		test('throws on tag selectors', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Test')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 
 			expect(() => locator.locator('div')).toThrow(/tag\/type selectors/);
 			expect(() => locator.locator('span')).toThrow(/\[data-view=/);
@@ -441,10 +441,10 @@ describe('InkxLocator', () => {
 		});
 
 		test('throws on universal selector', () => {
-			const { getContainer } = render(
+			const app = render(
 				React.createElement(Box, null, React.createElement(Text, null, 'Test')),
 			);
-			const locator = createLocator(getContainer());
+			const locator = createLocator(app.getContainer());
 
 			expect(() => locator.locator('*')).toThrow(/universal selector/);
 			expect(() => locator.locator('*')).toThrow(/km-inkx-css-select/);

@@ -95,27 +95,27 @@ describe('useInput memory: listener cleanup', () => {
 		const render = createRenderer();
 
 		// Get the initial listener count by doing a reference render
-		const { unmount: refUnmount, stdin } = render(<Text>Reference</Text>);
+		const refApp = render(<Text>Reference</Text>);
 
 		// Access the underlying EventEmitter from stdin
 		// In test renderer, stdin.write triggers events on the internal emitter
 		// We need to track listener growth through multiple mount/unmount cycles
 
-		refUnmount();
+		refApp.unmount();
 
 		// Now test rapid mount/unmount cycles
 		const CYCLES = 100;
 		const listenerCounts: number[] = [];
 
 		for (let i = 0; i < CYCLES; i++) {
-			const { unmount } = render(<InputComponent />);
-			unmount();
+			const app = render(<InputComponent />);
+			app.unmount();
 		}
 
 		// After all unmounts, create one more render to check listener count
-		const { lastFrame, unmount: finalUnmount } = render(<Text>Final</Text>);
-		expect(lastFrame()).toContain('Final');
-		finalUnmount();
+		const finalApp = render(<Text>Final</Text>);
+		expect(finalApp.ansi).toContain('Final');
+		finalApp.unmount();
 
 		// If we got here without errors, listeners are being cleaned up
 		// The test renderer's auto-cleanup should prevent accumulation
@@ -125,32 +125,32 @@ describe('useInput memory: listener cleanup', () => {
 	test('useInput cleanup when component is rerendered with different active state', () => {
 		const render = createRenderer();
 
-		const { lastFrame, rerender, unmount } = render(<ConditionalInput active={true} />);
-		expect(lastFrame()).toContain('Active');
+		const app = render(<ConditionalInput active={true} />);
+		expect(app.ansi).toContain('Active');
 
 		// Toggle active state multiple times
 		for (let i = 0; i < 50; i++) {
-			rerender(<ConditionalInput active={false} />);
-			rerender(<ConditionalInput active={true} />);
+			app.rerender(<ConditionalInput active={false} />);
+			app.rerender(<ConditionalInput active={true} />);
 		}
 
-		const finalFrame = lastFrame();
+		const finalFrame = app.ansi;
 		expect(finalFrame).toContain('Active');
 
-		unmount();
+		app.unmount();
 	});
 
 	test('nested useInput hooks are cleaned up on unmount', () => {
 		const render = createRenderer();
 
-		const { stdin, unmount } = render(<NestedInputComponent />);
+		const app = render(<NestedInputComponent />);
 
 		// Trigger insert mode
-		stdin.write('i');
+		app.stdin.write('i');
 
 		// Now InsertModeIndicator is mounted with its own useInput
 		// Unmount entire tree
-		unmount();
+		app.unmount();
 
 		// If we get here without errors, cleanup worked
 		expect(true).toBe(true);
@@ -167,7 +167,7 @@ describe('useInput memory: listener cleanup', () => {
 		}
 
 		// Create 100 different handlers and replace them
-		const { rerender, unmount } = render(
+		const app = render(
 			<DynamicHandler handler={(k) => handlers.push(() => k)} />,
 		);
 
@@ -175,10 +175,10 @@ describe('useInput memory: listener cleanup', () => {
 			const newHandler = (k: string) => {
 				handlers.push(() => k);
 			};
-			rerender(<DynamicHandler handler={newHandler} />);
+			app.rerender(<DynamicHandler handler={newHandler} />);
 		}
 
-		unmount();
+		app.unmount();
 
 		// The test passes if no memory-related errors occurred
 		expect(true).toBe(true);
@@ -229,12 +229,12 @@ describe('EventEmitter accumulation', () => {
 			return <Text>Child {id}</Text>;
 		}
 
-		const { lastFrame, unmount } = render(<MultiInputApp />);
+		const app = render(<MultiInputApp />);
 
-		expect(lastFrame()).toContain('Child a');
-		expect(lastFrame()).toContain('Child e');
+		expect(app.ansi).toContain('Child a');
+		expect(app.ansi).toContain('Child e');
 
-		unmount();
+		app.unmount();
 
 		// Test passes if unmount doesn't throw from listener cleanup issues
 		expect(true).toBe(true);
@@ -245,8 +245,8 @@ describe('EventEmitter accumulation', () => {
 
 		// Create and unmount multiple renderers
 		for (let i = 0; i < 10; i++) {
-			const { unmount } = render(<InputComponent />);
-			unmount();
+			const app = render(<InputComponent />);
+			app.unmount();
 		}
 
 		// No accumulated listeners should remain
@@ -274,29 +274,29 @@ describe('Long-running app memory patterns', () => {
 			return <Text>Count: {count}</Text>;
 		}
 
-		const { lastFrame, stdin, frames, clear, unmount } = render(<Counter />);
+		const app = render(<Counter />);
 
 		// Generate many frames
 		for (let i = 0; i < 500; i++) {
-			stdin.write('+');
+			app.stdin.write('+');
 		}
 
-		expect(lastFrame()).toContain('Count: 500');
+		expect(app.ansi).toContain('Count: 500');
 
 		// Clear frames to prevent test memory issues
-		const frameCountBefore = frames.length;
-		clear();
-		expect(frames.length).toBe(0);
+		const frameCountBefore = app.frames.length;
+		app.clear();
+		expect(app.frames.length).toBe(0);
 
 		// Generate more frames after clear
 		for (let i = 0; i < 100; i++) {
-			stdin.write('-');
+			app.stdin.write('-');
 		}
 
-		expect(lastFrame()).toContain('Count: 400');
-		expect(frames.length).toBeLessThan(frameCountBefore);
+		expect(app.ansi).toContain('Count: 400');
+		expect(app.frames.length).toBeLessThan(frameCountBefore);
 
-		unmount();
+		app.unmount();
 	});
 
 	test('rerender cycles do not accumulate nodes', { timeout: 15000 }, () => {
@@ -312,25 +312,25 @@ describe('Long-running app memory patterns', () => {
 			);
 		}
 
-		const { lastFrame, rerender, unmount } = render(<DynamicList count={10} />);
+		const app = render(<DynamicList count={10} />);
 
 		// Grow and shrink list many times (reduced from 50 cycles for CI)
 		for (let cycle = 0; cycle < 20; cycle++) {
 			for (let size = 1; size <= 20; size++) {
-				rerender(<DynamicList count={size} />);
+				app.rerender(<DynamicList count={size} />);
 			}
 			for (let size = 20; size >= 1; size--) {
-				rerender(<DynamicList count={size} />);
+				app.rerender(<DynamicList count={size} />);
 			}
 		}
 
 		// Final render should work correctly
-		rerender(<DynamicList count={5} />);
-		expect(lastFrame()).toContain('Item 0');
-		expect(lastFrame()).toContain('Item 4');
-		expect(lastFrame()).not.toContain('Item 5');
+		app.rerender(<DynamicList count={5} />);
+		expect(app.ansi).toContain('Item 0');
+		expect(app.ansi).toContain('Item 4');
+		expect(app.ansi).not.toContain('Item 5');
 
-		unmount();
+		app.unmount();
 	});
 
 	test('deeply nested components do not leak on restructure', () => {
@@ -353,19 +353,19 @@ describe('Long-running app memory patterns', () => {
 			);
 		}
 
-		const { lastFrame, rerender, unmount } = render(<DeepNest depth={10} />);
-		expect(lastFrame()).toContain('Leaf at depth 10');
+		const app = render(<DeepNest depth={10} />);
+		expect(app.ansi).toContain('Leaf at depth 10');
 
 		// Change nesting depth many times
 		for (let i = 0; i < 50; i++) {
 			const depth = (i % 20) + 1;
-			rerender(<DeepNest depth={depth} />);
+			app.rerender(<DeepNest depth={depth} />);
 		}
 
-		rerender(<DeepNest depth={5} />);
-		expect(lastFrame()).toContain('Leaf at depth 5');
+		app.rerender(<DeepNest depth={5} />);
+		expect(app.ansi).toContain('Leaf at depth 5');
 
-		unmount();
+		app.unmount();
 	});
 });
 
@@ -386,18 +386,18 @@ describe('Yoga node cleanup', () => {
 			);
 		}
 
-		const { lastFrame, rerender, unmount } = render(<RemovableChild show={true} />);
-		expect(lastFrame()).toContain('Conditional child');
+		const app = render(<RemovableChild show={true} />);
+		expect(app.ansi).toContain('Conditional child');
 
 		// Remove child
-		rerender(<RemovableChild show={false} />);
-		expect(lastFrame()).not.toContain('Conditional child');
+		app.rerender(<RemovableChild show={false} />);
+		expect(app.ansi).not.toContain('Conditional child');
 
 		// Re-add child
-		rerender(<RemovableChild show={true} />);
-		expect(lastFrame()).toContain('Conditional child');
+		app.rerender(<RemovableChild show={true} />);
+		expect(app.ansi).toContain('Conditional child');
 
-		unmount();
+		app.unmount();
 	});
 
 	test('rapid child addition/removal frees nodes properly', () => {
@@ -413,21 +413,21 @@ describe('Yoga node cleanup', () => {
 			);
 		}
 
-		const { lastFrame, rerender, unmount } = render(<TogglingChildren items={['a', 'b', 'c']} />);
+		const app = render(<TogglingChildren items={['a', 'b', 'c']} />);
 
 		// Rapidly add and remove items
 		for (let i = 0; i < 100; i++) {
 			const items = Array.from({ length: (i % 10) + 1 }, (_, j) => `item-${j}`);
-			rerender(<TogglingChildren items={items} />);
+			app.rerender(<TogglingChildren items={items} />);
 		}
 
 		// Final state
-		rerender(<TogglingChildren items={['x', 'y', 'z']} />);
-		expect(lastFrame()).toContain('x');
-		expect(lastFrame()).toContain('y');
-		expect(lastFrame()).toContain('z');
+		app.rerender(<TogglingChildren items={['x', 'y', 'z']} />);
+		expect(app.ansi).toContain('x');
+		expect(app.ansi).toContain('y');
+		expect(app.ansi).toContain('z');
 
-		unmount();
+		app.unmount();
 	});
 
 	test('node replacement (key change) frees old node', () => {
@@ -441,17 +441,17 @@ describe('Yoga node cleanup', () => {
 			);
 		}
 
-		const { lastFrame, rerender, unmount } = render(<KeyedChild id="first" />);
-		expect(lastFrame()).toContain('Child with key: first');
+		const app = render(<KeyedChild id="first" />);
+		expect(app.ansi).toContain('Child with key: first');
 
 		// Change key many times (forces node replacement)
 		for (let i = 0; i < 100; i++) {
-			rerender(<KeyedChild id={`key-${i}`} />);
+			app.rerender(<KeyedChild id={`key-${i}`} />);
 		}
 
-		expect(lastFrame()).toContain('Child with key: key-99');
+		expect(app.ansi).toContain('Child with key: key-99');
 
-		unmount();
+		app.unmount();
 	});
 
 	test('container clear frees all nodes', () => {
@@ -472,18 +472,18 @@ describe('Yoga node cleanup', () => {
 			);
 		}
 
-		const { lastFrame, unmount } = render1(<ManyChildren />);
-		expect(lastFrame()).toContain('Row 0');
-		expect(lastFrame()).toContain('Row 49');
+		const app1 = render1(<ManyChildren />);
+		expect(app1.ansi).toContain('Row 0');
+		expect(app1.ansi).toContain('Row 49');
 
 		// Unmount clears container and should free all nodes
-		unmount();
+		app1.unmount();
 
 		// Re-render fresh tree with a separate renderer
-		const { lastFrame: newFrame, unmount: newUnmount } = render2(<ManyChildren />);
-		expect(newFrame()).toContain('Row 0');
+		const app2 = render2(<ManyChildren />);
+		expect(app2.ansi).toContain('Row 0');
 
-		newUnmount();
+		app2.unmount();
 	});
 
 	test('text node updates do not create new yoga nodes', () => {
@@ -497,16 +497,16 @@ describe('Yoga node cleanup', () => {
 			);
 		}
 
-		const { lastFrame, rerender, unmount } = render(<TextUpdater text="initial" />);
+		const app = render(<TextUpdater text="initial" />);
 
 		// Update text content many times (should reuse same yoga node)
 		for (let i = 0; i < 200; i++) {
-			rerender(<TextUpdater text={`text-${i}`} />);
+			app.rerender(<TextUpdater text={`text-${i}`} />);
 		}
 
-		expect(lastFrame()).toContain('text-199');
+		expect(app.ansi).toContain('text-199');
 
-		unmount();
+		app.unmount();
 	});
 });
 
@@ -547,7 +547,7 @@ describe('Memory tracking', () => {
 			);
 		}
 
-		const { lastFrame, stdin, unmount } = render(<IntensiveApp />);
+		const app = render(<IntensiveApp />);
 
 		// Capture initial heap if available
 		const initialHeap = process.memoryUsage?.().heapUsed ?? 0;
@@ -556,17 +556,17 @@ describe('Memory tracking', () => {
 		for (let cycle = 0; cycle < 10; cycle++) {
 			// Add 100 items
 			for (let i = 0; i < 100; i++) {
-				stdin.write('a');
+				app.stdin.write('a');
 			}
 
 			// Clear
-			stdin.write('c');
+			app.stdin.write('c');
 		}
 
 		// Final state should be empty
-		expect(lastFrame()).toContain('Items: 0');
+		expect(app.ansi).toContain('Items: 0');
 
-		unmount();
+		app.unmount();
 
 		// Capture final heap
 		const finalHeap = process.memoryUsage?.().heapUsed ?? 0;
@@ -596,7 +596,7 @@ describe('Memory tracking', () => {
 
 		// Create and destroy heavy components (reduced iterations for CI)
 		for (let i = 0; i < 10; i++) {
-			const { unmount } = render(
+			const app = render(
 				<Box flexDirection="column">
 					{Array.from({ length: 50 }, (_, j) => (
 						<Box key={j}>
@@ -605,7 +605,7 @@ describe('Memory tracking', () => {
 					))}
 				</Box>,
 			);
-			unmount();
+			app.unmount();
 		}
 
 		// Trigger GC if available
@@ -629,18 +629,18 @@ describe('Memory stress tests', () => {
 		const render = createRenderer();
 
 		for (let i = 0; i < 1000; i++) {
-			const { unmount } = render(
+			const app = render(
 				<Box>
 					<Text>Cycle {i}</Text>
 				</Box>,
 			);
-			unmount();
+			app.unmount();
 		}
 
 		// Final render should work
-		const { lastFrame, unmount } = render(<Text>Done</Text>);
-		expect(lastFrame()).toContain('Done');
-		unmount();
+		const app = render(<Text>Done</Text>);
+		expect(app.ansi).toContain('Done');
+		app.unmount();
 	});
 
 	test('rapid input events do not cause memory issues', () => {
@@ -654,15 +654,15 @@ describe('Memory stress tests', () => {
 			return <Text>Inputs: {inputCount}</Text>;
 		}
 
-		const { stdin, unmount } = render(<InputCounter />);
+		const app = render(<InputCounter />);
 
 		// Send 10000 rapid inputs
 		for (let i = 0; i < 10000; i++) {
-			stdin.write('x');
+			app.stdin.write('x');
 		}
 
 		expect(inputCount).toBe(10000);
-		unmount();
+		app.unmount();
 	});
 
 	test('large frame buffer is handled correctly', () => {
@@ -682,13 +682,13 @@ describe('Memory stress tests', () => {
 			);
 		}
 
-		const { lastFrame, unmount } = render(<LargeOutput />);
+		const app = render(<LargeOutput />);
 
 		// Frame should contain the grid
-		const frame = lastFrame();
+		const frame = app.ansi;
 		expect(frame).toBeDefined();
 		expect(frame!.length).toBeGreaterThan(1000);
 
-		unmount();
+		app.unmount();
 	});
 });

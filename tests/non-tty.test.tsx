@@ -30,22 +30,22 @@ const render = createRenderer();
 describe('Non-TTY environments (km-wvgu)', () => {
 	describe('Default dimensions when no TTY', () => {
 		test('renders with default 80x24 dimensions', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box width={80}>
 					<Text>Full width text</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('Full width text');
+			expect(app.ansi).toContain('Full width text');
 		});
 
 		test('uses fallback dimensions for vertical layout', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Text>Line 1</Text>
 					<Text>Line 2</Text>
 				</Box>,
 			);
-			const frame = normalizeFrame(lastFrame() ?? '');
+			const frame = normalizeFrame(app.ansi);
 			expect(frame).toContain('Line 1');
 			expect(frame).toContain('Line 2');
 		});
@@ -53,12 +53,12 @@ describe('Non-TTY environments (km-wvgu)', () => {
 
 	describe('Does not crash when stdout is piped', () => {
 		test('basic text rendering works', () => {
-			const { lastFrame } = render(<Text>Hello World</Text>);
-			expect(lastFrame()).toContain('Hello World');
+			const app = render(<Text>Hello World</Text>);
+			expect(app.ansi).toContain('Hello World');
 		});
 
 		test('nested boxes render correctly', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Box flexDirection="row">
 						<Text>A</Text>
@@ -66,56 +66,56 @@ describe('Non-TTY environments (km-wvgu)', () => {
 					</Box>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('A');
-			expect(lastFrame()).toContain('B');
+			expect(app.ansi).toContain('A');
+			expect(app.ansi).toContain('B');
 		});
 
 		test('borders render correctly', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box borderStyle="single" width={10} height={3}>
 					<Text>Hi</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('Hi');
+			expect(app.ansi).toContain('Hi');
 		});
 
 		test('rerender works correctly', () => {
-			const { lastFrame, rerender } = render(<Text>Initial</Text>);
-			expect(lastFrame()).toContain('Initial');
-			rerender(<Text>Updated</Text>);
-			expect(lastFrame()).toContain('Updated');
+			const app = render(<Text>Initial</Text>);
+			expect(app.ansi).toContain('Initial');
+			app.rerender(<Text>Updated</Text>);
+			expect(app.ansi).toContain('Updated');
 		});
 	});
 
 	describe('Graceful degradation', () => {
 		test('styled text renders without crash', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box>
 					<Text color="red">Red</Text>
 					<Text bold>Bold</Text>
 				</Box>,
 			);
-			const frame = normalizeFrame(lastFrame() ?? '');
+			const frame = normalizeFrame(app.ansi);
 			expect(frame).toContain('Red');
 			expect(frame).toContain('Bold');
 		});
 
 		test('unmount works cleanly', () => {
-			const { unmount, lastFrame } = render(<Text>Cleanup test</Text>);
-			expect(lastFrame()).toContain('Cleanup test');
-			unmount();
-			expect(lastFrame()).toContain('Cleanup test');
+			const app = render(<Text>Cleanup test</Text>);
+			expect(app.ansi).toContain('Cleanup test');
+			app.unmount();
+			expect(app.ansi).toContain('Cleanup test');
 		});
 	});
 
 	describe('Edge cases', () => {
 		test('handles empty content', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box>
 					<Text />
 				</Box>,
 			);
-			expect(lastFrame()).toBeDefined();
+			expect(app.ansi).toBeDefined();
 		});
 	});
 });

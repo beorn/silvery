@@ -28,9 +28,9 @@ describe('Exit Behavior', () => {
 				return <Text>Ready</Text>;
 			}
 
-			const { lastFrame } = render(<CaptureExit />);
+			const app = render(<CaptureExit />);
 
-			expect(lastFrame()).toContain('Ready');
+			expect(app.ansi).toContain('Ready');
 			expect(exitFn).toBeInstanceOf(Function);
 		});
 
@@ -45,10 +45,10 @@ describe('Exit Behavior', () => {
 			}
 
 			// Should render without throwing
-			const { lastFrame } = render(<ExitOnMount />);
+			const app = render(<ExitOnMount />);
 
 			// Content should still be rendered
-			expect(lastFrame()).toContain('Exiting');
+			expect(app.ansi).toContain('Exiting');
 		});
 
 		test('exit with error should not throw in test renderer', () => {
@@ -60,8 +60,8 @@ describe('Exit Behavior', () => {
 				return <Text>Exiting with error</Text>;
 			}
 
-			const { lastFrame } = render(<ExitWithError />);
-			expect(lastFrame()).toContain('Exiting with error');
+			const app = render(<ExitWithError />);
+			expect(app.ansi).toContain('Exiting with error');
 		});
 	});
 
@@ -83,10 +83,10 @@ describe('Exit Behavior', () => {
 				return <Text>Status: {status}</Text>;
 			}
 
-			const { lastFrame } = render(<UpdateThenExit />);
+			const app = render(<UpdateThenExit />);
 
 			// Last frame should show the update (React batches the update)
-			expect(lastFrame()).toContain('Status: updated');
+			expect(app.ansi).toContain('Status: updated');
 		});
 
 		test('multiple rapid state changes should all render', () => {
@@ -103,10 +103,10 @@ describe('Exit Behavior', () => {
 				return <Text>Count: {count}</Text>;
 			}
 
-			const { lastFrame } = render(<RapidUpdates />);
+			const app = render(<RapidUpdates />);
 
 			// Final count should be 3 (React batches these)
-			expect(lastFrame()).toContain('Count: 3');
+			expect(app.ansi).toContain('Count: 3');
 		});
 
 		test('nested state updates should complete before exit', () => {
@@ -128,10 +128,10 @@ describe('Exit Behavior', () => {
 				return <Text>Phase: {phase}</Text>;
 			}
 
-			const { lastFrame } = render(<NestedUpdates />);
+			const app = render(<NestedUpdates />);
 
 			// Should reach 'done' state
-			expect(lastFrame()).toContain('Phase: done');
+			expect(app.ansi).toContain('Phase: done');
 		});
 	});
 
@@ -155,16 +155,16 @@ describe('Exit Behavior', () => {
 				);
 			}
 
-			const { lastFrame, rerender } = render(<ListWithExit items={['a', 'b']} />);
+			const app = render(<ListWithExit items={['a', 'b']} />);
 
-			expect(lastFrame()).toContain('a');
-			expect(lastFrame()).toContain('b');
+			expect(app.ansi).toContain('a');
+			expect(app.ansi).toContain('b');
 
 			// Trigger exit by adding third item
-			rerender(<ListWithExit items={['a', 'b', 'c']} />);
+			app.rerender(<ListWithExit items={['a', 'b', 'c']} />);
 
 			// All items should be rendered
-			const frame = lastFrame();
+			const frame = app.ansi;
 			expect(frame).toContain('a');
 			expect(frame).toContain('b');
 			expect(frame).toContain('c');
@@ -191,10 +191,10 @@ describe('Exit Behavior', () => {
 				);
 			}
 
-			const { lastFrame } = render(<StyledExit />);
+			const app = render(<StyledExit />);
 
 			// Content should be present
-			const frame = lastFrame();
+			const frame = app.ansi;
 			expect(frame).toContain('Red text');
 			expect(frame).toContain('Green bold');
 			expect(frame).toContain('Blue bg');
@@ -226,10 +226,10 @@ describe('Exit Behavior', () => {
 				return <Text>{message}</Text>;
 			}
 
-			const { lastFrame } = render(<KeyboardExit />);
+			const app = render(<KeyboardExit />);
 
 			// The goodbye message should be rendered
-			expect(lastFrame()).toContain('Goodbye!');
+			expect(app.ansi).toContain('Goodbye!');
 		});
 	});
 
@@ -252,10 +252,10 @@ describe('Exit Behavior', () => {
 				return <Text>Status: {status}</Text>;
 			}
 
-			const { lastFrame } = render(<SyncCleanup />);
+			const app = render(<SyncCleanup />);
 
 			expect(cleanupCompleted).toBe(true);
-			expect(lastFrame()).toContain('Status: cleaned');
+			expect(app.ansi).toContain('Status: cleaned');
 		});
 
 		test('synchronous state updates before exit should all be captured', () => {
@@ -281,9 +281,9 @@ describe('Exit Behavior', () => {
 				);
 			}
 
-			const { lastFrame } = render(<SyncUpdates />);
+			const app = render(<SyncUpdates />);
 
-			const frame = lastFrame();
+			const frame = app.ansi;
 			expect(frame).toContain('start');
 			expect(frame).toContain('step1');
 			expect(frame).toContain('step2');
@@ -303,21 +303,21 @@ describe('Exit Behavior', () => {
 				return <Text>Done</Text>;
 			}
 
-			const { lastFrame, unmount } = render(<ExitComponent />);
+			const app = render(<ExitComponent />);
 
-			expect(lastFrame()).toContain('Done');
+			expect(app.ansi).toContain('Done');
 
 			// Unmount should not throw
-			expect(() => unmount()).not.toThrow();
+			expect(() => app.unmount()).not.toThrow();
 		});
 
 		test('double unmount should throw', () => {
-			const { unmount } = render(<Text>Test</Text>);
+			const app = render(<Text>Test</Text>);
 
-			unmount();
+			app.unmount();
 
 			// Second unmount should throw
-			expect(() => unmount()).toThrow('Already unmounted');
+			expect(() => app.unmount()).toThrow('Already unmounted');
 		});
 	});
 
@@ -338,13 +338,13 @@ describe('Exit Behavior', () => {
 				return <Text>Frame: {count}</Text>;
 			}
 
-			const { frames, lastFrame } = render(<FrameTracker />);
+			const app = render(<FrameTracker />);
 
 			// Should have captured multiple frames
-			expect(frames.length).toBeGreaterThanOrEqual(1);
+			expect(app.frames.length).toBeGreaterThanOrEqual(1);
 
 			// Last frame should show final count
-			expect(lastFrame()).toContain('Frame: 3');
+			expect(app.ansi).toContain('Frame: 3');
 		});
 	});
 });
@@ -364,8 +364,8 @@ describe('Exit edge cases', () => {
 		}
 
 		// Should not throw or cause issues
-		const { lastFrame } = render(<MultiExit />);
-		expect(lastFrame()).toContain('Multi-exit');
+		const app = render(<MultiExit />);
+		expect(app.ansi).toContain('Multi-exit');
 	});
 
 	test('exit with undefined error should work', () => {
@@ -379,8 +379,8 @@ describe('Exit edge cases', () => {
 			return <Text>Undefined error</Text>;
 		}
 
-		const { lastFrame } = render(<UndefinedError />);
-		expect(lastFrame()).toContain('Undefined error');
+		const app = render(<UndefinedError />);
+		expect(app.ansi).toContain('Undefined error');
 	});
 
 	test('component updating after exit should not crash', () => {
@@ -399,9 +399,9 @@ describe('Exit edge cases', () => {
 			return <Text>Value: {value}</Text>;
 		}
 
-		const { lastFrame } = render(<UpdateAfterExit />);
+		const app = render(<UpdateAfterExit />);
 
 		// Should render the updated value
-		expect(lastFrame()).toContain('Value: after');
+		expect(app.ansi).toContain('Value: after');
 	});
 });

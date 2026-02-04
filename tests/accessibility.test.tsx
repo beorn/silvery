@@ -22,7 +22,7 @@ const render = createRenderer();
 describe('Accessibility (km-017z)', () => {
 	describe('Screen reader compatibility', () => {
 		test('content is readable when ANSI stripped', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Text color="red" bold>
 						Error: Something went wrong
@@ -32,7 +32,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const frame = lastFrame();
+			const frame = app.ansi;
 			expect(frame).toBeDefined();
 
 			// Strip ANSI and verify content is still meaningful
@@ -43,13 +43,13 @@ describe('Accessibility (km-017z)', () => {
 		});
 
 		test('nested colored text preserves meaning when stripped', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Text>
 					Status: <Text color="green">PASS</Text> - All tests passed
 				</Text>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 			expect(stripped).toContain('Status:');
 			expect(stripped).toContain('PASS');
 			expect(stripped).toContain('All tests passed');
@@ -57,7 +57,7 @@ describe('Accessibility (km-017z)', () => {
 
 		test('styled status indicators have text equivalents', () => {
 			// Good accessibility: use both color AND text/shape
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Text>
 						<Text color="green">[PASS]</Text> Test 1
@@ -71,7 +71,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 			// Status is conveyed through text, not just color
 			expect(stripped).toContain('[PASS]');
 			expect(stripped).toContain('[FAIL]');
@@ -99,16 +99,16 @@ describe('Accessibility (km-017z)', () => {
 		];
 
 		test('basic text has no problematic invisible characters', () => {
-			const { lastFrame } = render(<Text>Hello World</Text>);
+			const app = render(<Text>Hello World</Text>);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 			for (const { char, name } of problematicChars) {
 				expect(stripped).not.toContain(char);
 			}
 		});
 
 		test('styled text has no problematic invisible characters', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box>
 					<Text color="red" bold>
 						Styled
@@ -118,20 +118,20 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 			for (const { char } of problematicChars) {
 				expect(stripped).not.toContain(char);
 			}
 		});
 
 		test('border characters are standard box drawing', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box borderStyle="single" width={10} height={3}>
 					<Text>Hi</Text>
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 
 			// Box drawing characters should be from standard Unicode block
 			// U+2500-U+257F (Box Drawing)
@@ -152,9 +152,9 @@ describe('Accessibility (km-017z)', () => {
 		test('ZWJ is only used in valid emoji sequences', () => {
 			// ZWJ (U+200D) is acceptable when part of emoji sequences like family emoji
 			// but should not appear as standalone invisible character
-			const { lastFrame } = render(<Text>Hello World</Text>);
+			const app = render(<Text>Hello World</Text>);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 			const graphemes = splitGraphemes(stripped.trim());
 
 			// Check each grapheme
@@ -168,13 +168,13 @@ describe('Accessibility (km-017z)', () => {
 		});
 
 		test('output contains no private use area characters', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box borderStyle="double" width={15} height={3}>
 					<Text>Content</Text>
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 
 			// Private Use Area ranges
 			const puaRanges = [
@@ -198,7 +198,7 @@ describe('Accessibility (km-017z)', () => {
 
 	describe('logical reading order is maintained', () => {
 		test('vertical layout produces top-to-bottom reading order', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Text>First line</Text>
 					<Text>Second line</Text>
@@ -206,7 +206,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 			const lines = stripped.split('\n').filter((l) => l.trim());
 
 			// Content should appear in document order
@@ -219,7 +219,7 @@ describe('Accessibility (km-017z)', () => {
 		});
 
 		test('horizontal layout maintains left-to-right order', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="row">
 					<Text>Left</Text>
 					<Text> Middle </Text>
@@ -227,7 +227,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 
 			// In a horizontal layout, text should appear left to right
 			const leftIdx = stripped.indexOf('Left');
@@ -239,7 +239,7 @@ describe('Accessibility (km-017z)', () => {
 		});
 
 		test('nested layouts maintain semantic order', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Text>Header</Text>
 					<Box flexDirection="row">
@@ -251,7 +251,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 
 			// Vertical: Header, then row content, then Footer
 			const headerIdx = stripped.indexOf('Header');
@@ -266,7 +266,7 @@ describe('Accessibility (km-017z)', () => {
 
 		test('tables have row-major reading order', () => {
 			// Simulating a simple table structure
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Box flexDirection="row">
 						<Text>A1</Text>
@@ -285,7 +285,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 
 			// Row-major order: A1, B1, C1, A2, B2, C2
 			const indices = ['A1', 'B1', 'C1', 'A2', 'B2', 'C2'].map((s) => stripped.indexOf(s));
@@ -306,7 +306,7 @@ describe('Accessibility (km-017z)', () => {
 			// Bad: relying only on color
 			// Good: using both color AND shape/text
 
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					{/* Good: checkmark + color for success */}
 					<Text>
@@ -323,7 +323,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 
 			// Even without colors, status is conveyed through text symbols
 			expect(stripped).toContain('[OK]');
@@ -334,7 +334,7 @@ describe('Accessibility (km-017z)', () => {
 		test('selection state uses both color AND formatting', () => {
 			// Document the km pattern: selected items use both color change AND potentially other cues
 			// Use explicit prefix characters (not leading spaces) for alignment indicators
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Text backgroundColor="cyan" color="black">
 						&gt; Selected item
@@ -343,7 +343,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 
 			// The ">" prefix provides a non-color indicator of selection
 			// Unselected items use "·" (middle dot) as a visible but subtle prefix
@@ -353,7 +353,7 @@ describe('Accessibility (km-017z)', () => {
 
 		test('text contrast is maintained with background colors', () => {
 			// Render text with various background colors
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Text backgroundColor="red" color="white">
 						White on Red
@@ -367,7 +367,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const frame = lastFrame()!;
+			const frame = app.ansi;
 
 			// Content should be present (visual contrast is a design concern,
 			// but we can verify the text is there)
@@ -383,13 +383,13 @@ describe('Accessibility (km-017z)', () => {
 
 	describe('ANSI codes are properly handled', () => {
 		test('ANSI codes are complete and balanced', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Text color="red" bold>
 					Styled text
 				</Text>,
 			);
 
-			const frame = lastFrame()!;
+			const frame = app.ansi;
 
 			// Should have ANSI codes
 			expect(hasAnsi(frame)).toBe(true);
@@ -411,13 +411,13 @@ describe('Accessibility (km-017z)', () => {
 		});
 
 		test('stripped output has correct display width', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Text color="red" bold>
 					Hello
 				</Text>,
 			);
 
-			const frame = lastFrame()!;
+			const frame = app.ansi;
 			const stripped = stripAnsi(frame);
 
 			// Display width of stripped content should match visible characters
@@ -431,9 +431,9 @@ describe('Accessibility (km-017z)', () => {
 
 		test('hex color codes are handled', () => {
 			// Inkx supports hex color codes
-			const { lastFrame } = render(<Text color="#ff0000">Hex color red</Text>);
+			const app = render(<Text color="#ff0000">Hex color red</Text>);
 
-			const frame = lastFrame()!;
+			const frame = app.ansi;
 			const stripped = stripAnsi(frame);
 
 			// Content should be preserved
@@ -450,7 +450,7 @@ describe('Accessibility (km-017z)', () => {
 
 	describe('semantic structure', () => {
 		test('headings and content have visual hierarchy', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Text bold color="yellow">
 						Main Heading
@@ -463,7 +463,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 
 			// All content should be readable in order
 			const mainIdx = stripped.indexOf('Main Heading');
@@ -477,7 +477,7 @@ describe('Accessibility (km-017z)', () => {
 		});
 
 		test('grouped content maintains structure when stripped', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column">
 					<Box borderStyle="single" flexDirection="column">
 						<Text>Group 1 Title</Text>
@@ -490,7 +490,7 @@ describe('Accessibility (km-017z)', () => {
 				</Box>,
 			);
 
-			const stripped = stripAnsi(lastFrame()!);
+			const stripped = app.text;
 
 			// Groups should maintain their content order
 			const g1Title = stripped.indexOf('Group 1 Title');

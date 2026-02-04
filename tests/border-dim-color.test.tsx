@@ -49,12 +49,12 @@ function hasGreen(str: string): boolean {
 
 describe('borderDimColor does not affect child Text', () => {
 	test('Box with dim style does not dim child Text', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" dim>
 				<Text>Hello</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		// The text "Hello" should be present
 		expect(stripAnsi(frame)).toContain('Hello');
@@ -73,12 +73,12 @@ describe('borderDimColor does not affect child Text', () => {
 
 	test('Text at left edge of bordered Box is not dimmed', () => {
 		// This reproduces the Ink bug where text touching the left border gets dimmed
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" borderColor="gray">
 				<Text bold>Important Text</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 		const stripped = stripAnsi(frame);
 
 		// Text should be present
@@ -96,7 +96,7 @@ describe('borderDimColor does not affect child Text', () => {
 	});
 
 	test('nested Text children at various positions are not dimmed', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" borderColor="gray">
 				<Box flexDirection="column">
 					<Text>First line at edge</Text>
@@ -105,7 +105,7 @@ describe('borderDimColor does not affect child Text', () => {
 				</Box>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 		const stripped = stripAnsi(frame);
 
 		// All text should be present
@@ -115,7 +115,7 @@ describe('borderDimColor does not affect child Text', () => {
 	});
 
 	test('deeply nested Text is not affected by parent border', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" borderColor="gray">
 				<Box>
 					<Box>
@@ -124,7 +124,7 @@ describe('borderDimColor does not affect child Text', () => {
 				</Box>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('Deep nested bold');
 
@@ -145,12 +145,12 @@ describe('various border styles with color', () => {
 
 	for (const borderStyle of borderStyles) {
 		test(`${borderStyle} border with color does not affect child Text`, () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box borderStyle={borderStyle} borderColor="blue">
 					<Text color="green">Styled Text</Text>
 				</Box>,
 			);
-			const frame = lastFrame() ?? '';
+			const frame = app.ansi;
 			const stripped = stripAnsi(frame);
 
 			expect(stripped).toContain('Styled Text');
@@ -171,13 +171,13 @@ describe('various border styles with color', () => {
 describe('Box with explicit dim prop', () => {
 	test('dim Box border does not dim non-dim Text children', () => {
 		// In Inkx, dim on Box affects the border styling, not children
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" dim>
 				<Text>Normal text</Text>
 				<Text bold>Bold text</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 		const stripped = stripAnsi(frame);
 
 		expect(stripped).toContain('Normal text');
@@ -185,7 +185,7 @@ describe('Box with explicit dim prop', () => {
 	});
 
 	test('explicit dimColor on Text is applied correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single">
 				<Box flexDirection="column">
 					<Text>Normal</Text>
@@ -194,7 +194,7 @@ describe('Box with explicit dim prop', () => {
 				</Box>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 		const stripped = stripAnsi(frame);
 
 		expect(stripped).toContain('Normal');
@@ -226,12 +226,12 @@ describe('padding workaround for Ink bug should not be needed', () => {
 	// In Inkx, this should not be necessary - both should render the same.
 
 	test('Text without paddingLeft is styled correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" borderColor="gray">
 				<Text bold>No padding</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		const lines = frame.split('\n');
 		const textLine = lines.find((line) => stripAnsi(line).includes('No padding'));
@@ -255,8 +255,8 @@ describe('padding workaround for Ink bug should not be needed', () => {
 			</Box>,
 		);
 
-		const frameWithout = withoutPadding.lastFrame() ?? '';
-		const frameWith = withPadding.lastFrame() ?? '';
+		const frameWithout = withoutPadding.ansi;
+		const frameWith = withPadding.ansi;
 
 		// Both should have bold text
 		const linesWithout = frameWithout.split('\n');
@@ -281,12 +281,12 @@ describe('alignItems workaround for Ink bug should not be needed', () => {
 	// In Inkx, this should not be necessary.
 
 	test('alignItems=flex-start does not cause dimming issues', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" borderColor="gray" alignItems="flex-start">
 				<Text bold>Left aligned bold</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		const lines = frame.split('\n');
 		const textLine = lines.find((line) => stripAnsi(line).includes('Left aligned bold'));
@@ -298,12 +298,12 @@ describe('alignItems workaround for Ink bug should not be needed', () => {
 	});
 
 	test('alignItems=center text is styled correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" borderColor="gray" alignItems="center" width={30}>
 				<Text bold>Centered bold</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		const lines = frame.split('\n');
 		const textLine = lines.find((line) => stripAnsi(line).includes('Centered bold'));
@@ -317,12 +317,12 @@ describe('alignItems workaround for Ink bug should not be needed', () => {
 
 describe('ANSI code isolation between border and content', () => {
 	test('border color does not leak into content area', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" borderColor="red">
 				<Text color="green">Green text</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		// Find the content line (not border lines)
 		const lines = frame.split('\n');
@@ -336,14 +336,14 @@ describe('ANSI code isolation between border and content', () => {
 	});
 
 	test('multiple border colors in nested boxes are isolated', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" borderColor="red">
 				<Box borderStyle="single" borderColor="blue">
 					<Text color="green">Nested green text</Text>
 				</Box>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		const lines = frame.split('\n');
 		const textLine = lines.find((line) => stripAnsi(line).includes('Nested green text'));

@@ -29,10 +29,10 @@ describe('Bug: Colors lost after re-render', () => {
 			);
 		}
 
-		const { lastFrame, rerender } = render(<ColoredText count={0} />);
+		const app = render(<ColoredText count={0} />);
 
 		// Initial render should have content
-		const frame1 = lastFrame() ?? '';
+		const frame1 = app.ansi;
 		expect(stripAnsi(frame1)).toContain('Red text: 0');
 		expect(stripAnsi(frame1)).toContain('Green text: 0');
 		expect(stripAnsi(frame1)).toContain('Blue text: 0');
@@ -41,9 +41,9 @@ describe('Bug: Colors lost after re-render', () => {
 		expect(frame1).toMatch(/\x1b\[/);
 
 		// Rerender with updated count
-		rerender(<ColoredText count={1} />);
+		app.rerender(<ColoredText count={1} />);
 
-		const frame2 = lastFrame() ?? '';
+		const frame2 = app.ansi;
 		expect(stripAnsi(frame2)).toContain('Red text: 1');
 		// Colors should still be present
 		expect(frame2).toMatch(/\x1b\[/);
@@ -68,16 +68,16 @@ describe('Bug: Colors lost after re-render', () => {
 			);
 		}
 
-		const { lastFrame, rerender } = render(<SelectableList selected={0} />);
+		const app = render(<SelectableList selected={0} />);
 
 		// Initial render should show first item selected
-		const frame1 = lastFrame() ?? '';
+		const frame1 = app.ansi;
 		expect(stripAnsi(frame1)).toContain('Item 1');
 
 		// Move selection to second item
-		rerender(<SelectableList selected={1} />);
+		app.rerender(<SelectableList selected={1} />);
 
-		const frame2 = lastFrame() ?? '';
+		const frame2 = app.ansi;
 		expect(stripAnsi(frame2)).toContain('Item 1');
 		expect(stripAnsi(frame2)).toContain('Item 2');
 		expect(stripAnsi(frame2)).toContain('Item 3');
@@ -144,14 +144,14 @@ describe('Bug: Text content overwriting', () => {
 			return <Text>{text}</Text>;
 		}
 
-		const { lastFrame, rerender } = render(<DynamicText text="Hello World" />);
+		const app = render(<DynamicText text="Hello World" />);
 
-		const frame1 = lastFrame() ?? '';
+		const frame1 = app.ansi;
 		expect(stripAnsi(frame1)).toContain('Hello World');
 
-		rerender(<DynamicText text="Hi" />);
+		app.rerender(<DynamicText text="Hi" />);
 
-		const frame2 = lastFrame() ?? '';
+		const frame2 = app.ansi;
 		// "Hi" should be there
 		expect(stripAnsi(frame2)).toContain('Hi');
 		// "World" from previous frame should NOT be there
@@ -169,17 +169,17 @@ describe('Bug: Text content overwriting', () => {
 			);
 		}
 
-		const { lastFrame, rerender } = render(<MultiLine lines={['Line 1', 'Line 2', 'Line 3']} />);
+		const app = render(<MultiLine lines={['Line 1', 'Line 2', 'Line 3']} />);
 
-		const frame1 = lastFrame() ?? '';
+		const frame1 = app.ansi;
 		expect(stripAnsi(frame1)).toContain('Line 1');
 		expect(stripAnsi(frame1)).toContain('Line 2');
 		expect(stripAnsi(frame1)).toContain('Line 3');
 
 		// Reduce to fewer lines
-		rerender(<MultiLine lines={['New Line']} />);
+		app.rerender(<MultiLine lines={['New Line']} />);
 
-		const frame2 = lastFrame() ?? '';
+		const frame2 = app.ansi;
 		expect(stripAnsi(frame2)).toContain('New Line');
 		// Old lines should be gone
 		expect(stripAnsi(frame2)).not.toContain('Line 2');
@@ -222,15 +222,15 @@ describe('Bug: Scroll container style preservation', () => {
 			);
 		}
 
-		const { lastFrame, rerender } = render(<ScrollableList scrollOffset={0} />);
+		const app = render(<ScrollableList scrollOffset={0} />);
 
-		const frame1 = lastFrame() ?? '';
+		const frame1 = app.ansi;
 		expect(stripAnsi(frame1)).toContain('Item 1');
 
 		// After scroll, colors should still work
-		rerender(<ScrollableList scrollOffset={2} />);
+		app.rerender(<ScrollableList scrollOffset={2} />);
 
-		const frame2 = lastFrame() ?? '';
+		const frame2 = app.ansi;
 		expect(stripAnsi(frame2)).toContain('Item 3'); // First visible after scroll
 		// Should still have ANSI codes for cyan
 		expect(frame2).toMatch(/\x1b\[/);
@@ -476,17 +476,17 @@ describe('Bug: Keyed children reorder loses content', () => {
 			);
 		}
 
-		const { lastFrame, rerender } = render(<KeyedList order={['A', 'B', 'C']} />);
+		const app = render(<KeyedList order={['A', 'B', 'C']} />);
 
-		const frame1 = lastFrame() ?? '';
+		const frame1 = app.ansi;
 		expect(stripAnsi(frame1)).toContain('A');
 		expect(stripAnsi(frame1)).toContain('B');
 		expect(stripAnsi(frame1)).toContain('C');
 
 		// Reorder: move C to front
-		rerender(<KeyedList order={['C', 'A', 'B']} />);
+		app.rerender(<KeyedList order={['C', 'A', 'B']} />);
 
-		const frame2 = lastFrame() ?? '';
+		const frame2 = app.ansi;
 		expect(stripAnsi(frame2)).toContain('A');
 		expect(stripAnsi(frame2)).toContain('B');
 		expect(stripAnsi(frame2)).toContain('C');
@@ -507,17 +507,17 @@ describe('Bug: Keyed children reorder loses content', () => {
 			);
 		}
 
-		const { lastFrame, rerender } = render(<SlidingWindow offset={0} />);
+		const app = render(<SlidingWindow offset={0} />);
 
-		const frame1 = lastFrame() ?? '';
+		const frame1 = app.ansi;
 		expect(stripAnsi(frame1)).toContain('[W]');
 		expect(stripAnsi(frame1)).toContain('[X]');
 		expect(stripAnsi(frame1)).toContain('[Y]');
 
 		// Slide window by 1: [X, Y, Z] - X and Y are reused (reordered), Z is new
-		rerender(<SlidingWindow offset={1} />);
+		app.rerender(<SlidingWindow offset={1} />);
 
-		const frame2 = lastFrame() ?? '';
+		const frame2 = app.ansi;
 		expect(stripAnsi(frame2)).toContain('[X]');
 		expect(stripAnsi(frame2)).toContain('[Y]');
 		expect(stripAnsi(frame2)).toContain('[Z]');
@@ -538,18 +538,18 @@ describe('Bug: Keyed children reorder loses content', () => {
 			);
 		}
 
-		const { lastFrame, rerender } = render(<ReversibleList reversed={false} />);
+		const app = render(<ReversibleList reversed={false} />);
 
-		const frame1 = lastFrame() ?? '';
+		const frame1 = app.ansi;
 		const text1 = stripAnsi(frame1);
 		expect(text1).toContain('First');
 		expect(text1).toContain('Second');
 		expect(text1).toContain('Third');
 
 		// Reverse the order
-		rerender(<ReversibleList reversed={true} />);
+		app.rerender(<ReversibleList reversed={true} />);
 
-		const frame2 = lastFrame() ?? '';
+		const frame2 = app.ansi;
 		const text2 = stripAnsi(frame2);
 		expect(text2).toContain('First');
 		expect(text2).toContain('Second');

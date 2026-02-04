@@ -164,8 +164,8 @@ describe('Bug 1: Kanban column header background color', () => {
 	const render = createRenderer({ cols: 100, rows: 30 });
 
 	it('selected column header should have cyan background', () => {
-		const { lastFrame } = render(<SimpleKanban />);
-		const frame = lastFrame() ?? '';
+		const app = render(<SimpleKanban />);
+		const frame = app.ansi;
 
 		// The frame should contain ANSI code for cyan background (48;5;6 or 46)
 		// around the "To Do" text when the first column is selected
@@ -177,8 +177,8 @@ describe('Bug 1: Kanban column header background color', () => {
 	});
 
 	it('card selection should not override column header background', () => {
-		const { lastFrame } = render(<SimpleKanban />);
-		const frame = lastFrame() ?? '';
+		const app = render(<SimpleKanban />);
+		const frame = app.ansi;
 
 		// Count occurrences of cyan background codes
 		// The ANSI format includes reset (0;) before the background code
@@ -196,15 +196,15 @@ describe('Bug 2: Kanban cursor movement', () => {
 	const render = createRenderer({ cols: 100, rows: 30 });
 
 	it('pressing j should move cursor down', () => {
-		const { lastFrame, stdin } = render(<SimpleKanban />);
+		const app = render(<SimpleKanban />);
 
 		// Initial: Card A1 selected (has cyan border/bg)
-		let frame = lastFrame() ?? '';
+		let frame = app.ansi;
 		expect(frame).toContain('Card A1');
 
 		// Press j to move down
-		stdin.write('j');
-		frame = lastFrame() ?? '';
+		app.stdin.write('j');
+		frame = app.ansi;
 
 		// After j: Card A2 should be selected
 		// Check that the selection indicator moved
@@ -214,15 +214,15 @@ describe('Bug 2: Kanban cursor movement', () => {
 	});
 
 	it('pressing l should move to next column', () => {
-		const { lastFrame, stdin } = render(<SimpleKanban />);
+		const app = render(<SimpleKanban />);
 
 		// Initial: To Do column selected
-		let frame = stripAnsi(lastFrame() ?? '');
+		let frame = app.text;
 		expect(frame).toContain('To Do');
 
 		// Press l to move right
-		stdin.write('l');
-		frame = lastFrame() ?? '';
+		app.stdin.write('l');
+		frame = app.ansi;
 
 		// After l: In Progress column should be selected (cyan border)
 		// Bug: selection doesn't change
@@ -233,9 +233,9 @@ describe('Bug 3: Colors lost after keyboard input', () => {
 	const render = createRenderer({ cols: 80, rows: 24 });
 
 	it('dashboard colors persist after pressing l', () => {
-		const { lastFrame, stdin } = render(<SimpleDashboard />);
+		const app = render(<SimpleDashboard />);
 
-		const initialFrame = lastFrame() ?? '';
+		const initialFrame = app.ansi;
 		// Initial frame should have ANSI color codes
 		expect(initialFrame).toContain('\x1b[');
 
@@ -244,9 +244,9 @@ describe('Bug 3: Colors lost after keyboard input', () => {
 		expect(initialColorCount).toBeGreaterThan(5); // Has many colors
 
 		// Press a key
-		stdin.write('l');
+		app.stdin.write('l');
 
-		const afterFrame = lastFrame() ?? '';
+		const afterFrame = app.ansi;
 		const afterColorCount = (afterFrame.match(/\x1b\[/g) || []).length;
 
 		// Bug: after input, colors are stripped
@@ -255,15 +255,15 @@ describe('Bug 3: Colors lost after keyboard input', () => {
 	});
 
 	it('task-list colors persist after pressing j', () => {
-		const { lastFrame, stdin } = render(<SimpleTaskList />);
+		const app = render(<SimpleTaskList />);
 
-		const initialFrame = lastFrame() ?? '';
+		const initialFrame = app.ansi;
 		const initialColorCount = (initialFrame.match(/\x1b\[/g) || []).length;
 		expect(initialColorCount).toBeGreaterThan(3);
 
-		stdin.write('j');
+		app.stdin.write('j');
 
-		const afterFrame = lastFrame() ?? '';
+		const afterFrame = app.ansi;
 		const afterColorCount = (afterFrame.match(/\x1b\[/g) || []).length;
 
 		// Bug: colors lost after input
@@ -271,15 +271,15 @@ describe('Bug 3: Colors lost after keyboard input', () => {
 	});
 
 	it('kanban colors persist after pressing j', () => {
-		const { lastFrame, stdin } = render(<SimpleKanban />);
+		const app = render(<SimpleKanban />);
 
-		const initialFrame = lastFrame() ?? '';
+		const initialFrame = app.ansi;
 		const initialColorCount = (initialFrame.match(/\x1b\[/g) || []).length;
 		expect(initialColorCount).toBeGreaterThan(10);
 
-		stdin.write('j');
+		app.stdin.write('j');
 
-		const afterFrame = lastFrame() ?? '';
+		const afterFrame = app.ansi;
 		const afterColorCount = (afterFrame.match(/\x1b\[/g) || []).length;
 
 		// Bug: colors lost after input
@@ -291,16 +291,16 @@ describe('Bug 4: Task-list layout changes after keypress', () => {
 	const render = createRenderer({ cols: 60, rows: 20 });
 
 	it('layout height should remain stable after input', () => {
-		const { lastFrame, stdin } = render(<SimpleTaskList />);
+		const app = render(<SimpleTaskList />);
 
-		const initialFrame = lastFrame() ?? '';
+		const initialFrame = app.ansi;
 		const initialLines = initialFrame.split('\n');
 		const initialHeight = initialLines.length;
 
 		// Press j to move down
-		stdin.write('j');
+		app.stdin.write('j');
 
-		const afterFrame = lastFrame() ?? '';
+		const afterFrame = app.ansi;
 		const afterLines = afterFrame.split('\n');
 		const afterHeight = afterLines.length;
 
@@ -309,16 +309,16 @@ describe('Bug 4: Task-list layout changes after keypress', () => {
 	});
 
 	it('layout width should remain stable after input', () => {
-		const { lastFrame, stdin } = render(<SimpleTaskList />);
+		const app = render(<SimpleTaskList />);
 
-		const initialFrame = lastFrame() ?? '';
+		const initialFrame = app.ansi;
 		const initialMaxWidth = Math.max(
 			...initialFrame.split('\n').map((line) => stripAnsi(line).length),
 		);
 
-		stdin.write('j');
+		app.stdin.write('j');
 
-		const afterFrame = lastFrame() ?? '';
+		const afterFrame = app.ansi;
 		const afterMaxWidth = Math.max(...afterFrame.split('\n').map((line) => stripAnsi(line).length));
 
 		// Width should be similar (within a few chars due to cursor indicator)
@@ -330,7 +330,7 @@ describe('Bug 5: Overflow height calculation with borders', () => {
 	const render = createRenderer({ cols: 40, rows: 15 });
 
 	it('height=5 with border should show correct content lines', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" height={5} overflow="hidden">
 				<Box flexDirection="column">
 					<Text>Line 1</Text>
@@ -344,7 +344,7 @@ describe('Bug 5: Overflow height calculation with borders', () => {
 			</Box>,
 		);
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		// With height=5 and single border (2 lines for top+bottom),
 		// content area is 3 lines
@@ -358,7 +358,7 @@ describe('Bug 5: Overflow height calculation with borders', () => {
 	});
 
 	it('height should include border in total box height', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box borderStyle="single" height={7} overflow="hidden">
 				<Box flexDirection="column">
 					<Text>Line 1</Text>
@@ -372,7 +372,7 @@ describe('Bug 5: Overflow height calculation with borders', () => {
 			</Box>,
 		);
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		// height=7 with border = 5 content lines
 		expect(frame).toContain('Line 1');

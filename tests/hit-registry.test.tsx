@@ -439,14 +439,14 @@ describe('useHitRegion', () => {
 			return <Text>Test</Text>;
 		}
 
-		const { unmount } = render(
+		const app = render(
 			<HitRegistryContext.Provider value={registry}>
 				<TestComponent />
 			</HitRegistryContext.Provider>,
 		);
 
 		expect(registry.size).toBe(1);
-		unmount();
+		app.unmount();
 		expect(registry.size).toBe(0);
 	});
 
@@ -461,8 +461,8 @@ describe('useHitRegion', () => {
 		}
 
 		// Should render without error
-		const { lastFrameText } = render(<TestComponent />);
-		expect(lastFrameText()).toContain('Test');
+		const app = render(<TestComponent />);
+		expect(app.text).toContain('Test');
 	});
 });
 
@@ -559,7 +559,7 @@ describe('useHitRegionCallback', () => {
 			return <Text>Test</Text>;
 		}
 
-		const { unmount } = render(
+		const app = render(
 			<HitRegistryContext.Provider value={registry}>
 				<TestComponent />
 			</HitRegistryContext.Provider>,
@@ -568,7 +568,7 @@ describe('useHitRegionCallback', () => {
 		callback!({ x: 10, y: 5, width: 30, height: 8 });
 		expect(registry.size).toBe(1);
 
-		unmount();
+		app.unmount();
 		expect(registry.size).toBe(0);
 	});
 });

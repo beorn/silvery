@@ -10,7 +10,7 @@ import React, { useState } from 'react';
  */
 import { describe, expect, test } from 'vitest';
 import { Box, type Key, Text, useInput } from '../src/index.ts';
-import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer } from '../src/testing/index.tsx';
 
 // ============================================================================
 // Test Component: Simple keystroke capture
@@ -77,16 +77,16 @@ describe('Rapid keypress handling', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles multiple rapid keypresses sequentially', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
 		// Send rapid keypresses
-		stdin.write('a');
-		stdin.write('b');
-		stdin.write('c');
-		stdin.write('d');
-		stdin.write('e');
+		app.stdin.write('a');
+		app.stdin.write('b');
+		app.stdin.write('c');
+		app.stdin.write('d');
+		app.stdin.write('e');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 5');
 		expect(frame).toContain('input="a"');
 		expect(frame).toContain('input="b"');
@@ -96,15 +96,15 @@ describe('Rapid keypress handling', () => {
 	});
 
 	test('handles rapid arrow key sequences', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
 		// Arrow keys: ESC [ A/B/C/D
-		stdin.write('\x1b[A'); // up
-		stdin.write('\x1b[B'); // down
-		stdin.write('\x1b[C'); // right
-		stdin.write('\x1b[D'); // left
+		app.stdin.write('\x1b[A'); // up
+		app.stdin.write('\x1b[B'); // down
+		app.stdin.write('\x1b[C'); // right
+		app.stdin.write('\x1b[D'); // left
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 4');
 		expect(frame).toContain('"upArrow":true');
 		expect(frame).toContain('"downArrow":true');
@@ -113,29 +113,29 @@ describe('Rapid keypress handling', () => {
 	});
 
 	test('handles mixed rapid input: letters + special keys', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('h'); // h
-		stdin.write('\x1b[A'); // up arrow
-		stdin.write('j'); // j
-		stdin.write('\x1b[B'); // down arrow
-		stdin.write('k'); // k
-		stdin.write('\x1b[A'); // up arrow
-		stdin.write('l'); // l
+		app.stdin.write('h'); // h
+		app.stdin.write('\x1b[A'); // up arrow
+		app.stdin.write('j'); // j
+		app.stdin.write('\x1b[B'); // down arrow
+		app.stdin.write('k'); // k
+		app.stdin.write('\x1b[A'); // up arrow
+		app.stdin.write('l'); // l
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 7');
 	});
 
 	test('handles burst of 20 rapid keypresses', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
 		// Send a burst of 20 keypresses
 		for (let i = 0; i < 20; i++) {
-			stdin.write(String.fromCharCode(97 + (i % 26))); // a-z cycling
+			app.stdin.write(String.fromCharCode(97 + (i % 26))); // a-z cycling
 		}
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 20');
 	});
 });
@@ -148,28 +148,28 @@ describe('Paste operations', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles single paste of multi-character string', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
 		// When stdin.write is called with a multi-char string, it's processed as ONE input event
 		// This is the expected behavior for paste operations - the entire pasted content
 		// arrives as a single input event
-		stdin.write('hello');
+		app.stdin.write('hello');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		// Current behavior: the entire string is a single keystroke event
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('input="hello"');
 	});
 
 	test('handles paste with special characters', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('a');
-		stdin.write('!');
-		stdin.write('@');
-		stdin.write('#');
+		app.stdin.write('a');
+		app.stdin.write('!');
+		app.stdin.write('@');
+		app.stdin.write('#');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 4');
 		expect(frame).toContain('input="a"');
 		expect(frame).toContain('input="!"');
@@ -178,13 +178,13 @@ describe('Paste operations', () => {
 	});
 
 	test('handles paste with numbers', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('1');
-		stdin.write('2');
-		stdin.write('3');
+		app.stdin.write('1');
+		app.stdin.write('2');
+		app.stdin.write('3');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 3');
 		// Numbers return empty input string due to key.name = 'number' handling
 	});
@@ -198,25 +198,25 @@ describe('Unicode edge cases', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles basic Unicode characters', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('é'); // e with acute accent
-		stdin.write('ñ'); // n with tilde
+		app.stdin.write('é'); // e with acute accent
+		app.stdin.write('ñ'); // n with tilde
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 2');
 		expect(frame).toContain('input="é"');
 		expect(frame).toContain('input="ñ"');
 	});
 
 	test('handles CJK characters', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('中'); // Chinese
-		stdin.write('日'); // Japanese
-		stdin.write('한'); // Korean
+		app.stdin.write('中'); // Chinese
+		app.stdin.write('日'); // Japanese
+		app.stdin.write('한'); // Korean
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 3');
 		expect(frame).toContain('input="中"');
 		expect(frame).toContain('input="日"');
@@ -224,60 +224,60 @@ describe('Unicode edge cases', () => {
 	});
 
 	test('handles emoji (basic)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('😀'); // Grinning face (U+1F600)
+		app.stdin.write('😀'); // Grinning face (U+1F600)
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('input="😀"');
 	});
 
 	test('handles emoji with variation selectors', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
 		// Heart with variation selector (❤️ = U+2764 U+FE0F)
-		stdin.write('❤️');
+		app.stdin.write('❤️');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		// The input should preserve the variation selector
 		expect(frame).toContain('❤');
 	});
 
 	test('handles surrogate pair emoji', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
 		// Emoji outside BMP (requires surrogate pairs in UTF-16)
-		stdin.write('🎉'); // U+1F389 Party popper
-		stdin.write('🚀'); // U+1F680 Rocket
+		app.stdin.write('🎉'); // U+1F389 Party popper
+		app.stdin.write('🚀'); // U+1F680 Rocket
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 2');
 		expect(frame).toContain('input="🎉"');
 		expect(frame).toContain('input="🚀"');
 	});
 
 	test('handles ZWJ emoji sequences', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
 		// Family emoji (composed via ZWJ)
 		// Note: This may be processed as multiple codepoints or as one grapheme
 		// depending on terminal and implementation
-		stdin.write('👨‍👩‍👧');
+		app.stdin.write('👨‍👩‍👧');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		// Document current behavior - may be 1 or multiple keystrokes
 		expect(frame).toContain('Keystrokes captured:');
 	});
 
 	test('handles combining characters', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
 		// e + combining acute accent (U+0301) = é
-		stdin.write('e\u0301');
+		app.stdin.write('e\u0301');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		// Document behavior: may be 1 or 2 keystrokes depending on processing
 		expect(frame).toContain('Keystrokes captured:');
 	});
@@ -291,64 +291,64 @@ describe('Escape sequence handling', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles standalone Escape key', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b'); // ESC
+		app.stdin.write('\x1b'); // ESC
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"escape":true');
 	});
 
 	test('handles double Escape (meta)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b\x1b'); // ESC ESC
+		app.stdin.write('\x1b\x1b'); // ESC ESC
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"meta":true');
 	});
 
 	test('handles function keys F1-F4 (xterm O-style)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1bOP'); // F1
-		stdin.write('\x1bOQ'); // F2
-		stdin.write('\x1bOR'); // F3
-		stdin.write('\x1bOS'); // F4
+		app.stdin.write('\x1bOP'); // F1
+		app.stdin.write('\x1bOQ'); // F2
+		app.stdin.write('\x1bOR'); // F3
+		app.stdin.write('\x1bOS'); // F4
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 4');
 	});
 
 	test('handles function keys F5-F12 (xterm [~style)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[15~'); // F5
-		stdin.write('\x1b[17~'); // F6
-		stdin.write('\x1b[18~'); // F7
-		stdin.write('\x1b[19~'); // F8
-		stdin.write('\x1b[20~'); // F9
-		stdin.write('\x1b[21~'); // F10
-		stdin.write('\x1b[23~'); // F11
-		stdin.write('\x1b[24~'); // F12
+		app.stdin.write('\x1b[15~'); // F5
+		app.stdin.write('\x1b[17~'); // F6
+		app.stdin.write('\x1b[18~'); // F7
+		app.stdin.write('\x1b[19~'); // F8
+		app.stdin.write('\x1b[20~'); // F9
+		app.stdin.write('\x1b[21~'); // F10
+		app.stdin.write('\x1b[23~'); // F11
+		app.stdin.write('\x1b[24~'); // F12
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 8');
 	});
 
 	test('handles navigation keys', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[1~'); // Home
-		stdin.write('\x1b[4~'); // End
-		stdin.write('\x1b[5~'); // Page Up
-		stdin.write('\x1b[6~'); // Page Down
-		stdin.write('\x1b[2~'); // Insert
-		stdin.write('\x1b[3~'); // Delete
+		app.stdin.write('\x1b[1~'); // Home
+		app.stdin.write('\x1b[4~'); // End
+		app.stdin.write('\x1b[5~'); // Page Up
+		app.stdin.write('\x1b[6~'); // Page Down
+		app.stdin.write('\x1b[2~'); // Insert
+		app.stdin.write('\x1b[3~'); // Delete
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 6');
 		expect(frame).toContain('"home":true');
 		expect(frame).toContain('"end":true');
@@ -358,26 +358,26 @@ describe('Escape sequence handling', () => {
 	});
 
 	test('handles xterm alternative Home/End sequences', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[H'); // Home (alternative)
-		stdin.write('\x1b[F'); // End (alternative)
+		app.stdin.write('\x1b[H'); // Home (alternative)
+		app.stdin.write('\x1b[F'); // End (alternative)
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 2');
 		expect(frame).toContain('"home":true');
 		expect(frame).toContain('"end":true');
 	});
 
 	test('handles gnome/xterm O-style arrow keys', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1bOA'); // up
-		stdin.write('\x1bOB'); // down
-		stdin.write('\x1bOC'); // right
-		stdin.write('\x1bOD'); // left
+		app.stdin.write('\x1bOA'); // up
+		app.stdin.write('\x1bOB'); // down
+		app.stdin.write('\x1bOC'); // right
+		app.stdin.write('\x1bOD'); // left
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 4');
 		expect(frame).toContain('"upArrow":true');
 		expect(frame).toContain('"downArrow":true');
@@ -386,11 +386,11 @@ describe('Escape sequence handling', () => {
 	});
 
 	test('handles shift+tab (backtab)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[Z'); // Shift+Tab
+		app.stdin.write('\x1b[Z'); // Shift+Tab
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"tab":true');
 		expect(frame).toContain('"shift":true');
@@ -405,14 +405,14 @@ describe('Control character handling', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles Ctrl+letter combinations', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x01'); // Ctrl+A
-		stdin.write('\x02'); // Ctrl+B
-		stdin.write('\x04'); // Ctrl+D
-		stdin.write('\x05'); // Ctrl+E
+		app.stdin.write('\x01'); // Ctrl+A
+		app.stdin.write('\x02'); // Ctrl+B
+		app.stdin.write('\x04'); // Ctrl+D
+		app.stdin.write('\x05'); // Ctrl+E
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 4');
 		expect(frame).toContain('"ctrl":true');
 		expect(frame).toContain('input="a"');
@@ -422,41 +422,41 @@ describe('Control character handling', () => {
 	});
 
 	test('handles Return key', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\r'); // Return
+		app.stdin.write('\r'); // Return
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"return":true');
 	});
 
 	test('handles Tab key', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\t'); // Tab
+		app.stdin.write('\t'); // Tab
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"tab":true');
 	});
 
 	test('handles Backspace', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\b'); // Backspace
+		app.stdin.write('\b'); // Backspace
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"backspace":true');
 	});
 
 	test('handles Delete (0x7f)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x7f'); // Delete
+		app.stdin.write('\x7f'); // Delete
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"delete":true');
 	});
@@ -470,13 +470,13 @@ describe('Modifier key detection', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('detects uppercase as shift+letter', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('A');
-		stdin.write('B');
-		stdin.write('Z');
+		app.stdin.write('A');
+		app.stdin.write('B');
+		app.stdin.write('Z');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 3');
 		expect(frame).toContain('"shift":true');
 		expect(frame).toContain('input="A"');
@@ -485,24 +485,24 @@ describe('Modifier key detection', () => {
 	});
 
 	test('handles meta+letter (Alt+key)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1ba'); // Alt+a
+		app.stdin.write('\x1ba'); // Alt+a
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"meta":true');
 	});
 
 	test('handles rxvt shift+arrow keys', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[a'); // Shift+Up (rxvt)
-		stdin.write('\x1b[b'); // Shift+Down (rxvt)
-		stdin.write('\x1b[c'); // Shift+Right (rxvt)
-		stdin.write('\x1b[d'); // Shift+Left (rxvt)
+		app.stdin.write('\x1b[a'); // Shift+Up (rxvt)
+		app.stdin.write('\x1b[b'); // Shift+Down (rxvt)
+		app.stdin.write('\x1b[c'); // Shift+Right (rxvt)
+		app.stdin.write('\x1b[d'); // Shift+Left (rxvt)
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 4');
 		expect(frame).toContain('"shift":true');
 		expect(frame).toContain('"upArrow":true');
@@ -512,14 +512,14 @@ describe('Modifier key detection', () => {
 	});
 
 	test('handles rxvt ctrl+navigation keys', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1bOa'); // Ctrl+Up (rxvt)
-		stdin.write('\x1bOb'); // Ctrl+Down (rxvt)
-		stdin.write('\x1bOc'); // Ctrl+Right (rxvt)
-		stdin.write('\x1bOd'); // Ctrl+Left (rxvt)
+		app.stdin.write('\x1bOa'); // Ctrl+Up (rxvt)
+		app.stdin.write('\x1bOb'); // Ctrl+Down (rxvt)
+		app.stdin.write('\x1bOc'); // Ctrl+Right (rxvt)
+		app.stdin.write('\x1bOd'); // Ctrl+Left (rxvt)
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 4');
 		expect(frame).toContain('"ctrl":true');
 	});
@@ -549,54 +549,54 @@ describe('Stateful component with rapid input', () => {
 	}
 
 	test('increments with rapid + presses', () => {
-		const { lastFrame, stdin } = render(<Counter />);
+		const app = render(<Counter />);
 
-		stdin.write('+');
-		stdin.write('+');
-		stdin.write('+');
-		stdin.write('+');
-		stdin.write('+');
+		app.stdin.write('+');
+		app.stdin.write('+');
+		app.stdin.write('+');
+		app.stdin.write('+');
+		app.stdin.write('+');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Count: 5');
 	});
 
 	test('handles mixed increment/decrement', () => {
-		const { lastFrame, stdin } = render(<Counter />);
+		const app = render(<Counter />);
 
-		stdin.write('+'); // 0 -> 1
-		stdin.write('+'); // 1 -> 2
-		stdin.write('+'); // 2 -> 3
-		stdin.write('-'); // 3 -> 2
-		stdin.write('+'); // 2 -> 3
+		app.stdin.write('+'); // 0 -> 1
+		app.stdin.write('+'); // 1 -> 2
+		app.stdin.write('+'); // 2 -> 3
+		app.stdin.write('-'); // 3 -> 2
+		app.stdin.write('+'); // 2 -> 3
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Count: 3');
 	});
 
 	test('handles arrow keys for increment/decrement', () => {
-		const { lastFrame, stdin } = render(<Counter />);
+		const app = render(<Counter />);
 
-		stdin.write('\x1b[A'); // up
-		stdin.write('\x1b[A'); // up
-		stdin.write('\x1b[B'); // down
-		stdin.write('\x1b[A'); // up
+		app.stdin.write('\x1b[A'); // up
+		app.stdin.write('\x1b[A'); // up
+		app.stdin.write('\x1b[B'); // down
+		app.stdin.write('\x1b[A'); // up
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Count: 2');
 	});
 
 	test('handles reset mid-sequence', () => {
-		const { lastFrame, stdin } = render(<Counter />);
+		const app = render(<Counter />);
 
-		stdin.write('+');
-		stdin.write('+');
-		stdin.write('+');
-		stdin.write('r'); // reset
-		stdin.write('+');
-		stdin.write('+');
+		app.stdin.write('+');
+		app.stdin.write('+');
+		app.stdin.write('+');
+		app.stdin.write('r'); // reset
+		app.stdin.write('+');
+		app.stdin.write('+');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Count: 2');
 	});
 });
@@ -609,37 +609,37 @@ describe('Space and special characters', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles space character', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write(' ');
+		app.stdin.write(' ');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		// Space is handled specially - check it was captured
 		expect(frame).toContain('input=" "');
 	});
 
 	test('handles meta+space', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b '); // Alt+Space
+		app.stdin.write('\x1b '); // Alt+Space
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"meta":true');
 	});
 
 	test('handles punctuation', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('.');
-		stdin.write(',');
-		stdin.write('/');
-		stdin.write('\\');
-		stdin.write('[');
-		stdin.write(']');
+		app.stdin.write('.');
+		app.stdin.write(',');
+		app.stdin.write('/');
+		app.stdin.write('\\');
+		app.stdin.write('[');
+		app.stdin.write(']');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 6');
 	});
 });
@@ -656,31 +656,31 @@ describe('Home/End key handling (km-bquv)', () => {
 	// ------------------------------------------------------------------------
 
 	test('detects Home key via ESC[H (xterm)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[H');
+		app.stdin.write('\x1b[H');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"home":true');
 	});
 
 	test('detects Home key via ESC[1~ (vt/linux)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[1~');
+		app.stdin.write('\x1b[1~');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"home":true');
 	});
 
 	test('detects Home key via ESCOH (application mode)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1bOH');
+		app.stdin.write('\x1bOH');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"home":true');
 	});
@@ -690,31 +690,31 @@ describe('Home/End key handling (km-bquv)', () => {
 	// ------------------------------------------------------------------------
 
 	test('detects End key via ESC[F (xterm)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[F');
+		app.stdin.write('\x1b[F');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"end":true');
 	});
 
 	test('detects End key via ESC[4~ (vt/linux)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[4~');
+		app.stdin.write('\x1b[4~');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"end":true');
 	});
 
 	test('detects End key via ESCOF (application mode)', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1bOF');
+		app.stdin.write('\x1bOF');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"end":true');
 	});
@@ -724,22 +724,22 @@ describe('Home/End key handling (km-bquv)', () => {
 	// ------------------------------------------------------------------------
 
 	test('detects Shift+Home via ESC[1;2H', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[1;2H');
+		app.stdin.write('\x1b[1;2H');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"home":true');
 		expect(frame).toContain('"shift":true');
 	});
 
 	test('detects Shift+End via ESC[1;2F', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[1;2F');
+		app.stdin.write('\x1b[1;2F');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 1');
 		expect(frame).toContain('"end":true');
 		expect(frame).toContain('"shift":true');
@@ -750,14 +750,14 @@ describe('Home/End key handling (km-bquv)', () => {
 	// ------------------------------------------------------------------------
 
 	test('handles all Home escape sequences consistently', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
 		// Send all three Home variants
-		stdin.write('\x1b[H'); // xterm
-		stdin.write('\x1b[1~'); // vt/linux
-		stdin.write('\x1bOH'); // application mode
+		app.stdin.write('\x1b[H'); // xterm
+		app.stdin.write('\x1b[1~'); // vt/linux
+		app.stdin.write('\x1bOH'); // application mode
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 3');
 		// All three should register as home keys
 		const homeMatches = (frame.match(/"home":true/g) || []).length;
@@ -765,14 +765,14 @@ describe('Home/End key handling (km-bquv)', () => {
 	});
 
 	test('handles all End escape sequences consistently', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
 		// Send all three End variants
-		stdin.write('\x1b[F'); // xterm
-		stdin.write('\x1b[4~'); // vt/linux
-		stdin.write('\x1bOF'); // application mode
+		app.stdin.write('\x1b[F'); // xterm
+		app.stdin.write('\x1b[4~'); // vt/linux
+		app.stdin.write('\x1bOF'); // application mode
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 3');
 		// All three should register as end keys
 		const endMatches = (frame.match(/"end":true/g) || []).length;
@@ -780,16 +780,16 @@ describe('Home/End key handling (km-bquv)', () => {
 	});
 
 	test('Home and End keys interleaved with other navigation', () => {
-		const { lastFrame, stdin } = render(<KeystrokeCapture />);
+		const app = render(<KeystrokeCapture />);
 
-		stdin.write('\x1b[H'); // Home
-		stdin.write('\x1b[C'); // Right arrow
-		stdin.write('\x1b[C'); // Right arrow
-		stdin.write('\x1b[F'); // End
-		stdin.write('\x1b[D'); // Left arrow
-		stdin.write('\x1b[H'); // Home
+		app.stdin.write('\x1b[H'); // Home
+		app.stdin.write('\x1b[C'); // Right arrow
+		app.stdin.write('\x1b[C'); // Right arrow
+		app.stdin.write('\x1b[F'); // End
+		app.stdin.write('\x1b[D'); // Left arrow
+		app.stdin.write('\x1b[H'); // Home
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Keystrokes captured: 6');
 		const homeMatches = (frame.match(/"home":true/g) || []).length;
 		const endMatches = (frame.match(/"end":true/g) || []).length;

@@ -10,7 +10,7 @@ import React, { useState } from 'react';
  */
 import { describe, expect, it } from 'vitest';
 import { Box, type Key, Text, useInput } from '../src/index.js';
-import { createRenderer, normalizeFrame, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer, normalizeFrame } from '../src/testing/index.tsx';
 
 // ============================================================================
 // Bug km-r0nz: Columns view vertical spacing inconsistency
@@ -49,8 +49,8 @@ describe('Bug km-r0nz: Columns view vertical spacing', () => {
 	}
 
 	it('items should have consistent vertical spacing', () => {
-		const { lastFrame } = render(<SimpleColumnsView />);
-		const frame = normalizeFrame(lastFrame() ?? '');
+		const app = render(<SimpleColumnsView />);
+		const frame = normalizeFrame(app.ansi);
 		const lines = frame.split('\n');
 
 		// Find lines with task names
@@ -73,8 +73,8 @@ describe('Bug km-r0nz: Columns view vertical spacing', () => {
 	});
 
 	it('context lines should render above items that have them', () => {
-		const { lastFrame } = render(<SimpleColumnsView />);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const app = render(<SimpleColumnsView />);
+		const frame = app.text;
 
 		// Context should appear immediately before its task
 		const projectXIndex = frame.indexOf('Project X');
@@ -119,8 +119,8 @@ describe('Bug km-d5e9: Top bar text visibility', () => {
 	}
 
 	it('top bar text should be visible on white background', () => {
-		const { lastFrame } = render(<SimpleTopBar bgColor="white" useWhiteText={false} />);
-		const frame = lastFrame() ?? '';
+		const app = render(<SimpleTopBar bgColor="white" useWhiteText={false} />);
+		const frame = app.ansi;
 
 		// Should have black text color code (30) on white background (47)
 		expect(frame).toContain('Board');
@@ -128,8 +128,8 @@ describe('Bug km-d5e9: Top bar text visibility', () => {
 	});
 
 	it('top bar text should be visible on blue background', () => {
-		const { lastFrame } = render(<SimpleTopBar bgColor="blue" useWhiteText={true} />);
-		const frame = lastFrame() ?? '';
+		const app = render(<SimpleTopBar bgColor="blue" useWhiteText={true} />);
+		const frame = app.ansi;
 
 		// Should have white text on blue background
 		expect(frame).toContain('Board');
@@ -137,8 +137,8 @@ describe('Bug km-d5e9: Top bar text visibility', () => {
 
 	it('top bar with no bgColor defaults should be visible', () => {
 		// This reproduces the startup state where board color isn't set
-		const { lastFrame } = render(<SimpleTopBar useWhiteText={false} />);
-		const frame = lastFrame() ?? '';
+		const app = render(<SimpleTopBar useWhiteText={false} />);
+		const frame = app.ansi;
 
 		// Without background set, we need white text or terminal default
 		expect(frame).toContain('Board');
@@ -179,8 +179,8 @@ describe('Bug km-5x66: Bottom bar background color', () => {
 	}
 
 	it('nested Text components should inherit styles', () => {
-		const { lastFrame } = render(<SimpleBottomBar />);
-		const frame = lastFrame() ?? '';
+		const app = render(<SimpleBottomBar />);
+		const frame = app.ansi;
 
 		// The nested Text with color="green" should render green
 		// Check for green color ANSI codes (32 or 38;5;2)
@@ -188,8 +188,8 @@ describe('Bug km-5x66: Bottom bar background color', () => {
 	});
 
 	it('bottom bar text should not have broken background', () => {
-		const { lastFrame } = render(<FixedBottomBar />);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const app = render(<FixedBottomBar />);
+		const frame = app.text;
 
 		// Should have both indicators
 		expect(frame).toContain('DISK REPO');
@@ -282,60 +282,60 @@ describe('Bug km-n29q: Empty column navigation', () => {
 	}
 
 	it('should navigate into empty column', () => {
-		const { lastFrame, stdin } = render(<ColumnsNav />);
+		const app = render(<ColumnsNav />);
 
 		// Initial: first column selected
-		let frame = stripAnsi(lastFrame() ?? '');
+		let frame = app.text;
 		expect(frame).toContain('Todo');
 
 		// Navigate right to empty column
-		stdin.write('l');
-		frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('l');
+		frame = app.text;
 		// Should now show empty column as selected
 		expect(frame).toContain('Empty Column');
 	});
 
 	it('should navigate back from empty column', () => {
-		const { lastFrame, stdin } = render(<ColumnsNav />);
+		const app = render(<ColumnsNav />);
 
 		// Navigate to empty column
-		stdin.write('l');
-		let frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('l');
+		let frame = app.text;
 		expect(frame).toContain('(empty)');
 
 		// Navigate back
-		stdin.write('h');
-		frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('h');
+		frame = app.text;
 
 		// Should be back at first column
 		// The bug is that navigation back might not work properly
 	});
 
 	it('should navigate through empty column to next column', () => {
-		const { lastFrame, stdin } = render(<ColumnsNav />);
+		const app = render(<ColumnsNav />);
 
 		// Navigate to empty column
-		stdin.write('l');
+		app.stdin.write('l');
 
 		// Navigate to done column
-		stdin.write('l');
-		const frame = stripAnsi(lastFrame() ?? '');
+		app.stdin.write('l');
+		const frame = app.text;
 
 		// Should be at Done column
 		expect(frame).toContain('Done');
 	});
 
 	it('vertical navigation should not break in empty column', () => {
-		const { lastFrame, stdin } = render(<ColumnsNav />);
+		const app = render(<ColumnsNav />);
 
 		// Navigate to empty column
-		stdin.write('l');
+		app.stdin.write('l');
 
 		// Try vertical navigation (should not crash or break state)
-		stdin.write('j'); // down
-		stdin.write('k'); // up
+		app.stdin.write('j'); // down
+		app.stdin.write('k'); // up
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		// Should still be at empty column, not broken
 		expect(frame).toContain('Empty Column');
 	});

@@ -14,7 +14,7 @@ const render = createRenderer();
 
 describe('display="none"', () => {
 	test('renders visible content next to display=none box', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Box display="none">
 					<Text>Hidden</Text>
@@ -22,24 +22,24 @@ describe('display="none"', () => {
 				<Text>Visible</Text>
 			</Box>,
 		);
-		const frame = lastFrame();
+		const frame = app.ansi;
 		expect(frame).toContain('Visible');
 		expect(frame).not.toContain('Hidden');
 	});
 
 	test('handles display=none on root child', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box display="none">
 				<Text>Hidden Content</Text>
 			</Box>,
 		);
-		const frame = lastFrame();
+		const frame = app.ansi;
 		// Should render an empty frame, not hang
 		expect(frame).not.toContain('Hidden');
 	});
 
 	test('handles nested display=none', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>Before</Text>
 				<Box>
@@ -51,7 +51,7 @@ describe('display="none"', () => {
 				<Text>After</Text>
 			</Box>,
 		);
-		const frame = lastFrame();
+		const frame = app.ansi;
 		expect(frame).toContain('Before');
 		expect(frame).toContain('Sibling');
 		expect(frame).toContain('After');
@@ -59,7 +59,7 @@ describe('display="none"', () => {
 	});
 
 	test('display=none takes zero space in layout', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box flexDirection="row" width={20}>
 				<Text>A</Text>
 				<Box display="none" width={10}>
@@ -68,7 +68,7 @@ describe('display="none"', () => {
 				<Text>B</Text>
 			</Box>,
 		);
-		const frame = lastFrame();
+		const frame = app.ansi;
 		expect(frame).toContain('A');
 		expect(frame).toContain('B');
 		// A and B should be adjacent since hidden box takes no space

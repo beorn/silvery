@@ -20,24 +20,24 @@ describe('text wrapping with long words', () => {
 	const render = createRenderer({ cols: 20, rows: 10 });
 
 	test('word longer than container width should wrap or truncate', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box width={10}>
 				<Text>supercalifragilisticexpialidocious</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		// The long word should be present (possibly wrapped/truncated)
 		expect(frame).toContain('super');
 	});
 
 	test('long word at end of line should handle correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box width={15}>
 				<Text>Hi thisisaverylongword</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		// The first word should always be present
 		expect(frame).toContain('Hi');
@@ -47,35 +47,35 @@ describe('text wrapping with long words', () => {
 	test('multiple long words are present in output', () => {
 		// Use a taller container to allow for wrapping
 		const render = createRenderer({ cols: 20, rows: 20 });
-		const { lastFrame } = render(
+		const app = render(
 			<Box width={10} height={10}>
 				<Text>aaaaaaaaaaaaaa bbbbbbbbbbbbbb</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		// At minimum the first part should be present
 		expect(frame).toContain('aaaa');
 	});
 
 	test('long URL-like strings should wrap', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box width={15}>
 				<Text>https://example.com/very/long/path/to/resource</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('https');
 	});
 
 	test('wrap=truncate-end should truncate long text', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box width={10}>
 				<Text wrap="truncate-end">supercalifragilisticexpialidocious</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		// Should be truncated to fit Box width (trimmed because terminal may be wider)
 		const lines = frame.split('\n');
@@ -96,12 +96,12 @@ describe('ANSI escape codes in text', () => {
 	const render = createRenderer({ cols: 40, rows: 10 });
 
 	test('text with bold styling renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text bold>Bold text</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		// Should contain bold text
 		expect(stripAnsi(frame)).toContain('Bold text');
@@ -111,12 +111,12 @@ describe('ANSI escape codes in text', () => {
 	});
 
 	test('text with color renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text color="red">Red text</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('Red text');
 		// Should contain ANSI escape codes
@@ -124,40 +124,40 @@ describe('ANSI escape codes in text', () => {
 	});
 
 	test('text with background color renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text backgroundColor="blue">Blue background</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('Blue background');
 		expect(frame).toContain('\x1b[');
 	});
 
 	test('text with multiple styles renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text bold italic underline color="green">
 					Styled text
 				</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('Styled text');
 		expect(frame).toContain('\x1b[');
 	});
 
 	test('nested styled text renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>
 					Normal <Text bold>bold</Text> normal
 				</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('Normal');
 		expect(frame).toContain('bold');
@@ -165,12 +165,12 @@ describe('ANSI escape codes in text', () => {
 	});
 
 	test('dim text renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text dim>Dimmed text</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('Dimmed text');
 
@@ -179,12 +179,12 @@ describe('ANSI escape codes in text', () => {
 	});
 
 	test('inverse text renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text inverse>Inverted</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('Inverted');
 
@@ -193,12 +193,12 @@ describe('ANSI escape codes in text', () => {
 	});
 
 	test('strikethrough text renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text strikethrough>Strikethrough</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('Strikethrough');
 
@@ -215,24 +215,24 @@ describe('emoji and wide characters', () => {
 	const render = createRenderer({ cols: 40, rows: 10 });
 
 	test('single emoji renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>Hello 👋</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('Hello');
 		expect(frame).toContain('👋');
 	});
 
 	test('multiple emojis render correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>🎉🎊🎁</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('🎉');
 		expect(frame).toContain('🎊');
@@ -240,48 +240,48 @@ describe('emoji and wide characters', () => {
 	});
 
 	test('emoji at start of text renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>✅ Task complete</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('✅');
 		expect(frame).toContain('Task complete');
 	});
 
 	test('emoji at end of text renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>Success! 🚀</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('Success!');
 		expect(frame).toContain('🚀');
 	});
 
 	test('CJK characters render correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>Hello 世界</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('Hello');
 		expect(frame).toContain('世界');
 	});
 
 	test('mixed width characters in box', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box width={20}>
 				<Text>AB世界CD</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('AB');
 		expect(frame).toContain('世界');
@@ -289,35 +289,35 @@ describe('emoji and wide characters', () => {
 	});
 
 	test('emoji with skin tone modifier', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>Wave 👋🏻 hello</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('Wave');
 		expect(frame).toContain('hello');
 	});
 
 	test('flag emoji renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>USA 🇺🇸</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('USA');
 	});
 
 	test('compound emoji renders correctly', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>Family: 👨‍👩‍👧‍👦</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('Family:');
 	});
@@ -331,14 +331,14 @@ describe('mixed content (text + emoji + ANSI)', () => {
 	const render = createRenderer({ cols: 60, rows: 10 });
 
 	test('styled text with emoji', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text bold color="green">
 					✅ Success!
 				</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('✅');
 		expect(stripAnsi(frame)).toContain('Success!');
@@ -347,14 +347,14 @@ describe('mixed content (text + emoji + ANSI)', () => {
 	});
 
 	test('multiple styled segments with emojis', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>
 					<Text color="green">✅ Pass</Text> <Text color="red">❌ Fail</Text>
 				</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('✅');
 		expect(frame).toContain('Pass');
@@ -363,12 +363,12 @@ describe('mixed content (text + emoji + ANSI)', () => {
 	});
 
 	test('emoji in bold text', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text bold>🔥 Hot take</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('🔥');
 		expect(stripAnsi(frame)).toContain('Hot take');
@@ -377,26 +377,26 @@ describe('mixed content (text + emoji + ANSI)', () => {
 	});
 
 	test('CJK text with styling', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text color="blue" bold>
 					你好世界
 				</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('你好世界');
 		expect(frame).toContain('\x1b[');
 	});
 
 	test('mixed ASCII, emoji, and CJK', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>Hello 👋 世界!</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('Hello');
 		expect(frame).toContain('👋');
@@ -404,12 +404,12 @@ describe('mixed content (text + emoji + ANSI)', () => {
 	});
 
 	test('emoji with background color', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text backgroundColor="yellow">🌟 Star</Text>
 			</Box>,
 		);
-		const frame = lastFrame() ?? '';
+		const frame = app.ansi;
 
 		expect(stripAnsi(frame)).toContain('🌟');
 		expect(stripAnsi(frame)).toContain('Star');
@@ -417,7 +417,7 @@ describe('mixed content (text + emoji + ANSI)', () => {
 	});
 
 	test('complex status line with icons', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box width={50}>
 				<Text>
 					<Text color="green">●</Text> Online <Text color="yellow">⚠</Text> Warning{' '}
@@ -425,7 +425,7 @@ describe('mixed content (text + emoji + ANSI)', () => {
 				</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('●');
 		expect(frame).toContain('Online');
@@ -436,7 +436,7 @@ describe('mixed content (text + emoji + ANSI)', () => {
 	});
 
 	test('progress indicator with emoji', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>
 					<Text dim>[</Text>
@@ -447,7 +447,7 @@ describe('mixed content (text + emoji + ANSI)', () => {
 				</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('████');
 		expect(frame).toContain('50%');
@@ -455,14 +455,14 @@ describe('mixed content (text + emoji + ANSI)', () => {
 	});
 
 	test('list with emoji bullets', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box flexDirection="column">
 				<Text>📁 Documents</Text>
 				<Text>📷 Photos</Text>
 				<Text>🎵 Music</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('📁');
 		expect(frame).toContain('Documents');
@@ -482,35 +482,35 @@ describe('wrapping with wide characters', () => {
 
 	test('emoji at wrap boundary', () => {
 		// Set up a scenario where emoji might be at wrap boundary
-		const { lastFrame } = render(
+		const app = render(
 			<Box width={10}>
 				<Text>12345678👋9</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		// Content should be present
 		expect(frame).toContain('1234');
 	});
 
 	test('CJK text wrapping', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box width={10}>
 				<Text>你好世界这是一个测试</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('你好');
 	});
 
 	test('mixed content wrapping', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box width={15}>
 				<Text>Hello 你好 World 世界 🎉</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 
 		expect(frame).toContain('Hello');
 	});

@@ -17,7 +17,7 @@
 import React, { useState } from 'react';
 import { describe, expect, test } from 'vitest';
 import { Box, type Key, Text, useInput } from '../src/index.ts';
-import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer } from '../src/testing/index.tsx';
 import { displayWidth, graphemeCount } from '../src/unicode.js';
 
 // ============================================================================
@@ -123,11 +123,11 @@ describe('Chinese Character Input (中文)', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles single Chinese character input', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('中');
+		app.stdin.write('中');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Inputs captured: 1');
 		expect(frame).toContain('"中"');
 		expect(frame).toContain('width=2');
@@ -135,14 +135,14 @@ describe('Chinese Character Input (中文)', () => {
 	});
 
 	test('handles multiple Chinese characters input individually', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('你');
-		stdin.write('好');
-		stdin.write('世');
-		stdin.write('界');
+		app.stdin.write('你');
+		app.stdin.write('好');
+		app.stdin.write('世');
+		app.stdin.write('界');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Inputs captured: 4');
 		expect(frame).toContain('"你"');
 		expect(frame).toContain('"好"');
@@ -151,12 +151,12 @@ describe('Chinese Character Input (中文)', () => {
 	});
 
 	test('handles Chinese string as single paste event', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
 		// When pasted, the entire string arrives as one input event
-		stdin.write('你好世界');
+		app.stdin.write('你好世界');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Inputs captured: 1');
 		expect(frame).toContain('"你好世界"');
 		expect(frame).toContain('width=8'); // 4 chars * 2 columns
@@ -164,34 +164,34 @@ describe('Chinese Character Input (中文)', () => {
 	});
 
 	test('handles simplified Chinese characters', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('简体中文');
+		app.stdin.write('简体中文');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"简体中文"');
 		expect(frame).toContain('width=8');
 	});
 
 	test('handles traditional Chinese characters', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('繁體中文');
+		app.stdin.write('繁體中文');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"繁體中文"');
 		expect(frame).toContain('width=8');
 	});
 
 	test('handles Chinese punctuation', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('，');
-		stdin.write('。');
-		stdin.write('！');
-		stdin.write('？');
+		app.stdin.write('，');
+		app.stdin.write('。');
+		app.stdin.write('！');
+		app.stdin.write('？');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Inputs captured: 4');
 		// Full-width punctuation is 2 columns
 		expect(frame).toContain('width=2');
@@ -206,64 +206,64 @@ describe('Japanese Character Input (日本語)', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles Hiragana input', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('ひらがな');
+		app.stdin.write('ひらがな');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"ひらがな"');
 		expect(frame).toContain('width=8'); // 4 chars * 2 columns
 		expect(frame).toContain('graphemes=4');
 	});
 
 	test('handles Katakana input', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('カタカナ');
+		app.stdin.write('カタカナ');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"カタカナ"');
 		expect(frame).toContain('width=8');
 	});
 
 	test('handles Kanji input', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('日本語');
+		app.stdin.write('日本語');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"日本語"');
 		expect(frame).toContain('width=6'); // 3 chars * 2 columns
 	});
 
 	test('handles half-width Katakana (hankaku)', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
 		// Half-width katakana: U+FF61-U+FF9F
-		stdin.write('ｱｲｳ');
+		app.stdin.write('ｱｲｳ');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"ｱｲｳ"');
 		expect(frame).toContain('width=3'); // Half-width = 1 column each
 	});
 
 	test('handles mixed Japanese script', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
 		// Common Japanese pattern: Kanji + Hiragana
-		stdin.write('東京とうきょう');
+		app.stdin.write('東京とうきょう');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"東京とうきょう"');
 		expect(frame).toContain('width=14'); // 2 kanji (4) + 5 hiragana (10)
 	});
 
 	test('handles Romaji (ASCII) mixed with Japanese', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('ABCあいう');
+		app.stdin.write('ABCあいう');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"ABCあいう"');
 		expect(frame).toContain('width=9'); // 3 ASCII (3) + 3 hiragana (6)
 	});
@@ -277,44 +277,44 @@ describe('Korean Character Input (한국어)', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles Hangul syllable input', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('한글');
+		app.stdin.write('한글');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"한글"');
 		expect(frame).toContain('width=4'); // 2 chars * 2 columns
 		expect(frame).toContain('graphemes=2');
 	});
 
 	test('handles Korean greeting', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('안녕하세요');
+		app.stdin.write('안녕하세요');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"안녕하세요"');
 		expect(frame).toContain('width=10'); // 5 chars * 2 columns
 		expect(frame).toContain('graphemes=5');
 	});
 
 	test('handles Hangul Jamo (conjoining)', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
 		// Compatibility Jamo (displayed separately)
-		stdin.write('ㄱㄴㄷ');
+		app.stdin.write('ㄱㄴㄷ');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"ㄱㄴㄷ"');
 		expect(frame).toContain('width=6'); // Compatibility Jamo are wide
 	});
 
 	test('handles Korean with numbers', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('2024년');
+		app.stdin.write('2024년');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"2024년"');
 		expect(frame).toContain('width=6'); // 4 digits (4) + 1 Hangul (2)
 	});
@@ -328,14 +328,14 @@ describe('Mixed CJK and ASCII Input', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles alternating ASCII and CJK characters', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('a');
-		stdin.write('中');
-		stdin.write('b');
-		stdin.write('文');
+		app.stdin.write('a');
+		app.stdin.write('中');
+		app.stdin.write('b');
+		app.stdin.write('文');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Inputs captured: 4');
 		expect(frame).toContain('"a"');
 		expect(frame).toContain('"中"');
@@ -344,23 +344,23 @@ describe('Mixed CJK and ASCII Input', () => {
 	});
 
 	test('handles mixed CJK language input', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
 		// Chinese + Japanese + Korean
-		stdin.write('中あ한');
+		app.stdin.write('中あ한');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"中あ한"');
 		expect(frame).toContain('width=6'); // 3 CJK chars * 2 columns
 		expect(frame).toContain('graphemes=3');
 	});
 
 	test('handles CJK with ASCII punctuation', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		stdin.write('中文.');
+		app.stdin.write('中文.');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"中文."');
 		expect(frame).toContain('width=5'); // 2 CJK (4) + 1 ASCII (1)
 	});
@@ -374,21 +374,21 @@ describe('Cursor Positioning with CJK Characters', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('tracks cursor position with CJK input', () => {
-		const { lastFrame, stdin } = render(<CJKTextEditor />);
+		const app = render(<CJKTextEditor />);
 
-		stdin.write('中');
+		app.stdin.write('中');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Cursor position: 1 (graphemes)');
 		expect(frame).toContain('Cursor column: 2 (display columns)');
 	});
 
 	test('cursor column accounts for CJK width', () => {
-		const { lastFrame, stdin } = render(<CJKTextEditor />);
+		const app = render(<CJKTextEditor />);
 
-		stdin.write('AB中文CD');
+		app.stdin.write('AB中文CD');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Cursor position: 6 (graphemes)');
 		// A(1) + B(1) + 中(2) + 文(2) + C(1) + D(1) = 8 columns
 		expect(frame).toContain('Cursor column: 8 (display columns)');
@@ -397,30 +397,30 @@ describe('Cursor Positioning with CJK Characters', () => {
 	});
 
 	test('cursor movement with mixed CJK/ASCII', () => {
-		const { lastFrame, stdin } = render(<CJKTextEditor />);
+		const app = render(<CJKTextEditor />);
 
 		// Type "A中B"
-		stdin.write('A');
-		stdin.write('中');
-		stdin.write('B');
+		app.stdin.write('A');
+		app.stdin.write('中');
+		app.stdin.write('B');
 
 		// Move left twice (should be at '中')
-		stdin.write('\x1b[D'); // left
-		stdin.write('\x1b[D'); // left
+		app.stdin.write('\x1b[D'); // left
+		app.stdin.write('\x1b[D'); // left
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Cursor position: 1 (graphemes)');
 		// Cursor at position 1 means after 'A' (1 column)
 		expect(frame).toContain('Cursor column: 1 (display columns)');
 	});
 
 	test('backspace removes whole CJK character', () => {
-		const { lastFrame, stdin } = render(<CJKTextEditor />);
+		const app = render(<CJKTextEditor />);
 
-		stdin.write('A中B');
-		stdin.write('\b'); // Backspace
+		app.stdin.write('A中B');
+		app.stdin.write('\b'); // Backspace
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Text: A中');
 		expect(frame).toContain('Cursor position: 2');
 	});
@@ -580,66 +580,66 @@ describe('CJK Input Edge Cases', () => {
 	const wideRender = createRenderer({ cols: 160, rows: 30 });
 
 	test('handles empty input gracefully', () => {
-		const { lastFrame } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Inputs captured: 0');
 	});
 
 	test('handles very long CJK string', () => {
 		// Need wide terminal for 50 CJK chars (100 columns) + formatting text
-		const { lastFrame, stdin } = wideRender(<CJKInputCapture />);
+		const app = wideRender(<CJKInputCapture />);
 
 		// 50 Chinese characters
 		const longText = '中'.repeat(50);
-		stdin.write(longText);
+		app.stdin.write(longText);
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('width=100'); // 50 * 2 columns
 		expect(frame).toContain('graphemes=50');
 	});
 
 	test('handles CJK with combining marks', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
 		// Some rare cases have CJK with combining marks
 		// Example: Vietnamese uses combining marks
-		stdin.write('Việt Nam');
+		app.stdin.write('Việt Nam');
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"Việt Nam"');
 	});
 
 	test('handles zero-width joiner between CJK', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
 		// ZWJ (U+200D) between characters (unusual but valid)
 		const textWithZwj = '中\u200D文';
-		stdin.write(textWithZwj);
+		app.stdin.write(textWithZwj);
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		// ZWJ should not affect display width calculation significantly
 		expect(frame).toContain('width=');
 	});
 
 	test('handles CJK compatibility characters', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
 		// CJK Compatibility Forms (U+F900-U+FAFF)
 		// These are alternate forms of existing characters
-		stdin.write('\uF900'); // CJK compatibility ideograph
+		app.stdin.write('\uF900'); // CJK compatibility ideograph
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('width=2'); // Still a wide character
 	});
 
 	test('handles fullwidth ASCII characters', () => {
-		const { lastFrame, stdin } = render(<CJKInputCapture />);
+		const app = render(<CJKInputCapture />);
 
 		// Fullwidth ASCII (U+FF01-U+FF5E) - often used in CJK contexts
-		stdin.write('ＡＢＣ'); // Fullwidth A, B, C
+		app.stdin.write('ＡＢＣ'); // Fullwidth A, B, C
 
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('"ＡＢＣ"');
 		expect(frame).toContain('width=6'); // 3 fullwidth chars * 2
 	});

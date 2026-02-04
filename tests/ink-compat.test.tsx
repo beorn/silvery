@@ -129,139 +129,139 @@ describe('Ink API Compatibility', () => {
 
 	describe('Box Props (Ink-compatible)', () => {
 		test('Box accepts flexDirection prop', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box flexDirection="column">
 					<Text>A</Text>
 					<Text>B</Text>
 				</Box>,
 			);
-			const frame = lastFrame();
+			const frame = app.ansi;
 			expect(frame).toContain('A');
 			expect(frame).toContain('B');
 		});
 
 		test('Box accepts padding props', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box padding={1}>
 					<Text>Padded</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('Padded');
+			expect(app.ansi).toContain('Padded');
 		});
 
 		test('Box accepts margin props', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box margin={1}>
 					<Text>Margined</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('Margined');
+			expect(app.ansi).toContain('Margined');
 		});
 
 		test('Box accepts width/height props', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box width={10} height={3}>
 					<Text>Sized</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('Sized');
+			expect(app.ansi).toContain('Sized');
 		});
 
 		test('Box accepts borderStyle prop', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box borderStyle="single">
 					<Text>Bordered</Text>
 				</Box>,
 			);
-			const frame = lastFrame();
+			const frame = app.ansi;
 			expect(frame).toContain('Bordered');
 			// Should have border characters
 			expect(frame).toMatch(/[─│┌┐└┘]/);
 		});
 
 		test('Box accepts borderColor prop', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box borderStyle="single" borderColor="red">
 					<Text>Red Border</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('Red Border');
+			expect(app.ansi).toContain('Red Border');
 		});
 
 		test('Box accepts justifyContent prop', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box justifyContent="space-between" width={20}>
 					<Text>A</Text>
 					<Text>B</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('A');
-			expect(lastFrame()).toContain('B');
+			expect(app.ansi).toContain('A');
+			expect(app.ansi).toContain('B');
 		});
 
 		test('Box accepts alignItems prop', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box alignItems="center" height={3}>
 					<Text>Centered</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('Centered');
+			expect(app.ansi).toContain('Centered');
 		});
 	});
 
 	describe('Text Props (Ink-compatible)', () => {
 		test('Text accepts color prop', () => {
-			const { lastFrame } = testRender(<Text color="red">Red</Text>);
-			expect(lastFrame()).toContain('Red');
+			const app = testRender(<Text color="red">Red</Text>);
+			expect(app.ansi).toContain('Red');
 		});
 
 		test('Text accepts backgroundColor prop', () => {
-			const { lastFrame } = testRender(<Text backgroundColor="blue">BlueBg</Text>);
-			expect(lastFrame()).toContain('BlueBg');
+			const app = testRender(<Text backgroundColor="blue">BlueBg</Text>);
+			expect(app.ansi).toContain('BlueBg');
 		});
 
 		test('Text accepts bold prop', () => {
-			const { lastFrame } = testRender(<Text bold>Bold</Text>);
-			expect(lastFrame()).toContain('Bold');
+			const app = testRender(<Text bold>Bold</Text>);
+			expect(app.ansi).toContain('Bold');
 		});
 
 		test('Text accepts italic prop', () => {
-			const { lastFrame } = testRender(<Text italic>Italic</Text>);
-			expect(lastFrame()).toContain('Italic');
+			const app = testRender(<Text italic>Italic</Text>);
+			expect(app.ansi).toContain('Italic');
 		});
 
 		test('Text accepts underline prop', () => {
-			const { lastFrame } = testRender(<Text underline>Underline</Text>);
-			expect(lastFrame()).toContain('Underline');
+			const app = testRender(<Text underline>Underline</Text>);
+			expect(app.ansi).toContain('Underline');
 		});
 
 		test('Text accepts strikethrough prop', () => {
-			const { lastFrame } = testRender(<Text strikethrough>Strike</Text>);
-			expect(lastFrame()).toContain('Strike');
+			const app = testRender(<Text strikethrough>Strike</Text>);
+			expect(app.ansi).toContain('Strike');
 		});
 
 		test('Text accepts dimColor prop', () => {
-			const { lastFrame } = testRender(<Text dimColor>Dim</Text>);
-			expect(lastFrame()).toContain('Dim');
+			const app = testRender(<Text dimColor>Dim</Text>);
+			expect(app.ansi).toContain('Dim');
 		});
 
 		test('Text accepts inverse prop', () => {
-			const { lastFrame } = testRender(<Text inverse>Inverse</Text>);
-			expect(lastFrame()).toContain('Inverse');
+			const app = testRender(<Text inverse>Inverse</Text>);
+			expect(app.ansi).toContain('Inverse');
 		});
 
 		test('Text accepts wrap prop', () => {
-			const { lastFrame } = testRender(<Text wrap="truncate">LongTextHere</Text>);
-			expect(lastFrame()).toContain('Long');
+			const app = testRender(<Text wrap="truncate">LongTextHere</Text>);
+			expect(app.ansi).toContain('Long');
 		});
 
 		test('Text truncate-start shows end of text with ellipsis at start', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box width={10}>
 					<Text wrap="truncate-start">Hello World Test</Text>
 				</Box>,
 			);
-			const frame = stripAnsi(lastFrame() ?? '');
+			const frame = app.text;
 			// Should show ellipsis at start followed by end portion
 			// Inkx uses Unicode ellipsis character
 			expect(frame).toMatch(/[…\.]{1,3}/);
@@ -269,12 +269,12 @@ describe('Ink API Compatibility', () => {
 		});
 
 		test('Text truncate-middle shows start and end with ellipsis in middle', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box width={12}>
 					<Text wrap="truncate-middle">Hello World Test</Text>
 				</Box>,
 			);
-			const frame = stripAnsi(lastFrame() ?? '');
+			const frame = app.text;
 			// Should show start, ellipsis, then end
 			// Inkx uses Unicode ellipsis character
 			expect(frame).toMatch(/[…\.]{1,3}/);
@@ -285,29 +285,29 @@ describe('Ink API Compatibility', () => {
 
 	describe('Spacer Component', () => {
 		test('Spacer pushes content apart', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box flexDirection="row" width={20}>
 					<Text>L</Text>
 					<Spacer />
 					<Text>R</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('L');
-			expect(lastFrame()).toContain('R');
+			expect(app.ansi).toContain('L');
+			expect(app.ansi).toContain('R');
 		});
 	});
 
 	describe('Newline Component', () => {
 		test('Newline adds line breaks', () => {
-			const { lastFrame } = testRender(
+			const app = testRender(
 				<Box flexDirection="column">
 					<Text>A</Text>
 					<Newline count={2} />
 					<Text>B</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('A');
-			expect(lastFrame()).toContain('B');
+			expect(app.ansi).toContain('A');
+			expect(app.ansi).toContain('B');
 		});
 	});
 
@@ -368,18 +368,18 @@ describe('Ink API Compatibility', () => {
 
 	describe('Color Formats', () => {
 		test('Text accepts named colors', () => {
-			const { lastFrame } = testRender(<Text color="green">Green</Text>);
-			expect(lastFrame()).toContain('Green');
+			const app = testRender(<Text color="green">Green</Text>);
+			expect(app.ansi).toContain('Green');
 		});
 
 		test('Text accepts hex colors', () => {
-			const { lastFrame } = testRender(<Text color="#ff0000">Hex</Text>);
-			expect(lastFrame()).toContain('Hex');
+			const app = testRender(<Text color="#ff0000">Hex</Text>);
+			expect(app.ansi).toContain('Hex');
 		});
 
 		test('Text accepts rgb colors', () => {
-			const { lastFrame } = testRender(<Text color="rgb(255, 0, 0)">RGB</Text>);
-			expect(lastFrame()).toContain('RGB');
+			const app = testRender(<Text color="rgb(255, 0, 0)">RGB</Text>);
+			expect(app.ansi).toContain('RGB');
 		});
 	});
 });
@@ -405,9 +405,9 @@ describe('Behavioral Tests - useInput', () => {
 				return <Text>Inactive Handler</Text>;
 			}
 
-			const { stdin } = render(<InactiveInputHandler />);
-			stdin.write('a');
-			stdin.write('\x1b[A'); // up arrow
+			const app = render(<InactiveInputHandler />);
+			app.stdin.write('a');
+			app.stdin.write('\x1b[A'); // up arrow
 
 			expect(inputReceived).toBe(false);
 		});
@@ -425,8 +425,8 @@ describe('Behavioral Tests - useInput', () => {
 				return <Text>Active Handler</Text>;
 			}
 
-			const { stdin } = render(<ActiveInputHandler />);
-			stdin.write('a');
+			const app = render(<ActiveInputHandler />);
+			app.stdin.write('a');
 
 			expect(inputReceived).toBe(true);
 		});
@@ -441,8 +441,8 @@ describe('Behavioral Tests - useInput', () => {
 				return <Text>Default Handler</Text>;
 			}
 
-			const { stdin } = render(<DefaultActiveHandler />);
-			stdin.write('a');
+			const app = render(<DefaultActiveHandler />);
+			app.stdin.write('a');
 
 			expect(inputReceived).toBe(true);
 		});
@@ -466,15 +466,15 @@ describe('Behavioral Tests - useInput', () => {
 				return <Text>isActive: {isActive ? 'true' : 'false'}</Text>;
 			}
 
-			const { stdin, lastFrame } = render(<ToggleableHandler />);
+			const app = render(<ToggleableHandler />);
 
-			stdin.write('a'); // Should be received
-			stdin.write('b'); // Should be received
-			stdin.write('d'); // Should be received, disables handler
-			stdin.write('e'); // Should NOT be received
+			app.stdin.write('a'); // Should be received
+			app.stdin.write('b'); // Should be received
+			app.stdin.write('d'); // Should be received, disables handler
+			app.stdin.write('e'); // Should NOT be received
 
 			expect(receivedInputs).toEqual(['a', 'b', 'd']);
-			expect(stripAnsi(lastFrame() ?? '')).toContain('isActive: false');
+			expect(app.text).toContain('isActive: false');
 		});
 	});
 
@@ -507,8 +507,8 @@ describe('Behavioral Tests - useInput', () => {
 				);
 			}
 
-			const { stdin } = render(<MultiHandlerApp />);
-			stdin.write('x');
+			const app = render(<MultiHandlerApp />);
+			app.stdin.write('x');
 
 			expect(handler1Inputs).toContain('h1:x');
 			expect(handler2Inputs).toContain('h2:x');
@@ -548,8 +548,8 @@ describe('Behavioral Tests - useInput', () => {
 				);
 			}
 
-			const { stdin } = render(<MixedHandlerApp />);
-			stdin.write('y');
+			const app = render(<MixedHandlerApp />);
+			app.stdin.write('y');
 
 			expect(activeInputs).toEqual(['y']);
 			expect(inactiveInputs).toEqual([]);
@@ -745,8 +745,8 @@ describe('Behavioral Tests - useApp', () => {
 			return <Text>Press q to exit</Text>;
 		}
 
-		const { stdin } = render(<ExitOnKey />);
-		stdin.write('q');
+		const app = render(<ExitOnKey />);
+		app.stdin.write('q');
 
 		expect(exitCalled).toBe(true);
 	});
@@ -773,16 +773,16 @@ describe('Behavioral Tests - Rendering', () => {
 				return <Text>Count: {count}</Text>;
 			}
 
-			const { lastFrame, stdin } = render(<Counter />);
+			const app = render(<Counter />);
 
-			expect(stripAnsi(lastFrame() ?? '')).toContain('Count: 0');
+			expect(app.text).toContain('Count: 0');
 
-			stdin.write('+');
-			expect(stripAnsi(lastFrame() ?? '')).toContain('Count: 1');
+			app.stdin.write('+');
+			expect(app.text).toContain('Count: 1');
 
-			stdin.write('+');
-			stdin.write('+');
-			expect(stripAnsi(lastFrame() ?? '')).toContain('Count: 3');
+			app.stdin.write('+');
+			app.stdin.write('+');
+			expect(app.text).toContain('Count: 3');
 		});
 
 		test('rerender function updates component', () => {
@@ -790,12 +790,12 @@ describe('Behavioral Tests - Rendering', () => {
 				return <Text>Hello, {name}!</Text>;
 			}
 
-			const { lastFrame, rerender } = render(<Greeting name="World" />);
+			const app = render(<Greeting name="World" />);
 
-			expect(stripAnsi(lastFrame() ?? '')).toContain('Hello, World!');
+			expect(app.text).toContain('Hello, World!');
 
-			rerender(<Greeting name="Inkx" />);
-			expect(stripAnsi(lastFrame() ?? '')).toContain('Hello, Inkx!');
+			app.rerender(<Greeting name="Inkx" />);
+			expect(app.text).toContain('Hello, Inkx!');
 		});
 
 		test('frames array captures all renders', () => {
@@ -803,14 +803,14 @@ describe('Behavioral Tests - Rendering', () => {
 				return <Text>{text}</Text>;
 			}
 
-			const { frames, rerender } = render(<Message text="First" />);
-			rerender(<Message text="Second" />);
-			rerender(<Message text="Third" />);
+			const app = render(<Message text="First" />);
+			app.rerender(<Message text="Second" />);
+			app.rerender(<Message text="Third" />);
 
-			expect(frames.length).toBe(3);
-			expect(stripAnsi(frames[0] ?? '')).toContain('First');
-			expect(stripAnsi(frames[1] ?? '')).toContain('Second');
-			expect(stripAnsi(frames[2] ?? '')).toContain('Third');
+			expect(app.frames.length).toBe(3);
+			expect(stripAnsi(app.frames[0] ?? '')).toContain('First');
+			expect(stripAnsi(app.frames[1] ?? '')).toContain('Second');
+			expect(stripAnsi(app.frames[2] ?? '')).toContain('Third');
 		});
 	});
 
@@ -836,8 +836,8 @@ describe('Behavioral Tests - Rendering', () => {
 				);
 			}
 
-			const { lastFrame } = render(<Outer />);
-			const frame = stripAnsi(lastFrame() ?? '');
+			const app = render(<Outer />);
+			const frame = app.text;
 
 			expect(frame).toContain('Header');
 			expect(frame).toContain('Inner Content');
@@ -854,13 +854,13 @@ describe('Behavioral Tests - Rendering', () => {
 				);
 			}
 
-			const { lastFrame, rerender } = render(<ConditionalContent show={false} />);
-			expect(stripAnsi(lastFrame() ?? '')).toContain('Always visible');
-			expect(stripAnsi(lastFrame() ?? '')).not.toContain('Conditional content');
+			const app = render(<ConditionalContent show={false} />);
+			expect(app.text).toContain('Always visible');
+			expect(app.text).not.toContain('Conditional content');
 
-			rerender(<ConditionalContent show={true} />);
-			expect(stripAnsi(lastFrame() ?? '')).toContain('Always visible');
-			expect(stripAnsi(lastFrame() ?? '')).toContain('Conditional content');
+			app.rerender(<ConditionalContent show={true} />);
+			expect(app.text).toContain('Always visible');
+			expect(app.text).toContain('Conditional content');
 		});
 
 		test('list rendering with map works', () => {
@@ -876,8 +876,8 @@ describe('Behavioral Tests - Rendering', () => {
 				);
 			}
 
-			const { lastFrame } = render(<List />);
-			const frame = stripAnsi(lastFrame() ?? '');
+			const app = render(<List />);
+			const frame = app.text;
 
 			expect(frame).toContain('Apple');
 			expect(frame).toContain('Banana');
@@ -887,16 +887,16 @@ describe('Behavioral Tests - Rendering', () => {
 
 	describe('Text styling', () => {
 		test('multiple styles can be combined', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Text bold italic underline color="red">
 					Multi-styled
 				</Text>,
 			);
-			expect(lastFrame()).toContain('Multi-styled');
+			expect(app.ansi).toContain('Multi-styled');
 		});
 
 		test('nested Text elements inherit styling context', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Text>
 					Normal{' '}
 					<Text bold>
@@ -904,7 +904,7 @@ describe('Behavioral Tests - Rendering', () => {
 					</Text>
 				</Text>,
 			);
-			const frame = stripAnsi(lastFrame() ?? '');
+			const frame = app.text;
 			expect(frame).toContain('Normal');
 			expect(frame).toContain('Bold');
 			expect(frame).toContain('Bold+Red');
@@ -913,7 +913,7 @@ describe('Behavioral Tests - Rendering', () => {
 
 	describe('Layout calculations', () => {
 		test('flexGrow distributes space', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="row" width={30}>
 					<Box flexGrow={1}>
 						<Text>A</Text>
@@ -926,32 +926,32 @@ describe('Behavioral Tests - Rendering', () => {
 					</Box>
 				</Box>,
 			);
-			const frame = stripAnsi(lastFrame() ?? '');
+			const frame = app.text;
 			expect(frame).toContain('A');
 			expect(frame).toContain('B');
 			expect(frame).toContain('C');
 		});
 
 		test('Spacer with flexDirection column creates vertical space', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box flexDirection="column" height={5}>
 					<Text>Top</Text>
 					<Spacer />
 					<Text>Bottom</Text>
 				</Box>,
 			);
-			const frame = stripAnsi(lastFrame() ?? '');
+			const frame = app.text;
 			expect(frame).toContain('Top');
 			expect(frame).toContain('Bottom');
 		});
 
 		test('padding adds space around content', () => {
-			const { lastFrame } = render(
+			const app = render(
 				<Box padding={2} width={20}>
 					<Text>Padded</Text>
 				</Box>,
 			);
-			const frame = lastFrame() ?? '';
+			const frame = app.ansi;
 			// Content should be present
 			expect(frame).toContain('Padded');
 		});
@@ -991,30 +991,30 @@ describe('Common Ink Patterns', () => {
 			}
 
 			const items = ['Option 1', 'Option 2', 'Option 3'];
-			const { lastFrame, stdin } = render(<SelectList items={items} />);
+			const app = render(<SelectList items={items} />);
 
 			// Initial state - first item selected
-			let frame = stripAnsi(lastFrame() ?? '');
+			let frame = app.text;
 			expect(frame).toContain('> Option 1');
 
 			// Move down
-			stdin.write('\x1b[B'); // down arrow
-			frame = stripAnsi(lastFrame() ?? '');
+			app.stdin.write('\x1b[B'); // down arrow
+			frame = app.text;
 			expect(frame).toContain('> Option 2');
 
 			// Move down again
-			stdin.write('\x1b[B'); // down arrow
-			frame = stripAnsi(lastFrame() ?? '');
+			app.stdin.write('\x1b[B'); // down arrow
+			frame = app.text;
 			expect(frame).toContain('> Option 3');
 
 			// Try to move past end - should stay at last
-			stdin.write('\x1b[B');
-			frame = stripAnsi(lastFrame() ?? '');
+			app.stdin.write('\x1b[B');
+			frame = app.text;
 			expect(frame).toContain('> Option 3');
 
 			// Move up
-			stdin.write('\x1b[A'); // up arrow
-			frame = stripAnsi(lastFrame() ?? '');
+			app.stdin.write('\x1b[A'); // up arrow
+			frame = app.text;
 			expect(frame).toContain('> Option 2');
 		});
 	});
@@ -1043,24 +1043,24 @@ describe('Common Ink Patterns', () => {
 				);
 			}
 
-			const { lastFrame, stdin } = render(<InputField />);
+			const app = render(<InputField />);
 
 			// Type each character
-			stdin.write('h');
-			stdin.write('e');
-			stdin.write('l');
-			stdin.write('l');
-			stdin.write('o');
+			app.stdin.write('h');
+			app.stdin.write('e');
+			app.stdin.write('l');
+			app.stdin.write('l');
+			app.stdin.write('o');
 
 			// Verify inputs were captured
 			expect(capturedInputs).toEqual(['h', 'e', 'l', 'l', 'o']);
 
-			const frame = stripAnsi(lastFrame() ?? '');
+			const frame = app.text;
 			expect(frame).toContain('Input: hello');
 
 			// Test delete key (0x7f is what terminals send for backspace/delete)
-			stdin.write('\x7f');
-			expect(stripAnsi(lastFrame() ?? '')).toContain('Input: hell');
+			app.stdin.write('\x7f');
+			expect(app.text).toContain('Input: hell');
 		});
 	});
 
@@ -1081,14 +1081,14 @@ describe('Common Ink Patterns', () => {
 				);
 			}
 
-			const { lastFrame, rerender } = render(<Spinner isLoading={true} message="Loading..." />);
+			const app = render(<Spinner isLoading={true} message="Loading..." />);
 
-			let frame = stripAnsi(lastFrame() ?? '');
+			let frame = app.text;
 			expect(frame).toContain('...');
 			expect(frame).toContain('Loading...');
 
-			rerender(<Spinner isLoading={false} message="Done!" />);
-			frame = stripAnsi(lastFrame() ?? '');
+			app.rerender(<Spinner isLoading={false} message="Done!" />);
+			frame = app.text;
 			expect(frame).toContain('+');
 			expect(frame).toContain('Done!');
 		});
@@ -1112,8 +1112,8 @@ describe('Common Ink Patterns', () => {
 				);
 			}
 
-			const { lastFrame } = render(<StatusBar mode="NORMAL" filename="test.txt" />);
-			const frame = stripAnsi(lastFrame() ?? '');
+			const app = render(<StatusBar mode="NORMAL" filename="test.txt" />);
+			const frame = app.text;
 
 			expect(frame).toContain('NORMAL');
 			expect(frame).toContain('test.txt');
@@ -1149,23 +1149,23 @@ describe('Common Ink Patterns', () => {
 				);
 			}
 
-			const { lastFrame, stdin } = render(<TabPanel />);
+			const app = render(<TabPanel />);
 
-			let frame = stripAnsi(lastFrame() ?? '');
+			let frame = app.text;
 			expect(frame).toContain('Content for: Home');
 
 			// Press tab to switch
-			stdin.write('\t');
-			frame = stripAnsi(lastFrame() ?? '');
+			app.stdin.write('\t');
+			frame = app.text;
 			expect(frame).toContain('Content for: Settings');
 
-			stdin.write('\t');
-			frame = stripAnsi(lastFrame() ?? '');
+			app.stdin.write('\t');
+			frame = app.text;
 			expect(frame).toContain('Content for: Help');
 
 			// Wrap around
-			stdin.write('\t');
-			frame = stripAnsi(lastFrame() ?? '');
+			app.stdin.write('\t');
+			frame = app.text;
 			expect(frame).toContain('Content for: Home');
 		});
 	});
@@ -1179,66 +1179,66 @@ describe('Edge Cases', () => {
 	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('empty Box renders without error', () => {
-		const { lastFrame } = render(<Box />);
-		expect(lastFrame()).toBeDefined();
+		const app = render(<Box />);
+		expect(app.ansi).toBeDefined();
 	});
 
 	test('empty Text renders without error', () => {
-		const { lastFrame } = render(<Text />);
-		expect(lastFrame()).toBeDefined();
+		const app = render(<Text />);
+		expect(app.ansi).toBeDefined();
 	});
 
 	test('null children are handled', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>Before</Text>
 				{null}
 				<Text>After</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Before');
 		expect(frame).toContain('After');
 	});
 
 	test('undefined children are handled', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				<Text>Before</Text>
 				{undefined}
 				<Text>After</Text>
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Before');
 		expect(frame).toContain('After');
 	});
 
 	test('boolean children are handled', () => {
-		const { lastFrame } = render(
+		const app = render(
 			<Box>
 				{true && <Text>Shown</Text>}
 				{false && <Text>Hidden</Text>}
 			</Box>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Shown');
 		expect(frame).not.toContain('Hidden');
 	});
 
 	test('number children render correctly', () => {
-		const { lastFrame } = render(<Text>{42}</Text>);
-		expect(stripAnsi(lastFrame() ?? '')).toContain('42');
+		const app = render(<Text>{42}</Text>);
+		expect(app.text).toContain('42');
 	});
 
 	test('mixed children types render correctly', () => {
 		const isActive = true; // Testing ternary expression handling
-		const { lastFrame } = render(
+		const app = render(
 			<Text>
 				Count: {10} - Status: {'ok'} - Active: {isActive ? 'yes' : 'no'}
 			</Text>,
 		);
-		const frame = stripAnsi(lastFrame() ?? '');
+		const frame = app.text;
 		expect(frame).toContain('Count: 10');
 		expect(frame).toContain('Status: ok');
 		expect(frame).toContain('Active: yes');

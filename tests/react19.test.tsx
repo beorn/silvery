@@ -64,8 +64,8 @@ function createMockInkxNode(layout: {
 describe('React 19 Compatibility (km-a1xb)', () => {
 	describe('Basic Rendering', () => {
 		test('basic component renders with React 19', () => {
-			const { lastFrame } = render(<Text>Hello React 19</Text>);
-			expect(lastFrame()).toContain('Hello React 19');
+			const app = render(<Text>Hello React 19</Text>);
+			expect(app.ansi).toContain('Hello React 19');
 		});
 
 		test('nested components render correctly', () => {
@@ -82,8 +82,8 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				);
 			}
 
-			const { lastFrame } = render(<Parent />);
-			const frame = lastFrame() ?? '';
+			const app = render(<Parent />);
+			const frame = app.ansi;
 			expect(frame).toContain('First');
 			expect(frame).toContain('Second');
 		});
@@ -98,13 +98,13 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				);
 			}
 
-			const { lastFrame, rerender } = render(<Conditional show={true} />);
-			expect(lastFrame()).toContain('Visible');
-			expect(lastFrame()).toContain('Always');
+			const app = render(<Conditional show={true} />);
+			expect(app.ansi).toContain('Visible');
+			expect(app.ansi).toContain('Always');
 
-			rerender(<Conditional show={false} />);
-			expect(lastFrame()).not.toContain('Visible');
-			expect(lastFrame()).toContain('Always');
+			app.rerender(<Conditional show={false} />);
+			expect(app.ansi).not.toContain('Visible');
+			expect(app.ansi).toContain('Always');
 		});
 	});
 
@@ -118,9 +118,9 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				return <Text>Count: {count}</Text>;
 			}
 
-			const { lastFrame } = render(<Counter />);
+			const app = render(<Counter />);
 			// After effect runs, count should be 42
-			expect(lastFrame()).toContain('Count: 42');
+			expect(app.ansi).toContain('Count: 42');
 		});
 
 		test('useEffect runs in React 19', () => {
@@ -147,8 +147,8 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				return <Text>Input Test</Text>;
 			}
 
-			const { stdin } = render(<InputTest />);
-			stdin.write('x');
+			const app = render(<InputTest />);
+			app.stdin.write('x');
 			expect(receivedInput).toBe('x');
 		});
 
@@ -202,9 +202,9 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				);
 			}
 
-			const { lastFrame } = render(<AppWithSuspense />);
+			const app = render(<AppWithSuspense />);
 			// Non-suspending components should render immediately
-			expect(lastFrame()).toContain('Regular Content');
+			expect(app.ansi).toContain('Regular Content');
 		});
 
 		test('Suspense with lazy components concept works', () => {
@@ -228,9 +228,9 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				);
 			}
 
-			const { lastFrame } = render(<AppWithLazyChild />);
+			const app = render(<AppWithLazyChild />);
 			// Non-suspending component renders immediately
-			expect(lastFrame()).toContain('Lazy Content');
+			expect(app.ansi).toContain('Lazy Content');
 		});
 
 		test('nested Suspense boundaries work correctly', () => {
@@ -247,8 +247,8 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				);
 			}
 
-			const { lastFrame } = render(<Outer />);
-			const frame = lastFrame() ?? '';
+			const app = render(<Outer />);
+			const frame = app.ansi;
 			expect(frame).toContain('Outer Content');
 			expect(frame).toContain('Inner Content');
 		});
@@ -275,7 +275,7 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				<StrictMode>
 					<Text>StrictMode Content</Text>
 				</StrictMode>,
-			).lastFrame();
+			).ansi;
 
 			expect(frame).toContain('StrictMode Content');
 			// Should not have duplicated content
@@ -293,13 +293,13 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				return <Text>{value}</Text>;
 			}
 
-			const { lastFrame } = render(
+			const app = render(
 				<StrictMode>
 					<StrictStateTest />
 				</StrictMode>,
 			);
 
-			expect(lastFrame()).toContain('updated');
+			expect(app.ansi).toContain('updated');
 		});
 	});
 
@@ -323,8 +323,8 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				);
 			}
 
-			const { lastFrame } = render(<TransitionTest />);
-			const frame = lastFrame() ?? '';
+			const app = render(<TransitionTest />);
+			const frame = app.ansi;
 			// The transition should eventually complete
 			expect(frame).toContain('Count:');
 		});
@@ -346,8 +346,8 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				);
 			}
 
-			const { lastFrame } = render(<DeferredTest />);
-			const frame = lastFrame() ?? '';
+			const app = render(<DeferredTest />);
+			const frame = app.ansi;
 			// Both values should be present (deferred may lag)
 			expect(frame).toContain('Input:');
 			expect(frame).toContain('Deferred:');
@@ -361,29 +361,29 @@ describe('React 19 Compatibility (km-a1xb)', () => {
 				return <Text>Count: {count}</Text>;
 			}
 
-			const { lastFrame, rerender } = render(<RapidRerender />);
-			expect(lastFrame()).toContain('Count: 0');
+			const app = render(<RapidRerender />);
+			expect(app.ansi).toContain('Count: 0');
 
 			// Rapid rerenders
-			rerender(<Text>A</Text>);
-			rerender(<Text>B</Text>);
-			rerender(<Text>C</Text>);
+			app.rerender(<Text>A</Text>);
+			app.rerender(<Text>B</Text>);
+			app.rerender(<Text>C</Text>);
 
-			expect(lastFrame()).toContain('C');
-			expect(lastFrame()).not.toContain('A');
-			expect(lastFrame()).not.toContain('B');
+			expect(app.ansi).toContain('C');
+			expect(app.ansi).not.toContain('A');
+			expect(app.ansi).not.toContain('B');
 		});
 
 		test('rerender with different element types works', () => {
-			const { lastFrame, rerender } = render(<Text>Text</Text>);
-			expect(lastFrame()).toContain('Text');
+			const app = render(<Text>Text</Text>);
+			expect(app.ansi).toContain('Text');
 
-			rerender(
+			app.rerender(
 				<Box borderStyle="single" width={15}>
 					<Text>Boxed</Text>
 				</Box>,
 			);
-			expect(lastFrame()).toContain('Boxed');
+			expect(app.ansi).toContain('Boxed');
 		});
 	});
 
