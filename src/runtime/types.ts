@@ -2,15 +2,15 @@
  * Core types for the inkx-loop runtime.
  */
 
-import type { TerminalBuffer } from "../buffer.js"
-import type { InkxNode } from "../types.js"
+import type { TerminalBuffer } from '../buffer.js';
+import type { InkxNode } from '../types.js';
 
 /**
  * Dimensions for rendering.
  */
 export interface Dims {
-  cols: number
-  rows: number
+	cols: number;
+	rows: number;
 }
 
 /**
@@ -22,72 +22,72 @@ export interface Dims {
  * - nodes: Internal node tree for locator queries
  */
 export interface Buffer {
-  /** Plain text without ANSI codes */
-  readonly text: string
-  /** Styled output with ANSI escape codes */
-  readonly ansi: string
-  /** Internal node tree for locator queries */
-  readonly nodes: InkxNode
-  /** Raw terminal buffer for diffing */
-  readonly _buffer: TerminalBuffer
+	/** Plain text without ANSI codes */
+	readonly text: string;
+	/** Styled output with ANSI escape codes */
+	readonly ansi: string;
+	/** Internal node tree for locator queries */
+	readonly nodes: InkxNode;
+	/** Raw terminal buffer for diffing */
+	readonly _buffer: TerminalBuffer;
 }
 
 /**
  * Event types from the runtime.
  */
 export type Event =
-  | {
-      type: "key"
-      key: string
-      ctrl?: boolean
-      meta?: boolean
-      shift?: boolean
-    }
-  | { type: "resize"; cols: number; rows: number }
-  | { type: "tick"; time: number }
-  | { type: "effect"; id: string; result: unknown }
-  | { type: "error"; error: Error }
+	| {
+			type: 'key';
+			key: string;
+			ctrl?: boolean;
+			meta?: boolean;
+			shift?: boolean;
+	  }
+	| { type: 'resize'; cols: number; rows: number }
+	| { type: 'tick'; time: number }
+	| { type: 'effect'; id: string; result: unknown }
+	| { type: 'error'; error: Error };
 
 /**
  * Render target interface - abstracts terminal output.
  */
 export interface RenderTarget {
-  /** Write rendered frame to output */
-  write(frame: string): void
-  /** Get current dimensions */
-  getDims(): Dims
-  /** Subscribe to resize events */
-  onResize?(handler: (dims: Dims) => void): () => void
+	/** Write rendered frame to output */
+	write(frame: string): void;
+	/** Get current dimensions */
+	getDims(): Dims;
+	/** Subscribe to resize events */
+	onResize?(handler: (dims: Dims) => void): () => void;
 }
 
 /**
  * Runtime options for createRuntime().
  */
 export interface RuntimeOptions {
-  /** Render target (terminal, test mock, etc.) */
-  target: RenderTarget
-  /** Abort signal for cleanup */
-  signal?: AbortSignal
+	/** Render target (terminal, test mock, etc.) */
+	target: RenderTarget;
+	/** Abort signal for cleanup */
+	signal?: AbortSignal;
 }
 
 /**
  * The runtime kernel interface.
  */
 export interface Runtime {
-  /** Event stream - yields until disposed */
-  events(): AsyncIterable<Event>
+	/** Event stream - yields until disposed */
+	events(): AsyncIterable<Event>;
 
-  /** Schedule an effect with optional cancellation */
-  schedule<T>(effect: () => Promise<T>, opts?: { signal?: AbortSignal }): void
+	/** Schedule an effect with optional cancellation */
+	schedule<T>(effect: () => Promise<T>, opts?: { signal?: AbortSignal }): void;
 
-  /** Render a buffer to the target */
-  render(buffer: Buffer): void
+	/** Render a buffer to the target */
+	render(buffer: Buffer): void;
 
-  /** Get current dimensions */
-  getDims(): Dims
+	/** Get current dimensions */
+	getDims(): Dims;
 
-  /** Dispose and cleanup - idempotent */
-  [Symbol.dispose](): void
+	/** Dispose and cleanup - idempotent */
+	[Symbol.dispose](): void;
 }
 
 // ============================================================================
@@ -98,8 +98,8 @@ export interface Runtime {
  * Event emitted by a provider, tagged with event type.
  */
 export type ProviderEvent<Events extends Record<string, unknown>> = {
-  [K in keyof Events]: { type: K; data: Events[K] }
-}[keyof Events]
+	[K in keyof Events]: { type: K; data: Events[K] };
+}[keyof Events];
 
 /**
  * Provider interface - unified store + event source.
@@ -119,20 +119,20 @@ export type ProviderEvent<Events extends Record<string, unknown>> = {
  * ```
  */
 export interface Provider<
-  State = unknown,
-  Events extends Record<string, unknown> = Record<string, never>,
+	State = unknown,
+	Events extends Record<string, unknown> = Record<string, never>,
 > {
-  /** Get current state (Zustand-compatible) */
-  getState(): State
+	/** Get current state (Zustand-compatible) */
+	getState(): State;
 
-  /** Subscribe to state changes (Zustand-compatible) */
-  subscribe(listener: (state: State) => void): () => void
+	/** Subscribe to state changes (Zustand-compatible) */
+	subscribe(listener: (state: State) => void): () => void;
 
-  /** Event stream - yields typed events until disposed */
-  events(): AsyncIterable<ProviderEvent<Events>>
+	/** Event stream - yields typed events until disposed */
+	events(): AsyncIterable<ProviderEvent<Events>>;
 
-  /** Cleanup resources */
-  [Symbol.dispose](): void
+	/** Cleanup resources */
+	[Symbol.dispose](): void;
 }
 
 /**
@@ -145,17 +145,17 @@ export interface Provider<
  * | ...
  */
 export type NamespacedEvent<
-  Providers extends Record<string, Provider<unknown, Record<string, unknown>>>,
+	Providers extends Record<string, Provider<unknown, Record<string, unknown>>>,
 > = {
-  [P in keyof Providers]: Providers[P] extends Provider<unknown, infer E>
-    ? {
-        [K in keyof E & string]: {
-          type: `${P & string}:${K}`
-          data: E[K]
-        }
-      }[keyof E & string]
-    : never
-}[keyof Providers]
+	[P in keyof Providers]: Providers[P] extends Provider<unknown, infer E>
+		? {
+				[K in keyof E & string]: {
+					type: `${P & string}:${K}`;
+					data: E[K];
+				};
+			}[keyof E & string]
+		: never;
+}[keyof Providers];
 
 /**
  * Extract all event keys from a providers map.
@@ -164,13 +164,13 @@ export type NamespacedEvent<
  * 'term:key' | 'term:resize' | 'sync:data' | ...
  */
 export type ProviderEventKey<
-  Providers extends Record<string, Provider<unknown, Record<string, unknown>>>,
-> = NamespacedEvent<Providers>["type"]
+	Providers extends Record<string, Provider<unknown, Record<string, unknown>>>,
+> = NamespacedEvent<Providers>['type'];
 
 /**
  * Get the data type for a specific event key.
  */
 export type EventData<
-  Providers extends Record<string, Provider<unknown, Record<string, unknown>>>,
-  K extends ProviderEventKey<Providers>,
-> = Extract<NamespacedEvent<Providers>, { type: K }>["data"]
+	Providers extends Record<string, Provider<unknown, Record<string, unknown>>>,
+	K extends ProviderEventKey<Providers>,
+> = Extract<NamespacedEvent<Providers>, { type: K }>['data'];

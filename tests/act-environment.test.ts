@@ -9,13 +9,13 @@
  * This test runs in a subprocess to ensure a clean global state.
  */
 
-import { spawn } from "bun"
-import { describe, expect, test } from "vitest"
+import { spawn } from 'bun';
+import { describe, expect, test } from 'vitest';
 
-describe("IS_REACT_ACT_ENVIRONMENT", () => {
-  test("main inkx module does NOT set IS_REACT_ACT_ENVIRONMENT", async () => {
-    // Create a test script that runs in isolation
-    const testScript = `
+describe('IS_REACT_ACT_ENVIRONMENT', () => {
+	test('main inkx module does NOT set IS_REACT_ACT_ENVIRONMENT', async () => {
+		// Create a test script that runs in isolation
+		const testScript = `
 			// Check before import
 			const before = globalThis.IS_REACT_ACT_ENVIRONMENT;
 			if (before !== undefined) {
@@ -35,34 +35,34 @@ describe("IS_REACT_ACT_ENVIRONMENT", () => {
 
 			// Success
 			process.exit(0);
-		`
+		`;
 
-    const proc = spawn({
-      cmd: ["bun", "-e", testScript],
-      stdout: "pipe",
-      stderr: "pipe",
-    })
+		const proc = spawn({
+			cmd: ['bun', '-e', testScript],
+			stdout: 'pipe',
+			stderr: 'pipe',
+		});
 
-    const exitCode = await proc.exited
-    const stderr = await new Response(proc.stderr).text()
+		const exitCode = await proc.exited;
+		const stderr = await new Response(proc.stderr).text();
 
-    if (exitCode === 1) {
-      throw new Error(
-        `IS_REACT_ACT_ENVIRONMENT was set before import (possibly by test framework)`,
-      )
-    }
-    if (exitCode === 2) {
-      throw new Error(
-        `inkx import set IS_REACT_ACT_ENVIRONMENT = true. This causes act() warnings in production. stderr: ${stderr}`,
-      )
-    }
+		if (exitCode === 1) {
+			throw new Error(
+				`IS_REACT_ACT_ENVIRONMENT was set before import (possibly by test framework)`,
+			);
+		}
+		if (exitCode === 2) {
+			throw new Error(
+				`inkx import set IS_REACT_ACT_ENVIRONMENT = true. This causes act() warnings in production. stderr: ${stderr}`,
+			);
+		}
 
-    expect(exitCode).toBe(0)
-  })
+		expect(exitCode).toBe(0);
+	});
 
-  test("testing module DOES set IS_REACT_ACT_ENVIRONMENT", async () => {
-    // The testing module should set the flag (this is expected)
-    const testScript = `
+	test('testing module DOES set IS_REACT_ACT_ENVIRONMENT', async () => {
+		// The testing module should set the flag (this is expected)
+		const testScript = `
 			// Check before import
 			const before = globalThis.IS_REACT_ACT_ENVIRONMENT;
 
@@ -78,17 +78,17 @@ describe("IS_REACT_ACT_ENVIRONMENT", () => {
 
 			// Success
 			process.exit(0);
-		`
+		`;
 
-    const proc = spawn({
-      cmd: ["bun", "-e", testScript],
-      stdout: "pipe",
-      stderr: "pipe",
-    })
+		const proc = spawn({
+			cmd: ['bun', '-e', testScript],
+			stdout: 'pipe',
+			stderr: 'pipe',
+		});
 
-    const exitCode = await proc.exited
-    const stderr = await new Response(proc.stderr).text()
+		const exitCode = await proc.exited;
+		const stderr = await new Response(proc.stderr).text();
 
-    expect(exitCode).toBe(0)
-  })
-})
+		expect(exitCode).toBe(0);
+	});
+});

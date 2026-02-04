@@ -21,8 +21,8 @@
  * ```
  */
 
-import { type Key, parseKey } from "./keys.js"
-import type { Dims, Provider, ProviderEvent } from "./types.js"
+import { type Key, parseKey } from './keys.js';
+import type { Dims, Provider, ProviderEvent } from './types.js';
 
 // ============================================================================
 // Types
@@ -32,31 +32,31 @@ import type { Dims, Provider, ProviderEvent } from "./types.js"
  * Terminal state.
  */
 export interface TermState {
-  cols: number
-  rows: number
+	cols: number;
+	rows: number;
 }
 
 /**
  * Terminal events.
  */
 export interface TermEvents {
-  key: { input: string; key: Key }
-  resize: Dims
+	key: { input: string; key: Key };
+	resize: Dims;
 }
 
 /**
  * Terminal provider type.
  */
-export type TermProvider = Provider<TermState, TermEvents>
+export type TermProvider = Provider<TermState, TermEvents>;
 
 /**
  * Options for createTermProvider.
  */
 export interface TermProviderOptions {
-  /** Initial columns (default: from stdout or 80) */
-  cols?: number
-  /** Initial rows (default: from stdout or 24) */
-  rows?: number
+	/** Initial columns (default: from stdout or 80) */
+	cols?: number;
+	/** Initial rows (default: from stdout or 24) */
+	rows?: number;
 }
 
 // ============================================================================
@@ -72,143 +72,139 @@ export interface TermProviderOptions {
  * - Cleans up stdin/stdout listeners on dispose
  */
 export function createTermProvider(
-  stdin: NodeJS.ReadStream,
-  stdout: NodeJS.WriteStream,
-  options: TermProviderOptions = {},
+	stdin: NodeJS.ReadStream,
+	stdout: NodeJS.WriteStream,
+	options: TermProviderOptions = {},
 ): TermProvider {
-  const { cols = stdout.columns || 80, rows = stdout.rows || 24 } = options
+	const { cols = stdout.columns || 80, rows = stdout.rows || 24 } = options;
 
-  // Current state
-  let state: TermState = { cols, rows }
+	// Current state
+	let state: TermState = { cols, rows };
 
-  // Subscribers
-  const listeners = new Set<(state: TermState) => void>()
+	// Subscribers
+	const listeners = new Set<(state: TermState) => void>();
 
-  // Disposed flag
-  let disposed = false
+	// Disposed flag
+	let disposed = false;
 
-  // Abort controller for cleanup
-  const controller = new AbortController()
-  const signal = controller.signal
+	// Abort controller for cleanup
+	const controller = new AbortController();
+	const signal = controller.signal;
 
-  // Resize handler
-  const onResize = () => {
-    state = {
-      cols: stdout.columns || 80,
-      rows: stdout.rows || 24,
-    }
-    listeners.forEach((l) => l(state))
-  }
+	// Resize handler
+	const onResize = () => {
+		state = {
+			cols: stdout.columns || 80,
+			rows: stdout.rows || 24,
+		};
+		listeners.forEach((l) => l(state));
+	};
 
-  // Subscribe to resize
-  stdout.on("resize", onResize)
+	// Subscribe to resize
+	stdout.on('resize', onResize);
 
-  return {
-    getState(): TermState {
-      return state
-    },
+	return {
+		getState(): TermState {
+			return state;
+		},
 
-    subscribe(listener: (state: TermState) => void): () => void {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
-    },
+		subscribe(listener: (state: TermState) => void): () => void {
+			listeners.add(listener);
+			return () => listeners.delete(listener);
+		},
 
-    async *events(): AsyncGenerator<
-      ProviderEvent<TermEvents>,
-      void,
-      undefined
-    > {
-      if (disposed) return
+		async *events(): AsyncGenerator<ProviderEvent<TermEvents>, void, undefined> {
+			if (disposed) return;
 
-      // Set up stdin for raw mode if TTY
-      if (stdin.isTTY) {
-        stdin.setRawMode(true)
-        stdin.resume()
-        stdin.setEncoding("utf8")
-      }
+			// Set up stdin for raw mode if TTY
+			if (stdin.isTTY) {
+				stdin.setRawMode(true);
+				stdin.resume();
+				stdin.setEncoding('utf8');
+			}
 
-      // Queued events
-      const queue: ProviderEvent<TermEvents>[] = []
-      let eventResolve: (() => void) | null = null
+			// Queued events
+			const queue: ProviderEvent<TermEvents>[] = [];
+			let eventResolve: (() => void) | null = null;
 
-      // Key handler
-      const onData = (rawKey: string) => {
-        const [input, key] = parseKey(rawKey)
-        const event: ProviderEvent<TermEvents> = {
-          type: "key",
-          data: { input, key },
-        }
-        queue.push(event)
-        if (eventResolve) {
-          const resolve = eventResolve
-          eventResolve = null
-          resolve()
-        }
-      }
+			// Key handler
+			const onData = (rawKey: string) => {
+				const [input, key] = parseKey(rawKey);
+				const event: ProviderEvent<TermEvents> = {
+					type: 'key',
+					data: { input, key },
+				};
+				queue.push(event);
+				if (eventResolve) {
+					const resolve = eventResolve;
+					eventResolve = null;
+					resolve();
+				}
+			};
 
-      // Resize handler for events
-      const onResizeEvent = () => {
-        const event: ProviderEvent<TermEvents> = {
-          type: "resize",
-          data: {
-            cols: stdout.columns || 80,
-            rows: stdout.rows || 24,
-          },
-        }
-        queue.push(event)
-        if (eventResolve) {
-          const resolve = eventResolve
-          eventResolve = null
-          resolve()
-        }
-      }
+			// Resize handler for events
+			const onResizeEvent = () => {
+				const event: ProviderEvent<TermEvents> = {
+					type: 'resize',
+					data: {
+						cols: stdout.columns || 80,
+						rows: stdout.rows || 24,
+					},
+				};
+				queue.push(event);
+				if (eventResolve) {
+					const resolve = eventResolve;
+					eventResolve = null;
+					resolve();
+				}
+			};
 
-      // Subscribe
-      stdin.on("data", onData)
-      stdout.on("resize", onResizeEvent)
+			// Subscribe
+			stdin.on('data', onData);
+			stdout.on('resize', onResizeEvent);
 
-      try {
-        while (!disposed && !signal.aborted) {
-          // Wait for event
-          if (queue.length === 0) {
-            await new Promise<void>((resolve) => {
-              eventResolve = resolve
-              signal.addEventListener("abort", resolve, { once: true })
-            })
-          }
+			try {
+				while (!disposed && !signal.aborted) {
+					// Wait for event
+					if (queue.length === 0) {
+						await new Promise<void>((resolve) => {
+							eventResolve = resolve;
+							signal.addEventListener('abort', resolve, { once: true });
+						});
+					}
 
-          // Check if aborted while waiting
-          if (disposed || signal.aborted) break
+					// Check if aborted while waiting
+					if (disposed || signal.aborted) break;
 
-          // Yield queued events
-          while (queue.length > 0) {
-            yield queue.shift()!
-          }
-        }
-      } finally {
-        // Cleanup
-        stdin.off("data", onData)
-        stdout.off("resize", onResizeEvent)
+					// Yield queued events
+					while (queue.length > 0) {
+						yield queue.shift()!;
+					}
+				}
+			} finally {
+				// Cleanup
+				stdin.off('data', onData);
+				stdout.off('resize', onResizeEvent);
 
-        if (stdin.isTTY) {
-          stdin.setRawMode(false)
-          stdin.pause()
-        }
-      }
-    },
+				if (stdin.isTTY) {
+					stdin.setRawMode(false);
+					stdin.pause();
+				}
+			}
+		},
 
-    [Symbol.dispose](): void {
-      if (disposed) return
-      disposed = true
+		[Symbol.dispose](): void {
+			if (disposed) return;
+			disposed = true;
 
-      // Abort pending waits
-      controller.abort()
+			// Abort pending waits
+			controller.abort();
 
-      // Remove resize listener
-      stdout.off("resize", onResize)
+			// Remove resize listener
+			stdout.off('resize', onResize);
 
-      // Clear listeners
-      listeners.clear()
-    },
-  }
+			// Clear listeners
+			listeners.clear();
+		},
+	};
 }

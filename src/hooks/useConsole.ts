@@ -1,5 +1,5 @@
-import type { ConsoleEntry, PatchedConsole } from "chalkx"
-import { useSyncExternalStore } from "react"
+import type { ConsoleEntry, PatchedConsole } from 'chalkx';
+import { useSyncExternalStore } from 'react';
 
 /**
  * Hook to subscribe to console entries from a PatchedConsole.
@@ -23,5 +23,5 @@ import { useSyncExternalStore } from "react"
  * ```
  */
 export function useConsole(patched: PatchedConsole): readonly ConsoleEntry[] {
-  return useSyncExternalStore(patched.subscribe, patched.getSnapshot)
+	return useSyncExternalStore(patched.subscribe, patched.getSnapshot);
 }

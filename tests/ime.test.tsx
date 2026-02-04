@@ -14,56 +14,56 @@
  * @see terminal-multiplexers.test.ts for Synchronized Update Mode
  */
 
-import { describe, expect, test } from "vitest"
-import React, { useState } from "react"
-import { Box, type Key, Text, useInput } from "../src/index.ts"
-import { createRenderer, stripAnsi } from "../src/testing/index.tsx"
-import { displayWidth, graphemeCount } from "../src/unicode.js"
+import React, { useState } from 'react';
+import { describe, expect, test } from 'vitest';
+import { Box, type Key, Text, useInput } from '../src/index.ts';
+import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { displayWidth, graphemeCount } from '../src/unicode.js';
 
 // ============================================================================
 // Test Components
 // ============================================================================
 
 interface TextCapture {
-  input: string
-  displayWidth: number
-  graphemeCount: number
+	input: string;
+	displayWidth: number;
+	graphemeCount: number;
 }
 
 /**
  * Component that captures and displays input with CJK-aware metrics.
  */
 function CJKInputCapture({
-  onCapture,
+	onCapture,
 }: {
-  onCapture?: (captures: TextCapture[]) => void
+	onCapture?: (captures: TextCapture[]) => void;
 }) {
-  const [captures, setCaptures] = useState<TextCapture[]>([])
+	const [captures, setCaptures] = useState<TextCapture[]>([]);
 
-  useInput((input: string, _key: Key) => {
-    const newCapture: TextCapture = {
-      input,
-      displayWidth: displayWidth(input),
-      graphemeCount: graphemeCount(input),
-    }
-    setCaptures((prev) => {
-      const updated = [...prev, newCapture]
-      onCapture?.(updated)
-      return updated
-    })
-  })
+	useInput((input: string, _key: Key) => {
+		const newCapture: TextCapture = {
+			input,
+			displayWidth: displayWidth(input),
+			graphemeCount: graphemeCount(input),
+		};
+		setCaptures((prev) => {
+			const updated = [...prev, newCapture];
+			onCapture?.(updated);
+			return updated;
+		});
+	});
 
-  return (
-    <Box flexDirection="column">
-      <Text>Inputs captured: {captures.length}</Text>
-      {captures.map((cap, i) => (
-        <Text key={`${i}-${cap.input}`}>
-          {i}: "{cap.input}" (width={cap.displayWidth}, graphemes=
-          {cap.graphemeCount})
-        </Text>
-      ))}
-    </Box>
-  )
+	return (
+		<Box flexDirection="column">
+			<Text>Inputs captured: {captures.length}</Text>
+			{captures.map((cap, i) => (
+				<Text key={`${i}-${cap.input}`}>
+					{i}: "{cap.input}" (width={cap.displayWidth}, graphemes=
+					{cap.graphemeCount})
+				</Text>
+			))}
+		</Box>
+	);
 }
 
 /**
@@ -71,579 +71,579 @@ function CJKInputCapture({
  * Demonstrates CJK-aware cursor positioning.
  */
 function CJKTextEditor() {
-  const [text, setText] = useState("")
-  const [cursorPos, setCursorPos] = useState(0)
+	const [text, setText] = useState('');
+	const [cursorPos, setCursorPos] = useState(0);
 
-  useInput((input: string, key: Key) => {
-    if (key.backspace || key.delete) {
-      if (cursorPos > 0) {
-        // Remove character before cursor
-        const graphemes = [...text]
-        graphemes.splice(cursorPos - 1, 1)
-        setText(graphemes.join(""))
-        setCursorPos(cursorPos - 1)
-      }
-    } else if (key.leftArrow) {
-      setCursorPos(Math.max(0, cursorPos - 1))
-    } else if (key.rightArrow) {
-      setCursorPos(Math.min([...text].length, cursorPos + 1))
-    } else if (input && !key.ctrl && !key.meta && !key.escape && !key.return) {
-      // Insert input at cursor (can be single char or paste)
-      const graphemes = [...text]
-      const inputGraphemes = [...input] // Split pasted text into graphemes
-      graphemes.splice(cursorPos, 0, ...inputGraphemes)
-      setText(graphemes.join(""))
-      setCursorPos(cursorPos + inputGraphemes.length)
-    }
-  })
+	useInput((input: string, key: Key) => {
+		if (key.backspace || key.delete) {
+			if (cursorPos > 0) {
+				// Remove character before cursor
+				const graphemes = [...text];
+				graphemes.splice(cursorPos - 1, 1);
+				setText(graphemes.join(''));
+				setCursorPos(cursorPos - 1);
+			}
+		} else if (key.leftArrow) {
+			setCursorPos(Math.max(0, cursorPos - 1));
+		} else if (key.rightArrow) {
+			setCursorPos(Math.min([...text].length, cursorPos + 1));
+		} else if (input && !key.ctrl && !key.meta && !key.escape && !key.return) {
+			// Insert input at cursor (can be single char or paste)
+			const graphemes = [...text];
+			const inputGraphemes = [...input]; // Split pasted text into graphemes
+			graphemes.splice(cursorPos, 0, ...inputGraphemes);
+			setText(graphemes.join(''));
+			setCursorPos(cursorPos + inputGraphemes.length);
+		}
+	});
 
-  // Calculate display column for cursor (CJK chars are 2 columns wide)
-  const graphemes = [...text]
-  let cursorColumn = 0
-  for (let i = 0; i < cursorPos && i < graphemes.length; i++) {
-    cursorColumn += displayWidth(graphemes[i]!)
-  }
+	// Calculate display column for cursor (CJK chars are 2 columns wide)
+	const graphemes = [...text];
+	let cursorColumn = 0;
+	for (let i = 0; i < cursorPos && i < graphemes.length; i++) {
+		cursorColumn += displayWidth(graphemes[i]!);
+	}
 
-  return (
-    <Box flexDirection="column">
-      <Text>Text: {text || "(empty)"}</Text>
-      <Text>Cursor position: {cursorPos} (graphemes)</Text>
-      <Text>Cursor column: {cursorColumn} (display columns)</Text>
-      <Text>Text width: {displayWidth(text)} columns</Text>
-      <Text>Grapheme count: {graphemeCount(text)}</Text>
-    </Box>
-  )
+	return (
+		<Box flexDirection="column">
+			<Text>Text: {text || '(empty)'}</Text>
+			<Text>Cursor position: {cursorPos} (graphemes)</Text>
+			<Text>Cursor column: {cursorColumn} (display columns)</Text>
+			<Text>Text width: {displayWidth(text)} columns</Text>
+			<Text>Grapheme count: {graphemeCount(text)}</Text>
+		</Box>
+	);
 }
 
 // ============================================================================
 // Chinese Character Input Tests
 // ============================================================================
 
-describe("Chinese Character Input (中文)", () => {
-  const render = createRenderer({ cols: 80, rows: 30 })
+describe('Chinese Character Input (中文)', () => {
+	const render = createRenderer({ cols: 80, rows: 30 });
 
-  test("handles single Chinese character input", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles single Chinese character input', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("中")
+		stdin.write('中');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("Inputs captured: 1")
-    expect(frame).toContain('"中"')
-    expect(frame).toContain("width=2")
-    expect(frame).toContain("graphemes=1")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('Inputs captured: 1');
+		expect(frame).toContain('"中"');
+		expect(frame).toContain('width=2');
+		expect(frame).toContain('graphemes=1');
+	});
 
-  test("handles multiple Chinese characters input individually", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles multiple Chinese characters input individually', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("你")
-    stdin.write("好")
-    stdin.write("世")
-    stdin.write("界")
+		stdin.write('你');
+		stdin.write('好');
+		stdin.write('世');
+		stdin.write('界');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("Inputs captured: 4")
-    expect(frame).toContain('"你"')
-    expect(frame).toContain('"好"')
-    expect(frame).toContain('"世"')
-    expect(frame).toContain('"界"')
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('Inputs captured: 4');
+		expect(frame).toContain('"你"');
+		expect(frame).toContain('"好"');
+		expect(frame).toContain('"世"');
+		expect(frame).toContain('"界"');
+	});
 
-  test("handles Chinese string as single paste event", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles Chinese string as single paste event', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    // When pasted, the entire string arrives as one input event
-    stdin.write("你好世界")
+		// When pasted, the entire string arrives as one input event
+		stdin.write('你好世界');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("Inputs captured: 1")
-    expect(frame).toContain('"你好世界"')
-    expect(frame).toContain("width=8") // 4 chars * 2 columns
-    expect(frame).toContain("graphemes=4")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('Inputs captured: 1');
+		expect(frame).toContain('"你好世界"');
+		expect(frame).toContain('width=8'); // 4 chars * 2 columns
+		expect(frame).toContain('graphemes=4');
+	});
 
-  test("handles simplified Chinese characters", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles simplified Chinese characters', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("简体中文")
+		stdin.write('简体中文');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"简体中文"')
-    expect(frame).toContain("width=8")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"简体中文"');
+		expect(frame).toContain('width=8');
+	});
 
-  test("handles traditional Chinese characters", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles traditional Chinese characters', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("繁體中文")
+		stdin.write('繁體中文');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"繁體中文"')
-    expect(frame).toContain("width=8")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"繁體中文"');
+		expect(frame).toContain('width=8');
+	});
 
-  test("handles Chinese punctuation", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles Chinese punctuation', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("，")
-    stdin.write("。")
-    stdin.write("！")
-    stdin.write("？")
+		stdin.write('，');
+		stdin.write('。');
+		stdin.write('！');
+		stdin.write('？');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("Inputs captured: 4")
-    // Full-width punctuation is 2 columns
-    expect(frame).toContain("width=2")
-  })
-})
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('Inputs captured: 4');
+		// Full-width punctuation is 2 columns
+		expect(frame).toContain('width=2');
+	});
+});
 
 // ============================================================================
 // Japanese Input Tests
 // ============================================================================
 
-describe("Japanese Character Input (日本語)", () => {
-  const render = createRenderer({ cols: 80, rows: 30 })
+describe('Japanese Character Input (日本語)', () => {
+	const render = createRenderer({ cols: 80, rows: 30 });
 
-  test("handles Hiragana input", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles Hiragana input', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("ひらがな")
+		stdin.write('ひらがな');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"ひらがな"')
-    expect(frame).toContain("width=8") // 4 chars * 2 columns
-    expect(frame).toContain("graphemes=4")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"ひらがな"');
+		expect(frame).toContain('width=8'); // 4 chars * 2 columns
+		expect(frame).toContain('graphemes=4');
+	});
 
-  test("handles Katakana input", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles Katakana input', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("カタカナ")
+		stdin.write('カタカナ');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"カタカナ"')
-    expect(frame).toContain("width=8")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"カタカナ"');
+		expect(frame).toContain('width=8');
+	});
 
-  test("handles Kanji input", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles Kanji input', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("日本語")
+		stdin.write('日本語');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"日本語"')
-    expect(frame).toContain("width=6") // 3 chars * 2 columns
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"日本語"');
+		expect(frame).toContain('width=6'); // 3 chars * 2 columns
+	});
 
-  test("handles half-width Katakana (hankaku)", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles half-width Katakana (hankaku)', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    // Half-width katakana: U+FF61-U+FF9F
-    stdin.write("ｱｲｳ")
+		// Half-width katakana: U+FF61-U+FF9F
+		stdin.write('ｱｲｳ');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"ｱｲｳ"')
-    expect(frame).toContain("width=3") // Half-width = 1 column each
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"ｱｲｳ"');
+		expect(frame).toContain('width=3'); // Half-width = 1 column each
+	});
 
-  test("handles mixed Japanese script", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles mixed Japanese script', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    // Common Japanese pattern: Kanji + Hiragana
-    stdin.write("東京とうきょう")
+		// Common Japanese pattern: Kanji + Hiragana
+		stdin.write('東京とうきょう');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"東京とうきょう"')
-    expect(frame).toContain("width=14") // 2 kanji (4) + 5 hiragana (10)
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"東京とうきょう"');
+		expect(frame).toContain('width=14'); // 2 kanji (4) + 5 hiragana (10)
+	});
 
-  test("handles Romaji (ASCII) mixed with Japanese", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles Romaji (ASCII) mixed with Japanese', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("ABCあいう")
+		stdin.write('ABCあいう');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"ABCあいう"')
-    expect(frame).toContain("width=9") // 3 ASCII (3) + 3 hiragana (6)
-  })
-})
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"ABCあいう"');
+		expect(frame).toContain('width=9'); // 3 ASCII (3) + 3 hiragana (6)
+	});
+});
 
 // ============================================================================
 // Korean Input Tests
 // ============================================================================
 
-describe("Korean Character Input (한국어)", () => {
-  const render = createRenderer({ cols: 80, rows: 30 })
+describe('Korean Character Input (한국어)', () => {
+	const render = createRenderer({ cols: 80, rows: 30 });
 
-  test("handles Hangul syllable input", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles Hangul syllable input', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("한글")
+		stdin.write('한글');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"한글"')
-    expect(frame).toContain("width=4") // 2 chars * 2 columns
-    expect(frame).toContain("graphemes=2")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"한글"');
+		expect(frame).toContain('width=4'); // 2 chars * 2 columns
+		expect(frame).toContain('graphemes=2');
+	});
 
-  test("handles Korean greeting", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles Korean greeting', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("안녕하세요")
+		stdin.write('안녕하세요');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"안녕하세요"')
-    expect(frame).toContain("width=10") // 5 chars * 2 columns
-    expect(frame).toContain("graphemes=5")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"안녕하세요"');
+		expect(frame).toContain('width=10'); // 5 chars * 2 columns
+		expect(frame).toContain('graphemes=5');
+	});
 
-  test("handles Hangul Jamo (conjoining)", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles Hangul Jamo (conjoining)', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    // Compatibility Jamo (displayed separately)
-    stdin.write("ㄱㄴㄷ")
+		// Compatibility Jamo (displayed separately)
+		stdin.write('ㄱㄴㄷ');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"ㄱㄴㄷ"')
-    expect(frame).toContain("width=6") // Compatibility Jamo are wide
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"ㄱㄴㄷ"');
+		expect(frame).toContain('width=6'); // Compatibility Jamo are wide
+	});
 
-  test("handles Korean with numbers", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles Korean with numbers', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("2024년")
+		stdin.write('2024년');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"2024년"')
-    expect(frame).toContain("width=6") // 4 digits (4) + 1 Hangul (2)
-  })
-})
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"2024년"');
+		expect(frame).toContain('width=6'); // 4 digits (4) + 1 Hangul (2)
+	});
+});
 
 // ============================================================================
 // Mixed CJK Input Tests
 // ============================================================================
 
-describe("Mixed CJK and ASCII Input", () => {
-  const render = createRenderer({ cols: 80, rows: 30 })
+describe('Mixed CJK and ASCII Input', () => {
+	const render = createRenderer({ cols: 80, rows: 30 });
 
-  test("handles alternating ASCII and CJK characters", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles alternating ASCII and CJK characters', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("a")
-    stdin.write("中")
-    stdin.write("b")
-    stdin.write("文")
+		stdin.write('a');
+		stdin.write('中');
+		stdin.write('b');
+		stdin.write('文');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("Inputs captured: 4")
-    expect(frame).toContain('"a"')
-    expect(frame).toContain('"中"')
-    expect(frame).toContain('"b"')
-    expect(frame).toContain('"文"')
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('Inputs captured: 4');
+		expect(frame).toContain('"a"');
+		expect(frame).toContain('"中"');
+		expect(frame).toContain('"b"');
+		expect(frame).toContain('"文"');
+	});
 
-  test("handles mixed CJK language input", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles mixed CJK language input', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    // Chinese + Japanese + Korean
-    stdin.write("中あ한")
+		// Chinese + Japanese + Korean
+		stdin.write('中あ한');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"中あ한"')
-    expect(frame).toContain("width=6") // 3 CJK chars * 2 columns
-    expect(frame).toContain("graphemes=3")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"中あ한"');
+		expect(frame).toContain('width=6'); // 3 CJK chars * 2 columns
+		expect(frame).toContain('graphemes=3');
+	});
 
-  test("handles CJK with ASCII punctuation", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles CJK with ASCII punctuation', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    stdin.write("中文.")
+		stdin.write('中文.');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"中文."')
-    expect(frame).toContain("width=5") // 2 CJK (4) + 1 ASCII (1)
-  })
-})
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"中文."');
+		expect(frame).toContain('width=5'); // 2 CJK (4) + 1 ASCII (1)
+	});
+});
 
 // ============================================================================
 // Cursor Positioning Tests
 // ============================================================================
 
-describe("Cursor Positioning with CJK Characters", () => {
-  const render = createRenderer({ cols: 80, rows: 30 })
+describe('Cursor Positioning with CJK Characters', () => {
+	const render = createRenderer({ cols: 80, rows: 30 });
 
-  test("tracks cursor position with CJK input", () => {
-    const { lastFrame, stdin } = render(<CJKTextEditor />)
+	test('tracks cursor position with CJK input', () => {
+		const { lastFrame, stdin } = render(<CJKTextEditor />);
 
-    stdin.write("中")
+		stdin.write('中');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("Cursor position: 1 (graphemes)")
-    expect(frame).toContain("Cursor column: 2 (display columns)")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('Cursor position: 1 (graphemes)');
+		expect(frame).toContain('Cursor column: 2 (display columns)');
+	});
 
-  test("cursor column accounts for CJK width", () => {
-    const { lastFrame, stdin } = render(<CJKTextEditor />)
+	test('cursor column accounts for CJK width', () => {
+		const { lastFrame, stdin } = render(<CJKTextEditor />);
 
-    stdin.write("AB中文CD")
+		stdin.write('AB中文CD');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("Cursor position: 6 (graphemes)")
-    // A(1) + B(1) + 中(2) + 文(2) + C(1) + D(1) = 8 columns
-    expect(frame).toContain("Cursor column: 8 (display columns)")
-    expect(frame).toContain("Text width: 8 columns")
-    expect(frame).toContain("Grapheme count: 6")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('Cursor position: 6 (graphemes)');
+		// A(1) + B(1) + 中(2) + 文(2) + C(1) + D(1) = 8 columns
+		expect(frame).toContain('Cursor column: 8 (display columns)');
+		expect(frame).toContain('Text width: 8 columns');
+		expect(frame).toContain('Grapheme count: 6');
+	});
 
-  test("cursor movement with mixed CJK/ASCII", () => {
-    const { lastFrame, stdin } = render(<CJKTextEditor />)
+	test('cursor movement with mixed CJK/ASCII', () => {
+		const { lastFrame, stdin } = render(<CJKTextEditor />);
 
-    // Type "A中B"
-    stdin.write("A")
-    stdin.write("中")
-    stdin.write("B")
+		// Type "A中B"
+		stdin.write('A');
+		stdin.write('中');
+		stdin.write('B');
 
-    // Move left twice (should be at '中')
-    stdin.write("\x1b[D") // left
-    stdin.write("\x1b[D") // left
+		// Move left twice (should be at '中')
+		stdin.write('\x1b[D'); // left
+		stdin.write('\x1b[D'); // left
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("Cursor position: 1 (graphemes)")
-    // Cursor at position 1 means after 'A' (1 column)
-    expect(frame).toContain("Cursor column: 1 (display columns)")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('Cursor position: 1 (graphemes)');
+		// Cursor at position 1 means after 'A' (1 column)
+		expect(frame).toContain('Cursor column: 1 (display columns)');
+	});
 
-  test("backspace removes whole CJK character", () => {
-    const { lastFrame, stdin } = render(<CJKTextEditor />)
+	test('backspace removes whole CJK character', () => {
+		const { lastFrame, stdin } = render(<CJKTextEditor />);
 
-    stdin.write("A中B")
-    stdin.write("\b") // Backspace
+		stdin.write('A中B');
+		stdin.write('\b'); // Backspace
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("Text: A中")
-    expect(frame).toContain("Cursor position: 2")
-  })
-})
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('Text: A中');
+		expect(frame).toContain('Cursor position: 2');
+	});
+});
 
 // ============================================================================
 // Synchronized Update Mode Tests
 // ============================================================================
 
-describe("Synchronized Update Mode (for IME rendering)", () => {
-  /**
-   * Synchronized Update Mode (CSI ? 2026 h/l) helps prevent tearing
-   * when IME composition windows or candidate lists are displayed.
-   *
-   * This is especially important in tmux where screen updates can flicker.
-   *
-   * These tests verify the escape sequence format, not actual terminal behavior.
-   */
+describe('Synchronized Update Mode (for IME rendering)', () => {
+	/**
+	 * Synchronized Update Mode (CSI ? 2026 h/l) helps prevent tearing
+	 * when IME composition windows or candidate lists are displayed.
+	 *
+	 * This is especially important in tmux where screen updates can flicker.
+	 *
+	 * These tests verify the escape sequence format, not actual terminal behavior.
+	 */
 
-  const ESC = "\x1b"
-  const CSI = `${ESC}[`
+	const ESC = '\x1b';
+	const CSI = `${ESC}[`;
 
-  const SYNC_UPDATE = {
-    begin: `${CSI}?2026h`,
-    end: `${CSI}?2026l`,
-  }
+	const SYNC_UPDATE = {
+		begin: `${CSI}?2026h`,
+		end: `${CSI}?2026l`,
+	};
 
-  test("generates correct synchronized update begin sequence", () => {
-    expect(SYNC_UPDATE.begin).toBe("\x1b[?2026h")
-  })
+	test('generates correct synchronized update begin sequence', () => {
+		expect(SYNC_UPDATE.begin).toBe('\x1b[?2026h');
+	});
 
-  test("generates correct synchronized update end sequence", () => {
-    expect(SYNC_UPDATE.end).toBe("\x1b[?2026l")
-  })
+	test('generates correct synchronized update end sequence', () => {
+		expect(SYNC_UPDATE.end).toBe('\x1b[?2026l');
+	});
 
-  test("wraps CJK output with synchronized update", () => {
-    const wrapWithSyncUpdate = (content: string): string => {
-      return `${SYNC_UPDATE.begin}${content}${SYNC_UPDATE.end}`
-    }
+	test('wraps CJK output with synchronized update', () => {
+		const wrapWithSyncUpdate = (content: string): string => {
+			return `${SYNC_UPDATE.begin}${content}${SYNC_UPDATE.end}`;
+		};
 
-    const cjkContent = "中文日本語한국어"
-    const wrapped = wrapWithSyncUpdate(cjkContent)
+		const cjkContent = '中文日本語한국어';
+		const wrapped = wrapWithSyncUpdate(cjkContent);
 
-    expect(wrapped).toBe("\x1b[?2026h中文日本語한국어\x1b[?2026l")
-    expect(wrapped.startsWith(SYNC_UPDATE.begin)).toBe(true)
-    expect(wrapped.endsWith(SYNC_UPDATE.end)).toBe(true)
-  })
+		expect(wrapped).toBe('\x1b[?2026h中文日本語한국어\x1b[?2026l');
+		expect(wrapped.startsWith(SYNC_UPDATE.begin)).toBe(true);
+		expect(wrapped.endsWith(SYNC_UPDATE.end)).toBe(true);
+	});
 
-  test("documented: prevents IME composition window flicker", () => {
-    // IME composition typically shows:
-    // 1. Inline composition text (underlined)
-    // 2. Candidate window (floating)
-    //
-    // Without synchronized update, rapid screen updates during
-    // composition can cause visible flicker in tmux.
-    //
-    // Using synchronized update batches the screen changes,
-    // resulting in smoother IME interaction.
-    expect(true).toBe(true) // Documentation test
-  })
-})
+	test('documented: prevents IME composition window flicker', () => {
+		// IME composition typically shows:
+		// 1. Inline composition text (underlined)
+		// 2. Candidate window (floating)
+		//
+		// Without synchronized update, rapid screen updates during
+		// composition can cause visible flicker in tmux.
+		//
+		// Using synchronized update batches the screen changes,
+		// resulting in smoother IME interaction.
+		expect(true).toBe(true); // Documentation test
+	});
+});
 
 // ============================================================================
 // IME Documentation Tests
 // ============================================================================
 
-describe("IME Considerations (Documentation)", () => {
-  /**
-   * IME INPUT METHOD EDITOR CONSIDERATIONS
-   * ======================================
-   *
-   * IME is used for inputting CJK characters and other complex scripts.
-   * The composition process is:
-   *
-   * 1. User types phonetic characters (romaji, pinyin, bopomofo)
-   * 2. IME shows composition string (often underlined)
-   * 3. IME shows candidate list
-   * 4. User selects candidate
-   * 5. Final converted text is committed
-   *
-   * From the terminal's perspective:
-   * - Only the final committed text is received
-   * - Composition UI is handled by the IME system
-   * - The terminal sees completed CJK characters, not keystrokes
-   *
-   * For example, typing "nihongo" and pressing space might:
-   * - Send "日本語" as a single string to the terminal
-   * - Or send each character individually depending on IME mode
-   */
+describe('IME Considerations (Documentation)', () => {
+	/**
+	 * IME INPUT METHOD EDITOR CONSIDERATIONS
+	 * ======================================
+	 *
+	 * IME is used for inputting CJK characters and other complex scripts.
+	 * The composition process is:
+	 *
+	 * 1. User types phonetic characters (romaji, pinyin, bopomofo)
+	 * 2. IME shows composition string (often underlined)
+	 * 3. IME shows candidate list
+	 * 4. User selects candidate
+	 * 5. Final converted text is committed
+	 *
+	 * From the terminal's perspective:
+	 * - Only the final committed text is received
+	 * - Composition UI is handled by the IME system
+	 * - The terminal sees completed CJK characters, not keystrokes
+	 *
+	 * For example, typing "nihongo" and pressing space might:
+	 * - Send "日本語" as a single string to the terminal
+	 * - Or send each character individually depending on IME mode
+	 */
 
-  test("documents IME composition behavior", () => {
-    // The terminal receives final text, not composition events
-    const imeCommittedText = "日本語"
-    expect(imeCommittedText).toBe("日本語")
-    expect(displayWidth(imeCommittedText)).toBe(6)
-  })
+	test('documents IME composition behavior', () => {
+		// The terminal receives final text, not composition events
+		const imeCommittedText = '日本語';
+		expect(imeCommittedText).toBe('日本語');
+		expect(displayWidth(imeCommittedText)).toBe(6);
+	});
 
-  test("documents IME paste behavior", () => {
-    // When using IME to input and then pasting:
-    // - Pasted CJK text arrives as a single chunk
-    // - Bracketed paste mode helps distinguish paste from typing
-    const pastedText = "你好世界こんにちは안녕하세요"
-    expect(graphemeCount(pastedText)).toBe(14)
-  })
+	test('documents IME paste behavior', () => {
+		// When using IME to input and then pasting:
+		// - Pasted CJK text arrives as a single chunk
+		// - Bracketed paste mode helps distinguish paste from typing
+		const pastedText = '你好世界こんにちは안녕하세요';
+		expect(graphemeCount(pastedText)).toBe(14);
+	});
 
-  test("documents bracketed paste sequences", () => {
-    // Bracketed paste helps distinguish IME-pasted text
-    const bracketedPaste = {
-      enable: "\x1b[?2004h",
-      disable: "\x1b[?2004l",
-      pasteStart: "\x1b[200~",
-      pasteEnd: "\x1b[201~",
-    }
+	test('documents bracketed paste sequences', () => {
+		// Bracketed paste helps distinguish IME-pasted text
+		const bracketedPaste = {
+			enable: '\x1b[?2004h',
+			disable: '\x1b[?2004l',
+			pasteStart: '\x1b[200~',
+			pasteEnd: '\x1b[201~',
+		};
 
-    expect(bracketedPaste.enable).toBe("\x1b[?2004h")
-    expect(bracketedPaste.pasteStart).toBe("\x1b[200~")
-    expect(bracketedPaste.pasteEnd).toBe("\x1b[201~")
-  })
+		expect(bracketedPaste.enable).toBe('\x1b[?2004h');
+		expect(bracketedPaste.pasteStart).toBe('\x1b[200~');
+		expect(bracketedPaste.pasteEnd).toBe('\x1b[201~');
+	});
 
-  test("documents tmux IME considerations", () => {
-    // tmux quirks affecting IME:
-    // 1. escape-time delay can interfere with rapid input
-    //    Fix: set -sg escape-time 0
-    //
-    // 2. Screen tearing during composition
-    //    Fix: Synchronized Update Mode (CSI ? 2026 h/l)
-    //
-    // 3. Unicode width handling
-    //    Fix: set -g utf8 on (tmux < 2.2)
-    //    Modern tmux handles UTF-8 automatically
-    expect(true).toBe(true) // Documentation test
-  })
+	test('documents tmux IME considerations', () => {
+		// tmux quirks affecting IME:
+		// 1. escape-time delay can interfere with rapid input
+		//    Fix: set -sg escape-time 0
+		//
+		// 2. Screen tearing during composition
+		//    Fix: Synchronized Update Mode (CSI ? 2026 h/l)
+		//
+		// 3. Unicode width handling
+		//    Fix: set -g utf8 on (tmux < 2.2)
+		//    Modern tmux handles UTF-8 automatically
+		expect(true).toBe(true); // Documentation test
+	});
 
-  test("documents terminal compatibility", () => {
-    // Terminal emulators with good IME support:
-    // - iTerm2 (macOS): Excellent IME support
-    // - Kitty: Good IME support, configurable
-    // - WezTerm: Good IME support
-    // - GNOME Terminal: Good on Linux
-    // - Windows Terminal: Good IME support on Windows
-    //
-    // For TUI apps:
-    // - Focus on handling committed text correctly
-    // - Don't try to handle composition (OS handles it)
-    // - Use wide character detection for cursor positioning
-    expect(true).toBe(true) // Documentation test
-  })
-})
+	test('documents terminal compatibility', () => {
+		// Terminal emulators with good IME support:
+		// - iTerm2 (macOS): Excellent IME support
+		// - Kitty: Good IME support, configurable
+		// - WezTerm: Good IME support
+		// - GNOME Terminal: Good on Linux
+		// - Windows Terminal: Good IME support on Windows
+		//
+		// For TUI apps:
+		// - Focus on handling committed text correctly
+		// - Don't try to handle composition (OS handles it)
+		// - Use wide character detection for cursor positioning
+		expect(true).toBe(true); // Documentation test
+	});
+});
 
 // ============================================================================
 // Input Validation Tests
 // ============================================================================
 
-describe("CJK Input Edge Cases", () => {
-  const render = createRenderer({ cols: 80, rows: 30 })
-  // Wide render for tests with long content that exceeds 80 columns
-  const wideRender = createRenderer({ cols: 160, rows: 30 })
+describe('CJK Input Edge Cases', () => {
+	const render = createRenderer({ cols: 80, rows: 30 });
+	// Wide render for tests with long content that exceeds 80 columns
+	const wideRender = createRenderer({ cols: 160, rows: 30 });
 
-  test("handles empty input gracefully", () => {
-    const { lastFrame } = render(<CJKInputCapture />)
+	test('handles empty input gracefully', () => {
+		const { lastFrame } = render(<CJKInputCapture />);
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("Inputs captured: 0")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('Inputs captured: 0');
+	});
 
-  test("handles very long CJK string", () => {
-    // Need wide terminal for 50 CJK chars (100 columns) + formatting text
-    const { lastFrame, stdin } = wideRender(<CJKInputCapture />)
+	test('handles very long CJK string', () => {
+		// Need wide terminal for 50 CJK chars (100 columns) + formatting text
+		const { lastFrame, stdin } = wideRender(<CJKInputCapture />);
 
-    // 50 Chinese characters
-    const longText = "中".repeat(50)
-    stdin.write(longText)
+		// 50 Chinese characters
+		const longText = '中'.repeat(50);
+		stdin.write(longText);
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("width=100") // 50 * 2 columns
-    expect(frame).toContain("graphemes=50")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('width=100'); // 50 * 2 columns
+		expect(frame).toContain('graphemes=50');
+	});
 
-  test("handles CJK with combining marks", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles CJK with combining marks', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    // Some rare cases have CJK with combining marks
-    // Example: Vietnamese uses combining marks
-    stdin.write("Việt Nam")
+		// Some rare cases have CJK with combining marks
+		// Example: Vietnamese uses combining marks
+		stdin.write('Việt Nam');
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"Việt Nam"')
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"Việt Nam"');
+	});
 
-  test("handles zero-width joiner between CJK", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles zero-width joiner between CJK', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    // ZWJ (U+200D) between characters (unusual but valid)
-    const textWithZwj = "中\u200D文"
-    stdin.write(textWithZwj)
+		// ZWJ (U+200D) between characters (unusual but valid)
+		const textWithZwj = '中\u200D文';
+		stdin.write(textWithZwj);
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    // ZWJ should not affect display width calculation significantly
-    expect(frame).toContain("width=")
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		// ZWJ should not affect display width calculation significantly
+		expect(frame).toContain('width=');
+	});
 
-  test("handles CJK compatibility characters", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles CJK compatibility characters', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    // CJK Compatibility Forms (U+F900-U+FAFF)
-    // These are alternate forms of existing characters
-    stdin.write("\uF900") // CJK compatibility ideograph
+		// CJK Compatibility Forms (U+F900-U+FAFF)
+		// These are alternate forms of existing characters
+		stdin.write('\uF900'); // CJK compatibility ideograph
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain("width=2") // Still a wide character
-  })
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('width=2'); // Still a wide character
+	});
 
-  test("handles fullwidth ASCII characters", () => {
-    const { lastFrame, stdin } = render(<CJKInputCapture />)
+	test('handles fullwidth ASCII characters', () => {
+		const { lastFrame, stdin } = render(<CJKInputCapture />);
 
-    // Fullwidth ASCII (U+FF01-U+FF5E) - often used in CJK contexts
-    stdin.write("ＡＢＣ") // Fullwidth A, B, C
+		// Fullwidth ASCII (U+FF01-U+FF5E) - often used in CJK contexts
+		stdin.write('ＡＢＣ'); // Fullwidth A, B, C
 
-    const frame = stripAnsi(lastFrame() ?? "")
-    expect(frame).toContain('"ＡＢＣ"')
-    expect(frame).toContain("width=6") // 3 fullwidth chars * 2
-  })
-})
+		const frame = stripAnsi(lastFrame() ?? '');
+		expect(frame).toContain('"ＡＢＣ"');
+		expect(frame).toContain('width=6'); // 3 fullwidth chars * 2
+	});
+});
 
 // ============================================================================
 // Manual Testing Guide
@@ -713,9 +713,9 @@ describe("CJK Input Edge Cases", () => {
  * 5. Expected vs actual behavior
  */
 
-describe("Manual Testing Guide", () => {
-  test("guide exists in comments above", () => {
-    // This test ensures the documentation is present
-    expect(true).toBe(true)
-  })
-})
+describe('Manual Testing Guide', () => {
+	test('guide exists in comments above', () => {
+		// This test ensures the documentation is present
+		expect(true).toBe(true);
+	});
+});

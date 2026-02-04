@@ -26,40 +26,40 @@
  *   Emit minimal ANSI sequences for changes
  */
 
-import { createConditionalLogger, createLogger } from "@beorn/logger"
-import type { TerminalBuffer } from "../buffer.js"
-import type { InkxNode } from "../types.js"
+import { createConditionalLogger, createLogger } from '@beorn/logger';
+import type { TerminalBuffer } from '../buffer.js';
+import type { InkxNode } from '../types.js';
 
-const log = createConditionalLogger("inkx:pipeline")
-const baseLog = createLogger("inkx")
+const log = createConditionalLogger('inkx:pipeline');
+const baseLog = createLogger('inkx');
 
 // Re-export types
-export type { CellChange, BorderChars } from "./types.js"
+export type { CellChange, BorderChars } from './types.js';
 
 // Re-export phase functions
-export { measurePhase } from "./measure-phase.js"
+export { measurePhase } from './measure-phase.js';
 export {
-  layoutPhase,
-  rectEqual,
-  scrollPhase,
-  screenRectPhase,
-  notifyLayoutSubscribers,
-} from "./layout-phase.js"
-export { contentPhase, clearBgConflictWarnings } from "./content-phase.js"
-export { contentPhaseAdapter } from "./content-phase-adapter.js"
-export { outputPhase } from "./output-phase.js"
+	layoutPhase,
+	rectEqual,
+	scrollPhase,
+	screenRectPhase,
+	notifyLayoutSubscribers,
+} from './layout-phase.js';
+export { contentPhase, clearBgConflictWarnings } from './content-phase.js';
+export { contentPhaseAdapter } from './content-phase-adapter.js';
+export { outputPhase } from './output-phase.js';
 
-import { contentPhaseAdapter } from "./content-phase-adapter.js"
-import { clearBgConflictWarnings, contentPhase } from "./content-phase.js"
+import { contentPhaseAdapter } from './content-phase-adapter.js';
+import { clearBgConflictWarnings, contentPhase } from './content-phase.js';
 import {
-  layoutPhase,
-  notifyLayoutSubscribers,
-  screenRectPhase,
-  scrollPhase,
-} from "./layout-phase.js"
+	layoutPhase,
+	notifyLayoutSubscribers,
+	screenRectPhase,
+	scrollPhase,
+} from './layout-phase.js';
 // Import for orchestration
-import { measurePhase } from "./measure-phase.js"
-import { outputPhase } from "./output-phase.js"
+import { measurePhase } from './measure-phase.js';
+import { outputPhase } from './output-phase.js';
 
 // ============================================================================
 // Execute Render (Orchestration)
@@ -69,18 +69,18 @@ import { outputPhase } from "./output-phase.js"
  * Options for executeRender.
  */
 export interface ExecuteRenderOptions {
-  /**
-   * Render mode: fullscreen or inline.
-   * Default: 'fullscreen'
-   */
-  mode?: "fullscreen" | "inline"
+	/**
+	 * Render mode: fullscreen or inline.
+	 * Default: 'fullscreen'
+	 */
+	mode?: 'fullscreen' | 'inline';
 
-  /**
-   * Skip notifying layout subscribers.
-   * Use for static/one-shot renders where layout feedback isn't needed.
-   * Default: false
-   */
-  skipLayoutNotifications?: boolean
+	/**
+	 * Skip notifying layout subscribers.
+	 * Use for static/one-shot renders where layout feedback isn't needed.
+	 * Default: false
+	 */
+	skipLayoutNotifications?: boolean;
 }
 
 /**
@@ -94,92 +94,87 @@ export interface ExecuteRenderOptions {
  * @returns Object with ANSI output and current buffer
  */
 export function executeRender(
-  root: InkxNode,
-  width: number,
-  height: number,
-  prevBuffer: TerminalBuffer | null,
-  options: ExecuteRenderOptions | "fullscreen" | "inline" = "fullscreen",
+	root: InkxNode,
+	width: number,
+	height: number,
+	prevBuffer: TerminalBuffer | null,
+	options: ExecuteRenderOptions | 'fullscreen' | 'inline' = 'fullscreen',
 ): { output: string; buffer: TerminalBuffer } {
-  // Normalize options (string shorthand for mode)
-  const opts: ExecuteRenderOptions =
-    typeof options === "string" ? { mode: options } : options
-  const { mode = "fullscreen", skipLayoutNotifications = false } = opts
-  const start = Date.now()
+	// Normalize options (string shorthand for mode)
+	const opts: ExecuteRenderOptions = typeof options === 'string' ? { mode: options } : options;
+	const { mode = 'fullscreen', skipLayoutNotifications = false } = opts;
+	const start = Date.now();
 
-  using render = baseLog.span("pipeline", { width, height, mode })
+	using render = baseLog.span('pipeline', { width, height, mode });
 
-  // Clear per-render caches
-  clearBgConflictWarnings()
+	// Clear per-render caches
+	clearBgConflictWarnings();
 
-  // Phase 1: Measure (for fit-content nodes)
-  {
-    using _measure = render.span("measure")
-    const t1 = Date.now()
-    measurePhase(root)
-    log.debug?.(`measure: ${Date.now() - t1}ms`)
-  }
+	// Phase 1: Measure (for fit-content nodes)
+	{
+		using _measure = render.span('measure');
+		const t1 = Date.now();
+		measurePhase(root);
+		log.debug?.(`measure: ${Date.now() - t1}ms`);
+	}
 
-  // Phase 2: Layout
-  {
-    using _layout = render.span("layout")
-    const t2 = Date.now()
-    layoutPhase(root, width, height)
-    log.debug?.(`layout: ${Date.now() - t2}ms`)
-  }
+	// Phase 2: Layout
+	{
+		using _layout = render.span('layout');
+		const t2 = Date.now();
+		layoutPhase(root, width, height);
+		log.debug?.(`layout: ${Date.now() - t2}ms`);
+	}
 
-  // Phase 2.5: Scroll calculation (for overflow='scroll' containers)
-  {
-    using _scroll = render.span("scroll")
-    scrollPhase(root)
-  }
+	// Phase 2.5: Scroll calculation (for overflow='scroll' containers)
+	{
+		using _scroll = render.span('scroll');
+		scrollPhase(root);
+	}
 
-  // Phase 2.6: Screen rect calculation (screen-relative positions)
-  {
-    using _screenRect = render.span("screenRect")
-    screenRectPhase(root)
-  }
+	// Phase 2.6: Screen rect calculation (screen-relative positions)
+	{
+		using _screenRect = render.span('screenRect');
+		screenRectPhase(root);
+	}
 
-  // Phase 2.7: Notify layout subscribers
-  // This runs AFTER screenRectPhase so useScreenRectCallback reads correct positions
-  // Skip for static renders where no one will respond to the feedback
-  if (!skipLayoutNotifications) {
-    using _notify = render.span("notify")
-    notifyLayoutSubscribers(root)
-  }
+	// Phase 2.7: Notify layout subscribers
+	// This runs AFTER screenRectPhase so useScreenRectCallback reads correct positions
+	// Skip for static renders where no one will respond to the feedback
+	if (!skipLayoutNotifications) {
+		using _notify = render.span('notify');
+		notifyLayoutSubscribers(root);
+	}
 
-  // Phase 3: Content render (incremental if we have prevBuffer)
-  let buffer: TerminalBuffer
-  {
-    using _content = render.span("content")
-    const t3 = Date.now()
-    buffer = contentPhase(root, prevBuffer)
-    log.debug?.(`content: ${Date.now() - t3}ms`)
-  }
+	// Phase 3: Content render (incremental if we have prevBuffer)
+	let buffer: TerminalBuffer;
+	{
+		using _content = render.span('content');
+		const t3 = Date.now();
+		buffer = contentPhase(root, prevBuffer);
+		log.debug?.(`content: ${Date.now() - t3}ms`);
+	}
 
-  // Phase 4: Diff and output
-  let output: string
-  {
-    using outputSpan = render.span("output")
-    const t4 = Date.now()
-    output = outputPhase(prevBuffer, buffer, mode)
-    outputSpan.spanData.bytes = output.length
-    log.debug?.(`output: ${Date.now() - t4}ms (${output.length} bytes)`)
-  }
+	// Phase 4: Diff and output
+	let output: string;
+	{
+		using outputSpan = render.span('output');
+		const t4 = Date.now();
+		output = outputPhase(prevBuffer, buffer, mode);
+		outputSpan.spanData.bytes = output.length;
+		log.debug?.(`output: ${Date.now() - t4}ms (${output.length} bytes)`);
+	}
 
-  log.debug?.(`total pipeline: ${Date.now() - start}ms`)
+	log.debug?.(`total pipeline: ${Date.now() - start}ms`);
 
-  return { output, buffer }
+	return { output, buffer };
 }
 
 // ============================================================================
 // Execute Render (Adapter-aware)
 // ============================================================================
 
-import {
-  type RenderBuffer,
-  getRenderAdapter,
-  hasRenderAdapter,
-} from "../render-adapter.js"
+import { type RenderBuffer, getRenderAdapter, hasRenderAdapter } from '../render-adapter.js';
 
 /**
  * Execute the full render pipeline using the current RenderAdapter.
@@ -195,87 +190,86 @@ import {
  * @returns Object with output (if any) and current buffer
  */
 export function executeRenderAdapter(
-  root: InkxNode,
-  width: number,
-  height: number,
-  prevBuffer: RenderBuffer | null,
-  options: ExecuteRenderOptions | "fullscreen" | "inline" = "fullscreen",
+	root: InkxNode,
+	width: number,
+	height: number,
+	prevBuffer: RenderBuffer | null,
+	options: ExecuteRenderOptions | 'fullscreen' | 'inline' = 'fullscreen',
 ): { output: string | void; buffer: RenderBuffer } {
-  if (!hasRenderAdapter()) {
-    throw new Error("executeRenderAdapter called without a render adapter set")
-  }
+	if (!hasRenderAdapter()) {
+		throw new Error('executeRenderAdapter called without a render adapter set');
+	}
 
-  const opts: ExecuteRenderOptions =
-    typeof options === "string" ? { mode: options } : options
-  const { skipLayoutNotifications = false } = opts
-  const start = Date.now()
-  const adapter = getRenderAdapter()
+	const opts: ExecuteRenderOptions = typeof options === 'string' ? { mode: options } : options;
+	const { skipLayoutNotifications = false } = opts;
+	const start = Date.now();
+	const adapter = getRenderAdapter();
 
-  using render = baseLog.span("pipeline-adapter", {
-    width,
-    height,
-    adapter: adapter.name,
-  })
+	using render = baseLog.span('pipeline-adapter', {
+		width,
+		height,
+		adapter: adapter.name,
+	});
 
-  // Clear per-render caches
-  clearBgConflictWarnings()
+	// Clear per-render caches
+	clearBgConflictWarnings();
 
-  // Phase 1: Measure
-  {
-    using _measure = render.span("measure")
-    const t1 = Date.now()
-    measurePhase(root)
-    log.debug?.(`measure: ${Date.now() - t1}ms`)
-  }
+	// Phase 1: Measure
+	{
+		using _measure = render.span('measure');
+		const t1 = Date.now();
+		measurePhase(root);
+		log.debug?.(`measure: ${Date.now() - t1}ms`);
+	}
 
-  // Phase 2: Layout
-  {
-    using _layout = render.span("layout")
-    const t2 = Date.now()
-    layoutPhase(root, width, height)
-    log.debug?.(`layout: ${Date.now() - t2}ms`)
-  }
+	// Phase 2: Layout
+	{
+		using _layout = render.span('layout');
+		const t2 = Date.now();
+		layoutPhase(root, width, height);
+		log.debug?.(`layout: ${Date.now() - t2}ms`);
+	}
 
-  // Phase 2.5: Scroll calculation
-  {
-    using _scroll = render.span("scroll")
-    scrollPhase(root)
-  }
+	// Phase 2.5: Scroll calculation
+	{
+		using _scroll = render.span('scroll');
+		scrollPhase(root);
+	}
 
-  // Phase 2.6: Screen rect calculation
-  {
-    using _screenRect = render.span("screenRect")
-    screenRectPhase(root)
-  }
+	// Phase 2.6: Screen rect calculation
+	{
+		using _screenRect = render.span('screenRect');
+		screenRectPhase(root);
+	}
 
-  // Phase 2.7: Notify layout subscribers
-  if (!skipLayoutNotifications) {
-    using _notify = render.span("notify")
-    notifyLayoutSubscribers(root)
-  }
+	// Phase 2.7: Notify layout subscribers
+	if (!skipLayoutNotifications) {
+		using _notify = render.span('notify');
+		notifyLayoutSubscribers(root);
+	}
 
-  // Phase 3: Content render (adapter-aware)
-  let buffer: RenderBuffer
-  {
-    using _content = render.span("content")
-    const t3 = Date.now()
-    buffer = contentPhaseAdapter(root)
-    log.debug?.(`content: ${Date.now() - t3}ms`)
-  }
+	// Phase 3: Content render (adapter-aware)
+	let buffer: RenderBuffer;
+	{
+		using _content = render.span('content');
+		const t3 = Date.now();
+		buffer = contentPhaseAdapter(root);
+		log.debug?.(`content: ${Date.now() - t3}ms`);
+	}
 
-  // Phase 4: Flush via adapter
-  let output: string | void
-  {
-    using outputSpan = render.span("output")
-    const t4 = Date.now()
-    output = adapter.flush(buffer, prevBuffer)
-    if (typeof output === "string") {
-      outputSpan.spanData.bytes = output.length
-    }
-    log.debug?.(`output: ${Date.now() - t4}ms`)
-  }
+	// Phase 4: Flush via adapter
+	let output: string | void;
+	{
+		using outputSpan = render.span('output');
+		const t4 = Date.now();
+		output = adapter.flush(buffer, prevBuffer);
+		if (typeof output === 'string') {
+			outputSpan.spanData.bytes = output.length;
+		}
+		log.debug?.(`output: ${Date.now() - t4}ms`);
+	}
 
-  log.debug?.(`total pipeline: ${Date.now() - start}ms`)
+	log.debug?.(`total pipeline: ${Date.now() - start}ms`);
 
-  return { output, buffer }
+	return { output, buffer };
 }

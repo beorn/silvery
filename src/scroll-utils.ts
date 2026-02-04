@@ -43,37 +43,34 @@
  * @returns New scroll offset
  */
 export function calcEdgeBasedScrollOffset(
-  selectedIndex: number,
-  currentOffset: number,
-  visibleCount: number,
-  totalCount: number,
-  padding = 1,
+	selectedIndex: number,
+	currentOffset: number,
+	visibleCount: number,
+	totalCount: number,
+	padding = 1,
 ): number {
-  // If everything fits, no scrolling needed
-  if (totalCount <= visibleCount) return 0
+	// If everything fits, no scrolling needed
+	if (totalCount <= visibleCount) return 0;
 
-  // Calculate visible range
-  const visibleStart = currentOffset
-  const visibleEnd = currentOffset + visibleCount - 1
+	// Calculate visible range
+	const visibleStart = currentOffset;
+	const visibleEnd = currentOffset + visibleCount - 1;
 
-  // Define the "safe zone" where cursor doesn't trigger scroll
-  const paddedStart = visibleStart + padding
-  const paddedEnd = visibleEnd - padding
+	// Define the "safe zone" where cursor doesn't trigger scroll
+	const paddedStart = visibleStart + padding;
+	const paddedEnd = visibleEnd - padding;
 
-  let newOffset = currentOffset
+	let newOffset = currentOffset;
 
-  if (selectedIndex < paddedStart) {
-    // Scrolling UP/LEFT: place item `padding` rows from top
-    newOffset = Math.max(0, selectedIndex - padding)
-  } else if (selectedIndex > paddedEnd) {
-    // Scrolling DOWN/RIGHT: place item `padding` rows from bottom
-    // The +1 converts from 0-indexed offset to correct position
-    newOffset = Math.min(
-      totalCount - visibleCount,
-      selectedIndex - visibleCount + padding + 1,
-    )
-  }
+	if (selectedIndex < paddedStart) {
+		// Scrolling UP/LEFT: place item `padding` rows from top
+		newOffset = Math.max(0, selectedIndex - padding);
+	} else if (selectedIndex > paddedEnd) {
+		// Scrolling DOWN/RIGHT: place item `padding` rows from bottom
+		// The +1 converts from 0-indexed offset to correct position
+		newOffset = Math.min(totalCount - visibleCount, selectedIndex - visibleCount + padding + 1);
+	}
 
-  // Clamp to valid range
-  return Math.max(0, Math.min(newOffset, totalCount - visibleCount))
+	// Clamp to valid range
+	return Math.max(0, Math.min(newOffset, totalCount - visibleCount));
 }

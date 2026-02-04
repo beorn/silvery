@@ -26,88 +26,82 @@
  * }
  * ```
  */
-export function createTick(
-  intervalMs: number,
-  signal?: AbortSignal,
-): AsyncIterable<number> {
-  return {
-    [Symbol.asyncIterator]: () => createTickIterator(intervalMs, signal),
-  }
+export function createTick(intervalMs: number, signal?: AbortSignal): AsyncIterable<number> {
+	return {
+		[Symbol.asyncIterator]: () => createTickIterator(intervalMs, signal),
+	};
 }
 
 /**
  * Create the actual tick iterator.
  */
-function createTickIterator(
-  intervalMs: number,
-  signal?: AbortSignal,
-): AsyncIterator<number> {
-  let count = 0
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let resolve: ((result: IteratorResult<number>) => void) | undefined
-  let reject: ((error: Error) => void) | undefined
-  let done = false
+function createTickIterator(intervalMs: number, signal?: AbortSignal): AsyncIterator<number> {
+	let count = 0;
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	let resolve: ((result: IteratorResult<number>) => void) | undefined;
+	let reject: ((error: Error) => void) | undefined;
+	let done = false;
 
-  // Handle abort signal
-  const onAbort = () => {
-    done = true
-    if (timer) {
-      clearTimeout(timer)
-      timer = undefined
-    }
-    if (resolve) {
-      resolve({ done: true, value: undefined })
-      resolve = undefined
-      reject = undefined
-    }
-  }
+	// Handle abort signal
+	const onAbort = () => {
+		done = true;
+		if (timer) {
+			clearTimeout(timer);
+			timer = undefined;
+		}
+		if (resolve) {
+			resolve({ done: true, value: undefined });
+			resolve = undefined;
+			reject = undefined;
+		}
+	};
 
-  if (signal) {
-    if (signal.aborted) {
-      done = true
-    } else {
-      signal.addEventListener("abort", onAbort, { once: true })
-    }
-  }
+	if (signal) {
+		if (signal.aborted) {
+			done = true;
+		} else {
+			signal.addEventListener('abort', onAbort, { once: true });
+		}
+	}
 
-  return {
-    async next(): Promise<IteratorResult<number>> {
-      if (done) {
-        return { done: true, value: undefined }
-      }
+	return {
+		async next(): Promise<IteratorResult<number>> {
+			if (done) {
+				return { done: true, value: undefined };
+			}
 
-      return new Promise<IteratorResult<number>>((res, rej) => {
-        resolve = res
-        reject = rej
+			return new Promise<IteratorResult<number>>((res, rej) => {
+				resolve = res;
+				reject = rej;
 
-        timer = setTimeout(() => {
-          if (!done) {
-            const value = count++
-            resolve = undefined
-            reject = undefined
-            res({ done: false, value })
-          }
-        }, intervalMs)
-      })
-    },
+				timer = setTimeout(() => {
+					if (!done) {
+						const value = count++;
+						resolve = undefined;
+						reject = undefined;
+						res({ done: false, value });
+					}
+				}, intervalMs);
+			});
+		},
 
-    async return(): Promise<IteratorResult<number>> {
-      done = true
-      if (timer) {
-        clearTimeout(timer)
-        timer = undefined
-      }
-      if (signal) {
-        signal.removeEventListener("abort", onAbort)
-      }
-      if (resolve) {
-        resolve({ done: true, value: undefined })
-        resolve = undefined
-        reject = undefined
-      }
-      return { done: true, value: undefined }
-    },
-  }
+		async return(): Promise<IteratorResult<number>> {
+			done = true;
+			if (timer) {
+				clearTimeout(timer);
+				timer = undefined;
+			}
+			if (signal) {
+				signal.removeEventListener('abort', onAbort);
+			}
+			if (resolve) {
+				resolve({ done: true, value: undefined });
+				resolve = undefined;
+				reject = undefined;
+			}
+			return { done: true, value: undefined };
+		},
+	};
 }
 
 /**
@@ -117,7 +111,7 @@ function createTickIterator(
  * @returns AsyncIterable that yields frame numbers
  */
 export function createFrameTick(signal?: AbortSignal): AsyncIterable<number> {
-  return createTick(16, signal)
+	return createTick(16, signal);
 }
 
 /**
@@ -127,7 +121,7 @@ export function createFrameTick(signal?: AbortSignal): AsyncIterable<number> {
  * @returns AsyncIterable that yields second counts
  */
 export function createSecondTick(signal?: AbortSignal): AsyncIterable<number> {
-  return createTick(1000, signal)
+	return createTick(1000, signal);
 }
 
 /**
@@ -141,94 +135,90 @@ export function createSecondTick(signal?: AbortSignal): AsyncIterable<number> {
  * @returns AsyncIterable with timing information
  */
 export function createAdaptiveTick(
-  targetFps = 60,
-  signal?: AbortSignal,
+	targetFps = 60,
+	signal?: AbortSignal,
 ): AsyncIterable<{ tick: number; elapsed: number; delta: number }> {
-  const targetMs = 1000 / targetFps
-  let lastTime = Date.now()
-  let tick = 0
+	const targetMs = 1000 / targetFps;
+	let lastTime = Date.now();
+	let tick = 0;
 
-  return {
-    [Symbol.asyncIterator]: () => {
-      let done = false
-      let timer: ReturnType<typeof setTimeout> | undefined
-      let resolve:
-        | ((
-            result: IteratorResult<{
-              tick: number
-              elapsed: number
-              delta: number
-            }>,
-          ) => void)
-        | undefined
+	return {
+		[Symbol.asyncIterator]: () => {
+			let done = false;
+			let timer: ReturnType<typeof setTimeout> | undefined;
+			let resolve:
+				| ((
+						result: IteratorResult<{
+							tick: number;
+							elapsed: number;
+							delta: number;
+						}>,
+				  ) => void)
+				| undefined;
 
-      const onAbort = () => {
-        done = true
-        if (timer) {
-          clearTimeout(timer)
-          timer = undefined
-        }
-        if (resolve) {
-          resolve({ done: true, value: undefined })
-          resolve = undefined
-        }
-      }
+			const onAbort = () => {
+				done = true;
+				if (timer) {
+					clearTimeout(timer);
+					timer = undefined;
+				}
+				if (resolve) {
+					resolve({ done: true, value: undefined });
+					resolve = undefined;
+				}
+			};
 
-      if (signal) {
-        if (signal.aborted) {
-          done = true
-        } else {
-          signal.addEventListener("abort", onAbort, { once: true })
-        }
-      }
+			if (signal) {
+				if (signal.aborted) {
+					done = true;
+				} else {
+					signal.addEventListener('abort', onAbort, { once: true });
+				}
+			}
 
-      return {
-        async next(): Promise<
-          IteratorResult<{ tick: number; elapsed: number; delta: number }>
-        > {
-          if (done) {
-            return { done: true, value: undefined }
-          }
+			return {
+				async next(): Promise<IteratorResult<{ tick: number; elapsed: number; delta: number }>> {
+					if (done) {
+						return { done: true, value: undefined };
+					}
 
-          return new Promise((res) => {
-            resolve = res
-            const now = Date.now()
-            const elapsed = now - lastTime
-            const delay = Math.max(0, targetMs - elapsed)
+					return new Promise((res) => {
+						resolve = res;
+						const now = Date.now();
+						const elapsed = now - lastTime;
+						const delay = Math.max(0, targetMs - elapsed);
 
-            timer = setTimeout(() => {
-              if (!done) {
-                const currentTime = Date.now()
-                const delta = currentTime - lastTime
-                lastTime = currentTime
-                resolve = undefined
-                res({
-                  done: false,
-                  value: { tick: tick++, elapsed: currentTime, delta },
-                })
-              }
-            }, delay)
-          })
-        },
+						timer = setTimeout(() => {
+							if (!done) {
+								const currentTime = Date.now();
+								const delta = currentTime - lastTime;
+								lastTime = currentTime;
+								resolve = undefined;
+								res({
+									done: false,
+									value: { tick: tick++, elapsed: currentTime, delta },
+								});
+							}
+						}, delay);
+					});
+				},
 
-        async return(): Promise<
-          IteratorResult<{ tick: number; elapsed: number; delta: number }>
-        > {
-          done = true
-          if (timer) {
-            clearTimeout(timer)
-            timer = undefined
-          }
-          if (signal) {
-            signal.removeEventListener("abort", onAbort)
-          }
-          if (resolve) {
-            resolve({ done: true, value: undefined })
-            resolve = undefined
-          }
-          return { done: true, value: undefined }
-        },
-      }
-    },
-  }
+				async return(): Promise<IteratorResult<{ tick: number; elapsed: number; delta: number }>> {
+					done = true;
+					if (timer) {
+						clearTimeout(timer);
+						timer = undefined;
+					}
+					if (signal) {
+						signal.removeEventListener('abort', onAbort);
+					}
+					if (resolve) {
+						resolve({ done: true, value: undefined });
+						resolve = undefined;
+					}
+					return { done: true, value: undefined };
+				},
+			};
+		},
+	};
 }

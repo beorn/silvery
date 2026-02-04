@@ -17,7 +17,7 @@
  * - 'plain': Strip all ANSI codes
  */
 
-import { stripAnsi } from "./unicode.js"
+import { stripAnsi } from './unicode.js';
 
 // ============================================================================
 // Types
@@ -32,22 +32,22 @@ import { stripAnsi } from "./unicode.js"
  * - 'static': Single final output only
  * - 'plain': Strip all ANSI escape codes
  */
-export type NonTTYMode = "auto" | "tty" | "line-by-line" | "static" | "plain"
+export type NonTTYMode = 'auto' | 'tty' | 'line-by-line' | 'static' | 'plain';
 
 /**
  * Options for non-TTY output.
  */
 export interface NonTTYOptions {
-  /** The rendering mode. Default: 'auto' */
-  mode?: NonTTYMode
-  /** Output stream to check for TTY status. Default: process.stdout */
-  stdout?: NodeJS.WriteStream
+	/** The rendering mode. Default: 'auto' */
+	mode?: NonTTYMode;
+	/** Output stream to check for TTY status. Default: process.stdout */
+	stdout?: NodeJS.WriteStream;
 }
 
 /**
  * Resolved non-TTY mode after auto-detection.
  */
-export type ResolvedNonTTYMode = Exclude<NonTTYMode, "auto">
+export type ResolvedNonTTYMode = Exclude<NonTTYMode, 'auto'>;
 
 // ============================================================================
 // Detection
@@ -62,30 +62,30 @@ export type ResolvedNonTTYMode = Exclude<NonTTYMode, "auto">
  * - CI environment variables are set
  */
 export function isTTY(stdout: NodeJS.WriteStream = process.stdout): boolean {
-  // Check stdout.isTTY
-  if (!stdout.isTTY) {
-    return false
-  }
+	// Check stdout.isTTY
+	if (!stdout.isTTY) {
+		return false;
+	}
 
-  // Check TERM=dumb
-  if (process.env.TERM === "dumb") {
-    return false
-  }
+	// Check TERM=dumb
+	if (process.env.TERM === 'dumb') {
+		return false;
+	}
 
-  // Check common CI environment variables
-  if (
-    process.env.CI ||
-    process.env.GITHUB_ACTIONS ||
-    process.env.GITLAB_CI ||
-    process.env.JENKINS_URL ||
-    process.env.BUILDKITE ||
-    process.env.CIRCLECI ||
-    process.env.TRAVIS
-  ) {
-    return false
-  }
+	// Check common CI environment variables
+	if (
+		process.env.CI ||
+		process.env.GITHUB_ACTIONS ||
+		process.env.GITLAB_CI ||
+		process.env.JENKINS_URL ||
+		process.env.BUILDKITE ||
+		process.env.CIRCLECI ||
+		process.env.TRAVIS
+	) {
+		return false;
+	}
 
-  return true
+	return true;
 }
 
 /**
@@ -95,21 +95,19 @@ export function isTTY(stdout: NodeJS.WriteStream = process.stdout): boolean {
  * - If TTY detected: returns 'tty'
  * - If non-TTY detected: returns 'line-by-line'
  */
-export function resolveNonTTYMode(
-  options: NonTTYOptions = {},
-): ResolvedNonTTYMode {
-  const { mode = "auto", stdout = process.stdout } = options
+export function resolveNonTTYMode(options: NonTTYOptions = {}): ResolvedNonTTYMode {
+	const { mode = 'auto', stdout = process.stdout } = options;
 
-  if (mode !== "auto") {
-    return mode
-  }
+	if (mode !== 'auto') {
+		return mode;
+	}
 
-  // Auto-detect based on environment
-  return isTTY(stdout) ? "tty" : "line-by-line"
+	// Auto-detect based on environment
+	return isTTY(stdout) ? 'tty' : 'line-by-line';
 }
 
 // Re-export stripAnsi from unicode.ts (canonical implementation)
-export { stripAnsi } from "./unicode.js"
+export { stripAnsi } from './unicode.js';
 
 // ============================================================================
 // Line-by-Line Output
@@ -125,44 +123,41 @@ export { stripAnsi } from "./unicode.js"
  * @param prevLineCount Number of lines in the previous frame (for clearing)
  * @returns Output string suitable for non-TTY rendering
  */
-export function toLineByLineOutput(
-  content: string,
-  prevLineCount: number,
-): string {
-  const lines = content.split("\n")
-  let output = ""
+export function toLineByLineOutput(content: string, prevLineCount: number): string {
+	const lines = content.split('\n');
+	let output = '';
 
-  // Move cursor up to overwrite previous content (if any)
-  if (prevLineCount > 0) {
-    // Move to start of first line
-    output += "\r"
-    // Move up
-    if (prevLineCount > 1) {
-      output += `\x1b[${prevLineCount - 1}A`
-    }
-  }
+	// Move cursor up to overwrite previous content (if any)
+	if (prevLineCount > 0) {
+		// Move to start of first line
+		output += '\r';
+		// Move up
+		if (prevLineCount > 1) {
+			output += `\x1b[${prevLineCount - 1}A`;
+		}
+	}
 
-  // Output each line
-  for (let i = 0; i < lines.length; i++) {
-    if (i > 0) {
-      output += "\n"
-    }
-    output += lines[i]
-    // Clear to end of line (removes leftover content from longer previous lines)
-    output += "\x1b[K"
-  }
+	// Output each line
+	for (let i = 0; i < lines.length; i++) {
+		if (i > 0) {
+			output += '\n';
+		}
+		output += lines[i];
+		// Clear to end of line (removes leftover content from longer previous lines)
+		output += '\x1b[K';
+	}
 
-  // Clear any remaining lines from previous frame
-  const extraLines = prevLineCount - lines.length
-  if (extraLines > 0) {
-    for (let i = 0; i < extraLines; i++) {
-      output += "\n\x1b[K"
-    }
-    // Move cursor back up to end of content
-    output += `\x1b[${extraLines}A`
-  }
+	// Clear any remaining lines from previous frame
+	const extraLines = prevLineCount - lines.length;
+	if (extraLines > 0) {
+		for (let i = 0; i < extraLines; i++) {
+			output += '\n\x1b[K';
+		}
+		// Move cursor back up to end of content
+		output += `\x1b[${extraLines}A`;
+	}
 
-  return output
+	return output;
 }
 
 /**
@@ -176,18 +171,18 @@ export function toLineByLineOutput(
  * @returns Plain text output
  */
 export function toPlainOutput(content: string, _prevLineCount: number): string {
-  // Strip ANSI codes
-  const plain = stripAnsi(content)
+	// Strip ANSI codes
+	const plain = stripAnsi(content);
 
-  // Trim trailing whitespace from each line but preserve structure
-  const lines = plain.split("\n").map((line) => line.trimEnd())
+	// Trim trailing whitespace from each line but preserve structure
+	const lines = plain.split('\n').map((line) => line.trimEnd());
 
-  // Remove trailing empty lines
-  while (lines.length > 0 && lines[lines.length - 1] === "") {
-    lines.pop()
-  }
+	// Remove trailing empty lines
+	while (lines.length > 0 && lines[lines.length - 1] === '') {
+		lines.pop();
+	}
 
-  return lines.join("\n")
+	return lines.join('\n');
 }
 
 // ============================================================================
@@ -201,30 +196,30 @@ export function toPlainOutput(content: string, _prevLineCount: number): string {
  * @returns A function that transforms output based on the mode
  */
 export function createOutputTransformer(
-  mode: ResolvedNonTTYMode,
+	mode: ResolvedNonTTYMode,
 ): (content: string, prevLineCount: number) => string {
-  switch (mode) {
-    case "tty":
-      // Pass through unchanged
-      return (content) => content
+	switch (mode) {
+		case 'tty':
+			// Pass through unchanged
+			return (content) => content;
 
-    case "line-by-line":
-      return toLineByLineOutput
+		case 'line-by-line':
+			return toLineByLineOutput;
 
-    case "static":
-      // For static mode, we return empty string for intermediate renders
-      // The final render is handled by the caller
-      return () => ""
+		case 'static':
+			// For static mode, we return empty string for intermediate renders
+			// The final render is handled by the caller
+			return () => '';
 
-    case "plain":
-      return toPlainOutput
-  }
+		case 'plain':
+			return toPlainOutput;
+	}
 }
 
 /**
  * Count the number of lines in a string.
  */
 export function countLines(str: string): number {
-  if (!str) return 0
-  return str.split("\n").length
+	if (!str) return 0;
+	return str.split('\n').length;
 }
