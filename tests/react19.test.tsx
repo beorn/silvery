@@ -24,14 +24,14 @@ import React, {
 } from 'react';
 import { NodeContext } from '../src/context.ts';
 import { Box, Text, useContentRect, useInput } from '../src/index.ts';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
 import type { InkxNode } from '../src/types.ts';
 
 // ============================================================================
 // Test Setup
 // ============================================================================
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 /**
  * Create a mock InkxNode for testing useContentRect

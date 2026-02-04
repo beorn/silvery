@@ -9,7 +9,7 @@ import { expect } from 'bun:test';
 
 // Re-export utilities from the testing module
 export {
-	createTestRenderer,
+	createRenderer,
 	normalizeFrame,
 	stripAnsi,
 	waitFor,

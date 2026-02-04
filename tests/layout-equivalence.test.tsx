@@ -22,7 +22,7 @@ import { createFlexxZeroEngine } from '../src/adapters/flexx-zero-adapter.js';
 import { initYogaEngine } from '../src/adapters/yoga-adapter.js';
 import { Box, Text } from '../src/index.js';
 import type { LayoutEngine } from '../src/layout-engine.js';
-import { createTestRenderer, normalizeFrame } from '../src/testing/index.js';
+import { createRenderer, normalizeFrame } from '../src/testing/index.js';
 
 // ============================================================================
 // Test Setup - Initialize engines once before all tests
@@ -47,18 +47,18 @@ function renderWithBothEngines(
 	const { columns = 80, rows = 24 } = options;
 
 	// Render with Yoga
-	const yogaRender = createTestRenderer({
+	const yogaRender = createRenderer({
 		layoutEngine: yogaEngine,
-		columns,
+		cols: columns,
 		rows,
 	});
 	const yogaResult = yogaRender(element);
 	const yogaFrame = yogaResult.lastFrame();
 
 	// Render with Flexx
-	const flexxRender = createTestRenderer({
+	const flexxRender = createRenderer({
 		layoutEngine: flexxEngine,
-		columns,
+		cols: columns,
 		rows,
 	});
 	const flexxResult = flexxRender(element);

@@ -12,9 +12,9 @@
 import { describe, expect, test } from 'bun:test';
 import React, { useState } from 'react';
 import { Box, Text } from '../src/index.js';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.js';
+import { createRenderer, stripAnsi } from '../src/testing/index.js';
 
-const render = createTestRenderer({ incremental: true });
+const render = createRenderer({ incremental: true });
 
 describe('Incremental rendering: conditional child removal', () => {
 	test('removed child text disappears from buffer', () => {

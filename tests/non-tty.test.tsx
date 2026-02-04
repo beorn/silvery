@@ -22,10 +22,10 @@ import {
 	toLineByLineOutput,
 	toPlainOutput,
 } from '../src/non-tty.js';
-import { createTestRenderer, normalizeFrame } from '../src/testing/index.js';
+import { createRenderer, normalizeFrame } from '../src/testing/index.js';
 
 // Single shared render instance (required pattern for inkx tests)
-const render = createTestRenderer();
+const render = createRenderer();
 
 describe('Non-TTY environments (km-wvgu)', () => {
 	describe('Default dimensions when no TTY', () => {

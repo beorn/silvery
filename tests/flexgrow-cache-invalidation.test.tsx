@@ -7,10 +7,10 @@
  */
 import { describe, expect, test } from 'bun:test';
 import { Box, Text } from '../src/index.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 
 describe('flexGrow cache invalidation', () => {
-	const render = createTestRenderer({ columns: 80, rows: 3 });
+	const render = createRenderer({ cols: 80, rows: 3 });
 
 	function BottomBar({ viewMode }: { viewMode: string }) {
 		return (

@@ -12,9 +12,9 @@ import React from 'react';
 import { TerminalBuffer, cellEquals, styleEquals } from '../src/buffer.js';
 import { Box, Text } from '../src/index.js';
 import { outputPhase } from '../src/pipeline.js';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.js';
+import { createRenderer, stripAnsi } from '../src/testing/index.js';
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 describe('Bug: Colors lost after re-render', () => {
 	test('colored text should retain color after rerender', () => {

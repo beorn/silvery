@@ -1,6 +1,6 @@
 # Testing
 
-Inkx includes a comprehensive test suite with **870+ tests** covering everything from low-level buffer operations to high-level React component rendering. This guide documents the test structure and how to use `createTestRenderer` for testing your own Inkx applications.
+Inkx includes a comprehensive test suite with **870+ tests** covering everything from low-level buffer operations to high-level React component rendering. This guide documents the test structure and how to use `createRenderer` for testing your own Inkx applications.
 
 ## Test Suite Overview
 
@@ -36,17 +36,17 @@ The test suite is organized by domain:
 | `examples-cursor.test.tsx`      | 9     | Cursor positioning tests                                              |
 | `non-tty.test.tsx`              | 9     | Non-TTY output handling                                               |
 
-## Using createTestRenderer
+## Using createRenderer
 
-The `createTestRenderer` function provides an ink-testing-library compatible API for testing Inkx components.
+The `createRenderer` function provides an ink-testing-library compatible API for testing Inkx components.
 
 ### Basic Usage
 
 ```tsx
-import { createTestRenderer } from "inkx/testing";
+import { createRenderer } from "inkx/testing";
 import { Text } from "inkx";
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 test("renders text", () => {
   const { lastFrame } = render(<Text>Hello</Text>);
@@ -59,7 +59,7 @@ test("renders text", () => {
 Each `render()` call automatically unmounts the previous render, so you don't need explicit cleanup:
 
 ```tsx
-const render = createTestRenderer();
+const render = createRenderer();
 
 test("first test", () => {
   const { lastFrame } = render(<Text>First</Text>);
@@ -93,7 +93,7 @@ function Counter() {
 }
 
 test("increments with arrow keys", () => {
-  const render = createTestRenderer();
+  const render = createRenderer();
   const { lastFrame, stdin } = render(<Counter />);
 
   stdin.write("\x1b[A"); // Up arrow
@@ -133,7 +133,7 @@ function Greeter({ name }: { name: string }) {
 }
 
 test("updates on prop change", () => {
-  const render = createTestRenderer();
+  const render = createRenderer();
   const { lastFrame, rerender } = render(<Greeter name="Alice" />);
 
   expect(lastFrame()).toContain("Hello, Alice!");
@@ -148,11 +148,11 @@ test("updates on prop change", () => {
 Specify terminal dimensions per render:
 
 ```tsx
-const render = createTestRenderer();
+const render = createRenderer();
 
 // Default is 80x24
 const { lastFrame } = render(<WideComponent />, {
-  columns: 120,
+  cols: 120,
   rows: 40,
 });
 ```
@@ -160,8 +160,8 @@ const { lastFrame } = render(<WideComponent />, {
 Or set defaults at renderer creation:
 
 ```tsx
-const render = createTestRenderer({
-  columns: 120,
+const render = createRenderer({
+  cols: 120,
   rows: 40,
 });
 ```
@@ -241,7 +241,7 @@ function FocusableItem({ id }: { id: string }) {
 }
 
 test("focus navigation", () => {
-  const render = createTestRenderer();
+  const render = createRenderer();
   const { stdin, lastFrame } = render(
     <Box flexDirection="column">
       <FocusableItem id="item1" />
@@ -268,7 +268,7 @@ function LayoutCapture({ onLayout }: { onLayout: (l: any) => void }) {
 
 test("layout provides dimensions", () => {
   let capturedLayout = null;
-  const render = createTestRenderer();
+  const render = createRenderer();
 
   render(
     <Box width={40} height={10}>
@@ -294,7 +294,7 @@ test("useApp exit function", () => {
     },
   };
 
-  const render = createTestRenderer();
+  const render = createRenderer();
   render(
     <AppContext.Provider value={mockAppContext}>
       <ComponentThatCallsExit />

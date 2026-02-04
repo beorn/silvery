@@ -8,9 +8,9 @@
 import { describe, expect, test } from 'bun:test';
 import React from 'react';
 import { Box, Text } from '../src/components/index.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 describe('display="none"', () => {
 	test('renders visible content next to display=none box', () => {

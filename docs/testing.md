@@ -218,10 +218,10 @@ Use inkx testing API with text snapshots:
 
 ```typescript
 // tests/visual/visual.test.ts
-import { createTestRenderer } from 'inkx/testing';
+import { createRenderer } from 'inkx/testing';
 import { Box, Text } from 'inkx';
 
-const render = createTestRenderer({ columns: 80, rows: 24 });
+const render = createRenderer({ cols: 80, rows: 24 });
 
 test('basic layout renders correctly', () => {
   const app = render(
@@ -432,10 +432,10 @@ async function recordMetrics() {
 Inkx provides a Playwright-inspired testing API with **auto-refreshing locators**:
 
 ```typescript
-import { createTestRenderer } from 'inkx/testing';
+import { createRenderer } from 'inkx/testing';
 import { Box, Text } from 'inkx';
 
-const render = createTestRenderer({ columns: 80, rows: 24 });
+const render = createRenderer({ cols: 80, rows: 24 });
 
 test('renders and responds to input', async () => {
   const app = render(
@@ -653,10 +653,10 @@ Terminal Unicode handling is complex. Test comprehensively:
 
 ```typescript
 // tests/unicode/unicode.test.ts
-import { createTestRenderer } from 'inkx/testing';
+import { createRenderer } from 'inkx/testing';
 import { Box, Text } from 'inkx';
 
-const render = createTestRenderer({ columns: 80, rows: 24 });
+const render = createRenderer({ cols: 80, rows: 24 });
 
 describe('Unicode handling', () => {
   describe('Wide characters (CJK)', () => {
@@ -960,10 +960,10 @@ inkx provides Playwright-inspired locators that **auto-refresh on every access**
 ### 9.1 Quick Start
 
 ```typescript
-import { createTestRenderer } from "inkx/testing";
+import { createRenderer } from "inkx/testing";
 import { Box, Text } from "inkx";
 
-const render = createTestRenderer({ columns: 80, rows: 24 });
+const render = createRenderer({ cols: 80, rows: 24 });
 
 test("locators auto-refresh after state changes", async () => {
   const app = render(

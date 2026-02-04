@@ -14,7 +14,7 @@ import { describe, expect, test } from 'bun:test';
 import { EventEmitter } from 'node:events';
 import React, { useEffect, useState } from 'react';
 import { Box, Text, useInput } from '../src/index.ts';
-import { createTestRenderer } from '../src/testing/index.tsx';
+import { createRenderer } from '../src/testing/index.tsx';
 
 // ============================================================================
 // Test Helpers
@@ -92,7 +92,7 @@ function InsertModeIndicator() {
 
 describe('useInput memory: listener cleanup', () => {
 	test('useInput does not leak listeners on rapid mount/unmount', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		// Get the initial listener count by doing a reference render
 		const { unmount: refUnmount, stdin } = render(<Text>Reference</Text>);
@@ -123,7 +123,7 @@ describe('useInput memory: listener cleanup', () => {
 	});
 
 	test('useInput cleanup when component is rerendered with different active state', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		const { lastFrame, rerender, unmount } = render(<ConditionalInput active={true} />);
 		expect(lastFrame()).toContain('Active');
@@ -141,7 +141,7 @@ describe('useInput memory: listener cleanup', () => {
 	});
 
 	test('nested useInput hooks are cleaned up on unmount', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		const { stdin, unmount } = render(<NestedInputComponent />);
 
@@ -157,7 +157,7 @@ describe('useInput memory: listener cleanup', () => {
 	});
 
 	test('useInput handler replacement does not accumulate listeners', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		const handlers: Array<(k: string) => void> = [];
 
@@ -208,7 +208,7 @@ describe('EventEmitter accumulation', () => {
 	});
 
 	test('multiple components with useInput have bounded listener counts', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		function MultiInputApp() {
 			return (
@@ -241,7 +241,7 @@ describe('EventEmitter accumulation', () => {
 	});
 
 	test('input emitter is cleaned on unmount', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		// Create and unmount multiple renderers
 		for (let i = 0; i < 10; i++) {
@@ -261,7 +261,7 @@ describe('EventEmitter accumulation', () => {
 
 describe('Long-running app memory patterns', () => {
 	test('many frames do not accumulate memory indefinitely', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		function Counter() {
 			const [count, setCount] = useState(0);
@@ -302,7 +302,7 @@ describe('Long-running app memory patterns', () => {
 	test(
 		'rerender cycles do not accumulate nodes',
 		() => {
-			const render = createTestRenderer();
+			const render = createRenderer();
 
 			function DynamicList({ count }: { count: number }) {
 				return (
@@ -338,7 +338,7 @@ describe('Long-running app memory patterns', () => {
 	);
 
 	test('deeply nested components do not leak on restructure', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		function DeepNest({
 			depth,
@@ -379,7 +379,7 @@ describe('Long-running app memory patterns', () => {
 
 describe('Yoga node cleanup', () => {
 	test('removed nodes are freed (basic case)', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		function RemovableChild({ show }: { show: boolean }) {
 			return (
@@ -405,7 +405,7 @@ describe('Yoga node cleanup', () => {
 	});
 
 	test('rapid child addition/removal frees nodes properly', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		function TogglingChildren({ items }: { items: string[] }) {
 			return (
@@ -435,7 +435,7 @@ describe('Yoga node cleanup', () => {
 	});
 
 	test('node replacement (key change) frees old node', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		function KeyedChild({ id }: { id: string }) {
 			return (
@@ -461,8 +461,8 @@ describe('Yoga node cleanup', () => {
 	test('container clear frees all nodes', () => {
 		// Use separate renderers to avoid auto-cleanup issues
 		// Use large row count to fit all 50 rows
-		const render1 = createTestRenderer({ rows: 60 });
-		const render2 = createTestRenderer({ rows: 60 });
+		const render1 = createRenderer({ rows: 60 });
+		const render2 = createRenderer({ rows: 60 });
 
 		function ManyChildren() {
 			return (
@@ -491,7 +491,7 @@ describe('Yoga node cleanup', () => {
 	});
 
 	test('text node updates do not create new yoga nodes', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		function TextUpdater({ text }: { text: string }) {
 			return (
@@ -521,7 +521,7 @@ describe('Yoga node cleanup', () => {
 describe('Memory tracking', () => {
 	test('heap usage stays bounded during intensive operations', () => {
 		// Note: This is a heuristic test - exact memory behavior depends on GC
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		function IntensiveApp() {
 			const [data, setData] = useState<string[]>([]);
@@ -598,7 +598,7 @@ describe('Memory tracking', () => {
 			// Force GC if available (Bun with --expose-gc)
 			const gc = globalThis.gc as (() => void) | undefined;
 
-			const render = createTestRenderer();
+			const render = createRenderer();
 
 			// Create and destroy heavy components (reduced iterations for CI)
 			for (let i = 0; i < 10; i++) {
@@ -634,7 +634,7 @@ describe('Memory tracking', () => {
 
 describe('Memory stress tests', () => {
 	test('1000 mount/unmount cycles complete without error', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 
 		for (let i = 0; i < 1000; i++) {
 			const { unmount } = render(
@@ -652,7 +652,7 @@ describe('Memory stress tests', () => {
 	});
 
 	test('rapid input events do not cause memory issues', () => {
-		const render = createTestRenderer();
+		const render = createRenderer();
 		let inputCount = 0;
 
 		function InputCounter() {
@@ -674,7 +674,7 @@ describe('Memory stress tests', () => {
 	});
 
 	test('large frame buffer is handled correctly', () => {
-		const render = createTestRenderer({ columns: 200, rows: 100 });
+		const render = createRenderer({ cols: 200, rows: 100 });
 
 		function LargeOutput() {
 			return (

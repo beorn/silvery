@@ -10,14 +10,14 @@
 import { describe, expect, it } from 'bun:test';
 import React, { useState } from 'react';
 import { Box, type Key, Text, useInput } from '../src/index.js';
-import { createTestRenderer, normalizeFrame, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer, normalizeFrame, stripAnsi } from '../src/testing/index.tsx';
 
 // ============================================================================
 // Bug km-r0nz: Columns view vertical spacing inconsistency
 // ============================================================================
 
 describe('Bug km-r0nz: Columns view vertical spacing', () => {
-	const render = createTestRenderer({ columns: 60, rows: 20 });
+	const render = createRenderer({ cols: 60, rows: 20 });
 
 	// Simplified column component that mimics the km columns view structure
 	function SimpleColumnsView() {
@@ -92,7 +92,7 @@ describe('Bug km-r0nz: Columns view vertical spacing', () => {
 // ============================================================================
 
 describe('Bug km-d5e9: Top bar text visibility', () => {
-	const render = createTestRenderer({ columns: 80, rows: 24 });
+	const render = createRenderer({ cols: 80, rows: 24 });
 
 	// Simplified top bar that mimics Board.tsx rendering
 	function SimpleTopBar({
@@ -150,7 +150,7 @@ describe('Bug km-d5e9: Top bar text visibility', () => {
 // ============================================================================
 
 describe('Bug km-5x66: Bottom bar background color', () => {
-	const render = createTestRenderer({ columns: 80, rows: 24 });
+	const render = createRenderer({ cols: 80, rows: 24 });
 
 	// Simplified bottom bar that mimics Board.tsx pattern
 	function SimpleBottomBar() {
@@ -202,7 +202,7 @@ describe('Bug km-5x66: Bottom bar background color', () => {
 // ============================================================================
 
 describe('Bug km-n29q: Empty column navigation', () => {
-	const render = createTestRenderer({ columns: 100, rows: 20 });
+	const render = createRenderer({ cols: 100, rows: 20 });
 
 	// Simplified navigation that mimics kanban column navigation
 	function ColumnsNav() {

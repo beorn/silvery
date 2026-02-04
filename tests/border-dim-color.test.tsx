@@ -15,9 +15,9 @@
 import { describe, expect, test } from 'bun:test';
 import React from 'react';
 import { Box, Text } from '../src/index.js';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
 
-const render = createTestRenderer({ columns: 40, rows: 15 });
+const render = createRenderer({ cols: 40, rows: 15 });
 
 /**
  * Check if an ANSI string contains bold styling (SGR code 1).

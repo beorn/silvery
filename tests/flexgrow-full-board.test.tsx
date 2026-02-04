@@ -3,11 +3,11 @@
  */
 import { describe, expect, test } from 'bun:test';
 import { Box, Text } from '../src/index.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 
 describe('flexGrow full board simulation', () => {
 	test('complete board structure with COLUMNS VIEW', () => {
-		const render = createTestRenderer({ columns: 80, rows: 24 });
+		const render = createRenderer({ cols: 80, rows: 24 });
 		const termWidth = 80;
 		const termHeight = 24;
 
@@ -83,7 +83,7 @@ describe('flexGrow full board simulation', () => {
 
 	test('verify the exact broken scenario from km-tui', () => {
 		// Exact dimensions and structure from the failing test
-		const render = createTestRenderer({ columns: 80, rows: 24 });
+		const render = createRenderer({ cols: 80, rows: 24 });
 		const termWidth = 80;
 		const termHeight = 24;
 

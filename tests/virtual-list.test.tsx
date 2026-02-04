@@ -8,7 +8,7 @@ import { beforeAll, describe, expect, test } from 'bun:test';
 import React from 'react';
 import { Box, Text, VirtualList } from '../src/index.js';
 import { initYogaEngine, setLayoutEngine } from '../src/render.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 
 // Initialize layout engine before tests
 beforeAll(async () => {
@@ -16,7 +16,7 @@ beforeAll(async () => {
 	setLayoutEngine(engine);
 });
 
-const render = createTestRenderer({ columns: 80, rows: 24 });
+const render = createRenderer({ cols: 80, rows: 24 });
 
 describe('VirtualList', () => {
 	test('renders visible items only', () => {

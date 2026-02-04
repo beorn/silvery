@@ -13,7 +13,7 @@
  * import { Box, Text, useContentRect, useInput, useApp, render, createTerm, term } from 'inkx';
  *
  * // Testing utilities
- * import { createTestRenderer, createLocator } from 'inkx/testing';
+ * import { createRenderer, createLocator } from 'inkx/testing';
  * ```
  *
  * ## Quick Example

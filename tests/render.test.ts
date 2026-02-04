@@ -7,10 +7,10 @@
 import { describe, expect, it } from 'bun:test';
 import { createElement } from 'react';
 import { Box, Text } from '../src/index.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 import { expectFrame, normalizeFrame, stripAnsi } from './setup.js';
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 describe('render', () => {
 	describe('basic rendering', () => {
@@ -139,15 +139,15 @@ describe('render', () => {
 	});
 
 	describe('options', () => {
-		it('accepts columns option via createTestRenderer', () => {
-			const customRender = createTestRenderer({ columns: 40 });
+		it('accepts columns option via createRenderer', () => {
+			const customRender = createRenderer({ cols: 40 });
 			const { lastFrame } = customRender(createElement(Text, null, 'Test'));
 
 			expect(lastFrame()).toBeDefined();
 		});
 
-		it('accepts rows option via createTestRenderer', () => {
-			const customRender = createTestRenderer({ rows: 10 });
+		it('accepts rows option via createRenderer', () => {
+			const customRender = createRenderer({ rows: 10 });
 			const { lastFrame } = customRender(createElement(Text, null, 'Test'));
 
 			expect(lastFrame()).toBeDefined();

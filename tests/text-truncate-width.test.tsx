@@ -4,10 +4,10 @@
  */
 import { describe, expect, test } from 'bun:test';
 import { Box, Text, displayWidth } from '../src/index.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 
 describe('Text truncation with explicit parent width', () => {
-	const render = createTestRenderer({ columns: 80, rows: 5 });
+	const render = createRenderer({ cols: 80, rows: 5 });
 
 	test('Text truncates to parent Box width', () => {
 		const app = render(

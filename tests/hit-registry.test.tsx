@@ -21,9 +21,9 @@ import {
 	useHitRegistry,
 } from '../src/hit-registry.ts';
 import { Box, Text } from '../src/index.ts';
-import { createTestRenderer } from '../src/testing/index.tsx';
+import { createRenderer } from '../src/testing/index.tsx';
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 // Reset ID counter before each test for predictable IDs
 beforeEach(() => {

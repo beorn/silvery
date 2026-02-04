@@ -3,10 +3,10 @@
  */
 import { describe, expect, test } from 'bun:test';
 import { Box, Text } from '../src/index.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 
 describe('flexGrow nested structure', () => {
-	const render = createTestRenderer({ columns: 80, rows: 5 });
+	const render = createRenderer({ cols: 80, rows: 5 });
 
 	test('nested Text inside flexGrow={0} Box (status bar pattern)', () => {
 		// Replicate exact structure from board-bottom-bar.tsx

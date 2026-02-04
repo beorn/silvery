@@ -13,9 +13,9 @@
 import { describe, expect, test } from 'bun:test';
 import React, { useEffect, useState } from 'react';
 import { Box, Text, useApp } from '../src/index.ts';
-import { createTestRenderer } from '../src/testing/index.tsx';
+import { createRenderer } from '../src/testing/index.tsx';
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 describe('Exit Behavior', () => {
 	describe('Basic exit via useApp', () => {

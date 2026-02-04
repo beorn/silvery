@@ -22,13 +22,13 @@ import {
 	Text,
 	type TextHandle,
 } from '../src/index.js';
-import { createTestRenderer } from '../src/testing/index.tsx';
+import { createRenderer } from '../src/testing/index.tsx';
 
 // ============================================================================
 // Test Setup
 // ============================================================================
 
-const render = createTestRenderer({ columns: 40, rows: 10 });
+const render = createRenderer({ cols: 40, rows: 10 });
 
 // ============================================================================
 // forwardRef Support

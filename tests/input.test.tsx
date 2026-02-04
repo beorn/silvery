@@ -10,7 +10,7 @@
 import { describe, expect, test } from 'bun:test';
 import React, { useState } from 'react';
 import { Box, type Key, Text, useInput } from '../src/index.ts';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
 
 // ============================================================================
 // Test Component: Simple keystroke capture
@@ -74,7 +74,7 @@ function KeystrokeCapture({
 // ============================================================================
 
 describe('Rapid keypress handling', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles multiple rapid keypresses sequentially', () => {
 		const { lastFrame, stdin } = render(<KeystrokeCapture />);
@@ -145,7 +145,7 @@ describe('Rapid keypress handling', () => {
 // ============================================================================
 
 describe('Paste operations', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles single paste of multi-character string', () => {
 		const { lastFrame, stdin } = render(<KeystrokeCapture />);
@@ -195,7 +195,7 @@ describe('Paste operations', () => {
 // ============================================================================
 
 describe('Unicode edge cases', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles basic Unicode characters', () => {
 		const { lastFrame, stdin } = render(<KeystrokeCapture />);
@@ -288,7 +288,7 @@ describe('Unicode edge cases', () => {
 // ============================================================================
 
 describe('Escape sequence handling', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles standalone Escape key', () => {
 		const { lastFrame, stdin } = render(<KeystrokeCapture />);
@@ -402,7 +402,7 @@ describe('Escape sequence handling', () => {
 // ============================================================================
 
 describe('Control character handling', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles Ctrl+letter combinations', () => {
 		const { lastFrame, stdin } = render(<KeystrokeCapture />);
@@ -467,7 +467,7 @@ describe('Control character handling', () => {
 // ============================================================================
 
 describe('Modifier key detection', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('detects uppercase as shift+letter', () => {
 		const { lastFrame, stdin } = render(<KeystrokeCapture />);
@@ -530,7 +530,7 @@ describe('Modifier key detection', () => {
 // ============================================================================
 
 describe('Stateful component with rapid input', () => {
-	const render = createTestRenderer({ columns: 80, rows: 10 });
+	const render = createRenderer({ cols: 80, rows: 10 });
 
 	function Counter() {
 		const [count, setCount] = useState(0);
@@ -606,7 +606,7 @@ describe('Stateful component with rapid input', () => {
 // ============================================================================
 
 describe('Space and special characters', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles space character', () => {
 		const { lastFrame, stdin } = render(<KeystrokeCapture />);
@@ -649,7 +649,7 @@ describe('Space and special characters', () => {
 // ============================================================================
 
 describe('Home/End key handling (km-bquv)', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	// ------------------------------------------------------------------------
 	// Home key detection

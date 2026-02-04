@@ -10,10 +10,10 @@
 import { describe, expect, test } from 'bun:test';
 import React, { useState } from 'react';
 import { Box, type Key, Text, useInput } from '../../src/index.js';
-import { createTestRenderer } from '../../src/testing/index.js';
+import { createRenderer } from '../../src/testing/index.js';
 
 describe('Text node backgroundColor clearing (incremental)', () => {
-	const render = createTestRenderer({ columns: 40, rows: 10 });
+	const render = createRenderer({ cols: 40, rows: 10 });
 
 	test('Text backgroundColor removed on rerender clears stale bg', () => {
 		function Header({ active }: { active: boolean }) {

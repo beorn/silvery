@@ -10,10 +10,10 @@
 import { describe, expect, test } from 'bun:test';
 import React from 'react';
 import { Box, Text } from '../src/components/index.js';
-import { createTestRenderer, normalizeFrame, stripAnsi } from '../src/testing/index.js';
+import { createRenderer, normalizeFrame, stripAnsi } from '../src/testing/index.js';
 import { displayWidth, hasAnsi, splitGraphemes } from '../src/unicode.js';
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 // ============================================================================
 // Screen Reader Compatibility

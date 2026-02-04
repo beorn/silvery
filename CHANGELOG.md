@@ -93,14 +93,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Testing
 
-- `createTestRenderer()` - Testing library for Inkx components
+- `createRenderer()` - Testing library for Inkx components
   - `ink-testing-library` compatible API
   - Auto-cleanup between renders
   - `lastFrame()` for snapshot assertions
   - `frames` array for render history
   - `stdin.write()` for simulating keyboard input
   - `rerender()` for testing updates
-  - Custom dimensions per render (`columns`, `rows`)
+  - Custom dimensions per render (`cols`, `rows`)
 - `stripAnsi()` - Remove ANSI codes from strings
 - `normalizeFrame()` - Normalize frame output for comparison
 - `waitFor()` - Async condition waiting utility

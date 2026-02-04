@@ -164,9 +164,9 @@ function SearchResults() {
 The inkx testing library is configured for React 19's act() requirements:
 
 ```tsx
-import { createTestRenderer } from "inkx/testing";
+import { createRenderer } from "inkx/testing";
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 test("component renders correctly", () => {
   const { lastFrame } = render(<MyComponent />);

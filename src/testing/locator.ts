@@ -6,7 +6,7 @@
  *
  * @example
  * ```typescript
- * const render = createTestRenderer({ columns: 80, rows: 24 });
+ * const render = createRenderer({ cols: 80, rows: 24 });
  * const { getContainer } = render(<MyComponent />);
  *
  * // Query by text content

@@ -11,9 +11,9 @@
 import { describe, expect, test } from 'bun:test';
 import React from 'react';
 import { Box, Newline, Spacer, Text } from '../../src/index.js';
-import { createTestRenderer } from '../../src/testing/index.js';
+import { createRenderer } from '../../src/testing/index.js';
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 describe('Layout API Compatibility', () => {
 	describe('Flex Direction', () => {

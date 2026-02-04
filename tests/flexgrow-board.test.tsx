@@ -3,10 +3,10 @@
  */
 import { describe, expect, test } from 'bun:test';
 import { Box, Text } from '../src/index.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 
 describe('flexGrow in board structure', () => {
-	const render = createTestRenderer({ columns: 80, rows: 24 });
+	const render = createRenderer({ cols: 80, rows: 24 });
 
 	test('bottom bar in full board layout', () => {
 		const termWidth = 80;

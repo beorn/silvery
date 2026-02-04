@@ -3,10 +3,10 @@
  */
 import { describe, expect, test } from 'bun:test';
 import { Box, Text } from '../src/index.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 
 describe('flexGrow measurement', () => {
-	const render = createTestRenderer({ columns: 80, rows: 5 });
+	const render = createRenderer({ cols: 80, rows: 5 });
 
 	test('check computed widths', () => {
 		const app = render(

@@ -7,10 +7,10 @@
 import { describe, expect, test } from 'bun:test';
 import React from 'react';
 import { Box, Text } from '../src/components/index.ts';
-import { createLocator, createTestRenderer } from '../src/testing/index.tsx';
+import { createLocator, createRenderer } from '../src/testing/index.tsx';
 
 // Test renderer factory
-const render = createTestRenderer({ columns: 80, rows: 24 });
+const render = createRenderer({ cols: 80, rows: 24 });
 
 describe('InkxLocator', () => {
 	describe('getByText', () => {

@@ -178,7 +178,7 @@ import { setLayoutEngine, initYogaEngine, createFlexxEngine } from 'inkx'
 import { createTerm, patchConsole, type Term, type StyleChain, type PatchedConsole } from 'inkx'
 
 // Testing
-import { createTestRenderer, bufferToText, stripAnsi, keyToAnsi, debugTree } from 'inkx/testing'
+import { createRenderer, bufferToText, stripAnsi, keyToAnsi, debugTree } from 'inkx/testing'
 ```
 
 ## Common Patterns
@@ -286,10 +286,10 @@ function ColoredOutput() {
 ### Testing Components (App API)
 
 ```tsx
-import { createTestRenderer } from 'inkx/testing'
+import { createRenderer } from 'inkx/testing'
 import { Text, Box } from 'inkx'
 
-const render = createTestRenderer({ columns: 80, rows: 24 })
+const render = createRenderer({ cols: 80, rows: 24 })
 
 test('renders content', () => {
   const app = render(
@@ -335,9 +335,9 @@ Both work identically. Use `id` for consistency with CSS selectors, or `testID` 
 Use `app.press()` for Playwright-style keyboard input:
 
 ```tsx
-import { createTestRenderer } from 'inkx/testing'
+import { createRenderer } from 'inkx/testing'
 
-const render = createTestRenderer({ columns: 80, rows: 24 })
+const render = createRenderer({ cols: 80, rows: 24 })
 
 test('handles keyboard input', async () => {
   const app = render(<MyComponent />)
@@ -392,9 +392,9 @@ test('inspect terminal buffer', () => {
 ### Debugging Tests
 
 ```tsx
-import { createTestRenderer, debugTree } from 'inkx/testing'
+import { createRenderer, debugTree } from 'inkx/testing'
 
-const render = createTestRenderer({ columns: 80, rows: 24 })
+const render = createRenderer({ cols: 80, rows: 24 })
 
 test('debugging example', () => {
   const app = render(<MyComponent />)

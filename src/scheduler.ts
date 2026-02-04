@@ -357,7 +357,7 @@ export class RenderScheduler {
 
 			// INKX_CHECK_INCREMENTAL: compare incremental render against fresh render
 			if (process.env.INKX_CHECK_INCREMENTAL && this.stats.renderCount > 0) {
-				log.debug?.(`checking incremental render #${this.stats.renderCount + 1}`);
+				const renderNum = this.stats.renderCount + 1;
 				const { buffer: freshBuffer } = executeRender(this.root, width, height, null, {
 					mode: this.mode === 'fullscreen' ? 'fullscreen' : 'inline',
 					skipLayoutNotifications: true,
@@ -372,18 +372,22 @@ export class RenderScheduler {
 							const incText = bufferToText(buffer);
 							const freshText = bufferToText(freshBuffer);
 							const msg =
-								`INKX_CHECK_INCREMENTAL: mismatch at (${x}, ${y}) on render #${this.stats.renderCount + 1}\n` +
+								`INKX_CHECK_INCREMENTAL: MISMATCH at (${x}, ${y}) on render #${renderNum}\n` +
 								`  incremental: char=${JSON.stringify(a.char)} fg=${JSON.stringify(a.fg)} bg=${JSON.stringify(a.bg)}\n` +
 								`  fresh:       char=${JSON.stringify(b.char)} fg=${JSON.stringify(b.fg)} bg=${JSON.stringify(b.bg)}\n` +
 								`--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`;
-							// Write to DEBUG_LOG file if set (TUI occupies terminal)
 							if (process.env.DEBUG_LOG) {
 								appendFileSync(process.env.DEBUG_LOG, msg + '\n');
 							}
-							// Also use conditional logger
 							log.error(msg);
 						}
 					}
+				}
+				if (!found && process.env.DEBUG_LOG) {
+					appendFileSync(
+						process.env.DEBUG_LOG,
+						`INKX_CHECK_INCREMENTAL: render #${renderNum} OK\n`,
+					);
 				}
 			}
 

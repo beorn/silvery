@@ -7,7 +7,7 @@
 import { describe, expect, it, test } from 'bun:test';
 import React, { useState } from 'react';
 import { Box, type Key, Text, useInput } from '../src/index.js';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
 
 // ============================================================================
 // Simplified components that reproduce the bugs
@@ -161,7 +161,7 @@ function SimpleDashboard() {
 // ============================================================================
 
 describe('Bug 1: Kanban column header background color', () => {
-	const render = createTestRenderer({ columns: 100, rows: 30 });
+	const render = createRenderer({ cols: 100, rows: 30 });
 
 	it('selected column header should have cyan background', () => {
 		const { lastFrame } = render(<SimpleKanban />);
@@ -193,7 +193,7 @@ describe('Bug 1: Kanban column header background color', () => {
 });
 
 describe('Bug 2: Kanban cursor movement', () => {
-	const render = createTestRenderer({ columns: 100, rows: 30 });
+	const render = createRenderer({ cols: 100, rows: 30 });
 
 	it('pressing j should move cursor down', () => {
 		const { lastFrame, stdin } = render(<SimpleKanban />);
@@ -230,7 +230,7 @@ describe('Bug 2: Kanban cursor movement', () => {
 });
 
 describe('Bug 3: Colors lost after keyboard input', () => {
-	const render = createTestRenderer({ columns: 80, rows: 24 });
+	const render = createRenderer({ cols: 80, rows: 24 });
 
 	it('dashboard colors persist after pressing l', () => {
 		const { lastFrame, stdin } = render(<SimpleDashboard />);
@@ -288,7 +288,7 @@ describe('Bug 3: Colors lost after keyboard input', () => {
 });
 
 describe('Bug 4: Task-list layout changes after keypress', () => {
-	const render = createTestRenderer({ columns: 60, rows: 20 });
+	const render = createRenderer({ cols: 60, rows: 20 });
 
 	it('layout height should remain stable after input', () => {
 		const { lastFrame, stdin } = render(<SimpleTaskList />);
@@ -327,7 +327,7 @@ describe('Bug 4: Task-list layout changes after keypress', () => {
 });
 
 describe('Bug 5: Overflow height calculation with borders', () => {
-	const render = createTestRenderer({ columns: 40, rows: 15 });
+	const render = createRenderer({ cols: 40, rows: 15 });
 
 	it('height=5 with border should show correct content lines', () => {
 		const { lastFrame } = render(

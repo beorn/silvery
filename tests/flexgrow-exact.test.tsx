@@ -3,10 +3,10 @@
  */
 import { describe, expect, test } from 'bun:test';
 import { Box, Text } from '../src/index.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 
 describe('flexGrow exact replication', () => {
-	const render = createTestRenderer({ columns: 80, rows: 1 });
+	const render = createRenderer({ cols: 80, rows: 1 });
 
 	test('CARDS VIEW fits (shorter text)', () => {
 		const viewModeStr = 'CARDS VIEW';

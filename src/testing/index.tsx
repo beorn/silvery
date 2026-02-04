@@ -7,22 +7,22 @@
  * ## Import Syntax
  *
  * ```tsx
- * import { createTestRenderer, bufferToText, stripAnsi } from 'inkx/testing';
+ * import { createRenderer, bufferToText, stripAnsi } from 'inkx/testing';
  * ```
  *
  * ## Auto-cleanup
  *
- * Each render() call automatically unmounts the previous render,
+ * Each render() call from createRenderer automatically unmounts the previous render,
  * so you don't need explicit cleanup.
  *
- * ## Basic Testing (NewWay - App API)
+ * ## Basic Testing
  *
  * @example
  * ```tsx
- * import { createTestRenderer } from 'inkx/testing';
+ * import { createRenderer } from 'inkx/testing';
  * import { Text, Box } from 'inkx';
  *
- * const render = createTestRenderer({ columns: 80, rows: 24 });
+ * const render = createRenderer({ cols: 80, rows: 24 });
  *
  * test('renders text', () => {
  *   const app = render(<Text>Hello</Text>);
@@ -81,15 +81,7 @@
  * ```
  */
 
-import { EventEmitter } from 'node:events';
-import React, { type ReactElement, act } from 'react';
-import { type App, buildApp } from '../app.js';
-import { type TerminalBuffer, bufferToText, cellEquals } from '../buffer.js';
-import {
-	ensureDefaultLayoutEngine,
-	getLayoutEngine,
-	isLayoutEngineInitialized,
-} from '../layout-engine.js';
+import { ensureDefaultLayoutEngine } from '../layout-engine.js';
 
 // Re-export App for type usage
 export type { App } from '../app.js';
@@ -112,12 +104,20 @@ export { debugTree, type DebugTreeOptions } from './debug.js';
 
 // Re-export buffer comparison utilities
 export { compareBuffers, formatMismatch, type BufferMismatch } from './compare-buffers.js';
-import { createTerm } from 'chalkx';
-import { AppContext, EventsContext, InputContext, StdoutContext, TermContext } from '../context.js';
-import type { LayoutEngine } from '../layout-engine.js';
-import { setLayoutEngine } from '../layout-engine.js';
-import { executeRender } from '../pipeline.js';
-import { createContainer, getContainerRoot, reconciler } from '../reconciler.js';
+
+// Re-export render API
+export {
+	render,
+	createRenderer,
+	createStore,
+	run,
+	ensureEngine,
+	getActiveRenderCount,
+	type RenderOptions,
+	type PerRenderOptions,
+	type Store,
+	type StoreOptions,
+} from '../renderer.js';
 
 // ============================================================================
 // Module Initialization
@@ -129,390 +129,8 @@ import { createContainer, getContainerRoot, reconciler } from '../reconciler.js'
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 // Initialize default layout engine via top-level await.
-// This cached engine is used by createTestRenderer() when no engine is provided.
+// This ensures render()/createRenderer() work immediately after import.
 await ensureDefaultLayoutEngine();
-const defaultLayoutEngine = getLayoutEngine();
-
-// ============================================================================
-// Types
-// ============================================================================
-
-/**
- * Options for creating a test renderer.
- */
-export interface TestRendererOptions {
-	/** Terminal width for layout calculations. Default: 80 */
-	columns?: number;
-	/** Terminal height. Default: 24 */
-	rows?: number;
-	/** Layout engine to use (yoga or flexx). Default: flexx */
-	layoutEngine?: LayoutEngine;
-	/** Enable debug output. Default: false */
-	debug?: boolean;
-}
-
-/**
- * Options for individual render calls.
- */
-export interface RenderOptions {
-	/** Enable debug output for this render. Default: false */
-	debug?: boolean;
-	/** Override terminal width for this render. Default: use renderer default (80) */
-	columns?: number;
-	/** Override terminal height for this render. Default: use renderer default (24) */
-	rows?: number;
-	/**
-	 * Enable incremental rendering (buffer clone + subtree skip).
-	 * When true, matches live scheduler behavior and catches stale-pixel bugs.
-	 * When false (default), always does full render for stable lastFrame() output.
-	 */
-	incremental?: boolean;
-}
-
-/**
- * Test render function type.
- * Returns App for querying and interacting with the rendered component.
- */
-export type TestRender = (element: ReactElement, options?: RenderOptions) => App;
-
-/**
- * Internal state for a render instance.
- */
-interface RenderInstance {
-	frames: string[];
-	container: ReturnType<typeof createContainer>;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- React reconciler internal type
-	fiberRoot: any;
-	prevBuffer: TerminalBuffer | null;
-	mounted: boolean;
-	columns: number;
-	rows: number;
-	inputEmitter: EventEmitter;
-	debug: boolean;
-}
-
-// ============================================================================
-// Test Renderer Factory
-// ============================================================================
-
-/**
- * Create a test render function for testing inkx components.
- *
- * The returned render function auto-cleans previous renders on each call.
- *
- * @param options - Renderer configuration (dimensions, layout engine, debug)
- * @returns Render function that returns an App instance
- *
- * @example
- * ```tsx
- * import { createTestRenderer } from 'inkx/testing';
- * import { Box, Text } from 'inkx';
- *
- * // Create renderer (typically once per test file)
- * const render = createTestRenderer({ columns: 80, rows: 24 });
- *
- * test('my test', async () => {
- *   const app = render(<MyComponent />);
- *
- *   // Check output
- *   expect(app.text).toContain('expected');
- *
- *   // Send input
- *   await app.press('q');
- *
- *   // DOM queries (auto-refreshing locators)
- *   expect(app.getByText('Hello').count()).toBe(1);
- * });
- * ```
- */
-export function createTestRenderer(options: TestRendererOptions = {}): TestRender {
-	const {
-		columns = 80,
-		rows = 24,
-		layoutEngine = defaultLayoutEngine,
-		debug: defaultDebug = false,
-	} = options;
-
-	// Set the layout engine for this renderer
-	setLayoutEngine(layoutEngine);
-
-	// Track current instance for auto-cleanup
-	let currentInstance: App | null = null;
-
-	function render(element: ReactElement, renderOptions: RenderOptions = {}): App {
-		// Auto-cleanup previous render before creating new one
-		if (currentInstance) {
-			try {
-				currentInstance.unmount();
-			} catch {
-				// Already unmounted, ignore
-			}
-		}
-
-		const debug = renderOptions.debug ?? defaultDebug;
-		// Allow per-render column/row overrides
-		const renderColumns = renderOptions.columns ?? columns;
-		const renderRows = renderOptions.rows ?? rows;
-
-		const instance: RenderInstance = {
-			frames: [],
-			container: null as unknown as ReturnType<typeof createContainer>,
-			fiberRoot: null,
-			prevBuffer: null,
-			mounted: true,
-			columns: renderColumns,
-			rows: renderRows,
-			inputEmitter: new EventEmitter(),
-			debug,
-		};
-
-		// Create container (onRender callback not needed for sync rendering)
-		instance.container = createContainer(() => {});
-
-		instance.fiberRoot = reconciler.createContainer(
-			instance.container,
-			0, // LegacyRoot
-			null, // hydrationCallbacks
-			false, // isStrictMode
-			null, // concurrentUpdatesByDefaultOverride
-			'', // identifierPrefix
-			() => {}, // onRecoverableError
-			null, // transitionCallbacks
-		);
-
-		// Track if exit was called (for testing exit behavior)
-		let exitCalledFlag = false;
-		let exitErrorValue: Error | undefined;
-
-		// Exit handler for useApp hook
-		const handleExit = (error?: Error) => {
-			exitCalledFlag = true;
-			exitErrorValue = error;
-			if (debug) {
-				console.log('[inkx-test] exit() called', error ? `with error: ${error.message}` : '');
-			}
-		};
-
-		// Create a mock stdout for useStdout hook
-		// Provides columns/rows from test config and a no-op write function
-		// Also includes on/off methods for resize event listeners (required by layout systems)
-		const mockStdout = {
-			columns: instance.columns,
-			rows: instance.rows,
-			write: () => true,
-			// Add required WriteStream properties for type compatibility
-			isTTY: true,
-			// Event listener methods (no-op since tests don't resize)
-			on: () => mockStdout,
-			off: () => mockStdout,
-			once: () => mockStdout,
-			removeListener: () => mockStdout,
-			addListener: () => mockStdout,
-		} as unknown as NodeJS.WriteStream;
-
-		// Create a mock term for useTerm hook (no actual terminal, but provides styling API)
-		const mockTerm = createTerm({ level: 3, columns: renderColumns });
-
-		// Mock events for interactive mode (non-null signals to useInput that input is enabled)
-		// This empty async iterable is never iterated; tests use InputContext EventEmitter
-		const mockEvents: AsyncIterable<import('../types.js').Event> = {
-			[Symbol.asyncIterator]: () => ({
-				next: () => new Promise<IteratorResult<import('../types.js').Event>>(() => {}),
-			}),
-		};
-
-		// Wrap element with contexts to enable useApp, useInput, useStdout, and useTerm hooks
-		function wrapWithContexts(el: ReactElement): ReactElement {
-			return React.createElement(
-				TermContext.Provider,
-				{ value: mockTerm },
-				React.createElement(
-					EventsContext.Provider,
-					{ value: mockEvents },
-					React.createElement(
-						AppContext.Provider,
-						{
-							value: {
-								exit: handleExit,
-							},
-						},
-						React.createElement(
-							StdoutContext.Provider,
-							{
-								value: {
-									stdout: mockStdout,
-									write: () => {},
-								},
-							},
-							React.createElement(
-								InputContext.Provider,
-								{
-									value: {
-										eventEmitter: instance.inputEmitter,
-										exitOnCtrlC: false,
-									},
-								},
-								el,
-							),
-						),
-					),
-				),
-			);
-		}
-
-		// Render function that executes the pipeline
-		// When incremental=true, pass prevBuffer to enable buffer clone + subtree skip
-		// (matches live scheduler behavior, catches stale-pixel bugs)
-		// When incremental=false (default), always do full render for stable lastFrame() output
-		const incremental = renderOptions.incremental ?? false;
-		function doRender(): string {
-			const root = getContainerRoot(instance.container);
-			const { output, buffer } = executeRender(
-				root,
-				instance.columns,
-				instance.rows,
-				incremental ? instance.prevBuffer : null,
-			);
-			instance.prevBuffer = buffer;
-			return output;
-		}
-
-		// Fresh render: renders from scratch without updating incremental state.
-		// Used for differential testing (incremental vs fresh comparison).
-		function doFreshRender(): TerminalBuffer {
-			const root = getContainerRoot(instance.container);
-			const { buffer } = executeRender(root, instance.columns, instance.rows, null, {
-				skipLayoutNotifications: true,
-			});
-			// NOTE: does NOT update instance.prevBuffer
-			return buffer;
-		}
-
-		// Synchronously update React tree within act() to ensure all state updates are flushed
-		act(() => {
-			reconciler.updateContainerSync(wrapWithContexts(element), instance.fiberRoot, null, null);
-			reconciler.flushSyncWork();
-		});
-
-		// Execute the render pipeline
-		const output = doRender();
-		instance.frames.push(output);
-
-		if (debug) {
-			console.log('[inkx-test] Initial render:', output);
-		}
-
-		// Helper functions for App
-		const getContainer = () => getContainerRoot(instance.container);
-		const getBuffer = () => instance.prevBuffer;
-
-		// Auto-check incremental rendering when INKX_CHECK_INCREMENTAL is set
-		const autoCheckIncremental = incremental && !!process.env.INKX_CHECK_INCREMENTAL;
-
-		const sendInput = (data: string) => {
-			if (!instance.mounted) {
-				throw new Error('Cannot write to stdin after unmount');
-			}
-			act(() => {
-				instance.inputEmitter.emit('input', data);
-			});
-			const newFrame = doRender();
-			instance.frames.push(newFrame);
-			if (debug) {
-				console.log('[inkx-test] stdin.write:', newFrame);
-			}
-			if (autoCheckIncremental) {
-				const freshBuffer = doFreshRender();
-				const currentBuffer = instance.prevBuffer;
-				if (currentBuffer) {
-					for (let y = 0; y < currentBuffer.height; y++) {
-						for (let x = 0; x < currentBuffer.width; x++) {
-							const a = currentBuffer.getCell(x, y);
-							const b = freshBuffer.getCell(x, y);
-							if (!cellEquals(a, b)) {
-								const inputDesc = JSON.stringify(data);
-								throw new Error(
-									`INKX_CHECK_INCREMENTAL: Buffer mismatch at (${x}, ${y}) after input ${inputDesc}\n` +
-										`  incremental: char=${JSON.stringify(a.char)} fg=${JSON.stringify(a.fg)} bg=${JSON.stringify(a.bg)}\n` +
-										`  fresh:       char=${JSON.stringify(b.char)} fg=${JSON.stringify(b.fg)} bg=${JSON.stringify(b.bg)}`,
-								);
-							}
-						}
-					}
-				}
-			}
-		};
-
-		const rerenderFn = (newElement: React.ReactNode) => {
-			if (!instance.mounted) {
-				throw new Error('Cannot rerender after unmount');
-			}
-			act(() => {
-				reconciler.updateContainerSync(
-					wrapWithContexts(newElement as ReactElement),
-					instance.fiberRoot,
-					null,
-					null,
-				);
-				reconciler.flushSyncWork();
-			});
-			const newFrame = doRender();
-			instance.frames.push(newFrame);
-			if (debug) {
-				console.log('[inkx-test] Rerender:', newFrame);
-			}
-		};
-
-		const unmountFn = () => {
-			if (!instance.mounted) {
-				throw new Error('Already unmounted');
-			}
-			act(() => {
-				reconciler.updateContainer(null, instance.fiberRoot, null, () => {});
-			});
-			instance.mounted = false;
-			instance.inputEmitter.removeAllListeners();
-			if (debug) {
-				console.log('[inkx-test] Unmounted');
-			}
-		};
-
-		const clearFn = () => {
-			instance.frames.length = 0;
-			instance.prevBuffer = null;
-		};
-
-		const debugFn = () => {
-			console.log(debugTree(getContainerRoot(instance.container)));
-		};
-
-		// Create unified App instance
-		const app = buildApp({
-			getContainer,
-			getBuffer,
-			sendInput,
-			rerender: rerenderFn,
-			unmount: unmountFn,
-			waitUntilExit: () => Promise.resolve(),
-			clear: clearFn,
-			exitCalled: () => exitCalledFlag,
-			exitError: () => exitErrorValue,
-			freshRender: doFreshRender,
-			debugFn,
-			frames: instance.frames,
-			columns: renderColumns,
-			rows: renderRows,
-		});
-
-		// Track current instance for auto-cleanup on next render
-		currentInstance = app;
-
-		return app;
-	}
-
-	// Return render function directly - auto-cleans previous render on each call
-	return render;
-}
 
 // ============================================================================
 // Utility Functions

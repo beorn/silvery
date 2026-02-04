@@ -10,14 +10,14 @@
 import { describe, expect, test } from 'bun:test';
 import React from 'react';
 import { Box, Text } from '../src/index.js';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
 
 // ============================================================================
 // Text wrapping with long words
 // ============================================================================
 
 describe('text wrapping with long words', () => {
-	const render = createTestRenderer({ columns: 20, rows: 10 });
+	const render = createRenderer({ cols: 20, rows: 10 });
 
 	test('word longer than container width should wrap or truncate', () => {
 		const { lastFrame } = render(
@@ -46,7 +46,7 @@ describe('text wrapping with long words', () => {
 
 	test('multiple long words are present in output', () => {
 		// Use a taller container to allow for wrapping
-		const render = createTestRenderer({ columns: 20, rows: 20 });
+		const render = createRenderer({ cols: 20, rows: 20 });
 		const { lastFrame } = render(
 			<Box width={10} height={10}>
 				<Text>aaaaaaaaaaaaaa bbbbbbbbbbbbbb</Text>
@@ -93,7 +93,7 @@ describe('text wrapping with long words', () => {
 // ============================================================================
 
 describe('ANSI escape codes in text', () => {
-	const render = createTestRenderer({ columns: 40, rows: 10 });
+	const render = createRenderer({ cols: 40, rows: 10 });
 
 	test('text with bold styling renders correctly', () => {
 		const { lastFrame } = render(
@@ -212,7 +212,7 @@ describe('ANSI escape codes in text', () => {
 // ============================================================================
 
 describe('emoji and wide characters', () => {
-	const render = createTestRenderer({ columns: 40, rows: 10 });
+	const render = createRenderer({ cols: 40, rows: 10 });
 
 	test('single emoji renders correctly', () => {
 		const { lastFrame } = render(
@@ -328,7 +328,7 @@ describe('emoji and wide characters', () => {
 // ============================================================================
 
 describe('mixed content (text + emoji + ANSI)', () => {
-	const render = createTestRenderer({ columns: 60, rows: 10 });
+	const render = createRenderer({ cols: 60, rows: 10 });
 
 	test('styled text with emoji', () => {
 		const { lastFrame } = render(
@@ -478,7 +478,7 @@ describe('mixed content (text + emoji + ANSI)', () => {
 // ============================================================================
 
 describe('wrapping with wide characters', () => {
-	const render = createTestRenderer({ columns: 20, rows: 10 });
+	const render = createRenderer({ cols: 20, rows: 10 });
 
 	test('emoji at wrap boundary', () => {
 		// Set up a scenario where emoji might be at wrap boundary

@@ -26,10 +26,10 @@ import {
 	useStdin,
 	useStdout,
 } from '../src/index.ts';
-import { createTestRenderer } from '../src/testing/index.tsx';
+import { createRenderer } from '../src/testing/index.tsx';
 import type { InkxNode } from '../src/types.ts';
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 // ============================================================================
 // Test Helpers

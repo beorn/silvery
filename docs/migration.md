@@ -23,7 +23,7 @@ bun add inkx
 + import { Box, Text, render, useInput, useApp, createTerm } from 'inkx';
 
 - import { render } from 'ink-testing-library';
-+ import { createTestRenderer } from 'inkx/testing';
++ import { createRenderer } from 'inkx/testing';
 ```
 
 ### Step 3: Run Tests
@@ -250,9 +250,9 @@ diff before.txt after.txt
 If you have tests using ink-testing-library, update to inkx/testing:
 
 ```typescript
-import { createTestRenderer } from 'inkx/testing';
+import { createRenderer } from 'inkx/testing';
 
-const render = createTestRenderer({ columns: 80, rows: 24 });
+const render = createRenderer({ cols: 80, rows: 24 });
 
 test('my component', () => {
   const app = render(<MyComponent />);

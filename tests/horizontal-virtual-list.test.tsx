@@ -4,9 +4,9 @@
 import { describe, expect, it } from 'bun:test';
 import React from 'react';
 import { Box, HorizontalVirtualList, Text } from '../src/index.js';
-import { createTestRenderer } from '../src/testing/index.js';
+import { createRenderer } from '../src/testing/index.js';
 
-const render = createTestRenderer({ columns: 80, rows: 24 });
+const render = createRenderer({ cols: 80, rows: 24 });
 
 describe('HorizontalVirtualList', () => {
 	it('renders visible items only', () => {

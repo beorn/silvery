@@ -52,9 +52,9 @@ import {
 } from '../src/index.js';
 
 import { FocusContext, type FocusContextValue } from '../src/context.js';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.js';
+import { createRenderer, stripAnsi } from '../src/testing/index.js';
 
-const testRender = createTestRenderer();
+const testRender = createRenderer();
 
 // ============================================================================
 // API Export Tests
@@ -389,7 +389,7 @@ describe('Ink API Compatibility', () => {
 // ============================================================================
 
 describe('Behavioral Tests - useInput', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	describe('isActive option', () => {
 		test('useInput ignores input when isActive is false', () => {
@@ -562,7 +562,7 @@ describe('Behavioral Tests - useInput', () => {
 // ============================================================================
 
 describe('Behavioral Tests - useFocus', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	/**
 	 * Create a mock focus context that tracks focus state.
@@ -712,7 +712,7 @@ describe('Behavioral Tests - useFocus', () => {
 // ============================================================================
 
 describe('Behavioral Tests - useApp', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('useApp returns exit function', () => {
 		let exitFn: ((error?: Error) => void) | null = null;
@@ -757,7 +757,7 @@ describe('Behavioral Tests - useApp', () => {
 // ============================================================================
 
 describe('Behavioral Tests - Rendering', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	describe('Re-render behavior', () => {
 		test('state changes trigger re-render', () => {
@@ -963,7 +963,7 @@ describe('Behavioral Tests - Rendering', () => {
 // ============================================================================
 
 describe('Common Ink Patterns', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	describe('Selection list pattern', () => {
 		test('renders a selectable list with keyboard navigation', () => {
@@ -1176,7 +1176,7 @@ describe('Common Ink Patterns', () => {
 // ============================================================================
 
 describe('Edge Cases', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('empty Box renders without error', () => {
 		const { lastFrame } = render(<Box />);

@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'bun:test';
 import React, { useState } from 'react';
 import { Box, type Key, Text, useInput } from '../src/index.js';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
 
 // Simplified Dashboard component for testing
 function TestDashboard() {
@@ -48,7 +48,7 @@ function TestDashboard() {
 }
 
 describe('Dashboard cursor movement', () => {
-	const render = createTestRenderer({ columns: 100, rows: 20 });
+	const render = createRenderer({ cols: 100, rows: 20 });
 
 	it('renders initial state with pane 1 selected', () => {
 		const { lastFrame } = render(<TestDashboard />);
@@ -147,7 +147,7 @@ function TestScrollList() {
 }
 
 describe('Scroll list cursor movement', () => {
-	const render = createTestRenderer({ columns: 60, rows: 15 });
+	const render = createRenderer({ cols: 60, rows: 15 });
 
 	it('renders initial state with first item selected', () => {
 		const { lastFrame } = render(<TestScrollList />);

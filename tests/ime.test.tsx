@@ -17,7 +17,7 @@
 import { describe, expect, test } from 'bun:test';
 import React, { useState } from 'react';
 import { Box, type Key, Text, useInput } from '../src/index.ts';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.tsx';
+import { createRenderer, stripAnsi } from '../src/testing/index.tsx';
 import { displayWidth, graphemeCount } from '../src/unicode.js';
 
 // ============================================================================
@@ -120,7 +120,7 @@ function CJKTextEditor() {
 // ============================================================================
 
 describe('Chinese Character Input (中文)', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles single Chinese character input', () => {
 		const { lastFrame, stdin } = render(<CJKInputCapture />);
@@ -203,7 +203,7 @@ describe('Chinese Character Input (中文)', () => {
 // ============================================================================
 
 describe('Japanese Character Input (日本語)', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles Hiragana input', () => {
 		const { lastFrame, stdin } = render(<CJKInputCapture />);
@@ -274,7 +274,7 @@ describe('Japanese Character Input (日本語)', () => {
 // ============================================================================
 
 describe('Korean Character Input (한국어)', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles Hangul syllable input', () => {
 		const { lastFrame, stdin } = render(<CJKInputCapture />);
@@ -325,7 +325,7 @@ describe('Korean Character Input (한국어)', () => {
 // ============================================================================
 
 describe('Mixed CJK and ASCII Input', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('handles alternating ASCII and CJK characters', () => {
 		const { lastFrame, stdin } = render(<CJKInputCapture />);
@@ -371,7 +371,7 @@ describe('Mixed CJK and ASCII Input', () => {
 // ============================================================================
 
 describe('Cursor Positioning with CJK Characters', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 
 	test('tracks cursor position with CJK input', () => {
 		const { lastFrame, stdin } = render(<CJKTextEditor />);
@@ -575,9 +575,9 @@ describe('IME Considerations (Documentation)', () => {
 // ============================================================================
 
 describe('CJK Input Edge Cases', () => {
-	const render = createTestRenderer({ columns: 80, rows: 30 });
+	const render = createRenderer({ cols: 80, rows: 30 });
 	// Wide render for tests with long content that exceeds 80 columns
-	const wideRender = createTestRenderer({ columns: 160, rows: 30 });
+	const wideRender = createRenderer({ cols: 160, rows: 30 });
 
 	test('handles empty input gracefully', () => {
 		const { lastFrame } = render(<CJKInputCapture />);

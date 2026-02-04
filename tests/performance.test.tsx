@@ -8,9 +8,9 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from 'bun:test';
 import React from 'react';
 import { Box, Text } from '../src/components/index.js';
-import { createTestRenderer, stripAnsi } from '../src/testing/index.js';
+import { createRenderer, stripAnsi } from '../src/testing/index.js';
 
-const render = createTestRenderer();
+const render = createRenderer();
 
 // Capture console.log output during tests
 let logSpy: ReturnType<typeof spyOn>;

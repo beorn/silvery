@@ -71,19 +71,19 @@ bun run test:fast
 - Test files use the naming pattern `*.test.ts` or `*.test.tsx`
 - Use `bun:test` for test utilities (`describe`, `test`, `expect`)
 
-### Using createTestRenderer
+### Using createRenderer
 
 Inkx provides a testing library with auto-cleanup between renders:
 
 ```tsx
-import { createTestRenderer } from "inkx/testing";
+import { createRenderer } from "inkx/testing";
 import { Box, Text } from "inkx";
 
 // Create a render function (default: 80 columns, 24 rows)
-const render = createTestRenderer();
+const render = createRenderer();
 
 // Or with custom dimensions
-const wideRender = createTestRenderer({ columns: 120, rows: 40 });
+const wideRender = createRenderer({ cols: 120, rows: 40 });
 
 test("renders text", () => {
   const { lastFrame, rerender, stdin } = render(
@@ -117,7 +117,7 @@ test("wide render", () => {
     <Box width={100}>
       <Text>Wide</Text>
     </Box>,
-    { columns: 120, rows: 24 },
+    { cols: 120, rows: 24 },
   );
 });
 ```
@@ -126,7 +126,7 @@ test("wide render", () => {
 
 ```tsx
 import {
-  createTestRenderer,
+  createRenderer,
   stripAnsi,
   normalizeFrame,
   waitFor,
@@ -293,7 +293,7 @@ inkx/
 ├── src/
 │ ├── components/ # Box, Text, Newline, Spacer, Static
 │ ├── hooks/ # useLayout, useInput, useApp, etc.
-│ ├── testing/ # Test utilities (createTestRenderer)
+│ ├── testing/ # Test utilities (createRenderer)
 │ ├── reconciler.ts # React reconciler
 │ ├── pipeline.ts # Render pipeline
 │ ├── buffer.ts # Terminal buffer
