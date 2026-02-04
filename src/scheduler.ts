@@ -357,13 +357,11 @@ export class RenderScheduler {
 
 			// INKX_CHECK_INCREMENTAL: compare incremental render against fresh render
 			if (process.env.INKX_CHECK_INCREMENTAL && this.stats.renderCount > 0) {
-				const { buffer: freshBuffer } = executeRender(
-					this.root,
-					width,
-					height,
-					null,
-					{ mode: this.mode === 'fullscreen' ? 'fullscreen' : 'inline', skipLayoutNotifications: true },
-				);
+				log.debug?.(`checking incremental render #${this.stats.renderCount + 1}`);
+				const { buffer: freshBuffer } = executeRender(this.root, width, height, null, {
+					mode: this.mode === 'fullscreen' ? 'fullscreen' : 'inline',
+					skipLayoutNotifications: true,
+				});
 				let found = false;
 				for (let y = 0; y < buffer.height && !found; y++) {
 					for (let x = 0; x < buffer.width && !found; x++) {

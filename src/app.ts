@@ -176,7 +176,7 @@ export interface AppOptions {
 /**
  * Create an App instance
  */
-export function createApp(options: AppOptions): App {
+export function buildApp(options: AppOptions): App {
 	const {
 		getContainer,
 		getBuffer,

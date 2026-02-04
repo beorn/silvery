@@ -83,7 +83,7 @@
 
 import { EventEmitter } from 'node:events';
 import React, { type ReactElement, act } from 'react';
-import { type App, createApp } from '../app.js';
+import { type App, buildApp } from '../app.js';
 import { type TerminalBuffer, bufferToText, cellEquals } from '../buffer.js';
 import {
 	ensureDefaultLayoutEngine,
@@ -487,7 +487,7 @@ export function createTestRenderer(options: TestRendererOptions = {}): TestRende
 		};
 
 		// Create unified App instance
-		const app = createApp({
+		const app = buildApp({
 			getContainer,
 			getBuffer,
 			sendInput,
