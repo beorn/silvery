@@ -489,3 +489,49 @@ export type { StyledSegment } from './unicode.js';
  * ```
  */
 export { calcEdgeBasedScrollOffset } from './scroll-utils.js';
+
+// =============================================================================
+// Plugin Composition (SlateJS-style)
+// =============================================================================
+
+/**
+ * Plugin composition for command systems.
+ *
+ * @example
+ * ```tsx
+ * import { withCommands, withKeybindings, render } from 'inkx';
+ *
+ * const app = withKeybindings(withCommands(render(<Board />), {
+ *   registry: commandRegistry,
+ *   getContext: () => buildContext(state),
+ *   handleAction: (action) => dispatch(action),
+ *   getKeybindings: () => keybindings,
+ * }), {
+ *   bindings: keybindings,
+ *   getKeyContext: () => ({ mode: 'normal', hasSelection: false }),
+ * });
+ *
+ * await app.cmd.down();         // Direct command invocation
+ * await app.press('j');         // Key → command → action
+ * console.log(app.cmd.down.help); // Command metadata
+ * ```
+ */
+export { withCommands } from './with-commands.js';
+export type {
+	WithCommandsOptions,
+	CommandDef,
+	CommandRegistryLike,
+	CommandInfo,
+	Command,
+	Cmd,
+	AppWithCommands,
+	AppState,
+	KeybindingDef,
+} from './with-commands.js';
+
+export { withKeybindings } from './with-keybindings.js';
+export type {
+	WithKeybindingsOptions,
+	KeybindingContext,
+	ExtendedKeybindingDef,
+} from './with-keybindings.js';
