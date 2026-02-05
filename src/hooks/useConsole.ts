@@ -1,9 +1,10 @@
 import type { ConsoleEntry, PatchedConsole } from "chalkx"
-import { useSyncExternalStore } from "react"
+import { useEffect, useState } from "react"
 
 /**
  * Hook to subscribe to console entries from a PatchedConsole.
- * Re-renders when new entries arrive.
+ * Re-renders at most every {@link debounceMs} ms to prevent infinite
+ * render loops when pipeline debug logging is active (e.g. `-vv`).
  *
  * @example
  * ```tsx
@@ -22,6 +23,30 @@ import { useSyncExternalStore } from "react"
  * }
  * ```
  */
-export function useConsole(patched: PatchedConsole): readonly ConsoleEntry[] {
-  return useSyncExternalStore(patched.subscribe, patched.getSnapshot)
+export function useConsole(
+  patched: PatchedConsole,
+  debounceMs = 200,
+): readonly ConsoleEntry[] {
+  const [entries, setEntries] = useState<readonly ConsoleEntry[]>(
+    patched.getSnapshot,
+  )
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+    const unsub = patched.subscribe(() => {
+      if (timer) return
+      timer = setTimeout(() => {
+        timer = null
+        setEntries(patched.getSnapshot())
+      }, debounceMs)
+    })
+    // Pick up entries that arrived before subscribe
+    setEntries(patched.getSnapshot())
+    return () => {
+      unsub()
+      if (timer) clearTimeout(timer)
+    }
+  }, [patched, debounceMs])
+
+  return entries
 }
