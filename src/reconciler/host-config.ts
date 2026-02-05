@@ -349,12 +349,11 @@ export const hostConfig = {
     }
 
     // Check if content changed (text children, style props like backgroundColor)
-    if (
-      contentPropsChanged(
-        oldProps as Record<string, unknown>,
-        newProps as Record<string, unknown>,
-      )
-    ) {
+    const contentChanged = contentPropsChanged(
+      oldProps as Record<string, unknown>,
+      newProps as Record<string, unknown>,
+    )
+    if (contentChanged) {
       instance.contentDirty = true
       // paintDirty survives the measure phase (which clears contentDirty for
       // its text-collection cache). contentPhase uses paintDirty to know it

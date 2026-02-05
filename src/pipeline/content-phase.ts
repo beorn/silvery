@@ -62,18 +62,35 @@ function clearDirtyFlags(node: InkxNode): void {
 }
 
 /**
- * Find the nearest ancestor with a backgroundColor and return the parsed color.
- * Used when clearing a node's region to preserve the parent's painted background
- * instead of clearing to terminal default (black).
+ * Result of finding inherited background - includes both color and ancestor bounds.
  */
-function findInheritedBg(node: InkxNode): Color {
+interface InheritedBgResult {
+  color: Color
+  /** The rect of the ancestor that has the background color (for clipping) */
+  ancestorRect: { x: number; y: number; width: number; height: number } | null
+}
+
+/**
+ * Find the nearest ancestor with a backgroundColor and return the parsed color
+ * along with the ancestor's rect for proper clipping.
+ *
+ * When clearing excess area after a node shrinks, we need to clip to the colored
+ * ancestor's bounds - not just the immediate parent. Otherwise the inherited
+ * color can bleed into sibling areas that should have different backgrounds.
+ */
+function findInheritedBg(node: InkxNode): InheritedBgResult {
   let current = node.parent
   while (current) {
     const bg = (current.props as BoxProps).backgroundColor
-    if (bg) return parseColor(bg)
+    if (bg) {
+      return {
+        color: parseColor(bg),
+        ancestorRect: current.contentRect,
+      }
+    }
     current = current.parent
   }
-  return null
+  return { color: null, ancestorRect: null }
 }
 
 /**
@@ -164,7 +181,8 @@ function renderNodeToBuffer(
     !props.backgroundColor
 
   if (parentRegionCleared) {
-    const clearBg = findInheritedBg(node)
+    const inherited = findInheritedBg(node)
+    const clearBg = inherited.color
     const screenY = layout.y - scrollOffset
     const clearY = clipBounds ? Math.max(screenY, clipBounds.top) : screenY
     const clearBottom = clipBounds
@@ -179,9 +197,22 @@ function renderNodeToBuffer(
     }
 
     // Bug 3: When a node shrinks, clear the old bounds' excess area
+    // IMPORTANT: We clip to the COLORED ANCESTOR's bounds (not immediate parent).
+    // Using the inherited color but the immediate parent's bounds causes the
+    // color to bleed into sibling areas that should have different backgrounds.
+    // For example, if a text node inside a cyan row shrinks, clearing with cyan
+    // must not extend beyond the cyan row into an adjacent black dialog.
     if (layoutChanged && node.prevLayout) {
       const prev = node.prevLayout
       const prevScreenY = prev.y - scrollOffset
+
+      // Use colored ancestor's bounds for clipping, fallback to immediate parent
+      const clipRect = inherited.ancestorRect ?? node.parent?.contentRect
+      if (!clipRect) return // No bounds to clip to
+
+      const clipRectScreenY = clipRect.y - scrollOffset
+      const clipRectBottom = clipRectScreenY + clipRect.height
+
       // Clear right margin (old was wider than new)
       if (prev.width > layout.width) {
         const rightClearY = clipBounds
@@ -190,7 +221,9 @@ function renderNodeToBuffer(
         const rightClearBottom = clipBounds
           ? Math.min(prevScreenY + prev.height, clipBounds.bottom)
           : prevScreenY + prev.height
-        const rightClearHeight = rightClearBottom - rightClearY
+        // Clip to colored ancestor's bounds
+        const clippedClearBottom = Math.min(rightClearBottom, clipRectBottom)
+        const rightClearHeight = clippedClearBottom - rightClearY
         if (rightClearHeight > 0) {
           buffer.fill(
             layout.x + layout.width,
@@ -210,7 +243,9 @@ function renderNodeToBuffer(
         const bottomClearBottom = clipBounds
           ? Math.min(prevScreenY + prev.height, clipBounds.bottom)
           : prevScreenY + prev.height
-        const bottomClearHeight = bottomClearBottom - bottomClearY
+        // Clip to colored ancestor's bounds - prevents color bleeding
+        const clippedClearBottom = Math.min(bottomClearBottom, clipRectBottom)
+        const bottomClearHeight = clippedClearBottom - bottomClearY
         if (bottomClearHeight > 0) {
           buffer.fill(layout.x, bottomClearY, prev.width, bottomClearHeight, {
             char: " ",
@@ -334,7 +369,7 @@ function renderScrollContainerChildren(
         layout.width - border.left - border.right - padding.left - padding.right
       const scrollBg = props.backgroundColor
         ? parseColor(props.backgroundColor)
-        : findInheritedBg(node)
+        : findInheritedBg(node).color
       buffer.fill(contentX, clearY, contentWidth, clearHeight, {
         char: " ",
         bg: scrollBg,
