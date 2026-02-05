@@ -536,5 +536,5 @@ export type {
 	ExtendedKeybindingDef,
 } from './with-keybindings.js';
 
-export { withInvariants } from './with-invariants.js';
+export { withInvariants, VirtualTerminal } from './with-invariants.js';
 export type { InvariantOptions } from './with-invariants.js';
