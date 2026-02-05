@@ -205,6 +205,55 @@ import { TextInput, ReadlineInput } from "inkx"
 
 ReadlineInput supports full readline shortcuts: Ctrl+A/E (start/end), Ctrl+W (delete word), Ctrl+K (kill to end), Ctrl+Y (yank), etc.
 
+## Input Layer Stack
+
+Solves the race condition with async useEffect registration where multiple components register input handlers in unpredictable order. Without this, dialogs and inputs that mount asynchronously may not receive keystrokes.
+
+**How it works:** DOM-style event bubbling with LIFO (last-in-first-out) stack. The most recently registered layer gets first chance to handle input. If it returns `true`, the event is consumed. If `false`, it bubbles to the next layer.
+
+**API:**
+
+| Export               | Description                                   |
+| -------------------- | --------------------------------------------- |
+| `InputLayerProvider` | Wrap app to enable input layer stack          |
+| `useInputLayer`      | `(id: string, handler: InputHandler) => void` |
+
+Handler signature: `(input: string, key: Key) => boolean` - return `true` to consume, `false` to bubble.
+
+**Example: Dialog with text input**
+
+```tsx
+function SearchDialog() {
+  useInputLayer("search-input", (input, key) => {
+    if (key.escape) {
+      close()
+      return true
+    }
+    if (key.return) {
+      submit()
+      return true
+    }
+    if (key.backspace) {
+      deleteChar()
+      return true
+    }
+    if (input >= " ") {
+      appendChar(input)
+      return true
+    }
+    return false // Let navigation keys bubble to parent
+  })
+
+  return (
+    <Box borderStyle="single">
+      <Text>Search: {query}</Text>
+    </Box>
+  )
+}
+```
+
+Layers are identified by `id` for debugging. When a dialog mounts, its layer goes on top of the stack and receives all input first until it unmounts.
+
 ## Testing
 
 ```tsx
@@ -270,6 +319,9 @@ import { TextInput, ReadlineInput, useReadline } from "inkx"
 
 // Hooks
 import { useContentRect, useScreenRect, useInput, useApp, useTerm } from "inkx"
+
+// Input layer stack (for dialogs/modals)
+import { InputLayerProvider, useInputLayer } from "inkx"
 
 // Render functions
 import { render, renderStatic, renderString } from "inkx"
