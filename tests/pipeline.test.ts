@@ -23,6 +23,7 @@ import {
   outputPhase,
   screenRectPhase,
   scrollPhase,
+  setBgConflictMode,
 } from "../src/pipeline.js"
 import {
   type BoxProps,
@@ -1527,10 +1528,8 @@ describe("Pipeline", () => {
   })
 
   describe("background conflict detection", () => {
-    const originalEnv = process.env.INKX_BG_CONFLICT
-
     test("throws on chalk bg with inkx Text backgroundColor (throw mode)", async () => {
-      process.env.INKX_BG_CONFLICT = "throw"
+      setBgConflictMode("throw")
 
       // Text with backgroundColor + chalk.bgBlue ANSI code
       const textNode = await createTextWithLayout(
@@ -1546,12 +1545,10 @@ describe("Pipeline", () => {
       )
 
       expect(() => contentPhase(root)).toThrow(/Background conflict/)
-
-      process.env.INKX_BG_CONFLICT = originalEnv
     })
 
     test("throws on chalk bg with parent Box backgroundColor (throw mode)", async () => {
-      process.env.INKX_BG_CONFLICT = "throw"
+      setBgConflictMode("throw")
 
       // Text without own bg, but parent Box has bg
       const textNode = await createTextWithLayout(
@@ -1567,8 +1564,6 @@ describe("Pipeline", () => {
       )
 
       expect(() => contentPhase(root)).toThrow(/Background conflict/)
-
-      process.env.INKX_BG_CONFLICT = originalEnv
     })
 
     test.each([
@@ -1596,7 +1591,7 @@ describe("Pipeline", () => {
     ] as const)(
       "%s",
       async (_desc, envMode, textProps, rootProps, textContent) => {
-        process.env.INKX_BG_CONFLICT = envMode
+        setBgConflictMode(envMode)
 
         const textNode = await createTextWithLayout(
           textContent,
@@ -1611,8 +1606,6 @@ describe("Pipeline", () => {
 
         // Should not throw
         expect(() => contentPhase(root)).not.toThrow()
-
-        process.env.INKX_BG_CONFLICT = originalEnv
       },
     )
   })

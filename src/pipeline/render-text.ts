@@ -48,14 +48,25 @@ import {
  */
 type BgConflictMode = "ignore" | "warn" | "throw"
 
-/**
- * Get the current background conflict detection mode.
- * Reads from process.env each time so tests can change the mode dynamically.
- */
-function getBgConflictMode(): BgConflictMode {
+/** Cached bg conflict mode. Read from env once at module load. */
+let bgConflictMode: BgConflictMode = (() => {
   const env = process.env.INKX_BG_CONFLICT?.toLowerCase()
   if (env === "ignore" || env === "warn" || env === "throw") return env
   return "throw" // default - fail fast on programming errors
+})()
+
+/**
+ * Get the current background conflict detection mode.
+ */
+function getBgConflictMode(): BgConflictMode {
+  return bgConflictMode
+}
+
+/**
+ * Set the background conflict detection mode. For tests.
+ */
+export function setBgConflictMode(mode: BgConflictMode): void {
+  bgConflictMode = mode
 }
 
 // Track warned conflicts to avoid spam (only used in 'warn' mode)
@@ -100,9 +111,9 @@ interface StyleContext {
 function styleToAnsi(style: StyleContext): string {
   const codes: number[] = []
 
-  // Foreground color
+  // Foreground color - use parseColor directly instead of roundtripping through getTextStyle
   if (style.color) {
-    const color = getTextStyle({ color: style.color } as TextProps).fg
+    const color = parseColor(style.color)
     if (color !== null) {
       if (typeof color === "number") {
         codes.push(38, 5, color)

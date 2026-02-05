@@ -20,6 +20,7 @@ export {
   outputPhase,
   // Utilities
   clearBgConflictWarnings,
+  setBgConflictMode,
   // Orchestration
   executeRender,
 } from "./pipeline/index.js"

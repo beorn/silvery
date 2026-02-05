@@ -14,7 +14,11 @@ import { rectEqual } from "../types.js"
 import { getBorderSize, getPadding } from "./helpers.js"
 import { renderBox, renderScrollIndicators } from "./render-box.js"
 import { parseColor } from "./render-helpers.js"
-import { clearBgConflictWarnings, renderText } from "./render-text.js"
+import {
+  clearBgConflictWarnings,
+  renderText,
+  setBgConflictMode,
+} from "./render-text.js"
 
 /**
  * Render all nodes to a terminal buffer.
@@ -48,7 +52,7 @@ export function contentPhase(
 }
 
 // Re-export for consumers who need to clear bg conflict warnings
-export { clearBgConflictWarnings }
+export { clearBgConflictWarnings, setBgConflictMode }
 
 /**
  * Clear dirty flags on a subtree that was skipped during incremental rendering.

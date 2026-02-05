@@ -97,68 +97,72 @@ export function parseColor(color: string): Color {
 // ============================================================================
 
 /**
+ * Border character sets by style. Hoisted to module scope to avoid
+ * re-allocating 7 objects on every call.
+ */
+const borders: Record<NonNullable<BoxProps["borderStyle"]>, BorderChars> = {
+  single: {
+    topLeft: "\u250c",
+    topRight: "\u2510",
+    bottomLeft: "\u2514",
+    bottomRight: "\u2518",
+    horizontal: "\u2500",
+    vertical: "\u2502",
+  },
+  double: {
+    topLeft: "\u2554",
+    topRight: "\u2557",
+    bottomLeft: "\u255a",
+    bottomRight: "\u255d",
+    horizontal: "\u2550",
+    vertical: "\u2551",
+  },
+  round: {
+    topLeft: "\u256d",
+    topRight: "\u256e",
+    bottomLeft: "\u2570",
+    bottomRight: "\u256f",
+    horizontal: "\u2500",
+    vertical: "\u2502",
+  },
+  bold: {
+    topLeft: "\u250f",
+    topRight: "\u2513",
+    bottomLeft: "\u2517",
+    bottomRight: "\u251b",
+    horizontal: "\u2501",
+    vertical: "\u2503",
+  },
+  singleDouble: {
+    topLeft: "\u2553",
+    topRight: "\u2556",
+    bottomLeft: "\u2559",
+    bottomRight: "\u255c",
+    horizontal: "\u2500",
+    vertical: "\u2551",
+  },
+  doubleSingle: {
+    topLeft: "\u2552",
+    topRight: "\u2555",
+    bottomLeft: "\u2558",
+    bottomRight: "\u255b",
+    horizontal: "\u2550",
+    vertical: "\u2502",
+  },
+  classic: {
+    topLeft: "+",
+    topRight: "+",
+    bottomLeft: "+",
+    bottomRight: "+",
+    horizontal: "-",
+    vertical: "|",
+  },
+}
+
+/**
  * Get border characters for a style.
  */
 export function getBorderChars(style: BoxProps["borderStyle"]): BorderChars {
-  const borders: Record<NonNullable<BoxProps["borderStyle"]>, BorderChars> = {
-    single: {
-      topLeft: "\u250c",
-      topRight: "\u2510",
-      bottomLeft: "\u2514",
-      bottomRight: "\u2518",
-      horizontal: "\u2500",
-      vertical: "\u2502",
-    },
-    double: {
-      topLeft: "\u2554",
-      topRight: "\u2557",
-      bottomLeft: "\u255a",
-      bottomRight: "\u255d",
-      horizontal: "\u2550",
-      vertical: "\u2551",
-    },
-    round: {
-      topLeft: "\u256d",
-      topRight: "\u256e",
-      bottomLeft: "\u2570",
-      bottomRight: "\u256f",
-      horizontal: "\u2500",
-      vertical: "\u2502",
-    },
-    bold: {
-      topLeft: "\u250f",
-      topRight: "\u2513",
-      bottomLeft: "\u2517",
-      bottomRight: "\u251b",
-      horizontal: "\u2501",
-      vertical: "\u2503",
-    },
-    singleDouble: {
-      topLeft: "\u2553",
-      topRight: "\u2556",
-      bottomLeft: "\u2559",
-      bottomRight: "\u255c",
-      horizontal: "\u2500",
-      vertical: "\u2551",
-    },
-    doubleSingle: {
-      topLeft: "\u2552",
-      topRight: "\u2555",
-      bottomLeft: "\u2558",
-      bottomRight: "\u255b",
-      horizontal: "\u2550",
-      vertical: "\u2502",
-    },
-    classic: {
-      topLeft: "+",
-      topRight: "+",
-      bottomLeft: "+",
-      bottomRight: "+",
-      horizontal: "-",
-      vertical: "|",
-    },
-  }
-
   return borders[style ?? "single"]
 }
 

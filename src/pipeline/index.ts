@@ -45,7 +45,11 @@ export {
   screenRectPhase,
   notifyLayoutSubscribers,
 } from "./layout-phase.js"
-export { contentPhase, clearBgConflictWarnings } from "./content-phase.js"
+export {
+  contentPhase,
+  clearBgConflictWarnings,
+  setBgConflictMode,
+} from "./content-phase.js"
 export { contentPhaseAdapter } from "./content-phase-adapter.js"
 export { outputPhase } from "./output-phase.js"
 
