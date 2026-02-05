@@ -28,6 +28,22 @@ import type { InkxNode } from './types.js';
 const log = createlogger('inkx:scheduler');
 
 // ============================================================================
+// Errors
+// ============================================================================
+
+/**
+ * Error thrown when INKX_CHECK_INCREMENTAL detects a mismatch.
+ * This error should NOT be caught by general error handlers - it indicates
+ * a bug in incremental rendering that needs to be fixed.
+ */
+export class IncrementalRenderMismatchError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = 'IncrementalRenderMismatchError';
+	}
+}
+
+// ============================================================================
 // Types
 // ============================================================================
 
@@ -384,6 +400,8 @@ export class RenderScheduler {
 								appendFileSync(process.env.DEBUG_LOG, msg + '\n');
 							}
 							log.error(msg);
+							// Throw special error that won't be caught by general error handler
+							throw new IncrementalRenderMismatchError(msg);
 						}
 					}
 				}
@@ -417,16 +435,10 @@ export class RenderScheduler {
 				this.logDebug(`Render #${this.stats.renderCount} took ${renderTime}ms`);
 			}
 		} catch (error) {
-			// Don't crash on render errors - log and continue
+			// Log and re-throw all render errors - the app should handle cleanup
 			log.error(`render error: ${error}`);
 			this.logError('Render error:', error);
-
-			// Show error indicator in terminal (only in TTY mode)
-			if (this.nonTTYMode === 'tty') {
-				this.stdout.write('\x1b[0m\x1b[31mRender error (see console)\x1b[0m');
-			} else {
-				this.stdout.write('Render error (see console)\n');
-			}
+			throw error;
 		}
 	}
 

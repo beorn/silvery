@@ -538,3 +538,6 @@ export type {
 
 export { withInvariants, VirtualTerminal } from './with-invariants.js';
 export type { InvariantOptions } from './with-invariants.js';
+
+// Scheduler errors (for catching incremental render mismatches)
+export { IncrementalRenderMismatchError } from './scheduler.js';
