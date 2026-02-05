@@ -542,3 +542,51 @@ export type { DiagnosticOptions } from "./with-diagnostics.js"
 
 // Scheduler errors (for catching incremental render mismatches)
 export { IncrementalRenderMismatchError } from "./scheduler.js"
+
+// =============================================================================
+// Input Layer Stack
+// =============================================================================
+
+/**
+ * Input layer stack for DOM-style event bubbling.
+ *
+ * Layers register synchronously via useLayoutEffect and receive input
+ * in child-first order (like DOM event bubbling from target to ancestors).
+ *
+ * @example
+ * ```tsx
+ * import { InputLayerProvider, useInputLayer } from 'inkx';
+ *
+ * function App() {
+ *   return (
+ *     <InputLayerProvider>
+ *       <Board>
+ *         <Dialog />
+ *       </Board>
+ *     </InputLayerProvider>
+ *   );
+ * }
+ *
+ * function Dialog() {
+ *   useInputLayer('dialog-input', (input, key) => {
+ *     if (key.backspace) { ... return true }  // consumed
+ *     if (input >= ' ') { ... return true }   // consumed
+ *     return false  // bubble (e.g., escape to parent)
+ *   });
+ * }
+ * ```
+ *
+ * @see docs/future/inkx-command-api-research.md
+ */
+export {
+  InputLayerProvider,
+  InputLayerContext,
+  useInputLayer,
+  useInputLayerContext,
+} from "./contexts/InputLayerContext.js"
+export type {
+  InputLayerHandler,
+  InputLayer,
+  InputLayerContextValue,
+  InputLayerProviderProps,
+} from "./contexts/InputLayerContext.js"
