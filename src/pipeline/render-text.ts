@@ -531,7 +531,6 @@ function wrapText(text: string, maxWidth: number): string {
     // Split into words (preserving spaces as separate tokens for proper handling)
     const words: string[] = []
     let current = ""
-    let inWord = false
 
     for (const grapheme of splitGraphemes(line)) {
       const isSpace = grapheme === " " || grapheme === "\t"
@@ -541,10 +540,8 @@ function wrapText(text: string, maxWidth: number): string {
           current = ""
         }
         words.push(grapheme)
-        inWord = false
       } else {
         current += grapheme
-        inWord = true
       }
     }
     if (current) words.push(current)
@@ -702,47 +699,53 @@ export function renderTextLine(
     return
   }
 
-  // Regular text without ANSI codes
-  // Use grapheme segmentation to properly handle:
-  // - Emoji (width 2)
-  // - Combining characters (width 0, merged with base char)
-  // - CJK characters (width 2)
-  let col = x
-  const graphemes = splitGraphemes(text)
+  renderGraphemes(buffer, splitGraphemes(text), x, y, baseStyle)
+}
+
+/**
+ * Render graphemes to buffer cells with proper Unicode handling.
+ * Shared by renderTextLine (plain text) and renderAnsiTextLine (per-segment).
+ *
+ * Returns the column position after the last rendered grapheme.
+ */
+function renderGraphemes(
+  buffer: TerminalBuffer,
+  graphemes: string[],
+  startCol: number,
+  y: number,
+  style: Style,
+): number {
+  let col = startCol
 
   for (const grapheme of graphemes) {
     if (col >= buffer.width) break
 
     const width = graphemeWidth(grapheme)
-
-    // Skip zero-width graphemes (should be merged by graphemer, but just in case)
     if (width === 0) continue
 
-    // Preserve existing background color if text style doesn't specify one
+    // Preserve existing background color if style doesn't specify one
     // This allows Text inside Box with backgroundColor to inherit the bg
-    const existingBg =
-      baseStyle.bg === null ? buffer.getCell(col, y).bg : baseStyle.bg
+    const existingBg = style.bg === null ? buffer.getCell(col, y).bg : style.bg
 
     buffer.setCell(col, y, {
       char: grapheme,
-      fg: baseStyle.fg,
+      fg: style.fg,
       bg: existingBg,
-      underlineColor: baseStyle.underlineColor ?? null,
-      attrs: baseStyle.attrs,
+      underlineColor: style.underlineColor ?? null,
+      attrs: style.attrs,
       wide: width === 2,
       continuation: false,
     })
 
     if (width === 2 && col + 1 < buffer.width) {
-      // Wide character continuation cell
       const existingBg2 =
-        baseStyle.bg === null ? buffer.getCell(col + 1, y).bg : baseStyle.bg
+        style.bg === null ? buffer.getCell(col + 1, y).bg : style.bg
       buffer.setCell(col + 1, y, {
         char: "",
-        fg: baseStyle.fg,
+        fg: style.fg,
         bg: existingBg2,
-        underlineColor: baseStyle.underlineColor ?? null,
-        attrs: baseStyle.attrs,
+        underlineColor: style.underlineColor ?? null,
+        attrs: style.attrs,
         wide: false,
         continuation: true,
       })
@@ -751,6 +754,8 @@ export function renderTextLine(
       col += width
     }
   }
+
+  return col
 }
 
 /**
@@ -802,49 +807,7 @@ export function renderAnsiTextLine(
       }
     }
 
-    // Use grapheme segmentation for proper Unicode handling
-    const graphemes = splitGraphemes(segment.text)
-
-    for (const grapheme of graphemes) {
-      if (col >= buffer.width) break
-
-      const width = graphemeWidth(grapheme)
-
-      // Skip zero-width graphemes
-      if (width === 0) continue
-
-      // Preserve existing background color if style doesn't specify one
-      // This allows Text inside Box with backgroundColor to inherit the bg
-      const existingBg =
-        style.bg === null ? buffer.getCell(col, y).bg : style.bg
-
-      buffer.setCell(col, y, {
-        char: grapheme,
-        fg: style.fg,
-        bg: existingBg,
-        underlineColor: style.underlineColor ?? null,
-        attrs: style.attrs,
-        wide: width === 2,
-        continuation: false,
-      })
-
-      if (width === 2 && col + 1 < buffer.width) {
-        const existingBg2 =
-          style.bg === null ? buffer.getCell(col + 1, y).bg : style.bg
-        buffer.setCell(col + 1, y, {
-          char: "",
-          fg: style.fg,
-          bg: existingBg2,
-          underlineColor: style.underlineColor ?? null,
-          attrs: style.attrs,
-          wide: false,
-          continuation: true,
-        })
-        col += 2
-      } else {
-        col += width
-      }
-    }
+    col = renderGraphemes(buffer, splitGraphemes(segment.text), col, y, style)
   }
 }
 

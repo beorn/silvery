@@ -13,6 +13,7 @@ import {
   type Style,
   type TerminalBuffer,
   type UnderlineStyle,
+  hasActiveAttrs,
   styleEquals,
 } from "../buffer.js"
 import type { CellChange } from "./types.js"
@@ -39,23 +40,6 @@ function underlineStyleToSgr(style: UnderlineStyle | undefined): number | null {
     default:
       return null // Use simple SGR 4 or no underline
   }
-}
-
-/**
- * Check if any text attributes are active.
- */
-function hasActiveAttrs(attrs: CellAttrs): boolean {
-  return !!(
-    attrs.bold ||
-    attrs.dim ||
-    attrs.italic ||
-    attrs.underline ||
-    attrs.underlineStyle ||
-    attrs.blink ||
-    attrs.inverse ||
-    attrs.hidden ||
-    attrs.strikethrough
-  )
 }
 
 /**

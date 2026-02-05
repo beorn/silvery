@@ -29,33 +29,33 @@ export { getBorderSize, getPadding } from "./helpers.js"
 // Color Parsing
 // ============================================================================
 
+// Named colors map to 256-color indices (hoisted to module scope to avoid per-call allocation)
+const namedColors: Record<string, number> = {
+  black: 0,
+  red: 1,
+  green: 2,
+  yellow: 3,
+  blue: 4,
+  magenta: 5,
+  cyan: 6,
+  white: 7,
+  gray: 8,
+  grey: 8,
+  blackBright: 8,
+  redBright: 9,
+  greenBright: 10,
+  yellowBright: 11,
+  blueBright: 12,
+  magentaBright: 13,
+  cyanBright: 14,
+  whiteBright: 15,
+}
+
 /**
  * Parse color string to Color type.
  * Supports: named colors, hex (#rgb, #rrggbb), rgb(r,g,b)
  */
 export function parseColor(color: string): Color {
-  // Named colors map to 256-color indices
-  const namedColors: Record<string, number> = {
-    black: 0,
-    red: 1,
-    green: 2,
-    yellow: 3,
-    blue: 4,
-    magenta: 5,
-    cyan: 6,
-    white: 7,
-    gray: 8,
-    grey: 8,
-    blackBright: 8,
-    redBright: 9,
-    greenBright: 10,
-    yellowBright: 11,
-    blueBright: 12,
-    magentaBright: 13,
-    cyanBright: 14,
-    whiteBright: 15,
-  }
-
   if (color in namedColors) {
     return namedColors[color as keyof typeof namedColors]!
   }

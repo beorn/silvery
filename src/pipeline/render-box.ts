@@ -9,6 +9,7 @@
 
 import type { Style, TerminalBuffer } from "../buffer.js"
 import type { BoxProps, InkxNode, Rect } from "../types.js"
+import { getPadding } from "./helpers.js"
 import { getBorderChars, getBorderSize, parseColor } from "./render-helpers.js"
 import { renderTextLine } from "./render-text.js"
 
@@ -194,22 +195,5 @@ export function renderScrollIndicators(
       const y = layout.y + layout.height - 1 - padding.bottom
       renderTextLine(buffer, x, y, indicator, indicatorStyle)
     }
-  }
-}
-
-/**
- * Get padding values from props.
- */
-function getPadding(props: BoxProps): {
-  top: number
-  bottom: number
-  left: number
-  right: number
-} {
-  return {
-    top: props.paddingTop ?? props.paddingY ?? props.padding ?? 0,
-    bottom: props.paddingBottom ?? props.paddingY ?? props.padding ?? 0,
-    left: props.paddingLeft ?? props.paddingX ?? props.padding ?? 0,
-    right: props.paddingRight ?? props.paddingX ?? props.padding ?? 0,
   }
 }

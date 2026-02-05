@@ -791,12 +791,13 @@ export function bufferToStyledText(
 /**
  * Check if any text attributes are active.
  */
-function hasActiveAttrs(attrs: CellAttrs): boolean {
+export function hasActiveAttrs(attrs: CellAttrs): boolean {
   return !!(
     attrs.bold ||
     attrs.dim ||
     attrs.italic ||
     attrs.underline ||
+    attrs.underlineStyle ||
     attrs.blink ||
     attrs.inverse ||
     attrs.hidden ||
