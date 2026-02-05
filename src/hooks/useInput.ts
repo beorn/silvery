@@ -319,6 +319,13 @@ export function useInput(inputHandler: InputHandler, options: UseInputOptions = 
 				input = input.slice(1);
 			}
 
+			// Filter out escape sequence fragments that leak through
+			// e.g., "[2~" from Insert key, "[A" from arrows when not fully parsed
+			// BUT allow single "[" and "]" through - they're valid key bindings
+			if ((input.startsWith('[') && input.length > 1) || (input.startsWith('O') && input.length > 1)) {
+				input = '';
+			}
+
 			// Detect shift for uppercase letters
 			if (input.length === 1 && typeof input[0] === 'string' && /[A-Z]/.test(input[0])) {
 				key.shift = true;
