@@ -592,6 +592,15 @@ test("debugging example", () => {
 
 ### Debugging TUI at Runtime
 
+**Incremental render checks are on by default** for test mode (`storeMode`). For CLI debugging, enable explicitly:
+
+```bash
+# Enable incremental vs fresh render comparison
+INKX_STRICT=1 bun km view /path/to/vault
+```
+
+This catches issues like blank cards after fold/unfold by comparing incremental vs fresh render on every frame. See [docs/lessons/incremental-rendering.md](../../docs/lessons/incremental-rendering.md) for debugging workflow and common patterns.
+
 When debugging a live TUI app, use `DEBUG_LOG` to write debug output to a file (since the terminal is occupied by the TUI):
 
 ```bash
