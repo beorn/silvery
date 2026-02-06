@@ -9,12 +9,13 @@
  * - Text content collection (collectTextContent)
  */
 
-import type {
-  CellAttrs,
-  Color,
-  Style,
-  TerminalBuffer,
-  UnderlineStyle,
+import {
+  type CellAttrs,
+  type Color,
+  type Style,
+  type TerminalBuffer,
+  type UnderlineStyle,
+  createMutableCell,
 } from "../buffer.js"
 import type { InkxNode, TextProps } from "../types.js"
 import {
@@ -362,6 +363,9 @@ function applyBgSegmentsToLine(
   if (bgSegments.length === 0) return
   if (y < 0 || y >= buffer.height) return
 
+  // Reusable cell for readCellInto to avoid per-character allocation
+  const bgCell = createMutableCell()
+
   // For each bg segment that overlaps this line's character range,
   // calculate the screen columns and fill the bg
   for (const seg of bgSegments) {
@@ -388,12 +392,15 @@ function applyBgSegmentsToLine(
       if (gWidth === 0) continue
 
       if (charIdx >= relStart && charIdx < relEnd) {
-        // This character is within the bg segment -- set bg on its cells
-        const cell = buffer.getCell(col, y)
-        buffer.setCell(col, y, { ...cell, bg: seg.bg })
+        // This character is within the bg segment -- set bg on its cells.
+        // Use readCellInto to avoid allocating a new Cell per iteration.
+        buffer.readCellInto(col, y, bgCell)
+        bgCell.bg = seg.bg
+        buffer.setCell(col, y, bgCell)
         if (gWidth === 2 && col + 1 < buffer.width) {
-          const cell2 = buffer.getCell(col + 1, y)
-          buffer.setCell(col + 1, y, { ...cell2, bg: seg.bg })
+          buffer.readCellInto(col + 1, y, bgCell)
+          bgCell.bg = seg.bg
+          buffer.setCell(col + 1, y, bgCell)
         }
       }
 
@@ -746,7 +753,7 @@ function renderGraphemes(
 
     // Preserve existing background color if style doesn't specify one
     // This allows Text inside Box with backgroundColor to inherit the bg
-    const existingBg = style.bg === null ? buffer.getCell(col, y).bg : style.bg
+    const existingBg = style.bg === null ? buffer.getCellBg(col, y) : style.bg
 
     // For text-presentation emoji, add VS16 so terminals render at 2 columns
     const outputChar =
@@ -764,7 +771,7 @@ function renderGraphemes(
 
     if (width === 2 && col + 1 < buffer.width) {
       const existingBg2 =
-        style.bg === null ? buffer.getCell(col + 1, y).bg : style.bg
+        style.bg === null ? buffer.getCellBg(col + 1, y) : style.bg
       buffer.setCell(col + 1, y, {
         char: "",
         fg: style.fg,
@@ -812,8 +819,7 @@ export function renderAnsiTextLine(
       segment.bg !== null
     ) {
       // Check if there's an existing background (from Text prop or parent Box fill)
-      const existingBufBg =
-        col < buffer.width ? buffer.getCell(col, y).bg : null
+      const existingBufBg = col < buffer.width ? buffer.getCellBg(col, y) : null
       const hasExistingBg = baseStyle.bg !== null || existingBufBg !== null
 
       if (hasExistingBg) {

@@ -13,6 +13,7 @@ import {
   type Style,
   type TerminalBuffer,
   type UnderlineStyle,
+  createMutableCell,
   hasActiveAttrs,
   styleEquals,
 } from "../buffer.js"
@@ -94,8 +95,8 @@ export function outputPhase(
  */
 function lineHasContent(buffer: TerminalBuffer, y: number): boolean {
   for (let x = 0; x < buffer.width; x++) {
-    const cell = buffer.getCell(x, y)
-    if (cell.char !== " " && cell.char !== "") {
+    const ch = buffer.getCellChar(x, y)
+    if (ch !== " " && ch !== "") {
       return true
     }
   }
@@ -137,6 +138,15 @@ function bufferToAnsi(
     output += "\x1b[?25l"
   }
 
+  // Reusable objects to avoid per-cell allocation in the inner loop
+  const cell = createMutableCell()
+  const cellStyle: Style = {
+    fg: null,
+    bg: null,
+    underlineColor: null,
+    attrs: {},
+  }
+
   for (let y = 0; y <= maxLine; y++) {
     // Move to start of line
     if (y > 0 || mode === "inline") {
@@ -145,21 +155,29 @@ function bufferToAnsi(
 
     // Render the line content
     for (let x = 0; x < buffer.width; x++) {
-      const cell = buffer.getCell(x, y)
+      buffer.readCellInto(x, y, cell)
 
       // Skip continuation cells
       if (cell.continuation) continue
 
-      // Update style if changed
-      const cellStyle: Style = {
-        fg: cell.fg,
-        bg: cell.bg,
-        underlineColor: cell.underlineColor,
-        attrs: cell.attrs,
-      }
+      // Build style from cell and check if changed.
+      // readCellInto mutates cell.attrs in place, so we must snapshot attrs
+      // only when the style actually changes (which is rare -- most adjacent
+      // cells share the same style). This avoids per-cell object allocation.
+      cellStyle.fg = cell.fg
+      cellStyle.bg = cell.bg
+      cellStyle.underlineColor = cell.underlineColor
+      cellStyle.attrs = cell.attrs
       if (!styleEquals(currentStyle, cellStyle)) {
-        output += styleToAnsi(cellStyle)
-        currentStyle = cellStyle
+        // Snapshot: copy attrs so currentStyle isn't invalidated by next readCellInto
+        const saved: Style = {
+          fg: cell.fg,
+          bg: cell.bg,
+          underlineColor: cell.underlineColor,
+          attrs: { ...cell.attrs },
+        }
+        output += styleToAnsi(saved)
+        currentStyle = saved
       }
 
       output += cell.char
@@ -188,14 +206,105 @@ function bufferToAnsi(
   return output
 }
 
+// ============================================================================
+// Pre-allocated diff pool
+// ============================================================================
+
+/**
+ * Create a fresh CellChange with empty cell data.
+ * Used to populate the pre-allocated pool.
+ */
+function createEmptyCellChange(): CellChange {
+  return {
+    x: 0,
+    y: 0,
+    cell: {
+      char: " ",
+      fg: null,
+      bg: null,
+      underlineColor: null,
+      attrs: {},
+      wide: false,
+      continuation: false,
+    },
+  }
+}
+
+/** Pre-allocated pool of CellChange objects, reused across frames. */
+let diffPool: CellChange[] = []
+
+/** Current pool capacity. */
+let diffPoolCapacity = 0
+
+/**
+ * Ensure the diff pool has at least `capacity` entries.
+ * Grows the pool if needed; never shrinks.
+ */
+function ensureDiffPoolCapacity(capacity: number): void {
+  if (capacity <= diffPoolCapacity) return
+  for (let i = diffPoolCapacity; i < capacity; i++) {
+    diffPool.push(createEmptyCellChange())
+  }
+  diffPoolCapacity = capacity
+}
+
+/**
+ * Write cell data from a buffer into a pre-allocated CellChange entry.
+ * Uses readCellInto for zero-allocation reads.
+ */
+function writeCellChange(
+  change: CellChange,
+  x: number,
+  y: number,
+  buffer: TerminalBuffer,
+): void {
+  change.x = x
+  change.y = y
+  buffer.readCellInto(x, y, change.cell)
+}
+
+/**
+ * Write empty cell data into a pre-allocated CellChange entry.
+ * Used for shrink regions where cells need to be cleared.
+ */
+function writeEmptyCellChange(change: CellChange, x: number, y: number): void {
+  change.x = x
+  change.y = y
+  const cell = change.cell
+  cell.char = " "
+  cell.fg = null
+  cell.bg = null
+  cell.underlineColor = null
+  // Reset attrs fields
+  const attrs = cell.attrs
+  attrs.bold = undefined
+  attrs.dim = undefined
+  attrs.italic = undefined
+  attrs.underline = undefined
+  attrs.underlineStyle = undefined
+  attrs.blink = undefined
+  attrs.inverse = undefined
+  attrs.hidden = undefined
+  attrs.strikethrough = undefined
+  cell.wide = false
+  cell.continuation = false
+}
+
 /**
  * Diff two buffers and return list of changes.
  *
- * Optimization: Uses buffer's cellEquals method which can do fast
- * packed integer comparison before falling back to full cell comparison.
+ * Optimization: Uses a pre-allocated pool of CellChange objects to avoid
+ * allocating new objects per changed cell. Uses _readCellInto for
+ * zero-allocation cell reads. The pool grows as needed but is reused
+ * between frames.
  */
 function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): CellChange[] {
-  const changes: CellChange[] = []
+  // Ensure pool is large enough for worst case (all cells changed)
+  const maxChanges =
+    Math.max(prev.width, next.width) * Math.max(prev.height, next.height)
+  ensureDiffPoolCapacity(maxChanges)
+
+  let changeCount = 0
 
   // Dimension mismatch means we need to re-render everything visible
   const height = Math.min(prev.height, next.height)
@@ -205,7 +314,8 @@ function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): CellChange[] {
     for (let x = 0; x < width; x++) {
       // Use buffer's optimized cellEquals which compares packed metadata first
       if (!next.cellEquals(x, y, prev)) {
-        changes.push({ x, y, cell: next.getCell(x, y) })
+        writeCellChange(diffPool[changeCount]!, x, y, next)
+        changeCount++
       }
     }
   }
@@ -214,44 +324,42 @@ function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): CellChange[] {
   if (next.width > prev.width) {
     for (let y = 0; y < next.height; y++) {
       for (let x = prev.width; x < next.width; x++) {
-        changes.push({ x, y, cell: next.getCell(x, y) })
+        writeCellChange(diffPool[changeCount]!, x, y, next)
+        changeCount++
       }
     }
   }
   if (next.height > prev.height) {
     for (let y = prev.height; y < next.height; y++) {
       for (let x = 0; x < next.width; x++) {
-        changes.push({ x, y, cell: next.getCell(x, y) })
+        writeCellChange(diffPool[changeCount]!, x, y, next)
+        changeCount++
       }
     }
   }
 
   // Handle size shrink: clear cells in old-but-not-new areas
-  const emptyCell: Cell = {
-    char: " ",
-    fg: null,
-    bg: null,
-    underlineColor: null,
-    attrs: {},
-    wide: false,
-    continuation: false,
-  }
   if (prev.width > next.width) {
     for (let y = 0; y < height; y++) {
       for (let x = next.width; x < prev.width; x++) {
-        changes.push({ x, y, cell: emptyCell })
+        writeEmptyCellChange(diffPool[changeCount]!, x, y)
+        changeCount++
       }
     }
   }
   if (prev.height > next.height) {
     for (let y = next.height; y < prev.height; y++) {
       for (let x = 0; x < prev.width; x++) {
-        changes.push({ x, y, cell: emptyCell })
+        writeEmptyCellChange(diffPool[changeCount]!, x, y)
+        changeCount++
       }
     }
   }
 
-  return changes
+  // Return a slice view of the pool (no allocation for the array itself
+  // when there are no changes; otherwise one array allocation for the slice)
+  if (changeCount === 0) return []
+  return diffPool.slice(0, changeCount)
 }
 
 /**

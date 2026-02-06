@@ -118,12 +118,11 @@ export class VirtualTerminal {
   loadFromBuffer(buffer: TerminalBuffer): void {
     for (let y = 0; y < Math.min(this.height, buffer.height); y++) {
       for (let x = 0; x < Math.min(this.width, buffer.width); x++) {
-        const cell = buffer.getCell(x, y)
-        if (cell.continuation) {
+        if (buffer.isCellContinuation(x, y)) {
           this.wideMarker[y]![x] = true
           this.grid[y]![x] = ""
         } else {
-          this.grid[y]![x] = cell.char
+          this.grid[y]![x] = buffer.getCellChar(x, y)
           this.wideMarker[y]![x] = false
         }
       }
@@ -305,10 +304,9 @@ export class VirtualTerminal {
     const mismatches: ReplayMismatch[] = []
     for (let y = 0; y < Math.min(this.height, buffer.height); y++) {
       for (let x = 0; x < Math.min(this.width, buffer.width); x++) {
-        const cell = buffer.getCell(x, y)
-        if (cell.continuation) continue
+        if (buffer.isCellContinuation(x, y)) continue
 
-        const expected = cell.char
+        const expected = buffer.getCellChar(x, y)
         const actual = this.getChar(x, y)
         if (expected !== actual) {
           mismatches.push({ x, y, expected, actual })
@@ -460,9 +458,8 @@ export function withDiagnostics<T extends AppWithCommands>(
                 const incrementalText = app.text
                 const freshText = fresh
                   ? Array.from({ length: fresh.height }, (_, y) =>
-                      Array.from(
-                        { length: fresh.width },
-                        (_, x) => fresh.getCell(x, y).char,
+                      Array.from({ length: fresh.width }, (_, x) =>
+                        fresh.getCellChar(x, y),
                       ).join(""),
                     ).join("\n")
                   : "(no fresh buffer)"

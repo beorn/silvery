@@ -136,6 +136,9 @@ const EMPTY_CELL: Cell = {
   continuation: false,
 }
 
+/** Frozen empty attrs object, shared across zero-allocation reads for OOB cells */
+const EMPTY_ATTRS: CellAttrs = Object.freeze({})
+
 // ============================================================================
 // Packing/Unpacking Helpers
 // ============================================================================
@@ -423,6 +426,149 @@ export class TerminalBuffer {
     }
   }
 
+  // --------------------------------------------------------------------------
+  // Zero-allocation cell accessors for hot paths
+  // --------------------------------------------------------------------------
+
+  /**
+   * Get just the character at a cell position (no object allocation).
+   * Returns " " for out-of-bounds positions.
+   */
+  getCellChar(x: number, y: number): string {
+    if (!this.inBounds(x, y)) return " "
+    return this.chars[this.index(x, y)]!
+  }
+
+  /**
+   * Get just the background color at a cell position (no object allocation).
+   * Returns null for out-of-bounds positions.
+   */
+  getCellBg(x: number, y: number): Color {
+    if (!this.inBounds(x, y)) return null
+    const idx = this.index(x, y)
+    const packed = this.cells[idx]!
+    if (unpackTrueColorBg(packed)) {
+      return this.bgColors.get(idx) ?? null
+    }
+    const bgIndex = unpackBgIndex(packed)
+    return bgIndex > 0 ? bgIndex - 1 : null
+  }
+
+  /**
+   * Get just the foreground color at a cell position (no object allocation).
+   * Returns null for out-of-bounds positions.
+   */
+  getCellFg(x: number, y: number): Color {
+    if (!this.inBounds(x, y)) return null
+    const idx = this.index(x, y)
+    const packed = this.cells[idx]!
+    if (unpackTrueColorFg(packed)) {
+      return this.fgColors.get(idx) ?? null
+    }
+    const fgIndex = unpackFgIndex(packed)
+    return fgIndex > 0 ? fgIndex - 1 : null
+  }
+
+  /**
+   * Get the raw packed metadata at a cell position (no unpackAttrs allocation).
+   * Returns 0 for out-of-bounds positions. The packed value contains color
+   * indices, attr bits, underline style, and flags in a single Uint32.
+   */
+  getCellAttrs(x: number, y: number): number {
+    if (!this.inBounds(x, y)) return 0
+    return this.cells[this.index(x, y)]!
+  }
+
+  /**
+   * Check if a cell is a wide character (no object allocation).
+   * Returns false for out-of-bounds positions.
+   */
+  isCellWide(x: number, y: number): boolean {
+    if (!this.inBounds(x, y)) return false
+    return unpackWide(this.cells[this.index(x, y)]!)
+  }
+
+  /**
+   * Check if a cell is a continuation of a wide character (no object allocation).
+   * Returns false for out-of-bounds positions.
+   */
+  isCellContinuation(x: number, y: number): boolean {
+    if (!this.inBounds(x, y)) return false
+    return unpackContinuation(this.cells[this.index(x, y)]!)
+  }
+
+  /**
+   * Read cell data into a caller-provided Cell object (zero-allocation).
+   * For hot loops that need the full Cell, reuse a single object:
+   *
+   *   const cell = createMutableCell()
+   *   for (...) { buffer.readCellInto(x, y, cell) }
+   *
+   * Returns the same `out` object for chaining convenience.
+   */
+  readCellInto(x: number, y: number, out: Cell): Cell {
+    if (!this.inBounds(x, y)) {
+      out.char = " "
+      out.fg = null
+      out.bg = null
+      out.underlineColor = null
+      out.attrs = EMPTY_ATTRS
+      out.wide = false
+      out.continuation = false
+      return out
+    }
+
+    const idx = this.index(x, y)
+    const packed = this.cells[idx]!
+
+    out.char = this.chars[idx]!
+
+    // Foreground color
+    if (unpackTrueColorFg(packed)) {
+      out.fg = this.fgColors.get(idx) ?? null
+    } else {
+      const fgIndex = unpackFgIndex(packed)
+      out.fg = fgIndex > 0 ? fgIndex - 1 : null
+    }
+
+    // Background color
+    if (unpackTrueColorBg(packed)) {
+      out.bg = this.bgColors.get(idx) ?? null
+    } else {
+      const bgIndex = unpackBgIndex(packed)
+      out.bg = bgIndex > 0 ? bgIndex - 1 : null
+    }
+
+    out.underlineColor = this.underlineColors.get(idx) ?? null
+
+    // Unpack attrs inline to avoid allocating a new CellAttrs object.
+    // We reuse the existing out.attrs object when possible.
+    const attrs =
+      out.attrs === EMPTY_ATTRS ? ((out.attrs = {}), out.attrs) : out.attrs
+    attrs.bold = (packed & ATTR_BOLD) !== 0 ? true : undefined
+    attrs.dim = (packed & ATTR_DIM) !== 0 ? true : undefined
+    attrs.italic = (packed & ATTR_ITALIC) !== 0 ? true : undefined
+    attrs.blink = (packed & ATTR_BLINK) !== 0 ? true : undefined
+    attrs.inverse = (packed & ATTR_INVERSE) !== 0 ? true : undefined
+    attrs.hidden = (packed & ATTR_HIDDEN) !== 0 ? true : undefined
+    attrs.strikethrough = (packed & ATTR_STRIKETHROUGH) !== 0 ? true : undefined
+
+    const ulStyleNum = (packed & UNDERLINE_STYLE_MASK) >> UNDERLINE_STYLE_SHIFT
+    const ulStyle = numberToUnderlineStyle(ulStyleNum)
+    if (ulStyle) {
+      attrs.underlineStyle = ulStyle
+      attrs.underline = true
+    } else {
+      attrs.underlineStyle = undefined
+      attrs.underline = undefined
+    }
+
+    out.wide = (packed & WIDE_FLAG) !== 0
+    out.continuation = (packed & CONTINUATION_FLAG) !== 0
+
+    return out
+  }
+
   /**
    * Set a cell at the given position.
    */
@@ -473,6 +619,9 @@ export class TerminalBuffer {
 
   /**
    * Fill a region with a cell.
+   *
+   * Optimized: packs cell metadata once and assigns directly to arrays,
+   * avoiding O(width*height) intermediate object allocations from setCell().
    */
   fill(
     x: number,
@@ -486,9 +635,67 @@ export class TerminalBuffer {
     const startX = Math.max(0, x)
     const startY = Math.max(0, y)
 
+    if (startX >= endX || startY >= endY) return
+
+    // Resolve cell properties once (instead of per-cell in setCell)
+    const char = cell.char ?? " "
+    const fg = cell.fg ?? null
+    const bg = cell.bg ?? null
+    const underlineColor = cell.underlineColor ?? null
+    const attrs = cell.attrs ?? {}
+    const wide = cell.wide ?? false
+    const continuation = cell.continuation ?? false
+
+    // Pack metadata once for the entire fill region
+    const fullCell: Cell = {
+      char,
+      fg,
+      bg,
+      underlineColor,
+      attrs,
+      wide,
+      continuation,
+    }
+    const packed = packCell(fullCell)
+
+    // Determine true color values once
+    const hasTrueColorFg = isTrueColor(fg)
+    const hasTrueColorBg = isTrueColor(bg)
+    const trueColorFg = hasTrueColorFg
+      ? (fg as { r: number; g: number; b: number })
+      : null
+    const trueColorBg = hasTrueColorBg
+      ? (bg as { r: number; g: number; b: number })
+      : null
+    const hasUnderlineColor = underlineColor !== null
+
     for (let cy = startY; cy < endY; cy++) {
+      const rowBase = cy * this.width
       for (let cx = startX; cx < endX; cx++) {
-        this.setCell(cx, cy, cell)
+        const idx = rowBase + cx
+
+        // Direct array assignment (no setCell overhead)
+        this.cells[idx] = packed
+        this.chars[idx] = char
+
+        // Handle true color maps in batch
+        if (hasTrueColorFg) {
+          this.fgColors.set(idx, trueColorFg!)
+        } else {
+          this.fgColors.delete(idx)
+        }
+
+        if (hasTrueColorBg) {
+          this.bgColors.set(idx, trueColorBg!)
+        } else {
+          this.bgColors.delete(idx)
+        }
+
+        if (hasUnderlineColor) {
+          this.underlineColors.set(idx, underlineColor)
+        } else {
+          this.underlineColors.delete(idx)
+        }
       }
     }
   }
@@ -516,6 +723,7 @@ export class TerminalBuffer {
     width: number,
     height: number,
   ): void {
+    const cell = createMutableCell()
     for (let dy = 0; dy < height; dy++) {
       for (let dx = 0; dx < width; dx++) {
         const sx = srcX + dx
@@ -524,7 +732,8 @@ export class TerminalBuffer {
         const dstY = destY + dy
 
         if (source.inBounds(sx, sy) && this.inBounds(dstX, dstY)) {
-          this.setCell(dstX, dstY, source.getCell(sx, sy))
+          source.readCellInto(sx, sy, cell)
+          this.setCell(dstX, dstY, cell)
         }
       }
     }
@@ -653,6 +862,22 @@ export function styleEquals(a: Style | null, b: Style | null): boolean {
 }
 
 /**
+ * Create a mutable Cell object for use with readCellInto().
+ * The returned object is reusable -- readCellInto() overwrites all fields.
+ */
+export function createMutableCell(): Cell {
+  return {
+    char: " ",
+    fg: null,
+    bg: null,
+    underlineColor: null,
+    attrs: {},
+    wide: false,
+    continuation: false,
+  }
+}
+
+/**
  * Create a buffer initialized with a specific character.
  */
 export function createBuffer(
@@ -694,10 +919,9 @@ export function bufferToText(
   for (let y = 0; y < buffer.height; y++) {
     let line = ""
     for (let x = 0; x < buffer.width; x++) {
-      const cell = buffer.getCell(x, y)
-      // Skip continuation cells (part of wide character)
-      if (cell.continuation) continue
-      line += cell.char
+      // Use zero-allocation accessors instead of getCell()
+      if (buffer.isCellContinuation(x, y)) continue
+      line += buffer.getCellChar(x, y)
     }
     if (trimTrailingWhitespace) {
       line = line.trimEnd()
@@ -738,6 +962,8 @@ export function bufferToStyledText(
     let line = ""
 
     for (let x = 0; x < buffer.width; x++) {
+      // getCell allocates a fresh object each call, which is fine here since
+      // bufferToStyledText is a utility function, not a hot render path.
       const cell = buffer.getCell(x, y)
       // Skip continuation cells (part of wide character)
       if (cell.continuation) continue

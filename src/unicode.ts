@@ -14,7 +14,13 @@
 import { BG_OVERRIDE_CODE } from "chalkx"
 import Graphemer from "graphemer"
 import stringWidth from "string-width"
-import type { Style, TerminalBuffer, UnderlineStyle } from "./buffer.js"
+import {
+  type Cell,
+  type Style,
+  type TerminalBuffer,
+  type UnderlineStyle,
+  createMutableCell,
+} from "./buffer.js"
 
 // Re-export for consumers of inkx
 export { BG_OVERRIDE_CODE }
@@ -610,18 +616,20 @@ export function writeTextToBuffer(
 ): number {
   const graphemes = splitGraphemes(text)
   let col = x
+  let combineCell: Cell | null = null
 
   for (const grapheme of graphemes) {
     const width = graphemeWidth(grapheme)
 
     if (width === 0) {
-      // Zero-width character: combine with previous cell
+      // Zero-width character: combine with previous cell.
+      // Use readCellInto to avoid allocating a fresh Cell on each combine.
       if (col > 0 && buffer.inBounds(col - 1, y)) {
-        const prevCell = buffer.getCell(col - 1, y)
-        buffer.setCell(col - 1, y, {
-          ...prevCell,
-          char: prevCell.char + grapheme,
-        })
+        // Lazy-init reusable cell (zero-width combining is uncommon)
+        combineCell ??= createMutableCell()
+        buffer.readCellInto(col - 1, y, combineCell)
+        combineCell.char = combineCell.char + grapheme
+        buffer.setCell(col - 1, y, combineCell)
       }
     } else if (width === 1) {
       // Normal single-width character
