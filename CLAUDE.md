@@ -256,11 +256,13 @@ Layers are identified by `id` for debugging. When a dialog mounts, its layer goe
 
 ### Architecture Note
 
-`useInputLayer` is a low-level primitive for raw key capture with consumption semantics. In apps with a centralized command/keybinding system (like km-tui's `@km/commands`):
+`useInputLayer` is a low-level primitive for raw key capture with consumption semantics. For command-driven apps, the **prescribed pattern** is [focus-based input routing](docs/focus-routing.md):
 
 - **Don't** use `useInputLayer` in individual components for discrete commands (navigation, toggles, mode switches)
 - **Do** use the command system with mode/context for all discrete key-to-action mapping
-- **Do** use `useInputLayer` only for: (1) the single base layer that bridges raw keys to the command system, and (2) text input components that need raw character capture
+- **Do** use `useInputLayer` only for: (1) the single base layer that bridges raw keys to the command system, and (2) dialog navigation (Enter, Escape, arrows)
+
+See [docs/focus-routing.md](docs/focus-routing.md) for the full pattern: context keys, when predicates, TextEditTarget, and text input as fallback.
 
 The hook silently no-ops without `InputLayerProvider` — ensure test harnesses wrap with it.
 
@@ -575,3 +577,4 @@ function createBoardDriver(repo: Repo, rootId: string) {
 | [docs/ink-comparison.md](docs/ink-comparison.md)               | Ink issues and Inkx solutions         |
 | [docs/streams.md](docs/streams.md)                             | AsyncIterable stream helpers          |
 | [docs/terminal-capabilities.md](docs/terminal-capabilities.md) | Terminal detection and render modes   |
+| [docs/focus-routing.md](docs/focus-routing.md)                 | Focus-based input routing pattern     |
