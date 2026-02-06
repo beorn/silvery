@@ -4,12 +4,12 @@
  * Run Yoga layout calculation and propagate dimensions to all nodes.
  */
 
-import { createlogger } from "@beorn/logger"
+import { createLogger } from "@beorn/logger"
 import { measureStats } from "../reconciler/nodes.js"
 import { type BoxProps, type InkxNode, type Rect, rectEqual } from "../types.js"
 import { getBorderSize, getPadding } from "./helpers.js"
 
-const log = createlogger("inkx:layout")
+const log = createLogger("inkx:layout")
 
 /**
  * Run Yoga layout calculation and propagate dimensions to all nodes.

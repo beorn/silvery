@@ -13,7 +13,7 @@
 
 import { EventEmitter } from "node:events"
 import process from "node:process"
-import { createConditionalLogger } from "@beorn/logger"
+import { createLogger } from "@beorn/logger"
 import { type Term, createTerm } from "chalkx"
 import React, {
   useCallback,
@@ -23,7 +23,7 @@ import React, {
   type ReactNode,
 } from "react"
 
-const log = createConditionalLogger("inkx:render")
+const log = createLogger("inkx:render")
 import {
   AppContext,
   EventsContext,

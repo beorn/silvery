@@ -13,7 +13,7 @@
  */
 
 import { appendFileSync } from "node:fs"
-import { type Logger, createLogger, createlogger } from "@beorn/logger"
+import { type Logger, createLogger } from "@beorn/logger"
 import { type TerminalBuffer, bufferToText, cellEquals } from "./buffer.js"
 import {
   buildMismatchContext,
@@ -29,7 +29,7 @@ import {
 import { executeRender } from "./pipeline.js"
 import type { InkxNode } from "./types.js"
 
-const log = createlogger("inkx:scheduler")
+const log = createLogger("inkx:scheduler")
 
 // ============================================================================
 // Errors

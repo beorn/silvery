@@ -5,12 +5,12 @@
  * Compatible with Ink's useInput API.
  */
 
-import { createlogger } from "@beorn/logger"
+import { createLogger } from "@beorn/logger"
 import { useContext, useEffect } from "react"
 import { EventsContext, InputContext, StdinContext } from "../context.js"
 import { CODE_TO_KEY } from "../keys.js"
 
-const log = createlogger("inkx:useInput")
+const log = createLogger("inkx:useInput")
 
 // ============================================================================
 // Types

@@ -26,11 +26,11 @@
  *   Emit minimal ANSI sequences for changes
  */
 
-import { createLogger, createlogger } from "@beorn/logger"
+import { createLogger } from "@beorn/logger"
 import type { TerminalBuffer } from "../buffer.js"
 import type { InkxNode } from "../types.js"
 
-const log = createlogger("inkx:pipeline")
+const log = createLogger("inkx:pipeline")
 const baseLog = createLogger("inkx")
 
 // Re-export types
