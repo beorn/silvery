@@ -197,7 +197,7 @@ export interface AppRunner<S>
 // Store Context
 // ============================================================================
 
-const StoreContext = createContext<StoreApi<unknown> | null>(null)
+export const StoreContext = createContext<StoreApi<unknown> | null>(null)
 
 /**
  * Hook for accessing app state with selectors.
@@ -218,7 +218,8 @@ export function useApp<S, T>(selector: (state: S) => T): T {
 
   useEffect(() => {
     return store.subscribe((newState) => {
-      setState(selectorRef.current(newState))
+      // Wrap in updater to avoid React treating function values as updaters
+      setState(() => selectorRef.current(newState))
     })
   }, [store])
 

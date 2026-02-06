@@ -74,6 +74,7 @@ export { parseKey, emptyKey } from "./keys.js"
 export {
   createApp,
   useApp,
+  StoreContext,
   type AppDefinition,
   type AppHandle,
   type AppRunOptions,
