@@ -66,18 +66,18 @@
  * </Box>
  * ```
  */
-export { Box } from './components/Box.js';
-export { Console } from './components/Console.js';
-export { VirtualList } from './components/VirtualList.js';
+export { Box } from "./components/Box.js"
+export { Console } from "./components/Console.js"
+export { VirtualList } from "./components/VirtualList.js"
 export type {
-	VirtualListProps,
-	VirtualListHandle,
-} from './components/VirtualList.js';
-export { HorizontalVirtualList } from './components/HorizontalVirtualList.js';
+  VirtualListProps,
+  VirtualListHandle,
+} from "./components/VirtualList.js"
+export { HorizontalVirtualList } from "./components/HorizontalVirtualList.js"
 export type {
-	HorizontalVirtualListProps,
-	HorizontalVirtualListHandle,
-} from './components/HorizontalVirtualList.js';
+  HorizontalVirtualListProps,
+  HorizontalVirtualListHandle,
+} from "./components/HorizontalVirtualList.js"
 
 /**
  * Re-export Text component - renders text content.
@@ -92,11 +92,11 @@ export type {
  * <Text>{chalk.bold('Chalk works too')}</Text>
  * ```
  */
-export { Text } from './components/Text.js';
+export { Text } from "./components/Text.js"
 
-export { Newline } from './components/Newline.js';
-export { Spacer } from './components/Spacer.js';
-export { Static } from './components/Static.js';
+export { Newline } from "./components/Newline.js"
+export { Spacer } from "./components/Spacer.js"
+export { Static } from "./components/Static.js"
 
 /**
  * Re-export ErrorBoundary component - catches render errors in children.
@@ -110,26 +110,26 @@ export { Static } from './components/Static.js';
  * </ErrorBoundary>
  * ```
  */
-export { ErrorBoundary } from './components/ErrorBoundary.js';
-export type { ErrorBoundaryProps } from './components/ErrorBoundary.js';
+export { ErrorBoundary } from "./components/ErrorBoundary.js"
+export type { ErrorBoundaryProps } from "./components/ErrorBoundary.js"
 
 // Input Components
-export { TextInput } from './components/TextInput.js';
-export type { TextInputProps, TextInputHandle } from './components/TextInput.js';
+export { TextInput } from "./components/TextInput.js"
+export type { TextInputProps, TextInputHandle } from "./components/TextInput.js"
 
-export { ReadlineInput } from './components/ReadlineInput.js';
+export { ReadlineInput } from "./components/ReadlineInput.js"
 export type {
-	ReadlineInputProps,
-	ReadlineInputHandle,
-} from './components/ReadlineInput.js';
+  ReadlineInputProps,
+  ReadlineInputHandle,
+} from "./components/ReadlineInput.js"
 
 // Input Hooks
-export { useReadline } from './components/useReadline.js';
+export { useReadline } from "./components/useReadline.js"
 export type {
-	ReadlineState,
-	UseReadlineOptions,
-	UseReadlineResult,
-} from './components/useReadline.js';
+  ReadlineState,
+  UseReadlineOptions,
+  UseReadlineResult,
+} from "./components/useReadline.js"
 
 // =============================================================================
 // Hooks
@@ -150,11 +150,11 @@ export type {
  * ```
  */
 export {
-	useContentRect,
-	useContentRectCallback,
-	useScreenRect,
-	useScreenRectCallback,
-} from './hooks/useLayout.js';
+  useContentRect,
+  useContentRectCallback,
+  useScreenRect,
+  useScreenRectCallback,
+} from "./hooks/useLayout.js"
 
 /**
  * Keyboard input hook.
@@ -170,7 +170,7 @@ export {
  * });
  * ```
  */
-export { useInput } from './hooks/useInput.js';
+export { useInput } from "./hooks/useInput.js"
 
 /**
  * App control hook - provides exit function.
@@ -184,14 +184,14 @@ export { useInput } from './hooks/useInput.js';
  * exit(new Error('Failed'));  // Exit with error
  * ```
  */
-export { useApp } from './hooks/useApp.js';
+export { useApp } from "./hooks/useApp.js"
 
-export { useStdout } from './hooks/useStdout.js';
-export { useStdin } from './hooks/useStdin.js';
-export { useFocus, resetFocusIdCounter } from './hooks/useFocus.js';
-export { useFocusManager } from './hooks/useFocusManager.js';
-export { useTerm } from './hooks/useTerm.js';
-export { useConsole } from './hooks/useConsole.js';
+export { useStdout } from "./hooks/useStdout.js"
+export { useStdin } from "./hooks/useStdin.js"
+export { useFocus, resetFocusIdCounter } from "./hooks/useFocus.js"
+export { useFocusManager } from "./hooks/useFocusManager.js"
+export { useTerm } from "./hooks/useTerm.js"
+export { useConsole } from "./hooks/useConsole.js"
 
 /**
  * Re-export React concurrent features for TUI responsiveness.
@@ -218,37 +218,37 @@ export { useConsole } from './hooks/useConsole.js';
  * }
  * ```
  */
-export { useTransition, useDeferredValue, useId } from 'react';
+export { useTransition, useDeferredValue, useId } from "react"
 
 // Contexts for advanced usage (usually hooks are preferred)
-export { TermContext, EventsContext } from './context.js';
+export { TermContext, EventsContext } from "./context.js"
 
 // =============================================================================
 // Re-exports from chalkx
 // =============================================================================
 
 // Term primitives (so consumers don't need to import from chalkx directly)
-export { createTerm, term, patchConsole } from 'chalkx';
+export { createTerm, term, patchConsole } from "chalkx"
 export type {
-	Term,
-	StyleChain,
-	PatchedConsole,
-	PatchConsoleOptions,
-	ConsoleStats,
-	ColorLevel,
-	ConsoleEntry,
-} from 'chalkx';
+  Term,
+  StyleChain,
+  PatchedConsole,
+  PatchConsoleOptions,
+  ConsoleStats,
+  ColorLevel,
+  ConsoleEntry,
+} from "chalkx"
 
 // Hit Registry (mouse support)
 export {
-	HitRegistry,
-	HitRegistryContext,
-	useHitRegistry,
-	useHitRegion,
-	useHitRegionCallback,
-	resetHitRegionIdCounter,
-	Z_INDEX,
-} from './hit-registry.js';
+  HitRegistry,
+  HitRegistryContext,
+  useHitRegistry,
+  useHitRegion,
+  useHitRegionCallback,
+  resetHitRegionIdCounter,
+  Z_INDEX,
+} from "./hit-registry.js"
 
 // =============================================================================
 // Render Functions
@@ -282,123 +282,123 @@ export {
  * ```
  */
 export {
-	render,
-	renderSync,
-	renderStatic,
-	setLayoutEngine,
-	isLayoutEngineInitialized,
-	// Yoga adapter
-	createYogaEngine,
-	initYogaEngine,
-	YogaLayoutEngine,
-	// Flexx adapter
-	createFlexxEngine,
-	FlexxLayoutEngine,
-} from './render.js';
+  render,
+  renderSync,
+  renderStatic,
+  setLayoutEngine,
+  isLayoutEngineInitialized,
+  // Yoga adapter
+  createYogaEngine,
+  initYogaEngine,
+  YogaLayoutEngine,
+  // Flexx adapter
+  createFlexxEngine,
+  FlexxLayoutEngine,
+} from "./render.js"
 export {
-	renderString,
-	renderStringSync,
-	type RenderStringOptions,
-} from './render-string.js';
-export { measureElement } from './measureElement.js';
+  renderString,
+  renderStringSync,
+  type RenderStringOptions,
+} from "./render-string.js"
+export { measureElement } from "./measureElement.js"
 
 // TermDef resolution utilities
 export {
-	resolveTermDef,
-	resolveFromTerm,
-	isTerm,
-	isTermDef,
-	createInputEvents,
-	type ResolvedTermDef,
-} from './term-def.js';
+  resolveTermDef,
+  resolveFromTerm,
+  isTerm,
+  isTermDef,
+  createInputEvents,
+  type ResolvedTermDef,
+} from "./term-def.js"
 
 // ANSI escape sequences for terminal control
-export { ANSI, enableMouse, disableMouse } from './output.js';
+export { ANSI, enableMouse, disableMouse } from "./output.js"
 
 // Layout engine types
 export type {
-	LayoutEngine,
-	LayoutNode,
-	LayoutConstants,
-	MeasureFunc,
-	MeasureMode,
-} from './layout-engine.js';
+  LayoutEngine,
+  LayoutNode,
+  LayoutConstants,
+  MeasureFunc,
+  MeasureMode,
+} from "./layout-engine.js"
 
 // Render adapter (for canvas, DOM, etc.)
 export {
-	setRenderAdapter,
-	getRenderAdapter,
-	hasRenderAdapter,
-	getTextMeasurer,
-	ensureRenderAdapterInitialized,
-} from './render-adapter.js';
+  setRenderAdapter,
+  getRenderAdapter,
+  hasRenderAdapter,
+  getTextMeasurer,
+  ensureRenderAdapterInitialized,
+} from "./render-adapter.js"
 export type {
-	RenderAdapter,
-	RenderBuffer,
-	RenderStyle,
-	TextMeasurer,
-	TextMeasureResult,
-	TextMeasureStyle,
-	BorderChars,
-} from './render-adapter.js';
+  RenderAdapter,
+  RenderBuffer,
+  RenderStyle,
+  TextMeasurer,
+  TextMeasureResult,
+  TextMeasureStyle,
+  BorderChars,
+} from "./render-adapter.js"
 
 // Canvas adapter
 export {
-	createCanvasAdapter,
-	CanvasRenderBuffer,
-} from './adapters/canvas-adapter.js';
-export type { CanvasAdapterConfig } from './adapters/canvas-adapter.js';
+  createCanvasAdapter,
+  CanvasRenderBuffer,
+} from "./adapters/canvas-adapter.js"
+export type { CanvasAdapterConfig } from "./adapters/canvas-adapter.js"
 
 // DOM adapter
 export {
-	createDOMAdapter,
-	DOMRenderBuffer,
-	injectDOMStyles,
-} from './adapters/dom-adapter.js';
-export type { DOMAdapterConfig } from './adapters/dom-adapter.js';
+  createDOMAdapter,
+  DOMRenderBuffer,
+  injectDOMStyles,
+} from "./adapters/dom-adapter.js"
+export type { DOMAdapterConfig } from "./adapters/dom-adapter.js"
 
 // App types (unified render API)
-export type { App } from './app.js';
-export type { AutoLocator, FilterOptions } from './auto-locator.js';
-export type { BoundTerm } from './bound-term.js';
+export type { App } from "./app.js"
+export type { AutoLocator, FilterOptions } from "./auto-locator.js"
+export type { BoundTerm } from "./bound-term.js"
 
 // Types
-export type { BoxProps, BoxHandle } from './components/Box.js';
-export type { TextProps, TextHandle } from './components/Text.js';
-export type { Rect } from './hooks/useLayout.js';
-export type { Key, InputHandler, UseInputOptions } from './hooks/useInput.js';
-export type { UseAppResult } from './hooks/useApp.js';
-export type { UseStdoutResult } from './hooks/useStdout.js';
-export type { UseStdinResult } from './hooks/useStdin.js';
-export type { UseFocusOptions, UseFocusResult } from './hooks/useFocus.js';
-export type { UseFocusManagerResult } from './hooks/useFocusManager.js';
+export type { BoxProps, BoxHandle } from "./components/Box.js"
+export type { TextProps, TextHandle } from "./components/Text.js"
+export type { Rect } from "./hooks/useLayout.js"
+export type { Key, InputHandler, UseInputOptions } from "./hooks/useInput.js"
+export type { UseAppResult } from "./hooks/useApp.js"
+export type { UseStdoutResult } from "./hooks/useStdout.js"
+export type { UseStdinResult } from "./hooks/useStdin.js"
+export type { UseFocusOptions, UseFocusResult } from "./hooks/useFocus.js"
+export type { UseFocusManagerResult } from "./hooks/useFocusManager.js"
 export type {
-	RenderOptions,
-	Instance,
-	RenderMode,
-	NonTTYMode,
-} from './render.js';
-export type { MeasureElementOutput } from './measureElement.js';
+  RenderOptions,
+  Instance,
+  RenderMode,
+  NonTTYMode,
+} from "./render.js"
+export type { MeasureElementOutput } from "./measureElement.js"
 export type {
-	InkxNode,
-	// Event types
-	Event,
-	KeyEvent,
-	MouseEvent,
-	ResizeEvent,
-	FocusEvent,
-	BlurEvent,
-	SignalEvent,
-	CustomEvent,
-	EventSource,
-	// TermDef for render configuration
-	TermDef,
-} from './types.js';
-export type { HitTarget, HitRegion } from './hit-registry.js';
+  InkxNode,
+  // Event types
+  Event,
+  KeyEvent,
+  MouseEvent,
+  ResizeEvent,
+  FocusEvent,
+  BlurEvent,
+  SignalEvent,
+  CustomEvent,
+  EventSource,
+  // TermDef for render configuration
+  TermDef,
+} from "./types.js"
+export type { HitTarget, HitRegion } from "./hit-registry.js"
 
 // Non-TTY utilities
-export { isTTY, resolveNonTTYMode, stripAnsi } from './non-tty.js';
-export type { NonTTYOptions, ResolvedNonTTYMode } from './non-tty.js';
+export { isTTY, resolveNonTTYMode, stripAnsi } from "./non-tty.js"
+export type { NonTTYOptions, ResolvedNonTTYMode } from "./non-tty.js"
 
 // =============================================================================
 // DevTools
@@ -419,7 +419,7 @@ export type { NonTTYOptions, ResolvedNonTTYMode } from './non-tty.js';
  * // Or use env var: DEBUG_DEVTOOLS=1 bun run app.ts
  * ```
  */
-export { connectDevTools, isDevToolsConnected } from './devtools.js';
+export { connectDevTools, isDevToolsConnected } from "./devtools.js"
 
 // =============================================================================
 // Unicode Text Utilities
@@ -430,44 +430,44 @@ export { connectDevTools, isDevToolsConnected } from './devtools.js';
  * Handle ANSI codes, wide characters (CJK), and emoji correctly.
  */
 export {
-	// Measurement
-	displayWidth,
-	displayWidthAnsi,
-	measureText,
-	// Manipulation
-	wrapText,
-	truncateText,
-	padText,
-	constrainText,
-	sliceByWidth,
-	// ANSI handling
-	hasAnsi,
-	parseAnsiText,
-	stripAnsi as stripAnsiUnicode,
-	truncateAnsi,
-	// Grapheme operations
-	splitGraphemes,
-	graphemeCount,
-	graphemeWidth,
-	// Character detection
-	isWideGrapheme,
-	isZeroWidthGrapheme,
-	isCJK,
-	isLikelyEmoji,
-	hasWideCharacters,
-	hasZeroWidthCharacters,
-	// Emoji presentation
-	ensureEmojiPresentation,
-	// Buffer writing
-	writeTextToBuffer,
-	writeTextTruncated,
-	writeLinesToBuffer,
-	// Utilities
-	normalizeText,
-	getFirstCodePoint,
-} from './unicode.js';
+  // Measurement
+  displayWidth,
+  displayWidthAnsi,
+  measureText,
+  // Manipulation
+  wrapText,
+  truncateText,
+  padText,
+  constrainText,
+  sliceByWidth,
+  // ANSI handling
+  hasAnsi,
+  parseAnsiText,
+  stripAnsi as stripAnsiUnicode,
+  truncateAnsi,
+  // Grapheme operations
+  splitGraphemes,
+  graphemeCount,
+  graphemeWidth,
+  // Character detection
+  isWideGrapheme,
+  isZeroWidthGrapheme,
+  isCJK,
+  isLikelyEmoji,
+  hasWideCharacters,
+  hasZeroWidthCharacters,
+  // Emoji presentation
+  ensureEmojiPresentation,
+  // Buffer writing
+  writeTextToBuffer,
+  writeTextTruncated,
+  writeLinesToBuffer,
+  // Utilities
+  normalizeText,
+  getFirstCodePoint,
+} from "./unicode.js"
 
-export type { StyledSegment } from './unicode.js';
+export type { StyledSegment } from "./unicode.js"
 
 // =============================================================================
 // Scroll Utilities
@@ -489,7 +489,7 @@ export type { StyledSegment } from './unicode.js';
  * );
  * ```
  */
-export { calcEdgeBasedScrollOffset } from './scroll-utils.js';
+export { calcEdgeBasedScrollOffset } from "./scroll-utils.js"
 
 // =============================================================================
 // Plugin Composition (SlateJS-style)
@@ -517,32 +517,32 @@ export { calcEdgeBasedScrollOffset } from './scroll-utils.js';
  * console.log(app.cmd.down.help); // Command metadata
  * ```
  */
-export { withCommands } from './with-commands.js';
+export { withCommands } from "./with-commands.js"
 export type {
-	WithCommandsOptions,
-	CommandDef,
-	CommandRegistryLike,
-	CommandInfo,
-	Command,
-	Cmd,
-	AppWithCommands,
-	AppState,
-	KeybindingDef,
-} from './with-commands.js';
+  WithCommandsOptions,
+  CommandDef,
+  CommandRegistryLike,
+  CommandInfo,
+  Command,
+  Cmd,
+  AppWithCommands,
+  AppState,
+  KeybindingDef,
+} from "./with-commands.js"
 
-export { withKeybindings } from './with-keybindings.js';
+export { withKeybindings } from "./with-keybindings.js"
 export type {
-	WithKeybindingsOptions,
-	KeybindingContext,
-	ExtendedKeybindingDef,
-} from './with-keybindings.js';
+  WithKeybindingsOptions,
+  KeybindingContext,
+  ExtendedKeybindingDef,
+} from "./with-keybindings.js"
 
 // Diagnostic tools - prefer importing from 'inkx/toolbelt' for new code
-export { withDiagnostics, VirtualTerminal } from './with-diagnostics.js';
-export type { DiagnosticOptions } from './with-diagnostics.js';
+export { withDiagnostics, VirtualTerminal } from "./with-diagnostics.js"
+export type { DiagnosticOptions } from "./with-diagnostics.js"
 
 // Scheduler errors (for catching incremental render mismatches)
-export { IncrementalRenderMismatchError } from './scheduler.js';
+export { IncrementalRenderMismatchError } from "./scheduler.js"
 
 // =============================================================================
 // Input Layer Stack
@@ -580,14 +580,14 @@ export { IncrementalRenderMismatchError } from './scheduler.js';
  * @see docs/future/inkx-command-api-research.md
  */
 export {
-	InputLayerProvider,
-	InputLayerContext,
-	useInputLayer,
-	useInputLayerContext,
-} from './contexts/InputLayerContext.js';
+  InputLayerProvider,
+  InputLayerContext,
+  useInputLayer,
+  useInputLayerContext,
+} from "./contexts/InputLayerContext.js"
 export type {
-	InputLayerHandler,
-	InputLayer,
-	InputLayerContextValue,
-	InputLayerProviderProps,
-} from './contexts/InputLayerContext.js';
+  InputLayerHandler,
+  InputLayer,
+  InputLayerContextValue,
+  InputLayerProviderProps,
+} from "./contexts/InputLayerContext.js"

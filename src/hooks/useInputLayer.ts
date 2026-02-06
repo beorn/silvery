@@ -30,7 +30,7 @@
 
 // Re-export from context for convenience
 export {
-	useInputLayer,
-	useInputLayerContext,
-	type InputLayerHandler,
-} from '../contexts/InputLayerContext.js';
+  useInputLayer,
+  useInputLayerContext,
+  type InputLayerHandler,
+} from "../contexts/InputLayerContext.js"

@@ -24,351 +24,364 @@
  * ```
  */
 
-import type { ReactElement, ReactNode } from 'react';
-import { type AutoLocator, type FilterOptions, createAutoLocator } from './auto-locator.js';
-import { type BoundTerm, createBoundTerm } from './bound-term.js';
-import type { TerminalBuffer } from './buffer.js';
-import { bufferToStyledText, bufferToText } from './buffer.js';
-import { keyToAnsi } from './keys.js';
-import type { InkxNode, Rect } from './types.js';
+import type { ReactElement, ReactNode } from "react"
+import {
+  type AutoLocator,
+  type FilterOptions,
+  createAutoLocator,
+} from "./auto-locator.js"
+import { type BoundTerm, createBoundTerm } from "./bound-term.js"
+import type { TerminalBuffer } from "./buffer.js"
+import { bufferToStyledText, bufferToText } from "./buffer.js"
+import { keyToAnsi } from "./keys.js"
+import type { InkxNode, Rect } from "./types.js"
 
 /**
  * App interface - unified return type from render()
  */
 export interface App {
-	// === Content/Document Perspective ===
+  // === Content/Document Perspective ===
 
-	/** Full rendered text (no ANSI codes) */
-	readonly text: string;
+  /** Full rendered text (no ANSI codes) */
+  readonly text: string
 
-	/** Full rendered text with ANSI styling */
-	readonly ansi: string;
+  /** Full rendered text with ANSI styling */
+  readonly ansi: string
 
-	/** Get node at content coordinates */
-	nodeAt(x: number, y: number): InkxNode | null;
+  /** Get node at content coordinates */
+  nodeAt(x: number, y: number): InkxNode | null
 
-	/** Get locator by testID attribute */
-	getByTestId(id: string): AutoLocator;
+  /** Get locator by testID attribute */
+  getByTestId(id: string): AutoLocator
 
-	/** Get locator by text content */
-	getByText(text: string | RegExp): AutoLocator;
+  /** Get locator by text content */
+  getByText(text: string | RegExp): AutoLocator
 
-	/** Get locator by CSS-style selector */
-	locator(selector: string): AutoLocator;
+  /** Get locator by CSS-style selector */
+  locator(selector: string): AutoLocator
 
-	// === Actions (return this for chaining) ===
+  // === Actions (return this for chaining) ===
 
-	/** Send a key press (uses keyToAnsi internally) */
-	press(key: string): Promise<this>;
+  /** Send a key press (uses keyToAnsi internally) */
+  press(key: string): Promise<this>
 
-	/** Send multiple key presses */
-	pressSequence(...keys: string[]): Promise<this>;
+  /** Send multiple key presses */
+  pressSequence(...keys: string[]): Promise<this>
 
-	/** Type text input */
-	type(text: string): Promise<this>;
+  /** Type text input */
+  type(text: string): Promise<this>
 
-	/** Wait until app exits */
-	run(): Promise<void>;
+  /** Wait until app exits */
+  run(): Promise<void>
 
-	// === Terminal Binding ===
+  // === Terminal Binding ===
 
-	/** Bound terminal for screen-space access */
-	readonly term: BoundTerm;
+  /** Bound terminal for screen-space access */
+  readonly term: BoundTerm
 
-	// === Lifecycle (Instance compatibility) ===
+  // === Lifecycle (Instance compatibility) ===
 
-	/** Re-render with a new element */
-	rerender(element: ReactNode): void;
+  /** Re-render with a new element */
+  rerender(element: ReactNode): void
 
-	/** Unmount the component and clean up */
-	unmount(): void;
+  /** Unmount the component and clean up */
+  unmount(): void
 
-	/** Dispose (alias for unmount) — enables `using` */
-	[Symbol.dispose](): void;
+  /** Dispose (alias for unmount) — enables `using` */
+  [Symbol.dispose](): void
 
-	/** Promise that resolves when the app exits (alias for run()) */
-	waitUntilExit(): Promise<void>;
+  /** Promise that resolves when the app exits (alias for run()) */
+  waitUntilExit(): Promise<void>
 
-	/** Clear the terminal output */
-	clear(): void;
+  /** Clear the terminal output */
+  clear(): void
 
-	// === Debug ===
+  // === Debug ===
 
-	/** Print component tree to console */
-	debug(): void;
+  /** Print component tree to console */
+  debug(): void
 
-	// === Testing extras ===
+  // === Testing extras ===
 
-	/** Render the current tree from scratch (no incremental buffer reuse).
-	 *  Returns the fresh buffer without updating incremental state.
-	 *  Only available in test renderer - throws otherwise. */
-	freshRender(): TerminalBuffer;
+  /** Render the current tree from scratch (no incremental buffer reuse).
+   *  Returns the fresh buffer without updating incremental state.
+   *  Only available in test renderer - throws otherwise. */
+  freshRender(): TerminalBuffer
 
-	/** Check if exit() was called */
-	exitCalled(): boolean;
+  /** Check if exit() was called */
+  exitCalled(): boolean
 
-	/** Get error passed to exit() */
-	exitError(): Error | undefined;
+  /** Get error passed to exit() */
+  exitError(): Error | undefined
 
-	/** Send raw stdin input (for sync test helpers; prefer app.press() for new code) */
-	readonly stdin: { write: (data: string) => void };
+  /** Send raw stdin input (for sync test helpers; prefer app.press() for new code) */
+  readonly stdin: { write: (data: string) => void }
 
-	// === Internal/Legacy (kept for inkx test compatibility, not for external use) ===
+  // === Internal/Legacy (kept for inkx test compatibility, not for external use) ===
 
-	/** All rendered frames (internal) */
-	readonly frames: string[];
+  /** All rendered frames (internal) */
+  readonly frames: string[]
 
-	/** Get last frame with ANSI codes (internal - use app.ansi instead) */
-	lastFrame(): string | undefined;
+  /** Get last frame with ANSI codes (internal - use app.ansi instead) */
+  lastFrame(): string | undefined
 
-	/** Get last buffer (internal - use app.term.buffer instead) */
-	lastBuffer(): TerminalBuffer | undefined;
+  /** Get last buffer (internal - use app.term.buffer instead) */
+  lastBuffer(): TerminalBuffer | undefined
 
-	/** Get last frame as plain text (internal - use app.text instead) */
-	lastFrameText(): string | undefined;
+  /** Get last frame as plain text (internal - use app.text instead) */
+  lastFrameText(): string | undefined
 
-	/** Get container root node (internal - use app.locator() instead) */
-	getContainer(): InkxNode;
+  /** Get container root node (internal - use app.locator() instead) */
+  getContainer(): InkxNode
 }
 
 /**
  * Options for creating an App instance
  */
 export interface AppOptions {
-	/** Function to get current container root */
-	getContainer: () => InkxNode;
+  /** Function to get current container root */
+  getContainer: () => InkxNode
 
-	/** Function to get current buffer */
-	getBuffer: () => TerminalBuffer | null;
+  /** Function to get current buffer */
+  getBuffer: () => TerminalBuffer | null
 
-	/** Function to send input */
-	sendInput: (data: string) => void;
+  /** Function to send input */
+  sendInput: (data: string) => void
 
-	/** Function to rerender */
-	rerender: (element: ReactNode) => void;
+  /** Function to rerender */
+  rerender: (element: ReactNode) => void
 
-	/** Function to unmount */
-	unmount: () => void;
+  /** Function to unmount */
+  unmount: () => void
 
-	/** Function to wait for exit */
-	waitUntilExit: () => Promise<void>;
+  /** Function to wait for exit */
+  waitUntilExit: () => Promise<void>
 
-	/** Function to clear output */
-	clear: () => void;
+  /** Function to clear output */
+  clear: () => void
 
-	/** Function to check if exit was called */
-	exitCalled?: () => boolean;
+  /** Function to check if exit was called */
+  exitCalled?: () => boolean
 
-	/** Function to get exit error */
-	exitError?: () => Error | undefined;
+  /** Function to get exit error */
+  exitError?: () => Error | undefined
 
-	/** Fresh render function (test renderer only) */
-	freshRender?: () => TerminalBuffer;
+  /** Fresh render function (test renderer only) */
+  freshRender?: () => TerminalBuffer
 
-	/** Debug print function */
-	debugFn?: () => void;
+  /** Debug print function */
+  debugFn?: () => void
 
-	/** Captured frames array (internal) */
-	frames?: string[];
+  /** Captured frames array (internal) */
+  frames?: string[]
 
-	/** Terminal dimensions */
-	columns: number;
-	rows: number;
+  /** Terminal dimensions */
+  columns: number
+  rows: number
 }
 
 /**
  * Create an App instance
  */
 export function buildApp(options: AppOptions): App {
-	const {
-		getContainer,
-		getBuffer,
-		sendInput,
-		rerender,
-		unmount,
-		waitUntilExit,
-		clear,
-		exitCalled = () => false,
-		exitError = () => undefined,
-		freshRender: freshRenderFn,
-		debugFn,
-		frames = [],
-		columns,
-		rows,
-	} = options;
+  const {
+    getContainer,
+    getBuffer,
+    sendInput,
+    rerender,
+    unmount,
+    waitUntilExit,
+    clear,
+    exitCalled = () => false,
+    exitError = () => undefined,
+    freshRender: freshRenderFn,
+    debugFn,
+    frames = [],
+    columns,
+    rows,
+  } = options
 
-	// Create auto-refreshing locator factory
-	const createLocator = () => createAutoLocator(getContainer);
+  // Create auto-refreshing locator factory
+  const createLocator = () => createAutoLocator(getContainer)
 
-	// Create bound terminal
-	const getText = () => {
-		const buffer = getBuffer();
-		return buffer ? bufferToText(buffer) : '';
-	};
+  // Create bound terminal
+  const getText = () => {
+    const buffer = getBuffer()
+    return buffer ? bufferToText(buffer) : ""
+  }
 
-	// Note: BoundTerm is created lazily since buffer may not exist initially
-	let boundTerm: BoundTerm | null = null;
+  // Note: BoundTerm is created lazily since buffer may not exist initially
+  let boundTerm: BoundTerm | null = null
 
-	const app: App = {
-		// === Content/Document Perspective ===
+  const app: App = {
+    // === Content/Document Perspective ===
 
-		get text(): string {
-			return getText();
-		},
+    get text(): string {
+      return getText()
+    },
 
-		get ansi(): string {
-			const buffer = getBuffer();
-			return buffer ? bufferToStyledText(buffer) : '';
-		},
+    get ansi(): string {
+      const buffer = getBuffer()
+      return buffer ? bufferToStyledText(buffer) : ""
+    },
 
-		nodeAt(x: number, y: number): InkxNode | null {
-			const root = getContainer();
-			return findNodeAtContentPosition(root, x, y);
-		},
+    nodeAt(x: number, y: number): InkxNode | null {
+      const root = getContainer()
+      return findNodeAtContentPosition(root, x, y)
+    },
 
-		getByTestId(id: string): AutoLocator {
-			return createLocator().getByTestId(id);
-		},
+    getByTestId(id: string): AutoLocator {
+      return createLocator().getByTestId(id)
+    },
 
-		getByText(text: string | RegExp): AutoLocator {
-			return createLocator().getByText(text);
-		},
+    getByText(text: string | RegExp): AutoLocator {
+      return createLocator().getByText(text)
+    },
 
-		locator(selector: string): AutoLocator {
-			return createLocator().locator(selector);
-		},
+    locator(selector: string): AutoLocator {
+      return createLocator().locator(selector)
+    },
 
-		// === Actions ===
+    // === Actions ===
 
-		async press(key: string): Promise<App> {
-			const sequence = keyToAnsi(key);
-			sendInput(sequence);
-			// Allow microtask to flush for test synchronization
-			await Promise.resolve();
-			return app;
-		},
+    async press(key: string): Promise<App> {
+      const sequence = keyToAnsi(key)
+      sendInput(sequence)
+      // Allow microtask to flush for test synchronization
+      await Promise.resolve()
+      return app
+    },
 
-		async pressSequence(...keys: string[]): Promise<App> {
-			for (const key of keys) {
-				await app.press(key);
-			}
-			return app;
-		},
+    async pressSequence(...keys: string[]): Promise<App> {
+      for (const key of keys) {
+        await app.press(key)
+      }
+      return app
+    },
 
-		async type(text: string): Promise<App> {
-			for (const char of text) {
-				sendInput(char);
-			}
-			await Promise.resolve();
-			return app;
-		},
+    async type(text: string): Promise<App> {
+      for (const char of text) {
+        sendInput(char)
+      }
+      await Promise.resolve()
+      return app
+    },
 
-		async run(): Promise<void> {
-			return waitUntilExit();
-		},
+    async run(): Promise<void> {
+      return waitUntilExit()
+    },
 
-		// === Terminal Binding ===
+    // === Terminal Binding ===
 
-		get term(): BoundTerm {
-			const buffer = getBuffer();
-			if (!buffer) {
-				// Return a dummy bound term if no buffer yet
-				const dummyBuffer = {
-					width: columns,
-					height: rows,
-					getCell: () => ({
-						char: ' ',
-						fg: null,
-						bg: null,
-						attrs: {},
-						wide: false,
-						continuation: false,
-					}),
-					setCell: () => {},
-					clear: () => {},
-					inBounds: () => false,
-				} as unknown as TerminalBuffer;
-				return createBoundTerm(dummyBuffer, getContainer, getText);
-			}
-			if (!boundTerm || boundTerm.buffer !== buffer) {
-				boundTerm = createBoundTerm(buffer, getContainer, getText);
-			}
-			return boundTerm;
-		},
+    get term(): BoundTerm {
+      const buffer = getBuffer()
+      if (!buffer) {
+        // Return a dummy bound term if no buffer yet
+        const dummyBuffer = {
+          width: columns,
+          height: rows,
+          getCell: () => ({
+            char: " ",
+            fg: null,
+            bg: null,
+            attrs: {},
+            wide: false,
+            continuation: false,
+          }),
+          setCell: () => {},
+          clear: () => {},
+          inBounds: () => false,
+        } as unknown as TerminalBuffer
+        return createBoundTerm(dummyBuffer, getContainer, getText)
+      }
+      if (!boundTerm || boundTerm.buffer !== buffer) {
+        boundTerm = createBoundTerm(buffer, getContainer, getText)
+      }
+      return boundTerm
+    },
 
-		// === Lifecycle ===
+    // === Lifecycle ===
 
-		rerender,
-		unmount,
-		[Symbol.dispose]: unmount,
-		waitUntilExit,
-		clear,
+    rerender,
+    unmount,
+    [Symbol.dispose]: unmount,
+    waitUntilExit,
+    clear,
 
-		// === Debug ===
+    // === Debug ===
 
-		debug(): void {
-			if (debugFn) {
-				debugFn();
-			} else {
-				console.log(app.text);
-			}
-		},
+    debug(): void {
+      if (debugFn) {
+        debugFn()
+      } else {
+        console.log(app.text)
+      }
+    },
 
-		// === Testing extras ===
+    // === Testing extras ===
 
-		freshRender(): TerminalBuffer {
-			if (!freshRenderFn) {
-				throw new Error('freshRender() is only available in test renderer');
-			}
-			return freshRenderFn();
-		},
+    freshRender(): TerminalBuffer {
+      if (!freshRenderFn) {
+        throw new Error("freshRender() is only available in test renderer")
+      }
+      return freshRenderFn()
+    },
 
-		exitCalled,
-		exitError,
+    exitCalled,
+    exitError,
 
-		stdin: {
-			write: sendInput,
-		},
+    stdin: {
+      write: sendInput,
+    },
 
-		// Internal/Legacy (kept for inkx test compatibility)
-		frames,
+    // Internal/Legacy (kept for inkx test compatibility)
+    frames,
 
-		lastFrame(): string | undefined {
-			return frames[frames.length - 1];
-		},
+    lastFrame(): string | undefined {
+      return frames[frames.length - 1]
+    },
 
-		lastBuffer(): TerminalBuffer | undefined {
-			return getBuffer() ?? undefined;
-		},
+    lastBuffer(): TerminalBuffer | undefined {
+      return getBuffer() ?? undefined
+    },
 
-		lastFrameText(): string | undefined {
-			const buffer = getBuffer();
-			return buffer ? bufferToText(buffer) : undefined;
-		},
+    lastFrameText(): string | undefined {
+      const buffer = getBuffer()
+      return buffer ? bufferToText(buffer) : undefined
+    },
 
-		getContainer(): InkxNode {
-			return getContainer();
-		},
-	};
+    getContainer(): InkxNode {
+      return getContainer()
+    },
+  }
 
-	return app;
+  return app
 }
 
 /**
  * Find node at content coordinates (not screen coordinates)
  */
-function findNodeAtContentPosition(node: InkxNode, x: number, y: number): InkxNode | null {
-	const rect = node.contentRect;
-	if (!rect) return null;
+function findNodeAtContentPosition(
+  node: InkxNode,
+  x: number,
+  y: number,
+): InkxNode | null {
+  const rect = node.contentRect
+  if (!rect) return null
 
-	if (x < rect.x || x >= rect.x + rect.width || y < rect.y || y >= rect.y + rect.height) {
-		return null;
-	}
+  if (
+    x < rect.x ||
+    x >= rect.x + rect.width ||
+    y < rect.y ||
+    y >= rect.y + rect.height
+  ) {
+    return null
+  }
 
-	for (const child of node.children) {
-		const found = findNodeAtContentPosition(child, x, y);
-		if (found) return found;
-	}
+  for (const child of node.children) {
+    const found = findNodeAtContentPosition(child, x, y)
+    if (found) return found
+  }
 
-	return node;
+  return node
 }

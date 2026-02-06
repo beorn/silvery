@@ -15,84 +15,93 @@
  * ```
  */
 
-import type { Cell, TerminalBuffer } from './buffer.js';
-import type { InkxNode } from './types.js';
+import type { Cell, TerminalBuffer } from "./buffer.js"
+import type { InkxNode } from "./types.js"
 
 /**
  * BoundTerm interface - terminal with node awareness
  */
 export interface BoundTerm {
-	/** Get cell at screen coordinates */
-	cell(x: number, y: number): Cell;
+  /** Get cell at screen coordinates */
+  cell(x: number, y: number): Cell
 
-	/** Get node at screen coordinates */
-	nodeAt(x: number, y: number): InkxNode | null;
+  /** Get node at screen coordinates */
+  nodeAt(x: number, y: number): InkxNode | null
 
-	/** Get visible text (plain, no ANSI) */
-	readonly text: string;
+  /** Get visible text (plain, no ANSI) */
+  readonly text: string
 
-	/** Terminal dimensions */
-	readonly columns: number;
-	readonly rows: number;
+  /** Terminal dimensions */
+  readonly columns: number
+  readonly rows: number
 
-	/** Access underlying buffer */
-	readonly buffer: TerminalBuffer;
+  /** Access underlying buffer */
+  readonly buffer: TerminalBuffer
 }
 
 /**
  * Create a BoundTerm from a buffer and root node getter
  */
 export function createBoundTerm(
-	buffer: TerminalBuffer,
-	getRoot: () => InkxNode,
-	getText: () => string,
+  buffer: TerminalBuffer,
+  getRoot: () => InkxNode,
+  getText: () => string,
 ): BoundTerm {
-	return {
-		cell(x: number, y: number): Cell {
-			return buffer.getCell(x, y);
-		},
+  return {
+    cell(x: number, y: number): Cell {
+      return buffer.getCell(x, y)
+    },
 
-		nodeAt(x: number, y: number): InkxNode | null {
-			const root = getRoot();
-			return findNodeAtScreenPosition(root, x, y);
-		},
+    nodeAt(x: number, y: number): InkxNode | null {
+      const root = getRoot()
+      return findNodeAtScreenPosition(root, x, y)
+    },
 
-		get text(): string {
-			return getText();
-		},
+    get text(): string {
+      return getText()
+    },
 
-		get columns(): number {
-			return buffer.width;
-		},
+    get columns(): number {
+      return buffer.width
+    },
 
-		get rows(): number {
-			return buffer.height;
-		},
+    get rows(): number {
+      return buffer.height
+    },
 
-		get buffer(): TerminalBuffer {
-			return buffer;
-		},
-	};
+    get buffer(): TerminalBuffer {
+      return buffer
+    },
+  }
 }
 
 /**
  * Find the deepest node at the given screen coordinates
  */
-function findNodeAtScreenPosition(node: InkxNode, x: number, y: number): InkxNode | null {
-	const rect = node.screenRect;
-	if (!rect) return null;
+function findNodeAtScreenPosition(
+  node: InkxNode,
+  x: number,
+  y: number,
+): InkxNode | null {
+  const rect = node.screenRect
+  if (!rect) return null
 
-	// Check if point is within this node's bounds
-	if (x < rect.x || x >= rect.x + rect.width || y < rect.y || y >= rect.y + rect.height) {
-		return null;
-	}
+  // Check if point is within this node's bounds
+  if (
+    x < rect.x ||
+    x >= rect.x + rect.width ||
+    y < rect.y ||
+    y >= rect.y + rect.height
+  ) {
+    return null
+  }
 
-	// Check children (deepest match wins)
-	for (const child of node.children) {
-		const found = findNodeAtScreenPosition(child, x, y);
-		if (found) return found;
-	}
+  // Check children (deepest match wins)
+  for (const child of node.children) {
+    const found = findNodeAtScreenPosition(child, x, y)
+    if (found) return found
+  }
 
-	// No child matched, this node is the deepest match
-	return node;
+  // No child matched, this node is the deepest match
+  return node
 }

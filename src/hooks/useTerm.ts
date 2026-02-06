@@ -1,6 +1,6 @@
-import type { Term } from 'chalkx';
-import { useContext } from 'react';
-import { TermContext } from '../context.js';
+import type { Term } from "chalkx"
+import { useContext } from "react"
+import { TermContext } from "../context.js"
 
 /**
  * Hook to access the Term in components.
@@ -17,9 +17,11 @@ import { TermContext } from '../context.js';
  * ```
  */
 export function useTerm(): Term {
-	const term = useContext(TermContext);
-	if (!term) {
-		throw new Error('useTerm must be used within a render(element, term) context');
-	}
-	return term;
+  const term = useContext(TermContext)
+  if (!term) {
+    throw new Error(
+      "useTerm must be used within a render(element, term) context",
+    )
+  }
+  return term
 }

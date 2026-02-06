@@ -12,21 +12,24 @@
  * - Clean shutdown
  */
 
-import { appendFileSync } from 'node:fs';
-import { type Logger, createLogger, createlogger } from '@beorn/logger';
-import { type TerminalBuffer, bufferToText, cellEquals } from './buffer.js';
-import { buildMismatchContext, formatMismatchContext } from './debug-mismatch.js';
+import { appendFileSync } from "node:fs"
+import { type Logger, createLogger, createlogger } from "@beorn/logger"
+import { type TerminalBuffer, bufferToText, cellEquals } from "./buffer.js"
 import {
-	type ResolvedNonTTYMode as ResolvedMode,
-	countLines,
-	createOutputTransformer,
-	resolveNonTTYMode,
-	stripAnsi,
-} from './non-tty.js';
-import { executeRender } from './pipeline.js';
-import type { InkxNode } from './types.js';
+  buildMismatchContext,
+  formatMismatchContext,
+} from "./debug-mismatch.js"
+import {
+  type ResolvedNonTTYMode as ResolvedMode,
+  countLines,
+  createOutputTransformer,
+  resolveNonTTYMode,
+  stripAnsi,
+} from "./non-tty.js"
+import { executeRender } from "./pipeline.js"
+import type { InkxNode } from "./types.js"
 
-const log = createlogger('inkx:scheduler');
+const log = createlogger("inkx:scheduler")
 
 // ============================================================================
 // Errors
@@ -38,10 +41,10 @@ const log = createlogger('inkx:scheduler');
  * a bug in incremental rendering that needs to be fixed.
  */
 export class IncrementalRenderMismatchError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = 'IncrementalRenderMismatchError';
-	}
+  constructor(message: string) {
+    super(message)
+    this.name = "IncrementalRenderMismatchError"
+  }
 }
 
 // ============================================================================
@@ -51,45 +54,45 @@ export class IncrementalRenderMismatchError extends Error {
 /**
  * Non-TTY mode for rendering in non-interactive environments.
  */
-export type NonTTYMode = 'auto' | 'tty' | 'line-by-line' | 'static' | 'plain';
+export type NonTTYMode = "auto" | "tty" | "line-by-line" | "static" | "plain"
 
 /**
  * Resolved non-TTY mode after auto-detection.
  */
-export type ResolvedNonTTYMode = Exclude<NonTTYMode, 'auto'>;
+export type ResolvedNonTTYMode = Exclude<NonTTYMode, "auto">
 
 export interface SchedulerOptions {
-	/** stdout stream for writing output */
-	stdout: NodeJS.WriteStream;
-	/** Root Inkx node */
-	root: InkxNode;
-	/** Debug mode - logs render timing */
-	debug?: boolean;
-	/** Minimum time between frames in ms (default: 16 for ~60fps) */
-	minFrameTime?: number;
-	/** Render mode: fullscreen (absolute positioning) or inline (relative positioning) */
-	mode?: 'fullscreen' | 'inline';
-	/**
-	 * Non-TTY mode for non-interactive environments (default: 'auto')
-	 *
-	 * - 'auto': Detect based on environment
-	 * - 'tty': Force TTY mode
-	 * - 'line-by-line': Simple line output
-	 * - 'static': Only output final frame
-	 * - 'plain': Strip all ANSI codes
-	 */
-	nonTTYMode?: NonTTYMode;
+  /** stdout stream for writing output */
+  stdout: NodeJS.WriteStream
+  /** Root Inkx node */
+  root: InkxNode
+  /** Debug mode - logs render timing */
+  debug?: boolean
+  /** Minimum time between frames in ms (default: 16 for ~60fps) */
+  minFrameTime?: number
+  /** Render mode: fullscreen (absolute positioning) or inline (relative positioning) */
+  mode?: "fullscreen" | "inline"
+  /**
+   * Non-TTY mode for non-interactive environments (default: 'auto')
+   *
+   * - 'auto': Detect based on environment
+   * - 'tty': Force TTY mode
+   * - 'line-by-line': Simple line output
+   * - 'static': Only output final frame
+   * - 'plain': Strip all ANSI codes
+   */
+  nonTTYMode?: NonTTYMode
 }
 
 export interface RenderStats {
-	/** Number of renders executed */
-	renderCount: number;
-	/** Number of renders skipped (batched) */
-	skippedCount: number;
-	/** Last render duration in ms */
-	lastRenderTime: number;
-	/** Average render time in ms */
-	avgRenderTime: number;
+  /** Number of renders executed */
+  renderCount: number
+  /** Number of renders skipped (batched) */
+  skippedCount: number
+  /** Last render duration in ms */
+  lastRenderTime: number
+  /** Average render time in ms */
+  avgRenderTime: number
 }
 
 // ============================================================================
@@ -118,443 +121,453 @@ export interface RenderStats {
  * ```
  */
 export class RenderScheduler {
-	private stdout: NodeJS.WriteStream;
-	private root: InkxNode;
-	private debugMode: boolean;
-	private minFrameTime: number;
-	private mode: 'fullscreen' | 'inline';
-	private nonTTYMode: ResolvedMode;
-	private outputTransformer: (content: string, prevLineCount: number) => string;
-	private log: Logger;
-
-	/** Previous buffer for diffing */
-	private prevBuffer: TerminalBuffer | null = null;
-
-	/** Line count of previous render (for non-TTY modes) */
-	private prevLineCount = 0;
-
-	/** Accumulated output for static mode */
-	private staticOutput = '';
-
-	/** Is a render currently scheduled? */
-	private renderScheduled = false;
-
-	/** Last render timestamp */
-	private lastRenderTime = 0;
-
-	/** Pending frame timeout (for frame rate limiting) */
-	private frameTimeout: ReturnType<typeof setTimeout> | null = null;
-
-	/** Resize listener cleanup */
-	private resizeCleanup: (() => void) | null = null;
-
-	/** Render statistics */
-	private stats: RenderStats = {
-		renderCount: 0,
-		skippedCount: 0,
-		lastRenderTime: 0,
-		avgRenderTime: 0,
-	};
-
-	/** Is the scheduler disposed? */
-	private disposed = false;
-
-	/** Is the scheduler paused? When paused, renders are deferred until resume. */
-	private paused = false;
-
-	/** Was a render requested while paused? */
-	private pendingWhilePaused = false;
-
-	constructor(options: SchedulerOptions) {
-		this.stdout = options.stdout;
-		this.root = options.root;
-		this.debugMode = options.debug ?? false;
-		this.minFrameTime = options.minFrameTime ?? 16;
-		this.mode = options.mode ?? 'fullscreen';
-		this.log = createLogger('inkx:scheduler');
-
-		// Resolve non-TTY mode based on environment
-		this.nonTTYMode = resolveNonTTYMode({
-			mode: options.nonTTYMode,
-			stdout: this.stdout,
-		});
-		this.outputTransformer = createOutputTransformer(this.nonTTYMode);
-
-		log.debug?.(`non-TTY mode resolved to: ${this.nonTTYMode}`);
-
-		// Listen for terminal resize (only in TTY mode)
-		if (this.nonTTYMode === 'tty') {
-			this.setupResizeListener();
-		}
-	}
-
-	/**
-	 * Get the resolved non-TTY mode.
-	 */
-	getNonTTYMode(): ResolvedMode {
-		return this.nonTTYMode;
-	}
-
-	// ==========================================================================
-	// Public API
-	// ==========================================================================
-
-	/**
-	 * Schedule a render on the next microtask.
-	 *
-	 * Multiple calls within the same synchronous execution will be
-	 * coalesced into a single render.
-	 */
-	scheduleRender(): void {
-		if (this.disposed) return;
-
-		if (this.paused) {
-			this.pendingWhilePaused = true;
-			return;
-		}
-
-		if (this.renderScheduled) {
-			this.stats.skippedCount++;
-			log.debug?.(`render skipped (batched), total: ${this.stats.skippedCount}`);
-			return;
-		}
-
-		this.renderScheduled = true;
-		log.debug?.('render scheduled');
-
-		// Use queueMicrotask for batching synchronous updates
-		queueMicrotask(() => {
-			this.renderScheduled = false;
-
-			if (this.disposed) return;
-
-			// Check frame rate limiting
-			const now = Date.now();
-			const timeSinceLastRender = now - this.lastRenderTime;
-
-			if (timeSinceLastRender < this.minFrameTime) {
-				// Schedule for next frame
-				log.debug?.(`frame limited, delay: ${this.minFrameTime - timeSinceLastRender}ms`);
-				this.scheduleNextFrame(this.minFrameTime - timeSinceLastRender);
-			} else {
-				this.executeRender();
-			}
-		});
-	}
-
-	/**
-	 * Force an immediate render, bypassing batching.
-	 */
-	forceRender(): void {
-		if (this.disposed) return;
-
-		if (this.paused) {
-			this.pendingWhilePaused = true;
-			return;
-		}
-
-		// Cancel any pending scheduled render
-		this.renderScheduled = false;
-		if (this.frameTimeout) {
-			clearTimeout(this.frameTimeout);
-			this.frameTimeout = null;
-		}
-
-		this.executeRender();
-	}
-
-	/**
-	 * Get render statistics.
-	 */
-	getStats(): RenderStats {
-		return { ...this.stats };
-	}
-
-	/**
-	 * Pause rendering. While paused, scheduled and forced renders are deferred.
-	 * Input handling continues normally. Call resume() to unpause and force a
-	 * full redraw. Used for screen-switching (alt screen ↔ normal screen).
-	 */
-	pause(): void {
-		if (this.disposed || this.paused) return;
-		this.paused = true;
-		this.pendingWhilePaused = false;
-		log.debug?.('scheduler paused');
-	}
-
-	/**
-	 * Resume rendering after pause. Resets the previous buffer so the next
-	 * render outputs everything (full redraw), then forces an immediate render.
-	 */
-	resume(): void {
-		if (this.disposed || !this.paused) return;
-		this.paused = false;
-		log.debug?.('scheduler resumed');
-
-		// Reset buffer for full redraw (alt screen was switched)
-		this.prevBuffer = null;
-
-		// If anything was deferred, render now
-		if (this.pendingWhilePaused) {
-			this.pendingWhilePaused = false;
-			this.executeRender();
-		}
-	}
-
-	/**
-	 * Whether the scheduler is currently paused.
-	 */
-	isPaused(): boolean {
-		return this.paused;
-	}
-
-	/**
-	 * Clear the terminal and reset buffer.
-	 */
-	clear(): void {
-		if (this.disposed) return;
-
-		// Clear screen and keep cursor hidden
-		this.stdout.write('\x1b[2J\x1b[H\x1b[?25l');
-
-		// Reset buffer so next render outputs everything
-		this.prevBuffer = null;
-	}
-
-	/**
-	 * Dispose the scheduler and clean up resources.
-	 */
-	[Symbol.dispose](): void {
-		this.dispose();
-	}
-
-	dispose(): void {
-		if (this.disposed) return;
-
-		log.info?.(
-			`dispose: renders=${this.stats.renderCount}, skipped=${this.stats.skippedCount}, avg=${Math.round(this.stats.avgRenderTime)}ms`,
-		);
-		this.disposed = true;
-
-		// Cancel pending renders
-		this.renderScheduled = false;
-		if (this.frameTimeout) {
-			clearTimeout(this.frameTimeout);
-			this.frameTimeout = null;
-		}
-
-		// Remove resize listener
-		if (this.resizeCleanup) {
-			this.resizeCleanup();
-			this.resizeCleanup = null;
-		}
-
-		// In static mode, output the final frame on dispose
-		if (this.nonTTYMode === 'static' && this.staticOutput) {
-			this.stdout.write(this.staticOutput);
-			this.stdout.write('\n');
-		}
-	}
-
-	/**
-	 * Get the last rendered output (for static mode).
-	 * Returns the plain text output that would be written on dispose.
-	 */
-	getStaticOutput(): string {
-		return this.staticOutput;
-	}
-
-	// ==========================================================================
-	// Private Methods
-	// ==========================================================================
-
-	/**
-	 * Schedule render for next frame (frame rate limiting).
-	 */
-	private scheduleNextFrame(delay: number): void {
-		if (this.frameTimeout) return;
-
-		this.frameTimeout = setTimeout(() => {
-			this.frameTimeout = null;
-			if (!this.disposed) {
-				this.executeRender();
-			}
-		}, delay);
-	}
-
-	/**
-	 * Execute the actual render.
-	 */
-	private executeRender(): void {
-		using render = this.log.span('render');
-		const startTime = Date.now();
-
-		try {
-			// Get terminal dimensions
-			const width = this.stdout.columns ?? 80;
-			const height = this.stdout.rows ?? 24;
-
-			log.debug?.(
-				`render #${this.stats.renderCount + 1}: ${width}x${height}, nonTTYMode=${this.nonTTYMode}`,
-			);
-
-			// Run render pipeline
-			const { output, buffer } = executeRender(
-				this.root,
-				width,
-				height,
-				this.prevBuffer,
-				this.mode,
-			);
-
-			// Transform output based on non-TTY mode
-			let transformedOutput: string;
-			if (this.nonTTYMode === 'tty') {
-				// Pass through unchanged
-				transformedOutput = output;
-			} else if (this.nonTTYMode === 'static') {
-				// Store for final output, don't write yet
-				this.staticOutput = stripAnsi(output);
-				transformedOutput = '';
-			} else {
-				// Apply line-by-line or plain transformation
-				transformedOutput = this.outputTransformer(output, this.prevLineCount);
-				this.prevLineCount = countLines(output);
-			}
-
-			// Write output if there's any
-			if (transformedOutput.length > 0) {
-				this.stdout.write(transformedOutput);
-			}
-
-			// Save buffer for next diff
-			this.prevBuffer = buffer;
-
-			// INKX_STRICT or INKX_CHECK_INCREMENTAL: compare incremental render against fresh render
-			const strictEnv = process.env.INKX_STRICT || process.env.INKX_CHECK_INCREMENTAL;
-			const strictMode = strictEnv && strictEnv !== '0' && strictEnv !== 'false';
-			if (strictMode && this.stats.renderCount > 0) {
-				const renderNum = this.stats.renderCount + 1;
-				const { buffer: freshBuffer } = executeRender(this.root, width, height, null, {
-					mode: this.mode === 'fullscreen' ? 'fullscreen' : 'inline',
-					skipLayoutNotifications: true,
-				});
-				let found = false;
-				for (let y = 0; y < buffer.height && !found; y++) {
-					for (let x = 0; x < buffer.width && !found; x++) {
-						const a = buffer.getCell(x, y);
-						const b = freshBuffer.getCell(x, y);
-						if (!cellEquals(a, b)) {
-							found = true;
-
-							// Build rich debug context
-							const ctx = buildMismatchContext(this.root, x, y, a, b, renderNum);
-							const debugInfo = formatMismatchContext(ctx);
-
-							// Include text output for full picture
-							const incText = bufferToText(buffer);
-							const freshText = bufferToText(freshBuffer);
-							const msg =
-								debugInfo + `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`;
-
-							if (process.env.DEBUG_LOG) {
-								appendFileSync(process.env.DEBUG_LOG, msg + '\n');
-							}
-							log.error(msg);
-							// Throw special error that won't be caught by general error handler
-							throw new IncrementalRenderMismatchError(msg);
-						}
-					}
-				}
-				if (!found && process.env.DEBUG_LOG) {
-					appendFileSync(
-						process.env.DEBUG_LOG,
-						`INKX_CHECK_INCREMENTAL: render #${renderNum} OK\n`,
-					);
-				}
-			}
-
-			// Update stats
-			const renderTime = Date.now() - startTime;
-			this.stats.renderCount++;
-			this.stats.lastRenderTime = renderTime;
-			this.stats.avgRenderTime =
-				(this.stats.avgRenderTime * (this.stats.renderCount - 1) + renderTime) /
-				this.stats.renderCount;
-			this.lastRenderTime = Date.now();
-
-			// Record span data
-			render.spanData.renderCount = this.stats.renderCount;
-			render.spanData.renderTime = renderTime;
-			render.spanData.bytes = transformedOutput.length;
-
-			log.debug?.(
-				`render #${this.stats.renderCount} complete: ${renderTime}ms, output: ${transformedOutput.length} bytes`,
-			);
-
-			if (this.debugMode) {
-				this.logDebug(`Render #${this.stats.renderCount} took ${renderTime}ms`);
-			}
-		} catch (error) {
-			// Log and re-throw all render errors - the app should handle cleanup
-			log.error(`render error: ${error}`);
-			this.logError('Render error:', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Set up terminal resize listener.
-	 */
-	private setupResizeListener(): void {
-		let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
-
-		const handleResize = () => {
-			// Debounce resize events
-			if (resizeTimeout) {
-				clearTimeout(resizeTimeout);
-			}
-
-			resizeTimeout = setTimeout(() => {
-				resizeTimeout = null;
-
-				// Reset buffer to force full redraw
-				this.prevBuffer = null;
-
-				// Schedule render
-				this.scheduleRender();
-			}, 50); // 50ms debounce
-		};
-
-		this.stdout.on('resize', handleResize);
-
-		this.resizeCleanup = () => {
-			this.stdout.off('resize', handleResize);
-			if (resizeTimeout) {
-				clearTimeout(resizeTimeout);
-			}
-		};
-	}
-
-	/**
-	 * Log debug message.
-	 */
-	private logDebug(message: string): void {
-		// Write to stderr to avoid corrupting terminal output
-		process.stderr.write(`[Inkx Debug] ${message}\n`);
-	}
-
-	/**
-	 * Log error message.
-	 */
-	private logError(message: string, error: unknown): void {
-		process.stderr.write(`[Inkx Error] ${message}\n`);
-		if (error instanceof Error) {
-			process.stderr.write(`${error.stack ?? error.message}\n`);
-		} else {
-			process.stderr.write(`${String(error)}\n`);
-		}
-	}
+  private stdout: NodeJS.WriteStream
+  private root: InkxNode
+  private debugMode: boolean
+  private minFrameTime: number
+  private mode: "fullscreen" | "inline"
+  private nonTTYMode: ResolvedMode
+  private outputTransformer: (content: string, prevLineCount: number) => string
+  private log: Logger
+
+  /** Previous buffer for diffing */
+  private prevBuffer: TerminalBuffer | null = null
+
+  /** Line count of previous render (for non-TTY modes) */
+  private prevLineCount = 0
+
+  /** Accumulated output for static mode */
+  private staticOutput = ""
+
+  /** Is a render currently scheduled? */
+  private renderScheduled = false
+
+  /** Last render timestamp */
+  private lastRenderTime = 0
+
+  /** Pending frame timeout (for frame rate limiting) */
+  private frameTimeout: ReturnType<typeof setTimeout> | null = null
+
+  /** Resize listener cleanup */
+  private resizeCleanup: (() => void) | null = null
+
+  /** Render statistics */
+  private stats: RenderStats = {
+    renderCount: 0,
+    skippedCount: 0,
+    lastRenderTime: 0,
+    avgRenderTime: 0,
+  }
+
+  /** Is the scheduler disposed? */
+  private disposed = false
+
+  /** Is the scheduler paused? When paused, renders are deferred until resume. */
+  private paused = false
+
+  /** Was a render requested while paused? */
+  private pendingWhilePaused = false
+
+  constructor(options: SchedulerOptions) {
+    this.stdout = options.stdout
+    this.root = options.root
+    this.debugMode = options.debug ?? false
+    this.minFrameTime = options.minFrameTime ?? 16
+    this.mode = options.mode ?? "fullscreen"
+    this.log = createLogger("inkx:scheduler")
+
+    // Resolve non-TTY mode based on environment
+    this.nonTTYMode = resolveNonTTYMode({
+      mode: options.nonTTYMode,
+      stdout: this.stdout,
+    })
+    this.outputTransformer = createOutputTransformer(this.nonTTYMode)
+
+    log.debug?.(`non-TTY mode resolved to: ${this.nonTTYMode}`)
+
+    // Listen for terminal resize (only in TTY mode)
+    if (this.nonTTYMode === "tty") {
+      this.setupResizeListener()
+    }
+  }
+
+  /**
+   * Get the resolved non-TTY mode.
+   */
+  getNonTTYMode(): ResolvedMode {
+    return this.nonTTYMode
+  }
+
+  // ==========================================================================
+  // Public API
+  // ==========================================================================
+
+  /**
+   * Schedule a render on the next microtask.
+   *
+   * Multiple calls within the same synchronous execution will be
+   * coalesced into a single render.
+   */
+  scheduleRender(): void {
+    if (this.disposed) return
+
+    if (this.paused) {
+      this.pendingWhilePaused = true
+      return
+    }
+
+    if (this.renderScheduled) {
+      this.stats.skippedCount++
+      log.debug?.(`render skipped (batched), total: ${this.stats.skippedCount}`)
+      return
+    }
+
+    this.renderScheduled = true
+    log.debug?.("render scheduled")
+
+    // Use queueMicrotask for batching synchronous updates
+    queueMicrotask(() => {
+      this.renderScheduled = false
+
+      if (this.disposed) return
+
+      // Check frame rate limiting
+      const now = Date.now()
+      const timeSinceLastRender = now - this.lastRenderTime
+
+      if (timeSinceLastRender < this.minFrameTime) {
+        // Schedule for next frame
+        log.debug?.(
+          `frame limited, delay: ${this.minFrameTime - timeSinceLastRender}ms`,
+        )
+        this.scheduleNextFrame(this.minFrameTime - timeSinceLastRender)
+      } else {
+        this.executeRender()
+      }
+    })
+  }
+
+  /**
+   * Force an immediate render, bypassing batching.
+   */
+  forceRender(): void {
+    if (this.disposed) return
+
+    if (this.paused) {
+      this.pendingWhilePaused = true
+      return
+    }
+
+    // Cancel any pending scheduled render
+    this.renderScheduled = false
+    if (this.frameTimeout) {
+      clearTimeout(this.frameTimeout)
+      this.frameTimeout = null
+    }
+
+    this.executeRender()
+  }
+
+  /**
+   * Get render statistics.
+   */
+  getStats(): RenderStats {
+    return { ...this.stats }
+  }
+
+  /**
+   * Pause rendering. While paused, scheduled and forced renders are deferred.
+   * Input handling continues normally. Call resume() to unpause and force a
+   * full redraw. Used for screen-switching (alt screen ↔ normal screen).
+   */
+  pause(): void {
+    if (this.disposed || this.paused) return
+    this.paused = true
+    this.pendingWhilePaused = false
+    log.debug?.("scheduler paused")
+  }
+
+  /**
+   * Resume rendering after pause. Resets the previous buffer so the next
+   * render outputs everything (full redraw), then forces an immediate render.
+   */
+  resume(): void {
+    if (this.disposed || !this.paused) return
+    this.paused = false
+    log.debug?.("scheduler resumed")
+
+    // Reset buffer for full redraw (alt screen was switched)
+    this.prevBuffer = null
+
+    // If anything was deferred, render now
+    if (this.pendingWhilePaused) {
+      this.pendingWhilePaused = false
+      this.executeRender()
+    }
+  }
+
+  /**
+   * Whether the scheduler is currently paused.
+   */
+  isPaused(): boolean {
+    return this.paused
+  }
+
+  /**
+   * Clear the terminal and reset buffer.
+   */
+  clear(): void {
+    if (this.disposed) return
+
+    // Clear screen and keep cursor hidden
+    this.stdout.write("\x1b[2J\x1b[H\x1b[?25l")
+
+    // Reset buffer so next render outputs everything
+    this.prevBuffer = null
+  }
+
+  /**
+   * Dispose the scheduler and clean up resources.
+   */
+  [Symbol.dispose](): void {
+    this.dispose()
+  }
+
+  dispose(): void {
+    if (this.disposed) return
+
+    log.info?.(
+      `dispose: renders=${this.stats.renderCount}, skipped=${this.stats.skippedCount}, avg=${Math.round(this.stats.avgRenderTime)}ms`,
+    )
+    this.disposed = true
+
+    // Cancel pending renders
+    this.renderScheduled = false
+    if (this.frameTimeout) {
+      clearTimeout(this.frameTimeout)
+      this.frameTimeout = null
+    }
+
+    // Remove resize listener
+    if (this.resizeCleanup) {
+      this.resizeCleanup()
+      this.resizeCleanup = null
+    }
+
+    // In static mode, output the final frame on dispose
+    if (this.nonTTYMode === "static" && this.staticOutput) {
+      this.stdout.write(this.staticOutput)
+      this.stdout.write("\n")
+    }
+  }
+
+  /**
+   * Get the last rendered output (for static mode).
+   * Returns the plain text output that would be written on dispose.
+   */
+  getStaticOutput(): string {
+    return this.staticOutput
+  }
+
+  // ==========================================================================
+  // Private Methods
+  // ==========================================================================
+
+  /**
+   * Schedule render for next frame (frame rate limiting).
+   */
+  private scheduleNextFrame(delay: number): void {
+    if (this.frameTimeout) return
+
+    this.frameTimeout = setTimeout(() => {
+      this.frameTimeout = null
+      if (!this.disposed) {
+        this.executeRender()
+      }
+    }, delay)
+  }
+
+  /**
+   * Execute the actual render.
+   */
+  private executeRender(): void {
+    using render = this.log.span("render")
+    const startTime = Date.now()
+
+    try {
+      // Get terminal dimensions
+      const width = this.stdout.columns ?? 80
+      const height = this.stdout.rows ?? 24
+
+      log.debug?.(
+        `render #${this.stats.renderCount + 1}: ${width}x${height}, nonTTYMode=${this.nonTTYMode}`,
+      )
+
+      // Run render pipeline
+      const { output, buffer } = executeRender(
+        this.root,
+        width,
+        height,
+        this.prevBuffer,
+        this.mode,
+      )
+
+      // Transform output based on non-TTY mode
+      let transformedOutput: string
+      if (this.nonTTYMode === "tty") {
+        // Pass through unchanged
+        transformedOutput = output
+      } else if (this.nonTTYMode === "static") {
+        // Store for final output, don't write yet
+        this.staticOutput = stripAnsi(output)
+        transformedOutput = ""
+      } else {
+        // Apply line-by-line or plain transformation
+        transformedOutput = this.outputTransformer(output, this.prevLineCount)
+        this.prevLineCount = countLines(output)
+      }
+
+      // Write output if there's any
+      if (transformedOutput.length > 0) {
+        this.stdout.write(transformedOutput)
+      }
+
+      // Save buffer for next diff
+      this.prevBuffer = buffer
+
+      // INKX_STRICT or INKX_CHECK_INCREMENTAL: compare incremental render against fresh render
+      const strictEnv =
+        process.env.INKX_STRICT || process.env.INKX_CHECK_INCREMENTAL
+      const strictMode = strictEnv && strictEnv !== "0" && strictEnv !== "false"
+      if (strictMode && this.stats.renderCount > 0) {
+        const renderNum = this.stats.renderCount + 1
+        const { buffer: freshBuffer } = executeRender(
+          this.root,
+          width,
+          height,
+          null,
+          {
+            mode: this.mode === "fullscreen" ? "fullscreen" : "inline",
+            skipLayoutNotifications: true,
+          },
+        )
+        let found = false
+        for (let y = 0; y < buffer.height && !found; y++) {
+          for (let x = 0; x < buffer.width && !found; x++) {
+            const a = buffer.getCell(x, y)
+            const b = freshBuffer.getCell(x, y)
+            if (!cellEquals(a, b)) {
+              found = true
+
+              // Build rich debug context
+              const ctx = buildMismatchContext(this.root, x, y, a, b, renderNum)
+              const debugInfo = formatMismatchContext(ctx)
+
+              // Include text output for full picture
+              const incText = bufferToText(buffer)
+              const freshText = bufferToText(freshBuffer)
+              const msg =
+                debugInfo +
+                `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
+
+              if (process.env.DEBUG_LOG) {
+                appendFileSync(process.env.DEBUG_LOG, msg + "\n")
+              }
+              log.error(msg)
+              // Throw special error that won't be caught by general error handler
+              throw new IncrementalRenderMismatchError(msg)
+            }
+          }
+        }
+        if (!found && process.env.DEBUG_LOG) {
+          appendFileSync(
+            process.env.DEBUG_LOG,
+            `INKX_CHECK_INCREMENTAL: render #${renderNum} OK\n`,
+          )
+        }
+      }
+
+      // Update stats
+      const renderTime = Date.now() - startTime
+      this.stats.renderCount++
+      this.stats.lastRenderTime = renderTime
+      this.stats.avgRenderTime =
+        (this.stats.avgRenderTime * (this.stats.renderCount - 1) + renderTime) /
+        this.stats.renderCount
+      this.lastRenderTime = Date.now()
+
+      // Record span data
+      render.spanData.renderCount = this.stats.renderCount
+      render.spanData.renderTime = renderTime
+      render.spanData.bytes = transformedOutput.length
+
+      log.debug?.(
+        `render #${this.stats.renderCount} complete: ${renderTime}ms, output: ${transformedOutput.length} bytes`,
+      )
+
+      if (this.debugMode) {
+        this.logDebug(`Render #${this.stats.renderCount} took ${renderTime}ms`)
+      }
+    } catch (error) {
+      // Log and re-throw all render errors - the app should handle cleanup
+      log.error(`render error: ${error}`)
+      this.logError("Render error:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Set up terminal resize listener.
+   */
+  private setupResizeListener(): void {
+    let resizeTimeout: ReturnType<typeof setTimeout> | null = null
+
+    const handleResize = () => {
+      // Debounce resize events
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout)
+      }
+
+      resizeTimeout = setTimeout(() => {
+        resizeTimeout = null
+
+        // Reset buffer to force full redraw
+        this.prevBuffer = null
+
+        // Schedule render
+        this.scheduleRender()
+      }, 50) // 50ms debounce
+    }
+
+    this.stdout.on("resize", handleResize)
+
+    this.resizeCleanup = () => {
+      this.stdout.off("resize", handleResize)
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout)
+      }
+    }
+  }
+
+  /**
+   * Log debug message.
+   */
+  private logDebug(message: string): void {
+    // Write to stderr to avoid corrupting terminal output
+    process.stderr.write(`[Inkx Debug] ${message}\n`)
+  }
+
+  /**
+   * Log error message.
+   */
+  private logError(message: string, error: unknown): void {
+    process.stderr.write(`[Inkx Error] ${message}\n`)
+    if (error instanceof Error) {
+      process.stderr.write(`${error.stack ?? error.message}\n`)
+    } else {
+      process.stderr.write(`${String(error)}\n`)
+    }
+  }
 }
 
 // ============================================================================
@@ -568,7 +581,7 @@ export class RenderScheduler {
  * @returns A new RenderScheduler instance
  */
 export function createScheduler(options: SchedulerOptions): RenderScheduler {
-	return new RenderScheduler(options);
+  return new RenderScheduler(options)
 }
 
 // ============================================================================
@@ -580,7 +593,11 @@ export function createScheduler(options: SchedulerOptions): RenderScheduler {
  *
  * Does not batch or diff - just runs the pipeline and returns ANSI output.
  */
-export function renderToString(root: InkxNode, width: number, height: number): string {
-	const { output } = executeRender(root, width, height, null);
-	return output;
+export function renderToString(
+  root: InkxNode,
+  width: number,
+  height: number,
+): string {
+  const { output } = executeRender(root, width, height, null)
+  return output
 }

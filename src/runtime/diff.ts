@@ -5,13 +5,13 @@
  * This is an internal function used by the runtime.
  */
 
-import { outputPhase } from '../pipeline/index.js';
-import type { Buffer } from './types.js';
+import { outputPhase } from "../pipeline/index.js"
+import type { Buffer } from "./types.js"
 
 /**
  * Diff mode for ANSI output.
  */
-export type DiffMode = 'fullscreen' | 'inline';
+export type DiffMode = "fullscreen" | "inline"
 
 /**
  * Compute the minimal ANSI diff between two buffers.
@@ -31,11 +31,15 @@ export type DiffMode = 'fullscreen' | 'inline';
  * process.stdout.write(patch)
  * ```
  */
-export function diff(prev: Buffer | null, next: Buffer, mode: DiffMode = 'fullscreen'): string {
-	const prevBuffer = prev?._buffer ?? null;
-	const nextBuffer = next._buffer;
+export function diff(
+  prev: Buffer | null,
+  next: Buffer,
+  mode: DiffMode = "fullscreen",
+): string {
+  const prevBuffer = prev?._buffer ?? null
+  const nextBuffer = next._buffer
 
-	return outputPhase(prevBuffer, nextBuffer, mode);
+  return outputPhase(prevBuffer, nextBuffer, mode)
 }
 
 /**
@@ -45,6 +49,6 @@ export function diff(prev: Buffer | null, next: Buffer, mode: DiffMode = 'fullsc
  * @param mode Render mode (fullscreen or inline)
  * @returns Full ANSI output
  */
-export function render(buffer: Buffer, mode: DiffMode = 'fullscreen'): string {
-	return outputPhase(null, buffer._buffer, mode);
+export function render(buffer: Buffer, mode: DiffMode = "fullscreen"): string {
+  return outputPhase(null, buffer._buffer, mode)
 }
