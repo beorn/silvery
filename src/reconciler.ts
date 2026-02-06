@@ -10,10 +10,10 @@
  */
 
 export {
-  // Main exports (used by render.tsx and testing/index.tsx)
-  reconciler,
-  createContainer,
-  getContainerRoot,
-  // Types
-  type Container,
-} from "./reconciler/index.js"
+	// Main exports (used by render.tsx and testing/index.tsx)
+	reconciler,
+	createContainer,
+	getContainerRoot,
+	// Types
+	type Container,
+} from './reconciler/index.js';

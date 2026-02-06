@@ -33,43 +33,43 @@
 // =============================================================================
 
 export {
-  withDiagnostics,
-  VirtualTerminal,
-  type DiagnosticOptions,
-} from "../with-diagnostics.js"
+	withDiagnostics,
+	VirtualTerminal,
+	type DiagnosticOptions,
+} from '../with-diagnostics.js';
 
 // =============================================================================
 // Error Types
 // =============================================================================
 
-export { IncrementalRenderMismatchError } from "../scheduler.js"
+export { IncrementalRenderMismatchError } from '../scheduler.js';
 
 // =============================================================================
 // Buffer Comparison
 // =============================================================================
 
 export {
-  compareBuffers,
-  formatMismatch,
-  type BufferMismatch,
-} from "../testing/compare-buffers.js"
+	compareBuffers,
+	formatMismatch,
+	type BufferMismatch,
+} from '../testing/compare-buffers.js';
 
 // =============================================================================
 // Pipeline Internals (for manual ANSI replay verification)
 // =============================================================================
 
-export { outputPhase } from "../pipeline/index.js"
+export { outputPhase } from '../pipeline/index.js';
 
 // =============================================================================
 // Mismatch Debug Utilities
 // =============================================================================
 
 export {
-  findNodeAtPosition,
-  findAllContainingNodes,
-  getNodeDebugInfo,
-  buildMismatchContext,
-  formatMismatchContext,
-  type NodeDebugInfo,
-  type MismatchDebugContext,
-} from "../debug-mismatch.js"
+	findNodeAtPosition,
+	findAllContainingNodes,
+	getNodeDebugInfo,
+	buildMismatchContext,
+	formatMismatchContext,
+	type NodeDebugInfo,
+	type MismatchDebugContext,
+} from '../debug-mismatch.js';

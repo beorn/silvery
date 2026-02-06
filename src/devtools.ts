@@ -15,9 +15,9 @@
  * @module
  */
 
-import { reconciler } from "./reconciler.js"
+import { reconciler } from './reconciler.js';
 
-let connected = false
+let connected = false;
 
 /**
  * Connect to React DevTools standalone app.
@@ -36,70 +36,70 @@ let connected = false
  * ```
  */
 export async function connectDevTools(): Promise<boolean> {
-  if (connected) return true
+	if (connected) return true;
 
-  try {
-    // Polyfill WebSocket for Node.js environments (required by react-devtools-core)
-    if (typeof globalThis.WebSocket === "undefined") {
-      try {
-        const ws = await import("ws")
-        // @ts-expect-error -- ws default export is compatible with browser WebSocket
-        globalThis.WebSocket = ws.default ?? ws
-      } catch {
-        // ws not available -- devtools won't be able to connect
-        console.warn(
-          "inkx devtools: WebSocket polyfill (ws) not available. " +
-            "Install ws for DevTools support: bun add -d ws",
-        )
-        return false
-      }
-    }
+	try {
+		// Polyfill WebSocket for Node.js environments (required by react-devtools-core)
+		if (typeof globalThis.WebSocket === 'undefined') {
+			try {
+				const ws = await import('ws');
+				// @ts-expect-error -- ws default export is compatible with browser WebSocket
+				globalThis.WebSocket = ws.default ?? ws;
+			} catch {
+				// ws not available -- devtools won't be able to connect
+				console.warn(
+					'inkx devtools: WebSocket polyfill (ws) not available. ' +
+						'Install ws for DevTools support: bun add -d ws',
+				);
+				return false;
+			}
+		}
 
-    // Ensure window/self exist for react-devtools-core internals
-    if (typeof globalThis.window === "undefined") {
-      // @ts-expect-error -- polyfill for devtools
-      globalThis.window = globalThis
-    }
+		// Ensure window/self exist for react-devtools-core internals
+		if (typeof globalThis.window === 'undefined') {
+			// @ts-expect-error -- polyfill for devtools
+			globalThis.window = globalThis;
+		}
 
-    // Configure component filters to hide inkx internals from the DevTools tree.
-    // Filter types from react-devtools-shared/src/types.js:
-    //   1 = ComponentFilterElementType, value 7 = HostComponent
-    //   2 = ComponentFilterDisplayName (regex on displayName)
-    if (!globalThis.__REACT_DEVTOOLS_COMPONENT_FILTERS__) {
-      globalThis.__REACT_DEVTOOLS_COMPONENT_FILTERS__ = [
-        { type: 1, value: 7, isEnabled: true },
-        { type: 2, value: "InkxApp", isEnabled: true, isValid: true },
-      ]
-    }
+		// Configure component filters to hide inkx internals from the DevTools tree.
+		// Filter types from react-devtools-shared/src/types.js:
+		//   1 = ComponentFilterElementType, value 7 = HostComponent
+		//   2 = ComponentFilterDisplayName (regex on displayName)
+		if (!globalThis.__REACT_DEVTOOLS_COMPONENT_FILTERS__) {
+			globalThis.__REACT_DEVTOOLS_COMPONENT_FILTERS__ = [
+				{ type: 1, value: 7, isEnabled: true },
+				{ type: 2, value: 'InkxApp', isEnabled: true, isValid: true },
+			];
+		}
 
-    // @ts-expect-error -- react-devtools-core has no type declarations
-    const devtools = await import("react-devtools-core")
-    devtools.initialize()
-    devtools.connectToDevTools()
+		// @ts-expect-error -- react-devtools-core has no type declarations
+		const devtools = await import('react-devtools-core');
+		devtools.initialize();
+		devtools.connectToDevTools();
 
-    // Inject renderer info so DevTools can identify inkx.
-    // rendererPackageName and rendererVersion are read from the host config
-    // passed to Reconciler() -- see reconciler/host-config.ts.
-    reconciler.injectIntoDevTools()
+		// Inject renderer info so DevTools can identify inkx.
+		// rendererPackageName and rendererVersion are read from the host config
+		// passed to Reconciler() -- see reconciler/host-config.ts.
+		reconciler.injectIntoDevTools();
 
-    connected = true
-    return true
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error)
-    console.warn(
-      `inkx devtools: Failed to connect to React DevTools. ` +
-        `Install react-devtools-core: bun add -d react-devtools-core\n` +
-        `  Error: ${message}`,
-    )
-    return false
-  }
+		connected = true;
+		return true;
+	} catch (error: unknown) {
+		const message = error instanceof Error ? error.message : String(error);
+		console.warn(
+			`inkx devtools: Failed to connect to React DevTools. ` +
+				`Install react-devtools-core: bun add -d react-devtools-core\n` +
+				`  Error: ${message}`,
+		);
+		return false;
+	}
 }
 
 /**
  * Check if DevTools are currently connected.
  */
 export function isDevToolsConnected(): boolean {
-  return connected
+	return connected;
 }
 
 /**
@@ -107,21 +107,18 @@ export function isDevToolsConnected(): boolean {
  * Called internally during render initialization.
  */
 export async function autoConnectDevTools(): Promise<void> {
-  if (
-    process.env.DEBUG_DEVTOOLS === "1" ||
-    process.env.DEBUG_DEVTOOLS === "true"
-  ) {
-    await connectDevTools()
-  }
+	if (process.env.DEBUG_DEVTOOLS === '1' || process.env.DEBUG_DEVTOOLS === 'true') {
+		await connectDevTools();
+	}
 }
 
 // Global type augmentation for devtools polyfills
 declare global {
-  // biome-ignore lint/style/noVar: global augmentation requires var
-  var __REACT_DEVTOOLS_COMPONENT_FILTERS__: Array<{
-    type: number
-    value: number | string
-    isEnabled: boolean
-    isValid?: boolean
-  }>
+	// biome-ignore lint/style/noVar: global augmentation requires var
+	var __REACT_DEVTOOLS_COMPONENT_FILTERS__: Array<{
+		type: number;
+		value: number | string;
+		isEnabled: boolean;
+		isValid?: boolean;
+	}>;
 }
