@@ -41,48 +41,43 @@
  * ```
  */
 export async function* merge<T>(
-  ...sources: AsyncIterable<T>[]
+	...sources: AsyncIterable<T>[]
 ): AsyncGenerator<T, void, undefined> {
-  if (sources.length === 0) return
+	if (sources.length === 0) return;
 
-  // Track active iterators and their pending promises
-  const iterators = sources.map((source) => source[Symbol.asyncIterator]())
-  const pending = new Map<
-    number,
-    Promise<{ index: number; result: IteratorResult<T, unknown> }>
-  >()
+	// Track active iterators and their pending promises
+	const iterators = sources.map((source) => source[Symbol.asyncIterator]());
+	const pending = new Map<number, Promise<{ index: number; result: IteratorResult<T, unknown> }>>();
 
-  // Start all iterators
-  for (let i = 0; i < iterators.length; i++) {
-    pending.set(
-      i,
-      iterators[i]!.next().then((result) => ({ index: i, result })),
-    )
-  }
+	// Start all iterators
+	for (let i = 0; i < iterators.length; i++) {
+		pending.set(
+			i,
+			iterators[i]!.next().then((result) => ({ index: i, result })),
+		);
+	}
 
-  try {
-    while (pending.size > 0) {
-      // Race all pending promises
-      const { index, result } = await Promise.race(pending.values())
+	try {
+		while (pending.size > 0) {
+			// Race all pending promises
+			const { index, result } = await Promise.race(pending.values());
 
-      if (result.done) {
-        // This source is exhausted, remove it
-        pending.delete(index)
-      } else {
-        // Yield the value and request next from this source
-        yield result.value
-        pending.set(
-          index,
-          iterators[index]!.next().then((result) => ({ index, result })),
-        )
-      }
-    }
-  } finally {
-    // Clean up all iterators on early exit or error
-    await Promise.all(
-      iterators.map((it) => (it.return ? it.return() : Promise.resolve())),
-    )
-  }
+			if (result.done) {
+				// This source is exhausted, remove it
+				pending.delete(index);
+			} else {
+				// Yield the value and request next from this source
+				yield result.value;
+				pending.set(
+					index,
+					iterators[index]!.next().then((result) => ({ index, result })),
+				);
+			}
+		}
+	} finally {
+		// Clean up all iterators on early exit or error
+		await Promise.all(iterators.map((it) => (it.return ? it.return() : Promise.resolve())));
+	}
 }
 
 /**
@@ -94,20 +89,20 @@ export async function* merge<T>(
  * ```
  */
 export async function* map<T, U>(
-  source: AsyncIterable<T>,
-  fn: (value: T) => U,
+	source: AsyncIterable<T>,
+	fn: (value: T) => U,
 ): AsyncGenerator<U, void, undefined> {
-  const iterator = source[Symbol.asyncIterator]()
-  try {
-    // Use the iterator directly to avoid double-iteration
-    for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
-      yield fn(value)
-    }
-  } finally {
-    if (iterator.return) {
-      await iterator.return()
-    }
-  }
+	const iterator = source[Symbol.asyncIterator]();
+	try {
+		// Use the iterator directly to avoid double-iteration
+		for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
+			yield fn(value);
+		}
+	} finally {
+		if (iterator.return) {
+			await iterator.return();
+		}
+	}
 }
 
 /**
@@ -119,21 +114,21 @@ export async function* map<T, U>(
  * ```
  */
 export async function* filter<T>(
-  source: AsyncIterable<T>,
-  predicate: (value: T) => boolean,
+	source: AsyncIterable<T>,
+	predicate: (value: T) => boolean,
 ): AsyncGenerator<T, void, undefined> {
-  const iterator = source[Symbol.asyncIterator]()
-  try {
-    for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
-      if (predicate(value)) {
-        yield value
-      }
-    }
-  } finally {
-    if (iterator.return) {
-      await iterator.return()
-    }
-  }
+	const iterator = source[Symbol.asyncIterator]();
+	try {
+		for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
+			if (predicate(value)) {
+				yield value;
+			}
+		}
+	} finally {
+		if (iterator.return) {
+			await iterator.return();
+		}
+	}
 }
 
 /**
@@ -147,22 +142,22 @@ export async function* filter<T>(
  * ```
  */
 export async function* filterMap<T, U>(
-  source: AsyncIterable<T>,
-  fn: (value: T) => U | undefined,
+	source: AsyncIterable<T>,
+	fn: (value: T) => U | undefined,
 ): AsyncGenerator<U, void, undefined> {
-  const iterator = source[Symbol.asyncIterator]()
-  try {
-    for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
-      const mapped = fn(value)
-      if (mapped !== undefined) {
-        yield mapped
-      }
-    }
-  } finally {
-    if (iterator.return) {
-      await iterator.return()
-    }
-  }
+	const iterator = source[Symbol.asyncIterator]();
+	try {
+		for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
+			const mapped = fn(value);
+			if (mapped !== undefined) {
+				yield mapped;
+			}
+		}
+	} finally {
+		if (iterator.return) {
+			await iterator.return();
+		}
+	}
 }
 
 /**
@@ -180,38 +175,38 @@ export async function* filterMap<T, U>(
  * ```
  */
 export async function* takeUntil<T>(
-  source: AsyncIterable<T>,
-  signal: AbortSignal,
+	source: AsyncIterable<T>,
+	signal: AbortSignal,
 ): AsyncGenerator<T, void, undefined> {
-  if (signal.aborted) return
+	if (signal.aborted) return;
 
-  const iterator = source[Symbol.asyncIterator]()
+	const iterator = source[Symbol.asyncIterator]();
 
-  // Create a promise that resolves when signal aborts
-  let abortResolve: () => void
-  const abortPromise = new Promise<void>((resolve) => {
-    abortResolve = resolve
-  })
-  const onAbort = () => abortResolve()
-  signal.addEventListener("abort", onAbort, { once: true })
+	// Create a promise that resolves when signal aborts
+	let abortResolve: () => void;
+	const abortPromise = new Promise<void>((resolve) => {
+		abortResolve = resolve;
+	});
+	const onAbort = () => abortResolve();
+	signal.addEventListener('abort', onAbort, { once: true });
 
-  try {
-    while (!signal.aborted) {
-      // Race between next value and abort
-      const result = await Promise.race([
-        iterator.next(),
-        abortPromise.then(() => ({ done: true, value: undefined }) as const),
-      ])
+	try {
+		while (!signal.aborted) {
+			// Race between next value and abort
+			const result = await Promise.race([
+				iterator.next(),
+				abortPromise.then(() => ({ done: true, value: undefined }) as const),
+			]);
 
-      if (result.done) break
-      yield result.value as T
-    }
-  } finally {
-    signal.removeEventListener("abort", onAbort)
-    if (iterator.return) {
-      await iterator.return()
-    }
-  }
+			if (result.done) break;
+			yield result.value as T;
+		}
+	} finally {
+		signal.removeEventListener('abort', onAbort);
+		if (iterator.return) {
+			await iterator.return();
+		}
+	}
 }
 
 /**
@@ -223,25 +218,25 @@ export async function* takeUntil<T>(
  * ```
  */
 export async function* take<T>(
-  source: AsyncIterable<T>,
-  count: number,
+	source: AsyncIterable<T>,
+	count: number,
 ): AsyncGenerator<T, void, undefined> {
-  if (count <= 0) return
+	if (count <= 0) return;
 
-  const iterator = source[Symbol.asyncIterator]()
-  let taken = 0
+	const iterator = source[Symbol.asyncIterator]();
+	let taken = 0;
 
-  try {
-    for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
-      yield value
-      taken++
-      if (taken >= count) break
-    }
-  } finally {
-    if (iterator.return) {
-      await iterator.return()
-    }
-  }
+	try {
+		for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
+			yield value;
+			taken++;
+			if (taken >= count) break;
+		}
+	} finally {
+		if (iterator.return) {
+			await iterator.return();
+		}
+	}
 }
 
 /**
@@ -255,12 +250,10 @@ export async function* take<T>(
  * ])
  * ```
  */
-export async function* fromArray<T>(
-  items: T[],
-): AsyncGenerator<T, void, undefined> {
-  for (const item of items) {
-    yield item
-  }
+export async function* fromArray<T>(items: T[]): AsyncGenerator<T, void, undefined> {
+	for (const item of items) {
+		yield item;
+	}
 }
 
 /**
@@ -272,13 +265,13 @@ export async function* fromArray<T>(
  * ```
  */
 export async function* fromArrayWithDelay<T>(
-  items: T[],
-  delayMs: number,
+	items: T[],
+	delayMs: number,
 ): AsyncGenerator<T, void, undefined> {
-  for (const item of items) {
-    await new Promise((resolve) => setTimeout(resolve, delayMs))
-    yield item
-  }
+	for (const item of items) {
+		await new Promise((resolve) => setTimeout(resolve, delayMs));
+		yield item;
+	}
 }
 
 /**
@@ -293,25 +286,25 @@ export async function* fromArrayWithDelay<T>(
  * ```
  */
 export async function* throttle<T>(
-  source: AsyncIterable<T>,
-  ms: number,
+	source: AsyncIterable<T>,
+	ms: number,
 ): AsyncGenerator<T, void, undefined> {
-  const iterator = source[Symbol.asyncIterator]()
-  let lastEmit = 0
+	const iterator = source[Symbol.asyncIterator]();
+	let lastEmit = 0;
 
-  try {
-    for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
-      const now = Date.now()
-      if (now - lastEmit >= ms) {
-        lastEmit = now
-        yield value
-      }
-    }
-  } finally {
-    if (iterator.return) {
-      await iterator.return()
-    }
-  }
+	try {
+		for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
+			const now = Date.now();
+			if (now - lastEmit >= ms) {
+				lastEmit = now;
+				yield value;
+			}
+		}
+	} finally {
+		if (iterator.return) {
+			await iterator.return();
+		}
+	}
 }
 
 /**
@@ -328,26 +321,26 @@ export async function* throttle<T>(
  * ```
  */
 export async function* debounce<T>(
-  source: AsyncIterable<T>,
-  ms: number,
+	source: AsyncIterable<T>,
+	ms: number,
 ): AsyncGenerator<T, void, undefined> {
-  const iterator = source[Symbol.asyncIterator]()
-  let last: { value: T } | undefined
+	const iterator = source[Symbol.asyncIterator]();
+	let last: { value: T } | undefined;
 
-  try {
-    for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
-      last = { value }
-    }
+	try {
+		for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
+			last = { value };
+		}
 
-    if (last) {
-      await new Promise((r) => setTimeout(r, ms))
-      yield last.value
-    }
-  } finally {
-    if (iterator.return) {
-      await iterator.return()
-    }
-  }
+		if (last) {
+			await new Promise((r) => setTimeout(r, ms));
+			yield last.value;
+		}
+	} finally {
+		if (iterator.return) {
+			await iterator.return();
+		}
+	}
 }
 
 /**
@@ -361,37 +354,37 @@ export async function* debounce<T>(
  * ```
  */
 export function batch<T>(
-  source: AsyncIterable<T>,
-  size: number,
+	source: AsyncIterable<T>,
+	size: number,
 ): AsyncGenerator<T[], void, undefined> {
-  if (size <= 0) throw new Error("Batch size must be positive")
-  return batchImpl(source, size)
+	if (size <= 0) throw new Error('Batch size must be positive');
+	return batchImpl(source, size);
 }
 
 async function* batchImpl<T>(
-  source: AsyncIterable<T>,
-  size: number,
+	source: AsyncIterable<T>,
+	size: number,
 ): AsyncGenerator<T[], void, undefined> {
-  const iterator = source[Symbol.asyncIterator]()
-  let buffer: T[] = []
+	const iterator = source[Symbol.asyncIterator]();
+	let buffer: T[] = [];
 
-  try {
-    for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
-      buffer.push(value)
-      if (buffer.length >= size) {
-        yield buffer
-        buffer = []
-      }
-    }
-    // Emit remaining items
-    if (buffer.length > 0) {
-      yield buffer
-    }
-  } finally {
-    if (iterator.return) {
-      await iterator.return()
-    }
-  }
+	try {
+		for await (const value of { [Symbol.asyncIterator]: () => iterator }) {
+			buffer.push(value);
+			if (buffer.length >= size) {
+				yield buffer;
+				buffer = [];
+			}
+		}
+		// Emit remaining items
+		if (buffer.length > 0) {
+			yield buffer;
+		}
+	} finally {
+		if (iterator.return) {
+			await iterator.return();
+		}
+	}
 }
 
 /**
@@ -403,11 +396,11 @@ async function* batchImpl<T>(
  * ```
  */
 export async function* concat<T>(
-  ...sources: AsyncIterable<T>[]
+	...sources: AsyncIterable<T>[]
 ): AsyncGenerator<T, void, undefined> {
-  for (const source of sources) {
-    yield* source
-  }
+	for (const source of sources) {
+		yield* source;
+	}
 }
 
 /**
@@ -420,22 +413,20 @@ export async function* concat<T>(
  * ```
  */
 export async function* zip<T extends unknown[]>(
-  ...sources: { [K in keyof T]: AsyncIterable<T[K]> }
+	...sources: { [K in keyof T]: AsyncIterable<T[K]> }
 ): AsyncGenerator<T, void, undefined> {
-  const iterators = sources.map((source) => source[Symbol.asyncIterator]())
+	const iterators = sources.map((source) => source[Symbol.asyncIterator]());
 
-  try {
-    while (true) {
-      const results = await Promise.all(iterators.map((it) => it.next()))
+	try {
+		while (true) {
+			const results = await Promise.all(iterators.map((it) => it.next()));
 
-      // If any source is done, we're done
-      if (results.some((r) => r.done)) break
+			// If any source is done, we're done
+			if (results.some((r) => r.done)) break;
 
-      yield results.map((r) => r.value) as T
-    }
-  } finally {
-    await Promise.all(
-      iterators.map((it) => (it.return ? it.return() : Promise.resolve())),
-    )
-  }
+			yield results.map((r) => r.value) as T;
+		}
+	} finally {
+		await Promise.all(iterators.map((it) => (it.return ? it.return() : Promise.resolve())));
+	}
 }

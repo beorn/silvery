@@ -24,54 +24,54 @@
  * Note: Alt key detection requires terminal support. Some terminals send
  * ESC followed by the key instead of a proper alt modifier.
  */
-import { useCallback, useRef, useState } from "react"
-import { type Key, useInput } from "../hooks/index.js"
+import { useCallback, useRef, useState } from 'react';
+import { type Key, useInput } from '../hooks/index.js';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface ReadlineState {
-  /** Current text value */
-  value: string
-  /** Cursor position (0 = before first char, value.length = after last char) */
-  cursor: number
+	/** Current text value */
+	value: string;
+	/** Cursor position (0 = before first char, value.length = after last char) */
+	cursor: number;
 }
 
 export interface UseReadlineOptions {
-  /** Initial value */
-  initialValue?: string
-  /** Called when value changes */
-  onChange?: (value: string) => void
-  /** Whether input is active */
-  isActive?: boolean
-  /** Handle Enter key (default: false - let parent handle) */
-  handleEnter?: boolean
-  /** Handle Escape key (default: false - let parent handle) */
-  handleEscape?: boolean
-  /** Handle Up/Down arrows (default: false - let parent handle for history) */
-  handleVerticalArrows?: boolean
-  /** Called on Ctrl+D with empty input (default: undefined) */
-  onEOF?: () => void
+	/** Initial value */
+	initialValue?: string;
+	/** Called when value changes */
+	onChange?: (value: string) => void;
+	/** Whether input is active */
+	isActive?: boolean;
+	/** Handle Enter key (default: false - let parent handle) */
+	handleEnter?: boolean;
+	/** Handle Escape key (default: false - let parent handle) */
+	handleEscape?: boolean;
+	/** Handle Up/Down arrows (default: false - let parent handle for history) */
+	handleVerticalArrows?: boolean;
+	/** Called on Ctrl+D with empty input (default: undefined) */
+	onEOF?: () => void;
 }
 
 export interface UseReadlineResult {
-  /** Current text value */
-  value: string
-  /** Cursor position */
-  cursor: number
-  /** Text before cursor (for rendering) */
-  beforeCursor: string
-  /** Text after cursor (for rendering) */
-  afterCursor: string
-  /** Clear the input */
-  clear: () => void
-  /** Set value programmatically (cursor moves to end) */
-  setValue: (value: string) => void
-  /** Set both value and cursor position */
-  setValueWithCursor: (value: string, cursor: number) => void
-  /** Kill ring contents (for debugging/display) */
-  killRing: string[]
+	/** Current text value */
+	value: string;
+	/** Cursor position */
+	cursor: number;
+	/** Text before cursor (for rendering) */
+	beforeCursor: string;
+	/** Text after cursor (for rendering) */
+	afterCursor: string;
+	/** Clear the input */
+	clear: () => void;
+	/** Set value programmatically (cursor moves to end) */
+	setValue: (value: string) => void;
+	/** Set both value and cursor position */
+	setValueWithCursor: (value: string, cursor: number) => void;
+	/** Kill ring contents (for debugging/display) */
+	killRing: string[];
 }
 
 // =============================================================================
@@ -79,15 +79,15 @@ export interface UseReadlineResult {
 // =============================================================================
 
 /** Global kill ring shared across all readline instances */
-const killRing: string[] = []
-const MAX_KILL_RING_SIZE = 10
+const killRing: string[] = [];
+const MAX_KILL_RING_SIZE = 10;
 
 function addToKillRing(text: string): void {
-  if (!text) return
-  killRing.unshift(text)
-  if (killRing.length > MAX_KILL_RING_SIZE) {
-    killRing.pop()
-  }
+	if (!text) return;
+	killRing.unshift(text);
+	if (killRing.length > MAX_KILL_RING_SIZE) {
+		killRing.pop();
+	}
 }
 
 // =============================================================================
@@ -96,22 +96,22 @@ function addToKillRing(text: string): void {
 
 /** Find the start of the previous word (for Alt+B, Ctrl+W) */
 function findPrevWordStart(value: string, cursor: number): number {
-  let pos = cursor
-  // Skip any spaces before cursor
-  while (pos > 0 && /\s/.test(value[pos - 1] ?? "")) pos--
-  // Skip non-space characters (the word itself)
-  while (pos > 0 && !/\s/.test(value[pos - 1] ?? "")) pos--
-  return pos
+	let pos = cursor;
+	// Skip any spaces before cursor
+	while (pos > 0 && /\s/.test(value[pos - 1] ?? '')) pos--;
+	// Skip non-space characters (the word itself)
+	while (pos > 0 && !/\s/.test(value[pos - 1] ?? '')) pos--;
+	return pos;
 }
 
 /** Find the end of the next word (for Alt+F, Alt+D) */
 function findNextWordEnd(value: string, cursor: number): number {
-  let pos = cursor
-  // Skip any spaces after cursor
-  while (pos < value.length && /\s/.test(value[pos] ?? "")) pos++
-  // Skip non-space characters (the word itself)
-  while (pos < value.length && !/\s/.test(value[pos] ?? "")) pos++
-  return pos
+	let pos = cursor;
+	// Skip any spaces after cursor
+	while (pos < value.length && /\s/.test(value[pos] ?? '')) pos++;
+	// Skip non-space characters (the word itself)
+	while (pos < value.length && !/\s/.test(value[pos] ?? '')) pos++;
+	return pos;
 }
 
 // =============================================================================
@@ -119,289 +119,286 @@ function findNextWordEnd(value: string, cursor: number): number {
 // =============================================================================
 
 export function useReadline({
-  initialValue = "",
-  onChange,
-  isActive = true,
-  handleEnter = false,
-  handleEscape = false,
-  handleVerticalArrows = false,
-  onEOF,
+	initialValue = '',
+	onChange,
+	isActive = true,
+	handleEnter = false,
+	handleEscape = false,
+	handleVerticalArrows = false,
+	onEOF,
 }: UseReadlineOptions = {}): UseReadlineResult {
-  const [state, setState] = useState<ReadlineState>({
-    value: initialValue,
-    cursor: initialValue.length,
-  })
+	const [state, setState] = useState<ReadlineState>({
+		value: initialValue,
+		cursor: initialValue.length,
+	});
 
-  // Track last yank position for Alt+Y cycling
-  const yankStateRef = useRef<{
-    lastYankIndex: number
-    yankStart: number
-    yankEnd: number
-  } | null>(null)
+	// Track last yank position for Alt+Y cycling
+	const yankStateRef = useRef<{
+		lastYankIndex: number;
+		yankStart: number;
+		yankEnd: number;
+	} | null>(null);
 
-  const updateValue = useCallback(
-    (newValue: string, newCursor: number) => {
-      setState({ value: newValue, cursor: newCursor })
-      onChange?.(newValue)
-      // Reset yank state on any edit that's not a yank
-      yankStateRef.current = null
-    },
-    [onChange],
-  )
+	const updateValue = useCallback(
+		(newValue: string, newCursor: number) => {
+			setState({ value: newValue, cursor: newCursor });
+			onChange?.(newValue);
+			// Reset yank state on any edit that's not a yank
+			yankStateRef.current = null;
+		},
+		[onChange],
+	);
 
-  const clear = useCallback(() => {
-    setState({ value: "", cursor: 0 })
-    onChange?.("")
-    yankStateRef.current = null
-  }, [onChange])
+	const clear = useCallback(() => {
+		setState({ value: '', cursor: 0 });
+		onChange?.('');
+		yankStateRef.current = null;
+	}, [onChange]);
 
-  const setValue = useCallback(
-    (value: string) => {
-      setState({ value, cursor: value.length })
-      onChange?.(value)
-      yankStateRef.current = null
-    },
-    [onChange],
-  )
+	const setValue = useCallback(
+		(value: string) => {
+			setState({ value, cursor: value.length });
+			onChange?.(value);
+			yankStateRef.current = null;
+		},
+		[onChange],
+	);
 
-  const setValueWithCursor = useCallback(
-    (value: string, cursor: number) => {
-      setState({ value, cursor: Math.max(0, Math.min(cursor, value.length)) })
-      onChange?.(value)
-      yankStateRef.current = null
-    },
-    [onChange],
-  )
+	const setValueWithCursor = useCallback(
+		(value: string, cursor: number) => {
+			setState({ value, cursor: Math.max(0, Math.min(cursor, value.length)) });
+			onChange?.(value);
+			yankStateRef.current = null;
+		},
+		[onChange],
+	);
 
-  useInput(
-    (input, key) => {
-      const { value, cursor } = state
+	useInput(
+		(input, key) => {
+			const { value, cursor } = state;
 
-      // Let parent handle Enter/Escape/vertical arrows unless explicitly enabled
-      if (key.return && !handleEnter) return
-      if (key.escape && !handleEscape) return
-      if ((key.upArrow || key.downArrow) && !handleVerticalArrows) return
+			// Let parent handle Enter/Escape/vertical arrows unless explicitly enabled
+			if (key.return && !handleEnter) return;
+			if (key.escape && !handleEscape) return;
+			if ((key.upArrow || key.downArrow) && !handleVerticalArrows) return;
 
-      // =======================================================================
-      // Cursor Movement
-      // =======================================================================
+			// =======================================================================
+			// Cursor Movement
+			// =======================================================================
 
-      // Ctrl+A: Move to beginning
-      if (key.ctrl && input === "a") {
-        setState((s) => ({ ...s, cursor: 0 }))
-        yankStateRef.current = null
-        return
-      }
+			// Ctrl+A: Move to beginning
+			if (key.ctrl && input === 'a') {
+				setState((s) => ({ ...s, cursor: 0 }));
+				yankStateRef.current = null;
+				return;
+			}
 
-      // Ctrl+E: Move to end
-      if (key.ctrl && input === "e") {
-        setState((s) => ({ ...s, cursor: s.value.length }))
-        yankStateRef.current = null
-        return
-      }
+			// Ctrl+E: Move to end
+			if (key.ctrl && input === 'e') {
+				setState((s) => ({ ...s, cursor: s.value.length }));
+				yankStateRef.current = null;
+				return;
+			}
 
-      // Ctrl+B or Left: Move cursor left
-      if ((key.ctrl && input === "b") || key.leftArrow) {
-        if (cursor > 0) {
-          setState((s) => ({ ...s, cursor: s.cursor - 1 }))
-        }
-        yankStateRef.current = null
-        return
-      }
+			// Ctrl+B or Left: Move cursor left
+			if ((key.ctrl && input === 'b') || key.leftArrow) {
+				if (cursor > 0) {
+					setState((s) => ({ ...s, cursor: s.cursor - 1 }));
+				}
+				yankStateRef.current = null;
+				return;
+			}
 
-      // Ctrl+F or Right: Move cursor right
-      if ((key.ctrl && input === "f") || key.rightArrow) {
-        if (cursor < value.length) {
-          setState((s) => ({ ...s, cursor: s.cursor + 1 }))
-        }
-        yankStateRef.current = null
-        return
-      }
+			// Ctrl+F or Right: Move cursor right
+			if ((key.ctrl && input === 'f') || key.rightArrow) {
+				if (cursor < value.length) {
+					setState((s) => ({ ...s, cursor: s.cursor + 1 }));
+				}
+				yankStateRef.current = null;
+				return;
+			}
 
-      // Alt+B: Move cursor back one word
-      if (key.meta && input === "b") {
-        const newCursor = findPrevWordStart(value, cursor)
-        setState((s) => ({ ...s, cursor: newCursor }))
-        yankStateRef.current = null
-        return
-      }
+			// Alt+B: Move cursor back one word
+			if (key.meta && input === 'b') {
+				const newCursor = findPrevWordStart(value, cursor);
+				setState((s) => ({ ...s, cursor: newCursor }));
+				yankStateRef.current = null;
+				return;
+			}
 
-      // Alt+F: Move cursor forward one word
-      if (key.meta && input === "f") {
-        const newCursor = findNextWordEnd(value, cursor)
-        setState((s) => ({ ...s, cursor: newCursor }))
-        yankStateRef.current = null
-        return
-      }
+			// Alt+F: Move cursor forward one word
+			if (key.meta && input === 'f') {
+				const newCursor = findNextWordEnd(value, cursor);
+				setState((s) => ({ ...s, cursor: newCursor }));
+				yankStateRef.current = null;
+				return;
+			}
 
-      // =======================================================================
-      // Kill Operations (add to kill ring)
-      // =======================================================================
+			// =======================================================================
+			// Kill Operations (add to kill ring)
+			// =======================================================================
 
-      // Ctrl+W: Delete word backwards
-      if (key.ctrl && input === "w") {
-        if (cursor === 0) return
-        const newCursor = findPrevWordStart(value, cursor)
-        const killed = value.slice(newCursor, cursor)
-        addToKillRing(killed)
-        const newValue = value.slice(0, newCursor) + value.slice(cursor)
-        updateValue(newValue, newCursor)
-        return
-      }
+			// Ctrl+W: Delete word backwards
+			if (key.ctrl && input === 'w') {
+				if (cursor === 0) return;
+				const newCursor = findPrevWordStart(value, cursor);
+				const killed = value.slice(newCursor, cursor);
+				addToKillRing(killed);
+				const newValue = value.slice(0, newCursor) + value.slice(cursor);
+				updateValue(newValue, newCursor);
+				return;
+			}
 
-      // Alt+Backspace: Same as Ctrl+W
-      if (key.meta && key.backspace) {
-        if (cursor === 0) return
-        const newCursor = findPrevWordStart(value, cursor)
-        const killed = value.slice(newCursor, cursor)
-        addToKillRing(killed)
-        const newValue = value.slice(0, newCursor) + value.slice(cursor)
-        updateValue(newValue, newCursor)
-        return
-      }
+			// Alt+Backspace: Same as Ctrl+W
+			if (key.meta && key.backspace) {
+				if (cursor === 0) return;
+				const newCursor = findPrevWordStart(value, cursor);
+				const killed = value.slice(newCursor, cursor);
+				addToKillRing(killed);
+				const newValue = value.slice(0, newCursor) + value.slice(cursor);
+				updateValue(newValue, newCursor);
+				return;
+			}
 
-      // Alt+D: Delete word forwards
-      if (key.meta && input === "d") {
-        if (cursor >= value.length) return
-        const newEnd = findNextWordEnd(value, cursor)
-        const killed = value.slice(cursor, newEnd)
-        addToKillRing(killed)
-        const newValue = value.slice(0, cursor) + value.slice(newEnd)
-        updateValue(newValue, cursor)
-        return
-      }
+			// Alt+D: Delete word forwards
+			if (key.meta && input === 'd') {
+				if (cursor >= value.length) return;
+				const newEnd = findNextWordEnd(value, cursor);
+				const killed = value.slice(cursor, newEnd);
+				addToKillRing(killed);
+				const newValue = value.slice(0, cursor) + value.slice(newEnd);
+				updateValue(newValue, cursor);
+				return;
+			}
 
-      // Ctrl+U: Delete to beginning
-      if (key.ctrl && input === "u") {
-        if (cursor === 0) return
-        const killed = value.slice(0, cursor)
-        addToKillRing(killed)
-        const newValue = value.slice(cursor)
-        updateValue(newValue, 0)
-        return
-      }
+			// Ctrl+U: Delete to beginning
+			if (key.ctrl && input === 'u') {
+				if (cursor === 0) return;
+				const killed = value.slice(0, cursor);
+				addToKillRing(killed);
+				const newValue = value.slice(cursor);
+				updateValue(newValue, 0);
+				return;
+			}
 
-      // Ctrl+K: Delete to end
-      if (key.ctrl && input === "k") {
-        if (cursor >= value.length) return
-        const killed = value.slice(cursor)
-        addToKillRing(killed)
-        const newValue = value.slice(0, cursor)
-        updateValue(newValue, cursor)
-        return
-      }
+			// Ctrl+K: Delete to end
+			if (key.ctrl && input === 'k') {
+				if (cursor >= value.length) return;
+				const killed = value.slice(cursor);
+				addToKillRing(killed);
+				const newValue = value.slice(0, cursor);
+				updateValue(newValue, cursor);
+				return;
+			}
 
-      // =======================================================================
-      // Yank Operations
-      // =======================================================================
+			// =======================================================================
+			// Yank Operations
+			// =======================================================================
 
-      // Ctrl+Y: Yank (paste from kill ring)
-      if (key.ctrl && input === "y") {
-        if (killRing.length === 0) return
-        const text = killRing[0] ?? ""
-        const newValue = value.slice(0, cursor) + text + value.slice(cursor)
-        const newCursor = cursor + text.length
-        setState({ value: newValue, cursor: newCursor })
-        onChange?.(newValue)
-        // Track yank state for Alt+Y cycling
-        yankStateRef.current = {
-          lastYankIndex: 0,
-          yankStart: cursor,
-          yankEnd: newCursor,
-        }
-        return
-      }
+			// Ctrl+Y: Yank (paste from kill ring)
+			if (key.ctrl && input === 'y') {
+				if (killRing.length === 0) return;
+				const text = killRing[0] ?? '';
+				const newValue = value.slice(0, cursor) + text + value.slice(cursor);
+				const newCursor = cursor + text.length;
+				setState({ value: newValue, cursor: newCursor });
+				onChange?.(newValue);
+				// Track yank state for Alt+Y cycling
+				yankStateRef.current = {
+					lastYankIndex: 0,
+					yankStart: cursor,
+					yankEnd: newCursor,
+				};
+				return;
+			}
 
-      // Alt+Y: Cycle through kill ring (only after Ctrl+Y)
-      if (key.meta && input === "y") {
-        const yankState = yankStateRef.current
-        if (!yankState || killRing.length <= 1) return
-        // Cycle to next kill ring entry
-        const nextIndex = (yankState.lastYankIndex + 1) % killRing.length
-        const text = killRing[nextIndex] ?? ""
-        // Replace the previously yanked text
-        const before = value.slice(0, yankState.yankStart)
-        const after = value.slice(yankState.yankEnd)
-        const newValue = before + text + after
-        const newCursor = yankState.yankStart + text.length
-        setState({ value: newValue, cursor: newCursor })
-        onChange?.(newValue)
-        yankStateRef.current = {
-          lastYankIndex: nextIndex,
-          yankStart: yankState.yankStart,
-          yankEnd: newCursor,
-        }
-        return
-      }
+			// Alt+Y: Cycle through kill ring (only after Ctrl+Y)
+			if (key.meta && input === 'y') {
+				const yankState = yankStateRef.current;
+				if (!yankState || killRing.length <= 1) return;
+				// Cycle to next kill ring entry
+				const nextIndex = (yankState.lastYankIndex + 1) % killRing.length;
+				const text = killRing[nextIndex] ?? '';
+				// Replace the previously yanked text
+				const before = value.slice(0, yankState.yankStart);
+				const after = value.slice(yankState.yankEnd);
+				const newValue = before + text + after;
+				const newCursor = yankState.yankStart + text.length;
+				setState({ value: newValue, cursor: newCursor });
+				onChange?.(newValue);
+				yankStateRef.current = {
+					lastYankIndex: nextIndex,
+					yankStart: yankState.yankStart,
+					yankEnd: newCursor,
+				};
+				return;
+			}
 
-      // =======================================================================
-      // Character Operations
-      // =======================================================================
+			// =======================================================================
+			// Character Operations
+			// =======================================================================
 
-      // Ctrl+T: Transpose characters
-      if (key.ctrl && input === "t") {
-        // Transpose the two characters before cursor, move cursor forward
-        if (cursor < 2) return
-        const newValue =
-          value.slice(0, cursor - 2) +
-          value[cursor - 1] +
-          value[cursor - 2] +
-          value.slice(cursor)
-        updateValue(newValue, cursor)
-        return
-      }
+			// Ctrl+T: Transpose characters
+			if (key.ctrl && input === 't') {
+				// Transpose the two characters before cursor, move cursor forward
+				if (cursor < 2) return;
+				const newValue =
+					value.slice(0, cursor - 2) + value[cursor - 1] + value[cursor - 2] + value.slice(cursor);
+				updateValue(newValue, cursor);
+				return;
+			}
 
-      // Ctrl+D: Delete char at cursor (or EOF if empty)
-      if (key.ctrl && input === "d") {
-        if (value.length === 0) {
-          onEOF?.()
-          return
-        }
-        if (cursor >= value.length) return
-        const newValue = value.slice(0, cursor) + value.slice(cursor + 1)
-        updateValue(newValue, cursor)
-        return
-      }
+			// Ctrl+D: Delete char at cursor (or EOF if empty)
+			if (key.ctrl && input === 'd') {
+				if (value.length === 0) {
+					onEOF?.();
+					return;
+				}
+				if (cursor >= value.length) return;
+				const newValue = value.slice(0, cursor) + value.slice(cursor + 1);
+				updateValue(newValue, cursor);
+				return;
+			}
 
-      // Ctrl+H or Backspace: Delete char before cursor
-      if (key.ctrl && input === "h") {
-        if (cursor > 0) {
-          const newValue = value.slice(0, cursor - 1) + value.slice(cursor)
-          updateValue(newValue, cursor - 1)
-        }
-        return
-      }
+			// Ctrl+H or Backspace: Delete char before cursor
+			if (key.ctrl && input === 'h') {
+				if (cursor > 0) {
+					const newValue = value.slice(0, cursor - 1) + value.slice(cursor);
+					updateValue(newValue, cursor - 1);
+				}
+				return;
+			}
 
-      // Backspace or Delete key
-      if (key.backspace || key.delete) {
-        if (cursor > 0) {
-          const newValue = value.slice(0, cursor - 1) + value.slice(cursor)
-          updateValue(newValue, cursor - 1)
-        }
-        return
-      }
+			// Backspace or Delete key
+			if (key.backspace || key.delete) {
+				if (cursor > 0) {
+					const newValue = value.slice(0, cursor - 1) + value.slice(cursor);
+					updateValue(newValue, cursor - 1);
+				}
+				return;
+			}
 
-      // =======================================================================
-      // Regular Character Input
-      // =======================================================================
+			// =======================================================================
+			// Regular Character Input
+			// =======================================================================
 
-      // Regular character input (printable ASCII)
-      if (input.length === 1 && input >= " ") {
-        const newValue = value.slice(0, cursor) + input + value.slice(cursor)
-        updateValue(newValue, cursor + 1)
-      }
-    },
-    { isActive },
-  )
+			// Regular character input (printable ASCII)
+			if (input.length === 1 && input >= ' ') {
+				const newValue = value.slice(0, cursor) + input + value.slice(cursor);
+				updateValue(newValue, cursor + 1);
+			}
+		},
+		{ isActive },
+	);
 
-  return {
-    value: state.value,
-    cursor: state.cursor,
-    beforeCursor: state.value.slice(0, state.cursor),
-    afterCursor: state.value.slice(state.cursor),
-    clear,
-    setValue,
-    setValueWithCursor,
-    killRing: [...killRing],
-  }
+	return {
+		value: state.value,
+		cursor: state.cursor,
+		beforeCursor: state.value.slice(0, state.cursor),
+		afterCursor: state.value.slice(state.cursor),
+		clear,
+		setValue,
+		setValueWithCursor,
+		killRing: [...killRing],
+	};
 }

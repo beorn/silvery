@@ -40,13 +40,16 @@ interface WhenPredicate {
   label: string
 }
 
-function when(label: string, fn: (ctx: KeybindingContext) => boolean): WhenPredicate {
+function when(
+  label: string,
+  fn: (ctx: KeybindingContext) => boolean,
+): WhenPredicate {
   return Object.assign(fn, { label })
 }
 
 // Compose predicates
-const textInputFocused = when("textInputFocused", ctx => ctx.textInputFocused)
-const isInDetailPane = when("isInDetailPane", ctx => ctx.isInDetailPane)
+const textInputFocused = when("textInputFocused", (ctx) => ctx.textInputFocused)
+const isInDetailPane = when("isInDetailPane", (ctx) => ctx.isInDetailPane)
 const notTextInput = not(textInputFocused)
 const inMoveAndNotEditing = and(inMoveMode, notTextInput)
 ```
@@ -87,7 +90,10 @@ When `textInputFocused` is true, printable characters MUST be routed to TEXT_INS
 ```ts
 // In processInkKey():
 if (textInputFocused && isPrintable(input) && !hasModifiers) {
-  return { commandId: "text.insert", actions: { type: "TEXT_INSERT", char: input } }
+  return {
+    commandId: "text.insert",
+    actions: { type: "TEXT_INSERT", char: input },
+  }
 }
 // Only THEN resolve keybindings
 const commandId = resolveKeybinding(key, modifiers, context)
@@ -101,6 +107,7 @@ const commandId = resolveKeybinding(key, modifiers, context)
 2. **Dialog navigation**: Dialogs (search, project picker) that handle a small set of nav keys (Enter, Escape, arrows) before the command system sees them
 
 Components should **never** use `useInputLayer` for:
+
 - Navigation keys (j/k/h/l) - use keybindings
 - Mode-specific keys (Escape in detail pane) - use `when` predicates
 - Text editing shortcuts - use TextEditTarget + commands
@@ -123,11 +130,11 @@ expect(normalResult).toBeNull() // No binding without textInputFocused
 
 ## Comparison: Per-Component vs Focus-Based
 
-| Aspect | Per-Component (useInputLayer) | Focus-Based (when predicates) |
-|--------|-------------------------------|-------------------------------|
-| Key assignment | Scattered across files | Central keybindings table |
-| Mode handling | Component checks mode | Predicate on binding |
-| Text input | Layer intercepts all keys | TextEditTarget + fallback |
-| Help display | Manually maintained | Auto-generated from bindings |
-| AI automation | Opaque key sequences | Command IDs + metadata |
-| Testing | Mount component + send keys | Resolve binding from context |
+| Aspect         | Per-Component (useInputLayer) | Focus-Based (when predicates) |
+| -------------- | ----------------------------- | ----------------------------- |
+| Key assignment | Scattered across files        | Central keybindings table     |
+| Mode handling  | Component checks mode         | Predicate on binding          |
+| Text input     | Layer intercepts all keys     | TextEditTarget + fallback     |
+| Help display   | Manually maintained           | Auto-generated from bindings  |
+| AI automation  | Opaque key sequences          | Command IDs + metadata        |
+| Testing        | Mount component + send keys   | Resolve binding from context  |

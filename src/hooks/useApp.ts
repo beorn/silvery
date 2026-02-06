@@ -5,29 +5,29 @@
  * Compatible with Ink's useApp API.
  */
 
-import { useContext } from "react"
-import { AppContext } from "../context.js"
+import { useContext } from 'react';
+import { AppContext } from '../context.js';
 
 // ============================================================================
 // Types
 // ============================================================================
 
 export interface UseAppResult {
-  /**
-   * Exit the application.
-   * Optionally pass an error to indicate the app exited due to an error.
-   */
-  exit: (error?: Error) => void
-  /**
-   * Pause rendering output (for screen switching). Input still works.
-   * Returns undefined if not supported (static mode).
-   */
-  pause?: () => void
-  /**
-   * Resume rendering after pause. Forces a full redraw.
-   * Returns undefined if not supported (static mode).
-   */
-  resume?: () => void
+	/**
+	 * Exit the application.
+	 * Optionally pass an error to indicate the app exited due to an error.
+	 */
+	exit: (error?: Error) => void;
+	/**
+	 * Pause rendering output (for screen switching). Input still works.
+	 * Returns undefined if not supported (static mode).
+	 */
+	pause?: () => void;
+	/**
+	 * Resume rendering after pause. Forces a full redraw.
+	 * Returns undefined if not supported (static mode).
+	 */
+	resume?: () => void;
 }
 
 // ============================================================================
@@ -53,15 +53,15 @@ export interface UseAppResult {
  * ```
  */
 export function useApp(): UseAppResult {
-  const context = useContext(AppContext)
+	const context = useContext(AppContext);
 
-  if (!context) {
-    throw new Error("useApp must be used within an Inkx application")
-  }
+	if (!context) {
+		throw new Error('useApp must be used within an Inkx application');
+	}
 
-  return {
-    exit: context.exit,
-    pause: context.pause,
-    resume: context.resume,
-  }
+	return {
+		exit: context.exit,
+		pause: context.pause,
+		resume: context.resume,
+	};
 }
