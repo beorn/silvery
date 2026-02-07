@@ -221,8 +221,10 @@ export function useApp<S, T>(selector: (state: S) => T): T {
 
   useEffect(() => {
     return store.subscribe((newState) => {
-      // Wrap in updater to avoid React treating function values as updaters
-      setState(() => selectorRef.current(newState))
+      const next = selectorRef.current(newState)
+      // Only update if the selected value actually changed (avoids
+      // unnecessary re-renders when unrelated store slices change)
+      setState((prev) => (Object.is(prev, next) ? prev : next))
     })
   }, [store])
 
@@ -726,22 +728,35 @@ async function initApp<
     const namespacedKey = event.type
     const namespacedHandler = handlers?.[namespacedKey as keyof typeof handlers]
 
-    if (namespacedHandler && typeof namespacedHandler === "function") {
-      const result = (namespacedHandler as EventHandler<unknown, S & I>)(
-        event.data,
-        {
-          set: store.setState,
-          get: store.getState,
-        },
-      )
-      if (result === "exit") {
-        exit()
-        return null
+    // Guard: if the handler calls set(), the store subscription will fire
+    // doRender() synchronously (because isRendering is false). Setting
+    // isRendering=true before the handler makes set() defer to a microtask,
+    // and our single doRender() below picks up all state changes at once.
+    isRendering = true
+    try {
+      if (namespacedHandler && typeof namespacedHandler === "function") {
+        const result = (namespacedHandler as EventHandler<unknown, S & I>)(
+          event.data,
+          {
+            set: store.setState,
+            get: store.getState,
+          },
+        )
+        if (result === "exit") {
+          exit()
+          return null
+        }
       }
-    }
 
-    // Re-render
-    currentBuffer = doRender()
+      // Clear any pending re-render queued by the handler's set() calls —
+      // our explicit doRender() below will pick up that state. If effects
+      // during doRender() call set(), they'll re-set pendingRerender.
+      pendingRerender = false
+      // Single render pass that picks up all handler state changes.
+      currentBuffer = doRender()
+    } finally {
+      isRendering = false
+    }
     runtime.render(currentBuffer)
 
     return currentBuffer
