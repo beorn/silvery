@@ -300,6 +300,99 @@ If you're on Ink and considering Inkx:
 
 ---
 
+## Performance Benchmarks
+
+Measured on Apple M1 Max, Bun 1.3.8. Run: `bun run bench:comparison`
+
+### React Component Rendering
+
+Time to render Box+Text component trees through the full pipeline (reconciliation + layout + content + output).
+
+| Components | inkx (Flexx) | Notes                                   |
+| ---------- | ------------ | --------------------------------------- |
+| 1          | 178 us       | Single component baseline               |
+| 100        | 47 ms        | Typical TUI complexity                  |
+| 1000       | 470 ms       | Stress test (far beyond normal TUI use) |
+
+Ink does not publish render benchmarks. Ink issue [#694](https://github.com/vadimdemedes/ink/issues/694) reports degradation at 500+ components; inkx handles 1000 without crashes, though at reduced throughput.
+
+### Pipeline Render (Low-Level)
+
+`executeRender` bypassing React reconciliation. Shows raw pipeline throughput.
+
+| Nodes | First Render | Diff Render | Diff Speedup |
+| ----- | ------------ | ----------- | ------------ |
+| 1     | 310 us       | 40 us       | 7.8x         |
+| 100   | 24 ms        | 45 us       | 520x         |
+| 1000  | 242 ms       | 164 us      | 1475x        |
+
+The diff path is dramatically faster because inkx tracks dirty nodes per-component and uses packed-integer buffer comparison. This is the key advantage of inkx's architecture: after the first render, updates are near-instant for typical UIs where <10% of cells change.
+
+### Diff Performance (Buffer Comparison)
+
+The output phase computes terminal escape sequences by diffing two buffers.
+
+| Scenario         | Time   |
+| ---------------- | ------ |
+| 80x24 no changes | 28 us  |
+| 80x24 10% change | 35 us  |
+| 80x24 full paint | 61 us  |
+| 200x50 no change | 148 us |
+
+Ink uses row-based string comparison (PR [#836](https://github.com/vadimdemedes/ink/pull/836) adds incremental optimization). inkx uses cell-level comparison with a packed Uint32Array fast-path, giving consistent sub-millisecond diffs even for large terminals.
+
+### Resize Handling
+
+Time to re-layout after terminal size change (80x24 -> 120x40).
+
+| Nodes | Flexx  |
+| ----- | ------ |
+| 10    | 257 ns |
+| 100   | 1.8 us |
+| 1000  | 21 us  |
+
+Resize is extremely fast because it only involves the layout phase (no reconciliation or content rendering). Both inkx and Ink use flexbox layout engines, so this performance is comparable when inkx uses Yoga.
+
+### Layout Engine: Flexx vs Yoga
+
+Direct comparison on identical trees.
+
+| Benchmark             | Flexx | Yoga  | Winner |
+| --------------------- | ----- | ----- | ------ |
+| 100 nodes flat list   | 86 us | 80 us | ~same  |
+| 50-node kanban (3col) | 63 us | 52 us | ~same  |
+
+Both engines are fast for terminal UIs. The difference is negligible at these scales. Flexx's advantage is its 5x smaller bundle size (7 KB vs 38 KB gzipped) and synchronous initialization.
+
+### Bundle Size
+
+| Package      | Size (gzip) | Notes                   |
+| ------------ | ----------- | ----------------------- |
+| inkx + Flexx | ~45 KB      | Pure JS layout engine   |
+| inkx + Yoga  | ~76 KB      | WASM layout engine      |
+| ink          | ~52 KB      | Yoga-only, no Flexx opt |
+
+### Feature Comparison Summary
+
+| Feature                 | inkx                          | Ink                           |
+| ----------------------- | ----------------------------- | ----------------------------- |
+| Layout awareness        | useContentRect/useScreenRect  | None (thread props manually)  |
+| Scrollable containers   | overflow="scroll"             | Third-party or manual         |
+| Text truncation         | Auto (ANSI-aware)             | Manual per-component          |
+| Unicode/CJK handling    | Built-in grapheme/width utils | Basic (known issues)          |
+| Mouse support           | HitRegistry with z-index      | Basic useInput                |
+| Input handling          | InputLayerProvider + useInput | useInput only                 |
+| Static rendering        | renderStatic()                | Static component              |
+| Plugin system           | withCommands/Keybindings/Diag | None                          |
+| Testing API             | createRenderer + locators     | ink-testing-library           |
+| Multiple render targets | Terminal, Canvas, DOM         | Terminal only                 |
+| Layout engines          | Flexx (7KB) or Yoga (38KB)    | Yoga only                     |
+| Incremental rendering   | Dirty tracking per-node       | Full re-render (PR #836 adds) |
+| Diff render (100 nodes) | 45 us                         | N/A (no published benchmarks) |
+| Resize (1000 nodes)     | 21 us                         | Comparable (same Yoga engine) |
+
+---
+
 ## Conclusion
 
 Inkx is well-positioned to capture users frustrated with Ink's limitations:

@@ -428,6 +428,64 @@ function canBreakAnywhere(grapheme: string): boolean {
   return isCJK(grapheme)
 }
 
+// ANSI CSI pattern: ESC [ (params) (letter)
+const ANSI_CSI_RE = /^\x1b\[[0-9;:?]*[A-Za-z]/
+// ANSI OSC pattern: ESC ] ... (BEL or ST)
+const ANSI_OSC_RE = /^\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/
+// Single-char escape: ESC followed by one letter
+const ANSI_SINGLE_RE = /^\x1b[DME78(B]/
+
+/**
+ * Split text into graphemes, keeping ANSI escape sequences as single zero-width tokens.
+ * Without this, `splitGraphemes` would split `\x1b[38;5;1m` into individual characters
+ * like `[`, `3`, `8`, `;`, etc., each consuming display width.
+ */
+function splitGraphemesAnsiAware(text: string): string[] {
+  if (!hasAnsi(text)) {
+    return splitGraphemes(text)
+  }
+
+  const result: string[] = []
+  let pos = 0
+
+  while (pos < text.length) {
+    if (text[pos] === "\x1b") {
+      // Try to match an ANSI sequence starting at pos
+      const remaining = text.slice(pos)
+      const csi = remaining.match(ANSI_CSI_RE)
+      if (csi) {
+        result.push(csi[0])
+        pos += csi[0].length
+        continue
+      }
+      const osc = remaining.match(ANSI_OSC_RE)
+      if (osc) {
+        result.push(osc[0])
+        pos += osc[0].length
+        continue
+      }
+      const single = remaining.match(ANSI_SINGLE_RE)
+      if (single) {
+        result.push(single[0])
+        pos += single[0].length
+        continue
+      }
+    }
+
+    // Find the next ESC or end of string
+    const nextEsc = text.indexOf("\x1b", pos + 1)
+    const chunk = nextEsc === -1 ? text.slice(pos) : text.slice(pos, nextEsc)
+
+    // Split this non-ANSI chunk into graphemes
+    for (const g of splitGraphemes(chunk)) {
+      result.push(g)
+    }
+    pos += chunk.length
+  }
+
+  return result
+}
+
 /**
  * Wrap text to fit within a given width.
  *
@@ -437,15 +495,17 @@ function canBreakAnywhere(grapheme: string): boolean {
  * 3. Handles CJK text properly (can break anywhere since CJK has no word spaces)
  * 4. Preserves intentional line breaks
  *
- * @param text - The text to wrap
+ * @param text - The text to wrap (may contain ANSI escape sequences)
  * @param width - Maximum display width per line
  * @param preserveNewlines - Whether to preserve existing newlines
+ * @param trim - Trim trailing spaces on broken lines and skip leading spaces on continuation lines (useful for rendering)
  * @returns Array of wrapped lines
  */
 export function wrapText(
   text: string,
   width: number,
   preserveNewlines = true,
+  trim = false,
 ): string[] {
   if (width <= 0) {
     return []
@@ -465,9 +525,13 @@ export function wrapText(
       continue
     }
 
-    const graphemes = splitGraphemes(line)
+    // If the line contains ANSI escape sequences, split them out so they
+    // don't consume display width.  We interleave visible graphemes with
+    // zero-width ANSI "tokens" that are appended to currentLine untouched.
+    const graphemes = splitGraphemesAnsiAware(line)
     let currentLine = ""
     let currentWidth = 0
+    let isFirstLineOfParagraph = true
 
     // Track the last valid break point
     let lastBreakIndex = -1 // Index in currentLine (character position)
@@ -484,6 +548,17 @@ export function wrapText(
         continue
       }
 
+      // In trim mode, skip leading spaces on continuation lines
+      if (
+        trim &&
+        !isFirstLineOfParagraph &&
+        currentWidth === 0 &&
+        isWordBoundary(grapheme) &&
+        grapheme !== "-"
+      ) {
+        continue
+      }
+
       // Check if this grapheme is a break point
       // Break AFTER spaces/hyphens, or BEFORE CJK characters
       if (isWordBoundary(grapheme)) {
@@ -496,6 +571,20 @@ export function wrapText(
           lastBreakGraphemeIndex = i + 1
           continue
         }
+        // Space/hyphen doesn't fit — break here (before the boundary char).
+        // The current line is complete; the boundary char is consumed as the break.
+        if (currentLine) {
+          let lineToAdd = currentLine
+          if (trim) lineToAdd = lineToAdd.trimEnd()
+          lines.push(lineToAdd)
+          isFirstLineOfParagraph = false
+        }
+        currentLine = ""
+        currentWidth = 0
+        lastBreakIndex = -1
+        lastBreakWidth = 0
+        lastBreakGraphemeIndex = -1
+        continue
       } else if (canBreakAnywhere(grapheme)) {
         // CJK: can break before this character
         lastBreakIndex = currentLine.length
@@ -507,8 +596,10 @@ export function wrapText(
       if (currentWidth + gWidth > width) {
         if (lastBreakIndex > 0) {
           // We have a valid break point - use it
-          const lineToAdd = currentLine.slice(0, lastBreakIndex)
+          let lineToAdd = currentLine.slice(0, lastBreakIndex)
+          if (trim) lineToAdd = lineToAdd.trimEnd()
           lines.push(lineToAdd)
+          isFirstLineOfParagraph = false
 
           // Reset and continue from break point
           currentLine = currentLine.slice(lastBreakIndex)
@@ -524,7 +615,9 @@ export function wrapText(
         } else {
           // No break point found - must do character wrap
           if (currentLine) {
+            if (trim) currentLine = currentLine.trimEnd()
             lines.push(currentLine)
+            isFirstLineOfParagraph = false
           }
           currentLine = grapheme
           currentWidth = gWidth

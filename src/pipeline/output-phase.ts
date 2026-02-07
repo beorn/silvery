@@ -7,9 +7,6 @@
  */
 
 import {
-  type Cell,
-  type CellAttrs,
-  type Color,
   type Style,
   type TerminalBuffer,
   type UnderlineStyle,
@@ -61,24 +58,26 @@ export function outputPhase(
     return bufferToAnsi(next, mode)
   }
 
-  // Diff and emit only changes
-  const changes = diffBuffers(prev, next)
+  // Diff and emit only changes (returns pool+count, no array allocation)
+  const { pool, count } = diffBuffers(prev, next)
 
   if (DEBUG_OUTPUT) {
     // eslint-disable-next-line no-console
-    console.error(`[INKX_DEBUG_OUTPUT] diffBuffers: ${changes.length} changes`)
+    console.error(`[INKX_DEBUG_OUTPUT] diffBuffers: ${count} changes`)
     // Log first few changes
-    for (const change of changes.slice(0, 10)) {
+    const debugLimit = Math.min(count, 10)
+    for (let i = 0; i < debugLimit; i++) {
+      const change = pool[i]!
       // eslint-disable-next-line no-console
       console.error(`  (${change.x},${change.y}): "${change.cell.char}"`)
     }
-    if (changes.length > 10) {
+    if (count > 10) {
       // eslint-disable-next-line no-console
-      console.error(`  ... and ${changes.length - 10} more`)
+      console.error(`  ... and ${count - 10} more`)
     }
   }
 
-  if (changes.length === 0) {
+  if (count === 0) {
     return "" // No changes
   }
 
@@ -87,7 +86,7 @@ export function outputPhase(
   const prevContentHeight = mode === "inline" ? findLastContentLine(prev) : 0
   const nextContentHeight = mode === "inline" ? findLastContentLine(next) : 0
 
-  return changesToAnsi(changes, mode, prevContentHeight, nextContentHeight)
+  return changesToAnsi(pool, count, mode, prevContentHeight, nextContentHeight)
 }
 
 /**
@@ -291,14 +290,25 @@ function writeEmptyCellChange(change: CellChange, x: number, y: number): void {
 }
 
 /**
- * Diff two buffers and return list of changes.
+ * Diff result: pool reference + count (avoids per-frame array allocation).
+ */
+interface DiffResult {
+  pool: CellChange[]
+  count: number
+}
+
+/** Reusable diff result object (avoids allocating a new one per frame). */
+const diffResult: DiffResult = { pool: diffPool, count: 0 }
+
+/**
+ * Diff two buffers and return changes via pre-allocated pool.
  *
  * Optimization: Uses a pre-allocated pool of CellChange objects to avoid
- * allocating new objects per changed cell. Uses _readCellInto for
+ * allocating new objects per changed cell. Uses readCellInto for
  * zero-allocation cell reads. The pool grows as needed but is reused
- * between frames.
+ * between frames. Returns a pool+count pair instead of slicing the array.
  */
-function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): CellChange[] {
+function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
   // Ensure pool is large enough for worst case (all cells changed)
   const maxChanges =
     Math.max(prev.width, next.width) * Math.max(prev.height, next.height)
@@ -356,16 +366,46 @@ function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): CellChange[] {
     }
   }
 
-  // Return a slice view of the pool (no allocation for the array itself
-  // when there are no changes; otherwise one array allocation for the slice)
-  if (changeCount === 0) return []
-  return diffPool.slice(0, changeCount)
+  diffResult.pool = diffPool
+  diffResult.count = changeCount
+  return diffResult
+}
+
+/** Pre-allocated style object reused across changesToAnsi calls. */
+const reusableCellStyle: Style = {
+  fg: null,
+  bg: null,
+  underlineColor: null,
+  attrs: {},
+}
+
+/**
+ * Sort a sub-range of the pool by position for optimal cursor movement.
+ * Uses a simple in-place sort on pool[0..count).
+ */
+function sortPoolByPosition(pool: CellChange[], count: number): void {
+  // Insertion sort is efficient for the typical case (mostly sorted or small count)
+  for (let i = 1; i < count; i++) {
+    const item = pool[i]!
+    const iy = item.y
+    const ix = item.x
+    let j = i - 1
+    while (
+      j >= 0 &&
+      (pool[j]!.y > iy || (pool[j]!.y === iy && pool[j]!.x > ix))
+    ) {
+      pool[j + 1] = pool[j]!
+      j--
+    }
+    pool[j + 1] = item
+  }
 }
 
 /**
  * Convert cell changes to optimized ANSI output.
  *
- * @param changes List of cell changes to render
+ * @param pool Pre-allocated pool of CellChange objects
+ * @param count Number of valid entries in the pool
  * @param mode Render mode: fullscreen or inline
  * @param prevContentLine Last content line of the previous buffer (inline mode only).
  *   This is the row where the cursor currently sits after the previous render.
@@ -373,15 +413,16 @@ function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): CellChange[] {
  *   After rendering, the cursor will be positioned at this row.
  */
 function changesToAnsi(
-  changes: CellChange[],
+  pool: CellChange[],
+  count: number,
   mode: "fullscreen" | "inline" = "fullscreen",
   prevContentLine = 0,
   nextContentLine = 0,
 ): string {
-  if (changes.length === 0) return ""
+  if (count === 0) return ""
 
-  // Sort by position for optimal cursor movement
-  changes.sort((a, b) => a.y - b.y || a.x - b.x)
+  // Sort by position for optimal cursor movement (in-place, no allocation)
+  sortPoolByPosition(pool, count)
 
   let output = ""
   let currentStyle: Style | null = null
@@ -406,7 +447,12 @@ function changesToAnsi(
     let currentY = 0
 
     // Apply changes
-    for (const { x, y, cell } of changes) {
+    for (let i = 0; i < count; i++) {
+      const change = pool[i]!
+      const x = change.x
+      const y = change.y
+      const cell = change.cell
+
       // Skip continuation cells
       if (cell.continuation) continue
 
@@ -419,16 +465,20 @@ function changesToAnsi(
       // Move to correct column
       output += `\x1b[${x + 1}G`
 
-      // Update style if changed
-      const cellStyle: Style = {
-        fg: cell.fg,
-        bg: cell.bg,
-        underlineColor: cell.underlineColor,
-        attrs: cell.attrs,
-      }
-      if (!styleEquals(currentStyle, cellStyle)) {
-        output += styleToAnsi(cellStyle)
-        currentStyle = cellStyle
+      // Update style if changed (reuse pre-allocated style object)
+      reusableCellStyle.fg = cell.fg
+      reusableCellStyle.bg = cell.bg
+      reusableCellStyle.underlineColor = cell.underlineColor
+      reusableCellStyle.attrs = cell.attrs
+      if (!styleEquals(currentStyle, reusableCellStyle)) {
+        // Snapshot: copy attrs so currentStyle isn't invalidated by next iteration
+        currentStyle = {
+          fg: cell.fg,
+          bg: cell.bg,
+          underlineColor: cell.underlineColor,
+          attrs: { ...cell.attrs },
+        }
+        output += styleToAnsi(currentStyle)
       }
 
       // Write character
@@ -445,7 +495,12 @@ function changesToAnsi(
     let cursorX = -1
     let cursorY = -1
 
-    for (const { x, y, cell } of changes) {
+    for (let i = 0; i < count; i++) {
+      const change = pool[i]!
+      const x = change.x
+      const y = change.y
+      const cell = change.cell
+
       // Skip continuation cells
       if (cell.continuation) continue
 
@@ -472,16 +527,20 @@ function changesToAnsi(
         }
       }
 
-      // Update style if changed
-      const cellStyle: Style = {
-        fg: cell.fg,
-        bg: cell.bg,
-        underlineColor: cell.underlineColor,
-        attrs: cell.attrs,
-      }
-      if (!styleEquals(currentStyle, cellStyle)) {
-        output += styleToAnsi(cellStyle)
-        currentStyle = cellStyle
+      // Update style if changed (reuse pre-allocated style object)
+      reusableCellStyle.fg = cell.fg
+      reusableCellStyle.bg = cell.bg
+      reusableCellStyle.underlineColor = cell.underlineColor
+      reusableCellStyle.attrs = cell.attrs
+      if (!styleEquals(currentStyle, reusableCellStyle)) {
+        // Snapshot: copy attrs so currentStyle isn't invalidated by next iteration
+        currentStyle = {
+          fg: cell.fg,
+          bg: cell.bg,
+          underlineColor: cell.underlineColor,
+          attrs: { ...cell.attrs },
+        }
+        output += styleToAnsi(currentStyle)
       }
 
       // Write character
@@ -502,6 +561,10 @@ function changesToAnsi(
 /**
  * Convert style to ANSI escape sequence.
  *
+ * Optimized: builds the escape string via concatenation instead of
+ * allocating intermediate arrays. This avoids per-call array allocations
+ * for the codes[], colorToAnsiFg(), and colorToAnsiBg() arrays.
+ *
  * Emits SGR codes including:
  * - Basic colors (30-37, 40-47)
  * - 256-color (38;5;N, 48;5;N)
@@ -514,103 +577,55 @@ function styleToAnsi(style: Style): string {
   const fg = style.fg
   const bg = style.bg
 
-  const codes: number[] = [0] // Reset first
+  // Build escape string via concatenation (no array allocation)
+  let result = "\x1b[0" // Reset first
 
   // Foreground color
   if (fg !== null) {
-    const fgCode = colorToAnsiFg(fg)
-    if (fgCode) codes.push(...fgCode)
+    if (typeof fg === "number") {
+      result += `;38;5;${fg}`
+    } else {
+      result += `;38;2;${fg.r};${fg.g};${fg.b}`
+    }
   }
 
   // Background color
   if (bg !== null) {
-    const bgCode = colorToAnsiBg(bg)
-    if (bgCode) codes.push(...bgCode)
+    if (typeof bg === "number") {
+      result += `;48;5;${bg}`
+    } else {
+      result += `;48;2;${bg.r};${bg.g};${bg.b}`
+    }
   }
 
   // Attributes
-  if (style.attrs.bold) codes.push(1)
-  if (style.attrs.dim) codes.push(2)
-  if (style.attrs.italic) codes.push(3)
+  if (style.attrs.bold) result += ";1"
+  if (style.attrs.dim) result += ";2"
+  if (style.attrs.italic) result += ";3"
 
   // Underline: use SGR 4:x if style specified, otherwise simple SGR 4
   const underlineStyle = style.attrs.underlineStyle
   const sgrSubparam = underlineStyleToSgr(underlineStyle)
   if (sgrSubparam !== null && sgrSubparam !== 0) {
-    // Use colon-separated format for underline style: 4:x
-    // Note: We can't use codes.push here because 4:x is a single parameter
-    // We'll append it separately after the semicolon-joined codes
+    result += `;4:${sgrSubparam}`
   } else if (style.attrs.underline) {
-    codes.push(4) // Simple underline
+    result += ";4"
   }
 
   // Use SGR 7 for inverse — lets the terminal correctly swap fg/bg
   // (including default terminal colors that have no explicit ANSI code)
-  if (style.attrs.inverse) codes.push(7)
-  if (style.attrs.strikethrough) codes.push(9)
-
-  // Build the escape sequence
-  let result = `\x1b[${codes.join(";")}`
-
-  // Append underline style if needed (uses colon separator)
-  if (sgrSubparam !== null && sgrSubparam !== 0) {
-    result += `;4:${sgrSubparam}`
-  }
+  if (style.attrs.inverse) result += ";7"
+  if (style.attrs.strikethrough) result += ";9"
 
   // Append underline color if specified (SGR 58)
   if (style.underlineColor !== null && style.underlineColor !== undefined) {
-    const ulColorCode = colorToUnderlineColor(style.underlineColor)
-    if (ulColorCode) {
-      result += `;${ulColorCode}`
+    if (typeof style.underlineColor === "number") {
+      result += `;58;5;${style.underlineColor}`
+    } else {
+      result += `;58;2;${style.underlineColor.r};${style.underlineColor.g};${style.underlineColor.b}`
     }
   }
 
   result += "m"
   return result
-}
-
-/**
- * Convert color to underline color SGR 58 code string.
- * Returns a string like "58;5;N" or "58;2;r;g;b"
- */
-function colorToUnderlineColor(color: Color): string | null {
-  if (color === null) return null
-
-  if (typeof color === "number") {
-    // 256-color
-    return `58;5;${color}`
-  }
-
-  // True color
-  return `58;2;${color.r};${color.g};${color.b}`
-}
-
-/**
- * Convert color to ANSI foreground codes.
- */
-function colorToAnsiFg(color: Color): number[] | null {
-  if (color === null) return null
-
-  if (typeof color === "number") {
-    // 256-color
-    return [38, 5, color]
-  }
-
-  // True color
-  return [38, 2, color.r, color.g, color.b]
-}
-
-/**
- * Convert color to ANSI background codes.
- */
-function colorToAnsiBg(color: Color): number[] | null {
-  if (color === null) return null
-
-  if (typeof color === "number") {
-    // 256-color
-    return [48, 5, color]
-  }
-
-  // True color
-  return [48, 2, color.r, color.g, color.b]
 }

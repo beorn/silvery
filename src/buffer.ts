@@ -571,6 +571,9 @@ export class TerminalBuffer {
 
   /**
    * Set a cell at the given position.
+   *
+   * Optimized: resolves defaults and packs metadata inline to avoid
+   * allocating an intermediate Cell object.
    */
   setCell(x: number, y: number, cell: Partial<Cell>): void {
     if (!this.inBounds(x, y)) {
@@ -579,42 +582,48 @@ export class TerminalBuffer {
 
     const idx = this.index(x, y)
 
-    // Merge with defaults for any missing properties
-    const fullCell: Cell = {
-      char: cell.char ?? " ",
-      fg: cell.fg ?? null,
-      bg: cell.bg ?? null,
-      underlineColor: cell.underlineColor ?? null,
-      attrs: cell.attrs ?? {},
-      wide: cell.wide ?? false,
-      continuation: cell.continuation ?? false,
-    }
+    // Resolve properties with defaults (no intermediate object)
+    const char = cell.char ?? " "
+    const fg = cell.fg ?? null
+    const bg = cell.bg ?? null
+    const underlineColor = cell.underlineColor ?? null
+    const attrs = cell.attrs ?? EMPTY_ATTRS
+    const wide = cell.wide ?? false
+    const continuation = cell.continuation ?? false
 
     // Store character
-    this.chars[idx] = fullCell.char
+    this.chars[idx] = char
 
     // Handle true color storage
-    if (isTrueColor(fullCell.fg)) {
-      this.fgColors.set(idx, fullCell.fg)
+    if (isTrueColor(fg)) {
+      this.fgColors.set(idx, fg)
     } else {
       this.fgColors.delete(idx)
     }
 
-    if (isTrueColor(fullCell.bg)) {
-      this.bgColors.set(idx, fullCell.bg)
+    if (isTrueColor(bg)) {
+      this.bgColors.set(idx, bg)
     } else {
       this.bgColors.delete(idx)
     }
 
     // Handle underline color storage
-    if (fullCell.underlineColor !== null) {
-      this.underlineColors.set(idx, fullCell.underlineColor)
+    if (underlineColor !== null) {
+      this.underlineColors.set(idx, underlineColor)
     } else {
       this.underlineColors.delete(idx)
     }
 
-    // Pack and store metadata
-    this.cells[idx] = packCell(fullCell)
+    // Pack metadata inline (avoids packCell's fullCell parameter overhead)
+    let packed = 0
+    packed |= colorToIndex(fg) & 0xff
+    packed |= (colorToIndex(bg) & 0xff) << 8
+    packed |= attrsToNumber(attrs)
+    if (wide) packed |= WIDE_FLAG
+    if (continuation) packed |= CONTINUATION_FLAG
+    if (isTrueColor(fg)) packed |= TRUE_COLOR_FG_FLAG
+    if (isTrueColor(bg)) packed |= TRUE_COLOR_BG_FLAG
+    this.cells[idx] = packed
   }
 
   /**

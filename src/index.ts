@@ -367,6 +367,16 @@ export type { BoxProps, BoxHandle } from "./components/Box.js"
 export type { TextProps, TextHandle } from "./components/Text.js"
 export type { Rect } from "./hooks/useLayout.js"
 export type { Key, InputHandler, UseInputOptions } from "./hooks/useInput.js"
+export {
+  keyToName,
+  keyToModifiers,
+  parseHotkey,
+  matchHotkey,
+  parseKeypress,
+  parseKey,
+  emptyKey,
+} from "./keys.js"
+export type { ParsedKeypress, ParsedHotkey } from "./keys.js"
 export type { UseAppResult } from "./hooks/useApp.js"
 export type { UseStdoutResult } from "./hooks/useStdout.js"
 export type { UseStdinResult } from "./hooks/useStdin.js"

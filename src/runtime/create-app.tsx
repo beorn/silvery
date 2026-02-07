@@ -523,7 +523,11 @@ async function initApp<
   // Exit/pause/resume - mutable ref so AppContext always sees latest values.
   // Object literal captures values at creation time, so we use a mutable
   // object whose properties are updated in-place after assignment.
-  const appContextRef: { exit: () => void; pause?: () => void; resume?: () => void } = {
+  const appContextRef: {
+    exit: () => void
+    pause?: () => void
+    resume?: () => void
+  } = {
     exit: () => {},
     pause: undefined,
     resume: undefined,
@@ -617,9 +621,15 @@ async function initApp<
     }
     appContextRef.resume = () => {
       renderPaused = false
-      // Force full re-render to restore display
-      currentBuffer = doRender()
-      runtime.render(currentBuffer)
+      // Force full re-render to restore display, but only if we're not
+      // already inside a doRender() call (e.g. when resume() is called
+      // from a React effect cleanup during reconciliation).
+      if (!isRendering) {
+        currentBuffer = doRender()
+        runtime.render(currentBuffer)
+      }
+      // If isRendering is true, the outer doRender()/runtime.render() will
+      // handle the re-render after effects complete, with renderPaused=false.
     }
   }
 
@@ -824,9 +834,14 @@ async function initApp<
       } finally {
         isRendering = false
       }
-      // Flush any deferred re-renders from effects
-      await Promise.resolve()
-      if (pendingRerender) {
+      // Flush any deferred re-renders from effects.
+      // Loop until stable: effects during doRender() may trigger set() which
+      // queues microtask re-renders. Each flush may produce more pending renders.
+      let flushCount = 0
+      const maxFlushes = 5
+      while (flushCount < maxFlushes) {
+        await Promise.resolve()
+        if (!pendingRerender) break
         pendingRerender = false
         isRendering = true
         try {
@@ -834,6 +849,7 @@ async function initApp<
         } finally {
           isRendering = false
         }
+        flushCount++
       }
     },
 

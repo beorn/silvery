@@ -22,6 +22,7 @@
  */
 
 import type { AppWithCommands, KeybindingDef } from "./with-commands.js"
+import { parseHotkey } from "./keys.js"
 
 // =============================================================================
 // Types
@@ -59,34 +60,7 @@ export interface ExtendedKeybindingDef extends KeybindingDef {
 // Implementation
 // =============================================================================
 
-/**
- * Parse a key string into base key and modifiers.
- *
- * Examples:
- * - 'j' → { key: 'j', ctrl: false, meta: false, shift: false, alt: false }
- * - 'Control+c' → { key: 'c', ctrl: true, ... }
- * - 'Shift+ArrowUp' → { key: 'ArrowUp', shift: true, ... }
- */
-function parseKey(keyStr: string): {
-  key: string
-  ctrl: boolean
-  meta: boolean
-  shift: boolean
-  alt: boolean
-} {
-  const parts = keyStr.split("+")
-  const key = parts.pop() || keyStr
-  const modifiers = new Set(parts.map((p) => p.toLowerCase()))
-
-  return {
-    key,
-    ctrl: modifiers.has("control") || modifiers.has("ctrl"),
-    meta:
-      modifiers.has("meta") || modifiers.has("cmd") || modifiers.has("command"),
-    shift: modifiers.has("shift"),
-    alt: modifiers.has("alt") || modifiers.has("option"),
-  }
-}
+// parseKey replaced by parseHotkey from ./keys.js
 
 /**
  * Resolve a key press to a command ID using keybinding lookup.
@@ -153,7 +127,7 @@ export function withKeybindings<T extends AppWithCommands>(
     get(target, prop, receiver) {
       if (prop === "press") {
         return async function interceptedPress(keyStr: string): Promise<T> {
-          const { key, ...modifiers } = parseKey(keyStr)
+          const { key, ...modifiers } = parseHotkey(keyStr)
           const ctx = getKeyContext()
 
           // Try to resolve to a command

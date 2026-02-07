@@ -6,7 +6,12 @@
 
 import { bench, group, run } from "mitata"
 import { initYogaEngine } from "../src/adapters/yoga-adapter.js"
-import { TerminalBuffer, cellEquals, styleEquals } from "../src/buffer.js"
+import {
+  TerminalBuffer,
+  cellEquals,
+  createMutableCell,
+  styleEquals,
+} from "../src/buffer.js"
 import { getLayoutEngine, setLayoutEngine } from "../src/layout-engine.js"
 import {
   contentPhase,
@@ -100,6 +105,19 @@ group("TerminalBuffer", () => {
     buffer.getCell(40, 12)
   })
 
+  const mutableCell = createMutableCell()
+  bench("readCellInto single", () => {
+    buffer.readCellInto(40, 12, mutableCell)
+  })
+
+  bench("getCellChar single", () => {
+    buffer.getCellChar(40, 12)
+  })
+
+  bench("getCellBg single", () => {
+    buffer.getCellBg(40, 12)
+  })
+
   bench("fill 80x24", () => {
     buffer.fill(0, 0, 80, 24, { char: " ", bg: 4 })
   })
@@ -112,6 +130,14 @@ group("TerminalBuffer", () => {
 
   bench("cellEquals (different)", () => {
     cellEquals(buffer.getCell(10, 5), buffer2.getCell(10, 5))
+  })
+
+  bench("buffer.cellEquals (equal)", () => {
+    buffer.cellEquals(10, 5, buffer)
+  })
+
+  bench("buffer.cellEquals (different)", () => {
+    buffer.cellEquals(10, 5, buffer2)
   })
 })
 

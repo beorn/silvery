@@ -60,6 +60,7 @@
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "bench": "bun run benchmarks/index.ts",
+    "bench:comparison": "bun run benchmarks/ink-comparison/run.ts",
     "typecheck": "tsc --noEmit",
     "lint": "biome check src tests",
     "fix": "biome check --write src tests",
