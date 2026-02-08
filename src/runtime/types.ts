@@ -83,6 +83,9 @@ export interface Runtime {
   /** Render a buffer to the target */
   render(buffer: Buffer): void
 
+  /** Reset diff state so next render outputs a full frame */
+  invalidate(): void
+
   /** Get current dimensions */
   getDims(): Dims
 

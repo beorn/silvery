@@ -241,6 +241,10 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       target.write(patch)
     },
 
+    invalidate(): void {
+      prevBuffer = null
+    },
+
     getDims(): Dims {
       return target.getDims()
     },

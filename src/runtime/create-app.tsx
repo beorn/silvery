@@ -643,6 +643,10 @@ async function initApp<
     }
     appContextRef.resume = () => {
       renderPaused = false
+      // Reset diff state so next render outputs a full frame.
+      // The screen was cleared when entering console mode, so
+      // incremental diffing would produce an incomplete frame.
+      runtime.invalidate()
       // Force full re-render to restore display, but only if we're not
       // already inside a doRender() call (e.g. when resume() is called
       // from a React effect cleanup during reconciliation).
