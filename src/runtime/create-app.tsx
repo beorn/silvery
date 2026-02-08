@@ -231,6 +231,70 @@ export function useApp<S, T>(selector: (state: S) => T): T {
   return state
 }
 
+/**
+ * Shallow comparison for plain objects.
+ * Returns true if objects have same keys with Object.is() equal values.
+ */
+function shallowEqual<T>(a: T, b: T): boolean {
+  if (Object.is(a, b)) return true
+  if (
+    typeof a !== "object" ||
+    typeof b !== "object" ||
+    a === null ||
+    b === null
+  ) {
+    return false
+  }
+  const keysA = Object.keys(a as Record<string, unknown>)
+  const keysB = Object.keys(b as Record<string, unknown>)
+  if (keysA.length !== keysB.length) return false
+  for (const key of keysA) {
+    if (
+      !Object.is(
+        (a as Record<string, unknown>)[key],
+        (b as Record<string, unknown>)[key],
+      )
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
+/**
+ * Hook for accessing app state with shallow comparison.
+ *
+ * Like useApp, but uses shallow object comparison instead of Object.is().
+ * Use when your selector returns a new object on each call — this prevents
+ * re-renders when all individual fields are unchanged.
+ *
+ * @example
+ * ```tsx
+ * const { cursor, mode } = useAppShallow(s => ({
+ *   cursor: s.cursorNodeId,
+ *   mode: s.viewMode,
+ * }))
+ * ```
+ */
+export function useAppShallow<S, T>(selector: (state: S) => T): T {
+  const store = useContext(StoreContext) as StoreApi<S> | null
+  if (!store)
+    throw new Error("useAppShallow must be used within createApp().run()")
+
+  const [state, setState] = React.useState(() => selector(store.getState()))
+  const selectorRef = useRef(selector)
+  selectorRef.current = selector
+
+  useEffect(() => {
+    return store.subscribe((newState) => {
+      const next = selectorRef.current(newState)
+      setState((prev) => (shallowEqual(prev, next) ? prev : next))
+    })
+  }, [store])
+
+  return state
+}
+
 // ============================================================================
 // Implementation
 // ============================================================================
