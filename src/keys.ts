@@ -449,10 +449,10 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
 /**
  * Parse raw terminal input into a Key object and cleaned input string.
  *
- * @param rawInput Raw terminal input string
+ * @param rawInput Raw terminal input (string or Buffer)
  * @returns Tuple of [cleanedInput, Key]
  */
-export function parseKey(rawInput: string): [string, Key] {
+export function parseKey(rawInput: string | Buffer): [string, Key] {
   const keypress = parseKeypress(rawInput)
 
   const key: Key = {
@@ -483,6 +483,16 @@ export function parseKey(rawInput: string): [string, Key] {
   // Strip meta prefix if remaining
   if (input.startsWith("\u001b")) {
     input = input.slice(1)
+  }
+
+  // Filter out escape sequence fragments that leak through
+  // e.g., "[2~" from Insert key, "[A" from arrows when not fully parsed
+  // Single "[" and "]" are allowed — they're valid key bindings
+  if (
+    (input.startsWith("[") && input.length > 1) ||
+    (input.startsWith("O") && input.length > 1)
+  ) {
+    input = ""
   }
 
   // Detect shift for uppercase letters

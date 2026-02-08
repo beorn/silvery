@@ -8,12 +8,7 @@
 import { createLogger } from "@beorn/logger"
 import { useContext, useEffect } from "react"
 import { EventsContext, InputContext, StdinContext } from "../context.js"
-import {
-  type Key,
-  type ParsedKeypress,
-  CODE_TO_KEY,
-  parseKeypress,
-} from "../keys.js"
+import { type Key, parseKey } from "../keys.js"
 
 const log = createLogger("inkx:useInput")
 
@@ -41,17 +36,6 @@ export interface UseInputOptions {
    */
   isActive?: boolean
 }
-
-// ============================================================================
-// Key Parsing Constants (useInput-specific)
-// ============================================================================
-
-/**
- * Keys that should not be passed as input text.
- * This is a shorter list than the runtime version since useInput doesn't need
- * "return", "enter", "tab", "escape", "delete" filtering.
- */
-const NON_ALPHANUMERIC_KEYS = [...Object.values(CODE_TO_KEY), "backspace"]
 
 // ============================================================================
 // Hook Implementation
@@ -132,56 +116,7 @@ export function useInput(
     }
 
     const handleData = (data: string | Buffer) => {
-      const keypress: ParsedKeypress = parseKeypress(data)
-
-      const key: Key = {
-        upArrow: keypress.name === "up",
-        downArrow: keypress.name === "down",
-        leftArrow: keypress.name === "left",
-        rightArrow: keypress.name === "right",
-        pageDown: keypress.name === "pagedown",
-        pageUp: keypress.name === "pageup",
-        home: keypress.name === "home",
-        end: keypress.name === "end",
-        return: keypress.name === "return",
-        escape: keypress.name === "escape",
-        ctrl: keypress.ctrl,
-        shift: keypress.shift,
-        tab: keypress.name === "tab",
-        backspace: keypress.name === "backspace",
-        delete: keypress.name === "delete",
-        meta: keypress.meta || keypress.name === "escape" || keypress.option,
-      }
-
-      let input = keypress.ctrl ? keypress.name : keypress.sequence
-
-      if (NON_ALPHANUMERIC_KEYS.includes(keypress.name)) {
-        input = ""
-      }
-
-      // Strip meta prefix if remaining
-      if (input.startsWith("\u001b")) {
-        input = input.slice(1)
-      }
-
-      // Filter out escape sequence fragments that leak through
-      // e.g., "[2~" from Insert key, "[A" from arrows when not fully parsed
-      // BUT allow single "[" and "]" through - they're valid key bindings
-      if (
-        (input.startsWith("[") && input.length > 1) ||
-        (input.startsWith("O") && input.length > 1)
-      ) {
-        input = ""
-      }
-
-      // Detect shift for uppercase letters
-      if (
-        input.length === 1 &&
-        typeof input[0] === "string" &&
-        /[A-Z]/.test(input[0])
-      ) {
-        key.shift = true
-      }
+      const [input, key] = parseKey(data)
 
       // Handle Ctrl+C exit
       if (input === "c" && key.ctrl && inputContext.exitOnCtrlC) {
