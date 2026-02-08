@@ -414,11 +414,24 @@ const driver = withDiagnostics(createBoardDriver(repo, rootId), {
   checkIncremental: true, // Verify incremental vs fresh render
   checkStability: true, // Verify cursor moves don't change content
   checkReplay: true, // Verify ANSI replay produces correct result
+  captureOnFailure: true, // Save screenshot on diagnostic failure
+  screenshotDir: "/tmp/inkx-diagnostics", // Default directory
 })
 
 // Commands now run invariant checks automatically
-await driver.cmd.down() // Throws if any check fails
+await driver.cmd.down() // Throws if any check fails (with screenshot path)
 ```
+
+### Screenshots
+
+The App interface supports direct screenshot capture via `bufferToHTML()` + lazy Playwright rendering:
+
+```tsx
+const png = await app.screenshot("/tmp/board.png") // Save to file
+const buffer = await app.screenshot() // Get Buffer
+```
+
+No TTY server or external processes needed. Playwright is lazy-loaded on first call.
 
 ### Driver Pattern for Testing/AI
 

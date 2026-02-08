@@ -40,6 +40,8 @@
  * ```
  */
 
+import { mkdir, writeFile } from "node:fs/promises"
+import { join } from "node:path"
 import type { TerminalBuffer } from "./buffer.js"
 import { outputPhase } from "./pipeline/index.js"
 import { compareBuffers, formatMismatch } from "./testing/compare-buffers.js"
@@ -58,6 +60,10 @@ export interface DiagnosticOptions {
   checkReplay?: boolean
   /** Lines to skip for stability check (e.g., [0, -1] for breadcrumb/statusbar) */
   skipLines?: number[]
+  /** Capture screenshot on failure (default: false) */
+  captureOnFailure?: boolean
+  /** Directory for failure screenshots (default: /tmp/inkx-diagnostics) */
+  screenshotDir?: string
 }
 
 /**
@@ -418,10 +424,29 @@ export function withDiagnostics<T extends AppWithCommands>(
     checkStability = true,
     checkReplay = true,
     skipLines = parseSkipLines(process.env.INKX_STABILITY_SKIP_LINES),
+    captureOnFailure = false,
+    screenshotDir = "/tmp/inkx-diagnostics",
   } = options
 
   // If all checks are explicitly disabled, return app unchanged
   if (!checkIncremental && !checkStability && !checkReplay) return app
+
+  /** Capture screenshot on diagnostic failure (best-effort, never masks original error) */
+  async function captureFailureScreenshot(
+    commandId: string,
+    checkType: string,
+  ): Promise<string | null> {
+    if (!captureOnFailure) return null
+    try {
+      await mkdir(screenshotDir, { recursive: true })
+      const filename = `fail-${commandId}-${checkType}.png`
+      const filepath = join(screenshotDir, filename)
+      await app.screenshot(filepath)
+      return filepath
+    } catch {
+      return null
+    }
+  }
 
   // Wrap the cmd proxy
   const wrappedCmd = new Proxy(app.cmd, {
@@ -463,13 +488,20 @@ export function withDiagnostics<T extends AppWithCommands>(
                       ).join(""),
                     ).join("\n")
                   : "(no fresh buffer)"
+                const screenshotPath = await captureFailureScreenshot(
+                  command.id,
+                  "incremental",
+                )
                 throw new Error(
                   `INKX_DIAGNOSTIC: Incremental/fresh mismatch after ${command.id}\n` +
                     formatMismatch(mismatch, {
                       key: command.id,
                       incrementalText,
                       freshText,
-                    }),
+                    }) +
+                    (screenshotPath
+                      ? `\n  Screenshot saved: ${screenshotPath}`
+                      : ""),
                 )
               }
             }
@@ -489,9 +521,16 @@ export function withDiagnostics<T extends AppWithCommands>(
           const afterText = app.text
           const mismatch = compareText(beforeText, afterText, skipLines)
           if (mismatch) {
+            const screenshotPath = await captureFailureScreenshot(
+              command.id,
+              "stability",
+            )
             throw new Error(
               `INKX_DIAGNOSTIC: Content changed after cursor move ${command.id}\n` +
-                `  Line ${mismatch.line}: "${mismatch.before}" → "${mismatch.after}"`,
+                `  Line ${mismatch.line}: "${mismatch.before}" → "${mismatch.after}"` +
+                (screenshotPath
+                  ? `\n  Screenshot saved: ${screenshotPath}`
+                  : ""),
             )
           }
         }
@@ -523,11 +562,18 @@ export function withDiagnostics<T extends AppWithCommands>(
                     `  (${m.x},${m.y}): expected="${m.expected}" actual="${m.actual}"`,
                 )
                 .join("\n")
+              const screenshotPath = await captureFailureScreenshot(
+                command.id,
+                "replay",
+              )
               throw new Error(
                 `INKX_DIAGNOSTIC: ANSI replay mismatch after ${command.id}\n` +
                   `  ${mismatches.length} cells differ:\n${details}` +
                   (mismatches.length > 5
                     ? `\n  ... and ${mismatches.length - 5} more`
+                    : "") +
+                  (screenshotPath
+                    ? `\n  Screenshot saved: ${screenshotPath}`
                     : ""),
               )
             }

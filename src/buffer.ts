@@ -1023,6 +1023,222 @@ export function bufferToStyledText(
   return result
 }
 
+// ============================================================================
+// xterm-256 Color Palette
+// ============================================================================
+
+/** Standard xterm-256 color palette as hex strings. */
+const XTERM_256_PALETTE: string[] = (() => {
+  const palette: string[] = new Array(256)
+
+  // Colors 0-7: standard colors
+  const standard = [
+    "#000000",
+    "#cd0000",
+    "#00cd00",
+    "#cdcd00",
+    "#0000ee",
+    "#cd00cd",
+    "#00cdcd",
+    "#e5e5e5",
+  ]
+  // Colors 8-15: bright colors
+  const bright = [
+    "#7f7f7f",
+    "#ff0000",
+    "#00ff00",
+    "#ffff00",
+    "#5c5cff",
+    "#ff00ff",
+    "#00ffff",
+    "#ffffff",
+  ]
+  for (let i = 0; i < 8; i++) {
+    palette[i] = standard[i]!
+    palette[i + 8] = bright[i]!
+  }
+
+  // Colors 16-231: 6x6x6 RGB cube
+  const cubeValues = [0, 95, 135, 175, 215, 255]
+  for (let i = 0; i < 216; i++) {
+    const r = cubeValues[Math.floor(i / 36)]!
+    const g = cubeValues[Math.floor((i % 36) / 6)]!
+    const b = cubeValues[i % 6]!
+    palette[16 + i] =
+      "#" +
+      r.toString(16).padStart(2, "0") +
+      g.toString(16).padStart(2, "0") +
+      b.toString(16).padStart(2, "0")
+  }
+
+  // Colors 232-255: grayscale ramp
+  for (let i = 0; i < 24; i++) {
+    const v = 8 + i * 10
+    const hex = v.toString(16).padStart(2, "0")
+    palette[232 + i] = "#" + hex + hex + hex
+  }
+
+  return palette
+})()
+
+/**
+ * Convert a Color value to a CSS color string.
+ * Returns null for default/inherit colors.
+ */
+function colorToCSS(color: Color): string | null {
+  if (color === null) return null
+  if (typeof color === "number") {
+    return XTERM_256_PALETTE[color] ?? null
+  }
+  return `rgb(${color.r},${color.g},${color.b})`
+}
+
+// ============================================================================
+// Buffer to HTML Conversion
+// ============================================================================
+
+/**
+ * Convert a terminal buffer to a full HTML document.
+ * Suitable for rendering as a screenshot via headless browser.
+ *
+ * @param buffer The buffer to convert
+ * @param options.fontFamily CSS font-family (default: 'JetBrains Mono, Menlo, monospace')
+ * @param options.fontSize CSS font-size in px (default: 14)
+ * @param options.theme Color scheme (default: 'dark')
+ * @returns Complete HTML document string
+ */
+export function bufferToHTML(
+  buffer: TerminalBuffer,
+  options: {
+    fontFamily?: string
+    fontSize?: number
+    theme?: "dark" | "light"
+  } = {},
+): string {
+  const {
+    fontFamily = "JetBrains Mono, Menlo, monospace",
+    fontSize = 14,
+    theme = "dark",
+  } = options
+
+  const defaultFg = theme === "dark" ? "#d4d4d4" : "#1e1e1e"
+  const defaultBg = theme === "dark" ? "#1e1e1e" : "#ffffff"
+
+  const htmlLines: string[] = []
+
+  for (let y = 0; y < buffer.height; y++) {
+    let lineHTML = ""
+    let currentStyle: Style | null = null
+    let spanOpen = false
+
+    for (let x = 0; x < buffer.width; x++) {
+      const cell = buffer.getCell(x, y)
+      if (cell.continuation) continue
+
+      const cellStyle: Style = {
+        fg: cell.fg,
+        bg: cell.bg,
+        underlineColor: cell.underlineColor,
+        attrs: cell.attrs,
+      }
+
+      if (!styleEquals(currentStyle, cellStyle)) {
+        if (spanOpen) {
+          lineHTML += "</span>"
+          spanOpen = false
+        }
+        const css = styleToCSSProperties(cellStyle, defaultFg, defaultBg)
+        if (css) {
+          lineHTML += `<span style="${css}">`
+          spanOpen = true
+        }
+        currentStyle = cellStyle
+      }
+
+      lineHTML += escapeHTML(cell.char)
+    }
+
+    if (spanOpen) {
+      lineHTML += "</span>"
+    }
+
+    htmlLines.push(`<div>${lineHTML}</div>`)
+  }
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:${defaultBg};color:${defaultFg};font-family:${fontFamily};font-size:${fontSize}px;line-height:1.2;white-space:pre">
+${htmlLines.join("\n")}
+</body>
+</html>`
+}
+
+/**
+ * Convert a Style to CSS inline style properties.
+ * Returns null if the style is entirely default.
+ */
+function styleToCSSProperties(
+  style: Style,
+  defaultFg: string,
+  defaultBg: string,
+): string | null {
+  const parts: string[] = []
+
+  // Handle inverse: swap fg/bg
+  let fgColor: string | null
+  let bgColor: string | null
+  if (style.attrs.inverse) {
+    fgColor = colorToCSS(style.bg) ?? defaultBg
+    bgColor = colorToCSS(style.fg) ?? defaultFg
+  } else {
+    fgColor = colorToCSS(style.fg)
+    bgColor = colorToCSS(style.bg)
+  }
+
+  if (fgColor) parts.push(`color:${fgColor}`)
+  if (bgColor) parts.push(`background:${bgColor}`)
+  if (style.attrs.bold) parts.push("font-weight:bold")
+  if (style.attrs.dim) parts.push("opacity:0.5")
+  if (style.attrs.italic) parts.push("font-style:italic")
+  if (style.attrs.hidden) parts.push("visibility:hidden")
+
+  // Text decoration: underline and/or strikethrough
+  const decorations: string[] = []
+  const underlineStyle = style.attrs.underlineStyle
+  if (typeof underlineStyle === "string") {
+    const cssStyleMap: Record<string, string> = {
+      single: "solid",
+      double: "double",
+      curly: "wavy",
+      dotted: "dotted",
+      dashed: "dashed",
+    }
+    decorations.push("underline")
+    const cssStyle = cssStyleMap[underlineStyle]
+    if (cssStyle) parts.push(`text-decoration-style:${cssStyle}`)
+    const ulColor = colorToCSS(style.underlineColor ?? null)
+    if (ulColor) parts.push(`text-decoration-color:${ulColor}`)
+  } else if (style.attrs.underline) {
+    decorations.push("underline")
+  }
+  if (style.attrs.strikethrough) decorations.push("line-through")
+  if (decorations.length > 0)
+    parts.push(`text-decoration:${decorations.join(" ")}`)
+
+  return parts.length > 0 ? parts.join(";") : null
+}
+
+/** Escape special HTML characters. */
+function escapeHTML(str: string): string {
+  if (str === " " || str.length === 0) return str
+  return str
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+}
+
 /**
  * Check if any text attributes are active.
  */

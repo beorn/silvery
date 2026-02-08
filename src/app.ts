@@ -32,7 +32,8 @@ import {
 } from "./auto-locator.js"
 import { type BoundTerm, createBoundTerm } from "./bound-term.js"
 import type { TerminalBuffer } from "./buffer.js"
-import { bufferToStyledText, bufferToText } from "./buffer.js"
+import { bufferToHTML, bufferToStyledText, bufferToText } from "./buffer.js"
+import { type Screenshotter, createScreenshotter } from "./screenshot.js"
 import { keyToAnsi } from "./keys.js"
 import type { InkxNode, Rect } from "./types.js"
 
@@ -95,6 +96,11 @@ export interface App {
 
   /** Clear the terminal output */
   clear(): void
+
+  // === Screenshot ===
+
+  /** Render current buffer to PNG. Requires Playwright (lazy-loaded on first call). */
+  screenshot(outputPath?: string): Promise<Buffer>
 
   // === Debug ===
 
@@ -213,6 +219,9 @@ export function buildApp(options: AppOptions): App {
   // Note: BoundTerm is created lazily since buffer may not exist initially
   let boundTerm: BoundTerm | null = null
 
+  // Screenshotter is created lazily on first screenshot() call
+  let screenshotter: Screenshotter | null = null
+
   const app: App = {
     // === Content/Document Perspective ===
 
@@ -300,11 +309,34 @@ export function buildApp(options: AppOptions): App {
       return boundTerm
     },
 
+    // === Screenshot ===
+
+    async screenshot(outputPath?: string): Promise<Buffer> {
+      const buffer = getBuffer()
+      if (!buffer) {
+        throw new Error("No buffer available for screenshot")
+      }
+      const html = bufferToHTML(buffer)
+      if (!screenshotter) {
+        screenshotter = createScreenshotter()
+      }
+      return screenshotter.capture(html, outputPath)
+    },
+
     // === Lifecycle ===
 
     rerender,
-    unmount,
-    [Symbol.dispose]: unmount,
+    unmount() {
+      // Close screenshotter if it was created
+      if (screenshotter) {
+        screenshotter.close().catch(() => {})
+        screenshotter = null
+      }
+      unmount()
+    },
+    [Symbol.dispose]() {
+      app.unmount()
+    },
     waitUntilExit,
     clear,
 

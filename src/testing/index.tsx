@@ -93,7 +93,7 @@ export {
 export type { BoundTerm } from "../bound-term.js"
 
 // Re-export buffer utilities for testing convenience
-export { bufferToText, bufferToStyledText } from "../buffer.js"
+export { bufferToText, bufferToStyledText, bufferToHTML } from "../buffer.js"
 export type { TerminalBuffer } from "../buffer.js"
 
 // Re-export locator API for DOM queries (legacy, prefer App.locator())
