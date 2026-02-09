@@ -290,19 +290,7 @@ function renderScrollContainerChildren(
     ? getBorderSize(props)
     : { top: 0, bottom: 0, left: 0, right: 0 }
   const padding = getPadding(props)
-
-  // Set up clip bounds for children
-  const nodeClip = {
-    top: layout.y + border.top + padding.top,
-    bottom: layout.y + layout.height - border.bottom - padding.bottom,
-  }
-  // Intersect with parent clip bounds if present
-  const childClipBounds = clipBounds
-    ? {
-        top: Math.max(clipBounds.top, nodeClip.top),
-        bottom: Math.min(clipBounds.bottom, nodeClip.bottom),
-      }
-    : nodeClip
+  const childClipBounds = computeChildClipBounds(layout, props, clipBounds)
 
   // Determine if scroll offset changed since last render.
   const scrollOffsetChanged = ss.offset !== ss.prevOffset
@@ -422,30 +410,11 @@ function renderNormalChildren(
   const layout = node.contentRect
   if (!layout) return
 
-  // For overflow='hidden' containers, calculate clip bounds
-  // Must account for scrollOffset since clip checks happen in screen coordinates
-  let effectiveClipBounds = clipBounds
-  if (props.overflow === "hidden") {
-    const border = props.borderStyle
-      ? getBorderSize(props)
-      : { top: 0, bottom: 0, left: 0, right: 0 }
-    const padding = getPadding(props)
-    // Adjust layout position by scrollOffset to get screen coordinates
-    const adjustedY = layout.y - scrollOffset
-    const nodeClip = {
-      top: adjustedY + border.top + padding.top,
-      bottom: adjustedY + layout.height - border.bottom - padding.bottom,
-    }
-    // Intersect with parent clip bounds if present
-    if (clipBounds) {
-      effectiveClipBounds = {
-        top: Math.max(clipBounds.top, nodeClip.top),
-        bottom: Math.min(clipBounds.bottom, nodeClip.bottom),
-      }
-    } else {
-      effectiveClipBounds = nodeClip
-    }
-  }
+  // For overflow='hidden' containers, clip children to content area
+  const effectiveClipBounds =
+    props.overflow === "hidden"
+      ? computeChildClipBounds(layout, props, clipBounds, scrollOffset)
+      : clipBounds
 
   // Force children to re-render when parent's region was modified on a clone,
   // children were restructured, or sibling positions shifted.
@@ -497,6 +466,38 @@ function renderNormalChildren(
     if (childIsDirty) {
       anySiblingWasDirty = true
     }
+  }
+}
+
+// ============================================================================
+// Clip Bounds
+// ============================================================================
+
+type ClipBounds = { top: number; bottom: number }
+
+/**
+ * Compute clip bounds for a container's children by insetting for border+padding,
+ * then intersecting with parent clip bounds.
+ */
+function computeChildClipBounds(
+  layout: NonNullable<InkxNode["contentRect"]>,
+  props: BoxProps,
+  parentClip: ClipBounds | undefined,
+  scrollOffset = 0,
+): ClipBounds {
+  const border = props.borderStyle
+    ? getBorderSize(props)
+    : { top: 0, bottom: 0, left: 0, right: 0 }
+  const padding = getPadding(props)
+  const adjustedY = layout.y - scrollOffset
+  const nodeClip: ClipBounds = {
+    top: adjustedY + border.top + padding.top,
+    bottom: adjustedY + layout.height - border.bottom - padding.bottom,
+  }
+  if (!parentClip) return nodeClip
+  return {
+    top: Math.max(parentClip.top, nodeClip.top),
+    bottom: Math.min(parentClip.bottom, nodeClip.bottom),
   }
 }
 
