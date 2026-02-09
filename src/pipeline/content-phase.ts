@@ -226,10 +226,16 @@ function renderNodeToBuffer(
     node.childrenDirty ||
     layoutChanged ||
     childPositionChanged
-  // skipBgFill: in incremental mode, skip the bg fill when the box is visually
-  // unchanged. This preserves child pixels in the cloned buffer.
-  // Also skip when ancestorCleared but the box itself doesn't need repaint.
-  const skipBgFill = (hasPrevBuffer || ancestorCleared) && !needsOwnRepaint
+  // skipBgFill: in incremental mode, skip the bg fill when the cloned buffer
+  // already has the correct bg at this node's position. That's ONLY when:
+  // - hasPrevBuffer=true (buffer is a clone with previous frame's pixels)
+  // - ancestorCleared=false (no ancestor erased our region)
+  // - needsOwnRepaint=false (our own properties didn't change)
+  //
+  // When ancestorCleared=true, the buffer at our position was erased to the
+  // inherited bg, NOT our bg — so we must re-fill.
+  // When hasPrevBuffer=false AND ancestorCleared=false, it's a fresh render.
+  const skipBgFill = hasPrevBuffer && !ancestorCleared && !needsOwnRepaint
   const parentWasPainted =
     parentRegionCleared ||
     ((hasPrevBuffer || ancestorCleared) &&
@@ -346,8 +352,9 @@ function renderNodeToBuffer(
       props,
       clipBounds,
       hasPrevBuffer,
+      parentRegionCleared,
       parentWasPainted,
-      ancestorCleared || parentRegionCleared,
+      ancestorCleared,
     )
   } else {
     renderNormalChildren(
@@ -358,8 +365,9 @@ function renderNodeToBuffer(
       clipBounds,
       hasPrevBuffer,
       childPositionChanged,
+      parentRegionCleared,
       parentWasPainted,
-      ancestorCleared || parentRegionCleared,
+      ancestorCleared,
     )
   }
 
@@ -380,6 +388,7 @@ function renderScrollContainerChildren(
   clipBounds?: { top: number; bottom: number },
   hasPrevBuffer = false,
   parentRegionCleared = false,
+  parentWasPainted = false,
   ancestorCleared = false,
 ): void {
   const layout = node.contentRect
@@ -417,9 +426,15 @@ function renderScrollContainerChildren(
   //
   // 2. No clear needed: only subtreeDirty (some descendants changed).
   //    Children use hasPrevBuffer=true and skip via fast-path if clean.
+  // Clear viewport when scroll offset changed, children restructured, or
+  // parent region was cleared/painted. Both parentRegionCleared and
+  // parentWasPainted mean children's pixels were overwritten.
   const needsViewportClear =
     hasPrevBuffer &&
-    (scrollOffsetChanged || node.childrenDirty || parentRegionCleared)
+    (scrollOffsetChanged ||
+      node.childrenDirty ||
+      parentRegionCleared ||
+      parentWasPainted)
 
   const childHasPrev = needsViewportClear ? false : hasPrevBuffer
   // When viewport was cleared, children need to know the buffer is a clone
@@ -516,6 +531,7 @@ function renderNormalChildren(
   hasPrevBuffer = false,
   childPositionChanged = false,
   parentRegionCleared = false,
+  parentWasPainted = false,
   ancestorCleared = false,
 ): void {
   const layout = node.contentRect
@@ -546,26 +562,26 @@ function renderNormalChildren(
     }
   }
 
-  // When children were added/removed/reordered, force all children to re-render.
-  // The parent's region was cleared, so clean children must repaint too.
-  // Also force re-render when child positions changed (sibling shift) because
-  // we cleared the parent's region including children's old positions.
-  // Also force when parent's region was cleared for any reason (contentDirty,
-  // paintDirty, etc.) - children's pixels were erased and must be repainted.
+  // Force children to re-render when:
+  // - childrenDirty: children added/removed/reordered — old pixels erased
+  // - childPositionChanged: sibling shift — gap regions cleared
+  // - parentRegionCleared: parent's region was explicitly cleared (no bg fill)
+  // - parentWasPainted: parent filled its bg — children's old pixels overwritten
   const parentDidClear =
-    node.childrenDirty || childPositionChanged || parentRegionCleared
+    node.childrenDirty ||
+    childPositionChanged ||
+    parentRegionCleared ||
+    parentWasPainted
   const childHasPrev = parentDidClear ? false : hasPrevBuffer
-  // When we force childHasPrev=false on a CLONED buffer, children need to know
-  // the buffer still has stale pixels. Pass ancestorCleared so descendants can
-  // clear their own sub-regions when needed.
-  //
-  // Only set ancestorCleared when there are ACTUAL stale pixels:
-  // - parentRegionCleared: parent cleared its region (stale pixels exist in children)
+  // ancestorCleared tells descendants the buffer has STALE pixels that need
+  // clearing. Only set when actual stale pixels exist:
+  // - parentRegionCleared: parent cleared (no bg fill) — stale pixels remain
   // - ancestorCleared already true: stale pixels from higher up the tree
   //
-  // Do NOT set ancestorCleared just because parentDidClear (childrenDirty etc.)
-  // combined with the parent having a backgroundColor — the bg fill handled the
-  // stale pixels, so children render on a correct background.
+  // Do NOT include parentWasPainted: when a parent fills its bg, children's
+  // positions have the correct bg (parent's color), not stale pixels.
+  // Setting ancestorCleared would cause children to re-fill their regions,
+  // which can overwrite parent border cells at boundary positions.
   const childAncestorCleared =
     parentRegionCleared || ancestorCleared
 
