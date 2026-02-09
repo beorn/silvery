@@ -2,9 +2,28 @@
 
 [Ink](https://github.com/vadimdemedes/ink) (2017) brought React to the terminal. ~1.3M npm weekly downloads (Feb 2026), 50+ community components, used by Gatsby, Prisma, Terraform CDK, Shopify CLI, and many more. Mature, stable, well-documented.
 
-[inkx](https://github.com/beorn/inkx) (2025) is a ground-up reimplementation with two-phase rendering — components know their dimensions during render, not after. This enables native scrolling, auto-truncation, and dimension-aware hooks that are architecturally difficult to add to Ink.
+[inkx](https://github.com/beorn/inkx) (2025) started as a ground-up reimplementation of Ink's rendering with two-phase rendering — components know their dimensions during render, not after. It has since grown into a broader app framework with runtime layers, state management integration, command/keybinding systems, and plugin composition. This makes a direct 1:1 comparison somewhat apples-to-oranges: Ink is a focused React renderer, while inkx is closer to a full terminal app toolkit.
 
-Both use the same React component model and similar APIs. See [migration guide](migration.md) for switching.
+See [migration guide](migration.md) for switching the rendering layer.
+
+---
+
+## Shared Foundation
+
+inkx and Ink share the same core ideas — the migration path is intentionally short:
+
+- **React component model** — JSX, hooks (`useState`, `useEffect`, `useMemo`, etc.), reconciliation, keys
+- **Box + Text primitives** — Flexbox layout via `<Box>` with direction/padding/margin/border, styled text via `<Text>`
+- **Flexbox layout** — Both use CSS-like flexbox (inkx via Flexx or Yoga, Ink via Yoga NAPI)
+- **`useInput` hook** — Same callback signature `(input, key) => void` for keyboard handling
+- **`useApp` / exit pattern** — `useApp()` to access app-level methods including `exit()`
+- **`Static` component** — Render content above the interactive area (log lines, completed items)
+- **`Spacer` / `Newline`** — Same utility components
+- **Border styles** — `single`, `double`, `round`, `bold`, `classic`, etc.
+- **`measureElement`** — Both offer ways to measure rendered elements (inkx also has `useContentRect`)
+- **Node.js streams** — Both render to stdout, read from stdin
+
+If your app uses `Box`, `Text`, `useInput`, and basic hooks, it works in both with minimal changes.
 
 ---
 
@@ -35,7 +54,7 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 | Input handling | `InputLayerProvider` stack (DOM-style bubbling) | `useInput` only |
 | Kitty keyboard protocol | `keyToKittyAnsi()` + auto-detection | [PR #852](https://github.com/vadimdemedes/ink/pull/852) in review |
 | Cursor API | `useCursor()` — component-relative positioning | None ([#251](https://github.com/vadimdemedes/ink/issues/251), open since 2019) |
-| TextArea | `TextArea` — multi-line editing with layout feedback | None ([#676](https://github.com/vadimdemedes/ink/issues/676)) |
+| TextArea | Planned — multi-line editing with layout feedback | None ([#676](https://github.com/vadimdemedes/ink/issues/676)) |
 | Mouse support | HitRegistry with z-index | Basic via `useInput` |
 | Unicode/CJK | Built-in grapheme splitting + display width | Third-party `string-width` |
 | Console capture | Built-in `Console` component | `patchConsole()` |
