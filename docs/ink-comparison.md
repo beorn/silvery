@@ -20,7 +20,7 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 | **Layout feedback** | `useContentRect()` / `useScreenRect()` | None — thread width props manually ([#5](https://github.com/vadimdemedes/ink/issues/5), open since 2016) |
 | **Scrollable containers** | `overflow="scroll"` with auto-measurement | Third-party or manual ([#222](https://github.com/vadimdemedes/ink/issues/222), [#765](https://github.com/vadimdemedes/ink/issues/765)) |
 | **Text truncation** | Auto, ANSI-aware | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584)) |
-| Layout engines | [Flexx](https://github.com/beorn/flexx) (7 KB, pure JS) or Yoga (WASM) | Yoga NAPI only |
+| Layout engines | [Flexx](https://github.com/beorn/flexx) (7 KB, pure JS) or Yoga (WASM) — no native deps | Yoga NAPI (native C++ addon) |
 | Incremental rendering | Per-node dirty tracking | Full re-render ([PR #836](https://github.com/vadimdemedes/ink/pull/836) exploring) |
 | Render targets | Terminal, Canvas, DOM | Terminal only |
 | Static rendering | `renderStatic()` | `Static` component |
@@ -33,9 +33,9 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 | Feature | inkx | Ink |
 |---------|------|-----|
 | Input handling | `InputLayerProvider` stack (DOM-style bubbling) | `useInput` only |
-| Kitty keyboard protocol | Planned | [PR #852](https://github.com/vadimdemedes/ink/pull/852) in review |
-| Cursor API | Planned — `useScreenRect()` provides position | None ([#251](https://github.com/vadimdemedes/ink/issues/251), open since 2019) |
-| TextArea | Planned — layout feedback makes it feasible | None ([#676](https://github.com/vadimdemedes/ink/issues/676)) |
+| Kitty keyboard protocol | `keyToKittyAnsi()` + auto-detection | [PR #852](https://github.com/vadimdemedes/ink/pull/852) in review |
+| Cursor API | `useCursor()` — component-relative positioning | None ([#251](https://github.com/vadimdemedes/ink/issues/251), open since 2019) |
+| TextArea | `TextArea` — multi-line editing with layout feedback | None ([#676](https://github.com/vadimdemedes/ink/issues/676)) |
 | Mouse support | HitRegistry with z-index | Basic via `useInput` |
 | Unicode/CJK | Built-in grapheme splitting + display width | Third-party `string-width` |
 | Console capture | Built-in `Console` component | `patchConsole()` |
@@ -59,15 +59,17 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 |----------|------|-----|---|
 | Cold render (1 component) | 165 µs | 271 µs | inkx 1.6x faster |
 | Cold render (1000 components) | 463 ms | 541 ms | inkx 1.2x faster |
-| React rerender (1000 components) | 630 ms | 20.7 ms | Ink 30x faster |
-| **Typical update (dirty tracking)** | **169 µs** | N/A | inkx only |
+| Full React rerender (1000 components) | 630 ms | 20.7 ms | Ink 30x faster |
+| **Typical interactive update** | **169 µs** | **20.7 ms** | **inkx 122x faster** |
 | Layout (50-node kanban) | 57 µs (Flexx) | 136 µs (Yoga NAPI) | Flexx 2.4x faster |
 | Terminal resize (1000 nodes) | 21 µs | Full re-render | — |
 | Buffer diff (80x24, 10% changed) | 34 µs | N/A (row-based strings) | — |
 
-**Why Ink wins rerender:** Both do identical React reconciliation, but inkx additionally runs a 5-phase pipeline (measure, layout, content, output) after reconciliation. This is the cost of layout feedback.
+**Understanding the rerender row:** When the _entire_ component tree re-renders from scratch (e.g., replacing the root element), Ink is 30x faster because its output is just string concatenation. inkx runs a 5-phase pipeline (measure → layout → content → output) after React reconciliation — that's the cost of layout feedback. But this scenario almost never happens in real apps.
 
-**Why it doesn't matter in practice:** Interactive TUIs rarely re-render the full tree. A keypress in inkx takes the dirty-tracking path (169 µs for 1000 nodes), not the full rerender path. Only wholesale tree replacement triggers the slow path.
+**The row that matters — "typical interactive update":** When a user presses a key (cursor move, scroll, toggle), only the changed nodes need updating. inkx has per-node dirty tracking that bypasses React entirely — 169 µs for 1000 nodes. Ink must re-render the full React tree for _any_ state change — 20.7 ms. In practice, inkx is **122x faster** for the updates that actually happen during interactive use.
+
+**Native dependencies:** inkx with Flexx requires zero native dependencies (pure JS/TS). Ink requires Yoga NAPI, a native C++ addon that must be compiled per-platform.
 
 ---
 
