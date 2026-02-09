@@ -191,22 +191,50 @@ console.log(
   "  Flexx = pure JS (7 KB). Yoga WASM = yoga-wasm-web. Yoga NAPI = yoga-layout (C++).",
 )
 
-// Section 3: Re-render (update existing tree)
-const rerender100 = get(inkMap, "100 Box+Text rerender (80x24)")
-const rerender1000 = get(inkMap, "1000 Box+Text rerender (120x40)")
+// Section 3: React re-render (apples-to-apples)
+console.log()
+console.log(
+  "React re-render (apples-to-apples: full React reconciliation + layout + output)",
+)
+console.log(
+  "─────────────────────────────────────────────────────────────────────",
+)
+console.log(
+  `${"".padEnd(W.l)}  ${"inkx".padStart(W.v)}  ${"ink".padStart(W.v)}  ${"Ratio".padStart(W.r)}`,
+)
 
-if (rerender100) {
-  console.log()
-  console.log(
-    "Re-render (update existing tree — ink only, inkx uses diff render)",
-  )
-  console.log(
-    "─────────────────────────────────────────────────────────────────────",
-  )
-  console.log(`  100 Box+Text (80×24):   ${formatUs(rerender100)}`)
-  if (rerender1000)
-    console.log(`  1000 Box+Text (120×40): ${formatUs(rerender1000)}`)
+const rerenderComps = [
+  {
+    label: "100 Box+Text (80×24)",
+    inkx: "100 Box+Text re-render (80x24)",
+    ink: "100 Box+Text rerender (80x24)",
+  },
+  {
+    label: "1000 Box+Text (120×40)",
+    inkx: "1000 Box+Text re-render (120x40)",
+    ink: "1000 Box+Text rerender (120x40)",
+  },
+]
+
+for (const cmp of rerenderComps) {
+  const x = get(inkxMap, cmp.inkx)
+  const k = get(inkMap, cmp.ink)
+  if (x && k) {
+    console.log(
+      `${cmp.label.padEnd(W.l)}  ${formatUs(x).padStart(W.v)}  ${formatUs(k).padStart(W.v)}  ${ratio(x, k).padStart(W.r)}`,
+    )
+  } else if (k) {
+    console.log(
+      `${cmp.label.padEnd(W.l)}  ${"—".padStart(W.v)}  ${formatUs(k).padStart(W.v)}`,
+    )
+  }
 }
+
+console.log()
+console.log(
+  "  Both trigger full React reconciliation of the component tree.",
+)
+
 
 // Section 4: inkx diff render (no ink equivalent)
 console.log()

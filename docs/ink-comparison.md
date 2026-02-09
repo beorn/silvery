@@ -279,12 +279,12 @@ inkx supports two layout engines. Both use the same flexbox API:
 
 | Engine              | Bundle (gzip) | Performance\* | Initialization |
 | ------------------- | ------------- | ------------- | -------------- |
-| **Yoga** (WASM)     | 38 KB         | 316 µs        | Async          |
-| **Flexx** (pure JS) | 7 KB          | 125 µs        | Sync           |
+| **Yoga** (WASM)     | 38 KB         | 54 µs         | Async          |
+| **Flexx** (pure JS) | 7 KB          | 57 µs         | Sync           |
 
 \*Kanban 3×50 benchmark (~150 nodes), Apple M1 Max
 
-**Flexx is 2.5x faster and 5x smaller.** Trade-off: no RTL or baseline alignment.
+**Flexx is 5x smaller with comparable performance.** Trade-off: no RTL or baseline alignment.
 
 For terminal UIs, both are fast enough for 60fps. Choose based on bundle size and feature needs. See [Flexx vs Yoga comparison](../../beorn-flexx/docs/yoga-comparison.md) for details.
 
@@ -316,7 +316,7 @@ If you're on Ink and considering inkx:
 
 ## Performance Benchmarks
 
-Measured on Apple M1 Max, Bun 1.3.9. Run: `bun run bench:compare`
+Measured on Apple M1 Max, Bun 1.3.9. Run: `bun run bench:compare` from the km root.
 
 inkx builds on [Ink](https://github.com/vadimdemedes/ink)'s pioneering work in React-based terminal UIs. These benchmarks help users understand performance differences between the two approaches.
 
@@ -326,9 +326,9 @@ Time to render Box+Text component trees through the full pipeline (reconciliatio
 
 | Components | inkx (Flexx) | Ink 6 (Yoga NAPI) | Ratio     |
 | ---------- | ------------ | ----------------- | --------- |
-| 1          | 172 us       | 269 us            | inkx 1.6x |
-| 100        | 45.9 ms      | 49.7 ms           | inkx 1.1x |
-| 1000       | 443 ms       | 544 ms            | inkx 1.2x |
+| 1          | 165 µs       | 271 µs            | inkx 1.6x |
+| 100        | 45.0 ms      | 49.4 ms           | inkx 1.1x |
+| 1000       | 463 ms       | 541 ms            | inkx 1.2x |
 
 inkx uses `createRenderer()` (headless, no stdout writing). Ink uses `render()` with mock stdout + unmount per iteration, which includes additional lifecycle overhead (signal handlers, stdin setup). Both include React reconciliation.
 
@@ -338,9 +338,9 @@ inkx uses `createRenderer()` (headless, no stdout writing). Ink uses `render()` 
 
 | Nodes | First Render | Diff Render | Diff Speedup |
 | ----- | ------------ | ----------- | ------------ |
-| 1     | 308 us       | 38 us       | 8.1x         |
-| 100   | 23 ms        | 45 us       | 511x         |
-| 1000  | 233 ms       | 164 us      | 1420x        |
+| 1     | 311 µs       | 38 µs       | 8.2x         |
+| 100   | 23 ms        | 46 µs       | 500x         |
+| 1000  | 236 ms       | 169 µs      | 1396x        |
 
 The diff path is dramatically faster because inkx tracks dirty nodes per-component and uses packed-integer buffer comparison. After the first render, updates are near-instant for typical UIs where <10% of cells change.
 
@@ -349,33 +349,28 @@ The diff path is dramatically faster because inkx tracks dirty nodes per-compone
 | Scenario                     | Time    |
 | ---------------------------- | ------- |
 | Ink 6 rerender 100 Box+Text  | 2.3 ms  |
-| Ink 6 rerender 1000 Box+Text | 20.4 ms |
-| inkx diff render 100 nodes   | 45 us   |
-| inkx diff render 1000 nodes  | 164 us  |
+| Ink 6 rerender 1000 Box+Text | 20.7 ms |
+| inkx diff render 100 nodes   | 46 µs   |
+| inkx diff render 1000 nodes  | 169 µs  |
 
 These measure fundamentally different operations. Ink's `rerender()` triggers full React reconciliation of the component tree. inkx's diff render is a low-level pipeline operation that bypasses React entirely, using per-node dirty tracking and packed-integer buffer comparison. The architectural difference is significant for interactive TUIs where most updates change only a few nodes.
 
 ### React Re-render (Apples-to-Apples)
 
-The update comparison above is intentionally asymmetric — it highlights inkx's diff-only fast path. For a **fair apples-to-apples comparison**, both frameworks should trigger full React reconciliation:
+The update comparison above is intentionally asymmetric — it highlights inkx's diff-only fast path. For a **fair apples-to-apples comparison**, both frameworks trigger full React reconciliation via `app.rerender()`:
 
-| Scenario        | inkx (full React re-render) | Ink 6 (rerender) |
-| --------------- | --------------------------- | ---------------- |
-| 100 components  | _TODO: benchmark needed_    | 2.3 ms           |
-| 1000 components | _TODO: benchmark needed_    | 20.4 ms          |
+| Scenario        | inkx (rerender) | Ink 6 (rerender) | Ratio     |
+| --------------- | --------------- | ---------------- | --------- |
+| 100 components  | 64.3 ms         | 2.3 ms           | Ink 28x   |
+| 1000 components | 630 ms          | 20.7 ms          | Ink 30x   |
 
-This would measure the same operation: React reconciliation + layout + output. The full-pipeline benchmarks above give an approximation (inkx is ~1.1-1.2x faster at scale), but a dedicated re-render benchmark isolating a single state change would be more precise.
+**Why Ink is faster here:** Both do identical React reconciliation, but inkx must additionally run its 5-phase rendering pipeline (measure → layout → content → output) after every reconciliation. This is the cost of layout feedback — `useContentRect()` and auto-truncation require a full layout pass. Ink writes directly to a string buffer without a separate layout-aware content phase.
+
+**In practice**, interactive TUIs rarely trigger full-tree re-renders. inkx's typical update path uses the diff render (46-169 µs) which only processes dirty nodes. The `rerender()` path is primarily used for wholesale tree replacement, not typical interactions like cursor movement or scroll.
 
 ### Startup Time
 
-Both frameworks need to bootstrap React and initialize the terminal. Startup time matters for short-lived CLI tools.
-
-| Scenario                    | inkx                     | Ink 6                    |
-| --------------------------- | ------------------------ | ------------------------ |
-| Cold start (first render)   | _TODO: benchmark needed_ | _TODO: benchmark needed_ |
-| Warm start (cached modules) | _TODO: benchmark needed_ | _TODO: benchmark needed_ |
-
-_Note: inkx with Flexx avoids WASM initialization, which may provide a faster cold start. Actual numbers TBD._
+The full pipeline benchmarks above already measure cold start: each iteration creates a fresh renderer and renders from scratch. For a 1-component app, inkx starts in ~165 µs vs Ink's ~271 µs (1.6x faster). inkx with Flexx avoids WASM initialization overhead, giving it a faster cold start than Yoga-based setups.
 
 ### Diff Performance (Buffer Comparison)
 
@@ -383,10 +378,10 @@ The output phase computes terminal escape sequences by diffing two buffers.
 
 | Scenario         | Time   |
 | ---------------- | ------ |
-| 80x24 no changes | 28 us  |
-| 80x24 10% change | 34 us  |
-| 80x24 full paint | 59 us  |
-| 200x50 no change | 146 us |
+| 80x24 no changes | 28 µs  |
+| 80x24 10% change | 34 µs  |
+| 80x24 full paint | 59 µs  |
+| 200x50 no change | 146 µs |
 
 inkx uses cell-level comparison with a packed Uint32Array fast-path, giving consistent sub-millisecond diffs even for large terminals. Ink uses row-based string comparison.
 
@@ -396,9 +391,9 @@ Time to re-layout after terminal size change (80x24 -> 120x40).
 
 | Nodes | Flexx  |
 | ----- | ------ |
-| 10    | 257 ns |
-| 100   | 1.8 us |
-| 1000  | 21 us  |
+| 10    | 250 ns |
+| 100   | 2 µs   |
+| 1000  | 21 µs  |
 
 Resize only involves the layout phase (no reconciliation or content rendering).
 
@@ -408,8 +403,8 @@ Pure layout computation, no React or rendering.
 
 | Benchmark             | Flexx (JS) | Yoga WASM | Yoga NAPI (C++) |
 | --------------------- | ---------- | --------- | --------------- |
-| 100 nodes flat list   | 87 us      | 88 us     | 200 us          |
-| 50-node kanban (3col) | 62 us      | 58 us     | 136 us          |
+| 100 nodes flat list   | 85 µs      | 88 µs     | 197 µs          |
+| 50-node kanban (3col) | 57 µs      | 54 µs     | 136 µs          |
 
 Flexx (pure JS, 7 KB) and Yoga WASM perform similarly. Both are ~2x faster than Yoga NAPI (native C++) due to NAPI bridge overhead. Ink 6 uses Yoga NAPI.
 
@@ -463,12 +458,13 @@ Flexx (pure JS, 7 KB) and Yoga WASM perform similarly. Both are ~2x faster than 
 
 #### Performance (1000 components)
 
-| Metric          | inkx                         | Ink                     |
-| --------------- | ---------------------------- | ----------------------- |
-| Full render     | 443 ms                       | 544 ms                  |
-| Update pipeline | 164 us (diff only, no React) | 20.4 ms (full rerender) |
+| Metric             | inkx                          | Ink                     |
+| ------------------ | ----------------------------- | ----------------------- |
+| Full render        | 463 ms                        | 541 ms                  |
+| Re-render          | 630 ms                        | 20.7 ms                 |
+| Diff render (inkx) | 169 µs (dirty tracking)       | N/A                     |
 
-_Note: The update pipeline numbers compare different operations. See [Update Performance](#update-performance) for details._
+_Note: Re-render triggers full React reconciliation in both. inkx is slower due to its 5-phase pipeline (the cost of layout feedback). In practice, inkx uses the diff render path for typical interactions. See [React Re-render](#react-re-render-apples-to-apples) for details._
 
 ---
 

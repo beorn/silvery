@@ -13,7 +13,7 @@ delete process.env.INKX_STRICT
 delete process.env.INKX_CHECK_INCREMENTAL
 
 import { bench, group, run } from "mitata"
-import React, { useState } from "react"
+import React from "react"
 import { createRenderer } from "../../src/testing/index.js"
 import { TerminalBuffer } from "../../src/buffer.js"
 import {
@@ -27,6 +27,7 @@ import { createFlexxZeroEngine } from "../../src/adapters/flexx-zero-adapter.js"
 import { initYogaEngine } from "../../src/adapters/yoga-adapter.js"
 import type { InkxNode, BoxProps, TextProps } from "../../src/types.js"
 import { Box, Text } from "../../src/index.js"
+import { render as renderDirect } from "../../src/renderer.js"
 
 // ============================================================================
 // Setup
@@ -130,6 +131,76 @@ group("React Render (createRenderer)", () => {
       ),
     )
     render120x40(
+      React.createElement(Box, { flexDirection: "column" }, ...items),
+    )
+  })
+})
+
+// ============================================================================
+// 1b. React Re-render: Apples-to-apples with Ink's rerender()
+// ============================================================================
+
+group("React Re-render (rerender)", () => {
+  // Pre-render, then call app.rerender() with updated JSX.
+  // This is the exact equivalent of Ink's instance.rerender() — full React reconciliation.
+  const items100init = Array.from({ length: 100 }, (_, i) =>
+    React.createElement(
+      Box,
+      { key: i },
+      React.createElement(Text, null, `Item ${i}: Some example text`),
+    ),
+  )
+  const app100 = renderDirect(
+    React.createElement(Box, { flexDirection: "column" }, ...items100init),
+    { cols: 80, rows: 24 },
+  )
+
+  let counter100 = 0
+  bench("100 Box+Text re-render (80x24)", () => {
+    counter100++
+    const items = Array.from({ length: 100 }, (_, i) =>
+      React.createElement(
+        Box,
+        { key: i },
+        React.createElement(
+          Text,
+          null,
+          `Item ${i}: Some example text ${counter100}`,
+        ),
+      ),
+    )
+    app100.rerender(
+      React.createElement(Box, { flexDirection: "column" }, ...items),
+    )
+  })
+
+  const items1000init = Array.from({ length: 1000 }, (_, i) =>
+    React.createElement(
+      Box,
+      { key: i },
+      React.createElement(Text, null, `Item ${i}: Some example text`),
+    ),
+  )
+  const app1000 = renderDirect(
+    React.createElement(Box, { flexDirection: "column" }, ...items1000init),
+    { cols: 120, rows: 40 },
+  )
+
+  let counter1000 = 0
+  bench("1000 Box+Text re-render (120x40)", () => {
+    counter1000++
+    const items = Array.from({ length: 1000 }, (_, i) =>
+      React.createElement(
+        Box,
+        { key: i },
+        React.createElement(
+          Text,
+          null,
+          `Item ${i}: Some example text ${counter1000}`,
+        ),
+      ),
+    )
+    app1000.rerender(
       React.createElement(Box, { flexDirection: "column" }, ...items),
     )
   })
