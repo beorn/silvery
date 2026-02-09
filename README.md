@@ -134,7 +134,7 @@ The RenderAdapter interface separates core logic (reconciler, layout, hooks) fro
 - `useContentRect()` / `useScreenRect()` — sync layout feedback during render
 - Five-phase pipeline with dirty tracking
 - Pluggable layout: [Flexx](https://github.com/beorn/flexx) (default, pure JS) or Yoga (WASM)
-- 172us full pipeline render (vs ~269us in Ink 6); optimized diff rendering for large trees ([see benchmarks](benchmarks/ink-comparison/README.md))
+- 165µs cold render, 169µs dirty update for 1000 nodes ([benchmarks](docs/ink-comparison.md#performance))
 
 ### Components
 
@@ -164,7 +164,7 @@ The RenderAdapter interface separates core logic (reconciler, layout, hooks) fro
 
 ## Ink Compatibility
 
-Drop-in replacement for [Ink](https://github.com/vadimdemedes/ink). Same components, same hooks API. See [migration guide](docs/migration.md).
+Drop-in replacement for [Ink](https://github.com/vadimdemedes/ink). Same components, same hooks API. See [migration guide](docs/migration.md) and [detailed comparison](docs/ink-comparison.md) for feature/performance differences.
 
 ## Status
 
