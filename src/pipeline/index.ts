@@ -119,7 +119,7 @@ export function executeRender(
     skipLayoutNotifications = false,
     skipScrollStateUpdates = false,
   } = opts
-  const start = Date.now()
+  const start = performance.now()
 
   using render = baseLog.span("pipeline", { width, height, mode })
 
@@ -127,61 +127,85 @@ export function executeRender(
   clearBgConflictWarnings()
 
   // Phase 1: Measure (for fit-content nodes)
+  let tMeasure: number
   {
     using _measure = render.span("measure")
-    const t1 = Date.now()
+    const t1 = performance.now()
     measurePhase(root)
-    log.debug?.(`measure: ${Date.now() - t1}ms`)
+    tMeasure = performance.now() - t1
+    log.debug?.(`measure: ${tMeasure.toFixed(2)}ms`)
   }
 
   // Phase 2: Layout
+  let tLayout: number
   {
     using _layout = render.span("layout")
-    const t2 = Date.now()
+    const t2 = performance.now()
     layoutPhase(root, width, height)
-    log.debug?.(`layout: ${Date.now() - t2}ms`)
+    tLayout = performance.now() - t2
+    log.debug?.(`layout: ${tLayout.toFixed(2)}ms`)
   }
 
   // Phase 2.5: Scroll calculation (for overflow='scroll' containers)
+  let tScroll: number
   {
     using _scroll = render.span("scroll")
+    const t2s = performance.now()
     scrollPhase(root, { skipStateUpdates: skipScrollStateUpdates })
+    tScroll = performance.now() - t2s
   }
 
   // Phase 2.6: Screen rect calculation (screen-relative positions)
+  let tScreenRect: number
   {
     using _screenRect = render.span("screenRect")
+    const t2r = performance.now()
     screenRectPhase(root)
+    tScreenRect = performance.now() - t2r
   }
 
   // Phase 2.7: Notify layout subscribers
   // This runs AFTER screenRectPhase so useScreenRectCallback reads correct positions
   // Skip for static renders where no one will respond to the feedback
+  let tNotify = 0
   if (!skipLayoutNotifications) {
     using _notify = render.span("notify")
+    const t2n = performance.now()
     notifyLayoutSubscribers(root)
+    tNotify = performance.now() - t2n
   }
 
   // Phase 3: Content render (incremental if we have prevBuffer)
   let buffer: TerminalBuffer
+  let tContent: number
   {
     using _content = render.span("content")
-    const t3 = Date.now()
+    const t3 = performance.now()
     buffer = contentPhase(root, prevBuffer)
-    log.debug?.(`content: ${Date.now() - t3}ms`)
+    tContent = performance.now() - t3
+    log.debug?.(`content: ${tContent.toFixed(2)}ms`)
   }
 
   // Phase 4: Diff and output
   let output: string
+  let tOutput: number
   {
     using outputSpan = render.span("output")
-    const t4 = Date.now()
+    const t4 = performance.now()
     output = outputPhase(prevBuffer, buffer, mode)
+    tOutput = performance.now() - t4
     outputSpan.spanData.bytes = output.length
-    log.debug?.(`output: ${Date.now() - t4}ms (${output.length} bytes)`)
+    log.debug?.(`output: ${tOutput.toFixed(2)}ms (${output.length} bytes)`)
   }
 
-  log.debug?.(`total pipeline: ${Date.now() - start}ms`)
+  const total = performance.now() - start
+  log.debug?.(`total pipeline: ${total.toFixed(2)}ms`)
+
+  // Expose phase timing for benchmarking
+  ;(globalThis as any).__inkx_last_pipeline = {
+    measure: tMeasure, layout: tLayout, scroll: tScroll,
+    screenRect: tScreenRect, notify: tNotify, content: tContent, output: tOutput, total,
+  }
 
   return { output, buffer }
 }

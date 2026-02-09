@@ -8,7 +8,7 @@
  * - When scrollTo is defined: actively track and scroll to that index
  * - When scrollTo is undefined: freeze scroll state (critical for multi-column layouts)
  */
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { calcEdgeBasedScrollOffset } from "../scroll-utils.js"
 
 // =============================================================================
@@ -169,76 +169,63 @@ export function useVirtualization<T>(
     Math.floor(viewportSize / (avgItemSize + gap)),
   )
 
-  // Scroll state: the selected index and computed scroll offset
-  // Using state (not refs) to ensure React re-renders when we scroll imperatively
-  // Lazy initializer computes proper scrollOffset from initial scrollTo so that
-  // the first render's windowCalc centers correctly (not at offset 0).
-  const [scrollState, setScrollState] = useState(() => {
-    const initialIndex = Math.max(
-      0,
-      Math.min(scrollTo ?? 0, items.length - 1),
-    )
-    const initialOffset = calcEdgeBasedScrollOffset(
-      initialIndex,
+  // Selected index as ref — doesn't trigger re-renders when cursor moves
+  // within the viewport. Only scrollOffset (state) triggers re-renders.
+  const selectedIndexRef = useRef(
+    Math.max(0, Math.min(scrollTo ?? 0, items.length - 1)),
+  )
+
+  // Scroll offset as state — VirtualList re-renders only when offset changes
+  // (cursor exits viewport). Cursor moves within viewport skip re-render entirely.
+  const [scrollOffset, setScrollOffset] = useState(() =>
+    calcEdgeBasedScrollOffset(
+      selectedIndexRef.current,
       0,
       estimatedVisibleCount,
       items.length,
       scrollPadding,
-    )
-    return { selectedIndex: initialIndex, scrollOffset: initialOffset }
-  })
+    ),
+  )
 
-  // Imperative scroll function
+  // Imperative scroll function — updates ref always, state only when offset changes
   const scrollToItem = useCallback(
     (index: number) => {
       const clampedIndex = Math.max(0, Math.min(index, items.length - 1))
-      setScrollState((prev) => {
+      selectedIndexRef.current = clampedIndex
+      setScrollOffset((prevOffset) => {
         const newOffset = calcEdgeBasedScrollOffset(
           clampedIndex,
-          prev.scrollOffset,
+          prevOffset,
           estimatedVisibleCount,
           items.length,
           scrollPadding,
         )
-        // Return same reference when nothing changed → no re-render
-        if (
-          prev.selectedIndex === clampedIndex &&
-          prev.scrollOffset === newOffset
-        ) {
-          return prev
-        }
-        return { selectedIndex: clampedIndex, scrollOffset: newOffset }
+        return newOffset === prevOffset ? prevOffset : newOffset
       })
     },
     [items.length, estimatedVisibleCount, scrollPadding],
   )
 
-  // Update scroll state when scrollTo prop changes (only when defined)
-  // When scrollTo becomes undefined, we freeze state
+  // Update scroll state when scrollTo prop changes (only when defined).
+  // When scrollTo becomes undefined, we freeze state.
+  // Uses functional updater to read prevOffset (avoids oscillation from
+  // position-sensitive calcEdgeBasedScrollOffset).
   useEffect(() => {
     if (scrollTo === undefined) {
       return // Frozen: do not update state
     }
 
     const clampedIndex = Math.max(0, Math.min(scrollTo, items.length - 1))
-    setScrollState((prev) => {
+    selectedIndexRef.current = clampedIndex
+    setScrollOffset((prevOffset) => {
       const newOffset = calcEdgeBasedScrollOffset(
         clampedIndex,
-        prev.scrollOffset,
+        prevOffset,
         estimatedVisibleCount,
         items.length,
         scrollPadding,
       )
-
-      // Only update if something actually changed
-      if (
-        prev.selectedIndex === clampedIndex &&
-        prev.scrollOffset === newOffset
-      ) {
-        return prev
-      }
-
-      return { selectedIndex: clampedIndex, scrollOffset: newOffset }
+      return newOffset === prevOffset ? prevOffset : newOffset
     })
   }, [scrollTo, items.length, estimatedVisibleCount, scrollPadding])
 
@@ -246,7 +233,7 @@ export function useVirtualization<T>(
   const currentSelectedIndex =
     scrollTo !== undefined
       ? Math.max(0, Math.min(scrollTo, items.length - 1))
-      : scrollState.selectedIndex
+      : selectedIndexRef.current
 
   // Calculate virtualization window
   // Depends on scrollOffset (not currentSelectedIndex) so that cursor moves
@@ -279,7 +266,7 @@ export function useVirtualization<T>(
     // Dep is scrollOffset (not selectedIndex) so cursor moves within the
     // visible window don't trigger recalculation. When scrollOffset changes
     // (cursor leaves viewport), the memo fires and uses the latest selectedIndex.
-    const viewportCenter = scrollState.selectedIndex
+    const viewportCenter = selectedIndexRef.current
     const halfWindow = Math.floor(maxRendered / 2)
     let start = Math.max(0, viewportCenter - halfWindow)
     let end = Math.min(totalItems, start + maxRendered)
@@ -307,7 +294,7 @@ export function useVirtualization<T>(
     }
   }, [
     items.length,
-    scrollState.scrollOffset,
+    scrollOffset,
     maxRendered,
     overscan,
     itemSize,
@@ -319,7 +306,7 @@ export function useVirtualization<T>(
     startIndex: windowCalc.startIndex,
     endIndex: windowCalc.endIndex,
     currentSelectedIndex,
-    scrollOffset: scrollState.scrollOffset,
+    scrollOffset,
     leadingPlaceholderSize: windowCalc.leadingPlaceholderSize,
     trailingPlaceholderSize: windowCalc.trailingPlaceholderSize,
     hiddenBefore: windowCalc.startIndex,

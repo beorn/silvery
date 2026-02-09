@@ -178,14 +178,14 @@ function renderNodeToBuffer(
   // IMPORTANT: When we clear the parent's region, children must re-render too
   // (even if they have clean flags) because their pixels were erased. Track this
   // condition to pass to child rendering functions.
+  //
+  // Paint-only changes (e.g. borderColor) don't require clearing the interior:
+  // renderBox redraws the border pixels, and children's content area is untouched.
+  // Only clear when content/structure actually changed (text, children, layout).
+  const needsInteriorClear =
+    node.contentDirty || node.childrenDirty || layoutChanged || childPositionChanged
   const parentRegionCleared =
-    hasPrevBuffer &&
-    (node.contentDirty ||
-      node.paintDirty ||
-      node.childrenDirty ||
-      layoutChanged ||
-      childPositionChanged) &&
-    !props.backgroundColor
+    hasPrevBuffer && needsInteriorClear && !props.backgroundColor
 
   if (parentRegionCleared) {
     const inherited = findInheritedBg(node)
@@ -351,34 +351,24 @@ function renderScrollContainerChildren(
     : nodeClip
 
   // Determine if scroll offset changed since last render.
-  // When offset is unchanged, children's screen positions haven't moved,
-  // so we can safely use the fast-path (hasPrevBuffer) for unchanged children.
-  // When offset changed, all children must re-render at new screen positions.
-  // Also disable fast-path when:
-  // - children were added/removed/reordered (childrenDirty)
-  // - parent's region was cleared (parentRegionCleared) - children's pixels erased
-  // - subtree is dirty (subtreeDirty) - if we'll clear the viewport, children must repaint
   const scrollOffsetChanged = ss.offset !== ss.prevOffset
 
-  // Determine if we need to clear the viewport
-  // When we clear, ALL children must re-render (even clean ones)
+  // Two-tier strategy for scroll container updates:
+  //
+  // 1. needsViewportClear: scroll offset changed, children restructured, or
+  //    parent region was cleared. Must clear viewport and re-render children.
+  //    NOTE: subtreeDirty alone does NOT require viewport clear — dirty
+  //    descendants handle their own region clearing. Clearing for subtreeDirty
+  //    caused a 12ms regression (re-rendering ~50 children vs 2 dirty ones).
+  //
+  // 2. No clear needed: only subtreeDirty (some descendants changed).
+  //    Children use hasPrevBuffer=true and skip via fast-path if clean.
   const needsViewportClear =
-    hasPrevBuffer && (scrollOffsetChanged || node.subtreeDirty)
+    hasPrevBuffer &&
+    (scrollOffsetChanged || node.childrenDirty || parentRegionCleared)
 
-  const childHasPrev =
-    scrollOffsetChanged ||
-    node.childrenDirty ||
-    parentRegionCleared ||
-    needsViewportClear
-      ? false
-      : hasPrevBuffer
+  const childHasPrev = needsViewportClear ? false : hasPrevBuffer
 
-  // Clear the scroll container's viewport area before re-rendering children.
-  // When scroll offset changed, children are forced to hasPrevBuffer=false
-  // (disabling fast-path), but the buffer IS a clone from the previous frame.
-  // Without clearing, stale pixels (e.g. old cursor highlight backgroundColor)
-  // bleed through in boxes that no longer have their own backgroundColor.
-  // When offset is unchanged, only clear if subtree is dirty (content changed).
   if (needsViewportClear) {
     const clearY = childClipBounds.top
     const clearHeight = childClipBounds.bottom - childClipBounds.top

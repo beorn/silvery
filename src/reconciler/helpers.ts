@@ -68,11 +68,14 @@ export function layoutPropsChanged(
 
 /**
  * Check if content-affecting props changed.
+ * Returns "text" for text content changes (affect layout dimensions),
+ * "style" for style-only changes (affect paint but not layout),
+ * or false if nothing content-related changed.
  */
 export function contentPropsChanged(
   oldProps: Record<string, unknown>,
   newProps: Record<string, unknown>,
-): boolean {
+): "text" | "style" | false {
   // Children change triggers content change ONLY for primitive children (text)
   // Array children are React elements that get reconciled separately
   const oldChildren = oldProps.children
@@ -84,13 +87,14 @@ export function contentPropsChanged(
     const newIsPrimitive =
       typeof newChildren === "string" || typeof newChildren === "number"
     if (oldIsPrimitive || newIsPrimitive) {
-      return true
+      return "text" // Text changes affect layout (measure returns different result)
     }
     // Array/object children are React elements - don't set contentDirty
     // (child nodes will be updated via their own commitUpdate calls)
   }
 
-  // Style props affect content but not layout
+  // Style props affect content (paint) but NOT layout dimensions.
+  // borderColor, color, bold, etc. don't change how much space a node takes.
   const styleProps = [
     "color",
     "backgroundColor",
@@ -106,7 +110,7 @@ export function contentPropsChanged(
 
   for (const prop of styleProps) {
     if (oldProps[prop] !== newProps[prop]) {
-      return true
+      return "style"
     }
   }
 

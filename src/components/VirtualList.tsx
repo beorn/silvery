@@ -174,18 +174,13 @@ function VirtualListInner<T>(
     : selectedIndexInSlice
 
   // Pass scrollTo to inkx Box:
-  // - When active (scrollTo defined): pass the selected child index for edge-based scrolling
-  // - When frozen (scrollTo undefined): pass undefined to preserve scroll position
-  //
-  // The frozen case relies on inkx's prevOffset to maintain position. On fresh render,
-  // prevOffset is undefined and defaults to 0 - this is an UNSOLVED BUG (km-tui.level-nav-shift).
-  // TODO: Fix requires either:
-  //   1. VirtualList tracking actual scroll offset and passing it via scrollOffset prop
-  //   2. Or inkx preserving scroll state across fresh renders
-  const boxScrollTo =
-    scrollTo !== undefined && isSelectedInSlice
-      ? Math.max(0, scrollToIndex)
-      : undefined
+  // Always pass the selected child index when it's in the rendered slice.
+  // This works for both declarative mode (scrollTo prop) and imperative mode
+  // (scrollToItem via ref). For frozen columns, scrollState is preserved so
+  // the index points to the same child as before (no visual change).
+  const boxScrollTo = isSelectedInSlice
+    ? Math.max(0, scrollToIndex)
+    : undefined
 
   debug(
     "VirtualList render: scrollTo=%s boxScrollTo=%s frozen=%s start=%d end=%d currentSelected=%d isInSlice=%s",

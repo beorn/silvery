@@ -140,7 +140,7 @@ function propagateLayout(
 
   // Recurse to children
   for (const child of node.children) {
-    propagateLayout(child, node.contentRect.x, node.contentRect.y)
+    propagateLayout(child, rect.x, rect.y)
   }
 }
 

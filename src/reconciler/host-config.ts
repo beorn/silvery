@@ -375,6 +375,8 @@ export const hostConfig = {
     }
 
     // Check if content changed (text children, style props like backgroundColor)
+    // Returns "text" for text content changes (affect layout) or "style" for
+    // style-only changes (borderColor, color, etc. — don't affect layout).
     const contentChanged = contentPropsChanged(
       oldProps as Record<string, unknown>,
       newProps as Record<string, unknown>,
@@ -385,16 +387,30 @@ export const hostConfig = {
       // its text-collection cache). contentPhase uses paintDirty to know it
       // must clear stale backgrounds from the cloned buffer.
       instance.paintDirty = true
-      // Content change affects layout size (measure function returns different result)
-      // Mark layout dirty to clear flexx's measure cache
-      if (instance.layoutNode) {
+      // Only text content changes affect layout size (measure function returns
+      // different result). Style-only changes (borderColor, color, bold, etc.)
+      // don't change dimensions — no layout recalculation needed.
+      if (contentChanged === "text" && instance.layoutNode) {
         instance.layoutNode.markDirty()
       }
     }
 
     instance.props = newProps
-    markLayoutAncestorDirty(instance)
-    markSubtreeDirty(instance)
+
+    // Only mark subtree/ancestor dirty when visual changes were detected.
+    // Data attributes (data-*), event handlers, and other non-visual props
+    // don't affect rendering, so propagating dirty flags wastes content phase
+    // time traversing unchanged subtrees.
+    //
+    // scrollTo changes affect rendering via scroll phase (children shift position),
+    // so they must propagate subtreeDirty for content phase traversal.
+    const scrollToChanged =
+      (oldProps as Record<string, unknown>).scrollTo !==
+      (newProps as Record<string, unknown>).scrollTo
+    if (instance.layoutDirty || contentChanged || scrollToChanged) {
+      markLayoutAncestorDirty(instance)
+      markSubtreeDirty(instance)
+    }
   },
 
   commitTextUpdate(textInstance: InkxNode, _oldText: string, newText: string) {

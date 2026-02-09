@@ -460,6 +460,7 @@ export function render(
           "Use setTimeout or an event handler instead.",
       )
     }
+    const t0 = performance.now()
     instance.rendering = true
     try {
       withActEnvironment(() => {
@@ -470,12 +471,16 @@ export function render(
     } finally {
       instance.rendering = false
     }
+    const t1 = performance.now()
     // doRender() handles INKX_STRICT checking internally
     const newFrame = doRender()
+    const t2 = performance.now()
     instance.frames.push(newFrame)
     if (debug) {
       console.log("[inkx] stdin.write:", newFrame)
     }
+    // Expose timing on global for benchmarking
+    ;(globalThis as any).__inkx_last_timing = { actMs: t1 - t0, renderMs: t2 - t1 }
   }
 
   const rerenderFn = (newElement: ReactNode) => {

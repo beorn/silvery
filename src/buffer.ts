@@ -749,6 +749,93 @@ export class TerminalBuffer {
   }
 
   /**
+   * Shift content within a rectangular region vertically by `delta` rows.
+   * Positive delta = shift content UP (scroll down), negative = shift DOWN (scroll up).
+   * Exposed rows (at the bottom for positive delta, top for negative) are filled
+   * with the given background cell.
+   *
+   * Uses Uint32Array.copyWithin for the packed cells (native memcpy) and
+   * Array splice for the character array.
+   */
+  scrollRegion(
+    x: number,
+    y: number,
+    regionWidth: number,
+    regionHeight: number,
+    delta: number,
+    clearCell: Partial<Cell> = {},
+  ): void {
+    if (delta === 0 || regionHeight <= 0 || regionWidth <= 0) return
+
+    const startX = Math.max(0, x)
+    const endX = Math.min(x + regionWidth, this.width)
+    const startY = Math.max(0, y)
+    const endY = Math.min(y + regionHeight, this.height)
+    const clampedWidth = endX - startX
+    const clampedHeight = endY - startY
+
+    if (clampedWidth <= 0 || clampedHeight <= 0) return
+    if (Math.abs(delta) >= clampedHeight) {
+      // Scroll amount exceeds region — just clear everything
+      this.fill(startX, startY, clampedWidth, clampedHeight, { char: clearCell.char ?? " ", bg: clearCell.bg ?? null })
+      return
+    }
+
+    const absDelta = Math.abs(delta)
+    const w = this.width
+
+    if (delta > 0) {
+      // Shift content UP: copy rows [startY + delta .. endY) to [startY .. endY - delta)
+      for (let row = startY; row < endY - absDelta; row++) {
+        const dstBase = row * w
+        const srcBase = (row + absDelta) * w
+        // Copy cells and chars for the region columns
+        this.cells.copyWithin(dstBase + startX, srcBase + startX, srcBase + endX)
+        for (let cx = startX; cx < endX; cx++) {
+          this.chars[dstBase + cx] = this.chars[srcBase + cx]!
+          // Move true color maps
+          const srcIdx = srcBase + cx
+          const dstIdx = dstBase + cx
+          const fgc = this.fgColors.get(srcIdx)
+          if (fgc) { this.fgColors.set(dstIdx, fgc); this.fgColors.delete(srcIdx) }
+          else { this.fgColors.delete(dstIdx) }
+          const bgc = this.bgColors.get(srcIdx)
+          if (bgc) { this.bgColors.set(dstIdx, bgc); this.bgColors.delete(srcIdx) }
+          else { this.bgColors.delete(dstIdx) }
+          const ulc = this.underlineColors.get(srcIdx)
+          if (ulc) { this.underlineColors.set(dstIdx, ulc); this.underlineColors.delete(srcIdx) }
+          else { this.underlineColors.delete(dstIdx) }
+        }
+      }
+      // Clear exposed rows at bottom
+      this.fill(startX, endY - absDelta, clampedWidth, absDelta, { char: clearCell.char ?? " ", bg: clearCell.bg ?? null })
+    } else {
+      // Shift content DOWN: copy rows [startY .. endY - absDelta) to [startY + absDelta .. endY)
+      for (let row = endY - 1; row >= startY + absDelta; row--) {
+        const dstBase = row * w
+        const srcBase = (row - absDelta) * w
+        this.cells.copyWithin(dstBase + startX, srcBase + startX, srcBase + endX)
+        for (let cx = startX; cx < endX; cx++) {
+          this.chars[dstBase + cx] = this.chars[srcBase + cx]!
+          const srcIdx = srcBase + cx
+          const dstIdx = dstBase + cx
+          const fgc = this.fgColors.get(srcIdx)
+          if (fgc) { this.fgColors.set(dstIdx, fgc); this.fgColors.delete(srcIdx) }
+          else { this.fgColors.delete(dstIdx) }
+          const bgc = this.bgColors.get(srcIdx)
+          if (bgc) { this.bgColors.set(dstIdx, bgc); this.bgColors.delete(srcIdx) }
+          else { this.bgColors.delete(dstIdx) }
+          const ulc = this.underlineColors.get(srcIdx)
+          if (ulc) { this.underlineColors.set(dstIdx, ulc); this.underlineColors.delete(srcIdx) }
+          else { this.underlineColors.delete(dstIdx) }
+        }
+      }
+      // Clear exposed rows at top
+      this.fill(startX, startY, clampedWidth, absDelta, { char: clearCell.char ?? " ", bg: clearCell.bg ?? null })
+    }
+  }
+
+  /**
    * Clone this buffer.
    */
   clone(): TerminalBuffer {
