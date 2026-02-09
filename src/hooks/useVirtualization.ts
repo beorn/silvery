@@ -200,6 +200,13 @@ export function useVirtualization<T>(
           items.length,
           scrollPadding,
         )
+        // Return same reference when nothing changed → no re-render
+        if (
+          prev.selectedIndex === clampedIndex &&
+          prev.scrollOffset === newOffset
+        ) {
+          return prev
+        }
         return { selectedIndex: clampedIndex, scrollOffset: newOffset }
       })
     },
