@@ -162,22 +162,31 @@ export function useVirtualization<T>(
     gap = 0,
   } = config
 
-  // Scroll state: the selected index and computed scroll offset
-  // Using state (not refs) to ensure React re-renders when we scroll imperatively
-  const [scrollState, setScrollState] = useState<{
-    selectedIndex: number
-    scrollOffset: number
-  }>({
-    selectedIndex: scrollTo ?? 0,
-    scrollOffset: 0,
-  })
-
   // Calculate average item size for estimating visible count
   const avgItemSize = calcAverageItemSize(items, itemSize)
   const estimatedVisibleCount = Math.max(
     1,
     Math.floor(viewportSize / (avgItemSize + gap)),
   )
+
+  // Scroll state: the selected index and computed scroll offset
+  // Using state (not refs) to ensure React re-renders when we scroll imperatively
+  // Lazy initializer computes proper scrollOffset from initial scrollTo so that
+  // the first render's windowCalc centers correctly (not at offset 0).
+  const [scrollState, setScrollState] = useState(() => {
+    const initialIndex = Math.max(
+      0,
+      Math.min(scrollTo ?? 0, items.length - 1),
+    )
+    const initialOffset = calcEdgeBasedScrollOffset(
+      initialIndex,
+      0,
+      estimatedVisibleCount,
+      items.length,
+      scrollPadding,
+    )
+    return { selectedIndex: initialIndex, scrollOffset: initialOffset }
+  })
 
   // Imperative scroll function
   const scrollToItem = useCallback(
@@ -233,6 +242,9 @@ export function useVirtualization<T>(
       : scrollState.selectedIndex
 
   // Calculate virtualization window
+  // Depends on scrollOffset (not currentSelectedIndex) so that cursor moves
+  // within the visible window don't trigger recalculation. This prevents
+  // VirtualList re-renders when the scroll position hasn't actually changed.
   const windowCalc = useMemo(() => {
     const totalItems = items.length
 
@@ -256,9 +268,13 @@ export function useVirtualization<T>(
       }
     }
 
-    // Center the window around the selected item
+    // Center the render window around the selected item.
+    // Dep is scrollOffset (not selectedIndex) so cursor moves within the
+    // visible window don't trigger recalculation. When scrollOffset changes
+    // (cursor leaves viewport), the memo fires and uses the latest selectedIndex.
+    const viewportCenter = scrollState.selectedIndex
     const halfWindow = Math.floor(maxRendered / 2)
-    let start = Math.max(0, currentSelectedIndex - halfWindow)
+    let start = Math.max(0, viewportCenter - halfWindow)
     let end = Math.min(totalItems, start + maxRendered)
 
     // Adjust start if we hit the end
@@ -284,7 +300,7 @@ export function useVirtualization<T>(
     }
   }, [
     items.length,
-    currentSelectedIndex,
+    scrollState.scrollOffset,
     maxRendered,
     overscan,
     itemSize,
