@@ -33,56 +33,56 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 
 ### Architecture & Rendering
 
-| Feature | inkx | Ink |
-|---------|------|-----|
-| React version | 19 | 18 |
-| **Layout feedback** | `useContentRect()` / `useScreenRect()` | None — thread width props manually ([#5](https://github.com/vadimdemedes/ink/issues/5), open since 2016) |
-| **Scrollable containers** | `overflow="scroll"` with auto-measurement | Third-party or manual ([#222](https://github.com/vadimdemedes/ink/issues/222), [#765](https://github.com/vadimdemedes/ink/issues/765)) |
-| **Text truncation** | Auto, ANSI-aware | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584)) |
-| Layout engines | [Flexx](https://github.com/beorn/flexx) (7 KB, pure JS) or Yoga (WASM) — no native deps | Yoga NAPI (native C++ addon) |
-| Incremental rendering | Per-node dirty tracking | Full re-render ([PR #836](https://github.com/vadimdemedes/ink/pull/836) exploring) |
-| Render targets | Terminal, Canvas, DOM | Terminal only |
-| Static rendering | `renderStatic()` | `Static` component |
-| CJK/IME sync | DEC 2026 synchronized update (automatic) | In progress ([#759](https://github.com/vadimdemedes/ink/issues/759), [PR #846](https://github.com/vadimdemedes/ink/pull/846)) |
-| Non-TTY fallback | `renderStatic()` | [PR #854](https://github.com/vadimdemedes/ink/pull/854) |
-| Concurrent React | Not yet | [PR #850](https://github.com/vadimdemedes/ink/pull/850) exploring |
+| Feature                   | inkx                                                                                    | Ink                                                                                                                                    |
+| ------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| React version             | 19                                                                                      | 18                                                                                                                                     |
+| **Layout feedback**       | `useContentRect()` / `useScreenRect()`                                                  | None — thread width props manually ([#5](https://github.com/vadimdemedes/ink/issues/5), open since 2016)                               |
+| **Scrollable containers** | `overflow="scroll"` with auto-measurement                                               | Third-party or manual ([#222](https://github.com/vadimdemedes/ink/issues/222), [#765](https://github.com/vadimdemedes/ink/issues/765)) |
+| **Text truncation**       | Auto, ANSI-aware                                                                        | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                          |
+| Layout engines            | [Flexx](https://github.com/beorn/flexx) (7 KB, pure JS) or Yoga (WASM) — no native deps | Yoga NAPI (native C++ addon)                                                                                                           |
+| Incremental rendering     | Per-node dirty tracking                                                                 | Full re-render ([PR #836](https://github.com/vadimdemedes/ink/pull/836) exploring)                                                     |
+| Render targets            | Terminal, Canvas, DOM                                                                   | Terminal only                                                                                                                          |
+| Static rendering          | `renderStatic()`                                                                        | `Static` component                                                                                                                     |
+| CJK/IME sync              | DEC 2026 synchronized update (automatic)                                                | In progress ([#759](https://github.com/vadimdemedes/ink/issues/759), [PR #846](https://github.com/vadimdemedes/ink/pull/846))          |
+| Non-TTY fallback          | `renderStatic()`                                                                        | [PR #854](https://github.com/vadimdemedes/ink/pull/854)                                                                                |
+| Concurrent React          | Not yet                                                                                 | [PR #850](https://github.com/vadimdemedes/ink/pull/850) exploring                                                                      |
 
 ### Input & Interaction
 
-| Feature | inkx | Ink |
-|---------|------|-----|
-| Input handling | `InputLayerProvider` stack (DOM-style bubbling) | `useInput` only |
-| Kitty keyboard protocol | `keyToKittyAnsi()` + auto-detection | [PR #852](https://github.com/vadimdemedes/ink/pull/852) in review |
-| Cursor API | `useCursor()` — component-relative positioning | None ([#251](https://github.com/vadimdemedes/ink/issues/251), open since 2019) |
-| TextArea | Planned — multi-line editing with layout feedback | None ([#676](https://github.com/vadimdemedes/ink/issues/676)) |
-| Mouse support | HitRegistry with z-index | Basic via `useInput` |
-| Unicode/CJK | Built-in grapheme splitting + display width | Third-party `string-width` |
-| Console capture | Built-in `Console` component | `patchConsole()` |
-| Exit handling | `useExit` + `using` cleanup | `process.exit` handling |
-| Accessibility | Basic | [PR #823](https://github.com/vadimdemedes/ink/pull/823) (screen reader) |
+| Feature                 | inkx                                              | Ink                                                                            |
+| ----------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Input handling          | `InputLayerProvider` stack (DOM-style bubbling)   | `useInput` only                                                                |
+| Kitty keyboard protocol | `keyToKittyAnsi()` + auto-detection               | [PR #852](https://github.com/vadimdemedes/ink/pull/852) in review              |
+| Cursor API              | `useCursor()` — component-relative positioning    | None ([#251](https://github.com/vadimdemedes/ink/issues/251), open since 2019) |
+| TextArea                | Planned — multi-line editing with layout feedback | None ([#676](https://github.com/vadimdemedes/ink/issues/676))                  |
+| Mouse support           | HitRegistry with z-index                          | Basic via `useInput`                                                           |
+| Unicode/CJK             | Built-in grapheme splitting + display width       | Third-party `string-width`                                                     |
+| Console capture         | Built-in `Console` component                      | `patchConsole()`                                                               |
+| Exit handling           | `useExit` + `using` cleanup                       | `process.exit` handling                                                        |
+| Accessibility           | Basic                                             | [PR #823](https://github.com/vadimdemedes/ink/pull/823) (screen reader)        |
 
 ### Developer Experience
 
-| Feature | inkx | Ink |
-|---------|------|-----|
-| TypeScript | Native, strict mode | TS support |
-| Plugin composition | `withCommands` / `withKeybindings` / `withDiagnostics` | None |
-| Testing | `createRenderer` + Playwright-style locators | ink-testing-library |
-| Community | New | 50+ components, ~1.3M npm weekly (Feb 2026) |
-| Bundle (gzip) | ~45 KB (Flexx) / ~76 KB (Yoga) | ~52 KB |
-| Maintenance | Active development | Maintenance mode |
+| Feature            | inkx                                                   | Ink                                         |
+| ------------------ | ------------------------------------------------------ | ------------------------------------------- |
+| TypeScript         | Native, strict mode                                    | TS support                                  |
+| Plugin composition | `withCommands` / `withKeybindings` / `withDiagnostics` | None                                        |
+| Testing            | `createRenderer` + Playwright-style locators           | ink-testing-library                         |
+| Community          | New                                                    | 50+ components, ~1.3M npm weekly (Feb 2026) |
+| Bundle (gzip)      | ~45 KB (Flexx) / ~76 KB (Yoga)                         | ~52 KB                                      |
+| Maintenance        | Active development                                     | Maintenance mode                            |
 
 ### Performance
 
-| Scenario | inkx | Ink | |
-|----------|------|-----|---|
-| Cold render (1 component) | 165 µs | 271 µs | inkx 1.6x faster |
-| Cold render (1000 components) | 463 ms | 541 ms | inkx 1.2x faster |
-| Full React rerender (1000 components) | 630 ms | 20.7 ms | Ink 30x faster |
-| **Typical interactive update** | **169 µs** | **20.7 ms** | **inkx 122x faster** |
-| Layout (50-node kanban) | 57 µs (Flexx) | 136 µs (Yoga NAPI) | Flexx 2.4x faster |
-| Terminal resize (1000 nodes) | 21 µs | Full re-render | — |
-| Buffer diff (80x24, 10% changed) | 34 µs | N/A (row-based strings) | — |
+| Scenario                              | inkx          | Ink                     |                      |
+| ------------------------------------- | ------------- | ----------------------- | -------------------- |
+| Cold render (1 component)             | 165 µs        | 271 µs                  | inkx 1.6x faster     |
+| Cold render (1000 components)         | 463 ms        | 541 ms                  | inkx 1.2x faster     |
+| Full React rerender (1000 components) | 630 ms        | 20.7 ms                 | Ink 30x faster       |
+| **Typical interactive update**        | **169 µs**    | **20.7 ms**             | **inkx 122x faster** |
+| Layout (50-node kanban)               | 57 µs (Flexx) | 136 µs (Yoga NAPI)      | Flexx 2.4x faster    |
+| Terminal resize (1000 nodes)          | 21 µs         | Full re-render          | —                    |
+| Buffer diff (80x24, 10% changed)      | 34 µs         | N/A (row-based strings) | —                    |
 
 **Understanding the rerender row:** When the _entire_ component tree re-renders from scratch (e.g., replacing the root element), Ink is 30x faster because its output is just string concatenation. inkx runs a 5-phase pipeline (measure → layout → content → output) after React reconciliation — that's the cost of layout feedback. But this scenario almost never happens in real apps.
 
@@ -144,15 +144,15 @@ Terminal multiplexers (tmux, Zellij) can misinterpret frame boundaries during IM
 
 inkx supports pluggable layout engines with the same flexbox API:
 
-| | Flexx (default) | Yoga (WASM) |
-|---|---|---|
-| Size (gzip) | 7 KB | 38 KB |
-| Language | Pure JS | C++ → WASM |
-| Initialization | Synchronous | Async |
-| 100-node layout | 85 µs | 88 µs |
-| 50-node kanban | 57 µs | 54 µs |
-| RTL direction | Supported | Supported |
-| Baseline alignment | Not supported | Supported |
+|                    | Flexx (default) | Yoga (WASM) |
+| ------------------ | --------------- | ----------- |
+| Size (gzip)        | 7 KB            | 38 KB       |
+| Language           | Pure JS         | C++ → WASM  |
+| Initialization     | Synchronous     | Async       |
+| 100-node layout    | 85 µs           | 88 µs       |
+| 50-node kanban     | 57 µs           | 54 µs       |
+| RTL direction      | Supported       | Supported   |
+| Baseline alignment | Not supported   | Supported   |
 
 Both are fast enough for 60fps terminal UIs. Flexx is 5x smaller with comparable performance. See [Flexx vs Yoga](../../beorn-flexx/docs/yoga-comparison.md) for details.
 
@@ -211,19 +211,19 @@ One-shot question → answer → exit.
 
 Tested scenarios derived from common Ink issues:
 
-| Scenario | inkx Test | Ink Issue |
-|----------|-----------|-----------|
-| CJK character rendering (Chinese, Japanese, Korean) | `ime.test.tsx` | [#759](https://github.com/vadimdemedes/ink/issues/759) |
-| Double-width character alignment | `ime.test.tsx`, `wide-char-truncate.test.ts` | [#759](https://github.com/vadimdemedes/ink/issues/759) |
-| Emoji ZWJ sequences | `ime.test.tsx` | — |
-| ANSI-aware text truncation | `text-truncate-width.test.ts` | [#584](https://github.com/vadimdemedes/ink/issues/584) |
-| Rapid keystrokes (burst input) | `input.test.tsx` | [PR #782](https://github.com/vadimdemedes/ink/pull/782) |
-| borderDimColor | `border-dim-color.test.tsx` | [#840](https://github.com/vadimdemedes/ink/issues/840) |
-| Large component counts (1000+) | `performance.test.tsx`, `memory.test.tsx` | [#694](https://github.com/vadimdemedes/ink/issues/694) |
-| Home/End key support | `keys.test.ts` | [PR #829](https://github.com/vadimdemedes/ink/pull/829) |
-| Process exit timing | `exit.test.tsx` | [#796](https://github.com/vadimdemedes/ink/issues/796) |
-| tmux rendering | `terminal-multiplexers.test.ts`, `sync-update.test.ts` | [PR #846](https://github.com/vadimdemedes/ink/pull/846) |
-| Zellij rendering | `terminal-multiplexers.test.ts` | [PR #846](https://github.com/vadimdemedes/ink/pull/846) |
+| Scenario                                            | inkx Test                                              | Ink Issue                                               |
+| --------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
+| CJK character rendering (Chinese, Japanese, Korean) | `ime.test.tsx`                                         | [#759](https://github.com/vadimdemedes/ink/issues/759)  |
+| Double-width character alignment                    | `ime.test.tsx`, `wide-char-truncate.test.ts`           | [#759](https://github.com/vadimdemedes/ink/issues/759)  |
+| Emoji ZWJ sequences                                 | `ime.test.tsx`                                         | —                                                       |
+| ANSI-aware text truncation                          | `text-truncate-width.test.ts`                          | [#584](https://github.com/vadimdemedes/ink/issues/584)  |
+| Rapid keystrokes (burst input)                      | `input.test.tsx`                                       | [PR #782](https://github.com/vadimdemedes/ink/pull/782) |
+| borderDimColor                                      | `border-dim-color.test.tsx`                            | [#840](https://github.com/vadimdemedes/ink/issues/840)  |
+| Large component counts (1000+)                      | `performance.test.tsx`, `memory.test.tsx`              | [#694](https://github.com/vadimdemedes/ink/issues/694)  |
+| Home/End key support                                | `keys.test.ts`                                         | [PR #829](https://github.com/vadimdemedes/ink/pull/829) |
+| Process exit timing                                 | `exit.test.tsx`                                        | [#796](https://github.com/vadimdemedes/ink/issues/796)  |
+| tmux rendering                                      | `terminal-multiplexers.test.ts`, `sync-update.test.ts` | [PR #846](https://github.com/vadimdemedes/ink/pull/846) |
+| Zellij rendering                                    | `terminal-multiplexers.test.ts`                        | [PR #846](https://github.com/vadimdemedes/ink/pull/846) |
 
 ---
 
@@ -233,11 +233,11 @@ _Apple M1 Max, Bun 1.3.9, Feb 2026. Reproduce: `bun run bench:compare`_
 
 ### Full Pipeline (React Reconciliation + Layout + Output)
 
-| Components | inkx (Flexx) | Ink 6 (Yoga NAPI) | Faster |
-|------------|-------------|-------------------|--------|
-| 1 Box+Text (80x24) | 165 µs | 271 µs | inkx 1.6x |
-| 100 Box+Text (80x24) | 45.0 ms | 49.4 ms | inkx 1.1x |
-| 1000 Box+Text (120x40) | 463 ms | 541 ms | inkx 1.2x |
+| Components             | inkx (Flexx) | Ink 6 (Yoga NAPI) | Faster    |
+| ---------------------- | ------------ | ----------------- | --------- |
+| 1 Box+Text (80x24)     | 165 µs       | 271 µs            | inkx 1.6x |
+| 100 Box+Text (80x24)   | 45.0 ms      | 49.4 ms           | inkx 1.1x |
+| 1000 Box+Text (120x40) | 463 ms       | 541 ms            | inkx 1.2x |
 
 inkx uses `createRenderer()` (headless). Ink uses `render()` with mock stdout + unmount per iteration.
 
@@ -245,10 +245,10 @@ inkx uses `createRenderer()` (headless). Ink uses `render()` with mock stdout + 
 
 Both trigger full React reconciliation via `app.rerender()`:
 
-| Components | inkx | Ink 6 | Faster |
-|------------|------|-------|--------|
-| 100 Box+Text (80x24) | 64.3 ms | 2.3 ms | Ink 28x |
-| 1000 Box+Text (120x40) | 630 ms | 20.7 ms | Ink 30x |
+| Components             | inkx    | Ink 6   | Faster  |
+| ---------------------- | ------- | ------- | ------- |
+| 100 Box+Text (80x24)   | 64.3 ms | 2.3 ms  | Ink 28x |
+| 1000 Box+Text (120x40) | 630 ms  | 20.7 ms | Ink 30x |
 
 Ink is faster because it writes directly to a string buffer. inkx runs the 5-phase pipeline after reconciliation.
 
@@ -257,46 +257,46 @@ Ink is faster because it writes directly to a string buffer. inkx runs the 5-pha
 Per-node dirty tracking bypasses React entirely:
 
 | Nodes | First Render | Dirty Update | Faster |
-|-------|-------------|-------------|--------|
-| 1 | 311 µs | 38 µs | 8x |
-| 100 | 23 ms | 46 µs | 500x |
-| 1000 | 236 ms | 169 µs | 1396x |
+| ----- | ------------ | ------------ | ------ |
+| 1     | 311 µs       | 38 µs        | 8x     |
+| 100   | 23 ms        | 46 µs        | 500x   |
+| 1000  | 236 ms       | 169 µs       | 1396x  |
 
 This is the typical update path for interactive TUIs (cursor movement, scroll, single-node edits).
 
 ### Buffer Diff
 
-| Scenario | Time |
-|----------|------|
-| 80x24, no changes | 28 µs |
-| 80x24, 10% changed | 34 µs |
-| 80x24, full repaint | 59 µs |
-| 200x50, no changes | 146 µs |
+| Scenario            | Time   |
+| ------------------- | ------ |
+| 80x24, no changes   | 28 µs  |
+| 80x24, 10% changed  | 34 µs  |
+| 80x24, full repaint | 59 µs  |
+| 200x50, no changes  | 146 µs |
 
 Packed Uint32Array cell comparison with cursor-movement optimization.
 
 ### Layout Engine (Pure Layout, No React)
 
-| Benchmark | Flexx (JS) | Yoga WASM | Yoga NAPI (C++) |
-|-----------|-----------|-----------|-----------------|
-| 100 nodes flat | 85 µs | 88 µs | 197 µs |
-| 50-node kanban | 57 µs | 54 µs | 136 µs |
+| Benchmark      | Flexx (JS) | Yoga WASM | Yoga NAPI (C++) |
+| -------------- | ---------- | --------- | --------------- |
+| 100 nodes flat | 85 µs      | 88 µs     | 197 µs          |
+| 50-node kanban | 57 µs      | 54 µs     | 136 µs          |
 
 ### Resize (Layout Only)
 
-| Nodes | Time |
-|-------|------|
-| 10 | 250 ns |
-| 100 | 2 µs |
-| 1000 | 21 µs |
+| Nodes | Time   |
+| ----- | ------ |
+| 10    | 250 ns |
+| 100   | 2 µs   |
+| 1000  | 21 µs  |
 
 ### Bundle Size
 
-| Package | Size (gzip) |
-|---------|------------|
-| inkx + Flexx | ~45 KB |
-| inkx + Yoga | ~76 KB |
-| Ink | ~52 KB |
+| Package      | Size (gzip) |
+| ------------ | ----------- |
+| inkx + Flexx | ~45 KB      |
+| inkx + Yoga  | ~76 KB      |
+| Ink          | ~52 KB      |
 
 ---
 

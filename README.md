@@ -179,15 +179,15 @@ Drop-in replacement for [Ink](https://github.com/vadimdemedes/ink). Same compone
 
 **Experimental** — actively developed, used in production apps, but APIs may change and things may break. The terminal render target is stable; non-TUI render targets (Canvas, DOM) are prototypes only.
 
-| Feature                                           | Status       |
-| ------------------------------------------------- | ------------ |
-| Core components (Box, Text)                       | Stable       |
-| Hooks (useContentRect, useInput, useApp, useTerm) | Stable       |
-| React reconciler (React 19)                       | Stable       |
-| Flexx layout engine (default)                     | Stable       |
-| Yoga layout engine (WASM, optional)               | Stable       |
-| Terminal target                                   | Production   |
-| Canvas / DOM targets                              | Prototype    |
+| Feature                                           | Status     |
+| ------------------------------------------------- | ---------- |
+| Core components (Box, Text)                       | Stable     |
+| Hooks (useContentRect, useInput, useApp, useTerm) | Stable     |
+| React reconciler (React 19)                       | Stable     |
+| Flexx layout engine (default)                     | Stable     |
+| Yoga layout engine (WASM, optional)               | Stable     |
+| Terminal target                                   | Production |
+| Canvas / DOM targets                              | Prototype  |
 
 ## Examples
 

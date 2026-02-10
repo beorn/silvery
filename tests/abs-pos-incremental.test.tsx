@@ -68,7 +68,12 @@ describe("Incremental rendering: absolute-positioned elements", () => {
       return (
         <Box width={40} height={10} flexDirection="column">
           {/* Absolute dialog listed FIRST in children */}
-          <Box position="absolute" width={30} height={3} backgroundColor="black">
+          <Box
+            position="absolute"
+            width={30}
+            height={3}
+            backgroundColor="black"
+          >
             <Text>Overlay Title</Text>
           </Box>
           {/* Normal-flow content listed SECOND — changes each render */}
@@ -97,7 +102,12 @@ describe("Incremental rendering: absolute-positioned elements", () => {
       return (
         <Box width={40} height={10} flexDirection="column">
           {/* Absolute dialog with nested content, listed FIRST */}
-          <Box position="absolute" width={30} height={5} backgroundColor="black">
+          <Box
+            position="absolute"
+            width={30}
+            height={5}
+            backgroundColor="black"
+          >
             <Box flexDirection="column">
               <Text bold>Dialog Header</Text>
               <Text>Static body line 1</Text>
@@ -177,7 +187,12 @@ describe("Incremental rendering: absolute-positioned elements", () => {
             <Text>Static board</Text>
           </Box>
           {/* Absolute dialog with static title + changing input */}
-          <Box position="absolute" width={30} height={5} backgroundColor="black">
+          <Box
+            position="absolute"
+            width={30}
+            height={5}
+            backgroundColor="black"
+          >
             <Box flexDirection="column">
               <Text>Search Title</Text>
               <Text>{inputText}</Text>
@@ -208,9 +223,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
   test("both board and dialog change — dialog after board in children order", () => {
     function App({ query }: { query: string }) {
       const items = ["alpha", "bravo", "charlie", "delta", "echo"]
-      const filtered = query
-        ? items.filter((i) => i.includes(query))
-        : items
+      const filtered = query ? items.filter((i) => i.includes(query)) : items
       return (
         <Box width={60} height={15} flexDirection="column">
           {/* Board content — changes based on search */}
@@ -359,7 +372,9 @@ describe("Incremental rendering: absolute-positioned elements", () => {
       )
     }
 
-    const app = render(<App content="Board v1 with long text that spans width" />)
+    const app = render(
+      <App content="Board v1 with long text that spans width" />,
+    )
 
     app.rerender(
       <App content="Board v2 with different long text content here" />,
@@ -383,7 +398,12 @@ describe("Incremental rendering: absolute-positioned elements", () => {
             <Text>Board line 2</Text>
           </Box>
           {/* Dialog at top-left, overlapping board line 1 */}
-          <Box position="absolute" width={20} height={3} backgroundColor="black">
+          <Box
+            position="absolute"
+            width={20}
+            height={3}
+            backgroundColor="black"
+          >
             <Box flexDirection="column">
               <Text>TITLE</Text>
               <Text>body</Text>
@@ -393,9 +413,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
       )
     }
 
-    const app = render(
-      <App line1="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" />,
-    )
+    const app = render(<App line1="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" />)
     expect(app.text).toContain("TITLE")
 
     app.rerender(<App line1="BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB" />)

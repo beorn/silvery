@@ -159,8 +159,22 @@ function StatusBar({
     <Box justifyContent="space-between">
       <Text dim>
         {" "}
-        <Text bold dim>j/k</Text> navigate <Text bold dim>space</Text> toggle{" "}
-        <Text bold dim>enter</Text> expand <Text bold dim>q</Text> quit
+        <Text bold dim>
+          j/k
+        </Text>{" "}
+        navigate{" "}
+        <Text bold dim>
+          space
+        </Text>{" "}
+        toggle{" "}
+        <Text bold dim>
+          enter
+        </Text>{" "}
+        expand{" "}
+        <Text bold dim>
+          q
+        </Text>{" "}
+        quit
       </Text>
       <Text dim>
         {" "}

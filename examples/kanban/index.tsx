@@ -186,8 +186,22 @@ function HelpBar(): JSX.Element {
   return (
     <Text dim>
       {" "}
-      <Text bold dim>h/l</Text> column <Text bold dim>j/k</Text> card{" "}
-      <Text bold dim>{"</>"}</Text> move <Text bold dim>q</Text> quit
+      <Text bold dim>
+        h/l
+      </Text>{" "}
+      column{" "}
+      <Text bold dim>
+        j/k
+      </Text>{" "}
+      card{" "}
+      <Text bold dim>
+        {"</>"}
+      </Text>{" "}
+      move{" "}
+      <Text bold dim>
+        q
+      </Text>{" "}
+      quit
     </Text>
   )
 }

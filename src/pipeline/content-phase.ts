@@ -172,7 +172,14 @@ function renderNodeToBuffer(
     (hasPrevBuffer || ancestorCleared) && needsOwnRepaint
 
   if (parentRegionCleared) {
-    clearNodeRegion(node, buffer, layout, scrollOffset, clipBounds, layoutChanged)
+    clearNodeRegion(
+      node,
+      buffer,
+      layout,
+      scrollOffset,
+      clipBounds,
+      layoutChanged,
+    )
   }
 
   // Render based on node type

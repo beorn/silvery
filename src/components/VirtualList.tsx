@@ -149,9 +149,7 @@ function VirtualListInner<T>(
 
   // Adjust scrollTo to account for frozen items
   const adjustedScrollTo =
-    scrollTo !== undefined
-      ? Math.max(0, scrollTo - frozenCount)
-      : undefined
+    scrollTo !== undefined ? Math.max(0, scrollTo - frozenCount) : undefined
 
   // Adjust itemHeight function to use original indices
   const adjustedItemHeight =

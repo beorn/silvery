@@ -178,7 +178,14 @@ export function LayoutRefApp(): JSX.Element {
 
       <Text dim>
         {" "}
-        <Text bold dim>i</Text> inspect <Text bold dim>Esc</Text> quit
+        <Text bold dim>
+          i
+        </Text>{" "}
+        inspect{" "}
+        <Text bold dim>
+          Esc
+        </Text>{" "}
+        quit
       </Text>
     </Box>
   )

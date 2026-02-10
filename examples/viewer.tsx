@@ -44,7 +44,8 @@ const examples: Example[] = [
   {
     name: "Dashboard",
     file: "dashboard/index.tsx",
-    description: "Multi-pane dashboard with flexGrow columns and keyboard navigation",
+    description:
+      "Multi-pane dashboard with flexGrow columns and keyboard navigation",
     category: "Layout",
     component: "Dashboard",
   },
@@ -65,7 +66,8 @@ const examples: Example[] = [
   {
     name: "Task List",
     file: "task-list/index.tsx",
-    description: "Scrollable list with priority badges, toggles, and expandable subtasks",
+    description:
+      "Scrollable list with priority badges, toggles, and expandable subtasks",
     category: "Interactive",
     component: "TaskList",
   },
@@ -79,21 +81,24 @@ const examples: Example[] = [
   {
     name: "Search Filter",
     file: "search-filter/index.tsx",
-    description: "useTransition + useDeferredValue for responsive concurrent search",
+    description:
+      "useTransition + useDeferredValue for responsive concurrent search",
     category: "Interactive",
     component: "SearchApp",
   },
   {
     name: "Async Data",
     file: "async-data/index.tsx",
-    description: "React Suspense with independent data sources and error boundaries",
+    description:
+      "React Suspense with independent data sources and error boundaries",
     category: "Interactive",
     // No preview: Suspense + async use() requires full reconciler event loop
   },
   {
     name: "Layout Ref",
     file: "layout-ref/index.tsx",
-    description: "useContentRect + useScreenRect for imperative layout measurement",
+    description:
+      "useContentRect + useScreenRect for imperative layout measurement",
     category: "Interactive",
     component: "LayoutRefApp",
   },
@@ -106,7 +111,8 @@ const examples: Example[] = [
   {
     name: "Hello Runtime",
     file: "hello-runtime.tsx",
-    description: "Simplest Layer 1 API: createRuntime(), layout(), Symbol.dispose",
+    description:
+      "Simplest Layer 1 API: createRuntime(), layout(), Symbol.dispose",
     category: "Runtime",
   },
   {
@@ -166,38 +172,104 @@ const CATEGORY_COLOR: Record<string, string> = {
 // =============================================================================
 
 const KEYWORDS = new Set([
-  "import", "from", "export", "default", "function", "const", "let", "var",
-  "return", "if", "else", "for", "while", "switch", "case", "break",
-  "new", "typeof", "instanceof", "async", "await", "yield", "class",
-  "extends", "implements", "interface", "type", "enum", "true", "false",
-  "null", "undefined", "this", "super", "of", "in", "as", "using",
+  "import",
+  "from",
+  "export",
+  "default",
+  "function",
+  "const",
+  "let",
+  "var",
+  "return",
+  "if",
+  "else",
+  "for",
+  "while",
+  "switch",
+  "case",
+  "break",
+  "new",
+  "typeof",
+  "instanceof",
+  "async",
+  "await",
+  "yield",
+  "class",
+  "extends",
+  "implements",
+  "interface",
+  "type",
+  "enum",
+  "true",
+  "false",
+  "null",
+  "undefined",
+  "this",
+  "super",
+  "of",
+  "in",
+  "as",
+  "using",
 ])
 
 const REACT_KEYWORDS = new Set([
-  "useState", "useEffect", "useCallback", "useMemo", "useRef",
-  "useInput", "useApp", "useTerm", "useContentRect", "useScrollback",
+  "useState",
+  "useEffect",
+  "useCallback",
+  "useMemo",
+  "useRef",
+  "useInput",
+  "useApp",
+  "useTerm",
+  "useContentRect",
+  "useScrollback",
 ])
 
 function highlightLine(line: string): React.ReactNode {
-  if (line.trimStart().startsWith("//") || line.trimStart().startsWith("*") || line.trimStart().startsWith("/*")) {
-    return <Text dim color="gray">{line}</Text>
+  if (
+    line.trimStart().startsWith("//") ||
+    line.trimStart().startsWith("*") ||
+    line.trimStart().startsWith("/*")
+  ) {
+    return (
+      <Text dim color="gray">
+        {line}
+      </Text>
+    )
   }
 
   const parts: React.ReactNode[] = []
-  const regex = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(<\/?[A-Z]\w*)|(\b[a-zA-Z_]\w*\b)|(\s+)|([^\s"'`<\w]+)/g
+  const regex =
+    /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(<\/?[A-Z]\w*)|(\b[a-zA-Z_]\w*\b)|(\s+)|([^\s"'`<\w]+)/g
   let match: RegExpExecArray | null
   let i = 0
 
   while ((match = regex.exec(line)) !== null) {
     const [full, str, jsxTag, word] = match
     if (str) {
-      parts.push(<Text key={i++} color="green">{str}</Text>)
+      parts.push(
+        <Text key={i++} color="green">
+          {str}
+        </Text>,
+      )
     } else if (jsxTag) {
-      parts.push(<Text key={i++} color="cyan">{jsxTag}</Text>)
+      parts.push(
+        <Text key={i++} color="cyan">
+          {jsxTag}
+        </Text>,
+      )
     } else if (word && KEYWORDS.has(word)) {
-      parts.push(<Text key={i++} color="magenta" bold>{word}</Text>)
+      parts.push(
+        <Text key={i++} color="magenta" bold>
+          {word}
+        </Text>,
+      )
     } else if (word && REACT_KEYWORDS.has(word)) {
-      parts.push(<Text key={i++} color="yellow">{word}</Text>)
+      parts.push(
+        <Text key={i++} color="yellow">
+          {word}
+        </Text>,
+      )
     } else {
       parts.push(<Text key={i++}>{full}</Text>)
     }
@@ -210,13 +282,12 @@ function highlightLine(line: string): React.ReactNode {
 // Components
 // =============================================================================
 
-function Sidebar({
-  cursor,
-}: {
-  cursor: number
-}) {
+function Sidebar({ cursor }: { cursor: number }) {
   const { groups, scrollToChild } = useMemo(() => {
-    const result: { category: string; items: { example: Example; globalIdx: number }[] }[] = []
+    const result: {
+      category: string
+      items: { example: Example; globalIdx: number }[]
+    }[] = []
     let currentCat = ""
     let childIdx = 0
     let targetChild = 0
@@ -264,7 +335,8 @@ function Sidebar({
                   bold={selected}
                   wrap="truncate"
                 >
-                  {selected ? "\u25B8 " : "  "}{example.name}
+                  {selected ? "\u25B8 " : "  "}
+                  {example.name}
                 </Text>
               </Box>
             )
@@ -278,8 +350,12 @@ function Sidebar({
 /** Pad content lines to fill the full height — prevents stale pixel artifacts
  *  from the incremental renderer when switching between previews of different heights. */
 function padLines(contentLines: string[], totalHeight: number): string[] {
-  if (contentLines.length >= totalHeight) return contentLines.slice(0, totalHeight)
-  return [...contentLines, ...Array<string>(totalHeight - contentLines.length).fill("")]
+  if (contentLines.length >= totalHeight)
+    return contentLines.slice(0, totalHeight)
+  return [
+    ...contentLines,
+    ...Array<string>(totalHeight - contentLines.length).fill(""),
+  ]
 }
 
 function Preview({ example }: { example: Example }) {
@@ -325,14 +401,18 @@ function Preview({ example }: { example: Example }) {
         if (!cancelled) setError(e.message || String(e))
       })
 
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [example.file, example.component, width, height])
 
   // All paths pad to full height to clear stale pixels from prior previews
   const renderLines = (contentLines: string[]) => (
     <Box flexDirection="column" flexGrow={1}>
       {padLines(contentLines, height).map((line, i) => (
-        <Text key={i} wrap="truncate">{line}</Text>
+        <Text key={i} wrap="truncate">
+          {line}
+        </Text>
       ))}
     </Box>
   )
@@ -349,21 +429,11 @@ function Preview({ example }: { example: Example }) {
   }
 
   if (error) {
-    return renderLines([
-      "",
-      ` ${example.name}`,
-      "",
-      ` Error: ${error}`,
-    ])
+    return renderLines(["", ` ${example.name}`, "", ` Error: ${error}`])
   }
 
   if (!lines) {
-    return renderLines([
-      "",
-      ` ${example.name}`,
-      "",
-      " Loading preview...",
-    ])
+    return renderLines(["", ` ${example.name}`, "", " Loading preview..."])
   }
 
   return renderLines(lines)
@@ -383,7 +453,9 @@ function SourceCode({ example }: { example: Example }) {
     <Box flexDirection="column" flexGrow={1} paddingX={1}>
       {lines.map((line, i) => (
         <Text key={i} wrap="truncate">
-          <Text dim color="gray">{String(i + 1).padStart(3)} </Text>
+          <Text dim color="gray">
+            {String(i + 1).padStart(3)}{" "}
+          </Text>
           {highlightLine(line)}
         </Text>
       ))}
@@ -454,17 +526,22 @@ function Viewer() {
     )
   }
 
-  const runLabel = selected.category === "Inline" || selected.category === "Runtime"
-    ? "run"
-    : "run interactive"
+  const runLabel =
+    selected.category === "Inline" || selected.category === "Runtime"
+      ? "run"
+      : "run interactive"
 
   return (
     <Box flexDirection="column" flexGrow={1}>
       {/* Header */}
       <Text>
-        <Text bold color="yellow">{" inkx"}</Text>
+        <Text bold color="yellow">
+          {" inkx"}
+        </Text>
         <Text dim> examples </Text>
-        <Text dim>({cursor + 1}/{examples.length})</Text>
+        <Text dim>
+          ({cursor + 1}/{examples.length})
+        </Text>
       </Text>
 
       {/* Main: sidebar + content */}
@@ -472,24 +549,43 @@ function Viewer() {
         <Sidebar cursor={cursor} />
 
         {/* Content area with tabs */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="gray" overflow="hidden">
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="gray"
+          overflow="hidden"
+        >
           {/* Tab bar */}
           <Box paddingX={1}>
             <Text>
-              <Text bold={tab === "view"} color={tab === "view" ? "cyan" : undefined} dim={tab !== "view"}>
+              <Text
+                bold={tab === "view"}
+                color={tab === "view" ? "cyan" : undefined}
+                dim={tab !== "view"}
+              >
                 View
               </Text>
-              <Text>  </Text>
-              <Text bold={tab === "source"} color={tab === "source" ? "cyan" : undefined} dim={tab !== "source"}>
+              <Text> </Text>
+              <Text
+                bold={tab === "source"}
+                color={tab === "source" ? "cyan" : undefined}
+                dim={tab !== "source"}
+              >
                 Source
               </Text>
-              <Text dim>  {selected.name}</Text>
+              <Text dim> {selected.name}</Text>
             </Text>
           </Box>
 
           {/* Tab content — key forces full teardown on example switch */}
           {tab === "view" ? (
-            <Box key={selected.file} flexDirection="column" flexGrow={1} overflow="hidden">
+            <Box
+              key={selected.file}
+              flexDirection="column"
+              flexGrow={1}
+              overflow="hidden"
+            >
               <Preview example={selected} />
             </Box>
           ) : (
@@ -500,14 +596,26 @@ function Viewer() {
 
       {/* Bottom bar */}
       <Text>
-        <Text dim>{" "}</Text>
-        <Text bold dim>j</Text><Text dim>/</Text><Text bold dim>k</Text>
-        <Text dim> navigate  </Text>
-        <Text bold dim>Tab</Text>
-        <Text dim> {tab === "view" ? "source" : "view"}  </Text>
-        <Text bold dim>Enter</Text>
-        <Text dim> {runLabel}  </Text>
-        <Text bold dim>q</Text>
+        <Text dim> </Text>
+        <Text bold dim>
+          j
+        </Text>
+        <Text dim>/</Text>
+        <Text bold dim>
+          k
+        </Text>
+        <Text dim> navigate </Text>
+        <Text bold dim>
+          Tab
+        </Text>
+        <Text dim> {tab === "view" ? "source" : "view"} </Text>
+        <Text bold dim>
+          Enter
+        </Text>
+        <Text dim> {runLabel} </Text>
+        <Text bold dim>
+          q
+        </Text>
         <Text dim> quit</Text>
       </Text>
     </Box>

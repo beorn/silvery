@@ -64,8 +64,14 @@ export function ScrollExample() {
 
       <Text dim>
         {" "}
-        <Text bold dim>j/k</Text> navigate <Text bold dim>q</Text> quit |
-        Selected: {selectedIndex + 1}/{items.length}
+        <Text bold dim>
+          j/k
+        </Text>{" "}
+        navigate{" "}
+        <Text bold dim>
+          q
+        </Text>{" "}
+        quit | Selected: {selectedIndex + 1}/{items.length}
       </Text>
     </Box>
   )

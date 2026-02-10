@@ -60,7 +60,18 @@ const PIPELINE: { title: string; duration: number }[] = [
 // Spinner
 // =============================================================================
 
-const FRAMES = ["\u28CB", "\u28D9", "\u28F9", "\u28F8", "\u28FC", "\u28F4", "\u28E6", "\u28E7", "\u28C7", "\u28CF"]
+const FRAMES = [
+  "\u28CB",
+  "\u28D9",
+  "\u28F9",
+  "\u28F8",
+  "\u28FC",
+  "\u28F4",
+  "\u28E6",
+  "\u28E7",
+  "\u28C7",
+  "\u28CF",
+]
 
 function useSpinner() {
   const [frame, setFrame] = useState(0)
@@ -80,7 +91,12 @@ export function Pipeline() {
   const term = useTerm()
   const spinner = useSpinner()
   const [steps, setSteps] = useState<Step[]>(
-    PIPELINE.map((p, i) => ({ id: i, title: p.title, duration: p.duration, complete: false })),
+    PIPELINE.map((p, i) => ({
+      id: i,
+      title: p.title,
+      duration: p.duration,
+      complete: false,
+    })),
   )
   const startRef = useRef(Date.now())
   const [elapsed, setElapsed] = useState(0)
@@ -95,7 +111,9 @@ export function Pipeline() {
     if (allDone) return
     const step = steps[activeIdx]!
     const t = setTimeout(() => {
-      setSteps((prev) => prev.map((s, i) => (i === activeIdx ? { ...s, complete: true } : s)))
+      setSteps((prev) =>
+        prev.map((s, i) => (i === activeIdx ? { ...s, complete: true } : s)),
+      )
     }, step.duration)
     return () => clearTimeout(t)
   }, [activeIdx, allDone])
@@ -103,7 +121,10 @@ export function Pipeline() {
   // Elapsed counter
   useEffect(() => {
     if (allDone) return
-    const t = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 200)
+    const t = setInterval(
+      () => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)),
+      200,
+    )
     return () => clearInterval(t)
   }, [allDone])
 
@@ -120,17 +141,29 @@ export function Pipeline() {
     <Box flexDirection="column" height={rows} paddingX={1}>
       {/* Header */}
       <Text>
-        <Text bold color="cyan">{"\u25B8 Build Pipeline"}</Text>
+        <Text bold color="cyan">
+          {"\u25B8 Build Pipeline"}
+        </Text>
       </Text>
       <Text>
         <Text color={allDone ? "green" : "yellow"}>[{bar}]</Text>
-        <Text dim> {doneCount}/{steps.length}</Text>
-        <Text dim>{" \u2022 "}{elapsed}s</Text>
+        <Text dim>
+          {" "}
+          {doneCount}/{steps.length}
+        </Text>
+        <Text dim>
+          {" \u2022 "}
+          {elapsed}s
+        </Text>
       </Text>
       <Text> </Text>
 
       {/* Step list */}
-      <Box flexDirection="column" overflow="scroll" scrollTo={Math.max(0, activeIdx)}>
+      <Box
+        flexDirection="column"
+        overflow="scroll"
+        scrollTo={Math.max(0, activeIdx)}
+      >
         {steps.map((step, i) => {
           const active = i === activeIdx
           return (
@@ -138,14 +171,16 @@ export function Pipeline() {
               {step.complete ? (
                 <Text color="green">{"\u2713 "}</Text>
               ) : active ? (
-                <Text color="yellow">{spinner}{" "}</Text>
+                <Text color="yellow">{spinner} </Text>
               ) : (
                 <Text dim>{"  "}</Text>
               )}
               <Text bold={active} dim={step.complete && !active}>
                 {step.title}
               </Text>
-              {active && <Text dim> ({(step.duration / 1000).toFixed(1)}s)</Text>}
+              {active && (
+                <Text dim> ({(step.duration / 1000).toFixed(1)}s)</Text>
+              )}
             </Text>
           )
         })}

@@ -515,78 +515,82 @@ describe("Yoga node cleanup", () => {
 // ============================================================================
 
 describe("Memory tracking", () => {
-  test("heap usage stays bounded during intensive operations", { timeout: 30000 }, () => {
-    // Note: This is a heuristic test - exact memory behavior depends on GC
-    const render = createRenderer()
+  test(
+    "heap usage stays bounded during intensive operations",
+    { timeout: 30000 },
+    () => {
+      // Note: This is a heuristic test - exact memory behavior depends on GC
+      const render = createRenderer()
 
-    function IntensiveApp() {
-      const [data, setData] = useState<string[]>([])
+      function IntensiveApp() {
+        const [data, setData] = useState<string[]>([])
 
-      useInput((input: string) => {
-        if (input === "a") {
-          // Add items
-          setData((prev) => [...prev, `item-${prev.length}`])
-        }
-        if (input === "d") {
-          // Remove items
-          setData((prev) => prev.slice(0, -1))
-        }
-        if (input === "c") {
-          // Clear
-          setData([])
-        }
-      })
+        useInput((input: string) => {
+          if (input === "a") {
+            // Add items
+            setData((prev) => [...prev, `item-${prev.length}`])
+          }
+          if (input === "d") {
+            // Remove items
+            setData((prev) => prev.slice(0, -1))
+          }
+          if (input === "c") {
+            // Clear
+            setData([])
+          }
+        })
 
-      return (
-        <Box flexDirection="column">
-          <Text>Items: {data.length}</Text>
-          {data.slice(-10).map((item, i) => (
-            <Text key={i}>{item}</Text>
-          ))}
-        </Box>
-      )
-    }
-
-    const app = render(<IntensiveApp />)
-
-    // Capture initial heap if available
-    const initialHeap = process.memoryUsage?.().heapUsed ?? 0
-
-    // Intensive operations: add many, clear, repeat
-    for (let cycle = 0; cycle < 10; cycle++) {
-      // Add 100 items
-      for (let i = 0; i < 100; i++) {
-        app.stdin.write("a")
-      }
-
-      // Clear
-      app.stdin.write("c")
-    }
-
-    // Final state should be empty
-    expect(app.ansi).toContain("Items: 0")
-
-    app.unmount()
-
-    // Capture final heap
-    const finalHeap = process.memoryUsage?.().heapUsed ?? 0
-
-    // If heap measurement is available, log it for debugging
-    // Note: This is fuzzy due to GC timing - we skip the assertion since
-    // CI environments have unpredictable memory behavior
-    if (initialHeap > 0 && finalHeap > 0) {
-      const growth = finalHeap - initialHeap
-      const maxGrowth = 100 * 1024 * 1024 // 100MB - very generous for CI
-      // Log but don't fail - memory tests are inherently flaky
-      if (growth > maxGrowth) {
-        const growthMB = Math.round(growth / 1024 / 1024)
-        const thresholdMB = Math.round(maxGrowth / 1024 / 1024)
-        console.log(
-          `[memory.test] Heap grew by ${growthMB}MB (threshold: ${thresholdMB}MB) - may indicate leak or GC timing`,
+        return (
+          <Box flexDirection="column">
+            <Text>Items: {data.length}</Text>
+            {data.slice(-10).map((item, i) => (
+              <Text key={i}>{item}</Text>
+            ))}
+          </Box>
         )
       }
-    }
-  })
+
+      const app = render(<IntensiveApp />)
+
+      // Capture initial heap if available
+      const initialHeap = process.memoryUsage?.().heapUsed ?? 0
+
+      // Intensive operations: add many, clear, repeat
+      for (let cycle = 0; cycle < 10; cycle++) {
+        // Add 100 items
+        for (let i = 0; i < 100; i++) {
+          app.stdin.write("a")
+        }
+
+        // Clear
+        app.stdin.write("c")
+      }
+
+      // Final state should be empty
+      expect(app.ansi).toContain("Items: 0")
+
+      app.unmount()
+
+      // Capture final heap
+      const finalHeap = process.memoryUsage?.().heapUsed ?? 0
+
+      // If heap measurement is available, log it for debugging
+      // Note: This is fuzzy due to GC timing - we skip the assertion since
+      // CI environments have unpredictable memory behavior
+      if (initialHeap > 0 && finalHeap > 0) {
+        const growth = finalHeap - initialHeap
+        const maxGrowth = 100 * 1024 * 1024 // 100MB - very generous for CI
+        // Log but don't fail - memory tests are inherently flaky
+        if (growth > maxGrowth) {
+          const growthMB = Math.round(growth / 1024 / 1024)
+          const thresholdMB = Math.round(maxGrowth / 1024 / 1024)
+          console.log(
+            `[memory.test] Heap grew by ${growthMB}MB (threshold: ${thresholdMB}MB) - may indicate leak or GC timing`,
+          )
+        }
+      }
+    },
+  )
 
   test(
     "garbage collection reclaims unmounted component memory",

@@ -47,12 +47,7 @@
 
 import React, { useState, act } from "react"
 import { describe, expect, it } from "vitest"
-import {
-  Box,
-  Text,
-  useContentRect,
-  type Rect,
-} from "../src/index.js"
+import { Box, Text, useContentRect, type Rect } from "../src/index.js"
 import { createRenderer } from "../src/testing/index.js"
 import {
   reconciler,
@@ -146,9 +141,7 @@ function LayoutContainer() {
               {pane}: {info.width}x{info.height}
             </Text>
           ))}
-          {Object.keys(layouts).length === 0 && (
-            <Text dim>No layout yet</Text>
-          )}
+          {Object.keys(layouts).length === 0 && <Text dim>No layout yet</Text>}
         </Box>
       </Box>
     </Box>
@@ -267,12 +260,7 @@ function createProductionSimulator(
   const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   act(() => {
-    reconciler.updateContainerSync(
-      wrapElement(element),
-      fiberRoot,
-      null,
-      null,
-    )
+    reconciler.updateContainerSync(wrapElement(element), fiberRoot, null, null)
     reconciler.flushSyncWork()
   })
   globalThis.IS_REACT_ACT_ENVIRONMENT = prev as boolean
@@ -412,9 +400,7 @@ describe("onLayout corruption", () => {
           const inc = second.buffer.getCell(x, y)
           const fr = fresh.buffer.getCell(x, y)
           if (!cellEquals(inc, fr)) {
-            mismatches.push(
-              `(${x},${y}): inc='${inc.char}' fresh='${fr.char}'`,
-            )
+            mismatches.push(`(${x},${y}): inc='${inc.char}' fresh='${fr.char}'`)
           }
         }
       }
@@ -469,9 +455,7 @@ describe("onLayout corruption", () => {
           const inc = second.buffer.getCell(x, y)
           const fr = fresh.buffer.getCell(x, y)
           if (!cellEquals(inc, fr)) {
-            mismatches.push(
-              `(${x},${y}): inc='${inc.char}' fresh='${fr.char}'`,
-            )
+            mismatches.push(`(${x},${y}): inc='${inc.char}' fresh='${fr.char}'`)
           }
         }
       }

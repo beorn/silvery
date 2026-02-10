@@ -97,19 +97,14 @@ function SuspendingComponent({ read }: { read: () => string }) {
 /**
  * Compare two buffers cell by cell, collecting mismatches.
  */
-function findMismatches(
-  inc: TerminalBuffer,
-  fresh: TerminalBuffer,
-): string[] {
+function findMismatches(inc: TerminalBuffer, fresh: TerminalBuffer): string[] {
   const mismatches: string[] = []
   for (let y = 0; y < inc.height; y++) {
     for (let x = 0; x < inc.width; x++) {
       const a = inc.getCell(x, y)
       const b = fresh.getCell(x, y)
       if (!cellEquals(a, b)) {
-        mismatches.push(
-          `(${x},${y}): inc='${a.char}' fresh='${b.char}'`,
-        )
+        mismatches.push(`(${x},${y}): inc='${a.char}' fresh='${b.char}'`)
       }
     }
   }
@@ -264,12 +259,7 @@ function createProductionSimulator(
   const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
   act(() => {
-    reconciler.updateContainerSync(
-      wrapElement(element),
-      fiberRoot,
-      null,
-      null,
-    )
+    reconciler.updateContainerSync(wrapElement(element), fiberRoot, null, null)
     reconciler.flushSyncWork()
   })
   globalThis.IS_REACT_ACT_ENVIRONMENT = prev as boolean
@@ -415,302 +405,316 @@ describe("Suspense embedded: sync path (baseline)", () => {
 // ============================================================================
 
 describe("Suspense embedded: dirty-flag simulation", () => {
-  it(
-    "unhideInstance dirty flags: incremental must clear fallback pixels",
-    () => {
-      // Set up a tree with a "fallback" text node that's visible
-      // and a "content" text node that's hidden.
-      // This mirrors what Suspense does: fallback shown, content hidden.
+  it("unhideInstance dirty flags: incremental must clear fallback pixels", () => {
+    // Set up a tree with a "fallback" text node that's visible
+    // and a "content" text node that's hidden.
+    // This mirrors what Suspense does: fallback shown, content hidden.
 
-      function App() {
-        return (
-          <Box flexDirection="row" width={60} height={10}>
-            <Box
-              flexDirection="column"
-              width={20}
-              borderStyle="round"
-              borderColor="gray"
-              id="sidebar"
-            >
-              <Text bold>Sidebar</Text>
-              <Text>Nav 1</Text>
-              <Text>Nav 2</Text>
-            </Box>
-            <Box flexDirection="column" flexGrow={1} id="content-area">
-              <Text bold>Content</Text>
-              {/* Two text nodes in a column - we'll hide/unhide them manually */}
-              <Text testID="fallback">FALLBACK_TEXT_HERE</Text>
-              <Text testID="real-content">REAL_CONTENT_DATA</Text>
-              <Text>Footer</Text>
-            </Box>
+    function App() {
+      return (
+        <Box flexDirection="row" width={60} height={10}>
+          <Box
+            flexDirection="column"
+            width={20}
+            borderStyle="round"
+            borderColor="gray"
+            id="sidebar"
+          >
+            <Text bold>Sidebar</Text>
+            <Text>Nav 1</Text>
+            <Text>Nav 2</Text>
           </Box>
+          <Box flexDirection="column" flexGrow={1} id="content-area">
+            <Text bold>Content</Text>
+            {/* Two text nodes in a column - we'll hide/unhide them manually */}
+            <Text testID="fallback">FALLBACK_TEXT_HERE</Text>
+            <Text testID="real-content">REAL_CONTENT_DATA</Text>
+            <Text>Footer</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    const sim = createProductionSimulator(<App />)
+
+    try {
+      // Step 1: Initial render - both texts visible
+      const initial = sim.renderPipeline()
+      expect(initial.text).toContain("Sidebar")
+      expect(initial.text).toContain("FALLBACK_TEXT_HERE")
+      expect(initial.text).toContain("REAL_CONTENT_DATA")
+      expect(initial.text).toContain("Footer")
+
+      // Step 2: Simulate Suspense state: hide real-content, keep fallback visible
+      // (This is what happens when content first suspends)
+      const realContentNode = findNode(sim.root, (n) => {
+        const props = n.props as any
+        return props.testID === "real-content"
+      })
+      expect(realContentNode).toBeTruthy()
+      simulateHideInstance(realContentNode!)
+
+      // Run pipeline (incremental) - should show fallback, hide real-content
+      const suspended = sim.renderPipeline()
+      expect(suspended.text).toContain("FALLBACK_TEXT_HERE")
+      expect(suspended.text).not.toContain("REAL_CONTENT_DATA")
+
+      // Step 3: Now simulate Suspense resolution:
+      // unhide real-content, hide fallback
+      // This is EXACTLY what hideInstance/unhideInstance do
+      const fallbackNode = findNode(sim.root, (n) => {
+        const props = n.props as any
+        return props.testID === "fallback"
+      })
+      expect(fallbackNode).toBeTruthy()
+
+      simulateHideInstance(fallbackNode!)
+      simulateUnhideInstance(realContentNode!)
+
+      // Step 4: Run pipeline (incremental, uses prevBuffer from step 2)
+      const resolved = sim.renderPipeline()
+
+      // Step 5: Compare against fresh render
+      const fresh = sim.freshRender()
+
+      const mismatches = findMismatches(resolved.buffer, fresh.buffer)
+
+      if (mismatches.length > 0) {
+        throw new Error(
+          `Incremental/fresh render mismatch after simulated unhide:\n` +
+            `${mismatches.length} cells differ.\n` +
+            `Incremental:\n${resolved.text}\n` +
+            `Fresh:\n${fresh.text}\n` +
+            `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
         )
       }
 
-      const sim = createProductionSimulator(<App />)
+      // Verify content correctness
+      expect(resolved.text).toContain("Sidebar")
+      expect(resolved.text).toContain("REAL_CONTENT_DATA")
+      expect(resolved.text).toContain("Footer")
+      expect(resolved.text).not.toContain("FALLBACK_TEXT_HERE")
+    } finally {
+      sim.unmount()
+    }
+  })
 
-      try {
-        // Step 1: Initial render - both texts visible
-        const initial = sim.renderPipeline()
-        expect(initial.text).toContain("Sidebar")
-        expect(initial.text).toContain("FALLBACK_TEXT_HERE")
-        expect(initial.text).toContain("REAL_CONTENT_DATA")
-        expect(initial.text).toContain("Footer")
+  it("unhideInstance without layoutDirty: layout not recalculated after size change", () => {
+    // The hidden node participates in layout (no display:none on Yoga).
+    // When unhidden, its dimensions are whatever the layout engine last
+    // calculated. If hideInstance didn't mark layoutDirty, the layout
+    // engine won't recalculate, and nodes may be at wrong positions.
 
-        // Step 2: Simulate Suspense state: hide real-content, keep fallback visible
-        // (This is what happens when content first suspends)
-        const realContentNode = findNode(sim.root, (n) => {
-          const props = n.props as any
-          return props.testID === "real-content"
-        })
-        expect(realContentNode).toBeTruthy()
-        simulateHideInstance(realContentNode!)
-
-        // Run pipeline (incremental) - should show fallback, hide real-content
-        const suspended = sim.renderPipeline()
-        expect(suspended.text).toContain("FALLBACK_TEXT_HERE")
-        expect(suspended.text).not.toContain("REAL_CONTENT_DATA")
-
-        // Step 3: Now simulate Suspense resolution:
-        // unhide real-content, hide fallback
-        // This is EXACTLY what hideInstance/unhideInstance do
-        const fallbackNode = findNode(sim.root, (n) => {
-          const props = n.props as any
-          return props.testID === "fallback"
-        })
-        expect(fallbackNode).toBeTruthy()
-
-        simulateHideInstance(fallbackNode!)
-        simulateUnhideInstance(realContentNode!)
-
-        // Step 4: Run pipeline (incremental, uses prevBuffer from step 2)
-        const resolved = sim.renderPipeline()
-
-        // Step 5: Compare against fresh render
-        const fresh = sim.freshRender()
-
-        const mismatches = findMismatches(resolved.buffer, fresh.buffer)
-
-        if (mismatches.length > 0) {
-          throw new Error(
-            `Incremental/fresh render mismatch after simulated unhide:\n` +
-              `${mismatches.length} cells differ.\n` +
-              `Incremental:\n${resolved.text}\n` +
-              `Fresh:\n${fresh.text}\n` +
-              `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
-          )
-        }
-
-        // Verify content correctness
-        expect(resolved.text).toContain("Sidebar")
-        expect(resolved.text).toContain("REAL_CONTENT_DATA")
-        expect(resolved.text).toContain("Footer")
-        expect(resolved.text).not.toContain("FALLBACK_TEXT_HERE")
-      } finally {
-        sim.unmount()
-      }
-    },
-  )
-
-  it(
-    "unhideInstance without layoutDirty: layout not recalculated after size change",
-    () => {
-      // The hidden node participates in layout (no display:none on Yoga).
-      // When unhidden, its dimensions are whatever the layout engine last
-      // calculated. If hideInstance didn't mark layoutDirty, the layout
-      // engine won't recalculate, and nodes may be at wrong positions.
-
-      function App() {
-        return (
-          <Box flexDirection="column" width={40} height={15}>
-            <Text bold>Header</Text>
-            <Box
-              flexDirection="column"
-              borderStyle="round"
-              borderColor="green"
-              testID="panel"
-            >
-              <Text>Panel Line 1</Text>
-              <Text>Panel Line 2</Text>
-              <Text>Panel Line 3</Text>
-            </Box>
-            <Text testID="fallback-text">Loading panel...</Text>
-            <Text>Footer stays here</Text>
+    function App() {
+      return (
+        <Box flexDirection="column" width={40} height={15}>
+          <Text bold>Header</Text>
+          <Box
+            flexDirection="column"
+            borderStyle="round"
+            borderColor="green"
+            testID="panel"
+          >
+            <Text>Panel Line 1</Text>
+            <Text>Panel Line 2</Text>
+            <Text>Panel Line 3</Text>
           </Box>
+          <Text testID="fallback-text">Loading panel...</Text>
+          <Text>Footer stays here</Text>
+        </Box>
+      )
+    }
+
+    const sim = createProductionSimulator(<App />, 40, 15)
+
+    try {
+      // Step 1: Render with all visible
+      const initial = sim.renderPipeline()
+      expect(initial.text).toContain("Header")
+      expect(initial.text).toContain("Panel Line 1")
+      expect(initial.text).toContain("Loading panel...")
+      expect(initial.text).toContain("Footer stays here")
+
+      // Step 2: Simulate Suspense state: hide panel, keep fallback
+      const panelNode = findNode(sim.root, (n) => {
+        const props = n.props as any
+        return props.testID === "panel"
+      })
+      expect(panelNode).toBeTruthy()
+      simulateHideInstance(panelNode!)
+
+      const afterHide = sim.renderPipeline()
+      expect(afterHide.text).toContain("Header")
+      expect(afterHide.text).not.toContain("Panel Line 1")
+      expect(afterHide.text).toContain("Loading panel...")
+
+      // Step 3: Simulate resolution: unhide panel, hide fallback
+      const fallbackNode = findNode(sim.root, (n) => {
+        const props = n.props as any
+        return props.testID === "fallback-text"
+      })
+      expect(fallbackNode).toBeTruthy()
+
+      simulateUnhideInstance(panelNode!)
+      simulateHideInstance(fallbackNode!)
+
+      // Step 4: Incremental render
+      const resolved = sim.renderPipeline()
+
+      // Step 5: Fresh render for comparison
+      const fresh = sim.freshRender()
+
+      const mismatches = findMismatches(resolved.buffer, fresh.buffer)
+
+      if (mismatches.length > 0) {
+        throw new Error(
+          `Layout shift mismatch after unhide (no layoutDirty):\n` +
+            `${mismatches.length} cells differ.\n` +
+            `Incremental:\n${resolved.text}\n` +
+            `Fresh:\n${fresh.text}\n` +
+            `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
         )
       }
 
-      const sim = createProductionSimulator(<App />, 40, 15)
+      // Verify content correctness
+      expect(resolved.text).toContain("Header")
+      expect(resolved.text).toContain("Panel Line 1")
+      expect(resolved.text).toContain("Panel Line 2")
+      expect(resolved.text).toContain("Panel Line 3")
+      expect(resolved.text).toContain("Footer stays here")
+      expect(resolved.text).not.toContain("Loading panel...")
+    } finally {
+      sim.unmount()
+    }
+  })
 
-      try {
-        // Step 1: Render with all visible
-        const initial = sim.renderPipeline()
-        expect(initial.text).toContain("Header")
-        expect(initial.text).toContain("Panel Line 1")
-        expect(initial.text).toContain("Loading panel...")
-        expect(initial.text).toContain("Footer stays here")
+  it("staggered unhide: accumulated stale pixels from multiple resolutions", () => {
+    // Three "Suspense boundaries" that resolve one at a time.
+    // Each resolution shows content + hides fallback.
+    // After 3 staggered incremental renders, compare against fresh.
 
-        // Step 2: Simulate Suspense state: hide panel, keep fallback
-        const panelNode = findNode(sim.root, (n) => {
-          const props = n.props as any
-          return props.testID === "panel"
-        })
-        expect(panelNode).toBeTruthy()
-        simulateHideInstance(panelNode!)
-
-        const afterHide = sim.renderPipeline()
-        expect(afterHide.text).toContain("Header")
-        expect(afterHide.text).not.toContain("Panel Line 1")
-        expect(afterHide.text).toContain("Loading panel...")
-
-        // Step 3: Simulate resolution: unhide panel, hide fallback
-        const fallbackNode = findNode(sim.root, (n) => {
-          const props = n.props as any
-          return props.testID === "fallback-text"
-        })
-        expect(fallbackNode).toBeTruthy()
-
-        simulateUnhideInstance(panelNode!)
-        simulateHideInstance(fallbackNode!)
-
-        // Step 4: Incremental render
-        const resolved = sim.renderPipeline()
-
-        // Step 5: Fresh render for comparison
-        const fresh = sim.freshRender()
-
-        const mismatches = findMismatches(resolved.buffer, fresh.buffer)
-
-        if (mismatches.length > 0) {
-          throw new Error(
-            `Layout shift mismatch after unhide (no layoutDirty):\n` +
-              `${mismatches.length} cells differ.\n` +
-              `Incremental:\n${resolved.text}\n` +
-              `Fresh:\n${fresh.text}\n` +
-              `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
-          )
-        }
-
-        // Verify content correctness
-        expect(resolved.text).toContain("Header")
-        expect(resolved.text).toContain("Panel Line 1")
-        expect(resolved.text).toContain("Panel Line 2")
-        expect(resolved.text).toContain("Panel Line 3")
-        expect(resolved.text).toContain("Footer stays here")
-        expect(resolved.text).not.toContain("Loading panel...")
-      } finally {
-        sim.unmount()
-      }
-    },
-  )
-
-  it(
-    "staggered unhide: accumulated stale pixels from multiple resolutions",
-    () => {
-      // Three "Suspense boundaries" that resolve one at a time.
-      // Each resolution shows content + hides fallback.
-      // After 3 staggered incremental renders, compare against fresh.
-
-      function App() {
-        return (
-          <Box flexDirection="row" width={60} height={15}>
-            <Box
-              flexDirection="column"
-              width={20}
-              borderStyle="round"
-              borderColor="gray"
-              id="sidebar"
-            >
-              <Text bold>Sidebar</Text>
-              <Text>Item A</Text>
-              <Text>Item B</Text>
-            </Box>
-            <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="cyan">
-              <Text bold>Content</Text>
-              <Text testID="fallback-1">Loading 1...</Text>
-              <Text testID="content-1">Content One</Text>
-              <Text testID="fallback-2">Loading 2...</Text>
-              <Text testID="content-2">Content Two</Text>
-              <Text testID="fallback-3">Loading 3...</Text>
-              <Text testID="content-3">Content Three</Text>
-              <Text>Status bar</Text>
-            </Box>
+    function App() {
+      return (
+        <Box flexDirection="row" width={60} height={15}>
+          <Box
+            flexDirection="column"
+            width={20}
+            borderStyle="round"
+            borderColor="gray"
+            id="sidebar"
+          >
+            <Text bold>Sidebar</Text>
+            <Text>Item A</Text>
+            <Text>Item B</Text>
           </Box>
+          <Box
+            flexDirection="column"
+            flexGrow={1}
+            borderStyle="round"
+            borderColor="cyan"
+          >
+            <Text bold>Content</Text>
+            <Text testID="fallback-1">Loading 1...</Text>
+            <Text testID="content-1">Content One</Text>
+            <Text testID="fallback-2">Loading 2...</Text>
+            <Text testID="content-2">Content Two</Text>
+            <Text testID="fallback-3">Loading 3...</Text>
+            <Text testID="content-3">Content Three</Text>
+            <Text>Status bar</Text>
+          </Box>
+        </Box>
+      )
+    }
+
+    const sim = createProductionSimulator(<App />)
+
+    try {
+      // Initial render: all visible
+      const initial = sim.renderPipeline()
+      expect(initial.text).toContain("Sidebar")
+
+      // Simulate initial Suspense state: hide all content, show all fallbacks
+      for (let i = 1; i <= 3; i++) {
+        const contentNode = findNode(sim.root, (n) => {
+          const props = n.props as any
+          return props.testID === `content-${i}`
+        })
+        expect(contentNode).toBeTruthy()
+        simulateHideInstance(contentNode!)
+      }
+
+      const suspended = sim.renderPipeline()
+      expect(suspended.text).toContain("Loading 1...")
+      expect(suspended.text).toContain("Loading 2...")
+      expect(suspended.text).toContain("Loading 3...")
+      expect(suspended.text).not.toContain("Content One")
+
+      // Resolution 1: unhide content-1, hide fallback-1
+      const content1 = findNode(
+        sim.root,
+        (n) => (n.props as any).testID === "content-1",
+      )!
+      const fallback1 = findNode(
+        sim.root,
+        (n) => (n.props as any).testID === "fallback-1",
+      )!
+      simulateUnhideInstance(content1)
+      simulateHideInstance(fallback1)
+      const after1 = sim.renderPipeline()
+
+      // Resolution 2: unhide content-2, hide fallback-2
+      const content2 = findNode(
+        sim.root,
+        (n) => (n.props as any).testID === "content-2",
+      )!
+      const fallback2 = findNode(
+        sim.root,
+        (n) => (n.props as any).testID === "fallback-2",
+      )!
+      simulateUnhideInstance(content2)
+      simulateHideInstance(fallback2)
+      const after2 = sim.renderPipeline()
+
+      // Resolution 3: unhide content-3, hide fallback-3
+      const content3 = findNode(
+        sim.root,
+        (n) => (n.props as any).testID === "content-3",
+      )!
+      const fallback3 = findNode(
+        sim.root,
+        (n) => (n.props as any).testID === "fallback-3",
+      )!
+      simulateUnhideInstance(content3)
+      simulateHideInstance(fallback3)
+      const after3 = sim.renderPipeline()
+
+      // Compare final incremental vs fresh
+      const fresh = sim.freshRender()
+      const mismatches = findMismatches(after3.buffer, fresh.buffer)
+
+      if (mismatches.length > 0) {
+        throw new Error(
+          `Staggered unhide mismatch:\n` +
+            `${mismatches.length} cells differ.\n` +
+            `Incremental:\n${after3.text}\n` +
+            `Fresh:\n${fresh.text}\n` +
+            `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
         )
       }
 
-      const sim = createProductionSimulator(<App />)
-
-      try {
-        // Initial render: all visible
-        const initial = sim.renderPipeline()
-        expect(initial.text).toContain("Sidebar")
-
-        // Simulate initial Suspense state: hide all content, show all fallbacks
-        for (let i = 1; i <= 3; i++) {
-          const contentNode = findNode(sim.root, (n) => {
-            const props = n.props as any
-            return props.testID === `content-${i}`
-          })
-          expect(contentNode).toBeTruthy()
-          simulateHideInstance(contentNode!)
-        }
-
-        const suspended = sim.renderPipeline()
-        expect(suspended.text).toContain("Loading 1...")
-        expect(suspended.text).toContain("Loading 2...")
-        expect(suspended.text).toContain("Loading 3...")
-        expect(suspended.text).not.toContain("Content One")
-
-        // Resolution 1: unhide content-1, hide fallback-1
-        const content1 = findNode(sim.root, (n) => (n.props as any).testID === "content-1")!
-        const fallback1 = findNode(sim.root, (n) => (n.props as any).testID === "fallback-1")!
-        simulateUnhideInstance(content1)
-        simulateHideInstance(fallback1)
-        const after1 = sim.renderPipeline()
-
-        // Resolution 2: unhide content-2, hide fallback-2
-        const content2 = findNode(sim.root, (n) => (n.props as any).testID === "content-2")!
-        const fallback2 = findNode(sim.root, (n) => (n.props as any).testID === "fallback-2")!
-        simulateUnhideInstance(content2)
-        simulateHideInstance(fallback2)
-        const after2 = sim.renderPipeline()
-
-        // Resolution 3: unhide content-3, hide fallback-3
-        const content3 = findNode(sim.root, (n) => (n.props as any).testID === "content-3")!
-        const fallback3 = findNode(sim.root, (n) => (n.props as any).testID === "fallback-3")!
-        simulateUnhideInstance(content3)
-        simulateHideInstance(fallback3)
-        const after3 = sim.renderPipeline()
-
-        // Compare final incremental vs fresh
-        const fresh = sim.freshRender()
-        const mismatches = findMismatches(after3.buffer, fresh.buffer)
-
-        if (mismatches.length > 0) {
-          throw new Error(
-            `Staggered unhide mismatch:\n` +
-              `${mismatches.length} cells differ.\n` +
-              `Incremental:\n${after3.text}\n` +
-              `Fresh:\n${fresh.text}\n` +
-              `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
-          )
-        }
-
-        // Verify all content visible, all fallbacks hidden
-        expect(after3.text).toContain("Sidebar")
-        expect(after3.text).toContain("Content One")
-        expect(after3.text).toContain("Content Two")
-        expect(after3.text).toContain("Content Three")
-        expect(after3.text).toContain("Status bar")
-        expect(after3.text).not.toContain("Loading 1...")
-        expect(after3.text).not.toContain("Loading 2...")
-        expect(after3.text).not.toContain("Loading 3...")
-      } finally {
-        sim.unmount()
-      }
-    },
-  )
+      // Verify all content visible, all fallbacks hidden
+      expect(after3.text).toContain("Sidebar")
+      expect(after3.text).toContain("Content One")
+      expect(after3.text).toContain("Content Two")
+      expect(after3.text).toContain("Content Three")
+      expect(after3.text).toContain("Status bar")
+      expect(after3.text).not.toContain("Loading 1...")
+      expect(after3.text).not.toContain("Loading 2...")
+      expect(after3.text).not.toContain("Loading 3...")
+    } finally {
+      sim.unmount()
+    }
+  })
 })
 
 // ============================================================================

@@ -183,8 +183,15 @@ export function Dashboard(): JSX.Element {
 
       <Text dim>
         {" "}
-        Selected: Pane {selectedPane + 1} <Text bold dim>h/l</Text> navigate{" "}
-        <Text bold dim>q</Text> quit
+        Selected: Pane {selectedPane + 1}{" "}
+        <Text bold dim>
+          h/l
+        </Text>{" "}
+        navigate{" "}
+        <Text bold dim>
+          q
+        </Text>{" "}
+        quit
       </Text>
     </Box>
   )

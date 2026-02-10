@@ -231,10 +231,7 @@ for (const cmp of rerenderComps) {
 }
 
 console.log()
-console.log(
-  "  Both trigger full React reconciliation of the component tree.",
-)
-
+console.log("  Both trigger full React reconciliation of the component tree.")
 
 // Section 4: inkx diff render (no ink equivalent)
 console.log()
