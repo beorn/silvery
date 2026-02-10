@@ -380,14 +380,29 @@ function renderNormalChildren(
   // there would cause children to re-fill, overwriting border cells at boundaries.
   const childAncestorCleared = parentRegionCleared || ancestorCleared
 
-  // Normal rendering - render all children with effective clip bounds.
-  // Track whether any sibling was dirty (will be rendered, not skipped).
-  // Absolute-positioned children that come after a dirty sibling must repaint
-  // because the sibling's render may have overwritten pixels in the cloned buffer
-  // that the absolute child also occupies.
-  let anySiblingWasDirty = false
+  // Two-pass rendering to match CSS paint order: normal-flow first, then
+  // absolute on top. This ensures absolute children's pixels (bg fills, text)
+  // are never overwritten by normal-flow siblings' clearNodeRegion/render.
+  //
+  // Without two-pass, an absolute child rendered before a dirty normal-flow
+  // sibling gets its bg wiped by the sibling's clearNodeRegion. The old
+  // single-pass anySiblingWasDirty flag only caught absolute children AFTER
+  // dirty siblings, not before.
+  //
+  // Pre-scan: detect if any non-absolute sibling is dirty. When true, absolute
+  // children in the second pass must force-repaint because the first pass may
+  // have overwritten their pixels in the cloned buffer.
+  let hasAbsoluteChildren = false
+  let anyNormalFlowDirty = false
+
+  // First pass: render normal-flow children, track dirty state
   for (const child of node.children) {
-    // Check dirty flags BEFORE rendering (render clears them)
+    const childProps = child.props as BoxProps
+    if (childProps.position === "absolute") {
+      hasAbsoluteChildren = true
+      continue // Skip — rendered in second pass
+    }
+
     const childIsDirty =
       child.layoutNode &&
       !child.hidden &&
@@ -399,24 +414,33 @@ function renderNormalChildren(
           child.prevLayout &&
           !rectEqual(child.prevLayout, child.contentRect)))
 
-    const childProps = child.props as BoxProps
-    const isAbsolute = childProps.position === "absolute"
-
-    // Absolute-positioned children must repaint after any dirty sibling
-    // because their pixels may have been overwritten in the cloned buffer
-    const forceRepaint = childHasPrev && isAbsolute && anySiblingWasDirty
+    if (childIsDirty) anyNormalFlowDirty = true
 
     renderNodeToBuffer(
       child,
       buffer,
       scrollOffset,
       effectiveClipBounds,
-      forceRepaint ? false : childHasPrev,
-      forceRepaint ? true : childAncestorCleared,
+      childHasPrev,
+      childAncestorCleared,
     )
+  }
 
-    if (childIsDirty) {
-      anySiblingWasDirty = true
+  // Second pass: render absolute children on top (CSS paint order)
+  if (hasAbsoluteChildren) {
+    const forceRepaint = childHasPrev && anyNormalFlowDirty
+    for (const child of node.children) {
+      const childProps = child.props as BoxProps
+      if (childProps.position !== "absolute") continue
+
+      renderNodeToBuffer(
+        child,
+        buffer,
+        scrollOffset,
+        effectiveClipBounds,
+        forceRepaint ? false : childHasPrev,
+        forceRepaint ? true : childAncestorCleared,
+      )
     }
   }
 }

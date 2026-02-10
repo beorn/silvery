@@ -63,7 +63,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
    * skips the absolute child (keeping stale/overwritten pixels) while the fresh
    * render paints everything from scratch.
    */
-  test("BUG: absolute child before dirty sibling — anySiblingWasDirty misses it", () => {
+  test("absolute child before dirty sibling — anySiblingWasDirty misses it", () => {
     function App({ content }: { content: string }) {
       return (
         <Box width={40} height={10} flexDirection="column">
@@ -92,7 +92,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
    * Same bug but with a deeper subtree: the absolute child's grandchildren
    * should also be repainted when their pixels were overwritten.
    */
-  test("BUG: nested content in absolute child before dirty sibling", () => {
+  test("nested content in absolute child before dirty sibling", () => {
     function App({ content }: { content: string }) {
       return (
         <Box width={40} height={10} flexDirection="column">
@@ -401,6 +401,107 @@ describe("Incremental rendering: absolute-positioned elements", () => {
     app.rerender(<App line1="BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB" />)
     expect(app.text).toContain("TITLE")
 
+    assertBuffersMatch(app)
+  })
+
+  /**
+   * KM TUI dialog scenario: Board content is inside a container with overflow=hidden.
+   * Dialog overlay is absolute-positioned within the same container.
+   * When the board content changes underneath, the dialog's static title should
+   * still be correctly rendered.
+   *
+   * This mirrors the actual km-tui layout where Board.tsx has:
+   *   <Box overflow="hidden">
+   *     <BoardContent />       (normal flow, may change)
+   *     <Dialog position="absolute" />  (overlay with static title)
+   *   </Box>
+   */
+  test("km-tui pattern — dialog title in overflow=hidden container", () => {
+    function App({ cursor }: { cursor: number }) {
+      const items = ["Item A", "Item B", "Item C", "Item D", "Item E"]
+      return (
+        <Box width={60} height={15} flexDirection="column" overflow="hidden">
+          {/* Board content area — cursor changes cause re-render */}
+          <Box flexGrow={1} flexDirection="column">
+            {items.map((item, i) => (
+              <Text key={item}>
+                {i === cursor ? "> " : "  "}
+                {item}
+              </Text>
+            ))}
+          </Box>
+          {/* Absolute dialog overlay (like SearchDialog) */}
+          <Box
+            position="absolute"
+            marginLeft={10}
+            marginTop={2}
+            width={40}
+            height={8}
+          >
+            <Box
+              flexDirection="column"
+              borderStyle="double"
+              borderColor="cyan"
+              backgroundColor="black"
+              paddingX={2}
+              paddingY={1}
+              width={40}
+              height={8}
+            >
+              <Text color="cyan" bold>
+                Search
+              </Text>
+              <Text> </Text>
+              <Text>Type to search...</Text>
+            </Box>
+          </Box>
+        </Box>
+      )
+    }
+
+    const app = render(<App cursor={0} />)
+    expect(app.text).toContain("Search")
+    expect(app.text).toContain("> Item A")
+
+    // Move cursor — board content changes, dialog is static
+    app.rerender(<App cursor={1} />)
+    expect(app.text).toContain("Search")
+    expect(app.text).toContain("> Item B")
+
+    assertBuffersMatch(app)
+
+    // Move again
+    app.rerender(<App cursor={2} />)
+    expect(app.text).toContain("Search")
+    expect(app.text).toContain("> Item C")
+
+    assertBuffersMatch(app)
+  })
+
+  /**
+   * Two-pass absolute repaint: First pass renders normal-flow children
+   * (potentially overwriting absolute child pixels). A correct implementation
+   * needs a second pass to repaint absolute children whose areas were affected.
+   */
+  test("absolute child needs repaint after later sibling dirties its area", () => {
+    // Reproduce the exact scenario: normal-flow content child at same position
+    // as absolute child, where the normal-flow child's clearNodeRegion wipes
+    // the absolute child's bg.
+    function App({ text }: { text: string }) {
+      return (
+        <Box width={30} height={5}>
+          {/* Absolute child first (painted first, should be on bottom in z-order) */}
+          <Box position="absolute" width={30} height={2} backgroundColor="blue">
+            <Text>ABS-LAYER</Text>
+          </Box>
+          {/* Normal-flow child at same position */}
+          <Text>{text}</Text>
+        </Box>
+      )
+    }
+
+    const app = render(<App text="initial" />)
+    app.rerender(<App text="changed" />)
     assertBuffersMatch(app)
   })
 })

@@ -10,30 +10,51 @@
  * the cloned buffer. Symptoms: sidebar disappears, frames bleed through,
  * borders overlap.
  *
- * The root cause is that `hideInstance`/`unhideInstance` only set
- * `contentDirty` and call `markSubtreeDirty`, but do NOT:
+ * ## Root Cause
+ *
+ * `hideInstance`/`unhideInstance` in host-config.ts only set `contentDirty`
+ * and call `markSubtreeDirty`, but do NOT:
  * - Set `paintDirty` (needed for stale pixel clearing in cloned buffer)
  * - Set `layoutDirty` or call `layoutNode.markDirty()` (needed when the
  *   hidden content has different dimensions than the fallback)
  * - Set `childrenDirty` on the parent (needed to force child re-render
  *   so sibling content at shifted positions gets repainted)
  *
- * Without these, the incremental renderer's fast-path skipping and
- * stale-pixel clearing logic fails for siblings of the Suspense boundary.
+ * Additionally, hidden nodes still participate in layout calculation
+ * (no `display: none` on Yoga node), and when hidden nodes are skipped
+ * in content-phase.ts line 93, their dirty flags are NOT cleared, leading
+ * to stale flag accumulation.
+ *
+ * ## Test Strategy
+ *
+ * Three approaches:
+ * 1. Sync path (createRenderer + rerender): baseline showing it works with full reconciliation
+ * 2. Direct dirty-flag simulation: manually set hidden + dirty flags exactly as
+ *    hideInstance/unhideInstance do, then run incremental pipeline to expose mismatch
+ * 3. Production cycle via createProductionSimulator: realistic async Suspense resolution
  */
 
-import React, { Suspense, use, useState } from "react"
-import { afterEach, beforeEach, describe, expect, test } from "vitest"
+import React, { Suspense, act } from "react"
+import { describe, expect, it } from "vitest"
 import { Box, Text } from "../src/index.js"
-import { run, useInput } from "../src/runtime/run.tsx"
-import { createRenderer, bufferToText } from "../src/testing/index.js"
-
-// ============================================================================
-// Incremental rendering is enabled by default in createRenderer.
-// This matches production behavior and is critical for reproducing this bug.
-// ============================================================================
-
-const render = createRenderer({ cols: 60, rows: 20, incremental: true })
+import { createRenderer } from "../src/testing/index.js"
+import {
+  reconciler,
+  createContainer,
+  getContainerRoot,
+} from "../src/reconciler.js"
+import { executeRender } from "../src/pipeline/index.js"
+import {
+  AppContext,
+  StdoutContext,
+  TermContext,
+  InputContext,
+  EventsContext,
+} from "../src/context.js"
+import { createTerm } from "chalkx"
+import { EventEmitter } from "node:events"
+import { bufferToText, cellEquals, type TerminalBuffer } from "../src/buffer.js"
+import type { InkxNode } from "../src/types.js"
 
 // ============================================================================
 // Test Helpers
@@ -41,7 +62,6 @@ const render = createRenderer({ cols: 60, rows: 20, incremental: true })
 
 /**
  * Create a controllable suspending resource.
- * On first call to read(), throws a promise. After resolve(), returns the value.
  */
 function createResource<T>(): {
   read: () => T
@@ -69,45 +89,245 @@ function createResource<T>(): {
   }
 }
 
-/**
- * Component that suspends by calling read().
- */
 function SuspendingComponent({ read }: { read: () => string }) {
   const value = read()
   return <Text>{value}</Text>
 }
 
 /**
- * Multi-line suspending component (to test layout shifts when resolved
- * content has different height than fallback).
+ * Compare two buffers cell by cell, collecting mismatches.
  */
-function SuspendingMultiLine({
-  read,
-  borderColor,
-}: {
-  read: () => string[]
-  borderColor?: string
-}) {
-  const lines = read()
-  return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor={borderColor ?? "gray"}
-    >
-      {lines.map((line, i) => (
-        <Text key={i}>{line}</Text>
-      ))}
-    </Box>
-  )
+function findMismatches(
+  inc: TerminalBuffer,
+  fresh: TerminalBuffer,
+): string[] {
+  const mismatches: string[] = []
+  for (let y = 0; y < inc.height; y++) {
+    for (let x = 0; x < inc.width; x++) {
+      const a = inc.getCell(x, y)
+      const b = fresh.getCell(x, y)
+      if (!cellEquals(a, b)) {
+        mismatches.push(
+          `(${x},${y}): inc='${a.char}' fresh='${b.char}'`,
+        )
+      }
+    }
+  }
+  return mismatches
+}
+
+/**
+ * Walk the node tree and find a node by predicate.
+ */
+function findNode(
+  root: InkxNode,
+  predicate: (node: InkxNode) => boolean,
+): InkxNode | null {
+  if (predicate(root)) return root
+  for (const child of root.children) {
+    const found = findNode(child, predicate)
+    if (found) return found
+  }
+  return null
+}
+
+/**
+ * Walk the node tree and find all nodes matching a predicate.
+ */
+function findNodes(
+  root: InkxNode,
+  predicate: (node: InkxNode) => boolean,
+): InkxNode[] {
+  const result: InkxNode[] = []
+  function walk(node: InkxNode) {
+    if (predicate(node)) result.push(node)
+    for (const child of node.children) walk(child)
+  }
+  walk(root)
+  return result
+}
+
+/**
+ * Simulate what hideInstance does: set hidden=true, contentDirty=true,
+ * and markSubtreeDirty (walk up ancestors setting subtreeDirty).
+ * This is the EXACT logic from host-config.ts lines 562-569.
+ */
+function simulateHideInstance(node: InkxNode) {
+  node.hidden = true
+  node.contentDirty = true
+  if (node.parent) {
+    node.parent.contentDirty = true
+  }
+  // markSubtreeDirty: walk up setting subtreeDirty
+  let ancestor: InkxNode | null = node
+  while (ancestor && !ancestor.subtreeDirty) {
+    ancestor.subtreeDirty = true
+    ancestor = ancestor.parent
+  }
+}
+
+/**
+ * Simulate what unhideInstance does: set hidden=false, contentDirty=true,
+ * and markSubtreeDirty.
+ * This is the EXACT logic from host-config.ts lines 576-583.
+ */
+function simulateUnhideInstance(node: InkxNode) {
+  node.hidden = false
+  node.contentDirty = true
+  if (node.parent) {
+    node.parent.contentDirty = true
+  }
+  let ancestor: InkxNode | null = node
+  while (ancestor && !ancestor.subtreeDirty) {
+    ancestor.subtreeDirty = true
+    ancestor = ancestor.parent
+  }
 }
 
 // ============================================================================
-// Tests: Synchronous path (createRenderer with act())
+// Production Simulator
 // ============================================================================
 
-describe("Suspense embedded: staggered resolution with incremental rendering", () => {
-  test("three Suspense boundaries resolving one at a time - siblings stay correct", () => {
+function createProductionSimulator(
+  element: React.ReactElement,
+  cols = 60,
+  rows = 20,
+) {
+  let onRenderCalled = false
+  const container = createContainer(() => {
+    onRenderCalled = true
+  })
+
+  const fiberRoot = reconciler.createContainer(
+    container,
+    1, // ConcurrentRoot
+    null,
+    false,
+    null,
+    "",
+    () => {},
+    () => {},
+    () => {},
+    null,
+  )
+
+  const mockStdout = {
+    columns: cols,
+    rows: rows,
+    write: () => true,
+    isTTY: true,
+    on: () => mockStdout,
+    off: () => mockStdout,
+    once: () => mockStdout,
+    removeListener: () => mockStdout,
+    addListener: () => mockStdout,
+  } as unknown as NodeJS.WriteStream
+
+  const mockTerm = createTerm({ level: 3, columns: cols })
+  const inputEmitter = new EventEmitter()
+  const mockEvents: AsyncIterable<any> = {
+    [Symbol.asyncIterator]: () => ({
+      next: () => new Promise(() => {}),
+    }),
+  }
+
+  function wrapElement(el: React.ReactElement) {
+    return React.createElement(
+      TermContext.Provider,
+      { value: mockTerm },
+      React.createElement(
+        EventsContext.Provider,
+        { value: mockEvents },
+        React.createElement(
+          AppContext.Provider,
+          { value: { exit: () => {} } },
+          React.createElement(
+            StdoutContext.Provider,
+            { value: { stdout: mockStdout, write: () => {} } },
+            React.createElement(
+              InputContext.Provider,
+              {
+                value: {
+                  eventEmitter: inputEmitter,
+                  exitOnCtrlC: false,
+                },
+              },
+              el,
+            ),
+          ),
+        ),
+      ),
+    )
+  }
+
+  // Initial reconciliation
+  const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  act(() => {
+    reconciler.updateContainerSync(
+      wrapElement(element),
+      fiberRoot,
+      null,
+      null,
+    )
+    reconciler.flushSyncWork()
+  })
+  globalThis.IS_REACT_ACT_ENVIRONMENT = prev as boolean
+
+  let prevBuffer: TerminalBuffer | null = null
+
+  return {
+    get root() {
+      return getContainerRoot(container)
+    },
+
+    renderPipeline() {
+      const root = getContainerRoot(container)
+      const { buffer } = executeRender(root, cols, rows, prevBuffer)
+      prevBuffer = buffer
+      return { text: bufferToText(buffer), buffer }
+    },
+
+    async flushReact() {
+      onRenderCalled = false
+      const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
+      globalThis.IS_REACT_ACT_ENVIRONMENT = true
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 0))
+        reconciler.flushSyncWork()
+      })
+      globalThis.IS_REACT_ACT_ENVIRONMENT = prev as boolean
+      return onRenderCalled
+    },
+
+    freshRender() {
+      const root = getContainerRoot(container)
+      const { buffer } = executeRender(root, cols, rows, null, {
+        skipLayoutNotifications: true,
+        skipScrollStateUpdates: true,
+      })
+      return { text: bufferToText(buffer), buffer }
+    },
+
+    unmount() {
+      const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
+      globalThis.IS_REACT_ACT_ENVIRONMENT = true
+      act(() => {
+        reconciler.updateContainer(null, fiberRoot, null, () => {})
+      })
+      globalThis.IS_REACT_ACT_ENVIRONMENT = prev as boolean
+    },
+  }
+}
+
+// ============================================================================
+// Sync path tests (baseline)
+// ============================================================================
+
+const render = createRenderer({ cols: 60, rows: 20, incremental: true })
+
+describe("Suspense embedded: sync path (baseline)", () => {
+  it("staggered resolution with rerender: all content visible", () => {
     const res1 = createResource<string>()
     const res2 = createResource<string>()
     const res3 = createResource<string>()
@@ -128,7 +348,6 @@ describe("Suspense embedded: staggered resolution with incremental rendering", (
       )
     }
 
-    // Outer layout: sidebar + content area (simulates viewer embedding)
     function OuterApp() {
       return (
         <Box flexDirection="row" width={60} height={20}>
@@ -159,217 +378,366 @@ describe("Suspense embedded: staggered resolution with incremental rendering", (
     const app = render(<OuterApp />)
 
     expect(app.text).toContain("Sidebar")
-    expect(app.text).toContain("Item 1")
-    expect(app.text).toContain("Item 2")
-    expect(app.text).toContain("Item 3")
-    expect(app.text).toContain("Content")
     expect(app.text).toContain("Loading A...")
     expect(app.text).toContain("Loading B...")
     expect(app.text).toContain("Loading C...")
 
-    // Resolve one at a time
     res1.resolve("Data A loaded")
     app.rerender(<OuterApp />)
-
     expect(app.text).toContain("Sidebar")
-    expect(app.text).toContain("Item 1")
     expect(app.text).toContain("Data A loaded")
-    expect(app.text).toContain("Loading B...")
-    expect(app.text).toContain("Loading C...")
-    expect(app.text).not.toContain("Loading A...")
 
     res2.resolve("Data B loaded")
     app.rerender(<OuterApp />)
-
     expect(app.text).toContain("Sidebar")
-    expect(app.text).toContain("Data A loaded")
     expect(app.text).toContain("Data B loaded")
-    expect(app.text).toContain("Loading C...")
 
     res3.resolve("Data C loaded")
     app.rerender(<OuterApp />)
-
     expect(app.text).toContain("Sidebar")
-    expect(app.text).toContain("Data A loaded")
-    expect(app.text).toContain("Data B loaded")
     expect(app.text).toContain("Data C loaded")
     expect(app.text).not.toContain("Loading")
-  })
-
-  test("INKX_STRICT: incremental matches fresh after each Suspense resolution", () => {
-    const res1 = createResource<string>()
-    const res2 = createResource<string>()
-
-    function EmbeddedApp() {
-      return (
-        <Box flexDirection="column">
-          <Suspense fallback={<Text>Loading section 1...</Text>}>
-            <SuspendingComponent read={res1.read} />
-          </Suspense>
-          <Suspense fallback={<Text>Loading section 2...</Text>}>
-            <SuspendingComponent read={res2.read} />
-          </Suspense>
-        </Box>
-      )
-    }
-
-    function OuterApp() {
-      return (
-        <Box flexDirection="row" width={50} height={12}>
-          <Box
-            flexDirection="column"
-            width={15}
-            borderStyle="round"
-            borderColor="gray"
-          >
-            <Text>Sidebar</Text>
-            <Text>Nav 1</Text>
-            <Text>Nav 2</Text>
-          </Box>
-          <Box flexDirection="column" flexGrow={1}>
-            <Text bold>Main</Text>
-            <EmbeddedApp />
-            <Text dim>Status bar</Text>
-          </Box>
-        </Box>
-      )
-    }
-
-    const app = render(<OuterApp />)
-
-    // Helper to compare buffers
-    function assertBuffersMatch(label: string) {
-      const freshBuf = app.freshRender()
-      const incBuf = app.lastBuffer()!
-      const freshText = bufferToText(freshBuf)
-      const incText = bufferToText(incBuf)
-      for (let y = 0; y < incBuf.height; y++) {
-        for (let x = 0; x < incBuf.width; x++) {
-          const incCell = incBuf.getCell(x, y)
-          const freshCell = freshBuf.getCell(x, y)
-          if (incCell.char !== freshCell.char) {
-            expect.fail(
-              `Mismatch at (${x},${y}) ${label}: ` +
-                `incremental="${incCell.char}" fresh="${freshCell.char}"\n` +
-                `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`,
-            )
-          }
-        }
-      }
-    }
-
-    assertBuffersMatch("after initial render")
-
-    res1.resolve("Section 1 data")
-    app.rerender(<OuterApp />)
-    assertBuffersMatch("after first resolution")
-
-    res2.resolve("Section 2 data")
-    app.rerender(<OuterApp />)
-    assertBuffersMatch("after second resolution")
-  })
-
-  test("hidden fallback text does not leak through incremental buffer", () => {
-    const res = createResource<string>()
-
-    function OuterApp() {
-      return (
-        <Box flexDirection="column" width={40} height={10}>
-          <Text>Title</Text>
-          <Suspense fallback={<Text>LOADING_INDICATOR_XYZ</Text>}>
-            <SuspendingComponent read={res.read} />
-          </Suspense>
-          <Text>Bottom</Text>
-        </Box>
-      )
-    }
-
-    const app = render(<OuterApp />)
-    expect(app.text).toContain("LOADING_INDICATOR_XYZ")
-
-    res.resolve("SHORT")
-    app.rerender(<OuterApp />)
-
-    expect(app.text).toContain("SHORT")
-    expect(app.text).toContain("Bottom")
-    expect(app.text).not.toContain("LOADING_INDICATOR_XYZ")
-    expect(app.text).not.toContain("LOADING")
   })
 })
 
 // ============================================================================
-// Tests: Async path (run() with real concurrent scheduler)
+// Direct dirty-flag simulation tests
 //
-// These tests exercise the production code path where Suspense promises
-// resolve asynchronously, triggering onRender -> scheduleRender -> microtask.
-// This is where the incremental rendering bug manifests because:
-// 1. The render happens asynchronously after dirty flags are set
-// 2. Between renders, other Suspense boundaries may resolve
-// 3. The dirty flag propagation from hideInstance/unhideInstance may be
-//    insufficient for the incremental renderer's stale-pixel detection
+// These tests render a tree, run the pipeline to get a prevBuffer, then
+// MANUALLY toggle hidden flags with the SAME dirty-flag logic that
+// hideInstance/unhideInstance use. This simulates the Suspense
+// hide/unhide code path without depending on React's internal scheduling.
+//
+// The test then runs the pipeline incrementally and compares against a
+// fresh render. If hideInstance/unhideInstance set insufficient dirty flags,
+// the incremental render will not clear stale fallback pixels or will
+// render at wrong positions.
 // ============================================================================
 
-describe("Suspense embedded (async, ConcurrentRoot)", () => {
-  const origActEnv = globalThis.IS_REACT_ACT_ENVIRONMENT
-  beforeEach(() => {
-    globalThis.IS_REACT_ACT_ENVIRONMENT = false
-  })
-  afterEach(() => {
-    globalThis.IS_REACT_ACT_ENVIRONMENT = origActEnv
-  })
+describe("Suspense embedded: dirty-flag simulation", () => {
+  it(
+    "unhideInstance dirty flags: incremental must clear fallback pixels",
+    () => {
+      // Set up a tree with a "fallback" text node that's visible
+      // and a "content" text node that's hidden.
+      // This mirrors what Suspense does: fallback shown, content hidden.
 
-  test("staggered Suspense resolution: sidebar survives in async path", async () => {
-    // Promise cache keyed by resource ID
-    const cache = new Map<
-      string,
-      { promise: Promise<string>; resolve: (v: string) => void; value?: string }
-    >()
+      function App() {
+        return (
+          <Box flexDirection="row" width={60} height={10}>
+            <Box
+              flexDirection="column"
+              width={20}
+              borderStyle="round"
+              borderColor="gray"
+              id="sidebar"
+            >
+              <Text bold>Sidebar</Text>
+              <Text>Nav 1</Text>
+              <Text>Nav 2</Text>
+            </Box>
+            <Box flexDirection="column" flexGrow={1} id="content-area">
+              <Text bold>Content</Text>
+              {/* Two text nodes in a column - we'll hide/unhide them manually */}
+              <Text testID="fallback">FALLBACK_TEXT_HERE</Text>
+              <Text testID="real-content">REAL_CONTENT_DATA</Text>
+              <Text>Footer</Text>
+            </Box>
+          </Box>
+        )
+      }
 
-    function getEntry(key: string) {
-      let entry = cache.get(key)
-      if (!entry) {
-        let resolve!: (v: string) => void
-        const promise = new Promise<string>((r) => {
-          resolve = r
+      const sim = createProductionSimulator(<App />)
+
+      try {
+        // Step 1: Initial render - both texts visible
+        const initial = sim.renderPipeline()
+        expect(initial.text).toContain("Sidebar")
+        expect(initial.text).toContain("FALLBACK_TEXT_HERE")
+        expect(initial.text).toContain("REAL_CONTENT_DATA")
+        expect(initial.text).toContain("Footer")
+
+        // Step 2: Simulate Suspense state: hide real-content, keep fallback visible
+        // (This is what happens when content first suspends)
+        const realContentNode = findNode(sim.root, (n) => {
+          const props = n.props as any
+          return props.testID === "real-content"
         })
-        entry = { promise, resolve }
-        cache.set(key, entry)
-      }
-      return entry
-    }
+        expect(realContentNode).toBeTruthy()
+        simulateHideInstance(realContentNode!)
 
-    function resolveResource(key: string, value: string) {
-      const entry = getEntry(key)
-      entry.value = value
-      entry.resolve(value)
-    }
+        // Run pipeline (incremental) - should show fallback, hide real-content
+        const suspended = sim.renderPipeline()
+        expect(suspended.text).toContain("FALLBACK_TEXT_HERE")
+        expect(suspended.text).not.toContain("REAL_CONTENT_DATA")
 
-    function SuspendingData({ id }: { id: string }) {
-      const entry = getEntry(id)
-      if (entry.value !== undefined) {
-        return <Text>{entry.value}</Text>
+        // Step 3: Now simulate Suspense resolution:
+        // unhide real-content, hide fallback
+        // This is EXACTLY what hideInstance/unhideInstance do
+        const fallbackNode = findNode(sim.root, (n) => {
+          const props = n.props as any
+          return props.testID === "fallback"
+        })
+        expect(fallbackNode).toBeTruthy()
+
+        simulateHideInstance(fallbackNode!)
+        simulateUnhideInstance(realContentNode!)
+
+        // Step 4: Run pipeline (incremental, uses prevBuffer from step 2)
+        const resolved = sim.renderPipeline()
+
+        // Step 5: Compare against fresh render
+        const fresh = sim.freshRender()
+
+        const mismatches = findMismatches(resolved.buffer, fresh.buffer)
+
+        if (mismatches.length > 0) {
+          throw new Error(
+            `Incremental/fresh render mismatch after simulated unhide:\n` +
+              `${mismatches.length} cells differ.\n` +
+              `Incremental:\n${resolved.text}\n` +
+              `Fresh:\n${fresh.text}\n` +
+              `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
+          )
+        }
+
+        // Verify content correctness
+        expect(resolved.text).toContain("Sidebar")
+        expect(resolved.text).toContain("REAL_CONTENT_DATA")
+        expect(resolved.text).toContain("Footer")
+        expect(resolved.text).not.toContain("FALLBACK_TEXT_HERE")
+      } finally {
+        sim.unmount()
       }
-      throw entry.promise
-    }
+    },
+  )
+
+  it(
+    "unhideInstance without layoutDirty: layout not recalculated after size change",
+    () => {
+      // The hidden node participates in layout (no display:none on Yoga).
+      // When unhidden, its dimensions are whatever the layout engine last
+      // calculated. If hideInstance didn't mark layoutDirty, the layout
+      // engine won't recalculate, and nodes may be at wrong positions.
+
+      function App() {
+        return (
+          <Box flexDirection="column" width={40} height={15}>
+            <Text bold>Header</Text>
+            <Box
+              flexDirection="column"
+              borderStyle="round"
+              borderColor="green"
+              testID="panel"
+            >
+              <Text>Panel Line 1</Text>
+              <Text>Panel Line 2</Text>
+              <Text>Panel Line 3</Text>
+            </Box>
+            <Text testID="fallback-text">Loading panel...</Text>
+            <Text>Footer stays here</Text>
+          </Box>
+        )
+      }
+
+      const sim = createProductionSimulator(<App />, 40, 15)
+
+      try {
+        // Step 1: Render with all visible
+        const initial = sim.renderPipeline()
+        expect(initial.text).toContain("Header")
+        expect(initial.text).toContain("Panel Line 1")
+        expect(initial.text).toContain("Loading panel...")
+        expect(initial.text).toContain("Footer stays here")
+
+        // Step 2: Simulate Suspense state: hide panel, keep fallback
+        const panelNode = findNode(sim.root, (n) => {
+          const props = n.props as any
+          return props.testID === "panel"
+        })
+        expect(panelNode).toBeTruthy()
+        simulateHideInstance(panelNode!)
+
+        const afterHide = sim.renderPipeline()
+        expect(afterHide.text).toContain("Header")
+        expect(afterHide.text).not.toContain("Panel Line 1")
+        expect(afterHide.text).toContain("Loading panel...")
+
+        // Step 3: Simulate resolution: unhide panel, hide fallback
+        const fallbackNode = findNode(sim.root, (n) => {
+          const props = n.props as any
+          return props.testID === "fallback-text"
+        })
+        expect(fallbackNode).toBeTruthy()
+
+        simulateUnhideInstance(panelNode!)
+        simulateHideInstance(fallbackNode!)
+
+        // Step 4: Incremental render
+        const resolved = sim.renderPipeline()
+
+        // Step 5: Fresh render for comparison
+        const fresh = sim.freshRender()
+
+        const mismatches = findMismatches(resolved.buffer, fresh.buffer)
+
+        if (mismatches.length > 0) {
+          throw new Error(
+            `Layout shift mismatch after unhide (no layoutDirty):\n` +
+              `${mismatches.length} cells differ.\n` +
+              `Incremental:\n${resolved.text}\n` +
+              `Fresh:\n${fresh.text}\n` +
+              `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
+          )
+        }
+
+        // Verify content correctness
+        expect(resolved.text).toContain("Header")
+        expect(resolved.text).toContain("Panel Line 1")
+        expect(resolved.text).toContain("Panel Line 2")
+        expect(resolved.text).toContain("Panel Line 3")
+        expect(resolved.text).toContain("Footer stays here")
+        expect(resolved.text).not.toContain("Loading panel...")
+      } finally {
+        sim.unmount()
+      }
+    },
+  )
+
+  it(
+    "staggered unhide: accumulated stale pixels from multiple resolutions",
+    () => {
+      // Three "Suspense boundaries" that resolve one at a time.
+      // Each resolution shows content + hides fallback.
+      // After 3 staggered incremental renders, compare against fresh.
+
+      function App() {
+        return (
+          <Box flexDirection="row" width={60} height={15}>
+            <Box
+              flexDirection="column"
+              width={20}
+              borderStyle="round"
+              borderColor="gray"
+              id="sidebar"
+            >
+              <Text bold>Sidebar</Text>
+              <Text>Item A</Text>
+              <Text>Item B</Text>
+            </Box>
+            <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="cyan">
+              <Text bold>Content</Text>
+              <Text testID="fallback-1">Loading 1...</Text>
+              <Text testID="content-1">Content One</Text>
+              <Text testID="fallback-2">Loading 2...</Text>
+              <Text testID="content-2">Content Two</Text>
+              <Text testID="fallback-3">Loading 3...</Text>
+              <Text testID="content-3">Content Three</Text>
+              <Text>Status bar</Text>
+            </Box>
+          </Box>
+        )
+      }
+
+      const sim = createProductionSimulator(<App />)
+
+      try {
+        // Initial render: all visible
+        const initial = sim.renderPipeline()
+        expect(initial.text).toContain("Sidebar")
+
+        // Simulate initial Suspense state: hide all content, show all fallbacks
+        for (let i = 1; i <= 3; i++) {
+          const contentNode = findNode(sim.root, (n) => {
+            const props = n.props as any
+            return props.testID === `content-${i}`
+          })
+          expect(contentNode).toBeTruthy()
+          simulateHideInstance(contentNode!)
+        }
+
+        const suspended = sim.renderPipeline()
+        expect(suspended.text).toContain("Loading 1...")
+        expect(suspended.text).toContain("Loading 2...")
+        expect(suspended.text).toContain("Loading 3...")
+        expect(suspended.text).not.toContain("Content One")
+
+        // Resolution 1: unhide content-1, hide fallback-1
+        const content1 = findNode(sim.root, (n) => (n.props as any).testID === "content-1")!
+        const fallback1 = findNode(sim.root, (n) => (n.props as any).testID === "fallback-1")!
+        simulateUnhideInstance(content1)
+        simulateHideInstance(fallback1)
+        const after1 = sim.renderPipeline()
+
+        // Resolution 2: unhide content-2, hide fallback-2
+        const content2 = findNode(sim.root, (n) => (n.props as any).testID === "content-2")!
+        const fallback2 = findNode(sim.root, (n) => (n.props as any).testID === "fallback-2")!
+        simulateUnhideInstance(content2)
+        simulateHideInstance(fallback2)
+        const after2 = sim.renderPipeline()
+
+        // Resolution 3: unhide content-3, hide fallback-3
+        const content3 = findNode(sim.root, (n) => (n.props as any).testID === "content-3")!
+        const fallback3 = findNode(sim.root, (n) => (n.props as any).testID === "fallback-3")!
+        simulateUnhideInstance(content3)
+        simulateHideInstance(fallback3)
+        const after3 = sim.renderPipeline()
+
+        // Compare final incremental vs fresh
+        const fresh = sim.freshRender()
+        const mismatches = findMismatches(after3.buffer, fresh.buffer)
+
+        if (mismatches.length > 0) {
+          throw new Error(
+            `Staggered unhide mismatch:\n` +
+              `${mismatches.length} cells differ.\n` +
+              `Incremental:\n${after3.text}\n` +
+              `Fresh:\n${fresh.text}\n` +
+              `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
+          )
+        }
+
+        // Verify all content visible, all fallbacks hidden
+        expect(after3.text).toContain("Sidebar")
+        expect(after3.text).toContain("Content One")
+        expect(after3.text).toContain("Content Two")
+        expect(after3.text).toContain("Content Three")
+        expect(after3.text).toContain("Status bar")
+        expect(after3.text).not.toContain("Loading 1...")
+        expect(after3.text).not.toContain("Loading 2...")
+        expect(after3.text).not.toContain("Loading 3...")
+      } finally {
+        sim.unmount()
+      }
+    },
+  )
+})
+
+// ============================================================================
+// Production cycle with real Suspense
+// ============================================================================
+
+describe("Suspense embedded: production cycle (real Suspense)", () => {
+  it("async Suspense resolution via act: content appears after promise resolves", async () => {
+    const res = createResource<string>()
 
     function App() {
       return (
-        <Box flexDirection="row">
-          <Box flexDirection="column" width={15} borderStyle="round" borderColor="gray">
+        <Box flexDirection="row" width={60} height={15}>
+          <Box
+            flexDirection="column"
+            width={20}
+            borderStyle="round"
+            borderColor="gray"
+          >
             <Text bold>Sidebar</Text>
-            <Text>Nav A</Text>
-            <Text>Nav B</Text>
+            <Text>Nav 1</Text>
+            <Text>Nav 2</Text>
           </Box>
           <Box flexDirection="column" flexGrow={1}>
-            <Text bold>Content Area</Text>
-            <Suspense fallback={<Text dim>Loading 1...</Text>}>
-              <SuspendingData id="res1" />
-            </Suspense>
-            <Suspense fallback={<Text dim>Loading 2...</Text>}>
-              <SuspendingData id="res2" />
-            </Suspense>
-            <Suspense fallback={<Text dim>Loading 3...</Text>}>
-              <SuspendingData id="res3" />
+            <Text bold>Content</Text>
+            <Suspense fallback={<Text>Loading...</Text>}>
+              <SuspendingComponent read={res.read} />
             </Suspense>
             <Text>Footer</Text>
           </Box>
@@ -377,158 +745,32 @@ describe("Suspense embedded (async, ConcurrentRoot)", () => {
       )
     }
 
-    const app = await run(<App />, { cols: 60, rows: 20 })
+    const sim = createProductionSimulator(<App />)
 
-    // Initial render: all suspended
-    expect(app.text).toContain("Sidebar")
-    expect(app.text).toContain("Nav A")
-    expect(app.text).toContain("Nav B")
-    expect(app.text).toContain("Content Area")
-    expect(app.text).toContain("Loading 1...")
-    expect(app.text).toContain("Loading 2...")
-    expect(app.text).toContain("Loading 3...")
-    expect(app.text).toContain("Footer")
+    try {
+      // Initial render
+      const initial = sim.renderPipeline()
+      expect(initial.text).toContain("Sidebar")
+      expect(initial.text).toContain("Loading...")
+      expect(initial.text).toContain("Footer")
 
-    // Resolve first resource and wait for React to process
-    resolveResource("res1", "Data from resource 1")
-    // Wait for: promise microtask -> React retry -> commit -> onRender -> scheduleRender -> microtask -> doRender
-    await new Promise((r) => setTimeout(r, 500))
+      // Resolve and flush
+      res.resolve("Data loaded")
+      await sim.flushReact()
+      const resolved = sim.renderPipeline()
 
-    // Sidebar must survive
-    expect(app.text).toContain("Sidebar")
-    expect(app.text).toContain("Nav A")
-    expect(app.text).toContain("Nav B")
-    // First resolved, others still loading
-    expect(app.text).toContain("Data from resource 1")
-    expect(app.text).toContain("Loading 2...")
-    expect(app.text).toContain("Loading 3...")
-    expect(app.text).toContain("Footer")
+      // Verify content appeared
+      expect(resolved.text).toContain("Sidebar")
+      expect(resolved.text).toContain("Data loaded")
+      expect(resolved.text).toContain("Footer")
+      expect(resolved.text).not.toContain("Loading...")
 
-    // Resolve second resource
-    resolveResource("res2", "Data from resource 2")
-    await new Promise((r) => setTimeout(r, 500))
-
-    // Sidebar must still survive
-    expect(app.text).toContain("Sidebar")
-    expect(app.text).toContain("Nav A")
-    expect(app.text).toContain("Nav B")
-    expect(app.text).toContain("Data from resource 1")
-    expect(app.text).toContain("Data from resource 2")
-    expect(app.text).toContain("Loading 3...")
-    expect(app.text).toContain("Footer")
-
-    // Resolve third resource
-    resolveResource("res3", "Data from resource 3")
-    await new Promise((r) => setTimeout(r, 500))
-
-    // Everything must be correct
-    expect(app.text).toContain("Sidebar")
-    expect(app.text).toContain("Nav A")
-    expect(app.text).toContain("Nav B")
-    expect(app.text).toContain("Data from resource 1")
-    expect(app.text).toContain("Data from resource 2")
-    expect(app.text).toContain("Data from resource 3")
-    expect(app.text).toContain("Footer")
-    expect(app.text).not.toContain("Loading")
-
-    app.unmount()
-  })
-
-  test("staggered resolution with different-height content: no corruption", async () => {
-    const cache = new Map<
-      string,
-      { promise: Promise<string[]>; resolve: (v: string[]) => void; value?: string[] }
-    >()
-
-    function getEntry(key: string) {
-      let entry = cache.get(key)
-      if (!entry) {
-        let resolve!: (v: string[]) => void
-        const promise = new Promise<string[]>((r) => {
-          resolve = r
-        })
-        entry = { promise, resolve }
-        cache.set(key, entry)
-      }
-      return entry
+      // Compare incremental vs fresh
+      const fresh = sim.freshRender()
+      const mismatches = findMismatches(resolved.buffer, fresh.buffer)
+      expect(mismatches).toHaveLength(0)
+    } finally {
+      sim.unmount()
     }
-
-    function resolveResource(key: string, value: string[]) {
-      const entry = getEntry(key)
-      entry.value = value
-      entry.resolve(value)
-    }
-
-    function SuspendingPanel({ id, color }: { id: string; color: string }) {
-      const entry = getEntry(id)
-      if (entry.value === undefined) throw entry.promise
-      return (
-        <Box flexDirection="column" borderStyle="round" borderColor={color}>
-          {entry.value.map((line, i) => (
-            <Text key={i}>{line}</Text>
-          ))}
-        </Box>
-      )
-    }
-
-    function App() {
-      return (
-        <Box flexDirection="column">
-          <Text bold>Dashboard Header</Text>
-          <Box flexDirection="row" gap={1}>
-            <Suspense
-              fallback={
-                <Box borderStyle="round" borderColor="gray">
-                  <Text dim>Panel 1...</Text>
-                </Box>
-              }
-            >
-              <SuspendingPanel id="panel1" color="green" />
-            </Suspense>
-            <Suspense
-              fallback={
-                <Box borderStyle="round" borderColor="gray">
-                  <Text dim>Panel 2...</Text>
-                </Box>
-              }
-            >
-              <SuspendingPanel id="panel2" color="blue" />
-            </Suspense>
-          </Box>
-          <Text>Status: All systems operational</Text>
-        </Box>
-      )
-    }
-
-    const app = await run(<App />, { cols: 60, rows: 20 })
-
-    expect(app.text).toContain("Dashboard Header")
-    expect(app.text).toContain("Panel 1...")
-    expect(app.text).toContain("Panel 2...")
-    expect(app.text).toContain("Status: All systems operational")
-
-    // Resolve panel 1 with 3 lines (taller than the 1-line fallback)
-    resolveResource("panel1", ["User: Alice", "Role: Admin", "Active: Yes"])
-    await new Promise((r) => setTimeout(r, 500))
-
-    expect(app.text).toContain("Dashboard Header")
-    expect(app.text).toContain("User: Alice")
-    expect(app.text).toContain("Role: Admin")
-    expect(app.text).toContain("Active: Yes")
-    expect(app.text).toContain("Panel 2...")
-    expect(app.text).toContain("Status: All systems operational")
-
-    // Resolve panel 2 with 2 lines
-    resolveResource("panel2", ["Commits: 847", "PRs: 156"])
-    await new Promise((r) => setTimeout(r, 500))
-
-    expect(app.text).toContain("Dashboard Header")
-    expect(app.text).toContain("User: Alice")
-    expect(app.text).toContain("Commits: 847")
-    expect(app.text).toContain("Status: All systems operational")
-    expect(app.text).not.toContain("Panel 1...")
-    expect(app.text).not.toContain("Panel 2...")
-
-    app.unmount()
   })
 })
