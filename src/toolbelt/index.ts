@@ -34,6 +34,7 @@
 
 export {
   withDiagnostics,
+  checkLayoutInvariants,
   VirtualTerminal,
   type DiagnosticOptions,
 } from "../with-diagnostics.js"

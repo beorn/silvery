@@ -45,6 +45,7 @@ import { join } from "node:path"
 import type { TerminalBuffer } from "./buffer.js"
 import { outputPhase } from "./pipeline/index.js"
 import { compareBuffers, formatMismatch } from "./testing/compare-buffers.js"
+import type { BoxProps, InkxNode } from "./types.js"
 import type { AppWithCommands, Cmd, Command } from "./with-commands.js"
 
 // =============================================================================
@@ -58,6 +59,8 @@ export interface DiagnosticOptions {
   checkStability?: boolean
   /** Check ANSI replay produces correct result (default: true when plugin is used) */
   checkReplay?: boolean
+  /** Check layout tree integrity after each command (default: true when plugin is used) */
+  checkLayout?: boolean
   /** Lines to skip for stability check (e.g., [0, -1] for breadcrumb/statusbar) */
   skipLines?: number[]
   /** Capture screenshot on failure (default: false) */
@@ -397,6 +400,92 @@ function compareText(
 }
 
 // =============================================================================
+// Layout Invariant Checks
+// =============================================================================
+
+/**
+ * Check layout tree integrity. Returns violation messages, or empty array if valid.
+ *
+ * Checks:
+ * - All rect dimensions are finite and non-negative (width >= 0, height >= 0)
+ * - All positions are finite (x, y are valid numbers)
+ * - No NaN values in computed layout
+ * - Children don't overflow parent bounds (1px tolerance for rounding)
+ *   - Skips overflow check for nodes with overflow:hidden/scroll (they intentionally clip)
+ */
+export function checkLayoutInvariants(node: InkxNode): string[] {
+  const violations: string[] = []
+  walkLayout(node, null, violations)
+  return violations
+}
+
+function walkLayout(
+  node: InkxNode,
+  parentRect: { x: number; y: number; width: number; height: number; clipped: boolean } | null,
+  violations: string[],
+): void {
+  const rect = node.contentRect
+  if (!rect) return // No layout computed yet — skip
+
+  const id = (node.props as BoxProps).id ?? node.type
+
+  // Check finite and non-negative dimensions
+  if (!Number.isFinite(rect.width) || rect.width < 0) {
+    violations.push(`${id}: invalid width ${rect.width}`)
+  }
+  if (!Number.isFinite(rect.height) || rect.height < 0) {
+    violations.push(`${id}: invalid height ${rect.height}`)
+  }
+  if (!Number.isFinite(rect.x)) {
+    violations.push(`${id}: invalid x ${rect.x}`)
+  }
+  if (!Number.isFinite(rect.y)) {
+    violations.push(`${id}: invalid y ${rect.y}`)
+  }
+
+  // Check children don't overflow parent (with 1px tolerance)
+  if (parentRect && !parentRect.clipped) {
+    const TOLERANCE = 1
+    if (rect.x + rect.width > parentRect.x + parentRect.width + TOLERANCE) {
+      violations.push(
+        `${id}: overflows parent right (${rect.x + rect.width} > ${parentRect.x + parentRect.width})`,
+      )
+    }
+    if (rect.y + rect.height > parentRect.y + parentRect.height + TOLERANCE) {
+      violations.push(
+        `${id}: overflows parent bottom (${rect.y + rect.height} > ${parentRect.y + parentRect.height})`,
+      )
+    }
+    if (rect.x < parentRect.x - TOLERANCE) {
+      violations.push(
+        `${id}: overflows parent left (${rect.x} < ${parentRect.x})`,
+      )
+    }
+    if (rect.y < parentRect.y - TOLERANCE) {
+      violations.push(
+        `${id}: overflows parent top (${rect.y} < ${parentRect.y})`,
+      )
+    }
+  }
+
+  // Determine if this node clips its children
+  const overflow = (node.props as BoxProps).overflow
+  const clipped = overflow === "hidden" || overflow === "scroll"
+
+  const childParentRect = {
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height,
+    clipped,
+  }
+
+  for (const child of node.children) {
+    walkLayout(child, childParentRect, violations)
+  }
+}
+
+// =============================================================================
 // Plugin Implementation
 // =============================================================================
 
@@ -423,13 +512,15 @@ export function withDiagnostics<T extends AppWithCommands>(
     checkIncremental = true,
     checkStability = true,
     checkReplay = true,
+    checkLayout = true,
     skipLines = parseSkipLines(process.env.INKX_STABILITY_SKIP_LINES),
     captureOnFailure = false,
     screenshotDir = "/tmp/inkx-diagnostics",
   } = options
 
   // If all checks are explicitly disabled, return app unchanged
-  if (!checkIncremental && !checkStability && !checkReplay) return app
+  if (!checkIncremental && !checkStability && !checkReplay && !checkLayout)
+    return app
 
   /** Capture screenshot on diagnostic failure (best-effort, never masks original error) */
   async function captureFailureScreenshot(
@@ -577,6 +668,32 @@ export function withDiagnostics<T extends AppWithCommands>(
                     : ""),
               )
             }
+          }
+        }
+
+        // Check 4: Layout tree integrity
+        if (checkLayout) {
+          const root = app.getContainer()
+          const violations = checkLayoutInvariants(root)
+          if (violations.length > 0) {
+            const details = violations
+              .slice(0, 10)
+              .map((v) => `  ${v}`)
+              .join("\n")
+            const screenshotPath = await captureFailureScreenshot(
+              command.id,
+              "layout",
+            )
+            throw new Error(
+              `INKX_DIAGNOSTIC: Layout invariant violation after ${command.id}\n` +
+                `  ${violations.length} violation(s):\n${details}` +
+                (violations.length > 10
+                  ? `\n  ... and ${violations.length - 10} more`
+                  : "") +
+                (screenshotPath
+                  ? `\n  Screenshot saved: ${screenshotPath}`
+                  : ""),
+            )
           }
         }
       }

@@ -4,7 +4,13 @@
 
 import React from "react"
 import { describe, expect, it } from "vitest"
-import { Box, Text, withCommands, withDiagnostics } from "../src/index.js"
+import {
+  Box,
+  Text,
+  withCommands,
+  withDiagnostics,
+} from "../src/index.js"
+import { checkLayoutInvariants } from "../src/with-diagnostics.js"
 import { createRenderer } from "../src/testing/index.js"
 import type { CommandDef } from "../src/with-commands.js"
 
@@ -57,6 +63,7 @@ describe("withDiagnostics", () => {
       checkIncremental: false,
       checkStability: false,
       checkReplay: false,
+      checkLayout: false,
     })
 
     // Should return the same object when no checks enabled
@@ -170,5 +177,94 @@ describe("withDiagnostics", () => {
     const description = wrapped.cmd.describe()
     expect(description).toContain("cursor_down")
     expect(description).toContain("increment")
+  })
+
+  it("runs layout check for all commands", async () => {
+    const app = render(<Counter count={0} />)
+    const withCmd = withCommands(app, {
+      registry: createTestRegistry(),
+      getContext: () => ({}),
+      handleAction: () => {},
+    })
+
+    const wrapped = withDiagnostics(withCmd, {
+      checkLayout: true,
+      checkIncremental: false,
+      checkStability: false,
+      checkReplay: false,
+    })
+
+    // Should not throw - normal layout should be valid
+    await wrapped.cmd.down!()
+    await wrapped.cmd.increment!()
+  })
+
+  it("checkLayoutInvariants passes for valid layout", () => {
+    const app = render(
+      <Box flexDirection="column">
+        <Box flexDirection="row">
+          <Text>Col 1</Text>
+          <Text>Col 2</Text>
+        </Box>
+        <Text>Row 2</Text>
+      </Box>,
+    )
+
+    const root = app.getContainer()
+    const violations = checkLayoutInvariants(root)
+    expect(violations).toEqual([])
+  })
+
+  it("checkLayoutInvariants passes with overflow:hidden children", () => {
+    // Children inside overflow:hidden may logically exceed parent bounds
+    const app = render(
+      <Box height={5} overflow="hidden">
+        <Box height={10}>
+          <Text>Tall content</Text>
+        </Box>
+      </Box>,
+    )
+
+    const root = app.getContainer()
+    const violations = checkLayoutInvariants(root)
+    expect(violations).toEqual([])
+  })
+
+  it("checkLayoutInvariants detects NaN in layout", () => {
+    const app = render(
+      <Box flexDirection="column">
+        <Text>Hello</Text>
+      </Box>,
+    )
+
+    // Corrupt a node's rect to have NaN
+    const root = app.getContainer()
+    const textNode = root.children[0]?.children[0]
+    if (textNode?.contentRect) {
+      textNode.contentRect = { ...textNode.contentRect, width: NaN }
+    }
+
+    const violations = checkLayoutInvariants(root)
+    expect(violations.length).toBeGreaterThan(0)
+    expect(violations[0]).toContain("invalid width")
+  })
+
+  it("checkLayoutInvariants detects negative dimensions", () => {
+    const app = render(
+      <Box flexDirection="column">
+        <Text>Hello</Text>
+      </Box>,
+    )
+
+    // Corrupt a node's rect to have negative height
+    const root = app.getContainer()
+    const textNode = root.children[0]?.children[0]
+    if (textNode?.contentRect) {
+      textNode.contentRect = { ...textNode.contentRect, height: -5 }
+    }
+
+    const violations = checkLayoutInvariants(root)
+    expect(violations.length).toBeGreaterThan(0)
+    expect(violations[0]).toContain("invalid height")
   })
 })
