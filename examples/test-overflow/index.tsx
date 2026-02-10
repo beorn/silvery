@@ -8,7 +8,7 @@ import {
   createTerm,
 } from "../../src/index.js"
 
-function App() {
+export function OverflowApp() {
   const { exit } = useApp()
   useInput((input) => {
     if (input === "q") exit()
@@ -37,8 +37,10 @@ function App() {
 
 async function main() {
   using term = createTerm()
-  const { waitUntilExit } = await render(<App />, term)
+  const { waitUntilExit } = await render(<OverflowApp />, term)
   await waitUntilExit()
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

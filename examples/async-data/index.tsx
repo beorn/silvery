@@ -155,7 +155,7 @@ function LoadingBox({ label, color }: { label: string; color: string }) {
 // Main App
 // ============================================================================
 
-function AsyncDataApp(): JSX.Element {
+export function AsyncDataApp(): JSX.Element {
   const { exit } = useApp()
   const [refreshKey, setRefreshKey] = useState(0)
 
@@ -177,10 +177,9 @@ function AsyncDataApp(): JSX.Element {
         <Text bold color="yellow">
           Async Data Demo
         </Text>
-        <Text dim> | Suspense + use() | r to refresh | Esc to quit</Text>
       </Box>
 
-      <Box flexDirection="row" gap={1}>
+      <Box flexGrow={1} flexDirection="row" gap={1}>
         {/* Each Suspense boundary loads independently */}
         <ErrorBoundary fallback={<Text color="red">User error</Text>}>
           <Suspense fallback={<LoadingBox label="user" color="green" />}>
@@ -201,15 +200,10 @@ function AsyncDataApp(): JSX.Element {
         </ErrorBoundary>
       </Box>
 
-      <Box marginTop={1} borderStyle="single" borderColor="gray" padding={1}>
-        <Box flexDirection="column">
-          <Text dim>This example demonstrates:</Text>
-          <Text dim>- React.use() for data fetching in render</Text>
-          <Text dim>- Suspense boundaries show loading states</Text>
-          <Text dim>- Components load independently (staggered)</Text>
-          <Text dim>- ErrorBoundary catches render errors</Text>
-        </Box>
-      </Box>
+      <Text dim>
+        {" "}
+        <Text bold dim>r</Text> refresh <Text bold dim>Esc</Text> quit
+      </Text>
     </Box>
   )
 }
@@ -224,4 +218,6 @@ async function main() {
   await waitUntilExit()
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

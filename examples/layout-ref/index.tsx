@@ -110,7 +110,7 @@ function InspectTrigger({ onInspect }: { onInspect: () => void }) {
   return null
 }
 
-function LayoutRefApp(): JSX.Element {
+export function LayoutRefApp(): JSX.Element {
   const { exit } = useApp()
   const [layouts, setLayouts] = useState<Record<string, LayoutInfo>>({})
 
@@ -129,10 +129,6 @@ function LayoutRefApp(): JSX.Element {
       <Box marginBottom={1}>
         <Text bold color="yellow">
           Layout Ref Demo
-        </Text>
-        <Text dim>
-          {" "}
-          | forwardRef + onLayout + BoxHandle | i to inspect | Esc to quit
         </Text>
       </Box>
 
@@ -176,22 +172,14 @@ function LayoutRefApp(): JSX.Element {
       </Box>
 
       {/* Imperative access demo */}
-      <Box marginTop={1}>
+      <Box flexGrow={1} marginTop={1}>
         <ImperativeAccessDemo />
       </Box>
 
-      <Box marginTop={1} borderStyle="single" borderColor="gray" padding={1}>
-        <Box flexDirection="column">
-          <Text dim>This example demonstrates:</Text>
-          <Text dim>
-            - forwardRef: Box accepts ref prop for imperative access
-          </Text>
-          <Text dim>- onLayout: Callback fires when dimensions change</Text>
-          <Text dim>
-            - BoxHandle: getContentRect(), getScreenRect(), getNode()
-          </Text>
-        </Box>
-      </Box>
+      <Text dim>
+        {" "}
+        <Text bold dim>i</Text> inspect <Text bold dim>Esc</Text> quit
+      </Text>
     </Box>
   )
 }
@@ -206,4 +194,6 @@ async function main() {
   await waitUntilExit()
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

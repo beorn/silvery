@@ -84,7 +84,7 @@ inkx supports several rendering strategies for terminal output:
 | -------------- | ------------- | ----------------- | ----- | ------------------------------ |
 | **Fullscreen** | Alternate     | None              | Yes   | TUI apps (takes over terminal) |
 | **Inline**     | Normal        | Exists but unused | Yes   | Progress bars, prompts         |
-| **Scrollback** | Normal        | Active (planned)  | Yes   | CLI tools with history         |
+| **Scrollback** | Normal        | Active            | Yes   | CLI tools with history         |
 | **Static**     | N/A           | Append-only       | No    | CI, piped output, logging      |
 
 **Fullscreen** uses the alternate screen buffer — content disappears when the app exits. Best for interactive TUI applications.
@@ -101,7 +101,16 @@ using term = createTerm()
 await render(<ProgressBar />, term)
 ```
 
-**Scrollback** (planned) — a freeze API where historical content accumulates in terminal scrollback while the active UI updates in place. Users can scroll up to review past output with native terminal features. Similar to how pi-tui and Rich's Live work.
+**Scrollback** — completed items freeze and scroll into terminal scrollback via `useScrollback` + VirtualList's `frozen` prop. The active UI shrinks as items complete. Users scroll up with native terminal features to review history. Similar to pi-tui and Rich's Live.
+
+```tsx
+const frozenCount = useScrollback(items, {
+  frozen: (item) => item.complete,
+  render: (item) => `  ✓ ${item.title}`,
+})
+
+<VirtualList items={items} frozen={(item) => item.complete} ... />
+```
 
 **Static** renders once to a string — no cursor control needed, safe for piped output and CI environments.
 
@@ -188,6 +197,7 @@ bun run examples/kanban/index.tsx         # 3-column kanban board
 bun run examples/task-list/index.tsx      # Scrollable task list
 bun run examples/search-filter/index.tsx  # useTransition + useDeferredValue
 bun run examples/async-data/index.tsx     # Suspense + async loading
+bun run examples/scrollback/index.tsx    # Scrollback mode (frozen items)
 ```
 
 See [examples/index.md](examples/index.md) for descriptions.

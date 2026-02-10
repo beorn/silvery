@@ -189,7 +189,7 @@ function FilteredList({
   )
 }
 
-function SearchApp(): JSX.Element {
+export function SearchApp(): JSX.Element {
   const { exit } = useApp()
   const [query, setQuery] = useState("")
 
@@ -228,22 +228,19 @@ function SearchApp(): JSX.Element {
         <Text bold color="yellow">
           Search Filter Demo
         </Text>
-        <Text dim> | useTransition + useDeferredValue | Esc to quit</Text>
       </Box>
 
       <SearchInput value={query} onChange={setQuery} />
 
       {/* List uses deferredQuery so typing stays responsive */}
-      <FilteredList query={deferredQuery} isPending={isPending} />
-
-      <Box marginTop={1} borderStyle="single" borderColor="gray" padding={1}>
-        <Box flexDirection="column">
-          <Text dim>This example demonstrates:</Text>
-          <Text dim>- useDeferredValue: query filtering is deferred</Text>
-          <Text dim>- useTransition: shows "filtering..." during updates</Text>
-          <Text dim>- Typing stays responsive even with many items</Text>
-        </Box>
+      <Box flexGrow={1}>
+        <FilteredList query={deferredQuery} isPending={isPending} />
       </Box>
+
+      <Text dim>
+        {" "}
+        <Text bold dim>type</Text> to search <Text bold dim>Esc</Text> quit
+      </Text>
     </Box>
   )
 }
@@ -258,4 +255,6 @@ async function main() {
   await waitUntilExit()
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

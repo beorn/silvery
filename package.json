@@ -66,6 +66,7 @@
     "docs:build": "vitepress build docs/site",
     "docs:preview": "vitepress preview docs/site",
     "build:web": "bun run examples/web/build.ts",
+    "examples": "bun run examples/viewer.tsx",
     "example:dashboard": "bun run examples/dashboard/index.tsx",
     "example:task-list": "bun run examples/task-list/index.tsx",
     "example:kanban": "bun run examples/kanban/index.tsx",
@@ -75,6 +76,7 @@
     "chalkx": "github:beorn/chalkx",
     "graphemer": "^1.4.0",
     "react-reconciler": "^0.33.0",
+    "shiki": "^3.22.0",
     "slice-ansi": "^7.1.2",
     "string-width": "^8.0.0",
     "zustand": "^5.0.11"

@@ -4,11 +4,11 @@
  * A 3-column kanban board demonstrating:
  * - Todo, In Progress, Done columns
  * - Move items between columns with arrow keys
- * - Each column is independently scrollable
+ * - Each column uses native overflow="scroll" for scrolling
  * - Flexbox layout for proportional sizing
  */
 
-import React, { useState, useMemo } from "react"
+import React, { useState } from "react"
 import {
   render,
   Box,
@@ -113,7 +113,6 @@ function CardComponent({
       borderStyle="round"
       borderColor={isSelected ? "cyan" : "gray"}
       paddingX={1}
-      marginBottom={1}
     >
       {isSelected ? (
         <Text backgroundColor="cyan" color="black" bold>
@@ -135,22 +134,11 @@ function ColumnComponent({
   column,
   isSelected,
   selectedCardIndex,
-  scrollOffset,
-  visibleCount,
 }: {
   column: Column
   isSelected: boolean
   selectedCardIndex: number
-  scrollOffset: number
-  visibleCount: number
 }): JSX.Element {
-  const visibleCards = column.cards.slice(
-    scrollOffset,
-    scrollOffset + visibleCount,
-  )
-  const hasMoreAbove = scrollOffset > 0
-  const hasMoreBelow = scrollOffset + visibleCount < column.cards.length
-
   return (
     <Box
       flexDirection="column"
@@ -171,38 +159,22 @@ function ColumnComponent({
       <Box
         flexDirection="column"
         paddingX={1}
-        paddingY={1}
-        overflow="hidden"
+        overflow="scroll"
+        scrollTo={isSelected ? selectedCardIndex : undefined}
         flexGrow={1}
+        gap={1}
       >
-        {hasMoreAbove && (
-          <Text dim color="cyan">
-            {" "}
-            ... {scrollOffset} more above
-          </Text>
-        )}
-
-        {visibleCards.map((card, visibleIndex) => {
-          const actualIndex = scrollOffset + visibleIndex
-          return (
-            <CardComponent
-              key={card.id}
-              card={card}
-              isSelected={isSelected && actualIndex === selectedCardIndex}
-            />
-          )
-        })}
+        {column.cards.map((card, cardIndex) => (
+          <CardComponent
+            key={card.id}
+            card={card}
+            isSelected={isSelected && cardIndex === selectedCardIndex}
+          />
+        ))}
 
         {column.cards.length === 0 && (
           <Text dim italic>
             No cards
-          </Text>
-        )}
-
-        {hasMoreBelow && (
-          <Text dim color="cyan">
-            {" "}
-            ... {column.cards.length - scrollOffset - visibleCount} more below
           </Text>
         )}
       </Box>
@@ -212,73 +184,26 @@ function ColumnComponent({
 
 function HelpBar(): JSX.Element {
   return (
-    <Box paddingX={1} gap={2}>
-      <Text dim>
-        <Text bold>h/l</Text> switch column
-      </Text>
-      <Text dim>
-        <Text bold>j/k</Text> select card
-      </Text>
-      <Text dim>
-        <Text bold>{"</>>"}</Text> move card
-      </Text>
-      <Text dim>
-        <Text bold>q</Text> quit
-      </Text>
-    </Box>
+    <Text dim>
+      {" "}
+      <Text bold dim>h/l</Text> column <Text bold dim>j/k</Text> card{" "}
+      <Text bold dim>{"</>"}</Text> move <Text bold dim>q</Text> quit
+    </Text>
   )
 }
 
-function KanbanBoard(): JSX.Element {
+export function KanbanBoard(): JSX.Element {
   const { exit } = useApp()
   const [columns, setColumns] = useState<Column[]>(initialColumns)
   const [selectedColumn, setSelectedColumn] = useState(0)
   const [selectedCard, setSelectedCard] = useState(0)
-  const [scrollOffsets, setScrollOffsets] = useState<number[]>([0, 0, 0])
 
-  // Fixed visible cards per column (in a real app, this would use useLayout)
-  const visibleCardsPerColumn = 5
-
-  // Current column data
   const currentColumn = columns[selectedColumn]
   const currentColumnCards = currentColumn?.cards ?? []
-
-  // Ensure selected card is within bounds
   const boundedSelectedCard = Math.min(
     selectedCard,
     Math.max(0, currentColumnCards.length - 1),
   )
-
-  // Update scroll offset to keep selected card visible
-  useMemo(() => {
-    if (currentColumnCards.length === 0) return
-
-    const currentOffset = scrollOffsets[selectedColumn] ?? 0
-    let newOffset = currentOffset
-
-    // If selected card is above visible area, scroll up
-    if (boundedSelectedCard < currentOffset) {
-      newOffset = boundedSelectedCard
-    }
-    // If selected card is below visible area, scroll down
-    else if (boundedSelectedCard >= currentOffset + visibleCardsPerColumn) {
-      newOffset = boundedSelectedCard - visibleCardsPerColumn + 1
-    }
-
-    if (newOffset !== currentOffset) {
-      setScrollOffsets((prev) => {
-        const next = [...prev]
-        next[selectedColumn] = newOffset
-        return next
-      })
-    }
-  }, [
-    boundedSelectedCard,
-    selectedColumn,
-    visibleCardsPerColumn,
-    scrollOffsets,
-    currentColumnCards.length,
-  ])
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) {
@@ -324,30 +249,24 @@ function KanbanBoard(): JSX.Element {
 
     setColumns((prev) => {
       const next = prev.map((col) => ({ ...col, cards: [...col.cards] }))
-
-      // Remove from current column
       next[selectedColumn]!.cards.splice(boundedSelectedCard, 1)
-
-      // Add to target column
       next[targetColumnIndex]!.cards.push(cardToMove)
-
       return next
     })
 
-    // Move focus to target column and select the moved card
     setSelectedColumn(targetColumnIndex)
-    setSelectedCard(columns[targetColumnIndex]!.cards.length) // Will be at end
+    setSelectedCard(columns[targetColumnIndex]!.cards.length)
   }
 
   return (
-    <Box flexDirection="column" padding={1}>
+    <Box flexDirection="column" padding={1} height="100%">
       <Box marginBottom={1}>
         <Text bold color="yellow">
           Kanban Board
         </Text>
       </Box>
 
-      <Box flexDirection="row" gap={1} height={20} overflow="hidden">
+      <Box flexGrow={1} flexDirection="row" gap={1} overflow="hidden">
         {columns.map((column, colIndex) => (
           <ColumnComponent
             key={column.id}
@@ -356,8 +275,6 @@ function KanbanBoard(): JSX.Element {
             selectedCardIndex={
               colIndex === selectedColumn ? boundedSelectedCard : -1
             }
-            scrollOffset={scrollOffsets[colIndex] ?? 0}
-            visibleCount={visibleCardsPerColumn}
           />
         ))}
       </Box>
@@ -377,4 +294,6 @@ async function main() {
   await waitUntilExit()
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

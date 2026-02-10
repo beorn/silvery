@@ -14,14 +14,14 @@ const items = Array.from({ length: 50 }, (_, i) => ({
   description: `This is the description for item number ${i + 1}`,
 }))
 
-function ScrollExample() {
+export function ScrollExample() {
   const [selectedIndex, setSelectedIndex] = useState(0)
 
   useInput((input, key) => {
-    if (key.upArrow) {
+    if (key.upArrow || input === "k") {
       setSelectedIndex((prev) => Math.max(0, prev - 1))
     }
-    if (key.downArrow) {
+    if (key.downArrow || input === "j") {
       setSelectedIndex((prev) => Math.min(items.length - 1, prev + 1))
     }
     if (input === "q") {
@@ -35,10 +35,10 @@ function ScrollExample() {
         <Text bold color="yellow">
           Scroll Example
         </Text>
-        <Text dim> | ↑↓ to navigate | q to quit</Text>
       </Box>
 
       <Box
+        flexGrow={1}
         flexDirection="column"
         borderStyle="round"
         borderColor="cyan"
@@ -62,15 +62,17 @@ function ScrollExample() {
         ))}
       </Box>
 
-      <Box marginTop={1}>
-        <Text dim>
-          Selected: {selectedIndex + 1}/{items.length}
-        </Text>
-      </Box>
+      <Text dim>
+        {" "}
+        <Text bold dim>j/k</Text> navigate <Text bold dim>q</Text> quit |
+        Selected: {selectedIndex + 1}/{items.length}
+      </Text>
     </Box>
   )
 }
 
 // Run the app
-using term = createTerm()
-await render(<ScrollExample />, term)
+if (import.meta.main) {
+  using term = createTerm()
+  await render(<ScrollExample />, term)
+}

@@ -121,7 +121,7 @@ function ProgressBars({
   )
 }
 
-function Dashboard(): JSX.Element {
+export function Dashboard(): JSX.Element {
   const { exit } = useApp()
   const [selectedPane, setSelectedPane] = useState(0)
 
@@ -165,10 +165,9 @@ function Dashboard(): JSX.Element {
         <Text bold color="yellow">
           Dashboard
         </Text>
-        <Text dim> | Use arrow keys or h/l to navigate | q to quit</Text>
       </Box>
 
-      <Box flexDirection="row" gap={1}>
+      <Box flexGrow={1} flexDirection="row" gap={1}>
         <Pane title="System Stats" isSelected={selectedPane === 0}>
           <StatsList stats={systemStats} />
         </Pane>
@@ -182,12 +181,11 @@ function Dashboard(): JSX.Element {
         </Pane>
       </Box>
 
-      <Box marginTop={1}>
-        <Text dim>
-          Selected: Pane {selectedPane + 1} | Press left/right arrows to switch
-          panes
-        </Text>
-      </Box>
+      <Text dim>
+        {" "}
+        Selected: Pane {selectedPane + 1} <Text bold dim>h/l</Text> navigate{" "}
+        <Text bold dim>q</Text> quit
+      </Text>
     </Box>
   )
 }
@@ -202,4 +200,6 @@ async function main() {
   await waitUntilExit()
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

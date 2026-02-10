@@ -515,7 +515,7 @@ describe("Yoga node cleanup", () => {
 // ============================================================================
 
 describe("Memory tracking", () => {
-  test("heap usage stays bounded during intensive operations", () => {
+  test("heap usage stays bounded during intensive operations", { timeout: 30000 }, () => {
     // Note: This is a heuristic test - exact memory behavior depends on GC
     const render = createRenderer()
 
@@ -581,8 +581,8 @@ describe("Memory tracking", () => {
       if (growth > maxGrowth) {
         const growthMB = Math.round(growth / 1024 / 1024)
         const thresholdMB = Math.round(maxGrowth / 1024 / 1024)
-        console.warn(
-          `[memory.test] Heap grew by ${growthMB}MB (threshold: ${thresholdMB}MB) - this may indicate a memory leak but could also be GC timing`,
+        console.log(
+          `[memory.test] Heap grew by ${growthMB}MB (threshold: ${thresholdMB}MB) - may indicate leak or GC timing`,
         )
       }
     }

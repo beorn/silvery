@@ -156,27 +156,22 @@ function StatusBar({
   const percent = Math.round((completed / total) * 100)
 
   return (
-    <Box
-      borderStyle="single"
-      borderColor="gray"
-      paddingX={1}
-      justifyContent="space-between"
-    >
-      <Text>
-        <Text bold>{completed}</Text>
-        <Text dim>
-          /{total} completed ({percent}%)
-        </Text>
+    <Box justifyContent="space-between">
+      <Text dim>
+        {" "}
+        <Text bold dim>j/k</Text> navigate <Text bold dim>space</Text> toggle{" "}
+        <Text bold dim>enter</Text> expand <Text bold dim>q</Text> quit
       </Text>
       <Text dim>
-        Item {cursor + 1}/{total} | Scroll: {scrollOffset + 1}-
-        {Math.min(scrollOffset + visibleCount, total)}
+        {" "}
+        <Text bold>{completed}</Text>/{total} ({percent}%) | {cursor + 1}/
+        {total}{" "}
       </Text>
     </Box>
   )
 }
 
-function TaskList(): JSX.Element {
+export function TaskList(): JSX.Element {
   const { exit } = useApp()
   const [tasks, setTasks] = useState(() => generateTasks(60))
   const [cursor, setCursor] = useState(0)
@@ -254,14 +249,10 @@ function TaskList(): JSX.Element {
         <Text bold color="yellow">
           Task List
         </Text>
-        <Text dim>
-          {" "}
-          | j/k or arrows to navigate | space to toggle | enter to expand | q to
-          quit
-        </Text>
       </Box>
 
       <Box
+        flexGrow={1}
         flexDirection="column"
         borderStyle="round"
         borderColor="blue"
@@ -301,4 +292,6 @@ async function main() {
   await waitUntilExit()
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}
