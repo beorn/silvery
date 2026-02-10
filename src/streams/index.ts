@@ -340,7 +340,7 @@ export async function* debounce<T>(
     }
 
     if (last) {
-      await new Promise((r) => setTimeout(r, ms))
+      await new Promise((resolve) => setTimeout(resolve, ms))
       yield last.value
     }
   } finally {

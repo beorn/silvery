@@ -19,7 +19,7 @@ async function startTtyd(exampleName: string): Promise<void> {
   // Kill any existing ttyd
   try {
     spawn("pkill", ["-f", "ttyd"], { stdio: "ignore" })
-    await new Promise((r) => setTimeout(r, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500))
   } catch {
     // Ignore if no ttyd running
   }
@@ -35,14 +35,14 @@ async function startTtyd(exampleName: string): Promise<void> {
   )
 
   // Wait for ttyd to start and app to render
-  await new Promise((r) => setTimeout(r, STARTUP_DELAY))
+  await new Promise((resolve) => setTimeout(resolve, STARTUP_DELAY))
 }
 
 async function stopTtyd(): Promise<void> {
   if (ttydProcess) {
     ttydProcess.kill("SIGTERM")
     ttydProcess = null
-    await new Promise((r) => setTimeout(r, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500))
   }
 }
 

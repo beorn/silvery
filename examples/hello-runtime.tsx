@@ -50,14 +50,14 @@ async function main() {
   runtime.render(buffer)
 
   // Wait a moment to see the output
-  await new Promise((r) => setTimeout(r, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000))
 
   // Update with new content
   const buffer2 = layout(<HelloView name="inkx-loop" />, runtime.getDims())
   runtime.render(buffer2)
 
   // Wait again
-  await new Promise((r) => setTimeout(r, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000))
 
   // Cleanup
   runtime[Symbol.dispose]()

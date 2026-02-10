@@ -147,7 +147,7 @@ async function main() {
     // Schedule periodic increments using effects
     const scheduleIncrement = () => {
       runtime.schedule(async () => {
-        await new Promise((r) => setTimeout(r, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000))
         return "increment"
       })
     }

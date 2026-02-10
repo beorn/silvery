@@ -44,8 +44,8 @@ function createTickIterator(
 ): AsyncIterator<number> {
   let count = 0
   let timer: ReturnType<typeof setTimeout> | undefined
-  let resolve: ((result: IteratorResult<number>) => void) | undefined
-  let reject: ((error: Error) => void) | undefined
+  let pendingResolve: ((result: IteratorResult<number>) => void) | undefined
+  let pendingReject: ((error: Error) => void) | undefined
   let done = false
 
   // Handle abort signal
@@ -55,10 +55,10 @@ function createTickIterator(
       clearTimeout(timer)
       timer = undefined
     }
-    if (resolve) {
-      resolve({ done: true, value: undefined })
-      resolve = undefined
-      reject = undefined
+    if (pendingResolve) {
+      pendingResolve({ done: true, value: undefined })
+      pendingResolve = undefined
+      pendingReject = undefined
     }
   }
 
@@ -76,16 +76,16 @@ function createTickIterator(
         return { done: true, value: undefined }
       }
 
-      return new Promise<IteratorResult<number>>((res, rej) => {
-        resolve = res
-        reject = rej
+      return new Promise<IteratorResult<number>>((resolve, reject) => {
+        pendingResolve = resolve
+        pendingReject = reject
 
         timer = setTimeout(() => {
           if (!done) {
             const value = count++
-            resolve = undefined
-            reject = undefined
-            res({ done: false, value })
+            pendingResolve = undefined
+            pendingReject = undefined
+            resolve({ done: false, value })
           }
         }, intervalMs)
       })
@@ -100,10 +100,10 @@ function createTickIterator(
       if (signal) {
         signal.removeEventListener("abort", onAbort)
       }
-      if (resolve) {
-        resolve({ done: true, value: undefined })
-        resolve = undefined
-        reject = undefined
+      if (pendingResolve) {
+        pendingResolve({ done: true, value: undefined })
+        pendingResolve = undefined
+        pendingReject = undefined
       }
       return { done: true, value: undefined }
     },
@@ -152,7 +152,7 @@ export function createAdaptiveTick(
     [Symbol.asyncIterator]: () => {
       let done = false
       let timer: ReturnType<typeof setTimeout> | undefined
-      let resolve:
+      let pendingResolve:
         | ((
             result: IteratorResult<{
               tick: number
@@ -168,9 +168,9 @@ export function createAdaptiveTick(
           clearTimeout(timer)
           timer = undefined
         }
-        if (resolve) {
-          resolve({ done: true, value: undefined })
-          resolve = undefined
+        if (pendingResolve) {
+          pendingResolve({ done: true, value: undefined })
+          pendingResolve = undefined
         }
       }
 
@@ -190,8 +190,8 @@ export function createAdaptiveTick(
             return { done: true, value: undefined }
           }
 
-          return new Promise((res) => {
-            resolve = res
+          return new Promise((resolve) => {
+            pendingResolve = resolve
             const now = Date.now()
             const elapsed = now - lastTime
             const delay = Math.max(0, targetMs - elapsed)
@@ -201,8 +201,8 @@ export function createAdaptiveTick(
                 const currentTime = Date.now()
                 const delta = currentTime - lastTime
                 lastTime = currentTime
-                resolve = undefined
-                res({
+                pendingResolve = undefined
+                resolve({
                   done: false,
                   value: { tick: tick++, elapsed: currentTime, delta },
                 })
@@ -222,9 +222,9 @@ export function createAdaptiveTick(
           if (signal) {
             signal.removeEventListener("abort", onAbort)
           }
-          if (resolve) {
-            resolve({ done: true, value: undefined })
-            resolve = undefined
+          if (pendingResolve) {
+            pendingResolve({ done: true, value: undefined })
+            pendingResolve = undefined
           }
           return { done: true, value: undefined }
         },

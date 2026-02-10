@@ -44,14 +44,14 @@ interface EventChannel {
  */
 function createEventChannel(signal: AbortSignal): EventChannel {
   const queue: Event[] = []
-  let resolve: ((event: Event | null) => void) | undefined
+  let pendingResolve: ((event: Event | null) => void) | undefined
   let disposed = false
 
   // Resolve pending waiter on abort
   const onAbort = () => {
-    if (resolve) {
-      resolve(null)
-      resolve = undefined
+    if (pendingResolve) {
+      pendingResolve(null)
+      pendingResolve = undefined
     }
   }
   signal.addEventListener("abort", onAbort, { once: true })
@@ -60,9 +60,9 @@ function createEventChannel(signal: AbortSignal): EventChannel {
     push(event: Event): void {
       if (disposed || signal.aborted) return
 
-      if (resolve) {
-        const r = resolve
-        resolve = undefined
+      if (pendingResolve) {
+        const r = pendingResolve
+        pendingResolve = undefined
         r(event)
       } else {
         queue.push(event)
@@ -84,8 +84,8 @@ function createEventChannel(signal: AbortSignal): EventChannel {
               }
 
               // Wait for next event or abort
-              const event = await new Promise<Event | null>((r) => {
-                resolve = r
+              const event = await new Promise<Event | null>((resolve) => {
+                pendingResolve = resolve
               })
 
               if (event === null || disposed || signal.aborted) {
@@ -102,9 +102,9 @@ function createEventChannel(signal: AbortSignal): EventChannel {
     dispose(): void {
       disposed = true
       signal.removeEventListener("abort", onAbort)
-      if (resolve) {
-        resolve(null)
-        resolve = undefined
+      if (pendingResolve) {
+        pendingResolve(null)
+        pendingResolve = undefined
       }
     },
   }
@@ -186,7 +186,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
         try {
           if (effectSignal) {
             // Create abort race with cleanup
-            const aborted = new Promise<never>((_, reject) => {
+            const aborted = new Promise<never>((_resolve, reject) => {
               abortHandler = () => reject(new Error("Effect aborted"))
               effectSignal.addEventListener("abort", abortHandler, {
                 once: true,
@@ -227,7 +227,9 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       }
 
       // Start immediately (microtask)
-      queueMicrotask(execute)
+      queueMicrotask(() => {
+        void execute()
+      })
     },
 
     render(buffer: Buffer): void {

@@ -464,10 +464,10 @@ describe("Suspense Support", () => {
     expect(app.text).toContain("Inner content")
   })
 
-  test("hideInstance is available in host config", () => {
+  test("hideInstance is available in host config", async () => {
     // Verify the host config has the required methods for Suspense
     // This is a structural test - the actual behavior is tested above
-    const { hostConfig } = require("../src/reconciler/host-config.js")
+    const { hostConfig } = await import("../src/reconciler/host-config.js")
     expect(typeof hostConfig.hideInstance).toBe("function")
     expect(typeof hostConfig.unhideInstance).toBe("function")
     expect(typeof hostConfig.hideTextInstance).toBe("function")
