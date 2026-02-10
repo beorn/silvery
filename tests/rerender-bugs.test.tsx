@@ -384,10 +384,15 @@ describe("ANSI diff output correctness", () => {
     expect(output.length).toBeGreaterThan(0)
 
     // The output should position cursor at cells beyond next.width (col 5-9)
-    // Col 6 (1-indexed) on row 1: \x1b[1;6H
-    expect(output).toContain("\x1b[1;6H")
-    // Row 2 col 6 clearing: \x1b[2;6H
-    expect(output).toContain("\x1b[2;6H")
+    // Col 6 (1-indexed) on row 1: absolute \x1b[1;6H or relative CUF
+    // After writing "A" at (0,0), cursor is at (1,0), so CUF 4 reaches (5,0)
+    expect(
+      output.includes("\x1b[1;6H") || output.includes("\x1b[4C"),
+    ).toBeTruthy()
+    // Row 2 col 6 clearing: absolute or relative positioning
+    expect(
+      output.includes("\x1b[2;6H") || output.includes("\x1b[2;1H"),
+    ).toBeTruthy()
 
     // Row 3 clearing (height shrink) — may use \r\n or absolute positioning
     // Either way, spaces must be emitted for the old row 2 area

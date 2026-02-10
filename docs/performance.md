@@ -89,6 +89,29 @@ Flexx and Yoga WASM perform similarly. Both are ~2x faster than Yoga NAPI (nativ
 | `executeRender (simple, diff)`   | 42,724ns    | 9,477ns    | **4.5x faster** |
 | `executeRender (50 items, diff)` | 117,000ns   | 34,449ns   | **3.4x faster** |
 
+#### Round 3 (Diff Micro-optimizations, 2026-02-10)
+
+8. **Dirty row bounding box** (buffer.ts): Added `_minDirtyRow`/`_maxDirtyRow` tracking.
+   Instead of scanning all rows `[0, height)`, `diffBuffers()` scans only `[min, max]`.
+   Fresh buffers and `fill()` update bounds; `clone()` starts with bounds at -1 (no dirty rows).
+
+9. **Row-level bulk compare** (buffer.ts, output-phase.ts): `rowMetadataEquals()` and
+   `rowCharsEquals()` compare entire row slices before per-cell diff. Catches rows marked
+   dirty (e.g., by `fill()` or `scrollRegion()`) but with unchanged content — avoids
+   per-cell `cellEquals()` function call overhead.
+
+10. **Relative cursor moves** (output-phase.ts): Same-row forward uses `CUF` (`\x1b[C` /
+    `\x1b[${dx}C`). Column-0-down uses `\r\n` / `\r\x1b[${dy}B`. Avoids absolute
+    `\x1b[y;xH` for small jumps, reducing escape sequence bytes.
+
+| Metric                           | Before (R2) | After (R3) | Improvement     |
+| -------------------------------- | ----------- | ---------- | --------------- |
+| `outputPhase (no changes)`       | 33,609ns    | 7,643ns    | **4.4x faster** |
+| `executeRender (simple, diff)`   | 8,890ns     | 9,037ns    | similar         |
+| `executeRender (50 items, diff)` | 34,412ns    | 32,486ns   | slightly faster |
+
+The big win is the no-changes case — bounding box eliminates all row scanning when nothing changed.
+
 ### Key Findings
 
 1. **Diff path is now faster than first render**: With optimizations, diff renders
@@ -150,15 +173,16 @@ Flexx and Yoga WASM perform similarly. Both are ~2x faster than Yoga NAPI (nativ
 
 | # | Optimization | Description |
 |---|---|---|
-| 5.1 | **Row-level dirty tracking** | `_dirtyRows: Uint8Array` bitset on buffer. `setCell()`, `fill()`, `scrollRegion()`, `copyFrom()` mark rows dirty. `diffBuffers()` skips clean rows (~90% skip for cursor movement). |
+| 5.1 | **Row-level dirty tracking + bounding box** | `_dirtyRows: Uint8Array` bitset + `_minDirtyRow`/`_maxDirtyRow` bounds. `diffBuffers()` scans only `[min, max]` range, skipping clean rows (~90% skip for cursor movement). Bounding box eliminates scanning entirely for no-change frames. |
 | 5.2 | **Packed cell comparison** | `cellEquals()` compares packed `Uint32Array` metadata first (single integer compare), then char, then true color maps only if flags indicate true color. |
 | 5.3 | **Style interning + SGR cache** | `styleToKey()` serializes style to string key. `cachedStyleToAnsi()` caches the computed SGR escape string in `Map<string, string>`. ~15-50 unique styles per TUI. |
 | 5.4 | **Pre-allocated diff pool** | `diffPool: CellChange[]` pre-allocated and reused across frames. Grows as needed, never shrinks. Returns pool+count instead of slicing. |
 | 5.5 | **Reusable style object** | Single `reusableCellStyle` mutated in-place during diff traversal. Snapshot only on style change. |
 | 5.6 | **Insertion sort for diff positions** | In-place insertion sort (optimal for mostly-sorted or small change counts). No array allocation. |
-| 5.7 | **Cursor movement optimization** | Uses `\r\n` for next-line-column-0 instead of absolute positioning. Tracks `cursorX/cursorY` to skip cursor-move escapes for adjacent cells. |
+| 5.7 | **Cursor movement optimization** | Uses `\r\n` for next-line-column-0, relative `CUF`/`CUD` for small jumps, absolute only for large moves. Tracks `cursorX/cursorY` to skip cursor-move escapes for adjacent cells. |
 | 5.8 | **Style coalescing** | Only emits style changes when transitioning between different styles. Consecutive same-style cells emit characters only. |
 | 5.9 | **Dimension-aware diffing** | Handles buffer size mismatches by only comparing the overlapping region. |
+| 5.10 | **Row-level bulk compare** | `rowMetadataEquals()` + `rowCharsEquals()` pre-check before per-cell diff. Catches rows marked dirty but with unchanged content. |
 
 ### 6. Buffer (buffer.ts)
 

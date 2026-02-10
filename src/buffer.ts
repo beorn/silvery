@@ -361,6 +361,10 @@ export class TerminalBuffer {
    * 0 = clean (unchanged since last resetDirtyRows), 1 = dirty (modified).
    */
   private _dirtyRows: Uint8Array
+  /** Bounding box: first dirty row (inclusive). -1 when no rows are dirty. */
+  private _minDirtyRow: number
+  /** Bounding box: last dirty row (inclusive). -1 when no rows are dirty. */
+  private _maxDirtyRow: number
 
   readonly width: number
   readonly height: number
@@ -376,6 +380,8 @@ export class TerminalBuffer {
     this.underlineColors = new Map()
     // All rows start dirty (fresh buffer needs full diff on first comparison)
     this._dirtyRows = new Uint8Array(height).fill(1)
+    this._minDirtyRow = 0
+    this._maxDirtyRow = height - 1
   }
 
   /**
@@ -589,6 +595,9 @@ export class TerminalBuffer {
     }
 
     this._dirtyRows[y] = 1
+    if (this._minDirtyRow === -1 || y < this._minDirtyRow)
+      this._minDirtyRow = y
+    if (y > this._maxDirtyRow) this._maxDirtyRow = y
 
     const idx = this.index(x, y)
 
@@ -688,9 +697,14 @@ export class TerminalBuffer {
       : null
     const hasUnderlineColor = underlineColor !== null
 
-    // Mark affected rows dirty
+    // Mark affected rows dirty + update bounding box
     for (let cy = startY; cy < endY; cy++) {
       this._dirtyRows[cy] = 1
+    }
+    if (startY < endY) {
+      if (this._minDirtyRow === -1 || startY < this._minDirtyRow)
+        this._minDirtyRow = startY
+      if (endY - 1 > this._maxDirtyRow) this._maxDirtyRow = endY - 1
     }
 
     // Determine which Map operations are actually needed.
@@ -740,6 +754,8 @@ export class TerminalBuffer {
     this.bgColors.clear()
     this.underlineColors.clear()
     this._dirtyRows.fill(1)
+    this._minDirtyRow = 0
+    this._maxDirtyRow = this.height - 1
   }
 
   /**
@@ -759,6 +775,9 @@ export class TerminalBuffer {
       const dstY = destY + dy
       if (dstY >= 0 && dstY < this.height) {
         this._dirtyRows[dstY] = 1
+        if (this._minDirtyRow === -1 || dstY < this._minDirtyRow)
+          this._minDirtyRow = dstY
+        if (dstY > this._maxDirtyRow) this._maxDirtyRow = dstY
       }
       for (let dx = 0; dx < width; dx++) {
         const sx = srcX + dx
@@ -801,10 +820,13 @@ export class TerminalBuffer {
 
     if (clampedWidth <= 0 || clampedHeight <= 0) return
 
-    // Mark all rows in the scroll region dirty
+    // Mark all rows in the scroll region dirty + update bounding box
     for (let r = startY; r < endY; r++) {
       this._dirtyRows[r] = 1
     }
+    if (this._minDirtyRow === -1 || startY < this._minDirtyRow)
+      this._minDirtyRow = startY
+    if (endY - 1 > this._maxDirtyRow) this._maxDirtyRow = endY - 1
 
     if (Math.abs(delta) >= clampedHeight) {
       // Scroll amount exceeds region — just clear everything
@@ -921,6 +943,8 @@ export class TerminalBuffer {
     // the rows it modifies as dirty. diffBuffers() then skips clean rows,
     // which are guaranteed identical to the prev buffer (since this is a clone).
     copy._dirtyRows.fill(0)
+    copy._minDirtyRow = -1
+    copy._maxDirtyRow = -1
     return copy
   }
 
@@ -933,12 +957,24 @@ export class TerminalBuffer {
     return this._dirtyRows[y] !== 0
   }
 
+  /** First dirty row (inclusive), or -1 if no rows are dirty. */
+  get minDirtyRow(): number {
+    return this._minDirtyRow
+  }
+
+  /** Last dirty row (inclusive), or -1 if no rows are dirty. */
+  get maxDirtyRow(): number {
+    return this._maxDirtyRow
+  }
+
   /**
    * Reset all dirty row flags to clean.
    * Call after diffing to prepare for the next frame's modifications.
    */
   resetDirtyRows(): void {
     this._dirtyRows.fill(0)
+    this._minDirtyRow = -1
+    this._maxDirtyRow = -1
   }
 
   /**
@@ -981,6 +1017,37 @@ export class TerminalBuffer {
     const ulB = other.underlineColors.get(otherIdx) ?? null
     if (!colorEquals(ulA, ulB)) return false
 
+    return true
+  }
+
+  /**
+   * Fast check: are all packed metadata values identical for a row?
+   * This is a bulk pre-check before per-cell comparison. If metadata differs,
+   * we still need per-cell diffing. If metadata matches, we only need to
+   * check chars and true color maps (much cheaper for the common case).
+   * Returns true if all packed 32-bit values in the row are identical.
+   */
+  rowMetadataEquals(y: number, other: TerminalBuffer): boolean {
+    if (y < 0 || y >= this.height || y >= other.height) return false
+    const start = y * this.width
+    const w = Math.min(this.width, other.width)
+    for (let i = 0; i < w; i++) {
+      if (this.cells[start + i] !== other.cells[start + i]) return false
+    }
+    return true
+  }
+
+  /**
+   * Fast check: are all characters identical for a row?
+   * Companion to rowMetadataEquals for a two-phase row comparison.
+   */
+  rowCharsEquals(y: number, other: TerminalBuffer): boolean {
+    if (y < 0 || y >= this.height || y >= other.height) return false
+    const start = y * this.width
+    const w = Math.min(this.width, other.width)
+    for (let i = 0; i < w; i++) {
+      if (this.chars[start + i] !== other.chars[start + i]) return false
+    }
     return true
   }
 }

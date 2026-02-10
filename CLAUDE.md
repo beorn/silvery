@@ -471,6 +471,11 @@ function createBoardDriver(repo: Repo, rootId: string) {
 
 ## Documentation
 
+**Maintenance**: When adding or modifying performance optimizations in buffer.ts, output-phase.ts,
+content-phase.ts, or other pipeline files, update [docs/performance.md](docs/performance.md) —
+both the "All Optimizations" catalog and the benchmark tables. Run `bun run bench` before and after
+to capture numbers.
+
 | Document                                                       | Description                                              |
 | -------------------------------------------------------------- | -------------------------------------------------------- |
 | [docs/README.md](docs/README.md)                               | Documentation table of contents                          |
@@ -480,7 +485,7 @@ function createBoardDriver(repo: Repo, rootId: string) {
 | [docs/architecture.md](docs/architecture.md)                   | Core architecture and RenderAdapter                      |
 | [docs/testing.md](docs/testing.md)                             | Testing strategy, locators, and API                      |
 | [docs/internals.md](docs/internals.md)                         | Reconciler and 5-phase pipeline                          |
-| [docs/performance.md](docs/performance.md)                     | Benchmarks and optimization                              |
+| [docs/performance.md](docs/performance.md)                     | Benchmarks and optimization (**keep up-to-date!**)       |
 | [docs/streams.md](docs/streams.md)                             | AsyncIterable stream helpers                             |
 | [docs/focus-routing.md](docs/focus-routing.md)                 | Focus-based input routing pattern                        |
 | [docs/ink-comparison.md](docs/ink-comparison.md)               | Ink issues and Inkx solutions                            |

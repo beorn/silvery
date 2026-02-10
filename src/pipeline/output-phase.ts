@@ -408,11 +408,21 @@ function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
   const height = Math.min(prev.height, next.height)
   const width = Math.min(prev.width, next.width)
 
-  for (let y = 0; y < height; y++) {
-    // Skip rows that haven't been modified since the buffer was cloned.
-    // The content phase marks rows dirty as it renders into the clone.
-    // Clean rows still have pixels from the clone (identical to prev).
+  // Use dirty row bounding box to narrow the scan range.
+  // If no rows are dirty, minDirtyRow is -1 and the loop body is skipped.
+  const startRow = next.minDirtyRow === -1 ? 0 : next.minDirtyRow
+  const endRow =
+    next.maxDirtyRow === -1 ? -1 : Math.min(next.maxDirtyRow, height - 1)
+
+  for (let y = startRow; y <= endRow; y++) {
+    // Skip individual clean rows within the bounding box
     if (!next.isRowDirty(y)) continue
+
+    // Fast row-level pre-check: if all packed metadata AND all chars match,
+    // skip per-cell comparison entirely. This catches rows marked dirty by
+    // fill() or scrollRegion() that didn't actually change content.
+    if (next.rowMetadataEquals(y, prev) && next.rowCharsEquals(y, prev))
+      continue
 
     for (let x = 0; x < width; x++) {
       // Use buffer's optimized cellEquals which compares packed metadata first
@@ -614,6 +624,21 @@ function changesToAnsi(
             currentStyle = null
           }
           output += "\r\n"
+        } else if (cursorY >= 0 && y === cursorY && x > cursorX) {
+          // Same row, forward: use CUF (Cursor Forward) for small jumps
+          const dx = x - cursorX
+          output += dx === 1 ? "\x1b[C" : `\x1b[${dx}C`
+        } else if (cursorY >= 0 && y > cursorY && x === 0) {
+          // Same column (0), down N rows: use \r + CUD
+          const dy = y - cursorY
+          if (
+            currentStyle &&
+            (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))
+          ) {
+            output += "\x1b[0m"
+            currentStyle = null
+          }
+          output += dy === 1 ? "\r\n" : `\r\x1b[${dy}B`
         } else {
           // Absolute position (1-indexed)
           output += `\x1b[${y + 1};${x + 1}H`
