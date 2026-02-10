@@ -17,10 +17,12 @@ import React, { useState, useCallback, useMemo, useEffect } from "react"
 import { readFileSync } from "node:fs"
 import {
   render,
+  renderStatic,
   Box,
   Text,
   useInput,
   useApp,
+  useContentRect,
   createTerm,
   type Key,
 } from "../src/index.js"
@@ -43,58 +45,57 @@ const examples: Example[] = [
     name: "Dashboard",
     file: "dashboard/index.tsx",
     description: "Multi-pane dashboard with flexGrow columns and keyboard navigation",
-    category: "Interactive",
-    // Live preview disabled: useInput captures viewer j/k navigation
-    // TODO: Use InputLayerProvider to isolate embedded component input
+    category: "Layout",
+    component: "Dashboard",
+  },
+  {
+    name: "Overflow Test",
+    file: "test-overflow/index.tsx",
+    description: 'overflow="hidden" content clipping test case',
+    category: "Layout",
+    component: "OverflowApp",
   },
   {
     name: "Kanban Board",
     file: "kanban/index.tsx",
     description: "3-column kanban with card movement and independent scroll",
     category: "Interactive",
-    // Live preview disabled: useInput captures viewer j/k navigation
+    component: "KanbanBoard",
   },
   {
     name: "Task List",
     file: "task-list/index.tsx",
     description: "Scrollable list with priority badges, toggles, and expandable subtasks",
     category: "Interactive",
-    // Live preview disabled: useInput captures viewer j/k navigation
+    component: "TaskList",
   },
   {
     name: "Scroll",
     file: "scroll/index.tsx",
     description: 'Native overflow="scroll" with automatic scroll-to-selected',
     category: "Interactive",
-    // Live preview disabled: useInput captures viewer j/k navigation
+    component: "ScrollExample",
   },
   {
     name: "Search Filter",
     file: "search-filter/index.tsx",
     description: "useTransition + useDeferredValue for responsive concurrent search",
     category: "Interactive",
-    // Live preview disabled: text input captures all keystrokes
+    component: "SearchApp",
   },
   {
     name: "Async Data",
     file: "async-data/index.tsx",
     description: "React Suspense with independent data sources and error boundaries",
     category: "Interactive",
-    // Live preview disabled: Suspense staggered loading corrupts incremental renderer
+    // No preview: Suspense + async use() requires full reconciler event loop
   },
   {
     name: "Layout Ref",
     file: "layout-ref/index.tsx",
-    description: "forwardRef + onLayout for imperative layout measurement",
+    description: "useContentRect + useScreenRect for imperative layout measurement",
     category: "Interactive",
-    // Live preview disabled: onLayout callbacks cause rendering artifacts when embedded
-  },
-  {
-    name: "Overflow Test",
-    file: "test-overflow/index.tsx",
-    description: 'overflow="hidden" content clipping test case',
-    category: "Interactive",
-    component: "OverflowApp",
+    component: "LayoutRefApp",
   },
   {
     name: "Todo App",
@@ -154,6 +155,7 @@ const examples: Example[] = [
 ]
 
 const CATEGORY_COLOR: Record<string, string> = {
+  Layout: "magenta",
   Interactive: "cyan",
   Runtime: "green",
   Inline: "yellow",
@@ -273,12 +275,20 @@ function Sidebar({
   )
 }
 
+/** Pad content lines to fill the full height — prevents stale pixel artifacts
+ *  from the incremental renderer when switching between previews of different heights. */
+function padLines(contentLines: string[], totalHeight: number): string[] {
+  if (contentLines.length >= totalHeight) return contentLines.slice(0, totalHeight)
+  return [...contentLines, ...Array<string>(totalHeight - contentLines.length).fill("")]
+}
+
 function Preview({ example }: { example: Example }) {
-  const [loaded, setLoaded] = useState<{ C: React.ComponentType } | null>(null)
+  const { width, height } = useContentRect()
+  const [lines, setLines] = useState<string[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setLoaded(null)
+    setLines(null)
     setError(null)
 
     if (!example.component) {
@@ -286,52 +296,77 @@ function Preview({ example }: { example: Example }) {
       return
     }
 
+    // Wait for layout dimensions
+    if (width === 0 || height === 0) return
+
+    let cancelled = false
     const path = new URL(example.file, import.meta.url).pathname
+
     import(path)
-      .then((mod: Record<string, unknown>) => {
-        const comp = mod[example.component!] as React.ComponentType | undefined
-        if (comp) setLoaded({ C: comp })
-        else setError(`Export "${example.component}" not found`)
+      .then(async (mod: Record<string, unknown>) => {
+        if (cancelled) return
+        const Comp = mod[example.component!] as React.ComponentType | undefined
+        if (!Comp) {
+          setError(`Export "${example.component}" not found`)
+          return
+        }
+
+        // Render in sandboxed static mode — useInput becomes a no-op,
+        // useApp gets a stub exit(), no terminal needed
+        const output = await renderStatic(React.createElement(Comp), {
+          width,
+          height,
+          plain: true,
+        })
+        if (!cancelled) setLines(output.split("\n"))
         return undefined
       })
-      .catch((e: Error) => setError(e.message || String(e)))
-  }, [example.file, example.component])
+      .catch((e: Error) => {
+        if (!cancelled) setError(e.message || String(e))
+      })
+
+    return () => { cancelled = true }
+  }, [example.file, example.component, width, height])
+
+  // All paths pad to full height to clear stale pixels from prior previews
+  const renderLines = (contentLines: string[]) => (
+    <Box flexDirection="column" flexGrow={1}>
+      {padLines(contentLines, height).map((line, i) => (
+        <Text key={i} wrap="truncate">{line}</Text>
+      ))}
+    </Box>
+  )
 
   if (error === "no-component") {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text bold color="cyan">{example.name}</Text>
-        <Text dim>{example.description}</Text>
-        <Text> </Text>
-        <Text dim>No live preview available.</Text>
-        <Text dim>Press Enter to run standalone.</Text>
-      </Box>
-    )
+    return renderLines([
+      "",
+      ` ${example.name}`,
+      ` ${example.description}`,
+      "",
+      " No live preview — uses non-React API.",
+      " Press Enter to run standalone.",
+    ])
   }
 
   if (error) {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text bold color="cyan">{example.name}</Text>
-        <Text> </Text>
-        <Text color="red">{error}</Text>
-      </Box>
-    )
+    return renderLines([
+      "",
+      ` ${example.name}`,
+      "",
+      ` Error: ${error}`,
+    ])
   }
 
-  if (!loaded) {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text bold color="cyan">{example.name}</Text>
-        <Text> </Text>
-        <Text dim>Loading...</Text>
-      </Box>
-    )
+  if (!lines) {
+    return renderLines([
+      "",
+      ` ${example.name}`,
+      "",
+      " Loading preview...",
+    ])
   }
 
-  const { C: Component } = loaded
-
-  return <Component />
+  return renderLines(lines)
 }
 
 function SourceCode({ example }: { example: Example }) {
@@ -419,6 +454,10 @@ function Viewer() {
     )
   }
 
+  const runLabel = selected.category === "Inline" || selected.category === "Runtime"
+    ? "run"
+    : "run interactive"
+
   return (
     <Box flexDirection="column" flexGrow={1}>
       {/* Header */}
@@ -467,7 +506,7 @@ function Viewer() {
         <Text bold dim>Tab</Text>
         <Text dim> {tab === "view" ? "source" : "view"}  </Text>
         <Text bold dim>Enter</Text>
-        <Text dim> run  </Text>
+        <Text dim> {runLabel}  </Text>
         <Text bold dim>q</Text>
         <Text dim> quit</Text>
       </Text>
