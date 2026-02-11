@@ -151,9 +151,11 @@ export const hostConfig = {
       contentRect: null,
       screenRect: null,
       prevLayout: null,
+      prevScreenRect: null,
       layoutDirty: false,
       contentDirty: true,
       paintDirty: true,
+      bgDirty: true,
       subtreeDirty: true,
       childrenDirty: false,
       layoutSubscribers: new Set(),
@@ -382,16 +384,27 @@ export const hostConfig = {
       newProps as Record<string, unknown>,
     )
     if (contentChanged) {
-      instance.contentDirty = true
-      // paintDirty survives the measure phase (which clears contentDirty for
-      // its text-collection cache). contentPhase uses paintDirty to know it
-      // must clear stale backgrounds from the cloned buffer.
+      // paintDirty: always set for any visual change. Content phase uses this
+      // to know the node needs re-rendering (border, text style, bg, etc.).
       instance.paintDirty = true
-      // Only text content changes affect layout size (measure function returns
-      // different result). Style-only changes (borderColor, color, bold, etc.)
-      // don't change dimensions — no layout recalculation needed.
-      if (contentChanged === "text" && instance.layoutNode) {
-        instance.layoutNode.markDirty()
+      // contentDirty: only for text content changes (not style-only changes).
+      // Style-only changes (borderColor, color, bold) set paintDirty but NOT
+      // contentDirty, so content phase won't cascade to children for border-only
+      // changes where the content area is unchanged.
+      if (contentChanged === "text") {
+        instance.contentDirty = true
+        if (instance.layoutNode) {
+          instance.layoutNode.markDirty()
+        }
+      }
+      // bgDirty: specifically track backgroundColor changes (added/changed/removed).
+      // Content phase uses this to cascade re-renders only when the content area
+      // was actually affected (not for border-only paint changes).
+      if (
+        (oldProps as Record<string, unknown>).backgroundColor !==
+        (newProps as Record<string, unknown>).backgroundColor
+      ) {
+        instance.bgDirty = true
       }
     }
 

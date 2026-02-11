@@ -149,10 +149,17 @@ function propagateLayout(
  *
  * Called from executeRender AFTER screenRectPhase completes,
  * so useScreenRectCallback can read correct screen positions.
+ *
+ * Notifies when EITHER contentRect or screenRect changed.
+ * screenRect can change from scroll offset changes even when
+ * contentRect stays the same — subscribers (like useScreenRectCallback)
+ * need notification in both cases.
  */
 export function notifyLayoutSubscribers(node: InkxNode): void {
-  // Only notify if dimensions actually changed
-  if (!rectEqual(node.prevLayout, node.contentRect)) {
+  // Notify if content rect OR screen rect changed
+  const contentChanged = !rectEqual(node.prevLayout, node.contentRect)
+  const screenChanged = !rectEqual(node.prevScreenRect, node.screenRect)
+  if (contentChanged || screenChanged) {
     for (const subscriber of node.layoutSubscribers) {
       subscriber()
     }
@@ -445,6 +452,9 @@ function propagateScreenRect(
   node: InkxNode,
   ancestorScrollOffset: number,
 ): void {
+  // Save previous screen rect for change detection in notifyLayoutSubscribers
+  node.prevScreenRect = node.screenRect
+
   const content = node.contentRect
   if (!content) {
     node.screenRect = null

@@ -269,6 +269,9 @@ export interface InkxNode {
    */
   screenRect: Rect | null
 
+  /** Previous screen rect (for change detection in notifyLayoutSubscribers) */
+  prevScreenRect: Rect | null
+
   /** True if layout-affecting props changed and Yoga needs recalculation.
    *  Set by reconciler on prop changes. Cleared after layout phase. */
   layoutDirty: boolean
@@ -284,6 +287,12 @@ export interface InkxNode {
    *  of contentDirty, ensuring content phase still detects style changes.
    *  Cleared by content phase after rendering. */
   paintDirty: boolean
+
+  /** True if backgroundColor specifically changed (added, modified, or removed).
+   *  Set by reconciler when backgroundColor prop changes. Used by content phase
+   *  to avoid cascading re-renders for border-only paint changes (borderColor
+   *  doesn't affect the content area). Cleared by content phase. */
+  bgDirty: boolean
 
   /** True if this node or any descendant has dirty content/layout.
    *  Propagated upward by reconciler when any descendant is dirtied.
