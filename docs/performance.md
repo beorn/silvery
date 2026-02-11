@@ -12,16 +12,20 @@
 
 inkx uses `createRenderer()` (headless). Ink uses `render()` with mock stdout + unmount per iteration. Both include React reconciliation. See [benchmark README](../benchmarks/ink-comparison/README.md) for full methodology and additional comparisons.
 
-### inkx Pipeline Summary
+### inkx Pipeline Summary (Current — after Rounds 1-3)
 
-| Operation                     | Time  | Notes                  |
-| ----------------------------- | ----- | ---------------------- |
-| Full render (simple, first)   | 54us  | First render, no diff  |
-| Full render (simple, diff)    | 25us  | With buffer diffing    |
-| Full render (50 items, first) | 159us | Complex tree           |
-| Full render (50 items, diff)  | 88us  | Complex tree with diff |
-| contentPhase (100 children)   | 26us  | Optimized with caching |
-| layoutPhase (100 children)    | 25us  | Flexx layout           |
+| Operation                     | Time    | Notes                                  |
+| ----------------------------- | ------- | -------------------------------------- |
+| Full render (simple, first)   | 74.7us  | First render, no diff                  |
+| Full render (simple, diff)    | 8.9us   | With buffer diffing                    |
+| Full render (50 items, first) | 189us   | Complex tree                           |
+| Full render (50 items, diff)  | 32.7us  | Complex tree with diff                 |
+| outputPhase (no changes)      | 7.5us   | Dirty bounding box skips all rows      |
+| outputPhase (10% changes)     | 45.0us  | Row-level dirty + style interning      |
+| contentPhase (simple)         | 1.8us   | Incremental clone + dirty skip         |
+| contentPhase (100 children)   | 3.6us   | Incremental clone + dirty skip         |
+| layoutPhase (100 children)    | 23.8us  | Flexx layout                           |
+| fill 80x24                    | 3.0us   | True color Map skip                    |
 
 ### Layout Engine Comparison
 
@@ -106,25 +110,49 @@ Flexx and Yoga WASM perform similarly. Both are ~2x faster than Yoga NAPI (nativ
 
 | Metric                           | Before (R2) | After (R3) | Improvement     |
 | -------------------------------- | ----------- | ---------- | --------------- |
-| `outputPhase (no changes)`       | 33,609ns    | 7,643ns    | **4.4x faster** |
-| `executeRender (simple, diff)`   | 8,890ns     | 9,037ns    | similar         |
-| `executeRender (50 items, diff)` | 34,412ns    | 32,486ns   | slightly faster |
+| `outputPhase (no changes)`       | 33,609ns    | 7,479ns    | **4.5x faster** |
+| `executeRender (simple, diff)`   | 9,477ns     | 8,890ns    | similar         |
+| `executeRender (50 items, diff)` | 34,449ns    | 32,664ns   | slightly faster |
 
 The big win is the no-changes case — bounding box eliminates all row scanning when nothing changed.
 
+#### Current Absolute Numbers (verified 2026-02-10)
+
+All measurements on M1 Max, Bun 1.3.9, after Rounds 1-3 (10 optimizations).
+
+| Metric                           | Time      |
+| -------------------------------- | --------- |
+| `fill 80x24`                     | 2,987ns   |
+| `outputPhase (no changes)`       | 7,479ns   |
+| `outputPhase (10% changes)`      | 44,971ns  |
+| `outputPhase (first render)`     | 69,876ns  |
+| `executeRender (simple, first)`  | 74,676ns  |
+| `executeRender (simple, diff)`   | 8,890ns   |
+| `executeRender (50 items, first)`| 189,000ns |
+| `executeRender (50 items, diff)` | 32,664ns  |
+| `measurePhase (simple)`          | 4.64ns    |
+| `measurePhase (100 children)`    | 525ns     |
+| `layoutPhase (simple)`           | 439ns     |
+| `layoutPhase (100 children)`     | 23,775ns  |
+| `contentPhase (simple)`          | 1,759ns   |
+| `contentPhase (100 children)`    | 3,619ns   |
+
 ### Key Findings
 
-1. **Diff path is now faster than first render**: With optimizations, diff renders
-   take 2.1x less time than first renders (was 1.5x slower before).
+1. **Diff path is 8.4x faster than first render**: `executeRender (simple, diff)` at 8.9us vs
+   first render at 74.7us. For 50 items: 32.7us vs 189us (5.8x).
 
-2. **Cache hit rate matters**: The displayWidth cache provides massive speedups
+2. **No-change frames are near-free**: `outputPhase (no changes)` at 7.5us thanks to dirty
+   bounding box — when nothing changed, no rows are scanned at all.
+
+3. **Content phase is the biggest optimization win**: From 503us to 3.6us for 100 children
+   (140x faster) through incremental clone + dirty subtree skip.
+
+4. **Layout is consistently fast**: Flexx layout for 100 children takes ~24us
+   thanks to dirty tracking.
+
+5. **Cache hit rate matters**: The displayWidth LRU cache provides 45x speedup
    for repeated strings (common in UIs with consistent text content).
-
-3. **Layout is consistently fast**: Yoga layout for 100 children takes ~25us
-   thanks to dirty tracking - similar to optimized content phase.
-
-4. **Unicode operations remain expensive**: `splitGraphemes` still takes 10us
-   for ASCII strings - consider caching if profiling shows hot paths.
 
 ## All Optimizations (by Pipeline Phase)
 
@@ -205,22 +233,24 @@ The big win is the no-changes case — bounding box eliminates all row scanning 
 | 7.2 | **styleEquals() identity check** | Reference equality before deep comparison. |
 | 7.3 | **colorEquals() fast paths** | Identity check, null handling, early exits before RGB comparison. |
 
-**Total: 45+ distinct optimizations across all pipeline phases.**
+**Total: 47 distinct optimizations across all pipeline phases.**
 
 ## Future Optimizations
 
-Based on analysis of ratatui, notcurses, crossterm, blessed, and bubbletea:
+Based on analysis of ratatui, notcurses, crossterm, blessed, bubbletea, and O3 deep research (2026-02-10).
 
-| Technique | Source | Effort | Expected Impact |
-|---|---|---|---|
-| **Synchronized output** (`CSI ? 2026 h/l`) | Notcurses, Textual | Low | Eliminates flicker/tearing |
-| **Scroll regions** (IL/DL instead of redraw) | blessed, ncurses | Medium | O(1) scroll vs O(N) redraw |
-| **ANSI compression** (strip redundant codes) | Bubbletea | Medium | Fewer bytes to terminal |
-| **64-bit cell packing** (one compare per cell) | Notcurses | Medium | Faster diff |
-| **Region bounding box** (only diff dirty rectangle) | General | Low-Medium | Skip more than row-level |
-| **TypedArray bulk comparison** (SIMD/DataView) | General | Medium | Faster row equality check |
-| **Virtual scrolling** | General | High | Only render visible children |
-| **Worker thread layout** | General | High | Unblock main thread for large trees |
+| Technique | Source | Effort | Expected Impact | Status |
+|---|---|---|---|---|
+| **Synchronized output** (`CSI ? 2026 h/l`) | Notcurses, Textual | Low | Eliminates flicker | **Done** (scheduler) |
+| **Row dirty bounding box** | General | Low | Skip undirty rows in diff | **Done** (R3) |
+| **Row-level bulk comparison** | General | Low | Skip unchanged-content dirty rows | **Done** (R3) |
+| **Style interning + SGR cache** | General | Low | Eliminate string building | **Done** (R2) |
+| **Scroll regions** (DECSTBM + LF/RI) | blessed, ncurses | Medium | O(1) scroll vs O(N) redraw | **Investigated, not worth it** — full-width only, doesn't help multi-column layouts |
+| **Grapheme interning** (intern chars to IDs) | Deep research | High | Faster char comparison | Not worth the refactor — char comparison is already fast |
+| **ANSI compression** (strip redundant codes) | Bubbletea | Medium | Fewer bytes to terminal | Style coalescing already handles this |
+| **64-bit cell packing** (one compare per cell) | Notcurses | Medium | Faster diff | JS doesn't have native u64; BigInt is slower than u32+string |
+| **Virtual scrolling** | General | High | Only render visible children | **Done** (VirtualList component) |
+| **Worker thread layout** | General | High | Unblock main thread | Not needed — layout is <25us for typical trees |
 
 ## Profiling Guide
 
