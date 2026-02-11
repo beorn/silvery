@@ -40,30 +40,27 @@ Diff renders are 6-8x faster than first renders thanks to incremental rendering.
 | `create 80x24`     | 1.7us  |
 | `create 200x50`    | 3.7us  |
 
-### inkx vs Ink 6: Frame Update Cost
+### inkx Dirty-Tracking Diff Render (No Ink Equivalent)
 
-The key performance difference is how each framework handles typical frame updates
-(cursor movement, selection changes, typing). Ink re-renders the entire tree every frame.
-inkx tracks dirty nodes and only updates what changed.
+inkx tracks dirty nodes and only re-renders what changed. Ink has no incremental mode —
+it re-renders the entire React tree every frame.
 
-| Nodes | inkx (incremental) | Ink 6 (full re-render) | Ratio       |
-| ----- | ------------------ | ---------------------- | ----------- |
-| 1     | 14us               | 262us                  | inkx ~19x   |
-| 100   | 22us               | 2.2ms                  | inkx ~100x  |
-| 1000  | 102us              | 20ms                   | inkx ~196x  |
+| Nodes | inkx diff render |
+| ----- | ---------------- |
+| 1     | 9us              |
+| 100   | 18us             |
+| 1000  | 101us            |
 
-**Caveat**: This compares inkx's best case (small change, dirty tracking active) against Ink's
-only path (full re-render). Ink has no incremental mode. The comparison is representative of
-real TUI usage where most frames change only a few nodes, but a workload that changes the
-entire tree every frame would not see this benefit.
+These are the times for typical frame updates (cursor movement, selection changes, typing)
+where only 1-2 nodes change. Ink would need a full React re-render for the same update.
 
 ### First Render (Full Pipeline)
 
 | Components | inkx (Flexx) | Ink 6 (Yoga NAPI) | Ratio     |
 | ---------- | ------------ | ----------------- | --------- |
-| 1          | 173 us       | 262 us            | inkx 1.5x |
-| 100        | 44.6 ms      | 49.6 ms           | inkx 1.1x |
-| 1000       | 463 ms       | 530 ms            | inkx 1.1x |
+| 1          | 169 us       | 257 us            | inkx 1.5x |
+| 100        | 44.2 ms      | 50.5 ms           | inkx 1.1x |
+| 1000       | 446 ms       | 546 ms            | inkx 1.2x |
 
 Both include React reconciliation. First-render performance is similar — the incremental
 machinery doesn't help here. See [benchmark README](../benchmarks/ink-comparison/README.md).
@@ -72,19 +69,19 @@ machinery doesn't help here. See [benchmark README](../benchmarks/ink-comparison
 
 | Benchmark             | Flexx (JS) | Yoga WASM | Yoga NAPI (C++) |
 | --------------------- | ---------- | --------- | --------------- |
-| 100 nodes flat list   | 73 us      | 95 us     | 236 us          |
-| 50-node kanban (3col) | 57 us      | 54 us     | 156 us          |
+| 100 nodes flat list   | 90 us      | 84 us     | 234 us          |
+| 50-node kanban (3col) | 54 us      | 61 us     | 154 us          |
 
-Flexx (pure JS, 7KB) is 2.2x faster than Yoga NAPI for flat layouts. Matches Yoga WASM
+Flexx (pure JS, 7KB) is 2.6x faster than Yoga NAPI for flat layouts. Matches Yoga WASM
 for kanban. Both significantly faster than Yoga NAPI (C++) due to NAPI bridge overhead.
 
 ## Key Insights
 
-1. **Diff renders are 5-6x faster than first renders** — incremental clone + dirty subtree skip means most of the buffer is preserved between frames.
+1. **Diff renders are 6-8x faster than first renders** — incremental clone + dirty subtree skip means most of the buffer is preserved between frames.
 
-2. **No-change frames are near-free at 7.4us** — the dirty bounding box means zero rows are scanned when nothing changed.
+2. **No-change frames are near-free at 7.5us** — the dirty bounding box means zero rows are scanned when nothing changed.
 
-3. **Content phase dominates the pipeline** — at 5-7us for incremental renders, it's the bottleneck for the diff path. Layout is faster (sub-microsecond for clean trees).
+3. **Content phase is fast at 1.7us** — incremental clone + dirty skip. Output phase (7.5us for no-change, 45us for 10% changes) is the bottleneck for the diff path.
 
 4. **displayWidth LRU cache** provides 45x speedup for repeated strings — critical for TUI where the same text appears across frames.
 
