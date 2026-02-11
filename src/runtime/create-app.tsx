@@ -656,35 +656,62 @@ async function initApp<
   const _perfLog =
     typeof process !== "undefined" && process.env?.DEBUG?.includes("inkx:perf")
 
+  // Incremental rendering — store previous pipeline buffer for diffing.
+  // Without this, every render walks the entire node tree from scratch.
+  let _prevTermBuffer: import("../buffer.js").TerminalBuffer | null = null
+
   // Helper to render and get text
   function doRender(): Buffer {
     _renderCount++
     const renderStart = performance.now()
+
+    // Phase A: React reconciliation
     reconciler.updateContainerSync(wrappedElement, fiberRoot, null, () => {})
     reconciler.flushSyncWork()
+    const reconcileMs = performance.now() - renderStart
 
+    // Phase B: Render pipeline (incremental when prevBuffer available)
+    const pipelineStart = performance.now()
     const rootNode = getContainerRoot(container)
     const dims = runtime.getDims()
+
+    // Invalidate prevBuffer on dimension change (resize)
+    if (
+      _prevTermBuffer &&
+      (dims.cols !== _prevTermBuffer.width ||
+        dims.rows !== _prevTermBuffer.height)
+    ) {
+      _prevTermBuffer = null
+    }
+
     const { buffer: termBuffer } = executeRender(
       rootNode,
       dims.cols,
       dims.rows,
-      null,
+      _prevTermBuffer,
       {
         skipLayoutNotifications: true,
       },
     )
+    _prevTermBuffer = termBuffer
+    const pipelineMs = performance.now() - pipelineStart
 
     const buf = createBuffer(termBuffer, rootNode)
     if (_perfLog) {
       const renderDuration = performance.now() - renderStart
-      if (renderDuration > 2) {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        require("node:fs").appendFileSync(
-          "/tmp/inkx-perf.log",
-          `doRender #${_renderCount}: ${renderDuration.toFixed(1)}ms\n`,
-        )
-      }
+      const phases = (globalThis as any).__inkx_last_pipeline
+      const detail = (globalThis as any).__inkx_content_detail
+      const phaseStr = phases
+        ? ` [measure=${phases.measure.toFixed(1)} layout=${phases.layout.toFixed(1)} content=${phases.content.toFixed(1)} output=${phases.output.toFixed(1)}]`
+        : ""
+      const detailStr = detail
+        ? ` {visited=${detail.nodesVisited} rendered=${detail.nodesRendered} skipped=${detail.nodesSkipped} noPrev=${detail.noPrevBuffer ?? 0} dirty=${detail.flagContentDirty ?? 0} paint=${detail.flagPaintDirty ?? 0} layoutChg=${detail.flagLayoutChanged ?? 0} subtree=${detail.flagSubtreeDirty ?? 0} children=${detail.flagChildrenDirty ?? 0} childPos=${detail.flagChildPositionChanged ?? 0} scroll=${detail.scrollContainerCount ?? 0}/${detail.scrollViewportCleared ?? 0}${detail.scrollClearReason ? `(${detail.scrollClearReason})` : ""}}${detail.cascadeNodes ? ` CASCADE[minDepth=${detail.cascadeMinDepth} ${detail.cascadeNodes}]` : ""}`
+        : ""
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("node:fs").appendFileSync(
+        "/tmp/inkx-perf.log",
+        `doRender #${_renderCount}: ${renderDuration.toFixed(1)}ms (reconcile=${reconcileMs.toFixed(1)}ms pipeline=${pipelineMs.toFixed(1)}ms ${dims.cols}x${dims.rows})${phaseStr}${detailStr}\n`,
+      )
     }
     return buf
   }
@@ -711,6 +738,7 @@ async function initApp<
       // The screen was cleared when entering console mode, so
       // incremental diffing would produce an incomplete frame.
       runtime.invalidate()
+      _prevTermBuffer = null
       // Force full re-render to restore display, but only if we're not
       // already inside a doRender() call (e.g. when resume() is called
       // from a React effect cleanup during reconciliation).
@@ -906,13 +934,15 @@ async function initApp<
     }
 
     inEventHandler = false
+    const runtimeStart = performance.now()
     runtime.render(currentBuffer)
+    const runtimeMs = performance.now() - runtimeStart
     if (_perfLog) {
       const totalMs = performance.now() - _eventStart
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("node:fs").appendFileSync(
         "/tmp/inkx-perf.log",
-        `EVENT batch(${events.length} ${events[0]?.type}): ${totalMs.toFixed(1)}ms total, ${_renderCount} doRender() calls\n---\n`,
+        `EVENT batch(${events.length} ${events[0]?.type}): ${totalMs.toFixed(1)}ms total, ${_renderCount} doRender() calls, runtime.render=${runtimeMs.toFixed(1)}ms\n---\n`,
       )
     }
     return currentBuffer

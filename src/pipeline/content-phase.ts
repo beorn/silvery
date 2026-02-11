@@ -48,13 +48,95 @@ export function contentPhase(
     prevBuffer.width === layout.width &&
     prevBuffer.height === layout.height
 
+  // DIAG: Track prevBuffer status per call
+  _contentPhaseCallCount++
+  _contentPhaseStats._prevBufferNull = prevBuffer == null ? 1 : 0
+  _contentPhaseStats._prevBufferDimMismatch =
+    prevBuffer && !hasPrevBuffer ? 1 : 0
+  _contentPhaseStats._hasPrevBuffer = hasPrevBuffer ? 1 : 0
+  _contentPhaseStats._layoutW = layout.width
+  _contentPhaseStats._layoutH = layout.height
+  _contentPhaseStats._prevW = prevBuffer?.width ?? 0
+  _contentPhaseStats._prevH = prevBuffer?.height ?? 0
+  _contentPhaseStats._callCount = _contentPhaseCallCount
+
+  const t0 = performance.now()
   const buffer = hasPrevBuffer
     ? prevBuffer.clone()
     : new TerminalBuffer(layout.width, layout.height)
+  const tClone = performance.now() - t0
 
+  const t1 = performance.now()
   renderNodeToBuffer(root, buffer, 0, undefined, hasPrevBuffer)
+  const tRender = performance.now() - t1
+
+  // Expose sub-phase timing for profiling
+  const snap = {
+    clone: tClone,
+    render: tRender,
+    ...structuredClone(_contentPhaseStats),
+  }
+  ;(globalThis as any).__inkx_content_detail = snap
+  // Also push to array for multi-call analysis
+  const arr = ((globalThis as any).__inkx_content_all ??= [] as typeof snap[])
+  arr.push(snap)
+  for (const key of Object.keys(_contentPhaseStats) as (keyof typeof _contentPhaseStats)[]) {
+    ;(_contentPhaseStats as any)[key] = 0
+  }
+  // Reset non-zero defaults
+  _contentPhaseStats.cascadeMinDepth = 999
+  _contentPhaseStats.cascadeNodes = ""
+  _contentPhaseStats.scrollClearReason = ""
+  _contentPhaseStats.normalRepaintReason = ""
 
   return buffer
+}
+
+/** Mutable stats counters — reset after each contentPhase call */
+const _contentPhaseStats = {
+  nodesVisited: 0,
+  nodesRendered: 0,
+  nodesSkipped: 0,
+  textNodes: 0,
+  boxNodes: 0,
+  clearOps: 0,
+  // Per-flag breakdown: why nodes weren't skipped
+  noPrevBuffer: 0,
+  flagContentDirty: 0,
+  flagPaintDirty: 0,
+  flagLayoutChanged: 0,
+  flagSubtreeDirty: 0,
+  flagChildrenDirty: 0,
+  flagChildPositionChanged: 0,
+  // Scroll container diagnostics
+  scrollContainerCount: 0,
+  scrollViewportCleared: 0,
+  scrollClearReason: "" as string,
+  // Normal container diagnostics
+  normalChildrenRepaint: 0,
+  normalRepaintReason: "" as string,
+  // Cascade diagnostics: shallowest node with parentRegionChanged=true
+  cascadeMinDepth: 999,
+  cascadeNodes: "" as string,  // "type:id@depth" of cascade sources
+  // Top-level prevBuffer diagnostics
+  _prevBufferNull: 0,
+  _prevBufferDimMismatch: 0,
+  _hasPrevBuffer: 0,
+  _layoutW: 0,
+  _layoutH: 0,
+  _prevW: 0,
+  _prevH: 0,
+  _callCount: 0,
+}
+
+let _contentPhaseCallCount = 0
+
+/** DIAG: compute node depth in tree */
+function _getNodeDepth(node: InkxNode): number {
+  let depth = 0
+  let n: InkxNode | null = node.parent
+  while (n) { depth++; n = n.parent }
+  return depth
 }
 
 // Re-export for consumers who need to clear bg conflict warnings
@@ -81,6 +163,7 @@ function renderNodeToBuffer(
    *  its own region, but descendants may still need to clear their sub-regions. */
   ancestorCleared = false,
 ): void {
+  _contentPhaseStats.nodesVisited++
   const layout = node.contentRect
   if (!layout) return
 
@@ -126,9 +209,19 @@ function renderNodeToBuffer(
     !childPositionChanged
 
   if (skipFastPath) {
+    _contentPhaseStats.nodesSkipped++
     clearDirtyFlags(node)
     return
   }
+  _contentPhaseStats.nodesRendered++
+  // Track WHY the fast-path was missed
+  if (!hasPrevBuffer) _contentPhaseStats.noPrevBuffer++
+  if (node.contentDirty) _contentPhaseStats.flagContentDirty++
+  if (node.paintDirty) _contentPhaseStats.flagPaintDirty++
+  if (layoutChanged) _contentPhaseStats.flagLayoutChanged++
+  if (node.subtreeDirty) _contentPhaseStats.flagSubtreeDirty++
+  if (node.childrenDirty) _contentPhaseStats.flagChildrenDirty++
+  if (childPositionChanged) _contentPhaseStats.flagChildPositionChanged++
 
   // Check if this is a scrollable container
   const isScrollContainer = props.overflow === "scroll" && node.scrollState
@@ -148,7 +241,23 @@ function renderNodeToBuffer(
     layoutChanged ||
     childPositionChanged
 
-  // Clear this node's region when it needs repaint but has no backgroundColor.
+  // contentAreaAffected: did this node's CONTENT AREA change (not just border)?
+  // Excludes border-only paint changes: renderBox only draws border chars at edges,
+  // content area pixels are untouched. This avoids cascading ~200 node re-renders
+  // per Card on cursor move (borderColor changes yellow↔blackBright but content
+  // area is unchanged).
+  //
+  // Uses bgDirty (set by reconciler when backgroundColor specifically changes) rather
+  // than checking current props.backgroundColor — catches bg removal (cyan → undefined)
+  // where current value is falsy but stale pixels must still be cleared.
+  const contentAreaAffected =
+    node.contentDirty ||
+    layoutChanged ||
+    childPositionChanged ||
+    node.childrenDirty ||
+    node.bgDirty
+
+  // Clear this node's region when its content area changed but has no backgroundColor.
   // Without bg, renderBox won't fill, so stale pixels from the cloned buffer
   // remain visible. We must explicitly clear with inherited bg.
   //
@@ -159,7 +268,7 @@ function renderNodeToBuffer(
   // On a truly fresh buffer (first render), both are false — no wasteful clear.
   const parentRegionCleared =
     (hasPrevBuffer || ancestorCleared) &&
-    needsOwnRepaint &&
+    contentAreaAffected &&
     !props.backgroundColor
 
   // skipBgFill: in incremental mode, skip the bg fill when the cloned buffer
@@ -172,15 +281,32 @@ function renderNodeToBuffer(
   // inherited bg, NOT our bg — so we must re-fill.
   // When hasPrevBuffer=false AND ancestorCleared=false, it's a fresh render.
   const skipBgFill = hasPrevBuffer && !ancestorCleared && !needsOwnRepaint
-  // parentRegionChanged: this node's region was modified on a cloned buffer.
-  // Algebraically: parentRegionCleared (no bg) + painted (has bg) = all repaint
-  // cases on a clone. Children must re-render (childHasPrev=false).
-  // NOTE: parentRegionCleared is a subset of parentRegionChanged — it adds the
-  // extra signal that stale pixels exist (no bg fill), used for childAncestorCleared.
+
+  // parentRegionChanged: this node's content area was modified on a cloned buffer.
+  // Children must re-render (childHasPrev=false) because their pixels may be stale.
   const parentRegionChanged =
-    (hasPrevBuffer || ancestorCleared) && needsOwnRepaint
+    (hasPrevBuffer || ancestorCleared) && contentAreaAffected
+
+  // DIAG: Track cascade sources
+  if (parentRegionChanged && node.children.length > 0) {
+    const depth = _getNodeDepth(node)
+    if (depth < _contentPhaseStats.cascadeMinDepth) {
+      _contentPhaseStats.cascadeMinDepth = depth
+    }
+    const id = (node.props as Record<string, unknown>).id ?? node.type
+    const flags = [
+      node.contentDirty && "C",
+      node.paintDirty && "P",
+      node.childrenDirty && "Ch",
+      layoutChanged && "L",
+      childPositionChanged && "CP",
+    ].filter(Boolean).join("")
+    const entry = `${id}@${depth}[${flags}:${node.children.length}ch]`
+    _contentPhaseStats.cascadeNodes += (_contentPhaseStats.cascadeNodes ? " " : "") + entry
+  }
 
   if (parentRegionCleared) {
+    _contentPhaseStats.clearOps++
     clearNodeRegion(
       node,
       buffer,
@@ -193,6 +319,7 @@ function renderNodeToBuffer(
 
   // Render based on node type
   if (node.type === "inkx-box") {
+    _contentPhaseStats.boxNodes++
     renderBox(node, buffer, layout, props, clipBounds, scrollOffset, skipBgFill)
 
     // If scrollable, render overflow indicators
@@ -200,6 +327,7 @@ function renderNodeToBuffer(
       renderScrollIndicators(node, buffer, layout, props, node.scrollState!)
     }
   } else if (node.type === "inkx-text") {
+    _contentPhaseStats.textNodes++
     renderText(node, buffer, layout, props, scrollOffset, clipBounds)
   }
 
@@ -233,6 +361,7 @@ function renderNodeToBuffer(
   // Clear dirty flags
   node.contentDirty = false
   node.paintDirty = false
+  node.bgDirty = false
   node.subtreeDirty = false
   node.childrenDirty = false
 }
@@ -263,46 +392,92 @@ function renderScrollContainerChildren(
   // Determine if scroll offset changed since last render.
   const scrollOffsetChanged = ss.offset !== ss.prevOffset
 
-  // Two-tier strategy for scroll container updates:
+  // Three-tier strategy for scroll container updates:
   //
-  // 1. needsViewportClear: scroll offset changed, children restructured, or
-  //    parent region changed. Must clear viewport and re-render children.
+  // 1. Buffer shift (scrollOnly): scroll offset changed but nothing else.
+  //    Shift buffer contents by scroll delta, then re-render only newly
+  //    visible children. Previously visible children keep their shifted pixels.
+  //    This avoids re-rendering the entire viewport on every scroll.
+  //
+  // 2. Full viewport clear: children restructured or parent region changed.
+  //    Must clear viewport and re-render all visible children.
   //    NOTE: subtreeDirty alone does NOT require viewport clear — dirty
   //    descendants handle their own region clearing. Clearing for subtreeDirty
   //    caused a 12ms regression (re-rendering ~50 children vs 2 dirty ones).
   //
-  // 2. No clear needed: only subtreeDirty (some descendants changed).
+  // 3. No clear needed: only subtreeDirty (some descendants changed).
   //    Children use hasPrevBuffer=true and skip via fast-path if clean.
+  const scrollOnly =
+    hasPrevBuffer &&
+    scrollOffsetChanged &&
+    !node.childrenDirty &&
+    !parentRegionChanged
   const needsViewportClear =
     hasPrevBuffer &&
+    !scrollOnly &&
     (scrollOffsetChanged || node.childrenDirty || parentRegionChanged)
 
-  const childHasPrev = needsViewportClear ? false : hasPrevBuffer
-  // When viewport was cleared, children need to know the buffer is a clone
-  // with stale pixels even though hasPrevBuffer=false. This allows descendants
-  // to clear their own sub-regions when needed (e.g., card bg changed).
-  // NOTE: needsViewportClear already gates on hasPrevBuffer, so when it's true,
-  // we know the buffer is a clone (not fresh).
-  const childAncestorCleared = needsViewportClear
+  _contentPhaseStats.scrollContainerCount++
+  if (needsViewportClear || scrollOnly) {
+    _contentPhaseStats.scrollViewportCleared++
+    const reasons: string[] = []
+    if (scrollOnly) reasons.push("SHIFT")
+    if (scrollOffsetChanged) reasons.push(`scrollOffset(${ss.prevOffset}->${ss.offset})`)
+    if (node.childrenDirty) reasons.push("childrenDirty")
+    if (parentRegionChanged) reasons.push("parentRegionChanged")
+    reasons.push(`vp=${ss.viewportHeight} content=${ss.contentHeight} vis=${ss.firstVisibleChild}-${ss.lastVisibleChild}`)
+    _contentPhaseStats.scrollClearReason = reasons.join("+")
+  }
+
+  // Compute viewport geometry (shared by both paths)
+  const clearY = childClipBounds.top
+  const clearHeight = childClipBounds.bottom - childClipBounds.top
+  const contentX = layout.x + border.left + padding.left
+  const contentWidth =
+    layout.width - border.left - border.right - padding.left - padding.right
+  const scrollBg = (needsViewportClear || scrollOnly)
+    ? (props.backgroundColor
+      ? parseColor(props.backgroundColor)
+      : findInheritedBg(node).color)
+    : null
+
+  // Buffer shift: shift viewport contents instead of full clear.
+  // After shift, previously-visible children's pixels are at correct positions.
+  // Exposed rows (top/bottom edge) are filled with scrollBg (null = no bg).
+  const scrollDelta = ss.offset - (ss.prevOffset ?? ss.offset)
+  if (scrollOnly && clearHeight > 0) {
+    buffer.scrollRegion(
+      contentX,
+      clearY,
+      contentWidth,
+      clearHeight,
+      scrollDelta,
+      { char: " ", bg: scrollBg },
+    )
+  }
+
+  // Full viewport clear (tier 2)
+  if (needsViewportClear && clearHeight > 0) {
+    buffer.fill(contentX, clearY, contentWidth, clearHeight, {
+      char: " ",
+      bg: scrollBg,
+    })
+  }
+
+  // Determine per-child hasPrev and ancestorCleared.
+  // - scrollOnly: per-child based on previous visibility
+  // - needsViewportClear: all false (full re-render)
+  // - otherwise: preserve parent's hasPrevBuffer
+  const defaultChildHasPrev = needsViewportClear ? false : hasPrevBuffer
+  const defaultChildAncestorCleared = needsViewportClear
     ? true
     : ancestorCleared || parentRegionCleared
 
-  if (needsViewportClear) {
-    const clearY = childClipBounds.top
-    const clearHeight = childClipBounds.bottom - childClipBounds.top
-    if (clearHeight > 0) {
-      const contentX = layout.x + border.left + padding.left
-      const contentWidth =
-        layout.width - border.left - border.right - padding.left - padding.right
-      const scrollBg = props.backgroundColor
-        ? parseColor(props.backgroundColor)
-        : findInheritedBg(node).color
-      buffer.fill(contentX, clearY, contentWidth, clearHeight, {
-        char: " ",
-        bg: scrollBg,
-      })
-    }
-  }
+  // For buffer shift: children that were fully visible in BOTH the previous
+  // and current frames have correct pixels after the shift (childHasPrev=true).
+  // Newly visible children need full rendering (childHasPrev=false).
+  const prevVisTop = ss.prevOffset ?? ss.offset
+  const prevVisBottom = prevVisTop + ss.viewportHeight
 
   // First pass: render non-sticky visible children with scroll offset
   for (let i = 0; i < node.children.length; i++) {
@@ -320,15 +495,34 @@ function renderScrollContainerChildren(
       continue
     }
 
+    // Determine per-child hasPrev for buffer shift mode
+    let thisChildHasPrev = defaultChildHasPrev
+    let thisChildAncestorCleared = defaultChildAncestorCleared
+    if (scrollOnly) {
+      // Check if child was fully visible in the previous frame
+      const childRect = child.contentRect
+      if (childRect) {
+        const childTop = childRect.y - layout.y - border.top - padding.top
+        const childBottom = childTop + childRect.height
+        const wasFullyVisible =
+          childTop >= prevVisTop && childBottom <= prevVisBottom
+        thisChildHasPrev = wasFullyVisible
+        // Shifted children: their pixels are intact (not cleared)
+        // Newly visible: exposed region was filled by scrollRegion
+        thisChildAncestorCleared = wasFullyVisible
+          ? (ancestorCleared || parentRegionCleared)
+          : true
+      }
+    }
+
     // Render visible children with scroll offset applied.
-    // Use fast-path (childHasPrev) when scroll offset is unchanged.
     renderNodeToBuffer(
       child,
       buffer,
       ss.offset,
       childClipBounds,
-      childHasPrev,
-      childAncestorCleared,
+      thisChildHasPrev,
+      thisChildAncestorCleared,
     )
   }
 
@@ -388,6 +582,14 @@ function renderNormalChildren(
   // children were restructured, or sibling positions shifted.
   const childrenNeedRepaint =
     node.childrenDirty || childPositionChanged || parentRegionChanged
+  if (childrenNeedRepaint && hasPrevBuffer) {
+    _contentPhaseStats.normalChildrenRepaint++
+    const reasons: string[] = []
+    if (node.childrenDirty) reasons.push("childrenDirty")
+    if (childPositionChanged) reasons.push("childPositionChanged")
+    if (parentRegionChanged) reasons.push("parentRegionChanged")
+    _contentPhaseStats.normalRepaintReason = reasons.join("+")
+  }
   const childHasPrev = childrenNeedRepaint ? false : hasPrevBuffer
   // childAncestorCleared: tells descendants that STALE pixels exist in the buffer.
   // Only parentRegionCleared (no bg fill → stale pixels remain) propagates this.
@@ -471,6 +673,7 @@ function renderNormalChildren(
 function clearDirtyFlags(node: InkxNode): void {
   node.contentDirty = false
   node.paintDirty = false
+  node.bgDirty = false
   node.subtreeDirty = false
   node.childrenDirty = false
   for (const child of node.children) {
