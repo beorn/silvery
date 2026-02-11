@@ -40,19 +40,21 @@ Diff renders are 6-8x faster than first renders thanks to incremental rendering.
 | `create 80x24`     | 1.7us  |
 | `create 200x50`    | 3.7us  |
 
-### inkx Dirty-Tracking Diff Render (No Ink Equivalent)
+### inkx vs Ink 6: Typical Frame Update
 
-inkx tracks dirty nodes and only re-renders what changed. Ink has no incremental mode —
-it re-renders the entire React tree every frame.
+When a user presses a key (cursor move, selection change, typing), this is what each
+framework does to update the screen:
 
-| Nodes | inkx diff render |
-| ----- | ---------------- |
-| 1     | 9us              |
-| 100   | 18us             |
-| 1000  | 101us            |
+| Nodes | inkx (dirty-tracking) | Ink 6 (full re-render) | Ratio       |
+| ----- | --------------------- | ---------------------- | ----------- |
+| 100   | 18us                  | 2.1ms                  | inkx ~117x  |
+| 1000  | 101us                 | 19.9ms                 | inkx ~197x  |
 
-These are the times for typical frame updates (cursor movement, selection changes, typing)
-where only 1-2 nodes change. Ink would need a full React re-render for the same update.
+**How to read this**: inkx tracks which nodes changed and only re-renders the dirty
+subtree — no React reconciliation needed. Ink has no incremental mode, so every frame
+update triggers a full React re-render of the entire tree. Both numbers represent the
+real end-to-end cost of a single keystroke. The gap grows with tree size because inkx's
+cost is proportional to the *change* while Ink's cost is proportional to the *tree*.
 
 ### First Render (Full Pipeline)
 
