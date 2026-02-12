@@ -711,7 +711,20 @@ class InkxInstance {
       this.stdout.write(ANSI.SYNC_END)
     }
 
-    // Clear the container
+    // Destroy the stdin stream to stop its internal I/O watcher from pulling
+    // data from fd 0. Without this, the stream's internal _read() continues
+    // consuming bytes from the kernel buffer even after all JS-level listeners
+    // are removed. A child process with inherited stdio would never see those
+    // bytes — they're trapped in the parent's stream buffer.
+    //
+    // Note: destroy() on process.stdin does NOT close fd 0 — the kernel fd
+    // remains open for child processes to inherit. It only tears down the
+    // Node.js/Bun stream wrapper.
+    const { stdin } = this
+    stdin.removeAllListeners("readable")
+    stdin.removeAllListeners("data")
+    stdin.destroy()
+
     if (this.fiberRoot) {
       reconciler.updateContainer(null, this.fiberRoot, null, () => {})
     }

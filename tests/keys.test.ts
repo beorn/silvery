@@ -132,6 +132,10 @@ describe("keyToAnsi", () => {
     test("shift+Tab works like Shift+Tab", () => {
       expect(keyToAnsi("shift+Tab")).toBe(keyToAnsi("Shift+Tab"))
     })
+
+    test("Shift+Tab produces backtab sequence", () => {
+      expect(keyToAnsi("Shift+Tab")).toBe("\x1b[Z")
+    })
   })
 
   describe("Ctrl+Enter round-trip", () => {
@@ -140,6 +144,15 @@ describe("keyToAnsi", () => {
       const [, key] = parseKey(ansi)
       expect(key.return).toBe(true)
       expect(key.ctrl).toBe(true)
+    })
+  })
+
+  describe("Shift+Tab round-trip", () => {
+    test("keyToAnsi → parseKey produces key.tab + key.shift", () => {
+      const ansi = keyToAnsi("Shift+Tab")
+      const [, key] = parseKey(ansi)
+      expect(key.tab).toBe(true)
+      expect(key.shift).toBe(true)
     })
   })
 })

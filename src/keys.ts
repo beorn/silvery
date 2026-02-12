@@ -179,6 +179,11 @@ export function keyToAnsi(key: string): string {
     return `\x1b${mainKey}`
   }
 
+  // Shift+Tab -> backtab (universally \x1b[Z across all terminal emulators)
+  if (modifiers.includes("Shift") && mainKey === "Tab") {
+    return "\x1b[Z"
+  }
+
   // Look up base key in map
   const base = KEY_MAP[mainKey]
   if (base !== undefined && base !== null) return base
