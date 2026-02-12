@@ -406,9 +406,9 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
       // =====================================================================
       // Regular Character Input
       // =====================================================================
-      if (input.length === 1 && input >= " ") {
+      if (input.length >= 1 && input >= " ") {
         const newValue = value.slice(0, cursor) + input + value.slice(cursor)
-        updateValue(newValue, cursor + 1)
+        updateValue(newValue, cursor + input.length)
       }
     },
     { isActive },

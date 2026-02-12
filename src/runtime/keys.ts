@@ -5,4 +5,4 @@
  */
 
 export type { Key, InputHandler, ParsedKeypress } from "../keys.js"
-export { parseKey, emptyKey, parseKeypress } from "../keys.js"
+export { parseKey, emptyKey, parseKeypress, splitRawInput } from "../keys.js"

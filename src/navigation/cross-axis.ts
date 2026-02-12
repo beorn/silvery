@@ -79,10 +79,6 @@ export function getItemMidY(registry: PositionRegistry, sectionIndex: number, it
  *
  * Convenience wrapper for navigation code that needs the full rect.
  */
-export function getItemRect(
-  registry: PositionRegistry,
-  sectionIndex: number,
-  itemIndex: number,
-): ScreenRect | null {
+export function getItemRect(registry: PositionRegistry, sectionIndex: number, itemIndex: number): ScreenRect | null {
   return registry.getPosition(sectionIndex, itemIndex) ?? null
 }

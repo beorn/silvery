@@ -143,18 +143,17 @@ describe("Rapid keypress handling", () => {
 describe("Paste operations", () => {
   const render = createRenderer({ cols: 80, rows: 30 })
 
-  test("handles single paste of multi-character string", () => {
+  test("handles multi-character string by splitting into graphemes", () => {
     const app = render(<KeystrokeCapture />)
 
-    // When stdin.write is called with a multi-char string, it's processed as ONE input event
-    // This is the expected behavior for paste operations - the entire pasted content
-    // arrives as a single input event
+    // Multi-char strings are split into individual grapheme keypresses,
+    // matching production behavior where stdin.read() can buffer multiple chars.
     app.stdin.write("hello")
 
     const frame = app.text
-    // Current behavior: the entire string is a single keystroke event
-    expect(frame).toContain("Keystrokes captured: 1")
-    expect(frame).toContain('input="hello"')
+    expect(frame).toContain("Keystrokes captured: 5")
+    expect(frame).toContain('input="h"')
+    expect(frame).toContain('input="o"')
   })
 
   test("handles paste with special characters", () => {
@@ -229,10 +228,11 @@ describe("Unicode edge cases", () => {
     expect(frame).toContain('input="😀"')
   })
 
-  test("handles emoji with variation selectors", () => {
+  test("handles emoji with variation selectors as single grapheme", () => {
     const app = render(<KeystrokeCapture />)
 
     // Heart with variation selector (❤️ = U+2764 U+FE0F)
+    // splitRawInput uses grapheme segmentation, keeping this as one keypress
     app.stdin.write("❤️")
 
     const frame = app.text

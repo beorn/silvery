@@ -280,11 +280,7 @@ function inlineFullRender(
  * @param maxRows Optional cap on number of rows to output (inline mode).
  *   When content exceeds terminal height, this prevents scrollback corruption.
  */
-function bufferToAnsi(
-  buffer: TerminalBuffer,
-  mode: "fullscreen" | "inline" = "fullscreen",
-  maxRows?: number,
-): string {
+function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "fullscreen", maxRows?: number): string {
   let output = ""
   let currentStyle: Style | null = null
 

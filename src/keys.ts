@@ -811,3 +811,103 @@ export function keyToKittyAnsi(key: string): string {
   }
   return `\x1b[${codepoint}u`
 }
+
+// ============================================================================
+// Raw Input Splitting
+// ============================================================================
+
+/** Grapheme segmenter for splitting non-escape text into visual characters */
+const graphemeSegmenter = new Intl.Segmenter("en", { granularity: "grapheme" })
+
+/**
+ * Split raw terminal input into individual keypresses.
+ *
+ * When stdin.read() returns multiple characters buffered together (e.g., rapid
+ * typing, paste, or auto-repeat during heavy renders), this tokenizer splits
+ * them into individual keypresses so each can be parsed and handled separately.
+ *
+ * Uses grapheme segmentation for non-escape text, so emoji with variation
+ * selectors (❤️), ZWJ sequences (👨‍👩‍👧‍👦), and combining marks stay intact.
+ *
+ * Handles:
+ * - CSI sequences: ESC [ ... (arrow keys, function keys, Kitty protocol)
+ * - SS3 sequences: ESC O + letter
+ * - Meta sequences: ESC + single char
+ * - Double ESC
+ * - Grapheme clusters (emoji, combining marks, CJK)
+ */
+export function* splitRawInput(data: string): Generator<string> {
+  // Single character fast path (most common case in real terminal I/O)
+  if (data.length <= 1) {
+    if (data.length === 1) yield data
+    return
+  }
+
+  let i = 0
+  let textStart = -1 // start of accumulated non-escape text
+
+  while (i < data.length) {
+    if (data.charCodeAt(i) === 0x1b) {
+      // Flush accumulated text before this escape sequence
+      if (textStart >= 0) {
+        yield* splitGraphemes(data.slice(textStart, i))
+        textStart = -1
+      }
+
+      // ESC — start of escape sequence
+      if (i + 1 >= data.length) {
+        // Bare ESC at end of chunk
+        yield "\x1b"
+        i++
+        continue
+      }
+
+      const next = data.charCodeAt(i + 1)
+
+      if (next === 0x5b) {
+        // CSI sequence: ESC [ params final-byte
+        // Final byte is in range 0x40-0x7E (@A-Z[\]^_`a-z{|}~)
+        let j = i + 2
+        while (j < data.length) {
+          const c = data.charCodeAt(j)
+          if (c >= 0x40 && c <= 0x7e) {
+            j++ // include the final byte
+            break
+          }
+          j++
+        }
+        yield data.slice(i, j)
+        i = j
+      } else if (next === 0x4f) {
+        // SS3 sequence: ESC O + one letter
+        const end = Math.min(i + 3, data.length)
+        yield data.slice(i, end)
+        i = end
+      } else if (next === 0x1b) {
+        // Double ESC
+        yield "\x1b\x1b"
+        i += 2
+      } else {
+        // Meta + single char (Alt+key)
+        yield data.slice(i, i + 2)
+        i += 2
+      }
+    } else {
+      // Non-escape: accumulate into text run for grapheme splitting
+      if (textStart < 0) textStart = i
+      i++
+    }
+  }
+
+  // Flush final text run
+  if (textStart >= 0) {
+    yield* splitGraphemes(data.slice(textStart))
+  }
+}
+
+/** Split a non-escape text run into grapheme clusters */
+function* splitGraphemes(text: string): Generator<string> {
+  for (const { segment } of graphemeSegmenter.segment(text)) {
+    yield segment
+  }
+}

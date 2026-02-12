@@ -526,6 +526,57 @@ describe("TextArea: controlled vs uncontrolled", () => {
 })
 
 // ============================================================================
+// Multi-character Input (rapid typing / paste)
+// ============================================================================
+
+describe("TextArea: multi-character input", () => {
+  const render = createRenderer({ cols: 40, rows: 20 })
+
+  test("handles multi-character stdin chunk (rapid typing)", () => {
+    const onChange = vi.fn()
+    const app = render(<ControlledTextArea onChange={onChange} />)
+
+    // Simulate rapid typing where multiple chars arrive in one stdin.read()
+    app.stdin.write("hello")
+
+    expect(onChange).toHaveBeenCalledTimes(5)
+    expect(onChange).toHaveBeenLastCalledWith("hello")
+  })
+
+  test("handles multi-character chunk with spaces", () => {
+    const onChange = vi.fn()
+    const app = render(<ControlledTextArea onChange={onChange} />)
+
+    app.stdin.write("hello world")
+
+    expect(onChange).toHaveBeenLastCalledWith("hello world")
+    expect(app.text).toContain("hello world")
+  })
+
+  test("handles mixed characters and escape sequences", () => {
+    const onChange = vi.fn()
+    const app = render(<ControlledTextArea onChange={onChange} />)
+
+    // Type "ab", then ArrowLeft, then "X" — all in one chunk
+    app.stdin.write("ab\x1b[DX")
+
+    // "ab" typed, ArrowLeft moves cursor between a and b, then X inserted
+    expect(onChange).toHaveBeenLastCalledWith("aXb")
+  })
+
+  test("handles paste with newlines", () => {
+    const onChange = vi.fn()
+    const app = render(<ControlledTextArea onChange={onChange} />)
+
+    // Paste "line1\nline2" as one chunk
+    app.stdin.write("line1\rline2")
+
+    // \r = Enter = newline insertion
+    expect(onChange).toHaveBeenLastCalledWith("line1\nline2")
+  })
+})
+
+// ============================================================================
 // isActive
 // ============================================================================
 

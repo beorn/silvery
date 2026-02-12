@@ -35,6 +35,7 @@ import { renderStringSync } from "./render-string.js"
 import { RenderScheduler } from "./scheduler.js"
 import { type ResolvedTermDef, isTerm, isTermDef, resolveFromTerm, resolveTermDef } from "./term-def.js"
 import type { TermDef } from "./types.js"
+import { splitRawInput } from "./keys.js"
 
 // ============================================================================
 // Types
@@ -369,7 +370,12 @@ function InkxApp({
         log.debug?.(`stdin.read() returned: ${chunk === null ? "null" : JSON.stringify(chunk)}`)
         if (chunk === null) return
 
-        handleChunk(chunk)
+        // Split multi-character chunks into individual keypresses.
+        // stdin.read() can return multiple characters buffered together
+        // (rapid typing, paste, or auto-repeat during heavy renders).
+        for (const keypress of splitRawInput(chunk)) {
+          handleChunk(keypress)
+        }
         processInput() // Process next chunk if available
       }
 

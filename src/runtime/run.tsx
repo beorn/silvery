@@ -36,6 +36,7 @@ import { merge, takeUntil } from "../streams/index.js"
 import { createBuffer } from "./create-buffer.js"
 import { createRuntime } from "./create-runtime.js"
 import { type InputHandler, type Key, parseKey } from "./keys.js"
+import { splitRawInput } from "../keys.js"
 import { ensureLayoutEngine } from "./layout.js"
 import type { Buffer, Dims, Event, RenderTarget, Runtime } from "./types.js"
 
@@ -254,17 +255,21 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
 
             if (rawKey === null || signal.aborted) break
 
-            // Parse the key using full key parsing
-            const [input, key] = parseKey(rawKey)
+            // Split multi-character chunks into individual keypresses.
+            // stdin "data" events can contain multiple characters buffered
+            // together (rapid typing, paste, or auto-repeat).
+            for (const keyChunk of splitRawInput(rawKey)) {
+              const [input, key] = parseKey(keyChunk)
 
-            yield {
-              type: "key" as const,
-              key: rawKey,
-              input,
-              parsedKey: key,
-              ctrl: key.ctrl,
-              meta: key.meta,
-              shift: key.shift,
+              yield {
+                type: "key" as const,
+                key: keyChunk,
+                input,
+                parsedKey: key,
+                ctrl: key.ctrl,
+                meta: key.meta,
+                shift: key.shift,
+              }
             }
           }
         } finally {

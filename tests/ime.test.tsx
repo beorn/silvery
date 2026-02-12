@@ -146,17 +146,18 @@ describe("Chinese Character Input (中文)", () => {
     expect(frame).toContain('"界"')
   })
 
-  test("handles Chinese string as single paste event", () => {
+  test("handles Chinese string split into individual graphemes", () => {
     const app = render(<CJKInputCapture />)
 
-    // When pasted, the entire string arrives as one input event
+    // Multi-char strings are split into individual grapheme keypresses
     app.stdin.write("你好世界")
 
     const frame = app.text
-    expect(frame).toContain("Inputs captured: 1")
-    expect(frame).toContain('"你好世界"')
-    expect(frame).toContain("width=8") // 4 chars * 2 columns
-    expect(frame).toContain("graphemes=4")
+    expect(frame).toContain("Inputs captured: 4")
+    expect(frame).toContain('0: "你" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "好" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "世" (width=2, graphemes=1)')
+    expect(frame).toContain('3: "界" (width=2, graphemes=1)')
   })
 
   test("handles simplified Chinese characters", () => {
@@ -165,8 +166,11 @@ describe("Chinese Character Input (中文)", () => {
     app.stdin.write("简体中文")
 
     const frame = app.text
-    expect(frame).toContain('"简体中文"')
-    expect(frame).toContain("width=8")
+    expect(frame).toContain("Inputs captured: 4")
+    expect(frame).toContain('0: "简" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "体" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "中" (width=2, graphemes=1)')
+    expect(frame).toContain('3: "文" (width=2, graphemes=1)')
   })
 
   test("handles traditional Chinese characters", () => {
@@ -175,8 +179,11 @@ describe("Chinese Character Input (中文)", () => {
     app.stdin.write("繁體中文")
 
     const frame = app.text
-    expect(frame).toContain('"繁體中文"')
-    expect(frame).toContain("width=8")
+    expect(frame).toContain("Inputs captured: 4")
+    expect(frame).toContain('0: "繁" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "體" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "中" (width=2, graphemes=1)')
+    expect(frame).toContain('3: "文" (width=2, graphemes=1)')
   })
 
   test("handles Chinese punctuation", () => {
@@ -207,9 +214,11 @@ describe("Japanese Character Input (日本語)", () => {
     app.stdin.write("ひらがな")
 
     const frame = app.text
-    expect(frame).toContain('"ひらがな"')
-    expect(frame).toContain("width=8") // 4 chars * 2 columns
-    expect(frame).toContain("graphemes=4")
+    expect(frame).toContain("Inputs captured: 4")
+    expect(frame).toContain('0: "ひ" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "ら" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "が" (width=2, graphemes=1)')
+    expect(frame).toContain('3: "な" (width=2, graphemes=1)')
   })
 
   test("handles Katakana input", () => {
@@ -218,8 +227,11 @@ describe("Japanese Character Input (日本語)", () => {
     app.stdin.write("カタカナ")
 
     const frame = app.text
-    expect(frame).toContain('"カタカナ"')
-    expect(frame).toContain("width=8")
+    expect(frame).toContain("Inputs captured: 4")
+    expect(frame).toContain('0: "カ" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "タ" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "カ" (width=2, graphemes=1)')
+    expect(frame).toContain('3: "ナ" (width=2, graphemes=1)')
   })
 
   test("handles Kanji input", () => {
@@ -228,8 +240,10 @@ describe("Japanese Character Input (日本語)", () => {
     app.stdin.write("日本語")
 
     const frame = app.text
-    expect(frame).toContain('"日本語"')
-    expect(frame).toContain("width=6") // 3 chars * 2 columns
+    expect(frame).toContain("Inputs captured: 3")
+    expect(frame).toContain('0: "日" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "本" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "語" (width=2, graphemes=1)')
   })
 
   test("handles half-width Katakana (hankaku)", () => {
@@ -239,8 +253,10 @@ describe("Japanese Character Input (日本語)", () => {
     app.stdin.write("ｱｲｳ")
 
     const frame = app.text
-    expect(frame).toContain('"ｱｲｳ"')
-    expect(frame).toContain("width=3") // Half-width = 1 column each
+    expect(frame).toContain("Inputs captured: 3")
+    expect(frame).toContain('0: "ｱ" (width=1, graphemes=1)')
+    expect(frame).toContain('1: "ｲ" (width=1, graphemes=1)')
+    expect(frame).toContain('2: "ｳ" (width=1, graphemes=1)')
   })
 
   test("handles mixed Japanese script", () => {
@@ -250,8 +266,14 @@ describe("Japanese Character Input (日本語)", () => {
     app.stdin.write("東京とうきょう")
 
     const frame = app.text
-    expect(frame).toContain('"東京とうきょう"')
-    expect(frame).toContain("width=14") // 2 kanji (4) + 5 hiragana (10)
+    expect(frame).toContain("Inputs captured: 7")
+    expect(frame).toContain('0: "東" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "京" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "と" (width=2, graphemes=1)')
+    expect(frame).toContain('3: "う" (width=2, graphemes=1)')
+    expect(frame).toContain('4: "き" (width=2, graphemes=1)')
+    expect(frame).toContain('5: "ょ" (width=2, graphemes=1)')
+    expect(frame).toContain('6: "う" (width=2, graphemes=1)')
   })
 
   test("handles Romaji (ASCII) mixed with Japanese", () => {
@@ -260,8 +282,13 @@ describe("Japanese Character Input (日本語)", () => {
     app.stdin.write("ABCあいう")
 
     const frame = app.text
-    expect(frame).toContain('"ABCあいう"')
-    expect(frame).toContain("width=9") // 3 ASCII (3) + 3 hiragana (6)
+    expect(frame).toContain("Inputs captured: 6")
+    expect(frame).toContain('0: "A" (width=1, graphemes=1)')
+    expect(frame).toContain('1: "B" (width=1, graphemes=1)')
+    expect(frame).toContain('2: "C" (width=1, graphemes=1)')
+    expect(frame).toContain('3: "あ" (width=2, graphemes=1)')
+    expect(frame).toContain('4: "い" (width=2, graphemes=1)')
+    expect(frame).toContain('5: "う" (width=2, graphemes=1)')
   })
 })
 
@@ -278,9 +305,9 @@ describe("Korean Character Input (한국어)", () => {
     app.stdin.write("한글")
 
     const frame = app.text
-    expect(frame).toContain('"한글"')
-    expect(frame).toContain("width=4") // 2 chars * 2 columns
-    expect(frame).toContain("graphemes=2")
+    expect(frame).toContain("Inputs captured: 2")
+    expect(frame).toContain('0: "한" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "글" (width=2, graphemes=1)')
   })
 
   test("handles Korean greeting", () => {
@@ -289,9 +316,12 @@ describe("Korean Character Input (한국어)", () => {
     app.stdin.write("안녕하세요")
 
     const frame = app.text
-    expect(frame).toContain('"안녕하세요"')
-    expect(frame).toContain("width=10") // 5 chars * 2 columns
-    expect(frame).toContain("graphemes=5")
+    expect(frame).toContain("Inputs captured: 5")
+    expect(frame).toContain('0: "안" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "녕" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "하" (width=2, graphemes=1)')
+    expect(frame).toContain('3: "세" (width=2, graphemes=1)')
+    expect(frame).toContain('4: "요" (width=2, graphemes=1)')
   })
 
   test("handles Hangul Jamo (conjoining)", () => {
@@ -301,8 +331,10 @@ describe("Korean Character Input (한국어)", () => {
     app.stdin.write("ㄱㄴㄷ")
 
     const frame = app.text
-    expect(frame).toContain('"ㄱㄴㄷ"')
-    expect(frame).toContain("width=6") // Compatibility Jamo are wide
+    expect(frame).toContain("Inputs captured: 3")
+    expect(frame).toContain('0: "ㄱ" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "ㄴ" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "ㄷ" (width=2, graphemes=1)')
   })
 
   test("handles Korean with numbers", () => {
@@ -311,8 +343,12 @@ describe("Korean Character Input (한국어)", () => {
     app.stdin.write("2024년")
 
     const frame = app.text
-    expect(frame).toContain('"2024년"')
-    expect(frame).toContain("width=6") // 4 digits (4) + 1 Hangul (2)
+    expect(frame).toContain("Inputs captured: 5")
+    expect(frame).toContain('0: "2" (width=1, graphemes=1)')
+    expect(frame).toContain('1: "0" (width=1, graphemes=1)')
+    expect(frame).toContain('2: "2" (width=1, graphemes=1)')
+    expect(frame).toContain('3: "4" (width=1, graphemes=1)')
+    expect(frame).toContain('4: "년" (width=2, graphemes=1)')
   })
 })
 
@@ -346,9 +382,10 @@ describe("Mixed CJK and ASCII Input", () => {
     app.stdin.write("中あ한")
 
     const frame = app.text
-    expect(frame).toContain('"中あ한"')
-    expect(frame).toContain("width=6") // 3 CJK chars * 2 columns
-    expect(frame).toContain("graphemes=3")
+    expect(frame).toContain("Inputs captured: 3")
+    expect(frame).toContain('0: "中" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "あ" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "한" (width=2, graphemes=1)')
   })
 
   test("handles CJK with ASCII punctuation", () => {
@@ -357,8 +394,10 @@ describe("Mixed CJK and ASCII Input", () => {
     app.stdin.write("中文.")
 
     const frame = app.text
-    expect(frame).toContain('"中文."')
-    expect(frame).toContain("width=5") // 2 CJK (4) + 1 ASCII (1)
+    expect(frame).toContain("Inputs captured: 3")
+    expect(frame).toContain('0: "中" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "文" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "." (width=1, graphemes=1)')
   })
 })
 
@@ -382,7 +421,13 @@ describe("Cursor Positioning with CJK Characters", () => {
   test("cursor column accounts for CJK width", () => {
     const app = render(<CJKTextEditor />)
 
-    app.stdin.write("AB中文CD")
+    // Send each character individually so state updates accumulate correctly
+    app.stdin.write("A")
+    app.stdin.write("B")
+    app.stdin.write("中")
+    app.stdin.write("文")
+    app.stdin.write("C")
+    app.stdin.write("D")
 
     const frame = app.text
     expect(frame).toContain("Cursor position: 6 (graphemes)")
@@ -413,7 +458,10 @@ describe("Cursor Positioning with CJK Characters", () => {
   test("backspace removes whole CJK character", () => {
     const app = render(<CJKTextEditor />)
 
-    app.stdin.write("A中B")
+    // Send each character individually so state updates accumulate correctly
+    app.stdin.write("A")
+    app.stdin.write("中")
+    app.stdin.write("B")
     app.stdin.write("\b") // Backspace
 
     const frame = app.text
@@ -586,13 +634,15 @@ describe("CJK Input Edge Cases", () => {
     // Need wide terminal for 50 CJK chars (100 columns) + formatting text
     const app = wideRender(<CJKInputCapture />)
 
-    // 50 Chinese characters
+    // 50 Chinese characters - each split into individual grapheme events
     const longText = "中".repeat(50)
     app.stdin.write(longText)
 
     const frame = app.text
-    expect(frame).toContain("width=100") // 50 * 2 columns
-    expect(frame).toContain("graphemes=50")
+    expect(frame).toContain("Inputs captured: 50")
+    // Each entry is a single character with width=2, graphemes=1
+    expect(frame).toContain('0: "中" (width=2, graphemes=1)')
+    expect(frame).toContain('49: "中" (width=2, graphemes=1)')
   })
 
   test("handles CJK with combining marks", () => {
@@ -603,7 +653,16 @@ describe("CJK Input Edge Cases", () => {
     app.stdin.write("Việt Nam")
 
     const frame = app.text
-    expect(frame).toContain('"Việt Nam"')
+    // Split into individual graphemes (combining marks stay with base char)
+    expect(frame).toContain("Inputs captured: 8")
+    expect(frame).toContain('"V"')
+    expect(frame).toContain('"i"')
+    expect(frame).toContain('"ệ"') // combining marks kept as single grapheme
+    expect(frame).toContain('"t"')
+    expect(frame).toContain('" "')
+    expect(frame).toContain('"N"')
+    expect(frame).toContain('"a"')
+    expect(frame).toContain('"m"')
   })
 
   test("handles zero-width joiner between CJK", () => {
@@ -636,8 +695,10 @@ describe("CJK Input Edge Cases", () => {
     app.stdin.write("ＡＢＣ") // Fullwidth A, B, C
 
     const frame = app.text
-    expect(frame).toContain('"ＡＢＣ"')
-    expect(frame).toContain("width=6") // 3 fullwidth chars * 2
+    expect(frame).toContain("Inputs captured: 3")
+    expect(frame).toContain('0: "Ａ" (width=2, graphemes=1)')
+    expect(frame).toContain('1: "Ｂ" (width=2, graphemes=1)')
+    expect(frame).toContain('2: "Ｃ" (width=2, graphemes=1)')
   })
 })
 

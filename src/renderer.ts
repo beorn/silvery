@@ -26,7 +26,7 @@ import { createContainer, getContainerRoot, reconciler } from "./reconciler.js"
 import { createTerm } from "chalkx"
 import { bufferToText } from "./buffer.js"
 import { buildMismatchContext, formatMismatchContext } from "./debug-mismatch.js"
-import { keyToAnsi } from "./keys.js"
+import { keyToAnsi, splitRawInput } from "./keys.js"
 import { IncrementalRenderMismatchError } from "./scheduler.js"
 import { debugTree } from "./testing/debug.js"
 
@@ -452,9 +452,14 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     const t0 = performance.now()
     instance.rendering = true
     try {
+      // Split multi-character data into individual keypresses.
+      // This mirrors the production path (render.tsx handleReadable)
+      // where stdin.read() can return buffered characters.
       withActEnvironment(() => {
         act(() => {
-          instance.inputEmitter.emit("input", data)
+          for (const keypress of splitRawInput(data)) {
+            instance.inputEmitter.emit("input", keypress)
+          }
         })
       })
     } finally {
