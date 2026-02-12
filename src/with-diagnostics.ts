@@ -116,9 +116,7 @@ export class VirtualTerminal {
     public readonly height: number,
   ) {
     this.grid = Array.from({ length: height }, () => Array(width).fill(" "))
-    this.wideMarker = Array.from({ length: height }, () =>
-      Array(width).fill(false),
-    )
+    this.wideMarker = Array.from({ length: height }, () => Array(width).fill(false))
   }
 
   /**
@@ -233,21 +231,12 @@ export class VirtualTerminal {
     switch (cmd) {
       case "H": {
         const parts = params.split(";")
-        this.cursorY = Math.max(
-          0,
-          (Number.parseInt(parts[0] || "1", 10) || 1) - 1,
-        )
-        this.cursorX = Math.max(
-          0,
-          (Number.parseInt(parts[1] || "1", 10) || 1) - 1,
-        )
+        this.cursorY = Math.max(0, (Number.parseInt(parts[0] || "1", 10) || 1) - 1)
+        this.cursorX = Math.max(0, (Number.parseInt(parts[1] || "1", 10) || 1) - 1)
         break
       }
       case "G": {
-        this.cursorX = Math.max(
-          0,
-          (Number.parseInt(params || "1", 10) || 1) - 1,
-        )
+        this.cursorX = Math.max(0, (Number.parseInt(params || "1", 10) || 1) - 1)
         break
       }
       case "A": {
@@ -368,11 +357,7 @@ function parseSkipLines(env?: string): number[] {
  * @param after - Text after command execution
  * @param skipLines - Line indices to skip (supports negative indices from end)
  */
-function compareText(
-  before: string,
-  after: string,
-  skipLines: number[],
-): TextMismatch | null {
+function compareText(before: string, after: string, skipLines: number[]): TextMismatch | null {
   const beforeLines = before.split("\n")
   const afterLines = after.split("\n")
   const maxLines = Math.max(beforeLines.length, afterLines.length)
@@ -453,24 +438,16 @@ function walkLayout(
   if (parentRect && !parentRect.clipped) {
     const TOLERANCE = 1
     if (rect.x + rect.width > parentRect.x + parentRect.width + TOLERANCE) {
-      violations.push(
-        `${id}: overflows parent right (${rect.x + rect.width} > ${parentRect.x + parentRect.width})`,
-      )
+      violations.push(`${id}: overflows parent right (${rect.x + rect.width} > ${parentRect.x + parentRect.width})`)
     }
     if (rect.y + rect.height > parentRect.y + parentRect.height + TOLERANCE) {
-      violations.push(
-        `${id}: overflows parent bottom (${rect.y + rect.height} > ${parentRect.y + parentRect.height})`,
-      )
+      violations.push(`${id}: overflows parent bottom (${rect.y + rect.height} > ${parentRect.y + parentRect.height})`)
     }
     if (rect.x < parentRect.x - TOLERANCE) {
-      violations.push(
-        `${id}: overflows parent left (${rect.x} < ${parentRect.x})`,
-      )
+      violations.push(`${id}: overflows parent left (${rect.x} < ${parentRect.x})`)
     }
     if (rect.y < parentRect.y - TOLERANCE) {
-      violations.push(
-        `${id}: overflows parent top (${rect.y} < ${parentRect.y})`,
-      )
+      violations.push(`${id}: overflows parent top (${rect.y} < ${parentRect.y})`)
     }
   }
 
@@ -509,10 +486,7 @@ function walkLayout(
  * @param options - Diagnostic check configuration (all enabled by default)
  * @returns App with wrapped cmd that runs diagnostic checks
  */
-export function withDiagnostics<T extends AppWithCommands>(
-  app: T,
-  options: DiagnosticOptions = {},
-): T {
+export function withDiagnostics<T extends AppWithCommands>(app: T, options: DiagnosticOptions = {}): T {
   // All checks enabled by default when plugin is used
   const {
     checkIncremental = true,
@@ -525,14 +499,10 @@ export function withDiagnostics<T extends AppWithCommands>(
   } = options
 
   // If all checks are explicitly disabled, return app unchanged
-  if (!checkIncremental && !checkStability && !checkReplay && !checkLayout)
-    return app
+  if (!checkIncremental && !checkStability && !checkReplay && !checkLayout) return app
 
   /** Capture screenshot on diagnostic failure (best-effort, never masks original error) */
-  async function captureFailureScreenshot(
-    commandId: string,
-    checkType: string,
-  ): Promise<string | null> {
+  async function captureFailureScreenshot(commandId: string, checkType: string): Promise<string | null> {
     if (!captureOnFailure) return null
     try {
       await mkdir(screenshotDir, { recursive: true })
@@ -580,15 +550,10 @@ export function withDiagnostics<T extends AppWithCommands>(
                 const incrementalText = app.text
                 const freshText = fresh
                   ? Array.from({ length: fresh.height }, (_, y) =>
-                      Array.from({ length: fresh.width }, (_, x) =>
-                        fresh.getCellChar(x, y),
-                      ).join(""),
+                      Array.from({ length: fresh.width }, (_, x) => fresh.getCellChar(x, y)).join(""),
                     ).join("\n")
                   : "(no fresh buffer)"
-                const screenshotPath = await captureFailureScreenshot(
-                  command.id,
-                  "incremental",
-                )
+                const screenshotPath = await captureFailureScreenshot(command.id, "incremental")
                 throw new Error(
                   `INKX_DIAGNOSTIC: Incremental/fresh mismatch after ${command.id}\n` +
                     formatMismatch(mismatch, {
@@ -596,18 +561,13 @@ export function withDiagnostics<T extends AppWithCommands>(
                       incrementalText,
                       freshText,
                     }) +
-                    (screenshotPath
-                      ? `\n  Screenshot saved: ${screenshotPath}`
-                      : ""),
+                    (screenshotPath ? `\n  Screenshot saved: ${screenshotPath}` : ""),
                 )
               }
             }
           } catch (e) {
             // If freshRender isn't available, skip the check
-            if (
-              !(e instanceof Error) ||
-              !e.message.includes("only available in test renderer")
-            ) {
+            if (!(e instanceof Error) || !e.message.includes("only available in test renderer")) {
               throw e
             }
           }
@@ -618,16 +578,11 @@ export function withDiagnostics<T extends AppWithCommands>(
           const afterText = app.text
           const mismatch = compareText(beforeText, afterText, skipLines)
           if (mismatch) {
-            const screenshotPath = await captureFailureScreenshot(
-              command.id,
-              "stability",
-            )
+            const screenshotPath = await captureFailureScreenshot(command.id, "stability")
             throw new Error(
               `INKX_DIAGNOSTIC: Content changed after cursor move ${command.id}\n` +
                 `  Line ${mismatch.line}: "${mismatch.before}" → "${mismatch.after}"` +
-                (screenshotPath
-                  ? `\n  Screenshot saved: ${screenshotPath}`
-                  : ""),
+                (screenshotPath ? `\n  Screenshot saved: ${screenshotPath}` : ""),
             )
           }
         }
@@ -640,10 +595,7 @@ export function withDiagnostics<T extends AppWithCommands>(
             const ansiDiff = outputPhase(beforeBuffer, afterBuffer)
 
             // Create virtual terminal initialized with previous state
-            const vterm = new VirtualTerminal(
-              afterBuffer.width,
-              afterBuffer.height,
-            )
+            const vterm = new VirtualTerminal(afterBuffer.width, afterBuffer.height)
             vterm.loadFromBuffer(beforeBuffer)
 
             // Apply the ANSI diff
@@ -654,24 +606,14 @@ export function withDiagnostics<T extends AppWithCommands>(
             if (mismatches.length > 0) {
               const first5 = mismatches.slice(0, 5)
               const details = first5
-                .map(
-                  (m) =>
-                    `  (${m.x},${m.y}): expected="${m.expected}" actual="${m.actual}"`,
-                )
+                .map((m) => `  (${m.x},${m.y}): expected="${m.expected}" actual="${m.actual}"`)
                 .join("\n")
-              const screenshotPath = await captureFailureScreenshot(
-                command.id,
-                "replay",
-              )
+              const screenshotPath = await captureFailureScreenshot(command.id, "replay")
               throw new Error(
                 `INKX_DIAGNOSTIC: ANSI replay mismatch after ${command.id}\n` +
                   `  ${mismatches.length} cells differ:\n${details}` +
-                  (mismatches.length > 5
-                    ? `\n  ... and ${mismatches.length - 5} more`
-                    : "") +
-                  (screenshotPath
-                    ? `\n  Screenshot saved: ${screenshotPath}`
-                    : ""),
+                  (mismatches.length > 5 ? `\n  ... and ${mismatches.length - 5} more` : "") +
+                  (screenshotPath ? `\n  Screenshot saved: ${screenshotPath}` : ""),
               )
             }
           }
@@ -686,19 +628,12 @@ export function withDiagnostics<T extends AppWithCommands>(
               .slice(0, 10)
               .map((v) => `  ${v}`)
               .join("\n")
-            const screenshotPath = await captureFailureScreenshot(
-              command.id,
-              "layout",
-            )
+            const screenshotPath = await captureFailureScreenshot(command.id, "layout")
             throw new Error(
               `INKX_DIAGNOSTIC: Layout invariant violation after ${command.id}\n` +
                 `  ${violations.length} violation(s):\n${details}` +
-                (violations.length > 10
-                  ? `\n  ... and ${violations.length - 10} more`
-                  : "") +
-                (screenshotPath
-                  ? `\n  Screenshot saved: ${screenshotPath}`
-                  : ""),
+                (violations.length > 10 ? `\n  ... and ${violations.length - 10} more` : "") +
+                (screenshotPath ? `\n  Screenshot saved: ${screenshotPath}` : ""),
             )
           }
         }

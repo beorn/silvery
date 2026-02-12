@@ -13,14 +13,7 @@
  * See reconciler.ts for the required host config methods added for 0.33+ compatibility.
  */
 
-import React, {
-  Suspense,
-  StrictMode,
-  useState,
-  useEffect,
-  useTransition,
-  useDeferredValue,
-} from "react"
+import React, { Suspense, StrictMode, useState, useEffect, useTransition, useDeferredValue } from "react"
 import { describe, expect, test } from "vitest"
 import { NodeContext } from "../src/context.ts"
 import { Box, Text, useContentRect, useInput } from "../src/index.ts"
@@ -36,12 +29,7 @@ const render = createRenderer()
 /**
  * Create a mock InkxNode for testing useContentRect
  */
-function createMockInkxNode(layout: {
-  x: number
-  y: number
-  width: number
-  height: number
-}): InkxNode {
+function createMockInkxNode(layout: { x: number; y: number; width: number; height: number }): InkxNode {
   return {
     type: "inkx-box",
     props: {},
@@ -409,9 +397,7 @@ describe("React 19 Compatibility (km-a1xb)", () => {
 
         // Filter for deprecated API warnings only (not act() warnings which are expected
         // in test environments when effects cause updates outside act())
-        const deprecatedErrors = errors.filter(
-          (e) => e.includes("deprecated") && !e.includes("act("),
-        )
+        const deprecatedErrors = errors.filter((e) => e.includes("deprecated") && !e.includes("act("))
 
         expect(deprecatedErrors).toEqual([])
       } finally {
@@ -439,9 +425,7 @@ describe("React 19 Compatibility (km-a1xb)", () => {
         render(<HookTest />)
 
         // Filter for deprecated API warnings only
-        const deprecatedWarnings = warnings.filter((w) =>
-          w.includes("deprecated"),
-        )
+        const deprecatedWarnings = warnings.filter((w) => w.includes("deprecated"))
 
         expect(deprecatedWarnings).toEqual([])
       } finally {

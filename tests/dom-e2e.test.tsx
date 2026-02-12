@@ -11,18 +11,8 @@ import React, { useState, useEffect } from "react"
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
 import { createDOMAdapter } from "../src/adapters/dom-adapter.js"
 import { createFlexxZeroEngine } from "../src/adapters/flexx-zero-adapter.js"
-import {
-  Box,
-  DOMRenderBuffer,
-  Text,
-  initDOMRenderer,
-  renderDOMOnce,
-  useContentRect,
-} from "../src/dom/index.js"
-import {
-  isLayoutEngineInitialized,
-  setLayoutEngine,
-} from "../src/layout-engine.js"
+import { Box, DOMRenderBuffer, Text, initDOMRenderer, renderDOMOnce, useContentRect } from "../src/dom/index.js"
+import { isLayoutEngineInitialized, setLayoutEngine } from "../src/layout-engine.js"
 import { hasRenderAdapter, setRenderAdapter } from "../src/render-adapter.js"
 
 // Check if we have DOM support

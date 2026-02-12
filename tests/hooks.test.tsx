@@ -11,21 +11,8 @@
 
 import React from "react"
 import { describe, expect, test } from "vitest"
-import {
-  FocusContext,
-  type FocusContextValue,
-  NodeContext,
-  StdinContext,
-  StdoutContext,
-} from "../src/context.ts"
-import {
-  Text,
-  useContentRect,
-  useFocus,
-  useFocusManager,
-  useStdin,
-  useStdout,
-} from "../src/index.ts"
+import { FocusContext, type FocusContextValue, NodeContext, StdinContext, StdoutContext } from "../src/context.ts"
+import { Text, useContentRect, useFocus, useFocusManager, useStdin, useStdout } from "../src/index.ts"
 import { createRenderer } from "../src/testing/index.tsx"
 import type { InkxNode } from "../src/types.ts"
 
@@ -38,12 +25,7 @@ const render = createRenderer()
 /**
  * Create a mock InkxNode for testing useContentRect
  */
-function createMockInkxNode(layout: {
-  x: number
-  y: number
-  width: number
-  height: number
-}): InkxNode {
+function createMockInkxNode(layout: { x: number; y: number; width: number; height: number }): InkxNode {
   return {
     type: "inkx-box",
     props: {},
@@ -62,9 +44,7 @@ function createMockInkxNode(layout: {
 /**
  * Create a mock focus context for testing
  */
-function createMockFocusContext(
-  activeId: string | null = null,
-): FocusContextValue {
+function createMockFocusContext(activeId: string | null = null): FocusContextValue {
   const focusables: Array<{ id: string; isActive: boolean }> = []
   let currentActiveId = activeId
 
@@ -105,13 +85,12 @@ function createMockFocusContext(
 
 describe("useContentRect", () => {
   test("returns default rect when used outside Inkx component", () => {
-    let capturedRect: { x: number; y: number; width: number; height: number } =
-      {
-        x: -1,
-        y: -1,
-        width: -1,
-        height: -1,
-      }
+    let capturedRect: { x: number; y: number; width: number; height: number } = {
+      x: -1,
+      y: -1,
+      width: -1,
+      height: -1,
+    }
 
     function InvalidUsage() {
       capturedRect = useContentRect()

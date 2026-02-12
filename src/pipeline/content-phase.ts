@@ -20,11 +20,7 @@ import { rectEqual } from "../types.js"
 import { getBorderSize, getPadding } from "./helpers.js"
 import { renderBox, renderScrollIndicators } from "./render-box.js"
 import { parseColor } from "./render-helpers.js"
-import {
-  clearBgConflictWarnings,
-  renderText,
-  setBgConflictMode,
-} from "./render-text.js"
+import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text.js"
 
 /**
  * Render all nodes to a terminal buffer.
@@ -33,26 +29,19 @@ import {
  * @param prevBuffer Previous buffer for incremental rendering (optional)
  * @returns A TerminalBuffer with the rendered content
  */
-export function contentPhase(
-  root: InkxNode,
-  prevBuffer?: TerminalBuffer | null,
-): TerminalBuffer {
+export function contentPhase(root: InkxNode, prevBuffer?: TerminalBuffer | null): TerminalBuffer {
   const layout = root.contentRect
   if (!layout) {
     throw new Error("contentPhase called before layout phase")
   }
 
   // Clone prevBuffer if same dimensions, else create fresh
-  const hasPrevBuffer =
-    prevBuffer &&
-    prevBuffer.width === layout.width &&
-    prevBuffer.height === layout.height
+  const hasPrevBuffer = prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
 
   if (_instrumentEnabled) {
     _contentPhaseCallCount++
     _contentPhaseStats._prevBufferNull = prevBuffer == null ? 1 : 0
-    _contentPhaseStats._prevBufferDimMismatch =
-      prevBuffer && !hasPrevBuffer ? 1 : 0
+    _contentPhaseStats._prevBufferDimMismatch = prevBuffer && !hasPrevBuffer ? 1 : 0
     _contentPhaseStats._hasPrevBuffer = hasPrevBuffer ? 1 : 0
     _contentPhaseStats._layoutW = layout.width
     _contentPhaseStats._layoutH = layout.height
@@ -62,9 +51,7 @@ export function contentPhase(
   }
 
   const t0 = _instrumentEnabled ? performance.now() : 0
-  const buffer = hasPrevBuffer
-    ? prevBuffer.clone()
-    : new TerminalBuffer(layout.width, layout.height)
+  const buffer = hasPrevBuffer ? prevBuffer.clone() : new TerminalBuffer(layout.width, layout.height)
   const tClone = _instrumentEnabled ? performance.now() - t0 : 0
 
   const t1 = _instrumentEnabled ? performance.now() : 0
@@ -79,7 +66,7 @@ export function contentPhase(
       ...structuredClone(_contentPhaseStats),
     }
     ;(globalThis as any).__inkx_content_detail = snap
-    const arr = ((globalThis as any).__inkx_content_all ??= [] as typeof snap[])
+    const arr = ((globalThis as any).__inkx_content_all ??= [] as (typeof snap)[])
     arr.push(snap)
     for (const key of Object.keys(_contentPhaseStats) as (keyof typeof _contentPhaseStats)[]) {
       ;(_contentPhaseStats as any)[key] = 0
@@ -130,7 +117,7 @@ const _contentPhaseStats = {
   normalRepaintReason: "" as string,
   // Cascade diagnostics: shallowest node with parentRegionChanged=true
   cascadeMinDepth: 999,
-  cascadeNodes: "" as string,  // "type:id@depth" of cascade sources
+  cascadeNodes: "" as string, // "type:id@depth" of cascade sources
   // Top-level prevBuffer diagnostics
   _prevBufferNull: 0,
   _prevBufferDimMismatch: 0,
@@ -166,14 +153,16 @@ interface NodeTraceEntry {
 }
 const _nodeTrace: NodeTraceEntry[] = []
 const _nodeTraceEnabled =
-  typeof process !== "undefined" &&
-  !!(process.env?.INKX_STRICT || process.env?.INKX_CHECK_INCREMENTAL)
+  typeof process !== "undefined" && !!(process.env?.INKX_STRICT || process.env?.INKX_CHECK_INCREMENTAL)
 
 /** DIAG: compute node depth in tree */
 function _getNodeDepth(node: InkxNode): number {
   let depth = 0
   let n: InkxNode | null = node.parent
-  while (n) { depth++; n = n.parent }
+  while (n) {
+    depth++
+    n = n.parent
+  }
   return depth
 }
 
@@ -242,8 +231,7 @@ function renderNodeToBuffer(
 
   // Check if any child shifted position (sibling shift from size changes).
   // Gap space between children belongs to this container, so must re-render.
-  const childPositionChanged =
-    hasPrevBuffer && !layoutChanged && hasChildPositionChanged(node)
+  const childPositionChanged = hasPrevBuffer && !layoutChanged && hasChildPositionChanged(node)
 
   const skipFastPath =
     hasPrevBuffer &&
@@ -304,11 +292,7 @@ function renderNodeToBuffer(
   // Why this matters: when backgroundColor changes from "cyan" to undefined,
   // paintDirty ensures we clear stale pixels from the cloned buffer.
   const needsOwnRepaint =
-    node.contentDirty ||
-    node.paintDirty ||
-    node.childrenDirty ||
-    layoutChanged ||
-    childPositionChanged
+    node.contentDirty || node.paintDirty || node.childrenDirty || layoutChanged || childPositionChanged
 
   // contentAreaAffected: did this node's CONTENT AREA change (not just border)?
   // Excludes border-only paint changes: renderBox only draws border chars at edges,
@@ -320,11 +304,7 @@ function renderNodeToBuffer(
   // than checking current props.backgroundColor — catches bg removal (cyan → undefined)
   // where current value is falsy but stale pixels must still be cleared.
   const contentAreaAffected =
-    node.contentDirty ||
-    layoutChanged ||
-    childPositionChanged ||
-    node.childrenDirty ||
-    node.bgDirty
+    node.contentDirty || layoutChanged || childPositionChanged || node.childrenDirty || node.bgDirty
 
   // Clear this node's region when its content area changed but has no backgroundColor.
   // Without bg, renderBox won't fill, so stale pixels from the cloned buffer
@@ -335,10 +315,7 @@ function renderNodeToBuffer(
   // - ancestorCleared=true: buffer is a clone but hasPrevBuffer=false was passed
   //   (ancestor cleared its region, but this node may need to clear its sub-region)
   // On a truly fresh buffer (first render), both are false — no wasteful clear.
-  const parentRegionCleared =
-    (hasPrevBuffer || ancestorCleared) &&
-    contentAreaAffected &&
-    !props.backgroundColor
+  const parentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
 
   // skipBgFill: in incremental mode, skip the bg fill when the cloned buffer
   // already has the correct bg at this node's position. That's ONLY when:
@@ -359,8 +336,7 @@ function renderNodeToBuffer(
 
   // parentRegionChanged: this node's content area was modified on a cloned buffer.
   // Children must re-render (childHasPrev=false) because their pixels may be stale.
-  const parentRegionChanged =
-    (hasPrevBuffer || ancestorCleared) && contentAreaAffected
+  const parentRegionChanged = (hasPrevBuffer || ancestorCleared) && contentAreaAffected
 
   // DIAG: Per-node trace and cascade tracking (gated on instrumentation)
   if (_instrumentEnabled) {
@@ -372,9 +348,10 @@ function renderNodeToBuffer(
         node.subtreeDirty && "S",
         node.childrenDirty && "Ch",
         childPositionChanged && "CP",
-      ].filter(Boolean).join(",")
-      const childrenNeedRepaint_ =
-        node.childrenDirty || childPositionChanged || parentRegionChanged
+      ]
+        .filter(Boolean)
+        .join(",")
+      const childrenNeedRepaint_ = node.childrenDirty || childPositionChanged || parentRegionChanged
       const childHasPrev_ = childrenNeedRepaint_ ? false : hasPrevBuffer
       const childAncestorCleared_ = parentRegionCleared || ancestorCleared
       _nodeTrace.push({
@@ -411,7 +388,9 @@ function renderNodeToBuffer(
         node.childrenDirty && "Ch",
         layoutChanged && "L",
         childPositionChanged && "CP",
-      ].filter(Boolean).join("")
+      ]
+        .filter(Boolean)
+        .join("")
       const entry = `${id}@${depth}[${flags}:${node.children.length}ch]`
       _contentPhaseStats.cascadeNodes += (_contentPhaseStats.cascadeNodes ? " " : "") + entry
     }
@@ -419,14 +398,7 @@ function renderNodeToBuffer(
 
   if (parentRegionCleared) {
     if (_instrumentEnabled) _contentPhaseStats.clearOps++
-    clearNodeRegion(
-      node,
-      buffer,
-      layout,
-      scrollOffset,
-      clipBounds,
-      layoutChanged,
-    )
+    clearNodeRegion(node, buffer, layout, scrollOffset, clipBounds, layoutChanged)
   }
 
   // Render based on node type
@@ -495,9 +467,7 @@ function renderScrollContainerChildren(
   const ss = node.scrollState
   if (!layout || !ss) return
 
-  const border = props.borderStyle
-    ? getBorderSize(props)
-    : { top: 0, bottom: 0, left: 0, right: 0 }
+  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
   const padding = getPadding(props)
   const childClipBounds = computeChildClipBounds(layout, props, clipBounds)
 
@@ -519,15 +489,9 @@ function renderScrollContainerChildren(
   //
   // 3. No clear needed: only subtreeDirty (some descendants changed).
   //    Children use hasPrevBuffer=true and skip via fast-path if clean.
-  const scrollOnly =
-    hasPrevBuffer &&
-    scrollOffsetChanged &&
-    !node.childrenDirty &&
-    !parentRegionChanged
+  const scrollOnly = hasPrevBuffer && scrollOffsetChanged && !node.childrenDirty && !parentRegionChanged
   const needsViewportClear =
-    hasPrevBuffer &&
-    !scrollOnly &&
-    (scrollOffsetChanged || node.childrenDirty || parentRegionChanged)
+    hasPrevBuffer && !scrollOnly && (scrollOffsetChanged || node.childrenDirty || parentRegionChanged)
 
   if (_instrumentEnabled) {
     _contentPhaseStats.scrollContainerCount++
@@ -538,7 +502,9 @@ function renderScrollContainerChildren(
       if (scrollOffsetChanged) reasons.push(`scrollOffset(${ss.prevOffset}->${ss.offset})`)
       if (node.childrenDirty) reasons.push("childrenDirty")
       if (parentRegionChanged) reasons.push("parentRegionChanged")
-      reasons.push(`vp=${ss.viewportHeight} content=${ss.contentHeight} vis=${ss.firstVisibleChild}-${ss.lastVisibleChild}`)
+      reasons.push(
+        `vp=${ss.viewportHeight} content=${ss.contentHeight} vis=${ss.firstVisibleChild}-${ss.lastVisibleChild}`,
+      )
       _contentPhaseStats.scrollClearReason = reasons.join("+")
     }
   }
@@ -547,27 +513,20 @@ function renderScrollContainerChildren(
   const clearY = childClipBounds.top
   const clearHeight = childClipBounds.bottom - childClipBounds.top
   const contentX = layout.x + border.left + padding.left
-  const contentWidth =
-    layout.width - border.left - border.right - padding.left - padding.right
-  const scrollBg = (needsViewportClear || scrollOnly)
-    ? (props.backgroundColor
-      ? parseColor(props.backgroundColor)
-      : findInheritedBg(node).color)
-    : null
+  const contentWidth = layout.width - border.left - border.right - padding.left - padding.right
+  const scrollBg =
+    needsViewportClear || scrollOnly
+      ? props.backgroundColor
+        ? parseColor(props.backgroundColor)
+        : findInheritedBg(node).color
+      : null
 
   // Buffer shift: shift viewport contents instead of full clear.
   // After shift, previously-visible children's pixels are at correct positions.
   // Exposed rows (top/bottom edge) are filled with scrollBg (null = no bg).
   const scrollDelta = ss.offset - (ss.prevOffset ?? ss.offset)
   if (scrollOnly && clearHeight > 0) {
-    buffer.scrollRegion(
-      contentX,
-      clearY,
-      contentWidth,
-      clearHeight,
-      scrollDelta,
-      { char: " ", bg: scrollBg },
-    )
+    buffer.scrollRegion(contentX, clearY, contentWidth, clearHeight, scrollDelta, { char: " ", bg: scrollBg })
   }
 
   // Full viewport clear (tier 2)
@@ -583,9 +542,7 @@ function renderScrollContainerChildren(
   // - needsViewportClear: all false (full re-render)
   // - otherwise: preserve parent's hasPrevBuffer
   const defaultChildHasPrev = needsViewportClear ? false : hasPrevBuffer
-  const defaultChildAncestorCleared = needsViewportClear
-    ? true
-    : ancestorCleared || parentRegionCleared
+  const defaultChildAncestorCleared = needsViewportClear ? true : ancestorCleared || parentRegionCleared
 
   // For buffer shift: children that were fully visible in BOTH the previous
   // and current frames have correct pixels after the shift (childHasPrev=true).
@@ -618,26 +575,16 @@ function renderScrollContainerChildren(
       if (childRect) {
         const childTop = childRect.y - layout.y - border.top - padding.top
         const childBottom = childTop + childRect.height
-        const wasFullyVisible =
-          childTop >= prevVisTop && childBottom <= prevVisBottom
+        const wasFullyVisible = childTop >= prevVisTop && childBottom <= prevVisBottom
         thisChildHasPrev = wasFullyVisible
         // Shifted children: their pixels are intact (not cleared)
         // Newly visible: exposed region was filled by scrollRegion
-        thisChildAncestorCleared = wasFullyVisible
-          ? (ancestorCleared || parentRegionCleared)
-          : true
+        thisChildAncestorCleared = wasFullyVisible ? ancestorCleared || parentRegionCleared : true
       }
     }
 
     // Render visible children with scroll offset applied.
-    renderNodeToBuffer(
-      child,
-      buffer,
-      ss.offset,
-      childClipBounds,
-      thisChildHasPrev,
-      thisChildAncestorCleared,
-    )
+    renderNodeToBuffer(child, buffer, ss.offset, childClipBounds, thisChildHasPrev, thisChildAncestorCleared)
   }
 
   // Second pass: render sticky children at their computed positions
@@ -688,14 +635,11 @@ function renderNormalChildren(
 
   // For overflow='hidden' containers, clip children to content area
   const effectiveClipBounds =
-    props.overflow === "hidden"
-      ? computeChildClipBounds(layout, props, clipBounds, scrollOffset)
-      : clipBounds
+    props.overflow === "hidden" ? computeChildClipBounds(layout, props, clipBounds, scrollOffset) : clipBounds
 
   // Force children to re-render when parent's region was modified on a clone,
   // children were restructured, or sibling positions shifted.
-  const childrenNeedRepaint =
-    node.childrenDirty || childPositionChanged || parentRegionChanged
+  const childrenNeedRepaint = node.childrenDirty || childPositionChanged || parentRegionChanged
   if (_instrumentEnabled && childrenNeedRepaint && hasPrevBuffer) {
     _contentPhaseStats.normalChildrenRepaint++
     const reasons: string[] = []
@@ -712,8 +656,7 @@ function renderNormalChildren(
   // there would cause children to re-fill, overwriting border cells at boundaries.
   // When this node has backgroundColor, its renderBox fill covers any stale
   // pixels from ancestor clears — so children don't need ancestorCleared.
-  const childAncestorCleared =
-    parentRegionCleared || (ancestorCleared && !props.backgroundColor)
+  const childAncestorCleared = parentRegionCleared || (ancestorCleared && !props.backgroundColor)
 
   // Two-pass rendering to match CSS paint order: normal-flow first, then
   // absolute on top. This ensures absolute children's pixels (bg fills, text)
@@ -745,20 +688,11 @@ function renderNormalChildren(
         child.paintDirty ||
         child.subtreeDirty ||
         child.childrenDirty ||
-        (child.contentRect &&
-          child.prevLayout &&
-          !rectEqual(child.prevLayout, child.contentRect)))
+        (child.contentRect && child.prevLayout && !rectEqual(child.prevLayout, child.contentRect)))
 
     if (childIsDirty) anyNormalFlowDirty = true
 
-    renderNodeToBuffer(
-      child,
-      buffer,
-      scrollOffset,
-      effectiveClipBounds,
-      childHasPrev,
-      childAncestorCleared,
-    )
+    renderNodeToBuffer(child, buffer, scrollOffset, effectiveClipBounds, childHasPrev, childAncestorCleared)
   }
 
   // Second pass: render absolute children on top (CSS paint order)
@@ -776,14 +710,7 @@ function renderNormalChildren(
       // When forceRepaint is true (normal-flow siblings overwrote the absolute
       // child's previous pixels), hasPrevBuffer=false ensures it re-renders fully
       // without needing ancestorCleared to trigger clearing.
-      renderNodeToBuffer(
-        child,
-        buffer,
-        scrollOffset,
-        effectiveClipBounds,
-        forceRepaint ? false : childHasPrev,
-        false,
-      )
+      renderNodeToBuffer(child, buffer, scrollOffset, effectiveClipBounds, forceRepaint ? false : childHasPrev, false)
     }
   }
 }
@@ -814,10 +741,7 @@ function clearDirtyFlags(node: InkxNode): void {
 function hasChildPositionChanged(node: InkxNode): boolean {
   for (const child of node.children) {
     if (child.contentRect && child.prevLayout) {
-      if (
-        child.contentRect.x !== child.prevLayout.x ||
-        child.contentRect.y !== child.prevLayout.y
-      ) {
+      if (child.contentRect.x !== child.prevLayout.x || child.contentRect.y !== child.prevLayout.y) {
         return true
       }
     }
@@ -835,9 +759,7 @@ function computeChildClipBounds(
   parentClip: ClipBounds | undefined,
   scrollOffset = 0,
 ): ClipBounds {
-  const border = props.borderStyle
-    ? getBorderSize(props)
-    : { top: 0, bottom: 0, left: 0, right: 0 }
+  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
   const padding = getPadding(props)
   const adjustedY = layout.y - scrollOffset
   const nodeClip: ClipBounds = {
@@ -909,14 +831,10 @@ function clearNodeRegion(
   // Clip to parent's contentRect to prevent oversized children from clearing
   // beyond their parent's bounds and bleeding inherited bg into sibling regions.
   const parentRect = node.parent?.contentRect
-  const parentBottom = parentRect
-    ? parentRect.y - scrollOffset + parentRect.height
-    : undefined
+  const parentBottom = parentRect ? parentRect.y - scrollOffset + parentRect.height : undefined
 
   const clearY = clipBounds ? Math.max(screenY, clipBounds.top) : screenY
-  let clearBottom = clipBounds
-    ? Math.min(screenY + layout.height, clipBounds.bottom)
-    : screenY + layout.height
+  let clearBottom = clipBounds ? Math.min(screenY + layout.height, clipBounds.bottom) : screenY + layout.height
   if (parentBottom !== undefined) {
     clearBottom = Math.min(clearBottom, parentBottom)
   }
@@ -982,10 +900,7 @@ function clippedFill(
   bg: Color,
 ): void {
   const clippedTop = clipBounds ? Math.max(top, clipBounds.top) : top
-  const clippedBottom = Math.min(
-    clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom,
-    outerBottom,
-  )
+  const clippedBottom = Math.min(clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom, outerBottom)
   const height = clippedBottom - clippedTop
   if (height > 0) {
     buffer.fill(x, clippedTop, width, height, { char: " ", bg })

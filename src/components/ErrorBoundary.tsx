@@ -100,10 +100,7 @@ interface ErrorBoundaryState {
  * // On 'r' key: setResetKey(k => k + 1)
  * ```
  */
-export class ErrorBoundary extends Component<
-  ErrorBoundaryProps,
-  ErrorBoundaryState
-> {
+export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = {
     hasError: false,
     error: null,
@@ -121,11 +118,7 @@ export class ErrorBoundary extends Component<
 
   componentDidUpdate(prevProps: ErrorBoundaryProps): void {
     // Reset error state when resetKey changes
-    if (
-      this.state.hasError &&
-      prevProps.resetKey !== this.props.resetKey &&
-      this.props.resetKey !== undefined
-    ) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey && this.props.resetKey !== undefined) {
       this.props.onReset?.()
       this.setState({ hasError: false, error: null, errorInfo: null })
     }
@@ -148,12 +141,7 @@ export class ErrorBoundary extends Component<
 
       // Default fallback: red bordered box with error message
       return (
-        <Box
-          borderStyle="single"
-          borderColor="red"
-          padding={1}
-          flexDirection="column"
-        >
+        <Box borderStyle="single" borderColor="red" padding={1} flexDirection="column">
           <Text color="red" bold>
             Error
           </Text>

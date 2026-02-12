@@ -14,10 +14,7 @@ import type { Dims, Provider, ProviderEvent } from "../../src/runtime/types.js"
  */
 function createTestProvider(
   keys: string[],
-): Provider<
-  { cols: number; rows: number },
-  { key: { input: string; key: Key } }
-> {
+): Provider<{ cols: number; rows: number }, { key: { input: string; key: Key } }> {
   const state = { cols: 80, rows: 24 }
   const listeners = new Set<(s: typeof state) => void>()
   let disposed = false

@@ -83,18 +83,11 @@ const BORDER_CHARS: Record<string, BorderChars> = {
 // Canvas Measurer
 // ============================================================================
 
-function createCanvasMeasurer(
-  config: Required<CanvasAdapterConfig>,
-): TextMeasurer {
+function createCanvasMeasurer(config: Required<CanvasAdapterConfig>): TextMeasurer {
   // Use OffscreenCanvas for measurement if available
-  let measureContext:
-    | CanvasRenderingContext2D
-    | OffscreenCanvasRenderingContext2D
-    | null = null
+  let measureContext: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null
 
-  function getContext():
-    | CanvasRenderingContext2D
-    | OffscreenCanvasRenderingContext2D {
+  function getContext(): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {
     if (!measureContext) {
       if (typeof OffscreenCanvas !== "undefined") {
         const canvas = new OffscreenCanvas(1, 1)
@@ -125,8 +118,7 @@ function createCanvasMeasurer(
 
       // Use actual bounding box if available, otherwise estimate
       const height =
-        metrics.actualBoundingBoxAscent !== undefined &&
-        metrics.actualBoundingBoxDescent !== undefined
+        metrics.actualBoundingBoxAscent !== undefined && metrics.actualBoundingBoxDescent !== undefined
           ? metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
           : (style?.fontSize ?? config.fontSize) * config.lineHeight
 
@@ -196,11 +188,7 @@ export class CanvasRenderBuffer implements RenderBuffer {
   private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
   private config: Required<CanvasAdapterConfig>
 
-  constructor(
-    width: number,
-    height: number,
-    config: Required<CanvasAdapterConfig>,
-  ) {
+  constructor(width: number, height: number, config: Required<CanvasAdapterConfig>) {
     this.width = width
     this.height = height
     this.config = config
@@ -218,22 +206,14 @@ export class CanvasRenderBuffer implements RenderBuffer {
 
     const ctx = this.canvas.getContext("2d")
     if (!ctx) throw new Error("Could not get 2d context")
-    this.ctx = ctx as
-      | CanvasRenderingContext2D
-      | OffscreenCanvasRenderingContext2D
+    this.ctx = ctx as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
 
     // Initialize with background
     this.ctx.fillStyle = config.backgroundColor
     this.ctx.fillRect(0, 0, width, height)
   }
 
-  fillRect(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style: RenderStyle,
-  ): void {
+  fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void {
     if (style.bg) {
       this.ctx.fillStyle = resolveColor(style.bg, this.config.backgroundColor)
       this.ctx.fillRect(x, y, width, height)
@@ -275,21 +255,13 @@ export class CanvasRenderBuffer implements RenderBuffer {
     }
   }
 
-  private drawUnderline(
-    x: number,
-    y: number,
-    text: string,
-    style: RenderStyle,
-  ): void {
+  private drawUnderline(x: number, y: number, text: string, style: RenderStyle): void {
     const attrs = style.attrs ?? {}
     const metrics = this.ctx.measureText(text)
     const textWidth = metrics.width
     const underlineY = y + this.config.fontSize * 0.9
 
-    const underlineColor = resolveColor(
-      attrs.underlineColor ?? style.fg,
-      this.config.foregroundColor,
-    )
+    const underlineColor = resolveColor(attrs.underlineColor ?? style.fg, this.config.foregroundColor)
 
     this.ctx.strokeStyle = underlineColor
     this.ctx.lineWidth = 1
@@ -314,12 +286,7 @@ export class CanvasRenderBuffer implements RenderBuffer {
         const waveLength = 4
         const amplitude = 2
         for (let wx = 0; wx < textWidth; wx += waveLength * 2) {
-          this.ctx.quadraticCurveTo(
-            x + wx + waveLength / 2,
-            underlineY - amplitude,
-            x + wx + waveLength,
-            underlineY,
-          )
+          this.ctx.quadraticCurveTo(x + wx + waveLength / 2, underlineY - amplitude, x + wx + waveLength, underlineY)
           this.ctx.quadraticCurveTo(
             x + wx + (waveLength * 3) / 2,
             underlineY + amplitude,
@@ -370,9 +337,7 @@ export class CanvasRenderBuffer implements RenderBuffer {
 // Canvas Adapter Factory
 // ============================================================================
 
-export function createCanvasAdapter(
-  config: CanvasAdapterConfig = {},
-): RenderAdapter {
+export function createCanvasAdapter(config: CanvasAdapterConfig = {}): RenderAdapter {
   const cfg = { ...DEFAULT_CONFIG, ...config }
   const measurer = createCanvasMeasurer(cfg)
 

@@ -56,12 +56,7 @@ describe("Bug km-r0nz: Columns view vertical spacing", () => {
     // Find lines with task names
     const taskLines: number[] = []
     lines.forEach((line, idx) => {
-      if (
-        line.includes("Task A") ||
-        line.includes("Task B") ||
-        line.includes("Task C") ||
-        line.includes("Task D")
-      ) {
+      if (line.includes("Task A") || line.includes("Task B") || line.includes("Task C") || line.includes("Task D")) {
         taskLines.push(idx)
       }
     })
@@ -95,13 +90,7 @@ describe("Bug km-d5e9: Top bar text visibility", () => {
   const render = createRenderer({ cols: 80, rows: 24 })
 
   // Simplified top bar that mimics Board.tsx rendering
-  function SimpleTopBar({
-    bgColor,
-    useWhiteText,
-  }: {
-    bgColor?: string
-    useWhiteText: boolean
-  }) {
+  function SimpleTopBar({ bgColor, useWhiteText }: { bgColor?: string; useWhiteText: boolean }) {
     // This mimics the Board.tsx pattern of using chalk for top bar
     // The bug occurs when useWhiteText is false but bgColor is dark
     const style: { backgroundColor?: string; color: string } = {
@@ -239,9 +228,7 @@ describe("Bug km-n29q: Empty column navigation", () => {
       if (key.downArrow || input === "j") {
         const currentCol = columns[colIndex]
         if (currentCol && currentCol.cards.length > 0) {
-          setCardIndex((prev) =>
-            Math.min(currentCol.cards.length - 1, prev + 1),
-          )
+          setCardIndex((prev) => Math.min(currentCol.cards.length - 1, prev + 1))
         }
       }
     })

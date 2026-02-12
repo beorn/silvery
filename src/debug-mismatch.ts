@@ -89,11 +89,7 @@ export interface MismatchDebugContext {
 /**
  * Find the innermost node at a screen position.
  */
-export function findNodeAtPosition(
-  root: InkxNode,
-  x: number,
-  y: number,
-): InkxNode | null {
+export function findNodeAtPosition(root: InkxNode, x: number, y: number): InkxNode | null {
   let result: InkxNode | null = null
 
   function visit(node: InkxNode): void {
@@ -101,12 +97,7 @@ export function findNodeAtPosition(
     if (!rect) return
 
     // Check if position is within this node's screenRect
-    if (
-      x >= rect.x &&
-      x < rect.x + rect.width &&
-      y >= rect.y &&
-      y < rect.y + rect.height
-    ) {
+    if (x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height) {
       result = node // This node contains the position
 
       // Check children (later children render on top of earlier ones)
@@ -124,23 +115,14 @@ export function findNodeAtPosition(
  * Find all nodes whose screenRect contains the given position.
  * Returns nodes from root to innermost (outermost first).
  */
-export function findAllContainingNodes(
-  root: InkxNode,
-  x: number,
-  y: number,
-): InkxNode[] {
+export function findAllContainingNodes(root: InkxNode, x: number, y: number): InkxNode[] {
   const result: InkxNode[] = []
 
   function visit(node: InkxNode): void {
     const rect = node.screenRect
     if (!rect) return
 
-    if (
-      x >= rect.x &&
-      x < rect.x + rect.width &&
-      y >= rect.y &&
-      y < rect.y + rect.height
-    ) {
+    if (x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height) {
       result.push(node)
       for (const child of node.children) {
         visit(child)
@@ -181,9 +163,7 @@ function getNodePath(node: InkxNode): string {
 function rectChanged(a: Rect | null, b: Rect | null): boolean {
   if (a === b) return false
   if (!a || !b) return true
-  return (
-    a.x !== b.x || a.y !== b.y || a.width !== b.width || a.height !== b.height
-  )
+  return a.x !== b.x || a.y !== b.y || a.width !== b.width || a.height !== b.height
 }
 
 /**
@@ -220,8 +200,7 @@ export function getNodeDebugInfo(node: InkxNode): NodeDebugInfo {
       ? {
           offset: node.scrollState.offset,
           prevOffset: node.scrollState.prevOffset,
-          offsetChanged:
-            node.scrollState.offset !== node.scrollState.prevOffset,
+          offsetChanged: node.scrollState.offset !== node.scrollState.prevOffset,
           contentHeight: node.scrollState.contentHeight,
           viewportHeight: node.scrollState.viewportHeight,
           hiddenAbove: node.scrollState.hiddenAbove,
@@ -256,31 +235,20 @@ function findScrollAncestors(node: InkxNode): InkxNode[] {
 /**
  * Analyze why a node might have been incorrectly skipped by fast-path.
  */
-function analyzeFastPath(
-  node: InkxNode | null,
-  scrollAncestors: InkxNode[],
-): string[] {
+function analyzeFastPath(node: InkxNode | null, scrollAncestors: InkxNode[]): string[] {
   const analysis: string[] = []
 
   if (!node) {
-    analysis.push(
-      "⚠ No node found at mismatch position - possible virtualization issue",
-    )
+    analysis.push("⚠ No node found at mismatch position - possible virtualization issue")
     return analysis
   }
 
   const flags = node
   const allClean =
-    !flags.contentDirty &&
-    !flags.paintDirty &&
-    !flags.subtreeDirty &&
-    !flags.childrenDirty &&
-    !flags.layoutDirty
+    !flags.contentDirty && !flags.paintDirty && !flags.subtreeDirty && !flags.childrenDirty && !flags.layoutDirty
 
   if (allClean) {
-    analysis.push(
-      "⚠ ALL DIRTY FLAGS FALSE - fast-path likely skipped this node",
-    )
+    analysis.push("⚠ ALL DIRTY FLAGS FALSE - fast-path likely skipped this node")
   }
 
   // Check if node is in a scroll container
@@ -290,41 +258,29 @@ function analyzeFastPath(
     const childIndex = node.parent ? node.parent.children.indexOf(node) : -1
 
     // Check if this node SHOULD be in visible range
-    const inVisibleRange =
-      childIndex >= ss.firstVisibleChild && childIndex <= ss.lastVisibleChild
+    const inVisibleRange = childIndex >= ss.firstVisibleChild && childIndex <= ss.lastVisibleChild
     if (!inVisibleRange && childIndex >= 0) {
       analysis.push(
         `⚠ Node index ${childIndex} is OUTSIDE visible range [${ss.firstVisibleChild}..${ss.lastVisibleChild}]`,
       )
-      analysis.push(
-        "  → Node should have been skipped, but mismatch suggests it should render",
-      )
+      analysis.push("  → Node should have been skipped, but mismatch suggests it should render")
     } else if (inVisibleRange) {
-      analysis.push(
-        `✓ Node index ${childIndex} is in visible range [${ss.firstVisibleChild}..${ss.lastVisibleChild}]`,
-      )
+      analysis.push(`✓ Node index ${childIndex} is in visible range [${ss.firstVisibleChild}..${ss.lastVisibleChild}]`)
     }
 
     // Check scroll offset
     if (ss.offset === ss.prevOffset) {
-      analysis.push(
-        "✓ Scroll offset unchanged (fast-path enabled for children)",
-      )
+      analysis.push("✓ Scroll offset unchanged (fast-path enabled for children)")
     } else {
       analysis.push(`⚠ Scroll offset CHANGED: ${ss.prevOffset} → ${ss.offset}`)
     }
 
     // Check if visible range might have changed
-    if (
-      ss.firstVisibleChild !== 0 ||
-      ss.lastVisibleChild !== scrollParent.children.length - 1
-    ) {
+    if (ss.firstVisibleChild !== 0 || ss.lastVisibleChild !== scrollParent.children.length - 1) {
       analysis.push(
         `  Visible range is partial: [${ss.firstVisibleChild}..${ss.lastVisibleChild}] of ${scrollParent.children.length} children`,
       )
-      analysis.push(
-        "  → If visible range changed, newly visible children need rendering",
-      )
+      analysis.push("  → If visible range changed, newly visible children need rendering")
     }
   }
 
@@ -333,13 +289,9 @@ function analyzeFastPath(
   if (!layoutChanged && node.prevLayout) {
     analysis.push("✓ Layout unchanged (prevLayout matches contentRect)")
   } else if (!node.prevLayout) {
-    analysis.push(
-      "⚠ prevLayout is NULL - node may never have been rendered before",
-    )
+    analysis.push("⚠ prevLayout is NULL - node may never have been rendered before")
   } else {
-    analysis.push(
-      "⚠ Layout CHANGED but node still skipped - dirty flag not set?",
-    )
+    analysis.push("⚠ Layout CHANGED but node still skipped - dirty flag not set?")
   }
 
   // Check for sibling child position changes
@@ -347,19 +299,14 @@ function analyzeFastPath(
     let siblingMoved = false
     for (const sibling of node.parent.children) {
       if (sibling !== node && sibling.contentRect && sibling.prevLayout) {
-        if (
-          sibling.contentRect.x !== sibling.prevLayout.x ||
-          sibling.contentRect.y !== sibling.prevLayout.y
-        ) {
+        if (sibling.contentRect.x !== sibling.prevLayout.x || sibling.contentRect.y !== sibling.prevLayout.y) {
           siblingMoved = true
           break
         }
       }
     }
     if (siblingMoved) {
-      analysis.push(
-        "⚠ SIBLING POSITION CHANGED - parent should have detected this",
-      )
+      analysis.push("⚠ SIBLING POSITION CHANGED - parent should have detected this")
     }
   }
 
@@ -407,9 +354,7 @@ export function formatMismatchContext(ctx: MismatchDebugContext): string {
   const lines: string[] = []
 
   // Header
-  lines.push(
-    `INKX_CHECK_INCREMENTAL: MISMATCH at (${ctx.position.x}, ${ctx.position.y}) on render #${ctx.renderNum}`,
-  )
+  lines.push(`INKX_CHECK_INCREMENTAL: MISMATCH at (${ctx.position.x}, ${ctx.position.y}) on render #${ctx.renderNum}`)
   lines.push("")
 
   // Cell values
@@ -495,8 +440,7 @@ export function formatMismatchContext(ctx: MismatchDebugContext): string {
         .join(",")
       const flagStr = flags ? ` [${flags}]` : " [clean]"
       const bgStr = node.backgroundColor ? ` bg=${node.backgroundColor}` : ""
-      const childStr =
-        node.childIndex !== null ? ` child[${node.childIndex}]` : ""
+      const childStr = node.childIndex !== null ? ` child[${node.childIndex}]` : ""
       lines.push(`  ${node.path}${flagStr}${bgStr}${childStr}`)
     }
     lines.push("")
@@ -519,22 +463,14 @@ function formatRect(rect: Rect | null): string {
   return `{x:${rect.x}, y:${rect.y}, w:${rect.width}, h:${rect.height}}`
 }
 
-function formatScrollState(
-  lines: string[],
-  scroll: NonNullable<NodeDebugInfo["scroll"]>,
-  indent = "  ",
-): void {
+function formatScrollState(lines: string[], scroll: NonNullable<NodeDebugInfo["scroll"]>, indent = "  "): void {
   if (scroll.offsetChanged) {
-    lines.push(
-      `${indent}⚠ SCROLL CHANGED: offset ${scroll.prevOffset} → ${scroll.offset}`,
-    )
+    lines.push(`${indent}⚠ SCROLL CHANGED: offset ${scroll.prevOffset} → ${scroll.offset}`)
   } else {
     lines.push(`${indent}offset: ${scroll.offset}`)
   }
   lines.push(
     `${indent}viewport: ${scroll.viewportHeight}/${scroll.contentHeight} (hidden: ▲${scroll.hiddenAbove} ▼${scroll.hiddenBelow})`,
   )
-  lines.push(
-    `${indent}visibleRange: [${scroll.firstVisibleChild}..${scroll.lastVisibleChild}]`,
-  )
+  lines.push(`${indent}visibleRange: [${scroll.firstVisibleChild}..${scroll.lastVisibleChild}]`)
 }

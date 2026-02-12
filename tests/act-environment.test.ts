@@ -47,9 +47,7 @@ describe("IS_REACT_ACT_ENVIRONMENT", () => {
     const stderr = await new Response(proc.stderr).text()
 
     if (exitCode === 1) {
-      throw new Error(
-        `IS_REACT_ACT_ENVIRONMENT was set before import (possibly by test framework)`,
-      )
+      throw new Error(`IS_REACT_ACT_ENVIRONMENT was set before import (possibly by test framework)`)
     }
     if (exitCode === 2) {
       throw new Error(

@@ -512,11 +512,7 @@ interface TextInputProps {
   placeholder?: string
 }
 
-export function TextInput({
-  value,
-  onChange,
-  placeholder = "",
-}: TextInputProps) {
+export function TextInput({ value, onChange, placeholder = "" }: TextInputProps) {
   const { isFocused } = useFocus()
   const { x, y } = useContentRect()
   const { show, hide, moveTo } = useCursor({ style: "bar" })
@@ -584,9 +580,7 @@ export function TextInput({
     )
   }, [value, cursorPos, isFocused, placeholder])
 
-  return (
-    <Box borderStyle={isFocused ? "round" : "single"}>{displayContent}</Box>
-  )
+  return <Box borderStyle={isFocused ? "round" : "single"}>{displayContent}</Box>
 }
 ```
 

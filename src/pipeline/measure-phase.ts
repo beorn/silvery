@@ -62,8 +62,7 @@ function measureIntrinsicSize(node: InkxNode): {
   }
 
   // For boxes, measure based on flex direction
-  const isRow =
-    props.flexDirection === "row" || props.flexDirection === "row-reverse"
+  const isRow = props.flexDirection === "row" || props.flexDirection === "row-reverse"
 
   let width = 0
   let height = 0
@@ -98,10 +97,7 @@ function measureIntrinsicSize(node: InkxNode): {
 /**
  * Traverse tree in depth-first order.
  */
-function traverseTree(
-  node: InkxNode,
-  callback: (node: InkxNode) => void,
-): void {
+function traverseTree(node: InkxNode, callback: (node: InkxNode) => void): void {
   callback(node)
   for (const child of node.children) {
     traverseTree(child, callback)

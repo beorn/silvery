@@ -2,7 +2,7 @@
 
 React components have never been able to know their own dimensions during render. In the DOM, you reach for `ResizeObserver` and accept a layout jank flash. In React Native, you guess at `FlatList` item heights and hope the scroll doesn't stutter. In terminal UIs built with [Ink](https://github.com/vadimdemedes/ink), you thread `width` props through every level of the component tree.
 
-inkx takes a different approach. It runs layout *before* content rendering, so components access their actual dimensions synchronously via a hook:
+inkx takes a different approach. It runs layout _before_ content rendering, so components access their actual dimensions synchronously via a hook:
 
 ```tsx
 function Card() {
@@ -33,7 +33,9 @@ In inkx, scrolling is a style property:
 
 ```tsx
 <Box overflow="scroll" scrollTo={selectedIdx}>
-  {messages.map(msg => <Message key={msg.id} content={msg.content} />)}
+  {messages.map((msg) => (
+    <Message key={msg.id} content={msg.content} />
+  ))}
 </Box>
 ```
 
@@ -114,6 +116,7 @@ inkx ships with a [CLAUDE.md](https://github.com/beorn/inkx/blob/main/CLAUDE.md)
 This isn't documentation written for humans and then fed to an AI. It's a parallel artifact: the same API, organized for how LLMs read code. Quick start, import paths, testing API, debugging flags -- all in one file, optimized for context window efficiency.
 
 When an AI assistant works on an inkx codebase, it reads `CLAUDE.md` and immediately knows:
+
 - How to import components (`import { Box, Text } from "inkx"`)
 - How to write tests (`createRenderer` + Playwright-style locators)
 - What patterns to avoid (mixing chalk backgrounds with Box backgroundColor)
@@ -153,25 +156,25 @@ Real numbers on Apple M1 Max, Bun 1.3.9 (February 2026). Reproducible via `bun r
 
 **The number that matters -- typical interactive update:**
 
-| Scenario | inkx | Ink | |
-|---|---|---|---|
+| Scenario                        | inkx       | Ink     |                      |
+| ------------------------------- | ---------- | ------- | -------------------- |
 | User presses a key (1000 nodes) | **169 us** | 20.7 ms | **inkx 122x faster** |
 
 When a user presses `j` to move a cursor, inkx's dirty tracking updates only the changed nodes -- bypassing React entirely. Ink must re-render the full React tree for any state change.
 
 **Full pipeline (cold render):**
 
-| Components | inkx (Flexx) | Ink (Yoga NAPI) | |
-|---|---|---|---|
-| 1 Box+Text | 165 us | 271 us | inkx 1.6x faster |
-| 100 Box+Text | 45.0 ms | 49.4 ms | inkx 1.1x faster |
+| Components   | inkx (Flexx) | Ink (Yoga NAPI) |                  |
+| ------------ | ------------ | --------------- | ---------------- |
+| 1 Box+Text   | 165 us       | 271 us          | inkx 1.6x faster |
+| 100 Box+Text | 45.0 ms      | 49.4 ms         | inkx 1.1x faster |
 
 **Layout engine (pure layout, no React):**
 
-| Benchmark | Flexx (JS) | Yoga WASM | Yoga NAPI (C++) |
-|---|---|---|---|
-| 100 nodes flat | 85 us | 88 us | 197 us |
-| 50-node kanban | 57 us | 54 us | 136 us |
+| Benchmark      | Flexx (JS) | Yoga WASM | Yoga NAPI (C++) |
+| -------------- | ---------- | --------- | --------------- |
+| 100 nodes flat | 85 us      | 88 us     | 197 us          |
+| 50-node kanban | 57 us      | 54 us     | 136 us          |
 
 [Flexx](https://github.com/beorn/flexx), inkx's default layout engine, is a 7 KB (gzipped) pure JavaScript flexbox implementation -- no native dependencies, no WASM. It matches Yoga's correctness on the flexbox subset that terminal UIs need, at 2.4x the speed of Yoga NAPI.
 
@@ -191,6 +194,7 @@ import { useInput } from "inkx/runtime"
 ```
 
 What you gain:
+
 - `useContentRect()` and `useScreenRect()` -- layout feedback during render
 - `overflow="scroll"` -- native scrollable containers
 - Auto text truncation (ANSI-aware)

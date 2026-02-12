@@ -393,12 +393,7 @@ await run({ avg: true, json: true });
 // scripts/perf-monitor.ts
 // Run nightly, track trends over time
 
-const METRICS = [
-  "render_simple_p50",
-  "render_complex_p50",
-  "memory_peak",
-  "layout_100_nodes",
-]
+const METRICS = ["render_simple_p50", "render_complex_p50", "memory_peak", "layout_100_nodes"]
 
 async function recordMetrics() {
   const results = await runBenchmarks()
@@ -414,9 +409,7 @@ async function recordMetrics() {
   const baseline = await db.getBaseline()
   for (const metric of METRICS) {
     if (results[metric] > baseline[metric] * 1.2) {
-      console.error(
-        `REGRESSION: ${metric} is ${results[metric]}ms (was ${baseline[metric]}ms)`,
-      )
+      console.error(`REGRESSION: ${metric} is ${results[metric]}ms (was ${baseline[metric]}ms)`)
       process.exit(1)
     }
   }

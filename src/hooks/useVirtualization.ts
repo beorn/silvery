@@ -85,11 +85,7 @@ const DEFAULT_MAX_RENDERED = 100
 /**
  * Get size for a specific item.
  */
-function getItemSize<T>(
-  item: T,
-  index: number,
-  itemSize: number | ((item: T, index: number) => number),
-): number {
+function getItemSize<T>(item: T, index: number, itemSize: number | ((item: T, index: number) => number)): number {
   return typeof itemSize === "function" ? itemSize(item, index) : itemSize
 }
 
@@ -125,10 +121,7 @@ function calcVisibleCount<T>(
 /**
  * Calculate average item size for estimating visible count.
  */
-function calcAverageItemSize<T>(
-  items: T[],
-  itemSize: number | ((item: T, index: number) => number),
-): number {
+function calcAverageItemSize<T>(items: T[], itemSize: number | ((item: T, index: number) => number)): number {
   if (items.length === 0) return 1
   if (typeof itemSize === "number") return itemSize
 
@@ -148,9 +141,7 @@ function calcAverageItemSize<T>(
 /**
  * useVirtualization - shared virtualization logic for both axes.
  */
-export function useVirtualization<T>(
-  config: VirtualizationConfig<T>,
-): VirtualizationResult {
+export function useVirtualization<T>(config: VirtualizationConfig<T>): VirtualizationResult {
   const {
     items,
     viewportSize,
@@ -164,27 +155,16 @@ export function useVirtualization<T>(
 
   // Calculate average item size for estimating visible count
   const avgItemSize = calcAverageItemSize(items, itemSize)
-  const estimatedVisibleCount = Math.max(
-    1,
-    Math.floor(viewportSize / (avgItemSize + gap)),
-  )
+  const estimatedVisibleCount = Math.max(1, Math.floor(viewportSize / (avgItemSize + gap)))
 
   // Selected index as ref — doesn't trigger re-renders when cursor moves
   // within the viewport. Only scrollOffset (state) triggers re-renders.
-  const selectedIndexRef = useRef(
-    Math.max(0, Math.min(scrollTo ?? 0, items.length - 1)),
-  )
+  const selectedIndexRef = useRef(Math.max(0, Math.min(scrollTo ?? 0, items.length - 1)))
 
   // Scroll offset as state — VirtualList re-renders only when offset changes
   // (cursor exits viewport). Cursor moves within viewport skip re-render entirely.
   const [scrollOffset, setScrollOffset] = useState(() =>
-    calcEdgeBasedScrollOffset(
-      selectedIndexRef.current,
-      0,
-      estimatedVisibleCount,
-      items.length,
-      scrollPadding,
-    ),
+    calcEdgeBasedScrollOffset(selectedIndexRef.current, 0, estimatedVisibleCount, items.length, scrollPadding),
   )
 
   // Imperative scroll function — updates ref always, state only when offset changes
@@ -231,9 +211,7 @@ export function useVirtualization<T>(
 
   // Determine the current selected index to use for rendering
   const currentSelectedIndex =
-    scrollTo !== undefined
-      ? Math.max(0, Math.min(scrollTo, items.length - 1))
-      : selectedIndexRef.current
+    scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, items.length - 1)) : selectedIndexRef.current
 
   // Calculate virtualization window
   // Depends on scrollOffset (not currentSelectedIndex) so that cursor moves
@@ -292,15 +270,7 @@ export function useVirtualization<T>(
       leadingPlaceholderSize: leadingSize,
       trailingPlaceholderSize: trailingSize,
     }
-  }, [
-    items.length,
-    scrollOffset,
-    maxRendered,
-    overscan,
-    itemSize,
-    avgItemSize,
-    gap,
-  ])
+  }, [items.length, scrollOffset, maxRendered, overscan, itemSize, avgItemSize, gap])
 
   return {
     startIndex: windowCalc.startIndex,

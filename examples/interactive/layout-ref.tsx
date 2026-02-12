@@ -8,22 +8,12 @@
  */
 
 import React, { useRef, useState, useEffect } from "react"
-import {
-  render,
-  Box,
-  Text,
-  useInput,
-  useApp,
-  createTerm,
-  type BoxHandle,
-  type Key,
-} from "../../src/index.js"
+import { render, Box, Text, useInput, useApp, createTerm, type BoxHandle, type Key } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Layout Ref",
-  description:
-    "useContentRect + useScreenRect for imperative layout measurement",
+  description: "useContentRect + useScreenRect for imperative layout measurement",
   features: ["forwardRef", "BoxHandle", "onLayout", "getContentRect()"],
 }
 
@@ -88,13 +78,7 @@ function ImperativeAccessDemo() {
   }
 
   return (
-    <Box
-      ref={boxRef}
-      flexDirection="column"
-      borderStyle="double"
-      borderColor="magenta"
-      padding={1}
-    >
+    <Box ref={boxRef} flexDirection="column" borderStyle="double" borderColor="magenta" padding={1}>
       <Text bold color="magenta">
         Imperative Access (BoxHandle)
       </Text>
@@ -136,21 +120,9 @@ export function LayoutRefApp(): JSX.Element {
     <Box flexDirection="column" padding={1}>
       {/* Row of resizable panes with onLayout callbacks */}
       <Box flexDirection="row" gap={1} height={8}>
-        <ResizablePane
-          title="Pane A"
-          color="green"
-          onLayoutChange={handleLayoutChange("a")}
-        />
-        <ResizablePane
-          title="Pane B"
-          color="blue"
-          onLayoutChange={handleLayoutChange("b")}
-        />
-        <ResizablePane
-          title="Pane C"
-          color="cyan"
-          onLayoutChange={handleLayoutChange("c")}
-        />
+        <ResizablePane title="Pane A" color="green" onLayoutChange={handleLayoutChange("a")} />
+        <ResizablePane title="Pane B" color="blue" onLayoutChange={handleLayoutChange("b")} />
+        <ResizablePane title="Pane C" color="cyan" onLayoutChange={handleLayoutChange("c")} />
       </Box>
 
       {/* Show layout info from onLayout callbacks */}
@@ -161,8 +133,7 @@ export function LayoutRefApp(): JSX.Element {
           </Text>
           {Object.entries(layouts).map(([pane, info]) => (
             <Text key={pane} dim>
-              Pane {pane.toUpperCase()}: {info.width}x{info.height} at ({info.x}
-              ,{info.y})
+              Pane {pane.toUpperCase()}: {info.width}x{info.height} at ({info.x},{info.y})
             </Text>
           ))}
           {Object.keys(layouts).length === 0 && (

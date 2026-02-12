@@ -95,9 +95,7 @@ export function isTTY(stdout: NodeJS.WriteStream = process.stdout): boolean {
  * - If TTY detected: returns 'tty'
  * - If non-TTY detected: returns 'line-by-line'
  */
-export function resolveNonTTYMode(
-  options: NonTTYOptions = {},
-): ResolvedNonTTYMode {
+export function resolveNonTTYMode(options: NonTTYOptions = {}): ResolvedNonTTYMode {
   const { mode = "auto", stdout = process.stdout } = options
 
   if (mode !== "auto") {
@@ -125,10 +123,7 @@ export { stripAnsi } from "./unicode.js"
  * @param prevLineCount Number of lines in the previous frame (for clearing)
  * @returns Output string suitable for non-TTY rendering
  */
-export function toLineByLineOutput(
-  content: string,
-  prevLineCount: number,
-): string {
+export function toLineByLineOutput(content: string, prevLineCount: number): string {
   const lines = content.split("\n")
   let output = ""
 
@@ -200,9 +195,7 @@ export function toPlainOutput(content: string, _prevLineCount: number): string {
  * @param mode The resolved non-TTY mode
  * @returns A function that transforms output based on the mode
  */
-export function createOutputTransformer(
-  mode: ResolvedNonTTYMode,
-): (content: string, prevLineCount: number) => string {
+export function createOutputTransformer(mode: ResolvedNonTTYMode): (content: string, prevLineCount: number) => string {
   switch (mode) {
     case "tty":
       // Pass through unchanged

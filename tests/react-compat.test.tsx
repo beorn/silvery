@@ -12,23 +12,9 @@
  */
 
 import type React from "react"
-import {
-  Suspense,
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react"
+import { Suspense, forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { describe, expect, test } from "vitest"
-import {
-  Box,
-  type BoxHandle,
-  ErrorBoundary,
-  type Rect,
-  Text,
-  type TextHandle,
-} from "../src/index.js"
+import { Box, type BoxHandle, ErrorBoundary, type Rect, Text, type TextHandle } from "../src/index.js"
 import { createRenderer } from "../src/testing/index.tsx"
 
 // ============================================================================
@@ -325,9 +311,7 @@ describe("ErrorBoundary Component", () => {
 
     try {
       const app = render(
-        <ErrorBoundary
-          fallback={(error, _errorInfo) => <Text>Caught: {error.message}</Text>}
-        >
+        <ErrorBoundary fallback={(error, _errorInfo) => <Text>Caught: {error.message}</Text>}>
           <BrokenComponent />
         </ErrorBoundary>,
       )
@@ -539,10 +523,7 @@ describe("Combined React Patterns", () => {
       children: React.ReactNode
     }
 
-    const CustomBox = forwardRef<BoxHandle, CustomBoxProps>(function CustomBox(
-      { label, children },
-      ref,
-    ) {
+    const CustomBox = forwardRef<BoxHandle, CustomBoxProps>(function CustomBox({ label, children }, ref) {
       return (
         <Box ref={ref} borderStyle="single" padding={1}>
           <Box flexDirection="column">

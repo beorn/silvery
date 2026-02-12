@@ -42,13 +42,7 @@
  */
 
 import process from "node:process"
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  type ReactElement,
-} from "react"
+import React, { createContext, useContext, useEffect, useRef, type ReactElement } from "react"
 import { type StateCreator, type StoreApi, createStore } from "zustand"
 
 import { createTerm } from "chalkx"
@@ -62,13 +56,7 @@ import { keyToAnsi } from "../keys.js"
 import { type Key, parseKey } from "./keys.js"
 import { ensureLayoutEngine } from "./layout.js"
 import { type TermProvider, createTermProvider } from "./term-provider.js"
-import type {
-  Buffer,
-  Dims,
-  Provider,
-  ProviderEvent,
-  RenderTarget,
-} from "./types.js"
+import type { Buffer, Dims, Provider, ProviderEvent, RenderTarget } from "./types.js"
 
 // ============================================================================
 // Types
@@ -77,9 +65,7 @@ import type {
 /**
  * Check if value is a Provider with events (full interface).
  */
-function isFullProvider(
-  value: unknown,
-): value is Provider<unknown, Record<string, unknown>> {
+function isFullProvider(value: unknown): value is Provider<unknown, Record<string, unknown>> {
   return (
     value !== null &&
     typeof value === "object" &&
@@ -121,10 +107,7 @@ export interface EventHandlerContext<S> {
  * Generic event handler function.
  * Return 'exit' to exit the app.
  */
-export type EventHandler<T, S> = (
-  data: T,
-  ctx: EventHandlerContext<S>,
-) => void | "exit" | "flush"
+export type EventHandler<T, S> = (data: T, ctx: EventHandlerContext<S>) => void | "exit" | "flush"
 
 /**
  * Event handlers map.
@@ -193,8 +176,7 @@ export interface AppDefinition<S> {
  * - `await app.run(el)` → AppHandle (backward compat)
  * - `for await (const frame of app.run(el))` → iterate frames
  */
-export interface AppRunner<S>
-  extends AsyncIterable<Buffer>, PromiseLike<AppHandle<S>> {}
+export interface AppRunner<S> extends AsyncIterable<Buffer>, PromiseLike<AppHandle<S>> {}
 
 // ============================================================================
 // Store Context
@@ -237,24 +219,14 @@ export function useApp<S, T>(selector: (state: S) => T): T {
  */
 function shallowEqual<T>(a: T, b: T): boolean {
   if (Object.is(a, b)) return true
-  if (
-    typeof a !== "object" ||
-    typeof b !== "object" ||
-    a === null ||
-    b === null
-  ) {
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) {
     return false
   }
   const keysA = Object.keys(a as Record<string, unknown>)
   const keysB = Object.keys(b as Record<string, unknown>)
   if (keysA.length !== keysB.length) return false
   for (const key of keysA) {
-    if (
-      !Object.is(
-        (a as Record<string, unknown>)[key],
-        (b as Record<string, unknown>)[key],
-      )
-    ) {
+    if (!Object.is((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) {
       return false
     }
   }
@@ -278,8 +250,7 @@ function shallowEqual<T>(a: T, b: T): boolean {
  */
 export function useAppShallow<S, T>(selector: (state: S) => T): T {
   const store = useContext(StoreContext) as StoreApi<S> | null
-  if (!store)
-    throw new Error("useAppShallow must be used within createApp().run()")
+  if (!store) throw new Error("useAppShallow must be used within createApp().run()")
 
   const [state, setState] = React.useState(() => selector(store.getState()))
   const selectorRef = useRef(selector)
@@ -320,10 +291,7 @@ interface NamespacedEvent {
  * @param factory Store factory function that receives providers
  * @param handlers Optional event handlers (namespaced as 'provider:event')
  */
-export function createApp<
-  I extends Record<string, unknown>,
-  S extends Record<string, unknown>,
->(
+export function createApp<I extends Record<string, unknown>, S extends Record<string, unknown>>(
   factory: (inject: I) => StateCreator<S>,
   handlers?: EventHandlers<S & I>,
 ): AppDefinition<S & I> {
@@ -341,12 +309,8 @@ export function createApp<
       return {
         // PromiseLike — makes `await app.run(el)` work
         then<TResult1 = AppHandle<S & I>, TResult2 = never>(
-          onfulfilled?:
-            | ((value: AppHandle<S & I>) => TResult1 | PromiseLike<TResult1>)
-            | null,
-          onrejected?:
-            | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
-            | null,
+          onfulfilled?: ((value: AppHandle<S & I>) => TResult1 | PromiseLike<TResult1>) | null,
+          onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
         ): Promise<TResult1 | TResult2> {
           return init().then(onfulfilled, onrejected)
         },
@@ -380,10 +344,7 @@ export function createApp<
 /**
  * Initialize the app — extracted from run() for clarity.
  */
-async function initApp<
-  I extends Record<string, unknown>,
-  S extends Record<string, unknown>,
->(
+async function initApp<I extends Record<string, unknown>, S extends Record<string, unknown>>(
   factory: (inject: I) => StateCreator<S>,
   handlers: EventHandlers<S & I> | undefined,
   element: ReactElement,
@@ -399,8 +360,7 @@ async function initApp<
     ...injectValues
   } = options
 
-  const headless =
-    explicitCols != null && explicitRows != null && !explicitStdout
+  const headless = explicitCols != null && explicitRows != null && !explicitStdout
   const cols = explicitCols ?? process.stdout.columns ?? 80
   const rows = explicitRows ?? process.stdout.rows ?? 24
   const stdout = explicitStdout ?? process.stdout
@@ -424,10 +384,7 @@ async function initApp<
   }
 
   // Separate providers from plain values
-  const providers: Record<
-    string,
-    Provider<unknown, Record<string, unknown>>
-  > = {}
+  const providers: Record<string, Provider<unknown, Record<string, unknown>>> = {}
   const plainValues: Record<string, unknown> = {}
   const providerCleanups: (() => void)[] = []
 
@@ -519,15 +476,11 @@ async function initApp<
   // ========================================================================
   // ANSI Trace: INKX_TRACE=1 logs all stdout writes with decoded sequences
   // ========================================================================
-  const _ansiTrace =
-    !headless &&
-    process.env?.INKX_TRACE === "1"
+  const _ansiTrace = !headless && process.env?.INKX_TRACE === "1"
 
   let _traceSeq = 0
   const _traceStart = performance.now()
-  let _origStdoutWrite:
-    | typeof process.stdout.write
-    | undefined
+  let _origStdoutWrite: typeof process.stdout.write | undefined
 
   if (_ansiTrace) {
     const fs =
@@ -571,20 +524,14 @@ async function initApp<
         // Catch remaining ESC sequences
         .replace(/\x1b([^\[])/, "⟨ESC $1⟩")
 
-    const traceWrite = function (
-      this: typeof stdout,
-      chunk: unknown,
-      ...args: unknown[]
-    ): boolean {
+    const traceWrite = function (this: typeof stdout, chunk: unknown, ...args: unknown[]): boolean {
       const str = typeof chunk === "string" ? chunk : String(chunk)
       const seq = ++_traceSeq
       const ms = (performance.now() - _traceStart).toFixed(0)
       const decoded = symbolize(str)
       // Truncate for readability but keep enough to identify content
       const preview =
-        decoded.length > 400
-          ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100)
-          : decoded
+        decoded.length > 400 ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100) : decoded
       fs.appendFileSync(
         "/tmp/inkx-trace.log",
         `[${String(seq).padStart(4, "0")}] +${ms}ms (${str.length}b): ${preview}\n`,
@@ -732,9 +679,7 @@ async function initApp<
     <TermContext.Provider value={mockTerm}>
       <AppContext.Provider value={appContextRef}>
         <StdoutContext.Provider value={{ stdout: mockStdout, write: () => {} }}>
-          <StoreContext.Provider value={store as StoreApi<unknown>}>
-            {element}
-          </StoreContext.Provider>
+          <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
         </StdoutContext.Provider>
       </AppContext.Provider>
     </TermContext.Provider>
@@ -743,14 +688,12 @@ async function initApp<
   // Performance instrumentation — count renders per event
   let _renderCount = 0
   let _eventStart = 0
-  const _perfLog =
-    typeof process !== "undefined" && process.env?.DEBUG?.includes("inkx:perf")
+  const _perfLog = typeof process !== "undefined" && process.env?.DEBUG?.includes("inkx:perf")
 
   // Incremental rendering — store previous pipeline buffer for diffing.
   // Without this, every render walks the entire node tree from scratch.
   // Set INKX_NO_INCREMENTAL=1 to disable (for debugging blank screen issues).
-  const _noIncremental =
-    process.env?.INKX_NO_INCREMENTAL === "1"
+  const _noIncremental = process.env?.INKX_NO_INCREMENTAL === "1"
   let _prevTermBuffer: import("../buffer.js").TerminalBuffer | null = null
 
   // Helper to render and get text
@@ -776,11 +719,7 @@ async function initApp<
     const dims = runtime.getDims()
 
     // Invalidate prevBuffer on dimension change (resize)
-    if (
-      _prevTermBuffer &&
-      (dims.cols !== _prevTermBuffer.width ||
-        dims.rows !== _prevTermBuffer.height)
-    ) {
+    if (_prevTermBuffer && (dims.cols !== _prevTermBuffer.width || dims.rows !== _prevTermBuffer.height)) {
       _prevTermBuffer = null
     }
 
@@ -804,16 +743,11 @@ async function initApp<
     // createApp bypasses Scheduler/Renderer which have this check built-in,
     // so we add it here to catch incremental rendering bugs at runtime.
     const strictEnv =
-      typeof process !== "undefined" &&
-      (process.env?.INKX_STRICT || process.env?.INKX_CHECK_INCREMENTAL)
+      typeof process !== "undefined" && (process.env?.INKX_STRICT || process.env?.INKX_CHECK_INCREMENTAL)
     if (strictEnv && strictEnv !== "0" && strictEnv !== "false" && _renderCount > 1) {
-      const { buffer: freshBuffer } = executeRender(
-        rootNode,
-        dims.cols,
-        dims.rows,
-        null,
-        { skipLayoutNotifications: true },
-      )
+      const { buffer: freshBuffer } = executeRender(rootNode, dims.cols, dims.rows, null, {
+        skipLayoutNotifications: true,
+      })
       const { cellEquals, bufferToText } =
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         require("../buffer.js") as typeof import("../buffer.js")
@@ -830,16 +764,19 @@ async function initApp<
             const contentAll = (globalThis as any).__inkx_content_all as unknown[]
             const statsStr = contentAll
               ? `\n--- content phase stats (${contentAll.length} calls) ---\n` +
-                contentAll.map((s: any, i: number) =>
-                  `  #${i}: visited=${s.nodesVisited} rendered=${s.nodesRendered} skipped=${s.nodesSkipped} ` +
-                  `clearOps=${s.clearOps} cascade="${s.cascadeNodes}" ` +
-                  `flags={C=${s.flagContentDirty} P=${s.flagPaintDirty} L=${s.flagLayoutChanged} ` +
-                  `S=${s.flagSubtreeDirty} Ch=${s.flagChildrenDirty} CP=${s.flagChildPositionChanged} noPrev=${s.noPrevBuffer}} ` +
-                  `scroll={containers=${s.scrollContainerCount} cleared=${s.scrollViewportCleared} reason="${s.scrollClearReason}"} ` +
-                  `normalRepaint="${s.normalRepaintReason}" ` +
-                  `prevBuf={null=${s._prevBufferNull} dimMismatch=${s._prevBufferDimMismatch} hasPrev=${s._hasPrevBuffer} ` +
-                  `layout=${s._layoutW}x${s._layoutH} prev=${s._prevW}x${s._prevH}}`
-                ).join("\n")
+                contentAll
+                  .map(
+                    (s: any, i: number) =>
+                      `  #${i}: visited=${s.nodesVisited} rendered=${s.nodesRendered} skipped=${s.nodesSkipped} ` +
+                      `clearOps=${s.clearOps} cascade="${s.cascadeNodes}" ` +
+                      `flags={C=${s.flagContentDirty} P=${s.flagPaintDirty} L=${s.flagLayoutChanged} ` +
+                      `S=${s.flagSubtreeDirty} Ch=${s.flagChildrenDirty} CP=${s.flagChildPositionChanged} noPrev=${s.noPrevBuffer}} ` +
+                      `scroll={containers=${s.scrollContainerCount} cleared=${s.scrollViewportCleared} reason="${s.scrollClearReason}"} ` +
+                      `normalRepaint="${s.normalRepaintReason}" ` +
+                      `prevBuf={null=${s._prevBufferNull} dimMismatch=${s._prevBufferDimMismatch} hasPrev=${s._hasPrevBuffer} ` +
+                      `layout=${s._layoutW}x${s._layoutH} prev=${s._prevW}x${s._prevH}}`,
+                  )
+                  .join("\n")
               : ""
             const msg =
               `INKX_CHECK_INCREMENTAL (createApp): MISMATCH at (${x}, ${y}) on render #${_renderCount}\n` +
@@ -1082,13 +1019,10 @@ async function initApp<
     const namespacedHandler = handlers?.[namespacedKey as keyof typeof handlers]
 
     if (namespacedHandler && typeof namespacedHandler === "function") {
-      const result = (namespacedHandler as EventHandler<unknown, S & I>)(
-        event.data,
-        {
-          set: store.setState,
-          get: store.getState,
-        },
-      )
+      const result = (namespacedHandler as EventHandler<unknown, S & I>)(event.data, {
+        set: store.setState,
+        get: store.getState,
+      })
       if (result === "exit") {
         return false
       }
@@ -1109,9 +1043,7 @@ async function initApp<
    * For a batch of 3 'j' presses: handler1 → handler2 → handler3 → render.
    * The cursor moves 3 positions, but we only pay one render cost.
    */
-  async function processEventBatch(
-    events: NamespacedEvent[],
-  ): Promise<Buffer | null> {
+  async function processEventBatch(events: NamespacedEvent[]): Promise<Buffer | null> {
     if (shouldExit || events.length === 0) return null
     _renderCount = 0
     _eventStart = performance.now()
@@ -1207,8 +1139,8 @@ async function initApp<
 
   const eventLoop = async () => {
     // Merge all provider event streams
-    const providerEventStreams = Object.entries(providers).map(
-      ([name, provider]) => createProviderEventStream(name, provider),
+    const providerEventStreams = Object.entries(providers).map(([name, provider]) =>
+      createProviderEventStream(name, provider),
     )
 
     const allEvents = merge(...providerEventStreams)

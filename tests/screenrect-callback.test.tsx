@@ -21,13 +21,7 @@ interface RecordedPosition {
 /**
  * Component that records its screen position when rendered.
  */
-function PositionRecorder({
-  id,
-  onLayout,
-}: {
-  id: string
-  onLayout: (pos: RecordedPosition) => void
-}) {
+function PositionRecorder({ id, onLayout }: { id: string; onLayout: (pos: RecordedPosition) => void }) {
   const handleLayout = useCallback(
     (rect: { x: number; y: number; width: number; height: number }) => {
       onLayout({ id, y: rect.y, height: rect.height })
@@ -42,15 +36,7 @@ function PositionRecorder({
 /**
  * Card with border that contains a PositionRecorder.
  */
-function Card({
-  id,
-  content,
-  onLayout,
-}: {
-  id: string
-  content: string
-  onLayout: (pos: RecordedPosition) => void
-}) {
+function Card({ id, content, onLayout }: { id: string; content: string; onLayout: (pos: RecordedPosition) => void }) {
   return (
     <Box borderStyle="single" flexDirection="column">
       <PositionRecorder id={id} onLayout={onLayout} />

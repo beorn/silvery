@@ -150,15 +150,11 @@ describe("Buffer", () => {
     })
 
     test("rgb equals same rgb", () => {
-      expect(colorEquals({ r: 255, g: 0, b: 0 }, { r: 255, g: 0, b: 0 })).toBe(
-        true,
-      )
+      expect(colorEquals({ r: 255, g: 0, b: 0 }, { r: 255, g: 0, b: 0 })).toBe(true)
     })
 
     test("rgb !== different rgb", () => {
-      expect(colorEquals({ r: 255, g: 0, b: 0 }, { r: 0, g: 255, b: 0 })).toBe(
-        false,
-      )
+      expect(colorEquals({ r: 255, g: 0, b: 0 }, { r: 0, g: 255, b: 0 })).toBe(false)
     })
 
     test("number !== rgb", () => {

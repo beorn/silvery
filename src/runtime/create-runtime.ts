@@ -166,10 +166,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       return takeUntil(eventChannel.events(), signal)
     },
 
-    schedule<T>(
-      effect: () => Promise<T>,
-      opts?: { signal?: AbortSignal },
-    ): void {
+    schedule<T>(effect: () => Promise<T>, opts?: { signal?: AbortSignal }): void {
       if (disposed) return
 
       const id = `effect-${effectId++}`
@@ -212,10 +209,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
           }
 
           // Check for abort by name (handles DOMException, AbortError, etc.)
-          if (
-            error instanceof Error &&
-            (error.message === "Effect aborted" || error.name === "AbortError")
-          ) {
+          if (error instanceof Error && (error.message === "Effect aborted" || error.name === "AbortError")) {
             // Silently ignore aborted effects
             return
           }

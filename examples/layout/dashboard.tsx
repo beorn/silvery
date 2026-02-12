@@ -8,21 +8,12 @@
  */
 
 import React, { useState } from "react"
-import {
-  render,
-  Box,
-  Text,
-  useInput,
-  useApp,
-  createTerm,
-  type Key,
-} from "../../src/index.js"
+import { render, Box, Text, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Dashboard",
-  description:
-    "Multi-pane dashboard with flexGrow columns and keyboard navigation",
+  description: "Multi-pane dashboard with flexGrow columns and keyboard navigation",
   features: ["Box flexGrow", "borderStyle", "useInput", "backgroundColor"],
 }
 
@@ -48,13 +39,7 @@ interface PaneProps {
 
 function Pane({ title, isSelected, children }: PaneProps): JSX.Element {
   return (
-    <Box
-      flexDirection="column"
-      flexGrow={1}
-      borderStyle="round"
-      borderColor={isSelected ? "cyan" : "gray"}
-      padding={1}
-    >
+    <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor={isSelected ? "cyan" : "gray"} padding={1}>
       <Box marginBottom={1}>
         <Text bold color={isSelected ? "cyan" : "white"}>
           {title}
@@ -75,12 +60,7 @@ function StatsList({ stats }: { stats: StatItem[] }): JSX.Element {
             <Text bold color="green">
               {stat.value}
             </Text>
-            {stat.change && (
-              <Text color={stat.change.startsWith("+") ? "green" : "red"}>
-                {" "}
-                {stat.change}
-              </Text>
-            )}
+            {stat.change && <Text color={stat.change.startsWith("+") ? "green" : "red"}> {stat.change}</Text>}
           </Box>
         </Box>
       ))}
@@ -100,11 +80,7 @@ function ActivityList({ activities }: { activities: string[] }): JSX.Element {
   )
 }
 
-function ProgressBars({
-  items,
-}: {
-  items: { label: string; percent: number }[]
-}): JSX.Element {
+function ProgressBars({ items }: { items: { label: string; percent: number }[] }): JSX.Element {
   const barWidth = 20 // Fixed width for simplicity
 
   return (

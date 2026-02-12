@@ -26,18 +26,11 @@ export { TextInput } from "./TextInput.js"
 export type { TextInputProps, TextInputHandle } from "./TextInput.js"
 
 export { ReadlineInput } from "./ReadlineInput.js"
-export type {
-  ReadlineInputProps,
-  ReadlineInputHandle,
-} from "./ReadlineInput.js"
+export type { ReadlineInputProps, ReadlineInputHandle } from "./ReadlineInput.js"
 
 export { TextArea } from "./TextArea.js"
 export type { TextAreaProps, TextAreaHandle } from "./TextArea.js"
 
 // Input Hooks
 export { useReadline } from "./useReadline.js"
-export type {
-  ReadlineState,
-  UseReadlineOptions,
-  UseReadlineResult,
-} from "./useReadline.js"
+export type { ReadlineState, UseReadlineOptions, UseReadlineResult } from "./useReadline.js"

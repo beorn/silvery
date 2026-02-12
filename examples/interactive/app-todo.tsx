@@ -71,9 +71,7 @@ const app = createApp<Record<string, unknown>, State>(
 
     toggleTodo: () =>
       set((s) => ({
-        todos: s.todos.map((t, i) =>
-          i === s.cursor ? { ...t, completed: !t.completed } : t,
-        ),
+        todos: s.todos.map((t, i) => (i === s.cursor ? { ...t, completed: !t.completed } : t)),
       })),
 
     deleteTodo: () =>
@@ -130,13 +128,8 @@ const app = createApp<Record<string, unknown>, State>(
 function TodoItem({ todo, isCursor }: { todo: Todo; isCursor: boolean }) {
   return (
     <Box>
-      <Text color={isCursor ? "cyan" : undefined}>
-        {isCursor ? "› " : "  "}
-      </Text>
-      <Text
-        color={todo.completed ? "green" : undefined}
-        strikethrough={todo.completed}
-      >
+      <Text color={isCursor ? "cyan" : undefined}>{isCursor ? "› " : "  "}</Text>
+      <Text color={todo.completed ? "green" : undefined} strikethrough={todo.completed}>
         {todo.completed ? "✓" : "○"} {todo.text}
       </Text>
     </Box>
@@ -152,9 +145,7 @@ function TodoList() {
       {todos.map((todo, i) => (
         <TodoItem key={todo.id} todo={todo} isCursor={i === cursor} />
       ))}
-      {todos.length === 0 && (
-        <Text dimColor>No todos. Press 'a' to add one.</Text>
-      )}
+      {todos.length === 0 && <Text dimColor>No todos. Press 'a' to add one.</Text>}
     </Box>
   )
 }
@@ -164,9 +155,7 @@ function App() {
     <Box flexDirection="column" padding={1}>
       <TodoList />
       <Text> </Text>
-      <Text dimColor>
-        j/k: move • x: toggle • a: add • d: delete • Esc/q: quit
-      </Text>
+      <Text dimColor>j/k: move • x: toggle • a: add • d: delete • Esc/q: quit</Text>
     </Box>
   )
 }
@@ -177,10 +166,7 @@ function App() {
 
 async function main() {
   const handle = await app.run(
-    <ExampleBanner
-      meta={meta}
-      controls="j/k move  x toggle  a add  d delete  Esc/q quit"
-    >
+    <ExampleBanner meta={meta} controls="j/k move  x toggle  a add  d delete  Esc/q quit">
       <App />
     </ExampleBanner>,
   )

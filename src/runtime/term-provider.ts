@@ -170,11 +170,7 @@ export function createTermProvider(
       return () => listeners.delete(listener)
     },
 
-    async *events(): AsyncGenerator<
-      ProviderEvent<TermEvents>,
-      void,
-      undefined
-    > {
+    async *events(): AsyncGenerator<ProviderEvent<TermEvents>, void, undefined> {
       if (disposed) return
 
       // Set up stdin for raw mode if TTY

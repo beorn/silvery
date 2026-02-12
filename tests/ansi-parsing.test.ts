@@ -7,12 +7,7 @@
  */
 
 import { describe, expect, test } from "vitest"
-import {
-  displayWidthAnsi,
-  hasAnsi,
-  parseAnsiText,
-  stripAnsi,
-} from "../src/unicode.js"
+import { displayWidthAnsi, hasAnsi, parseAnsiText, stripAnsi } from "../src/unicode.js"
 
 describe("ANSI text utilities", () => {
   describe("hasAnsi", () => {
@@ -37,9 +32,7 @@ describe("ANSI text utilities", () => {
     })
 
     test("handles multiple escape sequences", () => {
-      expect(stripAnsi("\x1b[31mred\x1b[0m and \x1b[32mgreen\x1b[0m")).toBe(
-        "red and green",
-      )
+      expect(stripAnsi("\x1b[31mred\x1b[0m and \x1b[32mgreen\x1b[0m")).toBe("red and green")
     })
   })
 
@@ -166,9 +159,7 @@ describe("ANSI text utilities", () => {
     })
 
     test("handles multiple segments with style changes", () => {
-      const segments = parseAnsiText(
-        "\x1b[31mred\x1b[0m normal \x1b[32mgreen\x1b[0m",
-      )
+      const segments = parseAnsiText("\x1b[31mred\x1b[0m normal \x1b[32mgreen\x1b[0m")
       expect(segments).toHaveLength(3)
       expect(segments[0]!.text).toBe("red")
       expect(segments[0]!.fg).toBe(31)
@@ -232,9 +223,7 @@ describe("ANSI text utilities", () => {
     })
 
     test("bgOverride persists across segments", () => {
-      const segments = parseAnsiText(
-        "\x1b[9999m\x1b[44mfirst\x1b[41msecond\x1b[0m",
-      )
+      const segments = parseAnsiText("\x1b[9999m\x1b[44mfirst\x1b[41msecond\x1b[0m")
       expect(segments).toHaveLength(2)
       expect(segments[0]!.bgOverride).toBe(true)
       expect(segments[1]!.bgOverride).toBe(true)

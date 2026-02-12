@@ -48,12 +48,7 @@ function App() {
   })
 
   return (
-    <Box
-      flexDirection="column"
-      height={10}
-      overflow="scroll"
-      scrollTo={selected}
-    >
+    <Box flexDirection="column" height={10} overflow="scroll" scrollTo={selected}>
       {items.map((item, i) => (
         <Text key={i} inverse={i === selected}>
           {item}
@@ -84,10 +79,7 @@ function TaskList({ tasks, selectedIndex }) {
 function TaskRow({ task, isSelected }) {
   // Variable height - some tasks have subtasks
   return (
-    <Box
-      flexDirection="column"
-      backgroundColor={isSelected ? "blue" : undefined}
-    >
+    <Box flexDirection="column" backgroundColor={isSelected ? "blue" : undefined}>
       <Text>
         {task.done ? "✓" : "○"} {task.title}
       </Text>

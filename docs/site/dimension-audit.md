@@ -83,17 +83,8 @@ height={Math.floor(contentHeight / 2)}
 **Recommendation:** Wrap in a centered flexbox container:
 
 ```tsx
-<Box
-  position="absolute"
-  width="100%"
-  height="100%"
-  justifyContent="center"
-  alignItems="center"
->
-  <ProjectPicker
-    width={Math.floor(termWidth / 2)}
-    height={Math.floor(contentHeight / 2)}
-  />
+<Box position="absolute" width="100%" height="100%" justifyContent="center" alignItems="center">
+  <ProjectPicker width={Math.floor(termWidth / 2)} height={Math.floor(contentHeight / 2)} />
 </Box>
 ```
 

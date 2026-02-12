@@ -29,12 +29,7 @@
  */
 
 import type { ReactElement } from "react"
-import {
-  type DOMAdapterConfig,
-  DOMRenderBuffer,
-  createDOMAdapter,
-  injectDOMStyles,
-} from "../adapters/dom-adapter.js"
+import { type DOMAdapterConfig, DOMRenderBuffer, createDOMAdapter, injectDOMStyles } from "../adapters/dom-adapter.js"
 import { createFlexxZeroEngine } from "../adapters/flexx-zero-adapter.js"
 import { setLayoutEngine } from "../layout-engine.js"
 import { executeRenderAdapter } from "../pipeline/index.js"
@@ -49,12 +44,7 @@ export { useContentRect, useScreenRect } from "../hooks/useLayout.js"
 export { useApp } from "../hooks/useApp.js"
 
 // Re-export adapter utilities
-export {
-  createDOMAdapter,
-  DOMRenderBuffer,
-  injectDOMStyles,
-  type DOMAdapterConfig,
-} from "../adapters/dom-adapter.js"
+export { createDOMAdapter, DOMRenderBuffer, injectDOMStyles, type DOMAdapterConfig } from "../adapters/dom-adapter.js"
 
 // ============================================================================
 // Types

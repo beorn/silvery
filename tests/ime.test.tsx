@@ -33,11 +33,7 @@ interface TextCapture {
 /**
  * Component that captures and displays input with CJK-aware metrics.
  */
-function CJKInputCapture({
-  onCapture,
-}: {
-  onCapture?: (captures: TextCapture[]) => void
-}) {
+function CJKInputCapture({ onCapture }: { onCapture?: (captures: TextCapture[]) => void }) {
   const [captures, setCaptures] = useState<TextCapture[]>([])
 
   useInput((input: string, _key: Key) => {

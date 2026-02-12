@@ -96,10 +96,7 @@ interface RenderAdapter {
 
 interface TextMeasurer {
   /** Measure text dimensions (cells for terminal, pixels for canvas) */
-  measureText(
-    text: string,
-    style?: TextMeasureStyle,
-  ): { width: number; height: number }
+  measureText(text: string, style?: TextMeasureStyle): { width: number; height: number }
 
   /** Get line height for the given style */
   getLineHeight(style?: TextMeasureStyle): number
@@ -110,13 +107,7 @@ interface RenderBuffer {
   readonly height: number
 
   /** Fill a rectangle with a style */
-  fillRect(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style: RenderStyle,
-  ): void
+  fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void
 
   /** Draw text at a position */
   drawText(x: number, y: number, text: string, style: RenderStyle): void

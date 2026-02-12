@@ -6,12 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react"
-import {
-  renderToCanvas,
-  Box,
-  Text,
-  useContentRect,
-} from "../../src/canvas/index.js"
+import { renderToCanvas, Box, Text, useContentRect } from "../../src/canvas/index.js"
 
 // ============================================================================
 // Shared components
@@ -44,9 +39,7 @@ function HelloWorld() {
           <Text bold color="cyan">
             Hello from inkx!
           </Text>
-          <Text color="gray">
-            React components rendered to HTML5 Canvas
-          </Text>
+          <Text color="gray">React components rendered to HTML5 Canvas</Text>
           <SizeDisplay />
         </Box>
       </Box>
@@ -169,13 +162,7 @@ function FlexboxLayout() {
         Nested columns:
       </Text>
       <Box flexDirection="row" gap={1}>
-        <Box
-          borderStyle="round"
-          borderColor="magenta"
-          padding={1}
-          flexGrow={1}
-          flexDirection="column"
-        >
+        <Box borderStyle="round" borderColor="magenta" padding={1} flexGrow={1} flexDirection="column">
           <Text bold color="magenta">
             Panel A
           </Text>
@@ -183,13 +170,7 @@ function FlexboxLayout() {
           <Text>Item 2</Text>
           <Text>Item 3</Text>
         </Box>
-        <Box
-          borderStyle="round"
-          borderColor="cyan"
-          padding={1}
-          flexGrow={1}
-          flexDirection="column"
-        >
+        <Box borderStyle="round" borderColor="cyan" padding={1} flexGrow={1} flexDirection="column">
           <Text bold color="cyan">
             Panel B
           </Text>
@@ -221,13 +202,7 @@ function BorderStyles() {
       <Divider />
       <Box flexDirection="row" gap={1} marginTop={1}>
         {styles.map(({ style, color }) => (
-          <Box
-            key={style}
-            borderStyle={style as any}
-            borderColor={color}
-            padding={1}
-            flexGrow={1}
-          >
+          <Box key={style} borderStyle={style as any} borderColor={color} padding={1} flexGrow={1}>
             <Box flexDirection="column">
               <Text bold color={color}>
                 {style}
@@ -254,39 +229,21 @@ function Dashboard() {
         </Text>
       </Box>
       <Box flexDirection="row" gap={1} marginTop={1}>
-        <Box
-          borderStyle="round"
-          borderColor="green"
-          padding={1}
-          flexGrow={1}
-          flexDirection="column"
-        >
+        <Box borderStyle="round" borderColor="green" padding={1} flexGrow={1} flexDirection="column">
           <Text bold color="green">
             CPU
           </Text>
           <Text color="brightGreen">|||||||....</Text>
           <Text>65%</Text>
         </Box>
-        <Box
-          borderStyle="round"
-          borderColor="yellow"
-          padding={1}
-          flexGrow={1}
-          flexDirection="column"
-        >
+        <Box borderStyle="round" borderColor="yellow" padding={1} flexGrow={1} flexDirection="column">
           <Text bold color="yellow">
             Memory
           </Text>
           <Text color="brightYellow">|||||||||..</Text>
           <Text>82%</Text>
         </Box>
-        <Box
-          borderStyle="round"
-          borderColor="red"
-          padding={1}
-          flexGrow={1}
-          flexDirection="column"
-        >
+        <Box borderStyle="round" borderColor="red" padding={1} flexGrow={1} flexDirection="column">
           <Text bold color="red">
             Disk
           </Text>
@@ -294,20 +251,14 @@ function Dashboard() {
           <Text>91%</Text>
         </Box>
       </Box>
-      <Box
-        borderStyle="single"
-        borderColor="gray"
-        padding={1}
-        marginTop={1}
-        flexDirection="column"
-      >
+      <Box borderStyle="single" borderColor="gray" padding={1} marginTop={1} flexDirection="column">
         <Text bold color="white">
           Recent Events
         </Text>
-        <Text color="green"> OK  api-server healthy</Text>
-        <Text color="green"> OK  database connected</Text>
+        <Text color="green"> OK api-server healthy</Text>
+        <Text color="green"> OK database connected</Text>
         <Text color="yellow"> WARN cache miss rate high</Text>
-        <Text color="red"> ERR  disk space low on /var</Text>
+        <Text color="red"> ERR disk space low on /var</Text>
       </Box>
     </Box>
   )
@@ -326,25 +277,15 @@ function Responsive() {
       <Text bold color="yellow">
         Responsive Layout
       </Text>
-      <Text color="gray">
-        Resize the canvas to see layout adapt ({Math.round(width)}px wide)
-      </Text>
+      <Text color="gray">Resize the canvas to see layout adapt ({Math.round(width)}px wide)</Text>
       <Divider />
       <Box flexDirection={isWide ? "row" : "column"} gap={1} marginTop={1}>
-        <Box
-          borderStyle="single"
-          borderColor="cyan"
-          padding={1}
-          flexGrow={1}
-          flexDirection="column"
-        >
+        <Box borderStyle="single" borderColor="cyan" padding={1} flexGrow={1} flexDirection="column">
           <Text bold color="cyan">
             Main Content
           </Text>
           <Text>This panel takes available space.</Text>
-          <Text>
-            Layout: {isWide ? "horizontal" : "vertical"}
-          </Text>
+          <Text>Layout: {isWide ? "horizontal" : "vertical"}</Text>
           <SizeDisplay />
         </Box>
         <Box

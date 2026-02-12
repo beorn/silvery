@@ -122,11 +122,7 @@ function isLayoutEngineInitialized(): boolean
 Checks if a layout engine has been set:
 
 ```tsx
-import {
-  isLayoutEngineInitialized,
-  setLayoutEngine,
-  createFlexxEngine,
-} from "inkx"
+import { isLayoutEngineInitialized, setLayoutEngine, createFlexxEngine } from "inkx"
 
 if (!isLayoutEngineInitialized()) {
   setLayoutEngine(createFlexxEngine())
@@ -327,12 +323,7 @@ renderSync(term, <App />)
 If Yoga WASM fails to load, try Flexx as a fallback:
 
 ```tsx
-import {
-  render,
-  setLayoutEngine,
-  createFlexxEngine,
-  isLayoutEngineInitialized,
-} from "inkx"
+import { render, setLayoutEngine, createFlexxEngine, isLayoutEngineInitialized } from "inkx"
 
 using term = createTerm()
 

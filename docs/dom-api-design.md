@@ -39,8 +39,8 @@ There is no way to render independent sub-applications into regions of a parent 
 
 ```tsx
 const layout = await render(term, <Layout />)
-const header = await render(layout.locator('#header'), <StatusBar />)
-const content = await render(layout.locator('#content'), <Board />)
+const header = await render(layout.locator("#header"), <StatusBar />)
+const content = await render(layout.locator("#content"), <Board />)
 ```
 
 Currently, composition only happens via React component nesting -- you cannot mount independent React trees into separate screen regions with their own lifecycle.
@@ -48,6 +48,7 @@ Currently, composition only happens via React component nesting -- you cannot mo
 ### 4. Inconsistent option passing
 
 Options are spread across multiple layers:
+
 - `createTerm()`: color detection, stdout/stdin
 - `render()`: mode, alternateScreen, exitOnCtrlC, nonTTYMode, layoutEngine
 - `createApp()`: cols, rows, alternateScreen, signal, plus arbitrary provider injection
@@ -174,13 +175,13 @@ The test renderer already has the right ergonomics. No changes needed -- it retu
 
 ### Comparison with DOM API
 
-| DOM (React 18)                            | inkx (proposed)                          |
-| ----------------------------------------- | ---------------------------------------- |
-| `const root = createRoot(container)`       | `const root = await inkx.createRoot()`   |
-| `root.render(<App />)`                    | `root.render(<App />)`                   |
-| `root.unmount()`                          | `root.unmount()`                         |
-| `createRoot(childDiv).render(<Sub />)`    | `root.createRoot(locator).render(<Sub />)` |
-| `createPortal(children, container)`       | (nested root is the equivalent)          |
+| DOM (React 18)                         | inkx (proposed)                            |
+| -------------------------------------- | ------------------------------------------ |
+| `const root = createRoot(container)`   | `const root = await inkx.createRoot()`     |
+| `root.render(<App />)`                 | `root.render(<App />)`                     |
+| `root.unmount()`                       | `root.unmount()`                           |
+| `createRoot(childDiv).render(<Sub />)` | `root.createRoot(locator).render(<Sub />)` |
+| `createPortal(children, container)`    | (nested root is the equivalent)            |
 
 Key difference: DOM has a physical `container` (HTMLElement). inkx has an abstract render target -- either a terminal (the "document") or a region identified by an `AutoLocator`. The locator's `boundingBox()` defines the nested root's dimensions and position.
 
@@ -188,13 +189,13 @@ Key difference: DOM has a physical `container` (HTMLElement). inkx has an abstra
 
 This proposal does **not** replace the runtime layers. Instead, it provides a better foundation for them:
 
-| Layer | Current                             | Proposed                                  |
-| ----- | ----------------------------------- | ----------------------------------------- |
-| 0     | `render()` in `render.tsx` (old)    | `inkx.createRoot()` + `root.render()`     |
-| 0     | `render()` in `renderer.ts` (test)  | unchanged -- already good ergonomics      |
-| 1     | `createRuntime()`                   | unchanged -- low-level, max control       |
-| 2     | `run()` (hooks)                     | `inkx.run()` wrapping `createRoot()`      |
-| 3     | `createApp()` (Zustand)             | unchanged -- uses `createRoot()` internally |
+| Layer | Current                            | Proposed                                    |
+| ----- | ---------------------------------- | ------------------------------------------- |
+| 0     | `render()` in `render.tsx` (old)   | `inkx.createRoot()` + `root.render()`       |
+| 0     | `render()` in `renderer.ts` (test) | unchanged -- already good ergonomics        |
+| 1     | `createRuntime()`                  | unchanged -- low-level, max control         |
+| 2     | `run()` (hooks)                    | `inkx.run()` wrapping `createRoot()`        |
+| 3     | `createApp()` (Zustand)            | unchanged -- uses `createRoot()` internally |
 
 The key insight is that `inkx.createRoot()` unifies the old `render.tsx` and `renderer.ts` behind a single interface (`InkxRoot`), while the runtime layers continue to provide their ergonomic patterns on top.
 
@@ -235,12 +236,12 @@ The parent root's render pipeline composites child root buffers into the final o
 
 ### When to use nested mounting vs component composition
 
-| Use Case                          | Approach              | Why                                        |
-| --------------------------------- | --------------------- | ------------------------------------------ |
-| UI sections of one app            | Component composition | Shared state, single reconciler, simpler   |
-| Independent sub-applications      | Nested mounting       | Independent lifecycle, isolation, hot-swap  |
-| Plugin/extension rendering        | Nested mounting       | Sandboxed React tree, crash isolation       |
-| Dashboard with unrelated widgets  | Nested mounting       | Each widget manages own state independently |
+| Use Case                         | Approach              | Why                                         |
+| -------------------------------- | --------------------- | ------------------------------------------- |
+| UI sections of one app           | Component composition | Shared state, single reconciler, simpler    |
+| Independent sub-applications     | Nested mounting       | Independent lifecycle, isolation, hot-swap  |
+| Plugin/extension rendering       | Nested mounting       | Sandboxed React tree, crash isolation       |
+| Dashboard with unrelated widgets | Nested mounting       | Each widget manages own state independently |
 
 ## Migration Path
 
@@ -266,6 +267,7 @@ export const inkx = {
 ### Phase 2: Merge App and Instance capabilities
 
 The `InkxRoot` interface combines:
+
 - From `Instance`: `rerender`, `unmount`, `waitUntilExit`, `clear`, `flush`, `pause`, `resume`
 - From `App`: `text`, `ansi`, `press()`, `getByTestId()`, `locator()`, `screenshot()`
 
@@ -276,6 +278,7 @@ Implementation: `InkxRoot` wraps `InkxInstance` and delegates to a `buildApp()` 
 ### Phase 3: Nested mounting
 
 Add `createRoot(locator)` to `InkxRoot`. This requires:
+
 - Buffer compositing: parent buffer reserves regions, child buffers render into them
 - Input routing: parent dispatches input events to the child whose region contains the cursor
 - Resize propagation: `boundingBox()` changes trigger child root resize
@@ -285,6 +288,7 @@ This is the most complex phase and can be deferred until the unified root is sta
 ### Phase 4: Deprecate old render API
 
 Once `inkx.createRoot()` is stable and the runtime layers use it internally:
+
 - Deprecate `render()` from `render.tsx` (keep working, emit deprecation warning)
 - `renderer.ts` render stays as-is (it is the headless/test path)
 - Update CLAUDE.md and docs to show `inkx.createRoot()` as the primary API
@@ -295,9 +299,9 @@ Once `inkx.createRoot()` is stable and the runtime layers use it internally:
 
 ```typescript
 class InkxRootImpl implements InkxRoot {
-  private instance: InkxInstance      // Terminal management, lifecycle
-  private app: App                     // Locators, text, buffer access
-  private children: Map<string, InkxRootImpl>  // Nested roots by locator selector
+  private instance: InkxInstance // Terminal management, lifecycle
+  private app: App // Locators, text, buffer access
+  private children: Map<string, InkxRootImpl> // Nested roots by locator selector
 
   render(element: ReactElement): void {
     this.instance.render(element)
@@ -335,6 +339,7 @@ This is analogous to how windowing systems composite child windows into a parent
 ### Input routing for nested roots
 
 When input arrives at the parent root:
+
 1. Check if the "cursor" (or input focus) is within a child root's region
 2. If yes, dispatch to the child root's input system
 3. If no, handle normally in the parent
@@ -344,6 +349,7 @@ For keyboard-driven TUIs (no mouse), input routing is simpler: the focused child
 ### Synchronization
 
 Child roots render independently but composite synchronously with the parent. The parent's render scheduler:
+
 1. Detects when any child root's buffer has changed (dirty flag)
 2. Re-composites and outputs the combined frame
 3. Uses synchronized rendering (DCS/SYNC sequences) to avoid tearing

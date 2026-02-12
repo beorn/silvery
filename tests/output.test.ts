@@ -7,13 +7,7 @@
  */
 
 import { describe, expect, test } from "vitest"
-import {
-  ANSI,
-  disableMouse,
-  enableMouse,
-  enterAlternateScreen,
-  leaveAlternateScreen,
-} from "../src/output.js"
+import { ANSI, disableMouse, enableMouse, enterAlternateScreen, leaveAlternateScreen } from "../src/output.js"
 
 describe("Output Functions", () => {
   describe("Screen control functions", () => {

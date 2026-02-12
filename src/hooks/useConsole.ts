@@ -23,13 +23,8 @@ import { useEffect, useState } from "react"
  * }
  * ```
  */
-export function useConsole(
-  patched: PatchedConsole,
-  debounceMs = 200,
-): readonly ConsoleEntry[] {
-  const [entries, setEntries] = useState<readonly ConsoleEntry[]>(
-    patched.getSnapshot,
-  )
+export function useConsole(patched: PatchedConsole, debounceMs = 200): readonly ConsoleEntry[] {
+  const [entries, setEntries] = useState<readonly ConsoleEntry[]>(patched.getSnapshot)
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null

@@ -48,8 +48,7 @@ export async function connectDevTools(): Promise<boolean> {
       } catch {
         // ws not available -- devtools won't be able to connect
         console.warn(
-          "inkx devtools: WebSocket polyfill (ws) not available. " +
-            "Install ws for DevTools support: bun add -d ws",
+          "inkx devtools: WebSocket polyfill (ws) not available. " + "Install ws for DevTools support: bun add -d ws",
         )
         return false
       }
@@ -107,10 +106,7 @@ export function isDevToolsConnected(): boolean {
  * Called internally during render initialization.
  */
 export async function autoConnectDevTools(): Promise<void> {
-  if (
-    process.env.DEBUG_DEVTOOLS === "1" ||
-    process.env.DEBUG_DEVTOOLS === "true"
-  ) {
+  if (process.env.DEBUG_DEVTOOLS === "1" || process.env.DEBUG_DEVTOOLS === "true") {
     await connectDevTools()
   }
 }

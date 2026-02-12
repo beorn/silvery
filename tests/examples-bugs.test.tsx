@@ -36,11 +36,7 @@ function SimpleKanban() {
   })
 
   const columns = ["To Do", "In Progress", "Done"]
-  const cards = [
-    ["Card A1", "Card A2", "Card A3"],
-    ["Card B1", "Card B2"],
-    ["Card C1"],
-  ]
+  const cards = [["Card A1", "Card A2", "Card A3"], ["Card B1", "Card B2"], ["Card C1"]]
 
   return (
     <Box flexDirection="row" gap={1}>
@@ -53,10 +49,7 @@ function SimpleKanban() {
           borderColor={selectedColumn === colIdx ? "cyan" : "gray"}
         >
           {/* Column header - Bug 1: bg color should show */}
-          <Box
-            backgroundColor={selectedColumn === colIdx ? "cyan" : undefined}
-            paddingX={1}
-          >
+          <Box backgroundColor={selectedColumn === colIdx ? "cyan" : undefined} paddingX={1}>
             <Text bold color={selectedColumn === colIdx ? "black" : "white"}>
               {title}
             </Text>
@@ -65,15 +58,9 @@ function SimpleKanban() {
           {/* Cards */}
           <Box flexDirection="column" paddingX={1}>
             {cards[colIdx]?.map((card, cardIdx) => {
-              const isCardSelected =
-                selectedColumn === colIdx && selectedCard === cardIdx
+              const isCardSelected = selectedColumn === colIdx && selectedCard === cardIdx
               return (
-                <Box
-                  key={cardIdx}
-                  borderStyle="round"
-                  borderColor={isCardSelected ? "cyan" : "gray"}
-                  paddingX={1}
-                >
+                <Box key={cardIdx} borderStyle="round" borderColor={isCardSelected ? "cyan" : "gray"} paddingX={1}>
                   {isCardSelected ? (
                     <Text backgroundColor="cyan" color="black">
                       {card}
@@ -320,16 +307,12 @@ describe("Bug 4: Task-list layout changes after keypress", () => {
     const app = render(<SimpleTaskList />)
 
     const initialFrame = app.ansi
-    const initialMaxWidth = Math.max(
-      ...initialFrame.split("\n").map((line) => stripAnsi(line).length),
-    )
+    const initialMaxWidth = Math.max(...initialFrame.split("\n").map((line) => stripAnsi(line).length))
 
     app.stdin.write("j")
 
     const afterFrame = app.ansi
-    const afterMaxWidth = Math.max(
-      ...afterFrame.split("\n").map((line) => stripAnsi(line).length),
-    )
+    const afterMaxWidth = Math.max(...afterFrame.split("\n").map((line) => stripAnsi(line).length))
 
     // Width should be similar (within a few chars due to cursor indicator)
     expect(Math.abs(afterMaxWidth - initialMaxWidth)).toBeLessThan(5)

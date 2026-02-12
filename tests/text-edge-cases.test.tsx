@@ -420,8 +420,7 @@ describe("mixed content (text + emoji + ANSI)", () => {
     const app = render(
       <Box width={50}>
         <Text>
-          <Text color="green">●</Text> Online <Text color="yellow">⚠</Text>{" "}
-          Warning <Text color="red">✗</Text> Error
+          <Text color="green">●</Text> Online <Text color="yellow">⚠</Text> Warning <Text color="red">✗</Text> Error
         </Text>
       </Box>,
     )

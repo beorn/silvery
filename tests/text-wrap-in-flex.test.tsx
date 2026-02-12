@@ -21,9 +21,7 @@ describe("text wrap in flexGrow container", () => {
             <Text>{"·  "}</Text>
           </Box>
           <Box flexGrow={1} flexShrink={1} testID="content">
-            <Text wrap="wrap">
-              Context: Found in inbox old DMV notices from 2019
-            </Text>
+            <Text wrap="wrap">Context: Found in inbox old DMV notices from 2019</Text>
           </Box>
         </Box>
       </Box>,
@@ -48,11 +46,7 @@ describe("text wrap in flexGrow container", () => {
     // URL text wraps to 4+ lines and last line bleeds onto bottom border
     const narrow = createRenderer({ cols: 40, rows: 30 })
 
-    function CardBox({
-      children,
-    }: {
-      children: React.ReactNode
-    }): React.ReactElement {
+    function CardBox({ children }: { children: React.ReactNode }): React.ReactElement {
       return (
         <Box borderStyle="round" paddingRight={1} flexShrink={0}>
           <Box flexDirection="column">
@@ -76,9 +70,7 @@ describe("text wrap in flexGrow container", () => {
           <Text wrap="wrap">AAAA BBBB CCCC DDDD</Text>
         </CardBox>
         <CardBox>
-          <Text wrap="wrap">
-            example.com/path/to/some/resource/that/is/quite/long
-          </Text>
+          <Text wrap="wrap">example.com/path/to/some/resource/that/is/quite/long</Text>
         </CardBox>
       </Box>,
     )
@@ -90,9 +82,7 @@ describe("text wrap in flexGrow container", () => {
           <Text wrap="wrap">AAAA BBBB CCCC DDDD</Text>
         </CardBox>
         <CardBox>
-          <Text wrap="wrap">
-            example.com/path/to/some/resource/that/is/quite/long
-          </Text>
+          <Text wrap="wrap">example.com/path/to/some/resource/that/is/quite/long</Text>
         </CardBox>
       </Box>,
     )
@@ -121,9 +111,7 @@ describe("text wrap in flexGrow container", () => {
         }
       }
       if (problems.length > 0) {
-        throw new Error(
-          `[${label}] Card border overflow:\n${problems.join("\n")}\n\nFull output:\n${text}`,
-        )
+        throw new Error(`[${label}] Card border overflow:\n${problems.join("\n")}\n\nFull output:\n${text}`)
       }
     }
   })
@@ -152,23 +140,12 @@ describe("text wrap in flexGrow container", () => {
           paddingRight={1}
           testID={testID}
         >
-          <Box
-            flexDirection="column"
-            testID={testID ? `${testID}-inner` : undefined}
-          >
-            <Box
-              flexDirection="row"
-              alignItems="flex-start"
-              testID={testID ? `${testID}-row` : undefined}
-            >
+          <Box flexDirection="column" testID={testID ? `${testID}-inner` : undefined}>
+            <Box flexDirection="row" alignItems="flex-start" testID={testID ? `${testID}-row` : undefined}>
               <Box width={3} flexShrink={0}>
                 <Text>{"·  "}</Text>
               </Box>
-              <Box
-                flexGrow={1}
-                flexShrink={1}
-                testID={testID ? `${testID}-content` : undefined}
-              >
+              <Box flexGrow={1} flexShrink={1} testID={testID ? `${testID}-content` : undefined}>
                 {children}
               </Box>
             </Box>
@@ -205,9 +182,7 @@ describe("text wrap in flexGrow container", () => {
                 </Text>
               </CardBox>
               <CardBox width={card1Width} testID="card2">
-                <Text wrap="wrap">
-                  example.com/path/to/some/resource/that/is/quite/long
-                </Text>
+                <Text wrap="wrap">example.com/path/to/some/resource/that/is/quite/long</Text>
               </CardBox>
             </Box>
           </Box>
@@ -283,18 +258,12 @@ describe("text wrap in flexGrow container", () => {
             <Box flexDirection="column">
               {/* Child HeadRow */}
               <Box flexDirection="column">
-                <Box
-                  flexDirection="row"
-                  alignItems="flex-start"
-                  paddingLeft={1}
-                >
+                <Box flexDirection="row" alignItems="flex-start" paddingLeft={1}>
                   <Box width={4} flexShrink={0}>
                     <Text>{" ·  "}</Text>
                   </Box>
                   <Box flexGrow={1} flexShrink={1}>
-                    <Text wrap="wrap">
-                      Context: Found in inbox old DMV notices from 2019
-                    </Text>
+                    <Text wrap="wrap">Context: Found in inbox old DMV notices from 2019</Text>
                   </Box>
                 </Box>
               </Box>

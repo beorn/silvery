@@ -23,11 +23,7 @@
  */
 
 import type { ReactElement } from "react"
-import {
-  type CanvasAdapterConfig,
-  CanvasRenderBuffer,
-  createCanvasAdapter,
-} from "../adapters/canvas-adapter.js"
+import { type CanvasAdapterConfig, CanvasRenderBuffer, createCanvasAdapter } from "../adapters/canvas-adapter.js"
 import { createFlexxZeroEngine } from "../adapters/flexx-zero-adapter.js"
 import { setLayoutEngine } from "../layout-engine.js"
 import { executeRenderAdapter } from "../pipeline/index.js"
@@ -42,11 +38,7 @@ export { useContentRect, useScreenRect } from "../hooks/useLayout.js"
 export { useApp } from "../hooks/useApp.js"
 
 // Re-export adapter utilities
-export {
-  createCanvasAdapter,
-  CanvasRenderBuffer,
-  type CanvasAdapterConfig,
-} from "../adapters/canvas-adapter.js"
+export { createCanvasAdapter, CanvasRenderBuffer, type CanvasAdapterConfig } from "../adapters/canvas-adapter.js"
 
 // ============================================================================
 // Types

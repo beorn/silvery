@@ -80,9 +80,7 @@ describe("streams", () => {
     it("filters and maps in one pass", async () => {
       const source = fromArray([1, 2, 3, 4, 5])
       const result: string[] = []
-      for await (const item of filterMap(source, (x) =>
-        x % 2 === 0 ? `even:${x}` : undefined,
-      )) {
+      for await (const item of filterMap(source, (x) => (x % 2 === 0 ? `even:${x}` : undefined))) {
         result.push(item)
       }
       expect(result).toEqual(["even:2", "even:4"])
@@ -349,10 +347,7 @@ describe("streams", () => {
         ...r,
       }))
 
-      const result: Array<
-        | { type: "key"; key: string }
-        | { type: "resize"; cols: number; rows: number }
-      > = []
+      const result: Array<{ type: "key"; key: string } | { type: "resize"; cols: number; rows: number }> = []
 
       for await (const item of merge(keys, resizes)) {
         result.push(item)

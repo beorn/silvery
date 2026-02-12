@@ -8,22 +8,12 @@
  */
 
 import React, { Suspense, useState, use } from "react"
-import {
-  render,
-  Box,
-  Text,
-  useInput,
-  useApp,
-  createTerm,
-  ErrorBoundary,
-  type Key,
-} from "../../src/index.js"
+import { render, Box, Text, useInput, useApp, createTerm, ErrorBoundary, type Key } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Async Data",
-  description:
-    "React Suspense with independent data sources and error boundaries",
+  description: "React Suspense with independent data sources and error boundaries",
   features: ["React Suspense", "use() hook", "ErrorBoundary"],
 }
 
@@ -36,10 +26,7 @@ const cache = new Map<string, Promise<unknown>>()
 
 function fetchData<T>(key: string, ms: number, data: T): Promise<T> {
   if (!cache.has(key)) {
-    cache.set(
-      key,
-      new Promise<T>((resolve) => setTimeout(() => resolve(data), ms)),
-    )
+    cache.set(key, new Promise<T>((resolve) => setTimeout(() => resolve(data), ms)))
   }
   return cache.get(key) as Promise<T>
 }
@@ -68,12 +55,7 @@ function UserProfile() {
   )
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="green"
-      padding={1}
-    >
+    <Box flexDirection="column" borderStyle="round" borderColor="green" padding={1}>
       <Text bold color="green">
         User Profile
       </Text>
@@ -100,12 +82,7 @@ function Statistics() {
   )
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="blue"
-      padding={1}
-    >
+    <Box flexDirection="column" borderStyle="round" borderColor="blue" padding={1}>
       <Text bold color="blue">
         Statistics
       </Text>
@@ -132,12 +109,7 @@ function RecentActivity() {
   )
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="yellow"
-      padding={1}
-    >
+    <Box flexDirection="column" borderStyle="round" borderColor="yellow" padding={1}>
       <Text bold color="yellow">
         Recent Activity
       </Text>

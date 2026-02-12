@@ -158,10 +158,7 @@ function detectColorLevel(stdout?: NodeJS.WriteStream): ColorLevel | null {
   }
 
   // Check COLORTERM for truecolor
-  if (
-    process.env.COLORTERM === "truecolor" ||
-    process.env.COLORTERM === "24bit"
-  ) {
+  if (process.env.COLORTERM === "truecolor" || process.env.COLORTERM === "24bit") {
     return "truecolor"
   }
 
@@ -189,9 +186,7 @@ function detectColorLevel(stdout?: NodeJS.WriteStream): ColorLevel | null {
  *
  * This enables interactive mode by providing a source of keyboard events.
  */
-export function createInputEvents(
-  stdin: NodeJS.ReadStream,
-): AsyncIterable<Event> {
+export function createInputEvents(stdin: NodeJS.ReadStream): AsyncIterable<Event> {
   return {
     [Symbol.asyncIterator](): AsyncIterator<Event> {
       const buffer: Event[] = []
@@ -208,11 +203,7 @@ export function createInputEvents(
           const event: Event = {
             type: "key",
             key: char,
-            ctrl:
-              char.charCodeAt(0) < 32 &&
-              char !== "\r" &&
-              char !== "\n" &&
-              char !== "\t",
+            ctrl: char.charCodeAt(0) < 32 && char !== "\r" && char !== "\n" && char !== "\t",
           }
 
           if (resolveNext) {

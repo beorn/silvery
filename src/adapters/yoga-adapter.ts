@@ -220,11 +220,7 @@ class YogaNodeAdapter implements LayoutNode {
   // Layout calculation
   calculateLayout(width: number, height: number, direction?: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Direction type
-    this.node.calculateLayout(
-      width,
-      height,
-      (direction ?? this.yoga.DIRECTION_LTR) as Direction,
-    )
+    this.node.calculateLayout(width, height, (direction ?? this.yoga.DIRECTION_LTR) as Direction)
   }
 
   // Layout results
@@ -258,14 +254,10 @@ export class YogaLayoutEngine implements LayoutEngine {
     // Cast Yoga's branded types to our LayoutEngine branded types at the adapter boundary
     this._constants = {
       // Flex Direction
-      FLEX_DIRECTION_COLUMN:
-        yoga.FLEX_DIRECTION_COLUMN as unknown as FlexDirectionValue,
-      FLEX_DIRECTION_COLUMN_REVERSE:
-        yoga.FLEX_DIRECTION_COLUMN_REVERSE as unknown as FlexDirectionValue,
-      FLEX_DIRECTION_ROW:
-        yoga.FLEX_DIRECTION_ROW as unknown as FlexDirectionValue,
-      FLEX_DIRECTION_ROW_REVERSE:
-        yoga.FLEX_DIRECTION_ROW_REVERSE as unknown as FlexDirectionValue,
+      FLEX_DIRECTION_COLUMN: yoga.FLEX_DIRECTION_COLUMN as unknown as FlexDirectionValue,
+      FLEX_DIRECTION_COLUMN_REVERSE: yoga.FLEX_DIRECTION_COLUMN_REVERSE as unknown as FlexDirectionValue,
+      FLEX_DIRECTION_ROW: yoga.FLEX_DIRECTION_ROW as unknown as FlexDirectionValue,
+      FLEX_DIRECTION_ROW_REVERSE: yoga.FLEX_DIRECTION_ROW_REVERSE as unknown as FlexDirectionValue,
 
       // Wrap
       WRAP_NO_WRAP: yoga.WRAP_NO_WRAP as unknown as WrapValue,
@@ -286,12 +278,9 @@ export class YogaLayoutEngine implements LayoutEngine {
       JUSTIFY_FLEX_START: yoga.JUSTIFY_FLEX_START as unknown as JustifyValue,
       JUSTIFY_CENTER: yoga.JUSTIFY_CENTER as unknown as JustifyValue,
       JUSTIFY_FLEX_END: yoga.JUSTIFY_FLEX_END as unknown as JustifyValue,
-      JUSTIFY_SPACE_BETWEEN:
-        yoga.JUSTIFY_SPACE_BETWEEN as unknown as JustifyValue,
-      JUSTIFY_SPACE_AROUND:
-        yoga.JUSTIFY_SPACE_AROUND as unknown as JustifyValue,
-      JUSTIFY_SPACE_EVENLY:
-        yoga.JUSTIFY_SPACE_EVENLY as unknown as JustifyValue,
+      JUSTIFY_SPACE_BETWEEN: yoga.JUSTIFY_SPACE_BETWEEN as unknown as JustifyValue,
+      JUSTIFY_SPACE_AROUND: yoga.JUSTIFY_SPACE_AROUND as unknown as JustifyValue,
+      JUSTIFY_SPACE_EVENLY: yoga.JUSTIFY_SPACE_EVENLY as unknown as JustifyValue,
 
       // Edge
       EDGE_LEFT: yoga.EDGE_LEFT as unknown as EdgeValue,
@@ -310,10 +299,8 @@ export class YogaLayoutEngine implements LayoutEngine {
       DISPLAY_NONE: yoga.DISPLAY_NONE as unknown as DisplayValue,
 
       // Position Type
-      POSITION_TYPE_RELATIVE:
-        yoga.POSITION_TYPE_RELATIVE as unknown as PositionTypeValue,
-      POSITION_TYPE_ABSOLUTE:
-        yoga.POSITION_TYPE_ABSOLUTE as unknown as PositionTypeValue,
+      POSITION_TYPE_RELATIVE: yoga.POSITION_TYPE_RELATIVE as unknown as PositionTypeValue,
+      POSITION_TYPE_ABSOLUTE: yoga.POSITION_TYPE_ABSOLUTE as unknown as PositionTypeValue,
 
       // Overflow
       OVERFLOW_VISIBLE: yoga.OVERFLOW_VISIBLE as unknown as OverflowValue,
@@ -324,12 +311,9 @@ export class YogaLayoutEngine implements LayoutEngine {
       DIRECTION_LTR: yoga.DIRECTION_LTR as unknown as DirectionValue,
 
       // Measure Mode
-      MEASURE_MODE_UNDEFINED:
-        yoga.MEASURE_MODE_UNDEFINED as unknown as MeasureModeValue,
-      MEASURE_MODE_EXACTLY:
-        yoga.MEASURE_MODE_EXACTLY as unknown as MeasureModeValue,
-      MEASURE_MODE_AT_MOST:
-        yoga.MEASURE_MODE_AT_MOST as unknown as MeasureModeValue,
+      MEASURE_MODE_UNDEFINED: yoga.MEASURE_MODE_UNDEFINED as unknown as MeasureModeValue,
+      MEASURE_MODE_EXACTLY: yoga.MEASURE_MODE_EXACTLY as unknown as MeasureModeValue,
+      MEASURE_MODE_AT_MOST: yoga.MEASURE_MODE_AT_MOST as unknown as MeasureModeValue,
     }
   }
 

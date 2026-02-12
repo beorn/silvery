@@ -4,14 +4,7 @@
 
 import React from "react"
 import { describe, expect, test } from "vitest"
-import {
-  Box,
-  Text,
-  initYogaEngine,
-  renderString,
-  renderStringSync,
-  setLayoutEngine,
-} from "../src"
+import { Box, Text, initYogaEngine, renderString, renderStringSync, setLayoutEngine } from "../src"
 
 describe("renderString", () => {
   test("renders simple text", async () => {

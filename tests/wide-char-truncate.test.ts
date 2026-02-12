@@ -185,11 +185,7 @@ describe("Wide Character Truncation (km-inkx.wide-char-truncate)", () => {
   describe("bordered Box alignment with text-presentation emoji", () => {
     test("ℹ in bordered Box: all rows same display width", () => {
       const app = render(
-        createElement(
-          Box,
-          { borderStyle: "round", width: 30 },
-          createElement(Text, null, "ℹ Task completed!"),
-        ),
+        createElement(Box, { borderStyle: "round", width: 30 }, createElement(Text, null, "ℹ Task completed!")),
       )
       const lines = app.text.split("\n")
       const widths = lines.map((l) => displayWidth(l))
@@ -199,11 +195,7 @@ describe("Wide Character Truncation (km-inkx.wide-char-truncate)", () => {
 
     test("⚠ in bordered Box: all rows same display width", () => {
       const app = render(
-        createElement(
-          Box,
-          { borderStyle: "round", width: 30 },
-          createElement(Text, null, "⚠ Warning message"),
-        ),
+        createElement(Box, { borderStyle: "round", width: 30 }, createElement(Text, null, "⚠ Warning message")),
       )
       const lines = app.text.split("\n")
       const widths = lines.map((l) => displayWidth(l))

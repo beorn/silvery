@@ -35,27 +35,27 @@ That's a complete, working TUI app. `run()` handles terminal setup, keyboard inp
 Use `useInput` to handle keyboard events. Return `'exit'` from the handler to quit the app.
 
 ```typescript
-import { run, useInput, type Key } from 'inkx/runtime';
+import { run, useInput, type Key } from "inkx/runtime"
 
 useInput((input: string, key: Key) => {
   // Regular characters
-  if (input === 'a') doSomething();
+  if (input === "a") doSomething()
 
   // Special keys
-  if (key.return) submit();
-  if (key.escape) cancel();
-  if (key.tab) nextField();
+  if (key.return) submit()
+  if (key.escape) cancel()
+  if (key.tab) nextField()
 
   // Arrow keys
-  if (key.upArrow) moveCursor(-1);
-  if (key.downArrow) moveCursor(1);
+  if (key.upArrow) moveCursor(-1)
+  if (key.downArrow) moveCursor(1)
 
   // Modifiers
-  if (key.ctrl && input === 'c') return 'exit';
+  if (key.ctrl && input === "c") return "exit"
 
   // Text input
-  if (input.length === 1) addChar(input);
-});
+  if (input.length === 1) addChar(input)
+})
 ```
 
 The `Key` object provides booleans for special keys:
@@ -70,27 +70,30 @@ interface Key {
   pageUp: boolean
   home: boolean
   end: boolean
-  return: boolean   // Enter key
+  return: boolean // Enter key
   escape: boolean
-  ctrl: boolean     // Ctrl modifier
-  shift: boolean    // Shift modifier
+  ctrl: boolean // Ctrl modifier
+  shift: boolean // Shift modifier
   tab: boolean
   backspace: boolean
   delete: boolean
-  meta: boolean     // Alt/Option modifier
+  meta: boolean // Alt/Option modifier
 }
 ```
 
 Wrap handlers in `useCallback` when they depend on state to prevent unnecessary re-subscriptions:
 
 ```typescript
-const handleInput = useCallback((input: string, key: Key) => {
-  if (input === 'j' || key.downArrow) setCursor(c => Math.min(c + 1, items.length - 1));
-  if (input === 'k' || key.upArrow) setCursor(c => Math.max(c - 1, 0));
-  if (input === 'q') return 'exit';
-}, [items.length]);
+const handleInput = useCallback(
+  (input: string, key: Key) => {
+    if (input === "j" || key.downArrow) setCursor((c) => Math.min(c + 1, items.length - 1))
+    if (input === "k" || key.upArrow) setCursor((c) => Math.max(c - 1, 0))
+    if (input === "q") return "exit"
+  },
+  [items.length],
+)
 
-useInput(handleInput);
+useInput(handleInput)
 ```
 
 ### Layout Feedback
@@ -175,10 +178,10 @@ await handle.waitUntilExit();
 
 ```typescript
 interface RunHandle {
-  text: string                  // Current rendered text (no ANSI)
+  text: string // Current rendered text (no ANSI)
   waitUntilExit(): Promise<void>
   unmount(): void
-  press(key: string): Promise<void>  // For testing
+  press(key: string): Promise<void> // For testing
 }
 ```
 
@@ -259,11 +262,7 @@ console.log('Final items:', handle.store.getState().items);
 ### Key Handler Signature (createApp)
 
 ```typescript
-type KeyHandler<S> = (
-  input: string,
-  key: Key,
-  ctx: { set: SetState<S>; get: GetState<S> },
-) => void | "exit"
+type KeyHandler<S> = (input: string, key: Key, ctx: { set: SetState<S>; get: GetState<S> }) => void | "exit"
 ```
 
 ### AppHandle API
@@ -271,7 +270,7 @@ type KeyHandler<S> = (
 ```typescript
 interface AppHandle<S> {
   text: string
-  store: StoreApi<S>          // Full Zustand store access
+  store: StoreApi<S> // Full Zustand store access
   waitUntilExit(): Promise<void>
   unmount(): void
   press(key: string): Promise<void>

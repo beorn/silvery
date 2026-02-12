@@ -6,13 +6,7 @@
  */
 import { describe, expect, test } from "vitest"
 import { createRenderer } from "../src/testing/index.js"
-import React, {
-  useState,
-  createContext,
-  useContext,
-  type Dispatch,
-  type SetStateAction,
-} from "react"
+import React, { useState, createContext, useContext, type Dispatch, type SetStateAction } from "react"
 
 const { Box, Text } = await import("../src/index.js")
 
@@ -37,15 +31,7 @@ function useIsSelected(index: number): boolean {
 
 // Memoized card that only re-renders when its own selection state changes
 const MemoCard = React.memo(
-  function MemoCard({
-    text,
-    index,
-    width,
-  }: {
-    text: string
-    index: number
-    width: number
-  }) {
+  function MemoCard({ text, index, width }: { text: string; index: number; width: number }) {
     const isSelected = useIsSelected(index)
 
     return (
@@ -70,11 +56,7 @@ const MemoCard = React.memo(
   },
   (prev, next) => {
     // Only re-render if card props change (NOT selection — that's via context)
-    return (
-      prev.text === next.text &&
-      prev.index === next.index &&
-      prev.width === next.width
-    )
+    return prev.text === next.text && prev.index === next.index && prev.width === next.width
   },
 )
 
@@ -95,12 +77,7 @@ describe("React.memo card re-render isolation", () => {
 
       return (
         <SelectionContext.Provider value={{ selected }}>
-          <Box
-            flexDirection="column"
-            width={39}
-            maxHeight={24}
-            overflow="hidden"
-          >
+          <Box flexDirection="column" width={39} maxHeight={24} overflow="hidden">
             <Box height={1} flexShrink={0}>
               <Text> · col1 ({cards.length})</Text>
             </Box>
@@ -127,9 +104,7 @@ describe("React.memo card re-render isolation", () => {
 
     const after = app.text
     if (hasTextInBorder(after)) {
-      throw new Error(
-        `Text in border after selection change with memo!\n\nBefore:\n${initial}\n\nAfter:\n${after}`,
-      )
+      throw new Error(`Text in border after selection change with memo!\n\nBefore:\n${initial}\n\nAfter:\n${after}`)
     }
   })
 
@@ -194,12 +169,7 @@ describe("React.memo card re-render isolation", () => {
       setSelectedCol = _setSelectedCol
 
       const renderCol = (cards: string[], colIdx: number, width: number) => (
-        <Box
-          flexDirection="column"
-          width={width}
-          maxHeight={24}
-          overflow="hidden"
-        >
+        <Box flexDirection="column" width={width} maxHeight={24} overflow="hidden">
           <Box height={1} flexShrink={0}>
             <Text>
               {" "}
@@ -208,13 +178,7 @@ describe("React.memo card re-render isolation", () => {
           </Box>
           <Box flexDirection="column" height={20} overflow="scroll">
             {cards.map((text, i) => (
-              <ColMemoCard
-                key={i}
-                text={text}
-                colIdx={colIdx}
-                cardIdx={i}
-                width={width - 2}
-              />
+              <ColMemoCard key={i} text={text} colIdx={colIdx} cardIdx={i} width={width - 2} />
             ))}
           </Box>
         </Box>
@@ -246,9 +210,7 @@ describe("React.memo card re-render isolation", () => {
 
     const after = app.text
     if (hasTextInBorder(after)) {
-      throw new Error(
-        `Text in border after cursor right with memo cards!\n\nBefore:\n${initial}\n\nAfter:\n${after}`,
-      )
+      throw new Error(`Text in border after cursor right with memo cards!\n\nBefore:\n${initial}\n\nAfter:\n${after}`)
     }
   })
 })

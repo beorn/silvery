@@ -124,13 +124,7 @@ export class TerminalRenderBuffer implements RenderBuffer {
     return this.buffer
   }
 
-  fillRect(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style: RenderStyle,
-  ): void {
+  fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void {
     const cellStyle = this.convertStyle(style)
     for (let row = y; row < y + height; row++) {
       for (let col = x; col < x + width; col++) {
@@ -191,13 +185,7 @@ export class TerminalRenderBuffer implements RenderBuffer {
       dim?: boolean
       italic?: boolean
       underline?: boolean
-      underlineStyle?:
-        | "single"
-        | "double"
-        | "curly"
-        | "dotted"
-        | "dashed"
-        | false
+      underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed" | false
       strikethrough?: boolean
       inverse?: boolean
     }
@@ -299,9 +287,7 @@ export const terminalAdapter: RenderAdapter = {
 
   flush(buffer: RenderBuffer, prevBuffer: RenderBuffer | null): string {
     const termBuffer = (buffer as TerminalRenderBuffer).getTerminalBuffer()
-    const prevTermBuffer = prevBuffer
-      ? (prevBuffer as TerminalRenderBuffer).getTerminalBuffer()
-      : null
+    const prevTermBuffer = prevBuffer ? (prevBuffer as TerminalRenderBuffer).getTerminalBuffer() : null
     return outputPhase(prevTermBuffer, termBuffer)
   },
 

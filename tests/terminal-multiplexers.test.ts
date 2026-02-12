@@ -246,19 +246,13 @@ describe("Input Handling in Multiplexers", () => {
     },
   }
 
-  test.each(["up", "down", "right", "left"] as const)(
-    "arrow key %s has standard xterm sequence",
-    (dir) => {
-      expect(arrowSequences.standard[dir]).toMatch(/^\x1b\[[ABCD]$/)
-    },
-  )
+  test.each(["up", "down", "right", "left"] as const)("arrow key %s has standard xterm sequence", (dir) => {
+    expect(arrowSequences.standard[dir]).toMatch(/^\x1b\[[ABCD]$/)
+  })
 
-  test.each(["up", "down", "right", "left"] as const)(
-    "arrow key %s has application mode sequence",
-    (dir) => {
-      expect(arrowSequences.appMode[dir]).toMatch(/^\x1bO[ABCD]$/)
-    },
-  )
+  test.each(["up", "down", "right", "left"] as const)("arrow key %s has application mode sequence", (dir) => {
+    expect(arrowSequences.appMode[dir]).toMatch(/^\x1bO[ABCD]$/)
+  })
 
   test("modifier key combinations use CSI 1;N format", () => {
     expect(arrowSequences.ctrl.up).toBe("\x1b[1;5A")
@@ -486,29 +480,21 @@ describe("Multiplexer Support Utilities", () => {
     ["zellij", { ZELLIJ: "0" }, "zellij", true],
     ["screen", { STY: "12345.pts-0.host" }, "screen", false],
     ["plain terminal", { TERM: "xterm-256color" }, null, false],
-  ])(
-    "detectMultiplexerEnvironment for %s",
-    (_, env, expectedType, expectedSyncUpdate) => {
-      const info = detectMultiplexerEnvironment(env)
-      expect(info.type).toBe(expectedType)
-      expect(info.features.synchronizedUpdate).toBe(expectedSyncUpdate)
-    },
-  )
+  ])("detectMultiplexerEnvironment for %s", (_, env, expectedType, expectedSyncUpdate) => {
+    const info = detectMultiplexerEnvironment(env)
+    expect(info.type).toBe(expectedType)
+    expect(info.features.synchronizedUpdate).toBe(expectedSyncUpdate)
+  })
 
   test("wrapOutputForMultiplexer adds synchronized update", () => {
-    const wrapOutputForMultiplexer = (
-      output: string,
-      multiplexerType: MultiplexerType,
-    ): string => {
+    const wrapOutputForMultiplexer = (output: string, multiplexerType: MultiplexerType): string => {
       if (multiplexerType === "tmux" || multiplexerType === "zellij") {
         return `${SYNC_UPDATE.begin}${output}${SYNC_UPDATE.end}`
       }
       return output
     }
 
-    expect(wrapOutputForMultiplexer("Hello", "tmux")).toBe(
-      "\x1b[?2026hHello\x1b[?2026l",
-    )
+    expect(wrapOutputForMultiplexer("Hello", "tmux")).toBe("\x1b[?2026hHello\x1b[?2026l")
     expect(wrapOutputForMultiplexer("Hello", null)).toBe("Hello")
   })
 })

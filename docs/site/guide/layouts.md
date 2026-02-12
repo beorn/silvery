@@ -95,12 +95,7 @@ function Column({ items, selectedIndex }) {
       </Box>
 
       {/* Scrollable content - fills remaining height */}
-      <Box
-        flexDirection="column"
-        flexGrow={1}
-        overflow="scroll"
-        scrollTo={selectedIndex}
-      >
+      <Box flexDirection="column" flexGrow={1} overflow="scroll" scrollTo={selectedIndex}>
         {items.map((item, i) => (
           <Text key={i} inverse={i === selectedIndex}>
             {item.title}
@@ -128,13 +123,7 @@ function ScrollIndicator({ direction }: { direction: "left" | "right" }) {
   const arrow = direction === "left" ? "‹" : "›"
 
   return (
-    <Box
-      width={1}
-      flexGrow={1}
-      backgroundColor="gray"
-      justifyContent="center"
-      alignItems="center"
-    >
+    <Box width={1} flexGrow={1} backgroundColor="gray" justifyContent="center" alignItems="center">
       <Text color="white">{arrow}</Text>
     </Box>
   )
@@ -179,13 +168,7 @@ import { useState } from "react"
 
 function ScrollIndicator({ direction }) {
   return (
-    <Box
-      width={1}
-      flexGrow={1}
-      backgroundColor="gray"
-      justifyContent="center"
-      alignItems="center"
-    >
+    <Box width={1} flexGrow={1} backgroundColor="gray" justifyContent="center" alignItems="center">
       <Text color="white">{direction === "left" ? "‹" : "›"}</Text>
     </Box>
   )
@@ -195,23 +178,14 @@ function Column({ title, items, selectedIndex, isActive }) {
   return (
     <Box flexDirection="column" flexGrow={1}>
       {/* Header */}
-      <Box
-        height={1}
-        flexShrink={0}
-        backgroundColor={isActive ? "cyan" : undefined}
-      >
+      <Box height={1} flexShrink={0} backgroundColor={isActive ? "cyan" : undefined}>
         <Text bold color={isActive ? "black" : undefined}>
           {title} ({items.length})
         </Text>
       </Box>
 
       {/* Scrollable items */}
-      <Box
-        flexDirection="column"
-        flexGrow={1}
-        overflow="scroll"
-        scrollTo={selectedIndex}
-      >
+      <Box flexDirection="column" flexGrow={1} overflow="scroll" scrollTo={selectedIndex}>
         {items.map((item, i) => (
           <Text key={i} inverse={isActive && i === selectedIndex}>
             {item}

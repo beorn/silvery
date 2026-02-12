@@ -80,8 +80,7 @@ function resolveKeybinding(
     if (!!binding.meta !== !!modifiers.meta) continue
 
     // For single uppercase letters (A-Z), the shift key is implicit
-    const isUppercaseLetter =
-      key.length === 1 && key >= "A" && key <= "Z" && !binding.shift
+    const isUppercaseLetter = key.length === 1 && key >= "A" && key <= "Z" && !binding.shift
     if (!isUppercaseLetter && !!binding.shift !== !!modifiers.shift) continue
 
     if (!!binding.alt !== !!modifiers.alt) continue
@@ -115,10 +114,7 @@ function resolveKeybinding(
  * await app.press('j')  // Triggers cmd.down() if bound
  * ```
  */
-export function withKeybindings<T extends AppWithCommands>(
-  app: T,
-  options: WithKeybindingsOptions,
-): T {
+export function withKeybindings<T extends AppWithCommands>(app: T, options: WithKeybindingsOptions): T {
   const { bindings, getKeyContext } = options
   const originalPress = app.press.bind(app)
 
@@ -131,12 +127,7 @@ export function withKeybindings<T extends AppWithCommands>(
           const ctx = getKeyContext()
 
           // Try to resolve to a command
-          const commandId = resolveKeybinding(
-            key,
-            modifiers,
-            bindings as ExtendedKeybindingDef[],
-            ctx,
-          )
+          const commandId = resolveKeybinding(key, modifiers, bindings as ExtendedKeybindingDef[], ctx)
 
           if (commandId) {
             const cmd = target.cmd[commandId]

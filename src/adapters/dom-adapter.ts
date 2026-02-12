@@ -198,19 +198,12 @@ export class DOMRenderBuffer implements RenderBuffer {
 
   private config: Required<DOMAdapterConfig>
   private lines: Map<number, TextRun[]>
-  private backgrounds: Map<
-    string,
-    { x: number; y: number; w: number; h: number; color: string }
-  >
+  private backgrounds: Map<string, { x: number; y: number; w: number; h: number; color: string }>
 
   // Container element (set when flushing)
   private container: HTMLElement | null = null
 
-  constructor(
-    width: number,
-    height: number,
-    config: Required<DOMAdapterConfig>,
-  ) {
+  constructor(width: number, height: number, config: Required<DOMAdapterConfig>) {
     this.width = width
     this.height = height
     this.config = config
@@ -232,13 +225,7 @@ export class DOMRenderBuffer implements RenderBuffer {
     return this.container
   }
 
-  fillRect(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style: RenderStyle,
-  ): void {
+  fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void {
     if (style.bg) {
       const key = `${x},${y},${width},${height}`
       this.backgrounds.set(key, {
@@ -271,9 +258,7 @@ export class DOMRenderBuffer implements RenderBuffer {
    */
   render(): void {
     if (!this.container) {
-      throw new Error(
-        "DOMRenderBuffer: No container set. Call setContainer() first.",
-      )
+      throw new Error("DOMRenderBuffer: No container set. Call setContainer() first.")
     }
 
     const container = this.container
@@ -312,9 +297,7 @@ export class DOMRenderBuffer implements RenderBuffer {
     }
 
     // Render text lines
-    const sortedLines = Array.from(this.lines.entries()).sort(
-      (a, b) => a[0] - b[0],
-    )
+    const sortedLines = Array.from(this.lines.entries()).sort((a, b) => a[0] - b[0])
 
     for (const [y, runs] of sortedLines) {
       const lineDiv = document.createElement("div")
@@ -339,14 +322,10 @@ export class DOMRenderBuffer implements RenderBuffer {
         const styles: string[] = [`position: absolute`, `left: ${run.x}px`]
 
         if (run.style.fg) {
-          styles.push(
-            `color: ${resolveColor(run.style.fg, this.config.foregroundColor)}`,
-          )
+          styles.push(`color: ${resolveColor(run.style.fg, this.config.foregroundColor)}`)
         }
         if (run.style.bg) {
-          styles.push(
-            `background-color: ${resolveColor(run.style.bg, this.config.backgroundColor)}`,
-          )
+          styles.push(`background-color: ${resolveColor(run.style.bg, this.config.backgroundColor)}`)
         }
 
         const attrs = run.style.attrs
@@ -364,40 +343,27 @@ export class DOMRenderBuffer implements RenderBuffer {
 
             switch (underlineStyle) {
               case "double":
-                styles.push(
-                  `text-decoration: underline double ${underlineColor}`,
-                )
+                styles.push(`text-decoration: underline double ${underlineColor}`)
                 break
               case "curly":
                 styles.push(`text-decoration: underline wavy ${underlineColor}`)
                 break
               case "dotted":
-                styles.push(
-                  `text-decoration: underline dotted ${underlineColor}`,
-                )
+                styles.push(`text-decoration: underline dotted ${underlineColor}`)
                 break
               case "dashed":
-                styles.push(
-                  `text-decoration: underline dashed ${underlineColor}`,
-                )
+                styles.push(`text-decoration: underline dashed ${underlineColor}`)
                 break
               default:
-                styles.push(
-                  `text-decoration: underline solid ${underlineColor}`,
-                )
+                styles.push(`text-decoration: underline solid ${underlineColor}`)
             }
           }
 
           if (attrs.strikethrough) {
-            const existing = styles.find((s) =>
-              s.startsWith("text-decoration:"),
-            )
+            const existing = styles.find((s) => s.startsWith("text-decoration:"))
             if (existing) {
               const idx = styles.indexOf(existing)
-              styles[idx] = existing.replace(
-                "underline",
-                "underline line-through",
-              )
+              styles[idx] = existing.replace("underline", "underline line-through")
             } else {
               styles.push("text-decoration: line-through")
             }

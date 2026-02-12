@@ -20,22 +20,13 @@ describe("box height stability on re-render", () => {
       setColor = _setColor
 
       return (
-        <Box
-          flexDirection="column"
-          flexShrink={0}
-          width={37}
-          borderStyle="round"
-          borderColor={color}
-          paddingRight={1}
-        >
+        <Box flexDirection="column" flexShrink={0} width={37} borderStyle="round" borderColor={color} paddingRight={1}>
           <Box flexDirection="row" alignItems="flex-start">
             <Box width={3} flexShrink={0}>
               <Text>{"·  "}</Text>
             </Box>
             <Box flexGrow={1} flexShrink={1}>
-              <Text wrap="wrap">
-                example.com/path/to/some/resource/that/is/quite/long
-              </Text>
+              <Text wrap="wrap">example.com/path/to/some/resource/that/is/quite/long</Text>
             </Box>
           </Box>
         </Box>
@@ -67,10 +58,7 @@ describe("box height stability on re-render", () => {
     for (const line of after.split("\n")) {
       const m = [...line.matchAll(/[╰╭]([^╯╮]+)[╯╮]/g)]
       for (const match of m) {
-        expect(match[1]).not.toMatch(
-          /[a-zA-Z0-9]/,
-          `Text in border: ${match[0]}`,
-        )
+        expect(match[1]).not.toMatch(/[a-zA-Z0-9]/, `Text in border: ${match[0]}`)
       }
     }
   })
@@ -136,10 +124,7 @@ describe("box height stability on re-render", () => {
     for (const line of after.split("\n")) {
       const m = [...line.matchAll(/[╰╭]([^╯╮]+)[╯╮]/g)]
       for (const match of m) {
-        expect(match[1]).not.toMatch(
-          /[a-zA-Z0-9]/,
-          `Text in border after selection change: ${match[0]}`,
-        )
+        expect(match[1]).not.toMatch(/[a-zA-Z0-9]/, `Text in border after selection change: ${match[0]}`)
       }
     }
   })
@@ -165,9 +150,7 @@ describe("box height stability on re-render", () => {
           flexShrink={0}
           width={37}
           borderStyle="round"
-          borderColor={
-            colIdx === selectedCol && cardIdx === 0 ? "yellow" : "blackBright"
-          }
+          borderColor={colIdx === selectedCol && cardIdx === 0 ? "yellow" : "blackBright"}
           paddingRight={1}
         >
           <Box flexDirection="row" alignItems="flex-start">
@@ -225,9 +208,7 @@ describe("box height stability on re-render", () => {
     }
 
     if (problems.length > 0) {
-      throw new Error(
-        `Card border problems:\n${problems.join("\n")}\n\nInitial:\n${initial}\n\nAfter:\n${after}`,
-      )
+      throw new Error(`Card border problems:\n${problems.join("\n")}\n\nInitial:\n${initial}\n\nAfter:\n${after}`)
     }
   })
 })

@@ -144,13 +144,7 @@ function Modal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
 ### Text Input
 
 ```tsx
-function TextInput({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (v: string) => void
-}) {
+function TextInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   useInput((input, key) => {
     if (key.backspace) {
       onChange(value.slice(0, -1))

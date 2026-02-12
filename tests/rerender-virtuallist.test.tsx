@@ -81,9 +81,7 @@ describe("VirtualList card height on re-render", () => {
 
     const after = app.text
     if (hasTextInBorder(after)) {
-      throw new Error(
-        `Text in border after selection change!\n\nBefore:\n${initial}\n\nAfter:\n${after}`,
-      )
+      throw new Error(`Text in border after selection change!\n\nBefore:\n${initial}\n\nAfter:\n${after}`)
     }
   })
 
@@ -103,12 +101,7 @@ describe("VirtualList card height on re-render", () => {
       setSelectedCol = _setSelectedCol
 
       const renderCol = (cards: string[], colIdx: number, width: number) => (
-        <Box
-          flexDirection="column"
-          width={width}
-          maxHeight={24}
-          overflow="hidden"
-        >
+        <Box flexDirection="column" width={width} maxHeight={24} overflow="hidden">
           <Box height={1} flexShrink={0}>
             <Text>
               {" "}
@@ -123,9 +116,7 @@ describe("VirtualList card height on re-render", () => {
                 flexShrink={0}
                 width={width - 2}
                 borderStyle="round"
-                borderColor={
-                  colIdx === selectedCol && i === 0 ? "yellow" : "blackBright"
-                }
+                borderColor={colIdx === selectedCol && i === 0 ? "yellow" : "blackBright"}
                 paddingRight={1}
               >
                 <Box flexDirection="row" alignItems="flex-start">
@@ -166,9 +157,7 @@ describe("VirtualList card height on re-render", () => {
 
     const after = app.text
     if (hasTextInBorder(after)) {
-      throw new Error(
-        `Text in border after cursor right!\n\nBefore:\n${initial}\n\nAfter:\n${after}`,
-      )
+      throw new Error(`Text in border after cursor right!\n\nBefore:\n${initial}\n\nAfter:\n${after}`)
     }
   })
 
@@ -192,12 +181,7 @@ describe("VirtualList card height on re-render", () => {
       setSelectedCol = _setSelectedCol
 
       const renderCol = (cards: string[], colIdx: number, width: number) => (
-        <Box
-          flexDirection="column"
-          width={width}
-          maxHeight={24}
-          overflow="hidden"
-        >
+        <Box flexDirection="column" width={width} maxHeight={24} overflow="hidden">
           <Box height={1} flexShrink={0}>
             <Text>
               {" "}
@@ -212,9 +196,7 @@ describe("VirtualList card height on re-render", () => {
                 flexShrink={0}
                 width={width - 2}
                 borderStyle="round"
-                borderColor={
-                  colIdx === selectedCol && i === 0 ? "yellow" : "blackBright"
-                }
+                borderColor={colIdx === selectedCol && i === 0 ? "yellow" : "blackBright"}
                 paddingRight={1}
               >
                 <Box flexDirection="row" alignItems="flex-start">
@@ -236,18 +218,10 @@ describe("VirtualList card height on re-render", () => {
           {/* Top bar with CHANGING text — forces calculateLayout() */}
           <Box flexShrink={0} width={80}>
             <Text wrap="truncate">
-              {selectedCol === 0
-                ? " / col1 / some-breadcrumb-path-that-is-different"
-                : " / col2"}
+              {selectedCol === 0 ? " / col1 / some-breadcrumb-path-that-is-different" : " / col2"}
             </Text>
           </Box>
-          <Box
-            flexGrow={1}
-            flexDirection="row"
-            minHeight={1}
-            maxHeight={22}
-            overflow="hidden"
-          >
+          <Box flexGrow={1} flexDirection="row" minHeight={1} maxHeight={22} overflow="hidden">
             {renderCol(col1Cards, 0, 40)}
             <Box width={1} alignSelf="stretch" />
             {renderCol(col2Cards, 1, 39)}
@@ -273,9 +247,7 @@ describe("VirtualList card height on re-render", () => {
 
     const after = app.text
     if (hasTextInBorder(after)) {
-      throw new Error(
-        `Text in border after cursor right with text change!\n\nBefore:\n${initial}\n\nAfter:\n${after}`,
-      )
+      throw new Error(`Text in border after cursor right with text change!\n\nBefore:\n${initial}\n\nAfter:\n${after}`)
     }
   })
 
@@ -294,15 +266,7 @@ describe("VirtualList card height on re-render", () => {
     const col2Cards = ["Task in col2", "Second task in col2 with more detail"]
 
     const MemoCard = React.memo(
-      function MemoCard({
-        text,
-        isSelected,
-        width,
-      }: {
-        text: string
-        isSelected: boolean
-        width: number
-      }) {
+      function MemoCard({ text, isSelected, width }: { text: string; isSelected: boolean; width: number }) {
         return (
           <Box
             flexDirection="column"
@@ -332,10 +296,7 @@ describe("VirtualList card height on re-render", () => {
           </Box>
         )
       },
-      (prev, next) =>
-        prev.text === next.text &&
-        prev.isSelected === next.isSelected &&
-        prev.width === next.width,
+      (prev, next) => prev.text === next.text && prev.isSelected === next.isSelected && prev.width === next.width,
     )
 
     function Board() {
@@ -343,94 +304,42 @@ describe("VirtualList card height on re-render", () => {
       setSelectedCol = _setSelectedCol
 
       return (
-        <Box
-          flexDirection="column"
-          width={80}
-          height={24}
-          minHeight={3}
-          overflow="hidden"
-        >
+        <Box flexDirection="column" width={80} height={24} minHeight={3} overflow="hidden">
           <Box flexShrink={0} width={80} backgroundColor="white">
             <Text color="gray" wrap="truncate">
-              {selectedCol === 0
-                ? " / col1 / long-breadcrumb-path-here"
-                : " / col2"}
+              {selectedCol === 0 ? " / col1 / long-breadcrumb-path-here" : " / col2"}
             </Text>
           </Box>
-          <Box
-            flexGrow={1}
-            flexDirection="row"
-            minHeight={1}
-            maxHeight={22}
-            overflow="hidden"
-          >
+          <Box flexGrow={1} flexDirection="row" minHeight={1} maxHeight={22} overflow="hidden">
             <Box flexDirection="row" width={80} height={22}>
-              <Box
-                flexDirection="column"
-                width={40}
-                maxHeight={22}
-                overflow="hidden"
-              >
+              <Box flexDirection="column" width={40} maxHeight={22} overflow="hidden">
                 <Box height={1} flexShrink={0}>
                   <Text> </Text>
                 </Box>
                 <Box height={1} flexShrink={0} width={40}>
-                  <Text
-                    bold
-                    color={selectedCol === 0 ? "yellow" : "white"}
-                    wrap="truncate"
-                  >
+                  <Text bold color={selectedCol === 0 ? "yellow" : "white"} wrap="truncate">
                     {" · col1 (4)                             "}
                   </Text>
                 </Box>
-                <Box
-                  flexDirection="column"
-                  height={20}
-                  overflow="scroll"
-                  scrollTo={0}
-                >
+                <Box flexDirection="column" height={20} overflow="scroll" scrollTo={0}>
                   {col1Cards.map((text, i) => (
-                    <MemoCard
-                      key={i}
-                      text={text}
-                      isSelected={selectedCol === 0 && i === 0}
-                      width={39}
-                    />
+                    <MemoCard key={i} text={text} isSelected={selectedCol === 0 && i === 0} width={39} />
                   ))}
                 </Box>
               </Box>
               <Box width={1} alignSelf="stretch" />
-              <Box
-                flexDirection="column"
-                width={39}
-                maxHeight={22}
-                overflow="hidden"
-              >
+              <Box flexDirection="column" width={39} maxHeight={22} overflow="hidden">
                 <Box height={1} flexShrink={0}>
                   <Text> </Text>
                 </Box>
                 <Box height={1} flexShrink={0} width={39}>
-                  <Text
-                    bold
-                    color={selectedCol === 1 ? "yellow" : "white"}
-                    wrap="truncate"
-                  >
+                  <Text bold color={selectedCol === 1 ? "yellow" : "white"} wrap="truncate">
                     {" · col2 (2)                            "}
                   </Text>
                 </Box>
-                <Box
-                  flexDirection="column"
-                  height={20}
-                  overflow="scroll"
-                  scrollTo={0}
-                >
+                <Box flexDirection="column" height={20} overflow="scroll" scrollTo={0}>
                   {col2Cards.map((text, i) => (
-                    <MemoCard
-                      key={i}
-                      text={text}
-                      isSelected={selectedCol === 1 && i === 0}
-                      width={38}
-                    />
+                    <MemoCard key={i} text={text} isSelected={selectedCol === 1 && i === 0} width={38} />
                   ))}
                 </Box>
               </Box>
@@ -455,9 +364,7 @@ describe("VirtualList card height on re-render", () => {
 
     const after = app.text
     if (hasTextInBorder(after)) {
-      throw new Error(
-        `Text in border with React.memo + text change!\n\nBefore:\n${initial}\n\nAfter:\n${after}`,
-      )
+      throw new Error(`Text in border with React.memo + text change!\n\nBefore:\n${initial}\n\nAfter:\n${after}`)
     }
   })
 
@@ -479,56 +386,28 @@ describe("VirtualList card height on re-render", () => {
       setSelectedCol = _setSelectedCol
 
       return (
-        <Box
-          flexDirection="column"
-          width={80}
-          height={24}
-          minHeight={3}
-          overflow="hidden"
-        >
+        <Box flexDirection="column" width={80} height={24} minHeight={3} overflow="hidden">
           {/* Top bar — text CHANGES to force calculateLayout() */}
           <Box flexShrink={0} width={80} backgroundColor="white">
             <Text color="gray" wrap="truncate">
-              {selectedCol === 0
-                ? " / col1 / long-breadcrumb-path-here"
-                : " / col2"}
+              {selectedCol === 0 ? " / col1 / long-breadcrumb-path-here" : " / col2"}
             </Text>
           </Box>
           {/* Column container with flexGrow */}
-          <Box
-            flexGrow={1}
-            flexDirection="row"
-            minHeight={1}
-            maxHeight={22}
-            overflow="hidden"
-          >
+          <Box flexGrow={1} flexDirection="row" minHeight={1} maxHeight={22} overflow="hidden">
             {/* column-row wrapper with explicit width and height — km-tui has this */}
             <Box flexDirection="row" width={80} height={22}>
               {/* Col 1 */}
-              <Box
-                flexDirection="column"
-                width={40}
-                maxHeight={22}
-                overflow="hidden"
-              >
+              <Box flexDirection="column" width={40} maxHeight={22} overflow="hidden">
                 <Box height={1} flexShrink={0}>
                   <Text> </Text>
                 </Box>
                 <Box height={1} flexShrink={0} width={40}>
-                  <Text
-                    bold
-                    color={selectedCol === 0 ? "yellow" : "white"}
-                    wrap="truncate"
-                  >
+                  <Text bold color={selectedCol === 0 ? "yellow" : "white"} wrap="truncate">
                     {" · col1 (4)                             "}
                   </Text>
                 </Box>
-                <Box
-                  flexDirection="column"
-                  height={20}
-                  overflow="scroll"
-                  scrollTo={0}
-                >
+                <Box flexDirection="column" height={20} overflow="scroll" scrollTo={0}>
                   {col1Cards.map((text, i) => (
                     <Box
                       key={i}
@@ -536,9 +415,7 @@ describe("VirtualList card height on re-render", () => {
                       flexShrink={0}
                       width={39}
                       borderStyle="round"
-                      borderColor={
-                        selectedCol === 0 && i === 0 ? "yellow" : "blackBright"
-                      }
+                      borderColor={selectedCol === 0 && i === 0 ? "yellow" : "blackBright"}
                       paddingRight={1}
                     >
                       <Box flexDirection="column">
@@ -547,11 +424,7 @@ describe("VirtualList card height on re-render", () => {
                             flexDirection="row"
                             alignItems="flex-start"
                             paddingLeft={0}
-                            backgroundColor={
-                              selectedCol === 0 && i === 0
-                                ? "yellow"
-                                : undefined
-                            }
+                            backgroundColor={selectedCol === 0 && i === 0 ? "yellow" : undefined}
                           >
                             <Box width={3} flexShrink={0}>
                               <Text wrap="truncate">{"· "}</Text>
@@ -569,30 +442,16 @@ describe("VirtualList card height on re-render", () => {
               {/* Divider */}
               <Box width={1} alignSelf="stretch" />
               {/* Col 2 */}
-              <Box
-                flexDirection="column"
-                width={39}
-                maxHeight={22}
-                overflow="hidden"
-              >
+              <Box flexDirection="column" width={39} maxHeight={22} overflow="hidden">
                 <Box height={1} flexShrink={0}>
                   <Text> </Text>
                 </Box>
                 <Box height={1} flexShrink={0} width={39}>
-                  <Text
-                    bold
-                    color={selectedCol === 1 ? "yellow" : "white"}
-                    wrap="truncate"
-                  >
+                  <Text bold color={selectedCol === 1 ? "yellow" : "white"} wrap="truncate">
                     {" · col2 (2)                            "}
                   </Text>
                 </Box>
-                <Box
-                  flexDirection="column"
-                  height={20}
-                  overflow="scroll"
-                  scrollTo={0}
-                >
+                <Box flexDirection="column" height={20} overflow="scroll" scrollTo={0}>
                   {col2Cards.map((text, i) => (
                     <Box
                       key={i}
@@ -600,9 +459,7 @@ describe("VirtualList card height on re-render", () => {
                       flexShrink={0}
                       width={38}
                       borderStyle="round"
-                      borderColor={
-                        selectedCol === 1 && i === 0 ? "yellow" : "blackBright"
-                      }
+                      borderColor={selectedCol === 1 && i === 0 ? "yellow" : "blackBright"}
                       paddingRight={1}
                     >
                       <Box flexDirection="column">
@@ -611,11 +468,7 @@ describe("VirtualList card height on re-render", () => {
                             flexDirection="row"
                             alignItems="flex-start"
                             paddingLeft={0}
-                            backgroundColor={
-                              selectedCol === 1 && i === 0
-                                ? "yellow"
-                                : undefined
-                            }
+                            backgroundColor={selectedCol === 1 && i === 0 ? "yellow" : undefined}
                           >
                             <Box width={3} flexShrink={0}>
                               <Text wrap="truncate">{"· "}</Text>

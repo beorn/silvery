@@ -5,12 +5,7 @@
  */
 
 import React, { useState } from "react"
-import {
-  renderToCanvas,
-  Box,
-  Text,
-  useContentRect,
-} from "../../src/canvas/index.js"
+import { renderToCanvas, Box, Text, useContentRect } from "../../src/canvas/index.js"
 
 // Component that shows its dimensions
 function SizeDisplay() {
@@ -66,9 +61,7 @@ function App() {
       </Box>
 
       <Box marginTop={1}>
-        <Text dim>
-          Layout by Flexx, rendered to OffscreenCanvas, drawn to visible canvas
-        </Text>
+        <Text dim>Layout by Flexx, rendered to OffscreenCanvas, drawn to visible canvas</Text>
       </Box>
     </Box>
   )

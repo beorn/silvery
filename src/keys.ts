@@ -175,10 +175,7 @@ export function keyToAnsi(key: string): string {
 
   // Alt+key -> ESC prefix (standard terminal convention)
   // Alt/Meta/Option keys send ESC followed by the key
-  if (
-    (modifiers.includes("Alt") || modifiers.includes("Meta")) &&
-    mainKey.length === 1
-  ) {
+  if ((modifiers.includes("Alt") || modifiers.includes("Meta")) && mainKey.length === 1) {
     return `\x1b${mainKey}`
   }
 
@@ -312,38 +309,12 @@ const NON_ALPHANUMERIC_KEYS = [
   // Note: 'space' is intentionally NOT included - users typically want ' ' as input
 ]
 
-const SHIFT_CODES = new Set([
-  "[a",
-  "[b",
-  "[c",
-  "[d",
-  "[e",
-  "[2$",
-  "[3$",
-  "[5$",
-  "[6$",
-  "[7$",
-  "[8$",
-  "[Z",
-])
+const SHIFT_CODES = new Set(["[a", "[b", "[c", "[d", "[e", "[2$", "[3$", "[5$", "[6$", "[7$", "[8$", "[Z"])
 
-const CTRL_CODES = new Set([
-  "Oa",
-  "Ob",
-  "Oc",
-  "Od",
-  "Oe",
-  "[2^",
-  "[3^",
-  "[5^",
-  "[6^",
-  "[7^",
-  "[8^",
-])
+const CTRL_CODES = new Set(["Oa", "Ob", "Oc", "Od", "Oe", "[2^", "[3^", "[5^", "[6^", "[7^", "[8^"])
 
 const META_KEY_CODE_RE = /^(?:\x1b)([a-zA-Z0-9])$/
-const FN_KEY_RE =
-  /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+)?([a-zA-Z]))/
+const FN_KEY_RE = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+)?([a-zA-Z]))/
 
 // ============================================================================
 // Kitty Keyboard Protocol
@@ -507,8 +478,7 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
     const kittyParts = KITTY_RE.exec(input)
     // xterm modifyOtherKeys format: CSI 27 ; modifier ; keycode ~
     // Sent by Ghostty, xterm, and others for modified keys like Ctrl+Enter
-    const modifyOtherKeysParts =
-      !kittyParts && MODIFY_OTHER_KEYS_RE.exec(input)
+    const modifyOtherKeysParts = !kittyParts && MODIFY_OTHER_KEYS_RE.exec(input)
     if (kittyParts || modifyOtherKeysParts) {
       let codepoint: number
       let modifier: number
@@ -552,9 +522,7 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
           }
 
           // Reassemble key code
-          const code = [parts[1], parts[2], parts[4], parts[6]]
-            .filter(Boolean)
-            .join("")
+          const code = [parts[1], parts[2], parts[4], parts[6]].filter(Boolean).join("")
           const modifier = (Number(parts[3] || parts[5] || 1) - 1) as number
 
           key.ctrl = !!(modifier & 4)
@@ -614,19 +582,12 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
   // Filter out escape sequence fragments that leak through
   // e.g., "[2~" from Insert key, "[A" from arrows when not fully parsed
   // Single "[" and "]" are allowed — they're valid key bindings
-  if (
-    (input.startsWith("[") && input.length > 1) ||
-    (input.startsWith("O") && input.length > 1)
-  ) {
+  if ((input.startsWith("[") && input.length > 1) || (input.startsWith("O") && input.length > 1)) {
     input = ""
   }
 
   // Detect shift for uppercase letters
-  if (
-    input.length === 1 &&
-    typeof input[0] === "string" &&
-    /[A-Z]/.test(input[0])
-  ) {
+  if (input.length === 1 && typeof input[0] === "string" && /[A-Z]/.test(input[0])) {
     key.shift = true
   }
 
@@ -723,8 +684,7 @@ export function parseHotkey(keyStr: string): ParsedHotkey {
   return {
     key,
     ctrl: modifiers.has("control") || modifiers.has("ctrl"),
-    meta:
-      modifiers.has("meta") || modifiers.has("cmd") || modifiers.has("command"),
+    meta: modifiers.has("meta") || modifiers.has("cmd") || modifiers.has("command"),
     shift: modifiers.has("shift"),
     alt: modifiers.has("alt") || modifiers.has("option"),
   }
@@ -738,22 +698,14 @@ export function parseHotkey(keyStr: string): ParsedHotkey {
  * @param input Optional input string (for matching character keys)
  * @returns true if the hotkey matches the key event
  */
-export function matchHotkey(
-  hotkey: ParsedHotkey,
-  key: Key,
-  input?: string,
-): boolean {
+export function matchHotkey(hotkey: ParsedHotkey, key: Key, input?: string): boolean {
   // Check modifiers
   if (!!hotkey.ctrl !== !!key.ctrl) return false
   if (!!hotkey.meta !== !!key.meta) return false
   if (!!hotkey.alt !== false) return false // terminals can't distinguish alt from meta
 
   // For single uppercase letters (A-Z), shift is implicit
-  const isUppercaseLetter =
-    hotkey.key.length === 1 &&
-    hotkey.key >= "A" &&
-    hotkey.key <= "Z" &&
-    !hotkey.shift
+  const isUppercaseLetter = hotkey.key.length === 1 && hotkey.key >= "A" && hotkey.key <= "Z" && !hotkey.shift
   if (!isUppercaseLetter && !!hotkey.shift !== !!key.shift) return false
 
   // Check key name against Key boolean fields

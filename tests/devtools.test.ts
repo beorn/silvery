@@ -30,9 +30,7 @@ describe("devtools", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
     try {
       await connectDevTools()
-      expect(warn).toHaveBeenCalledWith(
-        expect.stringContaining("react-devtools-core"),
-      )
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining("react-devtools-core"))
     } finally {
       warn.mockRestore()
     }

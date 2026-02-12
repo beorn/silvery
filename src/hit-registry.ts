@@ -24,13 +24,7 @@ import type { Rect } from "./types.js"
  */
 export interface HitTarget {
   /** The type of element that was clicked */
-  type:
-    | "node"
-    | "fold-toggle"
-    | "link"
-    | "column-header"
-    | "scroll-area"
-    | "button"
+  type: "node" | "fold-toggle" | "link" | "column-header" | "scroll-area" | "button"
   /** Column index (for column-header, or items within a column) */
   colIndex?: number
   /** Card index within a column */
@@ -253,12 +247,7 @@ export function useHitRegistry(): HitRegistry | null {
  * }
  * ```
  */
-export function useHitRegion(
-  target: HitTarget,
-  rect: Rect | null,
-  zIndex = 0,
-  enabled = true,
-): void {
+export function useHitRegion(target: HitTarget, rect: Rect | null, zIndex = 0, enabled = true): void {
   const registry = useContext(HitRegistryContext)
   const idRef = useRef<string | null>(null)
 
@@ -292,16 +281,7 @@ export function useHitRegion(
     return () => {
       registry.unregister(id)
     }
-  }, [
-    registry,
-    rect?.x,
-    rect?.y,
-    rect?.width,
-    rect?.height,
-    target,
-    zIndex,
-    enabled,
-  ])
+  }, [registry, rect?.x, rect?.y, rect?.width, rect?.height, target, zIndex, enabled])
 }
 
 /**
@@ -329,11 +309,7 @@ export function useHitRegion(
  * }
  * ```
  */
-export function useHitRegionCallback(
-  target: HitTarget,
-  zIndex = 0,
-  enabled = true,
-): (rect: Rect) => void {
+export function useHitRegionCallback(target: HitTarget, zIndex = 0, enabled = true): (rect: Rect) => void {
   const registry = useContext(HitRegistryContext)
   const idRef = useRef<string | null>(null)
 

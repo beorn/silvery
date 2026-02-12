@@ -14,10 +14,7 @@ import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
 import { bufferToText } from "../src/buffer.js"
 import { createRenderer } from "../src/testing/index.js"
-import {
-  compareBuffers,
-  formatMismatch,
-} from "../src/testing/compare-buffers.js"
+import { compareBuffers, formatMismatch } from "../src/testing/compare-buffers.js"
 
 const render = createRenderer({ incremental: true })
 
@@ -300,15 +297,8 @@ describe("Incremental rendering: console layout cascade", () => {
 
           <Box flexDirection="column" flexGrow={1} overflow="scroll">
             {Array.from({ length: 20 }, (_, i) => (
-              <Box
-                key={i}
-                borderStyle="single"
-                borderColor={i === selected ? "yellow" : "blackBright"}
-                width={58}
-              >
-                <Text dimColor={i !== selected}>
-                  {`Card ${i}: content text`}
-                </Text>
+              <Box key={i} borderStyle="single" borderColor={i === selected ? "yellow" : "blackBright"} width={58}>
+                <Text dimColor={i !== selected}>{`Card ${i}: content text`}</Text>
               </Box>
             ))}
           </Box>

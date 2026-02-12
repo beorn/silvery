@@ -136,11 +136,11 @@ const frozenCount = useScrollback(items, {
 })
 ```
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `frozen` | `(item: T, index: number) => boolean` | Predicate for frozen items |
-| `render` | `(item: T, index: number) => string` | Render item to string for stdout |
-| `stdout` | `{ write(data: string): boolean }` | Output stream (default: `process.stdout`) |
+| Option   | Type                                  | Description                               |
+| -------- | ------------------------------------- | ----------------------------------------- |
+| `frozen` | `(item: T, index: number) => boolean` | Predicate for frozen items                |
+| `render` | `(item: T, index: number) => string`  | Render item to string for stdout          |
+| `stdout` | `{ write(data: string): boolean }`    | Output stream (default: `process.stdout`) |
 
 Returns the current frozen count (contiguous prefix length).
 

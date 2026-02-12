@@ -25,14 +25,7 @@
  */
 
 import type React from "react"
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from "react"
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react"
 import type { Key } from "../hooks/useInput.js"
 import { useInput } from "../hooks/useInput.js"
 
@@ -113,9 +106,7 @@ export interface InputLayerProviderProps {
  * }
  * ```
  */
-export function InputLayerProvider({
-  children,
-}: InputLayerProviderProps): React.JSX.Element {
+export function InputLayerProvider({ children }: InputLayerProviderProps): React.JSX.Element {
   // Use ref to avoid re-renders when layers change
   const layersRef = useRef<InputLayer[]>([])
 
@@ -166,16 +157,9 @@ export function InputLayerProvider({
     dispatch(input, key)
   })
 
-  const contextValue = useMemo(
-    () => ({ push, pop, dispatch }),
-    [push, pop, dispatch],
-  )
+  const contextValue = useMemo(() => ({ push, pop, dispatch }), [push, pop, dispatch])
 
-  return (
-    <InputLayerContext.Provider value={contextValue}>
-      {children}
-    </InputLayerContext.Provider>
-  )
+  return <InputLayerContext.Provider value={contextValue}>{children}</InputLayerContext.Provider>
 }
 
 // =============================================================================
@@ -193,9 +177,7 @@ export function InputLayerProvider({
 export function useInputLayerContext(): InputLayerContextValue {
   const ctx = useContext(InputLayerContext)
   if (!ctx) {
-    throw new Error(
-      "useInputLayerContext must be used within an InputLayerProvider",
-    )
+    throw new Error("useInputLayerContext must be used within an InputLayerProvider")
   }
   return ctx
 }

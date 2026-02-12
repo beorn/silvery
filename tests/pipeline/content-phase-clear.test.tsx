@@ -49,9 +49,7 @@ describe("Text node backgroundColor clearing (incremental)", () => {
 
       return (
         <Box flexDirection="column" width={40}>
-          <Text backgroundColor={highlighted ? "yellow" : undefined}>
-            Toggle Me
-          </Text>
+          <Text backgroundColor={highlighted ? "yellow" : undefined}>Toggle Me</Text>
           <Text>Other Content</Text>
         </Box>
       )
@@ -78,10 +76,7 @@ describe("Text node backgroundColor clearing (incremental)", () => {
       return (
         <Box flexDirection="column" width={40}>
           {items.map((item, i) => (
-            <Text
-              key={i}
-              backgroundColor={i === selected ? "yellow" : undefined}
-            >
+            <Text key={i} backgroundColor={i === selected ? "yellow" : undefined}>
               {item}
             </Text>
           ))}
@@ -121,12 +116,7 @@ describe("Text node backgroundColor clearing (incremental)", () => {
     // clearing the Text region should use the parent's white bg, not null (black).
     function BoardTitle({ active }: { active: boolean }) {
       return (
-        <Box
-          backgroundColor="white"
-          width={40}
-          height={3}
-          flexDirection="column"
-        >
+        <Box backgroundColor="white" width={40} height={3} flexDirection="column">
           <Text color={active ? "yellow" : undefined}>Title</Text>
           <Text>Subtitle</Text>
         </Box>
@@ -177,18 +167,10 @@ describe("Text node backgroundColor clearing (incremental)", () => {
     // destroying parent's painted background.
     function ScrollWithBg({ selected }: { selected: number }) {
       return (
-        <Box
-          backgroundColor="white"
-          width={20}
-          height={5}
-          flexDirection="column"
-        >
+        <Box backgroundColor="white" width={20} height={5} flexDirection="column">
           <Box overflow="scroll" height={3} flexGrow={1}>
             {["A", "B", "C", "D"].map((item, i) => (
-              <Text
-                key={i}
-                backgroundColor={i === selected ? "yellow" : undefined}
-              >
+              <Text key={i} backgroundColor={i === selected ? "yellow" : undefined}>
                 {item}
               </Text>
             ))}
@@ -215,11 +197,7 @@ describe("Text node backgroundColor clearing (incremental)", () => {
     function BoxToggle({ active }: { active: boolean }) {
       return (
         <Box flexDirection="column" width={40}>
-          <Box
-            backgroundColor={active ? "yellow" : undefined}
-            width={10}
-            height={1}
-          >
+          <Box backgroundColor={active ? "yellow" : undefined} width={10} height={1}>
             <Text>Box</Text>
           </Box>
           <Text>Below</Text>

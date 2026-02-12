@@ -32,12 +32,7 @@
 // Diagnostic Plugin
 // =============================================================================
 
-export {
-  withDiagnostics,
-  checkLayoutInvariants,
-  VirtualTerminal,
-  type DiagnosticOptions,
-} from "../with-diagnostics.js"
+export { withDiagnostics, checkLayoutInvariants, VirtualTerminal, type DiagnosticOptions } from "../with-diagnostics.js"
 
 // =============================================================================
 // Error Types
@@ -49,11 +44,7 @@ export { IncrementalRenderMismatchError } from "../scheduler.js"
 // Buffer Comparison
 // =============================================================================
 
-export {
-  compareBuffers,
-  formatMismatch,
-  type BufferMismatch,
-} from "../testing/compare-buffers.js"
+export { compareBuffers, formatMismatch, type BufferMismatch } from "../testing/compare-buffers.js"
 
 // =============================================================================
 // Pipeline Internals (for manual ANSI replay verification)

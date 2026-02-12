@@ -27,13 +27,7 @@ import {
   splitGraphemes,
   wrapText,
 } from "../unicode.js"
-import {
-  getTextStyle,
-  getTextWidth,
-  parseColor,
-  sliceByWidth,
-  sliceByWidthFromEnd,
-} from "./render-helpers.js"
+import { getTextStyle, getTextWidth, parseColor, sliceByWidth, sliceByWidthFromEnd } from "./render-helpers.js"
 
 // ============================================================================
 // Background Conflict Detection
@@ -148,10 +142,7 @@ function styleToAnsi(style: StyleContext): string {
  * Merge child props into parent context.
  * Child values override parent values when specified.
  */
-function mergeStyleContext(
-  parent: StyleContext,
-  childProps: TextProps,
-): StyleContext {
+function mergeStyleContext(parent: StyleContext, childProps: TextProps): StyleContext {
   return {
     color: childProps.color ?? parent.color,
     backgroundColor: childProps.backgroundColor ?? parent.backgroundColor,
@@ -172,11 +163,7 @@ function mergeStyleContext(
  * @param childStyle - The merged style for this child (child overrides parent)
  * @param parentStyle - The parent's style context to restore after
  */
-function applyTextStyleAnsi(
-  text: string,
-  childStyle: StyleContext,
-  parentStyle: StyleContext,
-): string {
+function applyTextStyleAnsi(text: string, childStyle: StyleContext, parentStyle: StyleContext): string {
   if (!text) {
     return text
   }
@@ -206,10 +193,7 @@ function applyTextStyleAnsi(
  * @param node - The node to collect text from
  * @param parentContext - The inherited style context from parent (used for restoration)
  */
-export function collectTextContent(
-  node: InkxNode,
-  parentContext: StyleContext = {},
-): string {
+export function collectTextContent(node: InkxNode, parentContext: StyleContext = {}): string {
   // If this node has direct text content, return it
   if (node.textContent !== undefined) {
     return node.textContent
@@ -275,11 +259,7 @@ interface TextWithBg {
  * @param parentContext - The inherited style context from parent
  * @param offset - Current character offset in the collected text (for bg tracking)
  */
-function collectTextWithBg(
-  node: InkxNode,
-  parentContext: StyleContext = {},
-  offset = 0,
-): TextWithBg {
+function collectTextWithBg(node: InkxNode, parentContext: StyleContext = {}, offset = 0): TextWithBg {
   // If this node has direct text content, return it with no bg segments
   if (node.textContent !== undefined) {
     return { text: node.textContent, bgSegments: [] }
@@ -298,11 +278,7 @@ function collectTextWithBg(
       const childResult = collectTextWithBg(child, childContext, currentOffset)
 
       // Apply ANSI styles for fg/attrs (but NOT bg) with push/pop
-      const styledText = applyTextStyleAnsi(
-        childResult.text,
-        childContext,
-        parentContext,
-      )
+      const styledText = applyTextStyleAnsi(childResult.text, childContext, parentContext)
       result += styledText
 
       // Track bg segment if this child (or its ancestors) has backgroundColor
@@ -383,9 +359,7 @@ function applyBgSegmentsToLine(
     // Walk through the line's visible characters to find screen columns
     let charIdx = 0
     let col = x
-    const graphemes = splitGraphemes(
-      hasAnsi(lineText) ? stripAnsiForBg(lineText) : lineText,
-    )
+    const graphemes = splitGraphemes(hasAnsi(lineText) ? stripAnsiForBg(lineText) : lineText)
 
     for (const grapheme of graphemes) {
       const gWidth = graphemeWidth(grapheme)
@@ -436,14 +410,9 @@ function stripAnsiForBg(text: string): string {
  * @param formattedLines - The wrapped/truncated output lines
  * @returns Array of { start, end } character offsets for each formatted line
  */
-function mapLinesToCharOffsets(
-  originalText: string,
-  formattedLines: string[],
-): Array<{ start: number; end: number }> {
+function mapLinesToCharOffsets(originalText: string, formattedLines: string[]): Array<{ start: number; end: number }> {
   // Strip ANSI from the original to get the plain text character sequence
-  const plainOriginal = hasAnsi(originalText)
-    ? stripAnsiForBg(originalText)
-    : originalText
+  const plainOriginal = hasAnsi(originalText) ? stripAnsiForBg(originalText) : originalText
   // Normalize tabs to match formatTextLines behavior
   const normalized = plainOriginal.replace(/\t/g, "    ")
 
@@ -473,11 +442,7 @@ function mapLinesToCharOffsets(
  * character by character. Skips newlines and whitespace that were
  * consumed by wrapping between lines.
  */
-function findLineStart(
-  normalized: string,
-  plainLine: string,
-  fromOffset: number,
-): number {
+function findLineStart(normalized: string, plainLine: string, fromOffset: number): number {
   if (plainLine.length === 0) {
     // Empty line -- skip to next newline
     let pos = fromOffset
@@ -497,8 +462,7 @@ function findLineStart(
   // startsWith fails when the line has "…" that doesn't exist in the original.
   const ELLIPSIS = "\u2026"
   const ellipsisIdx = plainLine.indexOf(ELLIPSIS)
-  const truncatedPrefix =
-    ellipsisIdx > 0 ? plainLine.slice(0, ellipsisIdx) : null
+  const truncatedPrefix = ellipsisIdx > 0 ? plainLine.slice(0, ellipsisIdx) : null
 
   if (truncatedPrefix && normalized.startsWith(truncatedPrefix, fromOffset)) {
     return fromOffset
@@ -534,11 +498,7 @@ function findLineStart(
 /**
  * Format text into lines based on wrap mode.
  */
-export function formatTextLines(
-  text: string,
-  width: number,
-  wrap: TextProps["wrap"],
-): string[] {
+export function formatTextLines(text: string, width: number, wrap: TextProps["wrap"]): string[] {
   // Guard against width <= 0 to prevent infinite loops
   // This can happen with display="none" nodes (0x0 dimensions)
   if (width <= 0) {
@@ -571,11 +531,7 @@ export function formatTextLines(
 /**
  * Truncate text to fit within width.
  */
-export function truncateText(
-  text: string,
-  width: number,
-  mode: "start" | "middle" | "end",
-): string {
+export function truncateText(text: string, width: number, mode: "start" | "middle" | "end"): string {
   const textWidth = getTextWidth(text)
   if (textWidth <= width) return text
 
@@ -608,13 +564,7 @@ export function truncateText(
 /**
  * Render a single line of text to the buffer.
  */
-export function renderTextLine(
-  buffer: TerminalBuffer,
-  x: number,
-  y: number,
-  text: string,
-  baseStyle: Style,
-): void {
+export function renderTextLine(buffer: TerminalBuffer, x: number, y: number, text: string, baseStyle: Style): void {
   // Check if text contains ANSI escape sequences
   if (hasAnsi(text)) {
     renderAnsiTextLine(buffer, x, y, text, baseStyle)
@@ -650,8 +600,7 @@ function renderGraphemes(
     const existingBg = style.bg === null ? buffer.getCellBg(col, y) : style.bg
 
     // For text-presentation emoji, add VS16 so terminals render at 2 columns
-    const outputChar =
-      width === 2 ? ensureEmojiPresentation(grapheme) : grapheme
+    const outputChar = width === 2 ? ensureEmojiPresentation(grapheme) : grapheme
 
     buffer.setCell(col, y, {
       char: outputChar,
@@ -664,8 +613,7 @@ function renderGraphemes(
     })
 
     if (width === 2 && col + 1 < buffer.width) {
-      const existingBg2 =
-        style.bg === null ? buffer.getCellBg(col + 1, y) : style.bg
+      const existingBg2 = style.bg === null ? buffer.getCellBg(col + 1, y) : style.bg
       buffer.setCell(col + 1, y, {
         char: "",
         fg: style.fg,
@@ -688,13 +636,7 @@ function renderGraphemes(
  * Render text line with ANSI escape sequences.
  * Parses ANSI codes and applies styles to individual segments.
  */
-export function renderAnsiTextLine(
-  buffer: TerminalBuffer,
-  x: number,
-  y: number,
-  text: string,
-  baseStyle: Style,
-): void {
+export function renderAnsiTextLine(buffer: TerminalBuffer, x: number, y: number, text: string, baseStyle: Style): void {
   const segments = parseAnsiText(text)
   let col = x
 
@@ -706,12 +648,7 @@ export function renderAnsiTextLine(
     // Check both: 1) Text's own backgroundColor, 2) Parent Box's bg already in buffer
     // Skip if segment has bgOverride flag (explicit opt-out via chalkx.bgOverride)
     const bgConflictMode = getBgConflictMode()
-    if (
-      bgConflictMode !== "ignore" &&
-      !segment.bgOverride &&
-      segment.bg !== undefined &&
-      segment.bg !== null
-    ) {
+    if (bgConflictMode !== "ignore" && !segment.bgOverride && segment.bg !== undefined && segment.bg !== null) {
       // Check if there's an existing background (from Text prop or parent Box fill)
       const existingBufBg = col < buffer.width ? buffer.getCellBg(col, y) : null
       const hasExistingBg = baseStyle.bg !== null || existingBufBg !== null
@@ -772,11 +709,7 @@ export interface MergeStylesOptions {
  * @param overlay - The overlay style (from child/content)
  * @param options - Merge behavior options
  */
-export function mergeStyles(
-  base: Style,
-  overlay: Partial<Style>,
-  options: MergeStylesOptions = {},
-): Style {
+export function mergeStyles(base: Style, overlay: Partial<Style>, options: MergeStylesOptions = {}): Style {
   const { preserveDecorations = true, preserveEmphasis = true } = options
 
   const baseAttrs = base.attrs ?? {}
@@ -789,19 +722,16 @@ export function mergeStyles(
   if (preserveDecorations) {
     // Underline: OR the boolean, but style from overlay wins if specified
     const hasBaseUnderline = baseAttrs.underline || baseAttrs.underlineStyle
-    const hasOverlayUnderline =
-      overlayAttrs.underline || overlayAttrs.underlineStyle
+    const hasOverlayUnderline = overlayAttrs.underline || overlayAttrs.underlineStyle
     if (hasBaseUnderline || hasOverlayUnderline) {
       attrs.underline = true
       // Style: overlay wins if specified, else base
-      attrs.underlineStyle =
-        overlayAttrs.underlineStyle ?? baseAttrs.underlineStyle ?? "single"
+      attrs.underlineStyle = overlayAttrs.underlineStyle ?? baseAttrs.underlineStyle ?? "single"
     }
     attrs.strikethrough = overlayAttrs.strikethrough || baseAttrs.strikethrough
   } else {
     attrs.underline = overlayAttrs.underline ?? baseAttrs.underline
-    attrs.underlineStyle =
-      overlayAttrs.underlineStyle ?? baseAttrs.underlineStyle
+    attrs.underlineStyle = overlayAttrs.underlineStyle ?? baseAttrs.underlineStyle
     attrs.strikethrough = overlayAttrs.strikethrough ?? baseAttrs.strikethrough
   }
 
@@ -839,11 +769,7 @@ export function mergeStyles(
  * Merge ANSI segment style with base style.
  * Uses category-based merging to preserve decorations and emphasis.
  */
-function mergeAnsiStyle(
-  base: Style,
-  segment: StyledSegment,
-  options: MergeStylesOptions = {},
-): Style {
+function mergeAnsiStyle(base: Style, segment: StyledSegment, options: MergeStylesOptions = {}): Style {
   const { preserveDecorations = true, preserveEmphasis = true } = options
 
   // Convert ANSI SGR codes to overlay style
@@ -875,11 +801,7 @@ function mergeAnsiStyle(
   if (segment.inverse !== undefined) overlayAttrs.inverse = segment.inverse
 
   // Use mergeStyles for consistent category-based merging
-  return mergeStyles(
-    base,
-    { fg, bg, underlineColor, attrs: overlayAttrs },
-    { preserveDecorations, preserveEmphasis },
-  )
+  return mergeStyles(base, { fg, bg, underlineColor, attrs: overlayAttrs }, { preserveDecorations, preserveEmphasis })
 }
 
 /**
@@ -986,8 +908,7 @@ export function renderText(
   const lines = formatTextLines(text, width, props.wrap)
 
   // Map formatted lines back to character offsets for bg segment application
-  const lineOffsets =
-    bgSegments.length > 0 ? mapLinesToCharOffsets(text, lines) : []
+  const lineOffsets = bgSegments.length > 0 ? mapLinesToCharOffsets(text, lines) : []
 
   // Render each line
   for (let lineIdx = 0; lineIdx < lines.length && lineIdx < height; lineIdx++) {

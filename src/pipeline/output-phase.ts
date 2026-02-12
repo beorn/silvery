@@ -213,11 +213,7 @@ function findLastContentLine(buffer: TerminalBuffer): number {
  * This is simpler and more reliable than incremental diffing for inline
  * mode, which has external writes (useScrollback) that shift the cursor.
  */
-function inlineFullRender(
-  prev: TerminalBuffer,
-  next: TerminalBuffer,
-  scrollbackOffset: number,
-): string {
+function inlineFullRender(prev: TerminalBuffer, next: TerminalBuffer, scrollbackOffset: number): string {
   const prevContentLine = findLastContentLine(prev)
   const nextContentLine = findLastContentLine(next)
 
@@ -259,16 +255,12 @@ function inlineFullRender(
 /**
  * Convert entire buffer to ANSI string.
  */
-function bufferToAnsi(
-  buffer: TerminalBuffer,
-  mode: "fullscreen" | "inline" = "fullscreen",
-): string {
+function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "fullscreen"): string {
   let output = ""
   let currentStyle: Style | null = null
 
   // For inline mode, only render up to the last line with content
-  const maxLine =
-    mode === "inline" ? findLastContentLine(buffer) : buffer.height - 1
+  const maxLine = mode === "inline" ? findLastContentLine(buffer) : buffer.height - 1
 
   // Move cursor to start position based on mode
   if (mode === "fullscreen") {
@@ -330,10 +322,7 @@ function bufferToAnsi(
     // Move to next line (except for last line)
     if (y < maxLine) {
       // Reset style before newline to prevent background color bleeding
-      if (
-        currentStyle &&
-        (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))
-      ) {
+      if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
         output += "\x1b[0m"
         currentStyle = null
       }
@@ -393,12 +382,7 @@ function ensureDiffPoolCapacity(capacity: number): void {
  * Write cell data from a buffer into a pre-allocated CellChange entry.
  * Uses readCellInto for zero-allocation reads.
  */
-function writeCellChange(
-  change: CellChange,
-  x: number,
-  y: number,
-  buffer: TerminalBuffer,
-): void {
+function writeCellChange(change: CellChange, x: number, y: number, buffer: TerminalBuffer): void {
   change.x = x
   change.y = y
   buffer.readCellInto(x, y, change.cell)
@@ -452,8 +436,7 @@ const diffResult: DiffResult = { pool: diffPool, count: 0 }
  */
 function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
   // Ensure pool is large enough for worst case (all cells changed)
-  const maxChanges =
-    Math.max(prev.width, next.width) * Math.max(prev.height, next.height)
+  const maxChanges = Math.max(prev.width, next.width) * Math.max(prev.height, next.height)
   ensureDiffPoolCapacity(maxChanges)
 
   let changeCount = 0
@@ -465,8 +448,7 @@ function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
   // Use dirty row bounding box to narrow the scan range.
   // If no rows are dirty, minDirtyRow is -1 and the loop body is skipped.
   const startRow = next.minDirtyRow === -1 ? 0 : next.minDirtyRow
-  const endRow =
-    next.maxDirtyRow === -1 ? -1 : Math.min(next.maxDirtyRow, height - 1)
+  const endRow = next.maxDirtyRow === -1 ? -1 : Math.min(next.maxDirtyRow, height - 1)
 
   for (let y = startRow; y <= endRow; y++) {
     // Skip individual clean rows within the bounding box
@@ -475,8 +457,7 @@ function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
     // Fast row-level pre-check: if all packed metadata AND all chars match,
     // skip per-cell comparison entirely. This catches rows marked dirty by
     // fill() or scrollRegion() that didn't actually change content.
-    if (next.rowMetadataEquals(y, prev) && next.rowCharsEquals(y, prev))
-      continue
+    if (next.rowMetadataEquals(y, prev) && next.rowCharsEquals(y, prev)) continue
 
     for (let x = 0; x < width; x++) {
       // Use buffer's optimized cellEquals which compares packed metadata first
@@ -547,10 +528,7 @@ function sortPoolByPosition(pool: CellChange[], count: number): void {
     const iy = item.y
     const ix = item.x
     let j = i - 1
-    while (
-      j >= 0 &&
-      (pool[j]!.y > iy || (pool[j]!.y === iy && pool[j]!.x > ix))
-    ) {
+    while (j >= 0 && (pool[j]!.y > iy || (pool[j]!.y === iy && pool[j]!.x > ix))) {
       pool[j + 1] = pool[j]!
       j--
     }
@@ -565,11 +543,7 @@ function sortPoolByPosition(pool: CellChange[], count: number): void {
  * @param count Number of valid entries in the pool
  * @param mode Render mode (only fullscreen uses incremental diff)
  */
-function changesToAnsi(
-  pool: CellChange[],
-  count: number,
-  mode: "fullscreen" | "inline" = "fullscreen",
-): string {
+function changesToAnsi(pool: CellChange[], count: number, mode: "fullscreen" | "inline" = "fullscreen"): string {
   if (count === 0) return ""
 
   // Sort by position for optimal cursor movement (in-place, no allocation)
@@ -601,10 +575,7 @@ function changesToAnsi(
         if (cursorY >= 0 && y === cursorY + 1 && x === 0) {
           // Next line at column 0, use newline (more efficient)
           // Reset style before newline to prevent background color bleeding
-          if (
-            currentStyle &&
-            (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))
-          ) {
+          if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
             output += "\x1b[0m"
             currentStyle = null
           }
@@ -616,10 +587,7 @@ function changesToAnsi(
         } else if (cursorY >= 0 && y > cursorY && x === 0) {
           // Same column (0), down N rows: use \r + CUD
           const dy = y - cursorY
-          if (
-            currentStyle &&
-            (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))
-          ) {
+          if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
             output += "\x1b[0m"
             currentStyle = null
           }

@@ -125,17 +125,16 @@ function HorizontalVirtualListInner<T>(
   ref: React.ForwardedRef<HorizontalVirtualListHandle>,
 ): React.ReactElement {
   // Use shared virtualization hook
-  const { startIndex, endIndex, hiddenBefore, hiddenAfter, scrollToItem } =
-    useVirtualization({
-      items,
-      viewportSize: width,
-      itemSize: itemWidth,
-      scrollTo,
-      scrollPadding: SCROLL_PADDING,
-      overscan,
-      maxRendered,
-      gap,
-    })
+  const { startIndex, endIndex, hiddenBefore, hiddenAfter, scrollToItem } = useVirtualization({
+    items,
+    viewportSize: width,
+    itemSize: itemWidth,
+    scrollTo,
+    scrollPadding: SCROLL_PADDING,
+    overscan,
+    maxRendered,
+    gap,
+  })
 
   // Expose scrollToItem method via ref for imperative scrolling
   useImperativeHandle(ref, () => ({ scrollToItem }), [scrollToItem])
@@ -175,9 +174,7 @@ function HorizontalVirtualListInner<T>(
           <React.Fragment key={key}>
             {renderItem(item, actualIndex)}
             {!isLast && renderSeparator && renderSeparator()}
-            {!isLast && gap > 0 && !renderSeparator && (
-              <Box width={gap} flexShrink={0} />
-            )}
+            {!isLast && gap > 0 && !renderSeparator && <Box width={gap} flexShrink={0} />}
           </React.Fragment>
         )
       })}
@@ -193,9 +190,7 @@ function HorizontalVirtualListInner<T>(
 }
 
 // Export with forwardRef - use type assertion for generic component
-export const HorizontalVirtualList = forwardRef(HorizontalVirtualListInner) as <
-  T,
->(
+export const HorizontalVirtualList = forwardRef(HorizontalVirtualListInner) as <T>(
   props: HorizontalVirtualListProps<T> & {
     ref?: React.ForwardedRef<HorizontalVirtualListHandle>
   },

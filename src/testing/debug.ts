@@ -35,15 +35,8 @@ export interface DebugTreeOptions {
  * @param options - Display options
  * @returns Formatted tree string
  */
-export function debugTree(
-  node: InkxNode,
-  options: DebugTreeOptions = {},
-): string {
-  const {
-    depth = Number.POSITIVE_INFINITY,
-    showRects = true,
-    showText = true,
-  } = options
+export function debugTree(node: InkxNode, options: DebugTreeOptions = {}): string {
+  const { depth = Number.POSITIVE_INFINITY, showRects = true, showText = true } = options
   const lines: string[] = []
 
   // Safe JSON.stringify that handles cyclic references
@@ -84,10 +77,7 @@ export function debugTree(
     let text = ""
     if (showText && n.textContent) {
       // Truncate long text
-      const content =
-        n.textContent.length > 40
-          ? n.textContent.slice(0, 37) + "..."
-          : n.textContent
+      const content = n.textContent.length > 40 ? n.textContent.slice(0, 37) + "..." : n.textContent
       text = ` "${content}"`
     }
 

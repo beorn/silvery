@@ -9,26 +9,13 @@
  */
 
 import React, { useState } from "react"
-import {
-  render,
-  Box,
-  Text,
-  useInput,
-  useApp,
-  createTerm,
-  type Key,
-} from "../../src/index.js"
+import { render, Box, Text, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Kanban Board",
   description: "3-column kanban with card movement and independent scroll",
-  features: [
-    "Box flexDirection",
-    "useInput",
-    "backgroundColor",
-    "multi-column layout",
-  ],
+  features: ["Box flexDirection", "useInput", "backgroundColor", "multi-column layout"],
 }
 
 // ============================================================================
@@ -112,20 +99,9 @@ function Tag({ name }: { name: string }): JSX.Element {
   )
 }
 
-function CardComponent({
-  card,
-  isSelected,
-}: {
-  card: Card
-  isSelected: boolean
-}): JSX.Element {
+function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }): JSX.Element {
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor={isSelected ? "cyan" : "gray"}
-      paddingX={1}
-    >
+    <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "cyan" : "gray"} paddingX={1}>
       {isSelected ? (
         <Text backgroundColor="cyan" color="black" bold>
           {card.title}
@@ -152,20 +128,12 @@ function ColumnComponent({
   selectedCardIndex: number
 }): JSX.Element {
   return (
-    <Box
-      flexDirection="column"
-      flexGrow={1}
-      borderStyle="single"
-      borderColor={isSelected ? "cyan" : "gray"}
-    >
+    <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor={isSelected ? "cyan" : "gray"}>
       <Box backgroundColor={isSelected ? "cyan" : undefined} paddingX={1}>
         <Text bold color={isSelected ? "black" : "white"}>
           {column.title}
         </Text>
-        <Text color={isSelected ? "black" : "gray"}>
-          {" "}
-          ({column.cards.length})
-        </Text>
+        <Text color={isSelected ? "black" : "gray"}> ({column.cards.length})</Text>
       </Box>
 
       <Box
@@ -177,11 +145,7 @@ function ColumnComponent({
         gap={1}
       >
         {column.cards.map((card, cardIndex) => (
-          <CardComponent
-            key={card.id}
-            card={card}
-            isSelected={isSelected && cardIndex === selectedCardIndex}
-          />
+          <CardComponent key={card.id} card={card} isSelected={isSelected && cardIndex === selectedCardIndex} />
         ))}
 
         {column.cards.length === 0 && (
@@ -226,10 +190,7 @@ export function KanbanBoard(): JSX.Element {
 
   const currentColumn = columns[selectedColumn]
   const currentColumnCards = currentColumn?.cards ?? []
-  const boundedSelectedCard = Math.min(
-    selectedCard,
-    Math.max(0, currentColumnCards.length - 1),
-  )
+  const boundedSelectedCard = Math.min(selectedCard, Math.max(0, currentColumnCards.length - 1))
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) {
@@ -251,9 +212,7 @@ export function KanbanBoard(): JSX.Element {
       setSelectedCard((prev) => Math.max(0, prev - 1))
     }
     if (key.downArrow || input === "j") {
-      setSelectedCard((prev) =>
-        Math.min(currentColumnCards.length - 1, prev + 1),
-      )
+      setSelectedCard((prev) => Math.min(currentColumnCards.length - 1, prev + 1))
     }
 
     // Move card between columns
@@ -292,9 +251,7 @@ export function KanbanBoard(): JSX.Element {
             key={column.id}
             column={column}
             isSelected={colIndex === selectedColumn}
-            selectedCardIndex={
-              colIndex === selectedColumn ? boundedSelectedCard : -1
-            }
+            selectedCardIndex={colIndex === selectedColumn ? boundedSelectedCard : -1}
           />
         ))}
       </Box>
@@ -311,10 +268,7 @@ export function KanbanBoard(): JSX.Element {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner
-      meta={meta}
-      controls="h/l column  j/k card  </> move  Esc/q quit"
-    >
+    <ExampleBanner meta={meta} controls="h/l column  j/k card  </> move  Esc/q quit">
       <KanbanBoard />
     </ExampleBanner>,
     term,

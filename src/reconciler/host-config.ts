@@ -7,17 +7,9 @@
  */
 
 import { createContext } from "react"
-import {
-  DefaultEventPriority,
-  DiscreteEventPriority,
-  NoEventPriority,
-} from "react-reconciler/constants.js"
+import { DefaultEventPriority, DiscreteEventPriority, NoEventPriority } from "react-reconciler/constants.js"
 import type { BoxProps, InkxNode, InkxNodeType, TextProps } from "../types.js"
-import {
-  contentPropsChanged,
-  layoutPropsChanged,
-  propsEqual,
-} from "./helpers.js"
+import { contentPropsChanged, layoutPropsChanged, propsEqual } from "./helpers.js"
 import { applyBoxProps, createNode, createVirtualTextNode } from "./nodes.js"
 
 // ============================================================================
@@ -130,10 +122,7 @@ export const hostConfig = {
     return { isInsideText: false }
   },
 
-  getChildHostContext(
-    parentHostContext: HostContext,
-    type: InkxNodeType,
-  ): HostContext {
+  getChildHostContext(parentHostContext: HostContext, type: InkxNodeType): HostContext {
     // Once inside a text node, stay inside
     const isInsideText = parentHostContext.isInsideText || type === "inkx-text"
     if (isInsideText === parentHostContext.isInsideText) {
@@ -198,8 +187,7 @@ export const hostConfig = {
     // Only add to layout tree if both nodes have layout nodes
     if (parentInstance.layoutNode && child.layoutNode) {
       // Count non-raw-text children for proper layout index
-      const layoutIndex =
-        parentInstance.children.filter((c) => c.layoutNode !== null).length - 1
+      const layoutIndex = parentInstance.children.filter((c) => c.layoutNode !== null).length - 1
       parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex)
     }
     parentInstance.childrenDirty = true
@@ -215,8 +203,7 @@ export const hostConfig = {
     parentInstance.children.push(child)
     // Only add to layout tree if both nodes have layout nodes
     if (parentInstance.layoutNode && child.layoutNode) {
-      const layoutIndex =
-        parentInstance.children.filter((c) => c.layoutNode !== null).length - 1
+      const layoutIndex = parentInstance.children.filter((c) => c.layoutNode !== null).length - 1
       parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex)
     }
   },
@@ -233,8 +220,7 @@ export const hostConfig = {
     child.parent = container.root
     container.root.children.push(child)
     if (container.root.layoutNode && child.layoutNode) {
-      const layoutIndex =
-        container.root.children.filter((c) => c.layoutNode !== null).length - 1
+      const layoutIndex = container.root.children.filter((c) => c.layoutNode !== null).length - 1
       container.root.layoutNode.insertChild(child.layoutNode, layoutIndex)
     }
     container.root.childrenDirty = true
@@ -279,11 +265,7 @@ export const hostConfig = {
     }
   },
 
-  insertBefore(
-    parentInstance: InkxNode,
-    child: InkxNode,
-    beforeChild: InkxNode,
-  ) {
+  insertBefore(parentInstance: InkxNode, child: InkxNode, beforeChild: InkxNode) {
     // React calls insertBefore to move an existing child during keyed reorder.
     // Remove from old position first to avoid duplicating in the children array.
     const existingIndex = parentInstance.children.indexOf(child)
@@ -299,9 +281,7 @@ export const hostConfig = {
       parentInstance.children.splice(beforeIndex, 0, child)
       if (parentInstance.layoutNode && child.layoutNode) {
         // Count non-raw-text children before this position for proper layout index
-        const layoutIndex = parentInstance.children
-          .slice(0, beforeIndex)
-          .filter((c) => c.layoutNode !== null).length
+        const layoutIndex = parentInstance.children.slice(0, beforeIndex).filter((c) => c.layoutNode !== null).length
         parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex)
       }
       parentInstance.childrenDirty = true
@@ -313,11 +293,7 @@ export const hostConfig = {
     }
   },
 
-  insertInContainerBefore(
-    container: Container,
-    child: InkxNode,
-    beforeChild: InkxNode,
-  ) {
+  insertInContainerBefore(container: Container, child: InkxNode, beforeChild: InkxNode) {
     // Remove from old position if already a child (keyed reorder)
     const existingIndex = container.root.children.indexOf(child)
     if (existingIndex !== -1) {
@@ -331,9 +307,7 @@ export const hostConfig = {
       child.parent = container.root
       container.root.children.splice(beforeIndex, 0, child)
       if (container.root.layoutNode && child.layoutNode) {
-        const layoutIndex = container.root.children
-          .slice(0, beforeIndex)
-          .filter((c) => c.layoutNode !== null).length
+        const layoutIndex = container.root.children.slice(0, beforeIndex).filter((c) => c.layoutNode !== null).length
         container.root.layoutNode.insertChild(child.layoutNode, layoutIndex)
       }
       container.root.childrenDirty = true
@@ -352,10 +326,7 @@ export const hostConfig = {
     newProps: BoxProps | TextProps,
   ): boolean | null {
     // Return true if we need to update
-    return !propsEqual(
-      oldProps as Record<string, unknown>,
-      newProps as Record<string, unknown>,
-    )
+    return !propsEqual(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
   },
 
   // Note: react-reconciler 0.33+ changed the signature from
@@ -369,23 +340,13 @@ export const hostConfig = {
     _finishedWork: unknown,
   ) {
     // Early exit if props are equal (React may call commitUpdate even when nothing changed)
-    if (
-      propsEqual(
-        oldProps as Record<string, unknown>,
-        newProps as Record<string, unknown>,
-      )
-    ) {
+    if (propsEqual(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)) {
       instance.props = newProps
       return
     }
 
     // Check if layout-affecting props changed
-    if (
-      layoutPropsChanged(
-        oldProps as Record<string, unknown>,
-        newProps as Record<string, unknown>,
-      )
-    ) {
+    if (layoutPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)) {
       if (instance.layoutNode) {
         applyBoxProps(instance.layoutNode, newProps as BoxProps)
         instance.layoutNode.markDirty()
@@ -396,10 +357,7 @@ export const hostConfig = {
     // Check if content changed (text children, style props like backgroundColor)
     // Returns "text" for text content changes (affect layout) or "style" for
     // style-only changes (borderColor, color, etc. — don't affect layout).
-    const contentChanged = contentPropsChanged(
-      oldProps as Record<string, unknown>,
-      newProps as Record<string, unknown>,
-    )
+    const contentChanged = contentPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
     if (contentChanged) {
       // paintDirty: always set for any visual change. Content phase uses this
       // to know the node needs re-rendering (border, text style, bg, etc.).
@@ -418,8 +376,7 @@ export const hostConfig = {
       // Content phase uses this to cascade re-renders only when the content area
       // was actually affected (not for border-only paint changes).
       if (
-        (oldProps as Record<string, unknown>).backgroundColor !==
-        (newProps as Record<string, unknown>).backgroundColor
+        (oldProps as Record<string, unknown>).backgroundColor !== (newProps as Record<string, unknown>).backgroundColor
       ) {
         instance.bgDirty = true
       }
@@ -435,8 +392,7 @@ export const hostConfig = {
     // scrollTo changes affect rendering via scroll phase (children shift position),
     // so they must propagate subtreeDirty for content phase traversal.
     const scrollToChanged =
-      (oldProps as Record<string, unknown>).scrollTo !==
-      (newProps as Record<string, unknown>).scrollTo
+      (oldProps as Record<string, unknown>).scrollTo !== (newProps as Record<string, unknown>).scrollTo
     if (instance.layoutDirty || contentChanged || scrollToChanged) {
       markLayoutAncestorDirty(instance)
       markSubtreeDirty(instance)

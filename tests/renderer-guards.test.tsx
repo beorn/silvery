@@ -13,8 +13,7 @@ import { ensureEngine } from "../src/renderer.js"
 await ensureEngine()
 
 // Import after engine init to avoid hoisting issues
-const { render, createRenderer, createStore, run, getActiveRenderCount } =
-  await import("../src/renderer.js")
+const { render, createRenderer, createStore, run, getActiveRenderCount } = await import("../src/renderer.js")
 
 describe("renderer guards", () => {
   // ========================================================================
@@ -28,9 +27,7 @@ describe("renderer guards", () => {
       incremental: true,
     })
     app.unmount()
-    expect(() => app.stdin.write("j")).toThrow(
-      "Cannot write to stdin after unmount",
-    )
+    expect(() => app.stdin.write("j")).toThrow("Cannot write to stdin after unmount")
   })
 
   test("rerender after unmount throws", () => {
@@ -40,9 +37,7 @@ describe("renderer guards", () => {
       incremental: true,
     })
     app.unmount()
-    expect(() => app.rerender(<Text>World</Text>)).toThrow(
-      "Cannot rerender after unmount",
-    )
+    expect(() => app.rerender(<Text>World</Text>)).toThrow("Cannot rerender after unmount")
   })
 
   test("double unmount throws", () => {

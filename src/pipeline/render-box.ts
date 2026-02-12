@@ -89,9 +89,7 @@ export function renderBorder(
   // Helper to check if a row is visible within clip bounds
   const isRowVisible = (row: number): boolean => {
     if (!clipBounds) return row >= 0 && row < buffer.height
-    return (
-      row >= clipBounds.top && row < clipBounds.bottom && row < buffer.height
-    )
+    return row >= clipBounds.top && row < clipBounds.bottom && row < buffer.height
   }
 
   // Top border
@@ -152,9 +150,7 @@ export function renderScrollIndicators(
   props: BoxProps,
   ss: NonNullable<InkxNode["scrollState"]>,
 ): void {
-  const border = props.borderStyle
-    ? getBorderSize(props)
-    : { top: 0, bottom: 0, left: 0, right: 0 }
+  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
 
   const indicatorStyle: Style = {
     fg: props.borderColor ? parseColor(props.borderColor) : 8, // Gray/dim

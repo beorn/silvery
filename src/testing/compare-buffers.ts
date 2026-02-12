@@ -5,12 +5,7 @@
  * mismatch found (or null if buffers are identical).
  */
 
-import {
-  type Cell,
-  type TerminalBuffer,
-  bufferToText,
-  cellEquals,
-} from "../buffer.js"
+import { type Cell, type TerminalBuffer, bufferToText, cellEquals } from "../buffer.js"
 
 /**
  * A single cell mismatch between two buffers.
@@ -31,10 +26,7 @@ export interface BufferMismatch {
  *
  * @returns The first mismatch found, or null if buffers are identical.
  */
-export function compareBuffers(
-  a: TerminalBuffer,
-  b: TerminalBuffer,
-): BufferMismatch | null {
+export function compareBuffers(a: TerminalBuffer, b: TerminalBuffer): BufferMismatch | null {
   const width = Math.max(a.width, b.width)
   const height = Math.max(a.height, b.height)
 

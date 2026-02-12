@@ -49,8 +49,7 @@ describe("Text truncation with explicit parent width", () => {
     const app = render(
       <Box width={40}>
         <Text dimColor>
-          <Text color="red">Error:</Text>{" "}
-          <Text>Something went wrong with the operation</Text>
+          <Text color="red">Error:</Text> <Text>Something went wrong with the operation</Text>
         </Text>
       </Box>,
     )

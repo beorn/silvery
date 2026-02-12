@@ -40,10 +40,7 @@ beforeAll(async () => {
  * Helper to render a component with both engines and compare results.
  * Returns both frames for inspection if needed.
  */
-function renderWithBothEngines(
-  element: React.ReactElement,
-  options: { columns?: number; rows?: number } = {},
-) {
+function renderWithBothEngines(element: React.ReactElement, options: { columns?: number; rows?: number } = {}) {
   const { columns = 80, rows = 24 } = options
 
   // Render with Yoga
@@ -75,12 +72,8 @@ function renderWithBothEngines(
 /**
  * Assert that both engines produce identical normalized output.
  */
-function expectEquivalent(
-  element: React.ReactElement,
-  options: { columns?: number; rows?: number } = {},
-) {
-  const { yogaNormalized, flexxNormalized, yogaFrame, flexxFrame } =
-    renderWithBothEngines(element, options)
+function expectEquivalent(element: React.ReactElement, options: { columns?: number; rows?: number } = {}) {
+  const { yogaNormalized, flexxNormalized, yogaFrame, flexxFrame } = renderWithBothEngines(element, options)
 
   if (yogaNormalized !== flexxNormalized) {
     console.log("=== Yoga Frame ===")
@@ -96,14 +89,8 @@ function expectEquivalent(
  * Check that both engines render something (not empty), even if different.
  * Used to verify both engines work for a test case, even if outputs differ.
  */
-function expectBothRender(
-  element: React.ReactElement,
-  options: { columns?: number; rows?: number } = {},
-) {
-  const { yogaNormalized, flexxNormalized } = renderWithBothEngines(
-    element,
-    options,
-  )
+function expectBothRender(element: React.ReactElement, options: { columns?: number; rows?: number } = {}) {
+  const { yogaNormalized, flexxNormalized } = renderWithBothEngines(element, options)
 
   expect(yogaNormalized.length).toBeGreaterThan(0)
   expect(flexxNormalized.length).toBeGreaterThan(0)
@@ -313,14 +300,7 @@ describe.skipIf(isCI)("Layout Engine Equivalence (km-zofe)", () => {
 
     test("individual padding sides", () => {
       const element = (
-        <Box
-          width={20}
-          height={6}
-          paddingTop={1}
-          paddingBottom={2}
-          paddingLeft={3}
-          paddingRight={1}
-        >
+        <Box width={20} height={6} paddingTop={1} paddingBottom={2} paddingLeft={3} paddingRight={1}>
           <Text>Text</Text>
         </Box>
       )
@@ -388,9 +368,7 @@ describe.skipIf(isCI)("Layout Engine Equivalence (km-zofe)", () => {
     test("text with wrap=truncate", () => {
       const element = (
         <Box width={10}>
-          <Text wrap="truncate">
-            This is a very long text that should be truncated
-          </Text>
+          <Text wrap="truncate">This is a very long text that should be truncated</Text>
         </Box>
       )
       expectEquivalent(element, { columns: 20, rows: 5 })
@@ -399,9 +377,7 @@ describe.skipIf(isCI)("Layout Engine Equivalence (km-zofe)", () => {
     test("text with wrap=truncate-middle", () => {
       const element = (
         <Box width={15}>
-          <Text wrap="truncate-middle">
-            This is a very long text for middle truncation
-          </Text>
+          <Text wrap="truncate-middle">This is a very long text for middle truncation</Text>
         </Box>
       )
       expectEquivalent(element, { columns: 25, rows: 5 })
@@ -482,12 +458,7 @@ describe.skipIf(isCI)("Layout Engine Equivalence (km-zofe)", () => {
     test("justifyContent space-between (row)", () => {
       // Width 31 with 3 single-char items = 28 gap space / 2 gaps = 14 each (no fractional)
       const element = (
-        <Box
-          flexDirection="row"
-          width={31}
-          height={3}
-          justifyContent="space-between"
-        >
+        <Box flexDirection="row" width={31} height={3} justifyContent="space-between">
           <Text>A</Text>
           <Text>B</Text>
           <Text>C</Text>
@@ -580,9 +551,7 @@ describe.skipIf(isCI)("Layout Engine Equivalence (km-zofe)", () => {
     })
 
     test("many siblings (column)", () => {
-      const items = Array.from({ length: 10 }, (_, i) => (
-        <Text key={i}>Item {i}</Text>
-      ))
+      const items = Array.from({ length: 10 }, (_, i) => <Text key={i}>Item {i}</Text>)
       const element = (
         <Box flexDirection="column" width={20}>
           {items}
@@ -592,9 +561,7 @@ describe.skipIf(isCI)("Layout Engine Equivalence (km-zofe)", () => {
     })
 
     test("many siblings (row)", () => {
-      const items = Array.from({ length: 5 }, (_, i) => (
-        <Text key={i}>{i}</Text>
-      ))
+      const items = Array.from({ length: 5 }, (_, i) => <Text key={i}>{i}</Text>)
       const element = (
         <Box flexDirection="row" width={20}>
           {items}
@@ -624,13 +591,10 @@ describe.skipIf(isCI)("Layout Engine Equivalence (km-zofe)", () => {
       expectBothRender(element, { columns: 30, rows: 10 })
 
       // Document the specific difference
-      const { yogaNormalized, flexxNormalized } = renderWithBothEngines(
-        element,
-        {
-          columns: 30,
-          rows: 10,
-        },
-      )
+      const { yogaNormalized, flexxNormalized } = renderWithBothEngines(element, {
+        columns: 30,
+        rows: 10,
+      })
 
       // Both engines show all three lines now
       expect(yogaNormalized).toContain("Line 1")

@@ -13,13 +13,7 @@
  * @see https://react.dev/reference/react/Suspense
  */
 
-import {
-  Suspense,
-  startTransition,
-  useCallback,
-  useDeferredValue,
-  useState,
-} from "react"
+import { Suspense, startTransition, useCallback, useDeferredValue, useState } from "react"
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
 import { run, useInput } from "../src/runtime/run.tsx"
@@ -467,10 +461,7 @@ describe("Suspense flicker (async, ConcurrentRoot)", () => {
    * Supports pre-resolution: calling resolve() before read() works.
    */
   function createQueryResource() {
-    const cache = new Map<
-      string,
-      { promise: Promise<void>; resolve: () => void; resolved: boolean }
-    >()
+    const cache = new Map<string, { promise: Promise<void>; resolve: () => void; resolved: boolean }>()
     const preResolved = new Set<string>()
 
     return {

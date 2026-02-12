@@ -42,12 +42,7 @@ export {
 } from "./term-provider.js"
 
 // Layer 0: Pure render functions
-export {
-  layout,
-  layoutSync,
-  ensureLayoutEngine,
-  type LayoutOptions,
-} from "./layout.js"
+export { layout, layoutSync, ensureLayoutEngine, type LayoutOptions } from "./layout.js"
 export { diff, render, type DiffMode } from "./diff.js"
 
 // Buffer helper
@@ -57,15 +52,7 @@ export { createBuffer } from "./create-buffer.js"
 export { createRuntime } from "./create-runtime.js"
 
 // Layer 2: React integration
-export {
-  run,
-  useInput,
-  useExit,
-  type RunOptions,
-  type RunHandle,
-  type InputHandler,
-  type Key,
-} from "./run.js"
+export { run, useInput, useExit, type RunOptions, type RunHandle, type InputHandler, type Key } from "./run.js"
 
 // Key parsing utilities
 export { parseKey, emptyKey } from "./keys.js"
@@ -87,12 +74,7 @@ export {
 } from "./create-app.js"
 
 // Time/tick sources
-export {
-  createTick,
-  createFrameTick,
-  createSecondTick,
-  createAdaptiveTick,
-} from "./tick.js"
+export { createTick, createFrameTick, createSecondTick, createAdaptiveTick } from "./tick.js"
 
 // Stream helpers (re-export from streams module)
 export {

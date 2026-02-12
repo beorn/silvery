@@ -10,11 +10,7 @@
 import React from "react"
 import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/components/index.js"
-import {
-  createRenderer,
-  normalizeFrame,
-  stripAnsi,
-} from "../src/testing/index.js"
+import { createRenderer, normalizeFrame, stripAnsi } from "../src/testing/index.js"
 import { displayWidth, hasAnsi, splitGraphemes } from "../src/unicode.js"
 
 const render = createRenderer()
@@ -292,9 +288,7 @@ describe("Accessibility (km-017z)", () => {
       const stripped = app.text
 
       // Row-major order: A1, B1, C1, A2, B2, C2
-      const indices = ["A1", "B1", "C1", "A2", "B2", "C2"].map((s) =>
-        stripped.indexOf(s),
-      )
+      const indices = ["A1", "B1", "C1", "A2", "B2", "C2"].map((s) => stripped.indexOf(s))
 
       for (let i = 0; i < indices.length - 1; i++) {
         expect(indices[i]).toBeLessThan(indices[i + 1]!)

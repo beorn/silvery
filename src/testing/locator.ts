@@ -314,8 +314,7 @@ function parseSingleSelector(selector: string): NodePredicate | null {
   }
 
   // Extract all attribute selectors
-  const attrRegex =
-    /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g
+  const attrRegex = /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g
   for (const match of remaining.matchAll(attrRegex)) {
     const [, attr, op, value] = match
     if (!attr) continue
@@ -374,9 +373,7 @@ function parseChildCombinator(selector: string): NodePredicate | null {
 /**
  * Parse adjacent sibling combinator: A + B (B immediately follows A)
  */
-function parseAdjacentSiblingCombinator(
-  selector: string,
-): NodePredicate | null {
+function parseAdjacentSiblingCombinator(selector: string): NodePredicate | null {
   const parts = selector.split("+").map((s) => s.trim())
   if (parts.length !== 2) return null
 

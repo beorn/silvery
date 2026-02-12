@@ -10,12 +10,7 @@
  * - Delegates to adapter for text measurement and styling
  */
 
-import {
-  type RenderBuffer,
-  type RenderStyle,
-  getRenderAdapter,
-  hasRenderAdapter,
-} from "../render-adapter.js"
+import { type RenderBuffer, type RenderStyle, getRenderAdapter, hasRenderAdapter } from "../render-adapter.js"
 import type { BoxProps, InkxNode, Rect, TextProps } from "../types.js"
 import { getBorderSize, getPadding } from "./helpers.js"
 
@@ -167,11 +162,7 @@ function renderBorder(
   // Helper to check if a row is visible
   const isRowVisible = (row: number): boolean => {
     if (!clipBounds) return buffer.inBounds(0, row)
-    return (
-      row >= clipBounds.top &&
-      row < clipBounds.bottom &&
-      buffer.inBounds(0, row)
-    )
+    return row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row)
   }
 
   // Top border
@@ -234,13 +225,7 @@ function renderText(
   if (!text) return
 
   // Map underline style to supported values
-  const underlineStyle = props.underlineStyle as
-    | "single"
-    | "double"
-    | "curly"
-    | "dotted"
-    | "dashed"
-    | undefined
+  const underlineStyle = props.underlineStyle as "single" | "double" | "curly" | "dotted" | "dashed" | undefined
 
   // Build style from props
   const style: RenderStyle = {
@@ -313,12 +298,9 @@ function renderScrollIndicators(
   const { x, width, height } = layout
   const y = layout.y
 
-  const border = props.borderStyle
-    ? getBorderSize(props)
-    : { top: 0, bottom: 0, right: 0 }
+  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, right: 0 }
   const canScrollUp = scrollState.offset > 0
-  const canScrollDown =
-    scrollState.offset + scrollState.viewportHeight < scrollState.contentHeight
+  const canScrollDown = scrollState.offset + scrollState.viewportHeight < scrollState.contentHeight
 
   const indicatorX = x + width - border.right - 1
   const style: RenderStyle = { fg: props.borderColor ?? "#808080" }
@@ -357,9 +339,7 @@ function renderScrollContainerChildren(
   const ss = node.scrollState as ScrollState | undefined
   if (!layout || !ss) return
 
-  const border = props.borderStyle
-    ? getBorderSize(props)
-    : { top: 0, bottom: 0, left: 0, right: 0 }
+  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
   const padding = getPadding(props)
 
   const nodeClip = {
@@ -414,9 +394,7 @@ function renderNormalChildren(
   let effectiveClipBounds = clipBounds
 
   if (props.overflow === "hidden") {
-    const border = props.borderStyle
-      ? getBorderSize(props)
-      : { top: 0, bottom: 0, left: 0, right: 0 }
+    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
     const padding = getPadding(props)
 
     // Adjust layout position by scrollOffset to get screen coordinates

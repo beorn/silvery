@@ -3,21 +3,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
-import {
-  type CanvasAdapterConfig,
-  CanvasRenderBuffer,
-  createCanvasAdapter,
-} from "../src/adapters/canvas-adapter.js"
-import {
-  type RenderAdapter,
-  getRenderAdapter,
-  hasRenderAdapter,
-  setRenderAdapter,
-} from "../src/render-adapter.js"
+import { type CanvasAdapterConfig, CanvasRenderBuffer, createCanvasAdapter } from "../src/adapters/canvas-adapter.js"
+import { type RenderAdapter, getRenderAdapter, hasRenderAdapter, setRenderAdapter } from "../src/render-adapter.js"
 
 // Check if we have canvas support (OffscreenCanvas or document)
-const hasCanvas =
-  typeof OffscreenCanvas !== "undefined" || typeof document !== "undefined"
+const hasCanvas = typeof OffscreenCanvas !== "undefined" || typeof document !== "undefined"
 
 describe.skipIf(!hasCanvas)("Canvas Adapter", () => {
   let adapter: RenderAdapter

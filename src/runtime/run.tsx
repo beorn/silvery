@@ -26,12 +26,7 @@
  */
 
 import process from "node:process"
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  type ReactElement,
-} from "react"
+import React, { createContext, useContext, useEffect, type ReactElement } from "react"
 
 import { createTerm } from "chalkx"
 import { AppContext, StdoutContext, TermContext } from "../context.js"
@@ -148,10 +143,7 @@ export function useExit(): () => void {
  * For more control (custom event loop), use createRuntime() directly (Layer 1).
  * For stores and providers, use createApp() (Layer 3).
  */
-export async function run(
-  element: ReactElement,
-  options: RunOptions = {},
-): Promise<RunHandle> {
+export async function run(element: ReactElement, options: RunOptions = {}): Promise<RunHandle> {
   const {
     cols: explicitCols,
     rows: explicitRows,
@@ -160,8 +152,7 @@ export async function run(
     signal: externalSignal,
   } = options
 
-  const headless =
-    explicitCols != null && explicitRows != null && !explicitStdout
+  const headless = explicitCols != null && explicitRows != null && !explicitStdout
   const cols = explicitCols ?? process.stdout.columns ?? 80
   const rows = explicitRows ?? process.stdout.rows ?? 24
   const stdout = explicitStdout ?? process.stdout
@@ -209,15 +200,9 @@ export async function run(
 
     // Execute render pipeline
     const dims = runtime.getDims()
-    const { buffer: termBuffer } = executeRender(
-      rootNode,
-      dims.cols,
-      dims.rows,
-      null,
-      {
-        skipLayoutNotifications: true,
-      },
-    )
+    const { buffer: termBuffer } = executeRender(rootNode, dims.cols, dims.rows, null, {
+      skipLayoutNotifications: true,
+    })
 
     return createBuffer(termBuffer, rootNode)
   }
@@ -387,9 +372,7 @@ export async function run(
       <AppContext.Provider value={{ exit }}>
         <StdoutContext.Provider value={{ stdout: mockStdout, write: () => {} }}>
           <RuntimeContext.Provider value={runtimeContextValue}>
-            <InputContext.Provider value={inputContextValue}>
-              {element}
-            </InputContext.Provider>
+            <InputContext.Provider value={inputContextValue}>{element}</InputContext.Provider>
           </RuntimeContext.Provider>
         </StdoutContext.Provider>
       </AppContext.Provider>

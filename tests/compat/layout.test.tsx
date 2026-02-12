@@ -229,13 +229,7 @@ describe("Layout API Compatibility", () => {
 
   describe("Alignment", () => {
     test("accepts alignItems", () => {
-      const values = [
-        "flex-start",
-        "flex-end",
-        "center",
-        "stretch",
-        "baseline",
-      ] as const
+      const values = ["flex-start", "flex-end", "center", "stretch", "baseline"] as const
       for (const alignItems of values) {
         const app = render(
           <Box alignItems={alignItems} height={3}>
@@ -258,14 +252,7 @@ describe("Layout API Compatibility", () => {
     })
 
     test("accepts justifyContent", () => {
-      const values = [
-        "flex-start",
-        "flex-end",
-        "center",
-        "space-between",
-        "space-around",
-        "space-evenly",
-      ] as const
+      const values = ["flex-start", "flex-end", "center", "space-between", "space-around", "space-evenly"] as const
       for (const justifyContent of values) {
         const app = render(
           <Box justifyContent={justifyContent} width={20}>
@@ -363,13 +350,7 @@ describe("Layout API Compatibility", () => {
 
     test("accepts borderTop/Bottom/Left/Right", () => {
       const app = render(
-        <Box
-          borderStyle="single"
-          borderTop={true}
-          borderBottom={true}
-          borderLeft={false}
-          borderRight={false}
-        >
+        <Box borderStyle="single" borderTop={true} borderBottom={true} borderLeft={false} borderRight={false}>
           <Text>Content</Text>
         </Box>,
       )

@@ -105,12 +105,7 @@ function App() {
   })
 
   return (
-    <Box
-      flexDirection="column"
-      height={10}
-      overflow="scroll"
-      scrollTo={selected}
-    >
+    <Box flexDirection="column" height={10} overflow="scroll" scrollTo={selected}>
       {items.map((item, i) => (
         <Text key={i} inverse={i === selected}>
           {item}

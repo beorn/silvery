@@ -29,13 +29,7 @@ function TestDashboard() {
       </Text>
       <Box flexDirection="row" gap={1}>
         {[0, 1, 2].map((i) => (
-          <Box
-            key={i}
-            flexGrow={1}
-            borderStyle="round"
-            borderColor={selectedPane === i ? "cyan" : "gray"}
-            padding={1}
-          >
+          <Box key={i} flexGrow={1} borderStyle="round" borderColor={selectedPane === i ? "cyan" : "gray"} padding={1}>
             <Text bold color={selectedPane === i ? "cyan" : "white"}>
               Pane {i + 1} {selectedPane === i ? "[SEL]" : ""}
             </Text>

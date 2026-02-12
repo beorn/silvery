@@ -37,44 +37,44 @@ examples/
 
 ## Layout
 
-| Example | File | Description |
-|---------|------|-------------|
-| Dashboard | `layout/dashboard.tsx` | Multi-pane dashboard with keyboard navigation |
-| Live Resize | `layout/live-resize.tsx` | Responsive columns via `useContentRect()` |
-| Overflow | `layout/overflow.tsx` | `overflow="hidden"` content clipping |
+| Example     | File                     | Description                                   |
+| ----------- | ------------------------ | --------------------------------------------- |
+| Dashboard   | `layout/dashboard.tsx`   | Multi-pane dashboard with keyboard navigation |
+| Live Resize | `layout/live-resize.tsx` | Responsive columns via `useContentRect()`     |
+| Overflow    | `layout/overflow.tsx`    | `overflow="hidden"` content clipping          |
 
 ## Interactive
 
-| Example | File | Description |
-|---------|------|-------------|
-| AI Chat | `interactive/ai-chat.tsx` | Chat UI with VirtualList and streaming responses |
-| Todo App | `interactive/app-todo.tsx` | Layer 3: `createApp()` with Zustand store |
-| Async Data | `interactive/async-data.tsx` | Suspense boundaries with `use()` hook |
-| Kanban | `interactive/kanban.tsx` | Multi-column kanban with card movement |
-| Layout Ref | `interactive/layout-ref.tsx` | `forwardRef` + `onLayout` callbacks |
-| Scroll | `interactive/scroll.tsx` | Basic scrollable list |
-| Search Filter | `interactive/search-filter.tsx` | React concurrent features (`useDeferredValue`) |
-| Task List | `interactive/task-list.tsx` | VirtualList with variable-height items |
-| TextArea | `interactive/textarea.tsx` | Multi-line text input component |
-| Virtual 10K | `interactive/virtual-10k.tsx` | VirtualList with 10,000 items |
+| Example       | File                            | Description                                      |
+| ------------- | ------------------------------- | ------------------------------------------------ |
+| AI Chat       | `interactive/ai-chat.tsx`       | Chat UI with VirtualList and streaming responses |
+| Todo App      | `interactive/app-todo.tsx`      | Layer 3: `createApp()` with Zustand store        |
+| Async Data    | `interactive/async-data.tsx`    | Suspense boundaries with `use()` hook            |
+| Kanban        | `interactive/kanban.tsx`        | Multi-column kanban with card movement           |
+| Layout Ref    | `interactive/layout-ref.tsx`    | `forwardRef` + `onLayout` callbacks              |
+| Scroll        | `interactive/scroll.tsx`        | Basic scrollable list                            |
+| Search Filter | `interactive/search-filter.tsx` | React concurrent features (`useDeferredValue`)   |
+| Task List     | `interactive/task-list.tsx`     | VirtualList with variable-height items           |
+| TextArea      | `interactive/textarea.tsx`      | Multi-line text input component                  |
+| Virtual 10K   | `interactive/virtual-10k.tsx`   | VirtualList with 10,000 items                    |
 
 ## Runtime
 
-| Example | File | Description |
-|---------|------|-------------|
-| Elm Counter | `runtime/elm-counter.tsx` | Layer 1: `createRuntime()` with Elm architecture |
-| Hello Runtime | `runtime/hello-runtime.tsx` | Layer 1: minimal static render |
-| Run Counter | `runtime/run-counter.tsx` | Layer 2: `run()` with React hooks |
-| Runtime Counter | `runtime/runtime-counter.tsx` | Layer 1: `createRuntime()` with event loop |
+| Example         | File                          | Description                                      |
+| --------------- | ----------------------------- | ------------------------------------------------ |
+| Elm Counter     | `runtime/elm-counter.tsx`     | Layer 1: `createRuntime()` with Elm architecture |
+| Hello Runtime   | `runtime/hello-runtime.tsx`   | Layer 1: minimal static render                   |
+| Run Counter     | `runtime/run-counter.tsx`     | Layer 2: `run()` with React hooks                |
+| Runtime Counter | `runtime/runtime-counter.tsx` | Layer 1: `createRuntime()` with event loop       |
 
 ## Inline
 
-| Example | File | Description |
-|---------|------|-------------|
-| Inline Simple | `inline/inline-simple.tsx` | Basic inline rendering |
-| Inline Progress | `inline/inline-progress.tsx` | Inline progress bar |
-| Inline Non-TTY | `inline/inline-nontty.tsx` | Inline output for piped/non-TTY |
-| Scrollback | `inline/scrollback.tsx` | REPL with `useScrollback` + VirtualList frozen |
+| Example         | File                         | Description                                    |
+| --------------- | ---------------------------- | ---------------------------------------------- |
+| Inline Simple   | `inline/inline-simple.tsx`   | Basic inline rendering                         |
+| Inline Progress | `inline/inline-progress.tsx` | Inline progress bar                            |
+| Inline Non-TTY  | `inline/inline-nontty.tsx`   | Inline output for piped/non-TTY                |
+| Scrollback      | `inline/scrollback.tsx`      | REPL with `useScrollback` + VirtualList frozen |
 
 ## Creating New Examples
 

@@ -37,10 +37,7 @@ function countNewlines(s: string): number {
  *
  * @returns The current frozen count (contiguous prefix length).
  */
-export function useScrollback<T>(
-  items: T[],
-  options: UseScrollbackOptions<T>,
-): number {
+export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): number {
   const { frozen, render, stdout = process.stdout } = options
   const stdoutCtx = useContext(StdoutContext)
 

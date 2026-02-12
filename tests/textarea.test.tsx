@@ -61,18 +61,10 @@ function ControlledTextArea(props: {
 }
 
 /** Uncontrolled TextArea wrapper */
-function UncontrolledTextArea(props: {
-  defaultValue?: string
-  onChange?: (v: string) => void
-  height?: number
-}) {
+function UncontrolledTextArea(props: { defaultValue?: string; onChange?: (v: string) => void; height?: number }) {
   return (
     <Box width={20}>
-      <TextArea
-        defaultValue={props.defaultValue}
-        onChange={props.onChange}
-        height={props.height ?? 5}
-      />
+      <TextArea defaultValue={props.defaultValue} onChange={props.onChange} height={props.height ?? 5} />
     </Box>
   )
 }
@@ -94,17 +86,13 @@ describe("TextArea: basic typing", () => {
   })
 
   test("shows placeholder when empty", () => {
-    const app = render(
-      <ControlledTextArea placeholder="Type here..." />,
-    )
+    const app = render(<ControlledTextArea placeholder="Type here..." />)
 
     expect(app.text).toContain("Type here...")
   })
 
   test("placeholder disappears on typing", () => {
-    const app = render(
-      <ControlledTextArea placeholder="Type here..." />,
-    )
+    const app = render(<ControlledTextArea placeholder="Type here..." />)
 
     app.stdin.write("a")
 
@@ -279,10 +267,7 @@ describe("TextArea: word wrapping", () => {
   test("wraps long text at component width", () => {
     const app = render(
       <Box width={10}>
-        <TextArea
-          value={"abcdefghijklmno"}
-          height={5}
-        />
+        <TextArea value={"abcdefghijklmno"} height={5} />
       </Box>,
     )
 
@@ -495,9 +480,7 @@ describe("TextArea: submit", () => {
   test("Enter inserts newline by default (submitKey=ctrl+enter)", () => {
     const onSubmit = vi.fn()
     const onChange = vi.fn()
-    const app = render(
-      <ControlledTextArea onSubmit={onSubmit} onChange={onChange} />,
-    )
+    const app = render(<ControlledTextArea onSubmit={onSubmit} onChange={onChange} />)
 
     typeString(app, "hello")
     app.stdin.write("\r") // Enter
@@ -508,9 +491,7 @@ describe("TextArea: submit", () => {
 
   test("Enter submits when submitKey=enter", () => {
     const onSubmit = vi.fn()
-    const app = render(
-      <ControlledTextArea onSubmit={onSubmit} submitKey="enter" />,
-    )
+    const app = render(<ControlledTextArea onSubmit={onSubmit} submitKey="enter" />)
 
     typeString(app, "hello")
     app.stdin.write("\r") // Enter
@@ -528,9 +509,7 @@ describe("TextArea: controlled vs uncontrolled", () => {
 
   test("uncontrolled mode works with defaultValue", () => {
     const onChange = vi.fn()
-    const app = render(
-      <UncontrolledTextArea defaultValue="initial" onChange={onChange} />,
-    )
+    const app = render(<UncontrolledTextArea defaultValue="initial" onChange={onChange} />)
 
     expect(app.text).toContain("initial")
 
@@ -555,9 +534,7 @@ describe("TextArea: isActive", () => {
 
   test("ignores input when isActive=false", () => {
     const onChange = vi.fn()
-    const app = render(
-      <ControlledTextArea isActive={false} onChange={onChange} />,
-    )
+    const app = render(<ControlledTextArea isActive={false} onChange={onChange} />)
 
     app.stdin.write("a")
     app.stdin.write("b")

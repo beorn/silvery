@@ -112,9 +112,7 @@ describe("Exit Behavior", () => {
     test("nested state updates should complete before exit", () => {
       function NestedUpdates() {
         const { exit } = useApp()
-        const [phase, setPhase] = useState<
-          "init" | "loading" | "ready" | "done"
-        >("init")
+        const [phase, setPhase] = useState<"init" | "loading" | "ready" | "done">("init")
 
         useEffect(() => {
           if (phase === "init") {

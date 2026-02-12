@@ -54,10 +54,7 @@ export const LAYOUT_PROPS = new Set([
 /**
  * Check if layout-affecting props changed.
  */
-export function layoutPropsChanged(
-  oldProps: Record<string, unknown>,
-  newProps: Record<string, unknown>,
-): boolean {
+export function layoutPropsChanged(oldProps: Record<string, unknown>, newProps: Record<string, unknown>): boolean {
   for (const prop of LAYOUT_PROPS) {
     if (oldProps[prop] !== newProps[prop]) {
       return true
@@ -82,10 +79,8 @@ export function contentPropsChanged(
   const newChildren = newProps.children
   if (oldChildren !== newChildren) {
     // Only trigger for primitive children (string, number) that affect text rendering
-    const oldIsPrimitive =
-      typeof oldChildren === "string" || typeof oldChildren === "number"
-    const newIsPrimitive =
-      typeof newChildren === "string" || typeof newChildren === "number"
+    const oldIsPrimitive = typeof oldChildren === "string" || typeof oldChildren === "number"
+    const newIsPrimitive = typeof newChildren === "string" || typeof newChildren === "number"
     if (oldIsPrimitive || newIsPrimitive) {
       return "text" // Text changes affect layout (measure returns different result)
     }
@@ -123,10 +118,7 @@ export function contentPropsChanged(
 /**
  * Shallow compare two prop objects.
  */
-export function propsEqual(
-  a: Record<string, unknown>,
-  b: Record<string, unknown>,
-): boolean {
+export function propsEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
   const keysA = Object.keys(a)
   const keysB = Object.keys(b)
 

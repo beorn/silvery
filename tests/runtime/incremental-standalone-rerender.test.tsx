@@ -64,9 +64,7 @@ describe("ancestorCleared propagation through backgroundColor nodes", () => {
 
           {/* Text changes on store update → triggers incremental render */}
           <Box id="bottom-bar" flexShrink={0}>
-            <Text dimColor>
-              {count > 0 && `n:${count} `}VIEW
-            </Text>
+            <Text dimColor>{count > 0 && `n:${count} `}VIEW</Text>
           </Box>
         </Box>
       )

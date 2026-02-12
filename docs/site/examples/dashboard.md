@@ -42,15 +42,7 @@ bun run examples/dashboard/app.tsx
 ::: code-group
 
 ```tsx [app.tsx]
-import {
-  Box,
-  Text,
-  render,
-  useContentRect,
-  useInput,
-  useApp,
-  createTerm,
-} from "inkx"
+import { Box, Text, render, useContentRect, useInput, useApp, createTerm } from "inkx"
 import { useState } from "react"
 
 // Sample data
@@ -155,10 +147,7 @@ function ActivityRow({ time, message }: { time: string; message: string }) {
   // Truncate message to fit available width
   const timeWidth = 6 // "12:01 "
   const maxMessageWidth = Math.max(0, width - timeWidth)
-  const truncatedMessage =
-    message.length > maxMessageWidth
-      ? message.slice(0, maxMessageWidth - 1) + "..."
-      : message
+  const truncatedMessage = message.length > maxMessageWidth ? message.slice(0, maxMessageWidth - 1) + "..." : message
 
   return (
     <Text>
@@ -185,35 +174,21 @@ function BottomSection() {
       <Text> </Text>
       <Box flexDirection="column" overflow="scroll" scrollTo={selected}>
         {recentItems.map((item, i) => (
-          <RecentItemRow
-            key={item.name}
-            name={item.name}
-            date={item.date}
-            isSelected={i === selected}
-          />
+          <RecentItemRow key={item.name} name={item.name} date={item.date} isSelected={i === selected} />
         ))}
       </Box>
     </Box>
   )
 }
 
-function RecentItemRow({
-  name,
-  date,
-  isSelected,
-}: {
-  name: string
-  date: string
-  isSelected: boolean
-}) {
+function RecentItemRow({ name, date, isSelected }: { name: string; date: string; isSelected: boolean }) {
   const { width } = useContentRect()
 
   // Calculate space for name, leaving room for date
   const dateWidth = date.length + 2
   const nameWidth = Math.max(0, width - dateWidth - 2)
 
-  const truncatedName =
-    name.length > nameWidth ? name.slice(0, nameWidth - 1) + "..." : name
+  const truncatedName = name.length > nameWidth ? name.slice(0, nameWidth - 1) + "..." : name
 
   const padding = " ".repeat(Math.max(0, nameWidth - truncatedName.length))
 
@@ -309,10 +284,7 @@ function ActivityRow({ time, message }: { time: string; message: string }) {
   const { width } = useContentRect()
 
   const maxMessageWidth = Math.max(0, width - 6)
-  const truncatedMessage =
-    message.length > maxMessageWidth
-      ? message.slice(0, maxMessageWidth - 1) + "..."
-      : message
+  const truncatedMessage = message.length > maxMessageWidth ? message.slice(0, maxMessageWidth - 1) + "..." : message
 
   return (
     <Text>

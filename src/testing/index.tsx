@@ -85,11 +85,7 @@ import { ensureDefaultLayoutEngine } from "../layout-engine.js"
 
 // Re-export App for type usage
 export type { App } from "../app.js"
-export {
-  createAutoLocator,
-  type AutoLocator,
-  type FilterOptions,
-} from "../auto-locator.js"
+export { createAutoLocator, type AutoLocator, type FilterOptions } from "../auto-locator.js"
 export type { BoundTerm } from "../bound-term.js"
 
 // Re-export buffer utilities for testing convenience
@@ -107,11 +103,7 @@ export { keyToAnsi, keyToKittyAnsi, CODE_TO_KEY } from "../keys.js"
 export { debugTree, type DebugTreeOptions } from "./debug.js"
 
 // Re-export buffer comparison utilities
-export {
-  compareBuffers,
-  formatMismatch,
-  type BufferMismatch,
-} from "./compare-buffers.js"
+export { compareBuffers, formatMismatch, type BufferMismatch } from "./compare-buffers.js"
 
 // Re-export render API
 export {
@@ -166,10 +158,7 @@ export function normalizeFrame(frame: string): string {
  * Wait for a condition to be true, polling at intervals.
  * Useful for waiting for async state updates.
  */
-export async function waitFor(
-  condition: () => boolean,
-  { timeout = 1000, interval = 10 } = {},
-): Promise<void> {
+export async function waitFor(condition: () => boolean, { timeout = 1000, interval = 10 } = {}): Promise<void> {
   const start = Date.now()
   while (!condition()) {
     if (Date.now() - start > timeout) {

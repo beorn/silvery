@@ -172,9 +172,7 @@ async function main() {
       // Re-render if state changed or resize occurred
       if (newState !== state || event.type === "resize") {
         state = newState
-        runtime.render(
-          layout(view(state, runtime.getDims()), runtime.getDims()),
-        )
+        runtime.render(layout(view(state, runtime.getDims()), runtime.getDims()))
       }
 
       // Schedule next increment after effect completes

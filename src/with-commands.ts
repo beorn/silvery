@@ -168,10 +168,7 @@ function findCommand<TContext, TAction>(
 /**
  * Get keys bound to a command.
  */
-function getKeysForCommand(
-  commandId: string,
-  keybindings?: KeybindingDef[],
-): readonly string[] {
+function getKeysForCommand(commandId: string, keybindings?: KeybindingDef[]): readonly string[] {
   if (!keybindings) return []
   return keybindings
     .filter((kb) => kb.commandId === commandId)

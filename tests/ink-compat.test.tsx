@@ -317,11 +317,7 @@ describe("Ink API Compatibility", () => {
       // for proper behavior (writing content once and never updating).
       // Here we just verify the API shape.
       const items = ["a", "b"]
-      const element = (
-        <Static items={items}>
-          {(item) => <Text key={item}>{item}</Text>}
-        </Static>
-      )
+      const element = <Static items={items}>{(item) => <Text key={item}>{item}</Text>}</Static>
       expect(element).toBeDefined()
       expect(element.props.items).toEqual(["a", "b"])
       expect(typeof element.props.children).toBe("function")
@@ -616,26 +612,17 @@ describe("Behavioral Tests - useFocus", () => {
         state.activeId = id
       },
       focusNext: () => {
-        const activeItems = focusOrder.filter(
-          (id) => focusables.get(id)?.isActive,
-        )
+        const activeItems = focusOrder.filter((id) => focusables.get(id)?.isActive)
         if (activeItems.length === 0) return
-        const currentIdx = state.activeId
-          ? activeItems.indexOf(state.activeId)
-          : -1
+        const currentIdx = state.activeId ? activeItems.indexOf(state.activeId) : -1
         const nextIdx = (currentIdx + 1) % activeItems.length
         state.activeId = activeItems[nextIdx] ?? null
       },
       focusPrevious: () => {
-        const activeItems = focusOrder.filter(
-          (id) => focusables.get(id)?.isActive,
-        )
+        const activeItems = focusOrder.filter((id) => focusables.get(id)?.isActive)
         if (activeItems.length === 0) return
-        const currentIdx = state.activeId
-          ? activeItems.indexOf(state.activeId)
-          : 0
-        const prevIdx =
-          (currentIdx - 1 + activeItems.length) % activeItems.length
+        const currentIdx = state.activeId ? activeItems.indexOf(state.activeId) : 0
+        const prevIdx = (currentIdx - 1 + activeItems.length) % activeItems.length
         state.activeId = activeItems[prevIdx] ?? null
       },
       enableFocus: () => {},
@@ -1043,13 +1030,7 @@ describe("Common Ink Patterns", () => {
           capturedInputs.push(input)
           if (key.backspace || key.delete) {
             setValue((v) => v.slice(0, -1))
-          } else if (
-            !key.return &&
-            input.length >= 1 &&
-            !key.ctrl &&
-            !key.meta &&
-            !key.escape
-          ) {
+          } else if (!key.return && input.length >= 1 && !key.ctrl && !key.meta && !key.escape) {
             setValue((v) => v + input)
           }
         })
@@ -1085,13 +1066,7 @@ describe("Common Ink Patterns", () => {
 
   describe("Loading spinner pattern", () => {
     test("displays different states", () => {
-      function Spinner({
-        isLoading,
-        message,
-      }: {
-        isLoading: boolean
-        message: string
-      }) {
+      function Spinner({ isLoading, message }: { isLoading: boolean; message: string }) {
         return (
           <Box>
             <Text>{isLoading ? "..." : "+"}</Text>
@@ -1115,13 +1090,7 @@ describe("Common Ink Patterns", () => {
 
   describe("Status bar pattern", () => {
     test("renders full-width status bar", () => {
-      function StatusBar({
-        mode,
-        filename,
-      }: {
-        mode: string
-        filename: string
-      }) {
+      function StatusBar({ mode, filename }: { mode: string; filename: string }) {
         return (
           <Box flexDirection="row" width={40}>
             <Text inverse> {mode} </Text>

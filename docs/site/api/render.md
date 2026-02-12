@@ -11,11 +11,7 @@ import { render, createTerm } from "inkx"
 ## Signature
 
 ```tsx
-async function render(
-  term: Term,
-  element: ReactElement,
-  options?: RenderOptions,
-): Promise<Instance>
+async function render(term: Term, element: ReactElement, options?: RenderOptions): Promise<Instance>
 ```
 
 ### Parameters

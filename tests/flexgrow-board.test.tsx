@@ -14,12 +14,7 @@ describe("flexGrow in board structure", () => {
     const contentHeight = termHeight - 2 // Minus top bar and bottom bar
 
     const app = render(
-      <Box
-        flexDirection="column"
-        width={termWidth}
-        height={termHeight}
-        overflow="hidden"
-      >
+      <Box flexDirection="column" width={termWidth} height={termHeight} overflow="hidden">
         {/* Top bar */}
         <Box flexShrink={0} width={termWidth}>
           <Text>Top bar content</Text>
@@ -30,12 +25,7 @@ describe("flexGrow in board structure", () => {
         </Box>
         {/* Bottom bar - the problematic one */}
         <Box flexDirection="row" flexShrink={0} width={termWidth}>
-          <Box
-            flexGrow={1}
-            flexShrink={1}
-            flexDirection="row"
-            overflow="hidden"
-          >
+          <Box flexGrow={1} flexShrink={1} flexDirection="row" overflow="hidden">
             <Text dimColor>MEM</Text>
             <Text dimColor>{" 📁"}</Text>
           </Box>
@@ -64,12 +54,7 @@ describe("flexGrow in board structure", () => {
 
     // Replicate: content area, toast stack, bottom bar all in column layout
     const app = render(
-      <Box
-        flexDirection="column"
-        width={termWidth}
-        height={termHeight}
-        overflow="hidden"
-      >
+      <Box flexDirection="column" width={termWidth} height={termHeight} overflow="hidden">
         {/* Top bar */}
         <Box flexShrink={0} width={termWidth}>
           <Text>Top bar</Text>
@@ -81,12 +66,7 @@ describe("flexGrow in board structure", () => {
         {/* Toast stack (empty in this test) */}
         {/* Bottom bar */}
         <Box flexDirection="row" flexShrink={0} width={termWidth}>
-          <Box
-            flexGrow={1}
-            flexShrink={1}
-            flexDirection="row"
-            overflow="hidden"
-          >
+          <Box flexGrow={1} flexShrink={1} flexDirection="row" overflow="hidden">
             <Text dimColor>MEM 📁</Text>
           </Box>
           <Box flexGrow={0} flexShrink={0}>

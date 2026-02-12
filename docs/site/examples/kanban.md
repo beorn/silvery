@@ -38,15 +38,7 @@ bun run examples/kanban/app.tsx
 ::: code-group
 
 ```tsx [app.tsx]
-import {
-  Box,
-  Text,
-  render,
-  useContentRect,
-  useInput,
-  useApp,
-  createTerm,
-} from "inkx"
+import { Box, Text, render, useContentRect, useInput, useApp, createTerm } from "inkx"
 import { useState } from "react"
 
 interface Card {
@@ -231,13 +223,7 @@ function App() {
   )
 }
 
-function Board({
-  columns,
-  cursor,
-}: {
-  columns: Column[]
-  cursor: CursorPosition
-}) {
+function Board({ columns, cursor }: { columns: Column[]; cursor: CursorPosition }) {
   return (
     <Box flexDirection="row" flexGrow={1}>
       {columns.map((column, colIndex) => (
@@ -245,9 +231,7 @@ function Board({
           key={column.id}
           column={column}
           isSelected={colIndex === cursor.columnIndex}
-          selectedCardIndex={
-            colIndex === cursor.columnIndex ? cursor.cardIndex : -1
-          }
+          selectedCardIndex={colIndex === cursor.columnIndex ? cursor.cardIndex : -1}
         />
       ))}
     </Box>
@@ -264,38 +248,20 @@ function KanbanColumn({
   selectedCardIndex: number
 }) {
   return (
-    <Box
-      flexDirection="column"
-      flexGrow={1}
-      borderStyle="single"
-      borderColor={isSelected ? "cyan" : undefined}
-    >
-      <ColumnHeader
-        name={column.name}
-        count={column.cards.length}
-        isSelected={isSelected}
-      />
+    <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor={isSelected ? "cyan" : undefined}>
+      <ColumnHeader name={column.name} count={column.cards.length} isSelected={isSelected} />
       <CardList cards={column.cards} selectedIndex={selectedCardIndex} />
     </Box>
   )
 }
 
-function ColumnHeader({
-  name,
-  count,
-  isSelected,
-}: {
-  name: string
-  count: number
-  isSelected: boolean
-}) {
+function ColumnHeader({ name, count, isSelected }: { name: string; count: number; isSelected: boolean }) {
   const { width } = useContentRect()
 
   // Truncate name if needed
   const countStr = ` (${count})`
   const maxNameWidth = Math.max(0, width - countStr.length)
-  const truncatedName =
-    name.length > maxNameWidth ? name.slice(0, maxNameWidth - 1) + "..." : name
+  const truncatedName = name.length > maxNameWidth ? name.slice(0, maxNameWidth - 1) + "..." : name
 
   return (
     <Box paddingX={1} marginBottom={1}>
@@ -307,13 +273,7 @@ function ColumnHeader({
   )
 }
 
-function CardList({
-  cards,
-  selectedIndex,
-}: {
-  cards: Card[]
-  selectedIndex: number
-}) {
+function CardList({ cards, selectedIndex }: { cards: Card[]; selectedIndex: number }) {
   if (cards.length === 0) {
     return (
       <Box paddingX={1}>
@@ -345,23 +305,15 @@ function CardRow({ card, isSelected }: { card: Card; isSelected: boolean }) {
   const prefix = isSelected ? "> " : "  "
   const titleWidth = Math.max(0, width - 2)
 
-  const truncatedTitle =
-    card.title.length > titleWidth
-      ? card.title.slice(0, titleWidth - 1) + "..."
-      : card.title
+  const truncatedTitle = card.title.length > titleWidth ? card.title.slice(0, titleWidth - 1) + "..." : card.title
 
   return (
     <Box flexDirection="column">
-      <Text
-        backgroundColor={isSelected ? "cyan" : undefined}
-        color={isSelected ? "black" : undefined}
-      >
+      <Text backgroundColor={isSelected ? "cyan" : undefined} color={isSelected ? "black" : undefined}>
         {prefix}
         {truncatedTitle}
       </Text>
-      {card.tags && card.tags.length > 0 && (
-        <TagRow tags={card.tags} isSelected={isSelected} />
-      )}
+      {card.tags && card.tags.length > 0 && <TagRow tags={card.tags} isSelected={isSelected} />}
     </Box>
   )
 }
@@ -382,10 +334,7 @@ function TagRow({ tags, isSelected }: { tags: string[]; isSelected: boolean }) {
 function HelpBar() {
   return (
     <Box paddingX={1} marginTop={1}>
-      <Text dimColor>
-        h/l or arrows: switch column | j/k or arrows: navigate | m/M: move card
-        | q: quit
-      </Text>
+      <Text dimColor>h/l or arrows: switch column | j/k or arrows: navigate | m/M: move card | q: quit</Text>
     </Box>
   )
 }
@@ -403,13 +352,7 @@ await render(<App />, term)
 Each column has its own scroll container:
 
 ```tsx
-function CardList({
-  cards,
-  selectedIndex,
-}: {
-  cards: Card[]
-  selectedIndex: number
-}) {
+function CardList({ cards, selectedIndex }: { cards: Card[]; selectedIndex: number }) {
   return (
     <Box
       flexDirection="column"
@@ -433,13 +376,7 @@ Each column scrolls independently based on its own `selectedIndex`.
 Columns use `flexGrow={1}` to share space equally:
 
 ```tsx
-function Board({
-  columns,
-  cursor,
-}: {
-  columns: Column[]
-  cursor: CursorPosition
-}) {
+function Board({ columns, cursor }: { columns: Column[]; cursor: CursorPosition }) {
   return (
     <Box flexDirection="row" flexGrow={1}>
       {columns.map((column, colIndex) => (

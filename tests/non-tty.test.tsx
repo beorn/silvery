@@ -14,14 +14,7 @@
 
 import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/components/index.js"
-import {
-  countLines,
-  isTTY,
-  resolveNonTTYMode,
-  stripAnsi,
-  toLineByLineOutput,
-  toPlainOutput,
-} from "../src/non-tty.js"
+import { countLines, isTTY, resolveNonTTYMode, stripAnsi, toLineByLineOutput, toPlainOutput } from "../src/non-tty.js"
 import { createRenderer, normalizeFrame } from "../src/testing/index.js"
 
 // Single shared render instance (required pattern for inkx tests)
@@ -188,9 +181,7 @@ describe("Non-TTY Mode Detection (km-inkx-nontty)", () => {
 
     test("returns line-by-line for non-TTY in auto mode", () => {
       const mockStream = { isTTY: false } as NodeJS.WriteStream
-      expect(resolveNonTTYMode({ mode: "auto", stdout: mockStream })).toBe(
-        "line-by-line",
-      )
+      expect(resolveNonTTYMode({ mode: "auto", stdout: mockStream })).toBe("line-by-line")
     })
   })
 })
@@ -215,9 +206,7 @@ describe("Non-TTY Output Transformations (km-inkx-nontty)", () => {
     })
 
     test("handles mixed content", () => {
-      expect(stripAnsi("prefix\x1b[31mcolored\x1b[0msuffix")).toBe(
-        "prefixcoloredsuffix",
-      )
+      expect(stripAnsi("prefix\x1b[31mcolored\x1b[0msuffix")).toBe("prefixcoloredsuffix")
     })
   })
 

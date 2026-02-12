@@ -9,21 +9,12 @@
  */
 
 import React, { useState, useMemo } from "react"
-import {
-  render,
-  Box,
-  Text,
-  useInput,
-  useApp,
-  createTerm,
-  type Key,
-} from "../../src/index.js"
+import { render, Box, Text, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Task List",
-  description:
-    "Scrollable list with priority badges, toggles, and expandable subtasks",
+  description: "Scrollable list with priority badges, toggles, and expandable subtasks",
   features: ["VirtualList", "variable itemHeight", "Box overflow"],
 }
 
@@ -75,8 +66,7 @@ function generateTasks(count: number): Task[] {
     completed: Math.random() > 0.7,
     priority: priorities[i % 3] as "high" | "medium" | "low",
     // Every 5th task has subtasks
-    subtasks:
-      i % 5 === 0 ? subtaskTemplates[i % subtaskTemplates.length] : undefined,
+    subtasks: i % 5 === 0 ? subtaskTemplates[i % subtaskTemplates.length] : undefined,
   }))
 }
 
@@ -84,11 +74,7 @@ function generateTasks(count: number): Task[] {
 // Components
 // ============================================================================
 
-function PriorityBadge({
-  priority,
-}: {
-  priority: "high" | "medium" | "low"
-}): JSX.Element {
+function PriorityBadge({ priority }: { priority: "high" | "medium" | "low" }): JSX.Element {
   const colors = {
     high: "red",
     medium: "yellow",
@@ -186,8 +172,7 @@ function StatusBar({
       </Text>
       <Text dim>
         {" "}
-        <Text bold>{completed}</Text>/{total} ({percent}%) | {cursor + 1}/
-        {total}{" "}
+        <Text bold>{completed}</Text>/{total} ({percent}%) | {cursor + 1}/{total}{" "}
       </Text>
     </Box>
   )
@@ -242,11 +227,7 @@ export function TaskList(): JSX.Element {
     }
     if (input === " ") {
       // Toggle completion
-      setTasks((prev) =>
-        prev.map((task, idx) =>
-          idx === cursor ? { ...task, completed: !task.completed } : task,
-        ),
-      )
+      setTasks((prev) => prev.map((task, idx) => (idx === cursor ? { ...task, completed: !task.completed } : task)))
     }
     if (key.return || input === "e") {
       // Toggle expand/collapse subtasks
@@ -288,12 +269,7 @@ export function TaskList(): JSX.Element {
         })}
       </Box>
 
-      <StatusBar
-        tasks={tasks}
-        cursor={cursor}
-        scrollOffset={scrollOffset}
-        visibleCount={visibleCount}
-      />
+      <StatusBar tasks={tasks} cursor={cursor} scrollOffset={scrollOffset} visibleCount={visibleCount} />
     </Box>
   )
 }
@@ -305,10 +281,7 @@ export function TaskList(): JSX.Element {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner
-      meta={meta}
-      controls="j/k navigate  space toggle  enter expand  Esc/q quit"
-    >
+    <ExampleBanner meta={meta} controls="j/k navigate  space toggle  enter expand  Esc/q quit">
       <TaskList />
     </ExampleBanner>,
     term,

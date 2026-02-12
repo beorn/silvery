@@ -9,10 +9,7 @@
 import React, { useState, useCallback } from "react"
 import { describe, expect, test } from "vitest"
 import { InputBoundary } from "../src/contexts/InputBoundary.tsx"
-import {
-  InputLayerProvider,
-  useInputLayer,
-} from "../src/contexts/InputLayerContext.tsx"
+import { InputLayerProvider, useInputLayer } from "../src/contexts/InputLayerContext.tsx"
 import { Box, Text, useInput } from "../src/index.ts"
 import { createRenderer } from "../src/testing/index.tsx"
 
@@ -36,13 +33,7 @@ function SimpleInputCapture({ id }: { id: string }) {
 }
 
 /** Component using useInputLayer */
-function LayerInputCapture({
-  id,
-  consume = true,
-}: {
-  id: string
-  consume?: boolean
-}) {
+function LayerInputCapture({ id, consume = true }: { id: string; consume?: boolean }) {
   const [keys, setKeys] = useState<string[]>([])
 
   useInputLayer(
@@ -260,11 +251,7 @@ describe("InputBoundary", () => {
         return (
           <Box flexDirection="column">
             <Text testID="status">active: {active ? "yes" : "no"}</Text>
-            <InputBoundary
-              active={active}
-              exitKey="q"
-              onEscape={() => setActive(false)}
-            >
+            <InputBoundary active={active} exitKey="q" onEscape={() => setActive(false)}>
               <LayerInputCapture id="child" />
             </InputBoundary>
           </Box>
@@ -403,16 +390,10 @@ describe("InputBoundary", () => {
               outer={outerActive ? "on" : "off"} inner=
               {innerActive ? "on" : "off"}
             </Text>
-            <InputBoundary
-              active={outerActive}
-              onEscape={() => setOuterActive(false)}
-            >
+            <InputBoundary active={outerActive} onEscape={() => setOuterActive(false)}>
               <Box flexDirection="column">
                 <LayerInputCapture id="outer-child" />
-                <InputBoundary
-                  active={innerActive}
-                  onEscape={() => setInnerActive(false)}
-                >
+                <InputBoundary active={innerActive} onEscape={() => setInnerActive(false)}>
                   <LayerInputCapture id="inner-child" />
                 </InputBoundary>
               </Box>
@@ -470,9 +451,7 @@ describe("InputBoundary", () => {
           if (key.return) setReceived(true)
         })
 
-        return (
-          <Text testID="enter">enter: {received ? "yes" : "no"}</Text>
-        )
+        return <Text testID="enter">enter: {received ? "yes" : "no"}</Text>
       }
 
       const app = render(

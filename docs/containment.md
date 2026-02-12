@@ -67,15 +67,15 @@ The key mechanism is the `hadReactCommit` flag:
 
 Each iteration of the loop runs the full 5-phase pipeline:
 
-| Phase | Name | What Happens |
-|-------|------|-------------|
-| 1 | Measure | Measure intrinsic content sizes for `fit-content` nodes |
-| 2 | Layout | Run flexbox layout engine, propagate dimensions to all nodes |
-| 2.5 | Scroll | Calculate scroll state for `overflow="scroll"` containers |
-| 2.6 | Screen Rect | Calculate screen-relative positions (accounting for scroll offsets) |
-| 2.7 | Notify | Fire layout subscriber callbacks (`useContentRect`, `onLayout`, etc.) |
-| 3 | Content | Render each node to the terminal buffer |
-| 4 | Diff & Output | Compare with previous buffer, emit minimal ANSI |
+| Phase | Name          | What Happens                                                          |
+| ----- | ------------- | --------------------------------------------------------------------- |
+| 1     | Measure       | Measure intrinsic content sizes for `fit-content` nodes               |
+| 2     | Layout        | Run flexbox layout engine, propagate dimensions to all nodes          |
+| 2.5   | Scroll        | Calculate scroll state for `overflow="scroll"` containers             |
+| 2.6   | Screen Rect   | Calculate screen-relative positions (accounting for scroll offsets)   |
+| 2.7   | Notify        | Fire layout subscriber callbacks (`useContentRect`, `onLayout`, etc.) |
+| 3     | Content       | Render each node to the terminal buffer                               |
+| 4     | Diff & Output | Compare with previous buffer, emit minimal ANSI                       |
 
 Phase 2.7 is where the feedback happens. Layout subscribers call `forceUpdate()` or `setState()`, which queue React updates. These are flushed by `act()`, and if any committed, the loop runs another iteration.
 
@@ -87,7 +87,7 @@ These patterns are safe because they converge to a stable layout within 2 iterat
 
 ### Reading size to adapt content (not layout)
 
-The most common pattern: use dimensions to decide *what content to show*, without changing the component's own layout constraints.
+The most common pattern: use dimensions to decide _what content to show_, without changing the component's own layout constraints.
 
 ```tsx
 // SAFE: Reading width to truncate text
@@ -159,7 +159,11 @@ For components that appear many times (list items, cards), use the callback vari
 // SAFE: No re-render, just registers position
 function Card({ id, onPosition }: { id: string; onPosition: (id: string, rect: Rect) => void }) {
   useContentRectCallback((rect) => onPosition(id, rect))
-  return <Box><Text>{id}</Text></Box>
+  return (
+    <Box>
+      <Text>{id}</Text>
+    </Box>
+  )
 }
 ```
 
@@ -281,12 +285,12 @@ To keep your components safe from layout feedback loops:
 
 ## Comparison with CSS Containment
 
-| Aspect | CSS Container Queries | inkx |
-|--------|----------------------|------|
-| Prevention mechanism | Static containment rules (`contain: size`) | Bounded iteration loop (max 5) |
-| Cycle detection | Compile-time (containment is declarative) | Runtime (hadReactCommit flag) |
-| When cycles occur | Browser ignores the query (spec-defined) | Last iteration wins (silent cap) |
-| Developer feedback | DevTools warnings | None (silent convergence) |
-| Typical iterations | 1 (containment prevents re-layout) | 2 (first render + layout feedback) |
+| Aspect               | CSS Container Queries                      | inkx                               |
+| -------------------- | ------------------------------------------ | ---------------------------------- |
+| Prevention mechanism | Static containment rules (`contain: size`) | Bounded iteration loop (max 5)     |
+| Cycle detection      | Compile-time (containment is declarative)  | Runtime (hadReactCommit flag)      |
+| When cycles occur    | Browser ignores the query (spec-defined)   | Last iteration wins (silent cap)   |
+| Developer feedback   | DevTools warnings                          | None (silent convergence)          |
+| Typical iterations   | 1 (containment prevents re-layout)         | 2 (first render + layout feedback) |
 
 The key difference: CSS containment prevents cycles statically by ensuring a container's size can't depend on its children's queries. inkx allows the dependency but bounds the iteration count. This is more flexible (any pattern that converges is allowed) but less predictable (oscillating patterns silently produce arbitrary results).

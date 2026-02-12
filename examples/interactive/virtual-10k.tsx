@@ -28,14 +28,8 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Virtual 10K",
-  description:
-    "VirtualList scrolling through 10,000 items with instant navigation",
-  features: [
-    "VirtualList",
-    "10K items",
-    "useContentRect()",
-    "variable itemHeight",
-  ],
+  description: "VirtualList scrolling through 10,000 items with instant navigation",
+  features: ["VirtualList", "10K items", "useContentRect()", "variable itemHeight"],
 }
 
 // ============================================================================
@@ -130,12 +124,7 @@ function generateItems(count: number): Item[] {
       const tag = TAG_POOL[Math.floor(rng() * TAG_POOL.length)]!
       if (!tags.includes(tag)) tags.push(tag)
     }
-    const progress =
-      status === "done"
-        ? 100
-        : status === "todo"
-          ? 0
-          : Math.floor(rng() * 90) + 5
+    const progress = status === "done" ? 100 : status === "todo" ? 0 : Math.floor(rng() * 90) + 5
 
     items.push({
       id: i + 1,
@@ -179,13 +168,7 @@ const STATUS_COLORS: Record<Item["status"], string> = {
   blocked: "red",
 }
 
-function ProgressBar({
-  percent,
-  width: barWidth,
-}: {
-  percent: number
-  width: number
-}): JSX.Element {
+function ProgressBar({ percent, width: barWidth }: { percent: number; width: number }): JSX.Element {
   const effectiveWidth = Math.max(5, barWidth)
   const filled = Math.round((percent / 100) * effectiveWidth)
   const empty = effectiveWidth - filled
@@ -210,15 +193,9 @@ function ItemRow({
   const idStr = String(item.id).padStart(5, " ")
 
   return (
-    <Box
-      flexDirection="column"
-      paddingX={1}
-      backgroundColor={isSelected ? "blue" : undefined}
-    >
+    <Box flexDirection="column" paddingX={1} backgroundColor={isSelected ? "blue" : undefined}>
       <Box>
-        <Text color={STATUS_COLORS[item.status]}>
-          {STATUS_ICONS[item.status]}
-        </Text>
+        <Text color={STATUS_COLORS[item.status]}>{STATUS_ICONS[item.status]}</Text>
         <Text dim> {idStr} </Text>
         <Text bold color={PRIORITY_COLORS[item.priority]}>
           {item.priority}
@@ -247,15 +224,7 @@ function ItemRow({
   )
 }
 
-function ScrollIndicator({
-  current,
-  total,
-  width,
-}: {
-  current: number
-  total: number
-  width: number
-}): JSX.Element {
+function ScrollIndicator({ current, total, width }: { current: number; total: number; width: number }): JSX.Element {
   const percent = total > 0 ? Math.round(((current + 1) / total) * 100) : 0
 
   // Progress bar
@@ -460,10 +429,7 @@ function VirtualBenchmark(): JSX.Element {
 
 async function main() {
   const handle = await run(
-    <ExampleBanner
-      meta={meta}
-      controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit"
-    >
+    <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit">
       <VirtualBenchmark />
     </ExampleBanner>,
   )

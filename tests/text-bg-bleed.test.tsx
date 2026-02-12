@@ -124,8 +124,7 @@ describe("Text backgroundColor with wrapping (km-inkx.bg-bleed)", () => {
     const app = render(
       <Box width={30} height={2}>
         <Text>
-          <Text backgroundColor="red">Red</Text> gap{" "}
-          <Text backgroundColor="blue">Blue</Text>
+          <Text backgroundColor="red">Red</Text> gap <Text backgroundColor="blue">Blue</Text>
         </Text>
       </Box>,
     )

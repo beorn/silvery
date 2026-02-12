@@ -14,13 +14,7 @@
 import { BG_OVERRIDE_CODE } from "chalkx"
 import Graphemer from "graphemer"
 import stringWidth from "string-width"
-import {
-  type Cell,
-  type Style,
-  type TerminalBuffer,
-  type UnderlineStyle,
-  createMutableCell,
-} from "./buffer.js"
+import { type Cell, type Style, type TerminalBuffer, type UnderlineStyle, createMutableCell } from "./buffer.js"
 
 // Re-export for consumers of inkx
 export { BG_OVERRIDE_CODE }
@@ -501,12 +495,7 @@ function splitGraphemesAnsiAware(text: string): string[] {
  * @param trim - Trim trailing spaces on broken lines and skip leading spaces on continuation lines (useful for rendering)
  * @returns Array of wrapped lines
  */
-export function wrapText(
-  text: string,
-  width: number,
-  preserveNewlines = true,
-  trim = false,
-): string[] {
+export function wrapText(text: string, width: number, preserveNewlines = true, trim = false): string[] {
   if (width <= 0) {
     return []
   }
@@ -514,9 +503,7 @@ export function wrapText(
   const lines: string[] = []
 
   // Split by newlines first if preserving
-  const inputLines = preserveNewlines
-    ? text.split("\n")
-    : [text.replace(/\n/g, " ")]
+  const inputLines = preserveNewlines ? text.split("\n") : [text.replace(/\n/g, " ")]
 
   for (const line of inputLines) {
     // Handle empty lines
@@ -549,13 +536,7 @@ export function wrapText(
       }
 
       // In trim mode, skip leading spaces on continuation lines
-      if (
-        trim &&
-        !isFirstLineOfParagraph &&
-        currentWidth === 0 &&
-        isWordBoundary(grapheme) &&
-        grapheme !== "-"
-      ) {
+      if (trim && !isFirstLineOfParagraph && currentWidth === 0 && isWordBoundary(grapheme) && grapheme !== "-") {
         continue
       }
 
@@ -649,11 +630,7 @@ export function wrapText(
  * @param end - End display column (exclusive)
  * @returns Sliced string
  */
-export function sliceByWidth(
-  text: string,
-  start: number,
-  end?: number,
-): string {
+export function sliceByWidth(text: string, start: number, end?: number): string {
   const graphemes = splitGraphemes(text)
   let result = ""
   let currentCol = 0
@@ -862,11 +839,7 @@ export function displayWidthAnsi(text: string): number {
  * truncation. For proper ANSI-aware truncation, consider using
  * slice-ansi or similar library.
  */
-export function truncateAnsi(
-  text: string,
-  maxWidth: number,
-  ellipsis = "\u2026",
-): string {
+export function truncateAnsi(text: string, maxWidth: number, ellipsis = "\u2026"): string {
   // Simple approach: if text has ANSI, strip and truncate
   // A more sophisticated approach would preserve styles
   const stripped = stripAnsi(text)
@@ -984,8 +957,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
             const r = subparts[3] ?? subparts[2] ?? 0
             const g = subparts[4] ?? subparts[3] ?? 0
             const b = subparts[5] ?? subparts[4] ?? 0
-            currentStyle.underlineColor =
-              0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
+            currentStyle.underlineColor = 0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
           }
         } else if (mainCode === 38) {
           // SGR 38:2::r:g:b or 38:5:N format
@@ -995,8 +967,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
             const r = subparts[3] ?? subparts[2] ?? 0
             const g = subparts[4] ?? subparts[3] ?? 0
             const b = subparts[5] ?? subparts[4] ?? 0
-            currentStyle.fg =
-              0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
+            currentStyle.fg = 0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
           }
         } else if (mainCode === 48) {
           // SGR 48:2::r:g:b or 48:5:N format
@@ -1006,8 +977,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
             const r = subparts[3] ?? subparts[2] ?? 0
             const g = subparts[4] ?? subparts[3] ?? 0
             const b = subparts[5] ?? subparts[4] ?? 0
-            currentStyle.bg =
-              0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
+            currentStyle.bg = 0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
           }
         }
         continue
@@ -1071,10 +1041,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
           } else if (nextParams[0] === 2 && nextParams[3] !== undefined) {
             // True color - store as RGB values packed
             currentStyle.fg =
-              0x1000000 |
-              ((nextParams[1]! & 0xff) << 16) |
-              ((nextParams[2]! & 0xff) << 8) |
-              (nextParams[3]! & 0xff)
+              0x1000000 | ((nextParams[1]! & 0xff) << 16) | ((nextParams[2]! & 0xff) << 8) | (nextParams[3]! & 0xff)
             i += 4
           }
           break
@@ -1101,10 +1068,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
           } else if (nextParams[0] === 2 && nextParams[3] !== undefined) {
             // True color - store as RGB values packed
             currentStyle.bg =
-              0x1000000 |
-              ((nextParams[1]! & 0xff) << 16) |
-              ((nextParams[2]! & 0xff) << 8) |
-              (nextParams[3]! & 0xff)
+              0x1000000 | ((nextParams[1]! & 0xff) << 16) | ((nextParams[2]! & 0xff) << 8) | (nextParams[3]! & 0xff)
             i += 4
           }
           break
@@ -1121,10 +1085,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
           } else if (nextParams[0] === 2 && nextParams[3] !== undefined) {
             // True color - store as RGB values packed
             currentStyle.underlineColor =
-              0x1000000 |
-              ((nextParams[1]! & 0xff) << 16) |
-              ((nextParams[2]! & 0xff) << 8) |
-              (nextParams[3]! & 0xff)
+              0x1000000 | ((nextParams[1]! & 0xff) << 16) | ((nextParams[2]! & 0xff) << 8) | (nextParams[3]! & 0xff)
             i += 4
           }
           break
@@ -1296,9 +1257,5 @@ export function isLikelyEmoji(grapheme: string): boolean {
  */
 export function isCJK(grapheme: string): boolean {
   const cp = getFirstCodePoint(grapheme)
-  return (
-    CHAR_RANGES.isCJK(cp) ||
-    CHAR_RANGES.isJapaneseKana(cp) ||
-    CHAR_RANGES.isHangul(cp)
-  )
+  return CHAR_RANGES.isCJK(cp) || CHAR_RANGES.isJapaneseKana(cp) || CHAR_RANGES.isHangul(cp)
 }

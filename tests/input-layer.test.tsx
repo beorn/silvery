@@ -15,11 +15,7 @@
  */
 import React, { useState, useCallback } from "react"
 import { describe, expect, test } from "vitest"
-import {
-  InputLayerProvider,
-  useInputLayer,
-  useInputLayerContext,
-} from "../src/contexts/InputLayerContext.tsx"
+import { InputLayerProvider, useInputLayer, useInputLayerContext } from "../src/contexts/InputLayerContext.tsx"
 import { Box, Text } from "../src/index.ts"
 import { createRenderer } from "../src/testing/index.tsx"
 
@@ -63,13 +59,7 @@ function InputCapture({
 /**
  * Component that conditionally consumes based on key
  */
-function ConditionalConsumer({
-  layerId,
-  consumeKeys,
-}: {
-  layerId: string
-  consumeKeys: string[]
-}) {
+function ConditionalConsumer({ layerId, consumeKeys }: { layerId: string; consumeKeys: string[] }) {
   const [captured, setCaptured] = useState<string[]>([])
 
   useInputLayer(
@@ -144,16 +134,8 @@ describe("InputLayerContext", () => {
       function App() {
         return (
           <TestApp>
-            <InputCapture
-              layerId="first"
-              consume
-              onInput={(i) => received.push(`first:${i}`)}
-            />
-            <InputCapture
-              layerId="second"
-              consume
-              onInput={(i) => received.push(`second:${i}`)}
-            />
+            <InputCapture layerId="first" consume onInput={(i) => received.push(`first:${i}`)} />
+            <InputCapture layerId="second" consume onInput={(i) => received.push(`second:${i}`)} />
           </TestApp>
         )
       }
@@ -210,13 +192,7 @@ describe("InputLayerContext", () => {
     test("deeply nested child handles before all ancestors", () => {
       const received: string[] = []
 
-      function Level({
-        name,
-        children,
-      }: {
-        name: string
-        children?: React.ReactNode
-      }) {
+      function Level({ name, children }: { name: string; children?: React.ReactNode }) {
         useInputLayer(
           name,
           useCallback(
@@ -510,13 +486,7 @@ describe("InputLayerContext", () => {
 
   describe("dialog pattern", () => {
     test("dialog input field captures typing, escape bubbles to close dialog", () => {
-      function Dialog({
-        onClose,
-        onSubmit,
-      }: {
-        onClose: () => void
-        onSubmit: (value: string) => void
-      }) {
+      function Dialog({ onClose, onSubmit }: { onClose: () => void; onSubmit: (value: string) => void }) {
         const [value, setValue] = useState("")
 
         // Dialog layer - handles escape to close

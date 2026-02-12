@@ -26,7 +26,11 @@
       body {
         background: var(--bg-primary);
         color: var(--text-primary);
-        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
         min-height: 100vh;
         display: flex;
         flex-direction: column;
@@ -266,10 +270,7 @@
   <body>
     <header>
       <h1>inkx Canvas Playground</h1>
-      <span class="subtitle"
-        >React components rendered to HTML5 Canvas via the inkx rendering
-        pipeline</span
-      >
+      <span class="subtitle">React components rendered to HTML5 Canvas via the inkx rendering pipeline</span>
     </header>
 
     <div class="preset-bar">
@@ -294,41 +295,43 @@
           <h3>How It Works</h3>
           <p>
             inkx is a React renderer that computes layout
-            <strong>before</strong> content rendering. Components know their size
-            during render via <code>useContentRect()</code>, not after.
+            <strong>before</strong> content rendering. Components know their size during render via
+            <code>useContentRect()</code>, not after.
           </p>
           <ul class="feature-list">
-            <li>
-              React reconciler builds an <code>InkxNode</code> tree
-            </li>
+            <li>React reconciler builds an <code>InkxNode</code> tree</li>
             <li>Flexx (pure JS flexbox) computes layout synchronously</li>
             <li>Content renders to an OffscreenCanvas buffer</li>
             <li>Buffer is drawn to the visible canvas element</li>
-            <li>
-              <code>requestAnimationFrame</code> drives re-renders on state
-              changes
-            </li>
+            <li><code>requestAnimationFrame</code> drives re-renders on state changes</li>
           </ul>
         </div>
 
         <div class="section">
           <h3>Canvas Adapter API</h3>
-          <div class="code-block"><span class="keyword">import</span> { <span class="component">renderToCanvas</span>, <span class="component">Box</span>, <span class="component">Text</span>,
-  <span class="component">useContentRect</span> } <span class="keyword">from</span> <span class="string">'inkx/canvas'</span>;
+          <div class="code-block">
+            <span class="keyword">import</span> { <span class="component">renderToCanvas</span>,
+            <span class="component">Box</span>, <span class="component">Text</span>,
+            <span class="component">useContentRect</span> }
+            <span class="keyword">from</span>
+            <span class="string">'inkx/canvas'</span>;
 
-<span class="keyword">function</span> <span class="component">App</span>() {
-  <span class="keyword">const</span> { width, height } = <span class="component">useContentRect</span>();
-  <span class="keyword">return</span> (
-    &lt;<span class="component">Box</span> <span class="prop">borderStyle</span>=<span class="string">"single"</span>&gt;
-      &lt;<span class="component">Text</span>&gt;
-        {width}px x {height}px
-      &lt;/<span class="component">Text</span>&gt;
-    &lt;/<span class="component">Box</span>&gt;
-  );
-}
+            <span class="keyword">function</span>
+            <span class="component">App</span>() { <span class="keyword">const</span> { width, height } =
+            <span class="component">useContentRect</span>(); <span class="keyword">return</span> ( &lt;<span
+              class="component"
+              >Box</span
+            >
+            <span class="prop">borderStyle</span>=<span class="string">"single"</span>&gt; &lt;<span class="component"
+              >Text</span
+            >&gt; {width}px x {height}px &lt;/<span class="component">Text</span>&gt; &lt;/<span class="component"
+              >Box</span
+            >&gt; ); }
 
-<span class="keyword">const</span> canvas = document.getElementById(<span class="string">'canvas'</span>);
-<span class="component">renderToCanvas</span>(&lt;<span class="component">App</span> /&gt;, canvas);</div>
+            <span class="keyword">const</span> canvas = document.getElementById(<span class="string">'canvas'</span>);
+            <span class="component">renderToCanvas</span>(&lt;<span class="component">App</span>
+            /&gt;, canvas);
+          </div>
         </div>
 
         <div class="section">
@@ -347,15 +350,16 @@
 
         <div class="section">
           <h3>Build &amp; Run</h3>
-          <div class="code-block"><span class="comment"># Build the playground bundle</span>
-cd vendor/beorn-inkx
-bun run examples/playground/build.ts
+          <div class="code-block">
+            <span class="comment"># Build the playground bundle</span>
+            cd vendor/beorn-inkx bun run examples/playground/build.ts
 
-<span class="comment"># Open in browser</span>
-open examples/playground/index.html</div>
+            <span class="comment"># Open in browser</span>
+            open examples/playground/index.html
+          </div>
           <p>
-            For a full live-editing playground with Monaco editor and hot
-            reload, see <code>docs/playground-design.md</code>.
+            For a full live-editing playground with Monaco editor and hot reload, see
+            <code>docs/playground-design.md</code>.
           </p>
         </div>
       </div>
@@ -405,8 +409,7 @@ open examples/playground/index.html</div>
         7: "responsive",
       }
       document.addEventListener("keydown", (e) => {
-        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
-          return
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return
         const preset = presetKeys[e.key]
         if (preset) setPreset(preset)
       })

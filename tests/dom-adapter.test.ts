@@ -3,17 +3,8 @@
  */
 
 import { beforeEach, describe, expect, test } from "vitest"
-import {
-  type DOMAdapterConfig,
-  DOMRenderBuffer,
-  createDOMAdapter,
-} from "../src/adapters/dom-adapter.js"
-import {
-  type RenderAdapter,
-  getRenderAdapter,
-  hasRenderAdapter,
-  setRenderAdapter,
-} from "../src/render-adapter.js"
+import { type DOMAdapterConfig, DOMRenderBuffer, createDOMAdapter } from "../src/adapters/dom-adapter.js"
+import { type RenderAdapter, getRenderAdapter, hasRenderAdapter, setRenderAdapter } from "../src/render-adapter.js"
 
 // Check if we have DOM support
 const hasDOM = typeof document !== "undefined"

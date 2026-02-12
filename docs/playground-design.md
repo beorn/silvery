@@ -49,26 +49,26 @@ Design document for a full interactive playground where users can write JSX and 
 
 ### Why Sucrase (Not Babel)
 
-| Feature        | Sucrase    | Babel      |
-|----------------|------------|------------|
-| Bundle size    | ~120 KB    | ~800 KB    |
-| Transform time | <5 ms      | ~50 ms     |
-| JSX support    | Yes        | Yes        |
-| TypeScript     | Yes (strip)| Yes        |
-| Browser usage  | Direct ESM | Needs shim |
+| Feature        | Sucrase     | Babel      |
+| -------------- | ----------- | ---------- |
+| Bundle size    | ~120 KB     | ~800 KB    |
+| Transform time | <5 ms       | ~50 ms     |
+| JSX support    | Yes         | Yes        |
+| TypeScript     | Yes (strip) | Yes        |
+| Browser usage  | Direct ESM  | Needs shim |
 
 Sucrase is purpose-built for development transforms. It strips types and converts JSX without a full AST transform pipeline, making it ideal for a live editor.
 
 ## Tech Stack
 
-| Component        | Choice              | Rationale                                       |
-|------------------|---------------------|-------------------------------------------------|
-| Build tool       | Vite                | Fast HMR, ESM-native, simple config             |
-| Code editor      | Monaco Editor       | VSCode engine, TypeScript intellisense, JSX      |
-| JSX transpiler   | Sucrase             | Fast, small, browser-compatible                  |
-| UI framework     | React               | Already a dependency of inkx                     |
-| Layout engine    | Flexx               | Pure JS, synchronous init, no WASM               |
-| Canvas rendering | inkx/canvas         | The whole point                                  |
+| Component        | Choice        | Rationale                                   |
+| ---------------- | ------------- | ------------------------------------------- |
+| Build tool       | Vite          | Fast HMR, ESM-native, simple config         |
+| Code editor      | Monaco Editor | VSCode engine, TypeScript intellisense, JSX |
+| JSX transpiler   | Sucrase       | Fast, small, browser-compatible             |
+| UI framework     | React         | Already a dependency of inkx                |
+| Layout engine    | Flexx         | Pure JS, synchronous init, no WASM          |
+| Canvas rendering | inkx/canvas   | The whole point                             |
 
 ## Project Structure
 
@@ -89,6 +89,7 @@ playground/
 ## Editor Component
 
 Monaco provides:
+
 - JSX syntax highlighting
 - TypeScript type checking (with inkx `.d.ts` loaded)
 - Auto-completion for `<Box>`, `<Text>`, `useContentRect()`, etc.
@@ -96,20 +97,17 @@ Monaco provides:
 
 ```tsx
 // Editor.tsx (sketch)
-import * as monaco from 'monaco-editor';
+import * as monaco from "monaco-editor"
 
 function Editor({ value, onChange }) {
-  const editorRef = useRef(null);
+  const editorRef = useRef(null)
 
   useEffect(() => {
     // Load inkx type definitions for intellisense
-    monaco.languages.typescript.typescriptDefaults.addExtraLib(
-      inkxTypeDefs,
-      'inkx.d.ts'
-    );
-  }, []);
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(inkxTypeDefs, "inkx.d.ts")
+  }, [])
 
-  return <div ref={editorRef} style={{ height: '100%' }} />;
+  return <div ref={editorRef} style={{ height: "100%" }} />
 }
 ```
 
@@ -119,20 +117,17 @@ User code runs in a sandboxed scope with only React and inkx exports available:
 
 ```tsx
 // evaluate.ts (sketch)
-import React from 'react';
-import { Box, Text, useContentRect, useScreenRect } from 'inkx/canvas';
+import React from "react"
+import { Box, Text, useContentRect, useScreenRect } from "inkx/canvas"
 
-const scope = { React, Box, Text, useContentRect, useScreenRect };
+const scope = { React, Box, Text, useContentRect, useScreenRect }
 
 function evaluateComponent(code: string): React.FC | null {
   try {
-    const fn = new Function(
-      ...Object.keys(scope),
-      `${code}\nreturn typeof App !== 'undefined' ? App : null;`
-    );
-    return fn(...Object.values(scope));
+    const fn = new Function(...Object.keys(scope), `${code}\nreturn typeof App !== 'undefined' ? App : null;`)
+    return fn(...Object.values(scope))
   } catch (err) {
-    return null; // Show error in UI
+    return null // Show error in UI
   }
 }
 ```
@@ -141,11 +136,11 @@ function evaluateComponent(code: string): React.FC | null {
 
 Three error categories, each shown differently:
 
-| Error Type       | Source                | Display                        |
-|------------------|-----------------------|--------------------------------|
-| Syntax error     | Sucrase transpilation | Red underline in editor        |
-| Runtime error    | `new Function()`      | Error banner above canvas      |
-| Render error     | React reconciler      | Error boundary with stack      |
+| Error Type    | Source                | Display                   |
+| ------------- | --------------------- | ------------------------- |
+| Syntax error  | Sucrase transpilation | Red underline in editor   |
+| Runtime error | `new Function()`      | Error banner above canvas |
+| Render error  | React reconciler      | Error boundary with stack |
 
 All errors are caught and displayed; the playground never crashes.
 
@@ -156,15 +151,16 @@ To avoid excessive re-renders while typing:
 ```tsx
 // Debounce pipeline: edit -> 150ms pause -> transpile -> eval -> render
 const debouncedRender = useMemo(
-  () => debounce((code: string) => {
-    const js = transpile(code);     // Sucrase JSX -> JS
-    const Comp = evaluate(js);       // new Function -> React.FC
-    if (Comp) {
-      instance.rerender(<Comp />);   // inkx canvas render
-    }
-  }, 150),
-  [instance]
-);
+  () =>
+    debounce((code: string) => {
+      const js = transpile(code) // Sucrase JSX -> JS
+      const Comp = evaluate(js) // new Function -> React.FC
+      if (Comp) {
+        instance.rerender(<Comp />) // inkx canvas render
+      }
+    }, 150),
+  [instance],
+)
 ```
 
 150ms debounce balances responsiveness with render cost. Transpilation alone is <5ms, so the bottleneck is React reconciliation + layout + canvas paint.
@@ -173,15 +169,15 @@ const debouncedRender = useMemo(
 
 Ship with built-in examples users can load:
 
-| Preset          | Shows                                           |
-|-----------------|--------------------------------------------------|
-| Hello World     | Minimal Box + Text                               |
-| Text Styles     | Bold, italic, underline, strikethrough, colors   |
-| Flexbox Layout  | Row/column, flexGrow, gap, nested panels         |
-| Dashboard       | Multi-panel layout with borders and status        |
-| Responsive      | `useContentRect()` adapting layout to size       |
-| Color Palette   | Named colors, hex, RGB backgrounds                |
-| Border Gallery  | All border styles: single, double, round, bold   |
+| Preset         | Shows                                          |
+| -------------- | ---------------------------------------------- |
+| Hello World    | Minimal Box + Text                             |
+| Text Styles    | Bold, italic, underline, strikethrough, colors |
+| Flexbox Layout | Row/column, flexGrow, gap, nested panels       |
+| Dashboard      | Multi-panel layout with borders and status     |
+| Responsive     | `useContentRect()` adapting layout to size     |
+| Color Palette  | Named colors, hex, RGB backgrounds             |
+| Border Gallery | All border styles: single, double, round, bold |
 
 ## Deployment Options
 
@@ -246,13 +242,13 @@ Show both Canvas and DOM adapter output side by side, demonstrating that the sam
 
 ## Size Budget
 
-| Component         | Size (gzip) |
-|-------------------|-------------|
-| inkx + React      | ~90 KB      |
-| Monaco Editor     | ~800 KB     |
-| Sucrase           | ~40 KB      |
-| Playground UI     | ~5 KB       |
-| **Total**         | **~935 KB** |
+| Component     | Size (gzip) |
+| ------------- | ----------- |
+| inkx + React  | ~90 KB      |
+| Monaco Editor | ~800 KB     |
+| Sucrase       | ~40 KB      |
+| Playground UI | ~5 KB       |
+| **Total**     | **~935 KB** |
 
 Monaco dominates. For a lighter alternative, consider CodeMirror 6 (~150 KB) with a JSX mode, reducing total to ~285 KB. The tradeoff is less TypeScript intellisense.
 

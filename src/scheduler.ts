@@ -15,10 +15,7 @@
 import { appendFileSync } from "node:fs"
 import { type Logger, createLogger } from "@beorn/logger"
 import { type TerminalBuffer, bufferToText, cellEquals } from "./buffer.js"
-import {
-  buildMismatchContext,
-  formatMismatchContext,
-} from "./debug-mismatch.js"
+import { buildMismatchContext, formatMismatchContext } from "./debug-mismatch.js"
 import {
   type ResolvedNonTTYMode as ResolvedMode,
   countLines,
@@ -37,9 +34,7 @@ const log = createLogger("inkx:scheduler")
  * Whether synchronized update mode is enabled.
  * Enabled by default. Set INKX_SYNC_UPDATE=0 to disable.
  */
-const SYNC_UPDATE_ENABLED =
-  process.env.INKX_SYNC_UPDATE !== "0" &&
-  process.env.INKX_SYNC_UPDATE !== "false"
+const SYNC_UPDATE_ENABLED = process.env.INKX_SYNC_UPDATE !== "0" && process.env.INKX_SYNC_UPDATE !== "false"
 
 // ============================================================================
 // Errors
@@ -254,9 +249,7 @@ export class RenderScheduler {
 
       if (timeSinceLastRender < this.minFrameTime) {
         // Schedule for next frame
-        log.debug?.(
-          `frame limited, delay: ${this.minFrameTime - timeSinceLastRender}ms`,
-        )
+        log.debug?.(`frame limited, delay: ${this.minFrameTime - timeSinceLastRender}ms`)
         this.scheduleNextFrame(this.minFrameTime - timeSinceLastRender)
       } else {
         this.executeRender()
@@ -429,20 +422,15 @@ export class RenderScheduler {
       // Fullscreen mode: use terminal rows as the constraint.
       const height = this.mode === "inline" ? NaN : (this.stdout.rows ?? 24)
 
-      log.debug?.(
-        `render #${this.stats.renderCount + 1}: ${width}x${height}, nonTTYMode=${this.nonTTYMode}`,
-      )
+      log.debug?.(`render #${this.stats.renderCount + 1}: ${width}x${height}, nonTTYMode=${this.nonTTYMode}`)
 
       // Run render pipeline
       const scrollbackOffset = this.scrollbackOffset
       this.scrollbackOffset = 0 // Consume the offset
-      const { output, buffer } = executeRender(
-        this.root,
-        width,
-        height,
-        this.prevBuffer,
-        { mode: this.mode, scrollbackOffset },
-      )
+      const { output, buffer } = executeRender(this.root, width, height, this.prevBuffer, {
+        mode: this.mode,
+        scrollbackOffset,
+      })
 
       // Transform output based on non-TTY mode
       let transformedOutput: string
@@ -477,9 +465,7 @@ export class RenderScheduler {
       // preventing tearing during rapid screen updates.
       if (transformedOutput.length > 0 || cursorSuffix.length > 0) {
         if (this.nonTTYMode === "tty" && SYNC_UPDATE_ENABLED) {
-          this.stdout.write(
-            `${ANSI.SYNC_BEGIN}${transformedOutput}${cursorSuffix}${ANSI.SYNC_END}`,
-          )
+          this.stdout.write(`${ANSI.SYNC_BEGIN}${transformedOutput}${cursorSuffix}${ANSI.SYNC_END}`)
         } else {
           this.stdout.write(transformedOutput + cursorSuffix)
         }
@@ -489,21 +475,14 @@ export class RenderScheduler {
       this.prevBuffer = buffer
 
       // INKX_STRICT or INKX_CHECK_INCREMENTAL: compare incremental render against fresh render
-      const strictEnv =
-        process.env.INKX_STRICT || process.env.INKX_CHECK_INCREMENTAL
+      const strictEnv = process.env.INKX_STRICT || process.env.INKX_CHECK_INCREMENTAL
       const strictMode = strictEnv && strictEnv !== "0" && strictEnv !== "false"
       if (strictMode && this.stats.renderCount > 0) {
         const renderNum = this.stats.renderCount + 1
-        const { buffer: freshBuffer } = executeRender(
-          this.root,
-          width,
-          height,
-          null,
-          {
-            mode: this.mode === "fullscreen" ? "fullscreen" : "inline",
-            skipLayoutNotifications: true,
-          },
-        )
+        const { buffer: freshBuffer } = executeRender(this.root, width, height, null, {
+          mode: this.mode === "fullscreen" ? "fullscreen" : "inline",
+          skipLayoutNotifications: true,
+        })
         let found = false
         for (let y = 0; y < buffer.height && !found; y++) {
           for (let x = 0; x < buffer.width && !found; x++) {
@@ -519,9 +498,7 @@ export class RenderScheduler {
               // Include text output for full picture
               const incText = bufferToText(buffer)
               const freshText = bufferToText(freshBuffer)
-              const msg =
-                debugInfo +
-                `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
+              const msg = debugInfo + `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
 
               if (process.env.DEBUG_LOG) {
                 appendFileSync(process.env.DEBUG_LOG, msg + "\n")
@@ -533,10 +510,7 @@ export class RenderScheduler {
           }
         }
         if (!found && process.env.DEBUG_LOG) {
-          appendFileSync(
-            process.env.DEBUG_LOG,
-            `INKX_CHECK_INCREMENTAL: render #${renderNum} OK\n`,
-          )
+          appendFileSync(process.env.DEBUG_LOG, `INKX_CHECK_INCREMENTAL: render #${renderNum} OK\n`)
         }
       }
 
@@ -545,8 +519,7 @@ export class RenderScheduler {
       this.stats.renderCount++
       this.stats.lastRenderTime = renderTime
       this.stats.avgRenderTime =
-        (this.stats.avgRenderTime * (this.stats.renderCount - 1) + renderTime) /
-        this.stats.renderCount
+        (this.stats.avgRenderTime * (this.stats.renderCount - 1) + renderTime) / this.stats.renderCount
       this.lastRenderTime = Date.now()
 
       // Record span data
@@ -646,11 +619,7 @@ export function createScheduler(options: SchedulerOptions): RenderScheduler {
  *
  * Does not batch or diff - just runs the pipeline and returns ANSI output.
  */
-export function renderToString(
-  root: InkxNode,
-  width: number,
-  height: number,
-): string {
+export function renderToString(root: InkxNode, width: number, height: number): string {
   const { output } = executeRender(root, width, height, null)
   return output
 }

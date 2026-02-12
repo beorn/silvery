@@ -4,57 +4,57 @@
 
 ### Full Pipeline
 
-| Metric                           | Time    |
-| -------------------------------- | ------- |
-| `executeRender (simple, first)`  | 75us    |
-| `executeRender (simple, diff)`   | 9us     |
-| `executeRender (50 items, first)`| 189us   |
-| `executeRender (50 items, diff)` | 32us    |
+| Metric                            | Time  |
+| --------------------------------- | ----- |
+| `executeRender (simple, first)`   | 75us  |
+| `executeRender (simple, diff)`    | 9us   |
+| `executeRender (50 items, first)` | 189us |
+| `executeRender (50 items, diff)`  | 32us  |
 
 Diff renders are 6-8x faster than first renders thanks to incremental rendering.
 
 ### By Phase
 
-| Phase                            | Time    | Notes                             |
-| -------------------------------- | ------- | --------------------------------- |
-| `measurePhase (simple)`          | 4ns     | Cached, no dirty nodes            |
-| `measurePhase (100 children)`    | 523ns   | Selective traversal               |
-| `layoutPhase (simple)`           | 442ns   | Flexx layout                      |
-| `layoutPhase (100 children)`     | 24us    | Flexx layout                      |
-| `contentPhase (simple)`          | 1.7us   | Incremental clone + dirty skip    |
-| `contentPhase (100 children)`    | 3.4us   | Incremental clone + dirty skip    |
-| `outputPhase (no changes)`       | 7.5us   | Dirty bounding box skips all rows |
-| `outputPhase (10% changes)`      | 45us    | Row-level dirty + style cache     |
-| `outputPhase (first render)`     | 70us    | Full buffer diff                  |
+| Phase                         | Time  | Notes                             |
+| ----------------------------- | ----- | --------------------------------- |
+| `measurePhase (simple)`       | 4ns   | Cached, no dirty nodes            |
+| `measurePhase (100 children)` | 523ns | Selective traversal               |
+| `layoutPhase (simple)`        | 442ns | Flexx layout                      |
+| `layoutPhase (100 children)`  | 24us  | Flexx layout                      |
+| `contentPhase (simple)`       | 1.7us | Incremental clone + dirty skip    |
+| `contentPhase (100 children)` | 3.4us | Incremental clone + dirty skip    |
+| `outputPhase (no changes)`    | 7.5us | Dirty bounding box skips all rows |
+| `outputPhase (10% changes)`   | 45us  | Row-level dirty + style cache     |
+| `outputPhase (first render)`  | 70us  | Full buffer diff                  |
 
 ### Buffer Operations
 
-| Operation          | Time   |
-| ------------------ | ------ |
-| `fill 80x24`      | 3.0us  |
-| `setCell`          | 28ns   |
-| `getCellChar`      | 5.1ns  |
-| `getCellBg`        | 8.7ns  |
-| `readCellInto`     | 18ns   |
-| `cellEquals`       | 18ns   |
-| `create 80x24`     | 1.7us  |
-| `create 200x50`    | 3.7us  |
+| Operation       | Time  |
+| --------------- | ----- |
+| `fill 80x24`    | 3.0us |
+| `setCell`       | 28ns  |
+| `getCellChar`   | 5.1ns |
+| `getCellBg`     | 8.7ns |
+| `readCellInto`  | 18ns  |
+| `cellEquals`    | 18ns  |
+| `create 80x24`  | 1.7us |
+| `create 200x50` | 3.7us |
 
 ### inkx vs Ink 6: Typical Frame Update
 
 When a user presses a key (cursor move, selection change, typing), this is what each
 framework does to update the screen:
 
-| Nodes | inkx (dirty-tracking) | Ink 6 (full re-render) | Ratio       |
-| ----- | --------------------- | ---------------------- | ----------- |
-| 100   | 18us                  | 2.1ms                  | inkx ~117x  |
-| 1000  | 101us                 | 19.9ms                 | inkx ~197x  |
+| Nodes | inkx (dirty-tracking) | Ink 6 (full re-render) | Ratio      |
+| ----- | --------------------- | ---------------------- | ---------- |
+| 100   | 18us                  | 2.1ms                  | inkx ~117x |
+| 1000  | 101us                 | 19.9ms                 | inkx ~197x |
 
 **How to read this**: inkx tracks which nodes changed and only re-renders the dirty
 subtree — no React reconciliation needed. Ink has no incremental mode, so every frame
 update triggers a full React re-render of the entire tree. Both numbers represent the
 real end-to-end cost of a single keystroke. The gap grows with tree size because inkx's
-cost is proportional to the *change* while Ink's cost is proportional to the *tree*.
+cost is proportional to the _change_ while Ink's cost is proportional to the _tree_.
 
 ### First Render (Full Pipeline)
 
@@ -93,69 +93,69 @@ for kanban. Both significantly faster than Yoga NAPI (C++) due to NAPI bridge ov
 
 ### 1. Reconciler
 
-| # | Optimization | Description |
-|---|---|---|
-| 1.1 | **Granular dirty flags** | Separate `contentDirty`, `layoutDirty`, `paintDirty` — style-only changes skip layout, content changes skip paint. Props compared before marking dirty. |
-| 1.2 | **Efficient dirty propagation** | `markSubtreeDirty()` early-exits at already-dirty ancestors. Virtual text nodes skip to nearest physical ancestor. |
+| #   | Optimization                    | Description                                                                                                                                             |
+| --- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.1 | **Granular dirty flags**        | Separate `contentDirty`, `layoutDirty`, `paintDirty` — style-only changes skip layout, content changes skip paint. Props compared before marking dirty. |
+| 1.2 | **Efficient dirty propagation** | `markSubtreeDirty()` early-exits at already-dirty ancestors. Virtual text nodes skip to nearest physical ancestor.                                      |
 
 ### 2. Measure Phase
 
-| # | Optimization | Description |
-|---|---|---|
-| 2.1 | **Measurement caching** | Per-node result cache keyed on `"${width}|${widthMode}"`, cached text collection, emoji code point cache. Skips re-measurement when content unchanged. |
+| #   | Optimization               | Description                                                                              |
+| --- | -------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 2.1 | **Measurement caching**    | Per-node result cache keyed on `"${width}                                                | ${widthMode}"`, cached text collection, emoji code point cache. Skips re-measurement when content unchanged. |
 | 2.2 | **displayWidth LRU cache** | 10,000-entry LRU (unicode.ts). Repeated string width lookups ~45x faster (8us to 180ns). |
-| 2.3 | **Selective traversal** | Only visits nodes with `width/height: "fit-content"`, skips fixed-size nodes. |
+| 2.3 | **Selective traversal**    | Only visits nodes with `width/height: "fit-content"`, skips fixed-size nodes.            |
 
 ### 3. Layout Phase
 
-| # | Optimization | Description |
-|---|---|---|
-| 3.1 | **Layout early exit** | `hasLayoutDirtyNodes()` skips entire `calculateLayout()` when no nodes are dirty and dimensions unchanged. |
+| #   | Optimization                 | Description                                                                                                              |
+| --- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 3.1 | **Layout early exit**        | `hasLayoutDirtyNodes()` skips entire `calculateLayout()` when no nodes are dirty and dimensions unchanged.               |
 | 3.2 | **Change-gated propagation** | `layoutEqual()` and scroll offset compared to previous values — dirty flags only propagated when values actually differ. |
 
 ### 4. Content Phase
 
-| # | Optimization | Description |
-|---|---|---|
+| #   | Optimization              | Description                                                                                                                                                                                                                                                  |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 4.1 | **Incremental rendering** | Clone previous buffer; only re-render dirty subtrees. 7-flag fast-path skip (`contentDirty`, `paintDirty`, `layoutChanged`, `subtreeDirty`, `childrenDirty`, `childPositionChanged`, `hasPrevBuffer`). Includes skipBgFill and scroll viewport clear gating. |
-| 4.2 | **Viewport clipping** | Early exit when node is entirely off-screen. Defense-in-depth for non-VirtualList containers. |
+| 4.2 | **Viewport clipping**     | Early exit when node is entirely off-screen. Defense-in-depth for non-VirtualList containers.                                                                                                                                                                |
 
 ### 5. Output Phase
 
-| # | Optimization | Description |
-|---|---|---|
-| 5.1 | **Row-level dirty tracking + bounding box** | `_dirtyRows: Uint8Array` bitset + `_minDirtyRow`/`_maxDirtyRow`. Diff scans only dirty row range. No-change frames skip entirely. |
-| 5.2 | **Row-level bulk compare** | `rowMetadataEquals()` + `rowCharsEquals()` pre-check catches dirty-but-unchanged rows before per-cell diff. |
-| 5.3 | **Packed cell comparison** | `cellEquals()` compares packed Uint32 metadata first, then char, then true color maps only if flags indicate. |
-| 5.4 | **Style interning + SGR cache** | Style combinations interned to string key; SGR escape strings cached. Eliminates per-cell `styleToAnsi()` string building. |
-| 5.5 | **Zero-allocation diff pipeline** | Pre-allocated `CellChange` pool reused across frames. Reusable style object mutated in-place. In-place insertion sort for position ordering. |
-| 5.6 | **Optimized ANSI output** | Relative cursor moves (`CUF`/`CUD`) for small jumps, `\r\n` for next-line-column-0. Style coalescing emits SGR only on transitions. Dimension-aware diffing for size mismatches. |
+| #   | Optimization                                | Description                                                                                                                                                                      |
+| --- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 5.1 | **Row-level dirty tracking + bounding box** | `_dirtyRows: Uint8Array` bitset + `_minDirtyRow`/`_maxDirtyRow`. Diff scans only dirty row range. No-change frames skip entirely.                                                |
+| 5.2 | **Row-level bulk compare**                  | `rowMetadataEquals()` + `rowCharsEquals()` pre-check catches dirty-but-unchanged rows before per-cell diff.                                                                      |
+| 5.3 | **Packed cell comparison**                  | `cellEquals()` compares packed Uint32 metadata first, then char, then true color maps only if flags indicate.                                                                    |
+| 5.4 | **Style interning + SGR cache**             | Style combinations interned to string key; SGR escape strings cached. Eliminates per-cell `styleToAnsi()` string building.                                                       |
+| 5.5 | **Zero-allocation diff pipeline**           | Pre-allocated `CellChange` pool reused across frames. Reusable style object mutated in-place. In-place insertion sort for position ordering.                                     |
+| 5.6 | **Optimized ANSI output**                   | Relative cursor moves (`CUF`/`CUD`) for small jumps, `\r\n` for next-line-column-0. Style coalescing emits SGR only on transitions. Dimension-aware diffing for size mismatches. |
 
 ### 6. Buffer
 
-| # | Optimization | Description |
-|---|---|---|
+| #   | Optimization                   | Description                                                                                                                                                     |
+| --- | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 6.1 | **Packed cell representation** | 32-bit packed metadata (fg8+bg8+attrs8+underline3+flags5) + `string[]` chars. Sparse `Map<offset, RGB>` for true color. `fill()` packs once, assigns to region. |
-| 6.2 | **Zero-allocation accessors** | `getCellChar()`, `getCellBg()`, etc. read without Cell allocation. `readCellInto()` mutates caller-provided object for hot loops. |
-| 6.3 | **Native memory operations** | `scrollRegion()` uses `Uint32Array.copyWithin()`. `clone()` starts clean (dirty rows zeroed). True color Map skip in `fill()`. |
+| 6.2 | **Zero-allocation accessors**  | `getCellChar()`, `getCellBg()`, etc. read without Cell allocation. `readCellInto()` mutates caller-provided object for hot loops.                               |
+| 6.3 | **Native memory operations**   | `scrollRegion()` uses `Uint32Array.copyWithin()`. `clone()` starts clean (dirty rows zeroed). True color Map skip in `fill()`.                                  |
 
 ### 7. Identity Fast Paths
 
-| # | Optimization | Description |
-|---|---|---|
+| #   | Optimization                     | Description                                                                              |
+| --- | -------------------------------- | ---------------------------------------------------------------------------------------- |
 | 7.1 | **Reference equality shortcuts** | `rectEqual()`, `styleEquals()`, `colorEquals()` check `a === b` before field comparison. |
 
 **20 optimizations across 7 pipeline phases.**
 
 ## Investigated and Rejected
 
-| Technique | Why Not |
-|---|---|
+| Technique                    | Why Not                                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
 | **Scroll regions** (DECSTBM) | Full-width only — doesn't help multi-column layouts. ~100 lines of code for narrow benefit. |
-| **Grapheme interning** | Char comparison is already fast (3.8ns getCellChar). Not worth the refactor. |
-| **64-bit cell packing** | JS has no native u64. BigInt is slower than u32+string. |
-| **ANSI compression** | Style coalescing (5.6) already handles redundant codes. |
-| **Worker thread layout** | Layout is <25us for typical trees — not a bottleneck. |
+| **Grapheme interning**       | Char comparison is already fast (3.8ns getCellChar). Not worth the refactor.                |
+| **64-bit cell packing**      | JS has no native u64. BigInt is slower than u32+string.                                     |
+| **ANSI compression**         | Style coalescing (5.6) already handles redundant codes.                                     |
+| **Worker thread layout**     | Layout is <25us for typical trees — not a bottleneck.                                       |
 
 ## Profiling Guide
 

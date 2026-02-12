@@ -635,12 +635,7 @@ function TaskList({ tasks, selectedIndex, onSelect }) {
   return (
     <Box flexDirection="column" overflow="scroll" scrollTo={selectedIndex}>
       {tasks.map((task, i) => (
-        <TaskRow
-          key={task.id}
-          task={task}
-          isSelected={i === selectedIndex}
-          onSelect={() => onSelect(i)}
-        />
+        <TaskRow key={task.id} task={task} isSelected={i === selectedIndex} onSelect={() => onSelect(i)} />
       ))}
     </Box>
   )
@@ -650,10 +645,7 @@ function TaskRow({ task, isSelected }) {
   // Variable height - has subtasks, long titles, etc.
   // Inkx measures this automatically
   return (
-    <Box
-      flexDirection="column"
-      backgroundColor={isSelected ? "blue" : undefined}
-    >
+    <Box flexDirection="column" backgroundColor={isSelected ? "blue" : undefined}>
       <Text>
         {task.done ? "✓" : "○"} {task.title}
       </Text>

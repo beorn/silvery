@@ -60,10 +60,7 @@ function createMockTarget(dims: Dims = { cols: 80, rows: 24 }): RenderTarget & {
 /**
  * Collect events from an async iterable up to a limit.
  */
-async function collectEvents(
-  events: AsyncIterable<Event>,
-  limit: number,
-): Promise<Event[]> {
+async function collectEvents(events: AsyncIterable<Event>, limit: number): Promise<Event[]> {
   const result: Event[] = []
   for await (const event of events) {
     result.push(event)

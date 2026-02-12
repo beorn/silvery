@@ -229,9 +229,7 @@ export function setLayoutEngine(engine: LayoutEngine): void {
  */
 export function getLayoutEngine(): LayoutEngine {
   if (!layoutEngine) {
-    throw new Error(
-      "Layout engine not initialized. Call setLayoutEngine() or initYoga()/initFlexx() first.",
-    )
+    throw new Error("Layout engine not initialized. Call setLayoutEngine() or initYoga()/initFlexx() first.")
   }
   return layoutEngine
 }
@@ -270,26 +268,20 @@ export type LayoutEngineType = "flexx" | "yoga"
  * @param engineType - 'flexx', 'flexx-classic', or 'yoga'. If not provided, checks
  *                     INKX_ENGINE env var, then defaults to 'flexx'.
  */
-export async function ensureDefaultLayoutEngine(
-  engineType?: LayoutEngineType,
-): Promise<void> {
+export async function ensureDefaultLayoutEngine(engineType?: LayoutEngineType): Promise<void> {
   if (isLayoutEngineInitialized()) {
     return
   }
 
   // Resolve engine type: option → env → 'flexx'
-  const resolved =
-    engineType ??
-    (process.env.INKX_ENGINE?.toLowerCase() as LayoutEngineType) ??
-    "flexx"
+  const resolved = engineType ?? (process.env.INKX_ENGINE?.toLowerCase() as LayoutEngineType) ?? "flexx"
 
   if (resolved === "yoga") {
     const { initYogaEngine } = await import("./adapters/yoga-adapter.js")
     setLayoutEngine(await initYogaEngine())
   } else {
     // 'flexx' (default) uses zero-allocation engine
-    const { createFlexxZeroEngine } =
-      await import("./adapters/flexx-zero-adapter.js")
+    const { createFlexxZeroEngine } = await import("./adapters/flexx-zero-adapter.js")
     setLayoutEngine(createFlexxZeroEngine())
   }
 }

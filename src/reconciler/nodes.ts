@@ -4,18 +4,8 @@
  * Functions for creating InkxNodes and applying layout properties.
  */
 
-import {
-  type LayoutNode,
-  getConstants,
-  getLayoutEngine,
-} from "../layout-engine.js"
-import {
-  type BoxProps,
-  type InkxNode,
-  type InkxNodeType,
-  type TextProps,
-  rectEqual,
-} from "../types.js"
+import { type LayoutNode, getConstants, getLayoutEngine } from "../layout-engine.js"
+import { type BoxProps, type InkxNode, type InkxNodeType, type TextProps, rectEqual } from "../types.js"
 import { displayWidth, wrapText } from "../unicode.js"
 
 // Profiling counters for measure function performance analysis (dev only)
@@ -39,10 +29,7 @@ export const measureStats = {
 /**
  * Create a new InkxNode with a fresh layout node.
  */
-export function createNode(
-  type: InkxNodeType,
-  props: BoxProps | TextProps | Record<string, unknown>,
-): InkxNode {
+export function createNode(type: InkxNodeType, props: BoxProps | TextProps | Record<string, unknown>): InkxNode {
   const layoutNode = getLayoutEngine().createNode()
 
   const node: InkxNode = {
@@ -120,10 +107,7 @@ export function createNode(
       // Calculate text dimensions
       const lines = text.split("\n")
       // Treat NaN width the same as unconstrained (can happen with auto-sized parents)
-      const maxWidth =
-        widthMode === "undefined" || Number.isNaN(width)
-          ? Number.POSITIVE_INFINITY
-          : width
+      const maxWidth = widthMode === "undefined" || Number.isNaN(width) ? Number.POSITIVE_INFINITY : width
 
       // Check if text will be truncated (not wrapped) — affects height calculation
       const { wrap } = node.props as TextProps
@@ -146,10 +130,7 @@ export function createNode(
         if (isTruncate || lineWidth <= maxWidth) {
           // Truncated text always takes 1 line per source line
           totalHeight += 1
-          actualWidth = Math.max(
-            actualWidth,
-            isTruncate ? Math.min(lineWidth, maxWidth) : lineWidth,
-          )
+          actualWidth = Math.max(actualWidth, isTruncate ? Math.min(lineWidth, maxWidth) : lineWidth)
         } else {
           // Use same word-aware wrapping as render phase for accurate height
           const wrapped = wrapText(line, maxWidth, false, true)
@@ -313,9 +294,7 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
       "row-reverse": c.FLEX_DIRECTION_ROW_REVERSE,
       "column-reverse": c.FLEX_DIRECTION_COLUMN_REVERSE,
     }
-    layoutNode.setFlexDirection(
-      directionMap[props.flexDirection] ?? c.FLEX_DIRECTION_COLUMN,
-    )
+    layoutNode.setFlexDirection(directionMap[props.flexDirection] ?? c.FLEX_DIRECTION_COLUMN)
   }
 
   // Flex wrap
@@ -358,19 +337,13 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
 
   // Display
   if (props.display !== undefined) {
-    layoutNode.setDisplay(
-      props.display === "none" ? c.DISPLAY_NONE : c.DISPLAY_FLEX,
-    )
+    layoutNode.setDisplay(props.display === "none" ? c.DISPLAY_NONE : c.DISPLAY_FLEX)
   }
 
   // Position
   // Note: 'sticky' is handled at render-time, not by layout engine. For layout purposes, treat as relative.
   if (props.position !== undefined) {
-    layoutNode.setPositionType(
-      props.position === "absolute"
-        ? c.POSITION_TYPE_ABSOLUTE
-        : c.POSITION_TYPE_RELATIVE,
-    )
+    layoutNode.setPositionType(props.position === "absolute" ? c.POSITION_TYPE_ABSOLUTE : c.POSITION_TYPE_RELATIVE)
   }
 
   // Overflow
@@ -405,16 +378,9 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
 /**
  * Apply padding or margin to a layout node.
  */
-function applySpacing(
-  layoutNode: LayoutNode,
-  type: "padding" | "margin",
-  props: BoxProps,
-): void {
+function applySpacing(layoutNode: LayoutNode, type: "padding" | "margin", props: BoxProps): void {
   const c = getConstants()
-  const set =
-    type === "padding"
-      ? layoutNode.setPadding.bind(layoutNode)
-      : layoutNode.setMargin.bind(layoutNode)
+  const set = type === "padding" ? layoutNode.setPadding.bind(layoutNode) : layoutNode.setMargin.bind(layoutNode)
 
   const all = props[type]
   const x = props[`${type}X` as keyof BoxProps] as number | undefined
@@ -488,11 +454,7 @@ function justifyToConstant(justify: string): number {
 /**
  * Calculate layout for the entire tree starting from root.
  */
-export function calculateLayout(
-  root: InkxNode,
-  width: number,
-  height: number,
-): void {
+export function calculateLayout(root: InkxNode, width: number, height: number): void {
   const c = getConstants()
   if (!root.layoutNode) {
     throw new Error("Root node must have a layout node")
@@ -505,11 +467,7 @@ export function calculateLayout(
 /**
  * Propagate computed layout from layout nodes to InkxNodes.
  */
-function propagateLayout(
-  node: InkxNode,
-  parentX: number,
-  parentY: number,
-): void {
+function propagateLayout(node: InkxNode, parentX: number, parentY: number): void {
   // Save previous layout for change detection
   node.prevLayout = node.contentRect
 

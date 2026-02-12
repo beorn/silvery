@@ -31,11 +31,7 @@ export type DiffMode = "fullscreen" | "inline"
  * process.stdout.write(patch)
  * ```
  */
-export function diff(
-  prev: Buffer | null,
-  next: Buffer,
-  mode: DiffMode = "fullscreen",
-): string {
+export function diff(prev: Buffer | null, next: Buffer, mode: DiffMode = "fullscreen"): string {
   const prevBuffer = prev?._buffer ?? null
   const nextBuffer = next._buffer
 

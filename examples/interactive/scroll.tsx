@@ -5,15 +5,7 @@
  */
 
 import React, { useState } from "react"
-import {
-  Box,
-  Text,
-  render,
-  useInput,
-  useApp,
-  createTerm,
-  type Key,
-} from "../../src/index.js"
+import { Box, Text, render, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -57,15 +49,8 @@ export function ScrollExample() {
         height={10}
       >
         {items.map((item, index) => (
-          <Box
-            key={item.id}
-            paddingX={1}
-            backgroundColor={index === selectedIndex ? "cyan" : undefined}
-          >
-            <Text
-              color={index === selectedIndex ? "black" : "white"}
-              bold={index === selectedIndex}
-            >
+          <Box key={item.id} paddingX={1} backgroundColor={index === selectedIndex ? "cyan" : undefined}>
+            <Text color={index === selectedIndex ? "black" : "white"} bold={index === selectedIndex}>
               {item.title}
             </Text>
           </Box>

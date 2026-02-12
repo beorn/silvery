@@ -63,40 +63,35 @@ const inkOpts = {
 
 group("ink: React Render", () => {
   bench("1 Box+Text (80x24)", () => {
-    const instance = render(
-      React.createElement(Box, null, React.createElement(Text, null, "Hello")),
-      { ...inkOpts, stdout: stdout80x24, stdin },
-    )
+    const instance = render(React.createElement(Box, null, React.createElement(Text, null, "Hello")), {
+      ...inkOpts,
+      stdout: stdout80x24,
+      stdin,
+    })
     instance.unmount()
   })
 
   bench("100 Box+Text (80x24)", () => {
     const items = Array.from({ length: 100 }, (_, i) =>
-      React.createElement(
-        Box,
-        { key: i },
-        React.createElement(Text, null, `Item ${i}: Some example text`),
-      ),
+      React.createElement(Box, { key: i }, React.createElement(Text, null, `Item ${i}: Some example text`)),
     )
-    const instance = render(
-      React.createElement(Box, { flexDirection: "column" }, ...items),
-      { ...inkOpts, stdout: stdout80x24, stdin },
-    )
+    const instance = render(React.createElement(Box, { flexDirection: "column" }, ...items), {
+      ...inkOpts,
+      stdout: stdout80x24,
+      stdin,
+    })
     instance.unmount()
   })
 
   bench("1000 Box+Text (120x40)", () => {
     const items = Array.from({ length: 1000 }, (_, i) =>
-      React.createElement(
-        Box,
-        { key: i },
-        React.createElement(Text, null, `Item ${i}: Some example text`),
-      ),
+      React.createElement(Box, { key: i }, React.createElement(Text, null, `Item ${i}: Some example text`)),
     )
-    const instance = render(
-      React.createElement(Box, { flexDirection: "column" }, ...items),
-      { ...inkOpts, stdout: stdout120x40, stdin },
-    )
+    const instance = render(React.createElement(Box, { flexDirection: "column" }, ...items), {
+      ...inkOpts,
+      stdout: stdout120x40,
+      stdin,
+    })
     instance.unmount()
   })
 })
@@ -108,17 +103,14 @@ group("ink: React Render", () => {
 group("ink: Re-render (update)", () => {
   // Pre-create instance, then measure rerender time
   const items100 = Array.from({ length: 100 }, (_, i) =>
-    React.createElement(
-      Box,
-      { key: i },
-      React.createElement(Text, null, `Item ${i}: Some example text`),
-    ),
+    React.createElement(Box, { key: i }, React.createElement(Text, null, `Item ${i}: Some example text`)),
   )
 
-  const instance100 = render(
-    React.createElement(Box, { flexDirection: "column" }, ...items100),
-    { ...inkOpts, stdout: stdout80x24, stdin },
-  )
+  const instance100 = render(React.createElement(Box, { flexDirection: "column" }, ...items100), {
+    ...inkOpts,
+    stdout: stdout80x24,
+    stdin,
+  })
 
   let counter100 = 0
   bench("100 Box+Text rerender (80x24)", () => {
@@ -127,30 +119,21 @@ group("ink: Re-render (update)", () => {
       React.createElement(
         Box,
         { key: i },
-        React.createElement(
-          Text,
-          null,
-          `Item ${i}: Some example text ${counter100}`,
-        ),
+        React.createElement(Text, null, `Item ${i}: Some example text ${counter100}`),
       ),
     )
-    instance100.rerender(
-      React.createElement(Box, { flexDirection: "column" }, ...items),
-    )
+    instance100.rerender(React.createElement(Box, { flexDirection: "column" }, ...items))
   })
 
   const items1000 = Array.from({ length: 1000 }, (_, i) =>
-    React.createElement(
-      Box,
-      { key: i },
-      React.createElement(Text, null, `Item ${i}: Some example text`),
-    ),
+    React.createElement(Box, { key: i }, React.createElement(Text, null, `Item ${i}: Some example text`)),
   )
 
-  const instance1000 = render(
-    React.createElement(Box, { flexDirection: "column" }, ...items1000),
-    { ...inkOpts, stdout: stdout120x40, stdin },
-  )
+  const instance1000 = render(React.createElement(Box, { flexDirection: "column" }, ...items1000), {
+    ...inkOpts,
+    stdout: stdout120x40,
+    stdin,
+  })
 
   let counter1000 = 0
   bench("1000 Box+Text rerender (120x40)", () => {
@@ -159,16 +142,10 @@ group("ink: Re-render (update)", () => {
       React.createElement(
         Box,
         { key: i },
-        React.createElement(
-          Text,
-          null,
-          `Item ${i}: Some example text ${counter1000}`,
-        ),
+        React.createElement(Text, null, `Item ${i}: Some example text ${counter1000}`),
       ),
     )
-    instance1000.rerender(
-      React.createElement(Box, { flexDirection: "column" }, ...items),
-    )
+    instance1000.rerender(React.createElement(Box, { flexDirection: "column" }, ...items))
   })
 })
 
@@ -234,16 +211,13 @@ group("ink: Memory (heap snapshot)", () => {
     if (typeof globalThis.gc === "function") globalThis.gc()
     const before = process.memoryUsage().heapUsed
     const items = Array.from({ length: 100 }, (_, i) =>
-      React.createElement(
-        Box,
-        { key: i },
-        React.createElement(Text, null, `Item ${i}: Some example text`),
-      ),
+      React.createElement(Box, { key: i }, React.createElement(Text, null, `Item ${i}: Some example text`)),
     )
-    const instance = render(
-      React.createElement(Box, { flexDirection: "column" }, ...items),
-      { ...inkOpts, stdout: stdout80x24, stdin },
-    )
+    const instance = render(React.createElement(Box, { flexDirection: "column" }, ...items), {
+      ...inkOpts,
+      stdout: stdout80x24,
+      stdin,
+    })
     const after = process.memoryUsage().heapUsed
     instance.unmount()
     if (after < before) throw new Error("unexpected")

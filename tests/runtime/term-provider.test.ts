@@ -4,10 +4,7 @@
 
 import { EventEmitter } from "events"
 import { afterEach, beforeEach, describe, expect, it } from "vitest"
-import {
-  type TermProvider,
-  createTermProvider,
-} from "../../src/runtime/term-provider.js"
+import { type TermProvider, createTermProvider } from "../../src/runtime/term-provider.js"
 
 // Mock stdin/stdout
 function createMockStreams() {

@@ -262,11 +262,9 @@ export class FlexxZeroLayoutEngine implements LayoutEngine {
   private _constants: LayoutConstants = {
     // Flex Direction (cast from Flexx's plain numbers to branded types)
     FLEX_DIRECTION_COLUMN: FLEX_DIRECTION_COLUMN as FlexDirectionValue,
-    FLEX_DIRECTION_COLUMN_REVERSE:
-      FLEX_DIRECTION_COLUMN_REVERSE as FlexDirectionValue,
+    FLEX_DIRECTION_COLUMN_REVERSE: FLEX_DIRECTION_COLUMN_REVERSE as FlexDirectionValue,
     FLEX_DIRECTION_ROW: FLEX_DIRECTION_ROW as FlexDirectionValue,
-    FLEX_DIRECTION_ROW_REVERSE:
-      FLEX_DIRECTION_ROW_REVERSE as FlexDirectionValue,
+    FLEX_DIRECTION_ROW_REVERSE: FLEX_DIRECTION_ROW_REVERSE as FlexDirectionValue,
 
     // Wrap
     WRAP_NO_WRAP: WRAP_NO_WRAP as WrapValue,

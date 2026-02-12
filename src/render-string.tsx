@@ -98,10 +98,7 @@ async function ensureLayoutEngine(): Promise<void> {
  * console.log(output)
  * ```
  */
-export async function renderString(
-  element: ReactElement,
-  options: RenderStringOptions = {},
-): Promise<string> {
+export async function renderString(element: ReactElement, options: RenderStringOptions = {}): Promise<string> {
   await ensureLayoutEngine()
   return renderStringSync(element, options)
 }
@@ -123,14 +120,9 @@ export async function renderString(
  * console.log(output)
  * ```
  */
-export function renderStringSync(
-  element: ReactElement,
-  options: RenderStringOptions = {},
-): string {
+export function renderStringSync(element: ReactElement, options: RenderStringOptions = {}): string {
   if (!isLayoutEngineInitialized()) {
-    throw new Error(
-      "Layout engine not initialized. Use renderString() (async) or initialize with setLayoutEngine().",
-    )
+    throw new Error("Layout engine not initialized. Use renderString() (async) or initialize with setLayoutEngine().")
   }
 
   const { width = 80, height = 24, plain = false } = options

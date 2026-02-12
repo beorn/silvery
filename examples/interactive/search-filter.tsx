@@ -8,21 +8,12 @@
  */
 
 import React, { useState, useDeferredValue, useTransition } from "react"
-import {
-  render,
-  Box,
-  Text,
-  useInput,
-  useApp,
-  createTerm,
-  type Key,
-} from "../../src/index.js"
+import { render, Box, Text, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Search Filter",
-  description:
-    "useTransition + useDeferredValue for responsive concurrent search",
+  description: "useTransition + useDeferredValue for responsive concurrent search",
   features: ["useDeferredValue", "useTransition", "useInput"],
 }
 
@@ -138,13 +129,7 @@ const items: Item[] = [
 // Components
 // ============================================================================
 
-function SearchInput({
-  value,
-  onChange,
-}: {
-  value: string
-  onChange: (v: string) => void
-}) {
+function SearchInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <Box>
       <Text bold color="cyan">
@@ -156,13 +141,7 @@ function SearchInput({
   )
 }
 
-function FilteredList({
-  query,
-  isPending,
-}: {
-  query: string
-  isPending: boolean
-}) {
+function FilteredList({ query, isPending }: { query: string; isPending: boolean }) {
   // Simulate expensive filtering (in real app this might be fuzzy search)
   const filtered = items.filter((item) => {
     const searchLower = query.toLowerCase()

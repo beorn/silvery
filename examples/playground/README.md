@@ -19,15 +19,15 @@ No dev server required -- just open `index.html` directly in any modern browser.
 
 The playground includes seven preset examples accessible via buttons or number keys (1-7):
 
-| # | Preset     | Demonstrates                                               |
-|---|------------|------------------------------------------------------------|
-| 1 | Hello      | Basic Box + Text, `useContentRect()` size display          |
-| 2 | Text       | Bold, italic, underline styles (single/double/curly/etc.)  |
-| 3 | Colors     | Named ANSI colors, hex, RGB, background fills              |
-| 4 | Flexbox    | Row/column layouts, `flexGrow`, `gap`, nested panels       |
-| 5 | Borders    | single, double, round, bold border styles                  |
-| 6 | Dashboard  | Multi-panel system monitor layout                          |
-| 7 | Responsive | Layout adapts between horizontal/vertical based on width   |
+| #   | Preset     | Demonstrates                                              |
+| --- | ---------- | --------------------------------------------------------- |
+| 1   | Hello      | Basic Box + Text, `useContentRect()` size display         |
+| 2   | Text       | Bold, italic, underline styles (single/double/curly/etc.) |
+| 3   | Colors     | Named ANSI colors, hex, RGB, background fills             |
+| 4   | Flexbox    | Row/column layouts, `flexGrow`, `gap`, nested panels      |
+| 5   | Borders    | single, double, round, bold border styles                 |
+| 6   | Dashboard  | Multi-panel system monitor layout                         |
+| 7   | Responsive | Layout adapts between horizontal/vertical based on width  |
 
 Resize the browser window to see layouts recompute. The canvas size is shown in the bottom-right corner.
 
@@ -52,6 +52,7 @@ Browser display
 ```
 
 Key files:
+
 - `src/adapters/canvas-adapter.ts` -- Canvas `RenderAdapter` implementation
 - `src/canvas/index.ts` -- `renderToCanvas()` entry point and React integration
 - `src/render-adapter.ts` -- The `RenderAdapter` interface shared by all targets

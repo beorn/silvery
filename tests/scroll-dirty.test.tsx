@@ -18,12 +18,7 @@ describe("scroll dirty flags", () => {
     // Component with scrollable list that can change scrollTo
     function ScrollList({ scrollTo }: { scrollTo: number }) {
       return (
-        <Box
-          height={5}
-          overflow="scroll"
-          scrollTo={scrollTo}
-          borderStyle="single"
-        >
+        <Box height={5} overflow="scroll" scrollTo={scrollTo} borderStyle="single">
           <Text>Item 0</Text>
           <Text>Item 1</Text>
           <Text>Item 2</Text>
@@ -58,12 +53,7 @@ describe("scroll dirty flags", () => {
   test("incremental render matches fresh after scroll change", async () => {
     function ScrollList({ scrollTo }: { scrollTo: number }) {
       return (
-        <Box
-          height={5}
-          overflow="scroll"
-          scrollTo={scrollTo}
-          borderStyle="round"
-        >
+        <Box height={5} overflow="scroll" scrollTo={scrollTo} borderStyle="round">
           {Array.from({ length: 20 }, (_, i) => (
             <Text key={i}>Line {i}</Text>
           ))}
@@ -82,10 +72,7 @@ describe("scroll dirty flags", () => {
     // Get fresh render result
     const freshBuffer = app.freshRender()
     const freshText = Array.from({ length: freshBuffer.height }, (_, y) =>
-      Array.from(
-        { length: freshBuffer.width },
-        (_, x) => freshBuffer.getCell(x, y).char,
-      ).join(""),
+      Array.from({ length: freshBuffer.width }, (_, x) => freshBuffer.getCell(x, y).char).join(""),
     ).join("\n")
 
     // They should match

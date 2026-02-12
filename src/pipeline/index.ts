@@ -38,29 +38,14 @@ export type { CellChange, BorderChars } from "./types.js"
 
 // Re-export phase functions
 export { measurePhase } from "./measure-phase.js"
-export {
-  layoutPhase,
-  rectEqual,
-  scrollPhase,
-  screenRectPhase,
-  notifyLayoutSubscribers,
-} from "./layout-phase.js"
-export {
-  contentPhase,
-  clearBgConflictWarnings,
-  setBgConflictMode,
-} from "./content-phase.js"
+export { layoutPhase, rectEqual, scrollPhase, screenRectPhase, notifyLayoutSubscribers } from "./layout-phase.js"
+export { contentPhase, clearBgConflictWarnings, setBgConflictMode } from "./content-phase.js"
 export { contentPhaseAdapter } from "./content-phase-adapter.js"
 export { outputPhase } from "./output-phase.js"
 
 import { contentPhaseAdapter } from "./content-phase-adapter.js"
 import { clearBgConflictWarnings, contentPhase } from "./content-phase.js"
-import {
-  layoutPhase,
-  notifyLayoutSubscribers,
-  screenRectPhase,
-  scrollPhase,
-} from "./layout-phase.js"
+import { layoutPhase, notifyLayoutSubscribers, screenRectPhase, scrollPhase } from "./layout-phase.js"
 // Import for orchestration
 import { measurePhase } from "./measure-phase.js"
 import { outputPhase } from "./output-phase.js"
@@ -120,8 +105,7 @@ export function executeRender(
   options: ExecuteRenderOptions | "fullscreen" | "inline" = "fullscreen",
 ): { output: string; buffer: TerminalBuffer } {
   // Normalize options (string shorthand for mode)
-  const opts: ExecuteRenderOptions =
-    typeof options === "string" ? { mode: options } : options
+  const opts: ExecuteRenderOptions = typeof options === "string" ? { mode: options } : options
   const {
     mode = "fullscreen",
     skipLayoutNotifications = false,
@@ -229,11 +213,7 @@ export function executeRender(
 // Execute Render (Adapter-aware)
 // ============================================================================
 
-import {
-  type RenderBuffer,
-  getRenderAdapter,
-  hasRenderAdapter,
-} from "../render-adapter.js"
+import { type RenderBuffer, getRenderAdapter, hasRenderAdapter } from "../render-adapter.js"
 
 /**
  * Execute the full render pipeline using the current RenderAdapter.
@@ -259,8 +239,7 @@ export function executeRenderAdapter(
     throw new Error("executeRenderAdapter called without a render adapter set")
   }
 
-  const opts: ExecuteRenderOptions =
-    typeof options === "string" ? { mode: options } : options
+  const opts: ExecuteRenderOptions = typeof options === "string" ? { mode: options } : options
   const { skipLayoutNotifications = false } = opts
   const start = Date.now()
   const adapter = getRenderAdapter()

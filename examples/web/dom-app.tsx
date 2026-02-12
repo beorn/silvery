@@ -62,9 +62,7 @@ function App() {
       </Box>
 
       <Box marginTop={1}>
-        <Text dim>
-          Text is selectable! Screen readers work. CSS hover states available.
-        </Text>
+        <Text dim>Text is selectable! Screen readers work. CSS hover states available.</Text>
       </Box>
     </Box>
   )

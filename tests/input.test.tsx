@@ -21,11 +21,7 @@ interface KeyLog {
   key: Partial<Key>
 }
 
-function KeystrokeCapture({
-  onCapture,
-}: {
-  onCapture?: (logs: KeyLog[]) => void
-}) {
+function KeystrokeCapture({ onCapture }: { onCapture?: (logs: KeyLog[]) => void }) {
   const [logs, setLogs] = useState<KeyLog[]>([])
 
   useInput((input: string, key: Key) => {

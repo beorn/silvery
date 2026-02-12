@@ -19,15 +19,11 @@ import {
   renderCanvasOnce,
   useContentRect,
 } from "../src/canvas/index.js"
-import {
-  isLayoutEngineInitialized,
-  setLayoutEngine,
-} from "../src/layout-engine.js"
+import { isLayoutEngineInitialized, setLayoutEngine } from "../src/layout-engine.js"
 import { hasRenderAdapter, setRenderAdapter } from "../src/render-adapter.js"
 
 // Check if we have canvas support
-const hasCanvas =
-  typeof OffscreenCanvas !== "undefined" || typeof document !== "undefined"
+const hasCanvas = typeof OffscreenCanvas !== "undefined" || typeof document !== "undefined"
 
 // Reset state between tests
 function resetRendererState(): void {

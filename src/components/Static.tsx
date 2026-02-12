@@ -38,11 +38,7 @@ export interface StaticProps<T> {
  * </Box>
  * ```
  */
-export function Static<T>({
-  items,
-  children,
-  style,
-}: StaticProps<T>): JSX.Element {
+export function Static<T>({ items, children, style }: StaticProps<T>): JSX.Element {
   return (
     <inkx-box flexDirection="column" {...style}>
       {items.map((item, index) => children(item, index))}

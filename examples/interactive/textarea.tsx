@@ -10,22 +10,12 @@
  */
 
 import React, { useState } from "react"
-import {
-  render,
-  Box,
-  Text,
-  TextArea,
-  useInput,
-  useApp,
-  createTerm,
-  type Key,
-} from "../../src/index.js"
+import { render, Box, Text, TextArea, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "TextArea",
-  description:
-    "Multi-line text input with word wrap, scrolling, and kill operations",
+  description: "Multi-line text input with word wrap, scrolling, and kill operations",
   features: ["TextArea", "useContentRect()", "Ctrl+Enter submit"],
 }
 

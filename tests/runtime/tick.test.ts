@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  createAdaptiveTick,
-  createFrameTick,
-  createTick,
-  take,
-} from "../../src/runtime/index.js"
+import { createAdaptiveTick, createFrameTick, createTick, take } from "../../src/runtime/index.js"
 
 describe("runtime/tick", () => {
   describe("createTick()", () => {

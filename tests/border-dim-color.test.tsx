@@ -86,9 +86,7 @@ describe("borderDimColor does not affect child Text", () => {
 
     // Split into lines and find the line with "Important Text"
     const lines = frame.split("\n")
-    const textLine = lines.find((line) =>
-      stripAnsi(line).includes("Important Text"),
-    )
+    const textLine = lines.find((line) => stripAnsi(line).includes("Important Text"))
     expect(textLine).toBeDefined()
 
     // The text should have bold styling
@@ -132,9 +130,7 @@ describe("borderDimColor does not affect child Text", () => {
 
     // Find the line with the text
     const lines = frame.split("\n")
-    const textLine = lines.find((line) =>
-      stripAnsi(line).includes("Deep nested bold"),
-    )
+    const textLine = lines.find((line) => stripAnsi(line).includes("Deep nested bold"))
     expect(textLine).toBeDefined()
 
     // Should have bold styling
@@ -161,9 +157,7 @@ describe("various border styles with color", () => {
 
       // Find the line with the text
       const lines = frame.split("\n")
-      const textLine = lines.find((line) =>
-        stripAnsi(line).includes("Styled Text"),
-      )
+      const textLine = lines.find((line) => stripAnsi(line).includes("Styled Text"))
       expect(textLine).toBeDefined()
 
       // Text should have green color (not blue from border)
@@ -240,9 +234,7 @@ describe("padding workaround for Ink bug should not be needed", () => {
     const frame = app.ansi
 
     const lines = frame.split("\n")
-    const textLine = lines.find((line) =>
-      stripAnsi(line).includes("No padding"),
-    )
+    const textLine = lines.find((line) => stripAnsi(line).includes("No padding"))
     expect(textLine).toBeDefined()
 
     if (textLine) {
@@ -270,12 +262,8 @@ describe("padding workaround for Ink bug should not be needed", () => {
     const linesWithout = frameWithout.split("\n")
     const linesWith = frameWith.split("\n")
 
-    const textLineWithout = linesWithout.find((line) =>
-      stripAnsi(line).includes("Test text"),
-    )
-    const textLineWith = linesWith.find((line) =>
-      stripAnsi(line).includes("Test text"),
-    )
+    const textLineWithout = linesWithout.find((line) => stripAnsi(line).includes("Test text"))
+    const textLineWith = linesWith.find((line) => stripAnsi(line).includes("Test text"))
 
     expect(textLineWithout).toBeDefined()
     expect(textLineWith).toBeDefined()
@@ -301,9 +289,7 @@ describe("alignItems workaround for Ink bug should not be needed", () => {
     const frame = app.ansi
 
     const lines = frame.split("\n")
-    const textLine = lines.find((line) =>
-      stripAnsi(line).includes("Left aligned bold"),
-    )
+    const textLine = lines.find((line) => stripAnsi(line).includes("Left aligned bold"))
     expect(textLine).toBeDefined()
 
     if (textLine) {
@@ -313,21 +299,14 @@ describe("alignItems workaround for Ink bug should not be needed", () => {
 
   test("alignItems=center text is styled correctly", () => {
     const app = render(
-      <Box
-        borderStyle="single"
-        borderColor="gray"
-        alignItems="center"
-        width={30}
-      >
+      <Box borderStyle="single" borderColor="gray" alignItems="center" width={30}>
         <Text bold>Centered bold</Text>
       </Box>,
     )
     const frame = app.ansi
 
     const lines = frame.split("\n")
-    const textLine = lines.find((line) =>
-      stripAnsi(line).includes("Centered bold"),
-    )
+    const textLine = lines.find((line) => stripAnsi(line).includes("Centered bold"))
     expect(textLine).toBeDefined()
 
     if (textLine) {
@@ -347,9 +326,7 @@ describe("ANSI code isolation between border and content", () => {
 
     // Find the content line (not border lines)
     const lines = frame.split("\n")
-    const textLine = lines.find((line) =>
-      stripAnsi(line).includes("Green text"),
-    )
+    const textLine = lines.find((line) => stripAnsi(line).includes("Green text"))
     expect(textLine).toBeDefined()
 
     if (textLine) {
@@ -369,9 +346,7 @@ describe("ANSI code isolation between border and content", () => {
     const frame = app.ansi
 
     const lines = frame.split("\n")
-    const textLine = lines.find((line) =>
-      stripAnsi(line).includes("Nested green text"),
-    )
+    const textLine = lines.find((line) => stripAnsi(line).includes("Nested green text"))
     expect(textLine).toBeDefined()
 
     if (textLine) {

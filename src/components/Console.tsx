@@ -60,10 +60,7 @@ function formatArgs(args: unknown[]): string {
  * </Console>
  * ```
  */
-export function Console({
-  console: patched,
-  children,
-}: ConsoleProps): ReactElement {
+export function Console({ console: patched, children }: ConsoleProps): ReactElement {
   const entries = useConsole(patched)
 
   return (

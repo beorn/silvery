@@ -18,15 +18,10 @@ const log = createLogger("inkx:layout")
  * @param width Terminal width in columns
  * @param height Terminal height in rows
  */
-export function layoutPhase(
-  root: InkxNode,
-  width: number,
-  height: number,
-): void {
+export function layoutPhase(root: InkxNode, width: number, height: number): void {
   // Check if dimensions changed from previous layout
   const prevLayout = root.contentRect
-  const dimensionsChanged =
-    prevLayout && (prevLayout.width !== width || prevLayout.height !== height)
+  const dimensionsChanged = prevLayout && (prevLayout.width !== width || prevLayout.height !== height)
 
   // Only recalculate if something changed (dirty nodes or dimensions)
   if (!dimensionsChanged && !hasLayoutDirtyNodes(root)) {
@@ -70,9 +65,7 @@ function countNodes(node: InkxNode): number {
 function hasLayoutDirtyNodes(node: InkxNode, path = "root"): boolean {
   if (node.layoutDirty) {
     const props = node.props as BoxProps
-    log.debug?.(
-      `dirty node found: ${path} (id=${props.id ?? "?"}, type=${node.type})`,
-    )
+    log.debug?.(`dirty node found: ${path} (id=${props.id ?? "?"}, type=${node.type})`)
     return true
   }
   for (let i = 0; i < node.children.length; i++) {
@@ -89,11 +82,7 @@ function hasLayoutDirtyNodes(node: InkxNode, path = "root"): boolean {
  * @param parentX Absolute X position of parent
  * @param parentY Absolute Y position of parent
  */
-function propagateLayout(
-  node: InkxNode,
-  parentX: number,
-  parentY: number,
-): void {
+function propagateLayout(node: InkxNode, parentX: number, parentY: number): void {
   // Save previous layout for change detection
   node.prevLayout = node.contentRect
 
@@ -196,10 +185,7 @@ export interface ScrollPhaseOptions {
  * This phase runs after layout to determine which children are visible
  * within each scrollable container.
  */
-export function scrollPhase(
-  root: InkxNode,
-  options: ScrollPhaseOptions = {},
-): void {
+export function scrollPhase(root: InkxNode, options: ScrollPhaseOptions = {}): void {
   const { skipStateUpdates = false } = options
   traverseTree(root, (node) => {
     const props = node.props as BoxProps
@@ -213,22 +199,15 @@ export function scrollPhase(
 /**
  * Calculate scroll state for a single scrollable container.
  */
-function calculateScrollState(
-  node: InkxNode,
-  props: BoxProps,
-  skipStateUpdates: boolean,
-): void {
+function calculateScrollState(node: InkxNode, props: BoxProps, skipStateUpdates: boolean): void {
   const layout = node.contentRect
   if (!layout || !node.layoutNode) return
 
   // Calculate viewport (container minus borders/padding)
-  const border = props.borderStyle
-    ? getBorderSize(props)
-    : { top: 0, bottom: 0, left: 0, right: 0 }
+  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
   const padding = getPadding(props)
 
-  const viewportHeight =
-    layout.height - border.top - border.bottom - padding.top - padding.bottom
+  const viewportHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom
 
   // Calculate total content height and child positions
   let contentHeight = 0
@@ -276,11 +255,7 @@ function calculateScrollState(
   let scrollOffset = explicitOffset ?? prevOffset ?? 0
   const scrollTo = props.scrollTo
 
-  if (
-    scrollTo !== undefined &&
-    scrollTo >= 0 &&
-    scrollTo < childPositions.length
-  ) {
+  if (scrollTo !== undefined && scrollTo >= 0 && scrollTo < childPositions.length) {
     // Find the target child
     const target = childPositions.find((c) => c.index === scrollTo)
     if (target) {
@@ -300,10 +275,7 @@ function calculateScrollState(
 
       // Clamp to valid range
       scrollOffset = Math.max(0, scrollOffset)
-      scrollOffset = Math.min(
-        scrollOffset,
-        Math.max(0, contentHeight - viewportHeight),
-      )
+      scrollOffset = Math.min(scrollOffset, Math.max(0, contentHeight - viewportHeight))
     }
   }
 
@@ -336,8 +308,7 @@ function calculateScrollState(
   }
 
   // Calculate sticky children render positions
-  const stickyChildren: NonNullable<InkxNode["scrollState"]>["stickyChildren"] =
-    []
+  const stickyChildren: NonNullable<InkxNode["scrollState"]>["stickyChildren"] = []
 
   for (const cp of childPositions) {
     if (!cp.isSticky) continue
@@ -375,10 +346,7 @@ function calculateScrollState(
       // but don't go below bottom-alignment, or above natural position
       renderOffset = Math.max(viewportHeight - childHeight, renderOffset)
     } else {
-      renderOffset = Math.max(
-        0,
-        Math.min(renderOffset, viewportHeight - childHeight),
-      )
+      renderOffset = Math.max(0, Math.min(renderOffset, viewportHeight - childHeight))
     }
 
     stickyChildren.push({
@@ -416,10 +384,7 @@ function calculateScrollState(
 /**
  * Traverse tree in depth-first order.
  */
-function traverseTree(
-  node: InkxNode,
-  callback: (node: InkxNode) => void,
-): void {
+function traverseTree(node: InkxNode, callback: (node: InkxNode) => void): void {
   callback(node)
   for (const child of node.children) {
     traverseTree(child, callback)
@@ -448,10 +413,7 @@ export function screenRectPhase(root: InkxNode): void {
  * @param node The node to process
  * @param ancestorScrollOffset Sum of all ancestor scroll offsets
  */
-function propagateScreenRect(
-  node: InkxNode,
-  ancestorScrollOffset: number,
-): void {
+function propagateScreenRect(node: InkxNode, ancestorScrollOffset: number): void {
   // Save previous screen rect for change detection in notifyLayoutSubscribers
   node.prevScreenRect = node.screenRect
 

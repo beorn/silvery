@@ -38,19 +38,9 @@ import React, { Suspense, act } from "react"
 import { describe, expect, it } from "vitest"
 import { Box, Text } from "../src/index.js"
 import { createRenderer } from "../src/testing/index.js"
-import {
-  reconciler,
-  createContainer,
-  getContainerRoot,
-} from "../src/reconciler.js"
+import { reconciler, createContainer, getContainerRoot } from "../src/reconciler.js"
 import { executeRender } from "../src/pipeline/index.js"
-import {
-  AppContext,
-  StdoutContext,
-  TermContext,
-  InputContext,
-  EventsContext,
-} from "../src/context.js"
+import { AppContext, StdoutContext, TermContext, InputContext, EventsContext } from "../src/context.js"
 import { createTerm } from "chalkx"
 import { EventEmitter } from "node:events"
 import { bufferToText, cellEquals, type TerminalBuffer } from "../src/buffer.js"
@@ -114,10 +104,7 @@ function findMismatches(inc: TerminalBuffer, fresh: TerminalBuffer): string[] {
 /**
  * Walk the node tree and find a node by predicate.
  */
-function findNode(
-  root: InkxNode,
-  predicate: (node: InkxNode) => boolean,
-): InkxNode | null {
+function findNode(root: InkxNode, predicate: (node: InkxNode) => boolean): InkxNode | null {
   if (predicate(root)) return root
   for (const child of root.children) {
     const found = findNode(child, predicate)
@@ -129,10 +116,7 @@ function findNode(
 /**
  * Walk the node tree and find all nodes matching a predicate.
  */
-function findNodes(
-  root: InkxNode,
-  predicate: (node: InkxNode) => boolean,
-): InkxNode[] {
+function findNodes(root: InkxNode, predicate: (node: InkxNode) => boolean): InkxNode[] {
   const result: InkxNode[] = []
   function walk(node: InkxNode) {
     if (predicate(node)) result.push(node)
@@ -183,11 +167,7 @@ function simulateUnhideInstance(node: InkxNode) {
 // Production Simulator
 // ============================================================================
 
-function createProductionSimulator(
-  element: React.ReactElement,
-  cols = 60,
-  rows = 20,
-) {
+function createProductionSimulator(element: React.ReactElement, cols = 60, rows = 20) {
   let onRenderCalled = false
   const container = createContainer(() => {
     onRenderCalled = true
@@ -341,23 +321,13 @@ describe("Suspense embedded: sync path (baseline)", () => {
     function OuterApp() {
       return (
         <Box flexDirection="row" width={60} height={20}>
-          <Box
-            flexDirection="column"
-            width={20}
-            borderStyle="round"
-            borderColor="gray"
-          >
+          <Box flexDirection="column" width={20} borderStyle="round" borderColor="gray">
             <Text bold>Sidebar</Text>
             <Text>Item 1</Text>
             <Text>Item 2</Text>
             <Text>Item 3</Text>
           </Box>
-          <Box
-            flexDirection="column"
-            flexGrow={1}
-            borderStyle="round"
-            borderColor="cyan"
-          >
+          <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="cyan">
             <Text bold>Content</Text>
             <EmbeddedApp />
           </Box>
@@ -413,13 +383,7 @@ describe("Suspense embedded: dirty-flag simulation", () => {
     function App() {
       return (
         <Box flexDirection="row" width={60} height={10}>
-          <Box
-            flexDirection="column"
-            width={20}
-            borderStyle="round"
-            borderColor="gray"
-            id="sidebar"
-          >
+          <Box flexDirection="column" width={20} borderStyle="round" borderColor="gray" id="sidebar">
             <Text bold>Sidebar</Text>
             <Text>Nav 1</Text>
             <Text>Nav 2</Text>
@@ -509,12 +473,7 @@ describe("Suspense embedded: dirty-flag simulation", () => {
       return (
         <Box flexDirection="column" width={40} height={15}>
           <Text bold>Header</Text>
-          <Box
-            flexDirection="column"
-            borderStyle="round"
-            borderColor="green"
-            testID="panel"
-          >
+          <Box flexDirection="column" borderStyle="round" borderColor="green" testID="panel">
             <Text>Panel Line 1</Text>
             <Text>Panel Line 2</Text>
             <Text>Panel Line 3</Text>
@@ -596,23 +555,12 @@ describe("Suspense embedded: dirty-flag simulation", () => {
     function App() {
       return (
         <Box flexDirection="row" width={60} height={15}>
-          <Box
-            flexDirection="column"
-            width={20}
-            borderStyle="round"
-            borderColor="gray"
-            id="sidebar"
-          >
+          <Box flexDirection="column" width={20} borderStyle="round" borderColor="gray" id="sidebar">
             <Text bold>Sidebar</Text>
             <Text>Item A</Text>
             <Text>Item B</Text>
           </Box>
-          <Box
-            flexDirection="column"
-            flexGrow={1}
-            borderStyle="round"
-            borderColor="cyan"
-          >
+          <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="cyan">
             <Text bold>Content</Text>
             <Text testID="fallback-1">Loading 1...</Text>
             <Text testID="content-1">Content One</Text>
@@ -650,40 +598,22 @@ describe("Suspense embedded: dirty-flag simulation", () => {
       expect(suspended.text).not.toContain("Content One")
 
       // Resolution 1: unhide content-1, hide fallback-1
-      const content1 = findNode(
-        sim.root,
-        (n) => (n.props as any).testID === "content-1",
-      )!
-      const fallback1 = findNode(
-        sim.root,
-        (n) => (n.props as any).testID === "fallback-1",
-      )!
+      const content1 = findNode(sim.root, (n) => (n.props as any).testID === "content-1")!
+      const fallback1 = findNode(sim.root, (n) => (n.props as any).testID === "fallback-1")!
       simulateUnhideInstance(content1)
       simulateHideInstance(fallback1)
       const after1 = sim.renderPipeline()
 
       // Resolution 2: unhide content-2, hide fallback-2
-      const content2 = findNode(
-        sim.root,
-        (n) => (n.props as any).testID === "content-2",
-      )!
-      const fallback2 = findNode(
-        sim.root,
-        (n) => (n.props as any).testID === "fallback-2",
-      )!
+      const content2 = findNode(sim.root, (n) => (n.props as any).testID === "content-2")!
+      const fallback2 = findNode(sim.root, (n) => (n.props as any).testID === "fallback-2")!
       simulateUnhideInstance(content2)
       simulateHideInstance(fallback2)
       const after2 = sim.renderPipeline()
 
       // Resolution 3: unhide content-3, hide fallback-3
-      const content3 = findNode(
-        sim.root,
-        (n) => (n.props as any).testID === "content-3",
-      )!
-      const fallback3 = findNode(
-        sim.root,
-        (n) => (n.props as any).testID === "fallback-3",
-      )!
+      const content3 = findNode(sim.root, (n) => (n.props as any).testID === "content-3")!
+      const fallback3 = findNode(sim.root, (n) => (n.props as any).testID === "fallback-3")!
       simulateUnhideInstance(content3)
       simulateHideInstance(fallback3)
       const after3 = sim.renderPipeline()
@@ -728,12 +658,7 @@ describe("Suspense embedded: production cycle (real Suspense)", () => {
     function App() {
       return (
         <Box flexDirection="row" width={60} height={15}>
-          <Box
-            flexDirection="column"
-            width={20}
-            borderStyle="round"
-            borderColor="gray"
-          >
+          <Box flexDirection="column" width={20} borderStyle="round" borderColor="gray">
             <Text bold>Sidebar</Text>
             <Text>Nav 1</Text>
             <Text>Nav 2</Text>

@@ -84,9 +84,7 @@ const frozenCount = useScrollback(items, {
 Renders content once above the dynamic output. Useful for completed items in a stream.
 
 ```tsx
-<Static items={completedTasks}>
-  {(task) => <Text key={task.id}>✓ {task.name}</Text>}
-</Static>
+<Static items={completedTasks}>{(task) => <Text key={task.id}>✓ {task.name}</Text>}</Static>
 ```
 
 ## Console
@@ -129,12 +127,7 @@ Text input with full readline shortcuts (Ctrl+A/E start/end, Ctrl+W delete word,
 
 ```tsx
 import { ReadlineInput } from "inkx"
-;<ReadlineInput
-  value={command}
-  onChange={setCommand}
-  onSubmit={executeCommand}
-  prompt="$ "
-/>
+;<ReadlineInput value={command} onChange={setCommand} onSubmit={executeCommand} prompt="$ " />
 ```
 
 ## TextArea
@@ -154,17 +147,17 @@ const [value, setValue] = useState("")
 />
 ```
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `value` | `string` | Current value (controlled) |
-| `defaultValue` | `string` | Initial value (uncontrolled) |
-| `onChange` | `(value: string) => void` | Called when value changes |
-| `onSubmit` | `(value: string) => void` | Called on submit |
-| `submitKey` | `"ctrl+enter" \| "enter"` | Submit key (default: `"ctrl+enter"`) |
-| `placeholder` | `string` | Placeholder text when empty |
-| `isActive` | `boolean` | Whether input is focused |
-| `height` | `number` | Visible height in rows (required) |
-| `cursorStyle` | `"block" \| "underline"` | Cursor style (default: `"block"`) |
+| Prop           | Type                      | Description                          |
+| -------------- | ------------------------- | ------------------------------------ |
+| `value`        | `string`                  | Current value (controlled)           |
+| `defaultValue` | `string`                  | Initial value (uncontrolled)         |
+| `onChange`     | `(value: string) => void` | Called when value changes            |
+| `onSubmit`     | `(value: string) => void` | Called on submit                     |
+| `submitKey`    | `"ctrl+enter" \| "enter"` | Submit key (default: `"ctrl+enter"`) |
+| `placeholder`  | `string`                  | Placeholder text when empty          |
+| `isActive`     | `boolean`                 | Whether input is focused             |
+| `height`       | `number`                  | Visible height in rows (required)    |
+| `cursorStyle`  | `"block" \| "underline"`  | Cursor style (default: `"block"`)    |
 
 Keyboard shortcuts: Arrow keys, Home/End, Ctrl+A/E (line start/end), Ctrl+K/U (kill line), PageUp/PageDown, Backspace/Delete.
 
@@ -174,18 +167,17 @@ Isolates input for embedded interactive components. When active, input flows to 
 
 ```tsx
 import { InputBoundary } from "inkx"
-
-<InputBoundary active={focused} onEscape={() => setFocused(false)}>
+;<InputBoundary active={focused} onEscape={() => setFocused(false)}>
   <EmbeddedInteractiveComponent />
 </InputBoundary>
 ```
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `active` | `boolean` | Whether input flows to children |
-| `onEscape` | `() => void` | Called when escape is pressed while active |
-| `exitKey` | `string \| null` | Key to exit (default: Escape, null to disable) |
-| `children` | `ReactNode` | Components inside the isolated scope |
+| Prop       | Type             | Description                                    |
+| ---------- | ---------------- | ---------------------------------------------- |
+| `active`   | `boolean`        | Whether input flows to children                |
+| `onEscape` | `() => void`     | Called when escape is pressed while active     |
+| `exitKey`  | `string \| null` | Key to exit (default: Escape, null to disable) |
+| `children` | `ReactNode`      | Components inside the isolated scope           |
 
 ## Newline
 

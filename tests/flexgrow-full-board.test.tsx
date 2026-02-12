@@ -12,13 +12,7 @@ describe("flexGrow full board simulation", () => {
     const termHeight = 24
 
     const app = render(
-      <Box
-        flexDirection="column"
-        width={termWidth}
-        height={termHeight}
-        minHeight={3}
-        overflow="hidden"
-      >
+      <Box flexDirection="column" width={termWidth} height={termHeight} minHeight={3} overflow="hidden">
         {/* Top bar */}
         <Box flexShrink={0} width={termWidth} backgroundColor="white">
           <Text color="gray" wrap="truncate">
@@ -26,13 +20,7 @@ describe("flexGrow full board simulation", () => {
           </Text>
         </Box>
         {/* Content area (flexGrow={1}) */}
-        <Box
-          flexGrow={1}
-          flexDirection="row"
-          minHeight={1}
-          maxHeight={termHeight - 2}
-          overflow="hidden"
-        >
+        <Box flexGrow={1} flexDirection="row" minHeight={1} maxHeight={termHeight - 2} overflow="hidden">
           {/* Main board content area */}
           <Box flexGrow={1}>
             <Box flexDirection="column">
@@ -43,20 +31,9 @@ describe("flexGrow full board simulation", () => {
           </Box>
         </Box>
         {/* Bottom bar */}
-        <Box
-          flexDirection="row"
-          flexShrink={0}
-          width={termWidth}
-          id="bottom-bar"
-        >
+        <Box flexDirection="row" flexShrink={0} width={termWidth} id="bottom-bar">
           {/* Left side: fills remaining space */}
-          <Box
-            flexGrow={1}
-            flexShrink={1}
-            flexDirection="row"
-            overflow="hidden"
-            id="left"
-          >
+          <Box flexGrow={1} flexShrink={1} flexDirection="row" overflow="hidden" id="left">
             <Text dimColor>MEM</Text>
             <Text dimColor>{" 📁"}</Text>
           </Box>
@@ -105,12 +82,7 @@ describe("flexGrow full board simulation", () => {
     const nodeCount = 3
 
     const app = render(
-      <Box
-        flexDirection="column"
-        width={termWidth}
-        height={termHeight}
-        overflow="hidden"
-      >
+      <Box flexDirection="column" width={termWidth} height={termHeight} overflow="hidden">
         {/* Top bar (from km-tui Board.tsx line 219-228) */}
         <Box flexShrink={0} width={termWidth}>
           <Text wrap="truncate">Top bar content</Text>
@@ -120,19 +92,8 @@ describe("flexGrow full board simulation", () => {
           <Text>Content fills remaining space</Text>
         </Box>
         {/* Bottom bar (from km-tui board-bottom-bar.tsx) */}
-        <Box
-          flexDirection="row"
-          flexShrink={0}
-          width={termWidth}
-          id="bottom-bar"
-        >
-          <Box
-            flexGrow={1}
-            flexShrink={1}
-            flexDirection="row"
-            overflow="hidden"
-            id="left"
-          >
+        <Box flexDirection="row" flexShrink={0} width={termWidth} id="bottom-bar">
+          <Box flexGrow={1} flexShrink={1} flexDirection="row" overflow="hidden" id="left">
             <Text dimColor>MEM</Text>
             <Text dimColor>{" 📁"}</Text>
           </Box>

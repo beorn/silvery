@@ -36,9 +36,7 @@ function discoverExamples(): Example[] {
       if (!source.includes("export const meta")) continue
 
       // Find component export name from source (avoid importing for discovery)
-      const exportMatch = source.match(
-        /export\s+function\s+(\w+)/,
-      )
+      const exportMatch = source.match(/export\s+function\s+(\w+)/)
       const component = exportMatch?.[1]
 
       results.push({

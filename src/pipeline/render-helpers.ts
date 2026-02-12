@@ -14,12 +14,7 @@
 import sliceAnsi from "slice-ansi"
 import type { Color, Style, UnderlineStyle } from "../buffer.js"
 import type { BoxProps, TextProps } from "../types.js"
-import {
-  displayWidthAnsi,
-  graphemeWidth,
-  hasAnsi,
-  splitGraphemes,
-} from "../unicode.js"
+import { displayWidthAnsi, graphemeWidth, hasAnsi, splitGraphemes } from "../unicode.js"
 import type { BorderChars } from "./types.js"
 
 // Re-export shared layout helpers
@@ -78,9 +73,7 @@ export function parseColor(color: string): Color {
   }
 
   // rgb(r,g,b)
-  const rgbMatch = color.match(
-    /^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i,
-  )
+  const rgbMatch = color.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i)
   if (rgbMatch) {
     return {
       r: Number.parseInt(rgbMatch[1]!, 10),
@@ -185,9 +178,7 @@ export function getTextStyle(props: TextProps): Style {
   return {
     fg: props.color ? parseColor(props.color) : null,
     bg: props.backgroundColor ? parseColor(props.backgroundColor) : null,
-    underlineColor: props.underlineColor
-      ? parseColor(props.underlineColor)
-      : null,
+    underlineColor: props.underlineColor ? parseColor(props.underlineColor) : null,
     attrs: {
       bold: props.bold,
       dim: props.dim || props.dimColor, // dimColor is Ink compatibility alias

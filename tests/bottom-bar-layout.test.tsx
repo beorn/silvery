@@ -29,13 +29,7 @@ describe("Bottom bar layout", () => {
     // KEY: Use flexGrow={0} to prevent Box from expanding beyond specified width
     const app = render(
       <Box width={termWidth} flexDirection="row">
-        <Box
-          width={leftWidth}
-          flexGrow={0}
-          flexShrink={0}
-          flexDirection="row"
-          overflow="hidden"
-        >
+        <Box width={leftWidth} flexGrow={0} flexShrink={0} flexDirection="row" overflow="hidden">
           <Text dimColor>DISK 📁~/Code/pim/km</Text>
         </Box>
         <Box width={rightWidth} flexGrow={0} flexShrink={0}>
@@ -66,11 +60,7 @@ describe("Bottom bar layout", () => {
     const colIndex = 0
     const colCount = 3
 
-    const rightParts = [
-      `📋${dbCount}`,
-      `col ${colIndex + 1}/${colCount}`,
-      viewModeStr,
-    ]
+    const rightParts = [`📋${dbCount}`, `col ${colIndex + 1}/${colCount}`, viewModeStr]
     const right = ` ${rightParts.join("   ")} `
     const rightWidth = displayWidth(right)
     const termWidth = 80

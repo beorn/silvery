@@ -26,10 +26,7 @@ import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
 import { bufferToText } from "../src/buffer.js"
 import { createRenderer } from "../src/testing/index.js"
-import {
-  compareBuffers,
-  formatMismatch,
-} from "../src/testing/compare-buffers.js"
+import { compareBuffers, formatMismatch } from "../src/testing/compare-buffers.js"
 
 const render = createRenderer({ incremental: true })
 
@@ -68,12 +65,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
       return (
         <Box width={40} height={10} flexDirection="column">
           {/* Absolute dialog listed FIRST in children */}
-          <Box
-            position="absolute"
-            width={30}
-            height={3}
-            backgroundColor="black"
-          >
+          <Box position="absolute" width={30} height={3} backgroundColor="black">
             <Text>Overlay Title</Text>
           </Box>
           {/* Normal-flow content listed SECOND — changes each render */}
@@ -102,12 +94,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
       return (
         <Box width={40} height={10} flexDirection="column">
           {/* Absolute dialog with nested content, listed FIRST */}
-          <Box
-            position="absolute"
-            width={30}
-            height={5}
-            backgroundColor="black"
-          >
+          <Box position="absolute" width={30} height={5} backgroundColor="black">
             <Box flexDirection="column">
               <Text bold>Dialog Header</Text>
               <Text>Static body line 1</Text>
@@ -145,14 +132,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
             <Text>Board line 3</Text>
           </Box>
           {/* Absolute dialog listed AFTER board, with marginTop to offset */}
-          <Box
-            position="absolute"
-            marginLeft={10}
-            marginTop={3}
-            width={40}
-            height={5}
-            backgroundColor="black"
-          >
+          <Box position="absolute" marginLeft={10} marginTop={3} width={40} height={5} backgroundColor="black">
             <Box flexDirection="column">
               <Text>Dialog Title</Text>
               <Text>Dialog body</Text>
@@ -187,12 +167,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
             <Text>Static board</Text>
           </Box>
           {/* Absolute dialog with static title + changing input */}
-          <Box
-            position="absolute"
-            width={30}
-            height={5}
-            backgroundColor="black"
-          >
+          <Box position="absolute" width={30} height={5} backgroundColor="black">
             <Box flexDirection="column">
               <Text>Search Title</Text>
               <Text>{inputText}</Text>
@@ -233,14 +208,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
             ))}
           </Box>
           {/* Search dialog overlay with marginTop to not fully occlude board */}
-          <Box
-            position="absolute"
-            marginLeft={10}
-            marginTop={5}
-            width={40}
-            height={5}
-            backgroundColor="black"
-          >
+          <Box position="absolute" marginLeft={10} marginTop={5} width={40} height={5} backgroundColor="black">
             <Box flexDirection="column">
               <Text bold>Search Dialog</Text>
               <Text>Query: {query}</Text>
@@ -276,13 +244,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
             <Text>Line 4</Text>
             <Text>Line 5</Text>
           </Box>
-          <Box
-            position="absolute"
-            marginLeft={10}
-            marginTop={3}
-            width={40}
-            height={8}
-          >
+          <Box position="absolute" marginLeft={10} marginTop={3} width={40} height={8}>
             <Box
               flexDirection="column"
               borderStyle="double"
@@ -327,14 +289,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
             <Text>Counter: {n}</Text>
             <Text>Details for item {n}</Text>
           </Box>
-          <Box
-            position="absolute"
-            marginLeft={10}
-            marginTop={3}
-            width={30}
-            height={3}
-            backgroundColor="black"
-          >
+          <Box position="absolute" marginLeft={10} marginTop={3} width={30} height={3} backgroundColor="black">
             <Text>Persistent Overlay</Text>
           </Box>
         </Box>
@@ -372,13 +327,9 @@ describe("Incremental rendering: absolute-positioned elements", () => {
       )
     }
 
-    const app = render(
-      <App content="Board v1 with long text that spans width" />,
-    )
+    const app = render(<App content="Board v1 with long text that spans width" />)
 
-    app.rerender(
-      <App content="Board v2 with different long text content here" />,
-    )
+    app.rerender(<App content="Board v2 with different long text content here" />)
 
     assertBuffersMatch(app)
   })
@@ -398,12 +349,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
             <Text>Board line 2</Text>
           </Box>
           {/* Dialog at top-left, overlapping board line 1 */}
-          <Box
-            position="absolute"
-            width={20}
-            height={3}
-            backgroundColor="black"
-          >
+          <Box position="absolute" width={20} height={3} backgroundColor="black">
             <Box flexDirection="column">
               <Text>TITLE</Text>
               <Text>body</Text>
@@ -449,13 +395,7 @@ describe("Incremental rendering: absolute-positioned elements", () => {
             ))}
           </Box>
           {/* Absolute dialog overlay (like SearchDialog) */}
-          <Box
-            position="absolute"
-            marginLeft={10}
-            marginTop={2}
-            width={40}
-            height={8}
-          >
+          <Box position="absolute" marginLeft={10} marginTop={2} width={40} height={8}>
             <Box
               flexDirection="column"
               borderStyle="double"

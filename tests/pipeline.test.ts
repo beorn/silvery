@@ -25,13 +25,7 @@ import {
   scrollPhase,
   setBgConflictMode,
 } from "../src/pipeline.js"
-import {
-  type BoxProps,
-  type ComputedLayout,
-  type InkxNode,
-  type TextProps,
-  rectEqual,
-} from "../src/types.js"
+import { type BoxProps, type ComputedLayout, type InkxNode, type TextProps, rectEqual } from "../src/types.js"
 
 // Initialize layout engine before tests run
 let layoutEngine: LayoutEngine
@@ -159,33 +153,21 @@ function createRawTextNode(text: string): InkxNode {
 }
 
 /** Create a simple box with layout set */
-async function createBoxWithLayout(
-  props: BoxProps,
-  layout: Rect,
-  children: InkxNode[] = [],
-): Promise<InkxNode> {
+async function createBoxWithLayout(props: BoxProps, layout: Rect, children: InkxNode[] = []): Promise<InkxNode> {
   const node = await createMockNode("inkx-box", props, children)
   setNodeLayout(node, layout)
   return node
 }
 
 /** Create a text node with layout set */
-async function createTextWithLayout(
-  text: string,
-  layout: Rect,
-  props: TextProps = {},
-): Promise<InkxNode> {
+async function createTextWithLayout(text: string, layout: Rect, props: TextProps = {}): Promise<InkxNode> {
   const node = await createMockNode("inkx-text", props, [], text)
   setNodeLayout(node, layout)
   return node
 }
 
 /** Create N sequential box items (height 1 each, stacking vertically) */
-async function createSequentialItems(
-  count: number,
-  width = 10,
-  startY = 0,
-): Promise<InkxNode[]> {
+async function createSequentialItems(count: number, width = 10, startY = 0): Promise<InkxNode[]> {
   const items: InkxNode[] = []
   for (let i = 0; i < count; i++) {
     const item = await createMockNode("inkx-box", { height: 1 })
@@ -228,11 +210,7 @@ describe("Pipeline", () => {
     test("processes fit-content nodes", async () => {
       // Create a box with fit-content width containing text
       const textNode = await createMockNode("inkx-text", {}, [], "Hello")
-      const root = await createMockNode(
-        "inkx-box",
-        { width: "fit-content" as unknown as number },
-        [textNode],
-      )
+      const root = await createMockNode("inkx-box", { width: "fit-content" as unknown as number }, [textNode])
 
       // Should not throw
       measurePhase(root)
@@ -240,9 +218,7 @@ describe("Pipeline", () => {
 
     test("skips nodes without layoutNode", async () => {
       const rawText = createRawTextNode("Hello")
-      const root = await createMockNode("inkx-box", { width: 20, height: 5 }, [
-        rawText,
-      ])
+      const root = await createMockNode("inkx-box", { width: 20, height: 5 }, [rawText])
 
       // Should not throw even though rawText has no layoutNode
       measurePhase(root)
@@ -263,9 +239,7 @@ describe("Pipeline", () => {
 
     test("propagates layout to children", async () => {
       const child = await createMockNode("inkx-box", { width: 20, height: 5 })
-      const root = await createMockNode("inkx-box", { width: 80, height: 24 }, [
-        child,
-      ])
+      const root = await createMockNode("inkx-box", { width: 80, height: 24 }, [child])
       root.layoutDirty = true
 
       layoutPhase(root, 80, 24)
@@ -288,9 +262,7 @@ describe("Pipeline", () => {
 
     test("handles virtual text nodes (no layoutNode)", async () => {
       const rawText = createRawTextNode("Hello")
-      const root = await createMockNode("inkx-box", { width: 80, height: 24 }, [
-        rawText,
-      ])
+      const root = await createMockNode("inkx-box", { width: 80, height: 24 }, [rawText])
       root.layoutDirty = true
 
       layoutPhase(root, 80, 24)
@@ -315,23 +287,14 @@ describe("Pipeline", () => {
       const root = await createMockNode("inkx-box", { width: 40, height: 10 })
       // contentRect left as null to test error case
 
-      expect(() => contentPhase(root)).toThrow(
-        "contentPhase called before layout phase",
-      )
+      expect(() => contentPhase(root)).toThrow("contentPhase called before layout phase")
     })
 
     test("renders text content", async () => {
-      const textNode = await createMockNode(
-        "inkx-text",
-        { color: "red" },
-        [],
-        "Hello",
-      )
+      const textNode = await createMockNode("inkx-text", { color: "red" }, [], "Hello")
       setNodeLayout(textNode, { x: 0, y: 0, width: 10, height: 1 })
 
-      const root = await createMockNode("inkx-box", { width: 40, height: 10 }, [
-        textNode,
-      ])
+      const root = await createMockNode("inkx-box", { width: 40, height: 10 }, [textNode])
       setNodeLayout(root, { x: 0, y: 0, width: 40, height: 10 })
 
       const buffer = contentPhase(root)
@@ -363,10 +326,7 @@ describe("Pipeline", () => {
 
   describe("contentPhase incremental rendering", () => {
     test("clones prevBuffer when dimensions match", async () => {
-      const root = await createBoxWithLayout(
-        { width: 40, height: 10 },
-        { x: 0, y: 0, width: 40, height: 10 },
-      )
+      const root = await createBoxWithLayout({ width: 40, height: 10 }, { x: 0, y: 0, width: 40, height: 10 })
 
       // First render
       const buffer1 = contentPhase(root)
@@ -419,11 +379,10 @@ describe("Pipeline", () => {
       })
       // child2 stays dirty (default from creation)
 
-      const root = await createBoxWithLayout(
-        { width: 40, height: 10 },
-        { x: 0, y: 0, width: 40, height: 10 },
-        [child1, child2],
-      )
+      const root = await createBoxWithLayout({ width: 40, height: 10 }, { x: 0, y: 0, width: 40, height: 10 }, [
+        child1,
+        child2,
+      ])
       root.subtreeDirty = true // Has dirty descendant
 
       // First render
@@ -454,11 +413,9 @@ describe("Pipeline", () => {
         height: 1,
       })
 
-      const root = await createBoxWithLayout(
-        { width: 40, height: 10 },
-        { x: 0, y: 0, width: 40, height: 10 },
-        [textNode],
-      )
+      const root = await createBoxWithLayout({ width: 40, height: 10 }, { x: 0, y: 0, width: 40, height: 10 }, [
+        textNode,
+      ])
 
       // First render
       const buffer1 = contentPhase(root)
@@ -507,17 +464,15 @@ describe("Pipeline", () => {
       // 2. Second render: box is contentDirty (e.g., backgroundColor removed or children changed)
       //    Without clearing, stale colored pixels from clone bleed through
 
-      const child = await createBoxWithLayout(
-        { width: 10, height: 3, backgroundColor: "blue" } as BoxProps,
-        { x: 2, y: 1, width: 10, height: 3 },
-      )
+      const child = await createBoxWithLayout({ width: 10, height: 3, backgroundColor: "blue" } as BoxProps, {
+        x: 2,
+        y: 1,
+        width: 10,
+        height: 3,
+      })
       child.prevLayout = child.contentRect
 
-      const root = await createBoxWithLayout(
-        { width: 20, height: 5 },
-        { x: 0, y: 0, width: 20, height: 5 },
-        [child],
-      )
+      const root = await createBoxWithLayout({ width: 20, height: 5 }, { x: 0, y: 0, width: 20, height: 5 }, [child])
 
       // First render - child has backgroundColor='blue', fills its region
       const buffer1 = contentPhase(root)
@@ -546,21 +501,14 @@ describe("Pipeline", () => {
       // When a box moves, its old position in the cloned buffer has stale content
       // The new position should be cleared before re-rendering
 
-      const child = await createBoxWithLayout(
-        { width: 5, height: 2 } as BoxProps,
-        {
-          x: 0,
-          y: 0,
-          width: 5,
-          height: 2,
-        },
-      )
+      const child = await createBoxWithLayout({ width: 5, height: 2 } as BoxProps, {
+        x: 0,
+        y: 0,
+        width: 5,
+        height: 2,
+      })
 
-      const root = await createBoxWithLayout(
-        { width: 20, height: 5 },
-        { x: 0, y: 0, width: 20, height: 5 },
-        [child],
-      )
+      const root = await createBoxWithLayout({ width: 20, height: 5 }, { x: 0, y: 0, width: 20, height: 5 }, [child])
 
       // First render
       const buffer1 = contentPhase(root)
@@ -584,17 +532,15 @@ describe("Pipeline", () => {
       // When a node shrinks (gets narrower or shorter), the old excess area
       // in the cloned buffer has stale pixels that must be cleared.
 
-      const child = await createBoxWithLayout(
-        { width: 10, height: 4, backgroundColor: "blue" } as BoxProps,
-        { x: 2, y: 1, width: 10, height: 4 },
-      )
+      const child = await createBoxWithLayout({ width: 10, height: 4, backgroundColor: "blue" } as BoxProps, {
+        x: 2,
+        y: 1,
+        width: 10,
+        height: 4,
+      })
       child.prevLayout = child.contentRect
 
-      const root = await createBoxWithLayout(
-        { width: 20, height: 8 },
-        { x: 0, y: 0, width: 20, height: 8 },
-        [child],
-      )
+      const root = await createBoxWithLayout({ width: 20, height: 8 }, { x: 0, y: 0, width: 20, height: 8 }, [child])
 
       // First render - child is 10x4 with blue bg
       const buffer1 = contentPhase(root)
@@ -641,11 +587,9 @@ describe("Pipeline", () => {
         [textChild],
       )
 
-      const root = await createBoxWithLayout(
-        { width: 20, height: 3 },
-        { x: 0, y: 0, width: 20, height: 3 },
-        [parentBox],
-      )
+      const root = await createBoxWithLayout({ width: 20, height: 3 }, { x: 0, y: 0, width: 20, height: 3 }, [
+        parentBox,
+      ])
 
       // First render
       const buffer1 = contentPhase(root)
@@ -672,18 +616,24 @@ describe("Pipeline", () => {
       // has colored pixels at old positions - these must not bleed through.
 
       // Create colored card-like boxes
-      const card1 = await createBoxWithLayout(
-        { width: 8, height: 2, backgroundColor: "blue" } as BoxProps,
-        { x: 1, y: 0, width: 8, height: 2 },
-      )
-      const card2 = await createBoxWithLayout(
-        { width: 8, height: 2, backgroundColor: "green" } as BoxProps,
-        { x: 1, y: 2, width: 8, height: 2 },
-      )
-      const card3 = await createBoxWithLayout(
-        { width: 8, height: 2, backgroundColor: "red" } as BoxProps,
-        { x: 1, y: 4, width: 8, height: 2 },
-      )
+      const card1 = await createBoxWithLayout({ width: 8, height: 2, backgroundColor: "blue" } as BoxProps, {
+        x: 1,
+        y: 0,
+        width: 8,
+        height: 2,
+      })
+      const card2 = await createBoxWithLayout({ width: 8, height: 2, backgroundColor: "green" } as BoxProps, {
+        x: 1,
+        y: 2,
+        width: 8,
+        height: 2,
+      })
+      const card3 = await createBoxWithLayout({ width: 8, height: 2, backgroundColor: "red" } as BoxProps, {
+        x: 1,
+        y: 4,
+        width: 8,
+        height: 2,
+      })
 
       // Scroll container: viewport of 4 rows, content of 6 rows
       const scrollContainer = await createBoxWithLayout(
@@ -701,11 +651,9 @@ describe("Pipeline", () => {
         hiddenBelow: 1,
       }
 
-      const root = await createBoxWithLayout(
-        { width: 10, height: 4 },
-        { x: 0, y: 0, width: 10, height: 4 },
-        [scrollContainer],
-      )
+      const root = await createBoxWithLayout({ width: 10, height: 4 }, { x: 0, y: 0, width: 10, height: 4 }, [
+        scrollContainer,
+      ])
 
       // First render: card1 (blue) at y=0-1, card2 (green) at y=2-3
       const buffer1 = contentPhase(root)
@@ -758,21 +706,20 @@ describe("Pipeline", () => {
       // 3. On cloned buffer, Card A's old yellow pixels must be cleared
 
       // Card A: initially selected (yellow background)
-      const cardA = await createBoxWithLayout(
-        { width: 8, height: 2, backgroundColor: "yellow" } as BoxProps,
-        { x: 1, y: 0, width: 8, height: 2 },
-      )
+      const cardA = await createBoxWithLayout({ width: 8, height: 2, backgroundColor: "yellow" } as BoxProps, {
+        x: 1,
+        y: 0,
+        width: 8,
+        height: 2,
+      })
 
       // Card B: initially not selected (no background)
-      const cardB = await createBoxWithLayout(
-        { width: 8, height: 2 } as BoxProps,
-        {
-          x: 1,
-          y: 2,
-          width: 8,
-          height: 2,
-        },
-      )
+      const cardB = await createBoxWithLayout({ width: 8, height: 2 } as BoxProps, {
+        x: 1,
+        y: 2,
+        width: 8,
+        height: 2,
+      })
 
       const scrollContainer = await createBoxWithLayout(
         { overflow: "scroll", height: 4, width: 10 } as BoxProps,
@@ -789,11 +736,9 @@ describe("Pipeline", () => {
         hiddenBelow: 0,
       }
 
-      const root = await createBoxWithLayout(
-        { width: 10, height: 4 },
-        { x: 0, y: 0, width: 10, height: 4 },
-        [scrollContainer],
-      )
+      const root = await createBoxWithLayout({ width: 10, height: 4 }, { x: 0, y: 0, width: 10, height: 4 }, [
+        scrollContainer,
+      ])
 
       // First render: Card A has yellow background
       const buffer1 = contentPhase(root)
@@ -860,11 +805,9 @@ describe("Pipeline", () => {
         hiddenBelow: 0,
       }
 
-      const root = await createBoxWithLayout(
-        { width: 10, height: 2 },
-        { x: 0, y: 0, width: 10, height: 2 },
-        [scrollContainer],
-      )
+      const root = await createBoxWithLayout({ width: 10, height: 2 }, { x: 0, y: 0, width: 10, height: 2 }, [
+        scrollContainer,
+      ])
 
       // First render
       const buffer1 = contentPhase(root)
@@ -916,15 +859,12 @@ describe("Pipeline", () => {
     })
 
     test("skips non-scroll containers", async () => {
-      const container = await createBoxWithLayout(
-        { overflow: "hidden" } as BoxProps,
-        {
-          x: 0,
-          y: 0,
-          width: 10,
-          height: 5,
-        },
-      )
+      const container = await createBoxWithLayout({ overflow: "hidden" } as BoxProps, {
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 5,
+      })
 
       scrollPhase(container)
 
@@ -933,10 +873,12 @@ describe("Pipeline", () => {
 
     test("identifies sticky children for rendering", async () => {
       // Create a header (sticky) and some content
-      const stickyHeader = await createBoxWithLayout(
-        { height: 1, position: "sticky", stickyTop: 0 } as BoxProps,
-        { x: 0, y: 0, width: 10, height: 1 },
-      )
+      const stickyHeader = await createBoxWithLayout({ height: 1, position: "sticky", stickyTop: 0 } as BoxProps, {
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 1,
+      })
       const items = await createSequentialItems(3, 10, 1) // 3 items starting at y=1
 
       const scrollContainer = await createBoxWithLayout(
@@ -955,10 +897,12 @@ describe("Pipeline", () => {
 
     test("calculates sticky-top render offset when scrolled past header", async () => {
       // Header at natural position 0, sticks to top when scrolled
-      const stickyHeader = await createBoxWithLayout(
-        { height: 1, position: "sticky", stickyTop: 0 } as BoxProps,
-        { x: 0, y: 0, width: 10, height: 1 },
-      )
+      const stickyHeader = await createBoxWithLayout({ height: 1, position: "sticky", stickyTop: 0 } as BoxProps, {
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 1,
+      })
       // Many items below it
       const items = await createSequentialItems(10, 10, 1)
 
@@ -979,10 +923,12 @@ describe("Pipeline", () => {
 
     test("sticky header at natural position when not scrolled", async () => {
       // Header at natural position 0
-      const stickyHeader = await createBoxWithLayout(
-        { height: 1, position: "sticky", stickyTop: 0 } as BoxProps,
-        { x: 0, y: 0, width: 10, height: 1 },
-      )
+      const stickyHeader = await createBoxWithLayout({ height: 1, position: "sticky", stickyTop: 0 } as BoxProps, {
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 1,
+      })
       const items = await createSequentialItems(1, 10, 1)
 
       // Viewport of 5 rows, no scroll (scrollTo first item)
@@ -1002,10 +948,12 @@ describe("Pipeline", () => {
 
     test("sticky children are always considered visible", async () => {
       // Header at position 0
-      const stickyHeader = await createBoxWithLayout(
-        { height: 1, position: "sticky", stickyTop: 0 } as BoxProps,
-        { x: 0, y: 0, width: 10, height: 1 },
-      )
+      const stickyHeader = await createBoxWithLayout({ height: 1, position: "sticky", stickyTop: 0 } as BoxProps, {
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 1,
+      })
       // 20 items below it
       const items = await createSequentialItems(20, 10, 1)
 
@@ -1026,10 +974,12 @@ describe("Pipeline", () => {
     test("sticky child taller than viewport scrolls to show bottom when scrolled far", async () => {
       // Sticky child with height 8 in a viewport of 5
       // When scrolled past, the child should progressively reveal its bottom
-      const stickyPanel = await createBoxWithLayout(
-        { height: 8, position: "sticky", stickyTop: 0 } as BoxProps,
-        { x: 0, y: 0, width: 10, height: 8 },
-      )
+      const stickyPanel = await createBoxWithLayout({ height: 8, position: "sticky", stickyTop: 0 } as BoxProps, {
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 8,
+      })
       // Content items below the sticky panel (starting at y=8)
       const items = await createSequentialItems(20, 10, 8)
 
@@ -1053,14 +1003,13 @@ describe("Pipeline", () => {
 
     test("sticky child taller than viewport starts at top when not scrolled past", async () => {
       // Sticky child with height 8 placed at y=1, in a viewport of 5
-      const item0 = await createBoxWithLayout(
-        { height: 1 },
-        { x: 0, y: 0, width: 10, height: 1 },
-      )
-      const stickyPanel = await createBoxWithLayout(
-        { height: 8, position: "sticky", stickyTop: 0 } as BoxProps,
-        { x: 0, y: 1, width: 10, height: 8 },
-      )
+      const item0 = await createBoxWithLayout({ height: 1 }, { x: 0, y: 0, width: 10, height: 1 })
+      const stickyPanel = await createBoxWithLayout({ height: 8, position: "sticky", stickyTop: 0 } as BoxProps, {
+        x: 0,
+        y: 1,
+        width: 10,
+        height: 8,
+      })
       // Content items below the sticky panel (starting at y=9)
       const moreItems = await createSequentialItems(19, 10, 9)
 
@@ -1084,10 +1033,12 @@ describe("Pipeline", () => {
     test("sticky child taller than viewport has proportional offset at mid-scroll", async () => {
       // Sticky child with height 8 in a viewport of 5
       // The child overflows by 3 rows (8 - 5 = 3)
-      const stickyPanel = await createBoxWithLayout(
-        { height: 8, position: "sticky", stickyTop: 0 } as BoxProps,
-        { x: 0, y: 0, width: 10, height: 8 },
-      )
+      const stickyPanel = await createBoxWithLayout({ height: 8, position: "sticky", stickyTop: 0 } as BoxProps, {
+        x: 0,
+        y: 0,
+        width: 10,
+        height: 8,
+      })
       // Content items below the sticky panel (starting at y=8)
       const items = await createSequentialItems(20, 10, 8)
 
@@ -1181,10 +1132,7 @@ describe("Pipeline", () => {
   describe("screenRectPhase", () => {
     test("computes screen positions accounting for scroll offset", async () => {
       // Create a child at content y=10
-      const child = await createBoxWithLayout(
-        { height: 3 },
-        { x: 0, y: 10, width: 10, height: 3 },
-      )
+      const child = await createBoxWithLayout({ height: 3 }, { x: 0, y: 10, width: 10, height: 3 })
 
       // Create a scroll container scrolled down by 5
       const scrollContainer = await createBoxWithLayout(
@@ -1219,10 +1167,7 @@ describe("Pipeline", () => {
 
     test("accumulates scroll offsets from nested containers", async () => {
       // Inner child at content y=20
-      const innerChild = await createBoxWithLayout(
-        { height: 2 },
-        { x: 0, y: 20, width: 10, height: 2 },
-      )
+      const innerChild = await createBoxWithLayout({ height: 2 }, { x: 0, y: 20, width: 10, height: 2 })
 
       // Inner scroll container scrolled by 5
       const innerScroll = await createBoxWithLayout(
@@ -1272,10 +1217,7 @@ describe("Pipeline", () => {
     test("cross-column visual navigation uses screen Y not content Y", async () => {
       // Simulate two columns with different scroll offsets
       // Column 1: scrolled down, card at content y=50 appears at screen y=10
-      const col1Card = await createBoxWithLayout(
-        { height: 3 },
-        { x: 0, y: 50, width: 20, height: 3 },
-      )
+      const col1Card = await createBoxWithLayout({ height: 3 }, { x: 0, y: 50, width: 20, height: 3 })
 
       const col1 = await createBoxWithLayout(
         { overflow: "scroll", height: 20 } as BoxProps,
@@ -1293,10 +1235,7 @@ describe("Pipeline", () => {
       }
 
       // Column 2: not scrolled, card at content y=10 appears at screen y=10
-      const col2Card = await createBoxWithLayout(
-        { height: 3 },
-        { x: 20, y: 10, width: 20, height: 3 },
-      )
+      const col2Card = await createBoxWithLayout({ height: 3 }, { x: 20, y: 10, width: 20, height: 3 })
 
       const col2 = await createBoxWithLayout(
         { overflow: "scroll", height: 20 } as BoxProps,
@@ -1410,11 +1349,7 @@ describe("Pipeline", () => {
         height: 1,
       })
 
-      const root = await createBoxWithLayout(
-        { width: 20, height: 3 },
-        { x: 0, y: 0, width: 20, height: 3 },
-        [textNode],
-      )
+      const root = await createBoxWithLayout({ width: 20, height: 3 }, { x: 0, y: 0, width: 20, height: 3 }, [textNode])
 
       const buffer = contentPhase(root)
 
@@ -1434,11 +1369,7 @@ describe("Pipeline", () => {
         height: 1,
       })
 
-      const root = await createBoxWithLayout(
-        { width: 20, height: 1 },
-        { x: 0, y: 0, width: 20, height: 1 },
-        [textNode],
-      )
+      const root = await createBoxWithLayout({ width: 20, height: 1 }, { x: 0, y: 0, width: 20, height: 1 }, [textNode])
 
       const buffer = contentPhase(root)
 
@@ -1479,11 +1410,7 @@ describe("Pipeline", () => {
         width: 10,
         height: 1,
       })
-      const root = await createBoxWithLayout(
-        { width: 10, height: 1 },
-        { x: 0, y: 0, width: 10, height: 1 },
-        [textNode],
-      )
+      const root = await createBoxWithLayout({ width: 10, height: 1 }, { x: 0, y: 0, width: 10, height: 1 }, [textNode])
 
       const buffer = contentPhase(root)
 
@@ -1491,8 +1418,7 @@ describe("Pipeline", () => {
         const cell = buffer.getCell(expected.x, 0)
         if (expected.char !== undefined) expect(cell.char).toBe(expected.char)
         if (expected.wide !== undefined) expect(cell.wide).toBe(expected.wide)
-        if (expected.continuation !== undefined)
-          expect(cell.continuation).toBe(expected.continuation)
+        if (expected.continuation !== undefined) expect(cell.continuation).toBe(expected.continuation)
       }
     })
 
@@ -1507,11 +1433,7 @@ describe("Pipeline", () => {
         width: 10,
         height: 1,
       })
-      const root = await createBoxWithLayout(
-        { width: 10, height: 1 },
-        { x: 0, y: 0, width: 10, height: 1 },
-        [textNode],
-      )
+      const root = await createBoxWithLayout({ width: 10, height: 1 }, { x: 0, y: 0, width: 10, height: 1 }, [textNode])
 
       const buffer = contentPhase(root)
 
@@ -1538,11 +1460,7 @@ describe("Pipeline", () => {
         { backgroundColor: "cyan" } as TextProps,
       )
 
-      const root = await createBoxWithLayout(
-        { width: 20, height: 1 },
-        { x: 0, y: 0, width: 20, height: 1 },
-        [textNode],
-      )
+      const root = await createBoxWithLayout({ width: 20, height: 1 }, { x: 0, y: 0, width: 20, height: 1 }, [textNode])
 
       expect(() => contentPhase(root)).toThrow(/Background conflict/)
     })
@@ -1588,25 +1506,14 @@ describe("Pipeline", () => {
         { width: 20, height: 1 } as BoxProps,
         "\x1b[44mignored\x1b[0m",
       ],
-    ] as const)(
-      "%s",
-      async (_desc, envMode, textProps, rootProps, textContent) => {
-        setBgConflictMode(envMode)
+    ] as const)("%s", async (_desc, envMode, textProps, rootProps, textContent) => {
+      setBgConflictMode(envMode)
 
-        const textNode = await createTextWithLayout(
-          textContent,
-          { x: 0, y: 0, width: 20, height: 1 },
-          textProps,
-        )
-        const root = await createBoxWithLayout(
-          rootProps,
-          { x: 0, y: 0, width: 20, height: 1 },
-          [textNode],
-        )
+      const textNode = await createTextWithLayout(textContent, { x: 0, y: 0, width: 20, height: 1 }, textProps)
+      const root = await createBoxWithLayout(rootProps, { x: 0, y: 0, width: 20, height: 1 }, [textNode])
 
-        // Should not throw
-        expect(() => contentPhase(root)).not.toThrow()
-      },
-    )
+      // Should not throw
+      expect(() => contentPhase(root)).not.toThrow()
+    })
   })
 })

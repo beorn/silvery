@@ -26,10 +26,7 @@
  * }
  * ```
  */
-export function createTick(
-  intervalMs: number,
-  signal?: AbortSignal,
-): AsyncIterable<number> {
+export function createTick(intervalMs: number, signal?: AbortSignal): AsyncIterable<number> {
   return {
     [Symbol.asyncIterator]: () => createTickIterator(intervalMs, signal),
   }
@@ -38,10 +35,7 @@ export function createTick(
 /**
  * Create the actual tick iterator.
  */
-function createTickIterator(
-  intervalMs: number,
-  signal?: AbortSignal,
-): AsyncIterator<number> {
+function createTickIterator(intervalMs: number, signal?: AbortSignal): AsyncIterator<number> {
   let count = 0
   let timer: ReturnType<typeof setTimeout> | undefined
   let pendingResolve: ((result: IteratorResult<number>) => void) | undefined
@@ -183,9 +177,7 @@ export function createAdaptiveTick(
       }
 
       return {
-        async next(): Promise<
-          IteratorResult<{ tick: number; elapsed: number; delta: number }>
-        > {
+        async next(): Promise<IteratorResult<{ tick: number; elapsed: number; delta: number }>> {
           if (done) {
             return { done: true, value: undefined }
           }
@@ -211,9 +203,7 @@ export function createAdaptiveTick(
           })
         },
 
-        async return(): Promise<
-          IteratorResult<{ tick: number; elapsed: number; delta: number }>
-        > {
+        async return(): Promise<IteratorResult<{ tick: number; elapsed: number; delta: number }>> {
           done = true
           if (timer) {
             clearTimeout(timer)

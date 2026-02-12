@@ -65,12 +65,7 @@ describe("flexx nested Box bug (km-flexx-improve.11)", () => {
     test("bordered card with nested Box>Text expands unexpectedly", () => {
       const app = render(
         <Box flexDirection="column" height={20}>
-          <Box
-            flexDirection="column"
-            flexShrink={0}
-            borderStyle="round"
-            id="card"
-          >
+          <Box flexDirection="column" flexShrink={0} borderStyle="round" id="card">
             <Box flexDirection="row">
               <Box>
                 <Text>content</Text>
@@ -93,12 +88,7 @@ describe("flexx nested Box bug (km-flexx-improve.11)", () => {
       // Matches VirtualizedCardList structure
       const app = render(
         <Box flexDirection="column" height={20} overflow="scroll">
-          <Box
-            flexDirection="column"
-            flexShrink={0}
-            borderStyle="round"
-            id="card"
-          >
+          <Box flexDirection="column" flexShrink={0} borderStyle="round" id="card">
             <Box flexDirection="row">
               <Box flexShrink={0}>
                 <Text>*</Text>
@@ -168,24 +158,14 @@ describe("flexx nested Box bug (km-flexx-improve.11)", () => {
     test("bordered cards - first expands, others shrink", () => {
       const app = render(
         <Box flexDirection="column" height={20}>
-          <Box
-            flexDirection="column"
-            flexShrink={0}
-            borderStyle="round"
-            id="card1"
-          >
+          <Box flexDirection="column" flexShrink={0} borderStyle="round" id="card1">
             <Box flexDirection="row">
               <Box>
                 <Text>Card 1</Text>
               </Box>
             </Box>
           </Box>
-          <Box
-            flexDirection="column"
-            flexShrink={0}
-            borderStyle="round"
-            id="card2"
-          >
+          <Box flexDirection="column" flexShrink={0} borderStyle="round" id="card2">
             <Box flexDirection="row">
               <Box>
                 <Text>Card 2</Text>
@@ -282,20 +262,10 @@ describe("flexx nested Box bug (km-flexx-improve.11)", () => {
     test("bordered cards with direct Text work correctly", () => {
       const app = render(
         <Box flexDirection="column" height={20}>
-          <Box
-            flexDirection="column"
-            flexShrink={0}
-            borderStyle="round"
-            id="card1"
-          >
+          <Box flexDirection="column" flexShrink={0} borderStyle="round" id="card1">
             <Text>Card 1</Text>
           </Box>
-          <Box
-            flexDirection="column"
-            flexShrink={0}
-            borderStyle="round"
-            id="card2"
-          >
+          <Box flexDirection="column" flexShrink={0} borderStyle="round" id="card2">
             <Text>Card 2</Text>
           </Box>
         </Box>,

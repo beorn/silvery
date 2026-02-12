@@ -102,20 +102,14 @@ class AutoLocatorImpl implements AutoLocator {
       }
       return text.test(content)
     }
-    return new AutoLocatorImpl(this.getContainer, [
-      ...this.predicates,
-      predicate,
-    ])
+    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate])
   }
 
   getByTestId(id: string): AutoLocator {
     const predicate: NodePredicate = (node) => {
       return getNodeProp(node, "testID") === id
     }
-    return new AutoLocatorImpl(this.getContainer, [
-      ...this.predicates,
-      predicate,
-    ])
+    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate])
   }
 
   locator(selector: string): AutoLocator {
@@ -124,15 +118,10 @@ class AutoLocatorImpl implements AutoLocator {
       // Invalid selector - return locator that matches nothing
       return new AutoLocatorImpl(this.getContainer, [() => false])
     }
-    return new AutoLocatorImpl(this.getContainer, [
-      ...this.predicates,
-      predicate,
-    ])
+    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate])
   }
 
-  filter(
-    optionsOrPredicate: FilterOptions | ((node: InkxNode) => boolean),
-  ): AutoLocator {
+  filter(optionsOrPredicate: FilterOptions | ((node: InkxNode) => boolean)): AutoLocator {
     let predicate: NodePredicate
 
     if (typeof optionsOrPredicate === "function") {
@@ -163,10 +152,7 @@ class AutoLocatorImpl implements AutoLocator {
       }
     }
 
-    return new AutoLocatorImpl(this.getContainer, [
-      ...this.predicates,
-      predicate,
-    ])
+    return new AutoLocatorImpl(this.getContainer, [...this.predicates, predicate])
   }
 
   first(): AutoLocator {
@@ -328,8 +314,7 @@ function parseSingleSelector(selector: string): NodePredicate | null {
   }
 
   // Extract all attribute selectors
-  const attrRegex =
-    /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g
+  const attrRegex = /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g
   for (const match of remaining.matchAll(attrRegex)) {
     const [, attr, op, value] = match
     if (!attr) continue
@@ -383,9 +368,7 @@ function parseChildCombinator(selector: string): NodePredicate | null {
 /**
  * Parse adjacent sibling combinator: A + B
  */
-function parseAdjacentSiblingCombinator(
-  selector: string,
-): NodePredicate | null {
+function parseAdjacentSiblingCombinator(selector: string): NodePredicate | null {
   const parts = selector.split("+").map((s) => s.trim())
   if (parts.length !== 2) return null
 

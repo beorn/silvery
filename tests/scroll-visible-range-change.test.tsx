@@ -94,21 +94,10 @@ describe("Scroll visible range change", () => {
       return (
         <Box flexDirection="row" width={80} height={20}>
           {[0, 1].map((col) => (
-            <Box
-              key={col}
-              flexDirection="column"
-              width={39}
-              height={20}
-              overflow="scroll"
-              id={`col${col}`}
-            >
+            <Box key={col} flexDirection="column" width={39} height={20} overflow="scroll" id={`col${col}`}>
               <Text bold>Column {col}</Text>
               {Array.from({ length: 3 }, (_, i) => (
-                <Box
-                  key={i}
-                  borderStyle="single"
-                  borderColor={selectedCol === col ? "yellow" : "gray"}
-                >
+                <Box key={i} borderStyle="single" borderColor={selectedCol === col ? "yellow" : "gray"}>
                   <Text>
                     Card {col}-{i}
                   </Text>

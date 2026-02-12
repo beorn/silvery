@@ -17,10 +17,7 @@ import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
 import { bufferToText } from "../src/buffer.js"
 import { createRenderer } from "../src/testing/index.js"
-import {
-  compareBuffers,
-  formatMismatch,
-} from "../src/testing/compare-buffers.js"
+import { compareBuffers, formatMismatch } from "../src/testing/compare-buffers.js"
 
 const render = createRenderer({ incremental: true })
 
@@ -54,9 +51,9 @@ describe("Incremental rendering: border-only changes", () => {
             paddingRight={1}
           >
             <Text>Card Title Here</Text>
-            <Text>  Child item 1</Text>
-            <Text>  Child item 2</Text>
-            <Text>  Status: open</Text>
+            <Text> Child item 1</Text>
+            <Text> Child item 2</Text>
+            <Text> Status: open</Text>
           </Box>
         </Box>
       )
@@ -84,13 +81,7 @@ describe("Incremental rendering: border-only changes", () => {
    * Simulates cursor j/k in km-tui.
    */
   test("cursor move: old card deselects, new card selects", () => {
-    function Card({
-      title,
-      selected,
-    }: {
-      title: string
-      selected: boolean
-    }) {
+    function Card({ title, selected }: { title: string; selected: boolean }) {
       return (
         <Box
           flexDirection="column"
@@ -99,8 +90,8 @@ describe("Incremental rendering: border-only changes", () => {
           paddingRight={1}
         >
           <Text>{title}</Text>
-          <Text>  content line 1</Text>
-          <Text>  content line 2</Text>
+          <Text> content line 1</Text>
+          <Text> content line 2</Text>
         </Box>
       )
     }
@@ -159,7 +150,7 @@ describe("Incremental rendering: border-only changes", () => {
         >
           <Text>{title}</Text>
           {children.map((child, i) => (
-            <Text key={i}>  {child}</Text>
+            <Text key={i}> {child}</Text>
           ))}
         </Box>
       )
@@ -179,7 +170,10 @@ describe("Incremental rendering: border-only changes", () => {
       return (
         <Box flexDirection="column" width={width} height={60}>
           <Box height={1}>
-            <Text bold> {title} ({cards.length})</Text>
+            <Text bold>
+              {" "}
+              {title} ({cards.length})
+            </Text>
           </Box>
           {cards.map((card, i) => (
             <Card
@@ -230,13 +224,7 @@ describe("Incremental rendering: border-only changes", () => {
    * Cards inside overflow="scroll" container.
    */
   test("scroll container with bordered cards", () => {
-    function Card({
-      title,
-      selected,
-    }: {
-      title: string
-      selected: boolean
-    }) {
+    function Card({ title, selected }: { title: string; selected: boolean }) {
       return (
         <Box
           flexDirection="column"
@@ -245,8 +233,8 @@ describe("Incremental rendering: border-only changes", () => {
           paddingRight={1}
         >
           <Text>{title}</Text>
-          <Text>  body line 1</Text>
-          <Text>  body line 2</Text>
+          <Text> body line 1</Text>
+          <Text> body line 2</Text>
         </Box>
       )
     }
@@ -288,14 +276,9 @@ describe("Incremental rendering: border-only changes", () => {
     function App() {
       return (
         <Box width={40} height={10}>
-          <Box
-            flexDirection="column"
-            borderStyle="round"
-            borderColor="blackBright"
-            paddingRight={1}
-          >
+          <Box flexDirection="column" borderStyle="round" borderColor="blackBright" paddingRight={1}>
             <Text>Title</Text>
-            <Text>  Content line</Text>
+            <Text> Content line</Text>
           </Box>
         </Box>
       )
@@ -325,8 +308,8 @@ describe("Incremental rendering: border-only changes", () => {
             paddingRight={1}
           >
             <Text>Title</Text>
-            <Text>  Content 1</Text>
-            <Text>  Content 2</Text>
+            <Text> Content 1</Text>
+            <Text> Content 2</Text>
           </Box>
         </Box>
       )

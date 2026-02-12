@@ -13,13 +13,7 @@ import { EventEmitter } from "node:events"
 import React, { type ReactElement, type ReactNode, act } from "react"
 import { type App, buildApp } from "./app.js"
 import { type TerminalBuffer, cellEquals } from "./buffer.js"
-import {
-  AppContext,
-  EventsContext,
-  InputContext,
-  StdoutContext,
-  TermContext,
-} from "./context.js"
+import { AppContext, EventsContext, InputContext, StdoutContext, TermContext } from "./context.js"
 import {
   type LayoutEngine,
   ensureDefaultLayoutEngine,
@@ -31,10 +25,7 @@ import { createContainer, getContainerRoot, reconciler } from "./reconciler.js"
 
 import { createTerm } from "chalkx"
 import { bufferToText } from "./buffer.js"
-import {
-  buildMismatchContext,
-  formatMismatchContext,
-} from "./debug-mismatch.js"
+import { buildMismatchContext, formatMismatchContext } from "./debug-mismatch.js"
 import { keyToAnsi } from "./keys.js"
 import { IncrementalRenderMismatchError } from "./scheduler.js"
 import { debugTree } from "./testing/debug.js"
@@ -216,10 +207,7 @@ function isStore(arg: unknown): arg is Store {
  * expect(app.text).toContain('Count: 1')
  * ```
  */
-export function render(
-  element: ReactElement,
-  optsOrStore: RenderOptions | Store = {},
-): App {
+export function render(element: ReactElement, optsOrStore: RenderOptions | Store = {}): App {
   // Guard: layout engine must be initialized
   assertLayoutEngine()
 
@@ -291,10 +279,7 @@ export function render(
     exitCalledFlag = true
     exitErrorValue = error
     if (debug) {
-      console.log(
-        "[inkx] exit() called",
-        error ? `with error: ${error.message}` : "",
-      )
+      console.log("[inkx] exit() called", error ? `with error: ${error.message}` : "")
     }
   }
 
@@ -317,8 +302,7 @@ export function render(
   // Mock events for interactive mode (signals to useInput that input is enabled)
   const mockEvents: AsyncIterable<import("./types.js").Event> = {
     [Symbol.asyncIterator]: () => ({
-      next: () =>
-        new Promise<IteratorResult<import("./types.js").Event>>(() => {}),
+      next: () => new Promise<IteratorResult<import("./types.js").Event>>(() => {}),
     }),
   }
 
@@ -354,10 +338,8 @@ export function render(
 
   // Check INKX_STRICT for automatic incremental checking (like scheduler does)
   // Note: "0" and "false" are treated as disabled
-  const strictEnv =
-    process.env.INKX_STRICT || process.env.INKX_CHECK_INCREMENTAL
-  const strictMode =
-    incremental && strictEnv && strictEnv !== "0" && strictEnv !== "false"
+  const strictEnv = process.env.INKX_STRICT || process.env.INKX_CHECK_INCREMENTAL
+  const strictMode = incremental && strictEnv && strictEnv !== "0" && strictEnv !== "false"
 
   // Render function that executes the pipeline with layout feedback loop.
   // After executeRender fires notifyLayoutSubscribers (Phase 2.7), hooks like
@@ -381,12 +363,7 @@ export function render(
       withActEnvironment(() => {
         act(() => {
           const root = getContainerRoot(instance.container)
-          const result = executeRender(
-            root,
-            instance.columns,
-            instance.rows,
-            incremental ? instance.prevBuffer : null,
-          )
+          const result = executeRender(root, instance.columns, instance.rows, incremental ? instance.prevBuffer : null)
           output = result.output
           buffer = result.buffer
           instance.prevBuffer = buffer
@@ -410,22 +387,13 @@ export function render(
           const b = freshBuffer.getCell(x, y)
           if (!cellEquals(a, b)) {
             // Build rich debug context
-            const ctx = buildMismatchContext(
-              root,
-              x,
-              y,
-              a,
-              b,
-              instance.renderCount,
-            )
+            const ctx = buildMismatchContext(root, x, y, a, b, instance.renderCount)
             const debugInfo = formatMismatchContext(ctx)
 
             // Include text output for full picture
             const incText = bufferToText(buffer!)
             const freshText = bufferToText(freshBuffer)
-            const msg =
-              debugInfo +
-              `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
+            const msg = debugInfo + `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
             throw new IncrementalRenderMismatchError(msg)
           }
         }
@@ -438,16 +406,10 @@ export function render(
   // Fresh render: renders from scratch without updating incremental state
   function doFreshRender(): TerminalBuffer {
     const root = getContainerRoot(instance.container)
-    const { buffer } = executeRender(
-      root,
-      instance.columns,
-      instance.rows,
-      null,
-      {
-        skipLayoutNotifications: true,
-        skipScrollStateUpdates: true,
-      },
-    )
+    const { buffer } = executeRender(root, instance.columns, instance.rows, null, {
+      skipLayoutNotifications: true,
+      skipScrollStateUpdates: true,
+    })
     return buffer
   }
 
@@ -456,12 +418,7 @@ export function render(
   try {
     withActEnvironment(() => {
       act(() => {
-        reconciler.updateContainerSync(
-          wrapWithContexts(element),
-          instance.fiberRoot,
-          null,
-          null,
-        )
+        reconciler.updateContainerSync(wrapWithContexts(element), instance.fiberRoot, null, null)
         reconciler.flushSyncWork()
       })
     })
@@ -524,20 +481,14 @@ export function render(
     }
     if (instance.rendering) {
       throw new Error(
-        "inkx: Re-entrant render detected. " +
-          "Cannot call rerender() from inside a React render or effect.",
+        "inkx: Re-entrant render detected. " + "Cannot call rerender() from inside a React render or effect.",
       )
     }
     instance.rendering = true
     try {
       withActEnvironment(() => {
         act(() => {
-          reconciler.updateContainerSync(
-            wrapWithContexts(newElement as ReactElement),
-            instance.fiberRoot,
-            null,
-            null,
-          )
+          reconciler.updateContainerSync(wrapWithContexts(newElement as ReactElement), instance.fiberRoot, null, null)
           reconciler.flushSyncWork()
         })
       })
@@ -710,8 +661,7 @@ export interface SyncRunResult extends Iterable<string> {
 /**
  * Result of run() with async events — async iterable and awaitable.
  */
-export interface AsyncRunResult
-  extends AsyncIterable<string>, PromiseLike<void> {
+export interface AsyncRunResult extends AsyncIterable<string>, PromiseLike<void> {
   /** Current rendered text */
   readonly text: string
   /** The app being driven */
@@ -782,9 +732,7 @@ export function run(
     then<TResult1 = void, TResult2 = never>(
       // biome-ignore lint/suspicious/noConfusingVoidType: required by PromiseLike
       onfulfilled?: ((value: void) => TResult1 | PromiseLike<TResult1>) | null,
-      onrejected?:
-        | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
-        | null,
+      onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null,
     ): Promise<TResult1 | TResult2> {
       const promise = (async () => {
         if (events) {
@@ -841,9 +789,7 @@ export function run(
 }
 
 function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
-  return (
-    value !== null && typeof value === "object" && Symbol.asyncIterator in value
-  )
+  return value !== null && typeof value === "object" && Symbol.asyncIterator in value
 }
 
 /**

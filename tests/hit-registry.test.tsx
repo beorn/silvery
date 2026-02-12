@@ -474,14 +474,7 @@ describe("useHitRegionCallback", () => {
   test("returns a callback that registers regions", () => {
     const registry = new HitRegistry()
     const target: HitTarget = { type: "node", nodeId: "abc123" }
-    let callback:
-      | ((rect: {
-          x: number
-          y: number
-          width: number
-          height: number
-        }) => void)
-      | null = null
+    let callback: ((rect: { x: number; y: number; width: number; height: number }) => void) | null = null
 
     function TestComponent() {
       callback = useHitRegionCallback(target, Z_INDEX.CARD)
@@ -506,14 +499,7 @@ describe("useHitRegionCallback", () => {
   test("callback updates region on subsequent calls", () => {
     const registry = new HitRegistry()
     const target: HitTarget = { type: "node", nodeId: "abc123" }
-    let callback:
-      | ((rect: {
-          x: number
-          y: number
-          width: number
-          height: number
-        }) => void)
-      | null = null
+    let callback: ((rect: { x: number; y: number; width: number; height: number }) => void) | null = null
 
     function TestComponent() {
       callback = useHitRegionCallback(target, Z_INDEX.CARD)
@@ -545,14 +531,7 @@ describe("useHitRegionCallback", () => {
   test("unregisters on unmount", () => {
     const registry = new HitRegistry()
     const target: HitTarget = { type: "node", nodeId: "abc123" }
-    let callback:
-      | ((rect: {
-          x: number
-          y: number
-          width: number
-          height: number
-        }) => void)
-      | null = null
+    let callback: ((rect: { x: number; y: number; width: number; height: number }) => void) | null = null
 
     function TestComponent() {
       callback = useHitRegionCallback(target, Z_INDEX.CARD)

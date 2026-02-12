@@ -19,13 +19,7 @@
  * - 'dotted': dotted underline (SGR 4:4)
  * - 'dashed': dashed underline (SGR 4:5)
  */
-export type UnderlineStyle =
-  | false
-  | "single"
-  | "double"
-  | "curly"
-  | "dotted"
-  | "dashed"
+export type UnderlineStyle = false | "single" | "double" | "curly" | "dotted" | "dashed"
 
 /**
  * Text attributes that can be applied to a cell.
@@ -203,8 +197,7 @@ export function attrsToNumber(attrs: CellAttrs): number {
 
   // Pack underline style (3 bits)
   // If underlineStyle is set, use it. Otherwise, check underline boolean.
-  const ulStyle =
-    attrs.underlineStyle ?? (attrs.underline ? "single" : undefined)
+  const ulStyle = attrs.underlineStyle ?? (attrs.underline ? "single" : undefined)
   n |= underlineStyleToNumber(ulStyle) << UNDERLINE_STYLE_SHIFT
 
   return n
@@ -250,9 +243,7 @@ function colorToIndex(color: Color): number {
 /**
  * Check if a color is true color (RGB).
  */
-function isTrueColor(
-  color: Color,
-): color is { r: number; g: number; b: number } {
+function isTrueColor(color: Color): color is { r: number; g: number; b: number } {
   return color !== null && typeof color === "object"
 }
 
@@ -557,8 +548,7 @@ export class TerminalBuffer {
 
     // Unpack attrs inline to avoid allocating a new CellAttrs object.
     // We reuse the existing out.attrs object when possible.
-    const attrs =
-      out.attrs === EMPTY_ATTRS ? ((out.attrs = {}), out.attrs) : out.attrs
+    const attrs = out.attrs === EMPTY_ATTRS ? ((out.attrs = {}), out.attrs) : out.attrs
     attrs.bold = (packed & ATTR_BOLD) !== 0 ? true : undefined
     attrs.dim = (packed & ATTR_DIM) !== 0 ? true : undefined
     attrs.italic = (packed & ATTR_ITALIC) !== 0 ? true : undefined
@@ -595,8 +585,7 @@ export class TerminalBuffer {
     }
 
     this._dirtyRows[y] = 1
-    if (this._minDirtyRow === -1 || y < this._minDirtyRow)
-      this._minDirtyRow = y
+    if (this._minDirtyRow === -1 || y < this._minDirtyRow) this._minDirtyRow = y
     if (y > this._maxDirtyRow) this._maxDirtyRow = y
 
     const idx = this.index(x, y)
@@ -651,13 +640,7 @@ export class TerminalBuffer {
    * Optimized: packs cell metadata once and assigns directly to arrays,
    * avoiding O(width*height) intermediate object allocations from setCell().
    */
-  fill(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    cell: Partial<Cell>,
-  ): void {
+  fill(x: number, y: number, width: number, height: number, cell: Partial<Cell>): void {
     const endX = Math.min(x + width, this.width)
     const endY = Math.min(y + height, this.height)
     const startX = Math.max(0, x)
@@ -689,12 +672,8 @@ export class TerminalBuffer {
     // Determine true color values once
     const hasTrueColorFg = isTrueColor(fg)
     const hasTrueColorBg = isTrueColor(bg)
-    const trueColorFg = hasTrueColorFg
-      ? (fg as { r: number; g: number; b: number })
-      : null
-    const trueColorBg = hasTrueColorBg
-      ? (bg as { r: number; g: number; b: number })
-      : null
+    const trueColorFg = hasTrueColorFg ? (fg as { r: number; g: number; b: number }) : null
+    const trueColorBg = hasTrueColorBg ? (bg as { r: number; g: number; b: number }) : null
     const hasUnderlineColor = underlineColor !== null
 
     // Mark affected rows dirty + update bounding box
@@ -702,8 +681,7 @@ export class TerminalBuffer {
       this._dirtyRows[cy] = 1
     }
     if (startY < endY) {
-      if (this._minDirtyRow === -1 || startY < this._minDirtyRow)
-        this._minDirtyRow = startY
+      if (this._minDirtyRow === -1 || startY < this._minDirtyRow) this._minDirtyRow = startY
       if (endY - 1 > this._maxDirtyRow) this._maxDirtyRow = endY - 1
     }
 
@@ -775,8 +753,7 @@ export class TerminalBuffer {
       const dstY = destY + dy
       if (dstY >= 0 && dstY < this.height) {
         this._dirtyRows[dstY] = 1
-        if (this._minDirtyRow === -1 || dstY < this._minDirtyRow)
-          this._minDirtyRow = dstY
+        if (this._minDirtyRow === -1 || dstY < this._minDirtyRow) this._minDirtyRow = dstY
         if (dstY > this._maxDirtyRow) this._maxDirtyRow = dstY
       }
       for (let dx = 0; dx < width; dx++) {
@@ -824,8 +801,7 @@ export class TerminalBuffer {
     for (let r = startY; r < endY; r++) {
       this._dirtyRows[r] = 1
     }
-    if (this._minDirtyRow === -1 || startY < this._minDirtyRow)
-      this._minDirtyRow = startY
+    if (this._minDirtyRow === -1 || startY < this._minDirtyRow) this._minDirtyRow = startY
     if (endY - 1 > this._maxDirtyRow) this._maxDirtyRow = endY - 1
 
     if (Math.abs(delta) >= clampedHeight) {
@@ -846,11 +822,7 @@ export class TerminalBuffer {
         const dstBase = row * w
         const srcBase = (row + absDelta) * w
         // Copy cells and chars for the region columns
-        this.cells.copyWithin(
-          dstBase + startX,
-          srcBase + startX,
-          srcBase + endX,
-        )
+        this.cells.copyWithin(dstBase + startX, srcBase + startX, srcBase + endX)
         for (let cx = startX; cx < endX; cx++) {
           this.chars[dstBase + cx] = this.chars[srcBase + cx]!
           // Move true color maps
@@ -889,11 +861,7 @@ export class TerminalBuffer {
       for (let row = endY - 1; row >= startY + absDelta; row--) {
         const dstBase = row * w
         const srcBase = (row - absDelta) * w
-        this.cells.copyWithin(
-          dstBase + startX,
-          srcBase + startX,
-          srcBase + endX,
-        )
+        this.cells.copyWithin(dstBase + startX, srcBase + startX, srcBase + endX)
         for (let cx = startX; cx < endX; cx++) {
           this.chars[dstBase + cx] = this.chars[srcBase + cx]!
           const srcIdx = srcBase + cx
@@ -1059,10 +1027,7 @@ export class TerminalBuffer {
 /**
  * Compare two colors for equality.
  */
-export function colorEquals(
-  a: Color | undefined,
-  b: Color | undefined,
-): boolean {
+export function colorEquals(a: Color | undefined, b: Color | undefined): boolean {
   if (a === b) return true
   if (a === null || a === undefined) return b === null || b === undefined
   if (b === null || b === undefined) return false
@@ -1136,11 +1101,7 @@ export function createMutableCell(): Cell {
 /**
  * Create a buffer initialized with a specific character.
  */
-export function createBuffer(
-  width: number,
-  height: number,
-  char = " ",
-): TerminalBuffer {
+export function createBuffer(width: number, height: number, char = " "): TerminalBuffer {
   const buffer = new TerminalBuffer(width, height)
   if (char !== " ") {
     buffer.fill(0, 0, width, height, { char })
@@ -1240,10 +1201,7 @@ export function bufferToStyledText(
     }
 
     // Reset style at end of line to prevent background color bleeding
-    if (
-      currentStyle &&
-      (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))
-    ) {
+    if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
       line += "\x1b[0m"
       currentStyle = null
     }
@@ -1279,27 +1237,9 @@ const XTERM_256_PALETTE: string[] = (() => {
   const palette: string[] = new Array(256)
 
   // Colors 0-7: standard colors
-  const standard = [
-    "#000000",
-    "#cd0000",
-    "#00cd00",
-    "#cdcd00",
-    "#0000ee",
-    "#cd00cd",
-    "#00cdcd",
-    "#e5e5e5",
-  ]
+  const standard = ["#000000", "#cd0000", "#00cd00", "#cdcd00", "#0000ee", "#cd00cd", "#00cdcd", "#e5e5e5"]
   // Colors 8-15: bright colors
-  const bright = [
-    "#7f7f7f",
-    "#ff0000",
-    "#00ff00",
-    "#ffff00",
-    "#5c5cff",
-    "#ff00ff",
-    "#00ffff",
-    "#ffffff",
-  ]
+  const bright = ["#7f7f7f", "#ff0000", "#00ff00", "#ffff00", "#5c5cff", "#ff00ff", "#00ffff", "#ffffff"]
   for (let i = 0; i < 8; i++) {
     palette[i] = standard[i]!
     palette[i + 8] = bright[i]!
@@ -1312,10 +1252,7 @@ const XTERM_256_PALETTE: string[] = (() => {
     const g = cubeValues[Math.floor((i % 36) / 6)]!
     const b = cubeValues[i % 6]!
     palette[16 + i] =
-      "#" +
-      r.toString(16).padStart(2, "0") +
-      g.toString(16).padStart(2, "0") +
-      b.toString(16).padStart(2, "0")
+      "#" + r.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b.toString(16).padStart(2, "0")
   }
 
   // Colors 232-255: grayscale ramp
@@ -1362,11 +1299,7 @@ export function bufferToHTML(
     theme?: "dark" | "light"
   } = {},
 ): string {
-  const {
-    fontFamily = "JetBrains Mono, Menlo, monospace",
-    fontSize = 14,
-    theme = "dark",
-  } = options
+  const { fontFamily = "JetBrains Mono, Menlo, monospace", fontSize = 14, theme = "dark" } = options
 
   const defaultFg = theme === "dark" ? "#d4d4d4" : "#1e1e1e"
   const defaultBg = theme === "dark" ? "#1e1e1e" : "#ffffff"
@@ -1425,11 +1358,7 @@ ${htmlLines.join("\n")}
  * Convert a Style to CSS inline style properties.
  * Returns null if the style is entirely default.
  */
-function styleToCSSProperties(
-  style: Style,
-  defaultFg: string,
-  defaultBg: string,
-): string | null {
+function styleToCSSProperties(style: Style, defaultFg: string, defaultBg: string): string | null {
   const parts: string[] = []
 
   // Handle inverse: swap fg/bg
@@ -1470,8 +1399,7 @@ function styleToCSSProperties(
     decorations.push("underline")
   }
   if (style.attrs.strikethrough) decorations.push("line-through")
-  if (decorations.length > 0)
-    parts.push(`text-decoration:${decorations.join(" ")}`)
+  if (decorations.length > 0) parts.push(`text-decoration:${decorations.join(" ")}`)
 
   return parts.length > 0 ? parts.join(";") : null
 }
@@ -1479,11 +1407,7 @@ function styleToCSSProperties(
 /** Escape special HTML characters. */
 function escapeHTML(str: string): string {
   if (str === " " || str.length === 0) return str
-  return str
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
+  return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;")
 }
 
 /**

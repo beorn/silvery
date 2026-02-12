@@ -26,8 +26,7 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Live Resize",
-  description:
-    "Responsive multi-column grid that reflows based on terminal width",
+  description: "Responsive multi-column grid that reflows based on terminal width",
   features: ["useContentRect()", "responsive breakpoints", "Box flexDirection"],
 }
 
@@ -55,8 +54,7 @@ const CARDS: CardData[] = [
     value: "42%",
     detail: "4 cores, 2.4 GHz base",
     color: "green",
-    sparkline:
-      "\u2582\u2583\u2585\u2587\u2586\u2584\u2583\u2585\u2587\u2588\u2586\u2584\u2583\u2582\u2583\u2585",
+    sparkline: "\u2582\u2583\u2585\u2587\u2586\u2584\u2583\u2585\u2587\u2588\u2586\u2584\u2583\u2582\u2583\u2585",
   },
   {
     title: "Memory",
@@ -64,8 +62,7 @@ const CARDS: CardData[] = [
     value: "8.2 GB",
     detail: "of 16 GB (51% used)",
     color: "cyan",
-    sparkline:
-      "\u2584\u2584\u2585\u2585\u2585\u2586\u2586\u2586\u2585\u2585\u2586\u2586\u2587\u2587\u2586\u2586",
+    sparkline: "\u2584\u2584\u2585\u2585\u2585\u2586\u2586\u2586\u2585\u2585\u2586\u2586\u2587\u2587\u2586\u2586",
   },
   {
     title: "Disk I/O",
@@ -73,8 +70,7 @@ const CARDS: CardData[] = [
     value: "234 MB/s",
     detail: "Read: 180 MB/s Write: 54 MB/s",
     color: "yellow",
-    sparkline:
-      "\u2581\u2582\u2583\u2587\u2588\u2587\u2584\u2582\u2581\u2582\u2585\u2587\u2586\u2583\u2582\u2581",
+    sparkline: "\u2581\u2582\u2583\u2587\u2588\u2587\u2584\u2582\u2581\u2582\u2585\u2587\u2586\u2583\u2582\u2581",
   },
   {
     title: "Network",
@@ -82,8 +78,7 @@ const CARDS: CardData[] = [
     value: "1.2 Gb/s",
     detail: "In: 800 Mb/s Out: 400 Mb/s",
     color: "magenta",
-    sparkline:
-      "\u2583\u2584\u2585\u2586\u2587\u2586\u2585\u2584\u2585\u2586\u2587\u2588\u2587\u2586\u2585\u2584",
+    sparkline: "\u2583\u2584\u2585\u2586\u2587\u2586\u2585\u2584\u2585\u2586\u2587\u2588\u2587\u2586\u2585\u2584",
   },
   {
     title: "Processes",
@@ -91,8 +86,7 @@ const CARDS: CardData[] = [
     value: "247",
     detail: "12 running, 235 sleeping",
     color: "blue",
-    sparkline:
-      "\u2585\u2585\u2585\u2586\u2585\u2585\u2585\u2585\u2586\u2585\u2585\u2585\u2586\u2585\u2585\u2585",
+    sparkline: "\u2585\u2585\u2585\u2586\u2585\u2585\u2585\u2585\u2586\u2585\u2585\u2585\u2586\u2585\u2585\u2585",
   },
   {
     title: "Temperature",
@@ -100,8 +94,7 @@ const CARDS: CardData[] = [
     value: "62 C",
     detail: "Max: 85 C (safe range)",
     color: "red",
-    sparkline:
-      "\u2583\u2583\u2584\u2584\u2585\u2585\u2586\u2586\u2585\u2585\u2584\u2584\u2583\u2584\u2585\u2585",
+    sparkline: "\u2583\u2583\u2584\u2584\u2585\u2585\u2586\u2586\u2585\u2585\u2584\u2584\u2583\u2584\u2585\u2585",
   },
 ]
 
@@ -109,23 +102,11 @@ const CARDS: CardData[] = [
 // Components
 // ============================================================================
 
-function MetricCard({
-  card,
-  compact,
-}: {
-  card: CardData
-  compact: boolean
-}): JSX.Element {
+function MetricCard({ card, compact }: { card: CardData; compact: boolean }): JSX.Element {
   if (compact) {
     // Minimal: single-line card for narrow terminals
     return (
-      <Box
-        borderStyle="round"
-        borderColor={card.color}
-        paddingX={1}
-        flexDirection="row"
-        justifyContent="space-between"
-      >
+      <Box borderStyle="round" borderColor={card.color} paddingX={1} flexDirection="row" justifyContent="space-between">
         <Text bold color={card.color}>
           {card.title}
         </Text>
@@ -136,13 +117,7 @@ function MetricCard({
 
   // Full card with sparkline and details
   return (
-    <Box
-      borderStyle="round"
-      borderColor={card.color}
-      paddingX={1}
-      flexDirection="column"
-      flexGrow={1}
-    >
+    <Box borderStyle="round" borderColor={card.color} paddingX={1} flexDirection="column" flexGrow={1}>
       <Box justifyContent="space-between">
         <Text bold color={card.color}>
           {card.title}
@@ -157,13 +132,7 @@ function MetricCard({
   )
 }
 
-function BreakpointIndicator({
-  width,
-  columns,
-}: {
-  width: number
-  columns: number
-}): JSX.Element {
+function BreakpointIndicator({ width, columns }: { width: number; columns: number }): JSX.Element {
   const breakpoints = [
     { threshold: 0, cols: 1, label: "< 60" },
     { threshold: 60, cols: 2, label: "60-99" },
@@ -248,24 +217,17 @@ function CodeSnippet({ width }: { width: number }): JSX.Element {
   }
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="single"
-      borderColor="gray"
-      paddingX={1}
-    >
+    <Box flexDirection="column" borderStyle="single" borderColor="gray" paddingX={1}>
       <Text bold color="yellow">
         How it works:
       </Text>
       <Text color="gray">
         {"  "}
-        <Text color="magenta">const</Text> {"{"} width {"}"} ={" "}
-        <Text color="cyan">useContentRect</Text>()
+        <Text color="magenta">const</Text> {"{"} width {"}"} = <Text color="cyan">useContentRect</Text>()
       </Text>
       <Text color="gray">
         {"  "}
-        <Text color="magenta">const</Text> columns = width {">"} 100 ?{" "}
-        <Text color="green">3</Text> : width {">"} 60 ?{" "}
+        <Text color="magenta">const</Text> columns = width {">"} 100 ? <Text color="green">3</Text> : width {">"} 60 ?{" "}
         <Text color="green">2</Text> : <Text color="green">1</Text>
       </Text>
       <Text dim italic>
@@ -327,10 +289,7 @@ function LiveResize(): JSX.Element {
 
 async function main() {
   const handle = await run(
-    <ExampleBanner
-      meta={meta}
-      controls="Resize terminal to see reflow  Esc/q quit"
-    >
+    <ExampleBanner meta={meta} controls="Resize terminal to see reflow  Esc/q quit">
       <LiveResize />
     </ExampleBanner>,
   )

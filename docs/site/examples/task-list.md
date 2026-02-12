@@ -40,15 +40,7 @@ bun run examples/task-list/app.tsx
 ::: code-group
 
 ```tsx [app.tsx]
-import {
-  Box,
-  Text,
-  render,
-  useContentRect,
-  useInput,
-  useApp,
-  createTerm,
-} from "inkx"
+import { Box, Text, render, useContentRect, useInput, useApp, createTerm } from "inkx"
 import { useState } from "react"
 
 interface Subtask {
@@ -139,11 +131,7 @@ function App() {
 
     if (input === " " || key.return) {
       // Toggle selected task
-      setTasks((prev) =>
-        prev.map((task, i) =>
-          i === selectedIndex ? { ...task, done: !task.done } : task,
-        ),
-      )
+      setTasks((prev) => prev.map((task, i) => (i === selectedIndex ? { ...task, done: !task.done } : task)))
     }
   })
 
@@ -172,21 +160,9 @@ function Header({ total, completed }: { total: number; completed: number }) {
   )
 }
 
-function TaskList({
-  tasks,
-  selectedIndex,
-}: {
-  tasks: Task[]
-  selectedIndex: number
-}) {
+function TaskList({ tasks, selectedIndex }: { tasks: Task[]; selectedIndex: number }) {
   return (
-    <Box
-      flexDirection="column"
-      flexGrow={1}
-      borderStyle="single"
-      overflow="scroll"
-      scrollTo={selectedIndex}
-    >
+    <Box flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll" scrollTo={selectedIndex}>
       {tasks.map((task, i) => (
         <TaskRow key={task.id} task={task} isSelected={i === selectedIndex} />
       ))}
@@ -204,37 +180,21 @@ function TaskRow({ task, isSelected }: { task: Task; isSelected: boolean }) {
   // prefix (1) + space (1) + checkbox (3) + space (1) = 6 chars
   const titleWidth = Math.max(0, width - 6)
 
-  const truncatedTitle =
-    task.title.length > titleWidth
-      ? task.title.slice(0, titleWidth - 1) + "..."
-      : task.title
+  const truncatedTitle = task.title.length > titleWidth ? task.title.slice(0, titleWidth - 1) + "..." : task.title
 
   return (
     <Box flexDirection="column">
-      <Text
-        backgroundColor={isSelected ? "cyan" : undefined}
-        color={isSelected ? "black" : undefined}
-      >
+      <Text backgroundColor={isSelected ? "cyan" : undefined} color={isSelected ? "black" : undefined}>
         {prefix} {checkbox} {truncatedTitle}
       </Text>
       {task.subtasks?.map((subtask) => (
-        <SubtaskRow
-          key={subtask.id}
-          subtask={subtask}
-          isParentSelected={isSelected}
-        />
+        <SubtaskRow key={subtask.id} subtask={subtask} isParentSelected={isSelected} />
       ))}
     </Box>
   )
 }
 
-function SubtaskRow({
-  subtask,
-  isParentSelected,
-}: {
-  subtask: Subtask
-  isParentSelected: boolean
-}) {
+function SubtaskRow({ subtask, isParentSelected }: { subtask: Subtask; isParentSelected: boolean }) {
   const { width } = useContentRect()
 
   const checkbox = subtask.done ? "x" : " "
@@ -243,9 +203,7 @@ function SubtaskRow({
   const titleWidth = Math.max(0, width - 10)
 
   const truncatedTitle =
-    subtask.title.length > titleWidth
-      ? subtask.title.slice(0, titleWidth - 1) + "..."
-      : subtask.title
+    subtask.title.length > titleWidth ? subtask.title.slice(0, titleWidth - 1) + "..." : subtask.title
 
   return (
     <Text
@@ -279,21 +237,9 @@ await render(<App />, term)
 The `TaskList` component wraps tasks in a scrollable container:
 
 ```tsx
-function TaskList({
-  tasks,
-  selectedIndex,
-}: {
-  tasks: Task[]
-  selectedIndex: number
-}) {
+function TaskList({ tasks, selectedIndex }: { tasks: Task[]; selectedIndex: number }) {
   return (
-    <Box
-      flexDirection="column"
-      flexGrow={1}
-      borderStyle="single"
-      overflow="scroll"
-      scrollTo={selectedIndex}
-    >
+    <Box flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll" scrollTo={selectedIndex}>
       {tasks.map((task, i) => (
         <TaskRow key={task.id} task={task} isSelected={i === selectedIndex} />
       ))}
@@ -332,10 +278,7 @@ Inkx measures each task's actual height. No height estimation needed.
 Selected items use `backgroundColor="cyan"` and `color="black"`:
 
 ```tsx
-<Text
-  backgroundColor={isSelected ? "cyan" : undefined}
-  color={isSelected ? "black" : undefined}
->
+<Text backgroundColor={isSelected ? "cyan" : undefined} color={isSelected ? "black" : undefined}>
   {prefix} {checkbox} {truncatedTitle}
 </Text>
 ```
@@ -357,11 +300,7 @@ useInput((input, key) => {
   }
 
   if (input === " " || key.return) {
-    setTasks((prev) =>
-      prev.map((task, i) =>
-        i === selectedIndex ? { ...task, done: !task.done } : task,
-      ),
-    )
+    setTasks((prev) => prev.map((task, i) => (i === selectedIndex ? { ...task, done: !task.done } : task)))
   }
 })
 ```
@@ -372,10 +311,7 @@ Both tasks and subtasks truncate long titles:
 
 ```tsx
 const titleWidth = Math.max(0, width - 6)
-const truncatedTitle =
-  task.title.length > titleWidth
-    ? task.title.slice(0, titleWidth - 1) + "..."
-    : task.title
+const truncatedTitle = task.title.length > titleWidth ? task.title.slice(0, titleWidth - 1) + "..." : task.title
 ```
 
 The available width comes from `useContentRect()`.

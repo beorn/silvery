@@ -25,10 +25,7 @@ describe("Scroll container incremental rendering", () => {
         <Box flexDirection="column" width={40}>
           <Box overflow="scroll" height={3}>
             {["Alpha", "Beta", "Gamma", "Delta", "Epsilon"].map((item, i) => (
-              <Text
-                key={i}
-                backgroundColor={i === selected ? "yellow" : undefined}
-              >
+              <Text key={i} backgroundColor={i === selected ? "yellow" : undefined}>
                 {item}
               </Text>
             ))}
@@ -38,9 +35,7 @@ describe("Scroll container incremental rendering", () => {
     }
 
     // Render with incremental mode
-    const incApp = createRenderer({ cols: 40, rows: 20, incremental: true })(
-      <ScrollList selected={0} />,
-    )
+    const incApp = createRenderer({ cols: 40, rows: 20, incremental: true })(<ScrollList selected={0} />)
 
     // Render without incremental mode (fresh each time)
     const freshApp = render(<ScrollList selected={0} />)
@@ -58,19 +53,8 @@ describe("Scroll container incremental rendering", () => {
       return (
         <Box flexDirection="column" width={40}>
           <Box overflow="scroll" height={5} scrollTo={selected}>
-            {[
-              "Alpha",
-              "Beta",
-              "Gamma",
-              "Delta",
-              "Epsilon",
-              "Foxtrot",
-              "Golf",
-            ].map((item, i) => (
-              <Text
-                key={i}
-                backgroundColor={i === selected ? "yellow" : undefined}
-              >
+            {["Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Foxtrot", "Golf"].map((item, i) => (
+              <Text key={i} backgroundColor={i === selected ? "yellow" : undefined}>
                 {item}
               </Text>
             ))}
@@ -106,10 +90,7 @@ describe("Scroll container incremental rendering", () => {
         <Box flexDirection="column" width={40}>
           <Box overflow="scroll" height={5} scrollTo={selected}>
             {["A", "B", "C", "D", "E", "F", "G", "H"].map((item, i) => (
-              <Text
-                key={i}
-                backgroundColor={i === selected ? "cyan" : undefined}
-              >
+              <Text key={i} backgroundColor={i === selected ? "cyan" : undefined}>
                 {`${item}: item ${i}`}
               </Text>
             ))}
@@ -142,10 +123,7 @@ describe("Scroll container incremental rendering", () => {
         <Box width={20}>
           <Box overflow="scroll" height={4} scrollTo={cursor}>
             {["One", "Two", "Three", "Four"].map((item, i) => (
-              <Text
-                key={i}
-                backgroundColor={i === cursor ? "yellow" : undefined}
-              >
+              <Text key={i} backgroundColor={i === cursor ? "yellow" : undefined}>
                 {item}
               </Text>
             ))}
@@ -175,19 +153,11 @@ describe("Scroll container incremental rendering", () => {
   test("scroll container with parent backgroundColor preserves bg on incremental", () => {
     function ScrollWithBg({ cursor }: { cursor: number }) {
       return (
-        <Box
-          backgroundColor="white"
-          width={20}
-          height={6}
-          flexDirection="column"
-        >
+        <Box backgroundColor="white" width={20} height={6} flexDirection="column">
           <Text>Header</Text>
           <Box overflow="scroll" height={4} scrollTo={cursor}>
             {["A", "B", "C", "D", "E"].map((item, i) => (
-              <Text
-                key={i}
-                backgroundColor={i === cursor ? "yellow" : undefined}
-              >
+              <Text key={i} backgroundColor={i === cursor ? "yellow" : undefined}>
                 {item}
               </Text>
             ))}

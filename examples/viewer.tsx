@@ -102,8 +102,7 @@ async function discoverExamples(): Promise<Example[]> {
   }
 
   results.sort((a, b) => {
-    const catDiff =
-      (CATEGORY_ORDER[a.category] ?? 99) - (CATEGORY_ORDER[b.category] ?? 99)
+    const catDiff = (CATEGORY_ORDER[a.category] ?? 99) - (CATEGORY_ORDER[b.category] ?? 99)
     if (catDiff !== 0) return catDiff
     return a.name.localeCompare(b.name)
   })
@@ -170,11 +169,7 @@ const REACT_KEYWORDS = new Set([
 ])
 
 function highlightLine(line: string): React.ReactNode {
-  if (
-    line.trimStart().startsWith("//") ||
-    line.trimStart().startsWith("*") ||
-    line.trimStart().startsWith("/*")
-  ) {
+  if (line.trimStart().startsWith("//") || line.trimStart().startsWith("*") || line.trimStart().startsWith("/*")) {
     return (
       <Text dim color="gray">
         {line}
@@ -226,13 +221,7 @@ function highlightLine(line: string): React.ReactNode {
 // Components
 // =============================================================================
 
-function Sidebar({
-  examples,
-  cursor,
-}: {
-  examples: Example[]
-  cursor: number
-}) {
+function Sidebar({ examples, cursor }: { examples: Example[]; cursor: number }) {
   const { groups, scrollToChild } = useMemo(() => {
     const result: {
       category: string
@@ -275,16 +264,8 @@ function Sidebar({
           {group.items.map(({ example, globalIdx }) => {
             const selected = globalIdx === cursor
             return (
-              <Box
-                key={example.name}
-                paddingX={1}
-                backgroundColor={selected ? "cyan" : undefined}
-              >
-                <Text
-                  color={selected ? "white" : "white"}
-                  bold={selected}
-                  wrap="truncate"
-                >
+              <Box key={example.name} paddingX={1} backgroundColor={selected ? "cyan" : undefined}>
+                <Text color={selected ? "white" : "white"} bold={selected} wrap="truncate">
                   {selected ? "\u25B8 " : "  "}
                   {example.name}
                 </Text>
@@ -300,12 +281,8 @@ function Sidebar({
 /** Pad content lines to fill the full height — prevents stale pixel artifacts
  *  from the incremental renderer when switching between previews of different heights. */
 function padLines(contentLines: string[], totalHeight: number): string[] {
-  if (contentLines.length >= totalHeight)
-    return contentLines.slice(0, totalHeight)
-  return [
-    ...contentLines,
-    ...Array<string>(totalHeight - contentLines.length).fill(""),
-  ]
+  if (contentLines.length >= totalHeight) return contentLines.slice(0, totalHeight)
+  return [...contentLines, ...Array<string>(totalHeight - contentLines.length).fill("")]
 }
 
 function Preview({ example }: { example: Example }) {
@@ -368,11 +345,7 @@ function Preview({ example }: { example: Example }) {
   )
 
   if (error === "no-component") {
-    return renderLines([
-      "",
-      " No live preview — uses non-React API.",
-      " Press Enter to run standalone.",
-    ])
+    return renderLines(["", " No live preview — uses non-React API.", " Press Enter to run standalone."])
   }
 
   if (error) {
@@ -473,10 +446,7 @@ function Viewer({ examples }: { examples: Example[] }) {
     )
   }
 
-  const runLabel =
-    selected.category === "Inline" || selected.category === "Runtime"
-      ? "run"
-      : "run interactive"
+  const runLabel = selected.category === "Inline" || selected.category === "Runtime" ? "run" : "run interactive"
 
   return (
     <Box flexDirection="column" flexGrow={1}>
@@ -496,13 +466,7 @@ function Viewer({ examples }: { examples: Example[] }) {
         <Sidebar examples={examples} cursor={cursor} />
 
         {/* Content area with tabs */}
-        <Box
-          flexDirection="column"
-          flexGrow={1}
-          borderStyle="round"
-          borderColor="gray"
-          overflow="hidden"
-        >
+        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="gray" overflow="hidden">
           {/* Info banner */}
           <Box paddingX={1} flexDirection="column">
             <Text wrap="truncate">
@@ -519,19 +483,11 @@ function Viewer({ examples }: { examples: Example[] }) {
           {/* Tab bar */}
           <Box paddingX={1}>
             <Text>
-              <Text
-                bold={tab === "view"}
-                color={tab === "view" ? "cyan" : undefined}
-                dim={tab !== "view"}
-              >
+              <Text bold={tab === "view"} color={tab === "view" ? "cyan" : undefined} dim={tab !== "view"}>
                 View
               </Text>
               <Text dim> │ </Text>
-              <Text
-                bold={tab === "source"}
-                color={tab === "source" ? "cyan" : undefined}
-                dim={tab !== "source"}
-              >
+              <Text bold={tab === "source"} color={tab === "source" ? "cyan" : undefined} dim={tab !== "source"}>
                 Source
               </Text>
             </Text>
@@ -539,12 +495,7 @@ function Viewer({ examples }: { examples: Example[] }) {
 
           {/* Tab content — key forces full teardown on example switch */}
           {tab === "view" ? (
-            <Box
-              key={selected.file}
-              flexDirection="column"
-              flexGrow={1}
-              overflow="hidden"
-            >
+            <Box key={selected.file} flexDirection="column" flexGrow={1} overflow="hidden">
               <Preview example={selected} />
             </Box>
           ) : (

@@ -33,14 +33,8 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "AI Chat",
-  description:
-    "VirtualList chat with simulated streaming responses and ReadlineInput",
-  features: [
-    "VirtualList",
-    "useContentRect()",
-    "ReadlineInput",
-    "variable-height items",
-  ],
+  description: "VirtualList chat with simulated streaming responses and ReadlineInput",
+  features: ["VirtualList", "useContentRect()", "ReadlineInput", "variable-height items"],
 }
 
 // ============================================================================
@@ -80,13 +74,7 @@ function formatTime(date: Date): string {
   })
 }
 
-function MessageBubble({
-  message,
-  width,
-}: {
-  message: Message
-  width: number
-}): JSX.Element {
+function MessageBubble({ message, width }: { message: Message; width: number }): JSX.Element {
   const isUser = message.role === "user"
   const isSystem = message.role === "system"
   const maxContentWidth = Math.max(20, width - 4)
@@ -102,12 +90,7 @@ function MessageBubble({
   }
 
   return (
-    <Box
-      flexDirection="column"
-      paddingX={1}
-      marginBottom={1}
-      alignItems={isUser ? "flex-end" : "flex-start"}
-    >
+    <Box flexDirection="column" paddingX={1} marginBottom={1} alignItems={isUser ? "flex-end" : "flex-start"}>
       <Box gap={1}>
         <Text bold color={isUser ? "cyan" : "green"}>
           {isUser ? "You" : "Assistant"}
@@ -139,12 +122,7 @@ function MessageBubble({
 
 function Header(): JSX.Element {
   return (
-    <Box
-      borderStyle="single"
-      borderColor="magenta"
-      paddingX={2}
-      justifyContent="space-between"
-    >
+    <Box borderStyle="single" borderColor="magenta" paddingX={2} justifyContent="space-between">
       <Text bold color="magenta">
         inkx AI Chat
       </Text>
@@ -203,9 +181,7 @@ function MessageArea({
       itemHeight={estimateHeight}
       scrollTo={scrollIndex}
       overscan={3}
-      renderItem={(msg) => (
-        <MessageBubble key={msg.id} message={msg} width={width} />
-      )}
+      renderItem={(msg) => <MessageBubble key={msg.id} message={msg} width={width} />}
     />
   )
 }
@@ -223,8 +199,7 @@ function Chat(): JSX.Element {
     {
       id: nextId++,
       role: "system",
-      content:
-        "Welcome to inkx AI Chat! Type a message and press Enter to chat.",
+      content: "Welcome to inkx AI Chat! Type a message and press Enter to chat.",
       timestamp: new Date(),
     },
   ])
@@ -244,8 +219,7 @@ function Chat(): JSX.Element {
   // Simulate AI streaming response
   const simulateResponse = useCallback(
     (userMessage: string) => {
-      const fullResponse =
-        AI_RESPONSES[Math.floor(Math.random() * AI_RESPONSES.length)]!
+      const fullResponse = AI_RESPONSES[Math.floor(Math.random() * AI_RESPONSES.length)]!
       const assistantId = nextId++
 
       // Add empty assistant message
@@ -315,11 +289,7 @@ function Chat(): JSX.Element {
   )
 
   useInput((input: string, key: Key) => {
-    if (
-      key.escape ||
-      (key.ctrl && input === "c") ||
-      (input === "q" && inputActive && !inputValue)
-    ) {
+    if (key.escape || (key.ctrl && input === "c") || (input === "q" && inputActive && !inputValue)) {
       if (streamingRef.current) clearInterval(streamingRef.current)
       exit()
     }
@@ -328,18 +298,10 @@ function Chat(): JSX.Element {
   return (
     <Box flexDirection="column" flexGrow={1}>
       <Box flexGrow={1} flexDirection="column">
-        <MessageArea
-          messages={messages}
-          scrollIndex={scrollIndex}
-          width={width}
-        />
+        <MessageArea messages={messages} scrollIndex={scrollIndex} width={width} />
       </Box>
 
-      <Box
-        borderStyle="single"
-        borderColor={isStreaming ? "yellow" : "cyan"}
-        paddingX={1}
-      >
+      <Box borderStyle="single" borderColor={isStreaming ? "yellow" : "cyan"} paddingX={1}>
         {isStreaming ? (
           <Text color="yellow" italic>
             Assistant is typing...

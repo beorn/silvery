@@ -49,19 +49,9 @@ import React, { useState, act } from "react"
 import { describe, expect, it } from "vitest"
 import { Box, Text, useContentRect, type Rect } from "../src/index.js"
 import { createRenderer } from "../src/testing/index.js"
-import {
-  reconciler,
-  createContainer,
-  getContainerRoot,
-} from "../src/reconciler.js"
+import { reconciler, createContainer, getContainerRoot } from "../src/reconciler.js"
 import { executeRender } from "../src/pipeline/index.js"
-import {
-  AppContext,
-  StdoutContext,
-  TermContext,
-  InputContext,
-  EventsContext,
-} from "../src/context.js"
+import { AppContext, StdoutContext, TermContext, InputContext, EventsContext } from "../src/context.js"
 import { createTerm } from "chalkx"
 import { EventEmitter } from "node:events"
 import { bufferToText, cellEquals } from "../src/buffer.js"
@@ -92,19 +82,9 @@ function SelfMeasuring({ label }: { label: string }) {
  * A component that uses onLayout to store layout info in parent state.
  * The onLayout callback calls setState on the parent, scheduling a re-render.
  */
-function LayoutReporter({
-  label,
-  onLayoutChange,
-}: {
-  label: string
-  onLayoutChange: (rect: Rect) => void
-}) {
+function LayoutReporter({ label, onLayoutChange }: { label: string; onLayoutChange: (rect: Rect) => void }) {
   return (
-    <Box
-      borderStyle="round"
-      flexGrow={1}
-      onLayout={(layout) => onLayoutChange(layout)}
-    >
+    <Box borderStyle="round" flexGrow={1} onLayout={(layout) => onLayoutChange(layout)}>
       <Text>{label}</Text>
     </Box>
   )
@@ -124,14 +104,8 @@ function LayoutContainer() {
   return (
     <Box flexDirection="column">
       <Box flexDirection="row" gap={1} height={6}>
-        <LayoutReporter
-          label="Pane A"
-          onLayoutChange={handleLayoutChange("a")}
-        />
-        <LayoutReporter
-          label="Pane B"
-          onLayoutChange={handleLayoutChange("b")}
-        />
+        <LayoutReporter label="Pane A" onLayoutChange={handleLayoutChange("a")} />
+        <LayoutReporter label="Pane B" onLayoutChange={handleLayoutChange("b")} />
       </Box>
       <Box borderStyle="single" padding={1}>
         <Box flexDirection="column">
@@ -151,22 +125,11 @@ function LayoutContainer() {
 /**
  * Outer "viewer" shell for embedding.
  */
-function ViewerShell({
-  children,
-  title,
-}: {
-  children: React.ReactNode
-  title: string
-}) {
+function ViewerShell({ children, title }: { children: React.ReactNode; title: string }) {
   return (
     <Box flexDirection="column" flexGrow={1}>
       <Text bold>{title}</Text>
-      <Box
-        flexDirection="column"
-        flexGrow={1}
-        borderStyle="round"
-        overflow="hidden"
-      >
+      <Box flexDirection="column" flexGrow={1} borderStyle="round" overflow="hidden">
         {children}
       </Box>
       <Text dim>Press q to quit</Text>
@@ -184,11 +147,7 @@ function ViewerShell({
  * when React flushes and when the render pipeline runs, exposing
  * the race condition between layout notifications and incremental rendering.
  */
-function createProductionSimulator(
-  element: React.ReactElement,
-  cols = 60,
-  rows = 20,
-) {
+function createProductionSimulator(element: React.ReactElement, cols = 60, rows = 20) {
   let onRenderCalled = false
   const container = createContainer(() => {
     onRenderCalled = true
@@ -276,7 +235,10 @@ function createProductionSimulator(
      */
     renderPipeline() {
       const MAX_ITERATIONS = 5
-      let result!: { text: string; buffer: import("../src/buffer.js").TerminalBuffer }
+      let result!: {
+        text: string
+        buffer: import("../src/buffer.js").TerminalBuffer
+      }
 
       for (let i = 0; i < MAX_ITERATIONS; i++) {
         onRenderCalled = false

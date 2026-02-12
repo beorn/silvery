@@ -61,13 +61,7 @@ export interface RenderBuffer {
   /**
    * Fill a rectangle with a style.
    */
-  fillRect(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    style: RenderStyle,
-  ): void
+  fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void
 
   /**
    * Draw text at a position.

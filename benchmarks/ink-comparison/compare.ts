@@ -74,15 +74,11 @@ function ratio(inkxUs: number, inkUs: number): string {
 }
 
 console.log("Running inkx benchmark...")
-const inkxProc = await $`bun run ${join(benchDir, "run.ts")}`
-  .cwd(kmRoot)
-  .quiet()
+const inkxProc = await $`bun run ${join(benchDir, "run.ts")}`.cwd(kmRoot).quiet()
 const inkxOutput = inkxProc.stdout.toString()
 
 console.log("Running ink benchmark...")
-const inkProc = await $`bun run ${join(benchDir, "ink-bench.ts")}`
-  .cwd(kmRoot)
-  .quiet()
+const inkProc = await $`bun run ${join(benchDir, "ink-bench.ts")}`.cwd(kmRoot).quiet()
 const inkOutput = inkProc.stdout.toString()
 
 const inkxMap = new Map(parseResults(inkxOutput).map((r) => [r.name, r]))
@@ -96,20 +92,14 @@ function get(map: Map<string, BenchResult>, name: string): number {
 // ════════════════════════════════════════════════════════════════════════════
 
 console.log()
-console.log(
-  "═══════════════════════════════════════════════════════════════════════════",
-)
+console.log("═══════════════════════════════════════════════════════════════════════════")
 console.log("  inkx (Flexx) vs Ink 6 (Yoga native)  —  Head-to-Head Comparison")
-console.log(
-  "═══════════════════════════════════════════════════════════════════════════",
-)
+console.log("═══════════════════════════════════════════════════════════════════════════")
 
 // Section 1: Full pipeline (React → layout → output)
 console.log()
 console.log("Full pipeline: React reconciliation → layout → string output")
-console.log(
-  "─────────────────────────────────────────────────────────────────────",
-)
+console.log("─────────────────────────────────────────────────────────────────────")
 
 const fullPipeline = [
   {
@@ -130,9 +120,7 @@ const fullPipeline = [
 ]
 
 const W = { l: 28, v: 14, r: 14 }
-console.log(
-  `${"".padEnd(W.l)}  ${"inkx".padStart(W.v)}  ${"ink".padStart(W.v)}  ${"Winner".padStart(W.r)}`,
-)
+console.log(`${"".padEnd(W.l)}  ${"inkx".padStart(W.v)}  ${"ink".padStart(W.v)}  ${"Winner".padStart(W.r)}`)
 
 for (const cmp of fullPipeline) {
   const x = get(inkxMap, cmp.inkx)
@@ -145,22 +133,14 @@ for (const cmp of fullPipeline) {
 
 // Note about fairness
 console.log()
-console.log(
-  "  Note: inkx uses createRenderer() (headless). Ink uses render() with",
-)
-console.log(
-  "  mock stdout + unmount per iteration. Both include React reconciliation.",
-)
+console.log("  Note: inkx uses createRenderer() (headless). Ink uses render() with")
+console.log("  mock stdout + unmount per iteration. Both include React reconciliation.")
 
 // Section 2: Layout engine (pure layout, no React)
 console.log()
 console.log("Layout engine only (no React, no rendering)")
-console.log(
-  "─────────────────────────────────────────────────────────────────────",
-)
-console.log(
-  `${"".padEnd(W.l)}  ${"Flexx".padStart(W.v)}  ${"Yoga WASM".padStart(W.v)}  ${"Yoga NAPI".padStart(W.r)}`,
-)
+console.log("─────────────────────────────────────────────────────────────────────")
+console.log(`${"".padEnd(W.l)}  ${"Flexx".padStart(W.v)}  ${"Yoga WASM".padStart(W.v)}  ${"Yoga NAPI".padStart(W.r)}`)
 
 const layoutComps = [
   {
@@ -187,21 +167,13 @@ for (const cmp of layoutComps) {
 }
 
 console.log()
-console.log(
-  "  Flexx = pure JS (7 KB). Yoga WASM = yoga-wasm-web. Yoga NAPI = yoga-layout (C++).",
-)
+console.log("  Flexx = pure JS (7 KB). Yoga WASM = yoga-wasm-web. Yoga NAPI = yoga-layout (C++).")
 
 // Section 3: React re-render (apples-to-apples)
 console.log()
-console.log(
-  "React re-render (apples-to-apples: full React reconciliation + layout + output)",
-)
-console.log(
-  "─────────────────────────────────────────────────────────────────────",
-)
-console.log(
-  `${"".padEnd(W.l)}  ${"inkx".padStart(W.v)}  ${"ink".padStart(W.v)}  ${"Ratio".padStart(W.r)}`,
-)
+console.log("React re-render (apples-to-apples: full React reconciliation + layout + output)")
+console.log("─────────────────────────────────────────────────────────────────────")
+console.log(`${"".padEnd(W.l)}  ${"inkx".padStart(W.v)}  ${"ink".padStart(W.v)}  ${"Ratio".padStart(W.r)}`)
 
 const rerenderComps = [
   {
@@ -224,9 +196,7 @@ for (const cmp of rerenderComps) {
       `${cmp.label.padEnd(W.l)}  ${formatUs(x).padStart(W.v)}  ${formatUs(k).padStart(W.v)}  ${ratio(x, k).padStart(W.r)}`,
     )
   } else if (k) {
-    console.log(
-      `${cmp.label.padEnd(W.l)}  ${"—".padStart(W.v)}  ${formatUs(k).padStart(W.v)}`,
-    )
+    console.log(`${cmp.label.padEnd(W.l)}  ${"—".padStart(W.v)}  ${formatUs(k).padStart(W.v)}`)
   }
 }
 
@@ -236,9 +206,7 @@ console.log("  Both trigger full React reconciliation of the component tree.")
 // Section 4: inkx diff render (no ink equivalent)
 console.log()
 console.log("inkx dirty-tracking diff render (no ink equivalent)")
-console.log(
-  "─────────────────────────────────────────────────────────────────────",
-)
+console.log("─────────────────────────────────────────────────────────────────────")
 const diffs = [
   { label: "1 node", name: "1 node (diff)" },
   { label: "100 nodes", name: "100 nodes (diff)" },
@@ -252,9 +220,7 @@ for (const d of diffs) {
 // Section 5: inkx resize
 console.log()
 console.log("inkx resize re-layout (no ink equivalent)")
-console.log(
-  "─────────────────────────────────────────────────────────────────────",
-)
+console.log("─────────────────────────────────────────────────────────────────────")
 const resizes = [
   { label: "10 nodes", name: "10 nodes 80x24 -> 120x40" },
   { label: "100 nodes", name: "100 nodes 80x24 -> 120x40" },
@@ -271,19 +237,11 @@ const inkHeap = get(inkMap, "100 Box+Text heap delta")
 if (inkxHeap && inkHeap) {
   console.log()
   console.log("Memory (100 Box+Text heap delta)")
-  console.log(
-    "─────────────────────────────────────────────────────────────────────",
-  )
-  console.log(
-    `  inkx: ${formatUs(inkxHeap)}    ink: ${formatUs(inkHeap)}    ${ratio(inkxHeap, inkHeap)}`,
-  )
+  console.log("─────────────────────────────────────────────────────────────────────")
+  console.log(`  inkx: ${formatUs(inkxHeap)}    ink: ${formatUs(inkHeap)}    ${ratio(inkxHeap, inkHeap)}`)
 }
 
 console.log()
-console.log(
-  "─────────────────────────────────────────────────────────────────────",
-)
+console.log("─────────────────────────────────────────────────────────────────────")
 console.log("Platform: Apple M1 Max, Bun 1.3.9, macOS")
-console.log(
-  "inkx: Flexx layout (pure JS). Ink 6.6.0: yoga-layout 3.2.1 (native).",
-)
+console.log("inkx: Flexx layout (pure JS). Ink 6.6.0: yoga-layout 3.2.1 (native).")

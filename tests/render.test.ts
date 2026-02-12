@@ -22,12 +22,7 @@ describe("render", () => {
     })
 
     it("renders nested elements", () => {
-      const element = createElement(
-        Box,
-        null,
-        createElement(Text, null, "Line 1"),
-        createElement(Text, null, "Line 2"),
-      )
+      const element = createElement(Box, null, createElement(Text, null, "Line 1"), createElement(Text, null, "Line 2"))
 
       const app = render(element)
 
@@ -280,12 +275,7 @@ describe("test utilities", () => {
       const element = createElement(
         Text,
         null,
-        createElement(
-          Text,
-          { color: "green" },
-          "green ",
-          createElement(Text, { bold: true }, "green+bold"),
-        ),
+        createElement(Text, { color: "green" }, "green ", createElement(Text, { bold: true }, "green+bold")),
       )
 
       const app = render(element)
@@ -320,11 +310,7 @@ describe("test utilities", () => {
     })
 
     it("should render black background color (color index 0)", () => {
-      const element = createElement(
-        Box,
-        { backgroundColor: "black" },
-        createElement(Text, { color: "white" }, "WHITE"),
-      )
+      const element = createElement(Box, { backgroundColor: "black" }, createElement(Text, { color: "white" }, "WHITE"))
 
       const app = render(element)
       const frame = app.ansi
@@ -388,13 +374,7 @@ describe("test utilities", () => {
         Text,
         { color: "white" },
         "W",
-        createElement(
-          Text,
-          { color: "red" },
-          "R",
-          createElement(Text, { color: "blue" }, "B"),
-          "R",
-        ),
+        createElement(Text, { color: "red" }, "R", createElement(Text, { color: "blue" }, "B"), "R"),
         "W",
       )
 

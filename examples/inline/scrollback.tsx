@@ -10,16 +10,7 @@
  */
 
 import React, { useState, useCallback } from "react"
-import {
-  render,
-  Box,
-  Text,
-  VirtualList,
-  useInput,
-  useApp,
-  createTerm,
-  type Key,
-} from "../../src/index.js"
+import { render, Box, Text, VirtualList, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { useScrollback } from "../../src/hooks/useScrollback.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
@@ -75,10 +66,7 @@ export function Repl() {
     const id = nextId++
 
     // Mark all existing results as frozen, add new one unfrozen
-    setResults((prev) => [
-      ...prev.map((r) => ({ ...r, frozen: true })),
-      { id, expr, value, frozen: false },
-    ])
+    setResults((prev) => [...prev.map((r) => ({ ...r, frozen: true })), { id, expr, value, frozen: false }])
     setInput("")
     setCursor(0)
   }, [input])
@@ -185,12 +173,12 @@ export function Repl() {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-      <ExampleBanner meta={meta} controls="Type expr + Enter  Esc/q quit">
-        <Repl />
-      </ExampleBanner>,
-      term,
-      { mode: "inline" },
-    )
+    <ExampleBanner meta={meta} controls="Type expr + Enter  Esc/q quit">
+      <Repl />
+    </ExampleBanner>,
+    term,
+    { mode: "inline" },
+  )
   await waitUntilExit()
 }
 

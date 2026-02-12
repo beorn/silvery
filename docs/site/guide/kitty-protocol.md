@@ -290,8 +290,7 @@ Add Kitty protocol parsing to `parseKeypress`:
 
 ```typescript
 // New regex for CSI u format
-const KITTY_KEY_RE =
-  /^\x1b\[(\d+)(?::(\d+))?(?:;(\d+)(?::(\d+))?)?(?:;([^u]*))?u$/
+const KITTY_KEY_RE = /^\x1b\[(\d+)(?::(\d+))?(?:;(\d+)(?::(\d+))?)?(?:;([^u]*))?u$/
 
 function parseKittyKeypress(s: string): ParsedKeypress | null {
   const match = KITTY_KEY_RE.exec(s)
@@ -312,8 +311,7 @@ function parseKittyKeypress(s: string): ParsedKeypress | null {
     hyper: !!(modifiers & 16),
     capsLock: !!(modifiers & 64),
     numLock: !!(modifiers & 128),
-    eventType:
-      eventType === 1 ? "press" : eventType === 2 ? "repeat" : "release",
+    eventType: eventType === 1 ? "press" : eventType === 2 ? "repeat" : "release",
     sequence: s,
     keyCode,
     kittyProtocol: true,
@@ -394,14 +392,8 @@ function App() {
 
   return (
     <Box flexDirection="column">
-      <Text>
-        Kitty protocol: {kittyProtocolEnabled ? "enabled" : "not available"}
-      </Text>
-      {!kittyProtocolEnabled && (
-        <Text dimColor>
-          Tip: Use Kitty, WezTerm, or iTerm2 for enhanced keyboard support
-        </Text>
-      )}
+      <Text>Kitty protocol: {kittyProtocolEnabled ? "enabled" : "not available"}</Text>
+      {!kittyProtocolEnabled && <Text dimColor>Tip: Use Kitty, WezTerm, or iTerm2 for enhanced keyboard support</Text>}
     </Box>
   )
 }

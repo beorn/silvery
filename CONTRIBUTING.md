@@ -125,12 +125,7 @@ test("wide render", () => {
 ### Testing Utilities
 
 ```tsx
-import {
-  createRenderer,
-  stripAnsi,
-  normalizeFrame,
-  waitFor,
-} from "inkx/testing"
+import { createRenderer, stripAnsi, normalizeFrame, waitFor } from "inkx/testing"
 
 // Strip ANSI codes for easier assertions
 const plainText = stripAnsi("\u001B[32mGreen\u001B[39m")

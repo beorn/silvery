@@ -33,14 +33,9 @@ function verifyAnsiReplay(app: ReturnType<typeof render>) {
   if (mismatches.length > 0) {
     const details = mismatches
       .slice(0, 10)
-      .map(
-        (m) =>
-          `  (${m.x},${m.y}): expected="${m.expected}" actual="${m.actual}"`,
-      )
+      .map((m) => `  (${m.x},${m.y}): expected="${m.expected}" actual="${m.actual}"`)
       .join("\n")
-    throw new Error(
-      `ANSI replay mismatch: ${mismatches.length} cells differ:\n${details}`,
-    )
+    throw new Error(`ANSI replay mismatch: ${mismatches.length} cells differ:\n${details}`)
   }
 }
 
@@ -49,11 +44,7 @@ describe("Ghost characters when replacing content", () => {
     function App({ long }: { long: boolean }) {
       return (
         <Box flexDirection="column" width={40} height={10}>
-          {long ? (
-            <Text>This is a very long line of text that fills the width</Text>
-          ) : (
-            <Text>Short</Text>
-          )}
+          {long ? <Text>This is a very long line of text that fills the width</Text> : <Text>Short</Text>}
         </Box>
       )
     }
@@ -129,10 +120,8 @@ describe("Ghost characters when replacing content", () => {
       const [selectedIndex, setSelectedIndex] = useState(0)
 
       useInput((input, key) => {
-        if (input === "j" || key.downArrow)
-          setSelectedIndex((prev) => Math.min(prev + 1, sections.length - 1))
-        if (input === "k" || key.upArrow)
-          setSelectedIndex((prev) => Math.max(prev - 1, 0))
+        if (input === "j" || key.downArrow) setSelectedIndex((prev) => Math.min(prev + 1, sections.length - 1))
+        if (input === "k" || key.upArrow) setSelectedIndex((prev) => Math.max(prev - 1, 0))
       })
 
       const section = sections[selectedIndex]!
@@ -140,13 +129,7 @@ describe("Ghost characters when replacing content", () => {
         <Box flexDirection="column" width={70} height={20}>
           <Box flexDirection="row" flexGrow={1}>
             {/* Sidebar */}
-            <Box
-              flexDirection="column"
-              width={20}
-              borderStyle="single"
-              borderColor="gray"
-              paddingX={1}
-            >
+            <Box flexDirection="column" width={20} borderStyle="single" borderColor="gray" paddingX={1}>
               <Text bold color="yellow">
                 Sections
               </Text>
@@ -161,12 +144,7 @@ describe("Ghost characters when replacing content", () => {
               ))}
             </Box>
             {/* Content */}
-            <Box
-              flexDirection="column"
-              flexGrow={1}
-              paddingX={1}
-              overflow="hidden"
-            >
+            <Box flexDirection="column" flexGrow={1} paddingX={1} overflow="hidden">
               {section.content.map((line, i) => (
                 <Text key={i}>{line}</Text>
               ))}
@@ -222,9 +200,7 @@ describe("Ghost characters when replacing content", () => {
             {idx === 0 ? (
               <Text>Short content for A</Text>
             ) : (
-              <Text>
-                This is a much longer content for section B that might overflow
-              </Text>
+              <Text>This is a much longer content for section B that might overflow</Text>
             )}
           </Box>
         </Box>
@@ -252,10 +228,7 @@ describe("Ghost characters when replacing content", () => {
       if (y === 0 || y === buffer.height - 1 || y >= 7) continue // skip top/bottom/unused rows
       // The border characters are │ for sides
       expect(
-        borderCell.char === "│" ||
-          borderCell.char === "┐" ||
-          borderCell.char === "┘" ||
-          borderCell.char === " ",
+        borderCell.char === "│" || borderCell.char === "┐" || borderCell.char === "┘" || borderCell.char === " ",
         `Row ${y} col 14: expected border/space, got "${borderCell.char}"`,
       ).toBe(true)
     }
@@ -272,12 +245,7 @@ describe("Ghost characters when replacing content", () => {
       })
 
       const contents = [
-        [
-          "Section A - Long line of content here that fills up space",
-          "A line 2",
-          "A line 3",
-          "A line 4",
-        ],
+        ["Section A - Long line of content here that fills up space", "A line 2", "A line 3", "A line 4"],
         ["Section B - Short"],
         ["Section C - Medium content", "C line 2", "C line 3"],
       ]
@@ -286,11 +254,7 @@ describe("Ghost characters when replacing content", () => {
         <Box flexDirection="row" width={60} height={10}>
           <Box flexDirection="column" width={15} borderStyle="single">
             {["Sec A", "Sec B", "Sec C"].map((t, i) => (
-              <Text
-                key={t}
-                backgroundColor={i === idx ? "cyan" : undefined}
-                color={i === idx ? "black" : "white"}
-              >
+              <Text key={t} backgroundColor={i === idx ? "cyan" : undefined} color={i === idx ? "black" : "white"}>
                 {i === idx ? ">" : " "} {t}
               </Text>
             ))}
@@ -331,14 +295,9 @@ describe("Ghost characters when replacing content", () => {
     if (mismatches.length > 0) {
       const details = mismatches
         .slice(0, 20)
-        .map(
-          (m) =>
-            `  (${m.x},${m.y}): expected="${m.expected}" actual="${m.actual}"`,
-        )
+        .map((m) => `  (${m.x},${m.y}): expected="${m.expected}" actual="${m.actual}"`)
         .join("\n")
-      expect.fail(
-        `ANSI replay mismatch: ${mismatches.length} cells differ:\n${details}`,
-      )
+      expect.fail(`ANSI replay mismatch: ${mismatches.length} cells differ:\n${details}`)
     }
 
     // Navigate to section C, then back to B
@@ -356,14 +315,9 @@ describe("Ghost characters when replacing content", () => {
     if (mismatches2.length > 0) {
       const details = mismatches2
         .slice(0, 20)
-        .map(
-          (m) =>
-            `  (${m.x},${m.y}): expected="${m.expected}" actual="${m.actual}"`,
-        )
+        .map((m) => `  (${m.x},${m.y}): expected="${m.expected}" actual="${m.actual}"`)
         .join("\n")
-      expect.fail(
-        `ANSI replay mismatch (C→B): ${mismatches2.length} cells differ:\n${details}`,
-      )
+      expect.fail(`ANSI replay mismatch (C→B): ${mismatches2.length} cells differ:\n${details}`)
     }
   })
 })

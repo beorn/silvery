@@ -25,11 +25,7 @@
  */
 
 import type { ReactElement, ReactNode } from "react"
-import {
-  type AutoLocator,
-  type FilterOptions,
-  createAutoLocator,
-} from "./auto-locator.js"
+import { type AutoLocator, type FilterOptions, createAutoLocator } from "./auto-locator.js"
 import { type BoundTerm, createBoundTerm } from "./bound-term.js"
 import type { TerminalBuffer } from "./buffer.js"
 import { bufferToHTML, bufferToStyledText, bufferToText } from "./buffer.js"
@@ -393,20 +389,11 @@ export function buildApp(options: AppOptions): App {
 /**
  * Find node at content coordinates (not screen coordinates)
  */
-function findNodeAtContentPosition(
-  node: InkxNode,
-  x: number,
-  y: number,
-): InkxNode | null {
+function findNodeAtContentPosition(node: InkxNode, x: number, y: number): InkxNode | null {
   const rect = node.contentRect
   if (!rect) return null
 
-  if (
-    x < rect.x ||
-    x >= rect.x + rect.width ||
-    y < rect.y ||
-    y >= rect.y + rect.height
-  ) {
+  if (x < rect.x || x >= rect.x + rect.width || y < rect.y || y >= rect.y + rect.height) {
     return null
   }
 

@@ -134,20 +134,11 @@ function SearchInput() {
 ### Conditional Focus
 
 ```tsx
-function DisableableButton({
-  label,
-  disabled,
-}: {
-  label: string
-  disabled: boolean
-}) {
+function DisableableButton({ label, disabled }: { label: string; disabled: boolean }) {
   const { isFocused } = useFocus({ isActive: !disabled })
 
   return (
-    <Text
-      color={disabled ? "gray" : isFocused ? "green" : undefined}
-      dimColor={disabled}
-    >
+    <Text color={disabled ? "gray" : isFocused ? "green" : undefined} dimColor={disabled}>
       {isFocused ? "> " : "  "}
       {label}
     </Text>
@@ -186,13 +177,7 @@ function FocusableWithId({ id, label }: { id: string; label: string }) {
 ### Action on Focus
 
 ```tsx
-function MenuItem({
-  label,
-  onSelect,
-}: {
-  label: string
-  onSelect: () => void
-}) {
+function MenuItem({ label, onSelect }: { label: string; onSelect: () => void }) {
   const { isFocused } = useFocus()
 
   useInput((input, key) => {

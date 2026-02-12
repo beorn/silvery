@@ -215,9 +215,7 @@ describe("inkx render: edge cases", () => {
   bench(
     "100 items (90% empty)",
     () => {
-      const items = Array.from({ length: 100 }, (_, i) =>
-        i % 10 === 0 ? `Item ${i}` : "",
-      )
+      const items = Array.from({ length: 100 }, (_, i) => (i % 10 === 0 ? `Item ${i}` : ""))
       render(
         <Box flexDirection="column">
           {items.map((item, i) => (

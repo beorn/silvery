@@ -148,8 +148,7 @@ function VirtualListInner<T>(
   const activeItems = frozenCount > 0 ? items.slice(frozenCount) : items
 
   // Adjust scrollTo to account for frozen items
-  const adjustedScrollTo =
-    scrollTo !== undefined ? Math.max(0, scrollTo - frozenCount) : undefined
+  const adjustedScrollTo = scrollTo !== undefined ? Math.max(0, scrollTo - frozenCount) : undefined
 
   // Adjust itemHeight function to use original indices
   const adjustedItemHeight =
@@ -202,11 +201,8 @@ function VirtualListInner<T>(
   // Account for top placeholder being child 0 when present
   const hasTopPlaceholder = leadingPlaceholderSize > 0
   const selectedIndexInSlice = currentSelectedIndex - startIndex
-  const isSelectedInSlice =
-    selectedIndexInSlice >= 0 && selectedIndexInSlice < visibleItems.length
-  const scrollToIndex = hasTopPlaceholder
-    ? selectedIndexInSlice + 1
-    : selectedIndexInSlice
+  const isSelectedInSlice = selectedIndexInSlice >= 0 && selectedIndexInSlice < visibleItems.length
+  const scrollToIndex = hasTopPlaceholder ? selectedIndexInSlice + 1 : selectedIndexInSlice
 
   // Pass scrollTo to inkx Box:
   // Always pass the selected child index when it's in the rendered slice.
@@ -215,7 +211,9 @@ function VirtualListInner<T>(
   // the index points to the same child as before (no visual change).
   const boxScrollTo = isSelectedInSlice ? Math.max(0, scrollToIndex) : undefined
 
-  log.debug?.(`VirtualList render: scrollTo=${scrollTo} boxScrollTo=${boxScrollTo} frozen=${scrollTo === undefined} start=${startIndex} end=${endIndex} currentSelected=${currentSelectedIndex} isInSlice=${isSelectedInSlice}`)
+  log.debug?.(
+    `VirtualList render: scrollTo=${scrollTo} boxScrollTo=${boxScrollTo} frozen=${scrollTo === undefined} start=${startIndex} end=${endIndex} currentSelected=${currentSelectedIndex} isInSlice=${isSelectedInSlice}`,
+  )
 
   return (
     <Box
@@ -227,34 +225,26 @@ function VirtualListInner<T>(
       overflowIndicator={overflowIndicator}
     >
       {/* Top placeholder for virtual height */}
-      {leadingPlaceholderSize > 0 && (
-        <Box height={leadingPlaceholderSize} flexShrink={0} />
-      )}
+      {leadingPlaceholderSize > 0 && <Box height={leadingPlaceholderSize} flexShrink={0} />}
 
       {/* Render visible items */}
       {visibleItems.map((item, i) => {
         const activeIndex = startIndex + i
         const originalIndex = activeIndex + frozenCount
-        const key = keyExtractor
-          ? keyExtractor(item, originalIndex)
-          : originalIndex
+        const key = keyExtractor ? keyExtractor(item, originalIndex) : originalIndex
         const isLast = i === visibleItems.length - 1
 
         return (
           <React.Fragment key={key}>
             {renderItem(item, originalIndex)}
             {!isLast && renderSeparator && renderSeparator()}
-            {!isLast && gap > 0 && !renderSeparator && (
-              <Box height={gap} flexShrink={0} />
-            )}
+            {!isLast && gap > 0 && !renderSeparator && <Box height={gap} flexShrink={0} />}
           </React.Fragment>
         )
       })}
 
       {/* Bottom placeholder for virtual height */}
-      {trailingPlaceholderSize > 0 && (
-        <Box height={trailingPlaceholderSize} flexShrink={0} />
-      )}
+      {trailingPlaceholderSize > 0 && <Box height={trailingPlaceholderSize} flexShrink={0} />}
     </Box>
   )
 }

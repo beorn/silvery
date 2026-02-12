@@ -31,9 +31,7 @@ export interface Rect {
 export function rectEqual(a: Rect | null, b: Rect | null): boolean {
   if (a === b) return true
   if (!a || !b) return false
-  return (
-    a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
-  )
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
 }
 
 // ============================================================================
@@ -66,27 +64,9 @@ export interface FlexboxProps {
 
   // Alignment
   alignItems?: "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
-  alignSelf?:
-    | "auto"
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "stretch"
-    | "baseline"
-  alignContent?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "stretch"
-    | "space-between"
-    | "space-around"
-  justifyContent?:
-    | "flex-start"
-    | "flex-end"
-    | "center"
-    | "space-between"
-    | "space-around"
-    | "space-evenly"
+  alignSelf?: "auto" | "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
+  alignContent?: "flex-start" | "flex-end" | "center" | "stretch" | "space-between" | "space-around"
+  justifyContent?: "flex-start" | "flex-end" | "center" | "space-between" | "space-around" | "space-evenly"
 
   // Spacing
   padding?: number
@@ -148,13 +128,7 @@ export interface TestProps {
  * - 'dotted': dotted underline (SGR 4:4)
  * - 'dashed': dashed underline (SGR 4:5)
  */
-export type UnderlineStyle =
-  | false
-  | "single"
-  | "double"
-  | "curly"
-  | "dotted"
-  | "dashed"
+export type UnderlineStyle = false | "single" | "double" | "curly" | "dotted" | "dashed"
 
 /**
  * Style properties for text rendering.
@@ -187,14 +161,7 @@ export interface StyleProps {
  * Props for Box component.
  */
 export interface BoxProps extends FlexboxProps, StyleProps, TestProps {
-  borderStyle?:
-    | "single"
-    | "double"
-    | "round"
-    | "bold"
-    | "singleDouble"
-    | "doubleSingle"
-    | "classic"
+  borderStyle?: "single" | "double" | "round" | "bold" | "singleDouble" | "doubleSingle" | "classic"
   borderColor?: string
   borderTop?: boolean
   borderBottom?: boolean
@@ -218,13 +185,7 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps {
  */
 export interface TextProps extends StyleProps, TestProps {
   children?: React.ReactNode
-  wrap?:
-    | "wrap"
-    | "truncate"
-    | "truncate-start"
-    | "truncate-middle"
-    | "truncate-end"
-    | boolean
+  wrap?: "wrap" | "truncate" | "truncate-start" | "truncate-middle" | "truncate-end" | boolean
 }
 
 /**
@@ -491,14 +452,7 @@ export interface CustomEvent {
  * the render loop runs until exit() is called. When events are absent,
  * the render completes when the UI is stable.
  */
-export type Event =
-  | KeyEvent
-  | MouseEvent
-  | ResizeEvent
-  | FocusEvent
-  | BlurEvent
-  | SignalEvent
-  | CustomEvent
+export type Event = KeyEvent | MouseEvent | ResizeEvent | FocusEvent | BlurEvent | SignalEvent | CustomEvent
 
 /**
  * Event source that can be subscribed to and unsubscribed from.

@@ -11,15 +11,7 @@
 import type React from "react"
 import { beforeAll, describe, expect, it } from "vitest"
 import { Box, Text } from "../../src/index.js"
-import {
-  type Buffer,
-  diff,
-  ensureLayoutEngine,
-  fromArray,
-  layout,
-  map,
-  merge,
-} from "../../src/runtime/index.js"
+import { type Buffer, diff, ensureLayoutEngine, fromArray, layout, map, merge } from "../../src/runtime/index.js"
 
 // ============================================================================
 // Test State/Events/Reducer
@@ -30,11 +22,7 @@ interface State {
   items: string[]
 }
 
-type Event =
-  | { type: "increment" }
-  | { type: "decrement" }
-  | { type: "add"; item: string }
-  | { type: "reset" }
+type Event = { type: "increment" } | { type: "decrement" } | { type: "add"; item: string } | { type: "reset" }
 
 function reducer(state: State, event: Event): State {
   switch (event.type) {
@@ -164,9 +152,7 @@ describe("Mode 3 (Pure Functional)", () => {
       let renderCount = 0
 
       // Generate 1000 increment events
-      const events = fromArray<Event>(
-        Array.from({ length: 1000 }, () => ({ type: "increment" as const })),
-      )
+      const events = fromArray<Event>(Array.from({ length: 1000 }, () => ({ type: "increment" as const })))
 
       let prevBuffer: Buffer | null = null
 
@@ -193,10 +179,7 @@ describe("Mode 3 (Pure Functional)", () => {
       let state: State = { count: 0, items: [] }
 
       // Two event sources
-      const increments = fromArray<Event>([
-        { type: "increment" },
-        { type: "increment" },
-      ])
+      const increments = fromArray<Event>([{ type: "increment" }, { type: "increment" }])
       const adds = fromArray<Event>([
         { type: "add", item: "a" },
         { type: "add", item: "b" },

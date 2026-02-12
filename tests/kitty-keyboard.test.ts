@@ -9,11 +9,7 @@ import { describe, expect, test } from "vitest"
 import { parseKeypress, keyToKittyAnsi } from "../src/keys.js"
 
 // Helper: generate a Kitty CSI u sequence
-function kittySeq(
-  codepoint: number,
-  modifier?: number,
-  eventType?: number,
-): string {
+function kittySeq(codepoint: number, modifier?: number, eventType?: number): string {
   const parts = [codepoint]
   if (modifier !== undefined || eventType !== undefined) {
     parts.push(modifier ?? 1)

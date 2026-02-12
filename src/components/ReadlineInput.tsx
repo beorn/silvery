@@ -26,13 +26,7 @@
  * - Alt+Y: Cycle kill ring
  * - Ctrl+T: Transpose characters
  */
-import React, {
-  useCallback,
-  useImperativeHandle,
-  forwardRef,
-  useState,
-  useEffect,
-} from "react"
+import React, { useCallback, useImperativeHandle, forwardRef, useState, useEffect } from "react"
 import { Box } from "./Box.js"
 import { Text } from "./Text.js"
 import { useReadline } from "./useReadline.js"
@@ -87,10 +81,7 @@ export interface ReadlineInputHandle {
 // Component
 // =============================================================================
 
-export const ReadlineInput = forwardRef<
-  ReadlineInputHandle,
-  ReadlineInputProps
->(function ReadlineInput(
+export const ReadlineInput = forwardRef<ReadlineInputHandle, ReadlineInputProps>(function ReadlineInput(
   {
     value: controlledValue,
     defaultValue = "",
@@ -128,8 +119,7 @@ export const ReadlineInput = forwardRef<
   })
 
   // Sync controlled value to readline
-  const [lastControlledValue, setLastControlledValue] =
-    useState(controlledValue)
+  const [lastControlledValue, setLastControlledValue] = useState(controlledValue)
   useEffect(() => {
     if (isControlled && controlledValue !== lastControlledValue) {
       readline.setValue(controlledValue ?? "")
@@ -138,15 +128,7 @@ export const ReadlineInput = forwardRef<
   }, [isControlled, controlledValue, lastControlledValue, readline])
 
   // Handle Enter separately for onSubmit
-  const {
-    value,
-    beforeCursor,
-    afterCursor,
-    cursor,
-    clear,
-    setValue,
-    killRing,
-  } = readline
+  const { value, beforeCursor, afterCursor, cursor, clear, setValue, killRing } = readline
 
   // Imperative handle for parent control
   useImperativeHandle(ref, () => ({
@@ -172,23 +154,13 @@ export const ReadlineInput = forwardRef<
         ) : (
           <>
             <Text>{displayBeforeCursor}</Text>
-            {isActive && cursorStyle === "block" && (
-              <Text inverse>{displayAtCursor}</Text>
-            )}
-            {isActive && cursorStyle === "underline" && (
-              <Text underline>{displayAtCursor}</Text>
-            )}
+            {isActive && cursorStyle === "block" && <Text inverse>{displayAtCursor}</Text>}
+            {isActive && cursorStyle === "underline" && <Text underline>{displayAtCursor}</Text>}
             {!isActive && <Text>{displayAtCursor}</Text>}
             <Text>{displayAfterCursor}</Text>
           </>
         )}
-        {showPlaceholder &&
-          isActive &&
-          (cursorStyle === "block" ? (
-            <Text inverse> </Text>
-          ) : (
-            <Text underline> </Text>
-          ))}
+        {showPlaceholder && isActive && (cursorStyle === "block" ? <Text inverse> </Text> : <Text underline> </Text>)}
       </Text>
       {showUnderline && <Text dimColor>{"─".repeat(underlineWidth)}</Text>}
     </Box>

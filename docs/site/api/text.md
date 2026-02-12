@@ -168,13 +168,7 @@ import chalk from "chalk";
 ### Status Indicator
 
 ```tsx
-function Status({
-  type,
-  message,
-}: {
-  type: "success" | "error" | "warning"
-  message: string
-}) {
+function Status({ type, message }: { type: "success" | "error" | "warning"; message: string }) {
   const colors = {
     success: "green",
     error: "red",
@@ -197,13 +191,7 @@ function Status({
 ### Highlighted Selection
 
 ```tsx
-function MenuItem({
-  label,
-  isSelected,
-}: {
-  label: string
-  isSelected: boolean
-}) {
+function MenuItem({ label, isSelected }: { label: string; isSelected: boolean }) {
   return (
     <Text inverse={isSelected} bold={isSelected}>
       {isSelected ? "> " : "  "}

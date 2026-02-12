@@ -25,14 +25,10 @@ async function startTtyd(exampleName: string): Promise<void> {
   }
 
   const examplePath = `${EXAMPLES_DIR}/${exampleName}/index.tsx`
-  ttydProcess = spawn(
-    "ttyd",
-    ["-W", "-p", String(TTYD_PORT), "bun", "run", examplePath],
-    {
-      stdio: "pipe",
-      env: { ...process.env, FORCE_COLOR: "1" },
-    },
-  )
+  ttydProcess = spawn("ttyd", ["-W", "-p", String(TTYD_PORT), "bun", "run", examplePath], {
+    stdio: "pipe",
+    env: { ...process.env, FORCE_COLOR: "1" },
+  })
 
   // Wait for ttyd to start and app to render
   await new Promise((resolve) => setTimeout(resolve, STARTUP_DELAY))

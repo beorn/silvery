@@ -139,10 +139,7 @@ Some nodes need content measurement before layout:
 ```typescript
 function measurePhase(root: InkxNode) {
   traverseTree(root, (node) => {
-    if (
-      node.props.width === "fit-content" ||
-      node.props.height === "fit-content"
-    ) {
+    if (node.props.width === "fit-content" || node.props.height === "fit-content") {
       const intrinsicSize = measureIntrinsicSize(node)
 
       if (node.props.width === "fit-content") {
@@ -189,22 +186,14 @@ function measureIntrinsicSize(node: InkxNode): {
 Calculate layout for the entire tree:
 
 ```typescript
-function layoutPhase(
-  root: InkxNode,
-  terminalWidth: number,
-  terminalHeight: number,
-) {
+function layoutPhase(root: InkxNode, terminalWidth: number, terminalHeight: number) {
   // Only recalculate if something changed
   if (!hasLayoutDirtyNodes(root)) {
     return
   }
 
   // Calculate layout
-  root.yogaNode.calculateLayout(
-    terminalWidth,
-    terminalHeight,
-    Yoga.DIRECTION_LTR,
-  )
+  root.yogaNode.calculateLayout(terminalWidth, terminalHeight, Yoga.DIRECTION_LTR)
 
   // Propagate computed dimensions
   propagateLayout(root, 0, 0)
@@ -255,10 +244,7 @@ Render actual terminal content:
 
 ```typescript
 function contentPhase(root: InkxNode): TerminalBuffer {
-  const buffer = createBuffer(
-    root.computedLayout.width,
-    root.computedLayout.height,
-  )
+  const buffer = createBuffer(root.computedLayout.width, root.computedLayout.height)
 
   renderNodeToBuffer(root, buffer)
 
@@ -296,10 +282,7 @@ function renderNodeToBuffer(node: InkxNode, buffer: TerminalBuffer) {
   node.contentDirty = false
 }
 
-function renderTextContent(
-  node: InkxNode,
-  availableWidth: number,
-): StyledString {
+function renderTextContent(node: InkxNode, availableWidth: number): StyledString {
   const text = node.props.children
 
   // Auto-truncate by default
@@ -316,10 +299,7 @@ function renderTextContent(
 Compare buffers and emit minimal ANSI:
 
 ```typescript
-function outputPhase(
-  prevBuffer: TerminalBuffer | null,
-  nextBuffer: TerminalBuffer,
-): string {
+function outputPhase(prevBuffer: TerminalBuffer | null, nextBuffer: TerminalBuffer): string {
   if (!prevBuffer) {
     // First render: output entire buffer
     return bufferToAnsi(nextBuffer)
@@ -544,13 +524,7 @@ import stringWidth from "string-width"
 
 const graphemer = new Graphemer()
 
-function writeTextToBuffer(
-  buffer: TerminalBuffer,
-  x: number,
-  y: number,
-  text: string,
-  style: Style,
-) {
+function writeTextToBuffer(buffer: TerminalBuffer, x: number, y: number, text: string, style: Style) {
   const graphemes = graphemer.splitGraphemes(text)
   let col = x
 

@@ -69,15 +69,9 @@
 export { Box } from "./components/Box.js"
 export { Console } from "./components/Console.js"
 export { VirtualList } from "./components/VirtualList.js"
-export type {
-  VirtualListProps,
-  VirtualListHandle,
-} from "./components/VirtualList.js"
+export type { VirtualListProps, VirtualListHandle } from "./components/VirtualList.js"
 export { HorizontalVirtualList } from "./components/HorizontalVirtualList.js"
-export type {
-  HorizontalVirtualListProps,
-  HorizontalVirtualListHandle,
-} from "./components/HorizontalVirtualList.js"
+export type { HorizontalVirtualListProps, HorizontalVirtualListHandle } from "./components/HorizontalVirtualList.js"
 
 /**
  * Re-export Text component - renders text content.
@@ -118,21 +112,14 @@ export { TextInput } from "./components/TextInput.js"
 export type { TextInputProps, TextInputHandle } from "./components/TextInput.js"
 
 export { ReadlineInput } from "./components/ReadlineInput.js"
-export type {
-  ReadlineInputProps,
-  ReadlineInputHandle,
-} from "./components/ReadlineInput.js"
+export type { ReadlineInputProps, ReadlineInputHandle } from "./components/ReadlineInput.js"
 
 export { TextArea } from "./components/TextArea.js"
 export type { TextAreaProps, TextAreaHandle } from "./components/TextArea.js"
 
 // Input Hooks
 export { useReadline } from "./components/useReadline.js"
-export type {
-  ReadlineState,
-  UseReadlineOptions,
-  UseReadlineResult,
-} from "./components/useReadline.js"
+export type { ReadlineState, UseReadlineOptions, UseReadlineResult } from "./components/useReadline.js"
 
 // =============================================================================
 // Hooks
@@ -152,12 +139,7 @@ export type {
  * }
  * ```
  */
-export {
-  useContentRect,
-  useContentRectCallback,
-  useScreenRect,
-  useScreenRectCallback,
-} from "./hooks/useLayout.js"
+export { useContentRect, useContentRectCallback, useScreenRect, useScreenRectCallback } from "./hooks/useLayout.js"
 
 /**
  * Keyboard input hook.
@@ -195,12 +177,7 @@ export { useFocus, resetFocusIdCounter } from "./hooks/useFocus.js"
 export { useFocusManager } from "./hooks/useFocusManager.js"
 export { useTerm } from "./hooks/useTerm.js"
 export { useConsole } from "./hooks/useConsole.js"
-export {
-  useCursor,
-  resetCursorState,
-  getCursorState,
-  subscribeCursor,
-} from "./hooks/useCursor.js"
+export { useCursor, resetCursorState, getCursorState, subscribeCursor } from "./hooks/useCursor.js"
 export type { CursorPosition, CursorState } from "./hooks/useCursor.js"
 export { useScrollback } from "./hooks/useScrollback.js"
 export type { UseScrollbackOptions } from "./hooks/useScrollback.js"
@@ -307,11 +284,7 @@ export {
   createFlexxEngine,
   FlexxLayoutEngine,
 } from "./render.js"
-export {
-  renderString,
-  renderStringSync,
-  type RenderStringOptions,
-} from "./render-string.js"
+export { renderString, renderStringSync, type RenderStringOptions } from "./render-string.js"
 export { measureElement } from "./measureElement.js"
 
 // TermDef resolution utilities
@@ -328,13 +301,7 @@ export {
 export { ANSI, enableMouse, disableMouse } from "./output.js"
 
 // Layout engine types
-export type {
-  LayoutEngine,
-  LayoutNode,
-  LayoutConstants,
-  MeasureFunc,
-  MeasureMode,
-} from "./layout-engine.js"
+export type { LayoutEngine, LayoutNode, LayoutConstants, MeasureFunc, MeasureMode } from "./layout-engine.js"
 
 // Render adapter (for canvas, DOM, etc.)
 export {
@@ -355,18 +322,11 @@ export type {
 } from "./render-adapter.js"
 
 // Canvas adapter
-export {
-  createCanvasAdapter,
-  CanvasRenderBuffer,
-} from "./adapters/canvas-adapter.js"
+export { createCanvasAdapter, CanvasRenderBuffer } from "./adapters/canvas-adapter.js"
 export type { CanvasAdapterConfig } from "./adapters/canvas-adapter.js"
 
 // DOM adapter
-export {
-  createDOMAdapter,
-  DOMRenderBuffer,
-  injectDOMStyles,
-} from "./adapters/dom-adapter.js"
+export { createDOMAdapter, DOMRenderBuffer, injectDOMStyles } from "./adapters/dom-adapter.js"
 export type { DOMAdapterConfig } from "./adapters/dom-adapter.js"
 
 // App types (unified render API)
@@ -379,27 +339,14 @@ export type { BoxProps, BoxHandle } from "./components/Box.js"
 export type { TextProps, TextHandle } from "./components/Text.js"
 export type { Rect } from "./hooks/useLayout.js"
 export type { Key, InputHandler, UseInputOptions } from "./hooks/useInput.js"
-export {
-  keyToName,
-  keyToModifiers,
-  parseHotkey,
-  matchHotkey,
-  parseKeypress,
-  parseKey,
-  emptyKey,
-} from "./keys.js"
+export { keyToName, keyToModifiers, parseHotkey, matchHotkey, parseKeypress, parseKey, emptyKey } from "./keys.js"
 export type { ParsedKeypress, ParsedHotkey } from "./keys.js"
 export type { UseAppResult } from "./hooks/useApp.js"
 export type { UseStdoutResult } from "./hooks/useStdout.js"
 export type { UseStdinResult } from "./hooks/useStdin.js"
 export type { UseFocusOptions, UseFocusResult } from "./hooks/useFocus.js"
 export type { UseFocusManagerResult } from "./hooks/useFocusManager.js"
-export type {
-  RenderOptions,
-  Instance,
-  RenderMode,
-  NonTTYMode,
-} from "./render.js"
+export type { RenderOptions, Instance, RenderMode, NonTTYMode } from "./render.js"
 export type { MeasureElementOutput } from "./measureElement.js"
 export type {
   InkxNode,
@@ -553,11 +500,7 @@ export type {
 } from "./with-commands.js"
 
 export { withKeybindings } from "./with-keybindings.js"
-export type {
-  WithKeybindingsOptions,
-  KeybindingContext,
-  ExtendedKeybindingDef,
-} from "./with-keybindings.js"
+export type { WithKeybindingsOptions, KeybindingContext, ExtendedKeybindingDef } from "./with-keybindings.js"
 
 // Diagnostic tools - prefer importing from 'inkx/toolbelt' for new code
 export { withDiagnostics, VirtualTerminal } from "./with-diagnostics.js"

@@ -67,9 +67,7 @@ describe("Incremental rendering with createApp store re-renders", () => {
               <Text dimColor>DISK 📁 ~/path</Text>
             </Box>
             <Box flexShrink={0}>
-              <Text dimColor>
-                {logCount > 0 && `💬${logCount} `}📋1234 CARDS VIEW
-              </Text>
+              <Text dimColor>{logCount > 0 && `💬${logCount} `}📋1234 CARDS VIEW</Text>
             </Box>
           </Box>
         </Box>
@@ -285,9 +283,7 @@ describe("Incremental rendering with createApp store re-renders", () => {
             <Text>Content</Text>
           </Box>
           <Box id="bottom-bar" flexShrink={0}>
-            <Text dimColor>
-              {logCount > 0 ? `💬${logCount} ` : ""}CARDS VIEW
-            </Text>
+            <Text dimColor>{logCount > 0 ? `💬${logCount} ` : ""}CARDS VIEW</Text>
           </Box>
         </Box>
       )

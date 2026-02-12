@@ -22,9 +22,7 @@ describe("Layout Snapshots: card structures", () => {
               <Text>{"* "}</Text>
             </Box>
             <Box flexGrow={1} flexShrink={1}>
-              <Text wrap="wrap">
-                Long text that should wrap to multiple lines here
-              </Text>
+              <Text wrap="wrap">Long text that should wrap to multiple lines here</Text>
             </Box>
           </Box>
         </Box>
@@ -137,9 +135,7 @@ describe("Layout Snapshots: width sweep", () => {
             <Text>{"* "}</Text>
           </Box>
           <Box flexGrow={1} flexShrink={1}>
-            <Text wrap="wrap">
-              Context: Found in inbox old DMV notices from 2019 that need filing
-            </Text>
+            <Text wrap="wrap">Context: Found in inbox old DMV notices from 2019 that need filing</Text>
           </Box>
         </Box>
       </Box>

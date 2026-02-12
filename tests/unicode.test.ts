@@ -51,13 +51,9 @@ function expectGraphemeCount(text: string, expected: number) {
 }
 
 /** Assert text properties in one call */
-function expectTextMetrics(
-  text: string,
-  metrics: { width?: number; graphemes?: number },
-) {
+function expectTextMetrics(text: string, metrics: { width?: number; graphemes?: number }) {
   if (metrics.width !== undefined) expectWidth(text, metrics.width)
-  if (metrics.graphemes !== undefined)
-    expectGraphemeCount(text, metrics.graphemes)
+  if (metrics.graphemes !== undefined) expectGraphemeCount(text, metrics.graphemes)
 }
 
 /** Assert all wrapped lines fit within maxWidth */
@@ -68,11 +64,7 @@ function expectAllLinesFitWidth(lines: string[], maxWidth: number) {
 }
 
 /** Assert truncation respects width and adds ellipsis when needed */
-function expectTruncation(
-  text: string,
-  maxWidth: number,
-  options?: { hasEllipsis?: boolean },
-) {
+function expectTruncation(text: string, maxWidth: number, options?: { hasEllipsis?: boolean }) {
   const result = truncateText(text, maxWidth)
   expect(displayWidth(result)).toBeLessThanOrEqual(maxWidth)
   if (options?.hasEllipsis) {
@@ -584,13 +576,10 @@ describe("Unicode", () => {
         ["中文", 8, "left"],
         ["中", 6, "center"],
         ["日本", 8, "right"],
-      ] as const)(
-        'padText("%s", %d, "%s") has correct width',
-        (text, width, align) => {
-          const padded = padText(text, width, align)
-          expect(displayWidth(padded)).toBe(width)
-        },
-      )
+      ] as const)('padText("%s", %d, "%s") has correct width', (text, width, align) => {
+        const padded = padText(text, width, align)
+        expect(displayWidth(padded)).toBe(width)
+      })
     })
 
     describe("CJK in slice scenarios", () => {
@@ -598,16 +587,13 @@ describe("Unicode", () => {
         ["中文测试", 0, 4, "中文", 4],
         ["中文测试", 2, 6, "文测", 4],
         ["A中B文", 1, 4, "中B", undefined],
-      ])(
-        'sliceByWidth("%s", %d, %d) = "%s"',
-        (text, start, end, expected, expectedWidth) => {
-          const result = sliceByWidth(text, start, end)
-          expect(result).toBe(expected)
-          if (expectedWidth !== undefined) {
-            expect(displayWidth(result)).toBe(expectedWidth)
-          }
-        },
-      )
+      ])('sliceByWidth("%s", %d, %d) = "%s"', (text, start, end, expected, expectedWidth) => {
+        const result = sliceByWidth(text, start, end)
+        expect(result).toBe(expected)
+        if (expectedWidth !== undefined) {
+          expect(displayWidth(result)).toBe(expectedWidth)
+        }
+      })
     })
 
     describe("CJK buffer writing", () => {
@@ -658,12 +644,9 @@ describe("Unicode", () => {
         expect(isCJK(char)).toBe(expected)
       })
 
-      test.each([["中"], ["あ"], ["한"]])(
-        'isWideGrapheme("%s") = true',
-        (char) => {
-          expect(isWideGrapheme(char)).toBe(true)
-        },
-      )
+      test.each([["中"], ["あ"], ["한"]])('isWideGrapheme("%s") = true', (char) => {
+        expect(isWideGrapheme(char)).toBe(true)
+      })
 
       test.each([
         ["Hello中文World", true],
@@ -698,12 +681,9 @@ describe("Unicode", () => {
         expectGraphemeCount("😀🎉🔥", 3)
       })
 
-      test.each([["😀"], ["❤️"], ["🔥"]])(
-        'isLikelyEmoji("%s") = true',
-        (emoji) => {
-          expect(isLikelyEmoji(emoji)).toBe(true)
-        },
-      )
+      test.each([["😀"], ["❤️"], ["🔥"]])('isLikelyEmoji("%s") = true', (emoji) => {
+        expect(isLikelyEmoji(emoji)).toBe(true)
+      })
     })
 
     describe("Skin tone modifiers", () => {
@@ -808,12 +788,9 @@ describe("Unicode", () => {
     })
 
     describe("Emoji width calculation", () => {
-      test.each([["😀"], ["👋🏽"], ["🇺🇸"]])(
-        'isWideGrapheme("%s") = true',
-        (emoji) => {
-          expect(isWideGrapheme(emoji)).toBe(true)
-        },
-      )
+      test.each([["😀"], ["👋🏽"], ["🇺🇸"]])('isWideGrapheme("%s") = true', (emoji) => {
+        expect(isWideGrapheme(emoji)).toBe(true)
+      })
 
       test.each([
         ["Hello 😀 World", true],
@@ -861,13 +838,10 @@ describe("Unicode", () => {
         ["😀", 6, "center"],
         ["🇺🇸", 6, "right"],
         ["👨‍👩‍👧‍👦", 6, "left"],
-      ] as const)(
-        'padText("%s", %d, "%s") has correct width',
-        (text, width, align) => {
-          const padded = padText(text, width, align)
-          expect(displayWidth(padded)).toBe(width)
-        },
-      )
+      ] as const)('padText("%s", %d, "%s") has correct width', (text, width, align) => {
+        const padded = padText(text, width, align)
+        expect(displayWidth(padded)).toBe(width)
+      })
     })
 
     describe("Emoji in slice scenarios", () => {

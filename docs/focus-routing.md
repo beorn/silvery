@@ -40,10 +40,7 @@ interface WhenPredicate {
   label: string
 }
 
-function when(
-  label: string,
-  fn: (ctx: KeybindingContext) => boolean,
-): WhenPredicate {
+function when(label: string, fn: (ctx: KeybindingContext) => boolean): WhenPredicate {
   return Object.assign(fn, { label })
 }
 

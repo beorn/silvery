@@ -1,12 +1,5 @@
 import React from "react"
-import {
-  render,
-  Box,
-  Text,
-  useApp,
-  useInput,
-  createTerm,
-} from "../../src/index.js"
+import { render, Box, Text, useApp, useInput, createTerm } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {

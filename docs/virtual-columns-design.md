@@ -13,12 +13,12 @@ Apps rendering 2D grids (e.g. km-tui's kanban Board) need:
 
 inkx already provides `VirtualList` (vertical) and `HorizontalVirtualList` (horizontal), but these are independent components with no shared position awareness. Currently km-tui bridges them with app-level code spread across four files:
 
-| File | Responsibility | Lines |
-|------|---------------|-------|
-| `Board.tsx` | Horizontal column slicing (`columns.slice(offset, offset + maxCols)`) | ~40 |
-| `board-layout.ts` | Column scroll formula (`calcEdgeBasedColumnScrollOffset`) | ~50 |
-| `card-positions.ts` | `LayoutRegistry` — position tracking, stickyY/X, `findCardAtYVisual` | ~460 |
-| `CardColumn.tsx` | `CardLayoutRegistrar` — register/unregister on mount/unmount via `useScreenRectCallback` | ~50 |
+| File                | Responsibility                                                                           | Lines |
+| ------------------- | ---------------------------------------------------------------------------------------- | ----- |
+| `Board.tsx`         | Horizontal column slicing (`columns.slice(offset, offset + maxCols)`)                    | ~40   |
+| `board-layout.ts`   | Column scroll formula (`calcEdgeBasedColumnScrollOffset`)                                | ~50   |
+| `card-positions.ts` | `LayoutRegistry` — position tracking, stickyY/X, `findCardAtYVisual`                     | ~460  |
+| `CardColumn.tsx`    | `CardLayoutRegistrar` — register/unregister on mount/unmount via `useScreenRectCallback` | ~50   |
 
 ### Current bugs and fragility
 
@@ -29,24 +29,28 @@ inkx already provides `VirtualList` (vertical) and `HorizontalVirtualList` (hori
 ## Prior Art
 
 ### TanStack Virtual
+
 - Headless virtualizer: one `useVirtualizer()` hook handles any axis.
 - Grid = compose two virtualizers (row + column). Each returns virtual items with `start`/`size`/`index`.
 - Position-aware by design — `virtualItem.start` gives the pixel offset.
 - No built-in cross-axis navigation (it's a web library; keyboard nav is app-level).
 
 ### React Native FlatList / SectionList
+
 - `FlatList` has `numColumns` for uniform grids, plus `viewabilityConfig` for tracking visible items.
 - `SectionList` groups items into sections (similar to columns) with headers.
 - Virtualization is automatic (only visible items mount). Position tracking is via `onViewableItemsChanged` callback.
 - No cross-axis navigation primitives.
 
 ### Flutter Slivers
+
 - `CustomScrollView` composes `SliverList`, `SliverGrid`, etc. in a single scroll context.
 - `SliverGrid` virtualizes both axes: main axis scrolls, cross axis is laid out by a `SliverGridDelegate`.
 - Built-in `crossAxisCount` and `maxCrossAxisExtent` delegates handle column count calculation.
 - No cross-axis keyboard navigation (it's primarily touch-based).
 
 ### Terminal TUIs (ratatui, textual)
+
 - **ratatui** (Rust): Immediate-mode rendering. `List` widget renders all items on every frame — no virtualization. App manages scroll offset manually. No position registry.
 - **textual** (Python): `DataTable` widget virtualizes rows in a table. `Grid` container lays out children in CSS Grid, but doesn't virtualize. No built-in cross-axis keyboard nav.
 
@@ -67,6 +71,7 @@ HorizontalVirtualList          — horizontal axis (sections/columns)
 ```
 
 This matches TanStack Virtual's philosophy. Benefits:
+
 - Each axis can be used independently (some views only need vertical)
 - Position registry is opt-in (simple lists don't need it)
 - Apps compose at any level (custom column headers, mixed item heights, etc.)
@@ -165,28 +170,24 @@ function findCrossAxisTarget(
 ): { itemIndex: number; usedStickyY: boolean }
 
 // Get the Y midpoint of an item's "head" region (for stickyY)
-function getItemMidY(
-  registry: PositionRegistry,
-  sectionIndex: number,
-  itemIndex: number,
-): number
+function getItemMidY(registry: PositionRegistry, sectionIndex: number, itemIndex: number): number
 ```
 
 These replace `findCardAtYVisual` and `getCardMidY` from `card-positions.ts`.
 
 ### What stays in inkx vs what stays in km-tui
 
-| Concern | Location | Rationale |
-|---------|----------|-----------|
-| `PositionRegistry` (context + hook) | inkx | Generic — any 2D grid app needs position tracking |
-| `GridCell` (auto-registering wrapper) | inkx | Generic convenience component |
-| `useGridPosition` (hook) | inkx | For apps that don't want the wrapper |
-| `findCrossAxisTarget` / `getItemMidY` | inkx | Pure functions, reusable navigation logic |
-| `stickyY` / `stickyX` state | inkx (inside PositionRegistry) | Core to cross-axis navigation UX |
-| Column scroll offset calculation | inkx (already exists: `calcEdgeBasedScrollOffset`) | Already in inkx |
-| Column width calculation | km-tui (`board-layout.ts`) | App-specific (indicator widths, separator counts) |
-| `ScrollTrackingVirtualList` | km-tui | App-specific (CursorStore integration) |
-| View-specific rendering (Board, ColumnsView, etc.) | km-tui | App-level layout decisions |
+| Concern                                            | Location                                           | Rationale                                         |
+| -------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------- |
+| `PositionRegistry` (context + hook)                | inkx                                               | Generic — any 2D grid app needs position tracking |
+| `GridCell` (auto-registering wrapper)              | inkx                                               | Generic convenience component                     |
+| `useGridPosition` (hook)                           | inkx                                               | For apps that don't want the wrapper              |
+| `findCrossAxisTarget` / `getItemMidY`              | inkx                                               | Pure functions, reusable navigation logic         |
+| `stickyY` / `stickyX` state                        | inkx (inside PositionRegistry)                     | Core to cross-axis navigation UX                  |
+| Column scroll offset calculation                   | inkx (already exists: `calcEdgeBasedScrollOffset`) | Already in inkx                                   |
+| Column width calculation                           | km-tui (`board-layout.ts`)                         | App-specific (indicator widths, separator counts) |
+| `ScrollTrackingVirtualList`                        | km-tui                                             | App-specific (CursorStore integration)            |
+| View-specific rendering (Board, ColumnsView, etc.) | km-tui                                             | App-level layout decisions                        |
 
 ### How HorizontalVirtualList + VirtualList compose
 
@@ -240,7 +241,9 @@ Current code has `updateCardHead(colIndex, cardIndex, headY, headHeight)` for tr
 ```tsx
 <GridCell sectionIndex={colIndex} itemIndex={idx}>
   <Box>
-    <Box ref={headRef}>  {/* GridCell tracks this for stickyY */}
+    <Box ref={headRef}>
+      {" "}
+      {/* GridCell tracks this for stickyY */}
       <Text>{card.title}</Text>
     </Box>
     <Text>{card.body}</Text>

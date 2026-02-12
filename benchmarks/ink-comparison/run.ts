@@ -16,12 +16,7 @@ import { bench, group, run } from "mitata"
 import React from "react"
 import { createRenderer } from "../../src/testing/index.js"
 import { TerminalBuffer } from "../../src/buffer.js"
-import {
-  executeRender,
-  layoutPhase,
-  contentPhase,
-  outputPhase,
-} from "../../src/pipeline.js"
+import { executeRender, layoutPhase, contentPhase, outputPhase } from "../../src/pipeline.js"
 import { getLayoutEngine, setLayoutEngine } from "../../src/layout-engine.js"
 import { createFlexxZeroEngine } from "../../src/adapters/flexx-zero-adapter.js"
 import { initYogaEngine } from "../../src/adapters/yoga-adapter.js"
@@ -90,9 +85,7 @@ function createMockNode(
 function createTree(childCount: number, cols: number, rows: number) {
   const children: InkxNode[] = []
   for (let i = 0; i < childCount; i++) {
-    children.push(
-      createMockNode("inkx-text", {}, [], `Item ${i}: Example text content`),
-    )
+    children.push(createMockNode("inkx-text", {}, [], `Item ${i}: Example text content`))
   }
   return createMockNode("inkx-box", { width: cols, height: rows }, children)
 }
@@ -104,19 +97,13 @@ function createTree(childCount: number, cols: number, rows: number) {
 group("React Render (createRenderer)", () => {
   // Single Box+Text
   bench("1 Box+Text (80x24)", () => {
-    render80x24(
-      React.createElement(Box, null, React.createElement(Text, null, "Hello")),
-    )
+    render80x24(React.createElement(Box, null, React.createElement(Text, null, "Hello")))
   })
 
   // 100 Box+Text
   bench("100 Box+Text (80x24)", () => {
     const items = Array.from({ length: 100 }, (_, i) =>
-      React.createElement(
-        Box,
-        { key: i },
-        React.createElement(Text, null, `Item ${i}: Some example text`),
-      ),
+      React.createElement(Box, { key: i }, React.createElement(Text, null, `Item ${i}: Some example text`)),
     )
     render80x24(React.createElement(Box, { flexDirection: "column" }, ...items))
   })
@@ -124,15 +111,9 @@ group("React Render (createRenderer)", () => {
   // 1000 Box+Text
   bench("1000 Box+Text (120x40)", () => {
     const items = Array.from({ length: 1000 }, (_, i) =>
-      React.createElement(
-        Box,
-        { key: i },
-        React.createElement(Text, null, `Item ${i}: Some example text`),
-      ),
+      React.createElement(Box, { key: i }, React.createElement(Text, null, `Item ${i}: Some example text`)),
     )
-    render120x40(
-      React.createElement(Box, { flexDirection: "column" }, ...items),
-    )
+    render120x40(React.createElement(Box, { flexDirection: "column" }, ...items))
   })
 })
 
@@ -144,16 +125,12 @@ group("React Re-render (rerender)", () => {
   // Pre-render, then call app.rerender() with updated JSX.
   // This is the exact equivalent of Ink's instance.rerender() — full React reconciliation.
   const items100init = Array.from({ length: 100 }, (_, i) =>
-    React.createElement(
-      Box,
-      { key: i },
-      React.createElement(Text, null, `Item ${i}: Some example text`),
-    ),
+    React.createElement(Box, { key: i }, React.createElement(Text, null, `Item ${i}: Some example text`)),
   )
-  const app100 = renderDirect(
-    React.createElement(Box, { flexDirection: "column" }, ...items100init),
-    { cols: 80, rows: 24 },
-  )
+  const app100 = renderDirect(React.createElement(Box, { flexDirection: "column" }, ...items100init), {
+    cols: 80,
+    rows: 24,
+  })
 
   let counter100 = 0
   bench("100 Box+Text re-render (80x24)", () => {
@@ -162,29 +139,19 @@ group("React Re-render (rerender)", () => {
       React.createElement(
         Box,
         { key: i },
-        React.createElement(
-          Text,
-          null,
-          `Item ${i}: Some example text ${counter100}`,
-        ),
+        React.createElement(Text, null, `Item ${i}: Some example text ${counter100}`),
       ),
     )
-    app100.rerender(
-      React.createElement(Box, { flexDirection: "column" }, ...items),
-    )
+    app100.rerender(React.createElement(Box, { flexDirection: "column" }, ...items))
   })
 
   const items1000init = Array.from({ length: 1000 }, (_, i) =>
-    React.createElement(
-      Box,
-      { key: i },
-      React.createElement(Text, null, `Item ${i}: Some example text`),
-    ),
+    React.createElement(Box, { key: i }, React.createElement(Text, null, `Item ${i}: Some example text`)),
   )
-  const app1000 = renderDirect(
-    React.createElement(Box, { flexDirection: "column" }, ...items1000init),
-    { cols: 120, rows: 40 },
-  )
+  const app1000 = renderDirect(React.createElement(Box, { flexDirection: "column" }, ...items1000init), {
+    cols: 120,
+    rows: 40,
+  })
 
   let counter1000 = 0
   bench("1000 Box+Text re-render (120x40)", () => {
@@ -193,16 +160,10 @@ group("React Re-render (rerender)", () => {
       React.createElement(
         Box,
         { key: i },
-        React.createElement(
-          Text,
-          null,
-          `Item ${i}: Some example text ${counter1000}`,
-        ),
+        React.createElement(Text, null, `Item ${i}: Some example text ${counter1000}`),
       ),
     )
-    app1000.rerender(
-      React.createElement(Box, { flexDirection: "column" }, ...items),
-    )
+    app1000.rerender(React.createElement(Box, { flexDirection: "column" }, ...items))
   })
 })
 
@@ -356,9 +317,7 @@ group("Layout Engine: Flexx vs Yoga", () => {
     for (let c = 0; c < 3; c++) {
       const items: InkxNode[] = []
       for (let i = 0; i < 17; i++) {
-        items.push(
-          createMockNode("inkx-text", {}, [], `Card ${c}-${i}: Task text`),
-        )
+        items.push(createMockNode("inkx-text", {}, [], `Card ${c}-${i}: Task text`))
       }
       cols.push(createMockNode("inkx-box", { flexGrow: 1 }, items))
     }
@@ -383,9 +342,7 @@ group("Layout Engine: Yoga", () => {
     for (let c = 0; c < 3; c++) {
       const items: InkxNode[] = []
       for (let i = 0; i < 17; i++) {
-        items.push(
-          createMockNode("inkx-text", {}, [], `Card ${c}-${i}: Task text`),
-        )
+        items.push(createMockNode("inkx-text", {}, [], `Card ${c}-${i}: Task text`))
       }
       cols.push(createMockNode("inkx-box", { flexGrow: 1 }, items))
     }
@@ -407,11 +364,7 @@ group("Memory (heap snapshot)", () => {
     if (typeof globalThis.gc === "function") globalThis.gc()
     const before = process.memoryUsage().heapUsed
     const items = Array.from({ length: 100 }, (_, i) =>
-      React.createElement(
-        Box,
-        { key: i },
-        React.createElement(Text, null, `Item ${i}: Some example text`),
-      ),
+      React.createElement(Box, { key: i }, React.createElement(Text, null, `Item ${i}: Some example text`)),
     )
     render80x24(React.createElement(Box, { flexDirection: "column" }, ...items))
     const after = process.memoryUsage().heapUsed
@@ -445,6 +398,4 @@ console.log("| inkx + Flexx    | ~45 KB      | Pure JS layout engine    |")
 console.log("| inkx + Yoga     | ~76 KB      | WASM layout engine       |")
 console.log("| ink             | ~52 KB      | Yoga-only, no Flexx opt  |")
 console.log()
-console.log(
-  "Note: ink numbers from npm bundle analysis. inkx numbers from local build.",
-)
+console.log("Note: ink numbers from npm bundle analysis. inkx numbers from local build.")

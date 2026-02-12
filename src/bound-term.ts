@@ -42,11 +42,7 @@ export interface BoundTerm {
 /**
  * Create a BoundTerm from a buffer and root node getter
  */
-export function createBoundTerm(
-  buffer: TerminalBuffer,
-  getRoot: () => InkxNode,
-  getText: () => string,
-): BoundTerm {
+export function createBoundTerm(buffer: TerminalBuffer, getRoot: () => InkxNode, getText: () => string): BoundTerm {
   return {
     cell(x: number, y: number): Cell {
       return buffer.getCell(x, y)
@@ -78,21 +74,12 @@ export function createBoundTerm(
 /**
  * Find the deepest node at the given screen coordinates
  */
-function findNodeAtScreenPosition(
-  node: InkxNode,
-  x: number,
-  y: number,
-): InkxNode | null {
+function findNodeAtScreenPosition(node: InkxNode, x: number, y: number): InkxNode | null {
   const rect = node.screenRect
   if (!rect) return null
 
   // Check if point is within this node's bounds
-  if (
-    x < rect.x ||
-    x >= rect.x + rect.width ||
-    y < rect.y ||
-    y >= rect.y + rect.height
-  ) {
+  if (x < rect.x || x >= rect.x + rect.width || y < rect.y || y >= rect.y + rect.height) {
     return null
   }
 
