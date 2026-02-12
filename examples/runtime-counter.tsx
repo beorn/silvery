@@ -42,7 +42,9 @@ function reducer(state: State, event: Event): State {
       return state
     case "effect":
       // Effect completed - increment count
-      if (event.id.startsWith("increment")) {
+      // Note: event.id is auto-generated ("effect-0", "effect-1", ...),
+      // event.result is whatever schedule() callback returned
+      if (event.result === "increment") {
         return { ...state, count: state.count + 1 }
       }
       return state
@@ -185,4 +187,6 @@ async function main() {
 }
 
 // Run
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

@@ -16,20 +16,19 @@
 
 import React, { useState, useCallback } from "react"
 import { Box, Text } from "../src/index.js"
-import { run, useRuntimeInput } from "../src/runtime/index.js"
+import { run, useInput } from "../src/runtime/index.js"
 
 function Counter() {
   const [count, setCount] = useState(0)
 
-  // useCallback is required for useRuntimeInput to avoid re-subscriptions
-  const handleInput = useCallback((key: string) => {
-    if (key === "j") setCount((c) => c + 1)
-    if (key === "k") setCount((c) => c - 1)
-    if (key === "r") setCount(0)
-    if (key === "q") return "exit" as const
-  }, [])
-
-  useRuntimeInput(handleInput)
+  useInput(
+    useCallback((input: string) => {
+      if (input === "j") setCount((c) => c + 1)
+      if (input === "k") setCount((c) => c - 1)
+      if (input === "r") setCount(0)
+      if (input === "q") return "exit"
+    }, []),
+  )
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -58,4 +57,6 @@ async function main() {
   console.log("\nGoodbye!")
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

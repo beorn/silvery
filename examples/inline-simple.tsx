@@ -51,4 +51,6 @@ async function main() {
   console.log("\nAfter")
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

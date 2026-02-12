@@ -67,4 +67,6 @@ async function main() {
   console.log("\nProgress complete! This is output after the progress bar.")
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

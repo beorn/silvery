@@ -10,7 +10,7 @@
  */
 
 import React, { useState } from "react"
-import { run, useInput } from "../../src/runtime.js"
+import { run, useInput } from "../../src/runtime/index.js"
 import { Box, Text, TextArea } from "../../src/index.js"
 
 export function NoteEditor(): JSX.Element {
@@ -77,4 +77,10 @@ export function NoteEditor(): JSX.Element {
   )
 }
 
-await run(<NoteEditor />, { fullscreen: true })
+async function main() {
+  await run(<NoteEditor />, { fullscreen: true })
+}
+
+if (import.meta.main) {
+  main().catch(console.error)
+}

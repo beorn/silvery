@@ -177,4 +177,6 @@ async function main() {
   console.log("\nFinal state:", handle.store.getState().todos.length, "todos")
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}

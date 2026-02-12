@@ -329,4 +329,6 @@ async function main() {
   await handle.waitUntilExit()
 }
 
-main().catch(console.error)
+if (import.meta.main) {
+  main().catch(console.error)
+}
