@@ -17,6 +17,7 @@ import { createRootNode } from "./nodes.js"
 
 // Re-export only what's needed by render.tsx and testing/index.tsx
 export type { Container } from "./host-config.js"
+export { runWithDiscreteEvent } from "./host-config.js"
 
 // ============================================================================
 // Reconciler Export

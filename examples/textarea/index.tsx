@@ -10,15 +10,27 @@
  */
 
 import React, { useState } from "react"
-import { run, useInput } from "../../src/runtime/index.js"
-import { Box, Text, TextArea } from "../../src/index.js"
+import {
+  render,
+  Box,
+  Text,
+  TextArea,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "../../src/index.js"
 
 export function NoteEditor(): JSX.Element {
+  const { exit } = useApp()
   const [notes, setNotes] = useState<string[]>([])
   const [value, setValue] = useState("")
 
-  useInput((input) => {
-    if (input === "q" && notes.length > 0) return "exit"
+  useInput((_input: string, _key: Key) => {
+    // q to quit only after saving at least one note
+    if (_input === "q" && notes.length > 0) {
+      exit()
+    }
   })
 
   function handleSubmit(text: string) {
@@ -78,7 +90,9 @@ export function NoteEditor(): JSX.Element {
 }
 
 async function main() {
-  await run(<NoteEditor />, { fullscreen: true })
+  using term = createTerm()
+  const { waitUntilExit } = await render(<NoteEditor />, term)
+  await waitUntilExit()
 }
 
 if (import.meta.main) {

@@ -14,6 +14,7 @@ export {
   reconciler,
   createContainer,
   getContainerRoot,
+  runWithDiscreteEvent,
   // Types
   type Container,
 } from "./reconciler/index.js"

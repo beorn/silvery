@@ -39,7 +39,12 @@ import {
   isLayoutEngineInitialized,
 } from "./layout-engine.js"
 import { ANSI, enterAlternateScreen, leaveAlternateScreen } from "./output.js"
-import { createContainer, getContainerRoot, reconciler } from "./reconciler.js"
+import {
+  createContainer,
+  getContainerRoot,
+  reconciler,
+  runWithDiscreteEvent,
+} from "./reconciler.js"
 import { renderStringSync } from "./render-string.js"
 import { RenderScheduler } from "./scheduler.js"
 import {
@@ -412,8 +417,13 @@ function InkxApp({
         setFocusState((prev) => ({ ...prev, activeId: null }))
       }
 
-      // Emit input event
-      eventEmitter.emit("input", chunk)
+      // Emit input event with discrete priority so React commits
+      // synchronously. Without this, concurrent mode defers the commit
+      // and onCommit → scheduleRender() never fires.
+      runWithDiscreteEvent(() => {
+        eventEmitter.emit("input", chunk)
+      })
+      reconciler.flushSyncWork()
     }
   }, [
     stdin,

@@ -9,6 +9,7 @@
 import { createContext } from "react"
 import {
   DefaultEventPriority,
+  DiscreteEventPriority,
   NoEventPriority,
 } from "react-reconciler/constants.js"
 import type { BoxProps, InkxNode, InkxNodeType, TextProps } from "../types.js"
@@ -81,6 +82,22 @@ interface HostContext {
 // ============================================================================
 
 let currentUpdatePriority = NoEventPriority
+
+/**
+ * Run a callback with DiscreteEventPriority so React treats state
+ * updates inside it as user-interaction priority (synchronous commit).
+ * Use this for keyboard input handling to prevent React's concurrent
+ * scheduler from deferring the commit.
+ */
+export function runWithDiscreteEvent(fn: () => void): void {
+  const prev = currentUpdatePriority
+  currentUpdatePriority = DiscreteEventPriority
+  try {
+    fn()
+  } finally {
+    currentUpdatePriority = prev
+  }
+}
 
 // ============================================================================
 // Host Config
