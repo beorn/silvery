@@ -430,6 +430,7 @@ export class RenderScheduler {
       const { output, buffer } = executeRender(this.root, width, height, this.prevBuffer, {
         mode: this.mode,
         scrollbackOffset,
+        termRows: this.mode === "inline" ? (this.stdout.rows ?? 24) : undefined,
       })
 
       // Transform output based on non-TTY mode

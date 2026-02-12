@@ -85,6 +85,14 @@ export interface ExecuteRenderOptions {
    * Default: 0
    */
   scrollbackOffset?: number
+
+  /**
+   * Terminal height in rows (inline mode only).
+   * Used to clamp cursor-up offset when content exceeds terminal height.
+   * Without this, content taller than the terminal causes rendering corruption
+   * because cursor-up can't reach lines that scrolled off screen.
+   */
+  termRows?: number
 }
 
 /**
@@ -111,6 +119,7 @@ export function executeRender(
     skipLayoutNotifications = false,
     skipScrollStateUpdates = false,
     scrollbackOffset = 0,
+    termRows,
   } = opts
   const start = performance.now()
 
@@ -185,7 +194,7 @@ export function executeRender(
   {
     using outputSpan = render.span("output")
     const t4 = performance.now()
-    output = outputPhase(prevBuffer, buffer, mode, scrollbackOffset)
+    output = outputPhase(prevBuffer, buffer, mode, scrollbackOffset, termRows)
     tOutput = performance.now() - t4
     outputSpan.spanData.bytes = output.length
     log.debug?.(`output: ${tOutput.toFixed(2)}ms (${output.length} bytes)`)

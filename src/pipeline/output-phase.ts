@@ -134,6 +134,9 @@ function underlineStyleToSgr(style: UnderlineStyle | undefined): number | null {
  * @param prev Previous buffer (null on first render)
  * @param next Current buffer
  * @param mode Render mode: fullscreen or inline
+ * @param scrollbackOffset Lines written to stdout between renders (inline mode)
+ * @param termRows Terminal height in rows (inline mode) — caps output to prevent
+ *   scrollback corruption when content exceeds terminal height
  * @returns ANSI escape sequence string
  */
 export function outputPhase(
@@ -141,10 +144,14 @@ export function outputPhase(
   next: TerminalBuffer,
   mode: "fullscreen" | "inline" = "fullscreen",
   scrollbackOffset = 0,
+  termRows?: number,
 ): string {
   // First render: output entire buffer
   if (!prev) {
-    return bufferToAnsi(next, mode)
+    // In inline mode, cap output to terminal height to prevent scrollback corruption.
+    // Content taller than the terminal would push lines into scrollback where they
+    // can never be overwritten on re-render (cursor-up is clamped at terminal row 0).
+    return bufferToAnsi(next, mode, mode === "inline" ? termRows : undefined)
   }
 
   // Inline mode: always full re-render (no incremental diffing).
@@ -152,7 +159,7 @@ export function outputPhase(
   // and it avoids complex cursor/scrollback offset tracking that's fragile
   // with external stdout.write() calls (e.g., useScrollback).
   if (mode === "inline") {
-    return inlineFullRender(prev, next, scrollbackOffset)
+    return inlineFullRender(prev, next, scrollbackOffset, termRows)
   }
 
   // Fullscreen mode: diff and emit only changes
@@ -212,13 +219,27 @@ function findLastContentLine(buffer: TerminalBuffer): number {
  * buffer fresh, and erases any leftover lines from the previous render.
  * This is simpler and more reliable than incremental diffing for inline
  * mode, which has external writes (useScrollback) that shift the cursor.
+ *
+ * When content exceeds terminal height, output is capped to termRows lines.
+ * Lines beyond the terminal can't be managed (cursor-up is clamped at row 0),
+ * so we truncate to prevent scrollback corruption.
  */
-function inlineFullRender(prev: TerminalBuffer, next: TerminalBuffer, scrollbackOffset: number): string {
-  const prevContentLine = findLastContentLine(prev)
-  const nextContentLine = findLastContentLine(next)
+function inlineFullRender(
+  prev: TerminalBuffer,
+  next: TerminalBuffer,
+  scrollbackOffset: number,
+  termRows?: number,
+): string {
+  const rawPrevLine = findLastContentLine(prev)
+  const rawNextLine = findLastContentLine(next)
+
+  // Cap content lines to terminal height. Content beyond the terminal would
+  // push lines into scrollback where they can never be overwritten.
+  const prevContentLine = termRows != null ? Math.min(rawPrevLine, termRows - 1) : rawPrevLine
+  const nextContentLine = termRows != null ? Math.min(rawNextLine, termRows - 1) : rawNextLine
 
   // How far the cursor is below the start of the render region:
-  // previous content height + any lines written to stdout between renders
+  // previous content height + any lines written to stdout between renders.
   const cursorOffset = prevContentLine + scrollbackOffset
 
   // Quick check: if nothing changed and no scrollback displacement, skip
@@ -233,9 +254,10 @@ function inlineFullRender(prev: TerminalBuffer, next: TerminalBuffer, scrollback
     prefix = `\x1b[${cursorOffset}A\r`
   }
 
-  // bufferToAnsi handles: hide cursor, render all content lines with
-  // \x1b[K (clear to EOL) on each line, and reset style at end
-  let output = prefix + bufferToAnsi(next, "inline")
+  // bufferToAnsi handles: hide cursor, render content lines with
+  // \x1b[K (clear to EOL) on each line, and reset style at end.
+  // Pass termRows to cap output lines.
+  let output = prefix + bufferToAnsi(next, "inline", termRows)
 
   // Erase leftover lines if content shrank
   if (prevContentLine > nextContentLine) {
@@ -254,13 +276,25 @@ function inlineFullRender(prev: TerminalBuffer, next: TerminalBuffer, scrollback
 
 /**
  * Convert entire buffer to ANSI string.
+ *
+ * @param maxRows Optional cap on number of rows to output (inline mode).
+ *   When content exceeds terminal height, this prevents scrollback corruption.
  */
-function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "fullscreen"): string {
+function bufferToAnsi(
+  buffer: TerminalBuffer,
+  mode: "fullscreen" | "inline" = "fullscreen",
+  maxRows?: number,
+): string {
   let output = ""
   let currentStyle: Style | null = null
 
-  // For inline mode, only render up to the last line with content
-  const maxLine = mode === "inline" ? findLastContentLine(buffer) : buffer.height - 1
+  // For inline mode, only render up to the last line with content.
+  // Cap to maxRows to prevent content taller than the terminal from
+  // pushing lines into scrollback (where they can't be overwritten).
+  let maxLine = mode === "inline" ? findLastContentLine(buffer) : buffer.height - 1
+  if (maxRows != null && maxLine >= maxRows) {
+    maxLine = maxRows - 1
+  }
 
   // Move cursor to start position based on mode
   if (mode === "fullscreen") {
