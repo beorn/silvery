@@ -120,3 +120,28 @@ function ListItem({ id }) {
   return <Text color={isFocused ? "blue" : undefined}>{id}</Text>
 }
 ```
+
+## useScrollback
+
+Push frozen items to terminal scrollback. Tracks a contiguous frozen prefix — when the count increases, renders newly frozen items and writes them to stdout.
+
+Pair with VirtualList's `frozen` prop for the complete experience.
+
+```tsx
+import { useScrollback } from "inkx"
+
+const frozenCount = useScrollback(items, {
+  frozen: (item) => item.complete,
+  render: (item) => `  ✓ ${item.title}`,
+})
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `frozen` | `(item: T, index: number) => boolean` | Predicate for frozen items |
+| `render` | `(item: T, index: number) => string` | Render item to string for stdout |
+| `stdout` | `{ write(data: string): boolean }` | Output stream (default: `process.stdout`) |
+
+Returns the current frozen count (contiguous prefix length).
+
+**Requires inline mode** — scrollback only exists in the normal screen buffer.

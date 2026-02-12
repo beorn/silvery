@@ -92,6 +92,12 @@ export interface StdoutContextValue {
   stdout: NodeJS.WriteStream
   /** Write to stdout */
   write: (data: string) => void
+  /**
+   * Notify the scheduler that lines were written to stdout externally.
+   * Used by useScrollback to report lines written between renders so that
+   * inline mode cursor positioning accounts for the displacement.
+   */
+  notifyScrollback?: (lines: number) => void
 }
 
 /**

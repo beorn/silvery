@@ -8,9 +8,10 @@
  */
 
 import React, { useState, useEffect } from "react"
-import { render, Box, Text, createTerm } from "../src/index.js"
+import { render, Box, Text, useApp, createTerm } from "../src/index.js"
 
 function InlineProgress() {
+  const { exit } = useApp()
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState("Starting...")
 
@@ -30,6 +31,13 @@ function InlineProgress() {
 
     return () => clearInterval(timer)
   }, [])
+
+  // Exit cleanly after showing "Complete!" for a moment
+  useEffect(() => {
+    if (progress < 100) return
+    const timeout = setTimeout(() => exit(), 300)
+    return () => clearTimeout(timeout)
+  }, [progress, exit])
 
   const barWidth = 40
   const filled = Math.floor((progress / 100) * barWidth)

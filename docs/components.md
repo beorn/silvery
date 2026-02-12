@@ -62,6 +62,23 @@ Efficient rendering for large lists (100+ items). Only renders visible items.
 />
 ```
 
+### Frozen Items (Scrollback)
+
+VirtualList supports a `frozen` prop that excludes a contiguous prefix of items from rendering. Pair with `useScrollback` to push frozen items to terminal scrollback:
+
+```tsx
+const frozenCount = useScrollback(items, {
+  frozen: (item) => item.complete,
+  render: (item) => `  ✓ ${item.title}`,
+})
+
+<VirtualList
+  items={items}
+  frozen={(item) => item.complete}
+  renderItem={(item) => <Text>{item.title}</Text>}
+/>
+```
+
 ## Static
 
 Renders content once above the dynamic output. Useful for completed items in a stream.
@@ -119,6 +136,56 @@ import { ReadlineInput } from "inkx"
   prompt="$ "
 />
 ```
+
+## TextArea
+
+Multi-line text input with word wrapping, scrolling, and cursor movement.
+
+```tsx
+import { TextArea } from "inkx"
+
+const [value, setValue] = useState("")
+<TextArea
+  value={value}
+  onChange={setValue}
+  onSubmit={(val) => console.log("Submitted:", val)}
+  height={10}
+  placeholder="Type here..."
+/>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `value` | `string` | Current value (controlled) |
+| `defaultValue` | `string` | Initial value (uncontrolled) |
+| `onChange` | `(value: string) => void` | Called when value changes |
+| `onSubmit` | `(value: string) => void` | Called on submit |
+| `submitKey` | `"ctrl+enter" \| "enter"` | Submit key (default: `"ctrl+enter"`) |
+| `placeholder` | `string` | Placeholder text when empty |
+| `isActive` | `boolean` | Whether input is focused |
+| `height` | `number` | Visible height in rows (required) |
+| `cursorStyle` | `"block" \| "underline"` | Cursor style (default: `"block"`) |
+
+Keyboard shortcuts: Arrow keys, Home/End, Ctrl+A/E (line start/end), Ctrl+K/U (kill line), PageUp/PageDown, Backspace/Delete.
+
+## InputBoundary
+
+Isolates input for embedded interactive components. When active, input flows to children only; the parent's handlers don't fire.
+
+```tsx
+import { InputBoundary } from "inkx"
+
+<InputBoundary active={focused} onEscape={() => setFocused(false)}>
+  <EmbeddedInteractiveComponent />
+</InputBoundary>
+```
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `active` | `boolean` | Whether input flows to children |
+| `onEscape` | `() => void` | Called when escape is pressed while active |
+| `exitKey` | `string \| null` | Key to exit (default: Escape, null to disable) |
+| `children` | `ReactNode` | Components inside the isolated scope |
 
 ## Newline
 

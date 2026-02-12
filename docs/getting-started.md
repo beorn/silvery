@@ -1,76 +1,150 @@
 # Getting Started with inkx/runtime
 
-inkx/runtime is a layered TUI framework built on AsyncIterables. It's like a game loop for terminals: events come in, state updates, view renders.
+inkx/runtime is a layered TUI framework built on React. Write terminal apps the same way you write web apps -- with components, hooks, and state.
 
-## Choose Your Layer
+## Your First App
 
-inkx/runtime has three layers. Pick the one that matches your needs:
-
-| Layer | Entry Point       | Best For                   | State Management     |
-| ----- | ----------------- | -------------------------- | -------------------- |
-| 1     | `createRuntime()` | Maximum control, Elm-style | Your choice          |
-| 2     | `run()`           | React hooks                | `useState/useEffect` |
-| 3     | `createApp()`     | Complex apps               | Zustand store        |
-
-**Start with Layer 2** (`run()`) for most apps. Move to Layer 1 for control or Layer 3 for complex state.
-
-## Quick Start: Layer 2 (Recommended)
+The fastest way to build an interactive terminal app is `run()`:
 
 ```typescript
-import { run, useInput, type Key } from 'inkx/runtime';
+import { run, useInput } from 'inkx/runtime';
 import { Text } from 'inkx';
+import { useState } from 'react';
 
 function Counter() {
   const [count, setCount] = useState(0);
 
   useInput((input, key) => {
-    if (input === 'j') setCount(c => c + 1);
-    if (input === 'k') setCount(c => c - 1);
-    if (key.upArrow) setCount(c => c + 1);
-    if (key.downArrow) setCount(c => c - 1);
+    if (input === 'j' || key.downArrow) setCount(c => c + 1);
+    if (input === 'k' || key.upArrow) setCount(c => c - 1);
     if (input === 'q') return 'exit';
   });
 
-  return <Text>Count: {count}</Text>;
+  return <Text>Count: {count} (j/k to change, q to quit)</Text>;
 }
 
 await run(<Counter />);
 ```
 
-That's it. Full React with keyboard input.
+That's a complete, working TUI app. `run()` handles terminal setup, keyboard input, rendering, and cleanup. You write React components.
 
-## Architecture
+## Building with run()
 
+### Keyboard Input
+
+Use `useInput` to handle keyboard events. Return `'exit'` from the handler to quit the app.
+
+```typescript
+import { run, useInput, type Key } from 'inkx/runtime';
+
+useInput((input: string, key: Key) => {
+  // Regular characters
+  if (input === 'a') doSomething();
+
+  // Special keys
+  if (key.return) submit();
+  if (key.escape) cancel();
+  if (key.tab) nextField();
+
+  // Arrow keys
+  if (key.upArrow) moveCursor(-1);
+  if (key.downArrow) moveCursor(1);
+
+  // Modifiers
+  if (key.ctrl && input === 'c') return 'exit';
+
+  // Text input
+  if (input.length === 1) addChar(input);
+});
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Layer 3: createApp().run()                                 │
-│           Zustand store, flattened providers, useApp        │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 2: run()  ← Start here                               │
-│           React components, useInput, useState              │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 1: createRuntime()                                   │
-│           events(), render(), user-driven loop              │
-├─────────────────────────────────────────────────────────────┤
-│  Layer 0: layout() / diff()                                 │
-│           Pure functions, static output                      │
-└─────────────────────────────────────────────────────────────┘
+
+The `Key` object provides booleans for special keys:
+
+```typescript
+interface Key {
+  upArrow: boolean
+  downArrow: boolean
+  leftArrow: boolean
+  rightArrow: boolean
+  pageDown: boolean
+  pageUp: boolean
+  home: boolean
+  end: boolean
+  return: boolean   // Enter key
+  escape: boolean
+  ctrl: boolean     // Ctrl modifier
+  shift: boolean    // Shift modifier
+  tab: boolean
+  backspace: boolean
+  delete: boolean
+  meta: boolean     // Alt/Option modifier
+}
 ```
 
-## Layer 2: React Hooks (`run()`)
+Wrap handlers in `useCallback` when they depend on state to prevent unnecessary re-subscriptions:
 
-Use `run()` when you want React hooks (useState, useEffect) with minimal setup.
+```typescript
+const handleInput = useCallback((input: string, key: Key) => {
+  if (input === 'j' || key.downArrow) setCursor(c => Math.min(c + 1, items.length - 1));
+  if (input === 'k' || key.upArrow) setCursor(c => Math.max(c - 1, 0));
+  if (input === 'q') return 'exit';
+}, [items.length]);
+
+useInput(handleInput);
+```
+
+### Layout Feedback
+
+Components can know their size during render -- inkx's core innovation:
+
+```typescript
+import { useContentRect } from 'inkx';
+
+function ResponsivePanel() {
+  const { width, height } = useContentRect();
+
+  return (
+    <Box flexDirection="column">
+      <Text>Panel is {width}x{height}</Text>
+      {height > 10 && <Text>Extra content when tall enough</Text>}
+    </Box>
+  );
+}
+```
+
+### Terminal Capabilities
+
+Access terminal info and styling with `useTerm`:
+
+```typescript
+import { useTerm } from 'inkx';
+
+function StatusLine() {
+  const term = useTerm();
+
+  return (
+    <Text>
+      {term.hasColor() ? term.green('OK') : 'OK'}
+      {` ${term.cols}x${term.rows}`}
+    </Text>
+  );
+}
+```
+
+### A Complete Example: Interactive List
+
+Putting hooks together into a real app:
 
 ```typescript
 import { run, useInput, useExit, type Key } from 'inkx/runtime';
-import { Box, Text } from 'inkx';
+import { Box, Text, useContentRect } from 'inkx';
 import { useState, useCallback } from 'react';
 
 function App() {
   const [items, setItems] = useState(['Apple', 'Banana', 'Cherry']);
   const [cursor, setCursor] = useState(0);
+  const { width } = useContentRect();
 
-  // useCallback prevents re-subscriptions
   const handleInput = useCallback((input: string, key: Key) => {
     if (input === 'j' || key.downArrow) setCursor(c => Math.min(c + 1, items.length - 1));
     if (input === 'k' || key.upArrow) setCursor(c => Math.max(c - 1, 0));
@@ -81,6 +155,7 @@ function App() {
 
   return (
     <Box flexDirection="column">
+      <Text bold>{'─'.repeat(width)}</Text>
       {items.map((item, i) => (
         <Text key={item} color={i === cursor ? 'cyan' : undefined}>
           {i === cursor ? '› ' : '  '}{item}
@@ -94,69 +169,28 @@ const handle = await run(<App />);
 await handle.waitUntilExit();
 ```
 
-### Key Object
-
-The `Key` object tells you which special keys were pressed:
-
-```typescript
-interface Key {
-  upArrow: boolean
-  downArrow: boolean
-  leftArrow: boolean
-  rightArrow: boolean
-  pageDown: boolean
-  pageUp: boolean
-  home: boolean
-  end: boolean
-  return: boolean // Enter key
-  escape: boolean
-  ctrl: boolean // Ctrl modifier
-  shift: boolean // Shift modifier
-  tab: boolean
-  backspace: boolean
-  delete: boolean
-  meta: boolean // Alt/Option modifier
-}
-```
-
-Example usage:
-
-```typescript
-useInput((input, key) => {
-  // Check modifiers
-  if (key.ctrl && input === "c") return "exit" // Ctrl+C
-
-  // Check special keys
-  if (key.return) submit()
-  if (key.escape) cancel()
-
-  // Check arrow keys
-  if (key.upArrow) moveCursor(-1)
-  if (key.downArrow) moveCursor(1)
-
-  // Check regular input
-  if (input.length === 1) addChar(input)
-})
-```
-
 ### RunHandle API
+
+`run()` returns a handle for programmatic control:
 
 ```typescript
 interface RunHandle {
-  text: string // Current rendered text (no ANSI)
+  text: string                  // Current rendered text (no ANSI)
   waitUntilExit(): Promise<void>
   unmount(): void
-  press(key: string): Promise<void> // For testing
+  press(key: string): Promise<void>  // For testing
 }
 ```
 
-## Layer 3: Zustand Store (`createApp()`)
+## When You Need More: createApp()
 
-Use `createApp()` when you need:
+For apps with complex shared state, `createApp()` adds a Zustand store with centralized event handling. Components subscribe to individual slices of state -- no prop drilling, no unnecessary re-renders.
+
+Use `createApp()` when you have:
 
 - Shared state across many components
-- Fine-grained subscriptions (no prop drilling)
-- Complex state logic
+- Fine-grained subscriptions
+- Complex state logic that benefits from centralized updates
 
 ```typescript
 import { createApp, useApp, type Key } from 'inkx/runtime';
@@ -222,7 +256,7 @@ await handle.waitUntilExit();
 console.log('Final items:', handle.store.getState().items);
 ```
 
-### Key Handler Signature (Layer 3)
+### Key Handler Signature (createApp)
 
 ```typescript
 type KeyHandler<S> = (
@@ -237,21 +271,16 @@ type KeyHandler<S> = (
 ```typescript
 interface AppHandle<S> {
   text: string
-  store: StoreApi<S> // Full Zustand store access
+  store: StoreApi<S>          // Full Zustand store access
   waitUntilExit(): Promise<void>
   unmount(): void
   press(key: string): Promise<void>
 }
 ```
 
-## Layer 1: Full Control (`createRuntime()`)
+## Maximum Control: createRuntime()
 
-Use `createRuntime()` when you want:
-
-- Full control over the event loop
-- Elm-style architecture (Model-Update-View)
-- Custom event sources
-- Maximum testability
+For Elm-style architecture, custom event loops, or integration with external event sources, `createRuntime()` gives you full control over the render loop. This is the escape hatch -- most apps don't need it.
 
 ```typescript
 import { createRuntime, layout, ensureLayoutEngine, merge } from 'inkx/runtime';
@@ -329,6 +358,26 @@ runtime.schedule(async () => await longTask(), { signal: controller.signal })
 controller.abort() // Cancels the effect
 ```
 
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  createApp().run()                                           │
+│           Zustand store, flattened providers, useApp         │
+├─────────────────────────────────────────────────────────────┤
+│  run()  ← Start here                                        │
+│           React components, useInput, useState               │
+├─────────────────────────────────────────────────────────────┤
+│  createRuntime()                                             │
+│           events(), render(), user-driven loop               │
+├─────────────────────────────────────────────────────────────┤
+│  layout() / diff()                                           │
+│           Pure functions, static output                       │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Each layer builds on the one below. `run()` uses `createRuntime()` internally; `createApp()` uses `run()` internally.
+
 ## Stream Helpers
 
 All layers use AsyncIterable streams. Compose them with helpers:
@@ -377,41 +426,41 @@ for await (const event of events) {
 }
 ```
 
-## Examples
-
-| File                  | Layer | Description             |
-| --------------------- | ----- | ----------------------- |
-| `hello-runtime.tsx`   | 1     | Minimal static render   |
-| `runtime-counter.tsx` | 1     | Counter with schedule() |
-| `mode3-counter.tsx`   | 1     | Elm-style with keyboard |
-| `run-counter.tsx`     | 2     | React hooks counter     |
-| `app-todo.tsx`        | 3     | Todo list with Zustand  |
-
-Run examples:
-
-```bash
-bun examples/run-counter.tsx
-bun examples/app-todo.tsx
-```
-
 ## Testing
 
 All layers support testing without a real terminal:
 
 ```typescript
-// Layer 2
+// run()
 const handle = await run(<Counter />, { cols: 80, rows: 24 });
 expect(handle.text).toContain('Count: 0');
 await handle.press('j');
 expect(handle.text).toContain('Count: 1');
 handle.unmount();
 
-// Layer 3
+// createApp()
 const handle = await app.run(<App />, { cols: 80, rows: 24 });
 expect(handle.store.getState().count).toBe(0);
 await handle.press('j');
 expect(handle.store.getState().count).toBe(1);
 handle.unmount();
+```
+
+## Examples
+
+| File                  | Layer             | Description             |
+| --------------------- | ----------------- | ----------------------- |
+| `run-counter.tsx`     | `run()`           | React hooks counter     |
+| `app-todo.tsx`        | `createApp()`     | Todo list with Zustand  |
+| `hello-runtime.tsx`   | `createRuntime()` | Minimal static render   |
+| `runtime-counter.tsx` | `createRuntime()` | Counter with schedule() |
+| `mode3-counter.tsx`   | `createRuntime()` | Elm-style with keyboard |
+
+Run examples:
+
+```bash
+bun examples/run-counter.tsx
+bun examples/app-todo.tsx
 ```
 
 ## Migration from Ink
@@ -422,10 +471,10 @@ inkx/runtime is compatible with existing inkx components. Key differences:
 | ---------------------- | ------------------------------------------- |
 | `useInput(input, key)` | `useInput(input, key)` (same signature!)    |
 | `useApp().exit()`      | `return 'exit'` from handler or `useExit()` |
-| Props for callbacks    | Store actions (Layer 3)                     |
+| Props for callbacks    | Store actions (createApp)                   |
 
 ## Next Steps
 
 1. Try the examples: `bun examples/run-counter.tsx`
 2. Read the source: `src/runtime/` has all implementations
-3. Build something: Start with Layer 2, upgrade to Layer 3 if needed
+3. Build something: Start with `run()`, upgrade to `createApp()` if needed

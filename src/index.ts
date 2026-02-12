@@ -123,6 +123,9 @@ export type {
   ReadlineInputHandle,
 } from "./components/ReadlineInput.js"
 
+export { TextArea } from "./components/TextArea.js"
+export type { TextAreaProps, TextAreaHandle } from "./components/TextArea.js"
+
 // Input Hooks
 export { useReadline } from "./components/useReadline.js"
 export type {
@@ -610,3 +613,6 @@ export type {
   InputLayerContextValue,
   InputLayerProviderProps,
 } from "./contexts/InputLayerContext.js"
+
+export { InputBoundary } from "./contexts/InputBoundary.js"
+export type { InputBoundaryProps } from "./contexts/InputBoundary.js"

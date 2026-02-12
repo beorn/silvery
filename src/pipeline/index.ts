@@ -92,6 +92,14 @@ export interface ExecuteRenderOptions {
    * Default: false
    */
   skipScrollStateUpdates?: boolean
+
+  /**
+   * Number of lines written to stdout between renders (inline mode only).
+   * Used to adjust cursor positioning when external code (e.g., useScrollback)
+   * writes directly to stdout between renders.
+   * Default: 0
+   */
+  scrollbackOffset?: number
 }
 
 /**
@@ -118,6 +126,7 @@ export function executeRender(
     mode = "fullscreen",
     skipLayoutNotifications = false,
     skipScrollStateUpdates = false,
+    scrollbackOffset = 0,
   } = opts
   const start = performance.now()
 
@@ -192,7 +201,7 @@ export function executeRender(
   {
     using outputSpan = render.span("output")
     const t4 = performance.now()
-    output = outputPhase(prevBuffer, buffer, mode)
+    output = outputPhase(prevBuffer, buffer, mode, scrollbackOffset)
     tOutput = performance.now() - t4
     outputSpan.spanData.bytes = output.length
     log.debug?.(`output: ${tOutput.toFixed(2)}ms (${output.length} bytes)`)

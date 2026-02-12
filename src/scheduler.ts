@@ -178,6 +178,13 @@ export class RenderScheduler {
   /** Was a render requested while paused? */
   private pendingWhilePaused = false
 
+  /**
+   * Lines written to stdout between renders (inline mode only).
+   * When useScrollback or other code writes to stdout, those lines
+   * displace the terminal cursor. This offset is consumed on the next render.
+   */
+  private scrollbackOffset = 0
+
   constructor(options: SchedulerOptions) {
     this.stdout = options.stdout
     this.root = options.root
@@ -283,6 +290,17 @@ export class RenderScheduler {
    */
   getStats(): RenderStats {
     return { ...this.stats }
+  }
+
+  /**
+   * Report lines written to stdout between renders (inline mode only).
+   * This adjusts cursor position tracking so the next render accounts
+   * for the extra lines. Used by useScrollback to notify the scheduler
+   * when it writes frozen items to stdout.
+   */
+  addScrollbackLines(lines: number): void {
+    if (this.mode !== "inline" || lines <= 0) return
+    this.scrollbackOffset += lines
   }
 
   /**
@@ -407,19 +425,23 @@ export class RenderScheduler {
     try {
       // Get terminal dimensions
       const width = this.stdout.columns ?? 80
-      const height = this.stdout.rows ?? 24
+      // Inline mode: use NaN height so layout engine auto-sizes to content.
+      // Fullscreen mode: use terminal rows as the constraint.
+      const height = this.mode === "inline" ? NaN : (this.stdout.rows ?? 24)
 
       log.debug?.(
         `render #${this.stats.renderCount + 1}: ${width}x${height}, nonTTYMode=${this.nonTTYMode}`,
       )
 
       // Run render pipeline
+      const scrollbackOffset = this.scrollbackOffset
+      this.scrollbackOffset = 0 // Consume the offset
       const { output, buffer } = executeRender(
         this.root,
         width,
         height,
         this.prevBuffer,
-        this.mode,
+        { mode: this.mode, scrollbackOffset },
       )
 
       // Transform output based on non-TTY mode

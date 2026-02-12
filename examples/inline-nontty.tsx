@@ -20,9 +20,10 @@
  */
 
 import React, { useEffect, useState } from "react"
-import { Box, render, Text, createTerm, type NonTTYMode } from "../src/index.js"
+import { Box, render, Text, useApp, createTerm, type NonTTYMode } from "../src/index.js"
 
 function ProgressExample() {
+  const { exit } = useApp()
   const [progress, setProgress] = useState(0)
   const [done, setDone] = useState(false)
 
@@ -41,6 +42,13 @@ function ProgressExample() {
 
     return () => clearInterval(timer)
   }, [])
+
+  // Exit cleanly after showing "Complete!" for a moment
+  useEffect(() => {
+    if (!done) return
+    const timeout = setTimeout(() => exit(), 300)
+    return () => clearTimeout(timeout)
+  }, [done, exit])
 
   const barWidth = 30
   const filled = Math.floor((progress / 100) * barWidth)

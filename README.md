@@ -31,7 +31,9 @@ inkx solves this with a five-phase pipeline: reconcile, measure, layout, content
 </Board>
 ```
 
-Same insight as WPF Measure/Arrange (2006), CSS Container Queries (2022), and Facebook Litho/ComponentKit (35% scroll perf gains).
+Same insight as [WPF's Measure/Arrange pass](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/advanced/layout) (2006) — Microsoft's two-phase layout where parent proposes size, child returns desired size; [CSS Container Queries](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_containment/Container_queries) (2022) — style elements based on their container's size instead of the viewport; and Facebook's [Litho](https://github.com/facebook/litho)/[ComponentKit](https://github.com/nicklockwood/ComponentKit) — async layout on background threads that yielded 35% scroll performance gains in the Facebook app.
+
+![Dashboard with multiple panes, borders, and colors](docs/images/dashboard.png)
 
 ## Quick Start
 
@@ -145,6 +147,8 @@ The RenderAdapter interface separates core logic (reconciler, layout, hooks) fro
 - Pluggable layout: [Flexx](https://github.com/beorn/flexx) (default, pure JS) or Yoga (WASM)
 - 165µs cold render, 169µs dirty update for 1000 nodes ([benchmarks](docs/ink-comparison.md#performance))
 
+![Layout feedback: each pane displays its own dimensions via useContentRect()](docs/images/layout-feedback.png)
+
 ### Components
 
 - **Box** — flexbox container with borders, padding, overflow
@@ -152,7 +156,13 @@ The RenderAdapter interface separates core logic (reconciler, layout, hooks) fro
 - **VirtualList** — efficient rendering for large lists (100+ items)
 - **Console** — captures and displays `console.log` output
 - **TextInput** / **ReadlineInput** — text input with readline shortcuts (Ctrl+A/E/W/K/Y)
+- **TextArea** — multi-line text input with word wrap, scrolling, and cursor movement
+- **InputBoundary** — isolates input scope for embedded interactive components
 - `overflow="scroll"` with `scrollTo` — no manual virtualization needed
+
+![Scrollable task list with selection and priority badges](docs/images/task-list.png)
+
+![Kanban board with cards, tags, and column navigation](docs/images/kanban.png)
 
 ### Input & Interaction
 
@@ -197,6 +207,7 @@ bun run examples/kanban/index.tsx         # 3-column kanban board
 bun run examples/task-list/index.tsx      # Scrollable task list
 bun run examples/search-filter/index.tsx  # useTransition + useDeferredValue
 bun run examples/async-data/index.tsx     # Suspense + async loading
+bun run examples/textarea/index.tsx       # Multi-line text input
 bun run examples/scrollback/index.tsx    # Scrollback mode (frozen items)
 ```
 

@@ -140,19 +140,27 @@ export function outputPhase(
   prev: TerminalBuffer | null,
   next: TerminalBuffer,
   mode: "fullscreen" | "inline" = "fullscreen",
+  scrollbackOffset = 0,
 ): string {
   // First render: output entire buffer
   if (!prev) {
     return bufferToAnsi(next, mode)
   }
 
-  // Diff and emit only changes (returns pool+count, no array allocation)
+  // Inline mode: always full re-render (no incremental diffing).
+  // Inline content is typically small (< 10 lines) so the cost is minimal,
+  // and it avoids complex cursor/scrollback offset tracking that's fragile
+  // with external stdout.write() calls (e.g., useScrollback).
+  if (mode === "inline") {
+    return inlineFullRender(prev, next, scrollbackOffset)
+  }
+
+  // Fullscreen mode: diff and emit only changes
   const { pool, count } = diffBuffers(prev, next)
 
   if (DEBUG_OUTPUT) {
     // eslint-disable-next-line no-console
     console.error(`[INKX_DEBUG_OUTPUT] diffBuffers: ${count} changes`)
-    // Log first few changes
     const debugLimit = Math.min(count, 10)
     for (let i = 0; i < debugLimit; i++) {
       const change = pool[i]!
@@ -169,12 +177,7 @@ export function outputPhase(
     return "" // No changes
   }
 
-  // For inline mode, pass the previous content height so changesToAnsi knows
-  // where the cursor currently sits (at the bottom of the previous render).
-  const prevContentHeight = mode === "inline" ? findLastContentLine(prev) : 0
-  const nextContentHeight = mode === "inline" ? findLastContentLine(next) : 0
-
-  return changesToAnsi(pool, count, mode, prevContentHeight, nextContentHeight)
+  return changesToAnsi(pool, count, mode)
 }
 
 /**
@@ -200,6 +203,57 @@ function findLastContentLine(buffer: TerminalBuffer): number {
     }
   }
   return 0 // At least render first line
+}
+
+/**
+ * Full re-render for inline mode.
+ *
+ * Moves cursor to the start of the render region, writes the entire
+ * buffer fresh, and erases any leftover lines from the previous render.
+ * This is simpler and more reliable than incremental diffing for inline
+ * mode, which has external writes (useScrollback) that shift the cursor.
+ */
+function inlineFullRender(
+  prev: TerminalBuffer,
+  next: TerminalBuffer,
+  scrollbackOffset: number,
+): string {
+  const prevContentLine = findLastContentLine(prev)
+  const nextContentLine = findLastContentLine(next)
+
+  // How far the cursor is below the start of the render region:
+  // previous content height + any lines written to stdout between renders
+  const cursorOffset = prevContentLine + scrollbackOffset
+
+  // Quick check: if nothing changed and no scrollback displacement, skip
+  if (scrollbackOffset === 0) {
+    const { count } = diffBuffers(prev, next)
+    if (count === 0) return ""
+  }
+
+  // Move cursor up to the start of the render region
+  let prefix = ""
+  if (cursorOffset > 0) {
+    prefix = `\x1b[${cursorOffset}A\r`
+  }
+
+  // bufferToAnsi handles: hide cursor, render all content lines with
+  // \x1b[K (clear to EOL) on each line, and reset style at end
+  let output = prefix + bufferToAnsi(next, "inline")
+
+  // Erase leftover lines if content shrank
+  if (prevContentLine > nextContentLine) {
+    for (let y = nextContentLine + 1; y <= prevContentLine; y++) {
+      output += "\n\r\x1b[K"
+    }
+    // Move back up to the end of new content
+    const up = prevContentLine - nextContentLine
+    if (up > 0) output += `\x1b[${up}A`
+  }
+
+  // Show cursor (bufferToAnsi hides it for inline mode)
+  output += "\x1b[?25h"
+  return output
 }
 
 /**
@@ -509,18 +563,12 @@ function sortPoolByPosition(pool: CellChange[], count: number): void {
  *
  * @param pool Pre-allocated pool of CellChange objects
  * @param count Number of valid entries in the pool
- * @param mode Render mode: fullscreen or inline
- * @param prevContentLine Last content line of the previous buffer (inline mode only).
- *   This is the row where the cursor currently sits after the previous render.
- * @param nextContentLine Last content line of the next buffer (inline mode only).
- *   After rendering, the cursor will be positioned at this row.
+ * @param mode Render mode (only fullscreen uses incremental diff)
  */
 function changesToAnsi(
   pool: CellChange[],
   count: number,
   mode: "fullscreen" | "inline" = "fullscreen",
-  prevContentLine = 0,
-  nextContentLine = 0,
 ): string {
   if (count === 0) return ""
 
@@ -530,71 +578,8 @@ function changesToAnsi(
   let output = ""
   let currentStyle: Style | null = null
 
-  if (mode === "inline") {
-    // Inline mode: move cursor to start of the render region.
-    // The cursor is currently at prevContentLine (the last content row of
-    // the previous render). We need to move up to row 0 to start rendering.
-
-    // Hide cursor
-    output += "\x1b[?25l"
-
-    // Move up from the cursor's current position (prevContentLine) to row 0
-    if (prevContentLine > 0) {
-      output += `\x1b[${prevContentLine}A`
-    }
-
-    // Move to start of line
-    output += "\r"
-
-    // Track current line for multi-line support
-    let currentY = 0
-
-    // Apply changes
-    for (let i = 0; i < count; i++) {
-      const change = pool[i]!
-      const x = change.x
-      const y = change.y
-      const cell = change.cell
-
-      // Skip continuation cells
-      if (cell.continuation) continue
-
-      // Move to correct line if needed
-      while (currentY < y) {
-        output += "\n"
-        currentY++
-      }
-
-      // Move to correct column
-      output += `\x1b[${x + 1}G`
-
-      // Update style if changed (reuse pre-allocated style object)
-      reusableCellStyle.fg = cell.fg
-      reusableCellStyle.bg = cell.bg
-      reusableCellStyle.underlineColor = cell.underlineColor
-      reusableCellStyle.attrs = cell.attrs
-      if (!styleEquals(currentStyle, reusableCellStyle)) {
-        // Snapshot: copy attrs so currentStyle isn't invalidated by next iteration
-        currentStyle = {
-          fg: cell.fg,
-          bg: cell.bg,
-          underlineColor: cell.underlineColor,
-          attrs: { ...cell.attrs },
-        }
-        output += cachedStyleToAnsi(currentStyle)
-      }
-
-      // Write character
-      output += cell.char
-    }
-
-    // After rendering, move cursor to nextContentLine so the next diff
-    // knows where the cursor is. The cursor is currently at currentY.
-    if (currentY < nextContentLine) {
-      output += `\x1b[${nextContentLine - currentY}B`
-    }
-  } else {
-    // Fullscreen mode: use absolute positioning
+  // Fullscreen mode: use absolute positioning
+  {
     let cursorX = -1
     let cursorY = -1
 

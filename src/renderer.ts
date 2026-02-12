@@ -264,8 +264,11 @@ export function render(
     renderCount: 0,
   }
 
-  // Create container (onRender callback not needed for sync rendering)
-  instance.container = createContainer(() => {})
+  // Track whether React committed new work (from layout notifications etc.)
+  let hadReactCommit = false
+  instance.container = createContainer(() => {
+    hadReactCommit = true
+  })
 
   instance.fiberRoot = reconciler.createContainer(
     instance.container,
@@ -356,25 +359,54 @@ export function render(
   const strictMode =
     incremental && strictEnv && strictEnv !== "0" && strictEnv !== "false"
 
-  // Render function that executes the pipeline
+  // Render function that executes the pipeline with layout feedback loop.
+  // After executeRender fires notifyLayoutSubscribers (Phase 2.7), hooks like
+  // useContentRect call forceUpdate() and onLayout calls setState(). These
+  // React updates must be flushed and the pipeline re-run until stable.
+  //
+  // Key insight: executeRender must run inside act() so that forceUpdate/setState
+  // calls from layout notifications are properly captured by React's scheduler.
+  // With IS_REACT_ACT_ENVIRONMENT=true (set by inkx/testing), state updates
+  // outside act() boundaries may be dropped.
   function doRender(): string {
-    const root = getContainerRoot(instance.container)
-    const { output, buffer } = executeRender(
-      root,
-      instance.columns,
-      instance.rows,
-      incremental ? instance.prevBuffer : null,
-    )
-    instance.prevBuffer = buffer
-    instance.renderCount++
+    const MAX_LAYOUT_ITERATIONS = 5
+    let output: string
+    let buffer: TerminalBuffer
+
+    for (let iteration = 0; iteration < MAX_LAYOUT_ITERATIONS; iteration++) {
+      hadReactCommit = false
+
+      // Run the render pipeline inside act() so that forceUpdate/setState
+      // from notifyLayoutSubscribers (Phase 2.7) are properly captured.
+      withActEnvironment(() => {
+        act(() => {
+          const root = getContainerRoot(instance.container)
+          const result = executeRender(
+            root,
+            instance.columns,
+            instance.rows,
+            incremental ? instance.prevBuffer : null,
+          )
+          output = result.output
+          buffer = result.buffer
+          instance.prevBuffer = buffer
+          instance.renderCount++
+        })
+      })
+
+      // If React didn't commit any new work from layout notifications,
+      // the layout is stable — no more iterations needed.
+      if (!hadReactCommit) break
+    }
 
     // INKX_STRICT: Compare incremental vs fresh on every render (like scheduler)
     // Skip first render (nothing to compare against)
     if (strictMode && instance.renderCount > 1) {
+      const root = getContainerRoot(instance.container)
       const freshBuffer = doFreshRender()
-      for (let y = 0; y < buffer.height; y++) {
-        for (let x = 0; x < buffer.width; x++) {
-          const a = buffer.getCell(x, y)
+      for (let y = 0; y < buffer!.height; y++) {
+        for (let x = 0; x < buffer!.width; x++) {
+          const a = buffer!.getCell(x, y)
           const b = freshBuffer.getCell(x, y)
           if (!cellEquals(a, b)) {
             // Build rich debug context
@@ -389,7 +421,7 @@ export function render(
             const debugInfo = formatMismatchContext(ctx)
 
             // Include text output for full picture
-            const incText = bufferToText(buffer)
+            const incText = bufferToText(buffer!)
             const freshText = bufferToText(freshBuffer)
             const msg =
               debugInfo +
@@ -400,7 +432,7 @@ export function render(
       }
     }
 
-    return output
+    return output!
   }
 
   // Fresh render: renders from scratch without updating incremental state

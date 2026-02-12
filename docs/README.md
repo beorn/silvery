@@ -23,6 +23,7 @@
 ### Deep Dives
 
 - [Internals](internals.md) — Reconciler, dirty tracking, content phase
+- [Containment](containment.md) — Layout feedback loop prevention (useContentRect safe patterns)
 - [Performance](performance.md) — Benchmarks, optimization techniques
 - [Ink Comparison](ink-comparison.md) — Why inkx exists, detailed differences
 - [Roadmap](roadmap.md) — Render targets, multi-platform vision

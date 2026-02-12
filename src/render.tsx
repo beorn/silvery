@@ -233,6 +233,7 @@ interface AppProps {
   onExit: (error?: Error) => void
   onPause?: () => void
   onResume?: () => void
+  onScrollback?: (lines: number) => void
 }
 
 /**
@@ -248,6 +249,7 @@ function InkxApp({
   onExit,
   onPause,
   onResume,
+  onScrollback,
 }: AppProps): ReactElement {
   // Focus state
   const [focusState, setFocusState] = useState<{
@@ -493,8 +495,9 @@ function InkxApp({
     () => ({
       stdout,
       write: (data: string) => stdout.write(data),
+      notifyScrollback: onScrollback,
     }),
-    [stdout],
+    [stdout, onScrollback],
   )
 
   const inputContextValue = useMemo(
@@ -660,6 +663,7 @@ class InkxInstance {
         onExit={this.handleExit}
         onPause={this.pause}
         onResume={this.resume}
+        onScrollback={this.handleScrollback}
       >
         {element}
       </InkxApp>
@@ -722,10 +726,13 @@ class InkxInstance {
     this.signalCleanup?.()
 
     // Leave alternate screen if we entered it (leaveAlternateScreen includes
-    // SYNC_END as a safety belt). For inline mode, emit SYNC_END directly
-    // to ensure synchronized update mode is reset even if interrupted mid-render.
+    // SYNC_END as a safety belt). For inline mode, show cursor and move to
+    // next line. Otherwise emit SYNC_END as a safety belt.
     if (this.alternateScreen) {
       this.stdout.write(leaveAlternateScreen())
+    } else if (this.mode === "inline") {
+      // Show cursor and move to line after content
+      this.stdout.write(`${ANSI.SYNC_END}${ANSI.CURSOR_SHOW}\n`)
     } else {
       this.stdout.write(ANSI.SYNC_END)
     }
@@ -787,6 +794,13 @@ class InkxInstance {
     }
 
     this.unmount()
+  }
+
+  /**
+   * Handle scrollback lines written to stdout by useScrollback.
+   */
+  private handleScrollback = (lines: number): void => {
+    this.scheduler?.addScrollbackLines(lines)
   }
 
   /**

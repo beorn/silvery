@@ -4,9 +4,13 @@
  * Tracks a contiguous frozen prefix of items. When the frozen count
  * increases, renders newly frozen items and writes them to stdout.
  * Pair with VirtualList's `frozen` prop for the complete experience.
+ *
+ * In inline mode, notifies the scheduler about lines written to stdout
+ * so that cursor positioning accounts for the displacement.
  */
 
-import { useEffect, useRef } from "react"
+import { useContext, useEffect, useRef } from "react"
+import { StdoutContext } from "../context.js"
 
 export interface UseScrollbackOptions<T> {
   /** Predicate: return true for items that should be frozen */
@@ -15,6 +19,17 @@ export interface UseScrollbackOptions<T> {
   render: (item: T, index: number) => string
   /** Output stream (defaults to process.stdout) */
   stdout?: { write(data: string): boolean }
+}
+
+/**
+ * Count the number of newlines in a string.
+ */
+function countNewlines(s: string): number {
+  let count = 0
+  for (let i = 0; i < s.length; i++) {
+    if (s.charCodeAt(i) === 10) count++
+  }
+  return count
 }
 
 /**
@@ -27,6 +42,7 @@ export function useScrollback<T>(
   options: UseScrollbackOptions<T>,
 ): number {
   const { frozen, render, stdout = process.stdout } = options
+  const stdoutCtx = useContext(StdoutContext)
 
   // Compute contiguous frozen prefix
   let frozenCount = 0
@@ -41,12 +57,17 @@ export function useScrollback<T>(
     const prev = prevFrozenCountRef.current
     if (frozenCount > prev) {
       // Write newly frozen items to scrollback
+      let linesWritten = 0
       for (let i = prev; i < frozenCount; i++) {
-        stdout.write(render(items[i]!, i) + "\n")
+        const text = render(items[i]!, i) + "\n"
+        stdout.write(text)
+        linesWritten += countNewlines(text)
       }
+      // Notify the scheduler so inline mode cursor positioning is correct
+      stdoutCtx?.notifyScrollback?.(linesWritten)
     }
     prevFrozenCountRef.current = frozenCount
-  }, [frozenCount, items, render, stdout])
+  }, [frozenCount, items, render, stdout, stdoutCtx])
 
   return frozenCount
 }

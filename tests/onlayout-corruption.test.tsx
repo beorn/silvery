@@ -269,31 +269,31 @@ function createProductionSimulator(
 
   return {
     /**
-     * Run the render pipeline (like scheduler.executeRender).
-     * This is where notifyLayoutSubscribers fires, queuing React updates.
+     * Run the render pipeline with layout feedback loop.
+     * executeRender must run inside act() so that forceUpdate/setState from
+     * notifyLayoutSubscribers (Phase 2.7) are properly captured by React.
+     * Loops until React has no more pending work from layout notifications.
      */
     renderPipeline() {
-      const root = getContainerRoot(container)
-      const { buffer } = executeRender(root, cols, rows, prevBuffer)
-      prevBuffer = buffer
-      return { text: bufferToText(buffer), buffer }
-    },
+      const MAX_ITERATIONS = 5
+      let result!: { text: string; buffer: import("../src/buffer.js").TerminalBuffer }
 
-    /**
-     * Flush any pending React work (simulates what happens when React's
-     * scheduler processes the forceUpdate/setState from layout notifications).
-     * Returns true if onRender was called (meaning React committed new work).
-     */
-    flushReact() {
-      onRenderCalled = false
-      const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
-      globalThis.IS_REACT_ACT_ENVIRONMENT = true
-      act(() => {
-        // act() will flush any pending React state updates
-        reconciler.flushSyncWork()
-      })
-      globalThis.IS_REACT_ACT_ENVIRONMENT = prev as boolean
-      return onRenderCalled
+      for (let i = 0; i < MAX_ITERATIONS; i++) {
+        onRenderCalled = false
+        const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
+        globalThis.IS_REACT_ACT_ENVIRONMENT = true
+        act(() => {
+          const root = getContainerRoot(container)
+          const { buffer } = executeRender(root, cols, rows, prevBuffer)
+          prevBuffer = buffer
+          result = { text: bufferToText(buffer), buffer }
+        })
+        globalThis.IS_REACT_ACT_ENVIRONMENT = prev as boolean
+
+        if (!onRenderCalled) break
+      }
+
+      return result
     },
 
     /**
@@ -327,10 +327,11 @@ function createProductionSimulator(
 // ============================================================================
 
 describe("onLayout corruption", () => {
-  it("useContentRect forceUpdate is never flushed - stuck at 0x0", () => {
-    // BUG: useContentRect's forceUpdate() fires during executeRender's Phase 2.7
-    // but the React state update is never flushed in the test renderer.
-    // The component is permanently stuck showing 0x0 dimensions.
+  it("useContentRect shows real dimensions after layout feedback loop", () => {
+    // The test renderer's doRender() includes a layout feedback loop:
+    // executeRender() fires notifyLayoutSubscribers (Phase 2.7) which queues
+    // forceUpdate() from useContentRect. The loop flushes React and re-renders
+    // until stable, so dimensions are available on first render.
     const app = render(
       <Box flexDirection="row" gap={1}>
         <SelfMeasuring label="A" />
@@ -342,32 +343,26 @@ describe("onLayout corruption", () => {
     expect(text).toContain("A:")
     expect(text).toContain("B:")
 
-    // BUG: dimensions are stuck at 0x0 because forceUpdate from
-    // notifyLayoutSubscribers (Phase 2.7) is never flushed.
-    // This SHOULD show real dimensions like "A: 28x3" but shows "A: 0x0".
-    expect(text).toContain("0x0")
+    // Dimensions should be real values, not stuck at 0x0
+    expect(text).not.toContain("0x0")
   })
 
-  it("onLayout setState is never flushed - always shows placeholder", () => {
-    // BUG: onLayout fires during executeRender Phase 2.7, calling setState,
-    // but the state update is never flushed.
+  it("onLayout setState is flushed by layout feedback loop", () => {
+    // The test renderer's layout feedback loop flushes React after
+    // executeRender fires onLayout callbacks that call setState.
     const app = render(<LayoutContainer />)
 
     const text = app.text
     expect(text).toContain("Layout Results:")
 
-    // BUG: onLayout fires and calls setLayouts(), but the setState is
-    // never flushed by the test renderer. Always shows "No layout yet".
-    expect(text).toContain("No layout yet")
+    // Layout data should be available, not stuck at placeholder
+    expect(text).not.toContain("No layout yet")
   })
 
-  it.fails("production cycle: useContentRect should show real dimensions after flush", () => {
-    // Simulate the production render cycle:
-    // 1. React reconciles + render pipeline (layout notifications fire)
-    // 2. React flushes pending updates from layout notifications
-    // 3. Render pipeline again (incremental, using prevBuffer from step 1)
-    // 4. Compare incremental result against fresh render
-
+  it("production cycle: useContentRect shows real dimensions with feedback loop", () => {
+    // The production simulator now includes a layout feedback loop in
+    // renderPipeline(). executeRender runs inside act(), so forceUpdate from
+    // useContentRect is properly captured and flushed.
     const sim = createProductionSimulator(
       <Box flexDirection="row" gap={1}>
         <SelfMeasuring label="A" />
@@ -376,28 +371,21 @@ describe("onLayout corruption", () => {
     )
 
     try {
-      // Step 1: First render pipeline run
-      // This fires notifyLayoutSubscribers -> useContentRect's forceUpdate()
-      const first = sim.renderPipeline()
-      expect(first.text).toContain("0x0") // Still shows initial values
+      // renderPipeline includes the feedback loop: executeRender fires
+      // layout notifications, React flushes, re-renders until stable.
+      const result = sim.renderPipeline()
 
-      // Step 2: Flush React - this processes the forceUpdate from Phase 2.7
-      const hadPendingWork = sim.flushReact()
+      // Verify real dimensions (not stuck at 0x0)
+      expect(result.text).not.toContain("0x0")
+      expect(result.text).toContain("A:")
+      expect(result.text).toContain("B:")
 
-      // Step 3: Second render pipeline run (incremental, using prevBuffer from step 1)
-      // THIS is where corruption happens: the React tree now has real dimensions
-      // but the incremental renderer may not detect the change because dirty flags
-      // were cleared by step 1.
-      const second = sim.renderPipeline()
-
-      // Step 4: Compare against fresh render
+      // Compare incremental against fresh render — no corruption
       const fresh = sim.freshRender()
-
-      // Find any mismatches between incremental and fresh
       const mismatches: string[] = []
-      for (let y = 0; y < second.buffer.height; y++) {
-        for (let x = 0; x < second.buffer.width; x++) {
-          const inc = second.buffer.getCell(x, y)
+      for (let y = 0; y < result.buffer.height; y++) {
+        for (let x = 0; x < result.buffer.width; x++) {
+          const inc = result.buffer.getCell(x, y)
           const fr = fresh.buffer.getCell(x, y)
           if (!cellEquals(inc, fr)) {
             mismatches.push(`(${x},${y}): inc='${inc.char}' fresh='${fr.char}'`)
@@ -405,54 +393,29 @@ describe("onLayout corruption", () => {
         }
       }
 
-      if (mismatches.length > 0) {
-        throw new Error(
-          `Incremental/fresh render mismatch: ${mismatches.length} cells differ.\n` +
-            `Incremental text:\n${second.text}\n` +
-            `Fresh text:\n${fresh.text}\n` +
-            `Had pending React work: ${hadPendingWork}\n` +
-            `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
-        )
-      }
-
-      // If no mismatches, verify that layout data actually propagated
-      // (if it didn't propagate, both incremental and fresh show 0x0 = no corruption
-      // but the feature is broken)
-      if (second.text.includes("0x0")) {
-        // Layout updates were lost entirely - the feature is broken
-        // even though there's no incremental corruption
-        expect.fail(
-          "useContentRect never received real dimensions.\n" +
-            `hadPendingWork=${hadPendingWork}\n` +
-            `Text after flush+re-render: ${second.text}`,
-        )
-      }
+      expect(mismatches).toHaveLength(0)
     } finally {
       sim.unmount()
     }
   })
 
-  it.fails("production cycle: onLayout setState should take effect after flush", () => {
+  it("production cycle: onLayout setState takes effect with feedback loop", () => {
     const sim = createProductionSimulator(<LayoutContainer />)
 
     try {
-      // Step 1: First render - onLayout fires, setState queued
-      const first = sim.renderPipeline()
-      expect(first.text).toContain("No layout yet")
+      // renderPipeline includes the feedback loop
+      const result = sim.renderPipeline()
 
-      // Step 2: Flush pending React state updates
-      const hadPendingWork = sim.flushReact()
+      // Layout data should be resolved (not stuck at placeholder)
+      expect(result.text).toContain("Layout Results:")
+      expect(result.text).not.toContain("No layout yet")
 
-      // Step 3: Incremental render with new tree state
-      const second = sim.renderPipeline()
-
-      // Step 4: Fresh render for comparison
+      // Compare incremental against fresh render — no corruption
       const fresh = sim.freshRender()
-
       const mismatches: string[] = []
-      for (let y = 0; y < second.buffer.height; y++) {
-        for (let x = 0; x < second.buffer.width; x++) {
-          const inc = second.buffer.getCell(x, y)
+      for (let y = 0; y < result.buffer.height; y++) {
+        for (let x = 0; x < result.buffer.width; x++) {
+          const inc = result.buffer.getCell(x, y)
           const fr = fresh.buffer.getCell(x, y)
           if (!cellEquals(inc, fr)) {
             mismatches.push(`(${x},${y}): inc='${inc.char}' fresh='${fr.char}'`)
@@ -460,24 +423,7 @@ describe("onLayout corruption", () => {
         }
       }
 
-      if (mismatches.length > 0) {
-        throw new Error(
-          `Incremental/fresh render mismatch: ${mismatches.length} cells differ.\n` +
-            `Incremental text:\n${second.text}\n` +
-            `Fresh text:\n${fresh.text}\n` +
-            `Had pending React work: ${hadPendingWork}\n` +
-            `First 10 mismatches:\n${mismatches.slice(0, 10).join("\n")}`,
-        )
-      }
-
-      // Verify the feature actually works
-      if (second.text.includes("No layout yet")) {
-        expect.fail(
-          "onLayout setState never took effect.\n" +
-            `hadPendingWork=${hadPendingWork}\n` +
-            `Text: ${second.text}`,
-        )
-      }
+      expect(mismatches).toHaveLength(0)
     } finally {
       sim.unmount()
     }

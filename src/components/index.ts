@@ -31,6 +31,9 @@ export type {
   ReadlineInputHandle,
 } from "./ReadlineInput.js"
 
+export { TextArea } from "./TextArea.js"
+export type { TextAreaProps, TextAreaHandle } from "./TextArea.js"
+
 // Input Hooks
 export { useReadline } from "./useReadline.js"
 export type {

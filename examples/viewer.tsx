@@ -103,6 +103,14 @@ const examples: Example[] = [
     component: "LayoutRefApp",
   },
   {
+    name: "TextArea",
+    file: "textarea/index.tsx",
+    description:
+      "Multi-line text input with word wrap, scrolling, and kill operations",
+    category: "Interactive",
+    component: "NoteEditor",
+  },
+  {
     name: "Todo App",
     file: "app-todo.tsx",
     description: "Layer 3: createApp() with Zustand store for shared state",
@@ -148,9 +156,10 @@ const examples: Example[] = [
   {
     name: "Scrollback",
     file: "scrollback/index.tsx",
-    description: "Scrollback mode with build pipeline progress",
+    description:
+      "REPL with useScrollback + VirtualList frozen for terminal scrollback",
     category: "Inline",
-    component: "Pipeline",
+    component: "Repl",
   },
   {
     name: "Non-TTY Mode",
@@ -388,11 +397,11 @@ function Preview({ example }: { example: Example }) {
         }
 
         // Render in sandboxed static mode — useInput becomes a no-op,
-        // useApp gets a stub exit(), no terminal needed
+        // useApp gets a stub exit(), no terminal needed.
+        // Keep ANSI codes for full-color preview.
         const output = await renderStatic(React.createElement(Comp), {
           width,
           height,
-          plain: true,
         })
         if (!cancelled) setLines(output.split("\n"))
         return undefined

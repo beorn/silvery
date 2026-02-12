@@ -87,7 +87,7 @@ await app.run(<App />)
 
 ## Components
 
-See [docs/components.md](docs/components.md) for full reference. Key components: Box, Text, VirtualList, Static, Console, TextInput, ReadlineInput.
+See [docs/components.md](docs/components.md) for full reference. Key components: Box, Text, VirtualList, Static, Console, TextInput, ReadlineInput, TextArea, InputBoundary.
 
 ## Layout Hooks
 

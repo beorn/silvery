@@ -104,6 +104,86 @@ bun run examples/layout-ref/index.tsx
 - `onLayout` callback for size change notifications
 - Declarative vs imperative layout access
 
+### TextArea
+
+A multi-line note editor demonstrating the TextArea component.
+
+```bash
+bun run examples/textarea/index.tsx
+```
+
+**Demonstrates:**
+
+- Multi-line text input with word wrapping via `useContentRect`
+- Cursor movement (arrows, Home/End, Ctrl+A/E)
+- Kill operations (Ctrl+K, Ctrl+U)
+- Scrolling within the textarea (PageUp/PageDown)
+- Submit with Ctrl+Enter
+
+### REPL (Scrollback Mode)
+
+Interactive expression evaluator demonstrating useScrollback + VirtualList frozen.
+
+```bash
+bun run examples/scrollback/index.tsx
+```
+
+**Demonstrates:**
+
+- `useScrollback` pushing completed results to terminal scrollback
+- `VirtualList` `frozen` prop excluding completed items from rendering
+- Inline mode (`mode: "inline"`) for normal screen buffer
+- Text input with expression evaluation
+
+### AI Chat UI
+
+A scrollable chat interface with simulated AI streaming responses.
+
+```bash
+bun run examples/ai-chat/index.tsx
+```
+
+**Demonstrates:**
+
+- `VirtualList` for efficient rendering of variable-height messages
+- `useContentRect()` for responsive layout adapting to terminal width
+- `ReadlineInput` for text entry with full readline shortcuts
+- Simulated AI streaming responses with progressive character reveal
+- Word-wrapped messages with usernames, timestamps, and styled bubbles
+
+### Live Resize
+
+Multi-column layout that reflows in real-time based on terminal width. **The** demo showcasing inkx's unique `useContentRect()` capability.
+
+```bash
+bun run examples/live-resize/index.tsx
+```
+
+**Demonstrates:**
+
+- `useContentRect()` providing synchronous width/height during render
+- Responsive breakpoints: 1 column (< 60), 2 columns (60-99), 3 columns (100+)
+- Metric cards with sparkline visualizations that adapt to size
+- Compact mode for very small terminals
+- Inline code snippet showing how the layout magic works
+
+### Virtual Scroll Benchmark (10K Items)
+
+Smooth scrolling through 10,000 items — proving VirtualList handles massive datasets instantly.
+
+```bash
+bun run examples/virtual-10k/index.tsx
+```
+
+**Demonstrates:**
+
+- `VirtualList` with 10,000 generated items and variable heights
+- Instant j/k navigation with scroll position indicator
+- Half-page jumps (d/u), jump to start/end (g/G)
+- Expandable detail view per item
+- Priority badges, status icons, progress bars, and tag labels
+- `useContentRect()` for adaptive layout
+
 ## Common Patterns
 
 ### Keyboard Handling
