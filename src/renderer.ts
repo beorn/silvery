@@ -369,6 +369,16 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           instance.prevBuffer = buffer
           instance.renderCount++
         })
+        // Flush any React work scheduled during executeRender (e.g. from
+        // useSyncExternalStore updates triggered by Phase 2.7 callbacks).
+        // Without this, external store changes from layout notification callbacks
+        // (Phase 2.7) won't be committed until after doRender returns, causing
+        // stale text in the buffer (e.g. breadcrumb showing old cursor position).
+        if (!hadReactCommit) {
+          act(() => {
+            reconciler.flushSyncWork()
+          })
+        }
       })
 
       // If React didn't commit any new work from layout notifications,

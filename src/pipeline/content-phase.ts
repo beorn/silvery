@@ -489,7 +489,15 @@ function renderScrollContainerChildren(
   //
   // 3. No clear needed: only subtreeDirty (some descendants changed).
   //    Children use hasPrevBuffer=true and skip via fast-path if clean.
-  const scrollOnly = hasPrevBuffer && scrollOffsetChanged && !node.childrenDirty && !parentRegionChanged
+  //
+  // IMPORTANT: Buffer shift is unsafe when sticky children exist. Sticky
+  // children render in a second pass that overwrites first-pass content.
+  // After a shift, these overwritten pixels corrupt items at new positions
+  // that skip rendering (hasPrevBuffer=true, no dirty flags). Fall back
+  // to full viewport clear (tier 2) when sticky children are present.
+  const hasStickyChildren = !!(ss.stickyChildren && ss.stickyChildren.length > 0)
+  const scrollOnly =
+    hasPrevBuffer && scrollOffsetChanged && !node.childrenDirty && !parentRegionChanged && !hasStickyChildren
   const needsViewportClear =
     hasPrevBuffer && !scrollOnly && (scrollOffsetChanged || node.childrenDirty || parentRegionChanged)
 
@@ -550,6 +558,34 @@ function renderScrollContainerChildren(
   const prevVisTop = ss.prevOffset ?? ss.offset
   const prevVisBottom = prevVisTop + ss.viewportHeight
 
+  // When sticky children exist and we're in tier 3 (subtreeDirty only, no
+  // viewport clear), force ALL first-pass items to re-render. This is needed
+  // because sticky headers render in a second pass where Text inherits bg from
+  // the buffer via getCellBg (render-text.ts:600). On a fresh render, the buffer
+  // has correct first-pass content. On incremental renders, the cloned buffer may
+  // have stale bg from PREVIOUS frames' sticky headers at various positions —
+  // both current AND former sticky positions. Forcing all items to re-render
+  // ensures the buffer matches fresh render state before the sticky pass.
+  //
+  // Performance: this re-renders all visible items (~20-50) instead of just
+  // dirty ones (~2-3). Only applies to scroll containers with sticky children
+  // in tier 3 (not tier 1/2 which already handle this via shift/viewport clear).
+  const stickyForceRefresh = hasStickyChildren && hasPrevBuffer && !needsViewportClear
+
+  // Full viewport clear for sticky containers: clear to blank (bg=null) to
+  // match fresh buffer state. The cloned buffer has stale sticky header content
+  // from previous frames at positions that may have moved. Pre-clearing only
+  // current sticky positions is insufficient because Text nodes at ANY position
+  // inherit bg via getCellBg (render-text.ts:600) — stale bg from old sticky
+  // positions leaks through. Clearing the entire viewport ensures Text reads
+  // null bg everywhere, matching fresh render behavior.
+  //
+  // Uses bg=null (not scrollBg/inherited bg) because fresh render starts with
+  // a blank buffer — the viewport has null bg before any content renders.
+  if (stickyForceRefresh && clearHeight > 0) {
+    buffer.fill(contentX, clearY, contentWidth, clearHeight, { char: " ", bg: null })
+  }
+
   // First pass: render non-sticky visible children with scroll offset
   for (let i = 0; i < node.children.length; i++) {
     const child = node.children[i]
@@ -583,6 +619,12 @@ function renderScrollContainerChildren(
       }
     }
 
+    // Force fresh rendering when sticky children exist (see stickyForceRefresh).
+    if (stickyForceRefresh && thisChildHasPrev) {
+      thisChildHasPrev = false
+      thisChildAncestorCleared = false
+    }
+
     // Render visible children with scroll offset applied.
     renderNodeToBuffer(child, buffer, ss.offset, childClipBounds, thisChildHasPrev, thisChildAncestorCleared)
   }
@@ -599,18 +641,20 @@ function renderScrollContainerChildren(
       // This makes the child render at renderOffset instead of its natural position
       const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset
 
-      // Sticky children always re-render since their effective scroll offset
-      // may change even when the container's scroll offset doesn't
-      renderNodeToBuffer(
-        child,
-        buffer,
-        stickyScrollOffset,
-        childClipBounds,
-        false,
-        // ancestorCleared: only set when we know the buffer is a clone.
-        // On initial render (hasPrevBuffer=false), the buffer is fresh.
-        hasPrevBuffer || ancestorCleared,
-      )
+      // Sticky children always re-render (hasPrevBuffer=false) since their
+      // effective scroll offset may change even when the container's doesn't.
+      //
+      // ancestorCleared=false matches fresh render semantics: on a fresh render,
+      // the buffer at sticky positions has first-pass content (not "cleared").
+      // Using ancestorCleared=true would cause transparent spacer Boxes to clear
+      // their region (via layoutChanged=true from prevLayout=null → cascading
+      // parentRegionCleared), wiping overlapping sticky headers rendered earlier
+      // in this pass.
+      //
+      // Stale bg from previous frames is handled by the first-pass overlap
+      // forcing above, which ensures correct bg is in the buffer before sticky
+      // Text nodes inherit it via getCellBg (render-text.ts:600).
+      renderNodeToBuffer(child, buffer, stickyScrollOffset, childClipBounds, false, false)
     }
   }
 }

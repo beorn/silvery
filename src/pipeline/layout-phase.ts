@@ -340,14 +340,22 @@ function calculateScrollState(node: InkxNode, props: BoxProps, skipStateUpdates:
       renderOffset = stickyTop
     }
 
-    // Clamp to viewport bounds
-    if (childHeight > viewportHeight) {
-      // Oversized child: allow negative offset (bottom of child past viewport top)
-      // but don't go below bottom-alignment, or above natural position
-      renderOffset = Math.max(viewportHeight - childHeight, renderOffset)
-    } else {
-      renderOffset = Math.max(0, Math.min(renderOffset, viewportHeight - childHeight))
+    // Clamp to viewport bounds — only when element is actually sticking.
+    // Elements at their natural position below the viewport must NOT be
+    // pulled up into view by clamping (that would overwrite other children's
+    // pixels, corrupting incremental rendering's buffer shift).
+    const isSticking = renderOffset !== naturalRenderY
+    if (isSticking) {
+      if (childHeight > viewportHeight) {
+        renderOffset = Math.max(viewportHeight - childHeight, renderOffset)
+      } else {
+        renderOffset = Math.max(0, Math.min(renderOffset, viewportHeight - childHeight))
+      }
     }
+
+    // Skip off-screen sticky children — they're not visible and shouldn't
+    // be rendered (would corrupt other children's pixels in the buffer).
+    if (renderOffset + childHeight <= 0 || renderOffset >= viewportHeight) continue
 
     stickyChildren.push({
       index: cp.index,
