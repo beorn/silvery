@@ -301,9 +301,10 @@ function calculateScrollState(node: InkxNode, props: BoxProps, skipStateUpdates:
     } else if (cp.top >= visibleBottom) {
       hiddenBelow++
     } else if (cp.top < visibleTop) {
-      // Child is partially visible at top — count as hidden so its
-      // clipped border/content doesn't create visual artifacts
-      hiddenAbove++
+      // Child is partially visible at top — render it (clipped by scroll
+      // container's clip bounds) so partial content is visible instead of blank space
+      if (firstVisible === -1) firstVisible = cp.index
+      lastVisible = Math.max(lastVisible, cp.index)
     } else if (cp.bottom > visibleBottom) {
       // Child is partially visible at bottom — render it (clipped by scroll
       // container's clip bounds) so partial content is visible instead of blank space
