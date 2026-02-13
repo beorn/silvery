@@ -718,9 +718,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     const rootNode = getContainerRoot(container)
     const dims = runtime.getDims()
 
-    // Invalidate prevBuffer on dimension change (resize)
+    // Invalidate prevBuffer on dimension change (resize).
+    // Both pipeline-level (_prevTermBuffer) and runtime-level (runtime.invalidate())
+    // must be cleared — otherwise the ANSI diff compares different-sized buffers.
     if (_prevTermBuffer && (dims.cols !== _prevTermBuffer.width || dims.rows !== _prevTermBuffer.height)) {
       _prevTermBuffer = null
+      runtime.invalidate()
     }
 
     // Clear diagnostic arrays before the render so we capture only this render's data

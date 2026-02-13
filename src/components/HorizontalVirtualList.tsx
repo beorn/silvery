@@ -160,7 +160,7 @@ function HorizontalVirtualListInner<T>(
       {/* Left overflow indicator */}
       {showLeftIndicator && (
         <Box flexShrink={0}>
-          <Text dimColor>◀{hiddenBefore}</Text>
+          <Text color="white" backgroundColor="gray">◀{hiddenBefore}</Text>
         </Box>
       )}
 
@@ -182,7 +182,7 @@ function HorizontalVirtualListInner<T>(
       {/* Right overflow indicator */}
       {showRightIndicator && (
         <Box flexShrink={0}>
-          <Text dimColor>{hiddenAfter}▶</Text>
+          <Text color="white" backgroundColor="gray">{hiddenAfter}▶</Text>
         </Box>
       )}
     </Box>

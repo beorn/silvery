@@ -152,10 +152,11 @@ export function renderScrollIndicators(
 ): void {
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
 
+  // Inverse bar style: white text on dark background
   const indicatorStyle: Style = {
-    fg: props.borderColor ? parseColor(props.borderColor) : 8, // Gray/dim
-    bg: null,
-    attrs: { dim: true },
+    fg: 15, // Bright white
+    bg: 8, // Dark gray
+    attrs: {},
   }
 
   // Determine if we should show indicators for borderless containers
@@ -166,16 +167,20 @@ export function renderScrollIndicators(
     const indicator = `\u25b2${ss.hiddenAbove}`
 
     if (border.top > 0) {
-      // Bordered: render on top border line, right side
-      const x = layout.x + layout.width - border.right - indicator.length - 1
+      // Bordered: render centered inverse bar on top border line
+      const contentWidth = layout.width - border.left - border.right
+      const bar = padCenter(indicator, contentWidth)
+      const x = layout.x + border.left
       const y = layout.y
-      renderTextLine(buffer, x, y, indicator, indicatorStyle)
+      renderTextLine(buffer, x, y, bar, indicatorStyle)
     } else if (showBorderless) {
-      // Borderless: render on first content row, right side
+      // Borderless: render centered inverse bar on first content row
       const padding = getPadding(props)
-      const x = layout.x + layout.width - indicator.length
+      const contentWidth = layout.width - padding.left - padding.right
+      const bar = padCenter(indicator, contentWidth)
+      const x = layout.x + padding.left
       const y = layout.y + padding.top
-      renderTextLine(buffer, x, y, indicator, indicatorStyle)
+      renderTextLine(buffer, x, y, bar, indicatorStyle)
     }
   }
 
@@ -184,16 +189,28 @@ export function renderScrollIndicators(
     const indicator = `\u25bc${ss.hiddenBelow}`
 
     if (border.bottom > 0) {
-      // Bordered: render on bottom border line, right side
-      const x = layout.x + layout.width - border.right - indicator.length - 1
+      // Bordered: render centered inverse bar on bottom border line
+      const contentWidth = layout.width - border.left - border.right
+      const bar = padCenter(indicator, contentWidth)
+      const x = layout.x + border.left
       const y = layout.y + layout.height - 1
-      renderTextLine(buffer, x, y, indicator, indicatorStyle)
+      renderTextLine(buffer, x, y, bar, indicatorStyle)
     } else if (showBorderless) {
-      // Borderless: render on last content row, right side
+      // Borderless: render centered inverse bar on last content row
       const padding = getPadding(props)
-      const x = layout.x + layout.width - indicator.length
+      const contentWidth = layout.width - padding.left - padding.right
+      const bar = padCenter(indicator, contentWidth)
+      const x = layout.x + padding.left
       const y = layout.y + layout.height - 1 - padding.bottom
-      renderTextLine(buffer, x, y, indicator, indicatorStyle)
+      renderTextLine(buffer, x, y, bar, indicatorStyle)
     }
   }
+}
+
+/** Center text within a fixed width, padding with spaces on both sides. */
+function padCenter(text: string, width: number): string {
+  if (text.length >= width) return text
+  const leftPad = Math.floor((width - text.length) / 2)
+  const rightPad = width - text.length - leftPad
+  return " ".repeat(leftPad) + text + " ".repeat(rightPad)
 }

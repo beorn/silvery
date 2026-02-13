@@ -300,8 +300,17 @@ function calculateScrollState(node: InkxNode, props: BoxProps, skipStateUpdates:
       hiddenAbove++
     } else if (cp.top >= visibleBottom) {
       hiddenBelow++
+    } else if (cp.top < visibleTop) {
+      // Child is partially visible at top — count as hidden so its
+      // clipped border/content doesn't create visual artifacts
+      hiddenAbove++
+    } else if (cp.bottom > visibleBottom) {
+      // Child is partially visible at bottom — render it (clipped by scroll
+      // container's clip bounds) so partial content is visible instead of blank space
+      if (firstVisible === -1) firstVisible = cp.index
+      lastVisible = cp.index
     } else {
-      // This child is at least partially visible
+      // This child is fully visible within the viewport
       if (firstVisible === -1) firstVisible = cp.index
       lastVisible = cp.index
     }
@@ -368,14 +377,18 @@ function calculateScrollState(node: InkxNode, props: BoxProps, skipStateUpdates:
   // Skip state updates for fresh render comparisons (INKX_STRICT)
   if (skipStateUpdates) return
 
-  // Mark node dirty if scroll offset changed (for incremental rendering)
+  // Track previous visible range for incremental rendering
+  const prevFirstVisible = node.scrollState?.firstVisibleChild ?? firstVisible
+  const prevLastVisible = node.scrollState?.lastVisibleChild ?? lastVisible
+
+  // Mark node dirty if scroll offset or visible range changed (for incremental rendering)
   // Without this, contentPhase would skip the container and children would
   // remain at their old pixel positions in the cloned buffer
-  if (scrollOffset !== prevOffset) {
+  if (scrollOffset !== prevOffset || firstVisible !== prevFirstVisible || lastVisible !== prevLastVisible) {
     node.subtreeDirty = true
   }
 
-  // Store scroll state (preserve previous offset for incremental rendering)
+  // Store scroll state (preserve previous offset and visible range for incremental rendering)
   node.scrollState = {
     offset: scrollOffset,
     prevOffset: prevOffset ?? scrollOffset,
@@ -383,6 +396,8 @@ function calculateScrollState(node: InkxNode, props: BoxProps, skipStateUpdates:
     viewportHeight,
     firstVisibleChild: firstVisible,
     lastVisibleChild: lastVisible,
+    prevFirstVisibleChild: prevFirstVisible,
+    prevLastVisibleChild: prevLastVisible,
     hiddenAbove,
     hiddenBelow,
     stickyChildren: stickyChildren.length > 0 ? stickyChildren : undefined,

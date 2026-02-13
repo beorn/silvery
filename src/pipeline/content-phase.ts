@@ -405,11 +405,6 @@ function renderNodeToBuffer(
   if (node.type === "inkx-box") {
     if (_instrumentEnabled) _contentPhaseStats.boxNodes++
     renderBox(node, buffer, layout, props, clipBounds, scrollOffset, skipBgFill)
-
-    // If scrollable, render overflow indicators
-    if (isScrollContainer) {
-      renderScrollIndicators(node, buffer, layout, props, node.scrollState!)
-    }
   } else if (node.type === "inkx-text") {
     if (_instrumentEnabled) _contentPhaseStats.textNodes++
     renderText(node, buffer, layout, props, scrollOffset, clipBounds)
@@ -427,6 +422,11 @@ function renderNodeToBuffer(
       parentRegionChanged,
       ancestorCleared,
     )
+
+    // Render overflow indicators AFTER children so they survive viewport clear.
+    // renderScrollContainerChildren may clear the viewport (Tier 2) which would
+    // overwrite indicators drawn before children.
+    renderScrollIndicators(node, buffer, layout, props, node.scrollState!)
   } else {
     renderNormalChildren(
       node,
@@ -496,10 +496,22 @@ function renderScrollContainerChildren(
   // that skip rendering (hasPrevBuffer=true, no dirty flags). Fall back
   // to full viewport clear (tier 2) when sticky children are present.
   const hasStickyChildren = !!(ss.stickyChildren && ss.stickyChildren.length > 0)
+  // Detect when visible range changed (items became hidden or newly visible).
+  // When lastVisibleChild decreases, stale pixels from now-hidden items remain
+  // in the cloned buffer and must be cleared.
+  const visibleRangeChanged =
+    ss.firstVisibleChild !== ss.prevFirstVisibleChild || ss.lastVisibleChild !== ss.prevLastVisibleChild
   const scrollOnly =
-    hasPrevBuffer && scrollOffsetChanged && !node.childrenDirty && !parentRegionChanged && !hasStickyChildren
+    hasPrevBuffer &&
+    scrollOffsetChanged &&
+    !node.childrenDirty &&
+    !parentRegionChanged &&
+    !hasStickyChildren &&
+    !visibleRangeChanged
   const needsViewportClear =
-    hasPrevBuffer && !scrollOnly && (scrollOffsetChanged || node.childrenDirty || parentRegionChanged)
+    hasPrevBuffer &&
+    !scrollOnly &&
+    (scrollOffsetChanged || node.childrenDirty || parentRegionChanged || visibleRangeChanged)
 
   if (_instrumentEnabled) {
     _contentPhaseStats.scrollContainerCount++

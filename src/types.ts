@@ -293,6 +293,10 @@ export interface InkxNode {
     firstVisibleChild: number
     /** Index of last visible child */
     lastVisibleChild: number
+    /** Previous first visible child from last render (for incremental rendering) */
+    prevFirstVisibleChild: number
+    /** Previous last visible child from last render (for incremental rendering) */
+    prevLastVisibleChild: number
     /** Count of items hidden above viewport */
     hiddenAbove: number
     /** Count of items hidden below viewport */
