@@ -546,6 +546,26 @@ function renderScrollContainerChildren(
   // Exposed rows (top/bottom edge) are filled with scrollBg (null = no bg).
   const scrollDelta = ss.offset - (ss.prevOffset ?? ss.offset)
   if (scrollOnly && clearHeight > 0) {
+    // Clear scroll indicator rows before shifting. Borderless scroll indicators
+    // (overflowIndicator) paint a full-width bar (fg=15/bg=8) on the first/last
+    // content rows. Children may be narrower than the indicator bar, so after a
+    // shift, stale indicator pixels at the edges (columns not covered by children)
+    // persist and cause incremental vs fresh render mismatches.
+    // Clearing these rows to scrollBg before the shift ensures the shift carries
+    // correct bg. The indicators are re-rendered after children by
+    // renderScrollIndicators.
+    const showBorderless = props.overflowIndicator === true
+    if (showBorderless && !border.top && !border.bottom) {
+      const topIndicatorY = clearY
+      const bottomIndicatorY = clearY + clearHeight - 1
+      if (ss.prevOffset != null && ss.prevOffset > 0) {
+        // Previous frame had items hidden above → top indicator was showing
+        buffer.fill(contentX, topIndicatorY, contentWidth, 1, { char: " ", bg: scrollBg })
+      }
+      // Previous frame had items hidden below → bottom indicator was showing
+      // (safe to always clear bottom row since it will be re-rendered)
+      buffer.fill(contentX, bottomIndicatorY, contentWidth, 1, { char: " ", bg: scrollBg })
+    }
     buffer.scrollRegion(contentX, clearY, contentWidth, clearHeight, scrollDelta, { char: " ", bg: scrollBg })
   }
 
