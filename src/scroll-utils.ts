@@ -70,6 +70,13 @@ export function calcEdgeBasedScrollOffset(
   if (selectedIndex < paddedStart) {
     // Scrolling UP/LEFT: place item `effectivePadding` rows from top
     newOffset = Math.max(0, selectedIndex - effectivePadding)
+  } else if (effectivePadding === 0 && selectedIndex === paddedStart && currentOffset > 0) {
+    // Small viewport (effectivePadding forced to 0): cursor at the very first visible
+    // position should still scroll back to provide context. Without this, scrolling
+    // right works (cursor past last visible triggers scroll) but scrolling left doesn't
+    // (cursor at first visible doesn't trigger), creating asymmetric behavior.
+    // Use original padding for the offset formula to show context before the cursor.
+    newOffset = Math.max(0, selectedIndex - padding)
   } else if (selectedIndex > paddedEnd) {
     // Scrolling DOWN/RIGHT: place item `effectivePadding` rows from bottom
     // The +1 converts from 0-indexed offset to correct position
