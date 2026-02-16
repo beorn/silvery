@@ -945,33 +945,50 @@ function clearNodeRegion(
   // The excess clearing should not extend into the parent's border area.
   // (When clip rect comes from a colored ancestor, its bg fill already covers
   // its border area, so children's clearing into that area is harmless.)
+  let clipRectRight = clipRect.x + clipRect.width
   if (clipRectOwner) {
     const ownerProps = clipRectOwner.props as BoxProps
     const border = getBorderSize(ownerProps)
     const padding = getPadding(ownerProps)
     clipRectBottom -= border.bottom + padding.bottom
+    clipRectRight -= border.right + padding.right
   }
 
   // Clear right margin (old was wider than new)
   if (prev.width > layout.width) {
-    clippedFill(
-      buffer,
-      layout.x + layout.width,
-      prev.width - layout.width,
-      prevScreenY,
-      prevScreenY + prev.height,
-      clipBounds,
-      clipRectBottom,
-      clearBg,
-    )
+    let excessX = layout.x + layout.width
+    let excessWidth = prev.width - layout.width
+    // Clip horizontally to parent's content area (inside border/padding).
+    // Without this, excess clearing of a child that previously filled a wider
+    // layout extends into the parent's right border, overwriting border chars.
+    if (excessX + excessWidth > clipRectRight) {
+      excessWidth = Math.max(0, clipRectRight - excessX)
+    }
+    if (excessWidth > 0) {
+      clippedFill(
+        buffer,
+        excessX,
+        excessWidth,
+        prevScreenY,
+        prevScreenY + prev.height,
+        clipBounds,
+        clipRectBottom,
+        clearBg,
+      )
+    }
   }
 
   // Clear bottom margin (old was taller than new)
   if (prev.height > layout.height) {
+    let bottomWidth = prev.width
+    // Clip horizontally to parent's content area
+    if (layout.x + bottomWidth > clipRectRight) {
+      bottomWidth = Math.max(0, clipRectRight - layout.x)
+    }
     clippedFill(
       buffer,
       layout.x,
-      prev.width,
+      bottomWidth,
       screenY + layout.height,
       prevScreenY + prev.height,
       clipBounds,
