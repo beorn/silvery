@@ -373,16 +373,30 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
     const borderWidth = 1
     if (props.borderTop !== false) {
       layoutNode.setBorder(c.EDGE_TOP, borderWidth)
+    } else {
+      layoutNode.setBorder(c.EDGE_TOP, 0)
     }
     if (props.borderBottom !== false) {
       layoutNode.setBorder(c.EDGE_BOTTOM, borderWidth)
+    } else {
+      layoutNode.setBorder(c.EDGE_BOTTOM, 0)
     }
     if (props.borderLeft !== false) {
       layoutNode.setBorder(c.EDGE_LEFT, borderWidth)
+    } else {
+      layoutNode.setBorder(c.EDGE_LEFT, 0)
     }
     if (props.borderRight !== false) {
       layoutNode.setBorder(c.EDGE_RIGHT, borderWidth)
+    } else {
+      layoutNode.setBorder(c.EDGE_RIGHT, 0)
     }
+  } else {
+    // Reset all border widths when borderStyle is removed
+    layoutNode.setBorder(c.EDGE_TOP, 0)
+    layoutNode.setBorder(c.EDGE_BOTTOM, 0)
+    layoutNode.setBorder(c.EDGE_LEFT, 0)
+    layoutNode.setBorder(c.EDGE_RIGHT, 0)
   }
 }
 
@@ -393,7 +407,7 @@ function applySpacing(layoutNode: LayoutNode, type: "padding" | "margin", props:
   const c = getConstants()
   const set = type === "padding" ? layoutNode.setPadding.bind(layoutNode) : layoutNode.setMargin.bind(layoutNode)
 
-  const all = props[type]
+  const all = props[type] as number | undefined
   const x = props[`${type}X` as keyof BoxProps] as number | undefined
   const yy = props[`${type}Y` as keyof BoxProps] as number | undefined
   const top = props[`${type}Top` as keyof BoxProps] as number | undefined
@@ -401,28 +415,14 @@ function applySpacing(layoutNode: LayoutNode, type: "padding" | "margin", props:
   const left = props[`${type}Left` as keyof BoxProps] as number | undefined
   const right = props[`${type}Right` as keyof BoxProps] as number | undefined
 
-  // Apply in order of specificity
-  if (all !== undefined) {
-    set(c.EDGE_ALL, all)
-  }
-  if (x !== undefined) {
-    set(c.EDGE_HORIZONTAL, x)
-  }
-  if (yy !== undefined) {
-    set(c.EDGE_VERTICAL, yy)
-  }
-  if (top !== undefined) {
-    set(c.EDGE_TOP, top)
-  }
-  if (bottom !== undefined) {
-    set(c.EDGE_BOTTOM, bottom)
-  }
-  if (left !== undefined) {
-    set(c.EDGE_LEFT, left)
-  }
-  if (right !== undefined) {
-    set(c.EDGE_RIGHT, right)
-  }
+  // Compute effective value per edge, resolving CSS-like specificity cascade:
+  // individual > axis (X/Y) > all > 0
+  // This handles the case where props are REMOVED (e.g., paddingLeft: 1 → undefined):
+  // the edge is reset to 0 instead of retaining the stale Yoga value.
+  set(c.EDGE_TOP, top ?? yy ?? all ?? 0)
+  set(c.EDGE_BOTTOM, bottom ?? yy ?? all ?? 0)
+  set(c.EDGE_LEFT, left ?? x ?? all ?? 0)
+  set(c.EDGE_RIGHT, right ?? x ?? all ?? 0)
 }
 
 /**

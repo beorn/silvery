@@ -90,6 +90,9 @@ export function contentPropsChanged(
 
   // Style props affect content (paint) but NOT layout dimensions.
   // borderColor, color, bold, etc. don't change how much space a node takes.
+  // borderStyle is also a layout prop (affects border widths), but it's included
+  // here so paintDirty is set — otherwise border add/remove doesn't trigger
+  // renderBox to draw/clear border characters.
   const styleProps = [
     "color",
     "backgroundColor",
@@ -104,6 +107,7 @@ export function contentPropsChanged(
     "inverse",
     "wrap",
     "borderColor",
+    "borderStyle",
   ]
 
   for (const prop of styleProps) {

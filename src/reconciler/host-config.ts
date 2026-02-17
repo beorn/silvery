@@ -380,6 +380,14 @@ export const hostConfig = {
       ) {
         instance.bgDirty = true
       }
+      // Border removal: when borderStyle goes from truthy to falsy, stale border
+      // characters (╭╮╰╯│─) persist in the cloned buffer because renderBox doesn't
+      // draw anything at those positions. Setting bgDirty makes contentAreaAffected
+      // true, triggering clearNodeRegion to fill the area with inherited bg.
+      // Border *addition* doesn't need this — renderBorder overwrites the old cells.
+      if ((oldProps as Record<string, unknown>).borderStyle && !(newProps as Record<string, unknown>).borderStyle) {
+        instance.bgDirty = true
+      }
     }
 
     instance.props = newProps
