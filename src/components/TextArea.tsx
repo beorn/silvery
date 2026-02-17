@@ -30,7 +30,7 @@
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useContentRect } from "../hooks/useLayout.js"
 import { useInput } from "../hooks/useInput.js"
-import { wrapText } from "../unicode.js"
+import { cursorToRowCol, getWrappedLines } from "../text-cursor.js"
 import { Box } from "./Box.js"
 import { Text } from "./Text.js"
 
@@ -68,70 +68,6 @@ export interface TextAreaHandle {
   setValue: (value: string) => void
 }
 
-// =============================================================================
-// Internal: text model
-// =============================================================================
-
-/** Convert a flat cursor position to row/col in wrapped lines */
-function cursorToRowCol(text: string, cursor: number, wrapWidth: number): { row: number; col: number } {
-  if (wrapWidth <= 0) return { row: 0, col: 0 }
-
-  const logicalLines = text.split("\n")
-  let charsSeen = 0
-  let row = 0
-
-  for (let li = 0; li < logicalLines.length; li++) {
-    const line = logicalLines[li]!
-    const wrapped = wrapText(line, wrapWidth, false)
-    const lines = wrapped.length === 0 ? [""] : wrapped
-
-    for (let wi = 0; wi < lines.length; wi++) {
-      const wLine = lines[wi]!
-      const lineLen = wLine.length
-      const isLastWrappedLine = wi === lines.length - 1
-
-      if (isLastWrappedLine) {
-        const endOfLogical = charsSeen + lineLen
-        if (cursor <= endOfLogical) {
-          return { row, col: cursor - charsSeen }
-        }
-        charsSeen = endOfLogical + 1 // +1 for \n
-      } else {
-        if (cursor <= charsSeen + lineLen) {
-          return { row, col: cursor - charsSeen }
-        }
-        charsSeen += lineLen
-      }
-      row++
-    }
-  }
-
-  return { row: Math.max(0, row - 1), col: 0 }
-}
-
-/** Get all wrapped display lines with their character offsets */
-function getWrappedLines(text: string, wrapWidth: number): { line: string; startOffset: number }[] {
-  if (wrapWidth <= 0) return [{ line: "", startOffset: 0 }]
-
-  const logicalLines = text.split("\n")
-  const result: { line: string; startOffset: number }[] = []
-  let offset = 0
-
-  for (let li = 0; li < logicalLines.length; li++) {
-    const line = logicalLines[li]!
-    const wrapped = wrapText(line, wrapWidth, false)
-    const lines = wrapped.length === 0 ? [""] : wrapped
-
-    for (const wLine of lines) {
-      result.push({ line: wLine, startOffset: offset })
-      offset += wLine.length
-    }
-    offset++ // for \n
-  }
-
-  return result
-}
-
 /** Ensure scroll offset keeps the cursor row visible */
 function clampScroll(cursorRow: number, currentScroll: number, viewportHeight: number): number {
   if (viewportHeight <= 0) return 0
@@ -167,6 +103,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue)
   const [cursor, setCursor] = useState(defaultValue.length)
   const [scrollOffset, setScrollOffset] = useState(0)
+  const stickyXRef = useRef<number | null>(null)
 
   const value = isControlled ? (controlledValue ?? "") : uncontrolledValue
   const { width } = useContentRect()
@@ -263,6 +200,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
       // Enter (newline) — only when submitKey is not "enter"
       // =====================================================================
       if (key.return && submitKey !== "enter") {
+        stickyXRef.current = null
         const newValue = value.slice(0, cursor) + "\n" + value.slice(cursor)
         updateValue(newValue, cursor + 1)
         return
@@ -274,36 +212,42 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
 
       // Left
       if (key.leftArrow || (key.ctrl && input === "b")) {
+        stickyXRef.current = null
         if (cursor > 0) setCursorAndScroll(cursor - 1, value)
         return
       }
 
       // Right
       if (key.rightArrow || (key.ctrl && input === "f")) {
+        stickyXRef.current = null
         if (cursor < value.length) setCursorAndScroll(cursor + 1, value)
         return
       }
 
-      // Up
+      // Up (with stickyX)
       if (key.upArrow) {
         if (cRow > 0) {
+          const targetX = stickyXRef.current ?? cCol
+          stickyXRef.current = targetX
           const targetRow = cRow - 1
           const targetLine = lines[targetRow]
           if (targetLine) {
-            const newCol = Math.min(cCol, targetLine.line.length)
+            const newCol = Math.min(targetX, targetLine.line.length)
             setCursorAndScroll(targetLine.startOffset + newCol, value)
           }
         }
         return
       }
 
-      // Down
+      // Down (with stickyX)
       if (key.downArrow) {
         if (cRow < lines.length - 1) {
+          const targetX = stickyXRef.current ?? cCol
+          stickyXRef.current = targetX
           const targetRow = cRow + 1
           const targetLine = lines[targetRow]
           if (targetLine) {
-            const newCol = Math.min(cCol, targetLine.line.length)
+            const newCol = Math.min(targetX, targetLine.line.length)
             setCursorAndScroll(targetLine.startOffset + newCol, value)
           }
         }
@@ -312,6 +256,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
 
       // Home / Ctrl+A
       if (key.home || (key.ctrl && input === "a")) {
+        stickyXRef.current = null
         const currentLine = lines[cRow]
         if (currentLine) {
           setCursorAndScroll(currentLine.startOffset, value)
@@ -321,6 +266,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
 
       // End / Ctrl+E
       if (key.end || (key.ctrl && input === "e")) {
+        stickyXRef.current = null
         const currentLine = lines[cRow]
         if (currentLine) {
           setCursorAndScroll(currentLine.startOffset + currentLine.line.length, value)
@@ -330,6 +276,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
 
       // PageUp
       if (key.pageUp) {
+        stickyXRef.current = null
         const targetRow = Math.max(0, cRow - height)
         const targetLine = lines[targetRow]
         if (targetLine) {
@@ -341,6 +288,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
 
       // PageDown
       if (key.pageDown) {
+        stickyXRef.current = null
         const targetRow = Math.min(lines.length - 1, cRow + height)
         const targetLine = lines[targetRow]
         if (targetLine) {
@@ -354,8 +302,9 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
       // Kill Operations
       // =====================================================================
 
-      // Ctrl+K: Kill to end of line
+      // Ctrl+K: Kill to end of line (resets stickyX)
       if (key.ctrl && input === "k") {
+        stickyXRef.current = null
         const currentLine = lines[cRow]
         if (!currentLine) return
         const lineEnd = currentLine.startOffset + currentLine.line.length
@@ -369,8 +318,9 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
         return
       }
 
-      // Ctrl+U: Kill to beginning of line
+      // Ctrl+U: Kill to beginning of line (resets stickyX)
       if (key.ctrl && input === "u") {
+        stickyXRef.current = null
         const currentLine = lines[cRow]
         if (!currentLine) return
         const lineStart = currentLine.startOffset
@@ -385,8 +335,9 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
       // Delete Operations
       // =====================================================================
 
-      // Backspace
+      // Backspace (resets stickyX)
       if (key.backspace || key.delete) {
+        stickyXRef.current = null
         if (cursor > 0) {
           const newValue = value.slice(0, cursor - 1) + value.slice(cursor)
           updateValue(newValue, cursor - 1)
@@ -394,8 +345,9 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
         return
       }
 
-      // Ctrl+D: Delete at cursor
+      // Ctrl+D: Delete at cursor (resets stickyX)
       if (key.ctrl && input === "d") {
+        stickyXRef.current = null
         if (cursor < value.length) {
           const newValue = value.slice(0, cursor) + value.slice(cursor + 1)
           updateValue(newValue, cursor)
@@ -407,6 +359,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
       // Regular Character Input
       // =====================================================================
       if (input.length >= 1 && input >= " ") {
+        stickyXRef.current = null
         const newValue = value.slice(0, cursor) + input + value.slice(cursor)
         updateValue(newValue, cursor + input.length)
       }

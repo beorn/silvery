@@ -20,6 +20,10 @@
 - [Testing](testing.md) — createRenderer, locators, withDiagnostics
 - [Terminal Capabilities](terminal-capabilities.md) — Detection, render modes, adaptive output
 
+### Text Editing
+
+- [Text Cursor](text-cursor.md) — Cursor offset ↔ visual position mapping (Layer 0)
+
 ### Deep Dives
 
 - [Internals](internals.md) — Reconciler, dirty tracking, content phase

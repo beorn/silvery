@@ -228,6 +228,10 @@ import { useContentRect, useScreenRect, useInput, useApp, useTerm } from "inkx"
 // Input layer stack (for dialogs/modals)
 import { InputLayerProvider, useInputLayer } from "inkx"
 
+// Text cursor utilities (Layer 0)
+import { cursorToRowCol, getWrappedLines, rowColToCursor, cursorMoveUp, cursorMoveDown, countVisualLines } from "inkx"
+import type { WrappedLine } from "inkx"
+
 // Render functions
 import { render, renderStatic, renderString } from "inkx"
 
@@ -487,6 +491,7 @@ to capture numbers.
 | [docs/internals.md](docs/internals.md)                         | Reconciler and 5-phase pipeline                          |
 | [docs/performance.md](docs/performance.md)                     | Benchmarks and optimization (**keep up-to-date!**)       |
 | [docs/streams.md](docs/streams.md)                             | AsyncIterable stream helpers                             |
+| [docs/text-cursor.md](docs/text-cursor.md)                     | Cursor offset ↔ visual position mapping (Layer 0)       |
 | [docs/focus-routing.md](docs/focus-routing.md)                 | Focus-based input routing pattern                        |
 | [docs/ink-comparison.md](docs/ink-comparison.md)               | Ink issues and Inkx solutions                            |
 | [docs/migration.md](docs/migration.md)                         | Ink to inkx migration guide                              |

@@ -439,6 +439,35 @@ export {
 export type { StyledSegment } from "./unicode.js"
 
 // =============================================================================
+// Text Cursor Utilities
+// =============================================================================
+
+/**
+ * Pure functions for mapping between flat character offsets and visual
+ * positions in word-wrapped text. Uses the same wrapText() as the
+ * rendering pipeline, guaranteeing cursor positions match display.
+ *
+ * Architecture layer 0 — no state, no hooks, no components.
+ *
+ * @example
+ * ```ts
+ * import { cursorToRowCol, cursorMoveDown } from 'inkx'
+ *
+ * const { row, col } = cursorToRowCol("hello world", 5, 8)
+ * const next = cursorMoveDown("hello world\nfoo", 3, 8)
+ * ```
+ */
+export {
+  cursorToRowCol,
+  getWrappedLines,
+  rowColToCursor,
+  cursorMoveUp,
+  cursorMoveDown,
+  countVisualLines,
+} from "./text-cursor.js"
+export type { WrappedLine } from "./text-cursor.js"
+
+// =============================================================================
 // Scroll Utilities
 // =============================================================================
 
