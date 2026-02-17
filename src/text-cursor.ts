@@ -157,8 +157,14 @@ export function cursorMoveUp(
   if (row === 0) return null // at first visual line — boundary
 
   const targetX = stickyX ?? col
-  const targetLine = lines[row - 1]!
-  return targetLine.startOffset + Math.min(targetX, targetLine.line.length)
+  // Try successive lines upward: if the target position equals the current cursor
+  // (happens at wrap boundaries), keep going up to make real progress.
+  for (let prevRow = row - 1; prevRow >= 0; prevRow--) {
+    const targetLine = lines[prevRow]!
+    const next = targetLine.startOffset + Math.min(targetX, targetLine.line.length)
+    if (next !== cursor) return next
+  }
+  return null // all preceding lines map to same position — boundary
 }
 
 /**
@@ -183,8 +189,15 @@ export function cursorMoveDown(
   if (row >= lines.length - 1) return null // at last visual line — boundary
 
   const targetX = stickyX ?? col
-  const targetLine = lines[row + 1]!
-  return targetLine.startOffset + Math.min(targetX, targetLine.line.length)
+  // Try successive lines: if the target position equals the current cursor
+  // (happens at wrap boundaries where end-of-line-N == start-of-line-N+1),
+  // advance to the next line to make real progress.
+  for (let nextRow = row + 1; nextRow < lines.length; nextRow++) {
+    const targetLine = lines[nextRow]!
+    const next = targetLine.startOffset + Math.min(targetX, targetLine.line.length)
+    if (next !== cursor) return next
+  }
+  return null // all remaining lines map to same position — boundary
 }
 
 /**

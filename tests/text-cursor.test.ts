@@ -545,6 +545,50 @@ describe("edge cases", () => {
     expect(cursorMoveUp("\n", 1, 10)).toBe(0)
   })
 
+  test("cursorMoveDown does not get stuck at wrap boundaries with stickyX=0", () => {
+    // Bug: km-inkx.cursor-stuck — at wrap boundaries, end of line N has the same
+    // offset as start of line N+1. cursorToRowCol assigns to line N. With stickyX=0,
+    // cursorMoveDown computed startOffset+0 == current cursor → stuck.
+    const text =
+      "File issues for remaining work – Create issues for anything that needs follow-up"
+    const width = 30
+    const lines = getWrappedLines(text, width)
+    expect(lines.length).toBeGreaterThanOrEqual(3)
+
+    // Walk down through all visual lines with stickyX=0
+    let cursor = 0
+    const visited = [cursor]
+    for (let i = 0; i < lines.length + 2; i++) {
+      const next = cursorMoveDown(text, cursor, width, 0)
+      if (next === null) break
+      expect(next).not.toBe(cursor) // must make progress, never stuck
+      expect(next).toBeGreaterThan(cursor) // must move forward
+      cursor = next
+      visited.push(cursor)
+    }
+    // Should have visited all visual lines
+    expect(visited.length).toBe(lines.length)
+  })
+
+  test("cursorMoveUp does not get stuck at wrap boundaries with stickyX=0", () => {
+    // Same text as the moveDown test — verify moveUp also makes progress
+    const text =
+      "File issues for remaining work – Create issues for anything that needs follow-up"
+    const width = 30
+
+    // Start at end of text, walk up — just verify no stuck cursor
+    let cursor = text.length
+    for (let i = 0; i < 10; i++) {
+      const next = cursorMoveUp(text, cursor, width, 0)
+      if (next === null) break
+      expect(next).not.toBe(cursor) // must make progress, never stuck
+      expect(next).toBeLessThan(cursor)
+      cursor = next
+    }
+    // Must have moved at least once (not stuck at start position)
+    expect(cursor).toBeLessThan(text.length)
+  })
+
   test("text exactly at width boundary does not produce extra line", () => {
     // "abcd" at width 4 is exactly one line
     expect(getWrappedLines("abcd", 4)).toEqual([{ line: "abcd", startOffset: 0 }])
