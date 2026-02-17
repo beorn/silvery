@@ -12,6 +12,7 @@
 import { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import { createTermEditContext } from "../edit-context.js"
 import type { TermEditContext, TextOp } from "../edit-context.js"
+import { rowColToCursor, countVisualLines } from "../text-cursor.js"
 
 // =============================================================================
 // Types
@@ -36,6 +37,8 @@ export interface UseEditContextOptions {
   wrapWidth?: number
   /** Initial cursor position */
   initialCursorPos?: "start" | "end"
+  /** Preferred cursor column preserved across block boundaries (visual column index) */
+  stickyX?: number
   /** Called on each text operation (for undo log) */
   onTextOp?: (op: TextOp) => void
 }
@@ -134,6 +137,7 @@ export function useEditContext({
   onMergeBackward,
   wrapWidth,
   initialCursorPos,
+  stickyX,
   onTextOp,
 }: UseEditContextOptions = {}): UseEditContextResult {
   // Stable refs for callbacks (avoid stale closures)
@@ -162,12 +166,22 @@ export function useEditContext({
 
   // Create TermEditContext (stable across renders)
   const ctx = useMemo(() => {
-    const cursorPos = initialCursorPos === "start" ? 0 : initialValue.length
+    const effectiveWrapWidth = wrapWidth ?? Infinity
+    let cursorPos: number
+    if (stickyX != null && initialValue.length > 0) {
+      // Preserve preferred column across block boundaries:
+      // position cursor at stickyX column on the target row
+      const targetRow =
+        initialCursorPos === "start" ? 0 : Math.max(0, countVisualLines(initialValue, effectiveWrapWidth) - 1)
+      cursorPos = rowColToCursor(initialValue, targetRow, stickyX, effectiveWrapWidth)
+    } else {
+      cursorPos = initialCursorPos === "start" ? 0 : initialValue.length
+    }
     return createTermEditContext({
       text: initialValue,
       selectionStart: cursorPos,
       selectionEnd: cursorPos,
-      wrapWidth: wrapWidth ?? Infinity,
+      wrapWidth: effectiveWrapWidth,
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps -- intentionally stable
 
