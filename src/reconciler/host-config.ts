@@ -397,11 +397,16 @@ export const hostConfig = {
     // don't affect rendering, so propagating dirty flags wastes content phase
     // time traversing unchanged subtrees.
     //
-    // scrollTo changes affect rendering via scroll phase (children shift position),
-    // so they must propagate subtreeDirty for content phase traversal.
+    // scrollTo/scrollOffset changes affect rendering via scroll phase (children
+    // shift position), so they must propagate subtreeDirty for content phase
+    // traversal. Without this, the content phase fast-path skips ancestors of
+    // the scroll container, never reaching the container to re-render at the
+    // new scroll position.
     const scrollToChanged =
       (oldProps as Record<string, unknown>).scrollTo !== (newProps as Record<string, unknown>).scrollTo
-    if (instance.layoutDirty || contentChanged || scrollToChanged) {
+    const scrollOffsetChanged =
+      (oldProps as Record<string, unknown>).scrollOffset !== (newProps as Record<string, unknown>).scrollOffset
+    if (instance.layoutDirty || contentChanged || scrollToChanged || scrollOffsetChanged) {
       markLayoutAncestorDirty(instance)
       markSubtreeDirty(instance)
     }

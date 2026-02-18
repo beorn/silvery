@@ -237,6 +237,66 @@ describe("Bug: Scroll container style preservation", () => {
   })
 })
 
+describe("Bug: scrollOffset prop on overflow=scroll container", () => {
+  test("scrollOffset change should update visible content", () => {
+    function ScrollView({ offset }: { offset: number }) {
+      return (
+        <Box flexDirection="column" height={5} overflow="scroll" scrollOffset={offset}>
+          {Array.from({ length: 20 }, (_, i) => (
+            <Text key={i}>Line {i + 1}</Text>
+          ))}
+        </Box>
+      )
+    }
+
+    const app = render(<ScrollView offset={0} />)
+    expect(app.text).toContain("Line 1")
+    expect(app.text).toContain("Line 5")
+    expect(app.text).not.toContain("Line 6")
+
+    // After changing scrollOffset, content should shift
+    app.rerender(<ScrollView offset={3} />)
+    expect(app.text).not.toContain("Line 1")
+    expect(app.text).toContain("Line 4")
+    expect(app.text).toContain("Line 8")
+  })
+
+  test("incremental scrollOffset update produces same result as fresh render", () => {
+    // Simulates storybook All Views: scroll container with multiple Text children
+    function ScrollView({ offset }: { offset: number }) {
+      return (
+        <Box flexDirection="column" height={8} overflow="scroll" scrollOffset={offset}>
+          {Array.from({ length: 20 }, (_, i) => (
+            <Text key={i}>Line {i + 1}</Text>
+          ))}
+        </Box>
+      )
+    }
+
+    // Render at offset 0, then scroll to offset 5
+    const app = render(<ScrollView offset={0} />)
+    const text0 = app.text
+    expect(text0).toContain("Line 1")
+
+    // Incremental re-render at offset 5
+    app.rerender(<ScrollView offset={5} />)
+    const textIncremental = app.text
+
+    // Fresh render at offset 5 (no previous buffer)
+    const fresh = render(<ScrollView offset={5} />)
+    const textFresh = fresh.text
+
+    // Incremental and fresh should produce identical output
+    expect(textIncremental).toBe(textFresh)
+    // And the content should have scrolled (Line 6 visible, Line 1/2/3/4/5 not)
+    expect(textIncremental).toContain("Line 6")
+    // Lines 1-5 should not be visible — check with word boundary to avoid
+    // "Line 1" matching "Line 10/11/12/13"
+    expect(textIncremental).not.toMatch(/\bLine 1\b/)
+    expect(textIncremental).not.toMatch(/\bLine 5\b/)
+  })
+})
+
 describe("Bug: styleEquals edge cases", () => {
   test("null style should not equal default style object", () => {
     const nullStyle = null
