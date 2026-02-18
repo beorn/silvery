@@ -90,7 +90,11 @@ export function createNode(type: InkxNodeType, props: BoxProps | TextProps | Rec
         }
         text = newText
         cachedText = text
-        // Clear contentDirty so subsequent measure calls in same layout pass use cache
+        // Clear contentDirty so subsequent measure calls in same layout pass use cache.
+        // NOTE: This means the content phase won't see contentDirty=true for text nodes
+        // whose content changed. The content phase uses paintDirty (which survives the
+        // measure phase) combined with the node type check to correctly identify text
+        // nodes that need region clearing. See contentAreaAffected in content-phase.ts.
         node.contentDirty = false
       }
       if (!text) {

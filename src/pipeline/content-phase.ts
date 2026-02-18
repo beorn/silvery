@@ -302,16 +302,25 @@ function renderNodeToBuffer(
     node.contentDirty || node.paintDirty || node.childrenDirty || layoutChanged || childPositionChanged
 
   // contentAreaAffected: did this node's CONTENT AREA change (not just border)?
-  // Excludes border-only paint changes: renderBox only draws border chars at edges,
-  // content area pixels are untouched. This avoids cascading ~200 node re-renders
-  // per Card on cursor move (borderColor changes yellow↔blackBright but content
-  // area is unchanged).
+  // Excludes border-only paint changes for BOX nodes: renderBox only draws border
+  // chars at edges, content area pixels are untouched. This avoids cascading ~200
+  // node re-renders per Card on cursor move (borderColor changes yellow↔blackBright
+  // but content area is unchanged).
+  //
+  // For TEXT nodes, paintDirty IS included because text nodes have no borders —
+  // any paint change (color, bold, inverse, or text content change) affects the
+  // content area. The measure phase clears contentDirty for its text-collection
+  // cache, so paintDirty acts as the surviving witness that the text node's
+  // content area changed and needs region clearing. Without this, stale pixels
+  // (e.g., cursor inverse attribute) persist when text content changes but
+  // layout dimensions stay the same.
   //
   // Uses bgDirty (set by reconciler when backgroundColor specifically changes) rather
   // than checking current props.backgroundColor — catches bg removal (cyan → undefined)
   // where current value is falsy but stale pixels must still be cleared.
+  const textPaintDirty = node.type === "inkx-text" && node.paintDirty
   const contentAreaAffected =
-    node.contentDirty || layoutChanged || childPositionChanged || node.childrenDirty || node.bgDirty
+    node.contentDirty || layoutChanged || childPositionChanged || node.childrenDirty || node.bgDirty || textPaintDirty
 
   // Clear this node's region when its content area changed but has no backgroundColor.
   // Without bg, renderBox won't fill, so stale pixels from the cloned buffer
