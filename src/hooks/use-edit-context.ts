@@ -126,6 +126,16 @@ export const activeEditTargetRef: { current: EditTarget | null } = {
  * - Subscribes to text updates for re-rendering
  * - Auto-saves on unmount if value changed and not explicitly cancelled
  * - Exposes BlockEditTarget-compatible methods for board-actions.ts
+ *
+ * WARNING — Auto-save on unmount:
+ * This hook fires onConfirm on unmount if cancelledRef is not set.
+ * For inline editing fields (navigate away = save), this is correct.
+ * For DIALOGS, this causes double-confirm bugs — the dialog closes
+ * (unmount), then auto-save fires onConfirm again.
+ *
+ * Dialog components MUST use useDialogInput (km-tui) instead of this
+ * hook directly. useDialogInput never passes onConfirm/onCancel here,
+ * making the auto-save inert. See km-qaco9 for the full root cause.
  */
 export function useEditContext({
   initialValue = "",
