@@ -874,6 +874,11 @@ export interface StyledSegment {
   underlineStyle?: UnderlineStyle
   inverse?: boolean
   bgOverride?: boolean // Set when BG_OVERRIDE_CODE (9999) is present
+  /**
+   * OSC 8 hyperlink URL.
+   * Set when the segment is inside an OSC 8 hyperlink sequence.
+   */
+  hyperlink?: string
 }
 
 /**
@@ -909,6 +914,55 @@ function parseUnderlineStyle(subparam: number): UnderlineStyle {
  */
 export function parseAnsiText(text: string): StyledSegment[] {
   const segments: StyledSegment[] = []
+
+  // Pre-process: strip OSC 8 hyperlink sequences and build a position-to-URL map.
+  // OSC 8 format: \x1b]8;;URL(\x1b\\ | \x07) for open, \x1b]8;;(\x1b\\ | \x07) for close.
+  // We strip these from the text before SGR parsing and track which character
+  // positions map to which hyperlink URL.
+  const oscPattern = /\x1b\]8;;([^\x07\x1b]*)(?:\x07|\x1b\\)/g
+  let currentHyperlink: string | undefined
+  // Map from character index in cleaned text to hyperlink URL
+  const hyperlinkRanges: Array<{ start: number; end: number; url: string }> = []
+  let rangeStart = -1
+  let cleaned = ""
+  let oscMatch: RegExpExecArray | null
+  let oscLastIndex = 0
+
+  // biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec pattern
+  while ((oscMatch = oscPattern.exec(text)) !== null) {
+    // Append text between last OSC and this one (preserving SGR codes)
+    cleaned += text.slice(oscLastIndex, oscMatch.index)
+    const url = oscMatch[1]!
+
+    if (url === "") {
+      // Close hyperlink
+      if (currentHyperlink && rangeStart >= 0) {
+        hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink })
+      }
+      currentHyperlink = undefined
+      rangeStart = -1
+    } else {
+      // Open hyperlink
+      if (currentHyperlink && rangeStart >= 0) {
+        // Close previous unclosed hyperlink
+        hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink })
+      }
+      currentHyperlink = url
+      rangeStart = cleaned.length
+    }
+
+    oscLastIndex = oscMatch.index + oscMatch[0].length
+  }
+  // Append remaining text after last OSC
+  cleaned += text.slice(oscLastIndex)
+  // Close any still-open hyperlink
+  if (currentHyperlink && rangeStart >= 0) {
+    hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink })
+  }
+
+  // If no OSC 8 sequences found, use original text for efficiency
+  const processText = hyperlinkRanges.length > 0 ? cleaned : text
+
   // Extended pattern: matches SGR with semicolons AND colons (for 4:x, 58:2::r:g:b)
   const ansiPattern = /\x1b\[([0-9;:]*)m/g
 
@@ -916,13 +970,50 @@ export function parseAnsiText(text: string): StyledSegment[] {
   let lastIndex = 0
   let match: RegExpExecArray | null
 
+  // Helper to find hyperlink URL for a position in the cleaned text.
+  // Positions in cleaned text map directly to hyperlinkRanges since OSC 8
+  // sequences were stripped but SGR sequences remain at the same indices.
+  function getHyperlinkAt(pos: number): string | undefined {
+    for (const range of hyperlinkRanges) {
+      if (pos >= range.start && pos < range.end) return range.url
+    }
+    return undefined
+  }
+
   // biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec pattern
-  while ((match = ansiPattern.exec(text)) !== null) {
+  while ((match = ansiPattern.exec(processText)) !== null) {
     // Add text before this escape sequence
     if (match.index > lastIndex) {
-      const content = text.slice(lastIndex, match.index)
+      const content = processText.slice(lastIndex, match.index)
       if (content.length > 0) {
-        segments.push({ text: content, ...currentStyle })
+        if (hyperlinkRanges.length > 0) {
+          // Split content into runs by hyperlink URL.
+          // lastIndex is the position of content[0] in processText/cleaned.
+          let segStart = 0
+          for (let ci = 0; ci < content.length; ci++) {
+            const hl = getHyperlinkAt(lastIndex + ci)
+            const prevHl = ci > 0 ? getHyperlinkAt(lastIndex + ci - 1) : undefined
+            if (ci > 0 && hl !== prevHl) {
+              const sub = content.slice(segStart, ci)
+              if (sub.length > 0) {
+                const seg: StyledSegment = { text: sub, ...currentStyle }
+                if (prevHl) seg.hyperlink = prevHl
+                segments.push(seg)
+              }
+              segStart = ci
+            }
+          }
+          // Push remaining
+          const sub = content.slice(segStart)
+          if (sub.length > 0) {
+            const hl = getHyperlinkAt(lastIndex + segStart)
+            const seg: StyledSegment = { text: sub, ...currentStyle }
+            if (hl) seg.hyperlink = hl
+            segments.push(seg)
+          }
+        } else {
+          segments.push({ text: content, ...currentStyle })
+        }
       }
     }
 
@@ -1125,20 +1216,45 @@ export function parseAnsiText(text: string): StyledSegment[] {
   }
 
   // Add remaining text
-  if (lastIndex < text.length) {
-    const content = text.slice(lastIndex)
+  if (lastIndex < processText.length) {
+    const content = processText.slice(lastIndex)
     if (content.length > 0) {
-      segments.push({ text: content, ...currentStyle })
+      if (hyperlinkRanges.length > 0) {
+        // Split remaining content by hyperlink URL
+        let segStart = 0
+        for (let ci = 0; ci < content.length; ci++) {
+          const hl = getHyperlinkAt(lastIndex + ci)
+          const prevHl = ci > 0 ? getHyperlinkAt(lastIndex + ci - 1) : undefined
+          if (ci > 0 && hl !== prevHl) {
+            const sub = content.slice(segStart, ci)
+            if (sub.length > 0) {
+              const seg: StyledSegment = { text: sub, ...currentStyle }
+              if (prevHl) seg.hyperlink = prevHl
+              segments.push(seg)
+            }
+            segStart = ci
+          }
+        }
+        const sub = content.slice(segStart)
+        if (sub.length > 0) {
+          const hl = getHyperlinkAt(lastIndex + segStart)
+          const seg: StyledSegment = { text: sub, ...currentStyle }
+          if (hl) seg.hyperlink = hl
+          segments.push(seg)
+        }
+      } else {
+        segments.push({ text: content, ...currentStyle })
+      }
     }
   }
 
   return segments
 }
 
-const ANSI_TEST_REGEX = /\x1b\[[0-9;]*[A-Za-z]/
+const ANSI_TEST_REGEX = /\x1b(?:\[[0-9;]*[A-Za-z]|\])/
 
 /**
- * Check if text contains ANSI escape sequences.
+ * Check if text contains ANSI escape sequences (SGR or OSC).
  */
 export function hasAnsi(text: string): boolean {
   // Use a non-global regex for testing to avoid lastIndex issues

@@ -89,6 +89,11 @@ function styleToKey(style: Style): string {
     }
   }
 
+  // Hyperlink URL (rare)
+  if (style.hyperlink) {
+    key += `|h${style.hyperlink}`
+  }
+
   return key
 }
 
@@ -402,6 +407,7 @@ function inlineFullRender(
 function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "fullscreen", maxRows?: number): string {
   let output = ""
   let currentStyle: Style | null = null
+  let currentHyperlink: string | undefined
 
   // For inline mode, only render up to the last line with content.
   // Cap to maxRows to prevent content taller than the terminal from
@@ -442,6 +448,18 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
       // Skip continuation cells
       if (cell.continuation) continue
 
+      // Handle OSC 8 hyperlink transitions (separate from SGR style)
+      const cellHyperlink = cell.hyperlink
+      if (cellHyperlink !== currentHyperlink) {
+        if (currentHyperlink) {
+          output += "\x1b]8;;\x1b\\" // Close previous hyperlink
+        }
+        if (cellHyperlink) {
+          output += `\x1b]8;;${cellHyperlink}\x1b\\` // Open new hyperlink
+        }
+        currentHyperlink = cellHyperlink
+      }
+
       // Build style from cell and check if changed.
       // readCellInto mutates cell.attrs in place, so we must snapshot attrs
       // only when the style actually changes (which is rare -- most adjacent
@@ -465,6 +483,12 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
       output += cell.char
     }
 
+    // Close any open hyperlink at end of row
+    if (currentHyperlink) {
+      output += "\x1b]8;;\x1b\\"
+      currentHyperlink = undefined
+    }
+
     // Clear to end of line (removes any leftover content)
     output += "\x1b[K"
 
@@ -477,6 +501,11 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
       }
       output += "\n"
     }
+  }
+
+  // Close any open hyperlink at end
+  if (currentHyperlink) {
+    output += "\x1b]8;;\x1b\\"
   }
 
   // Reset style at end
@@ -700,11 +729,13 @@ function changesToAnsi(pool: CellChange[], count: number, mode: "fullscreen" | "
 
   let output = ""
   let currentStyle: Style | null = null
+  let currentHyperlink: string | undefined
 
   // Fullscreen mode: use absolute positioning
   {
     let cursorX = -1
     let cursorY = -1
+    let prevY = -1
 
     for (let i = 0; i < count; i++) {
       const change = pool[i]!
@@ -714,6 +745,13 @@ function changesToAnsi(pool: CellChange[], count: number, mode: "fullscreen" | "
 
       // Skip continuation cells
       if (cell.continuation) continue
+
+      // Close hyperlink on row change (hyperlinks must not span across rows)
+      if (y !== prevY && currentHyperlink) {
+        output += "\x1b]8;;\x1b\\"
+        currentHyperlink = undefined
+      }
+      prevY = y
 
       // Move cursor if needed (cursor must be exactly at target position)
       if (y !== cursorY || x !== cursorX) {
@@ -747,6 +785,18 @@ function changesToAnsi(pool: CellChange[], count: number, mode: "fullscreen" | "
         }
       }
 
+      // Handle OSC 8 hyperlink transitions (separate from SGR style)
+      const cellHyperlink = cell.hyperlink
+      if (cellHyperlink !== currentHyperlink) {
+        if (currentHyperlink) {
+          output += "\x1b]8;;\x1b\\" // Close previous hyperlink
+        }
+        if (cellHyperlink) {
+          output += `\x1b]8;;${cellHyperlink}\x1b\\` // Open new hyperlink
+        }
+        currentHyperlink = cellHyperlink
+      }
+
       // Update style if changed (reuse pre-allocated style object)
       reusableCellStyle.fg = cell.fg
       reusableCellStyle.bg = cell.bg
@@ -768,6 +818,11 @@ function changesToAnsi(pool: CellChange[], count: number, mode: "fullscreen" | "
       cursorX = x + (cell.wide ? 2 : 1)
       cursorY = y
     }
+  }
+
+  // Close any open hyperlink
+  if (currentHyperlink) {
+    output += "\x1b]8;;\x1b\\"
   }
 
   // Reset style at end

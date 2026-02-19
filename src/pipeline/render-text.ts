@@ -663,6 +663,7 @@ function renderGraphemes(
         attrs: style.attrs,
         wide: false,
         continuation: false,
+        hyperlink: style.hyperlink,
       })
       col += 1
       continue
@@ -679,6 +680,7 @@ function renderGraphemes(
       attrs: style.attrs,
       wide: width === 2,
       continuation: false,
+      hyperlink: style.hyperlink,
     })
 
     if (width === 2 && col + 1 < buffer.width) {
@@ -692,6 +694,7 @@ function renderGraphemes(
         attrs: style.attrs,
         wide: false,
         continuation: true,
+        hyperlink: style.hyperlink,
       })
       col += 2
     } else {
@@ -895,7 +898,14 @@ function mergeAnsiStyle(base: Style, segment: StyledSegment, options: MergeStyle
   if (segment.inverse !== undefined) overlayAttrs.inverse = segment.inverse
 
   // Use mergeStyles for consistent category-based merging
-  return mergeStyles(base, { fg, bg, underlineColor, attrs: overlayAttrs }, { preserveDecorations, preserveEmphasis })
+  const merged = mergeStyles(base, { fg, bg, underlineColor, attrs: overlayAttrs }, { preserveDecorations, preserveEmphasis })
+
+  // Pass through OSC 8 hyperlink from segment (not an SGR attribute)
+  if (segment.hyperlink) {
+    merged.hyperlink = segment.hyperlink
+  }
+
+  return merged
 }
 
 /**

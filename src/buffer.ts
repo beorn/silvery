@@ -70,6 +70,11 @@ export interface Cell {
   wide: boolean
   /** True if this is the continuation cell after a wide character */
   continuation: boolean
+  /**
+   * OSC 8 hyperlink URL.
+   * When set, the cell is part of a clickable hyperlink in supporting terminals.
+   */
+  hyperlink?: string
 }
 
 /**
@@ -84,6 +89,11 @@ export interface Style {
    */
   underlineColor?: Color
   attrs: CellAttrs
+  /**
+   * OSC 8 hyperlink URL.
+   * When set, the cell is part of a clickable hyperlink in supporting terminals.
+   */
+  hyperlink?: string
 }
 
 // ============================================================================
@@ -128,6 +138,7 @@ const EMPTY_CELL: Cell = {
   attrs: {},
   wide: false,
   continuation: false,
+  hyperlink: undefined,
 }
 
 /** Frozen empty attrs object, shared across zero-allocation reads for OOB cells */
@@ -346,6 +357,8 @@ export class TerminalBuffer {
   private bgColors: Map<number, { r: number; g: number; b: number }>
   /** Underline color storage (independent of fg, for SGR 58) */
   private underlineColors: Map<number, Color>
+  /** OSC 8 hyperlink URL storage (only for cells that are part of a hyperlink) */
+  private hyperlinks: Map<number, string>
   /**
    * Per-row dirty tracking for diff optimization.
    * When set, diffBuffers() can skip clean rows entirely.
@@ -369,6 +382,7 @@ export class TerminalBuffer {
     this.fgColors = new Map()
     this.bgColors = new Map()
     this.underlineColors = new Map()
+    this.hyperlinks = new Map()
     // All rows start dirty (fresh buffer needs full diff on first comparison)
     this._dirtyRows = new Uint8Array(height).fill(1)
     this._minDirtyRow = 0
@@ -420,6 +434,7 @@ export class TerminalBuffer {
       bg = bgIndex > 0 ? bgIndex - 1 : null // -1 to restore actual color index
     }
 
+    const hyperlink = this.hyperlinks.get(idx)
     return {
       char: char!,
       fg,
@@ -428,6 +443,7 @@ export class TerminalBuffer {
       attrs: unpackAttrs(packed!),
       wide: unpackWide(packed!),
       continuation: unpackContinuation(packed!),
+      ...(hyperlink !== undefined ? { hyperlink } : {}),
     }
   }
 
@@ -520,6 +536,7 @@ export class TerminalBuffer {
       out.attrs = EMPTY_ATTRS
       out.wide = false
       out.continuation = false
+      out.hyperlink = undefined
       return out
     }
 
@@ -569,6 +586,7 @@ export class TerminalBuffer {
 
     out.wide = (packed & WIDE_FLAG) !== 0
     out.continuation = (packed & CONTINUATION_FLAG) !== 0
+    out.hyperlink = this.hyperlinks.get(idx)
 
     return out
   }
@@ -620,6 +638,14 @@ export class TerminalBuffer {
       this.underlineColors.set(idx, underlineColor)
     } else {
       this.underlineColors.delete(idx)
+    }
+
+    // Handle hyperlink storage
+    const hyperlink = cell.hyperlink
+    if (hyperlink !== undefined && hyperlink !== "") {
+      this.hyperlinks.set(idx, hyperlink)
+    } else {
+      this.hyperlinks.delete(idx)
     }
 
     // Pack metadata inline (avoids packCell's fullCell parameter overhead)
@@ -675,6 +701,8 @@ export class TerminalBuffer {
     const trueColorFg = hasTrueColorFg ? (fg as { r: number; g: number; b: number }) : null
     const trueColorBg = hasTrueColorBg ? (bg as { r: number; g: number; b: number }) : null
     const hasUnderlineColor = underlineColor !== null
+    const hyperlink = cell.hyperlink
+    const hasHyperlink = hyperlink !== undefined && hyperlink !== ""
 
     // Mark affected rows dirty + update bounding box
     for (let cy = startY; cy < endY; cy++) {
@@ -690,6 +718,7 @@ export class TerminalBuffer {
     const needFgDelete = !hasTrueColorFg && this.fgColors.size > 0
     const needBgDelete = !hasTrueColorBg && this.bgColors.size > 0
     const needUlDelete = !hasUnderlineColor && this.underlineColors.size > 0
+    const needHlDelete = !hasHyperlink && this.hyperlinks.size > 0
 
     for (let cy = startY; cy < endY; cy++) {
       const rowBase = cy * this.width
@@ -718,6 +747,12 @@ export class TerminalBuffer {
         } else if (needUlDelete) {
           this.underlineColors.delete(idx)
         }
+
+        if (hasHyperlink) {
+          this.hyperlinks.set(idx, hyperlink!)
+        } else if (needHlDelete) {
+          this.hyperlinks.delete(idx)
+        }
       }
     }
   }
@@ -731,6 +766,7 @@ export class TerminalBuffer {
     this.fgColors.clear()
     this.bgColors.clear()
     this.underlineColors.clear()
+    this.hyperlinks.clear()
     this._dirtyRows.fill(1)
     this._minDirtyRow = 0
     this._maxDirtyRow = this.height - 1
@@ -849,6 +885,13 @@ export class TerminalBuffer {
           } else {
             this.underlineColors.delete(dstIdx)
           }
+          const hl = this.hyperlinks.get(srcIdx)
+          if (hl) {
+            this.hyperlinks.set(dstIdx, hl)
+            this.hyperlinks.delete(srcIdx)
+          } else {
+            this.hyperlinks.delete(dstIdx)
+          }
         }
       }
       // Clear exposed rows at bottom
@@ -887,6 +930,13 @@ export class TerminalBuffer {
           } else {
             this.underlineColors.delete(dstIdx)
           }
+          const hl = this.hyperlinks.get(srcIdx)
+          if (hl) {
+            this.hyperlinks.set(dstIdx, hl)
+            this.hyperlinks.delete(srcIdx)
+          } else {
+            this.hyperlinks.delete(dstIdx)
+          }
         }
       }
       // Clear exposed rows at top
@@ -907,6 +957,7 @@ export class TerminalBuffer {
     copy.fgColors = new Map(this.fgColors)
     copy.bgColors = new Map(this.bgColors)
     copy.underlineColors = new Map(this.underlineColors)
+    copy.hyperlinks = new Map(this.hyperlinks)
     // Clone starts with all rows CLEAN. The content phase will mark only
     // the rows it modifies as dirty. diffBuffers() then skips clean rows,
     // which are guaranteed identical to the prev buffer (since this is a clone).
@@ -985,6 +1036,11 @@ export class TerminalBuffer {
     const ulB = other.underlineColors.get(otherIdx) ?? null
     if (!colorEquals(ulA, ulB)) return false
 
+    // Check hyperlinks
+    const hlA = this.hyperlinks.get(idx)
+    const hlB = other.hyperlinks.get(otherIdx)
+    if (hlA !== hlB) return false
+
     return true
   }
 
@@ -1047,7 +1103,8 @@ export function cellEquals(a: Cell, b: Cell): boolean {
     colorEquals(a.underlineColor, b.underlineColor) &&
     a.wide === b.wide &&
     a.continuation === b.continuation &&
-    attrsEquals(a.attrs, b.attrs)
+    attrsEquals(a.attrs, b.attrs) &&
+    (a.hyperlink ?? undefined) === (b.hyperlink ?? undefined)
   )
 }
 
@@ -1078,7 +1135,8 @@ export function styleEquals(a: Style | null, b: Style | null): boolean {
     colorEquals(a.fg, b.fg) &&
     colorEquals(a.bg, b.bg) &&
     colorEquals(a.underlineColor, b.underlineColor) &&
-    attrsEquals(a.attrs, b.attrs)
+    attrsEquals(a.attrs, b.attrs) &&
+    (a.hyperlink ?? undefined) === (b.hyperlink ?? undefined)
   )
 }
 
@@ -1095,6 +1153,7 @@ export function createMutableCell(): Cell {
     attrs: {},
     wide: false,
     continuation: false,
+    hyperlink: undefined,
   }
 }
 
@@ -1174,6 +1233,7 @@ export function bufferToStyledText(
 
   const lines: string[] = []
   let currentStyle: Style | null = null
+  let currentHyperlink: string | undefined
 
   for (let y = 0; y < buffer.height; y++) {
     let line = ""
@@ -1184,6 +1244,18 @@ export function bufferToStyledText(
       const cell = buffer.getCell(x, y)
       // Skip continuation cells (part of wide character)
       if (cell.continuation) continue
+
+      // Check if hyperlink changed (OSC 8 is separate from SGR)
+      const cellHyperlink = cell.hyperlink
+      if (cellHyperlink !== currentHyperlink) {
+        if (currentHyperlink) {
+          line += "\x1b]8;;\x1b\\" // Close previous hyperlink
+        }
+        if (cellHyperlink) {
+          line += `\x1b]8;;${cellHyperlink}\x1b\\` // Open new hyperlink
+        }
+        currentHyperlink = cellHyperlink
+      }
 
       // Check if style changed
       const cellStyle: Style = {
@@ -1198,6 +1270,12 @@ export function bufferToStyledText(
       }
 
       line += cell.char
+    }
+
+    // Close any open hyperlink at end of line
+    if (currentHyperlink) {
+      line += "\x1b]8;;\x1b\\"
+      currentHyperlink = undefined
     }
 
     // Reset style at end of line to prevent background color bleeding
@@ -1310,10 +1388,30 @@ export function bufferToHTML(
     let lineHTML = ""
     let currentStyle: Style | null = null
     let spanOpen = false
+    let linkOpen = false
+    let currentHyperlink: string | undefined
 
     for (let x = 0; x < buffer.width; x++) {
       const cell = buffer.getCell(x, y)
       if (cell.continuation) continue
+
+      // Handle hyperlink transitions
+      const cellHyperlink = cell.hyperlink
+      if (cellHyperlink !== currentHyperlink) {
+        if (linkOpen) {
+          if (spanOpen) {
+            lineHTML += "</span>"
+            spanOpen = false
+          }
+          lineHTML += "</a>"
+          linkOpen = false
+        }
+        if (cellHyperlink) {
+          lineHTML += `<a href="${escapeHTML(cellHyperlink)}">`
+          linkOpen = true
+        }
+        currentHyperlink = cellHyperlink
+      }
 
       const cellStyle: Style = {
         fg: cell.fg,
@@ -1340,6 +1438,10 @@ export function bufferToHTML(
 
     if (spanOpen) {
       lineHTML += "</span>"
+    }
+    if (linkOpen) {
+      lineHTML += "</a>"
+      currentHyperlink = undefined
     }
 
     htmlLines.push(`<div>${lineHTML}</div>`)
@@ -1509,7 +1611,27 @@ function trimTrailingWhitespacePreservingAnsi(str: string): string {
 
   while (i < str.length) {
     if (str[i] === "\x1b") {
-      // Found ANSI escape - skip the entire sequence
+      // Check for OSC sequence (ESC ] ... ST or BEL)
+      if (str[i + 1] === "]") {
+        // Find the terminator: ST (\x1b\\) or BEL (\x07)
+        let end = -1
+        for (let j = i + 2; j < str.length; j++) {
+          if (str[j] === "\x07") {
+            end = j
+            break
+          }
+          if (str[j] === "\x1b" && str[j + 1] === "\\") {
+            end = j + 1
+            break
+          }
+        }
+        if (end !== -1) {
+          lastContentIndex = end
+          i = end + 1
+          continue
+        }
+      }
+      // Found SGR escape - skip the entire sequence
       const end = str.indexOf("m", i)
       if (end !== -1) {
         lastContentIndex = end
