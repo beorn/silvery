@@ -39,7 +39,7 @@ import {
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
-  name: "Input",
+  name: "Mouse & Keys",
   description: "Combined keyboard + mouse input showcase with Kitty protocol",
   features: ["parseHotkey()", "parseMouseSequence()", "⌘ ⌥ ⌃ ⇧ ✦"],
 }

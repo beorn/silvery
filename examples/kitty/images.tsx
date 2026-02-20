@@ -23,7 +23,7 @@ import { createTerm } from "../../src/index.js"
 import type { ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
-  name: "Images",
+  name: "Image Viewer",
   description: "Browse and display images using Kitty graphics protocol",
   features: ["Kitty graphics", "PNG display", "gallery navigation", "zoom/pan", "true color"],
 }

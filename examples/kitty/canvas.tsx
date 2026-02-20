@@ -18,7 +18,7 @@ import { createTerm, enableMouse, disableMouse, parseMouseSequence, isMouseSeque
 import type { ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
-  name: "Canvas",
+  name: "Char Draw",
   description: "Click-drag to draw with half-block pixel art, RGB color picker",
   features: ["parseMouseSequence()", "enableMouse()", "half-block rendering", "drag tracking", "HSL color picker"],
 }

@@ -25,7 +25,7 @@ import { createTerm, enableMouse, disableMouse, parseMouseSequence, isMouseSeque
 import type { ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
-  name: "Paint",
+  name: "Photo Paint",
   description: "Draw over images — Kitty graphics + half-block pixel art overlay",
   features: [
     "Kitty graphics",
