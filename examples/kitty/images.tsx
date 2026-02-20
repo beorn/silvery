@@ -18,7 +18,8 @@
  */
 
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs"
-import { basename, resolve, extname } from "node:path"
+import { basename, resolve, extname, dirname } from "node:path"
+import { fileURLToPath } from "node:url"
 import { createTerm } from "../../src/index.js"
 import type { ExampleMeta } from "../_banner.js"
 
@@ -380,6 +381,21 @@ function renderImage(state: ViewerState): string {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  const crashCleanup = () => {
+    const stdout = process.stdout
+    stdout.write("\x1b[?1003l\x1b[?1006l") // Disable mouse
+    stdout.write("\x1b[?25h")               // Show cursor
+    stdout.write("\x1b[?1049l")             // Exit alternate screen
+    stdout.write("\x1b[0m")                 // Reset colors
+    if (process.stdin.isTTY && process.stdin.isRaw) {
+      try { process.stdin.setRawMode(false) } catch {}
+    }
+  }
+  process.on("uncaughtException", (err) => {
+    crashCleanup()
+    throw err
+  })
+
   using term = createTerm()
   const cols = term.cols ?? 80
   const rows = term.rows ?? 24
@@ -391,8 +407,14 @@ async function main() {
   let images: ImageEntry[]
 
   if (args.length === 0) {
-    // No arguments: show test pattern
-    images = [createTestPatternEntry()]
+    // No arguments: try samples/ directory first, fall back to test pattern
+    const samplesDir = resolve(dirname(fileURLToPath(import.meta.url)), "samples")
+    if (existsSync(samplesDir)) {
+      images = discoverImages([samplesDir])
+    }
+    if (!images || images.length === 0) {
+      images = [createTestPatternEntry()]
+    }
   } else {
     images = discoverImages(args)
     if (images.length === 0) {
@@ -572,5 +594,17 @@ function readPngDimensions(data: Buffer): { width: number; height: number } {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch((err) => {
+    // Restore terminal on crash
+    const stdout = process.stdout
+    stdout.write("\x1b[?1003l\x1b[?1006l") // Disable mouse
+    stdout.write("\x1b[?25h")               // Show cursor
+    stdout.write("\x1b[?1049l")             // Exit alternate screen
+    stdout.write("\x1b[0m")                 // Reset colors
+    if (process.stdin.isTTY && process.stdin.isRaw) {
+      try { process.stdin.setRawMode(false) } catch {}
+    }
+    console.error(err)
+    process.exit(1)
+  })
 }

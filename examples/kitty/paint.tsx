@@ -19,8 +19,9 @@
  * Run: bun vendor/beorn-inkx/examples/kitty/paint.tsx [image.png]
  */
 
-import { readFileSync, existsSync } from "node:fs"
-import { basename } from "node:path"
+import { readFileSync, existsSync, readdirSync } from "node:fs"
+import { basename, resolve, dirname, extname } from "node:path"
+import { fileURLToPath } from "node:url"
 import { createTerm, enableMouse, disableMouse, parseMouseSequence, isMouseSequence } from "../../src/index.js"
 import type { ExampleMeta } from "../_banner.js"
 
@@ -532,8 +533,7 @@ function renderOverlay(state: PhotoCanvasState, term: ReturnType<typeof createTe
         line += term.rgb(bottomPixel[0], bottomPixel[1], bottomPixel[2])(LOWER_HALF)
       } else if (
         topPixel !== null &&
-        bottomPixel !== null &&
-        topPixel[0] === bottomPixel[0] &&
+        topPixel[0] === bottomPixel?.[0] &&
         topPixel[1] === bottomPixel[1] &&
         topPixel[2] === bottomPixel[2]
       ) {
@@ -642,6 +642,21 @@ function countOverlayPixels(state: PhotoCanvasState): number {
 // ---------------------------------------------------------------------------
 
 async function main() {
+  const crashCleanup = () => {
+    const stdout = process.stdout
+    stdout.write("\x1b[?1003l\x1b[?1006l") // Disable mouse
+    stdout.write("\x1b[?25h")               // Show cursor
+    stdout.write("\x1b[?1049l")             // Exit alternate screen
+    stdout.write("\x1b[0m")                 // Reset colors
+    if (process.stdin.isTTY && process.stdin.isRaw) {
+      try { process.stdin.setRawMode(false) } catch {}
+    }
+  }
+  process.on("uncaughtException", (err) => {
+    crashCleanup()
+    throw err
+  })
+
   using term = createTerm()
   const cols = term.cols ?? 80
   const rows = term.rows ?? 24
@@ -649,12 +664,26 @@ async function main() {
   const { stdin, stdout } = process
 
   // Load image or generate test pattern
-  const filePath = process.argv[2]
+  let filePath = process.argv[2]
   let imageData: Buffer
   let filename: string
   let imgWidth: number
   let imgHeight: number
   let isPng: boolean
+
+  // Auto-load first sample image if no path given
+  if (!filePath) {
+    const samplesDir = resolve(dirname(fileURLToPath(import.meta.url)), "samples")
+    if (existsSync(samplesDir)) {
+      const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"])
+      const samples = readdirSync(samplesDir)
+        .filter((f) => IMAGE_EXTENSIONS.has(extname(f).toLowerCase()))
+        .sort()
+      if (samples.length > 0) {
+        filePath = resolve(samplesDir, samples[0]!)
+      }
+    }
+  }
 
   if (filePath && existsSync(filePath)) {
     imageData = Buffer.from(readFileSync(filePath))
@@ -971,5 +1000,17 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch((err) => {
+    // Restore terminal on crash
+    const stdout = process.stdout
+    stdout.write("\x1b[?1003l\x1b[?1006l") // Disable mouse
+    stdout.write("\x1b[?25h")               // Show cursor
+    stdout.write("\x1b[?1049l")             // Exit alternate screen
+    stdout.write("\x1b[0m")                 // Reset colors
+    if (process.stdin.isTTY && process.stdin.isRaw) {
+      try { process.stdin.setRawMode(false) } catch {}
+    }
+    console.error(err)
+    process.exit(1)
+  })
 }
