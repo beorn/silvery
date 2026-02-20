@@ -439,6 +439,84 @@ describe("Hyper modifier", () => {
 })
 
 // =============================================================================
+// macOS symbol modifier aliases
+// =============================================================================
+
+describe("macOS symbol modifiers", () => {
+  test("⌘ parses as super (Cmd)", () => {
+    const hotkey = parseHotkey("⌘j")
+    expect(hotkey.key).toBe("j")
+    expect(hotkey.super).toBe(true)
+    expect(hotkey.ctrl).toBe(false)
+  })
+
+  test("⌥ parses as alt (Opt)", () => {
+    const hotkey = parseHotkey("⌥j")
+    expect(hotkey.key).toBe("j")
+    expect(hotkey.alt).toBe(true)
+  })
+
+  test("⌃ parses as ctrl", () => {
+    const hotkey = parseHotkey("⌃c")
+    expect(hotkey.key).toBe("c")
+    expect(hotkey.ctrl).toBe(true)
+  })
+
+  test("⇧ parses as shift", () => {
+    const hotkey = parseHotkey("⇧Tab")
+    expect(hotkey.key).toBe("Tab")
+    expect(hotkey.shift).toBe(true)
+  })
+
+  test("✦ parses as hyper", () => {
+    const hotkey = parseHotkey("✦a")
+    expect(hotkey.key).toBe("a")
+    expect(hotkey.hyper).toBe(true)
+  })
+
+  test("multiple symbol prefixes: ⌃⇧a", () => {
+    const hotkey = parseHotkey("⌃⇧a")
+    expect(hotkey.key).toBe("a")
+    expect(hotkey.ctrl).toBe(true)
+    expect(hotkey.shift).toBe(true)
+  })
+
+  test("symbol prefix with + separator: ⌘+j", () => {
+    const hotkey = parseHotkey("⌘+j")
+    expect(hotkey.key).toBe("j")
+    expect(hotkey.super).toBe(true)
+  })
+
+  test("mixed symbol and word: ⌘+Shift+a", () => {
+    const hotkey = parseHotkey("⌘+Shift+a")
+    expect(hotkey.key).toBe("a")
+    expect(hotkey.super).toBe(true)
+    expect(hotkey.shift).toBe(true)
+  })
+
+  test("all symbols combined: ✦⌘⌥⌃⇧x", () => {
+    const hotkey = parseHotkey("✦⌘⌥⌃⇧x")
+    expect(hotkey.key).toBe("x")
+    expect(hotkey.hyper).toBe(true)
+    expect(hotkey.super).toBe(true)
+    expect(hotkey.alt).toBe(true)
+    expect(hotkey.ctrl).toBe(true)
+    expect(hotkey.shift).toBe(true)
+  })
+
+  test("word aliases: opt, command", () => {
+    expect(parseHotkey("opt+j").alt).toBe(true)
+    expect(parseHotkey("command+j").super).toBe(true)
+  })
+
+  test("matchHotkey with ⌘ symbol", () => {
+    const hotkey = parseHotkey("⌘j")
+    const [, key] = parseKey(kittySeq(106, 9)) // j with super (modifier 9 = bits 8 = super)
+    expect(matchHotkey(hotkey, key, "j")).toBe(true)
+  })
+})
+
+// =============================================================================
 // Event type parsing
 // =============================================================================
 

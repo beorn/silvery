@@ -132,14 +132,24 @@ const KEY_MAP: Record<string, string | null> = {
 const MODIFIER_ALIASES: Record<string, string> = {
   ctrl: "Control",
   control: "Control",
+  "⌃": "Control",
   shift: "Shift",
+  "⇧": "Shift",
   alt: "Alt",
   meta: "Meta",
-  cmd: "Super",
-  super: "Super",
-  hyper: "Hyper",
+  opt: "Alt",
   option: "Alt",
+  "⌥": "Alt",
+  cmd: "Super",
+  command: "Super",
+  super: "Super",
+  "⌘": "Super",
+  hyper: "Hyper",
+  "✦": "Hyper",
 }
+
+/** Modifier symbols that can be used as prefixes without + separator (e.g. ⌘J, ⌃⇧J) */
+const MODIFIER_SYMBOLS = new Set(["⌃", "⇧", "⌥", "⌘", "✦"])
 
 function normalizeModifier(mod: string): string {
   return MODIFIER_ALIASES[mod.toLowerCase()] ?? mod
@@ -768,21 +778,39 @@ export function keyToModifiers(key: Key): {
  * parseHotkey('j')           // { key: 'j', ctrl: false, meta: false, shift: false, alt: false }
  * parseHotkey('Control+c')   // { key: 'c', ctrl: true, ... }
  * parseHotkey('Shift+ArrowUp') // { key: 'ArrowUp', shift: true, ... }
+ * parseHotkey('⌘j')          // { key: 'j', super: true, ... } (macOS symbol prefix)
+ * parseHotkey('⌃⇧a')         // { key: 'a', ctrl: true, shift: true, ... }
  * ```
  */
 export function parseHotkey(keyStr: string): ParsedHotkey {
-  const parts = keyStr.split("+")
+  // Support macOS symbol prefix format: ⌘J, ⌃⇧J, ✦⌘J
+  let remaining = keyStr
+  const symbolMods = new Set<string>()
+  for (const char of remaining) {
+    if (MODIFIER_SYMBOLS.has(char)) {
+      symbolMods.add(char)
+    } else {
+      break
+    }
+  }
+
+  if (symbolMods.size > 0) {
+    remaining = remaining.slice(symbolMods.size)
+    if (remaining.startsWith("+")) remaining = remaining.slice(1)
+  }
+
+  const parts = remaining.split("+")
   const key = parts.pop() || keyStr
-  const modifiers = new Set(parts.map((p) => p.toLowerCase()))
+  const modifiers = new Set([...parts.map((p) => p.toLowerCase()), ...symbolMods])
 
   return {
     key,
-    ctrl: modifiers.has("control") || modifiers.has("ctrl"),
+    ctrl: modifiers.has("control") || modifiers.has("ctrl") || modifiers.has("⌃"),
     meta: modifiers.has("meta"),
-    shift: modifiers.has("shift"),
-    alt: modifiers.has("alt") || modifiers.has("option"),
-    super: modifiers.has("super") || modifiers.has("cmd") || modifiers.has("command"),
-    hyper: modifiers.has("hyper"),
+    shift: modifiers.has("shift") || modifiers.has("⇧"),
+    alt: modifiers.has("alt") || modifiers.has("opt") || modifiers.has("option") || modifiers.has("⌥"),
+    super: modifiers.has("super") || modifiers.has("cmd") || modifiers.has("command") || modifiers.has("⌘"),
+    hyper: modifiers.has("hyper") || modifiers.has("✦"),
   }
 }
 
