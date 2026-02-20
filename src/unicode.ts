@@ -418,6 +418,30 @@ function isWordBoundary(grapheme: string): boolean {
 }
 
 /**
+ * Look ahead from a space to check if the next word is a single-character
+ * operator (like +, =, *, /, etc.) followed by another space. Breaking before
+ * such operators looks bad — e.g. "$12k\n+ $400" — so we suppress the break
+ * point to keep the operator with its left operand.
+ */
+function isBreakBeforeOperator(graphemes: string[], spaceIndex: number): boolean {
+  // Look for pattern: [current space] [operator] [space]
+  // spaceIndex is the index of the current space in the graphemes array
+  let j = spaceIndex + 1
+  // Skip any zero-width characters (ANSI escapes)
+  while (j < graphemes.length && graphemeWidth(graphemes[j]!) === 0) j++
+  if (j >= graphemes.length) return false
+  const nextChar = graphemes[j]!
+  // Must be a single visible character that is not alphanumeric or space
+  if (graphemeWidth(nextChar) !== 1) return false
+  if (/^[a-zA-Z0-9\s]$/.test(nextChar)) return false
+  // Check that it's followed by a space (it's an infix operator, not a prefix)
+  let k = j + 1
+  while (k < graphemes.length && graphemeWidth(graphemes[k]!) === 0) k++
+  if (k >= graphemes.length) return false
+  return graphemes[k] === " "
+}
+
+/**
  * Check if a grapheme can break anywhere (CJK characters).
  * CJK text doesn't use spaces between words, so any character boundary is valid.
  */
@@ -550,9 +574,13 @@ export function wrapText(text: string, width: number, preserveNewlines = true, t
         if (currentWidth + gWidth <= width) {
           currentLine += grapheme
           currentWidth += gWidth
-          lastBreakIndex = currentLine.length
-          lastBreakWidth = currentWidth
-          lastBreakGraphemeIndex = i + 1
+          // Suppress break point if the next word is a lone operator (e.g. "+", "=")
+          // to avoid orphaning operators at the start of the next line.
+          if (grapheme !== " " || !isBreakBeforeOperator(graphemes, i)) {
+            lastBreakIndex = currentLine.length
+            lastBreakWidth = currentWidth
+            lastBreakGraphemeIndex = i + 1
+          }
           continue
         }
         // Space/hyphen doesn't fit — break here (before the boundary char).

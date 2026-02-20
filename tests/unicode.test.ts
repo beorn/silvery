@@ -377,6 +377,49 @@ describe("Unicode", () => {
         expect(lines).toEqual(["end- ", "start"])
       })
     })
+
+    describe("operator orphan prevention", () => {
+      test("keeps + operator with left operand", () => {
+        // At width 18, there's room to break before '=' instead of orphaning '+'
+        const lines = wrapText("US$ 3k x 4 = $12k + $400-700/mo", 18)
+        // The '+' should NOT be the first visible char of any line
+        for (let i = 1; i < lines.length; i++) {
+          expect(lines[i]!.trimStart()).not.toMatch(/^\+\s/)
+        }
+      })
+
+      test("keeps = operator with left operand", () => {
+        const lines = wrapText("result = value", 8)
+        // "result = " is 9 chars, won't fit in 8, so break before "result"'s space
+        // shouldn't orphan "=" at start of line
+        for (let i = 1; i < lines.length; i++) {
+          expect(lines[i]!.trimStart()).not.toMatch(/^=\s/)
+        }
+      })
+
+      test("does not suppress break for alphanumeric words", () => {
+        // "a" is alphanumeric — space before it IS a valid break point (not suppressed)
+        // At width 12: "hello world " (12) + "a" (13) + " " (14 > 12) -> break at last break point
+        // Last break was after "world " (the space before "a" is NOT suppressed for alpha)
+        const lines = wrapText("hello world a value", 12)
+        // Should break at space before "a" — orphaning "a" is fine for regular words
+        expect(lines[1]).toMatch(/^a /)
+      })
+
+      test("operator at end of text is not treated as infix", () => {
+        // "+" at end with no following space is not infix — normal break
+        const lines = wrapText("total +", 5)
+        expect(lines.length).toBeGreaterThanOrEqual(2)
+      })
+
+      test("all lines still respect width constraint", () => {
+        const text = "US$ 3k x 4 = $12k + $400-700/mo"
+        for (const w of [15, 16, 17, 18, 19, 20, 25, 30]) {
+          const lines = wrapText(text, w)
+          expectAllLinesFitWidth(lines, w)
+        }
+      })
+    })
   })
 
   describe("sliceByWidth", () => {
