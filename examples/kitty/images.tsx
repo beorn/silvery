@@ -1,5 +1,5 @@
 /**
- * Image Viewer (Kitty Graphics Protocol)
+ * Images — Kitty Graphics Image Viewer
  *
  * Displays images in the terminal using the Kitty graphics protocol.
  * Supports PNG files and generates a test pattern when no file is given.
@@ -10,7 +10,7 @@
  * - Built-in RGBA test pattern (rainbow + checkerboard)
  * - Pan with arrow keys, zoom with +/-, fit with f
  *
- * Run: bun vendor/beorn-inkx/examples/kitty/image-viewer.tsx [image.png]
+ * Run: bun vendor/beorn-inkx/examples/kitty/images.tsx [image.png]
  */
 
 import { readFileSync, existsSync } from "node:fs"
@@ -19,7 +19,7 @@ import { createTerm } from "../../src/index.js"
 import type { ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
-  name: "Image Viewer",
+  name: "Images",
   description: "Display images using Kitty graphics protocol",
   features: ["Kitty graphics", "PNG display", "zoom/pan", "true color"],
 }

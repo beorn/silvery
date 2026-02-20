@@ -1,5 +1,5 @@
 /**
- * Full Input Demo
+ * Input — Rich Input Showcase
  *
  * Combined keyboard + mouse showcase demonstrating all input features.
  *
@@ -10,7 +10,7 @@
  * - Event log showing all input events
  * - Kitty auto-detection
  *
- * Run: bun vendor/beorn-inkx/examples/full-input-demo.tsx
+ * Run: bun vendor/beorn-inkx/examples/kitty/input.tsx
  */
 
 import React, { useState, useRef, useEffect } from "react"
@@ -37,7 +37,7 @@ import {
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
-  name: "Full Input Demo",
+  name: "Input",
   description: "Combined keyboard + mouse input showcase",
   features: ["parseHotkey()", "parseMouseSequence()", "⌘ ⌥ ⌃ ⇧ ✦"],
 }

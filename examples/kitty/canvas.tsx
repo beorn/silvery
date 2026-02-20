@@ -1,5 +1,5 @@
 /**
- * Drawing Canvas
+ * Canvas — Drawing Canvas
  *
  * Click-drag to draw pixel art on a terminal canvas using half-block characters.
  * Each terminal cell holds 2 vertical pixels using Unicode half-block technique.
@@ -11,14 +11,14 @@
  * - Pen and eraser tools
  * - Keyboard shortcuts for color/tool selection
  *
- * Run: bun vendor/beorn-inkx/examples/kitty/mouse-demo.tsx
+ * Run: bun vendor/beorn-inkx/examples/kitty/canvas.tsx
  */
 
 import { createTerm, enableMouse, disableMouse, parseMouseSequence, isMouseSequence } from "../../src/index.js"
 import type { ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
-  name: "Drawing Canvas",
+  name: "Canvas",
   description: "Click-drag to draw with half-block pixel art, RGB color picker",
   features: ["parseMouseSequence()", "enableMouse()", "half-block rendering", "drag tracking", "HSL color picker"],
 }

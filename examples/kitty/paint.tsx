@@ -1,5 +1,5 @@
 /**
- * Photo Canvas — Draw Over Images
+ * Paint — Draw Over Images
  *
  * The flagship demo combining Kitty graphics protocol image display with
  * half-block pixel art drawing. Load a PNG, view it via Kitty graphics,
@@ -16,7 +16,7 @@
  * - Brush size via scroll wheel
  * - Clear overlay, toggle modes via keyboard
  *
- * Run: bun vendor/beorn-inkx/examples/kitty/photo-canvas.tsx [image.png]
+ * Run: bun vendor/beorn-inkx/examples/kitty/paint.tsx [image.png]
  */
 
 import { readFileSync, existsSync } from "node:fs"
@@ -25,7 +25,7 @@ import { createTerm, enableMouse, disableMouse, parseMouseSequence, isMouseSeque
 import type { ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
-  name: "Photo Canvas",
+  name: "Paint",
   description: "Draw over images — Kitty graphics + half-block pixel art overlay",
   features: [
     "Kitty graphics",

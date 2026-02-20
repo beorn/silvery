@@ -1,5 +1,5 @@
 /**
- * Kitty Keyboard Inspector
+ * Keys — Kitty Keyboard Inspector
  *
  * Shows all key properties in real-time as you press keys.
  * Demonstrates Kitty protocol extensions and macOS modifier symbols.
@@ -12,7 +12,7 @@
  * - macOS symbols in the display (⌘ ⌥ ⌃ ⇧ ✦)
  * - Kitty auto-detection on startup
  *
- * Run: bun vendor/beorn-inkx/examples/kitty-inspector.tsx
+ * Run: bun vendor/beorn-inkx/examples/kitty/keys.tsx
  */
 
 import React, { useState, useRef, useEffect } from "react"
@@ -35,7 +35,7 @@ import {
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
-  name: "Kitty Keyboard Inspector",
+  name: "Keys",
   description: "Real-time key event inspector with Kitty protocol support",
   features: ["parseKeypress()", "detectKittySupport()", "⌘ ⌥ ⌃ ⇧ ✦ symbols", "KittyFlags"],
 }
