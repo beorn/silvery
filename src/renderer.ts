@@ -95,6 +95,8 @@ export interface RenderOptions {
   debug?: boolean
   /** Enable incremental rendering. Default: true */
   incremental?: boolean
+  /** Use Kitty keyboard protocol encoding for press(). When true, press() uses keyToKittyAnsi. */
+  kittyMode?: boolean
   /**
    * Use production-like single-pass layout in doRender().
    *
@@ -237,6 +239,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // Store mode also supports incremental - the RenderInstance tracks prevBuffer
   const incremental = storeMode ? true : (optsOrStore.incremental ?? true)
   const singlePassLayout = storeMode ? false : (optsOrStore.singlePassLayout ?? false)
+  const kittyMode = storeMode ? false : (optsOrStore.kittyMode ?? false)
 
   // Guard: detect render leaks (absurd number of active instances)
   const liveCount = pruneAndCountActiveRenders()
@@ -677,6 +680,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     frames: instance.frames,
     columns: cols,
     rows: rows,
+    kittyMode,
   })
 }
 
@@ -722,6 +726,8 @@ export interface PerRenderOptions {
   incremental?: boolean
   /** Use production-like single-pass layout. See RenderOptions.singlePassLayout. */
   singlePassLayout?: boolean
+  /** Use Kitty keyboard protocol encoding for press(). */
+  kittyMode?: boolean
 }
 
 /**

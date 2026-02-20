@@ -30,7 +30,7 @@ import { type BoundTerm, createBoundTerm } from "./bound-term.js"
 import type { TerminalBuffer } from "./buffer.js"
 import { bufferToHTML, bufferToStyledText, bufferToText } from "./buffer.js"
 import { type Screenshotter, createScreenshotter } from "./screenshot.js"
-import { keyToAnsi } from "./keys.js"
+import { keyToAnsi, keyToKittyAnsi } from "./keys.js"
 import type { InkxNode, Rect } from "./types.js"
 
 /**
@@ -180,6 +180,9 @@ export interface AppOptions {
   /** Terminal dimensions */
   columns: number
   rows: number
+
+  /** Use Kitty keyboard protocol encoding for press(). When true, press() uses keyToKittyAnsi. */
+  kittyMode?: boolean
 }
 
 /**
@@ -201,6 +204,7 @@ export function buildApp(options: AppOptions): App {
     frames = [],
     columns,
     rows,
+    kittyMode = false,
   } = options
 
   // Create auto-refreshing locator factory
@@ -250,7 +254,7 @@ export function buildApp(options: AppOptions): App {
     // === Actions ===
 
     async press(key: string): Promise<App> {
-      const sequence = keyToAnsi(key)
+      const sequence = kittyMode ? keyToKittyAnsi(key) : keyToAnsi(key)
       sendInput(sequence)
       // Allow microtask to flush for test synchronization
       await Promise.resolve()

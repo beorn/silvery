@@ -301,7 +301,15 @@ export {
 } from "./term-def.js"
 
 // ANSI escape sequences for terminal control
-export { ANSI, enableMouse, disableMouse, enableKittyKeyboard, disableKittyKeyboard } from "./output.js"
+export {
+  ANSI,
+  enableMouse,
+  disableMouse,
+  KittyFlags,
+  enableKittyKeyboard,
+  disableKittyKeyboard,
+  queryKittyKeyboard,
+} from "./output.js"
 
 // Layout engine types
 export type { LayoutEngine, LayoutNode, LayoutConstants, MeasureFunc, MeasureMode } from "./layout-engine.js"

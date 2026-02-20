@@ -52,7 +52,7 @@ import { createContainer, getContainerRoot, reconciler } from "../reconciler.js"
 import { map, merge, takeUntil } from "../streams/index.js"
 import { createBuffer } from "./create-buffer.js"
 import { createRuntime } from "./create-runtime.js"
-import { keyToAnsi } from "../keys.js"
+import { keyToAnsi, keyToKittyAnsi } from "../keys.js"
 import { type Key, parseKey } from "./keys.js"
 import { ensureLayoutEngine } from "./layout.js"
 import { type TermProvider, createTermProvider } from "./term-provider.js"
@@ -132,6 +132,8 @@ export interface AppRunOptions {
   signal?: AbortSignal
   /** Enter alternate screen buffer (clean slate, restore on exit). Default: false */
   alternateScreen?: boolean
+  /** Use Kitty keyboard protocol encoding for press(). Default: false */
+  kittyMode?: boolean
   /** Providers and plain values to inject */
   [key: string]: unknown
 }
@@ -357,6 +359,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     stdin = process.stdin,
     signal: externalSignal,
     alternateScreen = false,
+    kittyMode: useKittyMode = false,
     ...injectValues
   } = options
 
@@ -1241,8 +1244,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       exit()
     },
     async press(rawKey: string) {
-      // Convert named keys (e.g. "Escape", "Enter", "ArrowUp") to raw ANSI bytes
-      const ansiKey = keyToAnsi(rawKey)
+      // Convert named keys to ANSI bytes (Kitty protocol when enabled)
+      const ansiKey = useKittyMode ? keyToKittyAnsi(rawKey) : keyToAnsi(rawKey)
       const [input, parsedKey] = parseKey(ansiKey)
 
       // Suppress subscription renders — flush loop below handles everything.

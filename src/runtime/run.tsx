@@ -268,6 +268,8 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
                 meta: key.meta,
                 shift: key.shift,
                 super: key.super,
+                hyper: key.hyper,
+                eventType: key.eventType,
               }
             }
           }

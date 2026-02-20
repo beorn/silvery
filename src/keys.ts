@@ -68,6 +68,10 @@ export interface Key {
   meta: boolean
   /** Super key (Cmd on macOS, Win on Windows) was pressed. Requires Kitty protocol. */
   super: boolean
+  /** Hyper key was pressed. Requires Kitty protocol. */
+  hyper: boolean
+  /** Kitty event type: 1=press, 2=repeat, 3=release. Only set with Kitty flag 2 (report events). */
+  eventType?: 1 | 2 | 3
 }
 
 /**
@@ -86,6 +90,7 @@ export interface ParsedHotkey {
   shift: boolean
   alt: boolean
   super: boolean
+  hyper: boolean
 }
 
 // ============================================================================
@@ -121,6 +126,7 @@ const KEY_MAP: Record<string, string | null> = {
   Alt: null,
   Meta: null,
   Super: null,
+  Hyper: null,
 }
 
 const MODIFIER_ALIASES: Record<string, string> = {
@@ -131,6 +137,7 @@ const MODIFIER_ALIASES: Record<string, string> = {
   meta: "Meta",
   cmd: "Super",
   super: "Super",
+  hyper: "Hyper",
   option: "Alt",
 }
 
@@ -421,6 +428,9 @@ export interface ParsedKeypress {
   shift: boolean
   option: boolean
   super: boolean
+  hyper: boolean
+  /** Kitty event type: 1=press, 2=repeat, 3=release. Only set with Kitty flag 2 (report events). */
+  eventType?: 1 | 2 | 3
   sequence: string
   code?: string
 }
@@ -451,6 +461,7 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
     shift: false,
     option: false,
     super: false,
+    hyper: false,
     sequence: input,
   }
 
@@ -515,6 +526,13 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
       key.meta = !!(modifier & 2) // alt
       key.ctrl = !!(modifier & 4)
       key.super = !!(modifier & 8) // super (Cmd on macOS)
+      key.hyper = !!(modifier & 16) // hyper
+
+      // Event type from Kitty protocol (group 4): 1=press, 2=repeat, 3=release
+      if (kittyParts?.[4]) {
+        const et = Number(kittyParts[4]) as 1 | 2 | 3
+        if (et >= 1 && et <= 3) key.eventType = et
+      }
 
       // Map codepoint to key name
       const mapped = kittyCodepointToName(codepoint)
@@ -550,6 +568,7 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
           key.ctrl = !!(modifier & 4)
           key.meta = !!(modifier & 2) // alt
           key.super = !!(modifier & 8) // super (Cmd on macOS)
+          key.hyper = !!(modifier & 16) // hyper
           key.shift = !!(modifier & 1)
           key.code = code
           key.name = CODE_TO_KEY[code] ?? ""
@@ -590,6 +609,8 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
     delete: keypress.name === "delete",
     meta: keypress.name !== "escape" && (keypress.meta || keypress.option),
     super: keypress.super,
+    hyper: keypress.hyper,
+    eventType: keypress.eventType,
   }
 
   let input = keypress.ctrl ? keypress.name : keypress.sequence
@@ -640,6 +661,7 @@ export function emptyKey(): Key {
     delete: false,
     meta: false,
     super: false,
+    hyper: false,
   }
 }
 
@@ -680,6 +702,7 @@ export function keyToModifiers(key: Key): {
   shift: boolean
   alt: boolean
   super: boolean
+  hyper: boolean
 } {
   return {
     ctrl: !!key.ctrl,
@@ -687,6 +710,7 @@ export function keyToModifiers(key: Key): {
     shift: !!key.shift,
     alt: false,
     super: !!key.super,
+    hyper: !!key.hyper,
   }
 }
 
@@ -715,6 +739,7 @@ export function parseHotkey(keyStr: string): ParsedHotkey {
     shift: modifiers.has("shift"),
     alt: modifiers.has("alt") || modifiers.has("option"),
     super: modifiers.has("super") || modifiers.has("cmd") || modifiers.has("command"),
+    hyper: modifiers.has("hyper"),
   }
 }
 
@@ -731,6 +756,7 @@ export function matchHotkey(hotkey: ParsedHotkey, key: Key, input?: string): boo
   if (!!hotkey.ctrl !== !!key.ctrl) return false
   if (!!hotkey.meta !== !!key.meta) return false
   if (!!hotkey.super !== !!key.super) return false
+  if (!!hotkey.hyper !== !!key.hyper) return false
   if (!!hotkey.alt !== false) return false // terminals can't distinguish alt from meta
 
   // For single uppercase letters (A-Z), shift is implicit
@@ -813,6 +839,7 @@ export function keyToKittyAnsi(key: string): string {
   if (modifiers.includes("Alt") || modifiers.includes("Meta")) mod |= 2
   if (modifiers.includes("Control")) mod |= 4
   if (modifiers.includes("Super")) mod |= 8
+  if (modifiers.includes("Hyper")) mod |= 16
 
   // Resolve codepoint
   let codepoint: number

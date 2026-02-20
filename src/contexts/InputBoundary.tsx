@@ -73,6 +73,7 @@ function toRawData(input: string, key: Key): string {
     if (key.shift) mods.push("Shift")
     if (key.meta) mods.push("Meta")
     if (key.super) mods.push("Super")
+    if (key.hyper) mods.push("Hyper")
     mods.push(name)
     return keyToAnsi(mods.join("+"))
   }

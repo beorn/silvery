@@ -387,6 +387,10 @@ export interface KeyEvent {
   alt?: boolean
   /** Super/Cmd modifier was held. Requires Kitty protocol. */
   super?: boolean
+  /** Hyper modifier was held. Requires Kitty protocol. */
+  hyper?: boolean
+  /** Kitty event type: 1=press, 2=repeat, 3=release. Requires Kitty flag 2. */
+  eventType?: 1 | 2 | 3
 }
 
 /**

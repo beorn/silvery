@@ -184,12 +184,43 @@ export function disableMouse(): string {
 }
 
 /**
- * Enable Kitty keyboard protocol (push mode with flags=1).
- * Sends CSI > 1 u to opt into disambiguate mode.
- * Supported: Ghostty, Kitty, WezTerm, foot. Ignored by unsupported terminals.
+ * Kitty keyboard protocol flags (bitfield).
+ *
+ * | Flag | Bit | Description                                    |
+ * | ---- | --- | ---------------------------------------------- |
+ * | 1    | 0   | Disambiguate escape codes                      |
+ * | 2    | 1   | Report event types (press/repeat/release)      |
+ * | 4    | 2   | Report alternate keys                          |
+ * | 8    | 3   | Report all keys as escape codes                |
+ * | 16   | 4   | Report associated text                         |
  */
-export function enableKittyKeyboard(): string {
-  return `${CSI}>1u`
+export const KittyFlags = {
+  DISAMBIGUATE: 1,
+  REPORT_EVENTS: 2,
+  REPORT_ALTERNATE: 4,
+  REPORT_ALL_KEYS: 8,
+  REPORT_TEXT: 16,
+} as const
+
+/**
+ * Enable Kitty keyboard protocol (push mode).
+ * Sends CSI > flags u to opt into the specified modes.
+ * Default flags=1 (disambiguate only) for maximum compatibility.
+ * Supported: Ghostty, Kitty, WezTerm, foot. Ignored by unsupported terminals.
+ *
+ * @param flags Bitfield of KittyFlags (default: DISAMBIGUATE)
+ */
+export function enableKittyKeyboard(flags = KittyFlags.DISAMBIGUATE): string {
+  return `${CSI}>${flags}u`
+}
+
+/**
+ * Query Kitty keyboard protocol support.
+ * Sends CSI ? u — terminal responds with CSI ? flags u if supported.
+ * Parse the response to detect which flags the terminal supports.
+ */
+export function queryKittyKeyboard(): string {
+  return `${CSI}?u`
 }
 
 /**
