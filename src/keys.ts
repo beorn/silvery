@@ -342,8 +342,19 @@ const FN_KEY_RE = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+
 // Kitty Keyboard Protocol
 // ============================================================================
 
-/** Matches Kitty keyboard protocol sequences: CSI codepoint ; modifiers u */
-const KITTY_RE = /^\x1b\[(\d+)(?::(\d+))?(?:;(\d+))?(?::(\d+))?u$/
+/**
+ * Matches Kitty keyboard protocol sequences:
+ * CSI codepoint[:shifted[:base]][;modifiers[:event_type][;text_codepoints]] u
+ *
+ * Groups:
+ *  1: codepoint
+ *  2: shifted_codepoint (optional)
+ *  3: base_layout_key (optional)
+ *  4: modifiers (optional, defaults to 1)
+ *  5: event_type (optional)
+ *  6: text_codepoints (colon-separated, optional — requires REPORT_TEXT flag)
+ */
+const KITTY_RE = /^\x1b\[(\d+)(?::(\d+))?(?::(\d+))?(?:;(\d+)(?::(\d+))?(?:;([\d:]+))?)?u$/
 
 /** Matches xterm modifyOtherKeys format: CSI 27 ; modifier ; keycode ~ */
 const MODIFY_OTHER_KEYS_RE = /^\x1b\[27;(\d+);(\d+)~$/
@@ -431,6 +442,16 @@ export interface ParsedKeypress {
   hyper: boolean
   /** Kitty event type: 1=press, 2=repeat, 3=release. Only set with Kitty flag 2 (report events). */
   eventType?: 1 | 2 | 3
+  /** The character when Shift is held. From Kitty shifted_codepoint. */
+  shiftedKey?: string
+  /** The key on a standard US layout (for non-Latin keyboards). From Kitty base_layout_key. */
+  baseLayoutKey?: string
+  /** CapsLock is active. Kitty modifier bit 6. */
+  capsLock?: boolean
+  /** NumLock is active. Kitty modifier bit 7. */
+  numLock?: boolean
+  /** Decoded text from Kitty REPORT_TEXT mode. */
+  associatedText?: string
   sequence: string
   code?: string
 }
@@ -516,7 +537,7 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
       let modifier: number
       if (kittyParts) {
         codepoint = Number(kittyParts[1])
-        modifier = (Number(kittyParts[3] || 1) - 1) as number
+        modifier = (Number(kittyParts[4] || 1) - 1) as number
       } else {
         modifier = (Number(modifyOtherKeysParts![1]) - 1) as number
         codepoint = Number(modifyOtherKeysParts![2])
@@ -527,11 +548,31 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
       key.ctrl = !!(modifier & 4)
       key.super = !!(modifier & 8) // super (Cmd on macOS)
       key.hyper = !!(modifier & 16) // hyper
+      key.capsLock = !!(modifier & 64)
+      key.numLock = !!(modifier & 128)
 
-      // Event type from Kitty protocol (group 4): 1=press, 2=repeat, 3=release
-      if (kittyParts?.[4]) {
-        const et = Number(kittyParts[4]) as 1 | 2 | 3
+      // Event type from Kitty protocol (group 5): 1=press, 2=repeat, 3=release
+      if (kittyParts?.[5]) {
+        const et = Number(kittyParts[5]) as 1 | 2 | 3
         if (et >= 1 && et <= 3) key.eventType = et
+      }
+
+      // Shifted codepoint (group 2)
+      if (kittyParts?.[2]) {
+        key.shiftedKey = String.fromCodePoint(Number(kittyParts[2]))
+      }
+
+      // Base layout key (group 3)
+      if (kittyParts?.[3]) {
+        key.baseLayoutKey = String.fromCodePoint(Number(kittyParts[3]))
+      }
+
+      // Text-as-codepoints (group 6) — requires REPORT_TEXT flag
+      if (kittyParts?.[6]) {
+        key.associatedText = kittyParts[6]
+          .split(":")
+          .map((cp) => String.fromCodePoint(Number(cp)))
+          .join("")
       }
 
       // Map codepoint to key name
@@ -570,6 +611,8 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
           key.super = !!(modifier & 8) // super (Cmd on macOS)
           key.hyper = !!(modifier & 16) // hyper
           key.shift = !!(modifier & 1)
+          key.capsLock = !!(modifier & 64)
+          key.numLock = !!(modifier & 128)
           key.code = code
           key.name = CODE_TO_KEY[code] ?? ""
           key.shift = SHIFT_CODES.has(code) || key.shift

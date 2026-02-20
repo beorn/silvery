@@ -391,6 +391,10 @@ export interface KeyEvent {
   hyper?: boolean
   /** Kitty event type: 1=press, 2=repeat, 3=release. Requires Kitty flag 2. */
   eventType?: 1 | 2 | 3
+  /** CapsLock is active. Kitty modifier bit 6. */
+  capsLock?: boolean
+  /** NumLock is active. Kitty modifier bit 7. */
+  numLock?: boolean
 }
 
 /**

@@ -587,3 +587,254 @@ describe("kittyMode in createRenderer", () => {
     expect(ansi).toBe("a")
   })
 })
+
+// =============================================================================
+// Shifted key + base layout key (Kitty extended codepoint format)
+// =============================================================================
+
+describe("Shifted key and base layout key", () => {
+  // Full format: CSI codepoint[:shifted[:base]][;modifiers[:event_type]] u
+
+  test("shifted codepoint parsed from Kitty sequence", () => {
+    // CSI 97:65;2 u — base=97 ('a'), shifted=65 ('A'), modifier=2 (shift)
+    const key = parseKeypress(`\x1b[97:65;2u`)
+    expect(key.name).toBe("a")
+    expect(key.shift).toBe(true)
+    expect(key.shiftedKey).toBe("A")
+  })
+
+  test("base layout key parsed from Kitty sequence", () => {
+    // CSI 246:214:111;2 u — codepoint=246 ('ö'), shifted=214 ('Ö'), base=111 ('o'), shift
+    const key = parseKeypress(`\x1b[246:214:111;2u`)
+    expect(key.name).toBe("ö")
+    expect(key.shift).toBe(true)
+    expect(key.shiftedKey).toBe("Ö")
+    expect(key.baseLayoutKey).toBe("o")
+  })
+
+  test("shifted codepoint without base layout key", () => {
+    // CSI 49:33;2 u — codepoint=49 ('1'), shifted=33 ('!'), shift
+    const key = parseKeypress(`\x1b[49:33;2u`)
+    expect(key.name).toBe("1")
+    expect(key.shift).toBe(true)
+    expect(key.shiftedKey).toBe("!")
+    expect(key.baseLayoutKey).toBeUndefined()
+  })
+
+  test("base layout key with non-Latin keyboard", () => {
+    // Russian 'й' (1081) shifted='Й' (1049) base='q' (113) with shift
+    const key = parseKeypress(`\x1b[1081:1049:113;2u`)
+    expect(key.name).toBe("й")
+    expect(key.shiftedKey).toBe("Й")
+    expect(key.baseLayoutKey).toBe("q")
+    expect(key.shift).toBe(true)
+  })
+
+  test("codepoint only (no shifted or base) still works", () => {
+    const key = parseKeypress(`\x1b[97u`)
+    expect(key.name).toBe("a")
+    expect(key.shiftedKey).toBeUndefined()
+    expect(key.baseLayoutKey).toBeUndefined()
+  })
+
+  test("shifted codepoint with ctrl modifier", () => {
+    // CSI 97:65;6 u — ctrl+shift+a (modifier: shift=1 + ctrl=4 = 5, encoded=6)
+    const key = parseKeypress(`\x1b[97:65;6u`)
+    expect(key.name).toBe("a")
+    expect(key.ctrl).toBe(true)
+    expect(key.shift).toBe(true)
+    expect(key.shiftedKey).toBe("A")
+  })
+
+  test("shifted codepoint with event type", () => {
+    // CSI 97:65;2:1 u — shift+a, press event
+    const key = parseKeypress(`\x1b[97:65;2:1u`)
+    expect(key.name).toBe("a")
+    expect(key.shift).toBe(true)
+    expect(key.shiftedKey).toBe("A")
+    expect(key.eventType).toBe(1)
+  })
+
+  test("all three codepoints with event type", () => {
+    // CSI 246:214:111;2:3 u — ö/Ö/o, shift, release
+    const key = parseKeypress(`\x1b[246:214:111;2:3u`)
+    expect(key.shiftedKey).toBe("Ö")
+    expect(key.baseLayoutKey).toBe("o")
+    expect(key.eventType).toBe(3)
+  })
+})
+
+// =============================================================================
+// CapsLock / NumLock modifier parsing
+// =============================================================================
+
+describe("CapsLock and NumLock modifiers", () => {
+  // Kitty modifier bits: capsLock=64, numLock=128
+
+  test("capsLock (bit 6) parsed from Kitty sequence", () => {
+    // capsLock=64, encoded = 64 + 1 = 65
+    const key = parseKeypress(kittySeq(97, 65))
+    expect(key.capsLock).toBe(true)
+    expect(key.numLock).toBeFalsy()
+    expect(key.name).toBe("a")
+  })
+
+  test("numLock (bit 7) parsed from Kitty sequence", () => {
+    // numLock=128, encoded = 128 + 1 = 129
+    const key = parseKeypress(kittySeq(97, 129))
+    expect(key.numLock).toBe(true)
+    expect(key.capsLock).toBeFalsy()
+  })
+
+  test("capsLock + numLock together", () => {
+    // capsLock=64 + numLock=128 = 192, encoded = 193
+    const key = parseKeypress(kittySeq(97, 193))
+    expect(key.capsLock).toBe(true)
+    expect(key.numLock).toBe(true)
+  })
+
+  test("capsLock + shift", () => {
+    // shift=1, capsLock=64 → 65, encoded=66
+    const key = parseKeypress(kittySeq(97, 66))
+    expect(key.shift).toBe(true)
+    expect(key.capsLock).toBe(true)
+    expect(key.ctrl).toBe(false)
+  })
+
+  test("capsLock + ctrl + alt", () => {
+    // ctrl=4, alt=2, capsLock=64 → 70, encoded=71
+    const key = parseKeypress(kittySeq(97, 71))
+    expect(key.ctrl).toBe(true)
+    expect(key.meta).toBe(true)
+    expect(key.capsLock).toBe(true)
+  })
+
+  test("numLock + super + shift", () => {
+    // shift=1, super=8, numLock=128 → 137, encoded=138
+    const key = parseKeypress(kittySeq(97, 138))
+    expect(key.shift).toBe(true)
+    expect(key.super).toBe(true)
+    expect(key.numLock).toBe(true)
+  })
+
+  test("all modifiers including lock keys", () => {
+    // shift=1, alt=2, ctrl=4, super=8, hyper=16, capsLock=64, numLock=128 → 223, encoded=224
+    const key = parseKeypress(kittySeq(97, 224))
+    expect(key.shift).toBe(true)
+    expect(key.meta).toBe(true)
+    expect(key.ctrl).toBe(true)
+    expect(key.super).toBe(true)
+    expect(key.hyper).toBe(true)
+    expect(key.capsLock).toBe(true)
+    expect(key.numLock).toBe(true)
+  })
+
+  test("no lock keys when modifier is low", () => {
+    const key = parseKeypress(kittySeq(97, 5)) // ctrl only
+    expect(key.capsLock).toBeFalsy()
+    expect(key.numLock).toBeFalsy()
+  })
+
+  test("lock modifiers in FN_KEY_RE path", () => {
+    // CSI 1;66 A — arrow up with shift(1) + capsLock(64) = 65, encoded=66
+    const key = parseKeypress(`\x1b[1;66A`)
+    expect(key.name).toBe("up")
+    expect(key.shift).toBe(true)
+    expect(key.capsLock).toBe(true)
+  })
+})
+
+// =============================================================================
+// Text-as-codepoints (REPORT_TEXT mode)
+// =============================================================================
+
+describe("Text-as-codepoints (REPORT_TEXT)", () => {
+  // Format: CSI codepoint;modifiers;text_codepoints u
+  // text_codepoints are colon-separated Unicode codepoints
+
+  test("single text codepoint", () => {
+    // CSI 97;1;97 u — 'a' with text 'a'
+    const key = parseKeypress(`\x1b[97;1;97u`)
+    expect(key.name).toBe("a")
+    expect(key.associatedText).toBe("a")
+  })
+
+  test("text codepoint differs from key codepoint (dead key composition)", () => {
+    // CSI 101;1;233 u — key 'e' but composed text 'é' (233)
+    const key = parseKeypress(`\x1b[101;1;233u`)
+    expect(key.name).toBe("e")
+    expect(key.associatedText).toBe("é")
+  })
+
+  test("multiple text codepoints (colon-separated)", () => {
+    // CSI 97;1;104:101:108:108:111 u — key 'a', text 'hello'
+    const key = parseKeypress(`\x1b[97;1;104:101:108:108:111u`)
+    expect(key.name).toBe("a")
+    expect(key.associatedText).toBe("hello")
+  })
+
+  test("text with modifier", () => {
+    // CSI 97;2;65 u — shift+'a', text 'A' (65)
+    const key = parseKeypress(`\x1b[97;2;65u`)
+    expect(key.name).toBe("a")
+    expect(key.shift).toBe(true)
+    expect(key.associatedText).toBe("A")
+  })
+
+  test("text with ctrl modifier (no text expected but still parseable)", () => {
+    // CSI 97;5;97 u — ctrl+a with text 'a'
+    const key = parseKeypress(`\x1b[97;5;97u`)
+    expect(key.name).toBe("a")
+    expect(key.ctrl).toBe(true)
+    expect(key.associatedText).toBe("a")
+  })
+
+  test("Unicode text codepoints", () => {
+    // CSI 97;1;128075 u — key 'a', text '👋' (128075 = 0x1F44B)
+    const key = parseKeypress(`\x1b[97;1;128075u`)
+    expect(key.associatedText).toBe("👋")
+  })
+
+  test("text with event type", () => {
+    // CSI 97;1:1;97 u — 'a', no mods, press event, text 'a'
+    const key = parseKeypress(`\x1b[97;1:1;97u`)
+    expect(key.name).toBe("a")
+    expect(key.eventType).toBe(1)
+    expect(key.associatedText).toBe("a")
+  })
+
+  test("text with shifted codepoint and base layout key", () => {
+    // CSI 97:65:113;2;65 u — 'a' shifted='A' base='q', shift, text 'A'
+    const key = parseKeypress(`\x1b[97:65:113;2;65u`)
+    expect(key.name).toBe("a")
+    expect(key.shiftedKey).toBe("A")
+    expect(key.baseLayoutKey).toBe("q")
+    expect(key.shift).toBe(true)
+    expect(key.associatedText).toBe("A")
+  })
+
+  test("no associated text when not present", () => {
+    const key = parseKeypress(kittySeq(97))
+    expect(key.associatedText).toBeUndefined()
+  })
+
+  test("no associated text with modifiers but no text group", () => {
+    const key = parseKeypress(kittySeq(97, 5))
+    expect(key.associatedText).toBeUndefined()
+  })
+
+  test("full kitchen-sink: shifted + base + modifiers + event + text", () => {
+    // CSI 246:214:111;66:1;214 u
+    // codepoint=246('ö'), shifted=214('Ö'), base=111('o'),
+    // modifier=66 (shift=1 + capsLock=64 = 65, encoded=66), event=press(1),
+    // text=214('Ö')
+    const key = parseKeypress(`\x1b[246:214:111;66:1;214u`)
+    expect(key.name).toBe("ö")
+    expect(key.shiftedKey).toBe("Ö")
+    expect(key.baseLayoutKey).toBe("o")
+    expect(key.shift).toBe(true)
+    expect(key.capsLock).toBe(true)
+    expect(key.eventType).toBe(1)
+    expect(key.associatedText).toBe("Ö")
+  })
+})
