@@ -29,8 +29,8 @@ import {
   disableMouse,
   type Key,
   type ParsedMouse,
-} from "../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "./_banner.js"
+} from "../../src/index.js"
+import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Mouse Event Visualizer",

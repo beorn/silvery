@@ -47,13 +47,14 @@ interface Example {
   features?: string[]
 }
 
-const CATEGORY_DIRS = ["layout", "interactive", "runtime", "inline"] as const
+const CATEGORY_DIRS = ["layout", "interactive", "runtime", "inline", "kitty"] as const
 
 const CATEGORY_ORDER: Record<string, number> = {
   Layout: 0,
   Interactive: 1,
   Runtime: 2,
   Inline: 3,
+  "Kitty Protocol": 4,
 }
 
 const CATEGORY_COLOR: Record<string, string> = {
@@ -61,14 +62,17 @@ const CATEGORY_COLOR: Record<string, string> = {
   Interactive: "cyan",
   Runtime: "green",
   Inline: "yellow",
+  "Kitty Protocol": "blue",
 }
 
 async function discoverExamples(): Promise<Example[]> {
   const baseDir = new URL(".", import.meta.url).pathname
   const results: Example[] = []
 
+  const CATEGORY_DISPLAY: Record<string, string> = { kitty: "Kitty Protocol" }
+
   for (const dir of CATEGORY_DIRS) {
-    const category = dir.charAt(0).toUpperCase() + dir.slice(1)
+    const category = CATEGORY_DISPLAY[dir] ?? dir.charAt(0).toUpperCase() + dir.slice(1)
     const glob = new Bun.Glob("*.tsx")
     const dirPath = resolve(baseDir, dir)
 

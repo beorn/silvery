@@ -31,8 +31,8 @@ import {
   detectKittyFromStdio,
   type Key,
   type ParsedKeypress,
-} from "../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "./_banner.js"
+} from "../../src/index.js"
+import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Kitty Keyboard Inspector",
