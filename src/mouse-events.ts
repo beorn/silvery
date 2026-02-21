@@ -9,6 +9,8 @@
  * - mouseenter/mouseleave tracking (no bubble, like DOM spec)
  */
 
+import type { FocusManager } from "./focus-manager.js"
+import { findFocusableAncestor } from "./focus-queries.js"
 import type { ParsedMouse } from "./mouse.js"
 import type { InkxNode, Rect } from "./types.js"
 
@@ -329,6 +331,15 @@ export function computeEnterLeave(
 // ============================================================================
 
 /**
+ * Options for creating a mouse event processor.
+ */
+export interface MouseEventProcessorOptions {
+  /** Optional focus manager — enables click-to-focus behavior.
+   *  On mousedown, the deepest focusable ancestor of the hit target is focused. */
+  focusManager?: FocusManager
+}
+
+/**
  * State for the mouse event processor.
  */
 export interface MouseEventProcessorState {
@@ -337,13 +348,16 @@ export interface MouseEventProcessorState {
   hoverPath: InkxNode[]
   /** Whether the left button is currently down (for click detection) */
   mouseDownTarget: InkxNode | null
+  /** Optional focus manager for click-to-focus */
+  focusManager?: FocusManager
 }
 
-export function createMouseEventProcessor(): MouseEventProcessorState {
+export function createMouseEventProcessor(options?: MouseEventProcessorOptions): MouseEventProcessorState {
   return {
     doubleClick: createDoubleClickState(),
     hoverPath: [],
     mouseDownTarget: null,
+    focusManager: options?.focusManager,
   }
 }
 
@@ -364,6 +378,15 @@ export function processMouseEvent(state: MouseEventProcessorState, parsed: Parse
 
   if (action === "down") {
     state.mouseDownTarget = target
+
+    // Click-to-focus: find nearest focusable ancestor and focus it
+    if (state.focusManager) {
+      const focusable = findFocusableAncestor(target)
+      if (focusable) {
+        state.focusManager.focus(focusable, "mouse")
+      }
+    }
+
     const event = createMouseEvent("mousedown", x, y, target, parsed)
     dispatchMouseEvent(event)
   } else if (action === "up") {

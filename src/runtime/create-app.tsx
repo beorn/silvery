@@ -49,7 +49,6 @@ import { createTerm } from "chalkx"
 import { AppContext, FocusManagerContext, StdoutContext, TermContext } from "../context.js"
 import { createFocusManager } from "../focus-manager.js"
 import { createKeyEvent, dispatchKeyEvent } from "../focus-events.js"
-import { findFocusableAncestor } from "../focus-queries.js"
 import { executeRender } from "../pipeline/index.js"
 import { createContainer, getContainerRoot, reconciler } from "../reconciler.js"
 import { map, merge, takeUntil } from "../streams/index.js"
@@ -58,7 +57,7 @@ import { createRuntime } from "./create-runtime.js"
 import { keyToAnsi, keyToKittyAnsi } from "../keys.js"
 import { type Key, parseKey } from "./keys.js"
 import { ensureLayoutEngine } from "./layout.js"
-import { createMouseEventProcessor, hitTest, processMouseEvent } from "../mouse-events.js"
+import { createMouseEventProcessor, processMouseEvent } from "../mouse-events.js"
 import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output.js"
 import { detectKittyFromStdio } from "../kitty-detect.js"
 import { type TermProvider, createTermProvider } from "./term-provider.js"
@@ -619,11 +618,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let kittyEnabled = false
   let mouseEnabled = false
 
-  // Mouse event processor for DOM-level dispatch
-  const mouseEventState = createMouseEventProcessor()
-
   // Focus manager (tree-based focus system)
   const focusManager = createFocusManager()
+
+  // Mouse event processor for DOM-level dispatch (with click-to-focus)
+  const mouseEventState = createMouseEventProcessor({ focusManager })
 
   // Cleanup function - idempotent, can be called from exit() or finally
   const cleanup = () => {
@@ -1140,17 +1139,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       }
 
       const root = getContainerRoot(container)
-
-      // Click-to-focus: on mousedown, find focusable ancestor and focus it
-      if (mouseData.action === "down") {
-        const target = hitTest(root, mouseData.x, mouseData.y)
-        if (target) {
-          const focusable = findFocusableAncestor(target)
-          if (focusable) {
-            focusManager.focus(focusable, "mouse")
-          }
-        }
-      }
 
       processMouseEvent(
         mouseEventState,

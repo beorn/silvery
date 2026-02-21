@@ -88,6 +88,8 @@ export type { HorizontalVirtualListProps, HorizontalVirtualListHandle } from "./
  */
 export { Text } from "./components/Text.js"
 
+export { Link } from "./components/Link.js"
+export type { LinkProps } from "./components/Link.js"
 export { Newline } from "./components/Newline.js"
 export { Spacer } from "./components/Spacer.js"
 export { Static } from "./components/Static.js"
@@ -176,7 +178,6 @@ export { useApp } from "./hooks/useApp.js"
 
 export { useStdout } from "./hooks/useStdout.js"
 export { useStdin } from "./hooks/useStdin.js"
-export { useFocus, resetFocusIdCounter } from "./hooks/useFocus.js"
 export { useFocusManager } from "./hooks/useFocusManager.js"
 
 // Focus system (tree-based)
@@ -373,7 +374,6 @@ export type { ParsedKeypress, ParsedHotkey } from "./keys.js"
 export type { UseAppResult } from "./hooks/useApp.js"
 export type { UseStdoutResult } from "./hooks/useStdout.js"
 export type { UseStdinResult } from "./hooks/useStdin.js"
-export type { UseFocusOptions, UseFocusResult } from "./hooks/useFocus.js"
 export type { UseFocusManagerResult } from "./hooks/useFocusManager.js"
 export type { RenderOptions, Instance, RenderMode, NonTTYMode } from "./render.js"
 export type { MeasureElementOutput } from "./measureElement.js"
@@ -411,6 +411,7 @@ export {
   type InkxMouseEvent,
   type InkxWheelEvent,
   type MouseEventProps,
+  type MouseEventProcessorOptions,
   type MouseEventProcessorState,
 } from "./mouse-events.js"
 

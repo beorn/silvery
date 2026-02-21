@@ -20,6 +20,8 @@ import {
   hitTest,
   processMouseEvent,
 } from "../../beorn-inkx/src/mouse-events.js"
+import { createFocusManager } from "../../beorn-inkx/src/focus-manager.js"
+import { Link } from "../../beorn-inkx/src/components/Link.js"
 import type { InkxNode } from "../../beorn-inkx/src/types.js"
 import { createRenderer } from "../../beorn-inkx/src/testing/index.js"
 
@@ -632,5 +634,212 @@ describe("interactive state updates", () => {
 
     await app.click(5, 1)
     expect(app.text).toContain("Count: 2")
+  })
+})
+
+// ============================================================================
+// Click-to-Focus Integration
+// ============================================================================
+
+describe("processMouseEvent with focusManager", () => {
+  it("focuses nearest focusable ancestor on mousedown", () => {
+    const fm = createFocusManager()
+
+    // Build a tree: root > focusableBox > textChild
+    const root: InkxNode = {
+      type: "inkx-root",
+      props: {},
+      children: [],
+      parent: null,
+      layoutNode: null,
+      contentRect: { x: 0, y: 0, width: 40, height: 10 },
+      screenRect: { x: 0, y: 0, width: 40, height: 10 },
+      prevLayout: null,
+      prevScreenRect: null,
+      layoutDirty: false,
+      contentDirty: false,
+      paintDirty: false,
+      bgDirty: false,
+      subtreeDirty: false,
+      childrenDirty: false,
+      layoutSubscribers: new Set(),
+    }
+
+    const focusableBox: InkxNode = {
+      type: "inkx-box",
+      props: { focusable: true, testID: "panel" },
+      children: [],
+      parent: root,
+      layoutNode: null,
+      contentRect: { x: 0, y: 0, width: 20, height: 5 },
+      screenRect: { x: 0, y: 0, width: 20, height: 5 },
+      prevLayout: null,
+      prevScreenRect: null,
+      layoutDirty: false,
+      contentDirty: false,
+      paintDirty: false,
+      bgDirty: false,
+      subtreeDirty: false,
+      childrenDirty: false,
+      layoutSubscribers: new Set(),
+    }
+
+    const textChild: InkxNode = {
+      type: "inkx-text",
+      props: {},
+      children: [],
+      parent: focusableBox,
+      layoutNode: null,
+      contentRect: { x: 2, y: 1, width: 10, height: 1 },
+      screenRect: { x: 2, y: 1, width: 10, height: 1 },
+      prevLayout: null,
+      prevScreenRect: null,
+      layoutDirty: false,
+      contentDirty: false,
+      paintDirty: false,
+      bgDirty: false,
+      subtreeDirty: false,
+      childrenDirty: false,
+      layoutSubscribers: new Set(),
+    }
+
+    root.children = [focusableBox]
+    focusableBox.children = [textChild]
+
+    const state = createMouseEventProcessor({ focusManager: fm })
+
+    // Click on the text child — should focus the focusable ancestor
+    processMouseEvent(
+      state,
+      { button: 0, x: 5, y: 1, action: "down", shift: false, meta: false, ctrl: false },
+      root,
+    )
+
+    expect(fm.activeElement).toBe(focusableBox)
+    expect(fm.focusOrigin).toBe("mouse")
+  })
+
+  it("does not focus when no focusable ancestor exists", () => {
+    const fm = createFocusManager()
+
+    const root: InkxNode = {
+      type: "inkx-root",
+      props: {},
+      children: [],
+      parent: null,
+      layoutNode: null,
+      contentRect: { x: 0, y: 0, width: 40, height: 10 },
+      screenRect: { x: 0, y: 0, width: 40, height: 10 },
+      prevLayout: null,
+      prevScreenRect: null,
+      layoutDirty: false,
+      contentDirty: false,
+      paintDirty: false,
+      bgDirty: false,
+      subtreeDirty: false,
+      childrenDirty: false,
+      layoutSubscribers: new Set(),
+    }
+
+    const state = createMouseEventProcessor({ focusManager: fm })
+
+    processMouseEvent(
+      state,
+      { button: 0, x: 5, y: 5, action: "down", shift: false, meta: false, ctrl: false },
+      root,
+    )
+
+    expect(fm.activeElement).toBeNull()
+  })
+
+  it("works without focusManager (backward compatible)", () => {
+    const root: InkxNode = {
+      type: "inkx-root",
+      props: {},
+      children: [],
+      parent: null,
+      layoutNode: null,
+      contentRect: { x: 0, y: 0, width: 40, height: 10 },
+      screenRect: { x: 0, y: 0, width: 40, height: 10 },
+      prevLayout: null,
+      prevScreenRect: null,
+      layoutDirty: false,
+      contentDirty: false,
+      paintDirty: false,
+      bgDirty: false,
+      subtreeDirty: false,
+      childrenDirty: false,
+      layoutSubscribers: new Set(),
+    }
+
+    // No focusManager — should not throw
+    const state = createMouseEventProcessor()
+    processMouseEvent(
+      state,
+      { button: 0, x: 5, y: 5, action: "down", shift: false, meta: false, ctrl: false },
+      root,
+    )
+  })
+})
+
+// ============================================================================
+// Link Component
+// ============================================================================
+
+describe("Link component", () => {
+  const render = createRenderer({ cols: 40, rows: 5 })
+
+  it("renders text with OSC 8 hyperlink in ANSI output", () => {
+    const app = render(
+      <Box>
+        <Link href="https://example.com">Click me</Link>
+      </Box>,
+    )
+
+    // Plain text should contain the link text
+    expect(app.text).toContain("Click me")
+
+    // ANSI output should contain OSC 8 sequences
+    expect(app.ansi).toContain("\x1b]8;;https://example.com\x1b\\")
+    expect(app.ansi).toContain("\x1b]8;;\x1b\\")
+  })
+
+  it("renders with default blue color and underline", () => {
+    const app = render(
+      <Box>
+        <Link href="https://example.com">Link</Link>
+      </Box>,
+    )
+
+    expect(app.text).toContain("Link")
+  })
+
+  it("supports custom color", () => {
+    const app = render(
+      <Box>
+        <Link href="https://example.com" color="green">Green Link</Link>
+      </Box>,
+    )
+
+    expect(app.text).toContain("Green Link")
+  })
+
+  it("fires onClick handler", async () => {
+    const handleClick = vi.fn()
+
+    const app = render(
+      <Box>
+        <Link href="https://example.com" onClick={handleClick} testID="link">
+          Clickable
+        </Link>
+      </Box>,
+    )
+
+    const linkLoc = app.getByTestId("link")
+    const box = linkLoc.boundingBox()
+    expect(box).not.toBeNull()
+
+    await app.click(box!.x + 1, box!.y)
+    expect(handleClick).toHaveBeenCalledTimes(1)
   })
 })
