@@ -12,6 +12,57 @@ Flexbox container with borders, padding, and overflow control.
 
 Box supports all standard flexbox props: `flexDirection`, `flexGrow`, `flexShrink`, `flexBasis`, `alignItems`, `alignSelf`, `justifyContent`, `flexWrap`, `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, `padding`, `paddingX`, `paddingY`, `margin`, `gap`, `borderStyle`, `borderColor`, `overflow`.
 
+### Focus Props
+
+Box supports tree-based focus management via the following props:
+
+| Prop             | Type      | Description                                               |
+| ---------------- | --------- | --------------------------------------------------------- |
+| `focusable`      | `boolean` | Node can receive focus (required for `useFocusable()`)    |
+| `autoFocus`      | `boolean` | Focus this node on mount                                  |
+| `focusScope`     | `boolean` | Creates a focus scope (Tab cycles within this subtree)    |
+| `nextFocusUp`    | `string`  | testID to focus when pressing Up from this node           |
+| `nextFocusDown`  | `string`  | testID to focus when pressing Down from this node         |
+| `nextFocusLeft`  | `string`  | testID to focus when pressing Left from this node         |
+| `nextFocusRight` | `string`  | testID to focus when pressing Right from this node        |
+
+```tsx
+<Box testID="panel" focusable autoFocus borderStyle="single">
+  <Text>This panel receives focus on mount</Text>
+</Box>
+
+<Box testID="scope" focusScope>
+  <Box testID="a" focusable><Text>A</Text></Box>
+  <Box testID="b" focusable><Text>B</Text></Box>
+  {/* Tab cycles between A and B within this scope */}
+</Box>
+```
+
+### Mouse Event Props
+
+Box and Text support DOM-compatible mouse events:
+
+| Prop            | Event Type       | Bubbles |
+| --------------- | ---------------- | ------- |
+| `onClick`       | `InkxMouseEvent` | Yes     |
+| `onDoubleClick` | `InkxMouseEvent` | Yes     |
+| `onMouseDown`   | `InkxMouseEvent` | Yes     |
+| `onMouseUp`     | `InkxMouseEvent` | Yes     |
+| `onMouseMove`   | `InkxMouseEvent` | Yes     |
+| `onMouseEnter`  | `InkxMouseEvent` | No      |
+| `onMouseLeave`  | `InkxMouseEvent` | No      |
+| `onWheel`       | `InkxWheelEvent` | Yes     |
+
+### Focus Event Props
+
+| Prop              | Event Type      | Description                                  |
+| ----------------- | --------------- | -------------------------------------------- |
+| `onFocus`         | `InkxFocusEvent`| Called when this node gains focus             |
+| `onBlur`          | `InkxFocusEvent`| Called when this node loses focus             |
+| `onKeyDown`       | `InkxKeyEvent`  | Called on key down (bubble phase)             |
+| `onKeyUp`         | `InkxKeyEvent`  | Called on key up (bubble phase)               |
+| `onKeyDownCapture`| `InkxKeyEvent`  | Called on key down (capture phase)            |
+
 ### Scrollable Containers
 
 ```tsx
@@ -161,23 +212,26 @@ const [value, setValue] = useState("")
 
 Keyboard shortcuts: Arrow keys, Home/End, Ctrl+A/E (line start/end), Ctrl+K/U (kill line), PageUp/PageDown, Backspace/Delete.
 
-## InputBoundary
+## Link
 
-Isolates input for embedded interactive components. When active, input flows to children only; the parent's handlers don't fire.
+Renders a terminal hyperlink using OSC 8 escape sequences. In supporting terminals (iTerm2, Ghostty, Kitty, etc.), the text is clickable. Also registers an `onClick` handler for mouse-driven interaction within inkx.
 
 ```tsx
-import { InputBoundary } from "inkx"
-;<InputBoundary active={focused} onEscape={() => setFocused(false)}>
-  <EmbeddedInteractiveComponent />
-</InputBoundary>
+import { Link } from "inkx"
+
+<Link href="https://example.com">Visit Example</Link>
+<Link href="https://example.com" color="green">Green Link</Link>
+<Link href="km://node/abc123" onClick={(e) => navigate(e)}>Internal Link</Link>
 ```
 
-| Prop       | Type             | Description                                    |
-| ---------- | ---------------- | ---------------------------------------------- |
-| `active`   | `boolean`        | Whether input flows to children                |
-| `onEscape` | `() => void`     | Called when escape is pressed while active     |
-| `exitKey`  | `string \| null` | Key to exit (default: Escape, null to disable) |
-| `children` | `ReactNode`      | Components inside the isolated scope           |
+| Prop        | Type                            | Description                                   |
+| ----------- | ------------------------------- | --------------------------------------------- |
+| `href`      | `string`                        | URL (http/https, or custom scheme)             |
+| `children`  | `ReactNode`                     | Link text content                              |
+| `color`     | `string`                        | Text color (default: `"blue"`)                 |
+| `underline` | `boolean`                       | Underline the link (default: `true`)           |
+| `onClick`   | `(event: InkxMouseEvent) => void` | Click handler (preventDefault to skip navigation) |
+| `testID`    | `string`                        | Test ID for locator queries                    |
 
 ## Newline
 

@@ -137,16 +137,47 @@ function StatusLine() {
 }
 ```
 
-## useFocus
+## useFocusable
 
-Manage focus for interactive components:
+Makes a component focusable within the tree-based focus system. Reads focus state from `FocusManager` via `useSyncExternalStore`.
+
+The component must have a `testID` prop and `focusable` on its Box ancestor. Optionally set `autoFocus` for initial focus on mount.
 
 ```tsx
-import { useFocus } from "inkx"
+import { useFocusable } from "inkx"
 
-function ListItem({ id }) {
-  const { isFocused } = useFocus({ id })
-  return <Text color={isFocused ? "blue" : undefined}>{id}</Text>
+function FocusablePanel() {
+  const { focused, focus, blur, focusOrigin } = useFocusable()
+  return (
+    <Box testID="panel" focusable borderStyle="single" borderColor={focused ? "green" : "gray"}>
+      <Text>{focused ? "Focused!" : "Click to focus"}</Text>
+    </Box>
+  )
+}
+```
+
+| Return        | Type                                              | Description                        |
+| ------------- | ------------------------------------------------- | ---------------------------------- |
+| `focused`     | `boolean`                                         | Whether this node is focused       |
+| `focus`       | `() => void`                                      | Focus this node programmatically   |
+| `blur`        | `() => void`                                      | Remove focus from this node        |
+| `focusOrigin` | `"keyboard" \| "mouse" \| "programmatic" \| null` | How focus was most recently gained |
+
+## useFocusWithin
+
+Returns `true` if focus is anywhere within a subtree. Walks from the focused node up to check if it passes through the given `testID`.
+
+```tsx
+import { useFocusWithin } from "inkx"
+
+function Sidebar() {
+  const hasFocus = useFocusWithin("sidebar")
+  return (
+    <Box testID="sidebar" borderColor={hasFocus ? "blue" : "gray"}>
+      <FocusableItem testID="item1" />
+      <FocusableItem testID="item2" />
+    </Box>
+  )
 }
 ```
 

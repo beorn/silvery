@@ -87,7 +87,7 @@ await app.run(<App />)
 
 ## Components
 
-See [docs/components.md](docs/components.md) for full reference. Key components: Box, Text, VirtualList, Static, Console, TextInput, ReadlineInput, TextArea, InputBoundary.
+See [docs/components.md](docs/components.md) for full reference. Key components: Box, Text, VirtualList, Static, Console, TextInput, ReadlineInput, TextArea, Link.
 
 ## Layout Hooks
 
@@ -339,6 +339,83 @@ Components can receive mouse events via React DOM-compatible props:
 
 See [docs/input-features.md](docs/input-features.md) for comprehensive input documentation and [docs/terminal-capabilities.md](docs/terminal-capabilities.md) for protocol details and terminal support matrix.
 
+## Focus System (Tree-Based)
+
+inkx provides a tree-based focus system that operates directly on the InkxNode render tree. Focus is managed by a standalone `FocusManager` (no React dependency) with React hooks for component integration.
+
+### Props (on Box)
+
+| Prop             | Type      | Description                                            |
+| ---------------- | --------- | ------------------------------------------------------ |
+| `focusable`      | `boolean` | Node can receive focus                                 |
+| `autoFocus`      | `boolean` | Focus this node on mount                               |
+| `focusScope`     | `boolean` | Creates a focus scope (Tab cycles within subtree)      |
+| `nextFocusUp`    | `string`  | testID to focus when pressing Up (explicit override)   |
+| `nextFocusDown`  | `string`  | testID to focus when pressing Down                     |
+| `nextFocusLeft`  | `string`  | testID to focus when pressing Left                     |
+| `nextFocusRight` | `string`  | testID to focus when pressing Right                    |
+| `onFocus`        | function  | Called when this node gains focus                      |
+| `onBlur`         | function  | Called when this node loses focus                      |
+| `onKeyDown`      | function  | Called on key down (bubble phase)                      |
+| `onKeyDownCapture` | function | Called on key down (capture phase)                   |
+
+### Hooks
+
+```tsx
+import { useFocusable, useFocusWithin } from "inkx"
+
+// Make a component focusable
+function Panel() {
+  const { focused, focus, blur, focusOrigin } = useFocusable()
+  return (
+    <Box testID="panel" focusable borderColor={focused ? "green" : "gray"}>
+      <Text>{focused ? "Focused" : "Unfocused"}</Text>
+    </Box>
+  )
+}
+
+// Check if focus is within a subtree
+function Sidebar() {
+  const hasFocus = useFocusWithin("sidebar")
+  return (
+    <Box testID="sidebar" borderColor={hasFocus ? "blue" : "gray"}>
+      <FocusableItem testID="item1" />
+      <FocusableItem testID="item2" />
+    </Box>
+  )
+}
+```
+
+### FocusManager API (standalone, no React)
+
+```tsx
+import { createFocusManager } from "inkx"
+
+const fm = createFocusManager()
+fm.focus(node, "programmatic")     // Focus a node
+fm.focusById("panel", root)        // Focus by testID
+fm.blur()                          // Clear focus
+fm.focusNext(root)                 // Tab to next focusable
+fm.focusPrev(root)                 // Tab to previous
+fm.focusDirection(root, "down")    // Spatial navigation
+fm.enterScope("dialog")            // Push focus scope
+fm.exitScope()                     // Pop focus scope
+fm.activeId                        // Current focused testID
+fm.focusOrigin                     // "keyboard" | "mouse" | "programmatic"
+```
+
+### Click-to-Focus
+
+Click-to-focus is built into the mouse event pipeline. Pass `focusManager` to `createMouseEventProcessor()`:
+
+```tsx
+const fm = createFocusManager()
+const mouseState = createMouseEventProcessor({ focusManager: fm })
+// On mousedown, the pipeline finds the nearest focusable ancestor and focuses it
+```
+
+The `run()` and `createApp()` runtimes wire this automatically.
+
 ## Layout Engine
 
 inkx supports multiple layout engines:
@@ -361,13 +438,18 @@ import { run, useInput, useExit, type Key } from "inkx/runtime"
 import { createApp, useApp } from "inkx/runtime"
 
 // Components
-import { Box, Text, Newline, Spacer, Static, Console, VirtualList } from "inkx"
+import { Box, Text, Link, Newline, Spacer, Static, Console, VirtualList } from "inkx"
 
 // Input components
 import { TextInput, ReadlineInput, useReadline } from "inkx"
 
 // Hooks
 import { useContentRect, useScreenRect, useInput, useApp, useTerm } from "inkx"
+
+// Focus system (tree-based)
+import { useFocusable, useFocusWithin } from "inkx"
+import { createFocusManager, type FocusManager } from "inkx"
+import { FocusManagerContext } from "inkx"
 
 // Input layer stack (for dialogs/modals)
 import { InputLayerProvider, useInputLayer } from "inkx"
@@ -386,7 +468,7 @@ import { enableMouse, disableMouse } from "inkx"
 
 // Mouse events (DOM-level)
 import { hitTest, processMouseEvent, createMouseEventProcessor } from "inkx"
-import type { InkxMouseEvent, InkxWheelEvent, MouseEventProps } from "inkx"
+import type { InkxMouseEvent, InkxWheelEvent, MouseEventProps, MouseEventProcessorOptions } from "inkx"
 
 // Hotkey parsing (supports macOS symbols ⌘⌥⌃⇧✦)
 import { parseHotkey, matchHotkey } from "inkx"
