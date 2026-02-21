@@ -93,8 +93,9 @@ export function useFocusManager(): UseFocusManagerResult {
     return root
   }, [node])
 
-  if (fm) {
-    const focus = (nodeOrId: InkxNode | string) => {
+  const focus = useCallback(
+    (nodeOrId: InkxNode | string) => {
+      if (!fm) return
       if (typeof nodeOrId === "string") {
         const root = getRoot()
         if (root) {
@@ -103,27 +104,39 @@ export function useFocusManager(): UseFocusManagerResult {
       } else {
         fm.focus(nodeOrId, "programmatic")
       }
-    }
+    },
+    [fm, getRoot],
+  )
 
-    const focusNext = () => {
-      const root = getRoot()
-      if (root) fm.focusNext(root)
-    }
+  const focusNext = useCallback(() => {
+    if (!fm) return
+    const root = getRoot()
+    if (root) fm.focusNext(root)
+  }, [fm, getRoot])
 
-    const focusPrev = () => {
-      const root = getRoot()
-      if (root) fm.focusPrev(root)
-    }
+  const focusPrev = useCallback(() => {
+    if (!fm) return
+    const root = getRoot()
+    if (root) fm.focusPrev(root)
+  }, [fm, getRoot])
 
+  const blur = useCallback(() => {
+    if (!fm) return
+    fm.blur()
+  }, [fm])
+
+  const noOp = useCallback(() => {}, [])
+
+  if (fm) {
     return {
       activeElement: fm.activeElement,
       activeId: snapshot?.activeId ?? null,
       focus,
       focusNext,
       focusPrev,
-      blur: () => fm.blur(),
-      enableFocus: () => {},
-      disableFocus: () => {},
+      blur,
+      enableFocus: noOp,
+      disableFocus: noOp,
       focusPrevious: focusPrev,
     }
   }
@@ -132,12 +145,12 @@ export function useFocusManager(): UseFocusManagerResult {
   return {
     activeElement: null,
     activeId: null,
-    focus: () => {},
-    focusNext: () => {},
-    focusPrev: () => {},
-    blur: () => {},
-    enableFocus: () => {},
-    disableFocus: () => {},
-    focusPrevious: () => {},
+    focus: noOp as (nodeOrId: InkxNode | string) => void,
+    focusNext: noOp,
+    focusPrev: noOp,
+    blur: noOp,
+    enableFocus: noOp,
+    disableFocus: noOp,
+    focusPrevious: noOp,
   }
 }

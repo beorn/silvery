@@ -86,6 +86,15 @@ export function useFocusable(): UseFocusableResult {
     }
   }, [fm, node, autoFocus])
 
+  // Clean up: if this node is focused when unmounting, blur it
+  useEffect(() => {
+    return () => {
+      if (fm && fm.activeElement === node) {
+        fm.blur()
+      }
+    }
+  }, [fm, node])
+
   // Memoize focus/blur callbacks
   const focus = useMemo(() => {
     return () => {

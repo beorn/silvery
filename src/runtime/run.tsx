@@ -30,7 +30,7 @@ import React, { createContext, useContext, useEffect, type ReactElement } from "
 
 import { createTerm } from "chalkx"
 import { AppContext, FocusManagerContext, StdoutContext, TermContext } from "../context.js"
-import { createFocusManager } from "../focus-manager.js"
+import { createFocusManager, type FocusManager } from "../focus-manager.js"
 import { createFocusEvent, createKeyEvent, dispatchFocusEvent, dispatchKeyEvent } from "../focus-events.js"
 import { findByTestID } from "../focus-queries.js"
 import { executeRender } from "../pipeline/index.js"
@@ -40,6 +40,7 @@ import { createBuffer } from "./create-buffer.js"
 import { createRuntime } from "./create-runtime.js"
 import { type InputHandler, type Key, parseKey } from "./keys.js"
 import { splitRawInput } from "../keys.js"
+import type { InkxNode, Rect } from "../types.js"
 import { isMouseSequence, parseMouseSequence } from "../mouse.js"
 import { createMouseEventProcessor, processMouseEvent } from "../mouse-events.js"
 import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output.js"
@@ -149,6 +150,66 @@ export function useExit(): () => void {
   const ctx = useContext(RuntimeContext)
   if (!ctx) throw new Error("useExit must be used within run()")
   return ctx.exit
+}
+
+// ============================================================================
+// Focus Navigation (shared between event loop and press())
+// ============================================================================
+
+/**
+ * Handle focus navigation keys (Tab, Shift+Tab, Enter for scope, Escape for scope exit,
+ * arrow keys for spatial navigation).
+ *
+ * @returns true if the key was handled (consumed), false otherwise.
+ *   Arrow keys perform spatial navigation but return false so they can still
+ *   fall through to app-level handlers.
+ */
+function handleFocusNavigation(
+  parsedKey: Key,
+  focusManager: FocusManager,
+  root: InkxNode,
+  layoutFn?: (node: InkxNode) => Rect | null,
+): boolean {
+  if (parsedKey.tab && !parsedKey.shift) {
+    focusManager.focusNext(root)
+    return true
+  }
+  if (parsedKey.tab && parsedKey.shift) {
+    focusManager.focusPrev(root)
+    return true
+  }
+  if (parsedKey.return) {
+    // Enter: if focused element has focusScope, enter that scope
+    const activeEl = focusManager.activeElement
+    if (activeEl) {
+      const props = activeEl.props as Record<string, unknown>
+      const testID = typeof props.testID === "string" ? props.testID : null
+      if (props.focusScope && testID) {
+        focusManager.enterScope(testID)
+        // Focus the first focusable child within the scope
+        focusManager.focusNext(root, activeEl)
+        return true
+      }
+    }
+  }
+  if (parsedKey.escape && focusManager.scopeStack.length > 0) {
+    // Escape: exit the current focus scope
+    const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
+    focusManager.exitScope()
+    // Restore focus to the scope node itself
+    const scopeNode = findByTestID(root, scopeId)
+    if (scopeNode) {
+      focusManager.focus(scopeNode, "keyboard")
+    }
+    return true
+  }
+  if (parsedKey.upArrow || parsedKey.downArrow || parsedKey.leftArrow || parsedKey.rightArrow) {
+    const direction = parsedKey.upArrow ? "up" : parsedKey.downArrow ? "down" : parsedKey.leftArrow ? "left" : "right"
+    focusManager.focusDirection(root, direction, layoutFn)
+    // Don't consume arrow events — let them fall through to app handlers
+    return false
+  }
+  return false
 }
 
 // ============================================================================
@@ -517,43 +578,10 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
               focusHandled = true
             }
 
-            // Default focus navigation (Tab, Shift+Tab, arrows) if not handled
+            // Default focus navigation (Tab, Shift+Tab, Enter, Escape, arrows) if not handled
             if (!focusHandled) {
               const root = getContainerRoot(container)
-              if (parsedKey.tab && !parsedKey.shift) {
-                focusManager.focusNext(root)
-                focusHandled = true
-              } else if (parsedKey.tab && parsedKey.shift) {
-                focusManager.focusPrev(root)
-                focusHandled = true
-              } else if (parsedKey.return) {
-                // Enter: if focused element has focusScope, enter that scope
-                const activeEl = focusManager.activeElement
-                if (activeEl) {
-                  const props = activeEl.props as Record<string, unknown>
-                  const testID = typeof props.testID === "string" ? props.testID : null
-                  if (props.focusScope && testID) {
-                    focusManager.enterScope(testID)
-                    // Focus the first focusable child within the scope
-                    focusManager.focusNext(root, activeEl)
-                    focusHandled = true
-                  }
-                }
-              } else if (parsedKey.escape && focusManager.scopeStack.length > 0) {
-                // Escape: exit the current focus scope
-                const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
-                focusManager.exitScope()
-                // Restore focus to the scope node itself
-                const scopeNode = findByTestID(root, scopeId)
-                if (scopeNode) {
-                  focusManager.focus(scopeNode, "keyboard")
-                }
-                focusHandled = true
-              } else if (parsedKey.upArrow || parsedKey.downArrow || parsedKey.leftArrow || parsedKey.rightArrow) {
-                const direction = parsedKey.upArrow ? "up" : parsedKey.downArrow ? "down" : parsedKey.leftArrow ? "left" : "right"
-                focusManager.focusDirection(root, direction)
-                // Don't consume arrow events — let them fall through to app handlers
-              }
+              focusHandled = handleFocusNavigation(parsedKey, focusManager, root)
             }
           }
 
@@ -651,36 +679,10 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
           focusHandled = true
         }
 
+        // Default focus navigation (Tab, Shift+Tab, Enter, Escape, arrows) if not handled
         if (!focusHandled) {
           const root = getContainerRoot(container)
-          if (parsedKey.tab && !parsedKey.shift) {
-            focusManager.focusNext(root)
-            focusHandled = true
-          } else if (parsedKey.tab && parsedKey.shift) {
-            focusManager.focusPrev(root)
-            focusHandled = true
-          } else if (parsedKey.return) {
-            // Enter: if focused element has focusScope, enter that scope
-            const activeEl = focusManager.activeElement
-            if (activeEl) {
-              const props = activeEl.props as Record<string, unknown>
-              const testID = typeof props.testID === "string" ? props.testID : null
-              if (props.focusScope && testID) {
-                focusManager.enterScope(testID)
-                focusManager.focusNext(root, activeEl)
-                focusHandled = true
-              }
-            }
-          } else if (parsedKey.escape && focusManager.scopeStack.length > 0) {
-            // Escape: exit the current focus scope
-            const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
-            focusManager.exitScope()
-            const scopeNode = findByTestID(root, scopeId)
-            if (scopeNode) {
-              focusManager.focus(scopeNode, "keyboard")
-            }
-            focusHandled = true
-          }
+          focusHandled = handleFocusNavigation(parsedKey, focusManager, root)
         }
       }
 

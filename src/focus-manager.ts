@@ -168,15 +168,20 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     // Virtual focus: set the ID without a DOM node. This enables named focus
     // targets (e.g. "board-area", "detail-pane") without requiring wrapper Boxes
     // that would disrupt layout.
+    const oldElement = activeElement
     previousElement = activeElement
+    previousId = activeId
     activeElement = null
     activeId = id
     focusOrigin = origin
     notify()
+
+    // Fire focus change callback (old element blurs, no new node for virtual focus)
+    onFocusChange?.(oldElement, null, origin)
   }
 
   function blur(): void {
-    if (!activeElement) return
+    if (!activeElement && !activeId) return
 
     const oldElement = activeElement
     previousElement = activeElement
