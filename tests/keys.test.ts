@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { keyToAnsi, parseKey } from "../src/keys.js"
+import { keyToAnsi, keyToKittyAnsi, parseKey } from "../src/keys.js"
 
 describe("keyToAnsi", () => {
   describe("single characters", () => {
@@ -121,10 +121,10 @@ describe("keyToAnsi", () => {
       expect(keyToAnsi("meta+x")).toBe("\x1bx")
     })
 
-    test("cmd+x falls through in legacy ANSI (Super has no encoding)", () => {
+    test("cmd+x uses Kitty encoding (Super requires Kitty protocol)", () => {
       // cmd maps to Super, which has no legacy ANSI representation.
-      // Use keyToKittyAnsi for proper Super encoding.
-      expect(keyToAnsi("cmd+x")).toBe("x")
+      // keyToAnsi now delegates to keyToKittyAnsi for Super/Hyper modifiers.
+      expect(keyToAnsi("cmd+x")).toBe(keyToKittyAnsi("cmd+x"))
     })
 
     test("option+x produces ESC+x (macOS alias)", () => {

@@ -653,12 +653,11 @@ describe("kittyMode in createRenderer", () => {
     expect(parsed.name).toBe("a")
   })
 
-  test("keyToAnsi cannot encode Super (falls through)", async () => {
-    // Legacy ANSI has no Super encoding — the key passes through unmodified
-    const { keyToAnsi } = await import("../src/keys.js")
+  test("keyToAnsi delegates Super to Kitty encoding", async () => {
+    // Super requires Kitty protocol — keyToAnsi now delegates to keyToKittyAnsi
+    const { keyToAnsi, keyToKittyAnsi } = await import("../src/keys.js")
     const ansi = keyToAnsi("Super+a")
-    // Super is lost in legacy encoding — just sends the base key
-    expect(ansi).toBe("a")
+    expect(ansi).toBe(keyToKittyAnsi("Super+a"))
   })
 })
 
