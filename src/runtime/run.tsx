@@ -31,7 +31,8 @@ import React, { createContext, useContext, useEffect, type ReactElement } from "
 import { createTerm } from "chalkx"
 import { AppContext, FocusManagerContext, StdoutContext, TermContext } from "../context.js"
 import { createFocusManager } from "../focus-manager.js"
-import { createKeyEvent, dispatchKeyEvent } from "../focus-events.js"
+import { createFocusEvent, createKeyEvent, dispatchFocusEvent, dispatchKeyEvent } from "../focus-events.js"
+import { findByTestID } from "../focus-queries.js"
 import { executeRender } from "../pipeline/index.js"
 import { createContainer, getContainerRoot, reconciler } from "../reconciler.js"
 import { merge, takeUntil } from "../streams/index.js"
@@ -204,8 +205,21 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
   let kittyEnabled = false
   let mouseEnabled = false
 
-  // Focus manager (tree-based focus system)
-  const focusManager = createFocusManager()
+  // Focus manager (tree-based focus system) with event dispatch wiring
+  const focusManager = createFocusManager({
+    onFocusChange(oldNode, newNode, _origin) {
+      // Dispatch blur event on the old element
+      if (oldNode) {
+        const blurEvent = createFocusEvent("blur", oldNode, newNode)
+        dispatchFocusEvent(blurEvent)
+      }
+      // Dispatch focus event on the new element
+      if (newNode) {
+        const focusEvent = createFocusEvent("focus", newNode, oldNode)
+        dispatchFocusEvent(focusEvent)
+      }
+    },
+  })
 
   // Mouse event processor for DOM-level dispatch (with click-to-focus)
   const mouseEventState = createMouseEventProcessor({ focusManager })
@@ -512,6 +526,29 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
               } else if (parsedKey.tab && parsedKey.shift) {
                 focusManager.focusPrev(root)
                 focusHandled = true
+              } else if (parsedKey.return) {
+                // Enter: if focused element has focusScope, enter that scope
+                const activeEl = focusManager.activeElement
+                if (activeEl) {
+                  const props = activeEl.props as Record<string, unknown>
+                  const testID = typeof props.testID === "string" ? props.testID : null
+                  if (props.focusScope && testID) {
+                    focusManager.enterScope(testID)
+                    // Focus the first focusable child within the scope
+                    focusManager.focusNext(root, activeEl)
+                    focusHandled = true
+                  }
+                }
+              } else if (parsedKey.escape && focusManager.scopeStack.length > 0) {
+                // Escape: exit the current focus scope
+                const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
+                focusManager.exitScope()
+                // Restore focus to the scope node itself
+                const scopeNode = findByTestID(root, scopeId)
+                if (scopeNode) {
+                  focusManager.focus(scopeNode, "keyboard")
+                }
+                focusHandled = true
               } else if (parsedKey.upArrow || parsedKey.downArrow || parsedKey.leftArrow || parsedKey.rightArrow) {
                 const direction = parsedKey.upArrow ? "up" : parsedKey.downArrow ? "down" : parsedKey.leftArrow ? "left" : "right"
                 focusManager.focusDirection(root, direction)
@@ -621,6 +658,27 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
             focusHandled = true
           } else if (parsedKey.tab && parsedKey.shift) {
             focusManager.focusPrev(root)
+            focusHandled = true
+          } else if (parsedKey.return) {
+            // Enter: if focused element has focusScope, enter that scope
+            const activeEl = focusManager.activeElement
+            if (activeEl) {
+              const props = activeEl.props as Record<string, unknown>
+              const testID = typeof props.testID === "string" ? props.testID : null
+              if (props.focusScope && testID) {
+                focusManager.enterScope(testID)
+                focusManager.focusNext(root, activeEl)
+                focusHandled = true
+              }
+            }
+          } else if (parsedKey.escape && focusManager.scopeStack.length > 0) {
+            // Escape: exit the current focus scope
+            const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
+            focusManager.exitScope()
+            const scopeNode = findByTestID(root, scopeId)
+            if (scopeNode) {
+              focusManager.focus(scopeNode, "keyboard")
+            }
             focusHandled = true
           }
         }

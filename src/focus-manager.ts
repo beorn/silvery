@@ -16,11 +16,30 @@ import { findByTestID, findFocusableAncestor, getTabOrder, findSpatialTarget, ge
 
 export type FocusOrigin = "keyboard" | "mouse" | "programmatic"
 
+/**
+ * Callback fired when focus changes. Used by the runtime to dispatch
+ * DOM-level focus/blur events without coupling FocusManager to the event system.
+ *
+ * @param oldNode - The node losing focus (null if nothing was focused)
+ * @param newNode - The node gaining focus (null on blur)
+ * @param origin - How focus was acquired
+ */
+export type FocusChangeCallback = (
+  oldNode: InkxNode | null,
+  newNode: InkxNode | null,
+  origin: FocusOrigin | null,
+) => void
+
 export interface FocusSnapshot {
   activeId: string | null
   previousId: string | null
   focusOrigin: FocusOrigin | null
   scopeStack: readonly string[]
+}
+
+export interface FocusManagerOptions {
+  /** Called when focus changes — wire up event dispatch here */
+  onFocusChange?: FocusChangeCallback
 }
 
 export interface FocusManager {
@@ -77,7 +96,9 @@ export interface FocusManager {
 // Factory
 // ============================================================================
 
-export function createFocusManager(): FocusManager {
+export function createFocusManager(options?: FocusManagerOptions): FocusManager {
+  const onFocusChange = options?.onFocusChange
+
   // Internal state
   let activeElement: InkxNode | null = null
   let activeId: string | null = null
@@ -116,6 +137,7 @@ export function createFocusManager(): FocusManager {
       return
     }
 
+    const oldElement = activeElement
     previousElement = activeElement
     previousId = activeId
     activeElement = node
@@ -128,6 +150,9 @@ export function createFocusManager(): FocusManager {
     }
 
     notify()
+
+    // Fire focus change callback (after state is updated)
+    onFocusChange?.(oldElement, node, origin)
   }
 
   function focusById(id: string, root: InkxNode, origin: FocusOrigin = "programmatic"): void {
@@ -153,6 +178,7 @@ export function createFocusManager(): FocusManager {
   function blur(): void {
     if (!activeElement) return
 
+    const oldElement = activeElement
     previousElement = activeElement
     previousId = activeId
     activeElement = null
@@ -160,6 +186,9 @@ export function createFocusManager(): FocusManager {
     focusOrigin = null
 
     notify()
+
+    // Fire focus change callback (after state is updated)
+    onFocusChange?.(oldElement, null, null)
   }
 
   // ---- Scope management ----
@@ -211,8 +240,26 @@ export function createFocusManager(): FocusManager {
 
   // ---- Navigation ----
 
+  /**
+   * Resolve the effective scope node for tab navigation.
+   * If an explicit scope is provided, use it. Otherwise, if the scopeStack
+   * is non-empty, find the topmost scope node in the tree by testID.
+   */
+  function resolveScope(root: InkxNode, explicitScope?: InkxNode): InkxNode | undefined {
+    if (explicitScope) return explicitScope
+
+    if (scopeStack.length > 0) {
+      const scopeId = scopeStack[scopeStack.length - 1]!
+      const scopeNode = findByTestID(root, scopeId)
+      if (scopeNode) return scopeNode
+    }
+
+    return undefined
+  }
+
   function focusNext(root: InkxNode, scope?: InkxNode): void {
-    const order = getTabOrder(root, scope)
+    const effectiveScope = resolveScope(root, scope)
+    const order = getTabOrder(root, effectiveScope)
     if (order.length === 0) return
 
     if (!activeElement) {
@@ -228,7 +275,8 @@ export function createFocusManager(): FocusManager {
   }
 
   function focusPrev(root: InkxNode, scope?: InkxNode): void {
-    const order = getTabOrder(root, scope)
+    const effectiveScope = resolveScope(root, scope)
+    const order = getTabOrder(root, effectiveScope)
     if (order.length === 0) return
 
     if (!activeElement) {

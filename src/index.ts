@@ -182,7 +182,7 @@ export { useFocusManager } from "./hooks/useFocusManager.js"
 
 // Focus system (tree-based)
 export { createFocusManager } from "./focus-manager.js"
-export type { FocusManager, FocusOrigin, FocusSnapshot } from "./focus-manager.js"
+export type { FocusManager, FocusManagerOptions, FocusChangeCallback, FocusOrigin, FocusSnapshot } from "./focus-manager.js"
 export { findFocusableAncestor, getTabOrder, findByTestID, findSpatialTarget, getExplicitFocusLink } from "./focus-queries.js"
 export {
   createKeyEvent,

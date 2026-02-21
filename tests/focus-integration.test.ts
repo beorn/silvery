@@ -446,3 +446,260 @@ describe("Full lifecycle", () => {
     expect(fm.hasFocusWithin(root, "root")).toBe(true) // Item is within root
   })
 })
+
+// ============================================================================
+// Automatic Focus Event Dispatch via onFocusChange
+// ============================================================================
+
+describe("Automatic focus event dispatch (onFocusChange wiring)", () => {
+  it("focus() dispatches blur on old element and focus on new element", () => {
+    const focusLog: string[] = []
+
+    const root = fakeNode("root", { focusable: false })
+    const a = fakeNode("a", {
+      focusable: true,
+      parent: root,
+      onFocus: () => focusLog.push("a-focus"),
+      onBlur: () => focusLog.push("a-blur"),
+    })
+    const b = fakeNode("b", {
+      focusable: true,
+      parent: root,
+      onFocus: () => focusLog.push("b-focus"),
+      onBlur: () => focusLog.push("b-blur"),
+    })
+
+    // Wire up event dispatch via onFocusChange (mimics what run.tsx does)
+    const fm = createFocusManager({
+      onFocusChange(oldNode, newNode) {
+        if (oldNode) {
+          dispatchFocusEvent(createFocusEvent("blur", oldNode, newNode))
+        }
+        if (newNode) {
+          dispatchFocusEvent(createFocusEvent("focus", newNode, oldNode))
+        }
+      },
+    })
+
+    // Focus "a" — should fire onFocus on a
+    fm.focus(a)
+    expect(focusLog).toEqual(["a-focus"])
+
+    // Move to "b" — should fire onBlur on a, then onFocus on b
+    fm.focus(b)
+    expect(focusLog).toEqual(["a-focus", "a-blur", "b-focus"])
+  })
+
+  it("focus events have correct relatedTarget", () => {
+    const events: { type: string; targetId: string; relatedId: string | null }[] = []
+
+    const root = fakeNode("root", { focusable: false })
+    const a = fakeNode("a", {
+      focusable: true,
+      parent: root,
+      onFocus: (e) => events.push({
+        type: "focus",
+        targetId: (e.target.props as Record<string, unknown>).testID as string,
+        relatedId: e.relatedTarget ? (e.relatedTarget.props as Record<string, unknown>).testID as string : null,
+      }),
+      onBlur: (e) => events.push({
+        type: "blur",
+        targetId: (e.target.props as Record<string, unknown>).testID as string,
+        relatedId: e.relatedTarget ? (e.relatedTarget.props as Record<string, unknown>).testID as string : null,
+      }),
+    })
+    const b = fakeNode("b", {
+      focusable: true,
+      parent: root,
+      onFocus: (e) => events.push({
+        type: "focus",
+        targetId: (e.target.props as Record<string, unknown>).testID as string,
+        relatedId: e.relatedTarget ? (e.relatedTarget.props as Record<string, unknown>).testID as string : null,
+      }),
+    })
+
+    const fm = createFocusManager({
+      onFocusChange(oldNode, newNode) {
+        if (oldNode) dispatchFocusEvent(createFocusEvent("blur", oldNode, newNode))
+        if (newNode) dispatchFocusEvent(createFocusEvent("focus", newNode, oldNode))
+      },
+    })
+
+    // Focus a: relatedTarget is null (nothing was focused before)
+    fm.focus(a)
+    expect(events).toEqual([
+      { type: "focus", targetId: "a", relatedId: null },
+    ])
+
+    // Focus b: blur on a has relatedTarget=b, focus on b has relatedTarget=a
+    fm.focus(b)
+    expect(events).toEqual([
+      { type: "focus", targetId: "a", relatedId: null },
+      { type: "blur", targetId: "a", relatedId: "b" },
+      { type: "focus", targetId: "b", relatedId: "a" },
+    ])
+  })
+
+  it("blur() dispatches blur event on the focused element", () => {
+    const blurHandler = vi.fn()
+
+    const root = fakeNode("root", { focusable: false })
+    const a = fakeNode("a", {
+      focusable: true,
+      parent: root,
+      onBlur: blurHandler,
+    })
+
+    const fm = createFocusManager({
+      onFocusChange(oldNode, newNode) {
+        if (oldNode) dispatchFocusEvent(createFocusEvent("blur", oldNode, newNode))
+        if (newNode) dispatchFocusEvent(createFocusEvent("focus", newNode, oldNode))
+      },
+    })
+
+    fm.focus(a)
+    blurHandler.mockClear()
+
+    fm.blur()
+    expect(blurHandler).toHaveBeenCalledOnce()
+    // relatedTarget is null since nothing is gaining focus
+    expect(blurHandler.mock.calls[0]![0].relatedTarget).toBeNull()
+  })
+
+  it("focusNext dispatches events automatically", () => {
+    const focusLog: string[] = []
+
+    const root = fakeNode("root", { focusable: false })
+    const a = fakeNode("a", {
+      focusable: true,
+      parent: root,
+      onFocus: () => focusLog.push("a-focus"),
+      onBlur: () => focusLog.push("a-blur"),
+    })
+    const b = fakeNode("b", {
+      focusable: true,
+      parent: root,
+      onFocus: () => focusLog.push("b-focus"),
+      onBlur: () => focusLog.push("b-blur"),
+    })
+
+    const fm = createFocusManager({
+      onFocusChange(oldNode, newNode) {
+        if (oldNode) dispatchFocusEvent(createFocusEvent("blur", oldNode, newNode))
+        if (newNode) dispatchFocusEvent(createFocusEvent("focus", newNode, oldNode))
+      },
+    })
+
+    fm.focusNext(root)
+    expect(focusLog).toEqual(["a-focus"])
+
+    fm.focusNext(root)
+    expect(focusLog).toEqual(["a-focus", "a-blur", "b-focus"])
+  })
+})
+
+// ============================================================================
+// Focus Scope: Tab Cycling with scopeStack
+// ============================================================================
+
+describe("Focus scope tab cycling via scopeStack", () => {
+  it("Tab cycles within scope when scope is on the stack", () => {
+    const fm = createFocusManager()
+    const root = fakeNode("root", { focusable: false })
+    fakeNode("outside", { focusable: true, parent: root })
+    const modal = fakeNode("modal", { focusScope: true, parent: root })
+    const m1 = fakeNode("m1", { focusable: true, parent: modal })
+    const m2 = fakeNode("m2", { focusable: true, parent: modal })
+    fakeNode("after", { focusable: true, parent: root })
+
+    // Enter scope
+    fm.enterScope("modal")
+
+    // Tab should only cycle within modal's children
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("m1")
+
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("m2")
+
+    // Wraps back to m1, never reaches "outside" or "after"
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("m1")
+  })
+
+  it("Shift+Tab cycles backwards within scope", () => {
+    const fm = createFocusManager()
+    const root = fakeNode("root", { focusable: false })
+    fakeNode("outside", { focusable: true, parent: root })
+    const modal = fakeNode("modal", { focusScope: true, parent: root })
+    const m1 = fakeNode("m1", { focusable: true, parent: modal })
+    const m2 = fakeNode("m2", { focusable: true, parent: modal })
+
+    fm.enterScope("modal")
+
+    fm.focusPrev(root)
+    expect(fm.activeId).toBe("m2")
+
+    fm.focusPrev(root)
+    expect(fm.activeId).toBe("m1")
+
+    fm.focusPrev(root)
+    expect(fm.activeId).toBe("m2")
+  })
+
+  it("nested scopes: innermost scope wins", () => {
+    const fm = createFocusManager()
+    const root = fakeNode("root", { focusable: false })
+    const outer = fakeNode("outer", { focusScope: true, parent: root })
+    const o1 = fakeNode("o1", { focusable: true, parent: outer })
+    const inner = fakeNode("inner", { focusScope: true, parent: outer })
+    const i1 = fakeNode("i1", { focusable: true, parent: inner })
+    const i2 = fakeNode("i2", { focusable: true, parent: inner })
+    const o2 = fakeNode("o2", { focusable: true, parent: outer })
+
+    fm.enterScope("outer")
+    fm.enterScope("inner")
+
+    // Tab should only cycle within inner scope
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("i1")
+
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("i2")
+
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("i1") // Wraps within inner, never visits o1/o2
+
+    // Exit inner scope
+    fm.exitScope()
+
+    // Now tab should cycle within outer scope (which contains inner as opaque)
+    fm.focus(o1)
+    fm.focusNext(root)
+    // inner is a focusScope node but not focusable, so it's skipped.
+    // The order is: o1, o2
+    expect(fm.activeId).toBe("o2")
+  })
+
+  it("exiting scope restores global navigation", () => {
+    const fm = createFocusManager()
+    const root = fakeNode("root", { focusable: false })
+    const a = fakeNode("a", { focusable: true, parent: root })
+    const modal = fakeNode("modal", { focusScope: true, parent: root })
+    const m1 = fakeNode("m1", { focusable: true, parent: modal })
+    const b = fakeNode("b", { focusable: true, parent: root })
+
+    fm.enterScope("modal")
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("m1")
+
+    fm.exitScope()
+    expect(fm.scopeStack).toEqual([])
+
+    // Global nav now
+    fm.focus(a)
+    fm.focusNext(root)
+    // Global order: a, b (modal's children are hidden behind focusScope boundary)
+    expect(fm.activeId).toBe("b")
+  })
+})

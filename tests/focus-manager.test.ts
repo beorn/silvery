@@ -413,3 +413,180 @@ describe("focusDirection", () => {
     expect(fm.activeElement).toBe(only)
   })
 })
+
+// ============================================================================
+// onFocusChange callback
+// ============================================================================
+
+describe("onFocusChange callback", () => {
+  it("fires with (null, newNode) on first focus", () => {
+    const callback = vi.fn()
+    const fm = createFocusManager({ onFocusChange: callback })
+    const { a } = buildTree()
+
+    fm.focus(a)
+
+    expect(callback).toHaveBeenCalledOnce()
+    expect(callback).toHaveBeenCalledWith(null, a, "programmatic")
+  })
+
+  it("fires with (oldNode, newNode) when changing focus", () => {
+    const callback = vi.fn()
+    const fm = createFocusManager({ onFocusChange: callback })
+    const { a, b } = buildTree()
+
+    fm.focus(a)
+    fm.focus(b)
+
+    expect(callback).toHaveBeenCalledTimes(2)
+    expect(callback).toHaveBeenNthCalledWith(1, null, a, "programmatic")
+    expect(callback).toHaveBeenNthCalledWith(2, a, b, "programmatic")
+  })
+
+  it("fires with (oldNode, null) on blur", () => {
+    const callback = vi.fn()
+    const fm = createFocusManager({ onFocusChange: callback })
+    const { a } = buildTree()
+
+    fm.focus(a)
+    callback.mockClear()
+
+    fm.blur()
+
+    expect(callback).toHaveBeenCalledOnce()
+    expect(callback).toHaveBeenCalledWith(a, null, null)
+  })
+
+  it("does not fire when focusing same node (no-op)", () => {
+    const callback = vi.fn()
+    const fm = createFocusManager({ onFocusChange: callback })
+    const { a } = buildTree()
+
+    fm.focus(a)
+    callback.mockClear()
+
+    fm.focus(a) // Same node, same origin — no change
+    expect(callback).not.toHaveBeenCalled()
+  })
+
+  it("does not fire when blur called with nothing focused", () => {
+    const callback = vi.fn()
+    const fm = createFocusManager({ onFocusChange: callback })
+
+    fm.blur()
+    expect(callback).not.toHaveBeenCalled()
+  })
+
+  it("passes correct origin", () => {
+    const callback = vi.fn()
+    const fm = createFocusManager({ onFocusChange: callback })
+    const { a, b } = buildTree()
+
+    fm.focus(a, "keyboard")
+    expect(callback).toHaveBeenCalledWith(null, a, "keyboard")
+
+    fm.focus(b, "mouse")
+    expect(callback).toHaveBeenCalledWith(a, b, "mouse")
+  })
+
+  it("fires during focusNext navigation", () => {
+    const callback = vi.fn()
+    const fm = createFocusManager({ onFocusChange: callback })
+    const { root, a, b } = buildTree()
+
+    fm.focusNext(root)
+    expect(callback).toHaveBeenCalledWith(null, a, "keyboard")
+
+    fm.focusNext(root)
+    expect(callback).toHaveBeenCalledWith(a, b, "keyboard")
+  })
+})
+
+// ============================================================================
+// Scope-aware tab navigation
+// ============================================================================
+
+describe("scope-aware focusNext/focusPrev", () => {
+  it("focusNext respects active scope from scopeStack", () => {
+    const fm = createFocusManager()
+    const root = fakeNode("root", { focusable: false })
+    const outside = fakeNode("outside", { parent: root })
+    const scope = fakeNode("modal", { focusable: false, parent: root, focusScope: true })
+    const m1 = fakeNode("m1", { parent: scope })
+    const m2 = fakeNode("m2", { parent: scope })
+
+    // Enter the modal scope
+    fm.enterScope("modal")
+
+    // Tab should only cycle within the scope
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("m1")
+
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("m2")
+
+    // Wraps within scope, never visits "outside"
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("m1")
+  })
+
+  it("focusPrev respects active scope from scopeStack", () => {
+    const fm = createFocusManager()
+    const root = fakeNode("root", { focusable: false })
+    const outside = fakeNode("outside", { parent: root })
+    const scope = fakeNode("modal", { focusable: false, parent: root, focusScope: true })
+    const m1 = fakeNode("m1", { parent: scope })
+    const m2 = fakeNode("m2", { parent: scope })
+
+    // Enter the modal scope
+    fm.enterScope("modal")
+
+    // Shift+Tab should only cycle within the scope
+    fm.focusPrev(root)
+    expect(fm.activeId).toBe("m2")
+
+    fm.focusPrev(root)
+    expect(fm.activeId).toBe("m1")
+
+    // Wraps within scope
+    fm.focusPrev(root)
+    expect(fm.activeId).toBe("m2")
+  })
+
+  it("after exitScope, tab navigation is global again", () => {
+    const fm = createFocusManager()
+    const root = fakeNode("root", { focusable: false })
+    const a = fakeNode("a", { parent: root })
+    const scope = fakeNode("modal", { focusable: false, parent: root, focusScope: true })
+    const m1 = fakeNode("m1", { parent: scope })
+    const b = fakeNode("b", { parent: root })
+
+    fm.enterScope("modal")
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("m1")
+
+    fm.exitScope()
+
+    // Now tab should see global order: a, b (modal is not focusable, its children are behind scope)
+    fm.focus(a)
+    fm.focusNext(root)
+    expect(fm.activeId).toBe("b")
+  })
+
+  it("explicit scope parameter overrides scopeStack", () => {
+    const fm = createFocusManager()
+    const root = fakeNode("root", { focusable: false })
+    const scope1 = fakeNode("scope1", { focusable: false, parent: root, focusScope: true })
+    const s1a = fakeNode("s1a", { parent: scope1 })
+    const s1b = fakeNode("s1b", { parent: scope1 })
+    const scope2 = fakeNode("scope2", { focusable: false, parent: root, focusScope: true })
+    const s2a = fakeNode("s2a", { parent: scope2 })
+
+    // Push scope1 on the stack
+    fm.enterScope("scope1")
+
+    // But explicitly pass scope2 — it should override
+    fm.focusNext(root, scope2)
+    expect(fm.activeId).toBe("s2a")
+  })
+})
