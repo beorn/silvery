@@ -21,17 +21,17 @@ A basic text field showing a cursor at the insertion point:
 
 ```tsx
 function TextInput({ value, onChange }: Props) {
-  const { isFocused } = useFocus()
+  const { focused } = useFocusable()
   const { cursor, show, hide } = useCursor()
 
   useEffect(() => {
-    isFocused ? show() : hide()
-  }, [isFocused])
+    focused ? show() : hide()
+  }, [focused])
 
   return (
     <Box>
       <Text>{value}</Text>
-      {isFocused && <Text inverse> </Text>}
+      {focused && <Text inverse> </Text>}
     </Box>
   )
 }
@@ -70,7 +70,7 @@ An input field with autocomplete suggestions:
 function CommandPalette() {
   const [query, setQuery] = useState("")
   const [cursorIndex, setCursorIndex] = useState(0)
-  const { isFocused } = useFocus({ autoFocus: true })
+  const { focused } = useFocusable()
   const { cursor, setStyle } = useCursor({ style: "bar" })
 
   // Insert cursor character at position
@@ -264,19 +264,19 @@ Use **rendered cursor** for visual feedback (the character at cursor position st
 
 ```tsx
 function TextInput({ value }: { value: string }) {
-  const { isFocused } = useFocus()
+  const { focused } = useFocusable()
   const { x, y } = useContentRect()
   const { moveTo, show, hide } = useCursor()
   const [cursorCol, setCursorCol] = useState(value.length)
 
   useEffect(() => {
-    if (isFocused) {
+    if (focused) {
       moveTo(x + cursorCol, y)
       show()
     } else {
       hide()
     }
-  }, [isFocused, x, y, cursorCol])
+  }, [focused, x, y, cursorCol])
 
   // Rendered cursor for visual feedback
   const before = value.slice(0, cursorCol)
@@ -286,7 +286,7 @@ function TextInput({ value }: { value: string }) {
   return (
     <Box>
       <Text>{before}</Text>
-      <Text inverse={isFocused}>{at}</Text>
+      <Text inverse={focused}>{at}</Text>
       <Text>{after}</Text>
     </Box>
   )
@@ -353,12 +353,12 @@ Cursor visibility should typically follow focus state:
 
 ```tsx
 function FocusableInput() {
-  const { isFocused } = useFocus()
+  const { focused } = useFocusable()
   const { show, hide } = useCursor()
 
   useEffect(() => {
-    isFocused ? show() : hide()
-  }, [isFocused])
+    focused ? show() : hide()
+  }, [focused])
 
   // ...
 }
@@ -504,7 +504,7 @@ useEffect(() => {
 
 ```tsx
 import { useState, useEffect, useMemo } from "react"
-import { Box, Text, useFocus, useCursor, useInput, useLayout } from "inkx"
+import { Box, Text, useFocusable, useCursor, useInput, useContentRect } from "inkx"
 
 interface TextInputProps {
   value: string
@@ -513,7 +513,7 @@ interface TextInputProps {
 }
 
 export function TextInput({ value, onChange, placeholder = "" }: TextInputProps) {
-  const { isFocused } = useFocus()
+  const { focused } = useFocusable()
   const { x, y } = useContentRect()
   const { show, hide, moveTo } = useCursor({ style: "bar" })
   const [cursorPos, setCursorPos] = useState(value.length)
@@ -527,18 +527,18 @@ export function TextInput({ value, onChange, placeholder = "" }: TextInputProps)
 
   // Manage terminal cursor visibility and position
   useEffect(() => {
-    if (isFocused) {
+    if (focused) {
       moveTo(x + cursorPos, y)
       show()
     } else {
       hide()
     }
-  }, [isFocused, x, y, cursorPos])
+  }, [focused, x, y, cursorPos])
 
   // Handle keyboard input
   useInput(
     (input, key) => {
-      if (!isFocused) return
+      if (!focused) return
 
       if (key.leftArrow) {
         setCursorPos((p) => Math.max(0, p - 1))
@@ -558,12 +558,12 @@ export function TextInput({ value, onChange, placeholder = "" }: TextInputProps)
         setCursorPos((p) => p + input.length)
       }
     },
-    { isActive: isFocused },
+    { isActive: focused },
   )
 
   // Render text with visual cursor indicator
   const displayContent = useMemo(() => {
-    if (!value && !isFocused) {
+    if (!value && !focused) {
       return <Text dimColor>{placeholder}</Text>
     }
 
@@ -574,13 +574,13 @@ export function TextInput({ value, onChange, placeholder = "" }: TextInputProps)
     return (
       <>
         <Text>{before}</Text>
-        <Text inverse={isFocused}>{at}</Text>
+        <Text inverse={focused}>{at}</Text>
         <Text>{after}</Text>
       </>
     )
-  }, [value, cursorPos, isFocused, placeholder])
+  }, [value, cursorPos, focused, placeholder])
 
-  return <Box borderStyle={isFocused ? "round" : "single"}>{displayContent}</Box>
+  return <Box borderStyle={focused ? "round" : "single"}>{displayContent}</Box>
 }
 ```
 
@@ -635,6 +635,6 @@ interface UseCursorOptions {
 ## Related Documentation
 
 - [useLayout](/api/use-layout) - Get component dimensions and position
-- [useFocus](/api/use-focus) - Manage focus state
+- [Focus Hooks](/api/use-focus) - Manage focus state
 - [useInput](/api/use-input) - Handle keyboard input
 - [Input Limitations](/guide/input-limitations) - Terminal input constraints

@@ -233,25 +233,23 @@ interface InkxKeyboardEvent {
 
 Terminal has no native focus. We need a focus concept for key events to know where to start bubbling.
 
-**Approach**: A `FocusContext` managed by the app. The "focused" element receives key events first, and they bubble up.
+**Approach**: The tree-based `FocusManager` tracks which node has focus. The "focused" element receives key events first, and they bubble up through the render tree.
 
 ```tsx
-<FocusProvider>
-  <Box
-    onKeyDown={(e) => {
-      /* board-level keys */
-    }}
-  >
-    <Column>
-      <Card
-        onKeyDown={(e) => {
-          if (e.key === "Enter") startEdit()
-          e.stopPropagation() // Don't let Enter bubble
-        }}
-      />
-    </Column>
-  </Box>
-</FocusProvider>
+<Box
+  onKeyDown={(e) => {
+    /* board-level keys */
+  }}
+>
+  <Column>
+    <Box testID="card" focusable
+      onKeyDown={(e) => {
+        if (e.key === "Enter") startEdit()
+        e.stopPropagation() // Don't let Enter bubble
+      }}
+    />
+  </Column>
+</Box>
 ```
 
 ### Backwards compatibility
@@ -268,7 +266,7 @@ This lets apps incrementally adopt the DOM-like model without rewriting existing
 
 ### Phase 2 (defer)
 
-Focus-based key routing is more complex than mouse events. We can ship mouse events first (v1) and add `onKeyDown`/`onKeyUp` + `FocusProvider` as v2. The existing `useInput`/`useInputLayer` system works well for keyboard-driven TUIs.
+Focus-based key routing is now implemented via the tree-based `FocusManager`. Key events are dispatched to the focused node and bubble up through the render tree. The `onKeyDown`/`onKeyUp` props on `Box` work alongside the existing `useInput`/`useInputLayer` system.
 
 ## Links — Clickable References (like HTML `<a>`)
 
@@ -418,5 +416,5 @@ New additions:
 - No onContextMenu — right-click is just button=2
 - No capture phase (onClickCapture) — rarely used, can add later
 - No pointer events (onPointerDown) — pointer is a superset for touch, irrelevant for terminal
-- No synthetic focus events from click — focus management is app-level (FocusProvider, Phase 2)
+- No synthetic focus events from click — click-to-focus is handled by the FocusManager automatically
 - No onChange, onSubmit — these are form-level concepts, handled by TextInput/ReadlineInput

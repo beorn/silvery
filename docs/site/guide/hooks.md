@@ -203,18 +203,18 @@ function App() {
 | `setRawMode`         | `(mode: boolean) => void` | Enable/disable raw mode       |
 | `isRawModeSupported` | `boolean`                 | Whether raw mode is supported |
 
-## useFocus
+## useFocusable
 
-Manage focus state for a component.
+Returns focus state for the nearest focusable ancestor. The component must be rendered inside a `<Box focusable>` with a `testID`.
 
 ```tsx
-import { useFocus, Box, Text } from "inkx"
+import { useFocusable, Box, Text } from "inkx"
 
 function FocusableItem({ label }: { label: string }) {
-  const { isFocused } = useFocus()
+  const { focused } = useFocusable()
 
   return (
-    <Box borderStyle={isFocused ? "double" : "single"}>
+    <Box testID={label} focusable borderStyle={focused ? "double" : "single"}>
       <Text>{label}</Text>
     </Box>
   )
@@ -223,37 +223,47 @@ function FocusableItem({ label }: { label: string }) {
 
 ### Return Value
 
-| Property    | Type      | Description                       |
-| ----------- | --------- | --------------------------------- |
-| `isFocused` | `boolean` | Whether this component is focused |
+| Property      | Type                                              | Description                               |
+| ------------- | ------------------------------------------------- | ----------------------------------------- |
+| `focused`     | `boolean`                                         | Whether this component currently has focus |
+| `focus`       | `() => void`                                      | Programmatically focus this component      |
+| `blur`        | `() => void`                                      | Programmatically blur this component       |
+| `focusOrigin` | `"keyboard" \| "mouse" \| "programmatic" \| null` | How focus was acquired                     |
 
-### Options
+Focus behavior is configured via Box props: `focusable`, `autoFocus`, `focusScope`, `onFocus`, `onBlur`, `onKeyDown`.
+
+## useFocusWithin
+
+Returns whether any descendant of the specified Box (by `testID`) has focus.
 
 ```tsx
-useFocus({
-  autoFocus?: boolean;  // Focus on mount
-  isActive?: boolean;   // Can receive focus
-  id?: string;          // Focus ID for programmatic focus
-})
+import { useFocusWithin } from "inkx"
+
+function Sidebar() {
+  const hasFocus = useFocusWithin("sidebar")
+
+  return (
+    <Box testID="sidebar" borderColor={hasFocus ? "blue" : "gray"}>
+      <FocusableItem testID="item1" />
+      <FocusableItem testID="item2" />
+    </Box>
+  )
+}
 ```
 
 ## useFocusManager
 
-Control focus programmatically.
+Access the focus manager for programmatic focus control.
 
 ```tsx
 import { useFocusManager } from "inkx"
 
 function App() {
-  const { focusNext, focusPrevious, focus } = useFocusManager()
-
-  useInput((input, key) => {
-    if (key.tab && key.shift) focusPrevious()
-    else if (key.tab) focusNext()
-  })
+  const { activeId, focusNext, focusPrev, focus, blur } = useFocusManager()
 
   return (
     <Box flexDirection="column">
+      <Text>Active: {activeId ?? "none"}</Text>
       <FocusableItem label="First" />
       <FocusableItem label="Second" />
       <FocusableItem label="Third" />
@@ -264,8 +274,12 @@ function App() {
 
 ### Return Value
 
-| Property        | Type                   | Description                        |
-| --------------- | ---------------------- | ---------------------------------- |
-| `focusNext`     | `() => void`           | Focus next focusable component     |
-| `focusPrevious` | `() => void`           | Focus previous focusable component |
-| `focus`         | `(id: string) => void` | Focus component by ID              |
+| Property        | Type                        | Description                            |
+| --------------- | --------------------------- | -------------------------------------- |
+| `activeId`      | `string \| null`            | testID of the currently focused node   |
+| `activeElement` | `InkxNode \| null`          | The currently focused node             |
+| `focused`       | `boolean`                   | Whether any node has focus             |
+| `focus`         | `(id: string) => void`      | Focus a specific component by testID   |
+| `focusNext`     | `() => void`                | Focus next focusable component         |
+| `focusPrev`     | `() => void`                | Focus previous focusable component     |
+| `blur`          | `() => void`                | Clear focus from all components        |

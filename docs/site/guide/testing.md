@@ -18,7 +18,7 @@ The test suite is organized by domain:
 | `buffer.test.ts`                | 38    | Terminal buffer operations, cell packing                              |
 | `pipeline.test.ts`              | 36    | Render pipeline: measure, layout, content, output phases              |
 | `ansi-parsing.test.ts`          | 29    | ANSI escape sequence parsing                                          |
-| `hooks.test.tsx`                | 28    | useContentRect, useFocus, useFocusManager, useStdin, useStdout        |
+| `hooks.test.tsx`                | 28    | useContentRect, useFocusable, useFocusManager, useStdin, useStdout    |
 | `layout-equivalence.test.tsx`   | 26    | Yoga vs Flexx layout engine parity                                    |
 | `render.test.ts`                | 24    | Core render API                                                       |
 | `memory.test.tsx`               | 20    | Memory leak detection, listener cleanup                               |
@@ -233,19 +233,23 @@ test("async update", async () => {
 ### Testing Focus Management
 
 ```tsx
-import { useFocus, useFocusManager, FocusContext } from "inkx"
+import { useFocusable } from "inkx"
 
-function FocusableItem({ id }: { id: string }) {
-  const { isFocused } = useFocus({ id })
-  return <Text backgroundColor={isFocused ? "cyan" : undefined}>{id}</Text>
+function FocusableItem({ testID }: { testID: string }) {
+  const { focused } = useFocusable()
+  return (
+    <Box testID={testID} focusable>
+      <Text backgroundColor={focused ? "cyan" : undefined}>{testID}</Text>
+    </Box>
+  )
 }
 
 test("focus navigation", () => {
   const render = createRenderer()
   const { stdin, lastFrame } = render(
     <Box flexDirection="column">
-      <FocusableItem id="item1" />
-      <FocusableItem id="item2" />
+      <FocusableItem testID="item1" />
+      <FocusableItem testID="item2" />
     </Box>,
   )
 
@@ -284,7 +288,7 @@ test("layout provides dimensions", () => {
 ### Testing with Mock Contexts
 
 ```tsx
-import { AppContext, StdinContext, FocusContext } from "inkx/context"
+import { AppContext, StdinContext } from "inkx/context"
 
 test("useApp exit function", () => {
   let exitCalled = false

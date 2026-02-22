@@ -1,67 +1,87 @@
-# useFocus / useFocusManager
+# Focus Hooks
 
-Create focusable components and manage focus navigation.
+Tree-based focus system hooks for managing focus state and navigation.
 
 ## Import
 
 ```tsx
-import { useFocus, useFocusManager } from "inkx"
+import { useFocusable, useFocusWithin, useFocusManager } from "inkx"
 ```
 
-## useFocus
+## useFocusable
 
-Makes a component focusable within the focus system.
+Returns focus state for the nearest focusable ancestor. The component must be rendered inside a `<Box focusable>` with a `testID` for identification.
 
 ### Usage
 
 ```tsx
 function FocusableItem({ label }: { label: string }) {
-  const { isFocused } = useFocus()
+  const { focused } = useFocusable()
 
   return (
-    <Text color={isFocused ? "green" : undefined}>
-      {isFocused ? "> " : "  "}
-      {label}
-    </Text>
+    <Box testID="item" focusable>
+      <Text color={focused ? "green" : undefined}>
+        {focused ? "> " : "  "}
+        {label}
+      </Text>
+    </Box>
   )
 }
 ```
 
-### Options
+### Return Value
 
-| Option      | Type      | Default  | Description                             |
-| ----------- | --------- | -------- | --------------------------------------- |
-| `isActive`  | `boolean` | `true`   | Enable/disable focus for this component |
-| `autoFocus` | `boolean` | `false`  | Auto-focus this component on mount      |
-| `id`        | `string`  | (random) | Custom ID for this focusable element    |
+| Property      | Type                                              | Description                                  |
+| ------------- | ------------------------------------------------- | -------------------------------------------- |
+| `focused`     | `boolean`                                         | Whether this component currently has focus    |
+| `focus`       | `() => void`                                      | Programmatically focus this component        |
+| `blur`        | `() => void`                                      | Programmatically blur this component         |
+| `focusOrigin` | `"keyboard" \| "mouse" \| "programmatic" \| null` | How focus was acquired                       |
+
+## useFocusWithin
+
+Returns whether any descendant of the specified Box (by `testID`) has focus.
+
+### Usage
+
+```tsx
+function Sidebar() {
+  const hasFocus = useFocusWithin("sidebar")
+
+  return (
+    <Box testID="sidebar" borderColor={hasFocus ? "blue" : "gray"}>
+      <FocusableItem testID="item1" />
+      <FocusableItem testID="item2" />
+    </Box>
+  )
+}
+```
+
+### Parameters
+
+| Parameter | Type     | Description                                |
+| --------- | -------- | ------------------------------------------ |
+| `testID`  | `string` | The testID of the Box to monitor for focus |
 
 ### Return Value
 
-| Property    | Type         | Description                                 |
-| ----------- | ------------ | ------------------------------------------- |
-| `isFocused` | `boolean`    | Whether this component is currently focused |
-| `focus`     | `() => void` | Focus this component programmatically       |
+| Type      | Description                                              |
+| --------- | -------------------------------------------------------- |
+| `boolean` | Whether any descendant of the specified Box has focus    |
 
 ## useFocusManager
 
-Control focus management across all focusable components.
+Access the focus manager for programmatic focus control across all focusable components.
 
 ### Usage
 
 ```tsx
 function App() {
-  const { focusNext, focusPrevious } = useFocusManager()
-
-  useInput((input, key) => {
-    if (key.tab && key.shift) {
-      focusPrevious()
-    } else if (key.tab) {
-      focusNext()
-    }
-  })
+  const { activeId, focused, focusNext, focusPrev, blur } = useFocusManager()
 
   return (
     <Box flexDirection="column">
+      <Text>Active: {activeId ?? "none"}</Text>
       <FocusableItem label="First" />
       <FocusableItem label="Second" />
       <FocusableItem label="Third" />
@@ -72,13 +92,41 @@ function App() {
 
 ### Return Value
 
-| Property        | Type                   | Description                            |
-| --------------- | ---------------------- | -------------------------------------- |
-| `focusNext`     | `() => void`           | Focus the next focusable component     |
-| `focusPrevious` | `() => void`           | Focus the previous focusable component |
-| `focus`         | `(id: string) => void` | Focus a specific component by ID       |
-| `enableFocus`   | `() => void`           | Enable focus management                |
-| `disableFocus`  | `() => void`           | Disable focus management               |
+| Property        | Type                        | Description                            |
+| --------------- | --------------------------- | -------------------------------------- |
+| `activeId`      | `string \| null`            | testID of the currently focused node   |
+| `activeElement` | `InkxNode \| null`          | The currently focused node             |
+| `focused`       | `boolean`                   | Whether any node has focus             |
+| `focus`         | `(id: string) => void`      | Focus a specific component by testID   |
+| `focusNext`     | `() => void`                | Focus the next focusable component     |
+| `focusPrev`     | `() => void`                | Focus the previous focusable component |
+| `blur`          | `() => void`                | Clear focus from all components        |
+
+## Box Focus Props
+
+Focus behavior is configured via props on `<Box>`:
+
+```tsx
+<Box focusable>           {/* Can receive focus */}
+<Box focusable autoFocus> {/* Focus on mount */}
+<Box focusScope>          {/* Isolated Tab cycle within subtree */}
+<Box onFocus={handler}>   {/* Focus event (bubbles) */}
+<Box onBlur={handler}>    {/* Blur event (bubbles) */}
+<Box onKeyDown={handler}> {/* Key event dispatched to focused node (bubbles) */}
+```
+
+| Prop             | Type       | Default | Description                                        |
+| ---------------- | ---------- | ------- | -------------------------------------------------- |
+| `focusable`      | `boolean`  | `false` | Node can receive focus                             |
+| `autoFocus`      | `boolean`  | `false` | Focus this node on mount                           |
+| `focusScope`     | `boolean`  | `false` | Tab cycles within this subtree                     |
+| `nextFocusUp`    | `string`   | —       | testID to focus on Up arrow (explicit override)    |
+| `nextFocusDown`  | `string`   | —       | testID to focus on Down arrow                      |
+| `nextFocusLeft`  | `string`   | —       | testID to focus on Left arrow                      |
+| `nextFocusRight` | `string`   | —       | testID to focus on Right arrow                     |
+| `onFocus`        | `function` | —       | Called when this node gains focus                   |
+| `onBlur`         | `function` | —       | Called when this node loses focus                   |
+| `onKeyDown`      | `function` | —       | Key event handler (bubble phase)                   |
 
 ## Examples
 
@@ -86,26 +134,16 @@ function App() {
 
 ```tsx
 function Button({ label }: { label: string }) {
-  const { isFocused } = useFocus()
+  const { focused } = useFocusable()
 
   return (
-    <Box borderStyle={isFocused ? "double" : "single"}>
-      <Text inverse={isFocused}>{label}</Text>
+    <Box testID={label} focusable borderStyle={focused ? "double" : "single"}>
+      <Text inverse={focused}>{label}</Text>
     </Box>
   )
 }
 
 function Form() {
-  const { focusNext, focusPrevious } = useFocusManager()
-
-  useInput((input, key) => {
-    if (key.tab && key.shift) {
-      focusPrevious()
-    } else if (key.tab) {
-      focusNext()
-    }
-  })
-
   return (
     <Box flexDirection="column" gap={1}>
       <Button label="Submit" />
@@ -120,28 +158,27 @@ function Form() {
 
 ```tsx
 function SearchInput() {
-  const { isFocused } = useFocus({ autoFocus: true })
+  const { focused } = useFocusable()
 
   return (
-    <Box borderStyle={isFocused ? "double" : "single"}>
+    <Box testID="search" focusable autoFocus borderStyle={focused ? "double" : "single"}>
       <Text>Search: </Text>
-      <Text inverse={isFocused}>_</Text>
+      <Text inverse={focused}>_</Text>
     </Box>
   )
 }
 ```
 
-### Conditional Focus
+### Focus Scopes
 
 ```tsx
-function DisableableButton({ label, disabled }: { label: string; disabled: boolean }) {
-  const { isFocused } = useFocus({ isActive: !disabled })
-
+function Dialog() {
   return (
-    <Text color={disabled ? "gray" : isFocused ? "green" : undefined} dimColor={disabled}>
-      {isFocused ? "> " : "  "}
-      {label}
-    </Text>
+    <Box testID="dialog" focusScope borderStyle="double">
+      {/* Tab cycles only within this dialog */}
+      <Button label="OK" />
+      <Button label="Cancel" />
+    </Box>
   )
 }
 ```
@@ -160,17 +197,50 @@ function Navigation() {
 
   return (
     <Box flexDirection="column">
-      <FocusableWithId id="first" label="First (1)" />
-      <FocusableWithId id="second" label="Second (2)" />
-      <FocusableWithId id="third" label="Third (3)" />
+      <FocusableItem testID="first" label="First (1)" />
+      <FocusableItem testID="second" label="Second (2)" />
+      <FocusableItem testID="third" label="Third (3)" />
     </Box>
   )
 }
 
-function FocusableWithId({ id, label }: { id: string; label: string }) {
-  const { isFocused } = useFocus({ id })
+function FocusableItem({ testID, label }: { testID: string; label: string }) {
+  const { focused } = useFocusable()
 
-  return <Text inverse={isFocused}>{label}</Text>
+  return (
+    <Box testID={testID} focusable>
+      <Text inverse={focused}>{label}</Text>
+    </Box>
+  )
+}
+```
+
+### Focus Within for Panels
+
+```tsx
+function Panel({ id, children }: { id: string; children: React.ReactNode }) {
+  const hasFocus = useFocusWithin(id)
+
+  return (
+    <Box testID={id} borderColor={hasFocus ? "cyan" : "gray"}>
+      {children}
+    </Box>
+  )
+}
+
+function Layout() {
+  return (
+    <Box flexDirection="row">
+      <Panel id="sidebar">
+        <FocusableItem testID="nav1" label="Nav 1" />
+        <FocusableItem testID="nav2" label="Nav 2" />
+      </Panel>
+      <Panel id="main">
+        <FocusableItem testID="content1" label="Content 1" />
+        <FocusableItem testID="content2" label="Content 2" />
+      </Panel>
+    </Box>
+  )
 }
 ```
 
@@ -178,27 +248,27 @@ function FocusableWithId({ id, label }: { id: string; label: string }) {
 
 ```tsx
 function MenuItem({ label, onSelect }: { label: string; onSelect: () => void }) {
-  const { isFocused } = useFocus()
-
-  useInput((input, key) => {
-    if (isFocused && key.return) {
-      onSelect()
-    }
-  })
+  const { focused } = useFocusable()
 
   return (
-    <Text color={isFocused ? "cyan" : undefined}>
-      {isFocused ? "> " : "  "}
-      {label}
-    </Text>
+    <Box testID={label} focusable onKeyDown={(e) => {
+      if (e.key === "Enter") onSelect()
+    }}>
+      <Text color={focused ? "cyan" : undefined}>
+        {focused ? "> " : "  "}
+        {label}
+      </Text>
+    </Box>
   )
 }
 ```
 
 ## Notes
 
-- Focus cycles through components in render order
-- Tab moves forward, Shift+Tab moves backward
-- Use `isActive: false` to skip a component during navigation
-- Components with `autoFocus: true` receive focus on mount
-- Custom IDs allow focusing specific components programmatically
+- Focus is managed by a tree-based `FocusManager` that operates on the InkxNode render tree
+- Tab moves forward through focusable nodes, Shift+Tab moves backward
+- `focusScope` creates an isolated focus cycle (Tab does not leave the subtree)
+- `autoFocus` on a Box focuses it when the component mounts
+- `testID` identifies nodes for programmatic focus and `useFocusWithin`
+- Click-to-focus is automatic when mouse events are enabled
+- Directional navigation (`nextFocusUp`, etc.) allows explicit spatial focus movement

@@ -296,7 +296,8 @@ useInput((input, key) => { ... });
 useStdout();
 useStdin();
 useApp();  // { exit }
-useFocus();
+useFocusable();
+useFocusWithin();
 useFocusManager();
 ```
 
@@ -716,7 +717,7 @@ Explicit expectations for what works and what doesn't:
 
 - `<Spacer>`, `<Newline>`
 - `<Static>` for persistent output above dynamic content
-- `useFocus()`, `useFocusManager()`
+- `useFocusable()`, `useFocusWithin()`, `useFocusManager()`
 - Border styles (single, double, round, etc.)
 - `measureElement()` for backward compatibility
 

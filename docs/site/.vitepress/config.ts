@@ -85,7 +85,7 @@ export default defineConfig({
             { text: "useInput", link: "/api/use-input" },
             { text: "useApp", link: "/api/use-app" },
             { text: "useStdout", link: "/api/use-stdout" },
-            { text: "useFocus", link: "/api/use-focus" },
+            { text: "Focus Hooks", link: "/api/use-focus" },
           ],
         },
         {
