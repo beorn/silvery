@@ -41,10 +41,10 @@ const browserDefines: Record<string, string> = {
 }
 
 // Shared build options for all browser targets.
-// External: packages pulled in by barrel exports but unused in browser builds.
-// @beorn/flexx is the terminal layout engine (browser examples use canvas/dom/xterm adapters).
+// External: packages not needed in browser builds.
 // yoga-wasm-web is an optional layout engine (WASM, not needed for demos).
 // ws is used by React DevTools connection (not needed in browser).
+// Note: @beorn/flexx IS bundled — all renderers use it for layout via browser-renderer.ts.
 const sharedOptions = {
   outdir: distDir,
   target: "browser" as const,
@@ -52,7 +52,7 @@ const sharedOptions = {
   minify: false,
   sourcemap: "external" as const,
   define: browserDefines,
-  external: ["@beorn/flexx", "yoga-wasm-web", "ws"],
+  external: ["yoga-wasm-web", "ws"],
 }
 
 // Build canvas app
