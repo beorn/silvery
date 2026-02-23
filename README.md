@@ -5,15 +5,42 @@ React 19 for modern terminals. Pure TypeScript — no WASM, no C++, no native de
 [![npm version](https://img.shields.io/npm/v/inkx.svg)](https://www.npmjs.com/package/inkx)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-| Unique to inkx | Terminal Protocols | Developer Experience |
-| --- | --- | --- |
-| [122x faster](docs/deep-dives/performance.md) interactive updates | Mouse — click, drag, scroll | Playwright-style testing |
-| Reactive layout — `useContentRect()` | Kitty keyboard — Cmd/Super/Hyper | Plugin composition |
-| AI-ready command introspection | Inline images — Kitty + Sixel | Drop-in Ink replacement |
-| TEA/Elm + React + Zustand architectures | Clipboard over SSH | Screenshot capture |
-| Terminal, Canvas 2D, and DOM targets | Hyperlinks, truecolor | Theming with `$token` colors |
-| No WASM, no C++, no native deps | Scrollback buffers | 23+ components |
-| Per-node dirty tracking (7 flags) | Synchronized output | Focus trees, scrollable containers |
+<table>
+<tr>
+<th>Unique to inkx</th>
+<th>Terminal Protocols</th>
+<th>Developer Experience</th>
+</tr>
+<tr>
+<td>
+  <a href="docs/deep-dives/performance.md">122x faster</a> updates<br>
+  Reactive layout<br>
+  AI-ready commands<br>
+  TEA/Elm + React + Zustand<br>
+  Terminal, Canvas, DOM targets<br>
+  Per-node dirty tracking<br>
+  No WASM, no C++
+</td>
+<td>
+  Mouse — click, drag, scroll<br>
+  Kitty keyboard<br>
+  Inline images<br>
+  Clipboard over SSH<br>
+  Hyperlinks, truecolor<br>
+  Scrollback buffers<br>
+  Synchronized output
+</td>
+<td>
+  Playwright-style testing<br>
+  Plugin composition<br>
+  Drop-in Ink replacement<br>
+  Screenshot capture<br>
+  <code>$token</code> theming<br>
+  23+ components<br>
+  Scrollable containers
+</td>
+</tr>
+</table>
 
 ## Why inkx?
 
