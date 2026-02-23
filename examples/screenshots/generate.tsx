@@ -38,6 +38,21 @@ const OUTPUT_DIR = resolve(dirname(import.meta.path), "../../docs/images")
 
 // --- 1. Dashboard -----------------------------------------------------------
 
+function ProgressBar({ percent, width = 24 }: { percent: number; width?: number }): JSX.Element {
+  const filled = Math.round((percent / 100) * width)
+  const empty = width - filled
+  const dot = filled < width ? "\u2578" : ""
+  const filledBar = "\u2501".repeat(Math.max(0, filled - (dot ? 1 : 0)))
+  const emptyBar = "\u2500".repeat(Math.max(0, empty - (dot ? 0 : 0)))
+  return (
+    <Text>
+      <Text color="green">{filledBar}</Text>
+      <Text color="green">{dot}</Text>
+      <Text dim>{emptyBar}</Text>
+    </Text>
+  )
+}
+
 function DashboardScreenshot(): JSX.Element {
   return (
     <Box flexDirection="column" padding={1}>
@@ -121,38 +136,33 @@ function DashboardScreenshot(): JSX.Element {
               { label: "Backend", percent: 72 },
               { label: "Testing", percent: 45 },
               { label: "Docs", percent: 30 },
-            ].map((item) => {
-              const filled = Math.round((item.percent / 100) * 20)
-              const empty = 20 - filled
-              return (
-                <Box key={item.label} flexDirection="column">
-                  <Box justifyContent="space-between">
-                    <Text>{item.label}</Text>
-                    <Text bold>{item.percent}%</Text>
-                  </Box>
-                  <Text>
-                    <Text color="green">{"\u2588".repeat(filled)}</Text>
-                    <Text dim>{"\u2591".repeat(empty)}</Text>
-                  </Text>
+            ].map((item) => (
+              <Box key={item.label} flexDirection="column">
+                <Box justifyContent="space-between">
+                  <Text>{item.label}</Text>
+                  <Text bold>{item.percent}%</Text>
                 </Box>
-              )
-            })}
+                <ProgressBar percent={item.percent} />
+              </Box>
+            ))}
           </Box>
         </Box>
       </Box>
 
-      <Text dim>
-        {" "}
-        Selected: Pane 1{" "}
-        <Text bold dim>
-          h/l
-        </Text>{" "}
-        navigate{" "}
-        <Text bold dim>
-          q
-        </Text>{" "}
-        quit
-      </Text>
+      <Box marginTop={1}>
+        <Text dim>
+          {" "}
+          Selected: Pane 1{" "}
+          <Text bold dim>
+            h/l
+          </Text>{" "}
+          navigate{" "}
+          <Text bold dim>
+            q
+          </Text>{" "}
+          quit
+        </Text>
+      </Box>
     </Box>
   )
 }
@@ -161,83 +171,20 @@ function DashboardScreenshot(): JSX.Element {
 
 function TaskListScreenshot(): JSX.Element {
   const tasks = [
-    {
-      id: 1,
-      title: "Review pull request #1",
-      completed: false,
-      priority: "high" as const,
-    },
-    {
-      id: 2,
-      title: "Update documentation #1",
-      completed: true,
-      priority: "medium" as const,
-    },
-    {
-      id: 3,
-      title: "Fix bug in authentication #1",
-      completed: false,
-      priority: "low" as const,
-    },
-    {
-      id: 4,
-      title: "Implement new feature #1",
-      completed: false,
-      priority: "high" as const,
-    },
-    {
-      id: 5,
-      title: "Write unit tests #1",
-      completed: true,
-      priority: "medium" as const,
-    },
-    {
-      id: 6,
-      title: "Refactor legacy code #1",
-      completed: false,
-      priority: "low" as const,
-    },
-    {
-      id: 7,
-      title: "Update dependencies #1",
-      completed: false,
-      priority: "high" as const,
-    },
-    {
-      id: 8,
-      title: "Create API endpoint #1",
-      completed: true,
-      priority: "medium" as const,
-    },
-    {
-      id: 9,
-      title: "Design database schema #1",
-      completed: false,
-      priority: "low" as const,
-    },
-    {
-      id: 10,
-      title: "Optimize performance #1",
-      completed: false,
-      priority: "high" as const,
-    },
-    {
-      id: 11,
-      title: "Add error handling #1",
-      completed: false,
-      priority: "medium" as const,
-    },
-    {
-      id: 12,
-      title: "Setup CI/CD pipeline #1",
-      completed: true,
-      priority: "low" as const,
-    },
+    { id: 1, title: "Review authentication refactor", completed: false, priority: "high" as const },
+    { id: 2, title: "Update API documentation", completed: true, priority: "medium" as const },
+    { id: 3, title: "Fix timezone handling in scheduler", completed: false, priority: "high" as const },
+    { id: 4, title: "Add rate limiting to endpoints", completed: false, priority: "medium" as const },
+    { id: 5, title: "Write integration tests for payments", completed: true, priority: "low" as const },
+    { id: 6, title: "Migrate user table to new schema", completed: false, priority: "high" as const },
+    { id: 7, title: "Set up staging environment", completed: false, priority: "low" as const },
+    { id: 8, title: "Refactor notification service", completed: true, priority: "medium" as const },
   ]
-  const cursor = 3
+  const cursor = 2
 
-  const prioritySymbols = { high: "!!!", medium: "!!", low: "!" }
-  const priorityColors = { high: "red", medium: "yellow", low: "green" }
+  const priorityLabels = { high: "P1", medium: "P2", low: "P3" }
+  const priorityColors = { high: "#ff6b6b", medium: "#ffd43b", low: "#69db7c" }
+  const separator = "\u2500"
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -245,34 +192,47 @@ function TaskListScreenshot(): JSX.Element {
         <Text bold color="yellow">
           Task List
         </Text>
+        <Text dim>
+          {" "}
+          {tasks.filter((t) => t.completed).length}/{tasks.length} completed
+        </Text>
       </Box>
 
-      <Box flexGrow={1} flexDirection="column" borderStyle="round" borderColor="blue" overflow="hidden">
+      <Box flexGrow={1} flexDirection="column" borderStyle="round" borderColor="blue" overflow="hidden" paddingX={1}>
         {tasks.map((task, index) => {
-          const checkbox = task.completed ? "[x]" : "[ ]"
+          const checkbox = task.completed ? "\u2611" : "\u2610"
           const isSelected = index === cursor
+          const showSeparator = index < tasks.length - 1
+          const label = priorityLabels[task.priority]
+          const labelColor = priorityColors[task.priority]
 
           return (
-            <Box key={task.id}>
+            <Box key={task.id} flexDirection="column">
               {isSelected ? (
-                <Text backgroundColor="cyan" color="black">
-                  {" "}
-                  {checkbox} {task.title}{" "}
+                <Text>
+                  <Text backgroundColor="cyan" color="black">
+                    {" "}
+                    {checkbox} {task.title}{" "}
+                  </Text>{" "}
+                  <Text color={labelColor} bold>
+                    {label}
+                  </Text>
                 </Text>
               ) : (
                 <Text strikethrough={task.completed} dim={task.completed}>
-                  {checkbox} {task.title}
+                  {checkbox} {task.title}{" "}
+                  <Text color={labelColor} bold>
+                    {label}
+                  </Text>
                 </Text>
-              )}{" "}
-              <Text color={priorityColors[task.priority]} bold>
-                [{prioritySymbols[task.priority]}]
-              </Text>
+              )}
+              {showSeparator && <Text dim>{separator.repeat(70)}</Text>}
             </Box>
           )
         })}
       </Box>
 
-      <Box justifyContent="space-between">
+      <Box marginTop={1} justifyContent="space-between">
         <Text dim>
           {" "}
           <Text bold dim>
@@ -294,7 +254,7 @@ function TaskListScreenshot(): JSX.Element {
         </Text>
         <Text dim>
           {" "}
-          <Text bold>4</Text>/12 (33%) | 4/12{" "}
+          <Text bold>3</Text>/8{" "}
         </Text>
       </Box>
     </Box>
@@ -374,7 +334,7 @@ function KanbanScreenshot(): JSX.Element {
             key={col.id}
             flexDirection="column"
             flexGrow={1}
-            borderStyle="single"
+            borderStyle="round"
             borderColor={col.isSelected ? "cyan" : "gray"}
           >
             <Box backgroundColor={col.isSelected ? "cyan" : undefined} paddingX={1}>
@@ -510,29 +470,29 @@ const screenshots: ScreenshotConfig[] = [
     name: "Dashboard",
     filename: "dashboard.png",
     element: <DashboardScreenshot />,
-    cols: 100,
-    rows: 22,
+    cols: 120,
+    rows: 25,
   },
   {
     name: "Task List",
     filename: "task-list.png",
     element: <TaskListScreenshot />,
     cols: 80,
-    rows: 20,
+    rows: 23,
   },
   {
     name: "Kanban Board",
     filename: "kanban.png",
     element: <KanbanScreenshot />,
-    cols: 100,
-    rows: 24,
+    cols: 120,
+    rows: 27,
   },
   {
     name: "Layout Feedback",
     filename: "layout-feedback.png",
     element: <LayoutFeedbackScreenshot />,
     cols: 90,
-    rows: 18,
+    rows: 20,
   },
 ]
 

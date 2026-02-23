@@ -197,7 +197,6 @@ See [docs/README.md](docs/README.md) for the complete documentation index.
 | ------------------------------------------ | ----------------------------------------------- |
 | [Ink](https://github.com/vadimdemedes/ink) | API compatibility target                        |
 | [Flexx](https://github.com/beorn/flexx)    | Default layout engine (2.5x faster, 5x smaller) |
-| [chalkx](https://github.com/beorn/chalkx)  | Terminal primitives (re-exported by inkx)       |
 | [Yoga](https://yogalayout.dev/)            | Optional layout engine (WASM)                   |
 
 ## License
