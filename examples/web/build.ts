@@ -40,15 +40,25 @@ const browserDefines: Record<string, string> = {
   "process.env.LC_CTYPE": "undefined",
 }
 
+// Shared build options for all browser targets.
+// External: packages pulled in by barrel exports but unused in browser builds.
+// @beorn/flexx is the terminal layout engine (browser examples use canvas/dom/xterm adapters).
+// yoga-wasm-web is an optional layout engine (WASM, not needed for demos).
+// ws is used by React DevTools connection (not needed in browser).
+const sharedOptions = {
+  outdir: distDir,
+  target: "browser" as const,
+  format: "esm" as const,
+  minify: false,
+  sourcemap: "external" as const,
+  define: browserDefines,
+  external: ["@beorn/flexx", "yoga-wasm-web", "ws"],
+}
+
 // Build canvas app
 const canvasResult = await Bun.build({
   entrypoints: [join(__dirname, "canvas-app.tsx")],
-  outdir: distDir,
-  target: "browser",
-  format: "esm",
-  minify: false,
-  sourcemap: "external",
-  define: browserDefines,
+  ...sharedOptions,
 })
 
 if (!canvasResult.success) {
@@ -62,12 +72,7 @@ if (!canvasResult.success) {
 // Build DOM app
 const domResult = await Bun.build({
   entrypoints: [join(__dirname, "dom-app.tsx")],
-  outdir: distDir,
-  target: "browser",
-  format: "esm",
-  minify: false,
-  sourcemap: "external",
-  define: browserDefines,
+  ...sharedOptions,
 })
 
 if (!domResult.success) {
@@ -81,12 +86,7 @@ if (!domResult.success) {
 // Build xterm app
 const xtermResult = await Bun.build({
   entrypoints: [join(__dirname, "xterm-app.tsx")],
-  outdir: distDir,
-  target: "browser",
-  format: "esm",
-  minify: false,
-  sourcemap: "external",
-  define: browserDefines,
+  ...sharedOptions,
 })
 
 if (!xtermResult.success) {
