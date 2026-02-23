@@ -47,6 +47,8 @@ import { createMouseEventProcessor, processMouseEvent } from "../mouse-events.js
 import { enableBracketedPaste, disableBracketedPaste } from "../bracketed-paste.js"
 import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output.js"
 import { detectKittyFromStdio } from "../kitty-detect.js"
+import { isTextSizingLikelySupported } from "../text-sizing.js"
+import { setTextSizingEnabled } from "../unicode.js"
 import { ensureLayoutEngine } from "./layout.js"
 import type { Buffer, Dims, Event, RenderTarget, Runtime } from "./types.js"
 
@@ -83,6 +85,16 @@ export interface RunOptions {
    * Default: false
    */
   mouse?: boolean
+  /**
+   * Enable Kitty text sizing protocol (OSC 66) for PUA characters.
+   * When enabled, nerdfont/powerline icons are measured as 2-wide and
+   * wrapped in OSC 66 sequences so the terminal renders them at the
+   * correct width.
+   * - `true`: force enable
+   * - `"auto"`: enable if terminal likely supports it (Kitty 0.40+, Ghostty)
+   * - `false`/undefined: disabled (default)
+   */
+  textSizing?: boolean | "auto"
 }
 
 /**
@@ -268,6 +280,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     signal: externalSignal,
     kitty: kittyOption,
     mouse: mouseOption = false,
+    textSizing: textSizingOption,
   } = options
 
   const headless = explicitCols != null && explicitRows != null && !explicitStdout
@@ -299,6 +312,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
   // Protocol tracking
   let kittyEnabled = false
   let mouseEnabled = false
+  let textSizingWasEnabled = false
 
   // Focus manager (tree-based focus system) with event dispatch wiring
   const focusManager = createFocusManager({
@@ -582,6 +596,12 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
       mouseEnabled = true
     }
 
+    // Text sizing protocol (OSC 66) for PUA characters
+    if (textSizingOption === true || (textSizingOption === "auto" && isTextSizingLikelySupported())) {
+      setTextSizingEnabled(true)
+      textSizingWasEnabled = true
+    }
+
     // Bracketed paste mode
     enableBracketedPaste(stdout)
   }
@@ -694,6 +714,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
         disableBracketedPaste(stdout)
         if (mouseEnabled) stdout.write(disableMouse())
         if (kittyEnabled) stdout.write(disableKittyKeyboard())
+        if (textSizingWasEnabled) setTextSizingEnabled(false)
         stdout.write("\x1b[?25h\x1b[0m\n")
       }
       exitResolve()

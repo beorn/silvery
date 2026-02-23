@@ -784,6 +784,25 @@ Key capability names:
 - `smcup`/`rmcup` - enter/exit alternate screen
 - `setaf`/`setab` - set foreground/background color
 
+## Text Sizing Protocol (OSC 66)
+
+The text sizing protocol (OSC 66) lets the app specify how many cells a character should occupy. This solves the measurement/rendering mismatch for Private Use Area (PUA) characters (nerdfont icons, powerline symbols) that are measured as 1-cell but rendered as 2-cell by modern terminals.
+
+```tsx
+// Auto-detect and enable
+await run(<App />, { textSizing: "auto" })
+```
+
+See [text-sizing.md](text-sizing.md) for full documentation.
+
+| Terminal  | OSC 66 Support |
+|-----------|---------------|
+| Kitty     | v0.40+        |
+| Ghostty   | Yes           |
+| WezTerm   | No            |
+| iTerm2    | No            |
+| Alacritty | No            |
+
 ## See Also
 
 - [ANSI escape code (Wikipedia)](https://en.wikipedia.org/wiki/ANSI_escape_code)

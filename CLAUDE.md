@@ -662,6 +662,10 @@ import { enableInspector, disableInspector, inspectTree, inspectFrame, autoEnabl
 // Terminal capabilities detection
 import { detectTerminalCaps, type TerminalCaps } from "inkx"
 
+// Text sizing protocol (OSC 66) -- PUA character width control
+import { textSized, isPrivateUseArea, isTextSizingLikelySupported, detectTextSizingSupport } from "inkx"
+import { setTextSizingEnabled, isTextSizingEnabled } from "inkx"
+
 // Scroll regions (DECSTBM)
 import { setScrollRegion, resetScrollRegion, scrollUp, scrollDown, supportsScrollRegions } from "inkx"
 import { useScrollRegion } from "inkx/hooks" // Hook (not in main entry)
@@ -947,17 +951,19 @@ to capture numbers.
 | [docs/reference/text-cursor.md](docs/reference/text-cursor.md)                     | Cursor offset ↔ visual position mapping (Layer 0)                                                                            |
 | [docs/reference/scroll-regions.md](docs/reference/scroll-regions.md)               | DECSTBM scroll region optimization                                                                                           |
 | [docs/reference/terminal-capabilities.md](docs/reference/terminal-capabilities.md) | Terminal detection, render modes, protocols                                                                                  |
+| [docs/reference/text-sizing.md](docs/reference/text-sizing.md)                     | OSC 66 text sizing protocol for PUA character width control                                                                  |
 | [docs/reference/recipes.md](docs/reference/recipes.md)                             | Common patterns and recipes                                                                                                  |
 | [docs/reference/devtools.md](docs/reference/devtools.md)                           | React DevTools integration (setup, API, troubleshooting)                                                                     |
 | **Deep Dives**                                                                     |                                                                                                                              |
 | [docs/deep-dives/architecture.md](docs/deep-dives/architecture.md)                 | Core architecture and RenderAdapter                                                                                          |
 | [docs/deep-dives/internals.md](docs/deep-dives/internals.md)                       | Reconciler and 5-phase pipeline                                                                                              |
-| [docs/deep-dives/performance.md](docs/deep-dives/performance.md)                   | Benchmarks and optimization (**keep up-to-date!**)                                                                           |
+| [docs/deep-dives/performance.md](docs/deep-dives/performance.md)                   | Optimization techniques and profiling (**keep up-to-date!**)                                                                 |
 | [docs/deep-dives/containment.md](docs/deep-dives/containment.md)                   | Layout feedback loop prevention (useContentRect safe patterns)                                                               |
 | [docs/deep-dives/focus-routing.md](docs/deep-dives/focus-routing.md)               | Focus-based input routing pattern                                                                                            |
 | **Top Level**                                                                      |                                                                                                                              |
 | [docs/testing.md](docs/testing.md)                                                 | Testing strategy, locators, and API                                                                                          |
-| [docs/ink-comparison.md](docs/ink-comparison.md)                                   | Ink issues and inkx solutions                                                                                                |
+| [docs/inkx-vs-ink.md](docs/inkx-vs-ink.md)                                         | Detailed feature/performance comparison with Ink                                                                             |
+| [docs/benchmarks.md](docs/benchmarks.md)                                           | Raw benchmark tables and data                                                                                                |
 | [docs/comparison.md](docs/comparison.md)                                           | Cross-framework comparison (BubbleTea, Textual, etc.)                                                                        |
 | [docs/troubleshooting.md](docs/troubleshooting.md)                                 | Common issues and debugging                                                                                                  |
 | [docs/roadmap.md](docs/roadmap.md)                                                 | Render targets and future plans                                                                                              |

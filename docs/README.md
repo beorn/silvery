@@ -3,7 +3,7 @@
 ## Where to Start
 
 - **New to inkx?** Start with [Getting Started](guides/getting-started.md) -- build your first app in 5 minutes
-- **Migrating from Ink?** Read [Ink Comparison](ink-comparison.md) and [Migration Guide](guides/migration.md)
+- **Migrating from Ink?** Read [inkx vs Ink](inkx-vs-ink.md) and [Migration Guide](guides/migration.md)
 - **Building an app?** [Components](reference/components.md) + [Hooks](reference/hooks.md) + [Input Features](reference/input-features.md)
 - **Testing?** [Testing](testing.md) + [Plugins](reference/plugins.md) (withCommands, withDiagnostics)
 - **Understanding internals?** [Architecture](deep-dives/architecture.md) → [Internals](deep-dives/internals.md) → [Performance](deep-dives/performance.md)
@@ -43,6 +43,7 @@ API documentation for components, hooks, and subsystems.
 | [Scroll Regions](reference/scroll-regions.md)               | DECSTBM-based scroll optimization                                    |
 | [Text Cursor](reference/text-cursor.md)                     | Cursor offset to visual position mapping (Layer 0)                   |
 | [Terminal Capabilities](reference/terminal-capabilities.md) | Detection, render modes, protocols                                   |
+| [Text Sizing (OSC 66)](reference/text-sizing.md)            | PUA character width control for nerdfont/powerline icons             |
 | [Recipes](reference/recipes.md)                             | Common patterns for building inkx apps                               |
 | [React DevTools](reference/devtools.md)                     | Connect React DevTools standalone for component tree inspection      |
 
@@ -55,7 +56,7 @@ Architecture, internals, and performance analysis.
 | [Architecture](deep-dives/architecture.md)   | Five-phase pipeline, RenderAdapter interface                              |
 | [Internals](deep-dives/internals.md)         | Reconciler, dirty tracking, content phase                                 |
 | [Containment](deep-dives/containment.md)     | Layout feedback loop prevention (useContentRect safe patterns)            |
-| [Performance](deep-dives/performance.md)     | Benchmarks, optimization techniques (**canonical** for benchmark numbers) |
+| [Performance](deep-dives/performance.md)     | Optimization techniques, profiling guide                                  |
 | [Focus Routing](deep-dives/focus-routing.md) | Focus-based input routing, commands, keybindings                          |
 
 ## Design Documents
@@ -77,7 +78,8 @@ Cross-cutting docs that don't fit a single category.
 | Document                              | Description                                                                |
 | ------------------------------------- | -------------------------------------------------------------------------- |
 | [Testing](testing.md)                 | Testing strategy, createRenderer, locators, withDiagnostics                |
-| [Ink Comparison](ink-comparison.md)   | Detailed feature/performance comparison with Ink                           |
+| [inkx vs Ink](inkx-vs-ink.md)         | Detailed feature/performance comparison with Ink                           |
+| [Benchmarks](benchmarks.md)           | Raw benchmark tables and data                                              |
 | [Comparison](comparison.md)           | Cross-framework comparison (BubbleTea, Textual, Notcurses, FTXUI, blessed) |
 | [Troubleshooting](troubleshooting.md) | Common issues and debugging                                                |
 | [Roadmap](roadmap.md)                 | Render targets, multi-platform vision                                      |

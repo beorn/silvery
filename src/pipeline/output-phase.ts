@@ -15,9 +15,25 @@ import {
   hasActiveAttrs,
   styleEquals,
 } from "../buffer.js"
+import { isPrivateUseArea, textSized } from "../text-sizing.js"
+import { isTextSizingEnabled } from "../unicode.js"
 import type { CellChange } from "./types.js"
 
 const DEBUG_OUTPUT = !!process.env.INKX_DEBUG_OUTPUT
+
+/**
+ * Wrap a cell character in OSC 66 if it is a PUA character and text sizing
+ * is enabled. For wide PUA characters, this tells the terminal to render
+ * the character in exactly 2 cells, matching the layout engine's measurement.
+ */
+function wrapTextSizing(char: string, wide: boolean): string {
+  if (!wide || !isTextSizingEnabled()) return char
+  const cp = char.codePointAt(0)
+  if (cp !== undefined && isPrivateUseArea(cp)) {
+    return textSized(char, 2)
+  }
+  return char
+}
 
 // ============================================================================
 // Style Interning + SGR Cache
@@ -505,7 +521,7 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
         currentStyle = saved
       }
 
-      output += cell.char
+      output += wrapTextSizing(cell.char, cell.wide)
     }
 
     // Close any open hyperlink at end of row
@@ -881,8 +897,8 @@ function changesToAnsi(
         output += styleTransition(prevStyle, currentStyle)
       }
 
-      // Write character
-      output += cell.char
+      // Write character (wrap PUA in OSC 66 when text sizing is enabled)
+      output += wrapTextSizing(cell.char, cell.wide)
       cursorX = x + (cell.wide ? 2 : 1)
       cursorY = y
       lastEmittedX = x
