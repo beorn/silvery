@@ -38,6 +38,10 @@
 
 - [Text Cursor](text-cursor.md) — Cursor offset ↔ visual position mapping (Layer 0)
 
+### Debugging
+
+- [React DevTools](devtools.md) — Connect React DevTools standalone for component tree inspection
+
 ### Deep Dives
 
 - [Internals](internals.md) — Reconciler, dirty tracking, content phase

@@ -365,6 +365,7 @@ export {
   notify,
   notifyITerm2,
   notifyKitty,
+  reportDirectory,
 } from "./output.js"
 
 // Bracketed paste mode (DEC private mode 2004)
@@ -382,6 +383,9 @@ export { copyToClipboard, requestClipboard, parseClipboardResponse } from "./cli
 
 // Kitty protocol detection
 export { detectKittySupport, detectKittyFromStdio, type KittyDetectResult } from "./kitty-detect.js"
+
+// Terminal capability detection
+export { detectTerminalCaps, type TerminalCaps } from "./terminal-caps.js"
 
 // Layout engine types
 export type { LayoutEngine, LayoutNode, LayoutConstants, MeasureFunc, MeasureMode } from "./layout-engine.js"
@@ -492,6 +496,36 @@ export type { NonTTYOptions, ResolvedNonTTYMode } from "./non-tty.js"
  * ```
  */
 export { connectDevTools, isDevToolsConnected } from "./devtools.js"
+
+// =============================================================================
+// Inspector (inkx-native debug introspection)
+// =============================================================================
+
+/**
+ * inkx Inspector — render pipeline debug introspection.
+ *
+ * Distinct from React DevTools. Provides inkx-specific info: render stats,
+ * component tree with layout rects, dirty flags, focus path.
+ *
+ * @example
+ * ```ts
+ * // Manual
+ * import { enableInspector } from 'inkx';
+ * enableInspector({ logFile: '/tmp/inkx-inspector.log' });
+ *
+ * // Or use env var: INKX_DEV=1 bun run app.ts
+ * // With log file: INKX_DEV=1 INKX_DEV_LOG=/tmp/inkx.log bun run app.ts
+ * ```
+ */
+export {
+  enableInspector,
+  disableInspector,
+  isInspectorEnabled,
+  inspectTree,
+  inspectFrame,
+  autoEnableInspector,
+} from "./inspector.js"
+export type { InspectorOptions } from "./inspector.js"
 
 // =============================================================================
 // Unicode Text Utilities

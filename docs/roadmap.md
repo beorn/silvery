@@ -34,7 +34,7 @@ Improvements to the terminal target based on real-world usage.
 
 | Feature                       | Value  | Effort | Notes                                                                                                 |
 | ----------------------------- | ------ | ------ | ----------------------------------------------------------------------------------------------------- |
-| React DevTools                | High   | Medium | Debug component tree                                                                                  |
+| React DevTools                | High   | Medium | ✅ Implemented — `connectDevTools()`, auto via `DEBUG_DEVTOOLS=1`                                     |
 | Cursor API (`useCursor()`)    | High   | Medium | Text editing, input fields ([Ink #251](https://github.com/vadimdemedes/ink/issues/251) open 6+ years) |
 | Kitty keyboard protocol       | Medium | Low    | Better modifier key detection                                                                         |
 | Mouse support                 | Medium | Medium | Click/hover handlers                                                                                  |

@@ -33,11 +33,72 @@ inkx's core innovation is **two-phase rendering with synchronous layout feedback
 
 ## Runtime Layers
 
-| Layer | Entry Point       | Best For                   | State Management     |
-| ----- | ----------------- | -------------------------- | -------------------- |
-| 1     | `createRuntime()` | Maximum control, Elm-style | Your choice          |
-| 2     | `run()`           | React hooks (recommended)  | `useState/useEffect` |
-| 3     | `createApp()`     | Complex apps               | Zustand store        |
+| Layer | Entry Point       | Best For                        | State Management                    |
+| ----- | ----------------- | ------------------------------- | ----------------------------------- |
+| 1     | `createRuntime()` | Custom event loops, integration | Manual loop + `schedule()`          |
+| 1.5   | `createStore()`   | Elm architecture (TEA)          | `(msg, model) → [Model, Effect[]]` |
+| 2     | `run()`           | React hooks (recommended)       | `useState/useEffect`               |
+| 3     | `createApp()`     | Complex apps                    | Zustand store                       |
+
+### Layer 1.5: createStore() — TEA (The Elm Architecture)
+
+A pure state container with effects, following the Elm pattern. No React dependency — lives in `inkx/core` and `inkx/store`.
+
+```tsx
+import { createStore, inkxUpdate, defaultInit, withFocusManagement } from "inkx/store"
+import { type Effect, none, batch, dispatch, compose, type Plugin } from "inkx/core"
+
+// Define your model (extends InkxModel with focus state)
+interface MyModel extends InkxModel {
+  count: number
+  loading: boolean
+}
+
+// Pure update: (msg, model) → [newModel, effects]
+function update(msg: MyMsg, model: MyModel): [MyModel, Effect[]] {
+  switch (msg.type) {
+    case "increment":
+      return [{ ...model, count: model.count + 1 }, [none]]
+    case "decrement":
+      return [{ ...model, count: model.count - 1 }, [none]]
+    case "fetch-start":
+      return [{ ...model, loading: true }, [dispatch({ type: "term:key", key: "f", input: "f", ctrl: false, meta: false, shift: false })]]
+    default:
+      return [model, [none]]
+  }
+}
+
+// Compose plugins (middleware-style)
+const fullUpdate = compose(withFocusManagement())(update)
+
+const store = createStore({
+  init: () => [{ ...defaultInit()[0], count: 0, loading: false } as MyModel, [none]],
+  update: fullUpdate,
+})
+
+store.dispatch({ type: "increment" })
+store.getModel().count // 1
+```
+
+**Effect types:**
+
+| Constructor | Description |
+|---|---|
+| `none` | No-op (default) |
+| `dispatch(msg)` | Queue another message (non-re-entrant) |
+| `batch(e1, e2, ...)` | Multiple effects (flattens nested batches, filters none) |
+
+**Plugin composition** — middleware-style wrappers around the update function:
+
+```tsx
+const logging: Plugin<MyModel, MyMsg> = (inner) => (msg, model) => {
+  console.log("msg:", msg.type)
+  return inner(msg, model)
+}
+
+const update = compose(logging, withFocusManagement())(baseUpdate)
+// Equivalent to: logging(withFocusManagement()(baseUpdate))
+```
 
 ### Layer 2: run() (Recommended)
 
@@ -554,6 +615,12 @@ import { render, renderStatic, renderString } from "inkx"
 // Testing
 import { createRenderer, keyToAnsi, keyToKittyAnsi, debugTree } from "inkx/testing"
 
+// TEA store (The Elm Architecture)
+import { createStore, inkxUpdate, defaultInit, withFocusManagement, type StoreConfig, type StoreApi } from "inkx/store"
+
+// Core types and effect constructors (pure, no React)
+import { type InkxModel, type InkxMsg, type Effect, type Plugin, none, batch, dispatch, compose } from "inkx/core"
+
 // Term primitives (re-exported from chalkx)
 import { createTerm, patchConsole, type Term, type StyleChain } from "inkx"
 ```
@@ -820,5 +887,6 @@ to capture numbers.
 | [docs/runtime-migration.md](docs/runtime-migration.md)         | Legacy inkx to inkx/runtime migration                     |
 | [docs/terminal-capabilities.md](docs/terminal-capabilities.md) | Terminal detection, render modes, protocols               |
 | [docs/plugins.md](docs/plugins.md)                             | withCommands, withKeybindings, withDiagnostics, drivers   |
+| [docs/devtools.md](docs/devtools.md)                           | React DevTools integration (setup, API, troubleshooting)  |
 | [docs/troubleshooting.md](docs/troubleshooting.md)             | Common issues and debugging                               |
 | [docs/roadmap.md](docs/roadmap.md)                             | Render targets and future plans                           |

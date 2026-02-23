@@ -5,6 +5,8 @@
  * This file contains only terminal control sequences and constants.
  */
 
+import { hostname } from "node:os"
+
 // ============================================================================
 // ANSI Escape Codes
 // ============================================================================
@@ -268,6 +270,20 @@ export function notify(stdout: NodeJS.WriteStream, message: string, opts?: { tit
   } else {
     stdout.write(BEL)
   }
+}
+
+// ============================================================================
+// Directory Reporting
+// ============================================================================
+
+/** Report current working directory to the terminal via OSC 7.
+ * Used by terminals (iTerm2, Ghostty, WezTerm) for tab/split directory inheritance.
+ */
+export function reportDirectory(stdout: NodeJS.WriteStream, path: string): void {
+  // OSC 7 format: ESC ] 7 ; file://hostname/path BEL
+  const host = hostname()
+  const encoded = encodeURI(path).replace(/#/g, "%23")
+  stdout.write(`${ESC}]7;file://${host}${encoded}${BEL}`)
 }
 
 // ============================================================================
