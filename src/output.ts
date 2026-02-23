@@ -232,6 +232,45 @@ export function disableKittyKeyboard(): string {
 }
 
 // ============================================================================
+// Terminal Notifications
+// ============================================================================
+
+/** BEL character — basic terminal bell/notification */
+export const BEL = "\x07"
+
+/** iTerm2 notification (OSC 9) */
+export function notifyITerm2(message: string): string {
+  return `${ESC}]9;${message}${BEL}`
+}
+
+/** Kitty notification (OSC 99) with optional title */
+export function notifyKitty(message: string, opts?: { title?: string }): string {
+  const params = opts?.title ? `;t=t;${opts.title}` : ""
+  return `${ESC}]99;i=1:d=0${params};${message}${ESC}\\`
+}
+
+/**
+ * Send a terminal notification using the best available method.
+ *
+ * Auto-detects terminal type via TERM_PROGRAM / TERM env vars:
+ * - iTerm2 → OSC 9
+ * - Kitty → OSC 99
+ * - Others → BEL (audible/visual bell)
+ */
+export function notify(stdout: NodeJS.WriteStream, message: string, opts?: { title?: string }): void {
+  const termProgram = process.env.TERM_PROGRAM ?? ""
+  const term = process.env.TERM ?? ""
+
+  if (termProgram === "iTerm.app") {
+    stdout.write(notifyITerm2(message))
+  } else if (term === "xterm-kitty") {
+    stdout.write(notifyKitty(message, opts))
+  } else {
+    stdout.write(BEL)
+  }
+}
+
+// ============================================================================
 // Export Constants
 // ============================================================================
 

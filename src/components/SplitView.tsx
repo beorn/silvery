@@ -122,10 +122,7 @@ function LayoutNodeView(props: LayoutNodeViewProps): React.ReactElement {
   const secondFlex = 100 - firstFlex
 
   return (
-    <Box
-      flexGrow={1}
-      flexDirection={node.direction === "horizontal" ? "row" : "column"}
-    >
+    <Box flexGrow={1} flexDirection={node.direction === "horizontal" ? "row" : "column"}>
       <Box
         flexGrow={firstFlex}
         flexShrink={1}

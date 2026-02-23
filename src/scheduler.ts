@@ -24,7 +24,7 @@ import {
   stripAnsi,
 } from "./non-tty.js"
 import { getCursorState } from "./hooks/useCursor.js"
-import { ANSI } from "./output.js"
+import { ANSI, notify as notifyTerminal } from "./output.js"
 import { executeRender } from "./pipeline.js"
 import type { InkxNode } from "./types.js"
 
@@ -87,6 +87,8 @@ export interface SchedulerOptions {
    * - 'plain': Strip all ANSI codes
    */
   nonTTYMode?: NonTTYMode
+  /** Slow frame warning threshold in ms (default: 50). Set to 0 to disable. */
+  slowFrameThreshold?: number
 }
 
 export interface RenderStats {
@@ -130,6 +132,7 @@ export class RenderScheduler {
   private root: InkxNode
   private debugMode: boolean
   private minFrameTime: number
+  private slowFrameThreshold: number
   private mode: "fullscreen" | "inline"
   private nonTTYMode: ResolvedMode
   private outputTransformer: (content: string, prevLineCount: number) => string
@@ -185,6 +188,7 @@ export class RenderScheduler {
     this.root = options.root
     this.debugMode = options.debug ?? false
     this.minFrameTime = options.minFrameTime ?? 16
+    this.slowFrameThreshold = options.slowFrameThreshold ?? 50
     this.mode = options.mode ?? "fullscreen"
     this.log = createLogger("inkx:scheduler")
 
@@ -294,6 +298,19 @@ export class RenderScheduler {
   addScrollbackLines(lines: number): void {
     if (this.mode !== "inline" || lines <= 0) return
     this.scrollbackOffset += lines
+  }
+
+  /**
+   * Send a terminal notification.
+   *
+   * Auto-detects terminal type and uses the best available method:
+   * - iTerm2 → OSC 9
+   * - Kitty → OSC 99
+   * - Others → BEL
+   */
+  notify(message: string, opts?: { title?: string }): void {
+    if (this.disposed) return
+    notifyTerminal(this.stdout, message, opts)
   }
 
   /**
@@ -531,6 +548,14 @@ export class RenderScheduler {
       log.debug?.(
         `render #${this.stats.renderCount} complete: ${renderTime}ms, output: ${transformedOutput.length} bytes`,
       )
+
+      // First render is always slow (initialization); use 5x threshold for it
+      const threshold = this.stats.renderCount <= 1 ? this.slowFrameThreshold * 5 : this.slowFrameThreshold
+      if (threshold > 0 && renderTime > threshold) {
+        log.warn?.(
+          `slow frame: render #${this.stats.renderCount} took ${renderTime}ms (threshold: ${this.slowFrameThreshold}ms, bytes: ${transformedOutput.length})`,
+        )
+      }
 
       if (this.debugMode) {
         this.logDebug(`Render #${this.stats.renderCount} took ${renderTime}ms`)

@@ -345,19 +345,19 @@ inkx provides a tree-based focus system that operates directly on the InkxNode r
 
 ### Props (on Box)
 
-| Prop             | Type      | Description                                            |
-| ---------------- | --------- | ------------------------------------------------------ |
-| `focusable`      | `boolean` | Node can receive focus                                 |
-| `autoFocus`      | `boolean` | Focus this node on mount                               |
-| `focusScope`     | `boolean` | Creates a focus scope (Tab cycles within subtree)      |
-| `nextFocusUp`    | `string`  | testID to focus when pressing Up (explicit override)   |
-| `nextFocusDown`  | `string`  | testID to focus when pressing Down                     |
-| `nextFocusLeft`  | `string`  | testID to focus when pressing Left                     |
-| `nextFocusRight` | `string`  | testID to focus when pressing Right                    |
-| `onFocus`        | function  | Called when this node gains focus                      |
-| `onBlur`         | function  | Called when this node loses focus                      |
-| `onKeyDown`      | function  | Called on key down (bubble phase)                      |
-| `onKeyDownCapture` | function | Called on key down (capture phase)                   |
+| Prop               | Type      | Description                                          |
+| ------------------ | --------- | ---------------------------------------------------- |
+| `focusable`        | `boolean` | Node can receive focus                               |
+| `autoFocus`        | `boolean` | Focus this node on mount                             |
+| `focusScope`       | `boolean` | Creates a focus scope (Tab cycles within subtree)    |
+| `nextFocusUp`      | `string`  | testID to focus when pressing Up (explicit override) |
+| `nextFocusDown`    | `string`  | testID to focus when pressing Down                   |
+| `nextFocusLeft`    | `string`  | testID to focus when pressing Left                   |
+| `nextFocusRight`   | `string`  | testID to focus when pressing Right                  |
+| `onFocus`          | function  | Called when this node gains focus                    |
+| `onBlur`           | function  | Called when this node loses focus                    |
+| `onKeyDown`        | function  | Called on key down (bubble phase)                    |
+| `onKeyDownCapture` | function  | Called on key down (capture phase)                   |
 
 ### Hooks
 
@@ -392,16 +392,16 @@ function Sidebar() {
 import { createFocusManager } from "inkx"
 
 const fm = createFocusManager()
-fm.focus(node, "programmatic")     // Focus a node
-fm.focusById("panel", root)        // Focus by testID
-fm.blur()                          // Clear focus
-fm.focusNext(root)                 // Tab to next focusable
-fm.focusPrev(root)                 // Tab to previous
-fm.focusDirection(root, "down")    // Spatial navigation
-fm.enterScope("dialog")            // Push focus scope
-fm.exitScope()                     // Pop focus scope
-fm.activeId                        // Current focused testID
-fm.focusOrigin                     // "keyboard" | "mouse" | "programmatic"
+fm.focus(node, "programmatic") // Focus a node
+fm.focusById("panel", root) // Focus by testID
+fm.blur() // Clear focus
+fm.focusNext(root) // Tab to next focusable
+fm.focusPrev(root) // Tab to previous
+fm.focusDirection(root, "down") // Spatial navigation
+fm.enterScope("dialog") // Push focus scope
+fm.exitScope() // Pop focus scope
+fm.activeId // Current focused testID
+fm.focusOrigin // "keyboard" | "mouse" | "programmatic"
 ```
 
 ### Click-to-Focus

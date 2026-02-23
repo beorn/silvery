@@ -61,12 +61,7 @@ export interface LinkProps {
  */
 export function Link({ href, children, color = "blue", underline = true, onClick, testID }: LinkProps) {
   return (
-    <Text
-      color={color}
-      underline={underline}
-      onClick={onClick}
-      testID={testID}
-    >
+    <Text color={color} underline={underline} onClick={onClick} testID={testID}>
       {osc8Open(href)}
       {children}
       {OSC8_CLOSE}

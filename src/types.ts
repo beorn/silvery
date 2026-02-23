@@ -188,6 +188,8 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
 export interface TextProps extends StyleProps, TestProps, MouseEventProps {
   children?: React.ReactNode
   wrap?: "wrap" | "truncate" | "truncate-start" | "truncate-middle" | "truncate-end" | boolean
+  /** Internal transform function applied to each rendered line. Used by Transform component. */
+  internal_transform?: (line: string, index: number) => string
 }
 
 /**

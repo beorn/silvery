@@ -159,47 +159,88 @@ function renderBorder(
   const showLeft = props.borderLeft !== false
   const showRight = props.borderRight !== false
 
-  // Helper to check if a row is visible
-  const isRowVisible = (row: number): boolean => {
-    if (!clipBounds) return buffer.inBounds(0, row)
-    return row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row)
-  }
+  const isRowVisible = (row: number): boolean =>
+    clipBounds ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row) : buffer.inBounds(0, row)
 
   // Top border
   if (showTop && isRowVisible(y)) {
-    if (showLeft) buffer.drawChar(x, y, chars.topLeft, style)
-    for (let col = x + 1; col < x + width - 1; col++) {
-      if (buffer.inBounds(col, y)) {
-        buffer.drawChar(col, y, chars.horizontal, style)
-      }
-    }
-    if (showRight && buffer.inBounds(x + width - 1, y)) {
-      buffer.drawChar(x + width - 1, y, chars.topRight, style)
-    }
+    renderHorizontalBorder(
+      buffer,
+      x,
+      y,
+      width,
+      showLeft,
+      showRight,
+      chars.topLeft,
+      chars.topRight,
+      chars.horizontal,
+      style,
+    )
   }
 
   // Side borders — extend range when top/bottom borders are hidden
   const sideStart = showTop ? y + 1 : y
   const sideEnd = showBottom ? y + height - 1 : y + height
-  for (let row = sideStart; row < sideEnd; row++) {
-    if (!isRowVisible(row)) continue
-    if (showLeft) buffer.drawChar(x, row, chars.vertical, style)
-    if (showRight && buffer.inBounds(x + width - 1, row)) {
-      buffer.drawChar(x + width - 1, row, chars.vertical, style)
-    }
-  }
+  renderSideBorders(buffer, x, width, sideStart, sideEnd, showLeft, showRight, chars.vertical, style, isRowVisible)
 
   // Bottom border
   const bottomY = y + height - 1
   if (showBottom && isRowVisible(bottomY)) {
-    if (showLeft) buffer.drawChar(x, bottomY, chars.bottomLeft, style)
-    for (let col = x + 1; col < x + width - 1; col++) {
-      if (buffer.inBounds(col, bottomY)) {
-        buffer.drawChar(col, bottomY, chars.horizontal, style)
-      }
+    renderHorizontalBorder(
+      buffer,
+      x,
+      bottomY,
+      width,
+      showLeft,
+      showRight,
+      chars.bottomLeft,
+      chars.bottomRight,
+      chars.horizontal,
+      style,
+    )
+  }
+}
+
+function renderHorizontalBorder(
+  buffer: RenderBuffer,
+  x: number,
+  row: number,
+  width: number,
+  showLeft: boolean,
+  showRight: boolean,
+  leftCorner: string,
+  rightCorner: string,
+  horizontal: string,
+  style: RenderStyle,
+): void {
+  if (showLeft) buffer.drawChar(x, row, leftCorner, style)
+  for (let col = x + 1; col < x + width - 1; col++) {
+    if (buffer.inBounds(col, row)) {
+      buffer.drawChar(col, row, horizontal, style)
     }
-    if (showRight && buffer.inBounds(x + width - 1, bottomY)) {
-      buffer.drawChar(x + width - 1, bottomY, chars.bottomRight, style)
+  }
+  if (showRight && buffer.inBounds(x + width - 1, row)) {
+    buffer.drawChar(x + width - 1, row, rightCorner, style)
+  }
+}
+
+function renderSideBorders(
+  buffer: RenderBuffer,
+  x: number,
+  width: number,
+  startRow: number,
+  endRow: number,
+  showLeft: boolean,
+  showRight: boolean,
+  vertical: string,
+  style: RenderStyle,
+  isRowVisible: (row: number) => boolean,
+): void {
+  for (let row = startRow; row < endRow; row++) {
+    if (!isRowVisible(row)) continue
+    if (showLeft) buffer.drawChar(x, row, vertical, style)
+    if (showRight && buffer.inBounds(x + width - 1, row)) {
+      buffer.drawChar(x + width - 1, row, vertical, style)
     }
   }
 }

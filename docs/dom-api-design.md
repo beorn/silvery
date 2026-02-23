@@ -1,5 +1,7 @@
 # DOM-like Render API Design
 
+> **Status: RFC** — This is a design proposal, not an implemented feature. Feedback welcome.
+
 Design proposal for a simplified, DOM-inspired render API with nested mounting.
 
 ## Current Pain Points

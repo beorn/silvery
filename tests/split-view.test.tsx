@@ -32,9 +32,7 @@ describe("SplitView — single pane", () => {
   })
 
   test("no border when showBorders=false", () => {
-    const app = render(
-      <SplitView layout={createLeaf("main")} renderPane={renderPane} showBorders={false} />,
-    )
+    const app = render(<SplitView layout={createLeaf("main")} renderPane={renderPane} showBorders={false} />)
     expect(app.text).toContain("Content:main")
     expect(app.text).not.toContain("─")
   })
@@ -151,15 +149,11 @@ describe("SplitView — focus highlighting", () => {
     const layout = splitPane(createLeaf("a"), "a", "horizontal", "b")
 
     // First render with "a" focused
-    const app = render(
-      <SplitView layout={layout} renderPane={renderPane} focusedPaneId="a" />,
-    )
+    const app = render(<SplitView layout={layout} renderPane={renderPane} focusedPaneId="a" />)
     expect(app.text).toContain("Content:a")
 
     // Re-render with "b" focused
-    app.rerender(
-      <SplitView layout={layout} renderPane={renderPane} focusedPaneId="b" />,
-    )
+    app.rerender(<SplitView layout={layout} renderPane={renderPane} focusedPaneId="b" />)
     expect(app.text).toContain("Content:b")
   })
 })
@@ -173,13 +167,7 @@ describe("SplitView — pane titles", () => {
 
   test("renders pane title when renderPaneTitle is provided", () => {
     const layout = splitPane(createLeaf("a"), "a", "horizontal", "b")
-    const app = render(
-      <SplitView
-        layout={layout}
-        renderPane={renderPane}
-        renderPaneTitle={(id) => `[${id}]`}
-      />,
-    )
+    const app = render(<SplitView layout={layout} renderPane={renderPane} renderPaneTitle={(id) => `[${id}]`} />)
 
     expect(app.text).toContain("[a]")
     expect(app.text).toContain("[b]")

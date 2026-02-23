@@ -214,7 +214,11 @@ describe("findSpatialTarget", () => {
   it("finds nearest node below", () => {
     const root = fakeNode("root")
     const top = fakeNode("top", { focusable: true, parent: root, screenRect: { x: 0, y: 0, width: 10, height: 5 } })
-    const bottom = fakeNode("bottom", { focusable: true, parent: root, screenRect: { x: 0, y: 10, width: 10, height: 5 } })
+    const bottom = fakeNode("bottom", {
+      focusable: true,
+      parent: root,
+      screenRect: { x: 0, y: 10, width: 10, height: 5 },
+    })
 
     const target = findSpatialTarget(top, "down", [top, bottom], layoutFn)
     expect(target).toBe(bottom)

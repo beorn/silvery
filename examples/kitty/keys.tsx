@@ -364,7 +364,9 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch((err) => {
+  try {
+    await main()
+  } catch (err) {
     // Restore terminal on crash
     const stdout = process.stdout
     stdout.write("\x1b[?1003l\x1b[?1006l") // Disable mouse
@@ -378,5 +380,5 @@ if (import.meta.main) {
     }
     console.error(err)
     process.exit(1)
-  })
+  }
 }

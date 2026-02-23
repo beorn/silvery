@@ -16,6 +16,10 @@ export type { TextProps, TextHandle } from "./Text.js"
 export { ErrorBoundary } from "./ErrorBoundary.js"
 export type { ErrorBoundaryProps } from "./ErrorBoundary.js"
 
+// Transform
+export { Transform } from "./Transform.js"
+export type { TransformProps } from "./Transform.js"
+
 // Utilities
 export { Newline } from "./Newline.js"
 export { Spacer } from "./Spacer.js"

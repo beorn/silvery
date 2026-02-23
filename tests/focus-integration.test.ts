@@ -189,7 +189,11 @@ describe("Arrow key spatial navigation", () => {
     const fm = createFocusManager()
     const root = fakeNode("root", { focusable: false })
     const left = fakeNode("left", { focusable: true, parent: root, screenRect: { x: 0, y: 5, width: 10, height: 5 } })
-    const right = fakeNode("right", { focusable: true, parent: root, screenRect: { x: 20, y: 5, width: 10, height: 5 } })
+    const right = fakeNode("right", {
+      focusable: true,
+      parent: root,
+      screenRect: { x: 20, y: 5, width: 10, height: 5 },
+    })
 
     fm.focus(left)
     fm.focusDirection(root, "right", layoutFn)
@@ -201,7 +205,11 @@ describe("Arrow key spatial navigation", () => {
     const fm = createFocusManager()
     const root = fakeNode("root", { focusable: false })
     const top = fakeNode("top", { focusable: true, parent: root, screenRect: { x: 5, y: 0, width: 10, height: 5 } })
-    const bottom = fakeNode("bottom", { focusable: true, parent: root, screenRect: { x: 5, y: 10, width: 10, height: 5 } })
+    const bottom = fakeNode("bottom", {
+      focusable: true,
+      parent: root,
+      screenRect: { x: 5, y: 10, width: 10, height: 5 },
+    })
 
     fm.focus(top)
     fm.focusDirection(root, "down", layoutFn)
@@ -497,25 +505,28 @@ describe("Automatic focus event dispatch (onFocusChange wiring)", () => {
     const a = fakeNode("a", {
       focusable: true,
       parent: root,
-      onFocus: (e) => events.push({
-        type: "focus",
-        targetId: (e.target.props as Record<string, unknown>).testID as string,
-        relatedId: e.relatedTarget ? (e.relatedTarget.props as Record<string, unknown>).testID as string : null,
-      }),
-      onBlur: (e) => events.push({
-        type: "blur",
-        targetId: (e.target.props as Record<string, unknown>).testID as string,
-        relatedId: e.relatedTarget ? (e.relatedTarget.props as Record<string, unknown>).testID as string : null,
-      }),
+      onFocus: (e) =>
+        events.push({
+          type: "focus",
+          targetId: (e.target.props as Record<string, unknown>).testID as string,
+          relatedId: e.relatedTarget ? ((e.relatedTarget.props as Record<string, unknown>).testID as string) : null,
+        }),
+      onBlur: (e) =>
+        events.push({
+          type: "blur",
+          targetId: (e.target.props as Record<string, unknown>).testID as string,
+          relatedId: e.relatedTarget ? ((e.relatedTarget.props as Record<string, unknown>).testID as string) : null,
+        }),
     })
     const b = fakeNode("b", {
       focusable: true,
       parent: root,
-      onFocus: (e) => events.push({
-        type: "focus",
-        targetId: (e.target.props as Record<string, unknown>).testID as string,
-        relatedId: e.relatedTarget ? (e.relatedTarget.props as Record<string, unknown>).testID as string : null,
-      }),
+      onFocus: (e) =>
+        events.push({
+          type: "focus",
+          targetId: (e.target.props as Record<string, unknown>).testID as string,
+          relatedId: e.relatedTarget ? ((e.relatedTarget.props as Record<string, unknown>).testID as string) : null,
+        }),
     })
 
     const fm = createFocusManager({
@@ -527,9 +538,7 @@ describe("Automatic focus event dispatch (onFocusChange wiring)", () => {
 
     // Focus a: relatedTarget is null (nothing was focused before)
     fm.focus(a)
-    expect(events).toEqual([
-      { type: "focus", targetId: "a", relatedId: null },
-    ])
+    expect(events).toEqual([{ type: "focus", targetId: "a", relatedId: null }])
 
     // Focus b: blur on a has relatedTarget=b, focus on b has relatedTarget=a
     fm.focus(b)

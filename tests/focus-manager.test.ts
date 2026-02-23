@@ -13,7 +13,10 @@ import type { InkxNode } from "../src/types.js"
 // Helpers
 // ============================================================================
 
-function fakeNode(testID: string, opts: { focusable?: boolean; parent?: InkxNode; focusScope?: boolean } = {}): InkxNode {
+function fakeNode(
+  testID: string,
+  opts: { focusable?: boolean; parent?: InkxNode; focusScope?: boolean } = {},
+): InkxNode {
   const node = {
     type: "inkx-box" as const,
     props: {

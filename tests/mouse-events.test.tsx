@@ -709,11 +709,7 @@ describe("processMouseEvent with focusManager", () => {
     const state = createMouseEventProcessor({ focusManager: fm })
 
     // Click on the text child — should focus the focusable ancestor
-    processMouseEvent(
-      state,
-      { button: 0, x: 5, y: 1, action: "down", shift: false, meta: false, ctrl: false },
-      root,
-    )
+    processMouseEvent(state, { button: 0, x: 5, y: 1, action: "down", shift: false, meta: false, ctrl: false }, root)
 
     expect(fm.activeElement).toBe(focusableBox)
     expect(fm.focusOrigin).toBe("mouse")
@@ -743,11 +739,7 @@ describe("processMouseEvent with focusManager", () => {
 
     const state = createMouseEventProcessor({ focusManager: fm })
 
-    processMouseEvent(
-      state,
-      { button: 0, x: 5, y: 5, action: "down", shift: false, meta: false, ctrl: false },
-      root,
-    )
+    processMouseEvent(state, { button: 0, x: 5, y: 5, action: "down", shift: false, meta: false, ctrl: false }, root)
 
     expect(fm.activeElement).toBeNull()
   })
@@ -774,11 +766,7 @@ describe("processMouseEvent with focusManager", () => {
 
     // No focusManager — should not throw
     const state = createMouseEventProcessor()
-    processMouseEvent(
-      state,
-      { button: 0, x: 5, y: 5, action: "down", shift: false, meta: false, ctrl: false },
-      root,
-    )
+    processMouseEvent(state, { button: 0, x: 5, y: 5, action: "down", shift: false, meta: false, ctrl: false }, root)
   })
 })
 
@@ -817,7 +805,9 @@ describe("Link component", () => {
   it("supports custom color", () => {
     const app = render(
       <Box>
-        <Link href="https://example.com" color="green">Green Link</Link>
+        <Link href="https://example.com" color="green">
+          Green Link
+        </Link>
       </Box>,
     )
 

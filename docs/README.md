@@ -1,11 +1,20 @@
 # inkx Documentation
 
+## Quick Navigation
+
+- **Completely new?** Start with [Getting Started](getting-started.md) — build your first app in 5 minutes
+- **Coming from Ink?** Read [Why inkx?](site/guide/why-inkx.md), then [Ink Comparison](ink-comparison.md) and [Migration Guide](migration.md)
+- **Building an app?** [Components](components.md) + [Hooks](hooks.md) + [Input Features](input-features.md)
+- **Understanding internals?** [Architecture](architecture.md) → [Internals](internals.md) → [Performance](performance.md)
+- **Contributing?** See [CONTRIBUTING.md](../CONTRIBUTING.md)
+
 ## Learning Path
 
 ### Getting Started
 
 - [Getting Started](getting-started.md) — Runtime layers, first app tutorial
-- [Migration](migration.md) — Migrating from Ink to inkx
+- [Migration from Ink](migration.md) — Drop-in migration guide
+- [Migration from legacy inkx](runtime-migration.md) — Migrating to inkx/runtime API
 
 ### Core Concepts
 
@@ -30,10 +39,15 @@
 - [Internals](internals.md) — Reconciler, dirty tracking, content phase
 - [Containment](containment.md) — Layout feedback loop prevention (useContentRect safe patterns)
 - [Performance](performance.md) — Benchmarks, optimization techniques
-- [Ink Comparison](ink-comparison.md) — Why inkx exists, detailed differences
+- [Ink Comparison](ink-comparison.md) — Detailed feature/performance comparison, real-world impact
 - [Roadmap](roadmap.md) — Render targets, multi-platform vision
 
-### Migration
+### Design Documents
 
-- [Ink → inkx](migration.md) — Drop-in migration guide
-- [Legacy inkx → runtime](runtime-migration.md) — Migrating to inkx/runtime API
+These documents describe the design rationale for implemented or proposed features.
+
+- [Terminal Rendering Design](design.md) — Five-phase pipeline, Unicode, scrolling (implemented)
+- [Mouse Events Design](mouse-events-design.md) — React DOM parity for mouse events (implemented)
+- [DOM Render API Design](dom-api-design.md) — Unified render API with nested mounting (RFC)
+- [Virtual Columns Design](virtual-columns-design.md) — 2D grid virtualization (RFC)
+- [Canvas Playground Design](playground-design.md) — Live-editing playground (RFC)

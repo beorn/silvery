@@ -1,5 +1,7 @@
 # Mouse Events Design — React DOM Parity
 
+> **Status: Implemented** — Mouse events are available in production. This document describes the design rationale.
+
 ## Principle
 
 Mirror React DOM's mouse event model exactly. Developers should be able to transfer their React web knowledge directly. No new concepts.
@@ -242,7 +244,9 @@ Terminal has no native focus. We need a focus concept for key events to know whe
   }}
 >
   <Column>
-    <Box testID="card" focusable
+    <Box
+      testID="card"
+      focusable
       onKeyDown={(e) => {
         if (e.key === "Enter") startEdit()
         e.stopPropagation() // Don't let Enter bubble

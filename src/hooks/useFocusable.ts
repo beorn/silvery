@@ -54,10 +54,10 @@ export function useFocusable(): UseFocusableResult {
   const node = useContext(NodeContext)
 
   // Read testID from the current node's props
-  const testID = node ? ((node.props as Record<string, unknown>).testID as string | undefined) ?? null : null
+  const testID = node ? (((node.props as Record<string, unknown>).testID as string | undefined) ?? null) : null
 
   // Read autoFocus from the current node's props
-  const autoFocus = node ? !!((node.props as Record<string, unknown>).autoFocus) : false
+  const autoFocus = node ? !!(node.props as Record<string, unknown>).autoFocus : false
 
   // Subscribe to FocusManager state via useSyncExternalStore
   const subscribe = useCallback(

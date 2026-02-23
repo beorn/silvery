@@ -10,6 +10,7 @@ import {
   type Style,
   type TerminalBuffer,
   type UnderlineStyle,
+  colorEquals,
   createMutableCell,
   hasActiveAttrs,
   styleEquals,
@@ -28,6 +29,13 @@ const DEBUG_OUTPUT = !!process.env.INKX_DEBUG_OUTPUT
  * This eliminates per-cell string concatenation in styleToAnsi().
  */
 const sgrCache = new Map<string, string>()
+
+/**
+ * Transition cache mapping "oldKey→newKey" to the minimal SGR diff string.
+ * Avoids recomputing attribute diffs for repeated style transitions.
+ * With ~15-50 unique styles, there are at most ~2500 possible transitions.
+ */
+const transitionCache = new Map<string, string>()
 
 /**
  * Serialize a Style into a cache key string.
@@ -109,6 +117,137 @@ function cachedStyleToAnsi(style: Style): string {
   sgr = styleToAnsi(style)
   sgrCache.set(key, sgr)
   return sgr
+}
+
+/**
+ * Compute the minimal SGR transition between two styles.
+ *
+ * When oldStyle is null (first cell or after reset), falls through to
+ * full SGR generation via cachedStyleToAnsi. Otherwise, diffs attribute
+ * by attribute and emits only changed SGR codes. Caches the result for
+ * each (oldKey, newKey) pair.
+ */
+function styleTransition(oldStyle: Style | null, newStyle: Style): string {
+  // First cell or after reset — full generation
+  if (!oldStyle) return cachedStyleToAnsi(newStyle)
+
+  // Same style — nothing to emit
+  if (styleEquals(oldStyle, newStyle)) return ""
+
+  // Check transition cache
+  const oldKey = styleToKey(oldStyle)
+  const newKey = styleToKey(newStyle)
+  const cacheKey = `${oldKey}\x00${newKey}`
+  const cached = transitionCache.get(cacheKey)
+  if (cached !== undefined) return cached
+
+  // Build minimal diff
+  const codes: string[] = []
+
+  // Check attributes that can only be "turned off" via reset or specific off-codes.
+  // If an attribute was on and is now off, we need either the off-code or a full reset.
+  const oa = oldStyle.attrs
+  const na = newStyle.attrs
+
+  // Bold and dim share SGR 22 as their off-code, so handle them together
+  // to avoid emitting duplicate codes.
+  const boldChanged = Boolean(oa.bold) !== Boolean(na.bold)
+  const dimChanged = Boolean(oa.dim) !== Boolean(na.dim)
+  if (boldChanged || dimChanged) {
+    const boldOff = boldChanged && !na.bold
+    const dimOff = dimChanged && !na.dim
+    if (boldOff || dimOff) {
+      // SGR 22 resets both bold and dim
+      codes.push("22")
+      // Re-enable whichever should stay on
+      if (na.bold) codes.push("1")
+      if (na.dim) codes.push("2")
+    } else {
+      // Only turning attributes on
+      if (boldChanged && na.bold) codes.push("1")
+      if (dimChanged && na.dim) codes.push("2")
+    }
+  }
+  if (Boolean(oa.italic) !== Boolean(na.italic)) {
+    codes.push(na.italic ? "3" : "23")
+  }
+
+  // Underline: compare both underline flag and underlineStyle
+  const oldUl = Boolean(oa.underline)
+  const newUl = Boolean(na.underline)
+  const oldUlStyle = oa.underlineStyle ?? false
+  const newUlStyle = na.underlineStyle ?? false
+  if (oldUl !== newUl || oldUlStyle !== newUlStyle) {
+    const sgrSub = underlineStyleToSgr(na.underlineStyle)
+    if (sgrSub !== null && sgrSub !== 0) {
+      codes.push(`4:${sgrSub}`)
+    } else if (newUl) {
+      codes.push("4")
+    } else {
+      codes.push("24")
+    }
+  }
+
+  if (Boolean(oa.inverse) !== Boolean(na.inverse)) {
+    codes.push(na.inverse ? "7" : "27")
+  }
+  if (Boolean(oa.hidden) !== Boolean(na.hidden)) {
+    codes.push(na.hidden ? "8" : "28")
+  }
+  if (Boolean(oa.strikethrough) !== Boolean(na.strikethrough)) {
+    codes.push(na.strikethrough ? "9" : "29")
+  }
+  if (Boolean(oa.blink) !== Boolean(na.blink)) {
+    codes.push(na.blink ? "5" : "25")
+  }
+
+  // Foreground color
+  if (!colorEquals(oldStyle.fg, newStyle.fg)) {
+    if (newStyle.fg === null) {
+      codes.push("39")
+    } else if (typeof newStyle.fg === "number") {
+      codes.push(`38;5;${newStyle.fg}`)
+    } else {
+      codes.push(`38;2;${newStyle.fg.r};${newStyle.fg.g};${newStyle.fg.b}`)
+    }
+  }
+
+  // Background color
+  if (!colorEquals(oldStyle.bg, newStyle.bg)) {
+    if (newStyle.bg === null) {
+      codes.push("49")
+    } else if (typeof newStyle.bg === "number") {
+      codes.push(`48;5;${newStyle.bg}`)
+    } else {
+      codes.push(`48;2;${newStyle.bg.r};${newStyle.bg.g};${newStyle.bg.b}`)
+    }
+  }
+
+  // Underline color
+  if (!colorEquals(oldStyle.underlineColor, newStyle.underlineColor)) {
+    if (newStyle.underlineColor === null || newStyle.underlineColor === undefined) {
+      // SGR 59 resets underline color
+      codes.push("59")
+    } else if (typeof newStyle.underlineColor === "number") {
+      codes.push(`58;5;${newStyle.underlineColor}`)
+    } else {
+      codes.push(`58;2;${newStyle.underlineColor.r};${newStyle.underlineColor.g};${newStyle.underlineColor.b}`)
+    }
+  }
+
+  // Hyperlink (OSC 8) is handled separately in the render loops, not here.
+
+  let result: string
+  if (codes.length === 0) {
+    // Styles differ but no SGR codes emitted (e.g., hyperlink-only change).
+    // Fall back to full generation to be safe.
+    result = cachedStyleToAnsi(newStyle)
+  } else {
+    result = `\x1b[${codes.join(";")}m`
+  }
+
+  transitionCache.set(cacheKey, result)
+  return result
 }
 
 /**
@@ -201,7 +340,7 @@ function renderFullRows(buffer: TerminalBuffer, rows: Set<number>): string {
           underlineColor: cell.underlineColor,
           attrs: { ...cell.attrs },
         }
-        output += cachedStyleToAnsi(saved)
+        output += styleTransition(currentStyle, saved)
         currentStyle = saved
       }
 
@@ -476,7 +615,7 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
           underlineColor: cell.underlineColor,
           attrs: { ...cell.attrs },
         }
-        output += cachedStyleToAnsi(saved)
+        output += styleTransition(currentStyle, saved)
         currentStyle = saved
       }
 
@@ -804,13 +943,14 @@ function changesToAnsi(pool: CellChange[], count: number, mode: "fullscreen" | "
       reusableCellStyle.attrs = cell.attrs
       if (!styleEquals(currentStyle, reusableCellStyle)) {
         // Snapshot: copy attrs so currentStyle isn't invalidated by next iteration
+        const prevStyle = currentStyle
         currentStyle = {
           fg: cell.fg,
           bg: cell.bg,
           underlineColor: cell.underlineColor,
           attrs: { ...cell.attrs },
         }
-        output += cachedStyleToAnsi(currentStyle)
+        output += styleTransition(prevStyle, currentStyle)
       }
 
       // Write character

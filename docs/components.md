@@ -16,15 +16,15 @@ Box supports all standard flexbox props: `flexDirection`, `flexGrow`, `flexShrin
 
 Box supports tree-based focus management via the following props:
 
-| Prop             | Type      | Description                                               |
-| ---------------- | --------- | --------------------------------------------------------- |
-| `focusable`      | `boolean` | Node can receive focus (required for `useFocusable()`)    |
-| `autoFocus`      | `boolean` | Focus this node on mount                                  |
-| `focusScope`     | `boolean` | Creates a focus scope (Tab cycles within this subtree)    |
-| `nextFocusUp`    | `string`  | testID to focus when pressing Up from this node           |
-| `nextFocusDown`  | `string`  | testID to focus when pressing Down from this node         |
-| `nextFocusLeft`  | `string`  | testID to focus when pressing Left from this node         |
-| `nextFocusRight` | `string`  | testID to focus when pressing Right from this node        |
+| Prop             | Type      | Description                                            |
+| ---------------- | --------- | ------------------------------------------------------ |
+| `focusable`      | `boolean` | Node can receive focus (required for `useFocusable()`) |
+| `autoFocus`      | `boolean` | Focus this node on mount                               |
+| `focusScope`     | `boolean` | Creates a focus scope (Tab cycles within this subtree) |
+| `nextFocusUp`    | `string`  | testID to focus when pressing Up from this node        |
+| `nextFocusDown`  | `string`  | testID to focus when pressing Down from this node      |
+| `nextFocusLeft`  | `string`  | testID to focus when pressing Left from this node      |
+| `nextFocusRight` | `string`  | testID to focus when pressing Right from this node     |
 
 ```tsx
 <Box testID="panel" focusable autoFocus borderStyle="single">
@@ -55,13 +55,13 @@ Box and Text support DOM-compatible mouse events:
 
 ### Focus Event Props
 
-| Prop              | Event Type      | Description                                  |
-| ----------------- | --------------- | -------------------------------------------- |
-| `onFocus`         | `InkxFocusEvent`| Called when this node gains focus             |
-| `onBlur`          | `InkxFocusEvent`| Called when this node loses focus             |
-| `onKeyDown`       | `InkxKeyEvent`  | Called on key down (bubble phase)             |
-| `onKeyUp`         | `InkxKeyEvent`  | Called on key up (bubble phase)               |
-| `onKeyDownCapture`| `InkxKeyEvent`  | Called on key down (capture phase)            |
+| Prop               | Event Type       | Description                        |
+| ------------------ | ---------------- | ---------------------------------- |
+| `onFocus`          | `InkxFocusEvent` | Called when this node gains focus  |
+| `onBlur`           | `InkxFocusEvent` | Called when this node loses focus  |
+| `onKeyDown`        | `InkxKeyEvent`   | Called on key down (bubble phase)  |
+| `onKeyUp`          | `InkxKeyEvent`   | Called on key up (bubble phase)    |
+| `onKeyDownCapture` | `InkxKeyEvent`   | Called on key down (capture phase) |
 
 ### Scrollable Containers
 
@@ -224,14 +224,14 @@ import { Link } from "inkx"
 <Link href="km://node/abc123" onClick={(e) => navigate(e)}>Internal Link</Link>
 ```
 
-| Prop        | Type                            | Description                                   |
-| ----------- | ------------------------------- | --------------------------------------------- |
-| `href`      | `string`                        | URL (http/https, or custom scheme)             |
-| `children`  | `ReactNode`                     | Link text content                              |
-| `color`     | `string`                        | Text color (default: `"blue"`)                 |
-| `underline` | `boolean`                       | Underline the link (default: `true`)           |
+| Prop        | Type                              | Description                                       |
+| ----------- | --------------------------------- | ------------------------------------------------- |
+| `href`      | `string`                          | URL (http/https, or custom scheme)                |
+| `children`  | `ReactNode`                       | Link text content                                 |
+| `color`     | `string`                          | Text color (default: `"blue"`)                    |
+| `underline` | `boolean`                         | Underline the link (default: `true`)              |
 | `onClick`   | `(event: InkxMouseEvent) => void` | Click handler (preventDefault to skip navigation) |
-| `testID`    | `string`                        | Test ID for locator queries                    |
+| `testID`    | `string`                          | Test ID for locator queries                       |
 
 ## Newline
 

@@ -1084,7 +1084,15 @@ export function renderText(
   const style = getTextStyle(props)
 
   // Handle wrapping/truncation
-  const lines = formatTextLines(text, width, props.wrap)
+  let lines = formatTextLines(text, width, props.wrap)
+
+  // Apply internal_transform if present (used by Transform component).
+  // Transform is applied per-line after formatting, matching ink's behavior.
+  // The transform should not change dimensions of the output.
+  const internalTransform = props.internal_transform
+  if (internalTransform) {
+    lines = lines.map((line, index) => internalTransform(line, index))
+  }
 
   // Map formatted lines back to character offsets for bg segment application
   const lineOffsets = bgSegments.length > 0 ? mapLinesToCharOffsets(text, lines) : []

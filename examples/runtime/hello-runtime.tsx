@@ -67,5 +67,9 @@ async function main() {
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  try {
+    await main()
+  } catch (e) {
+    console.error(e)
+  }
 }

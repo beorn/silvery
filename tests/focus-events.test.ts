@@ -185,25 +185,27 @@ describe("dispatchKeyEvent", () => {
       onKeyDown: () => log.push("root-bubble"),
       onKeyDownCapture: () => log.push("root-capture"),
     })
-    const middle = fakeNode("middle", {
-      onKeyDown: () => log.push("middle-bubble"),
-      onKeyDownCapture: () => log.push("middle-capture"),
-    }, root)
-    const target = fakeNode("target", {
-      onKeyDown: () => log.push("target"),
-    }, middle)
+    const middle = fakeNode(
+      "middle",
+      {
+        onKeyDown: () => log.push("middle-bubble"),
+        onKeyDownCapture: () => log.push("middle-capture"),
+      },
+      root,
+    )
+    const target = fakeNode(
+      "target",
+      {
+        onKeyDown: () => log.push("target"),
+      },
+      middle,
+    )
 
     const key = makeKey()
     const event = createKeyEvent("j", key, target)
     dispatchKeyEvent(event)
 
-    expect(log).toEqual([
-      "root-capture",
-      "middle-capture",
-      "target",
-      "middle-bubble",
-      "root-bubble",
-    ])
+    expect(log).toEqual(["root-capture", "middle-capture", "target", "middle-bubble", "root-bubble"])
   })
 
   it("stopPropagation in capture phase prevents target and bubble", () => {
@@ -215,9 +217,13 @@ describe("dispatchKeyEvent", () => {
         e.stopPropagation()
       },
     })
-    const target = fakeNode("target", {
-      onKeyDown: () => log.push("target"),
-    }, root)
+    const target = fakeNode(
+      "target",
+      {
+        onKeyDown: () => log.push("target"),
+      },
+      root,
+    )
 
     const key = makeKey()
     const event = createKeyEvent("j", key, target)
@@ -232,12 +238,16 @@ describe("dispatchKeyEvent", () => {
     const root = fakeNode("root", {
       onKeyDown: () => log.push("root"),
     })
-    const target = fakeNode("target", {
-      onKeyDown: (e: InkxKeyEvent) => {
-        log.push("target")
-        e.stopPropagation()
+    const target = fakeNode(
+      "target",
+      {
+        onKeyDown: (e: InkxKeyEvent) => {
+          log.push("target")
+          e.stopPropagation()
+        },
       },
-    }, root)
+      root,
+    )
 
     const key = makeKey()
     const event = createKeyEvent("j", key, target)
@@ -250,12 +260,16 @@ describe("dispatchKeyEvent", () => {
     const log: string[] = []
 
     const root = fakeNode("root", { onKeyDown: () => log.push("root") })
-    const middle = fakeNode("middle", {
-      onKeyDown: (e: InkxKeyEvent) => {
-        log.push("middle")
-        e.stopPropagation()
+    const middle = fakeNode(
+      "middle",
+      {
+        onKeyDown: (e: InkxKeyEvent) => {
+          log.push("middle")
+          e.stopPropagation()
+        },
       },
-    }, root)
+      root,
+    )
     const target = fakeNode("target", { onKeyDown: () => log.push("target") }, middle)
 
     const key = makeKey()
@@ -271,9 +285,13 @@ describe("dispatchKeyEvent", () => {
     const root = fakeNode("root", {
       onKeyDown: (e: InkxKeyEvent) => targets.push(e.currentTarget),
     })
-    const child = fakeNode("child", {
-      onKeyDown: (e: InkxKeyEvent) => targets.push(e.currentTarget),
-    }, root)
+    const child = fakeNode(
+      "child",
+      {
+        onKeyDown: (e: InkxKeyEvent) => targets.push(e.currentTarget),
+      },
+      root,
+    )
 
     const key = makeKey()
     const event = createKeyEvent("j", key, child)
@@ -339,12 +357,16 @@ describe("dispatchFocusEvent", () => {
     const log: string[] = []
 
     const root = fakeNode("root", { onFocus: () => log.push("root") })
-    const child = fakeNode("child", {
-      onFocus: (e: InkxFocusEvent) => {
-        log.push("child")
-        e.stopPropagation()
+    const child = fakeNode(
+      "child",
+      {
+        onFocus: (e: InkxFocusEvent) => {
+          log.push("child")
+          e.stopPropagation()
+        },
       },
-    }, root)
+      root,
+    )
 
     const event = createFocusEvent("focus", child, null)
     dispatchFocusEvent(event)
@@ -358,9 +380,13 @@ describe("dispatchFocusEvent", () => {
     const root = fakeNode("root", {
       onFocus: (e: InkxFocusEvent) => targets.push(e.currentTarget),
     })
-    const child = fakeNode("child", {
-      onFocus: (e: InkxFocusEvent) => targets.push(e.currentTarget),
-    }, root)
+    const child = fakeNode(
+      "child",
+      {
+        onFocus: (e: InkxFocusEvent) => targets.push(e.currentTarget),
+      },
+      root,
+    )
 
     const event = createFocusEvent("focus", child, null)
     dispatchFocusEvent(event)

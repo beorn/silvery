@@ -1,5 +1,7 @@
 # VirtualColumns Design
 
+> **Status: RFC** — This is a design proposal, not yet implemented. Feedback welcome.
+
 Composable virtualization primitives for 2D grid layouts (kanban boards, spreadsheets) with position tracking and cross-axis navigation.
 
 ## Problem

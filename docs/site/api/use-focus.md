@@ -31,12 +31,12 @@ function FocusableItem({ label }: { label: string }) {
 
 ### Return Value
 
-| Property      | Type                                              | Description                                  |
-| ------------- | ------------------------------------------------- | -------------------------------------------- |
-| `focused`     | `boolean`                                         | Whether this component currently has focus    |
-| `focus`       | `() => void`                                      | Programmatically focus this component        |
-| `blur`        | `() => void`                                      | Programmatically blur this component         |
-| `focusOrigin` | `"keyboard" \| "mouse" \| "programmatic" \| null` | How focus was acquired                       |
+| Property      | Type                                              | Description                                |
+| ------------- | ------------------------------------------------- | ------------------------------------------ |
+| `focused`     | `boolean`                                         | Whether this component currently has focus |
+| `focus`       | `() => void`                                      | Programmatically focus this component      |
+| `blur`        | `() => void`                                      | Programmatically blur this component       |
+| `focusOrigin` | `"keyboard" \| "mouse" \| "programmatic" \| null` | How focus was acquired                     |
 
 ## useFocusWithin
 
@@ -65,9 +65,9 @@ function Sidebar() {
 
 ### Return Value
 
-| Type      | Description                                              |
-| --------- | -------------------------------------------------------- |
-| `boolean` | Whether any descendant of the specified Box has focus    |
+| Type      | Description                                           |
+| --------- | ----------------------------------------------------- |
+| `boolean` | Whether any descendant of the specified Box has focus |
 
 ## useFocusManager
 
@@ -92,15 +92,15 @@ function App() {
 
 ### Return Value
 
-| Property        | Type                        | Description                            |
-| --------------- | --------------------------- | -------------------------------------- |
-| `activeId`      | `string \| null`            | testID of the currently focused node   |
-| `activeElement` | `InkxNode \| null`          | The currently focused node             |
-| `focused`       | `boolean`                   | Whether any node has focus             |
-| `focus`         | `(id: string) => void`      | Focus a specific component by testID   |
-| `focusNext`     | `() => void`                | Focus the next focusable component     |
-| `focusPrev`     | `() => void`                | Focus the previous focusable component |
-| `blur`          | `() => void`                | Clear focus from all components        |
+| Property        | Type                   | Description                            |
+| --------------- | ---------------------- | -------------------------------------- |
+| `activeId`      | `string \| null`       | testID of the currently focused node   |
+| `activeElement` | `InkxNode \| null`     | The currently focused node             |
+| `focused`       | `boolean`              | Whether any node has focus             |
+| `focus`         | `(id: string) => void` | Focus a specific component by testID   |
+| `focusNext`     | `() => void`           | Focus the next focusable component     |
+| `focusPrev`     | `() => void`           | Focus the previous focusable component |
+| `blur`          | `() => void`           | Clear focus from all components        |
 
 ## Box Focus Props
 
@@ -115,18 +115,18 @@ Focus behavior is configured via props on `<Box>`:
 <Box onKeyDown={handler}> {/* Key event dispatched to focused node (bubbles) */}
 ```
 
-| Prop             | Type       | Default | Description                                        |
-| ---------------- | ---------- | ------- | -------------------------------------------------- |
-| `focusable`      | `boolean`  | `false` | Node can receive focus                             |
-| `autoFocus`      | `boolean`  | `false` | Focus this node on mount                           |
-| `focusScope`     | `boolean`  | `false` | Tab cycles within this subtree                     |
-| `nextFocusUp`    | `string`   | —       | testID to focus on Up arrow (explicit override)    |
-| `nextFocusDown`  | `string`   | —       | testID to focus on Down arrow                      |
-| `nextFocusLeft`  | `string`   | —       | testID to focus on Left arrow                      |
-| `nextFocusRight` | `string`   | —       | testID to focus on Right arrow                     |
-| `onFocus`        | `function` | —       | Called when this node gains focus                   |
-| `onBlur`         | `function` | —       | Called when this node loses focus                   |
-| `onKeyDown`      | `function` | —       | Key event handler (bubble phase)                   |
+| Prop             | Type       | Default | Description                                     |
+| ---------------- | ---------- | ------- | ----------------------------------------------- |
+| `focusable`      | `boolean`  | `false` | Node can receive focus                          |
+| `autoFocus`      | `boolean`  | `false` | Focus this node on mount                        |
+| `focusScope`     | `boolean`  | `false` | Tab cycles within this subtree                  |
+| `nextFocusUp`    | `string`   | —       | testID to focus on Up arrow (explicit override) |
+| `nextFocusDown`  | `string`   | —       | testID to focus on Down arrow                   |
+| `nextFocusLeft`  | `string`   | —       | testID to focus on Left arrow                   |
+| `nextFocusRight` | `string`   | —       | testID to focus on Right arrow                  |
+| `onFocus`        | `function` | —       | Called when this node gains focus               |
+| `onBlur`         | `function` | —       | Called when this node loses focus               |
+| `onKeyDown`      | `function` | —       | Key event handler (bubble phase)                |
 
 ## Examples
 
@@ -251,9 +251,13 @@ function MenuItem({ label, onSelect }: { label: string; onSelect: () => void }) 
   const { focused } = useFocusable()
 
   return (
-    <Box testID={label} focusable onKeyDown={(e) => {
-      if (e.key === "Enter") onSelect()
-    }}>
+    <Box
+      testID={label}
+      focusable
+      onKeyDown={(e) => {
+        if (e.key === "Enter") onSelect()
+      }}
+    >
       <Text color={focused ? "cyan" : undefined}>
         {focused ? "> " : "  "}
         {label}

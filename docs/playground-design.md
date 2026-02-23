@@ -1,6 +1,8 @@
 # Canvas Playground Design
 
-Design document for a full interactive playground where users can write JSX and see it rendered to canvas in real time. The basic static playground lives at `examples/playground/`; this document describes the architecture for a live-editing version.
+> **Status: RFC** — This is a design proposal. The basic static playground lives at `examples/playground/`; this describes the architecture for a live-editing version.
+
+Design document for a full interactive playground where users can write JSX and see it rendered to canvas in real time.
 
 ## Goals
 

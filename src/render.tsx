@@ -18,14 +18,7 @@ import { type Term, createTerm } from "chalkx"
 import React, { useCallback, useMemo, useRef, type ReactElement, type ReactNode } from "react"
 
 const log = createLogger("inkx:render")
-import {
-  AppContext,
-  EventsContext,
-  InputContext,
-  StdinContext,
-  StdoutContext,
-  TermContext,
-} from "./context.js"
+import { AppContext, EventsContext, InputContext, StdinContext, StdoutContext, TermContext } from "./context.js"
 import { type LayoutEngineType, isLayoutEngineInitialized } from "./layout-engine.js"
 import {
   ANSI,

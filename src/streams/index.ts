@@ -47,12 +47,16 @@ export async function* merge<T>(...sources: AsyncIterable<T>[]): AsyncGenerator<
   const iterators = sources.map((source) => source[Symbol.asyncIterator]())
   const pending = new Map<number, Promise<{ index: number; result: IteratorResult<T, unknown> }>>()
 
+  async function nextWithIndex(idx: number): Promise<{ index: number; result: IteratorResult<T, unknown> }> {
+    const iterator = iterators[idx]
+    if (!iterator) throw new Error(`No iterator at index ${idx}`)
+    const result = await iterator.next()
+    return { index: idx, result }
+  }
+
   // Start all iterators
   for (let i = 0; i < iterators.length; i++) {
-    pending.set(
-      i,
-      iterators[i]!.next().then((result) => ({ index: i, result })),
-    )
+    pending.set(i, nextWithIndex(i))
   }
 
   try {
@@ -66,10 +70,7 @@ export async function* merge<T>(...sources: AsyncIterable<T>[]): AsyncGenerator<
       } else {
         // Yield the value and request next from this source
         yield result.value
-        pending.set(
-          index,
-          iterators[index]!.next().then((result) => ({ index, result })),
-        )
+        pending.set(index, nextWithIndex(index))
       }
     }
   } finally {

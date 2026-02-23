@@ -8,7 +8,13 @@
  */
 
 import type { InkxNode, Rect } from "./types.js"
-import { findByTestID, findFocusableAncestor, getTabOrder, findSpatialTarget, getExplicitFocusLink } from "./focus-queries.js"
+import {
+  findByTestID,
+  findFocusableAncestor,
+  getTabOrder,
+  findSpatialTarget,
+  getExplicitFocusLink,
+} from "./focus-queries.js"
 
 // ============================================================================
 // Types

@@ -198,9 +198,7 @@ export function dispatchKeyEvent(event: InkxKeyEvent, dispatch?: (msg: unknown) 
   for (let i = path.length - 1; i > 0; i--) {
     if (event.propagationStopped) return
     const node = path[i]!
-    const handler = (node.props as Record<string, unknown>).onKeyDownCapture as
-      | ((e: InkxKeyEvent) => void)
-      | undefined
+    const handler = (node.props as Record<string, unknown>).onKeyDownCapture as ((e: InkxKeyEvent) => void) | undefined
     if (handler) {
       mutableEvent.currentTarget = node
       handler(event)
@@ -246,9 +244,7 @@ export function dispatchFocusEvent(event: InkxFocusEvent): void {
   for (const node of path) {
     if (event.propagationStopped) break
 
-    const handler = (node.props as Record<string, unknown>)[handlerProp] as
-      | ((e: InkxFocusEvent) => void)
-      | undefined
+    const handler = (node.props as Record<string, unknown>)[handlerProp] as ((e: InkxFocusEvent) => void) | undefined
     if (handler) {
       mutableEvent.currentTarget = node
       handler(event)

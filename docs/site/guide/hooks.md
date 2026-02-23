@@ -223,8 +223,8 @@ function FocusableItem({ label }: { label: string }) {
 
 ### Return Value
 
-| Property      | Type                                              | Description                               |
-| ------------- | ------------------------------------------------- | ----------------------------------------- |
+| Property      | Type                                              | Description                                |
+| ------------- | ------------------------------------------------- | ------------------------------------------ |
 | `focused`     | `boolean`                                         | Whether this component currently has focus |
 | `focus`       | `() => void`                                      | Programmatically focus this component      |
 | `blur`        | `() => void`                                      | Programmatically blur this component       |
@@ -274,12 +274,12 @@ function App() {
 
 ### Return Value
 
-| Property        | Type                        | Description                            |
-| --------------- | --------------------------- | -------------------------------------- |
-| `activeId`      | `string \| null`            | testID of the currently focused node   |
-| `activeElement` | `InkxNode \| null`          | The currently focused node             |
-| `focused`       | `boolean`                   | Whether any node has focus             |
-| `focus`         | `(id: string) => void`      | Focus a specific component by testID   |
-| `focusNext`     | `() => void`                | Focus next focusable component         |
-| `focusPrev`     | `() => void`                | Focus previous focusable component     |
-| `blur`          | `() => void`                | Clear focus from all components        |
+| Property        | Type                   | Description                          |
+| --------------- | ---------------------- | ------------------------------------ |
+| `activeId`      | `string \| null`       | testID of the currently focused node |
+| `activeElement` | `InkxNode \| null`     | The currently focused node           |
+| `focused`       | `boolean`              | Whether any node has focus           |
+| `focus`         | `(id: string) => void` | Focus a specific component by testID |
+| `focusNext`     | `() => void`           | Focus next focusable component       |
+| `focusPrev`     | `() => void`           | Focus previous focusable component   |
+| `blur`          | `() => void`           | Clear focus from all components      |

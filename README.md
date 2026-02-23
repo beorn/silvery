@@ -143,18 +143,28 @@ The RenderAdapter interface separates core logic (reconciler, layout, hooks) fro
 ### Layout & Rendering
 
 - `useContentRect()` / `useScreenRect()` — sync layout feedback during render
-- Five-phase pipeline with dirty tracking
+- Five-phase pipeline with dirty tracking — only changed nodes re-render
 - Pluggable layout: [Flexx](https://github.com/beorn/flexx) (default, pure JS) or Yoga (WASM)
 - 165µs cold render, 169µs dirty update for 1000 nodes ([benchmarks](docs/ink-comparison.md#performance))
+
+### Memory & Stability
+
+- **No WASM linear memory growth** — Flexx is pure TypeScript; Yoga WASM allocates linear memory that grows monotonically during long sessions and cannot be reclaimed without resetting the entire module
+- **Layout caching** — Flexx fingerprints nodes and caches layout results; unchanged subtrees skip recomputation entirely. Static UI regions (status bars, headers, chrome) have zero layout cost after first render
+- **Zero initialization overhead** — no async WASM loading; instant startup with no deferred imports needed
+- **No native dependencies** — pure JS/TS, no platform-specific C++ compilation (Yoga NAPI) or WASM binaries
+- **Built-in CJK/wide character support** — wcwidth-aware text measurement prevents misaligned layouts with Chinese, Japanese, Korean, and emoji content
+- **Incremental terminal output** — buffer diff emits only changed cells; streaming LLM output or rapid state updates produce minimal terminal I/O instead of full-screen repaints
 
 ![Layout feedback: each pane displays its own dimensions via useContentRect()](docs/images/layout-feedback.png)
 
 ### Components
 
-- **Box** — flexbox container with borders, padding, overflow
+- **Box** — flexbox container with borders, padding, overflow, focus, mouse events
 - **Text** — styled text with auto-truncation, extended underlines
+- **Link** — OSC 8 hyperlinks (clickable URLs in supporting terminals)
 - **VirtualList** — efficient rendering for large lists (100+ items)
-- **Console** — captures and displays `console.log` output
+- **Console** — captures and displays `console.log` output cleanly alongside the UI
 - **TextInput** / **ReadlineInput** — text input with readline shortcuts (Ctrl+A/E/W/K/Y)
 - **TextArea** — multi-line text input with word wrap, scrolling, and cursor movement
 - **InputBoundary** — isolates input scope for embedded interactive components
@@ -166,15 +176,27 @@ The RenderAdapter interface separates core logic (reconciler, layout, hooks) fro
 
 ### Input & Interaction
 
-- Input layer stack — DOM-style event bubbling (LIFO)
+- Input layer stack — DOM-style event bubbling (LIFO) for modal dialogs and text input
+- [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) — Cmd ⌘, Hyper ✦, key release events, international keyboard support
+- Mouse support (SGR protocol) — click, double-click, scroll, drag with DOM-style event props
+- Focus system — tree-based focus management with scopes, spatial navigation, click-to-focus
 - Plugin composition: withCommands, withKeybindings, withDiagnostics
-- HitRegistry — mouse/click support (coming soon)
+- Hotkey parsing with macOS symbols: `parseHotkey("⌘K")`, `matchHotkey(key, "⌃⇧A")`
+
+### Terminal Features
+
+- Synchronized updates (DEC 2026) — atomic screen painting, no flicker in tmux/Zellij
+- Scrollback mode — completed items freeze into terminal scrollback via `useScrollback`; active UI shrinks as items complete
+- Adaptive rendering — `term.hasCursor()`, `term.hasColor()`, `term.hasInput()` for graceful degradation
+- `renderString()` — static rendering for non-TTY output (CI, piped, headless)
+- Kitty graphics protocol — inline image display ([example](examples/kitty/images.tsx))
+- `using` / Disposable cleanup — automatic resource teardown
 
 ### Testing
 
 - `createRenderer` with configurable dimensions
 - Playwright-style locators: `getByTestId`, `getByText`, `locator()`
-- `withDiagnostics`: incremental vs fresh render verification
+- `withDiagnostics`: incremental vs fresh render verification (catches rendering regressions in CI)
 
 ### Unicode & Streams
 

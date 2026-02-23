@@ -85,10 +85,7 @@ export type InkxMsg =
  * - `batch`: Multiple effects to execute
  * - `dispatch`: Queue another message (no re-entrant dispatch)
  */
-export type Effect =
-  | { type: "none" }
-  | { type: "batch"; effects: Effect[] }
-  | { type: "dispatch"; msg: InkxMsg }
+export type Effect = { type: "none" } | { type: "batch"; effects: Effect[] } | { type: "dispatch"; msg: InkxMsg }
 
 /**
  * Subscription descriptor (for future use).
@@ -167,9 +164,7 @@ export type Plugin<Model, Msg> = (
  * // Equivalent to: logging(focusNav(spatialNav(baseUpdate)))
  * ```
  */
-export function compose<Model, Msg>(
-  ...plugins: Plugin<Model, Msg>[]
-): Plugin<Model, Msg> {
+export function compose<Model, Msg>(...plugins: Plugin<Model, Msg>[]): Plugin<Model, Msg> {
   return (innerUpdate) => {
     let update = innerUpdate
     // Apply right-to-left so first plugin is outermost
@@ -185,28 +180,14 @@ export function compose<Model, Msg>(
 // =============================================================================
 
 export { createFocusManager } from "../focus-manager.js"
-export type {
-  FocusManager,
-  FocusManagerOptions,
-  FocusChangeCallback,
-  FocusSnapshot,
-} from "../focus-manager.js"
+export type { FocusManager, FocusManagerOptions, FocusChangeCallback, FocusSnapshot } from "../focus-manager.js"
 
 // =============================================================================
 // Focus Events (pure, no React)
 // =============================================================================
 
-export {
-  createKeyEvent,
-  createFocusEvent,
-  dispatchKeyEvent,
-  dispatchFocusEvent,
-} from "../focus-events.js"
-export type {
-  InkxKeyEvent,
-  InkxFocusEvent,
-  FocusEventProps,
-} from "../focus-events.js"
+export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "../focus-events.js"
+export type { InkxKeyEvent, InkxFocusEvent, FocusEventProps } from "../focus-events.js"
 
 // =============================================================================
 // Focus Queries (pure, no React)

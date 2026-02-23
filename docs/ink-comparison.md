@@ -31,6 +31,24 @@ If your app uses `Box`, `Text`, `useInput`, and basic hooks, it works in both wi
 
 _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 
+### Runtime Stability
+
+| Feature                     | inkx                                                             | Ink                                                                              |
+| --------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Memory in long sessions** | Constant — Flexx uses normal JS GC                               | Grows monotonically — Yoga WASM linear memory cannot shrink without module reset |
+| **Layout caching**          | Flexx fingerprints + caches unchanged subtrees                   | Full tree recomputation on every pass                                            |
+| **Initialization**          | Synchronous — pure TypeScript import                             | Async WASM loading (Yoga) or native compilation (Yoga NAPI)                      |
+| **Native dependencies**     | None — pure JS/TS                                                | Yoga NAPI: C++ addon per platform; Yoga WASM: binary blob                        |
+| **Streaming output perf**   | Dirty tracking + buffer diff — only changed cells emit           | Full-screen repaint on every state change                                        |
+| **Synchronized updates**    | DEC 2026 automatic — atomic screen paint, no tmux/Zellij flicker | None                                                                             |
+| **Resource cleanup**        | `using` / Disposable — automatic teardown                        | Manual `unmount()` / `process.exit` handling                                     |
+| **Unicode/CJK**             | Built-in wcwidth, grapheme splitting, display width (28+ utils)  | Third-party `string-width`, no built-in truncation                               |
+| **Border/overflow**         | Correct border text rendering, ANSI-aware auto-truncation        | Text can overflow borders; manual truncation per component                       |
+| **Scrollback mode**         | `useScrollback` — completed items freeze into terminal history   | None — must keep all items in render tree                                        |
+| **Console capture**         | Built-in `<Console />` — subprocess output alongside UI          | `patchConsole()` — intercepts but less composable                                |
+| **Adaptive degradation**    | `term.hasCursor/hasColor/hasInput` + `renderString()` fallback   | Assumes TTY; non-TTY is [PR #854](https://github.com/vadimdemedes/ink/pull/854)  |
+| **Static rendering**        | `renderString()` — one-call string output, plain mode option     | Requires full `render()` setup even for non-interactive output                   |
+
 ### Architecture & Rendering
 
 | Feature                   | inkx                                                                                    | Ink                                                                                                                                    |
@@ -49,28 +67,40 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 
 ### Input & Interaction
 
-| Feature                 | inkx                                              | Ink                                                                            |
-| ----------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Input handling          | `InputLayerProvider` stack (DOM-style bubbling)   | `useInput` only                                                                |
-| Kitty keyboard protocol | `keyToKittyAnsi()` + auto-detection               | [PR #852](https://github.com/vadimdemedes/ink/pull/852) in review              |
-| Cursor API              | `useCursor()` — component-relative positioning    | None ([#251](https://github.com/vadimdemedes/ink/issues/251), open since 2019) |
-| TextArea                | Planned — multi-line editing with layout feedback | None ([#676](https://github.com/vadimdemedes/ink/issues/676))                  |
-| Mouse support           | HitRegistry with z-index                          | Basic via `useInput`                                                           |
-| Unicode/CJK             | Built-in grapheme splitting + display width       | Third-party `string-width`                                                     |
-| Console capture         | Built-in `Console` component                      | `patchConsole()`                                                               |
-| Exit handling           | `useExit` + `using` cleanup                       | `process.exit` handling                                                        |
-| Accessibility           | Basic                                             | [PR #823](https://github.com/vadimdemedes/ink/pull/823) (screen reader)        |
+| Feature                 | inkx                                                              | Ink                                                                            |
+| ----------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Input handling          | `InputLayerProvider` stack (DOM-style bubbling, modal isolation)  | `useInput` only (flat, no isolation)                                           |
+| Kitty keyboard protocol | Full spec: ⌘/✦ modifiers, press/repeat/release, auto-detect       | [PR #852](https://github.com/vadimdemedes/ink/pull/852) in review              |
+| Focus system            | Tree-based: scopes, spatial navigation, autoFocus, click-to-focus | None                                                                           |
+| Command system          | `withCommands` — ID, name, help, keybindings, introspection       | None                                                                           |
+| Keybinding system       | `withKeybindings` — configurable, context-aware, macOS symbols    | None                                                                           |
+| Mouse support           | SGR protocol, DOM-style event props, hit testing, wheel/drag      | Basic via `useInput`                                                           |
+| Cursor API              | `useCursor()` — component-relative positioning                    | None ([#251](https://github.com/vadimdemedes/ink/issues/251), open since 2019) |
+| TextArea                | Multi-line editing with word wrap, readline, scroll               | None ([#676](https://github.com/vadimdemedes/ink/issues/676))                  |
+| Hotkey parsing          | `parseHotkey("⌘K")` — macOS symbols ⌘⌥⌃⇧✦                         | None                                                                           |
+| Hyperlinks              | `<Link>` — OSC 8 clickable URLs                                   | None                                                                           |
+| Inline images           | Kitty graphics protocol (PNG display, working example)            | None                                                                           |
+| Unicode/CJK             | Built-in grapheme splitting + display width (28+ utils)           | Third-party `string-width`                                                     |
+| Console capture         | Built-in `<Console />` component (composable)                     | `patchConsole()` (intercept-only)                                              |
+| Exit handling           | `useExit` + `using` cleanup (Disposable)                          | `process.exit` handling                                                        |
+| Accessibility           | Basic                                                             | [PR #823](https://github.com/vadimdemedes/ink/pull/823) (screen reader)        |
 
 ### Developer Experience
 
-| Feature            | inkx                                                   | Ink                                         |
-| ------------------ | ------------------------------------------------------ | ------------------------------------------- |
-| TypeScript         | Native, strict mode                                    | TS support                                  |
-| Plugin composition | `withCommands` / `withKeybindings` / `withDiagnostics` | None                                        |
-| Testing            | `createRenderer` + Playwright-style locators           | ink-testing-library                         |
-| Community          | New                                                    | 50+ components, ~1.3M npm weekly (Feb 2026) |
-| Bundle (gzip)      | ~45 KB (Flexx) / ~76 KB (Yoga)                         | ~52 KB                                      |
-| Maintenance        | Active development                                     | Maintenance mode                            |
+| Feature            | inkx                                                    | Ink                                         |
+| ------------------ | ------------------------------------------------------- | ------------------------------------------- |
+| React version      | 19                                                      | 18                                          |
+| TypeScript         | Native, strict mode                                     | TS support                                  |
+| Runtime layers     | 3 layers: Elm-style reducer, React hooks, Zustand store | Single render API                           |
+| Plugin composition | `withCommands` / `withKeybindings` / `withDiagnostics`  | None                                        |
+| Testing            | `createRenderer` + Playwright-style locators            | ink-testing-library                         |
+| Render invariants  | `withDiagnostics` — incremental vs fresh verification   | None                                        |
+| Screenshots        | `bufferToHTML()` + Playwright — programmatic capture    | None                                        |
+| Render targets     | Terminal, Canvas 2D, DOM                                | Terminal only                               |
+| Stream helpers     | AsyncIterable: merge, map, filter, throttle, debounce   | None                                        |
+| Community          | New                                                     | 50+ components, ~1.3M npm weekly (Feb 2026) |
+| Bundle (gzip)      | ~45 KB (Flexx) / ~76 KB (Yoga)                          | ~52 KB                                      |
+| Maintenance        | Active development                                      | Maintenance mode                            |
 
 ### Performance
 
@@ -297,6 +327,17 @@ Packed Uint32Array cell comparison with cursor-movement optimization.
 | inkx + Flexx | ~45 KB      |
 | inkx + Yoga  | ~76 KB      |
 | Ink          | ~52 KB      |
+
+---
+
+## Real-World Impact
+
+These aren't theoretical differences. Production Ink-based CLIs have hit several of these issues:
+
+- **Memory**: Claude Code (Anthropic's CLI, built on Ink) reported [120+ GB memory usage](https://github.com/anthropics/claude-code/issues/4953) from Yoga WASM linear memory growth, crashing every 30-60 minutes. Versions 2.1.47–2.1.50 each fixed WASM memory leaks. inkx's pure-TS layout eliminates this entire bug category.
+- **Flicker**: Ink's approach of [clearing the entire terminal](https://github.com/vadimdemedes/ink/issues/359) on each render causes visible flicker, especially in tmux. A [Hacker News discussion](https://news.ycombinator.com/item?id=46844822) noted that Ink "literally clears the entire terminal including scrollback buffer on each full render." inkx's dirty tracking and DEC 2026 synchronized updates produce flicker-free output.
+- **Performance**: Developers have noted ["rough edges in rendering performance"](https://www.libhunt.com/posts/1476376-claude-opus-4-6) with Ink-based tools. inkx's 122x faster interactive updates (dirty tracking vs full re-render) directly address this.
+- **Missing capabilities**: Production CLIs lack mouse support, customizable keybindings, focus management, and modern terminal protocol support — all built into inkx.
 
 ---
 

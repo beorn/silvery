@@ -59,10 +59,7 @@ export interface StoreApi<Model extends InkxModel, Msg extends InkxMsg> {
  * the node tree, which the store doesn't have — those are handled
  * at the React integration layer).
  */
-export function withFocusManagement<
-  Model extends InkxModel,
-  Msg extends InkxMsg,
->(): Plugin<Model, Msg> {
+export function withFocusManagement<Model extends InkxModel, Msg extends InkxMsg>(): Plugin<Model, Msg> {
   return (innerUpdate) => (msg, model) => {
     switch (msg.type) {
       case "focus": {
@@ -139,10 +136,7 @@ export function withFocusManagement<
  * Returns the model unchanged with no effects for any unhandled message.
  * Compose with plugins to add behavior.
  */
-export function inkxUpdate<Model extends InkxModel, Msg extends InkxMsg>(
-  _msg: Msg,
-  model: Model,
-): [Model, Effect[]] {
+export function inkxUpdate<Model extends InkxModel, Msg extends InkxMsg>(_msg: Msg, model: Model): [Model, Effect[]] {
   return [model, [none]]
 }
 

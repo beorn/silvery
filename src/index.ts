@@ -103,6 +103,8 @@ export { Text } from "./components/Text.js"
 
 export { Link } from "./components/Link.js"
 export type { LinkProps } from "./components/Link.js"
+export { Transform } from "./components/Transform.js"
+export type { TransformProps } from "./components/Transform.js"
 export { Newline } from "./components/Newline.js"
 export { Spacer } from "./components/Spacer.js"
 export { Static } from "./components/Static.js"
@@ -195,18 +197,29 @@ export { useFocusManager } from "./hooks/useFocusManager.js"
 
 // Focus system (tree-based)
 export { createFocusManager } from "./focus-manager.js"
-export type { FocusManager, FocusManagerOptions, FocusChangeCallback, FocusOrigin, FocusSnapshot } from "./focus-manager.js"
-export { findFocusableAncestor, getTabOrder, findByTestID, findSpatialTarget, getExplicitFocusLink } from "./focus-queries.js"
+export type {
+  FocusManager,
+  FocusManagerOptions,
+  FocusChangeCallback,
+  FocusOrigin,
+  FocusSnapshot,
+} from "./focus-manager.js"
 export {
-  createKeyEvent,
-  createFocusEvent,
-  dispatchKeyEvent,
-  dispatchFocusEvent,
-} from "./focus-events.js"
+  findFocusableAncestor,
+  getTabOrder,
+  findByTestID,
+  findSpatialTarget,
+  getExplicitFocusLink,
+} from "./focus-queries.js"
+export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "./focus-events.js"
 export type { InkxKeyEvent, InkxFocusEvent, FocusEventProps } from "./focus-events.js"
 export { useFocusable } from "./hooks/useFocusable.js"
 export type { UseFocusableResult } from "./hooks/useFocusable.js"
 export { useFocusWithin } from "./hooks/useFocusWithin.js"
+
+// Ink-compatible focus hooks
+export { useFocus, useInkFocusManager } from "./hooks/ink-compat.js"
+export type { UseFocusOptions, UseFocusResult, InkUseFocusManagerResult } from "./hooks/ink-compat.js"
 export { useTerm } from "./hooks/useTerm.js"
 export { useConsole } from "./hooks/useConsole.js"
 export { useCursor, resetCursorState, getCursorState, subscribeCursor } from "./hooks/useCursor.js"
@@ -332,12 +345,16 @@ export {
 // ANSI escape sequences for terminal control
 export {
   ANSI,
+  BEL,
   enableMouse,
   disableMouse,
   KittyFlags,
   enableKittyKeyboard,
   disableKittyKeyboard,
   queryKittyKeyboard,
+  notify,
+  notifyITerm2,
+  notifyKitty,
 } from "./output.js"
 
 // Kitty protocol detection

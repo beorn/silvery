@@ -108,6 +108,7 @@ export function contentPropsChanged(
     "wrap",
     "borderColor",
     "borderStyle",
+    "internal_transform",
   ]
 
   for (const prop of styleProps) {

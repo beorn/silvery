@@ -21,14 +21,7 @@ import {
   dispatch as dispatchEffect,
   none,
 } from "inkx/core"
-import {
-  type StoreApi,
-  type StoreConfig,
-  createStore,
-  defaultInit,
-  inkxUpdate,
-  withFocusManagement,
-} from "inkx/store"
+import { type StoreApi, type StoreConfig, createStore, defaultInit, inkxUpdate, withFocusManagement } from "inkx/store"
 
 // =============================================================================
 // Helpers
@@ -267,10 +260,7 @@ describe("effects — execution", () => {
         callOrder.push(msg.type)
         if (msg.type === "increment") {
           // When we get increment, also dispatch a decrement
-          return [
-            { ...model, count: model.count + 1 },
-            [dispatchEffect({ type: "decrement" } as CounterMsg)],
-          ]
+          return [{ ...model, count: model.count + 1 }, [dispatchEffect({ type: "decrement" } as CounterMsg)]]
         }
         if (msg.type === "decrement") {
           return [{ ...model, count: model.count - 1 }, [none]]
@@ -353,10 +343,7 @@ describe("effect constructors", () => {
   })
 
   test("batch flattens nested batches", () => {
-    const inner = batch(
-      dispatchEffect({ type: "blur" }),
-      dispatchEffect({ type: "blur" }),
-    )
+    const inner = batch(dispatchEffect({ type: "blur" }), dispatchEffect({ type: "blur" }))
     const outer = batch(inner, dispatchEffect({ type: "blur" }))
 
     // Should flatten to a single batch with 3 dispatch effects
@@ -484,9 +471,7 @@ describe("compose — plugin chaining", () => {
 
 describe("withFocusManagement — plugin", () => {
   function createFocusStore(): StoreApi<CounterModel, CounterMsg> {
-    const update = compose<CounterModel, CounterMsg>(
-      withFocusManagement<CounterModel, CounterMsg>(),
-    )(counterUpdate)
+    const update = compose<CounterModel, CounterMsg>(withFocusManagement<CounterModel, CounterMsg>())(counterUpdate)
 
     return createStore<CounterModel, CounterMsg>({
       init: () => [
@@ -655,8 +640,7 @@ describe("inkx/core — exports", () => {
   })
 
   test("re-exports focus events", async () => {
-    const { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } =
-      await import("inkx/core")
+    const { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } = await import("inkx/core")
     expect(typeof createKeyEvent).toBe("function")
     expect(typeof createFocusEvent).toBe("function")
     expect(typeof dispatchKeyEvent).toBe("function")

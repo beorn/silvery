@@ -1469,10 +1469,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // Simulate term:key event through handlers
       const namespacedHandler = handlers?.["term:key" as keyof typeof handlers]
       if (namespacedHandler && typeof namespacedHandler === "function") {
-        const result = (namespacedHandler as EventHandler<unknown, S & I>)(
-          { input, key: parsedKey },
-          handlerCtx,
-        )
+        const result = (namespacedHandler as EventHandler<unknown, S & I>)({ input, key: parsedKey }, handlerCtx)
         if (result === "exit") {
           isRendering = false
           inEventHandler = false
