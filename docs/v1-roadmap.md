@@ -133,15 +133,15 @@ These APIs are the 1.0 stability contract. After 1.0, changes to these require a
 
 These are explicitly excluded from the 1.0 stability guarantee:
 
-| Feature | Status | Entry Point | Notes |
-|---------|--------|-------------|-------|
-| Canvas 2D adapter | Experimental | `inkx/canvas` | API may change without major bump |
-| DOM adapter | Experimental | `inkx/dom` | API may change without major bump |
-| WebGL adapter | Future | -- | Not started |
-| React Native target | Future | -- | Not started |
-| PDF/Email generation | Future | -- | Not started |
-| `useScrollRegion` (DECSTBM) | Experimental | `inkx/hooks` | May stabilize in 1.x |
-| React DevTools integration | Experimental | `enableInspector()` | Debug-only, API may change |
+| Feature                     | Status       | Entry Point         | Notes                             |
+| --------------------------- | ------------ | ------------------- | --------------------------------- |
+| Canvas 2D adapter           | Experimental | `inkx/canvas`       | API may change without major bump |
+| DOM adapter                 | Experimental | `inkx/dom`          | API may change without major bump |
+| WebGL adapter               | Future       | --                  | Not started                       |
+| React Native target         | Future       | --                  | Not started                       |
+| PDF/Email generation        | Future       | --                  | Not started                       |
+| `useScrollRegion` (DECSTBM) | Experimental | `inkx/hooks`        | May stabilize in 1.x              |
+| React DevTools integration  | Experimental | `enableInspector()` | Debug-only, API may change        |
 
 Experimental entry points are available but carry no stability guarantee. They can have breaking changes in minor versions (1.1, 1.2) with documentation.
 
@@ -149,13 +149,13 @@ Experimental entry points are available but carry no stability guarantee. They c
 
 After 1.0:
 
-| Change | Version Bump |
-|--------|-------------|
-| Breaking change to core API (component props, hook signatures, runtime API) | **Major** (2.0) |
-| Breaking change to experimental entry points (canvas, dom) | **Minor** (1.x) with deprecation notice |
-| New component, hook, or entry point | **Minor** (1.1, 1.2) |
-| Bug fix, performance improvement, documentation | **Patch** (1.0.1) |
-| New terminal protocol support | **Minor** |
+| Change                                                                      | Version Bump                            |
+| --------------------------------------------------------------------------- | --------------------------------------- |
+| Breaking change to core API (component props, hook signatures, runtime API) | **Major** (2.0)                         |
+| Breaking change to experimental entry points (canvas, dom)                  | **Minor** (1.x) with deprecation notice |
+| New component, hook, or entry point                                         | **Minor** (1.1, 1.2)                    |
+| Bug fix, performance improvement, documentation                             | **Patch** (1.0.1)                       |
+| New terminal protocol support                                               | **Minor**                               |
 
 **Ink compatibility contract**: The `inkx/ink` entry point and the Ink-compatible subset of the main API are part of the 1.0 contract. If Ink adds new API surface, inkx may adopt it in a minor release. Removing Ink-compatible API is a breaking change.
 
@@ -168,6 +168,7 @@ inkx should reach 1.0 **after** Flexx, because:
 3. inkx has a larger API surface with more to audit
 
 Suggested order:
+
 1. Flexx 1.0 published on npm
 2. Complete layered architecture restructure
 3. Run bundle audit with Flexx 1.0 as dependency

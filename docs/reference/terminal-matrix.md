@@ -4,36 +4,36 @@ Comprehensive reference of terminal emulator feature support as detected by inkx
 
 ## Capability Matrix
 
-| Terminal     | Colors  | Kitty KB | Kitty Gfx | Sixel | OSC 52 | Hyperlinks | Notify | Paste | Mouse | Sync | Unicode |
-| ------------ | ------- | -------- | --------- | ----- | ------ | ---------- | ------ | ----- | ----- | ---- | ------- |
-| Ghostty      | 24-bit  | Yes      | Yes       | -     | Yes    | Yes        | -      | Yes   | Yes   | Yes  | Yes     |
-| kitty        | 24-bit  | Yes      | Yes       | -     | Yes    | Yes        | Yes    | Yes   | Yes   | Yes  | Yes     |
-| WezTerm      | 24-bit  | Yes      | -         | Yes   | Yes    | Yes        | -      | Yes   | Yes   | Yes  | Yes     |
-| iTerm2       | 24-bit  | -        | -         | -     | Yes    | Yes        | Yes    | Yes   | Yes   | Yes  | Yes     |
-| foot         | 24-bit  | Yes      | -         | Yes   | Yes    | Yes        | -      | Yes   | Yes   | Yes  | Yes     |
-| Alacritty    | 24-bit  | -        | -         | -     | Yes    | Yes        | -      | Yes   | Yes   | Yes  | Yes     |
-| VS Code      | 24-bit  | -        | -         | -     | -      | -          | -      | Yes   | Yes   | -    | Yes     |
-| Terminal.app | 256     | -        | -         | -     | -      | -          | -      | Yes   | Yes   | -    | Yes     |
-| tmux         | 24-bit* | -        | -         | -     | -      | -          | -      | Yes   | Yes   | -    | Yes     |
-| TERM=dumb    | -       | -        | -         | -     | -      | -          | -      | Yes   | Yes   | -    | Yes     |
+| Terminal     | Colors   | Kitty KB | Kitty Gfx | Sixel | OSC 52 | Hyperlinks | Notify | Paste | Mouse | Sync | Unicode |
+| ------------ | -------- | -------- | --------- | ----- | ------ | ---------- | ------ | ----- | ----- | ---- | ------- |
+| Ghostty      | 24-bit   | Yes      | Yes       | -     | Yes    | Yes        | -      | Yes   | Yes   | Yes  | Yes     |
+| kitty        | 24-bit   | Yes      | Yes       | -     | Yes    | Yes        | Yes    | Yes   | Yes   | Yes  | Yes     |
+| WezTerm      | 24-bit   | Yes      | -         | Yes   | Yes    | Yes        | -      | Yes   | Yes   | Yes  | Yes     |
+| iTerm2       | 24-bit   | -        | -         | -     | Yes    | Yes        | Yes    | Yes   | Yes   | Yes  | Yes     |
+| foot         | 24-bit   | Yes      | -         | Yes   | Yes    | Yes        | -      | Yes   | Yes   | Yes  | Yes     |
+| Alacritty    | 24-bit   | -        | -         | -     | Yes    | Yes        | -      | Yes   | Yes   | Yes  | Yes     |
+| VS Code      | 24-bit   | -        | -         | -     | -      | -          | -      | Yes   | Yes   | -    | Yes     |
+| Terminal.app | 256      | -        | -         | -     | -      | -          | -      | Yes   | Yes   | -    | Yes     |
+| tmux         | 24-bit\* | -        | -         | -     | -      | -          | -      | Yes   | Yes   | -    | Yes     |
+| TERM=dumb    | -        | -        | -         | -     | -      | -          | -      | Yes   | Yes   | -    | Yes     |
 
 \* tmux color support depends on the outer terminal and tmux configuration.
 
 ## Column Descriptions
 
-| Column     | Protocol/Standard | Description                                                   |
-| ---------- | ----------------- | ------------------------------------------------------------- |
-| Colors     | SGR               | Color depth: 24-bit (truecolor), 256, 16 (basic), or none    |
-| Kitty KB   | CSI > u           | Kitty keyboard protocol for unambiguous key identification    |
-| Kitty Gfx  | APC G             | Kitty graphics protocol for inline image display              |
-| Sixel      | DCS q             | Sixel graphics for inline image display                       |
-| OSC 52     | OSC 52            | Clipboard access (works over SSH)                             |
-| Hyperlinks | OSC 8             | Clickable hyperlinks in terminal output                       |
-| Notify     | OSC 9/99          | Desktop notifications (OSC 9 = iTerm2, OSC 99 = Kitty)       |
-| Paste      | DEC 2004          | Bracketed paste mode (distinguish pasted from typed input)    |
-| Mouse      | SGR 1006          | SGR mouse tracking (click, drag, scroll)                      |
-| Sync       | DEC 2026          | Synchronized output (batch rendering to prevent tearing)      |
-| Unicode    | -                 | Unicode and emoji rendering                                   |
+| Column     | Protocol/Standard | Description                                                |
+| ---------- | ----------------- | ---------------------------------------------------------- |
+| Colors     | SGR               | Color depth: 24-bit (truecolor), 256, 16 (basic), or none  |
+| Kitty KB   | CSI > u           | Kitty keyboard protocol for unambiguous key identification |
+| Kitty Gfx  | APC G             | Kitty graphics protocol for inline image display           |
+| Sixel      | DCS q             | Sixel graphics for inline image display                    |
+| OSC 52     | OSC 52            | Clipboard access (works over SSH)                          |
+| Hyperlinks | OSC 8             | Clickable hyperlinks in terminal output                    |
+| Notify     | OSC 9/99          | Desktop notifications (OSC 9 = iTerm2, OSC 99 = Kitty)     |
+| Paste      | DEC 2004          | Bracketed paste mode (distinguish pasted from typed input) |
+| Mouse      | SGR 1006          | SGR mouse tracking (click, drag, scroll)                   |
+| Sync       | DEC 2026          | Synchronized output (batch rendering to prevent tearing)   |
+| Unicode    | -                 | Unicode and emoji rendering                                |
 
 ## Terminal Details
 
@@ -114,12 +114,12 @@ Comprehensive reference of terminal emulator feature support as detected by inkx
 
 inkx detects capabilities synchronously from environment variables at startup:
 
-| Variable       | Purpose                                             |
-| -------------- | --------------------------------------------------- |
+| Variable       | Purpose                                               |
+| -------------- | ----------------------------------------------------- |
 | `TERM`         | Terminal type (e.g., `xterm-256color`, `xterm-kitty`) |
 | `TERM_PROGRAM` | Terminal emulator name (e.g., `ghostty`, `iTerm.app`) |
-| `COLORTERM`    | Color capability hint (`truecolor` or `24bit`)      |
-| `NO_COLOR`     | Disable all color output when set                   |
+| `COLORTERM`    | Color capability hint (`truecolor` or `24bit`)        |
+| `NO_COLOR`     | Disable all color output when set                     |
 
 ```typescript
 import { detectTerminalCaps } from "inkx"
