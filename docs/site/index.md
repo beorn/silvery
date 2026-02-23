@@ -38,7 +38,7 @@ import LiveDemo from './.vitepress/components/LiveDemo.vue'
 
 Same React component, running in the browser via xterm.js:
 
-<LiveDemo :height="350" />
+<LiveDemo />
 
 ## Build Any Terminal App
 

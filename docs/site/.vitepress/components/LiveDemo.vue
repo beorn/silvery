@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 
 const props = defineProps({
   xtermSrc: { type: String, default: '/inkx/examples/xterm.html' },
-  height: { type: Number, default: 400 },
+  height: { type: Number, default: 500 },
 })
 </script>
 
@@ -13,6 +13,7 @@ const props = defineProps({
       <div class="live-demo-header">
         <span class="live-demo-label">Terminal</span>
         <span class="live-demo-note">ANSI escape sequences rendered via xterm.js</span>
+        <span class="live-demo-build-hint">Blank? Run <code>bun run examples/web/build.ts</code></span>
       </div>
 
       <div class="live-demo-viewport" :style="{ height: height + 'px' }">
@@ -24,10 +25,6 @@ const props = defineProps({
           loading="lazy"
           @error="() => {}"
         />
-        <div class="live-demo-fallback">
-          <p>If the demo is blank, build the examples first:</p>
-          <code>bun run examples/web/build.ts</code>
-        </div>
       </div>
     </div>
   </ClientOnly>
@@ -36,7 +33,7 @@ const props = defineProps({
 <style scoped>
 .live-demo {
   margin: 1.5rem 0;
-  max-width: 800px;
+  max-width: 960px;
 }
 
 .live-demo-header {
@@ -61,6 +58,20 @@ const props = defineProps({
   color: var(--vp-c-text-3);
 }
 
+.live-demo-build-hint {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--vp-c-text-3);
+  opacity: 0.6;
+}
+
+.live-demo-build-hint code {
+  padding: 0.1rem 0.35rem;
+  background: rgba(127, 127, 127, 0.15);
+  border-radius: 3px;
+  font-size: 0.7rem;
+}
+
 .live-demo-viewport {
   position: relative;
   background: #1e1e1e;
@@ -75,33 +86,5 @@ const props = defineProps({
   height: 100%;
   border: none;
   background: #1e1e1e;
-}
-
-.live-demo-fallback {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 0.75rem 1rem;
-  background: rgba(30, 30, 30, 0.95);
-  color: var(--vp-c-text-3);
-  font-size: 0.8rem;
-  text-align: center;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.live-demo-viewport:hover .live-demo-fallback {
-  opacity: 1;
-}
-
-.live-demo-fallback code {
-  display: inline-block;
-  margin-top: 0.25rem;
-  padding: 0.15rem 0.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  font-size: 0.8rem;
 }
 </style>
