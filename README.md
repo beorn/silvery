@@ -1,6 +1,6 @@
 # inkx
 
-React 19 for modern terminals. Pure TypeScript — no WASM, no C++, no native deps.
+TUI framework for modern terminals — Ink-compatible but [122x faster](docs/deep-dives/performance.md). React 19, every terminal protocol, 23+ components incl. virtual scroll, Playwright-style testing. Pure TypeScript — no WASM, no native deps.
 
 [![npm version](https://img.shields.io/npm/v/inkx.svg)](https://www.npmjs.com/package/inkx)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -15,7 +15,7 @@ React 19 for modern terminals. Pure TypeScript — no WASM, no C++, no native de
 <td>
   • <a href="docs/deep-dives/performance.md">122x faster</a> updates<br>
   • Reactive layout<br>
-  • AI-ready commands<br>
+  • Scrollable containers<br>
   • TEA/Elm + React + Zustand<br>
   • Terminal, Canvas, DOM targets<br>
   • Per-node dirty tracking<br>
@@ -37,31 +37,10 @@ React 19 for modern terminals. Pure TypeScript — no WASM, no C++, no native de
   • Screenshot capture<br>
   • <code>$token</code> theming<br>
   • 23+ components<br>
-  • Scrollable containers
+  • Node, Bun, Deno
 </td>
 </tr>
 </table>
-
-## Why inkx?
-
-**Components that know their size.** `useContentRect()` gives every component its rendered width and height — synchronously, during render. No prop drilling, no second pass, no ResizeObserver. This is [Ink's oldest open issue](https://github.com/vadimdemedes/ink/issues/5) (2016), solved.
-
-**Every modern terminal protocol.** [Kitty keyboard](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) (all 5 flags including Cmd/Super), SGR mouse (click, drag, scroll with DOM-style event bubbling), inline images (Kitty graphics + Sixel), OSC 52 clipboard (works over SSH), OSC 8 hyperlinks, DECSTBM scroll regions, synchronized updates (flicker-free in tmux/Zellij), and bracketed paste. All built-in, all auto-detected, all with graceful fallback.
-
-**[122x faster interactive updates.](docs/deep-dives/performance.md)** Per-node dirty tracking with 7 independent dirty flags per node. When a user presses a key, only changed nodes re-render — [169us for 1000 nodes vs Ink's 20.7ms](docs/deep-dives/performance.md#incremental-rendering). Buffer diffing emits only changed cells, reducing terminal I/O by 90%+.
-
-**Scrollable containers — just work.** `overflow="scroll"` with `scrollTo`, hardware-accelerated DECSTBM scroll regions, and VirtualList for huge datasets. [Ink's #1 feature request](https://github.com/vadimdemedes/ink/issues/222) since 2019, solved.
-
-**Three render targets.** Terminal, Canvas 2D, and DOM. Same React components, same layout engine — different output. See the [live demo](https://beorn.github.io/inkx/examples/live-demo).
-
-## Build Any Terminal App
-
-- **[AI Assistants & Chat](https://beorn.github.io/inkx/use-cases/ai-assistants)** — Streaming output, scrollback history, command palettes
-- **[Dashboards & Monitoring](https://beorn.github.io/inkx/use-cases/dashboards)** — Multi-pane layouts with real-time data
-- **[Kanban & Project Boards](https://beorn.github.io/inkx/use-cases/kanban-boards)** — Multi-column navigation with cards and focus management
-- **[CLI Wizards & Setup Tools](https://beorn.github.io/inkx/use-cases/cli-wizards)** — Step-by-step forms, selections, progress tracking
-- **[Developer Tools](https://beorn.github.io/inkx/use-cases/developer-tools)** — REPLs, log viewers, debuggers, profilers
-- **[Data Explorers & Tables](https://beorn.github.io/inkx/use-cases/data-explorers)** — Virtual lists, filtering, search, sortable tables
 
 ## Quick Start
 
@@ -70,6 +49,7 @@ bun add inkx react @beorn/flexx
 ```
 
 ```tsx
+import { useState } from "react"
 import { run, useInput } from "inkx/runtime"
 import { Box, Text, useContentRect } from "inkx"
 
@@ -94,6 +74,18 @@ function App() {
 await run(<App />)
 ```
 
+## Why inkx?
+
+**Components that know their size.** `useContentRect()` gives every component its rendered width and height — synchronously, during render. No prop drilling, no second pass, no ResizeObserver. This is [Ink's oldest open issue](https://github.com/vadimdemedes/ink/issues/5) (2016), solved.
+
+**Every modern terminal protocol.** [Kitty keyboard](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) (all 5 flags including Cmd/Super), SGR mouse (click, drag, scroll with DOM-style event bubbling), inline images (Kitty graphics + Sixel), OSC 52 clipboard (works over SSH), OSC 8 hyperlinks, DECSTBM scroll regions, synchronized updates (flicker-free in tmux/Zellij), and bracketed paste. All built-in, all auto-detected, all with graceful fallback.
+
+**[122x faster interactive updates.](docs/deep-dives/performance.md)** Per-node dirty tracking with 7 independent dirty flags per node. When a user presses a key, only changed nodes re-render — [169us for 1000 nodes vs Ink's 20.7ms](docs/deep-dives/performance.md#incremental-rendering). Buffer diffing emits only changed cells, reducing terminal I/O by 90%+.
+
+**Scrollable containers — just work.** `overflow="scroll"` with `scrollTo`, hardware-accelerated DECSTBM scroll regions, and VirtualList for huge datasets. [Ink's #1 feature request](https://github.com/vadimdemedes/ink/issues/222) since 2019, solved.
+
+**Three render targets.** Terminal, Canvas 2D, and DOM. Same React components, same layout engine — different output. See the [live demo](https://beorn.github.io/inkx/examples/live-demo).
+
 ## What's Inside
 
 ### Components (23+)
@@ -102,7 +94,7 @@ await run(<App />)
 - **Input:** TextInput, ReadlineInput, TextArea (multi-line with readline shortcuts)
 - **Data:** VirtualList, SelectList, Table, Console
 - **Display:** Spinner, ProgressBar, Badge, Divider, Image, Link
-- **`overflow="scroll"`** with `scrollTo` — scrollable containers without manual virtualization ([Ink's #1 feature request](https://github.com/vadimdemedes/ink/issues/222) since 2019)
+- **`overflow="scroll"`** with `scrollTo` — scrollable containers without manual virtualization
 
 ### Input & Focus
 
@@ -122,16 +114,6 @@ await run(<App />)
 
 Each wraps the one below. Choose the right paradigm per use case — all three in one framework.
 
-### Developer Experience
-
-- **Drop-in Ink replacement** — same Box, Text, useInput, useApp, Static, Spacer. [Migration guide](docs/guides/migration.md)
-- **Playwright-style testing** — `createRenderer`, `getByTestId`, `getByText`, `locator()`, `app.press()`
-- **Plugin composition** — `withCommands`, `withKeybindings`, `withDiagnostics` (SlateJS-inspired)
-- **Screenshot capture** — `app.screenshot()` renders buffer to PNG via Playwright
-- **Theming** — `ThemeProvider` with semantic `$token` colors (dark/light built-in)
-- **Built for AI** — Command introspection for agents, programmatic screenshots, CLAUDE.md ships with the package
-- **Pure TypeScript, zero native deps** — runs on Node, Bun, Deno. No WASM, no C++, no memory growth.
-
 ## Trade-offs
 
 inkx optimizes for interactive apps where parts of the UI update frequently. For workloads that re-render the entire component tree from scratch (not typical for interactive CLIs), Ink's simpler reconciliation is [~30x faster](docs/deep-dives/performance.md). inkx's five-phase pipeline is the cost of layout feedback — and the reason interactive updates are [122x faster](docs/deep-dives/performance.md#incremental-rendering). See [detailed comparison](docs/ink-comparison.md).
@@ -149,7 +131,7 @@ import { render, Box, Text, useApp } from "inkx"
 import { useInput } from "inkx/runtime"
 ```
 
-What you gain: layout feedback, scrollable containers, mouse support, focus management, Kitty keyboard, images, clipboard, theming, plugin composition, Playwright-style testing, and zero native dependencies. See [migration guide](docs/guides/migration.md) for details.
+See [migration guide](docs/guides/migration.md) for details.
 
 ## Status
 
