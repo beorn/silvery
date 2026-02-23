@@ -84,7 +84,7 @@ await run(<App />)
 
 **Scrollable containers — just work.** `overflow="scroll"` with `scrollTo`, hardware-accelerated DECSTBM scroll regions, and VirtualList for huge datasets. [Ink's #1 feature request](https://github.com/vadimdemedes/ink/issues/222) since 2019, solved.
 
-**Three render targets.** Terminal, Canvas 2D, and DOM. Same React components, same layout engine — different output. See the [live demo](https://beorn.github.io/inkx/examples/live-demo).
+**Runs in the browser.** Same React components render to an xterm.js terminal in any web page — [try the live demo](https://beorn.github.io/inkx/examples/live-demo). Canvas 2D and DOM render targets are in development.
 
 ## What's Inside
 
@@ -159,7 +159,7 @@ bun run examples/textarea/index.tsx       # Multi-line text input
 bun run examples/scrollback/index.tsx     # Scrollback mode (frozen items)
 ```
 
-See [examples/index.md](examples/index.md) for descriptions and the [live demo](https://beorn.github.io/inkx/examples/live-demo) for browser-rendered examples.
+See [examples/index.md](examples/index.md) for descriptions and the [live demo](https://beorn.github.io/inkx/examples/live-demo) running in the browser via xterm.js.
 
 ## Documentation
 

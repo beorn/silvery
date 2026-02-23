@@ -1,11 +1,11 @@
 ---
-title: Live Demo — Three Render Targets
-description: The same inkx component rendered to Canvas, DOM, and Terminal simultaneously
+title: Live Demo
+description: inkx rendered in the browser via xterm.js
 ---
 
 # Live Demo
 
-The same React component rendered to three different targets -- demonstrating inkx's pluggable RenderAdapter architecture.
+An inkx React component rendered in the browser via xterm.js — the same ANSI output you'd see in a real terminal.
 
 <script setup>
 import LiveDemo from '../.vitepress/components/LiveDemo.vue'
@@ -15,17 +15,9 @@ import LiveDemo from '../.vitepress/components/LiveDemo.vue'
 
 ## How It Works
 
-inkx's `RenderAdapter` interface abstracts the rendering target. The same component tree runs through the same layout engine (Flexx) and render pipeline. Only the final output differs:
+inkx's `RenderAdapter` interface abstracts the rendering target. The same component tree runs through the same layout engine (Flexx) and render pipeline. The xterm adapter writes ANSI escape sequences to an xterm.js terminal emulator running in the browser.
 
-| Target | Adapter | Output |
-|--------|---------|--------|
-| **Canvas 2D** | `renderToCanvas()` | Draws glyphs to an OffscreenCanvas, composited onto a visible `<canvas>` element |
-| **DOM** | `renderToDOM()` | Creates semantic `<span>` and `<div>` elements with CSS styling |
-| **Terminal** | `renderToXterm()` | Writes ANSI escape sequences to an xterm.js terminal emulator |
-
-### The Same Component
-
-All three tabs run identical React code:
+### The Component
 
 ```tsx
 import { Box, Text, useContentRect } from 'inkx'
@@ -54,17 +46,7 @@ function App() {
 }
 ```
 
-### Why Three Targets?
-
-- **Canvas** -- best for pixel-perfect rendering, image export, and WebGL upgrade path
-- **DOM** -- best for accessibility, text selection, and CSS integration
-- **Terminal** -- proves that the same components work identically in a real terminal
-
-The adapter pattern means your components are portable. Write once, render to any target -- including targets that don't exist yet.
-
-## Building the Examples
-
-To run the demos locally:
+## Building Locally
 
 ```bash
 cd vendor/beorn-inkx

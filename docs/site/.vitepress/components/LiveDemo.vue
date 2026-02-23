@@ -2,70 +2,25 @@
 import { ref, computed } from 'vue'
 
 const props = defineProps({
-  canvasSrc: { type: String, default: '/inkx/examples/canvas.html' },
-  domSrc: { type: String, default: '/inkx/examples/dom.html' },
   xtermSrc: { type: String, default: '/inkx/examples/xterm.html' },
   height: { type: Number, default: 400 },
 })
-
-const activeTab = ref('dom')
-
-const tabs = [
-  {
-    id: 'canvas',
-    label: 'Canvas 2D',
-    description: 'Pixel-perfect rendering to HTML5 Canvas. Fast batch updates, single DOM element, export to image.',
-  },
-  {
-    id: 'dom',
-    label: 'DOM',
-    description: 'Semantic HTML elements. Native text selection, screen reader accessible, CSS hover/focus states.',
-  },
-  {
-    id: 'xterm',
-    label: 'Terminal',
-    description: 'ANSI escape sequences rendered via xterm.js. Identical output to a real terminal emulator.',
-  },
-]
-
-const activeDescription = computed(() => {
-  return tabs.find(t => t.id === activeTab.value)?.description ?? ''
-})
-
-function iframeSrc(tabId) {
-  switch (tabId) {
-    case 'canvas': return props.canvasSrc
-    case 'dom': return props.domSrc
-    case 'xterm': return props.xtermSrc
-    default: return ''
-  }
-}
 </script>
 
 <template>
   <ClientOnly>
     <div class="live-demo">
-      <div class="live-demo-tabs">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          :class="['live-demo-tab', { active: activeTab === tab.id }]"
-          @click="activeTab = tab.id"
-          :title="tab.description"
-        >
-          {{ tab.label }}
-        </button>
+      <div class="live-demo-header">
+        <span class="live-demo-label">Terminal</span>
+        <span class="live-demo-note">ANSI escape sequences rendered via xterm.js</span>
       </div>
 
       <div class="live-demo-viewport" :style="{ height: height + 'px' }">
         <iframe
-          v-for="tab in tabs"
-          :key="tab.id"
-          v-show="activeTab === tab.id"
-          :src="iframeSrc(tab.id)"
+          :src="xtermSrc"
           class="live-demo-iframe"
           frameborder="0"
-          :title="`inkx ${tab.label} render target demo`"
+          title="inkx Terminal render target demo"
           loading="lazy"
           @error="() => {}"
         />
@@ -74,8 +29,6 @@ function iframeSrc(tabId) {
           <code>bun run examples/web/build.ts</code>
         </div>
       </div>
-
-      <p class="live-demo-description">{{ activeDescription }}</p>
     </div>
   </ClientOnly>
 </template>
@@ -86,33 +39,26 @@ function iframeSrc(tabId) {
   max-width: 800px;
 }
 
-.live-demo-tabs {
+.live-demo-header {
   display: flex;
-  gap: 0;
-  border-bottom: 2px solid var(--vp-c-divider);
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--vp-c-divider);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  background: var(--vp-c-bg-soft);
 }
 
-.live-demo-tab {
-  padding: 0.5rem 1.25rem;
-  border: none;
-  background: transparent;
-  color: var(--vp-c-text-2);
+.live-demo-label {
+  font-weight: 600;
   font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  transition: color 0.2s, border-color 0.2s;
-  font-family: var(--vp-font-family-base);
-}
-
-.live-demo-tab:hover {
-  color: var(--vp-c-text-1);
-}
-
-.live-demo-tab.active {
   color: var(--vp-c-brand-1);
-  border-bottom-color: var(--vp-c-brand-1);
+}
+
+.live-demo-note {
+  font-size: 0.8rem;
+  color: var(--vp-c-text-3);
 }
 
 .live-demo-viewport {
@@ -157,12 +103,5 @@ function iframeSrc(tabId) {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
   font-size: 0.8rem;
-}
-
-.live-demo-description {
-  margin-top: 0.75rem;
-  color: var(--vp-c-text-2);
-  font-size: 0.9rem;
-  line-height: 1.5;
 }
 </style>

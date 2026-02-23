@@ -26,8 +26,8 @@ features:
     link: /guide/why-inkx#incremental-rendering
     linkText: "* See benchmarks"
   - icon: "\U0001F3AF"
-    title: "Three Render Targets"
-    details: "Terminal, Canvas 2D, and DOM. Same components, different output."
+    title: "Runs in the Browser"
+    details: "Same React components render to xterm.js in any web page. Canvas 2D and DOM targets in development."
 ---
 
 <script setup>
@@ -36,7 +36,7 @@ import LiveDemo from './.vitepress/components/LiveDemo.vue'
 
 ## See It in Action
 
-Same React component, three render targets — switch tabs to compare:
+Same React component, running in the browser via xterm.js:
 
 <LiveDemo :height="350" />
 
