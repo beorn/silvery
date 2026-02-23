@@ -15,7 +15,7 @@ inkx brings all of it to React. Full mouse and keyboard support, inline images, 
 
 **Components that know their size.** `useContentRect()` gives components their actual dimensions during render — no width prop drilling, no second render pass, no guessing. This is [Ink's oldest open issue](https://github.com/vadimdemedes/ink/issues/5) (2016) and React's biggest layout gap, solved.
 
-**Every modern terminal protocol.** [Kitty keyboard](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) (all 5 flags), SGR mouse (click, drag, scroll), inline images (Kitty graphics + Sixel), OSC 52 clipboard (works over SSH), OSC 8 hyperlinks, DECSTBM scroll regions, DEC 2026 synchronized updates (flicker-free in tmux/Zellij), and bracketed paste. No other JavaScript TUI framework exposes all of these.
+**Every modern terminal protocol.** [Kitty keyboard](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) (all 5 flags), SGR mouse (click, drag, scroll), inline images (Kitty graphics + Sixel), OSC 52 clipboard (works over SSH), OSC 8 hyperlinks, DECSTBM scroll regions, DEC 2026 synchronized updates (flicker-free in tmux/Zellij), and bracketed paste. All built-in, all auto-detected.
 
 **122x faster interactive updates.** Per-node dirty tracking bypasses React reconciliation entirely for keystroke updates. When a user presses a key, only the changed nodes re-render — 169us for 1000 nodes vs Ink's 20.7ms full re-render. See [benchmarks](docs/deep-dives/performance.md).
 
@@ -108,7 +108,7 @@ await run(<App />)
 | 2     | `run()`           | React hooks   | Most apps (recommended)        |
 | 3     | `createApp()`     | Zustand store | Complex apps with many sources |
 
-Each wraps the one below. Layer 1 gives you a pure event loop with AsyncIterable — `reducer(state, event) -> state`, `view(state) -> JSX`, `schedule()` for async effects. Layer 2 adds React hooks. Layer 3 adds centralized state with a provider pattern. Choose the right paradigm per use case — no other TUI framework offers all three.
+Each wraps the one below. Layer 1 gives you a pure event loop with AsyncIterable — `reducer(state, event) -> state`, `view(state) -> JSX`, `schedule()` for async effects. Layer 2 adds React hooks. Layer 3 adds centralized state with a provider pattern. Choose the right paradigm per use case — all three in one framework.
 
 ### Developer Experience
 

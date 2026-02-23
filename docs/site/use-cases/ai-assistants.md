@@ -13,7 +13,7 @@ Terminal-based AI assistants have unique UI requirements: streaming output that 
 
 **Command introspection for AI agents.** The `withCommands` plugin exposes every action with an ID, name, description, and keybindings. Calling `cmd.all()` returns a structured list of everything the app can do. An AI agent can read this to decide which actions to invoke, turning the TUI into a programmable interface rather than a purely visual one.
 
-**Streaming-friendly incremental rendering.** When an LLM streams tokens, only the message being appended changes. inkx tracks dirty flags per node and re-renders only what changed -- 169us per update versus 20.7ms for a full-screen repaint in Ink. At 50 tokens per second, that is the difference between smooth scrolling and visible flicker.
+**Streaming-friendly incremental rendering.** When an LLM streams tokens, only the message being appended changes. inkx tracks dirty flags per node and re-renders only what changed — 169us per update versus 20.7ms for a full-screen repaint ([benchmarks](/guide/why-inkx#performance)). At 50 tokens per second, that is the difference between smooth scrolling and visible flicker.
 
 **Bracketed paste for code snippets.** The `usePaste` hook receives multi-line pasted text as a single event instead of individual keystrokes. Users can paste code blocks, stack traces, or configuration files directly into the input area without the app interpreting each line as a separate command.
 
@@ -118,9 +118,9 @@ await app.cmd.send_message()
 
 This turns the TUI from a visual interface into a structured API. The agent does not need to simulate keystrokes -- it calls commands by name and reads the screen state through `app.text` or `app.getState()`.
 
-## Why Not Ink?
+## What inkx Adds
 
-Ink lacks the primitives that AI chat interfaces require. There are no scroll containers (`overflow="scroll"` does not exist), so you must manually track viewport offsets and slice your message array. There is no layout feedback, so sizing message bubbles or allocating space between the history and input areas requires threading width and height props through every component. There is no command system, so building a command palette or exposing actions to an AI agent means writing the entire registry and dispatch infrastructure from scratch.
+Most TUI frameworks leave you to build chat infrastructure from scratch. inkx provides the primitives out of the box: scroll containers (`overflow="scroll"`) handle variable-length LLM output without manual viewport tracking, layout feedback via `useContentRect()` sizes message bubbles without threading width props, and the command system gives AI agents a programmatic API to discover and invoke actions.
 
 ## Get Started
 

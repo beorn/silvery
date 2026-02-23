@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "inkx"
   text: "React for modern terminals"
-  tagline: "Layout feedback, every terminal protocol, React + Elm architectures, 122x faster updates. Zero native dependencies."
+  tagline: "Layout feedback, every terminal protocol, React + Elm architectures, 122x faster updates.* Zero native dependencies."
   actions:
     - theme: brand
       text: Get Started
@@ -19,16 +19,16 @@ features:
     details: Components query their own dimensions via useContentRect(). No width prop drilling. Ink's oldest open issue (2016), solved.
   - icon: "\U0001F4E1"
     title: Every Protocol
-    details: Kitty keyboard, SGR mouse, inline images, OSC 52 clipboard, hyperlinks, synchronized updates. No other JS framework has all of these.
+    details: Kitty keyboard, SGR mouse, inline images, OSC 52 clipboard, hyperlinks, synchronized updates. All built-in, all auto-detected.
   - icon: "\U0001F3D7\uFE0F"
     title: Three Architectures
-    details: Elm-style reducers, React hooks, or Zustand stores. Choose the right paradigm per use case — no other TUI framework offers all three.
+    details: Elm-style reducers, React hooks, or Zustand stores. Choose the right paradigm per use case — all three in one framework.
   - icon: "\U0001F9F1"
     title: 23+ Components
     details: Box, Text, VirtualList, TextArea, SelectList, Table, Image, Spinner, ProgressBar, and more. overflow="scroll" just works.
   - icon: "\u26A1"
-    title: 122x Faster
-    details: Per-node dirty tracking with 7 independent flags. Only changed nodes re-render — 169us vs Ink's 20.7ms.
+    title: 122x Faster*
+    details: Per-node dirty tracking with 7 independent flags. Only changed nodes re-render — 169us vs 20.7ms full re-render. *Benchmarks.
   - icon: "\U0001F916"
     title: Built for AI
     details: Command introspection for agents, programmatic screenshots, scrollable streaming output. CLAUDE.md ships with the package.
@@ -73,10 +73,14 @@ await run(<App />)
 
 ## The Problem inkx Solves
 
-In Ink, components render _before_ layout is computed. You can't know a component's dimensions, so you manually thread width props everywhere:
+In most TUI frameworks, components render _before_ layout is computed. You can't know a component's dimensions, so you manually thread width props everywhere. inkx computes layout first, then lets components query their dimensions:
+
+<div class="code-compare">
+<div class="code-compare-col">
+
+**Before: manual width threading**
 
 ```tsx
-// Ink: width props cascade through the entire tree
 function Board({ width }) {
   const colWidth = Math.floor((width - 2) / 3)
   return (
@@ -89,12 +93,12 @@ function Board({ width }) {
 }
 ```
 
-Real apps have 100+ lines of this. Every layout change means updating arithmetic everywhere.
+</div>
+<div class="code-compare-col">
 
-**inkx fixes this** by computing layout first, then letting components query their dimensions:
+**After: layout feedback**
 
 ```tsx
-// inkx: no width props needed
 function Column({ items }) {
   const { width } = useContentRect()
   return (
@@ -106,6 +110,26 @@ function Column({ items }) {
   )
 }
 ```
+
+</div>
+</div>
+
+<style>
+.code-compare {
+  display: flex;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.code-compare-col {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 768px) {
+  .code-compare {
+    flex-direction: column;
+  }
+}
+</style>
 
 ## Build Any Terminal App
 

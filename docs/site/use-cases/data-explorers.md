@@ -116,9 +116,9 @@ For datasets larger than a few hundred rows, wrap the table body in a `VirtualLi
 />
 ```
 
-## Why Not Ink?
+## What inkx Adds
 
-Ink lacks the building blocks for responsive data explorers. There is no `Table` component, no `VirtualList` for large datasets, and no `useContentRect()` for responsive column widths -- you must thread width props manually through every component. Ink is also pinned to React 18, so concurrent features like `useDeferredValue` and `useTransition` are unavailable for keeping filter UIs responsive under load.
+Data explorers need responsive tables, large dataset handling, and non-blocking search. inkx ships these as first-party components: `Table` handles column alignment and headers, `VirtualList` renders large datasets with constant memory, `useContentRect()` gives responsive column widths without prop threading, and React 19 support unlocks `useDeferredValue` and `useTransition` for keeping filter UIs responsive under load.
 
 ## Get Started
 

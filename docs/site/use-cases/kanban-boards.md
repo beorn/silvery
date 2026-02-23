@@ -177,9 +177,9 @@ await run(<App />, { mouse: true })
 
 Cards respond to `onClick`, `onDoubleClick` (to open a detail view), and columns respond to `onWheel` for trackpad or mouse scrolling -- all with DOM-style event bubbling and `stopPropagation()`.
 
-## Why Not Ink?
+## What inkx Adds
 
-Ink lacks the three primitives kanban boards need most. There is no focus system for spatial navigation between columns and within them -- you must build and maintain your own focus tree. There is no `overflow="scroll"` -- each column requires manual virtualization with height estimation, and coordinating multiple independent scroll positions adds significant complexity. And there are no mouse events -- no `onClick`, no `onWheel`, no click-to-focus. These gaps mean building a kanban board in Ink requires hundreds of lines of infrastructure code that inkx provides out of the box.
+Building a kanban board in most TUI frameworks means writing your own focus tree, scroll management, and mouse handling. inkx provides all three: a tree-based focus system for spatial navigation between columns, `overflow="scroll"` for independent column scrolling, and DOM-style mouse events (`onClick`, `onWheel`, click-to-focus) for natural card interaction. Together, these save hundreds of lines of infrastructure code.
 
 ## Next Steps
 

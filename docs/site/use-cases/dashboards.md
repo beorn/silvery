@@ -15,7 +15,7 @@ inkx solves all three problems out of the box. Components query their own dimens
 
 - **Multi-pane layouts** -- Flexbox via `Box` with `flexDirection`, `flexGrow`, and percentage widths lets you compose arbitrary panel arrangements. Nest layouts freely: a sidebar next to a main area, each containing stacked sub-panels.
 
-- **Real-time updates** -- inkx's incremental renderer tracks dirty flags per node. When one metric changes in a 1000-node dashboard, only that cell repaints. At 169us per incremental update (122x faster than Ink's full-screen rewrite), you get smooth 30fps data refreshes without saturating the terminal.
+- **Real-time updates** -- inkx's incremental renderer tracks dirty flags per node. When one metric changes in a 1000-node dashboard, only that cell repaints — 169us per update vs 20.7ms for a full re-render ([benchmarks](/guide/why-inkx#performance)). Smooth 30fps data refreshes without saturating the terminal.
 
 - **Theming** -- `ThemeProvider` with semantic `$token` colors (`$primary`, `$success`, `$error`, `$muted`, `$border`) gives your dashboard a consistent look. Switch between `defaultDarkTheme` and `defaultLightTheme` or define custom palettes.
 
@@ -165,9 +165,9 @@ function StatusBar() {
 await run(<App />)
 ```
 
-## Why Not Ink?
+## What inkx Adds
 
-Ink has no layout feedback mechanism -- components cannot query their computed dimensions, so every panel that needs to size content (progress bars, truncated text, responsive breakpoints) requires manual width calculations threaded through props. Ink also lacks a theming system for consistent color tokens, and it performs full-screen rewrites on every state change, which causes visible flicker in dashboards that update multiple times per second. Ink has no synchronized output support, so multiplexers like tmux show partial frames during rapid updates.
+Traditional TUI frameworks require manual width calculations for responsive panels. inkx's layout feedback lets components query their own dimensions — size progress bars, truncate text, and set responsive breakpoints without prop threading. The theming system provides consistent color tokens. Incremental rendering (122x faster than full-screen rewrites — [benchmarks](/guide/why-inkx#performance)) eliminates visible flicker in dashboards that update multiple times per second. And synchronized output ensures multiplexers like tmux show complete frames.
 
 ## Get Started
 

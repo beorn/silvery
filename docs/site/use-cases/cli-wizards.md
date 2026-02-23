@@ -122,11 +122,9 @@ await run(<Wizard />)
 
 Run it with `bun wizard.tsx` or `npx tsx wizard.tsx`.
 
-## Why Not Ink?
+## What inkx Adds
 
-Ink is a capable terminal React renderer, but it lacks several primitives that wizard-style tools need out of the box. There is no `SelectList` component -- you need a third-party package like `ink-select-input`. There is no `ProgressBar` or `Spinner` built in, requiring `ink-progress-bar` and `ink-spinner` respectively. And Ink has no focus scope mechanism, so Tab navigation in a multi-step wizard cycles through every focusable element in the entire tree rather than staying within the current step.
-
-inkx ships all of these as first-party components with consistent APIs, so you can build a complete wizard without pulling in a constellation of community packages.
+Most TUI frameworks require third-party packages for selection lists, progress bars, and spinners. inkx ships all wizard primitives as first-party components with consistent APIs: `SelectList` handles single and multi-select with keyboard navigation, `ProgressBar` and `Spinner` provide visual feedback, and focus scopes isolate Tab navigation per wizard step. One framework, no plugin constellation.
 
 ## Next Steps
 

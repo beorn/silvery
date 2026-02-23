@@ -125,9 +125,9 @@ test("log viewer navigates entries", async () => {
 })
 ```
 
-## Why Not Ink?
+## What inkx Adds
 
-Ink provides a solid foundation for simple terminal apps, but developer tools hit its limits quickly. Ink has no virtualized list component, so rendering thousands of log lines means mounting thousands of React elements -- unusable for real log viewers or profilers. Ink also lacks a command system, so wiring keyboard shortcuts to actions requires manual plumbing in every component. And testing Ink apps means writing custom harnesses around its `render()` return value, with no built-in locators or `press()` API for simulating keyboard interaction.
+Developer tools need to handle large datasets, complex shortcuts, and automated testing. inkx ships the building blocks: `VirtualList` renders thousands of log lines with constant memory, the command system wires shortcuts to actions declaratively with introspection for free, and the Playwright-style testing API (`createRenderer`, `press()`, `getByTestId`) lets you write automated tests without custom harnesses.
 
 ## Get Started
 
