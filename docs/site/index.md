@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "inkx"
   text: "React for modern terminals"
-  tagline: "Layout feedback, every terminal protocol, React + Elm architectures, 122x faster updates.* Zero native dependencies."
+  tagline: "Layout feedback, every terminal protocol, React + Elm architectures, 122x faster updates. Zero native dependencies."
   actions:
     - theme: brand
       text: Get Started
@@ -16,46 +16,35 @@ hero:
 features:
   - icon: "\U0001F4D0"
     title: Layout Feedback
-    details: Components query their own dimensions via useContentRect(). No width prop drilling. Ink's oldest open issue (2016), solved.
+    details: "useContentRect() — components know their size. Ink's oldest open issue (2016), solved."
   - icon: "\U0001F4E1"
     title: Every Protocol
-    details: Kitty keyboard, SGR mouse, inline images, OSC 52 clipboard, hyperlinks, synchronized updates. All built-in, all auto-detected.
-  - icon: "\U0001F3D7\uFE0F"
-    title: Three Architectures
-    details: Elm-style reducers, React hooks, or Zustand stores. Choose the right paradigm per use case — all three in one framework.
-  - icon: "\U0001F9F1"
-    title: 23+ Components
-    details: Box, Text, VirtualList, TextArea, SelectList, Table, Image, Spinner, ProgressBar, and more. overflow="scroll" just works.
+    details: "Kitty keyboard, SGR mouse, images, clipboard, hyperlinks. All built-in, all auto-detected."
   - icon: "\u26A1"
-    title: 122x Faster*
-    details: Per-node dirty tracking with 7 independent flags. Only changed nodes re-render — 169us vs 20.7ms full re-render. *Benchmarks.
-  - icon: "\U0001F916"
-    title: Built for AI
-    details: Command introspection for agents, programmatic screenshots, scrollable streaming output. CLAUDE.md ships with the package.
-  - icon: "\U0001F4DC"
-    title: Scrollable Containers
-    details: overflow="scroll" with scrollTo — no manual virtualization. Ink's #1 feature request since 2019, built-in.
+    title: 122x Faster
+    details: "Per-node dirty tracking — 169us vs 20.7ms. Only changed nodes re-render."
   - icon: "\U0001F3AF"
-    title: Three Render Targets
-    details: Terminal, Canvas 2D, and DOM. Same React components, same layout engine — different output. See the [live demo](/examples/live-demo).
-  - icon: "\U0001F4E6"
-    title: Zero Native Dependencies
-    details: Pure TypeScript. No WASM, no C++, no memory leaks. Runs on Node, Bun, and Deno.
+    title: "Three Render Targets"
+    details: "Terminal, Canvas 2D, and DOM. Same components, different output."
 ---
-
-## See It in Action
-
-The same React component rendered to three different targets — same code, same layout engine, different output:
 
 <script setup>
 import LiveDemo from './.vitepress/components/LiveDemo.vue'
 </script>
 
+## See It in Action
+
+Same React component, three render targets — switch tabs to compare:
+
 <LiveDemo :height="350" />
 
-Switch between Canvas 2D, DOM, and Terminal tabs. All three run the same inkx components through the same Flexx layout engine. Only the final render adapter differs.
+<div class="also">
 
-[Explore all examples](/examples/) | [See use cases](/use-cases/ai-assistants)
+**Also:** 23+ components with `overflow="scroll"` | Three architectures (React hooks, Elm reducers, Zustand) | Built for AI (command introspection, screenshots) | Zero native dependencies (pure TypeScript, Node/Bun/Deno)
+
+</div>
+
+[Explore examples](/examples/) &nbsp;·&nbsp; [Use cases](/use-cases/ai-assistants)
 
 ## Quick Start
 
@@ -132,6 +121,15 @@ function Column({ items }) {
 </div>
 
 <style>
+.also {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  background: var(--vp-c-bg-soft);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--vp-c-text-2);
+}
 .code-compare {
   display: flex;
   gap: 1rem;
