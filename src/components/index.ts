@@ -21,6 +21,8 @@ export { Transform } from "./Transform.js"
 export type { TransformProps } from "./Transform.js"
 
 // Utilities
+export { Fill } from "./Fill.js"
+export type { FillProps } from "./Fill.js"
 export { Newline } from "./Newline.js"
 export { Spacer } from "./Spacer.js"
 export { Static } from "./Static.js"

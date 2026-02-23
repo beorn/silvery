@@ -29,9 +29,11 @@
 
 - [Input Features](input-features.md) — Keyboard (Kitty protocol), mouse (SGR), hotkeys, modifier symbols (⌘⌥⌃⇧✦)
 - [Focus Routing](focus-routing.md) — Input routing, commands, keybindings
+- [Theming](theming.md) — ThemeProvider, semantic `$token` colors, custom themes
 - [Plugins](plugins.md) — withCommands, withKeybindings, withDiagnostics, driver pattern
 - [Testing](testing.md) — createRenderer, locators, withDiagnostics
 - [Terminal Capabilities](terminal-capabilities.md) — Detection, render modes, protocols
+- [Scroll Region Optimization](scroll-regions.md) — DECSTBM-based scroll optimization
 - [Troubleshooting](troubleshooting.md) — Common issues and debugging
 
 ### Text Editing

@@ -151,7 +151,7 @@ await app.run(<App />)
 
 ## Components
 
-See [docs/components.md](docs/components.md) for full reference. Key components: Box, Text, VirtualList, Static, Console, TextInput, ReadlineInput, TextArea, Link, Transform, Image.
+See [docs/components.md](docs/components.md) for full reference. Key components: Box, Text, VirtualList, Static, Console, TextInput, ReadlineInput, TextArea, Link, Transform, Image, Spinner, ProgressBar, SelectList, Table, Badge, Divider.
 
 ### Box Outline Props
 
@@ -195,6 +195,22 @@ Renders images via Kitty graphics or Sixel protocol, with text fallback. Auto-de
 | `fallback` | `string`                       | Text when unsupported (default: `"[image]"`)                      |
 | `protocol` | `"kitty" \| "sixel" \| "auto"` | Protocol selection (default: `"auto"` — Kitty > Sixel > fallback) |
 
+## Theming
+
+inkx provides a theming system based on React context and semantic color tokens. See [docs/theming.md](docs/theming.md) for full details.
+
+```tsx
+import { ThemeProvider, defaultDarkTheme, useTheme } from "inkx"
+
+<ThemeProvider theme={defaultDarkTheme}>
+  <Box borderColor="$border"><Text color="$primary">Hello</Text></Box>
+</ThemeProvider>
+```
+
+Any color prop starting with `$` is resolved against the active theme (e.g. `color="$primary"`, `borderColor="$border"`). Two built-in themes: `defaultDarkTheme` and `defaultLightTheme` (Nord-inspired). Use `resolveThemeColor(color, theme)` for programmatic resolution.
+
+Token reference: `$primary`, `$accent`, `$error`, `$warning`, `$success`, `$surface`, `$background`, `$text`, `$muted`, `$border`.
+
 ## Layout Hooks
 
 ```tsx
@@ -221,6 +237,23 @@ For the `render()` API, use the `onPaste` option on `useInput` instead:
 ```tsx
 useInput(handler, { onPaste: (text) => insertText(text) })
 ```
+
+## Animation Hooks
+
+```tsx
+import { useAnimation, useAnimatedTransition, useInterval, easings } from "inkx"
+
+// Animate 0→1 over 300ms with easing
+const { value, isAnimating, reset } = useAnimation({ duration: 300, easing: "easeOut" })
+
+// Smooth value interpolation (animates when target changes)
+const smooth = useAnimatedTransition(targetValue, { duration: 200, easing: "easeOut" })
+
+// Fixed interval (Dan Abramov's ref pattern, no stale closures)
+useInterval(() => tick(), 1000, enabled)
+```
+
+Easing presets: `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`, `easeInCubic`, `easeOutCubic`. All animation hooks target ~30fps (33ms ticks).
 
 ## Input Layer Stack
 
@@ -565,12 +598,21 @@ import { createApp, useApp } from "inkx/runtime"
 
 // Components
 import { Box, Text, Link, Newline, Spacer, Static, Console, VirtualList, Transform, Image } from "inkx"
+import { Spinner, ProgressBar, SelectList, Table, Badge, Divider } from "inkx"
 
 // Input components
 import { TextInput, ReadlineInput, useReadline } from "inkx"
 
 // Hooks
 import { useContentRect, useScreenRect, useInput, useApp, useTerm } from "inkx"
+
+// Theming
+import { ThemeProvider, useTheme, defaultDarkTheme, defaultLightTheme, resolveThemeColor } from "inkx"
+import type { Theme } from "inkx"
+
+// Animation
+import { useAnimation, useAnimatedTransition, useInterval, easings, resolveEasing } from "inkx"
+import type { EasingFn, EasingName, UseAnimationOptions, UseAnimationResult } from "inkx"
 
 // Focus system (tree-based)
 import { useFocusable, useFocusWithin } from "inkx"
@@ -611,6 +653,16 @@ import type { InkxMouseEvent, InkxWheelEvent, MouseEventProps, MouseEventProcess
 
 // Hotkey parsing (supports macOS symbols ⌘⌥⌃⇧✦)
 import { parseHotkey, matchHotkey } from "inkx"
+
+// Inspector
+import { enableInspector, disableInspector, inspectTree, inspectFrame, autoEnableInspector } from "inkx"
+
+// Terminal capabilities detection
+import { detectTerminalCaps, type TerminalCaps } from "inkx"
+
+// Scroll regions (DECSTBM)
+import { setScrollRegion, resetScrollRegion, scrollUp, scrollDown, supportsScrollRegions } from "inkx"
+import { useScrollRegion } from "inkx/hooks" // Hook (not in main entry)
 
 // Render functions
 import { render, renderStatic, renderString } from "inkx"
@@ -863,6 +915,10 @@ function createBoardDriver(repo: Repo, rootId: string) {
 8. **OSC 52 clipboard**: Cross-SSH clipboard access via `copyToClipboard`/`requestClipboard`
 9. **Outline prop**: CSS outline equivalent (`outlineStyle`) — renders border without affecting layout
 10. **Transform component**: Ink-compatible, applies per-line string transform to children
+11. **Theming**: `ThemeProvider` + semantic `$token` color props (dark/light built-in)
+12. **Animation hooks**: `useAnimation`, `useAnimatedTransition`, `useInterval` with easing presets
+13. **Inspector**: `enableInspector()` / `INKX_DEV=1` for render stats, tree dumps, dirty flags
+14. **Terminal caps detection**: `detectTerminalCaps()` for synchronous env-based capability detection
 
 ## Documentation
 
@@ -875,8 +931,10 @@ to capture numbers.
 | -------------------------------------------------------------- | --------------------------------------------------------- |
 | [docs/README.md](docs/README.md)                               | Documentation table of contents                           |
 | [docs/getting-started.md](docs/getting-started.md)             | Runtime layers and tutorial                               |
-| [docs/components.md](docs/components.md)                       | Box, Text, VirtualList, Console, Image, Transform, inputs |
-| [docs/hooks.md](docs/hooks.md)                                 | useContentRect, useScreenRect, useInput, usePaste, useApp |
+| [docs/components.md](docs/components.md)                       | Box, Text, VirtualList, Console, Image, Transform, Spinner, ProgressBar, SelectList, Table, Badge, Divider, inputs |
+| [docs/hooks.md](docs/hooks.md)                                 | useContentRect, useScreenRect, useInput, usePaste, useApp, useAnimation, useAnimatedTransition, useInterval, useScrollRegion |
+| [docs/theming.md](docs/theming.md)                             | ThemeProvider, useTheme, $token colors, custom themes     |
+| [docs/scroll-regions.md](docs/scroll-regions.md)               | DECSTBM scroll region optimization                        |
 | [docs/input-features.md](docs/input-features.md)               | Keyboard, mouse, hotkeys, modifier symbols                |
 | [docs/architecture.md](docs/architecture.md)                   | Core architecture and RenderAdapter                       |
 | [docs/testing.md](docs/testing.md)                             | Testing strategy, locators, and API                       |

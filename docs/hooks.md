@@ -263,6 +263,109 @@ useInput(handler, {
 })
 ```
 
+## useAnimation
+
+Drive a 0-to-1 animation over a duration with easing. Targets ~30fps (33ms interval) since terminals don't benefit from higher refresh rates.
+
+```tsx
+import { useAnimation } from "inkx"
+
+function FadeIn({ children }) {
+  const { value, isAnimating, reset } = useAnimation({
+    duration: 300,
+    easing: "easeOut",
+  })
+  return <Text dimColor={value < 1}>{children}</Text>
+}
+```
+
+| Option       | Type                     | Default    | Description                          |
+| ------------ | ------------------------ | ---------- | ------------------------------------ |
+| `duration`   | `number`                 | --         | Duration in milliseconds (required)  |
+| `easing`     | `EasingName \| EasingFn` | `"linear"` | Easing function or preset name       |
+| `delay`      | `number`                 | `0`        | Delay before starting (ms)           |
+| `onComplete` | `() => void`             | --         | Called when animation completes      |
+| `enabled`    | `boolean`                | `true`     | Whether to run the animation         |
+
+| Return         | Type         | Description                           |
+| -------------- | ------------ | ------------------------------------- |
+| `value`        | `number`     | Current progress (0 to 1, eased)      |
+| `isAnimating`  | `boolean`    | Whether the animation is still running |
+| `reset`        | `() => void` | Reset and replay the animation        |
+
+**Easing presets** (`easings` object): `linear`, `ease`, `easeIn`, `easeOut`, `easeInOut`, `easeInCubic`, `easeOutCubic`. Pass a custom `(t: number) => number` function for others.
+
+## useAnimatedTransition
+
+Smoothly interpolate between numeric values. When the target changes, animates from the current position to the new target. If the target changes mid-animation, restarts from the current interpolated position.
+
+```tsx
+import { useAnimatedTransition } from "inkx"
+
+function ScrollOffset({ target }) {
+  const smooth = useAnimatedTransition(target, { duration: 200, easing: "easeOut" })
+  return <Box marginTop={Math.round(smooth)}>...</Box>
+}
+```
+
+| Parameter     | Type                     | Default      | Description                     |
+| ------------- | ------------------------ | ------------ | ------------------------------- |
+| `targetValue` | `number`                 | --           | Target value to animate toward  |
+| `duration`    | `number`                 | `300`        | Duration in milliseconds        |
+| `easing`      | `EasingName \| EasingFn` | `"easeOut"`  | Easing function or preset name  |
+
+Returns the current interpolated `number`. On first render, returns the target value immediately (no animation).
+
+## useInterval
+
+Run a callback on a fixed interval. Uses a ref for the callback to avoid stale closures (Dan Abramov's pattern). The callback is NOT called on mount -- only on subsequent ticks.
+
+```tsx
+import { useInterval } from "inkx"
+
+function Clock() {
+  const [time, setTime] = useState(Date.now())
+  useInterval(() => setTime(Date.now()), 1000)
+  return <Text>{new Date(time).toLocaleTimeString()}</Text>
+}
+```
+
+| Parameter  | Type         | Default | Description                        |
+| ---------- | ------------ | ------- | ---------------------------------- |
+| `callback` | `() => void` | --      | Function to call on each tick      |
+| `ms`       | `number`     | --      | Interval in milliseconds           |
+| `enabled`  | `boolean`    | `true`  | Whether the interval is active     |
+
+## useScrollRegion
+
+Terminal scroll region optimization hook. When scroll offset changes, uses DECSTBM to natively shift content instead of re-rendering the entire area. See [Scroll Region Optimization](scroll-regions.md) for full details.
+
+```tsx
+import { useScrollRegion } from "inkx/hooks"
+
+function ScrollableArea({ items, scrollOffset }) {
+  const { isActive, scrollDelta } = useScrollRegion({
+    top: 2,
+    bottom: 20,
+    scrollOffset,
+  })
+  return <VirtualList items={items} />
+}
+```
+
+| Option         | Type                 | Default          | Description                    |
+| -------------- | -------------------- | ---------------- | ------------------------------ |
+| `top`          | `number`             | --               | Top row (0-indexed)            |
+| `bottom`       | `number`             | --               | Bottom row (0-indexed)         |
+| `scrollOffset` | `number`             | --               | Current scroll position        |
+| `enabled`      | `boolean`            | auto-detect      | Force on/off                   |
+| `stdout`       | `NodeJS.WriteStream` | `process.stdout` | Output stream                  |
+
+| Return        | Type      | Description                                   |
+| ------------- | --------- | --------------------------------------------- |
+| `isActive`    | `boolean` | Whether scroll region optimization is active  |
+| `scrollDelta` | `number`  | Lines shifted since last render               |
+
 ## useScrollback
 
 Push frozen items to terminal scrollback. Tracks a contiguous frozen prefix — when the count increases, renders newly frozen items and writes them to stdout.

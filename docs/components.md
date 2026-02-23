@@ -327,6 +327,139 @@ const deleteSeq = deleteKittyImage(1)
 const sixelSeq = encodeSixel({ pixels, width: 320, height: 240 })
 ```
 
+## Spinner
+
+An animated loading spinner with multiple built-in styles.
+
+```tsx
+import { Spinner } from "inkx"
+
+<Spinner />
+<Spinner type="arc" label="Loading..." />
+<Spinner type="bounce" interval={120} />
+```
+
+| Prop       | Type                                       | Description                             |
+| ---------- | ------------------------------------------ | --------------------------------------- |
+| `type`     | `"dots" \| "line" \| "arc" \| "bounce"`   | Spinner style preset (default: `"dots"`) |
+| `label`    | `string`                                   | Label text shown after spinner          |
+| `interval` | `number`                                   | Animation interval in ms (default: 80)  |
+
+## ProgressBar
+
+A terminal progress bar with determinate and indeterminate modes.
+
+```tsx
+import { ProgressBar } from "inkx"
+
+<ProgressBar value={0.5} />
+<ProgressBar value={0.75} color="green" label="Downloading..." />
+<ProgressBar />  {/* indeterminate (animated bounce) */}
+```
+
+| Prop             | Type      | Description                                       |
+| ---------------- | --------- | ------------------------------------------------- |
+| `value`          | `number`  | Progress 0-1 (omit for indeterminate)             |
+| `width`          | `number`  | Width in columns (default: available via layout)  |
+| `fillChar`       | `string`  | Fill character (default: `"█"`)                   |
+| `emptyChar`      | `string`  | Empty character (default: `"░"`)                  |
+| `showPercentage` | `boolean` | Show percentage label (default: true if value set) |
+| `label`          | `string`  | Label text before the bar                         |
+| `color`          | `string`  | Color of the filled portion                       |
+
+## SelectList
+
+A keyboard-navigable single-select list with controlled and uncontrolled modes.
+
+```tsx
+import { SelectList } from "inkx"
+
+const items = [
+  { label: "Apple", value: "apple" },
+  { label: "Banana", value: "banana" },
+  { label: "Cherry", value: "cherry", disabled: true },
+]
+
+<SelectList items={items} onSelect={(opt) => console.log(opt.value)} />
+```
+
+| Prop               | Type                                           | Description                                     |
+| ------------------ | ---------------------------------------------- | ----------------------------------------------- |
+| `items`            | `SelectOption[]`                               | List of options (`{ label, value, disabled? }`)  |
+| `highlightedIndex` | `number`                                       | Controlled: current highlighted index            |
+| `onHighlight`      | `(index: number) => void`                      | Called when highlight changes                    |
+| `onSelect`         | `(option: SelectOption, index: number) => void` | Called on Enter to confirm selection             |
+| `initialIndex`     | `number`                                       | Initial index for uncontrolled mode              |
+| `maxVisible`       | `number`                                       | Max visible items (scrolls the rest)             |
+| `isActive`         | `boolean`                                      | Whether this list captures input (default: true) |
+
+Keyboard: `j`/`Down` to move down, `k`/`Up` to move up, `Enter` to select, `Ctrl+A` for first, `Ctrl+E` for last. Disabled items are skipped.
+
+## Table
+
+A data table with headers, column alignment, and auto-sized columns.
+
+```tsx
+import { Table } from "inkx"
+
+<Table
+  columns={[
+    { header: "Name", key: "name" },
+    { header: "Age", key: "age", align: "right" },
+  ]}
+  data={[
+    { name: "Alice", age: 30 },
+    { name: "Bob", age: 25 },
+  ]}
+/>
+```
+
+| Prop         | Type                                       | Description                              |
+| ------------ | ------------------------------------------ | ---------------------------------------- |
+| `columns`    | `TableColumn[]`                            | Column definitions (`{ header, key?, width?, align? }`) |
+| `data`       | `Array<Record<string, unknown> \| unknown[]>` | Data rows (objects or arrays)          |
+| `showHeader` | `boolean`                                  | Show header row (default: true)          |
+| `separator`  | `string`                                   | Column separator (default: `" │ "`)      |
+| `headerBold` | `boolean`                                  | Bold header text (default: true)         |
+
+Column `align` supports `"left"` (default), `"right"`, and `"center"`. Columns auto-size to fit content when `width` is omitted.
+
+## Badge
+
+A small inline label for status display.
+
+```tsx
+import { Badge } from "inkx"
+
+<Badge label="Active" variant="success" />
+<Badge label="Warning" variant="warning" />
+<Badge label="Custom" color="magenta" />
+```
+
+| Prop      | Type                                                          | Description                      |
+| --------- | ------------------------------------------------------------- | -------------------------------- |
+| `label`   | `string`                                                      | Badge text                       |
+| `variant` | `"default" \| "primary" \| "success" \| "warning" \| "error"` | Color variant (default: `"default"`) |
+| `color`   | `string`                                                      | Custom color (overrides variant) |
+
+## Divider
+
+A horizontal separator line with optional centered title.
+
+```tsx
+import { Divider } from "inkx"
+
+<Divider />
+<Divider title="Section" />
+<Divider char="=" width={40} />
+```
+
+| Prop    | Type     | Description                                   |
+| ------- | -------- | --------------------------------------------- |
+| `char`  | `string` | Character to repeat (default: `"─"`)          |
+| `title` | `string` | Title text centered in the divider            |
+| `width` | `number` | Width in columns (default: available via layout) |
+
 ## Newline
 
 Inserts a line break:
