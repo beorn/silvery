@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "inkx"
   text: "React for modern terminals"
-  tagline: "Reactive layout, mouse events, keyboard protocols, inline images, scrollable containers, scrollback buffers, truecolor, hyperlinks, clipboard, focus trees, Playwright-style testing, AI-ready, TEA/Elm or React, drop-in Ink replacement, 122x faster. Pure TypeScript — no WASM, no C++."
+  tagline: "122x faster interactive updates. Reactive layout. AI-ready. Three architectures. Mouse, keyboard, images, clipboard, hyperlinks, scrollback. Pure TypeScript — no WASM, no C++."
   actions:
     - theme: brand
       text: Get Started

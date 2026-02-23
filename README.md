@@ -1,9 +1,19 @@
 # inkx
 
-React 19 for modern terminals — reactive layout feedback, click/drag/scroll mouse events, keyboard protocols, inline images, virtualized scrollable containers, scrollback buffers, truecolor theming, hyperlinks, clipboard, focus trees, Playwright-style testing, AI-ready command introspection, TEA/Elm + React + Zustand architectures, drop-in Ink replacement, [122x faster](docs/deep-dives/performance.md). 23+ components. Pure TypeScript — no WASM, no C++, no native deps.
+React 19 for modern terminals. Pure TypeScript — no WASM, no C++, no native deps.
 
 [![npm version](https://img.shields.io/npm/v/inkx.svg)](https://www.npmjs.com/package/inkx)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+| Unique to inkx | Terminal Protocols | Developer Experience |
+| --- | --- | --- |
+| [122x faster](docs/deep-dives/performance.md) interactive updates | Mouse — click, drag, scroll | Playwright-style testing |
+| Reactive layout — `useContentRect()` | Kitty keyboard — Cmd/Super/Hyper | Plugin composition |
+| AI-ready command introspection | Inline images — Kitty + Sixel | Drop-in Ink replacement |
+| TEA/Elm + React + Zustand architectures | Clipboard over SSH | Screenshot capture |
+| Terminal, Canvas 2D, and DOM targets | Hyperlinks, truecolor | Theming with `$token` colors |
+| No WASM, no C++, no native deps | Scrollback buffers | 23+ components |
+| Per-node dirty tracking (7 flags) | Synchronized output | Focus trees, scrollable containers |
 
 ## Why inkx?
 
