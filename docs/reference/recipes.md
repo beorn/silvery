@@ -9,15 +9,21 @@ import { Box, Text, useInputLayer } from "inkx"
 
 function ConfirmDialog({ message, onConfirm, onCancel }) {
   useInputLayer("confirm-dialog", (input, key) => {
-    if (input === "y") { onConfirm(); return true }
-    if (input === "n" || key.escape) { onCancel(); return true }
+    if (input === "y") {
+      onConfirm()
+      return true
+    }
+    if (input === "n" || key.escape) {
+      onCancel()
+      return true
+    }
     return false
   })
 
   return (
     <Box borderStyle="round" paddingX={2} paddingY={1} flexDirection="column">
       <Text>{message}</Text>
-      <Text dimColor>[y] Confirm  [n] Cancel</Text>
+      <Text dimColor>[y] Confirm [n] Cancel</Text>
     </Box>
   )
 }
@@ -31,7 +37,10 @@ function App() {
       {showConfirm && (
         <ConfirmDialog
           message="Delete this item?"
-          onConfirm={() => { deleteItem(); setShowConfirm(false) }}
+          onConfirm={() => {
+            deleteItem()
+            setShowConfirm(false)
+          }}
           onCancel={() => setShowConfirm(false)}
         />
       )}
@@ -54,14 +63,23 @@ function FilterList({ items }) {
     <Box flexDirection="column">
       <Box>
         <Text>Search: </Text>
-        <TextInput value={query} onChange={(v) => { setQuery(v); setCursor(0) }} />
+        <TextInput
+          value={query}
+          onChange={(v) => {
+            setQuery(v)
+            setCursor(0)
+          }}
+        />
       </Box>
       {filtered.map((item, i) => (
         <Text key={item} color={i === cursor ? "green" : undefined}>
-          {i === cursor ? "> " : "  "}{item}
+          {i === cursor ? "> " : "  "}
+          {item}
         </Text>
       ))}
-      <Text dimColor>{filtered.length} / {items.length} items</Text>
+      <Text dimColor>
+        {filtered.length} / {items.length} items
+      </Text>
     </Box>
   )
 }
@@ -121,7 +139,7 @@ function StreamingChat({ messages, streamingText }) {
         <Box>
           <Text color="green">assistant: </Text>
           <Text>{streamingText}</Text>
-          <Text dimColor>{'▌'}</Text>
+          <Text dimColor>{"▌"}</Text>
         </Box>
       )}
     </Box>
@@ -143,7 +161,10 @@ function TaskProgress({ tasks }) {
       <Box>
         <Text bold>Progress: </Text>
         <ProgressBar value={done / tasks.length} width={40} />
-        <Text> {done}/{tasks.length}</Text>
+        <Text>
+          {" "}
+          {done}/{tasks.length}
+        </Text>
       </Box>
 
       {running && (

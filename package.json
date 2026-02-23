@@ -27,6 +27,42 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./ink": {
+      "types": "./src/ink.ts",
+      "import": "./src/ink.ts"
+    },
+    "./layout": {
+      "types": "./src/layout.ts",
+      "import": "./src/layout.ts"
+    },
+    "./components": {
+      "types": "./src/components.ts",
+      "import": "./src/components.ts"
+    },
+    "./focus": {
+      "types": "./src/focus.ts",
+      "import": "./src/focus.ts"
+    },
+    "./input": {
+      "types": "./src/input.ts",
+      "import": "./src/input.ts"
+    },
+    "./theme": {
+      "types": "./src/theme.ts",
+      "import": "./src/theme.ts"
+    },
+    "./animation": {
+      "types": "./src/animation.ts",
+      "import": "./src/animation.ts"
+    },
+    "./images": {
+      "types": "./src/images.ts",
+      "import": "./src/images.ts"
+    },
+    "./plugins": {
+      "types": "./src/plugins.ts",
+      "import": "./src/plugins.ts"
+    },
     "./testing": {
       "types": "./src/testing/index.tsx",
       "import": "./src/testing/index.tsx"

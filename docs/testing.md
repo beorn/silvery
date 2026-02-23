@@ -114,9 +114,9 @@ await driver.press("j") // Throws if incremental render doesn't match fresh rend
 ### Debugging
 
 ```typescript
-app.debug()              // Print frame to console
-console.log(app.ansi)    // Print with ANSI colors
-console.log(app.text)    // Print plain text
+app.debug() // Print frame to console
+console.log(app.ansi) // Print with ANSI colors
+console.log(app.text) // Print plain text
 ```
 
 ---

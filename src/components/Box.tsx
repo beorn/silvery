@@ -24,7 +24,7 @@ import {
 } from "react"
 import { NodeContext } from "../context.js"
 import { useTheme } from "../contexts/ThemeContext.js"
-import { resolveThemeColor } from "../theme.js"
+import { resolveThemeColor } from "../theme-defs.js"
 import type { BoxProps as BoxPropsType, InkxNode, Rect } from "../types.js"
 
 // ============================================================================

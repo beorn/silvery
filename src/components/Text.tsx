@@ -12,7 +12,7 @@
 
 import { type ForwardedRef, type JSX, type ReactNode, forwardRef } from "react"
 import { useTheme } from "../contexts/ThemeContext.js"
-import { resolveThemeColor } from "../theme.js"
+import { resolveThemeColor } from "../theme-defs.js"
 import type { InkxNode, TextProps as TextPropsType } from "../types.js"
 
 // ============================================================================

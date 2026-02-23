@@ -291,8 +291,8 @@ export { TermContext, EventsContext, FocusManagerContext } from "./context.js"
 // Theming
 export { ThemeProvider, useTheme } from "./contexts/ThemeContext.js"
 export type { ThemeProviderProps } from "./contexts/ThemeContext.js"
-export { defaultDarkTheme, defaultLightTheme, resolveThemeColor } from "./theme.js"
-export type { Theme } from "./theme.js"
+export { defaultDarkTheme, defaultLightTheme, resolveThemeColor } from "./theme-defs.js"
+export type { Theme } from "./theme-defs.js"
 
 // =============================================================================
 // Re-exports from chalkx

@@ -149,15 +149,15 @@ What you gain: layout feedback, scrollable containers, mouse support, focus mana
 
 Actively developed and used in production ([km](https://github.com/beorn/km), a terminal workspace for knowledge workers). APIs may change. The core architecture (reconciler, layout hooks, five-phase pipeline, plugin system) has been stable through months of daily production use.
 
-| Feature                                           | Status     |
-| ------------------------------------------------- | ---------- |
-| Core components (Box, Text, VirtualList, inputs)  | Stable     |
-| Hooks (useContentRect, useInput, useApp, useTerm) | Stable     |
-| React reconciler (React 19)                       | Stable     |
-| Flexx layout engine                               | Stable     |
+| Feature                                            | Status     |
+| -------------------------------------------------- | ---------- |
+| Core components (Box, Text, VirtualList, inputs)   | Stable     |
+| Hooks (useContentRect, useInput, useApp, useTerm)  | Stable     |
+| React reconciler (React 19)                        | Stable     |
+| Flexx layout engine                                | Stable     |
 | Plugin system (commands, keybindings, diagnostics) | Stable     |
-| Terminal target                                   | Production |
-| Canvas / DOM targets                              | Prototype  |
+| Terminal target                                    | Production |
+| Canvas / DOM targets                               | Prototype  |
 
 ## Examples
 
@@ -175,19 +175,19 @@ See [examples/index.md](examples/index.md) for descriptions.
 
 ## Documentation
 
-| Document                                         | Description                                    |
-| ------------------------------------------------ | ---------------------------------------------- |
-| [Getting Started](docs/guides/getting-started.md)       | First app tutorial, basic input, layout         |
-| [Runtime Layers](docs/guides/runtime-layers.md)         | createRuntime, createStore, createApp, streams  |
-| [Components](docs/reference/components.md)               | Box, Text, VirtualList, Console, inputs         |
-| [Hooks](docs/reference/hooks.md)                         | useContentRect, useInput, useApp, useTerm       |
-| [Architecture](docs/deep-dives/architecture.md)          | Pipeline, RenderAdapter interface               |
-| [Testing](docs/testing.md)                               | Strategy, locators, withDiagnostics             |
-| [Performance](docs/deep-dives/performance.md)            | Benchmarks and optimization                     |
-| [Plugins](docs/reference/plugins.md)                     | withCommands, withKeybindings, withDiagnostics  |
-| [Ink Comparison](docs/ink-comparison.md)                 | Detailed feature and performance comparison     |
-| [Migration](docs/guides/migration.md)                    | Ink → inkx guide                                |
-| [Troubleshooting](docs/troubleshooting.md)               | Common issues and debugging                     |
+| Document                                          | Description                                    |
+| ------------------------------------------------- | ---------------------------------------------- |
+| [Getting Started](docs/guides/getting-started.md) | First app tutorial, basic input, layout        |
+| [Runtime Layers](docs/guides/runtime-layers.md)   | createRuntime, createStore, createApp, streams |
+| [Components](docs/reference/components.md)        | Box, Text, VirtualList, Console, inputs        |
+| [Hooks](docs/reference/hooks.md)                  | useContentRect, useInput, useApp, useTerm      |
+| [Architecture](docs/deep-dives/architecture.md)   | Pipeline, RenderAdapter interface              |
+| [Testing](docs/testing.md)                        | Strategy, locators, withDiagnostics            |
+| [Performance](docs/deep-dives/performance.md)     | Benchmarks and optimization                    |
+| [Plugins](docs/reference/plugins.md)              | withCommands, withKeybindings, withDiagnostics |
+| [Ink Comparison](docs/ink-comparison.md)          | Detailed feature and performance comparison    |
+| [Migration](docs/guides/migration.md)             | Ink → inkx guide                               |
+| [Troubleshooting](docs/troubleshooting.md)        | Common issues and debugging                    |
 
 See [docs/README.md](docs/README.md) for the complete documentation index.
 
@@ -197,7 +197,7 @@ See [docs/README.md](docs/README.md) for the complete documentation index.
 | ------------------------------------------ | ----------------------------------------------- |
 | [Ink](https://github.com/vadimdemedes/ink) | API compatibility target                        |
 | [Flexx](https://github.com/beorn/flexx)    | Default layout engine (2.5x faster, 5x smaller) |
-| [chalkx](https://github.com/beorn/chalkx) | Terminal primitives (re-exported by inkx)        |
+| [chalkx](https://github.com/beorn/chalkx)  | Terminal primitives (re-exported by inkx)       |
 | [Yoga](https://yogalayout.dev/)            | Optional layout engine (WASM)                   |
 
 ## License
