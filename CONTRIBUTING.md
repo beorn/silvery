@@ -162,19 +162,21 @@ Key style rules:
 ### TypeScript
 
 - Strict mode is enabled
+- Factory functions, no classes
+- `using` for cleanup (Disposable pattern)
 - Avoid `any` types where possible
 - Use `@ts-expect-error` with explanatory comments when necessary
 
 ### React Patterns
 
-- Use functional components with hooks
+- Functional components with hooks (no class components)
 - Prefer `useCallback` and `useMemo` for performance-critical paths
 - Follow React's rules of hooks
 
 ```tsx
-// Good: Clear hook usage
+// Good: Factory function + using cleanup
 function MyComponent() {
-  const { width } = useLayout()
+  const { width } = useContentRect()
   const [selected, setSelected] = useState(0)
 
   useInput((input, key) => {
@@ -213,15 +215,18 @@ bun test tests/
 
 ### 4. Commit Guidelines
 
-Write clear, descriptive commit messages:
+Follow [Conventional Commits](https://conventionalcommits.org):
 
 ```
-Add useLayout hook for dimension feedback
-
-- Implements layout subscription system
-- Components receive {width, height, x, y}
-- Auto-unsubscribes on unmount
+feat(hooks): add useContentRect for dimension feedback
+fix(output): correct wide character diffing in buffer
+refactor(pipeline): extract content phase into separate module
+docs: update components reference
+test: add VirtualList edge case coverage
+perf(buffer): reduce allocations in cell comparison
 ```
+
+Types: `feat`, `fix`, `refactor`, `docs`, `test`, `perf`, `chore`. Scope is optional: `feat(runtime):`, `fix(output):`.
 
 ### 5. Open Pull Request
 

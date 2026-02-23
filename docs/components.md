@@ -233,6 +233,31 @@ import { Link } from "inkx"
 | `onClick`   | `(event: InkxMouseEvent) => void` | Click handler (preventDefault to skip navigation) |
 | `testID`    | `string`                          | Test ID for locator queries                       |
 
+## Transform
+
+Applies a string transformation to each line of rendered text output. Compatible with Ink's Transform component.
+
+```tsx
+import { Transform, Text } from "inkx"
+
+// Uppercase all text
+<Transform transform={output => output.toUpperCase()}>
+  <Text>Hello World</Text>
+</Transform>
+
+// Add line numbers
+<Transform transform={(line, index) => `${index + 1}: ${line}`}>
+  <Text>First line{'\n'}Second line</Text>
+</Transform>
+```
+
+| Prop        | Type                                      | Description                             |
+| ----------- | ----------------------------------------- | --------------------------------------- |
+| `transform` | `(line: string, index: number) => string` | Function applied to each line of output |
+| `children`  | `ReactNode`                               | Text content to transform               |
+
+The transform should not change the dimensions of the output (e.g., adding characters that change line width) — otherwise layout will be incorrect.
+
 ## Newline
 
 Inserts a line break:

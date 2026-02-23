@@ -18,7 +18,7 @@ import { TerminalBuffer } from "../buffer.js"
 import type { BoxProps, InkxNode, TextProps } from "../types.js"
 import { rectEqual } from "../types.js"
 import { getBorderSize, getPadding } from "./helpers.js"
-import { renderBox, renderScrollIndicators } from "./render-box.js"
+import { renderBox, renderOutline, renderScrollIndicators } from "./render-box.js"
 import { parseColor } from "./render-helpers.js"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text.js"
 
@@ -494,6 +494,13 @@ function renderNodeToBuffer(
       parentRegionChanged,
       ancestorCleared,
     )
+  }
+
+  // Render outline AFTER children — outline overlaps content at edges
+  if (node.type === "inkx-box" && props.outlineStyle) {
+    const { x, width, height } = layout
+    const y = layout.y - scrollOffset
+    renderOutline(buffer, x, y, width, height, props, clipBounds)
   }
 
   // Clear dirty flags

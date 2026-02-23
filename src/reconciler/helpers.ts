@@ -108,6 +108,9 @@ export function contentPropsChanged(
     "wrap",
     "borderColor",
     "borderStyle",
+    "outlineStyle",
+    "outlineColor",
+    "outlineDimColor",
     "internal_transform",
   ]
 

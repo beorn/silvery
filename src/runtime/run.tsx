@@ -41,8 +41,10 @@ import { createRuntime } from "./create-runtime.js"
 import { type InputHandler, type Key, parseKey } from "./keys.js"
 import { splitRawInput } from "../keys.js"
 import type { InkxNode, Rect } from "../types.js"
+import { parseBracketedPaste } from "../bracketed-paste.js"
 import { isMouseSequence, parseMouseSequence } from "../mouse.js"
 import { createMouseEventProcessor, processMouseEvent } from "../mouse-events.js"
+import { enableBracketedPaste, disableBracketedPaste } from "../bracketed-paste.js"
 import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output.js"
 import { detectKittyFromStdio } from "../kitty-detect.js"
 import { ensureLayoutEngine } from "./layout.js"
@@ -116,6 +118,15 @@ interface InputContextValue {
 
 const InputContext = createContext<InputContextValue | null>(null)
 
+/** Paste handler callback type */
+export type PasteHandler = (text: string) => void
+
+interface PasteContextValue {
+  subscribe: (handler: PasteHandler) => () => void
+}
+
+const PasteContext = createContext<PasteContextValue | null>(null)
+
 // ============================================================================
 // Hooks
 // ============================================================================
@@ -150,6 +161,29 @@ export function useExit(): () => void {
   const ctx = useContext(RuntimeContext)
   if (!ctx) throw new Error("useExit must be used within run()")
   return ctx.exit
+}
+
+/**
+ * Hook for handling bracketed paste events.
+ *
+ * When the terminal has bracketed paste mode enabled (default),
+ * pasted text is delivered as a single string instead of
+ * individual keystrokes.
+ *
+ * @example
+ * ```tsx
+ * usePaste((text) => {
+ *   insertText(text)
+ * })
+ * ```
+ */
+export function usePaste(handler: PasteHandler): void {
+  const ctx = useContext(PasteContext)
+
+  useEffect(() => {
+    if (!ctx) return
+    return ctx.subscribe(handler)
+  }, [ctx, handler])
 }
 
 // ============================================================================
@@ -287,6 +321,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
 
   // Input handlers
   const inputHandlers = new Set<InputHandler>()
+  const pasteHandlers = new Set<PasteHandler>()
   let shouldExit = false
 
   // ========================================================================
@@ -358,6 +393,15 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
             })
 
             if (rawKey === null || signal.aborted) break
+
+            // Check for bracketed paste before splitting into individual keys.
+            // Pasted text arrives wrapped in markers and should be emitted as
+            // a single paste event, not character-by-character.
+            const pasteResult = parseBracketedPaste(rawKey)
+            if (pasteResult) {
+              yield { type: "paste" as const, content: pasteResult.content }
+              continue
+            }
 
             // Split multi-character chunks into individual keypresses.
             // stdin "data" events can contain multiple characters buffered
@@ -455,6 +499,14 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     },
   }
 
+  // Paste context value
+  const pasteContextValue: PasteContextValue = {
+    subscribe(handler: PasteHandler) {
+      pasteHandlers.add(handler)
+      return () => pasteHandlers.delete(handler)
+    },
+  }
+
   // Runtime context value
   const runtimeContextValue: RuntimeContextValue = {
     runtime,
@@ -504,7 +556,9 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
         <StdoutContext.Provider value={{ stdout: mockStdout, write: () => {} }}>
           <FocusManagerContext.Provider value={focusManager}>
             <RuntimeContext.Provider value={runtimeContextValue}>
-              <InputContext.Provider value={inputContextValue}>{element}</InputContext.Provider>
+              <PasteContext.Provider value={pasteContextValue}>
+                <InputContext.Provider value={inputContextValue}>{element}</InputContext.Provider>
+              </PasteContext.Provider>
             </RuntimeContext.Provider>
           </FocusManagerContext.Provider>
         </StdoutContext.Provider>
@@ -538,6 +592,9 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
       stdout.write(enableMouse())
       mouseEnabled = true
     }
+
+    // Bracketed paste mode
+    enableBracketedPaste(stdout)
   }
   runtime.render(currentBuffer)
 
@@ -628,6 +685,14 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
           )
         }
 
+        // Handle paste events
+        if (event.type === "paste") {
+          const { content } = event as { content: string }
+          for (const handler of pasteHandlers) {
+            handler(content)
+          }
+        }
+
         // Schedule batched render after any event
         scheduleRender()
 
@@ -637,6 +702,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
       // Cleanup
       runtime[Symbol.dispose]()
       if (!headless) {
+        disableBracketedPaste(stdout)
         if (mouseEnabled) stdout.write(disableMouse())
         if (kittyEnabled) stdout.write(disableKittyKeyboard())
         stdout.write("\x1b[?25h\x1b[0m\n")

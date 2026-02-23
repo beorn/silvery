@@ -24,6 +24,7 @@ import {
   stripAnsi,
 } from "./non-tty.js"
 import { getCursorState } from "./hooks/useCursor.js"
+import { copyToClipboard as copyToClipboardImpl } from "./clipboard.js"
 import { ANSI, notify as notifyTerminal } from "./output.js"
 import { executeRender } from "./pipeline.js"
 import type { InkxNode } from "./types.js"
@@ -311,6 +312,15 @@ export class RenderScheduler {
   notify(message: string, opts?: { title?: string }): void {
     if (this.disposed) return
     notifyTerminal(this.stdout, message, opts)
+  }
+
+  /**
+   * Copy text to the system clipboard via OSC 52.
+   * Works across SSH sessions in terminals that support it.
+   */
+  copyToClipboard(text: string): void {
+    if (this.disposed) return
+    copyToClipboardImpl(this.stdout, text)
   }
 
   /**

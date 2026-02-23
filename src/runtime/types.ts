@@ -54,6 +54,7 @@ export type Event =
       meta: boolean
       ctrl: boolean
     }
+  | { type: "paste"; content: string }
   | { type: "resize"; cols: number; rows: number }
   | { type: "tick"; time: number }
   | { type: "effect"; id: string; result: unknown }

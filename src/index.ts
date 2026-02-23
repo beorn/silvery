@@ -141,6 +141,16 @@ export type { EditContextDisplayProps } from "./components/EditContextDisplay.js
 export { useReadline } from "./components/useReadline.js"
 export type { ReadlineState, UseReadlineOptions, UseReadlineResult } from "./components/useReadline.js"
 
+// Image Component
+export { Image } from "./image/Image.js"
+export type { ImageProps } from "./image/Image.js"
+
+// Image Protocol Encoders
+export { encodeKittyImage, deleteKittyImage, isKittyGraphicsSupported } from "./image/kitty-graphics.js"
+export type { KittyImageOptions } from "./image/kitty-graphics.js"
+export { encodeSixel, isSixelSupported } from "./image/sixel-encoder.js"
+export type { SixelImageData } from "./image/sixel-encoder.js"
+
 // =============================================================================
 // Hooks
 // =============================================================================
@@ -356,6 +366,19 @@ export {
   notifyITerm2,
   notifyKitty,
 } from "./output.js"
+
+// Bracketed paste mode (DEC private mode 2004)
+export {
+  enableBracketedPaste,
+  disableBracketedPaste,
+  parseBracketedPaste,
+  PASTE_START,
+  PASTE_END,
+} from "./bracketed-paste.js"
+export type { BracketedPasteResult } from "./bracketed-paste.js"
+
+// OSC 52 clipboard support
+export { copyToClipboard, requestClipboard, parseClipboardResponse } from "./clipboard.js"
 
 // Kitty protocol detection
 export { detectKittySupport, detectKittyFromStdio, type KittyDetectResult } from "./kitty-detect.js"

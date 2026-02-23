@@ -248,8 +248,10 @@ See [examples/index.md](examples/index.md) for descriptions.
 | [Performance](docs/performance.md)         | Benchmarks and optimization                              |
 | [Streams](docs/streams.md)                 | AsyncIterable helpers                                    |
 | [Focus Routing](docs/focus-routing.md)     | Input routing pattern                                    |
+| [Plugins](docs/plugins.md)                 | withCommands, withKeybindings, withDiagnostics           |
 | [Ink Comparison](docs/ink-comparison.md)   | Detailed comparison                                      |
 | [Migration](docs/migration.md)             | Ink → inkx guide                                         |
+| [Troubleshooting](docs/troubleshooting.md) | Common issues and debugging                              |
 | [Roadmap](docs/roadmap.md)                 | Render targets and future plans                          |
 
 ## Related Projects

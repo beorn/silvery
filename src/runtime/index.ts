@@ -52,7 +52,17 @@ export { createBuffer } from "./create-buffer.js"
 export { createRuntime } from "./create-runtime.js"
 
 // Layer 2: React integration
-export { run, useInput, useExit, type RunOptions, type RunHandle, type InputHandler, type Key } from "./run.js"
+export {
+  run,
+  useInput,
+  useExit,
+  usePaste,
+  type RunOptions,
+  type RunHandle,
+  type InputHandler,
+  type PasteHandler,
+  type Key,
+} from "./run.js"
 
 // Key parsing utilities
 export { parseKey, emptyKey } from "./keys.js"

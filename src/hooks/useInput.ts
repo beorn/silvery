@@ -35,6 +35,14 @@ export interface UseInputOptions {
    * @default true
    */
   isActive?: boolean
+
+  /**
+   * Callback for bracketed paste events.
+   * When the terminal has bracketed paste mode enabled,
+   * pasted text is delivered as a single string instead of
+   * individual keystrokes.
+   */
+  onPaste?: (text: string) => void
 }
 
 // ============================================================================
@@ -65,13 +73,16 @@ export function useInput(inputHandler: InputHandler, options: UseInputOptions = 
   const stdinContext = useContext(StdinContext)
   const inputContext = useContext(InputContext)
 
-  const { isActive = true } = options
+  const { isActive = true, onPaste } = options
 
   // Stable ref for the handler — avoids tearing down/recreating the event
   // subscription on every render. Without this, rapid keystrokes between
   // effect cleanup and setup are lost.
   const handlerRef = useRef(inputHandler)
   handlerRef.current = inputHandler
+
+  const onPasteRef = useRef(onPaste)
+  onPasteRef.current = onPaste
 
   // Static mode check: when events is null, we're in static rendering mode
   // In this mode, useInput becomes a no-op (no raw mode, no event subscription)
@@ -130,8 +141,16 @@ export function useInput(inputHandler: InputHandler, options: UseInputOptions = 
     }
 
     inputContext.eventEmitter.on("input", handleData)
+
+    // Subscribe to paste events if onPaste callback is provided
+    const handlePaste = (text: string) => {
+      onPasteRef.current?.(text)
+    }
+    inputContext.eventEmitter.on("paste", handlePaste)
+
     return () => {
       inputContext.eventEmitter.removeListener("input", handleData)
+      inputContext.eventEmitter.removeListener("paste", handlePaste)
     }
   }, [isActive, isStaticMode, inputContext])
 }

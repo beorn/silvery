@@ -38,3 +38,7 @@ export type { TextAreaProps, TextAreaHandle } from "./TextArea.js"
 // Input Hooks
 export { useReadline } from "./useReadline.js"
 export type { ReadlineState, UseReadlineOptions, UseReadlineResult } from "./useReadline.js"
+
+// Image
+export { Image } from "../image/Image.js"
+export type { ImageProps } from "../image/Image.js"

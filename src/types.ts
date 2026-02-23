@@ -169,6 +169,23 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
   borderBottom?: boolean
   borderLeft?: boolean
   borderRight?: boolean
+
+  /**
+   * Outline style — renders border characters at the box edges without affecting layout.
+   *
+   * Unlike `borderStyle` which adds border dimensions to the layout (making the content
+   * area smaller), `outlineStyle` draws border characters that OVERLAP the content area.
+   * The layout engine sees no border at all — outline is purely visual.
+   *
+   * Use cases: selection indicators, hover highlights, focus rings — anything that
+   * should visually frame a box without shifting content.
+   */
+  outlineStyle?: "single" | "double" | "round" | "bold" | "singleDouble" | "doubleSingle" | "classic"
+  /** Foreground color for the outline */
+  outlineColor?: string
+  /** Apply dim styling to the outline */
+  outlineDimColor?: boolean
+
   onLayout?: (layout: Rect) => void
 
   /**

@@ -1,11 +1,13 @@
 # inkx Documentation
 
-## Quick Navigation
+## Where to Start
 
-- **Completely new?** Start with [Getting Started](getting-started.md) — build your first app in 5 minutes
-- **Coming from Ink?** Read [Why inkx?](site/guide/why-inkx.md), then [Ink Comparison](ink-comparison.md) and [Migration Guide](migration.md)
+- **New to inkx?** Start with [Getting Started](getting-started.md) — build your first app in 5 minutes
+- **Migrating from Ink?** Read [Ink Comparison](ink-comparison.md) and [Migration Guide](migration.md)
 - **Building an app?** [Components](components.md) + [Hooks](hooks.md) + [Input Features](input-features.md)
+- **Testing?** [Testing](testing.md) + [Plugins](plugins.md) (withCommands, withDiagnostics)
 - **Understanding internals?** [Architecture](architecture.md) → [Internals](internals.md) → [Performance](performance.md)
+- **Something broken?** [Troubleshooting](troubleshooting.md)
 - **Contributing?** See [CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ## Learning Path
@@ -27,8 +29,10 @@
 
 - [Input Features](input-features.md) — Keyboard (Kitty protocol), mouse (SGR), hotkeys, modifier symbols (⌘⌥⌃⇧✦)
 - [Focus Routing](focus-routing.md) — Input routing, commands, keybindings
+- [Plugins](plugins.md) — withCommands, withKeybindings, withDiagnostics, driver pattern
 - [Testing](testing.md) — createRenderer, locators, withDiagnostics
 - [Terminal Capabilities](terminal-capabilities.md) — Detection, render modes, protocols
+- [Troubleshooting](troubleshooting.md) — Common issues and debugging
 
 ### Text Editing
 

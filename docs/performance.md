@@ -87,7 +87,7 @@ for kanban. Both significantly faster than Yoga NAPI (C++) due to NAPI bridge ov
 
 4. **displayWidth LRU cache** provides 45x speedup for repeated strings — critical for TUI where the same text appears across frames.
 
-5. **Style interning eliminates string building** — ~15-50 unique styles per TUI, so caching SGR escape strings per style avoids per-cell string concatenation.
+5. **Style interning eliminates string building** — ~15-50 unique styles per TUI, so caching SGR escape strings per style avoids per-cell string concatenation. A **style transition cache** further optimizes consecutive cells: with ~15-50 unique styles, there are at most ~2,500 possible transitions, and each (oldStyle, newStyle) pair is cached to avoid recomputing SGR diff strings.
 
 ## Optimizations by Phase
 

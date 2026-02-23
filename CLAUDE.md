@@ -739,4 +739,6 @@ to capture numbers.
 | [docs/migration.md](docs/migration.md)                         | Ink to inkx migration guide                              |
 | [docs/runtime-migration.md](docs/runtime-migration.md)         | Legacy inkx to inkx/runtime migration                    |
 | [docs/terminal-capabilities.md](docs/terminal-capabilities.md) | Terminal detection, render modes, protocols              |
+| [docs/plugins.md](docs/plugins.md)                             | withCommands, withKeybindings, withDiagnostics, drivers  |
+| [docs/troubleshooting.md](docs/troubleshooting.md)             | Common issues and debugging                              |
 | [docs/roadmap.md](docs/roadmap.md)                             | Render targets and future plans                          |

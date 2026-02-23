@@ -90,6 +90,13 @@ function renderNodeToBuffer(
     renderNormalChildren(node, buffer, scrollOffset, props, clipBounds)
   }
 
+  // Render outline AFTER children — outline overlaps content at edges
+  if (node.type === "inkx-box" && props.outlineStyle) {
+    const { x, width, height } = layout
+    const outlineY = layout.y - scrollOffset
+    renderOutlineAdapter(buffer, x, outlineY, width, height, props, clipBounds)
+  }
+
   // Clear content dirty flag
   node.contentDirty = false
 }
@@ -242,6 +249,60 @@ function renderSideBorders(
     if (showRight && buffer.inBounds(x + width - 1, row)) {
       buffer.drawChar(x + width - 1, row, vertical, style)
     }
+  }
+}
+
+// ============================================================================
+// Outline Rendering
+// ============================================================================
+
+/**
+ * Render an outline around a box (adapter version).
+ *
+ * Unlike borders, outlines do NOT affect layout dimensions. They draw border
+ * characters that OVERLAP the content area at the node's screen rect edges.
+ */
+function renderOutlineAdapter(
+  buffer: RenderBuffer,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  props: BoxProps,
+  clipBounds?: { top: number; bottom: number },
+): void {
+  const adapter = getRenderAdapter()
+  const chars = adapter.getBorderChars(props.outlineStyle ?? "single")
+  const style: RenderStyle = {}
+  if (props.outlineColor) style.fg = props.outlineColor
+  if (props.outlineDimColor) style.attrs = { dim: true }
+
+  const isRowVisible = (row: number): boolean =>
+    clipBounds ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row) : buffer.inBounds(0, row)
+
+  // Top border
+  if (isRowVisible(y)) {
+    renderHorizontalBorder(buffer, x, y, width, true, true, chars.topLeft, chars.topRight, chars.horizontal, style)
+  }
+
+  // Side borders
+  renderSideBorders(buffer, x, width, y + 1, y + height - 1, true, true, chars.vertical, style, isRowVisible)
+
+  // Bottom border
+  const bottomY = y + height - 1
+  if (isRowVisible(bottomY)) {
+    renderHorizontalBorder(
+      buffer,
+      x,
+      bottomY,
+      width,
+      true,
+      true,
+      chars.bottomLeft,
+      chars.bottomRight,
+      chars.horizontal,
+      style,
+    )
   }
 }
 

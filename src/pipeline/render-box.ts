@@ -158,6 +158,82 @@ export function renderBorder(
 }
 
 // ============================================================================
+// Outline Rendering
+// ============================================================================
+
+/**
+ * Render an outline around a box.
+ *
+ * Unlike borders, outlines do NOT affect layout dimensions. They draw border
+ * characters that OVERLAP the content area at the node's screen rect edges.
+ * This is the CSS `outline` equivalent for terminal UI.
+ */
+export function renderOutline(
+  buffer: TerminalBuffer,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  props: BoxProps,
+  clipBounds?: { top: number; bottom: number; left?: number; right?: number },
+): void {
+  const chars = getBorderChars(props.outlineStyle ?? "single")
+  const color = props.outlineColor ? parseColor(props.outlineColor) : null
+  const attrs = props.outlineDimColor ? { dim: true } : {}
+
+  // Helper to check if a row is visible within clip bounds
+  const isRowVisible = (row: number): boolean => {
+    if (!clipBounds) return row >= 0 && row < buffer.height
+    return row >= clipBounds.top && row < clipBounds.bottom && row < buffer.height
+  }
+
+  // Helper to check if a column is visible within clip bounds
+  const isColVisible = (col: number): boolean => {
+    if (clipBounds?.left === undefined || clipBounds.right === undefined) return col >= 0 && col < buffer.width
+    return col >= clipBounds.left && col < clipBounds.right && col < buffer.width
+  }
+
+  // Top border
+  if (isRowVisible(y)) {
+    if (isColVisible(x)) buffer.setCell(x, y, { char: chars.topLeft, fg: color, bg: null, attrs })
+    for (let col = x + 1; col < x + width - 1 && col < buffer.width; col++) {
+      if (isColVisible(col)) buffer.setCell(col, y, { char: chars.horizontal, fg: color, bg: null, attrs })
+    }
+    if (x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
+      buffer.setCell(x + width - 1, y, { char: chars.topRight, fg: color, bg: null, attrs })
+    }
+  }
+
+  // Side borders
+  for (let row = y + 1; row < y + height - 1; row++) {
+    if (!isRowVisible(row)) continue
+    if (isColVisible(x)) buffer.setCell(x, row, { char: chars.vertical, fg: color, bg: null, attrs })
+    if (x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
+      buffer.setCell(x + width - 1, row, { char: chars.vertical, fg: color, bg: null, attrs })
+    }
+  }
+
+  // Bottom border
+  const bottomY = y + height - 1
+  if (isRowVisible(bottomY)) {
+    if (isColVisible(x)) {
+      buffer.setCell(x, bottomY, { char: chars.bottomLeft, fg: color, bg: null, attrs })
+    }
+    for (let col = x + 1; col < x + width - 1 && col < buffer.width; col++) {
+      if (isColVisible(col)) buffer.setCell(col, bottomY, { char: chars.horizontal, fg: color, bg: null, attrs })
+    }
+    if (x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
+      buffer.setCell(x + width - 1, bottomY, {
+        char: chars.bottomRight,
+        fg: color,
+        bg: null,
+        attrs,
+      })
+    }
+  }
+}
+
+// ============================================================================
 // Scroll Indicators
 // ============================================================================
 

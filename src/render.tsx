@@ -20,6 +20,7 @@ import React, { useCallback, useMemo, useRef, type ReactElement, type ReactNode 
 const log = createLogger("inkx:render")
 import { AppContext, EventsContext, InputContext, StdinContext, StdoutContext, TermContext } from "./context.js"
 import { type LayoutEngineType, isLayoutEngineInitialized } from "./layout-engine.js"
+import { enableBracketedPaste, disableBracketedPaste, parseBracketedPaste } from "./bracketed-paste.js"
 import {
   ANSI,
   enterAlternateScreen,
@@ -274,6 +275,15 @@ function InkxApp({
         log.debug?.(`stdin.read() returned: ${chunk === null ? "null" : JSON.stringify(chunk)}`)
         if (chunk === null) return
 
+        // Check for bracketed paste before splitting into individual keys.
+        const pasteResult = parseBracketedPaste(chunk)
+        if (pasteResult) {
+          // Emit paste as a single 'paste' event on the input emitter
+          eventEmitter.emit("paste", pasteResult.content)
+          processInput()
+          return
+        }
+
         // Split multi-character chunks into individual keypresses.
         // stdin.read() can return multiple characters buffered together
         // (rapid typing, paste, or auto-repeat during heavy renders).
@@ -445,6 +455,11 @@ class InkxInstance {
       this.stdout.write(enableKittyKeyboard())
     }
 
+    // Enable bracketed paste mode so pasted text is distinguishable from typing
+    if (this.stdout.isTTY) {
+      enableBracketedPaste(this.stdout)
+    }
+
     // Set up container
     this.container = createContainer(() => {
       this.scheduler?.scheduleRender()
@@ -560,8 +575,9 @@ class InkxInstance {
     this.resizeCleanup?.()
     this.signalCleanup?.()
 
-    // Disable Kitty keyboard protocol before leaving
+    // Disable Kitty keyboard protocol and bracketed paste before leaving
     if (this.stdout.isTTY) {
+      disableBracketedPaste(this.stdout)
       this.stdout.write(disableKittyKeyboard())
     }
 

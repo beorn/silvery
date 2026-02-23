@@ -607,6 +607,30 @@ The runtime handles mouse parsing automatically — mouse sequences are dispatch
 | Terminal.app | Yes       | Basic |
 | xterm        | Yes       | 277+  |
 
+## Terminal Notifications
+
+inkx provides a notification API that auto-detects the terminal and sends notifications using the best available method.
+
+```tsx
+import { notify, notifyITerm2, notifyKitty, BEL } from "inkx"
+
+// Auto-detect terminal and send notification
+notify(process.stdout, "Build complete", { title: "inkx" })
+
+// Terminal-specific functions
+notifyITerm2("Build complete") // OSC 9 (iTerm2)
+notifyKitty("Build complete", { title: "inkx" }) // OSC 99 (Kitty)
+```
+
+| Function       | Protocol | Description                                         |
+| -------------- | -------- | --------------------------------------------------- |
+| `notify`       | Auto     | Detects terminal via `TERM_PROGRAM`/`TERM` env vars |
+| `notifyITerm2` | OSC 9    | Returns iTerm2 notification escape string           |
+| `notifyKitty`  | OSC 99   | Returns Kitty notification escape string            |
+| `BEL`          | BEL      | Basic terminal bell character (`\x07`)              |
+
+`notify()` auto-selects: iTerm2 uses OSC 9, Kitty uses OSC 99, other terminals fall back to BEL (audible/visual bell).
+
 ## Standards Reference
 
 ### ECMA-48 (ISO 6429)

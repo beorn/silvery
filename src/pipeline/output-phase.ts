@@ -273,93 +273,6 @@ function underlineStyleToSgr(style: UnderlineStyle | undefined): number | null {
 }
 
 /**
- * Find rows that have changes AND contain wide characters.
- * These rows need full-row rendering to avoid cursor drift from
- * wide character width mismatches between inkx and the terminal.
- */
-function findWideCharChangedRows(pool: CellChange[], count: number, buffer: TerminalBuffer): Set<number> {
-  // Collect unique changed rows
-  const changedRows = new Set<number>()
-  for (let i = 0; i < count; i++) {
-    changedRows.add(pool[i]!.y)
-  }
-
-  // Check which changed rows have wide characters
-  const wideRows = new Set<number>()
-  for (const y of changedRows) {
-    for (let x = 0; x < buffer.width; x++) {
-      if (buffer.isCellWide(x, y)) {
-        wideRows.add(y)
-        break
-      }
-    }
-  }
-
-  return wideRows
-}
-
-/**
- * Render full rows for rows that contain wide characters.
- * Emits each row from column 0 sequentially with \x1b[K to clear
- * to end of line, avoiding cursor position drift from width mismatches.
- */
-function renderFullRows(buffer: TerminalBuffer, rows: Set<number>): string {
-  let output = ""
-  let currentStyle: Style | null = null
-  const cell = createMutableCell()
-  const cellStyle: Style = {
-    fg: null,
-    bg: null,
-    underlineColor: null,
-    attrs: {},
-  }
-
-  // Sort rows for efficient cursor movement
-  const sortedRows = Array.from(rows).sort((a, b) => a - b)
-
-  for (const y of sortedRows) {
-    // Move cursor to start of row (1-indexed)
-    output += `\x1b[${y + 1};1H`
-
-    // Render all cells on this row sequentially
-    for (let x = 0; x < buffer.width; x++) {
-      buffer.readCellInto(x, y, cell)
-
-      // Skip continuation cells
-      if (cell.continuation) continue
-
-      // Apply style changes
-      cellStyle.fg = cell.fg
-      cellStyle.bg = cell.bg
-      cellStyle.underlineColor = cell.underlineColor
-      cellStyle.attrs = cell.attrs
-      if (!styleEquals(currentStyle, cellStyle)) {
-        const saved: Style = {
-          fg: cell.fg,
-          bg: cell.bg,
-          underlineColor: cell.underlineColor,
-          attrs: { ...cell.attrs },
-        }
-        output += styleTransition(currentStyle, saved)
-        currentStyle = saved
-      }
-
-      output += cell.char
-    }
-
-    // Clear to end of line (removes any stale content from previous render)
-    output += "\x1b[K"
-  }
-
-  // Reset style at end
-  if (currentStyle) {
-    output += "\x1b[0m"
-  }
-
-  return output
-}
-
-/**
  * Diff two buffers and produce minimal ANSI output.
  *
  * @param prev Previous buffer (null on first render)
@@ -415,39 +328,12 @@ export function outputPhase(
     return "" // No changes
   }
 
-  // Identify rows with changes that also contain wide characters.
-  // Wide chars (emoji, CJK) can have width mismatches between inkx and
-  // terminal emulators, causing cursor position drift on incremental diffs.
-  // For these rows, emit the full row sequentially instead of cell-level
-  // diffs to avoid accumulated positioning errors.
-  const wideCharRows = findWideCharChangedRows(pool, count, next)
-
-  if (wideCharRows.size > 0) {
-    // Split output: full-row rendering for wide-char rows, cell diffs for the rest.
-    // Filter out wide-char row entries from the pool.
-    let filteredCount = 0
-    for (let i = 0; i < count; i++) {
-      if (!wideCharRows.has(pool[i]!.y)) {
-        // Swap to front of pool
-        if (filteredCount !== i) {
-          const tmp = pool[filteredCount]!
-          pool[filteredCount] = pool[i]!
-          pool[i] = tmp
-        }
-        filteredCount++
-      }
-    }
-
-    // Render wide-char rows fully + remaining cell diffs
-    let output = ""
-    if (filteredCount > 0) {
-      output += changesToAnsi(pool, filteredCount, mode)
-    }
-    output += renderFullRows(next, wideCharRows)
-    return output
-  }
-
-  return changesToAnsi(pool, count, mode)
+  // Wide characters are handled atomically in changesToAnsi():
+  // - Wide char main cells emit the character and advance cursor by 2
+  // - Continuation cells are skipped (handled with their main cell)
+  // - Orphaned continuation cells (main cell unchanged) trigger a
+  //   re-emit of the main cell from the buffer
+  return changesToAnsi(pool, count, mode, next)
 }
 
 /**
@@ -835,6 +721,12 @@ const reusableCellStyle: Style = {
 }
 
 /**
+ * Pre-allocated cell for looking up wide char main cells from the buffer
+ * when an orphaned continuation cell is encountered in changesToAnsi.
+ */
+const wideCharLookupCell = createMutableCell()
+
+/**
  * Sort a sub-range of the pool by position for optimal cursor movement.
  * Uses a simple in-place sort on pool[0..count).
  */
@@ -856,11 +748,24 @@ function sortPoolByPosition(pool: CellChange[], count: number): void {
 /**
  * Convert cell changes to optimized ANSI output.
  *
+ * Wide characters are handled atomically: the main cell (wide:true) and its
+ * continuation cell are treated as a single unit. When the main cell is in
+ * the pool, it's emitted and the cursor advances by 2. When only the
+ * continuation cell changed (e.g., bg color), the main cell is read from
+ * the buffer and emitted to cover both columns.
+ *
  * @param pool Pre-allocated pool of CellChange objects
  * @param count Number of valid entries in the pool
  * @param mode Render mode (only fullscreen uses incremental diff)
+ * @param buffer The current buffer, used to look up main cells for orphaned
+ *   continuation cells (optional for backward compatibility)
  */
-function changesToAnsi(pool: CellChange[], count: number, mode: "fullscreen" | "inline" = "fullscreen"): string {
+function changesToAnsi(
+  pool: CellChange[],
+  count: number,
+  mode: "fullscreen" | "inline" = "fullscreen",
+  buffer?: TerminalBuffer,
+): string {
   if (count === 0) return ""
 
   // Sort by position for optimal cursor movement (in-place, no allocation)
@@ -875,15 +780,38 @@ function changesToAnsi(pool: CellChange[], count: number, mode: "fullscreen" | "
     let cursorX = -1
     let cursorY = -1
     let prevY = -1
+    // Track the last emitted cell position to detect when a continuation
+    // cell's main cell was already emitted in this pass.
+    let lastEmittedX = -1
+    let lastEmittedY = -1
 
     for (let i = 0; i < count; i++) {
       const change = pool[i]!
-      const x = change.x
+      let x = change.x
       const y = change.y
-      const cell = change.cell
+      let cell = change.cell
 
-      // Skip continuation cells
-      if (cell.continuation) continue
+      // Handle continuation cells: these are the second column of a wide
+      // character. If their main cell (x-1) was already emitted in this
+      // pass, skip. Otherwise, look up and emit the main cell from the
+      // buffer so the wide char covers both columns.
+      if (cell.continuation) {
+        // Main cell was already emitted — skip
+        if (lastEmittedX === x - 1 && lastEmittedY === y) continue
+
+        // Orphaned continuation cell: main cell didn't change but this
+        // cell's style did. Read the main cell from the buffer and emit it.
+        if (buffer && x > 0) {
+          x = x - 1
+          buffer.readCellInto(x, y, wideCharLookupCell)
+          cell = wideCharLookupCell
+          // If the looked-up cell is itself a continuation (shouldn't happen
+          // with valid buffers) or not wide, fall back to skipping
+          if (cell.continuation || !cell.wide) continue
+        } else {
+          continue
+        }
+      }
 
       // Close hyperlink on row change (hyperlinks must not span across rows)
       if (y !== prevY && currentHyperlink) {
@@ -957,6 +885,8 @@ function changesToAnsi(pool: CellChange[], count: number, mode: "fullscreen" | "
       output += cell.char
       cursorX = x + (cell.wide ? 2 : 1)
       cursorY = y
+      lastEmittedX = x
+      lastEmittedY = y
     }
   }
 

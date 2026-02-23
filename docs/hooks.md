@@ -181,6 +181,60 @@ function Sidebar() {
 }
 ```
 
+## useFocus (Ink-Compatible)
+
+Ink-compatible wrapper around `useFocusable`. Returns `{ isFocused }` instead of `{ focused }`.
+
+```tsx
+import { useFocus } from "inkx"
+
+function FocusableItem() {
+  const { isFocused } = useFocus()
+  return (
+    <Box testID="item" focusable>
+      <Text color={isFocused ? "green" : "white"}>Item</Text>
+    </Box>
+  )
+}
+```
+
+| Option      | Type      | Description                                            |
+| ----------- | --------- | ------------------------------------------------------ |
+| `autoFocus` | `boolean` | Auto-focus on mount (use Box `autoFocus` prop instead) |
+| `isActive`  | `boolean` | Accepted for API compatibility (not wired through)     |
+| `id`        | `string`  | Accepted for API compatibility (use `testID` prop)     |
+
+For new code, prefer `useFocusable()` which returns richer state (`focused`, `focus()`, `blur()`, `focusOrigin`).
+
+## useInkFocusManager (Ink-Compatible)
+
+Ink-compatible wrapper around `useFocusManager`. Provides the same API shape as Ink's `useFocusManager`.
+
+```tsx
+import { useInkFocusManager } from "inkx"
+
+function Navigation() {
+  const { focusNext, focusPrevious } = useInkFocusManager()
+
+  useInput((input, key) => {
+    if (key.tab && key.shift) focusPrevious()
+    else if (key.tab) focusNext()
+  })
+
+  return <Text>Tab to navigate</Text>
+}
+```
+
+| Return          | Type                   | Description                            |
+| --------------- | ---------------------- | -------------------------------------- |
+| `focusNext`     | `() => void`           | Focus the next focusable element       |
+| `focusPrevious` | `() => void`           | Focus the previous focusable element   |
+| `focus`         | `(id: string) => void` | Focus a specific element by ID         |
+| `enableFocus`   | `() => void`           | No-op (kept for Ink API compatibility) |
+| `disableFocus`  | `() => void`           | No-op (kept for Ink API compatibility) |
+
+For new code, prefer `useFocusManager()` which returns the full inkx focus manager API.
+
 ## useScrollback
 
 Push frozen items to terminal scrollback. Tracks a contiguous frozen prefix — when the count increases, renders newly frozen items and writes them to stdout.
