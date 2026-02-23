@@ -1,6 +1,6 @@
 # Layout Engine
 
-inkx uses a pluggable layout engine architecture. It supports [Flexx](../../../beorn-flexx/) (pure JavaScript, recommended) and [Yoga](https://yogalayout.dev/) (Facebook's WASM-based flexbox implementation).
+inkx uses a pluggable layout engine architecture. It supports [Flexx](https://github.com/beorn/flexx) (pure JavaScript, recommended) and [Yoga](https://yogalayout.dev/) (Facebook's WASM-based flexbox implementation).
 
 ## Quick Start
 
