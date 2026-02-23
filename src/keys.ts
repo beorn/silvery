@@ -575,8 +575,9 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
         codepoint = Number(kittyParts[1])
         modifier = (Number(kittyParts[4] || 1) - 1) as number
       } else {
-        modifier = (Number(modifyOtherKeysParts![1]) - 1) as number
-        codepoint = Number(modifyOtherKeysParts![2])
+        const mokParts = modifyOtherKeysParts as RegExpExecArray
+        modifier = (Number(mokParts[1]) - 1) as number
+        codepoint = Number(mokParts[2])
       }
 
       key.shift = !!(modifier & 1)

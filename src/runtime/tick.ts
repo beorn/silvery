@@ -39,7 +39,6 @@ function createTickIterator(intervalMs: number, signal?: AbortSignal): AsyncIter
   let count = 0
   let timer: ReturnType<typeof setTimeout> | undefined
   let pendingResolve: ((result: IteratorResult<number>) => void) | undefined
-  let pendingReject: ((error: Error) => void) | undefined
   let done = false
 
   // Handle abort signal
@@ -52,7 +51,6 @@ function createTickIterator(intervalMs: number, signal?: AbortSignal): AsyncIter
     if (pendingResolve) {
       pendingResolve({ done: true, value: undefined })
       pendingResolve = undefined
-      pendingReject = undefined
     }
   }
 
@@ -70,15 +68,13 @@ function createTickIterator(intervalMs: number, signal?: AbortSignal): AsyncIter
         return { done: true, value: undefined }
       }
 
-      return new Promise<IteratorResult<number>>((resolve, reject) => {
+      return new Promise<IteratorResult<number>>((resolve, _reject) => {
         pendingResolve = resolve
-        pendingReject = reject
 
         timer = setTimeout(() => {
           if (!done) {
             const value = count++
             pendingResolve = undefined
-            pendingReject = undefined
             resolve({ done: false, value })
           }
         }, intervalMs)
@@ -97,7 +93,6 @@ function createTickIterator(intervalMs: number, signal?: AbortSignal): AsyncIter
       if (pendingResolve) {
         pendingResolve({ done: true, value: undefined })
         pendingResolve = undefined
-        pendingReject = undefined
       }
       return { done: true, value: undefined }
     },

@@ -13,7 +13,7 @@ import type { FocusManager } from "./focus-manager.js"
 import { findFocusableAncestor } from "./focus-queries.js"
 import type { ParsedMouse } from "./mouse.js"
 import { getAncestorPath, pointInRect } from "./tree-utils.js"
-import type { InkxNode, Rect } from "./types.js"
+import type { InkxNode } from "./types.js"
 
 // ============================================================================
 // Event Types

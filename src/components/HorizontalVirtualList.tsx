@@ -101,17 +101,15 @@ const SCROLL_PADDING = 1
 // Helpers
 // =============================================================================
 
-/**
- * Calculate average item width for estimating visible count.
- */
-function calcAvgItemWidth<T>(items: T[], itemWidth: number | ((item: T, index: number) => number)): number {
-  if (typeof itemWidth === "number") return itemWidth
-  if (items.length === 0) return 1
-  const n = Math.min(items.length, 10)
-  let sum = 0
-  for (let i = 0; i < n; i++) sum += itemWidth(items[i], i)
-  return sum / n
-}
+// /** Calculate average item width for estimating visible count. */
+// function calcAvgItemWidth<T>(items: T[], itemWidth: number | ((item: T, index: number) => number)): number {
+//   if (typeof itemWidth === "number") return itemWidth
+//   if (items.length === 0) return 1
+//   const n = Math.min(items.length, 10)
+//   let sum = 0
+//   for (let i = 0; i < n; i++) sum += itemWidth(items[i], i)
+//   return sum / n
+// }
 
 /**
  * Calculate total width of all items including gaps.

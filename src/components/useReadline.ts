@@ -28,7 +28,7 @@
  * ESC followed by the key instead of a proper alt modifier.
  */
 import { useCallback, useRef, useState } from "react"
-import { type Key, useInput } from "../hooks/index.js"
+import { useInput } from "../hooks/index.js"
 
 // =============================================================================
 // Types

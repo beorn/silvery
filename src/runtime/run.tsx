@@ -26,7 +26,7 @@
  */
 
 import process from "node:process"
-import React, { createContext, useContext, useEffect, type ReactElement } from "react"
+import { createContext, useContext, useEffect, type ReactElement } from "react"
 
 import { createTerm } from "chalkx"
 import { AppContext, FocusManagerContext, StdoutContext, TermContext } from "../context.js"
@@ -536,7 +536,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
   } as unknown as NodeJS.WriteStream
 
   // Create mock term for useTerm()
-  const mockTerm = createTerm({ level: 3, columns: cols })
+  const mockTerm = createTerm({ color: "truecolor" })
 
   // Wrap element with all required providers
   const wrappedElement = (
@@ -571,7 +571,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
           kittyEnabled = true
         }
       } else {
-        stdout.write(enableKittyKeyboard(kittyOption))
+        stdout.write(enableKittyKeyboard(kittyOption as 1))
         kittyEnabled = true
       }
     }
@@ -609,7 +609,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
 
         // Handle key events with parsed key
         if (event.type === "key" && "parsedKey" in event) {
-          const { input, parsedKey } = event as {
+          const { input, parsedKey } = event as unknown as {
             input: string
             parsedKey: Key
           }

@@ -84,7 +84,6 @@ export {
   type EventHandler,
   type EventHandlers,
   type EventHandlerContext,
-  type Provider,
 } from "./create-app.js"
 
 // Time/tick sources

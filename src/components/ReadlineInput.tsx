@@ -26,7 +26,7 @@
  * - Alt+Y: Cycle kill ring
  * - Ctrl+T: Transpose characters
  */
-import React, { useCallback, useImperativeHandle, forwardRef, useState, useEffect } from "react"
+import { useCallback, useImperativeHandle, forwardRef, useState, useEffect } from "react"
 import { Box } from "./Box.js"
 import { Text } from "./Text.js"
 import { useReadline } from "./useReadline.js"
@@ -128,7 +128,7 @@ export const ReadlineInput = forwardRef<ReadlineInputHandle, ReadlineInputProps>
   }, [isControlled, controlledValue, lastControlledValue, readline])
 
   // Handle Enter separately for onSubmit
-  const { value, beforeCursor, afterCursor, cursor, clear, setValue, killRing } = readline
+  const { value, cursor, clear, setValue, killRing } = readline
 
   // Imperative handle for parent control
   useImperativeHandle(ref, () => ({

@@ -98,7 +98,7 @@ export interface Command {
  * access to commands. Uses Proxy for dynamic lookup.
  */
 export interface Cmd {
-  [key: string]: Command | undefined
+  [key: string]: Command | (() => CommandInfo[]) | (() => string) | undefined
   /** Get all commands with metadata */
   all(): CommandInfo[]
   /** Get human/AI readable description of all commands */

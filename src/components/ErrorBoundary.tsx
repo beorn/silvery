@@ -136,7 +136,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       // If fallback is provided, use it
       if (fallback !== undefined) {
-        return fallback
+        return fallback as ReactNode
       }
 
       // Default fallback: red bordered box with error message

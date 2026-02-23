@@ -191,7 +191,7 @@ export class RenderScheduler {
     this.minFrameTime = options.minFrameTime ?? 16
     this.slowFrameThreshold = options.slowFrameThreshold ?? 50
     this.mode = options.mode ?? "fullscreen"
-    this.log = createLogger("inkx:scheduler")
+    this.log = createLogger("inkx:scheduler") as unknown as Logger
 
     // Resolve non-TTY mode based on environment
     this.nonTTYMode = resolveNonTTYMode({
@@ -531,7 +531,7 @@ export class RenderScheduler {
               if (process.env.DEBUG_LOG) {
                 appendFileSync(process.env.DEBUG_LOG, msg + "\n")
               }
-              log.error(msg)
+              log.error?.(msg)
               // Throw special error that won't be caught by general error handler
               throw new IncrementalRenderMismatchError(msg)
             }
@@ -572,7 +572,7 @@ export class RenderScheduler {
       }
     } catch (error) {
       // Log and re-throw all render errors - the app should handle cleanup
-      log.error(`render error: ${error}`)
+      log.error?.(`render error: ${error}`)
       this.logError("Render error:", error)
       throw error
     }

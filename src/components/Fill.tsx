@@ -31,7 +31,7 @@
  * ```
  */
 
-import { type JSX, type ReactNode, useMemo, Children, isValidElement, cloneElement } from "react"
+import React, { type JSX, type ReactNode, useMemo, Children, isValidElement, cloneElement } from "react"
 import { displayWidth } from "../unicode.js"
 
 /** Maximum fill width in columns. Covers ultrawide terminals (8K at 5px font ≈ 1500 cols). */
@@ -52,8 +52,8 @@ function extractText(children: ReactNode): string {
       text += child
     } else if (typeof child === "number") {
       text += String(child)
-    } else if (isValidElement(child) && child.props.children != null) {
-      text += extractText(child.props.children as ReactNode)
+    } else if (isValidElement(child) && (child as React.ReactElement<any>).props.children != null) {
+      text += extractText((child as React.ReactElement<any>).props.children as ReactNode)
     }
   })
   return text
@@ -69,7 +69,7 @@ function renderWithText(children: ReactNode, text: string): JSX.Element {
   const firstChild = childArray[0]
 
   if (isValidElement(firstChild)) {
-    return cloneElement(firstChild, { wrap: "clip" }, text)
+    return cloneElement(firstChild as React.ReactElement<any>, { wrap: "clip" }, text)
   }
 
   return <>{text}</>

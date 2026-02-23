@@ -27,7 +27,7 @@
  * - Backspace/Delete: Delete characters
  * - Enter: Insert newline (or submit with submitKey="enter")
  */
-import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
+import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useContentRect } from "../hooks/useLayout.js"
 import { useInput } from "../hooks/useInput.js"
 import { cursorToRowCol, getWrappedLines } from "../text-cursor.js"

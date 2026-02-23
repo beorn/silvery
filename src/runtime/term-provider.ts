@@ -101,6 +101,7 @@ export interface TermEvents {
   key: { input: string; key: Key }
   mouse: ParsedMouse
   resize: Dims
+  [key: string]: unknown
 }
 
 /**
@@ -239,7 +240,7 @@ export function createTermProvider(
           if (queue.length === 0) {
             await new Promise<void>((resolve) => {
               eventResolve = resolve
-              signal.addEventListener("abort", resolve, { once: true })
+              signal.addEventListener("abort", () => resolve(), { once: true })
             })
           }
 

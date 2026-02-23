@@ -82,7 +82,7 @@ export function layout(element: ReactElement, dims: Dims, options: LayoutOptions
   } as unknown as NodeJS.WriteStream
 
   // Create mock term for components that use useTerm()
-  const mockTerm = createTerm({ level: plain ? 0 : 3, columns: width })
+  const mockTerm = createTerm({ color: plain ? null : "truecolor" })
 
   // Wrap with minimal contexts (no input handling needed)
   const wrapped = React.createElement(
@@ -151,11 +151,11 @@ export function layoutSync(element: ReactElement, dims: Dims, options: LayoutOpt
  * Used for static renders where we don't use act() and don't need layout feedback.
  */
 function withoutActWarnings(fn: () => void): void {
-  const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
-  globalThis.IS_REACT_ACT_ENVIRONMENT = false
+  const prev = (globalThis as any).IS_REACT_ACT_ENVIRONMENT
+  ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = false
   try {
     fn()
   } finally {
-    globalThis.IS_REACT_ACT_ENVIRONMENT = prev
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = prev
   }
 }

@@ -30,7 +30,7 @@ import { createTerm } from "chalkx"
 
 import { bufferToStyledText, bufferToText, type TerminalBuffer } from "./buffer.js"
 import { AppContext, StdoutContext, TermContext } from "./context.js"
-import { isLayoutEngineInitialized, setLayoutEngine } from "./layout-engine.js"
+import { isLayoutEngineInitialized } from "./layout-engine.js"
 import { executeRender } from "./pipeline.js"
 import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "./reconciler.js"
 
@@ -150,7 +150,7 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
   } as unknown as NodeJS.WriteStream
 
   // Create mock term for components that use useTerm()
-  const mockTerm = createTerm({ level: plain ? 0 : 3, columns: width })
+  const mockTerm = createTerm({ color: plain ? null : "truecolor" })
 
   // Wrap with minimal contexts (no input handling needed)
   const wrapped = React.createElement(
@@ -226,13 +226,11 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
  * This ensures act() captures forceUpdate/setState from layout notifications.
  */
 function withActEnvironment(fn: () => void): void {
-  const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
-  // @ts-expect-error - React internal flag
-  globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  const prev = (globalThis as any).IS_REACT_ACT_ENVIRONMENT
+  ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
   try {
     fn()
   } finally {
-    // @ts-expect-error - React internal flag
-    globalThis.IS_REACT_ACT_ENVIRONMENT = prev
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = prev
   }
 }

@@ -30,8 +30,8 @@ import { readFileSync } from "node:fs"
 import { type JSX, useContext, useEffect, useMemo, useRef } from "react"
 import { StdoutContext } from "../context.js"
 import { useContentRect } from "../hooks/useLayout.js"
-import { encodeKittyImage, isKittyGraphicsSupported } from "./kitty-graphics.js"
-import { encodeSixel, isSixelSupported } from "./sixel-encoder.js"
+import { encodeKittyImage, isKittyGraphicsSupported, deleteKittyImage } from "./kitty-graphics.js"
+import { isSixelSupported } from "./sixel-encoder.js"
 
 // ============================================================================
 // Types

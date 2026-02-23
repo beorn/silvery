@@ -19,6 +19,7 @@
 // TEA Types (The Elm Architecture)
 // =============================================================================
 
+import type { FocusOrigin } from "../focus-manager.js"
 export type { FocusOrigin } from "../focus-manager.js"
 
 /**

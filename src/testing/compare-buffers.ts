@@ -5,7 +5,7 @@
  * mismatch found (or null if buffers are identical).
  */
 
-import { type Cell, type TerminalBuffer, bufferToText, cellEquals } from "../buffer.js"
+import { type Cell, type TerminalBuffer, cellEquals } from "../buffer.js"
 
 /**
  * A single cell mismatch between two buffers.

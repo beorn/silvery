@@ -20,7 +20,6 @@ import {
 import type { InkxNode, TextProps } from "../types.js"
 import {
   type StyledSegment,
-  displayWidth,
   ensureEmojiPresentation,
   graphemeWidth,
   hasAnsi,

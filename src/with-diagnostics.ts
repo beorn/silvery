@@ -40,7 +40,7 @@
  * ```
  */
 
-import { mkdir, writeFile } from "node:fs/promises"
+import { mkdir } from "node:fs/promises"
 import { join } from "node:path"
 import type { TerminalBuffer } from "./buffer.js"
 import { outputPhase } from "./pipeline/index.js"

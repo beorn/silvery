@@ -89,34 +89,26 @@ function getItemSize<T>(item: T, index: number, itemSize: number | ((item: T, in
   return typeof itemSize === "function" ? itemSize(item, index) : itemSize
 }
 
-/**
- * Calculate how many items fit in the viewport starting from a given index.
- * Handles variable item sizes.
- */
-function calcVisibleCount<T>(
-  items: T[],
-  startIndex: number,
-  viewportSize: number,
-  itemSize: number | ((item: T, index: number) => number),
-  gap: number,
-): number {
-  // Fast path for fixed sizes
-  if (typeof itemSize === "number") {
-    return Math.max(1, Math.floor(viewportSize / (itemSize + gap)))
-  }
-
-  // Variable sizes - count items that fit
-  let usedSize = 0
-  let count = 0
-
-  for (let i = startIndex; i < items.length && usedSize < viewportSize; i++) {
-    const size = getItemSize(items[i], i, itemSize)
-    usedSize += size + (count > 0 ? gap : 0)
-    count++
-  }
-
-  return Math.max(1, count)
-}
+// /** Calculate how many items fit in the viewport starting from a given index. Handles variable item sizes. */
+// function calcVisibleCount<T>(
+//   items: T[],
+//   startIndex: number,
+//   viewportSize: number,
+//   itemSize: number | ((item: T, index: number) => number),
+//   gap: number,
+// ): number {
+//   if (typeof itemSize === "number") {
+//     return Math.max(1, Math.floor(viewportSize / (itemSize + gap)))
+//   }
+//   let usedSize = 0
+//   let count = 0
+//   for (let i = startIndex; i < items.length && usedSize < viewportSize; i++) {
+//     const size = getItemSize(items[i], i, itemSize)
+//     usedSize += size + (count > 0 ? gap : 0)
+//     count++
+//   }
+//   return Math.max(1, count)
+// }
 
 /**
  * Calculate average item size for estimating visible count.
@@ -178,7 +170,7 @@ export function useVirtualization<T>(config: VirtualizationConfig<T>): Virtualiz
   const scrollOffsetRef = useRef(
     calcEdgeBasedScrollOffset(selectedIndexRef.current, 0, estimatedVisibleCount, items.length, scrollPadding),
   )
-  const [scrollOffset, setScrollOffset] = useState(() => scrollOffsetRef.current)
+  const [/* scrollOffset */, setScrollOffset] = useState(() => scrollOffsetRef.current)
 
   // Synchronous scroll offset computation during render.
   // When scrollTo is defined, compute the new offset immediately so the

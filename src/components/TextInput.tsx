@@ -14,7 +14,7 @@
  * />
  * ```
  */
-import React, { useState, useCallback, useImperativeHandle, useRef, forwardRef } from "react"
+import { useState, useCallback, useImperativeHandle, useRef, forwardRef } from "react"
 import { useInput } from "../hooks/index.js"
 import { Box } from "./Box.js"
 import { Text } from "./Text.js"

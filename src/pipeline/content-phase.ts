@@ -55,7 +55,7 @@ export function contentPhase(root: InkxNode, prevBuffer?: TerminalBuffer | null)
   const tClone = _instrumentEnabled ? performance.now() - t0 : 0
 
   const t1 = _instrumentEnabled ? performance.now() : 0
-  renderNodeToBuffer(root, buffer, 0, undefined, hasPrevBuffer)
+  renderNodeToBuffer(root, buffer, 0, undefined, !!hasPrevBuffer)
   const tRender = _instrumentEnabled ? performance.now() - t1 : 0
 
   if (_instrumentEnabled) {
@@ -313,8 +313,7 @@ function renderNodeToBuffer(
   // cache, so paintDirty acts as a surviving witness that style props changed.
   // Why this matters: when backgroundColor changes from "cyan" to undefined,
   // paintDirty ensures we clear stale pixels from the cloned buffer.
-  const needsOwnRepaint =
-    node.contentDirty || node.paintDirty || node.childrenDirty || layoutChanged || childPositionChanged
+  // needsOwnRepaint = node.contentDirty || node.paintDirty || node.childrenDirty || layoutChanged || childPositionChanged
 
   // contentAreaAffected: did this node's CONTENT AREA change (not just border)?
   // Excludes border-only paint changes for BOX nodes: renderBox only draws border

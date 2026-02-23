@@ -11,7 +11,8 @@
 
 import { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import { createTermEditContext } from "../edit-context.js"
-import type { TermEditContext, TextOp } from "../edit-context.js"
+import type { TermEditContext } from "../edit-context.js"
+import type { TextOp } from "../text-ops.js"
 import { rowColToCursor, countVisualLines } from "../text-cursor.js"
 
 // =============================================================================

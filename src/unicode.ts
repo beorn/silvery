@@ -113,6 +113,7 @@ export function graphemeCount(text: string): number {
  */
 const TEXT_PRESENTATION_EMOJI_REGEX = /^\p{Extended_Pictographic}$/u
 const EMOJI_PRESENTATION_REGEX = /^\p{Emoji_Presentation}$/u
+// @ts-expect-error -- RGI_Emoji requires v flag (es2024+) but works at runtime in Bun/Node 20+
 const RGI_EMOJI_REGEX = /^\p{RGI_Emoji}$/v
 
 /**
@@ -159,6 +160,40 @@ function isTextPresentationEmoji(grapheme: string): boolean {
   textPresentationEmojiCache.set(cp, result)
   return result
 }
+
+// ============================================================================
+// Private Use Area (PUA) — Nerdfont / Powerline Icons
+// ============================================================================
+
+/**
+ * Check if a code point is in the Unicode Private Use Area (PUA).
+ *
+ * Modern terminals (Ghostty, Kitty, iTerm2, WezTerm) render nerdfont/Powerline
+ * icons from the PUA as 2-cell width. string-width reports them as 1-cell
+ * (per Unicode EAW tables, PUA characters have East_Asian_Width=Ambiguous/Neutral).
+ *
+ * This mismatch causes text after PUA icons to be positioned 1 cell too far left,
+ * truncating the last character at column boundaries.
+ *
+ * PUA ranges:
+ * - BMP PUA: U+E000-U+F8FF (nerdfont, Powerline, custom icon fonts)
+ * - Supplementary PUA-A: U+F0000-U+FFFFD
+ * - Supplementary PUA-B: U+100000-U+10FFFD
+ */
+function isPrivateUseArea(cp: number): boolean {
+  return (
+    (cp >= 0xe000 && cp <= 0xf8ff) || // BMP Private Use Area
+    (cp >= 0xf0000 && cp <= 0xffffd) || // Supplementary PUA-A
+    (cp >= 0x100000 && cp <= 0x10fffd) // Supplementary PUA-B
+  )
+}
+
+/**
+ * Regex to detect strings that MAY contain PUA characters.
+ * Used as a fast pre-check before the more expensive grapheme-based calculation.
+ * Covers the BMP PUA range U+E000-U+F8FF where nerdfont icons live.
+ */
+const MAY_CONTAIN_PUA = /[\uE000-\uF8FF]/
 
 /**
  * Append VS16 (U+FE0F) to emoji characters that have default text presentation.
@@ -219,9 +254,9 @@ export function displayWidth(text: string): number {
   }
 
   let width: number
-  // Fast path: if text cannot contain text-presentation emoji,
+  // Fast path: if text cannot contain text-presentation emoji or PUA characters,
   // use string-width directly
-  if (!MAY_CONTAIN_TEXT_EMOJI.test(text)) {
+  if (!MAY_CONTAIN_TEXT_EMOJI.test(text) && !MAY_CONTAIN_PUA.test(text)) {
     width = stringWidth(text)
   } else {
     // Slow path: strip ANSI codes first (they'd inflate the grapheme count),
@@ -254,6 +289,10 @@ export function graphemeWidth(grapheme: string): number {
   if (width !== 1) return width
   // Check if this is a text-presentation emoji that terminals render wide
   if (isTextPresentationEmoji(grapheme)) return 2
+  // Check if this is a Private Use Area character (nerdfont/Powerline icon)
+  // Modern terminals render these as 2-cell width
+  const cp = grapheme.codePointAt(0)
+  if (cp !== undefined && isPrivateUseArea(cp)) return 2
   return width
 }
 

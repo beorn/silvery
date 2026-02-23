@@ -763,7 +763,7 @@ function sortPoolByPosition(pool: CellChange[], count: number): void {
 function changesToAnsi(
   pool: CellChange[],
   count: number,
-  mode: "fullscreen" | "inline" = "fullscreen",
+  _mode: "fullscreen" | "inline" = "fullscreen",
   buffer?: TerminalBuffer,
 ): string {
   if (count === 0) return ""

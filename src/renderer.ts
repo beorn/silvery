@@ -310,7 +310,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   } as unknown as NodeJS.WriteStream
 
   // Create mock term
-  const mockTerm = createTerm({ level: 3, columns: cols })
+  const mockTerm = createTerm({ color: "truecolor" })
 
   // Mock events for interactive mode (signals to useInput that input is enabled)
   const mockEvents: AsyncIterable<import("./types.js").Event> = {
@@ -941,14 +941,12 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
  * This ensures act() works correctly without polluting the global scope.
  */
 function withActEnvironment(fn: () => void): void {
-  const prev = globalThis.IS_REACT_ACT_ENVIRONMENT
-  // @ts-expect-error - React internal flag
-  globalThis.IS_REACT_ACT_ENVIRONMENT = true
+  const prev = (globalThis as any).IS_REACT_ACT_ENVIRONMENT
+  ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
   try {
     fn()
   } finally {
-    // @ts-expect-error - React internal flag
-    globalThis.IS_REACT_ACT_ENVIRONMENT = prev
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = prev
   }
 }
 

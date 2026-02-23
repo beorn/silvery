@@ -56,13 +56,13 @@ import { map, merge, takeUntil } from "../streams/index.js"
 import { createBuffer } from "./create-buffer.js"
 import { createRuntime } from "./create-runtime.js"
 import { keyToAnsi, keyToKittyAnsi } from "../keys.js"
-import { type Key, parseKey } from "./keys.js"
+import { parseKey } from "./keys.js"
 import { ensureLayoutEngine } from "./layout.js"
 import { createMouseEventProcessor, processMouseEvent } from "../mouse-events.js"
 import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output.js"
 import { detectKittyFromStdio } from "../kitty-detect.js"
 import { type TermProvider, createTermProvider } from "./term-provider.js"
-import type { Buffer, Dims, Provider, ProviderEvent, RenderTarget } from "./types.js"
+import type { Buffer, Dims, Provider, RenderTarget } from "./types.js"
 
 // ============================================================================
 // Types
@@ -444,7 +444,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         } as unknown as NodeJS.ReadStream)
       : stdin
     termProvider = createTermProvider(termStdin, termStdout, { cols, rows })
-    providers.term = termProvider
+    providers.term = termProvider as unknown as Provider<unknown, Record<string, unknown>>
     providerCleanups.push(() => termProvider![Symbol.dispose]())
   }
 
@@ -480,7 +480,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
       // Subscribe to provider state changes (basic providers only)
       if (isBasicProvider(provider)) {
-        const unsub = provider.subscribe((providerState) => {
+        const unsub = provider.subscribe((_providerState) => {
           // Could flatten provider state here if desired
           // For now, just trigger a re-check
         })
@@ -717,7 +717,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   } as unknown as NodeJS.WriteStream
 
   // Create mock term
-  const mockTerm = createTerm({ level: 3, columns: cols })
+  const mockTerm = createTerm({ color: "truecolor" })
 
   // Wrap element with all required providers
   const wrappedElement = (
@@ -927,7 +927,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         }
       } else {
         // Explicit flags — enable directly without detection
-        stdout.write(enableKittyKeyboard(kittyOption))
+        stdout.write(enableKittyKeyboard(kittyOption as 1))
         kittyEnabled = true
       }
     } else {
@@ -1313,7 +1313,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         if (eventQueue.length === 0) {
           await new Promise<void>((resolve) => {
             eventQueueResolve = resolve
-            signal.addEventListener("abort", resolve, { once: true })
+            signal.addEventListener("abort", () => resolve(), { once: true })
           })
         }
 
@@ -1468,8 +1468,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       }
 
       // Legacy handler
-      if (handlers?.key) {
-        const result = handlers.key(input, parsedKey, handlerCtx)
+      if ((handlers as any)?.key) {
+        const result = (handlers as any).key(input, parsedKey, handlerCtx)
         if (result === "exit") {
           isRendering = false
           inEventHandler = false

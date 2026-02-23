@@ -42,8 +42,8 @@ export async function connectDevTools(): Promise<boolean> {
     // Polyfill WebSocket for Node.js environments (required by react-devtools-core)
     if (typeof globalThis.WebSocket === "undefined") {
       try {
+        // @ts-expect-error -- ws is an optional peer dependency
         const ws = await import("ws")
-        // @ts-expect-error -- ws default export is compatible with browser WebSocket
         globalThis.WebSocket = ws.default ?? ws
       } catch {
         // ws not available -- devtools won't be able to connect
