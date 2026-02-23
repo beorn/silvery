@@ -12,6 +12,24 @@ Flexbox container with borders, padding, and overflow control.
 
 Box supports all standard flexbox props: `flexDirection`, `flexGrow`, `flexShrink`, `flexBasis`, `alignItems`, `alignSelf`, `justifyContent`, `flexWrap`, `width`, `height`, `minWidth`, `minHeight`, `maxWidth`, `maxHeight`, `padding`, `paddingX`, `paddingY`, `margin`, `gap`, `borderStyle`, `borderColor`, `overflow`.
 
+### Outline Props
+
+Box supports outline props — the CSS outline equivalent. Unlike `borderStyle`, which adds border dimensions to the layout (making the content area smaller), outline renders border characters that overlap the content area. The layout engine sees no border at all — outline is purely visual.
+
+```tsx
+<Box outlineStyle="single" outlineColor="cyan">
+  <Text>Framed without layout impact</Text>
+</Box>
+```
+
+| Prop              | Type          | Description                                              |
+| ----------------- | ------------- | -------------------------------------------------------- |
+| `outlineStyle`    | `BorderStyle` | Outline border style (single, double, round, bold, etc.) |
+| `outlineColor`    | `string`      | Foreground color for the outline                         |
+| `outlineDimColor` | `boolean`     | Apply dim styling to the outline                         |
+
+Use outline when you need to visually frame a box without shifting its content or affecting the layout of sibling elements.
+
 ### Focus Props
 
 Box supports tree-based focus management via the following props:
@@ -257,6 +275,53 @@ import { Transform, Text } from "inkx"
 | `children`  | `ReactNode`                               | Text content to transform               |
 
 The transform should not change the dimensions of the output (e.g., adding characters that change line width) — otherwise layout will be incorrect.
+
+## Image
+
+Renders a bitmap image in the terminal using Kitty graphics or Sixel protocol, with automatic protocol detection and text fallback.
+
+```tsx
+import { Image } from "inkx"
+
+// From a PNG buffer
+<Image src={pngBuffer} width={40} height={15} />
+
+// From a file path
+<Image src="/path/to/image.png" width={60} />
+
+// With explicit protocol and custom fallback
+<Image src={data} protocol="sixel" fallback="[photo]" />
+```
+
+| Prop       | Type                            | Description                                                               |
+| ---------- | ------------------------------- | ------------------------------------------------------------------------- |
+| `src`      | `Buffer \| string`              | PNG image data (Buffer) or file path to a PNG file                        |
+| `width`    | `number`                        | Width in terminal columns (default: available width from layout)          |
+| `height`   | `number`                        | Height in terminal rows (default: half the width for rough aspect ratio)  |
+| `fallback` | `string`                        | Text to display when image rendering is not supported (default: `"[image]"`) |
+| `protocol` | `"kitty" \| "sixel" \| "auto"` | Which protocol to use (default: `"auto"` — tries Kitty, then Sixel, then fallback) |
+
+The component operates in two phases: during layout it renders a Box that reserves the visual space, then after render it writes the image escape sequence directly to stdout, positioned over the reserved space.
+
+**Protocol detection helpers:**
+
+```tsx
+import { isKittyGraphicsSupported, isSixelSupported } from "inkx"
+
+if (isKittyGraphicsSupported()) { /* Kitty graphics available */ }
+if (isSixelSupported()) { /* Sixel available */ }
+```
+
+**Low-level encoding functions:**
+
+```tsx
+import { encodeKittyImage, deleteKittyImage } from "inkx"
+import { encodeSixel } from "inkx"
+
+const kittySeq = encodeKittyImage(pngBuffer, { id: 1, cols: 40, rows: 15 })
+const deleteSeq = deleteKittyImage(1)
+const sixelSeq = encodeSixel({ pixels, width: 320, height: 240 })
+```
 
 ## Newline
 

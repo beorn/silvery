@@ -130,6 +130,7 @@ for kanban. Both significantly faster than Yoga NAPI (C++) due to NAPI bridge ov
 | 5.4 | **Style interning + SGR cache**             | Style combinations interned to string key; SGR escape strings cached. Eliminates per-cell `styleToAnsi()` string building.                                                       |
 | 5.5 | **Zero-allocation diff pipeline**           | Pre-allocated `CellChange` pool reused across frames. Reusable style object mutated in-place. In-place insertion sort for position ordering.                                     |
 | 5.6 | **Optimized ANSI output**                   | Relative cursor moves (`CUF`/`CUD`) for small jumps, `\r\n` for next-line-column-0. Style coalescing emits SGR only on transitions. Dimension-aware diffing for size mismatches. |
+| 5.7 | **Wide character atomic diff**              | Wide char + continuation cell treated as a single atomic unit during cell-level diff. Orphaned continuation cells (main cell unchanged) trigger re-emit of the main cell from the buffer. Eliminates previous full-row fallback for rows containing wide characters. |
 
 ### 6. Buffer
 
@@ -145,7 +146,11 @@ for kanban. Both significantly faster than Yoga NAPI (C++) due to NAPI bridge ov
 | --- | -------------------------------- | ---------------------------------------------------------------------------------------- |
 | 7.1 | **Reference equality shortcuts** | `rectEqual()`, `styleEquals()`, `colorEquals()` check `a === b` before field comparison. |
 
-**20 optimizations across 7 pipeline phases.**
+**21 optimizations across 7 pipeline phases.**
+
+### Wide Character Diff Benchmark
+
+The wide character atomic diff optimization (5.7) is validated by `tests/damage-rects.bench.ts` and `tests/wide-char-diff.test.tsx`. Previously, rows containing wide characters fell back to full-row rendering. Now, the cell-level diff treats each wide character and its continuation cell as a single atomic unit, enabling per-cell diffing even for CJK-heavy content.
 
 ## Investigated and Rejected
 

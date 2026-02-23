@@ -87,7 +87,49 @@ await app.run(<App />)
 
 ## Components
 
-See [docs/components.md](docs/components.md) for full reference. Key components: Box, Text, VirtualList, Static, Console, TextInput, ReadlineInput, TextArea, Link.
+See [docs/components.md](docs/components.md) for full reference. Key components: Box, Text, VirtualList, Static, Console, TextInput, ReadlineInput, TextArea, Link, Transform, Image.
+
+### Box Outline Props
+
+Box supports outline props — CSS outline equivalent that renders a border without affecting layout:
+
+```tsx
+<Box outlineStyle="single" outlineColor="blue">
+  <Text>Outlined without layout impact</Text>
+</Box>
+```
+
+| Prop              | Type          | Description                                              |
+| ----------------- | ------------- | -------------------------------------------------------- |
+| `outlineStyle`    | `BorderStyle` | Outline border style (single, double, round, bold, etc.) |
+| `outlineColor`    | `string`      | Foreground color for the outline                         |
+| `outlineDimColor` | `boolean`     | Apply dim styling to the outline                         |
+
+Unlike `borderStyle` which adds border dimensions to the layout (shrinking content area), `outlineStyle` draws border characters that overlap the content area. The layout engine sees no border at all.
+
+### Transform
+
+```tsx
+<Transform transform={(line, index) => line.toUpperCase()}>{children}</Transform>
+```
+
+Applies a string transformation to each line of rendered text output. Ink-compatible.
+
+### Image
+
+```tsx
+<Image src={pngBuffer} width={40} height={15} fallback="[image]" />
+```
+
+Renders images via Kitty graphics or Sixel protocol, with text fallback. Auto-detects the best available protocol.
+
+| Prop       | Type                         | Description                                                       |
+| ---------- | ---------------------------- | ----------------------------------------------------------------- |
+| `src`      | `Buffer \| string`           | PNG data (Buffer) or file path                                    |
+| `width`    | `number`                     | Width in columns (default: available width)                       |
+| `height`   | `number`                     | Height in rows (default: half width)                              |
+| `fallback` | `string`                     | Text when unsupported (default: `"[image]"`)                      |
+| `protocol` | `"kitty" \| "sixel" \| "auto"` | Protocol selection (default: `"auto"` — Kitty > Sixel > fallback) |
 
 ## Layout Hooks
 
@@ -97,6 +139,24 @@ const { x, y } = useScreenRect() // Absolute screen position
 ```
 
 See [docs/hooks.md](docs/hooks.md) for all hooks.
+
+### usePaste
+
+Receives bracketed paste events in the `run()` runtime:
+
+```tsx
+import { usePaste } from "inkx/runtime"
+
+usePaste((text) => {
+  insertText(text)
+})
+```
+
+For the `render()` API, use the `onPaste` option on `useInput` instead:
+
+```tsx
+useInput(handler, { onPaste: (text) => insertText(text) })
+```
 
 ## Input Layer Stack
 
@@ -180,6 +240,8 @@ test("renders and handles input", async () => {
   expect(cursor.textContent()).toBe("item2") // Same locator, fresh result
 })
 ```
+
+**Note:** `useInput` supports an `onPaste` option for handling bracketed paste events in tests and the `render()` API.
 
 **Testing API:**
 
@@ -438,7 +500,7 @@ import { run, useInput, useExit, type Key } from "inkx/runtime"
 import { createApp, useApp } from "inkx/runtime"
 
 // Components
-import { Box, Text, Link, Newline, Spacer, Static, Console, VirtualList } from "inkx"
+import { Box, Text, Link, Newline, Spacer, Static, Console, VirtualList, Transform, Image } from "inkx"
 
 // Input components
 import { TextInput, ReadlineInput, useReadline } from "inkx"
@@ -465,6 +527,19 @@ import { detectKittySupport, detectKittyFromStdio } from "inkx"
 // Mouse events (SGR protocol)
 import { parseMouseSequence, isMouseSequence, type ParsedMouse } from "inkx"
 import { enableMouse, disableMouse } from "inkx"
+
+// Bracketed paste
+import { enableBracketedPaste, disableBracketedPaste, parseBracketedPaste, PASTE_START, PASTE_END } from "inkx"
+
+// Clipboard (OSC 52)
+import { copyToClipboard, requestClipboard, parseClipboardResponse } from "inkx"
+
+// Image rendering
+import { Image, encodeKittyImage, deleteKittyImage, isKittyGraphicsSupported } from "inkx"
+import { encodeSixel, isSixelSupported } from "inkx"
+
+// Paste hook (runtime only)
+import { usePaste } from "inkx/runtime"
 
 // Mouse events (DOM-level)
 import { hitTest, processMouseEvent, createMouseEventProcessor } from "inkx"
@@ -713,6 +788,11 @@ function createBoardDriver(repo: Repo, rootId: string) {
 3. **Layout feedback**: `useContentRect()` / `useScreenRect()` give actual dimensions
 4. **Term context**: `useTerm()` provides terminal capabilities to components
 5. **Auto-truncation**: Text truncates by default (use `wrap={false}` to overflow)
+6. **Image rendering**: Kitty graphics + Sixel protocol with auto-detection and text fallback
+7. **Bracketed paste**: Built into runtime with `usePaste` hook
+8. **OSC 52 clipboard**: Cross-SSH clipboard access via `copyToClipboard`/`requestClipboard`
+9. **Outline prop**: CSS outline equivalent (`outlineStyle`) — renders border without affecting layout
+10. **Transform component**: Ink-compatible, applies per-line string transform to children
 
 ## Documentation
 
@@ -725,8 +805,8 @@ to capture numbers.
 | -------------------------------------------------------------- | -------------------------------------------------------- |
 | [docs/README.md](docs/README.md)                               | Documentation table of contents                          |
 | [docs/getting-started.md](docs/getting-started.md)             | Runtime layers and tutorial                              |
-| [docs/components.md](docs/components.md)                       | Box, Text, VirtualList, Console, inputs                  |
-| [docs/hooks.md](docs/hooks.md)                                 | useContentRect, useScreenRect, useInput, useApp, useTerm |
+| [docs/components.md](docs/components.md)                       | Box, Text, VirtualList, Console, Image, Transform, inputs |
+| [docs/hooks.md](docs/hooks.md)                                 | useContentRect, useScreenRect, useInput, usePaste, useApp |
 | [docs/input-features.md](docs/input-features.md)               | Keyboard, mouse, hotkeys, modifier symbols               |
 | [docs/architecture.md](docs/architecture.md)                   | Core architecture and RenderAdapter                      |
 | [docs/testing.md](docs/testing.md)                             | Testing strategy, locators, and API                      |

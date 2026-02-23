@@ -235,6 +235,34 @@ function Navigation() {
 
 For new code, prefer `useFocusManager()` which returns the full inkx focus manager API.
 
+## usePaste
+
+Receives bracketed paste events. Only available in the `run()` runtime (Layer 2).
+
+```tsx
+import { usePaste } from "inkx/runtime"
+
+function Editor() {
+  usePaste((text) => {
+    insertText(text)
+  })
+
+  return <Text>{content}</Text>
+}
+```
+
+The handler receives the full pasted text as a single string, rather than individual keystrokes. The runtime automatically enables bracketed paste mode.
+
+For the `render()` API (Layer 1), use the `onPaste` option on `useInput` instead:
+
+```tsx
+import { useInput } from "inkx"
+
+useInput(handler, {
+  onPaste: (text) => insertText(text),
+})
+```
+
 ## useScrollback
 
 Push frozen items to terminal scrollback. Tracks a contiguous frozen prefix — when the count increases, renders newly frozen items and writes them to stdout.

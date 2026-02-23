@@ -28,6 +28,7 @@ examples/
   viewer.tsx            # Interactive example browser
   layout/               # Layout and responsive design
   interactive/          # Keyboard-driven interactive apps
+  kitty/                # Kitty protocol features (graphics, keyboard)
   runtime/              # Runtime layer demos (Layer 1-3)
   inline/               # Inline mode and scrollback
   playground/           # Web playground (not an example)
@@ -57,6 +58,21 @@ examples/
 | Task List     | `interactive/task-list.tsx`     | VirtualList with variable-height items           |
 | TextArea      | `interactive/textarea.tsx`      | Multi-line text input component                  |
 | Virtual 10K   | `interactive/virtual-10k.tsx`   | VirtualList with 10,000 items                    |
+| Clipboard     | `interactive/clipboard.tsx`     | OSC 52 clipboard copy/paste across sessions      |
+| Paste Demo    | `interactive/paste-demo.tsx`    | Bracketed paste mode — paste as single event     |
+| Outline       | `interactive/outline.tsx`       | Outline vs border side-by-side comparison        |
+| Transform     | `interactive/transform.tsx`     | Text post-processing with Transform component   |
+
+## Kitty Protocol
+
+| Example         | File                            | Description                                       |
+| --------------- | ------------------------------- | ------------------------------------------------- |
+| Image Viewer    | `kitty/images.tsx`              | Raw Kitty graphics protocol image display         |
+| Image Component | `kitty/image-component.tsx`     | Declarative `<Image>` with protocol auto-detect   |
+| Key Events      | `kitty/keys.tsx`                | Interactive key chord tester with Kitty protocol  |
+| Input           | `kitty/input.tsx`               | Kitty keyboard input demonstration                |
+| Canvas          | `kitty/canvas.tsx`              | Canvas rendering via Kitty graphics               |
+| Paint           | `kitty/paint.tsx`               | Terminal paint app using Kitty graphics            |
 
 ## Runtime
 

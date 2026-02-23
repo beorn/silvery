@@ -47,6 +47,9 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 | **Scrollback mode**         | `useScrollback` — completed items freeze into terminal history   | None — must keep all items in render tree                                        |
 | **Console capture**         | Built-in `<Console />` — subprocess output alongside UI          | `patchConsole()` — intercepts but less composable                                |
 | **Adaptive degradation**    | `term.hasCursor/hasColor/hasInput` + `renderString()` fallback   | Assumes TTY; non-TTY is [PR #854](https://github.com/vadimdemedes/ink/pull/854)  |
+| **Image rendering**         | `<Image>` — Kitty graphics + Sixel with auto-detect and fallback | None                                                                             |
+| **Clipboard (OSC 52)**      | `copyToClipboard`/`requestClipboard` — works across SSH          | None                                                                             |
+| **Bracketed paste**         | Built-in runtime support with `usePaste` hook                    | None                                                                             |
 | **Static rendering**        | `renderString()` — one-call string output, plain mode option     | Requires full `render()` setup even for non-interactive output                   |
 
 ### Architecture & Rendering
@@ -64,6 +67,8 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 | CJK/IME sync              | DEC 2026 synchronized update (automatic)                                                | In progress ([#759](https://github.com/vadimdemedes/ink/issues/759), [PR #846](https://github.com/vadimdemedes/ink/pull/846))          |
 | Non-TTY fallback          | `renderStatic()`                                                                        | [PR #854](https://github.com/vadimdemedes/ink/pull/854)                                                                                |
 | Concurrent React          | Not yet                                                                                 | [PR #850](https://github.com/vadimdemedes/ink/pull/850) exploring                                                                      |
+| **Box outline**           | `outlineStyle` — CSS outline equivalent, no layout impact                               | None                                                                                                                                   |
+| **Transform component**   | `<Transform>` — per-line string transform (Ink-compatible)                              | `<Transform>` — same API                                                                                                               |
 
 ### Input & Interaction
 
@@ -79,7 +84,10 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 | TextArea                | Multi-line editing with word wrap, readline, scroll               | None ([#676](https://github.com/vadimdemedes/ink/issues/676))                  |
 | Hotkey parsing          | `parseHotkey("⌘K")` — macOS symbols ⌘⌥⌃⇧✦                         | None                                                                           |
 | Hyperlinks              | `<Link>` — OSC 8 clickable URLs                                   | None                                                                           |
-| Inline images           | Kitty graphics protocol (PNG display, working example)            | None                                                                           |
+| Inline images           | Kitty graphics + Sixel — auto-detect with text fallback           | None                                                                           |
+| Bracketed paste         | Built-in `usePaste` hook + runtime auto-enable                    | None                                                                           |
+| OSC 52 clipboard        | `copyToClipboard`/`requestClipboard` — works across SSH           | None                                                                           |
+| Outline prop            | `outlineStyle` — CSS outline equivalent without layout impact     | None                                                                           |
 | Unicode/CJK             | Built-in grapheme splitting + display width (28+ utils)           | Third-party `string-width`                                                     |
 | Console capture         | Built-in `<Console />` component (composable)                     | `patchConsole()` (intercept-only)                                              |
 | Exit handling           | `useExit` + `using` cleanup (Disposable)                          | `process.exit` handling                                                        |

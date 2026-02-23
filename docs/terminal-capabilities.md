@@ -607,6 +607,134 @@ The runtime handles mouse parsing automatically — mouse sequences are dispatch
 | Terminal.app | Yes       | Basic |
 | xterm        | Yes       | 277+  |
 
+## OSC 52 Clipboard
+
+inkx provides clipboard access via the OSC 52 terminal protocol. This works across SSH sessions — the clipboard operation is handled by the local terminal, not the remote host.
+
+### Protocol
+
+```
+Copy:     ESC ] 52 ; c ; <base64> BEL
+Query:    ESC ] 52 ; c ; ? BEL
+Response: ESC ] 52 ; c ; <base64> BEL  (or ST terminator)
+```
+
+Text is base64-encoded in the escape sequence. Terminals support both BEL (`\x07`) and ST (`ESC \`) as terminators.
+
+### API
+
+```tsx
+import { copyToClipboard, requestClipboard, parseClipboardResponse } from "inkx"
+
+// Copy text to system clipboard
+copyToClipboard(process.stdout, "Hello, clipboard!")
+
+// Request clipboard contents (terminal sends response asynchronously)
+requestClipboard(process.stdout)
+
+// Parse the terminal's response
+const text = parseClipboardResponse(rawInput) // string | null
+```
+
+| Function                 | Description                                                  |
+| ------------------------ | ------------------------------------------------------------ |
+| `copyToClipboard`        | Write base64-encoded text to clipboard via OSC 52            |
+| `requestClipboard`       | Send OSC 52 query to request clipboard contents              |
+| `parseClipboardResponse` | Decode an OSC 52 response (handles both BEL and ST terminators) |
+
+### Terminal Support
+
+| Terminal     | OSC 52 | Notes              |
+| ------------ | ------ | ------------------ |
+| Ghostty      | Yes    |                    |
+| Kitty        | Yes    |                    |
+| WezTerm      | Yes    |                    |
+| iTerm2       | Yes    |                    |
+| xterm        | Yes    |                    |
+| foot         | Yes    |                    |
+| tmux         | Yes    | `set -g set-clipboard on` |
+| Terminal.app | No     |                    |
+
+### SSH Transparency
+
+OSC 52 is particularly useful over SSH because the escape sequence is forwarded through the SSH connection to the local terminal. The clipboard operation happens on the user's machine, not the remote server. This means `copyToClipboard` works even in remote sessions without any special configuration.
+
+## Bracketed Paste Mode
+
+Bracketed paste mode lets the app distinguish pasted text from typed input. When enabled, the terminal wraps pasted content with start/end markers, delivering it as a single event rather than individual keystrokes.
+
+### Protocol
+
+DEC private mode 2004:
+
+```
+Enable:       CSI ? 2004 h      (ESC [ ? 2004 h)
+Disable:      CSI ? 2004 l      (ESC [ ? 2004 l)
+Paste start:  CSI 200 ~         (ESC [ 200 ~)
+Paste end:    CSI 201 ~         (ESC [ 201 ~)
+```
+
+### API
+
+```tsx
+import {
+  enableBracketedPaste,
+  disableBracketedPaste,
+  parseBracketedPaste,
+  PASTE_START,
+  PASTE_END,
+} from "inkx"
+
+// Enable/disable (the run() runtime handles this automatically)
+enableBracketedPaste(process.stdout)
+disableBracketedPaste(process.stdout)
+
+// Parse pasted content from raw input
+const result = parseBracketedPaste(rawInput)
+if (result) {
+  console.log("Pasted:", result.content)
+}
+```
+
+| Export                   | Description                                                      |
+| ------------------------ | ---------------------------------------------------------------- |
+| `enableBracketedPaste`   | Write `CSI ? 2004 h` to enable paste bracketing                 |
+| `disableBracketedPaste`  | Write `CSI ? 2004 l` to disable paste bracketing                |
+| `parseBracketedPaste`    | Extract paste content from raw input (returns `{ type: "paste", content }` or null) |
+| `PASTE_START`            | The paste start marker string (`ESC [ 200 ~`)                   |
+| `PASTE_END`              | The paste end marker string (`ESC [ 201 ~`)                     |
+
+### Runtime Integration
+
+The `run()` runtime automatically enables bracketed paste mode. Use the `usePaste` hook (from `inkx/runtime`) to receive paste events:
+
+```tsx
+import { usePaste } from "inkx/runtime"
+
+usePaste((text) => {
+  insertText(text)
+})
+```
+
+For the `render()` API, use the `onPaste` option on `useInput`:
+
+```tsx
+useInput(handler, { onPaste: (text) => handlePaste(text) })
+```
+
+### Terminal Support
+
+| Terminal     | Bracketed Paste | Notes |
+| ------------ | --------------- | ----- |
+| Ghostty      | Yes             |       |
+| Kitty        | Yes             |       |
+| WezTerm      | Yes             |       |
+| iTerm2       | Yes             |       |
+| Alacritty    | Yes             |       |
+| xterm        | Yes             |       |
+| tmux         | Yes             |       |
+| foot         | Yes             |       |
+
 ## Terminal Notifications
 
 inkx provides a notification API that auto-detects the terminal and sends notifications using the best available method.
