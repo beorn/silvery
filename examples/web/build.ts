@@ -40,6 +40,24 @@ const browserDefines: Record<string, string> = {
   "process.env.LC_CTYPE": "undefined",
 }
 
+// Browser process shim — chalkx/logger access process.stdout, process.stdin,
+// process.stderr, and dynamic process.env[key] at module init.
+// The `define` map above handles static process.env.KEY references, but
+// process.stdout/stdin/stderr and process.env[dynamic] need a real object.
+const processShim = `
+if (typeof globalThis.process === "undefined") {
+  globalThis.process = {
+    env: { NODE_ENV: "production" },
+    stdout: { write() {}, columns: 80, rows: 24, isTTY: false },
+    stdin: { isTTY: false, setRawMode() {}, on() {}, resume() {} },
+    stderr: { write() {} },
+    emit() {},
+    on() {},
+    platform: "browser",
+  };
+}
+`
+
 // Shared build options for all browser targets.
 // External: packages not needed in browser builds.
 // yoga-wasm-web is an optional layout engine (WASM, not needed for demos).
@@ -52,6 +70,7 @@ const sharedOptions = {
   minify: false,
   sourcemap: "external" as const,
   define: browserDefines,
+  banner: processShim,
   external: ["yoga-wasm-web", "ws"],
 }
 
