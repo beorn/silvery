@@ -788,11 +788,12 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       return currentBuffer
     }
 
+    const wasIncremental = !_noIncremental && _prevTermBuffer !== null
     const { buffer: termBuffer } = executeRender(
       rootNode,
       dims.cols,
       dims.rows,
-      _noIncremental ? null : _prevTermBuffer,
+      wasIncremental ? _prevTermBuffer : null,
     )
     if (!_noIncremental) _prevTermBuffer = termBuffer
     const pipelineMs = performance.now() - pipelineStart
@@ -802,7 +803,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // so we add it here to catch incremental rendering bugs at runtime.
     const strictEnv =
       typeof process !== "undefined" && (process.env?.INKX_STRICT || process.env?.INKX_CHECK_INCREMENTAL)
-    if (strictEnv && strictEnv !== "0" && strictEnv !== "false" && _renderCount > 1) {
+    if (strictEnv && strictEnv !== "0" && strictEnv !== "false" && wasIncremental) {
       const { buffer: freshBuffer } = executeRender(rootNode, dims.cols, dims.rows, null, {
         skipLayoutNotifications: true,
       })
@@ -1185,6 +1186,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         isRendering = false
       }
       flushCount++
+    }
+
+    // When multiple doRender() calls happened (layout feedback, effects),
+    // the final buffer's dirty rows only cover the LAST doRender's changes.
+    // But runtime.render() diffs against its own prevBuffer (from the previous
+    // event batch), which may be older. Rows changed in earlier doRender calls
+    // but not the last one would be invisible to diffBuffers' dirty row scan,
+    // causing those rows to be skipped → garbled terminal output.
+    // Fix: mark all rows dirty so diffBuffers does a full scan.
+    if (flushCount > 0) {
+      currentBuffer._buffer.markAllRowsDirty()
     }
 
     inEventHandler = false

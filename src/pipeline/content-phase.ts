@@ -84,27 +84,7 @@ export function contentPhase(root: InkxNode, prevBuffer?: TerminalBuffer | null)
     _nodeTrace.length = 0
   }
 
-  // Sync prevLayout after content phase to prevent staleness on subsequent frames.
-  // Without this, prevLayout stays at the old value from propagateLayout, causing
-  // hasChildPositionChanged and clearExcessArea to use stale coordinates.
-  syncPrevLayout(root)
-
   return buffer
-}
-
-/**
- * Sync prevLayout to contentRect for all nodes in the tree.
- *
- * Called at the end of each contentPhase pass. This prevents:
- * 1. The O(N) staleness bug where prevLayout drifts from contentRect
- *    causing !rectEqual to always be true on subsequent frames.
- * 2. Stale old-bounds references in clearExcessArea on doRender iteration 2+.
- */
-function syncPrevLayout(node: InkxNode): void {
-  node.prevLayout = node.contentRect
-  for (const child of node.children) {
-    syncPrevLayout(child)
-  }
 }
 
 /** Instrumentation enabled when INKX_STRICT, INKX_CHECK_INCREMENTAL, or INKX_INSTRUMENT is set */
@@ -262,11 +242,17 @@ function renderNodeToBuffer(
   // FAST PATH: Skip entire subtree if unchanged and we have a previous buffer
   // The buffer was cloned from prevBuffer, so skipped nodes keep their rendered output
   //
-  // Uses layoutChangedThisFrame (set by propagateLayout) instead of the stale
-  // !rectEqual(prevLayout, contentRect). The rect comparison becomes permanently
-  // true when the layout phase skips (no dirty nodes) because prevLayout isn't
-  // updated, causing O(N) content phase every frame.
-  const layoutChanged = node.layoutChangedThisFrame
+  // NOTE: prevLayout is intentionally NOT synced back to contentRect after the
+  // content phase. This means prevLayout stays at the value set by propagateLayout
+  // (which saves the OLD contentRect before computing the new one). On the first
+  // frame, prevLayout=null, so layoutChanged=true for all nodes — a correctness
+  // catch-all that ensures all nodes render at least once. On subsequent frames
+  // where the layout phase skips (no layoutDirty nodes), prevLayout remains null,
+  // keeping layoutChanged=true. This masks latent dirty-flag propagation bugs.
+  //
+  // TODO: Fix dirty flag propagation bugs, then switch to layoutChangedThisFrame
+  // for O(1) skip decisions. See bead km-inkx.content-phase-skip.
+  const layoutChanged = !rectEqual(node.prevLayout, node.contentRect)
 
   // Check if any child shifted position (sibling shift from size changes).
   // Gap space between children belongs to this container, so must re-render.
@@ -1162,12 +1148,6 @@ function clearExcessArea(
       excessWidth = Math.max(0, clipRectRight - excessX)
     }
     if (excessWidth > 0) {
-      // DEBUG: trace which node causes excess clearing at target position
-      const _TX = 36, _TY = 7
-      if (excessX <= _TX && _TX < excessX + excessWidth && prevScreenY <= _TY && _TY < prevScreenY + prev.height) {
-        const nid = (node.props as any).id ?? node.type
-        console.error(`[EXCESS] node=${nid} type=${node.type} layout=${JSON.stringify(layout)} prev=${JSON.stringify(prev)} excess=(${excessX},${prevScreenY},${excessWidth},${prev.height}) clipRight=${clipRectRight} parent=${node.parent?.type}/${(node.parent?.props as any)?.id ?? ""}`)
-      }
       clippedFill(
         buffer,
         excessX,

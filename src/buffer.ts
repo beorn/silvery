@@ -997,6 +997,18 @@ export class TerminalBuffer {
   }
 
   /**
+   * Mark all rows as dirty.
+   * Used when the buffer's dirty rows may not cover all changes relative
+   * to a different prev buffer (e.g., after multiple doRender calls where
+   * the runtime's prevBuffer skipped intermediate buffers).
+   */
+  markAllRowsDirty(): void {
+    this._dirtyRows.fill(1)
+    this._minDirtyRow = 0
+    this._maxDirtyRow = this.height - 1
+  }
+
+  /**
    * Check if two cells at given positions are equal.
    * Used for diffing.
    */
