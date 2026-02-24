@@ -530,16 +530,18 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
       currentHyperlink = undefined
     }
 
-    // Clear to end of line (removes any leftover content)
+    // Reset style before clear-to-end and newline to prevent background
+    // color from filling the right margin or bleeding into the next line.
+    // \x1b[K] uses current SGR attributes for the erased area.
+    if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
+      output += "\x1b[0m"
+      currentStyle = null
+    }
+    // Clear to end of line (removes any leftover content from previous render)
     output += "\x1b[K"
 
     // Move to next line (except for last line)
     if (y < maxLine) {
-      // Reset style before newline to prevent background color bleeding
-      if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
-        output += "\x1b[0m"
-        currentStyle = null
-      }
       output += "\n"
     }
   }

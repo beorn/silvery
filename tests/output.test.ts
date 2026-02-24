@@ -8,6 +8,8 @@
 
 import { describe, expect, test } from "vitest"
 import { ANSI, disableMouse, enableMouse, enterAlternateScreen, leaveAlternateScreen } from "../src/output.js"
+import { TerminalBuffer } from "../src/buffer.js"
+import { outputPhase } from "../src/pipeline/output-phase.js"
 
 describe("Output Functions", () => {
   describe("Screen control functions", () => {
@@ -104,6 +106,57 @@ describe("Output Functions", () => {
     test("cursorToColumn moves cursor to column (1-indexed)", () => {
       expect(ANSI.cursorToColumn(0)).toBe("\x1b[1G")
       expect(ANSI.cursorToColumn(79)).toBe("\x1b[80G")
+    })
+  })
+
+  describe("Background color and EL (erase-to-end-of-line)", () => {
+    test("background color is reset before EL on first render", () => {
+      // Regression: \x1b[K (EL) uses current SGR attributes for the erased area.
+      // If the last cell on a row has a background color, the clear-to-end fills
+      // the right margin with that color — visible as a grey band in Ghostty.
+      const buffer = new TerminalBuffer(10, 2)
+      // Row 0: text with red bg filling all 10 columns
+      for (let x = 0; x < 10; x++) {
+        buffer.setCell(x, 0, { char: "X", bg: "red" })
+      }
+      // Row 1: plain text (no bg)
+      for (let x = 0; x < 5; x++) {
+        buffer.setCell(x, 1, { char: "Y" })
+      }
+
+      const output = outputPhase(null, buffer)
+
+      // Find first \x1b[K] — it should NOT have a red bg active at that point.
+      // The reset (\x1b[0m) must come BEFORE the erase (\x1b[K]).
+      // Split output at first newline to isolate row 0's ANSI sequence.
+      const firstNewline = output.indexOf("\n")
+      const row0 = output.slice(0, firstNewline)
+
+      // Row 0 must contain a reset before the EL sequence
+      const lastReset = row0.lastIndexOf("\x1b[0m")
+      const lastEL = row0.lastIndexOf("\x1b[K")
+      expect(lastReset).toBeGreaterThanOrEqual(0)
+      expect(lastEL).toBeGreaterThan(lastReset)
+    })
+
+    test("EL with no background does not emit unnecessary reset", () => {
+      const buffer = new TerminalBuffer(10, 1)
+      // Row 0: plain text (no bg, no attrs)
+      for (let x = 0; x < 5; x++) {
+        buffer.setCell(x, 0, { char: "A" })
+      }
+
+      const output = outputPhase(null, buffer)
+      const row0 = output
+
+      // No bg means no reset needed before \x1b[K]
+      // The final \x1b[0m at the very end is the always-reset, but we're checking
+      // that there's no extra reset just before \x1b[K]
+      const elIdx = row0.indexOf("\x1b[K")
+      expect(elIdx).toBeGreaterThanOrEqual(0)
+      // The character before \x1b[K should be 'A' (or space), not \x1b[0m
+      const beforeEL = row0.slice(Math.max(0, elIdx - 4), elIdx)
+      expect(beforeEL).not.toContain("\x1b[0m")
     })
   })
 
