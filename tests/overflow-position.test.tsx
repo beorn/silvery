@@ -1,8 +1,8 @@
 /**
  * Test: overflow indicator positioning
  *
- * The ▼N indicator should appear directly after the last fully visible child,
- * not at the viewport bottom when a partially visible child creates a gap.
+ * The ▼N indicator renders flush to the viewport bottom for borderless
+ * containers, and on the border line for bordered containers.
  */
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "inkx/testing"
@@ -10,12 +10,12 @@ import { Box, Text } from "inkx"
 import React from "react"
 
 describe("overflow indicator position", () => {
-  test("borderless: ▼N right after last fully visible child (viewport 11, items height 3)", () => {
+  test("borderless: ▼N flush to viewport bottom (viewport 11, items height 3)", () => {
     const render = createRenderer({ cols: 30, rows: 25 })
 
     // Viewport 11, items height 3 (bordered).
     // Items 0-2: fully visible (rows 0-8). Item 3: partially visible (rows 9-10).
-    // Indicator should be at row 9 (right after item 2), NOT row 10 (viewport bottom).
+    // Indicator flush to bottom at row 10.
     const app = render(
       <Box flexDirection="column" height={11} overflow="scroll" scrollTo={0} overflowIndicator>
         {Array.from({ length: 10 }, (_, i) => (
@@ -29,7 +29,7 @@ describe("overflow indicator position", () => {
     const lines = app.text.split("\n")
     expect(app.text).toContain("▼")
     const indicatorRow = lines.findIndex((l) => l.includes("▼"))
-    expect(indicatorRow).toBe(9)
+    expect(indicatorRow).toBe(10)
   })
 
   test("borderless: uniform height items fill viewport, indicator at last row", () => {
@@ -53,12 +53,12 @@ describe("overflow indicator position", () => {
     expect(indicatorRow).toBe(9)
   })
 
-  test("borderless: larger gap, indicator at correct position (viewport 20, items height 3)", () => {
+  test("borderless: flush to bottom with larger gap (viewport 20, items height 3)", () => {
     const render = createRenderer({ cols: 30, rows: 30 })
 
     // 10 items height 3. Viewport 20. Items 0-5 fully visible (rows 0-17).
     // Item 6: partially visible (rows 18-19). Items 7-9: hidden.
-    // Indicator at row 18 (right after item 5), NOT row 19 (viewport bottom).
+    // Indicator flush to bottom at row 19.
     const app = render(
       <Box flexDirection="column" height={20} overflow="scroll" scrollTo={0} overflowIndicator>
         {Array.from({ length: 10 }, (_, i) => (
@@ -72,7 +72,7 @@ describe("overflow indicator position", () => {
     const lines = app.text.split("\n")
     expect(app.text).toContain("▼")
     const indicatorRow = lines.findIndex((l) => l.includes("▼"))
-    expect(indicatorRow).toBe(18)
+    expect(indicatorRow).toBe(19)
   })
 
   test("bordered: indicator stays on bottom border (no change for bordered)", () => {

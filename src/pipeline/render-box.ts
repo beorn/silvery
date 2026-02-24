@@ -308,43 +308,12 @@ export function renderScrollIndicators(
       const y = layout.y + layout.height - 1
       renderTextLine(buffer, x, y, bar, indicatorStyle)
     } else if (showBorderless) {
-      // Borderless: render indicator right after the last fully visible child,
-      // not at the viewport bottom. This prevents the indicator from overlaying
-      // the last visible card's content (e.g., covering its bottom border).
+      // Borderless: render indicator flush to viewport bottom
       const padding = getPadding(props)
       const contentWidth = layout.width - padding.left - padding.right
       const bar = padCenter(indicator, contentWidth)
       const x = layout.x + padding.left
-      const contentAreaTop = layout.y + border.top + padding.top
-      const viewportBottom = layout.y + layout.height - padding.bottom
-
-      // Scan backwards from lastVisibleChild to find the last child whose
-      // bottom fits entirely within the viewport (accounting for the 1-row
-      // indicator reserve). Children whose bottom extends past the effective
-      // visible area are partially visible and the indicator goes before them.
-      const effectiveViewportHeight = ss.viewportHeight - 1 // reserve 1 row for indicator
-      let y = viewportBottom - 1 // fallback: viewport last row
-      for (let i = ss.lastVisibleChild; i >= ss.firstVisibleChild; i--) {
-        const child = node.children[i]
-        if (!child?.contentRect) continue
-        const childBottomInContent =
-          child.contentRect.y + child.contentRect.height - contentAreaTop
-        // Check if this child's bottom fits within the effective viewport
-        if (childBottomInContent - ss.offset <= effectiveViewportHeight) {
-          const childBottomScreen = contentAreaTop + childBottomInContent - ss.offset
-          y = Math.min(childBottomScreen, viewportBottom - 1)
-          break
-        }
-      }
-
-      // Clear from indicator row to viewport bottom to cover any partially
-      // visible child content that renders below the indicator.
-      // Use container's own bg for the clear area — indicator gray only on the bar row.
-      const clearHeight = viewportBottom - y
-      if (clearHeight > 0) {
-        const containerBg = props.backgroundColor ? parseColor(props.backgroundColor) : null
-        buffer.fill(x, y, contentWidth, clearHeight, { char: " ", bg: containerBg })
-      }
+      const y = layout.y + layout.height - padding.bottom - 1
 
       renderTextLine(buffer, x, y, bar, indicatorStyle)
     }
