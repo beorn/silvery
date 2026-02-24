@@ -20,6 +20,7 @@ import { isTextSizingEnabled } from "../unicode.js"
 import type { CellChange } from "./types.js"
 
 const DEBUG_OUTPUT = !!process.env.INKX_DEBUG_OUTPUT
+const FULL_RENDER = !!process.env.INKX_FULL_RENDER
 
 /**
  * Wrap a cell character in OSC 66 if it is a PUA character and text sizing
@@ -320,6 +321,13 @@ export function outputPhase(
   // with external stdout.write() calls (e.g., useScrollback).
   if (mode === "inline") {
     return inlineFullRender(prev, next, scrollbackOffset, termRows)
+  }
+
+  // INKX_FULL_RENDER: bypass incremental diff, always render full buffer.
+  // Use to diagnose garbled rendering — if FULL_RENDER fixes it, the bug
+  // is in changesToAnsi (diff → ANSI serialization).
+  if (FULL_RENDER) {
+    return bufferToAnsi(next, mode)
   }
 
   // Fullscreen mode: diff and emit only changes

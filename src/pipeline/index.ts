@@ -203,7 +203,7 @@ export function executeRender(
   const total = performance.now() - start
   log.debug?.(`total pipeline: ${total.toFixed(2)}ms`)
 
-  // Expose phase timing for benchmarking
+  // Expose phase timing and render count for benchmarking and diagnostics
   ;(globalThis as any).__inkx_last_pipeline = {
     measure: tMeasure,
     layout: tLayout,
@@ -214,6 +214,7 @@ export function executeRender(
     output: tOutput,
     total,
   }
+  ;(globalThis as any).__inkx_render_count = ((globalThis as any).__inkx_render_count ?? 0) + 1
 
   return { output, buffer }
 }
