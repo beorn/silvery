@@ -242,30 +242,35 @@ function renderNodeToBuffer(
   // FAST PATH: Skip entire subtree if unchanged and we have a previous buffer
   // The buffer was cloned from prevBuffer, so skipped nodes keep their rendered output
   //
-  // NOTE: prevLayout is intentionally NOT synced back to contentRect after the
-  // content phase. This means prevLayout stays at the value set by propagateLayout
-  // (which saves the OLD contentRect before computing the new one). On the first
-  // frame, prevLayout=null, so layoutChanged=true for all nodes — a correctness
-  // catch-all that ensures all nodes render at least once. On subsequent frames
-  // where the layout phase skips (no layoutDirty nodes), prevLayout remains null,
-  // keeping layoutChanged=true. This masks latent dirty-flag propagation bugs.
-  //
-  // TODO: Fix dirty flag propagation bugs, then switch to layoutChangedThisFrame
-  // for O(1) skip decisions. See bead km-inkx.content-phase-skip.
+  // layoutChanged: did this node's layout position/size change?
+  // Uses the real prevLayout comparison for cascade logic (contentAreaAffected,
+  // parentRegionCleared, skipBgFill). These formulas must reflect actual layout
+  // changes to avoid false region clearing and bg fill mismatches.
   const layoutChanged = !rectEqual(node.prevLayout, node.contentRect)
 
   // Check if any child shifted position (sibling shift from size changes).
   // Gap space between children belongs to this container, so must re-render.
   const childPositionChanged = hasPrevBuffer && !layoutChanged && hasChildPositionChanged(node)
 
-  const skipFastPath =
-    hasPrevBuffer &&
-    !node.contentDirty &&
-    !node.paintDirty &&
-    !layoutChanged &&
-    !node.subtreeDirty &&
-    !node.childrenDirty &&
-    !childPositionChanged
+  // CORRECTNESS CATCH-ALL: Never skip any node in the content phase.
+  //
+  // The dirty flag propagation system has latent bugs where nodes that should
+  // be dirty (due to cursor movement, scroll changes, etc.) aren't properly
+  // marked. With correct dirty flags, we could skip clean nodes for O(1)
+  // content phase. Without them, skipping causes garbled output.
+  //
+  // The old catch-all (!rectEqual(prevLayout, contentRect)) was unreliable:
+  // propagateLayout() syncs prevLayout = contentRect on every frame where
+  // the layout phase runs, breaking the catch-all for subsequent frames.
+  //
+  // Instead of manipulating layoutChanged (which cascades through
+  // contentAreaAffected/parentRegionCleared/skipBgFill), we disable the
+  // skip decision directly. This forces all nodes to re-render while
+  // preserving correct cascade behavior for region clearing and bg fills.
+  //
+  // TODO: Fix dirty flag propagation bugs, then re-enable skipping.
+  // See bead km-inkx.content-phase-skip.
+  const skipFastPath = false
 
   // Node ID for tracing (only trace named nodes to keep compact)
   const _nodeId = _instrumentEnabled ? ((props.id as string | undefined) ?? "") : ""
