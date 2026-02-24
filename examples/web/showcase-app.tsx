@@ -9,7 +9,7 @@ import React from "react"
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
 import { renderToXterm } from "../../src/xterm/index.js"
-import { SHOWCASES } from "./showcases.js"
+import { SHOWCASES, emitInput } from "./showcases.js"
 
 // Read demo name from URL params
 const params = new URLSearchParams(window.location.search)
@@ -43,6 +43,9 @@ if (!ShowcaseComponent) {
     fitAddon.fit()
 
     const instance = renderToXterm(<ShowcaseComponent />, term)
+
+    // Wire keyboard input to showcase components
+    term.onData((data) => emitInput(data))
 
     // Re-fit and re-render on window resize
     window.addEventListener("resize", () => {

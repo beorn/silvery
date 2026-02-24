@@ -1,46 +1,16 @@
 # inkx
 
-TUI framework for modern terminals — Ink-compatible but [122x faster](docs/deep-dives/performance.md). React 19, every terminal protocol, 23+ components incl. virtual scroll, Playwright-style testing. Pure TypeScript — no WASM, no native deps.
+**TUI framework for modern terminals.**
+Ink-compatible but [122x faster](docs/deep-dives/performance.md). React 19, every terminal protocol, pure TypeScript.
 
 [![npm version](https://img.shields.io/npm/v/inkx.svg)](https://www.npmjs.com/package/inkx)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-<table>
-<tr>
-<th align="left">Unique to inkx</th>
-<th align="left">Terminal Protocols</th>
-<th align="left">Developer Experience</th>
-</tr>
-<tr>
-<td>
-  • <a href="docs/deep-dives/performance.md">122x faster</a> updates<br>
-  • Reactive layout<br>
-  • Scrollable containers<br>
-  • TEA/Elm + React + Zustand<br>
-  • Terminal, Canvas, DOM targets<br>
-  • Per-node dirty tracking<br>
-  • No WASM, no C++
-</td>
-<td>
-  • Mouse — click, drag, scroll<br>
-  • Kitty keyboard<br>
-  • Inline images<br>
-  • Clipboard over SSH<br>
-  • Hyperlinks, truecolor<br>
-  • Scrollback buffers<br>
-  • Synchronized output
-</td>
-<td>
-  • Playwright-style testing<br>
-  • Plugin composition<br>
-  • Drop-in Ink replacement<br>
-  • Screenshot capture<br>
-  • <code>$token</code> theming<br>
-  • 23+ components<br>
-  • Node, Bun, Deno
-</td>
-</tr>
-</table>
+**Unique to inkx** — Reactive layout · scrollable containers · per-node dirty tracking · Elm + React + Zustand · three render targets · no WASM
+
+**Terminal protocols** — Kitty keyboard · SGR mouse · inline images · clipboard over SSH · hyperlinks · synchronized output
+
+**Developer experience** — Drop-in Ink replacement · Playwright-style testing · plugin composition · `$token` theming · 23+ components
 
 ## Quick Start
 
@@ -86,7 +56,7 @@ await run(<App />)
 
 **Three render targets.** Terminal, Canvas 2D, and DOM. Same React components, same layout engine — different output. See the [live demo](https://beorn.github.io/inkx/examples/live-demo).
 
-## Built for Agents
+## Accessible to Agents
 
 inkx is designed to be driven by AI agents, not just humans:
 
