@@ -11,7 +11,7 @@
 import React, { useState } from "react"
 import { describe, expect, test, vi } from "vitest"
 import { Box, Text } from "../src/index.ts"
-import { createRenderer } from "../src/testing/index.tsx"
+import { createRenderer } from "inkx/testing"
 import { useEditContext, activeEditContextRef } from "../src/hooks/use-edit-context.ts"
 import type { UseEditContextOptions, UseEditContextResult } from "../src/hooks/use-edit-context.ts"
 

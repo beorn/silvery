@@ -3,7 +3,7 @@
  */
 import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 describe("flexGrow in board structure", () => {
   const render = createRenderer({ cols: 80, rows: 24 })

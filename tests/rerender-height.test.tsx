@@ -6,7 +6,7 @@
  * cards lose their last content line — text bleeds into the bottom border.
  */
 import { describe, expect, test } from "vitest"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 import React, { useState, type Dispatch, type SetStateAction } from "react"
 
 const { Box, Text } = await import("../src/index.js")

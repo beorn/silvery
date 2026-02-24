@@ -8,7 +8,7 @@
 import React, { useCallback } from "react"
 import { describe, expect, test, beforeEach } from "vitest"
 import { Box, Text, useScreenRectCallback } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 import { useCursor, resetCursorState, getCursorState } from "../src/hooks/useCursor.js"
 
 const render = createRenderer({ cols: 80, rows: 24 })

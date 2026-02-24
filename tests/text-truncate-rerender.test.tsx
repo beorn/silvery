@@ -9,7 +9,7 @@
 import { describe, test, expect } from "vitest"
 import React from "react"
 import { Box, Text, createTerm } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 const style = createTerm({ color: "truecolor" })
 

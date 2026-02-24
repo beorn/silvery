@@ -8,10 +8,10 @@
 import { expect } from "vitest"
 
 // Re-export utilities from the testing module
-export { createRenderer, normalizeFrame, stripAnsi, waitFor } from "../src/testing/index.js"
+export { createRenderer, normalizeFrame, stripAnsi, waitFor } from "inkx/testing"
 
 // Import for local use
-import { normalizeFrame } from "../src/testing/index.js"
+import { normalizeFrame } from "inkx/testing"
 
 /**
  * Create a matcher for frame content that ignores ANSI codes.

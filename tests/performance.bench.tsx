@@ -11,7 +11,7 @@
 import React from "react"
 import { bench, describe } from "vitest"
 import { Box, Text } from "../src/components/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 const render = createRenderer()
 

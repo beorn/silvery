@@ -20,7 +20,7 @@
 import { describe, expect, test } from "vitest"
 import React from "react"
 import { Box, Text } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 import { createMutableCell } from "../src/buffer.js"
 
 /** Check all border cells in a bordered box have correct char, fg, and bg */

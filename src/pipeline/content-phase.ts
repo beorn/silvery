@@ -84,7 +84,27 @@ export function contentPhase(root: InkxNode, prevBuffer?: TerminalBuffer | null)
     _nodeTrace.length = 0
   }
 
+  // Sync prevLayout after content phase to prevent staleness on subsequent frames.
+  // Without this, prevLayout stays at the old value from propagateLayout, causing
+  // hasChildPositionChanged and clearExcessArea to use stale coordinates.
+  syncPrevLayout(root)
+
   return buffer
+}
+
+/**
+ * Sync prevLayout to contentRect for all nodes in the tree.
+ *
+ * Called at the end of each contentPhase pass. This prevents:
+ * 1. The O(N) staleness bug where prevLayout drifts from contentRect
+ *    causing !rectEqual to always be true on subsequent frames.
+ * 2. Stale old-bounds references in clearExcessArea on doRender iteration 2+.
+ */
+function syncPrevLayout(node: InkxNode): void {
+  node.prevLayout = node.contentRect
+  for (const child of node.children) {
+    syncPrevLayout(child)
+  }
 }
 
 /** Instrumentation enabled when INKX_STRICT, INKX_CHECK_INCREMENTAL, or INKX_INSTRUMENT is set */
@@ -241,15 +261,12 @@ function renderNodeToBuffer(
 
   // FAST PATH: Skip entire subtree if unchanged and we have a previous buffer
   // The buffer was cloned from prevBuffer, so skipped nodes keep their rendered output
-  const layoutChanged = !rectEqual(node.prevLayout, node.contentRect)
-
-  // NOTE: prevLayout is intentionally NOT updated here. Updating it would fix
-  // the staleness bug (prevLayout=null after first render → layoutChanged=true
-  // for all nodes on every subsequent render), but the content phase currently
-  // relies on layoutChanged=true as a catch-all for contentAreaAffected region
-  // clearing. The subtreeDirtyWithBg fix below handles the specific case of
-  // descendant content shrinking inside bg-bearing boxes, but fixing prevLayout
-  // broadly still requires auditing all contentAreaAffected consumers.
+  //
+  // Uses layoutChangedThisFrame (set by propagateLayout) instead of the stale
+  // !rectEqual(prevLayout, contentRect). The rect comparison becomes permanently
+  // true when the layout phase skips (no dirty nodes) because prevLayout isn't
+  // updated, causing O(N) content phase every frame.
+  const layoutChanged = node.layoutChangedThisFrame
 
   // Check if any child shifted position (sibling shift from size changes).
   // Gap space between children belongs to this container, so must re-render.
@@ -508,6 +525,7 @@ function renderNodeToBuffer(
   node.bgDirty = false
   node.subtreeDirty = false
   node.childrenDirty = false
+  node.layoutChangedThisFrame = false
 }
 
 /**
@@ -866,6 +884,7 @@ function clearDirtyFlags(node: InkxNode): void {
   node.bgDirty = false
   node.subtreeDirty = false
   node.childrenDirty = false
+  node.layoutChangedThisFrame = false
   for (const child of node.children) {
     if (child.layoutNode) {
       clearDirtyFlags(child)
@@ -890,6 +909,7 @@ function clearVirtualTextFlags(node: InkxNode): void {
   node.bgDirty = false
   node.subtreeDirty = false
   node.childrenDirty = false
+  node.layoutChangedThisFrame = false
   for (const child of node.children) {
     clearVirtualTextFlags(child)
   }
@@ -1087,30 +1107,48 @@ function clearExcessArea(
   // Only clear if the node actually shrank in at least one dimension
   if (prev.width <= layout.width && prev.height <= layout.height) return
 
+  // Skip excess clearing when the node MOVED (changed x or y position).
+  // The right/bottom excess formulas use new-x + old-y coordinates, which
+  // creates a phantom rectangle at wrong positions when the node moved.
+  // Example: text at old=(30,7,23,1) → new=(22,8,14,2) computes excess at
+  // (36,7) which overwrites a sibling's border character.
+  //
+  // When the node moved, the parent handles old-pixel cleanup:
+  // - Parent's clearNodeRegion covers old pixels within parent's current rect
+  // - Parent's clearExcessArea covers old pixels outside parent's rect
+  if (prev.x !== layout.x || prev.y !== layout.y) return
+
   if (!inherited) inherited = findInheritedBg(node)
   const clearBg = inherited.color
   const screenY = layout.y - scrollOffset
   const prevScreenY = prev.y - scrollOffset
 
-  // Find the clip rect and its owner for content-area inset calculation
-  const clipRectOwner = inherited.ancestorRect ? null : node.parent
+  // Clip to prevent excess clearing from bleeding outside valid bounds.
+  // Start with the colored ancestor's rect (prevents bg color bleed),
+  // then further restrict to the immediate parent's content area (prevents
+  // overwriting parent's border characters).
   const clipRect = inherited.ancestorRect ?? node.parent?.contentRect
   if (!clipRect) return
 
   const clipRectScreenY = clipRect.y - scrollOffset
   let clipRectBottom = clipRectScreenY + clipRect.height
-
-  // Inset by border/padding when clip rect comes from the immediate parent.
-  // The excess clearing should not extend into the parent's border area.
-  // (When clip rect comes from a colored ancestor, its bg fill already covers
-  // its border area, so children's clearing into that area is harmless.)
   let clipRectRight = clipRect.x + clipRect.width
-  if (clipRectOwner) {
-    const ownerProps = clipRectOwner.props as BoxProps
-    const border = getBorderSize(ownerProps)
-    const padding = getPadding(ownerProps)
-    clipRectBottom -= border.bottom + padding.bottom
-    clipRectRight -= border.right + padding.right
+
+  // Always inset by the immediate parent's border/padding.
+  // Without this, a child's excess clearing extends into the parent's
+  // border row, overwriting border characters with spaces.
+  // (The old code skipped inset when clip rect came from a colored ancestor,
+  // assuming "its bg fill covers its border area" — but bg fill only covers
+  // the inside, while renderBorder draws characters on the border row.)
+  const parent = node.parent
+  if (parent?.contentRect) {
+    const parentProps = parent.props as BoxProps
+    const border = getBorderSize(parentProps)
+    const padding = getPadding(parentProps)
+    const parentRight = parent.contentRect.x + parent.contentRect.width - border.right - padding.right
+    const parentBottom = parent.contentRect.y - scrollOffset + parent.contentRect.height - border.bottom - padding.bottom
+    clipRectRight = Math.min(clipRectRight, parentRight)
+    clipRectBottom = Math.min(clipRectBottom, parentBottom)
   }
 
   // Clear right margin (old was wider than new)
@@ -1124,6 +1162,12 @@ function clearExcessArea(
       excessWidth = Math.max(0, clipRectRight - excessX)
     }
     if (excessWidth > 0) {
+      // DEBUG: trace which node causes excess clearing at target position
+      const _TX = 36, _TY = 7
+      if (excessX <= _TX && _TX < excessX + excessWidth && prevScreenY <= _TY && _TY < prevScreenY + prev.height) {
+        const nid = (node.props as any).id ?? node.type
+        console.error(`[EXCESS] node=${nid} type=${node.type} layout=${JSON.stringify(layout)} prev=${JSON.stringify(prev)} excess=(${excessX},${prevScreenY},${excessWidth},${prev.height}) clipRight=${clipRectRight} parent=${node.parent?.type}/${(node.parent?.props as any)?.id ?? ""}`)
+      }
       clippedFill(
         buffer,
         excessX,

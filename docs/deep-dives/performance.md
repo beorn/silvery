@@ -46,8 +46,9 @@ inkx's five-phase render pipeline (measure, layout, content, output, buffer) con
 
 | #   | Optimization              | Description                                                                                                                                                                                                                                                  |
 | --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 4.1 | **Incremental rendering** | Clone previous buffer; only re-render dirty subtrees. 7-flag fast-path skip (`contentDirty`, `paintDirty`, `layoutChanged`, `subtreeDirty`, `childrenDirty`, `childPositionChanged`, `hasPrevBuffer`). Includes skipBgFill and scroll viewport clear gating. |
-| 4.2 | **Viewport clipping**     | Early exit when node is entirely off-screen. Defense-in-depth for non-VirtualList containers.                                                                                                                                                                |
+| 4.1 | **Incremental rendering** | Clone previous buffer; only re-render dirty subtrees. 7-flag fast-path skip (`contentDirty`, `paintDirty`, `layoutChangedThisFrame`, `subtreeDirty`, `childrenDirty`, `childPositionChanged`, `hasPrevBuffer`). Includes skipBgFill and scroll viewport clear gating. |
+| 4.2 | **layoutChangedThisFrame** | Authoritative per-frame flag set by `propagateLayout`, cleared by content phase. Replaces stale `!rectEqual(prevLayout, contentRect)` which was permanently true when layout phase skipped. Reduces content phase from O(N) to O(dirty) on no-layout-change frames. |
+| 4.3 | **Viewport clipping**     | Early exit when node is entirely off-screen. Defense-in-depth for non-VirtualList containers.                                                                                                                                                                |
 
 ### 5. Output Phase
 

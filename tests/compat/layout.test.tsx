@@ -11,7 +11,7 @@
 import React from "react"
 import { describe, expect, test } from "vitest"
 import { Box, Newline, Spacer, Text } from "../../src/index.js"
-import { createRenderer } from "../../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 const render = createRenderer()
 

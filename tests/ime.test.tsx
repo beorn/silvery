@@ -17,7 +17,7 @@
 import React, { useState } from "react"
 import { describe, expect, test } from "vitest"
 import { Box, type Key, Text, useInput } from "../src/index.ts"
-import { createRenderer } from "../src/testing/index.tsx"
+import { createRenderer } from "inkx/testing"
 import { displayWidth, graphemeCount } from "../src/unicode.js"
 
 // ============================================================================

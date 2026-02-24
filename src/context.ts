@@ -60,7 +60,7 @@ export const EventsContext = createContext<AsyncIterable<Event> | null>(null)
  * Context that provides access to the current InkxNode.
  * Used by useContentRect() to subscribe to layout changes.
  *
- * Each Box/Text component wraps its children in a NodeContext.Provider
+ * Each Box component wraps its children in a NodeContext.Provider
  * with its corresponding InkxNode.
  */
 export const NodeContext = createContext<InkxNode | null>(null)

@@ -8,7 +8,7 @@
 import React from "react"
 import { describe, expect, test } from "vitest"
 import { Box, Text, Transform } from "../src/components/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 const render = createRenderer({ cols: 80, rows: 5 })
 

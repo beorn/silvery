@@ -8,7 +8,7 @@ import { Box, Text } from "../src/index.js"
 import { SplitView } from "../src/components/SplitView.js"
 import { createLeaf, splitPane } from "../src/pane-manager.js"
 import type { LayoutNode } from "../src/pane-manager.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 const renderPane = (id: string) => <Text>{`Content:${id}`}</Text>
 

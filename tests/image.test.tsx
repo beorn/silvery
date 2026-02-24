@@ -17,7 +17,7 @@ import {
   Text,
 } from "../src/index.js"
 import type { SixelImageData } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 // ============================================================================
 // Kitty Graphics Protocol

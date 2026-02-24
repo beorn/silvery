@@ -17,7 +17,7 @@ import React, { Suspense, StrictMode, useState, useEffect, useTransition, useDef
 import { describe, expect, test } from "vitest"
 import { NodeContext } from "../src/context.ts"
 import { Box, Text, useContentRect, useInput } from "../src/index.ts"
-import { createRenderer, stripAnsi } from "../src/testing/index.tsx"
+import { createRenderer, stripAnsi } from "inkx/testing"
 import type { InkxNode } from "../src/types.ts"
 
 // ============================================================================
@@ -39,6 +39,7 @@ function createMockInkxNode(layout: { x: number; y: number; width: number; heigh
     contentRect: layout,
     screenRect: layout,
     prevLayout: null,
+    layoutChangedThisFrame: false,
     layoutDirty: false,
     contentDirty: false,
     layoutSubscribers: new Set(),

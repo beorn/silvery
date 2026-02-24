@@ -9,7 +9,7 @@
  * bugs where the buffer is correct but the terminal output isn't.
  */
 import { describe, expect, test } from "vitest"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 import { VirtualTerminal } from "../src/index.js"
 import { outputPhase } from "../src/pipeline.js"
 import React from "react"

@@ -15,7 +15,7 @@ import type { SelectOption } from "../src/components/SelectList.js"
 import { Table } from "../src/components/Table.js"
 import { Badge } from "../src/components/Badge.js"
 import { Divider } from "../src/components/Divider.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 // =============================================================================
 // Spinner

@@ -50,7 +50,7 @@ import {
   useStdout,
 } from "../src/index.js"
 
-import { createRenderer, stripAnsi } from "../src/testing/index.js"
+import { createRenderer, stripAnsi } from "inkx/testing"
 
 const testRender = createRenderer()
 

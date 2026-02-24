@@ -20,8 +20,7 @@ import React, { useState } from "react"
 import { describe, expect, test } from "vitest"
 import { Box, Text, useInput } from "../src/index.js"
 import { bufferToText } from "../src/buffer.js"
-import { createRenderer } from "../src/testing/index.js"
-import { compareBuffers, formatMismatch } from "../src/testing/compare-buffers.js"
+import { createRenderer, compareBuffers, formatMismatch } from "inkx/testing"
 
 const render = createRenderer({ incremental: true, cols: 40, rows: 20 })
 

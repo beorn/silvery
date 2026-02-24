@@ -4,7 +4,7 @@ import React from "react"
  */
 import { describe, expect, it } from "vitest"
 import { Box, HorizontalVirtualList, Text } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 const render = createRenderer({ cols: 80, rows: 24 })
 

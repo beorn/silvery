@@ -17,7 +17,7 @@ import React, { useState } from "react"
 import { describe, expect, test, vi } from "vitest"
 import { Box, Text, type App } from "../src/index.ts"
 import { TextArea } from "../src/components/TextArea.tsx"
-import { createRenderer } from "../src/testing/index.tsx"
+import { createRenderer } from "inkx/testing"
 
 // ============================================================================
 // Test helpers

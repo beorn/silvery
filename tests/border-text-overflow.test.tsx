@@ -11,7 +11,7 @@
 
 import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 import { outputPhase } from "../src/pipeline/output-phase.js"
 import { VirtualTerminal } from "../src/with-diagnostics.js"
 

@@ -7,7 +7,7 @@
 import { createElement } from "react"
 import { describe, expect, it } from "vitest"
 import { Box, Text } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 import { expectFrame, normalizeFrame, stripAnsi } from "./setup.js"
 
 const render = createRenderer()

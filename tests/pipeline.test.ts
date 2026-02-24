@@ -56,6 +56,8 @@ function markNodeDirty(node: InkxNode): void {
   node.contentDirty = true
   node.paintDirty = true
   node.subtreeDirty = true
+  // Compute layoutChangedThisFrame from prevLayout vs contentRect (layout phase would do this)
+  node.layoutChangedThisFrame = !rectEqual(node.prevLayout, node.contentRect)
 }
 
 /** Mark a node as having only dirty descendants (subtreeDirty but not contentDirty) */

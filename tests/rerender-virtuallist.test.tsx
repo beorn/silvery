@@ -6,7 +6,7 @@
  * This test isolates whether VirtualList + overflow is the trigger.
  */
 import { describe, expect, test } from "vitest"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 import React, { useState, type Dispatch, type SetStateAction } from "react"
 
 const { Box, Text, VirtualList } = await import("../src/index.js")

@@ -22,7 +22,7 @@ import { createFlexxZeroEngine } from "../src/adapters/flexx-zero-adapter.js"
 import { initYogaEngine } from "../src/adapters/yoga-adapter.js"
 import { Box, Text } from "../src/index.js"
 import type { LayoutEngine } from "../src/layout-engine.js"
-import { createRenderer, normalizeFrame } from "../src/testing/index.js"
+import { createRenderer, normalizeFrame } from "inkx/testing"
 
 // ============================================================================
 // Test Setup - Initialize engines once before all tests

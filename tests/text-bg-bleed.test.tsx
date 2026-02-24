@@ -15,7 +15,7 @@
 import React from "react"
 import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.tsx"
+import { createRenderer } from "inkx/testing"
 
 describe("Text backgroundColor with wrapping (km-inkx.bg-bleed)", () => {
   const render = createRenderer({ cols: 30, rows: 10 })

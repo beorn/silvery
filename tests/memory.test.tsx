@@ -14,7 +14,7 @@ import { EventEmitter } from "node:events"
 import React, { useEffect, useState } from "react"
 import { describe, expect, test } from "vitest"
 import { Box, Text, useInput } from "../src/index.ts"
-import { createRenderer } from "../src/testing/index.tsx"
+import { createRenderer } from "inkx/testing"
 
 // ============================================================================
 // Test Helpers

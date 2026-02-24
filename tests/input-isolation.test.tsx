@@ -11,7 +11,7 @@ import { describe, expect, test } from "vitest"
 import { InputBoundary } from "../src/contexts/InputBoundary.tsx"
 import { InputLayerProvider, useInputLayer } from "../src/contexts/InputLayerContext.tsx"
 import { Box, Text, useInput } from "../src/index.ts"
-import { createRenderer } from "../src/testing/index.tsx"
+import { createRenderer } from "inkx/testing"
 
 // ============================================================================
 // Test Components

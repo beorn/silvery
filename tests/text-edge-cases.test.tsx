@@ -10,7 +10,7 @@ import React from "react"
  */
 import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
-import { createRenderer, stripAnsi } from "../src/testing/index.tsx"
+import { createRenderer, stripAnsi } from "inkx/testing"
 
 // ============================================================================
 // Text wrapping with long words

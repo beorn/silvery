@@ -15,7 +15,7 @@ import React, { useState } from "react"
 import { describe, expect, test } from "vitest"
 import { Box, Text, VirtualTerminal, useInput } from "../src/index.js"
 import { outputPhase } from "../src/pipeline.js"
-import { createRenderer, stripAnsi } from "../src/testing/index.js"
+import { createRenderer, stripAnsi } from "inkx/testing"
 
 const render = createRenderer({ incremental: true, cols: 80, rows: 24 })
 

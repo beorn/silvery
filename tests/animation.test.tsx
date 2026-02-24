@@ -8,7 +8,7 @@
 import React, { useState } from "react"
 import { describe, expect, test, vi, beforeEach, afterEach } from "vitest"
 import { Box, Text } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 import { easings, resolveEasing, type EasingFn } from "../src/animation/easing.js"
 import { useAnimation, type UseAnimationOptions } from "../src/animation/useAnimation.js"
 import { useTransition } from "../src/animation/useTransition.js"

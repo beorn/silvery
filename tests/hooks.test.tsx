@@ -12,7 +12,7 @@ import React from "react"
 import { describe, expect, test } from "vitest"
 import { NodeContext, StdinContext, StdoutContext } from "../src/context.ts"
 import { Text, useContentRect, useFocusManager, useStdin, useStdout } from "../src/index.ts"
-import { createRenderer } from "../src/testing/index.tsx"
+import { createRenderer } from "inkx/testing"
 import type { InkxNode } from "../src/types.ts"
 
 const render = createRenderer()
@@ -34,6 +34,7 @@ function createMockInkxNode(layout: { x: number; y: number; width: number; heigh
     contentRect: layout,
     screenRect: layout,
     prevLayout: null,
+    layoutChangedThisFrame: false,
     layoutDirty: false,
     contentDirty: false,
     layoutSubscribers: new Set(),

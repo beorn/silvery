@@ -15,7 +15,7 @@ import type React from "react"
 import { Suspense, forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react"
 import { describe, expect, test } from "vitest"
 import { Box, type BoxHandle, ErrorBoundary, type Rect, Text, type TextHandle } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.tsx"
+import { createRenderer } from "inkx/testing"
 
 // ============================================================================
 // Test Setup

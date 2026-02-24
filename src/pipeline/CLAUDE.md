@@ -35,7 +35,11 @@ The reconciler sets flags on nodes when props/children change. The content phase
 | `childrenDirty` | Reconciler                | Direct children added, removed, or reordered                                             |
 | `layoutDirty`   | Reconciler                | Layout-affecting props changed; triggers Yoga recalculation                              |
 
-The layout phase also sets `subtreeDirty` upward when a descendant's `contentRect` changes.
+The layout phase also sets `subtreeDirty` upward when a descendant's `contentRect` changes via `layoutChangedThisFrame`.
+
+| Flag                     | Set by                    | Meaning                                                                                  |
+| ------------------------ | ------------------------- | ---------------------------------------------------------------------------------------- |
+| `layoutChangedThisFrame` | Layout phase              | Node's contentRect changed this frame; cleared by content phase after processing         |
 
 ## Incremental Rendering Model
 
@@ -50,7 +54,7 @@ The fast-path skip condition (all must be false to skip):
 ```typescript
 !node.contentDirty &&
   !node.paintDirty &&
-  !layoutChanged && // !rectEqual(node.prevLayout, node.contentRect)
+  !layoutChanged && // node.layoutChangedThisFrame
   !node.subtreeDirty &&
   !node.childrenDirty &&
   !childPositionChanged // any child's x/y differs from prevLayout
@@ -86,7 +90,9 @@ These five computed values in `renderNodeToBuffer` control the entire incrementa
 
 ```typescript
 // Did this node's layout position/size change?
-layoutChanged = !rectEqual(node.prevLayout, node.contentRect)
+// Uses layoutChangedThisFrame (set by propagateLayout in layout phase)
+// instead of the stale !rectEqual(prevLayout, contentRect).
+layoutChanged = node.layoutChangedThisFrame
 
 // Did the CONTENT AREA change? (excludes border-only paint changes)
 contentAreaAffected = node.contentDirty || layoutChanged || childPositionChanged || node.childrenDirty || node.bgDirty
@@ -199,9 +205,24 @@ When a node shrinks, the excess area (old bounds minus new bounds) is also clear
 
 **Important:** Excess area clearing runs independently of `parentRegionCleared`. Even when `parentRegionCleared=false` (e.g., absolute children with `forceRepaint=true` where `hasPrevBuffer=false` + `ancestorCleared=false`), the cloned buffer still has stale pixels in the old-but-not-new area that must be cleared. This also applies to nodes WITH `backgroundColor` — `renderBox` fills only the new (smaller) region.
 
-## prevLayout Staleness (Known Issue)
+## prevLayout and layoutChangedThisFrame
 
-`prevLayout` is set by the layout phase and intentionally NOT updated by the content phase. This means `prevLayout=null` after the first render causes `layoutChanged=true` for all nodes on every subsequent render. The content phase currently relies on `layoutChanged=true` as a catch-all for `contentAreaAffected` region clearing. Fixing this requires also fixing `contentAreaAffected` to account for `subtreeDirty` (descendant content changes that shrink and leave stale pixels).
+`layoutChanged` is now driven by the `layoutChangedThisFrame` flag (set by `propagateLayout` in layout phase, cleared by content phase after processing). This replaces the old `!rectEqual(prevLayout, contentRect)` which was permanently stale when layout phase skipped (no dirty nodes), causing O(N) content phase every frame.
+
+**How it works:**
+1. Layout phase: `propagateLayout` saves `node.prevLayout = node.contentRect`, recomputes rect, sets `node.layoutChangedThisFrame = !rectEqual(old, new)`
+2. Content phase: reads `node.layoutChangedThisFrame` for skip decisions, clears it after processing
+3. End of content phase: `syncPrevLayout` sets `prevLayout = contentRect` for all nodes, ensuring `clearExcessArea` and `hasChildPositionChanged` use correct coordinates on multi-pass doRender iterations
+
+`prevLayout` is still used by `clearExcessArea` (old bounds for excess clearing) and `hasChildPositionChanged` (sibling position shift detection), but NOT for the primary `layoutChanged` decision.
+
+## clearExcessArea Guards
+
+`clearExcessArea` fills old-minus-new bounds when a node shrinks. Two guards prevent border corruption:
+
+1. **Position-change guard**: When a node MOVED (prev.x ≠ layout.x or prev.y ≠ layout.y), clearExcessArea is skipped entirely. The right/bottom excess formulas mix new-x with old-y coordinates, creating phantom rectangles at wrong positions. The parent handles old-pixel cleanup instead.
+
+2. **Parent border inset**: Excess clearing always clips to the immediate parent's content area (inside border/padding), even when the inherited bg comes from a colored ancestor. Without this, a child's bottom excess extends into the parent's border row and overwrites border characters with spaces.
 
 ## Common Pitfalls
 
@@ -323,7 +344,7 @@ Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content a
 | Absolute child disappears                         | Two-pass rendering order; absolute children need `ancestorCleared=false` in second pass           |
 | Content correct initially, wrong after navigation | Incremental rendering bug; `INKX_STRICT=1` will catch it                                          |
 | Text bg different from parent Box bg              | `getCellBg` reading stale buffer; check if region was cleared to correct bg                       |
-| Flickering on every render                        | `prevLayout=null` causing `layoutChanged=true` every frame (known issue)                          |
+| Flickering on every render                        | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of content phase         |
 | Stale overlay pixels after shrink (black area)    | `clearExcessArea` not called; check `parentRegionCleared` + `forceRepaint` interaction            |
 
 ## Quick Regression Test Template

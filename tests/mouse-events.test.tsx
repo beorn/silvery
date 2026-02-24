@@ -23,7 +23,7 @@ import {
 import { createFocusManager } from "../src/focus-manager.js"
 import { Link } from "../src/components/Link.js"
 import type { InkxNode } from "../src/types.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 // ============================================================================
 // Unit Tests: Event Creation

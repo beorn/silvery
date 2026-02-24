@@ -14,7 +14,7 @@ import { describe, expect, test } from "vitest"
 import { Box, Text, useInput } from "../src/index.js"
 import { ThemeProvider, useTheme } from "../src/contexts/ThemeContext.js"
 import { defaultDarkTheme, defaultLightTheme, resolveThemeColor, type Theme } from "../src/theme.js"
-import { createRenderer, stripAnsi } from "../src/testing/index.tsx"
+import { createRenderer, stripAnsi } from "inkx/testing"
 
 const render = createRenderer({ cols: 60, rows: 10 })
 
@@ -169,7 +169,7 @@ describe("ThemeProvider + useTheme", () => {
 })
 
 // ============================================================================
-// $token resolution in Text
+// $token resolution (explicit resolveThemeColor)
 // ============================================================================
 
 /**
@@ -180,99 +180,55 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   return { r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff }
 }
 
-describe("$token resolution in Text", () => {
-  test("Text with color=$primary uses theme primary color", () => {
+describe("$token resolution via explicit resolveThemeColor", () => {
+  test("Text with resolved color uses theme primary color", () => {
+    function ThemedText() {
+      const theme = useTheme()
+      return <Text color={resolveThemeColor("$primary", theme)}>Hello</Text>
+    }
+
     const app = render(
       <ThemeProvider theme={defaultDarkTheme}>
-        <Text color="$primary">Hello</Text>
+        <ThemedText />
       </ThemeProvider>,
     )
 
     const frame = app.ansi
-    // #88C0D0 = rgb(136, 192, 208) → ANSI: 38;2;136;192;208
     const { r, g, b } = hexToRgb(defaultDarkTheme.primary)
     expect(frame).toContain(`38;2;${r};${g};${b}`)
     expect(stripAnsi(frame)).toContain("Hello")
   })
 
-  test("Text with backgroundColor=$surface uses theme surface color", () => {
+  test("Box with resolved borderColor uses theme border color", () => {
+    function ThemedBox() {
+      const theme = useTheme()
+      return (
+        <Box borderStyle="single" borderColor={resolveThemeColor("$border", theme)}>
+          <Text>inside</Text>
+        </Box>
+      )
+    }
+
     const app = render(
       <ThemeProvider theme={defaultDarkTheme}>
-        <Text backgroundColor="$surface">Hello</Text>
+        <ThemedBox />
       </ThemeProvider>,
     )
 
     const frame = app.ansi
-    // #3B4252 = rgb(59, 66, 82) → ANSI: 48;2;59;66;82
-    const { r, g, b } = hexToRgb(defaultDarkTheme.surface)
-    expect(frame).toContain(`48;2;${r};${g};${b}`)
+    const { r, g, b } = hexToRgb(defaultDarkTheme.border)
+    expect(frame).toContain(`38;2;${r};${g};${b}`)
+    expect(stripAnsi(frame)).toContain("inside")
   })
 
-  test("Text with literal color passes through unchanged", () => {
+  test("literal colors pass through Box/Text unchanged", () => {
     const app = render(
-      <ThemeProvider theme={defaultDarkTheme}>
+      <Box borderStyle="single" borderColor="green">
         <Text color="red">Hello</Text>
-      </ThemeProvider>,
+      </Box>,
     )
 
-    const frame = app.ansi
-    // "red" should NOT be resolved as a token
-    expect(stripAnsi(frame)).toContain("Hello")
-    // Should NOT contain the primary color
-    const { r, g, b } = hexToRgb(defaultDarkTheme.primary)
-    expect(frame).not.toContain(`38;2;${r};${g};${b}`)
-  })
-})
-
-// ============================================================================
-// $token resolution in Box
-// ============================================================================
-
-describe("$token resolution in Box", () => {
-  test("Box with borderColor=$border uses theme border color", () => {
-    const app = render(
-      <ThemeProvider theme={defaultDarkTheme}>
-        <Box borderStyle="single" borderColor="$border">
-          <Text>inside</Text>
-        </Box>
-      </ThemeProvider>,
-    )
-
-    const frame = app.ansi
-    // #4C566A = rgb(76, 86, 106)
-    const { r, g, b } = hexToRgb(defaultDarkTheme.border)
-    expect(frame).toContain(`38;2;${r};${g};${b}`)
-    expect(stripAnsi(frame)).toContain("inside")
-  })
-
-  test("Box with backgroundColor=$surface uses theme surface color", () => {
-    const app = render(
-      <ThemeProvider theme={defaultDarkTheme}>
-        <Box backgroundColor="$surface">
-          <Text>content</Text>
-        </Box>
-      </ThemeProvider>,
-    )
-
-    const frame = app.ansi
-    const { r, g, b } = hexToRgb(defaultDarkTheme.surface)
-    expect(frame).toContain(`48;2;${r};${g};${b}`)
-  })
-
-  test("Box with literal borderColor passes through unchanged", () => {
-    const app = render(
-      <ThemeProvider theme={defaultDarkTheme}>
-        <Box borderStyle="single" borderColor="green">
-          <Text>inside</Text>
-        </Box>
-      </ThemeProvider>,
-    )
-
-    const frame = app.ansi
-    expect(stripAnsi(frame)).toContain("inside")
-    // Should NOT contain theme border color
-    const { r, g, b } = hexToRgb(defaultDarkTheme.border)
-    expect(frame).not.toContain(`38;2;${r};${g};${b}`)
+    expect(stripAnsi(app.ansi)).toContain("Hello")
   })
 })
 
@@ -282,6 +238,11 @@ describe("$token resolution in Box", () => {
 
 describe("theme switching", () => {
   test("switching theme changes resolved colors", async () => {
+    function ThemedText() {
+      const theme = useTheme()
+      return <Text color={resolveThemeColor("$primary", theme)}>Hello</Text>
+    }
+
     function ThemeSwitcher() {
       const [dark, setDark] = useState(true)
       const theme = dark ? defaultDarkTheme : defaultLightTheme
@@ -292,7 +253,7 @@ describe("theme switching", () => {
 
       return (
         <ThemeProvider theme={theme}>
-          <Text color="$primary">Hello</Text>
+          <ThemedText />
         </ThemeProvider>
       )
     }

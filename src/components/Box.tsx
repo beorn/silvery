@@ -23,8 +23,6 @@ import {
   useState,
 } from "react"
 import { NodeContext } from "../context.js"
-import { useTheme } from "../contexts/ThemeContext.js"
-import { resolveThemeColor } from "../theme-defs.js"
 import type { BoxProps as BoxPropsType, InkxNode, Rect } from "../types.js"
 
 // ============================================================================
@@ -89,21 +87,20 @@ export interface BoxHandle {
  * ```
  */
 export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<BoxHandle>): JSX.Element {
-  const { children, onLayout, color, backgroundColor, borderColor, outlineColor, ...restProps } = props
-  const theme = useTheme()
+  const { children, onLayout, ...restProps } = props
   const nodeRef = useRef<InkxNode | null>(null)
   const [node, setNode] = useState<InkxNode | null>(null)
 
   // Track the last layout we reported to onLayout to avoid duplicate calls
   const lastReportedLayout = useRef<Rect | null>(null)
 
-  // After mount, ref points to the InkxNode (via getPublicInstance in reconciler).
-  // Update state to provide the node to children via context.
+  // After mount, ref points to the InkxNode. Update state once to provide
+  // the node to children via context. Only runs on mount ([] deps).
   useLayoutEffect(() => {
-    if (nodeRef.current && nodeRef.current !== node) {
+    if (nodeRef.current) {
       setNode(nodeRef.current)
     }
-  })
+  }, [])
 
   // Wire up onLayout callback - subscribe to layout changes
   useLayoutEffect(() => {
@@ -152,23 +149,10 @@ export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<Bo
     [],
   )
 
-  // Resolve $token color props against the active theme
-  const resolvedColor = resolveThemeColor(color, theme)
-  const resolvedBg = resolveThemeColor(backgroundColor, theme)
-  const resolvedBorder = resolveThemeColor(borderColor, theme)
-  const resolvedOutline = resolveThemeColor(outlineColor, theme)
-
   // Render inkx-box with ref, wrap children in NodeContext
   // The reconciler creates an InkxNode, ref gives us access to it
   return (
-    <inkx-box
-      ref={nodeRef}
-      color={resolvedColor}
-      backgroundColor={resolvedBg}
-      borderColor={resolvedBorder}
-      outlineColor={resolvedOutline}
-      {...restProps}
-    >
+    <inkx-box ref={nodeRef} {...restProps}>
       <NodeContext.Provider value={node}>{children}</NodeContext.Provider>
     </inkx-box>
   )

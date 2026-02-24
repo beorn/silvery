@@ -115,11 +115,17 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number): void
   // Clear layout dirty flag
   node.layoutDirty = false
 
+  // Set authoritative "layout changed this frame" flag.
+  // Unlike !rectEqual(prevLayout, contentRect) which becomes stale when
+  // layout phase skips on subsequent frames, this flag is explicitly set
+  // each time propagateLayout runs and cleared by the content phase.
+  node.layoutChangedThisFrame = !!(node.prevLayout && !rectEqual(node.prevLayout, node.contentRect))
+
   // When layout changes, mark ancestors subtreeDirty so contentPhase doesn't
   // fast-path skip them. Without this, a deeply nested node whose dimensions
   // change (e.g., width 3→4) would never be re-rendered because all ancestors
   // appear clean — their own layout didn't change, just a descendant's did.
-  if (node.prevLayout && !rectEqual(node.prevLayout, node.contentRect)) {
+  if (node.layoutChangedThisFrame) {
     let ancestor = node.parent
     while (ancestor && !ancestor.subtreeDirty) {
       ancestor.subtreeDirty = true

@@ -6,7 +6,7 @@ import React from "react"
 import { describe, expect, it } from "vitest"
 import { Box, Text, withCommands, withDiagnostics } from "../src/index.js"
 import { checkLayoutInvariants } from "../src/with-diagnostics.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 import type { CommandDef } from "../src/with-commands.js"
 
 const render = createRenderer({ cols: 40, rows: 10 })

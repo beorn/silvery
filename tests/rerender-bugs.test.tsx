@@ -12,7 +12,7 @@ import { describe, expect, test } from "vitest"
 import { TerminalBuffer, cellEquals, styleEquals } from "../src/buffer.js"
 import { Box, Text } from "../src/index.js"
 import { outputPhase } from "../src/pipeline.js"
-import { createRenderer, stripAnsi } from "../src/testing/index.js"
+import { createRenderer, stripAnsi } from "inkx/testing"
 
 const render = createRenderer()
 

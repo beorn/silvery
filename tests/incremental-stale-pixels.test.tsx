@@ -11,7 +11,7 @@
 import React, { useState } from "react"
 import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
-import { createRenderer, stripAnsi } from "../src/testing/index.js"
+import { createRenderer, stripAnsi } from "inkx/testing"
 
 const render = createRenderer({ incremental: true })
 

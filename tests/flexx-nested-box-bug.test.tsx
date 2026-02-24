@@ -11,7 +11,7 @@ import { Box, Text } from "../src/index.js"
  * Expected: flexShrink=0 child sizes to content (height=1 for single line)
  * Actual: flexShrink=0 child expands to container height (height=20)
  */
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 const render = createRenderer({ cols: 80, rows: 24 })
 

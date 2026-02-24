@@ -10,7 +10,7 @@ import React, { useState } from "react"
  */
 import { describe, expect, test } from "vitest"
 import { Box, type Key, Text, useInput } from "../../src/index.js"
-import { createRenderer } from "../../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 describe("Text node backgroundColor clearing (incremental)", () => {
   const render = createRenderer({ cols: 40, rows: 10 })

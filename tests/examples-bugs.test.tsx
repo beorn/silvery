@@ -7,7 +7,7 @@ import React, { useState } from "react"
  */
 import { describe, expect, it, test } from "vitest"
 import { Box, type Key, Text, useInput } from "../src/index.js"
-import { createRenderer, stripAnsi } from "../src/testing/index.tsx"
+import { createRenderer, stripAnsi } from "inkx/testing"
 
 // ============================================================================
 // Simplified components that reproduce the bugs

@@ -8,7 +8,7 @@ import React from "react"
  */
 import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 
 // Create renderer with incremental enabled (default)
 const render = createRenderer({ cols: 40, rows: 10 })

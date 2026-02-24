@@ -38,8 +38,6 @@ export function useContentRect(): Rect {
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0)
 
   useLayoutEffect(() => {
-    // Node may be null on first render before Box's useLayoutEffect sets it.
-    // The effect re-runs when node changes.
     if (!node) return
 
     const handleLayoutComplete = () => {
@@ -79,11 +77,7 @@ export function useContentRectCallback(callback: (rect: Rect) => void): void {
   callbackRef.current = callback
 
   useLayoutEffect(() => {
-    // Node may be null on first render before Box's useLayoutEffect sets it.
-    // The effect re-runs when node changes, so we'll subscribe on second render.
-    if (!node) {
-      return
-    }
+    if (!node) return
 
     const handleLayoutComplete = () => {
       if (node.contentRect) {
@@ -101,7 +95,7 @@ export function useContentRectCallback(callback: (rect: Rect) => void): void {
     return () => {
       node.layoutSubscribers.delete(handleLayoutComplete)
     }
-  }, [node]) // Re-run when node becomes available
+  }, [node])
 }
 
 // ============================================================================
@@ -133,8 +127,6 @@ export function useScreenRect(): Rect {
   const prevScreenRectRef = useRef<Rect | null>(null)
 
   useLayoutEffect(() => {
-    // Node may be null on first render before Box's useLayoutEffect sets it.
-    // The effect re-runs when node changes.
     if (!node) return
 
     const handleLayoutComplete = () => {
@@ -182,11 +174,7 @@ export function useScreenRectCallback(callback: (rect: Rect) => void): void {
   callbackRef.current = callback
 
   useLayoutEffect(() => {
-    // Node may be null on first render before Box's useLayoutEffect sets it.
-    // The effect re-runs when node changes, so we'll subscribe on second render.
-    if (!node) {
-      return
-    }
+    if (!node) return
 
     const handleLayoutComplete = () => {
       if (node.screenRect) {
@@ -204,5 +192,5 @@ export function useScreenRectCallback(callback: (rect: Rect) => void): void {
     return () => {
       node.layoutSubscribers.delete(handleLayoutComplete)
     }
-  }, [node]) // Re-run when node becomes available
+  }, [node])
 }

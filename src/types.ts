@@ -262,6 +262,13 @@ export interface InkxNode {
   /** Previous screen rect (for change detection in notifyLayoutSubscribers) */
   prevScreenRect: Rect | null
 
+  /** True if layout changed THIS frame (position or size).
+   *  Set by propagateLayout in layout phase. Cleared by content phase.
+   *  This is the authoritative signal for "did layout change?" — unlike
+   *  !rectEqual(prevLayout, contentRect) which becomes stale when layout
+   *  phase skips (no dirty nodes). */
+  layoutChangedThisFrame: boolean
+
   /** True if layout-affecting props changed and Yoga needs recalculation.
    *  Set by reconciler on prop changes. Cleared after layout phase. */
   layoutDirty: boolean

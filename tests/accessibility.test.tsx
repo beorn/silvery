@@ -10,7 +10,7 @@
 import React from "react"
 import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/components/index.js"
-import { createRenderer, normalizeFrame, stripAnsi } from "../src/testing/index.js"
+import { createRenderer, normalizeFrame, stripAnsi } from "inkx/testing"
 import { displayWidth, hasAnsi, splitGraphemes } from "../src/unicode.js"
 
 const render = createRenderer()

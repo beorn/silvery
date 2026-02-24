@@ -7,7 +7,7 @@
  */
 import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "inkx/testing"
 import { outputPhase } from "../src/pipeline/index.js"
 import { VirtualTerminal } from "../src/with-diagnostics.js"
 

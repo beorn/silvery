@@ -13,7 +13,7 @@
 import React, { useEffect, useState } from "react"
 import { describe, expect, test } from "vitest"
 import { Box, Text, useApp } from "../src/index.ts"
-import { createRenderer } from "../src/testing/index.tsx"
+import { createRenderer } from "inkx/testing"
 
 const render = createRenderer()
 

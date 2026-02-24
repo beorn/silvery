@@ -158,6 +158,7 @@ export const hostConfig = {
       screenRect: null,
       prevLayout: null,
       prevScreenRect: null,
+      layoutChangedThisFrame: false,
       layoutDirty: false,
       contentDirty: true,
       paintDirty: true,

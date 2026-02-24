@@ -48,17 +48,23 @@ import { type StateCreator, type StoreApi, createStore } from "zustand"
 import { createTerm } from "chalkx"
 import { AppContext, FocusManagerContext, StdoutContext, TermContext } from "../context.js"
 import { createFocusManager } from "../focus-manager.js"
-import { createFocusEvent, createKeyEvent, dispatchFocusEvent, dispatchKeyEvent } from "../focus-events.js"
-import { findByTestID } from "../focus-queries.js"
+import { createFocusEvent, dispatchFocusEvent } from "../focus-events.js"
 import { executeRender } from "../pipeline/index.js"
 import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "../reconciler.js"
 import { map, merge, takeUntil } from "../streams/index.js"
 import { createBuffer } from "./create-buffer.js"
 import { createRuntime } from "./create-runtime.js"
+import {
+  createHandlerContext,
+  dispatchKeyToHandlers,
+  handleFocusNavigation,
+  invokeEventHandler,
+  type NamespacedEvent,
+} from "./event-handlers.js"
 import { keyToAnsi, keyToKittyAnsi } from "../keys.js"
 import { parseKey } from "./keys.js"
 import { ensureLayoutEngine } from "./layout.js"
-import { createMouseEventProcessor, processMouseEvent } from "../mouse-events.js"
+import { createMouseEventProcessor } from "../mouse-events.js"
 import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output.js"
 import { detectKittyFromStdio } from "../kitty-detect.js"
 import { type TermProvider, createTermProvider } from "./term-provider.js"
@@ -296,16 +302,6 @@ export function useAppShallow<S, T>(selector: (state: S) => T): T {
 // ============================================================================
 // Implementation
 // ============================================================================
-
-/**
- * Namespaced event from a provider.
- */
-interface NamespacedEvent {
-  type: string
-  provider: string
-  event: string
-  data: unknown
-}
 
 /**
  * Create an app with Zustand store and provider integration.
@@ -1103,63 +1099,8 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
    * Returns true if processing should continue, false if app should exit.
    */
   function runEventHandler(event: NamespacedEvent): boolean | "flush" {
-    const namespacedKey = event.type
-    const namespacedHandler = handlers?.[namespacedKey as keyof typeof handlers]
-
-    if (namespacedHandler && typeof namespacedHandler === "function") {
-      const result = (namespacedHandler as EventHandler<unknown, S & I>)(event.data, {
-        set: store.setState,
-        get: store.getState,
-        focusManager,
-        focus(testID: string) {
-          const root = getContainerRoot(container)
-          focusManager.focusById(testID, root, "programmatic")
-        },
-        getFocusPath() {
-          const root = getContainerRoot(container)
-          return focusManager.getFocusPath(root)
-        },
-      })
-      if (result === "exit") {
-        return false
-      }
-      if (result === "flush") {
-        return "flush"
-      }
-    }
-
-    // DOM-level mouse event dispatch for mouse events
-    if (event.event === "mouse" && event.data) {
-      const mouseData = event.data as {
-        button: number
-        x: number
-        y: number
-        action: string
-        delta?: number
-        shift: boolean
-        meta: boolean
-        ctrl: boolean
-      }
-
-      const root = getContainerRoot(container)
-
-      processMouseEvent(
-        mouseEventState,
-        {
-          button: mouseData.button,
-          x: mouseData.x,
-          y: mouseData.y,
-          action: mouseData.action as "down" | "up" | "move" | "wheel",
-          delta: mouseData.delta,
-          shift: mouseData.shift,
-          meta: mouseData.meta,
-          ctrl: mouseData.ctrl,
-        },
-        root,
-      )
-    }
-
-    return true
+    const ctx = createHandlerContext(store, focusManager, container)
+    return invokeEventHandler(event, handlers, ctx, mouseEventState, container)
   }
 
   /**
@@ -1374,108 +1315,24 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       inEventHandler = true
       isRendering = true
 
-      // Focus system: dispatch key event to focused node first
-      if (focusManager.activeElement) {
-        const keyEvent = createKeyEvent(input, parsedKey, focusManager.activeElement)
-        dispatchKeyEvent(keyEvent)
-
-        // If focus system consumed the event, skip app handlers
-        if (keyEvent.propagationStopped || keyEvent.defaultPrevented) {
-          pendingRerender = false
-          isRendering = false
-          inEventHandler = false
-          doRender()
-          await Promise.resolve()
-          return
-        }
-
-        // Default focus navigation (Tab, Shift+Tab, Enter for scope, Escape for scope exit)
-        const root = getContainerRoot(container)
-        if (parsedKey.tab && !parsedKey.shift) {
-          focusManager.focusNext(root)
-          pendingRerender = false
-          isRendering = false
-          inEventHandler = false
-          doRender()
-          await Promise.resolve()
-          return
-        } else if (parsedKey.tab && parsedKey.shift) {
-          focusManager.focusPrev(root)
-          pendingRerender = false
-          isRendering = false
-          inEventHandler = false
-          doRender()
-          await Promise.resolve()
-          return
-        } else if (parsedKey.return) {
-          // Enter: if focused element has focusScope, enter that scope
-          const activeEl = focusManager.activeElement
-          if (activeEl) {
-            const props = activeEl.props as Record<string, unknown>
-            const testID = typeof props.testID === "string" ? props.testID : null
-            if (props.focusScope && testID) {
-              focusManager.enterScope(testID)
-              focusManager.focusNext(root, activeEl)
-              pendingRerender = false
-              isRendering = false
-              inEventHandler = false
-              doRender()
-              await Promise.resolve()
-              return
-            }
-          }
-        } else if (parsedKey.escape && focusManager.scopeStack.length > 0) {
-          // Escape: exit the current focus scope
-          const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
-          focusManager.exitScope()
-          const scopeNode = findByTestID(root, scopeId)
-          if (scopeNode) {
-            focusManager.focus(scopeNode, "keyboard")
-          }
-          pendingRerender = false
-          isRendering = false
-          inEventHandler = false
-          doRender()
-          await Promise.resolve()
-          return
-        }
+      // Focus system: dispatch key event and handle default navigation
+      const focusResult = handleFocusNavigation(input, parsedKey, focusManager, container)
+      if (focusResult === "consumed") {
+        pendingRerender = false
+        isRendering = false
+        inEventHandler = false
+        doRender()
+        await Promise.resolve()
+        return
       }
 
-      const handlerCtx = {
-        set: store.setState,
-        get: store.getState,
-        focusManager,
-        focus(testID: string) {
-          const root = getContainerRoot(container)
-          focusManager.focusById(testID, root, "programmatic")
-        },
-        getFocusPath() {
-          const root = getContainerRoot(container)
-          return focusManager.getFocusPath(root)
-        },
-      }
-
-      // Simulate term:key event through handlers
-      const namespacedHandler = handlers?.["term:key" as keyof typeof handlers]
-      if (namespacedHandler && typeof namespacedHandler === "function") {
-        const result = (namespacedHandler as EventHandler<unknown, S & I>)({ input, key: parsedKey }, handlerCtx)
-        if (result === "exit") {
-          isRendering = false
-          inEventHandler = false
-          exit()
-          return
-        }
-      }
-
-      // Legacy handler
-      if ((handlers as any)?.key) {
-        const result = (handlers as any).key(input, parsedKey, handlerCtx)
-        if (result === "exit") {
-          isRendering = false
-          inEventHandler = false
-          exit()
-          return
-        }
+      // Dispatch to app handlers (namespaced + legacy)
+      const handlerCtx = createHandlerContext(store, focusManager, container)
+      if (dispatchKeyToHandlers(input, parsedKey, handlers, handlerCtx) === "exit") {
+        isRendering = false
+        inEventHandler = false
+        exit()
+        return
       }
 
       // Clear deferred renders — explicit render below batches all changes
