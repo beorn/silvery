@@ -41,7 +41,7 @@ const log = createLogger("inkx:scheduler")
  *
  * Set INKX_SYNC_UPDATE=1 to force-enable (e.g., for testing in Kitty).
  * TODO: Re-enable by default once the Ghostty bug is fixed.
- * See: https://github.com/ghostty-org/ghostty/discussions/PENDING
+ * See: https://github.com/ghostty-org/ghostty/issues/11001
  */
 const SYNC_UPDATE_ENABLED = process.env.INKX_SYNC_UPDATE === "1" || process.env.INKX_SYNC_UPDATE === "true"
 
