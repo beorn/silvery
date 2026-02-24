@@ -1,9 +1,37 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   xtermSrc: { type: String, default: '/inkx/examples/xterm.html' },
   height: { type: Number, default: 500 },
+})
+
+const showBuildHint = ref(false)
+let timeout = null
+
+function onMessage(event) {
+  if (event.data?.type === 'inkx-ready') {
+    showBuildHint.value = false
+    if (timeout) {
+      clearTimeout(timeout)
+      timeout = null
+    }
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('message', onMessage)
+  timeout = setTimeout(() => {
+    showBuildHint.value = true
+  }, 3000)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('message', onMessage)
+  if (timeout) {
+    clearTimeout(timeout)
+    timeout = null
+  }
 })
 </script>
 
@@ -13,7 +41,9 @@ const props = defineProps({
       <div class="live-demo-header">
         <span class="live-demo-label">Terminal</span>
         <span class="live-demo-note">ANSI escape sequences rendered via xterm.js</span>
-        <span class="live-demo-build-hint">Blank? Run <code>bun run examples/web/build.ts</code></span>
+        <transition name="fade">
+          <span v-if="showBuildHint" class="live-demo-build-hint">Blank? Run <code>bun run examples/web/build.ts</code></span>
+        </transition>
       </div>
 
       <div class="live-demo-viewport" :style="{ height: height + 'px' }">
@@ -86,5 +116,13 @@ const props = defineProps({
   height: 100%;
   border: none;
   background: #1e1e1e;
+}
+
+.fade-enter-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
 }
 </style>

@@ -1,6 +1,12 @@
+<script setup>
+import LiveDemo from '../.vitepress/components/LiveDemo.vue'
+</script>
+
 # Components
 
 inkx provides the same components as Ink, with some enhancements.
+
+<LiveDemo xtermSrc="/inkx/examples/showcase.html?demo=text-input" :height="250" />
 
 ## Box
 

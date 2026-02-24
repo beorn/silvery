@@ -1,6 +1,12 @@
+<script setup>
+import LiveDemo from '../.vitepress/components/LiveDemo.vue'
+</script>
+
 # Scrolling
 
 inkx makes scrolling effortless. Just render your content and let inkx handle the rest.
+
+<LiveDemo xtermSrc="/inkx/examples/showcase.html?demo=scroll" :height="300" />
 
 ## Basic Usage
 

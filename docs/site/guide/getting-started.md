@@ -1,3 +1,7 @@
+<script setup>
+import LiveDemo from '../.vitepress/components/LiveDemo.vue'
+</script>
+
 # Getting Started
 
 inkx is a terminal UI framework for React that lets components know their computed dimensions. It's a drop-in replacement for Ink with one key addition: the `useContentRect()` hook.
@@ -23,6 +27,8 @@ pnpm add inkx
 ```
 
 :::
+
+<LiveDemo xtermSrc="/inkx/examples/showcase.html?demo=layout-feedback" :height="250" />
 
 ## Your First App
 

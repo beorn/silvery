@@ -44,6 +44,9 @@ if (!ShowcaseComponent) {
 
     const instance = renderToXterm(<ShowcaseComponent />, term)
 
+    // Signal to parent (LiveDemo.vue) that the demo loaded successfully
+    window.parent.postMessage({ type: "inkx-ready" }, "*")
+
     // Wire keyboard input to showcase components
     term.onData((data) => emitInput(data))
 

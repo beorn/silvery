@@ -57,6 +57,18 @@ function useInput(handler: InputHandler): void {
 }
 
 // ============================================================================
+// KeyHints — bottom bar showing available keys
+// ============================================================================
+
+function KeyHints({ hints }: { hints: string }): JSX.Element {
+  return (
+    <Box marginTop={1}>
+      <Text color="#555">{hints}</Text>
+    </Box>
+  )
+}
+
+// ============================================================================
 // 1. DashboardShowcase
 // ============================================================================
 
@@ -195,6 +207,8 @@ function DashboardShowcase(): JSX.Element {
           </Text>
         ))}
       </Box>
+
+      <KeyHints hints="←→ panels" />
     </Box>
   )
 }
@@ -233,91 +247,7 @@ const CHAT_SCRIPT: ChatMsg[] = [
 ]
 
 function AIChatShowcase(): JSX.Element {
-  const [messages, setMessages] = useState<
-    { role: "user" | "assistant"; text: string; time: string; done: boolean }[]
-  >([])
-  const [scriptIdx, setScriptIdx] = useState(0)
-  const [charIdx, setCharIdx] = useState(0)
-  const [autoTimer, setAutoTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
-
-  // Advance to next message
-  const advanceMessage = () => {
-    if (scriptIdx >= CHAT_SCRIPT.length) return
-    const current = CHAT_SCRIPT[scriptIdx]!
-    if (messages.length <= scriptIdx || !messages[scriptIdx]) {
-      // Add a new message shell
-      setMessages((prev) => [...prev, { ...current, text: "", done: false }])
-    }
-    // If current message is done, move to next
-    const msg = messages[scriptIdx]
-    if (msg && msg.done) {
-      setScriptIdx((i) => i + 1)
-      setCharIdx(0)
-    }
-  }
-
-  // Character-by-character streaming
-  useEffect(() => {
-    if (scriptIdx >= CHAT_SCRIPT.length) return
-
-    const current = CHAT_SCRIPT[scriptIdx]!
-
-    // Add message shell on first char
-    if (charIdx === 0 && (messages.length <= scriptIdx || !messages[scriptIdx])) {
-      setMessages((prev) => [...prev, { ...current, text: "", done: false }])
-      return
-    }
-
-    if (charIdx < current.text.length) {
-      const isAssistant = current.role === "assistant"
-      const speed = isAssistant ? 20 : 40
-      const step = isAssistant ? 2 : 1
-      const id = setTimeout(() => {
-        const next = Math.min(charIdx + step, current.text.length)
-        setMessages((prev) => {
-          const updated = [...prev]
-          updated[scriptIdx] = {
-            ...current,
-            text: current.text.slice(0, next),
-            done: next >= current.text.length,
-          }
-          return updated
-        })
-        setCharIdx(next)
-      }, speed)
-      return () => clearTimeout(id)
-    } else {
-      // Pause then advance
-      const id = setTimeout(() => {
-        setScriptIdx((i) => i + 1)
-        setCharIdx(0)
-      }, 3000)
-      setAutoTimer(id)
-      return () => clearTimeout(id)
-    }
-  }, [scriptIdx, charIdx, messages.length])
-
-  // Enter skips to next message
-  useInput((_input, key) => {
-    if (key.return) {
-      if (autoTimer) clearTimeout(autoTimer)
-      if (scriptIdx < CHAT_SCRIPT.length) {
-        const current = CHAT_SCRIPT[scriptIdx]!
-        // Complete current message immediately
-        setMessages((prev) => {
-          const updated = [...prev]
-          updated[scriptIdx] = { ...current, text: current.text, done: true }
-          return updated
-        })
-        setCharIdx(current.text.length)
-        // Move to next after a tick
-        setTimeout(() => {
-          setScriptIdx((i) => i + 1)
-          setCharIdx(0)
-        }, 100)
-      }
-    }
-  })
+  const messages = CHAT_SCRIPT.map((msg) => ({ ...msg, done: true }))
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -335,7 +265,6 @@ function AIChatShowcase(): JSX.Element {
               <Text wrap="wrap">
                 {"  "}
                 {msg.text}
-                {!msg.done && <Text color="yellow"> ●</Text>}
               </Text>
             </Box>
           )
@@ -350,6 +279,8 @@ function AIChatShowcase(): JSX.Element {
       >
         <Text color="#666">&gt; Type a message...</Text>
       </Box>
+
+      <KeyHints hints="Enter next message" />
     </Box>
   )
 }
@@ -402,21 +333,6 @@ const KANBAN_DATA: KanbanColumn[] = [
 function KanbanShowcase(): JSX.Element {
   const [col, setCol] = useState(0)
   const [card, setCard] = useState(0)
-
-  // Auto-animate: cycle through cards every 2s
-  useEffect(() => {
-    const id = setInterval(() => {
-      setCard((c) => {
-        const maxCards = KANBAN_DATA[col]?.cards.length ?? 3
-        if (c + 1 >= maxCards) {
-          setCol((co) => (co + 1) % 3)
-          return 0
-        }
-        return c + 1
-      })
-    }, 2000)
-    return () => clearInterval(id)
-  }, [col])
 
   useInput((_input, key) => {
     if (key.leftArrow) {
@@ -478,6 +394,8 @@ function KanbanShowcase(): JSX.Element {
           </Box>
         ))}
       </Box>
+
+      <KeyHints hints="←→ columns  ↑↓ cards" />
     </Box>
   )
 }
@@ -524,31 +442,6 @@ function CLIWizardShowcase(): JSX.Element {
     answers: [],
   })
   const [done, setDone] = useState(false)
-
-  // Auto-animate: advance step every 2.5s
-  useEffect(() => {
-    const id = setInterval(() => {
-      setState((s) => {
-        if (s.step >= WIZARD_STEPS.length) {
-          // Reset after done
-          setDone(false)
-          return { step: 0, cursor: 0, answers: [] }
-        }
-        const currentStep = WIZARD_STEPS[s.step]!
-        const answer = currentStep.answer
-        const newAnswers = [...s.answers, answer]
-        if (s.step + 1 >= WIZARD_STEPS.length) {
-          setDone(true)
-          return { step: s.step + 1, cursor: 0, answers: newAnswers }
-        }
-        const nextStep = WIZARD_STEPS[s.step + 1]!
-        const nextCursor =
-          nextStep.type === "select" ? (nextStep.defaultCursor ?? 0) : 0
-        return { step: s.step + 1, cursor: nextCursor, answers: newAnswers }
-      })
-    }, 2500)
-    return () => clearInterval(id)
-  }, [])
 
   // Interactive: arrows + enter
   useInput((_input, key) => {
@@ -672,6 +565,8 @@ function CLIWizardShowcase(): JSX.Element {
       ) : (
         <Text color="#444">└</Text>
       )}
+
+      <KeyHints hints="↑↓ select  Enter confirm" />
     </Box>
   )
 }
@@ -794,6 +689,8 @@ function DataExplorerShowcase(): JSX.Element {
           </Box>
         )
       })}
+
+      <KeyHints hints="↑↓ select row" />
     </Box>
   )
 }
@@ -823,61 +720,23 @@ const ALL_LOGS: LogEntry[] = [
   { time: "14:23:38", level: "INFO", message: "Request processed: 200 OK (23ms)" },
 ]
 
-const SEARCH_QUERIES = ["", "error", "redis", "api", "warn", ""]
-
 function DevToolsShowcase(): JSX.Element {
-  const [queryIdx, setQueryIdx] = useState(0)
   const [typedQuery, setTypedQuery] = useState("")
   const [scrollOffset, setScrollOffset] = useState(0)
-  const [isAutoMode, setIsAutoMode] = useState(true)
-
-  // Auto-animate: cycle through search queries with typing
-  useEffect(() => {
-    if (!isAutoMode) return
-    const id = setInterval(() => {
-      setQueryIdx((i) => (i + 1) % SEARCH_QUERIES.length)
-      setScrollOffset(0)
-    }, 3000)
-    return () => clearInterval(id)
-  }, [isAutoMode])
-
-  // Typing animation for auto mode
-  useEffect(() => {
-    if (!isAutoMode) return
-    const target = SEARCH_QUERIES[queryIdx]!
-    if (target === "") {
-      setTypedQuery("")
-      return
-    }
-    let charI = 0
-    setTypedQuery("")
-    const id = setInterval(() => {
-      charI++
-      if (charI > target.length) {
-        clearInterval(id)
-        return
-      }
-      setTypedQuery(target.slice(0, charI))
-    }, 80)
-    return () => clearInterval(id)
-  }, [queryIdx, isAutoMode])
 
   // Keyboard input: typing filters, arrows scroll
   useInput((input, key) => {
     if (input) {
-      setIsAutoMode(false)
       setTypedQuery((q) => q + input)
       setScrollOffset(0)
     }
     if (key.backspace) {
-      setIsAutoMode(false)
       setTypedQuery((q) => q.slice(0, -1))
       setScrollOffset(0)
     }
     if (key.escape) {
       setTypedQuery("")
       setScrollOffset(0)
-      setIsAutoMode(true)
     }
     if (key.upArrow) setScrollOffset((o) => Math.max(0, o - 1))
     if (key.downArrow) setScrollOffset((o) => o + 1)
@@ -954,6 +813,159 @@ function DevToolsShowcase(): JSX.Element {
           </Box>
         ))}
       </Box>
+
+      <KeyHints hints="type to filter  Esc clear  ↑↓ scroll" />
+    </Box>
+  )
+}
+
+// ============================================================================
+// 7. ScrollShowcase
+// ============================================================================
+
+function ScrollShowcase(): JSX.Element {
+  const [scrollPos, setScrollPos] = useState(0)
+
+  useInput((_input, key) => {
+    if (key.upArrow) setScrollPos((p) => Math.max(0, p - 1))
+    if (key.downArrow) setScrollPos((p) => Math.min(20, p + 1))
+  })
+
+  const items = Array.from({ length: 30 }, (_, i) => `Item ${i + 1}`)
+  const visible = items.slice(scrollPos, scrollPos + 10)
+
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Box flexDirection="column" borderStyle="single" borderColor="#444">
+        {visible.map((item, i) => {
+          const isHighlighted = i === 0
+          return (
+            <Box key={scrollPos + i} paddingX={1}>
+              <Text bold={isHighlighted} color={isHighlighted ? "cyan" : "white"}>
+                {item}
+              </Text>
+            </Box>
+          )
+        })}
+      </Box>
+
+      <KeyHints hints="↑↓ scroll" />
+    </Box>
+  )
+}
+
+// ============================================================================
+// 8. LayoutFeedbackShowcase
+// ============================================================================
+
+function LayoutFeedbackShowcase(): JSX.Element {
+  const { width, height } = useContentRect()
+
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Box
+        flexDirection="column"
+        borderStyle="single"
+        borderColor="cyan"
+        flexGrow={1}
+        justifyContent="center"
+        alignItems="center"
+      >
+        <Text>
+          Width: {width}  Height: {height}
+        </Text>
+      </Box>
+
+      <KeyHints hints="resize browser to see dimensions change" />
+    </Box>
+  )
+}
+
+// ============================================================================
+// 9. FocusShowcase
+// ============================================================================
+
+function FocusShowcase(): JSX.Element {
+  const [focusedPanel, setFocusedPanel] = useState(0)
+
+  useInput((_input, key) => {
+    if (key.tab) {
+      setFocusedPanel((p) => (p + 1) % 3)
+    }
+  })
+
+  const labels = ["Panel A", "Panel B", "Panel C"]
+
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Box flexDirection="row" gap={1}>
+        {labels.map((label, i) => {
+          const isFocused = i === focusedPanel
+          return (
+            <Box
+              key={label}
+              flexDirection="column"
+              flexGrow={1}
+              borderStyle="single"
+              borderColor={isFocused ? "cyan" : "#444"}
+              paddingX={1}
+              paddingY={1}
+            >
+              <Text bold color={isFocused ? "cyan" : "white"}>
+                {label}
+              </Text>
+              <Text color={isFocused ? "cyan" : "#666"}>
+                {isFocused ? "● focused" : "○"}
+              </Text>
+            </Box>
+          )
+        })}
+      </Box>
+
+      <KeyHints hints="Tab / Shift+Tab cycle panels" />
+    </Box>
+  )
+}
+
+// ============================================================================
+// 10. TextInputShowcase
+// ============================================================================
+
+function TextInputShowcase(): JSX.Element {
+  const [text, setText] = useState("")
+
+  useInput((input, key) => {
+    if (input) {
+      setText((t) => t + input)
+    }
+    if (key.backspace) {
+      setText((t) => t.slice(0, -1))
+    }
+    if (key.escape) {
+      setText("")
+    }
+  })
+
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Box
+        flexDirection="row"
+        borderStyle="single"
+        borderColor="#444"
+        paddingX={1}
+      >
+        <Text>&gt; </Text>
+        <Text>{text}</Text>
+        <Text color="cyan">▋</Text>
+      </Box>
+
+      <Box marginTop={1} paddingX={1}>
+        <Text color="#999">
+          Echo: {text || "(empty)"}
+        </Text>
+      </Box>
+
+      <KeyHints hints="type text  Backspace delete  Esc clear" />
     </Box>
   )
 }
@@ -969,4 +981,8 @@ export const SHOWCASES: Record<string, () => JSX.Element> = {
   "cli-wizard": CLIWizardShowcase,
   "dev-tools": DevToolsShowcase,
   "data-explorer": DataExplorerShowcase,
+  scroll: ScrollShowcase,
+  "layout-feedback": LayoutFeedbackShowcase,
+  focus: FocusShowcase,
+  "text-input": TextInputShowcase,
 }
