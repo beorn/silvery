@@ -248,23 +248,23 @@ export function useVirtualization<T>(config: VirtualizationConfig<T>): Virtualiz
       }
     }
 
+    // Render window = visible items + overscan buffer, capped at maxRendered.
+    // This auto-sizes the window based on viewport — no manual tuning needed.
+    const renderCount = Math.min(estimatedVisibleCount + 2 * overscan, maxRendered)
+
     // Center the render window around the selected item.
     // Dep is effectiveScrollOffset (not selectedIndex) so cursor moves within
     // the visible window don't trigger recalculation. When offset changes
     // (cursor leaves viewport), the memo fires and uses the latest selectedIndex.
     const viewportCenter = selectedIndexRef.current
-    const halfWindow = Math.floor(maxRendered / 2)
+    const halfWindow = Math.floor(renderCount / 2)
     let start = Math.max(0, viewportCenter - halfWindow)
-    let end = Math.min(totalItems, start + maxRendered)
+    let end = Math.min(totalItems, start + renderCount)
 
     // Adjust start if we hit the end
     if (end === totalItems) {
-      start = Math.max(0, end - maxRendered)
+      start = Math.max(0, end - renderCount)
     }
-
-    // Add overscan
-    start = Math.max(0, start - overscan)
-    end = Math.min(totalItems, end + overscan)
 
     // Calculate placeholder sizes (for fixed item sizes)
     // For variable sizes, we'd need to sum actual sizes

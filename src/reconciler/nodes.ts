@@ -67,6 +67,12 @@ export function createNode(type: InkxNodeType, props: BoxProps | TextProps | Rec
 
     layoutNode.setMeasureFunc((width, widthMode, height, heightMode) => {
       measureStats.calls++
+      // @ts-expect-error - temporary debug
+      if (globalThis.__inkx_debug_measure) {
+        const text = collectNodeTextContent(node)
+        // @ts-expect-error - temporary debug
+        globalThis.__inkx_debug_measure_log?.push({ text: text.slice(0, 40), width, widthMode, height, heightMode })
+      }
 
       // Fast path: check if we have a cached result for this exact constraint
       // This avoids text collection entirely if we've measured this before
