@@ -256,7 +256,7 @@ export function renderOutline(
  * Uses ▲N for items hidden above, ▼N for items hidden below.
  */
 export function renderScrollIndicators(
-  node: InkxNode,
+  _node: InkxNode,
   buffer: TerminalBuffer,
   layout: Rect,
   props: BoxProps,
