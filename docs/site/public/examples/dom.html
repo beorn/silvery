@@ -5,8 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>inkx DOM Demo</title>
     <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { height: 100%; overflow: hidden; }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
       body {
         background: #1e1e1e;
         color: #eee;
@@ -40,11 +48,16 @@
     <script type="module" src="./dist/dom-app.js"></script>
     <script>
       // Show fallback if bundle fails to load
-      window.addEventListener('error', function(e) {
-        if (e.filename && e.filename.includes('dom-app')) {
-          document.body.innerHTML = '<div class="error-msg">Build the examples to see this demo.<code>bun run examples/web/build.ts</code></div>';
-        }
-      }, true);
+      window.addEventListener(
+        "error",
+        function (e) {
+          if (e.filename && e.filename.includes("dom-app")) {
+            document.body.innerHTML =
+              '<div class="error-msg">Build the examples to see this demo.<code>bun run examples/web/build.ts</code></div>'
+          }
+        },
+        true,
+      )
     </script>
   </body>
 </html>

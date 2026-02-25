@@ -1,8 +1,8 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from "vue"
 
 const props = defineProps({
-  xtermSrc: { type: String, default: '/inkx/examples/xterm.html' },
+  xtermSrc: { type: String, default: "/inkx/examples/xterm.html" },
   height: { type: Number, default: 500 },
 })
 
@@ -10,7 +10,7 @@ const showBuildHint = ref(false)
 let timeout = null
 
 function onMessage(event) {
-  if (event.data?.type === 'inkx-ready') {
+  if (event.data?.type === "inkx-ready") {
     showBuildHint.value = false
     if (timeout) {
       clearTimeout(timeout)
@@ -20,14 +20,14 @@ function onMessage(event) {
 }
 
 onMounted(() => {
-  window.addEventListener('message', onMessage)
+  window.addEventListener("message", onMessage)
   timeout = setTimeout(() => {
     showBuildHint.value = true
   }, 3000)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('message', onMessage)
+  window.removeEventListener("message", onMessage)
   if (timeout) {
     clearTimeout(timeout)
     timeout = null
@@ -42,7 +42,9 @@ onUnmounted(() => {
         <span class="live-demo-label">Terminal</span>
         <span class="live-demo-note">ANSI escape sequences rendered via xterm.js</span>
         <transition name="fade">
-          <span v-if="showBuildHint" class="live-demo-build-hint">Blank? Run <code>bun run examples/web/build.ts</code></span>
+          <span v-if="showBuildHint" class="live-demo-build-hint"
+            >Blank? Run <code>bun run examples/web/build.ts</code></span
+          >
         </transition>
       </div>
 

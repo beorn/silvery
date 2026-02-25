@@ -1,0 +1,55 @@
+- generic [ref=e5]:
+    - textbox "Terminal input" [ref=e6]
+    - generic:
+        - generic:
+            - generic: Log Viewer
+            - generic: "- 12 entries"
+        - generic:
+            - generic: ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+        - generic:
+            - generic: │
+            - generic: /
+            - generic: "|"
+            - generic: │
+        - generic:
+            - generic: ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+        - generic:
+            - generic: 14:23:01
+            - generic: INFO
+            - generic: Server started on port 3000
+        - generic:
+            - generic: 14:23:02
+            - generic: INFO
+            - generic: Database connection established
+        - generic:
+            - generic: 14:23:05
+            - generic: DEBUG
+            - generic: Loading configuration from env
+        - generic:
+            - generic: 14:23:08
+            - generic: WARN
+            - generic: Cache miss ratio above threshold (42%)
+        - generic:
+            - generic: 14:23:12
+            - generic: ERROR
+            - generic: "Failed to connect to Redis: ECONNREFUSED"
+        - generic:
+            - generic: 14:23:15
+            - generic: INFO
+            - generic: "Retry succeeded: Redis connected"
+        - generic:
+            - generic: 14:23:18
+            - generic: INFO
+            - generic: Worker pool initialized (4 threads)
+        - generic:
+            - generic: 14:23:22
+            - generic: WARN
+            - generic: Deprecated API v1 endpoint called
+        - generic:
+            - generic: 14:23:25
+            - generic: DEBUG
+            - generic: "GC pause: 12ms (minor collection)"
+        - generic:
+            - generic: 14:23:30
+            - generic: ERROR
+            - generic: "Timeout: /api/analytics took 5200ms"

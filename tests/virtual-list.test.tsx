@@ -163,7 +163,9 @@ describe("VirtualList", () => {
   describe("interactive mode", () => {
     const items = Array.from({ length: 20 }, (_, i) => `Item ${i}`)
 
-    function renderInteractive(opts: { selectedIndex?: number; onSelectionChange?: (i: number) => void; onSelect?: (i: number) => void } = {}) {
+    function renderInteractive(
+      opts: { selectedIndex?: number; onSelectionChange?: (i: number) => void; onSelect?: (i: number) => void } = {},
+    ) {
       return render(
         <VirtualList
           items={items}
@@ -174,7 +176,10 @@ describe("VirtualList", () => {
           onSelectionChange={opts.onSelectionChange}
           onSelect={opts.onSelect}
           renderItem={(item, _index, meta) => (
-            <Text>{meta?.isSelected ? "> " : "  "}{item}</Text>
+            <Text>
+              {meta?.isSelected ? "> " : "  "}
+              {item}
+            </Text>
           )}
         />,
       )
@@ -265,7 +270,10 @@ describe("VirtualList", () => {
           itemHeight={1}
           scrollTo={0}
           renderItem={(item, _index, meta) => (
-            <Text>{meta?.isSelected ? "> " : "  "}{item}</Text>
+            <Text>
+              {meta?.isSelected ? "> " : "  "}
+              {item}
+            </Text>
           )}
         />,
       )

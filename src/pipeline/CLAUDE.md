@@ -37,9 +37,9 @@ The reconciler sets flags on nodes when props/children change. The content phase
 
 The layout phase also sets `subtreeDirty` upward when a descendant's `contentRect` changes via `layoutChangedThisFrame`.
 
-| Flag                     | Set by                    | Meaning                                                                                  |
-| ------------------------ | ------------------------- | ---------------------------------------------------------------------------------------- |
-| `layoutChangedThisFrame` | Layout phase              | Node's contentRect changed this frame; cleared by content phase after processing         |
+| Flag                     | Set by       | Meaning                                                                          |
+| ------------------------ | ------------ | -------------------------------------------------------------------------------- |
+| `layoutChangedThisFrame` | Layout phase | Node's contentRect changed this frame; cleared by content phase after processing |
 
 ## Incremental Rendering Model
 
@@ -97,7 +97,13 @@ layoutChanged = node.layoutChangedThisFrame
 // Did the CONTENT AREA change? (excludes border-only paint changes)
 // absoluteChildMutated: absolute child had children mount/unmount/reorder, layout change,
 // or child position shift. Forces parent to clear (removes stale overlay pixels in gap areas).
-contentAreaAffected = node.contentDirty || layoutChanged || childPositionChanged || node.childrenDirty || node.bgDirty || absoluteChildMutated
+contentAreaAffected =
+  node.contentDirty ||
+  layoutChanged ||
+  childPositionChanged ||
+  node.childrenDirty ||
+  node.bgDirty ||
+  absoluteChildMutated
 
 // Should we clear this node's region with inherited bg?
 // Only when: buffer has stale pixels AND content area changed AND no own bg fill
@@ -216,6 +222,7 @@ When a node shrinks, the excess area (old bounds minus new bounds) is also clear
 `layoutChanged` is now driven by the `layoutChangedThisFrame` flag (set by `propagateLayout` in layout phase, cleared by content phase after processing). This replaces the old `!rectEqual(prevLayout, contentRect)` which was permanently stale when layout phase skipped (no dirty nodes), causing O(N) content phase every frame.
 
 **How it works:**
+
 1. Layout phase: `propagateLayout` saves `node.prevLayout = node.contentRect`, recomputes rect, sets `node.layoutChangedThisFrame = !rectEqual(old, new)`
 2. Content phase: reads `node.layoutChangedThisFrame` for skip decisions, clears it after processing
 3. End of content phase: `syncPrevLayout` sets `prevLayout = contentRect` for all nodes, ensuring `clearExcessArea` and `hasChildPositionChanged` use correct coordinates on multi-pass doRender iterations

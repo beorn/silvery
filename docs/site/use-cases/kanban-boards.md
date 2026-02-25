@@ -40,21 +40,33 @@ type Card = { id: string; title: string }
 type Column = { id: string; name: string; cards: Card[] }
 
 const columns: Column[] = [
-  { id: "todo", name: "To Do", cards: [
-    { id: "1", title: "Research competitors" },
-    { id: "2", title: "Design system audit" },
-    { id: "3", title: "Write API docs" },
-    { id: "4", title: "Performance benchmarks" },
-  ]},
-  { id: "doing", name: "In Progress", cards: [
-    { id: "5", title: "Implement scroll" },
-    { id: "6", title: "Migration guide" },
-  ]},
-  { id: "done", name: "Done", cards: [
-    { id: "7", title: "Project setup" },
-    { id: "8", title: "React reconciler" },
-    { id: "9", title: "Basic components" },
-  ]},
+  {
+    id: "todo",
+    name: "To Do",
+    cards: [
+      { id: "1", title: "Research competitors" },
+      { id: "2", title: "Design system audit" },
+      { id: "3", title: "Write API docs" },
+      { id: "4", title: "Performance benchmarks" },
+    ],
+  },
+  {
+    id: "doing",
+    name: "In Progress",
+    cards: [
+      { id: "5", title: "Implement scroll" },
+      { id: "6", title: "Migration guide" },
+    ],
+  },
+  {
+    id: "done",
+    name: "Done",
+    cards: [
+      { id: "7", title: "Project setup" },
+      { id: "8", title: "React reconciler" },
+      { id: "9", title: "Basic components" },
+    ],
+  },
 ]
 
 function App() {
@@ -84,11 +96,13 @@ function App() {
     if (input === "m" && col < board.length - 1) {
       const card = board[col].cards[row]
       if (!card) return
-      setBoard((b) => b.map((column, i) => {
-        if (i === col) return { ...column, cards: column.cards.filter((c) => c.id !== card.id) }
-        if (i === col + 1) return { ...column, cards: [...column.cards, card] }
-        return column
-      }))
+      setBoard((b) =>
+        b.map((column, i) => {
+          if (i === col) return { ...column, cards: column.cards.filter((c) => c.id !== card.id) }
+          if (i === col + 1) return { ...column, cards: [...column.cards, card] }
+          return column
+        }),
+      )
       setRow((r) => Math.min(r, Math.max(0, board[col].cards.length - 2)))
     }
   })
@@ -97,35 +111,40 @@ function App() {
     <Box flexDirection="column" width="100%" height="100%">
       <Box flexDirection="row" flexGrow={1}>
         {board.map((column, ci) => (
-          <KanbanColumn key={column.id} column={column}
-            isActive={ci === col} selectedCard={ci === col ? row : -1} />
+          <KanbanColumn key={column.id} column={column} isActive={ci === col} selectedCard={ci === col ? row : -1} />
         ))}
       </Box>
       <Box paddingX={1}>
-        <Text dimColor>h/l: columns  j/k: cards  m: move right  q: quit</Text>
+        <Text dimColor>h/l: columns j/k: cards m: move right q: quit</Text>
       </Box>
     </Box>
   )
 }
 
-function KanbanColumn({ column, isActive, selectedCard }: {
-  column: Column; isActive: boolean; selectedCard: number
-}) {
+function KanbanColumn({ column, isActive, selectedCard }: { column: Column; isActive: boolean; selectedCard: number }) {
   return (
-    <Box flexDirection="column" flexGrow={1}
-      borderStyle="single" borderColor={isActive ? "cyan" : undefined}>
+    <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor={isActive ? "cyan" : undefined}>
       <Box paddingX={1}>
-        <Text bold color={isActive ? "cyan" : undefined}>{column.name}</Text>
+        <Text bold color={isActive ? "cyan" : undefined}>
+          {column.name}
+        </Text>
         <Text dimColor> ({column.cards.length})</Text>
       </Box>
-      <Box flexDirection="column" flexGrow={1}
-        overflow="scroll" scrollTo={selectedCard >= 0 ? selectedCard : undefined}
-        paddingX={1}>
+      <Box
+        flexDirection="column"
+        flexGrow={1}
+        overflow="scroll"
+        scrollTo={selectedCard >= 0 ? selectedCard : undefined}
+        paddingX={1}
+      >
         {column.cards.map((card, i) => (
-          <Text key={card.id}
+          <Text
+            key={card.id}
             backgroundColor={i === selectedCard ? "cyan" : undefined}
-            color={i === selectedCard ? "black" : undefined}>
-            {i === selectedCard ? "> " : "  "}{card.title}
+            color={i === selectedCard ? "black" : undefined}
+          >
+            {i === selectedCard ? "> " : "  "}
+            {card.title}
           </Text>
         ))}
       </Box>
@@ -147,10 +166,16 @@ function FocusableCard({ card }: { card: Card }) {
   const { focused } = useFocusable()
 
   return (
-    <Box testID={card.id} focusable
-      onClick={() => { /* click-to-focus is automatic */ }}>
+    <Box
+      testID={card.id}
+      focusable
+      onClick={() => {
+        /* click-to-focus is automatic */
+      }}
+    >
       <Text inverse={focused}>
-        {focused ? "> " : "  "}{card.title}
+        {focused ? "> " : "  "}
+        {card.title}
       </Text>
     </Box>
   )
@@ -160,10 +185,17 @@ function FocusableColumn({ column }: { column: Column }) {
   const hasFocus = useFocusWithin(column.id)
 
   return (
-    <Box testID={column.id} flexDirection="column" flexGrow={1}
-      borderStyle="single" borderColor={hasFocus ? "cyan" : undefined}>
+    <Box
+      testID={column.id}
+      flexDirection="column"
+      flexGrow={1}
+      borderStyle="single"
+      borderColor={hasFocus ? "cyan" : undefined}
+    >
       <Box paddingX={1}>
-        <Text bold color={hasFocus ? "cyan" : undefined}>{column.name}</Text>
+        <Text bold color={hasFocus ? "cyan" : undefined}>
+          {column.name}
+        </Text>
       </Box>
       <Box flexDirection="column" flexGrow={1} overflow="scroll" paddingX={1}>
         {column.cards.map((card) => (

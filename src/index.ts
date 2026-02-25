@@ -415,12 +415,7 @@ export { detectKittySupport, detectKittyFromStdio, type KittyDetectResult } from
 export { detectTerminalCaps, type TerminalCaps } from "./terminal-caps.js"
 
 // Text sizing protocol (OSC 66) — PUA character width control
-export {
-  textSized,
-  isPrivateUseArea,
-  isTextSizingLikelySupported,
-  detectTextSizingSupport,
-} from "./text-sizing.js"
+export { textSized, isPrivateUseArea, isTextSizingLikelySupported, detectTextSizingSupport } from "./text-sizing.js"
 
 // Layout engine types
 export type { LayoutEngine, LayoutNode, LayoutConstants, MeasureFunc, MeasureMode } from "./layout-engine.js"

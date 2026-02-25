@@ -62,14 +62,13 @@ function LogViewer() {
     if (input === "k" || key.upArrow) {
       setSelected((s) => Math.max(s - 1, 0))
     }
-    if (input === "i") addLog("info", `Request handled in ${Math.random() * 100 | 0}ms`)
+    if (input === "i") addLog("info", `Request handled in ${(Math.random() * 100) | 0}ms`)
     if (input === "w") addLog("warn", "Connection pool near capacity")
     if (input === "e") addLog("error", "Timeout after 30s on /api/data")
     if (input === "q") return "exit"
   })
 
-  const levelColor = (level: string) =>
-    level === "error" ? "red" : level === "warn" ? "yellow" : "green"
+  const levelColor = (level: string) => (level === "error" ? "red" : level === "warn" ? "yellow" : "green")
 
   return (
     <Box flexDirection="row" width="100%" height="100%">
@@ -81,11 +80,7 @@ function LogViewer() {
           itemHeight={1}
           scrollTo={selected}
           renderItem={(entry, index) => (
-            <Text
-              key={index}
-              inverse={index === selected}
-              color={levelColor(entry.level)}
-            >
+            <Text key={index} inverse={index === selected} color={levelColor(entry.level)}>
               {entry.time} [{entry.level.toUpperCase().padEnd(5)}] {entry.message}
             </Text>
           )}

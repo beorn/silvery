@@ -10,7 +10,7 @@ Nerdfont icons (U+E000-U+F8FF) cause layout misalignment:
 2. The terminal renders the icon as 2 cells wide (because the font's glyph is double-width)
 3. Text after the icon is placed at the wrong column, causing truncation
 
-Example: A column header "FAMILY  SPRINT" (where  is a nerdfont icon) gets truncated to "FAMILY SPRIN" because the layout engine allocates 1 cell for the icon but the terminal uses 2.
+Example: A column header "FAMILY SPRINT" (where is a nerdfont icon) gets truncated to "FAMILY SPRIN" because the layout engine allocates 1 cell for the icon but the terminal uses 2.
 
 ## The Solution
 
@@ -53,13 +53,13 @@ setTextSizingEnabled(false)
 
 ## Terminal Support
 
-| Terminal | Version | Status |
-|----------|---------|--------|
-| Kitty    | v0.40+  | Full support |
-| Ghostty  | all     | Full support |
-| WezTerm  | --      | Not yet |
-| iTerm2   | --      | Not yet |
-| Alacritty| --      | Not yet |
+| Terminal  | Version | Status       |
+| --------- | ------- | ------------ |
+| Kitty     | v0.40+  | Full support |
+| Ghostty   | all     | Full support |
+| WezTerm   | --      | Not yet      |
+| iTerm2    | --      | Not yet      |
+| Alacritty | --      | Not yet      |
 
 Use `isTextSizingLikelySupported()` for a fast synchronous env-var check, or `detectTextSizingSupport()` for definitive cursor-position-based detection.
 
@@ -82,8 +82,8 @@ Check if a code point is in the Private Use Area. Covers BMP PUA (U+E000-U+F8FF)
 ```typescript
 import { isPrivateUseArea } from "inkx"
 
-isPrivateUseArea(0xE0B0) // true (Powerline separator)
-isPrivateUseArea(0x41)   // false (ASCII 'A')
+isPrivateUseArea(0xe0b0) // true (Powerline separator)
+isPrivateUseArea(0x41) // false (ASCII 'A')
 ```
 
 ### `isTextSizingLikelySupported(): boolean`
@@ -97,6 +97,7 @@ Definitive detection using cursor position reports. Sends an OSC 66 test sequenc
 ### `setTextSizingEnabled(enabled: boolean): void`
 
 Enable or disable text sizing mode globally. When enabled:
+
 - `graphemeWidth()` returns 2 for PUA characters
 - `displayWidth()` accounts for PUA width
 - The output phase wraps PUA characters in OSC 66 sequences

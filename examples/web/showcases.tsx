@@ -75,7 +75,9 @@ function useTermFocused(): boolean {
   useEffect(() => {
     const cb = (f: boolean) => setFocused(f)
     focusListeners.add(cb)
-    return () => { focusListeners.delete(cb) }
+    return () => {
+      focusListeners.delete(cb)
+    }
   }, [])
   return focused
 }
@@ -110,9 +112,13 @@ function DashboardShowcase(): JSX.Element {
     const id = setInterval(() => {
       setTick((t) => {
         const newT = t + 1
-        cpuHistory.push(Math.max(5, Math.min(95, cpuHistory[cpuHistory.length - 1]! + Math.floor(Math.random() * 21) - 10)))
+        cpuHistory.push(
+          Math.max(5, Math.min(95, cpuHistory[cpuHistory.length - 1]! + Math.floor(Math.random() * 21) - 10)),
+        )
         cpuHistory.shift()
-        memHistory.push(Math.max(20, Math.min(90, memHistory[memHistory.length - 1]! + Math.floor(Math.random() * 11) - 5)))
+        memHistory.push(
+          Math.max(20, Math.min(90, memHistory[memHistory.length - 1]! + Math.floor(Math.random() * 11) - 5)),
+        )
         memHistory.shift()
         return newT
       })
@@ -143,10 +149,8 @@ function DashboardShowcase(): JSX.Element {
     { name: "mail-service", status: "down" as const, uptime: "0m", latency: "—" },
   ]
 
-  const statusIcon = (s: "up" | "warn" | "down") =>
-    s === "up" ? "●" : s === "warn" ? "▲" : "✕"
-  const statusColor = (s: "up" | "warn" | "down") =>
-    s === "up" ? "#a6e3a1" : s === "warn" ? "#f9e2af" : "#f38ba8"
+  const statusIcon = (s: "up" | "warn" | "down") => (s === "up" ? "●" : s === "warn" ? "▲" : "✕")
+  const statusColor = (s: "up" | "warn" | "down") => (s === "up" ? "#a6e3a1" : s === "warn" ? "#f9e2af" : "#f38ba8")
 
   const allEvents = [
     { tag: "DEPLOY", color: "#a6e3a1", time: "14:23:01", msg: "v2.4.1 completed" },
@@ -166,8 +170,13 @@ function DashboardShowcase(): JSX.Element {
       {/* Header */}
       <Box marginBottom={1}>
         <Text color="#a6e3a1">● </Text>
-        <Text bold color="#cdd6f4">System Monitor</Text>
-        <Text color="#6c7086"> — {cores.length} cores, {services.length} services</Text>
+        <Text bold color="#cdd6f4">
+          System Monitor
+        </Text>
+        <Text color="#6c7086">
+          {" "}
+          — {cores.length} cores, {services.length} services
+        </Text>
       </Box>
 
       {/* Top row: Metrics + Services */}
@@ -187,34 +196,53 @@ function DashboardShowcase(): JSX.Element {
           </Box>
           {/* Sparkline graphs */}
           <Box flexDirection="row" gap={1} marginBottom={1}>
-            <Box width={5}><Text color="#6c7086">CPU</Text></Box>
+            <Box width={5}>
+              <Text color="#6c7086">CPU</Text>
+            </Box>
             <Text>
               {cpuHistory.map((v, i) => (
-                <Text key={i} color={gaugeColor(v)}>{sparkChar(v)}</Text>
+                <Text key={i} color={gaugeColor(v)}>
+                  {sparkChar(v)}
+                </Text>
               ))}
             </Text>
-            <Text bold color={gaugeColor(cpu)}> {String(cpu).padStart(2)}%</Text>
+            <Text bold color={gaugeColor(cpu)}>
+              {" "}
+              {String(cpu).padStart(2)}%
+            </Text>
           </Box>
           <Box flexDirection="row" gap={1} marginBottom={1}>
-            <Box width={5}><Text color="#6c7086">MEM</Text></Box>
+            <Box width={5}>
+              <Text color="#6c7086">MEM</Text>
+            </Box>
             <Text>
               {memHistory.map((v, i) => (
-                <Text key={i} color={gaugeColor(v)}>{sparkChar(v)}</Text>
+                <Text key={i} color={gaugeColor(v)}>
+                  {sparkChar(v)}
+                </Text>
               ))}
             </Text>
-            <Text bold color={gaugeColor(mem)}> {String(mem).padStart(2)}%</Text>
+            <Text bold color={gaugeColor(mem)}>
+              {" "}
+              {String(mem).padStart(2)}%
+            </Text>
           </Box>
           {/* Per-core mini bars */}
           {cores.map((c) => {
             const blocks = Math.round((c.value / 100) * 12)
             return (
               <Box key={c.label} flexDirection="row" gap={1}>
-                <Box width={5}><Text color="#6c7086">{c.label}</Text></Box>
+                <Box width={5}>
+                  <Text color="#6c7086">{c.label}</Text>
+                </Box>
                 <Text>
                   <Text color={gaugeColor(c.value)}>{"█".repeat(blocks)}</Text>
                   <Text color="#313244">{"░".repeat(12 - blocks)}</Text>
                 </Text>
-                <Text bold color={gaugeColor(c.value)}> {String(c.value).padStart(2)}%</Text>
+                <Text bold color={gaugeColor(c.value)}>
+                  {" "}
+                  {String(c.value).padStart(2)}%
+                </Text>
               </Box>
             )
           })}
@@ -241,7 +269,9 @@ function DashboardShowcase(): JSX.Element {
               </Text>
               <Text>
                 <Text color="#6c7086">{s.latency} </Text>
-                <Text dim color="#585b70">{s.uptime}</Text>
+                <Text dim color="#585b70">
+                  {s.uptime}
+                </Text>
               </Text>
             </Box>
           ))}
@@ -263,9 +293,13 @@ function DashboardShowcase(): JSX.Element {
         </Box>
         {visibleEvents.map((e, i) => (
           <Box key={i} flexDirection="row" gap={1}>
-            <Text dim color="#585b70">{e.time}</Text>
+            <Text dim color="#585b70">
+              {e.time}
+            </Text>
             <Box width={8}>
-              <Text color={e.color} bold>[{e.tag}]</Text>
+              <Text color={e.color} bold>
+                [{e.tag}]
+              </Text>
             </Box>
             <Text color={i === 0 ? "#cdd6f4" : "#a6adc8"}>{e.msg}</Text>
           </Box>
@@ -300,117 +334,183 @@ const EXCHANGE_POOL: Exchange[] = [
     prompt: "Fix the login bug — expired tokens return null",
     text: "Fixed! Expired tokens now refresh instead of returning null. All 3 auth tests pass.",
     tools: [
-      { tool: "Read", label: "src/auth.ts", lines: [
-        "47│ export async function validateToken(token: Token) {",
-        "48│   if (token.expired) return null  // ← bug",
-        "49│   return token",
-        "50│ }",
-      ]},
-      { tool: "Edit", label: "src/auth.ts", diff: [
-        { del: "  if (token.expired) return null", add: "  if (token.expired) return refreshToken(token)" },
-      ]},
-      { tool: "Bash", label: "bun test auth", lines: [
-        "✓ validates active tokens", "✓ refreshes expired tokens", "✓ rejects revoked tokens", "3 passed",
-      ]},
+      {
+        tool: "Read",
+        label: "src/auth.ts",
+        lines: [
+          "47│ export async function validateToken(token: Token) {",
+          "48│   if (token.expired) return null  // ← bug",
+          "49│   return token",
+          "50│ }",
+        ],
+      },
+      {
+        tool: "Edit",
+        label: "src/auth.ts",
+        diff: [{ del: "  if (token.expired) return null", add: "  if (token.expired) return refreshToken(token)" }],
+      },
+      {
+        tool: "Bash",
+        label: "bun test auth",
+        lines: ["✓ validates active tokens", "✓ refreshes expired tokens", "✓ rejects revoked tokens", "3 passed"],
+      },
     ],
   },
   {
     prompt: "Add rate limiting to the API endpoints",
     text: "Done. Added sliding window rate limiter — 100 req/min per IP with Redis backing.",
     tools: [
-      { tool: "Read", label: "src/middleware/index.ts", lines: [
-        " 1│ import express from 'express'",
-        " 2│ import cors from 'cors'",
-        " 3│ // No rate limiting configured",
-        " 4│ export const app = express()",
-      ]},
-      { tool: "Write", label: "src/middleware/rate-limit.ts", lines: [
-        " 1│ import { RateLimiterRedis } from 'rate-limiter-flexible'",
-        " 2│ import { redis } from '../db/redis.js'",
-        " 3│",
-        " 4│ const limiter = new RateLimiterRedis({",
-        " 5│   storeClient: redis,",
-        " 6│   keyPrefix: 'rl',",
-        " 7│   points: 100,       // requests",
-        " 8│   duration: 60,      // per 60 seconds",
-        " 9│   blockDuration: 60, // block for 60s when exceeded",
-        "10│ })",
-        "11│",
-        "12│ export async function rateLimit(req, res, next) {",
-        "13│   try {",
-        "14│     await limiter.consume(req.ip)",
-        "15│     next()",
-        "16│   } catch {",
-        "17│     res.status(429).json({ error: 'Too many requests' })",
-        "18│   }",
-        "19│ }",
-      ]},
-      { tool: "Edit", label: "src/middleware/index.ts", diff: [
-        { del: "// No rate limiting configured", add: "import { rateLimit } from './rate-limit.js'" },
-        { del: "export const app = express()", add: "export const app = express()\napp.use(rateLimit)" },
-      ]},
-      { tool: "Bash", label: "bun test middleware", lines: [
-        "✓ allows requests under limit", "✓ blocks after 100 req/min",
-        "✓ resets after window expires", "✓ returns 429 with JSON body", "4 passed",
-      ]},
+      {
+        tool: "Read",
+        label: "src/middleware/index.ts",
+        lines: [
+          " 1│ import express from 'express'",
+          " 2│ import cors from 'cors'",
+          " 3│ // No rate limiting configured",
+          " 4│ export const app = express()",
+        ],
+      },
+      {
+        tool: "Write",
+        label: "src/middleware/rate-limit.ts",
+        lines: [
+          " 1│ import { RateLimiterRedis } from 'rate-limiter-flexible'",
+          " 2│ import { redis } from '../db/redis.js'",
+          " 3│",
+          " 4│ const limiter = new RateLimiterRedis({",
+          " 5│   storeClient: redis,",
+          " 6│   keyPrefix: 'rl',",
+          " 7│   points: 100,       // requests",
+          " 8│   duration: 60,      // per 60 seconds",
+          " 9│   blockDuration: 60, // block for 60s when exceeded",
+          "10│ })",
+          "11│",
+          "12│ export async function rateLimit(req, res, next) {",
+          "13│   try {",
+          "14│     await limiter.consume(req.ip)",
+          "15│     next()",
+          "16│   } catch {",
+          "17│     res.status(429).json({ error: 'Too many requests' })",
+          "18│   }",
+          "19│ }",
+        ],
+      },
+      {
+        tool: "Edit",
+        label: "src/middleware/index.ts",
+        diff: [
+          { del: "// No rate limiting configured", add: "import { rateLimit } from './rate-limit.js'" },
+          { del: "export const app = express()", add: "export const app = express()\napp.use(rateLimit)" },
+        ],
+      },
+      {
+        tool: "Bash",
+        label: "bun test middleware",
+        lines: [
+          "✓ allows requests under limit",
+          "✓ blocks after 100 req/min",
+          "✓ resets after window expires",
+          "✓ returns 429 with JSON body",
+          "4 passed",
+        ],
+      },
     ],
   },
   {
     prompt: "Refactor the user service to use dependency injection",
     text: "Refactored. UserService now accepts dependencies via constructor — easy to test with mocks.",
     tools: [
-      { tool: "Read", label: "src/services/user.ts", lines: [
-        " 1│ import { db } from '../db/connection.js'",
-        " 2│ import { mailer } from '../email/mailer.js'",
-        " 3│ import { logger } from '../utils/logger.js'",
-        " 4│",
-        " 5│ export async function createUser(data: UserInput) {",
-        " 6│   const user = await db.users.create(data)",
-        " 7│   await mailer.sendWelcome(user.email)",
-        " 8│   logger.info('User created', { id: user.id })",
-        " 9│   return user",
-        "10│ }",
-        "11│",
-        "12│ export async function getUser(id: string) {",
-        "13│   return db.users.findById(id)",
-        "14│ }",
-      ]},
-      { tool: "Edit", label: "src/services/user.ts", diff: [
-        { del: "import { db } from '../db/connection.js'", add: "interface UserServiceDeps {" },
-        { del: "import { mailer } from '../email/mailer.js'", add: "  db: Database; mailer: Mailer; logger: Logger" },
-        { del: "export async function createUser(data: UserInput) {", add: "export function createUserService(deps: UserServiceDeps) {" },
-      ]},
-      { tool: "Bash", label: "bun test services/user", lines: [
-        "✓ creates user with valid data", "✓ sends welcome email",
-        "✓ logs user creation", "✓ updates user email",
-        "✓ returns null for missing user", "5 passed",
-      ]},
+      {
+        tool: "Read",
+        label: "src/services/user.ts",
+        lines: [
+          " 1│ import { db } from '../db/connection.js'",
+          " 2│ import { mailer } from '../email/mailer.js'",
+          " 3│ import { logger } from '../utils/logger.js'",
+          " 4│",
+          " 5│ export async function createUser(data: UserInput) {",
+          " 6│   const user = await db.users.create(data)",
+          " 7│   await mailer.sendWelcome(user.email)",
+          " 8│   logger.info('User created', { id: user.id })",
+          " 9│   return user",
+          "10│ }",
+          "11│",
+          "12│ export async function getUser(id: string) {",
+          "13│   return db.users.findById(id)",
+          "14│ }",
+        ],
+      },
+      {
+        tool: "Edit",
+        label: "src/services/user.ts",
+        diff: [
+          { del: "import { db } from '../db/connection.js'", add: "interface UserServiceDeps {" },
+          { del: "import { mailer } from '../email/mailer.js'", add: "  db: Database; mailer: Mailer; logger: Logger" },
+          {
+            del: "export async function createUser(data: UserInput) {",
+            add: "export function createUserService(deps: UserServiceDeps) {",
+          },
+        ],
+      },
+      {
+        tool: "Bash",
+        label: "bun test services/user",
+        lines: [
+          "✓ creates user with valid data",
+          "✓ sends welcome email",
+          "✓ logs user creation",
+          "✓ updates user email",
+          "✓ returns null for missing user",
+          "5 passed",
+        ],
+      },
     ],
   },
   {
     prompt: "What's causing the memory leak in the WebSocket handler?",
     text: "Found it — event listeners weren't being cleaned up on disconnect. Fixed with proper cleanup.",
     tools: [
-      { tool: "Bash", label: "node --inspect src/ws.ts", lines: [
-        "Heap snapshot: 142 MB (growing)",
-        "Detached listeners: 847",
-        "Top retainer: WSHandler → EventEmitter → Array(847)",
-      ]},
-      { tool: "Read", label: "src/ws/handler.ts", lines: [
-        "23│ ws.on('message', (data) => {",
-        "24│   events.on('broadcast', (msg) => ws.send(msg)) // ← leak!",
-        "25│   processMessage(data)",
-        "26│ })",
-      ]},
-      { tool: "Edit", label: "src/ws/handler.ts", diff: [
-        { del: "ws.on('message', (data) => {", add: "const onBroadcast = (msg) => ws.send(msg)" },
-        { del: "  events.on('broadcast', (msg) => ws.send(msg)) // ← leak!", add: "events.on('broadcast', onBroadcast)\nws.on('message', (data) => {" },
-        { del: "})", add: "})\nws.on('close', () => events.off('broadcast', onBroadcast))" },
-      ]},
-      { tool: "Bash", label: "bun test ws --coverage", lines: [
-        "✓ cleans up listeners on disconnect", "✓ heap stable after 1000 connections",
-        "✓ broadcasts reach all clients", "3 passed  |  coverage: 94%",
-      ]},
+      {
+        tool: "Bash",
+        label: "node --inspect src/ws.ts",
+        lines: [
+          "Heap snapshot: 142 MB (growing)",
+          "Detached listeners: 847",
+          "Top retainer: WSHandler → EventEmitter → Array(847)",
+        ],
+      },
+      {
+        tool: "Read",
+        label: "src/ws/handler.ts",
+        lines: [
+          "23│ ws.on('message', (data) => {",
+          "24│   events.on('broadcast', (msg) => ws.send(msg)) // ← leak!",
+          "25│   processMessage(data)",
+          "26│ })",
+        ],
+      },
+      {
+        tool: "Edit",
+        label: "src/ws/handler.ts",
+        diff: [
+          { del: "ws.on('message', (data) => {", add: "const onBroadcast = (msg) => ws.send(msg)" },
+          {
+            del: "  events.on('broadcast', (msg) => ws.send(msg)) // ← leak!",
+            add: "events.on('broadcast', onBroadcast)\nws.on('message', (data) => {",
+          },
+          { del: "})", add: "})\nws.on('close', () => events.off('broadcast', onBroadcast))" },
+        ],
+      },
+      {
+        tool: "Bash",
+        label: "bun test ws --coverage",
+        lines: [
+          "✓ cleans up listeners on disconnect",
+          "✓ heap stable after 1000 connections",
+          "✓ broadcasts reach all clients",
+          "3 passed  |  coverage: 94%",
+        ],
+      },
     ],
   },
 ]
@@ -418,14 +518,19 @@ const EXCHANGE_POOL: Exchange[] = [
 let exchangeIdx = 0
 
 function ToolCallBlock({ tc }: { tc: ToolCall }): JSX.Element {
-  const iconColor = tc.tool === "Read" ? "#89b4fa" : tc.tool === "Edit" ? "#f9e2af"
-    : tc.tool === "Write" ? "#cba6f7" : "#a6e3a1"
+  const iconColor =
+    tc.tool === "Read" ? "#89b4fa" : tc.tool === "Edit" ? "#f9e2af" : tc.tool === "Write" ? "#cba6f7" : "#a6e3a1"
   return (
     <Box flexDirection="column" marginLeft={2}>
       <Box borderStyle="round" borderColor="#45475a" flexDirection="column" paddingX={1}>
         <Text>
-          <Text bold color={iconColor}>{tc.tool}</Text>
-          <Text dim color="#6c7086"> {tc.label}</Text>
+          <Text bold color={iconColor}>
+            {tc.tool}
+          </Text>
+          <Text dim color="#6c7086">
+            {" "}
+            {tc.label}
+          </Text>
         </Text>
         {tc.lines &&
           tc.lines.map((line, i) => (
@@ -436,8 +541,14 @@ function ToolCallBlock({ tc }: { tc: ToolCall }): JSX.Element {
         {tc.diff &&
           tc.diff.map((d, i) => (
             <Box key={i} flexDirection="column">
-              <Text color="#f38ba8">{"- "}{d.del}</Text>
-              <Text color="#a6e3a1">{"+ "}{d.add}</Text>
+              <Text color="#f38ba8">
+                {"- "}
+                {d.del}
+              </Text>
+              <Text color="#a6e3a1">
+                {"+ "}
+                {d.add}
+              </Text>
             </Box>
           ))}
       </Box>
@@ -450,15 +561,21 @@ function ExchangeBlock({ ex, animatedTools }: { ex: Exchange; animatedTools: num
   return (
     <Box flexDirection="column">
       <Box paddingX={1}>
-        <Text color="#cba6f7" bold>{"❯ "}</Text>
-        <Text color="#cdd6f4" wrap="wrap">{ex.prompt}</Text>
+        <Text color="#cba6f7" bold>
+          {"❯ "}
+        </Text>
+        <Text color="#cdd6f4" wrap="wrap">
+          {ex.prompt}
+        </Text>
       </Box>
       {ex.tools.slice(0, animatedTools).map((tc, j) => (
         <ToolCallBlock key={j} tc={tc} />
       ))}
       {animatedTools > ex.tools.length && (
         <Box paddingX={1}>
-          <Text color="#a6adc8" wrap="wrap">{ex.text}</Text>
+          <Text color="#a6adc8" wrap="wrap">
+            {ex.text}
+          </Text>
         </Box>
       )}
     </Box>
@@ -529,21 +646,37 @@ function CodingAgentShowcase(): JSX.Element {
     <Box flexDirection="column" padding={1} overflow="hidden">
       {/* Header */}
       <Box flexDirection="row" gap={1}>
-        <Text bold color="#cba6f7">●</Text>
-        <Text dim color="#585b70">~/project</Text>
-        {hiddenCount > 0 && <Text dim color="#45475a">↑ {hiddenCount} more</Text>}
+        <Text bold color="#cba6f7">
+          ●
+        </Text>
+        <Text dim color="#585b70">
+          ~/project
+        </Text>
+        {hiddenCount > 0 && (
+          <Text dim color="#45475a">
+            ↑ {hiddenCount} more
+          </Text>
+        )}
       </Box>
 
       {/* Visible exchange history */}
       <Box flexDirection="column" flexGrow={1} overflow="hidden">
         {visibleExchanges.map((ex, i) => (
-          <ExchangeBlock key={exchanges.length - visibleExchanges.length + i} ex={ex} animatedTools={ex.tools.length + 1} />
+          <ExchangeBlock
+            key={exchanges.length - visibleExchanges.length + i}
+            ex={ex}
+            animatedTools={ex.tools.length + 1}
+          />
         ))}
 
         {/* Active exchange (animating) */}
         {activeExchange && (
           <Box flexDirection="column">
-            {visibleExchanges.length > 0 && <Text dim color="#313244">{"─".repeat(60)}</Text>}
+            {visibleExchanges.length > 0 && (
+              <Text dim color="#313244">
+                {"─".repeat(60)}
+              </Text>
+            )}
             <ExchangeBlock ex={activeExchange} animatedTools={animatedTools} />
             {animatedTools <= activeExchange.tools.length && (
               <Box paddingX={1}>
@@ -555,8 +688,15 @@ function CodingAgentShowcase(): JSX.Element {
       </Box>
 
       {/* Input */}
-      <Box borderStyle="round" borderColor={isAnimating ? "#313244" : termFocused ? "#45475a" : "#313244"} paddingX={1} flexDirection="row">
-        <Text color="#cba6f7" bold>{"❯ "}</Text>
+      <Box
+        borderStyle="round"
+        borderColor={isAnimating ? "#313244" : termFocused ? "#45475a" : "#313244"}
+        paddingX={1}
+        flexDirection="row"
+      >
+        <Text color="#cba6f7" bold>
+          {"❯ "}
+        </Text>
         <Text color={inputText ? "#cdd6f4" : "#585b70"} wrap="truncate">
           {inputText || (isAnimating ? "" : termFocused ? "type a prompt, then Enter..." : "click to focus")}
         </Text>
@@ -745,23 +885,18 @@ function CLIWizardShowcase(): JSX.Element {
     if (currentStep.type === "select") {
       const opts = currentStep.options!
       if (key.upArrow) setState((s) => ({ ...s, cursor: Math.max(0, s.cursor - 1) }))
-      if (key.downArrow)
-        setState((s) => ({ ...s, cursor: Math.min(opts.length - 1, s.cursor + 1) }))
+      if (key.downArrow) setState((s) => ({ ...s, cursor: Math.min(opts.length - 1, s.cursor + 1) }))
     }
 
     if (key.return) {
-      const answer =
-        currentStep.type === "select"
-          ? currentStep.options![state.cursor]!
-          : currentStep.answer
+      const answer = currentStep.type === "select" ? currentStep.options![state.cursor]! : currentStep.answer
       const newAnswers = [...state.answers, answer]
       if (state.step + 1 >= WIZARD_STEPS.length) {
         setDone(true)
         setState({ step: state.step + 1, cursor: 0, answers: newAnswers })
       } else {
         const nextStep = WIZARD_STEPS[state.step + 1]!
-        const nextCursor =
-          nextStep.type === "select" ? (nextStep.defaultCursor ?? 0) : 0
+        const nextCursor = nextStep.type === "select" ? (nextStep.defaultCursor ?? 0) : 0
         setState({ step: state.step + 1, cursor: nextCursor, answers: newAnswers })
       }
     }
@@ -770,8 +905,12 @@ function CLIWizardShowcase(): JSX.Element {
   return (
     <Box flexDirection="column" padding={1} paddingLeft={2}>
       <Text>
-        <Text bold color="#cba6f7">┌  </Text>
-        <Text bold color="#cdd6f4">create-app</Text>
+        <Text bold color="#cba6f7">
+          ┌{" "}
+        </Text>
+        <Text bold color="#cdd6f4">
+          create-app
+        </Text>
       </Text>
       <Text color="#45475a">│</Text>
 
@@ -785,12 +924,12 @@ function CLIWizardShowcase(): JSX.Element {
             <React.Fragment key={ws.label}>
               <Text>
                 <Text color="#a6e3a1">◆</Text>
-                <Text color="#cdd6f4">  {ws.label}</Text>
+                <Text color="#cdd6f4"> {ws.label}</Text>
                 <Text color="#a6e3a1"> ✓</Text>
               </Text>
               <Text>
                 <Text color="#45475a">│</Text>
-                <Text color="#89b4fa">  {state.answers[i]}</Text>
+                <Text color="#89b4fa"> {state.answers[i]}</Text>
               </Text>
               <Text color="#45475a">│</Text>
             </React.Fragment>
@@ -802,11 +941,14 @@ function CLIWizardShowcase(): JSX.Element {
             <React.Fragment key={ws.label}>
               <Text>
                 <Text color="#89dceb">◆</Text>
-                <Text bold color="#cdd6f4">  {ws.label}</Text>
+                <Text bold color="#cdd6f4">
+                  {" "}
+                  {ws.label}
+                </Text>
               </Text>
               <Text>
                 <Text color="#45475a">│</Text>
-                <Text color="#89dceb">  {ws.answer}</Text>
+                <Text color="#89dceb"> {ws.answer}</Text>
                 <Text color="#89dceb">▋</Text>
               </Text>
               <Text color="#45475a">│</Text>
@@ -819,16 +961,16 @@ function CLIWizardShowcase(): JSX.Element {
             <React.Fragment key={ws.label}>
               <Text>
                 <Text color="#89dceb">◆</Text>
-                <Text bold color="#cdd6f4">  {ws.label}</Text>
+                <Text bold color="#cdd6f4">
+                  {" "}
+                  {ws.label}
+                </Text>
               </Text>
               {ws.options!.map((opt, oi) => (
                 <Text key={opt}>
                   <Text color="#45475a">│</Text>
-                  {"  "}{oi === state.cursor ? (
-                    <Text color="#89dceb">● {opt}</Text>
-                  ) : (
-                    <Text color="#6c7086">○ {opt}</Text>
-                  )}
+                  {"  "}
+                  {oi === state.cursor ? <Text color="#89dceb">● {opt}</Text> : <Text color="#6c7086">○ {opt}</Text>}
                 </Text>
               ))}
               <Text color="#45475a">│</Text>
@@ -841,7 +983,7 @@ function CLIWizardShowcase(): JSX.Element {
             <React.Fragment key={ws.label}>
               <Text>
                 <Text color="#585b70">○</Text>
-                <Text color="#585b70">  {ws.label}</Text>
+                <Text color="#585b70"> {ws.label}</Text>
               </Text>
               <Text color="#45475a">│</Text>
             </React.Fragment>
@@ -855,19 +997,30 @@ function CLIWizardShowcase(): JSX.Element {
         <>
           <Text>
             <Text color="#a6e3a1">◆</Text>
-            <Text color="#a6e3a1" bold>  Done!</Text>
+            <Text color="#a6e3a1" bold>
+              {" "}
+              Done!
+            </Text>
           </Text>
           <Text color="#45475a">│</Text>
           {/* Summary box */}
           <Box flexDirection="column" marginLeft={1} borderStyle="round" borderColor="#313244" paddingX={1}>
-            <Text color="#6c7086">Project:   <Text color="#cdd6f4">my-app</Text></Text>
-            <Text color="#6c7086">Framework: <Text color="#cdd6f4">React</Text></Text>
-            <Text color="#6c7086">TypeScript:<Text color="#cdd6f4"> Yes</Text></Text>
-            <Text color="#6c7086">Manager:   <Text color="#cdd6f4">bun</Text></Text>
+            <Text color="#6c7086">
+              Project: <Text color="#cdd6f4">my-app</Text>
+            </Text>
+            <Text color="#6c7086">
+              Framework: <Text color="#cdd6f4">React</Text>
+            </Text>
+            <Text color="#6c7086">
+              TypeScript:<Text color="#cdd6f4"> Yes</Text>
+            </Text>
+            <Text color="#6c7086">
+              Manager: <Text color="#cdd6f4">bun</Text>
+            </Text>
           </Box>
           <Text color="#45475a">│</Text>
           <Text>
-            <Text color="#a6e3a1">└  </Text>
+            <Text color="#a6e3a1">└ </Text>
             <Text color="#cdd6f4">cd my-app && bun dev</Text>
           </Text>
         </>
@@ -921,16 +1074,11 @@ function DataExplorerShowcase(): JSX.Element {
 
   const rows = PROCESS_DATA.map((row) => ({
     ...row,
-    cpu:
-      row.status === "running"
-        ? Math.max(1, Math.min(99, row.cpu + ((tick * 7 + row.cpu) % 13) - 6))
-        : row.cpu,
+    cpu: row.status === "running" ? Math.max(1, Math.min(99, row.cpu + ((tick * 7 + row.cpu) % 13) - 6)) : row.cpu,
   })).sort((a, b) => b.cpu - a.cpu)
 
-  const statusIcon = (s: string) =>
-    s === "running" ? "●" : s === "idle" ? "◐" : "○"
-  const statusColor = (s: string) =>
-    s === "running" ? "#a6e3a1" : s === "idle" ? "#f9e2af" : "#f38ba8"
+  const statusIcon = (s: string) => (s === "running" ? "●" : s === "idle" ? "◐" : "○")
+  const statusColor = (s: string) => (s === "running" ? "#a6e3a1" : s === "idle" ? "#f9e2af" : "#f38ba8")
   const cpuColor = (v: number) => (v > 50 ? "#f38ba8" : v > 20 ? "#f9e2af" : "#a6e3a1")
 
   const colW = { id: 6, name: 14, status: 3, cpu: 14, mem: 8 }
@@ -939,41 +1087,52 @@ function DataExplorerShowcase(): JSX.Element {
     <Box flexDirection="column" padding={1}>
       <Box flexDirection="row" justifyContent="space-between" marginBottom={1}>
         <Text>
-          <Text bold color="#cdd6f4">Process Explorer</Text>
+          <Text bold color="#cdd6f4">
+            Process Explorer
+          </Text>
           <Text color="#6c7086"> — {rows.length} processes</Text>
         </Text>
         <Text color="#6c7086">
-          sorted by <Text bold color="#89dceb">CPU ▼</Text>
+          sorted by{" "}
+          <Text bold color="#89dceb">
+            CPU ▼
+          </Text>
         </Text>
       </Box>
 
       {/* Header */}
       <Box flexDirection="row" backgroundColor="#313244">
         <Box width={colW.id} paddingX={1}>
-          <Text bold color="#a6adc8">PID</Text>
+          <Text bold color="#a6adc8">
+            PID
+          </Text>
         </Box>
         <Box width={colW.name} paddingX={1}>
-          <Text bold color="#a6adc8">Name</Text>
+          <Text bold color="#a6adc8">
+            Name
+          </Text>
         </Box>
         <Box width={colW.status} paddingX={1}>
-          <Text bold color="#a6adc8">S</Text>
+          <Text bold color="#a6adc8">
+            S
+          </Text>
         </Box>
         <Box width={colW.cpu} paddingX={1}>
-          <Text bold color="#a6adc8">CPU%</Text>
+          <Text bold color="#a6adc8">
+            CPU%
+          </Text>
         </Box>
         <Box width={colW.mem} paddingX={1}>
-          <Text bold color="#a6adc8">Mem</Text>
+          <Text bold color="#a6adc8">
+            Mem
+          </Text>
         </Box>
       </Box>
 
       {/* Rows */}
       {rows.map((row, i) => {
         const isSelected = i === selectedRow
-        const bgColor = isSelected
-          ? "#2a2a5e"
-          : i % 2 === 0
-            ? "#1a1a2e"
-            : "#1e1e3e"
+        const bgColor = isSelected ? "#2a2a5e" : i % 2 === 0 ? "#1a1a2e" : "#1e1e3e"
         const cpuBars = Math.round((row.cpu / 100) * 8)
         return (
           <Box key={row.id} flexDirection="row" backgroundColor={bgColor}>
@@ -981,7 +1140,9 @@ function DataExplorerShowcase(): JSX.Element {
               <Text color="#585b70">{row.id}</Text>
             </Box>
             <Box width={colW.name} paddingX={1}>
-              <Text bold={isSelected} color={isSelected ? "#cdd6f4" : "#a6adc8"}>{row.name}</Text>
+              <Text bold={isSelected} color={isSelected ? "#cdd6f4" : "#a6adc8"}>
+                {row.name}
+              </Text>
             </Box>
             <Box width={colW.status} paddingX={1}>
               <Text color={statusColor(row.status)}>{statusIcon(row.status)}</Text>
@@ -990,7 +1151,10 @@ function DataExplorerShowcase(): JSX.Element {
               <Text>
                 <Text color={cpuColor(row.cpu)}>{"█".repeat(cpuBars)}</Text>
                 <Text color="#313244">{"░".repeat(8 - cpuBars)}</Text>
-                <Text bold color={cpuColor(row.cpu)}> {String(row.cpu).padStart(2)}</Text>
+                <Text bold color={cpuColor(row.cpu)}>
+                  {" "}
+                  {String(row.cpu).padStart(2)}
+                </Text>
               </Text>
             </Box>
             <Box width={colW.mem} paddingX={1}>
@@ -1016,10 +1180,10 @@ interface LogEntry {
 }
 
 const ALL_LOGS: LogEntry[] = [
-  { time: "14:23:01", level: "INFO", message: 'Server started on port 3000' },
+  { time: "14:23:01", level: "INFO", message: "Server started on port 3000" },
   { time: "14:23:02", level: "INFO", message: 'Database connection to "primary" established' },
   { time: "14:23:05", level: "DEBUG", message: "Loading config from /etc/app/config.toml" },
-  { time: "14:23:08", level: "WARN", message: 'Cache miss ratio above threshold (42%)' },
+  { time: "14:23:08", level: "WARN", message: "Cache miss ratio above threshold (42%)" },
   { time: "14:23:12", level: "ERROR", message: "Failed to connect to Redis: ECONNREFUSED at /var/run/redis.sock" },
   { time: "14:23:15", level: "INFO", message: 'Retry succeeded: Redis "default" connected' },
   { time: "14:23:18", level: "INFO", message: "Worker pool initialized (4 threads)" },
@@ -1053,19 +1217,35 @@ function LogMessage({ text, query }: { text: string; query: string }): JSX.Eleme
   while ((match = regex.exec(text)) !== null) {
     // Text before match
     if (match.index > lastIndex) {
-      parts.push(<Text key={`t${lastIndex}`} color="#cdd6f4">{text.slice(lastIndex, match.index)}</Text>)
+      parts.push(
+        <Text key={`t${lastIndex}`} color="#cdd6f4">
+          {text.slice(lastIndex, match.index)}
+        </Text>,
+      )
     }
     if (match[1]) {
       // Quoted string — green
-      parts.push(<Text key={`q${match.index}`} color="#a6e3a1">{match[1]}</Text>)
+      parts.push(
+        <Text key={`q${match.index}`} color="#a6e3a1">
+          {match[1]}
+        </Text>,
+      )
     } else if (match[2]) {
       // Path — underline
-      parts.push(<Text key={`p${match.index}`} color="#94e2d5" underline>{match[2]}</Text>)
+      parts.push(
+        <Text key={`p${match.index}`} color="#94e2d5" underline>
+          {match[2]}
+        </Text>,
+      )
     }
     lastIndex = match.index + match[0].length
   }
   if (lastIndex < text.length) {
-    parts.push(<Text key={`e${lastIndex}`} color="#cdd6f4">{text.slice(lastIndex)}</Text>)
+    parts.push(
+      <Text key={`e${lastIndex}`} color="#cdd6f4">
+        {text.slice(lastIndex)}
+      </Text>,
+    )
   }
 
   // If there's an active query, we wrap matching segments with inverse
@@ -1088,7 +1268,9 @@ function LogMessage({ text, query }: { text: string; query: string }): JSX.Eleme
         highlighted.push(
           <Text key={key}>
             <Text color={props.color}>{content.slice(0, qi)}</Text>
-            <Text inverse color="#f9e2af">{content.slice(qi, qi + query.length)}</Text>
+            <Text inverse color="#f9e2af">
+              {content.slice(qi, qi + query.length)}
+            </Text>
             <Text color={props.color}>{content.slice(qi + query.length)}</Text>
           </Text>,
         )
@@ -1123,11 +1305,7 @@ function DevToolsShowcase(): JSX.Element {
 
   const query = typedQuery.toLowerCase()
   const filtered = query
-    ? ALL_LOGS.filter(
-        (l) =>
-          l.message.toLowerCase().includes(query) ||
-          l.level.toLowerCase().includes(query),
-      )
+    ? ALL_LOGS.filter((l) => l.message.toLowerCase().includes(query) || l.level.toLowerCase().includes(query))
     : ALL_LOGS
 
   const maxVisible = 10
@@ -1139,7 +1317,9 @@ function DevToolsShowcase(): JSX.Element {
     <Box flexDirection="column" padding={1}>
       <Box flexDirection="row" justifyContent="space-between" marginBottom={1}>
         <Text>
-          <Text bold color="#cdd6f4">Log Viewer</Text>
+          <Text bold color="#cdd6f4">
+            Log Viewer
+          </Text>
           <Text color="#6c7086"> — {filtered.length} entries</Text>
         </Text>
       </Box>
@@ -1160,12 +1340,7 @@ function DevToolsShowcase(): JSX.Element {
       {/* Log entries */}
       <Box flexDirection="column" flexGrow={1}>
         {visibleLogs.map((log, i) => (
-          <Box
-            key={clampedOffset + i}
-            flexDirection="row"
-            gap={1}
-            backgroundColor={levelBg[log.level]}
-          >
+          <Box key={clampedOffset + i} flexDirection="row" gap={1} backgroundColor={levelBg[log.level]}>
             <Text color="#94e2d5">{log.time}</Text>
             <Box width={7} backgroundColor={levelBg[log.level]}>
               <Text bold color={levelColors[log.level]}>
@@ -1235,7 +1410,7 @@ function LayoutFeedbackShowcase(): JSX.Element {
         alignItems="center"
       >
         <Text>
-          Width: {width}  Height: {height}
+          Width: {width} Height: {height}
         </Text>
       </Box>
 
@@ -1277,9 +1452,7 @@ function FocusShowcase(): JSX.Element {
               <Text bold color={isFocused ? "cyan" : "white"}>
                 {label}
               </Text>
-              <Text color={isFocused ? "cyan" : "#666"}>
-                {isFocused ? "● focused" : "○"}
-              </Text>
+              <Text color={isFocused ? "cyan" : "#666"}>{isFocused ? "● focused" : "○"}</Text>
             </Box>
           )
         })}
@@ -1312,21 +1485,14 @@ function TextInputShowcase(): JSX.Element {
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Box
-        flexDirection="row"
-        borderStyle="single"
-        borderColor={termFocused ? "#444" : "#313244"}
-        paddingX={1}
-      >
+      <Box flexDirection="row" borderStyle="single" borderColor={termFocused ? "#444" : "#313244"} paddingX={1}>
         <Text>&gt; </Text>
         <Text>{text}</Text>
         <Text color="cyan">{termFocused ? "▋" : " "}</Text>
       </Box>
 
       <Box marginTop={1} paddingX={1}>
-        <Text color="#999">
-          Echo: {text || "(empty)"}
-        </Text>
+        <Text color="#999">Echo: {text || "(empty)"}</Text>
       </Box>
 
       <KeyHints hints={termFocused ? "type text  Backspace delete  Esc clear" : "click to focus"} />

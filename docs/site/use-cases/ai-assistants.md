@@ -59,13 +59,7 @@ function Chat() {
 
   return (
     <Box flexDirection="column" width="100%" height="100%">
-      <Box
-        flexDirection="column"
-        flexGrow={1}
-        overflow="scroll"
-        scrollTo={messages.length - 1}
-        paddingX={1}
-      >
+      <Box flexDirection="column" flexGrow={1} overflow="scroll" scrollTo={messages.length - 1} paddingX={1}>
         {messages.map((msg, i) => (
           <Text key={i} color={msg.role === "user" ? "cyan" : "white"}>
             {msg.role === "user" ? "> " : "  "}
@@ -98,7 +92,6 @@ This gives you:
 - Layout feedback via `useContentRect()` -- the message area fills all available height
 
 To add streaming, replace the echo stub with an async generator that appends tokens to the latest message. inkx will re-render only the changed text node on each token, keeping the update cost constant regardless of conversation length.
-
 
 ## Adding Command Introspection
 

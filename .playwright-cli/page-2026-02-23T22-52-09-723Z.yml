@@ -1,0 +1,53 @@
+- generic [ref=e5]:
+    - textbox "Terminal input" [ref=e6]
+    - generic:
+        - generic:
+            - generic: ┌─────────────────────────────────────────────────────────────────┐
+        - generic:
+            - generic: │
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: inkx xterm.js Rendering
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "Size: 63 cols x 2 rows"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: │
+        - generic:
+            - generic: └─────────────────────────────────────────────────────────────────┘
+        - generic:
+            - generic: ╭─────────────────────────────────────────────────────────────────╮
+        - generic:
+            - generic: │
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: Text Styles
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: Normal
+            - generic: Bold
+            - generic: Italic
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: Underline
+            - generic: Strike
+            - generic: Dim
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: │
+        - generic:
+            - generic: ╰─────────────────────────────────────────────────────────────────╯
+        - generic:
+            - generic: Red
+            - generic: Green
+            - generic: Blue
+        - generic:
+            - generic: Layout by Flexx, ANSI output via terminal adapter, rendered by xterm

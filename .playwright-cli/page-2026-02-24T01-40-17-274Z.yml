@@ -1,0 +1,93 @@
+- generic [ref=e5]:
+    - textbox "Terminal input" [ref=e6]
+    - generic:
+        - generic:
+            - generic: ┌───────────────────────────────────────────────────────────────────────────────┐
+            - generic: ┌────────────────────────────────────────────────────────────────┐
+        - generic:
+            - generic: │
+            - generic: Metrics
+            - generic: │
+            - generic: │
+            - generic: Services
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: │
+            - generic: │
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: CPU ━━━━━━──────────────
+            - generic: 28%
+            - generic: │
+            - generic: │
+            - generic: ● api-gateway
+            - generic: 14d 6h
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: Memory ━━━━━━━━━━──────────
+            - generic: 52%
+            - generic: │
+            - generic: │
+            - generic: ● auth-service
+            - generic: 14d 6h
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: Disk ━━━━━━━━────────────
+            - generic: 41%
+            - generic: │
+            - generic: │
+            - generic: ▲ worker-pool
+            - generic: 2h 15m
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: Network ━━──────────────────
+            - generic: 12%
+            - generic: │
+            - generic: │
+            - generic: ● cache-redis
+            - generic: 7d 3h
+            - generic: │
+        - generic:
+            - generic: └───────────────────────────────────────────────────────────────────────────────┘
+            - generic: │
+            - generic: ✕ mail-service
+            - generic: 0m
+            - generic: │
+        - generic:
+            - generic: └────────────────────────────────────────────────────────────────┘
+        - generic:
+            - generic: ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+        - generic:
+            - generic: │
+            - generic: Events
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "[14:23:01] Deploy v2.4.1 completed"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "[14:23:15] Auth service restarted"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "[14:23:30] Backup job finished (12.4 GB)"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "[14:23:45] SSL certificate renewed"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "[14:24:01] Cache purged successfully"
+            - generic: │
+        - generic:
+            - generic: └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -27,47 +27,72 @@ function replayAnsiChars(width: number, height: number, ansi: string): string[][
       if (ansi[i + 1] === "[") {
         i += 2
         let params = ""
-        while (i < ansi.length && ((ansi[i]! >= "0" && ansi[i]! <= "9") || ansi[i] === ";" || ansi[i] === "?" || ansi[i] === ":")) {
+        while (
+          i < ansi.length &&
+          ((ansi[i]! >= "0" && ansi[i]! <= "9") || ansi[i] === ";" || ansi[i] === "?" || ansi[i] === ":")
+        ) {
           params += ansi[i]
           i++
         }
         const cmd = ansi[i]
         i++
         if (cmd === "H") {
-          if (params === "") { cx = 0; cy = 0 }
-          else {
+          if (params === "") {
+            cx = 0
+            cy = 0
+          } else {
             const parts = params.split(";")
             cy = Math.max(0, (parseInt(parts[0]!) || 1) - 1)
             cx = Math.max(0, (parseInt(parts[1]!) || 1) - 1)
           }
         } else if (cmd === "K") {
           const n = parseInt(params) || 0
-          if (n === 0) { for (let x = cx; x < width; x++) screen[cy]![x] = " " }
-          else if (n === 1) { for (let x = 0; x <= cx; x++) screen[cy]![x] = " " }
-          else if (n === 2) { for (let x = 0; x < width; x++) screen[cy]![x] = " " }
-        } else if (cmd === "A") { cy = Math.max(0, cy - (parseInt(params) || 1)) }
-        else if (cmd === "B") { cy = Math.min(height - 1, cy + (parseInt(params) || 1)) }
-        else if (cmd === "C") { cx = Math.min(width - 1, cx + (parseInt(params) || 1)) }
-        else if (cmd === "D") { cx = Math.max(0, cx - (parseInt(params) || 1)) }
-        else if (cmd === "G") { cx = Math.max(0, (parseInt(params) || 1) - 1) }
-        else if (cmd === "J") {
+          if (n === 0) {
+            for (let x = cx; x < width; x++) screen[cy]![x] = " "
+          } else if (n === 1) {
+            for (let x = 0; x <= cx; x++) screen[cy]![x] = " "
+          } else if (n === 2) {
+            for (let x = 0; x < width; x++) screen[cy]![x] = " "
+          }
+        } else if (cmd === "A") {
+          cy = Math.max(0, cy - (parseInt(params) || 1))
+        } else if (cmd === "B") {
+          cy = Math.min(height - 1, cy + (parseInt(params) || 1))
+        } else if (cmd === "C") {
+          cx = Math.min(width - 1, cx + (parseInt(params) || 1))
+        } else if (cmd === "D") {
+          cx = Math.max(0, cx - (parseInt(params) || 1))
+        } else if (cmd === "G") {
+          cx = Math.max(0, (parseInt(params) || 1) - 1)
+        } else if (cmd === "J") {
           if (params === "2") {
-            for (let y = 0; y < height; y++)
-              for (let x = 0; x < width; x++) screen[y]![x] = " "
+            for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) screen[y]![x] = " "
           }
         }
         // Skip SGR (m), DEC modes (h/l), etc.
       } else if (ansi[i + 1] === "]") {
         i += 2
         while (i < ansi.length) {
-          if (ansi[i] === "\x1b" && ansi[i + 1] === "\\") { i += 2; break }
-          if (ansi[i] === "\x07") { i++; break }
+          if (ansi[i] === "\x1b" && ansi[i + 1] === "\\") {
+            i += 2
+            break
+          }
+          if (ansi[i] === "\x07") {
+            i++
+            break
+          }
           i++
         }
-      } else { i += 2 }
-    } else if (ansi[i] === "\r") { cx = 0; i++ }
-    else if (ansi[i] === "\n") { cy = Math.min(height - 1, cy + 1); i++ }
-    else {
+      } else {
+        i += 2
+      }
+    } else if (ansi[i] === "\r") {
+      cx = 0
+      i++
+    } else if (ansi[i] === "\n") {
+      cy = Math.min(height - 1, cy + 1)
+      i++
+    } else {
       if (cy < height && cx < width) {
         screen[cy]![cx] = ansi[i]!
         cx++
@@ -94,7 +119,10 @@ function replayAnsiBg(width: number, height: number, ansi: string): string[][] {
       if (ansi[i + 1] === "[") {
         i += 2
         let params = ""
-        while (i < ansi.length && ((ansi[i]! >= "0" && ansi[i]! <= "9") || ansi[i] === ";" || ansi[i] === "?" || ansi[i] === ":")) {
+        while (
+          i < ansi.length &&
+          ((ansi[i]! >= "0" && ansi[i]! <= "9") || ansi[i] === ";" || ansi[i] === "?" || ansi[i] === ":")
+        ) {
           params += ansi[i]
           i++
         }
@@ -123,36 +151,54 @@ function replayAnsiBg(width: number, height: number, ansi: string): string[][] {
             }
           }
         } else if (cmd === "H") {
-          if (params === "") { cx = 0; cy = 0 }
-          else {
+          if (params === "") {
+            cx = 0
+            cy = 0
+          } else {
             const parts = params.split(";")
             cy = Math.max(0, (parseInt(parts[0]!) || 1) - 1)
             cx = Math.max(0, (parseInt(parts[1]!) || 1) - 1)
           }
         } else if (cmd === "K") {
           // EL clears with current bg
-        } else if (cmd === "A") { cy = Math.max(0, cy - (parseInt(params) || 1)) }
-        else if (cmd === "B") { cy = Math.min(height - 1, cy + (parseInt(params) || 1)) }
-        else if (cmd === "C") { cx = Math.min(width - 1, cx + (parseInt(params) || 1)) }
-        else if (cmd === "D") { cx = Math.max(0, cx - (parseInt(params) || 1)) }
-        else if (cmd === "G") { cx = Math.max(0, (parseInt(params) || 1) - 1) }
-        else if (cmd === "J") {
+        } else if (cmd === "A") {
+          cy = Math.max(0, cy - (parseInt(params) || 1))
+        } else if (cmd === "B") {
+          cy = Math.min(height - 1, cy + (parseInt(params) || 1))
+        } else if (cmd === "C") {
+          cx = Math.min(width - 1, cx + (parseInt(params) || 1))
+        } else if (cmd === "D") {
+          cx = Math.max(0, cx - (parseInt(params) || 1))
+        } else if (cmd === "G") {
+          cx = Math.max(0, (parseInt(params) || 1) - 1)
+        } else if (cmd === "J") {
           if (params === "2") {
-            for (let y = 0; y < height; y++)
-              for (let x = 0; x < width; x++) screen[y]![x] = ""
+            for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) screen[y]![x] = ""
           }
         }
       } else if (ansi[i + 1] === "]") {
         i += 2
         while (i < ansi.length) {
-          if (ansi[i] === "\x1b" && ansi[i + 1] === "\\") { i += 2; break }
-          if (ansi[i] === "\x07") { i++; break }
+          if (ansi[i] === "\x1b" && ansi[i + 1] === "\\") {
+            i += 2
+            break
+          }
+          if (ansi[i] === "\x07") {
+            i++
+            break
+          }
           i++
         }
-      } else { i += 2 }
-    } else if (ansi[i] === "\r") { cx = 0; i++ }
-    else if (ansi[i] === "\n") { cy = Math.min(height - 1, cy + 1); i++ }
-    else {
+      } else {
+        i += 2
+      }
+    } else if (ansi[i] === "\r") {
+      cx = 0
+      i++
+    } else if (ansi[i] === "\n") {
+      cy = Math.min(height - 1, cy + 1)
+      i++
+    } else {
       if (cy < height && cx < width) {
         screen[cy]![cx] = currentBg
         cx++
@@ -203,9 +249,7 @@ describe("diffBuffers true color handling", () => {
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
         if (screenIncr[y]![x] !== screenFresh[y]![x]) {
-          expect.fail(
-            `Character mismatch at (${x},${y}): incr='${screenIncr[y]![x]}' fresh='${screenFresh[y]![x]}'`
-          )
+          expect.fail(`Character mismatch at (${x},${y}): incr='${screenIncr[y]![x]}' fresh='${screenFresh[y]![x]}'`)
         }
       }
     }
@@ -284,9 +328,7 @@ describe("diffBuffers true color handling", () => {
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < cols; x++) {
         if (screenIncr[y]![x] !== screenFresh[y]![x]) {
-          expect.fail(
-            `Background mismatch at (${x},${y}): incr='${screenIncr[y]![x]}' fresh='${screenFresh[y]![x]}'`
-          )
+          expect.fail(`Background mismatch at (${x},${y}): incr='${screenIncr[y]![x]}' fresh='${screenFresh[y]![x]}'`)
         }
       }
     }
@@ -330,7 +372,7 @@ describe("diffBuffers true color handling", () => {
         for (let x = 0; x < cols; x++) {
           if (screenIncr[y]![x] !== screenFresh[y]![x]) {
             expect.fail(
-              `Mismatch at (${x},${y}) after step ${i}: incr='${screenIncr[y]![x]}' fresh='${screenFresh[y]![x]}'`
+              `Mismatch at (${x},${y}) after step ${i}: incr='${screenIncr[y]![x]}' fresh='${screenFresh[y]![x]}'`,
             )
           }
         }

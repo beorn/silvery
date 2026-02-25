@@ -158,8 +158,8 @@ Real numbers on Apple M1 Max, Bun 1.3.9 (February 2026). Reproducible via `bun r
 
 **The number that matters -- typical interactive update:**
 
-| Scenario                        | inkx       | Ink     |                      |
-| ------------------------------- | ---------- | ------- | -------------------- |
+| Scenario                        | inkx       | Ink     |                       |
+| ------------------------------- | ---------- | ------- | --------------------- |
 | User presses a key (1000 nodes) | **169 us** | 20.7 ms | **inkx 200x+ faster** |
 
 When a user presses `j` to move a cursor, inkx's dirty tracking updates only the changed nodes -- bypassing React entirely. Ink must re-render the full React tree for any state change.

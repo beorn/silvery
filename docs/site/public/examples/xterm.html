@@ -6,8 +6,16 @@
     <title>inkx Terminal Demo</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@6/css/xterm.min.css" />
     <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { height: 100%; overflow: hidden; }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
       body {
         background: #1e1e1e;
         color: #eee;
@@ -23,8 +31,12 @@
         height: calc(100vh - 32px);
       }
       /* Override xterm.js viewport background to match */
-      .xterm { background: #1e1e1e; }
-      .xterm-viewport { background: #1e1e1e !important; }
+      .xterm {
+        background: #1e1e1e;
+      }
+      .xterm-viewport {
+        background: #1e1e1e !important;
+      }
       .error-msg {
         color: #808080;
         font-size: 14px;
@@ -44,11 +56,16 @@
     <script type="module" src="./dist/xterm-app.js"></script>
     <script>
       // Show fallback if bundle fails to load
-      window.addEventListener('error', function(e) {
-        if (e.filename && e.filename.includes('xterm-app')) {
-          document.body.innerHTML = '<div class="error-msg">Build the examples to see this demo.<code>bun run examples/web/build.ts</code></div>';
-        }
-      }, true);
+      window.addEventListener(
+        "error",
+        function (e) {
+          if (e.filename && e.filename.includes("xterm-app")) {
+            document.body.innerHTML =
+              '<div class="error-msg">Build the examples to see this demo.<code>bun run examples/web/build.ts</code></div>'
+          }
+        },
+        true,
+      )
     </script>
   </body>
 </html>

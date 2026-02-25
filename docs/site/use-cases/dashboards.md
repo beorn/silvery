@@ -86,7 +86,9 @@ function MetricsPanel() {
 
   return (
     <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor="$border" paddingX={1}>
-      <Text bold color="$primary">System Metrics</Text>
+      <Text bold color="$primary">
+        System Metrics
+      </Text>
       <Text> </Text>
       {metrics.map((m) => (
         <MetricBar key={m.label} label={m.label} value={m.value} />
@@ -105,8 +107,7 @@ function MetricBar({ label, value }: { label: string; value: number }) {
 
   return (
     <Text>
-      {label.padEnd(8)}{" "}
-      <Text color={color}>{"█".repeat(filled)}</Text>
+      {label.padEnd(8)} <Text color={color}>{"█".repeat(filled)}</Text>
       <Text color="$muted">{"░".repeat(empty)}</Text>
       <Text> {String(value).padStart(3)}%</Text>
     </Text>
@@ -131,7 +132,9 @@ function EventsPanel() {
 
   return (
     <Box flexDirection="column" flexGrow={2} borderStyle="single" borderColor="$border" paddingX={1}>
-      <Text bold color="$primary">Events</Text>
+      <Text bold color="$primary">
+        Events
+      </Text>
       <Text> </Text>
       {events.map((e, i) => (
         <Text key={i}>
@@ -152,7 +155,9 @@ function LogPanel() {
 
   return (
     <Box flexDirection="column" height={6} borderStyle="single" borderColor="$border" paddingX={1}>
-      <Text bold color="$primary">Logs</Text>
+      <Text bold color="$primary">
+        Logs
+      </Text>
       {logs.map((line, i) => (
         <Text key={i} color={line.includes("[WARN]") ? "$warning" : "$muted"}>
           {line}

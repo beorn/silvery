@@ -1,0 +1,176 @@
+- generic [ref=e5]:
+    - textbox "Terminal input" [ref=e6]
+    - generic:
+        - generic:
+            - generic: │
+            - generic: "58"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 192 MB
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: PID-1027
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: worker-pool
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: running
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "39"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 96 MB
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: PID-1024
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: web-server
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: running
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "38"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 128 MB
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: PID-1026
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: cache-redis
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: running
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "17"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 256 MB
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: PID-1031
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: metrics-collector
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: running
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "14"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 64 MB
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: PID-1028
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: log-shipper
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: idle
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "2"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 32 MB
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: PID-1029
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: cron-scheduler
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: idle
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "0"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 16 MB
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: PID-1030
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: backup-agent
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: stopped
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "0"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 0 MB
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: PID-1033
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: mail-service
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: stopped
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "0"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 0 MB
+            - generic: │
+        - generic:
+            - generic: └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

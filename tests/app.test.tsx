@@ -391,9 +391,7 @@ describe("App frames tracking", () => {
   })
 
   test("lastFrameText returns plain text of last frame", () => {
-    const app = render(
-      <Text color="green">Plain</Text>,
-    )
+    const app = render(<Text color="green">Plain</Text>)
     const text = app.lastFrameText()
     expect(text).toBeDefined()
     expect(text).toContain("Plain")

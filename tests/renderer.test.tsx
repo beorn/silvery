@@ -15,9 +15,13 @@ import { ensureEngine } from "../src/renderer.js"
 // Initialize layout engine
 await ensureEngine()
 
-const { render, createStore, run, getActiveRenderCount, createRenderer: rendererCreateRenderer } = await import(
-  "../src/renderer.js"
-)
+const {
+  render,
+  createStore,
+  run,
+  getActiveRenderCount,
+  createRenderer: rendererCreateRenderer,
+} = await import("../src/renderer.js")
 
 describe("renderer", () => {
   // ========================================================================

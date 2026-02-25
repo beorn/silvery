@@ -170,7 +170,7 @@ export function useVirtualization<T>(config: VirtualizationConfig<T>): Virtualiz
   const scrollOffsetRef = useRef(
     calcEdgeBasedScrollOffset(selectedIndexRef.current, 0, estimatedVisibleCount, items.length, scrollPadding),
   )
-  const [/* scrollOffset */, setScrollOffset] = useState(() => scrollOffsetRef.current)
+  const [, /* scrollOffset */ setScrollOffset] = useState(() => scrollOffsetRef.current)
 
   // Synchronous scroll offset computation during render.
   // When scrollTo is defined, compute the new offset immediately so the

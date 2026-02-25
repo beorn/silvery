@@ -51,13 +51,13 @@ API documentation for components, hooks, and subsystems.
 
 Architecture, internals, and performance analysis.
 
-| Document                                     | Description                                                               |
-| -------------------------------------------- | ------------------------------------------------------------------------- |
-| [Architecture](deep-dives/architecture.md)   | Five-phase pipeline, RenderAdapter interface                              |
-| [Internals](deep-dives/internals.md)         | Reconciler, dirty tracking, content phase                                 |
-| [Containment](deep-dives/containment.md)     | Layout feedback loop prevention (useContentRect safe patterns)            |
-| [Performance](deep-dives/performance.md)     | Optimization techniques, profiling guide                                  |
-| [Focus Routing](deep-dives/focus-routing.md) | Focus-based input routing, commands, keybindings                          |
+| Document                                     | Description                                                    |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| [Architecture](deep-dives/architecture.md)   | Five-phase pipeline, RenderAdapter interface                   |
+| [Internals](deep-dives/internals.md)         | Reconciler, dirty tracking, content phase                      |
+| [Containment](deep-dives/containment.md)     | Layout feedback loop prevention (useContentRect safe patterns) |
+| [Performance](deep-dives/performance.md)     | Optimization techniques, profiling guide                       |
+| [Focus Routing](deep-dives/focus-routing.md) | Focus-based input routing, commands, keybindings               |
 
 ## Design Documents
 

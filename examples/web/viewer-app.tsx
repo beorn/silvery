@@ -532,44 +532,78 @@ function buildRegistry(): { categories: Category[]; allDemos: DemoEntry[] } {
 // =============================================================================
 
 const KW = new Set([
-  "import", "export", "from", "function", "const", "let", "var", "return",
-  "if", "else", "for", "while", "switch", "case", "break", "new", "typeof",
-  "instanceof", "async", "await", "yield", "class", "extends", "interface",
-  "type", "enum", "true", "false", "null", "undefined", "as", "of", "in",
-  "default", "using",
+  "import",
+  "export",
+  "from",
+  "function",
+  "const",
+  "let",
+  "var",
+  "return",
+  "if",
+  "else",
+  "for",
+  "while",
+  "switch",
+  "case",
+  "break",
+  "new",
+  "typeof",
+  "instanceof",
+  "async",
+  "await",
+  "yield",
+  "class",
+  "extends",
+  "interface",
+  "type",
+  "enum",
+  "true",
+  "false",
+  "null",
+  "undefined",
+  "as",
+  "of",
+  "in",
+  "default",
+  "using",
 ])
 
 function highlightSource(code: string): string {
-  return code.split("\n").map((line, i) => {
-    const num = `<span class="line-num">${String(i + 1).padStart(3)}</span> `
-    const trimmed = line.trimStart()
+  return code
+    .split("\n")
+    .map((line, i) => {
+      const num = `<span class="line-num">${String(i + 1).padStart(3)}</span> `
+      const trimmed = line.trimStart()
 
-    // Comment lines
-    if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")) {
-      return num + `<span class="hl-comment">${esc(line)}</span>`
-    }
-
-    // Token-by-token highlighting
-    let result = ""
-    const re = /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(<\/?[A-Z]\w*)|(\b[a-zA-Z_]\w*\b)|(:\s*)([A-Z]\w*)|([^\s"'`<\w]+|\s+)/g
-    let m: RegExpExecArray | null
-    while ((m = re.exec(line)) !== null) {
-      const [full, str, jsxTag, word, colonSpace, typeName] = m
-      if (str) {
-        result += `<span class="hl-string">${esc(str)}</span>`
-      } else if (jsxTag) {
-        result += `<span class="hl-jsx">${esc(jsxTag)}</span>`
-      } else if (word && KW.has(word)) {
-        result += `<span class="hl-keyword">${esc(word)}</span>`
-      } else if (colonSpace && typeName) {
-        result += `<span class="hl-punct">${esc(colonSpace)}</span><span class="hl-type">${esc(typeName)}</span>`
-      } else {
-        result += esc(full!)
+      // Comment lines
+      if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")) {
+        return num + `<span class="hl-comment">${esc(line)}</span>`
       }
-    }
 
-    return num + result
-  }).join("\n")
+      // Token-by-token highlighting
+      let result = ""
+      const re =
+        /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(<\/?[A-Z]\w*)|(\b[a-zA-Z_]\w*\b)|(:\s*)([A-Z]\w*)|([^\s"'`<\w]+|\s+)/g
+      let m: RegExpExecArray | null
+      while ((m = re.exec(line)) !== null) {
+        const [full, str, jsxTag, word, colonSpace, typeName] = m
+        if (str) {
+          result += `<span class="hl-string">${esc(str)}</span>`
+        } else if (jsxTag) {
+          result += `<span class="hl-jsx">${esc(jsxTag)}</span>`
+        } else if (word && KW.has(word)) {
+          result += `<span class="hl-keyword">${esc(word)}</span>`
+        } else if (colonSpace && typeName) {
+          result += `<span class="hl-punct">${esc(colonSpace)}</span><span class="hl-type">${esc(typeName)}</span>`
+        } else {
+          result += esc(full!)
+        }
+      }
+
+      return num + result
+    })
+    .join("\n")
 }
 
 function esc(s: string): string {
@@ -679,7 +713,9 @@ function createViewerApp(root: HTMLElement): void {
   // ─── Build DOM ─────────────────────────────────────────────────────
 
   // Header
-  const header = el("div", { className: "vw-header" },
+  const header = el(
+    "div",
+    { className: "vw-header" },
     el("span", { className: "vw-header-brand" }, "inkx"),
     el("span", { className: "vw-header-title" }, "Interactive Examples"),
     el("span", { className: "vw-header-badge" }, `${allDemos.length} demos`),
@@ -770,11 +806,18 @@ function createViewerApp(root: HTMLElement): void {
   term.onData((data) => emitInput(data))
 
   // Track terminal focus state for showcase cursor/outline
-  term.textarea?.addEventListener("focus", () => { setTermFocused(true); sidebarFocused = false })
-  term.textarea?.addEventListener("blur", () => { setTermFocused(false) })
+  term.textarea?.addEventListener("focus", () => {
+    setTermFocused(true)
+    sidebarFocused = false
+  })
+  term.textarea?.addEventListener("blur", () => {
+    setTermFocused(false)
+  })
 
   // Click terminal to focus it (unfocus sidebar)
-  termWrap.addEventListener("click", () => { sidebarFocused = false })
+  termWrap.addEventListener("click", () => {
+    sidebarFocused = false
+  })
 
   // ─── Selection logic ───────────────────────────────────────────────
   function selectDemo(idx: number): void {
@@ -804,9 +847,11 @@ function createViewerApp(root: HTMLElement): void {
 
     // Key hints based on whether demo has component
     if (demo.component) {
-      keyHints.innerHTML = "<kbd>j</kbd><kbd>k</kbd> navigate &nbsp; <kbd>Enter</kbd> select &nbsp; <kbd>s</kbd> toggle source &nbsp; Click terminal for keyboard input"
+      keyHints.innerHTML =
+        "<kbd>j</kbd><kbd>k</kbd> navigate &nbsp; <kbd>Enter</kbd> select &nbsp; <kbd>s</kbd> toggle source &nbsp; Click terminal for keyboard input"
     } else {
-      keyHints.innerHTML = "<kbd>j</kbd><kbd>k</kbd> navigate &nbsp; <kbd>s</kbd> toggle source &nbsp; Run in terminal: <code>bun run examples/...</code>"
+      keyHints.innerHTML =
+        "<kbd>j</kbd><kbd>k</kbd> navigate &nbsp; <kbd>s</kbd> toggle source &nbsp; Run in terminal: <code>bun run examples/...</code>"
     }
 
     // Update source pane
@@ -848,7 +893,9 @@ function createViewerApp(root: HTMLElement): void {
     if (!demo) return
     void navigator.clipboard.writeText(demo.source).then(() => {
       copyBtn.textContent = "Copied!"
-      setTimeout(() => { copyBtn.textContent = "Copy" }, 1500)
+      setTimeout(() => {
+        copyBtn.textContent = "Copy"
+      }, 1500)
       return undefined
     })
   })
@@ -888,7 +935,9 @@ function createViewerApp(root: HTMLElement): void {
   })
 
   // Click sidebar to focus it
-  sidebar.addEventListener("click", () => { sidebarFocused = true })
+  sidebar.addEventListener("click", () => {
+    sidebarFocused = true
+  })
 
   // ─── Resize handling ───────────────────────────────────────────────
   window.addEventListener("resize", () => {

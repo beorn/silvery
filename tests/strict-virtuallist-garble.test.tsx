@@ -69,7 +69,9 @@ describe("INKX_STRICT VirtualList garble", () => {
         <Box flexDirection="row" width={cols} height={rows}>
           <Box flexDirection="column" width={60} height={rows}>
             <Box height={1}>
-              <Text bold inverse={activeCol === 0}>Column A ({colA.length})</Text>
+              <Text bold inverse={activeCol === 0}>
+                Column A ({colA.length})
+              </Text>
             </Box>
             <VirtualList
               items={colA}
@@ -86,7 +88,9 @@ describe("INKX_STRICT VirtualList garble", () => {
           </Box>
           <Box flexDirection="column" width={60} height={rows}>
             <Box height={1}>
-              <Text bold inverse={activeCol === 1}>Column B ({colB.length})</Text>
+              <Text bold inverse={activeCol === 1}>
+                Column B ({colB.length})
+              </Text>
             </Box>
             <VirtualList
               items={colB}
@@ -111,15 +115,15 @@ describe("INKX_STRICT VirtualList garble", () => {
 
     // Navigate: down, down, right, down, left, up
     const sequence: { activeCol: number; scrollA: number; scrollB: number }[] = [
-      { activeCol: 0, scrollA: 1, scrollB: 0 },  // down in A
-      { activeCol: 0, scrollA: 2, scrollB: 0 },  // down in A
-      { activeCol: 1, scrollA: 2, scrollB: 0 },  // switch to B
-      { activeCol: 1, scrollA: 2, scrollB: 1 },  // down in B
-      { activeCol: 1, scrollA: 2, scrollB: 2 },  // down in B
-      { activeCol: 0, scrollA: 2, scrollB: 2 },  // switch to A
-      { activeCol: 0, scrollA: 1, scrollB: 2 },  // up in A
-      { activeCol: 0, scrollA: 3, scrollB: 2 },  // down in A
-      { activeCol: 1, scrollA: 3, scrollB: 5 },  // switch to B + jump
+      { activeCol: 0, scrollA: 1, scrollB: 0 }, // down in A
+      { activeCol: 0, scrollA: 2, scrollB: 0 }, // down in A
+      { activeCol: 1, scrollA: 2, scrollB: 0 }, // switch to B
+      { activeCol: 1, scrollA: 2, scrollB: 1 }, // down in B
+      { activeCol: 1, scrollA: 2, scrollB: 2 }, // down in B
+      { activeCol: 0, scrollA: 2, scrollB: 2 }, // switch to A
+      { activeCol: 0, scrollA: 1, scrollB: 2 }, // up in A
+      { activeCol: 0, scrollA: 3, scrollB: 2 }, // down in A
+      { activeCol: 1, scrollA: 3, scrollB: 5 }, // switch to B + jump
     ]
 
     for (let i = 0; i < sequence.length; i++) {

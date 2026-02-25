@@ -1,0 +1,117 @@
+- generic [ref=e5]:
+    - textbox "Terminal input" [active] [ref=e6]
+    - generic:
+        - generic:
+            - generic: ●
+            - generic: ~/project
+        - generic:
+            - generic: ❯
+        - generic:
+            - generic: Fix the login bug — expired tokens return null
+        - generic:
+            - generic: ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+        - generic:
+            - generic: │
+            - generic: Read src/auth.ts
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "47│ export async function validateToken(token: Token) {"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 48│ if (token.expired) return null // ← bug
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 49│ return token
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "50│ }"
+            - generic: │
+        - generic:
+            - generic: ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+        - generic:
+            - generic: ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+        - generic:
+            - generic: │
+            - generic: Edit src/auth.ts
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: "- if (token.expired) return null"
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: + if (token.expired) return refreshToken(token)
+            - generic: │
+        - generic:
+            - generic: ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+        - generic:
+            - generic: ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+        - generic:
+            - generic: │
+            - generic: Bash bun test auth
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: ✓ validates active tokens
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: ✓ refreshes expired tokens
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: ✓ rejects revoked tokens
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 3 passed
+            - generic: │
+        - generic:
+            - generic: ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+        - generic:
+            - generic: Fixed! Expired tokens now refresh instead of returning null. All 3 auth tests pass.
+        - generic:
+            - generic: ❯
+        - generic:
+            - generic: add rate limiting
+        - generic:
+            - generic: ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+        - generic:
+            - generic: │
+            - generic: Read src/middleware/index.ts
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 1│ import express from 'express'
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 2│ import cors from 'cors'
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 3│ // No rate limiting configured
+            - generic: │
+        - generic:
+            - generic: │
+            - generic: 4│ export const app = express()
+            - generic: │
+        - generic:
+            - generic: ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+        - generic:
+            - generic: ⠋
+            - generic: working...
+        - generic:
+            - generic: ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+        - generic:
+            - generic: │
+            - generic: ❯
+            - generic: │
+        - generic:
+            - generic: ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+        - generic:
+            - generic: type a prompt Enter run

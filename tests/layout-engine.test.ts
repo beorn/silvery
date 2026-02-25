@@ -425,7 +425,7 @@ describe("Layout Engine Abstraction", () => {
 
           expect(child.getComputedLeft()).toBe(5)
           expect(child.getComputedTop()).toBe(3)
-          expect(child.getComputedWidth()).toBe(90)  // 100 - 5 - 5
+          expect(child.getComputedWidth()).toBe(90) // 100 - 5 - 5
           expect(child.getComputedHeight()).toBe(44) // 50 - 3 - 3
 
           root.free()

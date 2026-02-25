@@ -1,0 +1,2 @@
+[      34ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3457/vendor/beorn-inkx/examples/web/showcase:0
+[      47ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3457/favicon.ico:0

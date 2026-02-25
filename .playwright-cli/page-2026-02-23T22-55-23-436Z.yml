@@ -1,0 +1,177 @@
+- generic [ref=e3]:
+    - link "Skip to content" [ref=e4] [cursor=pointer]:
+        - /url: "#VPContent"
+    - banner:
+        - generic:
+            - generic:
+                - generic:
+                    - link "inkx" [ref=e6] [cursor=pointer]:
+                        - /url: /inkx/
+                        - generic [ref=e7]: inkx
+                    - generic [ref=e8]:
+                        - button "Search" [ref=e11] [cursor=pointer]:
+                            - generic [ref=e14]: Search
+                            - generic [ref=e15]:
+                                - generic [ref=e16]: ⌘
+                                - generic [ref=e17]: K
+                        - navigation "Main Navigation" [ref=e18]:
+                            - generic [ref=e19]: Main Navigation
+                            - link "Guide" [ref=e20] [cursor=pointer]:
+                                - /url: /inkx/guide/getting-started.html
+                                - generic [ref=e21]: Guide
+                            - link "API" [ref=e22] [cursor=pointer]:
+                                - /url: /inkx/api/box.html
+                                - generic [ref=e23]: API
+                            - button "Examples" [ref=e25] [cursor=pointer]:
+                                - generic [ref=e27]: Examples
+                            - button "Links" [ref=e30] [cursor=pointer]:
+                                - generic [ref=e32]: Links
+                        - switch "Switch to dark theme" [ref=e35] [cursor=pointer]
+                        - link "github" [ref=e41] [cursor=pointer]:
+                            - /url: https://github.com/beorn/inkx
+    - complementary [ref=e43]:
+        - navigation "Sidebar Navigation" [ref=e45]:
+            - generic [ref=e46]: Sidebar Navigation
+            - generic [ref=e48]:
+                - button "Examples" [ref=e49]:
+                    - heading "Examples" [level=2] [ref=e51]
+                - generic [ref=e52]:
+                    - link "Overview" [ref=e56] [cursor=pointer]:
+                        - /url: /inkx/examples/
+                        - paragraph [ref=e57]: Overview
+                    - link "Live Demo" [ref=e61] [cursor=pointer]:
+                        - /url: /inkx/examples/live-demo.html
+                        - paragraph [ref=e62]: Live Demo
+                    - link "Dashboard" [ref=e66] [cursor=pointer]:
+                        - /url: /inkx/examples/dashboard.html
+                        - paragraph [ref=e67]: Dashboard
+                    - link "Task List" [ref=e71] [cursor=pointer]:
+                        - /url: /inkx/examples/task-list.html
+                        - paragraph [ref=e72]: Task List
+                    - link "Kanban Board" [ref=e76] [cursor=pointer]:
+                        - /url: /inkx/examples/kanban.html
+                        - paragraph [ref=e77]: Kanban Board
+            - generic [ref=e79]:
+                - button "Use Cases toggle section" [ref=e80] [cursor=pointer]:
+                    - heading "Use Cases" [level=2] [ref=e82]
+                    - button "toggle section" [ref=e83]
+                - generic [ref=e85]:
+                    - link "AI Assistants & Chat" [ref=e89] [cursor=pointer]:
+                        - /url: /inkx/use-cases/ai-assistants.html
+                        - paragraph [ref=e90]: AI Assistants & Chat
+                    - link "Dashboards & Monitoring" [ref=e94] [cursor=pointer]:
+                        - /url: /inkx/use-cases/dashboards.html
+                        - paragraph [ref=e95]: Dashboards & Monitoring
+                    - link "Kanban & Project Boards" [ref=e99] [cursor=pointer]:
+                        - /url: /inkx/use-cases/kanban-boards.html
+                        - paragraph [ref=e100]: Kanban & Project Boards
+                    - link "CLI Wizards & Setup" [ref=e104] [cursor=pointer]:
+                        - /url: /inkx/use-cases/cli-wizards.html
+                        - paragraph [ref=e105]: CLI Wizards & Setup
+                    - link "Developer Tools" [ref=e109] [cursor=pointer]:
+                        - /url: /inkx/use-cases/developer-tools.html
+                        - paragraph [ref=e110]: Developer Tools
+                    - link "Data Explorers & Tables" [ref=e114] [cursor=pointer]:
+                        - /url: /inkx/use-cases/data-explorers.html
+                        - paragraph [ref=e115]: Data Explorers & Tables
+    - generic [ref=e118]:
+        - navigation "On this page" [ref=e124]:
+            - generic [ref=e125]:
+                - heading "On this page" [level=2] [ref=e127]
+                - list [ref=e128]:
+                    - listitem [ref=e129]:
+                        - link "How It Works" [ref=e130] [cursor=pointer]:
+                            - /url: "#how-it-works"
+                        - list [ref=e131]:
+                            - listitem [ref=e132]:
+                                - link "The Component" [ref=e133] [cursor=pointer]:
+                                    - /url: "#the-component"
+                    - listitem [ref=e134]:
+                        - link "Building Locally" [ref=e135] [cursor=pointer]:
+                            - /url: "#building-locally"
+        - generic [ref=e138]:
+            - main [ref=e139]:
+                - generic [ref=e141]:
+                    - heading "Live Demo Permalink to \"Live Demo\"" [level=1] [ref=e142]:
+                        - text: Live Demo
+                        - link "Permalink to \"Live Demo\"" [ref=e143] [cursor=pointer]:
+                            - /url: "#live-demo"
+                            - text: "#"
+                    - paragraph [ref=e144]: An inkx React component rendered in the browser via xterm.js — the same ANSI output you'd see in a real terminal.
+                    - generic [ref=e145]:
+                        - generic [ref=e146]:
+                            - generic [ref=e147]: Terminal
+                            - generic [ref=e148]: ANSI escape sequences rendered via xterm.js
+                        - generic [ref=e149]:
+                            - iframe [ref=e150]:
+
+                            - generic:
+                                - paragraph: "If the demo is blank, build the examples first:"
+                                - code: bun run examples/web/build.ts
+                    - heading "How It Works Permalink to \"How It Works\"" [level=2] [ref=e151]:
+                        - text: How It Works
+                        - link "Permalink to \"How It Works\"" [ref=e152] [cursor=pointer]:
+                            - /url: "#how-it-works"
+                            - text: "#"
+                    - paragraph [ref=e153]:
+                        - text: inkx's
+                        - code [ref=e154]: RenderAdapter
+                        - text: interface abstracts the rendering target. The same component tree runs through the same layout engine (Flexx) and render pipeline. The xterm adapter writes ANSI escape sequences to an xterm.js terminal emulator running in the browser.
+                    - heading "The Component Permalink to \"The Component\"" [level=3] [ref=e155]:
+                        - text: The Component
+                        - link "Permalink to \"The Component\"" [ref=e156] [cursor=pointer]:
+                            - /url: "#the-component"
+                            - text: "#"
+                    - generic [ref=e157]:
+                        - button "Copy Code" [ref=e158] [cursor=pointer]
+                        - generic [ref=e159]: tsx
+                        - code [ref=e161]:
+                            - generic [ref=e162]: "import { Box, Text, useContentRect } from 'inkx'"
+                            - generic [ref=e163]: "function App() {"
+                            - generic [ref=e164]: "const { width, height } = useContentRect()"
+                            - generic [ref=e165]: return (
+                            - generic [ref=e166]: '<Box flexDirection="column" padding={1}>'
+                            - generic [ref=e167]: '<Box borderStyle="single" borderColor="cyan" padding={1}>'
+                            - generic [ref=e168]: <Text bold color="cyan">inkx Rendering</Text>
+                            - generic [ref=e169]: '<Text color="green">Size: {width} x {height}</Text>'
+                            - generic [ref=e170]: </Box>
+                            - generic [ref=e171]: '<Box marginTop={1} flexDirection="row" gap={1}>'
+                            - generic [ref=e172]: '<Box backgroundColor="red" padding={1}>'
+                            - generic [ref=e173]: <Text color="white">Red</Text>
+                            - generic [ref=e174]: </Box>
+                            - generic [ref=e175]: '<Box backgroundColor="green" padding={1}>'
+                            - generic [ref=e176]: <Text color="black">Green</Text>
+                            - generic [ref=e177]: </Box>
+                            - generic [ref=e178]: '<Box backgroundColor="blue" padding={1}>'
+                            - generic [ref=e179]: <Text color="white">Blue</Text>
+                            - generic [ref=e180]: </Box>
+                            - generic [ref=e181]: </Box>
+                            - generic [ref=e182]: </Box>
+                            - generic [ref=e183]: )
+                            - generic [ref=e184]: "}"
+                    - heading "Building Locally Permalink to \"Building Locally\"" [level=2] [ref=e185]:
+                        - text: Building Locally
+                        - link "Permalink to \"Building Locally\"" [ref=e186] [cursor=pointer]:
+                            - /url: "#building-locally"
+                            - text: "#"
+                    - generic [ref=e187]:
+                        - button "Copy Code" [ref=e188] [cursor=pointer]
+                        - generic [ref=e189]: bash
+                        - code [ref=e191]:
+                            - generic [ref=e192]: cd vendor/beorn-inkx
+                            - generic [ref=e193]: bun run examples/web/build.ts
+                    - paragraph [ref=e194]:
+                        - text: This builds the JavaScript bundles into
+                        - code [ref=e195]: examples/web/dist/
+                        - text: . The HTML pages load these bundles and render the demo applications.
+            - contentinfo [ref=e196]:
+                - navigation "Pager" [ref=e197]:
+                    - generic [ref=e198]: Pager
+                    - link "Previous page Overview" [ref=e200] [cursor=pointer]:
+                        - /url: /inkx/examples/
+                        - generic [ref=e201]: Previous page
+                        - generic [ref=e202]: Overview
+                    - link "Next page Dashboard" [ref=e204] [cursor=pointer]:
+                        - /url: /inkx/examples/dashboard.html
+                        - generic [ref=e205]: Next page
+                        - generic [ref=e206]: Dashboard

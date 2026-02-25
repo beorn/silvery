@@ -1,0 +1,28 @@
+- generic [ref=e5]:
+    - textbox "Terminal input" [ref=e6]
+    - generic:
+        - generic:
+            - generic: ┌
+            - generic: create-app
+        - generic:
+            - generic: │
+        - generic:
+            - generic: ◆ Project name
+        - generic:
+            - generic: │ my-app
+        - generic:
+            - generic: │
+        - generic:
+            - generic: ○ Framework
+        - generic:
+            - generic: │
+        - generic:
+            - generic: ○ TypeScript?
+        - generic:
+            - generic: │
+        - generic:
+            - generic: ○ Package manager
+        - generic:
+            - generic: │
+        - generic:
+            - generic: └

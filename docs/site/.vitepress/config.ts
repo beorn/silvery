@@ -12,7 +12,8 @@ export default defineConfig({
   },
 
   title: "inkx",
-  description: "React for modern terminals — layout feedback, every terminal protocol, 200x+ faster incremental renders",
+  description:
+    "React for modern terminals — layout feedback, every terminal protocol, 200x+ faster incremental renders",
   base: "/inkx/",
 
   head: [["link", { rel: "icon", href: "/inkx/favicon.ico" }]],

@@ -20,15 +20,19 @@ inkx's `RenderAdapter` interface abstracts the rendering target. The same compon
 ### The Component
 
 ```tsx
-import { Box, Text, useContentRect } from 'inkx'
+import { Box, Text, useContentRect } from "inkx"
 
 function App() {
   const { width, height } = useContentRect()
   return (
     <Box flexDirection="column" padding={1}>
       <Box borderStyle="single" borderColor="cyan" padding={1}>
-        <Text bold color="cyan">inkx Rendering</Text>
-        <Text color="green">Size: {width} x {height}</Text>
+        <Text bold color="cyan">
+          inkx Rendering
+        </Text>
+        <Text color="green">
+          Size: {width} x {height}
+        </Text>
       </Box>
       <Box marginTop={1} flexDirection="row" gap={1}>
         <Box backgroundColor="red" padding={1}>

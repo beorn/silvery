@@ -31,7 +31,9 @@ function ScrollBoard({ selectedCol }: { selectedCol: number }) {
       {cols.map((col, colIdx) => (
         <Box key={colIdx} flexDirection="column" width={40} height={20}>
           <Box height={1}>
-            <Text bold inverse={colIdx === selectedCol}>{col.name}</Text>
+            <Text bold inverse={colIdx === selectedCol}>
+              {col.name}
+            </Text>
           </Box>
           <Box overflow="scroll" flexDirection="column" height={19}>
             {col.items.map((item, i) => (
@@ -192,7 +194,9 @@ describe("INKX_STRICT scroll container garble", () => {
             <Box overflow="scroll" flexDirection="column" height={rows - 1}>
               {Array.from({ length: 80 }, (_, i) => (
                 <Box key={i} height={2} outlineStyle={i === cursor ? "single" : undefined}>
-                  <Text>Card {i}: {"some content text ".repeat(2)}</Text>
+                  <Text>
+                    Card {i}: {"some content text ".repeat(2)}
+                  </Text>
                 </Box>
               ))}
             </Box>

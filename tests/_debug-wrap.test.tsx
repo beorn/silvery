@@ -9,14 +9,7 @@ describe("debug wrap height", () => {
     const render = createRenderer({ cols: 80, rows: 10 })
     const app = render(
       <Box flexDirection="column" width={37}>
-        <Box
-          flexDirection="column"
-          flexShrink={0}
-          width={37}
-          borderStyle="round"
-          paddingRight={1}
-          testID="card"
-        >
+        <Box flexDirection="column" flexShrink={0} width={37} borderStyle="round" paddingRight={1} testID="card">
           <Box flexDirection="row" alignItems="flex-start">
             <Box width={3} flexShrink={0}>
               <Text>{"·  "}</Text>
@@ -39,14 +32,7 @@ describe("debug wrap height", () => {
     const app = render(
       <Box flexDirection="column" width={37}>
         <Box flexDirection="column" height={8} overflow="scroll">
-          <Box
-            flexDirection="column"
-            flexShrink={0}
-            width={37}
-            borderStyle="round"
-            paddingRight={1}
-            testID="card"
-          >
+          <Box flexDirection="column" flexShrink={0} width={37} borderStyle="round" paddingRight={1} testID="card">
             <Box flexDirection="row" alignItems="flex-start">
               <Box width={3} flexShrink={0}>
                 <Text>{"·  "}</Text>

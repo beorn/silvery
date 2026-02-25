@@ -1,0 +1,8 @@
+Total messages: 3 (Errors: 3, Warnings: 0)
+
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://beorn.github.io/inkx/logo.svg:0
+[ERROR] Failed to load resource: the server responded with a status of 404 () @ https://beorn.github.io/inkx/favicon.ico:0
+TypeError: import_graphemer.default is not a constructor
+    at https://beorn.github.io/inkx/examples/dist/dom-app.js:13214:15
+    at https://beorn.github.io/inkx/examples/dist/dom-app.js:39:46
+    at https://beorn.github.io/inkx/examples/dist/dom-app.js:21070:1

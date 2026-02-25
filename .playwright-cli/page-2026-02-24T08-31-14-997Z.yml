@@ -1,0 +1,157 @@
+- generic [ref=e2]:
+    - generic [ref=e3]:
+        - generic [ref=e4]: inkx
+        - generic [ref=e5]: Interactive Examples
+        - generic [ref=e6]: 10 demos
+    - generic [ref=e7]:
+        - generic [ref=e8]:
+            - generic [ref=e9]: Showcases
+            - generic [ref=e11] [cursor=pointer]: System Dashboard
+            - generic [ref=e12] [cursor=pointer]: Coding Agent
+            - generic [ref=e13] [cursor=pointer]: Kanban Board
+            - generic [ref=e14] [cursor=pointer]: CLI Wizard
+            - generic [ref=e15] [cursor=pointer]: Log Viewer
+            - generic [ref=e16] [cursor=pointer]: Process Explorer
+            - generic [ref=e17] [cursor=pointer]: Scroll List
+            - generic [ref=e18] [cursor=pointer]: Layout Feedback
+            - generic [ref=e19] [cursor=pointer]: Focus Panels
+            - generic [ref=e20] [cursor=pointer]: Text Input
+        - generic [ref=e21]:
+            - generic [ref=e25]:
+                - textbox "Terminal input" [ref=e26]
+                - generic:
+                    - generic:
+                        - generic: ●
+                    - generic:
+                        - generic: System Monitor
+                    - generic:
+                        - generic: — 4 cores, 5 services
+                    - generic:
+                        - generic: ╭───────────────────────────────────────╮
+                        - generic: ╭─────────────────────────────────╮
+                    - generic:
+                        - generic: │
+                        - generic: CPU / Memory
+                        - generic: │
+                        - generic: │
+                        - generic: Services
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: │
+                        - generic: │
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: CPU
+                        - generic: ▄▅▃▄▃▃▃▃▂▂▂▂▂▂▁▁▁▂▁▁
+                        - generic: 5%
+                        - generic: │
+                        - generic: │
+                        - generic: ● api-gateway 12ms 14d 6h
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: │
+                        - generic: │
+                        - generic: ● auth-service 8ms 14d 6h
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: MEM
+                        - generic: ▆▄▆▄▄▅▄▅▄▅▅▅▅▄▄▅▄▄▄▄
+                        - generic: 37%
+                        - generic: │
+                        - generic: │
+                        - generic: ▲ worker-pool 245ms 2h 15m
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: │
+                        - generic: │
+                        - generic: ● cache-redis 2ms 7d 3h
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: C0
+                        - generic: █░░░░░░░░░░░
+                        - generic: 10%
+                        - generic: │
+                        - generic: │
+                        - generic: ✕ mail-service — 0m
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: C1
+                        - generic: █░░░░░░░░░░░
+                        - generic: 5%
+                        - generic: │
+                        - generic: ╰─────────────────────────────────╯
+                    - generic:
+                        - generic: │
+                        - generic: C2
+                        - generic: █░░░░░░░░░░░
+                        - generic: 12%
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: C3
+                        - generic: █░░░░░░░░░░░
+                        - generic: 5%
+                        - generic: │
+                    - generic:
+                        - generic: ╰───────────────────────────────────────╯
+                    - generic:
+                        - generic: ╭───────────────────────────────────────────────────────────────────────────╮
+                    - generic:
+                        - generic: │
+                        - generic: Events
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: 14:23:30
+                        - generic: "[BACKUP]"
+                        - generic: Finished (12.4 GB)
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: 14:23:45
+                        - generic: "[CERT]"
+                        - generic: SSL renewed (90d)
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: 14:24:01
+                        - generic: "[CACHE]"
+                        - generic: Purged successfully
+                        - generic: │
+                    - generic:
+                        - generic: │
+                        - generic: 14:24:12
+                        - generic: "[DB]"
+                        - generic: Migration v38 applied
+                        - generic: │
+                    - generic:
+                        - generic: ╰───────────────────────────────────────────────────────────────────────────╯
+                    - generic:
+                        - generic: ←→ panels
+            - generic [ref=e29]:
+                - generic [ref=e30]: System Dashboard
+                - generic [ref=e31]: Real-time metrics, service status, and event feed with live updating data.
+                - generic [ref=e32]:
+                    - generic [ref=e33]: Box
+                    - generic [ref=e34]: Text
+                    - generic [ref=e35]: borderStyle
+                    - generic [ref=e36]: flexDirection
+                    - generic [ref=e37]: useInput
+                    - generic [ref=e38]: useEffect
+                    - generic [ref=e39]: setInterval
+                - generic [ref=e40]: jk navigate Enter select s toggle source Click terminal for keyboard input
+        - generic [ref=e41]:
+            - generic [ref=e42]:
+                - generic [ref=e43]: Source
+                - button "Copy" [ref=e44] [cursor=pointer]
+            - generic [ref=e46]: '1 import React, { useState, useEffect } from "react" 2 import { Box, Text, useInput } from "inkx" 3 4 function DashboardShowcase() { 5 const [tick, setTick] = useState() 6 const [activePanel, setActivePanel] = useState() 7 8 useEffect(() => { 9 const id = setInterval(() => setTick((t) => t + ), ) 10 return () => clearInterval(id) 11 }, []) 12 13 useInput((_input, key) => { 14 if (key.leftArrow) setActivePanel((p) => Math.max(, p - )) 15 if (key.rightArrow) setActivePanel((p) => Math.min(, p + )) 16 }) 17 18 const cpu = + ((tick * ) % ) 19 const metrics = [ 20 { label: "CPU", value: cpu, color: cpu > ? "red" : "green" }, 21 { label: "Memory", value: + ((tick * ) % ), color: "yellow" }, 22 ] 23 24 return ( 25 <Box flexDirection="column" padding={}> 26 <Box flexDirection="row" gap={}> 27 <Box flexGrow={} borderStyle="single" 28 borderColor={activePanel === ? "cyan" : "#444"}> 29 <Text bold color="cyan">Metrics</Text> 30 {metrics.map((m) => ( 31 <Box key={m.label} flexDirection="row" gap={}> 32 <Text>{m.label}</Text> 33 <Text color={m.color}> 34 {"━".repeat(Math.round(m.value / ))} 35 </Text> 36 <Text bold color={m.color}>{m.value}%</Text> 37 </Box> 38 ))} 39 </Box> 40 </Box> 41 </Box> 42 ) 43 }'

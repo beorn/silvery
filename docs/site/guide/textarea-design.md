@@ -575,7 +575,7 @@ Use a grapheme splitter to handle:
 const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" })
 
 function splitGraphemes(text: string): string[] {
-  return [...segmenter.segment(text)].map(s => s.segment)
+  return [...segmenter.segment(text)].map((s) => s.segment)
 }
 ```
 

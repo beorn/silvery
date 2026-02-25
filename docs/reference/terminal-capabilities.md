@@ -796,12 +796,12 @@ await run(<App />, { textSizing: "auto" })
 See [text-sizing.md](text-sizing.md) for full documentation.
 
 | Terminal  | OSC 66 Support |
-|-----------|---------------|
-| Kitty     | v0.40+        |
-| Ghostty   | Yes           |
-| WezTerm   | No            |
-| iTerm2    | No            |
-| Alacritty | No            |
+| --------- | -------------- |
+| Kitty     | v0.40+         |
+| Ghostty   | Yes            |
+| WezTerm   | No             |
+| iTerm2    | No             |
+| Alacritty | No             |
 
 ## See Also
 

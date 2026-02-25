@@ -500,16 +500,21 @@ export class RenderScheduler {
       // This tells the terminal to batch the output and paint atomically,
       // preventing tearing during rapid screen updates.
       if (transformedOutput.length > 0 || cursorSuffix.length > 0) {
-        const fullOutput = this.nonTTYMode === "tty" && SYNC_UPDATE_ENABLED
-          ? `${ANSI.SYNC_BEGIN}${transformedOutput}${cursorSuffix}${ANSI.SYNC_END}`
-          : transformedOutput + cursorSuffix
+        const fullOutput =
+          this.nonTTYMode === "tty" && SYNC_UPDATE_ENABLED
+            ? `${ANSI.SYNC_BEGIN}${transformedOutput}${cursorSuffix}${ANSI.SYNC_END}`
+            : transformedOutput + cursorSuffix
 
         // Debug: log output sizes to detect potential pipe buffer splits
         if (log.debug) {
           const bytes = Buffer.byteLength(fullOutput)
-          log.debug?.(`stdout.write: ${bytes} bytes (${transformedOutput.length} chars output + ${cursorSuffix.length} chars cursor)`)
+          log.debug?.(
+            `stdout.write: ${bytes} bytes (${transformedOutput.length} chars output + ${cursorSuffix.length} chars cursor)`,
+          )
           if (bytes > 16384) {
-            log.warn?.(`large output: ${bytes} bytes may exceed pipe buffer (16KB on macOS), risk of mid-sequence split`)
+            log.warn?.(
+              `large output: ${bytes} bytes may exceed pipe buffer (16KB on macOS), risk of mid-sequence split`,
+            )
           }
         }
 
@@ -517,7 +522,10 @@ export class RenderScheduler {
         const captureFile = process.env.INKX_CAPTURE_OUTPUT
         if (captureFile) {
           const fs = require("fs")
-          fs.appendFileSync(captureFile, `--- FRAME ${this.stats.renderCount + 1} (${Buffer.byteLength(fullOutput)} bytes) ---\n`)
+          fs.appendFileSync(
+            captureFile,
+            `--- FRAME ${this.stats.renderCount + 1} (${Buffer.byteLength(fullOutput)} bytes) ---\n`,
+          )
           fs.appendFileSync(captureFile, fullOutput)
           fs.appendFileSync(captureFile, "\n")
         }

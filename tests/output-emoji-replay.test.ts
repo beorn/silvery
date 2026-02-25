@@ -27,7 +27,7 @@ function rowChars(screen: ReturnType<typeof replayAnsiWithStyles>, y: number): s
 
 describe("replayAnsiWithStyles — ZWJ emoji regression", () => {
   test("ZWJ person running (🏃‍♂️) occupies exactly 2 columns", () => {
-    const emoji = "🏃‍♂️"  // U+1F3C3 + U+200D + U+2642 + U+FE0F
+    const emoji = "🏃‍♂️" // U+1F3C3 + U+200D + U+2642 + U+FE0F
     expect(graphemeWidth(emoji)).toBe(2)
 
     const ansi = ansiAt(0, 0, `${emoji} after`)
@@ -35,26 +35,26 @@ describe("replayAnsiWithStyles — ZWJ emoji regression", () => {
 
     // Emoji at col 0, continuation space at col 1, ' ' at col 2, 'a' at col 3
     expect(screen[0]![0]!.char).toBe(emoji)
-    expect(screen[0]![1]!.char).toBe(" ")  // continuation cell
-    expect(screen[0]![2]!.char).toBe(" ")  // actual space
+    expect(screen[0]![1]!.char).toBe(" ") // continuation cell
+    expect(screen[0]![2]!.char).toBe(" ") // actual space
     expect(screen[0]![3]!.char).toBe("a")
     expect(screen[0]![4]!.char).toBe("f")
   })
 
   test("ZWJ technologist (👨🏻‍💻) occupies exactly 2 columns", () => {
-    const emoji = "👨🏻‍💻"  // U+1F468 + U+1F3FB + U+200D + U+1F4BB
+    const emoji = "👨🏻‍💻" // U+1F468 + U+1F3FB + U+200D + U+1F4BB
     expect(graphemeWidth(emoji)).toBe(2)
 
     const ansi = ansiAt(0, 0, `${emoji}X`)
     const screen = replayAnsiWithStyles(10, 1, ansi)
 
     expect(screen[0]![0]!.char).toBe(emoji)
-    expect(screen[0]![1]!.char).toBe(" ")  // continuation
+    expect(screen[0]![1]!.char).toBe(" ") // continuation
     expect(screen[0]![2]!.char).toBe("X")
   })
 
   test("ZWJ weightlifter (🏋️‍♂️) occupies exactly 2 columns", () => {
-    const emoji = "🏋️‍♂️"  // U+1F3CB + U+FE0F + U+200D + U+2642 + U+FE0F
+    const emoji = "🏋️‍♂️" // U+1F3CB + U+FE0F + U+200D + U+2642 + U+FE0F
     expect(graphemeWidth(emoji)).toBe(2)
 
     const ansi = ansiAt(0, 0, `${emoji}Z`)
@@ -66,7 +66,7 @@ describe("replayAnsiWithStyles — ZWJ emoji regression", () => {
   })
 
   test("flag emoji (🇨🇦) occupies exactly 2 columns", () => {
-    const emoji = "🇨🇦"  // U+1F1E8 + U+1F1E6
+    const emoji = "🇨🇦" // U+1F1E8 + U+1F1E6
     expect(graphemeWidth(emoji)).toBe(2)
 
     const ansi = ansiAt(0, 0, `${emoji}Y`)
@@ -78,7 +78,7 @@ describe("replayAnsiWithStyles — ZWJ emoji regression", () => {
   })
 
   test("skin tone modifier (👨🏻) stays as single grapheme", () => {
-    const emoji = "👨🏻"  // U+1F468 + U+1F3FB
+    const emoji = "👨🏻" // U+1F468 + U+1F3FB
     expect(graphemeWidth(emoji)).toBe(2)
 
     const ansi = ansiAt(0, 0, `${emoji}W`)
@@ -90,7 +90,7 @@ describe("replayAnsiWithStyles — ZWJ emoji regression", () => {
   })
 
   test("text presentation emoji with VS16 (☎️) occupies 2 columns", () => {
-    const emoji = "☎️"  // U+260E + U+FE0F
+    const emoji = "☎️" // U+260E + U+FE0F
     expect(graphemeWidth(emoji)).toBe(2)
 
     const ansi = ansiAt(0, 0, `${emoji}A`)
@@ -135,7 +135,7 @@ describe("replayAnsiWithStyles — ZWJ emoji regression", () => {
   })
 
   test("complex ZWJ family emoji (👨‍👩‍👧‍👦) is single grapheme", () => {
-    const emoji = "👨‍👩‍👧‍👦"  // family: man, woman, girl, boy (7 codepoints)
+    const emoji = "👨‍👩‍👧‍👦" // family: man, woman, girl, boy (7 codepoints)
     const w = graphemeWidth(emoji)
     expect(w).toBe(2)
 
@@ -143,7 +143,7 @@ describe("replayAnsiWithStyles — ZWJ emoji regression", () => {
     const screen = replayAnsiWithStyles(10, 1, ansi)
 
     expect(screen[0]![0]!.char).toBe(emoji)
-    expect(screen[0]![1]!.char).toBe(" ")  // continuation
+    expect(screen[0]![1]!.char).toBe(" ") // continuation
     expect(screen[0]![2]!.char).toBe("X")
   })
 
@@ -162,30 +162,24 @@ describe("replayAnsiWithStyles — ZWJ emoji regression", () => {
 describe("replayAnsiWithStyles — fuzz: random emoji sequences", () => {
   // Comprehensive set of emoji that exercise all combining paths
   const EMOJI_ZWJ = [
-    "🏃‍♂️",    // person running + ZWJ + male
-    "🏃‍♀️",    // person running + ZWJ + female
-    "👨🏻‍💻",   // man technologist light skin
-    "👩🏽‍🔬",   // woman scientist medium skin
-    "🏋️‍♂️",   // man lifting weights
-    "🧑‍🤝‍🧑",  // people holding hands
+    "🏃‍♂️", // person running + ZWJ + male
+    "🏃‍♀️", // person running + ZWJ + female
+    "👨🏻‍💻", // man technologist light skin
+    "👩🏽‍🔬", // woman scientist medium skin
+    "🏋️‍♂️", // man lifting weights
+    "🧑‍🤝‍🧑", // people holding hands
     "👨‍👩‍👧‍👦", // family
-    "🏴‍☠️",    // pirate flag
-    "🐻‍❄️",    // polar bear
+    "🏴‍☠️", // pirate flag
+    "🐻‍❄️", // polar bear
   ]
 
   const EMOJI_FLAG = ["🇨🇦", "🇺🇸", "🇯🇵", "🇬🇧", "🇫🇷", "🇩🇪"]
 
-  const EMOJI_SKIN = [
-    "👨🏻", "👩🏼", "🧑🏽", "👶🏾", "🧓🏿",
-  ]
+  const EMOJI_SKIN = ["👨🏻", "👩🏼", "🧑🏽", "👶🏾", "🧓🏿"]
 
-  const EMOJI_VS16 = [
-    "☎️", "✈️", "☕", "⚠️", "✅", "❌", "⭐", "🍽️",
-  ]
+  const EMOJI_VS16 = ["☎️", "✈️", "☕", "⚠️", "✅", "❌", "⭐", "🍽️"]
 
-  const EMOJI_SIMPLE = [
-    "📱", "💻", "🎯", "📊", "💼", "📚", "🔧", "🌱", "🛒", "📦",
-  ]
+  const EMOJI_SIMPLE = ["📱", "💻", "🎯", "📊", "💼", "📚", "🔧", "🌱", "🛒", "📦"]
 
   const ALL_EMOJI = [...EMOJI_ZWJ, ...EMOJI_FLAG, ...EMOJI_SKIN, ...EMOJI_VS16, ...EMOJI_SIMPLE]
 
@@ -196,7 +190,7 @@ describe("replayAnsiWithStyles — fuzz: random emoji sequences", () => {
 
     expect(screen[0]![0]!.char).toBe(emoji)
     if (w > 1) {
-      expect(screen[0]![1]!.char).toBe(" ")  // continuation
+      expect(screen[0]![1]!.char).toBe(" ") // continuation
     }
     expect(screen[0]![w]!.char).toBe("X")
   })
@@ -208,7 +202,7 @@ describe("replayAnsiWithStyles — fuzz: random emoji sequences", () => {
     for (let i = 0; i < 20; i++) {
       const emoji = ALL_EMOJI[i % ALL_EMOJI.length]!
       text += emoji + " "
-      expectedPos += graphemeWidth(emoji) + 1  // emoji width + space
+      expectedPos += graphemeWidth(emoji) + 1 // emoji width + space
     }
     text += "END"
 
@@ -229,8 +223,8 @@ describe("replayAnsiWithStyles — fuzz: random emoji sequences", () => {
     const screen = replayAnsiWithStyles(20, 1, ansi)
 
     expect(screen[0]![0]!.char).toBe(emoji)
-    expect(screen[0]![1]!.char).toBe(" ")  // continuation
-    expect(screen[0]![2]!.char).toBe(" ")  // actual space
+    expect(screen[0]![1]!.char).toBe(" ") // continuation
+    expect(screen[0]![2]!.char).toBe(" ") // actual space
     expect(screen[0]![3]!.char).toBe("e")
   })
 })

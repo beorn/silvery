@@ -36,7 +36,7 @@ features:
     details: "Command introspection for agents, programmatic screenshots, scrollable streaming output. CLAUDE.md ships with the package."
   - icon: "\U0001F5C4\uFE0F"
     title: Scrollable Containers
-    details: "overflow=\"scroll\" with scrollTo just works. No manual virtualization. Ink's #1 feature request since 2019, solved."
+    details: 'overflow="scroll" with scrollTo just works. No manual virtualization. Ink''s #1 feature request since 2019, solved.'
   - icon: "\U0001F6AB"
     title: Zero Dependencies
     details: "Pure TypeScript. No WASM, no C++, no memory leaks. Runs on Node, Bun, and Deno."

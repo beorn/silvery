@@ -116,8 +116,12 @@ function Wizard() {
 
   return (
     <Box flexDirection="column" gap={1}>
-      <Text color="green" bold>Done!</Text>
-      <Text>Created {name} with {framework}.</Text>
+      <Text color="green" bold>
+        Done!
+      </Text>
+      <Text>
+        Created {name} with {framework}.
+      </Text>
       <Text dimColor>Press q to exit</Text>
     </Box>
   )

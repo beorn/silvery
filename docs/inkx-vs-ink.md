@@ -116,15 +116,15 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 
 ### Performance
 
-| Scenario                              | inkx          | Ink                     |                      |
-| ------------------------------------- | ------------- | ----------------------- | -------------------- |
-| Cold render (1 component)             | 165 µs        | 271 µs                  | inkx 1.6x faster     |
-| Cold render (1000 components)         | 463 ms        | 541 ms                  | inkx 1.2x faster     |
-| Full React rerender (1000 components) | 630 ms        | 20.7 ms                 | Ink 30x faster       |
+| Scenario                              | inkx          | Ink                     |                       |
+| ------------------------------------- | ------------- | ----------------------- | --------------------- |
+| Cold render (1 component)             | 165 µs        | 271 µs                  | inkx 1.6x faster      |
+| Cold render (1000 components)         | 463 ms        | 541 ms                  | inkx 1.2x faster      |
+| Full React rerender (1000 components) | 630 ms        | 20.7 ms                 | Ink 30x faster        |
 | **Typical interactive update**        | **169 µs**    | **20.7 ms**             | **inkx 200x+ faster** |
-| Layout (50-node kanban)               | 57 µs (Flexx) | 136 µs (Yoga NAPI)      | Flexx 2.4x faster    |
-| Terminal resize (1000 nodes)          | 21 µs         | Full re-render          | —                    |
-| Buffer diff (80x24, 10% changed)      | 34 µs         | N/A (row-based strings) | —                    |
+| Layout (50-node kanban)               | 57 µs (Flexx) | 136 µs (Yoga NAPI)      | Flexx 2.4x faster     |
+| Terminal resize (1000 nodes)          | 21 µs         | Full re-render          | —                     |
+| Buffer diff (80x24, 10% changed)      | 34 µs         | N/A (row-based strings) | —                     |
 
 **Understanding the rerender row:** When the _entire_ component tree re-renders from scratch (e.g., replacing the root element), Ink is 30x faster because its output is just string concatenation. inkx runs a 5-phase pipeline (measure → layout → content → output) after React reconciliation — that's the cost of layout feedback. But this scenario almost never happens in real apps.
 

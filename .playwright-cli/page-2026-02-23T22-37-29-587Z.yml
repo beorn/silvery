@@ -1,0 +1,181 @@
+- generic [ref=e3]:
+    - link "Skip to content" [ref=e4] [cursor=pointer]:
+        - /url: "#VPContent"
+    - banner:
+        - generic:
+            - generic:
+                - generic:
+                    - link "inkx" [ref=e6] [cursor=pointer]:
+                        - /url: /inkx/
+                        - generic [ref=e7]: inkx
+                    - generic [ref=e8]:
+                        - button "Search" [ref=e11] [cursor=pointer]:
+                            - generic [ref=e14]: Search
+                            - generic [ref=e15]:
+                                - generic [ref=e16]: ⌘
+                                - generic [ref=e17]: K
+                        - navigation "Main Navigation" [ref=e18]:
+                            - generic [ref=e19]: Main Navigation
+                            - link "Guide" [ref=e20] [cursor=pointer]:
+                                - /url: /inkx/guide/getting-started.html
+                                - generic [ref=e21]: Guide
+                            - link "API" [ref=e22] [cursor=pointer]:
+                                - /url: /inkx/api/box.html
+                                - generic [ref=e23]: API
+                            - button "Examples" [ref=e25] [cursor=pointer]:
+                                - generic [ref=e27]: Examples
+                            - button "Links" [ref=e30] [cursor=pointer]:
+                                - generic [ref=e32]: Links
+                        - switch "Switch to dark theme" [ref=e35] [cursor=pointer]
+                        - link "github" [ref=e41] [cursor=pointer]:
+                            - /url: https://github.com/beorn/inkx
+    - generic [ref=e44]:
+        - generic [ref=e47]:
+            - heading "inkx React for modern terminals" [level=1] [ref=e48]:
+                - generic [ref=e49]: inkx
+                - generic [ref=e50]: React for modern terminals
+            - paragraph [ref=e51]: 122x faster interactive updates. Reactive layout. AI-ready. Three architectures. Mouse, keyboard, images, clipboard, hyperlinks, scrollback. Pure TypeScript — no WASM, no C++.
+            - generic [ref=e52]:
+                - link "Get Started" [ref=e54] [cursor=pointer]:
+                    - /url: /inkx/guide/getting-started.html
+                - link "View on GitHub" [ref=e56] [cursor=pointer]:
+                    - /url: https://github.com/beorn/inkx
+        - generic [ref=e59]:
+            - article [ref=e62]:
+                - generic [ref=e63]: 📐
+                - heading "Layout Feedback" [level=2] [ref=e64]
+                - paragraph [ref=e65]: useContentRect() — components know their size. Ink's oldest open issue (2016), solved.
+            - article [ref=e68]:
+                - generic [ref=e69]: 📡
+                - heading "Every Protocol" [level=2] [ref=e70]
+                - paragraph [ref=e71]: Kitty keyboard, SGR mouse, images, clipboard, hyperlinks. All built-in, all auto-detected.
+            - link [ref=e73] [cursor=pointer]:
+                - /url: /inkx/guide/why-inkx.html#incremental-rendering
+                - article [ref=e74]:
+                    - generic [ref=e75]: ⚡
+                    - heading "122x Faster*" [level=2] [ref=e76]
+                    - paragraph [ref=e77]: Per-node dirty tracking with 7 independent flags — 169μs vs Ink's 20.7ms. Only changed nodes re-render.
+                    - paragraph [ref=e79]: "* See benchmarks"
+            - article [ref=e83]:
+                - generic [ref=e84]: 🎯
+                - heading "Three Render Targets" [level=2] [ref=e85]
+                - paragraph [ref=e86]: Terminal, Canvas 2D, and DOM. Same components, different output.
+        - generic [ref=e89]:
+            - heading "See It in Action Permalink to \"See It in Action\"" [level=2] [ref=e90]:
+                - text: See It in Action
+                - link "Permalink to \"See It in Action\"" [ref=e91] [cursor=pointer]:
+                    - /url: "#see-it-in-action"
+                    - text: "#"
+            - paragraph [ref=e92]: "Same React component, three render targets — switch tabs to compare:"
+            - generic [ref=e93]:
+                - generic [ref=e94]:
+                    - button "Canvas 2D" [ref=e95] [cursor=pointer]
+                    - button "DOM" [ref=e96] [cursor=pointer]
+                    - button "Terminal" [ref=e97] [cursor=pointer]
+                - generic [ref=e98]:
+                    - iframe [ref=e99]:
+
+                    - generic:
+                        - paragraph: "If the demo is blank, build the examples first:"
+                        - code: bun run examples/web/build.ts
+                - paragraph [ref=e100]: Semantic HTML elements. Native text selection, screen reader accessible, CSS hover/focus states.
+            - heading "Build Any Terminal App Permalink to \"Build Any Terminal App\"" [level=2] [ref=e101]:
+                - text: Build Any Terminal App
+                - link "Permalink to \"Build Any Terminal App\"" [ref=e102] [cursor=pointer]:
+                    - /url: "#build-any-terminal-app"
+                    - text: "#"
+            - list [ref=e104]:
+                - listitem [ref=e105]:
+                    - strong [ref=e106]:
+                        - link "AI Assistants & Chat" [ref=e107] [cursor=pointer]:
+                            - /url: /inkx/use-cases/ai-assistants.html
+                    - text: — Streaming output, scrollback history, command palettes
+                - listitem [ref=e108]:
+                    - strong [ref=e109]:
+                        - link "Dashboards & Monitoring" [ref=e110] [cursor=pointer]:
+                            - /url: /inkx/use-cases/dashboards.html
+                    - text: — Multi-pane layouts with real-time data
+                - listitem [ref=e111]:
+                    - strong [ref=e112]:
+                        - link "Kanban & Project Boards" [ref=e113] [cursor=pointer]:
+                            - /url: /inkx/use-cases/kanban-boards.html
+                    - text: — Multi-column navigation with cards and focus management
+                - listitem [ref=e114]:
+                    - strong [ref=e115]:
+                        - link "CLI Wizards & Setup Tools" [ref=e116] [cursor=pointer]:
+                            - /url: /inkx/use-cases/cli-wizards.html
+                    - text: — Step-by-step forms, selections, progress tracking
+                - listitem [ref=e117]:
+                    - strong [ref=e118]:
+                        - link "Developer Tools" [ref=e119] [cursor=pointer]:
+                            - /url: /inkx/use-cases/developer-tools.html
+                    - text: — REPLs, log viewers, debuggers, profilers
+                - listitem [ref=e120]:
+                    - strong [ref=e121]:
+                        - link "Data Explorers & Tables" [ref=e122] [cursor=pointer]:
+                            - /url: /inkx/use-cases/data-explorers.html
+                    - text: — Virtual lists, filtering, search, sortable tables
+            - heading "What's Inside Permalink to \"What's Inside\"" [level=2] [ref=e123]:
+                - text: What's Inside
+                - link "Permalink to \"What's Inside\"" [ref=e124] [cursor=pointer]:
+                    - /url: "#what-s-inside"
+                    - text: "#"
+            - list [ref=e126]:
+                - listitem [ref=e127]:
+                    - strong [ref=e128]: 23+ components
+                    - text: — Box, Text, VirtualList, TextArea, SelectList, Table, Image, Spinner, ProgressBar, and more
+                - listitem [ref=e129]:
+                    - strong [ref=e130]: Scrollable containers
+                    - text: —
+                    - code [ref=e131]: overflow="scroll"
+                    - text: with
+                    - code [ref=e132]: scrollTo
+                    - text: "just works. No manual virtualization. Ink's #1 feature request since 2019."
+                - listitem [ref=e133]:
+                    - strong [ref=e134]: Three architectures
+                    - text: — React hooks, Elm-style reducers, or Zustand stores. Choose per use case — all three in one framework.
+                - listitem [ref=e135]:
+                    - strong [ref=e136]: Built for AI
+                    - text: — Command introspection for agents, programmatic screenshots, scrollable streaming output. CLAUDE.md ships with the package.
+                - listitem [ref=e137]:
+                    - strong [ref=e138]: Input system
+                    - text: — Input layer stack (DOM-style event bubbling), tree-based focus with spatial navigation, command system with keybinding resolution
+                - listitem [ref=e139]:
+                    - strong [ref=e140]: Zero native deps
+                    - text: — Pure TypeScript. No WASM, no C++, no memory leaks. Runs on Node, Bun, and Deno.
+            - heading "Quick Start Permalink to \"Quick Start\"" [level=2] [ref=e141]:
+                - text: Quick Start
+                - link "Permalink to \"Quick Start\"" [ref=e142] [cursor=pointer]:
+                    - /url: "#quick-start"
+                    - text: "#"
+            - generic [ref=e143]:
+                - button "Copy Code" [ref=e144] [cursor=pointer]
+                - generic [ref=e145]: bash
+                - code [ref=e147]:
+                    - generic [ref=e148]: bun add inkx react @beorn/flexx
+            - generic [ref=e149]:
+                - button "Copy Code" [ref=e150] [cursor=pointer]
+                - generic [ref=e151]: tsx
+                - code [ref=e153]:
+                    - generic [ref=e154]: 'import { Box, Text, useContentRect } from "inkx"'
+                    - generic [ref=e155]: 'import { run, useInput } from "inkx/runtime"'
+                    - generic [ref=e156]: "function App() {"
+                    - generic [ref=e157]: "const { width } = useContentRect() // Components know their size!"
+                    - generic [ref=e158]: const [count, setCount] = useState(0)
+                    - generic [ref=e159]: "useInput((input, key) => {"
+                    - generic [ref=e160]: if (input === "j" || key.downArrow) setCount((c) => c + 1)
+                    - generic [ref=e161]: if (input === "k" || key.upArrow) setCount((c) => c - 1)
+                    - generic [ref=e162]: if (input === "q") return "exit"
+                    - generic [ref=e163]: "})"
+                    - generic [ref=e164]: return (
+                    - generic [ref=e165]: <Box flexDirection="column">
+                    - generic [ref=e166]: "<Text>Terminal width: {width}</Text>"
+                    - generic [ref=e167]: "<Text>Count: {count}</Text>"
+                    - generic [ref=e168]: </Box>
+                    - generic [ref=e169]: )
+                    - generic [ref=e170]: "}"
+                    - generic [ref=e171]: await run(<App />)
+    - contentinfo [ref=e172]:
+        - generic [ref=e173]:
+            - paragraph [ref=e174]: Released under the MIT License.
+            - paragraph [ref=e175]: Copyright © 2024-present

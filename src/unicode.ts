@@ -263,8 +263,7 @@ export function displayWidth(text: string): number {
   let width: number
   // Fast path: if text cannot contain text-presentation emoji (or PUA when text
   // sizing is enabled), use string-width directly
-  const needsSlowPath =
-    MAY_CONTAIN_TEXT_EMOJI.test(text) || (_textSizingEnabled && MAY_CONTAIN_PUA.test(text))
+  const needsSlowPath = MAY_CONTAIN_TEXT_EMOJI.test(text) || (_textSizingEnabled && MAY_CONTAIN_PUA.test(text))
   if (!needsSlowPath) {
     width = stringWidth(text)
   } else {

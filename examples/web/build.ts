@@ -109,18 +109,69 @@ async function generateRegistry(): Promise<void> {
   const entries: RegistryEntry[] = []
 
   // Showcase entries (from showcases.tsx — these share one file, source shown differently)
-  const showcaseKeys = ["dashboard", "coding-agent", "kanban", "cli-wizard", "dev-tools", "data-explorer", "scroll", "layout-feedback", "focus", "text-input"]
+  const showcaseKeys = [
+    "dashboard",
+    "coding-agent",
+    "kanban",
+    "cli-wizard",
+    "dev-tools",
+    "data-explorer",
+    "scroll",
+    "layout-feedback",
+    "focus",
+    "text-input",
+  ]
   const showcaseMeta: Record<string, { name: string; description: string; features: string[] }> = {
-    "dashboard": { name: "System Dashboard", description: "Real-time metrics, service status, and event feed with live updating data.", features: ["Box", "Text", "borderStyle", "flexDirection", "useInput", "useEffect", "setInterval"] },
-    "coding-agent": { name: "Coding Agent", description: "Claude Code-style coding agent with tool calls, code diffs, and streaming output.", features: ["Box", "Text", "outlineStyle", "flexDirection", "wrap"] },
-    "kanban": { name: "Kanban Board", description: "Three-column kanban with selectable cards and tag badges.", features: ["Box", "Text", "borderStyle", "flexGrow", "useInput", "useState"] },
-    "cli-wizard": { name: "CLI Wizard", description: "Clack-style interactive setup wizard with step-by-step progression.", features: ["Box", "Text", "useInput", "useState", "Fragment"] },
-    "dev-tools": { name: "Log Viewer", description: "Filterable log viewer with live search, scroll, and level coloring.", features: ["Box", "Text", "borderStyle", "useInput", "useState", "wrap"] },
-    "data-explorer": { name: "Process Explorer", description: "Sortable data table with live CPU jitter and row selection.", features: ["Box", "Text", "backgroundColor", "flexDirection", "useInput", "useEffect"] },
-    "scroll": { name: "Scroll List", description: "Basic scrollable list with keyboard navigation.", features: ["Box", "Text", "borderStyle", "useInput"] },
-    "layout-feedback": { name: "Layout Feedback", description: "Live display of content dimensions via useContentRect().", features: ["Box", "Text", "useContentRect", "justifyContent", "alignItems"] },
-    "focus": { name: "Focus Panels", description: "Tab-cycling focus across three panels.", features: ["Box", "Text", "borderStyle", "useInput"] },
-    "text-input": { name: "Text Input", description: "Live text echo with cursor, backspace, and clear.", features: ["Box", "Text", "borderStyle", "useInput"] },
+    dashboard: {
+      name: "System Dashboard",
+      description: "Real-time metrics, service status, and event feed with live updating data.",
+      features: ["Box", "Text", "borderStyle", "flexDirection", "useInput", "useEffect", "setInterval"],
+    },
+    "coding-agent": {
+      name: "Coding Agent",
+      description: "Claude Code-style coding agent with tool calls, code diffs, and streaming output.",
+      features: ["Box", "Text", "outlineStyle", "flexDirection", "wrap"],
+    },
+    kanban: {
+      name: "Kanban Board",
+      description: "Three-column kanban with selectable cards and tag badges.",
+      features: ["Box", "Text", "borderStyle", "flexGrow", "useInput", "useState"],
+    },
+    "cli-wizard": {
+      name: "CLI Wizard",
+      description: "Clack-style interactive setup wizard with step-by-step progression.",
+      features: ["Box", "Text", "useInput", "useState", "Fragment"],
+    },
+    "dev-tools": {
+      name: "Log Viewer",
+      description: "Filterable log viewer with live search, scroll, and level coloring.",
+      features: ["Box", "Text", "borderStyle", "useInput", "useState", "wrap"],
+    },
+    "data-explorer": {
+      name: "Process Explorer",
+      description: "Sortable data table with live CPU jitter and row selection.",
+      features: ["Box", "Text", "backgroundColor", "flexDirection", "useInput", "useEffect"],
+    },
+    scroll: {
+      name: "Scroll List",
+      description: "Basic scrollable list with keyboard navigation.",
+      features: ["Box", "Text", "borderStyle", "useInput"],
+    },
+    "layout-feedback": {
+      name: "Layout Feedback",
+      description: "Live display of content dimensions via useContentRect().",
+      features: ["Box", "Text", "useContentRect", "justifyContent", "alignItems"],
+    },
+    focus: {
+      name: "Focus Panels",
+      description: "Tab-cycling focus across three panels.",
+      features: ["Box", "Text", "borderStyle", "useInput"],
+    },
+    "text-input": {
+      name: "Text Input",
+      description: "Live text echo with cursor, backspace, and clear.",
+      features: ["Box", "Text", "borderStyle", "useInput"],
+    },
   }
 
   for (const key of showcaseKeys) {
@@ -140,7 +191,7 @@ async function generateRegistry(): Promise<void> {
   // Scan example directories
   for (const cat of categories) {
     const dir = join(__dirname, "..", cat.dir)
-    const files = (await readdir(dir)).filter(f => f.endsWith(".tsx") && !skipFiles.has(`${cat.dir}/${f}`))
+    const files = (await readdir(dir)).filter((f) => f.endsWith(".tsx") && !skipFiles.has(`${cat.dir}/${f}`))
 
     for (const file of files.sort()) {
       const source = await Bun.file(join(dir, file)).text()
@@ -148,7 +199,9 @@ async function generateRegistry(): Promise<void> {
 
       // Extract meta from ExampleMeta export
       const metaMatch = source.match(/export const meta:\s*ExampleMeta\s*=\s*\{([^}]+)\}/)
-      let name = key, description = "", features: string[] = []
+      let name = key,
+        description = "",
+        features: string[] = []
       if (metaMatch) {
         const metaStr = metaMatch[1]!
         const nameMatch = metaStr.match(/name:\s*"([^"]+)"/)
@@ -156,10 +209,19 @@ async function generateRegistry(): Promise<void> {
         const featMatch = metaStr.match(/features:\s*\[([^\]]*)\]/)
         if (nameMatch) name = nameMatch[1]!
         if (descMatch) description = descMatch[1]!
-        if (featMatch) features = featMatch[1]!.match(/"([^"]+)"/g)?.map(s => s.replace(/"/g, "")) ?? []
+        if (featMatch) features = featMatch[1]!.match(/"([^"]+)"/g)?.map((s) => s.replace(/"/g, "")) ?? []
       }
 
-      entries.push({ key, name, description, features, category: cat.label, categoryColor: cat.color, source, type: "example" })
+      entries.push({
+        key,
+        name,
+        description,
+        features,
+        category: cat.label,
+        categoryColor: cat.color,
+        source,
+        type: "example",
+      })
     }
   }
 

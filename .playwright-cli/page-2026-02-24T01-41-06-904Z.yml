@@ -1,0 +1,73 @@
+- generic [ref=e5]:
+    - textbox "Terminal input" [ref=e6]
+    - generic:
+        - generic:
+            - generic: Process Explorer
+            - generic: "- 10 processes"
+            - generic: Sorted by CPU ▼
+        - generic:
+            - generic: ID
+            - generic: Name
+            - generic: Status
+            - generic: CPU%
+            - generic: Mem
+        - generic:
+            - generic: "1024"
+            - generic: web-server
+            - generic: running
+            - generic: "63"
+            - generic: 128 MB
+        - generic:
+            - generic: "1026"
+            - generic: api-gateway
+            - generic: running
+            - generic: "51"
+            - generic: 192 MB
+        - generic:
+            - generic: "1025"
+            - generic: db-primary
+            - generic: running
+            - generic: "50"
+            - generic: 512 MB
+        - generic:
+            - generic: "1027"
+            - generic: worker-pool
+            - generic: running
+            - generic: "38"
+            - generic: 96 MB
+        - generic:
+            - generic: "1028"
+            - generic: cache-redis
+            - generic: running
+            - generic: "25"
+            - generic: 256 MB
+        - generic:
+            - generic: "1029"
+            - generic: metrics
+            - generic: running
+            - generic: "17"
+            - generic: 64 MB
+        - generic:
+            - generic: "1030"
+            - generic: log-shipper
+            - generic: idle
+            - generic: "4"
+            - generic: 32 MB
+        - generic:
+            - generic: "1031"
+            - generic: cron-sched
+            - generic: idle
+            - generic: "1"
+            - generic: 16 MB
+        - generic:
+            - generic: "1032"
+            - generic: backup-agent
+            - generic: stopped
+            - generic: "0"
+            - generic: 0 MB
+        - generic:
+            - generic: "1033"
+            - generic: mail-service
+            - generic: stopped
+            - generic: "0"
+            - generic: 0 MB

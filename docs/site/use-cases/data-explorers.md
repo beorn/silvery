@@ -51,10 +51,7 @@ function App() {
 
   // Filter rows against the deferred query so typing stays responsive
   const filtered = processes.filter(
-    (p) =>
-      p.name.includes(deferredQuery) ||
-      String(p.pid).includes(deferredQuery) ||
-      p.status.includes(deferredQuery),
+    (p) => p.name.includes(deferredQuery) || String(p.pid).includes(deferredQuery) || p.status.includes(deferredQuery),
   )
 
   useInput((input, key) => {
@@ -114,11 +111,7 @@ For datasets larger than a few hundred rows, wrap the table body in a `VirtualLi
   height={terminalHeight - 4}
   itemHeight={1}
   scrollTo={selected}
-  renderItem={(row, index) => (
-    <Text inverse={index === selected}>
-      {formatRow(row, columns)}
-    </Text>
-  )}
+  renderItem={(row, index) => <Text inverse={index === selected}>{formatRow(row, columns)}</Text>}
 />
 ```
 

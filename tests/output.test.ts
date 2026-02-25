@@ -179,7 +179,12 @@ describe("Output Functions", () => {
             i += 2
             // Parse params
             let params = ""
-            while (i < ansi.length && ansi[i]! >= "0" && ansi[i]! <= "9" || ansi[i] === ";" || ansi[i] === "?" || ansi[i] === ":") {
+            while (
+              (i < ansi.length && ansi[i]! >= "0" && ansi[i]! <= "9") ||
+              ansi[i] === ";" ||
+              ansi[i] === "?" ||
+              ansi[i] === ":"
+            ) {
               params += ansi[i]
               i++
             }
@@ -189,7 +194,8 @@ describe("Output Functions", () => {
             if (cmd === "H") {
               // Cursor position (1-indexed) or home
               if (params === "") {
-                cx = 0; cy = 0
+                cx = 0
+                cy = 0
               } else {
                 const parts = params.split(";")
                 cy = Math.max(0, (parseInt(parts[0]!) || 1) - 1)
@@ -216,8 +222,7 @@ describe("Output Functions", () => {
             } else if (cmd === "J") {
               // Erase display
               if (params === "2") {
-                for (let y = 0; y < height; y++)
-                  for (let x = 0; x < width; x++) screen[y]![x] = " "
+                for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) screen[y]![x] = " "
               }
             }
             // Skip other CSI sequences (SGR 'm', mouse modes 'h'/'l', etc.)
@@ -225,8 +230,14 @@ describe("Output Functions", () => {
             // OSC sequence: skip to ST (\x1b\\) or BEL (\x07)
             i += 2
             while (i < ansi.length) {
-              if (ansi[i] === "\x1b" && ansi[i + 1] === "\\") { i += 2; break }
-              if (ansi[i] === "\x07") { i++; break }
+              if (ansi[i] === "\x1b" && ansi[i + 1] === "\\") {
+                i += 2
+                break
+              }
+              if (ansi[i] === "\x07") {
+                i++
+                break
+              }
               i++
             }
           } else {
@@ -364,12 +375,10 @@ describe("Output Functions", () => {
     test("incremental diff with scattered single-cell changes", () => {
       // Sparse changes across multiple rows (worst case for cursor movement)
       const buf1 = new TerminalBuffer(20, 5)
-      for (let y = 0; y < 5; y++)
-        for (let x = 0; x < 20; x++) buf1.setCell(x, y, { char: "." })
+      for (let y = 0; y < 5; y++) for (let x = 0; x < 20; x++) buf1.setCell(x, y, { char: "." })
 
       const buf2 = new TerminalBuffer(20, 5)
-      for (let y = 0; y < 5; y++)
-        for (let x = 0; x < 20; x++) buf2.setCell(x, y, { char: "." })
+      for (let y = 0; y < 5; y++) for (let x = 0; x < 20; x++) buf2.setCell(x, y, { char: "." })
       // Scatter a few changed cells
       buf2.setCell(5, 0, { char: "X" })
       buf2.setCell(15, 1, { char: "Y" })

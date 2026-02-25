@@ -30,7 +30,9 @@ function isStrictOutput(): boolean {
   if (outputEnv === "0" || outputEnv === "false") return false
   return !!outputEnv || !!process.env.INKX_STRICT
 }
-function isStrictAccumulate(): boolean { return !!process.env.INKX_STRICT_ACCUMULATE }
+function isStrictAccumulate(): boolean {
+  return !!process.env.INKX_STRICT_ACCUMULATE
+}
 let accumulatedAnsi = ""
 let accumulateWidth = 0
 let accumulateHeight = 0
@@ -353,7 +355,6 @@ export function outputPhase(
 
   // Fullscreen mode: diff and emit only changes
   const { pool, count } = diffBuffers(prev, next)
-
 
   if (DEBUG_OUTPUT) {
     // eslint-disable-next-line no-console
@@ -1111,8 +1112,7 @@ function replayAnsi(width: number, height: number, ansi: string): string[][] {
           cx = Math.max(0, (parseInt(params) || 1) - 1)
         } else if (cmd === "J") {
           if (params === "2") {
-            for (let y = 0; y < height; y++)
-              for (let x = 0; x < width; x++) screen[y]![x] = " "
+            for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) screen[y]![x] = " "
           }
         }
         // Skip SGR (m), DEC modes (h/l), etc.
@@ -1439,7 +1439,7 @@ export function replayAnsiWithStyles(width: number, height: number, ansi: string
       // like flag emoji 🇺🇸 which are 2 regional indicator codepoints = 4 UTF-16 code units)
       const cp = ansi.codePointAt(i)!
       // Advance past this codepoint (2 code units if surrogate pair, 1 otherwise)
-      const cpLen = cp > 0xFFFF ? 2 : 1
+      const cpLen = cp > 0xffff ? 2 : 1
       // Collect combining marks and joiners that follow (ZWJ sequences, variation selectors, etc.)
       let grapheme = String.fromCodePoint(cp)
       let j = i + cpLen
@@ -1452,20 +1452,21 @@ export function replayAnsiWithStyles(width: number, height: number, ansi: string
         // 🏃‍♂️ = runner + ZWJ + male sign + VS16: male sign is NOT a combining mark
         // but must be part of this grapheme cluster).
         const isCombining =
-          prevWasZwj ||                                   // Joinee after ZWJ
-          (nextCp >= 0x0300 && nextCp <= 0x036F) ||       // Combining Diacritical Marks
-          (nextCp >= 0x20D0 && nextCp <= 0x20FF) ||       // Combining Diacritical Marks for Symbols
-          (nextCp >= 0xFE00 && nextCp <= 0xFE0F) ||       // Variation Selectors
-          nextCp === 0xFE0E || nextCp === 0xFE0F ||        // Text/Emoji presentation
-          nextCp === 0x200D ||                              // ZWJ
-          (nextCp >= 0xE0100 && nextCp <= 0xE01EF) ||      // Variation Selectors Supplement
+          prevWasZwj || // Joinee after ZWJ
+          (nextCp >= 0x0300 && nextCp <= 0x036f) || // Combining Diacritical Marks
+          (nextCp >= 0x20d0 && nextCp <= 0x20ff) || // Combining Diacritical Marks for Symbols
+          (nextCp >= 0xfe00 && nextCp <= 0xfe0f) || // Variation Selectors
+          nextCp === 0xfe0e ||
+          nextCp === 0xfe0f || // Text/Emoji presentation
+          nextCp === 0x200d || // ZWJ
+          (nextCp >= 0xe0100 && nextCp <= 0xe01ef) || // Variation Selectors Supplement
           // Skin tone modifiers (Fitzpatrick scale)
-          (nextCp >= 0x1F3FB && nextCp <= 0x1F3FF) ||
+          (nextCp >= 0x1f3fb && nextCp <= 0x1f3ff) ||
           // Regional indicator following a regional indicator (flag sequences)
-          (cp >= 0x1F1E6 && cp <= 0x1F1FF && nextCp >= 0x1F1E6 && nextCp <= 0x1F1FF)
+          (cp >= 0x1f1e6 && cp <= 0x1f1ff && nextCp >= 0x1f1e6 && nextCp <= 0x1f1ff)
         if (!isCombining) break
-        prevWasZwj = nextCp === 0x200D
-        const nextLen = nextCp > 0xFFFF ? 2 : 1
+        prevWasZwj = nextCp === 0x200d
+        const nextLen = nextCp > 0xffff ? 2 : 1
         grapheme += String.fromCodePoint(nextCp)
         j += nextLen
       }
@@ -1567,9 +1568,10 @@ function verifyOutputEquivalence(
           const fc = screenFresh[y]![cx]!
           const pc = prev.getCell(cx, y)
           const nc = next.getCell(cx, y)
-          const marker = cx === x ? " <<<" : (ic.char !== fc.char ? " !!!" : "")
+          const marker = cx === x ? " <<<" : ic.char !== fc.char ? " !!!" : ""
           colDetails.push(
-            `  col ${cx}: prev='${pc.char}'(w=${pc.wide},c=${pc.continuation}) next='${nc.char}' incr='${ic.char}' fresh='${fc.char}' wide=${nc.wide} cont=${nc.continuation}${marker}`)
+            `  col ${cx}: prev='${pc.char}'(w=${pc.wide},c=${pc.continuation}) next='${nc.char}' incr='${ic.char}' fresh='${fc.char}' wide=${nc.wide} cont=${nc.continuation}${marker}`,
+          )
         }
         const msg =
           `INKX_STRICT_OUTPUT char mismatch at (${x},${y}): ` +
@@ -1613,10 +1615,7 @@ function verifyOutputEquivalence(
  * terminal state as a fresh render of the current buffer.
  * Catches compounding errors across multiple render frames.
  */
-function verifyAccumulatedOutput(
-  currentBuffer: TerminalBuffer,
-  mode: "fullscreen" | "inline",
-): void {
+function verifyAccumulatedOutput(currentBuffer: TerminalBuffer, mode: "fullscreen" | "inline"): void {
   const w = accumulateWidth
   const h = accumulateHeight
   // Replay all accumulated output (first render + all incremental updates)

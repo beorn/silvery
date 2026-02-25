@@ -134,13 +134,7 @@ function ToolCallBlock({ call }: { call: ToolCall }): JSX.Element {
         <Text dim>{" \u2014 "}</Text>
         <Text color="white">{call.args}</Text>
       </Text>
-      <Box
-        flexDirection="column"
-        marginLeft={4}
-        borderStyle="single"
-        borderColor="gray"
-        paddingX={1}
-      >
+      <Box flexDirection="column" marginLeft={4} borderStyle="single" borderColor="gray" paddingX={1}>
         {call.output.map((line, i) => {
           if (isEdit && line.startsWith("+")) {
             return (
@@ -183,7 +177,9 @@ function ExchangeView({ exchange }: { exchange: Exchange }): JSX.Element {
       <Box marginLeft={2}>
         <Text wrap="wrap">{exchange.content}</Text>
       </Box>
-      {exchange.toolCalls?.map((call, i) => <ToolCallBlock key={i} call={call} />)}
+      {exchange.toolCalls?.map((call, i) => (
+        <ToolCallBlock key={i} call={call} />
+      ))}
     </Box>
   )
 }
@@ -264,15 +260,9 @@ function CodingAgent(): JSX.Element {
       <Static items={completedItems}>
         {(item, index) => (
           <Box key={item.id} flexDirection="column">
-            {index === 0 && (
-              <Text dim>
-                {"─".repeat(60)}
-              </Text>
-            )}
+            {index === 0 && <Text dim>{"─".repeat(60)}</Text>}
             <ExchangeView exchange={item} />
-            <Text dim>
-              {"─".repeat(60)}
-            </Text>
+            <Text dim>{"─".repeat(60)}</Text>
           </Box>
         )}
       </Static>

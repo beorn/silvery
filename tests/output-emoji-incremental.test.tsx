@@ -31,7 +31,9 @@ describe("incremental rendering with emoji", () => {
       return (
         <Box flexDirection="column">
           {items.map((item, i) => (
-            <Text key={i} inverse={i === selected}>{item}</Text>
+            <Text key={i} inverse={i === selected}>
+              {item}
+            </Text>
           ))}
         </Box>
       )
@@ -64,7 +66,9 @@ describe("incremental rendering with emoji", () => {
         <Box>
           {cols.map((c, i) => (
             <Box key={i} width={20} borderStyle={i === col ? "single" : undefined}>
-              <Text>{c.flag} {c.label}</Text>
+              <Text>
+                {c.flag} {c.label}
+              </Text>
             </Box>
           ))}
         </Box>
@@ -111,9 +115,7 @@ describe("incremental rendering with emoji", () => {
     const render = createRenderer({ cols: 30, rows: 3 })
 
     function App({ showEmoji }: { showEmoji: boolean }) {
-      return (
-        <Text>{showEmoji ? "🏃‍♂️ active" : "   idle  "}</Text>
-      )
+      return <Text>{showEmoji ? "🏃‍♂️ active" : "   idle  "}</Text>
     }
 
     const app = render(<App showEmoji={true} />)

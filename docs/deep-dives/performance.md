@@ -22,10 +22,10 @@ inkx's five-phase render pipeline (measure, layout, content, output, buffer) con
 
 ### 1. Reconciler
 
-| #   | Optimization                    | Description                                                                                                                                             |
-| --- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #   | Optimization                    | Description                                                                                                                                              |
+| --- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1.1 | **Granular dirty flags**        | Separate `contentDirty`, `layoutDirty`, `paintDirty` -- style-only changes skip layout, content changes skip paint. Props compared before marking dirty. |
-| 1.2 | **Efficient dirty propagation** | `markSubtreeDirty()` early-exits at already-dirty ancestors. Virtual text nodes skip to nearest physical ancestor.                                      |
+| 1.2 | **Efficient dirty propagation** | `markSubtreeDirty()` early-exits at already-dirty ancestors. Virtual text nodes skip to nearest physical ancestor.                                       |
 
 ### 2. Measure Phase
 
@@ -37,18 +37,18 @@ inkx's five-phase render pipeline (measure, layout, content, output, buffer) con
 
 ### 3. Layout Phase
 
-| #   | Optimization                 | Description                                                                                                              |
-| --- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| 3.1 | **Layout early exit**        | `hasLayoutDirtyNodes()` skips entire `calculateLayout()` when no nodes are dirty and dimensions unchanged.               |
+| #   | Optimization                 | Description                                                                                                               |
+| --- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 3.1 | **Layout early exit**        | `hasLayoutDirtyNodes()` skips entire `calculateLayout()` when no nodes are dirty and dimensions unchanged.                |
 | 3.2 | **Change-gated propagation** | `layoutEqual()` and scroll offset compared to previous values -- dirty flags only propagated when values actually differ. |
 
 ### 4. Content Phase
 
-| #   | Optimization              | Description                                                                                                                                                                                                                                                  |
-| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 4.1 | **Incremental rendering** | Clone previous buffer; only re-render dirty subtrees. 7-flag fast-path skip (`contentDirty`, `paintDirty`, `layoutChangedThisFrame`, `subtreeDirty`, `childrenDirty`, `childPositionChanged`, `hasPrevBuffer`). Includes skipBgFill and scroll viewport clear gating. |
-| 4.2 | **layoutChangedThisFrame** | Authoritative per-frame flag set by `propagateLayout`, cleared by content phase. Replaces stale `!rectEqual(prevLayout, contentRect)` which was permanently true when layout phase skipped. Reduces content phase from O(N) to O(dirty) on no-layout-change frames. |
-| 4.3 | **Viewport clipping**     | Early exit when node is entirely off-screen. Defense-in-depth for non-VirtualList containers.                                                                                                                                                                |
+| #   | Optimization               | Description                                                                                                                                                                                                                                                           |
+| --- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 4.1 | **Incremental rendering**  | Clone previous buffer; only re-render dirty subtrees. 7-flag fast-path skip (`contentDirty`, `paintDirty`, `layoutChangedThisFrame`, `subtreeDirty`, `childrenDirty`, `childPositionChanged`, `hasPrevBuffer`). Includes skipBgFill and scroll viewport clear gating. |
+| 4.2 | **layoutChangedThisFrame** | Authoritative per-frame flag set by `propagateLayout`, cleared by content phase. Replaces stale `!rectEqual(prevLayout, contentRect)` which was permanently true when layout phase skipped. Reduces content phase from O(N) to O(dirty) on no-layout-change frames.   |
+| 4.3 | **Viewport clipping**      | Early exit when node is entirely off-screen. Defense-in-depth for non-VirtualList containers.                                                                                                                                                                         |
 
 ### 5. Output Phase
 
@@ -84,12 +84,12 @@ The wide character atomic diff optimization (5.7) is validated by `tests/damage-
 
 ## Investigated and Rejected
 
-| Technique                    | Why Not                                                                                     |
-| ---------------------------- | ------------------------------------------------------------------------------------------- |
+| Technique                    | Why Not                                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------------- |
 | **Scroll regions** (DECSTBM) | Full-width only -- doesn't help multi-column layouts. ~100 lines of code for narrow benefit. |
-| **Grapheme interning**       | Char comparison is already fast (3.8ns getCellChar). Not worth the refactor.                |
-| **64-bit cell packing**      | JS has no native u64. BigInt is slower than u32+string.                                     |
-| **ANSI compression**         | Style coalescing (5.6) already handles redundant codes.                                     |
+| **Grapheme interning**       | Char comparison is already fast (3.8ns getCellChar). Not worth the refactor.                 |
+| **64-bit cell packing**      | JS has no native u64. BigInt is slower than u32+string.                                      |
+| **ANSI compression**         | Style coalescing (5.6) already handles redundant codes.                                      |
 | **Worker thread layout**     | Layout is <25us for typical trees -- not a bottleneck.                                       |
 
 ## Profiling Guide

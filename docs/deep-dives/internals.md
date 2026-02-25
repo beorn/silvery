@@ -524,7 +524,7 @@ import stringWidth from "string-width"
 const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" })
 
 function writeTextToBuffer(buffer: TerminalBuffer, x: number, y: number, text: string, style: Style) {
-  const graphemes = [...segmenter.segment(text)].map(s => s.segment)
+  const graphemes = [...segmenter.segment(text)].map((s) => s.segment)
   let col = x
 
   for (const grapheme of graphemes) {

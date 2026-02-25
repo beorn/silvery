@@ -6,11 +6,7 @@ import { Box, Text } from "../src/index.js"
 describe("bg inheritance", () => {
   test("Text inherits Box backgroundColor", () => {
     const render = createRenderer({ cols: 40, rows: 5 })
-    const app = render(
-      React.createElement(Box, { backgroundColor: "red" },
-        React.createElement(Text, null, "hello")
-      )
-    )
+    const app = render(React.createElement(Box, { backgroundColor: "red" }, React.createElement(Text, null, "hello")))
     // Red bg = 48;5;1 in 256-color mode
     // inkx emits combined sequences like \x1b[0;48;5;1m
     expect(app.ansi).toContain("48;5;1")
@@ -19,10 +15,12 @@ describe("bg inheritance", () => {
   test("Text with own color inside colored Box", () => {
     const render = createRenderer({ cols: 40, rows: 5 })
     const app = render(
-      React.createElement(Box, { backgroundColor: "#302030" },
+      React.createElement(
+        Box,
+        { backgroundColor: "#302030" },
         React.createElement(Text, { bold: true, color: "#f38ba8" }, "Title"),
-        React.createElement(Text, { color: "#6c7086" }, " 3")
-      )
+        React.createElement(Text, { color: "#6c7086" }, " 3"),
+      ),
     )
     // #302030 = rgb(48,32,48) -> 48;2;48;32;48 in truecolor
     expect(app.ansi).toContain("48;2;48;32;48")

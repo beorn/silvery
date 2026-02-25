@@ -9,11 +9,7 @@
 import React from "react"
 import { describe, expect, it, vi } from "vitest"
 import { Box, Text, withCommands } from "../src/index.js"
-import type {
-  CommandDef,
-  CommandRegistryLike,
-  KeybindingDef,
-} from "../src/with-commands.js"
+import type { CommandDef, CommandRegistryLike, KeybindingDef } from "../src/with-commands.js"
 import { createRenderer } from "inkx/testing"
 
 const render = createRenderer({ cols: 40, rows: 10 })
@@ -650,9 +646,7 @@ describe("withCommands", () => {
     })
 
     it("handles keybindings with multiple modifiers", () => {
-      const keybindings: KeybindingDef[] = [
-        { key: "s", commandId: "cursor_down", ctrl: true, shift: true, alt: true },
-      ]
+      const keybindings: KeybindingDef[] = [{ key: "s", commandId: "cursor_down", ctrl: true, shift: true, alt: true }]
 
       const app = render(<SimpleApp />)
       const enhanced = withCommands(app, {
