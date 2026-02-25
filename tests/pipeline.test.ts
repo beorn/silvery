@@ -363,7 +363,13 @@ describe("Pipeline", () => {
       expect(buffer.getCell(5, 5).char).toBe(" ")
     })
 
-    test("skips clean subtrees when fast path is enabled", async () => {
+    test("re-renders all subtrees (skip disabled for correctness catch-all)", async () => {
+      // NOTE: The content-phase fast-path skip is currently disabled
+      // (skipFastPath = false) to work around latent dirty-flag propagation
+      // bugs. When those are fixed, this test should verify that unchanged
+      // subtrees are correctly skipped (child1 keeps "Z", not overwritten).
+      // See bead km-inkx.content-phase-skip.
+
       // Create a tree: root -> [child1, child2]
       const child1 = await createTextWithLayout("Child1", {
         x: 0,
@@ -397,11 +403,11 @@ describe("Pipeline", () => {
       markSubtreeOnlyDirty(root)
       markNodeClean(child1)
 
-      // Second render - child1 is clean so it's SKIPPED (Z stays)
+      // Second render - with skip disabled, child1 is re-rendered (overwrites Z)
       const buffer2 = contentPhase(root, buffer1)
 
-      // Child1 was SKIPPED (Z remains - clean node kept its cloned pixels)
-      expect(buffer2.getCell(0, 0).char).toBe("Z")
+      // Child1 re-rendered (Z was overwritten back to "C" from "Child1")
+      expect(buffer2.getCell(0, 0).char).toBe("C")
 
       // Child2 was re-rendered (has its content)
       expect(buffer2.getCell(0, 1).char).toBe("C")
