@@ -614,7 +614,13 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
 
     // Move to next line (except for last line)
     if (y < maxLine) {
-      output += "\n"
+      // In inline mode, use \r\n instead of bare \n to cancel DECAWM
+      // pending-wrap state. When the line fills exactly `cols` characters,
+      // the cursor enters pending-wrap at position cols. A bare \n in that
+      // state causes a double line advance in some terminals (Ghostty, iTerm2).
+      // The \r first moves to column 0 (canceling pending-wrap), then \n
+      // advances one row cleanly.
+      output += mode === "inline" ? "\r\n" : "\n"
     }
   }
 

@@ -21,7 +21,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react"
-import { render, renderStringSync, Box, Text, useInput, useApp, createTerm, type Key } from "../../src/index.js"
+import { render, renderStringSync, Box, Text, Link, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { useScrollback } from "../../src/hooks/useScrollback.js"
 import type { ExampleMeta } from "../_banner.js"
 
@@ -130,7 +130,7 @@ const SCRIPT: Omit<Exchange, "id" | "frozen">[] = [
       {
         tool: "Bash",
         args: "rg 'rateLimit|rate-limit' src/ --files-with-matches",
-        output: ["src/middleware/rate-limit.ts", "src/config.ts"],
+        output: ["src/middleware/rate-limit.ts", "src/config.ts", "See https://docs.example.com/api/rate-limiting for API docs"],
       },
       {
         tool: "Read",
@@ -427,6 +427,34 @@ const TOOL_COLORS: Record<string, string> = {
   Write: "magenta",
 }
 
+/** Regex matching https/http URLs in output text. */
+const URL_RE = /https?:\/\/[^\s)]+/g
+
+/** Render a line of tool output, auto-linking any URLs found in the text. */
+function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; color?: string }): JSX.Element {
+  const parts: JSX.Element[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  URL_RE.lastIndex = 0
+  while ((match = URL_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(<Text key={`t${lastIndex}`} dim={dim} color={color}>{text.slice(lastIndex, match.index)}</Text>)
+    }
+    const url = match[0]
+    parts.push(<Link key={`l${match.index}`} href={url} dim={dim}>{url}</Link>)
+    lastIndex = match.index + url.length
+  }
+  if (lastIndex < text.length) {
+    parts.push(<Text key={`t${lastIndex}`} dim={dim} color={color}>{text.slice(lastIndex)}</Text>)
+  }
+  // No URLs found — return plain text
+  if (parts.length === 0) {
+    return <Text dim={dim} color={color}>{text}</Text>
+  }
+  return <Text>{parts}</Text>
+}
+
 /** Scrollback version of an exchange — always dimmed since it's frozen history. */
 function ScrollbackExchange({ exchange }: { exchange: Exchange }): JSX.Element {
   if (exchange.role === "system") {
@@ -461,13 +489,14 @@ function ScrollbackExchange({ exchange }: { exchange: Exchange }): JSX.Element {
               {"▸ "}
               {call.tool}
             </Text>
-            <Text> {call.args}</Text>
+            <Text> </Text>
+            <Link href={`file://${call.args}`} dim>{call.args}</Link>
           </Text>
           <Box flexDirection="column" paddingLeft={4}>
             {call.output.map((line, j) => {
-              if (line.startsWith("+")) return <Text key={j} dim color="$success">{line}</Text>
-              if (line.startsWith("-")) return <Text key={j} dim color="$error">{line}</Text>
-              return <Text key={j} dim>{line}</Text>
+              if (line.startsWith("+")) return <LinkifiedLine key={j} text={line} dim color="$success" />
+              if (line.startsWith("-")) return <LinkifiedLine key={j} text={line} dim color="$error" />
+              return <LinkifiedLine key={j} text={line} dim />
             })}
           </Box>
         </Box>
@@ -495,29 +524,18 @@ function ToolCallBlock({ call }: { call: ToolCall }): JSX.Element {
         <Text color={color} bold>
           {call.tool}
         </Text>
-        <Text dim> {call.args}</Text>
+        <Text> </Text>
+        <Link href={`file://${call.args}`}>{call.args}</Link>
       </Text>
       <Box flexDirection="column" borderStyle="bold" borderColor={color} borderLeft borderRight={false} borderTop={false} borderBottom={false} paddingLeft={1}>
         {call.output.map((line, i) => {
           if (isEdit && line.startsWith("+")) {
-            return (
-              <Text key={i} color="$success">
-                {line}
-              </Text>
-            )
+            return <LinkifiedLine key={i} text={line} color="$success" />
           }
           if (isEdit && line.startsWith("-")) {
-            return (
-              <Text key={i} color="$error">
-                {line}
-              </Text>
-            )
+            return <LinkifiedLine key={i} text={line} color="$error" />
           }
-          return (
-            <Text key={i}>
-              {line}
-            </Text>
-          )
+          return <LinkifiedLine key={i} text={line} />
         })}
       </Box>
     </Box>
@@ -600,9 +618,12 @@ function CodingAgent({ script, autoStart }: { script: Omit<Exchange, "id" | "fro
   const nextIdRef = useRef(0)
 
   // Commit frozen exchanges to real terminal scrollback (dimmed JSX → styled ANSI)
+  // markers: true emits OSC 133 semantic prompts so terminals like iTerm2, Kitty,
+  // and WezTerm support Cmd+Up/Cmd+Down to jump between exchanges.
   const frozenCount = useScrollback(exchanges, {
     frozen: (ex) => ex.frozen,
     render: (ex) => renderExchangeToJSX(ex),
+    markers: true,
   })
 
   const advance = useCallback(() => {

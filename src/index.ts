@@ -256,7 +256,7 @@ export { useConsole } from "./hooks/useConsole.js"
 export { useCursor, resetCursorState, getCursorState, subscribeCursor } from "./hooks/useCursor.js"
 export type { CursorPosition, CursorState } from "./hooks/useCursor.js"
 export { useScrollback } from "./hooks/useScrollback.js"
-export type { UseScrollbackOptions } from "./hooks/useScrollback.js"
+export type { UseScrollbackOptions, ScrollbackMarkerCallbacks } from "./hooks/useScrollback.js"
 
 /**
  * Re-export React concurrent features for TUI responsiveness.
@@ -421,6 +421,9 @@ export { copyToClipboard, requestClipboard, parseClipboardResponse } from "./cli
 
 // OSC 4 palette color query/set
 export { queryPaletteColor, setPaletteColor, parsePaletteResponse, queryMultiplePaletteColors } from "./osc-palette.js"
+
+// OSC 133 semantic prompt markers
+export { OSC133 } from "./osc-markers.js"
 
 // Kitty protocol detection
 export { detectKittySupport, detectKittyFromStdio, type KittyDetectResult } from "./kitty-detect.js"
