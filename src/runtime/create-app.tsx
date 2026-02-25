@@ -806,6 +806,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (strictEnv && strictEnv !== "0" && strictEnv !== "false" && wasIncremental) {
       const { buffer: freshBuffer } = executeRender(rootNode, dims.cols, dims.rows, null, {
         skipLayoutNotifications: true,
+        skipScrollStateUpdates: true,
       })
       const { cellEquals, bufferToText } =
         // eslint-disable-next-line @typescript-eslint/no-require-imports

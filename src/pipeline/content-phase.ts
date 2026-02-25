@@ -84,7 +84,31 @@ export function contentPhase(root: InkxNode, prevBuffer?: TerminalBuffer | null)
     _nodeTrace.length = 0
   }
 
+  // Sync prevLayout after content phase to prevent staleness on subsequent frames.
+  // Without this, prevLayout stays at the old value from propagateLayout, causing
+  // hasChildPositionChanged and clearExcessArea to use stale coordinates.
+  syncPrevLayout(root)
+
   return buffer
+}
+
+/**
+ * Sync prevLayout to contentRect for all nodes in the tree.
+ *
+ * Called at the end of each contentPhase pass. This prevents:
+ * 1. The O(N) staleness bug where prevLayout drifts from contentRect
+ *    causing !rectEqual to always be true on subsequent frames.
+ * 2. Stale old-bounds references in clearExcessArea on doRender iteration 2+.
+ * 3. Asymmetry between incremental and fresh renders — doFreshRender's layout
+ *    phase syncs prevLayout before content, so without this, the real render
+ *    has null/stale prevLayout while fresh has synced prevLayout, causing
+ *    different cascade behavior (layoutChanged true vs false).
+ */
+function syncPrevLayout(node: InkxNode): void {
+  node.prevLayout = node.contentRect
+  for (const child of node.children) {
+    syncPrevLayout(child)
+  }
 }
 
 /** Instrumentation enabled when INKX_STRICT, INKX_CHECK_INCREMENTAL, or INKX_INSTRUMENT is set */
@@ -243,10 +267,14 @@ function renderNodeToBuffer(
   // The buffer was cloned from prevBuffer, so skipped nodes keep their rendered output
   //
   // layoutChanged: did this node's layout position/size change?
-  // Uses the real prevLayout comparison for cascade logic (contentAreaAffected,
-  // parentRegionCleared, skipBgFill). These formulas must reflect actual layout
-  // changes to avoid false region clearing and bg fill mismatches.
-  const layoutChanged = !rectEqual(node.prevLayout, node.contentRect)
+  // Uses layoutChangedThisFrame (set by propagateLayout in layout phase) instead of
+  // the stale !rectEqual(prevLayout, contentRect). The rect comparison is asymmetric
+  // between incremental and fresh renders: doFreshRender's layout phase syncs
+  // prevLayout=contentRect before content, making layoutChanged=false, while the
+  // real render may have prevLayout=null (new nodes), making layoutChanged=true.
+  // This asymmetry causes contentAreaAffected→clearNodeRegion to fire in incremental
+  // but not fresh, wiping sibling content. layoutChangedThisFrame is symmetric.
+  const layoutChanged = node.layoutChangedThisFrame
 
   // Check if any child shifted position (sibling shift from size changes).
   // Gap space between children belongs to this container, so must re-render.

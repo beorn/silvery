@@ -1060,15 +1060,16 @@ export class TerminalBuffer {
    * Fast check: are all packed metadata values identical for a row?
    * This is a bulk pre-check before per-cell comparison. If metadata differs,
    * we still need per-cell diffing. If metadata matches, we only need to
-   * check chars and true color maps (much cheaper for the common case).
+   * check chars, true color maps, underline colors, and hyperlinks.
    * Returns true if all packed 32-bit values in the row are identical.
    */
   rowMetadataEquals(y: number, other: TerminalBuffer): boolean {
     if (y < 0 || y >= this.height || y >= other.height) return false
     const start = y * this.width
+    const otherStart = y * other.width
     const w = Math.min(this.width, other.width)
     for (let i = 0; i < w; i++) {
-      if (this.cells[start + i] !== other.cells[start + i]) return false
+      if (this.cells[start + i] !== other.cells[otherStart + i]) return false
     }
     return true
   }
@@ -1080,9 +1081,53 @@ export class TerminalBuffer {
   rowCharsEquals(y: number, other: TerminalBuffer): boolean {
     if (y < 0 || y >= this.height || y >= other.height) return false
     const start = y * this.width
+    const otherStart = y * other.width
     const w = Math.min(this.width, other.width)
     for (let i = 0; i < w; i++) {
-      if (this.chars[start + i] !== other.chars[start + i]) return false
+      if (this.chars[start + i] !== other.chars[otherStart + i]) return false
+    }
+    return true
+  }
+
+  /**
+   * Check Map-based extras for a row: true color fg/bg, underline colors, hyperlinks.
+   * Must be called AFTER rowMetadataEquals confirms packed metadata matches.
+   * Only checks cells that have true color flags set (the Maps are only populated
+   * for those cells). Also checks underline colors and hyperlinks for all cells.
+   */
+  rowExtrasEquals(y: number, other: TerminalBuffer): boolean {
+    if (y < 0 || y >= this.height || y >= other.height) return false
+    const start = y * this.width
+    const w = Math.min(this.width, other.width)
+    const otherStart = y * other.width
+    for (let i = 0; i < w; i++) {
+      const idx = start + i
+      const otherIdx = otherStart + i
+      const packed = this.cells[idx]!
+
+      // Check true color fg values
+      if ((packed & TRUE_COLOR_FG_FLAG) !== 0) {
+        const a = this.fgColors.get(idx)
+        const b = other.fgColors.get(otherIdx)
+        if (!colorEquals(a, b)) return false
+      }
+
+      // Check true color bg values
+      if ((packed & TRUE_COLOR_BG_FLAG) !== 0) {
+        const a = this.bgColors.get(idx)
+        const b = other.bgColors.get(otherIdx)
+        if (!colorEquals(a, b)) return false
+      }
+
+      // Check underline colors
+      const ulA = this.underlineColors.get(idx) ?? null
+      const ulB = other.underlineColors.get(otherIdx) ?? null
+      if (!colorEquals(ulA, ulB)) return false
+
+      // Check hyperlinks
+      const hlA = this.hyperlinks.get(idx)
+      const hlB = other.hyperlinks.get(otherIdx)
+      if (hlA !== hlB) return false
     }
     return true
   }

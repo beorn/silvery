@@ -16,12 +16,18 @@ import {
   styleEquals,
 } from "../buffer.js"
 import { isPrivateUseArea, textSized } from "../text-sizing.js"
-import { isTextSizingEnabled } from "../unicode.js"
+import { graphemeWidth, isTextSizingEnabled } from "../unicode.js"
 import type { CellChange } from "./types.js"
 
 const DEBUG_OUTPUT = !!process.env.INKX_DEBUG_OUTPUT
 const FULL_RENDER = !!process.env.INKX_FULL_RENDER
-const STRICT_OUTPUT = !!process.env.INKX_STRICT_OUTPUT
+// These use getters so they can be set after module load (e.g., in test files)
+function isStrictOutput(): boolean { return !!process.env.INKX_STRICT_OUTPUT }
+function isStrictAccumulate(): boolean { return !!process.env.INKX_STRICT_ACCUMULATE }
+let accumulatedAnsi = ""
+let accumulateWidth = 0
+let accumulateHeight = 0
+let accumulateFrameCount = 0
 
 /**
  * Wrap a cell character in OSC 66 if it is a PUA character and text sizing
@@ -313,7 +319,14 @@ export function outputPhase(
     // In inline mode, cap output to terminal height to prevent scrollback corruption.
     // Content taller than the terminal would push lines into scrollback where they
     // can never be overwritten on re-render (cursor-up is clamped at terminal row 0).
-    return bufferToAnsi(next, mode, mode === "inline" ? termRows : undefined)
+    const firstOutput = bufferToAnsi(next, mode, mode === "inline" ? termRows : undefined)
+    if (isStrictAccumulate()) {
+      accumulatedAnsi = firstOutput
+      accumulateWidth = next.width
+      accumulateHeight = next.height
+      accumulateFrameCount = 0
+    }
+    return firstOutput
   }
 
   // Inline mode: always full re-render (no incremental diffing).
@@ -333,6 +346,7 @@ export function outputPhase(
 
   // Fullscreen mode: diff and emit only changes
   const { pool, count } = diffBuffers(prev, next)
+
 
   if (DEBUG_OUTPUT) {
     // eslint-disable-next-line no-console
@@ -360,11 +374,29 @@ export function outputPhase(
   //   re-emit of the main cell from the buffer
   const incrOutput = changesToAnsi(pool, count, mode, next)
 
+  // Log output sizes when debug or strict-accumulate is enabled
+  if (DEBUG_OUTPUT || isStrictAccumulate()) {
+    const bytes = Buffer.byteLength(incrOutput)
+    try {
+      const fs = require("fs")
+      fs.appendFileSync("/tmp/inkx-sizes.log", `changesToAnsi: ${count} changes, ${bytes} bytes\n`)
+    } catch {}
+  }
+
   // INKX_STRICT_OUTPUT: verify that the incremental ANSI output produces the
   // same visible terminal state as a fresh render. Catches bugs in changesToAnsi
   // that INKX_STRICT (buffer-level check) cannot detect.
-  if (STRICT_OUTPUT) {
+  if (isStrictOutput()) {
     verifyOutputEquivalence(prev, next, incrOutput, mode)
+  }
+
+  // INKX_STRICT_ACCUMULATE: verify that the accumulated output from ALL frames
+  // produces the same terminal state as a fresh render of the current buffer.
+  // Catches compounding errors that per-frame verification misses.
+  if (isStrictAccumulate()) {
+    accumulatedAnsi += incrOutput
+    accumulateFrameCount++
+    verifyAccumulatedOutput(next, mode)
   }
 
   return incrOutput
@@ -693,10 +725,13 @@ function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
     // Skip individual clean rows within the bounding box
     if (!next.isRowDirty(y)) continue
 
-    // Fast row-level pre-check: if all packed metadata AND all chars match,
-    // skip per-cell comparison entirely. This catches rows marked dirty by
-    // fill() or scrollRegion() that didn't actually change content.
-    if (next.rowMetadataEquals(y, prev) && next.rowCharsEquals(y, prev)) continue
+    // Fast row-level pre-check: if all packed metadata, chars, AND Map-based
+    // extras (true colors, underline colors, hyperlinks) match, skip per-cell
+    // comparison entirely. This catches rows marked dirty by fill() or
+    // scrollRegion() that didn't actually change content.
+    // NOTE: rowExtrasEquals is essential — rowMetadataEquals only checks packed
+    // flags (e.g., "has true color fg"), not the actual RGB values in the Maps.
+    if (next.rowMetadataEquals(y, prev) && next.rowCharsEquals(y, prev) && next.rowExtrasEquals(y, prev)) continue
 
     for (let x = 0; x < width; x++) {
       // Use buffer's optimized cellEquals which compares packed metadata first
@@ -1106,10 +1141,367 @@ function replayAnsi(width: number, height: number, ansi: string): string[][] {
   return screen
 }
 
+// ============================================================================
+// Style-Aware ANSI Replay
+// ============================================================================
+
+/** SGR state tracked during ANSI replay. */
+interface SgrState {
+  fg: number | { r: number; g: number; b: number } | null
+  bg: number | { r: number; g: number; b: number } | null
+  bold: boolean
+  dim: boolean
+  italic: boolean
+  underline: boolean
+  blink: boolean
+  inverse: boolean
+  hidden: boolean
+  strikethrough: boolean
+}
+
+/** A cell in the style-aware virtual terminal. */
+interface StyledCell {
+  char: string
+  fg: number | { r: number; g: number; b: number } | null
+  bg: number | { r: number; g: number; b: number } | null
+  bold: boolean
+  dim: boolean
+  italic: boolean
+  underline: boolean
+  blink: boolean
+  inverse: boolean
+  hidden: boolean
+  strikethrough: boolean
+}
+
+function createDefaultSgr(): SgrState {
+  return {
+    fg: null,
+    bg: null,
+    bold: false,
+    dim: false,
+    italic: false,
+    underline: false,
+    blink: false,
+    inverse: false,
+    hidden: false,
+    strikethrough: false,
+  }
+}
+
+function createDefaultStyledCell(): StyledCell {
+  return {
+    char: " ",
+    fg: null,
+    bg: null,
+    bold: false,
+    dim: false,
+    italic: false,
+    underline: false,
+    blink: false,
+    inverse: false,
+    hidden: false,
+    strikethrough: false,
+  }
+}
+
+/**
+ * Apply SGR parameters to the current state.
+ * Handles all SGR codes used by styleTransition().
+ */
+function applySgrParams(params: string, sgr: SgrState): void {
+  if (params === "" || params === "0") {
+    // Reset
+    sgr.fg = null
+    sgr.bg = null
+    sgr.bold = false
+    sgr.dim = false
+    sgr.italic = false
+    sgr.underline = false
+    sgr.blink = false
+    sgr.inverse = false
+    sgr.hidden = false
+    sgr.strikethrough = false
+    return
+  }
+
+  const parts = params.split(";")
+  let i = 0
+  while (i < parts.length) {
+    const code = parts[i]!
+    // Handle subparameters (e.g., "4:3" for curly underline)
+    const colonIdx = code.indexOf(":")
+    if (colonIdx >= 0) {
+      const mainCode = parseInt(code.substring(0, colonIdx))
+      if (mainCode === 4) {
+        // Underline style subparameter
+        const sub = parseInt(code.substring(colonIdx + 1))
+        sgr.underline = sub > 0
+      }
+      i++
+      continue
+    }
+
+    const n = parseInt(code)
+    if (n === 0) {
+      sgr.fg = null
+      sgr.bg = null
+      sgr.bold = false
+      sgr.dim = false
+      sgr.italic = false
+      sgr.underline = false
+      sgr.blink = false
+      sgr.inverse = false
+      sgr.hidden = false
+      sgr.strikethrough = false
+    } else if (n === 1) {
+      sgr.bold = true
+    } else if (n === 2) {
+      sgr.dim = true
+    } else if (n === 3) {
+      sgr.italic = true
+    } else if (n === 4) {
+      sgr.underline = true
+    } else if (n === 5 || n === 6) {
+      sgr.blink = true
+    } else if (n === 7) {
+      sgr.inverse = true
+    } else if (n === 8) {
+      sgr.hidden = true
+    } else if (n === 9) {
+      sgr.strikethrough = true
+    } else if (n === 22) {
+      sgr.bold = false
+      sgr.dim = false
+    } else if (n === 23) {
+      sgr.italic = false
+    } else if (n === 24) {
+      sgr.underline = false
+    } else if (n === 25) {
+      sgr.blink = false
+    } else if (n === 27) {
+      sgr.inverse = false
+    } else if (n === 28) {
+      sgr.hidden = false
+    } else if (n === 29) {
+      sgr.strikethrough = false
+    } else if (n >= 30 && n <= 37) {
+      sgr.fg = n - 30
+    } else if (n === 38) {
+      // Extended fg color
+      if (i + 1 < parts.length && parts[i + 1] === "5" && i + 2 < parts.length) {
+        sgr.fg = parseInt(parts[i + 2]!)
+        i += 2
+      } else if (i + 1 < parts.length && parts[i + 1] === "2" && i + 4 < parts.length) {
+        sgr.fg = { r: parseInt(parts[i + 2]!), g: parseInt(parts[i + 3]!), b: parseInt(parts[i + 4]!) }
+        i += 4
+      }
+    } else if (n === 39) {
+      sgr.fg = null
+    } else if (n >= 40 && n <= 47) {
+      sgr.bg = n - 40
+    } else if (n === 48) {
+      // Extended bg color
+      if (i + 1 < parts.length && parts[i + 1] === "5" && i + 2 < parts.length) {
+        sgr.bg = parseInt(parts[i + 2]!)
+        i += 2
+      } else if (i + 1 < parts.length && parts[i + 1] === "2" && i + 4 < parts.length) {
+        sgr.bg = { r: parseInt(parts[i + 2]!), g: parseInt(parts[i + 3]!), b: parseInt(parts[i + 4]!) }
+        i += 4
+      }
+    } else if (n === 49) {
+      sgr.bg = null
+    } else if (n >= 90 && n <= 97) {
+      sgr.fg = n - 90 + 8 // bright colors: 8-15
+    } else if (n >= 100 && n <= 107) {
+      sgr.bg = n - 100 + 8
+    }
+    // 58/59 (underline color) not tracked in cell comparison for now
+    i++
+  }
+}
+
+/**
+ * Replay ANSI output tracking both characters AND SGR styles.
+ * Returns a 2D grid of StyledCell objects.
+ */
+function replayAnsiWithStyles(width: number, height: number, ansi: string): StyledCell[][] {
+  const screen: StyledCell[][] = Array.from({ length: height }, () =>
+    Array.from({ length: width }, () => createDefaultStyledCell()),
+  )
+  let cx = 0
+  let cy = 0
+  const sgr = createDefaultSgr()
+  let i = 0
+
+  while (i < ansi.length) {
+    if (ansi[i] === "\x1b") {
+      if (ansi[i + 1] === "[") {
+        i += 2
+        let params = ""
+        while (
+          i < ansi.length &&
+          ((ansi[i]! >= "0" && ansi[i]! <= "9") || ansi[i] === ";" || ansi[i] === "?" || ansi[i] === ":")
+        ) {
+          params += ansi[i]
+          i++
+        }
+        const cmd = ansi[i]
+        i++
+        if (cmd === "H") {
+          if (params === "") {
+            cx = 0
+            cy = 0
+          } else {
+            const cmdParts = params.split(";")
+            cy = Math.max(0, (parseInt(cmdParts[0]!) || 1) - 1)
+            cx = Math.max(0, (parseInt(cmdParts[1]!) || 1) - 1)
+          }
+        } else if (cmd === "K") {
+          // Erase to end of line — fills with current bg (or default)
+          for (let x = cx; x < width; x++) {
+            const cell = screen[cy]![x]!
+            cell.char = " "
+            cell.fg = null
+            cell.bg = sgr.bg
+            cell.bold = false
+            cell.dim = false
+            cell.italic = false
+            cell.underline = false
+            cell.blink = false
+            cell.inverse = false
+            cell.hidden = false
+            cell.strikethrough = false
+          }
+        } else if (cmd === "A") {
+          cy = Math.max(0, cy - (parseInt(params) || 1))
+        } else if (cmd === "B") {
+          cy = Math.min(height - 1, cy + (parseInt(params) || 1))
+        } else if (cmd === "C") {
+          cx = Math.min(width - 1, cx + (parseInt(params) || 1))
+        } else if (cmd === "D") {
+          cx = Math.max(0, cx - (parseInt(params) || 1))
+        } else if (cmd === "G") {
+          cx = Math.max(0, (parseInt(params) || 1) - 1)
+        } else if (cmd === "J") {
+          if (params === "2") {
+            for (let y = 0; y < height; y++)
+              for (let x = 0; x < width; x++) {
+                screen[y]![x] = createDefaultStyledCell()
+              }
+          }
+        } else if (cmd === "m") {
+          // SGR — apply to current state
+          applySgrParams(params, sgr)
+        }
+        // Skip DEC modes (h/l), etc.
+      } else if (ansi[i + 1] === "]") {
+        // OSC: skip to ST (\x1b\\) or BEL (\x07)
+        i += 2
+        while (i < ansi.length) {
+          if (ansi[i] === "\x1b" && ansi[i + 1] === "\\") {
+            i += 2
+            break
+          }
+          if (ansi[i] === "\x07") {
+            i++
+            break
+          }
+          i++
+        }
+      } else if (ansi[i + 1] === ">") {
+        i += 2
+        while (i < ansi.length && ansi[i] !== "\x1b") i++
+      } else {
+        i += 2
+      }
+    } else if (ansi[i] === "\r") {
+      cx = 0
+      i++
+    } else if (ansi[i] === "\n") {
+      cy = Math.min(height - 1, cy + 1)
+      i++
+    } else {
+      // Extract a full grapheme cluster (handles surrogate pairs and multi-codepoint sequences
+      // like flag emoji 🇺🇸 which are 2 regional indicator codepoints = 4 UTF-16 code units)
+      const cp = ansi.codePointAt(i)!
+      // Advance past this codepoint (2 code units if surrogate pair, 1 otherwise)
+      const cpLen = cp > 0xFFFF ? 2 : 1
+      // Collect combining marks and joiners that follow (ZWJ sequences, variation selectors, etc.)
+      let grapheme = String.fromCodePoint(cp)
+      let j = i + cpLen
+      while (j < ansi.length) {
+        const nextCp = ansi.codePointAt(j)!
+        // Combining marks (U+0300-U+036F, U+20D0-U+20FF, U+FE00-U+FE0F variation selectors),
+        // ZWJ (U+200D), regional indicators following another regional indicator
+        const isCombining =
+          (nextCp >= 0x0300 && nextCp <= 0x036F) ||   // Combining Diacritical Marks
+          (nextCp >= 0x20D0 && nextCp <= 0x20FF) ||   // Combining Diacritical Marks for Symbols
+          (nextCp >= 0xFE00 && nextCp <= 0xFE0F) ||   // Variation Selectors
+          nextCp === 0xFE0E || nextCp === 0xFE0F ||    // Text/Emoji presentation
+          nextCp === 0x200D ||                          // ZWJ
+          (nextCp >= 0xE0100 && nextCp <= 0xE01EF) ||  // Variation Selectors Supplement
+          // Regional indicator following a regional indicator (flag sequences)
+          (cp >= 0x1F1E6 && cp <= 0x1F1FF && nextCp >= 0x1F1E6 && nextCp <= 0x1F1FF)
+        if (!isCombining) break
+        const nextLen = nextCp > 0xFFFF ? 2 : 1
+        grapheme += String.fromCodePoint(nextCp)
+        j += nextLen
+      }
+      if (cy < height && cx < width) {
+        const gw = graphemeWidth(grapheme)
+        const charWidth = gw || 1
+
+        const cell = screen[cy]![cx]!
+        cell.char = grapheme
+        cell.fg = sgr.fg
+        cell.bg = sgr.bg
+        cell.bold = sgr.bold
+        cell.dim = sgr.dim
+        cell.italic = sgr.italic
+        cell.underline = sgr.underline
+        cell.blink = sgr.blink
+        cell.inverse = sgr.inverse
+        cell.hidden = sgr.hidden
+        cell.strikethrough = sgr.strikethrough
+
+        // Wide character overwrites the next cell (continuation cell)
+        // Real terminals do this automatically — the wide char occupies 2 columns
+        if (charWidth > 1 && cx + 1 < width) {
+          const cont = screen[cy]![cx + 1]!
+          cont.char = " "
+          cont.fg = null
+          cont.bg = sgr.bg
+          cont.bold = false
+          cont.dim = false
+          cont.italic = false
+          cont.underline = false
+          cont.blink = false
+          cont.inverse = false
+          cont.hidden = false
+          cont.strikethrough = false
+        }
+        cx += charWidth
+      }
+      i = j
+    }
+  }
+  return screen
+}
+
+/** Format a color value for display. */
+function formatColor(c: number | { r: number; g: number; b: number } | null): string {
+  if (c === null) return "default"
+  if (typeof c === "number") return `${c}`
+  return `rgb(${c.r},${c.g},${c.b})`
+}
+
 /**
  * Verify that applying changesToAnsi output to a previous terminal state
- * produces the same visible characters as a fresh render of the next buffer.
- * Throws on mismatch.
+ * produces the same visible characters AND styles as a fresh render of the
+ * next buffer. Throws on mismatch.
+ *
+ * This catches SGR style bugs that character-only verification misses.
  */
 function verifyOutputEquivalence(
   prev: TerminalBuffer,
@@ -1121,26 +1513,141 @@ function verifyOutputEquivalence(
   const h = next.height
   // Replay: fresh prev render + incremental diff applied on top
   const freshPrev = bufferToAnsi(prev, mode)
-  const screenIncr = replayAnsi(w, h, freshPrev + incrOutput)
+  const screenIncr = replayAnsiWithStyles(w, h, freshPrev + incrOutput)
   // Replay: fresh render of next buffer
   const freshNext = bufferToAnsi(next, mode)
-  const screenFresh = replayAnsi(w, h, freshNext)
+  const screenFresh = replayAnsiWithStyles(w, h, freshNext)
 
-  // Compare character by character
+  // Compare character by character AND style by style
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      if (screenIncr[y]![x] !== screenFresh[y]![x]) {
-        const incrRow = screenIncr[y]!.join("")
-        const freshRow = screenFresh[y]!.join("")
+      const incr = screenIncr[y]![x]!
+      const fresh = screenFresh[y]![x]!
+
+      // Check character
+      if (incr.char !== fresh.char) {
+        // Build context: show the row from both renders
+        const incrRow = screenIncr[y]!.map((c) => c.char).join("")
+        const freshRow = screenFresh[y]!.map((c) => c.char).join("")
+        // Also show the prev buffer row for diagnosis
+        const prevRow = screenIncr[y]!.map((_, cx) => {
+          const prevCell = prev.getCell(cx, y)
+          return prevCell.char
+        }).join("")
+        // Show what changesToAnsi tried to write at this position
+        const nextCell = next.getCell(x, y)
+        const prevCell = prev.getCell(x, y)
+        // Show detailed column-by-column comparison around the mismatch
+        const contextStart = Math.max(0, x - 5)
+        const contextEnd = Math.min(w, x + 10)
+        const colDetails: string[] = []
+        for (let cx = contextStart; cx < contextEnd; cx++) {
+          const ic = screenIncr[y]![cx]!
+          const fc = screenFresh[y]![cx]!
+          const pc = prev.getCell(cx, y)
+          const nc = next.getCell(cx, y)
+          const marker = cx === x ? " <<<" : (ic.char !== fc.char ? " !!!" : "")
+          colDetails.push(
+            `  col ${cx}: prev='${pc.char}' next='${nc.char}' incr='${ic.char}' fresh='${fc.char}' wide=${nc.wide} cont=${nc.continuation}${marker}`)
+        }
         const msg =
-          `INKX_STRICT_OUTPUT mismatch at (${x},${y}): ` +
-          `incremental='${screenIncr[y]![x]}' fresh='${screenFresh[y]![x]}'\n` +
-          `  incr row: "${incrRow}"\n` +
-          `  fresh row: "${freshRow}"`
+          `INKX_STRICT_OUTPUT char mismatch at (${x},${y}): ` +
+          `incremental='${incr.char}' fresh='${fresh.char}'\n` +
+          `  prev buffer cell: char='${prevCell.char}' bg=${prevCell.bg}\n` +
+          `  next buffer cell: char='${nextCell.char}' bg=${nextCell.bg}\n` +
+          `Column detail around mismatch:\n${colDetails.join("\n")}`
+        // eslint-disable-next-line no-console
+        console.error(msg)
+        throw new Error(msg)
+      }
+
+      // Check styles
+      const diffs: string[] = []
+      if (!sgrColorEquals(incr.fg, fresh.fg)) diffs.push(`fg: ${formatColor(incr.fg)} vs ${formatColor(fresh.fg)}`)
+      if (!sgrColorEquals(incr.bg, fresh.bg)) diffs.push(`bg: ${formatColor(incr.bg)} vs ${formatColor(fresh.bg)}`)
+      if (incr.bold !== fresh.bold) diffs.push(`bold: ${incr.bold} vs ${fresh.bold}`)
+      if (incr.dim !== fresh.dim) diffs.push(`dim: ${incr.dim} vs ${fresh.dim}`)
+      if (incr.italic !== fresh.italic) diffs.push(`italic: ${incr.italic} vs ${fresh.italic}`)
+      if (incr.underline !== fresh.underline) diffs.push(`underline: ${incr.underline} vs ${fresh.underline}`)
+      if (incr.inverse !== fresh.inverse) diffs.push(`inverse: ${incr.inverse} vs ${fresh.inverse}`)
+      if (incr.strikethrough !== fresh.strikethrough)
+        diffs.push(`strikethrough: ${incr.strikethrough} vs ${fresh.strikethrough}`)
+
+      if (diffs.length > 0) {
+        const msg =
+          `INKX_STRICT_OUTPUT style mismatch at (${x},${y}) char='${incr.char}': ` +
+          diffs.join(", ") +
+          `\n  incremental: fg=${formatColor(incr.fg)} bg=${formatColor(incr.bg)} bold=${incr.bold} dim=${incr.dim}` +
+          `\n  fresh:       fg=${formatColor(fresh.fg)} bg=${formatColor(fresh.bg)} bold=${fresh.bold} dim=${fresh.dim}`
         // eslint-disable-next-line no-console
         console.error(msg)
         throw new Error(msg)
       }
     }
   }
+}
+
+/**
+ * Verify that the accumulated output from all frames produces the same
+ * terminal state as a fresh render of the current buffer.
+ * Catches compounding errors across multiple render frames.
+ */
+function verifyAccumulatedOutput(
+  currentBuffer: TerminalBuffer,
+  mode: "fullscreen" | "inline",
+): void {
+  const w = accumulateWidth
+  const h = accumulateHeight
+  // Replay all accumulated output (first render + all incremental updates)
+  const screenAccumulated = replayAnsiWithStyles(w, h, accumulatedAnsi)
+  // Replay fresh render of current buffer
+  const freshOutput = bufferToAnsi(currentBuffer, mode)
+  const screenFresh = replayAnsiWithStyles(w, h, freshOutput)
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const accum = screenAccumulated[y]![x]!
+      const fresh = screenFresh[y]![x]!
+
+      if (accum.char !== fresh.char) {
+        const msg =
+          `INKX_STRICT_ACCUMULATE char mismatch at (${x},${y}) after ${accumulateFrameCount} frames: ` +
+          `accumulated='${accum.char}' fresh='${fresh.char}'`
+        // eslint-disable-next-line no-console
+        console.error(msg)
+        throw new Error(msg)
+      }
+
+      const diffs: string[] = []
+      if (!sgrColorEquals(accum.fg, fresh.fg)) diffs.push(`fg: ${formatColor(accum.fg)} vs ${formatColor(fresh.fg)}`)
+      if (!sgrColorEquals(accum.bg, fresh.bg)) diffs.push(`bg: ${formatColor(accum.bg)} vs ${formatColor(fresh.bg)}`)
+      if (accum.bold !== fresh.bold) diffs.push(`bold: ${accum.bold} vs ${fresh.bold}`)
+      if (accum.dim !== fresh.dim) diffs.push(`dim: ${accum.dim} vs ${fresh.dim}`)
+      if (accum.italic !== fresh.italic) diffs.push(`italic: ${accum.italic} vs ${fresh.italic}`)
+      if (accum.underline !== fresh.underline) diffs.push(`underline: ${accum.underline} vs ${fresh.underline}`)
+      if (accum.inverse !== fresh.inverse) diffs.push(`inverse: ${accum.inverse} vs ${fresh.inverse}`)
+      if (accum.strikethrough !== fresh.strikethrough)
+        diffs.push(`strikethrough: ${accum.strikethrough} vs ${fresh.strikethrough}`)
+
+      if (diffs.length > 0) {
+        const msg =
+          `INKX_STRICT_ACCUMULATE style mismatch at (${x},${y}) char='${accum.char}' after ${accumulateFrameCount} frames: ` +
+          diffs.join(", ")
+        // eslint-disable-next-line no-console
+        console.error(msg)
+        throw new Error(msg)
+      }
+    }
+  }
+}
+
+/** Compare two SGR color values. */
+function sgrColorEquals(
+  a: number | { r: number; g: number; b: number } | null,
+  b: number | { r: number; g: number; b: number } | null,
+): boolean {
+  if (a === b) return true
+  if (a === null || b === null) return false
+  if (typeof a === "number" || typeof b === "number") return a === b
+  return a.r === b.r && a.g === b.g && a.b === b.b
 }

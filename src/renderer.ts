@@ -426,9 +426,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     } else {
       // Classic multi-pass layout stabilization loop
       const MAX_LAYOUT_ITERATIONS = 5
+      let iterationCount = 0
 
       for (let iteration = 0; iteration < MAX_LAYOUT_ITERATIONS; iteration++) {
         hadReactCommit = false
+        iterationCount++
 
         // Run the render pipeline inside act() so that forceUpdate/setState
         // from notifyLayoutSubscribers (Phase 2.7) are properly captured.
@@ -462,6 +464,15 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         // the layout is stable — no more iterations needed.
         if (!hadReactCommit) break
       }
+
+      // When multiple iterations ran, the final buffer's dirty rows only cover
+      // the LAST iteration's content phase writes. Rows changed in earlier
+      // iterations but not the last are invisible to diffBuffers' dirty row
+      // scan, causing those rows to be skipped → garbled output. Mark all rows
+      // dirty so the output phase does a full diff scan.
+      if (incremental && buffer && iterationCount > 1) {
+        buffer.markAllRowsDirty()
+      }
     }
 
     // INKX_STRICT: Compare incremental vs fresh on every render (like scheduler)
@@ -474,6 +485,22 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           const a = buffer!.getCell(x, y)
           const b = freshBuffer.getCell(x, y)
           if (!cellEquals(a, b)) {
+            // Re-run fresh render with write trap to capture what writes here
+            let trapInfo = ""
+            const trap = { x, y, log: [] as string[] }
+            ;(globalThis as any).__inkx_write_trap = trap
+            try {
+              doFreshRender()
+            } catch {
+              // ignore
+            }
+            ;(globalThis as any).__inkx_write_trap = null
+            if (trap.log.length > 0) {
+              trapInfo = `\nWRITE TRAP (${trap.log.length} writes to (${x},${y})):\n${trap.log.join("\n")}\n`
+            } else {
+              trapInfo = `\nWRITE TRAP: NO WRITES to (${x},${y})\n`
+            }
+
             // Build rich debug context
             const ctx = buildMismatchContext(root, x, y, a, b, instance.renderCount)
             const debugInfo = formatMismatchContext(ctx)
@@ -481,7 +508,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             // Include text output for full picture
             const incText = bufferToText(buffer!)
             const freshText = bufferToText(freshBuffer)
-            const msg = debugInfo + `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
+            const msg = debugInfo + trapInfo + `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
             throw new IncrementalRenderMismatchError(msg)
           }
         }
@@ -572,6 +599,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // production's processEventBatch pattern (lines 1107-1118 of create-app.tsx).
     // Production does: doRender → await Promise.resolve() → check pendingRerender → repeat.
     // In tests, we use act(flushSyncWork) as the synchronous equivalent.
+    let doRenderCount = 1
     if (instance.singlePassLayout) {
       const MAX_EFFECT_FLUSHES = 5
       for (let flush = 0; flush < MAX_EFFECT_FLUSHES; flush++) {
@@ -584,7 +612,16 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         if (!hadReactCommit) break
         // React committed new work from effects — re-render
         newFrame = doRender()
+        doRenderCount++
       }
+    }
+
+    // When multiple doRender() calls ran (layout feedback, effects), the final
+    // buffer's dirty rows only cover the LAST call's writes. Rows changed in
+    // earlier doRender calls are invisible to callers using outputPhase to diff
+    // against an older prevBuffer. Mark all rows dirty for correctness.
+    if (incremental && doRenderCount > 1 && instance.prevBuffer) {
+      instance.prevBuffer.markAllRowsDirty()
     }
 
     const t2 = performance.now()

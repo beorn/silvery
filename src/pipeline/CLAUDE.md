@@ -298,6 +298,16 @@ The content phase has extensive instrumentation gated on `_instrumentEnabled` --
 - Setting `hasPrevBuffer=false` without clearing buffer (Text still reads stale bg via `getCellBg`)
 - Attempting to fix with `ancestorCleared=true` for sticky children (broke transparent overlays)
 
+### Output Phase: True Color Row Pre-Check Bug (2026-02-24)
+
+`diffBuffers` had a row-level pre-check: `rowMetadataEquals + rowCharsEquals → skip`. This only compared packed Uint32Array metadata and chars. When two cells both had the true-color fg/bg flag set but different actual RGB values in the Maps (fgColors/bgColors), the pre-check said "equal" and skipped the row. Result: progressive garble — characters correct but colors stale.
+
+Fix: Added `rowExtrasEquals()` to buffer.ts that checks all Map-based data (true colors, underline colors, hyperlinks). Updated `diffBuffers` to call it as third pre-check: `rowMetadataEquals && rowCharsEquals && rowExtrasEquals → skip`.
+
+Also fixed latent width-indexing bug: `rowMetadataEquals`/`rowCharsEquals` used `this.width`-based indexing for both buffers, wrong when widths differ (e.g., during resize). Now uses separate `otherStart = y * other.width`.
+
+**Key insight**: INKX_STRICT only verifies buffer content (content phase). It cannot detect output phase bugs where the buffer is correct but ANSI generation is wrong. Use `INKX_STRICT_OUTPUT` or `INKX_STRICT_ACCUMULATE` for output phase bugs.
+
 ### Text Background Bleed (BgSegment)
 
 ANSI-embedded backgrounds (`chalk.bgBlack("text")`) inside a Box with `backgroundColor` caused bg to leak across wrapped lines. The ANSI bg state persisted across line boundaries.
@@ -316,6 +326,7 @@ Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content a
 | Blaming the terminal emulator                 | If 3 terminals show the same glitch, it's your code                            | Use `withDiagnostics` + `INKX_STRICT=1` first                                               |
 | Hand-rolling VirtualTerminal tests            | Too simple to catch real app complexity                                        | Use `withDiagnostics(createBoardDriver(...))`                                               |
 | Reading code paths without a failing test     | Wastes 20+ turns on theorizing                                                 | Write failing test first, THEN trace code                                                   |
+| Row pre-check: only packed metadata + chars   | Misses true-color Map diffs (fgColors/bgColors) when both cells have TC flag   | Always include `rowExtrasEquals()` in the row pre-check                                     |
 
 ## Effective Strategies (Priority Order)
 
@@ -343,6 +354,7 @@ Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content a
 | Children blank after parent changes               | `parentRegionChanged` → `childHasPrev=false`; is viewport clear setting `childHasPrev` correctly? |
 | Absolute child disappears                         | Two-pass rendering order; absolute children need `ancestorCleared=false` in second pass           |
 | Content correct initially, wrong after navigation | Incremental rendering bug; `INKX_STRICT=1` will catch it                                          |
+| Colors wrong but characters correct (garble)      | Output phase: `diffBuffers` row pre-check skipping true-color Map diffs; check `rowExtrasEquals`  |
 | Text bg different from parent Box bg              | `getCellBg` reading stale buffer; check if region was cleared to correct bg                       |
 | Flickering on every render                        | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of content phase         |
 | Stale overlay pixels after shrink (black area)    | `clearExcessArea` not called; check `parentRegionCleared` + `forceRepaint` interaction            |
