@@ -21,8 +21,10 @@ import type { CellChange } from "./types.js"
 
 const DEBUG_OUTPUT = !!process.env.INKX_DEBUG_OUTPUT
 const FULL_RENDER = !!process.env.INKX_FULL_RENDER
-// These use getters so they can be set after module load (e.g., in test files)
-function isStrictOutput(): boolean { return !!process.env.INKX_STRICT_OUTPUT }
+// These use getters so they can be set after module load (e.g., in test files).
+// INKX_STRICT enables buffer + output checks (per-frame).
+// INKX_STRICT_ACCUMULATE is separate — it replays ALL frames (O(N²)) and is opt-in only.
+function isStrictOutput(): boolean { return !!process.env.INKX_STRICT_OUTPUT || !!process.env.INKX_STRICT }
 function isStrictAccumulate(): boolean { return !!process.env.INKX_STRICT_ACCUMULATE }
 let accumulatedAnsi = ""
 let accumulateWidth = 0
@@ -1325,7 +1327,7 @@ function applySgrParams(params: string, sgr: SgrState): void {
  * Replay ANSI output tracking both characters AND SGR styles.
  * Returns a 2D grid of StyledCell objects.
  */
-function replayAnsiWithStyles(width: number, height: number, ansi: string): StyledCell[][] {
+export function replayAnsiWithStyles(width: number, height: number, ansi: string): StyledCell[][] {
   const screen: StyledCell[][] = Array.from({ length: height }, () =>
     Array.from({ length: width }, () => createDefaultStyledCell()),
   )
@@ -1430,20 +1432,28 @@ function replayAnsiWithStyles(width: number, height: number, ansi: string): Styl
       // Collect combining marks and joiners that follow (ZWJ sequences, variation selectors, etc.)
       let grapheme = String.fromCodePoint(cp)
       let j = i + cpLen
+      let prevWasZwj = false
       while (j < ansi.length) {
         const nextCp = ansi.codePointAt(j)!
         // Combining marks (U+0300-U+036F, U+20D0-U+20FF, U+FE00-U+FE0F variation selectors),
-        // ZWJ (U+200D), regional indicators following another regional indicator
+        // ZWJ (U+200D), regional indicators following another regional indicator.
+        // After ZWJ, the next codepoint is always consumed (it's the joinee — e.g.,
+        // 🏃‍♂️ = runner + ZWJ + male sign + VS16: male sign is NOT a combining mark
+        // but must be part of this grapheme cluster).
         const isCombining =
-          (nextCp >= 0x0300 && nextCp <= 0x036F) ||   // Combining Diacritical Marks
-          (nextCp >= 0x20D0 && nextCp <= 0x20FF) ||   // Combining Diacritical Marks for Symbols
-          (nextCp >= 0xFE00 && nextCp <= 0xFE0F) ||   // Variation Selectors
-          nextCp === 0xFE0E || nextCp === 0xFE0F ||    // Text/Emoji presentation
-          nextCp === 0x200D ||                          // ZWJ
-          (nextCp >= 0xE0100 && nextCp <= 0xE01EF) ||  // Variation Selectors Supplement
+          prevWasZwj ||                                   // Joinee after ZWJ
+          (nextCp >= 0x0300 && nextCp <= 0x036F) ||       // Combining Diacritical Marks
+          (nextCp >= 0x20D0 && nextCp <= 0x20FF) ||       // Combining Diacritical Marks for Symbols
+          (nextCp >= 0xFE00 && nextCp <= 0xFE0F) ||       // Variation Selectors
+          nextCp === 0xFE0E || nextCp === 0xFE0F ||        // Text/Emoji presentation
+          nextCp === 0x200D ||                              // ZWJ
+          (nextCp >= 0xE0100 && nextCp <= 0xE01EF) ||      // Variation Selectors Supplement
+          // Skin tone modifiers (Fitzpatrick scale)
+          (nextCp >= 0x1F3FB && nextCp <= 0x1F3FF) ||
           // Regional indicator following a regional indicator (flag sequences)
           (cp >= 0x1F1E6 && cp <= 0x1F1FF && nextCp >= 0x1F1E6 && nextCp <= 0x1F1FF)
         if (!isCombining) break
+        prevWasZwj = nextCp === 0x200D
         const nextLen = nextCp > 0xFFFF ? 2 : 1
         grapheme += String.fromCodePoint(nextCp)
         j += nextLen
