@@ -50,6 +50,7 @@ import { AppContext, FocusManagerContext, StdoutContext, TermContext } from "../
 import { createFocusManager } from "../focus-manager.js"
 import { createFocusEvent, dispatchFocusEvent } from "../focus-events.js"
 import { executeRender } from "../pipeline/index.js"
+import { IncrementalRenderMismatchError } from "../scheduler.js"
 import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "../reconciler.js"
 import { map, merge, takeUntil } from "../streams/index.js"
 import { createBuffer } from "./create-buffer.js"
@@ -865,7 +866,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             // eslint-disable-next-line @typescript-eslint/no-require-imports
             require("node:fs").appendFileSync("/tmp/inkx-perf.log", msg + "\n")
             // Also throw to make it visible
-            throw new Error(msg)
+            throw new IncrementalRenderMismatchError(msg)
           }
         }
       }
