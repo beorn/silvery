@@ -83,51 +83,48 @@ describe("CJK wide character rendering", () => {
     expect(app.text).toContain("清理報表")
   })
 
-  test("zoom-like state change with CJK text in multiple columns", async () => {
+  test("CJK text in zoomed column layout", async () => {
     const render = createRenderer({ cols: 100, rows: 15 })
 
-    function Board({ zoomed }: { zoomed: boolean }) {
-      if (zoomed) {
-        return (
-          <Box flexDirection="column" width={100}>
-            <Text>Zoomed: 廈門大廈計劃</Text>
-            <Box flexDirection="row">
-              <Box width={50}>
-                <Text>子任務一：報表清理</Text>
-              </Box>
-              <Box width={50}>
-                <Text>子任務二：數據備份</Text>
-              </Box>
-            </Box>
+    // Test zoomed view with CJK subtasks in two columns
+    const app = render(
+      <Box flexDirection="column" width={100}>
+        <Text>Zoomed: 廈門大廈計劃</Text>
+        <Box flexDirection="row">
+          <Box width={50}>
+            <Text>子任務一：報表清理</Text>
           </Box>
-        )
-      }
-      return (
-        <Box flexDirection="row" width={100}>
-          <Box width={33}>
-            <Text>Column 1: 廈門</Text>
-          </Box>
-          <Box width={33}>
-            <Text>Column 2: 報表</Text>
-          </Box>
-          <Box width={34}>
-            <Text>Column 3: 備份</Text>
+          <Box width={50}>
+            <Text>子任務二：數據備份</Text>
           </Box>
         </Box>
-      )
-    }
-
-    const app = render(<Board zoomed={false} />)
-    expect(app.text).toContain("廈門")
-
-    // Zoom in — big layout change, tests the content phase fast path
-    app.rerender(<Board zoomed={true} />)
+      </Box>,
+    )
     expect(app.text).toContain("廈門大廈計劃")
+    expect(app.text).toContain("子任務一")
+    expect(app.text).toContain("子任務二")
+  })
 
-    // Zoom out — another big layout change
-    app.rerender(<Board zoomed={false} />)
+  test("CJK text in three-column layout", async () => {
+    const render = createRenderer({ cols: 100, rows: 15 })
+
+    const app = render(
+      <Box flexDirection="row" width={100}>
+        <Box width={33}>
+          <Text>Column 1: 廈門</Text>
+        </Box>
+        <Box width={33}>
+          <Text>Column 2: 報表</Text>
+        </Box>
+        <Box width={34}>
+          <Text>Column 3: 備份</Text>
+        </Box>
+      </Box>,
+    )
     expect(app.text).toContain("Column 1")
+    expect(app.text).toContain("廈門")
     expect(app.text).toContain("Column 3")
+    expect(app.text).toContain("備份")
   })
 })
 

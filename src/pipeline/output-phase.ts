@@ -727,8 +727,11 @@ const diffResult: DiffResult = { pool: diffPool, count: 0 }
  * between frames. Returns a pool+count pair instead of slicing the array.
  */
 function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
-  // Ensure pool is large enough for worst case (all cells changed)
-  const maxChanges = Math.max(prev.width, next.width) * Math.max(prev.height, next.height)
+  // Ensure pool is large enough for worst case (all cells changed).
+  // Wide→narrow transitions emit an extra change for the continuation cell,
+  // so worst case is 1.5x (every other cell could be a wide→narrow transition).
+  const cells = Math.max(prev.width, next.width) * Math.max(prev.height, next.height)
+  const maxChanges = cells + (cells >> 1) // 1.5x
   ensureDiffPoolCapacity(maxChanges)
 
   let changeCount = 0
