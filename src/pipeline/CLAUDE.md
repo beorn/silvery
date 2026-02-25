@@ -321,6 +321,20 @@ Also fixed latent width-indexing bug: `rowMetadataEquals`/`rowCharsEquals` used 
 
 **Key insight**: INKX_STRICT only verifies buffer content (content phase). It cannot detect output phase bugs where the buffer is correct but ANSI generation is wrong. Use `INKX_STRICT_OUTPUT` or `INKX_STRICT_ACCUMULATE` for output phase bugs.
 
+### Output Phase: CJK Wide Char Cursor Drift (2026-02-25)
+
+CJK wide characters (e.g., '廈') occupy 2 terminal columns. In the buffer, col X has `wide=true` and col X+1 should have `continuation=true`. `bufferToAnsi` relies on `continuation` to skip X+1 after writing the wide char — without it, both the wide char AND the non-continuation cell are written, causing every subsequent character on the row to shift right by 1 ("cursor drift").
+
+Two fixes applied to `output-phase.ts`:
+
+1. **`bufferToAnsi` robustness**: After writing a wide char, unconditionally skip X+1 (`if (cell.wide) x++`) instead of relying on the next cell's `continuation` flag. This makes output correct even if the buffer has a corrupted/missing continuation cell.
+
+2. **`diffBuffers` wide→narrow transition**: When prev buffer has `wide=true` at X and next doesn't, explicitly add X+1 to the change pool. Without this, the terminal retains the second half of the wide char at X+1 (which the buffer shows as "unchanged" since both prev and next are ' ').
+
+**Root cause**: Various buffer operations (`clearNodeRegion`, `renderBox` bg fill, scroll viewport clear) use `buffer.fill()` which defaults `continuation=false`. If these operations overlap with a wide char's continuation cell, the continuation flag is erased. INKX_STRICT doesn't catch this because both fresh and incremental renders produce the same corrupted buffer — use INKX_STRICT_OUTPUT for output-level verification.
+
+**INKX_STRICT_OUTPUT now enabled in CI** (`vitest/setup.ts`) after this fix — 3382 vendor + 2090 TUI tests pass with it.
+
 ### Text Background Bleed (BgSegment)
 
 ANSI-embedded backgrounds (`chalk.bgBlack("text")`) inside a Box with `backgroundColor` caused bg to leak across wrapped lines. The ANSI bg state persisted across line boundaries.
@@ -371,6 +385,7 @@ Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content a
 | Text bg different from parent Box bg              | `getCellBg` reading stale buffer; check if region was cleared to correct bg                       |
 | Flickering on every render                        | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of content phase         |
 | Stale overlay pixels after shrink (black area)    | `clearExcessArea` not called; check `parentRegionCleared` + `forceRepaint` interaction            |
+| CJK/wide char garble, text shifts right           | `bufferToAnsi` cursor drift: wide char without continuation at col+1. Run `INKX_STRICT_OUTPUT=1`  |
 
 ## Quick Regression Test Template
 

@@ -584,6 +584,15 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
       // all subsequent characters on the row to shift left by one column).
       const char = cell.char || " "
       output += wrapTextSizing(char, cell.wide)
+
+      // Wide characters occupy 2 columns in the terminal. Skip the next cell
+      // position since the terminal cursor already advanced by 2. We skip
+      // unconditionally (not relying on the next cell's continuation flag)
+      // because the buffer may have a corrupted continuation cell — e.g., when
+      // an adjacent container's region clear overwrites the continuation.
+      // Without this, the non-continuation cell at x+1 would also be written,
+      // causing every subsequent character on the row to shift right by 1.
+      if (cell.wide) x++
     }
 
     // Close any open hyperlink at end of row
@@ -750,6 +759,18 @@ function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
       if (!next.cellEquals(x, y, prev)) {
         writeCellChange(diffPool[changeCount]!, x, y, next)
         changeCount++
+
+        // Wide char transition: when prev had a wide char and next doesn't,
+        // we must also emit the continuation position (x+1) as a change.
+        // The terminal's state at x+1 contains the second half of the wide
+        // char, but the buffer may show x+1 as "unchanged" (both prev and
+        // next are ' '). Without this explicit change, changesToAnsi skips
+        // x+1 and the terminal retains the wide char remnant, causing
+        // cursor drift.
+        if (x + 1 < width && prev.isCellWide(x, y) && !next.isCellWide(x, y)) {
+          writeCellChange(diffPool[changeCount]!, x + 1, y, next)
+          changeCount++
+        }
       }
     }
   }
