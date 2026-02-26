@@ -1,7 +1,8 @@
 /**
  * Static Scrollback — Coding Agent Showcase
  *
- * Demonstrates inkx's scrollback capabilities vs traditional terminal UIs:
+ * Demonstrates inkx's ScrollbackList component for building apps where
+ * completed items freeze into real terminal scrollback:
  *
  * ┌─────────────────────────────────────────────────────────────────────────┐
  * │ Feature                          │ Claude Code │ inkx Showcase          │
@@ -17,6 +18,12 @@
  * │ Auto-compact on resize           │ ✗           │ ✓                     │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
+ * Key APIs demonstrated:
+ *   - ScrollbackList — declarative list with automatic scrollback management
+ *   - useScrollbackItem — imperative freeze() from within list items
+ *   - isFrozen prop — data-driven freezing for items marked as complete
+ *   - OSC 133 markers — terminal prompt navigation via markers prop
+ *
  * Controls:
  *   Enter - Advance to next step / skip streaming
  *   c     - Compact (clear dynamic area, scrollback remains)
@@ -30,14 +37,34 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react"
-import { render, renderStringSync, Box, Text, Link, Spinner, useInput, useApp, createTerm, type Key } from "../../src/index.js"
-import { useScrollback } from "../../src/hooks/useScrollback.js"
+import {
+  render,
+  Box,
+  Text,
+  Link,
+  Spinner,
+  ScrollbackList,
+  useScrollbackItem,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "../../src/index.js"
 import type { ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Static Scrollback",
-  description: "Coding agent showcase — rich scrollback, streaming, context tracking",
-  features: ["useScrollback()", "inline mode", "streaming", "OSC 8 links", "OSC 133 markers", "context tracking"],
+  description: "Coding agent showcase — ScrollbackList, streaming, context tracking",
+  features: [
+    "ScrollbackList",
+    "useScrollbackItem()",
+    "isFrozen",
+    "inline mode",
+    "streaming",
+    "OSC 8 links",
+    "OSC 133 markers",
+    "context tracking",
+  ],
 }
 
 // ============================================================================
@@ -82,12 +109,12 @@ const TOOL_COLORS: Record<string, string> = {
 }
 
 const TOOL_ICONS: Record<string, string> = {
-  Read: "📖",
-  Edit: "✏️",
-  Bash: "⚡",
-  Write: "📝",
-  Glob: "🔍",
-  Grep: "🔎",
+  Read: "\u{1F4D6}",
+  Edit: "\u270F\uFE0F",
+  Bash: "\u26A1",
+  Write: "\u{1F4DD}",
+  Glob: "\u{1F50D}",
+  Grep: "\u{1F50E}",
 }
 
 /** Regex matching https/http URLs in output text. */
@@ -100,12 +127,13 @@ const URL_RE = /https?:\/\/[^\s)]+/g
 const SCRIPT: ScriptEntry[] = [
   {
     role: "user",
-    content: "Fix the login bug in auth.ts — expired tokens throw instead of refreshing.",
+    content: "Fix the login bug in auth.ts \u2014 expired tokens throw instead of refreshing.",
     tokens: { input: 42, output: 0 },
   },
   {
     role: "agent",
-    thinking: "The user reports expired tokens throw instead of refreshing. This is likely in the token validation flow. I should read auth.ts to see the current expiry check logic. The bug is probably comparing jwt.exp (seconds) with Date.now() (milliseconds).",
+    thinking:
+      "The user reports expired tokens throw instead of refreshing. This is likely in the token validation flow. I should read auth.ts to see the current expiry check logic. The bug is probably comparing jwt.exp (seconds) with Date.now() (milliseconds).",
     content: "Let me look at the auth module.",
     toolCalls: [
       {
@@ -126,7 +154,8 @@ const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "agent",
-    thinking: "Found it — decoded.exp is in seconds (Unix timestamp) but Date.now() returns milliseconds. Every token appears expired because exp (e.g. 1700000000) is always less than Date.now() (e.g. 1700000000000). I need to divide Date.now() by 1000, and change the throw to a refresh call.",
+    thinking:
+      "Found it \u2014 decoded.exp is in seconds (Unix timestamp) but Date.now() returns milliseconds. Every token appears expired because exp (e.g. 1700000000) is always less than Date.now() (e.g. 1700000000000). I need to divide Date.now() by 1000, and change the throw to a refresh call.",
     content: "Found it. The expiry check compares seconds (jwt.exp) to milliseconds (Date.now()). Fixing now.",
     toolCalls: [
       {
@@ -153,9 +182,9 @@ const SCRIPT: ScriptEntry[] = [
         args: "bun test src/auth.test.ts",
         output: [
           "auth.test.ts",
-          "  ✓ login with valid token (2ms)",
-          "  ✓ login with expired token refreshes (3ms)",
-          "  ✓ login with invalid token rejects (1ms)",
+          "  \u2713 login with valid token (2ms)",
+          "  \u2713 login with expired token refreshes (3ms)",
+          "  \u2713 login with invalid token rejects (1ms)",
           "",
           "3 passed | 0 failed",
         ],
@@ -165,7 +194,8 @@ const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "agent",
-    content: "Fixed! The bug was comparing jwt.exp (seconds since epoch) with Date.now() (milliseconds). Expired tokens now trigger a refresh instead of throwing.",
+    content:
+      "Fixed! The bug was comparing jwt.exp (seconds since epoch) with Date.now() (milliseconds). Expired tokens now trigger a refresh instead of throwing.",
     tokens: { input: 2601, output: 89 },
   },
   {
@@ -175,13 +205,18 @@ const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "agent",
-    thinking: "The user wants rate limiting on login. I should check if there's existing rate limiting infrastructure before building from scratch. Let me search for rate-limit patterns in the codebase.",
+    thinking:
+      "The user wants rate limiting on login. I should check if there's existing rate limiting infrastructure before building from scratch. Let me search for rate-limit patterns in the codebase.",
     content: "I'll check what rate limiting infrastructure exists.",
     toolCalls: [
       {
         tool: "Grep",
         args: "rateLimit|rate-limit",
-        output: ["src/middleware/rate-limit.ts", "src/config.ts", "See https://docs.example.com/api/rate-limiting for API docs"],
+        output: [
+          "src/middleware/rate-limit.ts",
+          "src/config.ts",
+          "See https://docs.example.com/api/rate-limiting for API docs",
+        ],
       },
       {
         tool: "Read",
@@ -199,7 +234,8 @@ const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "agent",
-    thinking: "Good — there's already a RateLimiter abstraction. I just need to create an instance with appropriate settings (5 attempts per 60s window seems reasonable for login) and wire it into the auth route as middleware.",
+    thinking:
+      "Good \u2014 there's already a RateLimiter abstraction. I just need to create an instance with appropriate settings (5 attempts per 60s window seems reasonable for login) and wire it into the auth route as middleware.",
     content: "Good, there's already a rate limiter. I'll wire it into the auth route.",
     toolCalls: [
       {
@@ -244,21 +280,25 @@ const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "system",
-    content: "📦 Compaction: clearing dynamic area. Scrollback preserved above — scroll up to review previous exchanges.",
+    content:
+      "\u{1F4E6} Compaction: clearing dynamic area. Scrollback preserved above \u2014 scroll up to review previous exchanges.",
   },
   {
     role: "agent",
-    content: "Context recovered after compaction. I have the full conversation history. What would you like to work on next?",
+    content:
+      "Context recovered after compaction. I have the full conversation history. What would you like to work on next?",
     tokens: { input: 8012, output: 54 },
   },
   {
     role: "user",
-    content: "Now add i18n support for error messages. We need 日本語 (Japanese) and Deutsch (German). 🌍",
+    content:
+      "Now add i18n support for error messages. We need \u65E5\u672C\u8A9E (Japanese) and Deutsch (German). \u{1F30D}",
     tokens: { input: 73, output: 0 },
   },
   {
     role: "agent",
-    thinking: "i18n for error messages — I need to create translation JSON files for ja and de, then build a simple t() function that resolves message keys by locale. I'll also need to update the error responses in auth.ts to use t() with the request's locale.",
+    thinking:
+      "i18n for error messages \u2014 I need to create translation JSON files for ja and de, then build a simple t() function that resolves message keys by locale. I'll also need to update the error responses in auth.ts to use t() with the request's locale.",
     content: "I'll create the translation files and update the error handling.",
     toolCalls: [
       {
@@ -266,10 +306,10 @@ const SCRIPT: ScriptEntry[] = [
         args: "src/i18n/ja.json",
         output: [
           "{",
-          '  "token_expired": "トークンの有効期限が切れました 🔧",',
-          '  "rate_limited": "リクエストが多すぎます。後でもう一度お試しください",',
-          '  "invalid_token": "無効なトークンです 🐛",',
-          '  "login_success": "ログイン成功 ✅"',
+          '  "token_expired": "\u30C8\u30FC\u30AF\u30F3\u306E\u6709\u52B9\u671F\u9650\u304C\u5207\u308C\u307E\u3057\u305F \u{1F527}",',
+          '  "rate_limited": "\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u591A\u3059\u304E\u307E\u3059\u3002\u5F8C\u3067\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044",',
+          '  "invalid_token": "\u7121\u52B9\u306A\u30C8\u30FC\u30AF\u30F3\u3067\u3059 \u{1F41B}",',
+          '  "login_success": "\u30ED\u30B0\u30A4\u30F3\u6210\u529F \u2705"',
           "}",
         ],
       },
@@ -279,8 +319,8 @@ const SCRIPT: ScriptEntry[] = [
         output: [
           "{",
           '  "token_expired": "Token abgelaufen",',
-          '  "rate_limited": "Zu viele Anfragen. Bitte versuchen Sie es später",',
-          '  "invalid_token": "Ungültiges Token",',
+          '  "rate_limited": "Zu viele Anfragen. Bitte versuchen Sie es sp\u00E4ter",',
+          '  "invalid_token": "Ung\u00FCltiges Token",',
           '  "login_success": "Anmeldung erfolgreich"',
           "}",
         ],
@@ -290,7 +330,8 @@ const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "agent",
-    thinking: "Now I need the i18n loader module that imports the locale files and exports a t() function. The function should look up the key in the requested locale, falling back to English defaults. Then I'll wire it into the auth error responses.",
+    thinking:
+      "Now I need the i18n loader module that imports the locale files and exports a t() function. The function should look up the key in the requested locale, falling back to English defaults. Then I'll wire it into the auth error responses.",
     content: "Now I'll create the i18n loader and wire it into the error responses.",
     toolCalls: [
       {
@@ -329,10 +370,10 @@ const SCRIPT: ScriptEntry[] = [
         args: "bun test src/i18n/",
         output: [
           "i18n.test.ts",
-          "  ✓ English fallback for unknown key",
-          "  ✓ Japanese: トークンの有効期限が切れました 🔧",
-          "  ✓ German: Token abgelaufen",
-          "  ✓ Emoji preserved in translations 🐛✅",
+          "  \u2713 English fallback for unknown key",
+          "  \u2713 Japanese: \u30C8\u30FC\u30AF\u30F3\u306E\u6709\u52B9\u671F\u9650\u304C\u5207\u308C\u307E\u3057\u305F \u{1F527}",
+          "  \u2713 German: Token abgelaufen",
+          "  \u2713 Emoji preserved in translations \u{1F41B}\u2705",
           "",
           "4 passed | 0 failed",
         ],
@@ -342,7 +383,8 @@ const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "agent",
-    content: "i18n support added with Japanese (日本語) and German (Deutsch) translations. Error messages are now locale-aware. 🌍✅",
+    content:
+      "i18n support added with Japanese (\u65E5\u672C\u8A9E) and German (Deutsch) translations. Error messages are now locale-aware. \u{1F30D}\u2705",
     tokens: { input: 10401, output: 67 },
   },
   {
@@ -352,19 +394,14 @@ const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "agent",
-    thinking: "Simple task — read the version from package.json and expose it on GET /health alongside uptime. Quick implementation.",
-    content: "Simple addition — reading package.json for the version, then adding the route.",
+    thinking:
+      "Simple task \u2014 read the version from package.json and expose it on GET /health alongside uptime. Quick implementation.",
+    content: "Simple addition \u2014 reading package.json for the version, then adding the route.",
     toolCalls: [
       {
         tool: "Read",
         args: "package.json",
-        output: [
-          "{",
-          '  "name": "auth-service",',
-          '  "version": "2.4.1",',
-          "  ...",
-          "}",
-        ],
+        output: ["{", '  "name": "auth-service",', '  "version": "2.4.1",', "  ...", "}"],
       },
       {
         tool: "Edit",
@@ -403,7 +440,7 @@ const SCRIPT: ScriptEntry[] = [
   {
     role: "agent",
     content:
-      "All done! Summary of changes:\n• Fixed token expiry bug (seconds vs milliseconds)\n• Added rate limiting (5 req/min per IP)\n• Added i18n support (日本語 + Deutsch) 🌍\n• Added /health endpoint (v2.4.1)\n\nAll 21 tests pass. Ready to commit?",
+      "All done! Summary of changes:\n\u2022 Fixed token expiry bug (seconds vs milliseconds)\n\u2022 Added rate limiting (5 req/min per IP)\n\u2022 Added i18n support (\u65E5\u672C\u8A9E + Deutsch) \u{1F30D}\n\u2022 Added /health endpoint (v2.4.1)\n\nAll 21 tests pass. Ready to commit?",
     tokens: { input: 11234, output: 112 },
   },
 ]
@@ -423,7 +460,7 @@ function generateStressScript(): ScriptEntry[] {
     "src/utils/crypto.ts",
     "src/config.ts",
     "tests/integration.test.ts",
-    "src/i18n/日本語.json",
+    "src/i18n/\u65E5\u672C\u8A9E.json",
   ]
 
   let cumulativeInput = 4000
@@ -432,10 +469,10 @@ function generateStressScript(): ScriptEntry[] {
     if (i % 5 === 0) {
       const prompts = [
         `Fix bug #${100 + i} in ${files[i % files.length]}`,
-        `Add feature: ${["caching", "logging", "retry", "batching", "バリデーション"][i % 5]}`,
-        `Refactor ${files[i % files.length]} — it's too complex 🔧`,
-        `Why is test #${i} failing? 🐛`,
-        `Add 日本語 translations for module ${i}`,
+        `Add feature: ${["caching", "logging", "retry", "batching", "\u30D0\u30EA\u30C7\u30FC\u30B7\u30E7\u30F3"][i % 5]}`,
+        `Refactor ${files[i % files.length]} \u2014 it's too complex \u{1F527}`,
+        `Why is test #${i} failing? \u{1F41B}`,
+        `Add \u65E5\u672C\u8A9E translations for module ${i}`,
       ]
       exchanges.push({
         role: "user",
@@ -445,7 +482,7 @@ function generateStressScript(): ScriptEntry[] {
     } else if (i % 5 === 4) {
       exchanges.push({
         role: "agent",
-        content: `Done with batch ${Math.floor(i / 5) + 1}. ${3 + (i % 7)} tests pass. ✅`,
+        content: `Done with batch ${Math.floor(i / 5) + 1}. ${3 + (i % 7)} tests pass. \u2705`,
         tokens: { input: cumulativeInput, output: 45 + (i % 60) },
       })
     } else {
@@ -465,7 +502,7 @@ function generateStressScript(): ScriptEntry[] {
               `line ${i * 10 + 1}: processing...`,
               tool === "Edit" ? `- old code at line ${i}` : `  existing line ${i}`,
               tool === "Edit" ? `+ new code at line ${i}` : `  result: ok`,
-              i % 10 === 0 ? `✓ テスト合格 🎉` : `✓ done`,
+              i % 10 === 0 ? `\u2713 \u30C6\u30B9\u30C8\u5408\u683C \u{1F389}` : `\u2713 done`,
             ],
           },
         ],
@@ -476,7 +513,7 @@ function generateStressScript(): ScriptEntry[] {
     if (i === 80 || i === 160) {
       exchanges.push({
         role: "system",
-        content: `📦 Compaction #${i === 80 ? 1 : 2}: context cleared. Scrollback preserved above.`,
+        content: `\u{1F4E6} Compaction #${i === 80 ? 1 : 2}: context cleared. Scrollback preserved above.`,
       })
     }
   }
@@ -513,7 +550,7 @@ function computeCumulativeTokens(exchanges: Exchange[]): { input: number; output
 }
 
 // ============================================================================
-// Scrollback Rendering — JSX → styled ANSI for terminal scrollback
+// Shared UI Components
 // ============================================================================
 
 /** Render a line with auto-linked URLs. */
@@ -525,110 +562,83 @@ function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; colo
   URL_RE.lastIndex = 0
   while ((match = URL_RE.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      parts.push(<Text key={`t${lastIndex}`} dim={dim} color={color}>{text.slice(lastIndex, match.index)}</Text>)
+      parts.push(
+        <Text key={`t${lastIndex}`} dim={dim} color={color}>
+          {text.slice(lastIndex, match.index)}
+        </Text>,
+      )
     }
     const url = match[0]
-    parts.push(<Link key={`l${match.index}`} href={url} dim={dim}>{url}</Link>)
+    parts.push(
+      <Link key={`l${match.index}`} href={url} dim={dim}>
+        {url}
+      </Link>,
+    )
     lastIndex = match.index + url.length
   }
   if (lastIndex < text.length) {
-    parts.push(<Text key={`t${lastIndex}`} dim={dim} color={color}>{text.slice(lastIndex)}</Text>)
+    parts.push(
+      <Text key={`t${lastIndex}`} dim={dim} color={color}>
+        {text.slice(lastIndex)}
+      </Text>,
+    )
   }
   if (parts.length === 0) {
-    return <Text dim={dim} color={color}>{text}</Text>
+    return (
+      <Text dim={dim} color={color}>
+        {text}
+      </Text>
+    )
   }
   return <Text>{parts}</Text>
 }
-
-/** Scrollback version — dimmed, compact, with token badge. Rendered via renderStringSync. */
-function ScrollbackExchange({ exchange }: { exchange: Exchange }): JSX.Element {
-  const tokenBadge = exchange.tokens
-    ? ` [${formatTokens(exchange.tokens.input + exchange.tokens.output)} tokens]`
-    : ""
-
-  if (exchange.role === "system") {
-    return (
-      <Box paddingX={1}>
-        <Text dim italic color="$warning">{exchange.content}</Text>
-      </Box>
-    )
-  }
-
-  const isUser = exchange.role === "user"
-  const outlineColor = isUser ? "$primary" : "$success"
-
-  return (
-    <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} paddingX={1} dimColor>
-      <Text dim>
-        <Text bold color={outlineColor}>
-          {isUser ? "❯" : "◆"} {isUser ? "You" : "Agent"}
-        </Text>
-        {tokenBadge && <Text color="$muted">{tokenBadge}</Text>}
-      </Text>
-      <Text> </Text>
-      <Text dim>{exchange.content}</Text>
-      <Text> </Text>
-      {exchange.toolCalls?.map((call, i) => (
-        <Box key={i} flexDirection="column">
-          <Text dim>
-            <Text color={TOOL_COLORS[call.tool] ?? "gray"} bold>{"✓ "}{call.tool}</Text>
-            {" "}
-            <Link href={`file://${call.args}`} dim>{call.args}</Link>
-          </Text>
-          <Box flexDirection="column" paddingLeft={4}>
-            {call.output.map((line, j) => {
-              if (line.startsWith("+")) return <LinkifiedLine key={j} text={line} dim color="$success" />
-              if (line.startsWith("-")) return <LinkifiedLine key={j} text={line} dim color="$error" />
-              return <LinkifiedLine key={j} text={line} dim />
-            })}
-          </Box>
-        </Box>
-      ))}
-    </Box>
-  )
-}
-
-function renderExchangeToJSX(ex: Exchange): string {
-  const cols = process.stdout.columns || 80
-  return renderStringSync(<ScrollbackExchange exchange={ex} />, { width: cols })
-}
-
-// ============================================================================
-// Live Components — what the user sees in the dynamic render area
-// ============================================================================
 
 /** Thinking block — shows with spinner before agent response. */
 function ThinkingBlock({ text, done }: { text: string; done: boolean }): JSX.Element {
   return (
     <Box flexDirection="column" paddingLeft={2}>
       <Text color="$muted" dim italic>
-        {done ? "▸ " : <><Spinner type="dots" /> </>}
+        {done ? (
+          "\u25B8 "
+        ) : (
+          <>
+            <Spinner type="dots" />{" "}
+          </>
+        )}
         thinking
       </Text>
       {!done && (
-        <Text color="$muted" dim wrap="truncate">{"    "}{text}</Text>
+        <Text color="$muted" dim wrap="truncate">
+          {"    "}
+          {text}
+        </Text>
       )}
     </Box>
   )
 }
 
-/** Tool call with lifecycle: spinner → output → checkmark. */
+/** Tool call with lifecycle: spinner -> output -> checkmark. */
 function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "running" | "done" }): JSX.Element {
   const color = TOOL_COLORS[call.tool] ?? "gray"
-  const icon = TOOL_ICONS[call.tool] ?? "▸"
+  const icon = TOOL_ICONS[call.tool] ?? "\u25B8"
 
   return (
     <Box flexDirection="column" marginTop={0}>
       <Text>
         {phase === "running" ? (
-          <><Spinner type="dots" /> </>
+          <>
+            <Spinner type="dots" />{" "}
+          </>
         ) : phase === "done" ? (
-          <Text color="$success">{"✓ "}</Text>
+          <Text color="$success">{"\u2713 "}</Text>
         ) : (
-          <Text color="$muted" dim>{"○ "}</Text>
+          <Text color="$muted" dim>
+            {"\u25CB "}
+          </Text>
         )}
-        <Text color={color} bold>{call.tool}</Text>
-        {" "}
+        <Text color={color} bold>
+          {call.tool}
+        </Text>{" "}
         {call.tool === "Bash" || call.tool === "Grep" || call.tool === "Glob" ? (
           <Text color="$muted">{call.args}</Text>
         ) : (
@@ -658,7 +668,11 @@ function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "ru
 }
 
 /** Streaming text — reveals content word by word. */
-function StreamingText({ fullText, revealFraction, showCursor }: {
+function StreamingText({
+  fullText,
+  revealFraction,
+  showCursor,
+}: {
   fullText: string
   revealFraction: number
   showCursor: boolean
@@ -684,50 +698,80 @@ function StreamingText({ fullText, revealFraction, showCursor }: {
   return (
     <Text>
       {revealedText}
-      {showCursor && <Text color="$primary">▌</Text>}
+      {showCursor && <Text color="$primary">{"\u258C"}</Text>}
     </Text>
   )
 }
 
-/** Live exchange — rich rendering with streaming support. */
-function ExchangeView({ exchange, streamPhase, revealFraction, pulse }: {
+// ============================================================================
+// Exchange Views — live (interactive) and scrollback (frozen)
+// ============================================================================
+
+/**
+ * Live exchange view — rich rendering with streaming, spinners, and
+ * useScrollbackItem integration. When this item's exchange becomes frozen,
+ * it calls freeze() to push itself into terminal scrollback.
+ */
+function ExchangeItem({
+  exchange,
+  streamPhase,
+  revealFraction,
+  pulse,
+  isLatest,
+}: {
   exchange: Exchange
   streamPhase: "thinking" | "streaming" | "tools" | "done"
   revealFraction: number
   pulse: boolean
+  isLatest: boolean
 }): JSX.Element {
+  const { freeze } = useScrollbackItem()
+
+  // When the exchange is marked frozen in data, call freeze() imperatively.
+  // This triggers ScrollbackList to render us as a string and push to scrollback.
+  useEffect(() => {
+    if (exchange.frozen) {
+      freeze()
+    }
+  }, [exchange.frozen, freeze])
+
   if (exchange.role === "system") {
     return (
       <Box borderStyle="round" borderColor="$warning" paddingX={1}>
-        <Text color="$warning" italic>{exchange.content}</Text>
+        <Text color="$warning" italic>
+          {exchange.content}
+        </Text>
       </Box>
     )
   }
 
   const isUser = exchange.role === "user"
   const outlineColor = isUser ? "$primary" : "$success"
-  const icon = isUser ? "❯" : "◆"
+  const icon = isUser ? "\u276F" : "\u25C6"
   const name = isUser ? "You" : "Agent"
+  const phase = isLatest ? streamPhase : "done"
+  const fraction = isLatest ? revealFraction : 1
 
   // Token badge for agent exchanges
-  const tokenBadge = exchange.tokens && !isUser && streamPhase === "done"
-    ? ` ${formatTokens(exchange.tokens.output)} tokens`
-    : ""
+  const tokenBadge =
+    exchange.tokens && !isUser && phase === "done" ? ` ${formatTokens(exchange.tokens.output)} tokens` : ""
 
   // Tool call phases
   const toolCalls = exchange.toolCalls ?? []
-  const toolRevealCount = streamPhase === "tools" || streamPhase === "done"
-    ? toolCalls.length
-    : 0
+  const toolRevealCount = phase === "tools" || phase === "done" ? toolCalls.length : 0
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} paddingX={1}>
       {/* Header: icon + name + token badge */}
       <Text>
         <Text bold color={outlineColor}>
-          <Text dimColor={!isUser && !pulse && streamPhase !== "done"}>{icon}</Text> {name}
+          <Text dimColor={!isUser && !pulse && phase !== "done"}>{icon}</Text> {name}
         </Text>
-        {tokenBadge && <Text color="$muted" dim>{tokenBadge}</Text>}
+        {tokenBadge && (
+          <Text color="$muted" dim>
+            {tokenBadge}
+          </Text>
+        )}
       </Text>
 
       {/* Blank line before content */}
@@ -737,16 +781,16 @@ function ExchangeView({ exchange, streamPhase, revealFraction, pulse }: {
       {isUser && <Text>{exchange.content}</Text>}
 
       {/* Thinking block */}
-      {!isUser && exchange.thinking && (streamPhase === "thinking" || streamPhase === "streaming") && (
-        <ThinkingBlock text={exchange.thinking} done={streamPhase !== "thinking"} />
+      {!isUser && exchange.thinking && (phase === "thinking" || phase === "streaming") && (
+        <ThinkingBlock text={exchange.thinking} done={phase !== "thinking"} />
       )}
 
       {/* Agent content */}
-      {!isUser && (streamPhase === "streaming" || streamPhase === "tools" || streamPhase === "done") && (
+      {!isUser && (phase === "streaming" || phase === "tools" || phase === "done") && (
         <StreamingText
           fullText={exchange.content}
-          revealFraction={streamPhase === "streaming" ? revealFraction : 1}
-          showCursor={streamPhase === "streaming" && revealFraction < 1}
+          revealFraction={phase === "streaming" ? fraction : 1}
+          showCursor={phase === "streaming" && fraction < 1}
         />
       )}
 
@@ -760,13 +804,7 @@ function ExchangeView({ exchange, streamPhase, revealFraction, pulse }: {
             <ToolCallBlock
               key={i}
               call={call}
-              phase={
-                streamPhase === "done"
-                  ? "done"
-                  : i < toolRevealCount - 1
-                    ? "done"
-                    : "running"
-              }
+              phase={phase === "done" ? "done" : i < toolRevealCount - 1 ? "done" : "running"}
             />
           ))}
         </Box>
@@ -776,15 +814,18 @@ function ExchangeView({ exchange, streamPhase, revealFraction, pulse }: {
 }
 
 /** Status bar — single compact row. */
-function StatusBar({ exchanges, scriptLength, scriptIdx, autoMode, compacting, done, elapsed, pulse }: {
+function StatusBar({
+  exchanges,
+  autoMode,
+  compacting,
+  done,
+  elapsed,
+}: {
   exchanges: Exchange[]
-  scriptLength: number
-  scriptIdx: number
   autoMode: boolean
   compacting: boolean
   done: boolean
   elapsed: number
-  pulse: boolean
 }): JSX.Element {
   const cumulative = computeCumulativeTokens(exchanges)
   const totalTokens = cumulative.input + cumulative.output
@@ -799,7 +840,7 @@ function StatusBar({ exchanges, scriptLength, scriptIdx, autoMode, compacting, d
   const ctxFilled = Math.round(ctxFrac * CTX_W)
   const ctxPct = Math.round(ctxFrac * 100)
   const ctxColor = ctxPct > 80 ? "$error" : ctxPct > 50 ? "$warning" : "$primary"
-  const ctxBar = "█".repeat(ctxFilled) + "░".repeat(CTX_W - ctxFilled)
+  const ctxBar = "\u2588".repeat(ctxFilled) + "\u2591".repeat(CTX_W - ctxFilled)
 
   // Build left and right as plain strings, pad with spaces to fill terminal width
   let keys: string
@@ -815,22 +856,31 @@ function StatusBar({ exchanges, scriptLength, scriptIdx, autoMode, compacting, d
 
   return (
     <Text color="$muted" dim>
-      {" "}<Text color="$primary">{elapsedStr}</Text>{"  "}{keys}{" ".repeat(pad)}{right}{" "}
+      {" "}
+      <Text color="$primary">{elapsedStr}</Text>
+      {"  "}
+      {keys}
+      {" ".repeat(pad)}
+      {right}{" "}
     </Text>
   )
 }
 
 // ============================================================================
-// Main App
+// Main App — uses ScrollbackList for declarative scrollback management
 // ============================================================================
 
 /** How many live turns to keep in the dynamic area before freezing to scrollback. */
 const MAX_LIVE_TURNS = 4
 
-/** Streaming phases: thinking → streaming text → tool calls → done */
+/** Streaming phases: thinking -> streaming text -> tool calls -> done */
 type StreamPhase = "thinking" | "streaming" | "tools" | "done"
 
-function CodingAgent({ script, autoStart, fastMode }: {
+function CodingAgent({
+  script,
+  autoStart,
+  fastMode,
+}: {
   script: ScriptEntry[]
   autoStart: boolean
   fastMode: boolean
@@ -842,16 +892,11 @@ function CodingAgent({ script, autoStart, fastMode }: {
   const [autoMode, setAutoMode] = useState(autoStart)
   const [compacting, _setCompacting] = useState(false)
   const compactingRef = useRef(false)
-  const setCompacting = useCallback((v: boolean) => { compactingRef.current = v; _setCompacting(v) }, [])
-  const [pendingAdvance, setPendingAdvance] = useState(false)
-
-  // Terminal dimensions (track resize for height={termRows} pin)
-  const [termRows, setTermRows] = useState(process.stdout.rows ?? 40)
-  useEffect(() => {
-    const onResize = () => setTermRows(process.stdout.rows ?? 40)
-    process.stdout.on("resize", onResize)
-    return () => { process.stdout.off("resize", onResize) }
+  const setCompacting = useCallback((v: boolean) => {
+    compactingRef.current = v
+    _setCompacting(v)
   }, [])
+  const [pendingAdvance, setPendingAdvance] = useState(false)
 
   // Streaming state
   const [streamPhase, setStreamPhase] = useState<StreamPhase>("done")
@@ -861,91 +906,99 @@ function CodingAgent({ script, autoStart, fastMode }: {
   const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const nextIdRef = useRef(0)
 
-  // Scrollback with OSC 133 semantic markers
-  const frozenCount = useScrollback(exchanges, {
-    frozen: (ex) => ex.frozen,
-    render: (ex) => renderExchangeToJSX(ex),
-    markers: true,
-  })
-
   /** Cancel all streaming timers. */
   const cancelStreaming = useCallback(() => {
-    if (phaseTimerRef.current) { clearTimeout(phaseTimerRef.current); phaseTimerRef.current = null }
-    if (revealTimerRef.current) { clearInterval(revealTimerRef.current); revealTimerRef.current = null }
+    if (phaseTimerRef.current) {
+      clearTimeout(phaseTimerRef.current)
+      phaseTimerRef.current = null
+    }
+    if (revealTimerRef.current) {
+      clearInterval(revealTimerRef.current)
+      revealTimerRef.current = null
+    }
   }, [])
 
   /** Start streaming an exchange through its phases. */
-  const startStreaming = useCallback((entry: ScriptEntry, id: number) => {
-    cancelStreaming()
-    const newExchange: Exchange = { ...entry, id, frozen: false }
+  const startStreaming = useCallback(
+    (entry: ScriptEntry, id: number) => {
+      cancelStreaming()
+      const newExchange: Exchange = { ...entry, id, frozen: false }
 
-    // User messages and system messages: instant
-    if (entry.role === "user" || entry.role === "system") {
+      // User messages and system messages: instant
+      if (entry.role === "user" || entry.role === "system") {
+        setExchanges((prev) => [...prev, newExchange])
+        setStreamPhase("done")
+        setRevealFraction(1)
+        return
+      }
+
+      // Fast mode: skip all animation
+      if (fastMode) {
+        setExchanges((prev) => [...prev, newExchange])
+        setStreamPhase("done")
+        setRevealFraction(1)
+        return
+      }
+
+      // Agent message: thinking -> streaming -> tools -> done
       setExchanges((prev) => [...prev, newExchange])
-      setStreamPhase("done")
-      setRevealFraction(1)
-      return
-    }
 
-    // Fast mode: skip all animation
-    if (fastMode) {
-      setExchanges((prev) => [...prev, newExchange])
-      setStreamPhase("done")
-      setRevealFraction(1)
-      return
-    }
-
-    // Agent message: thinking → streaming → tools → done
-    setExchanges((prev) => [...prev, newExchange])
-
-    if (entry.thinking) {
-      // Phase 1: Thinking
-      setStreamPhase("thinking")
-      setRevealFraction(0)
-      phaseTimerRef.current = setTimeout(() => {
-        // Phase 2: Streaming text
+      if (entry.thinking) {
+        // Phase 1: Thinking
+        setStreamPhase("thinking")
+        setRevealFraction(0)
+        phaseTimerRef.current = setTimeout(() => {
+          // Phase 2: Streaming text
+          setStreamPhase("streaming")
+          let frac = 0
+          revealTimerRef.current = setInterval(() => {
+            frac += 0.08
+            if (frac >= 1) {
+              frac = 1
+              if (revealTimerRef.current) clearInterval(revealTimerRef.current)
+              // Phase 3: Tool calls (if any)
+              if (entry.toolCalls?.length) {
+                setStreamPhase("tools")
+                phaseTimerRef.current = setTimeout(
+                  () => {
+                    setStreamPhase("done")
+                  },
+                  600 * (entry.toolCalls?.length ?? 1),
+                )
+              } else {
+                setStreamPhase("done")
+              }
+            }
+            setRevealFraction(frac)
+          }, 50)
+        }, 1200)
+      } else {
+        // No thinking — go straight to streaming
         setStreamPhase("streaming")
         let frac = 0
         revealTimerRef.current = setInterval(() => {
-          frac += 0.08
+          frac += 0.12
           if (frac >= 1) {
             frac = 1
             if (revealTimerRef.current) clearInterval(revealTimerRef.current)
-            // Phase 3: Tool calls (if any)
             if (entry.toolCalls?.length) {
               setStreamPhase("tools")
-              phaseTimerRef.current = setTimeout(() => {
-                setStreamPhase("done")
-              }, 600 * (entry.toolCalls?.length ?? 1))
+              phaseTimerRef.current = setTimeout(
+                () => {
+                  setStreamPhase("done")
+                },
+                600 * (entry.toolCalls?.length ?? 1),
+              )
             } else {
               setStreamPhase("done")
             }
           }
           setRevealFraction(frac)
         }, 50)
-      }, 1200)
-    } else {
-      // No thinking — go straight to streaming
-      setStreamPhase("streaming")
-      let frac = 0
-      revealTimerRef.current = setInterval(() => {
-        frac += 0.12
-        if (frac >= 1) {
-          frac = 1
-          if (revealTimerRef.current) clearInterval(revealTimerRef.current)
-          if (entry.toolCalls?.length) {
-            setStreamPhase("tools")
-            phaseTimerRef.current = setTimeout(() => {
-              setStreamPhase("done")
-            }, 600 * (entry.toolCalls?.length ?? 1))
-          } else {
-            setStreamPhase("done")
-          }
-        }
-        setRevealFraction(frac)
-      }, 50)
-    }
-  }, [fastMode, cancelStreaming])
+      }
+    },
+    [fastMode, cancelStreaming],
+  )
 
   /** Advance to the next script entry. */
   const advance = useCallback(() => {
@@ -976,11 +1029,14 @@ function CodingAgent({ script, autoStart, fastMode }: {
       setStreamPhase("done")
       setRevealFraction(1)
 
-      setTimeout(() => {
-        setExchanges((prev) => prev.map((ex) => ({ ...ex, frozen: true })))
-        setCompacting(false)
-        setPendingAdvance(true)
-      }, fastMode ? 300 : 3000)
+      setTimeout(
+        () => {
+          setExchanges((prev) => prev.map((ex) => ({ ...ex, frozen: true })))
+          setCompacting(false)
+          setPendingAdvance(true)
+        },
+        fastMode ? 300 : 3000,
+      )
       return
     }
 
@@ -1006,10 +1062,13 @@ function CodingAgent({ script, autoStart, fastMode }: {
     setCompacting(true)
     setExchanges((prev) => prev.map((ex) => ({ ...ex, frozen: true })))
 
-    setTimeout(() => {
-      setCompacting(false)
-      setPendingAdvance(true)
-    }, fastMode ? 300 : 3000)
+    setTimeout(
+      () => {
+        setCompacting(false)
+        setPendingAdvance(true)
+      },
+      fastMode ? 300 : 3000,
+    )
   }, [done, cancelStreaming, setCompacting, fastMode])
 
   // Auto-continue after compaction
@@ -1031,25 +1090,40 @@ function CodingAgent({ script, autoStart, fastMode }: {
     if (streamPhase !== "done") return
 
     autoTimerRef.current = setTimeout(advance, 400)
-    return () => { if (autoTimerRef.current) clearTimeout(autoTimerRef.current) }
+    return () => {
+      if (autoTimerRef.current) clearTimeout(autoTimerRef.current)
+    }
   }, [autoMode, done, compacting, streamPhase, scriptIdx, advance])
 
   // Auto-compact on terminal resize
   useEffect(() => {
-    const onResize = () => { if (!compactingRef.current && !done) compact() }
+    const onResize = () => {
+      if (!compactingRef.current && !done) compact()
+    }
     process.stdout.on("resize", onResize)
-    return () => { process.stdout.off("resize", onResize) }
+    return () => {
+      process.stdout.off("resize", onResize)
+    }
   }, [compact, done])
 
   useInput((input: string, key: Key) => {
-    if (input === "q" || key.escape) { exit(); return }
+    if (input === "q" || key.escape) {
+      exit()
+      return
+    }
     if (key.return && !autoMode) {
       if (skipStreaming()) return
       advance()
       return
     }
-    if (input === "c") { compact(); return }
-    if (input === "a") { setAutoMode((m) => !m); return }
+    if (input === "c") {
+      compact()
+      return
+    }
+    if (input === "a") {
+      setAutoMode((m) => !m)
+      return
+    }
   })
 
   // Pulse animation for live icons
@@ -1067,81 +1141,100 @@ function CodingAgent({ script, autoStart, fastMode }: {
     return () => clearInterval(timer)
   }, [])
 
-  const activeExchanges = exchanges.slice(frozenCount)
+  // Count frozen for header display
+  const frozenCount = exchanges.filter((ex) => ex.frozen).length
 
   return (
-    <Box flexDirection="column" height={termRows}>
-      {/* Header — title + feature bullets */}
-      <Box flexDirection="column" paddingX={1}>
-        <Text bold>Static Scrollback</Text>
-        {frozenCount > 0 ? (
-          <Text color="$muted" dim>{"\u2191"} {frozenCount} in scrollback (Cmd+{"\u2191"}/{"\u2193"} to navigate)</Text>
-        ) : (
-          <>
-            <Text> </Text>
-            <Text>Coding agent simulation showcasing inkx rendering features:</Text>
-            <Text> {"\u2022"} useScrollback() — frozen turns become real terminal scrollback</Text>
-            <Text> {"\u2022"} renderStringSync() — JSX rendered to styled ANSI strings</Text>
-            <Text> {"\u2022"} mode: "inline" — no alt screen, content flows with terminal</Text>
-            <Text> {"\u2022"} OSC 8 hyperlinks — clickable file paths and URLs in scrollback</Text>
-            <Text> {"\u2022"} OSC 133 markers — Cmd+{"\u2191"}/{"\u2193"} to jump between exchanges</Text>
-            <Text> {"\u2022"} $token theme colors — semantic color tokens resolved at render</Text>
-          </>
-        )}
-      </Box>
+    <ScrollbackList
+      items={exchanges}
+      keyExtractor={(ex) => ex.id}
+      isFrozen={(ex) => ex.frozen}
+      markers={true}
+      footer={
+        <StatusBar exchanges={exchanges} autoMode={autoMode} compacting={compacting} done={done} elapsed={elapsed} />
+      }
+      footerHeight={1}
+    >
+      {(exchange, index) => {
+        const isLatest = index === exchanges.length - 1
 
-      {/* Content area — fills available space between header and status bar */}
-      <Box flexDirection="column" flexGrow={1} gap={1} overflow="hidden">
-        {/* Active exchanges */}
-        {!compacting &&
-          activeExchanges.map((ex, i) => {
-            const isLatest = i === activeExchanges.length - 1
-            return (
-              <ExchangeView
-                key={ex.id}
-                exchange={ex}
-                streamPhase={isLatest ? streamPhase : "done"}
-                revealFraction={isLatest ? revealFraction : 1}
+        // Header — shown as a pseudo-item before exchanges
+        // (We handle this by checking if we should show info above the exchange)
+
+        return (
+          <Box flexDirection="column">
+            {/* Show header info above first live exchange */}
+            {index === 0 && (
+              <Box flexDirection="column" paddingX={1}>
+                <Text bold>Static Scrollback</Text>
+                {frozenCount > 0 ? (
+                  <Text color="$muted" dim>
+                    {"\u2191"} {frozenCount} in scrollback (Cmd+{"\u2191"}/{"\u2193"} to navigate)
+                  </Text>
+                ) : (
+                  <>
+                    <Text> </Text>
+                    <Text>Coding agent simulation showcasing ScrollbackList:</Text>
+                    <Text> {"\u2022"} ScrollbackList \u2014 declarative list with automatic scrollback</Text>
+                    <Text> {"\u2022"} useScrollbackItem() \u2014 imperative freeze() from within items</Text>
+                    <Text> {"\u2022"} isFrozen prop \u2014 data-driven freezing for completed items</Text>
+                    <Text> {"\u2022"} OSC 8 hyperlinks \u2014 clickable file paths and URLs</Text>
+                    <Text>
+                      {" "}
+                      {"\u2022"} OSC 133 markers \u2014 Cmd+{"\u2191"}/{"\u2193"} to jump between exchanges
+                    </Text>
+                    <Text> {"\u2022"} $token theme colors \u2014 semantic color tokens</Text>
+                  </>
+                )}
+              </Box>
+            )}
+
+            {/* Compaction overlay */}
+            {compacting && isLatest && (
+              <Box borderStyle="round" borderColor="$warning" paddingX={1}>
+                <Text color="$warning">
+                  <Spinner type="arc" /> Compacting context... freezing all turns to scrollback.
+                </Text>
+              </Box>
+            )}
+
+            {/* Done message */}
+            {done && isLatest && (
+              <Box flexDirection="column" borderStyle="round" borderColor="$success" paddingX={1}>
+                <Text color="$success" bold>
+                  {"\u2713"} Session complete
+                </Text>
+                <Text color="$muted">
+                  Scroll up to review \u2014 colors, borders, and hyperlinks preserved in scrollback.
+                </Text>
+                <Text color="$muted" dim>
+                  Try{" "}
+                  <Text bold color="$primary">
+                    Cmd+{"\u2191"}
+                  </Text>
+                  /
+                  <Text bold color="$primary">
+                    Cmd+{"\u2193"}
+                  </Text>{" "}
+                  to jump between exchanges.
+                </Text>
+              </Box>
+            )}
+
+            {/* The exchange itself */}
+            {!compacting && (
+              <ExchangeItem
+                exchange={exchange}
+                streamPhase={streamPhase}
+                revealFraction={revealFraction}
                 pulse={pulse}
+                isLatest={isLatest}
               />
-            )
-          })}
-
-        {/* Compaction in progress */}
-        {compacting && (
-          <Box borderStyle="round" borderColor="$warning" paddingX={1}>
-            <Text color="$warning">
-              <Spinner type="arc" /> Compacting context... freezing all turns to scrollback.
-            </Text>
+            )}
           </Box>
-        )}
-
-        {/* Done message */}
-        {done && (
-          <Box flexDirection="column" borderStyle="round" borderColor="$success" paddingX={1}>
-            <Text color="$success" bold>{"\u2713"} Session complete</Text>
-            <Text color="$muted">
-              Scroll up to review — colors, borders, and hyperlinks preserved in scrollback.
-            </Text>
-            <Text color="$muted" dim>
-              Try <Text bold color="$primary">Cmd+{"\u2191"}</Text>/<Text bold color="$primary">Cmd+{"\u2193"}</Text> to jump between exchanges.
-            </Text>
-          </Box>
-        )}
-      </Box>
-
-      {/* Status bar — pinned to bottom */}
-      <StatusBar
-        exchanges={exchanges}
-        scriptLength={script.length}
-        scriptIdx={scriptIdx}
-        autoMode={autoMode}
-        compacting={compacting}
-        done={done}
-        elapsed={elapsed}
-        pulse={pulse}
-      />
-    </Box>
+        )
+      }}
+    </ScrollbackList>
   )
 }
 
@@ -1158,11 +1251,9 @@ async function main() {
   const script = isStress ? generateStressScript() : SCRIPT
 
   using term = createTerm()
-  using app = await render(
-    <CodingAgent script={script} autoStart={isAuto} fastMode={isFast} />,
-    term,
-    { mode: "inline" },
-  )
+  using app = await render(<CodingAgent script={script} autoStart={isAuto} fastMode={isFast} />, term, {
+    mode: "inline",
+  })
   await app.waitUntilExit()
   // Explicit exit — inkx's unmount doesn't fully release all event loop references yet
   process.exit(0)

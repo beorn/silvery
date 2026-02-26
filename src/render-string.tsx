@@ -32,7 +32,8 @@ import { bufferToStyledText, bufferToText, type TerminalBuffer } from "./buffer.
 import { AppContext, StdoutContext, TermContext } from "./context.js"
 import { isLayoutEngineInitialized } from "./layout-engine.js"
 import { executeRender } from "./pipeline.js"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "./reconciler.js"
+import { createContainer, getContainerRoot } from "./reconciler.js"
+import { stringReconciler } from "./reconciler/string-reconciler.js"
 
 // ============================================================================
 // Types
@@ -133,8 +134,19 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
     hadReactCommit = true
   })
 
-  // Create fiber root
-  const fiberRoot = createFiberRoot(container)
+  // Create fiber root using the dedicated string reconciler (not the main one)
+  const fiberRoot = stringReconciler.createContainer(
+    container,
+    1, // ConcurrentRoot
+    null, // hydrationCallbacks
+    false, // isStrictMode
+    null, // concurrentUpdatesByDefaultOverride
+    "", // identifierPrefix
+    () => {}, // onUncaughtError
+    () => {}, // onCaughtError
+    () => {}, // onRecoverableError
+    null, // onDefaultTransitionIndicator
+  )
 
   // Create minimal mock stdout for components that use useStdout
   const mockStdout = {
@@ -179,8 +191,8 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
   // Mount the React tree inside act() so layout feedback works
   withActEnvironment(() => {
     act(() => {
-      reconciler.updateContainerSync(wrapped, fiberRoot, null, null)
-      reconciler.flushSyncWork()
+      stringReconciler.updateContainerSync(wrapped, fiberRoot, null, null)
+      stringReconciler.flushSyncWork()
     })
   })
 
@@ -199,7 +211,7 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
       })
       if (!hadReactCommit) {
         act(() => {
-          reconciler.flushSyncWork()
+          stringReconciler.flushSyncWork()
         })
       }
     })
@@ -209,8 +221,8 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
   // Unmount (cleanup)
   withActEnvironment(() => {
     act(() => {
-      reconciler.updateContainerSync(null, fiberRoot, null, null)
-      reconciler.flushSyncWork()
+      stringReconciler.updateContainerSync(null, fiberRoot, null, null)
+      stringReconciler.flushSyncWork()
     })
   })
 

@@ -110,6 +110,8 @@ export type { FillProps } from "./components/Fill.js"
 export { Newline } from "./components/Newline.js"
 export { Spacer } from "./components/Spacer.js"
 export { Static } from "./components/Static.js"
+export { ScrollbackList } from "./components/ScrollbackList.js"
+export type { ScrollbackListProps } from "./components/ScrollbackList.js"
 
 /**
  * Re-export ErrorBoundary component - catches render errors in children.
@@ -257,6 +259,8 @@ export { useCursor, resetCursorState, getCursorState, subscribeCursor } from "./
 export type { CursorPosition, CursorState } from "./hooks/useCursor.js"
 export { useScrollback } from "./hooks/useScrollback.js"
 export type { UseScrollbackOptions, ScrollbackMarkerCallbacks } from "./hooks/useScrollback.js"
+export { useScrollbackItem } from "./hooks/useScrollbackItem.js"
+export type { ScrollbackItemContext } from "./hooks/useScrollbackItem.js"
 
 /**
  * Re-export React concurrent features for TUI responsiveness.
