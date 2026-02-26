@@ -558,7 +558,7 @@ function ScrollbackExchange({ exchange }: { exchange: Exchange }): JSX.Element {
   const outlineColor = isUser ? "$primary" : "$success"
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} paddingX={1} dimColor overflow="hidden">
+    <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} paddingX={1} dimColor>
       <Text dim>
         <Text bold color={outlineColor}>
           {isUser ? "❯" : "◆"} {isUser ? "You" : "Agent"}
@@ -721,7 +721,7 @@ function ExchangeView({ exchange, streamPhase, revealFraction, pulse }: {
     : 0
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} paddingX={1} overflow="hidden">
+    <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} paddingX={1}>
       {/* Header: icon + name + token badge */}
       <Text>
         <Text bold color={outlineColor}>
@@ -775,7 +775,7 @@ function ExchangeView({ exchange, streamPhase, revealFraction, pulse }: {
   )
 }
 
-/** Status bar — two compact rows: context+model, then elapsed+tokens+help+progress. */
+/** Status bar — single compact row. */
 function StatusBar({ exchanges, scriptLength, scriptIdx, autoMode, compacting, done, elapsed, pulse }: {
   exchanges: Exchange[]
   scriptLength: number
@@ -801,40 +801,25 @@ function StatusBar({ exchanges, scriptLength, scriptIdx, autoMode, compacting, d
   const ctxColor = ctxPct > 80 ? "$error" : ctxPct > 50 ? "$warning" : "$primary"
   const ctxBar = "█".repeat(ctxFilled) + "░".repeat(CTX_W - ctxFilled)
 
-  // Progress
-  const progress = Math.min(scriptIdx, scriptLength)
-
   return (
-    <Box flexDirection="column" paddingX={1}>
-      {/* Row 1: context bar | model | progress */}
+    <Box paddingX={1}>
       <Text>
         <Text color="$muted" dim>ctx </Text>
         <Text color={ctxColor}>{ctxBar}</Text>
         <Text color="$muted" dim> {ctxPct}%</Text>
         {"  "}
-        <Text color="$muted" dim>{MODEL_NAME}</Text>
+        <Text color="$primary">{elapsedStr}</Text>
+        <Text color="$muted" dim> · {cost}</Text>
+        {autoMode && <Text bold color="$warning"> auto</Text>}
         {"  "}
         {compacting ? (
           <Text color="$warning" bold dimColor={!pulse}>compacting</Text>
         ) : done ? (
-          <Text color="$success" bold>done</Text>
-        ) : (
-          <Text color="$muted" dim>{progress}/{scriptLength}</Text>
-        )}
-      </Text>
-
-      {/* Row 2: elapsed · tokens · cost | help keys */}
-      <Text>
-        <Text color="$primary">{elapsedStr}</Text>
-        <Text color="$muted" dim> · {formatTokens(totalTokens)} · {cost}</Text>
-        {autoMode && <Text bold color="$warning"> auto</Text>}
-        {"  "}
-        {done ? (
           <Text color="$muted"><Text bold>q</Text> quit</Text>
         ) : autoMode ? (
-          <Text color="$muted"><Text bold>a</Text> stop · <Text bold>c</Text> compact · <Text bold>q</Text> quit</Text>
+          <Text color="$muted"><Text bold>a</Text> stop <Text bold>c</Text> compact <Text bold>q</Text> quit</Text>
         ) : (
-          <Text color="$muted"><Text bold>⏎</Text> next · <Text bold>a</Text> auto · <Text bold>c</Text> compact · <Text bold>q</Text> quit</Text>
+          <Text color="$muted"><Text bold>⏎</Text> next <Text bold>a</Text> auto <Text bold>c</Text> compact <Text bold>q</Text> quit</Text>
         )}
       </Text>
     </Box>
@@ -845,9 +830,8 @@ function StatusBar({ exchanges, scriptLength, scriptIdx, autoMode, compacting, d
 // Main App
 // ============================================================================
 
-/** How many live turns to keep in the dynamic area before freezing to scrollback.
- * Dynamic based on terminal height — each exchange with tools is ~12-15 lines. */
-const MAX_LIVE_TURNS = Math.max(2, Math.floor(((process.stdout.rows ?? 24) - 6) / 12))
+/** How many live turns to keep in the dynamic area before freezing to scrollback. */
+const MAX_LIVE_TURNS = 4
 
 /** Streaming phases: thinking → streaming text → tool calls → done */
 type StreamPhase = "thinking" | "streaming" | "tools" | "done"
@@ -1084,16 +1068,28 @@ function CodingAgent({ script, autoStart, fastMode }: {
   const activeExchanges = exchanges.slice(frozenCount)
 
   return (
-    <Box flexDirection="column" gap={1} overflow="hidden" height={process.stdout.rows ?? 24}>
-      {/* Header + scrollback marker */}
+    <Box flexDirection="column" gap={1}>
+      {/* Header — title + feature bullets */}
       <Box flexDirection="column" paddingX={1}>
-        <Text bold color="$primary">inkx</Text>
-        {frozenCount > 0 && (
-          <Text color="$muted" dim>
-            ↑ {frozenCount} exchanges in scrollback (Cmd+↑/↓ to navigate)
-          </Text>
-        )}
+        <Text bold>Static Scrollback</Text>
+        <Text> </Text>
+        <Text>Coding agent simulation showcasing inkx rendering features:</Text>
+        <Text> {"\u2022"} useScrollback() — frozen turns become real terminal scrollback</Text>
+        <Text> {"\u2022"} renderStringSync() — JSX rendered to styled ANSI strings</Text>
+        <Text> {"\u2022"} mode: "inline" — no alt screen, content flows with terminal</Text>
+        <Text> {"\u2022"} OSC 8 hyperlinks — clickable file paths and URLs in scrollback</Text>
+        <Text> {"\u2022"} OSC 133 markers — Cmd+{"\u2191"}/{"\u2193"} to jump between exchanges</Text>
+        <Text> {"\u2022"} $token theme colors — semantic color tokens resolved at render</Text>
       </Box>
+
+      {/* Scrollback marker */}
+      {frozenCount > 0 && (
+        <Box paddingX={1}>
+          <Text color="$muted" dim>
+            {"\u2191"} {frozenCount} exchanges in scrollback (Cmd+{"\u2191"}/{"\u2193"} to navigate)
+          </Text>
+        </Box>
+      )}
 
       {/* Active exchanges */}
       {!compacting &&
