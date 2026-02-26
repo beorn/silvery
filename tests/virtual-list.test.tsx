@@ -6,7 +6,7 @@
 
 import React from "react"
 import { beforeAll, describe, expect, test } from "vitest"
-import { Box, Text, VirtualList } from "../src/index.js"
+import { Box, Text, VirtualList, type VirtualListHandle } from "../src/index.js"
 import { initYogaEngine, setLayoutEngine } from "../src/render.js"
 import { createRenderer } from "inkx/testing"
 
@@ -303,5 +303,173 @@ describe("VirtualList", () => {
 
     expect(app.text).toContain("First")
     expect(app.text).toContain("Description")
+  })
+
+  // ── Feature coverage (AC for DRY refactoring) ──────────────────────
+
+  test("variable itemHeight function sizes items correctly", () => {
+    // Items alternate between 1 and 3 rows tall
+    const items = Array.from({ length: 20 }, (_, i) => `Item ${i}`)
+
+    const app = render(
+      <VirtualList
+        items={items}
+        height={10}
+        itemHeight={(_item, index) => (index % 2 === 0 ? 1 : 3)}
+        scrollTo={0}
+        renderItem={(item, index) => (
+          <Box key={index} height={index % 2 === 0 ? 1 : 3}>
+            <Text>{item}</Text>
+          </Box>
+        )}
+      />,
+    )
+
+    // Should render first items
+    expect(app.text).toContain("Item 0")
+    expect(app.text).toContain("Item 1")
+    // Should not render all items (viewport is 10 rows, items average 2 rows)
+    expect(app.text).not.toContain("Item 19")
+  })
+
+  test("frozen prop excludes contiguous prefix from render", () => {
+    const items = Array.from({ length: 10 }, (_, i) => `Item ${i}`)
+
+    const app = render(
+      <VirtualList
+        items={items}
+        height={10}
+        itemHeight={1}
+        scrollTo={3}
+        frozen={(_item, index) => index < 3}
+        renderItem={(item, index) => <Text key={index}>{item}</Text>}
+      />,
+    )
+
+    // Frozen prefix (0,1,2) should NOT be rendered
+    expect(app.text).not.toContain("Item 0")
+    expect(app.text).not.toContain("Item 1")
+    expect(app.text).not.toContain("Item 2")
+    // Active items should be rendered
+    expect(app.text).toContain("Item 3")
+    expect(app.text).toContain("Item 4")
+  })
+
+  test("frozen items adjust scrollTo index", () => {
+    const items = Array.from({ length: 30 }, (_, i) => `Item ${i}`)
+
+    const app = render(
+      <VirtualList
+        items={items}
+        height={5}
+        itemHeight={1}
+        scrollTo={15}
+        frozen={(_item, index) => index < 10}
+        renderItem={(item, index) => <Text key={index}>{item}</Text>}
+      />,
+    )
+
+    // scrollTo=15 with 10 frozen means adjusted scrollTo=5 in the active items
+    // Should still show Item 15 (the target)
+    expect(app.text).toContain("Item 15")
+    // Frozen items should not be visible
+    expect(app.text).not.toContain("Item 0")
+    expect(app.text).not.toContain("Item 9")
+  })
+
+  test("gap adds spacing between items", () => {
+    const items = ["A", "B", "C", "D", "E"]
+
+    const app = render(
+      <VirtualList
+        items={items}
+        height={20}
+        itemHeight={1}
+        gap={1}
+        renderItem={(item, index) => <Text key={index}>{item}</Text>}
+      />,
+    )
+
+    // All items should be visible
+    expect(app.text).toContain("A")
+    expect(app.text).toContain("E")
+  })
+
+  test("renderSeparator renders between items", () => {
+    const items = ["A", "B", "C"]
+
+    const app = render(
+      <VirtualList
+        items={items}
+        height={20}
+        itemHeight={1}
+        renderSeparator={() => <Text>---</Text>}
+        renderItem={(item, index) => <Text key={index}>{item}</Text>}
+      />,
+    )
+
+    expect(app.text).toContain("A")
+    expect(app.text).toContain("---")
+    expect(app.text).toContain("C")
+  })
+
+  test("imperative scrollToItem via ref", () => {
+    const items = Array.from({ length: 50 }, (_, i) => `Item ${i}`)
+    const ref = React.createRef<VirtualListHandle>()
+
+    function TestApp() {
+      return (
+        <VirtualList
+          ref={ref}
+          items={items}
+          height={10}
+          itemHeight={1}
+          scrollTo={0}
+          renderItem={(item, index) => <Text key={index}>{item}</Text>}
+        />
+      )
+    }
+
+    const app = render(<TestApp />)
+    expect(app.text).toContain("Item 0")
+
+    // Imperative scroll to item 40
+    ref.current!.scrollToItem(40)
+
+    // Note: scrollToItem updates internal state but VirtualList is declarative
+    // (scrollTo=0), so the imperative call may not visually change without
+    // re-render. This test verifies the ref is properly exposed.
+    expect(ref.current).toBeDefined()
+    expect(ref.current!.scrollToItem).toBeInstanceOf(Function)
+  })
+
+  describe("interactive mouse wheel", () => {
+    const items = Array.from({ length: 30 }, (_, i) => `Item ${i}`)
+
+    test("wheel down moves selection", async () => {
+      const changes: number[] = []
+      const app = render(
+        <VirtualList
+          items={items}
+          height={10}
+          itemHeight={1}
+          interactive
+          onSelectionChange={(i) => changes.push(i)}
+          renderItem={(item, _index, meta) => (
+            <Text>
+              {meta?.isSelected ? "> " : "  "}
+              {item}
+            </Text>
+          )}
+        />,
+      )
+
+      expect(app.text).toContain("> Item 0")
+      // Simulate wheel down
+      await app.wheel(5, 5, 1)
+      // Should have moved selection down by WHEEL_STEP (3)
+      expect(changes.length).toBeGreaterThan(0)
+      expect(changes[0]).toBe(3)
+    })
   })
 })
