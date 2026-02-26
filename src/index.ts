@@ -113,6 +113,14 @@ export { Static } from "./components/Static.js"
 export { ScrollbackList } from "./components/ScrollbackList.js"
 export type { ScrollbackListProps } from "./components/ScrollbackList.js"
 
+// Viewport Architecture (Phase 2)
+export { Screen } from "./components/Screen.js"
+export type { ScreenProps } from "./components/Screen.js"
+export { ScrollView } from "./components/ScrollView.js"
+export type { ScrollViewProps } from "./components/ScrollView.js"
+export { VirtualScrollView } from "./components/VirtualScrollView.js"
+export type { VirtualScrollViewProps, VirtualScrollViewHandle } from "./components/VirtualScrollView.js"
+
 /**
  * Re-export ErrorBoundary component - catches render errors in children.
  *
@@ -259,6 +267,8 @@ export { useCursor, resetCursorState, getCursorState, subscribeCursor } from "./
 export type { CursorPosition, CursorState } from "./hooks/useCursor.js"
 export { useScrollback } from "./hooks/useScrollback.js"
 export type { UseScrollbackOptions, ScrollbackMarkerCallbacks } from "./hooks/useScrollback.js"
+export { useVirtualizer } from "./hooks/useVirtualizer.js"
+export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualizer.js"
 export { useScrollbackItem } from "./hooks/useScrollbackItem.js"
 export type { ScrollbackItemContext } from "./hooks/useScrollbackItem.js"
 

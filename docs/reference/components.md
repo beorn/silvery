@@ -156,6 +156,97 @@ Renders content once above the dynamic output. Useful for completed items in a s
 <Static items={completedTasks}>{(task) => <Text key={task.id}>✓ {task.name}</Text>}</Static>
 ```
 
+## Viewport Architecture
+
+Four composable primitives for different rendering modes. See [docs/design/viewport-architecture.md](../design/viewport-architecture.md) for the full design.
+
+### Screen
+
+Fullscreen root component. Claims the full terminal dimensions for flexbox layout.
+
+```tsx
+<Screen>
+  <Sidebar />
+  <MainContent />
+  <StatusBar />
+</Screen>
+```
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `flexDirection` | `string` | `"column"` | Flex direction for layout |
+
+### ScrollView
+
+Native scrollback root component. Items flow vertically and transition through Live → Virtualized → Static as they scroll off-screen. Uses `useScrollbackItem()` for per-item lifecycle control.
+
+```tsx
+<ScrollView
+  items={tasks}
+  keyExtractor={(t) => t.id}
+  isFrozen={(t) => t.done}
+  footer={<Text>Status bar</Text>}
+>
+  {(task) => <TaskItem task={task} />}
+</ScrollView>
+```
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `items` | `T[]` | required | Items to render |
+| `children` | `(item, index) => ReactNode` | required | Render function |
+| `keyExtractor` | `(item, index) => string \| number` | required | Unique key per item |
+| `isFrozen` | `(item, index) => boolean` | — | Data-driven freeze predicate |
+| `footer` | `ReactNode` | — | Pinned footer |
+| `footerHeight` | `number` | `1` | Footer height in rows |
+| `maxHistory` | `number` | `10000` | Max lines in dynamic scrollback |
+| `markers` | `boolean \| object` | — | OSC 133 semantic markers |
+
+### VirtualScrollView
+
+App-managed scrolling within a Screen rectangle. Items mount/unmount based on scroll position.
+
+```tsx
+<Screen>
+  <Header />
+  <VirtualScrollView
+    items={logs}
+    height={20}
+    estimateHeight={3}
+    scrollTo={selectedIndex}
+    renderItem={(item) => <LogEntry data={item} />}
+  />
+  <StatusBar />
+</Screen>
+```
+
+| Prop | Type | Default | Description |
+|---|---|---|---|
+| `items` | `T[]` | required | Items to render |
+| `height` | `number` | required | Viewport height in rows |
+| `renderItem` | `(item, index) => ReactNode` | required | Render function |
+| `estimateHeight` | `number \| (index) => number` | `1` | Item height estimate |
+| `scrollTo` | `number` | — | Index to scroll to |
+| `overscan` | `number` | `5` | Extra items beyond viewport |
+| `maxRendered` | `number` | `100` | Max items to render |
+| `scrollPadding` | `number` | `2` | Edge padding before scrolling |
+| `overflowIndicator` | `boolean` | `false` | Show ▲N/▼N indicators |
+| `keyExtractor` | `(item, index) => string \| number` | — | Key extractor |
+
+### useVirtualizer
+
+Headless virtualization engine shared by ScrollView and VirtualScrollView. Count-based API inspired by TanStack Virtual.
+
+```tsx
+const { range, scrollToItem, getKey } = useVirtualizer({
+  count: items.length,
+  estimateHeight: 3,
+  viewportHeight: 20,
+  scrollTo: selectedIndex,
+  overscan: 5,
+})
+```
+
 ## Console
 
 Captures `console.log` / `console.error` output and renders it as a component.
