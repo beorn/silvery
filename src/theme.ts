@@ -5,8 +5,9 @@
  * import { ThemeProvider, useTheme, defaultDarkTheme } from 'inkx/theme'
  *
  * <ThemeProvider theme={defaultDarkTheme}>
- *   <Box borderColor="$border">
+ *   <Box borderStyle="single">
  *     <Text color="$primary">Hello</Text>
+ *     <Text color="$text2">world</Text>
  *   </Box>
  * </ThemeProvider>
  * ```
@@ -28,5 +29,6 @@ export {
   builtinThemes,
   getThemeByName,
   resolveThemeColor,
+  generateTheme,
 } from "./theme-defs.js"
-export type { Theme } from "./theme-defs.js"
+export type { Theme, AnsiPrimary } from "./theme-defs.js"

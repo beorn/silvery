@@ -50,6 +50,14 @@ import { detectKittyFromStdio } from "../kitty-detect.js"
 import { isTextSizingLikelySupported } from "../text-sizing.js"
 import { setTextSizingEnabled } from "../unicode.js"
 import { ensureLayoutEngine } from "./layout.js"
+import {
+  captureTerminalState,
+  performSuspend,
+  CTRL_C,
+  CTRL_Z,
+  type TerminalLifecycleOptions,
+  type TerminalState,
+} from "./terminal-lifecycle.js"
 import type { Buffer, Dims, Event, RenderTarget, Runtime } from "./types.js"
 
 // Re-export types from keys.ts
@@ -104,6 +112,22 @@ export interface RunOptions {
    * - `false`/undefined: disabled (default)
    */
   textSizing?: boolean | "auto"
+  /**
+   * Handle Ctrl+Z by suspending the process (save terminal state,
+   * send SIGTSTP, restore on SIGCONT). Default: true
+   */
+  suspendOnCtrlZ?: boolean
+  /**
+   * Handle Ctrl+C by restoring terminal and exiting with code 130.
+   * Default: true
+   */
+  exitOnCtrlC?: boolean
+  /** Called before suspend. Return false to prevent. */
+  onSuspend?: () => boolean | void
+  /** Called after resume from suspend. */
+  onResume?: () => void
+  /** Called on Ctrl+C. Return false to prevent exit. */
+  onInterrupt?: () => boolean | void
 }
 
 /**
@@ -291,6 +315,11 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     mouse: mouseOption = false,
     textSizing: textSizingOption,
     mode: modeOption = "fullscreen",
+    suspendOnCtrlZ: suspendOption = true,
+    exitOnCtrlC: exitOnCtrlCOption = true,
+    onSuspend: onSuspendHook,
+    onResume: onResumeHook,
+    onInterrupt: onInterruptHook,
   } = options
 
   const headless = explicitCols != null && explicitRows != null && !explicitStdout
@@ -321,8 +350,10 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
 
   // Protocol tracking
   let kittyEnabled = false
+  let kittyFlags = KittyFlags.DISAMBIGUATE
   let mouseEnabled = false
   let textSizingWasEnabled = false
+  let bracketedPasteEnabled = false
 
   // Focus manager (tree-based focus system) with event dispatch wiring
   const focusManager = createFocusManager({
@@ -419,6 +450,38 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
             })
 
             if (rawKey === null || signal.aborted) break
+
+            // Intercept lifecycle keys BEFORE they reach useInput handlers.
+            // In raw mode, Ctrl+C (\x03) and Ctrl+Z (\x1a) don't generate
+            // signals — we must handle the raw bytes ourselves.
+            if (!headless && rawKey === CTRL_Z && suspendOption) {
+              const prevented = onSuspendHook?.() === false
+              if (!prevented) {
+                const state = captureTerminalState({
+                  alternateScreen: modeOption === "fullscreen",
+                  cursorHidden: true,
+                  mouse: mouseEnabled,
+                  kitty: kittyEnabled,
+                  kittyFlags,
+                  bracketedPaste: bracketedPasteEnabled,
+                  rawMode: true,
+                })
+                performSuspend(state, stdout, stdin, () => {
+                  // After resume, trigger a full re-render
+                  runtime.invalidate()
+                  onResumeHook?.()
+                })
+              }
+              continue
+            }
+            if (!headless && rawKey === CTRL_C && exitOnCtrlCOption) {
+              const prevented = onInterruptHook?.() === false
+              if (!prevented) {
+                exit()
+                break
+              }
+              continue
+            }
 
             // Check for bracketed paste before splitting into individual keys.
             // Pasted text arrives wrapped in markers and should be emitted as
@@ -605,10 +668,12 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
         if (result.supported) {
           stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE))
           kittyEnabled = true
+          kittyFlags = KittyFlags.DISAMBIGUATE
         }
       } else {
         stdout.write(enableKittyKeyboard(kittyOption as 1))
         kittyEnabled = true
+        kittyFlags = kittyOption as number
       }
     }
 
@@ -626,6 +691,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
 
     // Bracketed paste mode
     enableBracketedPaste(stdout)
+    bracketedPasteEnabled = true
   }
   runtime.render(currentBuffer)
 

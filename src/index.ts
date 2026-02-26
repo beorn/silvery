@@ -299,8 +299,9 @@ export {
   builtinThemes,
   getThemeByName,
   resolveThemeColor,
+  generateTheme,
 } from "./theme-defs.js"
-export type { Theme } from "./theme-defs.js"
+export type { Theme, AnsiPrimary } from "./theme-defs.js"
 
 // =============================================================================
 // Re-exports from chalkx

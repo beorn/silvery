@@ -124,6 +124,39 @@ function Counter() {
 await run(<Counter />)
 ```
 
+### Terminal Lifecycle (Suspend/Resume)
+
+Both `run()` and `createApp().run()` handle Ctrl+Z (suspend) and Ctrl+C (interrupt) by default. When stdin is in raw mode, these keys don't generate OS signals -- inkx intercepts the raw bytes and manages the full terminal state save/restore cycle.
+
+```tsx
+// Defaults: suspendOnCtrlZ=true, exitOnCtrlC=true
+await run(<App />)
+
+// With hooks:
+await run(<App />, {
+  onSuspend: () => { /* save app state before suspend */ },
+  onResume: () => { /* refresh data after resume */ },
+  onInterrupt: () => {
+    // Return false to prevent exit (e.g., show "unsaved changes" dialog)
+    return hasUnsavedChanges ? false : undefined
+  },
+})
+
+// Disable lifecycle handling (app handles it manually):
+await run(<App />, { suspendOnCtrlZ: false, exitOnCtrlC: false })
+```
+
+**Protocols saved/restored across suspend/resume:**
+- Raw mode (stdin)
+- Alternate screen buffer
+- Cursor visibility
+- Mouse tracking (modes 1000, 1002, 1006)
+- Kitty keyboard protocol (with original flags)
+- Bracketed paste mode
+- Full screen clear + synthetic resize on resume
+
+**Exports** (from `inkx/runtime`): `captureTerminalState`, `restoreTerminalState`, `resumeTerminalState`, `performSuspend`, `CTRL_C`, `CTRL_Z`, `TerminalLifecycleOptions`, `TerminalState`.
+
 ### Layer 3: createApp() with Zustand
 
 ```tsx
@@ -598,6 +631,10 @@ await render(<App />, term, { layoutEngine: "yoga" })
 import { run, useInput, useExit, type Key } from "inkx/runtime"
 import { createApp, useApp } from "inkx/runtime"
 
+// Terminal lifecycle (suspend/resume, interrupt)
+import { captureTerminalState, restoreTerminalState, resumeTerminalState, performSuspend } from "inkx/runtime"
+import { CTRL_C, CTRL_Z, type TerminalLifecycleOptions, type TerminalState } from "inkx/runtime"
+
 // Components
 import { Box, Text, Link, Newline, Spacer, Static, Console, VirtualList, Transform, Image } from "inkx"
 import { Spinner, ProgressBar, SelectList, Table, Badge, Divider } from "inkx"
@@ -958,6 +995,7 @@ to capture numbers.
 | [docs/reference/scroll-regions.md](docs/reference/scroll-regions.md)               | DECSTBM scroll region optimization                                                                                           |
 | [docs/reference/terminal-capabilities.md](docs/reference/terminal-capabilities.md) | Terminal detection, render modes, protocols                                                                                  |
 | [docs/reference/text-sizing.md](docs/reference/text-sizing.md)                     | OSC 66 text sizing protocol for PUA character width control                                                                  |
+| [docs/reference/lifecycle.md](docs/reference/lifecycle.md)                          | Terminal lifecycle: suspend/resume (Ctrl+Z), interrupt (Ctrl+C), state save/restore                                          |
 | [docs/reference/recipes.md](docs/reference/recipes.md)                             | Common patterns and recipes                                                                                                  |
 | [docs/reference/devtools.md](docs/reference/devtools.md)                           | React DevTools integration (setup, API, troubleshooting)                                                                     |
 | **Deep Dives**                                                                     |                                                                                                                              |

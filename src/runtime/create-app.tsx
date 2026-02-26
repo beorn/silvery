@@ -63,11 +63,17 @@ import {
   type NamespacedEvent,
 } from "./event-handlers.js"
 import { keyToAnsi, keyToKittyAnsi } from "../keys.js"
-import { parseKey } from "./keys.js"
+import { parseKey, type Key } from "./keys.js"
 import { ensureLayoutEngine } from "./layout.js"
 import { createMouseEventProcessor } from "../mouse-events.js"
 import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output.js"
 import { detectKittyFromStdio } from "../kitty-detect.js"
+import {
+  captureTerminalState,
+  performSuspend,
+  CTRL_C,
+  CTRL_Z,
+} from "./terminal-lifecycle.js"
 import { type TermProvider, createTermProvider } from "./term-provider.js"
 import type { Buffer, Dims, Provider, RenderTarget } from "./types.js"
 
@@ -166,6 +172,22 @@ export interface AppRunOptions {
    * Default: false
    */
   mouse?: boolean
+  /**
+   * Handle Ctrl+Z by suspending the process (save terminal state,
+   * send SIGTSTP, restore on SIGCONT). Default: true
+   */
+  suspendOnCtrlZ?: boolean
+  /**
+   * Handle Ctrl+C by restoring terminal and exiting.
+   * Default: true
+   */
+  exitOnCtrlC?: boolean
+  /** Called before suspend. Return false to prevent. */
+  onSuspend?: () => boolean | void
+  /** Called after resume from suspend. */
+  onResume?: () => void
+  /** Called on Ctrl+C. Return false to prevent exit. */
+  onInterrupt?: () => boolean | void
   /** Providers and plain values to inject */
   [key: string]: unknown
 }
@@ -384,6 +406,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     kittyMode: useKittyMode = false,
     kitty: kittyOption,
     mouse: mouseOption = false,
+    suspendOnCtrlZ: suspendOption = true,
+    exitOnCtrlC: exitOnCtrlCOption = true,
+    onSuspend: onSuspendHook,
+    onResume: onResumeHook,
+    onInterrupt: onInterruptHook,
     ...injectValues
   } = options
 
@@ -612,8 +639,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Cleanup state
   let cleanedUp = false
   let storeUnsubscribeFn: (() => void) | null = null
-  // Track protocol state for cleanup (set during setup, read during cleanup)
+  // Track protocol state for cleanup and suspend/resume
   let kittyEnabled = false
+  let kittyFlags = KittyFlags.DISAMBIGUATE
   let mouseEnabled = false
 
   // Focus manager (tree-based focus system) with event dispatch wiring
@@ -942,16 +970,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         if (result.supported) {
           stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE))
           kittyEnabled = true
+          kittyFlags = KittyFlags.DISAMBIGUATE
         }
       } else {
         // Explicit flags — enable directly without detection
         stdout.write(enableKittyKeyboard(kittyOption as 1))
         kittyEnabled = true
+        kittyFlags = kittyOption as number
       }
     } else {
       // Legacy behavior: always enable Kitty DISAMBIGUATE
       stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE))
       kittyEnabled = true
+      kittyFlags = KittyFlags.DISAMBIGUATE
     }
 
     // Mouse tracking
@@ -1139,6 +1170,52 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (shouldExit || events.length === 0) return null
     _renderCount = 0
     _eventStart = performance.now()
+
+    // Intercept lifecycle keys (Ctrl+Z, Ctrl+C) BEFORE they reach app handlers.
+    // These must be handled at the runtime level, not by individual components.
+    if (!headless) {
+      for (let i = events.length - 1; i >= 0; i--) {
+        const event = events[i]!
+        if (event.type !== "term:key") continue
+        const data = event.data as { input: string; key: Key }
+
+        // Ctrl+Z: suspend
+        if (data.input === CTRL_Z && suspendOption) {
+          const prevented = onSuspendHook?.() === false
+          if (!prevented) {
+            // Remove this event from the batch
+            events.splice(i, 1)
+            const state = captureTerminalState({
+              alternateScreen,
+              cursorHidden: true,
+              mouse: mouseEnabled,
+              kitty: kittyEnabled,
+              kittyFlags,
+              bracketedPaste: true,
+              rawMode: true,
+            })
+            performSuspend(state, stdout, stdin, () => {
+              // After resume, trigger a full re-render
+              runtime.invalidate()
+              onResumeHook?.()
+            })
+          } else {
+            events.splice(i, 1)
+          }
+        }
+
+        // Ctrl+C: exit
+        if (data.input === CTRL_C && exitOnCtrlCOption) {
+          const prevented = onInterruptHook?.() === false
+          if (!prevented) {
+            exit()
+            return null
+          }
+          events.splice(i, 1)
+        }
+      }
+      if (events.length === 0) return null
+    }
 
     // Suppress subscription renders — the flush loop below handles everything.
     inEventHandler = true

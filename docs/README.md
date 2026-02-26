@@ -44,6 +44,7 @@ API documentation for components, hooks, and subsystems.
 | [Text Cursor](reference/text-cursor.md)                     | Cursor offset to visual position mapping (Layer 0)                   |
 | [Terminal Capabilities](reference/terminal-capabilities.md) | Detection, render modes, protocols                                   |
 | [Text Sizing (OSC 66)](reference/text-sizing.md)            | PUA character width control for nerdfont/powerline icons             |
+| [Terminal Lifecycle](reference/lifecycle.md)                 | Suspend/resume (Ctrl+Z), interrupt (Ctrl+C), state save/restore      |
 | [Recipes](reference/recipes.md)                             | Common patterns for building inkx apps                               |
 | [React DevTools](reference/devtools.md)                     | Connect React DevTools standalone for component tree inspection      |
 

@@ -67,6 +67,18 @@ export {
 // Key parsing utilities
 export { parseKey, emptyKey } from "./keys.js"
 
+// Terminal lifecycle (suspend/resume, interrupt)
+export {
+  captureTerminalState,
+  restoreTerminalState,
+  resumeTerminalState,
+  performSuspend,
+  CTRL_C,
+  CTRL_Z,
+  type TerminalLifecycleOptions,
+  type TerminalState,
+} from "./terminal-lifecycle.js"
+
 // Layer 1.5: TEA store (re-exported for discoverability)
 export { createStore, inkxUpdate, defaultInit, withFocusManagement } from "../store/index.js"
 export type { StoreConfig, StoreApi } from "../store/index.js"

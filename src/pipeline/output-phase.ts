@@ -483,13 +483,17 @@ function inlineFullRender(
   // Pass termRows to cap output lines.
   let output = prefix + bufferToAnsi(next, "inline", termRows)
 
-  // Erase leftover lines if content shrank
-  if (prevContentLine > nextContentLine) {
-    for (let y = nextContentLine + 1; y <= prevContentLine; y++) {
+  // Erase leftover lines if content shrank or scrollback was written between renders.
+  // scrollbackOffset accounts for lines written to stdout (by useScrollback) that
+  // sit below the previous content. Without erasing them, they appear as stale
+  // duplicate content on screen when the terminal didn't scroll them off.
+  const lastOccupiedLine = prevContentLine + scrollbackOffset
+  if (lastOccupiedLine > nextContentLine) {
+    for (let y = nextContentLine + 1; y <= lastOccupiedLine; y++) {
       output += "\n\r\x1b[K"
     }
     // Move back up to the end of new content
-    const up = prevContentLine - nextContentLine
+    const up = lastOccupiedLine - nextContentLine
     if (up > 0) output += `\x1b[${up}A`
   }
 
