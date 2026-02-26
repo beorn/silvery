@@ -90,7 +90,7 @@ examples/
 | Inline Simple   | `inline/inline-simple.tsx`   | Basic inline rendering                         |
 | Inline Progress | `inline/inline-progress.tsx` | Inline progress bar                            |
 | Inline Non-TTY  | `inline/inline-nontty.tsx`   | Inline output for piped/non-TTY                |
-| Scrollback      | `inline/scrollback.tsx`      | REPL with `useScrollback` + VirtualList frozen |
+| Scrollback      | `inline/scrollback.tsx`      | REPL with `useScrollback` + VirtualList virtualized |
 
 ## Creating New Examples
 

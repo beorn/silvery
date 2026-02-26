@@ -47,7 +47,7 @@ describe("Screen", () => {
     expect(app.text).toContain("Right")
   })
 
-  test("can nest VirtualScrollView-like content", () => {
+  test("can nest VirtualView-like content", () => {
     const app = render(
       <Screen>
         <Box height={1}>

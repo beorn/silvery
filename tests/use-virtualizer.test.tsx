@@ -116,7 +116,7 @@ describe("useVirtualizer", () => {
 
     // After freezing, offset should stay the same
     // (We can't easily click in this test, but the hook's freeze behavior
-    // is tested through the VirtualList/VirtualScrollView integration tests)
+    // is tested through the VirtualList/VirtualView integration tests)
   })
 
   test("respects overscan", () => {

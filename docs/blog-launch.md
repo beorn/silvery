@@ -49,7 +49,7 @@ const frozenCount = useScrollback(items, {
   render: (item) => `  done: ${item.title}`,
 })
 
-<VirtualList items={items} frozen={(item) => item.complete} ... />
+<VirtualList items={items} virtualized={(item) => item.complete} ... />
 ```
 
 ### A command system built for AI introspection

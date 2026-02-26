@@ -5,8 +5,8 @@
  * placeholder sizes, and scroll offsets for any scrollable view.
  *
  * Two components consume this hook:
- * - VirtualScrollView: items mount/unmount based on scroll position (in-tree)
- * - ScrollView: items transition through Live → Virtualized → Static (scrollback)
+ * - VirtualView: items mount/unmount based on scroll position (in-tree)
+ * - ScrollbackView: items transition through Live → Virtualized → Static (scrollback)
  *
  * The hook is headless — it doesn't render anything. Consumers decide what
  * to do with the visible range.
@@ -37,6 +37,10 @@ export interface VirtualizerConfig {
   gap?: number
   /** Get a stable key for an item by index. Falls back to index if not provided. */
   getItemKey?: (index: number) => string | number
+  /** Called when the visible range reaches near the end of the list (infinite scroll). */
+  onEndReached?: () => void
+  /** How many items from the end to trigger onEndReached. Default: 5 */
+  onEndReachedThreshold?: number
 }
 
 export interface VirtualizerResult {
@@ -231,6 +235,24 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
       trailingHeight: trailingSize,
     }
   }, [count, effectiveScrollOffset, maxRendered, overscan, estimateHeight, avgHeight, gap])
+
+  // ── onEndReached ─────────────────────────────────────────────────────
+  // Fire once when the visible window reaches near the end. Resets when
+  // count changes (i.e. new items were loaded).
+  const onEndReachedRef = useRef(config.onEndReached)
+  onEndReachedRef.current = config.onEndReached
+  const firedForCountRef = useRef(-1)
+
+  const threshold = config.onEndReachedThreshold ?? DEFAULT_OVERSCAN
+  const { endIndex } = windowCalc
+
+  useEffect(() => {
+    if (!onEndReachedRef.current || count === 0) return
+    if (endIndex >= count - threshold && firedForCountRef.current !== count) {
+      firedForCountRef.current = count
+      onEndReachedRef.current()
+    }
+  }, [endIndex, count, threshold])
 
   return {
     range: { startIndex: windowCalc.startIndex, endIndex: windowCalc.endIndex },

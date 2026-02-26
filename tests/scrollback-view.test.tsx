@@ -1,5 +1,5 @@
 /**
- * ScrollView Component Tests
+ * ScrollbackView Component Tests
  *
  * Tests for the native scrollback view with automatic item lifecycle management.
  */
@@ -7,7 +7,7 @@
 import React, { useEffect } from "react"
 import { describe, expect, test } from "vitest"
 import { Text, useScrollbackItem, OSC133 } from "../src/index.js"
-import { ScrollView } from "../src/components/ScrollView.js"
+import { ScrollbackView } from "../src/components/ScrollbackView.js"
 import { createRenderer, stripAnsi } from "inkx/testing"
 
 // ============================================================================
@@ -57,10 +57,10 @@ function mkItems(...specs: Array<[string, boolean]>): TestItem[] {
 }
 
 // ============================================================================
-// ScrollView tests
+// ScrollbackView tests
 // ============================================================================
 
-describe("ScrollView", () => {
+describe("ScrollbackView", () => {
   const render = createRenderer({ cols: 80, rows: 24 })
 
   test("renders active (non-frozen) items in live area", () => {
@@ -68,9 +68,9 @@ describe("ScrollView", () => {
     const items = mkItems(["a", false], ["b", false], ["c", false])
 
     const app = render(
-      <ScrollView items={items} keyExtractor={(t) => t.id} stdout={stdout}>
+      <ScrollbackView items={items} keyExtractor={(t) => t.id} stdout={stdout}>
         {(item) => <Item item={item} />}
-      </ScrollView>,
+      </ScrollbackView>,
     )
 
     expect(app.text).toContain("Item a")
@@ -83,9 +83,9 @@ describe("ScrollView", () => {
     const items = mkItems(["a", true], ["b", true], ["c", false])
 
     const app = render(
-      <ScrollView items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.shouldFreeze}>
+      <ScrollbackView items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.shouldFreeze}>
         {(item) => <Item item={item} />}
-      </ScrollView>,
+      </ScrollbackView>,
     )
 
     expect(app.text).not.toContain("Item a")
@@ -98,9 +98,9 @@ describe("ScrollView", () => {
     const items = mkItems(["a", true], ["b", false])
 
     render(
-      <ScrollView items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.shouldFreeze}>
+      <ScrollbackView items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.shouldFreeze}>
         {(item) => <Item item={item} />}
-      </ScrollView>,
+      </ScrollbackView>,
     )
 
     const output = stripAnsi(writes.join(""))
@@ -113,7 +113,7 @@ describe("ScrollView", () => {
     const items = mkItems(["a", true], ["b", true], ["c", false])
 
     const app = render(
-      <ScrollView
+      <ScrollbackView
         items={items}
         keyExtractor={(t) => t.id}
         stdout={stdout}
@@ -121,7 +121,7 @@ describe("ScrollView", () => {
         footer={<Text>Status: 3 items</Text>}
       >
         {(item) => <Item item={item} />}
-      </ScrollView>,
+      </ScrollbackView>,
     )
 
     expect(app.text).toContain("Status: 3 items")
@@ -133,9 +133,9 @@ describe("ScrollView", () => {
 
     // Just verify it doesn't crash with the prop
     const app = render(
-      <ScrollView items={items} keyExtractor={(t) => t.id} stdout={stdout} maxHistory={5000}>
+      <ScrollbackView items={items} keyExtractor={(t) => t.id} stdout={stdout} maxHistory={5000}>
         {(item) => <Item item={item} />}
-      </ScrollView>,
+      </ScrollbackView>,
     )
 
     expect(app.text).toContain("Item a")
@@ -146,9 +146,9 @@ describe("ScrollView", () => {
     const items = mkItems(["a", true], ["b", false], ["c", true])
 
     const app = render(
-      <ScrollView items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.shouldFreeze}>
+      <ScrollbackView items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.shouldFreeze}>
         {(item) => <Item item={item} />}
-      </ScrollView>,
+      </ScrollbackView>,
     )
 
     // Only item a is in contiguous frozen prefix
@@ -163,7 +163,7 @@ describe("ScrollView", () => {
     const items = mkItems(["a", true], ["b", false])
 
     render(
-      <ScrollView
+      <ScrollbackView
         items={items}
         keyExtractor={(t) => t.id}
         stdout={stdout}
@@ -171,7 +171,7 @@ describe("ScrollView", () => {
         markers={true}
       >
         {(item) => <Item item={item} />}
-      </ScrollView>,
+      </ScrollbackView>,
     )
 
     const allOutput = writes.join("")
@@ -183,14 +183,14 @@ describe("ScrollView", () => {
     const { stdout, writes } = createMockStdout()
 
     const app = render(
-      <ScrollView
+      <ScrollbackView
         items={[] as TestItem[]}
         keyExtractor={(t) => t.id}
         stdout={stdout}
         footer={<Text>No items yet</Text>}
       >
         {(item) => <Item item={item} />}
-      </ScrollView>,
+      </ScrollbackView>,
     )
 
     expect(app.text).toContain("No items yet")
@@ -203,9 +203,9 @@ describe("ScrollView", () => {
     function TestApp({ freezeCount }: { freezeCount: number }) {
       const items = mkItems(["a", freezeCount >= 1], ["b", freezeCount >= 2], ["c", freezeCount >= 3])
       return (
-        <ScrollView items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.shouldFreeze}>
+        <ScrollbackView items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.shouldFreeze}>
           {(item) => <Item item={item} />}
-        </ScrollView>
+        </ScrollbackView>
       )
     }
 
@@ -242,7 +242,7 @@ describe("ScrollView", () => {
 
     function TestApp({ extra }: { extra?: string }) {
       return (
-        <ScrollView
+        <ScrollbackView
           items={items}
           keyExtractor={(t) => t.id}
           stdout={stdout}
@@ -250,7 +250,7 @@ describe("ScrollView", () => {
           footer={extra ? <Text>{extra}</Text> : undefined}
         >
           {(item) => <Item item={item} />}
-        </ScrollView>
+        </ScrollbackView>
       )
     }
 

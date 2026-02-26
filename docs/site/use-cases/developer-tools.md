@@ -19,7 +19,7 @@ Unlike browser-based dev tools, terminal tools run where your code runs. They st
 
 - **Console component** -- Captures `console.log`, `console.error`, and `console.warn` output via `patchConsole()` and renders it within your TUI layout. Display captured output side-by-side with other panels instead of losing it to raw stdout. Supports custom rendering via a render prop for color-coded log levels.
 
-- **VirtualList** -- Renders thousands of log lines, stack frames, or profiler entries with O(1) scroll performance. Only items within the visible viewport (plus configurable overscan) are mounted as React elements. Variable item heights, frozen row prefixes, and overflow indicators are built in.
+- **VirtualList** -- Renders thousands of log lines, stack frames, or profiler entries with O(1) scroll performance. Only items within the visible viewport (plus configurable overscan) are mounted as React elements. Variable item heights, virtualized row prefixes, and overflow indicators are built in.
 
 - **Scrollback buffer** -- Log viewers and REPLs produce unbounded output. `overflow="scroll"` containers grow as content arrives, track the viewport position, and let users scroll back through the full history with keyboard or mouse. The buffer retains all content — no manual ring buffer or viewport management needed.
 

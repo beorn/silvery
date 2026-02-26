@@ -33,7 +33,7 @@ bun test tests/
 | `bun run test:visual`        | Run Playwright visual regression tests      |
 | `bun run test:visual:update` | Update visual regression snapshots          |
 | `bun run typecheck`          | TypeScript type checking                    |
-| `bun run lint`               | Run Biome linter                            |
+| `bun run lint`               | Run linter (oxlint)                         |
 | `bun run fix`                | Auto-fix lint and format issues             |
 | `bun run bench`              | Run performance benchmarks                  |
 | `bun run build`              | Build for distribution                      |
@@ -140,9 +140,9 @@ await waitFor(() => lastFrame().includes("loaded"), { timeout: 1000 })
 
 ## Code Style
 
-### Biome Configuration
+### Linting
 
-This project uses [Biome](https://biomejs.dev/) for linting and formatting:
+This project uses oxlint for linting and Prettier for formatting:
 
 ```bash
 # Check for issues
@@ -154,10 +154,10 @@ bun run fix
 
 Key style rules:
 
-- **Indentation**: Tabs
-- **Line width**: 100 characters
-- **Quotes**: Single quotes
-- **Semicolons**: Always required
+- **Indentation**: 2 spaces
+- **Line width**: 120 characters
+- **Quotes**: Double quotes
+- **Semicolons**: None (ASI)
 
 ### TypeScript
 

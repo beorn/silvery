@@ -1029,7 +1029,6 @@ export function parseAnsiText(text: string): StyledSegment[] {
   let oscMatch: RegExpExecArray | null
   let oscLastIndex = 0
 
-  // biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec pattern
   while ((oscMatch = oscPattern.exec(text)) !== null) {
     // Append text between last OSC and this one (preserving SGR codes)
     cleaned += text.slice(oscLastIndex, oscMatch.index)
@@ -1081,7 +1080,6 @@ export function parseAnsiText(text: string): StyledSegment[] {
     return undefined
   }
 
-  // biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec pattern
   while ((match = ansiPattern.exec(processText)) !== null) {
     // Add text before this escape sequence
     if (match.index > lastIndex) {

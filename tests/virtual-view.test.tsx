@@ -1,5 +1,5 @@
 /**
- * VirtualScrollView Component Tests
+ * VirtualView Component Tests
  *
  * Tests for the app-managed scrollable viewport with virtualization.
  */
@@ -8,7 +8,7 @@ import React from "react"
 import { beforeAll, describe, expect, test } from "vitest"
 import { Text } from "../src/index.js"
 import { Box } from "../src/components/Box.js"
-import { VirtualScrollView } from "../src/components/VirtualScrollView.js"
+import { VirtualView } from "../src/components/VirtualView.js"
 import { initYogaEngine, setLayoutEngine } from "../src/render.js"
 import { createRenderer } from "inkx/testing"
 
@@ -20,12 +20,12 @@ beforeAll(async () => {
 
 const render = createRenderer({ cols: 80, rows: 24 })
 
-describe("VirtualScrollView", () => {
+describe("VirtualView", () => {
   test("renders visible items only", () => {
     const items = Array.from({ length: 100 }, (_, i) => `Item ${i}`)
 
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={1}
@@ -46,7 +46,7 @@ describe("VirtualScrollView", () => {
     const items = Array.from({ length: 100 }, (_, i) => `Item ${i}`)
 
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={1}
@@ -66,7 +66,7 @@ describe("VirtualScrollView", () => {
     const items: string[] = []
 
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={1}
@@ -82,7 +82,7 @@ describe("VirtualScrollView", () => {
     const items = ["A", "B", "C"]
 
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={1}
@@ -100,7 +100,7 @@ describe("VirtualScrollView", () => {
     const items = Array.from({ length: 1000 }, (_, i) => `Item ${i}`)
 
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={1}
@@ -126,7 +126,7 @@ describe("VirtualScrollView", () => {
     ]
 
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={1}
@@ -144,7 +144,7 @@ describe("VirtualScrollView", () => {
     const items = Array.from({ length: 100 }, (_, i) => `Item ${i}`)
 
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={5}
         estimateHeight={1}
@@ -163,7 +163,7 @@ describe("VirtualScrollView", () => {
     const items = ["First", "Second", "Third"]
 
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={2}
@@ -185,7 +185,7 @@ describe("VirtualScrollView", () => {
 
     // First render with scrollTo=20
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={1}
@@ -198,7 +198,7 @@ describe("VirtualScrollView", () => {
 
     // Re-render without scrollTo — scroll should freeze
     app.rerender(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={1}
@@ -214,7 +214,7 @@ describe("VirtualScrollView", () => {
     const items = ["A", "B", "C"]
 
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={1}
@@ -232,7 +232,7 @@ describe("VirtualScrollView", () => {
     const items = ["A", "B", "C"]
 
     const app = render(
-      <VirtualScrollView
+      <VirtualView
         items={items}
         height={10}
         estimateHeight={1}
@@ -244,5 +244,91 @@ describe("VirtualScrollView", () => {
     expect(app.text).toContain("A")
     expect(app.text).toContain("---")
     expect(app.text).toContain("C")
+  })
+
+  test("onEndReached fires when scrolled near end", () => {
+    const items = Array.from({ length: 50 }, (_, i) => `Item ${i}`)
+    let endReachedCount = 0
+
+    const app = render(
+      <VirtualView
+        items={items}
+        height={10}
+        estimateHeight={1}
+        scrollTo={0}
+        onEndReached={() => endReachedCount++}
+        onEndReachedThreshold={5}
+        renderItem={(item, index) => <Text key={index}>{item}</Text>}
+      />,
+    )
+
+    // At scrollTo=0, endIndex is far from 50 — should not fire
+    expect(endReachedCount).toBe(0)
+
+    // Scroll near the end
+    app.rerender(
+      <VirtualView
+        items={items}
+        height={10}
+        estimateHeight={1}
+        scrollTo={45}
+        onEndReached={() => endReachedCount++}
+        onEndReachedThreshold={5}
+        renderItem={(item, index) => <Text key={index}>{item}</Text>}
+      />,
+    )
+
+    expect(endReachedCount).toBe(1)
+  })
+
+  test("onEndReached fires only once per item count", () => {
+    const items = Array.from({ length: 30 }, (_, i) => `Item ${i}`)
+    let endReachedCount = 0
+    const onEndReached = () => endReachedCount++
+
+    const app = render(
+      <VirtualView
+        items={items}
+        height={10}
+        estimateHeight={1}
+        scrollTo={25}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={5}
+        renderItem={(item, index) => <Text key={index}>{item}</Text>}
+      />,
+    )
+
+    expect(endReachedCount).toBe(1)
+
+    // Re-render at same count, different scroll — should not re-fire
+    app.rerender(
+      <VirtualView
+        items={items}
+        height={10}
+        estimateHeight={1}
+        scrollTo={28}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={5}
+        renderItem={(item, index) => <Text key={index}>{item}</Text>}
+      />,
+    )
+
+    expect(endReachedCount).toBe(1)
+
+    // New items loaded — resets, fires again when at end
+    const moreItems = Array.from({ length: 60 }, (_, i) => `Item ${i}`)
+    app.rerender(
+      <VirtualView
+        items={moreItems}
+        height={10}
+        estimateHeight={1}
+        scrollTo={55}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={5}
+        renderItem={(item, index) => <Text key={index}>{item}</Text>}
+      />,
+    )
+
+    expect(endReachedCount).toBe(2)
   })
 })

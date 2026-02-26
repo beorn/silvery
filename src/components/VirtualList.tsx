@@ -4,9 +4,9 @@
  * React-level virtualization for long lists. Only renders items within the
  * visible viewport plus overscan, using placeholder boxes for virtual height.
  *
- * Thin wrapper around VirtualScrollView that adds:
+ * Thin wrapper around VirtualView that adds:
  * - Interactive mode: keyboard navigation (j/k, arrows, PgUp/PgDn, Home/End, G), mouse wheel, selection state
- * - Frozen items: `frozen` prop for contiguous prefix exclusion
+ * - Virtualized prefix: `virtualized` prop for contiguous prefix exclusion
  * - ItemMeta: Third arg to renderItem with `{ isSelected }`
  *
  * @example
@@ -37,8 +37,8 @@
  */
 import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useInput } from "../hooks/useInput.js"
-import { VirtualScrollView } from "./VirtualScrollView.js"
-import type { VirtualScrollViewHandle } from "./VirtualScrollView.js"
+import { VirtualView } from "./VirtualView.js"
+import type { VirtualViewHandle } from "./VirtualView.js"
 
 // =============================================================================
 // Types
@@ -87,11 +87,11 @@ export interface VirtualListProps<T> {
   /** Render separator between items (alternative to gap) */
   renderSeparator?: () => React.ReactNode
 
-  /** Predicate to determine if an item should be frozen (skipped from rendering).
-   * Only a contiguous prefix of frozen items is removed from the list.
-   * Frozen items are excluded from rendering -- callers can use Static or
+  /** Predicate for items already virtualized (e.g. pushed to scrollback).
+   * Only a contiguous prefix of matching items is removed from the list.
+   * Virtualized items are excluded from rendering — callers can use Static or
    * useScrollback to push them to terminal scrollback separately. */
-  frozen?: (item: T, index: number) => boolean
+  virtualized?: (item: T, index: number) => boolean
 
   // ── Interactive mode ──────────────────────────────────────────────
 
@@ -106,6 +106,11 @@ export interface VirtualListProps<T> {
 
   /** Called when Enter is pressed on the selected item */
   onSelect?: (index: number) => void
+
+  /** Called when the visible range reaches near the end of the list (infinite scroll). */
+  onEndReached?: () => void
+  /** How many items from the end to trigger onEndReached. Default: 5 */
+  onEndReachedThreshold?: number
 }
 
 export interface VirtualListHandle {
@@ -138,8 +143,8 @@ const SCROLL_PADDING = 2
 /**
  * VirtualList - React-level virtualized list with native inkx scrolling.
  *
- * Thin wrapper around VirtualScrollView that adds interactive mode (keyboard +
- * mouse), frozen item prefix exclusion, and selection metadata injection.
+ * Thin wrapper around VirtualView that adds interactive mode (keyboard +
+ * mouse), virtual item prefix exclusion, and selection metadata injection.
  *
  * Scroll state management:
  * - When scrollTo is defined: actively track and scroll to that index
@@ -163,11 +168,13 @@ function VirtualListInner<T>(
     width,
     gap,
     renderSeparator,
-    frozen,
+    virtualized,
     interactive,
     selectedIndex: selectedIndexProp,
     onSelectionChange,
     onSelect,
+    onEndReached,
+    onEndReachedThreshold,
   }: VirtualListProps<T>,
   ref: React.ForwardedRef<VirtualListHandle>,
 ): React.ReactElement {
@@ -210,48 +217,48 @@ function VirtualListInner<T>(
   // In interactive mode, scrollTo is derived from selection
   const scrollTo = interactive ? activeSelection : scrollToProp
 
-  // ── Frozen prefix computation ──────────────────────────────────────
-  let frozenCount = 0
-  if (frozen) {
+  // ── Virtual prefix computation ──────────────────────────────────────
+  let virtualizedCount = 0
+  if (virtualized) {
     for (let i = 0; i < items.length; i++) {
-      if (!frozen(items[i]!, i)) break
-      frozenCount++
+      if (!virtualized(items[i]!, i)) break
+      virtualizedCount++
     }
   }
 
-  // Slice items to exclude frozen prefix
-  const activeItems = frozenCount > 0 ? items.slice(frozenCount) : items
+  // Slice items to exclude virtual prefix
+  const activeItems = virtualizedCount > 0 ? items.slice(virtualizedCount) : items
 
-  // Adjust scrollTo to account for frozen items
-  const adjustedScrollTo = scrollTo !== undefined ? Math.max(0, scrollTo - frozenCount) : undefined
+  // Adjust scrollTo to account for virtual items
+  const adjustedScrollTo = scrollTo !== undefined ? Math.max(0, scrollTo - virtualizedCount) : undefined
 
-  // ── Adapt props for VirtualScrollView ──────────────────────────────
+  // ── Adapt props for VirtualView ──────────────────────────────
 
   // Convert itemHeight (item,index)=>number to estimateHeight (index)=>number
   const estimateHeight = useMemo(() => {
     if (typeof itemHeight === "number") return itemHeight
-    if (frozenCount > 0) {
-      return (index: number) => itemHeight(activeItems[index]!, index + frozenCount)
+    if (virtualizedCount > 0) {
+      return (index: number) => itemHeight(activeItems[index]!, index + virtualizedCount)
     }
     return (index: number) => itemHeight(activeItems[index]!, index)
-  }, [itemHeight, activeItems, frozenCount])
+  }, [itemHeight, activeItems, virtualizedCount])
 
-  // Wrap renderItem to inject ItemMeta (3rd arg) and adjust indices for frozen prefix
+  // Wrap renderItem to inject ItemMeta (3rd arg) and adjust indices for virtual prefix
   const wrappedRenderItem = useCallback(
     (item: T, index: number): React.ReactNode => {
-      const originalIndex = index + frozenCount
+      const originalIndex = index + virtualizedCount
       const meta: ItemMeta = { isSelected: originalIndex === activeSelection }
       return renderItem(item, originalIndex, meta)
     },
-    [renderItem, frozenCount, activeSelection],
+    [renderItem, virtualizedCount, activeSelection],
   )
 
-  // Wrap keyExtractor to adjust indices for frozen prefix
+  // Wrap keyExtractor to adjust indices for virtual prefix
   const wrappedKeyExtractor = useMemo(() => {
     if (!keyExtractor) return undefined
-    if (frozenCount === 0) return keyExtractor
-    return (item: T, index: number) => keyExtractor(item, index + frozenCount)
-  }, [keyExtractor, frozenCount])
+    if (virtualizedCount === 0) return keyExtractor
+    return (item: T, index: number) => keyExtractor(item, index + virtualizedCount)
+  }, [keyExtractor, virtualizedCount])
 
   // Mouse wheel handler for interactive mode
   const onWheel = useMemo(() => {
@@ -263,22 +270,22 @@ function VirtualListInner<T>(
   }, [interactive, activeSelection, moveTo])
 
   // ── Ref wrapping ───────────────────────────────────────────────────
-  const innerRef = useRef<VirtualScrollViewHandle>(null)
+  const innerRef = useRef<VirtualViewHandle>(null)
 
-  // Wrap scrollToItem to accept original indices (before frozen adjustment)
+  // Wrap scrollToItem to accept original indices (before virtual adjustment)
   useImperativeHandle(
     ref,
     () => ({
       scrollToItem(index: number) {
-        innerRef.current?.scrollToItem(Math.max(0, index - frozenCount))
+        innerRef.current?.scrollToItem(Math.max(0, index - virtualizedCount))
       },
     }),
-    [frozenCount],
+    [virtualizedCount],
   )
 
-  // ── Delegate to VirtualScrollView ──────────────────────────────────
+  // ── Delegate to VirtualView ──────────────────────────────────
   return (
-    <VirtualScrollView
+    <VirtualView
       ref={innerRef}
       items={activeItems}
       height={height}
@@ -294,6 +301,8 @@ function VirtualListInner<T>(
       gap={gap}
       renderSeparator={renderSeparator}
       onWheel={onWheel}
+      onEndReached={onEndReached}
+      onEndReachedThreshold={onEndReachedThreshold}
     />
   )
 }

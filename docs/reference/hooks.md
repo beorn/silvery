@@ -370,7 +370,7 @@ function ScrollableArea({ items, scrollOffset }) {
 
 Push frozen items to terminal scrollback. Tracks a contiguous frozen prefix — when the count increases, renders newly frozen items and writes them to stdout.
 
-Pair with VirtualList's `frozen` prop for the complete experience.
+Pair with VirtualList's `virtualized` prop for the complete experience.
 
 ```tsx
 import { useScrollback } from "inkx"

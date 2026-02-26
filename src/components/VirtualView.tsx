@@ -1,14 +1,14 @@
 /**
- * VirtualScrollView - App-managed scrolling within a Screen rectangle.
+ * VirtualView - App-managed scrolling within a Screen rectangle.
  *
  * A scrollable area where items mount/unmount based on scroll position,
  * managed entirely by the app. Uses the shared useVirtualizer() engine.
  *
- * Unlike ScrollView (which uses native terminal scrollback), VirtualScrollView
+ * Unlike ScrollbackView (which uses native terminal scrollback), VirtualView
  * keeps everything in the React tree. Items are simply unmounted when they
  * scroll out of the viewport and remounted when they scroll back in.
  *
- * Trade-offs vs ScrollView:
+ * Trade-offs vs ScrollbackView:
  * - Mouse events work on scrolled-off items (if you scroll back)
  * - App controls scroll position (no snap-to-bottom issue)
  * - Text selection requires Shift+drag (mouse tracking active)
@@ -18,7 +18,7 @@
  * ```tsx
  * <Screen>
  *   <Header />
- *   <VirtualScrollView
+ *   <VirtualView
  *     items={logs}
  *     height={20}
  *     renderItem={(item, index) => <LogEntry key={item.id} data={item} />}
@@ -37,7 +37,7 @@ import { Box } from "./Box.js"
 // Types
 // =============================================================================
 
-export interface VirtualScrollViewProps<T> {
+export interface VirtualViewProps<T> {
   /** Array of items to render */
   items: T[]
 
@@ -79,9 +79,14 @@ export interface VirtualScrollViewProps<T> {
 
   /** Mouse wheel handler for scrolling */
   onWheel?: (event: { deltaY: number }) => void
+
+  /** Called when the visible range reaches near the end of the list (infinite scroll). */
+  onEndReached?: () => void
+  /** How many items from the end to trigger onEndReached. Default: 5 */
+  onEndReachedThreshold?: number
 }
 
-export interface VirtualScrollViewHandle {
+export interface VirtualViewHandle {
   /** Imperatively scroll to a specific item index */
   scrollToItem(index: number): void
 }
@@ -107,7 +112,7 @@ const DEFAULT_SCROLL_PADDING = 2
  * - When scrollTo is defined: actively track and scroll to that index
  * - When scrollTo is undefined: freeze scroll state (critical for multi-column layouts)
  */
-function VirtualScrollViewInner<T>(
+function VirtualViewInner<T>(
   {
     items,
     height,
@@ -123,8 +128,10 @@ function VirtualScrollViewInner<T>(
     gap = 0,
     renderSeparator,
     onWheel,
-  }: VirtualScrollViewProps<T>,
-  ref: React.ForwardedRef<VirtualScrollViewHandle>,
+    onEndReached,
+    onEndReachedThreshold,
+  }: VirtualViewProps<T>,
+  ref: React.ForwardedRef<VirtualViewHandle>,
 ): React.ReactElement {
   // Convert item-based estimateHeight to index-based for useVirtualizer
   const indexEstimate =
@@ -149,6 +156,8 @@ function VirtualScrollViewInner<T>(
     getItemKey: keyExtractor
       ? (index) => keyExtractor(items[index]!, index)
       : undefined,
+    onEndReached,
+    onEndReachedThreshold,
   })
 
   // Expose scrollToItem method via ref
@@ -212,6 +221,6 @@ function VirtualScrollViewInner<T>(
 }
 
 // Export with forwardRef - use type assertion for generic component
-export const VirtualScrollView = forwardRef(VirtualScrollViewInner) as <T>(
-  props: VirtualScrollViewProps<T> & { ref?: React.ForwardedRef<VirtualScrollViewHandle> },
+export const VirtualView = forwardRef(VirtualViewInner) as <T>(
+  props: VirtualViewProps<T> & { ref?: React.ForwardedRef<VirtualViewHandle> },
 ) => React.ReactElement

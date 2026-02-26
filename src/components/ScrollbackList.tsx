@@ -11,7 +11,7 @@
  * have not yet frozen, item 3 is marked but won't flush to scrollback
  * until 0-2 are also frozen.
  *
- * This is a thin wrapper around ScrollView (which adds maxHistory support).
+ * This is a thin wrapper around ScrollbackView (which adds maxHistory support).
  * The two components share identical scrollback semantics.
  *
  * @example
@@ -41,7 +41,7 @@
 import type { ReactElement } from "react"
 import type { ScrollbackMarkerCallbacks } from "../hooks/useScrollback.js"
 import type { ReactNode } from "react"
-import { ScrollView } from "./ScrollView.js"
+import { ScrollbackView } from "./ScrollbackView.js"
 
 // ============================================================================
 // Types
@@ -81,9 +81,9 @@ export interface ScrollbackListProps<T> {
 /**
  * A list component that pushes completed items to terminal scrollback.
  *
- * Thin wrapper around ScrollView — delegates all rendering and scrollback
- * management to ScrollView without maxHistory (unlimited by default).
+ * Thin wrapper around ScrollbackView — delegates all rendering and scrollback
+ * management to ScrollbackView without maxHistory (unlimited by default).
  */
 export function ScrollbackList<T>(props: ScrollbackListProps<T>): ReactElement {
-  return <ScrollView {...props} />
+  return <ScrollbackView {...props} />
 }

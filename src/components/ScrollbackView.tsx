@@ -1,5 +1,5 @@
 /**
- * ScrollView - Native scrollback root component.
+ * ScrollbackView - Native scrollback root component.
  *
  * Uses the normal terminal buffer. Children flow vertically. As items scroll
  * off the top of the screen, they transition through the virtualization
@@ -15,22 +15,22 @@
  *
  * @example
  * ```tsx
- * <ScrollView footer={<StatusBar />}>
+ * <ScrollbackView footer={<StatusBar />}>
  *   {messages.map(m => <Message key={m.id} data={m} />)}
- * </ScrollView>
+ * </ScrollbackView>
  * ```
  *
  * @example
  * ```tsx
  * // With item-level lifecycle control via useScrollbackItem
- * <ScrollView
+ * <ScrollbackView
  *   items={tasks}
  *   keyExtractor={(t) => t.id}
  *   isFrozen={(t) => t.done}
  *   footer={<Text>Status bar</Text>}
  * >
  *   {(task) => <TaskItem task={task} />}
- * </ScrollView>
+ * </ScrollbackView>
  * ```
  */
 
@@ -44,7 +44,7 @@ import { ScrollbackItemProvider } from "../hooks/useScrollbackItem.js"
 // Types
 // ============================================================================
 
-export interface ScrollViewProps<T> {
+export interface ScrollbackViewProps<T> {
   /** Array of items to render. */
   items: T[]
   /** Render function for each item. Receives item and its index. */
@@ -98,16 +98,16 @@ function getTermCols(): number {
 /**
  * Native scrollback view with automatic item lifecycle management.
  *
- * Items rendered inside ScrollView have access to `useScrollbackItem()`
+ * Items rendered inside ScrollbackView have access to `useScrollbackItem()`
  * which provides a `freeze()` function. When an item calls freeze(), it is
  * marked for scrollback. Once a contiguous prefix of items are all frozen,
  * they are rendered to strings and written to stdout via useScrollback.
  *
- * This is the native-scrollback counterpart to VirtualScrollView. Where
- * VirtualScrollView keeps everything in the React tree, ScrollView commits
+ * This is the native-scrollback counterpart to VirtualView. Where
+ * VirtualView keeps everything in the React tree, ScrollbackView commits
  * completed items to the terminal's scrollback buffer.
  */
-export function ScrollView<T>({
+export function ScrollbackView<T>({
   items,
   children,
   keyExtractor,
@@ -119,7 +119,7 @@ export function ScrollView<T>({
   width,
   stdout = process.stdout as unknown as { write(data: string): boolean },
   onRecovery,
-}: ScrollViewProps<T>): ReactElement {
+}: ScrollbackViewProps<T>): ReactElement {
   const effectiveWidth = width ?? getTermCols()
 
   // Track terminal height for pinning footer at bottom

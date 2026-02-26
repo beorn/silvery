@@ -1,8 +1,8 @@
 /**
- * VirtualList frozen prop & useScrollback hook tests
+ * VirtualList virtualized prop & useScrollback hook tests
  *
- * Tests for scrollback/freeze mode where completed items are excluded
- * from VirtualList rendering via a contiguous frozen prefix.
+ * Tests for scrollback/virtualize mode where completed items are excluded
+ * from VirtualList rendering via a contiguous virtualized prefix.
  */
 
 import React from "react"
@@ -26,8 +26,8 @@ interface TestItem {
   complete: boolean
 }
 
-describe("VirtualList frozen prop", () => {
-  test("renders non-frozen items only", () => {
+describe("VirtualList virtualized prop", () => {
+  test("renders non-virtualized items only", () => {
     const items: TestItem[] = [
       { id: 1, name: "done-1", complete: true },
       { id: 2, name: "done-2", complete: true },
@@ -38,7 +38,7 @@ describe("VirtualList frozen prop", () => {
     const app = render(
       <VirtualList
         items={items}
-        frozen={(item) => item.complete}
+        virtualized={(item) => item.complete}
         height={10}
         itemHeight={1}
         scrollTo={0}
@@ -46,7 +46,7 @@ describe("VirtualList frozen prop", () => {
       />,
     )
 
-    // Frozen items should NOT be in the rendered output
+    // Virtualized items should NOT be in the rendered output
     expect(app.text).not.toContain("done-1")
     expect(app.text).not.toContain("done-2")
     // Active items should be rendered
@@ -54,7 +54,7 @@ describe("VirtualList frozen prop", () => {
     expect(app.text).toContain("active-4")
   })
 
-  test("handles all items frozen", () => {
+  test("handles all items virtualized", () => {
     const items: TestItem[] = [
       { id: 1, name: "done-1", complete: true },
       { id: 2, name: "done-2", complete: true },
@@ -63,7 +63,7 @@ describe("VirtualList frozen prop", () => {
     const app = render(
       <VirtualList
         items={items}
-        frozen={(item) => item.complete}
+        virtualized={(item) => item.complete}
         height={10}
         itemHeight={1}
         scrollTo={0}
@@ -79,13 +79,13 @@ describe("VirtualList frozen prop", () => {
     const items: TestItem[] = [
       { id: 1, name: "done-1", complete: true },
       { id: 2, name: "active-2", complete: false },
-      { id: 3, name: "done-3", complete: true }, // NOT frozen — not contiguous
+      { id: 3, name: "done-3", complete: true }, // NOT virtualized — not contiguous
     ]
 
     const app = render(
       <VirtualList
         items={items}
-        frozen={(item) => item.complete}
+        virtualized={(item) => item.complete}
         height={10}
         itemHeight={1}
         scrollTo={0}
@@ -93,12 +93,12 @@ describe("VirtualList frozen prop", () => {
       />,
     )
 
-    expect(app.text).not.toContain("done-1") // frozen (prefix)
-    expect(app.text).toContain("active-2") // not frozen
-    expect(app.text).toContain("done-3") // not frozen (not contiguous)
+    expect(app.text).not.toContain("done-1") // virtualized (prefix)
+    expect(app.text).toContain("active-2") // not virtualized
+    expect(app.text).toContain("done-3") // not virtualized (not contiguous)
   })
 
-  test("without frozen prop, renders all items", () => {
+  test("without virtualized prop, renders all items", () => {
     const items: TestItem[] = [
       { id: 1, name: "item-1", complete: true },
       { id: 2, name: "item-2", complete: false },
@@ -128,7 +128,7 @@ describe("VirtualList frozen prop", () => {
     render(
       <VirtualList
         items={items}
-        frozen={(item) => item.complete}
+        virtualized={(item) => item.complete}
         height={10}
         itemHeight={1}
         scrollTo={0}
@@ -144,7 +144,7 @@ describe("VirtualList frozen prop", () => {
     expect(indices).not.toContain(0)
   })
 
-  test("frozen with no frozen items renders all", () => {
+  test("virtualized with no matching items renders all", () => {
     const items: TestItem[] = [
       { id: 1, name: "active-1", complete: false },
       { id: 2, name: "active-2", complete: false },
@@ -154,7 +154,7 @@ describe("VirtualList frozen prop", () => {
     const app = render(
       <VirtualList
         items={items}
-        frozen={(item) => item.complete}
+        virtualized={(item) => item.complete}
         height={10}
         itemHeight={1}
         scrollTo={0}
@@ -167,13 +167,13 @@ describe("VirtualList frozen prop", () => {
     expect(app.text).toContain("active-3")
   })
 
-  test("frozen with empty items array", () => {
+  test("virtualized with empty items array", () => {
     const items: TestItem[] = []
 
     const app = render(
       <VirtualList
         items={items}
-        frozen={(item) => item.complete}
+        virtualized={(item) => item.complete}
         height={10}
         itemHeight={1}
         scrollTo={0}

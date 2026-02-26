@@ -3,7 +3,7 @@
  *
  * Tracks a contiguous frozen prefix of items. When the frozen count
  * increases, renders newly frozen items and writes them to stdout.
- * Pair with VirtualList's `frozen` prop for the complete experience.
+ * Pair with VirtualList's `virtualized` prop for the complete experience.
  *
  * In inline mode, notifies the scheduler about lines written to stdout
  * so that cursor positioning accounts for the displacement.

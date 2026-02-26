@@ -113,7 +113,6 @@ export async function autoConnectDevTools(): Promise<void> {
 
 // Global type augmentation for devtools polyfills
 declare global {
-  // biome-ignore lint/style/noVar: global augmentation requires var
   var __REACT_DEVTOOLS_COMPONENT_FILTERS__: Array<{
     type: number
     value: number | string

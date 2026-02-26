@@ -18,7 +18,7 @@
  * // Fullscreen + scrollable region (log viewer, dashboard)
  * <Screen>
  *   <Sidebar />
- *   <VirtualScrollView items={logs} renderItem={...} />
+ *   <VirtualView items={logs} renderItem={...} />
  *   <StatusBar />
  * </Screen>
  * ```

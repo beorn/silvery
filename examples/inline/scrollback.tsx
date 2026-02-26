@@ -1,7 +1,7 @@
 /**
  * Scrollback Mode — REPL
  *
- * Interactive expression evaluator demonstrating useScrollback + VirtualList frozen.
+ * Interactive expression evaluator demonstrating useScrollback + VirtualList virtualized.
  * Completed results freeze into terminal scrollback; the active prompt stays at bottom.
  *
  * Controls:
@@ -16,8 +16,8 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Scrollback",
-  description: "REPL with useScrollback + VirtualList frozen for terminal scrollback",
-  features: ["useScrollback()", "VirtualList frozen", "inline mode"],
+  description: "REPL with useScrollback + VirtualList virtualized for terminal scrollback",
+  features: ["useScrollback()", "VirtualList virtualized", "inline mode"],
 }
 
 // =============================================================================
@@ -124,11 +124,11 @@ export function Repl() {
 
   return (
     <Box flexDirection="column">
-      {/* Active (non-frozen) results via VirtualList */}
+      {/* Active (non-virtualized) results via VirtualList */}
       {activeCount > 0 && (
         <VirtualList
           items={results}
-          frozen={(r) => r.frozen}
+          virtualized={(r) => r.frozen}
           height={activeCount * 2}
           itemHeight={2}
           scrollTo={0}

@@ -116,10 +116,10 @@ export type { ScrollbackListProps } from "./components/ScrollbackList.js"
 // Viewport Architecture (Phase 2)
 export { Screen } from "./components/Screen.js"
 export type { ScreenProps } from "./components/Screen.js"
-export { ScrollView } from "./components/ScrollView.js"
-export type { ScrollViewProps } from "./components/ScrollView.js"
-export { VirtualScrollView } from "./components/VirtualScrollView.js"
-export type { VirtualScrollViewProps, VirtualScrollViewHandle } from "./components/VirtualScrollView.js"
+export { ScrollbackView } from "./components/ScrollbackView.js"
+export type { ScrollbackViewProps } from "./components/ScrollbackView.js"
+export { VirtualView } from "./components/VirtualView.js"
+export type { VirtualViewProps, VirtualViewHandle } from "./components/VirtualView.js"
 
 /**
  * Re-export ErrorBoundary component - catches render errors in children.

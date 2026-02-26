@@ -190,7 +190,7 @@ await app.run(<App />)
 
 ## Components
 
-See [docs/reference/components.md](docs/reference/components.md) for full reference. Key components: Box, Text, Screen, ScrollView, VirtualScrollView, VirtualList, Static, Console, TextInput, ReadlineInput, TextArea, Link, Transform, Image, Spinner, ProgressBar, SelectList, Table, Badge, Divider.
+See [docs/reference/components.md](docs/reference/components.md) for full reference. Key components: Box, Text, Screen, ScrollbackView, VirtualView, VirtualList, Static, Console, TextInput, ReadlineInput, TextArea, Link, Transform, Image, Spinner, ProgressBar, SelectList, Table, Badge, Divider.
 
 ### Box Outline Props
 
@@ -642,7 +642,7 @@ import { CTRL_C, CTRL_Z, type TerminalLifecycleOptions, type TerminalState } fro
 
 // Components
 import { Box, Text, Link, Newline, Spacer, Static, Console, VirtualList, Transform, Image } from "inkx"
-import { Screen, ScrollView, VirtualScrollView } from "inkx"
+import { Screen, ScrollbackView, VirtualView } from "inkx"
 import { Spinner, ProgressBar, SelectList, Table, Badge, Divider } from "inkx"
 
 // Input components

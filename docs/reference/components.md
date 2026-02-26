@@ -131,9 +131,9 @@ Efficient rendering for large lists (100+ items). Only renders visible items.
 />
 ```
 
-### Frozen Items (Scrollback)
+### Virtualized Items (Scrollback)
 
-VirtualList supports a `frozen` prop that excludes a contiguous prefix of items from rendering. Pair with `useScrollback` to push frozen items to terminal scrollback:
+VirtualList supports a `virtualized` prop that excludes a contiguous prefix of items from rendering. Pair with `useScrollback` to push completed items to terminal scrollback:
 
 ```tsx
 const frozenCount = useScrollback(items, {
@@ -143,7 +143,7 @@ const frozenCount = useScrollback(items, {
 
 <VirtualList
   items={items}
-  frozen={(item) => item.complete}
+  virtualized={(item) => item.complete}
   renderItem={(item) => <Text>{item.title}</Text>}
 />
 ```
@@ -176,19 +176,19 @@ Fullscreen root component. Claims the full terminal dimensions for flexbox layou
 |---|---|---|---|
 | `flexDirection` | `string` | `"column"` | Flex direction for layout |
 
-### ScrollView
+### ScrollbackView
 
 Native scrollback root component. Items flow vertically and transition through Live → Virtualized → Static as they scroll off-screen. Uses `useScrollbackItem()` for per-item lifecycle control.
 
 ```tsx
-<ScrollView
+<ScrollbackView
   items={tasks}
   keyExtractor={(t) => t.id}
   isFrozen={(t) => t.done}
   footer={<Text>Status bar</Text>}
 >
   {(task) => <TaskItem task={task} />}
-</ScrollView>
+</ScrollbackView>
 ```
 
 | Prop | Type | Default | Description |
@@ -202,14 +202,14 @@ Native scrollback root component. Items flow vertically and transition through L
 | `maxHistory` | `number` | `10000` | Max lines in dynamic scrollback |
 | `markers` | `boolean \| object` | — | OSC 133 semantic markers |
 
-### VirtualScrollView
+### VirtualView
 
 App-managed scrolling within a Screen rectangle. Items mount/unmount based on scroll position.
 
 ```tsx
 <Screen>
   <Header />
-  <VirtualScrollView
+  <VirtualView
     items={logs}
     height={20}
     estimateHeight={3}
@@ -232,10 +232,12 @@ App-managed scrolling within a Screen rectangle. Items mount/unmount based on sc
 | `scrollPadding` | `number` | `2` | Edge padding before scrolling |
 | `overflowIndicator` | `boolean` | `false` | Show ▲N/▼N indicators |
 | `keyExtractor` | `(item, index) => string \| number` | — | Key extractor |
+| `onEndReached` | `() => void` | — | Called near end of list (infinite scroll) |
+| `onEndReachedThreshold` | `number` | `5` | Items from end to trigger callback |
 
 ### useVirtualizer
 
-Headless virtualization engine shared by ScrollView and VirtualScrollView. Count-based API inspired by TanStack Virtual.
+Headless virtualization engine shared by ScrollbackView and VirtualView. Count-based API inspired by TanStack Virtual.
 
 ```tsx
 const { range, scrollToItem, getKey } = useVirtualizer({

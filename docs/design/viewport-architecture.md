@@ -43,29 +43,29 @@ Claims the alternate screen buffer. Provides a full rectangle for flexbox layout
 
 This is what km uses today. The entire terminal is your canvas. No scrollback. Mouse events work everywhere. Text selection works normally (no mouse tracking conflicts).
 
-### `<ScrollView>` — Native Scrollback
+### `<ScrollbackView>` — Native Scrollback
 
 Uses the normal terminal buffer. Children flow vertically. As items scroll off the top of the screen, they transition through the virtualization lifecycle (Live → Virtualized → Static) and are committed to terminal scrollback.
 
 ```tsx
-<ScrollView>
+<ScrollbackView>
   {messages.map(m => <Message key={m.id} data={m} />)}
   <InputBar />
-</ScrollView>
+</ScrollbackView>
 ```
 
 The user scrolls with their terminal's native scroll (mouse wheel, scrollbar, Shift+PageUp). Text selection is free. Content becomes part of the terminal's permanent history.
 
 **Trade-offs**: No mouse events in scrollback (terminal reports screen coordinates only). Updating content already in scrollback requires rewriting everything below it (expensive). Snap-to-bottom is controlled by the terminal, not the app.
 
-### `<VirtualScrollView>` — App-Managed Scrolling
+### `<VirtualView>` — App-Managed Scrolling
 
-A scrollable area within a `<Screen>`. Items mount/unmount based on scroll position, managed entirely by the app. Shares the same `useVirtualizer()` engine as ScrollView.
+A scrollable area within a `<Screen>`. Items mount/unmount based on scroll position, managed entirely by the app. Shares the same `useVirtualizer()` engine as ScrollbackView.
 
 ```tsx
 <Screen>
   <Header />
-  <VirtualScrollView
+  <VirtualView
     items={logs}
     renderItem={(item) => <LogEntry data={item} />}
     estimateHeight={() => 3}
@@ -78,9 +78,9 @@ A scrollable area within a `<Screen>`. Items mount/unmount based on scroll posit
 
 ### Compat Wrappers
 
-**`<VirtualList>`** — Thin wrapper around `<VirtualScrollView>`. Keeps the existing API for Ink migration.
+**`<VirtualList>`** — Thin wrapper around `<VirtualView>`. Keeps the existing API for Ink migration.
 
-**`<Static>`** — Thin wrapper around `<ScrollView>` that immediately virtualizes items on mount (render-once semantics). Ink-compatible API (`items` array + render function).
+**`<Static>`** — Thin wrapper around `<ScrollbackView>` that immediately virtualizes items on mount (render-once semantics). Ink-compatible API (`items` array + render function).
 
 ## Compositions
 
@@ -89,26 +89,26 @@ A scrollable area within a `<Screen>`. Items mount/unmount based on scroll posit
 <Screen><App /></Screen>
 
 // Scrollback/inline app (chat UI, CLI tools)
-<ScrollView>
+<ScrollbackView>
   {messages.map(m => <Message key={m.id} data={m} />)}
   <InputBar />
-</ScrollView>
+</ScrollbackView>
 
 // Fullscreen + scrollable region (log viewer, dashboard)
 <Screen>
   <Sidebar />
-  <VirtualScrollView items={logs} renderItem={...} />
+  <VirtualView items={logs} renderItem={...} />
   <StatusBar />
 </Screen>
 
 // Fullscreen + native scrollback for history (hybrid)
-<ScrollView>
+<ScrollbackView>
   {history.map(h => <HistoryEntry key={h.id} data={h} />)}
   <Screen>
     <LiveContent />
     <InputBar />
   </Screen>
-</ScrollView>
+</ScrollbackView>
 ```
 
 ## Item Lifecycle
@@ -148,11 +148,11 @@ The component is mounted in the React tree, rendering normally. It participates 
 
 The component has scrolled out of the visible area into the **dynamic** section of scrollback. inkx:
 1. Renders it to a string snapshot
-2. Commits the snapshot to terminal scrollback (ScrollView) or unmounts it (VirtualScrollView)
+2. Commits the snapshot to terminal scrollback (ScrollbackView) or unmounts it (VirtualView)
 3. Removes it from the React tree
 4. Retains the item's data/props in memory
 
-The item can be re-mounted if it scrolls back into view (VirtualScrollView) or re-rendered at a new width if the terminal resizes (ScrollView — nuke-and-redraw).
+The item can be re-mounted if it scrolls back into view (VirtualView) or re-rendered at a new width if the terminal resizes (ScrollbackView — nuke-and-redraw).
 
 ### Static (Static Scrollback)
 
@@ -172,7 +172,7 @@ The framework decides when to virtualize based on visibility. Components are res
 
 ## Shared Virtualization Engine: `useVirtualizer()`
 
-Both ScrollView and VirtualScrollView share a headless hook — similar to `@tanstack/react-virtual`:
+Both ScrollbackView and VirtualView share a headless hook — similar to `@tanstack/react-virtual`:
 
 ```tsx
 const virtualizer = useVirtualizer({
@@ -191,8 +191,8 @@ The hook handles:
 - Mount/unmount decisions
 
 The only difference is the **output adapter**:
-- **ScrollView**: virtualized items are rendered to string → written to terminal scrollback → unmounted
-- **VirtualScrollView**: virtualized items are simply unmounted (remounted when scrolled back into view)
+- **ScrollbackView**: virtualized items are rendered to string → written to terminal scrollback → unmounted
+- **VirtualView**: virtualized items are simply unmounted (remounted when scrolled back into view)
 
 ## Terminal Scrollback Detection
 
@@ -208,7 +208,7 @@ No standard ANSI escape sequence exists to query a terminal's scrollback limit. 
 | xterm | 1,024 lines |
 
 ```tsx
-<ScrollView maxHistory={5000}>  {/* override heuristic */}
+<ScrollbackView maxHistory={5000}>  {/* override heuristic */}
 ```
 
 A separate `terminal-caps` utility package (P4) could read actual terminal configs for precise detection. For now, the heuristic + prop override is sufficient.
@@ -233,11 +233,11 @@ When the terminal resizes (especially width changes), content in scrollback is a
 
 We choose (2) for correctness. `CSI 3J` is supported by all modern terminals (xterm, Ghostty, Kitty, WezTerm, iTerm2, GNOME Terminal). The cost is proportional to the number of retained (virtualized) items, but resizes are infrequent.
 
-For ScrollView with a `maxHistory` of 5,000 lines, a resize reprints at most 5,000 lines — fast enough to be imperceptible.
+For ScrollbackView with a `maxHistory` of 5,000 lines, a resize reprints at most 5,000 lines — fast enough to be imperceptible.
 
 ## Trade-off Matrix
 
-| | ScrollView (native) | VirtualScrollView (app-managed) |
+| | ScrollbackView (native) | VirtualView (app-managed) |
 |---|---|---|
 | Text selection | Free (terminal handles) | Shift+drag only (mouse tracking) |
 | Scroll mechanism | Terminal (mouse wheel, scrollbar) | App (keyboard, mouse wheel events) |
@@ -251,7 +251,7 @@ For ScrollView with a `maxHistory` of 5,000 lines, a resize reprints at most 5,0
 
 ## DECSTBM Integration
 
-ScrollView uses DECSTBM (scroll regions) to pin a footer/status bar at the bottom of the screen while content scrolls above it.
+ScrollbackView uses DECSTBM (scroll regions) to pin a footer/status bar at the bottom of the screen while content scrolls above it.
 
 **Critical detail**: Lines scrolled out of a DECSTBM region are NOT saved to terminal scrollback by default. The framework must explicitly write frozen content to stdout (outside the scroll region) before the region scroll occurs. The `useScrollback` hook handles this.
 

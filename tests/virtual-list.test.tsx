@@ -332,7 +332,7 @@ describe("VirtualList", () => {
     expect(app.text).not.toContain("Item 19")
   })
 
-  test("frozen prop excludes contiguous prefix from render", () => {
+  test("virtualized prop excludes contiguous prefix from render", () => {
     const items = Array.from({ length: 10 }, (_, i) => `Item ${i}`)
 
     const app = render(
@@ -341,12 +341,12 @@ describe("VirtualList", () => {
         height={10}
         itemHeight={1}
         scrollTo={3}
-        frozen={(_item, index) => index < 3}
+        virtualized={(_item, index) => index < 3}
         renderItem={(item, index) => <Text key={index}>{item}</Text>}
       />,
     )
 
-    // Frozen prefix (0,1,2) should NOT be rendered
+    // Virtualized prefix (0,1,2) should NOT be rendered
     expect(app.text).not.toContain("Item 0")
     expect(app.text).not.toContain("Item 1")
     expect(app.text).not.toContain("Item 2")
@@ -355,7 +355,7 @@ describe("VirtualList", () => {
     expect(app.text).toContain("Item 4")
   })
 
-  test("frozen items adjust scrollTo index", () => {
+  test("virtualized items adjust scrollTo index", () => {
     const items = Array.from({ length: 30 }, (_, i) => `Item ${i}`)
 
     const app = render(
@@ -364,15 +364,15 @@ describe("VirtualList", () => {
         height={5}
         itemHeight={1}
         scrollTo={15}
-        frozen={(_item, index) => index < 10}
+        virtualized={(_item, index) => index < 10}
         renderItem={(item, index) => <Text key={index}>{item}</Text>}
       />,
     )
 
-    // scrollTo=15 with 10 frozen means adjusted scrollTo=5 in the active items
+    // scrollTo=15 with 10 virtualized means adjusted scrollTo=5 in the active items
     // Should still show Item 15 (the target)
     expect(app.text).toContain("Item 15")
-    // Frozen items should not be visible
+    // Virtualized items should not be visible
     expect(app.text).not.toContain("Item 0")
     expect(app.text).not.toContain("Item 9")
   })
