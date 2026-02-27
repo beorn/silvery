@@ -1021,6 +1021,11 @@ function CodingAgent({
     if (streamPhase !== "done") return // Still streaming
 
     if (scriptIdx >= script.length) {
+      // Final compaction: freeze everything before showing "done"
+      if (!compactingRef.current && exchanges.some((ex) => !ex.frozen)) {
+        compact()
+        return
+      }
       setDone(true)
       return
     }
@@ -1256,6 +1261,9 @@ async function main() {
     mode: mode as "inline" | "fullscreen",
   })
   await handle.waitUntilExit()
+  // Clear scrollback buffer after exit — the frozen items served their demo
+  // purpose; clean up so the user's terminal isn't cluttered with demo output.
+  process.stdout.write("\x1b[3J\x1b[2J\x1b[H")
   process.exit(0) // Workaround for km-inkx.event-loop-hang
 }
 

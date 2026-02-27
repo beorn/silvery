@@ -67,11 +67,6 @@ let accumulateHeight = 0
 let accumulateFrameCount = 0
 
 // Track actual visible output lines between inline frames.
-// Used to prevent scroll jumps when content first overflows the terminal:
-// instead of jumping from N to termRows output lines in one frame (causing
-// terminal scrolling), we grow by at most 1 line per frame for smooth behavior.
-// -1 = no previous frame (reset on first render or app restart).
-let _prevInlineOutputLines = -1
 
 /**
  * Wrap a cell character in OSC 66 if it is a PUA character and text sizing
@@ -369,16 +364,6 @@ export function outputPhase(
     // Content taller than the terminal would push lines into scrollback where they
     // can never be overwritten on re-render (cursor-up is clamped at terminal row 0).
     const firstOutput = bufferToAnsi(next, mode, mode === "inline" ? termRows : undefined)
-    if (mode === "inline") {
-      // Track actual output lines for gradual growth (prevents scroll jump on overflow).
-      // Only track when termRows caps output — without it, buffer lines = output lines.
-      if (termRows != null) {
-        const maxLine = findLastContentLine(next)
-        _prevInlineOutputLines = Math.min(maxLine + 1, termRows)
-      } else {
-        _prevInlineOutputLines = -1
-      }
-    }
     if (isStrictAccumulate()) {
       accumulatedAnsi = firstOutput
       accumulateWidth = next.width
@@ -503,36 +488,25 @@ function inlineFullRender(
   scrollbackOffset: number,
   termRows?: number,
 ): string {
-  const rawNextLine = findLastContentLine(next)
-  const nextContentLines = rawNextLine + 1
-
-  // Use tracked output lines for cursor math when termRows caps output.
-  // Without termRows, buffer content lines = actual output lines (no capping).
-  // With termRows, the buffer may have more content than we actually output,
-  // so buffer-derived prevContentLine would overshoot the cursor-up.
-  // Disabled under STRICT_OUTPUT: gradual growth tracking is cosmetic, not correctness.
+  const nextContentLines = findLastContentLine(next) + 1
   const prevContentLines = findLastContentLine(prev) + 1
-  const prevOutputLines =
-    termRows != null && _prevInlineOutputLines > 0 && !isStrictOutput()
-      ? _prevInlineOutputLines
-      : prevContentLines
-  const prevLastLine = prevOutputLines - 1
+
+  // Previous frame may have capped output at termRows.
+  // Use actual output lines for cursor offset, not buffer content lines.
+  const prevOutputLines = termRows != null ? Math.min(prevContentLines, termRows) : prevContentLines
 
   // How far the cursor is below the start of the render region:
-  // previous output lines + any lines written to stdout between renders.
+  // previous OUTPUT lines + any lines written to stdout between renders.
   // Cap to termRows-1: terminal clamps cursor-up at row 0.
-  // Disabled under STRICT_OUTPUT: the virtual terminal replay doesn't have real terminal constraints.
-  const rawCursorOffset = prevLastLine + scrollbackOffset
+  const rawCursorOffset = prevOutputLines - 1 + scrollbackOffset
   const cursorOffset =
     termRows != null && !isStrictOutput() ? Math.min(rawCursorOffset, termRows - 1) : rawCursorOffset
 
-  // Limit output to prevent scroll jumps. We can output at most
-  // cursorOffset + 1 lines without scrolling (worst case: cursor at terminal
-  // bottom). Allow growing by 1 line per frame for smooth overflow transition.
-  // At 30fps, growing from 20→24 lines takes ~130ms — imperceptible.
-  // Disabled under STRICT_OUTPUT: gradual growth is cosmetic, not correctness.
-  const maxOutputLines = termRows != null && !isStrictOutput()
-    ? Math.min(nextContentLines, termRows, cursorOffset + 2)
+  // Cap output at terminal height to prevent scrollback corruption.
+  // Content taller than the terminal pushes lines into scrollback where
+  // they can never be overwritten (cursor-up is clamped at terminal row 0).
+  const maxOutputLines = termRows != null
+    ? Math.min(nextContentLines, termRows)
     : nextContentLines
 
   // Quick check: if nothing changed and no scrollback displacement, skip
@@ -549,14 +523,9 @@ function inlineFullRender(
 
   // bufferToAnsi handles: hide cursor, render content lines with
   // \x1b[K (clear to EOL) on each line, and reset style at end.
-  // Pass maxOutputLines to show the bottom N lines of content.
   let output = prefix + bufferToAnsi(next, "inline", maxOutputLines)
 
-  // Track actual output for next frame's cursor math (only when capping is active)
-  _prevInlineOutputLines = termRows != null ? maxOutputLines : -1
-
   // Erase leftover lines if visible area shrank.
-  // Use tracked output lines (not buffer lines) for the occupied area.
   const lastOccupiedLine = cursorOffset
   const nextLastLine = maxOutputLines - 1
   if (lastOccupiedLine > nextLastLine) {
@@ -584,9 +553,8 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
   let currentHyperlink: string | undefined
 
   // For inline mode, only render up to the last line with content.
-  // When content exceeds terminal height (maxRows), show the BOTTOM of the
-  // buffer (latest content) instead of the top. This provides natural
-  // scroll-as-needed behavior: the most recent output stays visible.
+  // When content exceeds terminal height (maxRows), show the bottom of the
+  // buffer so the footer and latest content stay visible.
   let maxLine = mode === "inline" ? findLastContentLine(buffer) : buffer.height - 1
   let startLine = 0
   if (maxRows != null && maxLine >= maxRows) {
