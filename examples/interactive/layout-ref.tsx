@@ -107,7 +107,7 @@ export function LayoutRefApp(): JSX.Element {
   const [layouts, setLayouts] = useState<Record<string, LayoutInfo>>({})
 
   useInput((input: string, key: Key) => {
-    if (key.escape) {
+    if (input === "q" || key.escape) {
       exit()
     }
   })
@@ -156,7 +156,7 @@ export function LayoutRefApp(): JSX.Element {
         </Text>{" "}
         inspect{" "}
         <Text bold dim>
-          Esc
+          Esc/q
         </Text>{" "}
         quit
       </Text>
@@ -171,7 +171,7 @@ export function LayoutRefApp(): JSX.Element {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="i inspect  Esc quit">
+    <ExampleBanner meta={meta} controls="i inspect  Esc/q quit">
       <LayoutRefApp />
     </ExampleBanner>,
     term,

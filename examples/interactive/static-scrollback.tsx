@@ -50,6 +50,7 @@ import {
   createTerm,
   type Key,
 } from "../../src/index.js"
+import { appendFileSync } from "node:fs"
 import type { ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -871,7 +872,7 @@ function StatusBar({
 // ============================================================================
 
 /** How many live turns to keep in the dynamic area before freezing to scrollback. */
-const MAX_LIVE_TURNS = 4
+const MAX_LIVE_TURNS = 6
 
 /** Streaming phases: thinking -> streaming text -> tool calls -> done */
 type StreamPhase = "thinking" | "streaming" | "tools" | "done"
@@ -1018,32 +1019,17 @@ function CodingAgent({
 
     const entry = script[scriptIdx]!
 
-    // System messages (compaction) — freeze everything
+    // System messages trigger compaction
     if (entry.role === "system") {
-      setCompacting(true)
-      setExchanges((prev) => prev.map((ex) => ({ ...ex, frozen: true })))
-      const id = nextIdRef.current++
-      const newExchange: Exchange = { ...entry, id, frozen: false }
-      setExchanges((prev) => [...prev, newExchange])
       setScriptIdx((i) => i + 1)
-      setStreamPhase("done")
-      setRevealFraction(1)
-
-      setTimeout(
-        () => {
-          setExchanges((prev) => prev.map((ex) => ({ ...ex, frozen: true })))
-          setCompacting(false)
-          setPendingAdvance(true)
-        },
-        fastMode ? 300 : 3000,
-      )
+      compact()
       return
     }
 
     const id = nextIdRef.current++
     setScriptIdx((i) => i + 1)
     startStreaming(entry, id)
-  }, [scriptIdx, done, streamPhase, script, startStreaming, setCompacting, fastMode])
+  }, [scriptIdx, done, streamPhase, script, startStreaming, compact, fastMode])
 
   /** Skip current streaming — jump to done. */
   const skipStreaming = useCallback(() => {
@@ -1095,6 +1081,13 @@ function CodingAgent({
     }
   }, [autoMode, done, compacting, streamPhase, scriptIdx, advance])
 
+  // Auto-exit when done in auto mode
+  useEffect(() => {
+    if (!autoMode || !done) return
+    const timer = setTimeout(exit, 1000)
+    return () => clearTimeout(timer)
+  }, [autoMode, done, exit])
+
   // Auto-compact on terminal resize
   useEffect(() => {
     const onResize = () => {
@@ -1145,96 +1138,93 @@ function CodingAgent({
   const frozenCount = exchanges.filter((ex) => ex.frozen).length
 
   return (
-    <ScrollbackList
-      items={exchanges}
-      keyExtractor={(ex) => ex.id}
-      isFrozen={(ex) => ex.frozen}
-      markers={true}
-      footer={
-        <StatusBar exchanges={exchanges} autoMode={autoMode} compacting={compacting} done={done} elapsed={elapsed} />
-      }
-      footerHeight={1}
-    >
-      {(exchange, index) => {
-        const isLatest = index === exchanges.length - 1
+    <Box flexDirection="column">
+      {/* Header — always visible, renders on frame 1 */}
+      <Box flexDirection="column" paddingX={1}>
+        <Text bold>Static Scrollback</Text>
+        {frozenCount > 0 ? (
+          <Text color="$muted" dim>
+            {"\u2191"} {frozenCount} in scrollback (Cmd+{"\u2191"}/{"\u2193"} to navigate)
+          </Text>
+        ) : (
+          <>
+            <Text> </Text>
+            <Text>Coding agent simulation showcasing ScrollbackList:</Text>
+            <Text> {"\u2022"} ScrollbackList — declarative list with automatic scrollback</Text>
+            <Text> {"\u2022"} useScrollbackItem() — imperative freeze() from within items</Text>
+            <Text> {"\u2022"} isFrozen prop — data-driven freezing for completed items</Text>
+            <Text> {"\u2022"} OSC 8 hyperlinks — clickable file paths and URLs</Text>
+            <Text>
+              {" "}
+              {"\u2022"} OSC 133 markers — Cmd+{"\u2191"}/{"\u2193"} to jump between exchanges
+            </Text>
+            <Text> {"\u2022"} $token theme colors — semantic color tokens</Text>
+          </>
+        )}
+      </Box>
 
-        // Header — shown as a pseudo-item before exchanges
-        // (We handle this by checking if we should show info above the exchange)
+      <ScrollbackList
+        items={exchanges}
+        keyExtractor={(ex) => ex.id}
+        isFrozen={(ex) => ex.frozen}
+        markers={true}
+        footer={
+          <StatusBar exchanges={exchanges} autoMode={autoMode} compacting={compacting} done={done} elapsed={elapsed} />
+        }
+        footerHeight={1}
+      >
+        {(exchange, index) => {
+          const isLatest = index === exchanges.length - 1
 
-        return (
-          <Box flexDirection="column">
-            {/* Show header info above first live exchange */}
-            {index === 0 && (
-              <Box flexDirection="column" paddingX={1}>
-                <Text bold>Static Scrollback</Text>
-                {frozenCount > 0 ? (
+          return (
+            <Box flexDirection="column">
+              {/* Compaction overlay */}
+              {compacting && isLatest && (
+                <Box borderStyle="round" borderColor="$warning" paddingX={1}>
+                  <Text color="$warning">
+                    <Spinner type="arc" /> Compacting context... freezing all turns to scrollback.
+                  </Text>
+                </Box>
+              )}
+
+              {/* Done message */}
+              {done && isLatest && (
+                <Box flexDirection="column" borderStyle="round" borderColor="$success" paddingX={1}>
+                  <Text color="$success" bold>
+                    {"\u2713"} Session complete
+                  </Text>
+                  <Text color="$muted">
+                    Scroll up to review — colors, borders, and hyperlinks preserved in scrollback.
+                  </Text>
                   <Text color="$muted" dim>
-                    {"\u2191"} {frozenCount} in scrollback (Cmd+{"\u2191"}/{"\u2193"} to navigate)
-                  </Text>
-                ) : (
-                  <>
-                    <Text> </Text>
-                    <Text>Coding agent simulation showcasing ScrollbackList:</Text>
-                    <Text> {"\u2022"} ScrollbackList \u2014 declarative list with automatic scrollback</Text>
-                    <Text> {"\u2022"} useScrollbackItem() \u2014 imperative freeze() from within items</Text>
-                    <Text> {"\u2022"} isFrozen prop \u2014 data-driven freezing for completed items</Text>
-                    <Text> {"\u2022"} OSC 8 hyperlinks \u2014 clickable file paths and URLs</Text>
-                    <Text>
-                      {" "}
-                      {"\u2022"} OSC 133 markers \u2014 Cmd+{"\u2191"}/{"\u2193"} to jump between exchanges
+                    Try{" "}
+                    <Text bold color="$primary">
+                      Cmd+{"\u2191"}
                     </Text>
-                    <Text> {"\u2022"} $token theme colors \u2014 semantic color tokens</Text>
-                  </>
-                )}
-              </Box>
-            )}
-
-            {/* Compaction overlay */}
-            {compacting && isLatest && (
-              <Box borderStyle="round" borderColor="$warning" paddingX={1}>
-                <Text color="$warning">
-                  <Spinner type="arc" /> Compacting context... freezing all turns to scrollback.
-                </Text>
-              </Box>
-            )}
-
-            {/* Done message */}
-            {done && isLatest && (
-              <Box flexDirection="column" borderStyle="round" borderColor="$success" paddingX={1}>
-                <Text color="$success" bold>
-                  {"\u2713"} Session complete
-                </Text>
-                <Text color="$muted">
-                  Scroll up to review \u2014 colors, borders, and hyperlinks preserved in scrollback.
-                </Text>
-                <Text color="$muted" dim>
-                  Try{" "}
-                  <Text bold color="$primary">
-                    Cmd+{"\u2191"}
+                    /
+                    <Text bold color="$primary">
+                      Cmd+{"\u2193"}
+                    </Text>{" "}
+                    to jump between exchanges.
                   </Text>
-                  /
-                  <Text bold color="$primary">
-                    Cmd+{"\u2193"}
-                  </Text>{" "}
-                  to jump between exchanges.
-                </Text>
-              </Box>
-            )}
+                </Box>
+              )}
 
-            {/* The exchange itself */}
-            {!compacting && (
-              <ExchangeItem
-                exchange={exchange}
-                streamPhase={streamPhase}
-                revealFraction={revealFraction}
-                pulse={pulse}
-                isLatest={isLatest}
-              />
-            )}
-          </Box>
-        )
-      }}
-    </ScrollbackList>
+              {/* The exchange itself */}
+              {!compacting && (
+                <ExchangeItem
+                  exchange={exchange}
+                  streamPhase={streamPhase}
+                  revealFraction={revealFraction}
+                  pulse={pulse}
+                  isLatest={isLatest}
+                />
+              )}
+            </Box>
+          )
+        }}
+      </ScrollbackList>
+    </Box>
   )
 }
 
@@ -1249,6 +1239,16 @@ async function main() {
   const isFast = args.includes("--fast")
 
   const script = isStress ? generateStressScript() : SCRIPT
+
+  // Redirect all console output to a log file so it doesn't interfere with inline mode.
+  const logFile = "/tmp/inkx-demo.log"
+  for (const method of ["log", "warn", "error", "debug", "info"] as const) {
+    console[method] = (...args: unknown[]) => {
+      try {
+        appendFileSync(logFile, `[${method}] ${args.map(String).join(" ")}\n`)
+      } catch {}
+    }
+  }
 
   using term = createTerm()
   using app = await render(<CodingAgent script={script} autoStart={isAuto} fastMode={isFast} />, term, {

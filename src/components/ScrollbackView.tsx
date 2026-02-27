@@ -81,11 +81,6 @@ export interface ScrollbackViewProps<T> {
 // Helpers
 // ============================================================================
 
-/** Get terminal rows, falling back to 24 for non-TTY environments. */
-function getTermRows(): number {
-  return process.stdout.rows ?? 24
-}
-
 /** Get terminal columns, falling back to 80 for non-TTY environments. */
 function getTermCols(): number {
   return process.stdout.columns ?? 80
@@ -121,17 +116,6 @@ export function ScrollbackView<T>({
   onRecovery,
 }: ScrollbackViewProps<T>): ReactElement {
   const effectiveWidth = width ?? getTermCols()
-
-  // Track terminal height for pinning footer at bottom
-  const [termRows, setTermRows] = useState(getTermRows)
-
-  useEffect(() => {
-    const onResize = () => setTermRows(getTermRows())
-    process.stdout.on("resize", onResize)
-    return () => {
-      process.stdout.off("resize", onResize)
-    }
-  }, [])
 
   // Set of item keys that have been marked as frozen via freeze()
   const [frozenKeys, setFrozenKeys] = useState<Set<string | number>>(() => new Set())
@@ -239,9 +223,9 @@ export function ScrollbackView<T>({
 
   // Render live items with ScrollbackItemProvider wrappers
   return (
-    <inkx-box flexDirection="column" height={termRows}>
+    <inkx-box flexDirection="column">
       {/* Content area: live (unfrozen) items */}
-      <inkx-box flexDirection="column" flexGrow={1} overflow="hidden">
+      <inkx-box flexDirection="column">
         {liveItems.map(({ item, index, key }) => (
           <ScrollbackItemProvider
             key={key}

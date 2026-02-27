@@ -24,7 +24,7 @@ export function NoteEditor(): JSX.Element {
   const [notes, setNotes] = useState<string[]>([])
   const [value, setValue] = useState("")
 
-  useInput((_input: string, key: Key) => {
+  useInput((input: string, key: Key) => {
     if (key.escape) {
       exit()
     }

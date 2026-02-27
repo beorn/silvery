@@ -19,7 +19,7 @@
 
 1. **Show, don't tell.** A showcase should demonstrate inkx features through working UI, not walls of text. Intro text is fine — but collapse it once the demo starts.
 
-2. **Fill the terminal.** For apps using `useScrollback`, set `height={termRows}` on the root Box with `flexGrow={1}` on the content area. This pins the status bar to the bottom and ensures scrollback writes cause real terminal scrolling (see [Scrollback Pattern](#scrollback-pattern) below).
+2. **Auto-size to content.** `ScrollbackView`/`ScrollbackList` auto-size to their content — no manual height management. The output phase caps output at terminal height independently. Content that exceeds terminal height causes natural terminal scrolling.
 
 3. **Single status bar.** Keep the status bar to one line. Include: context bar, elapsed time, cost, and key hints. Remove anything that doesn't help the user interact.
 
@@ -33,57 +33,28 @@
 
 ### Scrollback Pattern
 
-The recommended pattern for apps that freeze items to terminal scrollback:
+Use `ScrollbackList` (or `ScrollbackView`) — they handle terminal height, footer pinning, and overflow automatically:
 
 ```tsx
 function App() {
-  // Track terminal height (updates on resize)
-  const [termRows, setTermRows] = useState(process.stdout.rows ?? 40)
-  useEffect(() => {
-    const onResize = () => setTermRows(process.stdout.rows ?? 40)
-    process.stdout.on("resize", onResize)
-    return () => {
-      process.stdout.off("resize", onResize)
-    }
-  }, [])
-
-  const frozenCount = useScrollback(items, {
-    frozen: (item) => item.frozen,
-    render: (item) => renderStringSync(<ItemView item={item} />, { width: cols }),
-    markers: true, // OSC 133 for Cmd+Up/Down navigation
-  })
-
   return (
-    <Box flexDirection="column" height={termRows}>
-      {/* Header — fixed height */}
-      <Header frozenCount={frozenCount} />
-
-      {/* Content — fills available space */}
-      <Box flexDirection="column" flexGrow={1} gap={1} overflow="hidden">
-        {activeItems.map((item) => (
-          <ItemView key={item.id} item={item} />
-        ))}
-      </Box>
-
-      {/* Status bar — pinned to bottom */}
-      <StatusBar />
-    </Box>
+    <ScrollbackList
+      items={items}
+      keyExtractor={(item) => item.id}
+      isFrozen={(item) => item.done}
+      markers={true}
+      footer={<StatusBar />}
+      footerHeight={1}
+    >
+      {(item) => <ItemView item={item} />}
+    </ScrollbackList>
   )
 }
 
 await render(<App />, term, { mode: "inline" })
 ```
 
-**Why `height={termRows}`?** In inline mode, inkx auto-sizes to content. Without a fixed height, the dynamic area may not fill the terminal. When `useScrollback` writes frozen content to stdout, the terminal only scrolls if the cursor is at the bottom row. If the dynamic area is shorter than the terminal, scrollback text stays visible on screen and gets erased on the next render — losing the scrollback content.
-
-Setting `height={termRows}` ensures:
-
-- The cursor is always at the terminal bottom after each render
-- Scrollback writes cause real terminal scrolling
-- Frozen content persists in the terminal's scrollback buffer
-- The status bar is pinned to the bottom
-
-**Why `overflow="hidden"` on the content area?** Prevents content from overflowing past the status bar when exchanges are tall. Combined with `flexGrow={1}`, the content area fills all available space between the header and status bar.
+`ScrollbackView` auto-sizes to its content — no manual height management. The output phase independently caps output at terminal height (via `inlineFullRender()`), so content that exceeds the terminal causes natural scrolling. The footer stays pinned at the bottom of the content.
 
 ### Theme Tokens
 

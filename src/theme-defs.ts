@@ -186,7 +186,7 @@ export const defaultDarkTheme: Theme = {
   text4: "#545E72",
 
   bg: "#2E3440",
-  raisedbg: "#3B4252",
+  raisedbg: "#303642",
   separator: "#4C566A",
 
   error: "#BF616A",

@@ -225,7 +225,7 @@ export function SearchApp(): JSX.Element {
         </Text>{" "}
         to search{" "}
         <Text bold dim>
-          Esc
+          Esc/q
         </Text>{" "}
         quit
       </Text>

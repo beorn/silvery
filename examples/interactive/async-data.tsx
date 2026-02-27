@@ -140,7 +140,7 @@ export function AsyncDataApp(): JSX.Element {
   const [refreshKey, setRefreshKey] = useState(0)
 
   useInput((input: string, key: Key) => {
-    if (key.escape) {
+    if (input === "q" || key.escape) {
       exit()
       return
     }
@@ -181,7 +181,7 @@ export function AsyncDataApp(): JSX.Element {
         </Text>{" "}
         refresh{" "}
         <Text bold dim>
-          Esc
+          Esc/q
         </Text>{" "}
         quit
       </Text>
@@ -196,7 +196,7 @@ export function AsyncDataApp(): JSX.Element {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="r refresh  Esc quit">
+    <ExampleBanner meta={meta} controls="r refresh  Esc/q quit">
       <AsyncDataApp />
     </ExampleBanner>,
     term,
