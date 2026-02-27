@@ -517,7 +517,7 @@ describe("generateTheme", () => {
     expect(theme.text3).toBe("gray")
     expect(theme.text4).toBe("gray")
     expect(theme.bg).toBe("")
-    expect(theme.raisedbg).toBe("blackBright")
+    expect(theme.raisedbg).toBe("black")
     expect(theme.separator).toBe("gray")
     expect(theme.error).toBe("redBright")
     expect(theme.warning).toBe("yellow") // same as primary

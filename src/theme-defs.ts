@@ -128,7 +128,7 @@ export const ansi16DarkTheme: Theme = {
   text4: "gray",
 
   bg: "",
-  raisedbg: "blackBright",
+  raisedbg: "black",
   separator: "gray",
 
   error: "redBright",
@@ -380,7 +380,7 @@ export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
     text4: "gray",
 
     bg: "",
-    raisedbg: dark ? "blackBright" : "white",
+    raisedbg: dark ? "black" : "white",
     separator: "gray",
 
     error: dark ? "redBright" : "red",
