@@ -79,13 +79,6 @@ export function useInput(inputHandler: InputHandler, options: UseInputOptions = 
   const stdinContext = useContext(StdinContext)
   const inputContext = useContext(InputContext)
 
-  if (!inputContext) {
-    throw new Error(
-      "useInput: no InputContext found. useInput requires a runtime (run(), render(), or createApp()). " +
-        "If rendering statically, don't call useInput.",
-    )
-  }
-
   const { isActive = true, onPaste } = options
 
   // Stable ref for the handler — avoids tearing down/recreating the event
@@ -113,7 +106,7 @@ export function useInput(inputHandler: InputHandler, options: UseInputOptions = 
 
   // Listen for input events via InputContext
   useEffect(() => {
-    if (!isActive) {
+    if (!isActive || !inputContext) {
       return
     }
 
