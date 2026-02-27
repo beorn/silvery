@@ -283,15 +283,6 @@ import { TextInput } from "inkx"
 />
 ```
 
-## ReadlineInput
-
-Text input with full readline shortcuts (Ctrl+A/E start/end, Ctrl+W delete word, Ctrl+K kill to end, Ctrl+Y yank):
-
-```tsx
-import { ReadlineInput } from "inkx"
-;<ReadlineInput value={command} onChange={setCommand} onSubmit={executeCommand} prompt="$ " />
-```
-
 ## TextArea
 
 Multi-line text input with word wrapping, scrolling, and cursor movement.

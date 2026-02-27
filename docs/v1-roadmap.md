@@ -25,7 +25,7 @@ Every box must be checked before tagging 1.0.
 
 These APIs are the 1.0 stability contract. After 1.0, changes to these require a major version bump:
 
-- [x] **Components**: Box, Text, VirtualList, Static, Console, TextInput, ReadlineInput, TextArea, Link, Transform, Image, Spinner, ProgressBar, SelectList, Table, Badge, Divider, Newline, Spacer
+- [x] **Components**: Box, Text, VirtualList, Static, Console, TextInput, TextArea, Link, Transform, Image, Spinner, ProgressBar, SelectList, Table, Badge, Divider, Newline, Spacer
 - [x] **Hooks**: useContentRect, useScreenRect, useInput, useApp, useTerm, useFocusable, useFocusWithin, usePaste, useAnimation, useAnimatedTransition, useInterval
 - [x] **Runtime**: `run()`, `createApp()`, `createRuntime()`
 - [x] **Store**: `createStore()`, `inkxUpdate`, `defaultInit`, `withFocusManagement`

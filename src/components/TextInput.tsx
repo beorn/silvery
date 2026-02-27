@@ -68,9 +68,6 @@ export interface TextInputProps {
   mask?: string
   /** Test ID for focus system identification */
   testID?: string
-  /** Use the real terminal cursor instead of inverse-text fake cursor.
-   *  Useful in inline mode where the terminal has one visible cursor. */
-  realCursor?: boolean
 }
 
 export interface TextInputHandle {
@@ -105,7 +102,6 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     underlineWidth = 40,
     mask,
     testID,
-    realCursor = false,
   },
   ref,
 ) {
@@ -161,10 +157,9 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   const displayAfterCursor = displayValue.slice(cursor + 1)
   const showPlaceholder = !value && placeholder
 
-  // Position the real terminal cursor when realCursor is enabled.
-  // The cursor column accounts for the prompt prefix and text before cursor.
-  const useFakeCursor = !realCursor
-  const cursorEl = !(isActive && useFakeCursor)
+  // When active: real terminal cursor at cursor position, plain text rendering.
+  // When inactive: fake cursor (inverse/underline) for visual feedback.
+  const cursorEl = isActive
     ? <Text>{displayAtCursor}</Text>
     : cursorStyle === "underline"
       ? <Text underline>{displayAtCursor}</Text>
@@ -172,7 +167,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   useCursor({
     col: prompt.length + displayBeforeCursor.length,
     row: 0,
-    visible: realCursor && isActive,
+    visible: isActive,
   })
 
   return (
@@ -188,7 +183,6 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
             <Text>{displayAfterCursor}</Text>
           </>
         )}
-        {showPlaceholder && isActive && useFakeCursor && (cursorStyle === "block" ? <Text inverse> </Text> : <Text underline> </Text>)}
       </Text>
       {showUnderline && <Text dimColor>{"─".repeat(underlineWidth)}</Text>}
     </Box>

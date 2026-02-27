@@ -29,7 +29,15 @@ import process from "node:process"
 import { createContext, useContext, useEffect, type ReactElement } from "react"
 
 import { createTerm } from "chalkx"
-import { AppContext, FocusManagerContext, StdoutContext, TermContext } from "../context.js"
+import { EventEmitter } from "node:events"
+import {
+  AppContext,
+  EventsContext,
+  FocusManagerContext,
+  InputContext as SharedInputContext,
+  StdoutContext,
+  TermContext,
+} from "../context.js"
 import { createFocusManager, type FocusManager } from "../focus-manager.js"
 import { createFocusEvent, createKeyEvent, dispatchFocusEvent, dispatchKeyEvent } from "../focus-events.js"
 import { findByTestID } from "../focus-queries.js"
@@ -597,13 +605,24 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     controller.abort()
   }
 
-  // Input context value
+  // Input context value (run() runtime's own subscription system)
   const inputContextValue: InputContextValue = {
     subscribe(handler: InputHandler) {
       inputHandlers.add(handler)
       return () => inputHandlers.delete(handler)
     },
   }
+
+  // Shared input context — bridges run()'s input system to hooks/useInput.ts.
+  // Components like TextInput/TextArea use the hooks version of useInput which
+  // subscribes to this eventEmitter. Without this bridge, those components are
+  // silently disabled in run() apps.
+  const sharedInputEmitter = new EventEmitter()
+  const sharedInputContextValue = { eventEmitter: sharedInputEmitter, exitOnCtrlC: false }
+
+  // Dummy non-null sentinel so hooks/useInput.ts doesn't enter "static mode".
+  // The actual value is never iterated — hooks useInput only checks !== null.
+  const dummyEvents: AsyncIterable<never> = { [Symbol.asyncIterator]: () => ({ next: () => new Promise(() => {}) }) }
 
   // Paste context value
   const pasteContextValue: PasteContextValue = {
@@ -658,7 +677,13 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
           <FocusManagerContext.Provider value={focusManager}>
             <RuntimeContext.Provider value={runtimeContextValue}>
               <PasteContext.Provider value={pasteContextValue}>
-                <InputContext.Provider value={inputContextValue}>{element}</InputContext.Provider>
+                <InputContext.Provider value={inputContextValue}>
+                  <EventsContext.Provider value={dummyEvents}>
+                    <SharedInputContext.Provider value={sharedInputContextValue}>
+                      {element}
+                    </SharedInputContext.Provider>
+                  </EventsContext.Provider>
+                </InputContext.Provider>
               </PasteContext.Provider>
             </RuntimeContext.Provider>
           </FocusManagerContext.Provider>
@@ -723,7 +748,13 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
   function processEvent(event: Event & { parsedKey?: Key; input?: string }): boolean {
     // Handle key events with parsed key
     if (event.type === "key" && "parsedKey" in event) {
-      const { input, parsedKey } = event as { input: string; parsedKey: Key }
+      const { input, parsedKey } = event as { input: string; parsedKey: Key; key?: string }
+
+      // Bridge to hooks/useInput.ts: emit raw key data so components using
+      // the hooks version of useInput (TextInput, TextArea) receive input.
+      if ("key" in event) {
+        sharedInputEmitter.emit("input", (event as { key: string }).key)
+      }
 
       // Focus system: dispatch key event to focused node first
       let focusHandled = false
@@ -787,6 +818,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     // Handle paste events
     if (event.type === "paste") {
       const { content } = event as { content: string }
+      sharedInputEmitter.emit("paste", content)
       for (const handler of pasteHandlers) {
         handler(content)
       }

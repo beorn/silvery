@@ -1,8 +1,8 @@
 /**
  * useReadline Hook
  *
- * This hook lives in components/ because it's tightly coupled to ReadlineInput.
- * It manages readline state (cursor position, history, kill ring) that ReadlineInput renders.
+ * This hook lives in components/ because it's tightly coupled to TextInput.
+ * It manages readline state (cursor position, history, kill ring) that TextInput renders.
  *
  * Full readline-style line editing for terminal text input.
  * Supports cursor movement, word operations, kill ring, and all standard shortcuts.
@@ -29,6 +29,7 @@
  */
 import { useCallback, useRef, useState } from "react"
 import { useInput } from "../hooks/index.js"
+import { killRing, addToKillRing, handleReadlineKey, type YankState } from "../hooks/readline-ops.js"
 
 // =============================================================================
 // Types
@@ -80,46 +81,6 @@ export interface UseReadlineResult {
 }
 
 // =============================================================================
-// Kill Ring
-// =============================================================================
-
-/** Global kill ring shared across all readline instances */
-const killRing: string[] = []
-const MAX_KILL_RING_SIZE = 10
-
-function addToKillRing(text: string): void {
-  if (!text) return
-  killRing.unshift(text)
-  if (killRing.length > MAX_KILL_RING_SIZE) {
-    killRing.pop()
-  }
-}
-
-// =============================================================================
-// Word Boundary Helpers
-// =============================================================================
-
-/** Find the start of the previous word (for Alt+B, Ctrl+W) */
-function findPrevWordStart(value: string, cursor: number): number {
-  let pos = cursor
-  // Skip any spaces before cursor
-  while (pos > 0 && /\s/.test(value[pos - 1] ?? "")) pos--
-  // Skip non-space characters (the word itself)
-  while (pos > 0 && !/\s/.test(value[pos - 1] ?? "")) pos--
-  return pos
-}
-
-/** Find the end of the next word (for Alt+F, Alt+D) */
-function findNextWordEnd(value: string, cursor: number): number {
-  let pos = cursor
-  // Skip any spaces after cursor
-  while (pos < value.length && /\s/.test(value[pos] ?? "")) pos++
-  // Skip non-space characters (the word itself)
-  while (pos < value.length && !/\s/.test(value[pos] ?? "")) pos++
-  return pos
-}
-
-// =============================================================================
 // Hook
 // =============================================================================
 
@@ -144,20 +105,17 @@ export function useReadline({
   const stateRef = useRef<ReadlineState>({ value: initialValue, cursor: initialValue.length })
   stateRef.current = state
 
-  // Track last yank position for Alt+Y cycling
-  const yankStateRef = useRef<{
-    lastYankIndex: number
-    yankStart: number
-    yankEnd: number
-  } | null>(null)
+  const yankStateRef = useRef<YankState | null>(null)
 
-  const updateState = useCallback(
-    (newValue: string, newCursor: number) => {
-      const next = { value: newValue, cursor: newCursor }
+  /** Apply a ReadlineKeyResult to state */
+  const applyResult = useCallback(
+    (result: { value: string; cursor: number; yankState: YankState | null }, prevValue: string) => {
+      yankStateRef.current = result.yankState
+      if (result.value === prevValue && result.cursor === stateRef.current.cursor) return
+      const next = { value: result.value, cursor: result.cursor }
       stateRef.current = next
       setState(next)
-      onChange?.(newValue)
-      yankStateRef.current = null
+      if (result.value !== prevValue) onChange?.(result.value)
     },
     [onChange],
   )
@@ -194,8 +152,6 @@ export function useReadline({
 
   useInput(
     (input, key) => {
-      // Read fresh state from mutable ref — NOT from render closure.
-      // Multiple events between renders all see the latest value/cursor.
       const { value, cursor } = stateRef.current
 
       // Let parent handle Enter/Escape/vertical arrows unless explicitly enabled
@@ -207,209 +163,39 @@ export function useReadline({
       if (key.escape && !handleEscape) return
       if ((key.upArrow || key.downArrow) && !handleVerticalArrows) return
 
-      // Helper for cursor-only moves (syncs ref immediately)
-      const moveCursor = (newCursor: number) => {
-        stateRef.current = { value, cursor: newCursor }
-        setState({ value, cursor: newCursor })
-        yankStateRef.current = null
+      // Single-line specific: Ctrl+D on empty input = EOF
+      if (key.ctrl && input === "d" && value.length === 0) {
+        onEOF?.()
+        return
       }
 
-      // =======================================================================
-      // Cursor Movement
-      // =======================================================================
-
-      // Ctrl+A: Move to beginning
+      // Single-line specific: Ctrl+A/E move to beginning/end of entire text
       if (key.ctrl && input === "a") {
-        moveCursor(0)
+        applyResult({ value, cursor: 0, yankState: null }, value)
         return
       }
-
-      // Ctrl+E: Move to end
       if (key.ctrl && input === "e") {
-        moveCursor(value.length)
+        applyResult({ value, cursor: value.length, yankState: null }, value)
         return
       }
 
-      // Ctrl+B or Left: Move cursor left
-      if ((key.ctrl && input === "b") || key.leftArrow) {
-        if (cursor > 0) moveCursor(cursor - 1)
-        return
-      }
-
-      // Ctrl+F or Right: Move cursor right
-      if ((key.ctrl && input === "f") || key.rightArrow) {
-        if (cursor < value.length) moveCursor(cursor + 1)
-        return
-      }
-
-      // Alt+B: Move cursor back one word
-      if (key.meta && input === "b") {
-        moveCursor(findPrevWordStart(value, cursor))
-        return
-      }
-
-      // Alt+F: Move cursor forward one word
-      if (key.meta && input === "f") {
-        moveCursor(findNextWordEnd(value, cursor))
-        return
-      }
-
-      // =======================================================================
-      // Kill Operations (add to kill ring)
-      // =======================================================================
-
-      // Ctrl+W: Delete word backwards
-      if (key.ctrl && input === "w") {
-        if (cursor === 0) return
-        const newCursor = findPrevWordStart(value, cursor)
-        const killed = value.slice(newCursor, cursor)
-        addToKillRing(killed)
-        const newValue = value.slice(0, newCursor) + value.slice(cursor)
-        updateState(newValue, newCursor)
-        return
-      }
-
-      // Alt+Backspace: Same as Ctrl+W
-      if (key.meta && key.backspace) {
-        if (cursor === 0) return
-        const newCursor = findPrevWordStart(value, cursor)
-        const killed = value.slice(newCursor, cursor)
-        addToKillRing(killed)
-        const newValue = value.slice(0, newCursor) + value.slice(cursor)
-        updateState(newValue, newCursor)
-        return
-      }
-
-      // Alt+D: Delete word forwards
-      if (key.meta && input === "d") {
-        if (cursor >= value.length) return
-        const newEnd = findNextWordEnd(value, cursor)
-        const killed = value.slice(cursor, newEnd)
-        addToKillRing(killed)
-        const newValue = value.slice(0, cursor) + value.slice(newEnd)
-        updateState(newValue, cursor)
-        return
-      }
-
-      // Ctrl+U: Delete to beginning
+      // Single-line specific: Ctrl+U/K kill to beginning/end of entire text
       if (key.ctrl && input === "u") {
         if (cursor === 0) return
-        const killed = value.slice(0, cursor)
-        addToKillRing(killed)
-        const newValue = value.slice(cursor)
-        updateState(newValue, 0)
+        addToKillRing(value.slice(0, cursor))
+        applyResult({ value: value.slice(cursor), cursor: 0, yankState: null }, value)
         return
       }
-
-      // Ctrl+K: Delete to end
       if (key.ctrl && input === "k") {
         if (cursor >= value.length) return
-        const killed = value.slice(cursor)
-        addToKillRing(killed)
-        const newValue = value.slice(0, cursor)
-        updateState(newValue, cursor)
+        addToKillRing(value.slice(cursor))
+        applyResult({ value: value.slice(0, cursor), cursor, yankState: null }, value)
         return
       }
 
-      // =======================================================================
-      // Yank Operations
-      // =======================================================================
-
-      // Ctrl+Y: Yank (paste from kill ring)
-      if (key.ctrl && input === "y") {
-        if (killRing.length === 0) return
-        const text = killRing[0] ?? ""
-        const newValue = value.slice(0, cursor) + text + value.slice(cursor)
-        const newCursor = cursor + text.length
-        const next = { value: newValue, cursor: newCursor }
-        stateRef.current = next
-        setState(next)
-        onChange?.(newValue)
-        // Track yank state for Alt+Y cycling
-        yankStateRef.current = {
-          lastYankIndex: 0,
-          yankStart: cursor,
-          yankEnd: newCursor,
-        }
-        return
-      }
-
-      // Alt+Y: Cycle through kill ring (only after Ctrl+Y)
-      if (key.meta && input === "y") {
-        const yankState = yankStateRef.current
-        if (!yankState || killRing.length <= 1) return
-        // Cycle to next kill ring entry
-        const nextIndex = (yankState.lastYankIndex + 1) % killRing.length
-        const text = killRing[nextIndex] ?? ""
-        // Replace the previously yanked text
-        const before = value.slice(0, yankState.yankStart)
-        const after = value.slice(yankState.yankEnd)
-        const newValue = before + text + after
-        const newCursor = yankState.yankStart + text.length
-        const next = { value: newValue, cursor: newCursor }
-        stateRef.current = next
-        setState(next)
-        onChange?.(newValue)
-        yankStateRef.current = {
-          lastYankIndex: nextIndex,
-          yankStart: yankState.yankStart,
-          yankEnd: newCursor,
-        }
-        return
-      }
-
-      // =======================================================================
-      // Character Operations
-      // =======================================================================
-
-      // Ctrl+T: Transpose characters
-      if (key.ctrl && input === "t") {
-        // Transpose the two characters before cursor, move cursor forward
-        if (cursor < 2) return
-        const newValue = value.slice(0, cursor - 2) + value[cursor - 1] + value[cursor - 2] + value.slice(cursor)
-        updateState(newValue, cursor)
-        return
-      }
-
-      // Ctrl+D: Delete char at cursor (or EOF if empty)
-      if (key.ctrl && input === "d") {
-        if (value.length === 0) {
-          onEOF?.()
-          return
-        }
-        if (cursor >= value.length) return
-        const newValue = value.slice(0, cursor) + value.slice(cursor + 1)
-        updateState(newValue, cursor)
-        return
-      }
-
-      // Ctrl+H or Backspace: Delete char before cursor
-      if (key.ctrl && input === "h") {
-        if (cursor > 0) {
-          const newValue = value.slice(0, cursor - 1) + value.slice(cursor)
-          updateState(newValue, cursor - 1)
-        }
-        return
-      }
-
-      // Backspace or Delete key
-      if (key.backspace || key.delete) {
-        if (cursor > 0) {
-          const newValue = value.slice(0, cursor - 1) + value.slice(cursor)
-          updateState(newValue, cursor - 1)
-        }
-        return
-      }
-
-      // =======================================================================
-      // Regular Character Input
-      // =======================================================================
-
-      // Regular character input (printable ASCII)
-      if (input.length === 1 && input >= " ") {
-        const newValue = value.slice(0, cursor) + input + value.slice(cursor)
-        updateState(newValue, cursor + 1)
-      }
+      // Shared readline operations (cursor movement, word ops, kill ring, yank, etc.)
+      const result = handleReadlineKey(input, key, value, cursor, yankStateRef.current)
+      if (result) applyResult(result, value)
     },
     { isActive },
   )

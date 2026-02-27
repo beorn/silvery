@@ -70,7 +70,7 @@ inkx is designed to be driven by AI agents, not just humans:
 ### Components (23+)
 
 - **Core:** Box, Text, Newline, Spacer, Static, Transform
-- **Input:** TextInput, ReadlineInput, TextArea (multi-line with readline shortcuts)
+- **Input:** TextInput (with readline shortcuts), TextArea (multi-line with readline shortcuts)
 - **Data:** VirtualList, SelectList, Table, Console
 - **Display:** Spinner, ProgressBar, Badge, Divider, Image, Link
 - **`overflow="scroll"`** with `scrollTo` — scrollable containers without manual virtualization

@@ -25,10 +25,10 @@
  *   - OSC 133 markers — terminal prompt navigation via markers prop
  *
  * Controls:
- *   Enter - Advance to next step / skip streaming
- *   c     - Compact (clear dynamic area, scrollback remains)
- *   a     - Toggle auto-advance mode
- *   q     - Quit
+ *   Enter - Fast-complete agent action / submit user message
+ *   Tab   - Toggle auto-advance mode
+ *   Esc   - Quit
+ *   ^L    - Clear + scroll (compact)
  *
  * Flags:
  *   --auto    Start in auto-advance mode
@@ -834,9 +834,9 @@ function StatusBar({
   // Build key hints
   let keys: string
   if (compacting) keys = "compacting"
-  else if (done) keys = "q quit"
-  else if (autoMode) keys = `a stop  c clear+scroll  q quit${" auto"}`
-  else keys = "\u23CE next  a auto  c clear+scroll  q quit"
+  else if (done) keys = "esc quit"
+  else if (autoMode) keys = "tab stop  ^L clear  esc quit  auto"
+  else keys = "\u23CE send  tab auto  ^L clear  esc quit"
 
   return (
     <Box justifyContent="space-between" paddingX={1}>
@@ -1051,6 +1051,18 @@ function CodingAgent({
     const id = nextIdRef.current++
     setScriptIdx((i) => i + 1)
     startStreaming(entry, id)
+
+    // Auto-chain: user entry → immediately start the following agent entry
+    // so one Enter press sends message AND starts agent response
+    if (entry.role === "user") {
+      const nextIdx = scriptIdx + 1
+      if (nextIdx < script.length && script[nextIdx]!.role === "agent") {
+        const nextEntry = script[nextIdx]!
+        const nextId = nextIdRef.current++
+        setScriptIdx((i) => i + 1)
+        startStreaming(nextEntry, nextId)
+      }
+    }
   }, [scriptIdx, done, streamPhase, script, startStreaming, compact, fastMode])
 
   // Auto-continue after compaction
@@ -1132,19 +1144,43 @@ function CodingAgent({
     }
   }, [compact, done])
 
+  // Pre-fill input with next scripted user message in manual mode
+  useEffect(() => {
+    if (autoMode || done || streamPhase !== "done") return
+    const nextEntry = script[scriptIdx]
+    if (nextEntry?.role === "user" && !inputText) {
+      setInputText(nextEntry.content)
+    }
+  }, [autoMode, done, streamPhase, scriptIdx, script, inputText])
+
+  /** Handle Enter from TextInput — fast-complete or submit. */
+  const handleSubmit = useCallback(
+    (_text: string) => {
+      if (streamPhase !== "done") {
+        skipStreaming()
+        return
+      }
+      if (!done) {
+        setInputText("")
+        advance()
+      }
+    },
+    [streamPhase, skipStreaming, done, advance],
+  )
+
   useInput((input: string, key: Key) => {
-    if (input === "q" || key.escape) return "exit"
-    if (key.return && !autoMode) {
-      if (skipStreaming()) return
-      advance()
+    if (key.escape) return "exit"
+    if (key.tab) {
+      setAutoMode((m) => !m)
       return
     }
-    if (input === "c") {
+    if (key.ctrl && input === "l") {
       compact()
       return
     }
-    if (input === "a") {
-      setAutoMode((m) => !m)
+    // Fast-complete when Enter pressed during streaming (TextInput is inactive)
+    if (key.return && streamPhase !== "done") {
+      skipStreaming()
       return
     }
   })
@@ -1202,14 +1238,15 @@ function CodingAgent({
         markers={true}
         footer={
           <Box flexDirection="column">
-            <Box borderStyle="round" borderColor={streamPhase !== "done" ? "$warning" : "$primary"} paddingX={1}>
-              {streamPhase !== "done" ? (
-                <Text color="$warning" italic>Agent is thinking...</Text>
-              ) : done ? (
-                <Text color="$success">Session complete</Text>
-              ) : (
-                <TextInput value={inputText} prompt={"\u276F "} isActive={!autoMode} realCursor />
-              )}
+            <Box borderStyle="round" borderColor={streamPhase !== "done" ? "$warning" : done ? "$success" : "$primary"} paddingX={1}>
+              <TextInput
+                value={inputText}
+                onChange={setInputText}
+                onSubmit={handleSubmit}
+                prompt={"\u276F "}
+                placeholder={streamPhase !== "done" ? "\u23CE skip" : done ? "Session complete" : ""}
+                isActive={!autoMode && !done}
+              />
             </Box>
             <StatusBar exchanges={exchanges} autoMode={autoMode} compacting={compacting} done={done} elapsed={elapsed} />
           </Box>

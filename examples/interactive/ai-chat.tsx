@@ -4,7 +4,7 @@
  * A scrollable chat interface demonstrating:
  * - VirtualList for efficient rendering of variable-height messages
  * - useContentRect() for responsive layout that adapts to terminal width
- * - ReadlineInput for text entry with full readline shortcuts
+ * - TextInput for text entry with full readline shortcuts
  * - Simulated AI streaming responses (no actual API)
  * - Word-wrapped messages with usernames and timestamps
  *
@@ -22,7 +22,7 @@ import {
   Box,
   Text,
   VirtualList,
-  ReadlineInput,
+  TextInput,
   useContentRect,
   useInput,
   useApp,
@@ -33,8 +33,8 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "AI Chat",
-  description: "VirtualList chat with simulated streaming responses and ReadlineInput",
-  features: ["VirtualList", "useContentRect()", "ReadlineInput", "variable-height items"],
+  description: "VirtualList chat with simulated streaming responses and TextInput",
+  features: ["VirtualList", "useContentRect()", "TextInput", "variable-height items"],
 }
 
 // ============================================================================
@@ -56,7 +56,7 @@ interface Message {
 const AI_RESPONSES = [
   "That's a great question! Let me think about it...\n\nThe key insight here is that terminal UIs can be just as rich and responsive as graphical interfaces. With proper layout feedback and virtual scrolling, we can handle thousands of items smoothly.",
   "I'd be happy to help with that. Here are a few things to consider:\n\n1. Layout feedback means components know their size during render\n2. Virtual scrolling only renders visible items\n3. Flexbox layouts adapt to terminal width automatically\n\nThis makes building complex UIs much more natural.",
-  "Absolutely! inkx provides several key advantages over traditional terminal UI approaches:\n\n- Components know their dimensions via useContentRect()\n- VirtualList handles 10,000+ items efficiently\n- ReadlineInput gives you full editing capabilities\n- React's component model makes composition easy\n\nThe result is a developer experience very close to web development.",
+  "Absolutely! inkx provides several key advantages over traditional terminal UI approaches:\n\n- Components know their dimensions via useContentRect()\n- VirtualList handles 10,000+ items efficiently\n- TextInput gives you full editing capabilities\n- React's component model makes composition easy\n\nThe result is a developer experience very close to web development.",
   "That's an interesting perspective. Terminal UIs have a certain elegance — they're fast, lightweight, and accessible over SSH.\n\nWith modern frameworks, we can bring the best of both worlds: rich interaction and visual design in a text-based environment.",
   "Here's a concrete example of what makes this special:\n\n```tsx\nfunction Chat() {\n  const { width } = useContentRect()\n  // width is available during render!\n  // No useEffect, no layout thrashing\n  const cols = width > 100 ? 3 : width > 60 ? 2 : 1\n  return <Grid columns={cols}>...</Grid>\n}\n```\n\nThe component adapts instantly to size changes.",
   "Great observation! The streaming effect you see in this chat is just setTimeout with progressive string slicing. But the underlying VirtualList handles the variable-height messages efficiently — each message can be any height and the viewport calculation adapts.",
@@ -307,7 +307,7 @@ function Chat(): JSX.Element {
             Assistant is typing...
           </Text>
         ) : (
-          <ReadlineInput
+          <TextInput
             value={inputValue}
             onChange={setInputValue}
             onSubmit={handleSubmit}

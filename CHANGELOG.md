@@ -63,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Text component with auto-truncation, extended underlines, and color support
 - VirtualList for efficient rendering of large lists
 - Console component for capturing and displaying console output
-- TextInput and ReadlineInput with full readline shortcuts
+- TextInput with full readline shortcuts
 - `overflow="scroll"` with `scrollTo` for scrollable containers
 - Input layer stack with DOM-style event bubbling (LIFO)
 - Plugin composition: withCommands, withKeybindings, withDiagnostics

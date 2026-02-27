@@ -140,14 +140,29 @@ export type { ErrorBoundaryProps } from "./components/ErrorBoundary.js"
 export { TextInput } from "./components/TextInput.js"
 export type { TextInputProps, TextInputHandle } from "./components/TextInput.js"
 
-export { ReadlineInput } from "./components/ReadlineInput.js"
-export type { ReadlineInputProps, ReadlineInputHandle } from "./components/ReadlineInput.js"
-
 export { TextArea } from "./components/TextArea.js"
 export type { TextAreaProps, TextAreaHandle } from "./components/TextArea.js"
 
 export { EditContextDisplay } from "./components/EditContextDisplay.js"
 export type { EditContextDisplayProps } from "./components/EditContextDisplay.js"
+
+// Display Components
+export { CursorLine } from "./components/CursorLine.js"
+export type { CursorLineProps } from "./components/CursorLine.js"
+
+// Dialog Components
+export { ModalDialog, formatTitleWithHotkey } from "./components/ModalDialog.js"
+export type { ModalDialogProps } from "./components/ModalDialog.js"
+
+export { PickerDialog } from "./components/PickerDialog.js"
+export type { PickerDialogProps } from "./components/PickerDialog.js"
+
+// Focusable Controls
+export { Toggle } from "./components/Toggle.js"
+export type { ToggleProps } from "./components/Toggle.js"
+
+export { Button } from "./components/Button.js"
+export type { ButtonProps } from "./components/Button.js"
 
 // Input Hooks
 export { useReadline } from "./components/useReadline.js"

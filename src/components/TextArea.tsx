@@ -5,6 +5,9 @@
  * Uses useContentRect for width-aware word wrapping and VirtualList-style
  * scroll tracking to keep the cursor visible.
  *
+ * Includes full readline-style editing: word movement, word kill, kill ring
+ * (yank/cycle), and character transpose -- shared with TextInput via readline-ops.
+ *
  * Usage:
  * ```tsx
  * const [value, setValue] = useState('')
@@ -21,8 +24,14 @@
  * - Arrow keys: Move cursor
  * - Home/End: Beginning/end of line
  * - Ctrl+A/E: Beginning/end of line
- * - Ctrl+K: Kill to end of line
- * - Ctrl+U: Kill to beginning of line
+ * - Alt+B/F: Move by word (wraps across lines)
+ * - Ctrl+W, Alt+Backspace: Delete word backwards (kill ring)
+ * - Alt+D: Delete word forwards (kill ring)
+ * - Ctrl+K: Kill to end of line (kill ring)
+ * - Ctrl+U: Kill to beginning of line (kill ring)
+ * - Ctrl+Y: Yank (paste from kill ring)
+ * - Alt+Y: Cycle through kill ring (after Ctrl+Y)
+ * - Ctrl+T: Transpose characters
  * - PageUp/PageDown: Scroll by viewport height
  * - Backspace/Delete: Delete characters
  * - Enter: Insert newline (or submit with submitKey="enter")
@@ -30,6 +39,9 @@
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
 import { useContentRect } from "../hooks/useLayout.js"
 import { useInput } from "../hooks/useInput.js"
+import { useFocusable } from "../hooks/useFocusable.js"
+import { useCursor } from "../hooks/useCursor.js"
+import { addToKillRing, handleReadlineKey, type YankState } from "../hooks/readline-ops.js"
 import { cursorToRowCol, getWrappedLines } from "../text-cursor.js"
 import { Box } from "./Box.js"
 import { Text } from "./Text.js"
@@ -51,12 +63,14 @@ export interface TextAreaProps {
   submitKey?: "ctrl+enter" | "enter"
   /** Placeholder text when empty */
   placeholder?: string
-  /** Whether input is focused/active */
+  /** Whether input is focused/active (overrides focus system) */
   isActive?: boolean
   /** Visible height in rows (required) */
   height: number
   /** Cursor style: 'block' (inverse) or 'underline' */
   cursorStyle?: "block" | "underline"
+  /** Test ID for focus system identification */
+  testID?: string
 }
 
 export interface TextAreaHandle {
@@ -93,44 +107,48 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     onSubmit,
     submitKey = "ctrl+enter",
     placeholder = "",
-    isActive = true,
+    isActive: isActiveProp,
     height,
     cursorStyle = "block",
+    testID,
   },
   ref,
 ) {
+  // Focus system integration: prop overrides hook.
+  // When testID is set, the component participates in the focus tree and
+  // isActive derives from focus state. Without testID, default to true
+  // for backward compatibility.
+  const { focused } = useFocusable()
+  const isActive = isActiveProp ?? (testID ? focused : true)
+
   const isControlled = controlledValue !== undefined
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue)
   const [cursor, setCursor] = useState(defaultValue.length)
   const [scrollOffset, setScrollOffset] = useState(0)
   const stickyXRef = useRef<number | null>(null)
 
+  const yankStateRef = useRef<YankState | null>(null)
+
   const value = isControlled ? (controlledValue ?? "") : uncontrolledValue
   const { width } = useContentRect()
   const wrapWidth = Math.max(1, width)
 
   // Clamp cursor when controlled value shrinks (e.g., parent resets to "").
-  // Without this, cursor stays at a position past the end of the text,
-  // and cursorToRowCol falls through to the default {row: 0, col: 0}.
   const clampedCursor = Math.min(cursor, value.length)
   if (clampedCursor !== cursor) {
     setCursor(clampedCursor)
   }
 
   // Mutable ref for synchronous reads in the event handler.
-  // Without this, rapid keypresses between React renders all read the same
-  // stale closure state and overwrite each other (e.g. "abcdef" → "bdf").
   const stateRef = useRef({ value, cursor: clampedCursor })
   stateRef.current.value = value
   stateRef.current.cursor = clampedCursor
 
-  // Helper to update cursor and scroll together (avoids stale scroll)
   const scrollRef = useRef(scrollOffset)
   scrollRef.current = scrollOffset
 
   const setCursorAndScroll = useCallback(
     (newCursor: number, text: string) => {
-      // Update cursor ref synchronously for rapid event handling
       stateRef.current.cursor = newCursor
       setCursor(newCursor)
       const { row } = cursorToRowCol(text, newCursor, wrapWidth)
@@ -144,15 +162,14 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
 
   const updateValue = useCallback(
     (newValue: string, newCursor: number) => {
-      // Update ref synchronously so the next event in the same batch sees fresh state
       stateRef.current.value = newValue
       stateRef.current.cursor = newCursor
-
       if (!isControlled) {
         setUncontrolledValue(newValue)
       }
       setCursorAndScroll(newCursor, newValue)
       onChange?.(newValue)
+      yankStateRef.current = null
     },
     [isControlled, onChange, setCursorAndScroll],
   )
@@ -178,15 +195,13 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
 
   useInput(
     (input, key) => {
-      // Read fresh state from mutable ref — NOT from render closure.
-      // Multiple events between renders all see the latest value/cursor.
       const { value, cursor } = stateRef.current
       const lines = getWrappedLines(value, wrapWidth)
       const { row: cRow, col: cCol } = cursorToRowCol(value, cursor, wrapWidth)
 
-      // =====================================================================
+      // =================================================================
       // Submit
-      // =====================================================================
+      // =================================================================
       if (submitKey === "ctrl+enter" && key.return && key.ctrl) {
         onSubmit?.(value)
         return
@@ -196,172 +211,137 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
         return
       }
 
-      // =====================================================================
-      // Enter (newline) — only when submitKey is not "enter"
-      // =====================================================================
+      // =================================================================
+      // Enter (newline)
+      // =================================================================
       if (key.return && submitKey !== "enter") {
         stickyXRef.current = null
-        const newValue = value.slice(0, cursor) + "\n" + value.slice(cursor)
-        updateValue(newValue, cursor + 1)
+        updateValue(value.slice(0, cursor) + "\n" + value.slice(cursor), cursor + 1)
         return
       }
 
-      // =====================================================================
-      // Cursor Movement
-      // =====================================================================
-
-      // Left
-      if (key.leftArrow || (key.ctrl && input === "b")) {
-        stickyXRef.current = null
-        if (cursor > 0) setCursorAndScroll(cursor - 1, value)
-        return
-      }
-
-      // Right
-      if (key.rightArrow || (key.ctrl && input === "f")) {
-        stickyXRef.current = null
-        if (cursor < value.length) setCursorAndScroll(cursor + 1, value)
-        return
-      }
-
-      // Up (with stickyX)
+      // =================================================================
+      // Multi-line: Up/Down with stickyX
+      // =================================================================
       if (key.upArrow) {
         if (cRow > 0) {
           const targetX = stickyXRef.current ?? cCol
           stickyXRef.current = targetX
-          const targetRow = cRow - 1
-          const targetLine = lines[targetRow]
+          const targetLine = lines[cRow - 1]
           if (targetLine) {
-            const newCol = Math.min(targetX, targetLine.line.length)
-            setCursorAndScroll(targetLine.startOffset + newCol, value)
+            setCursorAndScroll(targetLine.startOffset + Math.min(targetX, targetLine.line.length), value)
           }
         }
+        yankStateRef.current = null
         return
       }
 
-      // Down (with stickyX)
       if (key.downArrow) {
         if (cRow < lines.length - 1) {
           const targetX = stickyXRef.current ?? cCol
           stickyXRef.current = targetX
-          const targetRow = cRow + 1
-          const targetLine = lines[targetRow]
+          const targetLine = lines[cRow + 1]
           if (targetLine) {
-            const newCol = Math.min(targetX, targetLine.line.length)
-            setCursorAndScroll(targetLine.startOffset + newCol, value)
+            setCursorAndScroll(targetLine.startOffset + Math.min(targetX, targetLine.line.length), value)
           }
         }
+        yankStateRef.current = null
         return
       }
 
-      // Home / Ctrl+A
+      // =================================================================
+      // Multi-line: Home/End, Ctrl+A/E (beginning/end of wrapped line)
+      // =================================================================
       if (key.home || (key.ctrl && input === "a")) {
         stickyXRef.current = null
         const currentLine = lines[cRow]
-        if (currentLine) {
-          setCursorAndScroll(currentLine.startOffset, value)
-        }
+        if (currentLine) setCursorAndScroll(currentLine.startOffset, value)
+        yankStateRef.current = null
         return
       }
 
-      // End / Ctrl+E
       if (key.end || (key.ctrl && input === "e")) {
         stickyXRef.current = null
         const currentLine = lines[cRow]
-        if (currentLine) {
-          setCursorAndScroll(currentLine.startOffset + currentLine.line.length, value)
-        }
+        if (currentLine) setCursorAndScroll(currentLine.startOffset + currentLine.line.length, value)
+        yankStateRef.current = null
         return
       }
 
-      // PageUp
+      // =================================================================
+      // Multi-line: PageUp/PageDown
+      // =================================================================
       if (key.pageUp) {
         stickyXRef.current = null
-        const targetRow = Math.max(0, cRow - height)
-        const targetLine = lines[targetRow]
+        const targetLine = lines[Math.max(0, cRow - height)]
         if (targetLine) {
-          const newCol = Math.min(cCol, targetLine.line.length)
-          setCursorAndScroll(targetLine.startOffset + newCol, value)
+          setCursorAndScroll(targetLine.startOffset + Math.min(cCol, targetLine.line.length), value)
         }
+        yankStateRef.current = null
         return
       }
 
-      // PageDown
       if (key.pageDown) {
         stickyXRef.current = null
-        const targetRow = Math.min(lines.length - 1, cRow + height)
-        const targetLine = lines[targetRow]
+        const targetLine = lines[Math.min(lines.length - 1, cRow + height)]
         if (targetLine) {
-          const newCol = Math.min(cCol, targetLine.line.length)
-          setCursorAndScroll(targetLine.startOffset + newCol, value)
+          setCursorAndScroll(targetLine.startOffset + Math.min(cCol, targetLine.line.length), value)
         }
+        yankStateRef.current = null
         return
       }
 
-      // =====================================================================
-      // Kill Operations
-      // =====================================================================
-
-      // Ctrl+K: Kill to end of line (resets stickyX)
+      // =================================================================
+      // Multi-line: Ctrl+K/U (kill to end/beginning of wrapped line)
+      // =================================================================
       if (key.ctrl && input === "k") {
         stickyXRef.current = null
         const currentLine = lines[cRow]
         if (!currentLine) return
         const lineEnd = currentLine.startOffset + currentLine.line.length
         if (cursor < lineEnd) {
-          const newValue = value.slice(0, cursor) + value.slice(lineEnd)
-          updateValue(newValue, cursor)
+          addToKillRing(value.slice(cursor, lineEnd))
+          updateValue(value.slice(0, cursor) + value.slice(lineEnd), cursor)
         } else if (cursor < value.length) {
-          const newValue = value.slice(0, cursor) + value.slice(cursor + 1)
-          updateValue(newValue, cursor)
+          // At end of line: kill the newline character
+          addToKillRing(value.slice(cursor, cursor + 1))
+          updateValue(value.slice(0, cursor) + value.slice(cursor + 1), cursor)
         }
         return
       }
 
-      // Ctrl+U: Kill to beginning of line (resets stickyX)
       if (key.ctrl && input === "u") {
         stickyXRef.current = null
         const currentLine = lines[cRow]
         if (!currentLine) return
         const lineStart = currentLine.startOffset
         if (cursor > lineStart) {
-          const newValue = value.slice(0, lineStart) + value.slice(cursor)
-          updateValue(newValue, lineStart)
+          addToKillRing(value.slice(lineStart, cursor))
+          updateValue(value.slice(0, lineStart) + value.slice(cursor), lineStart)
         }
         return
       }
 
-      // =====================================================================
-      // Delete Operations
-      // =====================================================================
-
-      // Backspace (resets stickyX)
-      if (key.backspace || key.delete) {
+      // =================================================================
+      // Shared readline operations (cursor, word, kill ring, yank, etc.)
+      // =================================================================
+      const result = handleReadlineKey(input, key, value, cursor, yankStateRef.current)
+      if (result) {
         stickyXRef.current = null
-        if (cursor > 0) {
-          const newValue = value.slice(0, cursor - 1) + value.slice(cursor)
-          updateValue(newValue, cursor - 1)
+        if (result.value === value && result.cursor === cursor) {
+          yankStateRef.current = result.yankState
+          return
         }
-        return
-      }
-
-      // Ctrl+D: Delete at cursor (resets stickyX)
-      if (key.ctrl && input === "d") {
-        stickyXRef.current = null
-        if (cursor < value.length) {
-          const newValue = value.slice(0, cursor) + value.slice(cursor + 1)
-          updateValue(newValue, cursor)
+        if (result.value !== value) {
+          stateRef.current.value = result.value
+          stateRef.current.cursor = result.cursor
+          if (!isControlled) setUncontrolledValue(result.value)
+          setCursorAndScroll(result.cursor, result.value)
+          onChange?.(result.value)
+        } else {
+          setCursorAndScroll(result.cursor, value)
         }
-        return
-      }
-
-      // =====================================================================
-      // Regular Character Input
-      // =====================================================================
-      if (input.length >= 1 && input >= " ") {
-        stickyXRef.current = null
-        const newValue = value.slice(0, cursor) + input + value.slice(cursor)
-        updateValue(newValue, cursor + input.length)
+        yankStateRef.current = result.yankState
       }
     },
     { isActive },
@@ -371,11 +351,20 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   // Rendering
   // =========================================================================
 
+  // When active: real terminal cursor at cursor position, plain text rendering.
+  // When inactive: fake cursor (inverse/underline) for visual feedback.
+  const visibleCursorRow = cursorRow - scrollOffset
+  useCursor({
+    col: cursorCol,
+    row: visibleCursorRow,
+    visible: isActive,
+  })
+
   const showPlaceholder = !value && placeholder
 
   if (showPlaceholder) {
     return (
-      <Box flexDirection="column" height={height} justifyContent="center" alignItems="center">
+      <Box focusable testID={testID} flexDirection="column" height={height} justifyContent="center" alignItems="center">
         <Text dimColor>{placeholder}</Text>
       </Box>
     )
@@ -384,24 +373,30 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   const visibleLines = wrappedLines.slice(scrollOffset, scrollOffset + height)
 
   return (
-    <Box key={scrollOffset} flexDirection="column" height={height}>
+    <Box focusable testID={testID} key={scrollOffset} flexDirection="column" height={height}>
       {visibleLines.map((wl, i) => {
         const absoluteRow = scrollOffset + i
         const isCursorRow = absoluteRow === cursorRow
 
-        if (!isCursorRow || !isActive) {
+        if (!isCursorRow) {
           return <Text key={absoluteRow}>{wl.line || " "}</Text>
         }
 
-        // Render line with cursor
         const beforeCursor = wl.line.slice(0, cursorCol)
         const atCursor = wl.line[cursorCol] ?? " "
         const afterCursor = wl.line.slice(cursorCol + 1)
 
+        // Active: plain text (real cursor handles it). Inactive: fake cursor.
+        const cursorEl = isActive
+          ? <Text>{atCursor}</Text>
+          : cursorStyle === "block"
+            ? <Text inverse>{atCursor}</Text>
+            : <Text underline>{atCursor}</Text>
+
         return (
           <Text key={absoluteRow}>
             {beforeCursor}
-            {cursorStyle === "block" ? <Text inverse>{atCursor}</Text> : <Text underline>{atCursor}</Text>}
+            {cursorEl}
             {afterCursor}
           </Text>
         )

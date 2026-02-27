@@ -21,7 +21,7 @@ Most terminal UI libraries force you to chain sequential `readline` prompts or s
 
 - **SelectList component** -- Built-in single-select with keyboard navigation (arrow keys, j/k, Home/End), disabled item support, and automatic scroll windowing via `maxVisible`. No external prompt library needed.
 
-- **TextInput and ReadlineInput** -- Text fields that work out of the box. `TextInput` covers simple cases; `ReadlineInput` adds full readline shortcuts (Ctrl+A/E for Home/End, Ctrl+K/U for kill line, Alt+B/F for word movement, Ctrl+Y for yank, and a kill ring). Both support controlled and uncontrolled modes, placeholder text, and password masking.
+- **TextInput** -- Text input that works out of the box with full readline shortcuts (Ctrl+A/E for Home/End, Ctrl+K/U for kill line, Alt+B/F for word movement, Ctrl+Y for yank, and a kill ring). Supports controlled and uncontrolled modes, placeholder text, and password masking.
 
 - **ProgressBar and Spinner** -- Visual progress feedback during long operations. `ProgressBar` supports both determinate (0-1 value) and indeterminate (animated bounce) modes with customizable fill characters and colors. `Spinner` ships with four animation presets (dots, line, arc, bounce).
 

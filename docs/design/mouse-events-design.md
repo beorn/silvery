@@ -421,4 +421,4 @@ New additions:
 - No capture phase (onClickCapture) — rarely used, can add later
 - No pointer events (onPointerDown) — pointer is a superset for touch, irrelevant for terminal
 - No synthetic focus events from click — click-to-focus is handled by the FocusManager automatically
-- No onChange, onSubmit — these are form-level concepts, handled by TextInput/ReadlineInput
+- No onChange, onSubmit — these are form-level concepts, handled by TextInput
