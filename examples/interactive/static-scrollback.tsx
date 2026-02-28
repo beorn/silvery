@@ -89,11 +89,11 @@ const OUTPUT_COST_PER_M = 75 // $/M output tokens
 const CONTEXT_WINDOW = 200_000
 
 const TOOL_COLORS: Record<string, string> = {
-  Read: "blue",
+  Read: "cyan",
   Edit: "yellow",
   Bash: "red",
   Write: "magenta",
-  Glob: "cyan",
+  Glob: "gray",
   Grep: "green",
 }
 
@@ -117,7 +117,7 @@ const SCRIPT: ScriptEntry[] = [
   {
     role: "user",
     content: "Fix the login bug in auth.ts \u2014 expired tokens throw instead of refreshing.",
-    tokens: { input: 42, output: 0 },
+    tokens: { input: 84, output: 0 },
   },
   {
     role: "agent",
@@ -139,7 +139,7 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 1847, output: 312 },
+    tokens: { input: 3694, output: 624 },
   },
   {
     role: "agent",
@@ -160,7 +160,7 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 2156, output: 287 },
+    tokens: { input: 4312, output: 574 },
   },
   {
     role: "agent",
@@ -179,18 +179,18 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 2489, output: 156 },
+    tokens: { input: 4978, output: 312 },
   },
   {
     role: "agent",
     content:
       "Fixed! The bug was comparing jwt.exp (seconds since epoch) with Date.now() (milliseconds). Expired tokens now trigger a refresh instead of throwing.",
-    tokens: { input: 2601, output: 89 },
+    tokens: { input: 5202, output: 178 },
   },
   {
     role: "user",
     content: "Nice. Can you also add rate limiting to the login endpoint?",
-    tokens: { input: 58, output: 0 },
+    tokens: { input: 116, output: 0 },
   },
   {
     role: "agent",
@@ -219,7 +219,7 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 3245, output: 423 },
+    tokens: { input: 6490, output: 846 },
   },
   {
     role: "agent",
@@ -242,7 +242,7 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 3891, output: 378 },
+    tokens: { input: 7782, output: 756 },
   },
   {
     role: "agent",
@@ -260,28 +260,18 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 4102, output: 167 },
+    tokens: { input: 8204, output: 334 },
   },
   {
     role: "agent",
     content: "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
-    tokens: { input: 4234, output: 78 },
-  },
-  {
-    role: "system",
-    content: "\u{1F4E6} Context compaction: conversation history frozen to scrollback. Scroll up to review.",
-  },
-  {
-    role: "agent",
-    content:
-      "Context recovered after compaction. I have the full conversation history. What would you like to work on next?",
-    tokens: { input: 8012, output: 54 },
+    tokens: { input: 8468, output: 156 },
   },
   {
     role: "user",
     content:
       "Now add i18n support for error messages. We need \u65E5\u672C\u8A9E (Japanese) and Deutsch (German). \u{1F30D}",
-    tokens: { input: 73, output: 0 },
+    tokens: { input: 146, output: 0 },
   },
   {
     role: "agent",
@@ -314,7 +304,7 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 8934, output: 567 },
+    tokens: { input: 17868, output: 1134 },
   },
   {
     role: "agent",
@@ -347,7 +337,7 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 9876, output: 445 },
+    tokens: { input: 19752, output: 890 },
   },
   {
     role: "agent",
@@ -367,18 +357,18 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 10234, output: 178 },
+    tokens: { input: 20468, output: 356 },
   },
   {
     role: "agent",
     content:
       "i18n support added with Japanese (\u65E5\u672C\u8A9E) and German (Deutsch) translations. Error messages are now locale-aware. \u{1F30D}\u2705",
-    tokens: { input: 10401, output: 67 },
+    tokens: { input: 20802, output: 134 },
   },
   {
     role: "user",
     content: "Add a health check endpoint at /health that returns the service version.",
-    tokens: { input: 52, output: 0 },
+    tokens: { input: 104, output: 0 },
   },
   {
     role: "agent",
@@ -403,7 +393,7 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 10789, output: 234 },
+    tokens: { input: 21578, output: 468 },
   },
   {
     role: "agent",
@@ -423,13 +413,13 @@ const SCRIPT: ScriptEntry[] = [
         ],
       },
     ],
-    tokens: { input: 11023, output: 145 },
+    tokens: { input: 22046, output: 290 },
   },
   {
     role: "agent",
     content:
       "All done! Summary of changes:\n\u2022 Fixed token expiry bug (seconds vs milliseconds)\n\u2022 Added rate limiting (5 req/min per IP)\n\u2022 Added i18n support (\u65E5\u672C\u8A9E + Deutsch) \u{1F30D}\n\u2022 Added /health endpoint (v2.4.1)\n\nAll 21 tests pass. Ready to commit?",
-    tokens: { input: 11234, output: 112 },
+    tokens: { input: 22468, output: 224 },
   },
 ]
 
@@ -637,7 +627,7 @@ function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "ru
         <Box
           flexDirection="column"
           borderStyle="bold"
-          borderColor={color}
+          borderColor="green"
           borderLeft
           borderRight={false}
           borderTop={false}
@@ -706,12 +696,16 @@ function ExchangeItem({
   revealFraction,
   pulse,
   isLatest,
+  isFirstInGroup,
+  isLastInGroup,
 }: {
   exchange: Exchange
   streamPhase: "thinking" | "streaming" | "tools" | "done"
   revealFraction: number
   pulse: boolean
   isLatest: boolean
+  isFirstInGroup: boolean
+  isLastInGroup: boolean
 }): JSX.Element {
   const { freeze } = useScrollbackItem()
 
@@ -735,21 +729,25 @@ function ExchangeItem({
 
   const isUser = exchange.role === "user"
 
-  // User messages: simple blue > prefix, no border
+  // User messages: blue ❯ prefix, grouped like a list (padding at group edges only)
   if (isUser) {
     return (
-      <Box paddingX={1}>
-        <Text>
-          <Text bold color="$primary">
-            {"\u276F"}{" "}
+      <Box flexDirection="column">
+        {isFirstInGroup && <Text> </Text>}
+        <Box paddingX={1}>
+          <Text>
+            <Text bold color="$focusring">
+              {"\u276F"}{" "}
+            </Text>
+            {exchange.content}
           </Text>
-          {exchange.content}
-        </Text>
+        </Box>
+        {isLastInGroup && <Text> </Text>}
       </Box>
     )
   }
 
-  const outlineColor = "$success"
+  const outlineColor = "green"
   const icon = "\u25C6"
   const name = "Agent"
   const phase = isLatest ? streamPhase : "done"
@@ -849,7 +847,7 @@ function StatusBar({
   else keys = "\u23CE send  tab auto  ^L clear  esc quit"
 
   return (
-    <Box justifyContent="space-between" paddingX={1}>
+    <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
       <Text color="$muted" dim>
         <Text color="$primary">{elapsedStr}</Text>
         {"  "}
@@ -867,7 +865,7 @@ function StatusBar({
 // ============================================================================
 
 /** How many live turns to keep in the dynamic area before freezing to scrollback. */
-const MAX_LIVE_TURNS = 18
+const MAX_LIVE_TURNS = 20
 
 /** Streaming phases: thinking -> streaming text -> tool calls -> done */
 type StreamPhase = "thinking" | "streaming" | "tools" | "done"
@@ -902,6 +900,9 @@ function CodingAgent({
   const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputTypingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const nextIdRef = useRef(0)
+
+  // Stable ref to latest advance() — avoids stale closure in setTimeout callbacks
+  const advanceRef = useRef<() => void>(() => {})
 
   // Input box state — simulates char-by-char typing in auto mode
   const [inputText, setInputText] = useState("")
@@ -1053,13 +1054,6 @@ function CodingAgent({
 
     const entry = script[scriptIdx]!
 
-    // System messages trigger compaction
-    if (entry.role === "system") {
-      setScriptIdx((i) => i + 1)
-      compact()
-      return
-    }
-
     const id = nextIdRef.current++
     setScriptIdx((i) => i + 1)
     startStreaming(entry, id)
@@ -1076,6 +1070,7 @@ function CodingAgent({
       }
     }
   }, [scriptIdx, done, streamPhase, script, startStreaming, compact, fastMode])
+  advanceRef.current = advance
 
   // Auto-continue after compaction
   useEffect(() => {
@@ -1145,6 +1140,16 @@ function CodingAgent({
     return () => cancelStreaming()
   }, [cancelStreaming])
 
+  // Auto-compact when context reaches 95%
+  useEffect(() => {
+    if (done || compactingRef.current) return
+    const cumulative = computeCumulativeTokens(exchanges)
+    const total = cumulative.input + cumulative.output
+    if (total >= CONTEXT_WINDOW * 0.95) {
+      compact()
+    }
+  }, [exchanges, done, compact])
+
   // Auto-compact on terminal resize
   useEffect(() => {
     const onResize = () => {
@@ -1165,19 +1170,38 @@ function CodingAgent({
     }
   }, [autoMode, done, streamPhase, scriptIdx, script, inputText])
 
-  /** Handle Enter from TextInput — fast-complete or submit. */
+  /** Handle Enter from TextInput — fast-complete or submit user message. */
   const handleSubmit = useCallback(
-    (_text: string) => {
+    (text: string) => {
       if (streamPhase !== "done") {
         skipStreaming()
         return
       }
-      if (!done) {
-        setInputText("")
-        advance()
+      if (done || !text.trim()) return
+
+      // Add the user's typed text as a visible exchange
+      const id = nextIdRef.current++
+      const userExchange: Exchange = {
+        id,
+        role: "user",
+        content: text,
+        tokens: { input: text.length * 4, output: 0 },
+        frozen: false,
       }
+      setExchanges((prev) => [...prev, userExchange])
+      setInputText("")
+
+      // Skip past any user entries in the script to find the next agent entry
+      let nextIdx = scriptIdx
+      while (nextIdx < script.length && script[nextIdx]!.role === "user") {
+        nextIdx++
+      }
+      setScriptIdx(nextIdx)
+
+      // Continue with the next agent entry after a brief pause
+      setTimeout(() => advanceRef.current(), 150)
     },
-    [streamPhase, skipStreaming, done, advance],
+    [streamPhase, skipStreaming, done, scriptIdx, script],
   )
 
   useInput((input: string, key: Key) => {
@@ -1245,15 +1269,13 @@ function CodingAgent({
         markers={true}
         footer={
           <Box flexDirection="column">
-            <Box
-              outlineStyle="round"
-              outlineColor={streamPhase !== "done" ? "$warning" : done ? "$success" : "$focusring"}
-            >
+            <Box borderStyle="round" borderColor="$focusring" paddingX={1}>
               <TextInput
                 value={inputText}
                 onChange={setInputText}
                 onSubmit={handleSubmit}
                 prompt={"\u276F "}
+                promptColor="$focusring"
                 placeholder={streamPhase !== "done" ? "\u23CE skip" : done ? "Session complete" : ""}
                 isActive={!autoMode && !done}
               />
@@ -1271,6 +1293,10 @@ function CodingAgent({
       >
         {(exchange, index) => {
           const isLatest = index === exchanges.length - 1
+          const prevRole = index > 0 ? exchanges[index - 1]!.role : null
+          const nextRole = index < exchanges.length - 1 ? exchanges[index + 1]!.role : null
+          const isFirstInGroup = exchange.role !== prevRole
+          const isLastInGroup = exchange.role !== nextRole
 
           return (
             <Box flexDirection="column">
@@ -1319,6 +1345,8 @@ function CodingAgent({
                   revealFraction={revealFraction}
                   pulse={pulse}
                   isLatest={isLatest}
+                  isFirstInGroup={isFirstInGroup}
+                  isLastInGroup={isLastInGroup}
                 />
               )}
 

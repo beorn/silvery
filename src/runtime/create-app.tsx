@@ -57,6 +57,7 @@ import { createFocusManager } from "../focus-manager.js"
 import { createFocusEvent, dispatchFocusEvent } from "../focus-events.js"
 import { executeRender } from "../pipeline/index.js"
 import { createPipeline } from "../measurer.js"
+import { isTextSizingLikelySupported } from "../text-sizing.js"
 import { IncrementalRenderMismatchError } from "../scheduler.js"
 import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "../reconciler.js"
 import { map, merge, takeUntil } from "../streams/index.js"
@@ -190,6 +191,16 @@ export interface AppRunOptions {
   onResume?: () => void
   /** Called on Ctrl+C. Return false to prevent exit. */
   onInterrupt?: () => boolean | void
+  /**
+   * Enable Kitty text sizing protocol (OSC 66) for PUA characters.
+   * When enabled, nerdfont/powerline icons are measured as 2-wide and
+   * wrapped in OSC 66 sequences so the terminal renders them at the
+   * correct width.
+   * - `true`: force enable
+   * - `"auto"`: enable if terminal likely supports it (Kitty 0.40+, Ghostty)
+   * - `false`/undefined: disabled (default)
+   */
+  textSizing?: boolean | "auto"
   /**
    * Terminal capabilities for width measurement and output suppression.
    * When provided, configures the render pipeline to use these caps
@@ -419,6 +430,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     onSuspend: onSuspendHook,
     onResume: onResumeHook,
     onInterrupt: onInterruptHook,
+    textSizing: textSizingOption,
     caps: capsOption,
     ...injectValues
   } = options
@@ -642,8 +654,15 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         },
       }
 
+  // Resolve textSizing from caps + option (matches run.tsx gate)
+  const textSizingEnabled =
+    textSizingOption === true ||
+    (textSizingOption === "auto" && (capsOption?.textSizingSupported ?? isTextSizingLikelySupported()))
+
   // Create pipeline config from caps (scoped width measurer + output phase)
-  const pipelineConfig = capsOption ? createPipeline({ caps: capsOption }) : undefined
+  const pipelineConfig = capsOption
+    ? createPipeline({ caps: { ...capsOption, textSizingSupported: textSizingEnabled } })
+    : undefined
 
   // Create runtime (pass scoped output phase to ensure measurer/caps are threaded)
   const runtime = createRuntime({ target, signal, outputPhaseFn: pipelineConfig?.outputPhaseFn })

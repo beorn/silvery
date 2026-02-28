@@ -172,7 +172,10 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
       <Text color={color}>
         {prompt && <Text color={promptColor}>{prompt}</Text>}
         {showPlaceholder ? (
-          <Text dimColor>{placeholder}</Text>
+          <>
+            {cursorEl}
+            <Text dimColor>{placeholder}</Text>
+          </>
         ) : (
           <>
             <Text>{displayBeforeCursor}</Text>
