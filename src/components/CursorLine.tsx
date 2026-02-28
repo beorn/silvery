@@ -50,7 +50,13 @@ export function CursorLine({
   showCursor = true,
   cursorStyle = "block",
 }: CursorLineProps): React.ReactElement {
-  if (!showCursor) return <Text color={color}>{beforeCursor}{afterCursor}</Text>
+  if (!showCursor)
+    return (
+      <Text color={color}>
+        {beforeCursor}
+        {afterCursor}
+      </Text>
+    )
 
   const cursorChar = afterCursor[0] ?? " "
   const rest = afterCursor.slice(1)

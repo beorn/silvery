@@ -172,8 +172,8 @@ Fullscreen root component. Claims the full terminal dimensions for flexbox layou
 </Screen>
 ```
 
-| Prop | Type | Default | Description |
-|---|---|---|---|
+| Prop            | Type     | Default    | Description               |
+| --------------- | -------- | ---------- | ------------------------- |
 | `flexDirection` | `string` | `"column"` | Flex direction for layout |
 
 ### ScrollbackView
@@ -181,26 +181,21 @@ Fullscreen root component. Claims the full terminal dimensions for flexbox layou
 Native scrollback root component. Items flow vertically and transition through Live → Virtualized → Static as they scroll off-screen. Uses `useScrollbackItem()` for per-item lifecycle control.
 
 ```tsx
-<ScrollbackView
-  items={tasks}
-  keyExtractor={(t) => t.id}
-  isFrozen={(t) => t.done}
-  footer={<Text>Status bar</Text>}
->
+<ScrollbackView items={tasks} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} footer={<Text>Status bar</Text>}>
   {(task) => <TaskItem task={task} />}
 </ScrollbackView>
 ```
 
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| `items` | `T[]` | required | Items to render |
-| `children` | `(item, index) => ReactNode` | required | Render function |
-| `keyExtractor` | `(item, index) => string \| number` | required | Unique key per item |
-| `isFrozen` | `(item, index) => boolean` | — | Data-driven freeze predicate |
-| `footer` | `ReactNode` | — | Pinned footer |
-| `footerHeight` | `number` | `1` | Footer height in rows |
-| `maxHistory` | `number` | `10000` | Max lines in dynamic scrollback |
-| `markers` | `boolean \| object` | — | OSC 133 semantic markers |
+| Prop           | Type                                | Default  | Description                     |
+| -------------- | ----------------------------------- | -------- | ------------------------------- |
+| `items`        | `T[]`                               | required | Items to render                 |
+| `children`     | `(item, index) => ReactNode`        | required | Render function                 |
+| `keyExtractor` | `(item, index) => string \| number` | required | Unique key per item             |
+| `isFrozen`     | `(item, index) => boolean`          | —        | Data-driven freeze predicate    |
+| `footer`       | `ReactNode`                         | —        | Pinned footer                   |
+| `footerHeight` | `number`                            | `1`      | Footer height in rows           |
+| `maxHistory`   | `number`                            | `10000`  | Max lines in dynamic scrollback |
+| `markers`      | `boolean \| object`                 | —        | OSC 133 semantic markers        |
 
 ### VirtualView
 
@@ -220,20 +215,20 @@ App-managed scrolling within a Screen rectangle. Items mount/unmount based on sc
 </Screen>
 ```
 
-| Prop | Type | Default | Description |
-|---|---|---|---|
-| `items` | `T[]` | required | Items to render |
-| `height` | `number` | required | Viewport height in rows |
-| `renderItem` | `(item, index) => ReactNode` | required | Render function |
-| `estimateHeight` | `number \| (index) => number` | `1` | Item height estimate |
-| `scrollTo` | `number` | — | Index to scroll to |
-| `overscan` | `number` | `5` | Extra items beyond viewport |
-| `maxRendered` | `number` | `100` | Max items to render |
-| `scrollPadding` | `number` | `2` | Edge padding before scrolling |
-| `overflowIndicator` | `boolean` | `false` | Show ▲N/▼N indicators |
-| `keyExtractor` | `(item, index) => string \| number` | — | Key extractor |
-| `onEndReached` | `() => void` | — | Called near end of list (infinite scroll) |
-| `onEndReachedThreshold` | `number` | `5` | Items from end to trigger callback |
+| Prop                    | Type                                | Default  | Description                               |
+| ----------------------- | ----------------------------------- | -------- | ----------------------------------------- |
+| `items`                 | `T[]`                               | required | Items to render                           |
+| `height`                | `number`                            | required | Viewport height in rows                   |
+| `renderItem`            | `(item, index) => ReactNode`        | required | Render function                           |
+| `estimateHeight`        | `number \| (index) => number`       | `1`      | Item height estimate                      |
+| `scrollTo`              | `number`                            | —        | Index to scroll to                        |
+| `overscan`              | `number`                            | `5`      | Extra items beyond viewport               |
+| `maxRendered`           | `number`                            | `100`    | Max items to render                       |
+| `scrollPadding`         | `number`                            | `2`      | Edge padding before scrolling             |
+| `overflowIndicator`     | `boolean`                           | `false`  | Show ▲N/▼N indicators                     |
+| `keyExtractor`          | `(item, index) => string \| number` | —        | Key extractor                             |
+| `onEndReached`          | `() => void`                        | —        | Called near end of list (infinite scroll) |
+| `onEndReachedThreshold` | `number`                            | `5`      | Items from end to trigger callback        |
 
 ### useVirtualizer
 

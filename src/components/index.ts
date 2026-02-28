@@ -60,7 +60,14 @@ export { useReadline } from "./useReadline.js"
 export type { ReadlineState, UseReadlineOptions, UseReadlineResult } from "./useReadline.js"
 
 // Readline Operations (shared utilities)
-export { killRing, addToKillRing, findPrevWordStart, findNextWordEnd, MAX_KILL_RING_SIZE, handleReadlineKey } from "../hooks/readline-ops.js"
+export {
+  killRing,
+  addToKillRing,
+  findPrevWordStart,
+  findNextWordEnd,
+  MAX_KILL_RING_SIZE,
+  handleReadlineKey,
+} from "../hooks/readline-ops.js"
 export type { YankState, ReadlineKeyResult } from "../hooks/readline-ops.js"
 
 // Image

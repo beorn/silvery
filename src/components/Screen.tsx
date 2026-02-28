@@ -71,11 +71,7 @@ export function Screen({ children, flexDirection = "column" }: ScreenProps): Rea
   }, [])
 
   return (
-    <Box
-      width={dims.width}
-      height={dims.height}
-      flexDirection={flexDirection}
-    >
+    <Box width={dims.width} height={dims.height} flexDirection={flexDirection}>
       {children}
     </Box>
   )

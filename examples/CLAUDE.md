@@ -74,4 +74,3 @@ Use semantic `$token` colors instead of hardcoded values:
 3. **Scrollback**: After frozen items, scroll up — verify colors/borders preserved
 4. **Width**: Test at 80 and 120 columns
 5. **Fast mode**: `--fast` flag should skip all animation for quick validation
-

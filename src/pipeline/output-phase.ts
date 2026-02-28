@@ -609,15 +609,12 @@ function inlineFullRender(
   // previous OUTPUT lines + any lines written to stdout between renders.
   // Cap to termRows-1: terminal clamps cursor-up at row 0.
   const rawCursorOffset = prevOutputLines - 1 + scrollbackOffset
-  const cursorOffset =
-    termRows != null && !isStrictOutput() ? Math.min(rawCursorOffset, termRows - 1) : rawCursorOffset
+  const cursorOffset = termRows != null && !isStrictOutput() ? Math.min(rawCursorOffset, termRows - 1) : rawCursorOffset
 
   // Cap output at terminal height to prevent scrollback corruption.
   // Content taller than the terminal pushes lines into scrollback where
   // they can never be overwritten (cursor-up is clamped at terminal row 0).
-  const maxOutputLines = termRows != null
-    ? Math.min(nextContentLines, termRows)
-    : nextContentLines
+  const maxOutputLines = termRows != null ? Math.min(nextContentLines, termRows) : nextContentLines
 
   // Quick check: if nothing changed and no scrollback displacement, skip
   if (scrollbackOffset === 0) {
@@ -701,8 +698,14 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
     for (let x = 0; x < buffer.width; x++) {
       buffer.readCellInto(x, y, cell)
 
-      // Skip continuation cells
-      if (cell.continuation) continue
+      // No continuation skip here. Valid continuation cells are never reached
+      // (jumped over by `if (cell.wide) x++` below). Orphaned continuation
+      // cells must NOT be skipped — they need to write a space to keep the
+      // VT cursor in sync. See: orphaned-continuation-cursor-drift fix.
+      if (cell.continuation && process.env.INKX_DEBUG_OUTPUT) {
+        // eslint-disable-next-line no-console
+        console.error(`[bufferToAnsi] orphaned continuation at (${x},${y}) char='${cell.char}' wide=${cell.wide}`)
+      }
 
       // Handle OSC 8 hyperlink transitions (separate from SGR style)
       const cellHyperlink = cell.hyperlink
@@ -1761,7 +1764,9 @@ function verifyOutputEquivalence(
   // DEBUG: log buffer dimensions
   if (process.env.INKX_DEBUG_OUTPUT) {
     // eslint-disable-next-line no-console
-    console.error(`[VERIFY] prev=${prev.width}x${prev.height} next=${next.width}x${next.height} vtSize=${w}x${vtHeight}`)
+    console.error(
+      `[VERIFY] prev=${prev.width}x${prev.height} next=${next.width}x${next.height} vtSize=${w}x${vtHeight}`,
+    )
   }
   // Replay: fresh prev render + incremental diff applied on top
   const freshPrev = bufferToAnsi(prev, mode)

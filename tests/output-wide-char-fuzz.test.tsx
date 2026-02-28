@@ -245,6 +245,107 @@ describe("Container boundary: fill overwrites continuation", () => {
 })
 
 // ============================================================================
+// Orphaned continuation cells (wide char overwritten, continuation remains)
+// ============================================================================
+
+describe("Orphaned continuation cells: wide char overwritten but continuation remains", () => {
+  test("bufferToAnsi: single orphaned continuation doesn't cause cursor drift", () => {
+    // Simulate: emoji at col 5 with continuation at col 6, then a region clear
+    // overwrites col 5 (the wide char) but leaves col 6 as continuation=true.
+    // This is the exact scenario from the user's Asana vault bug.
+    const buffer = new TerminalBuffer(20, 1)
+    buffer.setCell(0, 0, { char: "A" })
+    buffer.setCell(1, 0, { char: "B" })
+    buffer.setCell(2, 0, { char: "C" })
+    buffer.setCell(3, 0, { char: "D" })
+    buffer.setCell(4, 0, { char: "E" })
+    // Orphaned continuation: wide char was overwritten, continuation remains
+    buffer.setCell(5, 0, { char: " " }) // was wide emoji, now space
+    buffer.setCell(6, 0, { char: "", continuation: true }) // orphaned!
+    buffer.setCell(7, 0, { char: "X" })
+    buffer.setCell(8, 0, { char: "Y" })
+
+    const ansi = outputPhase(null, buffer)
+    const screen = replayAnsiWithStyles(20, 1, ansi)
+
+    // Without the fix, skipping the orphaned continuation at col 6 causes
+    // X to appear at col 6 instead of col 7 (drift of -1)
+    expect(screen[0]![0]!.char).toBe("A")
+    expect(screen[0]![4]!.char).toBe("E")
+    expect(screen[0]![7]!.char).toBe("X")
+    expect(screen[0]![8]!.char).toBe("Y")
+  })
+
+  test("bufferToAnsi: two orphaned continuations cause drift of -2", () => {
+    // Matches the user's exact error: drift of -2 at col 204
+    const buffer = new TerminalBuffer(20, 1)
+    // Two emoji were at cols 2-3 and 5-6, both overwritten by region clear
+    buffer.setCell(0, 0, { char: "A" })
+    buffer.setCell(1, 0, { char: "B" })
+    buffer.setCell(2, 0, { char: " " }) // was emoji
+    buffer.setCell(3, 0, { char: "", continuation: true }) // orphaned
+    buffer.setCell(4, 0, { char: "C" })
+    buffer.setCell(5, 0, { char: " " }) // was emoji
+    buffer.setCell(6, 0, { char: "", continuation: true }) // orphaned
+    buffer.setCell(7, 0, { char: "│" }) // border char — should be at col 7
+    buffer.setCell(8, 0, { char: " " })
+
+    const ansi = outputPhase(null, buffer)
+    const screen = replayAnsiWithStyles(20, 1, ansi)
+
+    // Without fix: │ appears at col 5 (drifted by -2)
+    // With fix: │ correctly at col 7
+    expect(screen[0]![7]!.char).toBe("│")
+    expect(screen[0]![0]!.char).toBe("A")
+    expect(screen[0]![1]!.char).toBe("B")
+    expect(screen[0]![4]!.char).toBe("C")
+  })
+
+  test("bufferToAnsi: orphaned continuation at col 0 (edge case)", () => {
+    // Wide char at col -1 would be out of bounds, but a cloned buffer shift
+    // could leave continuation at col 0.
+    const buffer = new TerminalBuffer(10, 1)
+    buffer.setCell(0, 0, { char: "", continuation: true }) // orphaned at start
+    buffer.setCell(1, 0, { char: "H" })
+    buffer.setCell(2, 0, { char: "i" })
+
+    const ansi = outputPhase(null, buffer)
+    const screen = replayAnsiWithStyles(10, 1, ansi)
+
+    expect(screen[0]![1]!.char).toBe("H")
+    expect(screen[0]![2]!.char).toBe("i")
+  })
+
+  test("incremental diff with orphaned continuation doesn't corrupt output", () => {
+    // Frame 1: emoji properly rendered
+    const prev = new TerminalBuffer(20, 1)
+    prev.setCell(0, 0, { char: "│" })
+    prev.setCell(1, 0, { char: " " })
+    prev.setCell(2, 0, { char: "📝", wide: true })
+    prev.setCell(3, 0, { char: "", continuation: true })
+    prev.setCell(4, 0, { char: " " })
+    prev.setCell(5, 0, { char: "│" })
+
+    // Frame 2: emoji cleared, leaving orphaned continuation
+    const next = new TerminalBuffer(20, 1)
+    next.setCell(0, 0, { char: "│" })
+    next.setCell(1, 0, { char: " " })
+    next.setCell(2, 0, { char: " " }) // cleared
+    next.setCell(3, 0, { char: "", continuation: true }) // orphaned!
+    next.setCell(4, 0, { char: " " })
+    next.setCell(5, 0, { char: "│" })
+
+    const freshPrev = outputPhase(null, prev)
+    const incrAnsi = outputPhase(prev, next)
+    const screenIncr = replayAnsiWithStyles(20, 1, freshPrev + incrAnsi)
+    const screenFresh = replayAnsiWithStyles(20, 1, outputPhase(null, next))
+
+    // Both fresh and incremental should show │ at col 5
+    assertScreensMatch(screenIncr, screenFresh, 20, 1, "orphaned continuation after clear")
+  })
+})
+
+// ============================================================================
 // Fuzz: random wide/narrow character mutations
 // ============================================================================
 

@@ -138,17 +138,9 @@ function VirtualViewInner<T>(
   ref: React.ForwardedRef<VirtualViewHandle>,
 ): React.ReactElement {
   // Convert item-based estimateHeight to index-based for useVirtualizer
-  const indexEstimate =
-    typeof estimateHeight === "function" ? estimateHeight : estimateHeight
+  const indexEstimate = typeof estimateHeight === "function" ? estimateHeight : estimateHeight
 
-  const {
-    range,
-    leadingHeight,
-    trailingHeight,
-    scrollOffset,
-    scrollToItem,
-    getKey,
-  } = useVirtualizer({
+  const { range, leadingHeight, trailingHeight, scrollOffset, scrollToItem, getKey } = useVirtualizer({
     count: items.length,
     estimateHeight: indexEstimate,
     viewportHeight: height,
@@ -157,9 +149,7 @@ function VirtualViewInner<T>(
     overscan,
     maxRendered,
     gap,
-    getItemKey: keyExtractor
-      ? (index) => keyExtractor(items[index]!, index)
-      : undefined,
+    getItemKey: keyExtractor ? (index) => keyExtractor(items[index]!, index) : undefined,
     onEndReached,
     onEndReachedThreshold,
   })
@@ -182,9 +172,7 @@ function VirtualViewInner<T>(
 
   // Calculate scrollTo index for inkx Box overflow="scroll"
   const hasTopPlaceholder = leadingHeight > 0
-  const currentSelectedIndex = scrollTo !== undefined
-    ? Math.max(0, Math.min(scrollTo, items.length - 1))
-    : scrollOffset
+  const currentSelectedIndex = scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, items.length - 1)) : scrollOffset
   const selectedIndexInSlice = currentSelectedIndex - startIndex
   const isSelectedInSlice = selectedIndexInSlice >= 0 && selectedIndexInSlice < visibleItems.length
   const scrollToIndex = hasTopPlaceholder ? selectedIndexInSlice + 1 : selectedIndexInSlice

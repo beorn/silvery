@@ -20,8 +20,12 @@ function VirtualizerTest(props: VirtualizerConfig & { testId?: string }) {
 
   return (
     <Box flexDirection="column">
-      <Text>range: {result.range.startIndex}-{result.range.endIndex}</Text>
-      <Text>hidden: {result.hiddenBefore}/{result.hiddenAfter}</Text>
+      <Text>
+        range: {result.range.startIndex}-{result.range.endIndex}
+      </Text>
+      <Text>
+        hidden: {result.hiddenBefore}/{result.hiddenAfter}
+      </Text>
       <Text>leading: {result.leadingHeight}</Text>
       <Text>trailing: {result.trailingHeight}</Text>
       <Text>offset: {result.scrollOffset}</Text>
@@ -31,28 +35,14 @@ function VirtualizerTest(props: VirtualizerConfig & { testId?: string }) {
 
 describe("useVirtualizer", () => {
   test("returns full range for small lists", () => {
-    const app = render(
-      <VirtualizerTest
-        count={5}
-        viewportHeight={10}
-        estimateHeight={1}
-        scrollTo={0}
-      />,
-    )
+    const app = render(<VirtualizerTest count={5} viewportHeight={10} estimateHeight={1} scrollTo={0} />)
 
     expect(app.text).toContain("range: 0-5")
     expect(app.text).toContain("hidden: 0/0")
   })
 
   test("virtualizes large lists", () => {
-    const app = render(
-      <VirtualizerTest
-        count={100}
-        viewportHeight={10}
-        estimateHeight={1}
-        scrollTo={0}
-      />,
-    )
+    const app = render(<VirtualizerTest count={100} viewportHeight={10} estimateHeight={1} scrollTo={0} />)
 
     // Should not render all 100 items
     expect(app.text).toMatch(/range: 0-\d+/)
@@ -62,14 +52,7 @@ describe("useVirtualizer", () => {
   })
 
   test("scrolls to target item", () => {
-    const app = render(
-      <VirtualizerTest
-        count={100}
-        viewportHeight={10}
-        estimateHeight={1}
-        scrollTo={50}
-      />,
-    )
+    const app = render(<VirtualizerTest count={100} viewportHeight={10} estimateHeight={1} scrollTo={50} />)
 
     // Should have items hidden before
     const hiddenMatch = app.text.match(/hidden: (\d+)\/(\d+)/)
@@ -77,13 +60,7 @@ describe("useVirtualizer", () => {
   })
 
   test("handles empty list", () => {
-    const app = render(
-      <VirtualizerTest
-        count={0}
-        viewportHeight={10}
-        estimateHeight={1}
-      />,
-    )
+    const app = render(<VirtualizerTest count={0} viewportHeight={10} estimateHeight={1} />)
 
     expect(app.text).toContain("range: 0-0")
     expect(app.text).toContain("hidden: 0/0")
@@ -101,9 +78,13 @@ describe("useVirtualizer", () => {
 
       return (
         <Box flexDirection="column">
-          <Text>range: {result.range.startIndex}-{result.range.endIndex}</Text>
+          <Text>
+            range: {result.range.startIndex}-{result.range.endIndex}
+          </Text>
           <Text>offset: {result.scrollOffset}</Text>
-          <Text testID="freeze" onClick={() => setScrollTo(undefined)}>freeze</Text>
+          <Text testID="freeze" onClick={() => setScrollTo(undefined)}>
+            freeze
+          </Text>
         </Box>
       )
     }
@@ -120,15 +101,7 @@ describe("useVirtualizer", () => {
   })
 
   test("respects overscan", () => {
-    const app = render(
-      <VirtualizerTest
-        count={100}
-        viewportHeight={10}
-        estimateHeight={1}
-        scrollTo={0}
-        overscan={3}
-      />,
-    )
+    const app = render(<VirtualizerTest count={100} viewportHeight={10} estimateHeight={1} scrollTo={0} overscan={3} />)
 
     // With overscan=3, should render ~10 + 2*3 = 16 items max
     const match = app.text.match(/range: 0-(\d+)/)
@@ -137,13 +110,7 @@ describe("useVirtualizer", () => {
 
   test("respects maxRendered", () => {
     const app = render(
-      <VirtualizerTest
-        count={1000}
-        viewportHeight={10}
-        estimateHeight={1}
-        scrollTo={500}
-        maxRendered={30}
-      />,
+      <VirtualizerTest count={1000} viewportHeight={10} estimateHeight={1} scrollTo={500} maxRendered={30} />,
     )
 
     const match = app.text.match(/range: (\d+)-(\d+)/)
@@ -156,7 +123,7 @@ describe("useVirtualizer", () => {
       <VirtualizerTest
         count={50}
         viewportHeight={10}
-        estimateHeight={(index) => index % 2 === 0 ? 1 : 3}
+        estimateHeight={(index) => (index % 2 === 0 ? 1 : 3)}
         scrollTo={0}
       />,
     )
@@ -203,15 +170,7 @@ describe("useVirtualizer", () => {
   })
 
   test("handles gap parameter", () => {
-    const app = render(
-      <VirtualizerTest
-        count={50}
-        viewportHeight={10}
-        estimateHeight={1}
-        gap={1}
-        scrollTo={0}
-      />,
-    )
+    const app = render(<VirtualizerTest count={50} viewportHeight={10} estimateHeight={1} gap={1} scrollTo={0} />)
 
     // With gap=1, effective item size is 2, so ~5 items visible + overscan
     expect(app.text).toContain("range:")

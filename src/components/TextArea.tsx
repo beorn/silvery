@@ -387,11 +387,13 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
         const afterCursor = wl.line.slice(cursorCol + 1)
 
         // Active: plain text (real cursor handles it). Inactive: fake cursor.
-        const cursorEl = isActive
-          ? <Text>{atCursor}</Text>
-          : cursorStyle === "block"
-            ? <Text inverse>{atCursor}</Text>
-            : <Text underline>{atCursor}</Text>
+        const cursorEl = isActive ? (
+          <Text>{atCursor}</Text>
+        ) : cursorStyle === "block" ? (
+          <Text inverse>{atCursor}</Text>
+        ) : (
+          <Text underline>{atCursor}</Text>
+        )
 
         return (
           <Text key={absoluteRow}>

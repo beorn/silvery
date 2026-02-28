@@ -269,8 +269,7 @@ const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "system",
-    content:
-      "\u{1F4E6} Context compaction: conversation history frozen to scrollback. Scroll up to review.",
+    content: "\u{1F4E6} Context compaction: conversation history frozen to scrollback. Scroll up to review.",
   },
   {
     role: "agent",
@@ -841,7 +840,9 @@ function StatusBar({
   return (
     <Box justifyContent="space-between" paddingX={1}>
       <Text color="$muted" dim>
-        <Text color="$primary">{elapsedStr}</Text>{"  "}{keys}
+        <Text color="$primary">{elapsedStr}</Text>
+        {"  "}
+        {keys}
       </Text>
       <Text color="$muted" dim>
         ctx <Text color={ctxColor}>{ctxBar}</Text> {ctxPct}% {"\u00B7"} {cost}
@@ -1233,7 +1234,11 @@ function CodingAgent({
         markers={true}
         footer={
           <Box flexDirection="column">
-            <Box borderStyle="round" borderColor={streamPhase !== "done" ? "$warning" : done ? "$success" : "$primary"} paddingX={1}>
+            <Box
+              borderStyle="round"
+              borderColor={streamPhase !== "done" ? "$warning" : done ? "$success" : "$primary"}
+              paddingX={1}
+            >
               <TextInput
                 value={inputText}
                 onChange={setInputText}
@@ -1243,7 +1248,13 @@ function CodingAgent({
                 isActive={!autoMode && !done}
               />
             </Box>
-            <StatusBar exchanges={exchanges} autoMode={autoMode} compacting={compacting} done={done} elapsed={elapsed} />
+            <StatusBar
+              exchanges={exchanges}
+              autoMode={autoMode}
+              compacting={compacting}
+              done={done}
+              elapsed={elapsed}
+            />
           </Box>
         }
         footerHeight={4}
@@ -1260,18 +1271,10 @@ function CodingAgent({
                     <Spinner type="arc" /> Compacting context
                   </Text>
                   <Text> </Text>
-                  <Text color="$muted">
-                    All exchanges are being frozen into terminal scrollback. The dynamic
-                  </Text>
-                  <Text color="$muted">
-                    area below will clear, but everything above is preserved — scroll up
-                  </Text>
-                  <Text color="$muted">
-                    to review. This simulates how Claude Code reclaims context window
-                  </Text>
-                  <Text color="$muted">
-                    space while keeping your conversation history accessible.
-                  </Text>
+                  <Text color="$muted">All exchanges are being frozen into terminal scrollback. The dynamic</Text>
+                  <Text color="$muted">area below will clear, but everything above is preserved — scroll up</Text>
+                  <Text color="$muted">to review. This simulates how Claude Code reclaims context window</Text>
+                  <Text color="$muted">space while keeping your conversation history accessible.</Text>
                 </Box>
               )}
 

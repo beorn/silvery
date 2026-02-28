@@ -49,7 +49,9 @@ Uses the normal terminal buffer. Children flow vertically. As items scroll off t
 
 ```tsx
 <ScrollbackView>
-  {messages.map(m => <Message key={m.id} data={m} />)}
+  {messages.map((m) => (
+    <Message key={m.id} data={m} />
+  ))}
   <InputBar />
 </ScrollbackView>
 ```
@@ -65,11 +67,7 @@ A scrollable area within a `<Screen>`. Items mount/unmount based on scroll posit
 ```tsx
 <Screen>
   <Header />
-  <VirtualView
-    items={logs}
-    renderItem={(item) => <LogEntry data={item} />}
-    estimateHeight={() => 3}
-  />
+  <VirtualView items={logs} renderItem={(item) => <LogEntry data={item} />} estimateHeight={() => 3} />
   <StatusBar />
 </Screen>
 ```
@@ -147,6 +145,7 @@ The component is mounted in the React tree, rendering normally. It participates 
 ### Virtualized (Dynamic Scrollback)
 
 The component has scrolled out of the visible area into the **dynamic** section of scrollback. inkx:
+
 1. Renders it to a string snapshot
 2. Commits the snapshot to terminal scrollback (ScrollbackView) or unmounts it (VirtualView)
 3. Removes it from the React tree
@@ -178,12 +177,13 @@ Both ScrollbackView and VirtualView share a headless hook — similar to `@tanst
 const virtualizer = useVirtualizer({
   count: items.length,
   getItemKey: (index) => items[index].id,
-  estimateHeight: (index) => 3,  // lines
+  estimateHeight: (index) => 3, // lines
   overscan: 5,
 })
 ```
 
 The hook handles:
+
 - Item tracking by key
 - Height measurement (actual) and estimation (before mount)
 - Visible range calculation
@@ -191,6 +191,7 @@ The hook handles:
 - Mount/unmount decisions
 
 The only difference is the **output adapter**:
+
 - **ScrollbackView**: virtualized items are rendered to string → written to terminal scrollback → unmounted
 - **VirtualView**: virtualized items are simply unmounted (remounted when scrolled back into view)
 
@@ -198,14 +199,14 @@ The only difference is the **output adapter**:
 
 No standard ANSI escape sequence exists to query a terminal's scrollback limit. We use a `TERM_PROGRAM` heuristic with prop override:
 
-| Terminal | Default Scrollback |
-|---|---|
-| Ghostty | 10,000 lines |
-| Kitty | 2,000 lines |
-| iTerm2 | unlimited (configurable) |
-| WezTerm | 3,500 lines |
-| macOS Terminal | 10,000 lines |
-| xterm | 1,024 lines |
+| Terminal       | Default Scrollback       |
+| -------------- | ------------------------ |
+| Ghostty        | 10,000 lines             |
+| Kitty          | 2,000 lines              |
+| iTerm2         | unlimited (configurable) |
+| WezTerm        | 3,500 lines              |
+| macOS Terminal | 10,000 lines             |
+| xterm          | 1,024 lines              |
 
 ```tsx
 <ScrollbackView maxHistory={5000}>  {/* override heuristic */}
@@ -237,17 +238,17 @@ For ScrollbackView with a `maxHistory` of 5,000 lines, a resize reprints at most
 
 ## Trade-off Matrix
 
-| | ScrollbackView (native) | VirtualView (app-managed) |
-|---|---|---|
-| Text selection | Free (terminal handles) | Shift+drag only (mouse tracking) |
-| Scroll mechanism | Terminal (mouse wheel, scrollbar) | App (keyboard, mouse wheel events) |
-| Scroll position control | Terminal decides | App decides (no snap-to-bottom issue) |
-| Mouse in history | No (coordinates are screen-relative) | Yes (app tracks position) |
-| Perf: append | O(1) — write to scrollback | O(1) — mount at bottom |
-| Perf: update old item | O(lines below it) — rewrite scrollback | O(1) if visible, free if unmounted |
-| Memory | Terminal buffer (external) | React tree (in-process) |
-| Max items | Terminal scrollback limit | Available memory |
-| Content after app exit | Preserved in terminal scrollback | Gone |
+|                         | ScrollbackView (native)                | VirtualView (app-managed)             |
+| ----------------------- | -------------------------------------- | ------------------------------------- |
+| Text selection          | Free (terminal handles)                | Shift+drag only (mouse tracking)      |
+| Scroll mechanism        | Terminal (mouse wheel, scrollbar)      | App (keyboard, mouse wheel events)    |
+| Scroll position control | Terminal decides                       | App decides (no snap-to-bottom issue) |
+| Mouse in history        | No (coordinates are screen-relative)   | Yes (app tracks position)             |
+| Perf: append            | O(1) — write to scrollback             | O(1) — mount at bottom                |
+| Perf: update old item   | O(lines below it) — rewrite scrollback | O(1) if visible, free if unmounted    |
+| Memory                  | Terminal buffer (external)             | React tree (in-process)               |
+| Max items               | Terminal scrollback limit              | Available memory                      |
+| Content after app exit  | Preserved in terminal scrollback       | Gone                                  |
 
 ## DECSTBM Integration
 
@@ -256,6 +257,7 @@ ScrollbackView uses DECSTBM (scroll regions) to pin a footer/status bar at the b
 **Critical detail**: Lines scrolled out of a DECSTBM region are NOT saved to terminal scrollback by default. The framework must explicitly write frozen content to stdout (outside the scroll region) before the region scroll occurs. The `useScrollback` hook handles this.
 
 **Sequence**:
+
 1. Set scroll region to rows 1..(N-1), excluding the status bar row
 2. When freezing an item: temporarily reset region, write item to stdout, re-engage region
 3. Issue `CSI S` (scroll up) within the region for the live content area
