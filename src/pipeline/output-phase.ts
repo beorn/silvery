@@ -66,18 +66,46 @@ export type OutputPhaseFn = (
   termRows?: number,
 ) => string
 
+// ============================================================================
+// Output Phase Measurer (module-local, avoids dual-module-loading issues)
+// ============================================================================
+// bun can load the same .ts file via symlink + real path as separate module
+// instances. This means `_scopedMeasurer` set by `runWithMeasurer()` in
+// pipeline/index.ts's instance of unicode.ts is invisible to output-phase.ts's
+// instance. We avoid this by closing over the measurer in createOutputPhase()
+// and setting a module-local variable that all output-phase functions read.
+
+interface OutputMeasurer {
+  graphemeWidth(grapheme: string): number
+  readonly textSizingEnabled: boolean
+}
+
+/** Module-local measurer, set by scopedOutputPhase. */
+let _outputMeasurer: OutputMeasurer | null = null
+
+/** Get grapheme width using the output phase measurer (falls back to unicode.ts import). */
+function outputGraphemeWidth(g: string): number {
+  return _outputMeasurer ? _outputMeasurer.graphemeWidth(g) : graphemeWidth(g)
+}
+
+/** Check if text sizing is enabled using the output phase measurer. */
+function outputTextSizingEnabled(): boolean {
+  return _outputMeasurer ? _outputMeasurer.textSizingEnabled : isTextSizingEnabled()
+}
+
 /**
  * Create a scoped output phase that uses specific terminal capabilities.
- * Measurer scoping is handled by runWithMeasurer() in the pipeline.
  *
  * @param caps - Terminal capabilities for SGR code generation
+ * @param measurer - Width measurer for graphemeWidth/textSizingEnabled (avoids dual-module-loading issues)
  */
-export function createOutputPhase(caps: Partial<OutputCaps>): OutputPhaseFn {
+export function createOutputPhase(caps: Partial<OutputCaps>, measurer?: OutputMeasurer): OutputPhaseFn {
   const closedCaps: OutputCaps = {
     underlineStyles: caps.underlineStyles ?? true,
     underlineColor: caps.underlineColor ?? true,
     colorLevel: caps.colorLevel ?? "truecolor",
   }
+  const closedMeasurer = measurer ?? null
 
   return function scopedOutputPhase(
     prev: TerminalBuffer | null,
@@ -87,11 +115,14 @@ export function createOutputPhase(caps: Partial<OutputCaps>): OutputPhaseFn {
     termRows?: number,
   ): string {
     const prevCaps = _caps
+    const prevMeasurer = _outputMeasurer
     _caps = closedCaps
+    _outputMeasurer = closedMeasurer
     try {
       return outputPhase(prev, next, mode, scrollbackOffset, termRows)
     } finally {
       _caps = prevCaps
+      _outputMeasurer = prevMeasurer
     }
   }
 }
@@ -120,7 +151,7 @@ let accumulateFrameCount = 0
  * the character in exactly 2 cells, matching the layout engine's measurement.
  */
 function wrapTextSizing(char: string, wide: boolean): string {
-  if (!wide || !isTextSizingEnabled()) return char
+  if (!wide || !outputTextSizingEnabled()) return char
   const cp = char.codePointAt(0)
   if (cp !== undefined && isPrivateUseArea(cp)) {
     return textSized(char, 2)
@@ -1748,7 +1779,7 @@ export function replayAnsiWithStyles(width: number, height: number, ansi: string
         j += nextLen
       }
       if (cy < height && cx < width) {
-        const gw = graphemeWidth(grapheme)
+        const gw = outputGraphemeWidth(grapheme)
         const charWidth = gw || 1
 
         const cell = screen[cy]![cx]!
@@ -1841,15 +1872,17 @@ function verifyOutputEquivalence(
     const parts: string[] = []
     for (let cx = 0; cx < buf.width; cx++) {
       const c = buf.getCell(cx, row)
-      const cp = c.char ? [...c.char].map(ch => 'U+' + (ch.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')).join(',') : 'empty'
-      if (c.wide) parts.push(`W@${cx}:${cp}(gw=${graphemeWidth(c.char)})`)
+      const cp = c.char
+        ? [...c.char].map((ch) => "U+" + (ch.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, "0")).join(",")
+        : "empty"
+      if (c.wide) parts.push(`W@${cx}:${cp}(gw=${outputGraphemeWidth(c.char)})`)
       if (c.continuation) parts.push(`C@${cx}`)
       // Flag cells where written char width differs from buffer expectation
       const charToWrite = c.char || " "
-      const vtWidth = graphemeWidth(charToWrite)
+      const vtWidth = outputGraphemeWidth(charToWrite)
       const bufWidth = c.wide ? 2 : 1
       if (!c.continuation && vtWidth !== bufWidth) {
-        parts.push(`MISMATCH@${cx}:${cp}(vtW=${vtWidth},bufW=${bufWidth})`)
+        parts.push(`MISMATCH@${cx}:${cp}(vtW=${vtWidth},bufW=${bufWidth},tse=${outputTextSizingEnabled()})`)
       }
     }
     return parts.join(" ")

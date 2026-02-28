@@ -320,8 +320,8 @@ describe("output phase: OSC 66 wrapping", () => {
     expect(output).toContain("\u4e00")
   })
 
-  // Genuine PUA wide-char incremental rendering bug (not VT overflow)
-  test.fails("wraps PUA in incremental diff output", () => {
+  // PUA wide-char incremental rendering — uses module-local measurer
+  test("wraps PUA in incremental diff output", () => {
     // Create prev buffer with different content
     const prev = new TerminalBuffer(10, 1)
     writeTextToBuffer(prev, 0, 0, "XXXX")

@@ -136,7 +136,9 @@ export function executeRender(
   config?: PipelineConfig,
 ): { output: string; buffer: TerminalBuffer } {
   if (config?.measurer) {
-    return runWithMeasurer(config.measurer, () => executeRenderCore(root, width, height, prevBuffer, options, config))
+    return runWithMeasurer(config.measurer, () => {
+      return executeRenderCore(root, width, height, prevBuffer, options, config)
+    })
   }
   return executeRenderCore(root, width, height, prevBuffer, options, config)
 }

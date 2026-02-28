@@ -64,6 +64,7 @@ export function createPipeline(
     caps
       ? { underlineStyles: caps.underlineStyles, underlineColor: caps.underlineColor, colorLevel: caps.colorLevel }
       : {},
+    measurer,
   )
   return { measurer, outputPhaseFn }
 }

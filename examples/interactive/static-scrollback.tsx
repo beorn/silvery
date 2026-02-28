@@ -740,7 +740,9 @@ function ExchangeItem({
     return (
       <Box paddingX={1}>
         <Text>
-          <Text bold color="$primary">{"\u276F"} </Text>
+          <Text bold color="$primary">
+            {"\u276F"}{" "}
+          </Text>
           {exchange.content}
         </Text>
       </Box>
@@ -754,8 +756,7 @@ function ExchangeItem({
   const fraction = isLatest ? revealFraction : 1
 
   // Token badge for agent exchanges
-  const tokenBadge =
-    exchange.tokens && phase === "done" ? ` ${formatTokens(exchange.tokens.output)} tokens` : ""
+  const tokenBadge = exchange.tokens && phase === "done" ? ` ${formatTokens(exchange.tokens.output)} tokens` : ""
 
   // Tool call phases
   const toolCalls = exchange.toolCalls ?? []
