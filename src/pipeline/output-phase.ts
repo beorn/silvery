@@ -1867,7 +1867,6 @@ function verifyOutputEquivalence(
   const freshNext = bufferToAnsi(next, mode)
   const screenFresh = replayAnsiWithStyles(w, vtHeight, freshNext)
 
-  // Dump wide cells, continuation cells, and width-mismatch cells for diagnosis
   const _dumpRowWideCells = (buf: TerminalBuffer, row: number): string => {
     const parts: string[] = []
     for (let cx = 0; cx < buf.width; cx++) {

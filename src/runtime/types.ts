@@ -82,6 +82,15 @@ export interface RuntimeOptions {
   signal?: AbortSignal
   /** Render mode: fullscreen (alt screen) or inline (scrollback-compatible) */
   mode?: "fullscreen" | "inline"
+  /** Scoped output phase function (from createOutputPhase/createPipeline). When provided,
+   *  runtime.render() uses this instead of the raw outputPhase — ensures measurer/caps are threaded. */
+  outputPhaseFn?: (
+    prev: import("../buffer.js").TerminalBuffer | null,
+    next: import("../buffer.js").TerminalBuffer,
+    mode?: "fullscreen" | "inline",
+    scrollbackOffset?: number,
+    termRows?: number,
+  ) => string
 }
 
 /**

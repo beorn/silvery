@@ -596,7 +596,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
       }
 
   // Create runtime
-  const runtime = createRuntime({ target, signal, mode: modeOption })
+  const runtime = createRuntime({ target, signal, mode: modeOption, outputPhaseFn: pipelineConfig?.outputPhaseFn })
 
   // Exit function
   const exit = () => {

@@ -642,8 +642,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         },
       }
 
-  // Create runtime
-  const runtime = createRuntime({ target, signal })
+  // Create pipeline config from caps (scoped width measurer + output phase)
+  const pipelineConfig = capsOption ? createPipeline({ caps: capsOption }) : undefined
+
+  // Create runtime (pass scoped output phase to ensure measurer/caps are threaded)
+  const runtime = createRuntime({ target, signal, outputPhaseFn: pipelineConfig?.outputPhaseFn })
 
   // Cleanup state
   let cleanedUp = false
@@ -652,9 +655,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let kittyEnabled = false
   let kittyFlags = KittyFlags.DISAMBIGUATE
   let mouseEnabled = false
-
-  // Create pipeline config from caps (scoped width measurer + output phase)
-  const pipelineConfig = capsOption ? createPipeline({ caps: capsOption }) : undefined
 
   // Focus manager (tree-based focus system) with event dispatch wiring
   const focusManager = createFocusManager({

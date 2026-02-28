@@ -121,7 +121,7 @@ function createEventChannel(signal: AbortSignal): EventChannel {
  * @returns Runtime instance implementing Symbol.dispose
  */
 export function createRuntime(options: RuntimeOptions): Runtime {
-  const { target, signal: externalSignal, mode = "fullscreen" } = options
+  const { target, signal: externalSignal, mode = "fullscreen", outputPhaseFn } = options
 
   // Internal abort controller for cleanup
   const controller = new AbortController()
@@ -236,7 +236,17 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       const offset = scrollbackOffset
       scrollbackOffset = 0 // Consume the offset
       const termRows = mode === "inline" ? target.getDims().rows : undefined
-      const patch = diff(prevBuffer, buffer, mode, offset, termRows)
+
+      // Use scoped output phase if provided (threads measurer/caps correctly),
+      // otherwise fall back to raw diff() for backwards compatibility
+      let patch: string
+      if (outputPhaseFn) {
+        const prevBuf = prevBuffer?._buffer ?? null
+        const nextBuf = buffer._buffer
+        patch = outputPhaseFn(prevBuf, nextBuf, mode, offset, termRows)
+      } else {
+        patch = diff(prevBuffer, buffer, mode, offset, termRows)
+      }
       prevBuffer = buffer
 
       // Write to target
