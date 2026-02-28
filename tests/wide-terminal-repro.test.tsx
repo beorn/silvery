@@ -385,15 +385,7 @@ describe("wide terminal content phase (board layout)", () => {
   })
 
   // Simple card without conditional styling in header (avoids dirty flag bug)
-  function SimpleCard({
-    title,
-    selected,
-    width: cardWidth,
-  }: {
-    title: string
-    selected: boolean
-    width: number
-  }) {
+  function SimpleCard({ title, selected, width: cardWidth }: { title: string; selected: boolean; width: number }) {
     return (
       <Box
         flexDirection="column"
@@ -408,15 +400,7 @@ describe("wide terminal content phase (board layout)", () => {
     )
   }
 
-  function SimpleBoard({
-    cols,
-    rows,
-    cursor,
-  }: {
-    cols: number
-    rows: number
-    cursor: [number, number]
-  }) {
+  function SimpleBoard({ cols, rows, cursor }: { cols: number; rows: number; cursor: [number, number] }) {
     const colWidth = Math.floor(cols / 4)
     const columns = [
       { cards: Array.from({ length: 10 }, (_, i) => `Task A-${i}`) },
@@ -428,12 +412,7 @@ describe("wide terminal content phase (board layout)", () => {
     return (
       <Box flexDirection="row" width={cols} height={rows}>
         {columns.map((col, colIdx) => (
-          <Box
-            key={colIdx}
-            flexDirection="column"
-            width={colIdx < 3 ? colWidth : cols - colWidth * 3}
-            height={rows}
-          >
+          <Box key={colIdx} flexDirection="column" width={colIdx < 3 ? colWidth : cols - colWidth * 3} height={rows}>
             <Box overflow="scroll" flexDirection="column" height={rows}>
               {col.cards.map((card, i) => (
                 <SimpleCard
@@ -450,9 +429,7 @@ describe("wide terminal content phase (board layout)", () => {
     )
   }
 
-  function assertBuffersMatch(
-    app: ReturnType<ReturnType<typeof createRenderer>>,
-  ): void {
+  function assertBuffersMatch(app: ReturnType<ReturnType<typeof createRenderer>>): void {
     const fresh = app.freshRender()
     const current = app.lastBuffer()!
     const mismatch = compareBuffers(current, fresh)
@@ -470,21 +447,15 @@ describe("wide terminal content phase (board layout)", () => {
     const rows = 25
     const render = createRenderer({ cols, rows })
 
-    const app = render(
-      <SimpleBoard cols={cols} rows={rows} cursor={[0, 0]} />,
-    )
+    const app = render(<SimpleBoard cols={cols} rows={rows} cursor={[0, 0]} />)
     assertBuffersMatch(app)
 
     // Select card in rightmost column
-    app.rerender(
-      <SimpleBoard cols={cols} rows={rows} cursor={[3, 0]} />,
-    )
+    app.rerender(<SimpleBoard cols={cols} rows={rows} cursor={[3, 0]} />)
     assertBuffersMatch(app)
 
     // Move to different card in same column
-    app.rerender(
-      <SimpleBoard cols={cols} rows={rows} cursor={[3, 2]} />,
-    )
+    app.rerender(<SimpleBoard cols={cols} rows={rows} cursor={[3, 2]} />)
     assertBuffersMatch(app)
   })
 
@@ -493,9 +464,7 @@ describe("wide terminal content phase (board layout)", () => {
     const rows = 20
     const render = createRenderer({ cols, rows })
 
-    const app = render(
-      <SimpleBoard cols={cols} rows={rows} cursor={[0, 0]} />,
-    )
+    const app = render(<SimpleBoard cols={cols} rows={rows} cursor={[0, 0]} />)
     assertBuffersMatch(app)
 
     const moves: [number, number][] = [
@@ -508,9 +477,7 @@ describe("wide terminal content phase (board layout)", () => {
       [0, 2],
     ]
     for (const cursor of moves) {
-      app.rerender(
-        <SimpleBoard cols={cols} rows={rows} cursor={cursor} />,
-      )
+      app.rerender(<SimpleBoard cols={cols} rows={rows} cursor={cursor} />)
       assertBuffersMatch(app)
     }
   })
@@ -520,59 +487,32 @@ describe("wide terminal content phase (board layout)", () => {
       const rows = 15
       const render = createRenderer({ cols, rows })
 
-      const app = render(
-        <SimpleBoard cols={cols} rows={rows} cursor={[0, 0]} />,
-      )
+      const app = render(<SimpleBoard cols={cols} rows={rows} cursor={[0, 0]} />)
       assertBuffersMatch(app)
 
-      app.rerender(
-        <SimpleBoard cols={cols} rows={rows} cursor={[3, 0]} />,
-      )
+      app.rerender(<SimpleBoard cols={cols} rows={rows} cursor={[3, 0]} />)
       assertBuffersMatch(app)
 
-      app.rerender(
-        <SimpleBoard cols={cols} rows={rows} cursor={[0, 0]} />,
-      )
+      app.rerender(<SimpleBoard cols={cols} rows={rows} cursor={[0, 0]} />)
       assertBuffersMatch(app)
     }
   })
 
   // Outline-style borders (used by km-tui cards)
   test("outline borders at wide widths", () => {
-    function OutlineBoard({
-      cols,
-      rows,
-      cursor,
-    }: {
-      cols: number
-      rows: number
-      cursor: [number, number]
-    }) {
+    function OutlineBoard({ cols, rows, cursor }: { cols: number; rows: number; cursor: [number, number] }) {
       const colWidth = Math.floor(cols / 3)
       return (
         <Box flexDirection="row" width={cols} height={rows}>
           {[0, 1, 2].map((colIdx) => (
-            <Box
-              key={colIdx}
-              flexDirection="column"
-              width={colIdx < 2 ? colWidth : cols - colWidth * 2}
-              height={rows}
-            >
+            <Box key={colIdx} flexDirection="column" width={colIdx < 2 ? colWidth : cols - colWidth * 2} height={rows}>
               <Box overflow="scroll" flexDirection="column" height={rows}>
                 {Array.from({ length: 10 }, (_, i) => (
                   <Box
                     key={i}
                     height={3}
-                    outlineStyle={
-                      cursor[0] === colIdx && cursor[1] === i
-                        ? "round"
-                        : undefined
-                    }
-                    outlineColor={
-                      cursor[0] === colIdx && cursor[1] === i
-                        ? "yellow"
-                        : undefined
-                    }
+                    outlineStyle={cursor[0] === colIdx && cursor[1] === i ? "round" : undefined}
+                    outlineColor={cursor[0] === colIdx && cursor[1] === i ? "yellow" : undefined}
                   >
                     <Text>
                       {" "}
@@ -591,38 +531,22 @@ describe("wide terminal content phase (board layout)", () => {
     const rows = 25
     const render = createRenderer({ cols, rows })
 
-    const app = render(
-      <OutlineBoard cols={cols} rows={rows} cursor={[0, 0]} />,
-    )
+    const app = render(<OutlineBoard cols={cols} rows={rows} cursor={[0, 0]} />)
     assertBuffersMatch(app)
 
-    app.rerender(
-      <OutlineBoard cols={cols} rows={rows} cursor={[2, 0]} />,
-    )
+    app.rerender(<OutlineBoard cols={cols} rows={rows} cursor={[2, 0]} />)
     assertBuffersMatch(app)
 
-    app.rerender(
-      <OutlineBoard cols={cols} rows={rows} cursor={[2, 3]} />,
-    )
+    app.rerender(<OutlineBoard cols={cols} rows={rows} cursor={[2, 3]} />)
     assertBuffersMatch(app)
 
-    app.rerender(
-      <OutlineBoard cols={cols} rows={rows} cursor={[1, 3]} />,
-    )
+    app.rerender(<OutlineBoard cols={cols} rows={rows} cursor={[1, 3]} />)
     assertBuffersMatch(app)
   })
 
   // Mixed border + backgroundColor
   test("border + backgroundColor at 210 cols", () => {
-    function ColorBoard({
-      cols,
-      rows,
-      selected,
-    }: {
-      cols: number
-      rows: number
-      selected: number
-    }) {
+    function ColorBoard({ cols, rows, selected }: { cols: number; rows: number; selected: number }) {
       const cardWidth = Math.floor(cols / 4)
       return (
         <Box flexDirection="row" width={cols} height={rows}>
@@ -648,9 +572,7 @@ describe("wide terminal content phase (board layout)", () => {
     const rows = 15
     const render = createRenderer({ cols, rows })
 
-    const app = render(
-      <ColorBoard cols={cols} rows={rows} selected={0} />,
-    )
+    const app = render(<ColorBoard cols={cols} rows={rows} selected={0} />)
     assertBuffersMatch(app)
 
     for (let i = 1; i <= 3; i++) {

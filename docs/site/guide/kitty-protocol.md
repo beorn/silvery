@@ -321,16 +321,13 @@ function parseKittyKeypress(s: string): ParsedKeypress | null {
 
 ### Phase 5: Context Integration
 
-Add protocol state to the input context:
+Track protocol state in terminal capabilities:
 
 ```typescript
-interface InputContextValue {
-  eventEmitter: EventEmitter
-  exitOnCtrlC: boolean
-  // New
-  kittyProtocolEnabled: boolean
-  kittyProtocolFlags: number
-}
+// Protocol state is managed by the runtime (run/createApp)
+// and can be queried via terminal capabilities detection
+const caps = detectTerminalCaps()
+// caps.kitty indicates Kitty protocol support
 ```
 
 ## API Design Examples
@@ -388,12 +385,14 @@ await render(<Game />, {
 
 ```tsx
 function App() {
-  const { kittyProtocolEnabled } = useStdin()
+  const rt = useRuntime()
+  // Kitty support is detected at runtime startup via detectKittyFromStdio()
+  // The run() and createApp() runtimes handle this automatically with kitty: true
 
   return (
     <Box flexDirection="column">
-      <Text>Kitty protocol: {kittyProtocolEnabled ? "enabled" : "not available"}</Text>
-      {!kittyProtocolEnabled && <Text dimColor>Tip: Use Kitty, WezTerm, or iTerm2 for enhanced keyboard support</Text>}
+      <Text>Kitty protocol: check terminal capabilities</Text>
+      <Text dimColor>Tip: Use Kitty, WezTerm, or iTerm2 for enhanced keyboard support</Text>
     </Box>
   )
 }
@@ -492,8 +491,7 @@ useInput((input, key) => {
 - [ ] Add `CSI u` parser for Kitty sequences
 - [ ] Add protocol enable/disable lifecycle
 - [ ] Ensure cleanup on process exit/crash
-- [ ] Update `InputContext` with protocol state
-- [ ] Add `kittyProtocolEnabled` to `useStdin` return value
+- [ ] Track protocol state in RuntimeContext or term capabilities
 - [ ] Write tests with mock terminal responses
 - [ ] Update documentation
 - [ ] Add example showing new capabilities

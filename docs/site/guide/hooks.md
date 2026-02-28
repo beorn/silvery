@@ -182,27 +182,6 @@ function App() {
 | `stdout` | `NodeJS.WriteStream`     | stdout stream            |
 | `write`  | `(data: string) => void` | Write directly to stdout |
 
-## useStdin
-
-Access stdin stream.
-
-```tsx
-import { useStdin } from "inkx"
-
-function App() {
-  const { stdin, setRawMode, isRawModeSupported } = useStdin()
-  // ...
-}
-```
-
-### Return Value
-
-| Property             | Type                      | Description                   |
-| -------------------- | ------------------------- | ----------------------------- |
-| `stdin`              | `NodeJS.ReadStream`       | stdin stream                  |
-| `setRawMode`         | `(mode: boolean) => void` | Enable/disable raw mode       |
-| `isRawModeSupported` | `boolean`                 | Whether raw mode is supported |
-
 ## useFocusable
 
 Returns focus state for the nearest focusable ancestor. The component must be rendered inside a `<Box focusable>` with a `testID`.

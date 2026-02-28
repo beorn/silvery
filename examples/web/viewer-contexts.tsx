@@ -8,9 +8,7 @@ import { EventEmitter } from "events"
 
 // Placeholder for future example bridging
 // Real implementation would provide:
-// - InputContext with eventEmitter wired to xterm.onData()
-// - AppContext with exit: () => {}
-// - EventsContext for lifecycle events
+// - RuntimeContext with on/emit for input events (wired to xterm.onData())
 // - TermContext for terminal capabilities
 // - FocusManagerContext for focus system
 

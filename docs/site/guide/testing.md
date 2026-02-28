@@ -18,7 +18,7 @@ The test suite is organized by domain:
 | `buffer.test.ts`                | 38    | Terminal buffer operations, cell packing                              |
 | `pipeline.test.ts`              | 36    | Render pipeline: measure, layout, content, output phases              |
 | `ansi-parsing.test.ts`          | 29    | ANSI escape sequence parsing                                          |
-| `hooks.test.tsx`                | 28    | useContentRect, useFocusable, useFocusManager, useStdin, useStdout    |
+| `hooks.test.tsx`                | 28    | useContentRect, useFocusable, useFocusManager, useStdout              |
 | `layout-equivalence.test.tsx`   | 26    | Yoga vs Flexx layout engine parity                                    |
 | `render.test.ts`                | 24    | Core render API                                                       |
 | `memory.test.tsx`               | 20    | Memory leak detection, listener cleanup                               |
@@ -285,27 +285,18 @@ test("layout provides dimensions", () => {
 })
 ```
 
-### Testing with Mock Contexts
+### Testing with RuntimeContext
+
+The test renderer (`createRenderer`) automatically provides `RuntimeContext`. Components using `useApp()` or `useInput()` work out of the box:
 
 ```tsx
-import { AppContext, StdinContext } from "inkx/context"
-
 test("useApp exit function", () => {
-  let exitCalled = false
-  const mockAppContext = {
-    exit: () => {
-      exitCalled = true
-    },
-  }
-
   const render = createRenderer()
-  render(
-    <AppContext.Provider value={mockAppContext}>
-      <ComponentThatCallsExit />
-    </AppContext.Provider>,
-  )
+  const app = render(<ComponentThatCallsExit />)
 
-  expect(exitCalled).toBe(true)
+  // press() triggers input through RuntimeContext
+  await app.press("q")
+  expect(app.exitCode).toBeDefined()
 })
 ```
 

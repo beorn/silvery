@@ -22,7 +22,6 @@ import {
   Text,
   useInput,
   useApp,
-  useStdin,
   createTerm,
   parseHotkey,
   parseMouseSequence,
@@ -70,7 +69,7 @@ const ITEMS = ["Inbox", "Today", "Upcoming", "Projects", "Archive", "Trash"]
 
 function RichInputDemo({ kittySupported }: { kittySupported: boolean }): JSX.Element {
   const { exit } = useApp()
-  const { stdin } = useStdin()
+  const stdin = process.stdin
   const [mode, setMode] = useState<Mode>("normal")
   const [cursor, setCursor] = useState(0)
   const [events, setEvents] = useState<EventEntry[]>([])

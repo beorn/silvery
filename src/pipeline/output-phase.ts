@@ -1783,6 +1783,17 @@ function verifyOutputEquivalence(
   const freshNext = bufferToAnsi(next, mode)
   const screenFresh = replayAnsiWithStyles(w, vtHeight, freshNext)
 
+  // Dump wide cells and continuation cells on each row for mismatch diagnosis
+  const _dumpRowWideCells = (buf: TerminalBuffer, row: number): string => {
+    const parts: string[] = []
+    for (let cx = 0; cx < buf.width; cx++) {
+      const c = buf.getCell(cx, row)
+      if (c.wide) parts.push(`W@${cx}:'${c.char}'(gw=${graphemeWidth(c.char)})`)
+      if (c.continuation) parts.push(`C@${cx}`)
+    }
+    return parts.join(" ")
+  }
+
   // Compare character by character AND style by style
   for (let y = 0; y < compareHeight; y++) {
     for (let x = 0; x < w; x++) {
@@ -1821,6 +1832,8 @@ function verifyOutputEquivalence(
           `incremental='${incr.char}' fresh='${fresh.char}'\n` +
           `  prev buffer cell: char='${prevCell.char}' bg=${prevCell.bg} wide=${prevCell.wide} cont=${prevCell.continuation}\n` +
           `  next buffer cell: char='${nextCell.char}' bg=${nextCell.bg} wide=${nextCell.wide} cont=${nextCell.continuation}\n` +
+          `Wide/cont cells on row ${y} (next buffer): ${_dumpRowWideCells(next, y)}\n` +
+          `Wide/cont cells on row ${y} (prev buffer): ${_dumpRowWideCells(prev, y)}\n` +
           `Column detail around mismatch:\n${colDetails.join("\n")}`
         // eslint-disable-next-line no-console
         console.error(msg)

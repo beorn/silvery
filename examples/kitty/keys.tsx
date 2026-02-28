@@ -24,7 +24,6 @@ import {
   Text,
   useInput,
   useApp,
-  useStdin,
   createTerm,
   parseKeypress,
   KittyFlags,
@@ -76,7 +75,7 @@ function KeyExplorer({ kittySupported }: { kittySupported: boolean }): JSX.Eleme
   const [events, setEvents] = useState<KeyEvent[]>([])
   const [latest, setLatest] = useState<KeyEvent | null>(null)
   const counterRef = useRef(0)
-  const { stdin } = useStdin()
+  const stdin = process.stdin
 
   // Listen to raw stdin for full ParsedKeypress info
   useEffect(() => {

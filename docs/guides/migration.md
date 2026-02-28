@@ -43,7 +43,7 @@ These APIs are 100% compatible:
 | Category       | APIs                                                                     |
 | -------------- | ------------------------------------------------------------------------ |
 | **Components** | `<Box>`, `<Text>`, `<Newline>`, `<Spacer>`, `<Static>`                   |
-| **Hooks**      | `useInput()`, `useApp()`, `useStdout()`, `useStdin()`                    |
+| **Hooks**      | `useInput()`, `useApp()`, `useStdout()`                                  |
 | **Render**     | `render()`, `render(element, options)`                                   |
 | **Styling**    | All Chalk styles work unchanged                                          |
 | **Flexbox**    | All flexbox props (direction, justify, align, wrap, grow, shrink, basis) |

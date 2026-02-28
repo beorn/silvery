@@ -18,12 +18,7 @@ import { type Term, createTerm } from "chalkx"
 import React, { useCallback, useMemo, useRef, type ReactElement, type ReactNode } from "react"
 
 const log = createLogger("inkx:render")
-import {
-  RuntimeContext,
-  type RuntimeContextValue,
-  StdoutContext,
-  TermContext,
-} from "./context.js"
+import { RuntimeContext, type RuntimeContextValue, StdoutContext, TermContext } from "./context.js"
 import { parseKey } from "./keys.js"
 import { type LayoutEngineType, isLayoutEngineInitialized } from "./layout-engine.js"
 import { enableBracketedPaste, disableBracketedPaste, parseBracketedPaste } from "./bracketed-paste.js"
@@ -870,12 +865,8 @@ async function renderImpl(
     log.debug?.(`render(): InkxInstance created in ${Date.now() - renderStart}ms`)
   }
 
-  // Wrap element with TermContext and EventsContext
-  const wrappedElement = (
-    <TermContext.Provider value={term}>
-      {element}
-    </TermContext.Provider>
-  )
+  // Wrap element with TermContext
+  const wrappedElement = <TermContext.Provider value={term}>{element}</TermContext.Provider>
 
   // Render the element
   log.debug?.("render(): calling instance.render()")
@@ -884,11 +875,7 @@ async function renderImpl(
 
   // Wrap rerender to also include contexts
   const rerender = (newElement: ReactNode) =>
-    instance.rerender(
-      <TermContext.Provider value={term}>
-        {newElement}
-      </TermContext.Provider>,
-    )
+    instance.rerender(<TermContext.Provider value={term}>{newElement}</TermContext.Provider>)
 
   return {
     rerender,
@@ -913,11 +900,7 @@ async function renderStaticImpl(element: ReactElement, term: Term, resolved: Res
   const { renderStringSync } = await import("./render-string.js")
 
   // Wrap element with contexts for static rendering
-  const wrappedElement = (
-    <TermContext.Provider value={term}>
-      {element}
-    </TermContext.Provider>
-  )
+  const wrappedElement = <TermContext.Provider value={term}>{element}</TermContext.Provider>
 
   // Render to string
   const output = renderStringSync(wrappedElement, {
@@ -936,11 +919,7 @@ async function renderStaticImpl(element: ReactElement, term: Term, resolved: Res
   let lastFrame = output
   return {
     rerender: (newElement: ReactNode) => {
-      const newWrapped = (
-        <TermContext.Provider value={term}>
-          {newElement}
-        </TermContext.Provider>
-      )
+      const newWrapped = <TermContext.Provider value={term}>{newElement}</TermContext.Provider>
       lastFrame = renderStringSync(newWrapped as ReactElement, {
         width: resolved.width,
         height: resolved.height,
@@ -1012,11 +991,7 @@ export function renderSync(element: ReactElement, termOrDef?: Term | TermDef, op
 
   // For static mode, use sync string rendering
   if (resolved.isStatic) {
-    const wrappedElement = (
-      <TermContext.Provider value={term}>
-        {element}
-      </TermContext.Provider>
-    )
+    const wrappedElement = <TermContext.Provider value={term}>{element}</TermContext.Provider>
     const lastFrame = renderStringSync(wrappedElement, {
       width: resolved.width,
       height: resolved.height,
@@ -1066,22 +1041,14 @@ export function renderSync(element: ReactElement, termOrDef?: Term | TermDef, op
   }
 
   // Wrap element with contexts
-  const wrappedElement = (
-    <TermContext.Provider value={term}>
-      {element}
-    </TermContext.Provider>
-  )
+  const wrappedElement = <TermContext.Provider value={term}>{element}</TermContext.Provider>
 
   // Render the element
   instance.render(wrappedElement)
 
   // Wrap rerender to also include contexts
   const rerender = (newElement: ReactNode) =>
-    instance!.rerender(
-      <TermContext.Provider value={term}>
-        {newElement}
-      </TermContext.Provider>,
-    )
+    instance!.rerender(<TermContext.Provider value={term}>{newElement}</TermContext.Provider>)
 
   return {
     rerender,

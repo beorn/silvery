@@ -13,13 +13,7 @@ import { EventEmitter } from "node:events"
 import React, { type ReactElement, type ReactNode, act } from "react"
 import { type App, buildApp } from "./app.js"
 import { type TerminalBuffer, cellEquals } from "./buffer.js"
-import {
-  FocusManagerContext,
-  RuntimeContext,
-  type RuntimeContextValue,
-  StdoutContext,
-  TermContext,
-} from "./context.js"
+import { FocusManagerContext, RuntimeContext, type RuntimeContextValue, StdoutContext, TermContext } from "./context.js"
 import { createFocusManager } from "./focus-manager.js"
 import {
   type LayoutEngine,

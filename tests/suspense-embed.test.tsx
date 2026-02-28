@@ -192,11 +192,7 @@ function createProductionSimulator(element: React.ReactElement, cols = 60, rows 
     return React.createElement(
       TermContext.Provider,
       { value: mockTerm },
-      React.createElement(
-        StdoutContext.Provider,
-        { value: { stdout: mockStdout, write: () => {} } },
-        el,
-      ),
+      React.createElement(StdoutContext.Provider, { value: { stdout: mockStdout, write: () => {} } }, el),
     )
   }
 

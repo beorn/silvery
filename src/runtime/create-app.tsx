@@ -46,7 +46,13 @@ import React, { createContext, useContext, useEffect, useRef, type ReactElement 
 import { type StateCreator, type StoreApi, createStore } from "zustand"
 
 import { createTerm } from "chalkx"
-import { FocusManagerContext, RuntimeContext, type RuntimeContextValue, StdoutContext, TermContext } from "../context.js"
+import {
+  FocusManagerContext,
+  RuntimeContext,
+  type RuntimeContextValue,
+  StdoutContext,
+  TermContext,
+} from "../context.js"
 import { createFocusManager } from "../focus-manager.js"
 import { createFocusEvent, dispatchFocusEvent } from "../focus-events.js"
 import { executeRender } from "../pipeline/index.js"
