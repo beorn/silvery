@@ -699,13 +699,9 @@ function bufferToAnsi(buffer: TerminalBuffer, mode: "fullscreen" | "inline" = "f
       buffer.readCellInto(x, y, cell)
 
       // No continuation skip here. Valid continuation cells are never reached
-      // (jumped over by `if (cell.wide) x++` below). Orphaned continuation
-      // cells must NOT be skipped — they need to write a space to keep the
-      // VT cursor in sync. See: orphaned-continuation-cursor-drift fix.
-      if (cell.continuation && process.env.INKX_DEBUG_OUTPUT) {
-        // eslint-disable-next-line no-console
-        console.error(`[bufferToAnsi] orphaned continuation at (${x},${y}) char='${cell.char}' wide=${cell.wide}`)
-      }
+      // because `if (cell.wide) x++` below jumps past them. Orphaned
+      // continuation cells (wide char overwritten by region clear) must NOT
+      // be skipped — they write a space to keep the VT cursor in sync.
 
       // Handle OSC 8 hyperlink transitions (separate from SGR style)
       const cellHyperlink = cell.hyperlink
