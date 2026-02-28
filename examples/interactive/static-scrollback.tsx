@@ -1170,36 +1170,41 @@ function CodingAgent({
     }
   }, [autoMode, done, streamPhase, scriptIdx, script, inputText])
 
-  /** Handle Enter from TextInput — fast-complete or submit user message. */
+  /** Handle Enter from TextInput — submit user text or advance script. */
   const handleSubmit = useCallback(
     (text: string) => {
       if (streamPhase !== "done") {
         skipStreaming()
         return
       }
-      if (done || !text.trim()) return
+      if (done) return
 
-      // Add the user's typed text as a visible exchange
-      const id = nextIdRef.current++
-      const userExchange: Exchange = {
-        id,
-        role: "user",
-        content: text,
-        tokens: { input: text.length * 4, output: 0 },
-        frozen: false,
+      if (text.trim()) {
+        // Add the user's typed text as a visible exchange
+        const id = nextIdRef.current++
+        const userExchange: Exchange = {
+          id,
+          role: "user",
+          content: text,
+          tokens: { input: text.length * 4, output: 0 },
+          frozen: false,
+        }
+        setExchanges((prev) => [...prev, userExchange])
+        setInputText("")
+
+        // Skip past any user entries in the script to find the next agent entry
+        let nextIdx = scriptIdx
+        while (nextIdx < script.length && script[nextIdx]!.role === "user") {
+          nextIdx++
+        }
+        setScriptIdx(nextIdx)
+
+        // Continue with the next agent entry after a brief pause
+        setTimeout(() => advanceRef.current(), 150)
+      } else {
+        // No text — just advance the script
+        advanceRef.current()
       }
-      setExchanges((prev) => [...prev, userExchange])
-      setInputText("")
-
-      // Skip past any user entries in the script to find the next agent entry
-      let nextIdx = scriptIdx
-      while (nextIdx < script.length && script[nextIdx]!.role === "user") {
-        nextIdx++
-      }
-      setScriptIdx(nextIdx)
-
-      // Continue with the next agent entry after a brief pause
-      setTimeout(() => advanceRef.current(), 150)
     },
     [streamPhase, skipStreaming, done, scriptIdx, script],
   )
