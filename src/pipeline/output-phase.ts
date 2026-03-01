@@ -167,17 +167,6 @@ function createInlineCursorState(): InlineCursorState {
 }
 
 /**
- * Reset inline cursor tracking. Called on terminal resize or mode switch.
- * @deprecated Prefer instance-scoped state via createOutputPhase().
- *   Bare outputPhase() calls always fall back to full render (safe default).
- */
-export function resetInlineCursorTracking(): void {
-  // No-op: cursor tracking is now instance-scoped in createOutputPhase().
-  // Bare outputPhase() calls use a fresh state each time (always full render).
-  // Kept for backward compatibility — tests that call this won't break.
-}
-
-/**
  * Update cursor tracking after an inline render frame.
  * Records where the terminal cursor ends up after inlineCursorSuffix().
  */
@@ -1254,154 +1243,151 @@ function changesToAnsi(
   const isInline = mode === "inline"
   const endLine = startLine + maxOutputLines // exclusive upper bound for inline filtering
   let finalY = -1
+  let cursorX = -1
+  let cursorY = -1
+  let prevY = -1
+  // Track the last emitted cell position to detect when a continuation
+  // cell's main cell was already emitted in this pass.
+  let lastEmittedX = -1
+  let lastEmittedY = -1
 
-  {
-    let cursorX = -1
-    let cursorY = -1
-    let prevY = -1
-    // Track the last emitted cell position to detect when a continuation
-    // cell's main cell was already emitted in this pass.
-    let lastEmittedX = -1
-    let lastEmittedY = -1
+  for (let i = 0; i < count; i++) {
+    const change = pool[i]!
+    let x = change.x
+    const y = change.y
+    let cell = change.cell
 
-    for (let i = 0; i < count; i++) {
-      const change = pool[i]!
-      let x = change.x
-      const y = change.y
-      let cell = change.cell
+    // In inline mode, skip changes outside the visible range
+    if (isInline && (y < startLine || y >= endLine)) continue
 
-      // In inline mode, skip changes outside the visible range
-      if (isInline && (y < startLine || y >= endLine)) continue
+    // Handle continuation cells: these are the second column of a wide
+    // character. If their main cell (x-1) was already emitted in this
+    // pass, skip. Otherwise, look up and emit the main cell from the
+    // buffer so the wide char covers both columns.
+    if (cell.continuation) {
+      // Main cell was already emitted — skip
+      if (lastEmittedX === x - 1 && lastEmittedY === y) continue
 
-      // Handle continuation cells: these are the second column of a wide
-      // character. If their main cell (x-1) was already emitted in this
-      // pass, skip. Otherwise, look up and emit the main cell from the
-      // buffer so the wide char covers both columns.
-      if (cell.continuation) {
-        // Main cell was already emitted — skip
-        if (lastEmittedX === x - 1 && lastEmittedY === y) continue
-
-        // Orphaned continuation cell: main cell didn't change but this
-        // cell's style did. Read the main cell from the buffer and emit it.
-        if (buffer && x > 0) {
-          x = x - 1
-          buffer.readCellInto(x, y, wideCharLookupCell)
-          cell = wideCharLookupCell
-          // If the looked-up cell is itself a continuation (shouldn't happen
-          // with valid buffers) or not wide, fall back to skipping
-          if (cell.continuation || !cell.wide) continue
-        } else {
-          continue
-        }
+      // Orphaned continuation cell: main cell didn't change but this
+      // cell's style did. Read the main cell from the buffer and emit it.
+      if (buffer && x > 0) {
+        x = x - 1
+        buffer.readCellInto(x, y, wideCharLookupCell)
+        cell = wideCharLookupCell
+        // If the looked-up cell is itself a continuation (shouldn't happen
+        // with valid buffers) or not wide, fall back to skipping
+        if (cell.continuation || !cell.wide) continue
+      } else {
+        continue
       }
-
-      // For inline mode, use render-region-relative row indices
-      const renderY = isInline ? y - startLine : y
-
-      // Close hyperlink on row change (hyperlinks must not span across rows)
-      if (y !== prevY && currentHyperlink) {
-        output += "\x1b]8;;\x1b\\"
-        currentHyperlink = undefined
-      }
-      prevY = y
-
-      // Move cursor if needed (cursor must be exactly at target position)
-      if (renderY !== cursorY || x !== cursorX) {
-        // Use \r\n optimization only if cursor is initialized AND we're moving
-        // to the next line at column 0. Don't use it when cursorY is -1
-        // (uninitialized) because that would incorrectly emit a newline at start.
-        // Bug km-x7ih: This was causing the first row to appear at the bottom.
-        if (cursorY >= 0 && renderY === cursorY + 1 && x === 0) {
-          // Next line at column 0, use newline (more efficient)
-          // Reset style before newline to prevent background color bleeding
-          if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
-            output += "\x1b[0m"
-            currentStyle = null
-          }
-          output += "\r\n"
-        } else if (cursorY >= 0 && renderY === cursorY && x > cursorX) {
-          // Same row, forward: use CUF (Cursor Forward) for small jumps.
-          // Reset bg before CUF to prevent background color bleeding into
-          // skipped cells. Some terminals (e.g., Ghostty) may apply the
-          // current bg to cells traversed by CUF, causing visual artifacts
-          // when bg transitions from undefined→color (km-tui.col-header-dup).
-          if (currentStyle && currentStyle.bg !== null) {
-            output += "\x1b[0m"
-            currentStyle = null
-          }
-          const dx = x - cursorX
-          output += dx === 1 ? "\x1b[C" : `\x1b[${dx}C`
-        } else if (cursorY >= 0 && renderY > cursorY && x === 0) {
-          // Same column (0), down N rows: use \r + CUD
-          const dy = renderY - cursorY
-          if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
-            output += "\x1b[0m"
-            currentStyle = null
-          }
-          output += dy === 1 ? "\r\n" : `\r\x1b[${dy}B`
-        } else if (isInline) {
-          // Inline mode: relative positioning (no absolute row numbers)
-          if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
-            output += "\x1b[0m"
-            currentStyle = null
-          }
-          if (cursorY >= 0) {
-            if (renderY > cursorY) {
-              output += `\x1b[${renderY - cursorY}B\r`
-            } else if (renderY < cursorY) {
-              output += `\x1b[${cursorY - renderY}A\r`
-            } else {
-              output += "\r"
-            }
-          }
-          if (x > 0) output += x === 1 ? "\x1b[C" : `\x1b[${x}C`
-        } else {
-          // Fullscreen: absolute position (1-indexed)
-          output += `\x1b[${renderY + 1};${x + 1}H`
-        }
-      }
-
-      // Handle OSC 8 hyperlink transitions (separate from SGR style)
-      const cellHyperlink = cell.hyperlink
-      if (cellHyperlink !== currentHyperlink) {
-        if (currentHyperlink) {
-          output += "\x1b]8;;\x1b\\" // Close previous hyperlink
-        }
-        if (cellHyperlink) {
-          output += `\x1b]8;;${cellHyperlink}\x1b\\` // Open new hyperlink
-        }
-        currentHyperlink = cellHyperlink
-      }
-
-      // Update style if changed (reuse pre-allocated style object)
-      reusableCellStyle.fg = cell.fg
-      reusableCellStyle.bg = cell.bg
-      reusableCellStyle.underlineColor = cell.underlineColor
-      reusableCellStyle.attrs = cell.attrs
-      if (!styleEquals(currentStyle, reusableCellStyle)) {
-        // Snapshot: copy attrs so currentStyle isn't invalidated by next iteration
-        const prevStyle = currentStyle
-        currentStyle = {
-          fg: cell.fg,
-          bg: cell.bg,
-          underlineColor: cell.underlineColor,
-          attrs: { ...cell.attrs },
-        }
-        output += styleTransition(prevStyle, currentStyle)
-      }
-
-      // Write character — empty-string chars are treated as space to ensure
-      // the terminal cursor advances and cursorX tracking stays correct.
-      const char = cell.char || " "
-      output += wrapTextSizing(char, cell.wide)
-      cursorX = x + (cell.wide ? 2 : 1)
-      cursorY = renderY
-      lastEmittedX = x
-      lastEmittedY = y
     }
 
-    finalY = cursorY
+    // For inline mode, use render-region-relative row indices
+    const renderY = isInline ? y - startLine : y
+
+    // Close hyperlink on row change (hyperlinks must not span across rows)
+    if (y !== prevY && currentHyperlink) {
+      output += "\x1b]8;;\x1b\\"
+      currentHyperlink = undefined
+    }
+    prevY = y
+
+    // Move cursor if needed (cursor must be exactly at target position)
+    if (renderY !== cursorY || x !== cursorX) {
+      // Use \r\n optimization only if cursor is initialized AND we're moving
+      // to the next line at column 0. Don't use it when cursorY is -1
+      // (uninitialized) because that would incorrectly emit a newline at start.
+      // Bug km-x7ih: This was causing the first row to appear at the bottom.
+      if (cursorY >= 0 && renderY === cursorY + 1 && x === 0) {
+        // Next line at column 0, use newline (more efficient)
+        // Reset style before newline to prevent background color bleeding
+        if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
+          output += "\x1b[0m"
+          currentStyle = null
+        }
+        output += "\r\n"
+      } else if (cursorY >= 0 && renderY === cursorY && x > cursorX) {
+        // Same row, forward: use CUF (Cursor Forward) for small jumps.
+        // Reset bg before CUF to prevent background color bleeding into
+        // skipped cells. Some terminals (e.g., Ghostty) may apply the
+        // current bg to cells traversed by CUF, causing visual artifacts
+        // when bg transitions from undefined→color (km-tui.col-header-dup).
+        if (currentStyle && currentStyle.bg !== null) {
+          output += "\x1b[0m"
+          currentStyle = null
+        }
+        const dx = x - cursorX
+        output += dx === 1 ? "\x1b[C" : `\x1b[${dx}C`
+      } else if (cursorY >= 0 && renderY > cursorY && x === 0) {
+        // Same column (0), down N rows: use \r + CUD
+        const dy = renderY - cursorY
+        if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
+          output += "\x1b[0m"
+          currentStyle = null
+        }
+        output += dy === 1 ? "\r\n" : `\r\x1b[${dy}B`
+      } else if (isInline) {
+        // Inline mode: relative positioning (no absolute row numbers)
+        if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
+          output += "\x1b[0m"
+          currentStyle = null
+        }
+        if (cursorY >= 0) {
+          if (renderY > cursorY) {
+            output += `\x1b[${renderY - cursorY}B\r`
+          } else if (renderY < cursorY) {
+            output += `\x1b[${cursorY - renderY}A\r`
+          } else {
+            output += "\r"
+          }
+        }
+        if (x > 0) output += x === 1 ? "\x1b[C" : `\x1b[${x}C`
+      } else {
+        // Fullscreen: absolute position (1-indexed)
+        output += `\x1b[${renderY + 1};${x + 1}H`
+      }
+    }
+
+    // Handle OSC 8 hyperlink transitions (separate from SGR style)
+    const cellHyperlink = cell.hyperlink
+    if (cellHyperlink !== currentHyperlink) {
+      if (currentHyperlink) {
+        output += "\x1b]8;;\x1b\\" // Close previous hyperlink
+      }
+      if (cellHyperlink) {
+        output += `\x1b]8;;${cellHyperlink}\x1b\\` // Open new hyperlink
+      }
+      currentHyperlink = cellHyperlink
+    }
+
+    // Update style if changed (reuse pre-allocated style object)
+    reusableCellStyle.fg = cell.fg
+    reusableCellStyle.bg = cell.bg
+    reusableCellStyle.underlineColor = cell.underlineColor
+    reusableCellStyle.attrs = cell.attrs
+    if (!styleEquals(currentStyle, reusableCellStyle)) {
+      // Snapshot: copy attrs so currentStyle isn't invalidated by next iteration
+      const prevStyle = currentStyle
+      currentStyle = {
+        fg: cell.fg,
+        bg: cell.bg,
+        underlineColor: cell.underlineColor,
+        attrs: { ...cell.attrs },
+      }
+      output += styleTransition(prevStyle, currentStyle)
+    }
+
+    // Write character — empty-string chars are treated as space to ensure
+    // the terminal cursor advances and cursorX tracking stays correct.
+    const char = cell.char || " "
+    output += wrapTextSizing(char, cell.wide)
+    cursorX = x + (cell.wide ? 2 : 1)
+    cursorY = renderY
+    lastEmittedX = x
+    lastEmittedY = y
   }
+
+  finalY = cursorY
 
   // Close any open hyperlink
   if (currentHyperlink) {

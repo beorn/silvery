@@ -44,7 +44,7 @@ export { measurePhase } from "./measure-phase.js"
 export { layoutPhase, rectEqual, scrollPhase, screenRectPhase, notifyLayoutSubscribers } from "./layout-phase.js"
 export { contentPhase, clearBgConflictWarnings, setBgConflictMode } from "./content-phase.js"
 export { contentPhaseAdapter } from "./content-phase-adapter.js"
-export { outputPhase, resetInlineCursorTracking } from "./output-phase.js"
+export { outputPhase } from "./output-phase.js"
 
 import { contentPhaseAdapter } from "./content-phase-adapter.js"
 import { clearBgConflictWarnings, contentPhase } from "./content-phase.js"
