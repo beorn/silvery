@@ -16,6 +16,8 @@ For raw benchmark numbers, see [benchmarks.md](../benchmarks.md). For the head-t
 
 5. **Style interning eliminates string building** -- ~15-50 unique styles per TUI, so caching SGR escape strings per style avoids per-cell string concatenation. A **style transition cache** further optimizes consecutive cells: with ~15-50 unique styles, there are at most ~2,500 possible transitions, and each (oldStyle, newStyle) pair is cached to avoid recomputing SGR diff strings.
 
+6. **Inline incremental rendering matches fullscreen efficiency** -- inline mode previously regenerated the entire ANSI output from scratch every frame (~5,848 bytes at 50 items). Instance-scoped cursor tracking in `createOutputPhase()` enables buffer diffing with relative cursor positioning, reducing output to ~33-121 bytes per keystroke (28-192x fewer bytes).
+
 ## Optimizations by Phase
 
 inkx's five-phase render pipeline (measure, layout, content, output, buffer) contains 21 optimizations across 7 categories.
@@ -61,6 +63,7 @@ inkx's five-phase render pipeline (measure, layout, content, output, buffer) con
 | 5.5 | **Zero-allocation diff pipeline**           | Pre-allocated `CellChange` pool reused across frames. Reusable style object mutated in-place. In-place insertion sort for position ordering.                                                                                                                         |
 | 5.6 | **Optimized ANSI output**                   | Relative cursor moves (`CUF`/`CUD`) for small jumps, `\r\n` for next-line-column-0. Style coalescing emits SGR only on transitions. Dimension-aware diffing for size mismatches.                                                                                     |
 | 5.7 | **Wide character atomic diff**              | Wide char + continuation cell treated as a single atomic unit during cell-level diff. Orphaned continuation cells (main cell unchanged) trigger re-emit of the main cell from the buffer. Eliminates previous full-row fallback for rows containing wide characters. |
+| 5.8 | **Inline incremental rendering**            | Instance-scoped cursor tracking in `createOutputPhase()` closure enables buffer diffing for inline mode. Uses relative cursor positioning (`CUU`/`CUD`/`\r`/`CUF`) instead of absolute. Falls back to full render when guard conditions fail (scrollback, resize, height change). 28-192x fewer bytes vs full re-render. |
 
 ### 6. Buffer
 
@@ -76,11 +79,36 @@ inkx's five-phase render pipeline (measure, layout, content, output, buffer) con
 | --- | -------------------------------- | ---------------------------------------------------------------------------------------- |
 | 7.1 | **Reference equality shortcuts** | `rectEqual()`, `styleEquals()`, `colorEquals()` check `a === b` before field comparison. |
 
-**21 optimizations across 7 pipeline phases.**
+**22 optimizations across 7 pipeline phases.**
 
 ### Wide Character Diff
 
 The wide character atomic diff optimization (5.7) is validated by `tests/damage-rects.bench.ts` and `tests/wide-char-diff.test.tsx`. Previously, rows containing wide characters fell back to full-row rendering. Now, the cell-level diff treats each wide character and its continuation cell as a single atomic unit, enabling per-cell diffing even for CJK-heavy content.
+
+### Inline Incremental Rendering
+
+In fullscreen mode, `diffBuffers` + `changesToAnsi` emit only changed cells (~21 bytes/keystroke). In inline mode, `inlineFullRender()` previously regenerated the entire ANSI output from scratch every frame because inline mode has external stdout writes (scrollback freezing) that shift cursor position.
+
+`inlineIncrementalRender()` uses the same buffer diffing when safe, falling back to `inlineFullRender()` when guard conditions fail:
+
+| Guard Condition | Why Required |
+|----------------|-------------|
+| `scrollbackOffset === 0` | External writes shift cursor — can't use relative positioning |
+| Same buffer dimensions | Resize needs full re-render |
+| Same content height | Height change needs full re-render |
+| Cursor tracking initialized | First render must be full |
+
+**Relative cursor positioning**: `changesToAnsi()` accepts `mode: "inline"` and uses `\x1b[NA` (up), `\x1b[NB` (down), `\r` (carriage return), `\x1b[NC` (forward) instead of `\x1b[row;colH` (absolute).
+
+**Instance-scoped state**: Inter-frame cursor tracking (`InlineCursorState`) is captured in the `createOutputPhase()` closure — no module-level globals. Bare `outputPhase()` calls get fresh state (always fall back to full render).
+
+| Scenario | Full Render | Incremental | Reduction |
+|----------|------------|-------------|-----------|
+| 10 rows, 1 change | 1,196 bytes | 42 bytes | 28x |
+| 30 rows, 1 change | 3,540 bytes | 33 bytes | 107x |
+| 50 rows, 1 change | 6,324 bytes | 33 bytes | 192x |
+
+Benchmarks: `tests/inline-output.bench.ts`, `examples/interactive/inline-bench.tsx`.
 
 ## Investigated and Rejected
 

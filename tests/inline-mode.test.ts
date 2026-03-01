@@ -13,7 +13,7 @@
 import { describe, expect, test } from "vitest"
 import { TerminalBuffer } from "../src/buffer.js"
 import type { CursorState } from "../src/hooks/useCursor.js"
-import { outputPhase } from "../src/pipeline/output-phase.js"
+import { createOutputPhase, outputPhase } from "../src/pipeline/output-phase.js"
 
 // ============================================================================
 // Helper: parse ANSI escape sequences from output
@@ -634,5 +634,184 @@ describe("Inline mode: cursor positioning via cursorPos", () => {
     // After rendering 3 lines and erasing leftover, cursor repositioning happens.
     // The output should show the cursor.
     expect(endsWithCursorShow(output)).toBe(true)
+  })
+})
+
+// ============================================================================
+// Tests: Incremental inline rendering
+// ============================================================================
+
+describe("Inline mode: incremental rendering", () => {
+  test("uses incremental path for small changes (fewer bytes)", () => {
+    const render = createOutputPhase({})
+
+    // Frame 1: initial render (sets up cursor tracking)
+    const buf1 = new TerminalBuffer(20, 10)
+    fillBuffer(buf1, 5) // A..E
+    const out1 = render(null, buf1, "inline")
+
+    // Frame 2: change one cell
+    const buf2 = new TerminalBuffer(20, 10)
+    fillBuffer(buf2, 5) // A..E
+    buf2.setCell(0, 2, { char: "X" }) // Change C → X
+
+    const out2 = render(buf1, buf2, "inline")
+
+    // Incremental output should be much smaller than full render
+    expect(out2.length).toBeLessThan(out1.length)
+    // Should contain the changed character
+    expect(out2).toContain("X")
+    // Visible text should NOT contain unchanged characters
+    const visible = stripAnsi(out2)
+    expect(visible).not.toContain("A")
+    expect(visible).not.toContain("E")
+  })
+
+  test("returns empty string for no changes (like fullscreen)", () => {
+    const render = createOutputPhase({})
+
+    const buf1 = new TerminalBuffer(20, 10)
+    fillBuffer(buf1, 4)
+    render(null, buf1, "inline") // init tracking
+
+    const buf2 = new TerminalBuffer(20, 10)
+    fillBuffer(buf2, 4) // same content
+
+    const out = render(buf1, buf2, "inline")
+    expect(out).toBe("")
+  })
+
+  test("falls back to full render when scrollbackOffset > 0", () => {
+    const render = createOutputPhase({})
+
+    const buf1 = new TerminalBuffer(20, 10)
+    fillBuffer(buf1, 4)
+    render(null, buf1, "inline") // init tracking
+
+    const buf2 = new TerminalBuffer(20, 10)
+    fillBuffer(buf2, 4, "x")
+
+    // scrollbackOffset > 0 forces full render
+    const out = render(buf1, buf2, "inline", 2)
+    // Full render includes cursor-up for scrollback + content positioning
+    const ups = extractCursorUp(out)
+    expect(ups[0]).toBe(5) // 4-1 + 2 = 5
+  })
+
+  test("falls back to full render when content height changes", () => {
+    const render = createOutputPhase({})
+
+    const buf1 = new TerminalBuffer(20, 10)
+    fillBuffer(buf1, 3)
+    render(null, buf1, "inline") // init tracking
+
+    // Content grows from 3 to 5 lines
+    const buf2 = new TerminalBuffer(20, 10)
+    fillBuffer(buf2, 5)
+
+    const out = render(buf1, buf2, "inline")
+    // Full render should contain all content including new lines
+    expect(out).toContain("D")
+    expect(out).toContain("E")
+  })
+
+  test("falls back to full render when buffer dimensions change", () => {
+    const render = createOutputPhase({})
+
+    const buf1 = new TerminalBuffer(20, 10)
+    fillBuffer(buf1, 3)
+    render(null, buf1, "inline") // init tracking
+
+    // Different width
+    const buf2 = new TerminalBuffer(30, 10)
+    fillBuffer(buf2, 3, "x")
+
+    const out = render(buf1, buf2, "inline")
+    expect(out.length).toBeGreaterThan(0)
+    expect(out).toContain("x")
+  })
+
+  test("incremental with cursor positioning", () => {
+    const render = createOutputPhase({})
+
+    const buf1 = new TerminalBuffer(20, 10)
+    fillBuffer(buf1, 4) // A..D
+    const cursorPos: CursorState = { x: 3, y: 1, visible: true }
+    render(null, buf1, "inline", 0, undefined, cursorPos) // init tracking
+
+    // Change one cell
+    const buf2 = new TerminalBuffer(20, 10)
+    fillBuffer(buf2, 4)
+    buf2.setCell(0, 0, { char: "Z" })
+
+    const out = render(buf1, buf2, "inline", 0, undefined, cursorPos)
+    expect(out).toContain("Z")
+    // Should end with cursor show (cursor is visible)
+    expect(endsWithCursorShow(out)).toBe(true)
+  })
+
+  test("multi-frame incremental consistency", () => {
+    const render = createOutputPhase({})
+
+    // Simulate multiple sequential frames like a real app
+    const buf1 = new TerminalBuffer(20, 10)
+    fillBuffer(buf1, 5)
+    render(null, buf1, "inline") // Frame 1
+
+    const buf2 = new TerminalBuffer(20, 10)
+    fillBuffer(buf2, 5)
+    buf2.setCell(0, 0, { char: "X" })
+    const out2 = render(buf1, buf2, "inline") // Frame 2 (incremental)
+    expect(out2).toContain("X")
+    expect(out2.length).toBeLessThan(200) // should be small
+
+    const buf3 = new TerminalBuffer(20, 10)
+    fillBuffer(buf3, 5)
+    buf3.setCell(0, 0, { char: "X" })
+    buf3.setCell(0, 3, { char: "Y" })
+    const out3 = render(buf2, buf3, "inline") // Frame 3 (incremental)
+    expect(out3).toContain("Y")
+    expect(out3).not.toContain("X") // X unchanged from frame 2
+
+    // Frame 4: no changes
+    const buf4 = new TerminalBuffer(20, 10)
+    fillBuffer(buf4, 5)
+    buf4.setCell(0, 0, { char: "X" })
+    buf4.setCell(0, 3, { char: "Y" })
+    const out4 = render(buf3, buf4, "inline")
+    expect(out4).toBe("")
+  })
+
+  test("incremental with termRows capping", () => {
+    const render = createOutputPhase({})
+
+    const buf1 = new TerminalBuffer(20, 20)
+    fillBuffer(buf1, 10)
+    render(null, buf1, "inline", 0, 5) // init with termRows=5
+
+    // Same height, change a cell in visible area (bottom 5 lines: rows 5-9)
+    const buf2 = new TerminalBuffer(20, 20)
+    fillBuffer(buf2, 10)
+    buf2.setCell(0, 7, { char: "Z" }) // row 7 = visible row 2 (startLine=5)
+
+    const out = render(buf1, buf2, "inline", 0, 5)
+    expect(out).toContain("Z")
+    expect(out.length).toBeLessThan(200)
+  })
+
+  test("incremental hides cursor when no cursorPos", () => {
+    const render = createOutputPhase({})
+
+    const buf1 = new TerminalBuffer(20, 10)
+    fillBuffer(buf1, 3)
+    render(null, buf1, "inline") // init
+
+    const buf2 = new TerminalBuffer(20, 10)
+    fillBuffer(buf2, 3)
+    buf2.setCell(0, 1, { char: "Z" })
+
+    const out = render(buf1, buf2, "inline")
+    expect(out).toContain("Z")
+    expect(endsWithCursorHide(out)).toBe(true)
   })
 })

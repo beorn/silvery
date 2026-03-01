@@ -268,6 +268,58 @@ INKX_INSTRUMENT=1 bun km view /path
 
 The content phase has extensive instrumentation gated on `_instrumentEnabled` -- node visit/skip/render counts, cascade diagnostics, scroll container tier decisions, and per-node trace entries.
 
+## Inline Incremental Rendering
+
+In fullscreen mode, the output phase diffs prev/next buffers and emits only changed cells (~21 bytes/keystroke). In inline mode, `inlineFullRender()` regenerated the ENTIRE ANSI output from scratch every frame (~5,848 bytes at 50 items) — 280x more data per keystroke.
+
+`inlineIncrementalRender()` brings inline mode to parity with fullscreen by diffing buffers and emitting only changed cells using relative cursor positioning.
+
+### When incremental runs (all conditions must be met)
+
+- `scrollbackOffset === 0` (no external stdout writes between frames)
+- Buffer dimensions unchanged (`prev.width === next.width && prev.height === next.height`)
+- Content height unchanged (`prevContentLines === nextContentLines`)
+- Cursor tracking initialized (`state.prevCursorRow >= 0` — set after first render)
+
+Otherwise: falls back to `inlineFullRender()` (reliable, handles all edge cases).
+
+### Instance-scoped cursor tracking
+
+Inter-frame cursor state (`InlineCursorState`) is captured in the `createOutputPhase()` closure — no module-level globals. Each `createOutputPhase()` call gets its own state. Bare `outputPhase()` calls use fresh state each time (always fall back to full render — safe default for tests).
+
+```typescript
+const render = createOutputPhase({ underlineStyles: true })
+render(null, buf1, "inline")    // first render → inits cursor tracking
+render(buf1, buf2, "inline")    // incremental (state persists in closure)
+
+outputPhase(buf1, buf2, "inline")  // bare → always full render (no shared state)
+```
+
+### Relative cursor positioning
+
+`changesToAnsi()` accepts `mode: "inline"` to use relative cursor movement instead of absolute row positioning. Inline mode:
+
+- Filters changes to visible range (`[startLine, startLine + maxOutputLines)`)
+- Uses `renderY = y - startLine` for render-region-relative coordinates
+- Uses `\x1b[NA` (cursor up), `\x1b[NB` (cursor down), `\r` (carriage return), `\x1b[NC` (cursor forward) instead of `\x1b[row;colH` (absolute)
+- Resets style before cursor jumps to prevent bg bleed across gaps
+
+Returns `ChangesResult { output: string, finalY: number }` — the final cursor position is used by `inlineIncrementalRender` to move the cursor to the bottom row before appending the cursor suffix.
+
+### Performance
+
+| Scenario | Full Render | Incremental | Reduction |
+|----------|------------|-------------|-----------|
+| 10 rows, 1 change | 1,196 bytes | 42 bytes | 28x |
+| 30 rows, 1 change | 3,540 bytes | 33 bytes | 107x |
+| 50 rows, 1 change | 6,324 bytes | 33 bytes | 192x |
+
+### Verification
+
+- `INKX_STRICT_OUTPUT=1` verifies incremental ANSI output produces the same terminal state as a fresh render
+- Inline incremental tests in `tests/inline-mode.test.ts` (9 tests covering guard conditions, cursor positioning, multi-frame consistency)
+- Vitest benchmarks in `tests/inline-output.bench.ts`
+
 ## File Map
 
 | File              | Responsibility                                                                                             |
@@ -277,7 +329,7 @@ The content phase has extensive instrumentation gated on `_instrumentEnabled` --
 | render-text.ts    | Text content collection, ANSI parsing, bg segment tracking, `getCellBg` inheritance, bg conflict detection |
 | layout-phase.ts   | Layout calculation, scroll state, screen rects, layout subscriber notification                             |
 | measure-phase.ts  | Intrinsic size measurement for fit-content nodes                                                           |
-| output-phase.ts   | Buffer diff, dirty row tracking, minimal ANSI output generation                                            |
+| output-phase.ts   | Buffer diff, dirty row tracking, minimal ANSI output generation, inline incremental rendering              |
 | render-helpers.ts | Color parsing, text width, border chars, style computation                                                 |
 | helpers.ts        | Border/padding size calculation                                                                            |
 

@@ -850,15 +850,33 @@ await app.press("ArrowUp")
 
 ## Debugging
 
+### Environment Variables
+
+| Variable | Effect |
+|----------|--------|
+| `INKX_STRICT=1` | Compare incremental vs fresh render every frame (crashes on mismatch) |
+| `INKX_STRICT_OUTPUT=1` | Verify output ANSI matches fresh render (catches output-phase bugs) |
+| `INKX_CHECK_INCREMENTAL=1` | Same as STRICT but logs instead of crashing |
+| `INKX_INSTRUMENT=1` | Content-phase counters on `globalThis.__inkx_content_detail` |
+| `INKX_DEV=1` | Enable inspector (render stats, tree dumps, dirty flags) |
+| `DEBUG=inkx:*` | Debug output for inkx pipeline |
+| `DEBUG_LOG=/tmp/inkx.log` | Redirect debug to file (required for TUI — terminal is captured) |
+
 ### Runtime Debug
 
 ```bash
 # Enable incremental vs fresh render comparison
 INKX_STRICT=1 bun km view /path/to/vault
 
+# Verify output phase correctness (catches ANSI generation bugs)
+INKX_STRICT_OUTPUT=1 bun km view /path/to/vault
+
 # Write debug output to file
 DEBUG=inkx:* DEBUG_LOG=/tmp/inkx.log bun km view /path
 tail -f /tmp/inkx.log
+
+# Content-phase instrumentation (skip/render counts)
+INKX_INSTRUMENT=1 DEBUG_LOG=/tmp/km.log bun km view /path
 ```
 
 ### Test Debug

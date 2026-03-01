@@ -8,7 +8,7 @@
  */
 
 import React from "react"
-import { describe, expect, test } from "vitest"
+import { beforeEach, describe, expect, test } from "vitest"
 import { TerminalBuffer, cellEquals, styleEquals } from "../src/buffer.js"
 import { Box, Text } from "../src/index.js"
 import { outputPhase } from "../src/pipeline.js"
@@ -972,6 +972,7 @@ describe("Bug: Keyed children reorder loses content", () => {
 })
 
 describe("Bug: Inline mode cursor positioning drifts with growing content", () => {
+  // Bare outputPhase() calls use fresh cursor state each time (no cross-test leakage)
   test("cursor-up distance uses previous content height, not maxY of changes", () => {
     // Simulate inline mode: content grows from 2 lines to 4 lines.
     // After the first render, cursor is at row 1 (the last content line).

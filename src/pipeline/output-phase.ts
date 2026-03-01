@@ -64,6 +64,7 @@ export type OutputPhaseFn = (
   mode?: "fullscreen" | "inline",
   scrollbackOffset?: number,
   termRows?: number,
+  cursorPos?: CursorState | null,
 ) => string
 
 // ============================================================================
@@ -106,6 +107,9 @@ export function createOutputPhase(caps: Partial<OutputCaps>, measurer?: OutputMe
     colorLevel: caps.colorLevel ?? "truecolor",
   }
   const closedMeasurer = measurer ?? null
+  // Instance-scoped inline cursor state — persists across frames for incremental rendering.
+  // Each createOutputPhase() call gets its own state, eliminating module-level globals.
+  const inlineState = createInlineCursorState()
 
   return function scopedOutputPhase(
     prev: TerminalBuffer | null,
@@ -113,13 +117,14 @@ export function createOutputPhase(caps: Partial<OutputCaps>, measurer?: OutputMe
     mode: "fullscreen" | "inline" = "fullscreen",
     scrollbackOffset = 0,
     termRows?: number,
+    cursorPos?: CursorState | null,
   ): string {
     const prevCaps = _caps
     const prevMeasurer = _outputMeasurer
     _caps = closedCaps
     _outputMeasurer = closedMeasurer
     try {
-      return outputPhase(prev, next, mode, scrollbackOffset, termRows)
+      return outputPhase(prev, next, mode, scrollbackOffset, termRows, cursorPos, inlineState)
     } finally {
       _caps = prevCaps
       _outputMeasurer = prevMeasurer
@@ -143,7 +148,54 @@ let accumulateWidth = 0
 let accumulateHeight = 0
 let accumulateFrameCount = 0
 
-// Track actual visible output lines between inline frames.
+// ============================================================================
+// Inline Mode: Inter-frame Cursor Tracking (instance-scoped)
+// ============================================================================
+
+/**
+ * Mutable state for inline mode inter-frame cursor tracking.
+ * Captured in the createOutputPhase() closure — no module-level globals.
+ */
+interface InlineCursorState {
+  /** Row within render region after last inline frame's cursor suffix. -1 = unknown. */
+  prevCursorRow: number
+}
+
+/** Create fresh inline cursor state (unknown position → first call falls back to full render). */
+function createInlineCursorState(): InlineCursorState {
+  return { prevCursorRow: -1 }
+}
+
+/**
+ * Reset inline cursor tracking. Called on terminal resize or mode switch.
+ * @deprecated Prefer instance-scoped state via createOutputPhase().
+ *   Bare outputPhase() calls always fall back to full render (safe default).
+ */
+export function resetInlineCursorTracking(): void {
+  // No-op: cursor tracking is now instance-scoped in createOutputPhase().
+  // Bare outputPhase() calls use a fresh state each time (always full render).
+  // Kept for backward compatibility — tests that call this won't break.
+}
+
+/**
+ * Update cursor tracking after an inline render frame.
+ * Records where the terminal cursor ends up after inlineCursorSuffix().
+ */
+function updateInlineCursorRow(
+  state: InlineCursorState,
+  cursorPos: CursorState | null | undefined,
+  maxOutputLines: number,
+  startLine: number,
+): void {
+  if (cursorPos?.visible) {
+    const visibleRow = cursorPos.y - startLine
+    state.prevCursorRow =
+      visibleRow >= 0 && visibleRow < maxOutputLines ? visibleRow : maxOutputLines - 1
+  } else {
+    // Cursor hidden: cursor stays at end of last content line
+    state.prevCursorRow = maxOutputLines - 1
+  }
+}
 
 /**
  * Wrap a cell character in OSC 66 if it is a PUA character and text sizing
@@ -435,15 +487,26 @@ export function outputPhase(
   scrollbackOffset = 0,
   termRows?: number,
   cursorPos?: CursorState | null,
+  _inlineState?: InlineCursorState,
 ): string {
+  // Bare outputPhase() calls use a fresh cursor state each time.
+  // prevCursorRow = -1 means incremental rendering always falls back to full render.
+  // Instance-scoped state (via createOutputPhase) enables incremental across frames.
+  const inlineState = _inlineState ?? createInlineCursorState()
+
   // First render: output entire buffer
   if (!prev) {
     // In inline mode, cap output to terminal height to prevent scrollback corruption.
     // Content taller than the terminal would push lines into scrollback where they
     // can never be overwritten on re-render (cursor-up is clamped at terminal row 0).
     const firstOutput = bufferToAnsi(next, mode, mode === "inline" ? termRows : undefined)
-    // For inline first render, append cursor positioning
+    // For inline first render, append cursor positioning and initialize tracking
     if (mode === "inline") {
+      const firstContentLines = findLastContentLine(next) + 1
+      const firstMaxOutput = termRows != null ? Math.min(firstContentLines, termRows) : firstContentLines
+      let firstStartLine = 0
+      if (termRows != null && firstContentLines > termRows) firstStartLine = firstContentLines - termRows
+      updateInlineCursorRow(inlineState, cursorPos, firstMaxOutput, firstStartLine)
       return firstOutput + inlineCursorSuffix(cursorPos ?? null, next, termRows)
     }
     if (isStrictAccumulate()) {
@@ -455,12 +518,9 @@ export function outputPhase(
     return firstOutput
   }
 
-  // Inline mode: always full re-render (no incremental diffing).
-  // Inline content is typically small (< 10 lines) so the cost is minimal,
-  // and it avoids complex cursor/scrollback offset tracking that's fragile
-  // with external stdout.write() calls (e.g., useScrollback).
+  // Inline mode: use incremental rendering when safe, fall back to full render.
   if (mode === "inline") {
-    return inlineFullRender(prev, next, scrollbackOffset, termRows, cursorPos)
+    return inlineIncrementalRender(inlineState, prev, next, scrollbackOffset, termRows, cursorPos)
   }
 
   // INKX_FULL_RENDER: bypass incremental diff, always render full buffer.
@@ -497,7 +557,7 @@ export function outputPhase(
   // - Continuation cells are skipped (handled with their main cell)
   // - Orphaned continuation cells (main cell unchanged) trigger a
   //   re-emit of the main cell from the buffer
-  const incrOutput = changesToAnsi(pool, count, mode, next)
+  const { output: incrOutput } = changesToAnsi(pool, count, mode, next)
 
   // Log output sizes when debug or strict-accumulate is enabled
   if (DEBUG_OUTPUT || isStrictAccumulate()) {
@@ -611,18 +671,96 @@ function inlineCursorSuffix(
 }
 
 /**
+ * Incremental rendering for inline mode.
+ *
+ * When conditions are safe (no external writes, dimensions unchanged),
+ * diffs prev/next buffers and emits only changed cells using relative
+ * cursor positioning. Falls back to full render otherwise.
+ *
+ * This reduces output from ~5,848 bytes (full re-render at 50 items)
+ * to ~50-100 bytes per keystroke, matching fullscreen efficiency.
+ */
+function inlineIncrementalRender(
+  state: InlineCursorState,
+  prev: TerminalBuffer,
+  next: TerminalBuffer,
+  scrollbackOffset: number,
+  termRows?: number,
+  cursorPos?: CursorState | null,
+): string {
+  // Guard: fall back to full render for complex cases
+  if (
+    scrollbackOffset > 0 ||
+    prev.width !== next.width ||
+    prev.height !== next.height ||
+    state.prevCursorRow < 0
+  ) {
+    return inlineFullRender(state, prev, next, scrollbackOffset, termRows, cursorPos)
+  }
+
+  const nextContentLines = findLastContentLine(next) + 1
+  const prevContentLines = findLastContentLine(prev) + 1
+
+  // Content height changed — full render handles line erasure/growth
+  if (nextContentLines !== prevContentLines) {
+    return inlineFullRender(state, prev, next, scrollbackOffset, termRows, cursorPos)
+  }
+
+  // Diff buffers
+  const { pool, count } = diffBuffers(prev, next)
+  if (count === 0) return ""
+
+  // Compute visible range (same logic as bufferToAnsi for inline)
+  const maxOutputLines = termRows != null ? Math.min(nextContentLines, termRows) : nextContentLines
+  let startLine = 0
+  if (termRows != null && nextContentLines > termRows) {
+    startLine = nextContentLines - termRows
+  }
+
+  // Move cursor from tracked row to row 0 of render region
+  let output = ""
+  if (state.prevCursorRow > 0) {
+    output += `\x1b[${state.prevCursorRow}A`
+  }
+  output += "\r"
+  output += "\x1b[?25l" // hide cursor during update
+
+  // Emit changes with relative positioning
+  const changes = changesToAnsi(pool, count, "inline", next, startLine, maxOutputLines)
+  output += changes.output
+
+  // After changesToAnsi, cursor is at changes.finalY (render-relative).
+  // inlineCursorSuffix assumes cursor is at (maxOutputLines - 1) — the last row.
+  // Move cursor to that position before calling the suffix.
+  const finalY = changes.finalY
+  const bottomRow = maxOutputLines - 1
+  if (finalY >= 0 && finalY < bottomRow) {
+    const dy = bottomRow - finalY
+    output += dy === 1 ? "\r\n" : `\r\x1b[${dy}B`
+  } else if (finalY >= 0) {
+    // Already at or past bottom — just ensure column 0
+    // (shouldn't be past bottom, but defensive)
+  }
+  output += inlineCursorSuffix(cursorPos ?? null, next, termRows)
+
+  // Update tracking
+  updateInlineCursorRow(state, cursorPos, maxOutputLines, startLine)
+
+  return output
+}
+
+/**
  * Full re-render for inline mode.
  *
  * Moves cursor to the start of the render region, writes the entire
  * buffer fresh, and erases any leftover lines from the previous render.
- * This is simpler and more reliable than incremental diffing for inline
- * mode, which has external writes (useScrollback) that shift the cursor.
  *
  * When content exceeds terminal height, output is capped to termRows lines.
  * Lines beyond the terminal can't be managed (cursor-up is clamped at row 0),
  * so we truncate to prevent scrollback corruption.
  */
 function inlineFullRender(
+  state: InlineCursorState,
   prev: TerminalBuffer,
   next: TerminalBuffer,
   scrollbackOffset: number,
@@ -678,6 +816,12 @@ function inlineFullRender(
   // If a component called useCursor(), place the cursor there.
   // Otherwise, just show it at the current position (end of content).
   output += inlineCursorSuffix(cursorPos ?? null, next, termRows)
+
+  // Update cursor tracking for incremental rendering on next frame
+  let startLine = 0
+  if (termRows != null && nextContentLines > termRows) startLine = nextContentLines - termRows
+  updateInlineCursorRow(state, cursorPos, maxOutputLines, startLine)
+
   return output
 }
 
@@ -1033,6 +1177,13 @@ function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
   return diffResult
 }
 
+/** Result from changesToAnsi: ANSI output string and final cursor position. */
+interface ChangesResult {
+  output: string
+  /** Final render-relative cursor Y after emitting changes (-1 if no changes emitted). */
+  finalY: number
+}
+
 /** Pre-allocated style object reused across changesToAnsi calls. */
 const reusableCellStyle: Style = {
   fg: null,
@@ -1077,17 +1228,22 @@ function sortPoolByPosition(pool: CellChange[], count: number): void {
  *
  * @param pool Pre-allocated pool of CellChange objects
  * @param count Number of valid entries in the pool
- * @param mode Render mode (only fullscreen uses incremental diff)
+ * @param mode Render mode: "fullscreen" uses absolute positioning,
+ *   "inline" uses relative cursor movement
  * @param buffer The current buffer, used to look up main cells for orphaned
  *   continuation cells (optional for backward compatibility)
+ * @param startLine For inline mode: first visible buffer row (for termRows capping)
+ * @param maxOutputLines For inline mode: number of visible rows
  */
 function changesToAnsi(
   pool: CellChange[],
   count: number,
-  _mode: "fullscreen" | "inline" = "fullscreen",
+  mode: "fullscreen" | "inline" = "fullscreen",
   buffer?: TerminalBuffer,
-): string {
-  if (count === 0) return ""
+  startLine = 0,
+  maxOutputLines = Infinity,
+): ChangesResult {
+  if (count === 0) return { output: "", finalY: -1 }
 
   // Sort by position for optimal cursor movement (in-place, no allocation)
   sortPoolByPosition(pool, count)
@@ -1095,8 +1251,10 @@ function changesToAnsi(
   let output = ""
   let currentStyle: Style | null = null
   let currentHyperlink: string | undefined
+  const isInline = mode === "inline"
+  const endLine = startLine + maxOutputLines // exclusive upper bound for inline filtering
+  let finalY = -1
 
-  // Fullscreen mode: use absolute positioning
   {
     let cursorX = -1
     let cursorY = -1
@@ -1111,6 +1269,9 @@ function changesToAnsi(
       let x = change.x
       const y = change.y
       let cell = change.cell
+
+      // In inline mode, skip changes outside the visible range
+      if (isInline && (y < startLine || y >= endLine)) continue
 
       // Handle continuation cells: these are the second column of a wide
       // character. If their main cell (x-1) was already emitted in this
@@ -1134,6 +1295,9 @@ function changesToAnsi(
         }
       }
 
+      // For inline mode, use render-region-relative row indices
+      const renderY = isInline ? y - startLine : y
+
       // Close hyperlink on row change (hyperlinks must not span across rows)
       if (y !== prevY && currentHyperlink) {
         output += "\x1b]8;;\x1b\\"
@@ -1142,12 +1306,12 @@ function changesToAnsi(
       prevY = y
 
       // Move cursor if needed (cursor must be exactly at target position)
-      if (y !== cursorY || x !== cursorX) {
+      if (renderY !== cursorY || x !== cursorX) {
         // Use \r\n optimization only if cursor is initialized AND we're moving
         // to the next line at column 0. Don't use it when cursorY is -1
         // (uninitialized) because that would incorrectly emit a newline at start.
         // Bug km-x7ih: This was causing the first row to appear at the bottom.
-        if (cursorY >= 0 && y === cursorY + 1 && x === 0) {
+        if (cursorY >= 0 && renderY === cursorY + 1 && x === 0) {
           // Next line at column 0, use newline (more efficient)
           // Reset style before newline to prevent background color bleeding
           if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
@@ -1155,7 +1319,7 @@ function changesToAnsi(
             currentStyle = null
           }
           output += "\r\n"
-        } else if (cursorY >= 0 && y === cursorY && x > cursorX) {
+        } else if (cursorY >= 0 && renderY === cursorY && x > cursorX) {
           // Same row, forward: use CUF (Cursor Forward) for small jumps.
           // Reset bg before CUF to prevent background color bleeding into
           // skipped cells. Some terminals (e.g., Ghostty) may apply the
@@ -1167,17 +1331,33 @@ function changesToAnsi(
           }
           const dx = x - cursorX
           output += dx === 1 ? "\x1b[C" : `\x1b[${dx}C`
-        } else if (cursorY >= 0 && y > cursorY && x === 0) {
+        } else if (cursorY >= 0 && renderY > cursorY && x === 0) {
           // Same column (0), down N rows: use \r + CUD
-          const dy = y - cursorY
+          const dy = renderY - cursorY
           if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
             output += "\x1b[0m"
             currentStyle = null
           }
           output += dy === 1 ? "\r\n" : `\r\x1b[${dy}B`
+        } else if (isInline) {
+          // Inline mode: relative positioning (no absolute row numbers)
+          if (currentStyle && (currentStyle.bg !== null || hasActiveAttrs(currentStyle.attrs))) {
+            output += "\x1b[0m"
+            currentStyle = null
+          }
+          if (cursorY >= 0) {
+            if (renderY > cursorY) {
+              output += `\x1b[${renderY - cursorY}B\r`
+            } else if (renderY < cursorY) {
+              output += `\x1b[${cursorY - renderY}A\r`
+            } else {
+              output += "\r"
+            }
+          }
+          if (x > 0) output += x === 1 ? "\x1b[C" : `\x1b[${x}C`
         } else {
-          // Absolute position (1-indexed)
-          output += `\x1b[${y + 1};${x + 1}H`
+          // Fullscreen: absolute position (1-indexed)
+          output += `\x1b[${renderY + 1};${x + 1}H`
         }
       }
 
@@ -1215,10 +1395,12 @@ function changesToAnsi(
       const char = cell.char || " "
       output += wrapTextSizing(char, cell.wide)
       cursorX = x + (cell.wide ? 2 : 1)
-      cursorY = y
+      cursorY = renderY
       lastEmittedX = x
       lastEmittedY = y
     }
+
+    finalY = cursorY
   }
 
   // Close any open hyperlink
@@ -1231,7 +1413,7 @@ function changesToAnsi(
     output += "\x1b[0m"
   }
 
-  return output
+  return { output, finalY }
 }
 
 /**
