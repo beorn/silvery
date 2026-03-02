@@ -85,7 +85,7 @@ import { Box } from "inkx"
 | -------------- | -------------------------------------- | ------------ | -------------------------------------------------------------- |
 | `position`     | `"relative" \| "absolute" \| "sticky"` | `"relative"` | Positioning mode                                               |
 | `stickyTop`    | `number`                               | `0`          | Offset from top when sticky (only with `position="sticky"`)    |
-| `stickyBottom` | `number`                               | -            | Offset from bottom when sticky (only with `position="sticky"`) |
+| `stickyBottom` | `number`                               | -            | Offset from bottom when sticky. Works in scroll containers and as a bottom-pinning primitive in any parent with explicit height. |
 
 ### Display
 

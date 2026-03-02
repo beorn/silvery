@@ -7,7 +7,7 @@ Read this before modifying content-phase.ts, render-text.ts, render-box.ts, or l
 The render pipeline runs on every frame. Phases execute in strict order:
 
 ```
-measure -> layout -> scroll -> screenRect -> [notify] -> content -> output
+measure -> layout -> scroll -> sticky -> screenRect -> [notify] -> content -> output
 ```
 
 | Phase       | File                 | What it does                                                                               |
@@ -15,6 +15,7 @@ measure -> layout -> scroll -> screenRect -> [notify] -> content -> output
 | measure     | measure-phase.ts     | Set Yoga constraints for fit-content nodes                                                 |
 | layout      | layout-phase.ts      | Run `calculateLayout()`, propagate rects, set `prevLayout` and `subtreeDirty`              |
 | scroll      | layout-phase.ts      | Calculate scroll offset, visible children, sticky positions for overflow=scroll containers |
+| sticky      | layout-phase.ts      | Calculate sticky render offsets for non-scroll parents with sticky children                |
 | screenRect  | layout-phase.ts      | Compute screen-relative positions (content position minus ancestor scroll offsets)         |
 | notify      | layout-phase.ts      | Fire `layoutSubscribers` callbacks (drives `useContentRect`/`useScreenRect`)               |
 | **content** | **content-phase.ts** | **Render nodes to a TerminalBuffer (this is the complex part)**                            |
@@ -196,12 +197,13 @@ const existingBg = style.bg !== null ? style.bg : inheritedBg !== undefined ? in
 
 Nested Text `backgroundColor` is handled separately via `BgSegment` tracking (not ANSI codes) to prevent bg bleed across wrapped text lines.
 
-## Normal Container Two-Pass Rendering
+## Normal Container Three-Pass Rendering
 
-`renderNormalChildren` also uses two passes (CSS paint order):
+`renderNormalChildren` uses three passes (CSS paint order):
 
-1. **First pass**: Normal-flow children
-2. **Second pass**: `position="absolute"` children (rendered on top)
+1. **First pass**: Normal-flow children (skip sticky + absolute)
+2. **Second pass**: `position="sticky"` children at computed `renderOffset` positions (when `node.stickyChildren` is present — set by `stickyPhase` for non-scroll parents)
+3. **Third pass**: `position="absolute"` children (rendered on top)
 
 Without two-pass, an absolute child rendered before a dirty normal-flow sibling would get its bg wiped by the sibling's `clearNodeRegion`.
 

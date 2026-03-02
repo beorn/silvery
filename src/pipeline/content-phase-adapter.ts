@@ -533,7 +533,22 @@ function renderNormalChildren(
       : nodeClip
   }
 
+  const hasStickyChildren = !!(node.stickyChildren && node.stickyChildren.length > 0)
+
+  // First pass: render non-sticky children
   for (const child of node.children) {
+    const childProps = child.props as BoxProps
+    if (hasStickyChildren && childProps.position === "sticky") continue
     renderNodeToBuffer(child, buffer, scrollOffset, effectiveClipBounds)
+  }
+
+  // Second pass: render sticky children at their computed positions
+  if (node.stickyChildren) {
+    for (const sticky of node.stickyChildren) {
+      const child = node.children[sticky.index]
+      if (!child?.contentRect) continue
+      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset
+      renderNodeToBuffer(child, buffer, stickyScrollOffset, effectiveClipBounds)
+    }
   }
 }
