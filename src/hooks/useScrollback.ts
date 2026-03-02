@@ -159,12 +159,6 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
     const currentFrozenCount = frozenCountRef.current
     if (currentFrozenCount === 0) return
 
-    // DEBUG: trace resize re-emission
-    if (process.env.DEBUG_LOG) {
-      const fs = require("fs")
-      fs.appendFileSync(process.env.DEBUG_LOG, `[useScrollback] RESIZE: ${prevWidth} → ${width}, frozenCount=${currentFrozenCount}, hasResetInlineCursor=${!!stdoutCtx?.resetInlineCursor}\n`)
-    }
-
     const currentItems = itemsRef.current
     const currentRender = renderRef.current
     const currentMarkers = markersRef.current

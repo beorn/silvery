@@ -711,7 +711,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
           stdout: mockStdout,
           write: () => {},
           notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
-          resetInlineCursor: () => pipelineConfig?.outputPhaseFn?.resetInlineState?.(),
+          resetInlineCursor: () => runtime.resetInlineCursor(),
         }}
       >
         <FocusManagerContext.Provider value={focusManager}>

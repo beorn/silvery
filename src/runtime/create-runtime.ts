@@ -127,7 +127,8 @@ export function createRuntime(options: RuntimeOptions): Runtime {
   // Inline mode needs persistent cursor tracking across frames.
   // If no outputPhaseFn provided, create one so prevCursorRow/prevOutputLines
   // persist between renders (bare diff() creates fresh state each call).
-  const outputPhaseFn = options.outputPhaseFn ?? (mode === "inline" ? createOutputPhase({}) : undefined)
+  const fallbackOutputPhase = mode === "inline" ? createOutputPhase({}) : undefined
+  const outputPhaseFn = options.outputPhaseFn ?? fallbackOutputPhase
 
   // Internal abort controller for cleanup
   const controller = new AbortController()
@@ -266,6 +267,13 @@ export function createRuntime(options: RuntimeOptions): Runtime {
 
     invalidate(): void {
       prevBuffer = null
+    },
+
+    resetInlineCursor(): void {
+      // Reset inline cursor tracking — delegates to the output phase (either
+      // the caller-provided one or the inline-mode fallback created above).
+      const fn = outputPhaseFn as { resetInlineState?: () => void } | undefined
+      fn?.resetInlineState?.()
     },
 
     getDims(): Dims {

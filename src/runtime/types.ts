@@ -112,6 +112,10 @@ export interface Runtime {
   /** Reset diff state so next render outputs a full frame */
   invalidate(): void
 
+  /** Reset inline cursor tracking state (inline mode only).
+   *  Called by useScrollback before re-emitting frozen items on resize. */
+  resetInlineCursor(): void
+
   /** Get current dimensions */
   getDims(): Dims
 
