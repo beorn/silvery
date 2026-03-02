@@ -860,6 +860,13 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
       }
     }
 
+    // Handle resize events — invalidate prevTermBuffer so the next render
+    // does a full content pass (dimension mismatch = stale buffer).
+    if (event.type === "resize") {
+      prevTermBuffer = null
+      runtime.invalidate()
+    }
+
     return true
   }
 

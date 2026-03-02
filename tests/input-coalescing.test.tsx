@@ -226,6 +226,101 @@ function createMockTtyStdin() {
   return stdin
 }
 
+// ============================================================================
+// Incremental content rendering verification
+// ============================================================================
+
+describe("incremental content rendering — run() Layer 2", () => {
+  it("uses incremental rendering after first frame (content phase skips clean nodes)", async () => {
+    const mockStdin = createMockTtyStdin()
+
+    function App() {
+      const [text, setText] = useState("")
+
+      useInput((input) => {
+        setText((t) => t + input)
+      })
+
+      return (
+        <Box flexDirection="column">
+          <Text>Header line 1</Text>
+          <Text>Header line 2</Text>
+          <Text>Header line 3</Text>
+          <Text>Input: {text}</Text>
+        </Box>
+      )
+    }
+
+    const handle = await run(<App />, {
+      cols: 40,
+      rows: 10,
+      stdin: mockStdin as any,
+    })
+
+    // Type a character to trigger an incremental render
+    mockStdin.emit("data", "x")
+    await new Promise((r) => setTimeout(r, 30))
+
+    // Verify incremental rendering is active — __inkx_last_pipeline.incremental
+    // is true when prevBuffer was passed to executeRender (not null).
+    // Without prevBuffer tracking, this would be false on every frame.
+    const pipeline = (globalThis as any).__inkx_last_pipeline
+    expect(pipeline).toBeDefined()
+    expect(pipeline.incremental).toBe(true)
+
+    // Verify correctness
+    expect(handle.text).toContain("Input: x")
+    expect(handle.text).toContain("Header line 1")
+
+    handle.unmount()
+  })
+
+  it("invalidates prevBuffer on resize so content renders fresh", async () => {
+    const mockStdin = createMockTtyStdin()
+    const mockStdout = Object.assign(new EventEmitter(), {
+      columns: 40,
+      rows: 10,
+      isTTY: true,
+      write: () => true,
+    }) as any
+
+    function App() {
+      const [text, setText] = useState("hello")
+
+      useInput((input) => {
+        setText((t) => t + input)
+      })
+
+      return <Text>Text: {text}</Text>
+    }
+
+    const handle = await run(<App />, {
+      stdin: mockStdin as any,
+      stdout: mockStdout,
+    })
+
+    expect(handle.text).toContain("Text: hello")
+
+    // Type something to establish incremental rendering
+    mockStdin.emit("data", "a")
+    await new Promise((r) => setTimeout(r, 30))
+    expect(handle.text).toContain("Text: helloa")
+
+    // Simulate resize — should not crash and should render correctly
+    mockStdout.columns = 60
+    mockStdout.rows = 15
+    mockStdout.emit("resize")
+    await new Promise((r) => setTimeout(r, 30))
+
+    // Type after resize — should still work (prevBuffer was invalidated)
+    mockStdin.emit("data", "b")
+    await new Promise((r) => setTimeout(r, 30))
+    expect(handle.text).toContain("Text: helloab")
+
+    handle.unmount()
+  })
+})
+
 describe("rapid typing — event queue batch cap", () => {
   it("100 rapid keystrokes do not crash (no Maximum update depth exceeded)", async () => {
     const mockStdin = createMockTtyStdin()

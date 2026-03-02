@@ -119,10 +119,15 @@ export interface PipelineConfig {
 /**
  * Execute the full render pipeline.
  *
+ * prevBuffer is required to force callers to think about incremental rendering.
+ * Pass null on the first render; pass the previous buffer on subsequent renders.
+ * Forgetting to pass prevBuffer silently disables incremental rendering (20-30ms
+ * per frame instead of <1ms) — making it required catches this at compile time.
+ *
  * @param root The root InkxNode
  * @param width Terminal width
  * @param height Terminal height
- * @param prevBuffer Previous buffer for diffing (null on first render)
+ * @param prevBuffer Previous buffer for incremental rendering (null on first render)
  * @param options Render options
  * @param config Optional pipeline config from withRender()
  * @returns Object with ANSI output and current buffer
@@ -162,6 +167,24 @@ function executeRenderCore(
     termRows,
     cursorPos,
   } = opts
+  // Dev warning: if prevBuffer is null but root has been rendered before
+  // (prevLayout exists), incremental rendering is disabled. This is usually
+  // a bug — the caller forgot to track and pass the previous buffer.
+  // Intentional null (INKX_STRICT fresh render, static/one-shot) passes
+  // skipLayoutNotifications which suppresses this warning.
+  if (
+    process?.env?.INKX_DEV &&
+    prevBuffer === null &&
+    root.prevLayout !== null &&
+    !skipLayoutNotifications
+  ) {
+    console.warn(
+      "[inkx] executeRender called with prevBuffer=null on frame 2+ — " +
+        "incremental content rendering is disabled (full render every frame). " +
+        "Track the returned buffer and pass it as prevBuffer on subsequent renders.",
+    )
+  }
+
   const start = performance.now()
 
   using render = baseLog.span("pipeline", { width, height, mode })
@@ -255,6 +278,7 @@ function executeRenderCore(
     content: tContent,
     output: tOutput,
     total,
+    incremental: prevBuffer !== null,
   }
   ;(globalThis as any).__inkx_render_count = ((globalThis as any).__inkx_render_count ?? 0) + 1
 

@@ -1263,7 +1263,7 @@ function CodingAgent({
         skipStreaming()
         return
       }
-      if (done) return
+      if (done) return "exit"
 
       if (text.trim()) {
         // Add the user's typed text as a visible exchange
