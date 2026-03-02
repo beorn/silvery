@@ -215,7 +215,7 @@ const effectRunners = {
 
 ## Composing Machines
 
-At Level 4, complex apps decompose into independent state machines that communicate through effects:
+Level 4 reducers are just functions — you can structure them however you like. For complex apps, a useful pattern is decomposing into independent state machines that communicate through effects:
 
 ```tsx
 // Each domain is a pure function
@@ -224,12 +224,15 @@ function dialogReducer(state: DialogState, action: DialogAction): DialogState | 
 function searchReducer(state: SearchState, action: SearchAction): SearchState | [SearchState, Effect[]] { ... }
 
 // Machines compose via dispatch effects
-function dialogReducer(state, action) {
-  case "CONFIRM":
-    return [
-      { ...state, open: false },
-      [{ type: "dispatch", action: { type: "CREATE_ITEM", text: state.value } }],
-    ]
+function dialogReducer(state: DialogState, action: DialogAction) {
+  switch (action.type) {
+    case "CONFIRM":
+      return [
+        { ...state, open: false },
+        [{ type: "dispatch", action: { type: "CREATE_ITEM", text: state.value } }],
+      ]
+    // ... other cases
+  }
 }
 // Dialog doesn't know about Board — it just says "dispatch this action"
 // The effect runner routes it to the right reducer
@@ -239,7 +242,7 @@ Each machine is independently testable. No machine imports another. Communicatio
 
 ## km: A Complete Level 4 Application
 
-[km](https://github.com/beorn/km) is a full-featured TUI workspace built on inkx. It demonstrates the complete Level 4 architecture at scale:
+[km](https://github.com/beorn/km) is a full-featured TUI workspace built on inkx. It demonstrates the complete Level 4 architecture at scale — every subsystem is a pure `(state, op) → [state, effects]` function (km calls these "noun-singletons" with an `.apply()` convention, following the SlateJS pattern):
 
 - **Board navigation**: `Board.apply(state, op) → [state, effects]` — cursor movement, folding, zoom, multi-select
 - **Text editing**: `PlainText.apply(state, op) → [state, effects]` — readline-style character editing, kill ring via effects
@@ -248,7 +251,24 @@ Each machine is independently testable. No machine imports another. Communicatio
 - **Command system**: Maps keys → semantic operations → dispatches to the right machine
 - **Platform portable**: Same `.apply()` functions work in terminal (inkx) and browser (React DOM)
 
-The progression was gradual — km started at Level 2, moved action handlers to Level 3, then migrated effects to data (Level 4) one handler at a time. The `tea()` middleware made this possible without rewriting the app.
+The `tea()` middleware is the bridge — km's `.apply()` functions return `[state, effects]` tuples, and the middleware handles them:
+
+```tsx
+function reducer(state: AppState, action: AppAction) {
+  switch (action.type) {
+    case "insert_text": {
+      const [text, effects] = PlainText.apply(state.text, action)
+      return [{ ...state, text }, effects]
+    }
+    case "cursor_down": {
+      const [board, effects] = Board.apply(state.board, action)
+      return [{ ...state, board }, effects]
+    }
+  }
+}
+```
+
+The progression was gradual — km started at Level 2, moved action handlers to Level 3, then migrated effects to data (Level 4) one handler at a time.
 
 ## Prior Art
 
