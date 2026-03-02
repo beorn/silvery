@@ -116,6 +116,7 @@ export function contentPropsChanged(
     "outlineLeft",
     "outlineRight",
     "internal_transform",
+    "theme",
   ]
 
   for (const prop of styleProps) {

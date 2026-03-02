@@ -194,6 +194,12 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
   /** Show right outline edge (default: true) */
   outlineRight?: boolean
 
+  /**
+   * Override theme for this subtree — $token colors resolve against this theme.
+   * Pushed onto the context theme stack during content phase tree walk.
+   */
+  theme?: import("./theme-defs.js").Theme
+
   onLayout?: (layout: Rect) => void
 
   /**

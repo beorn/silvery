@@ -393,6 +393,12 @@ export const hostConfig = {
       if ((oldProps as Record<string, unknown>).outlineStyle && !(newProps as Record<string, unknown>).outlineStyle) {
         instance.bgDirty = true
       }
+      // Theme change: all descendants need re-rendering with new token values.
+      // bgDirty makes contentAreaAffected=true, cascading parentRegionChanged
+      // to force children to re-render with the new theme context.
+      if ((oldProps as Record<string, unknown>).theme !== (newProps as Record<string, unknown>).theme) {
+        instance.bgDirty = true
+      }
     }
 
     instance.props = newProps

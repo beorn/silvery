@@ -408,5 +408,30 @@ export function setActiveTheme(theme: Theme): void {
 
 /** Get the active theme (called by parseColor in render-helpers). */
 export function getActiveTheme(): Theme {
-  return _activeTheme
+  return _contextStack.length > 0 ? _contextStack[_contextStack.length - 1]! : _activeTheme
+}
+
+// ============================================================================
+// Context Theme Stack (per-subtree overrides during content phase)
+// ============================================================================
+
+/**
+ * Stack of per-subtree theme overrides, pushed/popped during content phase
+ * tree walk. When a Box has a `theme` prop, its theme is pushed before
+ * rendering children and popped after. getActiveTheme() checks this stack
+ * first, falling back to _activeTheme.
+ *
+ * This enables CSS custom property-like cascading: the nearest ancestor
+ * Box with a theme prop determines $token resolution for its subtree.
+ */
+const _contextStack: Theme[] = []
+
+/** Push a context theme (called by content phase for Box nodes with theme prop). */
+export function pushContextTheme(theme: Theme): void {
+  _contextStack.push(theme)
+}
+
+/** Pop a context theme (called by content phase after processing Box subtree). */
+export function popContextTheme(): void {
+  _contextStack.pop()
 }

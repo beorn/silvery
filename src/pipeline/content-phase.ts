@@ -21,6 +21,8 @@ import { getBorderSize, getPadding } from "./helpers.js"
 import { renderBox, renderOutline, renderScrollIndicators } from "./render-box.js"
 import { parseColor } from "./render-helpers.js"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text.js"
+import { pushContextTheme, popContextTheme } from "../theme-defs.js"
+import type { Theme } from "../theme-defs.js"
 
 /**
  * Render all nodes to a terminal buffer.
@@ -330,6 +332,12 @@ function renderNodeToBuffer(
     if (childPositionChanged) _contentPhaseStats.flagChildPositionChanged++
   }
 
+  // Push per-subtree theme override (if this Box has a theme prop).
+  // Placed after all early returns and fast-path skip — only active during
+  // actual rendering. Popped at the end of this function after all child passes.
+  const nodeTheme = (props as BoxProps).theme as Theme | undefined
+  if (nodeTheme) pushContextTheme(nodeTheme)
+
   // Check if this is a scrollable container
   const isScrollContainer = props.overflow === "scroll" && node.scrollState
 
@@ -567,6 +575,9 @@ function renderNodeToBuffer(
   node.subtreeDirty = false
   node.childrenDirty = false
   node.layoutChangedThisFrame = false
+
+  // Pop per-subtree theme override (after ALL child passes including absolute/sticky)
+  if (nodeTheme) popContextTheme()
 }
 
 /**

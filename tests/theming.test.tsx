@@ -562,3 +562,114 @@ describe("generateTheme", () => {
     }
   })
 })
+
+// ============================================================================
+// Box theme prop — per-subtree $token override
+// ============================================================================
+
+describe("Box theme prop", () => {
+  test("Box theme overrides $token resolution for its subtree", () => {
+    const customTheme: Theme = { ...ansi16DarkTheme, selected: "red" }
+
+    const app = render(
+      <ThemeProvider theme={ansi16DarkTheme}>
+        <Box theme={customTheme}>
+          <Text color="$selected">inner</Text>
+        </Box>
+        <Text color="$selected">outer</Text>
+      </ThemeProvider>,
+    )
+
+    const buffer = app.lastBuffer()!
+    const inner = app.getByText("inner")
+    const outer = app.getByText("outer")
+
+    // inner: $selected resolves to "red" (customTheme) → ANSI 256 index 1
+    expect(inner.boundingBox()).toBeTruthy()
+    const innerCell = buffer.getCell(inner.boundingBox()!.x, inner.boundingBox()!.y)
+    expect(innerCell.fg).toBe(1) // red
+
+    // outer: $selected resolves to "yellow" (root theme) → ANSI 256 index 3
+    const outerCell = buffer.getCell(outer.boundingBox()!.x, outer.boundingBox()!.y)
+    expect(outerCell.fg).toBe(3) // yellow
+  })
+
+  test("nested Box themes cascade — innermost wins", () => {
+    const outerTheme: Theme = { ...ansi16DarkTheme, selected: "cyan" }
+    const innerTheme: Theme = { ...ansi16DarkTheme, selected: "magenta" }
+
+    const app = render(
+      <ThemeProvider theme={ansi16DarkTheme}>
+        <Box theme={outerTheme}>
+          <Box theme={innerTheme}>
+            <Text color="$selected">deep</Text>
+          </Box>
+          <Text color="$selected">mid</Text>
+        </Box>
+      </ThemeProvider>,
+    )
+
+    const buffer = app.lastBuffer()!
+    const deep = app.getByText("deep")
+    const mid = app.getByText("mid")
+
+    const deepCell = buffer.getCell(deep.boundingBox()!.x, deep.boundingBox()!.y)
+    expect(deepCell.fg).toBe(5) // magenta
+
+    const midCell = buffer.getCell(mid.boundingBox()!.x, mid.boundingBox()!.y)
+    expect(midCell.fg).toBe(6) // cyan
+  })
+
+  test("Box without theme prop inherits root theme", () => {
+    const customTheme: Theme = { ...ansi16DarkTheme, primary: "red" }
+
+    const app = render(
+      <ThemeProvider theme={customTheme}>
+        <Box>
+          <Text color="$primary">Hello</Text>
+        </Box>
+      </ThemeProvider>,
+    )
+
+    const buffer = app.lastBuffer()!
+    const text = app.getByText("Hello")
+    const cell = buffer.getCell(text.boundingBox()!.x, text.boundingBox()!.y)
+    expect(cell.fg).toBe(1) // red from root theme, not default yellow
+  })
+
+  test("theme prop change triggers re-render with new token values", async () => {
+    const themeA: Theme = { ...ansi16DarkTheme, selected: "red" }
+    const themeB: Theme = { ...ansi16DarkTheme, selected: "green" }
+
+    function App() {
+      const [useA, setUseA] = useState(true)
+
+      useInput((input: string) => {
+        if (input === "t") setUseA((v) => !v)
+      })
+
+      return (
+        <ThemeProvider theme={ansi16DarkTheme}>
+          <Box theme={useA ? themeA : themeB}>
+            <Text color="$selected">token</Text>
+          </Box>
+        </ThemeProvider>
+      )
+    }
+
+    const app = render(<App />)
+
+    // Initially themeA: $selected = red
+    const loc = app.getByText("token")
+    let buffer = app.lastBuffer()!
+    let cell = buffer.getCell(loc.boundingBox()!.x, loc.boundingBox()!.y)
+    expect(cell.fg).toBe(1) // red
+
+    // Switch to themeB
+    await app.press("t")
+
+    buffer = app.lastBuffer()!
+    cell = buffer.getCell(loc.boundingBox()!.x, loc.boundingBox()!.y)
+    expect(cell.fg).toBe(2) // green
+  })
+})
