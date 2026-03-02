@@ -279,8 +279,8 @@ The progression was gradual — km started at Level 2, moved action handlers to 
 | redux-loop | 4 | Reducer returns [state, effects] — Elm Architecture for Redux |
 | Hyperapp v2 | 3-4 | Optional tuple return (same Array.isArray detection as tea()) |
 | Elm | 4 | `update : Msg -> Model -> (Model, Cmd Msg)` — the original |
-| inkx createStore | 4 | `(msg, model) → [model, effects]` with plugin composition |
-| zustand-tea | 3-4 | Zustand middleware — gradual, per-case, mixed effects |
+| inkx createStore | 4 | `(msg, model) → [model, effects]` — non-React TEA container (see [Runtime Layers](runtime-layers.md)) |
+| zustand-tea | 3-4 | Zustand middleware — gradual, per-case upgrade for React apps |
 
 ## See Also
 
