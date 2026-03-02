@@ -23,7 +23,7 @@
 // ============================================================================
 
 /**
- * Semantic color token map (17 tokens + palette).
+ * Semantic color token map (19 tokens + palette).
  *
  * Components reference tokens with a `$` prefix (e.g. `color="$primary"`).
  * Palette colors use `$color0` through `$color15`.
@@ -68,6 +68,12 @@ export interface Theme {
   raisedbg: string
   /** Dividers, borders, rules */
   separator: string
+
+  // Chrome (inverted areas — title bars, status bars)
+  /** Chrome background — inverted from normal (bright in dark themes) */
+  chromebg: string
+  /** Chrome foreground — text on chrome background (dark in dark themes) */
+  chromefg: string
 
   // Status
   /** Error/destructive — validation errors, delete actions */
@@ -130,6 +136,8 @@ export const ansi16DarkTheme: Theme = {
   bg: "",
   raisedbg: "black",
   separator: "gray",
+  chromebg: "whiteBright",
+  chromefg: "black",
 
   error: "redBright",
   warning: "yellow",
@@ -159,6 +167,8 @@ export const ansi16LightTheme: Theme = {
   bg: "",
   raisedbg: "white",
   separator: "gray",
+  chromebg: "black",
+  chromefg: "whiteBright",
 
   error: "red",
   warning: "yellow",
@@ -188,6 +198,8 @@ export const defaultDarkTheme: Theme = {
   bg: "#2E3440",
   raisedbg: "#303642",
   separator: "#4C566A",
+  chromebg: "#ECEFF4",
+  chromefg: "#2E3440",
 
   error: "#BF616A",
   warning: "#EBCB8B",
@@ -234,6 +246,8 @@ export const defaultLightTheme: Theme = {
   bg: "#FFFFFF",
   raisedbg: "#F5F5F5",
   separator: "#E0E0E0",
+  chromebg: "#1A1A1A",
+  chromefg: "#FFFFFF",
 
   error: "#D32F2F",
   warning: "#F57C00",
@@ -368,6 +382,8 @@ export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
     bg: "",
     raisedbg: dark ? "black" : "white",
     separator: "gray",
+    chromebg: dark ? "whiteBright" : "black",
+    chromefg: dark ? "black" : "whiteBright",
 
     error: dark ? "redBright" : "red",
     warning: primary,

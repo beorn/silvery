@@ -66,13 +66,15 @@ explicit color, the theme's `$separator` token is used automatically.
 | `$text3` | Tertiary — timestamps, hints        | gray         | #7B88A1        |
 | `$text4` | Quaternary — ghost text, decorative | gray (+dim)  | #545E72        |
 
-### Surface (3 tokens)
+### Surface (5 tokens)
 
-| Token        | Use                         | ANSI 16 Dark | Truecolor Dark |
-| ------------ | --------------------------- | ------------ | -------------- |
-| `$bg`        | Default background          | (default)    | #2E3440        |
-| `$raisedbg`  | Dialogs, overlays, popovers | black        | #3B4252        |
-| `$separator` | Dividers, borders, rules    | gray         | #4C566A        |
+| Token        | Use                                        | ANSI 16 Dark | Truecolor Dark |
+| ------------ | ------------------------------------------ | ------------ | -------------- |
+| `$bg`        | Default background                         | (default)    | #2E3440        |
+| `$raisedbg`  | Dialogs, overlays, popovers                | black        | #3B4252        |
+| `$separator` | Dividers, borders, rules                   | gray         | #4C566A        |
+| `$chromebg`  | Title bars, status bars (inverted bg)      | whiteBright  | #ECEFF4        |
+| `$chromefg`  | Text on chrome areas (inverted fg)         | black        | #2E3440        |
 
 ### Status (3 tokens)
 
@@ -123,6 +125,8 @@ mathematical:
 - `text4` = text at 30% opacity
 - `raisedbg` = bg lightened 5% (dark mode) or darkened 3% (light mode)
 - `separator` = text at 20% opacity
+- `chromebg` = text color (inverted for use as background on title bars)
+- `chromefg` = bg color (inverted for use as text on title bars)
 
 ## generateTheme()
 
@@ -224,6 +228,8 @@ function contrastFg(bg: string): string {
 | `text4`      | `withOpacity(text, bg, 0.30)`                        |
 | `raisedbg`   | `lighten(bg, 5%)` (dark) or `darken(bg, 3%)` (light) |
 | `separator`  | `withOpacity(text, bg, 0.20)`                        |
+| `chromebg`   | `text` (inverted: text color becomes background)     |
+| `chromefg`   | `bg` or `contrastFg(chromebg)` (dark on light)       |
 
 ## Per-Subtree Theme Override
 
