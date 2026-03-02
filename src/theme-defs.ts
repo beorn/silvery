@@ -342,20 +342,6 @@ export function resolveThemeColor(color: string | undefined, theme: Theme): stri
 /** Supported primary colors for ANSI 16 theme generation. */
 export type AnsiPrimary = "yellow" | "cyan" | "magenta" | "green" | "red" | "blue" | "white"
 
-/** Bright variant lookup for ANSI primary colors. */
-const brightVariant: Record<AnsiPrimary, string> = {
-  yellow: "yellowBright",
-  cyan: "cyanBright",
-  magenta: "magentaBright",
-  green: "greenBright",
-  red: "redBright",
-  blue: "blueBright",
-  white: "whiteBright",
-}
-
-/** Warm primaries get cyan selection; cool primaries get yellow. */
-const warmPrimaries = new Set<AnsiPrimary>(["yellow", "red", "magenta", "green", "white"])
-
 /**
  * Generate a complete ANSI 16 theme from a primary color + dark/light preference.
  *

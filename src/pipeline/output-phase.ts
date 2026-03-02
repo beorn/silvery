@@ -1517,111 +1517,6 @@ function styleToAnsi(style: Style): string {
 // INKX_STRICT_OUTPUT: ANSI output verification via virtual terminal replay
 // =============================================================================
 
-/**
- * Minimal virtual terminal that replays ANSI output into a character grid.
- * Only handles sequences emitted by bufferToAnsi/changesToAnsi:
- * cursor positioning, character writes, EL, and skips style/OSC sequences.
- */
-function replayAnsi(width: number, height: number, ansi: string): string[][] {
-  const screen: string[][] = Array.from({ length: height }, () => Array(width).fill(" "))
-  let cx = 0
-  let cy = 0
-  let i = 0
-
-  while (i < ansi.length) {
-    if (ansi[i] === "\x1b") {
-      if (ansi[i + 1] === "[") {
-        i += 2
-        let params = ""
-        while (
-          i < ansi.length &&
-          ((ansi[i]! >= "0" && ansi[i]! <= "9") || ansi[i] === ";" || ansi[i] === "?" || ansi[i] === ":")
-        ) {
-          params += ansi[i]
-          i++
-        }
-        const cmd = ansi[i]
-        i++
-        if (cmd === "H") {
-          if (params === "") {
-            cx = 0
-            cy = 0
-          } else {
-            const parts = params.split(";")
-            cy = Math.max(0, (parseInt(parts[0]!) || 1) - 1)
-            cx = Math.max(0, (parseInt(parts[1]!) || 1) - 1)
-          }
-        } else if (cmd === "K") {
-          for (let x = cx; x < width; x++) screen[cy]![x] = " "
-        } else if (cmd === "A") {
-          cy = Math.max(0, cy - (parseInt(params) || 1))
-        } else if (cmd === "B") {
-          cy = Math.min(height - 1, cy + (parseInt(params) || 1))
-        } else if (cmd === "C") {
-          cx = Math.min(width - 1, cx + (parseInt(params) || 1))
-        } else if (cmd === "D") {
-          cx = Math.max(0, cx - (parseInt(params) || 1))
-        } else if (cmd === "G") {
-          cx = Math.max(0, (parseInt(params) || 1) - 1)
-        } else if (cmd === "J") {
-          if (params === "2") {
-            for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) screen[y]![x] = " "
-          }
-        }
-        // Skip SGR (m), DEC modes (h/l), etc.
-      } else if (ansi[i + 1] === "]") {
-        // OSC: extract payload
-        i += 2
-        let oscPayload = ""
-        while (i < ansi.length) {
-          if (ansi[i] === "\x1b" && ansi[i + 1] === "\\") {
-            i += 2
-            break
-          }
-          if (ansi[i] === "\x07") {
-            i++
-            break
-          }
-          oscPayload += ansi[i]
-          i++
-        }
-        // OSC 66: text sizing — format is "66;w=N;TEXT"
-        if (oscPayload.startsWith("66;")) {
-          const semiIdx = oscPayload.indexOf(";", 3)
-          if (semiIdx !== -1) {
-            const text = oscPayload.slice(semiIdx + 1)
-            const widthParam = oscPayload.slice(3, semiIdx)
-            const declaredWidth = widthParam.startsWith("w=") ? parseInt(widthParam.slice(2)) || 1 : 1
-            if (cy < height && cx < width) {
-              screen[cy]![cx] = text
-              cx += declaredWidth
-            }
-          }
-        }
-      } else if (ansi[i + 1] === ">") {
-        // DCS or private sequence: skip
-        i += 2
-        while (i < ansi.length && ansi[i] !== "\x1b") i++
-      } else {
-        i += 2
-      }
-    } else if (ansi[i] === "\r") {
-      cx = 0
-      i++
-    } else if (ansi[i] === "\n") {
-      cy = Math.min(height - 1, cy + 1)
-      i++
-    } else {
-      if (cy < height && cx < width) {
-        screen[cy]![cx] = ansi[i]!
-        cx++
-      }
-      i++
-    }
-  }
-  return screen
-}
-
 // ============================================================================
 // Style-Aware ANSI Replay
 // ============================================================================
@@ -2127,6 +2022,9 @@ function verifyOutputEquivalence(
           `incremental='${incr.char}' fresh='${fresh.char}'\n` +
           `  prev buffer cell: char='${prevCell.char}' bg=${prevCell.bg} wide=${prevCell.wide} cont=${prevCell.continuation}\n` +
           `  next buffer cell: char='${nextCell.char}' bg=${nextCell.bg} wide=${nextCell.wide} cont=${nextCell.continuation}\n` +
+          `  incr row: ${incrRow}\n` +
+          `  fresh row: ${freshRow}\n` +
+          `  prev row: ${prevRow}\n` +
           `Wide/cont cells on row ${y} (next buffer): ${_dumpRowWideCells(next, y)}\n` +
           `Wide/cont cells on row ${y} (prev buffer): ${_dumpRowWideCells(prev, y)}\n` +
           `Column detail around mismatch:\n${colDetails.join("\n")}`

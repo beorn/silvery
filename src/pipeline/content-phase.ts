@@ -16,7 +16,6 @@
 import type { Color } from "../buffer.js"
 import { TerminalBuffer } from "../buffer.js"
 import type { BoxProps, InkxNode, TextProps } from "../types.js"
-import { rectEqual } from "../types.js"
 import { getBorderSize, getPadding } from "./helpers.js"
 import { renderBox, renderOutline, renderScrollIndicators } from "./render-box.js"
 import { parseColor } from "./render-helpers.js"
@@ -912,7 +911,6 @@ function renderNormalChildren(
   // true, absolute children in the third pass must force-repaint because the
   // first pass may have overwritten their pixels in the cloned buffer.
   let hasAbsoluteChildren = false
-  let anyNormalFlowDirty = false
 
   // First pass: render normal-flow children (skip sticky + absolute), track dirty state
   for (const child of node.children) {
@@ -924,17 +922,6 @@ function renderNormalChildren(
     if (hasStickyChildren && childProps.position === "sticky") {
       continue // Skip — rendered in second pass
     }
-
-    const childIsDirty =
-      child.layoutNode &&
-      !child.hidden &&
-      (child.contentDirty ||
-        child.paintDirty ||
-        child.subtreeDirty ||
-        child.childrenDirty ||
-        (child.contentRect && child.prevLayout && !rectEqual(child.prevLayout, child.contentRect)))
-
-    if (childIsDirty) anyNormalFlowDirty = true
 
     renderNodeToBuffer(child, buffer, scrollOffset, effectiveClipBounds, childHasPrev, childAncestorCleared)
   }
@@ -964,7 +951,6 @@ function renderNormalChildren(
 
   // Third pass: render absolute children on top (CSS paint order)
   if (hasAbsoluteChildren) {
-    const forceRepaint = childHasPrev && anyNormalFlowDirty
     for (const child of node.children) {
       const childProps = child.props as BoxProps
       if (childProps.position !== "absolute") continue

@@ -140,7 +140,7 @@ function VirtualViewInner<T>(
   // Convert item-based estimateHeight to index-based for useVirtualizer
   const indexEstimate = typeof estimateHeight === "function" ? estimateHeight : estimateHeight
 
-  const { range, leadingHeight, trailingHeight, scrollOffset, scrollToItem, getKey } = useVirtualizer({
+  const { range, leadingHeight, trailingHeight, scrollOffset, scrollToItem } = useVirtualizer({
     count: items.length,
     estimateHeight: indexEstimate,
     viewportHeight: height,

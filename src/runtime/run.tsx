@@ -62,8 +62,6 @@ import {
   performSuspend,
   CTRL_C,
   CTRL_Z,
-  type TerminalLifecycleOptions,
-  type TerminalState,
 } from "./terminal-lifecycle.js"
 import type { Buffer, Dims, Event, RenderTarget, Runtime } from "./types.js"
 
@@ -366,7 +364,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
 
   // Protocol tracking
   let kittyEnabled = false
-  let kittyFlags = KittyFlags.DISAMBIGUATE
+  let kittyFlags: number = KittyFlags.DISAMBIGUATE
   let mouseEnabled = false
   let bracketedPasteEnabled = false
 

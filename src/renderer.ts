@@ -399,7 +399,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // outside act() boundaries may be dropped.
   function doRender(): string {
     let output: string
-    let buffer: TerminalBuffer
+    let buffer!: TerminalBuffer
 
     if (instance.singlePassLayout) {
       // Production-matching single-pass: one executeRender, no stabilization

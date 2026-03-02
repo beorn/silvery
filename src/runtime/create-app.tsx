@@ -674,7 +674,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let storeUnsubscribeFn: (() => void) | null = null
   // Track protocol state for cleanup and suspend/resume
   let kittyEnabled = false
-  let kittyFlags = KittyFlags.DISAMBIGUATE
+  let kittyFlags: number = KittyFlags.DISAMBIGUATE
   let mouseEnabled = false
 
   // Focus manager (tree-based focus system) with event dispatch wiring
