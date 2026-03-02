@@ -19,9 +19,22 @@ inkx's state management is a thin integration layer over established libraries, 
 - **Signal subscriptions**: Components read `.value` directly — fine-grained, automatic
 - **Zustand subscriptions**: `useApp(s => s.cursor.value)` — selector-based, familiar
 
+When updating multiple signals at once, wrap them in `batch()` from `@preact/signals-core` so the bridge fires once rather than per-signal:
+
+```tsx
+import { batch } from "@preact/signals-core"
+
+batch(() => {
+  cursor.value = 0
+  items.value = newItems
+  filter.value = ""
+})
+// → single Zustand notification, single re-render
+```
+
 inkx adds a second middleware that intercepts `Effect[]` returns from domain functions and routes them to declared effect runners. Everything else — the signal reactivity, the store subscription model, the React hooks — comes from the underlying libraries.
 
-`createApp()` returns more than just the store — it bundles terminal I/O, key routing, effect dispatch, and exit handling into a single `app.run(<Component />)` call. Components access the store via `useApp()`, which returns the object your factory created (signals, computed values, methods).
+`createApp()` returns more than just the store — it bundles terminal I/O, key routing, effect dispatch, and exit handling into a single `app.run(<Component />)` call. Components access the store via `useApp()`, which returns the object your factory created (signals, computed values, methods). Prefer `useApp(s => s.cursor.value)` (selector extracting a primitive) over bare `useApp()` — selectors let Zustand skip re-renders when unrelated signals change.
 
 ## The Levels
 
@@ -116,6 +129,8 @@ Good for most interactive TUI apps — dashboards, file browsers, list views, di
 **The problem**: State transitions get complex — multiple fields updated together, conditional logic scattered across methods, no clear record of *what happened*. You can't test state logic without the store.
 
 **The solution**: Extract transitions into domain functions. The store shape stays the same — signals, computed, methods — but methods now delegate to functions you can test by calling directly.
+
+These functions mutate signals (`s.cursor.value = ...`) but perform no I/O — their only effect is changing state. They're "pure" in the sense that matters: deterministic, no external side effects, fully testable by calling with fresh signals and checking the result. Think of them like Immer reducers — pure from the outside, internally mutative. This is intentional: signals are designed as long-lived mutable containers, and returning new state objects would break the reactivity model.
 
 ```tsx
 import { createApp, useApp } from "inkx/runtime"
@@ -316,6 +331,15 @@ const app = createApp(
 ```
 
 Cursor move: `cursor` signal notifies, `currentNode` recomputes, components reading `currentNode` re-render. Components reading other nodes — unaffected. With `VirtualList` limiting mounted components to ~30-50 visible items, this is O(visible) not O(total).
+
+**Cleanup**: When items are removed, delete their signals from the Map. The bridge middleware tracks signals it discovers in the store — stale signals left in a Map will continue to be watched. For collections that churn frequently, remove the signal from the Map when the entity is deleted:
+
+```tsx
+removeNode(nodeId: string) {
+  nodes.delete(nodeId)
+  folds.delete(nodeId)
+}
+```
 
 **You don't need per-entity signals for most apps.** A few top-level signals in the store handles dozens of components fine. Reach for `Map<string, Signal<T>>` when you have per-entity state with many concurrent subscribers — typically virtualized lists, tree views, or document editors.
 
