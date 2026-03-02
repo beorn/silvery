@@ -47,6 +47,7 @@ import { createBuffer } from "./create-buffer.js"
 import { createRuntime } from "./create-runtime.js"
 import { type InputHandler, type Key, parseKey } from "./keys.js"
 import { splitRawInput } from "../keys.js"
+import type { TerminalBuffer } from "../buffer.js"
 import type { InkxNode, Rect } from "../types.js"
 import { parseBracketedPaste } from "../bracketed-paste.js"
 import { isMouseSequence, parseMouseSequence } from "../mouse.js"
@@ -409,12 +410,17 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
 
   let renderScheduled = false
   let currentBuffer: Buffer
+  let prevTermBuffer: TerminalBuffer | null = null
 
   // Helper to render and get text
   function doRender(): Buffer {
+    const _t0 = performance.now()
+
     // Commit React changes to InkxNode tree
     reconciler.updateContainerSync(wrappedElement, fiberRoot, null, () => {})
     reconciler.flushSyncWork()
+
+    const _t1 = performance.now()
 
     // Get the InkxNode tree root
     const rootNode = getContainerRoot(container)
@@ -423,9 +429,38 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     const dims = runtime.getDims()
     // Inline mode: use NaN height so layout engine auto-sizes to content
     const height = modeOption === "inline" ? NaN : dims.rows
-    const { buffer: termBuffer } = executeRender(rootNode, dims.cols, height, null, undefined, pipelineConfig)
+    // Pass prevTermBuffer for incremental content rendering — without this,
+    // contentPhase renders ALL nodes from scratch every frame (20-30ms).
+    // With it, only dirty nodes re-render (<1ms for typing).
+    const { buffer: termBuffer } = executeRender(rootNode, dims.cols, height, prevTermBuffer, undefined, pipelineConfig)
+    prevTermBuffer = termBuffer
 
-    return createBuffer(termBuffer, rootNode)
+    const _t2 = performance.now()
+    const buf = createBuffer(termBuffer, rootNode)
+    const _t3 = performance.now()
+
+    if (process.env.INKX_PROFILE_RENDER) {
+      const react = (_t1 - _t0).toFixed(1)
+      const pipeline = (_t2 - _t1).toFixed(1)
+      const buffer = (_t3 - _t2).toFixed(1)
+      const total = (_t3 - _t0).toFixed(1)
+      // Per-phase breakdown from executeRender (exposed on globalThis)
+      const phases = (globalThis as any).__inkx_last_pipeline
+      if (phases) {
+        const m = phases.measure.toFixed(1)
+        const l = phases.layout.toFixed(1)
+        const s = phases.scroll.toFixed(1)
+        const c = phases.content.toFixed(1)
+        const o = phases.output.toFixed(1)
+        process.stderr.write(
+          `[render] react=${react}ms pipeline=${pipeline}ms (measure=${m} layout=${l} scroll=${s} content=${c} output=${o}) buffer=${buffer}ms total=${total}ms\n`,
+        )
+      } else {
+        process.stderr.write(`[render] react=${react}ms pipeline=${pipeline}ms buffer=${buffer}ms total=${total}ms\n`)
+      }
+    }
+
+    return buf
   }
 
   // Batched render - coalesces multiple calls within same tick
@@ -887,8 +922,8 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
         // Drain events in capped batches. Each event triggers ~3 setState
         // cascades (useReadline + onChange + useEffect sync). React's
         // NESTED_UPDATE_LIMIT is 50, so 16 × 3 = 48 stays safely under.
-        // Synchronous doRender() after each batch calls flushSyncWork(),
-        // resetting React's update counter before the next batch.
+        // Between batches, flush React state (resets the update counter)
+        // but defer the expensive layout+render to after all events drain.
         const MAX_BATCH = 16
         while (eventQueue.length > 0 && !shouldExit) {
           const batch = eventQueue.splice(0, MAX_BATCH)
@@ -900,33 +935,44 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
             }
           }
 
-          if (!shouldExit) {
-            currentBuffer = doRender()
-            runtime.render(currentBuffer)
+          // Flush React state to reset NESTED_UPDATE_LIMIT counter.
+          // This is cheap (just React reconciliation, no layout/render).
+          if (!shouldExit && eventQueue.length > 0) {
+            reconciler.updateContainerSync(wrappedElement, fiberRoot, null, () => {})
+            reconciler.flushSyncWork()
           }
+        }
+
+        // One render for the entire drain — layout + content + output.
+        if (!shouldExit) {
+          currentBuffer = doRender()
+          runtime.render(currentBuffer)
         }
       }
     } finally {
-      // Unmount React tree so useEffect cleanup functions fire
-      // (clears intervals, timeouts, subscriptions in components)
-      reconciler.updateContainerSync(null, fiberRoot, null, () => {})
-      reconciler.flushSyncWork()
+      try {
+        // Unmount React tree so useEffect cleanup functions fire
+        // (clears intervals, timeouts, subscriptions in components)
+        reconciler.updateContainerSync(null, fiberRoot, null, () => {})
+        reconciler.flushSyncWork()
 
-      // Cleanup
-      runtime[Symbol.dispose]()
-      if (!headless) {
-        disableBracketedPaste(stdout)
-        if (mouseEnabled) stdout.write(disableMouse())
-        if (kittyEnabled) stdout.write(disableKittyKeyboard())
-        stdout.write("\x1b[?25h\x1b[0m\n")
+        // Cleanup
+        runtime[Symbol.dispose]()
+        if (!headless) {
+          disableBracketedPaste(stdout)
+          if (mouseEnabled) stdout.write(disableMouse())
+          if (kittyEnabled) stdout.write(disableKittyKeyboard())
+          stdout.write("\x1b[?25h\x1b[0m\n")
+        }
+      } finally {
+        // Always restore raw mode + resolve exit, even if React unmount
+        // throws. Without this inner finally, an error in useEffect
+        // cleanup would leave the terminal in raw mode.
+        if (stdin.isTTY && (stdin as NodeJS.ReadStream).isRaw) {
+          stdin.setRawMode(false)
+        }
+        exitResolve()
       }
-      // Restore raw mode LAST — after all terminal escape sequences have
-      // been written. The keyboard source's finally only pauses stdin;
-      // we disable raw mode here to avoid the race condition.
-      if (stdin.isTTY && (stdin as NodeJS.ReadStream).isRaw) {
-        stdin.setRawMode(false)
-      }
-      exitResolve()
     }
   }
 
