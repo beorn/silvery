@@ -858,7 +858,8 @@ await app.press("ArrowUp")
 | `INKX_STRICT_OUTPUT=1` | Verify output ANSI matches fresh render (catches output-phase bugs) |
 | `INKX_CHECK_INCREMENTAL=1` | Same as STRICT but logs instead of crashing |
 | `INKX_INSTRUMENT=1` | Content-phase counters on `globalThis.__inkx_content_detail` |
-| `INKX_DEV=1` | Enable inspector (render stats, tree dumps, dirty flags) |
+| `INKX_DEV=1` | Enable inspector + warn on missing prevBuffer (incremental rendering disabled) |
+| `INKX_PROFILE_RENDER=1` | Per-phase pipeline timing to stderr (measure, layout, scroll, content, output) |
 | `DEBUG=inkx:*` | Debug output for inkx pipeline |
 | `DEBUG_LOG=/tmp/inkx.log` | Redirect debug to file (required for TUI — terminal is captured) |
 
