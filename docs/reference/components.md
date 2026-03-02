@@ -91,6 +91,37 @@ Box and Text support DOM-compatible mouse events:
 </Box>
 ```
 
+### Sticky Bottom (Outside Scroll Containers)
+
+`stickyBottom` works outside scroll containers as a bottom-pinning primitive.
+The element stays in normal flow but pins to the parent's bottom edge when
+content is short.
+
+```
+┌──────────────────────┐    ┌──────────────────────┐
+│ Content line 1       │    │ Content line 1       │
+│                      │    │ Content line 2       │
+│                      │    │ Content line 3       │
+│                      │    │ Content line 4       │
+│ Footer ◄── pinned    │    │ Footer ◄── natural   │
+└──────────────────────┘    └──────────────────────┘
+  Short content               Full content
+```
+
+```tsx
+<Box height={5} flexDirection="column">
+  <Text>Content</Text>
+  <Box position="sticky" stickyBottom={0} height={1}>
+    <Text>Footer — always at bottom</Text>
+  </Box>
+</Box>
+```
+
+Use `stickyBottom={N}` to offset N rows from the bottom edge.
+
+When the parent has no explicit height (auto-sizes), sticky is a no-op —
+the child stays at its natural position since parent height equals content height.
+
 ## Text
 
 Styled text with auto-truncation.

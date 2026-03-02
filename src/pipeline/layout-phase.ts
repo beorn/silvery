@@ -442,6 +442,120 @@ function calculateScrollState(node: InkxNode, props: BoxProps, skipStateUpdates:
   }
 }
 
+// ============================================================================
+// Phase 2.55: Sticky Phase (for non-scroll containers with sticky children)
+// ============================================================================
+
+/**
+ * Compute sticky offsets for non-scroll containers that have sticky children.
+ *
+ * Scroll containers handle their own sticky logic in calculateScrollState().
+ * This phase handles the remaining case: parents that are NOT overflow="scroll"
+ * but still contain position="sticky" children with stickyBottom.
+ *
+ * For non-scroll containers, sticky means: pin the child to the parent's bottom
+ * edge when content is shorter than the parent. When content fills the parent,
+ * the child stays at its natural position.
+ */
+export function stickyPhase(root: InkxNode): void {
+  traverseTree(root, (node) => {
+    const props = node.props as BoxProps
+    // Skip scroll containers — they handle sticky in scrollPhase
+    if (props.overflow === "scroll") return
+
+    // Check if any children are sticky with stickyBottom
+    let hasStickyChildren = false
+    for (const child of node.children) {
+      const childProps = child.props as BoxProps
+      if (childProps.position === "sticky" && childProps.stickyBottom !== undefined) {
+        hasStickyChildren = true
+        break
+      }
+    }
+
+    if (!hasStickyChildren) {
+      // Clear stale data if previously had sticky children
+      if (node.stickyChildren !== undefined) {
+        node.stickyChildren = undefined
+        node.subtreeDirty = true
+      }
+      return
+    }
+
+    const layout = node.contentRect
+    if (!layout || !node.layoutNode) return
+
+    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
+    const padding = getPadding(props)
+    const parentContentHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom
+
+    const newStickyChildren: NonNullable<InkxNode["stickyChildren"]> = []
+
+    for (let i = 0; i < node.children.length; i++) {
+      const child = node.children[i]!
+      const childProps = child.props as BoxProps
+      if (childProps.position !== "sticky") continue
+      if (childProps.stickyBottom === undefined) continue
+
+      if (!child.contentRect) continue
+
+      // Natural position relative to parent content area
+      const naturalY = child.contentRect.y - layout.y - border.top - padding.top
+      const childHeight = child.contentRect.height
+      const stickyBottom = childProps.stickyBottom
+
+      // Pin position: where the child would be if pinned to parent bottom
+      const bottomPin = parentContentHeight - stickyBottom - childHeight
+      // Child pins to bottom when content is short (naturalY < bottomPin)
+      // Stays at natural position when content fills parent (naturalY >= bottomPin)
+      const renderOffset = Math.max(naturalY, bottomPin)
+
+      newStickyChildren.push({
+        index: i,
+        renderOffset,
+        naturalTop: naturalY,
+        height: childHeight,
+      })
+    }
+
+    // Compare with previous value to detect changes
+    const prev = node.stickyChildren
+    const next = newStickyChildren.length > 0 ? newStickyChildren : undefined
+
+    const changed = !stickyChildrenEqual(prev, next)
+    node.stickyChildren = next
+
+    if (changed) {
+      node.subtreeDirty = true
+    }
+  })
+}
+
+/**
+ * Compare two stickyChildren arrays for equality.
+ */
+function stickyChildrenEqual(
+  a: InkxNode["stickyChildren"],
+  b: InkxNode["stickyChildren"],
+): boolean {
+  if (a === b) return true
+  if (!a || !b) return false
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    const ai = a[i]!
+    const bi = b[i]!
+    if (
+      ai.index !== bi.index ||
+      ai.renderOffset !== bi.renderOffset ||
+      ai.naturalTop !== bi.naturalTop ||
+      ai.height !== bi.height
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
 /**
  * Traverse tree in depth-first order.
  */

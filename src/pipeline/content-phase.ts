@@ -834,6 +834,33 @@ function renderNormalChildren(
   const effectiveClipBounds =
     props.overflow === "hidden" ? computeChildClipBounds(layout, props, clipBounds, scrollOffset) : clipBounds
 
+  // Non-scroll sticky children support. When the layout phase computes
+  // node.stickyChildren, we use the same two-pass pattern as scroll containers:
+  // first pass renders non-sticky children, second pass renders sticky children
+  // at their computed renderOffset positions.
+  const hasStickyChildren = !!(node.stickyChildren && node.stickyChildren.length > 0)
+
+  // When sticky children exist and hasPrevBuffer is true, force all first-pass
+  // children to re-render. The cloned buffer may have stale pixels from previous
+  // frames' sticky positions. This matches the stickyForceRefresh pattern from
+  // scroll containers (Tier 3).
+  const stickyForceRefresh = hasStickyChildren && hasPrevBuffer
+
+  // Pre-clear the content area to bg=null when stickyForceRefresh is true.
+  // Fresh renders start with a blank buffer (null bg everywhere). The cloned
+  // buffer has stale bg from old sticky positions — Text nodes inherit bg via
+  // getCellBg/inheritedBg, so stale bg leaks through. Clearing to null matches
+  // fresh render state before any content renders.
+  if (stickyForceRefresh) {
+    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
+    const padding = getPadding(props)
+    const contentX = layout.x + border.left + padding.left
+    const contentY = layout.y + border.top + padding.top
+    const contentWidth = layout.width - border.left - border.right - padding.left - padding.right
+    const contentHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom
+    buffer.fill(contentX, contentY, contentWidth, contentHeight, { char: " ", bg: null })
+  }
+
   // Force children to re-render when parent's region was modified on a clone,
   // children were restructured, or sibling positions shifted.
   const childrenNeedRepaint = node.childrenDirty || childPositionChanged || parentRegionChanged
@@ -845,7 +872,7 @@ function renderNormalChildren(
     if (parentRegionChanged) reasons.push("parentRegionChanged")
     _contentPhaseStats.normalRepaintReason = reasons.join("+")
   }
-  const childHasPrev = childrenNeedRepaint ? false : hasPrevBuffer
+  let childHasPrev = childrenNeedRepaint ? false : hasPrevBuffer
   // childAncestorCleared: tells descendants that STALE pixels exist in the buffer.
   // Only parentRegionCleared (no bg fill → stale pixels remain) propagates this.
   // parentRegionChanged WITHOUT parentRegionCleared means the parent filled its bg,
@@ -853,28 +880,37 @@ function renderNormalChildren(
   // there would cause children to re-fill, overwriting border cells at boundaries.
   // When this node has backgroundColor, its renderBox fill covers any stale
   // pixels from ancestor clears — so children don't need ancestorCleared.
-  const childAncestorCleared = parentRegionCleared || (ancestorCleared && !props.backgroundColor)
+  let childAncestorCleared = parentRegionCleared || (ancestorCleared && !props.backgroundColor)
 
-  // Two-pass rendering to match CSS paint order: normal-flow first, then
-  // absolute on top. This ensures absolute children's pixels (bg fills, text)
-  // are never overwritten by normal-flow siblings' clearNodeRegion/render.
+  // Override child flags when sticky force refresh is active — all first-pass
+  // children must re-render fresh (matching the scroll container pattern).
+  if (stickyForceRefresh) {
+    childHasPrev = false
+    childAncestorCleared = false
+  }
+
+  // Multi-pass rendering to match CSS paint order:
+  // 1. Normal-flow children (skip sticky and absolute)
+  // 2. Sticky children at computed positions (on top of normal-flow)
+  // 3. Absolute children on top of everything
   //
-  // Without two-pass, an absolute child rendered before a dirty normal-flow
-  // sibling gets its bg wiped by the sibling's clearNodeRegion. The old
-  // single-pass anySiblingWasDirty flag only caught absolute children AFTER
-  // dirty siblings, not before.
+  // This ensures absolute children's pixels (bg fills, text) are never
+  // overwritten by normal-flow siblings' clearNodeRegion/render.
   //
-  // Pre-scan: detect if any non-absolute sibling is dirty. When true, absolute
-  // children in the second pass must force-repaint because the first pass may
-  // have overwritten their pixels in the cloned buffer.
+  // Pre-scan: detect if any non-absolute, non-sticky sibling is dirty. When
+  // true, absolute children in the third pass must force-repaint because the
+  // first pass may have overwritten their pixels in the cloned buffer.
   let hasAbsoluteChildren = false
   let anyNormalFlowDirty = false
 
-  // First pass: render normal-flow children, track dirty state
+  // First pass: render normal-flow children (skip sticky + absolute), track dirty state
   for (const child of node.children) {
     const childProps = child.props as BoxProps
     if (childProps.position === "absolute") {
       hasAbsoluteChildren = true
+      continue // Skip — rendered in third pass
+    }
+    if (hasStickyChildren && childProps.position === "sticky") {
       continue // Skip — rendered in second pass
     }
 
@@ -892,7 +928,30 @@ function renderNormalChildren(
     renderNodeToBuffer(child, buffer, scrollOffset, effectiveClipBounds, childHasPrev, childAncestorCleared)
   }
 
-  // Second pass: render absolute children on top (CSS paint order)
+  // Second pass: render sticky children at their computed positions.
+  // Rendered after normal-flow so they appear on top of other content.
+  if (node.stickyChildren) {
+    for (const sticky of node.stickyChildren) {
+      const child = node.children[sticky.index]
+      if (!child?.contentRect) continue
+
+      // Calculate the scroll offset that would place the child at its sticky position.
+      // stickyScrollOffset = naturalTop - renderOffset
+      // This makes the child render at renderOffset instead of its natural position.
+      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset
+
+      // Sticky children always re-render (hasPrevBuffer=false) since their
+      // effective position may change between frames.
+      //
+      // ancestorCleared=false matches fresh render semantics: on a fresh render,
+      // the buffer at sticky positions has first-pass content (not "cleared").
+      // Using ancestorCleared=true would cause transparent spacer Boxes to clear
+      // their region, wiping overlapping sticky headers rendered earlier in this pass.
+      renderNodeToBuffer(child, buffer, stickyScrollOffset, effectiveClipBounds, false, false)
+    }
+  }
+
+  // Third pass: render absolute children on top (CSS paint order)
   if (hasAbsoluteChildren) {
     const forceRepaint = childHasPrev && anyNormalFlowDirty
     for (const child of node.children) {

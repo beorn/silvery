@@ -41,14 +41,14 @@ export type { CellChange, BorderChars } from "./types.js"
 
 // Re-export phase functions
 export { measurePhase } from "./measure-phase.js"
-export { layoutPhase, rectEqual, scrollPhase, screenRectPhase, notifyLayoutSubscribers } from "./layout-phase.js"
+export { layoutPhase, rectEqual, scrollPhase, stickyPhase, screenRectPhase, notifyLayoutSubscribers } from "./layout-phase.js"
 export { contentPhase, clearBgConflictWarnings, setBgConflictMode } from "./content-phase.js"
 export { contentPhaseAdapter } from "./content-phase-adapter.js"
 export { outputPhase } from "./output-phase.js"
 
 import { contentPhaseAdapter } from "./content-phase-adapter.js"
 import { clearBgConflictWarnings, contentPhase } from "./content-phase.js"
-import { layoutPhase, notifyLayoutSubscribers, screenRectPhase, scrollPhase } from "./layout-phase.js"
+import { layoutPhase, notifyLayoutSubscribers, screenRectPhase, scrollPhase, stickyPhase } from "./layout-phase.js"
 // Import for orchestration
 import { measurePhase } from "./measure-phase.js"
 import { outputPhase } from "./output-phase.js"
@@ -210,6 +210,9 @@ function executeRenderCore(
     tScroll = performance.now() - t2s
   }
 
+  // Phase 2.55: Sticky phase (non-scroll container sticky children)
+  stickyPhase(root)
+
   // Phase 2.6: Screen rect calculation (screen-relative positions)
   let tScreenRect: number
   {
@@ -339,6 +342,9 @@ export function executeRenderAdapter(
     using _scroll = render.span("scroll")
     scrollPhase(root)
   }
+
+  // Phase 2.55: Sticky phase (non-scroll container sticky children)
+  stickyPhase(root)
 
   // Phase 2.6: Screen rect calculation
   {

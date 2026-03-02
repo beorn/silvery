@@ -147,6 +147,29 @@ function StreamingChat({ messages, streamingText }) {
 }
 ```
 
+## Bottom-Pinned Footer
+
+Pin a footer or status bar to the bottom of a container using `stickyBottom`:
+
+```tsx
+import { Box, Text } from "inkx"
+
+function Layout({ children }) {
+  return (
+    <Box height="100%" flexDirection="column">
+      <Box flexGrow={1}>{children}</Box>
+      <Box position="sticky" stickyBottom={0} height={1} backgroundColor="blue">
+        <Text color="white"> Status: Ready </Text>
+      </Box>
+    </Box>
+  )
+}
+```
+
+The footer stays at the bottom regardless of content height. When content
+grows to fill the container, the footer moves to its natural position
+(which is the bottom anyway).
+
 ## Progress Tracking
 
 ```tsx

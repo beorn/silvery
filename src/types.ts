@@ -315,6 +315,20 @@ export interface InkxNode {
   /** True if this node is hidden (for Suspense support) */
   hidden?: boolean
 
+  /** Sticky children with computed render positions (for non-scroll containers).
+   *  When a parent has sticky children but is NOT a scroll container, this array
+   *  holds the computed render offsets. Same shape as scrollState.stickyChildren. */
+  stickyChildren?: Array<{
+    /** Index of the sticky child */
+    index: number
+    /** Computed Y offset to render at (relative to parent content area) */
+    renderOffset: number
+    /** Original natural Y position (relative to parent content area) */
+    naturalTop: number
+    /** Height of the sticky element */
+    height: number
+  }>
+
   /** Scroll state for overflow='scroll' containers */
   scrollState?: {
     /** Current scroll offset (in terminal rows) */
