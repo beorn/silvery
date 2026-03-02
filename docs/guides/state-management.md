@@ -35,15 +35,13 @@ function Counter() {
 await run(<Counter />)
 ```
 
-**Good for**: Single-component apps, prototypes, simple tools. State is local, self-contained, and only one component needs it.
-
-**You'll outgrow this when**: Multiple components need the same state, you're prop-drilling through layers that don't use the data, or you want to test state transitions without mounting React.
+Good for single-component apps, prototypes, and simple tools where state is local and self-contained.
 
 ### Level 2: Shared State
 
-**What this enables**: Any component can read any state via selectors — no prop drilling. Components subscribe to individual slices, so only the ones that read a changed field re-render. Key handling is centralized instead of scattered across components.
+**The problem**: Multiple components need the same state. You're passing props through layers that don't use them. Key handling is scattered across components instead of centralized. You can't subscribe to individual fields — one component's state change re-renders everything.
 
-`createApp()` provides a Zustand store shared across all components:
+**The solution**: `createApp()` provides a Zustand store shared across all components. Components subscribe to individual slices via selectors — only the ones that read a changed field re-render. Key handling moves to one place.
 
 ```tsx
 import { createApp, useApp } from "inkx/runtime"
@@ -80,15 +78,13 @@ function ItemList() {
 }
 ```
 
-**Good for**: Most interactive TUI apps. Dashboards, file browsers, list views, dialogs. State is shared but the transitions are simple enough to express as `set()` calls.
-
-**You'll outgrow this when**: State transitions get complex — multiple fields updated together, conditional logic in `set()` callbacks, side effects mixed with state changes, or you want to test state logic without mounting components.
+Good for most interactive TUI apps — dashboards, file browsers, list views, dialogs. State is shared but the transitions are simple enough to express as `set()` calls.
 
 ### Level 3: Actions
 
-**What this enables**: State transitions become testable without React — call the reducer, assert on the result. Actions are serializable data that documents what happened. You can log, inspect, and replay action streams. The reducer is a pure function: same input, same output.
+**The problem**: State transitions get complex — multiple fields updated together, conditional logic in `set()` callbacks, no clear record of *what happened*. You can't test state logic without mounting React components. Side effects start creeping into `set()` calls.
 
-Replace imperative `set()` calls with a dispatch/reducer pattern:
+**The solution**: Replace imperative `set()` calls with a dispatch/reducer pattern. State transitions become a pure function you can test by calling it directly — no React, no mocks, no async. Actions are serializable data that documents what happened: you can log, inspect, and replay them.
 
 ```tsx
 type Action =
@@ -117,7 +113,7 @@ function handleKey(input: string, dispatch: Dispatch<Action>) {
 }
 ```
 
-**Testing is trivial** — no React, no mocks, no async:
+Testing is trivial — call the function, check the result:
 
 ```tsx
 test("MOVE_CURSOR clamps at bottom", () => {
@@ -127,15 +123,13 @@ test("MOVE_CURSOR clamps at bottom", () => {
 })
 ```
 
-**Good for**: Apps with structured state transitions. The reducer is pure and testable, actions document what happened. This is the sweet spot for most complex TUI apps.
-
-**You'll outgrow this when**: You need side effects (HTTP, file I/O, timers) and they're tangled into your action handlers. When you want to test that an action *triggers* a save without actually saving. When you need undo/redo, action replay, or collaborative editing.
+Good for apps with structured state transitions. This is the sweet spot for most complex TUI apps.
 
 ### Level 4: Pure (Effects as Data)
 
-**What this enables**: The reducer becomes a *pure function* — given the same state and action, it always returns the same result. Side effects are data objects you can assert on in tests, not I/O calls buried in handlers. Effect runners are swappable: production runners do real I/O, test runners collect and assert, replay runners skip I/O. This unlocks undo/redo (invertible operations), collaborative editing (serializable ops over the network), AI automation (actions as tool calls), and platform portability (same reducer in terminal and browser).
+**The problem**: Side effects (file I/O, HTTP, timers, toasts) are tangled into your action handlers. You can test that state changed, but not that a save was triggered or a notification was sent — not without mocking the world. Undo/redo requires snapshotting because transitions aren't invertible. Collaborative editing requires serializable operations, but your effects are function calls.
 
-The reducer returns `[state, effects]` instead of just `state`. Effects describe what should happen — the runtime executes them:
+**The solution**: The reducer returns `[state, effects]` instead of just `state`. Effects are data objects describing what should happen — the runtime executes them. The reducer never touches I/O, making it a true pure function. Effect runners are swappable: production runners do real I/O, test runners collect and assert, replay runners skip I/O. This unlocks undo/redo (invertible operations), collaborative editing (serializable ops), AI automation (actions as tool calls), and platform portability (same reducer in terminal and browser).
 
 ```tsx
 type Effect =
@@ -175,7 +169,7 @@ function reducer(state: State, action: Action): State | [State, Effect[]] {
 const useStore = create(tea(reducer, effectRunners))
 ```
 
-**Testing the full round-trip** — assert on what the reducer *says should happen*, not on whether it happened:
+Assert on what the reducer *says should happen*, not on whether it happened:
 
 ```tsx
 import { collect } from "zustand-tea"
