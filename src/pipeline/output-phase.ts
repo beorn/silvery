@@ -1365,14 +1365,15 @@ function changesToAnsi(
           output += "\x1b[0m"
           currentStyle = null
         }
-        if (cursorY >= 0) {
-          if (renderY > cursorY) {
-            output += `\x1b[${renderY - cursorY}B\r`
-          } else if (renderY < cursorY) {
-            output += `\x1b[${cursorY - renderY}A\r`
-          } else {
-            output += "\r"
-          }
+        // When cursorY === -1 (first change in incremental render),
+        // the cursor is at row 0 (set by inlineIncrementalRender prefix).
+        const fromRow = cursorY >= 0 ? cursorY : 0
+        if (renderY > fromRow) {
+          output += `\x1b[${renderY - fromRow}B\r`
+        } else if (renderY < fromRow) {
+          output += `\x1b[${fromRow - renderY}A\r`
+        } else {
+          output += "\r"
         }
         if (x > 0) output += x === 1 ? "\x1b[C" : `\x1b[${x}C`
       } else {
