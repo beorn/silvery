@@ -31,6 +31,7 @@ inkx's core innovation is **two-phase rendering with synchronous layout feedback
 
 - [docs/deep-dives/architecture.md](docs/deep-dives/architecture.md) - Layer diagram, RenderAdapter interface
 - [docs/guides/getting-started.md](docs/guides/getting-started.md) - First app tutorial
+- [docs/guides/state-management.md](docs/guides/state-management.md) - Four levels: Component → Shared → Actions → Pure (effects as data)
 - [docs/guides/runtime-layers.md](docs/guides/runtime-layers.md) - Runtime architecture deep-dive (createApp, createRuntime, createStore)
 - [docs/deep-dives/internals.md](docs/deep-dives/internals.md) - Reconciler implementation
 
@@ -1028,6 +1029,7 @@ to capture numbers.
 | [docs/README.md](docs/README.md)                                                   | Documentation table of contents                                                                                              |
 | **Guides**                                                                         |                                                                                                                              |
 | [docs/guides/getting-started.md](docs/guides/getting-started.md)                   | First app tutorial, basic input, layout feedback                                                                             |
+| [docs/guides/state-management.md](docs/guides/state-management.md)                 | Four levels: Component → Shared → Actions → Pure (effects as data)                                                           |
 | [docs/guides/runtime-layers.md](docs/guides/runtime-layers.md)                     | createApp, createRuntime, createStore, streams, tick sources                                                                 |
 | [docs/guides/migration.md](docs/guides/migration.md)                               | Ink to inkx migration guide                                                                                                  |
 | [docs/guides/runtime-migration.md](docs/guides/runtime-migration.md)               | Legacy inkx to inkx/runtime migration                                                                                        |
