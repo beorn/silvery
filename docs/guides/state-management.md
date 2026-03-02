@@ -15,7 +15,7 @@ Level 4: Pure                Zustand + tea() + effects-data  — pure, serializa
 
 ### Level 1: Component State
 
-Standard React. State lives in individual components via `useState` or `useReducer`.
+The simplest model. State lives in individual components. No coordination overhead, no abstractions — just React.
 
 ```tsx
 import { run, useInput } from "inkx/runtime"
@@ -35,13 +35,15 @@ function Counter() {
 await run(<Counter />)
 ```
 
-**When this works**: Single-component apps, prototypes, simple tools. State is local, self-contained, and only one component needs it.
+**Good for**: Single-component apps, prototypes, simple tools. State is local, self-contained, and only one component needs it.
 
-**When to move on**: When multiple components need the same state, or you're passing props through layers that don't use them (prop drilling), or you want to test state transitions without mounting React components.
+**You'll outgrow this when**: Multiple components need the same state, you're prop-drilling through layers that don't use the data, or you want to test state transitions without mounting React.
 
 ### Level 2: Shared State
 
-`createApp()` provides a Zustand store shared across all components. Components subscribe to individual slices — only the ones that read a field re-render when it changes.
+**What this enables**: Any component can read any state via selectors — no prop drilling. Components subscribe to individual slices, so only the ones that read a changed field re-render. Key handling is centralized instead of scattered across components.
+
+`createApp()` provides a Zustand store shared across all components:
 
 ```tsx
 import { createApp, useApp } from "inkx/runtime"
@@ -78,15 +80,15 @@ function ItemList() {
 }
 ```
 
-**What changed**: State moved from component to store. Components read via `useApp()` selectors instead of props. Key handling is centralized in `createApp()` event handlers.
+**Good for**: Most interactive TUI apps. Dashboards, file browsers, list views, dialogs. State is shared but the transitions are simple enough to express as `set()` calls.
 
-**When this works**: Most interactive TUI apps. Dashboards, file browsers, list views, dialogs. State is shared but the transitions are simple enough to express as `set()` calls.
-
-**When to move on**: When state transitions get complex — multiple fields updated together, conditional logic in `set()` callbacks, side effects mixed with state changes, or you want to test state logic without mounting components.
+**You'll outgrow this when**: State transitions get complex — multiple fields updated together, conditional logic in `set()` callbacks, side effects mixed with state changes, or you want to test state logic without mounting components.
 
 ### Level 3: Actions
 
-Replace imperative `set()` calls with a dispatch/reducer pattern. State transitions are explicit, named, and testable as data.
+**What this enables**: State transitions become testable without React — call the reducer, assert on the result. Actions are serializable data that documents what happened. You can log, inspect, and replay action streams. The reducer is a pure function: same input, same output.
+
+Replace imperative `set()` calls with a dispatch/reducer pattern:
 
 ```tsx
 type Action =
@@ -115,9 +117,7 @@ function handleKey(input: string, dispatch: Dispatch<Action>) {
 }
 ```
 
-**What changed**: `set()` calls became action objects. State transitions are in a pure function. Actions are serializable — you can log them, replay them, inspect them.
-
-**Testing is now trivial**:
+**Testing is trivial** — no React, no mocks, no async:
 
 ```tsx
 test("MOVE_CURSOR clamps at bottom", () => {
@@ -127,15 +127,15 @@ test("MOVE_CURSOR clamps at bottom", () => {
 })
 ```
 
-No React, no mocks, no async — call the function, check the result.
+**Good for**: Apps with structured state transitions. The reducer is pure and testable, actions document what happened. This is the sweet spot for most complex TUI apps.
 
-**When this works**: Apps with structured state transitions. The reducer is pure and testable, actions document what happened. This is the sweet spot for most complex TUI apps.
-
-**When to move on**: When you need side effects (HTTP, file I/O, timers) and they're tangled into your action handlers. When you want to test that an action *triggers* a save without actually saving. When you need undo/redo, action replay, or collaborative editing.
+**You'll outgrow this when**: You need side effects (HTTP, file I/O, timers) and they're tangled into your action handlers. When you want to test that an action *triggers* a save without actually saving. When you need undo/redo, action replay, or collaborative editing.
 
 ### Level 4: Pure (Effects as Data)
 
-The reducer returns `[state, effects]` instead of just `state`. Effects are data objects describing what should happen — the runtime executes them. The reducer never touches I/O.
+**What this enables**: The reducer becomes a *pure function* — given the same state and action, it always returns the same result. Side effects are data objects you can assert on in tests, not I/O calls buried in handlers. Effect runners are swappable: production runners do real I/O, test runners collect and assert, replay runners skip I/O. This unlocks undo/redo (invertible operations), collaborative editing (serializable ops over the network), AI automation (actions as tool calls), and platform portability (same reducer in terminal and browser).
+
+The reducer returns `[state, effects]` instead of just `state`. Effects describe what should happen — the runtime executes them:
 
 ```tsx
 type Effect =
@@ -175,9 +175,7 @@ function reducer(state: State, action: Action): State | [State, Effect[]] {
 const useStore = create(tea(reducer, effectRunners))
 ```
 
-**What changed**: Side effects moved from imperative code to data. The reducer is now a *pure function* — given the same state and action, it always returns the same result. Effects are handled by separate runners that can be swapped for testing.
-
-**Testing the full round-trip**:
+**Testing the full round-trip** — assert on what the reducer *says should happen*, not on whether it happened:
 
 ```tsx
 import { collect } from "zustand-tea"
@@ -192,7 +190,7 @@ test("TOGGLE_DONE persists and toasts", () => {
 })
 ```
 
-No mocks. No I/O. No async. You assert on what the reducer *says should happen*, not on whether it happened.
+No mocks. No I/O. No async.
 
 **Effect runners** are separate, swappable interpreters:
 
