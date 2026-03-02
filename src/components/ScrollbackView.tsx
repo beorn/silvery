@@ -119,7 +119,23 @@ export function ScrollbackView<T>({
   stdout = process.stdout as unknown as { write(data: string): boolean },
   onRecovery,
 }: ScrollbackViewProps<T>): ReactElement {
-  const effectiveWidth = width ?? getTermCols()
+  // Track terminal width reactively so we re-render on resize.
+  // Without this, getTermCols() is only called during render — if no React
+  // state changes on resize, the component never re-renders and useScrollback
+  // never detects the width change (frozen items aren't re-emitted).
+  const [termWidth, setTermWidth] = useState(getTermCols)
+  useEffect(() => {
+    if (width !== undefined) return // Parent controls width — skip listener
+    // Use the stdout prop (defaults to process.stdout) — works with both
+    // real terminals and test mocks that emit "resize" events.
+    const stream = stdout as { on?: Function; off?: Function; columns?: number }
+    if (!stream?.on || !stream?.columns) return
+    const onResize = () => setTermWidth((stream as { columns: number }).columns ?? 80)
+    stream.on("resize", onResize)
+    return () => { stream.off?.("resize", onResize) }
+  }, [width, stdout])
+
+  const effectiveWidth = width ?? termWidth
 
   // Resolve render function: renderItem takes precedence over children
   const render = renderItem ?? children

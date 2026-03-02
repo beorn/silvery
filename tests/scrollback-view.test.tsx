@@ -265,4 +265,69 @@ describe("ScrollbackView", () => {
     expect(app.text).toContain("status update")
     expect(app.text).toContain("Item c")
   })
+
+  test("resize triggers re-render and re-emits frozen items (no width prop)", () => {
+    // Mock stdout with event emitter support (needed for resize detection)
+    const { EventEmitter } = require("events")
+    const emitter = new EventEmitter()
+    const writes: string[] = []
+    const resizableStdout = {
+      write(data: string) { writes.push(data); return true },
+      columns: 80,
+      rows: 24,
+      on(event: string, listener: (...args: unknown[]) => void) {
+        emitter.on(event, listener)
+        return resizableStdout
+      },
+      off(event: string, listener: (...args: unknown[]) => void) {
+        emitter.off(event, listener)
+        return resizableStdout
+      },
+    }
+
+    const items = mkItems(["a", true], ["b", true], ["c", false])
+
+    // No width prop — ScrollbackView should track via resize listener
+    const app = render(
+      <ScrollbackView
+        items={items}
+        keyExtractor={(t) => t.id}
+        stdout={resizableStdout}
+        isFrozen={(t) => t.shouldFreeze}
+      >
+        {(item) => <Item item={item} />}
+      </ScrollbackView>,
+    )
+
+    // Items a and b should be frozen and written
+    expect(app.text).not.toContain("Item a")
+    expect(app.text).not.toContain("Item b")
+    expect(app.text).toContain("Item c")
+    const initialWriteCount = writes.length
+    expect(initialWriteCount).toBeGreaterThan(0) // frozen items were written
+
+    // Simulate terminal resize: update columns and emit event
+    resizableStdout.columns = 40
+    emitter.emit("resize")
+
+    // Re-render to pick up the width state change
+    app.rerender(
+      <ScrollbackView
+        items={items}
+        keyExtractor={(t) => t.id}
+        stdout={resizableStdout}
+        isFrozen={(t) => t.shouldFreeze}
+      >
+        {(item) => <Item item={item} />}
+      </ScrollbackView>,
+    )
+
+    // Should have re-emitted frozen items after resize
+    expect(writes.length).toBeGreaterThan(initialWriteCount)
+
+    // The re-emission should include the clear sequence
+    const allOutput = writes.join("")
+    expect(allOutput).toContain("\x1b[9999A") // cursor up max
+    expect(allOutput).toContain("\x1b[J") // erase below
+  })
 })

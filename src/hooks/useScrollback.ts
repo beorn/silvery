@@ -8,11 +8,10 @@
  * In inline mode, notifies the scheduler about lines written to stdout
  * so that cursor positioning accounts for the displacement.
  *
- * On terminal resize (width change), re-renders frozen items at the new
- * width and compares with stored strings. If content changed (e.g. text
- * wraps differently), clears the visible screen and re-emits all frozen
- * items. If content is identical (e.g. short text fits at both widths),
- * skips re-emission entirely.
+ * On terminal resize (width change), clears the visible screen and
+ * re-emits all frozen items at the new width. This is necessary because
+ * the output phase clears the visible screen on resize, wiping any
+ * frozen items that were visible.
  *
  * Supports optional OSC 133 semantic markers for terminal prompt navigation
  * (Cmd+Up/Cmd+Down in iTerm2, Kitty, WezTerm, Ghostty).
@@ -160,6 +159,12 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
     const currentFrozenCount = frozenCountRef.current
     if (currentFrozenCount === 0) return
 
+    // DEBUG: trace resize re-emission
+    if (process.env.DEBUG_LOG) {
+      const fs = require("fs")
+      fs.appendFileSync(process.env.DEBUG_LOG, `[useScrollback] RESIZE: ${prevWidth} → ${width}, frozenCount=${currentFrozenCount}, hasResetInlineCursor=${!!stdoutCtx?.resetInlineCursor}\n`)
+    }
+
     const currentItems = itemsRef.current
     const currentRender = renderRef.current
     const currentMarkers = markersRef.current
@@ -202,6 +207,11 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
 
     // 5. Update stored strings
     renderedStringsRef.current = newStrings
+
+    // 6. Sync prevFrozenCountRef so the freeze useEffect (which runs AFTER
+    //    this useLayoutEffect) doesn't re-write items we just emitted.
+    //    This prevents double-writes when resize + compact happen in the same frame.
+    prevFrozenCountRef.current = currentFrozenCount
   }, [width, stdout, stdoutCtx])
 
   return frozenCount

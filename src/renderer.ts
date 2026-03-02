@@ -739,6 +739,9 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     instance.rows = newRows
     mockStdout.columns = newCols
     mockStdout.rows = newRows
+    // Emit resize event so component-level listeners (e.g., ScrollbackView's
+    // width tracking) fire before the render, matching real terminal behavior.
+    stdoutEmitter.emit("resize")
     // Clear prevBuffer to force full redraw (matches scheduler.setupResizeListener)
     instance.prevBuffer = null
     // Re-render at new dimensions
