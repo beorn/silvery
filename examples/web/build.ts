@@ -71,7 +71,7 @@ const sharedOptions = {
   sourcemap: "external" as const,
   define: browserDefines,
   banner: processShim,
-  external: ["yoga-wasm-web", "ws"],
+  external: ["yoga-wasm-web", "ws", "child_process"],
 }
 
 // =============================================================================

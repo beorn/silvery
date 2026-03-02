@@ -583,8 +583,8 @@ function ExchangeBlock({ ex, animatedTools }: { ex: Exchange; animatedTools: num
 }
 
 function CodingAgentShowcase(): JSX.Element {
-  // Start with first exchange already complete
-  const [exchanges, setExchanges] = useState<Exchange[]>([EXCHANGE_POOL[0]!])
+  // Start empty — auto-animate the first exchange so users see activity immediately
+  const [exchanges, setExchanges] = useState<Exchange[]>([])
   const [activeExchange, setActiveExchange] = useState<Exchange | null>(null)
   const [animatedTools, setAnimatedTools] = useState(0)
   const [cursorVisible, setCursorVisible] = useState(true)
@@ -595,6 +595,14 @@ function CodingAgentShowcase(): JSX.Element {
   useEffect(() => {
     const id = setInterval(() => setCursorVisible((v) => !v), 530)
     return () => clearInterval(id)
+  }, [])
+
+  // Auto-start the first exchange after a short delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setActiveExchange(EXCHANGE_POOL[0]!)
+    }, 1500)
+    return () => clearTimeout(timer)
   }, [])
 
   // Animate tool calls for active exchange
@@ -679,6 +687,13 @@ function CodingAgentShowcase(): JSX.Element {
                 <Text color="#585b70">{spinChar} working...</Text>
               </Box>
             )}
+          </Box>
+        )}
+
+        {/* Welcome text when no exchanges yet */}
+        {exchanges.length === 0 && !activeExchange && (
+          <Box flexDirection="column" paddingX={1} marginTop={1}>
+            <Text color="#6c7086">Ready. Type a prompt and press Enter to see the agent work.</Text>
           </Box>
         )}
       </Box>

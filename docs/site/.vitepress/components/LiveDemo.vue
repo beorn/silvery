@@ -6,6 +6,7 @@ const props = defineProps({
   height: { type: Number, default: 500 },
 })
 
+const iframeRef = ref(null)
 const showBuildHint = ref(false)
 let timeout = null
 
@@ -32,6 +33,17 @@ onUnmounted(() => {
     clearTimeout(timeout)
     timeout = null
   }
+  // Tell the iframe to clean up its React app and timers, then remove it
+  const iframe = iframeRef.value
+  if (iframe) {
+    try {
+      iframe.contentWindow?.postMessage({ type: "inkx-cleanup" }, "*")
+    } catch (_) {
+      // Cross-origin or already destroyed — ignore
+    }
+    iframe.removeAttribute("src")
+    iframe.remove()
+  }
 })
 </script>
 
@@ -50,11 +62,13 @@ onUnmounted(() => {
 
       <div class="live-demo-viewport" :style="{ height: height + 'px' }">
         <iframe
+          ref="iframeRef"
           :src="xtermSrc"
           class="live-demo-iframe"
           frameborder="0"
           title="inkx Terminal render target demo"
           loading="lazy"
+          tabindex="0"
           @error="() => {}"
         />
       </div>

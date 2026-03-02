@@ -19,7 +19,7 @@
  * ```
  */
 
-import { createContext, useContext, type ReactElement, type ReactNode } from "react"
+import { createContext, useContext, useMemo, type ReactElement, type ReactNode } from "react"
 
 // ============================================================================
 // Types
@@ -75,6 +75,10 @@ interface ScrollbackItemProviderProps extends ScrollbackItemContext {
  * Wraps each item rendered by ScrollbackList with its context.
  * Internal — not exported from the package's public API.
  */
-export function ScrollbackItemProvider({ children, ...ctx }: ScrollbackItemProviderProps) {
-  return <ScrollbackItemCtx.Provider value={ctx}>{children}</ScrollbackItemCtx.Provider>
+export function ScrollbackItemProvider({ children, freeze, isFrozen, index, nearScrollback }: ScrollbackItemProviderProps) {
+  const value = useMemo(
+    () => ({ freeze, isFrozen, index, nearScrollback }),
+    [freeze, isFrozen, index, nearScrollback],
+  )
+  return <ScrollbackItemCtx.Provider value={value}>{children}</ScrollbackItemCtx.Provider>
 }

@@ -54,6 +54,10 @@ if (!ShowcaseComponent) {
     term.textarea?.addEventListener("focus", () => setTermFocused(true))
     term.textarea?.addEventListener("blur", () => setTermFocused(false))
 
+    // Click anywhere on the terminal container to ensure focus
+    // (browsers restrict auto-focus in iframes, so click-to-focus is essential)
+    termContainer.addEventListener("click", () => term.focus())
+
     // Auto-focus terminal so keyboard input works immediately
     term.focus()
 
@@ -61,6 +65,20 @@ if (!ShowcaseComponent) {
     window.addEventListener("resize", () => {
       fitAddon.fit()
       instance.refresh()
+    })
+
+    // Clean up when parent frame navigates away (VitePress SPA navigation)
+    window.addEventListener("message", (event) => {
+      if (event.data?.type === "inkx-cleanup") {
+        instance.unmount()
+        term.dispose()
+      }
+    })
+
+    // Also clean up if the iframe is being unloaded (e.g., src removed)
+    window.addEventListener("pagehide", () => {
+      instance.unmount()
+      term.dispose()
     })
 
     // Expose for debugging

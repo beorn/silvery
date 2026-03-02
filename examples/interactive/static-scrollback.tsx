@@ -861,6 +861,91 @@ function StatusBar({
 }
 
 // ============================================================================
+// Footer — owns inputText state so typing doesn't re-render the parent
+// ============================================================================
+
+/** Imperative handle for parent to control footer text (auto-typing, pre-fill). */
+interface FooterControl {
+  setText: (text: string) => void
+  getText: () => string
+}
+
+/**
+ * Footer component that manages its own inputText state.
+ *
+ * By lifting text input state OUT of CodingAgent and INTO this component,
+ * typing keystrokes only re-render the footer — not the entire exchange list.
+ * This is the "lift state down" pattern: move state to the lowest component
+ * that needs it.
+ */
+function DemoFooter({
+  controlRef,
+  onSubmit,
+  streamPhase,
+  autoMode,
+  done,
+  compacting,
+  exchanges,
+}: {
+  controlRef: React.RefObject<FooterControl>
+  onSubmit: (text: string) => void
+  streamPhase: StreamPhase
+  autoMode: boolean
+  done: boolean
+  compacting: boolean
+  exchanges: Exchange[]
+}): JSX.Element {
+  const [inputText, setInputText] = useState("")
+  const inputTextRef = useRef(inputText)
+  inputTextRef.current = inputText
+
+  // Expose control to parent for auto-typing and pre-fill
+  controlRef.current = {
+    setText: setInputText,
+    getText: () => inputTextRef.current,
+  }
+
+  // Elapsed time — lives here since it only affects the status bar
+  const startRef = useRef(Date.now())
+  const [elapsed, setElapsed] = useState(0)
+  useEffect(() => {
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const handleSubmit = useCallback(
+    (text: string) => {
+      onSubmit(text)
+      setInputText("")
+    },
+    [onSubmit],
+  )
+
+  return (
+    <Box flexDirection="column">
+      <Box borderStyle="round" borderColor="$focusring" paddingX={1}>
+        <TextInput
+          value={inputText}
+          onChange={setInputText}
+          onSubmit={handleSubmit}
+          prompt={"\u276F "}
+          promptColor="$focusring"
+          placeholder={streamPhase !== "done" ? "\u23CE skip" : done ? "Session complete" : ""}
+          isActive={!autoMode && !done}
+        />
+      </Box>
+      <StatusBar
+        exchanges={exchanges}
+        autoMode={autoMode}
+        compacting={compacting}
+        done={done}
+        elapsed={elapsed}
+      />
+    </Box>
+  )
+}
+
+// ============================================================================
 // Main App — uses ScrollbackList for declarative scrollback management
 // ============================================================================
 
@@ -904,8 +989,9 @@ function CodingAgent({
   // Stable ref to latest advance() — avoids stale closure in setTimeout callbacks
   const advanceRef = useRef<() => void>(() => {})
 
-  // Input box state — simulates char-by-char typing in auto mode
-  const [inputText, setInputText] = useState("")
+  // Footer control — parent uses this to set/get input text for auto-typing and pre-fill.
+  // Input text state lives in DemoFooter (not here) so typing doesn't re-render the exchange list.
+  const footerControlRef = useRef<FooterControl>({ setText: () => {}, getText: () => "" })
 
   /** Cancel all streaming timers. */
   const cancelStreaming = useCallback(() => {
@@ -1095,20 +1181,20 @@ function CodingAgent({
       // Simulate typing the next user message char-by-char
       const fullMsg = nextEntry.content
       let charIdx = 0
-      setInputText("")
+      footerControlRef.current.setText("")
       inputTypingTimerRef.current = setInterval(() => {
         charIdx++
         if (charIdx >= fullMsg.length) {
-          setInputText(fullMsg)
+          footerControlRef.current.setText(fullMsg)
           if (inputTypingTimerRef.current) clearInterval(inputTypingTimerRef.current)
           inputTypingTimerRef.current = null
           // Brief pause after typing completes, then advance
           autoTimerRef.current = setTimeout(() => {
-            setInputText("")
+            footerControlRef.current.setText("")
             advance()
           }, 300)
         } else {
-          setInputText(fullMsg.slice(0, charIdx))
+          footerControlRef.current.setText(fullMsg.slice(0, charIdx))
         }
       }, 30)
       return () => {
@@ -1165,10 +1251,10 @@ function CodingAgent({
   useEffect(() => {
     if (autoMode || done || streamPhase !== "done") return
     const nextEntry = script[scriptIdx]
-    if (nextEntry?.role === "user" && !inputText) {
-      setInputText(nextEntry.content)
+    if (nextEntry?.role === "user" && !footerControlRef.current.getText()) {
+      footerControlRef.current.setText(nextEntry.content)
     }
-  }, [autoMode, done, streamPhase, scriptIdx, script, inputText])
+  }, [autoMode, done, streamPhase, scriptIdx, script])
 
   /** Handle Enter from TextInput — submit user text or advance script. */
   const handleSubmit = useCallback(
@@ -1190,7 +1276,7 @@ function CodingAgent({
           frozen: false,
         }
         setExchanges((prev) => [...prev, userExchange])
-        setInputText("")
+        // Note: DemoFooter clears inputText after calling onSubmit
 
         // Skip past any user entries in the script to find the next agent entry
         let nextIdx = scriptIdx
@@ -1209,8 +1295,17 @@ function CodingAgent({
     [streamPhase, skipStreaming, done, scriptIdx, script],
   )
 
+  const lastCtrlDRef = useRef(0)
+
   useInput((input: string, key: Key) => {
     if (key.escape) return "exit"
+    // Ctrl-D twice within 500ms exits
+    if (key.ctrl && input === "d") {
+      const now = Date.now()
+      if (now - lastCtrlDRef.current < 500) return "exit"
+      lastCtrlDRef.current = now
+      return
+    }
     if (key.tab) {
       setAutoMode((m) => !m)
       return
@@ -1225,14 +1320,6 @@ function CodingAgent({
   const [pulse, setPulse] = useState(false)
   useEffect(() => {
     const timer = setInterval(() => setPulse((p) => !p), 800)
-    return () => clearInterval(timer)
-  }, [])
-
-  // Elapsed time
-  const startRef = useRef(Date.now())
-  const [elapsed, setElapsed] = useState(0)
-  useEffect(() => {
-    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000)
     return () => clearInterval(timer)
   }, [])
 
@@ -1273,26 +1360,15 @@ function CodingAgent({
         isFrozen={(ex) => ex.frozen}
         markers={true}
         footer={
-          <Box flexDirection="column">
-            <Box borderStyle="round" borderColor="$focusring" paddingX={1}>
-              <TextInput
-                value={inputText}
-                onChange={setInputText}
-                onSubmit={handleSubmit}
-                prompt={"\u276F "}
-                promptColor="$focusring"
-                placeholder={streamPhase !== "done" ? "\u23CE skip" : done ? "Session complete" : ""}
-                isActive={!autoMode && !done}
-              />
-            </Box>
-            <StatusBar
-              exchanges={exchanges}
-              autoMode={autoMode}
-              compacting={compacting}
-              done={done}
-              elapsed={elapsed}
-            />
-          </Box>
+          <DemoFooter
+            controlRef={footerControlRef}
+            onSubmit={handleSubmit}
+            streamPhase={streamPhase}
+            autoMode={autoMode}
+            done={done}
+            compacting={compacting}
+            exchanges={exchanges}
+          />
         }
         footerHeight={4}
       >

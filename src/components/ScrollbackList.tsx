@@ -51,7 +51,10 @@ export interface ScrollbackListProps<T> {
   /** Array of items to render. */
   items: T[]
   /** Render function for each item. Receives item and its index. */
-  children: (item: T, index: number) => ReactNode
+  children?: (item: T, index: number) => ReactNode
+  /** Render function for each item. Alternative to children — prefer this for performance
+   *  as it can be wrapped in useCallback for memoization. */
+  renderItem?: (item: T, index: number) => ReactNode
   /** Extract a unique key for each item. */
   keyExtractor: (item: T, index: number) => string | number
   /**

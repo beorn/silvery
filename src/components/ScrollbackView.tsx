@@ -34,7 +34,7 @@
  * ```
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react"
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react"
 import type { ScrollbackMarkerCallbacks } from "../hooks/useScrollback.js"
 import { useScrollback } from "../hooks/useScrollback.js"
 import { renderStringSync } from "../render-string.js"
@@ -48,7 +48,10 @@ export interface ScrollbackViewProps<T> {
   /** Array of items to render. */
   items: T[]
   /** Render function for each item. Receives item and its index. */
-  children: (item: T, index: number) => ReactNode
+  children?: (item: T, index: number) => ReactNode
+  /** Render function for each item. Alternative to children — prefer this for performance
+   *  as it can be wrapped in useCallback for memoization. */
+  renderItem?: (item: T, index: number) => ReactNode
   /** Extract a unique key for each item. */
   keyExtractor: (item: T, index: number) => string | number
   /**
@@ -105,6 +108,7 @@ function getTermCols(): number {
 export function ScrollbackView<T>({
   items,
   children,
+  renderItem,
   keyExtractor,
   isFrozen: isFrozenProp,
   footer,
@@ -117,25 +121,36 @@ export function ScrollbackView<T>({
 }: ScrollbackViewProps<T>): ReactElement {
   const effectiveWidth = width ?? getTermCols()
 
+  // Resolve render function: renderItem takes precedence over children
+  const render = renderItem ?? children
+  if (!render) {
+    throw new Error("ScrollbackView requires either a `renderItem` prop or `children` render function")
+  }
+
   // Set of item keys that have been marked as frozen via freeze()
   const [frozenKeys, setFrozenKeys] = useState<Set<string | number>>(() => new Set())
 
   // Optional snapshot overrides: key -> ReactElement
   const snapshotRef = useRef<Map<string | number, ReactElement>>(new Map())
 
-  // Create freeze callback for a specific item key
-  const createFreeze = useCallback((key: string | number) => {
-    return (snapshot?: ReactElement) => {
-      if (snapshot) {
-        snapshotRef.current.set(key, snapshot)
+  // Cached freeze functions per key — stable references for memoization
+  const freezeCache = useRef(new Map<string | number, (snapshot?: ReactElement) => void>())
+
+  const getFreeze = useCallback((key: string | number) => {
+    let fn = freezeCache.current.get(key)
+    if (!fn) {
+      fn = (snapshot?: ReactElement) => {
+        if (snapshot) snapshotRef.current.set(key, snapshot)
+        setFrozenKeys((prev) => {
+          if (prev.has(key)) return prev
+          const next = new Set(prev)
+          next.add(key)
+          return next
+        })
       }
-      setFrozenKeys((prev) => {
-        if (prev.has(key)) return prev
-        const next = new Set(prev)
-        next.add(key)
-        return next
-      })
+      freezeCache.current.set(key, fn)
     }
+    return fn
   }, [])
 
   // Frozen predicate for useScrollback: combine data-driven isFrozen prop
@@ -155,7 +170,7 @@ export function ScrollbackView<T>({
       const key = keyExtractor(item, index)
       const snapshot = snapshotRef.current.get(key)
       const noop = () => {}
-      const inner = snapshot ?? (children(item, index) as ReactElement)
+      const inner = snapshot ?? (render(item, index) as ReactElement)
       const element = (
         <ScrollbackItemProvider freeze={noop} isFrozen={true} index={index} nearScrollback={false}>
           {inner}
@@ -167,7 +182,7 @@ export function ScrollbackView<T>({
         return `[frozen item ${index}]`
       }
     },
-    [children, keyExtractor, effectiveWidth],
+    [render, keyExtractor, effectiveWidth],
   )
 
   // Use the underlying useScrollback hook to manage stdout writes
@@ -207,6 +222,10 @@ export function ScrollbackView<T>({
         }
         return next
       })
+      // Clean up stale freeze cache entries
+      for (const key of freezeCache.current.keys()) {
+        if (!currentKeys.has(key)) freezeCache.current.delete(key)
+      }
       onRecovery?.()
     }
   }, [items, keyExtractor, frozenKeys, onRecovery])
@@ -221,21 +240,13 @@ export function ScrollbackView<T>({
     return result
   }, [items, frozenCount, keyExtractor])
 
-  // Render live items with ScrollbackItemProvider wrappers
+  // Render live items with memoized wrappers
   return (
     <inkx-box flexDirection="column">
       {/* Content area: live (unfrozen) items */}
       <inkx-box flexDirection="column">
         {liveItems.map(({ item, index, key }) => (
-          <ScrollbackItemProvider
-            key={key}
-            freeze={createFreeze(key)}
-            isFrozen={false}
-            index={index}
-            nearScrollback={false}
-          >
-            {children(item, index)}
-          </ScrollbackItemProvider>
+          <MemoItem key={key} item={item} index={index} freeze={getFreeze(key)} renderFn={render} />
         ))}
       </inkx-box>
 
@@ -248,3 +259,22 @@ export function ScrollbackView<T>({
     </inkx-box>
   )
 }
+
+// ============================================================================
+// MemoItem — skips reconciliation when item/index/freeze/renderFn are stable
+// ============================================================================
+
+interface MemoItemProps<T> {
+  item: T
+  index: number
+  freeze: (snapshot?: ReactElement) => void
+  renderFn: (item: T, index: number) => ReactNode
+}
+
+const MemoItem = memo(function MemoItem<T>({ item, index, freeze, renderFn }: MemoItemProps<T>) {
+  return (
+    <ScrollbackItemProvider freeze={freeze} isFrozen={false} index={index} nearScrollback={false}>
+      {renderFn(item, index)}
+    </ScrollbackItemProvider>
+  )
+}) as <T>(props: MemoItemProps<T> & { key?: React.Key }) => ReactElement
