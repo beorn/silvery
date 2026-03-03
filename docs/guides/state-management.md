@@ -187,17 +187,23 @@ batch(() => {
 
 Your todo list works. Now you want undo/redo. The problem: `store.toggleDone()` mutates state and is gone — you can't record what happened, replay it, or reverse it.
 
-The fix: add a `store.apply()` that takes a plain data object describing the operation. The direct methods still work — you just gain a second calling convention:
+The fix has one requirement: **function arguments must be plain objects** (not positional args). This is what makes them serializable — the params object *is* the operation payload:
 
 ```tsx
-// These are equivalent — both call the same logic:
+// Level 2 — positional args, can't serialize:
+store.moveCursor(1)
+
+// Level 3 — params object, serializable:
+store.moveCursor({ delta: 1 })
+```
+
+With params as objects, both calling conventions work and produce the same serializable operation — `store.moveCursor({ delta: 1 })` routes through `.apply({ op: "moveCursor", delta: 1 })` internally, so undo/replay/logging captures it either way:
+
+```tsx
+// These are equivalent:
 store.moveCursor({ delta: 1 })                    // direct (type-safe)
 store.apply({ op: "moveCursor", delta: 1 })       // as data (serializable)
 ```
-
-Both produce the same serializable operation — `store.moveCursor({ delta: 1 })` routes through `.apply({ op: "moveCursor", delta: 1 })` internally, so undo/replay/logging captures it either way. The direct style is just syntactic sugar for everyday code.
-
-The key change: switch from positional args to a params object, and add a discriminator field. The operation *is* the params with an `op` tag — `{ op: "moveCursor", delta: 1 }` is just JSON you can `stringify`, record, and replay.
 
 To implement this, pull the logic into a domain object. Each function takes a params object (matching the op fields), and `.apply()` dispatches by name:
 
