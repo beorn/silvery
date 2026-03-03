@@ -71,9 +71,9 @@ const app = createApp(
   () => (set, get) => ({
     cursor: 0,
     items: [
-      { text: "Buy milk", done: false },
-      { text: "Write docs", done: true },
-      { text: "Fix bug", done: false },
+      { id: "1", text: "Buy milk", done: false },
+      { id: "2", text: "Write docs", done: true },
+      { id: "3", text: "Fix bug", done: false },
     ],
     moveCursor(delta: number) {
       set(s => ({ cursor: clamp(s.cursor + delta, 0, s.items.length - 1) }))
@@ -106,7 +106,7 @@ function TodoList() {
   return (
     <Box flexDirection="column">
       {items.map((item, i) => (
-        <Text key={item.text} color={cursor === i ? "cyan" : undefined}>
+        <Text key={item.id} color={cursor === i ? "cyan" : undefined}>
           {cursor === i ? "> " : "  "}
           {item.done ? "[x] " : "[ ] "}
           {item.text}
@@ -132,7 +132,9 @@ await app.run(
 
 This is enough for most apps — dashboards, file browsers, list views, dialogs.
 
-> **Why Zustand over React Context?** Context re-renders every consumer when *any* part of the context changes. Zustand only re-renders components whose selected slice actually changed. For apps with frequent updates (cursor movement, typing), this difference is night and day.
+> **Why Zustand over React Context?** Context is fine for low-frequency global state (current user, theme, locale). But it re-renders every consumer when *any* part of the context changes — so for high-frequency updates (cursor movement, typing, selections), it becomes a bottleneck. Zustand only re-renders components whose selected slice actually changed.
+>
+> **Why not `useReducer`?** React's built-in `useReducer` is Level 3 in disguise — `dispatch(action)` + a pure reducer is ops-as-data. It's a solid choice for complex state in a single component tree. The limitation: it doesn't give you cross-component subscriptions. Every consuming component must be a child of the provider, and there's no selector — every dispatch re-renders every consumer. Zustand adds the subscription layer that makes it scale.
 
 > **inkx**: `createApp()` is a Zustand middleware that bundles the store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call. Without inkx, you'd wire Zustand, keyboard input, and lifecycle yourself — the store pattern is the same.
 
@@ -153,9 +155,9 @@ const app = createApp(
   () => {
     const cursor = signal(0)
     const items = signal([
-      { text: "Buy milk", done: false },
-      { text: "Write docs", done: true },
-      { text: "Fix bug", done: false },
+      { id: "1", text: "Buy milk", done: false },
+      { id: "2", text: "Write docs", done: true },
+      { id: "3", text: "Fix bug", done: false },
     ])
     const doneCount = computed(() => items.value.filter(i => i.done).length)
 
@@ -222,8 +224,9 @@ These are just JSON — plain objects you can inspect, store, and manipulate. On
 - **AI automation** — ops are structured data — an LLM can drive your app by emitting ops
 - **Collaboration** — send ops over the wire to other clients
 - **Testing** — assert on what ops were produced, not on internal state mutations
+- **DevTools** — feed ops into [Redux DevTools](https://github.com/reduxjs/redux-devtools) for a visual time-travel debugger, or build your own — you have the full event log
 
-None of this is possible when operations are function calls that vanish after execution.
+None of this is possible when operations are function calls that vanish after execution. This is the key mental shift: you're no longer *calling behavior* — you're *describing intent*. The store becomes a deterministic interpreter that processes descriptions, not a bag of functions that performs actions.
 
 This requires one refactor: function arguments change from positional to named objects, so the params double as the operation payload. `moveCursor(1)` can't self-describe what "1" means; `moveCursor({ delta: 1 })` can — it's the op payload minus the `op` tag:
 
@@ -255,8 +258,10 @@ const TodoList = {
   },
 
   apply(s: State, op: TodoOp) {
-    const { op: name, ...params } = op
-    return (TodoList as any)[name](s, params)
+    switch (op.op) {
+      case "moveCursor": return TodoList.moveCursor(s, op)
+      case "toggleDone": return TodoList.toggleDone(s, op)
+    }
   },
 }
 ```
@@ -310,7 +315,7 @@ function undo() {
 }
 ```
 
-Each slice provides an `inverse(state, op)` that returns the op which would undo it — `setDone(id, true)` → `setDone(id, false)`. The stack is just an array of plain objects. Serializable, inspectable, trivial to persist.
+Each slice provides an `inverse(state, op)` that returns the op which would undo it — `setDone(id, true)` → `setDone(id, false)`. The stack is just an array of plain objects. Serializable, inspectable, trivial to persist. In production, cap the stack size to avoid unbounded memory growth (Redux DevTools does the same).
 
 This is a pure pattern — no framework tooling needed. The slice, op types, and `.apply()` dispatcher are plain TypeScript.
 
@@ -405,9 +410,30 @@ const app = createApp(
 )
 ```
 
+**Async effects** work the same way. A function that needs to fetch data returns an effect describing what to fetch — the runner does the async work and dispatches the result as a new op:
+
+```tsx
+type Effect =
+  | { effect: "persist"; data: unknown }
+  | { effect: "toast"; message: string }
+  | { effect: "fetch"; url: string; onSuccess: TodoOp }
+
+// In the effects config:
+effects: {
+  fetch: async ({ url, onSuccess }, { store }) => {
+    const data = await fetch(url).then(r => r.json())
+    store.apply({ ...onSuccess, data })
+  },
+}
+```
+
+The domain function stays pure — it doesn't `await` anything. The runner handles the promise and feeds the result back through `apply()`, keeping the entire cycle in the same ops-as-data flow.
+
 **The upgrade is per-function, not per-app.** Functions that don't need I/O stay unchanged. You upgrade individual functions as they need effects.
 
 Step back and look at what you have: `apply(state, op) → [new state, effects]`. This is [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA) — Elm calls it `update msg model = (model, cmd)`. You arrived here incrementally, but you now have what Elm enforces at the language level: every state change is an explicit op (predictable, replayable), every side effect is a return value (testable without mocks), and the entire domain is a pure function from input to output (portable across platforms). The difference is that Elm makes you pay the full cost upfront; here you adopted each piece only when you needed it.
+
+Notice the throughline: **every level turns something invisible into data**. Level 3 turned behavior into data (ops). Level 4 turned I/O into data (effects). Level 5 will turn cross-module communication into data (dispatch effects). Each time something becomes data instead of behavior, it becomes loggable, replayable, testable, portable, and interceptable. That's the unifying thesis of this entire progression.
 
 > **inkx**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. inkx also provides a standalone TEA store (`createStore()` from `inkx/store`) with plugin composition — see [Runtime Layers](runtime-layers.md).
 
@@ -474,7 +500,25 @@ const app = createApp(
 )
 ```
 
-Each state machine is independently testable — `Dialog.confirm(state)` returns effects you can assert on without touching Board. Communication is through serializable effect objects you can log, replay, or intercept.
+Each state machine is independently testable — `Dialog.confirm(state)` returns effects you can assert on without touching Board. Features stop sharing state and start exchanging messages — each machine can be developed, tested, and replaced independently.
+
+Here's the full architecture at Level 5 — notice it's the same shape at every scale:
+
+```
+keypress / mouse / timer
+         ↓
+   dispatch(op)
+         ↓
+  machine.apply(state, op)
+         ↓
+  [new state, effects[]]
+         ↓
+   effect runners
+    ├─ persist  → disk / localStorage
+    ├─ toast    → notification UI
+    ├─ fetch    → network → dispatch(result)
+    └─ dispatch → another machine.apply(...)
+```
 
 Components pick what they need:
 
@@ -525,6 +569,8 @@ The core idea — making operations and effects into data — has been discovere
 | Redux | 3 | `dispatch(action)` + reducer (ops as data, but effects live in middleware) |
 | redux-loop | 3+4 | Extends Redux: reducer returns `[state, effects]` |
 | Hyperapp v2 | 3+4 | Optional tuple return from actions |
+| XState | 5 | Statecharts — formal state machines with explicit states, transitions, and composition |
+| MobX | 2 | Observable state with automatic tracking (OO-reactive, trades predictability for convenience) |
 | Event sourcing | 3 | Events as plain objects — store, replay, project |
 | Command pattern | 3 | Encapsulate request as object |
 
@@ -532,6 +578,16 @@ Redux got Level 3 right but stopped there — side effects live in thunks and sa
 
 This guide pieces these ideas into a single incremental progression for React: you get Elm's benefits without Elm's upfront cost, adopting each level only when you need it.
 
+---
+
+## The Takeaway
+
+You don't choose a state management library. You choose how visible your state transitions are.
+
+The more visible they are — the easier your app is to test, debug, automate, and scale. React doesn't force you into any of this. But you can grow into it, one level at a time, and you never have to adopt more than you need.
+
 ## See Also
 
 - [Runtime Layers](runtime-layers.md) — createRuntime, createStore, run, createApp API reference
+- [Functional Core, Imperative Shell](https://kennethlange.com/functional-core-imperative-shell/) — the architectural principle behind Levels 3-5
+- Dan Abramov, [You Might Not Need Redux](https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367) — when (and when not) to reach for ops-as-data
