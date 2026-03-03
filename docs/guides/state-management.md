@@ -9,7 +9,7 @@ This guide describes state management patterns for interactive applications. The
 | **1 — Component** | Local state, no abstractions |
 | **2 — Shared** | Shared store, centralized keys (+ optional signals for fine-grained reactivity) |
 | **3 — Ops as Data** | Undo/redo, replay, AI automation |
-| **4 — Effects as Data** | Testable I/O, swappable runners |
+| **4 — Effects as Data** | Testable I/O without mocks, swappable runners |
 
 Most apps only need Level 2.
 
@@ -187,7 +187,7 @@ batch(() => {
 
 Your todo list works. Now you want undo/redo. The problem: `store.toggleDone()` mutates state and is gone — you can't record what happened, replay it, or reverse it.
 
-The fix: make operations visible by turning them into data. Add a `store.apply()` that takes a plain object describing the operation:
+The fix: make operations visible by turning them into data. This requires a small refactor: function arguments change from positional (`moveCursor(1)`) to named objects (`moveCursor({ delta: 1 })`) so the params double as a serializable operation payload. Then add a `store.apply()` that takes a plain object describing the operation:
 
 ```tsx
 store.apply({ op: "moveCursor", delta: 1 })
@@ -295,11 +295,11 @@ The last form — `{ op: "setDone", id: "abc", done: true }` — is fully idempo
 
 You don't need to start here. Index-based ops are fine for simple undo in a single session. But when you add collaboration, offline sync, or AI automation (where ops may arrive out of order), design your ops to be identity-based and ideally idempotent.
 
-## "I Want to Ship to Terminal and Web" (Level 4)
+## "I Want Tests Without Mocks" (Level 4)
 
-Your app has I/O — saving to disk, showing notifications, fetching data. The domain logic is the same on both platforms, but the I/O is different: `fs.writeFile` on terminal, `localStorage` on web, and nothing during tests.
+Your app has I/O — saving to disk, showing notifications, fetching data. You could abstract the I/O behind an interface and swap implementations (dependency injection). That works for platform portability, but your tests still need to set up fakes, and you can't inspect what the function *intended* to do — only what the fake recorded.
 
-The fix is the same trick: make effects into data. Instead of *doing* I/O, domain functions *describe* what should happen. The only change from Level 3: functions that need I/O return an `Effect[]`:
+The fix is the same trick as Level 3: make effects into data. Instead of *doing* I/O, domain functions *describe* what should happen. Tests assert on what the function *says* — no mocks, no I/O, no async. The only change from Level 3: functions that need I/O return an `Effect[]`:
 
 ```tsx
 type Effect =
@@ -327,7 +327,20 @@ const TodoList = {
 }
 ```
 
-Same shape as ops — discriminator (`effect`) + named params. The runtime dispatches effects to runners — swap them per platform:
+Same shape as ops — discriminator (`effect`) + named params. This is where the payoff comes: tests assert on what the function *says should happen* — no mocks, no fakes, no I/O, no async:
+
+```tsx
+test("toggleDone persists and toasts", () => {
+  const s = { cursor: signal(0), items: signal([{ text: "Buy milk", done: false }]) }
+  const effects = TodoList.toggleDone(s, { index: 0 })
+  expect(effects).toContainEqual({ effect: "persist", data: expect.any(Array) })
+  expect(effects).toContainEqual({ effect: "toast", message: "Toggled Buy milk" })
+})
+```
+
+Compare this with the DI approach: you'd need a `FakePersistenceService`, wire it through a constructor, call the function, then inspect what the fake recorded. Here you just check what the function returned. The domain logic is pure — the test is three lines.
+
+The runtime dispatches effects to actual runners. Swap them per platform:
 
 ```tsx
 const app = createApp(
@@ -345,23 +358,15 @@ const app = createApp(
 )
 ```
 
-Tests assert on what the function *says should happen* — no mocks, no I/O, no async:
-
-```tsx
-test("toggleDone persists and toasts", () => {
-  const s = { cursor: signal(0), items: signal([{ text: "Buy milk", done: false }]) }
-  const effects = TodoList.toggleDone(s, { index: 0 })
-  expect(effects).toContainEqual({ effect: "persist", data: expect.any(Array) })
-})
-```
-
 **The upgrade is per-function, not per-app.** Some functions return nothing, others return `Effect[]`. You upgrade individual functions as they need effects.
 
 **What inkx adds**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. Without inkx, you'd write a thin dispatcher yourself — the pattern is the same.
 
-## Composing Machines
+## Composing Domain Objects
 
-For complex apps, decompose into independent domain objects that each own a slice of state. No machine imports another — they communicate through dispatch effects:
+As your app grows, you'll have multiple areas of concern — a board, a search dialog, a settings panel. Each is a domain object (like `TodoList` above) with its own state, ops, and `.apply()`. We call this combination a **state machine**: a domain object + the state it operates on + a set of ops it accepts.
+
+The key rule: no domain object imports another. They communicate through dispatch effects — the same data-as-effects pattern from Level 4:
 
 ```typescript
 const Board = {
@@ -373,16 +378,14 @@ const Board = {
 const Dialog = {
   open(s: DialogState, { kind }: { kind: string }) { ... },
   confirm(s: DialogState): Effect[] {
-    s.open = false
-    return [{ effect: "dispatch", op: "addItem", text: s.value }]
+    s.open.value = false
+    return [{ effect: "dispatch", target: "board", op: "addItem", text: s.value.value }]
   },
   apply(s: DialogState, op: DialogOp) { ... },
 }
 ```
 
-`Dialog.confirm()` says "dispatch addItem" as a data object; the effect runner routes it to the right domain function. Each machine is independently testable — communication is through serializable effect objects.
-
-All machines share a single store:
+`Dialog.confirm()` says "dispatch addItem to board" as a data object. The effect runner routes it:
 
 ```tsx
 const app = createApp(
@@ -391,28 +394,38 @@ const app = createApp(
     const dialogState = { open: signal(false), value: signal("") }
     const searchState = { query: signal(""), results: signal<string[]>([]) }
 
+    const machines = {
+      board: (op: BoardOp) => Board.apply(boardState, op),
+      dialog: (op: DialogOp) => Dialog.apply(dialogState, op),
+      search: (op: SearchOp) => Search.apply(searchState, op),
+    }
+
     return {
       ...boardState,
       dialog: dialogState,
       search: searchState,
-      applyBoard: (op: BoardOp) => Board.apply(boardState, op),
-      applyDialog: (op: DialogOp) => Dialog.apply(dialogState, op),
-      applySearch: (op: SearchOp) => Search.apply(searchState, op),
+      ...machines,
     }
   },
   {
     effects: {
-      dispatch: ({ op, ...params }) => { /* route to the right machine */ },
+      dispatch: ({ target, op, ...params }, { store }) => {
+        // Route to the named machine
+        const apply = (store as any)[target]
+        if (apply) return apply({ op, ...params })
+      },
       persist: async ({ data }) => { /* save to disk */ },
     },
     key(input, key, { store }) {
-      if (input === "/") store.applyDialog({ op: "open", kind: "search" })
-      if (input === "j") store.applyBoard({ op: "moveCursor", delta: 1 })
+      if (input === "/") store.dialog({ op: "open", kind: "search" })
+      if (input === "j") store.board({ op: "moveCursor", delta: 1 })
       if (input === "q") return "exit"
     },
   },
 )
 ```
+
+Each domain object is independently testable — call `Dialog.confirm(state)` and assert on the returned effects without touching Board at all. Communication is through serializable effect objects, which you can log, replay, or intercept.
 
 Components pick what they need — they only re-render when the signals they read change. (`useApp()` without a selector returns the whole store object, but since `search.query` is a signal, only components that read `.value` subscribe to changes.)
 
