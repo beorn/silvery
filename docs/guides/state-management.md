@@ -2,7 +2,7 @@
 
 > Start simple. Add structure when complexity demands it.
 
-This guide describes state management patterns for interactive applications. The patterns are general — ops as data and effects as data work in any framework (Redux, Elm, and event sourcing use the same ideas). inkx makes the progression seamless: each level builds on the previous with minimal wiring, so you can start simple and scale up without rewriting. Where inkx adds specific tooling, it's noted inline.
+This guide describes state management patterns for interactive applications. The patterns are general — ops as data and effects as data work in any framework (Redux, Elm, and event sourcing use the same ideas). inkx makes the progression seamless by composing [Zustand](https://github.com/pmndrs/zustand) (store) with [Signals](https://github.com/tc39/proposal-signals) (fine-grained reactivity), so you can start simple and scale up without rewriting. Where inkx adds specific tooling, it's noted inline.
 
 | Level | What you get |
 |-------|-------------|
@@ -13,11 +13,12 @@ This guide describes state management patterns for interactive applications. The
 
 Most apps only need Level 2.
 
-## Your First App
+## Your First App (Level 1)
 
-A counter. State lives in the component — just React.
+A counter. State lives in the component — just React. (`useState` is standard React; `useInput` and `run` are inkx's keyboard hook and app runner.)
 
 ```tsx
+import { useState } from "react"
 import { run, useInput } from "inkx/runtime"
 import { Text } from "inkx"
 
@@ -37,14 +38,17 @@ await run(<Counter />)
 
 This works until a second component needs the same state.
 
-## Sharing State
+## Sharing State (Level 2)
 
 The counter grows into a todo list. A sidebar shows the count of done items while the main view shows the list. Both need the same data.
 
-The standard approach is a shared store (Zustand, Redux, Jotai) with centralized key handling:
+The standard approach is a shared store with centralized key handling. `createApp()` creates a [Zustand](https://github.com/pmndrs/zustand) store — the double-arrow `() => (set, get) => ({...})` is Zustand's [state creator](https://zustand.docs.pmnd.rs/guides/updating-state) pattern, where `set` merges new state and `get` reads current state:
 
 ```tsx
 import { createApp, useApp } from "inkx/runtime"
+import { Box, Text } from "inkx"
+
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(v, max))
 
 const app = createApp(
   () => (set, get) => ({
@@ -66,6 +70,7 @@ const app = createApp(
     },
   }),
   {
+    // key() receives each keypress. Return "exit" to shut down the app.
     key(input, key, { store }) {
       if (input === "j") store.moveCursor(1)
       if (input === "k") store.moveCursor(-1)
@@ -111,13 +116,15 @@ await app.run(
 
 This is enough for most apps — dashboards, file browsers, list views, dialogs.
 
-**What inkx adds**: `createApp()` bundles a [Zustand](https://github.com/pmndrs/zustand) store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call. `useApp(selector)` is a thin wrapper around Zustand's `useStore`. Without inkx, you'd wire these yourself — the store pattern is the same.
+**What inkx adds**: `createApp()` is a Zustand middleware that bundles the store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call. `useApp(selector)` is a thin wrapper around Zustand's `useStore`. Without inkx, you'd wire Zustand, keyboard input, and lifecycle yourself — the store pattern is the same.
 
 ## Adding Signals
 
 As your app grows, selectors start to show their cost. Zustand runs *every* selector on *every* store update — if you have 100 `<Row>` components each with `useApp(s => s.rows.get(id))`, that's 100 selector calls every time the cursor moves, even though only 2 rows actually need to re-render.
 
-[Preact Signals](https://github.com/preactjs/signals) flip this. Instead of declaring what you read (selectors), components just read `.value` and automatically subscribe to exactly what they touched — no diffing, no linear scan. This is the same model as SolidJS, Vue 3, and the [TC39 Signals proposal](https://github.com/tc39/proposal-signals).
+[Signals](https://github.com/tc39/proposal-signals) flip this. Instead of declaring what you read (selectors), components just read `.value` and automatically subscribe to exactly what they touched — no diffing, no linear scan. This is the same model as SolidJS, Vue 3, and the TC39 Signals proposal. inkx uses [Preact's implementation](https://github.com/preactjs/signals) (`@preact/signals-core`).
+
+With signals, the factory returns a plain object instead of using Zustand's `(set, get)` — signals *are* the reactive state, so you don't need `set()` to trigger updates. We use `@preact/signals-core` (not `@preact/signals-react`) because inkx's bridge middleware handles the React integration — it notifies Zustand whenever any signal changes, which triggers React re-renders through the normal Zustand subscription path.
 
 ```tsx
 import { createApp, useApp } from "inkx/runtime"
@@ -176,7 +183,7 @@ batch(() => {
 
 **What inkx adds**: A bridge middleware that connects signals to Zustand — when any signal's `.value` changes, Zustand subscribers are also notified. Both subscription models work side by side: signal `.value` reads (automatic, fine-grained) and `useApp(s => s.cursor.value)` selectors (familiar). Without inkx, you'd use signals directly or write your own bridge.
 
-## "I Want Undo"
+## "I Want Undo" (Level 3)
 
 Your todo list works. Now you want undo/redo. The problem: `store.toggleDone()` mutates state and is gone — you can't record what happened, replay it, or reverse it.
 
@@ -227,7 +234,7 @@ const app = createApp(
 )
 ```
 
-Ops are just JSON — plain objects with a discriminator and named params. Same shape as Redux actions, Elm messages, and event sourcing events. No classes, no closures, no symbols.
+Ops are just JSON — plain objects with a discriminator and named params. Same shape as Redux actions, Elm messages, and event sourcing events. No classes, no closures, no symbols. (The `as any` cast in `.apply()` is the trade-off for keeping the dispatcher generic. For full type safety, use a `switch` on `op.op` instead.)
 
 **What this enables**:
 - **Undo/redo**: Record ops in a stack, replay or invert them
@@ -265,7 +272,7 @@ The last form — `{ op: "setDone", id: "abc", done: true }` — is fully idempo
 
 You don't need to start here. Index-based ops are fine for simple undo in a single session. But when you add collaboration, offline sync, or AI automation (where ops may arrive out of order), design your ops to be identity-based and ideally idempotent.
 
-## "I Want to Ship to Terminal and Web"
+## "I Want to Ship to Terminal and Web" (Level 4)
 
 Your app has I/O — saving to disk, showing notifications, fetching data. The domain logic is the same on both platforms, but the I/O is different: `fs.writeFile` on terminal, `localStorage` on web, and nothing during tests.
 
@@ -295,7 +302,7 @@ const TodoList = {
 }
 ```
 
-Same shape as ops — discriminator (`effect`) + named params. The runtime dispatches effects to runners — swap the runners per platform:
+Same shape as ops — discriminator (`effect`) + named params. The runtime dispatches effects to runners. When your domain function's `.apply()` returns an `Effect[]`, `createApp` catches the return value and calls the matching runner for each effect. Swap the runners per platform:
 
 ```tsx
 const app = createApp(
@@ -412,7 +419,7 @@ const app = createApp(
 )
 ```
 
-Components pick what they need — they only re-render when the signals they read change:
+Components pick what they need — they only re-render when the signals they read change. (`useApp()` without a selector returns the whole store object, but since `search.query` is a signal, only components that read `.value` subscribe to changes.)
 
 ```tsx
 function SearchBar() {
