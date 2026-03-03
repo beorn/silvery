@@ -134,7 +134,7 @@ This is enough for most apps — dashboards, file browsers, list views, dialogs.
 
 > **inkx**: `createApp()` is a Zustand middleware that bundles the store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call. Without inkx, you'd wire Zustand, keyboard input, and lifecycle yourself — the store pattern is the same.
 
-As your app grows, selectors show their cost — Zustand runs *every* selector on *every* store update, even when only one slice changed. [Signals](#appendix-a-scaling-with-signals) solve this with fine-grained subscriptions: components read `.value` and automatically subscribe to exactly what they touched. Signals are a performance optimization, not a conceptual shift — skip them unless you have performance issues.
+As your app grows, selectors show their cost — Zustand runs every selector on every store update. If that becomes a bottleneck, [Signals](#appendix-a-scaling-with-signals) give you fine-grained subscriptions. Skip them unless you have performance issues.
 
 State is shared and renders are efficient. But the transitions themselves are still invisible.
 
