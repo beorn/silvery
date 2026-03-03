@@ -764,6 +764,10 @@ import { type InkxModel, type InkxMsg, type Effect, type Plugin, none, batch, di
 import { createSlice } from "inkx/core"
 import type { Slice, SliceWithInit, InferOp } from "inkx/core"
 
+// TEA Zustand middleware (effects-as-data for Zustand stores)
+import { tea, collect } from "inkx/tea"
+import type { TeaResult, TeaReducer, EffectRunners, TeaSlice, EffectLike } from "inkx/tea"
+
 // Term primitives (re-exported from chalkx)
 import { createTerm, patchConsole, type Term, type StyleChain } from "inkx"
 ```

@@ -106,6 +106,10 @@
       "types": "./src/store/index.ts",
       "import": "./src/store/index.ts"
     },
+    "./tea": {
+      "types": "./src/tea/index.ts",
+      "import": "./src/tea/index.ts"
+    },
     "./react": {
       "types": "./src/react/index.ts",
       "import": "./src/react/index.ts"

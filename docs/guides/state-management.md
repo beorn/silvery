@@ -13,7 +13,7 @@ The patterns themselves are general — ops as data, effects as data, composable
 | **1 — Local** | Starting out | `useState` + `useInput` — just React |
 | **2 — Shared** | Multiple components need the same state | `createApp` + `useApp` — centralized store, selective re-renders |
 | **3 — Ops as Data** *(Redux's insight)* | Undo, collaboration, or automation | `createSlice` — typed operations, zero boilerplate |
-| **4 — Effects as Data** *(Elm's insight)* | Pure logic, testable I/O | Effect runners — deterministic functions, swappable I/O |
+| **4 — Effects as Data** *(Elm's insight)* | Pure logic, testable I/O | `tea()` middleware, effect runners — deterministic functions, swappable I/O |
 | **5 — Composition** | Independent modules | Multiple slices — state machines that talk through data |
 
 Most web apps stop at Level 2. TUI apps with keyboard-driven interaction, undo, and multi-pane layouts often reach Level 3. [Signals](#appendix-a-scaling-with-signals) (fine-grained reactivity) are orthogonal — they optimize re-renders at any level.
@@ -383,7 +383,7 @@ Step back and look at what you have: `apply(state, op) → [new state, effects]`
 
 Notice the throughline: **every level turns something invisible into data**. Level 3 turned behavior into data (ops). Level 4 turned I/O into data (effects). Level 5 will turn cross-module communication into data (dispatch effects). Each time something becomes data instead of behavior, it becomes loggable, replayable, testable, portable, and interceptable. That's the unifying thesis of this entire progression.
 
-> **inkx**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. inkx also provides a standalone TEA store (`createStore()` from `inkx/store`) with plugin composition — see [Runtime Layers](runtime-layers.md).
+> **inkx**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. For Zustand-native TEA, `tea()` from `inkx/tea` is a Zustand middleware that extends any reducer to optionally return `[state, effects]` — gradual, per-case, with typed effect runners and `collect()` for testing. inkx also provides a standalone TEA store (`createStore()` from `inkx/store`) with plugin composition — see [Runtime Layers](runtime-layers.md).
 
 **The wall**: Your single slice is 400 lines. A search feature change breaks the cursor because they share state and a single `apply()`.
 
@@ -494,6 +494,7 @@ The core idea — making operations and effects into data — has been discovere
 | [Redux](https://redux.js.org/) | 3 | `dispatch(action)` + reducer (ops as data, but effects live in middleware) |
 | [redux-loop](https://github.com/redux-loop/redux-loop) | 3+4 | Extends Redux: reducer returns `[state, effects]` |
 | [Hyperapp](https://github.com/jorgebucaran/hyperapp) v2 | 3+4 | Optional tuple return from actions |
+| **inkx/tea** | 3+4 | Zustand middleware — optional `[state, effects]` return, typed runners |
 | [XState](https://xstate.js.org/) | 5 | Statecharts[^statecharts] — formal state machines with explicit states, transitions, and composition |
 | [MobX](https://mobx.js.org/) | 2 | Observable state with automatic tracking (OO-reactive, trades predictability for convenience) |
 | [Event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html) | 3 | Events as plain objects — store, replay, project |
@@ -544,6 +545,7 @@ The more visible your transitions are — the easier your app is to test, debug,
 ## See Also
 
 - [Runtime Layers](runtime-layers.md) — createRuntime, createStore, run, createApp API reference
+- `inkx/tea` — Zustand middleware for TEA effects (`tea()`, `collect()`, typed effect runners)
 - [Functional Core, Imperative Shell](https://kennethlange.com/functional-core-imperative-shell/) — the architectural principle behind Levels 3-5
 - Dan Abramov, [You Might Not Need Redux](https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367) — when (and when not) to reach for ops-as-data
 

@@ -58,7 +58,7 @@ export function createSlice<S>(): <H extends Record<string, (s: S, ...args: any[
 export function createSlice(...args: any[]): any {
   if (args.length === 0) {
     // Curried form
-    return <H>(handlers: H) => makeSlice(handlers)
+    return <H extends Record<string, (s: any, ...args: any[]) => any>>(handlers: H) => makeSlice(handlers)
   }
   // State factory form
   const [init, handlers] = args
