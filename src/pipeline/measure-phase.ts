@@ -7,6 +7,7 @@
 import type { BoxProps, InkxNode } from "../types.js"
 import { displayWidthAnsi } from "../unicode.js"
 import { getBorderSize, getPadding } from "./helpers.js"
+import type { PipelineContext } from "./types.js"
 
 /**
  * Handle fit-content nodes by measuring their intrinsic content size.
@@ -14,7 +15,7 @@ import { getBorderSize, getPadding } from "./helpers.js"
  * Traverses the tree and for any node with width="fit-content" or
  * height="fit-content", measures the content and sets the Yoga constraint.
  */
-export function measurePhase(root: InkxNode): void {
+export function measurePhase(root: InkxNode, ctx?: PipelineContext): void {
   traverseTree(root, (node) => {
     // Skip nodes without Yoga (raw text nodes)
     if (!node.layoutNode) return
@@ -22,7 +23,7 @@ export function measurePhase(root: InkxNode): void {
     const props = node.props as BoxProps
 
     if (props.width === "fit-content" || props.height === "fit-content") {
-      const intrinsicSize = measureIntrinsicSize(node)
+      const intrinsicSize = measureIntrinsicSize(node, ctx)
 
       if (props.width === "fit-content") {
         node.layoutNode.setWidth(intrinsicSize.width)
@@ -40,7 +41,10 @@ export function measurePhase(root: InkxNode): void {
  * For text nodes: measures the text width and line count.
  * For box nodes: recursively measures children based on flex direction.
  */
-function measureIntrinsicSize(node: InkxNode): {
+function measureIntrinsicSize(
+  node: InkxNode,
+  ctx?: PipelineContext,
+): {
   width: number
   height: number
 } {
@@ -54,7 +58,7 @@ function measureIntrinsicSize(node: InkxNode): {
   if (node.type === "inkx-text") {
     const text = collectTextContent(node)
     const lines = text.split("\n")
-    const width = Math.max(...lines.map((line) => getTextWidth(line)))
+    const width = Math.max(...lines.map((line) => getTextWidth(line, ctx)))
     return {
       width,
       height: lines.length,
@@ -68,7 +72,7 @@ function measureIntrinsicSize(node: InkxNode): {
   let height = 0
 
   for (const child of node.children) {
-    const childSize = measureIntrinsicSize(child)
+    const childSize = measureIntrinsicSize(child, ctx)
 
     if (isRow) {
       width += childSize.width
@@ -108,7 +112,8 @@ function traverseTree(node: InkxNode, callback: (node: InkxNode) => void): void 
  * Get text display width (accounting for wide characters and ANSI codes).
  * Uses ANSI-aware width calculation to handle styled text.
  */
-function getTextWidth(text: string): number {
+function getTextWidth(text: string, ctx?: PipelineContext): number {
+  if (ctx) return ctx.measurer.displayWidthAnsi(text)
   return displayWidthAnsi(text)
 }
 

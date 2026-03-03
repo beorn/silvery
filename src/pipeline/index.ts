@@ -32,12 +32,13 @@ import type { CursorState } from "../hooks/useCursor.js"
 import type { InkxNode } from "../types.js"
 import { runWithMeasurer, type Measurer } from "../unicode.js"
 import type { OutputPhaseFn } from "./output-phase.js"
+import type { PipelineContext } from "./types.js"
 
 const log = createLogger("inkx:pipeline")
 const baseLog = createLogger("inkx")
 
 // Re-export types
-export type { CellChange, BorderChars } from "./types.js"
+export type { CellChange, BorderChars, PipelineContext } from "./types.js"
 
 // Re-export phase functions
 export { measurePhase } from "./measure-phase.js"
@@ -131,12 +132,19 @@ export function executeRender(
   options: ExecuteRenderOptions | "fullscreen" | "inline" = "fullscreen",
   config?: PipelineConfig,
 ): { output: string; buffer: TerminalBuffer } {
+  // Create PipelineContext from config measurer (if provided).
+  // The context is threaded explicitly through the pipeline, eliminating
+  // the need for pipeline functions to read the _scopedMeasurer global.
+  const ctx: PipelineContext | undefined = config?.measurer ? { measurer: config.measurer } : undefined
+
   if (config?.measurer) {
+    // Keep runWithMeasurer for backward compat: output-phase and other
+    // non-pipeline consumers still read the scoped measurer global.
     return runWithMeasurer(config.measurer, () => {
-      return executeRenderCore(root, width, height, prevBuffer, options, config)
+      return executeRenderCore(root, width, height, prevBuffer, options, config, ctx)
     })
   }
-  return executeRenderCore(root, width, height, prevBuffer, options, config)
+  return executeRenderCore(root, width, height, prevBuffer, options, config, ctx)
 }
 
 /** Internal: runs the full pipeline. */
@@ -147,6 +155,7 @@ function executeRenderCore(
   prevBuffer: TerminalBuffer | null,
   options: ExecuteRenderOptions | "fullscreen" | "inline" = "fullscreen",
   config?: PipelineConfig,
+  ctx?: PipelineContext,
 ): { output: string; buffer: TerminalBuffer } {
   // Normalize options (string shorthand for mode)
   const opts: ExecuteRenderOptions = typeof options === "string" ? { mode: options } : options
@@ -186,7 +195,7 @@ function executeRenderCore(
   {
     using _measure = render.span("measure")
     const t1 = performance.now()
-    measurePhase(root)
+    measurePhase(root, ctx)
     tMeasure = performance.now() - t1
     log.debug?.(`measure: ${tMeasure.toFixed(2)}ms`)
   }
@@ -239,7 +248,7 @@ function executeRenderCore(
   {
     using _content = render.span("content")
     const t3 = performance.now()
-    buffer = contentPhase(root, prevBuffer)
+    buffer = contentPhase(root, prevBuffer, ctx)
     tContent = performance.now() - t3
     log.debug?.(`content: ${tContent.toFixed(2)}ms`)
   }

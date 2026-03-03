@@ -15,7 +15,7 @@ import type { Color, Style, UnderlineStyle } from "../buffer.js"
 import { getActiveTheme, resolveThemeColor } from "../theme-defs.js"
 import type { BoxProps, TextProps } from "../types.js"
 import { displayWidthAnsi } from "../unicode.js"
-import type { BorderChars } from "./types.js"
+import type { BorderChars, PipelineContext } from "./types.js"
 
 // Re-export shared layout helpers
 export { getBorderSize, getPadding } from "./helpers.js"
@@ -205,7 +205,12 @@ export function getTextStyle(props: TextProps): Style {
 /**
  * Get text display width (accounting for wide characters and ANSI codes).
  * Uses ANSI-aware width calculation to handle styled text.
+ *
+ * When a PipelineContext is provided, uses the context's measurer for
+ * terminal-capability-aware width calculation. Falls back to the module-level
+ * displayWidthAnsi (which reads the scoped measurer or default).
  */
-export function getTextWidth(text: string): number {
+export function getTextWidth(text: string, ctx?: PipelineContext): number {
+  if (ctx) return ctx.measurer.displayWidthAnsi(text)
   return displayWidthAnsi(text)
 }

@@ -12,6 +12,7 @@ import type { BoxProps, InkxNode, Rect } from "../types.js"
 import { getPadding } from "./helpers.js"
 import { getBorderChars, getBorderSize, parseColor } from "./render-helpers.js"
 import { renderTextLine } from "./render-text.js"
+import type { PipelineContext } from "./types.js"
 
 // ============================================================================
 // Box Rendering
@@ -261,6 +262,7 @@ export function renderScrollIndicators(
   layout: Rect,
   props: BoxProps,
   ss: NonNullable<InkxNode["scrollState"]>,
+  ctx?: PipelineContext,
 ): void {
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
 
@@ -284,7 +286,7 @@ export function renderScrollIndicators(
       const bar = padCenter(indicator, contentWidth)
       const x = layout.x + border.left
       const y = layout.y
-      renderTextLine(buffer, x, y, bar, indicatorStyle)
+      renderTextLine(buffer, x, y, bar, indicatorStyle, undefined, undefined, ctx)
     } else if (showBorderless) {
       // Borderless: render centered inverse bar on first content row
       const padding = getPadding(props)
@@ -292,7 +294,7 @@ export function renderScrollIndicators(
       const bar = padCenter(indicator, contentWidth)
       const x = layout.x + padding.left
       const y = layout.y + padding.top
-      renderTextLine(buffer, x, y, bar, indicatorStyle)
+      renderTextLine(buffer, x, y, bar, indicatorStyle, undefined, undefined, ctx)
     }
   }
 
@@ -306,7 +308,7 @@ export function renderScrollIndicators(
       const bar = padCenter(indicator, contentWidth)
       const x = layout.x + border.left
       const y = layout.y + layout.height - 1
-      renderTextLine(buffer, x, y, bar, indicatorStyle)
+      renderTextLine(buffer, x, y, bar, indicatorStyle, undefined, undefined, ctx)
     } else if (showBorderless) {
       // Borderless: render indicator flush to viewport bottom
       const padding = getPadding(props)
@@ -315,7 +317,7 @@ export function renderScrollIndicators(
       const x = layout.x + padding.left
       const y = layout.y + layout.height - padding.bottom - 1
 
-      renderTextLine(buffer, x, y, bar, indicatorStyle)
+      renderTextLine(buffer, x, y, bar, indicatorStyle, undefined, undefined, ctx)
     }
   }
 }

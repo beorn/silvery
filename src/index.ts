@@ -475,7 +475,7 @@ export { runTermtest, TERMTEST_SECTIONS, type TermtestSection, type TermtestOpti
 export { setOutputCaps, createOutputPhase, type OutputPhaseFn, type OutputCaps } from "./pipeline/output-phase.js"
 
 // Pipeline configuration
-export { type PipelineConfig } from "./pipeline/index.js"
+export { type PipelineConfig, type PipelineContext } from "./pipeline/index.js"
 
 // withRender plugin
 export { withRender, type RenderTerm } from "./with-render.js"

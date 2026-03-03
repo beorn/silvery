@@ -30,6 +30,7 @@ import {
   wrapText,
 } from "../unicode.js"
 import { getTextStyle, getTextWidth, parseColor } from "./render-helpers.js"
+import type { PipelineContext } from "./types.js"
 
 // ============================================================================
 // Background Conflict Detection
@@ -286,22 +287,24 @@ function collectTextWithBg(
   parentContext: StyleContext = {},
   offset = 0,
   maxDisplayWidth?: number,
+  ctx?: PipelineContext,
 ): TextWithBg {
   // If this node has direct text content, return it with no bg segments
   if (node.textContent !== undefined) {
     let text = node.textContent
     // DOM-level truncation: trim leaf text to display width budget
     if (maxDisplayWidth !== undefined) {
-      const textW = getTextWidth(text)
+      const textW = getTextWidth(text, ctx)
       if (textW > maxDisplayWidth) {
-        text = sliceByWidth(text, maxDisplayWidth)
+        const sliceFn = ctx ? ctx.measurer.sliceByWidth : sliceByWidth
+        text = sliceFn(text, maxDisplayWidth)
       }
     }
     // plainLen tracks display width for budget, used for both budget tracking
     // and BgSegment offset tracking (both are display-width based since
     // mapLinesToCharOffsets works on plain text which maps 1:1 with display width
     // for non-wide characters)
-    const plainLen = getTextWidth(text)
+    const plainLen = getTextWidth(text, ctx)
     return { text, bgSegments: [], plainLen }
   }
 
@@ -322,7 +325,7 @@ function collectTextWithBg(
       const childContext = mergeStyleContext(parentContext, childProps)
 
       // Recursively collect with child's context and budget
-      const childResult = collectTextWithBg(child, childContext, currentOffset, childBudget)
+      const childResult = collectTextWithBg(child, childContext, currentOffset, childBudget, ctx)
 
       // Apply ANSI styles for fg/attrs (but NOT bg) with push/pop
       const styledText = applyTextStyleAnsi(childResult.text, childContext, parentContext)
@@ -350,7 +353,7 @@ function collectTextWithBg(
       displayWidthCollected += childResult.plainLen
     } else {
       // Not a styled Text node, just collect recursively
-      const childResult = collectTextWithBg(child, parentContext, currentOffset, childBudget)
+      const childResult = collectTextWithBg(child, parentContext, currentOffset, childBudget, ctx)
       result += childResult.text
       bgSegments.push(...childResult.bgSegments)
       currentOffset += childResult.plainLen
@@ -384,12 +387,14 @@ function applyBgSegmentsToLine(
   lineCharStart: number,
   lineCharEnd: number,
   bgSegments: BgSegment[],
+  ctx?: PipelineContext,
 ): void {
   if (bgSegments.length === 0) return
   if (y < 0 || y >= buffer.height) return
 
   // Reusable cell for readCellInto to avoid per-character allocation
   const bgCell = createMutableCell()
+  const gWidthFn = ctx ? ctx.measurer.graphemeWidth : graphemeWidth
 
   // For each bg segment that overlaps this line's character range,
   // calculate the screen columns and fill the bg
@@ -411,7 +416,7 @@ function applyBgSegmentsToLine(
     const graphemes = splitGraphemes(hasAnsi(lineText) ? stripAnsiForBg(lineText) : lineText)
 
     for (const grapheme of graphemes) {
-      const gWidth = graphemeWidth(grapheme)
+      const gWidth = gWidthFn(grapheme)
       if (gWidth === 0) continue
 
       if (charIdx >= relStart && charIdx < relEnd) {
@@ -547,7 +552,7 @@ function findLineStart(normalized: string, plainLine: string, fromOffset: number
 /**
  * Format text into lines based on wrap mode.
  */
-export function formatTextLines(text: string, width: number, wrap: TextProps["wrap"]): string[] {
+export function formatTextLines(text: string, width: number, wrap: TextProps["wrap"], ctx?: PipelineContext): string[] {
   // Guard against width <= 0 to prevent infinite loops
   // This can happen with display="none" nodes (0x0 dimensions)
   if (width <= 0) {
@@ -560,36 +565,43 @@ export function formatTextLines(text: string, width: number, wrap: TextProps["wr
 
   // Hard clip: truncate without ellipsis (used by Fill component)
   if (wrap === "clip") {
+    const sliceFn = ctx ? ctx.measurer.sliceByWidth : sliceByWidth
     return lines.map((line) => {
-      if (getTextWidth(line) <= width) return line
-      return sliceByWidth(line, width)
+      if (getTextWidth(line, ctx) <= width) return line
+      return sliceFn(line, width)
     })
   }
 
   // No wrapping, just truncate at end
   if (wrap === false || wrap === "truncate-end" || wrap === "truncate") {
-    return lines.map((line) => truncateText(line, width, "end"))
+    return lines.map((line) => truncateText(line, width, "end", ctx))
   }
 
   if (wrap === "truncate-start") {
-    return lines.map((line) => truncateText(line, width, "start"))
+    return lines.map((line) => truncateText(line, width, "start", ctx))
   }
 
   if (wrap === "truncate-middle") {
-    return lines.map((line) => truncateText(line, width, "middle"))
+    return lines.map((line) => truncateText(line, width, "middle", ctx))
   }
 
   // wrap === true or wrap === 'wrap' - word-aware wrapping
   // Uses wrapText from unicode.ts with trim=true for rendering
   // (trims trailing spaces on broken lines, skips leading spaces on continuation lines)
+  if (ctx) return ctx.measurer.wrapText(normalizedText, width, true, true)
   return wrapText(normalizedText, width, true, true)
 }
 
 /**
  * Truncate text to fit within width.
  */
-export function truncateText(text: string, width: number, mode: "start" | "middle" | "end"): string {
-  const textWidth = getTextWidth(text)
+export function truncateText(
+  text: string,
+  width: number,
+  mode: "start" | "middle" | "end",
+  ctx?: PipelineContext,
+): string {
+  const textWidth = getTextWidth(text, ctx)
   if (textWidth <= width) return text
 
   const ellipsis = "\u2026" // ...
@@ -599,18 +611,21 @@ export function truncateText(text: string, width: number, mode: "start" | "middl
     return width > 0 ? ellipsis : ""
   }
 
+  const sliceFn = ctx ? ctx.measurer.sliceByWidth : sliceByWidth
+  const sliceEndFn = ctx ? ctx.measurer.sliceByWidthFromEnd : sliceByWidthFromEnd
+
   if (mode === "end") {
-    return sliceByWidth(text, availableWidth) + ellipsis
+    return sliceFn(text, availableWidth) + ellipsis
   }
 
   if (mode === "start") {
-    return ellipsis + sliceByWidthFromEnd(text, availableWidth)
+    return ellipsis + sliceEndFn(text, availableWidth)
   }
 
   // middle
   const halfWidth = Math.floor(availableWidth / 2)
-  const startPart = sliceByWidth(text, halfWidth)
-  const endPart = sliceByWidthFromEnd(text, availableWidth - halfWidth)
+  const startPart = sliceFn(text, halfWidth)
+  const endPart = sliceEndFn(text, availableWidth - halfWidth)
   return startPart + ellipsis + endPart
 }
 
@@ -636,14 +651,15 @@ export function renderTextLine(
   baseStyle: Style,
   maxCol?: number,
   inheritedBg?: Color,
+  ctx?: PipelineContext,
 ): void {
   // Check if text contains ANSI escape sequences
   if (hasAnsi(text)) {
-    renderAnsiTextLine(buffer, x, y, text, baseStyle, maxCol, inheritedBg)
+    renderAnsiTextLine(buffer, x, y, text, baseStyle, maxCol, inheritedBg, ctx)
     return
   }
 
-  renderGraphemes(buffer, splitGraphemes(text), x, y, baseStyle, maxCol, inheritedBg)
+  renderGraphemes(buffer, splitGraphemes(text), x, y, baseStyle, maxCol, inheritedBg, ctx)
 }
 
 /**
@@ -658,11 +674,12 @@ function renderTextLineReturn(
   baseStyle: Style,
   maxCol?: number,
   inheritedBg?: Color,
+  ctx?: PipelineContext,
 ): number {
   if (hasAnsi(text)) {
-    return renderAnsiTextLineReturn(buffer, x, y, text, baseStyle, maxCol, inheritedBg)
+    return renderAnsiTextLineReturn(buffer, x, y, text, baseStyle, maxCol, inheritedBg, ctx)
   }
-  return renderGraphemes(buffer, splitGraphemes(text), x, y, baseStyle, maxCol, inheritedBg)
+  return renderGraphemes(buffer, splitGraphemes(text), x, y, baseStyle, maxCol, inheritedBg, ctx)
 }
 
 /**
@@ -686,15 +703,17 @@ function renderGraphemes(
   style: Style,
   maxCol?: number,
   inheritedBg?: Color,
+  ctx?: PipelineContext,
 ): number {
   let col = startCol
   // Effective right boundary: text node's layout edge or buffer edge
   const rightEdge = maxCol !== undefined ? Math.min(maxCol, buffer.width) : buffer.width
+  const gWidthFn = ctx ? ctx.measurer.graphemeWidth : graphemeWidth
 
   for (const grapheme of graphemes) {
     if (col >= rightEdge) break
 
-    const width = graphemeWidth(grapheme)
+    const width = gWidthFn(grapheme)
     if (width === 0) continue
 
     // Determine background color for this cell.
@@ -774,8 +793,9 @@ export function renderAnsiTextLine(
   baseStyle: Style,
   maxCol?: number,
   inheritedBg?: Color,
+  ctx?: PipelineContext,
 ): void {
-  renderAnsiTextLineReturn(buffer, x, y, text, baseStyle, maxCol, inheritedBg)
+  renderAnsiTextLineReturn(buffer, x, y, text, baseStyle, maxCol, inheritedBg, ctx)
 }
 
 /**
@@ -789,6 +809,7 @@ function renderAnsiTextLineReturn(
   baseStyle: Style,
   maxCol?: number,
   inheritedBg?: Color,
+  ctx?: PipelineContext,
 ): number {
   const segments = parseAnsiText(text)
   let col = x
@@ -822,7 +843,7 @@ function renderAnsiTextLineReturn(
       }
     }
 
-    col = renderGraphemes(buffer, splitGraphemes(segment.text), col, y, style, maxCol, inheritedBg)
+    col = renderGraphemes(buffer, splitGraphemes(segment.text), col, y, style, maxCol, inheritedBg, ctx)
   }
   return col
 }
@@ -1049,6 +1070,7 @@ export function renderText(
   clipBounds?: { top: number; bottom: number; left?: number; right?: number },
   inheritedBg?: Color,
   inheritedFg?: Color,
+  ctx?: PipelineContext,
 ): void {
   const { x, width, height } = layout
   let { y } = layout
@@ -1089,7 +1111,7 @@ export function renderText(
   // Collect text content and background segments from this node and all children.
   // Background color from nested Text elements is tracked as BgSegments
   // (not embedded as ANSI codes) to survive text wrapping correctly.
-  const { text, bgSegments } = collectTextWithBg(node, {}, 0, maxDisplayWidth)
+  const { text, bgSegments } = collectTextWithBg(node, {}, 0, maxDisplayWidth, ctx)
 
   // Get style for this Text node.
   // Inherit foreground from nearest ancestor Box with color prop (CSS semantics).
@@ -1099,7 +1121,7 @@ export function renderText(
   }
 
   // Handle wrapping/truncation
-  let lines = formatTextLines(text, width, props.wrap)
+  let lines = formatTextLines(text, width, props.wrap, ctx)
 
   // Apply internal_transform if present (used by Transform component).
   // Transform is applied per-line after formatting, matching ink's behavior.
@@ -1129,7 +1151,7 @@ export function renderText(
       clipBounds && "right" in clipBounds && clipBounds.right !== undefined
         ? Math.min(x + width, clipBounds.right)
         : x + width
-    const endCol = renderTextLineReturn(buffer, x, lineY, line, style, maxCol, inheritedBg)
+    const endCol = renderTextLineReturn(buffer, x, lineY, line, style, maxCol, inheritedBg, ctx)
 
     // Clear remaining cells after text to end of layout width (clipped).
     // When text content shrinks (e.g., breadcrumb changes from long to short path),
@@ -1166,7 +1188,7 @@ export function renderText(
     // that already have the correct character/fg/attrs written.
     if (bgSegments.length > 0 && lineIdx < lineOffsets.length) {
       const { start, end } = lineOffsets[lineIdx]!
-      applyBgSegmentsToLine(buffer, x, lineY, line, start, end, bgSegments)
+      applyBgSegmentsToLine(buffer, x, lineY, line, start, end, bgSegments, ctx)
     }
   }
 }
