@@ -277,3 +277,141 @@ describe("content changes after promotion → termless", () => {
     term.close()
   })
 })
+
+// ============================================================================
+// Resize during promotion
+// ============================================================================
+
+describe("resize during promotion → termless", () => {
+  test("content remains correct after resize mid-promotion", () => {
+    const term = createTestTerminal(40, 10)
+    const outputPhase = createOutputPhase({})
+
+    // Frame 1: render 4 lines of content
+    const buf1 = makeBuffer(40, 10, ["Alpha", "Beta", "Gamma", "Delta"])
+    term.feed(outputPhase(null, buf1, "inline", 0, 10))
+    expect(term).toContainText("Alpha")
+    expect(term).toContainText("Delta")
+
+    // Frame 2: promote Alpha to scrollback
+    outputPhase.promoteScrollback!("Alpha\x1b[K\r\n", 1)
+    const buf2 = makeBuffer(40, 10, ["Beta", "Gamma", "Delta"])
+    term.feed(outputPhase(buf1, buf2, "inline", 0, 10))
+
+    // Resize terminal mid-way (wider and shorter)
+    term.resize(60, 8)
+
+    // Frame 3: render new content after resize with a fresh output phase
+    // (resize invalidates inline cursor state, so we use null prev)
+    const buf3 = makeBuffer(60, 8, ["Beta", "Gamma", "Delta", "Epsilon"])
+    const outputPhase2 = createOutputPhase({})
+    term.feed(outputPhase2(null, buf3, "inline", 0, 8))
+
+    // Verify new content is visible after resize
+    expect(term).toContainText("Beta")
+    expect(term).toContainText("Gamma")
+    expect(term).toContainText("Epsilon")
+
+    term.close()
+  })
+})
+
+// ============================================================================
+// Content height exceeding terminal rows
+// ============================================================================
+
+describe("content height exceeding terminal rows → termless", () => {
+  test("viewport shows bottom lines when content exceeds terminal height", () => {
+    const term = createTestTerminal(40, 4)
+
+    // Feed 7 lines directly into a 4-row terminal via newline-delimited output.
+    // The terminal should naturally scroll, pushing top lines into scrollback.
+    const lines = ["Line 1", "Line 2", "Line 3", "Line 4", "Line 5", "Line 6", "Line 7"]
+    for (const line of lines) {
+      term.feed(line + "\r\n")
+    }
+
+    // The viewport (4 rows) should show the bottom lines
+    const viewportText = term.getViewportText()
+    expect(viewportText).toContain("Line 7")
+
+    // Top lines should have been pushed into scrollback
+    const scrollback = term.getScrollback()
+    expect(scrollback.totalLines).toBeGreaterThan(4)
+
+    // Early lines should be in scrollback above the viewport
+    expect(term).toHaveTextInScrollback("Line 1")
+    expect(term).toHaveTextInScrollback("Line 2")
+
+    term.close()
+  })
+})
+
+// ============================================================================
+// Cursor visibility after promotion
+// ============================================================================
+
+describe("cursor position after promotion → termless", () => {
+  test("cursor stays within viewport range after promoting lines", () => {
+    const ROWS = 8
+    const term = createTestTerminal(40, ROWS)
+    const outputPhase = createOutputPhase({})
+
+    // Frame 1: render 6 lines
+    const buf1 = makeBuffer(40, 10, ["H1", "H2", "H3", "Live A", "Live B", "Live C"])
+    term.feed(outputPhase(null, buf1, "inline", 0, ROWS))
+
+    // Frame 2: promote 3 lines to scrollback, live = 3 lines
+    const frozen = "H1\x1b[K\r\nH2\x1b[K\r\nH3\x1b[K\r\n"
+    outputPhase.promoteScrollback!(frozen, 3)
+
+    const buf2 = makeBuffer(40, 10, ["Live A", "Live B", "Live C"])
+    term.feed(outputPhase(buf1, buf2, "inline", 0, ROWS))
+
+    // Cursor y-position should be within the viewport (0..ROWS-1)
+    const cursor = term.getCursor()
+    expect(cursor.y).toBeGreaterThanOrEqual(0)
+    expect(cursor.y).toBeLessThan(ROWS)
+
+    term.close()
+  })
+})
+
+// ============================================================================
+// Styled content preservation in scrollback
+// ============================================================================
+
+describe("styled content in scrollback → termless", () => {
+  test("ANSI-styled text is preserved after scrolling into scrollback", () => {
+    const term = createTestTerminal(40, 4)
+    const outputPhase = createOutputPhase({})
+
+    // Feed ANSI-styled content: bold "IMPORTANT" and colored "status ok"
+    // ESC[1m = bold, ESC[32m = green, ESC[0m = reset
+    const styledLines = [
+      "\x1b[1mIMPORTANT\x1b[0m heading",
+      "\x1b[32mstatus ok\x1b[0m",
+      "plain line 3",
+      "plain line 4",
+      "plain line 5",
+      "plain line 6",
+      "plain line 7",
+    ]
+
+    // Feed raw styled content directly — this simulates an app writing
+    // more lines than the terminal can hold, pushing styled lines into scrollback
+    for (const line of styledLines) {
+      term.feed(line + "\r\n")
+    }
+
+    // The styled text should still be present in scrollback (text content preserved)
+    expect(term).toHaveTextInScrollback("IMPORTANT")
+    expect(term).toHaveTextInScrollback("status ok")
+
+    // The viewport should show the most recent lines
+    const viewportText = term.getViewportText()
+    expect(viewportText).toContain("plain line 7")
+
+    term.close()
+  })
+})
