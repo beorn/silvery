@@ -2,16 +2,16 @@
 
 > Start simple. Add structure when complexity demands it.
 
-inkx composes [Zustand](https://github.com/pmndrs/zustand) (store + React hooks) with optional [Preact Signals](https://github.com/preactjs/signals) (fine-grained reactivity). This guide walks through the progression — each section builds on the previous code.
+This guide describes state management patterns for interactive applications. The patterns are general — ops as data and effects as data work in any framework (Redux, Elm, and event sourcing use the same ideas). inkx makes the progression seamless: each level builds on the previous with minimal wiring, so you can start simple and scale up without rewriting. Where inkx adds specific tooling, it's noted inline.
 
-| Level | inkx API | What you get |
-|-------|----------|-------------|
-| **1 — Component** | `run()` + `useState` | Local state, no abstractions |
-| **2 — Shared** | `createApp()` + `useApp()` | Shared store, centralized keys |
-| **3 — Ops as Data** | + domain objects with `.apply()` | Undo/redo, replay, AI automation |
-| **4 — Effects as Data** | + `effects` option in `createApp()` | Testable I/O, swappable runners |
+| Level | What you get |
+|-------|-------------|
+| **1 — Component** | Local state, no abstractions |
+| **2 — Shared** | Shared store, centralized keys |
+| **3 — Ops as Data** | Undo/redo, replay, AI automation |
+| **4 — Effects as Data** | Testable I/O, swappable runners |
 
-Most apps only need Level 2. Levels 3-4 follow a general architecture pattern described in [Operations and Effects as Data](as-data-patterns.md).
+Most apps only need Level 2.
 
 ## Your First App
 
@@ -41,7 +41,7 @@ This works until a second component needs the same state.
 
 The counter grows into a todo list. A sidebar shows the count of done items while the main view shows the list. Both need the same data.
 
-`createApp()` gives you a Zustand store shared across all components, centralized key handling, terminal I/O, and exit handling — all bundled into `app.run(<Component />)`:
+The standard approach is a shared store (Zustand, Redux, Jotai) with centralized key handling:
 
 ```tsx
 import { createApp, useApp } from "inkx/runtime"
@@ -111,11 +111,13 @@ await app.run(
 
 This is enough for most apps — dashboards, file browsers, list views, dialogs.
 
+**What inkx adds**: `createApp()` bundles a [Zustand](https://github.com/pmndrs/zustand) store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call. `useApp(selector)` is a thin wrapper around Zustand's `useStore`. Without inkx, you'd wire these yourself — the store pattern is the same.
+
 ## Adding Signals
 
 As your app grows, selectors start to show their cost. Zustand runs *every* selector on *every* store update — if you have 100 `<Row>` components each with `useApp(s => s.rows.get(id))`, that's 100 selector calls every time the cursor moves, even though only 2 rows actually need to re-render.
 
-Signals flip this. Instead of declaring what you read (selectors), components just read `.value` and automatically subscribe to exactly what they touched — no diffing, no linear scan:
+[Preact Signals](https://github.com/preactjs/signals) flip this. Instead of declaring what you read (selectors), components just read `.value` and automatically subscribe to exactly what they touched — no diffing, no linear scan. This is the same model as SolidJS, Vue 3, and the [TC39 Signals proposal](https://github.com/tc39/proposal-signals).
 
 ```tsx
 import { createApp, useApp } from "inkx/runtime"
@@ -157,11 +159,9 @@ const app = createApp(
 )
 ```
 
-`signal()` creates reactive state. `computed()` derives from other signals — `doneCount` recomputes only when `items` changes, not when cursor moves. This is the same model as SolidJS, Vue 3, and the [TC39 Signals proposal](https://github.com/tc39/proposal-signals).
+`signal()` creates reactive state. `computed()` derives from other signals — `doneCount` recomputes only when `items` changes, not when cursor moves.
 
-inkx bridges signals and Zustand with a middleware — when any signal's `.value` changes, Zustand subscribers are also notified. Both subscription models work side by side: signal `.value` reads (automatic) and `useApp(s => s.cursor.value)` selectors (familiar).
-
-When updating multiple signals at once, wrap in `batch()` so the bridge fires once:
+When updating multiple signals at once, wrap in `batch()` so subscribers are notified once:
 
 ```tsx
 import { batch } from "@preact/signals-core"
@@ -171,8 +171,10 @@ batch(() => {
   items.value = newItems
   filter.value = ""
 })
-// → single Zustand notification, single re-render
+// → single notification, single re-render
 ```
+
+**What inkx adds**: A bridge middleware that connects signals to Zustand — when any signal's `.value` changes, Zustand subscribers are also notified. Both subscription models work side by side: signal `.value` reads (automatic, fine-grained) and `useApp(s => s.cursor.value)` selectors (familiar). Without inkx, you'd use signals directly or write your own bridge.
 
 ## "I Want Undo"
 
@@ -225,11 +227,43 @@ const app = createApp(
 )
 ```
 
-Beyond undo, this unlocks replay, logging (`JSON.stringify(op)`), AI automation (ops as tool call results), and collaboration (send ops over the wire).
+Ops are just JSON — plain objects with a discriminator and named params. Same shape as Redux actions, Elm messages, and event sourcing events. No classes, no closures, no symbols.
 
-**A note on robustness**: the example above uses `{ op: "toggleDone", index: 2 }` — but indices are fragile. If you replay ops after items were reordered, or two clients send ops concurrently, index 2 might point to the wrong item. Prefer identity-based ops: `{ op: "toggleDone", id: "abc123" }`. An op that says "toggle item abc123" works regardless of ordering — apply it twice and the item toggles twice, apply it out of order and it still finds the right item. This makes ops safe for undo (replaying after other edits), collaboration (concurrent ops from multiple users), and offline sync (merging ops that happened independently). See [Designing Robust Ops](as-data-patterns.md#designing-robust-ops) for more.
+**What this enables**:
+- **Undo/redo**: Record ops in a stack, replay or invert them
+- **Logging**: `JSON.stringify(op)` — see exactly what happened
+- **AI automation**: Ops are tool call results — an AI can drive your app
+- **Collaboration**: Send ops over the wire to other clients
+- **Time-travel**: Replay any sequence from an initial state
 
-See [Operations and Effects as Data](as-data-patterns.md) for the full pattern and prior art.
+### Designing Robust Ops
+
+The examples above use index-based ops: `{ op: "toggleDone", index: 2 }`. This works for undo within a single session, but breaks as soon as ops need to survive reordering — undo after other edits, concurrent ops from multiple users, or offline sync. If someone inserts an item at index 1, your `index: 2` now points to the wrong item.
+
+**Prefer identity-based ops**: `{ op: "toggleDone", id: "abc123" }`. An op that says "toggle item abc123" works regardless of what order it arrives in. This is the same principle behind CRDTs (Conflict-free Replicated Data Types) — operations that commute (produce the same result regardless of order) are safe for concurrent and distributed use.
+
+```typescript
+// Fragile — depends on ordering
+type FragileOp = { op: "toggleDone"; index: number }
+
+// Robust — works regardless of order
+type RobustOp = { op: "toggleDone"; id: string }
+
+// Even better — idempotent (applying twice = applying once)
+type IdempotentOp = { op: "setDone"; id: string; done: boolean }
+```
+
+The spectrum from fragile to robust:
+
+| Op style | Undo | Concurrent edits | Offline sync |
+|----------|------|-------------------|-------------|
+| `index: 2` | Fragile | Breaks | Breaks |
+| `id: "abc"` + toggle | Works | Works | Applies twice = toggled twice |
+| `id: "abc"` + `done: true` | Works | Works | Applies twice = same result (idempotent) |
+
+The last form — `{ op: "setDone", id: "abc", done: true }` — is fully idempotent: applying it any number of times produces the same state. This is the gold standard for ops that may be replayed or delivered more than once.
+
+You don't need to start here. Index-based ops are fine for simple undo in a single session. But when you add collaboration, offline sync, or AI automation (where ops may arrive out of order), design your ops to be identity-based and ideally idempotent.
 
 ## "I Want to Ship to Terminal and Web"
 
@@ -261,7 +295,7 @@ const TodoList = {
 }
 ```
 
-inkx's effects middleware intercepts these returns and routes them to declared runners — swap the runners per platform:
+Same shape as ops — discriminator (`effect`) + named params. The runtime dispatches effects to runners — swap the runners per platform:
 
 ```tsx
 const app = createApp(
@@ -289,7 +323,9 @@ test("toggleDone persists and toasts", () => {
 })
 ```
 
-See [Operations and Effects as Data](as-data-patterns.md) for the full pattern and prior art.
+**The upgrade is per-function, not per-app.** Some functions return nothing, others return `Effect[]`. You upgrade individual functions as they need effects.
+
+**What inkx adds**: The `effects` option in `createApp()` intercepts effect arrays returned from domain functions and routes them to declared runners automatically. Without inkx, you'd write a thin dispatcher yourself — the pattern is the same.
 
 ## Scaling
 
@@ -323,7 +359,28 @@ const app = createApp(
 
 ## Composing Machines
 
-For complex apps, decompose into independent domain objects that each own a slice of signal state. All share a single `createApp()` store:
+For complex apps, decompose into independent domain objects that each own a slice of state. No machine imports another — they communicate through dispatch effects:
+
+```typescript
+const Board = {
+  moveCursor(s: BoardState, { delta }: { delta: number }) { ... },
+  fold(s: BoardState, { nodeId }: { nodeId: string }): Effect[] { ... },
+  apply(s: BoardState, op: BoardOp) { ... },
+}
+
+const Dialog = {
+  open(s: DialogState, { kind }: { kind: string }) { ... },
+  confirm(s: DialogState): Effect[] {
+    s.open = false
+    return [{ effect: "dispatch", op: "addItem", text: s.value }]
+  },
+  apply(s: DialogState, op: DialogOp) { ... },
+}
+```
+
+`Dialog.confirm()` says "dispatch addItem" as a data object; the effect runner routes it to the right domain function. Each machine is independently testable — communication is through serializable effect objects.
+
+All machines share a single store:
 
 ```tsx
 const app = createApp(
@@ -364,9 +421,19 @@ function SearchBar() {
 }
 ```
 
-Machines communicate through dispatch effects (see [Composing Machines](as-data-patterns.md#composing-machines)) — no machine imports another.
+## Prior Art
+
+The ops-as-data and effects-as-data patterns have been independently discovered many times:
+
+| System | What it makes data | Approach |
+|--------|-------------------|----------|
+| Redux | Operations | `dispatch(action)` + reducer |
+| Event sourcing | Operations | Events as plain objects — store, replay, project |
+| Elm | Ops + effects | `update : Msg -> Model -> (Model, Cmd Msg)` |
+| redux-loop | Effects | Reducer returns `[state, effects]` |
+| Hyperapp v2 | Effects | Optional tuple return from actions |
+| Command pattern | Operations | Encapsulate request as object |
 
 ## See Also
 
-- [Operations and Effects as Data](as-data-patterns.md) — the architecture pattern behind Levels 3-4
 - [Runtime Layers](runtime-layers.md) — createRuntime, createStore, run, createApp API reference
