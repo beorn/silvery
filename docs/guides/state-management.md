@@ -4,7 +4,7 @@
 
 Every React app starts simple. Then requirements arrive — shared state, undo, testing, modularity — and each one tempts you to reach for a new library or rewrite from scratch. This guide shows a different path: a progression where each level builds on the last with minimal changes, and you only adopt what you need.
 
-The patterns are general. Ops as data, effects as data, and composable state machines work in any React framework. [inkx](https://github.com/nicktomlin/inkx) provides tooling that makes each transition seamless — noted inline where relevant.
+The patterns are general. Ops as data, effects as data, and composable state machines work in any React framework. If you've heard of [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA), that's where Levels 3+4 land — and you arrive there incrementally, not all at once. [inkx](https://github.com/nicktomlin/inkx) provides tooling that makes each transition seamless.
 
 ```
 keypress → store.apply(op) → domain logic → [new state, effects] → effect runners → I/O
@@ -57,7 +57,7 @@ await run(<Counter />)
 
 The counter grows into a todo list. You add a sidebar that shows how many items are done, and suddenly two components need the same data. You could lift state to a parent and pass it down as props — but that gets tedious fast, and every state change re-renders the entire tree below the parent.
 
-The standard solution is a shared store. [Zustand](https://github.com/pmndrs/zustand) is the best fit for React — lightweight, hook-based, no boilerplate. You put state and actions in one object, and components subscribe to only the slices they care about.
+The standard solution is a shared store. [Zustand](https://github.com/pmndrs/zustand) is a great fit — lightweight, hook-based, no boilerplate. You put state and actions in one object, and components subscribe to only the slices they care about.
 
 The double-arrow `() => (set, get) => ({...})` is Zustand's [state creator](https://zustand.docs.pmnd.rs/guides/updating-state) pattern — `set` merges new state, `get` reads current state:
 
@@ -404,7 +404,9 @@ const app = createApp(
 
 **The upgrade is per-function, not per-app.** Functions that don't need I/O stay unchanged. You upgrade individual functions as they need effects.
 
-> **inkx**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. Without inkx, you'd write a thin dispatcher — the pattern is the same.
+Step back and look at what you have: `apply(state, op) → [new state, effects]`. This is [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA) — Elm calls it `update msg model = (model, cmd)`. You arrived here incrementally, but you now have what Elm enforces at the language level: every state change is an explicit op (predictable, replayable), every side effect is a return value (testable without mocks), and the entire domain is a pure function from input to output (portable across platforms). The difference is that Elm makes you pay the full cost upfront; here you adopted each piece only when you needed it.
+
+> **inkx**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. inkx also provides a standalone TEA store (`createStore()` from `inkx/store`) with plugin composition — see [Runtime Layers](runtime-layers.md).
 
 **The wall**: Your app has a board, a search dialog, a settings panel. They all live in one domain object and it's getting unwieldy.
 
@@ -512,18 +514,20 @@ return {
 
 ## Prior Art
 
-These patterns have been independently discovered many times:
+The core idea — making operations and effects into data — has been discovered many times. [Elm](https://guide.elm-lang.org/architecture/) is the purest expression: the language enforces TEA, so every Elm app gets predictability, testability, and time-travel for free. The trade-off is that you pay the full architecture cost upfront, even for a counter.
 
-| System | What it makes data | Approach |
-|--------|-------------------|----------|
-| Redux | Operations | `dispatch(action)` + reducer |
-| Elm | Ops + effects | `update : Msg -> Model -> (Model, Cmd Msg)` |
-| Event sourcing | Operations | Events as plain objects — store, replay, project |
-| redux-loop | Effects | Reducer returns `[state, effects]` |
-| Hyperapp v2 | Effects | Optional tuple return from actions |
-| Command pattern | Operations | Encapsulate request as object |
+| System | Levels | Approach |
+|--------|--------|----------|
+| **Elm** | **3+4+5** | **`update : Msg -> Model -> (Model, Cmd Msg)` — the gold standard** |
+| Redux | 3 | `dispatch(action)` + reducer (ops as data, but effects live in middleware) |
+| redux-loop | 3+4 | Extends Redux: reducer returns `[state, effects]` |
+| Hyperapp v2 | 3+4 | Optional tuple return from actions |
+| Event sourcing | 3 | Events as plain objects — store, replay, project |
+| Command pattern | 3 | Encapsulate request as object |
 
-The progression in this guide pieces them together into a single, incremental system: start with React, add a store when you need shared state, make ops serializable when you need undo, make effects serializable when you need testability, and compose state machines when you need modularity. Each step is optional and per-function.
+Redux got Level 3 right but stopped there — side effects live in thunks and sagas, not in the update function's return value. redux-loop and Hyperapp v2 completed the TEA shape by returning effects as data.
+
+This guide pieces these ideas into a single incremental progression for React: you get Elm's benefits without Elm's upfront cost, adopting each level only when you need it.
 
 ## See Also
 
