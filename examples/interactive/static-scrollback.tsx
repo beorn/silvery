@@ -817,12 +817,14 @@ function StatusBar({
   compacting,
   done,
   elapsed,
+  frozenCount = 0,
 }: {
   exchanges: Exchange[]
   autoMode: boolean
   compacting: boolean
   done: boolean
   elapsed: number
+  frozenCount?: number
 }): JSX.Element {
   const cumulative = computeCumulativeTokens(exchanges)
   const totalTokens = cumulative.input + cumulative.output
@@ -852,6 +854,12 @@ function StatusBar({
         <Text color="$primary">{elapsedStr}</Text>
         {"  "}
         {keys}
+        {frozenCount > 0 && (
+          <>
+            {"  "}
+            <Text color="$muted">{"\u2191"} {frozenCount} in scrollback (Cmd+{"\u2191"}/{"\u2193"})</Text>
+          </>
+        )}
       </Text>
       <Text color="$muted" dim>
         ctx <Text color={ctxColor}>{ctxBar}</Text> {ctxPct}% {"\u00B7"} {cost}
@@ -886,6 +894,7 @@ function DemoFooter({
   done,
   compacting,
   exchanges,
+  frozenCount = 0,
 }: {
   controlRef: React.RefObject<FooterControl>
   onSubmit: (text: string) => void
@@ -894,6 +903,7 @@ function DemoFooter({
   done: boolean
   compacting: boolean
   exchanges: Exchange[]
+  frozenCount?: number
 }): JSX.Element {
   const [inputText, setInputText] = useState("")
   const inputTextRef = useRef(inputText)
@@ -940,6 +950,7 @@ function DemoFooter({
         compacting={compacting}
         done={done}
         elapsed={elapsed}
+        frozenCount={frozenCount}
       />
     </Box>
   )
@@ -1330,31 +1341,26 @@ function CodingAgent({
 
   return (
     <Box flexDirection="column" paddingX={1}>
-      {/* Header — always visible, renders on frame 1 */}
-      <Box flexDirection="column">
-        <Text> </Text>
-        <Text bold>Static Scrollback</Text>
-        {frozenCount > 0 ? (
-          <Text color="$muted" dim>
-            {"\u2191"} {frozenCount} in scrollback (Cmd+{"\u2191"}/{"\u2193"} to navigate)
+      {/* Header — only shown before any items are frozen.
+       *  Once frozen, the header would appear between frozen entries in scrollback. */}
+      {frozenCount === 0 && (
+        <Box flexDirection="column">
+          <Text> </Text>
+          <Text bold>Static Scrollback</Text>
+          <Text> </Text>
+          <Text>Coding agent simulation showcasing ScrollbackList:</Text>
+          <Text> {"\u2022"} ScrollbackList — declarative list with automatic scrollback</Text>
+          <Text> {"\u2022"} useScrollbackItem() — imperative freeze() from within items</Text>
+          <Text> {"\u2022"} isFrozen prop — data-driven freezing for completed items</Text>
+          <Text> {"\u2022"} OSC 8 hyperlinks — clickable file paths and URLs</Text>
+          <Text>
+            {" "}
+            {"\u2022"} OSC 133 markers — Cmd+{"\u2191"}/{"\u2193"} to jump between exchanges
           </Text>
-        ) : (
-          <>
-            <Text> </Text>
-            <Text>Coding agent simulation showcasing ScrollbackList:</Text>
-            <Text> {"\u2022"} ScrollbackList — declarative list with automatic scrollback</Text>
-            <Text> {"\u2022"} useScrollbackItem() — imperative freeze() from within items</Text>
-            <Text> {"\u2022"} isFrozen prop — data-driven freezing for completed items</Text>
-            <Text> {"\u2022"} OSC 8 hyperlinks — clickable file paths and URLs</Text>
-            <Text>
-              {" "}
-              {"\u2022"} OSC 133 markers — Cmd+{"\u2191"}/{"\u2193"} to jump between exchanges
-            </Text>
-            <Text> {"\u2022"} $token theme colors — semantic color tokens</Text>
-          </>
-        )}
-        <Text> </Text>
-      </Box>
+          <Text> {"\u2022"} $token theme colors — semantic color tokens</Text>
+          <Text> </Text>
+        </Box>
+      )}
 
       <ScrollbackList
         items={exchanges}
@@ -1370,6 +1376,7 @@ function CodingAgent({
             done={done}
             compacting={compacting}
             exchanges={exchanges}
+            frozenCount={frozenCount}
           />
         }
         footerHeight={4}

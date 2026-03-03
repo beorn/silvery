@@ -63,6 +63,13 @@ export interface StdoutContextValue {
    * Used by useScrollback to position frozen items at the render region start.
    */
   getInlineCursorRow?: () => number
+  /**
+   * Promote frozen content to scrollback via the output phase.
+   * Instead of writing directly to stdout (which causes flicker),
+   * this passes the content to the output phase which writes frozen content
+   * + live content in a single target.write() — no blanking, no cursor desync.
+   */
+  promoteScrollback?: (frozenContent: string, frozenLineCount: number) => void
 }
 
 /**

@@ -111,47 +111,33 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
 
   // Normal freeze path: write newly frozen items to scrollback.
   //
-  // In inline mode (run() runtime), moves the cursor to the start of the
-  // output phase's render region, clears the old live content, writes ONLY
-  // the newly frozen items, then resets the output phase so it re-renders
-  // the remaining live items below. This avoids duplicating frozen items
-  // in the scrollback buffer (the old clear+re-emit-ALL approach created
-  // copies each time because terminal scrollback is append-only).
+  // In inline mode with promoteScrollback (run() runtime), delegates frozen
+  // content to the output phase. The output phase writes frozen content + live
+  // content in a single target.write() — no screen clearing, no cursor desync,
+  // no flicker.
   //
-  // Without inline mode (test renderer, static rendering), just writes newly
-  // frozen items incrementally at the cursor position.
+  // Without promoteScrollback (test renderer, static rendering, or older runtimes),
+  // falls back to direct stdout writes with notifyScrollback.
   useLayoutEffect(() => {
     const prev = prevFrozenCountRef.current
     if (frozenCount > prev) {
-      const hasInlineRuntime = !!stdoutCtx?.resetInlineCursor
-
-      if (hasInlineRuntime) {
-        // Inline mode: move to render region start, clear, write only NEW frozen items.
-        const cursorRow = stdoutCtx.getInlineCursorRow?.() ?? -1
-        if (cursorRow > 0) {
-          stdout.write(`\x1b[${cursorRow}A`)
-        }
-        if (cursorRow >= 0) {
-          stdout.write("\r\x1b[J") // Clear from render region start to end of screen
-        }
-
-        // Write only newly frozen items (not previously emitted ones)
+      if (stdoutCtx?.promoteScrollback) {
+        // Inline mode: build frozen content string and delegate to output phase.
+        // No direct stdout writes — the output phase handles everything.
+        let frozenContent = ""
         let linesWritten = 0
         for (let i = prev; i < frozenCount; i++) {
           const { before, after } = resolveMarkers(markers, items[i]!, i)
-          if (before) stdout.write(before)
+          if (before) frozenContent += before
           const text = render(items[i]!, i) + "\n"
-          stdout.write(text.replace(/\n/g, "\r\n"))
+          frozenContent += text.replace(/\n/g, "\x1b[K\r\n")
           linesWritten += countNewlines(text)
           renderedStringsRef.current.set(i, text)
-          if (after) stdout.write(after)
+          if (after) frozenContent += after
         }
-
-        // Reset output phase so it does a fresh render from cursor position
-        stdoutCtx.resetInlineCursor!()
-        stdoutCtx.notifyScrollback!(linesWritten)
+        stdoutCtx.promoteScrollback(frozenContent, linesWritten)
       } else {
-        // Non-inline: write only newly frozen items
+        // Non-inline / legacy: write only newly frozen items directly
         let linesWritten = 0
         for (let i = prev; i < frozenCount; i++) {
           const { before, after } = resolveMarkers(markers, items[i]!, i)

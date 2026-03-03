@@ -93,6 +93,10 @@ export interface OutputPhaseFn {
   resetInlineState?: () => void;
   /** Get the current inline cursor row (relative to render region start). -1 if unknown. */
   getInlineCursorRow?: () => number;
+  /** Promote frozen content to scrollback. Called by useScrollback to queue
+   *  frozen content for the next render — the output phase writes frozen + live
+   *  content in a single target.write() to avoid flicker. */
+  promoteScrollback?: (frozenContent: string, frozenLineCount: number) => void;
 }
 
 // ============================================================================
@@ -154,6 +158,9 @@ export function createOutputPhase(
     accumulateFrameCount: 0,
   };
 
+  // Pending scrollback promotion — queued by useScrollback, consumed by the next render.
+  let pendingPromotion: { frozenContent: string; frozenLineCount: number } | null = null;
+
   const fn: OutputPhaseFn = function scopedOutputPhase(
     prev: TerminalBuffer | null,
     next: TerminalBuffer,
@@ -162,6 +169,20 @@ export function createOutputPhase(
     termRows?: number,
     cursorPos?: CursorState | null,
   ): string {
+    // Handle scrollback promotion: write frozen content + live content in one pass.
+    if (pendingPromotion && mode === "inline") {
+      const promo = pendingPromotion;
+      pendingPromotion = null;
+      return handleScrollbackPromotion(
+        inlineState,
+        promo.frozenContent,
+        promo.frozenLineCount,
+        next,
+        termRows,
+        cursorPos,
+        ctx,
+      );
+    }
     return outputPhase(
       prev,
       next,
@@ -182,8 +203,85 @@ export function createOutputPhase(
 
   fn.getInlineCursorRow = () => inlineState.prevCursorRow;
 
+  fn.promoteScrollback = (frozenContent: string, frozenLineCount: number) => {
+    if (pendingPromotion) {
+      pendingPromotion.frozenContent += frozenContent;
+      pendingPromotion.frozenLineCount += frozenLineCount;
+    } else {
+      pendingPromotion = { frozenContent, frozenLineCount };
+    }
+  };
+
   return fn;
 }
+
+/**
+ * Handle scrollback promotion: write frozen content + live content in a single output string.
+ *
+ * Instead of useScrollback writing directly to stdout (which blanks the screen and
+ * causes flicker), this function builds one output string that:
+ * 1. Moves cursor to the render region start (no clearing)
+ * 2. Writes frozen content (each line overwrites in-place via \x1b[K])
+ * 3. Writes live content via bufferToAnsi (also with per-line \x1b[K])
+ * 4. Erases any leftover lines from the previous frame
+ * 5. Positions the hardware cursor
+ *
+ * Result: a single target.write() with no blanking — no flicker.
+ */
+function handleScrollbackPromotion(
+  state: InlineCursorState,
+  frozenContent: string,
+  frozenLineCount: number,
+  next: TerminalBuffer,
+  termRows: number | undefined,
+  cursorPos: CursorState | null | undefined,
+  ctx: OutputContext,
+): string {
+  // 1. Move cursor to render region start
+  let output = "";
+  if (state.prevCursorRow > 0) {
+    output += `\x1b[${state.prevCursorRow}A`;
+  }
+  output += "\r"; // column 0, NO \x1b[J clear
+
+  // 2. Write frozen content (overwrites old content in-place, OSC markers included)
+  output += frozenContent;
+
+  // 3. Write live content via bufferToAnsi (each line has \x1b[K — no blanking)
+  const nextContentLines = findLastContentLine(next) + 1;
+  const maxOutputLines =
+    termRows != null ? Math.min(nextContentLines, termRows) : nextContentLines;
+  output += bufferToAnsi(next, "inline", ctx, maxOutputLines);
+
+  // 4. Erase leftover lines at bottom (if content shrank)
+  //    Account for terminal scroll: frozen + live content may push lines into scrollback.
+  const oldTotalLines = state.prevOutputLines;
+  const nextLastLine = maxOutputLines - 1;
+  const totalWritten = frozenLineCount + maxOutputLines;
+  const terminalScroll =
+    termRows != null ? Math.max(0, totalWritten - termRows) : 0;
+  const lastOccupied = Math.max(oldTotalLines - 1 - terminalScroll, 0);
+  if (lastOccupied > nextLastLine) {
+    for (let y = nextLastLine + 1; y <= lastOccupied; y++) {
+      output += "\n\r\x1b[K";
+    }
+    const up = lastOccupied - nextLastLine;
+    if (up > 0) output += `\x1b[${up}A`;
+  }
+
+  // 5. Cursor suffix (hardware cursor positioning)
+  output += inlineCursorSuffix(cursorPos ?? null, next, termRows);
+
+  // 6. Update tracking for subsequent incremental renders
+  let startLine = 0;
+  if (termRows != null && nextContentLines > termRows)
+    startLine = nextContentLines - termRows;
+  state.prevBuffer = next;
+  updateInlineCursorRow(state, cursorPos, maxOutputLines, startLine);
+
+  return output;
+}
+
 // These use getters so they can be set after module load (e.g., in test files).
 // INKX_STRICT enables buffer + output checks (per-frame).
 // INKX_STRICT_OUTPUT=0 explicitly disables output checking even when INKX_STRICT is set.

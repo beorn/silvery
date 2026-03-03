@@ -119,6 +119,10 @@ export interface Runtime {
   /** Get inline cursor row relative to render region start. -1 if unknown. */
   getInlineCursorRow(): number
 
+  /** Promote frozen content to scrollback via the output phase.
+   *  Content is written in a single frame with the live render — no flicker. */
+  promoteScrollback(content: string, lines: number): void
+
   /** Get current dimensions */
   getDims(): Dims
 

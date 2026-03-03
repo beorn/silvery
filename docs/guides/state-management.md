@@ -1,26 +1,22 @@
 # State Management
 
-> Five levels of React state management — from `useState` to composable state machines.
+> inkx makes it easy to graduate from local state to composable state machines — adopt each level only when you need it.
 
-Every React app starts simple. Then requirements arrive — shared state, undo, testing, modularity — and each one tempts you to reach for a new library or rewrite from scratch. This guide shows a different path: a progression where each level builds on the last with minimal changes, and you only adopt what you need.
+Your first inkx app uses `useState` and `useInput`. That's enough for a counter, a file browser, a simple list. Then your TUI grows — shared state across panes, undo, testable I/O, independent modules — and each requirement tempts you to reach for a new library or rewrite from scratch.
 
-The patterns are general. Ops as data, effects as data, and composable state machines work in any React framework. If you've heard of [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA), that's where Levels 3+4 land — and you arrive there incrementally, not all at once. [inkx](https://github.com/nicktomlin/inkx) provides tooling that makes each transition seamless.
+This guide shows a different path. Each level builds on the last with minimal changes. inkx provides tooling at each step — `createApp`, `createSlice`, effect runners, plugin composition — so the transition is mechanical, not architectural. You never rewrite; you graduate.
 
-```
-keypress → store.apply(op) → domain logic → [new state, effects] → effect runners → I/O
-               ↑                                                         │
-               └──────────── dispatch effect (cross-machine) ────────────┘
-```
+The patterns themselves are general — ops as data, effects as data, composable state machines work in any React framework. If you've heard of [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA), that's where Levels 3+4 land. You arrive there incrementally, not all at once.
 
-| Level | You need it when... | What you get |
+| Level | You need it when... | What inkx provides |
 |-------|---------------------|-------------|
-| **1 — Local** | Starting out | Just React |
-| **2 — Shared** | Multiple components need the same state, or prop drilling is painful | Centralized store, selective re-renders |
-| **3 — Ops as Data** *(Redux's insight)* | Undo, collaboration, or automation | Serializable operations |
-| **4 — Effects as Data** *(Elm's insight)* | Pure logic, testable I/O | Deterministic functions, swappable runners |
-| **5 — Composition** | Independent modules | State machines that talk through data |
+| **1 — Local** | Starting out | `useState` + `useInput` — just React |
+| **2 — Shared** | Multiple components need the same state | `createApp` + `useApp` — centralized store, selective re-renders |
+| **3 — Ops as Data** *(Redux's insight)* | Undo, collaboration, or automation | `createSlice` — typed operations, zero boilerplate |
+| **4 — Effects as Data** *(Elm's insight)* | Pure logic, testable I/O | Effect runners — deterministic functions, swappable I/O |
+| **5 — Composition** | Independent modules | Multiple slices — state machines that talk through data |
 
-Most apps stop at Level 2. [Signals](#appendix-a-scaling-with-signals) (fine-grained reactivity) are orthogonal — they optimize re-renders at any level.
+Most web apps stop at Level 2. TUI apps with keyboard-driven interaction, undo, and multi-pane layouts often reach Level 3. [Signals](#appendix-a-scaling-with-signals) (fine-grained reactivity) are orthogonal — they optimize re-renders at any level.
 
 ---
 

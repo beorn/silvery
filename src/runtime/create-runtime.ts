@@ -281,6 +281,11 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       return fn?.getInlineCursorRow?.() ?? -1
     },
 
+    promoteScrollback(content: string, lines: number): void {
+      const fn = outputPhaseFn as { promoteScrollback?: (c: string, l: number) => void } | undefined
+      fn?.promoteScrollback?.(content, lines)
+    },
+
     getDims(): Dims {
       return target.getDims()
     },
