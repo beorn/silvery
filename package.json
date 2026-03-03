@@ -129,7 +129,9 @@
     "example:dashboard": "bun run examples/dashboard/index.tsx",
     "example:task-list": "bun run examples/task-list/index.tsx",
     "example:kanban": "bun run examples/kanban/index.tsx",
-    "example:scroll": "bun run examples/scroll/index.tsx"
+    "example:scroll": "bun run examples/scroll/index.tsx",
+    "ci": "bun run typecheck && bun run test",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "dependencies": {
     "@beorn/logger": "github:beorn/logger",
