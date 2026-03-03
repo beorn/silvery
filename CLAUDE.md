@@ -754,6 +754,10 @@ import { createStore, inkxUpdate, defaultInit, withFocusManagement, type StoreCo
 // Core types and effect constructors (pure, no React)
 import { type InkxModel, type InkxMsg, type Effect, type Plugin, none, batch, dispatch, compose } from "inkx/core"
 
+// Slices (ops-as-data helper)
+import { createSlice } from "inkx/core"
+import type { Slice, SliceWithInit, InferOp } from "inkx/core"
+
 // Term primitives (re-exported from chalkx)
 import { createTerm, patchConsole, type Term, type StyleChain } from "inkx"
 ```

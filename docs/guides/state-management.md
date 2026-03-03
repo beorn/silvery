@@ -169,21 +169,11 @@ These are just JSON — plain objects you can inspect, store, and manipulate. On
 
 None of this is possible when operations are function calls that vanish after execution. This is the key mental shift: you're no longer *calling behavior* — you're *describing intent*. The store becomes a deterministic interpreter that processes descriptions, not a bag of functions that performs actions.
 
-This requires one refactor: function arguments change from positional to named objects, so the params double as the operation payload. `moveCursor(1)` can't self-describe what "1" means; `moveCursor({ delta: 1 })` can — it's the op payload minus the `op` tag:
-
-```tsx
-// These are equivalent — both produce { op: "moveCursor", delta: 1 }:
-store.moveCursor({ delta: 1 })                    // direct (type-safe)
-store.apply({ op: "moveCursor", delta: 1 })       // as data (serializable)
-```
-
-Both conventions produce the same serializable operation — use whichever reads better in context. `store.moveCursor({ delta: 1 })` routes through `.apply()` internally, so undo/replay/logging captures it either way.
+This requires one refactor: function arguments change from positional to named objects, so the params double as the operation payload. `moveCursor(1)` can't self-describe what "1" means; `{ op: "moveCursor", delta: 1 }` can — it's a self-describing, serializable action.
 
 ### Slicing up State
 
-Pull the logic out of the store into a **slice** — a plain TypeScript object that owns a piece of state and the operations on it. This is the same idea as Redux Toolkit's [`createSlice`](https://redux-toolkit.js.org/api/createSlice), but it's just TypeScript — no framework, no library, no conventions to follow. You won't see Redux's `SCREAMING_CASE` action types here; op names are regular camelCase strings in a discriminated union, and the dispatcher is a plain `switch`. inkx doesn't prescribe this shape — it's simply what emerges when you want type-safe ops-as-data.
-
-Each function takes state and a params object, and `.apply()` dispatches by name:
+Pull the logic out of the store into a **slice** — a plain object that owns a piece of state and the operations on it. A slice has three parts: a discriminated union[^discriminated-union] of op types, handler functions for each op, and a `switch`-based dispatcher:
 
 ```tsx
 type TodoOp =
@@ -209,27 +199,53 @@ const TodoList = {
 }
 ```
 
-The `switch` in `.apply()` is the type safety bridge — TypeScript's discriminated union[^discriminated-union] narrowing ensures that when `op.op` is `"moveCursor"`, the params are `{ delta: number }`. You get full type checking on both sides: callers construct a `TodoOp` (compile error if `delta` is missing), and the switch ensures exhaustive handling (compile error if you add an op variant but forget to handle it). No `any`, no runtime type checks — the union does all the work.
+The `switch` is the type safety bridge — when `op.op` is `"moveCursor"`, TypeScript narrows the params to `{ delta: number }` automatically. Add an op variant, forget a case → compile error. That's three artifacts per op (union variant, handler, switch case), which is more ceremony than Level 2's direct function calls. The trade: you get exhaustive narrowing, a serializable action vocabulary, and a single entry point for all state transitions.
 
-The store exposes both calling conventions — direct methods for everyday code, `.apply()` for when you need the data. (This example uses [signals](#appendix-a-scaling-with-signals) — `signal()` and `computed()` — for fine-grained reactivity. You can use plain Zustand `set()`/`get()` instead; the ops pattern works either way.)
+inkx provides `createSlice` to eliminate the union and the switch — you write only the handlers:
+
+```tsx
+import { createSlice } from "inkx/core"
+
+const TodoList = createSlice(
+  () => ({ cursor: signal(0), items: signal<Item[]>([...]) }),
+  {
+    moveCursor(s, { delta }: { delta: number }) {
+      s.cursor.value = clamp(s.cursor.value + delta, 0, s.items.value.length - 1)
+    },
+    toggleDone(s, { index }: { index: number }) {
+      s.items.value = s.items.value.map((item, i) =>
+        i === index ? { ...item, done: !item.done } : item
+      )
+    },
+  },
+)
+```
+
+`createSlice` infers the op union from your handler names and parameter types — TypeScript derives the state type from the factory, so you never write it twice:
+
+```tsx
+type TodoOp = typeof TodoList.Op
+// { op: "moveCursor"; delta: number } | { op: "toggleDone"; index: number }
+```
+
+Adding a new op means adding one function. TypeScript still catches exhaustiveness errors: if you pattern-match on `TodoOp` elsewhere (e.g. an `inverse` function for undo), a missing case is a compile error.
+
+The store wires in via `.create()`. (This example uses [signals](#appendix-a-scaling-with-signals) for reactivity; plain Zustand `set()`/`get()` works too.)
 
 ```tsx
 const app = createApp(
   () => {
-    const state = { cursor: signal(0), items: signal<Item[]>([...]) }
-    const apply = (op: TodoOp) => TodoList.apply(state, op)
+    const { state, apply } = TodoList.create()
     return {
       ...state,
       doneCount: computed(() => state.items.value.filter(i => i.done).length),
       apply,
-      moveCursor: (p: { delta: number }) => apply({ op: "moveCursor", ...p }),
-      toggleDone: (p: { index: number }) => apply({ op: "toggleDone", ...p }),
     }
   },
   {
     key(input, key, { store }) {
-      if (input === "j") store.moveCursor({ delta: 1 })
-      if (input === "k") store.moveCursor({ delta: -1 })
+      if (input === "j") store.apply({ op: "moveCursor", delta: 1 })
+      if (input === "k") store.apply({ op: "moveCursor", delta: -1 })
       if (input === "x") store.apply({ op: "toggleDone", index: store.cursor.value })
       if (input === "q") return "exit"
     },
@@ -237,32 +253,38 @@ const app = createApp(
 )
 ```
 
-Now let's make good on the first promise — undo. It's just an array and a pointer:
+Now let's make good on the first promise — undo. You define an `inverse` function that returns the op which would undo a given op — `moveCursor(+1)` → `moveCursor(-1)`, toggling is its own inverse. The undo stack is just an array:
 
 ```tsx
+type TodoOp = typeof TodoList.Op
+
+function inverse(op: TodoOp): TodoOp {
+  switch (op.op) {
+    case "moveCursor": return { op: "moveCursor", delta: -op.delta }
+    case "toggleDone": return op  // toggling is its own inverse
+  }
+}
+
 const undoStack: TodoOp[] = []
 const redoStack: TodoOp[] = []
 
 function applyWithUndo(op: TodoOp) {
-  // Capture the inverse before applying
-  const inverse = TodoList.inverse(state, op)
+  undoStack.push(inverse(op))
   TodoList.apply(state, op)
-  undoStack.push(inverse)
   redoStack.length = 0  // new action clears redo
 }
 
 function undo() {
   const op = undoStack.pop()
   if (!op) return
-  const inverse = TodoList.inverse(state, op)
+  redoStack.push(inverse(op))
   TodoList.apply(state, op)
-  redoStack.push(inverse)
 }
 ```
 
-Each slice provides an `inverse(state, op)` that returns the op which would undo it — `setDone(id, true)` → `setDone(id, false)`. The stack is just an array of plain objects. Serializable, inspectable, trivial to persist. In production, cap the stack size to avoid unbounded memory growth (Redux DevTools does the same).
+Notice that `inverse` pattern-matches on the same `TodoOp` union — TypeScript's exhaustive narrowing ensures every op has an inverse. If you add an op to `createSlice` and forget to handle it in `inverse`, the compiler tells you. The stack itself is just plain objects — serializable, inspectable, trivial to persist. In production, cap the stack size to avoid unbounded memory growth (Redux DevTools does the same).
 
-This is a pure pattern — no framework tooling needed. The slice, op types, and `.apply()` dispatcher are plain TypeScript. The store wires convenience methods (`store.moveCursor(...)`) that call through `apply()` internally, so you use the direct style in everyday code and the data style (`store.apply({ op: "moveCursor", ... })`) when you need serialization, logging, or replay. Both paths are equivalent — inkx doesn't prefer one over the other.
+Whether you use `createSlice` or the manual pattern, the slice, op types, and `.apply()` dispatcher are plain TypeScript. You can add convenience wrappers (`store.moveCursor = (p) => store.apply({ op: "moveCursor", ...p })`) if you prefer method-style calls in everyday code — both paths route through `apply()`, so undo/replay/logging captures them either way.
 
 The examples above use index-based ops (`toggleDone, index: 2`), which work for single-session undo. For collaboration, offline sync, or AI automation, prefer identity-based ops that survive reordering — see [Appendix B: Designing Robust Ops](#appendix-b-designing-robust-ops).
 
@@ -283,25 +305,26 @@ type Effect =
   | { effect: "persist"; data: unknown }
   | { effect: "toast"; message: string }
 
-const TodoList = {
-  // Pure — same as before:
-  moveCursor(s: State, { delta }: { delta: number }) {
-    s.cursor.value = clamp(s.cursor.value + delta, 0, s.items.value.length - 1)
-  },
+const TodoList = createSlice(
+  () => ({ cursor: signal(0), items: signal<Item[]>([...]) }),
+  {
+    // Pure — same as before:
+    moveCursor(s, { delta }: { delta: number }) {
+      s.cursor.value = clamp(s.cursor.value + delta, 0, s.items.value.length - 1)
+    },
 
-  // Returns effects as data:
-  toggleDone(s: State, { index }: { index: number }): Effect[] {
-    s.items.value = s.items.value.map((item, i) =>
-      i === index ? { ...item, done: !item.done } : item
-    )
-    return [
-      { effect: "persist", data: s.items.value },
-      { effect: "toast", message: `Toggled ${s.items.value[index].text}` },
-    ]
+    // Returns effects as data:
+    toggleDone(s, { index }: { index: number }): Effect[] {
+      s.items.value = s.items.value.map((item, i) =>
+        i === index ? { ...item, done: !item.done } : item
+      )
+      return [
+        { effect: "persist", data: s.items.value },
+        { effect: "toast", message: `Toggled ${s.items.value[index].text}` },
+      ]
+    },
   },
-
-  apply(s: State, op: TodoOp) { ... },
-}
+)
 ```
 
 Same shape as ops — discriminator (`effect`) + named params. Here's the payoff — tests assert on what the function *says should happen*:
@@ -379,20 +402,24 @@ Up to now, everything lives in one slice. That worked when the app was small, bu
 The key rule: **no state machine imports another**. They communicate through dispatch effects — the same pattern from Level 4:
 
 ```typescript
-const Board = {
-  moveCursor(s: BoardState, { delta }: { delta: number }) { ... },
-  fold(s: BoardState, { nodeId }: { nodeId: string }): Effect[] { ... },
-  apply(s: BoardState, op: BoardOp) { ... },
-}
-
-const Dialog = {
-  open(s: DialogState, { kind }: { kind: string }) { ... },
-  confirm(s: DialogState): Effect[] {
-    s.open.value = false
-    return [{ effect: "dispatch", target: "board", op: "addItem", text: s.value.value }]
+const Board = createSlice(
+  () => ({ cursor: signal(0), items: signal<Item[]>([]) }),
+  {
+    moveCursor(s, { delta }: { delta: number }) { ... },
+    fold(s, { nodeId }: { nodeId: string }): Effect[] { ... },
   },
-  apply(s: DialogState, op: DialogOp) { ... },
-}
+)
+
+const Dialog = createSlice(
+  () => ({ open: signal(false), value: signal("") }),
+  {
+    open(s, { kind }: { kind: string }) { ... },
+    confirm(s): Effect[] {
+      s.open.value = false
+      return [{ effect: "dispatch", target: "board", op: "addItem", text: s.value.value }]
+    },
+  },
+)
 ```
 
 `Dialog.confirm()` doesn't call Board directly. It returns `{ effect: "dispatch", target: "board", op: "addItem" }` — a data object. The effect runner routes it:
@@ -400,38 +427,35 @@ const Dialog = {
 ```tsx
 const app = createApp(
   () => {
-    const boardState = { cursor: signal(0), items: signal<Item[]>([]) }
-    const dialogState = { open: signal(false), value: signal("") }
-    const searchState = { query: signal(""), results: signal<string[]>([]) }
+    const board = Board.create()
+    const dialog = Dialog.create()
+    const search = Search.create()
 
-    const machines = {
-      board: (op: BoardOp) => Board.apply(boardState, op),
-      dialog: (op: DialogOp) => Dialog.apply(dialogState, op),
-      search: (op: SearchOp) => Search.apply(searchState, op),
+    // Each machine gets a namespace: state fields + dispatch
+    return {
+      board: { ...board.state, dispatch: board.apply },
+      dialog: { ...dialog.state, dispatch: dialog.apply },
+      search: { ...search.state, dispatch: search.apply },
     }
-
-    // Each slice's state is spread to top-level keys (e.g. store.cursor, store.open).
-    // Machine functions are also top-level (e.g. store.board(op), store.dialog(op)).
-    return { ...boardState, dialog: dialogState, search: searchState, ...machines }
   },
   {
     effects: {
       dispatch: ({ target, op, ...params }, { store }) => {
-        const apply = (store as any)[target]
-        if (apply) return apply({ op, ...params })
+        const machine = (store as any)[target]
+        if (machine?.dispatch) return machine.dispatch({ op, ...params })
       },
       persist: async ({ data }) => { /* ... */ },
     },
     key(input, key, { store }) {
-      if (input === "/") store.dialog({ op: "open", kind: "search" })
-      if (input === "j") store.board({ op: "moveCursor", delta: 1 })
+      if (input === "/") store.dialog.dispatch({ op: "open", kind: "search" })
+      if (input === "j") store.board.dispatch({ op: "moveCursor", delta: 1 })
       if (input === "q") return "exit"
     },
   },
 )
 ```
 
-Each state machine is independently testable — `Dialog.confirm(state)` returns effects you can assert on without touching Board. Features stop sharing state and start exchanging messages — each machine can be developed, tested, and replaced independently.
+Each state machine is independently testable — call `Dialog.confirm(dialogState)` directly and assert on the effects it returns, without touching Board. Features stop sharing state and start exchanging messages — each machine can be developed, tested, and replaced independently.
 
 Here's the full architecture at Level 5 — notice it's the same shape at every scale:
 
@@ -455,7 +479,7 @@ Components pick what they need:
 
 ```tsx
 function SearchBar() {
-  const { search } = useApp()
+  const search = useApp(s => s.search)
   return <Text>Search: {search.query.value} ({search.results.value.length} results)</Text>
 }
 ```
@@ -493,9 +517,9 @@ The progression from functions to data is not free. Each level buys something re
 
 **The costs of making everything data.** Once you move to Level 3+:
 
-- **Verbosity.** A one-line `store.toggleDone()` becomes a union variant (`{ op: "toggleDone", index: number }`), a case in `apply()`, and a wrapper method. Three places to maintain instead of one. For an app with 5 operations this is fine; for 50, it's a lot of boilerplate.
-- **Indirection.** When something goes wrong, the stack trace goes through `apply()` → `switch` → handler instead of directly to the function. You lose some "click to navigate" convenience in your editor. Naming your ops well (and keeping slices small) mitigates this.
-- **Type ceremony.** Discriminated unions are powerful but verbose. Every new operation means updating the union type, adding a switch case, and wiring the convenience method. TypeScript's `never` exhaustiveness check helps catch missed cases — but you're paying in keystrokes.
+- **Verbosity.** With `createSlice`, adding an op is one function — the same cost as Level 2. With the manual pattern, each op requires a union variant, a handler, and a switch case — three artifacts to maintain. Either way, callers write `{ op: "moveCursor", delta: 1 }` instead of `moveCursor(1)`.
+- **Indirection.** When something goes wrong, the stack trace goes through `apply()` → handler instead of directly to the function. You lose some "click to navigate" convenience in your editor. Naming your ops well (and keeping slices small) mitigates this.
+- **Type ceremony.** With the manual pattern, discriminated unions are powerful but verbose — every new operation means updating the union type and adding a switch case. `createSlice` eliminates this; you write the handler and the types are inferred. But even with `createSlice`, if you pattern-match on the op union elsewhere (e.g. an `inverse` function), you maintain that switch yourself.
 - **Debugging the dispatcher.** When you log `{ op: "moveCursor", delta: 1 }`, you see *what* happened but not *why* the code decided to dispatch it. The dispatch site might be in a key handler, an effect runner, or another machine's effect. Good naming and tooling (Redux DevTools) help, but there's inherently more indirection to trace.
 
 **When to use functions inside data.** Even at Level 4-5, not everything needs to be data. Effect *runners* are functions — they take effect descriptions and do real I/O. Computed values (`doneCount`) are functions. React components are functions. The boundary is: **crossing module boundaries** (between slices, between domain and I/O) should be data; **within a module** (the implementation of a single op handler), use whatever's clearest. `s.items.value.map(...)` inside `toggleDone` is a normal function call, and it should stay that way.
@@ -507,7 +531,7 @@ The progression from functions to data is not free. Each level buys something re
 - **Debugging** — `withDiagnostics()` validates incremental rendering, `INKX_INSTRUMENT=1` exposes per-frame counters, and the inspector (`INKX_DEV=1`) dumps the full node tree. These replace the "printf debugging through a dispatcher" problem with structured introspection.
 - **Driver pattern** — `withCommands()` + `withKeybindings()` give you a `driver.cmd.down()` API where each command carries metadata (name, keys, help text). The dispatcher is no longer opaque — `driver.cmd.all()` lists every available action with its keybinding.
 
-The ceremony of union types + switch cases remains — that's a TypeScript design choice, not a framework problem. But the infrastructure around it (store creation, effect routing, plugin composition, debugging) is where inkx absorbs complexity so your slices stay focused on domain logic. See [Runtime Layers](runtime-layers.md) for the full API.
+`createSlice` absorbs the union type + switch ceremony; the infrastructure around it (store creation, effect routing, plugin composition, debugging) is where inkx absorbs the rest so your slices stay focused on domain logic. See [Runtime Layers](runtime-layers.md) for the full API.
 
 **The honest rule of thumb**: if you can't name a specific benefit you'd get from making something data (undo? replay? testing without mocks?), keep it as a function call. The progression is opt-in at every level — and opting out is a valid choice.
 
