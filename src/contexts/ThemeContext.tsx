@@ -16,7 +16,7 @@
  */
 
 import React, { createContext, useContext } from "react"
-import { defaultDarkTheme, setActiveTheme, type Theme } from "../theme-defs.js"
+import { defaultDarkTheme, setActiveTheme, type Theme } from "themex"
 
 // ============================================================================
 // Context

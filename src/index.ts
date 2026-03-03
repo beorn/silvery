@@ -336,8 +336,8 @@ export {
   getThemeByName,
   resolveThemeColor,
   generateTheme,
-} from "./theme-defs.js"
-export type { Theme, AnsiPrimary } from "./theme-defs.js"
+} from "themex"
+export type { Theme, AnsiPrimary } from "themex"
 
 // =============================================================================
 // Re-exports from chalkx

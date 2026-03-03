@@ -198,7 +198,7 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
    * Override theme for this subtree — $token colors resolve against this theme.
    * Pushed onto the context theme stack during content phase tree walk.
    */
-  theme?: import("./theme-defs.js").Theme
+  theme?: import("themex").Theme
 
   onLayout?: (layout: Rect) => void
 

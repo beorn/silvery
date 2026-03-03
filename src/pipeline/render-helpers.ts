@@ -12,7 +12,7 @@
  */
 
 import type { Color, Style, UnderlineStyle } from "../buffer.js"
-import { getActiveTheme, resolveThemeColor } from "../theme-defs.js"
+import { getActiveTheme, resolveThemeColor } from "themex"
 import type { BoxProps, TextProps } from "../types.js"
 import { displayWidthAnsi } from "../unicode.js"
 import type { BorderChars, PipelineContext } from "./types.js"
