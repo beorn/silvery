@@ -2,9 +2,15 @@
 
 > Five levels of React state management — from `useState` to composable state machines.
 
-This guide describes a progression for managing state in React applications. Each level solves a real problem the previous level can't handle. You adopt levels incrementally — per-function, not per-app — and most apps never need to go past Level 2.
+Every React app starts simple. Then requirements arrive — shared state, undo, testing, modularity — and each one tempts you to reach for a new library or rewrite from scratch. This guide shows a different path: a progression where each level builds on the last with minimal changes, and you only adopt what you need.
 
 The patterns are general. Ops as data, effects as data, and composable state machines work in any React framework. [inkx](https://github.com/nicktomlin/inkx) provides tooling that makes each transition seamless — noted inline where relevant.
+
+```
+keypress → store.apply(op) → domain logic → [new state, effects] → effect runners → I/O
+               ↑                                                         │
+               └──────────── dispatch effect (cross-machine) ────────────┘
+```
 
 | Level | You need it when... | What you get |
 |-------|---------------------|-------------|
@@ -14,13 +20,13 @@ The patterns are general. Ops as data, effects as data, and composable state mac
 | **4 — Effects as Data** | You want tests without mocks | Pure domain logic, swappable I/O |
 | **5 — Composition** | Multiple independent concerns | State machines that talk through data |
 
-Signals (fine-grained reactivity) are orthogonal — they optimize re-renders at any level.
+Most apps stop at Level 2. Signals (fine-grained reactivity) are orthogonal — they optimize re-renders at any level.
 
 ---
 
 ## Level 1: Local State
 
-A counter. State lives in the component — just React.
+You're building a counter. One component, one piece of state. This is React at its simplest — no libraries, no abstractions, no decisions to make.
 
 ```tsx
 import { useState } from "react"
@@ -49,9 +55,9 @@ await run(<Counter />)
 
 ## Level 2: Shared Store
 
-The counter grows into a todo list. A sidebar shows the count of done items while the main view shows the list. Both need the same data.
+The counter grows into a todo list. You add a sidebar that shows how many items are done, and suddenly two components need the same data. You could lift state to a parent and pass it down as props — but that gets tedious fast, and every state change re-renders the entire tree below the parent.
 
-The standard solution is a shared store. [Zustand](https://github.com/pmndrs/zustand) is the best fit for React — lightweight, hook-based, no boilerplate. You put state and actions in one object, and components subscribe to the slices they care about.
+The standard solution is a shared store. [Zustand](https://github.com/pmndrs/zustand) is the best fit for React — lightweight, hook-based, no boilerplate. You put state and actions in one object, and components subscribe to only the slices they care about.
 
 The double-arrow `() => (set, get) => ({...})` is Zustand's [state creator](https://zustand.docs.pmnd.rs/guides/updating-state) pattern — `set` merges new state, `get` reads current state:
 
@@ -198,7 +204,7 @@ Signals are orthogonal to the levels — you can use them at Level 2 or Level 5.
 
 ## Level 3: Ops as Data
 
-Your todo list works. Now you want undo/redo, logging, or AI automation. The problem: `store.toggleDone()` is a function call — it happens and it's gone. You can't record it, replay it, or reverse it.
+Your todo list works. A user toggles an item, realizes it was wrong, and reaches for Ctrl+Z. Nothing happens — because `store.toggleDone()` is a function call. It mutated state and vanished. There's no record of what happened, nothing to reverse, nothing to replay.
 
 **The fix**: make operations visible by turning them into data. Instead of calling functions that mutate state, call functions that produce a serializable description of *what happened*:
 
@@ -278,6 +284,31 @@ const app = createApp(
 - **Collaboration** — send ops over the wire to other clients
 - **Time-travel** — replay any sequence from an initial state
 
+Here's what undo actually looks like — it's just an array and a pointer:
+
+```tsx
+const undoStack: TodoOp[] = []
+const redoStack: TodoOp[] = []
+
+function applyWithUndo(op: TodoOp) {
+  // Capture the inverse before applying
+  const inverse = TodoList.inverse(state, op)
+  TodoList.apply(state, op)
+  undoStack.push(inverse)
+  redoStack.length = 0  // new action clears redo
+}
+
+function undo() {
+  const op = undoStack.pop()
+  if (!op) return
+  const inverse = TodoList.inverse(state, op)
+  TodoList.apply(state, op)
+  redoStack.push(inverse)
+}
+```
+
+Each domain object provides an `inverse(state, op)` that returns the op which would undo it — `setDone(id, true)` → `setDone(id, false)`. The stack is just an array of plain objects. Serializable, inspectable, trivial to persist.
+
 This is a pure pattern — no framework tooling needed. The domain object, op types, and `.apply()` dispatcher are plain TypeScript.
 
 **The wall**: Your app does I/O — saving to disk, showing notifications, fetching data. Testing domain logic requires mocking all of it.
@@ -311,7 +342,7 @@ You don't need to start here. Index-based is fine for simple undo. But when you 
 
 ## Level 4: Effects as Data
 
-Your app does I/O — saving to disk, showing toasts, fetching data. You could abstract the I/O behind an interface and swap implementations (dependency injection). That gives you platform portability, but your tests still need to construct fakes, wire them in, call the function, then inspect what the fake recorded.
+Your todo list saves to disk, shows toast notifications, and fetches from an API. You write tests for the domain logic, but they're slow and brittle — every test needs a fake filesystem, a mock toast service, and a stub HTTP client. You spend more time maintaining test infrastructure than writing actual tests.
 
 **The fix** is the same trick as Level 3: make effects into data. Instead of *doing* I/O, domain functions *describe* what should happen. The only change: functions that need I/O return an `Effect[]`:
 
@@ -380,6 +411,8 @@ const app = createApp(
 ---
 
 ## Level 5: Composing State Machines
+
+Your app has a board, a search dialog, and a settings panel. They started as methods on one big domain object, but now `Board.apply()` is 400 lines, search and settings keep stepping on each other's state, and every new feature risks breaking something unrelated.
 
 Each area of concern becomes its own domain object with its own state, ops, and `.apply()`. We call this combination a **state machine** — a domain object + the state it operates on + the set of ops it accepts.
 
@@ -451,7 +484,7 @@ function SearchBar() {
 
 ## Scaling
 
-At scale (1,000+ items), two techniques apply at any level:
+Your todo list has 5,000 items and the cursor stutters. At scale, two techniques apply at any level:
 
 **Per-entity signals** — `Map<string, Signal<T>>` gives each item its own signal. Edit one item → 1 re-render:
 
