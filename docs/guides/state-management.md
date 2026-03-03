@@ -15,10 +15,10 @@ keypress → store.apply(op) → domain logic → [new state, effects] → effec
 | Level | You need it when... | What you get |
 |-------|---------------------|-------------|
 | **1 — Local** | Starting out | Just React |
-| **2 — Shared** | Two components need the same state | Centralized store, selective re-renders |
-| **3 — Ops as Data** *(Redux's insight)* | You want undo, logging, or AI automation | Serializable operations |
-| **4 — Effects as Data** *(Elm's insight)* | You want tests without mocks | Pure domain logic, swappable I/O |
-| **5 — Composition** | Multiple independent concerns | State machines that talk through data |
+| **2 — Shared** | Multiple components need the same state, or prop drilling is painful | Centralized store, selective re-renders |
+| **3 — Ops as Data** *(Redux's insight)* | You want undo, logging, debugging, AI automation, or replay | Serializable operations |
+| **4 — Effects as Data** *(Elm's insight)* | You want tests without mocks, cross-platform logic, or visible side effects | Pure domain logic, swappable I/O |
+| **5 — Composition** | Multiple concerns stepping on each other, or teams working on the same store | State machines that talk through data |
 
 Most apps stop at Level 2. [Signals](#appendix-a-scaling-with-signals) (fine-grained reactivity) are orthogonal — they optimize re-renders at any level.
 
@@ -49,7 +49,7 @@ await run(<Counter />)
 
 `useState` is standard React. `useInput` is inkx's keyboard hook; `run` starts the app and manages terminal I/O.
 
-**The wall**: A second component needs the same state.
+**The wall**: A second component needs the same state. Or every state change re-renders half the tree. Or you're threading props five levels deep and every intermediate component has to know about data it doesn't use.
 
 ---
 
@@ -142,13 +142,13 @@ As your app grows, selectors show their cost — Zustand runs *every* selector o
 
 State is shared and renders are efficient. But the transitions themselves are still invisible — `store.toggleDone()` is a function call that mutates state and vanishes.
 
-**The wall**: You want undo/redo. But there's no record of what happened, nothing to reverse, nothing to replay.
+**The wall**: You want undo/redo — but there's no record of what happened, nothing to reverse, nothing to replay. Or you're debugging a weird state and wish you could see *what sequence of actions* led here. Or you want an AI agent to drive the UI, but there's no structured API — just opaque function calls. Or you want to log user behavior for analytics, but every action is a different method with different arguments.
 
 ---
 
 ## Level 3: Ops as Data — Redux's Insight
 
-In Level 2, `store.toggleDone()` directly changed state and disappeared — there was no lasting record of that change. A user toggles an item, realizes it was wrong, and reaches for Ctrl/Cmd+Z. Nothing happens.
+In Level 2, `store.toggleDone()` directly changed state and disappeared — there was no lasting record of that change. A user reaches for Ctrl/Cmd+Z and nothing happens. A bug report says "the list got into a weird state" and you have no event log to inspect. You want to automate the UI from a script or AI, but there's no structured vocabulary of actions — just ad-hoc function calls.
 
 **The fix**: make operations visible by turning them into data. Instead of calling functions that mutate state, call functions that produce a serializable description of *what happened*:
 
@@ -269,13 +269,13 @@ The examples above use index-based ops (`toggleDone, index: 2`), which work for 
 
 Behavior is data now — serializable, reversible, replayable. But our domain functions still perform I/O directly: saving to disk, showing notifications, fetching from APIs.
 
-**The wall**: Testing domain logic requires mocking all of it.
+**The wall**: Testing domain logic requires mocking every service it touches. Or you want the same domain logic on terminal, web, and server — but each platform has different I/O. Or a side effect fires at the wrong time during a refactor and you can't figure out why, because the effect is buried inside the function that triggered it.
 
 ---
 
 ## Level 4: Effects as Data — Elm's Insight
 
-In Level 3, we made state transitions visible. But functions like `toggleDone` still directly call `fs.writeFile()` and `showToast()` — so tests need a fake filesystem, a mock toast service, and a stub HTTP client. You spend more time maintaining test infrastructure than writing actual tests.
+In Level 3, we made state transitions visible. But functions like `toggleDone` still directly call `fs.writeFile()` and `showToast()` — so tests need a fake filesystem, a mock toast service, and a stub HTTP client. You want to run the same domain logic in a browser, but it's calling Node's `fs`. You refactor a handler and a toast fires unexpectedly because the side effect was buried three calls deep.
 
 **The fix** is the same trick as Level 3: make effects into data. Instead of *doing* I/O, domain functions *describe* what should happen. The only change: functions that need I/O return an `Effect[]`:
 
@@ -367,13 +367,13 @@ Notice the throughline: **every level turns something invisible into data**. Lev
 
 > **inkx**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. inkx also provides a standalone TEA store (`createStore()` from `inkx/store`) with plugin composition — see [Runtime Layers](runtime-layers.md).
 
-**The wall**: Your app has a board, a search dialog, a settings panel. They all live in one slice and it's getting unwieldy.
+**The wall**: Your app has a board, a search dialog, a settings panel — and they all live in one slice. Adding a search feature means touching the board's state shape. Two developers can't work on dialog and board without merge conflicts. A bug in settings breaks the cursor because they share the same `apply()`. The slice is 400 lines and growing.
 
 ---
 
 ## Level 5: Composing State Machines
 
-Up to now, all your ops and effects live in a single slice. Your app has a board, a search dialog, and a settings panel. They started as methods on one big slice, but now `Board.apply()` is 400 lines, search and settings keep stepping on each other's state, and every new feature risks breaking something unrelated.
+Up to now, all your ops and effects live in a single slice. Your app has a board, a search dialog, and a settings panel — and they keep stepping on each other. Adding search means modifying the board's op union. Two developers can't iterate on dialog and board independently. A bug fix in one area breaks another because they share state and a single `apply()`.
 
 **The fix:** Each area of concern becomes its own slice with its own state, ops, and `.apply()`. We call this combination a **state machine** — a slice + the state it operates on + the set of ops it accepts. (Not a formal statechart[^statecharts] with explicit states and guards — just a self-contained module with well-defined transitions. If your interactions grow complex enough to need the formalism, [XState](https://xstate.js.org/) provides it.)
 
