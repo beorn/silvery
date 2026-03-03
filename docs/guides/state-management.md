@@ -212,7 +212,7 @@ const TodoList = {
 
 The `switch` in `.apply()` is the type safety bridge — TypeScript's discriminated union[^discriminated-union] narrowing ensures that when `op.op` is `"moveCursor"`, the params are `{ delta: number }`. You get full type checking on both sides: callers construct a `TodoOp` (compile error if `delta` is missing), and the switch ensures exhaustive handling (compile error if you add an op variant but forget to handle it). No `any`, no runtime type checks — the union does all the work.
 
-The store exposes both calling conventions — direct methods for everyday code, `.apply()` for when you need the data:
+The store exposes both calling conventions — direct methods for everyday code, `.apply()` for when you need the data. (This example uses [signals](#appendix-a-scaling-with-signals) — `signal()` and `computed()` — for fine-grained reactivity. You can use plain Zustand `set()`/`get()` instead; the ops pattern works either way.)
 
 ```tsx
 const app = createApp(
