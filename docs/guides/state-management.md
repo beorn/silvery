@@ -235,9 +235,9 @@ store.apply({ op: "moveCursor", delta: 1 })       // as data (serializable)
 
 Both conventions produce the same serializable operation. `store.moveCursor({ delta: 1 })` routes through `.apply()` internally, so undo/replay/logging captures it either way.
 
-### The Domain Object
+### Extracting a Slice
 
-Pull the logic out of the store into a **domain object** — a plain TypeScript object where each function takes state and a params object, and `.apply()` dispatches by name:
+Pull the logic out of the store into a **slice** — a plain TypeScript object that owns a piece of state and the operations on it (same idea as Redux Toolkit's [`createSlice`](https://redux-toolkit.js.org/api/createSlice), but without the framework). Each function takes state and a params object, and `.apply()` dispatches by name:
 
 ```tsx
 type TodoOp =
@@ -310,9 +310,9 @@ function undo() {
 }
 ```
 
-Each domain object provides an `inverse(state, op)` that returns the op which would undo it — `setDone(id, true)` → `setDone(id, false)`. The stack is just an array of plain objects. Serializable, inspectable, trivial to persist.
+Each slice provides an `inverse(state, op)` that returns the op which would undo it — `setDone(id, true)` → `setDone(id, false)`. The stack is just an array of plain objects. Serializable, inspectable, trivial to persist.
 
-This is a pure pattern — no framework tooling needed. The domain object, op types, and `.apply()` dispatcher are plain TypeScript.
+This is a pure pattern — no framework tooling needed. The slice, op types, and `.apply()` dispatcher are plain TypeScript.
 
 **The wall**: Your app does I/O — saving to disk, showing notifications, fetching data. Testing domain logic requires mocking all of it.
 
@@ -411,15 +411,15 @@ Step back and look at what you have: `apply(state, op) → [new state, effects]`
 
 > **inkx**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. inkx also provides a standalone TEA store (`createStore()` from `inkx/store`) with plugin composition — see [Runtime Layers](runtime-layers.md).
 
-**The wall**: Your app has a board, a search dialog, a settings panel. They all live in one domain object and it's getting unwieldy.
+**The wall**: Your app has a board, a search dialog, a settings panel. They all live in one slice and it's getting unwieldy.
 
 ---
 
 ## Level 5: Composing State Machines
 
-Your app has a board, a search dialog, and a settings panel. They started as methods on one big domain object, but now `Board.apply()` is 400 lines, search and settings keep stepping on each other's state, and every new feature risks breaking something unrelated.
+Your app has a board, a search dialog, and a settings panel. They started as methods on one big slice, but now `Board.apply()` is 400 lines, search and settings keep stepping on each other's state, and every new feature risks breaking something unrelated.
 
-Each area of concern becomes its own domain object with its own state, ops, and `.apply()`. We call this combination a **state machine** — a domain object + the state it operates on + the set of ops it accepts.
+Each area of concern becomes its own slice with its own state, ops, and `.apply()`. We call this combination a **state machine** — a slice + the state it operates on + the set of ops it accepts.
 
 The key rule: **no state machine imports another**. They communicate through dispatch effects — the same pattern from Level 4:
 
