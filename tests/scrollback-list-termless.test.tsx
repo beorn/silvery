@@ -119,17 +119,17 @@ describe("frozen item border integrity → termless", () => {
     }
 
     // Verify borders: top, bottom, left, right
-    expect(term).toContainText("╭") // top-left
-    expect(term).toContainText("╮") // top-right
-    expect(term).toContainText("╰") // bottom-left
-    expect(term).toContainText("╯") // bottom-right
+    expect(term.buffer).toContainText("╭") // top-left
+    expect(term.buffer).toContainText("╮") // top-right
+    expect(term.buffer).toContainText("╰") // bottom-left
+    expect(term.buffer).toContainText("╯") // bottom-right
 
     // Verify content is inside the border
-    expect(term).toContainText("Agent 1")
-    expect(term).toContainText("First response")
+    expect(term.buffer).toContainText("Agent 1")
+    expect(term.buffer).toContainText("First response")
 
     // Verify right border specifically: each content row should have │ on both sides
-    const viewportText = term.getViewportText()
+    const viewportText = term.screen.getText()
     const lines = viewportText.split("\n").filter((l) => l.trim().length > 0)
 
     for (const line of lines) {
@@ -184,9 +184,9 @@ describe("frozen item border integrity → termless", () => {
     expect(bottomRightCount).toBe(3)
 
     // Verify each item's content is present
-    expect(term).toContainText("Agent 1")
-    expect(term).toContainText("Agent 2")
-    expect(term).toContainText("Agent 3")
+    expect(term.buffer).toContainText("Agent 1")
+    expect(term.buffer).toContainText("Agent 2")
+    expect(term.buffer).toContainText("Agent 3")
 
     term.close()
   })
@@ -218,7 +218,7 @@ describe("frozen item border integrity → termless", () => {
     }
 
     // The top border line should span close to COLS
-    const topBorderRow = term.getRowText(0)
+    const topBorderRow = term.row(0).getText()
     // Should start with ╭ and end with ╮
     expect(topBorderRow.startsWith("╭")).toBe(true)
     expect(topBorderRow.endsWith("╮")).toBe(true)
@@ -276,7 +276,7 @@ describe("high-count frozen items → termless", () => {
 
     // Verify each item's content is present
     for (let i = 1; i <= 10; i++) {
-      expect(term).toContainText(`Agent ${i}`)
+      expect(term.buffer).toContainText(`Agent ${i}`)
     }
 
     // Verify every content line has │ on both sides

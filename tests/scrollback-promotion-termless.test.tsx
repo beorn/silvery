@@ -97,7 +97,7 @@ describe("scrollback promotion → border integrity", () => {
     const liveBuf = makeLiveBuffer(COLS, ROWS, ["Footer: status ok"])
     const ansi1 = outputPhase(null, liveBuf, "inline", 0, ROWS)
     term.feed(ansi1)
-    expect(term).toContainText("Footer: status ok")
+    expect(term.screen).toContainText("Footer: status ok")
 
     // Freeze one item: render it, queue via promoteScrollback, then render
     const { ansi: frozen, lineCount } = await renderFrozen(<AgentCard id={1} text="First response" />, COLS)
@@ -115,8 +115,8 @@ describe("scrollback promotion → border integrity", () => {
     expect(text).toContain("╯")
 
     // Content should be inside borders
-    expect(term).toContainText("Agent 1")
-    expect(term).toContainText("First response")
+    expect(term.buffer).toContainText("Agent 1")
+    expect(term.buffer).toContainText("First response")
 
     // Content lines should have │ on both sides
     for (const line of text.split("\n")) {
@@ -159,9 +159,9 @@ describe("scrollback promotion → border integrity", () => {
     expect(countChar(text, "╯")).toBe(3)
 
     // All agents should be present
-    expect(term).toContainText("Agent 1")
-    expect(term).toContainText("Agent 2")
-    expect(term).toContainText("Agent 3")
+    expect(term.buffer).toContainText("Agent 1")
+    expect(term.buffer).toContainText("Agent 2")
+    expect(term.buffer).toContainText("Agent 3")
 
     // Every content line should have │ on both sides
     for (const line of text.split("\n")) {
@@ -215,7 +215,7 @@ describe("scrollback promotion → border integrity", () => {
     }
 
     // Check scrollback specifically — early items should be in scrollback
-    const scrollback = term.getScrollbackText()
+    const scrollback = term.scrollback.getText()
     expect(scrollback).toContain("Agent 1")
 
     // Every content line (in both scrollback and viewport) should have │ on both sides
@@ -317,8 +317,8 @@ describe("scrollback promotion → compaction (jump up)", () => {
     const ansi1 = outputPhase(null, buf1, "inline", 0, TERM_ROWS)
     term.feed(ansi1)
 
-    expect(term).toContainText("Agent 1")
-    expect(term).toContainText("Footer: status")
+    expect(term.buffer).toContainText("Agent 1")
+    expect(term.buffer).toContainText("Footer: status")
 
     // Now compact: freeze all 3 agents at once via renderStringSync
     let frozenContent = ""
@@ -339,7 +339,7 @@ describe("scrollback promotion → compaction (jump up)", () => {
     term.feed(ansi2)
 
     // After compaction, the viewport should show the compacting message
-    const viewportText = term.getViewportText()
+    const viewportText = term.screen.getText()
     expect(viewportText).toContain("Compacting")
     expect(viewportText).toContain("Footer: compacted")
 
@@ -373,7 +373,7 @@ describe("scrollback promotion → compaction (jump up)", () => {
     const buf1 = makeLiveBuffer(COLS, TERM_ROWS, ["Live content line 1", "Live content line 2", "Footer: running"])
     const ansi1 = outputPhase(null, buf1, "inline", 0, TERM_ROWS)
     term.feed(ansi1)
-    expect(term).toContainText("Footer: running")
+    expect(term.buffer).toContainText("Footer: running")
 
     // Frame 2: Compact — freeze 3 items
     let frozenContent = ""
@@ -399,7 +399,7 @@ describe("scrollback promotion → compaction (jump up)", () => {
     term.feed(ansi3)
 
     // The viewport should show the latest live content, not garbled content
-    const viewportText = term.getViewportText()
+    const viewportText = term.screen.getText()
     expect(viewportText).toContain("New live content")
     expect(viewportText).toContain("Footer: resumed")
 
@@ -414,7 +414,7 @@ describe("scrollback promotion → compaction (jump up)", () => {
     const ansi4 = outputPhase(buf3, buf4, "inline", 0, TERM_ROWS)
     term.feed(ansi4)
 
-    const viewport2 = term.getViewportText()
+    const viewport2 = term.screen.getText()
     expect(viewport2).toContain("Updated content")
     expect(viewport2).toContain("Footer: stable")
     // Old live content should NOT remain in viewport (it was overwritten)
@@ -468,7 +468,7 @@ describe("scrollback promotion → compaction (jump up)", () => {
     }
 
     // Footer should be visible in viewport
-    expect(term).toContainText("Footer: done")
+    expect(term.screen).toContainText("Footer: done")
 
     term.close()
   })
