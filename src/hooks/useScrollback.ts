@@ -110,38 +110,50 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
   frozenCountRef.current = frozenCount
 
   // Normal freeze path: write newly frozen items to scrollback.
-  // MUST be useLayoutEffect so frozen items are written to stdout BEFORE the
-  // output phase renders live content. With useEffect, frozen items would be
-  // written AFTER the output phase — appearing below live content, then erased
-  // as "leftover" lines on the next frame.
+  // In inline mode (run() runtime), uses the same clear+re-emit strategy as the
+  // resize path: reset output phase cursor tracking, clear the visible screen,
+  // re-emit ALL frozen items, then let the output phase render live content fresh
+  // below. This is necessary because the cursor is at the end of the previous
+  // frame's live content — writing frozen items at that position would interleave
+  // with stale live content.
+  //
+  // Without inline mode (test renderer, static rendering), just writes newly
+  // frozen items incrementally.
   useLayoutEffect(() => {
     const prev = prevFrozenCountRef.current
     if (frozenCount > prev) {
-      // Write newly frozen items to scrollback
-      let linesWritten = 0
-      for (let i = prev; i < frozenCount; i++) {
-        const { before, after } = resolveMarkers(markers, items[i]!, i)
+      const hasInlineRuntime = !!stdoutCtx?.resetInlineCursor
 
-        // Emit marker before the item (markers are control sequences, not visible lines)
-        if (before) stdout.write(before)
+      if (hasInlineRuntime) {
+        // Inline mode: clear screen and re-emit ALL frozen items
+        stdoutCtx.resetInlineCursor!()
+        stdout.write("\x1b[9999A\r\x1b[J")
 
-        const text = render(items[i]!, i) + "\n"
-        // Use \r\n instead of bare \n to cancel DECAWM pending-wrap state.
-        // When a line fills exactly terminal width, the cursor enters pending-
-        // wrap. A bare \n would cause a double line advance in some terminals.
-        // \r cancels pending-wrap by moving to column 0 first.
-        const normalized = text.replace(/\n/g, "\r\n")
-        stdout.write(normalized)
-        linesWritten += countNewlines(text)
-
-        // Store the rendered string for content-change detection
-        renderedStringsRef.current.set(i, text)
-
-        // Emit marker after the item
-        if (after) stdout.write(after)
+        let linesWritten = 0
+        for (let i = 0; i < frozenCount; i++) {
+          const { before, after } = resolveMarkers(markers, items[i]!, i)
+          if (before) stdout.write(before)
+          const text = render(items[i]!, i) + "\n"
+          stdout.write(text.replace(/\n/g, "\r\n"))
+          linesWritten += countNewlines(text)
+          renderedStringsRef.current.set(i, text)
+          if (after) stdout.write(after)
+        }
+        stdoutCtx.notifyScrollback!(linesWritten)
+      } else {
+        // Non-inline: write only newly frozen items
+        let linesWritten = 0
+        for (let i = prev; i < frozenCount; i++) {
+          const { before, after } = resolveMarkers(markers, items[i]!, i)
+          if (before) stdout.write(before)
+          const text = render(items[i]!, i) + "\n"
+          stdout.write(text.replace(/\n/g, "\r\n"))
+          linesWritten += countNewlines(text)
+          renderedStringsRef.current.set(i, text)
+          if (after) stdout.write(after)
+        }
+        stdoutCtx?.notifyScrollback?.(linesWritten)
       }
-      // Notify the scheduler so inline mode cursor positioning is correct
-      stdoutCtx?.notifyScrollback?.(linesWritten)
     }
     prevFrozenCountRef.current = frozenCount
   }, [frozenCount, items, render, stdout, stdoutCtx, markers])
