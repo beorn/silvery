@@ -848,7 +848,10 @@ function inlineFullRender(
   let output = prefix + bufferToAnsi(next, "inline", maxOutputLines)
 
   // Erase leftover lines if visible area shrank.
-  const lastOccupiedLine = cursorOffset
+  // Use prevOutputLines (the output phase's own lines) instead of cursorOffset
+  // (which includes scrollbackOffset). Lines beyond prevOutputLines contain
+  // frozen items written by useScrollback — those must NOT be erased.
+  const lastOccupiedLine = prevOutputLines - 1
   const nextLastLine = maxOutputLines - 1
   if (lastOccupiedLine > nextLastLine) {
     for (let y = nextLastLine + 1; y <= lastOccupiedLine; y++) {

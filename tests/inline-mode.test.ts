@@ -1165,3 +1165,108 @@ describe("Inline mode: resize buffer content after clear", () => {
     expect(out2).toContain("X-Line-C")
   })
 })
+
+// ============================================================================
+// Tests: Scrollback preservation (frozen items not erased)
+// ============================================================================
+
+describe("Inline mode: scrollback preservation", () => {
+  /** Count newline+carriage-return+erase sequences (\n\r\x1b[K) used for leftover erasure */
+  function countLeftoverErasures(output: string): number {
+    return (output.match(/\n\r\x1b\[K/g) ?? []).length
+  }
+
+  test("content shrink with scrollbackOffset only erases render region lines", () => {
+    // Frame 1: 4 lines of content (A..D)
+    const prev = new TerminalBuffer(10, 10)
+    fillBuffer(prev, 4) // A, B, C, D
+
+    // Frame 2: shrinks to 2 lines + scrollbackOffset=3
+    // (useScrollback wrote 3 frozen lines between frames)
+    const next = new TerminalBuffer(10, 10)
+    fillBuffer(next, 2) // A, B
+
+    const output = outputPhase(prev, next, "inline", 3)
+
+    // Leftover erasure should clear lines 2-3 (prevOutputLines=4, nextOutputLines=2)
+    // = exactly 2 erasures. NOT 4 erasures (which would include the scrollback region).
+    const erasures = countLeftoverErasures(output)
+    expect(erasures).toBe(2) // lines 2 and 3 of render region only
+  })
+
+  test("same-height content with scrollbackOffset produces no leftover erasure", () => {
+    const prev = new TerminalBuffer(10, 10)
+    fillBuffer(prev, 3) // A, B, C
+
+    const next = new TerminalBuffer(10, 10)
+    fillBuffer(next, 3, "X") // X, Y, Z
+
+    // scrollbackOffset=5 but content same height — no leftover lines to erase
+    const output = outputPhase(prev, next, "inline", 5)
+    const erasures = countLeftoverErasures(output)
+    expect(erasures).toBe(0)
+  })
+
+  test("content growth with scrollbackOffset produces no leftover erasure", () => {
+    const prev = new TerminalBuffer(10, 10)
+    fillBuffer(prev, 2) // A, B
+
+    const next = new TerminalBuffer(10, 10)
+    fillBuffer(next, 5, "a") // a, b, c, d, e
+
+    // scrollbackOffset=2, content grew — no leftover lines
+    const output = outputPhase(prev, next, "inline", 2)
+    const erasures = countLeftoverErasures(output)
+    expect(erasures).toBe(0)
+  })
+
+  test("createOutputPhase multi-frame: scrollback items survive across renders", () => {
+    const render = createOutputPhase({})
+
+    // Frame 1: 5 lines of content
+    const buf1 = new TerminalBuffer(20, 10)
+    fillBuffer(buf1, 5) // A..E
+    render(null, buf1, "inline")
+    // State: prevOutputLines=5
+
+    // Frame 2: same content + scrollbackOffset=3
+    // (useScrollback froze items between frames)
+    const buf2 = new TerminalBuffer(20, 10)
+    fillBuffer(buf2, 5, "a") // changed content
+    const out2 = render(buf1, buf2, "inline", 3)
+
+    // Cursor-up should account for scrollback: prevOutputLines-1 + scrollbackOffset = 4+3 = 7
+    const ups = extractCursorUp(out2)
+    expect(ups[0]).toBe(7)
+
+    // No leftover erasure (content same height)
+    const erasures = countLeftoverErasures(out2)
+    expect(erasures).toBe(0)
+  })
+
+  test("createOutputPhase: shrink after scrollback does not over-erase", () => {
+    const render = createOutputPhase({})
+
+    // Frame 1: 6 lines of content
+    const buf1 = new TerminalBuffer(20, 10)
+    fillBuffer(buf1, 6) // A..F
+    render(null, buf1, "inline")
+    // State: prevOutputLines=6
+
+    // Frame 2: shrinks to 3 lines + scrollbackOffset=4
+    // (useScrollback wrote 4 frozen lines between frames)
+    const buf2 = new TerminalBuffer(20, 10)
+    fillBuffer(buf2, 3, "x") // x, y, z
+
+    const out2 = render(buf1, buf2, "inline", 4)
+
+    // Cursor-up: prevOutputLines-1 + scrollbackOffset = 5+4 = 9
+    const ups = extractCursorUp(out2)
+    expect(ups[0]).toBe(9)
+
+    // Leftover erasure: prevOutputLines - nextOutputLines = 6 - 3 = 3 lines
+    // NOT cursorOffset - nextOutputLines = 9 - 3 = 6 lines (which would wipe frozen items)
+    const erasures = countLeftoverErasures(out2)
+    expect(erasures).toBe(3)
+  })
+})
