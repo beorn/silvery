@@ -187,17 +187,17 @@ batch(() => {
 
 Your todo list works. Now you want undo/redo. The problem: `store.toggleDone()` mutates state and is gone — you can't record what happened, replay it, or reverse it.
 
-The fix has one requirement: **function arguments must be plain objects** (not positional args). This is what makes them serializable — the params object *is* the operation payload:
+The fix has one requirement: **function arguments must be named params objects** (not positional args). This is what makes the params object double as the operation payload — add an `op` tag and you have a self-describing, serializable operation:
 
 ```tsx
-// Level 2 — positional args, can't serialize:
-store.moveCursor(1)
+// Level 2 — positional args:
+store.moveCursor(1)              // what is "1"? Need the signature to know.
 
-// Level 3 — params object, serializable:
-store.moveCursor({ delta: 1 })
+// Level 3 — named params:
+store.moveCursor({ delta: 1 })   // self-describing, extensible, IS the op payload
 ```
 
-With params as objects, both calling conventions work and produce the same serializable operation — `store.moveCursor({ delta: 1 })` routes through `.apply({ op: "moveCursor", delta: 1 })` internally, so undo/replay/logging captures it either way:
+With named params, both calling conventions produce the same serializable operation — `store.moveCursor({ delta: 1 })` routes through `.apply({ op: "moveCursor", delta: 1 })` internally, so undo/replay/logging captures it either way:
 
 ```tsx
 // These are equivalent:
