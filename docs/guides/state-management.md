@@ -187,7 +187,31 @@ batch(() => {
 
 Your todo list works. Now you want undo/redo. The problem: `store.toggleDone()` mutates state and is gone — you can't record what happened, replay it, or reverse it.
 
-The fix is to make operations into data — plain JSON objects the system can see. This means pulling logic out of the store into a domain object with params-object style functions and an `.apply()` dispatcher:
+The fix: instead of calling methods directly, call `store.apply()` with a data object that describes the operation:
+
+```tsx
+// Before (Level 2) — direct calls, invisible to the system:
+store.moveCursor(1)
+store.toggleDone()
+
+// After (Level 3) — operations as data, serializable:
+store.apply({ op: "moveCursor", delta: 1 })
+store.apply({ op: "toggleDone", index: 2 })
+```
+
+Now every user action is a plain JSON object — `{ op: "toggleDone", index: 2 }` — that you can record in a stack, `JSON.stringify()` to a log, replay from the beginning, or send over the wire.
+
+Both calling styles work — direct calls for simplicity, `.apply()` when you need serialization:
+
+```tsx
+// Direct (simple, type-safe)
+TodoList.moveCursor(state, { delta: 1 })
+
+// As data (serializable — undo, replay, log, send over wire)
+store.apply({ op: "moveCursor", delta: 1 })
+```
+
+To implement this, pull the logic out of the store into a domain object. Each function takes a params object (matching the op fields), and `.apply()` dispatches by name:
 
 ```tsx
 type TodoOp =
@@ -211,7 +235,7 @@ const TodoList = {
 }
 ```
 
-Now every user action is a serializable object — `{ op: "toggleDone", index: 2 }` — that you can record in a stack, replay from the beginning, or send over the wire. The store becomes a thin shell:
+The store becomes a thin shell that delegates to the domain object:
 
 ```tsx
 const app = createApp(
