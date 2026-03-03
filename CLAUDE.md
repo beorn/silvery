@@ -258,11 +258,11 @@ import { ThemeProvider, defaultDarkTheme, useTheme } from "inkx"
 </ThemeProvider>
 ```
 
-Any color prop starting with `$` is resolved against the active theme (e.g. `color="$primary"`, `backgroundColor="$raisedbg"`). Four built-in themes (dark/light x ANSI16/truecolor). Borders default to `$separator` when style is set without explicit color. Use `resolveThemeColor(color, theme)` for programmatic resolution, `generateTheme(primary, dark)` to derive all tokens from one primary color.
+Any color prop starting with `$` is resolved against the active theme (e.g. `color="$primary"`, `backgroundColor="$surface"`). Four built-in themes (dark/light x ANSI16/truecolor). Borders default to `$separator` when style is set without explicit color. Use `resolveThemeColor(color, theme)` for programmatic resolution, `generateTheme(primary, dark)` to derive all tokens from one primary color.
 
-**19 semantic tokens**: `$primary`, `$link`, `$control`, `$selected`, `$selectedfg`, `$focusring`, `$text`, `$text2`, `$text3`, `$text4`, `$bg`, `$raisedbg`, `$separator`, `$chromebg`, `$chromefg`, `$error`, `$warning`, `$success` + **16 palette colors** `$color0`–`$color15`.
+**19 semantic tokens**: `$primary`, `$link`, `$control`, `$selected`, `$selectedfg`, `$focusring`, `$text`, `$text2`, `$text3`, `$text4`, `$bg`, `$surface`, `$separator`, `$chromebg`, `$chromefg`, `$error`, `$warning`, `$success` + **16 palette colors** `$color0`–`$color15`.
 
-Backward-compat aliases: `$accent`→`$primary`, `$muted`→`$text2`, `$surface`→`$raisedbg`, `$background`→`$bg`, `$border`→`$separator`.
+Backward-compat aliases: `$accent`→`$primary`, `$muted`→`$text2`, `$raisedbg`→`$surface`, `$background`→`$bg`, `$border`→`$separator`.
 
 ## Layout Hooks
 

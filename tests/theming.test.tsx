@@ -63,7 +63,7 @@ describe("resolveThemeColor", () => {
       ["$text3", defaultDarkTheme.text3],
       ["$text4", defaultDarkTheme.text4],
       ["$bg", defaultDarkTheme.bg],
-      ["$raisedbg", defaultDarkTheme.raisedbg],
+      ["$surface", defaultDarkTheme.surface],
       ["$separator", defaultDarkTheme.separator],
       ["$error", defaultDarkTheme.error],
       ["$warning", defaultDarkTheme.warning],
@@ -138,8 +138,8 @@ describe("resolveThemeColor backward compat", () => {
     expect(resolveThemeColor("$muted", ansi16DarkTheme)).toBe(ansi16DarkTheme.text2)
   })
 
-  test("$surface resolves to theme.raisedbg", () => {
-    expect(resolveThemeColor("$surface", defaultDarkTheme)).toBe(defaultDarkTheme.raisedbg)
+  test("$raisedbg resolves to theme.surface (backward compat)", () => {
+    expect(resolveThemeColor("$raisedbg", defaultDarkTheme)).toBe(defaultDarkTheme.surface)
   })
 
   test("$background resolves to theme.bg", () => {
@@ -190,7 +190,7 @@ describe("default themes", () => {
       "text3",
       "text4",
       "bg",
-      "raisedbg",
+      "surface",
       "separator",
       "error",
       "warning",
@@ -443,7 +443,7 @@ describe("$token auto-resolution in color props", () => {
     expect(app.ansi).toContain(`38;2;${r};${g};${b}`)
   })
 
-  test("backward compat: $surface auto-resolves to raisedbg", () => {
+  test("Box backgroundColor='$surface' resolves against theme", () => {
     const app = render(
       <ThemeProvider theme={defaultDarkTheme}>
         <Box backgroundColor="$surface">
@@ -452,13 +452,13 @@ describe("$token auto-resolution in color props", () => {
       </ThemeProvider>,
     )
 
-    const { r, g, b } = hexToRgb(defaultDarkTheme.raisedbg)
+    const { r, g, b } = hexToRgb(defaultDarkTheme.surface)
     // Background uses 48;2;r;g;b
     expect(app.ansi).toContain(`48;2;${r};${g};${b}`)
     expect(stripAnsi(app.ansi)).toContain("content")
   })
 
-  test("Box backgroundColor='$raisedbg' resolves against theme", () => {
+  test("backward compat: $raisedbg auto-resolves to surface", () => {
     const app = render(
       <ThemeProvider theme={defaultDarkTheme}>
         <Box backgroundColor="$raisedbg">
@@ -467,7 +467,7 @@ describe("$token auto-resolution in color props", () => {
       </ThemeProvider>,
     )
 
-    const { r, g, b } = hexToRgb(defaultDarkTheme.raisedbg)
+    const { r, g, b } = hexToRgb(defaultDarkTheme.surface)
     expect(app.ansi).toContain(`48;2;${r};${g};${b}`)
     expect(stripAnsi(app.ansi)).toContain("content")
   })
@@ -517,7 +517,7 @@ describe("generateTheme", () => {
     expect(theme.text3).toBe("gray")
     expect(theme.text4).toBe("gray")
     expect(theme.bg).toBe("")
-    expect(theme.raisedbg).toBe("black")
+    expect(theme.surface).toBe("black")
     expect(theme.separator).toBe("gray")
     expect(theme.error).toBe("redBright")
     expect(theme.warning).toBe("yellow") // same as primary
@@ -535,7 +535,7 @@ describe("generateTheme", () => {
     expect(theme.focusring).toBe("blue") // light → blue
     expect(theme.text).toBe("black")
     expect(theme.text2).toBe("blackBright")
-    expect(theme.raisedbg).toBe("white")
+    expect(theme.surface).toBe("white")
     expect(theme.error).toBe("red")
     expect(theme.success).toBe("green")
   })

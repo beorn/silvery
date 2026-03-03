@@ -144,7 +144,7 @@ export function ModalDialog({
       height={height}
       borderStyle="double"
       borderColor={borderColor}
-      backgroundColor={"$raisedbg"}
+      backgroundColor={"$surface"}
       paddingX={2}
       paddingY={1}
     >

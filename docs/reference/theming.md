@@ -30,7 +30,7 @@ Any color prop on `Box` or `Text` that starts with `$` resolves against the acti
 | Prop              | Components | Example                       |
 | ----------------- | ---------- | ----------------------------- |
 | `color`           | Box, Text  | `color="$primary"`            |
-| `backgroundColor` | Box, Text  | `backgroundColor="$raisedbg"` |
+| `backgroundColor` | Box, Text  | `backgroundColor="$surface"` |
 | `borderColor`     | Box        | `borderColor="$separator"`    |
 | `outlineColor`    | Box        | `outlineColor="$focusring"`   |
 
@@ -71,7 +71,7 @@ explicit color, the theme's `$separator` token is used automatically.
 | Token        | Use                                        | ANSI 16 Dark | Truecolor Dark |
 | ------------ | ------------------------------------------ | ------------ | -------------- |
 | `$bg`        | Default background                         | (default)    | #2E3440        |
-| `$raisedbg`  | Dialogs, overlays, popovers                | black        | #3B4252        |
+| `$surface`   | Dialogs, overlays, popovers                | black        | #3B4252        |
 | `$separator` | Dividers, borders, rules                   | gray         | #4C566A        |
 | `$chromebg`  | Title bars, status bars (inverted bg)      | whiteBright  | #ECEFF4        |
 | `$chromefg`  | Text on chrome areas (inverted fg)         | black        | #2E3440        |
@@ -123,7 +123,7 @@ mathematical:
 - `text2` = text at 85% opacity
 - `text3` = text at 50% opacity
 - `text4` = text at 30% opacity
-- `raisedbg` = bg lightened 5% (dark mode) or darkened 3% (light mode)
+- `surface` = bg lightened 5% (dark mode) or darkened 3% (light mode)
 - `separator` = text at 20% opacity
 - `chromebg` = text color (inverted for use as background on title bars)
 - `chromefg` = bg color (inverted for use as text on title bars)
@@ -174,7 +174,7 @@ const myTheme: Theme = {
   text4: "#505050",
 
   bg: "#1A1A2E",
-  raisedbg: "#242440",
+  surface: "#242440",
   separator: "#3A3A5A",
 
   error: "#E74C3C",
@@ -226,7 +226,7 @@ function contrastFg(bg: string): string {
 | `text2`      | `withOpacity(text, bg, 0.85)`                        |
 | `text3`      | `withOpacity(text, bg, 0.50)`                        |
 | `text4`      | `withOpacity(text, bg, 0.30)`                        |
-| `raisedbg`   | `lighten(bg, 5%)` (dark) or `darken(bg, 3%)` (light) |
+| `surface`    | `lighten(bg, 5%)` (dark) or `darken(bg, 3%)` (light) |
 | `separator`  | `withOpacity(text, bg, 0.20)`                        |
 | `chromebg`   | `text` (inverted: text color becomes background)     |
 | `chromefg`   | `bg` or `contrastFg(chromebg)` (dark on light)       |
@@ -289,7 +289,7 @@ Old token names from v1 are aliased automatically:
 | ------------- | ------------ |
 | `$accent`     | `$primary`   |
 | `$muted`      | `$text2`     |
-| `$surface`    | `$raisedbg`  |
+| `$raisedbg`   | `$surface`   |
 | `$background` | `$bg`        |
 | `$border`     | `$separator` |
 
