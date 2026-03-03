@@ -16,7 +16,7 @@ keypress → store.apply(op) → domain logic → [new state, effects] → effec
 |-------|---------------------|-------------|
 | **1 — Local** | Starting out | Just React |
 | **2 — Shared** | Multiple components need the same state, or prop drilling is painful | Centralized store, selective re-renders |
-| **3 — Ops as Data** *(Redux's insight)* | You want undo, logging, debugging, AI automation, or replay | Serializable operations |
+| **3 — Ops as Data** *(Redux's insight)* | You want undo, logging, middleware, collaboration, AI automation, or replay | Serializable operations |
 | **4 — Effects as Data** *(Elm's insight)* | You want tests without mocks, cross-platform logic, or visible side effects | Pure domain logic, swappable I/O |
 | **5 — Composition** | Multiple concerns stepping on each other, or teams working on the same store | State machines that talk through data |
 
@@ -142,13 +142,13 @@ As your app grows, selectors show their cost — Zustand runs *every* selector o
 
 State is shared and renders are efficient. But the transitions themselves are still invisible — `store.toggleDone()` is a function call that mutates state and vanishes.
 
-**The wall**: You want undo/redo — but there's no record of what happened, nothing to reverse, nothing to replay. Or you're debugging a weird state and wish you could see *what sequence of actions* led here. Or you want an AI agent to drive the UI, but there's no structured API — just opaque function calls. Or you want to log user behavior for analytics, but every action is a different method with different arguments.
+**The wall**: You want undo/redo — but there's no record of what happened, nothing to reverse, nothing to replay. Or you're debugging a weird state and wish you could see *what sequence of actions* led here. Or you want multiple independent concerns (analytics, error tracking, persistence) to react to the same user action without coupling them together. Or you want an AI agent to drive the UI, but there's no structured API — just opaque function calls. Or you want to serialize the entire action history for bug reports, SSR hydration, or session replay.
 
 ---
 
 ## Level 3: Ops as Data — Redux's Insight
 
-In Level 2, `store.toggleDone()` directly changed state and disappeared — there was no lasting record of that change. A user reaches for Ctrl/Cmd+Z and nothing happens. A bug report says "the list got into a weird state" and you have no event log to inspect. You want to automate the UI from a script or AI, but there's no structured vocabulary of actions — just ad-hoc function calls.
+In Level 2, `store.toggleDone()` directly changed state and disappeared — there was no lasting record of that change. A user reaches for Ctrl/Cmd+Z and nothing happens. A bug report says "the list got into a weird state" and you have no event log to inspect. You want analytics, error tracking, and persistence to all react when a todo is toggled — but they're coupled to the toggle function. You want to automate the UI from a script or AI, but there's no structured vocabulary of actions — just ad-hoc function calls.
 
 **The fix**: make operations visible by turning them into data. Instead of calling functions that mutate state, call functions that produce a serializable description of *what happened*:
 
@@ -163,10 +163,12 @@ These are just JSON — plain objects you can inspect, store, and manipulate. On
 - **Time-travel debugging** — record every op, scrub back and forth through app history like [Redux DevTools](https://github.com/reduxjs/redux-devtools)
 - **Logging & audit trails** — `JSON.stringify(op)` — see exactly what the user did, when, in what order
 - **Bug reproduction** — save an op sequence from production, replay it locally to reproduce the exact bug
+- **Middleware & cross-cutting concerns** — analytics, error tracking, auth checks, persistence all observe the same op stream without coupling to individual handlers
 - **AI automation** — ops are structured data — an LLM can drive your app by emitting ops
-- **Collaboration** — send ops over the wire to other clients
+- **Collaboration** — send ops over the wire to other clients; ops are the natural unit of real-time sync
+- **Predictability** — all state changes flow through one code path (`apply`), so there's exactly one place to trace, intercept, or validate transitions
+- **Serialization** — persist the entire action history, hydrate state from a snapshot, or send a session recording as a bug report
 - **Testing** — assert on what ops were produced, not on internal state mutations
-- **DevTools** — feed ops into [Redux DevTools](https://github.com/reduxjs/redux-devtools) for a visual time-travel debugger, or build your own — you have the full event log
 
 None of this is possible when operations are function calls that vanish after execution. This is the key mental shift: you're no longer *calling behavior* — you're *describing intent*. The store becomes a deterministic interpreter that processes descriptions, not a bag of functions that performs actions.
 
