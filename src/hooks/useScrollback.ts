@@ -9,9 +9,10 @@
  * so that cursor positioning accounts for the displacement.
  *
  * On terminal resize (width change), clears the visible screen and
- * re-emits all frozen items at the new width. This is necessary because
- * the output phase clears the visible screen on resize, wiping any
- * frozen items that were visible.
+ * re-emits frozen items that were visible at the new width. Items that
+ * have scrolled into terminal scrollback are not re-emitted (they can't
+ * be modified — the terminal owns them). This prevents duplicate entries
+ * at different widths when resizing multiple times.
  *
  * Supports optional OSC 133 semantic markers for terminal prompt navigation
  * (Cmd+Up/Cmd+Down in iTerm2, Kitty, WezTerm, Ghostty).
@@ -99,6 +100,12 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
   const renderedStringsRef = useRef<Map<number, string>>(new Map())
   const prevWidthRef = useRef(width)
 
+  // Track cumulative frozen line count for visible-range calculation on resize.
+  // This is the total number of terminal lines occupied by all frozen items.
+  // Used to determine which items have scrolled into terminal scrollback (and
+  // therefore can't be re-emitted — the terminal owns them).
+  const totalFrozenLinesRef = useRef(0)
+
   // Refs for current values — avoid stale closures in useLayoutEffect
   const renderRef = useRef(render)
   renderRef.current = render
@@ -135,6 +142,7 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
           renderedStringsRef.current.set(i, text)
           if (after) frozenContent += after
         }
+        totalFrozenLinesRef.current += linesWritten
         stdoutCtx.promoteScrollback(frozenContent, linesWritten)
       } else {
         // Non-inline / legacy: write only newly frozen items directly
@@ -148,17 +156,27 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
           renderedStringsRef.current.set(i, text)
           if (after) stdout.write(after)
         }
+        totalFrozenLinesRef.current += linesWritten
         stdoutCtx?.notifyScrollback?.(linesWritten)
       }
     }
     prevFrozenCountRef.current = frozenCount
   }, [frozenCount, items, render, stdout, stdoutCtx, markers])
 
-  // Resize path: re-emit frozen items when width changes.
-  // On resize, the output phase clears the entire visible screen before rendering
-  // live content. Frozen items visible on screen get wiped. We MUST re-emit them
-  // before the output phase runs, regardless of whether content changed at the new width.
-  // Uses useLayoutEffect so it fires BEFORE the pipeline generates live content.
+  // Resize path: re-emit VISIBLE frozen items when width changes.
+  //
+  // On resize, the visible screen is cleared and live items are re-rendered by
+  // the output phase. Frozen items on the visible screen are wiped and must be
+  // re-emitted at the new width. Items that have scrolled into terminal scrollback
+  // (above the visible area) CANNOT be modified — the terminal owns them. We must
+  // not re-emit those items, otherwise duplicates appear at different widths each
+  // time the user resizes.
+  //
+  // Strategy:
+  // 1. Use totalFrozenLinesRef to know how many total frozen lines exist
+  // 2. Read the output phase's cursor row to estimate live content height
+  // 3. Compute which frozen items are on the visible screen
+  // 4. Only re-emit those items at the new width
   useLayoutEffect(() => {
     // Skip if no width prop (no resize tracking)
     if (width === undefined) return
@@ -175,15 +193,52 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
     const currentRender = renderRef.current
     const currentMarkers = markersRef.current
 
-    // Re-render each frozen item at the new width
-    const newStrings: Map<number, string> = new Map()
-    for (let i = 0; i < currentFrozenCount; i++) {
-      newStrings.set(i, currentRender(currentItems[i]!, i) + "\n")
+    // Determine which frozen items are on the visible screen (not in scrollback).
+    // Items in terminal scrollback can't be modified — re-emitting them creates duplicates.
+    const termRows = (stdout as { rows?: number }).rows ?? 24
+
+    // Read live content height BEFORE resetting inline cursor state
+    const liveCursorRow = stdoutCtx?.getInlineCursorRow?.() ?? -1
+    const liveEstimate = liveCursorRow >= 0 ? liveCursorRow + 1 : 1
+
+    // Frozen lines that have scrolled into terminal scrollback
+    const totalFrozen = totalFrozenLinesRef.current
+    const frozenLinesInScrollback = Math.max(0, totalFrozen + liveEstimate - termRows)
+
+    // Find the first frozen item that is (at least partially) on the visible screen
+    let firstVisibleItem = 0
+    if (frozenLinesInScrollback > 0) {
+      let cumLines = 0
+      for (let i = 0; i < currentFrozenCount; i++) {
+        const prevText = renderedStringsRef.current.get(i)
+        cumLines += prevText ? countNewlines(prevText) : 1
+        if (cumLines > frozenLinesInScrollback) {
+          firstVisibleItem = i
+          break
+        }
+      }
+      // If ALL frozen items are in scrollback, nothing to re-emit
+      if (cumLines <= frozenLinesInScrollback) {
+        // Still need to update stored strings for future renders
+        for (let i = 0; i < currentFrozenCount; i++) {
+          renderedStringsRef.current.set(i, currentRender(currentItems[i]!, i) + "\n")
+        }
+        // Recompute totalFrozenLines at new width
+        let newTotal = 0
+        for (let i = 0; i < currentFrozenCount; i++) {
+          newTotal += countNewlines(renderedStringsRef.current.get(i)!)
+        }
+        totalFrozenLinesRef.current = newTotal
+        prevFrozenCountRef.current = currentFrozenCount
+        return
+      }
     }
 
-    // Always re-emit: the output phase will clear the visible screen on resize,
-    // wiping any frozen items that are visible. We must re-emit them first.
-    // (Content-change detection only determines whether to update stored strings.)
+    // Re-render visible frozen items at the new width
+    const newStrings: Map<number, string> = new Map()
+    for (let i = firstVisibleItem; i < currentFrozenCount; i++) {
+      newStrings.set(i, currentRender(currentItems[i]!, i) + "\n")
+    }
 
     // 1. Reset output phase cursor tracking
     stdoutCtx?.resetInlineCursor?.()
@@ -194,9 +249,9 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
     //    \x1b[J erases from cursor to end of screen
     stdout.write("\x1b[9999A\r\x1b[J")
 
-    // 3. Re-emit all frozen items at new width
+    // 3. Re-emit only VISIBLE frozen items at new width
     let linesWritten = 0
-    for (let i = 0; i < currentFrozenCount; i++) {
+    for (let i = firstVisibleItem; i < currentFrozenCount; i++) {
       const { before, after } = resolveMarkers(currentMarkers, currentItems[i]!, i)
 
       if (before) stdout.write(before)
@@ -211,10 +266,23 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
     // 4. Notify scheduler about scrollback displacement
     stdoutCtx?.notifyScrollback?.(linesWritten)
 
-    // 5. Update stored strings
-    renderedStringsRef.current = newStrings
+    // 5. Update stored strings for visible items (keep old strings for scrollback items)
+    for (const [i, text] of newStrings) {
+      renderedStringsRef.current.set(i, text)
+    }
+    // Also update scrollback items' strings at new width for future resize calculations
+    for (let i = 0; i < firstVisibleItem; i++) {
+      renderedStringsRef.current.set(i, currentRender(currentItems[i]!, i) + "\n")
+    }
 
-    // 6. Sync prevFrozenCountRef so the freeze useLayoutEffect doesn't
+    // 6. Recompute total frozen lines (mix of old-width scrollback + new-width visible)
+    let newTotal = 0
+    for (let i = 0; i < currentFrozenCount; i++) {
+      newTotal += countNewlines(renderedStringsRef.current.get(i)!)
+    }
+    totalFrozenLinesRef.current = newTotal
+
+    // 7. Sync prevFrozenCountRef so the freeze useLayoutEffect doesn't
     //    re-write items we just emitted.
     //    This prevents double-writes when resize + compact happen in the same frame.
     prevFrozenCountRef.current = currentFrozenCount
