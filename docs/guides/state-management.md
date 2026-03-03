@@ -1,19 +1,21 @@
 # State Management
 
-> inkx composes [Zustand](https://github.com/pmndrs/zustand) (store + React hooks) with optional [Preact Signals](https://github.com/preactjs/signals) (fine-grained reactivity). Pick the right tool for each problem.
+> Start simple. Add structure when complexity demands it.
+
+inkx composes [Zustand](https://github.com/pmndrs/zustand) (store + React hooks) with optional [Preact Signals](https://github.com/preactjs/signals) (fine-grained reactivity). This guide walks through the progression — each section builds on the previous code.
 
 | Level | inkx API | What you get |
 |-------|----------|-------------|
 | **1 — Component** | `run()` + `useState` | Local state, no abstractions |
-| **2 — Shared** | `createApp()` + `useApp()` | Shared store, centralized keys, optional signals |
+| **2 — Shared** | `createApp()` + `useApp()` | Shared store, centralized keys |
 | **3 — Ops as Data** | + domain objects with `.apply()` | Undo/redo, replay, AI automation |
 | **4 — Effects as Data** | + `effects` option in `createApp()` | Testable I/O, swappable runners |
 
-Most apps only need Level 2. For the "as data" architecture behind Levels 3-4, see [Operations and Effects as Data](as-data-patterns.md).
+Most apps only need Level 2. Levels 3-4 follow a general architecture pattern described in [Operations and Effects as Data](as-data-patterns.md).
 
-## Level 1: Component State
+## Your First App
 
-State lives in individual components — just React.
+A counter. State lives in the component — just React.
 
 ```tsx
 import { run, useInput } from "inkx/runtime"
@@ -33,11 +35,13 @@ function Counter() {
 await run(<Counter />)
 ```
 
-Good for single-component apps, prototypes, and simple tools.
+This works until a second component needs the same state.
 
-## Level 2: Shared State
+## Sharing State
 
-`createApp()` gives you a Zustand store shared across all components, centralized key handling, terminal I/O, and exit handling — all bundled into `app.run(<Component />)`.
+The counter grows into a todo list. A sidebar shows the count of done items while the main view shows the list. Both need the same data.
+
+`createApp()` gives you a Zustand store shared across all components, centralized key handling, terminal I/O, and exit handling — all bundled into `app.run(<Component />)`:
 
 ```tsx
 import { createApp, useApp } from "inkx/runtime"
@@ -45,83 +49,117 @@ import { createApp, useApp } from "inkx/runtime"
 const app = createApp(
   () => (set, get) => ({
     cursor: 0,
-    items: ["first", "second", "third"],
+    items: [
+      { text: "Buy milk", done: false },
+      { text: "Write docs", done: true },
+      { text: "Fix bug", done: false },
+    ],
     moveCursor(delta: number) {
       set(s => ({ cursor: clamp(s.cursor + delta, 0, s.items.length - 1) }))
+    },
+    toggleDone() {
+      set(s => ({
+        items: s.items.map((item, i) =>
+          i === s.cursor ? { ...item, done: !item.done } : item
+        ),
+      }))
     },
   }),
   {
     key(input, key, { store }) {
       if (input === "j") store.moveCursor(1)
       if (input === "k") store.moveCursor(-1)
+      if (input === "x") store.toggleDone()
       if (input === "q") return "exit"
     },
   },
 )
+```
 
-function ItemList() {
+Components access the store via `useApp(selector)`. The selector tells Zustand which slice to watch — `useApp(s => s.cursor)` re-renders only when the cursor changes, not when items change:
+
+```tsx
+function TodoList() {
   const cursor = useApp(s => s.cursor)
   const items = useApp(s => s.items)
   return (
     <Box flexDirection="column">
       {items.map((item, i) => (
-        <Text key={item} color={cursor === i ? "cyan" : undefined}>
+        <Text key={item.text} color={cursor === i ? "cyan" : undefined}>
           {cursor === i ? "> " : "  "}
-          {item}
+          {item.done ? "[x] " : "[ ] "}
+          {item.text}
         </Text>
       ))}
     </Box>
   )
 }
 
-await app.run(<ItemList />)
-```
-
-Components access the store via `useApp(selector)`. The selector tells Zustand which slice to watch — `useApp(s => s.cursor)` re-renders only when cursor changes.
-
-### Reactivity: Selectors vs Signals
-
-Consider a table with 10,000 rows. Each `<Row>` component needs the row data and whether it's selected. With plain Zustand:
-
-```tsx
-function Row({ id }: { id: string }) {
-  const data = useApp(s => s.rows.get(id))
-  const selected = useApp(s => s.cursor === id)
-  return <Text inverse={selected}>{data.text}</Text>
+function StatusBar() {
+  const items = useApp(s => s.items)
+  const done = items.filter(i => i.done).length
+  return <Text dimColor>{done}/{items.length} done</Text>
 }
+
+await app.run(
+  <Box flexDirection="column">
+    <TodoList />
+    <StatusBar />
+  </Box>
+)
 ```
 
-This works correctly — each Row re-renders only when its selectors return different values. But Zustand runs *every* selector on *every* store update. Move the cursor once → 10,000 selector calls, two return different values, two rows re-render. The diffing is cheap per call, but scales linearly with mounted components.
+This is enough for most apps — dashboards, file browsers, list views, dialogs.
 
-**Signals** flip this. Instead of "tell me what you read" (selectors), components just read `.value` and automatically subscribe to exactly what they touched:
+## Adding Signals
+
+As your app grows, selectors start to show their cost. Zustand runs *every* selector on *every* store update — if you have 100 `<Row>` components each with `useApp(s => s.rows.get(id))`, that's 100 selector calls every time the cursor moves, even though only 2 rows actually need to re-render.
+
+Signals flip this. Instead of declaring what you read (selectors), components just read `.value` and automatically subscribe to exactly what they touched — no diffing, no linear scan:
 
 ```tsx
+import { createApp, useApp } from "inkx/runtime"
 import { signal, computed } from "@preact/signals-core"
 
 const app = createApp(
   () => {
-    const cursor = signal<string>("row-0")
-    const rows = signal(new Map<string, RowData>())
+    const cursor = signal(0)
+    const items = signal([
+      { text: "Buy milk", done: false },
+      { text: "Write docs", done: true },
+      { text: "Fix bug", done: false },
+    ])
+    const doneCount = computed(() => items.value.filter(i => i.done).length)
 
     return {
       cursor,
-      rows,
-      currentRow: computed(() => rows.value.get(cursor.value)),
-      moveCursor(id: string) { cursor.value = id },
+      items,
+      doneCount,
+      moveCursor(delta: number) {
+        cursor.value = clamp(cursor.value + delta, 0, items.value.length - 1)
+      },
+      toggleDone() {
+        const i = cursor.value
+        items.value = items.value.map((item, j) =>
+          j === i ? { ...item, done: !item.done } : item
+        )
+      },
     }
   },
   {
     key(input, key, { store }) {
-      if (input === "j") store.moveCursor(nextId)
+      if (input === "j") store.moveCursor(1)
+      if (input === "k") store.moveCursor(-1)
+      if (input === "x") store.toggleDone()
       if (input === "q") return "exit"
     },
   },
 )
 ```
 
-`signal()` creates reactive state. `computed()` derives from other signals — `currentRow` recomputes only when `cursor` or `rows` change. Move the cursor → only components reading `cursor` re-render. No selector diffing, no linear scan.
+`signal()` creates reactive state. `computed()` derives from other signals — `doneCount` recomputes only when `items` changes, not when cursor moves. This is the same model as SolidJS, Vue 3, and the [TC39 Signals proposal](https://github.com/tc39/proposal-signals).
 
-inkx bridges signals and Zustand with a middleware — when any signal's `.value` changes, Zustand subscribers are also notified. Both subscription models work side by side.
+inkx bridges signals and Zustand with a middleware — when any signal's `.value` changes, Zustand subscribers are also notified. Both subscription models work side by side: signal `.value` reads (automatic) and `useApp(s => s.cursor.value)` selectors (familiar).
 
 When updating multiple signals at once, wrap in `batch()` so the bridge fires once:
 
@@ -129,44 +167,16 @@ When updating multiple signals at once, wrap in `batch()` so the bridge fires on
 import { batch } from "@preact/signals-core"
 
 batch(() => {
-  cursor.value = "row-0"
-  rows.value = newRows
+  cursor.value = 0
+  items.value = newItems
   filter.value = ""
 })
 // → single Zustand notification, single re-render
 ```
 
-**At scale (10,000+ items)**, combine per-entity signals with `VirtualList` — only ~50 visible rows are mounted, and each row's signal is independent:
+## Extracting Domain Functions
 
-```tsx
-const app = createApp(
-  () => {
-    const cursor = signal<string>("row-0")
-    const rows = new Map<string, Signal<RowData>>()  // per-entity signals
-
-    return {
-      cursor,
-      rows,
-      currentRow: computed(() => rows.get(cursor.value)?.value),
-      updateRow(id: string, data: RowData) {
-        const s = rows.get(id)
-        if (s) s.value = data  // only this row's subscribers re-render
-      },
-      removeRow(id: string) {
-        rows.delete(id)  // clean up — stale signals keep being watched
-      },
-    }
-  },
-)
-```
-
-Edit one row → 1 re-render. Move cursor → 2 re-renders (old + new). O(visible), not O(total).
-
-**You don't need this for most apps.** A few top-level signals in the store handles dozens of components fine. Reach for `Map<string, Signal<T>>` when you have per-entity state with many concurrent subscribers — typically virtualized lists, tree views, or document editors.
-
-### Extracting domain functions
-
-As your store grows, pull transition logic into a domain object for testability:
+The store is getting complex. Pull transition logic into a domain object so you can test it without React, without a store, without mocks:
 
 ```tsx
 const TodoList = {
@@ -180,52 +190,97 @@ const TodoList = {
   },
 }
 
-// Test without React, store, or mocks:
 test("moveCursor clamps at bottom", () => {
-  const s = { cursor: signal(2), items: signal(["a", "b", "c"]) }
+  const s = {
+    cursor: signal(2),
+    items: signal([{ text: "a", done: false }, { text: "b", done: false }, { text: "c", done: false }]),
+  }
   TodoList.moveCursor(s, 1)
   expect(s.cursor.value).toBe(2) // clamped
 })
 ```
 
-Domain functions mutate signals but perform no I/O — deterministic, no external side effects, fully testable. Think Immer reducers: pure from the outside, internally mutative. This is intentional — signals are designed as long-lived mutable containers.
+The domain functions mutate signals but perform no I/O — deterministic, fully testable. Think Immer reducers: pure from the outside, internally mutative.
 
-## Levels 3-4: Ops and Effects as Data
-
-inkx's `createApp()` supports two additional patterns from the [ops and effects architecture](as-data-patterns.md):
-
-**Level 3 — Operations as data**: Domain functions take params objects instead of positional args (`delta` becomes `{ delta }`), making operations serializable. An `.apply(state, op)` method dispatches op objects to named functions. This enables undo/redo, replay, logging, and AI automation.
-
-**Level 4 — Effects as data**: Domain functions return `Effect[]` — plain objects describing side effects. inkx's effects middleware intercepts these returns and routes them to declared runners:
+The store becomes a thin shell that wires domain functions to keys:
 
 ```tsx
 const app = createApp(
   () => {
-    const state = { cursor: signal(0), items: signal<Item[]>([]) }
+    const state = {
+      cursor: signal(0),
+      items: signal<Item[]>([...]),
+    }
     return {
       ...state,
-      apply: (op: TodoOp) => TodoList.apply(state, op),
+      doneCount: computed(() => state.items.value.filter(i => i.done).length),
+      moveCursor: (d: number) => TodoList.moveCursor(state, d),
+      toggleDone: () => TodoList.toggleDone(state, state.cursor.value),
     }
   },
   {
-    effects: {
-      persist: async ({ data }) => { await fs.writeFile("data.json", JSON.stringify(data)) },
-      toast: ({ message }) => { showToast(message) },
-    },
     key(input, key, { store }) {
-      if (input === "j") store.apply({ op: "moveCursor", delta: 1 })
-      if (input === "x") store.apply({ op: "toggleDone", index: store.cursor.value })
+      if (input === "j") store.moveCursor(1)
+      if (input === "k") store.moveCursor(-1)
+      if (input === "x") store.toggleDone()
       if (input === "q") return "exit"
     },
   },
 )
 ```
 
-See [Operations and Effects as Data](as-data-patterns.md) for the full pattern, examples, and prior art.
+This is where most apps stop. The next two levels add structure for undo/redo and testable I/O — see [Operations and Effects as Data](as-data-patterns.md) for the full pattern. The short version:
 
-## Composing Machines in a Store
+**Level 3 — Ops as data**: Change `moveCursor(s, delta)` to `moveCursor(s, { delta })` — params objects instead of positional args. Add an `.apply(state, { op: "moveCursor", delta: 1 })` dispatcher. Operations become serializable JSON, enabling undo/redo, replay, logging, and AI automation.
 
-Multiple domain objects share a single `createApp()` store. Each owns its slice of signal state:
+**Level 4 — Effects as data**: Domain functions return `Effect[]` — plain objects like `{ effect: "persist", data: items }`. inkx's effects middleware intercepts these returns and routes them to declared runners:
+
+```tsx
+const app = createApp(
+  () => { ... },
+  {
+    effects: {
+      persist: async ({ data }) => { await fs.writeFile("data.json", JSON.stringify(data)) },
+      toast: ({ message }) => { showToast(message) },
+    },
+    key(input, key, { store }) { ... },
+  },
+)
+```
+
+## Scaling
+
+For most apps, a few top-level signals in the store is all you need. At scale (1,000+ items), two techniques help:
+
+**Per-entity signals** — `Map<string, Signal<T>>` gives each item its own signal. Edit one item → only that item's subscribers re-render:
+
+```tsx
+const app = createApp(
+  () => {
+    const cursor = signal<string>("item-0")
+    const items = new Map<string, Signal<ItemData>>()
+
+    return {
+      cursor,
+      items,
+      currentItem: computed(() => items.get(cursor.value)?.value),
+      updateItem(id: string, data: ItemData) {
+        const s = items.get(id)
+        if (s) s.value = data  // only this item's subscribers re-render
+      },
+      removeItem(id: string) {
+        items.delete(id)  // clean up — stale signals keep being watched
+      },
+    }
+  },
+)
+```
+
+**VirtualList** — only mount the ~50 visible items. Combined with per-entity signals: edit one item → 1 re-render. Move cursor → 2 re-renders. O(visible), not O(total).
+
+## Composing Machines
+
+For complex apps, decompose into independent domain objects that each own a slice of signal state. All share a single `createApp()` store:
 
 ```tsx
 const app = createApp(
@@ -266,7 +321,7 @@ function SearchBar() {
 }
 ```
 
-One store, multiple machines, fine-grained subscriptions.
+Machines communicate through dispatch effects (see [Composing Machines](as-data-patterns.md#composing-machines)) — no machine imports another.
 
 ## See Also
 

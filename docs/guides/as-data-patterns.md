@@ -1,20 +1,20 @@
 # Operations and Effects as Data
 
-> You can only manipulate what you can see. Each level makes one more thing visible to the system.
+> You can only manipulate what you can see.
 
-This guide describes a general architecture pattern for interactive applications — not specific to inkx or any framework. The idea: progressively reify your app's behavior into plain data objects so the system can inspect, record, and replay what happens.
+This guide describes a general architecture pattern for interactive applications — not specific to inkx or any framework. The idea: progressively turn your app's behavior into plain data objects so the system can inspect, record, and replay what happens.
 
-| Level | What becomes data | What the system can now do |
-|-------|-------------------|---------------------------|
-| **State** | Values in memory | Share, observe, derive, persist |
-| **Operations** | What users do | Undo/redo, replay, log, AI automation, collaboration |
-| **Effects** | What happens next | Test I/O without mocking, swap runners, serialize side effects |
+| What becomes data | What the system can now do |
+|-------------------|---------------------------|
+| **State** | Share, observe, derive, persist |
+| **Operations** | Undo/redo, replay, log, AI automation, collaboration |
+| **Effects** | Test I/O without mocking, swap runners, serialize side effects |
 
 Most apps only need shared state. Reach for ops-as-data when you need undo or replay. Reach for effects-as-data when you need testable I/O.
 
 ## Operations as Data
 
-Start with plain domain functions:
+Start with plain domain functions — state in, mutation out:
 
 ```typescript
 const Tasks = {
@@ -26,14 +26,13 @@ const Tasks = {
   },
 }
 
-// Call directly
 Tasks.moveCursor(state, 1)
 Tasks.toggleDone(state, 3)
 ```
 
-This works fine — but the system can't see what happened. It only sees that state changed. No undo, no replay, no logging.
+This works — but the system can't see what happened. It only sees that state changed. You can't undo, replay, or log what the user did.
 
-**Make it data**: switch from positional args to a params object, add a discriminator field. The operation *is* the params with an `op` tag:
+**The fix**: switch from positional args to a params object, add a discriminator field. The operation *is* the params with an `op` tag:
 
 ```typescript
 type TaskOp =
@@ -55,7 +54,7 @@ const Tasks = {
 }
 ```
 
-Both calling styles work:
+Both calling styles work — direct calls for simplicity, `.apply()` when you need serialization:
 
 ```typescript
 // Direct (simple, type-safe)
@@ -79,7 +78,7 @@ Ops are just JSON — plain objects with a discriminator and named params. Same 
 
 ## Effects as Data
 
-Domain functions that do I/O are hard to test — you need mocks, stubs, and async. But what if they just *described* what should happen?
+Domain functions that do I/O are hard to test — you need mocks, stubs, and async. The same trick works: instead of *doing* the side effect, *describe* it as data.
 
 ```typescript
 type Effect =
@@ -116,7 +115,6 @@ const runners = {
   toast: ({ message }) => { showNotification(message) },
 }
 
-// After applying an op:
 const effects = Tasks.apply(state, op)
 if (effects) for (const e of effects) runners[e.effect](e)
 ```
@@ -165,15 +163,15 @@ const Dialog = {
 }
 ```
 
-Machines compose via dispatch effects — no machine imports another. `Dialog.confirm()` says "dispatch addItem" as a data object; the effect runner routes it to the right domain function.
+No machine imports another. `Dialog.confirm()` says "dispatch addItem" as a data object; the effect runner routes it to the right domain function. Each machine is independently testable — communication is through serializable effect objects.
 
-Each machine is independently testable. Communication is through serializable effect objects.
+For how to wire multiple machines into a single store, see [Composing Machines in a Store](state-management.md#composing-machines).
 
 ## Prior Art
 
-| System | What it reifies | Approach |
-|--------|----------------|----------|
-| Redux | Operations | `dispatch(action)` + reducer — switch/case dispatch |
+| System | What it makes data | Approach |
+|--------|-------------------|----------|
+| Redux | Operations | `dispatch(action)` + reducer |
 | Event sourcing | Operations | Events as plain objects — store, replay, project |
 | Elm | Ops + effects | `update : Msg -> Model -> (Model, Cmd Msg)` |
 | redux-loop | Effects | Reducer returns `[state, effects]` |
