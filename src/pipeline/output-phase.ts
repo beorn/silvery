@@ -254,9 +254,9 @@ function handleScrollbackPromotion(
   output += bufferToAnsi(next, "inline", ctx, maxOutputLines);
 
   // 4. Erase leftover lines at bottom (if content shrank)
-  //    Account for terminal scroll: frozen + live content may push lines into scrollback.
+  //    Account for frozen + live content: we wrote frozenLineCount + maxOutputLines total lines.
   const oldTotalLines = state.prevOutputLines;
-  const nextLastLine = maxOutputLines - 1;
+  const nextLastLine = frozenLineCount + maxOutputLines - 1;
   const totalWritten = frozenLineCount + maxOutputLines;
   const terminalScroll =
     termRows != null ? Math.max(0, totalWritten - termRows) : 0;
