@@ -119,7 +119,9 @@ await app.run(<ItemList />)
 
 #### Signals for fine-grained reactivity
 
-For apps with many components or frequent updates, signals give you finer-grained reactivity than Zustand's selector diffing. Components that read a signal re-render only when that signal changes — no selectors needed:
+Zustand re-renders a component when its selector returns a different value — `useApp(s => s.cursor)` re-renders on every cursor change, but not on item changes. This works well, but every component must specify exactly which state it reads, and Zustand diffs the selector result on every store update.
+
+Signals flip this: components that read a signal's `.value` automatically subscribe to just that signal — no selectors needed, no diffing. For apps with many components or frequent updates, this is more efficient:
 
 ```tsx
 import { createApp, useApp } from "inkx/runtime"
