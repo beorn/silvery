@@ -119,6 +119,28 @@ console.log(app.ansi) // Print with ANSI colors
 console.log(app.text) // Print plain text
 ```
 
+### Real Terminal Verification with @termless/test
+
+For testing that your inkx app renders correctly through a real terminal emulator -- verifying colors, cursor position, scrollback, terminal modes, and cross-terminal compatibility -- use [@termless/test](https://github.com/beorn/termless). It feeds your inkx ANSI output through actual terminal backends (xterm.js, Ghostty, Alacritty, etc.) and provides composable matchers for the full terminal state:
+
+```typescript
+import { createTerminal } from "@termless/core"
+import { createXtermBackend } from "@termless/xtermjs"
+import "@termless/test/matchers"
+
+test("renders correct colors through real terminal", () => {
+  const term = createTerminal({ backend: createXtermBackend(), cols: 80, rows: 24 })
+  term.feed(app.ansi) // Feed inkx output into terminal emulator
+
+  expect(term.cell(0, 0)).toHaveFg("#ff0000")
+  expect(term.cell(0, 0)).toBeBold()
+  expect(term).toBeInMode("altScreen")
+  expect(term.screen).toContainText("Dashboard")
+
+  term.close()
+})
+```
+
 ---
 
 ## inkx Internal Test Infrastructure
