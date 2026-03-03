@@ -187,31 +187,19 @@ batch(() => {
 
 Your todo list works. Now you want undo/redo. The problem: `store.toggleDone()` mutates state and is gone — you can't record what happened, replay it, or reverse it.
 
-The fix: instead of calling methods directly, call `store.apply()` with a data object that describes the operation:
+The fix: add a `store.apply()` that takes a plain data object describing the operation. The direct methods still work — you just gain a second calling convention:
 
 ```tsx
-// Before (Level 2) — direct calls, invisible to the system:
-store.moveCursor(1)
-store.toggleDone()
-
-// After (Level 3) — operations as data, serializable:
-store.apply({ op: "moveCursor", delta: 1 })
-store.apply({ op: "toggleDone", index: 2 })
+// These are equivalent — both call the same logic:
+store.moveCursor({ delta: 1 })                    // direct (type-safe)
+store.apply({ op: "moveCursor", delta: 1 })       // as data (serializable)
 ```
 
-Now every user action is a plain JSON object — `{ op: "toggleDone", index: 2 }` — that you can record in a stack, `JSON.stringify()` to a log, replay from the beginning, or send over the wire.
+Both produce the same serializable operation — `store.moveCursor({ delta: 1 })` routes through `.apply({ op: "moveCursor", delta: 1 })` internally, so undo/replay/logging captures it either way. The direct style is just syntactic sugar for everyday code.
 
-Both calling styles work — direct calls for simplicity, `.apply()` when you need serialization:
+The key change: switch from positional args to a params object, and add a discriminator field. The operation *is* the params with an `op` tag — `{ op: "moveCursor", delta: 1 }` is just JSON you can `stringify`, record, and replay.
 
-```tsx
-// Direct (simple, type-safe)
-TodoList.moveCursor(state, { delta: 1 })
-
-// As data (serializable — undo, replay, log, send over wire)
-store.apply({ op: "moveCursor", delta: 1 })
-```
-
-To implement this, pull the logic out of the store into a domain object. Each function takes a params object (matching the op fields), and `.apply()` dispatches by name:
+To implement this, pull the logic into a domain object. Each function takes a params object (matching the op fields), and `.apply()` dispatches by name:
 
 ```tsx
 type TodoOp =
@@ -235,7 +223,7 @@ const TodoList = {
 }
 ```
 
-The store becomes a thin shell that delegates to the domain object:
+The store exposes both calling conventions — direct methods for everyday code, `.apply()` for when you need the data:
 
 ```tsx
 const app = createApp(
@@ -244,13 +232,18 @@ const app = createApp(
     return {
       ...state,
       doneCount: computed(() => state.items.value.filter(i => i.done).length),
-      apply: (op: TodoOp) => TodoList.apply(state, op),
+      // Generic dispatcher — all ops flow through here (undo/replay/log)
+      apply(op: TodoOp) { return TodoList.apply(state, op) },
+      // Direct methods — syntactic sugar, routes through apply()
+      moveCursor(p: { delta: number }) { return this.apply({ op: "moveCursor", ...p }) },
+      toggleDone(p: { index: number }) { return this.apply({ op: "toggleDone", ...p }) },
     }
   },
   {
     key(input, key, { store }) {
-      if (input === "j") store.apply({ op: "moveCursor", delta: 1 })
-      if (input === "k") store.apply({ op: "moveCursor", delta: -1 })
+      // Both styles work — use whichever fits:
+      if (input === "j") store.moveCursor({ delta: 1 })
+      if (input === "k") store.moveCursor({ delta: -1 })
       if (input === "x") store.apply({ op: "toggleDone", index: store.cursor.value })
       if (input === "q") return "exit"
     },
