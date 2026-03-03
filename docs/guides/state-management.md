@@ -97,7 +97,7 @@ const app = createApp(
 )
 ```
 
-Components access the store via `useApp(selector)`. The selector tells Zustand which slice to watch — `useApp(s => s.cursor)` re-renders only when the cursor changes, not when items change:
+Components access the store via `useApp(selector)`. Selectors are a widespread pattern — Redux, Zustand, MobX, Recoil all use them. The idea: a function that extracts the slice of state a component cares about. Zustand (and Redux) track which slice each component selected and only re-render when that slice changes. `useApp(s => s.cursor)` re-renders only when the cursor changes, not when items change:
 
 ```tsx
 function TodoList() {
