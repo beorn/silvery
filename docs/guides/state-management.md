@@ -480,7 +480,7 @@ function SearchBar() {
 }
 ```
 
-When your list grows to thousands of items and the cursor stutters, two techniques help at any level: per-entity signals and virtualization. See [Appendix C: Scaling to Thousands of Items](#appendix-c-scaling-to-thousands-of-items).
+When your list grows to thousands of items and the cursor stutters, two techniques help at any level: per-entity signals and virtualization. See [Appendix A: Scaling with Signals](#appendix-a-scaling-with-signals).
 
 ---
 
@@ -611,6 +611,32 @@ Signals are orthogonal to the levels — you can use them at Level 2 or Level 5.
 
 > **inkx**: A bridge middleware connects signals to Zustand — when any signal's `.value` changes, Zustand subscribers are also notified. This is why we use `@preact/signals-core` (not `-react`): inkx's bridge handles the React integration.
 
+### Scaling to Thousands of Items
+
+Your todo list has 5,000 items and the cursor stutters. Two techniques help at any level:
+
+**Per-entity signals** — `Map<string, Signal<T>>` gives each item its own signal. Edit one item → 1 re-render:
+
+```tsx
+const cursor = signal<string>("item-0")
+const items = new Map<string, Signal<ItemData>>()
+
+return {
+  cursor,
+  items,
+  currentItem: computed(() => items.get(cursor.value)?.value),
+  updateItem(id: string, data: ItemData) {
+    const s = items.get(id)
+    if (s) s.value = data  // only this item's subscribers re-render
+  },
+  removeItem(id: string) {
+    items.delete(id)  // clean up — stale signals leak memory
+  },
+}
+```
+
+**VirtualList** — only mount the ~50 visible rows. Combined with per-entity signals: edit one item → 1 re-render. Move cursor → 2 re-renders. O(visible), not O(total).
+
 ---
 
 ## Appendix B: Designing Robust Ops
@@ -637,34 +663,6 @@ type IdempotentOp = { op: "setDone"; id: string; done: boolean }
 | `id: "abc"` + `done: true` | Works | Works | Idempotent |
 
 You don't need to start here. Index-based is fine for simple undo. But when you add collaboration, offline sync, or AI automation — design identity-based, ideally idempotent.
-
----
-
-## Appendix C: Scaling to Thousands of Items
-
-Your todo list has 5,000 items and the cursor stutters. At scale, two techniques apply at any level:
-
-**Per-entity signals** — `Map<string, Signal<T>>` gives each item its own signal. Edit one item → 1 re-render:
-
-```tsx
-const cursor = signal<string>("item-0")
-const items = new Map<string, Signal<ItemData>>()
-
-return {
-  cursor,
-  items,
-  currentItem: computed(() => items.get(cursor.value)?.value),
-  updateItem(id: string, data: ItemData) {
-    const s = items.get(id)
-    if (s) s.value = data  // only this item's subscribers re-render
-  },
-  removeItem(id: string) {
-    items.delete(id)  // clean up — stale signals leak memory
-  },
-}
-```
-
-**VirtualList** — only mount the ~50 visible rows. Combined with per-entity signals: edit one item → 1 re-render. Move cursor → 2 re-renders. O(visible), not O(total).
 
 ---
 
