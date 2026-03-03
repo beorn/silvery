@@ -447,7 +447,7 @@ Notice the throughline: **every level turns something invisible into data**. Lev
 
 Your app has a board, a search dialog, and a settings panel. They started as methods on one big slice, but now `Board.apply()` is 400 lines, search and settings keep stepping on each other's state, and every new feature risks breaking something unrelated.
 
-Each area of concern becomes its own slice with its own state, ops, and `.apply()`. We call this combination a **state machine** — a slice + the state it operates on + the set of ops it accepts.
+**The fix:** Each area of concern becomes its own slice with its own state, ops, and `.apply()`. We call this combination a **state machine** — a slice + the state it operates on + the set of ops it accepts.
 
 The key rule: **no state machine imports another**. They communicate through dispatch effects — the same pattern from Level 4:
 
@@ -596,6 +596,15 @@ The progression from functions to data is not free. Each level buys something re
 - **Debugging the dispatcher.** When you log `{ op: "moveCursor", delta: 1 }`, you see *what* happened but not *why* the code decided to dispatch it. The dispatch site might be in a key handler, an effect runner, or another machine's effect. Good naming and tooling (Redux DevTools) help, but there's inherently more indirection to trace.
 
 **When to use functions inside data.** Even at Level 4-5, not everything needs to be data. Effect *runners* are functions — they take effect descriptions and do real I/O. Computed values (`doneCount`) are functions. React components are functions. The boundary is: **crossing module boundaries** (between slices, between domain and I/O) should be data; **within a module** (the implementation of a single op handler), use whatever's clearest. `s.items.value.map(...)` inside `toggleDone` is a normal function call, and it should stay that way.
+
+**How inkx minimizes the costs.** The trade-offs above are real, but framework tooling can absorb most of the mechanical pain:
+
+- **Wiring** — `createApp()` handles the store-to-effects-to-runners pipeline. You declare effect runners once; the middleware intercepts `Effect[]` returns from `.apply()` and routes them automatically. No manual plumbing per call.
+- **Composition** — `createStore()` with plugin composition (`compose(withFocusManagement(), withUndo())(update)`) adds cross-cutting concerns like focus, undo, or logging without touching individual machines. Each plugin wraps the update function — middleware-style, no per-op boilerplate.
+- **Debugging** — `withDiagnostics()` validates incremental rendering, `INKX_INSTRUMENT=1` exposes per-frame counters, and the inspector (`INKX_DEV=1`) dumps the full node tree. These replace the "printf debugging through a dispatcher" problem with structured introspection.
+- **Driver pattern** — `withCommands()` + `withKeybindings()` give you a `driver.cmd.down()` API where each command carries metadata (name, keys, help text). The dispatcher is no longer opaque — `driver.cmd.all()` lists every available action with its keybinding.
+
+The ceremony of union types + switch cases remains — that's a TypeScript design choice, not a framework problem. But the infrastructure around it (store creation, effect routing, plugin composition, debugging) is where inkx absorbs complexity so your slices stay focused on domain logic. See [Runtime Layers](runtime-layers.md) for the full API.
 
 **The honest rule of thumb**: if you can't name a specific benefit you'd get from making something data (undo? replay? testing without mocks?), keep it as a function call. The progression is opt-in at every level — and opting out is a valid choice.
 
