@@ -97,7 +97,7 @@ const app = createApp(
 )
 ```
 
-Components access the store via `useApp(selector)`. Selectors are a widespread pattern — Redux, Zustand, MobX, Recoil all use them. The idea: a function that extracts the slice of state a component cares about. Zustand (and Redux) track which slice each component selected and only re-render when that slice changes. `useApp(s => s.cursor)` re-renders only when the cursor changes, not when items change:
+Components access the store via `useApp(selector)`. Selectors are a widespread pattern — Redux, Zustand, MobX[^mobx], Recoil[^recoil] all use them. The idea: a function that extracts the slice of state a component cares about. Zustand (and Redux) track which slice each component selected and only re-render when that slice changes. `useApp(s => s.cursor)` re-renders only when the cursor changes, not when items change:
 
 ```tsx
 function TodoList() {
@@ -144,7 +144,7 @@ This is enough for most apps — dashboards, file browsers, list views, dialogs.
 
 As your app grows, selectors show their cost. Zustand runs *every* selector on *every* store update — 100 `<Row>` components each with `useApp(s => s.rows.get(id))` means 100 selector calls when the cursor moves, even though only 2 rows changed.
 
-[Signals](https://github.com/tc39/proposal-signals) (TC39 proposal, stage 1) flip this. Components read `.value` and automatically subscribe to exactly what they touched — no diffing, no linear scan. Same model as SolidJS and Vue 3. We use [Preact's implementation](https://github.com/preactjs/signals) (`@preact/signals-core`).
+[Signals](https://github.com/tc39/proposal-signals) (TC39 proposal, stage 1) flip this. Components read `.value` and automatically subscribe to exactly what they touched — no diffing, no linear scan. Same model as [SolidJS](https://www.solidjs.com/) and [Vue 3](https://vuejs.org/). We use [Preact's implementation](https://github.com/preactjs/signals) (`@preact/signals-core`).
 
 With signals, the factory returns a plain object — signals *are* the reactive state, so you don't need Zustand's `set()`:
 
@@ -206,7 +206,7 @@ Signals are orthogonal to the levels — you can use them at Level 2 or Level 5.
 
 ## Level 3: Ops as Data — Redux's Insight
 
-Your todo list works. A user toggles an item, realizes it was wrong, and reaches for Ctrl+Z. Nothing happens — because `store.toggleDone()` is a function call. It mutated state and vanished. There's no record of what happened, nothing to reverse, nothing to replay.
+Your todo list works. A user toggles an item, realizes it was wrong, and reaches for Ctrl/Cmd+Z. Nothing happens — because `store.toggleDone()` is a function call. It mutated state and vanished. There's no record of what happened, nothing to reverse, nothing to replay.
 
 **The fix**: make operations visible by turning them into data. Instead of calling functions that mutate state, call functions that produce a serializable description of *what happened*:
 
@@ -266,7 +266,7 @@ const TodoList = {
 }
 ```
 
-The `switch` in `.apply()` is the type safety bridge — TypeScript's discriminated union narrowing ensures that when `op.op` is `"moveCursor"`, the params are `{ delta: number }`. You get full type checking on both sides: callers construct a `TodoOp` (compile error if `delta` is missing), and the switch ensures exhaustive handling (compile error if you add an op variant but forget to handle it). No `any`, no runtime type checks — the union does all the work.
+The `switch` in `.apply()` is the type safety bridge — TypeScript's discriminated union[^discriminated-union] narrowing ensures that when `op.op` is `"moveCursor"`, the params are `{ delta: number }`. You get full type checking on both sides: callers construct a `TodoOp` (compile error if `delta` is missing), and the switch ensures exhaustive handling (compile error if you add an op variant but forget to handle it). No `any`, no runtime type checks — the union does all the work.
 
 The store exposes both calling conventions — direct methods for everyday code, `.apply()` for when you need the data:
 
@@ -327,7 +327,7 @@ This is a pure pattern — no framework tooling needed. The slice, op types, and
 
 The examples use index-based ops: `{ op: "toggleDone", index: 2 }`. This works for single-session undo but breaks when ops need to survive reordering — undo after other edits, concurrent users, or offline sync. If someone inserts at index 1, your `index: 2` now points to the wrong item.
 
-**Prefer identity-based ops**: `{ op: "toggleDone", id: "abc123" }`. This is the same principle behind CRDTs — operations that commute (same result regardless of order) are safe for concurrent use.
+**Prefer identity-based ops**: `{ op: "toggleDone", id: "abc123" }`. This is the same principle behind CRDTs[^crdt] — operations that commute (produce the same result regardless of order) are safe for concurrent use.
 
 ```typescript
 // Fragile — depends on ordering
@@ -393,7 +393,7 @@ test("toggleDone persists and toasts", () => {
 })
 ```
 
-No mocks. No fakes. No I/O. No async. Compare with DI: you'd need a `FakePersistenceService`, wire it through a constructor, call the function, then inspect what the fake recorded. Here you just check what the function returned.
+No mocks. No fakes. No I/O. No async. Compare with DI[^di]: you'd need a `FakePersistenceService`, wire it through a constructor, call the function, then inspect what the fake recorded. Here you just check what the function returned.
 
 The runtime dispatches effects to actual runners — swap them per platform:
 
@@ -567,16 +567,16 @@ The core idea — making operations and effects into data — has been discovere
 
 | System | Levels | Approach |
 |--------|--------|----------|
-| **Elm** | **3+4+5** | **`update : Msg -> Model -> (Model, Cmd Msg)` — the gold standard** |
-| Redux | 3 | `dispatch(action)` + reducer (ops as data, but effects live in middleware) |
-| redux-loop | 3+4 | Extends Redux: reducer returns `[state, effects]` |
-| Hyperapp v2 | 3+4 | Optional tuple return from actions |
-| XState | 5 | Statecharts — formal state machines with explicit states, transitions, and composition |
-| MobX | 2 | Observable state with automatic tracking (OO-reactive, trades predictability for convenience) |
-| Event sourcing | 3 | Events as plain objects — store, replay, project |
-| Command pattern | 3 | Encapsulate request as object |
+| **[Elm](https://guide.elm-lang.org/architecture/)** | **3+4+5** | **`update : Msg -> Model -> (Model, Cmd Msg)` — the gold standard** |
+| [Redux](https://redux.js.org/) | 3 | `dispatch(action)` + reducer (ops as data, but effects live in middleware) |
+| [redux-loop](https://github.com/redux-loop/redux-loop) | 3+4 | Extends Redux: reducer returns `[state, effects]` |
+| [Hyperapp](https://github.com/jorgebucaran/hyperapp) v2 | 3+4 | Optional tuple return from actions |
+| [XState](https://xstate.js.org/) | 5 | Statecharts[^statecharts] — formal state machines with explicit states, transitions, and composition |
+| [MobX](https://mobx.js.org/) | 2 | Observable state with automatic tracking (OO-reactive, trades predictability for convenience) |
+| [Event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html) | 3 | Events as plain objects — store, replay, project |
+| [Command pattern](https://en.wikipedia.org/wiki/Command_pattern) | 3 | Encapsulate request as object (GoF[^gof]) |
 
-Redux got Level 3 right but stopped there — side effects live in thunks and sagas, not in the update function's return value. redux-loop and Hyperapp v2 completed the TEA shape by returning effects as data.
+Redux got Level 3 right but stopped there — side effects live in thunks and sagas[^thunks-sagas], not in the update function's return value. redux-loop and Hyperapp v2 completed the TEA shape by returning effects as data.
 
 This guide pieces these ideas into a single incremental progression for React: you get Elm's benefits without Elm's upfront cost, adopting each level only when you need it.
 
@@ -614,3 +614,14 @@ The more visible your transitions are — the easier your app is to test, debug,
 - [Runtime Layers](runtime-layers.md) — createRuntime, createStore, run, createApp API reference
 - [Functional Core, Imperative Shell](https://kennethlange.com/functional-core-imperative-shell/) — the architectural principle behind Levels 3-5
 - Dan Abramov, [You Might Not Need Redux](https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367) — when (and when not) to reach for ops-as-data
+
+---
+
+[^mobx]: [MobX](https://mobx.js.org/) — observable state management with automatic dependency tracking. OO-reactive: convenient but trades away the predictability of explicit ops.
+[^recoil]: [Recoil](https://recoiljs.org/) — Meta's experimental atomic state management for React, where state is split into independent "atoms" with derived "selectors."
+[^discriminated-union]: [Discriminated unions](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions) — a TypeScript pattern where a union of object types shares a common tag field (here `op`). The compiler narrows the type in each `switch` case, giving you exhaustive type checking with zero runtime cost.
+[^di]: [Dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) (DI) — passing dependencies (database, HTTP client, etc.) into a function rather than hardcoding them. Testing-friendly, but requires wiring and fake implementations.
+[^crdt]: [CRDTs](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type) (Conflict-free Replicated Data Types) — data structures designed for distributed systems that can be edited independently on multiple replicas and merged without conflicts.
+[^statecharts]: [Statecharts](https://statecharts.dev/) — an extension of finite state machines with hierarchy, concurrency, and history. Introduced by David Harel in 1987.
+[^gof]: [Gang of Four](https://en.wikipedia.org/wiki/Design_Patterns) — the classic *Design Patterns* book (Gamma, Helm, Johnson, Vlissides, 1994) that cataloged 23 object-oriented patterns including Command.
+[^thunks-sagas]: [Thunks](https://redux.js.org/usage/writing-logic-thunks) are functions returned from action creators that receive `dispatch` — they do async work then dispatch plain actions. [Sagas](https://redux-saga.js.org/) use generator functions to orchestrate side effects as a declarative, testable layer separate from reducers.
