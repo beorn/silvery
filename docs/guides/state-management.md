@@ -17,7 +17,7 @@ keypress → store.apply(op) → domain logic → [new state, effects] → effec
 | **1 — Local** | Starting out | Just React |
 | **2 — Shared** | Multiple components need the same state, or prop drilling is painful | Centralized store, selective re-renders |
 | **3 — Ops as Data** *(Redux's insight)* | You want undo, logging, middleware, collaboration, AI automation, or replay | Serializable operations |
-| **4 — Effects as Data** *(Elm's insight)* | You want tests without mocks, cross-platform logic, or visible side effects | Pure domain logic, swappable I/O |
+| **4 — Effects as Data** *(Elm's insight)* | You want pure domain logic, tests without mocks, cross-platform portability, or auditable I/O | Deterministic functions, swappable runners |
 | **5 — Composition** | Multiple concerns stepping on each other, or teams working on the same store | State machines that talk through data |
 
 Most apps stop at Level 2. [Signals](#appendix-a-scaling-with-signals) (fine-grained reactivity) are orthogonal — they optimize re-renders at any level.
@@ -271,13 +271,13 @@ The examples above use index-based ops (`toggleDone, index: 2`), which work for 
 
 Behavior is data now — serializable, reversible, replayable. But our domain functions still perform I/O directly: saving to disk, showing notifications, fetching from APIs.
 
-**The wall**: Testing domain logic requires mocking every service it touches. Or you want the same domain logic on terminal, web, and server — but each platform has different I/O. Or a side effect fires at the wrong time during a refactor and you can't figure out why, because the effect is buried inside the function that triggered it.
+**The wall**: You can't read a function and know what it does — `toggleDone` might save to disk, show a toast, or fire a network request, and you won't know without tracing through the implementation. Testing requires mocking every service it touches. You want the same domain logic on terminal, web, and server — but I/O is hardcoded. You refactor a handler and a side effect fires unexpectedly because it was buried three calls deep. You can't audit what I/O a module can trigger without reading every line.
 
 ---
 
 ## Level 4: Effects as Data — Elm's Insight
 
-In Level 3, we made state transitions visible. But functions like `toggleDone` still directly call `fs.writeFile()` and `showToast()` — so tests need a fake filesystem, a mock toast service, and a stub HTTP client. You want to run the same domain logic in a browser, but it's calling Node's `fs`. You refactor a handler and a toast fires unexpectedly because the side effect was buried three calls deep.
+In Level 3, we made state transitions visible. But functions like `toggleDone` still directly call `fs.writeFile()` and `showToast()` — you can't read the function signature and know what I/O it performs. Tests need a fake filesystem, a mock toast service, and a stub HTTP client. You want to run the same logic in a browser, but it's calling Node's `fs`. You refactor a handler and a toast fires unexpectedly because the effect was buried in a helper. In a large codebase, you can't audit what I/O a module can trigger without reading every line of every function it calls.
 
 **The fix** is the same trick as Level 3: make effects into data. Instead of *doing* I/O, domain functions *describe* what should happen. The only change: functions that need I/O return an `Effect[]`:
 
@@ -318,7 +318,7 @@ test("toggleDone persists and toasts", () => {
 })
 ```
 
-No mocks. No fakes. No I/O. No async. Compare with DI[^di]: you'd need a `FakePersistenceService`, wire it through a constructor, call the function, then inspect what the fake recorded. Here you just check what the function returned.
+No mocks. No fakes. No I/O. No async. The function's return type tells you *everything* it can do — state change plus a list of effects. You can read it, test it, and audit it without tracing through call chains. Compare with DI[^di]: you'd need a `FakePersistenceService`, wire it through a constructor, call the function, then inspect what the fake recorded. Here you just check what the function returned.
 
 The runtime dispatches effects to actual runners — swap them per platform:
 
