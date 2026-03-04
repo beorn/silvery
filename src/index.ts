@@ -343,8 +343,10 @@ export {
   getThemeByName,
   resolveThemeColor,
   generateTheme,
+  detectTheme,
+  deriveTheme,
 } from "themex"
-export type { Theme, AnsiPrimary } from "themex"
+export type { Theme, AnsiPrimary, DetectThemeOptions } from "themex"
 
 // =============================================================================
 // Re-exports from chalkx

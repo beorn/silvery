@@ -30,5 +30,7 @@ export {
   getThemeByName,
   resolveThemeColor,
   generateTheme,
+  detectTheme,
+  deriveTheme,
 } from "themex"
-export type { Theme, ColorPalette, AnsiPrimary } from "themex"
+export type { Theme, ColorPalette, AnsiPrimary, DetectThemeOptions } from "themex"
