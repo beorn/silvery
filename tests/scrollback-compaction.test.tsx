@@ -270,13 +270,11 @@ describe("scrollback compaction", () => {
 
 describe("scrollback resize", () => {
   test("visible screen is properly formatted after resize", async () => {
-    // After freezing items to scrollback and resizing, the VISIBLE SCREEN
-    // must show correctly formatted content at the new width. Terminal
-    // scrollback may contain old-width content (inherent terminal limitation).
-    //
-    // Before fix: mockStdout in run() had no-op on()/write(), so resize
-    // events never reached ScrollbackView and frozen content stayed at
-    // old width on the visible screen.
+    // After freezing items to scrollback and resizing, BOTH the visible screen
+    // AND scrollback must be clean. The fix uses ED3 (\x1b[3J) to clear the
+    // terminal's scrollback buffer, then re-emits ALL frozen items at the new
+    // width. This prevents cumulative duplication that occurred with the old
+    // selective re-emit approach.
 
     const term = createTerminalFixture({
       cols: 100,
@@ -341,6 +339,17 @@ describe("scrollback resize", () => {
       expect(count, `"${content}" duplicated ${count}x on visible screen`).toBeLessThanOrEqual(2)
     }
 
+    // After resize with ED3, scrollback should be clean — no old-width duplicates.
+    // Count occurrences of a distinctive content line in the FULL buffer (screen + scrollback).
+    // With the old approach (selective re-emit), each resize added another copy.
+    // With ED3 (clear scrollback + re-emit all), there should be at most 1 copy per exchange.
+    const fullBufferAfterShrink = term.getText()
+    const agentMatches = fullBufferAfterShrink.match(/Agent 624 tokens/g)
+    expect(
+      (agentMatches?.length ?? 0),
+      `"Agent 624 tokens" appears ${agentMatches?.length ?? 0}x in full buffer (expected ≤1)`,
+    ).toBeLessThanOrEqual(1)
+
     // Restore to original size
     term.resize(100, 30)
     await new Promise((r) => setTimeout(r, 2000))
@@ -357,5 +366,13 @@ describe("scrollback resize", () => {
         expect(trimmed.length, `Line too wide after restore: "${trimmed}"`).toBeLessThanOrEqual(100)
       }
     }
+
+    // Full buffer after restore should also be clean
+    const fullBufferAfterRestore = term.getText()
+    const agentMatchesRestore = fullBufferAfterRestore.match(/Agent 624 tokens/g)
+    expect(
+      (agentMatchesRestore?.length ?? 0),
+      `"Agent 624 tokens" appears ${agentMatchesRestore?.length ?? 0}x after restore (expected ≤1)`,
+    ).toBeLessThanOrEqual(1)
   }, 30000)
 })
