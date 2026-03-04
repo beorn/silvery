@@ -16,7 +16,7 @@ export default defineConfig({
     "React for modern terminals — layout feedback, every terminal protocol, 200x+ faster incremental renders",
   base: "/inkx/",
 
-  head: [["link", { rel: "icon", href: "/inkx/favicon.ico" }]],
+  head: [["link", { rel: "icon", type: "image/svg+xml", href: "/inkx/logo.svg" }]],
 
   themeConfig: {
     logo: "/logo.svg",
