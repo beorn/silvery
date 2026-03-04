@@ -147,9 +147,12 @@ export function hitTest(node: InkxNode, x: number, y: number): InkxNode | null {
   // Check if point is within this node's bounds
   if (!pointInRect(x, y, rect)) return null
 
+  // pointerEvents="none" makes this node and its subtree invisible to hit testing
+  const props = node.props as { overflow?: string; pointerEvents?: string }
+  if (props.pointerEvents === "none") return null
+
   // Check overflow clipping — if overflow is "hidden" or "scroll",
   // children outside this node's rect are not hittable
-  const props = node.props as { overflow?: string }
   const clips = props.overflow === "hidden" || props.overflow === "scroll"
 
   // DFS: check children in reverse order (last child = top z-order, like DOM)

@@ -14,7 +14,7 @@ import type { StoreApi } from "zustand"
 import { createKeyEvent, dispatchKeyEvent } from "../focus-events.js"
 import type { FocusManager } from "../focus-manager.js"
 import { findByTestID } from "../focus-queries.js"
-import { type MouseEventProcessorState, processMouseEvent } from "../mouse-events.js"
+import { type MouseEventProcessorState, processMouseEvent, hitTest } from "../mouse-events.js"
 import type { Container } from "../reconciler.js"
 import { getContainerRoot } from "../reconciler.js"
 import type { InkxNode } from "../types.js"
@@ -72,6 +72,10 @@ export function createHandlerContext<S>(
       return focusManager.getFocusPath(root)
     },
     dispatch: teaDispatch as EventHandlerContext<S>["dispatch"],
+    hitTest(x: number, y: number) {
+      const root = getContainerRoot(container)
+      return hitTest(root, x, y)
+    },
   }
 }
 

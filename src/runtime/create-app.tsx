@@ -143,6 +143,8 @@ export interface EventHandlerContext<S> {
    * For non-tea stores, this is `undefined`.
    */
   dispatch?: "dispatch" extends keyof S ? S["dispatch"] : undefined
+  /** Hit-test the render tree at (x, y). Returns the deepest InkxNode at that point, or null. */
+  hitTest(x: number, y: number): import("../types.js").InkxNode | null
 }
 
 /**

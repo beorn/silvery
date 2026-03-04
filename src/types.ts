@@ -200,6 +200,9 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
    */
   theme?: import("themex").Theme
 
+  /** CSS pointer-events equivalent. "none" makes this node and its subtree invisible to hit testing. */
+  pointerEvents?: "auto" | "none"
+
   onLayout?: (layout: Rect) => void
 
   /**
