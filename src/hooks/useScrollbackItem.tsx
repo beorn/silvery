@@ -75,10 +75,13 @@ interface ScrollbackItemProviderProps extends ScrollbackItemContext {
  * Wraps each item rendered by ScrollbackList with its context.
  * Internal — not exported from the package's public API.
  */
-export function ScrollbackItemProvider({ children, freeze, isFrozen, index, nearScrollback }: ScrollbackItemProviderProps) {
-  const value = useMemo(
-    () => ({ freeze, isFrozen, index, nearScrollback }),
-    [freeze, isFrozen, index, nearScrollback],
-  )
+export function ScrollbackItemProvider({
+  children,
+  freeze,
+  isFrozen,
+  index,
+  nearScrollback,
+}: ScrollbackItemProviderProps) {
+  const value = useMemo(() => ({ freeze, isFrozen, index, nearScrollback }), [freeze, isFrozen, index, nearScrollback])
   return <ScrollbackItemCtx.Provider value={value}>{children}</ScrollbackItemCtx.Provider>
 }

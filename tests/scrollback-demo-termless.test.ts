@@ -69,10 +69,9 @@ describe("scrollback demo visual regression", () => {
     })
 
     // Spawn the demo
-    await term.spawn(
-      ["bun", "examples/interactive/static-scrollback.tsx", "--fast"],
-      { cwd: "/Users/beorn/Code/pim/km/vendor/beorn-inkx" },
-    )
+    await term.spawn(["bun", "examples/interactive/static-scrollback.tsx", "--fast"], {
+      cwd: "/Users/beorn/Code/pim/km/vendor/beorn-inkx",
+    })
 
     // Wait for initial render — look for the status bar marker
     await term.waitFor("send", 10000)
@@ -143,7 +142,7 @@ describe("scrollback demo visual regression", () => {
     writeFileSync(
       `${OUT_DIR}/summary.txt`,
       `Screenshots: ${step}\nBorder failures: ${allBorderFailures.length} steps\n` +
-      `Steps with failures: ${allBorderFailures.map((f) => f.step).join(", ") || "none"}\n`,
+        `Steps with failures: ${allBorderFailures.map((f) => f.step).join(", ") || "none"}\n`,
     )
 
     // Verify we got all screenshots

@@ -811,7 +811,12 @@ function renderAnsiTextLineReturn(
     // Check both: 1) Text's own backgroundColor, 2) Parent Box's bg already in buffer
     // Skip if segment has bgOverride flag (explicit opt-out via chalkx.bgOverride)
     const effectiveBgConflictMode = ctx?.bgConflictMode ?? getBgConflictMode()
-    if (effectiveBgConflictMode !== "ignore" && !segment.bgOverride && segment.bg !== undefined && segment.bg !== null) {
+    if (
+      effectiveBgConflictMode !== "ignore" &&
+      !segment.bgOverride &&
+      segment.bg !== undefined &&
+      segment.bg !== null
+    ) {
       // Check if there's an existing background (from Text prop or parent Box fill)
       const existingBufBg = col < buffer.width ? buffer.getCellBg(col, y) : null
       const hasExistingBg = baseStyle.bg !== null || existingBufBg !== null

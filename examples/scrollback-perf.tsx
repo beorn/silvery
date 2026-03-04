@@ -61,7 +61,8 @@ function ComplexItem({ item }: { item: Item }) {
           ◆ Agent
         </Text>
         <Text color="gray" dim>
-          {" "}624 tokens
+          {" "}
+          624 tokens
         </Text>
       </Text>
       <Text> </Text>
@@ -70,7 +71,9 @@ function ComplexItem({ item }: { item: Item }) {
       <Box flexDirection="column">
         <Text>
           <Text color="green">{"✓ "}</Text>
-          <Text color="cyan" bold>Read</Text>{" "}
+          <Text color="cyan" bold>
+            Read
+          </Text>{" "}
           src/auth.ts
         </Text>
         <Box
@@ -97,7 +100,8 @@ function StatusBar() {
         {"  ⏎ send  tab auto  ^L clear  esc quit"}
       </Text>
       <Text color="gray" dim>
-        ctx {"█".repeat(4)}{"░".repeat(16)} 20% · $0.12
+        ctx {"█".repeat(4)}
+        {"░".repeat(16)} 20% · $0.12
       </Text>
     </Box>
   )
@@ -122,9 +126,10 @@ function TestApp({ itemCount }: { itemCount: number }) {
   const [items] = useState<Item[]>(() =>
     Array.from({ length: itemCount }, (_, i) => ({
       id: `item-${i}`,
-      text: i % 2 === 0
-        ? `Fix the login bug in auth.ts — expired tokens throw instead of refreshing.`
-        : `Found it. The expiry check compares seconds (jwt.exp) to milliseconds (Date.now()). Fixing now.`,
+      text:
+        i % 2 === 0
+          ? `Fix the login bug in auth.ts — expired tokens throw instead of refreshing.`
+          : `Found it. The expiry check compares seconds (jwt.exp) to milliseconds (Date.now()). Fixing now.`,
       role: i % 2 === 0 ? "user" : "assistant",
       frozen: false,
     })),
@@ -141,7 +146,10 @@ function TestApp({ itemCount }: { itemCount: number }) {
     if (!useTimers) return
     const t1 = setInterval(() => setPulse((p) => !p), 800)
     const t2 = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000)
-    return () => { clearInterval(t1); clearInterval(t2) }
+    return () => {
+      clearInterval(t1)
+      clearInterval(t2)
+    }
   }, [])
 
   return (
@@ -151,7 +159,9 @@ function TestApp({ itemCount }: { itemCount: number }) {
         keyExtractor={(item) => item.id}
         isFrozen={(item) => item.frozen}
         footer={
-          useLifted ? <LiftedFooter /> : (
+          useLifted ? (
+            <LiftedFooter />
+          ) : (
             <Box flexDirection="column">
               <Box borderStyle="round" paddingX={1}>
                 <TextInput value={inputText} onChange={setInputText} prompt="> " isActive={true} />
@@ -166,9 +176,7 @@ function TestApp({ itemCount }: { itemCount: number }) {
       >
         {(item, index) => {
           const isLatest = index === items.length - 1
-          return useSimple
-            ? <SimpleItem item={item} isLatest={isLatest} />
-            : <ComplexItem item={item} />
+          return useSimple ? <SimpleItem item={item} isLatest={isLatest} /> : <ComplexItem item={item} />
         }}
       </ScrollbackList>
     </Box>

@@ -7,7 +7,7 @@
  * - Scroll indicators (renderScrollIndicators)
  */
 
-import type { Style, TerminalBuffer } from "../buffer.js"
+import type { Color, Style, TerminalBuffer } from "../buffer.js"
 import type { BoxProps, InkxNode, Rect } from "../types.js"
 import { getPadding } from "./helpers.js"
 import { getBorderChars, getBorderSize, parseColor } from "./render-helpers.js"
@@ -28,6 +28,7 @@ export function renderBox(
   props: BoxProps,
   nodeState: NodeRenderState,
   skipBgFill = false,
+  inheritedBg?: Color | null,
 ): void {
   const { scrollOffset, clipBounds } = nodeState
   const { x, width, height } = layout
@@ -68,7 +69,7 @@ export function renderBox(
 
   // Render border if set
   if (props.borderStyle) {
-    renderBorder(buffer, x, y, width, height, props, clipBounds)
+    renderBorder(buffer, x, y, width, height, props, clipBounds, inheritedBg)
   }
 }
 
@@ -87,18 +88,14 @@ export function renderBorder(
   height: number,
   props: BoxProps,
   clipBounds?: { top: number; bottom: number; left?: number; right?: number },
+  inheritedBg?: Color | null,
 ): void {
   const chars = getBorderChars(props.borderStyle ?? "single")
   const color = props.borderColor ? parseColor(props.borderColor) : null
-  // Preserve the box's background color on border cells. Without this,
-  // border cells get bg=null (transparent) which differs from the box's
-  // bg fill (e.g., bg=0 for "black"). This bg=null vs bg=0 discrepancy
-  // causes ANSI output differences: bg=null emits no background SGR code
-  // (terminal default), while bg=0 emits explicit \x1b[48;5;0m. When
-  // these differ visually (some terminals/themes), border segments appear
-  // with wrong background. Setting bg explicitly ensures border cells
-  // match the box's background, producing consistent ANSI output.
-  const bg = props.backgroundColor ? parseColor(props.backgroundColor) : null
+  // Preserve the box's background color on border cells. Falls back to
+  // inherited bg from the nearest ancestor with backgroundColor, ensuring
+  // border cells don't punch transparent holes through parent backgrounds.
+  const bg = props.backgroundColor ? parseColor(props.backgroundColor) : (inheritedBg ?? null)
 
   const showTop = props.borderTop !== false
   const showBottom = props.borderBottom !== false
@@ -177,10 +174,11 @@ export function renderOutline(
   height: number,
   props: BoxProps,
   clipBounds?: { top: number; bottom: number; left?: number; right?: number },
+  inheritedBg?: Color | null,
 ): void {
   const chars = getBorderChars(props.outlineStyle ?? "single")
   const color = props.outlineColor ? parseColor(props.outlineColor) : null
-  const bg = props.backgroundColor ? parseColor(props.backgroundColor) : null
+  const bg = props.backgroundColor ? parseColor(props.backgroundColor) : (inheritedBg ?? null)
   const attrs = props.outlineDimColor ? { dim: true } : {}
 
   // Helper to check if a row is visible within clip bounds

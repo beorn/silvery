@@ -29,7 +29,11 @@ export const measureStats = {
 /**
  * Create a new InkxNode with a fresh layout node.
  */
-export function createNode(type: InkxNodeType, props: BoxProps | TextProps | Record<string, unknown>, measurer?: Measurer): InkxNode {
+export function createNode(
+  type: InkxNodeType,
+  props: BoxProps | TextProps | Record<string, unknown>,
+  measurer?: Measurer,
+): InkxNode {
   const layoutNode = getLayoutEngine().createNode()
 
   const node: InkxNode = {

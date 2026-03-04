@@ -75,8 +75,6 @@ describe("simple text change", () => {
     expect(term.screen.getText()).not.toContain("Hello")
     // Specifically check no partial overwrite artifact like "Horld"
     expect(term.screen.getText()).not.toContain("Horld")
-
-
   })
 })
 
@@ -119,8 +117,6 @@ describe("color change", () => {
     for (let c = 0; c < "Colored".length; c++) {
       expect(term.cell(0, c)).toHaveFg({ r: 0, g: 0, b: 255 })
     }
-
-
   })
 })
 
@@ -160,8 +156,6 @@ describe("text shortening", () => {
     // Old text must be fully cleared
     expect(term.screen.getText()).not.toContain("World")
     expect(term.screen.getText()).not.toContain("Hello")
-
-
   })
 })
 
@@ -198,8 +192,6 @@ describe("text lengthening", () => {
     term.feed(ansi2)
 
     expect(term.screen).toContainText("Hello World")
-
-
   })
 })
 
@@ -243,8 +235,6 @@ describe("multi-line update", () => {
     expect(term.screen).toContainText("Line B: updated")
     expect(term.screen).toContainText("Line C: footer")
     expect(term.screen.getText()).not.toContain("original")
-
-
   })
 })
 
@@ -286,8 +276,6 @@ describe("style change without text change", () => {
     for (let c = 0; c < "Styled text".length; c++) {
       expect(term.cell(0, c)).toBeBold()
     }
-
-
   })
 
   test("change foreground color without changing text content", () => {
@@ -321,8 +309,6 @@ describe("style change without text change", () => {
     for (let c = 0; c < "Same text".length; c++) {
       expect(term.cell(0, c)).toHaveFg({ r: 0, g: 170, b: 0 })
     }
-
-
   })
 })
 
@@ -366,8 +352,6 @@ describe("background color transitions", () => {
     for (let c = 0; c < 20; c++) {
       expect(term.cell(0, c)).toHaveBg({ r: 0, g: 255, b: 0 })
     }
-
-
   })
 })
 
@@ -415,8 +399,6 @@ describe("multiple sequential diffs", () => {
     expect(term.screen.getText()).not.toContain("Gamma")
     expect(term.screen.getText()).not.toContain("Beta")
     expect(term.screen.getText()).not.toContain("Alpha")
-
-
   })
 })
 
@@ -469,8 +451,6 @@ describe("complex multi-line diffs with styles", () => {
     expect(term.screen).toContainText("Header step 2")
     expect(term.cell(0, 0)).toHaveFg({ r: 0, g: 0, b: 255 })
     expect(term.screen).toContainText("Footer always")
-
-
   })
 })
 
@@ -488,9 +468,7 @@ describe("incremental diff matches fresh render", () => {
       return (
         <Box flexDirection="column" width={cols} height={rows}>
           <Box backgroundColor={step % 2 === 0 ? "#333333" : "#666666"} width={30} height={2}>
-            <Text color={step % 3 === 0 ? "#ff0000" : "#00ff00"}>
-              Step {step} content
-            </Text>
+            <Text color={step % 3 === 0 ? "#ff0000" : "#00ff00"}>Step {step} content</Text>
           </Box>
           <Text bold={step % 2 === 0}>Status: {step % 2 === 0 ? "even" : "odd"}</Text>
           <Text>Stable footer line</Text>
@@ -525,8 +503,6 @@ describe("incremental diff matches fresh render", () => {
       const freshRow = termFresh.row(row)
       expect(incrRow.getText()).toBe(freshRow.getText())
     }
-
-
   })
 })
 
@@ -578,7 +554,5 @@ describe("React component with conditional rendering", () => {
     expect(term.screen).toContainText("Top")
     expect(term.screen).toContainText("Middle section")
     expect(term.screen).toContainText("Bottom")
-
-
   })
 })

@@ -258,11 +258,22 @@ import { ThemeProvider, defaultDarkTheme, useTheme } from "inkx"
 </ThemeProvider>
 ```
 
-Any color prop starting with `$` is resolved against the active theme (e.g. `color="$primary"`, `backgroundColor="$surface"`). Four built-in themes (dark/light x ANSI16/truecolor). Borders default to `$separator` when style is set without explicit color. Use `resolveThemeColor(color, theme)` for programmatic resolution, `generateTheme(primary, dark)` to derive all tokens from one primary color.
+Any color prop starting with `$` is resolved against the active theme (e.g. `color="$primary"`, `backgroundColor="$surface"`). Four built-in themes (dark/light x ANSI16/truecolor). Borders default to `$border` when style is set without explicit color. Use `resolveThemeColor(color, theme)` for programmatic resolution.
 
-**19 semantic tokens**: `$primary`, `$link`, `$control`, `$selected`, `$selectedfg`, `$focusring`, `$text`, `$text2`, `$text3`, `$text4`, `$bg`, `$surface`, `$separator`, `$chromebg`, `$chromefg`, `$error`, `$warning`, `$success` + **16 palette colors** `$color0`–`$color15`.
+**33 semantic tokens** (shadcn-style `$name / $name-fg` pairing):
 
-Backward-compat aliases: `$accent`→`$primary`, `$muted`→`$text2`, `$raisedbg`→`$surface`, `$background`→`$bg`, `$border`→`$separator`.
+| Category   | Tokens                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------ |
+| Default    | `$bg`, `$fg`                                                                                     |
+| Surface    | `$surface`, `$surface-fg`, `$popover`, `$popover-fg`                                             |
+| Muted      | `$muted`, `$muted-fg`                                                                            |
+| Brand      | `$primary`, `$primary-fg`, `$secondary`, `$secondary-fg`                                         |
+| Accent     | `$accent`, `$accent-fg`                                                                          |
+| Status     | `$error`, `$error-fg`, `$warning`, `$warning-fg`, `$success`, `$success-fg`, `$info`, `$info-fg` |
+| Selection  | `$selection`, `$selection-fg`                                                                    |
+| Chrome     | `$inverse`, `$inverse-fg`                                                                        |
+| Cursor     | `$cursor`, `$cursor-fg`                                                                          |
+| Standalone | `$border`, `$inputborder`, `$focusborder`, `$link`, `$disabled-fg`                               |
 
 ## Layout Hooks
 
@@ -395,21 +406,21 @@ test("renders and handles input", async () => {
 
 **Testing API:**
 
-| Method                         | Returns        | Description                          |
-| ------------------------------ | -------------- | ------------------------------------ |
-| `app.text`                     | `string`       | Plain text output (no ANSI)          |
-| `app.ansi`                     | `string`       | Output with ANSI codes               |
-| `app.press(key)`               | `Promise`      | Send keyboard input                  |
-| `app.click(x, y, opts?)`       | `Promise`      | Simulate mouse click at coordinates  |
-| `app.doubleClick(x, y, opts?)` | `Promise`      | Simulate double-click at coordinates |
-| `app.wheel(x, y, delta)`       | `Promise`      | Simulate wheel scroll at coordinates |
+| Method                         | Returns        | Description                                       |
+| ------------------------------ | -------------- | ------------------------------------------------- |
+| `app.text`                     | `string`       | Plain text output (no ANSI)                       |
+| `app.ansi`                     | `string`       | Output with ANSI codes                            |
+| `app.press(key)`               | `Promise`      | Send keyboard input                               |
+| `app.click(x, y, opts?)`       | `Promise`      | Simulate mouse click at coordinates               |
+| `app.doubleClick(x, y, opts?)` | `Promise`      | Simulate double-click at coordinates              |
+| `app.wheel(x, y, delta)`       | `Promise`      | Simulate wheel scroll at coordinates              |
 | `app.resize(cols, rows)`       | `void`         | Resize virtual terminal and re-render (test only) |
-| `app.getByTestId(id)`          | `Locator`      | Find by testID prop                  |
-| `app.getByText(text)`          | `Locator`      | Find by text content                 |
-| `app.locator(sel)`             | `Locator`      | CSS-style attribute selector         |
-| `locator.textContent()`        | `string`       | Get element text                     |
-| `locator.boundingBox()`        | `Rect \| null` | Get position and size                |
-| `locator.count()`              | `number`       | Count matches                        |
+| `app.getByTestId(id)`          | `Locator`      | Find by testID prop                               |
+| `app.getByText(text)`          | `Locator`      | Find by text content                              |
+| `app.locator(sel)`             | `Locator`      | CSS-style attribute selector                      |
+| `locator.textContent()`        | `string`       | Get element text                                  |
+| `locator.boundingBox()`        | `Rect \| null` | Get position and size                             |
+| `locator.count()`              | `number`       | Count matches                                     |
 
 ## Kitty Keyboard Protocol
 
@@ -868,16 +879,16 @@ await app.press("ArrowUp")
 
 ### Environment Variables
 
-| Variable | Effect |
-|----------|--------|
-| `INKX_STRICT=1` | Compare incremental vs fresh render every frame (crashes on mismatch) |
-| `INKX_STRICT_OUTPUT=1` | Verify output ANSI matches fresh render (catches output-phase bugs) |
-| `INKX_CHECK_INCREMENTAL=1` | Same as STRICT but logs instead of crashing |
-| `INKX_INSTRUMENT=1` | Content-phase counters on `globalThis.__inkx_content_detail` |
-| `INKX_DEV=1` | Enable inspector + warn on missing prevBuffer (incremental rendering disabled) |
-| `INKX_PROFILE_RENDER=1` | Per-phase pipeline timing to stderr (measure, layout, scroll, content, output) |
-| `DEBUG=inkx:*` | Debug output for inkx pipeline |
-| `DEBUG_LOG=/tmp/inkx.log` | Redirect debug to file (required for TUI — terminal is captured) |
+| Variable                   | Effect                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| `INKX_STRICT=1`            | Compare incremental vs fresh render every frame (crashes on mismatch)          |
+| `INKX_STRICT_OUTPUT=1`     | Verify output ANSI matches fresh render (catches output-phase bugs)            |
+| `INKX_CHECK_INCREMENTAL=1` | Same as STRICT but logs instead of crashing                                    |
+| `INKX_INSTRUMENT=1`        | Content-phase counters on `globalThis.__inkx_content_detail`                   |
+| `INKX_DEV=1`               | Enable inspector + warn on missing prevBuffer (incremental rendering disabled) |
+| `INKX_PROFILE_RENDER=1`    | Per-phase pipeline timing to stderr (measure, layout, scroll, content, output) |
+| `DEBUG=inkx:*`             | Debug output for inkx pipeline                                                 |
+| `DEBUG_LOG=/tmp/inkx.log`  | Redirect debug to file (required for TUI — terminal is captured)               |
 
 ### Runtime Debug
 
@@ -1043,7 +1054,7 @@ to capture numbers.
 | [docs/README.md](docs/README.md)                                                   | Documentation table of contents                                                                                              |
 | **Guides**                                                                         |                                                                                                                              |
 | [docs/guides/getting-started.md](docs/guides/getting-started.md)                   | First app tutorial, basic input, layout feedback                                                                             |
-| [docs/guides/state-management.md](docs/guides/state-management.md)                 | createApp, useApp, createSlice, selectors vs signals, effects middleware                                              |
+| [docs/guides/state-management.md](docs/guides/state-management.md)                 | createApp, useApp, createSlice, selectors vs signals, effects middleware                                                     |
 | [docs/guides/runtime-layers.md](docs/guides/runtime-layers.md)                     | createApp, createRuntime, createStore, streams, tick sources                                                                 |
 | [docs/guides/migration.md](docs/guides/migration.md)                               | Ink to inkx migration guide                                                                                                  |
 | [docs/guides/runtime-migration.md](docs/guides/runtime-migration.md)               | Legacy inkx to inkx/runtime migration                                                                                        |

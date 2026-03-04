@@ -291,10 +291,10 @@ Inter-frame cursor state (`InlineCursorState`) is captured in the `createOutputP
 
 ```typescript
 const render = createOutputPhase({ underlineStyles: true })
-render(null, buf1, "inline")    // first render → inits cursor tracking
-render(buf1, buf2, "inline")    // incremental (state persists in closure)
+render(null, buf1, "inline") // first render → inits cursor tracking
+render(buf1, buf2, "inline") // incremental (state persists in closure)
 
-outputPhase(buf1, buf2, "inline")  // bare → always full render (no shared state)
+outputPhase(buf1, buf2, "inline") // bare → always full render (no shared state)
 ```
 
 ### Relative cursor positioning
@@ -310,11 +310,11 @@ Returns `ChangesResult { output: string, finalY: number }` — the final cursor 
 
 ### Performance
 
-| Scenario | Full Render | Incremental | Reduction |
-|----------|------------|-------------|-----------|
-| 10 rows, 1 change | 1,196 bytes | 42 bytes | 28x |
-| 30 rows, 1 change | 3,540 bytes | 33 bytes | 107x |
-| 50 rows, 1 change | 6,324 bytes | 33 bytes | 192x |
+| Scenario          | Full Render | Incremental | Reduction |
+| ----------------- | ----------- | ----------- | --------- |
+| 10 rows, 1 change | 1,196 bytes | 42 bytes    | 28x       |
+| 30 rows, 1 change | 3,540 bytes | 33 bytes    | 107x      |
+| 50 rows, 1 change | 6,324 bytes | 33 bytes    | 192x      |
 
 ### Verification
 

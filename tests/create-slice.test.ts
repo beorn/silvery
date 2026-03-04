@@ -24,10 +24,7 @@ type Effect = { effect: string; data?: unknown }
 const WithEffects = createSlice(makeState, {
   addItem(s, { text }: { text: string }): Effect[] {
     s.items.push(text)
-    return [
-      { effect: "persist", data: s.items },
-      { effect: "toast" },
-    ]
+    return [{ effect: "persist", data: s.items }, { effect: "toast" }]
   },
   clear(s): Effect[] {
     s.items = []
@@ -124,9 +121,7 @@ describe("createSlice", () => {
   describe("type inference", () => {
     test("Op type inferred correctly", () => {
       type CounterOp = typeof Counter.Op
-      expectTypeOf<CounterOp>().toEqualTypeOf<
-        { op: "increment" } | { op: "add"; amount: number } | { op: "reset" }
-      >()
+      expectTypeOf<CounterOp>().toEqualTypeOf<{ op: "increment" } | { op: "add"; amount: number } | { op: "reset" }>()
     })
 
     test("InferOp utility works", () => {

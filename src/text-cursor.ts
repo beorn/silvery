@@ -44,7 +44,12 @@ export interface WrappedLine {
  * Uses wrapText() from unicode.ts — the same function the render pipeline
  * uses — so cursor positions always match what's displayed on screen.
  */
-export function cursorToRowCol(text: string, cursor: number, wrapWidth: number, measurer?: Measurer): { row: number; col: number } {
+export function cursorToRowCol(
+  text: string,
+  cursor: number,
+  wrapWidth: number,
+  measurer?: Measurer,
+): { row: number; col: number } {
   if (wrapWidth <= 0) return { row: 0, col: 0 }
   return cursorToRowColFromLines(getWrappedLines(text, wrapWidth, measurer), cursor)
 }
@@ -134,7 +139,13 @@ export function rowColToCursor(text: string, row: number, col: number, wrapWidth
  *   stay at this column. Pass the col from the original position before
  *   the first vertical move in a sequence.
  */
-export function cursorMoveUp(text: string, cursor: number, wrapWidth: number, stickyX?: number, measurer?: Measurer): number | null {
+export function cursorMoveUp(
+  text: string,
+  cursor: number,
+  wrapWidth: number,
+  stickyX?: number,
+  measurer?: Measurer,
+): number | null {
   if (wrapWidth <= 0) return cursor > 0 ? 0 : null
 
   const lines = getWrappedLines(text, wrapWidth, measurer)
@@ -161,7 +172,13 @@ export function cursorMoveUp(text: string, cursor: number, wrapWidth: number, st
  *
  * @param stickyX - Preferred column position for vertical movement.
  */
-export function cursorMoveDown(text: string, cursor: number, wrapWidth: number, stickyX?: number, measurer?: Measurer): number | null {
+export function cursorMoveDown(
+  text: string,
+  cursor: number,
+  wrapWidth: number,
+  stickyX?: number,
+  measurer?: Measurer,
+): number | null {
   if (wrapWidth <= 0) return cursor < text.length ? text.length : null
 
   const lines = getWrappedLines(text, wrapWidth, measurer)

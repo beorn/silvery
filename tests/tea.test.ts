@@ -31,15 +31,9 @@ const delayed = (ms: number, then: CounterWithEffectsOp) => ({ type: "delay" as 
 
 type MyEffect = ReturnType<typeof log> | ReturnType<typeof save> | ReturnType<typeof delayed>
 
-type CounterWithEffectsOp =
-  | { type: "increment" }
-  | { type: "save" }
-  | { type: "delayed_increment"; ms: number }
+type CounterWithEffectsOp = { type: "increment" } | { type: "save" } | { type: "delayed_increment"; ms: number }
 
-function counterWithEffectsReducer(
-  state: CounterState,
-  op: CounterWithEffectsOp,
-): TeaResult<CounterState, MyEffect> {
+function counterWithEffectsReducer(state: CounterState, op: CounterWithEffectsOp): TeaResult<CounterState, MyEffect> {
   switch (op.type) {
     case "increment":
       return { ...state, count: state.count + 1 } // Level 3: plain state
@@ -88,8 +82,12 @@ describe("tea()", () => {
       const saved: unknown[] = []
 
       const runners: EffectRunners<MyEffect, CounterWithEffectsOp> = {
-        log: (e) => { logged.push(e.msg) },
-        save: (e) => { saved.push(e.data) },
+        log: (e) => {
+          logged.push(e.msg)
+        },
+        save: (e) => {
+          saved.push(e.data)
+        },
       }
 
       const store = createStore(tea({ count: 5 }, counterWithEffectsReducer, { runners }))
@@ -104,7 +102,9 @@ describe("tea()", () => {
     test("mixed: plain state ops produce no effects", () => {
       const logged: string[] = []
       const runners: EffectRunners<MyEffect, CounterWithEffectsOp> = {
-        log: (e) => { logged.push(e.msg) },
+        log: (e) => {
+          logged.push(e.msg)
+        },
       }
 
       const store = createStore(tea({ count: 0 }, counterWithEffectsReducer, { runners }))
@@ -159,10 +159,12 @@ describe("tea()", () => {
     })
 
     test("selectors work with Zustand", () => {
-      const store = createStore(tea({ count: 0, name: "test" }, (s, op: { type: "inc" }) => ({
-        ...s,
-        count: s.count + 1,
-      })))
+      const store = createStore(
+        tea({ count: 0, name: "test" }, (s, op: { type: "inc" }) => ({
+          ...s,
+          count: s.count + 1,
+        })),
+      )
 
       store.getState().dispatch({ type: "inc" })
       expect(store.getState().count).toBe(1)
@@ -183,7 +185,12 @@ describe("tea()", () => {
     })
 
     test("initial state available immediately", () => {
-      const store = createStore(tea({ count: 42, label: "hello" }, counterReducer as unknown as TeaReducer<{ count: number; label: string }, CounterOp>))
+      const store = createStore(
+        tea(
+          { count: 42, label: "hello" },
+          counterReducer as unknown as TeaReducer<{ count: number; label: string }, CounterOp>,
+        ),
+      )
       expect(store.getState().count).toBe(42)
       expect(store.getState().label).toBe("hello")
     })
@@ -231,9 +238,7 @@ describe("collect()", () => {
   })
 
   test("round-trip effects carry completion action", () => {
-    const [, effects] = collect(
-      counterWithEffectsReducer({ count: 0 }, { type: "delayed_increment", ms: 500 }),
-    )
+    const [, effects] = collect(counterWithEffectsReducer({ count: 0 }, { type: "delayed_increment", ms: 500 }))
     expect(effects).toContainEqual(delayed(500, { type: "increment" }))
   })
 })
@@ -244,14 +249,11 @@ describe("createApp + tea() integration", () => {
   test("EventHandlerContext has dispatch for tea stores", async () => {
     let capturedDispatch: unknown = undefined
 
-    const app = createApp(
-      () => tea({ count: 0 }, counterReducer),
-      {
-        "term:key": (_data, ctx) => {
-          capturedDispatch = ctx.dispatch
-        },
+    const app = createApp(() => tea({ count: 0 }, counterReducer), {
+      "term:key": (_data, ctx) => {
+        capturedDispatch = ctx.dispatch
       },
-    )
+    })
 
     const handle = await app.run(React.createElement("text", null, "test"), {
       cols: 40,
@@ -265,17 +267,14 @@ describe("createApp + tea() integration", () => {
   })
 
   test("ctx.dispatch updates store state", async () => {
-    const app = createApp(
-      () => tea({ count: 0 }, counterReducer),
-      {
-        "term:key": (data: unknown, ctx) => {
-          const { input } = data as { input: string }
-          if (input === "j") ctx.dispatch!({ type: "increment" })
-          if (input === "k") ctx.dispatch!({ type: "add", amount: 5 })
-          if (input === "q") return "exit"
-        },
+    const app = createApp(() => tea({ count: 0 }, counterReducer), {
+      "term:key": (data: unknown, ctx) => {
+        const { input } = data as { input: string }
+        if (input === "j") ctx.dispatch!({ type: "increment" })
+        if (input === "k") ctx.dispatch!({ type: "add", amount: 5 })
+        if (input === "q") return "exit"
       },
-    )
+    })
 
     const handle = await app.run(React.createElement("text", null, "test"), {
       cols: 40,
@@ -295,19 +294,18 @@ describe("createApp + tea() integration", () => {
     const logged: string[] = []
 
     const runners: EffectRunners<MyEffect, CounterWithEffectsOp> = {
-      log: (e) => { logged.push(e.msg) },
+      log: (e) => {
+        logged.push(e.msg)
+      },
       save: () => {},
     }
 
-    const app = createApp(
-      () => tea({ count: 0 }, counterWithEffectsReducer, { runners }),
-      {
-        "term:key": (data: unknown, ctx) => {
-          const { input } = data as { input: string }
-          if (input === "s") ctx.dispatch!({ type: "save" })
-        },
+    const app = createApp(() => tea({ count: 0 }, counterWithEffectsReducer, { runners }), {
+      "term:key": (data: unknown, ctx) => {
+        const { input } = data as { input: string }
+        if (input === "s") ctx.dispatch!({ type: "save" })
       },
-    )
+    })
 
     const handle = await app.run(React.createElement("text", null, "test"), {
       cols: 40,

@@ -96,10 +96,7 @@ function CompactApp({
     scriptIdx.current++
     onAdvance?.()
 
-    setExchanges((prev) => [
-      ...prev,
-      { id, content: entry.content, tokens: entry.tokens, frozen: false },
-    ])
+    setExchanges((prev) => [...prev, { id, content: entry.content, tokens: entry.tokens, frozen: false }])
   }, [done, script, onAdvance])
 
   // Auto-advance after compaction
@@ -146,13 +143,7 @@ function CompactApp({
         width={stdoutProp?.columns}
         footer={
           <Box borderStyle="round">
-            <TextInput
-              value={inputText}
-              onChange={setInputText}
-              onSubmit={handleSubmit}
-              isActive={!done}
-              prompt="> "
-            />
+            <TextInput value={inputText} onChange={setInputText} onSubmit={handleSubmit} isActive={!done} prompt="> " />
           </Box>
         }
       >
@@ -201,12 +192,7 @@ describe("scrollback compaction", () => {
     const { stdout } = createMockStdout(80)
 
     const render = createRenderer({ cols: 80, rows: 24 })
-    const app = render(
-      <CompactApp
-        stdout={stdout}
-        onCompact={() => compactCount++}
-      />,
-    )
+    const app = render(<CompactApp stdout={stdout} onCompact={() => compactCount++} />)
 
     // Advance 3 more times to cross threshold: 200+300+400+200 = 1100 > 950
     // The compact cascade (if bugged) plays out synchronously during
@@ -226,12 +212,7 @@ describe("scrollback compaction", () => {
     const { stdout, writes } = createMockStdout(80)
 
     const render = createRenderer({ cols: 80, rows: 24 })
-    const app = render(
-      <CompactApp
-        stdout={stdout}
-        onCompact={() => compactCount++}
-      />,
-    )
+    const app = render(<CompactApp stdout={stdout} onCompact={() => compactCount++} />)
 
     // Advance to cross threshold
     for (let i = 0; i < 3; i++) {
@@ -282,10 +263,9 @@ describe("scrollback resize", () => {
       scrollbackLimit: 1000,
     })
 
-    await term.spawn(
-      ["bun", "examples/interactive/static-scrollback.tsx", "--fast"],
-      { cwd: "/Users/beorn/Code/pim/km/vendor/beorn-inkx" },
-    )
+    await term.spawn(["bun", "examples/interactive/static-scrollback.tsx", "--fast"], {
+      cwd: "/Users/beorn/Code/pim/km/vendor/beorn-inkx",
+    })
 
     // Wait for initial render
     await term.waitFor("send", 10000)
@@ -346,9 +326,16 @@ describe("scrollback resize", () => {
     const fullBufferAfterShrink = term.getText()
     const agentMatches = fullBufferAfterShrink.match(/Agent 624 tokens/g)
     expect(
-      (agentMatches?.length ?? 0),
+      agentMatches?.length ?? 0,
       `"Agent 624 tokens" appears ${agentMatches?.length ?? 0}x in full buffer (expected ≤1)`,
     ).toBeLessThanOrEqual(1)
+
+    // Status bar must NOT leak into scrollback — only frozen exchange content
+    // should be in scrollback. The status bar (with "send", "esc quit", "ctx")
+    // belongs exclusively on the visible screen.
+    const scrollbackAfterShrink = term.scrollback.getText()
+    expect(scrollbackAfterShrink, "status bar 'send' leaked into scrollback after resize").not.toContain("send")
+    expect(scrollbackAfterShrink, "status bar 'esc quit' leaked into scrollback after resize").not.toContain("esc quit")
 
     // Restore to original size
     term.resize(100, 30)
@@ -371,8 +358,31 @@ describe("scrollback resize", () => {
     const fullBufferAfterRestore = term.getText()
     const agentMatchesRestore = fullBufferAfterRestore.match(/Agent 624 tokens/g)
     expect(
-      (agentMatchesRestore?.length ?? 0),
+      agentMatchesRestore?.length ?? 0,
       `"Agent 624 tokens" appears ${agentMatchesRestore?.length ?? 0}x after restore (expected ≤1)`,
     ).toBeLessThanOrEqual(1)
-  }, 30000)
+
+    // Scrollback after restore must also be clean of status bar content
+    const scrollbackAfterRestore = term.scrollback.getText()
+    expect(scrollbackAfterRestore, "status bar leaked into scrollback after restore").not.toContain("send")
+    expect(scrollbackAfterRestore, "status bar leaked into scrollback after restore").not.toContain("esc quit")
+
+    // Press Enter several times AFTER resize to trigger new renders + scrollback.
+    // This catches bugs where the output phase miscalculates cursor position
+    // post-resize and pushes the status bar into scrollback.
+    for (let i = 0; i < 3; i++) {
+      term.press("Enter")
+      await new Promise((r) => setTimeout(r, 2000))
+    }
+
+    const scrollbackAfterInteraction = term.scrollback.getText()
+    expect(
+      scrollbackAfterInteraction,
+      "status bar 'send' leaked into scrollback after post-resize interaction",
+    ).not.toContain("send")
+    expect(
+      scrollbackAfterInteraction,
+      "status bar 'esc quit' leaked into scrollback after post-resize interaction",
+    ).not.toContain("esc quit")
+  }, 45000)
 })

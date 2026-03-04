@@ -534,10 +534,7 @@ export function stickyPhase(root: InkxNode): void {
 /**
  * Compare two stickyChildren arrays for equality.
  */
-function stickyChildrenEqual(
-  a: InkxNode["stickyChildren"],
-  b: InkxNode["stickyChildren"],
-): boolean {
+function stickyChildrenEqual(a: InkxNode["stickyChildren"], b: InkxNode["stickyChildren"]): boolean {
   if (a === b) return true
   if (!a || !b) return false
   if (a.length !== b.length) return false

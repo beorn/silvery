@@ -886,7 +886,8 @@ function StatusBar({
       <Text color="$muted" dim>
         context <Text color={ctxColor}>{ctxBar}</Text>{" "}
         <Text color={ctxPct > 100 ? "$error" : undefined}>{ctxPct}%</Text>
-        {"  "}{cost}
+        {"  "}
+        {cost}
       </Text>
     </Box>
   )

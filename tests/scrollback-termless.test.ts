@@ -54,7 +54,6 @@ describe("inline output → termless verification", () => {
 
     expect(term.screen).toContainText("Hello World")
     expect(term.screen).toContainText("Second line")
-
   })
 
   test("incremental inline render updates changed content", () => {
@@ -74,7 +73,6 @@ describe("inline output → termless verification", () => {
 
     expect(term.screen).toContainText("Line A")
     expect(term.screen).toContainText("Line C")
-
   })
 })
 
@@ -106,7 +104,6 @@ describe("scrollback promotion → termless verification", () => {
     // Both should be visible — frozen in scrollback or on screen, live on screen
     expect(term.screen).toContainText("Item 2")
     expect(term.screen).toContainText("Status bar")
-
   })
 
   test("no jump-up: cursor stays at correct position after promotion", () => {
@@ -139,8 +136,6 @@ describe("scrollback promotion → termless verification", () => {
     // Cursor should NOT be at row 0 (that would mean it "jumped up")
     const cursor = term.getCursor()
     expect(cursor.y).toBeGreaterThan(0)
-
-
   })
 
   test("no blank lines after promotion (the jump-up bug)", () => {
@@ -177,8 +172,6 @@ describe("scrollback promotion → termless verification", () => {
     for (const line of liveLines) {
       expect(term.screen).toContainText(line)
     }
-
-
   })
 
   test("multiple sequential promotions work correctly", () => {
@@ -208,8 +201,6 @@ describe("scrollback promotion → termless verification", () => {
     term.feed(outputPhase(buf3, buf4, "inline", 0, 10))
     expect(term.screen).toContainText("C")
     expect(term.screen).toContainText("D updated")
-
-
   })
 
   test("promotion near terminal bottom doesn't overflow", () => {
@@ -235,8 +226,6 @@ describe("scrollback promotion → termless verification", () => {
     // if total exceeds terminal height)
     const sb = term.getScrollback()
     expect(sb.totalLines).toBeGreaterThanOrEqual(6)
-
-
   })
 })
 
@@ -270,8 +259,6 @@ describe("content changes after promotion → termless", () => {
     const hasStaleE = visibleLines.some((l) => l === "E")
     expect(hasStaleD).toBe(false)
     expect(hasStaleE).toBe(false)
-
-
   })
 })
 
@@ -308,8 +295,6 @@ describe("resize during promotion → termless", () => {
     expect(term.screen).toContainText("Beta")
     expect(term.screen).toContainText("Gamma")
     expect(term.screen).toContainText("Epsilon")
-
-
   })
 })
 
@@ -339,8 +324,6 @@ describe("content height exceeding terminal rows → termless", () => {
     // Early lines should be in scrollback above the viewport
     expect(term.scrollback).toContainText("Line 1")
     expect(term.scrollback).toContainText("Line 2")
-
-
   })
 })
 
@@ -369,8 +352,6 @@ describe("cursor position after promotion → termless", () => {
     const cursor = term.getCursor()
     expect(cursor.y).toBeGreaterThanOrEqual(0)
     expect(cursor.y).toBeLessThan(ROWS)
-
-
   })
 })
 
@@ -408,7 +389,5 @@ describe("styled content in scrollback → termless", () => {
     // The viewport should show the most recent lines
     const viewportText = term.screen.getText()
     expect(viewportText).toContain("plain line 7")
-
-
   })
 })

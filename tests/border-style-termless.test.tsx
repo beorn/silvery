@@ -83,8 +83,6 @@ describe("border characters render correctly through terminal", () => {
     expect(term.screen).toContainText("\u2502") // │
     // Content
     expect(term.screen).toContainText("Hi")
-
-
   })
 
   test("round border renders with correct box-drawing characters", () => {
@@ -101,8 +99,6 @@ describe("border characters render correctly through terminal", () => {
     expect(term.screen).toContainText("\u2570") // ╰
     expect(term.screen).toContainText("\u256f") // ╯
     expect(term.screen).toContainText("Hi")
-
-
   })
 
   test("double border renders with correct box-drawing characters", () => {
@@ -119,8 +115,6 @@ describe("border characters render correctly through terminal", () => {
     expect(term.screen).toContainText("\u255a") // ╚
     expect(term.screen).toContainText("\u255d") // ╝
     expect(term.screen).toContainText("Hi")
-
-
   })
 
   test("bold border renders with correct box-drawing characters", () => {
@@ -137,8 +131,6 @@ describe("border characters render correctly through terminal", () => {
     expect(term.screen).toContainText("\u2517") // ┗
     expect(term.screen).toContainText("\u251b") // ┛
     expect(term.screen).toContainText("Hi")
-
-
   })
 })
 
@@ -160,8 +152,6 @@ describe("dimColor on Text applies faint SGR through terminal", () => {
 
     // "D" of "Dimmed text" at row=0, col=0 should be faint
     expect(term.cell(0, 0)).toBeFaint()
-
-
   })
 
   test("dim border box: border is NOT faint, child text is NOT faint", () => {
@@ -183,8 +173,6 @@ describe("dimColor on Text applies faint SGR through terminal", () => {
 
     // Text at row=1, col=1 is NOT faint (dim on Box doesn't leak to children)
     expect(term.cell(1, 1)).not.toBeFaint()
-
-
   })
 })
 
@@ -217,8 +205,6 @@ describe("text inside bordered box has correct position", () => {
 
     // Left border at row=1, col=0 should be │
     expect(term.row(1)).toContainText("\u2502") // │
-
-
   })
 })
 
@@ -245,8 +231,6 @@ describe("background color does not bleed outside box", () => {
 
     // Cell outside the box: row=0, col=10 should NOT have red bg
     expect(term.cell(0, 10)).not.toHaveBg({ r: 255, g: 0, b: 0 })
-
-
   })
 
   test("bordered box with background: bg does not extend past border", () => {
@@ -267,8 +251,6 @@ describe("background color does not bleed outside box", () => {
 
     // Cell outside the box: row=0, col=12 should NOT have blue bg
     expect(term.cell(0, 12)).not.toHaveBg({ r: 0, g: 0, b: 255 })
-
-
   })
 })
 
@@ -293,8 +275,6 @@ describe("bold text inside bordered box renders with correct SGR", () => {
 
     // Border character at row=0, col=0 should NOT be bold
     expect(term.cell(0, 0)).not.toBeBold()
-
-
   })
 
   test("italic text inside border has italic attribute", () => {
@@ -310,8 +290,6 @@ describe("bold text inside bordered box renders with correct SGR", () => {
 
     // "I" at row=1, col=1 should be italic
     expect(term.cell(1, 1)).toBeItalic()
-
-
   })
 })
 
@@ -341,8 +319,6 @@ describe("style reset after box", () => {
     // "After box" is on row 3 (after the 3-row bordered box)
     // "A" of "After box" at row=3, col=0 should NOT have red foreground
     expect(term.cell(3, 0)).not.toHaveFg({ r: 255, g: 0, b: 0 })
-
-
   })
 
   test("text after bold box content is not bold", () => {
@@ -363,8 +339,6 @@ describe("style reset after box", () => {
 
     // "N" of "Normal line" at row=1, col=0 should NOT be bold
     expect(term.cell(1, 0)).not.toBeBold()
-
-
   })
 
   test("dim text followed by normal text: dim does not leak", () => {
@@ -385,8 +359,6 @@ describe("style reset after box", () => {
 
     // "B" of "Bright line" at row=1, col=0 should NOT be faint
     expect(term.cell(1, 0)).not.toBeFaint()
-
-
   })
 })
 
@@ -412,8 +384,6 @@ describe("nested boxes render correctly through terminal", () => {
     expect(term.screen).toContainText("\u250c") // ┌ (single)
     // Inner border: round style at row=1
     expect(term.screen).toContainText("\u256d") // ╭ (round)
-
-
   })
 
   test("nested boxes with different true-color border colors are isolated", () => {
@@ -437,8 +407,6 @@ describe("nested boxes render correctly through terminal", () => {
 
     // Content "C" at row=2, col=2 should be green
     expect(term.cell(2, 2)).toHaveFg({ r: 0, g: 255, b: 0 })
-
-
   })
 })
 
@@ -469,8 +437,6 @@ describe("border with foreground color", () => {
 
     // Bottom-left corner at row=2, col=0 should have red fg
     expect(term.cell(2, 0)).toHaveFg({ r: 255, g: 0, b: 0 })
-
-
   })
 
   test("borderColor does not affect content text color", () => {
@@ -489,8 +455,6 @@ describe("border with foreground color", () => {
 
     // "G" of "Green text" at row=1, col=1 should be green, not red
     expect(term.cell(1, 1)).toHaveFg({ r: 0, g: 255, b: 0 })
-
-
   })
 })
 
@@ -531,8 +495,6 @@ describe("style transitions across frames", () => {
     expect(term.screen).toContainText("Content")
     // Border should now be blue, not red
     expect(term.cell(0, 0)).toHaveFg({ r: 0, g: 0, b: 255 })
-
-
   })
 
   test("adding bold to text in incremental render applies correctly", () => {
@@ -568,8 +530,6 @@ describe("style transitions across frames", () => {
     expect(term.screen).toContainText("Dynamic")
     // "D" at row=1, col=1 should now be bold
     expect(term.cell(1, 1)).toBeBold()
-
-
   })
 
   test("removing background color in incremental render clears it", () => {
@@ -605,8 +565,6 @@ describe("style transitions across frames", () => {
     expect(term.screen).toContainText("Text")
     // Red bg should be cleared
     expect(term.cell(0, 0)).not.toHaveBg({ r: 255, g: 0, b: 0 })
-
-
   })
 })
 
@@ -633,8 +591,6 @@ describe("color transitions through terminal emulator", () => {
 
     // "B" at row=0, col=1 should be blue
     expect(term.cell(0, 1)).toHaveFg({ r: 0, g: 0, b: 255 })
-
-
   })
 
   test("fg color followed by bg color: both survive through terminal", () => {
@@ -655,8 +611,6 @@ describe("color transitions through terminal emulator", () => {
 
     // "B" at row=0, col=1 should have blue bg
     expect(term.cell(0, 1)).toHaveBg({ r: 0, g: 0, b: 255 })
-
-
   })
 
   test("true-color border survives ANSI round-trip", () => {
@@ -673,7 +627,5 @@ describe("color transitions through terminal emulator", () => {
 
     // Border at row=0, col=0 should have the true-color purple fg
     expect(term.cell(0, 0)).toHaveFg({ r: 0x8b, g: 0x5c, b: 0xf6 })
-
-
   })
 })

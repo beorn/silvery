@@ -50,24 +50,27 @@ describe("resolveThemeColor", () => {
     expect(resolveThemeColor("$primary", defaultDarkTheme)).toBe("#EBCB8B")
   })
 
-  test("resolves all 17 named tokens", () => {
+  test("resolves all named tokens", () => {
     const tokens: Array<[string, string]> = [
       ["$primary", defaultDarkTheme.primary],
       ["$link", defaultDarkTheme.link],
-      ["$control", defaultDarkTheme.control],
-      ["$selected", defaultDarkTheme.selected],
-      ["$selectedfg", defaultDarkTheme.selectedfg],
-      ["$focusring", defaultDarkTheme.focusring],
-      ["$text", defaultDarkTheme.text],
-      ["$text2", defaultDarkTheme.text2],
-      ["$text3", defaultDarkTheme.text3],
-      ["$text4", defaultDarkTheme.text4],
+      ["$inputborder", defaultDarkTheme.inputborder],
+      ["$selection", defaultDarkTheme.selection],
+      ["$selection-fg", defaultDarkTheme.selectionfg],
+      ["$focusborder", defaultDarkTheme.focusborder],
+      ["$fg", defaultDarkTheme.fg],
+      ["$muted-fg", defaultDarkTheme.mutedfg],
+      ["$disabled-fg", defaultDarkTheme.disabledfg],
       ["$bg", defaultDarkTheme.bg],
       ["$surface", defaultDarkTheme.surface],
-      ["$separator", defaultDarkTheme.separator],
+      ["$border", defaultDarkTheme.border],
       ["$error", defaultDarkTheme.error],
       ["$warning", defaultDarkTheme.warning],
       ["$success", defaultDarkTheme.success],
+      ["$inverse", defaultDarkTheme.inverse],
+      ["$inverse-fg", defaultDarkTheme.inversefg],
+      ["$popover", defaultDarkTheme.popover],
+      ["$popover-fg", defaultDarkTheme.popoverfg],
     ]
 
     for (const [token, expected] of tokens) {
@@ -79,16 +82,14 @@ describe("resolveThemeColor", () => {
     expect(resolveThemeColor("$nonexistent", defaultDarkTheme)).toBe("$nonexistent")
   })
 
-  test("does not resolve $name or $dark (non-color metadata)", () => {
-    // $name resolves to the string "dark-truecolor" which is a valid string, so it passes
-    expect(resolveThemeColor("$name", defaultDarkTheme)).toBe("dark-truecolor")
-    // $dark is boolean, not string — falls through
-    expect(resolveThemeColor("$dark", defaultDarkTheme)).toBe("$dark")
+  test("does not resolve $name (non-color metadata)", () => {
+    // $name resolves to the string "nord" which is a valid string, so it passes through
+    expect(resolveThemeColor("$name", defaultDarkTheme)).toBe("nord")
   })
 
   test("resolves against light theme", () => {
-    expect(resolveThemeColor("$primary", defaultLightTheme)).toBe("#0056B3")
-    expect(resolveThemeColor("$text", defaultLightTheme)).toBe("#1A1A1A")
+    expect(resolveThemeColor("$primary", defaultLightTheme)).toBe(defaultLightTheme.primary)
+    expect(resolveThemeColor("$fg", defaultLightTheme)).toBe(defaultLightTheme.fg)
   })
 })
 
@@ -124,31 +125,32 @@ describe("resolveThemeColor palette", () => {
 })
 
 // ============================================================================
-// resolveThemeColor — backward compat aliases
+// resolveThemeColor — hyphenated tokens
 // ============================================================================
 
-describe("resolveThemeColor backward compat", () => {
-  test("$accent resolves to theme.primary", () => {
-    expect(resolveThemeColor("$accent", defaultDarkTheme)).toBe(defaultDarkTheme.primary)
-    expect(resolveThemeColor("$accent", ansi16DarkTheme)).toBe(ansi16DarkTheme.primary)
+describe("resolveThemeColor hyphenated tokens", () => {
+  test("$accent resolves to theme.accent", () => {
+    expect(resolveThemeColor("$accent", defaultDarkTheme)).toBe(defaultDarkTheme.accent)
+    expect(resolveThemeColor("$accent", ansi16DarkTheme)).toBe(ansi16DarkTheme.accent)
   })
 
-  test("$muted resolves to theme.text2", () => {
-    expect(resolveThemeColor("$muted", defaultDarkTheme)).toBe(defaultDarkTheme.text2)
-    expect(resolveThemeColor("$muted", ansi16DarkTheme)).toBe(ansi16DarkTheme.text2)
+  test("$muted resolves to theme.muted", () => {
+    expect(resolveThemeColor("$muted", defaultDarkTheme)).toBe(defaultDarkTheme.muted)
+    expect(resolveThemeColor("$muted", ansi16DarkTheme)).toBe(ansi16DarkTheme.muted)
   })
 
-  test("$raisedbg resolves to theme.surface (backward compat)", () => {
-    expect(resolveThemeColor("$raisedbg", defaultDarkTheme)).toBe(defaultDarkTheme.surface)
+  test("$muted-fg resolves to theme.mutedfg", () => {
+    expect(resolveThemeColor("$muted-fg", defaultDarkTheme)).toBe(defaultDarkTheme.mutedfg)
+    expect(resolveThemeColor("$muted-fg", ansi16DarkTheme)).toBe(ansi16DarkTheme.mutedfg)
   })
 
-  test("$background resolves to theme.bg", () => {
-    expect(resolveThemeColor("$background", defaultDarkTheme)).toBe(defaultDarkTheme.bg)
+  test("$surface-fg resolves to theme.surfacefg", () => {
+    expect(resolveThemeColor("$surface-fg", defaultDarkTheme)).toBe(defaultDarkTheme.surfacefg)
   })
 
-  test("$border resolves to theme.separator", () => {
-    expect(resolveThemeColor("$border", defaultDarkTheme)).toBe(defaultDarkTheme.separator)
-    expect(resolveThemeColor("$border", ansi16DarkTheme)).toBe(ansi16DarkTheme.separator)
+  test("$border resolves to theme.border", () => {
+    expect(resolveThemeColor("$border", defaultDarkTheme)).toBe(defaultDarkTheme.border)
+    expect(resolveThemeColor("$border", ansi16DarkTheme)).toBe(ansi16DarkTheme.border)
   })
 })
 
@@ -158,43 +160,42 @@ describe("resolveThemeColor backward compat", () => {
 
 describe("default themes", () => {
   test("dark truecolor theme has expected metadata", () => {
-    expect(defaultDarkTheme.name).toBe("dark-truecolor")
-    expect(defaultDarkTheme.dark).toBe(true)
+    expect(defaultDarkTheme.name).toBe("nord")
   })
 
   test("light truecolor theme has expected metadata", () => {
-    expect(defaultLightTheme.name).toBe("light-truecolor")
-    expect(defaultLightTheme.dark).toBe(false)
+    expect(defaultLightTheme.name).toBe("catppuccin-latte")
   })
 
   test("dark ANSI 16 theme has expected metadata", () => {
     expect(ansi16DarkTheme.name).toBe("dark-ansi16")
-    expect(ansi16DarkTheme.dark).toBe(true)
   })
 
   test("light ANSI 16 theme has expected metadata", () => {
     expect(ansi16LightTheme.name).toBe("light-ansi16")
-    expect(ansi16LightTheme.dark).toBe(false)
   })
 
-  test("all 17 named color tokens are valid strings", () => {
+  test("all named color tokens are valid strings", () => {
     const colorKeys = [
       "primary",
       "link",
-      "control",
-      "selected",
-      "selectedfg",
-      "focusring",
-      "text",
-      "text2",
-      "text3",
-      "text4",
+      "inputborder",
+      "selection",
+      "selectionfg",
+      "focusborder",
+      "fg",
+      "mutedfg",
+      "disabledfg",
       "bg",
       "surface",
-      "separator",
+      "border",
       "error",
       "warning",
       "success",
+      "inverse",
+      "inversefg",
+      "popover",
+      "popoverfg",
     ] as const
 
     for (const theme of [defaultDarkTheme, defaultLightTheme, ansi16DarkTheme, ansi16LightTheme]) {
@@ -227,7 +228,7 @@ describe("ThemeProvider + useTheme", () => {
     }
 
     const app = render(<ThemeDisplay />)
-    expect(app.text).toContain("dark-truecolor")
+    expect(app.text).toContain("nord")
   })
 
   test("useTheme returns provided theme", () => {
@@ -241,7 +242,7 @@ describe("ThemeProvider + useTheme", () => {
         <ThemeDisplay />
       </ThemeProvider>,
     )
-    expect(app.text).toContain("light-truecolor")
+    expect(app.text).toContain("catppuccin-latte")
   })
 
   test("custom theme is accessible via useTheme", () => {
@@ -301,29 +302,7 @@ describe("$token resolution via explicit resolveThemeColor", () => {
     expect(stripAnsi(frame)).toContain("Hello")
   })
 
-  test("Box with resolved borderColor uses theme separator color", () => {
-    function ThemedBox() {
-      const theme = useTheme()
-      return (
-        <Box borderStyle="single" borderColor={resolveThemeColor("$separator", theme)}>
-          <Text>inside</Text>
-        </Box>
-      )
-    }
-
-    const app = render(
-      <ThemeProvider theme={defaultDarkTheme}>
-        <ThemedBox />
-      </ThemeProvider>,
-    )
-
-    const frame = app.ansi
-    const { r, g, b } = hexToRgb(defaultDarkTheme.separator)
-    expect(frame).toContain(`38;2;${r};${g};${b}`)
-    expect(stripAnsi(frame)).toContain("inside")
-  })
-
-  test("backward compat: $border resolves same as $separator", () => {
+  test("Box with resolved borderColor uses theme border color", () => {
     function ThemedBox() {
       const theme = useTheme()
       return (
@@ -340,8 +319,9 @@ describe("$token resolution via explicit resolveThemeColor", () => {
     )
 
     const frame = app.ansi
-    const { r, g, b } = hexToRgb(defaultDarkTheme.separator)
+    const { r, g, b } = hexToRgb(defaultDarkTheme.border)
     expect(frame).toContain(`38;2;${r};${g};${b}`)
+    expect(stripAnsi(frame)).toContain("inside")
   })
 
   test("literal colors pass through Box/Text unchanged", () => {
@@ -416,21 +396,7 @@ describe("$token auto-resolution in color props", () => {
     expect(stripAnsi(app.ansi)).toContain("Hello")
   })
 
-  test("Box borderColor='$separator' resolves against theme", () => {
-    const app = render(
-      <ThemeProvider theme={defaultDarkTheme}>
-        <Box borderStyle="single" borderColor="$separator">
-          <Text>inside</Text>
-        </Box>
-      </ThemeProvider>,
-    )
-
-    const { r, g, b } = hexToRgb(defaultDarkTheme.separator)
-    expect(app.ansi).toContain(`38;2;${r};${g};${b}`)
-    expect(stripAnsi(app.ansi)).toContain("inside")
-  })
-
-  test("backward compat: $border auto-resolves to separator", () => {
+  test("Box borderColor='$border' resolves against theme", () => {
     const app = render(
       <ThemeProvider theme={defaultDarkTheme}>
         <Box borderStyle="single" borderColor="$border">
@@ -439,8 +405,9 @@ describe("$token auto-resolution in color props", () => {
       </ThemeProvider>,
     )
 
-    const { r, g, b } = hexToRgb(defaultDarkTheme.separator)
+    const { r, g, b } = hexToRgb(defaultDarkTheme.border)
     expect(app.ansi).toContain(`38;2;${r};${g};${b}`)
+    expect(stripAnsi(app.ansi)).toContain("inside")
   })
 
   test("Box backgroundColor='$surface' resolves against theme", () => {
@@ -458,16 +425,16 @@ describe("$token auto-resolution in color props", () => {
     expect(stripAnsi(app.ansi)).toContain("content")
   })
 
-  test("backward compat: $raisedbg auto-resolves to surface", () => {
+  test("$popover auto-resolves to popover background", () => {
     const app = render(
       <ThemeProvider theme={defaultDarkTheme}>
-        <Box backgroundColor="$raisedbg">
+        <Box backgroundColor="$popover">
           <Text>content</Text>
         </Box>
       </ThemeProvider>,
     )
 
-    const { r, g, b } = hexToRgb(defaultDarkTheme.surface)
+    const { r, g, b } = hexToRgb(defaultDarkTheme.popover)
     expect(app.ansi).toContain(`48;2;${r};${g};${b}`)
     expect(stripAnsi(app.ansi)).toContain("content")
   })
@@ -505,20 +472,18 @@ describe("generateTheme", () => {
   test("generates dark yellow theme matching ansi16DarkTheme", () => {
     const theme = generateTheme("yellow", true)
     expect(theme.name).toBe("dark-yellow")
-    expect(theme.dark).toBe(true)
     expect(theme.primary).toBe("yellow")
     expect(theme.link).toBe("blueBright")
-    expect(theme.control).toBe("yellow")
-    expect(theme.selected).toBe("yellow") // selected = primary
-    expect(theme.selectedfg).toBe("black")
-    expect(theme.focusring).toBe("blueBright") // dark → blueBright
-    expect(theme.text).toBe("whiteBright")
-    expect(theme.text2).toBe("white")
-    expect(theme.text3).toBe("gray")
-    expect(theme.text4).toBe("gray")
+    expect(theme.inputborder).toBe("gray")
+    expect(theme.selection).toBe("yellow") // selection = primary
+    expect(theme.selectionfg).toBe("black")
+    expect(theme.focusborder).toBe("blueBright") // dark → blueBright
+    expect(theme.fg).toBe("whiteBright")
+    expect(theme.mutedfg).toBe("white")
+    expect(theme.disabledfg).toBe("gray")
     expect(theme.bg).toBe("")
     expect(theme.surface).toBe("black")
-    expect(theme.separator).toBe("gray")
+    expect(theme.border).toBe("gray")
     expect(theme.error).toBe("redBright")
     expect(theme.warning).toBe("yellow") // same as primary
     expect(theme.success).toBe("greenBright")
@@ -528,22 +493,21 @@ describe("generateTheme", () => {
   test("generates light blue theme matching ansi16LightTheme", () => {
     const theme = generateTheme("blue", false)
     expect(theme.name).toBe("light-blue")
-    expect(theme.dark).toBe(false)
     expect(theme.primary).toBe("blue")
     expect(theme.link).toBe("blueBright")
-    expect(theme.selected).toBe("blue") // selected = primary
-    expect(theme.focusring).toBe("blue") // light → blue
-    expect(theme.text).toBe("black")
-    expect(theme.text2).toBe("blackBright")
+    expect(theme.selection).toBe("blue") // selection = primary
+    expect(theme.focusborder).toBe("blue") // light → blue
+    expect(theme.fg).toBe("black")
+    expect(theme.mutedfg).toBe("blackBright")
     expect(theme.surface).toBe("white")
     expect(theme.error).toBe("red")
     expect(theme.success).toBe("green")
   })
 
-  test("selected always matches primary", () => {
+  test("selection always matches primary", () => {
     for (const primary of ["yellow", "red", "magenta", "green", "white", "cyan", "blue"] as const) {
       const theme = generateTheme(primary, true)
-      expect(theme.selected).toBe(primary)
+      expect(theme.selection).toBe(primary)
     }
   })
 
@@ -557,7 +521,7 @@ describe("generateTheme", () => {
         // All string fields should be defined
         expect(typeof theme.primary).toBe("string")
         expect(typeof theme.link).toBe("string")
-        expect(typeof theme.text).toBe("string")
+        expect(typeof theme.fg).toBe("string")
       }
     }
   })
@@ -569,14 +533,14 @@ describe("generateTheme", () => {
 
 describe("Box theme prop", () => {
   test("Box theme overrides $token resolution for its subtree", () => {
-    const customTheme: Theme = { ...ansi16DarkTheme, selected: "red" }
+    const customTheme: Theme = { ...ansi16DarkTheme, selection: "red" }
 
     const app = render(
       <ThemeProvider theme={ansi16DarkTheme}>
         <Box theme={customTheme}>
-          <Text color="$selected">inner</Text>
+          <Text color="$selection">inner</Text>
         </Box>
-        <Text color="$selected">outer</Text>
+        <Text color="$selection">outer</Text>
       </ThemeProvider>,
     )
 
@@ -584,27 +548,27 @@ describe("Box theme prop", () => {
     const inner = app.getByText("inner")
     const outer = app.getByText("outer")
 
-    // inner: $selected resolves to "red" (customTheme) → ANSI 256 index 1
+    // inner: $selection resolves to "red" (customTheme) → ANSI 256 index 1
     expect(inner.boundingBox()).toBeTruthy()
     const innerCell = buffer.getCell(inner.boundingBox()!.x, inner.boundingBox()!.y)
     expect(innerCell.fg).toBe(1) // red
 
-    // outer: $selected resolves to "yellow" (root theme) → ANSI 256 index 3
+    // outer: $selection resolves to "yellow" (root theme) → ANSI 256 index 3
     const outerCell = buffer.getCell(outer.boundingBox()!.x, outer.boundingBox()!.y)
     expect(outerCell.fg).toBe(3) // yellow
   })
 
   test("nested Box themes cascade — innermost wins", () => {
-    const outerTheme: Theme = { ...ansi16DarkTheme, selected: "cyan" }
-    const innerTheme: Theme = { ...ansi16DarkTheme, selected: "magenta" }
+    const outerTheme: Theme = { ...ansi16DarkTheme, selection: "cyan" }
+    const innerTheme: Theme = { ...ansi16DarkTheme, selection: "magenta" }
 
     const app = render(
       <ThemeProvider theme={ansi16DarkTheme}>
         <Box theme={outerTheme}>
           <Box theme={innerTheme}>
-            <Text color="$selected">deep</Text>
+            <Text color="$selection">deep</Text>
           </Box>
-          <Text color="$selected">mid</Text>
+          <Text color="$selection">mid</Text>
         </Box>
       </ThemeProvider>,
     )
@@ -638,8 +602,8 @@ describe("Box theme prop", () => {
   })
 
   test("theme prop change triggers re-render with new token values", async () => {
-    const themeA: Theme = { ...ansi16DarkTheme, selected: "red" }
-    const themeB: Theme = { ...ansi16DarkTheme, selected: "green" }
+    const themeA: Theme = { ...ansi16DarkTheme, selection: "red" }
+    const themeB: Theme = { ...ansi16DarkTheme, selection: "green" }
 
     function App() {
       const [useA, setUseA] = useState(true)
@@ -651,7 +615,7 @@ describe("Box theme prop", () => {
       return (
         <ThemeProvider theme={ansi16DarkTheme}>
           <Box theme={useA ? themeA : themeB}>
-            <Text color="$selected">token</Text>
+            <Text color="$selection">token</Text>
           </Box>
         </ThemeProvider>
       )
@@ -659,7 +623,7 @@ describe("Box theme prop", () => {
 
     const app = render(<App />)
 
-    // Initially themeA: $selected = red
+    // Initially themeA: $selection = red
     const loc = app.getByText("token")
     let buffer = app.lastBuffer()!
     let cell = buffer.getCell(loc.boundingBox()!.x, loc.boundingBox()!.y)

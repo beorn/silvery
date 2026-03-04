@@ -1,367 +1,367 @@
 - generic [ref=e3]:
-  - link "Skip to content" [ref=e4] [cursor=pointer]:
-    - /url: "#VPContent"
-  - banner:
-    - generic:
-      - generic:
+    - link "Skip to content" [ref=e4] [cursor=pointer]:
+        - /url: "#VPContent"
+    - banner:
         - generic:
-          - link "inkx" [ref=e6] [cursor=pointer]:
-            - /url: /inkx/
-            - generic [ref=e7]: inkx
-          - generic [ref=e8]:
-            - button "Search" [ref=e11] [cursor=pointer]:
-              - generic [ref=e14]: Search
-              - generic [ref=e15]:
-                - generic [ref=e16]: ⌘
-                - generic [ref=e17]: K
-            - navigation "Main Navigation" [ref=e18]:
-              - generic [ref=e19]: Main Navigation
-              - link "Guide" [ref=e20] [cursor=pointer]:
-                - /url: /inkx/guide/getting-started.html
-                - generic [ref=e21]: Guide
-              - link "API" [ref=e22] [cursor=pointer]:
-                - /url: /inkx/api/box.html
-                - generic [ref=e23]: API
-              - button "Examples" [ref=e25] [cursor=pointer]:
-                - generic [ref=e27]: Examples
-              - button "Links" [ref=e30] [cursor=pointer]:
-                - generic [ref=e32]: Links
-            - switch "Switch to dark theme" [ref=e35] [cursor=pointer]
-            - link "github" [ref=e41] [cursor=pointer]:
-              - /url: https://github.com/beorn/inkx
-  - complementary [ref=e43]:
-    - navigation "Sidebar Navigation" [ref=e45]:
-      - generic [ref=e46]: Sidebar Navigation
-      - generic [ref=e48]:
-        - button "Examples toggle section" [ref=e49] [cursor=pointer]:
-          - heading "Examples" [level=2] [ref=e51]
-          - button "toggle section" [ref=e52]
-        - generic [ref=e54]:
-          - link "Live Demo" [ref=e58] [cursor=pointer]:
-            - /url: /inkx/examples/live-demo.html
-            - paragraph [ref=e59]: Live Demo
-          - link "Dashboard" [ref=e63] [cursor=pointer]:
-            - /url: /inkx/examples/dashboard.html
-            - paragraph [ref=e64]: Dashboard
-          - link "Task List" [ref=e68] [cursor=pointer]:
-            - /url: /inkx/examples/task-list.html
-            - paragraph [ref=e69]: Task List
-          - link "Kanban Board" [ref=e73] [cursor=pointer]:
-            - /url: /inkx/examples/kanban.html
-            - paragraph [ref=e74]: Kanban Board
-      - generic [ref=e76]:
-        - button "Use Cases" [ref=e77]:
-          - heading "Use Cases" [level=2] [ref=e79]
-        - generic [ref=e80]:
-          - link "AI Assistants & Chat" [ref=e84] [cursor=pointer]:
-            - /url: /inkx/use-cases/ai-assistants.html
-            - paragraph [ref=e85]: AI Assistants & Chat
-          - link "Dashboards & Monitoring" [ref=e89] [cursor=pointer]:
-            - /url: /inkx/use-cases/dashboards.html
-            - paragraph [ref=e90]: Dashboards & Monitoring
-          - link "Kanban & Project Boards" [ref=e94] [cursor=pointer]:
-            - /url: /inkx/use-cases/kanban-boards.html
-            - paragraph [ref=e95]: Kanban & Project Boards
-          - link "CLI Wizards & Setup" [ref=e99] [cursor=pointer]:
-            - /url: /inkx/use-cases/cli-wizards.html
-            - paragraph [ref=e100]: CLI Wizards & Setup
-          - link "Developer Tools" [ref=e104] [cursor=pointer]:
-            - /url: /inkx/use-cases/developer-tools.html
-            - paragraph [ref=e105]: Developer Tools
-          - link "Data Explorers & Tables" [ref=e109] [cursor=pointer]:
-            - /url: /inkx/use-cases/data-explorers.html
-            - paragraph [ref=e110]: Data Explorers & Tables
-  - generic [ref=e113]:
-    - navigation "On this page" [ref=e119]:
-      - generic [ref=e120]:
-        - heading "On this page" [level=2] [ref=e122]
-        - list [ref=e123]:
-          - listitem [ref=e124]:
-            - link "Key Benefits" [ref=e125] [cursor=pointer]:
-              - /url: "#key-benefits"
-          - listitem [ref=e126]:
-            - 'link "Example: Minimal AI Chat" [ref=e127] [cursor=pointer]':
-              - /url: "#example-minimal-ai-chat"
-          - listitem [ref=e128]:
-            - link "Adding Command Introspection" [ref=e129] [cursor=pointer]:
-              - /url: "#adding-command-introspection"
-          - listitem [ref=e130]:
-            - link "What inkx Adds" [ref=e131] [cursor=pointer]:
-              - /url: "#what-inkx-adds"
-          - listitem [ref=e132]:
-            - link "Get Started" [ref=e133] [cursor=pointer]:
-              - /url: "#get-started"
-    - generic [ref=e136]:
-      - main [ref=e137]:
-        - generic [ref=e139]:
-          - heading "AI Assistants & Chat Interfaces Permalink to \"AI Assistants & Chat Interfaces\"" [level=1] [ref=e140]:
-            - text: AI Assistants & Chat Interfaces
-            - link "Permalink to \"AI Assistants & Chat Interfaces\"" [ref=e141] [cursor=pointer]:
-              - /url: "#ai-assistants-chat-interfaces"
-              - text: "#"
-          - paragraph [ref=e142]: "Terminal-based AI assistants have unique UI requirements: streaming output that grows unpredictably, long conversation history that must scroll, multi-line code pasting, and the ability for AI agents to discover and invoke actions programmatically. inkx handles all of these out of the box."
-          - generic [ref=e143]:
-            - generic [ref=e144]:
-              - generic [ref=e145]: Terminal
-              - generic [ref=e146]: ANSI escape sequences rendered via xterm.js
-            - iframe [active] [ref=e148]:
-              - generic [ref=f1e5]:
-                - textbox "Terminal input" [active] [ref=f1e6]
+            - generic:
                 - generic:
-                  - generic:
-                    - generic: ●
-                    - generic: ~/project
-                  - generic:
-                    - generic: ❯
-                  - generic:
-                    - generic: Fix the login bug — expired tokens return null
-                  - generic:
-                    - generic: ╭────────────────────────────────────────────────────────────────╮
-                  - generic:
-                    - generic: │
-                    - generic: Read src/auth.ts
-                    - generic: │
-                  - generic:
-                    - generic: │
-                    - generic: "47│ export async function validateToken(token: Token) {"
-                    - generic: │
-                  - generic:
-                    - generic: │
-                    - generic: 48│ if (token.expired) return null // ← bug
-                    - generic: │
-                  - generic:
-                    - generic: │
-                    - generic: 49│ return token
-                    - generic: │
-                  - generic:
-                    - generic: │
-                    - generic: "50│ }"
-                    - generic: │
-                  - generic:
-                    - generic: ╰────────────────────────────────────────────────────────────────╯
-                  - generic:
-                    - generic: ╭────────────────────────────────────────────────────────────────╮
-                  - generic:
-                    - generic: │
-                    - generic: Edit src/auth.ts
-                    - generic: │
-                  - generic:
-                    - generic: │
-                    - generic: "- if (token.expired) return null"
-                    - generic: │
-                  - generic:
-                    - generic: │
-                    - generic: + if (token.expired) return refreshToken(token)
-                    - generic: │
-                  - generic:
-                    - generic: ╰────────────────────────────────────────────────────────────────╯
-                  - generic:
-                    - generic: ╭────────────────────────────────────────────────────────────────╮
-                  - generic:
-                    - generic: │
-                    - generic: Bash bun test auth
-                    - generic: │
-                  - generic:
-                    - generic: │
-                    - generic: ✓ validates active tokens
-                    - generic: │
-                  - generic:
-                    - generic: │
-                    - generic: ✓ refreshes expired tokens
-                    - generic: │
-                  - generic:
-                    - generic: │
-                    - generic: ✓ rejects revoked tokens
-                    - generic: │
-                  - generic:
-                    - generic: │
-                    - generic: 3 passed
-                    - generic: │
-                  - generic:
-                    - generic: ╭────────────────────────────────────────────────────────────────────╮
-                  - generic:
-                    - generic: │
-                    - generic: ❯
-                    - generic: type a prompt, then Enter...
-                    - generic: │
-                  - generic:
-                    - generic: ╰────────────────────────────────────────────────────────────────────╯
-                  - generic:
-                    - generic: type a prompt Enter run
-          - heading "Key Benefits Permalink to \"Key Benefits\"" [level=2] [ref=e149]:
-            - text: Key Benefits
-            - link "Permalink to \"Key Benefits\"" [ref=e150] [cursor=pointer]:
-              - /url: "#key-benefits"
-              - text: "#"
-          - paragraph [ref=e151]:
-            - strong [ref=e152]: Scrollable containers for variable-length output.
-            - text: LLM responses range from one line to hundreds. With
-            - code [ref=e153]: overflow="scroll"
-            - text: on a Box, inkx measures all children, determines which are visible, and renders only those -- no manual height estimation or virtualization config. Just render your messages and let inkx handle the rest.
-          - paragraph [ref=e154]:
-            - strong [ref=e155]: Command introspection for AI agents.
-            - text: The
-            - code [ref=e156]: withCommands
-            - text: plugin exposes every action with an ID, name, description, and keybindings. Calling
-            - code [ref=e157]: cmd.all()
-            - text: returns a structured list of everything the app can do. An AI agent can read this to decide which actions to invoke, turning the TUI into a programmable interface rather than a purely visual one.
-          - paragraph [ref=e158]:
-            - strong [ref=e159]: Streaming-friendly incremental rendering.
-            - text: When an LLM streams tokens, only the message being appended changes. inkx tracks dirty flags per node and re-renders only what changed — 169us per update versus 20.7ms for a full-screen repaint (
-            - link "benchmarks" [ref=e160] [cursor=pointer]:
-              - /url: /inkx/guide/why-inkx.html#performance
-            - text: ). At 50 tokens per second, that is the difference between smooth scrolling and visible flicker.
-          - paragraph [ref=e161]:
-            - strong [ref=e162]: Bracketed paste for code snippets.
-            - text: The
-            - code [ref=e163]: usePaste
-            - text: hook receives multi-line pasted text as a single event instead of individual keystrokes. Users can paste code blocks, stack traces, or configuration files directly into the input area without the app interpreting each line as a separate command.
-          - paragraph [ref=e164]:
-            - strong [ref=e165]: Scrollback buffer support.
-            - text: Long conversations need scrollback — users expect to scroll up through conversation history just like in a web chat. inkx's
-            - code [ref=e166]: overflow="scroll"
-            - text: "containers handle this natively: content grows downward, the viewport follows the latest message, and users can scroll back through the full history with keyboard or mouse. No manual viewport management, no height estimation, no virtualization config."
-          - paragraph [ref=e167]:
-            - strong [ref=e168]: Kitty keyboard protocol for rich shortcuts.
-            - text: Modern terminals support unambiguous key identification. inkx can distinguish Cmd+K from Ctrl+K, detect key release events, and parse macOS modifier symbols. Build command palettes, chord sequences, and modal interfaces with confidence that key bindings will not collide.
-          - 'heading "Example: Minimal AI Chat Permalink to \"Example: Minimal AI Chat\"" [level=2] [ref=e169]':
-            - text: "Example: Minimal AI Chat"
-            - 'link "Permalink to \"Example: Minimal AI Chat\"" [ref=e170] [cursor=pointer]':
-              - /url: "#example-minimal-ai-chat"
-              - text: "#"
-          - paragraph [ref=e171]: A complete working chat interface in under 50 lines. Messages scroll automatically, the input field stays pinned at the bottom, and the user can send messages with Enter.
-          - generic [ref=e172]:
-            - button "Copy Code" [ref=e173] [cursor=pointer]
-            - generic [ref=e174]: tsx
-            - code [ref=e176]:
-              - generic [ref=e177]: "import { Box, Text, TextInput, useContentRect } from \"inkx\""
-              - generic [ref=e178]: "import { run, useInput } from \"inkx/runtime\""
-              - generic [ref=e179]: "import { useState } from \"react\""
-              - generic [ref=e180]: "interface Message {"
-              - generic [ref=e181]: "role: \"user\" | \"assistant\""
-              - generic [ref=e182]: "content: string"
-              - generic [ref=e183]: "}"
-              - generic [ref=e184]: "function Chat() {"
-              - generic [ref=e185]: const [messages, setMessages] = useState<Message[]>([])
-              - generic [ref=e186]: const [input, setInput] = useState("")
-              - generic [ref=e187]: "const { height } = useContentRect()"
-              - generic [ref=e188]: "async function send(text: string) {"
-              - generic [ref=e189]: if (!text.trim()) return
-              - generic [ref=e190]: setInput("")
-              - generic [ref=e191]: "const userMsg: Message = { role: \"user\", content: text }"
-              - generic [ref=e192]: setMessages((prev) => [...prev, userMsg])
-              - generic [ref=e193]: // Replace with your LLM call — response streams in via setMessages
-              - generic [ref=e194]: "const reply: Message = { role: \"assistant\", content: `Echo: ${text}` }"
-              - generic [ref=e195]: setMessages((prev) => [...prev, reply])
-              - generic [ref=e196]: "}"
-              - generic [ref=e197]: return (
-              - generic [ref=e198]: <Box flexDirection="column" width="100%" height="100%">
-              - generic [ref=e199]: "<Box flexDirection=\"column\" flexGrow={1} overflow=\"scroll\" scrollTo={messages.length - 1} paddingX={1}>"
-              - generic [ref=e200]: "{messages.map((msg, i) => ("
-              - generic [ref=e201]: "<Text key={i} color={msg.role === \"user\" ? \"cyan\" : \"white\"}>"
-              - generic [ref=e202]: "{msg.role === \"user\" ? \"> \" : \" \"}"
-              - generic [ref=e203]: "{msg.content}"
-              - generic [ref=e204]: </Text>
-              - generic [ref=e205]: "))}"
-              - generic [ref=e206]: </Box>
-              - generic [ref=e207]: "<Box borderStyle=\"round\" borderColor=\"gray\" paddingX={1}>"
-              - generic [ref=e208]: <TextInput
-              - generic [ref=e209]: "value={input}"
-              - generic [ref=e210]: "onChange={setInput}"
-              - generic [ref=e211]: "onSubmit={send}"
-              - generic [ref=e212]: placeholder="Ask anything..."
-              - generic [ref=e213]: "prompt=\"you: \""
-              - generic [ref=e214]: promptColor="cyan"
-              - generic [ref=e215]: />
-              - generic [ref=e216]: </Box>
-              - generic [ref=e217]: </Box>
-              - generic [ref=e218]: )
-              - generic [ref=e219]: "}"
-              - generic [ref=e220]: await run(<Chat />)
-          - paragraph [ref=e221]: "This gives you:"
-          - list [ref=e222]:
-            - listitem [ref=e223]: A scrollable message history that grows as the conversation progresses
-            - listitem [ref=e224]:
-              - text: Automatic scroll-to-bottom when new messages arrive (
-              - code [ref=e225]: "scrollTo={messages.length - 1}"
-              - text: )
-            - listitem [ref=e226]: A bordered input area with a prompt prefix and placeholder text
-            - listitem [ref=e227]:
-              - text: Layout feedback via
-              - code [ref=e228]: useContentRect()
-              - text: "-- the message area fills all available height"
-          - paragraph [ref=e229]: To add streaming, replace the echo stub with an async generator that appends tokens to the latest message. inkx will re-render only the changed text node on each token, keeping the update cost constant regardless of conversation length.
-          - heading "Adding Command Introspection Permalink to \"Adding Command Introspection\"" [level=2] [ref=e230]:
-            - text: Adding Command Introspection
-            - link "Permalink to \"Adding Command Introspection\"" [ref=e231] [cursor=pointer]:
-              - /url: "#adding-command-introspection"
-              - text: "#"
-          - paragraph [ref=e232]:
-            - text: For AI-driven applications where an agent needs to discover and execute actions, wrap the app with
-            - code [ref=e233]: withCommands
-            - text: ":"
-          - generic [ref=e234]:
-            - button "Copy Code" [ref=e235] [cursor=pointer]
-            - generic [ref=e236]: tsx
-            - code [ref=e238]:
-              - generic [ref=e239]: "import { withCommands } from \"inkx\""
-              - generic [ref=e240]: "const app = withCommands(render(<Chat />), {"
-              - generic [ref=e241]: "registry: commandRegistry,"
-              - generic [ref=e242]: "getContext: () => appContext,"
-              - generic [ref=e243]: "handleAction: (action) => dispatch(action),"
-              - generic [ref=e244]: "getKeybindings: () => keybindings,"
-              - generic [ref=e245]: "})"
-              - generic [ref=e246]: // An AI agent can enumerate all available actions
-              - generic [ref=e247]: const commands = app.cmd.all()
-              - generic [ref=e248]: "// [{ id: \"send_message\", name: \"Send\", keys: [\"Enter\"], ... },"
-              - generic [ref=e249]: "// { id: \"clear_history\", name: \"Clear\", keys: [\"Ctrl+L\"], ... },"
-              - generic [ref=e250]: "// { id: \"toggle_model\", name: \"Switch Model\", keys: [\"Ctrl+M\"], ... }]"
-              - generic [ref=e251]: // And invoke them directly
-              - generic [ref=e252]: await app.cmd.send_message()
-          - paragraph [ref=e253]:
-            - text: This turns the TUI from a visual interface into a structured API. The agent does not need to simulate keystrokes -- it calls commands by name and reads the screen state through
-            - code [ref=e254]: app.text
-            - text: or
-            - code [ref=e255]: app.getState()
-            - text: .
-          - heading "What inkx Adds Permalink to \"What inkx Adds\"" [level=2] [ref=e256]:
-            - text: What inkx Adds
-            - link "Permalink to \"What inkx Adds\"" [ref=e257] [cursor=pointer]:
-              - /url: "#what-inkx-adds"
-              - text: "#"
-          - paragraph [ref=e258]:
-            - text: "Most TUI frameworks leave you to build chat infrastructure from scratch. inkx provides the primitives out of the box: scroll containers ("
-            - code [ref=e259]: overflow="scroll"
-            - text: ) handle variable-length LLM output without manual viewport tracking, layout feedback via
-            - code [ref=e260]: useContentRect()
-            - text: sizes message bubbles without threading width props, and the command system gives AI agents a programmatic API to discover and invoke actions.
-          - heading "Get Started Permalink to \"Get Started\"" [level=2] [ref=e261]:
-            - text: Get Started
-            - link "Permalink to \"Get Started\"" [ref=e262] [cursor=pointer]:
-              - /url: "#get-started"
-              - text: "#"
-          - paragraph [ref=e263]: "Install inkx and build your first AI assistant:"
-          - generic [ref=e264]:
-            - button "Copy Code" [ref=e265] [cursor=pointer]
-            - generic [ref=e266]: bash
-            - code [ref=e268]:
-              - generic [ref=e269]: bun add inkx react @beorn/flexx
-          - paragraph [ref=e270]:
-            - text: See the
-            - link "Getting Started guide" [ref=e271] [cursor=pointer]:
-              - /url: /inkx/guide/getting-started.html
-            - text: for a full walkthrough, or explore the
-            - link "component reference" [ref=e272] [cursor=pointer]:
-              - /url: /inkx/guide/components.html
-            - text: for Box, Text, TextInput, VirtualList, and other building blocks.
-      - contentinfo [ref=e273]:
-        - navigation "Pager" [ref=e274]:
-          - generic [ref=e275]: Pager
-          - link "Previous page Kanban Board" [ref=e277] [cursor=pointer]:
-            - /url: /inkx/examples/kanban.html
-            - generic [ref=e278]: Previous page
-            - generic [ref=e279]: Kanban Board
-          - link "Next page Dashboards & Monitoring" [ref=e281] [cursor=pointer]:
-            - /url: /inkx/use-cases/dashboards.html
-            - generic [ref=e282]: Next page
-            - generic [ref=e283]: Dashboards & Monitoring
+                    - link "inkx" [ref=e6] [cursor=pointer]:
+                        - /url: /inkx/
+                        - generic [ref=e7]: inkx
+                    - generic [ref=e8]:
+                        - button "Search" [ref=e11] [cursor=pointer]:
+                            - generic [ref=e14]: Search
+                            - generic [ref=e15]:
+                                - generic [ref=e16]: ⌘
+                                - generic [ref=e17]: K
+                        - navigation "Main Navigation" [ref=e18]:
+                            - generic [ref=e19]: Main Navigation
+                            - link "Guide" [ref=e20] [cursor=pointer]:
+                                - /url: /inkx/guide/getting-started.html
+                                - generic [ref=e21]: Guide
+                            - link "API" [ref=e22] [cursor=pointer]:
+                                - /url: /inkx/api/box.html
+                                - generic [ref=e23]: API
+                            - button "Examples" [ref=e25] [cursor=pointer]:
+                                - generic [ref=e27]: Examples
+                            - button "Links" [ref=e30] [cursor=pointer]:
+                                - generic [ref=e32]: Links
+                        - switch "Switch to dark theme" [ref=e35] [cursor=pointer]
+                        - link "github" [ref=e41] [cursor=pointer]:
+                            - /url: https://github.com/beorn/inkx
+    - complementary [ref=e43]:
+        - navigation "Sidebar Navigation" [ref=e45]:
+            - generic [ref=e46]: Sidebar Navigation
+            - generic [ref=e48]:
+                - button "Examples toggle section" [ref=e49] [cursor=pointer]:
+                    - heading "Examples" [level=2] [ref=e51]
+                    - button "toggle section" [ref=e52]
+                - generic [ref=e54]:
+                    - link "Live Demo" [ref=e58] [cursor=pointer]:
+                        - /url: /inkx/examples/live-demo.html
+                        - paragraph [ref=e59]: Live Demo
+                    - link "Dashboard" [ref=e63] [cursor=pointer]:
+                        - /url: /inkx/examples/dashboard.html
+                        - paragraph [ref=e64]: Dashboard
+                    - link "Task List" [ref=e68] [cursor=pointer]:
+                        - /url: /inkx/examples/task-list.html
+                        - paragraph [ref=e69]: Task List
+                    - link "Kanban Board" [ref=e73] [cursor=pointer]:
+                        - /url: /inkx/examples/kanban.html
+                        - paragraph [ref=e74]: Kanban Board
+            - generic [ref=e76]:
+                - button "Use Cases" [ref=e77]:
+                    - heading "Use Cases" [level=2] [ref=e79]
+                - generic [ref=e80]:
+                    - link "AI Assistants & Chat" [ref=e84] [cursor=pointer]:
+                        - /url: /inkx/use-cases/ai-assistants.html
+                        - paragraph [ref=e85]: AI Assistants & Chat
+                    - link "Dashboards & Monitoring" [ref=e89] [cursor=pointer]:
+                        - /url: /inkx/use-cases/dashboards.html
+                        - paragraph [ref=e90]: Dashboards & Monitoring
+                    - link "Kanban & Project Boards" [ref=e94] [cursor=pointer]:
+                        - /url: /inkx/use-cases/kanban-boards.html
+                        - paragraph [ref=e95]: Kanban & Project Boards
+                    - link "CLI Wizards & Setup" [ref=e99] [cursor=pointer]:
+                        - /url: /inkx/use-cases/cli-wizards.html
+                        - paragraph [ref=e100]: CLI Wizards & Setup
+                    - link "Developer Tools" [ref=e104] [cursor=pointer]:
+                        - /url: /inkx/use-cases/developer-tools.html
+                        - paragraph [ref=e105]: Developer Tools
+                    - link "Data Explorers & Tables" [ref=e109] [cursor=pointer]:
+                        - /url: /inkx/use-cases/data-explorers.html
+                        - paragraph [ref=e110]: Data Explorers & Tables
+    - generic [ref=e113]:
+        - navigation "On this page" [ref=e119]:
+            - generic [ref=e120]:
+                - heading "On this page" [level=2] [ref=e122]
+                - list [ref=e123]:
+                    - listitem [ref=e124]:
+                        - link "Key Benefits" [ref=e125] [cursor=pointer]:
+                            - /url: "#key-benefits"
+                    - listitem [ref=e126]:
+                        - 'link "Example: Minimal AI Chat" [ref=e127] [cursor=pointer]':
+                            - /url: "#example-minimal-ai-chat"
+                    - listitem [ref=e128]:
+                        - link "Adding Command Introspection" [ref=e129] [cursor=pointer]:
+                            - /url: "#adding-command-introspection"
+                    - listitem [ref=e130]:
+                        - link "What inkx Adds" [ref=e131] [cursor=pointer]:
+                            - /url: "#what-inkx-adds"
+                    - listitem [ref=e132]:
+                        - link "Get Started" [ref=e133] [cursor=pointer]:
+                            - /url: "#get-started"
+        - generic [ref=e136]:
+            - main [ref=e137]:
+                - generic [ref=e139]:
+                    - heading "AI Assistants & Chat Interfaces Permalink to \"AI Assistants & Chat Interfaces\"" [level=1] [ref=e140]:
+                        - text: AI Assistants & Chat Interfaces
+                        - link "Permalink to \"AI Assistants & Chat Interfaces\"" [ref=e141] [cursor=pointer]:
+                            - /url: "#ai-assistants-chat-interfaces"
+                            - text: "#"
+                    - paragraph [ref=e142]: "Terminal-based AI assistants have unique UI requirements: streaming output that grows unpredictably, long conversation history that must scroll, multi-line code pasting, and the ability for AI agents to discover and invoke actions programmatically. inkx handles all of these out of the box."
+                    - generic [ref=e143]:
+                        - generic [ref=e144]:
+                            - generic [ref=e145]: Terminal
+                            - generic [ref=e146]: ANSI escape sequences rendered via xterm.js
+                        - iframe [active] [ref=e148]:
+                            - generic [ref=f1e5]:
+                                - textbox "Terminal input" [active] [ref=f1e6]
+                                - generic:
+                                    - generic:
+                                        - generic: ●
+                                        - generic: ~/project
+                                    - generic:
+                                        - generic: ❯
+                                    - generic:
+                                        - generic: Fix the login bug — expired tokens return null
+                                    - generic:
+                                        - generic: ╭────────────────────────────────────────────────────────────────╮
+                                    - generic:
+                                        - generic: │
+                                        - generic: Read src/auth.ts
+                                        - generic: │
+                                    - generic:
+                                        - generic: │
+                                        - generic: "47│ export async function validateToken(token: Token) {"
+                                        - generic: │
+                                    - generic:
+                                        - generic: │
+                                        - generic: 48│ if (token.expired) return null // ← bug
+                                        - generic: │
+                                    - generic:
+                                        - generic: │
+                                        - generic: 49│ return token
+                                        - generic: │
+                                    - generic:
+                                        - generic: │
+                                        - generic: "50│ }"
+                                        - generic: │
+                                    - generic:
+                                        - generic: ╰────────────────────────────────────────────────────────────────╯
+                                    - generic:
+                                        - generic: ╭────────────────────────────────────────────────────────────────╮
+                                    - generic:
+                                        - generic: │
+                                        - generic: Edit src/auth.ts
+                                        - generic: │
+                                    - generic:
+                                        - generic: │
+                                        - generic: "- if (token.expired) return null"
+                                        - generic: │
+                                    - generic:
+                                        - generic: │
+                                        - generic: + if (token.expired) return refreshToken(token)
+                                        - generic: │
+                                    - generic:
+                                        - generic: ╰────────────────────────────────────────────────────────────────╯
+                                    - generic:
+                                        - generic: ╭────────────────────────────────────────────────────────────────╮
+                                    - generic:
+                                        - generic: │
+                                        - generic: Bash bun test auth
+                                        - generic: │
+                                    - generic:
+                                        - generic: │
+                                        - generic: ✓ validates active tokens
+                                        - generic: │
+                                    - generic:
+                                        - generic: │
+                                        - generic: ✓ refreshes expired tokens
+                                        - generic: │
+                                    - generic:
+                                        - generic: │
+                                        - generic: ✓ rejects revoked tokens
+                                        - generic: │
+                                    - generic:
+                                        - generic: │
+                                        - generic: 3 passed
+                                        - generic: │
+                                    - generic:
+                                        - generic: ╭────────────────────────────────────────────────────────────────────╮
+                                    - generic:
+                                        - generic: │
+                                        - generic: ❯
+                                        - generic: type a prompt, then Enter...
+                                        - generic: │
+                                    - generic:
+                                        - generic: ╰────────────────────────────────────────────────────────────────────╯
+                                    - generic:
+                                        - generic: type a prompt Enter run
+                    - heading "Key Benefits Permalink to \"Key Benefits\"" [level=2] [ref=e149]:
+                        - text: Key Benefits
+                        - link "Permalink to \"Key Benefits\"" [ref=e150] [cursor=pointer]:
+                            - /url: "#key-benefits"
+                            - text: "#"
+                    - paragraph [ref=e151]:
+                        - strong [ref=e152]: Scrollable containers for variable-length output.
+                        - text: LLM responses range from one line to hundreds. With
+                        - code [ref=e153]: overflow="scroll"
+                        - text: on a Box, inkx measures all children, determines which are visible, and renders only those -- no manual height estimation or virtualization config. Just render your messages and let inkx handle the rest.
+                    - paragraph [ref=e154]:
+                        - strong [ref=e155]: Command introspection for AI agents.
+                        - text: The
+                        - code [ref=e156]: withCommands
+                        - text: plugin exposes every action with an ID, name, description, and keybindings. Calling
+                        - code [ref=e157]: cmd.all()
+                        - text: returns a structured list of everything the app can do. An AI agent can read this to decide which actions to invoke, turning the TUI into a programmable interface rather than a purely visual one.
+                    - paragraph [ref=e158]:
+                        - strong [ref=e159]: Streaming-friendly incremental rendering.
+                        - text: When an LLM streams tokens, only the message being appended changes. inkx tracks dirty flags per node and re-renders only what changed — 169us per update versus 20.7ms for a full-screen repaint (
+                        - link "benchmarks" [ref=e160] [cursor=pointer]:
+                            - /url: /inkx/guide/why-inkx.html#performance
+                        - text: ). At 50 tokens per second, that is the difference between smooth scrolling and visible flicker.
+                    - paragraph [ref=e161]:
+                        - strong [ref=e162]: Bracketed paste for code snippets.
+                        - text: The
+                        - code [ref=e163]: usePaste
+                        - text: hook receives multi-line pasted text as a single event instead of individual keystrokes. Users can paste code blocks, stack traces, or configuration files directly into the input area without the app interpreting each line as a separate command.
+                    - paragraph [ref=e164]:
+                        - strong [ref=e165]: Scrollback buffer support.
+                        - text: Long conversations need scrollback — users expect to scroll up through conversation history just like in a web chat. inkx's
+                        - code [ref=e166]: overflow="scroll"
+                        - text: "containers handle this natively: content grows downward, the viewport follows the latest message, and users can scroll back through the full history with keyboard or mouse. No manual viewport management, no height estimation, no virtualization config."
+                    - paragraph [ref=e167]:
+                        - strong [ref=e168]: Kitty keyboard protocol for rich shortcuts.
+                        - text: Modern terminals support unambiguous key identification. inkx can distinguish Cmd+K from Ctrl+K, detect key release events, and parse macOS modifier symbols. Build command palettes, chord sequences, and modal interfaces with confidence that key bindings will not collide.
+                    - 'heading "Example: Minimal AI Chat Permalink to \"Example: Minimal AI Chat\"" [level=2] [ref=e169]':
+                        - text: "Example: Minimal AI Chat"
+                        - 'link "Permalink to \"Example: Minimal AI Chat\"" [ref=e170] [cursor=pointer]':
+                            - /url: "#example-minimal-ai-chat"
+                            - text: "#"
+                    - paragraph [ref=e171]: A complete working chat interface in under 50 lines. Messages scroll automatically, the input field stays pinned at the bottom, and the user can send messages with Enter.
+                    - generic [ref=e172]:
+                        - button "Copy Code" [ref=e173] [cursor=pointer]
+                        - generic [ref=e174]: tsx
+                        - code [ref=e176]:
+                            - generic [ref=e177]: 'import { Box, Text, TextInput, useContentRect } from "inkx"'
+                            - generic [ref=e178]: 'import { run, useInput } from "inkx/runtime"'
+                            - generic [ref=e179]: 'import { useState } from "react"'
+                            - generic [ref=e180]: "interface Message {"
+                            - generic [ref=e181]: 'role: "user" | "assistant"'
+                            - generic [ref=e182]: "content: string"
+                            - generic [ref=e183]: "}"
+                            - generic [ref=e184]: "function Chat() {"
+                            - generic [ref=e185]: const [messages, setMessages] = useState<Message[]>([])
+                            - generic [ref=e186]: const [input, setInput] = useState("")
+                            - generic [ref=e187]: "const { height } = useContentRect()"
+                            - generic [ref=e188]: "async function send(text: string) {"
+                            - generic [ref=e189]: if (!text.trim()) return
+                            - generic [ref=e190]: setInput("")
+                            - generic [ref=e191]: 'const userMsg: Message = { role: "user", content: text }'
+                            - generic [ref=e192]: setMessages((prev) => [...prev, userMsg])
+                            - generic [ref=e193]: // Replace with your LLM call — response streams in via setMessages
+                            - generic [ref=e194]: 'const reply: Message = { role: "assistant", content: `Echo: ${text}` }'
+                            - generic [ref=e195]: setMessages((prev) => [...prev, reply])
+                            - generic [ref=e196]: "}"
+                            - generic [ref=e197]: return (
+                            - generic [ref=e198]: <Box flexDirection="column" width="100%" height="100%">
+                            - generic [ref=e199]: '<Box flexDirection="column" flexGrow={1} overflow="scroll" scrollTo={messages.length - 1} paddingX={1}>'
+                            - generic [ref=e200]: "{messages.map((msg, i) => ("
+                            - generic [ref=e201]: '<Text key={i} color={msg.role === "user" ? "cyan" : "white"}>'
+                            - generic [ref=e202]: '{msg.role === "user" ? "> " : " "}'
+                            - generic [ref=e203]: "{msg.content}"
+                            - generic [ref=e204]: </Text>
+                            - generic [ref=e205]: "))}"
+                            - generic [ref=e206]: </Box>
+                            - generic [ref=e207]: '<Box borderStyle="round" borderColor="gray" paddingX={1}>'
+                            - generic [ref=e208]: <TextInput
+                            - generic [ref=e209]: "value={input}"
+                            - generic [ref=e210]: "onChange={setInput}"
+                            - generic [ref=e211]: "onSubmit={send}"
+                            - generic [ref=e212]: placeholder="Ask anything..."
+                            - generic [ref=e213]: 'prompt="you: "'
+                            - generic [ref=e214]: promptColor="cyan"
+                            - generic [ref=e215]: />
+                            - generic [ref=e216]: </Box>
+                            - generic [ref=e217]: </Box>
+                            - generic [ref=e218]: )
+                            - generic [ref=e219]: "}"
+                            - generic [ref=e220]: await run(<Chat />)
+                    - paragraph [ref=e221]: "This gives you:"
+                    - list [ref=e222]:
+                        - listitem [ref=e223]: A scrollable message history that grows as the conversation progresses
+                        - listitem [ref=e224]:
+                            - text: Automatic scroll-to-bottom when new messages arrive (
+                            - code [ref=e225]: "scrollTo={messages.length - 1}"
+                            - text: )
+                        - listitem [ref=e226]: A bordered input area with a prompt prefix and placeholder text
+                        - listitem [ref=e227]:
+                            - text: Layout feedback via
+                            - code [ref=e228]: useContentRect()
+                            - text: "-- the message area fills all available height"
+                    - paragraph [ref=e229]: To add streaming, replace the echo stub with an async generator that appends tokens to the latest message. inkx will re-render only the changed text node on each token, keeping the update cost constant regardless of conversation length.
+                    - heading "Adding Command Introspection Permalink to \"Adding Command Introspection\"" [level=2] [ref=e230]:
+                        - text: Adding Command Introspection
+                        - link "Permalink to \"Adding Command Introspection\"" [ref=e231] [cursor=pointer]:
+                            - /url: "#adding-command-introspection"
+                            - text: "#"
+                    - paragraph [ref=e232]:
+                        - text: For AI-driven applications where an agent needs to discover and execute actions, wrap the app with
+                        - code [ref=e233]: withCommands
+                        - text: ":"
+                    - generic [ref=e234]:
+                        - button "Copy Code" [ref=e235] [cursor=pointer]
+                        - generic [ref=e236]: tsx
+                        - code [ref=e238]:
+                            - generic [ref=e239]: 'import { withCommands } from "inkx"'
+                            - generic [ref=e240]: "const app = withCommands(render(<Chat />), {"
+                            - generic [ref=e241]: "registry: commandRegistry,"
+                            - generic [ref=e242]: "getContext: () => appContext,"
+                            - generic [ref=e243]: "handleAction: (action) => dispatch(action),"
+                            - generic [ref=e244]: "getKeybindings: () => keybindings,"
+                            - generic [ref=e245]: "})"
+                            - generic [ref=e246]: // An AI agent can enumerate all available actions
+                            - generic [ref=e247]: const commands = app.cmd.all()
+                            - generic [ref=e248]: '// [{ id: "send_message", name: "Send", keys: ["Enter"], ... },'
+                            - generic [ref=e249]: '// { id: "clear_history", name: "Clear", keys: ["Ctrl+L"], ... },'
+                            - generic [ref=e250]: '// { id: "toggle_model", name: "Switch Model", keys: ["Ctrl+M"], ... }]'
+                            - generic [ref=e251]: // And invoke them directly
+                            - generic [ref=e252]: await app.cmd.send_message()
+                    - paragraph [ref=e253]:
+                        - text: This turns the TUI from a visual interface into a structured API. The agent does not need to simulate keystrokes -- it calls commands by name and reads the screen state through
+                        - code [ref=e254]: app.text
+                        - text: or
+                        - code [ref=e255]: app.getState()
+                        - text: .
+                    - heading "What inkx Adds Permalink to \"What inkx Adds\"" [level=2] [ref=e256]:
+                        - text: What inkx Adds
+                        - link "Permalink to \"What inkx Adds\"" [ref=e257] [cursor=pointer]:
+                            - /url: "#what-inkx-adds"
+                            - text: "#"
+                    - paragraph [ref=e258]:
+                        - text: "Most TUI frameworks leave you to build chat infrastructure from scratch. inkx provides the primitives out of the box: scroll containers ("
+                        - code [ref=e259]: overflow="scroll"
+                        - text: ) handle variable-length LLM output without manual viewport tracking, layout feedback via
+                        - code [ref=e260]: useContentRect()
+                        - text: sizes message bubbles without threading width props, and the command system gives AI agents a programmatic API to discover and invoke actions.
+                    - heading "Get Started Permalink to \"Get Started\"" [level=2] [ref=e261]:
+                        - text: Get Started
+                        - link "Permalink to \"Get Started\"" [ref=e262] [cursor=pointer]:
+                            - /url: "#get-started"
+                            - text: "#"
+                    - paragraph [ref=e263]: "Install inkx and build your first AI assistant:"
+                    - generic [ref=e264]:
+                        - button "Copy Code" [ref=e265] [cursor=pointer]
+                        - generic [ref=e266]: bash
+                        - code [ref=e268]:
+                            - generic [ref=e269]: bun add inkx react @beorn/flexx
+                    - paragraph [ref=e270]:
+                        - text: See the
+                        - link "Getting Started guide" [ref=e271] [cursor=pointer]:
+                            - /url: /inkx/guide/getting-started.html
+                        - text: for a full walkthrough, or explore the
+                        - link "component reference" [ref=e272] [cursor=pointer]:
+                            - /url: /inkx/guide/components.html
+                        - text: for Box, Text, TextInput, VirtualList, and other building blocks.
+            - contentinfo [ref=e273]:
+                - navigation "Pager" [ref=e274]:
+                    - generic [ref=e275]: Pager
+                    - link "Previous page Kanban Board" [ref=e277] [cursor=pointer]:
+                        - /url: /inkx/examples/kanban.html
+                        - generic [ref=e278]: Previous page
+                        - generic [ref=e279]: Kanban Board
+                    - link "Next page Dashboards & Monitoring" [ref=e281] [cursor=pointer]:
+                        - /url: /inkx/use-cases/dashboards.html
+                        - generic [ref=e282]: Next page
+                        - generic [ref=e283]: Dashboards & Monitoring

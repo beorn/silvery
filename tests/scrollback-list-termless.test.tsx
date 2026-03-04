@@ -49,7 +49,11 @@ function SimpleItem({ item }: { item: TestItem }) {
     if (item.frozen && !isFrozen) freeze()
   }, [item.frozen, isFrozen, freeze])
 
-  return <Text>Item {item.id}: {item.text}</Text>
+  return (
+    <Text>
+      Item {item.id}: {item.text}
+    </Text>
+  )
 }
 
 function createMockStdout(cols = 80) {
@@ -89,19 +93,10 @@ describe("frozen item border integrity → termless", () => {
     const { stdout, writes } = createMockStdout(COLS)
     const render = createRenderer({ cols: COLS, rows: 24 })
 
-    const items = mkItems(
-      ["1", "First response", true],
-      ["2", "Second response", false],
-    )
+    const items = mkItems(["1", "First response", true], ["2", "Second response", false])
 
     render(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={COLS}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={COLS}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -136,7 +131,6 @@ describe("frozen item border integrity → termless", () => {
         expect(trimmed).toMatch(/│.*│/)
       }
     }
-
   })
 
   test("multiple frozen bordered items all have right borders", () => {
@@ -152,13 +146,7 @@ describe("frozen item border integrity → termless", () => {
     )
 
     render(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={COLS}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={COLS}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -183,7 +171,6 @@ describe("frozen item border integrity → termless", () => {
     expect(term.buffer).toContainText("Agent 1")
     expect(term.buffer).toContainText("Agent 2")
     expect(term.buffer).toContainText("Agent 3")
-
   })
 
   test("frozen item border width matches terminal width", () => {
@@ -194,13 +181,7 @@ describe("frozen item border integrity → termless", () => {
     const items = mkItems(["1", "Hello", true], ["2", "Live", false])
 
     render(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={COLS}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={COLS}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -220,7 +201,6 @@ describe("frozen item border integrity → termless", () => {
 
     // Border width: ╭ + dashes + ╮ should be COLS (or COLS-based)
     expect(topBorderRow.length).toBeGreaterThanOrEqual(COLS - 2) // At least close to full width
-
   })
 })
 
@@ -232,22 +212,16 @@ describe("high-count frozen items → termless", () => {
 
     // 10 frozen items + 1 live — simulates many items before compaction
     const items = mkItems(
-      ...Array.from({ length: 10 }, (_, i) => [
-        String(i + 1),
-        `Response ${i + 1} with some longer text to fill the box`,
-        true,
-      ] as [string, string, boolean]),
+      ...Array.from(
+        { length: 10 },
+        (_, i) =>
+          [String(i + 1), `Response ${i + 1} with some longer text to fill the box`, true] as [string, string, boolean],
+      ),
       ["11", "Still live", false],
     )
 
     render(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={COLS}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={COLS}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -281,7 +255,6 @@ describe("high-count frozen items → termless", () => {
         expect(trimmed).toMatch(/│.*│/)
       }
     }
-
   })
 
   test("compaction: all items freeze at once preserves borders", () => {
@@ -291,20 +264,11 @@ describe("high-count frozen items → termless", () => {
 
     // Phase 1: All live
     const liveItems = mkItems(
-      ...Array.from({ length: 8 }, (_, i) => [
-        String(i + 1),
-        `Exchange ${i + 1}`,
-        false,
-      ] as [string, string, boolean]),
+      ...Array.from({ length: 8 }, (_, i) => [String(i + 1), `Exchange ${i + 1}`, false] as [string, string, boolean]),
     )
 
     const app = render(
-      <ScrollbackList
-        items={liveItems}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        width={COLS}
-      >
+      <ScrollbackList items={liveItems} keyExtractor={(t) => t.id} stdout={stdout} width={COLS}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -315,11 +279,7 @@ describe("high-count frozen items → termless", () => {
 
     // Phase 2: Compact — freeze all 8 items at once
     const frozenItems = mkItems(
-      ...Array.from({ length: 8 }, (_, i) => [
-        String(i + 1),
-        `Exchange ${i + 1}`,
-        true,
-      ] as [string, string, boolean]),
+      ...Array.from({ length: 8 }, (_, i) => [String(i + 1), `Exchange ${i + 1}`, true] as [string, string, boolean]),
     )
 
     app.rerender(
@@ -358,7 +318,6 @@ describe("high-count frozen items → termless", () => {
         expect(trimmed).toMatch(/│.*│/)
       }
     }
-
   })
 })
 
@@ -372,18 +331,10 @@ describe("live item borders in viewport", () => {
     const { stdout } = createMockStdout(COLS)
     const render = createRenderer({ cols: COLS, rows: 24 })
 
-    const items = mkItems(
-      ["1", "Live item one", false],
-      ["2", "Live item two", false],
-    )
+    const items = mkItems(["1", "Live item one", false], ["2", "Live item two", false])
 
     const app = render(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        width={COLS}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} width={COLS}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -412,20 +363,10 @@ describe("border width consistency between frozen and live", () => {
     const render = createRenderer({ cols: COLS, rows: 24 })
 
     // Start with 3 items, first 2 frozen
-    const items = mkItems(
-      ["1", "Frozen item", true],
-      ["2", "Also frozen", true],
-      ["3", "Live item", false],
-    )
+    const items = mkItems(["1", "Frozen item", true], ["2", "Also frozen", true], ["3", "Live item", false])
 
     const app = render(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={COLS}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={COLS}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -459,18 +400,11 @@ describe("parent padding: frozen items match live layout", () => {
     const render = createRenderer({ cols: COLS, rows: 24 })
 
     // Phase 1: All live (so layout info is computed before freezing)
-    const items1 = mkItems(
-      ["1", "First item", false],
-      ["2", "Second item", false],
-    )
+    const items1 = mkItems(["1", "First item", false], ["2", "Second item", false])
 
     const app = render(
       <Box paddingX={1}>
-        <ScrollbackList
-          items={items1}
-          keyExtractor={(t) => t.id}
-          stdout={stdout}
-        >
+        <ScrollbackList items={items1} keyExtractor={(t) => t.id} stdout={stdout}>
           {(item) => <BorderedItem item={item} />}
         </ScrollbackList>
       </Box>,
@@ -486,19 +420,11 @@ describe("parent padding: frozen items match live layout", () => {
     const liveBorderWidth = liveBorderLine!.trimEnd().length
 
     // Phase 2: Freeze first item
-    const items2 = mkItems(
-      ["1", "First item", true],
-      ["2", "Second item", false],
-    )
+    const items2 = mkItems(["1", "First item", true], ["2", "Second item", false])
 
     app.rerender(
       <Box paddingX={1}>
-        <ScrollbackList
-          items={items2}
-          keyExtractor={(t) => t.id}
-          stdout={stdout}
-          isFrozen={(t) => t.frozen}
-        >
+        <ScrollbackList items={items2} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen}>
           {(item) => <BorderedItem item={item} />}
         </ScrollbackList>
       </Box>,
@@ -528,18 +454,10 @@ describe("parent padding: frozen items match live layout", () => {
     const render = createRenderer({ cols: COLS, rows: 24 })
 
     // Phase 1: All live (no parent padding)
-    const items1 = mkItems(
-      ["1", "First item", false],
-      ["2", "Second item", false],
-    )
+    const items1 = mkItems(["1", "First item", false], ["2", "Second item", false])
 
     const app = render(
-      <ScrollbackList
-        items={items1}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        width={COLS}
-      >
+      <ScrollbackList items={items1} keyExtractor={(t) => t.id} stdout={stdout} width={COLS}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -547,19 +465,10 @@ describe("parent padding: frozen items match live layout", () => {
     expect(writes.length).toBe(0)
 
     // Phase 2: Freeze first item
-    const items2 = mkItems(
-      ["1", "First item", true],
-      ["2", "Second item", false],
-    )
+    const items2 = mkItems(["1", "First item", true], ["2", "Second item", false])
 
     app.rerender(
-      <ScrollbackList
-        items={items2}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={COLS}
-      >
+      <ScrollbackList items={items2} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={COLS}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -588,19 +497,10 @@ describe("freeze transition → termless", () => {
     const render = createRenderer({ cols: COLS, rows: 24 })
 
     // Phase 1: All live
-    const items1 = mkItems(
-      ["1", "Item one", false],
-      ["2", "Item two", false],
-      ["3", "Item three", false],
-    )
+    const items1 = mkItems(["1", "Item one", false], ["2", "Item two", false], ["3", "Item three", false])
 
     const app = render(
-      <ScrollbackList
-        items={items1}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        width={COLS}
-      >
+      <ScrollbackList items={items1} keyExtractor={(t) => t.id} stdout={stdout} width={COLS}>
         {(item) => <SimpleItem item={item} />}
       </ScrollbackList>,
     )
@@ -610,20 +510,10 @@ describe("freeze transition → termless", () => {
     expect(app.text).toContain("Item 3")
 
     // Phase 2: Freeze first two items
-    const items2 = mkItems(
-      ["1", "Item one", true],
-      ["2", "Item two", true],
-      ["3", "Item three", false],
-    )
+    const items2 = mkItems(["1", "Item one", true], ["2", "Item two", true], ["3", "Item three", false])
 
     app.rerender(
-      <ScrollbackList
-        items={items2}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={COLS}
-      >
+      <ScrollbackList items={items2} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={COLS}>
         {(item) => <SimpleItem item={item} />}
       </ScrollbackList>,
     )

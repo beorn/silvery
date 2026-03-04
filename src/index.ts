@@ -281,7 +281,14 @@ export { useFocus, useInkFocusManager } from "./hooks/ink-compat.js"
 export type { UseFocusOptions, UseFocusResult, InkUseFocusManagerResult } from "./hooks/ink-compat.js"
 export { useTerm } from "./hooks/useTerm.js"
 export { useConsole } from "./hooks/useConsole.js"
-export { useCursor, resetCursorState, getCursorState, subscribeCursor, createCursorStore, CursorProvider } from "./hooks/useCursor.js"
+export {
+  useCursor,
+  resetCursorState,
+  getCursorState,
+  subscribeCursor,
+  createCursorStore,
+  CursorProvider,
+} from "./hooks/useCursor.js"
 export type { CursorPosition, CursorState, CursorAccessors, CursorStore } from "./hooks/useCursor.js"
 export { useScrollback } from "./hooks/useScrollback.js"
 export type { UseScrollbackOptions, ScrollbackMarkerCallbacks } from "./hooks/useScrollback.js"

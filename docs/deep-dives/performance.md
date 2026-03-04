@@ -54,17 +54,17 @@ inkx's five-phase render pipeline (measure, layout, content, output, buffer) con
 
 ### 5. Output Phase
 
-| #   | Optimization                                | Description                                                                                                                                                                                                                                                          |
-| --- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 5.1 | **Row-level dirty tracking + bounding box** | `_dirtyRows: Uint8Array` bitset + `_minDirtyRow`/`_maxDirtyRow`. Diff scans only dirty row range. No-change frames skip entirely.                                                                                                                                    |
-| 5.2 | **Row-level bulk compare**                  | `rowMetadataEquals()` + `rowCharsEquals()` pre-check catches dirty-but-unchanged rows before per-cell diff.                                                                                                                                                          |
-| 5.3 | **Packed cell comparison**                  | `cellEquals()` compares packed Uint32 metadata first, then char, then true color maps only if flags indicate.                                                                                                                                                        |
-| 5.4 | **Style interning + SGR cache**             | Style combinations interned to string key; SGR escape strings cached. Eliminates per-cell `styleToAnsi()` string building.                                                                                                                                           |
-| 5.5 | **Zero-allocation diff pipeline**           | Pre-allocated `CellChange` pool reused across frames. Reusable style object mutated in-place. In-place insertion sort for position ordering.                                                                                                                         |
-| 5.6 | **Optimized ANSI output**                   | Relative cursor moves (`CUF`/`CUD`) for small jumps, `\r\n` for next-line-column-0. Style coalescing emits SGR only on transitions. Dimension-aware diffing for size mismatches.                                                                                     |
-| 5.7 | **Wide character atomic diff**              | Wide char + continuation cell treated as a single atomic unit during cell-level diff. Orphaned continuation cells (main cell unchanged) trigger re-emit of the main cell from the buffer. Eliminates previous full-row fallback for rows containing wide characters. |
-| 5.8 | **Inline incremental rendering**            | Instance-scoped cursor tracking in `createOutputPhase()` closure enables buffer diffing for inline mode. Uses relative cursor positioning (`CUU`/`CUD`/`\r`/`CUF`) instead of absolute. Falls back to full render when guard conditions fail (scrollback, resize, height change). 28-192x fewer bytes vs full re-render. |
-| 5.9 | **Scrollback resize re-emission** | On terminal resize, useScrollback re-renders frozen items at the new width and re-emits all to stdout. Necessary because the output phase clears the visible screen on resize, wiping visible frozen items. Resets output phase cursor tracking so the next render uses the first-render path. O(1) on normal frames, O(N) on resize (infrequent). |
+| #   | Optimization                                | Description                                                                                                                                                                                                                                                                                                                                        |
+| --- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 5.1 | **Row-level dirty tracking + bounding box** | `_dirtyRows: Uint8Array` bitset + `_minDirtyRow`/`_maxDirtyRow`. Diff scans only dirty row range. No-change frames skip entirely.                                                                                                                                                                                                                  |
+| 5.2 | **Row-level bulk compare**                  | `rowMetadataEquals()` + `rowCharsEquals()` pre-check catches dirty-but-unchanged rows before per-cell diff.                                                                                                                                                                                                                                        |
+| 5.3 | **Packed cell comparison**                  | `cellEquals()` compares packed Uint32 metadata first, then char, then true color maps only if flags indicate.                                                                                                                                                                                                                                      |
+| 5.4 | **Style interning + SGR cache**             | Style combinations interned to string key; SGR escape strings cached. Eliminates per-cell `styleToAnsi()` string building.                                                                                                                                                                                                                         |
+| 5.5 | **Zero-allocation diff pipeline**           | Pre-allocated `CellChange` pool reused across frames. Reusable style object mutated in-place. In-place insertion sort for position ordering.                                                                                                                                                                                                       |
+| 5.6 | **Optimized ANSI output**                   | Relative cursor moves (`CUF`/`CUD`) for small jumps, `\r\n` for next-line-column-0. Style coalescing emits SGR only on transitions. Dimension-aware diffing for size mismatches.                                                                                                                                                                   |
+| 5.7 | **Wide character atomic diff**              | Wide char + continuation cell treated as a single atomic unit during cell-level diff. Orphaned continuation cells (main cell unchanged) trigger re-emit of the main cell from the buffer. Eliminates previous full-row fallback for rows containing wide characters.                                                                               |
+| 5.8 | **Inline incremental rendering**            | Instance-scoped cursor tracking in `createOutputPhase()` closure enables buffer diffing for inline mode. Uses relative cursor positioning (`CUU`/`CUD`/`\r`/`CUF`) instead of absolute. Falls back to full render when guard conditions fail (scrollback, resize, height change). 28-192x fewer bytes vs full re-render.                           |
+| 5.9 | **Scrollback resize re-emission**           | On terminal resize, useScrollback re-renders frozen items at the new width and re-emits all to stdout. Necessary because the output phase clears the visible screen on resize, wiping visible frozen items. Resets output phase cursor tracking so the next render uses the first-render path. O(1) on normal frames, O(N) on resize (infrequent). |
 
 ### 6. Buffer
 
@@ -92,22 +92,22 @@ In fullscreen mode, `diffBuffers` + `changesToAnsi` emit only changed cells (~21
 
 `inlineIncrementalRender()` uses the same buffer diffing when safe, falling back to `inlineFullRender()` when guard conditions fail:
 
-| Guard Condition | Why Required |
-|----------------|-------------|
-| `scrollbackOffset === 0` | External writes shift cursor — can't use relative positioning |
-| Same buffer dimensions | Resize needs full re-render |
-| Same content height | Height change needs full re-render |
-| Cursor tracking initialized | First render must be full |
+| Guard Condition             | Why Required                                                  |
+| --------------------------- | ------------------------------------------------------------- |
+| `scrollbackOffset === 0`    | External writes shift cursor — can't use relative positioning |
+| Same buffer dimensions      | Resize needs full re-render                                   |
+| Same content height         | Height change needs full re-render                            |
+| Cursor tracking initialized | First render must be full                                     |
 
 **Relative cursor positioning**: `changesToAnsi()` accepts `mode: "inline"` and uses `\x1b[NA` (up), `\x1b[NB` (down), `\r` (carriage return), `\x1b[NC` (forward) instead of `\x1b[row;colH` (absolute).
 
 **Instance-scoped state**: Inter-frame cursor tracking (`InlineCursorState`) is captured in the `createOutputPhase()` closure — no module-level globals. Bare `outputPhase()` calls get fresh state (always fall back to full render).
 
-| Scenario | Full Render | Incremental | Reduction |
-|----------|------------|-------------|-----------|
-| 10 rows, 1 change | 1,196 bytes | 42 bytes | 28x |
-| 30 rows, 1 change | 3,540 bytes | 33 bytes | 107x |
-| 50 rows, 1 change | 6,324 bytes | 33 bytes | 192x |
+| Scenario          | Full Render | Incremental | Reduction |
+| ----------------- | ----------- | ----------- | --------- |
+| 10 rows, 1 change | 1,196 bytes | 42 bytes    | 28x       |
+| 30 rows, 1 change | 3,540 bytes | 33 bytes    | 107x      |
+| 50 rows, 1 change | 6,324 bytes | 33 bytes    | 192x      |
 
 Benchmarks: `tests/inline-output.bench.ts`, `examples/interactive/inline-bench.tsx`.
 

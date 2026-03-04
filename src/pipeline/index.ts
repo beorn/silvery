@@ -38,11 +38,27 @@ const log = createLogger("inkx:pipeline")
 const baseLog = createLogger("inkx")
 
 // Re-export types
-export type { CellChange, BorderChars, PipelineContext, NodeRenderState, ClipBounds, ContentPhaseStats, NodeTraceEntry, BgConflictMode } from "./types.js"
+export type {
+  CellChange,
+  BorderChars,
+  PipelineContext,
+  NodeRenderState,
+  ClipBounds,
+  ContentPhaseStats,
+  NodeTraceEntry,
+  BgConflictMode,
+} from "./types.js"
 
 // Re-export phase functions
 export { measurePhase } from "./measure-phase.js"
-export { layoutPhase, rectEqual, scrollPhase, stickyPhase, screenRectPhase, notifyLayoutSubscribers } from "./layout-phase.js"
+export {
+  layoutPhase,
+  rectEqual,
+  scrollPhase,
+  stickyPhase,
+  screenRectPhase,
+  notifyLayoutSubscribers,
+} from "./layout-phase.js"
 export { contentPhase, clearBgConflictWarnings, setBgConflictMode } from "./content-phase.js"
 export { contentPhaseAdapter } from "./content-phase-adapter.js"
 export { outputPhase } from "./output-phase.js"
@@ -170,12 +186,7 @@ function executeRenderCore(
   // Dev warning: prevBuffer null after first render means incremental is disabled.
   // Intentional null (INKX_STRICT, static/one-shot) passes skipLayoutNotifications.
   // console.warn (not @beorn/logger) — must fire regardless of logger config.
-  if (
-    process?.env?.INKX_DEV &&
-    prevBuffer === null &&
-    root.prevLayout !== null &&
-    !skipLayoutNotifications
-  ) {
+  if (process?.env?.INKX_DEV && prevBuffer === null && root.prevLayout !== null && !skipLayoutNotifications) {
     console.warn(
       "[inkx] executeRender called with prevBuffer=null on frame 2+ — " +
         "incremental content rendering is disabled (full render every frame). " +

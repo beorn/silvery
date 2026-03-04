@@ -73,8 +73,6 @@ describe("content shrink erases correctly", () => {
     const hasLine5 = viewportLines.some((l) => l === "Line 5")
     expect(hasLine4).toBe(false)
     expect(hasLine5).toBe(false)
-
-
   })
 })
 
@@ -107,8 +105,6 @@ describe("scrollback offset handling", () => {
 
     // Updated content should be visible
     expect(term.screen).toContainText("Items: 10")
-
-
   })
 })
 
@@ -122,15 +118,7 @@ describe("height capping (termRows)", () => {
     const outputPhase = createOutputPhase({})
 
     // Create a buffer with 7 lines but terminal only has 4 rows
-    const buf = makeBuffer(40, 7, [
-      "Header row",
-      "Item 1",
-      "Item 2",
-      "Item 3",
-      "Item 4",
-      "Item 5",
-      "Footer bar",
-    ])
+    const buf = makeBuffer(40, 7, ["Header row", "Item 1", "Item 2", "Item 3", "Item 4", "Item 5", "Footer bar"])
     const ansi = outputPhase(null, buf, "inline", 0, 4)
     term.feed(ansi)
 
@@ -143,8 +131,6 @@ describe("height capping (termRows)", () => {
     const viewportLines = viewportText.split("\n").map((l) => l.trim())
     const hasHeader = viewportLines.some((l) => l === "Header row")
     expect(hasHeader).toBe(false)
-
-
   })
 })
 
@@ -198,14 +184,14 @@ describe("multi-frame incremental consistency", () => {
 
     // Verify no stale content from previous frames in viewport
     const finalText = term.screen.getText()
-    const lines = finalText.split("\n").map((l) => l.trim()).filter((l) => l.length > 0)
+    const lines = finalText
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0)
     // Only the 3 current lines should have content
     for (const line of lines) {
-      const isCurrentContent =
-        line.includes("Alpha-v2") || line.includes("Beta-v3") || line.includes("Gamma-v3")
+      const isCurrentContent = line.includes("Alpha-v2") || line.includes("Beta-v3") || line.includes("Gamma-v3")
       expect(isCurrentContent).toBe(true)
     }
-
-
   })
 })

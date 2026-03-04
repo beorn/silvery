@@ -121,9 +121,7 @@ export function tea<S extends object, Op, E extends EffectLike = EffectLike>(
       const result = reducer(currentState as unknown as S, op)
 
       // Detect: plain state vs [state, effects]
-      const [newState, effects] = Array.isArray(result)
-        ? (result as [S, E[]])
-        : [result as S, [] as E[]]
+      const [newState, effects] = Array.isArray(result) ? (result as [S, E[]]) : [result as S, [] as E[]]
 
       // Update Zustand store (spread domain state, keep dispatch)
       set(newState as Partial<TeaSlice<S, Op>>)

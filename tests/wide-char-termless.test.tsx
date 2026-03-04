@@ -73,7 +73,6 @@ describe("CJK character renders as wide in termless", () => {
 
     expect(term.cell(0, 0)).toBeWide()
     expect(term.screen).toContainText("\u4e2d")
-
   })
 
   test("multiple CJK characters each occupy 2 cells", () => {
@@ -99,7 +98,6 @@ describe("CJK character renders as wide in termless", () => {
     expect(term.screen).toContainText("廈")
     expect(term.screen).toContainText("門")
     expect(term.screen).toContainText("市")
-
   })
 })
 
@@ -125,7 +123,6 @@ describe("text after CJK character is positioned correctly", () => {
     // Verify 'A' is at column 2, not drifted
     const cellA = term.row(0).cellAt(2)
     expect(cellA.text).toBe("A")
-
   })
 
   test("ASCII text after multiple CJK chars is not drifted", () => {
@@ -145,7 +142,6 @@ describe("text after CJK character is positioned correctly", () => {
     // Verify 'X' is at column 4 — no cursor drift
     const cellX = term.row(0).cellAt(4)
     expect(cellX.text).toBe("X")
-
   })
 })
 
@@ -167,7 +163,6 @@ describe("emoji renders correctly in termless", () => {
 
     expect(term.screen).toContainText("🌍")
     expect(term.screen).toContainText("Z")
-
   })
 
   test("emoji followed by ASCII text does not drift", () => {
@@ -192,7 +187,6 @@ describe("emoji renders correctly in termless", () => {
     const rowText = term.row(0).getText()
     const oIdx = rowText.indexOf("ok")
     expect(oIdx).toBeGreaterThan(0)
-
   })
 })
 
@@ -236,7 +230,6 @@ describe("mixed ASCII + CJK + emoji in same line", () => {
     const hiIdx = rowText.indexOf("Hi")
     const okIdx = rowText.indexOf("ok")
     expect(okIdx).toBeGreaterThan(hiIdx)
-
   })
 
   test("mixed content via inkx component", () => {
@@ -246,7 +239,6 @@ describe("mixed ASCII + CJK + emoji in same line", () => {
     expect(term.screen).toContainText("World")
     expect(term.screen).toContainText("🌍")
     expect(term.screen).toContainText("中")
-
   })
 })
 
@@ -271,7 +263,6 @@ describe("wide char at end of line", () => {
 
     expect(term.cell(0, 8)).toBeWide()
     expect(term.screen).toContainText("中")
-
   })
 
   test("emoji at last two columns does not wrap or corrupt", () => {
@@ -289,7 +280,6 @@ describe("wide char at end of line", () => {
 
     expect(term.screen).toContainText("🌍")
     expect(term.screen).toContainText("AAAAAA")
-
   })
 })
 
@@ -325,7 +315,6 @@ describe("incremental update with wide/narrow transitions", () => {
     expect(term.screen).toContainText("X")
     // Wide char should be gone
     expect(term.screen.getText()).not.toContain("中")
-
   })
 
   test("narrow chars replaced by wide CJK in diff render", () => {
@@ -353,7 +342,6 @@ describe("incremental update with wide/narrow transitions", () => {
     expect(term.cell(0, 0)).toBeWide()
     expect(term.screen).toContainText("中")
     expect(term.screen).toContainText("X")
-
   })
 
   test("wide emoji changed to different emoji via diff", () => {
@@ -381,7 +369,6 @@ describe("incremental update with wide/narrow transitions", () => {
     expect(term.screen).toContainText("🎉")
     expect(term.screen.getText()).not.toContain("🌍")
     expect(term.screen).toContainText("Z")
-
   })
 
   test("component-level wide-to-narrow transition via rerender", () => {
@@ -431,8 +418,6 @@ describe("incremental update with wide/narrow transitions", () => {
     expect(term.screen).toContainText("廈")
     expect(term.screen).toContainText("門")
     expect(term.screen).toContainText("right side")
-
-
   })
 })
 
@@ -455,7 +440,6 @@ describe("wide char in Box with border", () => {
     expect(term.screen).toContainText("市")
     // Border characters should be present
     expect(term.screen).toContainText("│")
-
   })
 
   test("CJK and bordered box side by side", () => {
@@ -477,7 +461,6 @@ describe("wide char in Box with border", () => {
     expect(term.screen).toContainText("card content")
     // Border should render without corruption from CJK continuation cells
     expect(term.screen).toContainText("│")
-
   })
 
   test("emoji inside double-bordered box", () => {
@@ -491,7 +474,6 @@ describe("wide char in Box with border", () => {
     expect(term.screen).toContainText("🌍")
     expect(term.screen).toContainText("World")
     expect(term.screen).toContainText("║")
-
   })
 })
 
@@ -513,7 +495,6 @@ describe("multi-row with mixed wide characters", () => {
     expect(term.screen).toContainText("廈")
     expect(term.screen).toContainText("報")
     expect(term.screen).toContainText("Third line: ASCII")
-
   })
 
   test("three-column layout with CJK, emoji, and ASCII", () => {
@@ -536,7 +517,6 @@ describe("multi-row with mixed wide characters", () => {
     expect(term.screen).toContainText("🌍")
     expect(term.screen).toContainText("Earth")
     expect(term.screen).toContainText("Hello World")
-
   })
 })
 
@@ -611,8 +591,6 @@ describe("multi-frame incremental consistency with wide chars", () => {
     term.feed(outputPhase(prevBuf, nextBuf))
     expect(term.screen).toContainText("廈")
     expect(term.screen).toContainText("Lang: zh")
-
-
   })
 
   test("emoji appearing and disappearing across frames", () => {
@@ -644,8 +622,6 @@ describe("multi-frame incremental consistency with wide chars", () => {
     nextBuf = app.lastBuffer()!
     term.feed(outputPhase(prevBuf, nextBuf))
     expect(term.screen).toContainText("active")
-
-
   })
 })
 
@@ -681,7 +657,6 @@ describe("adjacent containers with CJK and borders", () => {
     expect(term.screen).toContainText("card content")
     // Border should not be corrupted by CJK continuation cells
     expect(term.screen).toContainText("│")
-
   })
 
   test("incremental update of bordered box next to CJK", () => {
@@ -719,7 +694,5 @@ describe("adjacent containers with CJK and borders", () => {
     expect(term.screen).toContainText("廈")
     expect(term.screen).toContainText("Status: done")
     expect(term.screen.getText()).not.toContain("pending")
-
-
   })
 })

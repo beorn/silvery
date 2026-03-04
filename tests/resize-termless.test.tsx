@@ -152,7 +152,6 @@ describe("resize: width contraction", () => {
     const row0 = termSmall.row(0).getText().trim()
     expect(row0.length).toBeLessThanOrEqual(40)
     expect(row0).toContain("A")
-
   })
 })
 
@@ -250,7 +249,9 @@ describe("resize: multiple sequential resizes", () => {
     function App({ cols, rows }: { cols: number; rows: number }) {
       return (
         <Box width={cols} height={rows} borderStyle="single">
-          <Text>Size: {cols}x{rows}</Text>
+          <Text>
+            Size: {cols}x{rows}
+          </Text>
         </Box>
       )
     }
@@ -338,7 +339,9 @@ describe("resize: styles survive resize", () => {
       newRows: 5,
       component: ({ cols, rows }) => (
         <Box width={cols} height={rows}>
-          <Text color="#ff0000" bold>Red Bold Text</Text>
+          <Text color="#ff0000" bold>
+            Red Bold Text
+          </Text>
         </Box>
       ),
       verify: (term) => {

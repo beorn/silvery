@@ -27,12 +27,12 @@ function App() {
 
 Any color prop on `Box` or `Text` that starts with `$` resolves against the active theme:
 
-| Prop              | Components | Example                       |
-| ----------------- | ---------- | ----------------------------- |
-| `color`           | Box, Text  | `color="$primary"`            |
+| Prop              | Components | Example                      |
+| ----------------- | ---------- | ---------------------------- |
+| `color`           | Box, Text  | `color="$primary"`           |
 | `backgroundColor` | Box, Text  | `backgroundColor="$surface"` |
-| `borderColor`     | Box        | `borderColor="$separator"`    |
-| `outlineColor`    | Box        | `outlineColor="$focusring"`   |
+| `borderColor`     | Box        | `borderColor="$separator"`   |
+| `outlineColor`    | Box        | `outlineColor="$focusring"`  |
 
 Non-`$` values pass through unchanged (`color="red"`, `color="#ff0000"`).
 
@@ -68,13 +68,13 @@ explicit color, the theme's `$separator` token is used automatically.
 
 ### Surface (5 tokens)
 
-| Token        | Use                                        | ANSI 16 Dark | Truecolor Dark |
-| ------------ | ------------------------------------------ | ------------ | -------------- |
-| `$bg`        | Default background                         | (default)    | #2E3440        |
-| `$surface`   | Dialogs, overlays, popovers                | black        | #3B4252        |
-| `$separator` | Dividers, borders, rules                   | gray         | #4C566A        |
-| `$chromebg`  | Title bars, status bars (inverted bg)      | whiteBright  | #ECEFF4        |
-| `$chromefg`  | Text on chrome areas (inverted fg)         | black        | #2E3440        |
+| Token        | Use                                   | ANSI 16 Dark | Truecolor Dark |
+| ------------ | ------------------------------------- | ------------ | -------------- |
+| `$bg`        | Default background                    | (default)    | #2E3440        |
+| `$surface`   | Dialogs, overlays, popovers           | black        | #3B4252        |
+| `$separator` | Dividers, borders, rules              | gray         | #4C566A        |
+| `$chromebg`  | Title bars, status bars (inverted bg) | whiteBright  | #ECEFF4        |
+| `$chromefg`  | Text on chrome areas (inverted fg)    | black        | #2E3440        |
 
 ### Status (3 tokens)
 

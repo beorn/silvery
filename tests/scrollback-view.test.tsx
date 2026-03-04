@@ -272,7 +272,10 @@ describe("ScrollbackView", () => {
     const emitter = new EventEmitter()
     const writes: string[] = []
     const resizableStdout = {
-      write(data: string) { writes.push(data); return true },
+      write(data: string) {
+        writes.push(data)
+        return true
+      },
       columns: 80,
       rows: 24,
       on(event: string, listener: (...args: unknown[]) => void) {

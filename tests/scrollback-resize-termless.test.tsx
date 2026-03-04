@@ -174,7 +174,7 @@ function assertBorderInvariants(text: string, label: string) {
       if (borderWidths[i] !== firstWidth) {
         throw new Error(
           `[${label}] Inconsistent border widths: row 0 has width ${firstWidth}, ` +
-          `but row ${i} has width ${borderWidths[i]}. All border rows must be the same width.`,
+            `but row ${i} has width ${borderWidths[i]}. All border rows must be the same width.`,
         )
       }
     }
@@ -205,13 +205,7 @@ describe("resize: frozen items re-render at new width → termless", () => {
     )
 
     const app = render(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={WIDE}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={WIDE}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -223,7 +217,6 @@ describe("resize: frozen items re-render at new width → termless", () => {
       const { topCount, borderWidth } = assertBorderInvariants(term.getText(), `initial@${WIDE}`)
       expect(topCount).toBe(3)
       expect(borderWidth).toBe(WIDE)
-
     }
 
     const writesBeforeResize = writes.length
@@ -252,7 +245,6 @@ describe("resize: frozen items re-render at new width → termless", () => {
       const { topCount, borderWidth } = assertBorderInvariants(text, `resized@${NARROW}`)
       expect(topCount).toBe(3)
       expect(borderWidth).toBe(NARROW)
-
     }
   })
 
@@ -286,20 +278,13 @@ describe("resize: frozen items re-render at new width → termless", () => {
       const { topCount, borderWidth } = assertBorderInvariants(term.getText(), `initial@${NARROW}`)
       expect(topCount).toBe(2)
       expect(borderWidth).toBe(NARROW)
-
     }
 
     const writesBeforeResize = writes.length
 
     // Resize to WIDE — items should FILL the new width
     app.rerender(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={WIDE}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={WIDE}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -314,7 +299,6 @@ describe("resize: frozen items re-render at new width → termless", () => {
       expect(topCount).toBe(2)
       // KEY: borders must fill the NEW wider width, not stay at old narrow width
       expect(borderWidth).toBe(WIDE)
-
     }
   })
 })
@@ -335,11 +319,11 @@ describe("stress: many items + many resize cycles → termless", () => {
     // In a 24-row terminal, only about 6 items are visible on screen.
     // Items in scrollback are NOT re-emitted on resize (terminal owns them).
     const items = mkItems(
-      ...Array.from({ length: 10 }, (_, i) => [
-        String(i + 1),
-        `Response ${i + 1}: ${"x".repeat(20 + (i % 5))} end`,
-        true,
-      ] as [string, string, boolean]),
+      ...Array.from(
+        { length: 10 },
+        (_, i) =>
+          [String(i + 1), `Response ${i + 1}: ${"x".repeat(20 + (i % 5))} end`, true] as [string, string, boolean],
+      ),
       ["11", "Live item at the bottom", false],
     )
 
@@ -360,7 +344,6 @@ describe("stress: many items + many resize cycles → termless", () => {
       const term = feedToTerminal(writes, INITIAL_WIDTH, 200)
       const { topCount } = assertBorderInvariants(term.getText(), `initial@${INITIAL_WIDTH}`)
       expect(topCount).toBe(10)
-
     }
 
     // 8 resize cycles: alternating shrink and grow
@@ -397,8 +380,6 @@ describe("stress: many items + many resize cycles → termless", () => {
 
       // INVARIANT 2: borders fill the new width
       expect(borderWidth).toBe(newWidth)
-
-
     }
   })
 
@@ -409,11 +390,10 @@ describe("stress: many items + many resize cycles → termless", () => {
 
     // 5 frozen items — enough to overflow a 24-row terminal with borders
     const items = mkItems(
-      ...Array.from({ length: 5 }, (_, i) => [
-        String(i + 1),
-        `Response ${i + 1}: some content text`,
-        true,
-      ] as [string, string, boolean]),
+      ...Array.from(
+        { length: 5 },
+        (_, i) => [String(i + 1), `Response ${i + 1}: some content text`, true] as [string, string, boolean],
+      ),
       ["6", "Live item", false],
     )
 
@@ -449,7 +429,6 @@ describe("stress: many items + many resize cycles → termless", () => {
     // Feed all writes to a large terminal to see full scrollback
     const term = feedToTerminal(writes, 120, 500)
     const fullText = term.getText()
-
 
     // Count occurrences of each item's unique identifier
     for (let i = 1; i <= 5; i++) {
@@ -501,7 +480,6 @@ describe("freeze + resize simultaneously → termless", () => {
       const { topCount, borderWidth } = assertBorderInvariants(term.getText(), `phase1@${WIDTH_A}`)
       expect(topCount).toBe(2)
       expect(borderWidth).toBe(WIDTH_A)
-
     }
 
     const writesAfterPhase1 = writes.length
@@ -536,7 +514,6 @@ describe("freeze + resize simultaneously → termless", () => {
     const { topCount, borderWidth } = assertBorderInvariants(text, `phase2@${WIDTH_B}`)
     expect(topCount).toBe(3)
     expect(borderWidth).toBe(WIDTH_B)
-
   })
 })
 
@@ -556,13 +533,7 @@ describe("content preservation across resize → termless", () => {
     )
 
     const app = render(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={80}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={80}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -571,13 +542,7 @@ describe("content preservation across resize → termless", () => {
 
     // Resize to 60
     app.rerender(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={60}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={60}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -590,28 +555,17 @@ describe("content preservation across resize → termless", () => {
     expect(term.buffer).toContainText("Important data: 42")
     expect(term.buffer).toContainText("Agent 2")
     expect(term.buffer).toContainText("Critical info: hello world")
-
-
   })
 
   test("frozen and live items have same width after resize", () => {
     const { stdout, writes } = createMockStdout(80)
     const render = createRenderer({ cols: 80, rows: 24 })
 
-    const items = mkItems(
-      ["1", "Frozen item", true],
-      ["2", "Live item", false],
-    )
+    const items = mkItems(["1", "Frozen item", true], ["2", "Live item", false])
 
     // Initial render
     const app = render(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={80}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={80}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -635,13 +589,7 @@ describe("content preservation across resize → termless", () => {
     // Resize: update both layout engine (app.resize) and scrollback (width prop)
     app.resize(60, 24)
     app.rerender(
-      <ScrollbackList
-        items={items}
-        keyExtractor={(t) => t.id}
-        stdout={stdout}
-        isFrozen={(t) => t.frozen}
-        width={60}
-      >
+      <ScrollbackList items={items} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen} width={60}>
         {(item) => <BorderedItem item={item} />}
       </ScrollbackList>,
     )
@@ -681,18 +629,11 @@ describe("resize with parent padding → termless", () => {
     const render = createRenderer({ cols: COLS, rows: 24 })
 
     // Phase 1: All live (establish layout)
-    const liveItems = mkItems(
-      ["1", "First item", false],
-      ["2", "Second item", false],
-    )
+    const liveItems = mkItems(["1", "First item", false], ["2", "Second item", false])
 
     const app = render(
       <Box paddingX={PADDING}>
-        <ScrollbackList
-          items={liveItems}
-          keyExtractor={(t) => t.id}
-          stdout={stdout}
-        >
+        <ScrollbackList items={liveItems} keyExtractor={(t) => t.id} stdout={stdout}>
           {(item) => <BorderedItem item={item} />}
         </ScrollbackList>
       </Box>,
@@ -706,19 +647,11 @@ describe("resize with parent padding → termless", () => {
     expect(liveBorderWidth).toBe(COLS - PADDING) // left pad + border
 
     // Phase 2: Freeze first item
-    const frozenItems = mkItems(
-      ["1", "First item", true],
-      ["2", "Second item", false],
-    )
+    const frozenItems = mkItems(["1", "First item", true], ["2", "Second item", false])
 
     app.rerender(
       <Box paddingX={PADDING}>
-        <ScrollbackList
-          items={frozenItems}
-          keyExtractor={(t) => t.id}
-          stdout={stdout}
-          isFrozen={(t) => t.frozen}
-        >
+        <ScrollbackList items={frozenItems} keyExtractor={(t) => t.id} stdout={stdout} isFrozen={(t) => t.frozen}>
           {(item) => <BorderedItem item={item} />}
         </ScrollbackList>
       </Box>,

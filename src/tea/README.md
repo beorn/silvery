@@ -74,9 +74,9 @@ type Op = { type: "increment" } | { type: "save" }
 function reducer(state: State, op: Op): TeaResult<State, MyEffect> {
   switch (op.type) {
     case "increment":
-      return { ...state, count: state.count + 1 }         // Level 3: plain state
+      return { ...state, count: state.count + 1 } // Level 3: plain state
     case "save":
-      return [state, [save("/api/count", state), log("saved")]]  // Level 4: [state, effects]
+      return [state, [save("/api/count", state), log("saved")]] // Level 4: [state, effects]
   }
 }
 
@@ -113,11 +113,11 @@ communication. Unmatched effects (no runner for that type) are silently dropped.
 
 Zustand `StateCreator` middleware. Returns a store shape of `S & { dispatch }`.
 
-| Parameter      | Type                        | Description                          |
-| -------------- | --------------------------- | ------------------------------------ |
-| `initialState` | `S extends object`          | Initial domain state                 |
-| `reducer`      | `TeaReducer<S, Op, E>`     | Pure reducer: `(state, op) => state \| [state, effects]` |
-| `options`      | `TeaOptions<E, Op>`         | Optional `{ runners }` for effect execution |
+| Parameter      | Type                   | Description                                              |
+| -------------- | ---------------------- | -------------------------------------------------------- |
+| `initialState` | `S extends object`     | Initial domain state                                     |
+| `reducer`      | `TeaReducer<S, Op, E>` | Pure reducer: `(state, op) => state \| [state, effects]` |
+| `options`      | `TeaOptions<E, Op>`    | Optional `{ runners }` for effect execution              |
 
 Returns: `StateCreator<TeaSlice<S, Op>>`
 
@@ -126,8 +126,8 @@ Returns: `StateCreator<TeaSlice<S, Op>>`
 Test helper. Normalizes a reducer result to `[state, effects]` regardless of what
 the reducer returned.
 
-| Parameter | Type              | Description                     |
-| --------- | ----------------- | ------------------------------- |
+| Parameter | Type              | Description                      |
+| --------- | ----------------- | -------------------------------- |
 | `result`  | `TeaResult<S, E>` | Return value from a reducer call |
 
 Returns: `[S, E[]]` — always a tuple. Plain state becomes `[state, []]`.
@@ -142,15 +142,11 @@ type EffectLike = { type: string }
 type TeaResult<S, E extends EffectLike = EffectLike> = S | readonly [S, E[]]
 
 // A reducer function
-type TeaReducer<S, Op, E extends EffectLike = EffectLike> =
-  (state: S, op: Op) => TeaResult<S, E>
+type TeaReducer<S, Op, E extends EffectLike = EffectLike> = (state: S, op: Op) => TeaResult<S, E>
 
 // Runners keyed by effect type. Each receives the effect + dispatch for round-trips.
 type EffectRunners<E extends EffectLike, Op = unknown> = {
-  [K in E["type"]]?: (
-    effect: Extract<E, { type: K }>,
-    dispatch: (op: Op) => void,
-  ) => void | Promise<void>
+  [K in E["type"]]?: (effect: Extract<E, { type: K }>, dispatch: (op: Op) => void) => void | Promise<void>
 }
 
 // Options for tea()
@@ -197,14 +193,14 @@ runners.save!(save("/api/count", { count: 5 }), mockDispatch)
 
 ## Prior Art
 
-| System | Approach | Difference |
-| ------ | -------- | ---------- |
-| [redux-loop](https://github.com/redux-loop/redux-loop) | Redux middleware, `loop(state, effects)` | Store enhancer, more API surface. tea() is ~30 lines. |
-| [Hyperapp v2](https://github.com/jorgebucaran/hyperapp) | `[state, effects]` tuples from actions | Full framework. tea() is just a Zustand middleware. |
-| [Elm](https://guide.elm-lang.org/effects/) | `Cmd Msg` — effects return messages to update | The original. tea() adapts this to JS/Zustand. |
+| System                                                  | Approach                                      | Difference                                            |
+| ------------------------------------------------------- | --------------------------------------------- | ----------------------------------------------------- |
+| [redux-loop](https://github.com/redux-loop/redux-loop)  | Redux middleware, `loop(state, effects)`      | Store enhancer, more API surface. tea() is ~30 lines. |
+| [Hyperapp v2](https://github.com/jorgebucaran/hyperapp) | `[state, effects]` tuples from actions        | Full framework. tea() is just a Zustand middleware.   |
+| [Elm](https://guide.elm-lang.org/effects/)              | `Cmd Msg` — effects return messages to update | The original. tea() adapts this to JS/Zustand.        |
 
 The key insight shared by all: effects are **data**, not imperative calls. The reducer
-declares *what* should happen; runners decide *how*. This makes reducers pure, testable,
+declares _what_ should happen; runners decide _how_. This makes reducers pure, testable,
 and replayable.
 
 ## See Also

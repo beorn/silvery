@@ -58,12 +58,7 @@ import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, dis
 import { detectKittyFromStdio } from "../kitty-detect.js"
 import { isTextSizingLikelySupported } from "../text-sizing.js"
 import { ensureLayoutEngine } from "./layout.js"
-import {
-  captureTerminalState,
-  performSuspend,
-  CTRL_C,
-  CTRL_Z,
-} from "./terminal-lifecycle.js"
+import { captureTerminalState, performSuspend, CTRL_C, CTRL_Z } from "./terminal-lifecycle.js"
 import type { Buffer, Dims, Event, RenderTarget, Runtime } from "./types.js"
 
 // Re-export types from keys.ts
@@ -700,7 +695,10 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
   const mockStdout = {
     columns: cols,
     rows: rows,
-    write: (data: string) => { target.write(data); return true },
+    write: (data: string) => {
+      target.write(data)
+      return true
+    },
     isTTY: false,
     on(event: string, handler: () => void) {
       if (event === "resize") resizeListeners.add(handler)

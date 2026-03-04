@@ -100,9 +100,7 @@ describe("resize after scrollback promotion → termless", () => {
     term.feed(outputPhase(null, buf1, "inline", 0, ROWS))
 
     // Promote first 5 items to scrollback
-    const frozenContent = Array.from({ length: 5 }, (_, i) =>
-      `Exchange ${i + 1}\x1b[K\r\n`
-    ).join("")
+    const frozenContent = Array.from({ length: 5 }, (_, i) => `Exchange ${i + 1}\x1b[K\r\n`).join("")
     outputPhase.promoteScrollback!(frozenContent, 5)
 
     const buf2 = makeBuffer(COLS, ROWS, ["Exchange 6", "Status bar"])
@@ -110,8 +108,7 @@ describe("resize after scrollback promotion → termless", () => {
 
     // Resize
     outputPhase.resetInlineState!()
-    const reEmit = "\x1b[3J\x1b[H\x1b[2J" +
-      Array.from({ length: 5 }, (_, i) => `Exchange ${i + 1}\r\n`).join("")
+    const reEmit = "\x1b[3J\x1b[H\x1b[2J" + Array.from({ length: 5 }, (_, i) => `Exchange ${i + 1}\r\n`).join("")
     term.feed(reEmit)
 
     // Post-resize: scrollbackOffset=0 (correct)

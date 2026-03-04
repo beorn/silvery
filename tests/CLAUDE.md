@@ -19,7 +19,7 @@
 
 - km-specific command behavior — that's km-commands/km-tui
 - Board state logic — that's km-board
-- Layout engine internals — that's beorn-flexx (inkx tests layout *integration*)
+- Layout engine internals — that's beorn-flexx (inkx tests layout _integration_)
 
 ## Helpers
 

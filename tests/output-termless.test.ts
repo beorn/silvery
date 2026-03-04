@@ -55,7 +55,6 @@ describe("single cell change produces correct output", () => {
     term.feed(ansi)
 
     expect(term.screen).toContainText("Hello World")
-
   })
 
   test("diff render updates changed content", () => {
@@ -75,7 +74,6 @@ describe("single cell change produces correct output", () => {
     expect(term.screen).toContainText("Hello Earth")
     // "World" should no longer appear
     expect(term.screen.getText()).not.toContain("World")
-
   })
 })
 
@@ -102,7 +100,6 @@ describe("style changes render correctly", () => {
     expect(term.cell(0, 1)).toBeBold()
     expect(term.cell(0, 2)).toBeBold()
     expect(term.cell(0, 3)).toBeBold()
-
   })
 
   test("colored text renders with correct foreground color", () => {
@@ -122,7 +119,6 @@ describe("style changes render correctly", () => {
     expect(term.cell(0, 0)).toHaveFg({ r: 255, g: 0, b: 0 })
     expect(term.cell(0, 1)).toHaveFg({ r: 255, g: 0, b: 0 })
     expect(term.cell(0, 2)).toHaveFg({ r: 255, g: 0, b: 0 })
-
   })
 })
 
@@ -158,7 +154,6 @@ describe("multi-row diff correctness", () => {
     expect(term.screen).toContainText("Line 4")
     // Old line 3 should be gone
     expect(term.screen.getText()).not.toContain("Line 3")
-
   })
 })
 
@@ -180,7 +175,6 @@ describe("wide characters", () => {
 
     expect(term.cell(0, 0)).toBeWide()
     expect(term.screen).toContainText("\u4e2d")
-
   })
 })
 
@@ -204,7 +198,6 @@ describe("true-color values survive round-trip", () => {
     expect(term.screen).toContainText("X")
     expect(term.cell(0, 0)).toHaveFg(fgColor)
     expect(term.cell(0, 0)).toHaveBg(bgColor)
-
   })
 
   test("multiple cells with different true colors", () => {
@@ -221,6 +214,5 @@ describe("true-color values survive round-trip", () => {
     expect(term.cell(0, 0)).toHaveFg({ r: 255, g: 0, b: 0 })
     expect(term.cell(0, 1)).toHaveFg({ r: 0, g: 255, b: 0 })
     expect(term.cell(0, 2)).toHaveFg({ r: 0, g: 0, b: 255 })
-
   })
 })

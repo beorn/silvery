@@ -7,7 +7,7 @@
  * <ThemeProvider theme={defaultDarkTheme}>
  *   <Box borderStyle="single">
  *     <Text color="$primary">Hello</Text>
- *     <Text color="$text2">world</Text>
+ *     <Text color="$muted-fg">world</Text>
  *   </Box>
  * </ThemeProvider>
  * ```
@@ -31,4 +31,4 @@ export {
   resolveThemeColor,
   generateTheme,
 } from "themex"
-export type { Theme, AnsiPrimary } from "themex"
+export type { Theme, ColorPalette, AnsiPrimary } from "themex"

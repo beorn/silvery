@@ -26,7 +26,7 @@ import { Text } from "./Text.js"
 // =============================================================================
 
 export interface ModalDialogProps {
-  /** Border color (default: $text3). Cyan is reserved for text input focus rings. */
+  /** Border color (default: $border). Cyan is reserved for text input focus rings. */
   borderColor?: string
   /** Dialog title (rendered bold in titleColor or borderColor) */
   title?: string
@@ -119,7 +119,7 @@ export function formatTitleWithHotkey(title: string, hotkey: string, color?: str
  * - Footer: centered, dimColor, with spacer above
  */
 export function ModalDialog({
-  borderColor = "$text3",
+  borderColor = "$border",
   title,
   titleColor,
   titleAlign = "center",

@@ -217,18 +217,18 @@ Native scrollback root component. Items flow vertically and transition through L
 </ScrollbackView>
 ```
 
-| Prop           | Type                                | Default              | Description                     |
-| -------------- | ----------------------------------- | -------------------- | ------------------------------- |
-| `items`        | `T[]`                               | required             | Items to render                 |
-| `children`     | `(item, index) => ReactNode`        | required             | Render function                 |
-| `keyExtractor` | `(item, index) => string \| number` | required             | Unique key per item             |
-| `isFrozen`     | `(item, index) => boolean`          | —                    | Data-driven freeze predicate    |
-| `footer`       | `ReactNode`                         | —                    | Pinned footer                   |
-| `footerHeight` | `number`                            | —                    | ~~Deprecated~~ — footer auto-sizes to content |
-| `maxHistory`   | `number`                            | `10000`              | Max lines in dynamic scrollback |
-| `markers`      | `boolean \| object`                 | —                    | OSC 133 semantic markers        |
-| `width`        | `number`                            | `stdout.columns`     | Terminal width (enables resize re-emission) |
-| `stdout`       | `{ write(data: string): boolean }`  | `process.stdout`     | Output stream for frozen items  |
+| Prop           | Type                                | Default          | Description                                   |
+| -------------- | ----------------------------------- | ---------------- | --------------------------------------------- |
+| `items`        | `T[]`                               | required         | Items to render                               |
+| `children`     | `(item, index) => ReactNode`        | required         | Render function                               |
+| `keyExtractor` | `(item, index) => string \| number` | required         | Unique key per item                           |
+| `isFrozen`     | `(item, index) => boolean`          | —                | Data-driven freeze predicate                  |
+| `footer`       | `ReactNode`                         | —                | Pinned footer                                 |
+| `footerHeight` | `number`                            | —                | ~~Deprecated~~ — footer auto-sizes to content |
+| `maxHistory`   | `number`                            | `10000`          | Max lines in dynamic scrollback               |
+| `markers`      | `boolean \| object`                 | —                | OSC 133 semantic markers                      |
+| `width`        | `number`                            | `stdout.columns` | Terminal width (enables resize re-emission)   |
+| `stdout`       | `{ write(data: string): boolean }`  | `process.stdout` | Output stream for frozen items                |
 
 ### VirtualView
 

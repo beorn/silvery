@@ -34,7 +34,17 @@
  * ```
  */
 
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react"
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react"
 import type { ScrollbackMarkerCallbacks } from "../hooks/useScrollback.js"
 import { useScrollback } from "../hooks/useScrollback.js"
 import { renderStringSync } from "../render-string.js"
@@ -139,7 +149,9 @@ export function ScrollbackView<T>({
     if (!stream?.on || !stream?.columns) return
     const onResize = () => setTermWidth((stream as { columns: number }).columns ?? 80)
     stream.on("resize", onResize)
-    return () => { stream.off?.("resize", onResize) }
+    return () => {
+      stream.off?.("resize", onResize)
+    }
   }, [width, stdout])
 
   const effectiveWidth = width ?? termWidth
@@ -269,7 +281,10 @@ export function ScrollbackView<T>({
         // are indented by the parent's padding.
         if (frozenLeftPad > 0) {
           const pad = " ".repeat(frozenLeftPad)
-          text = text.split("\n").map((line) => pad + line).join("\n")
+          text = text
+            .split("\n")
+            .map((line) => pad + line)
+            .join("\n")
         }
         return text
       } catch {

@@ -122,8 +122,6 @@ describe("scrollback promotion → border integrity", () => {
         expect(trimmed).toMatch(/│.*│/)
       }
     }
-
-
   })
 
   test("3 frozen items all preserve right borders through promotion", async () => {
@@ -167,8 +165,6 @@ describe("scrollback promotion → border integrity", () => {
         expect(trimmed).toMatch(/│.*│/)
       }
     }
-
-
   })
 
   test("8 frozen items overflow beyond terminal rows, all borders intact in scrollback", async () => {
@@ -222,8 +218,6 @@ describe("scrollback promotion → border integrity", () => {
         expect(trimmed).toMatch(/│.*│/)
       }
     }
-
-
   })
 })
 
@@ -245,10 +239,7 @@ describe("scrollback promotion → progressive freezing", () => {
 
     // Progressively freeze 5 items, one at a time
     for (let i = 1; i <= 5; i++) {
-      const { ansi, lineCount } = await renderFrozen(
-        <AgentCard id={i} text={`Response ${i}`} />,
-        COLS,
-      )
+      const { ansi, lineCount } = await renderFrozen(<AgentCard id={i} text={`Response ${i}`} />, COLS)
       outputPhase.promoteScrollback!(ansi, lineCount)
 
       const nextBuf = makeLiveBuffer(COLS, ROWS, [`Footer: ${i} frozen`])
@@ -275,8 +266,6 @@ describe("scrollback promotion → progressive freezing", () => {
         expect(trimmed).toMatch(/│.*│/)
       }
     }
-
-
   })
 })
 
@@ -321,10 +310,7 @@ describe("scrollback promotion → compaction (jump up)", () => {
     let frozenContent = ""
     let frozenLines = 0
     for (let i = 1; i <= 3; i++) {
-      const { ansi, lineCount } = await renderFrozen(
-        <AgentCard id={i} text="Response text" />,
-        COLS,
-      )
+      const { ansi, lineCount } = await renderFrozen(<AgentCard id={i} text="Response text" />, COLS)
       frozenContent += ansi
       frozenLines += lineCount
     }
@@ -357,8 +343,6 @@ describe("scrollback promotion → compaction (jump up)", () => {
         expect(trimmed).toMatch(/│.*│/)
       }
     }
-
-
   })
 
   test("subsequent renders after compaction are positioned correctly (no jump-up)", async () => {
@@ -376,10 +360,7 @@ describe("scrollback promotion → compaction (jump up)", () => {
     let frozenContent = ""
     let frozenLines = 0
     for (let i = 1; i <= 3; i++) {
-      const { ansi, lineCount } = await renderFrozen(
-        <AgentCard id={i} text={`Response ${i}`} />,
-        COLS,
-      )
+      const { ansi, lineCount } = await renderFrozen(<AgentCard id={i} text={`Response ${i}`} />, COLS)
       frozenContent += ansi
       frozenLines += lineCount
     }
@@ -416,8 +397,6 @@ describe("scrollback promotion → compaction (jump up)", () => {
     expect(viewport2).toContain("Footer: stable")
     // Old live content should NOT remain in viewport (it was overwritten)
     expect(viewport2).not.toContain("New live content")
-
-
   })
 
   test("compaction with many items overflowing terminal preserves all borders", async () => {
@@ -434,10 +413,7 @@ describe("scrollback promotion → compaction (jump up)", () => {
     let frozenContent = ""
     let frozenLines = 0
     for (let i = 1; i <= 10; i++) {
-      const { ansi, lineCount } = await renderFrozen(
-        <AgentCard id={i} text={`Exchange ${i} response`} />,
-        COLS,
-      )
+      const { ansi, lineCount } = await renderFrozen(<AgentCard id={i} text={`Exchange ${i} response`} />, COLS)
       frozenContent += ansi
       frozenLines += lineCount
     }
@@ -466,7 +442,5 @@ describe("scrollback promotion → compaction (jump up)", () => {
 
     // Footer should be visible in viewport
     expect(term.screen).toContainText("Footer: done")
-
-
   })
 })

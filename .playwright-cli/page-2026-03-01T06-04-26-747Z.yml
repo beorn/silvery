@@ -1,396 +1,396 @@
 - generic [ref=e3]:
-  - link "Skip to content" [ref=e4] [cursor=pointer]:
-    - /url: "#VPContent"
-  - banner:
-    - generic:
-      - generic:
+    - link "Skip to content" [ref=e4] [cursor=pointer]:
+        - /url: "#VPContent"
+    - banner:
         - generic:
-          - link "inkx" [ref=e6] [cursor=pointer]:
-            - /url: /inkx/
-            - generic [ref=e7]: inkx
-          - generic [ref=e8]:
-            - button "Search" [ref=e11] [cursor=pointer]:
-              - generic [ref=e14]: Search
-              - generic [ref=e15]:
-                - generic [ref=e16]: ⌘
-                - generic [ref=e17]: K
-            - navigation "Main Navigation" [ref=e18]:
-              - generic [ref=e19]: Main Navigation
-              - link "Guide" [ref=e20] [cursor=pointer]:
-                - /url: /inkx/guide/getting-started.html
-                - generic [ref=e21]: Guide
-              - link "API" [ref=e22] [cursor=pointer]:
-                - /url: /inkx/api/box.html
-                - generic [ref=e23]: API
-              - button "Examples" [ref=e25] [cursor=pointer]:
-                - generic [ref=e27]: Examples
-              - button "Links" [ref=e30] [cursor=pointer]:
-                - generic [ref=e32]: Links
-            - switch [ref=e35] [cursor=pointer]
-            - link "github" [ref=e41] [cursor=pointer]:
-              - /url: https://github.com/beorn/inkx
-  - complementary [ref=e43]:
-    - navigation "Sidebar Navigation" [ref=e45]:
-      - generic [ref=e46]: Sidebar Navigation
-      - generic [ref=e48]:
-        - button "Examples toggle section" [ref=e49] [cursor=pointer]:
-          - heading "Examples" [level=2] [ref=e51]
-          - button "toggle section" [ref=e52]
-        - generic [ref=e54]:
-          - link "Live Demo" [ref=e58] [cursor=pointer]:
-            - /url: /inkx/examples/live-demo.html
-            - paragraph [ref=e59]: Live Demo
-          - link "Dashboard" [ref=e63] [cursor=pointer]:
-            - /url: /inkx/examples/dashboard.html
-            - paragraph [ref=e64]: Dashboard
-          - link "Task List" [ref=e68] [cursor=pointer]:
-            - /url: /inkx/examples/task-list.html
-            - paragraph [ref=e69]: Task List
-          - link "Kanban Board" [ref=e73] [cursor=pointer]:
-            - /url: /inkx/examples/kanban.html
-            - paragraph [ref=e74]: Kanban Board
-      - generic [ref=e76]:
-        - button "Use Cases" [ref=e77]:
-          - heading "Use Cases" [level=2] [ref=e79]
-        - generic [ref=e80]:
-          - link "AI Assistants & Chat" [ref=e84] [cursor=pointer]:
-            - /url: /inkx/use-cases/ai-assistants.html
-            - paragraph [ref=e85]: AI Assistants & Chat
-          - link "Dashboards & Monitoring" [ref=e89] [cursor=pointer]:
-            - /url: /inkx/use-cases/dashboards.html
-            - paragraph [ref=e90]: Dashboards & Monitoring
-          - link "Kanban & Project Boards" [ref=e94] [cursor=pointer]:
-            - /url: /inkx/use-cases/kanban-boards.html
-            - paragraph [ref=e95]: Kanban & Project Boards
-          - link "CLI Wizards & Setup" [ref=e99] [cursor=pointer]:
-            - /url: /inkx/use-cases/cli-wizards.html
-            - paragraph [ref=e100]: CLI Wizards & Setup
-          - link "Developer Tools" [ref=e104] [cursor=pointer]:
-            - /url: /inkx/use-cases/developer-tools.html
-            - paragraph [ref=e105]: Developer Tools
-          - link "Data Explorers & Tables" [ref=e109] [cursor=pointer]:
-            - /url: /inkx/use-cases/data-explorers.html
-            - paragraph [ref=e110]: Data Explorers & Tables
-  - generic [ref=e121]:
-    - main [ref=e122]:
-      - generic [ref=e124]:
-        - heading "Kanban & Project Boards Permalink to \"Kanban & Project Boards\"" [level=1] [ref=e125]:
-          - text: Kanban & Project Boards
-          - link "Permalink to \"Kanban & Project Boards\"" [ref=e126] [cursor=pointer]:
-            - /url: "#kanban-project-boards"
-            - text: "#"
-        - paragraph [ref=e127]: Terminal-based kanban boards need multi-column layouts that adapt to the terminal width, independent scrolling per column, two-axis keyboard navigation, and ideally mouse support for quick card selection. inkx provides all of these as built-in primitives, not manual abstractions you wire together yourself.
-        - paragraph [ref=e128]:
-          - text: Other terminal UI frameworks either lack scrollable containers entirely (Ink), require imperative resize callbacks (BubbleTea, Ratatui), or use CSS-like styling that doesn't map naturally to React components (Textual). inkx gives you flexbox layout with
-          - code [ref=e129]: Box
-          - text: ", layout-aware components via"
-          - code [ref=e130]: useContentRect()
-          - text: ", and"
-          - code [ref=e131]: overflow="scroll"
-          - text: that just works -- the same mental model as building a web app, but for the terminal.
-        - heading "Key Benefits Permalink to \"Key Benefits\"" [level=2] [ref=e132]:
-          - text: Key Benefits
-          - link "Permalink to \"Key Benefits\"" [ref=e133] [cursor=pointer]:
-            - /url: "#key-benefits"
-            - text: "#"
-        - list [ref=e134]:
-          - listitem [ref=e135]:
-            - paragraph [ref=e136]:
-              - strong [ref=e137]: Multi-column layout
-              - text: "-- Flexbox"
-              - code [ref=e138]: Box
-              - text: components with
-              - code [ref=e139]: "flexGrow={1}"
-              - text: create equal-width columns that automatically redistribute when the terminal resizes. No manual width arithmetic or resize event handlers.
-          - listitem [ref=e140]:
-            - paragraph [ref=e141]:
-              - strong [ref=e142]: Focus system
-              - text: "-- Tree-based spatial navigation lets users press Left/Right to move between columns and Up/Down within them. Mark any"
-              - code [ref=e143]: Box
-              - text: as
-              - code [ref=e144]: focusable
-              - text: ", add"
-              - code [ref=e145]: autoFocus
-              - text: to the default card, and inkx handles Tab cycling and
-              - code [ref=e146]: useFocusWithin
-              - text: for column-level focus indicators.
-          - listitem [ref=e147]:
-            - paragraph [ref=e148]:
-              - strong [ref=e149]: Scrollable columns
-              - text: "-- Each column gets"
-              - code [ref=e150]: overflow="scroll"
-              - text: with its own
-              - code [ref=e151]: scrollTo
-              - text: index. inkx measures all children with Yoga, determines which are visible, and only renders content for visible cards. No height estimation or virtualization config.
-          - listitem [ref=e152]:
-            - paragraph [ref=e153]:
-              - strong [ref=e154]: Mouse support
-              - text: "-- SGR mouse protocol gives you"
-              - code [ref=e155]: onClick
-              - text: and
-              - code [ref=e156]: onDoubleClick
-              - text: props on card components for editing,
-              - code [ref=e157]: onWheel
-              - text: for per-column scrolling, and automatic click-to-focus so users can click a card in any column to jump directly to it.
-          - listitem [ref=e158]:
-            - paragraph [ref=e159]:
-              - strong [ref=e160]: Command system
-              - text: "--"
-              - code [ref=e161]: withCommands
-              - text: assigns every board action (move card, create card, archive, filter) an ID with configurable keybindings.
-              - code [ref=e162]: withKeybindings
-              - text: resolves keypresses to commands. You get a searchable command palette and AI-accessible action introspection for free.
-        - heading "Code Example Permalink to \"Code Example\"" [level=2] [ref=e163]:
-          - text: Code Example
-          - link "Permalink to \"Code Example\"" [ref=e164] [cursor=pointer]:
-            - /url: "#code-example"
-            - text: "#"
-        - paragraph [ref=e165]: "A complete 3-column kanban board with keyboard navigation, card movement between columns, and independent column scrolling:"
-        - generic [ref=e166]:
-          - button "Copy Code" [ref=e167] [cursor=pointer]
-          - generic [ref=e168]: tsx
-          - code [ref=e170]:
-            - generic [ref=e171]: "import { Box, Text, useContentRect, useFocusable, useFocusWithin } from \"inkx\""
-            - generic [ref=e172]: "import { run, useInput } from \"inkx/runtime\""
-            - generic [ref=e173]: "import { useState } from \"react\""
-            - generic [ref=e174]: "type Card = { id: string; title: string }"
-            - generic [ref=e175]: "type Column = { id: string; name: string; cards: Card[] }"
-            - generic [ref=e176]: "const columns: Column[] = ["
-            - generic [ref=e177]: "{"
-            - generic [ref=e178]: "id: \"todo\","
-            - generic [ref=e179]: "name: \"To Do\","
-            - generic [ref=e180]: "cards: ["
-            - generic [ref=e181]: "{ id: \"1\", title: \"Research competitors\" },"
-            - generic [ref=e182]: "{ id: \"2\", title: \"Design system audit\" },"
-            - generic [ref=e183]: "{ id: \"3\", title: \"Write API docs\" },"
-            - generic [ref=e184]: "{ id: \"4\", title: \"Performance benchmarks\" },"
-            - generic [ref=e185]: "],"
-            - generic [ref=e186]: "},"
-            - generic [ref=e187]: "{"
-            - generic [ref=e188]: "id: \"doing\","
-            - generic [ref=e189]: "name: \"In Progress\","
-            - generic [ref=e190]: "cards: ["
-            - generic [ref=e191]: "{ id: \"5\", title: \"Implement scroll\" },"
-            - generic [ref=e192]: "{ id: \"6\", title: \"Migration guide\" },"
-            - generic [ref=e193]: "],"
-            - generic [ref=e194]: "},"
-            - generic [ref=e195]: "{"
-            - generic [ref=e196]: "id: \"done\","
-            - generic [ref=e197]: "name: \"Done\","
-            - generic [ref=e198]: "cards: ["
-            - generic [ref=e199]: "{ id: \"7\", title: \"Project setup\" },"
-            - generic [ref=e200]: "{ id: \"8\", title: \"React reconciler\" },"
-            - generic [ref=e201]: "{ id: \"9\", title: \"Basic components\" },"
-            - generic [ref=e202]: "],"
-            - generic [ref=e203]: "},"
-            - generic [ref=e204]: "]"
-            - generic [ref=e205]: "function App() {"
-            - generic [ref=e206]: const [board, setBoard] = useState(columns)
-            - generic [ref=e207]: const [col, setCol] = useState(0)
-            - generic [ref=e208]: const [row, setRow] = useState(0)
-            - generic [ref=e209]: "useInput((input, key) => {"
-            - generic [ref=e210]: if (input === "q") return "exit"
-            - generic [ref=e211]: const maxRow = Math.max(0, board[col].cards.length - 1)
-            - generic [ref=e212]: if (input === "j" || key.downArrow) setRow((r) => Math.min(r + 1, maxRow))
-            - generic [ref=e213]: if (input === "k" || key.upArrow) setRow((r) => Math.max(r - 1, 0))
-            - generic [ref=e214]: "if (input === \"l\" || key.rightArrow) {"
-            - generic [ref=e215]: "setCol((c) => {"
-            - generic [ref=e216]: const next = Math.min(c + 1, board.length - 1)
-            - generic [ref=e217]: setRow((r) => Math.min(r, Math.max(0, board[next].cards.length - 1)))
-            - generic [ref=e218]: return next
-            - generic [ref=e219]: "})"
-            - generic [ref=e220]: "}"
-            - generic [ref=e221]: "if (input === \"h\" || key.leftArrow) {"
-            - generic [ref=e222]: "setCol((c) => {"
-            - generic [ref=e223]: const prev = Math.max(c - 1, 0)
-            - generic [ref=e224]: setRow((r) => Math.min(r, Math.max(0, board[prev].cards.length - 1)))
-            - generic [ref=e225]: return prev
-            - generic [ref=e226]: "})"
-            - generic [ref=e227]: "}"
-            - generic [ref=e228]: "if (input === \"m\" && col < board.length - 1) {"
-            - generic [ref=e229]: const card = board[col].cards[row]
-            - generic [ref=e230]: if (!card) return
-            - generic [ref=e231]: setBoard((b) =>
-            - generic [ref=e232]: "b.map((column, i) => {"
-            - generic [ref=e233]: "if (i === col) return { ...column, cards: column.cards.filter((c) => c.id !== card.id) }"
-            - generic [ref=e234]: "if (i === col + 1) return { ...column, cards: [...column.cards, card] }"
-            - generic [ref=e235]: return column
-            - generic [ref=e236]: "}),"
-            - generic [ref=e237]: )
-            - generic [ref=e238]: setRow((r) => Math.min(r, Math.max(0, board[col].cards.length - 2)))
-            - generic [ref=e239]: "}"
-            - generic [ref=e240]: "})"
-            - generic [ref=e241]: return (
-            - generic [ref=e242]: <Box flexDirection="column" width="100%" height="100%">
-            - generic [ref=e243]: "<Box flexDirection=\"row\" flexGrow={1}>"
-            - generic [ref=e244]: "{board.map((column, ci) => ("
-            - generic [ref=e245]: "<KanbanColumn key={column.id} column={column} isActive={ci === col} selectedCard={ci === col ? row : -1} />"
-            - generic [ref=e246]: "))}"
-            - generic [ref=e247]: </Box>
-            - generic [ref=e248]: "<Box paddingX={1}>"
-            - generic [ref=e249]: "<Text dimColor>h/l: columns j/k: cards m: move right q: quit</Text>"
-            - generic [ref=e250]: </Box>
-            - generic [ref=e251]: </Box>
-            - generic [ref=e252]: )
-            - generic [ref=e253]: "}"
-            - generic [ref=e254]: "function KanbanColumn({ column, isActive, selectedCard }: { column: Column; isActive: boolean; selectedCard: number }) {"
-            - generic [ref=e255]: return (
-            - generic [ref=e256]: "<Box flexDirection=\"column\" flexGrow={1} borderStyle=\"single\" borderColor={isActive ? \"cyan\" : undefined}>"
-            - generic [ref=e257]: "<Box paddingX={1}>"
-            - generic [ref=e258]: "<Text bold color={isActive ? \"cyan\" : undefined}>"
-            - generic [ref=e259]: "{column.name}"
-            - generic [ref=e260]: </Text>
-            - generic [ref=e261]: "<Text dimColor> ({column.cards.length})</Text>"
-            - generic [ref=e262]: </Box>
-            - generic [ref=e263]: <Box
-            - generic [ref=e264]: flexDirection="column"
-            - generic [ref=e265]: "flexGrow={1}"
-            - generic [ref=e266]: overflow="scroll"
-            - generic [ref=e267]: "scrollTo={selectedCard >= 0 ? selectedCard : undefined}"
-            - generic [ref=e268]: "paddingX={1}"
-            - generic [ref=e269]: ">"
-            - generic [ref=e270]: "{column.cards.map((card, i) => ("
-            - generic [ref=e271]: <Text
-            - generic [ref=e272]: "key={card.id}"
-            - generic [ref=e273]: "backgroundColor={i === selectedCard ? \"cyan\" : undefined}"
-            - generic [ref=e274]: "color={i === selectedCard ? \"black\" : undefined}"
-            - generic [ref=e275]: ">"
-            - generic [ref=e276]: "{i === selectedCard ? \"> \" : \" \"}"
-            - generic [ref=e277]: "{card.title}"
-            - generic [ref=e278]: </Text>
-            - generic [ref=e279]: "))}"
-            - generic [ref=e280]: </Box>
-            - generic [ref=e281]: </Box>
-            - generic [ref=e282]: )
-            - generic [ref=e283]: "}"
-            - generic [ref=e284]: await run(<App />)
-        - paragraph [ref=e285]:
-          - text: Run it with
-          - code [ref=e286]: bun app.tsx
-          - text: or
-          - code [ref=e287]: npx tsx app.tsx
-          - text: .
-        - heading "Adding Focus and Mouse Support Permalink to \"Adding Focus and Mouse Support\"" [level=2] [ref=e288]:
-          - text: Adding Focus and Mouse Support
-          - link "Permalink to \"Adding Focus and Mouse Support\"" [ref=e289] [cursor=pointer]:
-            - /url: "#adding-focus-and-mouse-support"
-            - text: "#"
-        - paragraph [ref=e290]: "The example above uses manual cursor state for simplicity. For a production board, use inkx's focus system to get click-to-focus, Tab navigation, and focus-aware styling for free:"
-        - generic [ref=e291]:
-          - button "Copy Code" [ref=e292] [cursor=pointer]
-          - generic [ref=e293]: tsx
-          - code [ref=e295]:
-            - generic [ref=e296]: "function FocusableCard({ card }: { card: Card }) {"
-            - generic [ref=e297]: "const { focused } = useFocusable()"
-            - generic [ref=e298]: return (
-            - generic [ref=e299]: <Box
-            - generic [ref=e300]: "testID={card.id}"
-            - generic [ref=e301]: focusable
-            - generic [ref=e302]: "onClick={() => {"
-            - generic [ref=e303]: /* click-to-focus is automatic */
-            - generic [ref=e304]: "}}"
-            - generic [ref=e305]: ">"
-            - generic [ref=e306]: "<Text inverse={focused}>"
-            - generic [ref=e307]: "{focused ? \"> \" : \" \"}"
-            - generic [ref=e308]: "{card.title}"
-            - generic [ref=e309]: </Text>
-            - generic [ref=e310]: </Box>
-            - generic [ref=e311]: )
-            - generic [ref=e312]: "}"
-            - generic [ref=e313]: "function FocusableColumn({ column }: { column: Column }) {"
-            - generic [ref=e314]: const hasFocus = useFocusWithin(column.id)
-            - generic [ref=e315]: return (
-            - generic [ref=e316]: <Box
-            - generic [ref=e317]: "testID={column.id}"
-            - generic [ref=e318]: flexDirection="column"
-            - generic [ref=e319]: "flexGrow={1}"
-            - generic [ref=e320]: borderStyle="single"
-            - generic [ref=e321]: "borderColor={hasFocus ? \"cyan\" : undefined}"
-            - generic [ref=e322]: ">"
-            - generic [ref=e323]: "<Box paddingX={1}>"
-            - generic [ref=e324]: "<Text bold color={hasFocus ? \"cyan\" : undefined}>"
-            - generic [ref=e325]: "{column.name}"
-            - generic [ref=e326]: </Text>
-            - generic [ref=e327]: </Box>
-            - generic [ref=e328]: "<Box flexDirection=\"column\" flexGrow={1} overflow=\"scroll\" paddingX={1}>"
-            - generic [ref=e329]: "{column.cards.map((card) => ("
-            - generic [ref=e330]: "<FocusableCard key={card.id} card={card} />"
-            - generic [ref=e331]: "))}"
-            - generic [ref=e332]: </Box>
-            - generic [ref=e333]: </Box>
-            - generic [ref=e334]: )
-            - generic [ref=e335]: "}"
-        - paragraph [ref=e336]:
-          - text: Enable mouse events by passing
-          - code [ref=e337]: "mouse: true"
-          - text: to
-          - code [ref=e338]: run()
-          - text: ":"
-        - generic [ref=e339]:
-          - button "Copy Code" [ref=e340] [cursor=pointer]
-          - generic [ref=e341]: tsx
-          - code [ref=e343]:
-            - generic [ref=e344]: "await run(<App />, { mouse: true })"
-        - paragraph [ref=e345]:
-          - text: Cards respond to
-          - code [ref=e346]: onClick
-          - text: ","
-          - code [ref=e347]: onDoubleClick
-          - text: (to open a detail view), and columns respond to
-          - code [ref=e348]: onWheel
-          - text: for trackpad or mouse scrolling -- all with DOM-style event bubbling and
-          - code [ref=e349]: stopPropagation()
-          - text: .
-        - heading "What inkx Adds Permalink to \"What inkx Adds\"" [level=2] [ref=e350]:
-          - text: What inkx Adds
-          - link "Permalink to \"What inkx Adds\"" [ref=e351] [cursor=pointer]:
-            - /url: "#what-inkx-adds"
-            - text: "#"
-        - paragraph [ref=e352]:
-          - text: "Building a kanban board in most TUI frameworks means writing your own focus tree, scroll management, and mouse handling. inkx provides all three: a tree-based focus system for spatial navigation between columns,"
-          - code [ref=e353]: overflow="scroll"
-          - text: for independent column scrolling, and DOM-style mouse events (
-          - code [ref=e354]: onClick
-          - text: ","
-          - code [ref=e355]: onWheel
-          - text: ", click-to-focus) for natural card interaction. Together, these save hundreds of lines of infrastructure code."
-        - heading "Next Steps Permalink to \"Next Steps\"" [level=2] [ref=e356]:
-          - text: Next Steps
-          - link "Permalink to \"Next Steps\"" [ref=e357] [cursor=pointer]:
-            - /url: "#next-steps"
-            - text: "#"
-        - list [ref=e358]:
-          - listitem [ref=e359]:
-            - link "Getting Started" [ref=e360] [cursor=pointer]:
-              - /url: /inkx/guide/getting-started.html
-            - text: "-- Install inkx and build your first app"
-          - listitem [ref=e361]:
-            - link "Kanban Example" [ref=e362] [cursor=pointer]:
-              - /url: /inkx/examples/kanban.html
-            - text: "-- Full source with card tags, drag preview, and architecture notes"
-          - listitem [ref=e363]:
-            - link "Focus Hooks" [ref=e364] [cursor=pointer]:
-              - /url: /inkx/api/use-focus.html
-            - text: "-- Tree-based focus system API reference"
-          - listitem [ref=e365]:
-            - link "Scrolling Guide" [ref=e366] [cursor=pointer]:
-              - /url: /inkx/guide/scrolling.html
-            - text: "-- Deep dive into"
-            - code [ref=e367]: overflow="scroll"
-            - text: and
-            - code [ref=e368]: scrollTo
-          - listitem [ref=e369]:
-            - link "Mouse Events" [ref=e370] [cursor=pointer]:
-              - /url: /inkx/guide/components.html#mouse-events
-            - text: "-- SGR protocol, click handlers, and wheel scrolling"
-    - contentinfo [ref=e371]:
-      - navigation "Pager" [ref=e372]:
-        - generic [ref=e373]: Pager
-        - link "Previous page Dashboards & Monitoring" [ref=e375] [cursor=pointer]:
-          - /url: /inkx/use-cases/dashboards.html
-          - generic [ref=e376]: Previous page
-          - generic [ref=e377]: Dashboards & Monitoring
-        - link "Next page CLI Wizards & Setup" [ref=e379] [cursor=pointer]:
-          - /url: /inkx/use-cases/cli-wizards.html
-          - generic [ref=e380]: Next page
-          - generic [ref=e381]: CLI Wizards & Setup
+            - generic:
+                - generic:
+                    - link "inkx" [ref=e6] [cursor=pointer]:
+                        - /url: /inkx/
+                        - generic [ref=e7]: inkx
+                    - generic [ref=e8]:
+                        - button "Search" [ref=e11] [cursor=pointer]:
+                            - generic [ref=e14]: Search
+                            - generic [ref=e15]:
+                                - generic [ref=e16]: ⌘
+                                - generic [ref=e17]: K
+                        - navigation "Main Navigation" [ref=e18]:
+                            - generic [ref=e19]: Main Navigation
+                            - link "Guide" [ref=e20] [cursor=pointer]:
+                                - /url: /inkx/guide/getting-started.html
+                                - generic [ref=e21]: Guide
+                            - link "API" [ref=e22] [cursor=pointer]:
+                                - /url: /inkx/api/box.html
+                                - generic [ref=e23]: API
+                            - button "Examples" [ref=e25] [cursor=pointer]:
+                                - generic [ref=e27]: Examples
+                            - button "Links" [ref=e30] [cursor=pointer]:
+                                - generic [ref=e32]: Links
+                        - switch [ref=e35] [cursor=pointer]
+                        - link "github" [ref=e41] [cursor=pointer]:
+                            - /url: https://github.com/beorn/inkx
+    - complementary [ref=e43]:
+        - navigation "Sidebar Navigation" [ref=e45]:
+            - generic [ref=e46]: Sidebar Navigation
+            - generic [ref=e48]:
+                - button "Examples toggle section" [ref=e49] [cursor=pointer]:
+                    - heading "Examples" [level=2] [ref=e51]
+                    - button "toggle section" [ref=e52]
+                - generic [ref=e54]:
+                    - link "Live Demo" [ref=e58] [cursor=pointer]:
+                        - /url: /inkx/examples/live-demo.html
+                        - paragraph [ref=e59]: Live Demo
+                    - link "Dashboard" [ref=e63] [cursor=pointer]:
+                        - /url: /inkx/examples/dashboard.html
+                        - paragraph [ref=e64]: Dashboard
+                    - link "Task List" [ref=e68] [cursor=pointer]:
+                        - /url: /inkx/examples/task-list.html
+                        - paragraph [ref=e69]: Task List
+                    - link "Kanban Board" [ref=e73] [cursor=pointer]:
+                        - /url: /inkx/examples/kanban.html
+                        - paragraph [ref=e74]: Kanban Board
+            - generic [ref=e76]:
+                - button "Use Cases" [ref=e77]:
+                    - heading "Use Cases" [level=2] [ref=e79]
+                - generic [ref=e80]:
+                    - link "AI Assistants & Chat" [ref=e84] [cursor=pointer]:
+                        - /url: /inkx/use-cases/ai-assistants.html
+                        - paragraph [ref=e85]: AI Assistants & Chat
+                    - link "Dashboards & Monitoring" [ref=e89] [cursor=pointer]:
+                        - /url: /inkx/use-cases/dashboards.html
+                        - paragraph [ref=e90]: Dashboards & Monitoring
+                    - link "Kanban & Project Boards" [ref=e94] [cursor=pointer]:
+                        - /url: /inkx/use-cases/kanban-boards.html
+                        - paragraph [ref=e95]: Kanban & Project Boards
+                    - link "CLI Wizards & Setup" [ref=e99] [cursor=pointer]:
+                        - /url: /inkx/use-cases/cli-wizards.html
+                        - paragraph [ref=e100]: CLI Wizards & Setup
+                    - link "Developer Tools" [ref=e104] [cursor=pointer]:
+                        - /url: /inkx/use-cases/developer-tools.html
+                        - paragraph [ref=e105]: Developer Tools
+                    - link "Data Explorers & Tables" [ref=e109] [cursor=pointer]:
+                        - /url: /inkx/use-cases/data-explorers.html
+                        - paragraph [ref=e110]: Data Explorers & Tables
+    - generic [ref=e121]:
+        - main [ref=e122]:
+            - generic [ref=e124]:
+                - heading "Kanban & Project Boards Permalink to \"Kanban & Project Boards\"" [level=1] [ref=e125]:
+                    - text: Kanban & Project Boards
+                    - link "Permalink to \"Kanban & Project Boards\"" [ref=e126] [cursor=pointer]:
+                        - /url: "#kanban-project-boards"
+                        - text: "#"
+                - paragraph [ref=e127]: Terminal-based kanban boards need multi-column layouts that adapt to the terminal width, independent scrolling per column, two-axis keyboard navigation, and ideally mouse support for quick card selection. inkx provides all of these as built-in primitives, not manual abstractions you wire together yourself.
+                - paragraph [ref=e128]:
+                    - text: Other terminal UI frameworks either lack scrollable containers entirely (Ink), require imperative resize callbacks (BubbleTea, Ratatui), or use CSS-like styling that doesn't map naturally to React components (Textual). inkx gives you flexbox layout with
+                    - code [ref=e129]: Box
+                    - text: ", layout-aware components via"
+                    - code [ref=e130]: useContentRect()
+                    - text: ", and"
+                    - code [ref=e131]: overflow="scroll"
+                    - text: that just works -- the same mental model as building a web app, but for the terminal.
+                - heading "Key Benefits Permalink to \"Key Benefits\"" [level=2] [ref=e132]:
+                    - text: Key Benefits
+                    - link "Permalink to \"Key Benefits\"" [ref=e133] [cursor=pointer]:
+                        - /url: "#key-benefits"
+                        - text: "#"
+                - list [ref=e134]:
+                    - listitem [ref=e135]:
+                        - paragraph [ref=e136]:
+                            - strong [ref=e137]: Multi-column layout
+                            - text: "-- Flexbox"
+                            - code [ref=e138]: Box
+                            - text: components with
+                            - code [ref=e139]: "flexGrow={1}"
+                            - text: create equal-width columns that automatically redistribute when the terminal resizes. No manual width arithmetic or resize event handlers.
+                    - listitem [ref=e140]:
+                        - paragraph [ref=e141]:
+                            - strong [ref=e142]: Focus system
+                            - text: "-- Tree-based spatial navigation lets users press Left/Right to move between columns and Up/Down within them. Mark any"
+                            - code [ref=e143]: Box
+                            - text: as
+                            - code [ref=e144]: focusable
+                            - text: ", add"
+                            - code [ref=e145]: autoFocus
+                            - text: to the default card, and inkx handles Tab cycling and
+                            - code [ref=e146]: useFocusWithin
+                            - text: for column-level focus indicators.
+                    - listitem [ref=e147]:
+                        - paragraph [ref=e148]:
+                            - strong [ref=e149]: Scrollable columns
+                            - text: "-- Each column gets"
+                            - code [ref=e150]: overflow="scroll"
+                            - text: with its own
+                            - code [ref=e151]: scrollTo
+                            - text: index. inkx measures all children with Yoga, determines which are visible, and only renders content for visible cards. No height estimation or virtualization config.
+                    - listitem [ref=e152]:
+                        - paragraph [ref=e153]:
+                            - strong [ref=e154]: Mouse support
+                            - text: "-- SGR mouse protocol gives you"
+                            - code [ref=e155]: onClick
+                            - text: and
+                            - code [ref=e156]: onDoubleClick
+                            - text: props on card components for editing,
+                            - code [ref=e157]: onWheel
+                            - text: for per-column scrolling, and automatic click-to-focus so users can click a card in any column to jump directly to it.
+                    - listitem [ref=e158]:
+                        - paragraph [ref=e159]:
+                            - strong [ref=e160]: Command system
+                            - text: "--"
+                            - code [ref=e161]: withCommands
+                            - text: assigns every board action (move card, create card, archive, filter) an ID with configurable keybindings.
+                            - code [ref=e162]: withKeybindings
+                            - text: resolves keypresses to commands. You get a searchable command palette and AI-accessible action introspection for free.
+                - heading "Code Example Permalink to \"Code Example\"" [level=2] [ref=e163]:
+                    - text: Code Example
+                    - link "Permalink to \"Code Example\"" [ref=e164] [cursor=pointer]:
+                        - /url: "#code-example"
+                        - text: "#"
+                - paragraph [ref=e165]: "A complete 3-column kanban board with keyboard navigation, card movement between columns, and independent column scrolling:"
+                - generic [ref=e166]:
+                    - button "Copy Code" [ref=e167] [cursor=pointer]
+                    - generic [ref=e168]: tsx
+                    - code [ref=e170]:
+                        - generic [ref=e171]: 'import { Box, Text, useContentRect, useFocusable, useFocusWithin } from "inkx"'
+                        - generic [ref=e172]: 'import { run, useInput } from "inkx/runtime"'
+                        - generic [ref=e173]: 'import { useState } from "react"'
+                        - generic [ref=e174]: "type Card = { id: string; title: string }"
+                        - generic [ref=e175]: "type Column = { id: string; name: string; cards: Card[] }"
+                        - generic [ref=e176]: "const columns: Column[] = ["
+                        - generic [ref=e177]: "{"
+                        - generic [ref=e178]: 'id: "todo",'
+                        - generic [ref=e179]: 'name: "To Do",'
+                        - generic [ref=e180]: "cards: ["
+                        - generic [ref=e181]: '{ id: "1", title: "Research competitors" },'
+                        - generic [ref=e182]: '{ id: "2", title: "Design system audit" },'
+                        - generic [ref=e183]: '{ id: "3", title: "Write API docs" },'
+                        - generic [ref=e184]: '{ id: "4", title: "Performance benchmarks" },'
+                        - generic [ref=e185]: "],"
+                        - generic [ref=e186]: "},"
+                        - generic [ref=e187]: "{"
+                        - generic [ref=e188]: 'id: "doing",'
+                        - generic [ref=e189]: 'name: "In Progress",'
+                        - generic [ref=e190]: "cards: ["
+                        - generic [ref=e191]: '{ id: "5", title: "Implement scroll" },'
+                        - generic [ref=e192]: '{ id: "6", title: "Migration guide" },'
+                        - generic [ref=e193]: "],"
+                        - generic [ref=e194]: "},"
+                        - generic [ref=e195]: "{"
+                        - generic [ref=e196]: 'id: "done",'
+                        - generic [ref=e197]: 'name: "Done",'
+                        - generic [ref=e198]: "cards: ["
+                        - generic [ref=e199]: '{ id: "7", title: "Project setup" },'
+                        - generic [ref=e200]: '{ id: "8", title: "React reconciler" },'
+                        - generic [ref=e201]: '{ id: "9", title: "Basic components" },'
+                        - generic [ref=e202]: "],"
+                        - generic [ref=e203]: "},"
+                        - generic [ref=e204]: "]"
+                        - generic [ref=e205]: "function App() {"
+                        - generic [ref=e206]: const [board, setBoard] = useState(columns)
+                        - generic [ref=e207]: const [col, setCol] = useState(0)
+                        - generic [ref=e208]: const [row, setRow] = useState(0)
+                        - generic [ref=e209]: "useInput((input, key) => {"
+                        - generic [ref=e210]: if (input === "q") return "exit"
+                        - generic [ref=e211]: const maxRow = Math.max(0, board[col].cards.length - 1)
+                        - generic [ref=e212]: if (input === "j" || key.downArrow) setRow((r) => Math.min(r + 1, maxRow))
+                        - generic [ref=e213]: if (input === "k" || key.upArrow) setRow((r) => Math.max(r - 1, 0))
+                        - generic [ref=e214]: 'if (input === "l" || key.rightArrow) {'
+                        - generic [ref=e215]: "setCol((c) => {"
+                        - generic [ref=e216]: const next = Math.min(c + 1, board.length - 1)
+                        - generic [ref=e217]: setRow((r) => Math.min(r, Math.max(0, board[next].cards.length - 1)))
+                        - generic [ref=e218]: return next
+                        - generic [ref=e219]: "})"
+                        - generic [ref=e220]: "}"
+                        - generic [ref=e221]: 'if (input === "h" || key.leftArrow) {'
+                        - generic [ref=e222]: "setCol((c) => {"
+                        - generic [ref=e223]: const prev = Math.max(c - 1, 0)
+                        - generic [ref=e224]: setRow((r) => Math.min(r, Math.max(0, board[prev].cards.length - 1)))
+                        - generic [ref=e225]: return prev
+                        - generic [ref=e226]: "})"
+                        - generic [ref=e227]: "}"
+                        - generic [ref=e228]: 'if (input === "m" && col < board.length - 1) {'
+                        - generic [ref=e229]: const card = board[col].cards[row]
+                        - generic [ref=e230]: if (!card) return
+                        - generic [ref=e231]: setBoard((b) =>
+                        - generic [ref=e232]: "b.map((column, i) => {"
+                        - generic [ref=e233]: "if (i === col) return { ...column, cards: column.cards.filter((c) => c.id !== card.id) }"
+                        - generic [ref=e234]: "if (i === col + 1) return { ...column, cards: [...column.cards, card] }"
+                        - generic [ref=e235]: return column
+                        - generic [ref=e236]: "}),"
+                        - generic [ref=e237]: )
+                        - generic [ref=e238]: setRow((r) => Math.min(r, Math.max(0, board[col].cards.length - 2)))
+                        - generic [ref=e239]: "}"
+                        - generic [ref=e240]: "})"
+                        - generic [ref=e241]: return (
+                        - generic [ref=e242]: <Box flexDirection="column" width="100%" height="100%">
+                        - generic [ref=e243]: '<Box flexDirection="row" flexGrow={1}>'
+                        - generic [ref=e244]: "{board.map((column, ci) => ("
+                        - generic [ref=e245]: "<KanbanColumn key={column.id} column={column} isActive={ci === col} selectedCard={ci === col ? row : -1} />"
+                        - generic [ref=e246]: "))}"
+                        - generic [ref=e247]: </Box>
+                        - generic [ref=e248]: "<Box paddingX={1}>"
+                        - generic [ref=e249]: "<Text dimColor>h/l: columns j/k: cards m: move right q: quit</Text>"
+                        - generic [ref=e250]: </Box>
+                        - generic [ref=e251]: </Box>
+                        - generic [ref=e252]: )
+                        - generic [ref=e253]: "}"
+                        - generic [ref=e254]: "function KanbanColumn({ column, isActive, selectedCard }: { column: Column; isActive: boolean; selectedCard: number }) {"
+                        - generic [ref=e255]: return (
+                        - generic [ref=e256]: '<Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor={isActive ? "cyan" : undefined}>'
+                        - generic [ref=e257]: "<Box paddingX={1}>"
+                        - generic [ref=e258]: '<Text bold color={isActive ? "cyan" : undefined}>'
+                        - generic [ref=e259]: "{column.name}"
+                        - generic [ref=e260]: </Text>
+                        - generic [ref=e261]: "<Text dimColor> ({column.cards.length})</Text>"
+                        - generic [ref=e262]: </Box>
+                        - generic [ref=e263]: <Box
+                        - generic [ref=e264]: flexDirection="column"
+                        - generic [ref=e265]: "flexGrow={1}"
+                        - generic [ref=e266]: overflow="scroll"
+                        - generic [ref=e267]: "scrollTo={selectedCard >= 0 ? selectedCard : undefined}"
+                        - generic [ref=e268]: "paddingX={1}"
+                        - generic [ref=e269]: ">"
+                        - generic [ref=e270]: "{column.cards.map((card, i) => ("
+                        - generic [ref=e271]: <Text
+                        - generic [ref=e272]: "key={card.id}"
+                        - generic [ref=e273]: 'backgroundColor={i === selectedCard ? "cyan" : undefined}'
+                        - generic [ref=e274]: 'color={i === selectedCard ? "black" : undefined}'
+                        - generic [ref=e275]: ">"
+                        - generic [ref=e276]: '{i === selectedCard ? "> " : " "}'
+                        - generic [ref=e277]: "{card.title}"
+                        - generic [ref=e278]: </Text>
+                        - generic [ref=e279]: "))}"
+                        - generic [ref=e280]: </Box>
+                        - generic [ref=e281]: </Box>
+                        - generic [ref=e282]: )
+                        - generic [ref=e283]: "}"
+                        - generic [ref=e284]: await run(<App />)
+                - paragraph [ref=e285]:
+                    - text: Run it with
+                    - code [ref=e286]: bun app.tsx
+                    - text: or
+                    - code [ref=e287]: npx tsx app.tsx
+                    - text: .
+                - heading "Adding Focus and Mouse Support Permalink to \"Adding Focus and Mouse Support\"" [level=2] [ref=e288]:
+                    - text: Adding Focus and Mouse Support
+                    - link "Permalink to \"Adding Focus and Mouse Support\"" [ref=e289] [cursor=pointer]:
+                        - /url: "#adding-focus-and-mouse-support"
+                        - text: "#"
+                - paragraph [ref=e290]: "The example above uses manual cursor state for simplicity. For a production board, use inkx's focus system to get click-to-focus, Tab navigation, and focus-aware styling for free:"
+                - generic [ref=e291]:
+                    - button "Copy Code" [ref=e292] [cursor=pointer]
+                    - generic [ref=e293]: tsx
+                    - code [ref=e295]:
+                        - generic [ref=e296]: "function FocusableCard({ card }: { card: Card }) {"
+                        - generic [ref=e297]: "const { focused } = useFocusable()"
+                        - generic [ref=e298]: return (
+                        - generic [ref=e299]: <Box
+                        - generic [ref=e300]: "testID={card.id}"
+                        - generic [ref=e301]: focusable
+                        - generic [ref=e302]: "onClick={() => {"
+                        - generic [ref=e303]: /* click-to-focus is automatic */
+                        - generic [ref=e304]: "}}"
+                        - generic [ref=e305]: ">"
+                        - generic [ref=e306]: "<Text inverse={focused}>"
+                        - generic [ref=e307]: '{focused ? "> " : " "}'
+                        - generic [ref=e308]: "{card.title}"
+                        - generic [ref=e309]: </Text>
+                        - generic [ref=e310]: </Box>
+                        - generic [ref=e311]: )
+                        - generic [ref=e312]: "}"
+                        - generic [ref=e313]: "function FocusableColumn({ column }: { column: Column }) {"
+                        - generic [ref=e314]: const hasFocus = useFocusWithin(column.id)
+                        - generic [ref=e315]: return (
+                        - generic [ref=e316]: <Box
+                        - generic [ref=e317]: "testID={column.id}"
+                        - generic [ref=e318]: flexDirection="column"
+                        - generic [ref=e319]: "flexGrow={1}"
+                        - generic [ref=e320]: borderStyle="single"
+                        - generic [ref=e321]: 'borderColor={hasFocus ? "cyan" : undefined}'
+                        - generic [ref=e322]: ">"
+                        - generic [ref=e323]: "<Box paddingX={1}>"
+                        - generic [ref=e324]: '<Text bold color={hasFocus ? "cyan" : undefined}>'
+                        - generic [ref=e325]: "{column.name}"
+                        - generic [ref=e326]: </Text>
+                        - generic [ref=e327]: </Box>
+                        - generic [ref=e328]: '<Box flexDirection="column" flexGrow={1} overflow="scroll" paddingX={1}>'
+                        - generic [ref=e329]: "{column.cards.map((card) => ("
+                        - generic [ref=e330]: "<FocusableCard key={card.id} card={card} />"
+                        - generic [ref=e331]: "))}"
+                        - generic [ref=e332]: </Box>
+                        - generic [ref=e333]: </Box>
+                        - generic [ref=e334]: )
+                        - generic [ref=e335]: "}"
+                - paragraph [ref=e336]:
+                    - text: Enable mouse events by passing
+                    - code [ref=e337]: "mouse: true"
+                    - text: to
+                    - code [ref=e338]: run()
+                    - text: ":"
+                - generic [ref=e339]:
+                    - button "Copy Code" [ref=e340] [cursor=pointer]
+                    - generic [ref=e341]: tsx
+                    - code [ref=e343]:
+                        - generic [ref=e344]: "await run(<App />, { mouse: true })"
+                - paragraph [ref=e345]:
+                    - text: Cards respond to
+                    - code [ref=e346]: onClick
+                    - text: ","
+                    - code [ref=e347]: onDoubleClick
+                    - text: (to open a detail view), and columns respond to
+                    - code [ref=e348]: onWheel
+                    - text: for trackpad or mouse scrolling -- all with DOM-style event bubbling and
+                    - code [ref=e349]: stopPropagation()
+                    - text: .
+                - heading "What inkx Adds Permalink to \"What inkx Adds\"" [level=2] [ref=e350]:
+                    - text: What inkx Adds
+                    - link "Permalink to \"What inkx Adds\"" [ref=e351] [cursor=pointer]:
+                        - /url: "#what-inkx-adds"
+                        - text: "#"
+                - paragraph [ref=e352]:
+                    - text: "Building a kanban board in most TUI frameworks means writing your own focus tree, scroll management, and mouse handling. inkx provides all three: a tree-based focus system for spatial navigation between columns,"
+                    - code [ref=e353]: overflow="scroll"
+                    - text: for independent column scrolling, and DOM-style mouse events (
+                    - code [ref=e354]: onClick
+                    - text: ","
+                    - code [ref=e355]: onWheel
+                    - text: ", click-to-focus) for natural card interaction. Together, these save hundreds of lines of infrastructure code."
+                - heading "Next Steps Permalink to \"Next Steps\"" [level=2] [ref=e356]:
+                    - text: Next Steps
+                    - link "Permalink to \"Next Steps\"" [ref=e357] [cursor=pointer]:
+                        - /url: "#next-steps"
+                        - text: "#"
+                - list [ref=e358]:
+                    - listitem [ref=e359]:
+                        - link "Getting Started" [ref=e360] [cursor=pointer]:
+                            - /url: /inkx/guide/getting-started.html
+                        - text: "-- Install inkx and build your first app"
+                    - listitem [ref=e361]:
+                        - link "Kanban Example" [ref=e362] [cursor=pointer]:
+                            - /url: /inkx/examples/kanban.html
+                        - text: "-- Full source with card tags, drag preview, and architecture notes"
+                    - listitem [ref=e363]:
+                        - link "Focus Hooks" [ref=e364] [cursor=pointer]:
+                            - /url: /inkx/api/use-focus.html
+                        - text: "-- Tree-based focus system API reference"
+                    - listitem [ref=e365]:
+                        - link "Scrolling Guide" [ref=e366] [cursor=pointer]:
+                            - /url: /inkx/guide/scrolling.html
+                        - text: "-- Deep dive into"
+                        - code [ref=e367]: overflow="scroll"
+                        - text: and
+                        - code [ref=e368]: scrollTo
+                    - listitem [ref=e369]:
+                        - link "Mouse Events" [ref=e370] [cursor=pointer]:
+                            - /url: /inkx/guide/components.html#mouse-events
+                        - text: "-- SGR protocol, click handlers, and wheel scrolling"
+        - contentinfo [ref=e371]:
+            - navigation "Pager" [ref=e372]:
+                - generic [ref=e373]: Pager
+                - link "Previous page Dashboards & Monitoring" [ref=e375] [cursor=pointer]:
+                    - /url: /inkx/use-cases/dashboards.html
+                    - generic [ref=e376]: Previous page
+                    - generic [ref=e377]: Dashboards & Monitoring
+                - link "Next page CLI Wizards & Setup" [ref=e379] [cursor=pointer]:
+                    - /url: /inkx/use-cases/cli-wizards.html
+                    - generic [ref=e380]: Next page
+                    - generic [ref=e381]: CLI Wizards & Setup
