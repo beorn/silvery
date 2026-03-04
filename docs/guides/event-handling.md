@@ -1,23 +1,21 @@
 # Event Handling
 
-> inkx makes it easy to graduate from raw key callbacks to composable event pipelines — adopt each level only when you need it.
+> Sip TEA, don't chug it. Start with `useInput` and a callback. Graduate to composable plugins when you need them. Every step is additive — you never rewrite, you grow.
 
-Your first inkx app calls `useInput` and handles keys directly. That's enough for a counter, a file picker, a simple dialog. Then your TUI grows — mouse clicks, command palettes, vim modes, file watchers — and each requirement tempts you to add another ad-hoc handler or special case.
+Most TUI frameworks force a choice: simple callbacks that don't scale, or a full architecture you adopt all at once. inkx gives you a graduated path where each level builds on the last. Your first app is five lines. Your complex app — with vim modes, AI automation, customizable keybindings, and file watchers — uses the same primitives, just composed differently.
 
-This guide shows a different path. Each level builds on the last with minimal changes. inkx provides tooling at each step — `withDomEvents`, `withCommands`, app plugins, typed event streams — so the transition is mechanical, not architectural. You never rewrite; you graduate.
-
-The patterns are general — component-level handlers, commands as data, plugin composition — but inkx provides the plumbing so you don't wire it yourself.
+The payoff at the end of the path: **all state in one model**, all changes through one `update` function, all I/O through composable plugins. The entire app becomes inspectable, serializable, replayable, and testable — from headless unit tests to AI-driven automation. You get there incrementally, one sip at a time.
 
 | Level | You need it when... | What inkx provides |
 |-------|--------------------|--------------------|
 | **1 — Callbacks** | Starting out | `useInput` — just a function |
 | **2 — Component Handlers** | Clicks, per-component keys | `withDomEvents()` — React-style `onClick`/`onKeyDown` with bubbling |
 | **3 — Commands** | Undo, replay, AI automation | `withCommands()` — key/mouse → named serializable actions |
-| **4 — App Plugins** | Vim modes, chords, custom sources | `(app) => app` — same shape for processing and production |
+| **4 — App Plugins** | Vim modes, chords, custom sources | Slice + plugin — state in the model, reactions via subscribe |
 
-Most simple apps stop at Level 1. Apps with mouse interaction reach Level 2. Complex TUIs with customizable keybindings and AI automation land at Level 3. Level 4 is the escape hatch for anything the built-ins don't cover.
+Most simple apps stop at Level 1. Apps with mouse interaction reach Level 2. Complex TUIs with customizable keybindings and AI automation land at Level 3. Level 4 is for custom event processing, sources, and protocols — but by then you're writing pure functions that compose, not framework boilerplate.
 
-This guide is the companion to [State Management](state-management.md). State management answers "how do I organize my data?"; event handling answers "how do I respond to the world?". They meet in the middle at commands — where input becomes data.
+This guide is the companion to [State Management](state-management.md). State management answers "how do I organize my data?"; event handling answers "how do I respond to the world?". They meet at commands — where input becomes data, and the app becomes a pure pipeline from events to state to screen.
 
 ### The kernel and defaults
 
@@ -134,7 +132,8 @@ Enable it with a plugin — one line:
 import { pipe, withDomEvents } from "inkx/runtime"
 
 const app = pipe(
-  createApp(store, <Board />),
+  createApp(store),
+  withReact(<Board />),
   withDomEvents(),
 )
 ```
@@ -209,7 +208,8 @@ const registry = createCommandRegistry({
 })
 
 const app = pipe(
-  createApp(store, <Board />),
+  createApp(store),
+  withReact(<Board />),
   withDomEvents(),
   withCommands({
     registry,
@@ -260,7 +260,8 @@ This is the natural pattern for complex apps: `TextInput` handles its own keys v
 
 ```tsx
 const app = pipe(
-  createApp(store, <Board />),
+  createApp(store),
+  withReact(<Board />),
   withDomEvents(),      // component handlers fire first
   withCommands(opts),   // unhandled events resolve to commands
 )
@@ -315,37 +316,104 @@ const app = pipe(
 )
 ```
 
-### Writing your own plugin
+### Plugin anatomy
 
-A plugin overrides what it needs and passes everything else through. Here's a vim mode plugin that intercepts keys before commands:
+A plugin has two parts: a **slice** (pure reducer for its state) and a **plugin function** (event wiring, subscriptions, API surface):
 
 ```tsx
-function withVimModes<M, Msg>(): AppPlugin<M, Msg> {
-  let mode: "normal" | "insert" | "visual" = "normal"
+function withTerminal(proc: NodeJS.Process) {
+  return {
+    // Slice: pure (msg, sliceState) → sliceState — handles state transitions
+    slice: (msg: AppEvent, term: TermState): TermState => {
+      if (msg.type === "term:resize")
+        return { ...term, cols: msg.data.cols, rows: msg.data.rows }
+      return term
+    },
 
-  return (app) => {
-    const { update } = app
-    app.update = (msg, model) => {
-      if (msg.type === "term:key") {
-        // Mode switching
-        if (mode === "normal" && msg.data.input === "i") {
-          mode = "insert"
-          return [model, []]  // consumed, don't pass through
-        }
-        if (mode === "insert" && msg.data.key.escape) {
-          mode = "normal"
-          return [model, []]
-        }
-        // In insert mode, let keys pass through to text input
-        if (mode === "insert") {
+    // Plugin: event sources, subscriptions, API — no direct model mutation
+    plugin: (app) => {
+      const { events } = app
+      app.events = () => [...events(), terminalInput(proc.stdin), resizeStream(proc.stdout)]
+
+      // I/O reaction: write to stdout when buffer changes
+      app.subscribe(s => s.renderBuffer, (buf) => diffAndWrite(proc.stdout, buf))
+
+      return app
+    },
+  }
+}
+```
+
+The kernel composes all slices — every slice sees every message, no plugin can clobber another's state. Plugins wire events and react to model changes, but **never mutate the model directly**. All state changes flow through `update`.
+
+### Subscriptions and cleanup
+
+Plugins react to model changes via `app.subscribe`. The app collects subscriptions in a `DisposableStack` — cleanup is automatic:
+
+```tsx
+plugin: (app) => {
+  // I/O: no state change
+  app.subscribe(s => s.focus.activeId, (id) => scrollIntoView(id))
+
+  // Dispatch: goes through update, which may change state
+  app.subscribe(s => s.term.rows, () => app.dispatch.focus.revalidate())
+
+  return app
+}
+```
+
+```tsx
+using app = pipe(createApp(store), withTerminal(process), withFocus())
+await app.run()
+// all subscriptions cleaned up via [Symbol.dispose]
+```
+
+The rule: **subscribers never mutate the model.** They either do I/O or dispatch — which goes through `update`.
+
+### Typed dispatch
+
+`app.dispatch` is both callable and a typed proxy. The `EventMap` drives autocomplete:
+
+```tsx
+// Proxy — namespace:action from the property chain
+app.dispatch.focus.revalidate()
+app.dispatch.focus.changed({ from: "a", to: "b" })
+app.dispatch.term.resize({ cols: 80, rows: 24 })
+
+// Raw — when you already have a message object
+app.dispatch({ type: "focus:revalidate" })
+```
+
+### Writing your own plugin
+
+Here's a vim mode plugin. Note: mode lives **in the model**, not in a closure — so it's inspectable, serializable, and survives replay:
+
+```tsx
+function withVimModes() {
+  return {
+    slice: (msg: AppEvent, vim: VimState): VimState => {
+      if (msg.type !== "term:key") return vim
+      if (vim.mode === "normal" && msg.data.input === "i")
+        return { ...vim, mode: "insert" }
+      if (vim.mode === "insert" && msg.data.key.escape)
+        return { ...vim, mode: "normal" }
+      return vim
+    },
+
+    plugin: (app) => {
+      const { update } = app
+      app.update = (msg, model) => {
+        // In insert mode, keys pass through to text input
+        // In normal mode, keys pass through to command resolution
+        // Mode switching is handled by the slice — no interception needed
+        if (msg.type === "term:key" && model.vim.mode === "insert") {
+          // Skip command resolution, let it reach text input
           return update(msg, model)
         }
-        // In normal mode, pass to command resolution
         return update(msg, model)
       }
-      return update(msg, model)
-    }
-    return app
+      return app
+    },
   }
 }
 ```
@@ -353,28 +421,35 @@ function withVimModes<M, Msg>(): AppPlugin<M, Msg> {
 Stack it:
 
 ```tsx
-const app = pipe(
-  createApp(store),
+using app = pipe(
+  createApp(store, {
+    slices: { term: withTerminal(process).slice, vim: withVimModes().slice },
+  }),
+  withTerminal(process).plugin,
   withReact(<Board />),
-  withTerminal(process),
   withDomEvents(),
-  withVimModes(),       // intercepts before commands
+  withVimModes().plugin,
   withCommands(opts),
 )
 ```
 
 ### Custom event sources
 
-Plugins can also add event sources by overriding `app.events`:
+Plugins can add event sources by overriding `app.events`:
 
 ```tsx
-function withFileWatcher<M, Msg>(path: string): AppPlugin<M, Msg> {
-  return (app) => {
-    const { events, unmount } = app
-    const watcher = watch(path, (ev) => app.dispatch({ type: "fs:change", data: ev }))
-    app.events = () => [...events(), fileWatch(path)]
-    app.unmount = () => { watcher.close(); unmount() }
-    return app
+function withFileWatcher(path: string) {
+  return {
+    slice: (msg: AppEvent, fs: FsState): FsState => {
+      if (msg.type === "fs:change") return { ...fs, lastChange: msg.data }
+      return fs
+    },
+
+    plugin: (app) => {
+      const { events } = app
+      app.events = () => [...events(), fileWatch(path)]
+      return app
+    },
   }
 }
 ```
@@ -478,11 +553,11 @@ The event loop is simple because the complexity lives in the plugins, not the ru
 
 ## The Plugin Model
 
-Step back and look at what you have. Every extension — from mouse handling to vim modes to file watchers — is the same type: `(app) => app`. A function that takes an app and returns a richer app.
+Step back and look at what you have. Every extension — from terminal I/O to vim modes to file watchers — has the same shape: a **slice** (pure reducer for its model state) and a **plugin** (event wiring, subscriptions, API). All state lives in the model. All state changes flow through `update`. Plugins react to model changes via subscriptions, and clean up automatically via `using`.
 
 ```
-pipe(
-  createApp(store)                 kernel: event loop + state
+using app = pipe(
+  createApp(store, { slices })     kernel: event loop + composed reducers
   ├─ withReact(<View />)           rendering: React + virtual buffer
   ├─ withTerminal(process)         terminal: stdin→events, stdout→output, lifecycle, protocols
   ├─ withFocus()                   processing: Tab navigation, focus scopes
@@ -496,13 +571,28 @@ pipe(
 
 Three roles, one type:
 
-| Role | What it does | Overrides |
-|------|-------------|-----------|
-| **Source** | Produces events | `app.events` |
-| **Processor** | Transforms/consumes events | `app.update` |
+| Role | What it does | How |
+|------|-------------|-----|
+| **Source** | Produces events | Overrides `app.events` |
+| **Processor** | Transforms/consumes events | Wraps `app.update` |
+| **Reactor** | Responds to model changes | `app.subscribe` (I/O or dispatch) |
 | **Driver** | Enhances external API | `app.press`, `app.cmd`, etc. |
 
-A single plugin can fill multiple roles — `withCommands` overrides `update` (processing) AND adds `.cmd` (API). There's no taxonomy to learn; it's just functions overriding methods on an object.
+A single plugin can fill multiple roles — `withCommands` wraps `update` (processing) AND adds `.cmd` (API). `withTerminal` adds sources AND subscribes to render buffer (reactor). There's no taxonomy to learn; it's just functions enriching an object.
+
+### Sipping TEA
+
+The architecture supports incremental adoption of [The Elm Architecture](https://guide.elm-lang.org/architecture/) — you don't have to drink the whole pot at once.
+
+1. **`useState`** — state in components. Quick to start, hard to test, impossible to replay.
+2. **Shared store** — state in Zustand. Components share state, but handlers are still imperative `set()` calls.
+3. **Commands** — input as data. Keys and clicks become named, serializable actions. But state changes are still imperative.
+4. **Slices** — state changes as data. Pure `(msg, state) → state` reducers. All state in the model, all transitions traceable.
+5. **Effects as data** — side effects as data. `update` returns `[model, effects]`. The entire app is a pure function.
+
+At each step you have a working app. You can have some commands going through pure slices and others still calling `store.setState()`. The kernel doesn't care — it processes events the same way regardless. Migrate one slice at a time, validate it works, move to the next.
+
+The payoff at step 5: **snapshot** any moment, **replay** any session, **time-travel** through history, **test** with zero I/O. Because all state is in the model and all changes flow through `update`, there's nothing hidden, nothing to reconstruct.
 
 ### Relationship to state management
 
