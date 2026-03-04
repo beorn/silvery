@@ -691,17 +691,34 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
   // Create React fiber root
   const fiberRoot = createFiberRoot(container)
 
-  // Create mock stdout for contexts
+  // Create mock stdout for contexts.
+  // Must support resize events so ScrollbackView can detect terminal size changes
+  // and re-emit frozen items at the new width. Must forward writes to the real
+  // target so useScrollback's resize path (clear screen + re-emit frozen items)
+  // actually reaches the terminal.
+  const resizeListeners = new Set<() => void>()
   const mockStdout = {
     columns: cols,
     rows: rows,
-    write: () => true,
+    write: (data: string) => { target.write(data); return true },
     isTTY: false,
-    on: () => mockStdout,
-    off: () => mockStdout,
+    on(event: string, handler: () => void) {
+      if (event === "resize") resizeListeners.add(handler)
+      return mockStdout
+    },
+    off(event: string, handler: () => void) {
+      if (event === "resize") resizeListeners.delete(handler)
+      return mockStdout
+    },
     once: () => mockStdout,
-    removeListener: () => mockStdout,
-    addListener: () => mockStdout,
+    removeListener(event: string, handler: () => void) {
+      if (event === "resize") resizeListeners.delete(handler)
+      return mockStdout
+    },
+    addListener(event: string, handler: () => void) {
+      if (event === "resize") resizeListeners.add(handler)
+      return mockStdout
+    },
   } as unknown as NodeJS.WriteStream
 
   // Create mock term for useTerm()
@@ -866,6 +883,15 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     if (event.type === "resize") {
       prevTermBuffer = null
       runtime.invalidate()
+
+      // Update mockStdout dimensions and notify ScrollbackView.
+      // Without this, ScrollbackView never detects the resize and
+      // frozen items are never re-emitted at the new width.
+      const newDims = runtime.getDims()
+      mockStdout.columns = newDims.cols
+      mockStdout.rows = newDims.rows
+      for (const handler of resizeListeners) handler()
+
       scheduleRender()
     }
 

@@ -1239,10 +1239,14 @@ function CodingAgent({
     return () => cancelStreaming()
   }, [cancelStreaming])
 
-  // Auto-compact when context reaches 95%
+  // Auto-compact when ACTIVE (non-frozen) tokens reach 95% of context window.
+  // Only count active exchanges — frozen ones are already in scrollback and
+  // don't consume context. Without this filter, after the first compact the
+  // total never decreases and every new exchange re-triggers compaction.
   useEffect(() => {
     if (done || compactingRef.current) return
-    const cumulative = computeCumulativeTokens(exchanges)
+    const active = exchanges.filter((ex) => !ex.frozen)
+    const cumulative = computeCumulativeTokens(active)
     const total = cumulative.input + cumulative.output
     if (total >= CONTEXT_WINDOW * 0.95) {
       compact()
