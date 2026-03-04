@@ -27,7 +27,7 @@ export interface ErrorBoundaryProps {
    */
   onError?: (error: Error, errorInfo: ErrorInfo) => void
   /**
-   * Called when the error is reset (if resetKey changes).
+   * Called when the error is reset (if resetKey or resetKeys change).
    */
   onReset?: () => void
   /**
@@ -35,6 +35,12 @@ export interface ErrorBoundaryProps {
    * Useful for "retry" functionality.
    */
   resetKey?: string | number
+  /**
+   * When any element in this array changes (shallow comparison), the error
+   * boundary resets and re-mounts children. Useful when the recovery depends
+   * on multiple values (e.g., route + data version).
+   */
+  resetKeys?: unknown[]
 }
 
 interface ErrorBoundaryState {
@@ -117,8 +123,19 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidUpdate(prevProps: ErrorBoundaryProps): void {
+    if (!this.state.hasError) return
+
     // Reset error state when resetKey changes
-    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey && this.props.resetKey !== undefined) {
+    const resetKeyChanged = this.props.resetKey !== undefined && prevProps.resetKey !== this.props.resetKey
+
+    // Reset error state when any element in resetKeys changes (shallow comparison)
+    const resetKeysChanged =
+      this.props.resetKeys !== undefined &&
+      (prevProps.resetKeys === undefined ||
+        this.props.resetKeys.length !== prevProps.resetKeys.length ||
+        this.props.resetKeys.some((key, i) => key !== prevProps.resetKeys![i]))
+
+    if (resetKeyChanged || resetKeysChanged) {
       this.props.onReset?.()
       this.setState({ hasError: false, error: null, errorInfo: null })
     }
@@ -129,9 +146,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       const { fallback } = this.props
       const { error, errorInfo } = this.state
 
-      // If fallback is a function, call it with error details
-      if (typeof fallback === "function" && error && errorInfo) {
-        return fallback(error, errorInfo)
+      // If fallback is a function, call it with error details.
+      // errorInfo may be null on the first render (getDerivedStateFromError runs
+      // before componentDidCatch), so provide a minimal default.
+      if (typeof fallback === "function" && error) {
+        const info = errorInfo ?? ({ componentStack: null } as unknown as ErrorInfo)
+        return fallback(error, info)
       }
 
       // If fallback is provided, use it
