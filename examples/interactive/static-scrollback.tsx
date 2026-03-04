@@ -851,10 +851,10 @@ function StatusBar({
 
   // Context bar — uses currentContext (the actual context window usage)
   const CTX_W = 20
-  const ctxFrac = Math.min(cumulative.currentContext / CONTEXT_WINDOW, 1)
-  const ctxFilled = Math.round(ctxFrac * CTX_W)
+  const ctxFrac = cumulative.currentContext / CONTEXT_WINDOW
+  const ctxFilled = Math.round(Math.min(ctxFrac, 1) * CTX_W)
   const ctxPct = Math.round(ctxFrac * 100)
-  const ctxColor = ctxPct > 80 ? "$error" : ctxPct > 50 ? "$warning" : "$primary"
+  const ctxColor = ctxPct > 100 ? "$error" : ctxPct > 80 ? "$warning" : "$primary"
   const ctxBar = "\u2588".repeat(ctxFilled) + "\u2591".repeat(CTX_W - ctxFilled)
 
   // Build key hints — keep compact to avoid overflow
@@ -873,12 +873,17 @@ function StatusBar({
         {frozenCount > 0 && (
           <>
             {"  "}
-            <Text color="$muted">{"\u2191"}{frozenCount} in scrollback</Text>
+            <Text color="$muted">
+              {"\u2191"}
+              {frozenCount} in scrollback
+            </Text>
           </>
         )}
       </Text>
       <Text color="$muted" dim>
-        ctx <Text color={ctxColor}>{ctxBar}</Text> {ctxPct}%{"\u00B7"}{cost}
+        context <Text color={ctxColor}>{ctxBar}</Text>{" "}
+        <Text color={ctxPct > 100 ? "$error" : undefined}>{ctxPct}%</Text>
+        {"  "}{cost}
       </Text>
     </Box>
   )
@@ -949,13 +954,13 @@ function DemoFooter({
 
   return (
     <Box flexDirection="column">
-      <Box borderStyle="round" borderColor="$focusring" paddingX={1}>
+      <Box borderStyle="round" borderColor="$focusborder" paddingX={1}>
         <TextInput
           value={inputText}
           onChange={setInputText}
           onSubmit={handleSubmit}
           prompt={"\u276F "}
-          promptColor="$focusring"
+          promptColor="$focusborder"
           placeholder={streamPhase !== "done" ? "\u23CE skip" : done ? "Session complete" : ""}
           isActive={!autoMode && !done}
         />

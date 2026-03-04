@@ -223,8 +223,10 @@ export function useScrollback<T>(items: T[], options: UseScrollbackOptions<T>): 
     // 4. Reset totalFrozenLines to accurate count (no drift possible)
     totalFrozenLinesRef.current = linesWritten
 
-    // 5. Notify scheduler about scrollback displacement
-    stdoutCtx?.notifyScrollback?.(linesWritten)
+    // 5. Do NOT call notifyScrollback here. The re-emitted frozen items are
+    // the new scrollback baseline, not a displacement offset. resetInlineCursor()
+    // already set forceFirstRender=true, which makes the output phase treat the
+    // next render as the first frame — cursor starts fresh after the frozen items.
 
     // 6. Sync prevFrozenCountRef to prevent double-writes
     prevFrozenCountRef.current = currentFrozenCount

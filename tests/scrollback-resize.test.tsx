@@ -11,7 +11,7 @@
  * 3. No re-emission when there are no frozen items
  * 4. Clear sequence is correct (ED3 + ED2)
  * 5. resetInlineCursor is called before re-emission
- * 6. notifyScrollback is called with correct line count after re-emission
+ * 6. notifyScrollback is NOT called during resize (only on initial freeze)
  * 7. Normal scrollback still works after resize
  * 8. Markers are preserved during re-emission
  */
@@ -153,8 +153,8 @@ describe("useScrollback resize re-emission", () => {
     // Should have called resetInlineCursor before re-emission
     expect(resetInlineCursor).toHaveBeenCalled()
 
-    // notifyScrollback: once for initial freeze, once for resize re-emission
-    expect(notifyScrollback).toHaveBeenCalledTimes(2)
+    // notifyScrollback: once for initial freeze only (not on resize re-emission)
+    expect(notifyScrollback).toHaveBeenCalledTimes(1)
 
     // The clear sequence should be in the writes
     const allOutput = writes.join("")
@@ -201,9 +201,9 @@ describe("useScrollback resize re-emission", () => {
       </StdoutContextWrapper>,
     )
 
-    // Should have re-emitted: clear + frozen item + notifyScrollback
+    // Should have re-emitted: clear + frozen item (no notifyScrollback on resize)
     expect(resetInlineCursor).toHaveBeenCalled()
-    expect(notifyScrollback).toHaveBeenCalledTimes(2) // once on freeze, once on resize
+    expect(notifyScrollback).toHaveBeenCalledTimes(1) // once on freeze only
 
     // The re-emitted content should include the clear sequence and the item
     const allOutput = writes.join("")
@@ -306,8 +306,8 @@ describe("useScrollback resize re-emission", () => {
     expect(allOutput).toContain("[2]")
     expect(allOutput).toContain("[3]")
 
-    // notifyScrollback called once for the re-emission batch
-    expect(notifyScrollback).toHaveBeenCalledTimes(1)
+    // notifyScrollback NOT called on resize (only on initial freeze, which was cleared)
+    expect(notifyScrollback).toHaveBeenCalledTimes(0)
   })
 
   test("normal freezing still works after resize", () => {
