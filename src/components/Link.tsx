@@ -61,7 +61,7 @@ export interface LinkProps {
  * render it as a clickable link. The component also registers an onClick
  * handler for mouse-driven interaction within inkx.
  */
-export function Link({ href, children, color = "blue", underline = true, dim, onClick, testID }: LinkProps) {
+export function Link({ href, children, color = "$link", underline = true, dim, onClick, testID }: LinkProps) {
   return (
     <Text color={color} underline={underline} dim={dim} onClick={onClick} testID={testID}>
       {osc8Open(href)}

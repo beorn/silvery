@@ -318,7 +318,7 @@ function HorizontalVirtualListInner<T>(
           renderOverflowIndicator("before", overflowBefore)
         ) : (
           <Box flexShrink={0}>
-            <Text color="white" backgroundColor="gray">
+            <Text color="$inverse-fg" backgroundColor="$inverse">
               ◀{overflowBefore}
             </Text>
           </Box>
@@ -353,7 +353,7 @@ function HorizontalVirtualListInner<T>(
           renderOverflowIndicator("after", overflowAfter)
         ) : (
           <Box flexShrink={0}>
-            <Text color="white" backgroundColor="gray">
+            <Text color="$inverse-fg" backgroundColor="$inverse">
               {overflowAfter}▶
             </Text>
           </Box>

@@ -31,11 +31,11 @@ export interface BadgeProps {
 // =============================================================================
 
 const VARIANT_COLORS: Record<NonNullable<BadgeProps["variant"]>, string> = {
-  default: "white",
-  primary: "cyan",
-  success: "green",
-  warning: "yellow",
-  error: "red",
+  default: "$fg",
+  primary: "$primary",
+  success: "$success",
+  warning: "$warning",
+  error: "$error",
 }
 
 // =============================================================================

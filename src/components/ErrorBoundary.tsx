@@ -141,11 +141,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       // Default fallback: red bordered box with error message
       return (
-        <Box borderStyle="single" borderColor="red" padding={1} flexDirection="column">
-          <Text color="red" bold>
+        <Box borderStyle="single" borderColor="$error" padding={1} flexDirection="column">
+          <Text color="$error" bold>
             Error
           </Text>
-          {error && <Text color="red">{error.message}</Text>}
+          {error && <Text color="$error">{error.message}</Text>}
           {errorInfo?.componentStack && (
             <Text dim wrap="truncate">
               {errorInfo.componentStack.split("\n").slice(0, 3).join("\n")}

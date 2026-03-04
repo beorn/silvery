@@ -95,7 +95,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     placeholder = "",
     isActive: isActiveProp,
     prompt = "",
-    promptColor = "yellow",
+    promptColor = "$warning",
     color,
     cursorStyle = "block",
     showUnderline = false,
