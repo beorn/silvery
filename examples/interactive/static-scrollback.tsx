@@ -89,12 +89,12 @@ const OUTPUT_COST_PER_M = 75 // $/M output tokens
 const CONTEXT_WINDOW = 200_000
 
 const TOOL_COLORS: Record<string, string> = {
-  Read: "cyan",
-  Edit: "yellow",
-  Bash: "red",
-  Write: "magenta",
-  Glob: "gray",
-  Grep: "green",
+  Read: "$info",
+  Edit: "$warning",
+  Bash: "$error",
+  Write: "$accent",
+  Glob: "$muted-fg",
+  Grep: "$success",
 }
 
 const TOOL_ICONS: Record<string, string> = {
@@ -642,7 +642,7 @@ function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "ru
         <Box
           flexDirection="column"
           borderStyle="bold"
-          borderColor="green"
+          borderColor="$success"
           borderLeft
           borderRight={false}
           borderTop={false}
@@ -762,7 +762,7 @@ function ExchangeItem({
     )
   }
 
-  const outlineColor = "green"
+  const outlineColor = "$success"
   const icon = "\u25C6"
   const name = "Agent"
   const phase = isLatest ? streamPhase : "done"
@@ -835,6 +835,7 @@ function StatusBar({
   done,
   elapsed,
   frozenCount = 0,
+  contextBaseline = 0,
 }: {
   exchanges: Exchange[]
   autoMode: boolean
@@ -842,6 +843,7 @@ function StatusBar({
   done: boolean
   elapsed: number
   frozenCount?: number
+  contextBaseline?: number
 }): JSX.Element {
   const cumulative = computeCumulativeTokens(exchanges)
   const cost = formatCost(cumulative.input, cumulative.output)
@@ -849,9 +851,10 @@ function StatusBar({
   const seconds = elapsed % 60
   const elapsedStr = `${minutes}:${seconds.toString().padStart(2, "0")}`
 
-  // Context bar — uses currentContext (the actual context window usage)
+  // Context bar — subtract baseline so bar resets after compaction
   const CTX_W = 20
-  const ctxFrac = cumulative.currentContext / CONTEXT_WINDOW
+  const effectiveContext = Math.max(0, cumulative.currentContext - contextBaseline)
+  const ctxFrac = effectiveContext / CONTEXT_WINDOW
   const ctxFilled = Math.round(Math.min(ctxFrac, 1) * CTX_W)
   const ctxPct = Math.round(ctxFrac * 100)
   const ctxColor = ctxPct > 100 ? "$error" : ctxPct > 80 ? "$warning" : "$primary"
@@ -916,6 +919,7 @@ function DemoFooter({
   compacting,
   exchanges,
   frozenCount = 0,
+  contextBaseline = 0,
 }: {
   controlRef: React.RefObject<FooterControl>
   onSubmit: (text: string) => void
@@ -925,6 +929,7 @@ function DemoFooter({
   compacting: boolean
   exchanges: Exchange[]
   frozenCount?: number
+  contextBaseline?: number
 }): JSX.Element {
   const [inputText, setInputText] = useState("")
   const inputTextRef = useRef(inputText)
@@ -972,6 +977,7 @@ function DemoFooter({
         done={done}
         elapsed={elapsed}
         frozenCount={frozenCount}
+        contextBaseline={contextBaseline}
       />
     </Box>
   )
@@ -1007,6 +1013,8 @@ function CodingAgent({
     compactingRef.current = v
     _setCompacting(v)
   }, [])
+  // Baseline subtracted from context after compaction (simulates context reset)
+  const contextBaselineRef = useRef(0)
   const [pendingAdvance, setPendingAdvance] = useState(false)
 
   // Streaming state
@@ -1129,7 +1137,13 @@ function CodingAgent({
     setStreamPhase("done")
     setRevealFraction(1)
     setCompacting(true)
-    setExchanges((prev) => prev.map((ex) => ({ ...ex, frozen: true })))
+    setExchanges((prev) => {
+      // Record current context level as baseline — post-compaction context
+      // starts from ~0 again (simulates real context window reset after compaction)
+      const cumulative = computeCumulativeTokens(prev)
+      contextBaselineRef.current = cumulative.currentContext
+      return prev.map((ex) => ({ ...ex, frozen: true }))
+    })
 
     setTimeout(
       () => {
@@ -1260,13 +1274,14 @@ function CodingAgent({
 
   // Auto-compact when the current context reaches 95% of the context window.
   // Token values are cumulative — each exchange's input is the total context at
-  // that point. So we use the MAX input token value (= current context size),
-  // not the SUM of all exchanges.
+  // that point. We subtract contextBaseline (set during compaction) so that
+  // post-compaction exchanges don't immediately re-trigger compaction.
   useEffect(() => {
     if (done || compactingRef.current) return
     const active = exchanges.filter((ex) => !ex.frozen)
     const cumulative = computeCumulativeTokens(active)
-    if (cumulative.currentContext >= CONTEXT_WINDOW * 0.95) {
+    const effectiveContext = Math.max(0, cumulative.currentContext - contextBaselineRef.current)
+    if (effectiveContext >= CONTEXT_WINDOW * 0.95) {
       compact()
     }
   }, [exchanges, done, compact])
@@ -1394,6 +1409,7 @@ function CodingAgent({
             compacting={compacting}
             exchanges={exchanges}
             frozenCount={frozenCount}
+            contextBaseline={contextBaselineRef.current}
           />
         }
       >
