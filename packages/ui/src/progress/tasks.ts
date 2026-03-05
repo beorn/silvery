@@ -1,19 +1,19 @@
 /**
  * Fluent sequential task builder
  *
- * @deprecated Use `steps()` from `@beorn/inkx-ui/progress` instead.
+ * @deprecated Use `steps()` from `@hightea/ui/progress` instead.
  *
  * @example
  * ```typescript
  * // OLD (deprecated):
- * import { tasks } from "@beorn/inkx-ui/progress";
+ * import { tasks } from "@hightea/ui/progress";
  * const results = await tasks()
  *   .add("Loading", loadModules)
  *   .add("Processing", processData)
  *   .run({ clear: true });
  *
  * // NEW:
- * import { steps } from "@beorn/inkx-ui/progress";
+ * import { steps } from "@hightea/ui/progress";
  * const results = await steps({
  *   loadModules,
  *   processData,

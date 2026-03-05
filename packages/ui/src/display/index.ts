@@ -5,7 +5,7 @@
  *
  * @example
  * ```tsx
- * import { Table } from "@beorn/inkx-ui/display";
+ * import { Table } from "@hightea/ui/display";
  * ```
  */
 

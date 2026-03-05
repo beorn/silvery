@@ -14,7 +14,7 @@ import type { TextInputProps } from "../types.js"
  *
  * @example
  * ```tsx
- * import { TextInput } from "@beorn/inkx-ui/input";
+ * import { TextInput } from "@hightea/ui/input";
  * import { useInput } from "ink";
  *
  * function MyForm() {

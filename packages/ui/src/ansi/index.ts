@@ -9,7 +9,7 @@
  *   CLEAR_LINE,
  *   write,
  *   isTTY,
- * } from "@beorn/inkx-ui/ansi";
+ * } from "@hightea/ui/ansi";
  *
  * if (isTTY()) {
  *   write(CURSOR_HIDE);

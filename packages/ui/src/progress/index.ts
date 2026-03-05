@@ -5,7 +5,7 @@
  *
  * @example Declarative mode (recommended)
  * ```typescript
- * import { steps, step } from "@beorn/inkx-ui/progress";
+ * import { steps, step } from "@hightea/ui/progress";
  *
  * const loader = steps({
  *   loadModules,           // Auto-named: "Load modules"

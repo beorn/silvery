@@ -12,7 +12,7 @@ import type { SelectProps, SelectOption } from "../types.js"
  *
  * @example
  * ```tsx
- * import { Select } from "@beorn/inkx-ui/input";
+ * import { Select } from "@hightea/ui/input";
  *
  * function SettingsView() {
  *   const [theme, setTheme] = useState("light");

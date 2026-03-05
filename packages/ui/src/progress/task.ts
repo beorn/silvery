@@ -1,16 +1,16 @@
 /**
  * Fluent single-task wrapper
  *
- * @deprecated Use `steps()` from `@beorn/inkx-ui/progress` instead.
+ * @deprecated Use `steps()` from `@hightea/ui/progress` instead.
  *
  * @example
  * ```typescript
  * // OLD (deprecated):
- * import { task } from "@beorn/inkx-ui/progress";
+ * import { task } from "@hightea/ui/progress";
  * const data = await task("Loading data").wrap(fetchData());
  *
  * // NEW:
- * import { steps } from "@beorn/inkx-ui/progress";
+ * import { steps } from "@hightea/ui/progress";
  * const results = await steps({ loadData: fetchData }).run();
  * ```
  */

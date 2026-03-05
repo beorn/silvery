@@ -11,7 +11,7 @@ import { getETA, DEFAULT_ETA_BUFFER_SIZE, type ETASample } from "../utils/eta.js
  *
  * @example
  * ```tsx
- * import { ProgressBar } from "@beorn/inkx-ui/react";
+ * import { ProgressBar } from "@hightea/ui/react";
  *
  * function DownloadProgress({ current, total }) {
  *   return (

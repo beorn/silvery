@@ -8,13 +8,13 @@ All exports are **named exports**. Choose the sub-export based on your use case:
 
 ```ts
 // Main - includes CLI components and wrappers (no React dependency)
-import { Spinner, ProgressBar, MultiProgress, withSpinner, withProgress } from "@beorn/inkx-ui"
+import { Spinner, ProgressBar, MultiProgress, withSpinner, withProgress } from "@hightea/ui"
 
 // CLI mode - direct stdout usage, no React
-import { Spinner, ProgressBar, MultiProgress } from "@beorn/inkx-ui/cli"
+import { Spinner, ProgressBar, MultiProgress } from "@hightea/ui/cli"
 
 // React components - for inkx/Ink TUI apps
-import { Spinner, ProgressBar, Tasks, Task, useProgress, ProgressProvider } from "@beorn/inkx-ui/react"
+import { Spinner, ProgressBar, Tasks, Task, useProgress, ProgressProvider } from "@hightea/ui/react"
 
 // Wrappers - ergonomic async pattern adapters
 import {
@@ -24,22 +24,22 @@ import {
   wrapEmitter,
   withSelect,
   withTextInput,
-} from "@beorn/inkx-ui/wrappers"
+} from "@hightea/ui/wrappers"
 
 // Progress - declarative steps API (recommended for multi-step operations)
-import { steps, step } from "@beorn/inkx-ui/progress"
+import { steps, step } from "@hightea/ui/progress"
 
 // Input - React input components
-import { TextInput, Select } from "@beorn/inkx-ui/input"
+import { TextInput, Select } from "@hightea/ui/input"
 
 // Display - React display components
-import { Table } from "@beorn/inkx-ui/display"
+import { Table } from "@hightea/ui/display"
 
 // ANSI - low-level terminal control
-import { CURSOR_HIDE, CURSOR_SHOW, write, isTTY } from "@beorn/inkx-ui/ansi"
+import { CURSOR_HIDE, CURSOR_SHOW, write, isTTY } from "@hightea/ui/ansi"
 
 // Utils - ETA calculation
-import { createETATracker, formatETA } from "@beorn/inkx-ui/utils"
+import { createETATracker, formatETA } from "@hightea/ui/utils"
 ```
 
 ## Common Patterns
@@ -47,7 +47,7 @@ import { createETATracker, formatETA } from "@beorn/inkx-ui/utils"
 ### Declarative Steps (Recommended)
 
 ```ts
-import { steps, step } from "@beorn/inkx-ui/progress"
+import { steps, step } from "@hightea/ui/progress"
 
 // Auto-naming from function names
 const loader = steps({
@@ -68,7 +68,7 @@ const data = await step("Loading data").wrap(fetchData())
 ### Promise Wrapper
 
 ```ts
-import { withSpinner } from "@beorn/inkx-ui/wrappers"
+import { withSpinner } from "@hightea/ui/wrappers"
 
 // Wrap any promise
 const data = await withSpinner(fetchData(), "Loading...")
@@ -83,7 +83,7 @@ const data = await withSpinner(operation(), "Processing...", {
 ### Callback-Based APIs
 
 ```ts
-import { withProgress } from "@beorn/inkx-ui/wrappers"
+import { withProgress } from "@hightea/ui/wrappers"
 
 // Wrap callback-based APIs (perfect for existing onProgress patterns)
 await withProgress((onProgress) => manager.syncFromFs(onProgress), {
@@ -98,7 +98,7 @@ await withProgress((onProgress) => manager.syncFromFs(onProgress), {
 ### CLI Spinner
 
 ```ts
-import { Spinner } from "@beorn/inkx-ui/cli"
+import { Spinner } from "@hightea/ui/cli"
 
 // Quick start/stop
 const stop = Spinner.start("Loading...")
@@ -119,7 +119,7 @@ try {
 ### Multi-Task Display
 
 ```ts
-import { MultiProgress } from "@beorn/inkx-ui/cli"
+import { MultiProgress } from "@hightea/ui/cli"
 
 const multi = new MultiProgress()
 
@@ -141,8 +141,8 @@ multi.stop()
 ### React Components
 
 ```tsx
-import { Spinner, ProgressBar, Tasks, Task } from '@beorn/inkx-ui/react'
-import { ProgressProvider, useProgress, ProgressIndicator } from '@beorn/inkx-ui/react'
+import { Spinner, ProgressBar, Tasks, Task } from '@hightea/ui/react'
+import { ProgressProvider, useProgress, ProgressIndicator } from '@hightea/ui/react'
 
 // Individual components
 <Spinner label="Loading..." style="dots" color="cyan" />
@@ -176,7 +176,7 @@ function DeepComponent() {
 ### Interactive Prompts
 
 ```ts
-import { withSelect, withTextInput } from "@beorn/inkx-ui/wrappers"
+import { withSelect, withTextInput } from "@hightea/ui/wrappers"
 
 // Selection
 const choice = await withSelect({
@@ -200,22 +200,22 @@ const name = await withTextInput({
 
 ```ts
 // WRONG - requires React even for CLI-only usage
-import { Spinner } from "@beorn/inkx-ui" // This is CLI Spinner, ok
-import { Task } from "@beorn/inkx-ui" // Task only exists in /react
+import { Spinner } from "@hightea/ui" // This is CLI Spinner, ok
+import { Task } from "@hightea/ui" // Task only exists in /react
 
 // RIGHT - use specific sub-exports
-import { Spinner } from "@beorn/inkx-ui/cli" // CLI version
-import { Spinner, Task } from "@beorn/inkx-ui/react" // React versions
+import { Spinner } from "@hightea/ui/cli" // CLI version
+import { Spinner, Task } from "@hightea/ui/react" // React versions
 ```
 
 ### Wrong: Using deprecated task/tasks API
 
 ```ts
 // DEPRECATED - task() and tasks() are legacy
-import { task, tasks } from "@beorn/inkx-ui/progress"
+import { task, tasks } from "@hightea/ui/progress"
 
 // RIGHT - use steps() for new code
-import { steps, step } from "@beorn/inkx-ui/progress"
+import { steps, step } from "@hightea/ui/progress"
 
 const data = await step("Loading").wrap(fetchData())
 ```
@@ -253,7 +253,7 @@ await work()
 process.stdout.write("\x1b[?25h") // show cursor (skipped on error!)
 
 // RIGHT - use withCursor or built-in components
-import { withCursor } from "@beorn/inkx-ui/ansi"
+import { withCursor } from "@hightea/ui/ansi"
 
 await withCursor(false, async () => {
   await work()
@@ -274,12 +274,12 @@ await withCursor(false, async () => {
 
 | Export                    | Use Case                             |
 | ------------------------- | ------------------------------------ |
-| `@beorn/inkx-ui`          | CLI components + wrappers (no React) |
-| `@beorn/inkx-ui/cli`      | Direct stdout spinners/progress bars |
-| `@beorn/inkx-ui/react`    | React components for inkx apps       |
-| `@beorn/inkx-ui/wrappers` | Async pattern adapters               |
-| `@beorn/inkx-ui/progress` | Declarative steps API                |
-| `@beorn/inkx-ui/input`    | React input components               |
-| `@beorn/inkx-ui/display`  | React display components (Table)     |
-| `@beorn/inkx-ui/ansi`     | Low-level ANSI terminal control      |
-| `@beorn/inkx-ui/utils`    | ETA calculation utilities            |
+| `@hightea/ui`          | CLI components + wrappers (no React) |
+| `@hightea/ui/cli`      | Direct stdout spinners/progress bars |
+| `@hightea/ui/react`    | React components for inkx apps       |
+| `@hightea/ui/wrappers` | Async pattern adapters               |
+| `@hightea/ui/progress` | Declarative steps API                |
+| `@hightea/ui/input`    | React input components               |
+| `@hightea/ui/display`  | React display components (Table)     |
+| `@hightea/ui/ansi`     | Low-level ANSI terminal control      |
+| `@hightea/ui/utils`    | ETA calculation utilities            |

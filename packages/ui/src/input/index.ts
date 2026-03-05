@@ -3,7 +3,7 @@
  *
  * @example
  * ```tsx
- * import { TextInput, Select } from "@beorn/inkx-ui/input";
+ * import { TextInput, Select } from "@hightea/ui/input";
  *
  * // Text input
  * <TextInput value={name} onChange={setName} placeholder="Enter name" />

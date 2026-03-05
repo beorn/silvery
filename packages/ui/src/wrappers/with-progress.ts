@@ -1,19 +1,19 @@
 /**
  * withProgress - Wrap callback-based progress functions
  *
- * @deprecated Use `steps()` from `@beorn/inkx-ui/progress` instead.
+ * @deprecated Use `steps()` from `@hightea/ui/progress` instead.
  *
  * @example
  * ```typescript
  * // OLD (deprecated):
- * import { withProgress } from "@beorn/inkx-ui/wrappers";
+ * import { withProgress } from "@hightea/ui/wrappers";
  * const result = await withProgress(
  *   (onProgress) => manager.syncFromFs(onProgress),
  *   { phases: SYNC_PHASES }
  * );
  *
  * // NEW:
- * import { steps } from "@beorn/inkx-ui/progress";
+ * import { steps } from "@hightea/ui/progress";
  * const results = await steps({ syncFiles: () => manager.syncFromFs() }).run();
  * ```
  */

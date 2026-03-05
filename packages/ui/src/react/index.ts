@@ -3,7 +3,7 @@
  *
  * @example
  * ```tsx
- * import { Spinner, ProgressBar, Tasks, Task, useProgress } from "@beorn/inkx-ui/react";
+ * import { Spinner, ProgressBar, Tasks, Task, useProgress } from "@hightea/ui/react";
  *
  * // Spinner
  * <Spinner label="Loading..." style="dots" />

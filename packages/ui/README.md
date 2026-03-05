@@ -2,7 +2,7 @@
 
 > UI components for Ink/inkx TUI apps - spinners, progress bars, and more
 
-[![npm version](https://img.shields.io/npm/v/@beorn/inkx-ui.svg)](https://www.npmjs.com/package/@beorn/inkx-ui)
+[![npm version](https://img.shields.io/npm/v/@hightea/ui.svg)](https://www.npmjs.com/package/@hightea/ui)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 <p align="center">
@@ -22,9 +22,9 @@
 ## Installation
 
 ```bash
-bun add @beorn/inkx-ui
+bun add @hightea/ui
 # or
-npm install @beorn/inkx-ui
+npm install @hightea/ui
 ```
 
 ## Quick Start
@@ -32,7 +32,7 @@ npm install @beorn/inkx-ui
 ### Wrap any promise with a spinner
 
 ```ts
-import { withSpinner } from "@beorn/inkx-ui/wrappers"
+import { withSpinner } from "@hightea/ui/wrappers"
 
 const data = await withSpinner(fetchData(), "Loading data...")
 ```
@@ -44,7 +44,7 @@ const data = await withSpinner(fetchData(), "Loading data...")
 ### Wrap callback-based APIs (perfect for existing patterns)
 
 ```ts
-import { withProgress } from "@beorn/inkx-ui/wrappers"
+import { withProgress } from "@hightea/ui/wrappers"
 
 await withProgress((onProgress) => manager.syncFromFs(onProgress), {
   phases: {
@@ -62,7 +62,7 @@ await withProgress((onProgress) => manager.syncFromFs(onProgress), {
 ### Multi-task display
 
 ```ts
-import { MultiProgress } from "@beorn/inkx-ui/cli"
+import { MultiProgress } from "@hightea/ui/cli"
 
 const multi = new MultiProgress()
 
@@ -87,12 +87,12 @@ multi.stop()
 
 ## API Reference
 
-### CLI Mode (`@beorn/inkx-ui/cli`)
+### CLI Mode (`@hightea/ui/cli`)
 
 #### Spinner
 
 ```ts
-import { Spinner } from "@beorn/inkx-ui/cli"
+import { Spinner } from "@hightea/ui/cli"
 
 // Quick start/stop
 const stop = Spinner.start("Loading...")
@@ -121,7 +121,7 @@ const spinner = new Spinner({
 #### ProgressBar
 
 ```ts
-import { ProgressBar } from "@beorn/inkx-ui/cli"
+import { ProgressBar } from "@hightea/ui/cli"
 
 const bar = new ProgressBar({
   total: 100,
@@ -155,7 +155,7 @@ bar.setPhase("processing", { current: 0, total: 50 })
 #### MultiProgress
 
 ```ts
-import { MultiProgress } from "@beorn/inkx-ui/cli"
+import { MultiProgress } from "@hightea/ui/cli"
 
 const multi = new MultiProgress()
 
@@ -178,12 +178,12 @@ task3.fail("3 tests failed")
 multi.stop()
 ```
 
-### Wrappers (`@beorn/inkx-ui/wrappers`)
+### Wrappers (`@hightea/ui/wrappers`)
 
 #### withSpinner
 
 ```ts
-import { withSpinner } from "@beorn/inkx-ui/wrappers"
+import { withSpinner } from "@hightea/ui/wrappers"
 
 // Basic
 const result = await withSpinner(asyncOperation(), "Loading...")
@@ -201,7 +201,7 @@ const result = await withSpinner(longOperation(), (elapsed) => `Processing... ($
 #### withProgress
 
 ```ts
-import { withProgress } from "@beorn/inkx-ui/wrappers";
+import { withProgress } from "@hightea/ui/wrappers";
 
 // Wrap callback-based APIs
 await withProgress(
@@ -227,7 +227,7 @@ complete();
 #### wrapGenerator
 
 ```ts
-import { wrapGenerator } from "@beorn/inkx-ui/wrappers"
+import { wrapGenerator } from "@hightea/ui/wrappers"
 
 // Wrap a progress generator
 function* processItems() {
@@ -243,7 +243,7 @@ await wrapGenerator(processItems(), "Processing items")
 #### wrapEmitter
 
 ```ts
-import { wrapEmitter, waitForEvent } from "@beorn/inkx-ui/wrappers"
+import { wrapEmitter, waitForEvent } from "@hightea/ui/wrappers"
 
 // Track EventEmitter state
 const stop = wrapEmitter(syncManager, {
@@ -259,10 +259,10 @@ const stop = wrapEmitter(syncManager, {
 await waitForEvent(emitter, "ready", "Waiting...", { timeout: 5000 })
 ```
 
-### React Components (`@beorn/inkx-ui/react`)
+### React Components (`@hightea/ui/react`)
 
 ```tsx
-import { Spinner, ProgressBar, Tasks, Task } from "@beorn/inkx-ui/react";
+import { Spinner, ProgressBar, Tasks, Task } from "@hightea/ui/react";
 
 // Spinner
 <Spinner label="Loading..." style="dots" color="cyan" />
@@ -289,7 +289,7 @@ import { Spinner, ProgressBar, Tasks, Task } from "@beorn/inkx-ui/react";
 #### Hooks
 
 ```tsx
-import { useSpinnerFrame, useProgressBar, useTasks, useProgress } from "@beorn/inkx-ui/react"
+import { useSpinnerFrame, useProgressBar, useTasks, useProgress } from "@hightea/ui/react"
 
 // Spinner frame for custom components
 const frame = useSpinnerFrame("dots")
@@ -310,7 +310,7 @@ const { showSpinner, hideSpinner, updateProgress } = useProgress()
 #### Context Provider
 
 ```tsx
-import { ProgressProvider, ProgressIndicator, useProgress } from "@beorn/inkx-ui/react"
+import { ProgressProvider, ProgressIndicator, useProgress } from "@hightea/ui/react"
 
 function App() {
   return (

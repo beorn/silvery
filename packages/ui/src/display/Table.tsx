@@ -27,7 +27,7 @@ const BOX = {
  *
  * @example
  * ```tsx
- * import { Table } from "@beorn/inkx-ui/display";
+ * import { Table } from "@hightea/ui/display";
  *
  * const columns = [
  *   { key: "name", header: "Name", width: 20 },

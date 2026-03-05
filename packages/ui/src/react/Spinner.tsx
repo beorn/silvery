@@ -11,7 +11,7 @@ import { SPINNER_FRAMES, SPINNER_INTERVALS } from "../cli/spinner.js"
  *
  * @example
  * ```tsx
- * import { Spinner } from "@beorn/inkx-ui/react";
+ * import { Spinner } from "@hightea/ui/react";
  *
  * function LoadingView() {
  *   return <Spinner label="Loading..." />;
