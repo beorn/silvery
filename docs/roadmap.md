@@ -23,7 +23,7 @@ The foundation. Everything here is production-ready.
 | ANSI output with diffing             | ✅ Complete |
 | Keyboard input (stdin)               | ✅ Complete |
 | Yoga layout engine                   | ✅ Complete |
-| Flexture layout engine (2.5x faster)    | ✅ Complete |
+| Flexture layout engine (2.5x faster) | ✅ Complete |
 | `overflow="scroll"`                  | ✅ Complete |
 | Unicode/emoji/CJK handling           | ✅ Complete |
 | Style layering (preserve underlines) | ✅ Complete |
@@ -68,11 +68,11 @@ function TextInput() {
 
 ### Implementation Status
 
-| Adapter   | Status      | Entry Point   | Demo                        |
-| --------- | ----------- | ------------- | --------------------------- |
+| Adapter   | Status      | Entry Point      | Demo                        |
+| --------- | ----------- | ---------------- | --------------------------- |
 | Canvas 2D | ✅ Complete | `hightea/canvas` | `examples/canvas-test.html` |
 | DOM       | ✅ Complete | `hightea/dom`    | `examples/dom-test.html`    |
-| WebGL     | 🔮 Future   | -             | -                           |
+| WebGL     | 🔮 Future   | -                | -                           |
 
 ### Quick Start
 
@@ -107,7 +107,7 @@ Based on research into [xterm.js renderer architecture](https://github.com/xterm
 
 ### Use Cases
 
-| Application        | Why hightea Helps                            |
+| Application        | Why hightea Helps                         |
 | ------------------ | ----------------------------------------- |
 | Canvas games       | Layout feedback during render, not after  |
 | Data visualization | Complex responsive layouts without CSS    |
@@ -167,16 +167,16 @@ render(<App />, document.getElementById("root"))
 
 ### Implementation Scope
 
-| Component        | Reusable from @hightea/core   | Canvas-Specific   |
-| ---------------- | -------------------------- | ----------------- |
-| Reconciler       | ✅ 100%                    | -                 |
-| Layout engine    | ✅ 100%                    | -                 |
-| useContentRect   | ✅ 100%                    | -                 |
-| Style system     | ⚠️ Partial (no underlines) | Color mapping     |
-| Buffer           | -                          | OffscreenCanvas   |
-| Text measurement | -                          | ctx.measureText() |
-| Output           | -                          | Canvas draw calls |
-| Events           | -                          | DOM events → hightea |
+| Component        | Reusable from @hightea/core | Canvas-Specific      |
+| ---------------- | --------------------------- | -------------------- |
+| Reconciler       | ✅ 100%                     | -                    |
+| Layout engine    | ✅ 100%                     | -                    |
+| useContentRect   | ✅ 100%                     | -                    |
+| Style system     | ⚠️ Partial (no underlines)  | Color mapping        |
+| Buffer           | -                           | OffscreenCanvas      |
+| Text measurement | -                           | ctx.measureText()    |
+| Output           | -                           | Canvas draw calls    |
+| Events           | -                           | DOM events → hightea |
 
 **Estimate**: ~30% of hightea codebase is directly reusable.
 
@@ -260,7 +260,7 @@ Both compute layout off-main-thread, then render only visible components.
 
 | Approach           | Description                                    | Feasibility               |
 | ------------------ | ---------------------------------------------- | ------------------------- |
-| Fork RN Renderer   | Replace RN's reconciler with hightea-style        | High effort, full control |
+| Fork RN Renderer   | Replace RN's reconciler with hightea-style     | High effort, full control |
 | Yoga Wrapper       | Wrap Yoga calls to expose dimensions           | Medium effort, may work   |
 | Fabric Integration | Leverage new architecture's synchronous layout | Medium effort, best path  |
 | Library Layer      | Build on top of RN (limited)                   | Low effort, limited value |
@@ -292,7 +292,7 @@ Both compute layout off-main-thread, then render only visible components.
 
 ### Why CSS Is Usually Better
 
-| Aspect                | CSS                       | hightea-for-DOM        |
+| Aspect                | CSS                       | hightea-for-DOM     |
 | --------------------- | ------------------------- | ------------------- |
 | Text rendering        | Sophisticated, native     | Would need custom   |
 | Accessibility         | Browser handles a11y tree | Manual work         |
@@ -384,9 +384,9 @@ Paint/Composite
 
 ### Where hightea-for-Web Would Replace
 
-| Layer            | Browser                    | hightea-for-Web              |
+| Layer            | Browser                    | hightea-for-Web           |
 | ---------------- | -------------------------- | ------------------------- |
-| Layout Engine    | CSS (browser-native)       | Yoga/Flexture/custom         |
+| Layout Engine    | CSS (browser-native)       | Yoga/Flexture/custom      |
 | Layout Timing    | Async (post-render)        | Sync (pre-content)        |
 | Size Queries     | ResizeObserver (effect)    | useContentRect() (render) |
 | Text Measurement | `getComputedStyle`, canvas | Custom measurer           |
@@ -410,6 +410,20 @@ Paint/Composite
 - Standard web apps (CSS flexbox/grid is optimized)
 - Text-heavy content (browser text layout is sophisticated)
 - Accessibility (browser handles a11y tree)
+
+## Plugin Composition Architecture
+
+Status tracking for the plugin system described in [Event Handling Level 4](guides/event-handling.md#level-4-app-plugins).
+
+| Feature                                                | Guide Reference                                            | Status      |
+| ------------------------------------------------------ | ---------------------------------------------------------- | ----------- |
+| Individual plugins (withDomEvents, withCommands, etc.) | Event Handling L2-3                                        | Implemented |
+| createApp() + centralized key handler                  | State Management L2                                        | Implemented |
+| Unified pipe() composition                             | Event Handling L4                                          | Planned     |
+| Typed dispatch proxy                                   | Event Handling L4                                          | Planned     |
+| app.subscribe() with selector reactions                | Event Handling L4                                          | Planned     |
+| Plugin-scoped cleanup via DisposableStack              | Event Handling L4                                          | Planned     |
+| Effect combinators (debounce, throttle, delay)         | [Architecture Enables](deep-dives/architecture-enables.md) | Planned     |
 
 ## See Also
 

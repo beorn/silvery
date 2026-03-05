@@ -1,20 +1,18 @@
 # State Management
 
-Your first hightea app uses `useState` and `useInput`. That's enough for a counter, a file browser, a simple list. Then your TUI grows — shared state across panes, undo, testable I/O, independent modules — and each requirement tempts you to reach for a new library or rewrite from scratch.
-
-This guide shows a different path. Each level builds on the last with minimal changes. hightea provides tooling at each step — `createApp`, `createSlice`, effect runners, plugin composition — so the transition is mechanical, not architectural. You never rewrite; you graduate.
+Every level in this guide turns something invisible into data. Local state hides transitions inside function calls. Shared stores hide them behind imperative methods. Each level you adopt makes one more category of hidden behavior visible — as serializable, inspectable, testable data. You adopt each level only when you need it, never rewrite, and never pay for what you don't use.
 
 The patterns themselves are general — ops as data, effects as data, composable state machines work in any React framework. If you've heard of [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA), that's where Levels 3+4 land. You arrive there incrementally — one sip at a time.
 
-| Level                                     | You need it when...                     | What hightea provides                                                          |
-| ----------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
-| **1 — Local**                             | Starting out                            | `useState` + `useInput` — just React                                        |
-| **2 — Shared**                            | Multiple components need the same state | `createApp` + `useApp` — centralized store, selective re-renders            |
-| **3 — Ops as Data** _(Redux's insight)_   | Undo, collaboration, or automation      | `createSlice` — typed operations, zero boilerplate                          |
-| **4 — Effects as Data** _(Elm's insight)_ | Pure logic, testable I/O                | `tea()` middleware, effect runners — deterministic functions, swappable I/O |
-| **5 — Composition**                       | Independent modules                     | Multiple slices — state machines that talk through data                     |
+| Level                                     | What becomes data          | You need it when...                     | What hightea provides                                                       |
+| ----------------------------------------- | -------------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
+| **1 — Local**                             | _(nothing yet)_            | Starting out                            | `useState` + `useInput` — just React                                        |
+| **2 — Shared**                            | _(nothing yet)_            | Multiple components need the same state | `createApp` + `useApp` — centralized store, selective re-renders            |
+| **3 — Ops as Data** _(Redux's insight)_   | State transitions          | Undo, collaboration, or automation      | `createSlice` — typed operations, zero boilerplate                          |
+| **4 — Effects as Data** _(Elm's insight)_ | Side effects               | Pure logic, testable I/O                | `tea()` middleware, effect runners — deterministic functions, swappable I/O |
+| **5 — Composition**                       | Cross-module communication | Independent modules                     | Multiple slices — state machines that talk through data                     |
 
-Most web apps stop at Level 2. TUI apps with keyboard-driven interaction, undo, and multi-pane layouts often reach Level 3. [Signals](#appendix-a-scaling-with-signals) (fine-grained reactivity) are orthogonal — they optimize re-renders at any level.
+Most web apps stop at Level 2. TUI apps with keyboard-driven interaction, undo, and multi-pane layouts often reach Level 3. [Signals](../reference/signals.md) (fine-grained reactivity) are orthogonal — they optimize re-renders at any level.
 
 ---
 
@@ -41,7 +39,19 @@ function Counter() {
 await run(<Counter />)
 ```
 
+```
+Count: 0
+```
+
+Press `j` a few times:
+
+```
+Count: 3
+```
+
 `useState` is standard React. `useInput` is hightea's keyboard hook; `run` starts the app and manages terminal I/O.
+
+At Level 1, state lives inside a component — visible to React, invisible to everything else.
 
 **The wall**: A second component needs the same state — and threading it through five levels of props means every intermediate component has to know about data it doesn't use.
 
@@ -126,15 +136,22 @@ await app.run(
 )
 ```
 
+```
+> [ ] Buy milk
+  [x] Write docs
+  [ ] Fix bug
+1/3 done
+```
+
 This is enough for most apps — dashboards, file browsers, list views, dialogs.
 
 > **Why Zustand over React Context?** Context is fine for low-frequency global state (current user, theme, locale). But it re-renders every consumer when _any_ part of the context changes — so for high-frequency updates (cursor movement, typing, selections), it becomes a bottleneck. Zustand only re-renders components whose selected slice actually changed.
 >
 > **Why not `useReducer`?** React's built-in `useReducer` is Level 3 in disguise — `dispatch(action)` + a pure reducer is ops-as-data. It's a solid choice for complex state in a single component tree. The limitation: it doesn't give you cross-component subscriptions. Every consuming component must be a child of the provider, and there's no selector — every dispatch re-renders every consumer. Zustand adds the subscription layer that makes it scale.
 
-> **hightea**: `createApp()` is a Zustand middleware that bundles the store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call. Without hightea, you'd wire Zustand, keyboard input, and lifecycle yourself — the store pattern is the same.
+> **Hightea:** `createApp()` is a Zustand middleware that bundles the store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call. Without hightea, you'd wire Zustand, keyboard input, and lifecycle yourself — the store pattern is the same.
 
-As your app grows, selectors show their cost — Zustand runs every selector on every store update. If that becomes a bottleneck, [Signals](#appendix-a-scaling-with-signals) give you fine-grained subscriptions. Skip them unless you have performance issues.
+As your app grows, selectors show their cost — Zustand runs every selector on every store update. If that becomes a bottleneck, [Signals](../reference/signals.md) give you fine-grained subscriptions. Skip them unless you have performance issues.
 
 State is shared and renders are efficient. But the transitions themselves are still invisible.
 
@@ -224,7 +241,7 @@ type TodoOp = typeof TodoList.Op
 
 Adding a new op means adding one function. TypeScript still catches exhaustiveness errors: if you pattern-match on `TodoOp` elsewhere (e.g. an `inverse` function for undo), a missing case is a compile error.
 
-The store wires in via `.create()`. (This example uses [signals](#appendix-a-scaling-with-signals) for reactivity; plain Zustand `set()`/`get()` works too.)
+The store wires in via `.create()`. (This example uses [signals](../reference/signals.md) for reactivity; plain Zustand `set()`/`get()` works too.)
 
 ```tsx
 const app = createApp(
@@ -282,7 +299,7 @@ Notice that `inverse` pattern-matches on the same `TodoOp` union — TypeScript'
 
 Whether you use `createSlice` or the manual pattern, the slice, op types, and `.apply()` dispatcher are plain TypeScript. You can add convenience wrappers (`store.moveCursor = (p) => store.apply({ op: "moveCursor", ...p })`) if you prefer method-style calls in everyday code — both paths route through `apply()`, so undo/replay/logging captures them either way.
 
-The examples above use index-based ops (`toggleDone, index: 2`), which work for single-session undo. For collaboration, offline sync, or AI automation, prefer identity-based ops that survive reordering — see [Appendix B: Designing Robust Ops](#appendix-b-designing-robust-ops).
+The examples above use index-based ops (`toggleDone, index: 2`), which work for single-session undo. For collaboration, offline sync, or AI automation, prefer identity-based ops that survive reordering — see [Designing Robust Ops](../reference/robust-ops.md).
 
 Behavior is data now — serializable, reversible, replayable. But our domain functions still perform I/O directly: saving to disk, showing notifications, fetching from APIs.
 
@@ -381,9 +398,9 @@ This **dispatch-back pattern** keeps the entire async cycle in the same ops-as-d
 
 Step back and look at what you have: `apply(state, op) → [new state, effects]`. This is [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA) — Elm calls it `update msg model = (model, cmd)`. You arrived here incrementally, but you now have what Elm enforces at the language level: every state change is an explicit op (predictable, replayable), every side effect is a return value (testable without mocks), and the entire domain is a pure function from input to output (portable across platforms). The difference is that Elm makes you pay the full cost upfront; here you adopted each piece only when you needed it.
 
-Notice the throughline: **every level turns something invisible into data**. Level 3 turned behavior into data (ops). Level 4 turned I/O into data (effects). Level 5 will turn cross-module communication into data (dispatch effects). Each time something becomes data instead of behavior, it becomes loggable, replayable, testable, portable, and interceptable. That's the unifying thesis of this entire progression.
+This is the throughline in action: **every level turns something invisible into data**. Level 3 turned behavior into data (ops). Level 4 turned I/O into data (effects). Level 5 will turn cross-module communication into data (dispatch effects). Each time something becomes data instead of behavior, it becomes loggable, replayable, testable, portable, and interceptable. That's the unifying thesis of this entire progression.
 
-> **hightea**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. For Zustand-native TEA, `tea()` from `hightea/tea` is a Zustand middleware that extends any reducer to optionally return `[state, effects]` — gradual, per-case, with typed effect runners and `collect()` for testing. hightea also provides a standalone TEA store (`createStore()` from `hightea/store`) with plugin composition — see [Runtime Layers](runtime-layers.md).
+> **Hightea:** The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. For Zustand-native TEA, `tea()` from `hightea/tea` is a Zustand middleware that extends any reducer to optionally return `[state, effects]` — gradual, per-case, with typed effect runners and `collect()` for testing. hightea also provides a standalone TEA store (`createStore()` from `hightea/store`) with plugin composition — see [Runtime Layers](runtime-layers.md).
 
 **The wall**: Your single slice is 400 lines. A search feature change breaks the cursor because they share state and a single `apply()`.
 
@@ -486,7 +503,7 @@ function SearchBar() {
 }
 ```
 
-When your list grows to thousands of items and the cursor stutters, two techniques help at any level: per-entity signals and virtualization. See [Appendix A: Scaling with Signals](#appendix-a-scaling-with-signals).
+When your list grows to thousands of items and the cursor stutters, two techniques help at any level: per-entity signals and virtualization. See [Scaling with Signals](../reference/signals.md).
 
 ---
 
@@ -494,19 +511,16 @@ When your list grows to thousands of items and the cursor stutters, two techniqu
 
 The core idea — making operations and effects into data — has been discovered many times. [Elm](https://guide.elm-lang.org/architecture/) is the purest expression: the language enforces TEA, so every Elm app gets predictability, testability, and time-travel for free. The trade-off is that you pay the full architecture cost upfront, even for a counter.
 
-| System                                                               | Levels    | Approach                                                                                             |
-| -------------------------------------------------------------------- | --------- | ---------------------------------------------------------------------------------------------------- |
-| **[Elm](https://guide.elm-lang.org/architecture/)**                  | **3+4+5** | **`update : Msg -> Model -> (Model, Cmd Msg)` — the gold standard**                                  |
-| [Redux](https://redux.js.org/)                                       | 3         | `dispatch(action)` + reducer (ops as data, but effects live in middleware)                           |
-| [redux-loop](https://github.com/redux-loop/redux-loop)               | 3+4       | Extends Redux: reducer returns `[state, effects]`                                                    |
-| [Hyperapp](https://github.com/jorgebucaran/hyperapp) v2              | 3+4       | Optional tuple return from actions                                                                   |
-| **hightea/tea**                                                         | 3+4       | Zustand middleware — optional `[state, effects]` return, typed runners                               |
-| [XState](https://xstate.js.org/)                                     | 5         | Statecharts[^statecharts] — formal state machines with explicit states, transitions, and composition |
-| [MobX](https://mobx.js.org/)                                         | 2         | Observable state with automatic tracking (OO-reactive, trades predictability for convenience)        |
-| [Event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html) | 3         | Events as plain objects — store, replay, project                                                     |
-| [Command pattern](https://en.wikipedia.org/wiki/Command_pattern)     | 3         | Encapsulate request as object (GoF[^gof])                                                            |
+| System                                                 | Levels    | Approach                                                                   |
+| ------------------------------------------------------ | --------- | -------------------------------------------------------------------------- |
+| **[Elm](https://guide.elm-lang.org/architecture/)**    | **3+4+5** | **`update : Msg -> Model -> (Model, Cmd Msg)` — the gold standard**        |
+| [Redux](https://redux.js.org/)                         | 3         | `dispatch(action)` + reducer (ops as data, but effects live in middleware) |
+| [redux-loop](https://github.com/redux-loop/redux-loop) | 3+4       | Extends Redux: reducer returns `[state, effects]`                          |
+| **hightea/tea**                                        | 3+4       | Zustand middleware — optional `[state, effects]` return, typed runners     |
 
-Redux got Level 3 right but stopped there — side effects live in thunks and sagas[^thunks-sagas], not in the update function's return value. redux-loop and Hyperapp v2 completed the TEA shape by returning effects as data. This guide isn't reinventing the wheel — it's showing how to roll it out gradually.
+Others in the same lineage: [Hyperapp](https://github.com/jorgebucaran/hyperapp) v2 (3+4), [XState](https://xstate.js.org/) (5, statecharts[^statecharts]), [MobX](https://mobx.js.org/) (2, OO-reactive), [event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html) (3), and the [command pattern](https://en.wikipedia.org/wiki/Command_pattern) (3, GoF[^gof]).
+
+Redux got Level 3 right but stopped there — side effects live in thunks and sagas[^thunks-sagas], not in the update function's return value. redux-loop completed the TEA shape by returning effects as data. This guide isn't reinventing the wheel — it's showing how to roll it out gradually.
 
 This guide pieces these ideas into a single incremental progression for React: you get Elm's benefits without Elm's upfront cost, adopting each level only when you need it.
 
@@ -562,116 +576,17 @@ This guide covers the state side of the equation. For the event side — how inp
 
 ## Appendix A: Scaling with Signals
 
-As your app grows, selectors show their cost. Zustand runs _every_ selector on _every_ store update — 100 `<Row>` components each with `useApp(s => s.rows.get(id))` means 100 selector calls when the cursor moves, even though only 2 rows changed.
+Signals (fine-grained reactivity via `@preact/signals-core`) are orthogonal to the levels — they optimize re-renders at any level by replacing selector-based subscriptions with automatic dependency tracking. Combined with per-entity signals and VirtualList, they scale to thousands of items.
 
-[Signals](https://github.com/tc39/proposal-signals) (TC39 proposal, stage 1) flip this. Components read `.value` and automatically subscribe to exactly what they touched — no diffing, no linear scan. Same model as [SolidJS](https://www.solidjs.com/) and [Vue 3](https://vuejs.org/). We use [Preact's implementation](https://github.com/preactjs/signals) (`@preact/signals-core`).
-
-With signals, the factory returns a plain object — signals _are_ the reactive state, so you don't need Zustand's `set()`:
-
-```tsx
-import { signal, computed, batch } from "@preact/signals-core"
-
-const app = createApp(
-  () => {
-    const cursor = signal(0)
-    const items = signal([
-      { id: "1", text: "Buy milk", done: false },
-      { id: "2", text: "Write docs", done: true },
-      { id: "3", text: "Fix bug", done: false },
-    ])
-    const doneCount = computed(() => items.value.filter((i) => i.done).length)
-
-    return {
-      cursor,
-      items,
-      doneCount,
-      moveCursor(delta: number) {
-        cursor.value = clamp(cursor.value + delta, 0, items.value.length - 1)
-      },
-      toggleDone() {
-        const i = cursor.value
-        items.value = items.value.map((item, j) => (j === i ? { ...item, done: !item.done } : item))
-      },
-    }
-  },
-  {
-    key(input, key, { store }) {
-      if (input === "j") store.moveCursor(1)
-      if (input === "k") store.moveCursor(-1)
-      if (input === "x") store.toggleDone()
-      if (input === "q") return "exit"
-    },
-  },
-)
-```
-
-`signal()` creates reactive state. `computed()` derives from signals — `doneCount` recomputes only when `items` changes, not on cursor moves. `batch()` groups multiple signal writes into a single notification:
-
-```tsx
-batch(() => {
-  cursor.value = 0
-  items.value = newItems
-  filter.value = ""
-})
-// → one notification, one re-render
-```
-
-Signals are orthogonal to the levels — you can use them at Level 2 or Level 5. They're a performance optimization, not a conceptual shift. If your app doesn't have performance issues with selectors, skip them.
-
-> **hightea**: A bridge middleware connects signals to Zustand — when any signal's `.value` changes, Zustand subscribers are also notified. This is why we use `@preact/signals-core` (not `-react`): hightea's bridge handles the React integration.
-
-### Scaling to Thousands of Items
-
-Your todo list has 5,000 items and the cursor stutters. Two techniques help at any level:
-
-**Per-entity signals** — `Map<string, Signal<T>>` gives each item its own signal. Edit one item → 1 re-render:
-
-```tsx
-const cursor = signal<string>("item-0")
-const items = new Map<string, Signal<ItemData>>()
-
-return {
-  cursor,
-  items,
-  currentItem: computed(() => items.get(cursor.value)?.value),
-  updateItem(id: string, data: ItemData) {
-    const s = items.get(id)
-    if (s) s.value = data // only this item's subscribers re-render
-  },
-  removeItem(id: string) {
-    items.delete(id) // clean up — stale signals leak memory
-  },
-}
-```
-
-**VirtualList** — only mount the ~50 visible rows. Combined with per-entity signals: edit one item → 1 re-render. Move cursor → 2 re-renders. O(visible), not O(total).
+See [Scaling with Signals](../reference/signals.md) for the full guide.
 
 ---
 
 ## Appendix B: Designing Robust Ops
 
-The examples in Level 3 use index-based ops: `{ op: "toggleDone", index: 2 }`. This works for single-session undo but breaks when ops need to survive reordering — undo after other edits, concurrent users, or offline sync. If someone inserts at index 1, your `index: 2` now points to the wrong item.
+Index-based ops (`toggleDone, index: 2`) work for single-session undo but break under reordering, concurrency, or offline sync. Prefer identity-based, ideally idempotent ops for collaboration and AI automation.
 
-**Prefer identity-based ops**: `{ op: "toggleDone", id: "abc123" }`. This is the same principle behind CRDTs[^crdt] — operations that commute (produce the same result regardless of order) are safe for concurrent use.
-
-```typescript
-// Fragile — depends on ordering
-type FragileOp = { op: "toggleDone"; index: number }
-
-// Robust — works regardless of order
-type RobustOp = { op: "toggleDone"; id: string }
-
-// Gold standard — idempotent (applying twice = applying once)
-type IdempotentOp = { op: "setDone"; id: string; done: boolean }
-```
-
-| Op style                   | Undo    | Concurrent | Offline sync       |
-| -------------------------- | ------- | ---------- | ------------------ |
-| `index: 2`                 | Fragile | Breaks     | Breaks             |
-| `id: "abc"` + toggle       | Works   | Works      | Double-toggle risk |
-| `id: "abc"` + `done: true` | Works   | Works      | Idempotent         |
-
-You don't need to start here. Index-based is fine for simple undo. But when you add collaboration, offline sync, or AI automation — design identity-based, ideally idempotent.
+See [Designing Robust Ops](../reference/robust-ops.md) for the full guide.
 
 ---
 
@@ -682,8 +597,6 @@ You don't need to start here. Index-based is fine for simple undo. But when you 
 [^discriminated-union]: [Discriminated unions](https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions) — a TypeScript pattern where a union of object types shares a common tag field (here `op`). The compiler narrows the type in each `switch` case, giving you exhaustive type checking with zero runtime cost.
 
 [^di]: [Dependency injection](https://en.wikipedia.org/wiki/Dependency_injection) (DI) — passing dependencies (database, HTTP client, etc.) into a function rather than hardcoding them. Testing-friendly, but requires wiring and fake implementations.
-
-[^crdt]: [CRDTs](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type) (Conflict-free Replicated Data Types) — data structures designed for distributed systems that can be edited independently on multiple replicas and merged without conflicts.
 
 [^statecharts]: [Statecharts](https://statecharts.dev/) — an extension of finite state machines with hierarchy, concurrency, and history. Introduced by David Harel in 1987. [XState](https://xstate.js.org/) is the leading JavaScript implementation.
 

@@ -1,6 +1,66 @@
 # Plugin Composition
 
-hightea provides SlateJS-style plugins for extending app functionality. Plugins compose together to create "drivers" for automated testing and AI interaction.
+hightea provides SlateJS-style plugins for extending app functionality. Plugins compose together to create "drivers" for automated testing and AI interaction. For the graduated introduction to the plugin architecture, see [Event Handling](../guides/event-handling.md).
+
+## Built-in Plugins
+
+Every built-in behavior is a plugin. `run()` composes them for you; `pipe()` lets you pick.
+
+### Kernel
+
+| Plugin             | Role   | What it does                                                                                |
+| ------------------ | ------ | ------------------------------------------------------------------------------------------- |
+| `createApp(store)` | Kernel | Typed event loop: `update`, `dispatch`, `events`, `run`. No rendering, no terminal, no I/O. |
+
+### Rendering
+
+| Plugin              | Role      | What it does                                                                                                                    |
+| ------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `withReact(<El />)` | Rendering | React reconciler + virtual buffer. Mounts the element, renders into a `TerminalBuffer`, re-renders reactively on store changes. |
+
+### Terminal I/O
+
+| Plugin                         | Role                       | What it does                                                                                                                                                                                                                                                                                                              |
+| ------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `withTerminal(process, opts?)` | Source + Output + Protocol | **All terminal I/O in one plugin.** stdin → typed events (`term:key`, `term:mouse`, `term:paste`). stdout → alternate screen, raw mode, incremental diff output. SIGWINCH → `term:resize`. Lifecycle (Ctrl+Z suspend/resume, Ctrl+C exit). Protocols (SGR mouse, Kitty keyboard, bracketed paste) controlled via options. |
+
+Mouse, Kitty keyboard, and bracketed paste are **on by default** — no configuration needed. Options for disabling or customizing: `{ mouse?: boolean, kitty?: boolean | KittyFlags, paste?: boolean, onSuspend?, onResume?, onInterrupt? }`
+
+Internally, `withTerminal` composes the lower-level concerns (input parsing, output rendering, resize handling, protocol negotiation, lifecycle management). You never need to think about them separately unless you're building something exotic like a multiplexer or test harness.
+
+### Event Processing
+
+| Plugin               | Role             | What it does                                                                                                                                                                                                   |
+| -------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `withFocus()`        | Processing       | Focus manager: Tab/Shift+Tab navigation, Enter to enter scope, Escape to exit. Dispatches `onKeyDown`/`onKeyDownCapture` through focus tree (capture → target → bubble).                                       |
+| `withDomEvents()`    | Processing       | DOM-like event dispatch for mouse: hit testing via `screenRect`, bubbling through ancestors. `onClick`, `onDoubleClick`, `onMouseDown`, `onMouseUp`, `onMouseMove`, `onMouseEnter`, `onMouseLeave`, `onWheel`. |
+| `withCommands(opts)` | Processing + API | Resolves key and mouse events to named commands via a binding table. Adds `.cmd` proxy for programmatic invocation. Adds `.getState()` for introspection.                                                      |
+
+### Testing / Automation
+
+| Plugin                      | Role | What it does                                                                                                                              |
+| --------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `withKeybindings(bindings)` | API  | Intercepts `press()` to resolve keybindings → commands before passing through. `press("j")` becomes `cmd.cursor_down()`.                  |
+| `withDiagnostics(opts?)`    | API  | Adds render invariant checks after each command: incremental vs fresh render, stability, replay, layout. Captures screenshots on failure. |
+
+### How `run()` composes them
+
+```tsx
+// run(store, element, options) is equivalent to:
+function run(store, element, options = {}) {
+  return pipe(
+    createApp(store),
+    withReact(element),
+    withTerminal(process, options), // mouse, kitty, paste all on by default
+    withFocus(),
+    withDomEvents(),
+  ).run()
+}
+```
+
+Every option on `run()` maps to a plugin. When you need more control — custom processing, custom sources, testing drivers — drop down to `pipe()` and compose exactly what you need.
+
+## Plugin API Details
 
 ## withCommands
 

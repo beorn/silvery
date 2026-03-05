@@ -1,15 +1,13 @@
 # Event Handling
 
-Most TUI frameworks force a choice: simple callbacks that don't scale, or a full architecture you adopt all at once. hightea gives you a graduated path where each level builds on the last. Your first app is five lines. Your complex app — with vim modes, AI automation, customizable keybindings, and file watchers — uses the same primitives, just composed differently.
+Every level in this guide turns another category of invisible behavior into data. Callbacks hide what happened. Component handlers hide what the user intended. Commands make input visible — named, serializable, replayable. Plugins make even the event processing itself visible. You adopt each level only when you need it, never rewrite, and never pay for what you don't use.
 
-The payoff at the end of the path: **all state in one model**, all changes through one `update` function, all I/O through composable plugins. The entire app becomes inspectable, serializable, replayable, and testable — from headless unit tests to AI-driven automation.
-
-| Level                      | You need it when...               | What hightea provides                                                  |
-| -------------------------- | --------------------------------- | ------------------------------------------------------------------- |
-| **1 — Callbacks**          | Starting out                      | `useInput` — just a function                                        |
-| **2 — Component Handlers** | Clicks, per-component keys        | `withDomEvents()` — React-style `onClick`/`onKeyDown` with bubbling |
-| **3 — Commands**           | Undo, replay, AI automation       | `withCommands()` — key/mouse → named serializable actions           |
-| **4 — App Plugins**        | Vim modes, chords, custom sources | Slice + plugin — state in the model, reactions via subscribe        |
+| Level                      | What becomes data | You need it when...               | What hightea provides                                               |
+| -------------------------- | ----------------- | --------------------------------- | ------------------------------------------------------------------- |
+| **1 — Callbacks**          | _(nothing yet)_   | Starting out                      | `useInput` — just a function                                        |
+| **2 — Component Handlers** | Spatial targeting | Clicks, per-component keys        | `withDomEvents()` — React-style `onClick`/`onKeyDown` with bubbling |
+| **3 — Commands**           | User intent       | Undo, replay, AI automation       | `withCommands()` — key/mouse → named serializable actions           |
+| **4 — App Plugins**        | Event processing  | Vim modes, chords, custom sources | Slice + plugin — state in the model, reactions via subscribe        |
 
 Most simple apps stop at Level 1. Apps with mouse interaction reach Level 2. Complex TUIs with customizable keybindings and AI automation land at Level 3. Level 4 is for custom event processing, sources, and protocols — but by then you're writing pure functions that compose, not framework boilerplate.
 
@@ -40,9 +38,15 @@ function Counter() {
 await run(<Counter />)
 ```
 
+```
+Count: 0
+```
+
 `useInput` registers a callback that receives raw key data. `run()` manages terminal I/O — raw mode, alternate screen, cleanup. Return `"exit"` to quit.
 
 This is enough for dashboards, simple lists, and anything where one handler can see all input.
+
+At Level 1, input handling is a function call — it executes and vanishes.
 
 **The wall**: You add a sidebar and a main panel. Both need to handle clicks. You want `<Text onClick={...}>` like React DOM — but there's no DOM in a terminal, and `useInput` doesn't know about spatial coordinates.
 
@@ -123,6 +127,8 @@ If a component calls `event.stopPropagation()`, the event is consumed — the ba
 | `onKeyDownCapture` | `InkxKeyEvent`   | Yes (capture phase) |
 
 Component handlers are familiar to React developers, spatial (you click on things), and compositional (events bubble through the tree). This is enough for most interactive UIs.
+
+Component handlers make spatial targeting visible — clicks resolve to nodes, events bubble. But the handlers are still anonymous function calls.
 
 **The wall**: You want customizable keybindings. But `onClick={() => selectCard()}` is a function call — there's no data to serialize, no name to show in a command palette, no binding to remap. The user can't change "j means down" without editing code.
 
@@ -280,13 +286,15 @@ await driver.screenshot() // capture screen
 
 This is the same app — just with more capabilities layered on. [State Management Level 3](state-management.md#level-3-ops-as-data--reduxs-insight) (ops as data) meets event handling Level 3 (commands). Together they make the entire app automatable: commands describe input, ops describe state changes, both are serializable data.
 
+Commands made user intent visible — every action has a name and serializable data. But the event pipeline itself is still a black box.
+
 **The wall**: You want vim-style modal input (normal/insert/visual) or multi-key chords (gg, leader sequences). The built-in command resolution is single-key. You need to intercept events before they reach commands, with your own stateful logic.
 
 ---
 
 ## Level 4: App Plugins
 
-> **Note:** This level describes the planned plugin architecture. The `pipe()` composition API, slice-based plugins, and typed dispatch shown below are design targets — the individual plugins (`withDomEvents`, `withCommands`, etc.) are implemented, but the unified composition model is still taking shape.
+> **Status:** The individual plugins (`withDomEvents`, `withCommands`, etc.) are implemented and in production use. The unified `pipe()` composition model shown below is the architectural direction — some details may evolve.
 
 Every extension in this guide — `withDomEvents`, `withCommands`, `withKeybindings`, `withDiagnostics` — is the same thing: an app plugin. A function that takes an app and returns an enhanced app.
 
@@ -434,7 +442,7 @@ using app = pipe(
 )
 ```
 
-### Custom event sources
+### Event sources and type safety
 
 Plugins can add event sources by overriding `app.events`:
 
@@ -552,9 +560,7 @@ function update(msg: AppEvent<keyof MyEventMap>, model: Model) {
 
 The event loop is simple because the complexity lives in the plugins, not the runtime.
 
----
-
-## The Plugin Model
+### The plugin model
 
 Step back and look at what you have. Every extension — from terminal I/O to vim modes to file watchers — has the same shape: a **slice** (pure reducer for its model state) and a **plugin** (event wiring, subscriptions, API). All state lives in the model. All state changes flow through `update`. Plugins react to model changes via subscriptions, and clean up automatically via `using`.
 
@@ -610,241 +616,15 @@ This guide is the input side of the same architecture described in [State Manage
 
 They meet at Level 3 — commands produce ops, ops describe state changes, both are serializable data. Together they make the entire app a pure pipeline from input to output: events → commands → ops → state → effects → I/O.
 
----
-
-## Built-in Plugins
-
-Every built-in behavior is a plugin. `run()` composes them for you; `pipe()` lets you pick.
-
-### Kernel
-
-| Plugin             | Role   | What it does                                                                                |
-| ------------------ | ------ | ------------------------------------------------------------------------------------------- |
-| `createApp(store)` | Kernel | Typed event loop: `update`, `dispatch`, `events`, `run`. No rendering, no terminal, no I/O. |
-
-### Rendering
-
-| Plugin              | Role      | What it does                                                                                                                    |
-| ------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `withReact(<El />)` | Rendering | React reconciler + virtual buffer. Mounts the element, renders into a `TerminalBuffer`, re-renders reactively on store changes. |
-
-### Terminal I/O
-
-| Plugin                         | Role                       | What it does                                                                                                                                                                                                                                                                                                              |
-| ------------------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `withTerminal(process, opts?)` | Source + Output + Protocol | **All terminal I/O in one plugin.** stdin → typed events (`term:key`, `term:mouse`, `term:paste`). stdout → alternate screen, raw mode, incremental diff output. SIGWINCH → `term:resize`. Lifecycle (Ctrl+Z suspend/resume, Ctrl+C exit). Protocols (SGR mouse, Kitty keyboard, bracketed paste) controlled via options. |
-
-Mouse, Kitty keyboard, and bracketed paste are **on by default** — no configuration needed. Options for disabling or customizing: `{ mouse?: boolean, kitty?: boolean | KittyFlags, paste?: boolean, onSuspend?, onResume?, onInterrupt? }`
-
-Internally, `withTerminal` composes the lower-level concerns (input parsing, output rendering, resize handling, protocol negotiation, lifecycle management). You never need to think about them separately unless you're building something exotic like a multiplexer or test harness.
-
-### Event Processing
-
-| Plugin               | Role             | What it does                                                                                                                                                                                                   |
-| -------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `withFocus()`        | Processing       | Focus manager: Tab/Shift+Tab navigation, Enter to enter scope, Escape to exit. Dispatches `onKeyDown`/`onKeyDownCapture` through focus tree (capture → target → bubble).                                       |
-| `withDomEvents()`    | Processing       | DOM-like event dispatch for mouse: hit testing via `screenRect`, bubbling through ancestors. `onClick`, `onDoubleClick`, `onMouseDown`, `onMouseUp`, `onMouseMove`, `onMouseEnter`, `onMouseLeave`, `onWheel`. |
-| `withCommands(opts)` | Processing + API | Resolves key and mouse events to named commands via a binding table. Adds `.cmd` proxy for programmatic invocation. Adds `.getState()` for introspection.                                                      |
-
-### Testing / Automation
-
-| Plugin                      | Role | What it does                                                                                                                              |
-| --------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `withKeybindings(bindings)` | API  | Intercepts `press()` to resolve keybindings → commands before passing through. `press("j")` becomes `cmd.cursor_down()`.                  |
-| `withDiagnostics(opts?)`    | API  | Adds render invariant checks after each command: incremental vs fresh render, stability, replay, layout. Captures screenshots on failure. |
-
-### How `run()` composes them
-
-```tsx
-// run(store, element, options) is equivalent to:
-function run(store, element, options = {}) {
-  return pipe(
-    createApp(store),
-    withReact(element),
-    withTerminal(process, options), // mouse, kitty, paste all on by default
-    withFocus(),
-    withDomEvents(),
-  ).run()
-}
-```
-
-Every option on `run()` maps to a plugin. When you need more control — custom processing, custom sources, testing drivers — drop down to `pipe()` and compose exactly what you need.
+For the full catalog of built-in plugins (kernel, rendering, terminal I/O, event processing, testing/automation) and how `run()` composes them, see [Plugins Reference](../reference/plugins.md).
 
 ---
 
 ## What the Architecture Enables
 
-Because all state lives in the model, all changes flow through `update`, and all effects are data, a set of powerful capabilities fall out naturally.
+Because all state lives in the model, all changes flow through `update`, and all effects are data, powerful capabilities fall out naturally: effect combinators (debounce, throttle, delay), structured logging, generic undo, and time-travel debugging.
 
-### Effect combinators
-
-Effects are data — plain objects returned from `update`. The kernel runs them. hightea provides combinators for common async patterns:
-
-```tsx
-import { none, batch, dispatch, debounce, throttle } from "@hightea/term/core"
-
-function update(msg: AppEvent, model: Model): [Model, Effect[]] {
-  switch (msg.type) {
-    case "term:key":
-      if (msg.data.input === "/") {
-        return [{ ...model, searching: true }, []]
-      }
-      if (model.searching) {
-        const query = model.query + msg.data.input
-        return [
-          { ...model, query },
-          // Debounce: wait 150ms after last keystroke before searching
-          [debounce("search", 150, dispatch({ type: "search:execute", data: { query } }))],
-        ]
-      }
-      return [model, [none]]
-
-    case "search:execute":
-      return [model, [{ effect: "fetch", url: `/api/search?q=${msg.data.query}` }]]
-
-    default:
-      return [model, [none]]
-  }
-}
-```
-
-| Combinator                 | What it does                                    |
-| -------------------------- | ----------------------------------------------- |
-| `none`                     | No-op (placeholder)                             |
-| `batch(e1, e2, ...)`       | Multiple effects, flattened                     |
-| `dispatch(msg)`            | Queue another message                           |
-| `debounce(id, ms, effect)` | Cancel previous with same id, wait ms, then run |
-| `throttle(id, ms, effect)` | Run at most once per ms window                  |
-| `delay(ms, effect)`        | Run effect after ms                             |
-
-Because effects are data, the kernel can inspect, log, and replay them. `debounce("search", ...)` with an id means the kernel tracks active timers — cancel-and-restart is automatic.
-
-### Structured logging
-
-Since every state change flows through `update`, logging is a one-line plugin:
-
-```tsx
-function withLogging(): AppPlugin {
-  return {
-    plugin: (app) => {
-      const { update } = app
-      app.update = (msg, model) => {
-        const [newModel, effects] = update(msg, model)
-        console.log({
-          msg: msg.type,
-          data: msg.data,
-          changed: diff(model, newModel), // only the fields that changed
-          effects: effects.map((e) => e.type ?? e.effect),
-        })
-        return [newModel, effects]
-      }
-      return app
-    },
-  }
-}
-```
-
-```tsx
-// Output:
-// { msg: "term:key", data: { input: "j" }, changed: { cursor: 3 }, effects: ["none"] }
-// { msg: "focus:changed", data: { from: "item2", to: "item3" }, changed: { focus: {...} }, effects: [] }
-```
-
-Every event, every state change, every effect — in one stream. Filter by namespace, replay from a log file, or pipe to an AI for analysis. Because effects are data too, the log captures the full picture: what happened, what changed, and what side effects were requested.
-
-For production, write to a file instead of console:
-
-```tsx
-using app = pipe(
-  createApp(store, { slices }),
-  withLogging({ output: "/tmp/app.log", filter: (msg) => msg.type !== "term:mouse" }),
-  // ... other plugins
-)
-```
-
-### Undo
-
-Since slices are pure `(msg, state) → state`, undo is a generic plugin that records transitions and reverses them:
-
-```tsx
-function withUndo<M extends { undo: UndoState }>(opts?: { maxHistory?: number }): AppPlugin {
-  return {
-    slice: (msg: AppEvent, undo: UndoState): UndoState => {
-      if (msg.type === "undo:push")
-        return {
-          past: [...undo.past.slice(-(opts?.maxHistory ?? 100) + 1), msg.data.snapshot],
-          future: [],
-        }
-      if (msg.type === "undo:undo" && undo.past.length > 0)
-        return {
-          past: undo.past.slice(0, -1),
-          future: [...undo.future, msg.data.current],
-        }
-      if (msg.type === "undo:redo" && undo.future.length > 0)
-        return {
-          past: [...undo.past, msg.data.current],
-          future: undo.future.slice(0, -1),
-        }
-      return undo
-    },
-
-    plugin: (app) => {
-      // After each user action, snapshot the model for undo
-      app.subscribe(
-        (s) => s,
-        (model, prevModel) => {
-          if (isUserAction(model.lastMsg)) {
-            app.dispatch.undo.push({ snapshot: prevModel })
-          }
-        },
-      )
-
-      // Expose convenience API
-      app.undo = () => app.dispatch.undo.undo({ current: app.store.getState() })
-      app.redo = () => app.dispatch.undo.redo({ current: app.store.getState() })
-
-      return app
-    },
-  }
-}
-```
-
-Add it to the pipe:
-
-```tsx
-using app = pipe(
-  createApp(store, { slices: { ...slices, undo: withUndo().slice } }),
-  withUndo({ maxHistory: 50 }).plugin,
-  // ...
-)
-
-// In keybindings:
-bindings: { key: { "ctrl+z": "undo", "ctrl+shift+z": "redo" } }
-```
-
-Because the model is one serializable object, snapshotting is `structuredClone(model)`. Restoring is replacing the model. No custom logic per feature — undo works across all slices at once.
-
-### Time-travel debugging
-
-Undo is just the user-facing version. The same infrastructure enables full time-travel: record every `(msg, model)` pair, step forward and backward, fork from any point. Because there's no hidden state, replaying messages into a fresh `createApp` reproduces the exact same state.
-
-```tsx
-// Record
-const history: Array<{ msg: AppEvent; model: Model }> = []
-app.subscribe(
-  (s) => s,
-  (model) => {
-    history.push({ msg: model.lastMsg, model: structuredClone(model) })
-  },
-)
-
-// Replay to any point
-function replayTo(index: number) {
-  app.store.setState(history[index].model)
-}
-```
-
-This is the payoff of the full architecture: every moment is a snapshot, every transition is data, every session is replayable.
+See [What the Architecture Enables](../deep-dives/architecture-enables.md) for the full details with code examples.
 
 ---
 
@@ -879,6 +659,18 @@ The contrast from Lexical and ProseMirror: more structured plugin models are eas
 **The costs of custom plugins (Level 4).** Plugin ordering matters — `withVimModes()` before `withCommands()` means vim intercepts first. The override chain is a stack of closures, so debugging goes through multiple layers. Name your plugins well and keep them focused.
 
 **The honest rule of thumb**: if `useInput` handles your needs, stop at Level 1. If you need clicks, go to Level 2. If you need customizable bindings or automation, go to Level 3. Level 4 is for when the built-ins don't cover your use case. Each level adds power and complexity in equal measure.
+
+---
+
+## The Takeaway
+
+You don't choose an event handling strategy. You choose how visible your input processing is.
+
+At Level 1, a keypress enters a callback and vanishes. At Level 4, every event has a type, every action has a name, every plugin is a composable function, and the entire pipeline is inspectable data. The more visible your input processing is — the easier your app is to test, automate, customize, and debug.
+
+But visibility has a cost: registries, binding tables, plugin ordering. The right level is the one where the benefits you actually use outweigh the complexity you actually maintain. Hightea doesn't force you into any of this. You grow into it one level at a time, and you never have to adopt more than you need.
+
+This guide covers the event side. For the state side — ops, effects, composable state machines — see [State Management](state-management.md). Together they form the full pipeline: events → commands → ops → state → effects → screen.
 
 ---
 

@@ -2,7 +2,7 @@
 
 > Start simple, sip some TEA (The Elm Architecture), or go full TEA.
 
-hightea is a React-based TUI framework with a graduated architecture. Your first app is five lines. When you need shared state, undo, testable I/O, or composable plugins — each level builds on the last. You never rewrite; you grow.
+hightea is a React-based TUI framework with a graduated architecture. Your first app is five lines. When you need shared state, undo, testable I/O, or composable plugins — each level builds on the last. You never rewrite; you grow. The unifying idea: every level turns something invisible into data — state transitions, side effects, event processing — making it loggable, testable, replayable, and portable.
 
 ```tsx
 import { run, useInput } from "@hightea/term/runtime"
@@ -34,8 +34,8 @@ await run(<Counter />)
 ## Suggested Reading Order
 
 1. [Getting Started](guides/getting-started.md) -- first app, input handling, layout feedback
-2. [State Management](guides/state-management.md) -- graduated state: useState → shared store → ops as data → TEA
-3. [Event Handling](guides/event-handling.md) -- graduated input: callbacks → component handlers → commands → plugins
+2. [State Management](guides/state-management.md) -- each level turns another category of hidden behavior into data: transitions → effects → cross-module messages
+3. [Event Handling](guides/event-handling.md) -- each level turns another category of hidden input into data: spatial targeting → user intent → event processing
 4. [Components](reference/components.md) -- Box, Text, VirtualList, Console, inputs
 5. [Hooks](reference/hooks.md) -- useContentRect, useInput, useApp, animations
 6. [Architecture](deep-dives/architecture.md) -- five-phase pipeline, RenderAdapter
@@ -44,13 +44,13 @@ await run(<Counter />)
 
 Tutorials, walkthroughs, and migration paths.
 
-| Document                                                  | Description                                                                       |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [Getting Started](guides/getting-started.md)              | First app tutorial, basic input, layout feedback                                  |
-| [State Management](guides/state-management.md)            | General patterns + hightea tooling: store, signals, createSlice, ops/effects as data |
-| [Event Handling](guides/event-handling.md)                | Composable event plugins, commands, sources, and the input pipeline               |
-| [Runtime Layers](guides/runtime-layers.md)                | createApp, createRuntime, createStore, streams, tick sources                      |
-| [Migration from Ink](guides/migration.md)                 | Drop-in migration guide                                                           |
+| Document                                                     | Description                                                                          |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| [Getting Started](guides/getting-started.md)                 | First app tutorial, basic input, layout feedback                                     |
+| [State Management](guides/state-management.md)               | General patterns + hightea tooling: store, signals, createSlice, ops/effects as data |
+| [Event Handling](guides/event-handling.md)                   | Composable event plugins, commands, sources, and the input pipeline                  |
+| [Runtime Layers](guides/runtime-layers.md)                   | createApp, createRuntime, createStore, streams, tick sources                         |
+| [Migration from Ink](guides/migration.md)                    | Drop-in migration guide                                                              |
 | [Migration from legacy hightea](guides/runtime-migration.md) | Migrating to hightea/runtime API                                                     |
 
 ## Reference
@@ -70,20 +70,23 @@ API documentation for components, hooks, and subsystems.
 | [Terminal Capabilities](reference/terminal-capabilities.md) | Detection, render modes, protocols                                   |
 | [Text Sizing (OSC 66)](reference/text-sizing.md)            | PUA character width control for nerdfont/powerline icons             |
 | [Terminal Lifecycle](reference/lifecycle.md)                | Suspend/resume (Ctrl+Z), interrupt (Ctrl+C), state save/restore      |
-| [Recipes](reference/recipes.md)                             | Common patterns for building hightea apps                               |
+| [Signals](reference/signals.md)                             | Fine-grained reactivity with @preact/signals-core                    |
+| [Robust Ops](reference/robust-ops.md)                       | Identity-based, idempotent ops for collaboration and sync            |
+| [Recipes](reference/recipes.md)                             | Common patterns for building hightea apps                            |
 | [React DevTools](reference/devtools.md)                     | Connect React DevTools standalone for component tree inspection      |
 
 ## Deep Dives
 
 Architecture, internals, and performance analysis.
 
-| Document                                     | Description                                                    |
-| -------------------------------------------- | -------------------------------------------------------------- |
-| [Architecture](deep-dives/architecture.md)   | Five-phase pipeline, RenderAdapter interface                   |
-| [Internals](deep-dives/internals.md)         | Reconciler, dirty tracking, content phase                      |
-| [Containment](deep-dives/containment.md)     | Layout feedback loop prevention (useContentRect safe patterns) |
-| [Performance](deep-dives/performance.md)     | Optimization techniques, profiling guide                       |
-| [Focus Routing](deep-dives/focus-routing.md) | Focus-based input routing, commands, keybindings               |
+| Document                                                   | Description                                                    |
+| ---------------------------------------------------------- | -------------------------------------------------------------- |
+| [Architecture](deep-dives/architecture.md)                 | Five-phase pipeline, RenderAdapter interface                   |
+| [Internals](deep-dives/internals.md)                       | Reconciler, dirty tracking, content phase                      |
+| [Containment](deep-dives/containment.md)                   | Layout feedback loop prevention (useContentRect safe patterns) |
+| [Performance](deep-dives/performance.md)                   | Optimization techniques, profiling guide                       |
+| [Focus Routing](deep-dives/focus-routing.md)               | Focus-based input routing, commands, keybindings               |
+| [Architecture Enables](deep-dives/architecture-enables.md) | Effect combinators, structured logging, undo, time-travel      |
 
 ## Design Documents
 
@@ -104,7 +107,7 @@ Cross-cutting docs that don't fit a single category.
 | Document                              | Description                                                                |
 | ------------------------------------- | -------------------------------------------------------------------------- |
 | [Testing](testing.md)                 | Testing strategy, createRenderer, locators, withDiagnostics                |
-| [hightea vs Ink](hightea-vs-ink.md)         | Detailed feature/performance comparison with Ink                           |
+| [hightea vs Ink](hightea-vs-ink.md)   | Detailed feature/performance comparison with Ink                           |
 | [Benchmarks](benchmarks.md)           | Raw benchmark tables and data                                              |
 | [Comparison](comparison.md)           | Cross-framework comparison (BubbleTea, Textual, Notcurses, FTXUI, blessed) |
 | [Troubleshooting](troubleshooting.md) | Common issues and debugging                                                |
