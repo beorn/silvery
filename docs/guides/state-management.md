@@ -1,12 +1,12 @@
 # State Management
 
-Your first inkx app uses `useState` and `useInput`. That's enough for a counter, a file browser, a simple list. Then your TUI grows — shared state across panes, undo, testable I/O, independent modules — and each requirement tempts you to reach for a new library or rewrite from scratch.
+Your first hightea app uses `useState` and `useInput`. That's enough for a counter, a file browser, a simple list. Then your TUI grows — shared state across panes, undo, testable I/O, independent modules — and each requirement tempts you to reach for a new library or rewrite from scratch.
 
-This guide shows a different path. Each level builds on the last with minimal changes. inkx provides tooling at each step — `createApp`, `createSlice`, effect runners, plugin composition — so the transition is mechanical, not architectural. You never rewrite; you graduate.
+This guide shows a different path. Each level builds on the last with minimal changes. hightea provides tooling at each step — `createApp`, `createSlice`, effect runners, plugin composition — so the transition is mechanical, not architectural. You never rewrite; you graduate.
 
 The patterns themselves are general — ops as data, effects as data, composable state machines work in any React framework. If you've heard of [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA), that's where Levels 3+4 land. You arrive there incrementally — one sip at a time.
 
-| Level                                     | You need it when...                     | What inkx provides                                                          |
+| Level                                     | You need it when...                     | What hightea provides                                                          |
 | ----------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
 | **1 — Local**                             | Starting out                            | `useState` + `useInput` — just React                                        |
 | **2 — Shared**                            | Multiple components need the same state | `createApp` + `useApp` — centralized store, selective re-renders            |
@@ -41,7 +41,7 @@ function Counter() {
 await run(<Counter />)
 ```
 
-`useState` is standard React. `useInput` is inkx's keyboard hook; `run` starts the app and manages terminal I/O.
+`useState` is standard React. `useInput` is hightea's keyboard hook; `run` starts the app and manages terminal I/O.
 
 **The wall**: A second component needs the same state — and threading it through five levels of props means every intermediate component has to know about data it doesn't use.
 
@@ -132,7 +132,7 @@ This is enough for most apps — dashboards, file browsers, list views, dialogs.
 >
 > **Why not `useReducer`?** React's built-in `useReducer` is Level 3 in disguise — `dispatch(action)` + a pure reducer is ops-as-data. It's a solid choice for complex state in a single component tree. The limitation: it doesn't give you cross-component subscriptions. Every consuming component must be a child of the provider, and there's no selector — every dispatch re-renders every consumer. Zustand adds the subscription layer that makes it scale.
 
-> **inkx**: `createApp()` is a Zustand middleware that bundles the store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call. Without inkx, you'd wire Zustand, keyboard input, and lifecycle yourself — the store pattern is the same.
+> **hightea**: `createApp()` is a Zustand middleware that bundles the store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call. Without hightea, you'd wire Zustand, keyboard input, and lifecycle yourself — the store pattern is the same.
 
 As your app grows, selectors show their cost — Zustand runs every selector on every store update. If that becomes a bottleneck, [Signals](#appendix-a-scaling-with-signals) give you fine-grained subscriptions. Skip them unless you have performance issues.
 
@@ -195,7 +195,7 @@ const TodoList = {
 
 The `switch` is the type safety bridge — when `op.op` is `"moveCursor"`, TypeScript narrows the params to `{ delta: number }` automatically. Add an op variant, forget a case → compile error. That's three artifacts per op (union variant, handler, switch case), which is more ceremony than Level 2's direct function calls. The trade: you get exhaustive narrowing, a serializable action vocabulary, and a single entry point for all state transitions.
 
-inkx provides `createSlice` to eliminate the union and the switch — you write only the handlers:
+hightea provides `createSlice` to eliminate the union and the switch — you write only the handlers:
 
 ```tsx
 import { createSlice } from "@hightea/term/core"
@@ -383,7 +383,7 @@ Step back and look at what you have: `apply(state, op) → [new state, effects]`
 
 Notice the throughline: **every level turns something invisible into data**. Level 3 turned behavior into data (ops). Level 4 turned I/O into data (effects). Level 5 will turn cross-module communication into data (dispatch effects). Each time something becomes data instead of behavior, it becomes loggable, replayable, testable, portable, and interceptable. That's the unifying thesis of this entire progression.
 
-> **inkx**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. For Zustand-native TEA, `tea()` from `inkx/tea` is a Zustand middleware that extends any reducer to optionally return `[state, effects]` — gradual, per-case, with typed effect runners and `collect()` for testing. inkx also provides a standalone TEA store (`createStore()` from `inkx/store`) with plugin composition — see [Runtime Layers](runtime-layers.md).
+> **hightea**: The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners automatically. For Zustand-native TEA, `tea()` from `hightea/tea` is a Zustand middleware that extends any reducer to optionally return `[state, effects]` — gradual, per-case, with typed effect runners and `collect()` for testing. hightea also provides a standalone TEA store (`createStore()` from `hightea/store`) with plugin composition — see [Runtime Layers](runtime-layers.md).
 
 **The wall**: Your single slice is 400 lines. A search feature change breaks the cursor because they share state and a single `apply()`.
 
@@ -500,7 +500,7 @@ The core idea — making operations and effects into data — has been discovere
 | [Redux](https://redux.js.org/)                                       | 3         | `dispatch(action)` + reducer (ops as data, but effects live in middleware)                           |
 | [redux-loop](https://github.com/redux-loop/redux-loop)               | 3+4       | Extends Redux: reducer returns `[state, effects]`                                                    |
 | [Hyperapp](https://github.com/jorgebucaran/hyperapp) v2              | 3+4       | Optional tuple return from actions                                                                   |
-| **inkx/tea**                                                         | 3+4       | Zustand middleware — optional `[state, effects]` return, typed runners                               |
+| **hightea/tea**                                                         | 3+4       | Zustand middleware — optional `[state, effects]` return, typed runners                               |
 | [XState](https://xstate.js.org/)                                     | 5         | Statecharts[^statecharts] — formal state machines with explicit states, transitions, and composition |
 | [MobX](https://mobx.js.org/)                                         | 2         | Observable state with automatic tracking (OO-reactive, trades predictability for convenience)        |
 | [Event sourcing](https://martinfowler.com/eaaDev/EventSourcing.html) | 3         | Events as plain objects — store, replay, project                                                     |
@@ -527,14 +527,14 @@ The progression from functions to data is not free. Each level buys something re
 
 **When to use functions inside data.** Even at Level 4-5, not everything needs to be data. Effect _runners_ are functions — they take effect descriptions and do real I/O. Computed values (`doneCount`) are functions. React components are functions. The boundary is: **crossing module boundaries** (between slices, between domain and I/O) should be data; **within a module** (the implementation of a single op handler), use whatever's clearest. `s.items.value.map(...)` inside `toggleDone` is a normal function call, and it should stay that way.
 
-**How inkx minimizes the costs.** The trade-offs above are real, but framework tooling can absorb most of the mechanical pain:
+**How hightea minimizes the costs.** The trade-offs above are real, but framework tooling can absorb most of the mechanical pain:
 
 - **Wiring** — `createApp()` handles the store-to-effects-to-runners pipeline. You declare effect runners once; the middleware intercepts `Effect[]` returns from `.apply()` and routes them automatically. No manual plumbing per call.
 - **Composition** — `createStore()` with plugin composition (`compose(withFocusManagement(), withUndo())(update)`) adds cross-cutting concerns like focus, undo, or logging without touching individual machines. Each plugin wraps the update function — middleware-style, no per-op boilerplate.
-- **Debugging** — `withDiagnostics()` validates incremental rendering, `INKX_INSTRUMENT=1` exposes per-frame counters, and the inspector (`INKX_DEV=1`) dumps the full node tree. These replace the "printf debugging through a dispatcher" problem with structured introspection.
+- **Debugging** — `withDiagnostics()` validates incremental rendering, `HIGHTEA_INSTRUMENT=1` exposes per-frame counters, and the inspector (`HIGHTEA_DEV=1`) dumps the full node tree. These replace the "printf debugging through a dispatcher" problem with structured introspection.
 - **Driver pattern** — `withCommands()` + `withKeybindings()` give you a `driver.cmd.down()` API where each command carries metadata (name, keys, help text). The dispatcher is no longer opaque — `driver.cmd.all()` lists every available action with its keybinding.
 
-`createSlice` absorbs the union type + switch ceremony; the infrastructure around it (store creation, effect routing, plugin composition, debugging) is where inkx absorbs the rest so your slices stay focused on domain logic. See [Runtime Layers](runtime-layers.md) for the full API.
+`createSlice` absorbs the union type + switch ceremony; the infrastructure around it (store creation, effect routing, plugin composition, debugging) is where hightea absorbs the rest so your slices stay focused on domain logic. See [Runtime Layers](runtime-layers.md) for the full API.
 
 **The honest rule of thumb**: if you can't name a specific benefit you'd get from making something data (undo? replay? testing without mocks?), keep it as a function call. The progression is opt-in at every level — and opting out is a valid choice.
 
@@ -544,7 +544,7 @@ The progression from functions to data is not free. Each level buys something re
 
 You don't choose a state management library. You choose how visible your state transitions are.
 
-**The Elm Architecture (TEA)** is the formal name for what Levels 3+4 build: `update(msg, model) → (newModel, effects)`. Every state change is an explicit message (op). Every side effect is a return value, not a hidden call. The domain is a pure function from input to output. Elm the language enforces this from line one; this guide shows you can arrive there incrementally in React — one sip at a time.
+**The Elm Architecture (TEA)** is the formal name for what Levels 3+4 build: `update(msg, model) → (newModel, effects)`. Every state change is an explicit message (op). Every side effect is a return value, not a hidden call. The domain is a pure function from input to output. Elm the language enforces this from line one; this guide shows you can arrive there incrementally in React, adopting each level only when your requirements demand it.
 
 The more visible your transitions are — the easier your app is to test, debug, automate, and scale. But visibility has a cost: verbosity, indirection, and ceremony. The right level is the one where the benefits you actually use outweigh the boilerplate you actually write. React doesn't force you into any of this. You grow into it one level at a time, and you never have to adopt more than you need.
 
@@ -554,7 +554,7 @@ This guide covers the state side of the equation. For the event side — how inp
 
 - [Event Handling](event-handling.md) — composable event plugins, commands, sources, and the input pipeline
 - [Runtime Layers](runtime-layers.md) — createRuntime, createStore, run, createApp API reference
-- `inkx/tea` — Zustand middleware for TEA effects (`tea()`, `collect()`, typed effect runners)
+- `hightea/tea` — Zustand middleware for TEA effects (`tea()`, `collect()`, typed effect runners)
 - [Functional Core, Imperative Shell](https://kennethlange.com/functional-core-imperative-shell/) — the architectural principle behind Levels 3-5
 - Dan Abramov, [You Might Not Need Redux](https://medium.com/@dan_abramov/you-might-not-need-redux-be46360cf367) — when (and when not) to reach for ops-as-data
 
@@ -618,7 +618,7 @@ batch(() => {
 
 Signals are orthogonal to the levels — you can use them at Level 2 or Level 5. They're a performance optimization, not a conceptual shift. If your app doesn't have performance issues with selectors, skip them.
 
-> **inkx**: A bridge middleware connects signals to Zustand — when any signal's `.value` changes, Zustand subscribers are also notified. This is why we use `@preact/signals-core` (not `-react`): inkx's bridge handles the React integration.
+> **hightea**: A bridge middleware connects signals to Zustand — when any signal's `.value` changes, Zustand subscribers are also notified. This is why we use `@preact/signals-core` (not `-react`): hightea's bridge handles the React integration.
 
 ### Scaling to Thousands of Items
 
