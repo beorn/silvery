@@ -62,9 +62,11 @@ if (!ShowcaseComponent) {
     term.focus()
 
     // Re-fit and re-render on window resize
+    // Must use resize() (not refresh()) — clears the old buffer so the
+    // next render does a full repaint at the new dimensions.
     window.addEventListener("resize", () => {
       fitAddon.fit()
-      instance.refresh()
+      instance.resize(term.cols, term.rows)
     })
 
     // Clean up when parent frame navigates away (VitePress SPA navigation)
@@ -82,7 +84,7 @@ if (!ShowcaseComponent) {
     })
 
     // Expose for debugging
-    ;(window as any).inkxInstance = instance
+    ;(window as any).highteaInstance = instance
     ;(window as any).xtermTerminal = term
   }
 }

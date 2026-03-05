@@ -76,5 +76,5 @@ if (canvas) {
   })
 
   // Expose for debugging
-  ;(window as any).inkxInstance = instance
+  ;(window as any).highteaInstance = instance
 }

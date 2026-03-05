@@ -1,5 +1,5 @@
 /**
- * Browser-Ready Showcase Components for inkx Live Demos
+ * Browser-Ready Showcase Components for Hightea Live Demos
  *
  * Interactive components rendered via renderToXterm() in xterm.js iframes
  * on the VitePress docs site. Keyboard input via emitInput() event bus.
