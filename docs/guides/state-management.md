@@ -1,12 +1,12 @@
 # State Management
 
-> inkx makes it easy to graduate from local state to composable state machines — adopt each level only when you need it.
+> Start simple, sip some TEA, or go full TEA. Begin with `useState`. Graduate to composable state machines when you need them. Every step is additive — you never rewrite, you grow.
 
 Your first inkx app uses `useState` and `useInput`. That's enough for a counter, a file browser, a simple list. Then your TUI grows — shared state across panes, undo, testable I/O, independent modules — and each requirement tempts you to reach for a new library or rewrite from scratch.
 
 This guide shows a different path. Each level builds on the last with minimal changes. inkx provides tooling at each step — `createApp`, `createSlice`, effect runners, plugin composition — so the transition is mechanical, not architectural. You never rewrite; you graduate.
 
-The patterns themselves are general — ops as data, effects as data, composable state machines work in any React framework. If you've heard of [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA), that's where Levels 3+4 land. You arrive there incrementally, not all at once.
+The patterns themselves are general — ops as data, effects as data, composable state machines work in any React framework. If you've heard of [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA), that's where Levels 3+4 land. You arrive there incrementally — one sip at a time.
 
 | Level                                     | You need it when...                     | What inkx provides                                                          |
 | ----------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
@@ -546,12 +546,15 @@ The progression from functions to data is not free. Each level buys something re
 
 You don't choose a state management library. You choose how visible your state transitions are.
 
-**The Elm Architecture (TEA)** is the formal name for what Levels 3+4 build: `update(msg, model) → (newModel, effects)`. Every state change is an explicit message (op). Every side effect is a return value, not a hidden call. The domain is a pure function from input to output. Elm the language enforces this from line one; this guide shows you can arrive there incrementally in React, adopting each piece only when a real requirement demands it.
+**The Elm Architecture (TEA)** is the formal name for what Levels 3+4 build: `update(msg, model) → (newModel, effects)`. Every state change is an explicit message (op). Every side effect is a return value, not a hidden call. The domain is a pure function from input to output. Elm the language enforces this from line one; this guide shows you can arrive there incrementally in React — one sip at a time.
 
 The more visible your transitions are — the easier your app is to test, debug, automate, and scale. But visibility has a cost: verbosity, indirection, and ceremony. The right level is the one where the benefits you actually use outweigh the boilerplate you actually write. React doesn't force you into any of this. You grow into it one level at a time, and you never have to adopt more than you need.
 
+This guide covers the state side of the equation. For the event side — how input becomes data and flows through composable plugins — see [Event Handling](event-handling.md). Together they form the full picture: start simple, sip some TEA, or go full TEA.
+
 ## See Also
 
+- [Event Handling](event-handling.md) — composable event plugins, commands, sources, and the input pipeline
 - [Runtime Layers](runtime-layers.md) — createRuntime, createStore, run, createApp API reference
 - `inkx/tea` — Zustand middleware for TEA effects (`tea()`, `collect()`, typed effect runners)
 - [Functional Core, Imperative Shell](https://kennethlange.com/functional-core-imperative-shell/) — the architectural principle behind Levels 3-5
