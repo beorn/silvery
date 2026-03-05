@@ -410,10 +410,10 @@ describe("DOM Adapter (no browser required)", () => {
     expect(adapter.name).toBe("dom")
   })
 
-  test("measurer provides line height", () => {
+  test("measurer provides line height in cell units", () => {
     const adapter = createDOMAdapter({ fontSize: 14, lineHeight: 1.2 })
     const lineHeight = adapter.measurer.getLineHeight()
-    expect(lineHeight).toBeCloseTo(16.8, 1)
+    expect(lineHeight).toBe(1)
   })
 
   test("border chars are available", () => {

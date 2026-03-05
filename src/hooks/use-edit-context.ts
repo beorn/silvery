@@ -281,7 +281,7 @@ export function useEditContext({
       },
       insertBreak(): boolean {
         // Signal that this editor supports outliner-style Enter (split/new sibling).
-        // The actual node creation is handled by TEXT_CONFIRM via handleAddNodeAfter.
+        // The actual node creation is handled by TEXT_LINEBREAK_* actions in board-actions.ts.
         return !!onSplitRef.current
       },
       replaceContent(content: string, cursor: number) {

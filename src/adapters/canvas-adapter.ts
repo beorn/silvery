@@ -2,7 +2,9 @@
  * Canvas Render Adapter
  *
  * Implements the RenderAdapter interface for HTML5 Canvas output.
- * Uses pixels as units, Canvas 2D API for rendering.
+ * The layout engine operates in cell units (columns x rows). This adapter
+ * converts cell coordinates to pixel coordinates when drawing to the canvas,
+ * using charWidth (fontSize * 0.6) and cellHeight (fontSize * lineHeight).
  */
 
 import type {
@@ -83,54 +85,21 @@ const BORDER_CHARS: Record<string, BorderChars> = {
 // Canvas Measurer
 // ============================================================================
 
-function createCanvasMeasurer(config: Required<CanvasAdapterConfig>): TextMeasurer {
-  // Use OffscreenCanvas for measurement if available
-  let measureContext: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null
-
-  function getContext(): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {
-    if (!measureContext) {
-      if (typeof OffscreenCanvas !== "undefined") {
-        const canvas = new OffscreenCanvas(1, 1)
-        measureContext = canvas.getContext("2d")!
-      } else if (typeof document !== "undefined") {
-        const canvas = document.createElement("canvas")
-        measureContext = canvas.getContext("2d")!
-      } else {
-        throw new Error("Canvas not available in this environment")
-      }
-    }
-    return measureContext
-  }
-
-  function getFontString(style?: TextMeasureStyle): string {
-    const size = style?.fontSize ?? config.fontSize
-    const family = style?.fontFamily ?? config.fontFamily
-    const weight = style?.bold ? "bold" : "normal"
-    const fontStyle = style?.italic ? "italic" : "normal"
-    return `${fontStyle} ${weight} ${size}px ${family}`
-  }
-
+function createCanvasMeasurer(_config: Required<CanvasAdapterConfig>): TextMeasurer {
+  // The layout engine operates in cell units (columns x rows), matching the
+  // terminal convention. For monospace fonts, text width = character count
+  // and line height = 1 row.
   return {
-    measureText(text: string, style?: TextMeasureStyle): TextMeasureResult {
-      const ctx = getContext()
-      ctx.font = getFontString(style)
-      const metrics = ctx.measureText(text)
-
-      // Use actual bounding box if available, otherwise estimate
-      const height =
-        metrics.actualBoundingBoxAscent !== undefined && metrics.actualBoundingBoxDescent !== undefined
-          ? metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
-          : (style?.fontSize ?? config.fontSize) * config.lineHeight
-
+    measureText(text: string, _style?: TextMeasureStyle): TextMeasureResult {
+      // For monospace fonts, width is simply the character count (one cell per char)
       return {
-        width: metrics.width,
-        height,
+        width: text.length,
+        height: 1,
       }
     },
 
-    getLineHeight(style?: TextMeasureStyle): number {
-      const fontSize = style?.fontSize ?? config.fontSize
-      return fontSize * config.lineHeight
+    getLineHeight(_style?: TextMeasureStyle): number {
+      return 1
     },
   }
 }
@@ -188,18 +157,31 @@ export class CanvasRenderBuffer implements RenderBuffer {
   private ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D
   private config: Required<CanvasAdapterConfig>
 
+  // Cell-to-pixel conversion factors
+  private readonly charWidth: number
+  private readonly cellHeight: number
+
   constructor(width: number, height: number, config: Required<CanvasAdapterConfig>) {
     this.width = width
     this.height = height
     this.config = config
 
+    // Compute cell dimensions for coordinate conversion.
+    // Width/height are in cell units (cols/rows); drawing converts to pixels.
+    this.charWidth = config.fontSize * 0.6
+    this.cellHeight = config.fontSize * config.lineHeight
+
+    // Canvas pixel dimensions (convert cell units to pixels)
+    const pixelWidth = width * this.charWidth
+    const pixelHeight = height * this.cellHeight
+
     // Use OffscreenCanvas for double buffering
     if (typeof OffscreenCanvas !== "undefined") {
-      this.canvas = new OffscreenCanvas(width, height)
+      this.canvas = new OffscreenCanvas(pixelWidth, pixelHeight)
     } else if (typeof document !== "undefined") {
       this.canvas = document.createElement("canvas")
-      this.canvas.width = width
-      this.canvas.height = height
+      this.canvas.width = pixelWidth
+      this.canvas.height = pixelHeight
     } else {
       throw new Error("Canvas not available")
     }
@@ -210,17 +192,26 @@ export class CanvasRenderBuffer implements RenderBuffer {
 
     // Initialize with background
     this.ctx.fillStyle = config.backgroundColor
-    this.ctx.fillRect(0, 0, width, height)
+    this.ctx.fillRect(0, 0, pixelWidth, pixelHeight)
   }
 
   fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void {
     if (style.bg) {
+      // Convert cell coordinates to pixel coordinates
+      const px = x * this.charWidth
+      const py = y * this.cellHeight
+      const pw = width * this.charWidth
+      const ph = height * this.cellHeight
       this.ctx.fillStyle = resolveColor(style.bg, this.config.backgroundColor)
-      this.ctx.fillRect(x, y, width, height)
+      this.ctx.fillRect(px, py, pw, ph)
     }
   }
 
   drawText(x: number, y: number, text: string, style: RenderStyle): void {
+    // Convert cell coordinates to pixel coordinates
+    const px = x * this.charWidth
+    const py = y * this.cellHeight
+
     const attrs = style.attrs ?? {}
 
     // Build font string
@@ -233,33 +224,37 @@ export class CanvasRenderBuffer implements RenderBuffer {
     this.ctx.textBaseline = "top"
 
     // Draw text
-    this.ctx.fillText(text, x, y)
+    this.ctx.fillText(text, px, py)
 
     // Handle underline
     if (attrs.underline) {
-      this.drawUnderline(x, y, text, style)
+      this.drawUnderline(px, py, text, style)
     }
 
     // Handle strikethrough
     if (attrs.strikethrough) {
       const metrics = this.ctx.measureText(text)
       const textWidth = metrics.width
-      const strikeY = y + this.config.fontSize * 0.5
+      const strikeY = py + this.config.fontSize * 0.5
 
       this.ctx.strokeStyle = resolveColor(style.fg, this.config.foregroundColor)
       this.ctx.lineWidth = 1
       this.ctx.beginPath()
-      this.ctx.moveTo(x, strikeY)
-      this.ctx.lineTo(x + textWidth, strikeY)
+      this.ctx.moveTo(px, strikeY)
+      this.ctx.lineTo(px + textWidth, strikeY)
       this.ctx.stroke()
     }
   }
 
-  private drawUnderline(x: number, y: number, text: string, style: RenderStyle): void {
+  /**
+   * Draw underline decorations at pixel coordinates.
+   * Note: px, py are already in pixel coordinates.
+   */
+  private drawUnderline(px: number, py: number, text: string, style: RenderStyle): void {
     const attrs = style.attrs ?? {}
     const metrics = this.ctx.measureText(text)
     const textWidth = metrics.width
-    const underlineY = y + this.config.fontSize * 0.9
+    const underlineY = py + this.config.fontSize * 0.9
 
     const underlineColor = resolveColor(attrs.underlineColor ?? style.fg, this.config.foregroundColor)
 
@@ -272,25 +267,25 @@ export class CanvasRenderBuffer implements RenderBuffer {
       case "double":
         // Two parallel lines
         this.ctx.beginPath()
-        this.ctx.moveTo(x, underlineY - 1)
-        this.ctx.lineTo(x + textWidth, underlineY - 1)
-        this.ctx.moveTo(x, underlineY + 1)
-        this.ctx.lineTo(x + textWidth, underlineY + 1)
+        this.ctx.moveTo(px, underlineY - 1)
+        this.ctx.lineTo(px + textWidth, underlineY - 1)
+        this.ctx.moveTo(px, underlineY + 1)
+        this.ctx.lineTo(px + textWidth, underlineY + 1)
         this.ctx.stroke()
         break
 
       case "curly":
         // Wavy line using bezier curves
         this.ctx.beginPath()
-        this.ctx.moveTo(x, underlineY)
+        this.ctx.moveTo(px, underlineY)
         const waveLength = 4
         const amplitude = 2
         for (let wx = 0; wx < textWidth; wx += waveLength * 2) {
-          this.ctx.quadraticCurveTo(x + wx + waveLength / 2, underlineY - amplitude, x + wx + waveLength, underlineY)
+          this.ctx.quadraticCurveTo(px + wx + waveLength / 2, underlineY - amplitude, px + wx + waveLength, underlineY)
           this.ctx.quadraticCurveTo(
-            x + wx + (waveLength * 3) / 2,
+            px + wx + (waveLength * 3) / 2,
             underlineY + amplitude,
-            x + wx + waveLength * 2,
+            px + wx + waveLength * 2,
             underlineY,
           )
         }
@@ -300,8 +295,8 @@ export class CanvasRenderBuffer implements RenderBuffer {
       case "dotted":
         this.ctx.setLineDash([2, 2])
         this.ctx.beginPath()
-        this.ctx.moveTo(x, underlineY)
-        this.ctx.lineTo(x + textWidth, underlineY)
+        this.ctx.moveTo(px, underlineY)
+        this.ctx.lineTo(px + textWidth, underlineY)
         this.ctx.stroke()
         this.ctx.setLineDash([])
         break
@@ -309,16 +304,16 @@ export class CanvasRenderBuffer implements RenderBuffer {
       case "dashed":
         this.ctx.setLineDash([4, 2])
         this.ctx.beginPath()
-        this.ctx.moveTo(x, underlineY)
-        this.ctx.lineTo(x + textWidth, underlineY)
+        this.ctx.moveTo(px, underlineY)
+        this.ctx.lineTo(px + textWidth, underlineY)
         this.ctx.stroke()
         this.ctx.setLineDash([])
         break
 
       default: // 'single'
         this.ctx.beginPath()
-        this.ctx.moveTo(x, underlineY)
-        this.ctx.lineTo(x + textWidth, underlineY)
+        this.ctx.moveTo(px, underlineY)
+        this.ctx.lineTo(px + textWidth, underlineY)
         this.ctx.stroke()
     }
   }

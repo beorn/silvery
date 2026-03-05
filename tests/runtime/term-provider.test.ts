@@ -175,6 +175,145 @@ describe("createTermProvider()", () => {
     })
   })
 
+  describe("cross-chunk SGR mouse sequences", () => {
+    it("reassembles SGR mouse sequence split across two data events", async () => {
+      const { stdin, stdout } = createMockStreams()
+      const term = createTermProvider(stdin, stdout)
+
+      const events: { type: string; data: unknown }[] = []
+      const iterator = term.events()[Symbol.asyncIterator]()
+
+      // Collect events asynchronously
+      const collectPromise = (async () => {
+        while (true) {
+          const result = await iterator.next()
+          if (result.done) break
+          events.push(result.value as { type: string; data: unknown })
+          // Stop after we get enough events for our test
+          if (events.length >= 1) break
+        }
+      })()
+
+      // SGR mouse press at col 58, row 8: \x1b[<0;58;8M
+      // Split across two chunks: first chunk has incomplete CSI, second has the terminator
+      await new Promise((r) => setTimeout(r, 10))
+      stdin.emit("data", "\x1b[<0;58;8")
+      await new Promise((r) => setTimeout(r, 5))
+      stdin.emit("data", "M")
+
+      await collectPromise
+
+      // Should produce a single mouse event, not key events with fragments
+      expect(events).toHaveLength(1)
+      expect(events[0]!.type).toBe("mouse")
+      expect(events[0]!.data).toMatchObject({
+        button: 0,
+        x: 57, // 58 - 1 (1-indexed to 0-indexed)
+        y: 7, // 8 - 1
+        action: "down",
+      })
+
+      term[Symbol.dispose]()
+    })
+
+    it("reassembles SGR mouse release split across chunks", async () => {
+      const { stdin, stdout } = createMockStreams()
+      const term = createTermProvider(stdin, stdout)
+
+      const events: { type: string; data: unknown }[] = []
+      const iterator = term.events()[Symbol.asyncIterator]()
+
+      const collectPromise = (async () => {
+        while (true) {
+          const result = await iterator.next()
+          if (result.done) break
+          events.push(result.value as { type: string; data: unknown })
+          if (events.length >= 1) break
+        }
+      })()
+
+      // SGR mouse release: \x1b[<0;58;8m (lowercase m = release)
+      // Split so the 'm' terminator is in the second chunk
+      await new Promise((r) => setTimeout(r, 10))
+      stdin.emit("data", "\x1b[<0;58;")
+      await new Promise((r) => setTimeout(r, 5))
+      stdin.emit("data", "8m")
+
+      await collectPromise
+
+      expect(events).toHaveLength(1)
+      expect(events[0]!.type).toBe("mouse")
+      expect(events[0]!.data).toMatchObject({
+        button: 0,
+        x: 57,
+        y: 7,
+        action: "up",
+      })
+
+      term[Symbol.dispose]()
+    })
+
+    it("handles normal key after reassembled mouse sequence", async () => {
+      const { stdin, stdout } = createMockStreams()
+      const term = createTermProvider(stdin, stdout)
+
+      const events: { type: string; data: unknown }[] = []
+      const iterator = term.events()[Symbol.asyncIterator]()
+
+      const collectPromise = (async () => {
+        while (true) {
+          const result = await iterator.next()
+          if (result.done) break
+          events.push(result.value as { type: string; data: unknown })
+          if (events.length >= 2) break
+        }
+      })()
+
+      // Split mouse sequence, then a normal key in the same second chunk
+      await new Promise((r) => setTimeout(r, 10))
+      stdin.emit("data", "\x1b[<0;10;5")
+      await new Promise((r) => setTimeout(r, 5))
+      stdin.emit("data", "Ma") // 'M' terminates mouse, 'a' is a normal key
+
+      await collectPromise
+
+      expect(events).toHaveLength(2)
+      expect(events[0]!.type).toBe("mouse")
+      expect(events[1]!.type).toBe("key")
+      expect(events[1]!.data).toMatchObject({ input: "a" })
+
+      term[Symbol.dispose]()
+    })
+
+    it("does not buffer complete CSI sequences", async () => {
+      const { stdin, stdout } = createMockStreams()
+      const term = createTermProvider(stdin, stdout)
+
+      const events: { type: string; data: unknown }[] = []
+      const iterator = term.events()[Symbol.asyncIterator]()
+
+      const collectPromise = (async () => {
+        while (true) {
+          const result = await iterator.next()
+          if (result.done) break
+          events.push(result.value as { type: string; data: unknown })
+          if (events.length >= 1) break
+        }
+      })()
+
+      // Complete mouse sequence in a single chunk should work normally
+      await new Promise((r) => setTimeout(r, 10))
+      stdin.emit("data", "\x1b[<0;58;8M")
+
+      await collectPromise
+
+      expect(events).toHaveLength(1)
+      expect(events[0]!.type).toBe("mouse")
+
+      term[Symbol.dispose]()
+    })
+  })
+
   describe("cleanup", () => {
     it("dispose is idempotent", () => {
       const { stdin, stdout } = createMockStreams()

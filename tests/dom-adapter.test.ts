@@ -56,10 +56,10 @@ describe("DOM Adapter (no DOM required)", () => {
     expect(chars.vertical).toBe("│")
   })
 
-  test("line height is based on font size", () => {
+  test("line height is 1 cell row (cell units for layout engine)", () => {
     const adapter = createDOMAdapter({ fontSize: 14, lineHeight: 1.2 })
     const lineHeight = adapter.measurer.getLineHeight()
-    expect(lineHeight).toBeCloseTo(16.8, 1)
+    expect(lineHeight).toBe(1)
   })
 
   describe("DOMRenderBuffer", () => {

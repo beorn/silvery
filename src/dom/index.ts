@@ -121,13 +121,23 @@ export function renderToDOM(
 
   initDOMRenderer(adapterConfig)
 
-  const width = options.width ?? (container.clientWidth || 800)
-  const height = options.height ?? (container.clientHeight || 600)
+  const pixelWidth = options.width ?? (container.clientWidth || 800)
+  const pixelHeight = options.height ?? (container.clientHeight || 600)
+
+  // Convert pixel dimensions to cell dimensions for the layout engine.
+  // The layout engine operates in cell units (columns x rows), not pixels.
+  // We estimate cell size from font metrics: charWidth ~ fontSize * 0.6, lineHeight ~ fontSize * lineHeight.
+  const fontSize = adapterConfig.fontSize ?? 14
+  const lineHeightMultiplier = adapterConfig.lineHeight ?? 1.2
+  const charWidth = fontSize * 0.6
+  const lineHeight = fontSize * lineHeightMultiplier
+  const cols = Math.floor(pixelWidth / charWidth)
+  const rows = Math.floor(pixelHeight / lineHeight)
 
   const base = createBrowserRenderer<DOMRenderBuffer>(
     element,
-    width,
-    height,
+    cols,
+    rows,
     (buffer) => {
       buffer.setContainer(container)
       buffer.render()
@@ -163,7 +173,15 @@ export function renderDOMOnce(
 ): string {
   initDOMRenderer(options)
 
-  const buffer = renderOnce<DOMRenderBuffer>(element, width, height)
+  // Convert pixel dimensions to cell dimensions for the layout engine
+  const fontSize = options.fontSize ?? 14
+  const lineHeightMultiplier = options.lineHeight ?? 1.2
+  const charWidth = fontSize * 0.6
+  const lineHeight = fontSize * lineHeightMultiplier
+  const cols = Math.floor(width / charWidth)
+  const rows = Math.floor(height / lineHeight)
+
+  const buffer = renderOnce<DOMRenderBuffer>(element, cols, rows)
 
   if (typeof document !== "undefined") {
     const tempContainer = document.createElement("div")

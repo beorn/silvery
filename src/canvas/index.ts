@@ -105,14 +105,23 @@ export function renderToCanvas(
 ): CanvasInstance {
   initCanvasRenderer(options)
 
-  const width = options.width ?? canvas.width
-  const height = options.height ?? canvas.height
+  const pixelWidth = options.width ?? canvas.width
+  const pixelHeight = options.height ?? canvas.height
 
   // Ensure canvas dimensions match
-  if (canvas.width !== width) canvas.width = width
-  if (canvas.height !== height) canvas.height = height
+  if (canvas.width !== pixelWidth) canvas.width = pixelWidth
+  if (canvas.height !== pixelHeight) canvas.height = pixelHeight
 
-  return createBrowserRenderer<CanvasRenderBuffer>(element, width, height, (buffer) => {
+  // Convert pixel dimensions to cell dimensions for the layout engine.
+  // The layout engine operates in cell units (columns x rows), not pixels.
+  const fontSize = options.fontSize ?? 14
+  const lineHeightMultiplier = options.lineHeight ?? 1.2
+  const charWidth = fontSize * 0.6
+  const lineHeight = fontSize * lineHeightMultiplier
+  const cols = Math.floor(pixelWidth / charWidth)
+  const rows = Math.floor(pixelHeight / lineHeight)
+
+  return createBrowserRenderer<CanvasRenderBuffer>(element, cols, rows, (buffer) => {
     const ctx = canvas.getContext("2d")
     if (ctx) {
       ctx.drawImage(buffer.canvas, 0, 0)
@@ -137,5 +146,14 @@ export function renderCanvasOnce(
   options: CanvasAdapterConfig = {},
 ): CanvasRenderBuffer {
   initCanvasRenderer(options)
-  return renderOnce<CanvasRenderBuffer>(element, width, height)
+
+  // Convert pixel dimensions to cell dimensions for the layout engine
+  const fontSize = options.fontSize ?? 14
+  const lineHeightMultiplier = options.lineHeight ?? 1.2
+  const charWidth = fontSize * 0.6
+  const lineHeight = fontSize * lineHeightMultiplier
+  const cols = Math.floor(width / charWidth)
+  const rows = Math.floor(height / lineHeight)
+
+  return renderOnce<CanvasRenderBuffer>(element, cols, rows)
 }

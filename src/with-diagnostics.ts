@@ -4,7 +4,7 @@
  * Wraps the `cmd` object to check invariants after command execution:
  * - All commands: Check incremental vs fresh render
  * - Cursor moves: Also check buffer content stability
- * - Optional: ANSI replay verification (simulates terminal receiving diff)
+ * - Optional: ANSI replay verification (characters AND SGR styles)
  *
  * ## Design Note: Why wrap `cmd` instead of `sendInput`?
  *
@@ -42,7 +42,7 @@
 
 import { mkdir } from "node:fs/promises"
 import { join } from "node:path"
-import type { TerminalBuffer } from "./buffer.js"
+import { type Color, type TerminalBuffer, colorEquals } from "./buffer.js"
 import { outputPhase } from "./pipeline/index.js"
 import { compareBuffers, formatMismatch } from "./testing/compare-buffers.js"
 import type { BoxProps, InkxNode } from "./types.js"
@@ -79,13 +79,39 @@ interface TextMismatch {
 }
 
 /**
- * ANSI replay mismatch
+ * ANSI replay mismatch (character content)
  */
 interface ReplayMismatch {
   x: number
   y: number
   expected: string
   actual: string
+}
+
+/**
+ * SGR style attributes tracked per cell in the virtual terminal.
+ */
+interface VTermStyle {
+  fg: number | { r: number; g: number; b: number } | null
+  bg: number | { r: number; g: number; b: number } | null
+  bold: boolean
+  dim: boolean
+  italic: boolean
+  underline: boolean
+  blink: boolean
+  inverse: boolean
+  hidden: boolean
+  strikethrough: boolean
+}
+
+/**
+ * ANSI replay style mismatch
+ */
+interface StyleMismatch {
+  x: number
+  y: number
+  char: string
+  diffs: string[]
 }
 
 // =============================================================================
@@ -95,7 +121,8 @@ interface ReplayMismatch {
 /**
  * Virtual terminal simulator for testing ANSI replay equivalence.
  *
- * Parses ANSI sequences and applies them to a 2D character grid.
+ * Parses ANSI sequences and applies them to a 2D grid tracking both
+ * character content and SGR style attributes (fg, bg, bold, italic, etc.).
  * Used to verify the Replay Equivalence invariant: applying the ANSI
  * diff to the previous buffer state should produce the target buffer.
  *
@@ -104,10 +131,13 @@ interface ReplayMismatch {
  * - Line clear (K)
  * - Wide characters (emojis, CJK)
  * - CR/LF
+ * - SGR style sequences (m) — fg/bg colors, text attributes
  */
 export class VirtualTerminal {
   private grid: string[][]
   private wideMarker: boolean[][]
+  private styles: VTermStyle[][]
+  private sgr: VTermStyle
   private cursorX = 0
   private cursorY = 0
 
@@ -117,10 +147,13 @@ export class VirtualTerminal {
   ) {
     this.grid = Array.from({ length: height }, () => Array(width).fill(" "))
     this.wideMarker = Array.from({ length: height }, () => Array(width).fill(false))
+    this.styles = Array.from({ length: height }, () => Array.from({ length: width }, () => createDefaultVTermStyle()))
+    this.sgr = createDefaultVTermStyle()
   }
 
   /**
    * Initialize grid from a TerminalBuffer (for incremental replay).
+   * Loads both character content and style attributes.
    */
   loadFromBuffer(buffer: TerminalBuffer): void {
     for (let y = 0; y < Math.min(this.height, buffer.height); y++) {
@@ -128,9 +161,25 @@ export class VirtualTerminal {
         if (buffer.isCellContinuation(x, y)) {
           this.wideMarker[y]![x] = true
           this.grid[y]![x] = ""
+          // Continuation cells have default style
+          this.styles[y]![x] = createDefaultVTermStyle()
         } else {
           this.grid[y]![x] = buffer.getCellChar(x, y)
           this.wideMarker[y]![x] = false
+          // Load style from buffer cell
+          const cell = buffer.getCell(x, y)
+          this.styles[y]![x] = {
+            fg: cell.fg,
+            bg: cell.bg,
+            bold: !!cell.attrs.bold,
+            dim: !!cell.attrs.dim,
+            italic: !!cell.attrs.italic,
+            underline: !!cell.attrs.underline || !!cell.attrs.underlineStyle,
+            blink: !!cell.attrs.blink,
+            inverse: !!cell.attrs.inverse,
+            hidden: !!cell.attrs.hidden,
+            strikethrough: !!cell.attrs.strikethrough,
+          }
         }
       }
     }
@@ -168,12 +217,16 @@ export class VirtualTerminal {
       if (this.cursorX < this.width && this.cursorY < this.height) {
         this.grid[this.cursorY]![this.cursorX] = char
         this.wideMarker[this.cursorY]![this.cursorX] = false
+        // Apply current SGR state to the cell
+        this.styles[this.cursorY]![this.cursorX] = { ...this.sgr }
         this.cursorX++
 
         // Wide characters take 2 columns
         if (this.isWideChar(char) && this.cursorX < this.width) {
           this.grid[this.cursorY]![this.cursorX] = ""
           this.wideMarker[this.cursorY]![this.cursorX] = true
+          // Continuation cell gets default style
+          this.styles[this.cursorY]![this.cursorX] = createDefaultVTermStyle()
           this.cursorX++
         }
       }
@@ -261,29 +314,158 @@ export class VirtualTerminal {
       }
       case "K": {
         const mode = Number.parseInt(params || "0", 10)
+        // Erase in Line: fills cleared cells with current bg (per ECMA-48)
         if (mode === 0) {
           for (let x = this.cursorX; x < this.width; x++) {
             this.grid[this.cursorY]![x] = " "
             this.wideMarker[this.cursorY]![x] = false
+            this.styles[this.cursorY]![x] = {
+              ...createDefaultVTermStyle(),
+              bg: this.sgr.bg,
+            }
           }
         } else if (mode === 1) {
           for (let x = 0; x <= this.cursorX; x++) {
             this.grid[this.cursorY]![x] = " "
             this.wideMarker[this.cursorY]![x] = false
+            this.styles[this.cursorY]![x] = {
+              ...createDefaultVTermStyle(),
+              bg: this.sgr.bg,
+            }
           }
         } else if (mode === 2) {
           for (let x = 0; x < this.width; x++) {
             this.grid[this.cursorY]![x] = " "
             this.wideMarker[this.cursorY]![x] = false
+            this.styles[this.cursorY]![x] = {
+              ...createDefaultVTermStyle(),
+              bg: this.sgr.bg,
+            }
           }
         }
         break
       }
       case "m":
+        // SGR (Select Graphic Rendition) — apply style changes
+        this.applySgr(params)
+        break
       case "l":
       case "h":
-        // SGR (style) and private modes - ignore for character comparison
+        // Private modes — ignore for replay
         break
+    }
+  }
+
+  /**
+   * Apply SGR parameters to the current style state.
+   * Parses the semicolon-separated parameter string and updates this.sgr.
+   */
+  private applySgr(params: string): void {
+    if (params === "" || params === "0") {
+      // Reset all attributes
+      Object.assign(this.sgr, createDefaultVTermStyle())
+      return
+    }
+
+    const parts = params.split(";")
+    let i = 0
+    while (i < parts.length) {
+      const code = parts[i]!
+      // Handle subparameters (e.g., "4:3" for curly underline)
+      const colonIdx = code.indexOf(":")
+      if (colonIdx >= 0) {
+        const mainCode = Number.parseInt(code.substring(0, colonIdx), 10)
+        if (mainCode === 4) {
+          const sub = Number.parseInt(code.substring(colonIdx + 1), 10)
+          this.sgr.underline = sub > 0
+        }
+        i++
+        continue
+      }
+
+      const n = Number.parseInt(code, 10)
+      if (n === 0) {
+        Object.assign(this.sgr, createDefaultVTermStyle())
+      } else if (n === 1) {
+        this.sgr.bold = true
+      } else if (n === 2) {
+        this.sgr.dim = true
+      } else if (n === 3) {
+        this.sgr.italic = true
+      } else if (n === 4) {
+        this.sgr.underline = true
+      } else if (n === 5 || n === 6) {
+        this.sgr.blink = true
+      } else if (n === 7) {
+        this.sgr.inverse = true
+      } else if (n === 8) {
+        this.sgr.hidden = true
+      } else if (n === 9) {
+        this.sgr.strikethrough = true
+      } else if (n === 22) {
+        this.sgr.bold = false
+        this.sgr.dim = false
+      } else if (n === 23) {
+        this.sgr.italic = false
+      } else if (n === 24) {
+        this.sgr.underline = false
+      } else if (n === 25) {
+        this.sgr.blink = false
+      } else if (n === 27) {
+        this.sgr.inverse = false
+      } else if (n === 28) {
+        this.sgr.hidden = false
+      } else if (n === 29) {
+        this.sgr.strikethrough = false
+      } else if (n >= 30 && n <= 37) {
+        // Standard foreground colors (0-7)
+        this.sgr.fg = n - 30
+      } else if (n === 38) {
+        // Extended foreground color
+        if (i + 1 < parts.length && parts[i + 1] === "5" && i + 2 < parts.length) {
+          // 256-color: \x1b[38;5;Nm
+          this.sgr.fg = Number.parseInt(parts[i + 2]!, 10)
+          i += 2
+        } else if (i + 1 < parts.length && parts[i + 1] === "2" && i + 4 < parts.length) {
+          // True color: \x1b[38;2;R;G;Bm
+          this.sgr.fg = {
+            r: Number.parseInt(parts[i + 2]!, 10),
+            g: Number.parseInt(parts[i + 3]!, 10),
+            b: Number.parseInt(parts[i + 4]!, 10),
+          }
+          i += 4
+        }
+      } else if (n === 39) {
+        this.sgr.fg = null
+      } else if (n >= 40 && n <= 47) {
+        // Standard background colors (0-7)
+        this.sgr.bg = n - 40
+      } else if (n === 48) {
+        // Extended background color
+        if (i + 1 < parts.length && parts[i + 1] === "5" && i + 2 < parts.length) {
+          // 256-color: \x1b[48;5;Nm
+          this.sgr.bg = Number.parseInt(parts[i + 2]!, 10)
+          i += 2
+        } else if (i + 1 < parts.length && parts[i + 1] === "2" && i + 4 < parts.length) {
+          // True color: \x1b[48;2;R;G;Bm
+          this.sgr.bg = {
+            r: Number.parseInt(parts[i + 2]!, 10),
+            g: Number.parseInt(parts[i + 3]!, 10),
+            b: Number.parseInt(parts[i + 4]!, 10),
+          }
+          i += 4
+        }
+      } else if (n === 49) {
+        this.sgr.bg = null
+      } else if (n >= 90 && n <= 97) {
+        // Bright foreground colors (8-15)
+        this.sgr.fg = n - 90 + 8
+      } else if (n >= 100 && n <= 107) {
+        // Bright background colors (8-15)
+        this.sgr.bg = n - 100 + 8
+      }
+      // 58/59 (underline color) not tracked in diagnostic comparison
+      i++
     }
   }
 
@@ -296,7 +478,14 @@ export class VirtualTerminal {
   }
 
   /**
-   * Compare with a TerminalBuffer and return mismatches.
+   * Get the style at a position.
+   */
+  getStyle(x: number, y: number): VTermStyle {
+    return this.styles[y]?.[x] ?? createDefaultVTermStyle()
+  }
+
+  /**
+   * Compare with a TerminalBuffer and return character mismatches.
    */
   compareToBuffer(buffer: TerminalBuffer): ReplayMismatch[] {
     const mismatches: ReplayMismatch[] = []
@@ -313,6 +502,91 @@ export class VirtualTerminal {
     }
     return mismatches
   }
+
+  /**
+   * Compare styles with a TerminalBuffer and return style mismatches.
+   * Checks fg, bg, bold, dim, italic, underline, blink, inverse, hidden, strikethrough.
+   */
+  compareStylesToBuffer(buffer: TerminalBuffer): StyleMismatch[] {
+    const mismatches: StyleMismatch[] = []
+    for (let y = 0; y < Math.min(this.height, buffer.height); y++) {
+      for (let x = 0; x < Math.min(this.width, buffer.width); x++) {
+        if (buffer.isCellContinuation(x, y)) continue
+
+        const cell = buffer.getCell(x, y)
+        const actual = this.getStyle(x, y)
+        const diffs: string[] = []
+
+        // Compare foreground color
+        if (!colorEquals(actual.fg as Color, cell.fg)) {
+          diffs.push(`fg: ${formatVTermColor(actual.fg)} vs ${formatVTermColor(cell.fg)}`)
+        }
+        // Compare background color
+        if (!colorEquals(actual.bg as Color, cell.bg)) {
+          diffs.push(`bg: ${formatVTermColor(actual.bg)} vs ${formatVTermColor(cell.bg)}`)
+        }
+        // Compare text attributes
+        if (actual.bold !== !!cell.attrs.bold) {
+          diffs.push(`bold: ${actual.bold} vs ${!!cell.attrs.bold}`)
+        }
+        if (actual.dim !== !!cell.attrs.dim) {
+          diffs.push(`dim: ${actual.dim} vs ${!!cell.attrs.dim}`)
+        }
+        if (actual.italic !== !!cell.attrs.italic) {
+          diffs.push(`italic: ${actual.italic} vs ${!!cell.attrs.italic}`)
+        }
+        // Underline: buffer can have underline or underlineStyle
+        const expectedUnderline = !!cell.attrs.underline || !!cell.attrs.underlineStyle
+        if (actual.underline !== expectedUnderline) {
+          diffs.push(`underline: ${actual.underline} vs ${expectedUnderline}`)
+        }
+        if (actual.blink !== !!cell.attrs.blink) {
+          diffs.push(`blink: ${actual.blink} vs ${!!cell.attrs.blink}`)
+        }
+        if (actual.inverse !== !!cell.attrs.inverse) {
+          diffs.push(`inverse: ${actual.inverse} vs ${!!cell.attrs.inverse}`)
+        }
+        if (actual.hidden !== !!cell.attrs.hidden) {
+          diffs.push(`hidden: ${actual.hidden} vs ${!!cell.attrs.hidden}`)
+        }
+        if (actual.strikethrough !== !!cell.attrs.strikethrough) {
+          diffs.push(`strikethrough: ${actual.strikethrough} vs ${!!cell.attrs.strikethrough}`)
+        }
+
+        if (diffs.length > 0) {
+          mismatches.push({ x, y, char: cell.char, diffs })
+        }
+      }
+    }
+    return mismatches
+  }
+}
+
+/**
+ * Create a default VTermStyle with all attributes reset to defaults.
+ */
+function createDefaultVTermStyle(): VTermStyle {
+  return {
+    fg: null,
+    bg: null,
+    bold: false,
+    dim: false,
+    italic: false,
+    underline: false,
+    blink: false,
+    inverse: false,
+    hidden: false,
+    strikethrough: false,
+  }
+}
+
+/**
+ * Format a color value for diagnostic display.
+ */
+function formatVTermColor(c: number | { r: number; g: number; b: number } | null): string {
+  if (c === null) return "default"
+  if (typeof c === "number") return `${c}`
+  return `rgb(${c.r},${c.g},${c.b})`
 }
 
 // =============================================================================
@@ -601,7 +875,7 @@ export function withDiagnostics<T extends AppWithCommands>(app: T, options: Diag
             // Apply the ANSI diff
             vterm.applyAnsi(ansiDiff)
 
-            // Compare result to expected buffer
+            // Compare character content
             const mismatches = vterm.compareToBuffer(afterBuffer)
             if (mismatches.length > 0) {
               const first5 = mismatches.slice(0, 5)
@@ -613,6 +887,20 @@ export function withDiagnostics<T extends AppWithCommands>(app: T, options: Diag
                 `INKX_DIAGNOSTIC: ANSI replay mismatch after ${command.id}\n` +
                   `  ${mismatches.length} cells differ:\n${details}` +
                   (mismatches.length > 5 ? `\n  ... and ${mismatches.length - 5} more` : "") +
+                  (screenshotPath ? `\n  Screenshot saved: ${screenshotPath}` : ""),
+              )
+            }
+
+            // Compare SGR styles (fg, bg, bold, italic, underline, etc.)
+            const styleMismatches = vterm.compareStylesToBuffer(afterBuffer)
+            if (styleMismatches.length > 0) {
+              const first5 = styleMismatches.slice(0, 5)
+              const details = first5.map((m) => `  (${m.x},${m.y}) char="${m.char}": ${m.diffs.join(", ")}`).join("\n")
+              const screenshotPath = await captureFailureScreenshot(command.id, "replay-style")
+              throw new Error(
+                `INKX_DIAGNOSTIC: ANSI replay style mismatch after ${command.id}\n` +
+                  `  ${styleMismatches.length} cells have style differences:\n${details}` +
+                  (styleMismatches.length > 5 ? `\n  ... and ${styleMismatches.length - 5} more` : "") +
                   (screenshotPath ? `\n  Screenshot saved: ${screenshotPath}` : ""),
               )
             }

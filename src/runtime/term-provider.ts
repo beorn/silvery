@@ -30,51 +30,73 @@ import type { Dims, Provider, ProviderEvent } from "./types.js"
 // ============================================================================
 
 /**
+ * Result of splitting raw input — includes parsed sequences and any
+ * trailing incomplete CSI sequence that needs cross-chunk buffering.
+ */
+interface SplitResult {
+  /** Fully parsed key/mouse sequences */
+  sequences: string[]
+  /** Incomplete CSI sequence at end of chunk (needs next chunk to complete) */
+  incomplete: string | null
+}
+
+/**
  * Split a raw stdin chunk into individual key sequences.
  *
  * When the OS buffers key repeat events, stdin delivers multiple keystrokes
  * in a single read (e.g., "jjjjj" for held 'j'). parseKey expects one
  * keystroke at a time, so we must split first.
  *
+ * When a CSI sequence (ESC [ ...) ends at the chunk boundary without a
+ * terminator, it is returned as `incomplete` so the caller can buffer it
+ * and prepend to the next chunk. This handles SGR mouse sequences that
+ * split across stdin data events (e.g., '\x1b[<0;58;8' + 'M').
+ *
  * Strategy:
  * - ESC followed by [ or O starts a multi-byte sequence — consume until terminator
  * - ESC alone or ESC + single char is a 2-byte meta sequence
  * - Everything else is a single byte
  */
-function splitRawInput(raw: string): string[] {
-  const result: string[] = []
+function splitRawInput(raw: string): SplitResult {
+  const sequences: string[] = []
   let i = 0
   while (i < raw.length) {
     if (raw[i] === "\x1b") {
       // Escape sequence
       if (i + 1 >= raw.length) {
         // Bare ESC at end
-        result.push("\x1b")
+        sequences.push("\x1b")
         i++
       } else if (raw[i + 1] === "[") {
         // CSI sequence: ESC [ ... <letter or ~>
         let j = i + 2
         while (j < raw.length && !isCSITerminator(raw[j]!)) j++
-        if (j < raw.length) j++ // include terminator
-        result.push(raw.slice(i, j))
-        i = j
+        if (j < raw.length) {
+          j++ // include terminator
+          sequences.push(raw.slice(i, j))
+          i = j
+        } else {
+          // Incomplete CSI — hit end of chunk without finding terminator.
+          // Return it as incomplete so caller can buffer for next chunk.
+          return { sequences, incomplete: raw.slice(i) }
+        }
       } else if (raw[i + 1] === "O") {
         // SS3 sequence: ESC O <letter>
         const end = Math.min(i + 3, raw.length)
-        result.push(raw.slice(i, end))
+        sequences.push(raw.slice(i, end))
         i = end
       } else {
         // Meta key: ESC + char
-        result.push(raw.slice(i, i + 2))
+        sequences.push(raw.slice(i, i + 2))
         i += 2
       }
     } else {
       // Single byte (printable char, ctrl code, etc.)
-      result.push(raw[i]!)
+      sequences.push(raw[i]!)
       i++
     }
   }
-  return result
+  return { sequences, incomplete: null }
 }
 
 /** CSI sequences end with a letter (A-Z, a-z) or ~ */
@@ -204,11 +226,24 @@ export function createTermProvider(
         queue.push({ type: "key", data: { input, key } })
       }
 
+      // Cross-chunk buffer for incomplete CSI sequences.
+      // When an SGR mouse sequence (or other CSI) splits across two stdin
+      // data events, we buffer the incomplete prefix and prepend it to the
+      // next chunk so the sequence can be reassembled.
+      let incompleteCSI: string | null = null
+
       // stdin handler: splits multi-char chunks into individual keystrokes.
       // When the OS buffers key repeat events, stdin delivers "jjjjj" as a
       // single read — splitRawInput breaks it into individual keys for onKey.
       const onChunk = (chunk: string) => {
-        for (const raw of splitRawInput(chunk)) onKey(raw)
+        // Prepend any buffered incomplete CSI from the previous chunk
+        if (incompleteCSI !== null) {
+          chunk = incompleteCSI + chunk
+          incompleteCSI = null
+        }
+        const { sequences, incomplete } = splitRawInput(chunk)
+        for (const raw of sequences) onKey(raw)
+        incompleteCSI = incomplete
         if (eventResolve) {
           const resolve = eventResolve
           eventResolve = null
