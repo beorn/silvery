@@ -13,12 +13,12 @@
     "terminal",
     "underline"
   ],
-  "homepage": "https://github.com/beorn/chalkx#readme",
+  "homepage": "https://github.com/beorn/hightea/tree/main/packages/ansi#readme",
   "license": "MIT",
   "author": "Beorn",
   "repository": {
     "type": "git",
-    "url": "https://github.com/beorn/chalkx.git"
+    "url": "https://github.com/beorn/hightea.git"
   },
   "files": [
     "dist",
