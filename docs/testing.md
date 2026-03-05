@@ -565,7 +565,7 @@ async function recordMetrics() {
 
 ## 5. Test Infrastructure
 
-### 5.1 inkx-testing-library
+### 5.1 @hightea/term/testing
 
 inkx provides a Playwright-inspired testing API with **auto-refreshing locators**:
 

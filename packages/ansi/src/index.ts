@@ -1,5 +1,5 @@
 /**
- * @beorn/chalkx - Terminal Primitives and Extended ANSI Features
+ * @hightea/ansi - Terminal Primitives and Extended ANSI Features
  *
  * Core terminal abstraction with Disposable pattern support plus
  * extended ANSI features not natively supported by chalk:
@@ -10,7 +10,7 @@
  * ## NewWay API (Preferred)
  *
  * ```ts
- * import { createTerm, patchConsole } from '@beorn/chalkx'
+ * import { createTerm, patchConsole } from '@hightea/ansi'
  *
  * // Create term (Disposable)
  * using term = createTerm()
@@ -50,7 +50,7 @@ import type { Term } from "./term.js"
  *
  * @example
  * ```ts
- * import { term } from '@beorn/chalkx'
+ * import { term } from '@hightea/ansi'
  *
  * console.log(term.green('success'))
  * if (term.hasColor()) { ... }

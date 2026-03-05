@@ -5,7 +5,7 @@
  * Run alongside ink-bench.ts for head-to-head comparison via compare.ts.
  *
  * Run:
- *   cd /Users/beorn/Code/pim/km && bun run vendor/beorn-inkx/benchmarks/ink-comparison/run.ts
+ *   cd /Users/beorn/Code/pim/km && bun run vendor/hightea/benchmarks/ink-comparison/run.ts
  */
 
 // Ensure INKX_STRICT is disabled — it adds a fresh render comparison on every render

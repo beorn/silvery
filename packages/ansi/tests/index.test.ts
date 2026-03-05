@@ -1,5 +1,5 @@
 /**
- * Integration tests for @beorn/chalkx
+ * Integration tests for @hightea/ansi
  *
  * Tests the main index exports work correctly together.
  * Detailed unit tests are in separate files:
@@ -40,7 +40,7 @@ import {
   term,
 } from "../src/index.js"
 
-describe("@beorn/chalkx integration", () => {
+describe("@hightea/ansi integration", () => {
   // Save original env values
   const origTerm = process.env.TERM
   const origTermProgram = process.env.TERM_PROGRAM

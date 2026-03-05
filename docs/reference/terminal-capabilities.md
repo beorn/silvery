@@ -174,7 +174,7 @@ This is how Ink handles the same problem.
 ## Creating a Term
 
 ```ts
-import { createTerm } from "chalkx"
+import { createTerm } from "@hightea/ansi"
 
 // Default (process.stdout/stdin) - Disposable
 using term = createTerm()
@@ -218,7 +218,7 @@ term.dispose() // or let `using` handle it
 ### Detect Before Rendering
 
 ```ts
-import { createTerm } from 'chalkx'
+import { createTerm } from '@hightea/ansi'
 import { render, renderString } from '@hightea/term'
 
 using term = createTerm()
@@ -258,7 +258,7 @@ function StatusLine({ status }: { status: string }) {
 ### Console Component
 
 ```tsx
-import { createTerm } from "chalkx"
+import { createTerm } from "@hightea/ansi"
 import { render, Console, Box, Text } from "@hightea/term"
 
 using term = createTerm()
@@ -277,7 +277,7 @@ console.log("This shows in <Console />")
 ### Test Reporter Pattern
 
 ```tsx
-import { createTerm } from "chalkx"
+import { createTerm } from "@hightea/ansi"
 import { render, renderString, Console, Box } from "@hightea/term"
 
 class Reporter {

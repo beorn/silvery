@@ -16,7 +16,7 @@
  * - Brush size via scroll wheel
  * - Clear overlay, toggle modes via keyboard
  *
- * Run: bun vendor/beorn-inkx/examples/kitty/paint.tsx [image.png]
+ * Run: bun vendor/hightea/examples/kitty/paint.tsx [image.png]
  */
 
 import { readFileSync, existsSync, readdirSync } from "node:fs"

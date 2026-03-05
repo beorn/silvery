@@ -2,7 +2,7 @@
  * Bare TextArea Test — single useInput hook, no parent useInput.
  *
  * Tests whether the bug is from two useInput hooks competing.
- * Run: bun vendor/beorn-inkx/examples/interactive/_textarea-bare.tsx
+ * Run: bun vendor/hightea/examples/interactive/_textarea-bare.tsx
  *
  * If chars are STILL eaten → bug is in TextArea or input pipeline
  * If chars are NOT eaten → bug is from two useInput hooks

@@ -87,7 +87,7 @@ These APIs are the 1.0 stability contract. After 1.0, changes to these require a
 - [ ] `npm pack --dry-run` produces a clean tarball
 - [ ] Published on npm as `inkx`
 - [x] MIT license
-- [x] Peer dependencies declared: `react`, `@beorn/flexx` (optional), `yoga-wasm-web` (optional)
+- [x] Peer dependencies declared: `react`, `flexture` (optional), `yoga-wasm-web` (optional)
 
 ### Documentation
 

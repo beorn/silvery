@@ -13,7 +13,7 @@
  * - Protocol auto-detection status display
  * - Adjustable image dimensions with +/- keys
  *
- * Run: bun vendor/beorn-inkx/examples/kitty/image-component.tsx
+ * Run: bun vendor/hightea/examples/kitty/image-component.tsx
  */
 
 import { deflateSync } from "node:zlib"

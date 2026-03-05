@@ -139,7 +139,7 @@ Tests: `tests/scrollback-resize.test.tsx`.
 ### Run Benchmarks
 
 ```bash
-cd vendor/beorn-inkx
+cd vendor/hightea
 bun run bench           # Internal benchmarks
 bun run bench:compare   # Head-to-head inkx vs Ink 6
 ```

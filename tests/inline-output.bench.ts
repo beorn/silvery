@@ -5,8 +5,8 @@
  * - Full render (inlineFullRender): baseline
  * - Incremental render (inlineIncrementalRender): optimized path
  *
- * Run: bun bench vendor/beorn-inkx/tests/inline-output.bench.ts
- * Compare: bun bench vendor/beorn-inkx/tests/inline-output.bench.ts -- --reporter=verbose
+ * Run: bun bench vendor/hightea/tests/inline-output.bench.ts
+ * Compare: bun bench vendor/hightea/tests/inline-output.bench.ts -- --reporter=verbose
  */
 
 import { bench, describe } from "vitest"

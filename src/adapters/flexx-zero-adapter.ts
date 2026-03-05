@@ -2,7 +2,7 @@
  * Flexx Layout Engine Adapter
  *
  * Wraps Flexx to implement the LayoutEngine interface.
- * Uses the default zero-allocation algorithm from @beorn/flexx.
+ * Uses the default zero-allocation algorithm from flexture.
  */
 
 import {

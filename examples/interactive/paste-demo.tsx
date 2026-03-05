@@ -11,7 +11,7 @@
  * - Shows character count and line count of pasted text
  * - Maintains a history of paste events
  *
- * Run: bun vendor/beorn-inkx/examples/interactive/paste-demo.tsx
+ * Run: bun vendor/hightea/examples/interactive/paste-demo.tsx
  */
 
 import React, { useState } from "react"

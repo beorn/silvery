@@ -864,7 +864,7 @@ console.log("This appears in the Console component")
 </Box>
 
 // RIGHT - use bgOverride from chalkx
-import { bgOverride } from "chalkx"
+import { bgOverride } from "@hightea/ansi"
 ;<Box backgroundColor="cyan">
   <Text>{bgOverride(chalk.bgBlack("text"))}</Text>
 </Box>

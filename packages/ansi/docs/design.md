@@ -1,4 +1,4 @@
-# @beorn/chalkx Design Document
+# @hightea/ansi Design Document
 
 ## Overview
 
@@ -35,7 +35,7 @@ Reasons:
 For users who only need ANSI stripping without chalk, we provide:
 
 ```ts
-import { stripAnsi, displayLength, ANSI_REGEX } from "@beorn/chalkx/utils"
+import { stripAnsi, displayLength, ANSI_REGEX } from "@hightea/ansi/utils"
 ```
 
 This export has zero dependencies.
@@ -160,7 +160,7 @@ Where:
 Named exports for all functions:
 
 ```ts
-import { curlyUnderline, hyperlink } from "@beorn/chalkx"
+import { curlyUnderline, hyperlink } from "@hightea/ansi"
 ```
 
 ### 2. Convenience Object
@@ -168,7 +168,7 @@ import { curlyUnderline, hyperlink } from "@beorn/chalkx"
 For users who prefer object-style:
 
 ```ts
-import { chalkX } from "@beorn/chalkx"
+import { chalkX } from "@hightea/ansi"
 chalkX.curlyUnderline("text")
 chalkX.red("text") // chalk methods available too
 ```
@@ -178,7 +178,7 @@ chalkX.red("text") // chalk methods available too
 Single import for everything:
 
 ```ts
-import { chalk, curlyUnderline } from "@beorn/chalkx"
+import { chalk, curlyUnderline } from "@hightea/ansi"
 ```
 
 ### 4. Type Safety

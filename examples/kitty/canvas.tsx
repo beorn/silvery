@@ -11,7 +11,7 @@
  * - Pen and eraser tools
  * - Keyboard shortcuts for color/tool selection
  *
- * Run: bun vendor/beorn-inkx/examples/kitty/terminal-canvas.tsx
+ * Run: bun vendor/hightea/examples/kitty/terminal-canvas.tsx
  */
 
 import { createTerm, enableMouse, disableMouse, parseMouseSequence, isMouseSequence } from "../../src/index.js"

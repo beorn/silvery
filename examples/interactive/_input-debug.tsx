@@ -4,7 +4,7 @@
  * Minimal diagnostic to find where keypresses are lost.
  * Shows every event received by useInput + TextArea side by side.
  *
- * Run: bun vendor/beorn-inkx/examples/interactive/_input-debug.tsx
+ * Run: bun vendor/hightea/examples/interactive/_input-debug.tsx
  */
 
 import React, { useState, useRef } from "react"

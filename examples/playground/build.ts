@@ -16,7 +16,7 @@ const distDir = join(__dirname, "dist")
 await mkdir(distDir, { recursive: true })
 
 // Browser-safe defines for Node.js globals.
-// @beorn/logger and @beorn/chalkx access process.env at module init,
+// decant and @hightea/ansi access process.env at module init,
 // which throws ReferenceError in browsers where `process` is undefined.
 const browserDefines: Record<string, string> = {
   "process.env.NODE_ENV": '"production"',

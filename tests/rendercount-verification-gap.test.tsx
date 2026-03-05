@@ -3,7 +3,7 @@ import { describe, test, expect } from "vitest"
 /**
  * INKX _renderCount Verification Gap Bug Documentation
  *
- * This test documents a critical bug in vendor/beorn-inkx/src/runtime/create-app.tsx
+ * This test documents a critical bug in vendor/hightea/src/runtime/create-app.tsx
  * where INKX_STRICT incremental rendering verification was never triggered for
  * single-doRender events (which is most navigation).
  *

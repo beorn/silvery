@@ -5,7 +5,7 @@
  * Must run in a SEPARATE process from run.ts since both register React reconcilers.
  *
  * Run:
- *   cd /Users/beorn/Code/pim/km && bun run vendor/beorn-inkx/benchmarks/ink-comparison/ink-bench.ts
+ *   cd /Users/beorn/Code/pim/km && bun run vendor/hightea/benchmarks/ink-comparison/ink-bench.ts
  */
 
 import { bench, group, run } from "mitata"

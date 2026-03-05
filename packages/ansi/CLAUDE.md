@@ -11,16 +11,16 @@ Core terminal abstraction with Disposable pattern support plus extended ANSI fea
 
 ```ts
 // Term API (main)
-import { createTerm, patchConsole } from "chalkx"
+import { createTerm, patchConsole } from "@hightea/ansi"
 
 // Types
-import type { Term, StyleChain, PatchedConsole, ColorLevel, ConsoleEntry } from "chalkx"
+import type { Term, StyleChain, PatchedConsole, ColorLevel, ConsoleEntry } from "@hightea/ansi"
 
 // Detection (usually accessed via term instance)
-import { detectColor, detectCursor, detectInput, detectUnicode } from "chalkx"
+import { detectColor, detectCursor, detectInput, detectUnicode } from "@hightea/ansi"
 
 // Utilities
-import { stripAnsi, displayLength, hyperlink, curlyUnderline } from "chalkx"
+import { stripAnsi, displayLength, hyperlink, curlyUnderline } from "@hightea/ansi"
 ```
 
 ## Common Patterns
@@ -28,7 +28,7 @@ import { stripAnsi, displayLength, hyperlink, curlyUnderline } from "chalkx"
 ### Basic Usage
 
 ```ts
-import { createTerm } from "chalkx"
+import { createTerm } from "@hightea/ansi"
 
 // Create term (Disposable)
 using term = createTerm()
@@ -65,7 +65,7 @@ term.writeLine(term.dim("details here"))
 ### Console Patching
 
 ```ts
-import { patchConsole } from "chalkx"
+import { patchConsole } from "@hightea/ansi"
 
 // Patch console - Disposable
 using patched = patchConsole(console)
@@ -100,7 +100,7 @@ using term = createTerm({ stdout: mockStream, stdin: mockStdin })
 ### Extended Underlines
 
 ```ts
-import { curlyUnderline, dottedUnderline, hyperlink } from "chalkx"
+import { curlyUnderline, dottedUnderline, hyperlink } from "@hightea/ansi"
 
 // Wavy underline (spell-check style)
 curlyUnderline("misspelled")
@@ -119,7 +119,7 @@ term.red(curlyUnderline("error"))
 ```ts
 // WRONG - loses color level synchronization
 import chalk from "chalk"
-import { createTerm } from "chalkx"
+import { createTerm } from "@hightea/ansi"
 
 using term = createTerm({ color: null })
 chalk.red("still colored!") // chalk doesn't know about term's color setting
@@ -165,7 +165,7 @@ try {
 ## Type-Safe Colors
 
 ```ts
-import type { Color, AnsiColorName } from "chalkx"
+import type { Color, AnsiColorName } from "@hightea/ansi"
 
 // Color is the union of all supported color formats:
 // AnsiColorName | HexColor | RgbColor | ThemeToken | (string & {})

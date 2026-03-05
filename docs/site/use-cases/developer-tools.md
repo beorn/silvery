@@ -137,7 +137,7 @@ Developer tools need to handle large datasets, complex shortcuts, and automated 
 Install inkx and build your first developer tool:
 
 ```bash
-bun add inkx
+bun add @hightea/term
 ```
 
 Follow the [Getting Started guide](/guide/getting-started) to set up your project, then explore the [Components reference](/guide/components) for the full API.

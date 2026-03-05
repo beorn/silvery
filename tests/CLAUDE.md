@@ -62,10 +62,10 @@ test("scroll offset marks container dirty", async () => {
 ## Ad-Hoc Testing
 
 ```bash
-bun vitest run vendor/beorn-inkx/tests/                    # All inkx tests (~60s)
-bun vitest run vendor/beorn-inkx/tests/buffer.test.ts      # Specific file
-bun vitest run vendor/beorn-inkx/tests/ -t "scroll dirty"  # By test name
-bun vitest run vendor/beorn-inkx/tests/pipeline/           # Pipeline subdirectory
+bun vitest run vendor/hightea/tests/                    # All inkx tests (~60s)
+bun vitest run vendor/hightea/tests/buffer.test.ts      # Specific file
+bun vitest run vendor/hightea/tests/ -t "scroll dirty"  # By test name
+bun vitest run vendor/hightea/tests/pipeline/           # Pipeline subdirectory
 ```
 
 ## Efficiency

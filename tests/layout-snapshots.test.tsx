@@ -5,7 +5,7 @@
  * These catch geometry/rendering drift by locking down the visual output
  * of common card and board structures.
  *
- * Run: bun vitest run vendor/beorn-inkx/tests/layout-snapshots.test.tsx
+ * Run: bun vitest run vendor/hightea/tests/layout-snapshots.test.tsx
  */
 
 import React from "react"

@@ -14,7 +14,7 @@
  * - macOS symbols in the display (⌘ ⌥ ⌃ ⇧ ✦)
  * - Kitty auto-detection on startup
  *
- * Run: bun vendor/beorn-inkx/examples/kitty/key-explorer.tsx
+ * Run: bun vendor/hightea/examples/kitty/key-explorer.tsx
  */
 
 import React, { useState, useRef, useEffect } from "react"

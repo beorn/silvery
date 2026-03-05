@@ -6,7 +6,7 @@
  * a markdown compatibility matrix showing what each terminal supports.
  *
  * Usage:
- *   bun vendor/beorn-inkx/tests/terminal-compat/compat-matrix.ts
+ *   bun vendor/hightea/tests/terminal-compat/compat-matrix.ts
  *
  * Output: Markdown table to stdout
  */
@@ -176,7 +176,7 @@ function generateMarkdown(): string {
   lines.push(`Generated: ${new Date().toISOString().split("T")[0]}`)
   lines.push("")
   lines.push("```")
-  lines.push("bun vendor/beorn-inkx/tests/terminal-compat/compat-matrix.ts")
+  lines.push("bun vendor/hightea/tests/terminal-compat/compat-matrix.ts")
   lines.push("```")
   lines.push("")
 

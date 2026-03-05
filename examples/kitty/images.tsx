@@ -13,8 +13,8 @@
  * - Built-in RGBA test pattern (rainbow + checkerboard)
  * - Pan with arrow keys, zoom with +/-, fit with f
  *
- * Run: bun vendor/beorn-inkx/examples/kitty/image-gallery.tsx [image.png ...]
- *      bun vendor/beorn-inkx/examples/kitty/image-gallery.tsx ~/Pictures/
+ * Run: bun vendor/hightea/examples/kitty/image-gallery.tsx [image.png ...]
+ *      bun vendor/hightea/examples/kitty/image-gallery.tsx ~/Pictures/
  */
 
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs"

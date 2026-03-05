@@ -8,7 +8,7 @@
  *
  * Uses raw PNG encoding with Node's zlib — no external dependencies.
  *
- * Run: bun vendor/beorn-inkx/examples/kitty/generate-samples.ts
+ * Run: bun vendor/hightea/examples/kitty/generate-samples.ts
  */
 
 import { deflateSync } from "node:zlib"

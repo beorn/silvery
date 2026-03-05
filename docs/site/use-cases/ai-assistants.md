@@ -128,7 +128,7 @@ Most TUI frameworks leave you to build chat infrastructure from scratch. inkx pr
 Install inkx and build your first AI assistant:
 
 ```bash
-bun add inkx react @beorn/flexx
+bun add @hightea/term react flexture
 ```
 
 See the [Getting Started guide](/guide/getting-started) for a full walkthrough, or explore the [component reference](/guide/components) for Box, Text, TextInput, VirtualList, and other building blocks.

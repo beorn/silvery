@@ -1,6 +1,6 @@
 # chalkx
 
-[![npm version](https://img.shields.io/npm/v/@beorn/chalkx.svg)](https://www.npmjs.com/package/@beorn/chalkx)
+[![npm version](https://img.shields.io/npm/v/@hightea/ansi.svg)](https://www.npmjs.com/package/@hightea/ansi)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Terminal primitives with capability detection, extended underlines, and hyperlinks.
@@ -8,7 +8,7 @@ Terminal primitives with capability detection, extended underlines, and hyperlin
 ## Quick Start
 
 ```typescript
-import { createTerm } from "@beorn/chalkx"
+import { createTerm } from "@hightea/ansi"
 
 // Create term (Disposable pattern)
 using term = createTerm()
@@ -31,7 +31,7 @@ console.log(`${term.cols}x${term.rows}`)
 ### Console Capture
 
 ```typescript
-import { createTerm, patchConsole } from "@beorn/chalkx"
+import { createTerm, patchConsole } from "@hightea/ansi"
 
 using term = createTerm()
 using patched = patchConsole(console)
@@ -58,7 +58,7 @@ If you're building a TUI app with [inkx](https://github.com/beorn/hightea), impo
 import { render, Box, Text, createTerm, patchConsole } from "@hightea/term"
 
 // Only import from chalkx for extended ANSI features not re-exported
-import { curlyUnderline, hyperlink, bgOverride } from "@beorn/chalkx"
+import { curlyUnderline, hyperlink, bgOverride } from "@hightea/ansi"
 ```
 
 For CLI tools, scripts, or non-inkx projects, import directly from chalkx.
@@ -66,7 +66,7 @@ For CLI tools, scripts, or non-inkx projects, import directly from chalkx.
 ### Default Term for Simple Scripts
 
 ```typescript
-import { term } from "@beorn/chalkx"
+import { term } from "@hightea/ansi"
 
 console.log(term.green("success"))
 console.log(`Terminal size: ${term.cols}x${term.rows}`)
@@ -86,7 +86,7 @@ using term = createTerm({ cursor: false }) // No cursor control
 Beyond the Term API, chalkx provides extended ANSI features not found in any other npm package:
 
 ```typescript
-import { curlyUnderline, hyperlink, chalk } from "@beorn/chalkx"
+import { curlyUnderline, hyperlink, chalk } from "@hightea/ansi"
 
 // Spell-check style wavy underline
 console.log(curlyUnderline("mispelled"))
@@ -108,7 +108,7 @@ import {
   doubleUnderline,
   underlineColor,
   styledUnderline,
-} from "@beorn/chalkx"
+} from "@hightea/ansi"
 
 curlyUnderline("spelling error") // wavy underline
 dottedUnderline("embedded content") // dotted underline
@@ -142,9 +142,9 @@ Unsupported terminals gracefully fall back to regular underlines.
 ## Installation
 
 ```bash
-bun add @beorn/chalkx
+bun add @hightea/ansi
 # or
-npm install @beorn/chalkx
+npm install @hightea/ansi
 ```
 
 ## inkx Background Override
@@ -152,7 +152,7 @@ npm install @beorn/chalkx
 When using chalk with [inkx](https://github.com/beorn/hightea), mixing chalk backgrounds with inkx `backgroundColor` props causes visual artifacts. Use `bgOverride()` to explicitly allow this:
 
 ```tsx
-import { bgOverride, chalk } from "@beorn/chalkx"
+import { bgOverride, chalk } from "@hightea/ansi"
 import { Box, Text } from "@hightea/term"
 ;<Box backgroundColor="cyan">
   <Text>{bgOverride(chalk.bgBlack("text"))}</Text>
@@ -211,10 +211,10 @@ term.red("properly no-color")
 
 ```typescript
 // WRONG - deprecated API
-import chalkX from "@beorn/chalkx"
+import chalkX from "@hightea/ansi"
 
 // RIGHT - use createTerm
-import { createTerm } from "@beorn/chalkx"
+import { createTerm } from "@hightea/ansi"
 using term = createTerm()
 ```
 

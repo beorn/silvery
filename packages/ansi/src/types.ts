@@ -1,5 +1,5 @@
 /**
- * Type definitions for @beorn/chalkx
+ * Type definitions for @hightea/ansi
  */
 
 import type { TerminalCaps } from "./detection.js"

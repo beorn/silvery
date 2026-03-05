@@ -18,7 +18,7 @@ await mkdir(distDir, { recursive: true })
 await mkdir(docsDistDir, { recursive: true })
 
 // Browser-safe defines for Node.js globals.
-// @beorn/logger and @beorn/chalkx access process.env at module init,
+// decant and @hightea/ansi access process.env at module init,
 // which throws ReferenceError in browsers where `process` is undefined.
 const browserDefines: Record<string, string> = {
   "process.env.NODE_ENV": '"production"',
@@ -85,7 +85,7 @@ const nodeStubPlugin: import("bun").BunPlugin = {
 // External: packages not needed in browser builds.
 // yoga-wasm-web is an optional layout engine (WASM, not needed for demos).
 // ws is used by React DevTools connection (not needed in browser).
-// Note: @beorn/flexx IS bundled — all renderers use it for layout via browser-renderer.ts.
+// Note: flexture IS bundled — all renderers use it for layout via browser-renderer.ts.
 const sharedOptions = {
   outdir: distDir,
   target: "browser" as const,

@@ -5,7 +5,7 @@
  * Tests scaling characteristics across component counts, nesting depths,
  * scroll containers, styles, and content patterns.
  *
- * Run: bun bench vendor/beorn-inkx/tests/performance.bench.tsx
+ * Run: bun bench vendor/hightea/tests/performance.bench.tsx
  */
 
 import React from "react"

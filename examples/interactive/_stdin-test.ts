@@ -3,7 +3,7 @@
  * Bare stdin test — no React, no inkx.
  *
  * Tests whether Bun's stdin "readable" events deliver all keypresses.
- * Run in a real terminal (not through a tool): bun vendor/beorn-inkx/examples/interactive/_stdin-test.ts
+ * Run in a real terminal (not through a tool): bun vendor/hightea/examples/interactive/_stdin-test.ts
  *
  * Type characters slowly. Each keypress should appear immediately.
  * Press Ctrl+C to exit.

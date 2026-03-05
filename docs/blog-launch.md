@@ -233,7 +233,7 @@ No real terminal needed. No mock stdout. Configurable dimensions, synchronous as
 ## Getting started
 
 ```bash
-bun add inkx react @beorn/flexx
+bun add @hightea/term react flexture
 ```
 
 ```tsx

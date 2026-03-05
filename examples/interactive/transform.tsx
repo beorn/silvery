@@ -10,7 +10,7 @@
  * - Shows original and transformed text side by side
  * - Uses Transform from inkx components
  *
- * Run: bun vendor/beorn-inkx/examples/interactive/transform.tsx
+ * Run: bun vendor/hightea/examples/interactive/transform.tsx
  */
 
 import React, { useState } from "react"

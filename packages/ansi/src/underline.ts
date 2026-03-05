@@ -46,7 +46,7 @@ export function underline(text: string, style: UnderlineStyle = "single"): strin
  *
  * @example
  * ```ts
- * import { curlyUnderline, chalk } from '@beorn/chalkx';
+ * import { curlyUnderline, chalk } from '@hightea/ansi';
  *
  * console.log(curlyUnderline('misspelled'));
  * console.log(chalk.red(curlyUnderline('error')));
@@ -105,7 +105,7 @@ export function doubleUnderline(text: string): string {
  *
  * @example
  * ```ts
- * import { underlineColor, chalk } from '@beorn/chalkx';
+ * import { underlineColor, chalk } from '@hightea/ansi';
  *
  * // Red underline (text color unchanged)
  * console.log(underlineColor(255, 0, 0, 'warning'));
@@ -134,7 +134,7 @@ export function underlineColor(r: number, g: number, b: number, text: string): s
  *
  * @example
  * ```ts
- * import { styledUnderline, chalk } from '@beorn/chalkx';
+ * import { styledUnderline, chalk } from '@hightea/ansi';
  *
  * // Red curly underline (spell-check style)
  * console.log(styledUnderline('curly', [255, 0, 0], 'misspelled'));

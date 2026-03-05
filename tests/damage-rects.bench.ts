@@ -141,7 +141,7 @@
  *
  * ---
  *
- * Run: bun vitest bench vendor/beorn-inkx/tests/damage-rects.bench.ts
+ * Run: bun vitest bench vendor/hightea/tests/damage-rects.bench.ts
  */
 
 import { bench, describe } from "vitest"

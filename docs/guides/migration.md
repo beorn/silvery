@@ -13,7 +13,7 @@ This guide helps you migrate from Ink to inkx. Most apps require only an import 
 ```bash
 # Replace ink with inkx
 bun remove ink ink-testing-library
-bun add inkx
+bun add @hightea/term
 ```
 
 ### Step 2: Update Imports

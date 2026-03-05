@@ -101,12 +101,12 @@ console.log(chalk.red("error"))
 
 // After (option 1: add features, keep chalk imports)
 import chalk from "chalk"
-import { curlyUnderline } from "@beorn/chalkx"
+import { curlyUnderline } from "@hightea/ansi"
 console.log(chalk.red("error"))
 console.log(curlyUnderline("misspelled"))
 
 // After (option 2: single import)
-import { chalk, curlyUnderline } from "@beorn/chalkx"
+import { chalk, curlyUnderline } from "@hightea/ansi"
 console.log(chalk.red("error"))
 console.log(curlyUnderline("misspelled"))
 ```

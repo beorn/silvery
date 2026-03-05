@@ -8,7 +8,7 @@
  * The test also checks border invariants at each step.
  *
  * Run:
- *   bun vitest run --project vendor vendor/beorn-inkx/tests/scrollback-demo-termless.test.ts
+ *   bun vitest run --project vendor vendor/hightea/tests/scrollback-demo-termless.test.ts
  */
 
 import { writeFileSync, mkdirSync } from "fs"
@@ -70,7 +70,7 @@ describe("scrollback demo visual regression", () => {
 
     // Spawn the demo
     await term.spawn(["bun", "examples/interactive/static-scrollback.tsx", "--fast"], {
-      cwd: "/Users/beorn/Code/pim/km/vendor/beorn-inkx",
+      cwd: "/Users/beorn/Code/pim/km/vendor/hightea",
     })
 
     // Wait for initial render — look for the status bar marker

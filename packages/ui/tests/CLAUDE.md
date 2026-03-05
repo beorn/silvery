@@ -16,7 +16,7 @@
 ## What NOT to Test Here
 
 - Actual terminal rendering / ANSI output — most tests capture/suppress stdout
-- inkx framework internals — that's beorn-inkx
+- inkx framework internals — that's @hightea/term
 - Real async operations — wrappers are tested with resolved promises
 
 ## Patterns
@@ -44,10 +44,10 @@ test("withSpinner resolves with promise result", async () => {
 ## Ad-Hoc Testing
 
 ```bash
-bun vitest run vendor/beorn-inkx-ui/tests/                    # All inkx-ui tests
-bun vitest run vendor/beorn-inkx-ui/tests/spinner.test.ts     # Spinner tests
-bun vitest run vendor/beorn-inkx-ui/tests/select.test.ts      # Select component
-bun vitest run vendor/beorn-inkx-ui/tests/declarative-steps.test.ts  # Steps API
+bun vitest run vendor/hightea/packages/ui/tests/                    # All inkx-ui tests
+bun vitest run vendor/hightea/packages/ui/tests/spinner.test.ts     # Spinner tests
+bun vitest run vendor/hightea/packages/ui/tests/select.test.ts      # Select component
+bun vitest run vendor/hightea/packages/ui/tests/declarative-steps.test.ts  # Steps API
 ```
 
 ## Efficiency

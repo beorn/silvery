@@ -7,7 +7,7 @@ Head-to-head performance comparison between inkx and Ink 6.
 Ink is installed in this directory only (not a dependency of inkx):
 
 ```bash
-cd vendor/beorn-inkx/benchmarks/ink-comparison && bun install
+cd vendor/hightea/benchmarks/ink-comparison && bun install
 ```
 
 ## Running
@@ -16,11 +16,11 @@ cd vendor/beorn-inkx/benchmarks/ink-comparison && bun install
 cd /Users/beorn/Code/pim/km
 
 # Head-to-head comparison (runs both suites, prints comparison table)
-bun run vendor/beorn-inkx/benchmarks/ink-comparison/compare.ts
+bun run vendor/hightea/benchmarks/ink-comparison/compare.ts
 
 # Individual suites
-bun run vendor/beorn-inkx/benchmarks/ink-comparison/run.ts       # inkx only
-bun run vendor/beorn-inkx/benchmarks/ink-comparison/ink-bench.ts  # ink only
+bun run vendor/hightea/benchmarks/ink-comparison/run.ts       # inkx only
+bun run vendor/hightea/benchmarks/ink-comparison/ink-bench.ts  # ink only
 ```
 
 ## Results (Apple M1 Max, Bun 1.3.9)

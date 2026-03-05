@@ -5,10 +5,10 @@
  * React reconciler) and prints a side-by-side comparison table.
  *
  * Run:
- *   cd /Users/beorn/Code/pim/km && bun run vendor/beorn-inkx/benchmarks/ink-comparison/compare.ts
+ *   cd /Users/beorn/Code/pim/km && bun run vendor/hightea/benchmarks/ink-comparison/compare.ts
  *
  * Prerequisites:
- *   cd vendor/beorn-inkx/benchmarks/ink-comparison && bun install
+ *   cd vendor/hightea/benchmarks/ink-comparison && bun install
  */
 
 import { $ } from "bun"

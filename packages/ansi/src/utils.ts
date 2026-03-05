@@ -1,7 +1,7 @@
 /**
  * ANSI string utilities.
  *
- * This module can be imported separately via `@beorn/chalkx/utils`
+ * This module can be imported separately via `@hightea/ansi/utils`
  * for projects that only need ANSI stripping without chalk.
  */
 

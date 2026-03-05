@@ -6,7 +6,7 @@ Interactive browser demo of inkx's Canvas 2D adapter. Renders React components t
 
 ```bash
 # Build the playground bundle
-cd vendor/beorn-inkx
+cd vendor/hightea
 bun run examples/playground/build.ts
 
 # Open in browser

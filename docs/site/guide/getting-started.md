@@ -11,19 +11,19 @@ inkx is a terminal UI framework for React that lets components know their comput
 ::: code-group
 
 ```bash [bun]
-bun add inkx
+bun add @hightea/term
 ```
 
 ```bash [npm]
-npm install inkx
+npm install @hightea/term
 ```
 
 ```bash [yarn]
-yarn add inkx
+yarn add @hightea/term
 ```
 
 ```bash [pnpm]
-pnpm add inkx
+pnpm add @hightea/term
 ```
 
 :::

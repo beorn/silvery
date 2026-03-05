@@ -53,7 +53,7 @@ function App() {
 ## Building Locally
 
 ```bash
-cd vendor/beorn-inkx
+cd vendor/hightea
 bun run examples/web/build.ts
 ```
 

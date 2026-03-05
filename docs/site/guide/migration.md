@@ -9,7 +9,7 @@ inkx is designed as a drop-in replacement for Ink. Most apps require only an imp
 ```bash
 # Replace ink with inkx
 bun remove ink ink-testing-library
-bun add inkx inkx-testing-library
+bun add @hightea/term
 ```
 
 ### Step 2: Update Imports
@@ -19,7 +19,7 @@ bun add inkx inkx-testing-library
 + import { Box, Text, render, useInput, useApp, createTerm } from '@hightea/term';
 
 - import { render } from 'ink-testing-library';
-+ import { render } from 'inkx-testing-library';
++ import { render } from '@hightea/term/testing';
 ```
 
 ### Step 3: Update render() Calls

@@ -77,7 +77,7 @@ features:
 ## Quick Start
 
 ```bash
-bun add inkx react @beorn/flexx
+bun add @hightea/term react flexture
 ```
 
 ```tsx

@@ -6,8 +6,8 @@
  * and reports raw + gzipped sizes in a markdown table.
  *
  * Usage:
- *   bun vendor/beorn-inkx/scripts/measure-bundle.ts
- *   bun vendor/beorn-inkx/scripts/measure-bundle.ts --json   # JSON output
+ *   bun vendor/hightea/scripts/measure-bundle.ts
+ *   bun vendor/hightea/scripts/measure-bundle.ts --json   # JSON output
  */
 
 import { mkdtemp, rm } from "node:fs/promises"
@@ -45,9 +45,9 @@ const EXTERNALS = [
   "react",
   "react-reconciler",
   "react-devtools-core",
-  "@beorn/flexx",
+  "flexture",
   "yoga-wasm-web",
-  "chalkx",
+  "@hightea/ansi",
   "zustand",
   "slice-ansi",
   "string-width",

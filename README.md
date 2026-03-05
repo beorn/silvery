@@ -15,7 +15,7 @@ Ink-compatible but [100x+ faster](docs/deep-dives/performance.md). React 19, eve
 ## Quick Start
 
 ```bash
-bun add inkx react @beorn/flexx
+bun add @hightea/term react flexture
 ```
 
 ```tsx

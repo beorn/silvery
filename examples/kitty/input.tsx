@@ -12,7 +12,7 @@
  * - Event log showing all input events
  * - Kitty auto-detection
  *
- * Run: bun vendor/beorn-inkx/examples/kitty/rich-input.tsx
+ * Run: bun vendor/hightea/examples/kitty/rich-input.tsx
  */
 
 import React, { useState, useRef, useEffect } from "react"

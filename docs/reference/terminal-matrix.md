@@ -142,7 +142,7 @@ const result = await detectKittyFromStdio(process.stdout, process.stdin, 200)
 The compatibility matrix can also be auto-generated from the detection code:
 
 ```bash
-bun vendor/beorn-inkx/tests/terminal-compat/compat-matrix.ts
+bun vendor/hightea/tests/terminal-compat/compat-matrix.ts
 ```
 
 This runs `detectTerminalCaps()` with mocked env vars for each terminal profile and outputs a markdown table.

@@ -264,7 +264,7 @@ describe("scrollback resize", () => {
     })
 
     await term.spawn(["bun", "examples/interactive/static-scrollback.tsx", "--fast"], {
-      cwd: "/Users/beorn/Code/pim/km/vendor/beorn-inkx",
+      cwd: "/Users/beorn/Code/pim/km/vendor/hightea",
     })
 
     // Wait for initial render

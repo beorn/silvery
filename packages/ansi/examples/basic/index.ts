@@ -1,5 +1,5 @@
 /**
- * Basic usage example for @beorn/chalkx
+ * Basic usage example for @hightea/ansi
  *
  * Run with: bun examples/basic/index.ts
  */
@@ -18,7 +18,7 @@ import {
 
 using term = createTerm()
 
-console.log("@beorn/chalkx Basic Example\n")
+console.log("@hightea/ansi Basic Example\n")
 console.log("=".repeat(50))
 
 // Terminal detection

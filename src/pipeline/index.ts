@@ -185,7 +185,7 @@ function executeRenderCore(
   } = opts
   // Dev warning: prevBuffer null after first render means incremental is disabled.
   // Intentional null (INKX_STRICT, static/one-shot) passes skipLayoutNotifications.
-  // console.warn (not @beorn/logger) — must fire regardless of logger config.
+  // console.warn (not decant) — must fire regardless of logger config.
   if (process?.env?.INKX_DEV && prevBuffer === null && root.prevLayout !== null && !skipLayoutNotifications) {
     console.warn(
       "[inkx] executeRender called with prevBuffer=null on frame 2+ — " +

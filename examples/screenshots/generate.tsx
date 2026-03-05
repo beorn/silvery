@@ -5,7 +5,7 @@
  * using bufferToHTML() + Playwright.
  *
  * Usage:
- *   cd vendor/beorn-inkx && bun run examples/screenshots/generate.tsx
+ *   cd vendor/hightea && bun run examples/screenshots/generate.tsx
  *
  * Prerequisites:
  *   bunx playwright install chromium
