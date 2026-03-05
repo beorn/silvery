@@ -1,6 +1,6 @@
 {
   "name": "@hightea/term",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "React rendering where components know their size — terminal, canvas, and DOM targets",
   "keywords": [
     "cli",

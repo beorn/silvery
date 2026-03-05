@@ -1,6 +1,6 @@
 {
   "name": "@hightea/ansi",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Extended chalk with modern terminal features (curly/dotted/dashed underlines, underline color, hyperlinks)",
   "keywords": [
     "ansi",
