@@ -163,9 +163,10 @@ export function renderToXterm(
   let currentBuffer: RenderBuffer | null = null
   let currentElement: ReactElement = element
   let renderScheduled = false
+  let unmounted = false
 
   function scheduleRender(): void {
-    if (renderScheduled) return
+    if (renderScheduled || unmounted) return
     renderScheduled = true
 
     if (typeof requestAnimationFrame !== "undefined") {
@@ -182,6 +183,7 @@ export function renderToXterm(
   }
 
   function doRender(): void {
+    if (unmounted) return
     reconciler.updateContainerSync(currentElement, fiberRoot, null, null)
     reconciler.flushSyncWork()
 
@@ -200,7 +202,11 @@ export function renderToXterm(
   doRender()
 
   const unmount = (): void => {
-    reconciler.updateContainer(null, fiberRoot, null, () => {})
+    unmounted = true
+    // Synchronous unmount ensures useEffect cleanups (e.g. clearInterval) run
+    // before returning, preventing stale renders to the same terminal.
+    reconciler.updateContainerSync(null, fiberRoot, null, null)
+    reconciler.flushSyncWork()
     // Show cursor on unmount
     terminal.write(CURSOR_SHOW)
   }
