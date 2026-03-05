@@ -864,7 +864,15 @@ function createViewerApp(root: HTMLElement): void {
     term.focus()
   }
 
+  let pendingRenderFrame: number | null = null
+
   function renderDemo(demo: DemoEntry): void {
+    // Cancel any pending deferred render from a previous switch
+    if (pendingRenderFrame !== null) {
+      cancelAnimationFrame(pendingRenderFrame)
+      pendingRenderFrame = null
+    }
+
     // Cleanup previous — unmount React tree, then fully reset xterm
     if (currentInstance) {
       currentInstance.unmount()
@@ -872,19 +880,23 @@ function createViewerApp(root: HTMLElement): void {
     }
     // Full reset: clear scrollback + visible buffer, reset terminal state
     term.reset()
-    // Write blank lines to fill visible area (prevents old content bleeding through)
-    const blank = "\r\n".repeat(term.rows)
-    term.write(blank)
-    term.reset()
 
-    if (!demo.component) {
-      term.writeln("\r\n  This example requires a full terminal runtime.")
-      term.writeln(`\r\n  Run: bun run examples/${demo.id}`)
-      return
-    }
+    // Defer new render by one frame — ensures any pending requestAnimationFrame
+    // callbacks from the old demo's render scheduler have fired (and bailed via
+    // their unmounted flag), and any queued xterm.write() calls have been processed.
+    pendingRenderFrame = requestAnimationFrame(() => {
+      pendingRenderFrame = null
+      term.reset() // Clean slate after old async work drained
 
-    fitAddon.fit()
-    currentInstance = renderToXterm(React.createElement(demo.component), term)
+      if (!demo.component) {
+        term.writeln("\r\n  This example requires a full terminal runtime.")
+        term.writeln(`\r\n  Run: bun run examples/${demo.id}`)
+        return
+      }
+
+      fitAddon.fit()
+      currentInstance = renderToXterm(React.createElement(demo.component), term)
+    })
   }
 
   // ─── Copy button ───────────────────────────────────────────────────
