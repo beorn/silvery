@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>inkx Canvas Demo</title>
+    <title>hightea Canvas Demo</title>
     <style>
       * {
         box-sizing: border-box;
@@ -53,24 +53,24 @@
     </style>
   </head>
   <body>
-    <h1>inkx Canvas Adapter</h1>
-    <p>React components rendered to HTML5 Canvas via inkx</p>
+    <h1>hightea Canvas Adapter</h1>
+    <p>React components rendered to HTML5 Canvas via hightea</p>
 
     <canvas id="canvas" width="500" height="300"></canvas>
 
     <div class="info">
       <h3>How it works</h3>
       <ul>
-        <li>React components use <code>&lt;Box&gt;</code> and <code>&lt;Text&gt;</code> from inkx</li>
+        <li>React components use <code>&lt;Box&gt;</code> and <code>&lt;Text&gt;</code> from hightea</li>
         <li><code>useContentRect()</code> returns pixel dimensions during render</li>
-        <li>Layout computed by Flexx (pure JS flexbox)</li>
+        <li>Layout computed by Flexture (pure JS flexbox)</li>
         <li>Rendered to OffscreenCanvas, then drawn to visible canvas</li>
       </ul>
     </div>
 
     <div class="info">
       <h3>Code</h3>
-      <pre><code>import { renderToCanvas, Box, Text, useContentRect } from 'inkx/canvas';
+      <pre><code>import { renderToCanvas, Box, Text, useContentRect } from '@hightea/term/canvas';
 
 function App() {
   const { width, height } = useContentRect();

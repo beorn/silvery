@@ -1,5 +1,7 @@
 # hightea
 
+> **Alpha software — under heavy development.** APIs may change, things may break. Feedback welcome via [GitHub Issues](https://github.com/beorn/hightea/issues).
+
 **TUI framework for modern terminals.**
 Ink-compatible but [100x+ faster](docs/deep-dives/performance.md). React 19, every terminal protocol, pure TypeScript.
 

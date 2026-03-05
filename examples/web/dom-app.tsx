@@ -1,7 +1,7 @@
 /**
  * DOM Adapter Demo
  *
- * Demonstrates inkx rendering React components to DOM elements.
+ * Demonstrates hightea rendering React components to DOM elements.
  * Advantages: text selection, accessibility, CSS integration.
  */
 
@@ -25,7 +25,7 @@ function App() {
       <Box borderStyle="single" borderColor="cyan" padding={1}>
         <Box flexDirection="column">
           <Text bold color="cyan">
-            inkx DOM Rendering
+            hightea DOM Rendering
           </Text>
           <SizeDisplay />
         </Box>

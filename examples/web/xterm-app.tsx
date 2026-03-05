@@ -1,7 +1,7 @@
 /**
  * xterm.js Adapter Demo
  *
- * Demonstrates inkx rendering React components to an xterm.js terminal.
+ * Demonstrates hightea rendering React components to an xterm.js terminal.
  * The terminal adapter produces ANSI escape sequences, xterm.js renders them.
  */
 
@@ -27,7 +27,7 @@ function App() {
       <Box borderStyle="single" borderColor="cyan" padding={1}>
         <Box flexDirection="column">
           <Text bold color="cyan">
-            inkx xterm.js Rendering
+            hightea xterm.js Rendering
           </Text>
           <SizeDisplay />
         </Box>

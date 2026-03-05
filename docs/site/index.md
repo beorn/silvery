@@ -42,6 +42,10 @@ features:
     details: "Pure TypeScript. No WASM, no C++, no memory leaks. Runs on Node, Bun, and Deno."
 ---
 
+<div class="alpha-banner">
+  <strong>Alpha</strong> — under heavy development. APIs may change, things may break. <a href="https://github.com/beorn/hightea/issues">Feedback welcome</a>.
+</div>
+
 ## Explore the Examples
 
 <div class="viewer-wrapper">
@@ -131,5 +135,19 @@ await run(<App />)
 .features-list li {
   margin: 0.35rem 0;
   line-height: 1.5;
+}
+.alpha-banner {
+  margin: -0.5rem auto 2rem;
+  max-width: 640px;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  background: var(--vp-c-warning-soft);
+  color: var(--vp-c-warning-1);
+  font-size: 0.9rem;
+  text-align: center;
+}
+.alpha-banner a {
+  color: var(--vp-c-warning-1);
+  text-decoration: underline;
 }
 </style>

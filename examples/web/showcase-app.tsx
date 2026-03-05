@@ -1,7 +1,7 @@
 /**
  * Showcase Demo Entry Point
  *
- * Renders inkx showcase components in xterm.js for embedding in VitePress docs.
+ * Renders hightea showcase components in xterm.js for embedding in VitePress docs.
  * Usage: showcase.html?demo=dashboard
  */
 
@@ -9,7 +9,7 @@ import React from "react"
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
 import { renderToXterm } from "../../src/xterm/index.js"
-import { SHOWCASES, emitInput, setTermFocused } from "./showcases.js"
+import { SHOWCASES, emitInput, emitMouse, setTermFocused } from "./showcases.js"
 
 // Read demo name from URL params
 const params = new URLSearchParams(window.location.search)
@@ -49,6 +49,29 @@ if (!ShowcaseComponent) {
 
     // Wire keyboard input to showcase components
     term.onData((data) => emitInput(data))
+
+    // Enable mouse tracking (Normal + SGR mode)
+    term.write("\x1b[?1000h\x1b[?1006h")
+
+    // Parse SGR mouse events and forward to emitMouse()
+    term.onBinary((data) => {
+      // SGR mouse format: \x1b[<btn;x;yM (press) or \x1b[<btn;x;ym (release)
+      const str =
+        typeof data === "string"
+          ? data
+          : new TextDecoder().decode(new Uint8Array([...data].map((c) => c.charCodeAt(0))))
+      const match = str.match(/\x1b\[<(\d+);(\d+);(\d+)([Mm])/)
+      if (match) {
+        const btn = parseInt(match[1]!, 10)
+        const x = parseInt(match[2]!, 10) - 1 // 1-indexed to 0-indexed
+        const y = parseInt(match[3]!, 10) - 1
+        const isPress = match[4] === "M"
+        // Only forward press events (button 0=left, 1=middle, 2=right)
+        if (isPress && btn <= 2) {
+          emitMouse(x, y, btn)
+        }
+      }
+    })
 
     // Track terminal focus state for showcase cursor/outline
     term.textarea?.addEventListener("focus", () => setTermFocused(true))

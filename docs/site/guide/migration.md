@@ -1,13 +1,12 @@
 # Migration from Ink
 
-hightea is designed as a drop-in replacement for Ink. Most apps require only an import change.
+hightea is a drop-in replacement for Ink. Change your imports, and your app works.
 
 ## Quick Start
 
 ### Step 1: Install hightea
 
 ```bash
-# Replace ink with hightea
 bun remove ink ink-testing-library
 bun add @hightea/term
 ```
@@ -16,21 +15,23 @@ bun add @hightea/term
 
 ```diff
 - import { Box, Text, render, useInput, useApp } from 'ink';
-+ import { Box, Text, render, useInput, useApp, createTerm } from '@hightea/term';
++ import { Box, Text, render, useInput, useApp } from '@hightea/term';
 
 - import { render } from 'ink-testing-library';
 + import { render } from '@hightea/term/testing';
 ```
 
-### Step 3: Update render() Calls
+That's it. `render(<App />)` works exactly like Ink — no term parameter needed, returns synchronously:
 
-```diff
-- render(<App />);
-+ using term = createTerm();
-+ await render(<App />, term);
+```tsx
+// Ink
+const { unmount, waitUntilExit } = render(<App />)
+
+// hightea — identical
+const { unmount, waitUntilExit } = await render(<App />)
 ```
 
-### Step 4: Run Tests
+### Step 3: Run Tests
 
 ```bash
 bun test
@@ -38,12 +39,36 @@ bun test
 
 Most apps should work at this point.
 
+### Advanced: Explicit Terminal Control
+
+For production apps that need more control, you can create a term explicitly:
+
+```tsx
+import { render, createTerm } from '@hightea/term';
+
+using term = createTerm();
+const { unmount, waitUntilExit } = await render(<App />, term);
+```
+
+**Why use `createTerm()`?**
+
+- **Different contexts**: Swap term configurations for production, testing, or CI (colors, dimensions, capabilities).
+- **Better testing**: Mock terms that capture output, simulate terminal sizes, or disable colors.
+- **Explicit cleanup**: The `using` keyword (TC39 Explicit Resource Management) automatically restores cursor, raw mode, and alternate screen when the scope exits.
+
+Without `createTerm()`, hightea creates a default term internally — matching Ink's behavior exactly.
+
+::: tip Why is render() async?
+`render()` returns a handle synchronously (like Ink), but `await`-ing it waits for layout engine initialization. With Flexture (the default), this is near-instant — just a dynamic `import()`. With Yoga, it's a genuine WASM compilation step. For fully synchronous rendering, use `renderSync()` after initializing the engine manually. Most apps should just `await render(<App />)`.
+:::
+
 ## What Works Identically
 
 These APIs are 100% compatible:
 
 | Category       | APIs                                                                     |
 | -------------- | ------------------------------------------------------------------------ |
+| **Render**     | `render(<App />)` — no term parameter needed                             |
 | **Components** | `<Box>`, `<Text>`, `<Newline>`, `<Spacer>`, `<Static>`                   |
 | **Hooks**      | `useInput()`, `useApp()`, `useStdout()`                                  |
 | **Styling**    | All Chalk styles work unchanged                                          |
@@ -52,26 +77,7 @@ These APIs are 100% compatible:
 
 ## What's Different
 
-### 1. Term-First Rendering (Required)
-
-**Ink**: Render with just the element.
-
-```tsx
-// Ink
-render(<App />)
-```
-
-**hightea**: Create a term first.
-
-```tsx
-// hightea
-using term = createTerm()
-await render(<App />, term)
-```
-
-This enables `useTerm()` in components for terminal capabilities.
-
-### 2. Components Know Their Size (The Big Win)
+### 1. Components Know Their Size (The Big Win)
 
 **Ink**: Must manually thread width props.
 
@@ -96,7 +102,7 @@ function Card() {
 ;<Card />
 ```
 
-### 3. Text Auto-Truncates
+### 2. Text Wraps by Default
 
 **Ink**: Text overflows its container.
 
@@ -108,22 +114,31 @@ function Card() {
 // Output: "This is a very long text" (overflows)
 ```
 
-**hightea**: Text truncates to fit.
+**hightea**: Text wraps to fit its container by default (word-aware wrapping).
 
 ```tsx
-// hightea: Clean truncation
+// hightea: Text wraps to container width
 <Box width={10}>
   <Text>This is a very long text</Text>
 </Box>
-// Output: "This is a..."
-
-// Opt out if needed
-<Text wrap={false}>This overflows intentionally</Text>
+// Output:
+// "This is a"
+// "very long"
+// "text"
 ```
 
-**Migration**: If you rely on overflow, add `wrap={false}`.
+You can also truncate with an ellipsis instead of wrapping:
 
-### 4. First Render Shows Zeros
+```tsx
+// Truncation modes
+<Text wrap="truncate">This is a very long text</Text>      // "This is a…"
+<Text wrap="truncate-start">This is a very long text</Text> // "…long text"
+<Text wrap="truncate-middle">This is a very long text</Text> // "This…text"
+```
+
+**Migration**: If you rely on overflow, add `wrap={false}` to disable both wrapping and truncation.
+
+### 3. First Render Shows Zeros
 
 **Ink**: Components render once with final output.
 
@@ -148,7 +163,7 @@ function Header() {
 }
 ```
 
-### 5. Scrolling Just Works
+### 4. Scrolling Just Works
 
 **Ink**: Manual virtualization with height estimation.
 
@@ -175,7 +190,7 @@ function Header() {
 
 **Migration**: Replace virtualization components with `overflow="scroll"`.
 
-### 6. measureElement() -> useContentRect()
+### 5. measureElement() -> useContentRect()
 
 **Ink**: Use `measureElement()` after render.
 
@@ -192,7 +207,7 @@ const { width } = useContentRect()
 // Automatically re-renders with correct values
 ```
 
-### 7. Hook Naming
+### 6. Hook Naming
 
 **Ink**: `useLayout` (if available)
 
@@ -209,7 +224,7 @@ const { width } = useContentRect()
 
 | Behavior                | Ink       | hightea   | Reason                       |
 | ----------------------- | --------- | --------- | ---------------------------- |
-| Text overflow           | Overflows | Truncates | Better default               |
+| Text overflow           | Overflows | Wraps     | Better default               |
 | First render dimensions | N/A       | Zeros     | Required for layout feedback |
 | Internal APIs           | Exposed   | Hidden    | Not public API               |
 

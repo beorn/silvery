@@ -1,5 +1,5 @@
 /**
- * Context providers for running inkx examples in browser xterm.js
+ * Context providers for running hightea examples in browser xterm.js
  *
  * Wraps components with the same context hierarchy as the real renderer,
  * allowing examples that use useInput, useApp, etc. to work in the viewer.

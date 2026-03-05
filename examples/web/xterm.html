@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>inkx xterm.js Demo</title>
+    <title>hightea xterm.js Demo</title>
     <link rel="stylesheet" href="../../node_modules/@xterm/xterm/css/xterm.css" />
     <style>
       * {
@@ -66,7 +66,7 @@
     </style>
   </head>
   <body>
-    <h1>inkx xterm.js Adapter</h1>
+    <h1>hightea xterm.js Adapter</h1>
     <p>React components rendered to xterm.js via ANSI escape sequences</p>
 
     <div id="terminal"></div>
@@ -77,7 +77,7 @@
         <ul>
           <li>Full ANSI/VT100 escape sequence support</li>
           <li>True terminal rendering in the browser</li>
-          <li>Reuses inkx terminal adapter (same as native TUI)</li>
+          <li>Reuses hightea terminal adapter (same as native TUI)</li>
           <li>Copy/paste, selection, accessibility built-in</li>
           <li>WebGL renderer available for performance</li>
         </ul>
@@ -85,10 +85,10 @@
       <div class="info">
         <h3>How It Works</h3>
         <ul>
-          <li>inkx terminal adapter produces ANSI diff strings</li>
+          <li>hightea terminal adapter produces ANSI diff strings</li>
           <li>xterm.js parses and renders the ANSI sequences</li>
           <li>Same output as a real terminal (Kitty, iTerm, etc.)</li>
-          <li>Layout computed by Flexx (pure JS flexbox)</li>
+          <li>Layout computed by Flexture (pure JS flexbox)</li>
           <li>Incremental updates via buffer diffing</li>
         </ul>
       </div>
@@ -97,7 +97,7 @@
     <div class="info">
       <h3>Code</h3>
       <pre><code>import { Terminal } from "@xterm/xterm";
-import { renderToXterm, Box, Text, useContentRect } from 'inkx/xterm';
+import { renderToXterm, Box, Text, useContentRect } from '@hightea/term/xterm';
 
 function App() {
   const { width, height } = useContentRect();

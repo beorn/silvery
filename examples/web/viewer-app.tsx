@@ -1,5 +1,5 @@
 /**
- * Unified Web Viewer for inkx Examples
+ * Unified Web Viewer for Hightea Examples
  *
  * A DOM app (vanilla TypeScript, no React) that builds chrome around an xterm.js
  * terminal pane. Showcases run via renderToXterm() inside the terminal.
@@ -716,7 +716,7 @@ function createViewerApp(root: HTMLElement): void {
   const header = el(
     "div",
     { className: "vw-header" },
-    el("span", { className: "vw-header-brand" }, "inkx"),
+    el("span", { className: "vw-header-brand" }, "hightea"),
     el("span", { className: "vw-header-title" }, "Interactive Examples"),
     el("span", { className: "vw-header-badge" }, `${allDemos.length} demos`),
   )

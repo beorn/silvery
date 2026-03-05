@@ -20,7 +20,7 @@ bun add @hightea/term
 
 ```diff
 - import { Box, Text, render, useInput, useApp } from 'ink';
-+ import { Box, Text, render, useInput, useApp, createTerm } from '@hightea/term';
++ import { Box, Text, render, useInput, useApp } from '@hightea/term';
 
 - import { render } from 'ink-testing-library';
 + import { createRenderer } from '@hightea/term/testing';
@@ -32,7 +32,26 @@ bun add @hightea/term
 bun test
 ```
 
-Most apps should work at this point. Read on for known differences.
+Most apps should work at this point — `render(<App />)` works without changes. Read on for known differences.
+
+### Optional: Explicit Terminal Control
+
+For production apps, you can create a term explicitly for more control:
+
+```typescript
+import { render, createTerm } from '@hightea/term';
+
+using term = createTerm();
+await render(<App />, term);
+```
+
+**Why use `createTerm()`?**
+
+- **Different term types for different contexts**: production, testing, CI — each can use a different term configuration (colors, dimensions, capabilities).
+- **Better testing**: Create mock terms that capture output, simulate different terminal sizes, or disable colors.
+- **Explicit cleanup**: The `using` keyword (TC39 Explicit Resource Management) automatically cleans up the terminal when the scope exits — restoring cursor, raw mode, and alternate screen.
+
+Without `createTerm()`, hightea creates a default term internally. This is fine for simple apps and matches Ink's API exactly.
 
 ---
 
@@ -80,7 +99,7 @@ function Card() {
 <Card />
 ```
 
-### 2. Text Auto-Truncates by Default
+### 2. Text Wraps by Default
 
 **Ink**: Text overflows its container.
 
@@ -92,22 +111,30 @@ function Card() {
 // Output: "This is a very long text that overflows" (broken layout)
 ```
 
-**hightea**: Text truncates to fit.
+**hightea**: Text wraps to fit its container by default (word-aware wrapping).
 
 ```typescript
-// hightea: Text truncates automatically
+// hightea: Text wraps to container width
 <Box width={10}>
   <Text>This is a very long text that overflows</Text>
 </Box>
-// Output: "This is a…"
-
-// Opt out with wrap={false}
-<Box width={10}>
-  <Text wrap={false}>This overflows intentionally</Text>
-</Box>
+// Output:
+// "This is a"
+// "very long"
+// "text that"
+// "overflows"
 ```
 
-**Migration**: If you rely on overflow behavior, add `wrap={false}`.
+You can also truncate with an ellipsis instead of wrapping:
+
+```typescript
+// Truncation modes
+<Text wrap="truncate">This is a very long text</Text>      // "This is a…"
+<Text wrap="truncate-start">This is a very long text</Text> // "…long text"
+<Text wrap="truncate-middle">This is a very long text</Text> // "This…text"
+```
+
+**Migration**: If you rely on overflow behavior, add `wrap={false}` to disable both wrapping and truncation.
 
 ### 3. First Render May Show Zeros
 
@@ -195,7 +222,7 @@ These behaviors differ by design:
 
 | Behavior                | Ink       | hightea   | Reason                       |
 | ----------------------- | --------- | --------- | ---------------------------- |
-| Text overflow           | Overflows | Truncates | Better default for TUIs      |
+| Text overflow           | Overflows | Wraps     | Better default for TUIs      |
 | First render dimensions | N/A       | Zeros     | Required for layout feedback |
 | Internal APIs           | Exposed   | Hidden    | Not part of public API       |
 

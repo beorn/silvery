@@ -57,6 +57,38 @@ function useInput(handler: InputHandler): void {
 }
 
 // ============================================================================
+// Mouse Event Bus
+// ============================================================================
+
+interface MouseInfo {
+  x: number
+  y: number
+  button: number
+}
+
+type MouseHandler = (info: MouseInfo) => void
+
+const mouseListeners = new Set<MouseHandler>()
+
+/** Called from showcase-app.tsx via term.onBinary() */
+export function emitMouse(x: number, y: number, button: number): void {
+  for (const cb of mouseListeners) cb({ x, y, button })
+}
+
+/** Subscribe to mouse click events */
+function useMouseClick(handler: MouseHandler): void {
+  const ref = useRef(handler)
+  ref.current = handler
+  useEffect(() => {
+    const cb: MouseHandler = (info) => ref.current(info)
+    mouseListeners.add(cb)
+    return () => {
+      mouseListeners.delete(cb)
+    }
+  }, [])
+}
+
+// ============================================================================
 // Focus State — tracks whether the xterm terminal has focus
 // ============================================================================
 
@@ -517,37 +549,84 @@ const EXCHANGE_POOL: Exchange[] = [
 
 let exchangeIdx = 0
 
+const TOOL_ICONS: Record<string, string> = {
+  Read: "📄",
+  Edit: "✏️",
+  Write: "📝",
+  Bash: "⚡",
+}
+
+const TOOL_COLORS: Record<string, string> = {
+  Read: "#89b4fa",
+  Edit: "#f9e2af",
+  Write: "#cba6f7",
+  Bash: "#a6e3a1",
+}
+
+const TOOL_BORDER_COLORS: Record<string, string> = {
+  Read: "#45475a",
+  Edit: "#5a4520",
+  Write: "#3d2a5a",
+  Bash: "#2a4a2a",
+}
+
 function ToolCallBlock({ tc }: { tc: ToolCall }): JSX.Element {
-  const iconColor =
-    tc.tool === "Read" ? "#89b4fa" : tc.tool === "Edit" ? "#f9e2af" : tc.tool === "Write" ? "#cba6f7" : "#a6e3a1"
+  const iconColor = TOOL_COLORS[tc.tool] ?? "#a6adc8"
+  const borderColor = TOOL_BORDER_COLORS[tc.tool] ?? "#45475a"
+  const icon = TOOL_ICONS[tc.tool] ?? ">"
   return (
     <Box flexDirection="column" marginLeft={2}>
-      <Box borderStyle="round" borderColor="#45475a" flexDirection="column" paddingX={1}>
+      <Box borderStyle="round" borderColor={borderColor} flexDirection="column" paddingX={1}>
         <Text>
+          <Text>{icon} </Text>
           <Text bold color={iconColor}>
             {tc.tool}
           </Text>
-          <Text dim color="#6c7086">
-            {" "}
+          <Text color="#6c7086"> </Text>
+          <Text color="#94e2d5" underline>
             {tc.label}
           </Text>
         </Text>
         {tc.lines &&
-          tc.lines.map((line, i) => (
-            <Text key={i} color={line.startsWith("✓") ? "#a6e3a1" : "#a6adc8"}>
-              {line}
-            </Text>
-          ))}
+          tc.lines.map((line, i) => {
+            // Test results
+            if (line.startsWith("✓")) return <Text key={i} color="#a6e3a1">{line}</Text>
+            // Passed count
+            if (line.includes("passed")) return <Text key={i} bold color="#a6e3a1">{line}</Text>
+            // Heap/diagnostic data
+            if (line.includes(":")) {
+              const colonIdx = line.indexOf(":")
+              return (
+                <Text key={i}>
+                  <Text color="#89b4fa">{line.slice(0, colonIdx)}</Text>
+                  <Text color="#a6adc8">{line.slice(colonIdx)}</Text>
+                </Text>
+              )
+            }
+            // Line numbers in source
+            if (/^\s*\d+│/.test(line)) {
+              const match = line.match(/^(\s*\d+│)(.*)$/)
+              if (match) {
+                return (
+                  <Text key={i}>
+                    <Text color="#585b70">{match[1]}</Text>
+                    <Text color="#cdd6f4">{match[2]}</Text>
+                  </Text>
+                )
+              }
+            }
+            return <Text key={i} color="#a6adc8">{line}</Text>
+          })}
         {tc.diff &&
           tc.diff.map((d, i) => (
             <Box key={i} flexDirection="column">
-              <Text color="#f38ba8">
-                {"- "}
-                {d.del}
+              <Text>
+                <Text bold color="#f38ba8">- </Text>
+                <Text color="#f38ba8" strikethrough>{d.del}</Text>
               </Text>
-              <Text color="#a6e3a1">
-                {"+ "}
-                {d.add}
+              <Text>
+                <Text bold color="#a6e3a1">+ </Text>
+                <Text color="#a6e3a1">{d.add}</Text>
               </Text>
             </Box>
           ))}
@@ -556,8 +635,73 @@ function ToolCallBlock({ tc }: { tc: ToolCall }): JSX.Element {
   )
 }
 
+/** Streaming text that reveals character by character */
+function StreamingText({ text, color, done }: { text: string; color: string; done: boolean }): JSX.Element {
+  const [charCount, setCharCount] = useState(done ? text.length : 0)
+
+  useEffect(() => {
+    if (done) {
+      setCharCount(text.length)
+      return
+    }
+    setCharCount(0)
+    const id = setInterval(() => {
+      setCharCount((c) => {
+        if (c >= text.length) return c
+        // Skip ahead through spaces for more natural feel
+        const next = text[c] === " " ? c + 2 : c + 1
+        return Math.min(next, text.length)
+      })
+    }, 40)
+    return () => clearInterval(id)
+  }, [text, done])
+
+  return (
+    <Text color={color} wrap="wrap">
+      {text.slice(0, charCount)}
+      {charCount < text.length && <Text color="#585b70">▋</Text>}
+    </Text>
+  )
+}
+
+const THINKING_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+const THINKING_MESSAGES = ["Analyzing code...", "Reading files...", "Searching codebase...", "Planning changes..."]
+
+/** Thinking spinner before agent responds */
+function ThinkingIndicator(): JSX.Element {
+  const [frame, setFrame] = useState(0)
+  const [msgIdx, setMsgIdx] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => setFrame((f) => (f + 1) % THINKING_FRAMES.length), 80)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    const id = setInterval(() => setMsgIdx((m) => (m + 1) % THINKING_MESSAGES.length), 800)
+    return () => clearInterval(id)
+  }, [])
+
+  return (
+    <Box paddingX={1}>
+      <Text color="#cba6f7">{THINKING_FRAMES[frame]} </Text>
+      <Text color="#585b70" italic>{THINKING_MESSAGES[msgIdx]}</Text>
+    </Box>
+  )
+}
+
 /** One completed exchange (prompt + tools + summary) */
-function ExchangeBlock({ ex, animatedTools }: { ex: Exchange; animatedTools: number }): JSX.Element {
+function ExchangeBlock({
+  ex,
+  animatedTools,
+  isThinking,
+  isDone,
+}: {
+  ex: Exchange
+  animatedTools: number
+  isThinking?: boolean
+  isDone?: boolean
+}): JSX.Element {
   return (
     <Box flexDirection="column">
       <Box paddingX={1}>
@@ -568,14 +712,14 @@ function ExchangeBlock({ ex, animatedTools }: { ex: Exchange; animatedTools: num
           {ex.prompt}
         </Text>
       </Box>
+      {isThinking && <ThinkingIndicator />}
       {ex.tools.slice(0, animatedTools).map((tc, j) => (
         <ToolCallBlock key={j} tc={tc} />
       ))}
       {animatedTools > ex.tools.length && (
-        <Box paddingX={1}>
-          <Text color="#a6adc8" wrap="wrap">
-            {ex.text}
-          </Text>
+        <Box paddingX={1} marginTop={0}>
+          <Text color="#a6e3a1" bold>{"✔ "}</Text>
+          <StreamingText text={ex.text} color="#a6adc8" done={isDone ?? false} />
         </Box>
       )}
     </Box>
@@ -587,6 +731,7 @@ function CodingAgentShowcase(): JSX.Element {
   const [exchanges, setExchanges] = useState<Exchange[]>([])
   const [activeExchange, setActiveExchange] = useState<Exchange | null>(null)
   const [animatedTools, setAnimatedTools] = useState(0)
+  const [isThinking, setIsThinking] = useState(false)
   const [cursorVisible, setCursorVisible] = useState(true)
   const [inputText, setInputText] = useState("")
   const termFocused = useTermFocused()
@@ -600,29 +745,40 @@ function CodingAgentShowcase(): JSX.Element {
   // Auto-start the first exchange after a short delay
   useEffect(() => {
     const timer = setTimeout(() => {
+      setIsThinking(true)
       setActiveExchange(EXCHANGE_POOL[0]!)
     }, 1500)
     return () => clearTimeout(timer)
   }, [])
 
-  // Animate tool calls for active exchange
+  // Thinking phase → then start tool animation
   useEffect(() => {
-    if (!activeExchange) return
+    if (!isThinking || !activeExchange) return
+    const timer = setTimeout(() => {
+      setIsThinking(false)
+      setAnimatedTools(1)
+    }, 1800)
+    return () => clearTimeout(timer)
+  }, [isThinking, activeExchange])
+
+  // Animate tool calls for active exchange (starts after thinking)
+  useEffect(() => {
+    if (!activeExchange || isThinking || animatedTools === 0) return
     const totalSteps = activeExchange.tools.length + 1 // tools + summary
     if (animatedTools >= totalSteps) {
-      // Animation done — commit to history
+      // Animation done — commit to history after streaming text finishes
       const done = activeExchange
       const timer = setTimeout(() => {
         setExchanges((prev) => [...prev, done])
         setActiveExchange(null)
         setAnimatedTools(0)
-      }, 800)
+      }, 2000)
       return () => clearTimeout(timer)
     }
-    const delay = animatedTools === 0 ? 600 : 900
+    const delay = 1100
     const timer = setTimeout(() => setAnimatedTools((c) => c + 1), delay)
     return () => clearTimeout(timer)
-  }, [activeExchange, animatedTools])
+  }, [activeExchange, animatedTools, isThinking])
 
   // User types + Enter → start next exchange
   useInput((input, key) => {
@@ -632,6 +788,7 @@ function CodingAgentShowcase(): JSX.Element {
       const next = EXCHANGE_POOL[exchangeIdx]!
       // Use user's typed text as prompt override
       setActiveExchange({ ...next, prompt: inputText })
+      setIsThinking(true)
       setAnimatedTools(0)
       setInputText("")
     } else if (key.backspace) {
@@ -642,7 +799,6 @@ function CodingAgentShowcase(): JSX.Element {
   })
 
   const isAnimating = activeExchange !== null
-  const spinChar = cursorVisible ? "⠋" : "⠙"
 
   // Show only the most recent exchanges — older ones "scroll off"
   // When animating, hide completed to make room for the active exchange
@@ -674,6 +830,7 @@ function CodingAgentShowcase(): JSX.Element {
             key={exchanges.length - visibleExchanges.length + i}
             ex={ex}
             animatedTools={ex.tools.length + 1}
+            isDone
           />
         ))}
 
@@ -681,10 +838,15 @@ function CodingAgentShowcase(): JSX.Element {
         {activeExchange && (
           <Box flexDirection="column">
             {visibleExchanges.length > 0 && <Divider />}
-            <ExchangeBlock ex={activeExchange} animatedTools={animatedTools} />
-            {animatedTools <= activeExchange.tools.length && (
+            <ExchangeBlock
+              ex={activeExchange}
+              animatedTools={animatedTools}
+              isThinking={isThinking}
+            />
+            {!isThinking && animatedTools > 0 && animatedTools <= activeExchange.tools.length && (
               <Box paddingX={1}>
-                <Text color="#585b70">{spinChar} working...</Text>
+                <Text color="#cba6f7">{THINKING_FRAMES[Math.floor(Date.now() / 80) % THINKING_FRAMES.length]} </Text>
+                <Text color="#585b70">working...</Text>
               </Box>
             )}
           </Box>
@@ -701,7 +863,7 @@ function CodingAgentShowcase(): JSX.Element {
       {/* Input */}
       <Box
         borderStyle="round"
-        borderColor={isAnimating ? "#313244" : termFocused ? "#45475a" : "#313244"}
+        borderColor={isAnimating ? "#313244" : termFocused ? "#cba6f7" : "#313244"}
         paddingX={1}
         flexDirection="row"
       >
@@ -771,6 +933,7 @@ const KANBAN_DATA: KanbanColumn[] = [
 function KanbanShowcase(): JSX.Element {
   const [col, setCol] = useState(1)
   const [card, setCard] = useState(0)
+  const { width } = useContentRect()
 
   useInput((_input, key) => {
     if (key.leftArrow) {
@@ -785,6 +948,36 @@ function KanbanShowcase(): JSX.Element {
     if (key.downArrow) {
       const maxCards = KANBAN_DATA[col]?.cards.length ?? 3
       setCard((c) => Math.min(maxCards - 1, c + 1))
+    }
+  })
+
+  // Mouse click to select column and card
+  // Layout: padding=1, 3 columns with gap=1, each with border
+  // Column starts: roughly at x = padding + colIdx * (colWidth + gap)
+  // Cards start at y ~= 4 (padding + header + border + marginTop), each card ~4 rows tall
+  useMouseClick(({ x, y }) => {
+    const contentWidth = (width || 80) - 2 // subtract padding
+    const colWidth = Math.floor((contentWidth - 2) / 3) // 3 cols with 2 gaps
+    const colIdx = Math.min(2, Math.max(0, Math.floor((x - 1) / (colWidth + 1))))
+
+    // Cards start around row 4 (1 padding + 1 border + 1 header + 1 marginTop)
+    // Each card is ~4 rows (1 border-top + 1 title + 1 tag + 1 border-bottom)
+    const cardStartY = 4
+    const cardHeight = 4
+    if (y >= cardStartY) {
+      const cardIdx = Math.floor((y - cardStartY) / cardHeight)
+      const maxCards = KANBAN_DATA[colIdx]?.cards.length ?? 3
+      if (cardIdx < maxCards) {
+        setCol(colIdx)
+        setCard(cardIdx)
+      } else {
+        setCol(colIdx)
+        setCard(Math.max(0, maxCards - 1))
+      }
+    } else {
+      // Clicked on header area — just select the column
+      setCol(colIdx)
+      setCard(0)
     }
   })
 
@@ -840,7 +1033,7 @@ function KanbanShowcase(): JSX.Element {
         })}
       </Box>
 
-      <KeyHints hints="←→ columns  ↑↓ cards" />
+      <KeyHints hints="←→ columns  ↑↓ cards  click to select" />
     </Box>
   )
 }
@@ -880,6 +1073,26 @@ const WIZARD_STEPS = [
   },
 ]
 
+// Catppuccin Mocha palette gradient for the wizard pipe (purple → teal → green)
+const PIPE_GRADIENT = [
+  "#cba6f7", // mauve
+  "#b4befe", // lavender
+  "#89b4fa", // blue
+  "#74c7ec", // sapphire
+  "#89dceb", // sky
+  "#94e2d5", // teal
+  "#a6e3a1", // green
+]
+
+// Distinct bullet colors per step (Catppuccin Mocha)
+const STEP_COLORS = ["#cba6f7", "#89b4fa", "#89dceb", "#f9e2af"]
+
+function GradientPipe({ index, total }: { index: number; total: number }): JSX.Element {
+  const gradientIdx = Math.floor((index / Math.max(1, total - 1)) * (PIPE_GRADIENT.length - 1))
+  const color = PIPE_GRADIENT[Math.min(gradientIdx, PIPE_GRADIENT.length - 1)]!
+  return <Text color={color}>│</Text>
+}
+
 function CLIWizardShowcase(): JSX.Element {
   const [state, setState] = useState<WizardState>({
     step: 0,
@@ -887,6 +1100,14 @@ function CLIWizardShowcase(): JSX.Element {
     answers: [],
   })
   const [done, setDone] = useState(false)
+  const [flashStep, setFlashStep] = useState(-1)
+
+  // Flash animation when a step completes
+  useEffect(() => {
+    if (flashStep < 0) return
+    const timer = setTimeout(() => setFlashStep(-1), 400)
+    return () => clearTimeout(timer)
+  }, [flashStep])
 
   useInput((_input, key) => {
     if (done) return
@@ -902,6 +1123,7 @@ function CLIWizardShowcase(): JSX.Element {
     if (key.return) {
       const answer = currentStep.type === "select" ? currentStep.options![state.cursor]! : currentStep.answer
       const newAnswers = [...state.answers, answer]
+      setFlashStep(state.step)
       if (state.step + 1 >= WIZARD_STEPS.length) {
         setDone(true)
         setState({ step: state.step + 1, cursor: 0, answers: newAnswers })
@@ -913,36 +1135,53 @@ function CLIWizardShowcase(): JSX.Element {
     }
   })
 
+  // Total pipe lines for gradient calculation
+  const totalPipeLines = WIZARD_STEPS.length * 3 + 4
+
+  // Track line index for gradient
+  let pipeLineIdx = 0
+
   return (
     <Box flexDirection="column" padding={1} paddingLeft={2}>
+      {/* Title bar */}
+      <Box marginBottom={1}>
+        <Text color="#cba6f7" bold>{"▲ "}</Text>
+        <Text bold color="#cdd6f4">create-app</Text>
+        <Text color="#6c7086"> v1.0</Text>
+      </Box>
+
       <Text>
         <Text bold color="#cba6f7">
           ┌{" "}
         </Text>
         <Text bold color="#cdd6f4">
-          create-app
+          Configure your project
         </Text>
       </Text>
-      <Text color="#45475a">│</Text>
+      <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
 
       {WIZARD_STEPS.map((ws, i) => {
         const isDone = i < state.step
         const isActive = i === state.step && !done
         const isPending = i > state.step
+        const stepColor = STEP_COLORS[i % STEP_COLORS.length]!
+        const isFlashing = flashStep === i
 
         if (isDone) {
           return (
             <React.Fragment key={ws.label}>
               <Text>
-                <Text color="#a6e3a1">◆</Text>
+                <Text color={isFlashing ? "#f5e0dc" : "#a6e3a1"} bold={isFlashing}>
+                  {isFlashing ? "★" : "◆"}
+                </Text>
                 <Text color="#cdd6f4"> {ws.label}</Text>
-                <Text color="#a6e3a1"> ✓</Text>
+                <Text color="#a6e3a1" bold> ✓</Text>
               </Text>
               <Text>
-                <Text color="#45475a">│</Text>
-                <Text color="#89b4fa"> {state.answers[i]}</Text>
+                <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
+                <Text bold color={stepColor}> {state.answers[i]}</Text>
               </Text>
-              <Text color="#45475a">│</Text>
+              <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
             </React.Fragment>
           )
         }
@@ -951,18 +1190,18 @@ function CLIWizardShowcase(): JSX.Element {
           return (
             <React.Fragment key={ws.label}>
               <Text>
-                <Text color="#89dceb">◆</Text>
+                <Text color={stepColor} bold>◆</Text>
                 <Text bold color="#cdd6f4">
                   {" "}
                   {ws.label}
                 </Text>
               </Text>
               <Text>
-                <Text color="#45475a">│</Text>
-                <Text color="#89dceb"> {ws.answer}</Text>
-                <Text color="#89dceb">▋</Text>
+                <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
+                <Text color={stepColor}> {ws.answer}</Text>
+                <Text color={stepColor}>▋</Text>
               </Text>
-              <Text color="#45475a">│</Text>
+              <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
             </React.Fragment>
           )
         }
@@ -971,7 +1210,7 @@ function CLIWizardShowcase(): JSX.Element {
           return (
             <React.Fragment key={ws.label}>
               <Text>
-                <Text color="#89dceb">◆</Text>
+                <Text color={stepColor} bold>◆</Text>
                 <Text bold color="#cdd6f4">
                   {" "}
                   {ws.label}
@@ -979,12 +1218,16 @@ function CLIWizardShowcase(): JSX.Element {
               </Text>
               {ws.options!.map((opt, oi) => (
                 <Text key={opt}>
-                  <Text color="#45475a">│</Text>
+                  <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
                   {"  "}
-                  {oi === state.cursor ? <Text color="#89dceb">● {opt}</Text> : <Text color="#6c7086">○ {opt}</Text>}
+                  {oi === state.cursor ? (
+                    <Text bold color={stepColor}>● {opt}</Text>
+                  ) : (
+                    <Text color="#6c7086">○ {opt}</Text>
+                  )}
                 </Text>
               ))}
-              <Text color="#45475a">│</Text>
+              <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
             </React.Fragment>
           )
         }
@@ -993,10 +1236,10 @@ function CLIWizardShowcase(): JSX.Element {
           return (
             <React.Fragment key={ws.label}>
               <Text>
-                <Text color="#585b70">○</Text>
+                <Text color="#45475a">○</Text>
                 <Text color="#585b70"> {ws.label}</Text>
               </Text>
-              <Text color="#45475a">│</Text>
+              <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
             </React.Fragment>
           )
         }
@@ -1007,32 +1250,39 @@ function CLIWizardShowcase(): JSX.Element {
       {done ? (
         <>
           <Text>
-            <Text color="#a6e3a1">◆</Text>
+            <Text color="#a6e3a1" bold>◆</Text>
             <Text color="#a6e3a1" bold>
               {" "}
               Done!
             </Text>
           </Text>
-          <Text color="#45475a">│</Text>
-          {/* Summary box */}
-          <Box flexDirection="column" marginLeft={1} borderStyle="round" borderColor="#313244" paddingX={1}>
-            <Text color="#6c7086">
-              Project: <Text color="#cdd6f4">my-app</Text>
+          <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
+          {/* Summary box with colored labels */}
+          <Box flexDirection="column" marginLeft={1} borderStyle="round" borderColor="#45475a" paddingX={1}>
+            <Text>
+              <Text color="#cba6f7" bold>Project   </Text>
+              <Text color="#cdd6f4">my-app</Text>
             </Text>
-            <Text color="#6c7086">
-              Framework: <Text color="#cdd6f4">React</Text>
+            <Text>
+              <Text color="#89b4fa" bold>Framework </Text>
+              <Text color="#cdd6f4">{state.answers[1] ?? "React"}</Text>
             </Text>
-            <Text color="#6c7086">
-              TypeScript:<Text color="#cdd6f4"> Yes</Text>
+            <Text>
+              <Text color="#89dceb" bold>TypeScript</Text>
+              <Text color="#cdd6f4"> {state.answers[2] ?? "Yes"}</Text>
             </Text>
-            <Text color="#6c7086">
-              Manager: <Text color="#cdd6f4">bun</Text>
+            <Text>
+              <Text color="#f9e2af" bold>Manager   </Text>
+              <Text color="#cdd6f4">{state.answers[3] ?? "bun"}</Text>
             </Text>
           </Box>
-          <Text color="#45475a">│</Text>
+          <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
           <Text>
-            <Text color="#a6e3a1">└ </Text>
-            <Text color="#cdd6f4">cd my-app && bun dev</Text>
+            <Text color="#a6e3a1" bold>└ </Text>
+            <Text color="#a6e3a1">cd </Text>
+            <Text color="#cdd6f4" bold>my-app</Text>
+            <Text color="#6c7086"> && </Text>
+            <Text color="#a6e3a1">bun dev</Text>
           </Text>
         </>
       ) : (

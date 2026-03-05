@@ -1,7 +1,7 @@
 /**
  * Canvas Adapter Demo
  *
- * Demonstrates inkx rendering React components to Canvas.
+ * Demonstrates hightea rendering React components to Canvas.
  */
 
 import React, { useState } from "react"
@@ -24,7 +24,7 @@ function App() {
       <Box borderStyle="single" borderColor="cyan" padding={1}>
         <Box flexDirection="column">
           <Text bold color="cyan">
-            inkx Canvas Rendering
+            hightea Canvas Rendering
           </Text>
           <SizeDisplay />
         </Box>
