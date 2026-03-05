@@ -45,7 +45,7 @@ features:
 ## Explore the Examples
 
 <div class="viewer-wrapper">
-  <iframe src="/hightea/examples/viewer.html" class="viewer-iframe" frameborder="0" title="hightea Interactive Examples" loading="lazy" />
+  <iframe src="/examples/viewer.html" class="viewer-iframe" frameborder="0" title="Hightea Interactive Examples" loading="lazy" />
 </div>
 
 ## Build Any Terminal App
