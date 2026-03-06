@@ -51,7 +51,7 @@ export { TextInput } from "./components/TextInput.js"
 export type { TextInputProps, TextInputHandle } from "./components/TextInput.js"
 
 export { TextArea } from "./components/TextArea.js"
-export type { TextAreaProps, TextAreaHandle } from "./components/TextArea.js"
+export type { TextAreaProps, TextAreaHandle, TextAreaSelection } from "./components/TextArea.js"
 
 export { EditContextDisplay } from "./components/EditContextDisplay.js"
 export type { EditContextDisplayProps } from "./components/EditContextDisplay.js"

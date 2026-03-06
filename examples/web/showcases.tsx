@@ -583,9 +583,19 @@ function ToolCallBlock({ tc }: { tc: ToolCall }): JSX.Element {
         {tc.lines &&
           tc.lines.map((line, i) => {
             // Test results
-            if (line.startsWith("✓")) return <Text key={i} color="#a6e3a1">{line}</Text>
+            if (line.startsWith("✓"))
+              return (
+                <Text key={i} color="#a6e3a1">
+                  {line}
+                </Text>
+              )
             // Passed count
-            if (line.includes("passed")) return <Text key={i} bold color="#a6e3a1">{line}</Text>
+            if (line.includes("passed"))
+              return (
+                <Text key={i} bold color="#a6e3a1">
+                  {line}
+                </Text>
+              )
             // Heap/diagnostic data
             if (line.includes(":")) {
               const colonIdx = line.indexOf(":")
@@ -608,17 +618,27 @@ function ToolCallBlock({ tc }: { tc: ToolCall }): JSX.Element {
                 )
               }
             }
-            return <Text key={i} color="#a6adc8">{line}</Text>
+            return (
+              <Text key={i} color="#a6adc8">
+                {line}
+              </Text>
+            )
           })}
         {tc.diff &&
           tc.diff.map((d, i) => (
             <Box key={i} flexDirection="column">
               <Text>
-                <Text bold color="#f38ba8">- </Text>
-                <Text color="#f38ba8" strikethrough>{d.del}</Text>
+                <Text bold color="#f38ba8">
+                  -{" "}
+                </Text>
+                <Text color="#f38ba8" strikethrough>
+                  {d.del}
+                </Text>
               </Text>
               <Text>
-                <Text bold color="#a6e3a1">+ </Text>
+                <Text bold color="#a6e3a1">
+                  +{" "}
+                </Text>
                 <Text color="#a6e3a1">{d.add}</Text>
               </Text>
             </Box>
@@ -678,7 +698,9 @@ function ThinkingIndicator(): JSX.Element {
   return (
     <Box paddingX={1}>
       <Text color="#cba6f7">{THINKING_FRAMES[frame]} </Text>
-      <Text color="#585b70" italic>{THINKING_MESSAGES[msgIdx]}</Text>
+      <Text color="#585b70" italic>
+        {THINKING_MESSAGES[msgIdx]}
+      </Text>
     </Box>
   )
 }
@@ -711,7 +733,9 @@ function ExchangeBlock({
       ))}
       {animatedTools > ex.tools.length && (
         <Box paddingX={1} marginTop={0}>
-          <Text color="#a6e3a1" bold>{"✔ "}</Text>
+          <Text color="#a6e3a1" bold>
+            {"✔ "}
+          </Text>
           <StreamingText text={ex.text} color="#a6adc8" done={isDone ?? false} />
         </Box>
       )}
@@ -831,11 +855,7 @@ function CodingAgentShowcase(): JSX.Element {
         {activeExchange && (
           <Box flexDirection="column">
             {visibleExchanges.length > 0 && <Divider />}
-            <ExchangeBlock
-              ex={activeExchange}
-              animatedTools={animatedTools}
-              isThinking={isThinking}
-            />
+            <ExchangeBlock ex={activeExchange} animatedTools={animatedTools} isThinking={isThinking} />
             {!isThinking && animatedTools > 0 && animatedTools <= activeExchange.tools.length && (
               <Box paddingX={1}>
                 <Text color="#cba6f7">{THINKING_FRAMES[Math.floor(Date.now() / 80) % THINKING_FRAMES.length]} </Text>
@@ -1138,8 +1158,12 @@ function CLIWizardShowcase(): JSX.Element {
     <Box flexDirection="column" padding={1} paddingLeft={2}>
       {/* Title bar */}
       <Box marginBottom={1}>
-        <Text color="#cba6f7" bold>{"▲ "}</Text>
-        <Text bold color="#cdd6f4">create-app</Text>
+        <Text color="#cba6f7" bold>
+          {"▲ "}
+        </Text>
+        <Text bold color="#cdd6f4">
+          create-app
+        </Text>
         <Text color="#6c7086"> v1.0</Text>
       </Box>
 
@@ -1168,11 +1192,17 @@ function CLIWizardShowcase(): JSX.Element {
                   {isFlashing ? "★" : "◆"}
                 </Text>
                 <Text color="#cdd6f4"> {ws.label}</Text>
-                <Text color="#a6e3a1" bold> ✓</Text>
+                <Text color="#a6e3a1" bold>
+                  {" "}
+                  ✓
+                </Text>
               </Text>
               <Text>
                 <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
-                <Text bold color={stepColor}> {state.answers[i]}</Text>
+                <Text bold color={stepColor}>
+                  {" "}
+                  {state.answers[i]}
+                </Text>
               </Text>
               <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
             </React.Fragment>
@@ -1183,7 +1213,9 @@ function CLIWizardShowcase(): JSX.Element {
           return (
             <React.Fragment key={ws.label}>
               <Text>
-                <Text color={stepColor} bold>◆</Text>
+                <Text color={stepColor} bold>
+                  ◆
+                </Text>
                 <Text bold color="#cdd6f4">
                   {" "}
                   {ws.label}
@@ -1203,7 +1235,9 @@ function CLIWizardShowcase(): JSX.Element {
           return (
             <React.Fragment key={ws.label}>
               <Text>
-                <Text color={stepColor} bold>◆</Text>
+                <Text color={stepColor} bold>
+                  ◆
+                </Text>
                 <Text bold color="#cdd6f4">
                   {" "}
                   {ws.label}
@@ -1214,7 +1248,9 @@ function CLIWizardShowcase(): JSX.Element {
                   <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
                   {"  "}
                   {oi === state.cursor ? (
-                    <Text bold color={stepColor}>● {opt}</Text>
+                    <Text bold color={stepColor}>
+                      ● {opt}
+                    </Text>
                   ) : (
                     <Text color="#6c7086">○ {opt}</Text>
                   )}
@@ -1243,7 +1279,9 @@ function CLIWizardShowcase(): JSX.Element {
       {done ? (
         <>
           <Text>
-            <Text color="#a6e3a1" bold>◆</Text>
+            <Text color="#a6e3a1" bold>
+              ◆
+            </Text>
             <Text color="#a6e3a1" bold>
               {" "}
               Done!
@@ -1253,27 +1291,39 @@ function CLIWizardShowcase(): JSX.Element {
           {/* Summary box with colored labels */}
           <Box flexDirection="column" marginLeft={1} borderStyle="round" borderColor="#45475a" paddingX={1}>
             <Text>
-              <Text color="#cba6f7" bold>Project   </Text>
+              <Text color="#cba6f7" bold>
+                Project{" "}
+              </Text>
               <Text color="#cdd6f4">my-app</Text>
             </Text>
             <Text>
-              <Text color="#89b4fa" bold>Framework </Text>
+              <Text color="#89b4fa" bold>
+                Framework{" "}
+              </Text>
               <Text color="#cdd6f4">{state.answers[1] ?? "React"}</Text>
             </Text>
             <Text>
-              <Text color="#89dceb" bold>TypeScript</Text>
+              <Text color="#89dceb" bold>
+                TypeScript
+              </Text>
               <Text color="#cdd6f4"> {state.answers[2] ?? "Yes"}</Text>
             </Text>
             <Text>
-              <Text color="#f9e2af" bold>Manager   </Text>
+              <Text color="#f9e2af" bold>
+                Manager{" "}
+              </Text>
               <Text color="#cdd6f4">{state.answers[3] ?? "bun"}</Text>
             </Text>
           </Box>
           <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
           <Text>
-            <Text color="#a6e3a1" bold>└ </Text>
+            <Text color="#a6e3a1" bold>
+              └{" "}
+            </Text>
             <Text color="#a6e3a1">cd </Text>
-            <Text color="#cdd6f4" bold>my-app</Text>
+            <Text color="#cdd6f4" bold>
+              my-app
+            </Text>
             <Text color="#6c7086"> && </Text>
             <Text color="#a6e3a1">bun dev</Text>
           </Text>
@@ -1651,24 +1701,29 @@ function ScrollShowcase(): JSX.Element {
 // ============================================================================
 
 function LayoutFeedbackShowcase(): JSX.Element {
+  return (
+    <Box flexDirection="column" padding={1}>
+      <SizedPanel />
+      <KeyHints hints="resize browser to see dimensions change" />
+    </Box>
+  )
+}
+
+function SizedPanel(): JSX.Element {
   const { width, height } = useContentRect()
 
   return (
-    <Box flexDirection="column" padding={1}>
-      <Box
-        flexDirection="column"
-        borderStyle="single"
-        borderColor="cyan"
-        flexGrow={1}
-        justifyContent="center"
-        alignItems="center"
-      >
-        <Text>
-          Width: {width} Height: {height}
-        </Text>
-      </Box>
-
-      <KeyHints hints="resize browser to see dimensions change" />
+    <Box
+      flexDirection="column"
+      borderStyle="single"
+      borderColor="cyan"
+      flexGrow={1}
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Text>
+        Width: {width} Height: {height}
+      </Text>
     </Box>
   )
 }

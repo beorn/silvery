@@ -1,6 +1,6 @@
 # TextArea Component Design
 
-This document specifies the design for a multi-line text input component for hightea. Implementation will follow.
+This document describes the TextArea component in hightea. The core component is implemented and shipped, with some advanced features still planned.
 
 ## Overview
 
@@ -49,41 +49,33 @@ Unlike web text inputs, terminal TextArea must handle:
 
 ```typescript
 interface TextAreaProps {
-  /** Current text value */
-  value: string
-
+  /** Current value (controlled) */
+  value?: string
+  /** Initial value (uncontrolled) */
+  defaultValue?: string
   /** Called when value changes */
-  onChange: (value: string) => void
-
-  /** Fixed width in characters (default: fills container) */
-  width?: number
-
-  /** Fixed height in lines (default: 3) */
-  height?: number
-
+  onChange?: (value: string) => void
+  /** Called on submit (Ctrl+Enter by default, or Enter if submitKey="enter") */
+  onSubmit?: (value: string) => void
+  /** Key to trigger submit: "ctrl+enter" (default), "enter", or "meta+enter" */
+  submitKey?: "ctrl+enter" | "enter" | "meta+enter"
   /** Placeholder text when empty */
   placeholder?: string
-
-  /** Disable editing */
+  /** Whether input is focused/active (overrides focus system) */
+  isActive?: boolean
+  /** Visible height in rows (required) */
+  height: number
+  /** Cursor style: 'block' (inverse) or 'underline' */
+  cursorStyle?: "block" | "underline"
+  /** Number of context lines to keep visible above/below cursor when scrolling (default: 1) */
+  scrollMargin?: number
+  /** When true, ignore all input and dim the text */
   disabled?: boolean
-
-  /** Maximum character count */
+  /** Maximum number of characters allowed */
   maxLength?: number
-
-  /** Enable text selection (default: false) */
-  selection?: boolean
-
-  /** Called when user presses the submit key combination */
-  onSubmit?: (value: string) => void
-
-  /** Submit key combo (default: "ctrl+enter") */
-  submitKey?: "ctrl+enter" | "meta+enter" | "enter"
-
-  /** Auto-focus on mount (default: false) */
-  autoFocus?: boolean
+  /** Test ID for focus system identification */
+  testID?: string
 }
-
-function TextArea(props: TextAreaProps): JSX.Element
 ```
 
 ### Minimal Example
@@ -548,7 +540,9 @@ The `submitKey` prop controls Enter behavior:
 | -------------- | ------- | ----------- | ------------ |
 | `"enter"`      | Submit  | Newline     | Newline      |
 | `"ctrl+enter"` | Newline | Newline     | Submit       |
-| `"meta+enter"` | Newline | Newline     | Submit (Mac) |
+| `"meta+enter"` | Newline | Newline     | Newline      |
+
+Note: `meta+enter` requires the [Kitty keyboard protocol](/guide/kitty-protocol) since legacy ANSI cannot encode Meta+Enter. The terminal sends `CSI 13;3u` which hightea parses into `key.return + key.meta`.
 
 ## CJK and Unicode Handling
 
@@ -790,30 +784,18 @@ Could integrate with tree-sitter or highlight.js for code editing.
 
 Composition window positioning for CJK input methods. Requires terminal-specific handling.
 
-## Implementation Order
+## Implementation Status
 
-1. **Phase 1**: Basic multi-line editing
-   - Insert/delete characters
-   - Cursor movement (arrows, home, end)
-   - Soft wrapping
-   - Basic scrolling
+All core phases are implemented and shipped:
 
-2. **Phase 2**: Polish
-   - Word-wise movement
-   - Column memory
-   - Scroll margin
-   - Placeholder text
+- **Phase 1** (shipped): Basic multi-line editing — insert/delete, cursor movement (arrows, Home, End, Ctrl+Home, Ctrl+End), soft wrapping, scrolling
+- **Phase 2** (shipped): Word-wise movement, column memory, scroll margin (`scrollMargin` prop), placeholder text, disabled state, maxLength
+- **Phase 3** (shipped): Text selection — Shift+Arrow, Shift+Home/End, Ctrl+A (select all), delete/replace selection on type
 
-3. **Phase 3**: Selection
-   - Shift+arrow selection
-   - Select all
-   - Delete selection
-   - Replace selection on type
-
-4. **Phase 4**: Advanced
-   - Clipboard (if feasible)
-   - Undo/redo
-   - IME improvements
+Remaining planned features:
+- Clipboard (OSC 52)
+- Undo/redo
+- IME improvements
 
 ## References
 

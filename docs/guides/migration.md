@@ -229,11 +229,11 @@ const { width } = useContentRect()
 
 These behaviors differ by design:
 
-| Behavior                | Ink       | hightea   | Reason                       |
-| ----------------------- | --------- | --------- | ---------------------------- |
-| Text overflow           | Overflows | Wraps     | Better default for TUIs      |
-| First render dimensions | N/A       | Zeros     | Required for layout feedback |
-| Internal APIs           | Exposed   | Hidden    | Not part of public API       |
+| Behavior                | Ink       | hightea | Reason                       |
+| ----------------------- | --------- | ------- | ---------------------------- |
+| Text overflow           | Overflows | Wraps   | Better default for TUIs      |
+| First render dimensions | N/A       | Zeros   | Required for layout feedback |
+| Internal APIs           | Exposed   | Hidden  | Not part of public API       |
 
 ### Edge Cases
 

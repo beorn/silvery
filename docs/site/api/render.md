@@ -11,16 +11,16 @@ import { render, createTerm } from "@hightea/term"
 ## Signature
 
 ```tsx
-async function render(term: Term, element: ReactElement, options?: RenderOptions): Promise<Instance>
+function render(element: ReactElement, term?: Term | TermDef, options?: RenderOptions): RenderHandle
 ```
 
 ### Parameters
 
-| Parameter | Type            | Description                           |
-| --------- | --------------- | ------------------------------------- |
-| `term`    | `Term`          | Terminal instance from `createTerm()` |
-| `element` | `ReactElement`  | React element to render               |
-| `options` | `RenderOptions` | Optional render configuration         |
+| Parameter | Type                 | Description                            |
+| --------- | -------------------- | -------------------------------------- |
+| `element` | `ReactElement`       | React element to render                |
+| `term`    | `Term \| TermDef`    | Terminal instance from `createTerm()`  |
+| `options` | `RenderOptions`      | Optional render configuration          |
 
 ### Options
 
@@ -52,10 +52,10 @@ import { render, Box, Text, createTerm } from "@hightea/term"
 using term = createTerm()
 
 await render(
-  term,
   <Box>
     <Text>Hello, World!</Text>
   </Box>,
+  term,
 )
 ```
 
@@ -67,10 +67,10 @@ import { render, Box, Text, createTerm } from "@hightea/term"
 using term = createTerm()
 
 await render(
-  term,
   <Box>
     <Text>Full-screen mode...</Text>
   </Box>,
+  term,
   {
     exitOnCtrlC: false,
     alternateScreen: true,
@@ -180,7 +180,7 @@ using term = createTerm()
 await render(<Text>Loading...</Text>, term)
 
 // Subsequent renders can be synchronous
-const instance = renderSync(term, <Text>Ready!</Text>)
+const instance = renderSync(<Text>Ready!</Text>, term)
 ```
 
 ## Notes

@@ -34,13 +34,13 @@ useInput((input, key) => {
 
 ### Kitty Keyboard Protocol
 
-The [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) solves these ambiguities by encoding modifier state explicitly. However:
+The [Kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) solves these ambiguities by encoding modifier state explicitly. hightea fully supports this protocol:
 
-- Only newer terminals support it (Kitty, WezTerm, foot, Ghostty)
-- Applications must opt-in by sending an escape sequence
-- hightea does not currently implement this protocol
+- Supported terminals: Kitty, WezTerm, foot, Ghostty, Alacritty, iTerm2, rio
+- Enable with `kitty: true` in `run()` — hightea auto-detects support and falls back gracefully
+- When active, Tab vs Ctrl+I, Enter vs Ctrl+M, and all modifier combinations are fully distinguishable
 
-When Kitty protocol support is added, these limitations will be resolved for supported terminals.
+See [Kitty Protocol](/guide/kitty-protocol) for details.
 
 ### Undetectable Key Combinations
 
@@ -256,13 +256,13 @@ function HelpScreen() {
 }
 ```
 
-## Future Improvements
+## Enhanced Protocol Support
 
-hightea may add support for:
+hightea ships with full support for modern terminal protocols that resolve the limitations above:
 
-1. **Kitty keyboard protocol** - Enables full modifier detection in supported terminals
-2. **Bracketed paste mode** - Already partially supported, distinguishes pasted text from typed input
-3. **Mouse input** - Click and scroll events
-4. **Focus events** - Detect when terminal gains/loses focus
+1. **Kitty keyboard protocol** — Enables full modifier detection (Ctrl+Shift, Super, Hyper), key release events, and unambiguous key identification. Pass `kitty: true` to `run()`. See [Kitty Protocol](/guide/kitty-protocol).
+2. **Bracketed paste mode** — Distinguishes pasted text from typed input. Built into the runtime with `usePaste()` hook.
+3. **Mouse input** — Click, drag, and scroll events via SGR protocol (mode 1006). Pass `mouse: true` to `run()`. Components receive DOM-style `onClick`, `onWheel`, etc.
+4. **Focus events** — Detect when the terminal gains/loses focus via the focus system and `useFocusable()` hook.
 
-These improvements will be opt-in and gracefully degrade in unsupported terminals.
+All features are opt-in and gracefully degrade in unsupported terminals.

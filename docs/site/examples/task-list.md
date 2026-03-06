@@ -1,10 +1,25 @@
+---
+prev:
+  text: Dashboard
+  link: /examples/dashboard
+next:
+  text: Kanban Board
+  link: /examples/kanban
+---
+
+<script setup>
+import LiveDemo from '../.vitepress/components/LiveDemo.vue'
+</script>
+
 # Task List Example
 
 A scrollable task list with variable-height items and keyboard navigation.
 
-*(Interactive demo coming soon)*
-
 [[toc]]
+
+## Live Demo
+
+<LiveDemo xtermSrc="/examples/showcase.html?demo=scroll" :height="400" />
 
 ## What It Demonstrates
 

@@ -32,7 +32,7 @@ export { TextInput } from "./TextInput.js"
 export type { TextInputProps, TextInputHandle } from "./TextInput.js"
 
 export { TextArea } from "./TextArea.js"
-export type { TextAreaProps, TextAreaHandle } from "./TextArea.js"
+export type { TextAreaProps, TextAreaHandle, TextAreaSelection } from "./TextArea.js"
 
 // Display Components
 export { CursorLine } from "./CursorLine.js"

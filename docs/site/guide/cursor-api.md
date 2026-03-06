@@ -11,7 +11,16 @@ hightea provides two approaches to cursor display:
 1. **Rendered cursor** - A character (like `_` or `|`) rendered as part of the UI
 2. **Terminal cursor** - The actual blinking cursor controlled via ANSI escape sequences
 
-The `useCursor()` hook bridges these approaches with layout information from `useContentRect()`.
+The `useCursor()` hook manages the terminal cursor using position-based coordinates relative to the component:
+
+```tsx
+useCursor({
+  col: cursorCol,    // Column offset within component
+  row: cursorRow,    // Row offset within component
+  visible: isFocused, // Show/hide cursor
+  shape: "bar",      // Optional: "block" | "underline" | "bar" | "default"
+})
+```
 
 ## Use Cases
 
@@ -293,9 +302,20 @@ function TextInput({ value }: { value: string }) {
 }
 ```
 
-## Cursor Styles
+## Cursor Styles (DECSCUSR)
 
-ANSI provides cursor shape escape sequences (DECSCUSR):
+hightea supports DECSCUSR cursor shape control via the `shape` parameter on `useCursor()`:
+
+```tsx
+useCursor({
+  col: cursorCol,
+  row: cursorRow,
+  visible: true,
+  shape: "bar",  // "block" | "underline" | "bar" | "default"
+})
+```
+
+ANSI escape sequences used:
 
 | Code      | Style              | Description      |
 | --------- | ------------------ | ---------------- |

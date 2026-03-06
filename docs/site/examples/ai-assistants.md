@@ -1,6 +1,12 @@
 ---
 title: Building AI Assistants & Chat Apps with hightea
 description: Build terminal-based AI assistants with scrollable output, command palettes, and streaming-friendly rendering using hightea.
+prev:
+  text: Kanban Board
+  link: /examples/kanban
+next:
+  text: CLI Wizards
+  link: /examples/cli-wizards
 ---
 
 <script setup>

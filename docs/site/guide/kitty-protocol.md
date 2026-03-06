@@ -1,6 +1,6 @@
 # Kitty Keyboard Protocol Support
 
-This document outlines the research and implementation plan for adding Kitty keyboard protocol support to hightea (issue km-ax55).
+hightea fully supports the Kitty keyboard protocol for unambiguous key identification, modifier detection, and key event types.
 
 ## What is the Kitty Keyboard Protocol?
 
@@ -186,148 +186,59 @@ If the terminal doesn't respond to `CSI ? u`, it will respond to `CSI c` (device
 2. If you get `CSI ? <n> u` before `CSI ? <attrs> c`, protocol is supported
 3. If you only get device attributes, protocol is not supported
 
-## Implementation Plan for hightea
+## Usage in hightea
 
-### Phase 1: Protocol Detection and Opt-in
+### Enabling the Protocol
 
-Add protocol detection at render initialization:
+Pass `kitty: true` to `run()` for auto-detection and graceful fallback:
 
-```typescript
-interface KittyProtocolOptions {
-  /** Enable Kitty keyboard protocol if supported */
-  kittyKeyboard?:
-    | boolean
-    | {
-        /** Request key release events */
-        reportRelease?: boolean
-        /** Request key repeat events */
-        reportRepeat?: boolean
-        /** Report all keys (including plain letters) as CSI sequences */
-        reportAllKeys?: boolean
-      }
-}
+```tsx
+import { run } from "@hightea/term/runtime"
 
-interface RenderOptions {
-  // ... existing options ...
-  kittyKeyboard?: KittyProtocolOptions["kittyKeyboard"]
-}
+await run(<App />, { kitty: true })
+
+// Or with specific flags:
+import { KittyFlags } from "@hightea/term"
+await run(<App />, { kitty: KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS })
 ```
 
-### Phase 2: Enhanced Key Type
+hightea handles the full lifecycle: query support, enable on startup, disable on exit (including crash/SIGINT).
 
-Extend the `Key` interface to expose new capabilities:
+### Enhanced Key Fields
+
+When the protocol is active, the `Key` object includes additional fields:
+
+| Field            | Type          | Description                                                        |
+| ---------------- | ------------- | ------------------------------------------------------------------ |
+| `super`          | `boolean`     | Cmd/Super modifier (Kitty bit 3)                                   |
+| `hyper`          | `boolean`     | Hyper modifier (Kitty bit 4)                                       |
+| `eventType`      | `1 \| 2 \| 3` | Press (1), repeat (2), release (3). Requires `REPORT_EVENTS` flag. |
+| `capsLock`       | `boolean`     | CapsLock is active                                                 |
+| `numLock`        | `boolean`     | NumLock is active                                                  |
+| `shiftedKey`     | `string`      | Character produced when Shift is held                              |
+| `baseLayoutKey`  | `string`      | Key on standard US layout (for non-Latin keyboards)                |
+| `associatedText` | `string`      | Decoded text from `REPORT_TEXT` mode                               |
+
+### Protocol Control Functions
 
 ```typescript
-export interface Key {
-  // Existing properties
-  upArrow: boolean
-  downArrow: boolean
-  leftArrow: boolean
-  rightArrow: boolean
-  return: boolean
-  escape: boolean
-  ctrl: boolean
-  shift: boolean
-  meta: boolean
-  tab: boolean
-  backspace: boolean
-  delete: boolean
-  pageUp: boolean
-  pageDown: boolean
-  home: boolean
-  end: boolean
+import { enableKittyKeyboard, disableKittyKeyboard, queryKittyKeyboard, KittyFlags } from "@hightea/term"
 
-  // New: Enhanced modifier support (Kitty protocol)
-  /** Super/Windows/Command key (distinct from meta in Kitty) */
-  super?: boolean
-  /** Hyper modifier */
-  hyper?: boolean
-  /** Caps Lock state */
-  capsLock?: boolean
-  /** Num Lock state */
-  numLock?: boolean
-
-  // New: Event type (Kitty protocol with flag 2)
-  /**
-   * Event type: 'press', 'repeat', or 'release'
-   * Only available when Kitty protocol is enabled with reportRelease/reportRepeat
-   * @default 'press'
-   */
-  eventType?: "press" | "repeat" | "release"
-
-  // New: Disambiguation (Kitty protocol)
-  /**
-   * Whether this key event came from Kitty protocol (unambiguous)
-   * When true, Ctrl+I and Tab are distinguishable
-   */
-  kittyProtocol?: boolean
-}
+enableKittyKeyboard(KittyFlags.DISAMBIGUATE) // CSI > flags u
+disableKittyKeyboard()                        // CSI < u (pop stack)
+queryKittyKeyboard()                          // CSI ? u (detect support)
 ```
 
-### Phase 3: Protocol Lifecycle Management
-
-Enable/disable the protocol with proper cleanup:
+### Detection
 
 ```typescript
-// On render start (if kittyKeyboard enabled)
-function enableKittyProtocol(flags: number): void {
-  // Push current mode to stack, set new mode
-  stdout.write(`\x1b[>${flags}u`)
-}
+import { detectKittySupport, detectKittyFromStdio } from "@hightea/term"
 
-// On render unmount (CRITICAL: must always run)
-function disableKittyProtocol(): void {
-  // Pop from stack to restore previous mode
-  stdout.write("\x1b[<u")
-}
-```
+// Low-level: send query, parse response
+const supported = await detectKittySupport(write, read, timeout)
 
-**Important**: The cleanup must happen even on crash/SIGINT to avoid leaving the terminal in an unusable state. This is similar to how raw mode cleanup works.
-
-### Phase 4: Parser Updates
-
-Add Kitty protocol parsing to `parseKeypress`:
-
-```typescript
-// New regex for CSI u format
-const KITTY_KEY_RE = /^\x1b\[(\d+)(?::(\d+))?(?:;(\d+)(?::(\d+))?)?(?:;([^u]*))?u$/
-
-function parseKittyKeypress(s: string): ParsedKeypress | null {
-  const match = KITTY_KEY_RE.exec(s)
-  if (!match) return null
-
-  const keyCode = parseInt(match[1], 10)
-  const shiftedKey = match[2] ? parseInt(match[2], 10) : undefined
-  const modifiers = match[3] ? parseInt(match[3], 10) - 1 : 0
-  const eventType = match[4] ? parseInt(match[4], 10) : 1
-  const text = match[5]
-
-  return {
-    name: keyCodeToName(keyCode),
-    ctrl: !!(modifiers & 4),
-    shift: !!(modifiers & 1),
-    meta: !!(modifiers & 2), // Alt
-    super: !!(modifiers & 8),
-    hyper: !!(modifiers & 16),
-    capsLock: !!(modifiers & 64),
-    numLock: !!(modifiers & 128),
-    eventType: eventType === 1 ? "press" : eventType === 2 ? "repeat" : "release",
-    sequence: s,
-    keyCode,
-    kittyProtocol: true,
-  }
-}
-```
-
-### Phase 5: Context Integration
-
-Track protocol state in terminal capabilities:
-
-```typescript
-// Protocol state is managed by the runtime (run/createApp)
-// and can be queried via terminal capabilities detection
-const caps = detectTerminalCaps()
-// caps.kitty indicates Kitty protocol support
+// Convenience: detect using real stdio
+const supported = await detectKittyFromStdio(stdout, stdin, timeout)
 ```
 
 ## API Design Examples
@@ -483,18 +394,25 @@ useInput((input, key) => {
 })
 ```
 
-## Implementation Checklist
+## Testing
 
-- [ ] Add protocol detection function
-- [ ] Add render option for enabling protocol
-- [ ] Extend `Key` interface with new properties
-- [ ] Add `CSI u` parser for Kitty sequences
-- [ ] Add protocol enable/disable lifecycle
-- [ ] Ensure cleanup on process exit/crash
-- [ ] Track protocol state in RuntimeContext or term capabilities
-- [ ] Write tests with mock terminal responses
-- [ ] Update documentation
-- [ ] Add example showing new capabilities
+Use `kittyMode: true` on `createRenderer` to route `press()` through Kitty encoding, and `keyToKittyAnsi()` to generate raw sequences:
+
+```tsx
+import { createRenderer, keyToKittyAnsi } from "@hightea/term/testing"
+
+const render = createRenderer({ cols: 80, rows: 24, kittyMode: true })
+
+test("Super+j triggers action", async () => {
+  const app = render(<App />)
+  await app.press("Super+j")
+  expect(app.text).toContain("action triggered")
+})
+
+// Generate raw sequences for direct stdin writing
+keyToKittyAnsi("Super+j")      // '\x1b[106;9u'
+keyToKittyAnsi("Meta+Enter")   // '\x1b[13;3u'
+```
 
 ## References
 

@@ -44,10 +44,10 @@ Most apps should work at this point.
 For production apps that need more control, you can create a term explicitly:
 
 ```tsx
-import { render, createTerm } from '@hightea/term';
+import { render, createTerm } from "@hightea/term"
 
-using term = createTerm();
-const { unmount, waitUntilExit } = await render(<App />, term);
+using term = createTerm()
+const { unmount, waitUntilExit } = await render(<App />, term)
 ```
 
 **Why use `createTerm()`?**
@@ -222,11 +222,11 @@ const { width } = useContentRect()
 
 ### By Design
 
-| Behavior                | Ink       | hightea   | Reason                       |
-| ----------------------- | --------- | --------- | ---------------------------- |
-| Text overflow           | Overflows | Wraps     | Better default               |
-| First render dimensions | N/A       | Zeros     | Required for layout feedback |
-| Internal APIs           | Exposed   | Hidden    | Not public API               |
+| Behavior                | Ink       | hightea | Reason                       |
+| ----------------------- | --------- | ------- | ---------------------------- |
+| Text overflow           | Overflows | Wraps   | Better default               |
+| First render dimensions | N/A       | Zeros   | Required for layout feedback |
+| Internal APIs           | Exposed   | Hidden  | Not public API               |
 
 ### Edge Cases
 

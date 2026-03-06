@@ -145,6 +145,42 @@ function cursorToColumn(x: number): string {
 }
 
 // ============================================================================
+// Cursor Shape (DECSCUSR)
+// ============================================================================
+
+/**
+ * Terminal cursor shape. Combined with blink parameter in setCursorStyle().
+ */
+export type CursorShape = "block" | "underline" | "bar"
+
+const CURSOR_SHAPE_CODES: Record<CursorShape, { blink: number; steady: number }> = {
+  block: { blink: 1, steady: 2 },
+  underline: { blink: 3, steady: 4 },
+  bar: { blink: 5, steady: 6 },
+}
+
+/**
+ * Set the terminal cursor shape via DECSCUSR (CSI Ps SP q).
+ *
+ * Supported by: xterm, Ghostty, Kitty, WezTerm, iTerm2, Alacritty, foot.
+ * Terminals that don't support it safely ignore the sequence.
+ *
+ * @param shape - "block", "underline", or "bar"
+ * @param blink - Whether the cursor should blink (default: false)
+ */
+export function setCursorStyle(shape: CursorShape, blink = false): string {
+  const code = blink ? CURSOR_SHAPE_CODES[shape].blink : CURSOR_SHAPE_CODES[shape].steady
+  return `${CSI}${code} q`
+}
+
+/**
+ * Reset the terminal cursor style to the terminal's default (DECSCUSR 0).
+ */
+export function resetCursorStyle(): string {
+  return `${CSI}0 q`
+}
+
+// ============================================================================
 // Terminal Control
 // ============================================================================
 

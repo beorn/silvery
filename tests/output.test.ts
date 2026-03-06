@@ -7,7 +7,15 @@
  */
 
 import { describe, expect, test } from "vitest"
-import { ANSI, disableMouse, enableMouse, enterAlternateScreen, leaveAlternateScreen } from "../src/output.js"
+import {
+  ANSI,
+  disableMouse,
+  enableMouse,
+  enterAlternateScreen,
+  leaveAlternateScreen,
+  setCursorStyle,
+  resetCursorStyle,
+} from "../src/output.js"
 import { TerminalBuffer } from "../src/buffer.js"
 import { outputPhase } from "../src/pipeline/output-phase.js"
 
@@ -393,6 +401,25 @@ describe("Output Functions", () => {
       const screenFresh = replayAnsi(20, 5, fresh2)
 
       expect(screenToText(screenIncr)).toBe(screenToText(screenFresh))
+    })
+  })
+
+  describe("DECSCUSR cursor style", () => {
+    test("setCursorStyle produces correct sequences for each shape", () => {
+      // Steady (default blink=false)
+      expect(setCursorStyle("block")).toBe("\x1b[2 q")
+      expect(setCursorStyle("underline")).toBe("\x1b[4 q")
+      expect(setCursorStyle("bar")).toBe("\x1b[6 q")
+    })
+
+    test("setCursorStyle with blink=true produces blinking variants", () => {
+      expect(setCursorStyle("block", true)).toBe("\x1b[1 q")
+      expect(setCursorStyle("underline", true)).toBe("\x1b[3 q")
+      expect(setCursorStyle("bar", true)).toBe("\x1b[5 q")
+    })
+
+    test("resetCursorStyle produces DECSCUSR 0", () => {
+      expect(resetCursorStyle()).toBe("\x1b[0 q")
     })
   })
 

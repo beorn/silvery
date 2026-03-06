@@ -1,6 +1,12 @@
 ---
 title: Building Developer Tools with hightea
 description: Build terminal REPLs, log viewers, and debuggers with virtual lists, command palettes, and Playwright-style testing using hightea.
+prev:
+  text: CLI Wizards
+  link: /examples/cli-wizards
+next:
+  text: Data Explorers
+  link: /examples/data-explorers
 ---
 
 <script setup>

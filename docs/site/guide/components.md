@@ -151,3 +151,152 @@ function App() {
 | ---------- | --------------------------------------- | ------------------------ |
 | `items`    | `T[]`                                   | Array of items to render |
 | `children` | `(item: T, index: number) => ReactNode` | Render function          |
+
+## Input Components
+
+### TextInput
+
+Single-line text input with full readline shortcuts (Ctrl+A/E, Ctrl+K/U, Alt+B/F, Ctrl+Y with kill ring).
+
+```tsx
+import { TextInput } from "@hightea/term"
+
+;<TextInput value={text} onChange={setText} onSubmit={handleSubmit} placeholder="Type here..." prompt="> " />
+```
+
+### TextArea
+
+Multi-line text editing with cursor navigation, line wrapping, and text selection.
+
+```tsx
+import { TextArea } from "@hightea/term"
+
+<TextArea
+  value={text}
+  onChange={setText}
+  height={5}
+  placeholder="Type here..."
+  submitKey="ctrl+enter"
+  onSubmit={handleSubmit}
+  scrollMargin={1}
+/>
+```
+
+| Prop           | Type                                          | Default          | Description                                     |
+| -------------- | --------------------------------------------- | ---------------- | ----------------------------------------------- |
+| `value`        | `string`                                      | -                | Current value (controlled)                      |
+| `defaultValue` | `string`                                      | -                | Initial value (uncontrolled)                    |
+| `onChange`     | `(value: string) => void`                     | -                | Called when value changes                       |
+| `onSubmit`     | `(value: string) => void`                     | -                | Called on submit key press                      |
+| `submitKey`    | `"ctrl+enter" \| "enter" \| "meta+enter"`     | `"ctrl+enter"`   | Key combo to trigger submit                     |
+| `height`       | `number`                                      | **required**     | Visible height in rows                          |
+| `placeholder`  | `string`                                      | -                | Placeholder text when empty                     |
+| `isActive`     | `boolean`                                     | -                | Override focus system                           |
+| `cursorStyle`  | `"block" \| "underline"`                      | `"block"`        | Unfocused cursor style                          |
+| `scrollMargin` | `number`                                      | `1`              | Context lines above/below cursor when scrolling |
+| `disabled`     | `boolean`                                     | `false`          | Ignore input and dim text                       |
+| `maxLength`    | `number`                                      | -                | Maximum character count                         |
+| `testID`       | `string`                                      | -                | Test ID for focus system                        |
+
+Features: Shift+Arrow selection, Ctrl+A select all, Ctrl+Home/End document navigation, word-wise movement (Ctrl+Arrow), readline shortcuts (Ctrl+K/U/Y), column memory for vertical movement.
+
+### SelectList
+
+Single-select list with keyboard navigation (arrow keys, j/k, Home/End), disabled item support, and `maxVisible` for scroll windowing.
+
+```tsx
+import { SelectList } from "@hightea/term"
+
+;<SelectList
+  items={[
+    { label: "React", value: "react" },
+    { label: "Vue", value: "vue" },
+    { label: "Svelte", value: "svelte" },
+  ]}
+  onSelect={(item) => console.log(item.value)}
+/>
+```
+
+### Toggle, Button
+
+Simple interactive primitives for boolean toggles and clickable buttons.
+
+## Display Components
+
+| Component     | Description                                                |
+| ------------- | ---------------------------------------------------------- |
+| `Spinner`     | Animated spinner with presets (dots, line, arc, bounce)    |
+| `ProgressBar` | Determinate and indeterminate progress with custom fill    |
+| `Table`       | Column-aligned table with header, per-column alignment     |
+| `Badge`       | Styled label/tag                                           |
+| `Divider`     | Horizontal rule                                            |
+| `VirtualList` | O(1) scroll for thousands of items (fixed/variable height) |
+| `VirtualView` | Virtualized arbitrary content                              |
+| `Console`     | Captures `console.log` output via `patchConsole()`         |
+| `Transform`   | Per-line string transformation on children                 |
+| `Image`       | Kitty graphics / Sixel with text fallback                  |
+| `Link`        | OSC 8 hyperlink                                            |
+
+## Shadcn-Style Components
+
+Higher-level pre-styled components using `$token` semantic colors. Import from `@hightea/term`:
+
+| Component                               | Description                                          |
+| --------------------------------------- | ---------------------------------------------------- |
+| `Form` / `FormField`                    | Form layout with label, description, error message   |
+| `Toast` / `useToast()`                  | Auto-dismiss notifications with severity levels      |
+| `CommandPalette`                        | Fuzzy-search command palette (Ctrl+K pattern)        |
+| `TreeView`                              | Expandable/collapsible tree with keyboard navigation |
+| `Breadcrumb`                            | Path breadcrumb with separator customization         |
+| `Tabs` / `TabList` / `Tab` / `TabPanel` | Tabbed interface with keyboard navigation            |
+| `Tooltip`                               | Contextual tooltip overlay                           |
+| `Skeleton`                              | Loading placeholder with configurable width/lines    |
+| `ErrorBoundary`                         | React error boundary with `resetKeys` and `fallback` |
+| `ModalDialog`                           | Modal overlay with focus trapping                    |
+| `PickerDialog` / `PickerList`           | Selection dialog                                     |
+
+These components use the theming system — wrap your app in `ThemeProvider` with `defaultDarkTheme` or `defaultLightTheme` and the components will use semantic colors automatically. See [Theming](/guide/hooks#theming) for details.
+
+## @hightea/ui — Progress & Input Package
+
+`@hightea/ui` is a separate package with progress indicators and ergonomic async wrappers. It works both as standalone CLI output (no React) and as React components inside hightea apps.
+
+```bash
+bun add @hightea/ui
+```
+
+**CLI mode** (direct stdout, no React):
+
+```ts
+import { Spinner, ProgressBar, MultiProgress } from "@hightea/ui/cli"
+
+const stop = Spinner.start("Loading...")
+await doWork()
+stop()
+```
+
+**Wrappers** (ergonomic async adapters):
+
+```ts
+import { withSpinner, withProgress } from "@hightea/ui/wrappers"
+
+const data = await withSpinner(fetchData(), "Loading data...")
+```
+
+**Declarative steps**:
+
+```ts
+import { steps } from "@hightea/ui/progress"
+
+const loader = steps({ loadModules, parseConfig, validate })
+await loader.run({ clear: true })
+```
+
+**React components** (for hightea/Ink apps):
+
+```tsx
+import { Spinner, ProgressBar, Tasks, Task } from "@hightea/ui/react"
+import { TextInput, Select } from "@hightea/ui/input"
+```
+
+See the [@hightea/ui README](https://github.com/beorn/hightea/tree/main/packages/ui) for full documentation.

@@ -1,6 +1,12 @@
 ---
 title: Live Demo
 description: hightea rendered in the browser via xterm.js
+prev:
+  text: Overview
+  link: /examples/
+next:
+  text: Dashboard
+  link: /examples/dashboard
 ---
 
 # Live Demo

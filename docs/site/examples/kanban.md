@@ -1,3 +1,12 @@
+---
+prev:
+  text: Task List
+  link: /examples/task-list
+next:
+  text: AI Assistants
+  link: /examples/ai-assistants
+---
+
 <script setup>
 import LiveDemo from '../.vitepress/components/LiveDemo.vue'
 </script>

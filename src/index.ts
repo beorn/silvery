@@ -141,7 +141,7 @@ export { TextInput } from "./components/TextInput.js"
 export type { TextInputProps, TextInputHandle } from "./components/TextInput.js"
 
 export { TextArea } from "./components/TextArea.js"
-export type { TextAreaProps, TextAreaHandle } from "./components/TextArea.js"
+export type { TextAreaProps, TextAreaHandle, TextAreaSelection } from "./components/TextArea.js"
 
 export { EditContextDisplay } from "./components/EditContextDisplay.js"
 export type { EditContextDisplayProps } from "./components/EditContextDisplay.js"
@@ -489,7 +489,10 @@ export {
   setWindowTitle,
   setWindowAndIconTitle,
   resetWindowTitle,
+  setCursorStyle,
+  resetCursorStyle,
 } from "./output.js"
+export type { CursorShape } from "./output.js"
 
 // Bracketed paste mode (DEC private mode 2004)
 export {

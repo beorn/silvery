@@ -119,10 +119,10 @@ function App() {
 
 using term = createTerm()
 await render(
-  term,
   <StrictMode>
     <App />
   </StrictMode>,
+  term,
 )
 ```
 

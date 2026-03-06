@@ -1,3 +1,12 @@
+---
+prev:
+  text: Live Demo
+  link: /examples/live-demo
+next:
+  text: Task List
+  link: /examples/task-list
+---
+
 <script setup>
 import LiveDemo from '../.vitepress/components/LiveDemo.vue'
 </script>

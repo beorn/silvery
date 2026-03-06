@@ -1,6 +1,10 @@
 ---
 title: Building Data Explorers & Tables with hightea
 description: Build terminal data explorers with sortable tables, virtual lists, responsive layouts, and real-time filtering using hightea.
+prev:
+  text: Developer Tools
+  link: /examples/developer-tools
+next: false
 ---
 
 <script setup>

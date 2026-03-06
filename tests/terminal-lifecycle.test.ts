@@ -120,6 +120,7 @@ describe("restoreTerminalState", () => {
 
     // Verify essential restore sequences are present
     expect(output).toContain("\x1b[0m") // Reset SGR
+    expect(output).toContain("\x1b[0 q") // Reset cursor style (DECSCUSR 0)
     expect(output).toContain("\x1b[?25h") // Show cursor
     expect(output).toContain("\x1b[?1049l") // Exit alt screen
     expect(output).toContain("\x1b[?2004l") // Disable bracketed paste

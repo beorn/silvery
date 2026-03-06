@@ -25,7 +25,7 @@ import {
 } from "./non-tty.js"
 import { getCursorState as globalGetCursorState, type CursorAccessors } from "./hooks/useCursor.js"
 import { copyToClipboard as copyToClipboardImpl } from "./clipboard.js"
-import { ANSI, notify as notifyTerminal } from "./output.js"
+import { ANSI, notify as notifyTerminal, setCursorStyle, resetCursorStyle } from "./output.js"
 import { executeRender, type PipelineConfig } from "./pipeline.js"
 import type { TeaNode } from "./types.js"
 
@@ -509,7 +509,8 @@ export class RenderScheduler {
       if (this.nonTTYMode === "tty") {
         const cursor = this.getCursorState()
         if (cursor?.visible) {
-          cursorSuffix = ANSI.moveCursor(cursor.x, cursor.y) + ANSI.CURSOR_SHOW
+          const shapeSeq = cursor.shape ? setCursorStyle(cursor.shape) : resetCursorStyle()
+          cursorSuffix = ANSI.moveCursor(cursor.x, cursor.y) + shapeSeq + ANSI.CURSOR_SHOW
         } else {
           cursorSuffix = ANSI.CURSOR_HIDE
         }

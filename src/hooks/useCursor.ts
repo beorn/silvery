@@ -14,6 +14,7 @@
  */
 
 import React, { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from "react"
+import type { CursorShape } from "../output.js"
 import { useScreenRectCallback } from "./useLayout.js"
 
 // ============================================================================
@@ -27,6 +28,8 @@ export interface CursorPosition {
   row: number
   /** Whether the cursor should be visible. Default: true */
   visible?: boolean
+  /** Terminal cursor shape (DECSCUSR). Default: terminal default */
+  shape?: CursorShape
 }
 
 export interface CursorState {
@@ -36,6 +39,8 @@ export interface CursorState {
   y: number
   /** Whether cursor is visible */
   visible: boolean
+  /** Terminal cursor shape (DECSCUSR) */
+  shape?: CursorShape
 }
 
 // ============================================================================
@@ -145,7 +150,7 @@ export function resetCursorState(): void {
  * Falls back to module-level globals otherwise (backward compat).
  */
 export function useCursor(position: CursorPosition): void {
-  const { col, row, visible = true } = position
+  const { col, row, visible = true, shape } = position
   const store = useContext(CursorCtx)
 
   // Resolve set/get functions from context or global fallback
@@ -156,11 +161,13 @@ export function useCursor(position: CursorPosition): void {
   const colRef = useRef(col)
   const rowRef = useRef(row)
   const visibleRef = useRef(visible)
+  const shapeRef = useRef(shape)
   const setRef = useRef(set)
   const getRef = useRef(get)
   colRef.current = col
   rowRef.current = row
   visibleRef.current = visible
+  shapeRef.current = shape
   setRef.current = set
   getRef.current = get
 
@@ -175,6 +182,7 @@ export function useCursor(position: CursorPosition): void {
         x: rect.x + colRef.current,
         y: rect.y + rowRef.current,
         visible: true,
+        shape: shapeRef.current,
       })
     }, []),
   )

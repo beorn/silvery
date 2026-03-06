@@ -19,7 +19,7 @@
  */
 
 import { writeSync } from "node:fs"
-import { enableKittyKeyboard, disableKittyKeyboard, enableMouse, disableMouse } from "../output.js"
+import { enableKittyKeyboard, disableKittyKeyboard, enableMouse, disableMouse, resetCursorStyle } from "../output.js"
 
 // ============================================================================
 // Types
@@ -103,6 +103,7 @@ export function restoreTerminalState(stdout: NodeJS.WriteStream, stdin: NodeJS.R
     disableMouse(), // Disable all mouse tracking modes
     disableKittyKeyboard(), // Pop Kitty keyboard protocol
     "\x1b[?2004l", // Disable bracketed paste
+    resetCursorStyle(), // Reset cursor shape to terminal default (DECSCUSR 0)
     "\x1b[?25h", // Show cursor
     "\x1b[?1049l", // Exit alternate screen
   ].join("")

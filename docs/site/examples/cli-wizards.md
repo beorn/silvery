@@ -1,6 +1,12 @@
 ---
 title: Building CLI Wizards & Setup Tools with hightea
 description: Build interactive CLI wizards with multi-step forms, selection lists, progress bars, and focus scopes using hightea.
+prev:
+  text: AI Assistants
+  link: /examples/ai-assistants
+next:
+  text: Developer Tools
+  link: /examples/developer-tools
 ---
 
 <script setup>
