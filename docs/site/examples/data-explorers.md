@@ -131,4 +131,4 @@ Install hightea and build your first data explorer in minutes:
 bun add @hightea/term react flexture
 ```
 
-Follow the [Getting Started guide](/guide/getting-started) for a full walkthrough, or explore the [Table](/guide/components#table) and [VirtualList](/guide/components#virtuallist) component docs.
+Follow the [Getting Started guide](/guide/getting-started) for a full walkthrough, or explore the [Components](/guide/components) reference.
