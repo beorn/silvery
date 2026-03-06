@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: "hightea"
+  name: "Hightea"
   text: "React for modern terminals"
   tagline: "Layout feedback, every terminal protocol, React + Elm architectures, 100x+ faster incremental renders. Zero native dependencies."
   actions:
@@ -56,12 +56,12 @@ features:
 
 <div class="use-cases">
 
-- **[AI Assistants & Chat](/use-cases/ai-assistants)** -- Streaming output, scrollback history, command palettes
-- **[Dashboards & Monitoring](/use-cases/dashboards)** -- Multi-pane layouts with real-time data
-- **[Kanban & Project Boards](/use-cases/kanban-boards)** -- Multi-column navigation with cards and focus management
-- **[CLI Wizards & Setup Tools](/use-cases/cli-wizards)** -- Step-by-step forms, selections, progress tracking
-- **[Developer Tools](/use-cases/developer-tools)** -- REPLs, log viewers, debuggers, profilers
-- **[Data Explorers & Tables](/use-cases/data-explorers)** -- Virtual lists, filtering, search, sortable tables
+- **[AI Assistants & Chat](/examples/ai-assistants)** -- Streaming output, scrollback history, command palettes
+- **[Dashboards & Monitoring](/examples/dashboard)** -- Multi-pane layouts with real-time data
+- **[Kanban & Project Boards](/examples/kanban)** -- Multi-column navigation with cards and focus management
+- **[CLI Wizards & Setup Tools](/examples/cli-wizards)** -- Step-by-step forms, selections, progress tracking
+- **[Developer Tools](/examples/developer-tools)** -- REPLs, log viewers, debuggers, profilers
+- **[Data Explorers & Tables](/examples/data-explorers)** -- Virtual lists, filtering, search, sortable tables
 
 </div>
 

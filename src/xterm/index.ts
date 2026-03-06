@@ -200,6 +200,10 @@ export function renderToXterm(
   // Initial render: hide cursor, clear screen, move to home, then render
   terminal.write(CURSOR_HIDE + CURSOR_HOME + CLEAR_SCREEN)
   doRender()
+  // Second pass picks up layout feedback (useContentRect dimensions).
+  // Without this, the first frame shows zeros because forceUpdate() is
+  // deferred to requestAnimationFrame, which may not fire in iframes.
+  doRender()
 
   const unmount = (): void => {
     unmounted = true

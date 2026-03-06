@@ -2,6 +2,8 @@
 
 A scrollable task list with variable-height items and keyboard navigation.
 
+*(Interactive demo coming soon)*
+
 [[toc]]
 
 ## What It Demonstrates

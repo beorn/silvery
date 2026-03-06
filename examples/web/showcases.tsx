@@ -198,9 +198,9 @@ function DashboardShowcase(): JSX.Element {
   const visibleEvents = allEvents.slice(eventOffset, eventOffset + 4)
 
   return (
-    <Box flexDirection="column" padding={1}>
+    <Box flexDirection="column" paddingX={1}>
       {/* Header */}
-      <Box marginBottom={1}>
+      <Box>
         <Text color="#a6e3a1">● </Text>
         <Text bold color="#cdd6f4">
           System Monitor
@@ -221,13 +221,11 @@ function DashboardShowcase(): JSX.Element {
           borderColor={activePanel === 0 ? "#89b4fa" : "#45475a"}
           paddingX={1}
         >
-          <Box marginBottom={1}>
-            <Text bold color={activePanel === 0 ? "#89b4fa" : "#a6adc8"}>
-              CPU / Memory
-            </Text>
-          </Box>
+          <Text bold color={activePanel === 0 ? "#89b4fa" : "#a6adc8"}>
+            CPU / Memory
+          </Text>
           {/* Sparkline graphs */}
-          <Box flexDirection="row" gap={1} marginBottom={1}>
+          <Box flexDirection="row" gap={1}>
             <Box width={5}>
               <Text color="#6c7086">CPU</Text>
             </Box>
@@ -243,7 +241,7 @@ function DashboardShowcase(): JSX.Element {
               {String(cpu).padStart(2)}%
             </Text>
           </Box>
-          <Box flexDirection="row" gap={1} marginBottom={1}>
+          <Box flexDirection="row" gap={1}>
             <Box width={5}>
               <Text color="#6c7086">MEM</Text>
             </Box>
@@ -288,11 +286,9 @@ function DashboardShowcase(): JSX.Element {
           borderColor={activePanel === 1 ? "#89b4fa" : "#45475a"}
           paddingX={1}
         >
-          <Box marginBottom={1}>
-            <Text bold color={activePanel === 1 ? "#89b4fa" : "#a6adc8"}>
-              Services
-            </Text>
-          </Box>
+          <Text bold color={activePanel === 1 ? "#89b4fa" : "#a6adc8"}>
+            Services
+          </Text>
           {services.map((s) => (
             <Box key={s.name} flexDirection="row" justifyContent="space-between" marginBottom={0}>
               <Text>
@@ -316,13 +312,10 @@ function DashboardShowcase(): JSX.Element {
         borderStyle="round"
         borderColor={activePanel === 2 ? "#89b4fa" : "#45475a"}
         paddingX={1}
-        marginTop={1}
       >
-        <Box marginBottom={1}>
-          <Text bold color={activePanel === 2 ? "#89b4fa" : "#a6adc8"}>
-            Events
-          </Text>
-        </Box>
+        <Text bold color={activePanel === 2 ? "#89b4fa" : "#a6adc8"}>
+          Events
+        </Text>
         {visibleEvents.map((e, i) => (
           <Box key={i} flexDirection="row" gap={1}>
             <Text dim color="#585b70">

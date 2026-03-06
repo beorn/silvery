@@ -1,8 +1,16 @@
+<script setup>
+import LiveDemo from '../.vitepress/components/LiveDemo.vue'
+</script>
+
 # Kanban Board Example
 
 A multi-column kanban board with independent scroll regions.
 
 [[toc]]
+
+## Live Demo
+
+<LiveDemo xtermSrc="/examples/showcase.html?demo=kanban" :height="500" />
 
 ## What It Demonstrates
 
@@ -11,20 +19,6 @@ A multi-column kanban board with independent scroll regions.
 - **Cross-column navigation** with arrow keys
 - **Moving items between columns**
 - **State management** for cursor position
-
-## Screenshot
-
-```
-+------------+------------+------------+
-| To Do (5)  | Doing (3)  | Done (8)   |
-+------------+------------+------------+
-| Card 1     |> Card A    | Card X     |
-| Card 2     |  Card B    | Card Y     |
-| Card 3     |  Card C    | Card Z     |
-| v 2 more   |            | v 5 more   |
-+------------+------------+------------+
-  < > move column | j/k navigate | m move card
-```
 
 ## Running the Example
 
@@ -501,6 +495,14 @@ The selected card has inverted colors:
 | `useContentRect()`  | Text truncation in cards and headers     |
 | `useInput()`        | Two-axis keyboard navigation             |
 | Variable heights    | Cards with tags are taller               |
+
+### Why hightea for Kanban Boards
+
+- **Focus system** -- Tree-based spatial navigation lets users press Left/Right to move between columns and Up/Down within them. Mark any `Box` as `focusable`, add `autoFocus` to the default card, and hightea handles Tab cycling and `useFocusWithin` for column-level focus indicators.
+
+- **Mouse support** -- SGR mouse protocol gives you `onClick` and `onDoubleClick` props on card components, `onWheel` for per-column scrolling, and automatic click-to-focus so users can click a card in any column to jump directly to it.
+
+- **Command system** -- `withCommands` assigns every board action (move card, create card, archive, filter) an ID with configurable keybindings. `withKeybindings` resolves keypresses to commands. You get a searchable command palette and AI-accessible action introspection for free.
 
 ## Architecture Notes
 

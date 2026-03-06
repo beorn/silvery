@@ -1,8 +1,16 @@
+<script setup>
+import LiveDemo from '../.vitepress/components/LiveDemo.vue'
+</script>
+
 # Dashboard Example
 
 A multi-pane dashboard demonstrating responsive layouts with `useContentRect()`.
 
 [[toc]]
+
+## Live Demo
+
+<LiveDemo xtermSrc="/examples/showcase.html?demo=dashboard" :height="500" />
 
 ## What It Demonstrates
 
@@ -10,25 +18,6 @@ A multi-pane dashboard demonstrating responsive layouts with `useContentRect()`.
 - **Responsive breakpoints** that adapt to terminal width
 - **`useContentRect()` usage** for proportional sizing and text truncation
 - **Nested layout** with borders and padding
-
-## Screenshot
-
-```
-+------------------+---------------------+
-| System Stats     | Activity Feed       |
-|                  |                     |
-| CPU:    [====  ] | 12:01 User login    |
-| Memory: [=====  ]| 12:00 Build passed  |
-| Disk:   [==     ]| 11:58 PR #42 merged |
-|                  | 11:55 Deploy done   |
-+------------------+---------------------+
-| Recent Items                           |
-|                                        |
-| > project-alpha     2 hours ago        |
-|   report-q4.pdf     Yesterday          |
-|   config.json       3 days ago         |
-+----------------------------------------+
-```
 
 ## Running the Example
 
@@ -319,6 +308,14 @@ Add more items to `recentItems` and they'll scroll automatically.
 | `scrollTo={index}`  | Keep selected item visible                                           |
 | `flexGrow`          | Proportional pane sizing                                             |
 | `useInput()`        | Keyboard navigation                                                  |
+
+### Why hightea for Dashboards
+
+- **Real-time updates** -- hightea's incremental renderer tracks dirty flags per node. When one metric changes in a large dashboard, only that cell repaints -- 169us per update vs 20.7ms for a full re-render ([benchmarks](/guide/why-hightea#performance)). Smooth 30fps data refreshes without saturating the terminal.
+
+- **Theming** -- `ThemeProvider` with semantic `$token` colors (`$primary`, `$success`, `$error`, `$muted`, `$border`) gives your dashboard a consistent look. Switch between `defaultDarkTheme` and `defaultLightTheme` or define custom palettes.
+
+- **Synchronized output** -- DEC 2026 synchronized updates wrap each frame in atomic begin/end markers. Terminals that support the protocol (tmux, Zellij, Ghostty, WezTerm, kitty) paint the entire frame at once, eliminating partial-repaint flicker in fast-updating dashboards.
 
 ## Exercises
 
