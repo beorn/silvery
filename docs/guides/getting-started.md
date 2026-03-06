@@ -266,9 +266,8 @@ hightea/runtime is compatible with existing hightea components. Key differences:
 
 ## What's Next
 
-When your app outgrows `useState` and `useInput`, the two companion guides show how to graduate without rewriting:
+When your app outgrows `useState` and `useInput`, the progression guide shows how to grow without rewriting:
 
-- [State Management](state-management.md) — shared store, ops as data, effects as data, composable state machines
-- [Event Handling](event-handling.md) — component handlers, commands, composable plugins, custom event sources
+- [Building an App](building-an-app.md) — from Counter to full TEA, one level at a time
 
-You can also explore the [Components](../reference/components.md) and [Hooks](../reference/hooks.md) references, or dive into [Architecture](../deep-dives/architecture.md) for the five-phase pipeline internals.
+For API details, see [State Management](state-management.md) and [Event Handling](event-handling.md). You can also explore the [Components](../reference/components.md) and [Hooks](../reference/hooks.md) references, or dive into [Architecture](../deep-dives/architecture.md) for the five-phase pipeline internals.

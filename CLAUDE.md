@@ -31,7 +31,9 @@ hightea's core innovation is **two-phase rendering with synchronous layout feedb
 
 - [docs/deep-dives/architecture.md](docs/deep-dives/architecture.md) - Layer diagram, RenderAdapter interface
 - [docs/guides/getting-started.md](docs/guides/getting-started.md) - First app tutorial
-- [docs/guides/state-management.md](docs/guides/state-management.md) - createApp, useApp, createSlice, selectors vs signals, effects middleware
+- [docs/guides/building-an-app.md](docs/guides/building-an-app.md) - Unified progression: Counter → Todo → Board, state + events evolve together
+- [docs/guides/state-management.md](docs/guides/state-management.md) - API reference: createApp, createSlice, tea() middleware, createStore
+- [docs/guides/event-handling.md](docs/guides/event-handling.md) - API reference: withDomEvents, withCommands, plugins, event sources
 - [docs/guides/runtime-layers.md](docs/guides/runtime-layers.md) - Runtime architecture deep-dive (createApp, createRuntime, createStore)
 - [docs/deep-dives/internals.md](docs/deep-dives/internals.md) - Reconciler implementation
 
@@ -1093,7 +1095,9 @@ to capture numbers.
 | [docs/README.md](docs/README.md)                                                   | Documentation table of contents                                                                                              |
 | **Guides**                                                                         |                                                                                                                              |
 | [docs/guides/getting-started.md](docs/guides/getting-started.md)                   | First app tutorial, basic input, layout feedback                                                                             |
-| [docs/guides/state-management.md](docs/guides/state-management.md)                 | createApp, useApp, createSlice, selectors vs signals, effects middleware                                                     |
+| [docs/guides/building-an-app.md](docs/guides/building-an-app.md)                   | Unified progression: Counter → Todo → Board, state + events evolve together                                                  |
+| [docs/guides/state-management.md](docs/guides/state-management.md)                 | API reference: createApp, createSlice, tea() middleware, createStore                                                         |
+| [docs/guides/event-handling.md](docs/guides/event-handling.md)                     | API reference: withDomEvents, withCommands, plugins, event sources                                                           |
 | [docs/guides/runtime-layers.md](docs/guides/runtime-layers.md)                     | createApp, createRuntime, createStore, streams, tick sources                                                                 |
 | [docs/guides/migration.md](docs/guides/migration.md)                               | Ink to hightea migration guide                                                                                               |
 | [docs/guides/runtime-migration.md](docs/guides/runtime-migration.md)               | Legacy hightea to hightea/runtime migration                                                                                  |

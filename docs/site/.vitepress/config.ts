@@ -53,6 +53,7 @@ export default defineConfig({
           text: "Introduction",
           items: [
             { text: "Getting Started", link: "/guide/getting-started" },
+            { text: "Building an App", link: "/guide/building-an-app" },
             { text: "Installation", link: "/guide/installation" },
             { text: "Why Hightea?", link: "/guide/why-hightea" },
           ],

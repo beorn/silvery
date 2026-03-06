@@ -34,10 +34,10 @@ await run(<Counter />)
 ## Suggested Reading Order
 
 1. [Getting Started](guides/getting-started.md) -- first app, input handling, layout feedback
-2. [State Management](guides/state-management.md) -- each level turns another category of hidden behavior into data: transitions → effects → cross-module messages
-3. [Event Handling](guides/event-handling.md) -- each level turns another category of hidden input into data: spatial targeting → user intent → event processing
-4. [Components](reference/components.md) -- Box, Text, VirtualList, Console, inputs
-5. [Hooks](reference/hooks.md) -- useContentRect, useInput, useApp, animations
+2. [Building an App](guides/building-an-app.md) -- from Counter to full TEA: state + events evolve together, one level at a time
+3. [Components](reference/components.md) -- Box, Text, VirtualList, Console, inputs
+4. [Hooks](reference/hooks.md) -- useContentRect, useInput, useApp, animations
+5. [State Management](guides/state-management.md) / [Event Handling](guides/event-handling.md) -- API references for createApp, createSlice, withCommands, plugins
 6. [Architecture](deep-dives/architecture.md) -- five-phase pipeline, RenderAdapter
 
 ## Guides
@@ -47,8 +47,9 @@ Tutorials, walkthroughs, and migration paths.
 | Document                                                     | Description                                                                          |
 | ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
 | [Getting Started](guides/getting-started.md)                 | First app tutorial, basic input, layout feedback                                     |
-| [State Management](guides/state-management.md)               | General patterns + hightea tooling: store, signals, createSlice, ops/effects as data |
-| [Event Handling](guides/event-handling.md)                   | Composable event plugins, commands, sources, and the input pipeline                  |
+| [Building an App](guides/building-an-app.md)                 | Unified progression: Counter → Todo → Board, state + events evolve together          |
+| [State Management](guides/state-management.md)               | API reference: createApp, createSlice, tea() middleware, createStore                 |
+| [Event Handling](guides/event-handling.md)                   | API reference: withDomEvents, withCommands, plugins, event sources                   |
 | [Runtime Layers](guides/runtime-layers.md)                   | createApp, createRuntime, createStore, streams, tick sources                         |
 | [Migration from Ink](guides/migration.md)                    | Drop-in migration guide                                                              |
 | [Migration from legacy hightea](guides/runtime-migration.md) | Migrating to hightea/runtime API                                                     |
