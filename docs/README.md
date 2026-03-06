@@ -44,15 +44,15 @@ await run(<Counter />)
 
 Tutorials, walkthroughs, and migration paths.
 
-| Document                                                     | Description                                                                          |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| [Getting Started](guides/getting-started.md)                 | First app tutorial, basic input, layout feedback                                     |
-| [Building an App](guides/building-an-app.md)                 | Unified progression: Counter → Todo → Board, state + events evolve together          |
-| [State Management](guides/state-management.md)               | API reference: createApp, createSlice, tea() middleware, createStore                 |
-| [Event Handling](guides/event-handling.md)                   | API reference: withDomEvents, withCommands, plugins, event sources                   |
-| [Runtime Layers](guides/runtime-layers.md)                   | createApp, createRuntime, createStore, streams, tick sources                         |
-| [Migration from Ink](guides/migration.md)                    | Drop-in migration guide                                                              |
-| [Migration from legacy hightea](guides/runtime-migration.md) | Migrating to hightea/runtime API                                                     |
+| Document                                                     | Description                                                                 |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| [Getting Started](guides/getting-started.md)                 | First app tutorial, basic input, layout feedback                            |
+| [Building an App](guides/building-an-app.md)                 | Unified progression: Counter → Todo → Board, state + events evolve together |
+| [State Management](guides/state-management.md)               | API reference: createApp, createSlice, tea() middleware, createStore        |
+| [Event Handling](guides/event-handling.md)                   | API reference: withDomEvents, withCommands, plugins, event sources          |
+| [Runtime Layers](guides/runtime-layers.md)                   | createApp, createRuntime, createStore, streams, tick sources                |
+| [Migration from Ink](guides/migration.md)                    | Drop-in migration guide                                                     |
+| [Migration from legacy hightea](guides/runtime-migration.md) | Migrating to hightea/runtime API                                            |
 
 ## Reference
 

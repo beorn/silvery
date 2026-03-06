@@ -4,13 +4,13 @@ Every level in this guide turns something invisible into data. Local state hides
 
 The app evolves: Counter → Todo list → Board. At each level, both state management and event handling advance together — because in a real app, they're inseparable.
 
-| Level | App | State | Events | What becomes data |
-|-------|-----|-------|--------|-------------------|
-| **1 — Starting Simple** | Counter | `useState` | `useInput` callback | _(nothing yet)_ |
-| **2 — Shared State + Spatial Events** | Todo list | `createApp`/Zustand store | `withDomEvents()` — onClick, onKeyDown | Shared state, spatial targeting |
-| **3 — Everything is Data** | Board | `createSlice` + ops-as-data | `withCommands` — named serializable actions | State transitions + user intent |
-| **4 — Pure Functions** | Board + I/O | Effects as data (return `[state, effects]`) | Custom plugins (vim modes, file watchers) | Side effects + event processing |
-| **5 — Composable Machines** | Board + Dialog + Search | Multiple slices, dispatch effects | Plugin composition (`pipe()`) | Cross-module communication |
+| Level                                 | App                     | State                                       | Events                                      | What becomes data               |
+| ------------------------------------- | ----------------------- | ------------------------------------------- | ------------------------------------------- | ------------------------------- |
+| **1 — Starting Simple**               | Counter                 | `useState`                                  | `useInput` callback                         | _(nothing yet)_                 |
+| **2 — Shared State + Spatial Events** | Todo list               | `createApp`/Zustand store                   | `withDomEvents()` — onClick, onKeyDown      | Shared state, spatial targeting |
+| **3 — Everything is Data**            | Board                   | `createSlice` + ops-as-data                 | `withCommands` — named serializable actions | State transitions + user intent |
+| **4 — Pure Functions**                | Board + I/O             | Effects as data (return `[state, effects]`) | Custom plugins (vim modes, file watchers)   | Side effects + event processing |
+| **5 — Composable Machines**           | Board + Dialog + Search | Multiple slices, dispatch effects           | Plugin composition (`pipe()`)               | Cross-module communication      |
 
 Most web apps stop at Level 2. TUI apps with keyboard-driven interaction, undo, and multi-pane layouts often reach Level 3. The patterns are general — ops as data, effects as data, composable state machines work in any React framework. If you've heard of [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA), that's where Levels 3+4 land. You arrive there incrementally — one sip at a time.
 
@@ -318,15 +318,11 @@ keypress/click → command → op → state change → screen
 The driver pattern makes this concrete for testing and AI:
 
 ```tsx
-const driver = pipe(
-  app,
-  withKeybindings(bindings),
-  withDiagnostics(),
-)
+const driver = pipe(app, withKeybindings(bindings), withDiagnostics())
 
-driver.cmd.all()                  // list available commands
-await driver.cmd.cursor_down()    // execute by name
-driver.getState()                 // inspect state
+driver.cmd.all() // list available commands
+await driver.cmd.cursor_down() // execute by name
+driver.getState() // inspect state
 ```
 
 ### Hybrid: components + commands
@@ -434,14 +430,14 @@ This is the [SlateJS](https://docs.slatejs.org/concepts/08-plugins) editor model
 
 ```tsx
 const app = pipe(
-  createApp(store),          // kernel: event loop + state
-  withReact(<Board />),      // rendering: React + virtual buffer
-  withTerminal(process),     // terminal: stdin→events, stdout→output
-  withFocus(),               // processing: Tab navigation, focus scopes
-  withDomEvents(),           // processing: dispatch to component tree
-  withCommands(opts),        // processing: key/mouse → named commands
+  createApp(store), // kernel: event loop + state
+  withReact(<Board />), // rendering: React + virtual buffer
+  withTerminal(process), // terminal: stdin→events, stdout→output
+  withFocus(), // processing: Tab navigation, focus scopes
+  withDomEvents(), // processing: dispatch to component tree
+  withCommands(opts), // processing: key/mouse → named commands
   withKeybindings(bindings), // API: press() → keybinding resolution
-  withDiagnostics(),         // API: render invariant checks
+  withDiagnostics(), // API: render invariant checks
 )
 ```
 
@@ -477,11 +473,11 @@ Mode lives **in the model**, not in a closure — so it's inspectable, serializa
 
 Not all sources need to be app plugins. hightea provides three mechanisms:
 
-| Mechanism | Lifecycle | Use when... |
-|-----------|-----------|-------------|
-| **App plugins** | Static — created once at app setup | Always-on sources: stdin, resize, timers |
+| Mechanism            | Lifecycle                           | Use when...                                       |
+| -------------------- | ----------------------------------- | ------------------------------------------------- |
+| **App plugins**      | Static — created once at app setup  | Always-on sources: stdin, resize, timers          |
 | **React components** | Reactive — mount/unmount with state | Conditional sources: file watchers, network polls |
-| **Effects** | One-shot — triggered by update | Request/response: fetch, save, notifications |
+| **Effects**          | One-shot — triggered by update      | Request/response: fetch, save, notifications      |
 
 React components are the most natural way to add reactive sources:
 
@@ -631,15 +627,15 @@ The progression from functions to data is not free. Each level buys something re
 
 The core ideas — making operations, effects, and events into data — have been discovered many times.
 
-| System | What it covers | Approach |
-|--------|----------------|----------|
-| **[Elm](https://guide.elm-lang.org/architecture/)** | State + Effects + Composition | `update : Msg -> Model -> (Model, Cmd Msg)` — the gold standard. Enforces TEA at language level. |
-| [Redux](https://redux.js.org/) | State (ops as data) | `dispatch(action)` + reducer. Effects live in middleware (thunks/sagas), not return values. |
-| [redux-loop](https://github.com/redux-loop/redux-loop) | State + Effects | Extends Redux: reducer returns `[state, effects]` — completing the TEA shape. |
-| **[SlateJS](https://docs.slatejs.org/)** | Event plugins | `withHistory(withReact(createEditor()))` — same `(editor) => editor` plugin shape. |
-| [ProseMirror](https://prosemirror.net/) | Event plugins | Structured plugin hooks — more constrained, easier to reason about. |
-| [Express](https://expressjs.com/) / [Koa](https://koajs.com/) | Event middleware | `app.use(middleware)` — onion model composition. |
-| **hightea** | All of the above | `createSlice` + `tea()` for state; `pipe()` + plugins for events. Incremental adoption. |
+| System                                                        | What it covers                | Approach                                                                                         |
+| ------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------ |
+| **[Elm](https://guide.elm-lang.org/architecture/)**           | State + Effects + Composition | `update : Msg -> Model -> (Model, Cmd Msg)` — the gold standard. Enforces TEA at language level. |
+| [Redux](https://redux.js.org/)                                | State (ops as data)           | `dispatch(action)` + reducer. Effects live in middleware (thunks/sagas), not return values.      |
+| [redux-loop](https://github.com/redux-loop/redux-loop)        | State + Effects               | Extends Redux: reducer returns `[state, effects]` — completing the TEA shape.                    |
+| **[SlateJS](https://docs.slatejs.org/)**                      | Event plugins                 | `withHistory(withReact(createEditor()))` — same `(editor) => editor` plugin shape.               |
+| [ProseMirror](https://prosemirror.net/)                       | Event plugins                 | Structured plugin hooks — more constrained, easier to reason about.                              |
+| [Express](https://expressjs.com/) / [Koa](https://koajs.com/) | Event middleware              | `app.use(middleware)` — onion model composition.                                                 |
+| **hightea**                                                   | All of the above              | `createSlice` + `tea()` for state; `pipe()` + plugins for events. Incremental adoption.          |
 
 Redux got Level 3 right but stopped there. redux-loop completed the TEA shape. SlateJS pioneered the plugin-by-override model. This guide pieces these ideas into a single incremental progression for React.
 

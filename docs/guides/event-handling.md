@@ -36,18 +36,18 @@ const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
 
 ### Available event handler props
 
-| Prop | Event Type | Bubbles |
-|------|-----------|---------|
-| `onClick` | `InkxMouseEvent` | Yes |
-| `onDoubleClick` | `InkxMouseEvent` | Yes |
-| `onMouseDown` | `InkxMouseEvent` | Yes |
-| `onMouseUp` | `InkxMouseEvent` | Yes |
-| `onMouseMove` | `InkxMouseEvent` | Yes |
-| `onMouseEnter` | `InkxMouseEvent` | No |
-| `onMouseLeave` | `InkxMouseEvent` | No |
-| `onWheel` | `InkxWheelEvent` | Yes |
-| `onKeyDown` | `InkxKeyEvent` | Yes |
-| `onKeyDownCapture` | `InkxKeyEvent` | Yes (capture phase) |
+| Prop               | Event Type       | Bubbles             |
+| ------------------ | ---------------- | ------------------- |
+| `onClick`          | `InkxMouseEvent` | Yes                 |
+| `onDoubleClick`    | `InkxMouseEvent` | Yes                 |
+| `onMouseDown`      | `InkxMouseEvent` | Yes                 |
+| `onMouseUp`        | `InkxMouseEvent` | Yes                 |
+| `onMouseMove`      | `InkxMouseEvent` | Yes                 |
+| `onMouseEnter`     | `InkxMouseEvent` | No                  |
+| `onMouseLeave`     | `InkxMouseEvent` | No                  |
+| `onWheel`          | `InkxWheelEvent` | Yes                 |
+| `onKeyDown`        | `InkxKeyEvent`   | Yes                 |
+| `onKeyDownCapture` | `InkxKeyEvent`   | Yes (capture phase) |
 
 ---
 
@@ -119,7 +119,7 @@ Component handlers and commands coexist. `withDomEvents()` fires first; if a com
 const app = pipe(
   createApp(store),
   withReact(<Board />),
-  withDomEvents(),   // component handlers fire first
+  withDomEvents(), // component handlers fire first
   withCommands(opts), // unhandled events resolve to commands
 )
 ```
@@ -127,16 +127,12 @@ const app = pipe(
 ### The driver pattern (testing + AI)
 
 ```tsx
-const driver = pipe(
-  app,
-  withKeybindings(bindings),
-  withDiagnostics(),
-)
+const driver = pipe(app, withKeybindings(bindings), withDiagnostics())
 
-driver.cmd.all()                  // list available commands
-await driver.cmd.cursor_down()    // execute by name
-driver.getState()                 // inspect state
-await driver.screenshot()         // capture screen
+driver.cmd.all() // list available commands
+await driver.cmd.cursor_down() // execute by name
+driver.getState() // inspect state
+await driver.screenshot() // capture screen
 ```
 
 ---
@@ -196,11 +192,11 @@ The rule: **subscribers never mutate the model.** They either do I/O or dispatch
 
 ### Three mechanisms
 
-| Mechanism | Lifecycle | Use when... |
-|-----------|-----------|-------------|
-| **App plugins** | Static — created once at app setup | Always-on sources: stdin, resize, timers |
+| Mechanism            | Lifecycle                           | Use when...                                       |
+| -------------------- | ----------------------------------- | ------------------------------------------------- |
+| **App plugins**      | Static — created once at app setup  | Always-on sources: stdin, resize, timers          |
 | **React components** | Reactive — mount/unmount with state | Conditional sources: file watchers, network polls |
-| **Effects** | One-shot — triggered by update | Request/response: fetch, save, notifications |
+| **Effects**          | One-shot — triggered by update      | Request/response: fetch, save, notifications      |
 
 React components are the most natural way to add reactive sources:
 
@@ -251,8 +247,7 @@ interface EventMap {
   "term:resize": { cols: number; rows: number }
 }
 
-type AppEvent<K extends keyof EventMap = keyof EventMap> =
-  K extends K ? { type: K; data: EventMap[K] } : never
+type AppEvent<K extends keyof EventMap = keyof EventMap> = K extends K ? { type: K; data: EventMap[K] } : never
 ```
 
 Sources are typed against the map:
@@ -297,11 +292,11 @@ await run(store, <App />)
 
 // Equivalent to:
 const app = pipe(
-  createApp(store),       // kernel: event loop + state
-  withReact(<App />),     // rendering: React reconciler + virtual buffer
-  withTerminal(process),  // ALL terminal I/O: stdin→events, stdout→output, lifecycle
-  withFocus(),            // processing: Tab/Shift+Tab, focus scopes
-  withDomEvents(),        // processing: dispatch to component tree
+  createApp(store), // kernel: event loop + state
+  withReact(<App />), // rendering: React reconciler + virtual buffer
+  withTerminal(process), // ALL terminal I/O: stdin→events, stdout→output, lifecycle
+  withFocus(), // processing: Tab/Shift+Tab, focus scopes
+  withDomEvents(), // processing: dispatch to component tree
 )
 await app.run()
 
@@ -319,26 +314,26 @@ const app = pipe(
 
 ### Plugin roles
 
-| Role | What it does | How |
-|------|-------------|-----|
-| **Source** | Produces events | Overrides `app.events` |
-| **Processor** | Transforms/consumes events | Wraps `app.update` |
-| **Reactor** | Responds to model changes | `app.subscribe` (I/O or dispatch) |
-| **Driver** | Enhances external API | `app.press`, `app.cmd`, etc. |
+| Role          | What it does               | How                               |
+| ------------- | -------------------------- | --------------------------------- |
+| **Source**    | Produces events            | Overrides `app.events`            |
+| **Processor** | Transforms/consumes events | Wraps `app.update`                |
+| **Reactor**   | Responds to model changes  | `app.subscribe` (I/O or dispatch) |
+| **Driver**    | Enhances external API      | `app.press`, `app.cmd`, etc.      |
 
 A single plugin can fill multiple roles — `withCommands` wraps `update` AND adds `.cmd`. `withTerminal` adds sources AND subscribes to render buffer.
 
 ### Built-in plugins
 
-| Plugin | Role | What it does |
-|--------|------|-------------|
-| `withReact(<View />)` | Rendering | React reconciler + virtual buffer |
-| `withTerminal(process)` | Source + Reactor | stdin→events, stdout→output, lifecycle, protocols |
-| `withFocus()` | Processor | Tab/Shift+Tab navigation, focus scopes |
-| `withDomEvents()` | Processor | React-style event dispatch to component tree |
-| `withCommands(opts)` | Processor + Driver | Key/mouse → named commands, `.cmd` API |
-| `withKeybindings(bindings)` | Driver | `press()` → keybinding resolution |
-| `withDiagnostics()` | Driver | Render invariant checks |
+| Plugin                      | Role               | What it does                                      |
+| --------------------------- | ------------------ | ------------------------------------------------- |
+| `withReact(<View />)`       | Rendering          | React reconciler + virtual buffer                 |
+| `withTerminal(process)`     | Source + Reactor   | stdin→events, stdout→output, lifecycle, protocols |
+| `withFocus()`               | Processor          | Tab/Shift+Tab navigation, focus scopes            |
+| `withDomEvents()`           | Processor          | React-style event dispatch to component tree      |
+| `withCommands(opts)`        | Processor + Driver | Key/mouse → named commands, `.cmd` API            |
+| `withKeybindings(bindings)` | Driver             | `press()` → keybinding resolution                 |
+| `withDiagnostics()`         | Driver             | Render invariant checks                           |
 
 For the full API, see [Plugins Reference](../reference/plugins.md).
 
