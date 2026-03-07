@@ -1,8 +1,8 @@
 /**
- * DOM-level Focus and Keyboard Events for inkx
+ * DOM-level Focus and Keyboard Events for hightea
  *
  * Provides React DOM-compatible focus/keyboard event infrastructure:
- * - InkxKeyEvent / InkxFocusEvent synthetic event objects
+ * - HighteaKeyEvent / HighteaFocusEvent synthetic event objects
  * - Event dispatch with capture/target/bubble phases (key events)
  * - Event dispatch with target + bubble (focus events)
  *
@@ -20,7 +20,7 @@ import type { TeaNode } from "./types.js"
 /**
  * Synthetic keyboard event, mirroring React.KeyboardEvent / DOM KeyboardEvent.
  */
-export interface InkxKeyEvent {
+export interface HighteaKeyEvent {
   /** The printable character, or "" for non-printable keys */
   key: string
   /** Raw terminal input string */
@@ -52,7 +52,7 @@ export interface InkxKeyEvent {
 /**
  * Synthetic focus event, mirroring React.FocusEvent / DOM FocusEvent.
  */
-export interface InkxFocusEvent {
+export interface HighteaFocusEvent {
   /** The node gaining or losing focus */
   target: TeaNode
   /** The other node involved (losing focus on 'focus', gaining on 'blur') */
@@ -87,15 +87,15 @@ export interface FocusEventProps {
   /** ID of the node to focus when pressing Right from this node */
   nextFocusRight?: string
   /** Called when this node gains focus */
-  onFocus?: (event: InkxFocusEvent) => void
+  onFocus?: (event: HighteaFocusEvent) => void
   /** Called when this node loses focus */
-  onBlur?: (event: InkxFocusEvent) => void
+  onBlur?: (event: HighteaFocusEvent) => void
   /** Called on key down (bubble phase) */
-  onKeyDown?: (event: InkxKeyEvent, dispatch?: (msg: unknown) => void) => void
+  onKeyDown?: (event: HighteaKeyEvent, dispatch?: (msg: unknown) => void) => void
   /** Called on key up (bubble phase) */
-  onKeyUp?: (event: InkxKeyEvent, dispatch?: (msg: unknown) => void) => void
+  onKeyUp?: (event: HighteaKeyEvent, dispatch?: (msg: unknown) => void) => void
   /** Called on key down (capture phase — fires before target) */
-  onKeyDownCapture?: (event: InkxKeyEvent) => void
+  onKeyDownCapture?: (event: HighteaKeyEvent) => void
 }
 
 // ============================================================================
@@ -105,7 +105,7 @@ export interface FocusEventProps {
 /**
  * Create a synthetic keyboard event.
  */
-export function createKeyEvent(input: string, key: Key, target: TeaNode): InkxKeyEvent {
+export function createKeyEvent(input: string, key: Key, target: TeaNode): HighteaKeyEvent {
   let propagationStopped = false
   let defaultPrevented = false
 
@@ -143,7 +143,7 @@ export function createFocusEvent(
   type: "focus" | "blur",
   target: TeaNode,
   relatedTarget: TeaNode | null,
-): InkxFocusEvent {
+): HighteaFocusEvent {
   let propagationStopped = false
 
   return {
@@ -178,7 +178,7 @@ export function createFocusEvent(
  *
  * stopPropagation() halts traversal at any phase.
  */
-export function dispatchKeyEvent(event: InkxKeyEvent, dispatch?: (msg: unknown) => void): void {
+export function dispatchKeyEvent(event: HighteaKeyEvent, dispatch?: (msg: unknown) => void): void {
   const path = getAncestorPath(event.target)
   const mutableEvent = event as { currentTarget: TeaNode }
 
@@ -186,7 +186,7 @@ export function dispatchKeyEvent(event: InkxKeyEvent, dispatch?: (msg: unknown) 
   for (let i = path.length - 1; i > 0; i--) {
     if (event.propagationStopped) return
     const node = path[i]!
-    const handler = (node.props as Record<string, unknown>).onKeyDownCapture as ((e: InkxKeyEvent) => void) | undefined
+    const handler = (node.props as Record<string, unknown>).onKeyDownCapture as ((e: HighteaKeyEvent) => void) | undefined
     if (handler) {
       mutableEvent.currentTarget = node
       handler(event)
@@ -198,7 +198,7 @@ export function dispatchKeyEvent(event: InkxKeyEvent, dispatch?: (msg: unknown) 
     const target = path[0]!
     mutableEvent.currentTarget = target
     const handler = (target.props as Record<string, unknown>).onKeyDown as
-      | ((e: InkxKeyEvent, d?: (msg: unknown) => void) => void)
+      | ((e: HighteaKeyEvent, d?: (msg: unknown) => void) => void)
       | undefined
     if (handler) {
       handler(event, dispatch)
@@ -210,7 +210,7 @@ export function dispatchKeyEvent(event: InkxKeyEvent, dispatch?: (msg: unknown) 
     if (event.propagationStopped) return
     const node = path[i]!
     const handler = (node.props as Record<string, unknown>).onKeyDown as
-      | ((e: InkxKeyEvent, d?: (msg: unknown) => void) => void)
+      | ((e: HighteaKeyEvent, d?: (msg: unknown) => void) => void)
       | undefined
     if (handler) {
       mutableEvent.currentTarget = node
@@ -224,7 +224,7 @@ export function dispatchKeyEvent(event: InkxKeyEvent, dispatch?: (msg: unknown) 
  *
  * Fires onFocus/onBlur on the target, then bubbles to ancestors.
  */
-export function dispatchFocusEvent(event: InkxFocusEvent): void {
+export function dispatchFocusEvent(event: HighteaFocusEvent): void {
   const handlerProp = event.type === "focus" ? "onFocus" : "onBlur"
   const path = getAncestorPath(event.target)
   const mutableEvent = event as { currentTarget: TeaNode }
@@ -232,7 +232,7 @@ export function dispatchFocusEvent(event: InkxFocusEvent): void {
   for (const node of path) {
     if (event.propagationStopped) break
 
-    const handler = (node.props as Record<string, unknown>)[handlerProp] as ((e: InkxFocusEvent) => void) | undefined
+    const handler = (node.props as Record<string, unknown>)[handlerProp] as ((e: HighteaFocusEvent) => void) | undefined
     if (handler) {
       mutableEvent.currentTarget = node
       handler(event)

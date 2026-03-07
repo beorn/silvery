@@ -1,7 +1,7 @@
 /**
  * Node Creation and Layout Application
  *
- * Functions for creating InkxNodes and applying layout properties.
+ * Functions for creating HighteaNodes and applying layout properties.
  */
 
 import { type LayoutNode, getConstants, getLayoutEngine } from "../layout-engine.js"
@@ -27,7 +27,7 @@ export const measureStats = {
 // ============================================================================
 
 /**
- * Create a new InkxNode with a fresh layout node.
+ * Create a new HighteaNode with a fresh layout node.
  */
 export function createNode(
   type: TeaNodeType,
@@ -200,7 +200,7 @@ function collectNodeTextContent(node: TeaNode): string {
 }
 
 /**
- * Create the root node for the Inkx tree.
+ * Create the root node for the Hightea tree.
  */
 export function createRootNode(): TeaNode {
   return createNode("hightea-root", {})
@@ -240,7 +240,7 @@ export function createVirtualTextNode(props: TextProps): TeaNode {
 
 /**
  * Apply BoxProps to a layout node.
- * This maps Ink/Inkx props to the layout engine API.
+ * This maps Ink/Hightea props to the layout engine API.
  */
 export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
   const c = getConstants()
@@ -497,7 +497,7 @@ export function calculateLayout(root: TeaNode, width: number, height: number): v
 }
 
 /**
- * Propagate computed layout from layout nodes to InkxNodes.
+ * Propagate computed layout from layout nodes to HighteaNodes.
  */
 function propagateLayout(node: TeaNode, parentX: number, parentY: number): void {
   // Save previous layout for change detection

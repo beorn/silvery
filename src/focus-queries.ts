@@ -1,8 +1,8 @@
 /**
- * Focus Queries — pure tree query functions for the inkx focus system.
+ * Focus Queries — pure tree query functions for the hightea focus system.
  *
  * All functions are pure: no state, no React, no side effects.
- * They operate on the InkxNode tree to resolve focusable elements,
+ * They operate on the HighteaNode tree to resolve focusable elements,
  * tab order, spatial navigation targets, and explicit focus links.
  */
 

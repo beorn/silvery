@@ -1,8 +1,8 @@
 /**
- * DOM-level Mouse Events for inkx
+ * DOM-level Mouse Events for hightea
  *
  * Provides React DOM-compatible mouse event infrastructure:
- * - InkxMouseEvent / InkxWheelEvent synthetic event objects
+ * - HighteaMouseEvent / HighteaWheelEvent synthetic event objects
  * - Tree-based hit testing using screenRect (replaces manual HitRegistry)
  * - Event dispatch with bubbling (target → root, stopPropagation support)
  * - Double-click detection (300ms / 2-cell threshold)
@@ -22,7 +22,7 @@ import type { TeaNode } from "./types.js"
 /**
  * Synthetic mouse event, mirroring React.MouseEvent / DOM MouseEvent.
  */
-export interface InkxMouseEvent {
+export interface HighteaMouseEvent {
   /** Terminal column (0-indexed) */
   clientX: number
   /** Terminal row (0-indexed) */
@@ -53,9 +53,9 @@ export interface InkxMouseEvent {
 }
 
 /**
- * Synthetic wheel event, extending InkxMouseEvent with scroll deltas.
+ * Synthetic wheel event, extending HighteaMouseEvent with scroll deltas.
  */
-export interface InkxWheelEvent extends InkxMouseEvent {
+export interface HighteaWheelEvent extends HighteaMouseEvent {
   /** Vertical scroll: -1 (up) or +1 (down) */
   deltaY: number
   /** Horizontal scroll: always 0 for terminals */
@@ -67,14 +67,14 @@ export interface InkxWheelEvent extends InkxMouseEvent {
 // ============================================================================
 
 export interface MouseEventProps {
-  onClick?: (event: InkxMouseEvent) => void
-  onDoubleClick?: (event: InkxMouseEvent) => void
-  onMouseDown?: (event: InkxMouseEvent) => void
-  onMouseUp?: (event: InkxMouseEvent) => void
-  onMouseMove?: (event: InkxMouseEvent) => void
-  onMouseEnter?: (event: InkxMouseEvent) => void
-  onMouseLeave?: (event: InkxMouseEvent) => void
-  onWheel?: (event: InkxWheelEvent) => void
+  onClick?: (event: HighteaMouseEvent) => void
+  onDoubleClick?: (event: HighteaMouseEvent) => void
+  onMouseDown?: (event: HighteaMouseEvent) => void
+  onMouseUp?: (event: HighteaMouseEvent) => void
+  onMouseMove?: (event: HighteaMouseEvent) => void
+  onMouseEnter?: (event: HighteaMouseEvent) => void
+  onMouseLeave?: (event: HighteaMouseEvent) => void
+  onWheel?: (event: HighteaWheelEvent) => void
 }
 
 // ============================================================================
@@ -85,12 +85,12 @@ export interface MouseEventProps {
  * Create a synthetic mouse event.
  */
 export function createMouseEvent(
-  type: InkxMouseEvent["type"],
+  type: HighteaMouseEvent["type"],
   x: number,
   y: number,
   target: TeaNode,
   parsed: ParsedMouse,
-): InkxMouseEvent {
+): HighteaMouseEvent {
   let propagationStopped = false
   let defaultPrevented = false
 
@@ -124,8 +124,8 @@ export function createMouseEvent(
 /**
  * Create a synthetic wheel event.
  */
-export function createWheelEvent(x: number, y: number, target: TeaNode, parsed: ParsedMouse): InkxWheelEvent {
-  const base = createMouseEvent("wheel", x, y, target, parsed) as InkxWheelEvent
+export function createWheelEvent(x: number, y: number, target: TeaNode, parsed: ParsedMouse): HighteaWheelEvent {
+  const base = createMouseEvent("wheel", x, y, target, parsed) as HighteaWheelEvent
   base.deltaY = parsed.delta ?? 0
   base.deltaX = 0
   return base
@@ -195,7 +195,7 @@ const EVENT_HANDLER_MAP: Record<string, keyof MouseEventProps> = {
  * Bubbles from target → root, calling the appropriate handler on each node.
  * stopPropagation() halts bubbling. mouseenter/mouseleave do NOT bubble (DOM spec).
  */
-export function dispatchMouseEvent(event: InkxMouseEvent): void {
+export function dispatchMouseEvent(event: HighteaMouseEvent): void {
   const handlerProp = EVENT_HANDLER_MAP[event.type]
   if (!handlerProp) return
 
@@ -205,7 +205,7 @@ export function dispatchMouseEvent(event: InkxMouseEvent): void {
   if (noBubble) {
     // Only fire on the target itself
     const handler = (event.target.props as Record<string, unknown>)[handlerProp] as
-      | ((e: InkxMouseEvent) => void)
+      | ((e: HighteaMouseEvent) => void)
       | undefined
     if (handler) {
       const mutableEvent = event as { currentTarget: TeaNode }
@@ -220,7 +220,7 @@ export function dispatchMouseEvent(event: InkxMouseEvent): void {
   for (const node of path) {
     if (event.propagationStopped) break
 
-    const handler = (node.props as Record<string, unknown>)[handlerProp] as ((e: InkxMouseEvent) => void) | undefined
+    const handler = (node.props as Record<string, unknown>)[handlerProp] as ((e: HighteaMouseEvent) => void) | undefined
     if (handler) {
       const mutableEvent = event as { currentTarget: TeaNode }
       mutableEvent.currentTarget = node

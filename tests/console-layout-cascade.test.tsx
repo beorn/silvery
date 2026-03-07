@@ -5,7 +5,7 @@
  * the flexGrow sibling shrinks. The incremental renderer clears the root region
  * (because childPositionChanged=true) but then children must correctly re-render.
  *
- * Reproduces km-inkx.debug-blank: blank screen when debug logging causes Console
+ * Reproduces km-hightea.debug-blank: blank screen when debug logging causes Console
  * component to grow, triggering layout cascade in incremental renderer.
  */
 

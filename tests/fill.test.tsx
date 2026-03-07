@@ -6,7 +6,7 @@
  * long text doesn't inflate the flex item's basis.
  * Exact-fit mode (with max): uses useContentRect for precise count.
  *
- * Note: inkx defaults to flexDirection="column" (like Ink), so horizontal
+ * Note: hightea defaults to flexDirection="column" (like Ink), so horizontal
  * layouts need explicit flexDirection="row".
  */
 import React from "react"
@@ -99,7 +99,7 @@ describe("Fill component", () => {
       </Box>,
     )
     expect(app.text).toContain(".".repeat(10))
-    // inkx emits SGR with reset prefix: \x1b[0;2m
+    // hightea emits SGR with reset prefix: \x1b[0;2m
     expect(app.ansi).toMatch(/\x1b\[\d*;?2m/)
   })
 

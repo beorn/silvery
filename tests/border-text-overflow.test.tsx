@@ -6,7 +6,7 @@
  * the height constraint from the layout engine to prevent text lines from
  * rendering into border rows.
  *
- * See: km-inkx.border-text-overflow
+ * See: km-hightea.border-text-overflow
  */
 
 import { describe, expect, test } from "vitest"

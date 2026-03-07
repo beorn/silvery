@@ -1,5 +1,5 @@
 /**
- * Tests for the inkx theming system.
+ * Tests for the hightea theming system.
  *
  * Verifies:
  * - resolveThemeColor() function (new tokens + palette + backward compat aliases)
@@ -447,7 +447,7 @@ describe("$token auto-resolution in color props", () => {
     )
 
     // ansi16DarkTheme.primary = "yellow" → resolves via parseColor's namedColors
-    // chalkx encodes "yellow" as 38;5;3 (256-color palette index for yellow)
+    // ansi encodes "yellow" as 38;5;3 (256-color palette index for yellow)
     expect(app.ansi).toContain("38;5;3")
     expect(stripAnsi(app.ansi)).toContain("Hello")
   })

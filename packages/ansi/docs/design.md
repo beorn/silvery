@@ -2,7 +2,7 @@
 
 ## Overview
 
-chalkx extends the popular [chalk](https://github.com/chalk/chalk) library with modern terminal features that chalk doesn't support:
+ansi extends the popular [chalk](https://github.com/chalk/chalk) library with modern terminal features that chalk doesn't support:
 
 - **Extended underline styles**: curly, dotted, dashed, double
 - **Independent underline color**: set underline color separately from text color
@@ -26,9 +26,9 @@ We considered several approaches:
 Reasons:
 
 1. **Chalk is mature** - 21k stars, battle-tested color handling, active maintenance
-2. **Focused scope** - chalkx adds ONLY what chalk lacks
+2. **Focused scope** - ansi adds ONLY what chalk lacks
 3. **Smaller maintenance** - We don't duplicate 256-color/truecolor logic
-4. **Users need both** - chalkx re-exports chalk for single-import convenience
+4. **Users need both** - ansi re-exports chalk for single-import convenience
 
 ### Chalk-Free Utilities
 
@@ -168,9 +168,9 @@ import { curlyUnderline, hyperlink } from "@hightea/ansi"
 For users who prefer object-style:
 
 ```ts
-import { chalkX } from "@hightea/ansi"
-chalkX.curlyUnderline("text")
-chalkX.red("text") // chalk methods available too
+import { ansi } from "@hightea/ansi"
+ansi.curlyUnderline("text")
+ansi.red("text") // chalk methods available too
 ```
 
 ### 3. Chalk Re-export

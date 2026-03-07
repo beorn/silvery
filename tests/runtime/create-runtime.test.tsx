@@ -1,5 +1,5 @@
 /**
- * Tests for createRuntime - the inkx-loop runtime kernel.
+ * Tests for createRuntime - the hightea-loop runtime kernel.
  */
 
 import type React from "react"

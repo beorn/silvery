@@ -166,23 +166,23 @@ export {
 // =============================================================================
 
 /**
- * SGR code recognized by inkx to signal intentional bg override.
- * When text is wrapped with this, inkx won't warn/throw about chalk bg + inkx bg conflicts.
- * Exported for inkx to detect this marker in text content.
+ * SGR code recognized by hightea to signal intentional bg override.
+ * When text is wrapped with this, hightea won't warn/throw about chalk bg + hightea bg conflicts.
+ * Exported for hightea to detect this marker in text content.
  */
 export const BG_OVERRIDE_CODE = 9999
 
 /**
  * Compose styled text with an explicit background inside a Box that has its own
  * `backgroundColor`. This is the correct way to layer chalk/term background
- * colors on top of an inkx Box background.
+ * colors on top of an hightea Box background.
  *
- * Without `bgOverride`, inkx throws (by default) when it detects both an ANSI
+ * Without `bgOverride`, hightea throws (by default) when it detects both an ANSI
  * background in the text content AND a `backgroundColor` prop on an ancestor
  * Box, because the two conflict and produce visual artifacts (the ANSI bg
  * only covers the text, leaving gaps at line edges).
  *
- * `bgOverride` wraps the text with a private SGR marker that tells inkx
+ * `bgOverride` wraps the text with a private SGR marker that tells hightea
  * "this background is intentional — don't throw." Use it when you need
  * pixel-precise background control within a styled container.
  *
@@ -193,7 +193,7 @@ export const BG_OVERRIDE_CODE = 9999
  * ```tsx
  * import { bgOverride } from '@hightea/chalk'
  *
- * // Without bgOverride — inkx throws:
+ * // Without bgOverride — hightea throws:
  * <Box backgroundColor="cyan">
  *   <Text>{chalk.bgBlack('text')}</Text>  // Error!
  * </Box>

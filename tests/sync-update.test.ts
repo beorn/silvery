@@ -1,7 +1,7 @@
 /**
  * Synchronized Update Mode (DEC 2026) Tests
  *
- * Tests that inkx wraps terminal output with DEC private mode 2026 sequences
+ * Tests that hightea wraps terminal output with DEC private mode 2026 sequences
  * to prevent tearing during redraws. The terminal batches all output between
  * CSI?2026h (begin) and CSI?2026l (end) and paints atomically.
  *

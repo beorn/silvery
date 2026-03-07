@@ -4,7 +4,7 @@
  * Tests for the measureElement API which provides Ink-compatible
  * element measurement functionality.
  *
- * Note: In inkx, measureElement is primarily used for direct node access.
+ * Note: In hightea, measureElement is primarily used for direct node access.
  * For component-level measurement, useContentRect() is the recommended approach.
  * See hooks.test.tsx for useContentRect tests.
  */
@@ -60,7 +60,7 @@ function createMockLayoutNode(width: number, height: number) {
   }
 }
 
-// Helper to create a minimal InkxNode for testing
+// Helper to create a minimal HighteaNode for testing
 function createTestNode(options: {
   contentRect?: {
     x: number
@@ -87,7 +87,7 @@ function createTestNode(options: {
 }
 
 describe("measureElement", () => {
-  describe("with contentRect (inkx pipeline)", () => {
+  describe("with contentRect (hightea pipeline)", () => {
     test("returns dimensions from contentRect", () => {
       const node = createTestNode({
         contentRect: { x: 0, y: 0, width: 42, height: 17 },

@@ -1,7 +1,7 @@
 /**
  * Tests for Text backgroundColor handling across wrapped lines.
  *
- * Bug: km-inkx.bg-bleed
+ * Bug: km-hightea.bg-bleed
  *
  * Background color from nested Text elements was embedded as ANSI codes
  * in collectTextContent(). When the text was word-wrapped by wrapText()
@@ -17,7 +17,7 @@ import { describe, expect, test } from "vitest"
 import { Box, Text } from "../src/index.js"
 import { createRenderer } from "@hightea/term/testing"
 
-describe("Text backgroundColor with wrapping (km-inkx.bg-bleed)", () => {
+describe("Text backgroundColor with wrapping (km-hightea.bg-bleed)", () => {
   const render = createRenderer({ cols: 30, rows: 10 })
 
   test("top-level Text bg covers text cells on wrapped lines", () => {
@@ -59,7 +59,7 @@ describe("Text backgroundColor with wrapping (km-inkx.bg-bleed)", () => {
   })
 
   test("nested Text bg is preserved across wrapped lines", () => {
-    // This is the core regression test for km-inkx.bg-bleed.
+    // This is the core regression test for km-hightea.bg-bleed.
     // "Normal colored text here end" wraps at width=15 to:
     //   Line 0: "Normal colored"  (7 normal, 7 red)
     //   Line 1: "text here end"   (9 red, 1 space, 3 normal)
@@ -150,7 +150,7 @@ describe("Text backgroundColor with wrapping (km-inkx.bg-bleed)", () => {
   })
 
   test("bg segments map correctly when wrapped lines have repeated content", () => {
-    // Regression test for km-inkx.findlinestart.
+    // Regression test for km-hightea.findlinestart.
     // "aa bb aa cc" wraps at width=5 to:
     //   Line 0: "aa bb"
     //   Line 1: "aa cc"

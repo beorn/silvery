@@ -1,5 +1,5 @@
 /**
- * Screenshot Generator for inkx README
+ * Screenshot Generator for hightea README
  *
  * Renders example components headlessly and captures PNG screenshots
  * using bufferToHTML() + Playwright.

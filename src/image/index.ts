@@ -1,5 +1,5 @@
 /**
- * Image rendering support for inkx.
+ * Image rendering support for hightea.
  *
  * Provides encoders for the Kitty graphics protocol and Sixel protocol,
  * plus a React component for rendering images in terminal UIs.

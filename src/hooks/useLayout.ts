@@ -1,7 +1,7 @@
 /**
  * Layout Hooks
  *
- * Hooks for accessing element positions in inkx components.
+ * Hooks for accessing element positions in hightea components.
  *
  * Two coordinate systems:
  * - Content rect: Position within scrollable content (like CSS offsetTop/offsetLeft)

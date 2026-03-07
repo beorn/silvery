@@ -1,5 +1,5 @@
 /**
- * Tests for DOM-level mouse events in inkx.
+ * Tests for DOM-level mouse events in hightea.
  *
  * Tests hit testing, event dispatch with bubbling, click/double-click detection,
  * mouseenter/mouseleave, wheel events, and the testing API (app.click/wheel/doubleClick).
@@ -8,7 +8,7 @@
 import { useState } from "react"
 import { describe, expect, it, vi } from "vitest"
 import { Box, Text } from "../src/index.js"
-import type { InkxMouseEvent, InkxWheelEvent } from "../src/mouse-events.js"
+import type { HighteaMouseEvent, HighteaWheelEvent } from "../src/mouse-events.js"
 import {
   checkDoubleClick,
   computeEnterLeave,
@@ -296,7 +296,7 @@ describe("dispatchMouseEvent", () => {
 
     const child = {
       props: {
-        onClick: (e: InkxMouseEvent) => {
+        onClick: (e: HighteaMouseEvent) => {
           log.push("child")
           e.stopPropagation()
         },
@@ -429,7 +429,7 @@ describe("processMouseEvent", () => {
       screenRect: { x: 0, y: 0, width: 10, height: 5 },
       children: [],
       props: {
-        onWheel: (e: InkxWheelEvent) => log.push(e.deltaY),
+        onWheel: (e: HighteaWheelEvent) => log.push(e.deltaY),
       },
       parent: null,
     } as unknown as TeaNode
@@ -474,7 +474,7 @@ describe("app.click()", () => {
     await app.click(3, 1)
 
     expect(onClick).toHaveBeenCalledTimes(1)
-    const event = onClick.mock.calls[0]![0] as InkxMouseEvent
+    const event = onClick.mock.calls[0]![0] as HighteaMouseEvent
     expect(event.type).toBe("click")
     expect(event.clientX).toBe(3)
     expect(event.clientY).toBe(1)
@@ -587,7 +587,7 @@ describe("app.wheel()", () => {
     await app.wheel(5, 5, -1)
 
     expect(onWheel).toHaveBeenCalledTimes(1)
-    const event = onWheel.mock.calls[0]![0] as InkxWheelEvent
+    const event = onWheel.mock.calls[0]![0] as HighteaWheelEvent
     expect(event.type).toBe("wheel")
     expect(event.deltaY).toBe(-1)
     expect(event.deltaX).toBe(0)

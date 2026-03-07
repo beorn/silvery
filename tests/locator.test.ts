@@ -1,5 +1,5 @@
 /**
- * InkxLocator Tests
+ * HighteaLocator Tests
  *
  * Tests for Playwright-inspired DOM queries on TeaNode tree.
  */
@@ -12,7 +12,7 @@ import { createLocator, createRenderer } from "@hightea/term/testing"
 // Test renderer factory
 const render = createRenderer({ cols: 80, rows: 24 })
 
-describe("InkxLocator", () => {
+describe("HighteaLocator", () => {
   describe("getByText", () => {
     test("finds element by exact text", () => {
       const app = render(React.createElement(Box, null, React.createElement(Text, null, "Hello")))
@@ -349,7 +349,7 @@ describe("InkxLocator", () => {
 
       expect(() => locator.locator(":hover")).toThrow(/pseudo-classes/)
       expect(() => locator.locator("#id:nth-child(2)")).toThrow(/pseudo-classes/)
-      expect(() => locator.locator(":not(.foo)")).toThrow(/km-inkx-css-select/)
+      expect(() => locator.locator(":not(.foo)")).toThrow(/km-hightea-css-select/)
     })
 
     test("throws on pseudo-element selectors", () => {
@@ -357,7 +357,7 @@ describe("InkxLocator", () => {
       const locator = createLocator(app.getContainer())
 
       expect(() => locator.locator("::before")).toThrow(/pseudo-elements/)
-      expect(() => locator.locator("#id::after")).toThrow(/km-inkx-css-select/)
+      expect(() => locator.locator("#id::after")).toThrow(/km-hightea-css-select/)
     })
 
     test("throws on class selectors", () => {
@@ -375,7 +375,7 @@ describe("InkxLocator", () => {
 
       expect(() => locator.locator("div")).toThrow(/tag\/type selectors/)
       expect(() => locator.locator("span")).toThrow(/\[data-view=/)
-      expect(() => locator.locator("button")).toThrow(/km-inkx-css-select/)
+      expect(() => locator.locator("button")).toThrow(/km-hightea-css-select/)
     })
 
     test("throws on universal selector", () => {
@@ -383,7 +383,7 @@ describe("InkxLocator", () => {
       const locator = createLocator(app.getContainer())
 
       expect(() => locator.locator("*")).toThrow(/universal selector/)
-      expect(() => locator.locator("*")).toThrow(/km-inkx-css-select/)
+      expect(() => locator.locator("*")).toThrow(/km-hightea-css-select/)
     })
   })
 })

@@ -45,7 +45,7 @@ describe("overflow=hidden horizontal clipping", () => {
       expect(lines[i]!.length, `line ${i}: "${lines[i]}"`).toBeLessThanOrEqual(40)
     }
 
-    // Should have truncation ellipsis (inkx uses horizontal ellipsis U+2026)
+    // Should have truncation ellipsis (hightea uses horizontal ellipsis U+2026)
     expect(text).toContain("\u2026")
 
     // Should have the count display

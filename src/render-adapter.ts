@@ -1,7 +1,7 @@
 /**
  * Render Adapter Abstraction
  *
- * This module defines the interfaces that allow inkx to render to different
+ * This module defines the interfaces that allow hightea to render to different
  * targets (terminal, canvas, etc.) while keeping the core layout and
  * reconciliation logic portable.
  */

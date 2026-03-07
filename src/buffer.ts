@@ -1,5 +1,5 @@
 /**
- * Terminal buffer implementation for Inkx.
+ * Terminal buffer implementation for Hightea.
  *
  * Uses packed Uint32Array for efficient cell metadata storage,
  * with separate string array for character storage (needed for

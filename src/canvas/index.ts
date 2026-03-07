@@ -1,7 +1,7 @@
 /**
  * Canvas Entry Point
  *
- * Provides a browser-friendly API for rendering inkx components to HTML5 Canvas.
+ * Provides a browser-friendly API for rendering hightea components to HTML5 Canvas.
  * This module sets up the canvas adapter and provides render functions.
  *
  * @example

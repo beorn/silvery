@@ -1,5 +1,5 @@
 /**
- * Inkx Hooks Tests
+ * Hightea Hooks Tests
  *
  * Tests for public hook APIs:
  * - useContentRect: Returns computed layout dimensions
@@ -21,7 +21,7 @@ const render = createRenderer()
 // ============================================================================
 
 /**
- * Create a mock InkxNode for testing useContentRect
+ * Create a mock HighteaNode for testing useContentRect
  */
 function createMockTeaNode(layout: { x: number; y: number; width: number; height: number }): TeaNode {
   return {
@@ -45,7 +45,7 @@ function createMockTeaNode(layout: { x: number; y: number; width: number; height
 // ============================================================================
 
 describe("useContentRect", () => {
-  test("returns default rect when used outside Inkx component", () => {
+  test("returns default rect when used outside Hightea component", () => {
     let capturedRect: { x: number; y: number; width: number; height: number } = {
       x: -1,
       y: -1,
@@ -290,10 +290,10 @@ describe("useFocusManager", () => {
 // ============================================================================
 
 describe("useStdout", () => {
-  // SKIPPED: The inkx test renderer now provides StdoutContext (to support
+  // SKIPPED: The hightea test renderer now provides StdoutContext (to support
   // testing components that use useStdout). The throw behavior is verified
   // by the hook implementation itself (see src/hooks/useStdout.ts:45-47).
-  test.skip("throws error when used outside Inkx application", () => {
+  test.skip("throws error when used outside Hightea application", () => {
     // This test verified that useStdout throws when context is null.
     // Now that the test renderer provides StdoutContext, we can't easily
     // test this without bypassing the test renderer entirely.

@@ -27,7 +27,7 @@
  * app.getState()         // { screen, commands, focus } for AI
  * ```
  *
- * See docs/future/inkx-command-api-research.md for design rationale.
+ * See docs/future/hightea-command-api-research.md for design rationale.
  */
 
 import type { App } from "./app.js"

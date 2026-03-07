@@ -1,7 +1,7 @@
 /**
- * inkx Examples Viewer
+ * hightea Examples Viewer
  *
- * Storybook-style TUI for browsing and running inkx examples.
+ * Storybook-style TUI for browsing and running hightea examples.
  * Left: nav sidebar. Right: tabbed content (View / Source).
  *
  * Examples are auto-discovered from category directories (layout/, interactive/,
@@ -474,7 +474,7 @@ function Viewer({ examples }: { examples: Example[] }) {
         {/* Header */}
         <Box paddingX={1}>
           <Text bold color="$warning">
-            {" inkx"}
+            {" hightea"}
           </Text>
           <Text color="$muted"> examples </Text>
           <Text color="$muted">

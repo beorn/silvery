@@ -1,5 +1,5 @@
 /**
- * Inkx Static Component
+ * Hightea Static Component
  *
  * Renders items that are written to the terminal once and never updated.
  * Useful for logs, progress outputs, or any content that should remain

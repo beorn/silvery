@@ -1,7 +1,7 @@
 /**
- * inkx vs Ink Comparison Benchmark Suite
+ * hightea vs Ink Comparison Benchmark Suite
  *
- * Measures inkx performance across scenarios that mirror common TUI patterns.
+ * Measures hightea performance across scenarios that mirror common TUI patterns.
  * Run alongside ink-bench.ts for head-to-head comparison via compare.ts.
  *
  * Run:
@@ -377,7 +377,7 @@ group("Memory (heap snapshot)", () => {
 // Run
 // ============================================================================
 
-console.log("inkx Comparison Benchmark Suite")
+console.log("hightea Comparison Benchmark Suite")
 console.log("================================")
 console.log(`Layout engine: Flexture (default) + Yoga comparison`)
 console.log(`Platform: ${process.platform} ${process.arch}`)
@@ -394,8 +394,8 @@ console.log("(approximate gzipped sizes)")
 console.log()
 console.log("| Package         | Size (gzip) | Notes                    |")
 console.log("| --------------- | ----------- | ------------------------ |")
-console.log("| inkx + Flexture    | ~45 KB      | Pure JS layout engine    |")
-console.log("| inkx + Yoga     | ~76 KB      | WASM layout engine       |")
+console.log("| hightea + Flexture    | ~45 KB      | Pure JS layout engine    |")
+console.log("| hightea + Yoga     | ~76 KB      | WASM layout engine       |")
 console.log("| ink             | ~52 KB      | Yoga-only, no Flexture opt  |")
 console.log()
-console.log("Note: ink numbers from npm bundle analysis. inkx numbers from local build.")
+console.log("Note: ink numbers from npm bundle analysis. hightea numbers from local build.")

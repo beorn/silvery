@@ -1,5 +1,5 @@
 /**
- * Inkx Render Tests
+ * Hightea Render Tests
  *
  * Basic tests for the render function and testing library.
  */

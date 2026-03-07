@@ -21,7 +21,7 @@ const render = createRenderer({ cols: 40, rows: 15 })
 
 /**
  * Check if an ANSI string contains bold styling (SGR code 1).
- * Inkx outputs codes like \x1b[0;1m (reset + bold) or \x1b[1m.
+ * Hightea outputs codes like \x1b[0;1m (reset + bold) or \x1b[1m.
  */
 function hasBold(str: string): boolean {
   // Match SGR sequences containing bold code (1) as a distinct segment
@@ -170,7 +170,7 @@ describe("various border styles with color", () => {
 
 describe("Box with explicit dim prop", () => {
   test("dim Box border does not dim non-dim Text children", () => {
-    // In Inkx, dim on Box affects the border styling, not children
+    // In Hightea, dim on Box affects the border styling, not children
     const app = render(
       <Box borderStyle="single" dim>
         <Text>Normal text</Text>
@@ -223,7 +223,7 @@ describe("Box with explicit dim prop", () => {
 
 describe("padding workaround for Ink bug should not be needed", () => {
   // In Ink, adding paddingLeft was a workaround for the borderDimColor bug.
-  // In Inkx, this should not be necessary - both should render the same.
+  // In Hightea, this should not be necessary - both should render the same.
 
   test("Text without paddingLeft is styled correctly", () => {
     const app = render(
@@ -278,7 +278,7 @@ describe("padding workaround for Ink bug should not be needed", () => {
 
 describe("alignItems workaround for Ink bug should not be needed", () => {
   // In Ink, changing alignItems to center was a workaround for borderDimColor.
-  // In Inkx, this should not be necessary.
+  // In Hightea, this should not be necessary.
 
   test("alignItems=flex-start does not cause dimming issues", () => {
     const app = render(

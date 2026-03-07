@@ -27,7 +27,7 @@ import type { ClipBounds, ContentPhaseStats, NodeRenderState, NodeTraceEntry, Pi
 /**
  * Render all nodes to a terminal buffer.
  *
- * @param root The root InkxNode
+ * @param root The root HighteaNode
  * @param prevBuffer Previous buffer for incremental rendering (optional)
  * @returns A TerminalBuffer with the rendered content
  */

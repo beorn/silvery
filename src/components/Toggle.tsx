@@ -1,7 +1,7 @@
 /**
  * Toggle Component
  *
- * A focusable checkbox-style toggle control. Integrates with the inkx focus
+ * A focusable checkbox-style toggle control. Integrates with the hightea focus
  * system and responds to Space key to toggle the value.
  *
  * Usage:

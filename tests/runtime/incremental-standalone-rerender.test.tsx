@@ -1,7 +1,7 @@
 /**
  * Test incremental rendering with standalone store re-renders (case 3).
  *
- * Regression tests for km-inkx.debug-blank: when debug logging triggers a
+ * Regression tests for km-hightea.debug-blank: when debug logging triggers a
  * microtask-based store change (case 3 = standalone immediate render),
  * the incremental renderer must produce the same output as a fresh render.
  *

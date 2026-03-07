@@ -7,7 +7,7 @@
  * protocol detection and fallback support.
  *
  * Features:
- * - Uses the <Image> component from inkx
+ * - Uses the <Image> component from hightea
  * - Auto-generated rainbow test pattern (no external files needed)
  * - Fallback text when graphics protocol is not supported
  * - Protocol auto-detection status display

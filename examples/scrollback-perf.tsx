@@ -1,6 +1,6 @@
 /**
  * Benchmark: ScrollbackList typing performance
- * Measures per-keystroke cost across React reconciliation + inkx pipeline.
+ * Measures per-keystroke cost across React reconciliation + hightea pipeline.
  *
  * Usage: bun examples/scrollback-perf.tsx
  *

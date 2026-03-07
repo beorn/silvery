@@ -1,5 +1,5 @@
 /**
- * Time/tick source for inkx-loop.
+ * Time/tick source for hightea-loop.
  *
  * Creates an AsyncIterable that yields at regular intervals.
  * Used for animations, spinners, progress bars, etc.

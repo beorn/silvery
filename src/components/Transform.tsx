@@ -1,5 +1,5 @@
 /**
- * Inkx Transform Component
+ * Hightea Transform Component
  *
  * Applies a string transformation to each line of rendered text output.
  * Compatible with ink's Transform component.

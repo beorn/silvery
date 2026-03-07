@@ -307,7 +307,7 @@ function renderStatusBar(state: ViewerState, term: ReturnType<typeof createTerm>
   const navHelp = state.images.length > 1 ? "n/p navigate  " : ""
 
   return (
-    term.dim.yellow("  inkx") +
+    term.dim.yellow("  hightea") +
     " " +
     term.bold("Image Gallery") +
     galleryInfo +

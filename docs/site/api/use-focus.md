@@ -101,7 +101,7 @@ function App() {
 | Property        | Type                   | Description                            |
 | --------------- | ---------------------- | -------------------------------------- |
 | `activeId`      | `string \| null`       | testID of the currently focused node   |
-| `activeElement` | `InkxNode \| null`     | The currently focused node             |
+| `activeElement` | `HighteaNode \| null`     | The currently focused node             |
 | `focused`       | `boolean`              | Whether any node has focus             |
 | `focus`         | `(id: string) => void` | Focus a specific component by testID   |
 | `focusNext`     | `() => void`           | Focus the next focusable component     |
@@ -275,7 +275,7 @@ function MenuItem({ label, onSelect }: { label: string; onSelect: () => void }) 
 
 ## Notes
 
-- Focus is managed by a tree-based `FocusManager` that operates on the InkxNode render tree
+- Focus is managed by a tree-based `FocusManager` that operates on the HighteaNode render tree
 - Tab moves forward through focusable nodes, Shift+Tab moves backward
 - `focusScope` creates an isolated focus cycle (Tab does not leave the subtree)
 - `autoFocus` on a Box focuses it when the component mounts

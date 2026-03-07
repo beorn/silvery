@@ -1,5 +1,5 @@
 /**
- * Display components for inkx/Ink TUI apps
+ * Display components for hightea/Ink TUI apps
  *
  * These are read-only display components (no input handling).
  *

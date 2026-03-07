@@ -170,7 +170,7 @@ function VirtualViewInner<T>(
   const { startIndex, endIndex } = range
   const visibleItems = items.slice(startIndex, endIndex)
 
-  // Calculate scrollTo index for inkx Box overflow="scroll"
+  // Calculate scrollTo index for hightea Box overflow="scroll"
   const hasTopPlaceholder = leadingHeight > 0
   const currentSelectedIndex = scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, items.length - 1)) : scrollOffset
   const selectedIndexInSlice = currentSelectedIndex - startIndex

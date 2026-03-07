@@ -2,7 +2,7 @@
  * Test that useScreenRectCallback is actually called with correct Y positions
  * when rendering cards in a column.
  *
- * This is a minimal integration test to verify the inkx hook works.
+ * This is a minimal integration test to verify the hightea hook works.
  */
 
 import React, { useCallback } from "react"

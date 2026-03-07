@@ -1,7 +1,7 @@
 /**
- * Inkx Render Entry Point
+ * Hightea Render Entry Point
  *
- * The main render() function that initializes Inkx and renders a React element
+ * The main render() function that initializes Hightea and renders a React element
  * to the terminal. This wires together:
  * - Yoga (layout engine)
  * - React reconciler
@@ -70,7 +70,7 @@ export interface RenderOptions {
   exitOnCtrlC?: boolean
   /** Enable debug mode with verbose logging (default: false) */
   debug?: boolean
-  /** Patch console methods to work with Inkx output (default: true) */
+  /** Patch console methods to work with Hightea output (default: true) */
   patchConsole?: boolean
   /** Use alternate screen buffer (default: true for fullscreen mode, false for inline) */
   alternateScreen?: boolean
@@ -84,7 +84,7 @@ export interface RenderOptions {
    * Non-TTY mode for non-interactive environments (default: 'auto')
    *
    * When running in a non-TTY environment (piped output, CI, TERM=dumb),
-   * inkx will automatically detect this and use 'line-by-line' mode.
+   * hightea will automatically detect this and use 'line-by-line' mode.
    * You can override this behavior by explicitly setting the mode.
    *
    * - 'auto': Detect based on environment (TTY -> 'tty', non-TTY -> 'line-by-line')
@@ -179,7 +179,7 @@ export class RenderHandle implements PromiseLike<Instance> {
 // ============================================================================
 
 /** Map of stdout streams to instances (for reuse) */
-const instances = new Map<NodeJS.WriteStream, InkxInstance>()
+const instances = new Map<NodeJS.WriteStream, HighteaInstance>()
 
 // ============================================================================
 // Layout Engine Initialization
@@ -224,7 +224,7 @@ interface AppProps {
  * This is a functional component that manages focus state and provides
  * all the context values needed by hooks.
  */
-function InkxApp({
+function HighteaApp({
   children,
   stdin,
   stdout,
@@ -251,7 +251,7 @@ function InkxApp({
   // Raw mode support check
   const isRawModeSupported = stdin.isTTY === true
   log.debug?.(
-    `InkxApp: stdin=${stdin === process.stdin ? "process.stdin" : "other"}, stdin.isTTY=${stdin.isTTY}, process.stdin.isTTY=${process.stdin.isTTY}, isRawModeSupported=${isRawModeSupported}`,
+    `HighteaApp: stdin=${stdin === process.stdin ? "process.stdin" : "other"}, stdin.isTTY=${stdin.isTTY}, process.stdin.isTTY=${process.stdin.isTTY}, isRawModeSupported=${isRawModeSupported}`,
   )
 
   // Mutable refs for values accessed inside the stdin readable handler.
@@ -419,9 +419,9 @@ function InkxApp({
 // ============================================================================
 
 /**
- * Internal class that manages a single Inkx render instance.
+ * Internal class that manages a single Hightea render instance.
  */
-class InkxInstance {
+class HighteaInstance {
   private readonly stdout: NodeJS.WriteStream
   private readonly stdin: NodeJS.ReadStream
   private readonly exitOnCtrlC: boolean
@@ -445,7 +445,7 @@ class InkxInstance {
   private signalCleanup: (() => void) | null = null
 
   constructor(options: Required<Omit<RenderOptions, "patchConsole" | "layoutEngine">>) {
-    log.debug?.("InkxInstance constructor start")
+    log.debug?.("HighteaInstance constructor start")
     const startTime = Date.now()
 
     this.stdout = options.stdout
@@ -504,14 +504,14 @@ class InkxInstance {
     // Set up signal handlers
     this.setupSignalHandlers()
 
-    log.debug?.(`InkxInstance constructor complete in ${Date.now() - startTime}ms`)
+    log.debug?.(`HighteaInstance constructor complete in ${Date.now() - startTime}ms`)
   }
 
   /**
    * Render a React element.
    */
   render(element: ReactNode): void {
-    log.debug?.("InkxInstance.render() start")
+    log.debug?.("HighteaInstance.render() start")
     const startTime = Date.now()
 
     if (this.isUnmounted || !this.fiberRoot) return
@@ -519,7 +519,7 @@ class InkxInstance {
 
     const tree = (
       <CursorProvider store={this.cursorStore}>
-        <InkxApp
+        <HighteaApp
           stdin={this.stdin}
           stdout={this.stdout}
           exitOnCtrlC={this.exitOnCtrlC}
@@ -529,22 +529,22 @@ class InkxInstance {
           onScrollback={this.handleScrollback}
         >
           {element}
-        </InkxApp>
+        </HighteaApp>
       </CursorProvider>
     )
 
     // Use synchronous update to ensure React commits the work immediately
     // This is necessary because the async updateContainer doesn't flush work
     // in environments like Bun where the event loop may not be pumped
-    log.debug?.("InkxInstance.render() calling updateContainerSync")
+    log.debug?.("HighteaInstance.render() calling updateContainerSync")
     reconciler.updateContainerSync(tree, this.fiberRoot, null, null)
-    log.debug?.(`InkxInstance.render() updateContainerSync complete in ${Date.now() - startTime}ms`)
+    log.debug?.(`HighteaInstance.render() updateContainerSync complete in ${Date.now() - startTime}ms`)
 
-    log.debug?.("InkxInstance.render() calling flushSyncWork")
+    log.debug?.("HighteaInstance.render() calling flushSyncWork")
     const flushStart = Date.now()
     reconciler.flushSyncWork()
     log.debug?.(
-      `InkxInstance.render() flushSyncWork complete in ${Date.now() - flushStart}ms (total: ${Date.now() - startTime}ms)`,
+      `HighteaInstance.render() flushSyncWork complete in ${Date.now() - flushStart}ms (total: ${Date.now() - startTime}ms)`,
     )
   }
 
@@ -875,10 +875,10 @@ async function renderImpl(
   // Get or create instance for this stdout
   let instance = instances.get(resolvedOptions.stdout)
   if (!instance) {
-    log.debug?.("render(): creating new InkxInstance")
-    instance = new InkxInstance(resolvedOptions)
+    log.debug?.("render(): creating new HighteaInstance")
+    instance = new HighteaInstance(resolvedOptions)
     instances.set(resolvedOptions.stdout, instance)
-    log.debug?.(`render(): InkxInstance created in ${Date.now() - renderStart}ms`)
+    log.debug?.(`render(): HighteaInstance created in ${Date.now() - renderStart}ms`)
   }
 
   // Wrap element with TermContext
@@ -1052,7 +1052,7 @@ export function renderSync(element: ReactElement, termOrDef?: Term | TermDef, op
   // Get or create instance for this stdout
   let instance = instances.get(resolvedOptions.stdout)
   if (!instance) {
-    instance = new InkxInstance(resolvedOptions)
+    instance = new HighteaInstance(resolvedOptions)
     instances.set(resolvedOptions.stdout, instance)
   }
 

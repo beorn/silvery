@@ -1,7 +1,7 @@
 /**
  * React 19 Compatibility Tests (km-a1xb)
  *
- * These tests verify that inkx works correctly with React 19 features:
+ * These tests verify that hightea works correctly with React 19 features:
  * - Basic component rendering
  * - Hooks (useState, useEffect, useInput, useContentRect)
  * - Suspense boundaries
@@ -27,7 +27,7 @@ import type { TeaNode } from "../src/types.ts"
 const render = createRenderer()
 
 /**
- * Create a mock InkxNode for testing useContentRect
+ * Create a mock HighteaNode for testing useContentRect
  */
 function createMockTeaNode(layout: { x: number; y: number; width: number; height: number }): TeaNode {
   return {

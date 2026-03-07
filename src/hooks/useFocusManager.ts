@@ -1,5 +1,5 @@
 /**
- * Inkx useFocusManager Hook
+ * Hightea useFocusManager Hook
  *
  * Provides methods to control focus management for all components.
  * Uses the tree-based FocusManager via FocusManagerContext.

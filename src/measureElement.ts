@@ -1,5 +1,5 @@
 /**
- * Inkx measureElement
+ * Hightea measureElement
  *
  * Backward-compatible API for measuring element dimensions.
  * This is provided for Ink compatibility - prefer using the useContentRect() hook instead.
@@ -48,16 +48,16 @@ export interface MeasureElementOutput {
 }
 
 /**
- * Measure the dimensions of an Inkx element.
+ * Measure the dimensions of an Hightea element.
  *
- * @param node - The InkxNode to measure (obtained via ref)
+ * @param node - The HighteaNode to measure (obtained via ref)
  * @returns The computed width and height of the element
  *
  * Note: Returns { width: 0, height: 0 } if the element hasn't been laid out yet.
  * For automatic re-rendering on dimension changes, use the useContentRect() hook instead.
  */
 export function measureElement(node: TeaNode): MeasureElementOutput {
-  // Prefer contentRect (set by inkx pipeline after layout phase)
+  // Prefer contentRect (set by hightea pipeline after layout phase)
   // This is the canonical source of truth after a render
   if (node.contentRect) {
     return {
@@ -67,7 +67,7 @@ export function measureElement(node: TeaNode): MeasureElementOutput {
   }
 
   // Fall back to layoutNode for backward compatibility
-  // (handles case where measureElement is called before inkx pipeline runs)
+  // (handles case where measureElement is called before hightea pipeline runs)
   const width = node.layoutNode?.getComputedWidth() ?? 0
   const height = node.layoutNode?.getComputedHeight() ?? 0
 

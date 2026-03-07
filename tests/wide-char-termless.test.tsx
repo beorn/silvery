@@ -1,7 +1,7 @@
 /**
  * Tests for wide character ANSI output using termless (real terminal emulator).
  *
- * These tests verify that wide characters (CJK, emoji) rendered by inkx produce
+ * These tests verify that wide characters (CJK, emoji) rendered by hightea produce
  * correct terminal state when the ANSI output is fed through a real terminal
  * emulator (xterm.js). This catches output-phase bugs that virtual buffer tests
  * miss — such as incorrect cursor positioning after wide chars, missing
@@ -45,7 +45,7 @@ function createTestTerminal(cols: number, rows: number) {
   return term
 }
 
-/** Render an inkx component, get its buffer, produce ANSI, feed to termless. */
+/** Render an hightea component, get its buffer, produce ANSI, feed to termless. */
 function renderToTerminal(element: React.ReactElement, opts: { cols: number; rows: number }) {
   const render = createRenderer({ cols: opts.cols, rows: opts.rows })
   const app = render(element)
@@ -232,7 +232,7 @@ describe("mixed ASCII + CJK + emoji in same line", () => {
     expect(okIdx).toBeGreaterThan(hiIdx)
   })
 
-  test("mixed content via inkx component", () => {
+  test("mixed content via hightea component", () => {
     const { term } = renderToTerminal(<Text>Hello 中文 🌍 World</Text>, { cols: 40, rows: 3 })
 
     expect(term.screen).toContainText("Hello")

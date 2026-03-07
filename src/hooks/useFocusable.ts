@@ -1,5 +1,5 @@
 /**
- * Inkx useFocusable Hook
+ * Hightea useFocusable Hook
  *
  * Makes a component focusable within the new tree-based focus system.
  * Uses useSyncExternalStore for tear-free reads from FocusManager.

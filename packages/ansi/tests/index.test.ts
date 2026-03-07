@@ -33,7 +33,7 @@ import {
   styledUnderline,
   // Hyperlinks
   hyperlink,
-  // InkX compatibility
+  // Hightea compatibility
   bgOverride,
   // Term API
   createTerm,

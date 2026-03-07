@@ -1,7 +1,7 @@
 /**
- * Non-TTY Environment Tests (km-wvgu, km-inkx-nontty)
+ * Non-TTY Environment Tests (km-wvgu, km-hightea-nontty)
  *
- * Tests for inkx behavior when running in environments without a TTY:
+ * Tests for hightea behavior when running in environments without a TTY:
  * - Piped output (stdout is not a TTY)
  * - CI environments (no interactive terminal)
  * - Running without a terminal attached
@@ -17,7 +17,7 @@ import { Box, Text } from "../src/components/index.js"
 import { countLines, isTTY, resolveNonTTYMode, stripAnsi, toLineByLineOutput, toPlainOutput } from "../src/non-tty.js"
 import { createRenderer, normalizeFrame } from "@hightea/term/testing"
 
-// Single shared render instance (required pattern for inkx tests)
+// Single shared render instance (required pattern for hightea tests)
 const render = createRenderer()
 
 describe("Non-TTY environments (km-wvgu)", () => {
@@ -113,7 +113,7 @@ describe("Non-TTY environments (km-wvgu)", () => {
   })
 })
 
-describe("Non-TTY Mode Detection (km-inkx-nontty)", () => {
+describe("Non-TTY Mode Detection (km-hightea-nontty)", () => {
   describe("isTTY detection", () => {
     test("returns false for non-TTY stream", () => {
       const mockStream = { isTTY: false } as NodeJS.WriteStream
@@ -186,7 +186,7 @@ describe("Non-TTY Mode Detection (km-inkx-nontty)", () => {
   })
 })
 
-describe("Non-TTY Output Transformations (km-inkx-nontty)", () => {
+describe("Non-TTY Output Transformations (km-hightea-nontty)", () => {
   describe("stripAnsi", () => {
     test("strips CSI sequences", () => {
       expect(stripAnsi("\x1b[31mred\x1b[0m")).toBe("red")

@@ -21,7 +21,7 @@ import { getBorderSize, getPadding } from "./helpers.js"
 /**
  * Render all nodes to a RenderBuffer using the current adapter.
  *
- * @param root The root InkxNode
+ * @param root The root HighteaNode
  * @returns A RenderBuffer with the rendered content
  */
 export function contentPhaseAdapter(root: TeaNode): RenderBuffer {

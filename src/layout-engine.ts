@@ -2,7 +2,7 @@
  * Layout Engine Abstraction
  *
  * Provides a pluggable interface for layout engines (Yoga, Flexture, etc.)
- * This allows inkx to use different layout backends without code changes.
+ * This allows hightea to use different layout backends without code changes.
  */
 
 // ============================================================================

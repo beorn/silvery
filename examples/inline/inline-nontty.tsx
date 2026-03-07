@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 /**
- * Example: Non-TTY Mode Support (km-inkx-nontty)
+ * Example: Non-TTY Mode Support (km-hightea-nontty)
  *
- * Demonstrates inkx's non-TTY mode support for rendering in environments
+ * Demonstrates hightea's non-TTY mode support for rendering in environments
  * without a terminal (pipes, CI, TERM=dumb).
  *
  * Run this example:

@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 /**
- * Tests for known bugs in inkx examples
+ * Tests for known bugs in hightea examples
  *
  * These tests reproduce bugs before fixing them.
  * Each test should FAIL initially, then pass after the fix.

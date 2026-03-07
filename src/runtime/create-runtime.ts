@@ -1,5 +1,5 @@
 /**
- * Create the inkx-loop runtime kernel.
+ * Create the hightea-loop runtime kernel.
  *
  * The runtime owns the event loop, diffing, and output. Users interact via:
  * - events() - AsyncIterable of all events (keys, resize, effects)

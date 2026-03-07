@@ -49,7 +49,7 @@ export interface UseEditContextOptions {
  *
  * Methods match the existing BlockEditTarget type from km-tui so that
  * board-actions.ts can call them without changes. This is defined here
- * (in inkx, a lower layer) to avoid importing from km-tui.
+ * (in hightea, a lower layer) to avoid importing from km-tui.
  */
 export interface EditTarget {
   insertChar(char: string): void

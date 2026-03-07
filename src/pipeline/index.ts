@@ -1,10 +1,10 @@
 /**
- * Inkx Render Pipeline
+ * Hightea Render Pipeline
  *
  * The 5-phase rendering architecture:
  *
  * Phase 0: RECONCILIATION (React)
- *   React reconciliation builds the InkxNode tree.
+ *   React reconciliation builds the HighteaNode tree.
  *   Components register layout constraints via props.
  *
  * Phase 1: MEASURE (for fit-content nodes)
@@ -309,7 +309,7 @@ import { type RenderBuffer, getRenderAdapter, hasRenderAdapter } from "../render
  * This version works with any adapter (terminal, canvas, etc.) and returns
  * a RenderBuffer instead of a TerminalBuffer.
  *
- * @param root The root InkxNode
+ * @param root The root HighteaNode
  * @param width Width in adapter units (cells for terminal, pixels for canvas)
  * @param height Height in adapter units
  * @param prevBuffer Previous buffer for diffing (null on first render)

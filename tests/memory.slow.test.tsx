@@ -1,7 +1,7 @@
 /**
  * Memory Profiling Tests
  *
- * Tests for memory leak detection in inkx:
+ * Tests for memory leak detection in hightea:
  * 1. Profile useInput with rapid mount/unmount cycles
  * 2. Check for EventEmitter accumulation
  * 3. Test long-running apps for memory growth

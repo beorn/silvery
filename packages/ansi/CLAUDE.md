@@ -1,11 +1,11 @@
-# chalkx - Terminal Primitives and Extended ANSI Features
+# ansi - Terminal Primitives and Extended ANSI Features
 
 Core terminal abstraction with Disposable pattern support plus extended ANSI features (curly underlines, hyperlinks).
 
 **Note:** If you're building a TUI with `hightea`, import term primitives from `hightea`:
 
 - **From hightea:** `createTerm`, `term`, `patchConsole`, `Term`, `StyleChain`, `PatchedConsole`, `ColorLevel`, `ConsoleEntry`
-- **From chalkx only:** `curlyUnderline`, `hyperlink`, `bgOverride`, `displayLength`, `styledUnderline`, `underlineColor`, detection functions
+- **From ansi only:** `curlyUnderline`, `hyperlink`, `bgOverride`, `displayLength`, `styledUnderline`, `underlineColor`, detection functions
 
 ## Imports
 

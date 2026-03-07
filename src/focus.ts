@@ -1,5 +1,5 @@
 /**
- * inkx/focus -- Tree-based focus management system.
+ * hightea/focus -- Tree-based focus management system.
  *
  * ```tsx
  * import { useFocusable, createFocusManager, InputLayerProvider, useInputLayer } from '@hightea/term/focus'
@@ -38,7 +38,7 @@ export {
 // =============================================================================
 
 export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "./focus-events.js"
-export type { InkxKeyEvent, InkxFocusEvent, FocusEventProps } from "./focus-events.js"
+export type { HighteaKeyEvent, HighteaFocusEvent, FocusEventProps } from "./focus-events.js"
 
 // =============================================================================
 // React Hooks

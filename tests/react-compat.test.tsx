@@ -8,7 +8,7 @@
  * - ErrorBoundary component
  * - hideInstance/unhideInstance for Suspense data-fetching
  *
- * These tests ensure inkx provides the React patterns developers expect.
+ * These tests ensure hightea provides the React patterns developers expect.
  */
 
 import type React from "react"

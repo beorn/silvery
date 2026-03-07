@@ -1,5 +1,5 @@
 /**
- * Inkx Rendering Performance Benchmarks
+ * Hightea Rendering Performance Benchmarks
  *
  * Measures rendering performance with large numbers of components.
  * Tests scaling characteristics across component counts, nesting depths,
@@ -21,7 +21,7 @@ const BENCH_OPTIONS = { iterations: 5, warmupIterations: 1 }
 // Basic Scaling
 // ============================================================================
 
-describe("inkx render: basic scaling", () => {
+describe("hightea render: basic scaling", () => {
   bench(
     "100 Text components",
     () => {
@@ -75,7 +75,7 @@ describe("inkx render: basic scaling", () => {
 // Scrolling Container
 // ============================================================================
 
-describe("inkx render: scroll container", () => {
+describe("hightea render: scroll container", () => {
   bench(
     "500 items in scroll (h=50)",
     () => {
@@ -113,7 +113,7 @@ describe("inkx render: scroll container", () => {
 // Nested Components
 // ============================================================================
 
-describe("inkx render: nested components", () => {
+describe("hightea render: nested components", () => {
   bench(
     "100 Box+Text rows (3 Text per row)",
     () => {
@@ -164,7 +164,7 @@ describe("inkx render: nested components", () => {
 // Edge Cases
 // ============================================================================
 
-describe("inkx render: edge cases", () => {
+describe("hightea render: edge cases", () => {
   bench(
     "50 wide (200 char) lines with truncate",
     () => {
@@ -233,7 +233,7 @@ describe("inkx render: edge cases", () => {
 // Rerender
 // ============================================================================
 
-describe("inkx render: rerender", () => {
+describe("hightea render: rerender", () => {
   bench(
     "200 items: first render",
     () => {

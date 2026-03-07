@@ -1,8 +1,8 @@
 /**
- * Inkx Testing Library
+ * Hightea Testing Library
  *
- * Unified App-based API for testing Inkx components.
- * Uses the actual inkx render pipeline for accurate ANSI output.
+ * Unified App-based API for testing Hightea components.
+ * Uses the actual hightea render pipeline for accurate ANSI output.
  *
  * ## Import Syntax
  *
@@ -93,7 +93,7 @@ export { bufferToText, bufferToStyledText, bufferToHTML } from "../buffer.js"
 export type { TerminalBuffer } from "../buffer.js"
 
 // Re-export locator API for DOM queries (legacy, prefer App.locator())
-export { createLocator, type InkxLocator } from "./locator.js"
+export { createLocator, type HighteaLocator } from "./locator.js"
 export type { Rect } from "../types.js"
 
 // Re-export keyboard utilities

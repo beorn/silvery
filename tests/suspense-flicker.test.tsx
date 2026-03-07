@@ -5,7 +5,7 @@
  * Bug: When a Suspense boundary shows a fallback, sibling content outside
  * the boundary disappears for one frame before reappearing.
  *
- * Root cause investigation: inkx uses LegacyRoot (tag=0) for all
+ * Root cause investigation: hightea uses LegacyRoot (tag=0) for all
  * createContainer calls. In LegacyRoot mode, React can't "hold" the
  * old committed tree during Suspense transitions — specifically for
  * startTransition / useDeferredValue patterns.

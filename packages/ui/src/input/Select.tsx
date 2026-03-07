@@ -1,5 +1,5 @@
 /**
- * React Select component for inkx/Ink TUI apps
+ * React Select component for hightea/Ink TUI apps
  *
  * Single-choice selection list with keyboard navigation.
  */
@@ -62,21 +62,21 @@ export function Select<T>({
   }, [selectedIndex, controlledHighlightIndex])
 
   return (
-    <div data-inkx-select>
-      {hasMoreAbove && <div data-inkx-select-scroll-indicator="up">...</div>}
+    <div data-hightea-select>
+      {hasMoreAbove && <div data-hightea-select-scroll-indicator="up">...</div>}
       {visibleOptions.map((option, visibleIdx) => {
         const actualIndex = scrollOffset + visibleIdx
         const isSelected = option.value === value
         const isHighlighted = actualIndex === highlightIndex
 
         return (
-          <div key={actualIndex} data-inkx-select-option data-selected={isSelected} data-highlighted={isHighlighted}>
-            <span data-inkx-select-indicator>{isSelected ? ">" : " "}</span>
-            <span data-inkx-select-label>{option.label}</span>
+          <div key={actualIndex} data-hightea-select-option data-selected={isSelected} data-highlighted={isHighlighted}>
+            <span data-hightea-select-indicator>{isSelected ? ">" : " "}</span>
+            <span data-hightea-select-label>{option.label}</span>
           </div>
         )
       })}
-      {hasMoreBelow && <div data-inkx-select-scroll-indicator="down">...</div>}
+      {hasMoreBelow && <div data-hightea-select-scroll-indicator="down">...</div>}
     </div>
   )
 }

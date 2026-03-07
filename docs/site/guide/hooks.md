@@ -256,7 +256,7 @@ function App() {
 | Property        | Type                   | Description                          |
 | --------------- | ---------------------- | ------------------------------------ |
 | `activeId`      | `string \| null`       | testID of the currently focused node |
-| `activeElement` | `InkxNode \| null`     | The currently focused node           |
+| `activeElement` | `HighteaNode \| null`     | The currently focused node           |
 | `focused`       | `boolean`              | Whether any node has focus           |
 | `focus`         | `(id: string) => void` | Focus a specific component by testID |
 | `focusNext`     | `() => void`           | Focus next focusable component       |

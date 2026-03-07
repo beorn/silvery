@@ -1,7 +1,7 @@
 /**
- * Terminal capability detection -- re-exported from chalkx.
+ * Terminal capability detection -- re-exported from ansi.
  *
- * The canonical source of TerminalCaps is now in chalkx.
+ * The canonical source of TerminalCaps is now in ansi.
  * This module re-exports for backward compatibility.
  */
 

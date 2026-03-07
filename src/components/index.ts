@@ -1,7 +1,7 @@
 /**
- * Inkx Components
+ * Hightea Components
  *
- * Public component exports for the Inkx library.
+ * Public component exports for the Hightea library.
  */
 
 // Layout

@@ -1,4 +1,4 @@
-# chalkx
+# ansi
 
 [![npm version](https://img.shields.io/npm/v/@hightea/ansi.svg)](https://www.npmjs.com/package/@hightea/ansi)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -51,17 +51,17 @@ const unsubscribe = patched.subscribe(() => {
 
 ### Using with hightea
 
-If you're building a TUI app with [hightea](https://github.com/beorn/hightea), import term primitives from `hightea` directly - it re-exports everything from chalkx:
+If you're building a TUI app with [hightea](https://github.com/beorn/hightea), import term primitives from `hightea` directly - it re-exports everything from ansi:
 
 ```typescript
 // Preferred for hightea apps - one import source
 import { render, Box, Text, createTerm, patchConsole } from "@hightea/term"
 
-// Only import from chalkx for extended ANSI features not re-exported
+// Only import from ansi for extended ANSI features not re-exported
 import { curlyUnderline, hyperlink, bgOverride } from "@hightea/ansi"
 ```
 
-For CLI tools, scripts, or non-hightea projects, import directly from chalkx.
+For CLI tools, scripts, or non-hightea projects, import directly from ansi.
 
 ### Default Term for Simple Scripts
 
@@ -83,7 +83,7 @@ using term = createTerm({ cursor: false }) // No cursor control
 
 ## Extended ANSI Features
 
-Beyond the Term API, chalkx provides extended ANSI features not found in any other npm package:
+Beyond the Term API, ansi provides extended ANSI features not found in any other npm package:
 
 ```typescript
 import { curlyUnderline, hyperlink, chalk } from "@hightea/ansi"
@@ -191,7 +191,7 @@ Control detection via `HIGHTEA_BG_CONFLICT` env var: `throw` (default), `warn`, 
 
 | Package       | Extended Underlines | Underline Color | Hyperlinks | Term Detection |
 | ------------- | ------------------- | --------------- | ---------- | -------------- |
-| **chalkx**    | yes                 | yes             | yes        | yes            |
+| **ansi**    | yes                 | yes             | yes        | yes            |
 | chalk         | no                  | no              | no         | no             |
 | kleur         | no                  | no              | no         | no             |
 | picocolors    | no                  | no              | no         | no             |
@@ -211,7 +211,7 @@ term.red("properly no-color")
 
 ```typescript
 // WRONG - deprecated API
-import chalkX from "@hightea/ansi"
+import ansi from "@hightea/ansi"
 
 // RIGHT - use createTerm
 import { createTerm } from "@hightea/ansi"
@@ -239,7 +239,7 @@ bun ./src/storybook.ts
 
 | Project                                       | Description                                     |
 | --------------------------------------------- | ----------------------------------------------- |
-| [hightea](https://github.com/beorn/hightea)   | React terminal UI framework (re-exports chalkx) |
+| [hightea](https://github.com/beorn/hightea)   | React terminal UI framework (re-exports ansi) |
 | [chalk](https://github.com/chalk/chalk)       | Industry-standard terminal styling              |
 | [Flexture](https://github.com/beorn/flexture) | Pure JS flexbox layout engine                   |
 

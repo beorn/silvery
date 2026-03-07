@@ -1,7 +1,7 @@
 /**
  * Button Component
  *
- * A focusable button control. Integrates with the inkx focus system
+ * A focusable button control. Integrates with the hightea focus system
  * and responds to Enter or Space key to activate.
  *
  * Usage:

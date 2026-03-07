@@ -1,4 +1,4 @@
-# chalkx Roadmap
+# ansi Roadmap
 
 ## v0.1.0 (Current)
 
@@ -74,7 +74,7 @@
 
 ## Fallback Strategy
 
-chalkx implements a tiered fallback approach:
+ansi implements a tiered fallback approach:
 
 | Feature          | Modern Terminal     | Basic Terminal | No Color  |
 | ---------------- | ------------------- | -------------- | --------- |

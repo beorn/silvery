@@ -1,5 +1,5 @@
 /**
- * Inkx Render Pipeline Benchmarks
+ * Hightea Render Pipeline Benchmarks
  *
  * Run: bun run bench
  */
@@ -16,7 +16,7 @@ import { displayWidth, parseAnsiText, splitGraphemes, stripAnsi } from "../src/u
 const layoutEngine = await initYogaEngine()
 setLayoutEngine(layoutEngine)
 
-// Helper to create mock InkxNode
+// Helper to create mock HighteaNode
 function createMockNode(
   type: TeaNode["type"],
   props: BoxProps | TextProps,

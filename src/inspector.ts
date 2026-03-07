@@ -1,5 +1,5 @@
 /**
- * inkx Inspector — Debug introspection for rendering pipeline.
+ * hightea Inspector — Debug introspection for rendering pipeline.
  *
  * Activate with HIGHTEA_DEV=1 env var or by calling enableInspector().
  * Outputs debug info to stderr or a log file (never to the TUI stdout).
@@ -11,7 +11,7 @@
  * - Dirty region visualization
  *
  * This is DISTINCT from React DevTools (devtools.ts). This inspector provides
- * inkx-specific introspection: render pipeline stats, focus tree, dirty regions,
+ * hightea-specific introspection: render pipeline stats, focus tree, dirty regions,
  * layout info.
  */
 
@@ -45,7 +45,7 @@ let inspectorOutput: NodeJS.WritableStream = process.stderr
 // Public API
 // =============================================================================
 
-/** Enable the inkx inspector. */
+/** Enable the hightea inspector. */
 export function enableInspector(options?: InspectorOptions): void {
   inspectorEnabled = true
   if (options?.logFile) {
@@ -78,7 +78,7 @@ export function isInspectorEnabled(): boolean {
 export function inspectFrame(stats: RenderStats): void {
   if (!inspectorEnabled) return
   const line =
-    `[inkx] frame #${stats.renderCount} ` +
+    `[hightea] frame #${stats.renderCount} ` +
     `${stats.lastRenderTime.toFixed(1)}ms ` +
     `avg=${stats.avgRenderTime.toFixed(1)}ms ` +
     `skipped=${stats.skippedCount}\n`
@@ -88,7 +88,7 @@ export function inspectFrame(stats: RenderStats): void {
 /**
  * Dump the component tree structure as indented text.
  *
- * Walks the InkxNode tree and formats each node with its type, testID,
+ * Walks the HighteaNode tree and formats each node with its type, testID,
  * layout rect, and dirty flags.
  */
 export function inspectTree(rootNode: TeaNode, options?: { depth?: number; showLayout?: boolean }): string {

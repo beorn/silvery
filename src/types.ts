@@ -1,7 +1,7 @@
 /**
- * Inkx Types
+ * Hightea Types
  *
- * Core types for the Inkx renderer architecture.
+ * Core types for the Hightea renderer architecture.
  */
 
 import type { FocusEventProps } from "./focus-events.js"
@@ -41,7 +41,7 @@ export function rectEqual(a: Rect | null, b: Rect | null): boolean {
 // ============================================================================
 
 /**
- * Inkx node types - the primitive elements in the render tree.
+ * Hightea node types - the primitive elements in the render tree.
  */
 export type TeaNodeType = "hightea-root" | "hightea-box" | "hightea-text"
 
@@ -227,7 +227,7 @@ export interface TextProps extends StyleProps, TestProps, MouseEventProps {
 }
 
 /**
- * The core Inkx node - represents an element in the render tree.
+ * The core Hightea node - represents an element in the render tree.
  *
  * Each node has:
  * - A Yoga node for layout calculation
@@ -541,7 +541,7 @@ export interface EventSource {
 // TermDef - Minimal Render Configuration
 // ============================================================================
 
-// ColorLevel is re-exported from chalkx in index.ts
+// ColorLevel is re-exported from ansi in index.ts
 // Import here for use in TermDef
 import type { ColorLevel } from "@hightea/ansi"
 

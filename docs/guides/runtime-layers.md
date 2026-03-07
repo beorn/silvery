@@ -202,16 +202,16 @@ controller.abort() // Cancels the effect
 Between `createRuntime()` and the React layers sits a pure **TEA (The Elm Architecture) store**. It has no React dependency — use it for Elm-style apps or as the state backbone under React components.
 
 ```typescript
-import { createStore, inkxUpdate, defaultInit, withFocusManagement } from "@hightea/term/store"
-import { type Effect, type InkxModel, type InkxMsg, none, batch, dispatch, compose } from "@hightea/term/core"
+import { createStore, highteaUpdate, defaultInit, withFocusManagement } from "@hightea/term/store"
+import { type Effect, type HighteaModel, type HighteaMsg, none, batch, dispatch, compose } from "@hightea/term/core"
 
 // Extend the base model with your state
-interface AppModel extends InkxModel {
+interface AppModel extends HighteaModel {
   count: number
   items: string[]
 }
 
-type AppMsg = InkxMsg | { type: "increment" } | { type: "add-item"; text: string }
+type AppMsg = HighteaMsg | { type: "increment" } | { type: "add-item"; text: string }
 
 // Pure update: (msg, model) → [newModel, effects]
 function update(msg: AppMsg, model: AppModel): [AppModel, Effect[]] {
@@ -222,7 +222,7 @@ function update(msg: AppMsg, model: AppModel): [AppModel, Effect[]] {
       return [{ ...model, items: [...model.items, msg.text] }, [none]]
     default:
       // Delegate unhandled messages to the base hightea update
-      return inkxUpdate(msg, model)
+      return highteaUpdate(msg, model)
   }
 }
 

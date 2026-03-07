@@ -1,5 +1,5 @@
 /**
- * App - Unified render API for inkx
+ * App - Unified render API for hightea
  *
  * Both production and testing return an App instance with the same interface.
  * Key improvements over the old API:
@@ -135,7 +135,7 @@ export interface App {
   /** Send raw stdin input (for sync test helpers; prefer app.press() for new code) */
   readonly stdin: { write: (data: string) => void }
 
-  // === Internal/Legacy (kept for inkx test compatibility, not for external use) ===
+  // === Internal/Legacy (kept for hightea test compatibility, not for external use) ===
 
   /** All rendered frames (internal) */
   readonly frames: string[]
@@ -165,7 +165,7 @@ export interface App {
 
   // === Cursor State ===
 
-  /** Get the current cursor state for this inkx instance (per-instance, not global). */
+  /** Get the current cursor state for this hightea instance (per-instance, not global). */
   getCursorState(): import("./hooks/useCursor.js").CursorState | null
 }
 
@@ -474,7 +474,7 @@ export function buildApp(options: AppOptions): App {
       write: sendInput,
     },
 
-    // Internal/Legacy (kept for inkx test compatibility)
+    // Internal/Legacy (kept for hightea test compatibility)
     frames,
 
     lastFrame(): string | undefined {

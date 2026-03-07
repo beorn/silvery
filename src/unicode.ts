@@ -1,5 +1,5 @@
 /**
- * Unicode handling for Inkx.
+ * Unicode handling for Hightea.
  *
  * Uses Intl.Segmenter for proper grapheme cluster segmentation and
  * string-width for accurate terminal width calculation.
@@ -17,7 +17,7 @@ import stringWidth from "string-width"
 import { type Cell, type Style, type TerminalBuffer, type UnderlineStyle, createMutableCell } from "./buffer.js"
 import { isPrivateUseArea } from "./text-sizing.js"
 
-// Re-export for consumers of inkx
+// Re-export for consumers of hightea
 export { BG_OVERRIDE_CODE }
 
 // ============================================================================
@@ -1175,7 +1175,7 @@ export function truncateAnsi(text: string, maxWidth: number, ellipsis = "\u2026"
 // ANSI Parsing
 // ============================================================================
 
-// BG_OVERRIDE_CODE is imported from chalkx and re-exported at top of file
+// BG_OVERRIDE_CODE is imported from ansi and re-exported at top of file
 
 /** Styled text segment with associated ANSI colors/attributes */
 export interface StyledSegment {

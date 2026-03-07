@@ -43,13 +43,13 @@ The key insight: React components don't render terminal content directly. They d
 
 ### Phase 0: Reconciliation
 
-React's reconciler builds the component tree. Our custom reconciler creates `InkxNode` objects:
+React's reconciler builds the component tree. Our custom reconciler creates `HighteaNode` objects:
 
 ```typescript
-interface InkxNode {
+interface HighteaNode {
   type: "box" | "text" | "root"
   props: BoxProps | TextProps
-  children: InkxNode[]
+  children: HighteaNode[]
 
   // Yoga integration
   yogaNode: Yoga.Node
@@ -72,7 +72,7 @@ The reconciler hooks:
 
 ```typescript
 const hostConfig: HostConfig = {
-  createInstance(type, props): InkxNode {
+  createInstance(type, props): HighteaNode {
     const yogaNode = Yoga.Node.create()
     applyFlexboxProps(yogaNode, props)
 
@@ -137,7 +137,7 @@ const hostConfig: HostConfig = {
 Some nodes need content measurement before layout:
 
 ```typescript
-function measurePhase(root: InkxNode) {
+function measurePhase(root: HighteaNode) {
   traverseTree(root, (node) => {
     if (node.props.width === "fit-content" || node.props.height === "fit-content") {
       const intrinsicSize = measureIntrinsicSize(node)
@@ -152,7 +152,7 @@ function measurePhase(root: InkxNode) {
   })
 }
 
-function measureIntrinsicSize(node: InkxNode): {
+function measureIntrinsicSize(node: HighteaNode): {
   width: number
   height: number
 } {
@@ -186,7 +186,7 @@ function measureIntrinsicSize(node: InkxNode): {
 Calculate layout for the entire tree:
 
 ```typescript
-function layoutPhase(root: InkxNode, terminalWidth: number, terminalHeight: number) {
+function layoutPhase(root: HighteaNode, terminalWidth: number, terminalHeight: number) {
   // Only recalculate if something changed
   if (!hasLayoutDirtyNodes(root)) {
     return
@@ -202,7 +202,7 @@ function layoutPhase(root: InkxNode, terminalWidth: number, terminalHeight: numb
   notifyLayoutSubscribers(root)
 }
 
-function propagateLayout(node: InkxNode, parentX: number, parentY: number) {
+function propagateLayout(node: HighteaNode, parentX: number, parentY: number) {
   const yoga = node.yogaNode
 
   node.prevLayout = node.computedLayout
@@ -225,7 +225,7 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number) {
   }
 }
 
-function notifyLayoutSubscribers(node: InkxNode) {
+function notifyLayoutSubscribers(node: HighteaNode) {
   if (!layoutEqual(node.prevLayout, node.computedLayout)) {
     for (const subscriber of node.layoutSubscribers) {
       subscriber() // Triggers React re-render
@@ -243,7 +243,7 @@ function notifyLayoutSubscribers(node: InkxNode) {
 Render actual terminal content:
 
 ```typescript
-function contentPhase(root: InkxNode): TerminalBuffer {
+function contentPhase(root: HighteaNode): TerminalBuffer {
   const buffer = createBuffer(root.computedLayout.width, root.computedLayout.height)
 
   renderNodeToBuffer(root, buffer)
@@ -251,7 +251,7 @@ function contentPhase(root: InkxNode): TerminalBuffer {
   return buffer
 }
 
-function renderNodeToBuffer(node: InkxNode, buffer: TerminalBuffer) {
+function renderNodeToBuffer(node: HighteaNode, buffer: TerminalBuffer) {
   if (!node.contentDirty && !node.layoutDirty) {
     // Content unchanged, skip
     return
@@ -282,7 +282,7 @@ function renderNodeToBuffer(node: InkxNode, buffer: TerminalBuffer) {
   node.contentDirty = false
 }
 
-function renderTextContent(node: InkxNode, availableWidth: number): StyledString {
+function renderTextContent(node: HighteaNode, availableWidth: number): StyledString {
   const text = node.props.children
 
   // Auto-truncate by default
@@ -371,16 +371,16 @@ function changesToAnsi(changes: CellChange[]): string {
 The hook subscribes to layout completion:
 
 ```typescript
-const NodeContext = createContext<InkxNode | null>(null)
+const NodeContext = createContext<HighteaNode | null>(null)
 
-function useInkxNode(): InkxNode {
+function useHighteaNode(): HighteaNode {
   const node = useContext(NodeContext)
   if (!node) throw new Error("useContentRect must be used within hightea")
   return node
 }
 
 function useContentRect(): ComputedLayout {
-  const node = useInkxNode()
+  const node = useHighteaNode()
   const [, forceUpdate] = useReducer((x) => x + 1, 0)
 
   useLayoutEffect(() => {
@@ -421,7 +421,7 @@ Batches rapid updates:
 ```typescript
 class RenderScheduler {
   private pending = false
-  private root: InkxNode
+  private root: HighteaNode
   private stdout: NodeJS.WriteStream
   private prevBuffer: TerminalBuffer | null = null
 
@@ -556,7 +556,7 @@ function writeTextToBuffer(buffer: TerminalBuffer, x: number, y: number, text: s
 Graceful degradation:
 
 ```typescript
-function runPipeline(root: InkxNode) {
+function runPipeline(root: HighteaNode) {
   try {
     measurePhase(root)
     layoutPhase(root, process.stdout.columns, process.stdout.rows)
@@ -640,25 +640,25 @@ React Suspense requires the renderer to hide and unhide subtrees when components
 ```typescript
 const hostConfig: HostConfig = {
   // Called when a subtree suspends
-  hideInstance(instance: InkxNode) {
+  hideInstance(instance: HighteaNode) {
     instance.hidden = true
     instance.layoutDirty = true
     // Hidden nodes excluded from layout and rendering
   },
 
   // Called when suspension ends
-  unhideInstance(instance: InkxNode) {
+  unhideInstance(instance: HighteaNode) {
     instance.hidden = false
     instance.layoutDirty = true
     instance.contentDirty = true
   },
 
   // Also need hideTextInstance/unhideTextInstance for Text nodes
-  hideTextInstance(textInstance: InkxTextNode) {
+  hideTextInstance(textInstance: HighteaTextNode) {
     textInstance.hidden = true
   },
 
-  unhideTextInstance(textInstance: InkxTextNode) {
+  unhideTextInstance(textInstance: HighteaTextNode) {
     textInstance.hidden = false
   },
 }
@@ -669,7 +669,7 @@ const hostConfig: HostConfig = {
 The layout phase skips hidden nodes:
 
 ```typescript
-function propagateLayout(node: InkxNode, parentX: number, parentY: number) {
+function propagateLayout(node: HighteaNode, parentX: number, parentY: number) {
   // Skip hidden nodes - they don't participate in layout
   if (node.hidden) {
     return
@@ -694,7 +694,7 @@ function propagateLayout(node: InkxNode, parentX: number, parentY: number) {
 The content phase skips hidden nodes:
 
 ```typescript
-function renderNodeToBuffer(node: InkxNode, buffer: TerminalBuffer) {
+function renderNodeToBuffer(node: HighteaNode, buffer: TerminalBuffer) {
   // Don't render hidden nodes
   if (node.hidden) {
     return

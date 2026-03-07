@@ -1,5 +1,5 @@
 /**
- * Key parsing for inkx-loop runtime.
+ * Key parsing for hightea-loop runtime.
  *
  * Re-exports from canonical source in ../keys.ts.
  */

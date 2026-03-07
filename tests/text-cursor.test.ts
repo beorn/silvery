@@ -549,7 +549,7 @@ describe("edge cases", () => {
   })
 
   test("cursorMoveDown does not get stuck at wrap boundaries with stickyX=0", () => {
-    // Bug: km-inkx.cursor-stuck — at wrap boundaries, end of line N has the same
+    // Bug: km-hightea.cursor-stuck — at wrap boundaries, end of line N has the same
     // offset as start of line N+1. cursorToRowCol assigns to line N. With stickyX=0,
     // cursorMoveDown computed startOffset+0 == current cursor → stuck.
     const text = "File issues for remaining work – Create issues for anything that needs follow-up"

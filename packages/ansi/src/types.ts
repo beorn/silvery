@@ -67,7 +67,7 @@ type RgbColor = `rgb(${string})`
 type ThemeToken = `$${string}`
 
 /**
- * Type-safe color value accepted by chalkx APIs.
+ * Type-safe color value accepted by ansi APIs.
  *
  * Accepts:
  * - ANSI color names: `"red"`, `"cyan"`, `"whiteBright"`, etc.

@@ -1,5 +1,5 @@
 /**
- * React DevTools integration for inkx.
+ * React DevTools integration for hightea.
  *
  * Provides optional connection to React DevTools standalone app for
  * debugging TUI component trees. Requires `react-devtools-core` to be
@@ -48,7 +48,7 @@ export async function connectDevTools(): Promise<boolean> {
       } catch {
         // ws not available -- devtools won't be able to connect
         console.warn(
-          "inkx devtools: WebSocket polyfill (ws) not available. " + "Install ws for DevTools support: bun add -d ws",
+          "hightea devtools: WebSocket polyfill (ws) not available. " + "Install ws for DevTools support: bun add -d ws",
         )
         return false
       }
@@ -60,14 +60,14 @@ export async function connectDevTools(): Promise<boolean> {
       globalThis.window = globalThis
     }
 
-    // Configure component filters to hide inkx internals from the DevTools tree.
+    // Configure component filters to hide hightea internals from the DevTools tree.
     // Filter types from react-devtools-shared/src/types.js:
     //   1 = ComponentFilterElementType, value 7 = HostComponent
     //   2 = ComponentFilterDisplayName (regex on displayName)
     if (!globalThis.__REACT_DEVTOOLS_COMPONENT_FILTERS__) {
       globalThis.__REACT_DEVTOOLS_COMPONENT_FILTERS__ = [
         { type: 1, value: 7, isEnabled: true },
-        { type: 2, value: "InkxApp", isEnabled: true, isValid: true },
+        { type: 2, value: "HighteaApp", isEnabled: true, isValid: true },
       ]
     }
 
@@ -76,7 +76,7 @@ export async function connectDevTools(): Promise<boolean> {
     devtools.initialize()
     devtools.connectToDevTools()
 
-    // Inject renderer info so DevTools can identify inkx.
+    // Inject renderer info so DevTools can identify hightea.
     // rendererPackageName and rendererVersion are read from the host config
     // passed to Reconciler() -- see reconciler/host-config.ts.
     reconciler.injectIntoDevTools()
@@ -86,7 +86,7 @@ export async function connectDevTools(): Promise<boolean> {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
     console.warn(
-      `inkx devtools: Failed to connect to React DevTools. ` +
+      `hightea devtools: Failed to connect to React DevTools. ` +
         `Install react-devtools-core: bun add -d react-devtools-core\n` +
         `  Error: ${message}`,
     )

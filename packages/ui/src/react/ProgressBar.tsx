@@ -1,5 +1,5 @@
 /**
- * React ProgressBar component for inkx/Ink TUI apps
+ * React ProgressBar component for hightea/Ink TUI apps
  */
 
 import React, { useState, useEffect, useRef } from "react"

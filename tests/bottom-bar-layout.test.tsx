@@ -2,7 +2,7 @@
  * Test the bottom bar layout scenario that was causing VIEW truncation.
  *
  * Key findings:
- * - inkx handles nested Text correctly when parent Box has explicit width + flexGrow={0}
+ * - hightea handles nested Text correctly when parent Box has explicit width + flexGrow={0}
  * - The original bug was missing flexGrow={0} and using string.length instead of displayWidth
  * - Both nested Text and pre-built string approaches work when properly configured
  */
@@ -14,7 +14,7 @@ describe("Bottom bar layout", () => {
   const render = createRenderer({ cols: 80, rows: 5 })
 
   test("Nested Text with explicit width and flexGrow={0} works correctly", () => {
-    // This is the IDIOMATIC inkx pattern for styled text portions
+    // This is the IDIOMATIC hightea pattern for styled text portions
     const dbCount = 21
     const viewModeStr = "COLUMNS VIEW"
     const colIndex = 0

@@ -1,7 +1,7 @@
 /**
  * Layout Snapshot Tests
  *
- * Rendered output snapshots at the inkx level using renderString().
+ * Rendered output snapshots at the hightea level using renderString().
  * These catch geometry/rendering drift by locking down the visual output
  * of common card and board structures.
  *

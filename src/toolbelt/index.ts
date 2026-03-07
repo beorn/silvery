@@ -1,5 +1,5 @@
 /**
- * inkx/toolbelt - Diagnostic and helper tools for debugging TUI rendering
+ * hightea/toolbelt - Diagnostic and helper tools for debugging TUI rendering
  *
  * Central import for all diagnostic utilities. Use this when you need to:
  * - Debug incremental rendering issues

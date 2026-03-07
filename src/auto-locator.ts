@@ -4,7 +4,7 @@
  * This is the primary locator API. Prefer `App.locator()` / `App.getByTestId()` /
  * `App.getByText()` which use AutoLocator internally.
  *
- * Unlike the static InkxLocator in `testing/locator.ts` (legacy, deprecated),
+ * Unlike the static HighteaLocator in `testing/locator.ts` (legacy, deprecated),
  * AutoLocator re-evaluates queries against the current tree on each access.
  * This eliminates the stale locator problem in tests.
  *

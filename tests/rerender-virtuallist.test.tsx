@@ -2,7 +2,7 @@
  * Test: VirtualList card height stability on re-render.
  *
  * The km-tui board uses VirtualList inside overflow="scroll" containers.
- * Pure inkx borderColor change tests pass, but km-tui fails.
+ * Pure hightea borderColor change tests pass, but km-tui fails.
  * This test isolates whether VirtualList + overflow is the trigger.
  */
 import { describe, expect, test } from "vitest"

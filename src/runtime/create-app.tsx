@@ -1,5 +1,5 @@
 /**
- * createApp() - Layer 3 entry point for inkx-loop
+ * createApp() - Layer 3 entry point for hightea-loop
  *
  * Provides Zustand store integration with unified providers.
  * Providers are stores (getState/subscribe) + event sources (events()).
@@ -138,12 +138,12 @@ export interface EventHandlerContext<S> {
   /**
    * Dispatch an operation through the tea() reducer.
    *
-   * Available when the store was created with `tea()` middleware from `inkx/tea`.
+   * Available when the store was created with `tea()` middleware from `hightea/tea`.
    * Type-safe: the Op type is inferred from the store's TeaSlice.
    * For non-tea stores, this is `undefined`.
    */
   dispatch?: "dispatch" extends keyof S ? S["dispatch"] : undefined
-  /** Hit-test the render tree at (x, y). Returns the deepest InkxNode at that point, or null. */
+  /** Hit-test the render tree at (x, y). Returns the deepest HighteaNode at that point, or null. */
   hitTest(x: number, y: number): import("../types.js").TeaNode | null
 }
 
@@ -757,7 +757,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   let exit: () => void
 
-  // Create InkxNode container
+  // Create HighteaNode container
   const container = createContainer(() => {})
 
   // Create React fiber root

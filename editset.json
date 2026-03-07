@@ -1,0 +1,962 @@
+{
+  "id": "text-replace-1772849565954",
+  "operation": "rename",
+  "pattern": "chalkx",
+  "from": "chalkx",
+  "to": "ansi",
+  "refs": [
+    {
+      "refId": "45cb4c3b",
+      "file": "./src/ink.ts",
+      "range": [
+        75,
+        45,
+        75,
+        51
+      ],
+      "preview": "// Term primitives (so consumers don't need chalkx directly) // \"chalkx\" → \"chalkx\"",
+      "checksum": "06f9a01afe40",
+      "selected": true
+    },
+    {
+      "refId": "5de58f77",
+      "file": "./src/pipeline/CLAUDE.md",
+      "range": [
+        396,
+        184,
+        396,
+        190
+      ],
+      "preview": "Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content and tracks bg ranges separately. Each line's bg is applied independently. The `bgOverride` utility from chalkx allows intentional bg override where needed. // \"chalkx\" → \"chalkx\"",
+      "checksum": "a8018d3680fe",
+      "selected": true
+    },
+    {
+      "refId": "a04c865c",
+      "file": "./src/index.ts",
+      "range": [
+        391,
+        20,
+        391,
+        26
+      ],
+      "preview": "// Re-exports from chalkx // \"chalkx\" → \"chalkx\"",
+      "checksum": "0dcc469ec1a4",
+      "selected": true
+    },
+    {
+      "refId": "05125140",
+      "file": "./src/index.ts",
+      "range": [
+        394,
+        60,
+        394,
+        66
+      ],
+      "preview": "// Term primitives (so consumers don't need to import from chalkx directly) // \"chalkx\" → \"chalkx\"",
+      "checksum": "0dcc469ec1a4",
+      "selected": true
+    },
+    {
+      "refId": "ada5f790",
+      "file": "./src/unicode.ts",
+      "range": [
+        1178,
+        38,
+        1178,
+        44
+      ],
+      "preview": "// BG_OVERRIDE_CODE is imported from chalkx and re-exported at top of file // \"chalkx\" → \"chalkx\"",
+      "checksum": "8439083c8cd1",
+      "selected": true
+    },
+    {
+      "refId": "1928c687",
+      "file": "./src/pipeline/render-text.ts",
+      "range": [
+        812,
+        66,
+        812,
+        72
+      ],
+      "preview": "// Skip if segment has bgOverride flag (explicit opt-out via chalkx.bgOverride) // \"chalkx\" → \"chalkx\"",
+      "checksum": "2fd35aad6626",
+      "selected": true
+    },
+    {
+      "refId": "adab6c84",
+      "file": "./src/pipeline/render-text.ts",
+      "range": [
+        826,
+        189,
+        826,
+        195
+      ],
+      "preview": "const msg = `[hightea] Background conflict: chalk.bg* on text that already has hightea background. Chalk bg will override only text characters, causing visual gaps in padding. Use chalkx.bgOverride() to suppress if intentional. Text: \"${preview}${segment.text.length > 30 ? \"...\" : \"\"}\"` // \"chalkx\" → \"chalkx\"",
+      "checksum": "2fd35aad6626",
+      "selected": true
+    },
+    {
+      "refId": "e1e3f465",
+      "file": "./src/terminal-caps.ts",
+      "range": [
+        2,
+        54,
+        2,
+        60
+      ],
+      "preview": "* Terminal capability detection -- re-exported from chalkx. // \"chalkx\" → \"chalkx\"",
+      "checksum": "e1428b7f1009",
+      "selected": true
+    },
+    {
+      "refId": "0b4836f3",
+      "file": "./src/terminal-caps.ts",
+      "range": [
+        4,
+        51,
+        4,
+        57
+      ],
+      "preview": "* The canonical source of TerminalCaps is now in chalkx. // \"chalkx\" → \"chalkx\"",
+      "checksum": "e1428b7f1009",
+      "selected": true
+    },
+    {
+      "refId": "1ffc3c4a",
+      "file": "./src/types.ts",
+      "range": [
+        544,
+        35,
+        544,
+        41
+      ],
+      "preview": "// ColorLevel is re-exported from chalkx in index.ts // \"chalkx\" → \"chalkx\"",
+      "checksum": "6590d81a7a6d",
+      "selected": true
+    },
+    {
+      "refId": "39bd1436",
+      "file": "./CLAUDE.md",
+      "range": [
+        826,
+        38,
+        826,
+        44
+      ],
+      "preview": "// Term primitives (re-exported from chalkx) // \"chalkx\" → \"chalkx\"",
+      "checksum": "5a7de6ab6244",
+      "selected": true
+    },
+    {
+      "refId": "789af397",
+      "file": "./CLAUDE.md",
+      "range": [
+        894,
+        32,
+        894,
+        38
+      ],
+      "preview": "// RIGHT - use bgOverride from chalkx // \"chalkx\" → \"chalkx\"",
+      "checksum": "5a7de6ab6244",
+      "selected": true
+    },
+    {
+      "refId": "c78437a5",
+      "file": "./src/measurer.ts",
+      "range": [
+        5,
+        12,
+        5,
+        18
+      ],
+      "preview": "* Bridges chalkx Term with hightea measurement capabilities. // \"chalkx\" → \"chalkx\"",
+      "checksum": "6ec392ad07f6",
+      "selected": true
+    },
+    {
+      "refId": "2161d62d",
+      "file": "./packages/ansi/src/types.ts",
+      "range": [
+        70,
+        38,
+        70,
+        44
+      ],
+      "preview": "* Type-safe color value accepted by chalkx APIs. // \"chalkx\" → \"chalkx\"",
+      "checksum": "16361de5b71f",
+      "selected": true
+    },
+    {
+      "refId": "5615cd29",
+      "file": "./packages/ansi/CLAUDE.md",
+      "range": [
+        1,
+        3,
+        1,
+        9
+      ],
+      "preview": "# chalkx - Terminal Primitives and Extended ANSI Features // \"chalkx\" → \"chalkx\"",
+      "checksum": "5c05ac93656e",
+      "selected": true
+    },
+    {
+      "refId": "57730b8c",
+      "file": "./packages/ansi/CLAUDE.md",
+      "range": [
+        8,
+        10,
+        8,
+        16
+      ],
+      "preview": "- **From chalkx only:** `curlyUnderline`, `hyperlink`, `bgOverride`, `displayLength`, `styledUnderline`, `underlineColor`, detection functions // \"chalkx\" → \"chalkx\"",
+      "checksum": "5c05ac93656e",
+      "selected": true
+    },
+    {
+      "refId": "24633c25",
+      "file": "./docs/reference/terminal-capabilities.md",
+      "range": [
+        3,
+        52,
+        3,
+        58
+      ],
+      "preview": "This document explains terminal capabilities, the `chalkx` and `hightea` packages, and how to choose the right render strategy. // \"chalkx\" → \"chalkx\"",
+      "checksum": "0f3051891555",
+      "selected": true
+    },
+    {
+      "refId": "b4eeb3fd",
+      "file": "./packages/ansi/README.md",
+      "range": [
+        1,
+        3,
+        1,
+        9
+      ],
+      "preview": "# chalkx // \"chalkx\" → \"chalkx\"",
+      "checksum": "970caa78a3dd",
+      "selected": true
+    },
+    {
+      "refId": "d8353745",
+      "file": "./packages/ansi/README.md",
+      "range": [
+        54,
+        159,
+        54,
+        165
+      ],
+      "preview": "If you're building a TUI app with [hightea](https://github.com/beorn/hightea), import term primitives from `hightea` directly - it re-exports everything from chalkx: // \"chalkx\" → \"chalkx\"",
+      "checksum": "970caa78a3dd",
+      "selected": true
+    },
+    {
+      "refId": "d64e6079",
+      "file": "./packages/ansi/README.md",
+      "range": [
+        60,
+        21,
+        60,
+        27
+      ],
+      "preview": "// Only import from chalkx for extended ANSI features not re-exported // \"chalkx\" → \"chalkx\"",
+      "checksum": "970caa78a3dd",
+      "selected": true
+    },
+    {
+      "refId": "0cd74f5b",
+      "file": "./packages/ansi/README.md",
+      "range": [
+        64,
+        71,
+        64,
+        77
+      ],
+      "preview": "For CLI tools, scripts, or non-hightea projects, import directly from chalkx. // \"chalkx\" → \"chalkx\"",
+      "checksum": "970caa78a3dd",
+      "selected": true
+    },
+    {
+      "refId": "8c2ffdf4",
+      "file": "./packages/ansi/README.md",
+      "range": [
+        86,
+        22,
+        86,
+        28
+      ],
+      "preview": "Beyond the Term API, chalkx provides extended ANSI features not found in any other npm package: // \"chalkx\" → \"chalkx\"",
+      "checksum": "970caa78a3dd",
+      "selected": true
+    },
+    {
+      "refId": "cd9e461e",
+      "file": "./packages/ansi/README.md",
+      "range": [
+        194,
+        5,
+        194,
+        11
+      ],
+      "preview": "| **chalkx**    | yes                 | yes             | yes        | yes            | // \"chalkx\" → \"chalkx\"",
+      "checksum": "970caa78a3dd",
+      "selected": true
+    },
+    {
+      "refId": "74c94d39",
+      "file": "./packages/ansi/README.md",
+      "range": [
+        214,
+        8,
+        214,
+        14
+      ],
+      "preview": "import chalkX from \"@hightea/ansi\" // \"chalkX\" → \"chalkx\"",
+      "checksum": "970caa78a3dd",
+      "selected": true
+    },
+    {
+      "refId": "b5490f22",
+      "file": "./packages/ansi/README.md",
+      "range": [
+        242,
+        91,
+        242,
+        97
+      ],
+      "preview": "| [hightea](https://github.com/beorn/hightea)   | React terminal UI framework (re-exports chalkx) | // \"chalkx\" → \"chalkx\"",
+      "checksum": "970caa78a3dd",
+      "selected": true
+    },
+    {
+      "refId": "954c9a34",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        3,
+        10,
+        3,
+        16
+      ],
+      "preview": "How does chalkx compare to other terminal styling libraries? // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "feb1b821",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        7,
+        78,
+        7,
+        84
+      ],
+      "preview": "| Feature                 | chalk | ansis | picocolors | colorette | kleur | chalkx        | // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "e70100d6",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        42,
+        1,
+        42,
+        7
+      ],
+      "preview": "chalkx fills this gap while remaining a thin layer on chalk. // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "576508e3",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        59,
+        3,
+        59,
+        9
+      ],
+      "preview": "| chalkx     | ~4 KB       | 1 (chalk)    | // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "af229ccf",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        61,
+        1,
+        61,
+        7
+      ],
+      "preview": "chalkx adds minimal overhead (~4 KB) on top of chalk. // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "723ebd03",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        65,
+        1,
+        65,
+        7
+      ],
+      "preview": "chalkx performance is essentially chalk's performance because: // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "42384ff4",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        71,
+        119,
+        71,
+        125
+      ],
+      "preview": "For performance-critical applications with millions of style operations, consider using chalk directly for colors and chalkx only for extended features. // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "4646ce75",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        73,
+        16,
+        73,
+        22
+      ],
+      "preview": "## When to Use chalkx // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "0860c619",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        75,
+        7,
+        75,
+        13
+      ],
+      "preview": "**Use chalkx when you need:** // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "96db3c78",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        95,
+        1,
+        95,
+        7
+      ],
+      "preview": "chalkx is a drop-in extension of chalk: // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "d2fc474b",
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "range": [
+        114,
+        26,
+        114,
+        32
+      ],
+      "preview": "No breaking changes. Add chalkx alongside chalk and use extended features as needed. // \"chalkx\" → \"chalkx\"",
+      "checksum": "c2f655a02210",
+      "selected": true
+    },
+    {
+      "refId": "92bf773e",
+      "file": "./examples/web/build.ts",
+      "range": [
+        43,
+        29,
+        43,
+        35
+      ],
+      "preview": "// Browser process shim — chalkx/logger access process.stdout, process.stdin, // \"chalkx\" → \"chalkx\"",
+      "checksum": "a9acf7c802f7",
+      "selected": true
+    },
+    {
+      "refId": "f0142e49",
+      "file": "./packages/ansi/docs/design.md",
+      "range": [
+        5,
+        1,
+        5,
+        7
+      ],
+      "preview": "chalkx extends the popular [chalk](https://github.com/chalk/chalk) library with modern terminal features that chalk doesn't support: // \"chalkx\" → \"chalkx\"",
+      "checksum": "387b7c4e4304",
+      "selected": true
+    },
+    {
+      "refId": "c8f4a15a",
+      "file": "./packages/ansi/docs/design.md",
+      "range": [
+        29,
+        24,
+        29,
+        30
+      ],
+      "preview": "2. **Focused scope** - chalkx adds ONLY what chalk lacks // \"chalkx\" → \"chalkx\"",
+      "checksum": "387b7c4e4304",
+      "selected": true
+    },
+    {
+      "refId": "4609ea7e",
+      "file": "./packages/ansi/docs/design.md",
+      "range": [
+        31,
+        26,
+        31,
+        32
+      ],
+      "preview": "4. **Users need both** - chalkx re-exports chalk for single-import convenience // \"chalkx\" → \"chalkx\"",
+      "checksum": "387b7c4e4304",
+      "selected": true
+    },
+    {
+      "refId": "c2ca2b2a",
+      "file": "./packages/ansi/docs/design.md",
+      "range": [
+        171,
+        10,
+        171,
+        16
+      ],
+      "preview": "import { chalkX } from \"@hightea/ansi\" // \"chalkX\" → \"chalkx\"",
+      "checksum": "387b7c4e4304",
+      "selected": true
+    },
+    {
+      "refId": "eeeab5b7",
+      "file": "./packages/ansi/docs/design.md",
+      "range": [
+        172,
+        1,
+        172,
+        7
+      ],
+      "preview": "chalkX.curlyUnderline(\"text\") // \"chalkX\" → \"chalkx\"",
+      "checksum": "387b7c4e4304",
+      "selected": true
+    },
+    {
+      "refId": "b5336b17",
+      "file": "./packages/ansi/docs/design.md",
+      "range": [
+        173,
+        1,
+        173,
+        7
+      ],
+      "preview": "chalkX.red(\"text\") // chalk methods available too // \"chalkX\" → \"chalkx\"",
+      "checksum": "387b7c4e4304",
+      "selected": true
+    },
+    {
+      "refId": "4f3ee0bd",
+      "file": "./packages/ansi/docs/roadmap.md",
+      "range": [
+        1,
+        3,
+        1,
+        9
+      ],
+      "preview": "# chalkx Roadmap // \"chalkx\" → \"chalkx\"",
+      "checksum": "12f08883b912",
+      "selected": true
+    },
+    {
+      "refId": "671fa690",
+      "file": "./packages/ansi/docs/roadmap.md",
+      "range": [
+        77,
+        1,
+        77,
+        7
+      ],
+      "preview": "chalkx implements a tiered fallback approach: // \"chalkx\" → \"chalkx\"",
+      "checksum": "12f08883b912",
+      "selected": true
+    },
+    {
+      "refId": "f4173f9c",
+      "file": "./packages/ansi/tests/CLAUDE.md",
+      "range": [
+        1,
+        3,
+        1,
+        9
+      ],
+      "preview": "# chalkx Tests // \"chalkx\" → \"chalkx\"",
+      "checksum": "431a40a2fa01",
+      "selected": true
+    },
+    {
+      "refId": "f479c0a3",
+      "file": "./packages/ansi/tests/CLAUDE.md",
+      "range": [
+        40,
+        75,
+        40,
+        81
+      ],
+      "preview": "bun vitest run vendor/hightea/packages/ansi/tests/                  # All chalkx tests // \"chalkx\" → \"chalkx\"",
+      "checksum": "431a40a2fa01",
+      "selected": true
+    },
+    {
+      "refId": "8c04120f",
+      "file": "./packages/ansi/CHANGELOG.md",
+      "range": [
+        27,
+        35,
+        27,
+        41
+      ],
+      "preview": "[0.1.0]: https://github.com/beorn/chalkx/releases/tag/v0.1.0 // \"chalkx\" → \"chalkx\"",
+      "checksum": "d51a3b4ad898",
+      "selected": true
+    },
+    {
+      "refId": "4eca9dc7",
+      "file": "./tests/theming.test.tsx",
+      "range": [
+        450,
+        8,
+        450,
+        14
+      ],
+      "preview": "// chalkx encodes \"yellow\" as 38;5;3 (256-color palette index for yellow) // \"chalkx\" → \"chalkx\"",
+      "checksum": "9333b477372c",
+      "selected": true
+    },
+    {
+      "refId": "10ee54d3",
+      "file": "./tests/ansi-parsing.test.ts",
+      "range": [
+        217,
+        31,
+        217,
+        37
+      ],
+      "preview": "// Private code used by chalkx.bgOverride() to signal intentional bg conflict // \"chalkx\" → \"chalkx\"",
+      "checksum": "c5789651b92b",
+      "selected": true
+    }
+  ],
+  "edits": [
+    {
+      "file": "./CLAUDE.md",
+      "offset": 37927,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./CLAUDE.md",
+      "offset": 36509,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./docs/reference/terminal-capabilities.md",
+      "offset": 86,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./examples/web/build.ts",
+      "offset": 1464,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/CHANGELOG.md",
+      "offset": 1135,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/CLAUDE.md",
+      "offset": 405,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/CLAUDE.md",
+      "offset": 2,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 4386,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 3875,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 3393,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 3379,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 3328,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 2996,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 2925,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 2882,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 2235,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 197,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/chalk-comparison.md",
+      "offset": 48,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/design.md",
+      "offset": 5327,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/design.md",
+      "offset": 5297,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/design.md",
+      "offset": 5267,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/design.md",
+      "offset": 1508,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/design.md",
+      "offset": 1375,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/design.md",
+      "offset": 46,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/roadmap.md",
+      "offset": 1923,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/docs/roadmap.md",
+      "offset": 2,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/README.md",
+      "offset": 8083,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/README.md",
+      "offset": 6950,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/README.md",
+      "offset": 6190,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/README.md",
+      "offset": 2439,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/README.md",
+      "offset": 1895,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/README.md",
+      "offset": 1700,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/README.md",
+      "offset": 1530,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/README.md",
+      "offset": 2,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/src/types.ts",
+      "offset": 1604,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/tests/CLAUDE.md",
+      "offset": 1446,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./packages/ansi/tests/CLAUDE.md",
+      "offset": 2,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/index.ts",
+      "offset": 13032,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/index.ts",
+      "offset": 12884,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/ink.ts",
+      "offset": 3093,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/measurer.ts",
+      "offset": 104,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/pipeline/CLAUDE.md",
+      "offset": 28551,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/pipeline/render-text.ts",
+      "offset": 29012,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/pipeline/render-text.ts",
+      "offset": 28254,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/terminal-caps.ts",
+      "offset": 118,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/terminal-caps.ts",
+      "offset": 57,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/types.ts",
+      "offset": 17178,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./src/unicode.ts",
+      "offset": 39443,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./tests/ansi-parsing.test.ts",
+      "offset": 8202,
+      "length": 6,
+      "replacement": "ansi"
+    },
+    {
+      "file": "./tests/theming.test.tsx",
+      "offset": 14853,
+      "length": 6,
+      "replacement": "ansi"
+    }
+  ],
+  "createdAt": "2026-03-07T02:12:45.957Z"
+}

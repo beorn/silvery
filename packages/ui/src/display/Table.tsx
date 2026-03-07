@@ -1,5 +1,5 @@
 /**
- * React Table component for inkx/Ink TUI apps
+ * React Table component for hightea/Ink TUI apps
  */
 
 import React from "react"

@@ -8,7 +8,7 @@
  * unchanged, children that aren't dirty can skip rendering because their
  * screen positions haven't moved.
  *
- * Bead: km-inkx.incremental-content
+ * Bead: km-hightea.incremental-content
  */
 import React, { useState } from "react"
 import { describe, expect, test } from "vitest"

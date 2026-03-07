@@ -1,5 +1,5 @@
 /**
- * inkx/plugins -- SlateJS-style plugin composition for command systems.
+ * hightea/plugins -- SlateJS-style plugin composition for command systems.
  *
  * ```tsx
  * import { withCommands, withKeybindings } from '@hightea/term/plugins'

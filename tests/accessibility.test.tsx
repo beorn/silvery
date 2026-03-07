@@ -430,7 +430,7 @@ describe("Accessibility (km-017z)", () => {
     })
 
     test("hex color codes are handled", () => {
-      // Inkx supports hex color codes
+      // Hightea supports hex color codes
       const app = render(<Text color="#ff0000">Hex color red</Text>)
 
       const frame = app.ansi

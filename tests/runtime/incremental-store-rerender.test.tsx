@@ -1,7 +1,7 @@
 /**
  * Test incremental rendering correctness when store changes trigger re-renders.
  *
- * Reproduces km-inkx.debug-blank: when a state change (e.g. consoleStats updating)
+ * Reproduces km-hightea.debug-blank: when a state change (e.g. consoleStats updating)
  * triggers a Board re-render, the incremental renderer must correctly preserve
  * all unchanged regions (like TopBar with backgroundColor).
  *

@@ -1,5 +1,5 @@
 /**
- * Pure layout function for inkx-loop.
+ * Pure layout function for hightea-loop.
  *
  * Takes a React element and dimensions, returns an immutable Buffer.
  * This is Layer 0 - no runtime, no events, just pure rendering.

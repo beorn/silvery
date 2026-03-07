@@ -1,7 +1,7 @@
 /**
  * Incremental Rendering: Absolute Position Repaint Bug
  *
- * Bug: km-inkx.abs-pos-repaint
+ * Bug: km-hightea.abs-pos-repaint
  *
  * When board content changes (e.g., typing in search dialog), absolute-positioned
  * dialog elements with unchanged React content don't get repainted. All dirty flags

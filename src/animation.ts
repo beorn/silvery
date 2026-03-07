@@ -1,5 +1,5 @@
 /**
- * inkx/animation -- Smooth terminal UI animations at ~30fps.
+ * hightea/animation -- Smooth terminal UI animations at ~30fps.
  *
  * ```tsx
  * import { useAnimation, easings } from '@hightea/term/animation'

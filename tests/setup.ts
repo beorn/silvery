@@ -1,7 +1,7 @@
 /**
- * Inkx Test Setup and Utilities
+ * Hightea Test Setup and Utilities
  *
- * Provides test helpers for Inkx component testing.
+ * Provides test helpers for Hightea component testing.
  * Import this file in tests for common utilities.
  */
 

@@ -1,5 +1,5 @@
 /**
- * Inkx - Next-gen Terminal UI Renderer with Layout Feedback
+ * Hightea - Next-gen Terminal UI Renderer with Layout Feedback
  *
  * React-based terminal UI framework. Ink-compatible API with components
  * that know their size via useContentRect/useScreenRect hooks.
@@ -244,7 +244,7 @@ export type { SixelImageData } from "./image/sixel-encoder.js"
 // =============================================================================
 
 /**
- * Layout hooks - the main feature of inkx over ink.
+ * Layout hooks - the main feature of hightea over ink.
  *
  * @example
  * ```tsx
@@ -310,7 +310,7 @@ export {
   getExplicitFocusLink,
 } from "./focus-queries.js"
 export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "./focus-events.js"
-export type { InkxKeyEvent, InkxFocusEvent, FocusEventProps } from "./focus-events.js"
+export type { HighteaKeyEvent, HighteaFocusEvent, FocusEventProps } from "./focus-events.js"
 export { useFocusable } from "./hooks/useFocusable.js"
 export type { UseFocusableResult } from "./hooks/useFocusable.js"
 export { useFocusWithin } from "./hooks/useFocusWithin.js"
@@ -388,10 +388,10 @@ export {
 export type { Theme, AnsiPrimary, DetectThemeOptions } from "swatch"
 
 // =============================================================================
-// Re-exports from chalkx
+// Re-exports from ansi
 // =============================================================================
 
-// Term primitives (so consumers don't need to import from chalkx directly)
+// Term primitives (so consumers don't need to import from ansi directly)
 export { createTerm, term, patchConsole } from "@hightea/ansi"
 export type {
   Term,
@@ -647,8 +647,8 @@ export {
   checkDoubleClick,
   createDoubleClickState,
   computeEnterLeave,
-  type InkxMouseEvent,
-  type InkxWheelEvent,
+  type HighteaMouseEvent,
+  type HighteaWheelEvent,
   type MouseEventProps,
   type MouseEventProcessorOptions,
   type MouseEventProcessorState,
@@ -680,13 +680,13 @@ export type { NonTTYOptions, ResolvedNonTTYMode } from "./non-tty.js"
 export { connectDevTools, isDevToolsConnected } from "./devtools.js"
 
 // =============================================================================
-// Inspector (inkx-native debug introspection)
+// Inspector (hightea-native debug introspection)
 // =============================================================================
 
 /**
- * inkx Inspector — render pipeline debug introspection.
+ * hightea Inspector — render pipeline debug introspection.
  *
- * Distinct from React DevTools. Provides inkx-specific info: render stats,
+ * Distinct from React DevTools. Provides hightea-specific info: render stats,
  * component tree with layout rects, dirty flags, focus path.
  *
  * @example
@@ -944,7 +944,7 @@ export { IncrementalRenderMismatchError } from "./scheduler.js"
  * }
  * ```
  *
- * @see docs/future/inkx-command-api-research.md
+ * @see docs/future/hightea-command-api-research.md
  */
 export {
   InputLayerProvider,

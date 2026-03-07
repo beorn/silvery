@@ -1,5 +1,5 @@
 /**
- * inkx/input -- Terminal input protocols and low-level input handling.
+ * hightea/input -- Terminal input protocols and low-level input handling.
  *
  * Mouse events (SGR), Kitty keyboard protocol, bracketed paste,
  * OSC 52 clipboard, and key parsing utilities.
@@ -31,8 +31,8 @@ export {
   checkDoubleClick,
   createDoubleClickState,
   computeEnterLeave,
-  type InkxMouseEvent,
-  type InkxWheelEvent,
+  type HighteaMouseEvent,
+  type HighteaWheelEvent,
   type MouseEventProps,
   type MouseEventProcessorOptions,
   type MouseEventProcessorState,

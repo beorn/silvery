@@ -21,7 +21,7 @@
  * }
  * ```
  *
- * @see docs/future/inkx-command-api-research.md
+ * @see docs/future/hightea-command-api-research.md
  */
 
 import type React from "react"

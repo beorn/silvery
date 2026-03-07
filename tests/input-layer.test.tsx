@@ -11,7 +11,7 @@
  * - Sibling components handle input in render order (first sibling first)
  * - Handlers return true to consume, false to bubble
  *
- * @see docs/future/inkx-command-api-research.md
+ * @see docs/future/hightea-command-api-research.md
  */
 import React, { useState, useCallback } from "react"
 import { describe, expect, test } from "vitest"

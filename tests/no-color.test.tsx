@@ -5,7 +5,7 @@
  * The NO_COLOR spec: when the env var is defined (any value), programs should
  * not output ANSI color escape sequences.
  *
- * inkx handles this in two places:
+ * hightea handles this in two places:
  * 1. term-def.ts detectColorLevel() — returns null when NO_COLOR is set
  * 2. render pipeline — when colors === null, uses plain: true (bufferToText)
  */

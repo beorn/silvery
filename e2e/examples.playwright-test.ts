@@ -1,5 +1,5 @@
 /**
- * Visual Regression Tests for Inkx Examples
+ * Visual Regression Tests for Hightea Examples
  *
  * Uses ttyd + Playwright to render TUI apps and capture screenshots.
  * Compares against baseline snapshots to detect visual regressions.
@@ -42,7 +42,7 @@ async function stopTtyd(): Promise<void> {
   }
 }
 
-test.describe("Inkx Examples Visual Tests", () => {
+test.describe("Hightea Examples Visual Tests", () => {
   test.afterEach(async () => {
     await stopTtyd()
   })

@@ -1,8 +1,8 @@
 /**
- * Integration tests for the inkx focus system.
+ * Integration tests for the hightea focus system.
  *
  * Tests the FocusManager + focus-events + focus-queries working together
- * with fake InkxNode trees. These tests verify the full focus lifecycle:
+ * with fake HighteaNode trees. These tests verify the full focus lifecycle:
  * Tab cycling, spatial navigation, scope trapping, autoFocus, and
  * event dispatch on focus changes.
  *
@@ -18,8 +18,8 @@ import {
   createKeyEvent,
   dispatchFocusEvent,
   dispatchKeyEvent,
-  type InkxFocusEvent,
-  type InkxKeyEvent,
+  type HighteaFocusEvent,
+  type HighteaKeyEvent,
 } from "../src/focus-events.js"
 import { createFocusManager } from "../src/focus-manager.js"
 import { findByTestID, getTabOrder } from "../src/focus-queries.js"
@@ -37,10 +37,10 @@ function fakeNode(
     focusScope?: boolean
     parent?: TeaNode
     screenRect?: Rect
-    onFocus?: (e: InkxFocusEvent) => void
-    onBlur?: (e: InkxFocusEvent) => void
-    onKeyDown?: (e: InkxKeyEvent, dispatch?: (msg: unknown) => void) => void
-    onKeyDownCapture?: (e: InkxKeyEvent) => void
+    onFocus?: (e: HighteaFocusEvent) => void
+    onBlur?: (e: HighteaFocusEvent) => void
+    onKeyDown?: (e: HighteaKeyEvent, dispatch?: (msg: unknown) => void) => void
+    onKeyDownCapture?: (e: HighteaKeyEvent) => void
     nextFocusRight?: string
     nextFocusDown?: string
   } = {},

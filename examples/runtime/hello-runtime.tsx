@@ -1,7 +1,7 @@
 /**
  * Hello Runtime - Minimal createRuntime Example
  *
- * The simplest possible example using the inkx-loop runtime.
+ * The simplest possible example using the hightea-loop runtime.
  * Shows basic setup, rendering, and cleanup.
  *
  * Usage: bun examples/hello-runtime.tsx
@@ -34,7 +34,7 @@ function HelloView({ name }: { name: string }): React.ReactElement {
       <Text bold color="green">
         Hello, {name}!
       </Text>
-      <Text dimColor>Welcome to inkx-loop</Text>
+      <Text dimColor>Welcome to hightea-loop</Text>
     </Box>
   )
 }
@@ -54,7 +54,7 @@ async function main() {
   await new Promise((resolve) => setTimeout(resolve, 1000))
 
   // Update with new content
-  const buffer2 = layout(<HelloView name="inkx-loop" />, runtime.getDims())
+  const buffer2 = layout(<HelloView name="hightea-loop" />, runtime.getDims())
   runtime.render(buffer2)
 
   // Wait again

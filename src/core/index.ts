@@ -1,8 +1,8 @@
 /**
- * inkx/core — Pure functions and types, NO React dependency.
+ * hightea/core — Pure functions and types, NO React dependency.
  *
  * This sub-path export provides:
- * - TEA (The Elm Architecture) types: InkxModel, InkxMsg, Effect, Sub, Plugin
+ * - TEA (The Elm Architecture) types: HighteaModel, HighteaMsg, Effect, Sub, Plugin
  * - Focus manager: createFocusManager + types
  * - Focus events: event factories + dispatch functions
  * - Focus queries: tree query functions
@@ -23,13 +23,13 @@ import type { FocusOrigin } from "../focus-manager.js"
 export type { FocusOrigin } from "../focus-manager.js"
 
 /**
- * The model type that inkx manages for focus state.
+ * The model type that hightea manages for focus state.
  *
  * Applications extend this with their own model fields.
  * The store's update function receives the full model and returns
  * a new model + effects tuple.
  */
-export interface InkxModel {
+export interface HighteaModel {
   focus: {
     activeId: string | null
     previousId: string | null
@@ -45,13 +45,13 @@ export interface InkxModel {
 export type Direction = "up" | "down" | "left" | "right"
 
 /**
- * Message types that inkx understands.
+ * Message types that hightea understands.
  *
  * Applications can extend this union with their own message types.
  * The store's update function pattern-matches on `type` to decide
  * how to update the model.
  */
-export type InkxMsg =
+export type HighteaMsg =
   | { type: "focus"; nodeId: string; origin?: FocusOrigin }
   | { type: "blur" }
   | { type: "focus-next" }
@@ -86,7 +86,7 @@ export type InkxMsg =
  * - `batch`: Multiple effects to execute
  * - `dispatch`: Queue another message (no re-entrant dispatch)
  */
-export type Effect = { type: "none" } | { type: "batch"; effects: Effect[] } | { type: "dispatch"; msg: InkxMsg }
+export type Effect = { type: "none" } | { type: "batch"; effects: Effect[] } | { type: "dispatch"; msg: HighteaMsg }
 
 /**
  * Subscription descriptor (for future use).
@@ -123,7 +123,7 @@ export function batch(...effects: Effect[]): Effect {
 }
 
 /** Queue a message dispatch as an effect. */
-export function dispatch(msg: InkxMsg): Effect {
+export function dispatch(msg: HighteaMsg): Effect {
   return { type: "dispatch", msg }
 }
 
@@ -188,7 +188,7 @@ export type { FocusManager, FocusManagerOptions, FocusChangeCallback, FocusSnaps
 // =============================================================================
 
 export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "../focus-events.js"
-export type { InkxKeyEvent, InkxFocusEvent, FocusEventProps } from "../focus-events.js"
+export type { HighteaKeyEvent, HighteaFocusEvent, FocusEventProps } from "../focus-events.js"
 
 // =============================================================================
 // Focus Queries (pure, no React)

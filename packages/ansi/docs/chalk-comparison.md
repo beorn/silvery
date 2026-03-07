@@ -1,10 +1,10 @@
 # Terminal Styling Library Comparison
 
-How does chalkx compare to other terminal styling libraries?
+How does ansi compare to other terminal styling libraries?
 
 ## Feature Matrix
 
-| Feature                 | chalk | ansis | picocolors | colorette | kleur | chalkx        |
+| Feature                 | chalk | ansis | picocolors | colorette | kleur | ansi        |
 | ----------------------- | ----- | ----- | ---------- | --------- | ----- | ------------- |
 | **Colors**              |
 | Basic colors (16)       | ✓     | ✓     | ✓          | ✓         | ✓     | ✓ (via chalk) |
@@ -39,7 +39,7 @@ As of 2025, support has expanded significantly:
 
 - Ghostty, Kitty, WezTerm, iTerm2, Foot, VTE-based terminals
 
-chalkx fills this gap while remaining a thin layer on chalk.
+ansi fills this gap while remaining a thin layer on chalk.
 
 ### Other Libraries
 
@@ -56,23 +56,23 @@ ansis focuses on **performance** and API ergonomics but hasn't added extended un
 | kleur      | ~4 KB       | 0            |
 | ansis      | ~3 KB       | 0            |
 | chalk      | ~5 KB       | 0            |
-| chalkx     | ~4 KB       | 1 (chalk)    |
+| ansi     | ~4 KB       | 1 (chalk)    |
 
-chalkx adds minimal overhead (~4 KB) on top of chalk.
+ansi adds minimal overhead (~4 KB) on top of chalk.
 
 ## Performance
 
-chalkx performance is essentially chalk's performance because:
+ansi performance is essentially chalk's performance because:
 
 - Extended underlines are simple string concatenation
 - Terminal detection is cached (runs once)
 - No runtime overhead for standard chalk operations
 
-For performance-critical applications with millions of style operations, consider using chalk directly for colors and chalkx only for extended features.
+For performance-critical applications with millions of style operations, consider using chalk directly for colors and ansi only for extended features.
 
-## When to Use chalkx
+## When to Use ansi
 
-**Use chalkx when you need:**
+**Use ansi when you need:**
 
 - Curly underlines (spell check, error highlighting)
 - Colored underlines (semantic highlighting)
@@ -92,7 +92,7 @@ For performance-critical applications with millions of style operations, conside
 
 ## Migration from chalk
 
-chalkx is a drop-in extension of chalk:
+ansi is a drop-in extension of chalk:
 
 ```ts
 // Before
@@ -111,4 +111,4 @@ console.log(chalk.red("error"))
 console.log(curlyUnderline("misspelled"))
 ```
 
-No breaking changes. Add chalkx alongside chalk and use extended features as needed.
+No breaking changes. Add ansi alongside chalk and use extended features as needed.

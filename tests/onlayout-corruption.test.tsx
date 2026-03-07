@@ -1,7 +1,7 @@
 /**
  * Test: onLayout callback causes incremental render corruption
  *
- * Bug: km-inkx.onlayout-corruption
+ * Bug: km-hightea.onlayout-corruption
  *
  * When a component uses onLayout or useContentRect (which triggers re-renders
  * via forceUpdate), embedding it inside another app causes rendering artifacts:
@@ -142,7 +142,7 @@ function ViewerShell({ children, title }: { children: React.ReactNode; title: st
 
 /**
  * Set up a low-level render environment that mirrors the production
- * InkxInstance + RenderScheduler cycle. This allows us to control
+ * HighteaInstance + RenderScheduler cycle. This allows us to control
  * when React flushes and when the render pipeline runs, exposing
  * the race condition between layout notifications and incremental rendering.
  */

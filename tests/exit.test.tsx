@@ -1,7 +1,7 @@
 /**
  * Process Exit Timing Tests
  *
- * Tests for exit behavior in inkx:
+ * Tests for exit behavior in hightea:
  * 1. Does waitUntilExit() work reliably?
  * 2. Does final render complete before process exits?
  * 3. Test with rapid state changes followed by exit

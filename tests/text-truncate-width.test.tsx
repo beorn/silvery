@@ -45,7 +45,7 @@ describe("Text truncation with explicit parent width", () => {
   })
 
   test("Nested Text structure (Text inside Text for styling)", () => {
-    // This is the idiomatic Ink/inkx pattern for styled text portions
+    // This is the idiomatic Ink/hightea pattern for styled text portions
     const app = render(
       <Box width={40}>
         <Text dimColor>

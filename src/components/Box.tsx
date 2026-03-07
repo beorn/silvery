@@ -1,12 +1,12 @@
 /**
- * Inkx Box Component
+ * Hightea Box Component
  *
- * The primary layout primitive for Inkx. Box is a flexbox container that can hold
+ * The primary layout primitive for Hightea. Box is a flexbox container that can hold
  * other Box or Text components. It supports all standard flexbox properties,
  * dimensions, spacing, and borders.
  *
  * Box renders to an 'hightea-box' host element that the reconciler converts to an
- * InkxNode with an associated Yoga layout node.
+ * HighteaNode with an associated Yoga layout node.
  *
  * Box provides NodeContext to its children, enabling useContentRect/useScreenRect hooks.
  * It also supports forwardRef for imperative access and onLayout for layout callbacks.
@@ -38,7 +38,7 @@ export interface BoxProps extends BoxPropsType {
  * Methods exposed via ref on Box component.
  */
 export interface BoxHandle {
-  /** Get the underlying InkxNode */
+  /** Get the underlying HighteaNode */
   getNode(): TeaNode | null
   /** Get the current content-relative layout rect */
   getContentRect(): Rect | null
@@ -94,7 +94,7 @@ export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<Bo
   // Track the last layout we reported to onLayout to avoid duplicate calls
   const lastReportedLayout = useRef<Rect | null>(null)
 
-  // After mount, ref points to the InkxNode. Update state once to provide
+  // After mount, ref points to the HighteaNode. Update state once to provide
   // the node to children via context. Only runs on mount ([] deps).
   useLayoutEffect(() => {
     if (nodeRef.current) {
@@ -150,7 +150,7 @@ export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<Bo
   )
 
   // Render hightea-box with ref, wrap children in NodeContext
-  // The reconciler creates an InkxNode, ref gives us access to it
+  // The reconciler creates an HighteaNode, ref gives us access to it
   return (
     <hightea-box ref={nodeRef} {...restProps}>
       <NodeContext.Provider value={node}>{children}</NodeContext.Provider>

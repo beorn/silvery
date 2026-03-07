@@ -1,5 +1,5 @@
 /**
- * Core types for the inkx-loop runtime.
+ * Core types for the hightea-loop runtime.
  */
 
 import type { TerminalBuffer } from "../buffer.js"
@@ -144,7 +144,7 @@ export type ProviderEvent<Events extends Record<string, unknown>> = {
 /**
  * Provider interface - unified store + event source.
  *
- * Providers are the building blocks of inkx-loop applications.
+ * Providers are the building blocks of hightea-loop applications.
  * They encapsulate:
  * - State (Zustand-compatible: getState/subscribe)
  * - Events (AsyncIterable of typed events)

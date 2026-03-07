@@ -8,7 +8,7 @@ describe("bg inheritance", () => {
     const render = createRenderer({ cols: 40, rows: 5 })
     const app = render(React.createElement(Box, { backgroundColor: "red" }, React.createElement(Text, null, "hello")))
     // Red bg = 48;5;1 in 256-color mode
-    // inkx emits combined sequences like \x1b[0;48;5;1m
+    // hightea emits combined sequences like \x1b[0;48;5;1m
     expect(app.ansi).toContain("48;5;1")
   })
 

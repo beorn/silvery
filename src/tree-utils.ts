@@ -1,5 +1,5 @@
 /**
- * Shared tree utilities for inkx event systems.
+ * Shared tree utilities for hightea event systems.
  *
  * Functions used by both focus-events.ts and mouse-events.ts.
  */

@@ -10,14 +10,14 @@ Mirror React DOM's mouse event model exactly. Developers should be able to trans
 
 ```tsx
 interface MouseEventProps {
-  onClick?: (event: InkxMouseEvent) => void
-  onDoubleClick?: (event: InkxMouseEvent) => void
-  onMouseDown?: (event: InkxMouseEvent) => void
-  onMouseUp?: (event: InkxMouseEvent) => void
-  onMouseMove?: (event: InkxMouseEvent) => void
-  onMouseEnter?: (event: InkxMouseEvent) => void // No bubble (same as DOM)
-  onMouseLeave?: (event: InkxMouseEvent) => void // No bubble (same as DOM)
-  onWheel?: (event: InkxWheelEvent) => void
+  onClick?: (event: HighteaMouseEvent) => void
+  onDoubleClick?: (event: HighteaMouseEvent) => void
+  onMouseDown?: (event: HighteaMouseEvent) => void
+  onMouseUp?: (event: HighteaMouseEvent) => void
+  onMouseMove?: (event: HighteaMouseEvent) => void
+  onMouseEnter?: (event: HighteaMouseEvent) => void // No bubble (same as DOM)
+  onMouseLeave?: (event: HighteaMouseEvent) => void // No bubble (same as DOM)
+  onWheel?: (event: HighteaWheelEvent) => void
 }
 ```
 
@@ -26,7 +26,7 @@ These are added to `BoxProps` and `TextProps`, exactly like React DOM.
 ## Event Object (mirrors React.MouseEvent)
 
 ```tsx
-interface InkxMouseEvent {
+interface HighteaMouseEvent {
   // Position (terminal coordinates instead of pixels)
   clientX: number // Terminal column (0-indexed)
   clientY: number // Terminal row (0-indexed)
@@ -41,8 +41,8 @@ interface InkxMouseEvent {
   shiftKey: boolean
 
   // Target (same semantics as DOM)
-  target: InkxNode // Deepest node under cursor
-  currentTarget: InkxNode // Node whose handler is firing (changes during bubble)
+  target: HighteaNode // Deepest node under cursor
+  currentTarget: HighteaNode // Node whose handler is firing (changes during bubble)
 
   // Propagation control (same as DOM)
   stopPropagation(): void
@@ -56,7 +56,7 @@ interface InkxMouseEvent {
   nativeEvent: ParsedMouse
 }
 
-interface InkxWheelEvent extends InkxMouseEvent {
+interface HighteaWheelEvent extends HighteaMouseEvent {
   deltaY: number // -1 (up) or +1 (down) — from SGR scroll
   deltaX: number // Always 0 for terminal (future: horizontal scroll)
 }
@@ -76,7 +76,7 @@ interface InkxWheelEvent extends InkxMouseEvent {
 hightea already has `screenRect` on every node. The hit test walks the tree:
 
 ```typescript
-function hitTest(root: InkxNode, x: number, y: number): InkxNode | null {
+function hitTest(root: HighteaNode, x: number, y: number): HighteaNode | null {
   // DFS: check children first (deepest match wins, like DOM)
   for (let i = root.children.length - 1; i >= 0; i--) {
     const hit = hitTest(root.children[i], x, y)
@@ -137,7 +137,7 @@ New: After parsing, the runtime does hit testing + event dispatch through the re
 
 ### Render tree access
 
-The runtime already has access to the root `InkxNode`. After `screenRectPhase` runs, every node has its screen position. We walk this tree for hit testing.
+The runtime already has access to the root `HighteaNode`. After `screenRectPhase` runs, every node has its screen position. We walk this tree for hit testing.
 
 ### No HitRegistry needed
 
@@ -213,11 +213,11 @@ function DetailPane({ content }: DetailPaneProps) {
 
 ```tsx
 interface KeyboardEventProps {
-  onKeyDown?: (event: InkxKeyboardEvent) => void
-  onKeyUp?: (event: InkxKeyboardEvent) => void
+  onKeyDown?: (event: HighteaKeyboardEvent) => void
+  onKeyUp?: (event: HighteaKeyboardEvent) => void
 }
 
-interface InkxKeyboardEvent {
+interface HighteaKeyboardEvent {
   key: string // 'j', 'Enter', 'ArrowDown', etc.
   code: string // Physical key (for Kitty protocol)
   altKey: boolean

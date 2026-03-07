@@ -1,7 +1,7 @@
 /**
  * Re-render Bug Reproduction Tests
  *
- * Tests for bugs observed in inkx examples:
+ * Tests for bugs observed in hightea examples:
  * 1. Colors lost after scrolling/state changes
  * 2. Style bleeding across re-renders
  * 3. Diff output not properly resetting styles

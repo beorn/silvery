@@ -624,7 +624,7 @@ describe("HVL border regression: many columns", () => {
 })
 
 // ===========================================================================
-// Variant: using the REAL HorizontalVirtualList component from inkx
+// Variant: using the REAL HorizontalVirtualList component from hightea
 // ===========================================================================
 //
 // These tests use the REAL HorizontalVirtualList component and expose an

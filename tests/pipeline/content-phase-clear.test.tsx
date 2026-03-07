@@ -6,7 +6,7 @@ import React, { useState } from "react"
  * not just Box nodes. Reproduces the bug where Text backgroundColor transitions
  * (e.g., "yellow" → undefined) left stale colored pixels in the cloned buffer.
  *
- * Bug: km-jmxuh, km-inkx-stale
+ * Bug: km-jmxuh, km-hightea-stale
  */
 import { describe, expect, test } from "vitest"
 import { Box, type Key, Text, useInput } from "../../src/index.js"
@@ -111,7 +111,7 @@ describe("Text node backgroundColor clearing (incremental)", () => {
     expect(app.term.cell(gammaBox.x, gammaBox.y).bg).toBe(3) // now yellow
   })
 
-  test("parent bg inherited when clearing child Text (Bug 1: km-inkx-stale)", () => {
+  test("parent bg inherited when clearing child Text (Bug 1: km-hightea-stale)", () => {
     // Bug 1: When parent Box has backgroundColor=white and child Text has no bg,
     // clearing the Text region should use the parent's white bg, not null (black).
     function BoardTitle({ active }: { active: boolean }) {
@@ -138,7 +138,7 @@ describe("Text node backgroundColor clearing (incremental)", () => {
     expect(cell.bg).toBe(7) // white bg inherited from parent Box
   })
 
-  test("paintDirty-only node is NOT skipped by fast-path (Bug 2: km-inkx-stale)", () => {
+  test("paintDirty-only node is NOT skipped by fast-path (Bug 2: km-hightea-stale)", () => {
     // Bug 2: A node with only paintDirty=true (contentDirty cleared by measure,
     // no layout change, subtreeDirty not propagated) should NOT be fast-path skipped.
     function StyledText({ highlighted }: { highlighted: boolean }) {
@@ -162,7 +162,7 @@ describe("Text node backgroundColor clearing (incremental)", () => {
     expect(app.term.cell(styledBox.x, styledBox.y).bg).not.toBe(6)
   })
 
-  test("scroll container clearing preserves parent bg (Bug 4: km-inkx-stale)", () => {
+  test("scroll container clearing preserves parent bg (Bug 4: km-hightea-stale)", () => {
     // Bug 4: Scroll container clearing at line 189 used bg=null,
     // destroying parent's painted background.
     function ScrollWithBg({ selected }: { selected: number }) {

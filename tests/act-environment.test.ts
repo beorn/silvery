@@ -1,10 +1,10 @@
 /**
- * Tests that the main inkx module does NOT set IS_REACT_ACT_ENVIRONMENT.
+ * Tests that the main hightea module does NOT set IS_REACT_ACT_ENVIRONMENT.
  *
  * This is important because:
  * 1. IS_REACT_ACT_ENVIRONMENT = true causes React to emit act() warnings
  * 2. These warnings appear in production when using the TUI
- * 3. The testing module (inkx/testing) SHOULD set it, but the main module should not
+ * 3. The testing module (hightea/testing) SHOULD set it, but the main module should not
  *
  * This test runs in a subprocess to ensure a clean global state.
  */
@@ -13,7 +13,7 @@ import { spawn } from "bun"
 import { describe, expect, test } from "vitest"
 
 describe("IS_REACT_ACT_ENVIRONMENT", () => {
-  test("main inkx module does NOT set IS_REACT_ACT_ENVIRONMENT", async () => {
+  test("main hightea module does NOT set IS_REACT_ACT_ENVIRONMENT", async () => {
     // Create a test script that runs in isolation
     const testScript = `
 			// Check before import
@@ -51,7 +51,7 @@ describe("IS_REACT_ACT_ENVIRONMENT", () => {
     }
     if (exitCode === 2) {
       throw new Error(
-        `inkx import set IS_REACT_ACT_ENVIRONMENT = true. This causes act() warnings in production. stderr: ${stderr}`,
+        `hightea import set IS_REACT_ACT_ENVIRONMENT = true. This causes act() warnings in production. stderr: ${stderr}`,
       )
     }
 

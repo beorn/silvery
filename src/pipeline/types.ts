@@ -1,5 +1,5 @@
 /**
- * Shared types for the Inkx render pipeline.
+ * Shared types for the Hightea render pipeline.
  */
 
 import type { Cell } from "../buffer.js"

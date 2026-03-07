@@ -56,7 +56,7 @@ const app = createApp<Record<string, unknown>, State>(
   // Store factory
   () => (set, get) => ({
     todos: [
-      { id: 1, text: "Learn inkx-loop architecture", completed: true },
+      { id: 1, text: "Learn hightea-loop architecture", completed: true },
       { id: 2, text: "Build an app with createApp()", completed: false },
       { id: 3, text: "Ship to production", completed: false },
     ],

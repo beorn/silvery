@@ -1,5 +1,5 @@
 /**
- * Pure diff function for inkx-loop.
+ * Pure diff function for hightea-loop.
  *
  * Takes prev and next buffers, returns minimal ANSI patch.
  * This is an internal function used by the runtime.

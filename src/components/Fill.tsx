@@ -1,5 +1,5 @@
 /**
- * Inkx Fill Component
+ * Hightea Fill Component
  *
  * Repeats its children's text content to fill the parent's allocated width.
  * Single-pass rendering: generates a long repeated string that gets

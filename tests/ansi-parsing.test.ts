@@ -1,7 +1,7 @@
 /**
  * Tests for ANSI escape sequence parsing.
  *
- * These tests verify that inkx correctly handles text with embedded ANSI
+ * These tests verify that hightea correctly handles text with embedded ANSI
  * escape codes (like chalk-styled strings), which is essential for
  * applications that use pre-styled text in Text components.
  */
@@ -214,7 +214,7 @@ describe("ANSI text utilities", () => {
     })
 
     test("parses bgOverride marker (SGR 9999)", () => {
-      // Private code used by chalkx.bgOverride() to signal intentional bg conflict
+      // Private code used by ansi.bgOverride() to signal intentional bg conflict
       const segments = parseAnsiText("\x1b[9999m\x1b[44mblue bg\x1b[0m")
       expect(segments).toHaveLength(1)
       expect(segments[0]!.text).toBe("blue bg")

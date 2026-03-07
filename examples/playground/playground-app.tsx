@@ -1,7 +1,7 @@
 /**
  * Canvas Playground App
  *
- * Interactive demo showcasing inkx's Canvas adapter with multiple preset examples,
+ * Interactive demo showcasing hightea's Canvas adapter with multiple preset examples,
  * live resize, and theme controls. Communicates with the host page via window messages.
  */
 
@@ -37,7 +37,7 @@ function HelloWorld() {
       <Box borderStyle="single" borderColor="cyan" padding={1}>
         <Box flexDirection="column">
           <Text bold color="cyan">
-            Hello from inkx!
+            Hello from hightea!
           </Text>
           <Text color="gray">React components rendered to HTML5 Canvas</Text>
           <SizeDisplay />
@@ -407,7 +407,7 @@ if (canvas) {
   handleResize()
 
   // Expose for debugging
-  ;(window as any).inkxInstance = instance
+  ;(window as any).highteaInstance = instance
   ;(window as any).PRESETS = Object.keys(PRESETS)
 }
 

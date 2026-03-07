@@ -14,7 +14,7 @@ const log = createLogger("hightea:layout")
 /**
  * Run Yoga layout calculation and propagate dimensions to all nodes.
  *
- * @param root The root InkxNode
+ * @param root The root HighteaNode
  * @param width Terminal width in columns
  * @param height Terminal height in rows
  */
@@ -75,7 +75,7 @@ function hasLayoutDirtyNodes(node: TeaNode, path = "root"): boolean {
 }
 
 /**
- * Propagate computed layout from Yoga nodes to InkxNodes.
+ * Propagate computed layout from Yoga nodes to HighteaNodes.
  * Sets contentRect (content-relative position) on each node.
  *
  * @param node The node to process

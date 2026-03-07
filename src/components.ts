@@ -1,5 +1,5 @@
 /**
- * inkx/components -- Rich UI components beyond Ink's built-in set.
+ * hightea/components -- Rich UI components beyond Ink's built-in set.
  *
  * ```tsx
  * import { VirtualList, Table, SelectList, TextInput, Spinner } from '@hightea/term/components'

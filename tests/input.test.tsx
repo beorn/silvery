@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 /**
- * Tests for input handling in Inkx
+ * Tests for input handling in Hightea
  *
  * Tests for km-mvcn requirements:
  * 1. Rapid keypresses in automated tests

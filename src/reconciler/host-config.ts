@@ -1,7 +1,7 @@
 /**
  * React Reconciler Host Config
  *
- * Defines how React creates, updates, and manages InkxNodes.
+ * Defines how React creates, updates, and manages HighteaNodes.
  * This is the bridge between React's reconciliation algorithm
  * and our custom terminal node tree.
  */
@@ -55,7 +55,7 @@ function markLayoutAncestorDirty(node: TeaNode): void {
 // ============================================================================
 
 /**
- * Container type - the root of our Inkx tree
+ * Container type - the root of our Hightea tree
  */
 export interface Container {
   root: TeaNode
@@ -97,7 +97,7 @@ export function runWithDiscreteEvent(fn: () => void): void {
 
 /**
  * The React Reconciler host config.
- * This defines how React creates, updates, and manages our custom InkxNodes.
+ * This defines how React creates, updates, and manages our custom HighteaNodes.
  */
 export const hostConfig = {
   // Renderer identity (used by React DevTools to identify this renderer)

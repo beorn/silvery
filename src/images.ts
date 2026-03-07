@@ -1,5 +1,5 @@
 /**
- * inkx/images -- Image rendering via Kitty graphics and Sixel protocol.
+ * hightea/images -- Image rendering via Kitty graphics and Sixel protocol.
  *
  * ```tsx
  * import { Image } from '@hightea/term/images'

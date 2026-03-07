@@ -66,7 +66,7 @@ Inspired by `ReactDOM.createRoot(container).render(<App />)`, but adapted for te
 ```typescript
 // === Types ===
 
-interface InkxRoot {
+interface HighteaRoot {
   /** Re-render with a new element */
   render(element: ReactElement): void
   /** Unmount and clean up */
@@ -96,7 +96,7 @@ interface InkxRoot {
   // === Nested mounting ===
 
   /** Create a child root that renders into a region of this root */
-  createRoot(locator: AutoLocator): InkxRoot
+  createRoot(locator: AutoLocator): HighteaRoot
 }
 
 interface RootOptions {
@@ -199,7 +199,7 @@ This proposal does **not** replace the runtime layers. Instead, it provides a be
 | 2     | `run()` (hooks)                    | `hightea.run()` wrapping `createRoot()`     |
 | 3     | `createApp()` (Zustand)            | unchanged -- uses `createRoot()` internally |
 
-The key insight is that `hightea.createRoot()` unifies the old `render.tsx` and `renderer.ts` behind a single interface (`InkxRoot`), while the runtime layers continue to provide their ergonomic patterns on top.
+The key insight is that `hightea.createRoot()` unifies the old `render.tsx` and `renderer.ts` behind a single interface (`HighteaRoot`), while the runtime layers continue to provide their ergonomic patterns on top.
 
 ## Nested Mounting: How It Works
 
@@ -247,16 +247,16 @@ The parent root's render pipeline composites child root buffers into the final o
 
 ## Migration Path
 
-### Phase 1: Unified InkxRoot interface (non-breaking)
+### Phase 1: Unified HighteaRoot interface (non-breaking)
 
-Add `hightea.createRoot()` as a new entry point alongside existing APIs. It wraps the existing `InkxInstance` internally but returns the unified `InkxRoot` interface. No existing code needs to change.
+Add `hightea.createRoot()` as a new entry point alongside existing APIs. It wraps the existing `HighteaInstance` internally but returns the unified `HighteaRoot` interface. No existing code needs to change.
 
 ```typescript
 // New entry point (src/hightea.ts)
 export const hightea = {
-  async createRoot(options?: RootOptions): Promise<InkxRoot> {
-    // Internally: ensureLayoutEngine() + createTerm() + new InkxInstance()
-    // Returns InkxRoot wrapping the instance + App capabilities
+  async createRoot(options?: RootOptions): Promise<HighteaRoot> {
+    // Internally: ensureLayoutEngine() + createTerm() + new HighteaInstance()
+    // Returns HighteaRoot wrapping the instance + App capabilities
   },
   async run(element: ReactElement, options?: RootOptions): Promise<void> {
     using root = await hightea.createRoot(options)
@@ -268,18 +268,18 @@ export const hightea = {
 
 ### Phase 2: Merge App and Instance capabilities
 
-The `InkxRoot` interface combines:
+The `HighteaRoot` interface combines:
 
 - From `Instance`: `rerender`, `unmount`, `waitUntilExit`, `clear`, `flush`, `pause`, `resume`
 - From `App`: `text`, `ansi`, `press()`, `getByTestId()`, `locator()`, `screenshot()`
 
 This eliminates the current split where production code gets `Instance` (no locators) and test code gets `App` (no pause/resume).
 
-Implementation: `InkxRoot` wraps `InkxInstance` and delegates to a `buildApp()` internally for locator/text/screenshot functionality.
+Implementation: `HighteaRoot` wraps `HighteaInstance` and delegates to a `buildApp()` internally for locator/text/screenshot functionality.
 
 ### Phase 3: Nested mounting
 
-Add `createRoot(locator)` to `InkxRoot`. This requires:
+Add `createRoot(locator)` to `HighteaRoot`. This requires:
 
 - Buffer compositing: parent buffer reserves regions, child buffers render into them
 - Input routing: parent dispatches input events to the child whose region contains the cursor
@@ -297,24 +297,24 @@ Once `hightea.createRoot()` is stable and the runtime layers use it internally:
 
 ## Implementation Notes
 
-### InkxRoot internal structure
+### HighteaRoot internal structure
 
 ```typescript
-class InkxRootImpl implements InkxRoot {
-  private instance: InkxInstance // Terminal management, lifecycle
+class HighteaRootImpl implements HighteaRoot {
+  private instance: HighteaInstance // Terminal management, lifecycle
   private app: App // Locators, text, buffer access
-  private children: Map<string, InkxRootImpl> // Nested roots by locator selector
+  private children: Map<string, HighteaRootImpl> // Nested roots by locator selector
 
   render(element: ReactElement): void {
     this.instance.render(element)
     // After render, update App's container/buffer references
   }
 
-  createRoot(locator: AutoLocator): InkxRoot {
+  createRoot(locator: AutoLocator): HighteaRoot {
     const bbox = locator.boundingBox()
     if (!bbox) throw new Error("Locator does not resolve to a visible element")
     // Create child instance with bounded dimensions
-    const child = new InkxRootImpl({
+    const child = new HighteaRootImpl({
       cols: bbox.width,
       rows: bbox.height,
       // No terminal -- renders into parent's buffer

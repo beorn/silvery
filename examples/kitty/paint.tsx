@@ -439,7 +439,7 @@ function renderHeader(state: PhotoCanvasState, term: ReturnType<typeof createTer
   const zoomPct = Math.round(state.zoom * 100)
 
   return (
-    term.dim.yellow("▸ inkx") +
+    term.dim.yellow("▸ hightea") +
     " " +
     term.bold("Photo Canvas") +
     " " +

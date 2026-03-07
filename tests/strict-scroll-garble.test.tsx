@@ -1,7 +1,7 @@
 /**
  * Minimal reproduction for HIGHTEA_STRICT garble in scroll containers.
  *
- * Bug: km-inkx.garble-incremental
+ * Bug: km-hightea.garble-incremental
  *
  * The fresh render (doFreshRender with prevBuffer=null) produces text bleeding
  * in scroll containers — off-screen item text leaks into visible items.

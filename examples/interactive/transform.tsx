@@ -8,7 +8,7 @@
  * - Multiple transforms: uppercase, leetspeak, reverse, ROT13, etc.
  * - Cycle through transforms with j/k
  * - Shows original and transformed text side by side
- * - Uses Transform from inkx components
+ * - Uses Transform from hightea components
  *
  * Run: bun vendor/hightea/examples/interactive/transform.tsx
  */

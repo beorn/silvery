@@ -61,7 +61,7 @@ When `DEBUG_DEVTOOLS=1` (or `DEBUG_DEVTOOLS=true`) is set, hightea automatically
 
 - `connectDevTools()` lazy-loads `react-devtools-core` so there is zero impact on production bundles
 - WebSocket polyfill (`ws`) is loaded automatically for Node.js environments
-- Component filters hide hightea internals (host components and `InkxApp`) from the DevTools tree, so you see only your application components
+- Component filters hide hightea internals (host components and `HighteaApp`) from the DevTools tree, so you see only your application components
 - The hightea reconciler injects renderer info so DevTools can identify it
 
 ## Requirements
@@ -84,7 +84,7 @@ All are optional peer dependencies. If not installed, `connectDevTools()` return
 
 **Component tree is cluttered with internal nodes:**
 
-- hightea configures component filters automatically. If you still see noise, check that the DevTools "Component Filters" settings include host components (type 7) and `InkxApp`.
+- hightea configures component filters automatically. If you still see noise, check that the DevTools "Component Filters" settings include host components (type 7) and `HighteaApp`.
 
 **Performance impact:**
 

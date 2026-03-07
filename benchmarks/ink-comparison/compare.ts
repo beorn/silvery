@@ -1,5 +1,5 @@
 /**
- * inkx vs Ink Head-to-Head Comparison
+ * hightea vs Ink Head-to-Head Comparison
  *
  * Runs both benchmark suites in separate processes (each registers its own
  * React reconciler) and prints a side-by-side comparison table.
@@ -66,22 +66,22 @@ function formatUs(us: number): string {
   return `${(us / 1000000).toFixed(1)} s`
 }
 
-function ratio(inkxUs: number, inkUs: number): string {
-  const r = inkUs / inkxUs
-  if (r > 1.05) return `inkx ${r.toFixed(1)}×`
+function ratio(highteaUs: number, inkUs: number): string {
+  const r = inkUs / highteaUs
+  if (r > 1.05) return `hightea ${r.toFixed(1)}×`
   if (r < 0.95) return `ink ${(1 / r).toFixed(1)}×`
   return "~equal"
 }
 
-console.log("Running inkx benchmark...")
-const inkxProc = await $`bun run ${join(benchDir, "run.ts")}`.cwd(kmRoot).quiet()
-const inkxOutput = inkxProc.stdout.toString()
+console.log("Running hightea benchmark...")
+const highteaProc = await $`bun run ${join(benchDir, "run.ts")}`.cwd(kmRoot).quiet()
+const highteaOutput = highteaProc.stdout.toString()
 
 console.log("Running ink benchmark...")
 const inkProc = await $`bun run ${join(benchDir, "ink-bench.ts")}`.cwd(kmRoot).quiet()
 const inkOutput = inkProc.stdout.toString()
 
-const inkxMap = new Map(parseResults(inkxOutput).map((r) => [r.name, r]))
+const highteaMap = new Map(parseResults(highteaOutput).map((r) => [r.name, r]))
 const inkMap = new Map(parseResults(inkOutput).map((r) => [r.name, r]))
 
 function get(map: Map<string, BenchResult>, name: string): number {
@@ -93,7 +93,7 @@ function get(map: Map<string, BenchResult>, name: string): number {
 
 console.log()
 console.log("═══════════════════════════════════════════════════════════════════════════")
-console.log("  inkx (Flexture) vs Ink 6 (Yoga native)  —  Head-to-Head Comparison")
+console.log("  hightea (Flexture) vs Ink 6 (Yoga native)  —  Head-to-Head Comparison")
 console.log("═══════════════════════════════════════════════════════════════════════════")
 
 // Section 1: Full pipeline (React → layout → output)
@@ -104,26 +104,26 @@ console.log("──────────────────────�
 const fullPipeline = [
   {
     label: "1 Box+Text (80×24)",
-    inkx: "1 Box+Text (80x24)",
+    hightea: "1 Box+Text (80x24)",
     ink: "1 Box+Text (80x24)",
   },
   {
     label: "100 Box+Text (80×24)",
-    inkx: "100 Box+Text (80x24)",
+    hightea: "100 Box+Text (80x24)",
     ink: "100 Box+Text (80x24)",
   },
   {
     label: "1000 Box+Text (120×40)",
-    inkx: "1000 Box+Text (120x40)",
+    hightea: "1000 Box+Text (120x40)",
     ink: "1000 Box+Text (120x40)",
   },
 ]
 
 const W = { l: 28, v: 14, r: 14 }
-console.log(`${"".padEnd(W.l)}  ${"inkx".padStart(W.v)}  ${"ink".padStart(W.v)}  ${"Winner".padStart(W.r)}`)
+console.log(`${"".padEnd(W.l)}  ${"hightea".padStart(W.v)}  ${"ink".padStart(W.v)}  ${"Winner".padStart(W.r)}`)
 
 for (const cmp of fullPipeline) {
-  const x = get(inkxMap, cmp.inkx)
+  const x = get(highteaMap, cmp.hightea)
   const k = get(inkMap, cmp.ink)
   if (!x || !k) continue
   console.log(
@@ -133,7 +133,7 @@ for (const cmp of fullPipeline) {
 
 // Note about fairness
 console.log()
-console.log("  Note: inkx uses createRenderer() (headless). Ink uses render() with")
+console.log("  Note: hightea uses createRenderer() (headless). Ink uses render() with")
 console.log("  mock stdout + unmount per iteration. Both include React reconciliation.")
 
 // Section 2: Layout engine (pure layout, no React)
@@ -160,8 +160,8 @@ const layoutComps = [
 ]
 
 for (const cmp of layoutComps) {
-  const f = get(inkxMap, cmp.flexture)
-  const yw = get(inkxMap, cmp.yogaW)
+  const f = get(highteaMap, cmp.flexture)
+  const yw = get(highteaMap, cmp.yogaW)
   const yn = get(inkMap, cmp.yogaN)
   console.log(
     `${cmp.label.padEnd(W.l)}  ${formatUs(f).padStart(W.v)}  ${formatUs(yw).padStart(W.v)}  ${formatUs(yn).padStart(W.r)}`,
@@ -175,23 +175,23 @@ console.log("  Flexture = pure JS (7 KB). Yoga WASM = yoga-wasm-web. Yoga NAPI =
 console.log()
 console.log("React re-render (apples-to-apples: full React reconciliation + layout + output)")
 console.log("─────────────────────────────────────────────────────────────────────")
-console.log(`${"".padEnd(W.l)}  ${"inkx".padStart(W.v)}  ${"ink".padStart(W.v)}  ${"Ratio".padStart(W.r)}`)
+console.log(`${"".padEnd(W.l)}  ${"hightea".padStart(W.v)}  ${"ink".padStart(W.v)}  ${"Ratio".padStart(W.r)}`)
 
 const rerenderComps = [
   {
     label: "100 Box+Text (80×24)",
-    inkx: "100 Box+Text re-render (80x24)",
+    hightea: "100 Box+Text re-render (80x24)",
     ink: "100 Box+Text rerender (80x24)",
   },
   {
     label: "1000 Box+Text (120×40)",
-    inkx: "1000 Box+Text re-render (120x40)",
+    hightea: "1000 Box+Text re-render (120x40)",
     ink: "1000 Box+Text rerender (120x40)",
   },
 ]
 
 for (const cmp of rerenderComps) {
-  const x = get(inkxMap, cmp.inkx)
+  const x = get(highteaMap, cmp.hightea)
   const k = get(inkMap, cmp.ink)
   if (x && k) {
     console.log(
@@ -205,9 +205,9 @@ for (const cmp of rerenderComps) {
 console.log()
 console.log("  Both trigger full React reconciliation of the component tree.")
 
-// Section 4: inkx diff render (no ink equivalent)
+// Section 4: hightea diff render (no ink equivalent)
 console.log()
-console.log("inkx dirty-tracking diff render (no ink equivalent)")
+console.log("hightea dirty-tracking diff render (no ink equivalent)")
 console.log("─────────────────────────────────────────────────────────────────────")
 const diffs = [
   { label: "1 node", name: "1 node (diff)" },
@@ -215,13 +215,13 @@ const diffs = [
   { label: "1000 nodes", name: "1000 nodes (diff)" },
 ]
 for (const d of diffs) {
-  const v = get(inkxMap, d.name)
+  const v = get(highteaMap, d.name)
   if (v) console.log(`  ${d.label.padEnd(14)} ${formatUs(v)}`)
 }
 
-// Section 5: inkx resize
+// Section 5: hightea resize
 console.log()
-console.log("inkx resize re-layout (no ink equivalent)")
+console.log("hightea resize re-layout (no ink equivalent)")
 console.log("─────────────────────────────────────────────────────────────────────")
 const resizes = [
   { label: "10 nodes", name: "10 nodes 80x24 -> 120x40" },
@@ -229,18 +229,18 @@ const resizes = [
   { label: "1000 nodes", name: "1000 nodes 80x24 -> 120x40" },
 ]
 for (const r of resizes) {
-  const v = get(inkxMap, r.name)
+  const v = get(highteaMap, r.name)
   if (v) console.log(`  ${r.label.padEnd(14)} ${formatUs(v)}`)
 }
 
 // Section 6: Memory
-const inkxHeap = get(inkxMap, "100 Box+Text heap delta")
+const highteaHeap = get(highteaMap, "100 Box+Text heap delta")
 const inkHeap = get(inkMap, "100 Box+Text heap delta")
-if (inkxHeap && inkHeap) {
+if (highteaHeap && inkHeap) {
   console.log()
   console.log("Memory (100 Box+Text heap delta)")
   console.log("─────────────────────────────────────────────────────────────────────")
-  console.log(`  inkx: ${formatUs(inkxHeap)}    ink: ${formatUs(inkHeap)}    ${ratio(inkxHeap, inkHeap)}`)
+  console.log(`  hightea: ${formatUs(highteaHeap)}    ink: ${formatUs(inkHeap)}    ${ratio(highteaHeap, inkHeap)}`)
 }
 
 console.log()

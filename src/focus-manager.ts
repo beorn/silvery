@@ -1,5 +1,5 @@
 /**
- * Focus Manager — standalone state container for the inkx focus system.
+ * Focus Manager — standalone state container for the hightea focus system.
  *
  * Pure TypeScript, no React dependency. The subscribe/getSnapshot pattern
  * enables useSyncExternalStore in hooks.

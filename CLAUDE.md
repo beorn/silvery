@@ -55,11 +55,11 @@ Terminal buffer model terminology is defined in the [termless terminal model](..
 A pure state container with effects, following the Elm pattern. No React dependency — lives in `hightea/core` and `hightea/store`.
 
 ```tsx
-import { createStore, inkxUpdate, defaultInit, withFocusManagement } from "@hightea/term/store"
+import { createStore, highteaUpdate, defaultInit, withFocusManagement } from "@hightea/term/store"
 import { type Effect, none, batch, dispatch, compose, type Plugin } from "@hightea/term/core"
 
-// Define your model (extends InkxModel with focus state)
-interface MyModel extends InkxModel {
+// Define your model (extends HighteaModel with focus state)
+interface MyModel extends HighteaModel {
   count: number
   loading: boolean
 }
@@ -564,18 +564,18 @@ Components can receive mouse events via React DOM-compatible props:
 
 | Prop            | Event Type       | Bubbles |
 | --------------- | ---------------- | ------- |
-| `onClick`       | `InkxMouseEvent` | Yes     |
-| `onDoubleClick` | `InkxMouseEvent` | Yes     |
-| `onMouseDown`   | `InkxMouseEvent` | Yes     |
-| `onMouseUp`     | `InkxMouseEvent` | Yes     |
-| `onMouseMove`   | `InkxMouseEvent` | Yes     |
-| `onMouseEnter`  | `InkxMouseEvent` | No      |
-| `onMouseLeave`  | `InkxMouseEvent` | No      |
-| `onWheel`       | `InkxWheelEvent` | Yes     |
+| `onClick`       | `HighteaMouseEvent` | Yes     |
+| `onDoubleClick` | `HighteaMouseEvent` | Yes     |
+| `onMouseDown`   | `HighteaMouseEvent` | Yes     |
+| `onMouseUp`     | `HighteaMouseEvent` | Yes     |
+| `onMouseMove`   | `HighteaMouseEvent` | Yes     |
+| `onMouseEnter`  | `HighteaMouseEvent` | No      |
+| `onMouseLeave`  | `HighteaMouseEvent` | No      |
+| `onWheel`       | `HighteaWheelEvent` | Yes     |
 
-**InkxMouseEvent** fields: `clientX`, `clientY`, `button`, `altKey`, `ctrlKey`, `metaKey`, `shiftKey`, `target`, `currentTarget`, `type`, `nativeEvent`, `stopPropagation()`, `preventDefault()`.
+**HighteaMouseEvent** fields: `clientX`, `clientY`, `button`, `altKey`, `ctrlKey`, `metaKey`, `shiftKey`, `target`, `currentTarget`, `type`, `nativeEvent`, `stopPropagation()`, `preventDefault()`.
 
-**InkxWheelEvent** extends InkxMouseEvent with: `deltaY` (-1=up, +1=down), `deltaX` (always 0).
+**HighteaWheelEvent** extends HighteaMouseEvent with: `deltaY` (-1=up, +1=down), `deltaX` (always 0).
 
 **Hit testing**: Automatic tree-based using `screenRect` (last sibling wins for z-order, overflow:hidden clips).
 
@@ -583,7 +583,7 @@ See [docs/reference/input-features.md](docs/reference/input-features.md) for com
 
 ## Focus System (Tree-Based)
 
-hightea provides a tree-based focus system that operates directly on the InkxNode render tree. Focus is managed by a standalone `FocusManager` (no React dependency) with React hooks for component integration.
+hightea provides a tree-based focus system that operates directly on the HighteaNode render tree. Focus is managed by a standalone `FocusManager` (no React dependency) with React hooks for component integration.
 
 ### Props (on Box)
 
@@ -750,7 +750,7 @@ import { usePaste } from "@hightea/term/runtime"
 
 // Mouse events (DOM-level)
 import { hitTest, processMouseEvent, createMouseEventProcessor } from "@hightea/term"
-import type { InkxMouseEvent, InkxWheelEvent, MouseEventProps, MouseEventProcessorOptions } from "@hightea/term"
+import type { HighteaMouseEvent, HighteaWheelEvent, MouseEventProps, MouseEventProcessorOptions } from "@hightea/term"
 
 // Hotkey parsing (supports macOS symbols ⌘⌥⌃⇧✦)
 import { parseHotkey, matchHotkey } from "@hightea/term"
@@ -796,7 +796,7 @@ import { createRenderer, keyToAnsi, keyToKittyAnsi, debugTree } from "@hightea/t
 // TEA store (The Elm Architecture)
 import {
   createStore,
-  inkxUpdate,
+  highteaUpdate,
   defaultInit,
   withFocusManagement,
   type StoreConfig,
@@ -805,8 +805,8 @@ import {
 
 // Core types and effect constructors (pure, no React)
 import {
-  type InkxModel,
-  type InkxMsg,
+  type HighteaModel,
+  type HighteaMsg,
   type Effect,
   type Plugin,
   none,
@@ -823,7 +823,7 @@ import type { Slice, SliceWithInit, InferOp } from "@hightea/term/core"
 import { tea, collect } from "@hightea/term/tea"
 import type { TeaResult, TeaReducer, EffectRunners, TeaSlice, EffectLike } from "@hightea/term/tea"
 
-// Term primitives (re-exported from chalkx)
+// Term primitives (re-exported from ansi)
 import { createTerm, patchConsole, type Term, type StyleChain } from "@hightea/term"
 ```
 
@@ -891,7 +891,7 @@ console.log("This appears in the Console component")
   <Text>{chalk.bgBlack("text")}</Text>
 </Box>
 
-// RIGHT - use bgOverride from chalkx
+// RIGHT - use bgOverride from ansi
 import { bgOverride } from "@hightea/ansi"
 ;<Box backgroundColor="cyan">
   <Text>{bgOverride(chalk.bgBlack("text"))}</Text>

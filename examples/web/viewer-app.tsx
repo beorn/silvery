@@ -973,7 +973,7 @@ function createViewerApp(root: HTMLElement): void {
   window.parent.postMessage({ type: "hightea-ready" }, "*")
 
   // Expose for debugging
-  ;(window as any).inkxViewer = { term, allDemos, selectDemo }
+  ;(window as any).highteaViewer = { term, allDemos, selectDemo }
 }
 
 // =============================================================================

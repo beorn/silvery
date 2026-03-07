@@ -1,7 +1,7 @@
 /**
  * Terminal Multiplexer Compatibility Tests
  *
- * Tests and documents Inkx behavior in terminal multiplexers like tmux and Zellij.
+ * Tests and documents Hightea behavior in terminal multiplexers like tmux and Zellij.
  *
  * Since we cannot run automated tests inside actual multiplexers, this file:
  * 1. Documents expected behaviors and known quirks

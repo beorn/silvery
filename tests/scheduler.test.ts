@@ -57,7 +57,7 @@ function createMockStdout(opts?: { columns?: number; rows?: number; isTTY?: bool
 const { createNode } = await import("../src/reconciler/nodes.js")
 
 /**
- * Create a minimal InkxNode root with a text child.
+ * Create a minimal HighteaNode root with a text child.
  */
 function createTextRoot(text: string): TeaNode {
   const root = createRootNode()

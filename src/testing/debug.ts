@@ -1,7 +1,7 @@
 /**
  * Debug Tree Inspection
  *
- * Pretty-prints InkxNode trees for debugging TUI tests.
+ * Pretty-prints HighteaNode trees for debugging TUI tests.
  * Similar to React DevTools component tree or browser DOM inspection.
  *
  * @example
@@ -29,7 +29,7 @@ export interface DebugTreeOptions {
 }
 
 /**
- * Pretty-print InkxNode tree for debugging.
+ * Pretty-print HighteaNode tree for debugging.
  *
  * @param node - Root node to inspect
  * @param options - Display options

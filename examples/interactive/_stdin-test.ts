@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Bare stdin test — no React, no inkx.
+ * Bare stdin test — no React, no hightea.
  *
  * Tests whether Bun's stdin "readable" events deliver all keypresses.
  * Run in a real terminal (not through a tool): bun vendor/hightea/examples/interactive/_stdin-test.ts

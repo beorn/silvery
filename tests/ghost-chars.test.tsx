@@ -1,5 +1,5 @@
 /**
- * Ghost Character Bug Tests (km-inkx.1)
+ * Ghost Character Bug Tests (km-hightea.1)
  *
  * When content in a fixed-size container is replaced with shorter content,
  * ghost characters from the previous render can persist. This happens at the

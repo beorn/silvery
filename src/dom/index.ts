@@ -1,7 +1,7 @@
 /**
  * DOM Entry Point
  *
- * Provides a browser-friendly API for rendering inkx components to DOM elements.
+ * Provides a browser-friendly API for rendering hightea components to DOM elements.
  * This module sets up the DOM adapter and provides render functions.
  *
  * Advantages over Canvas:

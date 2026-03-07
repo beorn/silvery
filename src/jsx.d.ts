@@ -1,5 +1,5 @@
 /**
- * JSX type declarations for Inkx custom host elements.
+ * JSX type declarations for Hightea custom host elements.
  *
  * This declares the 'hightea-box' and 'hightea-text' intrinsic elements that the
  * React reconciler handles. These are custom host elements, not DOM elements.

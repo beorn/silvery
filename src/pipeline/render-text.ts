@@ -94,7 +94,7 @@ interface StyleContext {
  *
  * Note: backgroundColor is intentionally NOT embedded as ANSI codes.
  * Background color is handled at the buffer level (via BgSegment tracking)
- * to prevent bg bleed across wrapped text lines. See km-inkx.bg-bleed.
+ * to prevent bg bleed across wrapped text lines. See km-hightea.bg-bleed.
  */
 function styleToAnsi(style: StyleContext): string {
   const codes: number[] = []
@@ -807,9 +807,9 @@ function renderAnsiTextLineReturn(
     // Merge segment style with base style
     const style = mergeAnsiStyle(baseStyle, segment)
 
-    // Detect background conflict: chalk.bg* overwrites existing inkx background
+    // Detect background conflict: chalk.bg* overwrites existing hightea background
     // Check both: 1) Text's own backgroundColor, 2) Parent Box's bg already in buffer
-    // Skip if segment has bgOverride flag (explicit opt-out via chalkx.bgOverride)
+    // Skip if segment has bgOverride flag (explicit opt-out via ansi.bgOverride)
     const effectiveBgConflictMode = ctx?.bgConflictMode ?? getBgConflictMode()
     if (
       effectiveBgConflictMode !== "ignore" &&
@@ -823,7 +823,7 @@ function renderAnsiTextLineReturn(
 
       if (hasExistingBg) {
         const preview = segment.text.slice(0, 30)
-        const msg = `[inkx] Background conflict: chalk.bg* on text that already has inkx background. Chalk bg will override only text characters, causing visual gaps in padding. Use chalkx.bgOverride() to suppress if intentional. Text: "${preview}${segment.text.length > 30 ? "..." : ""}"`
+        const msg = `[hightea] Background conflict: chalk.bg* on text that already has hightea background. Chalk bg will override only text characters, causing visual gaps in padding. Use ansi.bgOverride() to suppress if intentional. Text: "${preview}${segment.text.length > 30 ? "..." : ""}"`
 
         if (effectiveBgConflictMode === "throw") {
           throw new Error(msg)
@@ -1054,7 +1054,7 @@ function ansiColorToColor(code: number): Color {
  *
  * Background colors from nested Text elements are handled at the buffer level
  * (not via ANSI codes) to prevent bg bleed across wrapped text lines.
- * See km-inkx.bg-bleed for details.
+ * See km-hightea.bg-bleed for details.
  */
 export function renderText(
   node: TeaNode,

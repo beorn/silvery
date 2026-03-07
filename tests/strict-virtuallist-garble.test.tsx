@@ -4,7 +4,7 @@
  * VirtualList dynamically mounts/unmounts items, creating new nodes with
  * prevLayout=null that may cause doFreshRender to produce different output.
  *
- * Bug: km-inkx.garble-incremental
+ * Bug: km-hightea.garble-incremental
  */
 import { describe, test, expect, beforeEach, afterEach } from "vitest"
 import { createRenderer } from "../tests/setup.js"

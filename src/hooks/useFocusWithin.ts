@@ -1,5 +1,5 @@
 /**
- * Inkx useFocusWithin Hook
+ * Hightea useFocusWithin Hook
  *
  * Returns true if the focus is within the subtree rooted at the given testID.
  * Uses useSyncExternalStore for tear-free reads from FocusManager.

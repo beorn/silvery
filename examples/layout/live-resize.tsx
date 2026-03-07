@@ -1,7 +1,7 @@
 /**
  * Live Resize Demo
  *
- * THE showcase demo for inkx's unique capability: components that know their size.
+ * THE showcase demo for hightea's unique capability: components that know their size.
  *
  * Demonstrates:
  * - useContentRect() providing real-time width/height during render

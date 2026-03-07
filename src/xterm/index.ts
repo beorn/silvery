@@ -1,7 +1,7 @@
 /**
  * xterm.js Entry Point
  *
- * Provides a browser-friendly API for rendering inkx components to xterm.js terminals.
+ * Provides a browser-friendly API for rendering hightea components to xterm.js terminals.
  * This module sets up the terminal adapter and writes ANSI output to an xterm.js Terminal.
  *
  * The terminal adapter produces ANSI diff strings via `flush()`. xterm.js accepts ANSI

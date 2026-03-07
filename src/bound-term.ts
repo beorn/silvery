@@ -1,7 +1,7 @@
 /**
  * BoundTerm - Terminal buffer with node awareness
  *
- * Bridges the terminal buffer (screen space) with the InkxNode tree.
+ * Bridges the terminal buffer (screen space) with the HighteaNode tree.
  * Provides screen-coordinate queries that return nodes.
  *
  * @example

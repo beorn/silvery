@@ -41,17 +41,17 @@ describe("devtools", () => {
     }
   })
 
-  describe("public API surface (exported from inkx)", () => {
-    it("connectDevTools is exported from inkx", async () => {
-      const inkx = await import("../src/index.js")
-      expect(inkx.connectDevTools).toBeDefined()
-      expect(typeof inkx.connectDevTools).toBe("function")
+  describe("public API surface (exported from hightea)", () => {
+    it("connectDevTools is exported from hightea", async () => {
+      const hightea = await import("../src/index.js")
+      expect(hightea.connectDevTools).toBeDefined()
+      expect(typeof hightea.connectDevTools).toBe("function")
     })
 
-    it("isDevToolsConnected is exported from inkx", async () => {
-      const inkx = await import("../src/index.js")
-      expect(inkx.isDevToolsConnected).toBeDefined()
-      expect(typeof inkx.isDevToolsConnected).toBe("function")
+    it("isDevToolsConnected is exported from hightea", async () => {
+      const hightea = await import("../src/index.js")
+      expect(hightea.isDevToolsConnected).toBeDefined()
+      expect(typeof hightea.isDevToolsConnected).toBe("function")
     })
   })
 

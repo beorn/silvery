@@ -1,5 +1,5 @@
 /**
- * Inkx Spacer Component
+ * Hightea Spacer Component
  *
  * A flexible space that expands to fill available space. Useful for pushing
  * elements to opposite ends of a container.

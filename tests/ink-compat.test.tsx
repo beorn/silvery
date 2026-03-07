@@ -1,7 +1,7 @@
 /**
  * Ink Compatibility Tests
  *
- * Tests that verify Inkx is API-compatible with Ink.
+ * Tests that verify Hightea is API-compatible with Ink.
  * These tests verify:
  * 1. Public API exports match Ink's expectations
  * 2. Components render equivalent output to Ink
@@ -101,7 +101,7 @@ describe("Ink API Compatibility", () => {
       expect(typeof useFocusManager).toBe("function")
     })
 
-    test("useContentRect hook exists and is a function (Inkx-specific)", () => {
+    test("useContentRect hook exists and is a function (Hightea-specific)", () => {
       expect(typeof useContentRect).toBe("function")
     })
   })
@@ -252,7 +252,7 @@ describe("Ink API Compatibility", () => {
       )
       const frame = app.text
       // Should show ellipsis at start followed by end portion
-      // Inkx uses Unicode ellipsis character
+      // Hightea uses Unicode ellipsis character
       expect(frame).toMatch(/[…\.]{1,3}/)
       expect(frame).toContain("Test")
     })
@@ -265,7 +265,7 @@ describe("Ink API Compatibility", () => {
       )
       const frame = app.text
       // Should show start, ellipsis, then end
-      // Inkx uses Unicode ellipsis character
+      // Hightea uses Unicode ellipsis character
       expect(frame).toMatch(/[…\.]{1,3}/)
       expect(frame).toContain("Hell") // Start portion
       expect(frame).toContain("est") // End portion
@@ -633,8 +633,8 @@ describe("Behavioral Tests - Rendering", () => {
 
       expect(app.text).toContain("Hello, World!")
 
-      app.rerender(<Greeting name="Inkx" />)
-      expect(app.text).toContain("Hello, Inkx!")
+      app.rerender(<Greeting name="Hightea" />)
+      expect(app.text).toContain("Hello, Hightea!")
     })
 
     test("frames array captures all renders", () => {

@@ -1,11 +1,11 @@
 /**
  * Static Scrollback — Coding Agent Showcase
  *
- * Demonstrates inkx's ScrollbackList component for building apps where
+ * Demonstrates hightea's ScrollbackList component for building apps where
  * completed items freeze into real terminal scrollback:
  *
  * ┌─────────────────────────────────────────────────────────────────────────┐
- * │ Feature                          │ Claude Code │ inkx Showcase          │
+ * │ Feature                          │ Claude Code │ hightea Showcase          │
  * ├──────────────────────────────────┼─────────────┼────────────────────────┤
  * │ Rich scrollback (colors/borders) │ ✗ plain     │ ✓ full JSX → ANSI     │
  * │ Clickable links in scrollback    │ partial     │ ✓ OSC 8 hyperlinks    │

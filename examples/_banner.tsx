@@ -30,7 +30,7 @@ export function ExampleBanner({ meta, controls, theme, children }: Props) {
         {/* One-line header: dimmed to not compete with example UI */}
         <Box paddingX={1} gap={1}>
           <Text dim color="$warning">
-            {"▸ inkx"}
+            {"▸ hightea"}
           </Text>
           <Text bold color="$text">
             {meta.name}

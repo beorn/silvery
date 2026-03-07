@@ -25,7 +25,7 @@
  * }
  * ```
  *
- * @see docs/future/inkx-command-api-research.md
+ * @see docs/future/hightea-command-api-research.md
  */
 
 // Re-export from context for convenience

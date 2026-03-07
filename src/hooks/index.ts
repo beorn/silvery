@@ -1,5 +1,5 @@
 /**
- * Inkx Hooks
+ * Hightea Hooks
  *
  * React hooks for building terminal UI applications.
  */

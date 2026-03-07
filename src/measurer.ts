@@ -2,7 +2,7 @@
  * Measurer composition layer.
  *
  * Creates term-scoped measurers and pipeline configs.
- * Bridges chalkx Term with inkx measurement capabilities.
+ * Bridges ansi Term with hightea measurement capabilities.
  */
 
 import type { Term, TerminalCaps } from "@hightea/ansi"

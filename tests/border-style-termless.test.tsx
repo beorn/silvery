@@ -1,7 +1,7 @@
 /**
  * Tests for border rendering and style transitions using termless (real terminal emulator).
  *
- * These tests verify that the ANSI output from inkx components with borders and
+ * These tests verify that the ANSI output from hightea components with borders and
  * styles produces correct terminal state when fed to a real terminal emulator
  * (xterm.js). This catches output-phase bugs that virtual buffer tests miss:
  * - Style leaks across frames (SGR not properly reset between rows)
@@ -13,7 +13,7 @@
  * Uses termless with xterm.js backend to emulate a real terminal.
  *
  * IMPORTANT: termless cell() uses (row, col) order, NOT (col, row).
- * Named colors (e.g., "red") map to 256-color palette indices in inkx,
+ * Named colors (e.g., "red") map to 256-color palette indices in hightea,
  * not true-color RGB. Use hex colors (#ff0000) for exact RGB matching.
  */
 
@@ -155,7 +155,7 @@ describe("dimColor on Text applies faint SGR through terminal", () => {
   })
 
   test("dim border box: border is NOT faint, child text is NOT faint", () => {
-    // The dim prop on Box does not make border characters faint in inkx.
+    // The dim prop on Box does not make border characters faint in hightea.
     // Border rendering (renderBorder) does not read the dim prop.
     // This verifies the Ink bug fix — dim on Box doesn't leak to children.
     const { term } = renderToTerminal(

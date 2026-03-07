@@ -10,7 +10,7 @@
  * They keep their creation dirty flags and render correctly when scrolled
  * into view.
  *
- * Bead: km-inkx.scroll-offscreen-render
+ * Bead: km-hightea.scroll-offscreen-render
  */
 import React from "react"
 import { describe, expect, test } from "vitest"

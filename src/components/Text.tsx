@@ -1,11 +1,11 @@
 /**
- * Inkx Text Component
+ * Hightea Text Component
  *
- * The primitive for rendering text content in Inkx. Text supports styling
+ * The primitive for rendering text content in Hightea. Text supports styling
  * (colors, bold, italic, etc.) and text wrapping/truncation modes.
  *
  * Text renders to an 'hightea-text' host element that the reconciler converts
- * to an InkxNode containing the text content.
+ * to an HighteaNode containing the text content.
  *
  * Supports forwardRef for imperative access to the underlying node.
  */
@@ -26,7 +26,7 @@ export interface TextProps extends TextPropsType {
  * Methods exposed via ref on Text component.
  */
 export interface TextHandle {
-  /** Get the underlying InkxNode */
+  /** Get the underlying HighteaNode */
   getNode(): TeaNode | null
 }
 
@@ -73,7 +73,7 @@ export const Text = forwardRef(function Text(props: TextProps, ref: ForwardedRef
   const { children, ...styleProps } = props
 
   // For Text, we need to pass the ref through to the host element
-  // The reconciler's getPublicInstance will return the InkxNode
+  // The reconciler's getPublicInstance will return the HighteaNode
   // We wrap it in a TextHandle for type safety
   return (
     <hightea-text

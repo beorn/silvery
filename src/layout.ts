@@ -1,7 +1,7 @@
 /**
- * inkx/layout -- Layout feedback hooks.
+ * hightea/layout -- Layout feedback hooks.
  *
- * The key differentiator of inkx over Ink: components that know their
+ * The key differentiator of hightea over Ink: components that know their
  * own size during render, not after.
  *
  * ```tsx

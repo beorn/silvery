@@ -1,7 +1,7 @@
 /**
- * inkx-loop Runtime Module
+ * hightea-loop Runtime Module
  *
- * Provides the core primitives for the inkx-loop architecture:
+ * Provides the core primitives for the hightea-loop architecture:
  *
  * Layer 0: Pure render functions
  * - layout() - React element → Buffer
@@ -80,7 +80,7 @@ export {
 } from "./terminal-lifecycle.js"
 
 // Layer 1.5: TEA store (re-exported for discoverability)
-export { createStore, inkxUpdate, defaultInit, withFocusManagement } from "../store/index.js"
+export { createStore, highteaUpdate, defaultInit, withFocusManagement } from "../store/index.js"
 export type { StoreConfig, StoreApi } from "../store/index.js"
 
 // Layer 3: Store integration

@@ -1,7 +1,7 @@
 /**
  * Regression test: incremental render mismatch after new children added
  *
- * Bug: km-inkx.zoom-mismatch
+ * Bug: km-hightea.zoom-mismatch
  *
  * When React creates new children (e.g., after terminal resize triggers
  * re-layout), the incremental render clears regions via ancestorCleared

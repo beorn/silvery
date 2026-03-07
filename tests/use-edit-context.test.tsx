@@ -2,7 +2,7 @@
  * useEditContext Hook Tests
  *
  * Tests for the React hook wrapping createTermEditContext.
- * Uses inkx createRenderer for component-level testing.
+ * Uses hightea createRenderer for component-level testing.
  *
  * Covers: rendering, text mutations, cursor movement, callbacks,
  * auto-save on unmount, cancel suppression, activeEditContextRef.

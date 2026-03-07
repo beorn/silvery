@@ -1,5 +1,5 @@
 /**
- * inkx-ui - UI components for Ink/inkx TUI apps
+ * hightea-ui - UI components for Ink/hightea TUI apps
  *
  * Progress indicators, spinners, and task wrappers for CLI applications.
  *

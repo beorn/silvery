@@ -1,7 +1,7 @@
 /**
  * Tests for focus-events.ts — event types, factories, and dispatch.
  *
- * Uses fake InkxNode trees (no React needed) to test:
+ * Uses fake HighteaNode trees (no React needed) to test:
  * - createKeyEvent / createFocusEvent factories
  * - dispatchKeyEvent capture/target/bubble phases
  * - dispatchFocusEvent target + bubble
@@ -14,8 +14,8 @@ import {
   createKeyEvent,
   dispatchFocusEvent,
   dispatchKeyEvent,
-  type InkxFocusEvent,
-  type InkxKeyEvent,
+  type HighteaFocusEvent,
+  type HighteaKeyEvent,
 } from "../src/focus-events.js"
 import { emptyKey, type Key } from "../src/keys.js"
 import type { TeaNode } from "../src/types.js"
@@ -212,7 +212,7 @@ describe("dispatchKeyEvent", () => {
     const log: string[] = []
 
     const root = fakeNode("root", {
-      onKeyDownCapture: (e: InkxKeyEvent) => {
+      onKeyDownCapture: (e: HighteaKeyEvent) => {
         log.push("root-capture")
         e.stopPropagation()
       },
@@ -241,7 +241,7 @@ describe("dispatchKeyEvent", () => {
     const target = fakeNode(
       "target",
       {
-        onKeyDown: (e: InkxKeyEvent) => {
+        onKeyDown: (e: HighteaKeyEvent) => {
           log.push("target")
           e.stopPropagation()
         },
@@ -263,7 +263,7 @@ describe("dispatchKeyEvent", () => {
     const middle = fakeNode(
       "middle",
       {
-        onKeyDown: (e: InkxKeyEvent) => {
+        onKeyDown: (e: HighteaKeyEvent) => {
           log.push("middle")
           e.stopPropagation()
         },
@@ -283,12 +283,12 @@ describe("dispatchKeyEvent", () => {
     const targets: TeaNode[] = []
 
     const root = fakeNode("root", {
-      onKeyDown: (e: InkxKeyEvent) => targets.push(e.currentTarget),
+      onKeyDown: (e: HighteaKeyEvent) => targets.push(e.currentTarget),
     })
     const child = fakeNode(
       "child",
       {
-        onKeyDown: (e: InkxKeyEvent) => targets.push(e.currentTarget),
+        onKeyDown: (e: HighteaKeyEvent) => targets.push(e.currentTarget),
       },
       root,
     )
@@ -360,7 +360,7 @@ describe("dispatchFocusEvent", () => {
     const child = fakeNode(
       "child",
       {
-        onFocus: (e: InkxFocusEvent) => {
+        onFocus: (e: HighteaFocusEvent) => {
           log.push("child")
           e.stopPropagation()
         },
@@ -378,12 +378,12 @@ describe("dispatchFocusEvent", () => {
     const targets: TeaNode[] = []
 
     const root = fakeNode("root", {
-      onFocus: (e: InkxFocusEvent) => targets.push(e.currentTarget),
+      onFocus: (e: HighteaFocusEvent) => targets.push(e.currentTarget),
     })
     const child = fakeNode(
       "child",
       {
-        onFocus: (e: InkxFocusEvent) => targets.push(e.currentTarget),
+        onFocus: (e: HighteaFocusEvent) => targets.push(e.currentTarget),
       },
       root,
     )

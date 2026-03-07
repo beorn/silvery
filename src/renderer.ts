@@ -1,5 +1,5 @@
 /**
- * Unified Render API for inkx
+ * Unified Render API for hightea
  *
  * Composable primitives:
  * - render(element, opts | store) — always sync, returns full App
@@ -293,7 +293,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     exitCalledFlag = true
     exitErrorValue = error
     if (debug) {
-      console.log("[inkx] exit() called", error ? `with error: ${error.message}` : "")
+      console.log("[hightea] exit() called", error ? `with error: ${error.message}` : "")
     }
   }
 
@@ -403,7 +403,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   //
   // Key insight: executeRender must run inside act() so that forceUpdate/setState
   // calls from layout notifications are properly captured by React's scheduler.
-  // With IS_REACT_ACT_ENVIRONMENT=true (set by inkx/testing), state updates
+  // With IS_REACT_ACT_ENVIRONMENT=true (set by hightea/testing), state updates
   // outside act() boundaries may be dropped.
   function doRender(): string {
     let output: string
@@ -584,7 +584,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   instance.frames.push(output)
 
   if (debug) {
-    console.log("[inkx] Initial render:", output)
+    console.log("[hightea] Initial render:", output)
   }
 
   // Helper functions for App
@@ -686,7 +686,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     const newFrame = doRender()
     instance.frames.push(newFrame)
     if (debug) {
-      console.log("[inkx] Rerender:", newFrame)
+      console.log("[hightea] Rerender:", newFrame)
     }
   }
 
@@ -711,7 +711,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     activeRenders.delete(renderRef)
 
     if (debug) {
-      console.log("[inkx] Unmounted")
+      console.log("[hightea] Unmounted")
     }
   }
   renderTracker.unmount = unmountFn
@@ -756,7 +756,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     const newFrame = doRender()
     instance.frames.push(newFrame)
     if (debug) {
-      console.log("[inkx] Resize:", newCols, "x", newRows)
+      console.log("[hightea] Resize:", newCols, "x", newRows)
     }
   }
 

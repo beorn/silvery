@@ -1,7 +1,7 @@
 /**
  * Tests for terminal resize correctness using termless (real terminal emulator).
  *
- * Verifies that when the terminal dimensions change, inkx's fullscreen output
+ * Verifies that when the terminal dimensions change, hightea's fullscreen output
  * produces correct terminal state at the new size. This catches bugs in the
  * resize → relayout → full-redraw pipeline: stale content from the old size,
  * truncated or overflowing lines, incorrect cursor positioning, and style

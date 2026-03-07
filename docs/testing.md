@@ -476,17 +476,17 @@ bun run visual-diff tests/fixtures/complex-layout.tsx
 // tests/perf/render.bench.ts
 import { bench, group, run } from 'mitata';
 import { render as inkRender } from 'ink';
-import { render as inkxRender } from '@hightea/term';
+import { render as highteaRender } from '@hightea/term';
 import { ComplexLayout } from './fixtures/complex-layout';
 
 group('Initial render', () => {
   bench('Ink', () => inkRender(<ComplexLayout />));
-  bench('hightea', () => inkxRender(<ComplexLayout />));
+  bench('hightea', () => highteaRender(<ComplexLayout />));
 });
 
 group('Re-render (state change)', () => {
   // Setup: render once, then benchmark updates
-  const { rerender } = inkxRender(<ComplexLayout count={0} />);
+  const { rerender } = highteaRender(<ComplexLayout count={0} />);
 
   bench('hightea rerender', () => {
     rerender(<ComplexLayout count={Math.random()} />);
@@ -1260,8 +1260,8 @@ expect(sidebar.boundingBox()?.width).toBe(20) // 20 chars wide
 | `last()`             | `AutoLocator`         | Last matching element                  |
 | `nth(index)`         | `AutoLocator`         | Element at index                       |
 | `filter(options)`    | `AutoLocator`         | Filter matches                         |
-| `resolve()`          | `InkxNode \| null`    | Get first matching node                |
-| `resolveAll()`       | `InkxNode[]`          | Get all matching nodes                 |
+| `resolve()`          | `HighteaNode \| null`    | Get first matching node                |
+| `resolveAll()`       | `HighteaNode[]`          | Get all matching nodes                 |
 | `count()`            | `number`              | Count matches                          |
 | `textContent()`      | `string`              | Get text content                       |
 | `getAttribute(name)` | `string \| undefined` | Get attribute value                    |
@@ -1279,4 +1279,4 @@ expect(sidebar.boundingBox()?.width).toBe(20) // 20 chars wide
 - [xterm-benchmark](https://github.com/xtermjs/xterm-benchmark) - Performance benchmarking
 - [AVA](https://github.com/avajs/ava) - Test framework used by Ink/Chalk
 - [mitata](https://github.com/evanwashere/mitata) - Benchmarking library
-- [Playwright Locators](https://playwright.dev/docs/locators) - Inspiration for InkxLocator API
+- [Playwright Locators](https://playwright.dev/docs/locators) - Inspiration for HighteaLocator API

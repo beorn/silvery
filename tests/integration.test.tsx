@@ -1,5 +1,5 @@
 /**
- * Inkx Integration Tests
+ * Hightea Integration Tests
  *
  * Tests that verify the rendering works correctly.
  * Uses simplified text extraction for fast, reliable testing.
@@ -12,7 +12,7 @@ import { createRenderer } from "@hightea/term/testing"
 
 const render = createRenderer()
 
-describe("Inkx Integration", () => {
+describe("Hightea Integration", () => {
   describe("Basic Rendering", () => {
     test("renders simple text", () => {
       const app = render(<Text>Hello World</Text>)

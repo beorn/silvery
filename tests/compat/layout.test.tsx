@@ -1,7 +1,7 @@
 /**
  * Layout API Compatibility Tests
  *
- * Tests that verify Inkx accepts the same props as Ink.
+ * Tests that verify Hightea accepts the same props as Ink.
  * These tests verify API compatibility (props accepted without error).
  *
  * Note: The test renderer uses simplified text extraction without full Yoga layout.
@@ -358,7 +358,7 @@ describe("Layout API Compatibility", () => {
     })
   })
 
-  describe("Overflow (Inkx Extension)", () => {
+  describe("Overflow (Hightea Extension)", () => {
     test('accepts overflow="visible"', () => {
       const app = render(
         <Box overflow="visible" width={5}>

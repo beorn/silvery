@@ -37,7 +37,7 @@ The playground uses the same rendering pipeline as hightea's terminal mode:
 
 ```
 React JSX
-  |  React reconciler builds InkxNode tree
+  |  React reconciler builds HighteaNode tree
   v
 Flexture layout engine (pure JS flexbox)
   |  Computes { x, y, width, height } for every node

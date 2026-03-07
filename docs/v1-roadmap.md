@@ -28,7 +28,7 @@ These APIs are the 1.0 stability contract. After 1.0, changes to these require a
 - [x] **Components**: Box, Text, VirtualList, Static, Console, TextInput, TextArea, Link, Transform, Image, Spinner, ProgressBar, SelectList, Table, Badge, Divider, Newline, Spacer
 - [x] **Hooks**: useContentRect, useScreenRect, useInput, useApp, useTerm, useFocusable, useFocusWithin, usePaste, useAnimation, useAnimatedTransition, useInterval
 - [x] **Runtime**: `run()`, `createApp()`, `createRuntime()`
-- [x] **Store**: `createStore()`, `inkxUpdate`, `defaultInit`, `withFocusManagement`
+- [x] **Store**: `createStore()`, `highteaUpdate`, `defaultInit`, `withFocusManagement`
 - [x] **Render**: `render()`, `renderStatic()`, `renderString()`
 - [x] **Testing**: `createRenderer()`, locator API, `app.press()`, `app.click()`, `app.text`, `app.ansi`
 - [x] **Plugins**: `withCommands()`, `withKeybindings()`, `withDiagnostics()`

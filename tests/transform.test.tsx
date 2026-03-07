@@ -221,7 +221,7 @@ describe("Transform", () => {
   // Claude Code API compatibility
   //
   // The CC fork of Ink uses: <Transform transform={(line, index) => `${index}: ${line}`}>
-  // In inkx, the transform is applied after layout, so the output is clipped
+  // In hightea, the transform is applied after layout, so the output is clipped
   // to the text node's layout width. This means prefixed text gets clipped.
   // The transform function signature (line: string, index: number) => string
   // is fully compatible; the clipping is a layout-level difference.

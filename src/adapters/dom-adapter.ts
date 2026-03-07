@@ -43,7 +43,7 @@ export interface DOMAdapterConfig {
   backgroundColor?: string
   /** Default foreground color (default: '#d4d4d4') */
   foregroundColor?: string
-  /** CSS class prefix (default: 'inkx') */
+  /** CSS class prefix (default: 'hightea') */
   classPrefix?: string
 }
 
@@ -53,7 +53,7 @@ const DEFAULT_CONFIG: Required<DOMAdapterConfig> = {
   lineHeight: 1.2,
   backgroundColor: "#1e1e1e",
   foregroundColor: "#d4d4d4",
-  classPrefix: "inkx",
+  classPrefix: "hightea",
 }
 
 // ============================================================================
@@ -423,10 +423,10 @@ export function createDOMAdapter(config: DOMAdapterConfig = {}): RenderAdapter {
 let stylesInjected = false
 
 /**
- * Inject global CSS styles for inkx DOM rendering.
+ * Inject global CSS styles for hightea DOM rendering.
  * Call once at application startup if you want default styling.
  */
-export function injectDOMStyles(classPrefix = "inkx"): void {
+export function injectDOMStyles(classPrefix = "hightea"): void {
   if (stylesInjected || typeof document === "undefined") return
 
   const style = document.createElement("style")

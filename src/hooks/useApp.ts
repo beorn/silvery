@@ -1,5 +1,5 @@
 /**
- * Inkx useApp Hook
+ * Hightea useApp Hook
  *
  * Provides access to app-level controls like exit, pause, resume.
  * Backed by RuntimeContext (unified input + app controls).

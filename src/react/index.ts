@@ -1,5 +1,5 @@
 /**
- * inkx/react — React hooks and runtime API.
+ * hightea/react — React hooks and runtime API.
  *
  * This sub-path export provides all React-dependent functionality:
  * - Focus hooks: useFocusable, useFocusWithin, useFocusManager
@@ -8,8 +8,8 @@
  * - Runtime: run(), createApp()
  * - Contexts: FocusManagerContext, etc.
  *
- * For pure functions and types with no React dependency, use `inkx/core`.
- * For the TEA store, use `inkx/store`.
+ * For pure functions and types with no React dependency, use `hightea/core`.
+ * For the TEA store, use `hightea/store`.
  *
  * @packageDocumentation
  */

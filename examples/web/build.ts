@@ -40,7 +40,7 @@ const browserDefines: Record<string, string> = {
   "process.env.LC_CTYPE": "undefined",
 }
 
-// Browser process shim — chalkx/logger access process.stdout, process.stdin,
+// Browser process shim — ansi/logger access process.stdout, process.stdin,
 // process.stderr, and dynamic process.env[key] at module init.
 // The `define` map above handles static process.env.KEY references, but
 // process.stdout/stdin/stderr and process.env[dynamic] need a real object.

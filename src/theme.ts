@@ -1,5 +1,5 @@
 /**
- * inkx/theme -- Theming system with semantic color tokens.
+ * hightea/theme -- Theming system with semantic color tokens.
  *
  * ```tsx
  * import { ThemeProvider, useTheme, defaultDarkTheme } from '@hightea/term/theme'

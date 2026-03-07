@@ -1,11 +1,11 @@
 /**
- * Inkx React Reconciler
+ * Hightea React Reconciler
  *
- * Custom React reconciler that builds a tree of InkxNodes, each with a Yoga layout node.
- * This is the core of Inkx's architecture - separating structure (React reconciliation)
+ * Custom React reconciler that builds a tree of HighteaNodes, each with a Yoga layout node.
+ * This is the core of Hightea's architecture - separating structure (React reconciliation)
  * from content (terminal rendering).
  *
- * The reconciler creates InkxNodes during React's reconciliation phase,
+ * The reconciler creates HighteaNodes during React's reconciliation phase,
  * but actual terminal content is rendered later after Yoga computes layout.
  */
 
@@ -55,7 +55,7 @@ export function createFiberRoot(container: Container) {
 }
 
 /**
- * Get the root InkxNode from a container.
+ * Get the root HighteaNode from a container.
  */
 export function getContainerRoot(container: Container): TeaNode {
   return container.root

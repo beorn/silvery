@@ -1,5 +1,5 @@
 /**
- * Inkx Render Scheduler
+ * Hightea Render Scheduler
  *
  * Batches rapid state updates to prevent flicker and improve performance.
  * Uses queueMicrotask for coalescing multiple synchronous state changes
@@ -78,7 +78,7 @@ export type ResolvedNonTTYMode = Exclude<NonTTYMode, "auto">
 export interface SchedulerOptions {
   /** stdout stream for writing output */
   stdout: NodeJS.WriteStream
-  /** Root Inkx node */
+  /** Root Hightea node */
   root: TeaNode
   /** Debug mode - logs render timing */
   debug?: boolean
@@ -677,14 +677,14 @@ export class RenderScheduler {
    */
   private logDebug(message: string): void {
     // Write to stderr to avoid corrupting terminal output
-    process.stderr.write(`[Inkx Debug] ${message}\n`)
+    process.stderr.write(`[Hightea Debug] ${message}\n`)
   }
 
   /**
    * Log error message.
    */
   private logError(message: string, error: unknown): void {
-    process.stderr.write(`[Inkx Error] ${message}\n`)
+    process.stderr.write(`[Hightea Error] ${message}\n`)
     if (error instanceof Error) {
       process.stderr.write(`${error.stack ?? error.message}\n`)
     } else {

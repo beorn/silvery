@@ -1,5 +1,5 @@
 /**
- * Inkx React Reconciler
+ * Hightea React Reconciler
  *
  * This file re-exports from the reconciler/ directory for backward compatibility.
  * All reconciler functionality has been extracted into:

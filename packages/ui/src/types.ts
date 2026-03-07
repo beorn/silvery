@@ -1,5 +1,5 @@
 /**
- * Core types for inkx-ui progress components
+ * Core types for hightea-ui progress components
  */
 
 /** Progress info passed to callbacks (legacy, use StepProgress for steps()) */

@@ -1,7 +1,7 @@
 /**
  * Tests for incremental diff output correctness using termless (real terminal emulator).
  *
- * These tests verify that inkx's fullscreen incremental diff output — the ANSI
+ * These tests verify that hightea's fullscreen incremental diff output — the ANSI
  * escape sequences emitted by the output phase when diffing previous and current
  * buffers — produces correct terminal state when fed through a real terminal
  * emulator (xterm.js via termless).

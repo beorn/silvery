@@ -106,7 +106,7 @@ function Editor({ value, onChange }) {
 
   useEffect(() => {
     // Load hightea type definitions for intellisense
-    monaco.languages.typescript.typescriptDefaults.addExtraLib(inkxTypeDefs, "hightea.d.ts")
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(highteaTypeDefs, "hightea.d.ts")
   }, [])
 
   return <div ref={editorRef} style={{ height: "100%" }} />

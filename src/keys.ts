@@ -1,7 +1,7 @@
 /**
  * Keyboard Constants and Utilities
  *
- * Single source of truth for all key parsing, mapping, and matching in inkx.
+ * Single source of truth for all key parsing, mapping, and matching in hightea.
  *
  * - KEY_MAP: Playwright key names -> ANSI sequences (for sending input)
  * - CODE_TO_KEY: ANSI escape suffixes -> key names (for parsing input)

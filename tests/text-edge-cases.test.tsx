@@ -1,6 +1,6 @@
 import React from "react"
 /**
- * Tests for text handling edge cases in inkx.
+ * Tests for text handling edge cases in hightea.
  *
  * Tests various edge cases:
  * - Text wrapping with long words (words longer than container width)

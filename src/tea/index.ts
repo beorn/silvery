@@ -1,5 +1,5 @@
 /**
- * inkx/tea — Zustand middleware for TEA (The Elm Architecture) effects.
+ * hightea/tea — Zustand middleware for TEA (The Elm Architecture) effects.
  *
  * A ~30-line middleware that extends Zustand reducers to optionally return
  * [state, effects]. Gradual adoption: return plain state (Level 3) or

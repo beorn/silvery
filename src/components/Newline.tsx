@@ -1,5 +1,5 @@
 /**
- * Inkx Newline Component
+ * Hightea Newline Component
  *
  * Renders a newline character. Useful for adding vertical spacing in text.
  */

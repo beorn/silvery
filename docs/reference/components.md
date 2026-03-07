@@ -62,24 +62,24 @@ Box and Text support DOM-compatible mouse events:
 
 | Prop            | Event Type       | Bubbles |
 | --------------- | ---------------- | ------- |
-| `onClick`       | `InkxMouseEvent` | Yes     |
-| `onDoubleClick` | `InkxMouseEvent` | Yes     |
-| `onMouseDown`   | `InkxMouseEvent` | Yes     |
-| `onMouseUp`     | `InkxMouseEvent` | Yes     |
-| `onMouseMove`   | `InkxMouseEvent` | Yes     |
-| `onMouseEnter`  | `InkxMouseEvent` | No      |
-| `onMouseLeave`  | `InkxMouseEvent` | No      |
-| `onWheel`       | `InkxWheelEvent` | Yes     |
+| `onClick`       | `HighteaMouseEvent` | Yes     |
+| `onDoubleClick` | `HighteaMouseEvent` | Yes     |
+| `onMouseDown`   | `HighteaMouseEvent` | Yes     |
+| `onMouseUp`     | `HighteaMouseEvent` | Yes     |
+| `onMouseMove`   | `HighteaMouseEvent` | Yes     |
+| `onMouseEnter`  | `HighteaMouseEvent` | No      |
+| `onMouseLeave`  | `HighteaMouseEvent` | No      |
+| `onWheel`       | `HighteaWheelEvent` | Yes     |
 
 ### Focus Event Props
 
 | Prop               | Event Type       | Description                        |
 | ------------------ | ---------------- | ---------------------------------- |
-| `onFocus`          | `InkxFocusEvent` | Called when this node gains focus  |
-| `onBlur`           | `InkxFocusEvent` | Called when this node loses focus  |
-| `onKeyDown`        | `InkxKeyEvent`   | Called on key down (bubble phase)  |
-| `onKeyUp`          | `InkxKeyEvent`   | Called on key up (bubble phase)    |
-| `onKeyDownCapture` | `InkxKeyEvent`   | Called on key down (capture phase) |
+| `onFocus`          | `HighteaFocusEvent` | Called when this node gains focus  |
+| `onBlur`           | `HighteaFocusEvent` | Called when this node loses focus  |
+| `onKeyDown`        | `HighteaKeyEvent`   | Called on key down (bubble phase)  |
+| `onKeyUp`          | `HighteaKeyEvent`   | Called on key up (bubble phase)    |
+| `onKeyDownCapture` | `HighteaKeyEvent`   | Called on key down (capture phase) |
 
 ### Scrollable Containers
 
@@ -366,7 +366,7 @@ import { Link } from "@hightea/term"
 | `children`  | `ReactNode`                       | Link text content                                 |
 | `color`     | `string`                          | Text color (default: `"blue"`)                    |
 | `underline` | `boolean`                         | Underline the link (default: `true`)              |
-| `onClick`   | `(event: InkxMouseEvent) => void` | Click handler (preventDefault to skip navigation) |
+| `onClick`   | `(event: HighteaMouseEvent) => void` | Click handler (preventDefault to skip navigation) |
 | `testID`    | `string`                          | Test ID for locator queries                       |
 
 ## Transform

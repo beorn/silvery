@@ -4,7 +4,7 @@ import { TermContext } from "../context.js"
 
 /**
  * Hook to access the Term in components.
- * Must be used within a component rendered via inkx's term-aware render().
+ * Must be used within a component rendered via hightea's term-aware render().
  *
  * @example
  * ```tsx

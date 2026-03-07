@@ -1,5 +1,5 @@
 /**
- * Suspense Embedded Rendering Tests (km-inkx.suspense-embed)
+ * Suspense Embedded Rendering Tests (km-hightea.suspense-embed)
  *
  * Tests that staggered Suspense resolution within an embedded component
  * does not corrupt the parent's incremental rendering.

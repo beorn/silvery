@@ -1,5 +1,5 @@
 /**
- * Wide Character Truncation Tests (km-inkx.wide-char-truncate)
+ * Wide Character Truncation Tests (km-hightea.wide-char-truncate)
  *
  * Verifies that text-presentation emoji characters (e.g., ⚠ U+26A0,
  * ☑ U+2611) are treated as 2 columns wide to match terminal rendering.
@@ -26,7 +26,7 @@ import {
 
 const render = createRenderer({ cols: 80, rows: 24 })
 
-describe("Wide Character Truncation (km-inkx.wide-char-truncate)", () => {
+describe("Wide Character Truncation (km-hightea.wide-char-truncate)", () => {
   // =========================================================================
   // Width Calculation
   // =========================================================================

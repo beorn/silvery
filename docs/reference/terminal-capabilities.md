@@ -1,6 +1,6 @@
 # Terminal Capabilities Reference
 
-This document explains terminal capabilities, the `chalkx` and `hightea` packages, and how to choose the right render strategy.
+This document explains terminal capabilities, the `ansi` and `hightea` packages, and how to choose the right render strategy.
 
 ## The Two Core Capabilities
 

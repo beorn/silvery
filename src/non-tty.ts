@@ -1,12 +1,12 @@
 /**
- * Non-TTY Mode Support for Inkx
+ * Non-TTY Mode Support for Hightea
  *
  * Provides detection and rendering modes for non-interactive environments:
  * - Piped output (process.stdout.isTTY === false)
  * - CI environments
  * - TERM=dumb
  *
- * When in non-TTY mode, inkx avoids cursor positioning codes that garble
+ * When in non-TTY mode, hightea avoids cursor positioning codes that garble
  * output in non-interactive environments.
  *
  * Modes:

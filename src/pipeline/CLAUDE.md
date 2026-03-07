@@ -393,7 +393,7 @@ Two fixes applied to `output-phase.ts`:
 
 ANSI-embedded backgrounds (`chalk.bgBlack("text")`) inside a Box with `backgroundColor` caused bg to leak across wrapped lines. The ANSI bg state persisted across line boundaries.
 
-Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content and tracks bg ranges separately. Each line's bg is applied independently. The `bgOverride` utility from chalkx allows intentional bg override where needed.
+Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content and tracks bg ranges separately. Each line's bg is applied independently. The `bgOverride` utility from ansi allows intentional bg override where needed.
 
 ## Common Blind Paths
 

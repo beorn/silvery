@@ -144,7 +144,7 @@ const SCROLL_PADDING = 2
 // =============================================================================
 
 /**
- * VirtualList - React-level virtualized list with native inkx scrolling.
+ * VirtualList - React-level virtualized list with native hightea scrolling.
  *
  * Thin wrapper around VirtualView that adds interactive mode (keyboard +
  * mouse), virtual item prefix exclusion, and selection metadata injection.

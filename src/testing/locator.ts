@@ -3,7 +3,7 @@
  * in a future version. The auto-locator provides the same API with auto-refreshing queries that
  * re-evaluate against the current tree on each access, eliminating stale reference bugs.
  *
- * InkxLocator - Playwright-inspired DOM queries for InkxNode tree
+ * HighteaLocator - Playwright-inspired DOM queries for HighteaNode tree
  *
  * Provides lazy query evaluation - queries don't resolve until you call
  * count(), resolve(), resolveAll(), textContent(), or boundingBox().
@@ -32,18 +32,18 @@ import type { TeaNode, Rect } from "../types.ts"
 /**
  * Locator interface - lazy reference to nodes matching a query
  */
-export interface InkxLocator {
+export interface HighteaLocator {
   // Core queries (return new Locators)
-  getByText(text: string | RegExp): InkxLocator
-  getByTestId(id: string): InkxLocator
+  getByText(text: string | RegExp): HighteaLocator
+  getByTestId(id: string): HighteaLocator
 
   // Attribute selector (CSS-like: '[data-selected="true"]')
-  locator(selector: string): InkxLocator
+  locator(selector: string): HighteaLocator
 
   // Narrowing
-  first(): InkxLocator
-  last(): InkxLocator
-  nth(index: number): InkxLocator
+  first(): HighteaLocator
+  last(): HighteaLocator
+  nth(index: number): HighteaLocator
 
   // Resolution (actually finds nodes)
   resolve(): TeaNode | null
@@ -63,21 +63,21 @@ type NodePredicate = (node: TeaNode) => boolean
 /**
  * Create a locator rooted at the given container node
  */
-export function createLocator(root: TeaNode): InkxLocator {
+export function createLocator(root: TeaNode): HighteaLocator {
   return new LocatorImpl(root, [])
 }
 
 /**
  * Internal locator implementation
  */
-class LocatorImpl implements InkxLocator {
+class LocatorImpl implements HighteaLocator {
   constructor(
     private root: TeaNode,
     private predicates: NodePredicate[],
     private indexSelector?: { type: "first" | "last" | "nth"; index?: number },
   ) {}
 
-  getByText(text: string | RegExp): InkxLocator {
+  getByText(text: string | RegExp): HighteaLocator {
     const predicate: NodePredicate = (node) => {
       // Match nodes that have text content directly (raw text nodes)
       // OR Text nodes that contain text (but not their parent containers)
@@ -104,14 +104,14 @@ class LocatorImpl implements InkxLocator {
     return new LocatorImpl(this.root, [...this.predicates, predicate])
   }
 
-  getByTestId(id: string): InkxLocator {
+  getByTestId(id: string): HighteaLocator {
     const predicate: NodePredicate = (node) => {
       return getNodeProp(node, "testID") === id
     }
     return new LocatorImpl(this.root, [...this.predicates, predicate])
   }
 
-  locator(selector: string): InkxLocator {
+  locator(selector: string): HighteaLocator {
     const predicate = parseSelector(selector)
     if (!predicate) {
       // Invalid selector - return locator that matches nothing
@@ -120,15 +120,15 @@ class LocatorImpl implements InkxLocator {
     return new LocatorImpl(this.root, [...this.predicates, predicate])
   }
 
-  first(): InkxLocator {
+  first(): HighteaLocator {
     return new LocatorImpl(this.root, this.predicates, { type: "first" })
   }
 
-  last(): InkxLocator {
+  last(): HighteaLocator {
     return new LocatorImpl(this.root, this.predicates, { type: "last" })
   }
 
-  nth(index: number): InkxLocator {
+  nth(index: number): HighteaLocator {
     return new LocatorImpl(this.root, this.predicates, {
       type: "nth",
       index,
@@ -263,21 +263,21 @@ function detectUnsupportedSelectors(selector: string): void {
   // Pseudo-elements (::before, ::after) - check BEFORE pseudo-classes
   if (selector.includes("::")) {
     throw new Error(
-      `Unsupported selector: pseudo-elements like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nIf you need pseudo-element support, see bead km-inkx-css-select for discussion about switching to css-select library.`,
+      `Unsupported selector: pseudo-elements like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nIf you need pseudo-element support, see bead km-hightea-css-select for discussion about switching to css-select library.`,
     )
   }
 
   // Pseudo-classes (:hover, :nth-child, :not, etc.)
   if (selector.includes(":")) {
     throw new Error(
-      `Unsupported selector: pseudo-classes like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nIf you need pseudo-class support, see bead km-inkx-css-select for discussion about switching to css-select library.`,
+      `Unsupported selector: pseudo-classes like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nIf you need pseudo-class support, see bead km-hightea-css-select for discussion about switching to css-select library.`,
     )
   }
 
   // Class selectors (.class)
   if (/\.[a-zA-Z]/.test(selector)) {
     throw new Error(
-      `Unsupported selector: class selectors like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nTip: Use [class="myclass"] or [class*="myclass"] instead, or see bead km-inkx-css-select for css-select library.`,
+      `Unsupported selector: class selectors like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nTip: Use [class="myclass"] or [class*="myclass"] instead, or see bead km-hightea-css-select for css-select library.`,
     )
   }
 
@@ -285,7 +285,7 @@ function detectUnsupportedSelectors(selector: string): void {
   // Allow single character selectors (might be valid IDs or edge cases)
   if (/^[a-z][a-z0-9-]*$/i.test(selector) && selector.length > 1) {
     throw new Error(
-      `Unsupported selector: tag/type selectors like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nTip: Use [data-view="${selector}"] or similar attribute selector, or see bead km-inkx-css-select for css-select library.`,
+      `Unsupported selector: tag/type selectors like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nTip: Use [data-view="${selector}"] or similar attribute selector, or see bead km-hightea-css-select for css-select library.`,
     )
   }
 
@@ -294,7 +294,7 @@ function detectUnsupportedSelectors(selector: string): void {
     throw new Error(
       `Unsupported selector: universal selector "*" is not supported.\n` +
         `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
-        "If you need universal selector support, see bead km-inkx-css-select for css-select library.",
+        "If you need universal selector support, see bead km-hightea-css-select for css-select library.",
     )
   }
 }

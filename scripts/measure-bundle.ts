@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Bundle size measurement for inkx entry points.
+ * Bundle size measurement for hightea entry points.
  *
  * Builds each export entry point with `Bun.build({ minify, target: "bun" })`
  * and reports raw + gzipped sizes in a markdown table.
@@ -19,7 +19,7 @@ const ROOT = resolve(import.meta.dirname, "..")
 // Entry points derived from package.json exports map.
 // Key = public import path, value = source file relative to ROOT.
 const ENTRY_POINTS: Record<string, string> = {
-  inkx: "src/index.ts",
+  hightea: "src/index.ts",
   "@hightea/term/ink": "src/ink.ts",
   "@hightea/term/layout": "src/layout.ts",
   "@hightea/term/components": "src/components.ts",
@@ -126,7 +126,7 @@ async function measureEntry(name: string, srcFile: string, tmpDir: string): Prom
 
 async function main() {
   const jsonMode = process.argv.includes("--json")
-  const tmpDir = await mkdtemp(join(tmpdir(), "inkx-bundle-"))
+  const tmpDir = await mkdtemp(join(tmpdir(), "hightea-bundle-"))
 
   try {
     const measurements: Measurement[] = []
@@ -148,7 +148,7 @@ async function main() {
 
     // Markdown table output.
     const lines: string[] = [
-      "## inkx Bundle Sizes",
+      "## hightea Bundle Sizes",
       "",
       `Externals: ${EXTERNALS.join(", ")}`,
       "",
@@ -165,12 +165,12 @@ async function main() {
     }
 
     // Summary row for the full bundle.
-    const full = measurements.find((m) => m.name === "inkx")
+    const full = measurements.find((m) => m.name === "hightea")
     const ink = measurements.find((m) => m.name === "@hightea/term/ink")
     if (full && ink && full.rawBytes > 0 && ink.rawBytes > 0) {
       const savings = (((full.gzipBytes - ink.gzipBytes) / full.gzipBytes) * 100).toFixed(0)
       lines.push("")
-      lines.push(`**Tree-shaking savings**: \`inkx/ink\` is ${savings}% smaller than full \`inkx\` (gzipped).`)
+      lines.push(`**Tree-shaking savings**: \`hightea/ink\` is ${savings}% smaller than full \`hightea\` (gzipped).`)
     }
 
     lines.push("")

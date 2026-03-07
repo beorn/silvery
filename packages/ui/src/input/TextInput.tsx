@@ -1,5 +1,5 @@
 /**
- * React TextInput component for inkx/Ink TUI apps
+ * React TextInput component for hightea/Ink TUI apps
  */
 
 import React, { useState, useCallback } from "react"
@@ -71,7 +71,7 @@ export function TextInput({
   const showPlaceholder = !value && placeholder
 
   return (
-    <span data-inkx-ui-text-input data-focused={focused}>
+    <span data-hightea-ui-text-input data-focused={focused}>
       {showPlaceholder ? (
         <span data-color="dim">{placeholder}</span>
       ) : (

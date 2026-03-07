@@ -14,7 +14,7 @@
  */
 
 import { type ReactNode } from "react"
-import type { InkxMouseEvent } from "../mouse-events.js"
+import type { HighteaMouseEvent } from "../mouse-events.js"
 import { Text } from "./Text.js"
 
 // ============================================================================
@@ -45,7 +45,7 @@ export interface LinkProps {
   /** Whether to dim the link text */
   dim?: boolean
   /** Called when the link is clicked. Use preventDefault() to suppress default navigation. */
-  onClick?: (event: InkxMouseEvent) => void
+  onClick?: (event: HighteaMouseEvent) => void
   /** Test ID for locator queries */
   testID?: string
 }
@@ -59,7 +59,7 @@ export interface LinkProps {
  *
  * The text is wrapped in OSC 8 open/close sequences so supporting terminals
  * render it as a clickable link. The component also registers an onClick
- * handler for mouse-driven interaction within inkx.
+ * handler for mouse-driven interaction within hightea.
  */
 export function Link({ href, children, color = "$link", underline = true, dim, onClick, testID }: LinkProps) {
   return (

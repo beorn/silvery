@@ -2,7 +2,7 @@
  * Terminal Protocol Feature Tests
  *
  * Verifies that escape sequence generators produce correct ANSI codes
- * for all terminal protocols supported by inkx.
+ * for all terminal protocols supported by hightea.
  *
  * These are pure unit tests -- they don't require a terminal, just verify
  * that the string output matches the expected escape sequences.

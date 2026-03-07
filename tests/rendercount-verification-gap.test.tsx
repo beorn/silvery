@@ -1,7 +1,7 @@
 import { describe, test, expect } from "vitest"
 
 /**
- * INKX _renderCount Verification Gap Bug Documentation
+ * HIGHTEA _renderCount Verification Gap Bug Documentation
  *
  * This test documents a critical bug in vendor/hightea/src/runtime/create-app.tsx
  * where HIGHTEA_STRICT incremental rendering verification was never triggered for

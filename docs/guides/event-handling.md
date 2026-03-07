@@ -38,16 +38,16 @@ const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
 
 | Prop               | Event Type       | Bubbles             |
 | ------------------ | ---------------- | ------------------- |
-| `onClick`          | `InkxMouseEvent` | Yes                 |
-| `onDoubleClick`    | `InkxMouseEvent` | Yes                 |
-| `onMouseDown`      | `InkxMouseEvent` | Yes                 |
-| `onMouseUp`        | `InkxMouseEvent` | Yes                 |
-| `onMouseMove`      | `InkxMouseEvent` | Yes                 |
-| `onMouseEnter`     | `InkxMouseEvent` | No                  |
-| `onMouseLeave`     | `InkxMouseEvent` | No                  |
-| `onWheel`          | `InkxWheelEvent` | Yes                 |
-| `onKeyDown`        | `InkxKeyEvent`   | Yes                 |
-| `onKeyDownCapture` | `InkxKeyEvent`   | Yes (capture phase) |
+| `onClick`          | `HighteaMouseEvent` | Yes                 |
+| `onDoubleClick`    | `HighteaMouseEvent` | Yes                 |
+| `onMouseDown`      | `HighteaMouseEvent` | Yes                 |
+| `onMouseUp`        | `HighteaMouseEvent` | Yes                 |
+| `onMouseMove`      | `HighteaMouseEvent` | Yes                 |
+| `onMouseEnter`     | `HighteaMouseEvent` | No                  |
+| `onMouseLeave`     | `HighteaMouseEvent` | No                  |
+| `onWheel`          | `HighteaWheelEvent` | Yes                 |
+| `onKeyDown`        | `HighteaKeyEvent`   | Yes                 |
+| `onKeyDownCapture` | `HighteaKeyEvent`   | Yes (capture phase) |
 
 ---
 

@@ -1,5 +1,5 @@
 /**
- * React Spinner component for inkx/Ink TUI apps
+ * React Spinner component for hightea/Ink TUI apps
  */
 
 import React, { useState, useEffect } from "react"
@@ -36,7 +36,7 @@ export function Spinner({ label, style = "dots", color = "cyan" }: SpinnerProps)
 
   const frame = frames[frameIndex]
 
-  // Note: In a real inkx app, you'd use <Text color={color}> etc.
+  // Note: In a real hightea app, you'd use <Text color={color}> etc.
   // This is a generic React component that can be styled by the consumer
   return (
     <span data-progressx-spinner data-color={color}>

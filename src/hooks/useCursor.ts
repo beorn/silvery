@@ -3,11 +3,11 @@
  *
  * Maps component-relative (col, row) to absolute terminal coordinates
  * using useScreenRectCallback. Per-instance last-writer-wins: only one cursor
- * can be active at a time per inkx instance (the terminal has one hardware cursor).
+ * can be active at a time per hightea instance (the terminal has one hardware cursor).
  *
- * Cursor state is isolated per inkx instance via CursorContext. Each runtime
+ * Cursor state is isolated per hightea instance via CursorContext. Each runtime
  * (run(), createApp(), test renderer) provides its own CursorProvider so
- * multiple inkx instances don't fight over cursor position.
+ * multiple hightea instances don't fight over cursor position.
  *
  * Falls back to module-level globals when no CursorProvider is present
  * (backward compatibility / deprecation path).
@@ -68,7 +68,7 @@ export interface CursorStore {
 }
 
 /**
- * Create an isolated cursor store. Each inkx instance gets one.
+ * Create an isolated cursor store. Each hightea instance gets one.
  * Returns the store (for CursorProvider) and accessors (for scheduler/output).
  */
 export function createCursorStore(): CursorStore {
@@ -101,7 +101,7 @@ const CursorCtx = createContext<CursorStore | null>(null)
 
 /**
  * Provider that gives its subtree an isolated cursor store.
- * Wrap your inkx app root in this to isolate cursor state per instance.
+ * Wrap your hightea app root in this to isolate cursor state per instance.
  */
 export function CursorProvider({ store, children }: { store: CursorStore; children?: ReactNode }) {
   return React.createElement(CursorCtx.Provider, { value: store }, children)
@@ -144,7 +144,7 @@ export function resetCursorState(): void {
  * Show and position the terminal's blinking cursor within this component.
  *
  * The cursor position is relative to the component's screen position.
- * Only one cursor can be active per inkx instance -- last caller with visible=true wins.
+ * Only one cursor can be active per hightea instance -- last caller with visible=true wins.
  *
  * Uses CursorContext if a CursorProvider is present (per-instance isolation).
  * Falls back to module-level globals otherwise (backward compat).

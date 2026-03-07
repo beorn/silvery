@@ -170,7 +170,7 @@ function renderFrame(state: CanvasState, term: ReturnType<typeof createTerm>): s
 
   // Header
   lines.push(
-    term.dim.yellow("▸ inkx") +
+    term.dim.yellow("▸ hightea") +
       " " +
       term.bold("Terminal Canvas") +
       " " +

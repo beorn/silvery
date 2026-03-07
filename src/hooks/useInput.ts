@@ -1,5 +1,5 @@
 /**
- * Inkx useInput Hook
+ * Hightea useInput Hook
  *
  * Handles keyboard input via the unified RuntimeContext.
  * Compatible with Ink's useInput API.

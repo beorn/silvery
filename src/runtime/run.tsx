@@ -1,5 +1,5 @@
 /**
- * run() - Layer 2 entry point for inkx-loop
+ * run() - Layer 2 entry point for hightea-loop
  *
  * Provides React hooks integration on top of createRuntime.
  * Use this when you want React component state (useState, useEffect)
@@ -305,7 +305,7 @@ function handleFocusNavigation(
 // ============================================================================
 
 /**
- * Run a React component with the inkx-loop runtime.
+ * Run a React component with the hightea-loop runtime.
  *
  * This is Layer 2 - it provides React hooks (useState, useEffect)
  * with simple keyboard input handling via useInput().
@@ -677,7 +677,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     exit,
   }
 
-  // Create InkxNode container (persistent for React state)
+  // Create HighteaNode container (persistent for React state)
   const container = createContainer(() => {
     // Schedule render when React state changes
     scheduleRender()

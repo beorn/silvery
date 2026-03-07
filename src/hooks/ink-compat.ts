@@ -1,17 +1,17 @@
 /**
  * Ink-Compatible Focus Hooks
  *
- * Thin wrappers around inkx's focus system that provide ink's simpler API.
+ * Thin wrappers around hightea's focus system that provide ink's simpler API.
  * Used for compatibility with code written for ink's useFocus/useFocusManager.
  *
- * ink API differences from inkx:
- * - useFocus returns { isFocused } (inkx's useFocusable returns { focused })
+ * ink API differences from hightea:
+ * - useFocus returns { isFocused } (hightea's useFocusable returns { focused })
  * - useFocus accepts { autoFocus, isActive, id } options
  * - useFocusManager returns { focusNext, focusPrevious, focus(id) }
  */
 
 import { useFocusable } from "./useFocusable.js"
-import { useFocusManager as useInkxFocusManager } from "./useFocusManager.js"
+import { useFocusManager as useHighteaFocusManager } from "./useFocusManager.js"
 
 // ============================================================================
 // useFocus (ink-compatible)
@@ -34,14 +34,14 @@ export interface UseFocusResult {
 /**
  * ink-compatible useFocus hook.
  *
- * Wraps inkx's useFocusable with ink's simpler API.
+ * Wraps hightea's useFocusable with ink's simpler API.
  *
  * ink API: useFocus({ autoFocus?, isActive?, id? }) => { isFocused }
- * inkx API: useFocusable() => { focused, focus(), blur(), focusOrigin }
+ * hightea API: useFocusable() => { focused, focus(), blur(), focusOrigin }
  *
- * Note: autoFocus is handled by inkx's Box autoFocus prop, not by this hook.
+ * Note: autoFocus is handled by hightea's Box autoFocus prop, not by this hook.
  * The isActive and id options are accepted for API compatibility but are
- * not currently wired through — inkx uses testID and focusable props on Box.
+ * not currently wired through — hightea uses testID and focusable props on Box.
  *
  * @example
  * ```tsx
@@ -80,10 +80,10 @@ export interface InkUseFocusManagerResult {
 /**
  * ink-compatible useFocusManager hook.
  *
- * Wraps inkx's useFocusManager with ink's API shape.
+ * Wraps hightea's useFocusManager with ink's API shape.
  *
  * ink API: useFocusManager() => { focusNext, focusPrevious, focus(id), enableFocus, disableFocus }
- * inkx API: useFocusManager() => { activeElement, activeId, focus, focusNext, focusPrev, blur, ... }
+ * hightea API: useFocusManager() => { activeElement, activeId, focus, focusNext, focusPrev, blur, ... }
  *
  * @example
  * ```tsx
@@ -100,7 +100,7 @@ export interface InkUseFocusManagerResult {
  * ```
  */
 export function useInkFocusManager(): InkUseFocusManagerResult {
-  const fm = useInkxFocusManager()
+  const fm = useHighteaFocusManager()
   return {
     focusNext: fm.focusNext,
     focusPrevious: fm.focusPrevious,

@@ -1,4 +1,4 @@
-# chalkx Tests
+# ansi Tests
 
 **Layer 0 — Terminal Colors and Styling**: ANSI output, extended underlines, hyperlinks, and terminal capability detection.
 
@@ -37,7 +37,7 @@ test("detects support via TERM=xterm-ghostty", () => {
 ## Ad-Hoc Testing
 
 ```bash
-bun vitest run vendor/hightea/packages/ansi/tests/                  # All chalkx tests
+bun vitest run vendor/hightea/packages/ansi/tests/                  # All ansi tests
 bun vitest run vendor/hightea/packages/ansi/tests/detection.test.ts # Terminal detection
 bun vitest run vendor/hightea/packages/ansi/tests/utils.test.ts     # ANSI utilities
 ```

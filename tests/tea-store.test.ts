@@ -13,8 +13,8 @@
 import { describe, expect, test, vi } from "vitest"
 import {
   type Effect,
-  type InkxModel,
-  type InkxMsg,
+  type HighteaModel,
+  type HighteaMsg,
   type Plugin,
   batch,
   compose,
@@ -26,7 +26,7 @@ import {
   type StoreConfig,
   createStore,
   defaultInit,
-  inkxUpdate,
+  highteaUpdate,
   withFocusManagement,
 } from "@hightea/term/store"
 
@@ -34,19 +34,19 @@ import {
 // Helpers
 // =============================================================================
 
-function createDefaultStore(): StoreApi<InkxModel, InkxMsg> {
+function createDefaultStore(): StoreApi<HighteaModel, HighteaMsg> {
   return createStore({
     init: defaultInit,
-    update: inkxUpdate,
+    update: highteaUpdate,
   })
 }
 
 /** Extended model for testing custom fields alongside focus. */
-interface CounterModel extends InkxModel {
+interface CounterModel extends HighteaModel {
   count: number
 }
 
-type CounterMsg = InkxMsg | { type: "increment" } | { type: "decrement" }
+type CounterMsg = HighteaMsg | { type: "increment" } | { type: "decrement" }
 
 function counterUpdate(msg: CounterMsg, model: CounterModel): [CounterModel, Effect[]] {
   switch (msg.type) {
@@ -102,9 +102,9 @@ describe("createStore — initialization", () => {
   })
 
   test("executes initial effects", () => {
-    const dispatched: InkxMsg[] = []
+    const dispatched: HighteaMsg[] = []
 
-    const store = createStore<InkxModel, InkxMsg>({
+    const store = createStore<HighteaModel, HighteaMsg>({
       init: () => [
         {
           focus: {
@@ -123,7 +123,7 @@ describe("createStore — initialization", () => {
           return [
             {
               ...model,
-              focus: { ...model.focus, activeId: (msg as Extract<InkxMsg, { type: "focus" }>).nodeId },
+              focus: { ...model.focus, activeId: (msg as Extract<HighteaMsg, { type: "focus" }>).nodeId },
             },
             [none],
           ]
@@ -162,7 +162,7 @@ describe("dispatch — runs update", () => {
 
     store.dispatch({ type: "term:resize", cols: 120, rows: 40 })
 
-    // inkxUpdate returns model unchanged, so reference equality holds
+    // highteaUpdate returns model unchanged, so reference equality holds
     expect(store.getModel()).toBe(before)
   })
 })
@@ -187,7 +187,7 @@ describe("subscribe — notifications", () => {
     const listener = vi.fn()
 
     store.subscribe(listener)
-    // inkxUpdate returns same model reference for unhandled msgs
+    // highteaUpdate returns same model reference for unhandled msgs
     store.dispatch({ type: "term:resize", cols: 80, rows: 24 })
 
     expect(listener).not.toHaveBeenCalled()
@@ -334,7 +334,7 @@ describe("effects — execution", () => {
     const listener = vi.fn()
     store.subscribe(listener)
 
-    // inkxUpdate returns [model, [none]] — model unchanged, no notification
+    // highteaUpdate returns [model, [none]] — model unchanged, no notification
     store.dispatch({ type: "term:resize", cols: 80, rows: 24 })
     expect(listener).not.toHaveBeenCalled()
   })
@@ -378,7 +378,7 @@ describe("effect constructors", () => {
   })
 
   test("dispatch creates a dispatch effect", () => {
-    const msg: InkxMsg = { type: "focus", nodeId: "test" }
+    const msg: HighteaMsg = { type: "focus", nodeId: "test" }
     const effect = dispatchEffect(msg)
     expect(effect).toEqual({ type: "dispatch", msg })
   })
@@ -640,7 +640,7 @@ describe("re-entrant dispatch", () => {
 // Core Exports (smoke test)
 // =============================================================================
 
-describe("inkx/core — exports", () => {
+describe("hightea/core — exports", () => {
   test("re-exports focus manager", async () => {
     const { createFocusManager } = await import("@hightea/term/core")
     expect(typeof createFocusManager).toBe("function")
@@ -674,15 +674,15 @@ describe("inkx/core — exports", () => {
   })
 })
 
-describe("inkx/store — exports", () => {
+describe("hightea/store — exports", () => {
   test("exports createStore", async () => {
     const { createStore } = await import("@hightea/term/store")
     expect(typeof createStore).toBe("function")
   })
 
-  test("exports inkxUpdate and defaultInit", async () => {
-    const { inkxUpdate, defaultInit } = await import("@hightea/term/store")
-    expect(typeof inkxUpdate).toBe("function")
+  test("exports highteaUpdate and defaultInit", async () => {
+    const { highteaUpdate, defaultInit } = await import("@hightea/term/store")
+    expect(typeof highteaUpdate).toBe("function")
     expect(typeof defaultInit).toBe("function")
   })
 
@@ -692,7 +692,7 @@ describe("inkx/store — exports", () => {
   })
 })
 
-describe("inkx/react — exports", () => {
+describe("hightea/react — exports", () => {
   test("exports focus hooks", async () => {
     const { useFocusable, useFocusWithin, useFocusManager } = await import("@hightea/term/react")
     expect(typeof useFocusable).toBe("function")

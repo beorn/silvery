@@ -1,5 +1,5 @@
 /**
- * inkx/store — TEA-style state container with effects.
+ * hightea/store — TEA-style state container with effects.
  *
  * Wraps FocusManager into a dispatch/subscribe loop following
  * The Elm Architecture (TEA): Model + Msg -> [Model, Effect[]].
@@ -16,7 +16,7 @@
  * @packageDocumentation
  */
 
-import type { Effect, InkxModel, InkxMsg, Plugin } from "../core/index.js"
+import type { Effect, HighteaModel, HighteaMsg, Plugin } from "../core/index.js"
 import { none } from "../core/index.js"
 
 // =============================================================================
@@ -26,7 +26,7 @@ import { none } from "../core/index.js"
 /**
  * Configuration for creating a store.
  */
-export interface StoreConfig<Model extends InkxModel, Msg extends InkxMsg> {
+export interface StoreConfig<Model extends HighteaModel, Msg extends HighteaMsg> {
   /** Initialize model and effects. Called once on store creation. */
   init: () => [Model, Effect[]]
   /** Pure update function: (msg, model) -> [newModel, effects] */
@@ -36,7 +36,7 @@ export interface StoreConfig<Model extends InkxModel, Msg extends InkxMsg> {
 /**
  * The store API returned by createStore.
  */
-export interface StoreApi<Model extends InkxModel, Msg extends InkxMsg> {
+export interface StoreApi<Model extends HighteaModel, Msg extends HighteaMsg> {
   /** Send a message through the update function. */
   dispatch(msg: Msg): void
   /** Get the current model. */
@@ -59,11 +59,11 @@ export interface StoreApi<Model extends InkxModel, Msg extends InkxMsg> {
  * the node tree, which the store doesn't have — those are handled
  * at the React integration layer).
  */
-export function withFocusManagement<Model extends InkxModel, Msg extends InkxMsg>(): Plugin<Model, Msg> {
+export function withFocusManagement<Model extends HighteaModel, Msg extends HighteaMsg>(): Plugin<Model, Msg> {
   return (innerUpdate) => (msg, model) => {
     switch (msg.type) {
       case "focus": {
-        const focusMsg = msg as Extract<InkxMsg, { type: "focus" }>
+        const focusMsg = msg as Extract<HighteaMsg, { type: "focus" }>
         const newModel = {
           ...model,
           focus: {
@@ -98,7 +98,7 @@ export function withFocusManagement<Model extends InkxModel, Msg extends InkxMsg
       }
 
       case "scope-enter": {
-        const scopeMsg = msg as Extract<InkxMsg, { type: "scope-enter" }>
+        const scopeMsg = msg as Extract<HighteaMsg, { type: "scope-enter" }>
         const newModel = {
           ...model,
           focus: {
@@ -131,12 +131,12 @@ export function withFocusManagement<Model extends InkxModel, Msg extends InkxMsg
 // =============================================================================
 
 /**
- * The default inkx update function.
+ * The default hightea update function.
  *
  * Returns the model unchanged with no effects for any unhandled message.
  * Compose with plugins to add behavior.
  */
-export function inkxUpdate<Model extends InkxModel, Msg extends InkxMsg>(_msg: Msg, model: Model): [Model, Effect[]] {
+export function highteaUpdate<Model extends HighteaModel, Msg extends HighteaMsg>(_msg: Msg, model: Model): [Model, Effect[]] {
   return [model, [none]]
 }
 
@@ -145,9 +145,9 @@ export function inkxUpdate<Model extends InkxModel, Msg extends InkxMsg>(_msg: M
 // =============================================================================
 
 /**
- * Create a default initial InkxModel.
+ * Create a default initial HighteaModel.
  */
-export function defaultInit(): [InkxModel, Effect[]] {
+export function defaultInit(): [HighteaModel, Effect[]] {
   return [
     {
       focus: {
@@ -179,19 +179,19 @@ export function defaultInit(): [InkxModel, Effect[]] {
  *
  * @example
  * ```ts
- * import { createStore, withFocusManagement, inkxUpdate } from '@hightea/term/store'
+ * import { createStore, withFocusManagement, highteaUpdate } from '@hightea/term/store'
  * import { compose } from '@hightea/term/core'
  *
  * const store = createStore({
  *   init: () => [{ focus: { activeId: null, ... }, count: 0 }, []],
- *   update: compose(withFocusManagement())(inkxUpdate),
+ *   update: compose(withFocusManagement())(highteaUpdate),
  * })
  *
  * store.dispatch({ type: 'focus', nodeId: 'btn1' })
  * console.log(store.getModel().focus.activeId) // 'btn1'
  * ```
  */
-export function createStore<Model extends InkxModel, Msg extends InkxMsg>(
+export function createStore<Model extends HighteaModel, Msg extends HighteaMsg>(
   config: StoreConfig<Model, Msg>,
 ): StoreApi<Model, Msg> {
   // Initialize

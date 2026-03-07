@@ -29,7 +29,7 @@ The existence of these solutions validates the need. hightea brings this pattern
 ```
 ┌────────────────────────────────────────────────────────────────────┐
 │                         @hightea/core                                 │
-│  ├── React reconciler (InkxNode tree)                             │
+│  ├── React reconciler (HighteaNode tree)                             │
 │  ├── Layout engine interface (pluggable: Yoga, Flexture, custom)     │
 │  ├── Two-phase pipeline (measure → layout → render)               │
 │  ├── Hooks: useContentRect(), useScreenRect()                     │
@@ -54,7 +54,7 @@ The existence of these solutions validates the need. hightea brings this pattern
 
 **@hightea/core** contains everything that doesn't depend on the render target:
 
-1. **React Reconciler** - Custom host config that builds InkxNode tree
+1. **React Reconciler** - Custom host config that builds HighteaNode tree
 2. **Layout Engine Abstraction** - Interface supporting Yoga, Flexture, or custom engines
 3. **Two-Phase Pipeline Orchestration** - Measure → Layout → Content render sequence
 4. **Layout Hooks** - `useContentRect()`, `useScreenRect()` implementation
@@ -198,7 +198,7 @@ hightea's core innovation is separating **structure** from **content**:
 Phase 0: RECONCILIATION
 ├── React reconciliation builds component tree
 ├── Components register content callbacks (not rendered content)
-└── Output: Tree of InkxNodes with layout nodes + callbacks
+└── Output: Tree of HighteaNodes with layout nodes + callbacks
 
 Phase 1: MEASURE (for fit-content nodes)
 ├── Traverse nodes with width="fit-content"

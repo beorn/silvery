@@ -75,7 +75,7 @@ function setNodeLayout(node: TeaNode, layout: Rect): void {
   node.contentRect = layout
 }
 
-/** Helper to create mock InkxNode */
+/** Helper to create mock HighteaNode */
 async function createMockNode(
   type: TeaNode["type"],
   props: BoxProps | TextProps,
@@ -530,7 +530,7 @@ describe("Pipeline", () => {
       expect(cell.char).toBe(" ")
     })
 
-    test("shrinking node clears stale pixels in old bounds (Bug 3: km-inkx-stale)", async () => {
+    test("shrinking node clears stale pixels in old bounds (Bug 3: km-hightea-stale)", async () => {
       // When a node shrinks (gets narrower or shorter), the old excess area
       // in the cloned buffer has stale pixels that must be cleared.
 
@@ -572,7 +572,7 @@ describe("Pipeline", () => {
       expect(buffer2.getCell(5, 4).bg).toBeNull() // was blue, now cleared
     })
 
-    test("parent bg inherited when clearing child (Bug 1: km-inkx-stale)", async () => {
+    test("parent bg inherited when clearing child (Bug 1: km-hightea-stale)", async () => {
       // When parent Box has backgroundColor and child Text has no bg,
       // clearing the child region should use the parent's bg, not null.
 
@@ -1452,7 +1452,7 @@ describe("Pipeline", () => {
   })
 
   describe("background conflict detection", () => {
-    test("throws on chalk bg with inkx Text backgroundColor (throw mode)", async () => {
+    test("throws on chalk bg with hightea Text backgroundColor (throw mode)", async () => {
       setBgConflictMode("throw")
 
       // Text with backgroundColor + chalk.bgBlue ANSI code
@@ -1488,7 +1488,7 @@ describe("Pipeline", () => {
 
     test.each([
       [
-        "allows chalk bg when no inkx background (no conflict)",
+        "allows chalk bg when no hightea background (no conflict)",
         "throw",
         {} as TextProps,
         { width: 20, height: 1 } as BoxProps,

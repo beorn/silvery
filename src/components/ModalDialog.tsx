@@ -4,7 +4,7 @@
  * Reusable modal dialog with consistent styling: double border, title bar,
  * optional footer, and solid background that covers board content.
  *
- * Moved from km-tui shared-components to inkx for reuse across apps.
+ * Moved from km-tui shared-components to hightea for reuse across apps.
  *
  * Usage:
  * ```tsx

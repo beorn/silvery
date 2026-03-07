@@ -1,5 +1,5 @@
 /**
- * Inkx useStdout Hook
+ * Hightea useStdout Hook
  *
  * Provides access to the stdout stream.
  * Compatible with Ink's useStdout API.
@@ -43,7 +43,7 @@ export function useStdout(): UseStdoutResult {
   const context = useContext(StdoutContext)
 
   if (!context) {
-    throw new Error("useStdout must be used within an Inkx application")
+    throw new Error("useStdout must be used within an Hightea application")
   }
 
   return {

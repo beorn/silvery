@@ -1,5 +1,5 @@
 /**
- * Shared helper functions for inkx pipeline phases.
+ * Shared helper functions for hightea pipeline phases.
  */
 
 import type { BoxProps } from "../types.js"

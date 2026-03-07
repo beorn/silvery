@@ -1,7 +1,7 @@
 /**
  * Ink 6 Benchmark Suite
  *
- * Mirrors the inkx benchmarks in run.ts with equivalent Ink workloads.
+ * Mirrors the hightea benchmarks in run.ts with equivalent Ink workloads.
  * Must run in a SEPARATE process from run.ts since both register React reconcilers.
  *
  * Run:
