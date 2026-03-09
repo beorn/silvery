@@ -124,9 +124,9 @@ await render(<App />, term)
 
 Silvery is part of a family of terminal-focused libraries:
 
-- **[termless](https://termless.dev)** -- Headless terminal testing, like Playwright for terminal apps
-- **[flexily](https://beorn.github.io/flexily)** -- Pure JS flexbox layout engine (Yoga-compatible, 2.5x faster, zero WASM)
-- **[loggily](https://beorn.github.io/loggily)** -- Debug + structured logging + tracing in one library
+- **[Termless](https://termless.dev)** -- Headless terminal testing, like Playwright for terminal apps
+- **[Flexily](https://beorn.github.io/flexily)** -- Pure JS flexbox layout engine (Yoga-compatible, 2.5x faster, zero WASM)
+- **[Loggily](https://beorn.github.io/loggily)** -- Debug + structured logging + tracing in one library
 
 <style>
 .viewer-wrapper {
