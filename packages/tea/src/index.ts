@@ -112,6 +112,18 @@ export { applyTextOp, invertTextOp, mergeTextOps } from "./text-ops"
 export type { TextOp } from "./text-ops"
 
 // =============================================================================
+// Text Decorations
+// =============================================================================
+
+export { splitIntoSegments, createSearchDecorations, adjustDecorations } from "./text-decorations"
+export type {
+  Decoration,
+  DecorationStyle,
+  StyledSegment as DecorationSegment,
+  SelectionRange,
+} from "./text-decorations"
+
+// =============================================================================
 // Types
 // =============================================================================
 

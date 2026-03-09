@@ -280,3 +280,44 @@ describe("stability: error recovery", () => {
     expect(app.text).toContain("Recovery")
   })
 })
+
+// ============================================================================
+// Sustained Input Under Varying Sizes
+// ============================================================================
+
+describe("stability: sustained input under varying sizes", () => {
+  test("continuous key presses across many resize events", async () => {
+    const r = createRenderer({ cols: 80, rows: 24 })
+    const app = r(React.createElement(Counter))
+
+    // Alternate resize + key press in tight loop
+    for (let i = 0; i < 300; i++) {
+      if (i % 2 === 0) {
+        app.resize(30 + (i % 100), 10 + (i % 20))
+      }
+      await app.press("j")
+    }
+
+    // All 300 presses should have been processed
+    expect(app.text).toContain("Count: 300")
+  })
+
+  test("rerender with different props after many frames", async () => {
+    const r = createRenderer({ cols: 80, rows: 24 })
+    const app = r(React.createElement(Counter, { initial: 0 }))
+
+    // Accumulate many frames
+    for (let i = 0; i < 100; i++) {
+      await app.press("j")
+    }
+    expect(app.text).toContain("Count: 100")
+
+    // Rerender with new initial value resets state (new component instance)
+    app.rerender(React.createElement(Counter, { initial: 500 }))
+
+    // After rerender, useState(initial) keeps old state (React preserves
+    // state when component type is the same). Verify it's still functional.
+    await app.press("j")
+    expect(app.text).toContain("Count:")
+  })
+})

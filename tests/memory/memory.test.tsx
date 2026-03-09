@@ -215,4 +215,23 @@ describe("memory: useContentRect cleanup", () => {
     // Allow 15MB for GC timing, frames accumulation, etc.
     expect(growth).toBeLessThan(15)
   })
+
+  test("rapid rerender of useContentRect component does not leak", () => {
+    const r = createRenderer({ cols: 80, rows: 24 })
+
+    const heapBefore = getHeapUsedMB()
+
+    // Rapidly rerender the same component (not mount/unmount cycle)
+    const app = r(React.createElement(ResponsiveBox))
+    for (let i = 0; i < 500; i++) {
+      app.rerender(React.createElement(ResponsiveBox))
+    }
+
+    const heapAfter = getHeapUsedMB()
+    const growth = heapAfter - heapBefore
+
+    // 500 rerenders of useContentRect component should stay bounded
+    expect(growth).toBeLessThan(15)
+    expect(app.text).toContain("Size:")
+  })
 })

@@ -1,6 +1,6 @@
 # silvery API Audit
 
-Catalog of every export from every entry point. Generated 2026-03-09.
+Catalog of every export from every entry point. Last updated 2026-03-09.
 
 ## Root Package (`silvery`)
 
@@ -236,6 +236,7 @@ Exposes all `src/` files. Notable internal files:
 | `@silvery/term/runtime`  | `src/runtime/index.ts`  |
 | `@silvery/term/toolbelt` | `src/toolbelt/index.ts` |
 | `@silvery/term/pipeline` | `src/pipeline/index.ts` |
+| `@silvery/term/ansi`     | `src/ansi/index.ts`     |
 | `@silvery/term/*`        | `src/*` (wildcard)      |
 
 ### `.` (main)
@@ -265,6 +266,19 @@ Diagnostic utilities: `withDiagnostics`, `checkLayoutInvariants`, `VirtualTermin
 ### `@silvery/term/pipeline`
 
 Render pipeline internals: `executeRender`, `executeRenderAdapter`, phase functions (`measurePhase`, `layoutPhase`, `contentPhase`, `outputPhase`, `scrollPhase`, `stickyPhase`, `screenRectPhase`, `contentPhaseAdapter`).
+
+### `@silvery/term/ansi`
+
+ANSI primitives merged from the former `@silvery/ansi` package. Term factory, styling, detection, underlines, hyperlinks, terminal control.
+
+**Term API**: `createTerm`, `term` (lazy proxy), `patchConsole`
+**Detection**: `detectCursor`, `detectInput`, `detectColor`, `detectUnicode`, `detectExtendedUnderline`, `detectTerminalCaps`, `defaultCaps`
+**Utilities**: `ANSI_REGEX`, `stripAnsi`, `displayLength`
+**Underline**: `underline`, `curlyUnderline`, `dottedUnderline`, `dashedUnderline`, `doubleUnderline`, `underlineColor`, `styledUnderline`
+**Hyperlink**: `hyperlink`
+**Terminal Control**: `enterAltScreen`, `leaveAltScreen`, `clearScreen`, `clearLine`, `cursorTo`, `cursorHome`, `cursorHide`, `cursorShow`, `cursorStyle`, `setTitle`, `enableMouse`, `disableMouse`, `enableBracketedPaste`, `disableBracketedPaste`, `enableSyncUpdate`, `disableSyncUpdate`, `setScrollRegion`, `resetScrollRegion`, `scrollUp`, `scrollDown`, `enableKittyKeyboard`, `disableKittyKeyboard`
+**Background Override**: `BG_OVERRIDE_CODE`, `bgOverride`
+**Types**: `Term`, `StyleChain`, `PatchedConsole`, `PatchConsoleOptions`, `ConsoleStats`, `UnderlineStyle`, `RGB`, `ColorLevel`, `Color`, `AnsiColorName`, `StyleOptions`, `ConsoleMethod`, `ConsoleEntry`, `CreateTermOptions`, `TerminalCaps`
 
 ### Wildcard (`@silvery/term/*`)
 

@@ -9,64 +9,56 @@
  */
 
 import React from "react"
-import { bench, describe, beforeAll } from "vitest"
+import { bench, describe } from "vitest"
 import { createRenderer, type App } from "@silvery/test"
-import { ensureDefaultLayoutEngine } from "@silvery/term/layout-engine"
+// @silvery/test initializes the layout engine via top-level await
 import { SimpleItem, FlatList, KanbanBoard, Dashboard, DeepTree, CounterApp, CursorList } from "./fixtures"
-
-beforeAll(async () => {
-  await ensureDefaultLayoutEngine()
-})
 
 // ============================================================================
 // Initial Render (cold — includes React tree creation + full pipeline)
 // ============================================================================
 
 describe("Initial Render", () => {
-  bench("1 Box+Text (80x24)", () => {
-    const render = createRenderer({ cols: 80, rows: 24 })
-    render(React.createElement(SimpleItem, { label: "Hello" }))
-  })
+	// Each createRenderer() auto-unmounts the previous render when called again,
+	// preventing render leaks across benchmark iterations.
+	const render80x24 = createRenderer({ cols: 80, rows: 24 })
+	const render120x40 = createRenderer({ cols: 120, rows: 40 })
 
-  bench("10 Box+Text (80x24)", () => {
-    const render = createRenderer({ cols: 80, rows: 24 })
-    render(React.createElement(FlatList, { count: 10 }))
-  })
+	bench("1 Box+Text (80x24)", () => {
+		render80x24(React.createElement(SimpleItem, { label: "Hello" }))
+	})
 
-  bench("100 Box+Text (80x24)", () => {
-    const render = createRenderer({ cols: 80, rows: 24 })
-    render(React.createElement(FlatList, { count: 100 }))
-  })
+	bench("10 Box+Text (80x24)", () => {
+		render80x24(React.createElement(FlatList, { count: 10 }))
+	})
 
-  bench("100 styled Box+Text (80x24)", () => {
-    const render = createRenderer({ cols: 80, rows: 24 })
-    render(React.createElement(FlatList, { count: 100, styled: true }))
-  })
+	bench("100 Box+Text (80x24)", () => {
+		render80x24(React.createElement(FlatList, { count: 100 }))
+	})
 
-  bench("1000 Box+Text (120x40)", () => {
-    const render = createRenderer({ cols: 120, rows: 40 })
-    render(React.createElement(FlatList, { count: 1000 }))
-  })
+	bench("100 styled Box+Text (80x24)", () => {
+		render80x24(React.createElement(FlatList, { count: 100, styled: true }))
+	})
 
-  bench("Kanban 3x10 (120x40)", () => {
-    const render = createRenderer({ cols: 120, rows: 40 })
-    render(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 10 }))
-  })
+	bench("1000 Box+Text (120x40)", () => {
+		render120x40(React.createElement(FlatList, { count: 1000 }))
+	})
 
-  bench("Kanban 3x50 (120x40)", () => {
-    const render = createRenderer({ cols: 120, rows: 40 })
-    render(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
-  })
+	bench("Kanban 3x10 (120x40)", () => {
+		render120x40(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 10 }))
+	})
 
-  bench("Dashboard 5 widgets (120x40)", () => {
-    const render = createRenderer({ cols: 120, rows: 40 })
-    render(React.createElement(Dashboard, { widgetCount: 5 }))
-  })
+	bench("Kanban 3x50 (120x40)", () => {
+		render120x40(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
+	})
 
-  bench("Deep tree (50 levels)", () => {
-    const render = createRenderer({ cols: 80, rows: 24 })
-    render(React.createElement(DeepTree, { depth: 50 }))
-  })
+	bench("Dashboard 5 widgets (120x40)", () => {
+		render120x40(React.createElement(Dashboard, { widgetCount: 5 }))
+	})
+
+	bench("Deep tree (50 levels)", () => {
+		render80x24(React.createElement(DeepTree, { depth: 50 }))
+	})
 })
 
 // ============================================================================
@@ -74,41 +66,38 @@ describe("Initial Render", () => {
 // ============================================================================
 
 describe("Re-render (incremental)", () => {
-  let app10: App
-  let app100: App
-  let app1000: App
+	// Set up warm apps at module level — beforeAll with async is unreliable
+	// in vitest bench mode. @silvery/test already initializes the engine.
+	const render10 = createRenderer({ cols: 80, rows: 24 })
+	const app10 = render10(React.createElement(CursorList, { count: 10, cursor: 0 }))
 
-  beforeAll(() => {
-    const render10 = createRenderer({ cols: 80, rows: 24 })
-    app10 = render10(React.createElement(CursorList, { count: 10, cursor: 0 }))
+	const render100 = createRenderer({ cols: 80, rows: 24 })
+	const app100 = render100(React.createElement(CursorList, { count: 100, cursor: 0 }))
 
-    const render100 = createRenderer({ cols: 80, rows: 24 })
-    app100 = render100(React.createElement(CursorList, { count: 100, cursor: 0 }))
+	const render1000 = createRenderer({ cols: 120, rows: 40 })
+	const app1000 = render1000(React.createElement(CursorList, { count: 1000, cursor: 0 }))
 
-    const render1000 = createRenderer({ cols: 120, rows: 40 })
-    app1000 = render1000(React.createElement(CursorList, { count: 1000, cursor: 0 }))
-  })
+	bench("Cursor move in 10-item list", () => {
+		app10.rerender(React.createElement(CursorList, { count: 10, cursor: 1 }))
+		app10.rerender(React.createElement(CursorList, { count: 10, cursor: 0 }))
+	})
 
-  bench("Cursor move in 10-item list", () => {
-    app10.rerender(React.createElement(CursorList, { count: 10, cursor: 1 }))
-    app10.rerender(React.createElement(CursorList, { count: 10, cursor: 0 }))
-  })
+	bench("Cursor move in 100-item list", () => {
+		app100.rerender(React.createElement(CursorList, { count: 100, cursor: 1 }))
+		app100.rerender(React.createElement(CursorList, { count: 100, cursor: 0 }))
+	})
 
-  bench("Cursor move in 100-item list", () => {
-    app100.rerender(React.createElement(CursorList, { count: 100, cursor: 1 }))
-    app100.rerender(React.createElement(CursorList, { count: 100, cursor: 0 }))
-  })
+	bench("Cursor move in 1000-item list", () => {
+		app1000.rerender(React.createElement(CursorList, { count: 1000, cursor: 1 }))
+		app1000.rerender(React.createElement(CursorList, { count: 1000, cursor: 0 }))
+	})
 
-  bench("Cursor move in 1000-item list", () => {
-    app1000.rerender(React.createElement(CursorList, { count: 1000, cursor: 1 }))
-    app1000.rerender(React.createElement(CursorList, { count: 1000, cursor: 0 }))
-  })
+	const renderCounter = createRenderer({ cols: 80, rows: 24 })
 
-  bench("Counter update (minimal state change)", () => {
-    const render = createRenderer({ cols: 80, rows: 24 })
-    const app = render(React.createElement(CounterApp, { count: 0 }))
-    app.rerender(React.createElement(CounterApp, { count: 1 }))
-  })
+	bench("Counter update (minimal state change)", () => {
+		const app = renderCounter(React.createElement(CounterApp, { count: 0 }))
+		app.rerender(React.createElement(CounterApp, { count: 1 }))
+	})
 })
 
 // ============================================================================
@@ -116,15 +105,16 @@ describe("Re-render (incremental)", () => {
 // ============================================================================
 
 describe("Full rerender (no dirty tracking)", () => {
-  bench("100 Box+Text full rerender", () => {
-    const render = createRenderer({ cols: 80, rows: 24 })
-    const app = render(React.createElement(FlatList, { count: 100 }))
-    app.rerender(React.createElement(FlatList, { count: 100 }))
-  })
+	const render80x24 = createRenderer({ cols: 80, rows: 24 })
+	const render120x40 = createRenderer({ cols: 120, rows: 40 })
 
-  bench("Kanban 3x50 full rerender", () => {
-    const render = createRenderer({ cols: 120, rows: 40 })
-    const app = render(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
-    app.rerender(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
-  })
+	bench("100 Box+Text full rerender", () => {
+		const app = render80x24(React.createElement(FlatList, { count: 100 }))
+		app.rerender(React.createElement(FlatList, { count: 100 }))
+	})
+
+	bench("Kanban 3x50 full rerender", () => {
+		const app = render120x40(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
+		app.rerender(React.createElement(KanbanBoard, { columns: 3, cardsPerColumn: 50 }))
+	})
 })

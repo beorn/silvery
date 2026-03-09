@@ -1,14 +1,14 @@
 # npm pack Audit
 
-Audit of `npm pack --dry-run` output for the `silvery` root package. Generated 2026-03-09.
+Audit of `npm pack --dry-run` output for the `silvery` root package. Last updated 2026-03-09.
 
 ## Summary
 
 | Metric        | Value           |
 | ------------- | --------------- |
 | Package name  | `silvery@0.0.1` |
-| Total files   | 451             |
-| Unpacked size | 3.6 MB          |
+| Total files   | 507             |
+| Unpacked size | 3.9 MB          |
 | Packed size   | 1.1 MB          |
 
 ## Entry Point Resolution
@@ -35,16 +35,17 @@ The tarball includes files that should NOT be published:
 | CI/GitHub        | `.github/workflows/docs.yml`                                 | 1.1 KB  | CI config                                       |
 | Changeset config | `.changeset/config.json`                                     | 296 B   | Release tooling internal                        |
 | Lint config      | `.oxlintrc.json`                                             | 206 B   | Dev-only config                                 |
-| CLAUDE.md files  | `examples/CLAUDE.md`, `packages/term/src/pipeline/CLAUDE.md` | 40.5 KB | AI assistant instructions                       |
+| CLAUDE.md files  | `examples/CLAUDE.md`, `packages/term/src/pipeline/CLAUDE.md` | ~41 KB  | AI assistant instructions                       |
 | Scripts          | `scripts/fix-imports.ts`                                     | 9.3 KB  | Dev utility script                              |
-| Test fixtures    | `tests/compat/ink/helpers/*`, `tests/fixtures/index.tsx`     | 9.8 KB  | Test infrastructure                             |
+| Test fixtures    | `tests/compat/ink/helpers/*`, `tests/fixtures/index.tsx`     | ~10 KB  | Test infrastructure                             |
 | tsconfig         | `tsconfig.json`                                              | 936 B   | Workspace config (consumers have their own)     |
 
 ### Should Consider Excluding (saves ~1.5+ MB packed)
 
 | Category                      | File Count  | Approximate Size | Issue                                            |
 | ----------------------------- | ----------- | ---------------- | ------------------------------------------------ |
-| Documentation (`docs/`)       | 85 files    | ~600+ KB         | Good for GitHub, not for npm. Use homepage link. |
+| Tests (`tests/`)              | 35 files    | ~150+ KB         | Test files, fixtures, benchmarks, results docs   |
+| Documentation (`docs/`)       | 90 files    | ~600+ KB         | Good for GitHub, not for npm. Use homepage link. |
 | Examples (`examples/`)        | 76 files    | ~700+ KB         | Better served via repo link or separate package  |
 | VitePress site (`docs/site/`) | 30+ files   | ~200+ KB         | Build artifacts, not library code                |
 | Images (`docs/images/`)       | 4 PNG files | ~182 KB          | Screenshots for docs site                        |
@@ -56,7 +57,7 @@ The tarball includes files that should NOT be published:
 - `.DS_Store` (via .gitignore)
 - `*.tsbuildinfo` (via .gitignore)
 - No `.env` or credentials files found
-- No test files (`*.test.*`, `*.spec.*`, `*.bench.*`, `*.fuzz.*`) -- tests appear to live in `tests/` at root level, and only 3 files from there leak in
+- No test files in `src/` or `packages/` directories -- all tests are under `tests/` at root level (35 files currently leak into the tarball)
 
 ## Current .gitignore
 
@@ -65,6 +66,7 @@ node_modules/
 dist/
 *.tsbuildinfo
 .DS_Store
+editset.json
 ```
 
 There is no `.npmignore` file. npm falls back to `.gitignore` for exclusion.
@@ -104,7 +106,7 @@ examples/
 **/CLAUDE.md
 ```
 
-This would reduce the tarball from ~451 files / 3.6 MB to ~250 files / ~1.8 MB (source code only).
+This would reduce the tarball from ~507 files / 3.9 MB to ~250 files / ~1.8 MB (source code only).
 
 ## Alternative: Use `"files"` in package.json
 

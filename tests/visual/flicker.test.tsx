@@ -292,4 +292,25 @@ describe("flicker: incremental consistency", () => {
       expect(bufferToText(currentBuffer)).toBe(bufferToText(freshBuffer))
     }
   })
+
+  test("incremental buffer matches fresh after resize", () => {
+    const r = createRenderer({ cols: 80, rows: 24, incremental: true })
+    const app = r(React.createElement(ComplexLayout))
+
+    // Resize and verify incremental still matches fresh
+    const sizes = [
+      [40, 12],
+      [120, 40],
+      [60, 20],
+      [80, 24],
+    ] as const
+
+    for (const [cols, rows] of sizes) {
+      app.resize(cols, rows)
+
+      const freshBuffer = app.freshRender()
+      const currentBuffer = app.lastBuffer()!
+      expect(bufferToText(currentBuffer)).toBe(bufferToText(freshBuffer))
+    }
+  })
 })
