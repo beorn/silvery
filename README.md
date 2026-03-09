@@ -5,7 +5,7 @@
 **TUI framework for modern terminals.**
 Ink-compatible but [100x+ faster](docs/deep-dives/performance.md). React 19, every terminal protocol, pure TypeScript.
 
-[![npm version](https://img.shields.io/npm/v/%40hightea%2Fterm.svg)](https://www.npmjs.com/package/%40hightea%2Fterm)
+[![npm version](https://img.shields.io/npm/v/hightea.svg)](https://www.npmjs.com/package/hightea)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 **Unique to hightea** — Reactive layout · scrollable containers · per-node dirty tracking · Elm + React + Zustand · three render targets · no WASM
