@@ -21,7 +21,6 @@ import { $ } from "bun"
 const COMPAT_DIR = resolve(import.meta.dir, "..")
 const SILVERY_ROOT = resolve(COMPAT_DIR, "../..")
 const CLONE_DIR = "/tmp/silvery-compat"
-const BUILD_DIR = join(CLONE_DIR, "build")
 const INK_DIR = join(CLONE_DIR, "ink")
 const CHALK_DIR = join(CLONE_DIR, "chalk")
 
@@ -41,54 +40,6 @@ async function cloneIfNeeded(repo: string, dir: string, name: string) {
   console.log(`  ${name}: done`)
 }
 
-/**
- * Pre-bundle the compat layers to self-contained JS files that Node.js
- * can import directly (no TypeScript, no workspace resolution needed).
- */
-async function buildCompatBundles() {
-  await $`mkdir -p ${BUILD_DIR}`.quiet()
-
-  const inkSrc = join(COMPAT_DIR, "src/ink.ts")
-  const chalkSrc = join(COMPAT_DIR, "src/chalk.ts")
-
-  console.log("  Building compat bundles...")
-
-  // Bundle ink compat — externalize react (ink tests provide their own)
-  if (!target || target === "ink") {
-    const result = await Bun.build({
-      entrypoints: [inkSrc],
-      outdir: BUILD_DIR,
-      target: "node",
-      format: "esm",
-      external: ["react", "chalk"],
-      naming: "silvery-ink.[ext]",
-    })
-    if (!result.success) {
-      console.error("  Failed to build ink compat bundle:")
-      for (const log of result.logs) console.error("   ", log)
-      throw new Error("ink bundle build failed")
-    }
-    console.log("  Built silvery-ink.js")
-  }
-
-  // Bundle chalk compat — fully self-contained (includes chalk itself)
-  if (!target || target === "chalk") {
-    const result = await Bun.build({
-      entrypoints: [chalkSrc],
-      outdir: BUILD_DIR,
-      target: "node",
-      format: "esm",
-      naming: "silvery-chalk.[ext]",
-    })
-    if (!result.success) {
-      console.error("  Failed to build chalk compat bundle:")
-      for (const log of result.logs) console.error("   ", log)
-      throw new Error("chalk bundle build failed")
-    }
-    console.log("  Built silvery-chalk.js")
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Ink
 // ---------------------------------------------------------------------------
@@ -98,12 +49,37 @@ async function runInkTests() {
 
   await cloneIfNeeded(INK_REPO, INK_DIR, "ink")
 
+  // Install ink's dependencies first (ava, sinon, strip-ansi, react, etc.)
+  console.log("  Installing ink dependencies...")
+  try {
+    await $`cd ${INK_DIR} && npm install --ignore-scripts 2>&1`.quiet()
+  } catch {
+    console.log("  Warning: npm install had issues, continuing anyway...")
+  }
+
+  // Bundle silvery's ink compat layer — place inside ink dir so react resolves
+  const inkSrc = join(COMPAT_DIR, "src/ink.ts")
+  const bundlePath = join(INK_DIR, "silvery-ink.mjs")
+
+  console.log("  Building ink compat bundle...")
+  const result = await Bun.build({
+    entrypoints: [inkSrc],
+    outdir: INK_DIR,
+    target: "node",
+    format: "esm",
+    external: ["react", "chalk"],
+    naming: "silvery-ink.mjs",
+  })
+  if (!result.success) {
+    console.error("  Failed to build ink compat bundle:")
+    for (const log of result.logs) console.error("   ", log)
+    throw new Error("ink bundle build failed")
+  }
+  console.log("  Built silvery-ink.mjs")
+
   // Ink tests import from '../src/index.js' (relative).
-  // tsx (used by ava via --import=tsx) resolves .js to .ts when both exist,
+  // tsx (used by ava via --import=tsx) resolves .js → .ts when both exist,
   // so we must remove index.ts to prevent tsx from loading ink's original source.
-
-  const bundlePath = join(BUILD_DIR, "silvery-ink.js")
-
   const shimContent = `// Auto-generated shim — re-exports silvery's ink compat layer
 export * from "${bundlePath}";
 
@@ -118,15 +94,7 @@ export default render;
   if (existsSync(origTsPath)) {
     await $`rm ${origTsPath}`.quiet()
   }
-  console.log("  Wrote ink shim at", shimPath, "(removed index.ts)")
-
-  // Install ink's dependencies (ava, sinon, strip-ansi, etc.)
-  console.log("  Installing ink dependencies...")
-  try {
-    await $`cd ${INK_DIR} && npm install --ignore-scripts 2>&1`.quiet()
-  } catch {
-    console.log("  Warning: npm install had issues, continuing anyway...")
-  }
+  console.log("  Wrote ink shim (removed index.ts)")
 
   // Run ava
   console.log("  Running ink tests with ava...\n")
@@ -151,11 +119,35 @@ async function runChalkTests() {
 
   await cloneIfNeeded(CHALK_REPO, CHALK_DIR, "chalk")
 
-  // Chalk tests import from '../source/index.js' (relative).
-  // We replace source/index.js with a shim re-exporting from our bundle.
+  // Install chalk's dependencies first
+  console.log("  Installing chalk dependencies...")
+  try {
+    await $`cd ${CHALK_DIR} && npm install --ignore-scripts 2>&1`.quiet()
+  } catch {
+    console.log("  Warning: npm install had issues, continuing anyway...")
+  }
 
+  // Bundle silvery's chalk compat layer — place inside chalk dir
+  const chalkSrc = join(COMPAT_DIR, "src/chalk.ts")
+  const bundlePath = join(CHALK_DIR, "silvery-chalk.mjs")
+
+  console.log("  Building chalk compat bundle...")
+  const result = await Bun.build({
+    entrypoints: [chalkSrc],
+    outdir: CHALK_DIR,
+    target: "node",
+    format: "esm",
+    naming: "silvery-chalk.mjs",
+  })
+  if (!result.success) {
+    console.error("  Failed to build chalk compat bundle:")
+    for (const log of result.logs) console.error("   ", log)
+    throw new Error("chalk bundle build failed")
+  }
+  console.log("  Built silvery-chalk.mjs")
+
+  // Chalk tests import from '../source/index.js' (relative).
   const shimPath = join(CHALK_DIR, "source/index.js")
-  const bundlePath = join(BUILD_DIR, "silvery-chalk.js")
 
   const shimContent = `// Auto-generated shim — re-exports silvery's chalk compat layer
 export * from "${bundlePath}";
@@ -166,15 +158,7 @@ import { Chalk as _Chalk } from "${bundlePath}";
 export const chalkStderr = new _Chalk({ level: 0 });
 `
   await Bun.write(shimPath, shimContent)
-  console.log("  Wrote chalk shim at", shimPath)
-
-  // Install chalk's dependencies (ava, etc.)
-  console.log("  Installing chalk dependencies...")
-  try {
-    await $`cd ${CHALK_DIR} && npm install --ignore-scripts 2>&1`.quiet()
-  } catch {
-    console.log("  Warning: npm install had issues, continuing anyway...")
-  }
+  console.log("  Wrote chalk shim")
 
   // Run ava
   console.log("  Running chalk tests with ava...\n")
@@ -226,9 +210,6 @@ function parseSummary(output: string) {
 console.log("silvery compat checker\n")
 console.log("Cloning test suites (cached after first run)...")
 await $`mkdir -p ${CLONE_DIR}`.quiet()
-
-// Build compat bundles (self-contained JS for Node.js/ava)
-await buildCompatBundles()
 
 let inkResult = ""
 let chalkResult = ""

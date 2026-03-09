@@ -56,6 +56,74 @@ export type { UseStdoutResult } from "@silvery/react/hooks/useStdout"
 export { useFocus, useInkFocusManager as useFocusManager } from "@silvery/react/hooks/ink-compat"
 export type { UseFocusOptions, UseFocusResult, InkUseFocusManagerResult } from "@silvery/react/hooks/ink-compat"
 
+// Ink-compatible useStdin stub
+import { useContext, useCallback, useRef, useState, useEffect, useMemo } from "react"
+import { StdoutContext } from "@silvery/react/context"
+
+/**
+ * Ink-compatible useStdin hook.
+ * Returns stdin stream and raw mode controls.
+ */
+export function useStdin() {
+  return {
+    stdin: process.stdin,
+    setRawMode: (_value: boolean) => {},
+    isRawModeSupported: process.stdin.isTTY ?? false,
+  }
+}
+
+/**
+ * Ink-compatible useCursor hook.
+ * Returns setCursorPosition for IME support.
+ */
+export function useCursor() {
+  const setCursorPosition = useCallback(
+    (_position: { x: number; y: number } | undefined) => {},
+    [],
+  )
+  return { setCursorPosition }
+}
+
+/**
+ * Ink-compatible useWindowSize hook.
+ * Returns current terminal dimensions.
+ */
+export function useWindowSize() {
+  const ctx = useContext(StdoutContext)
+  const stdout = ctx?.stdout ?? process.stdout
+  const [size, setSize] = useState(() => ({
+    columns: stdout.columns ?? 80,
+    rows: (stdout as any).rows ?? 24,
+  }))
+
+  useEffect(() => {
+    const onResize = () => {
+      setSize({
+        columns: stdout.columns ?? 80,
+        rows: (stdout as any).rows ?? 24,
+      })
+    }
+    stdout.on("resize", onResize)
+    return () => { stdout.off("resize", onResize) }
+  }, [stdout])
+
+  return size
+}
+
+/**
+ * Ink-compatible useBoxMetrics hook.
+ * Returns layout metrics for a tracked box element.
+ */
+export function useBoxMetrics(_ref: import("react").RefObject<any>) {
+  return useMemo(() => ({
+    width: 0,
+    height: 0,
+    left: 0,
+    top: 0,
+    hasMeasured: false,
+  }), [])
+}
+
 // =============================================================================
 // Render (Ink-compatible)
 // =============================================================================
@@ -83,6 +151,51 @@ export function render(element: import("react").ReactNode, options?: Record<stri
 
 export { measureElement } from "@silvery/react/measureElement"
 export type { MeasureElementOutput } from "@silvery/react/measureElement"
+
+/**
+ * Ink-compatible useStderr hook.
+ */
+export function useStderr() {
+  return {
+    stderr: process.stderr,
+    write: (data: string) => { process.stderr.write(data) },
+  }
+}
+
+// =============================================================================
+// renderToString (Ink-compatible)
+// =============================================================================
+
+import { renderStringSync } from "@silvery/react/render-string"
+import { isLayoutEngineInitialized, setLayoutEngine } from "@silvery/term/layout-engine"
+
+/**
+ * Ink-compatible renderToString.
+ * Maps ink's `renderToString(element, { columns })` to silvery's `renderStringSync`.
+ * Automatically initializes the layout engine if needed (using sync flexily).
+ */
+export function renderToString(
+  node: import("react").ReactNode,
+  options?: { columns?: number },
+): string {
+  if (!isLayoutEngineInitialized()) {
+    // Use flexily (sync) — no await needed
+    const { createFlexilyZeroEngine } = require("@silvery/term/adapters/flexily-zero-adapter") as any
+    setLayoutEngine(createFlexilyZeroEngine())
+  }
+  return renderStringSync(node as import("react").ReactElement, {
+    width: options?.columns ?? 80,
+  })
+}
+
+// =============================================================================
+// Types (Ink-compatible)
+// =============================================================================
+
+/**
+ * Ink DOMElement type stub. Ink tests reference this for ref typing.
+ */
+export type DOMElement = any
 
 // =============================================================================
 // Term primitives (so consumers don't need ansi directly)
