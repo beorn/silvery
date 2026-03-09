@@ -13,7 +13,17 @@
     "tea",
     "tui"
   ],
+  "homepage": "https://github.com/beorn/hightea/tree/main/packages/core",
+  "bugs": {
+    "url": "https://github.com/beorn/hightea/issues"
+  },
   "license": "MIT",
+  "author": "beorn",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beorn/hightea.git",
+    "directory": "packages/core"
+  },
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

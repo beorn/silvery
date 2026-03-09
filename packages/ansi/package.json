@@ -14,8 +14,11 @@
     "underline"
   ],
   "homepage": "https://github.com/beorn/hightea/tree/main/packages/ansi#readme",
+  "bugs": {
+    "url": "https://github.com/beorn/hightea/issues"
+  },
   "license": "MIT",
-  "author": "Beorn",
+  "author": "beorn",
   "repository": {
     "type": "git",
     "url": "https://github.com/beorn/hightea.git"
