@@ -1,7 +1,7 @@
 /**
  * ANSI string utilities.
  *
- * This module can be imported separately via `@hightea/ansi/utils`
+ * This module can be imported separately via `@silvery/ansi/utils`
  * for projects that only need ANSI stripping without chalk.
  */
 

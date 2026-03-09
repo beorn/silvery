@@ -1,5 +1,5 @@
 /**
- * @hightea/ansi - Terminal Primitives and Extended ANSI Features
+ * @silvery/ansi - Terminal Primitives and Extended ANSI Features
  *
  * Core terminal abstraction with Disposable pattern support plus
  * extended ANSI features not natively supported by chalk:
@@ -10,7 +10,7 @@
  * ## NewWay API (Preferred)
  *
  * ```ts
- * import { createTerm, patchConsole } from '@hightea/ansi'
+ * import { createTerm, patchConsole } from '@silvery/ansi'
  *
  * // Create term (Disposable)
  * using term = createTerm()
@@ -37,11 +37,11 @@
 // Term API (NewWay)
 // =============================================================================
 
-export { createTerm } from "./term.js"
-export type { Term, StyleChain } from "./term.js"
+export { createTerm } from "./term"
+export type { Term, StyleChain } from "./term"
 
-import { createTerm as _createTerm } from "./term.js"
-import type { Term } from "./term.js"
+import { createTerm as _createTerm } from "./term"
+import type { Term } from "./term"
 
 /**
  * Default term instance for convenience, lazily initialized on first access.
@@ -50,7 +50,7 @@ import type { Term } from "./term.js"
  *
  * @example
  * ```ts
- * import { term } from '@hightea/ansi'
+ * import { term } from '@silvery/ansi'
  *
  * console.log(term.green('success'))
  * if (term.hasColor()) { ... }
@@ -72,8 +72,8 @@ export const term: Term = new Proxy({} as Term, {
   },
 })
 
-export { patchConsole } from "./patch-console.js"
-export type { PatchedConsole, PatchConsoleOptions, ConsoleStats } from "./patch-console.js"
+export { patchConsole } from "./patch-console"
+export type { PatchedConsole, PatchConsoleOptions, ConsoleStats } from "./patch-console"
 
 // =============================================================================
 // Types
@@ -89,7 +89,7 @@ export type {
   ConsoleMethod,
   ConsoleEntry,
   CreateTermOptions,
-} from "./types.js"
+} from "./types"
 
 // =============================================================================
 // Detection Functions
@@ -103,14 +103,14 @@ export {
   detectExtendedUnderline,
   detectTerminalCaps,
   defaultCaps,
-} from "./detection.js"
-export type { TerminalCaps } from "./detection.js"
+} from "./detection"
+export type { TerminalCaps } from "./detection"
 
 // =============================================================================
 // Utilities
 // =============================================================================
 
-export { ANSI_REGEX, stripAnsi, displayLength } from "./utils.js"
+export { ANSI_REGEX, stripAnsi, displayLength } from "./utils"
 
 // =============================================================================
 // Underline Functions
@@ -124,13 +124,13 @@ export {
   doubleUnderline,
   underlineColor,
   styledUnderline,
-} from "./underline.js"
+} from "./underline"
 
 // =============================================================================
 // Hyperlink Functions
 // =============================================================================
 
-export { hyperlink } from "./hyperlink.js"
+export { hyperlink } from "./hyperlink"
 
 // =============================================================================
 // ANSI Terminal Control Helpers
@@ -159,30 +159,30 @@ export {
   scrollDown,
   enableKittyKeyboard,
   disableKittyKeyboard,
-} from "./ansi.js"
+} from "./ansi"
 
 // =============================================================================
 // Background Override — Compose styled text inside Box with backgroundColor
 // =============================================================================
 
 /**
- * SGR code recognized by hightea to signal intentional bg override.
- * When text is wrapped with this, hightea won't warn/throw about chalk bg + hightea bg conflicts.
- * Exported for hightea to detect this marker in text content.
+ * SGR code recognized by silvery to signal intentional bg override.
+ * When text is wrapped with this, silvery won't warn/throw about chalk bg + silvery bg conflicts.
+ * Exported for silvery to detect this marker in text content.
  */
 export const BG_OVERRIDE_CODE = 9999
 
 /**
  * Compose styled text with an explicit background inside a Box that has its own
  * `backgroundColor`. This is the correct way to layer chalk/term background
- * colors on top of an hightea Box background.
+ * colors on top of an silvery Box background.
  *
- * Without `bgOverride`, hightea throws (by default) when it detects both an ANSI
+ * Without `bgOverride`, silvery throws (by default) when it detects both an ANSI
  * background in the text content AND a `backgroundColor` prop on an ancestor
  * Box, because the two conflict and produce visual artifacts (the ANSI bg
  * only covers the text, leaving gaps at line edges).
  *
- * `bgOverride` wraps the text with a private SGR marker that tells hightea
+ * `bgOverride` wraps the text with a private SGR marker that tells silvery
  * "this background is intentional — don't throw." Use it when you need
  * pixel-precise background control within a styled container.
  *
@@ -191,9 +191,9 @@ export const BG_OVERRIDE_CODE = 9999
  *
  * @example
  * ```tsx
- * import { bgOverride } from '@hightea/chalk'
+ * import { bgOverride } from '@silvery/chalk'
  *
- * // Without bgOverride — hightea throws:
+ * // Without bgOverride — silvery throws:
  * <Box backgroundColor="cyan">
  *   <Text>{chalk.bgBlack('text')}</Text>  // Error!
  * </Box>

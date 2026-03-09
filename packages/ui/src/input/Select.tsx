@@ -1,5 +1,5 @@
 /**
- * React Select component for hightea/Ink TUI apps
+ * React Select component for silvery/Ink TUI apps
  *
  * Single-choice selection list with keyboard navigation.
  */
@@ -12,7 +12,7 @@ import type { SelectProps, SelectOption } from "../types.js"
  *
  * @example
  * ```tsx
- * import { Select } from "@hightea/ui/input";
+ * import { Select } from "@silvery/ui/input";
  *
  * function SettingsView() {
  *   const [theme, setTheme] = useState("light");
@@ -62,21 +62,21 @@ export function Select<T>({
   }, [selectedIndex, controlledHighlightIndex])
 
   return (
-    <div data-hightea-select>
-      {hasMoreAbove && <div data-hightea-select-scroll-indicator="up">...</div>}
+    <div data-silvery-select>
+      {hasMoreAbove && <div data-silvery-select-scroll-indicator="up">...</div>}
       {visibleOptions.map((option, visibleIdx) => {
         const actualIndex = scrollOffset + visibleIdx
         const isSelected = option.value === value
         const isHighlighted = actualIndex === highlightIndex
 
         return (
-          <div key={actualIndex} data-hightea-select-option data-selected={isSelected} data-highlighted={isHighlighted}>
-            <span data-hightea-select-indicator>{isSelected ? ">" : " "}</span>
-            <span data-hightea-select-label>{option.label}</span>
+          <div key={actualIndex} data-silvery-select-option data-selected={isSelected} data-highlighted={isHighlighted}>
+            <span data-silvery-select-indicator>{isSelected ? ">" : " "}</span>
+            <span data-silvery-select-label>{option.label}</span>
           </div>
         )
       })}
-      {hasMoreBelow && <div data-hightea-select-scroll-indicator="down">...</div>}
+      {hasMoreBelow && <div data-silvery-select-scroll-indicator="down">...</div>}
     </div>
   )
 }

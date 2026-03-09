@@ -2,7 +2,7 @@
  * Console patching with subscribable store for useSyncExternalStore.
  */
 
-import type { ConsoleEntry, ConsoleMethod } from "./types.js"
+import type { ConsoleEntry, ConsoleMethod } from "./types"
 
 /**
  * Aggregate counts of console output by severity.

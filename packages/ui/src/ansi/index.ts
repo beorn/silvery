@@ -9,7 +9,7 @@
  *   CLEAR_LINE,
  *   write,
  *   isTTY,
- * } from "@hightea/ui/ansi";
+ * } from "@silvery/ui/ansi";
  *
  * if (isTTY()) {
  *   write(CURSOR_HIDE);
@@ -40,4 +40,4 @@ export {
   // Terminal detection
   isTTY,
   getTerminalWidth,
-} from "../cli/ansi.js"
+} from "../cli/ansi"

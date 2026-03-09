@@ -3,7 +3,7 @@
  *
  * @example
  * ```tsx
- * import { Spinner, ProgressBar, Tasks, Task, useProgress } from "@hightea/ui/react";
+ * import { Spinner, ProgressBar, Tasks, Task, useProgress } from "@silvery/ui/react";
  *
  * // Spinner
  * <Spinner label="Loading..." style="dots" />
@@ -24,7 +24,7 @@
  * ```
  */
 
-export { Spinner, useSpinnerFrame } from "./Spinner.js"
-export { ProgressBar, useProgressBar } from "./ProgressBar.js"
-export { Task, Tasks, useTasks } from "./Tasks.js"
-export { ProgressProvider, useProgress, ProgressIndicator } from "./context.js"
+export { Spinner, useSpinnerFrame } from "./Spinner"
+export { ProgressBar, useProgressBar } from "./ProgressBar"
+export { Task, Tasks, useTasks } from "./Tasks"
+export { ProgressProvider, useProgress, ProgressIndicator } from "./context"

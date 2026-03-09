@@ -7,7 +7,7 @@
  */
 
 import { AsyncLocalStorage } from "node:async_hooks"
-import type { TaskHandle } from "../cli/multi-progress.js"
+import type { TaskHandle } from "../cli/multi-progress"
 
 /**
  * Context available to work functions during step execution

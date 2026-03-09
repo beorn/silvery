@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, useCallback } from "react"
 import type { SpinnerStyle } from "../types.js"
-import { Spinner } from "./Spinner.js"
+import { Spinner } from "./Spinner"
 
 /** Progress context state */
 interface ProgressContextState {

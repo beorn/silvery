@@ -1,38 +1,17 @@
 {
-  "name": "@hightea/ui",
-  "version": "0.3.0",
-  "description": "UI components for hightea TUI apps - spinners, progress bars, and more",
-  "keywords": [
-    "cli",
-    "eta",
-    "hightea",
-    "loading",
-    "progress",
-    "progress-bar",
-    "react",
-    "spinner",
-    "terminal",
-    "tui",
-    "ui-components"
-  ],
-  "homepage": "https://hightea.dev/packages/ui",
-  "bugs": {
-    "url": "https://github.com/beorn/hightea/issues"
-  },
+  "name": "@silvery/ui",
+  "version": "0.0.1",
+  "description": "Component library for silvery — Box, Text, ScrollView, VirtualList, and more",
   "license": "MIT",
-  "author": "beorn",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/beorn/hightea.git"
+    "url": "https://github.com/beorn/silvery.git",
+    "directory": "packages/ui"
   },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -69,31 +48,18 @@
     "./input": {
       "types": "./src/input/index.ts",
       "import": "./src/input/index.ts"
+    },
+    "./animation": {
+      "types": "./src/animation/index.ts",
+      "import": "./src/animation/index.ts"
+    },
+    "./*": {
+      "types": "./src/*",
+      "import": "./src/*"
     }
-  },
-  "scripts": {
-    "build": "tsc",
-    "test": "bun test",
-    "typecheck": "bun x tsc --noEmit",
-    "ci": "bun test && bun run typecheck",
-    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
-    "prepublishOnly": "bun run build"
   },
   "dependencies": {
-    "chalk": "^5.3.0"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/react": "^18.2.0",
-    "react": "^18.2.0",
-    "typescript": "^5.0.0"
-  },
-  "peerDependencies": {
-    "react": ">=18.0.0"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    }
+    "@silvery/react": "workspace:*",
+    "@silvery/theme": "workspace:*"
   }
 }

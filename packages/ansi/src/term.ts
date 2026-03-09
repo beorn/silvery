@@ -10,8 +10,8 @@
  */
 
 import { Chalk, type ChalkInstance } from "chalk"
-import type { ColorLevel, CreateTermOptions, TerminalCaps } from "./types.js"
-import { defaultCaps, detectColor, detectCursor, detectInput, detectTerminalCaps, detectUnicode } from "./detection.js"
+import type { ColorLevel, CreateTermOptions, TerminalCaps } from "./types"
+import { defaultCaps, detectColor, detectCursor, detectInput, detectTerminalCaps, detectUnicode } from "./detection"
 
 // =============================================================================
 // ANSI Utilities

@@ -1,0 +1,143 @@
+/**
+ * Shared types for the Silvery render pipeline.
+ */
+
+import type { Cell } from "../buffer"
+import type { Measurer } from "../unicode"
+
+/**
+ * Context threaded through the render pipeline.
+ *
+ * Carries per-render resources that were previously accessed via module-level
+ * globals (e.g., `_scopedMeasurer` + `runWithMeasurer()`). Threading context
+ * explicitly eliminates save/restore patterns and makes the pipeline pure.
+ *
+ * Phase 1: measurer only.
+ * Phase 2: NodeRenderState for per-node params.
+ * Phase 3: instrumentation/diagnostics fields (optional — fall back to
+ *   module-level globals when absent for backward compat).
+ */
+export interface PipelineContext {
+  readonly measurer: Measurer
+  // Phase 3: instrumentation (all optional for backward compat)
+  readonly instrumentEnabled?: boolean
+  readonly stats?: ContentPhaseStats
+  readonly nodeTrace?: NodeTraceEntry[]
+  readonly nodeTraceEnabled?: boolean
+  readonly bgConflictMode?: BgConflictMode
+  readonly warnedBgConflicts?: Set<string>
+}
+
+/**
+ * Background conflict detection mode.
+ * Set via SILVERY_BG_CONFLICT env var: 'ignore' | 'warn' | 'throw'
+ */
+export type BgConflictMode = "ignore" | "warn" | "throw"
+
+/**
+ * Per-node trace entry for SILVERY_STRICT diagnosis.
+ */
+export interface NodeTraceEntry {
+  id: string
+  type: string
+  depth: number
+  rect: string
+  prevLayout: string
+  hasPrev: boolean
+  ancestorCleared: boolean
+  flags: string
+  decision: string
+  layoutChanged: boolean
+  contentAreaAffected?: boolean
+  parentRegionCleared?: boolean
+  parentRegionChanged?: boolean
+  childHasPrev?: boolean
+  childAncestorCleared?: boolean
+  skipBgFill?: boolean
+  bgColor?: string
+}
+
+/**
+ * Mutable stats counters for content phase instrumentation.
+ * Reset after each contentPhase call.
+ */
+export interface ContentPhaseStats {
+  nodesVisited: number
+  nodesRendered: number
+  nodesSkipped: number
+  textNodes: number
+  boxNodes: number
+  clearOps: number
+  // Per-flag breakdown: why nodes weren't skipped
+  noPrevBuffer: number
+  flagContentDirty: number
+  flagPaintDirty: number
+  flagLayoutChanged: number
+  flagSubtreeDirty: number
+  flagChildrenDirty: number
+  flagChildPositionChanged: number
+  // Scroll container diagnostics
+  scrollContainerCount: number
+  scrollViewportCleared: number
+  scrollClearReason: string
+  // Normal container diagnostics
+  normalChildrenRepaint: number
+  normalRepaintReason: string
+  // Cascade diagnostics
+  cascadeMinDepth: number
+  cascadeNodes: string
+  // Top-level prevBuffer diagnostics
+  _prevBufferNull: number
+  _prevBufferDimMismatch: number
+  _hasPrevBuffer: number
+  _layoutW: number
+  _layoutH: number
+  _prevW: number
+  _prevH: number
+  _callCount: number
+}
+
+/**
+ * Clip bounds for viewport clipping.
+ */
+export type ClipBounds = { top: number; bottom: number; left?: number; right?: number }
+
+/**
+ * Per-node render state that changes at each tree level.
+ *
+ * Groups the parameters that vary per-node during tree traversal:
+ * - scrollOffset: accumulated scroll offset from scroll containers
+ * - clipBounds: viewport clipping rectangle (from overflow containers)
+ * - hasPrevBuffer: whether the buffer was cloned from a previous frame
+ * - ancestorCleared: whether an ancestor already cleared this node's region
+ *
+ * Contrast with frame-scoped params (buffer, ctx) which stay the same
+ * for the entire render pass.
+ */
+export interface NodeRenderState {
+  scrollOffset: number
+  clipBounds?: ClipBounds
+  hasPrevBuffer: boolean
+  ancestorCleared: boolean
+}
+
+/**
+ * Cell change for diffing.
+ */
+export interface CellChange {
+  x: number
+  y: number
+  cell: Cell
+}
+
+/**
+ * Border character sets.
+ */
+export interface BorderChars {
+  topLeft: string
+  topRight: string
+  bottomLeft: string
+  bottomRight: string
+  horizontal: string
+  vertical: string
+}

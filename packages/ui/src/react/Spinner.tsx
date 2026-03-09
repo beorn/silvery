@@ -1,17 +1,17 @@
 /**
- * React Spinner component for hightea/Ink TUI apps
+ * React Spinner component for silvery/Ink TUI apps
  */
 
 import React, { useState, useEffect } from "react"
 import type { SpinnerProps, SpinnerStyle } from "../types.js"
-import { SPINNER_FRAMES, SPINNER_INTERVALS } from "../cli/spinner.js"
+import { SPINNER_FRAMES, SPINNER_INTERVALS } from "../cli/spinner"
 
 /**
  * Animated spinner component for React TUI apps
  *
  * @example
  * ```tsx
- * import { Spinner } from "@hightea/ui/react";
+ * import { Spinner } from "@silvery/ui/react";
  *
  * function LoadingView() {
  *   return <Spinner label="Loading..." />;
@@ -36,7 +36,7 @@ export function Spinner({ label, style = "dots", color = "cyan" }: SpinnerProps)
 
   const frame = frames[frameIndex]
 
-  // Note: In a real hightea app, you'd use <Text color={color}> etc.
+  // Note: In a real silvery app, you'd use <Text color={color}> etc.
   // This is a generic React component that can be styled by the consumer
   return (
     <span data-progressx-spinner data-color={color}>

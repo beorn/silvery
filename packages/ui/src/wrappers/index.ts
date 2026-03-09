@@ -8,7 +8,7 @@
  *   withProgress,
  *   wrapGenerator,
  *   wrapEmitter
- * } from "@hightea/ui/wrappers";
+ * } from "@silvery/ui/wrappers";
  *
  * // Wrap any promise
  * const data = await withSpinner(fetchData(), "Loading...");
@@ -27,10 +27,10 @@
  * ```
  */
 
-export { withSpinner, attachSpinner } from "./with-spinner.js"
-export { withProgress, createProgressCallback } from "./with-progress.js"
-export { wrapGenerator, withIterableProgress } from "./wrap-generator.js"
-export { wrapEmitter, waitForEvent } from "./wrap-emitter.js"
-export { withSelect, createSelect } from "./with-select.js"
-export { withTextInput, createTextInput } from "./with-text-input.js"
+export { withSpinner, attachSpinner } from "./with-spinner"
+export { withProgress, createProgressCallback } from "./with-progress"
+export { wrapGenerator, withIterableProgress } from "./wrap-generator"
+export { wrapEmitter, waitForEvent } from "./wrap-emitter"
+export { withSelect, createSelect } from "./with-select"
+export { withTextInput, createTextInput } from "./with-text-input"
 export type { ProgressCallback, ProgressInfo, TextInputOptions } from "../types.js"

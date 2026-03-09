@@ -1,8 +1,8 @@
 /**
- * Type definitions for @hightea/ansi
+ * Type definitions for @silvery/ansi
  */
 
-import type { TerminalCaps } from "./detection.js"
+import type { TerminalCaps } from "./detection"
 
 // =============================================================================
 // Color Types
@@ -153,4 +153,4 @@ export interface CreateTermOptions {
 }
 
 // Re-export TerminalCaps from detection for convenience
-export type { TerminalCaps } from "./detection.js"
+export type { TerminalCaps } from "./detection"

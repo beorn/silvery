@@ -3,7 +3,7 @@
  *
  * @example
  * ```tsx
- * import { TextInput, Select } from "@hightea/ui/input";
+ * import { TextInput, Select } from "@silvery/ui/input";
  *
  * // Text input
  * <TextInput value={name} onChange={setName} placeholder="Enter name" />
@@ -20,6 +20,6 @@
  * ```
  */
 
-export { TextInput, useTextInput } from "./TextInput.js"
-export { Select, useSelect } from "./Select.js"
+export { TextInput, useTextInput } from "./TextInput"
+export { Select, useSelect } from "./Select"
 export type { TextInputProps, TextInputOptions, SelectProps, SelectOption } from "../types.js"

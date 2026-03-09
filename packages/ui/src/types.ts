@@ -1,5 +1,5 @@
 /**
- * Core types for hightea-ui progress components
+ * Core types for silvery-ui progress components
  */
 
 /** Progress info passed to callbacks (legacy, use StepProgress for steps()) */

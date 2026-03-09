@@ -5,17 +5,12 @@
  * structure and shows all steps upfront before execution.
  */
 
-import { MultiProgress, type TaskHandle } from "../cli/multi-progress.js"
-import {
-  step as getStepContext,
-  createStepContext,
-  runWithStepContext,
-  type InternalStepContext,
-} from "./als-context.js"
-import { parseStepsDef, flattenStepNodes, getLeafNodes, type StepNode, type StepsDef } from "./step-node.js"
+import { MultiProgress, type TaskHandle } from "../cli/multi-progress"
+import { step as getStepContext, createStepContext, runWithStepContext, type InternalStepContext } from "./als-context"
+import { parseStepsDef, flattenStepNodes, getLeafNodes, type StepNode, type StepsDef } from "./step-node"
 
 // Re-export step() for convenience
-export { step } from "./als-context.js"
+export { step } from "./als-context"
 
 // Node.js globals for yielding to event loop
 declare function setImmediate(callback: (value?: unknown) => void): unknown

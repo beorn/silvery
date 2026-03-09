@@ -1,9 +1,0 @@
-{
-  "name": "hightea-ink-comparison",
-  "private": true,
-  "description": "Head-to-head benchmark: hightea vs ink",
-  "dependencies": {
-    "ink": "^6.6.0",
-    "mitata": "^0.1.11"
-  }
-}

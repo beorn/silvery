@@ -1,17 +1,17 @@
 /**
- * React ProgressBar component for hightea/Ink TUI apps
+ * React ProgressBar component for silvery/Ink TUI apps
  */
 
 import React, { useState, useEffect, useRef } from "react"
 import type { ProgressBarProps } from "../types.js"
-import { getETA, DEFAULT_ETA_BUFFER_SIZE, type ETASample } from "../utils/eta.js"
+import { getETA, DEFAULT_ETA_BUFFER_SIZE, type ETASample } from "../utils/eta"
 
 /**
  * Progress bar component for React TUI apps
  *
  * @example
  * ```tsx
- * import { ProgressBar } from "@hightea/ui/react";
+ * import { ProgressBar } from "@silvery/ui/react";
  *
  * function DownloadProgress({ current, total }) {
  *   return (

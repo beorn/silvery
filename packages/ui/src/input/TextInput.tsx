@@ -1,5 +1,5 @@
 /**
- * React TextInput component for hightea/Ink TUI apps
+ * React TextInput component for silvery/Ink TUI apps
  */
 
 import React, { useState, useCallback } from "react"
@@ -14,7 +14,7 @@ import type { TextInputProps } from "../types.js"
  *
  * @example
  * ```tsx
- * import { TextInput } from "@hightea/ui/input";
+ * import { TextInput } from "@silvery/ui/input";
  * import { useInput } from "ink";
  *
  * function MyForm() {
@@ -71,7 +71,7 @@ export function TextInput({
   const showPlaceholder = !value && placeholder
 
   return (
-    <span data-hightea-ui-text-input data-focused={focused}>
+    <span data-silvery-ui-text-input data-focused={focused}>
       {showPlaceholder ? (
         <span data-color="dim">{placeholder}</span>
       ) : (

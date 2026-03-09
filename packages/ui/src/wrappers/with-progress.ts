@@ -1,27 +1,27 @@
 /**
  * withProgress - Wrap callback-based progress functions
  *
- * @deprecated Use `steps()` from `@hightea/ui/progress` instead.
+ * @deprecated Use `steps()` from `@silvery/ui/progress` instead.
  *
  * @example
  * ```typescript
  * // OLD (deprecated):
- * import { withProgress } from "@hightea/ui/wrappers";
+ * import { withProgress } from "@silvery/ui/wrappers";
  * const result = await withProgress(
  *   (onProgress) => manager.syncFromFs(onProgress),
  *   { phases: SYNC_PHASES }
  * );
  *
  * // NEW:
- * import { steps } from "@hightea/ui/progress";
+ * import { steps } from "@silvery/ui/progress";
  * const results = await steps({ syncFiles: () => manager.syncFromFs() }).run();
  * ```
  */
 
 import type { ProgressInfo, ProgressCallback, WithProgressOptions } from "../types.js"
-import { ProgressBar } from "../cli/progress-bar.js"
-import { Spinner } from "../cli/spinner.js"
-import { CURSOR_HIDE, CURSOR_SHOW, write, isTTY } from "../cli/ansi.js"
+import { ProgressBar } from "../cli/progress-bar"
+import { Spinner } from "../cli/spinner"
+import { CURSOR_HIDE, CURSOR_SHOW, write, isTTY } from "../cli/ansi"
 
 // Declare timer globals (not exposed by bun-types)
 declare function setTimeout(callback: () => void, ms: number): unknown

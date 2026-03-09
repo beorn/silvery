@@ -3,7 +3,7 @@
  */
 
 import type { WithSpinnerOptions } from "../types.js"
-import { Spinner } from "../cli/spinner.js"
+import { Spinner } from "../cli/spinner"
 
 /**
  * Wrap a promise with an animated spinner

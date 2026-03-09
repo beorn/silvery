@@ -4,9 +4,9 @@
 
 import chalk from "chalk"
 import type { SpinnerStyle, TaskStatus } from "../types.js"
-import { CURSOR_HIDE, CURSOR_SHOW, CLEAR_LINE, cursorUp, write, isTTY } from "./ansi.js"
-import { Spinner, SPINNER_FRAMES } from "./spinner.js"
-import { ProgressBar } from "./progress-bar.js"
+import { CURSOR_HIDE, CURSOR_SHOW, CLEAR_LINE, cursorUp, write, isTTY } from "./ansi"
+import { Spinner, SPINNER_FRAMES } from "./spinner"
+import { ProgressBar } from "./progress-bar"
 
 /** Status icons */
 const STATUS_ICONS: Record<TaskStatus, string> = {

@@ -1,22 +1,22 @@
 /**
  * Fluent single-task wrapper
  *
- * @deprecated Use `steps()` from `@hightea/ui/progress` instead.
+ * @deprecated Use `steps()` from `@silvery/ui/progress` instead.
  *
  * @example
  * ```typescript
  * // OLD (deprecated):
- * import { task } from "@hightea/ui/progress";
+ * import { task } from "@silvery/ui/progress";
  * const data = await task("Loading data").wrap(fetchData());
  *
  * // NEW:
- * import { steps } from "@hightea/ui/progress";
+ * import { steps } from "@silvery/ui/progress";
  * const results = await steps({ loadData: fetchData }).run();
  * ```
  */
 
 import type { ProgressInfo } from "../types.js"
-import { createSpinner } from "../cli/spinner.js"
+import { createSpinner } from "../cli/spinner"
 
 /** Phase labels for common operations */
 const PHASE_LABELS: Record<string, string> = {

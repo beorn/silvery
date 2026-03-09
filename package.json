@@ -1,36 +1,32 @@
 {
-  "name": "@hightea/term",
-  "version": "0.2.0",
-  "description": "React rendering where components know their size — terminal, canvas, and DOM targets",
+  "name": "silvery",
+  "version": "0.0.1",
+  "description": "Multi-target rendering framework for React — terminal, browser, and beyond",
   "keywords": [
+    "chalk",
     "cli",
-    "components",
-    "flexbox",
     "ink",
-    "keyboard",
-    "layout",
-    "mouse",
     "react",
+    "rendering",
     "terminal",
-    "tui"
+    "tui",
+    "ui"
   ],
-  "homepage": "https://hightea.dev",
+  "homepage": "https://silvery.dev",
   "bugs": {
-    "url": "https://github.com/beorn/hightea/issues"
+    "url": "https://github.com/beorn/silvery/issues"
   },
   "license": "MIT",
-  "author": "beorn",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/beorn/hightea.git"
+    "url": "https://github.com/beorn/silvery.git"
   },
   "workspaces": [
     "packages/*"
   ],
   "type": "module",
-  "sideEffects": false,
   "main": "src/index.ts",
-  "module": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
     ".": {
@@ -38,156 +34,53 @@
       "import": "./src/index.ts"
     },
     "./ink": {
-      "types": "./src/ink.ts",
-      "import": "./src/ink.ts"
+      "types": "./packages/compat/src/ink.ts",
+      "import": "./packages/compat/src/ink.ts"
     },
-    "./layout": {
-      "types": "./src/layout.ts",
-      "import": "./src/layout.ts"
-    },
-    "./components": {
-      "types": "./src/components.ts",
-      "import": "./src/components.ts"
-    },
-    "./focus": {
-      "types": "./src/focus.ts",
-      "import": "./src/focus.ts"
-    },
-    "./input": {
-      "types": "./src/input.ts",
-      "import": "./src/input.ts"
-    },
-    "./theme": {
-      "types": "./src/theme.ts",
-      "import": "./src/theme.ts"
-    },
-    "./animation": {
-      "types": "./src/animation.ts",
-      "import": "./src/animation.ts"
-    },
-    "./images": {
-      "types": "./src/images.ts",
-      "import": "./src/images.ts"
-    },
-    "./plugins": {
-      "types": "./src/plugins.ts",
-      "import": "./src/plugins.ts"
-    },
-    "./testing": {
-      "types": "./src/testing/index.tsx",
-      "import": "./src/testing/index.tsx"
-    },
-    "./runtime": {
-      "types": "./src/runtime/index.ts",
-      "import": "./src/runtime/index.ts"
-    },
-    "./canvas": {
-      "types": "./src/canvas/index.ts",
-      "import": "./src/canvas/index.ts"
-    },
-    "./dom": {
-      "types": "./src/dom/index.ts",
-      "import": "./src/dom/index.ts"
-    },
-    "./xterm": {
-      "types": "./src/xterm/index.ts",
-      "import": "./src/xterm/index.ts"
-    },
-    "./scroll-utils": {
-      "types": "./src/scroll-utils.ts",
-      "import": "./src/scroll-utils.ts"
-    },
-    "./toolbelt": {
-      "types": "./src/toolbelt/index.ts",
-      "import": "./src/toolbelt/index.ts"
-    },
-    "./core": {
-      "types": "./src/core/index.ts",
-      "import": "./src/core/index.ts"
-    },
-    "./store": {
-      "types": "./src/store/index.ts",
-      "import": "./src/store/index.ts"
-    },
-    "./tea": {
-      "types": "./src/tea/index.ts",
-      "import": "./src/tea/index.ts"
-    },
-    "./react": {
-      "types": "./src/react/index.ts",
-      "import": "./src/react/index.ts"
-    },
-    "./hooks": {
-      "types": "./src/hooks/index.ts",
-      "import": "./src/hooks/index.ts"
+    "./chalk": {
+      "types": "./packages/compat/src/chalk.ts",
+      "import": "./packages/compat/src/chalk.ts"
     }
   },
   "scripts": {
     "build": "bun build src/index.ts --outdir dist --target node",
-    "test": "bunx --bun vitest run tests/",
-    "test:fast": "bunx --bun vitest run tests/ --reporter=dot",
-    "test:compat": "bunx --bun vitest run tests/compat/",
-    "test:visual": "playwright test --config tests/e2e/playwright.config.ts --project=e2e",
-    "test:visual:update": "playwright test --config tests/e2e/playwright.config.ts --project=e2e --update-snapshots",
-    "test:showcase": "playwright test --config tests/e2e/playwright.config.ts --project=showcase",
-    "bench": "bun run tests/benchmarks/index.ts",
-    "bench:compare": "bun run tests/benchmarks/ink-comparison/compare.ts",
+    "test": "bunx --bun vitest run",
+    "test:fast": "bunx --bun vitest run --reporter=dot",
     "typecheck": "tsc --noEmit",
-    "docs:dev": "vitepress dev docs/site",
-    "docs:build": "vitepress build docs/site",
-    "docs:preview": "vitepress preview docs/site",
-    "build:web": "bun run examples/web/build.ts",
-    "examples": "bun run examples/viewer.tsx",
-    "example:dashboard": "bun run examples/dashboard/index.tsx",
-    "example:task-list": "bun run examples/task-list/index.tsx",
-    "example:kanban": "bun run examples/kanban/index.tsx",
-    "example:scroll": "bun run examples/scroll/index.tsx",
-    "ci": "bun run typecheck && bun run test",
-    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
+    "lint": "oxlint . && oxfmt --check .",
+    "fix": "oxlint --fix . && oxfmt --write .",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish"
   },
   "dependencies": {
-    "@hightea/ansi": "workspace:*",
+    "chalk": "^5.6.2",
     "decant": "github:beorn/decant",
+    "loggily": "^0.0.1",
     "react-reconciler": "^0.33.0",
-    "slice-ansi": "^7.1.2",
-    "string-width": "^8.0.0",
+    "slice-ansi": "^8.0.0",
+    "string-width": "^8.2.0",
     "swatch": "github:beorn/swatch",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@termless/core": "github:beorn/termless",
+    "@changesets/cli": "^2.27.0",
     "@types/bun": "^1.1.0",
     "@types/react": "^19.0.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
-    "chalk": "^5.6.2",
-    "fast-check": "^4.5.3",
-    "flexture": "github:beorn/flexture",
-    "mitata": "^0.1.11",
+    "fast-check": "^4.6.0",
+    "mitata": "^1.0.34",
+    "oxfmt": "^0.36.0",
+    "oxlint": "^1.51.0",
     "playwright": "^1.58.2",
     "react": "^19.0.0",
     "typescript": "^5.5.0",
-    "vitepress": "^1.5.0",
-    "vitepress-plugin-llms": "^1.0.0",
     "vitest": "^4.0.18",
     "yoga-wasm-web": "^0.3.3"
   },
   "peerDependencies": {
-    "flexture": "github:beorn/flexture",
-    "react": "^18.0.0 || ^19.0.0",
-    "react-devtools-core": ">=4.0.0",
-    "yoga-wasm-web": "^0.3.3"
-  },
-  "peerDependenciesMeta": {
-    "flexture": {
-      "optional": true
-    },
-    "react-devtools-core": {
-      "optional": true
-    },
-    "yoga-wasm-web": {
-      "optional": true
-    }
+    "react": "^18.0.0 || ^19.0.0"
   },
   "engines": {
     "bun": ">=1.0",

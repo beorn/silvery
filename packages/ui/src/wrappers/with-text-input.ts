@@ -4,7 +4,7 @@
 
 import chalk from "chalk"
 import type { TextInputOptions } from "../types.js"
-import { CURSOR_HIDE, CURSOR_SHOW, CURSOR_TO_START, CLEAR_LINE_END, write, isTTY } from "../cli/ansi.js"
+import { CURSOR_HIDE, CURSOR_SHOW, CURSOR_TO_START, CLEAR_LINE_END, write, isTTY } from "../cli/ansi"
 
 /**
  * Prompt for text input in the terminal

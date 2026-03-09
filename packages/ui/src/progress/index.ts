@@ -5,7 +5,7 @@
  *
  * @example Declarative mode (recommended)
  * ```typescript
- * import { steps, step } from "@hightea/ui/progress";
+ * import { steps, step } from "@silvery/ui/progress";
  *
  * const loader = steps({
  *   loadModules,           // Auto-named: "Load modules"
@@ -37,18 +37,18 @@ export {
   type StepsDef,
   type StepNode,
   type StepContext,
-} from "./steps.js"
+} from "./steps"
 
 // Legacy task wrappers (deprecated - use steps() instead)
 /** @deprecated Use steps() instead */
-export { task, type TaskWrapper } from "./task.js"
+export { task, type TaskWrapper } from "./task"
 /** @deprecated Use steps() instead */
-export { tasks, type TaskBuilder, type RunOptions } from "./tasks.js"
+export { tasks, type TaskBuilder, type RunOptions } from "./tasks"
 
 // Re-export CLI progress components
-export { Spinner, createSpinner, type CallableSpinner } from "../cli/spinner.js"
-export { ProgressBar } from "../cli/progress-bar.js"
-export { MultiProgress, type TaskHandle } from "../cli/multi-progress.js"
+export { Spinner, createSpinner, type CallableSpinner } from "../cli/spinner"
+export { ProgressBar } from "../cli/progress-bar"
+export { MultiProgress, type TaskHandle } from "../cli/multi-progress"
 
 // Re-export types
 export type { ProgressInfo, StepProgress } from "../types.js"

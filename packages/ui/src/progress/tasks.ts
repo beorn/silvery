@@ -1,19 +1,19 @@
 /**
  * Fluent sequential task builder
  *
- * @deprecated Use `steps()` from `@hightea/ui/progress` instead.
+ * @deprecated Use `steps()` from `@silvery/ui/progress` instead.
  *
  * @example
  * ```typescript
  * // OLD (deprecated):
- * import { tasks } from "@hightea/ui/progress";
+ * import { tasks } from "@silvery/ui/progress";
  * const results = await tasks()
  *   .add("Loading", loadModules)
  *   .add("Processing", processData)
  *   .run({ clear: true });
  *
  * // NEW:
- * import { steps } from "@hightea/ui/progress";
+ * import { steps } from "@silvery/ui/progress";
  * const results = await steps({
  *   loadModules,
  *   processData,
@@ -22,7 +22,7 @@
  */
 
 import type { ProgressInfo } from "../types.js"
-import { MultiProgress, type TaskHandle } from "../cli/multi-progress.js"
+import { MultiProgress, type TaskHandle } from "../cli/multi-progress"
 
 // Node.js globals for yielding to event loop
 declare function setImmediate(callback: (value?: unknown) => void): unknown

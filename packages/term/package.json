@@ -1,0 +1,44 @@
+{
+  "name": "@silvery/term",
+  "version": "0.0.1",
+  "description": "Terminal rendering target for silvery",
+  "license": "MIT",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beorn/silvery.git",
+    "directory": "packages/term"
+  },
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./runtime": {
+      "types": "./src/runtime/index.ts",
+      "import": "./src/runtime/index.ts"
+    },
+    "./toolbelt": {
+      "types": "./src/toolbelt/index.ts",
+      "import": "./src/toolbelt/index.ts"
+    },
+    "./pipeline": {
+      "types": "./src/pipeline/index.ts",
+      "import": "./src/pipeline/index.ts"
+    },
+    "./*": {
+      "types": "./src/*",
+      "import": "./src/*"
+    }
+  },
+  "dependencies": {
+    "@silvery/ansi": "workspace:*",
+    "@silvery/react": "workspace:*",
+    "@silvery/tea": "workspace:*",
+    "@silvery/test": "workspace:*",
+    "flexture": "github:beorn/flexture"
+  }
+}

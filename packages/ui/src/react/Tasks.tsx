@@ -4,7 +4,7 @@
 
 import React from "react"
 import type { TaskProps, TaskStatus } from "../types.js"
-import { useSpinnerFrame } from "./Spinner.js"
+import { useSpinnerFrame } from "./Spinner"
 
 /** Status icons for tasks */
 const STATUS_ICONS: Record<TaskStatus, string> = {

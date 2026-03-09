@@ -1,0 +1,23 @@
+{
+  "name": "@silvery/compat",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Ink and Chalk API compatibility layer (not published separately)",
+  "license": "MIT",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@silvery/ansi": "workspace:*",
+    "@silvery/react": "workspace:*",
+    "@silvery/ui": "workspace:*",
+    "chalk": "^5.6.2"
+  }
+}

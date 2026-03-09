@@ -4,7 +4,7 @@
 
 import chalk from "chalk"
 import type { SpinnerOptions, SpinnerStyle } from "../types.js"
-import { CURSOR_HIDE, CURSOR_SHOW, CURSOR_TO_START, CLEAR_LINE_END, write, isTTY } from "./ansi.js"
+import { CURSOR_HIDE, CURSOR_SHOW, CURSOR_TO_START, CLEAR_LINE_END, write, isTTY } from "./ansi"
 
 /** Spinner animation frames by style */
 export const SPINNER_FRAMES: Record<SpinnerStyle, string[]> = {

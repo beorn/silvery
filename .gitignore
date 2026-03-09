@@ -1,46 +1,4 @@
-# Dependencies
 node_modules/
-
-# Build output
 dist/
-
-# Bun
-bun.lockb
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
+*.tsbuildinfo
 .DS_Store
-Thumbs.db
-
-# Test coverage
-coverage/
-
-# Temporary files
-*.tmp
-*.temp
-/tmp/
-
-# Benchmark results (keep in separate branch)
-tests/benchmarks/results/
-
-# Playwright
-test-results/
-playwright-report/
-.playwright-cli/
-
-# Refactoring artifacts
-editset.json
-.editsets/
-
-# Beads archive
-.beads.archived/
-examples/web/dist/
-docs/site/public/examples/dist/
-# Generated LLM context
-llms.txt
-llms-full.txt

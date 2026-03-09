@@ -11,7 +11,7 @@
  */
 
 import { spawnSync } from "child_process"
-import type { ColorLevel } from "./types.js"
+import type { ColorLevel } from "./types"
 
 // =============================================================================
 // Cursor Detection

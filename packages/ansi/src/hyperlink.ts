@@ -7,7 +7,7 @@
  * @see https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
  */
 
-import { buildHyperlink } from "./constants.js"
+import { buildHyperlink } from "./constants"
 
 // =============================================================================
 // Hyperlink Functions

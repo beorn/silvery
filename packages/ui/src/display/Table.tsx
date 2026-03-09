@@ -1,5 +1,5 @@
 /**
- * React Table component for hightea/Ink TUI apps
+ * React Table component for silvery/Ink TUI apps
  */
 
 import React from "react"
@@ -27,7 +27,7 @@ const BOX = {
  *
  * @example
  * ```tsx
- * import { Table } from "@hightea/ui/display";
+ * import { Table } from "@silvery/ui/display";
  *
  * const columns = [
  *   { key: "name", header: "Name", width: 20 },

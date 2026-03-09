@@ -3,8 +3,8 @@
  */
 
 import type { ProgressGenerator } from "../types.js"
-import { ProgressBar } from "../cli/progress-bar.js"
-import { CURSOR_HIDE, CURSOR_SHOW, write, isTTY } from "../cli/ansi.js"
+import { ProgressBar } from "../cli/progress-bar"
+import { CURSOR_HIDE, CURSOR_SHOW, write, isTTY } from "../cli/ansi"
 
 /**
  * Consume a progress generator while displaying progress

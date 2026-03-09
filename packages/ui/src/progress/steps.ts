@@ -8,7 +8,7 @@
  * Pass an object to declare all steps upfront:
  *
  * ```typescript
- * import { steps, step } from "@hightea/ui/progress";
+ * import { steps, step } from "@silvery/ui/progress";
  *
  * const loader = steps({
  *   loadModules,           // Auto-named: "Load modules"
@@ -47,17 +47,17 @@
  * - Yield an **object** `{ current, total }` to update progress on current sub-step
  */
 
-import { MultiProgress, type TaskHandle } from "../cli/multi-progress.js"
-import { stepsDeclarative, type StepsRunner } from "./declarative.js"
-import type { StepsDef } from "./step-node.js"
+import { MultiProgress, type TaskHandle } from "../cli/multi-progress"
+import { stepsDeclarative, type StepsRunner } from "./declarative"
+import type { StepsDef } from "./step-node"
 
 // Re-export step() context helper
-export { step } from "./als-context.js"
+export { step } from "./als-context"
 
 // Re-export types from declarative
-export type { StepsRunner } from "./declarative.js"
-export type { StepsDef, StepNode } from "./step-node.js"
-export type { StepContext } from "./als-context.js"
+export type { StepsRunner } from "./declarative"
+export type { StepsDef, StepNode } from "./step-node"
+export type { StepContext } from "./als-context"
 
 // Node.js globals for yielding to event loop
 declare function setImmediate(callback: (value?: unknown) => void): unknown

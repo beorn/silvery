@@ -1,12 +1,12 @@
 /**
- * hightea-ui - UI components for Ink/hightea TUI apps
+ * silvery-ui - UI components for Ink/silvery TUI apps
  *
  * Progress indicators, spinners, and task wrappers for CLI applications.
  *
  * @example
  * ```ts
  * // Fluent task API (recommended)
- * import { task, tasks } from "@hightea/ui/progress";
+ * import { task, tasks } from "@silvery/ui/progress";
  *
  * const data = await task("Loading").wrap(fetchData());
  *
@@ -16,10 +16,10 @@
  *   .run({ clear: true });
  *
  * // Low-level CLI components
- * import { Spinner, ProgressBar } from "@hightea/ui/cli";
+ * import { Spinner, ProgressBar } from "@silvery/ui/cli";
  *
  * // React/TUI components
- * import { Spinner, ProgressBar } from "@hightea/ui/react";
+ * import { Spinner, ProgressBar } from "@silvery/ui/react";
  * ```
  *
  * @packageDocumentation
@@ -30,5 +30,5 @@ export * from "./types.js"
 export * from "./cli/index.js"
 export * from "./wrappers/index.js"
 
-// Note: React components should be imported from "@hightea/ui/react"
+// Note: React components should be imported from "@silvery/ui/react"
 // to avoid requiring React as a dependency for CLI-only usage

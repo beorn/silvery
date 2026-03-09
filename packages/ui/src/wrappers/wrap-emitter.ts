@@ -3,7 +3,7 @@
  */
 
 import type { EventEmitter } from "events"
-import { Spinner } from "../cli/spinner.js"
+import { Spinner } from "../cli/spinner"
 
 /** Event handler configuration */
 interface EventConfig {

@@ -1,0 +1,30 @@
+{
+  "name": "@silvery/test",
+  "version": "0.0.1",
+  "description": "Testing utilities for silvery — virtual renderer, locators, assertions",
+  "license": "MIT",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beorn/silvery.git",
+    "directory": "packages/test"
+  },
+  "type": "module",
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "exports": {
+    ".": {
+      "types": "./src/index.tsx",
+      "import": "./src/index.tsx"
+    },
+    "./*": {
+      "types": "./src/*",
+      "import": "./src/*"
+    }
+  },
+  "dependencies": {
+    "@silvery/react": "workspace:*",
+    "@silvery/tea": "workspace:*",
+    "@silvery/term": "workspace:*"
+  }
+}

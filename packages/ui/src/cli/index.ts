@@ -3,7 +3,7 @@
  *
  * @example
  * ```ts
- * import { Spinner, ProgressBar, MultiProgress } from "@hightea/ui/cli";
+ * import { Spinner, ProgressBar, MultiProgress } from "@silvery/ui/cli";
  *
  * // Quick spinner
  * const stop = Spinner.start("Loading...");
@@ -33,7 +33,7 @@
  * ```
  */
 
-export { Spinner, SPINNER_FRAMES, createSpinner, type CallableSpinner } from "./spinner.js"
-export { ProgressBar } from "./progress-bar.js"
-export { MultiProgress, type TaskHandle } from "./multi-progress.js"
-export * from "./ansi.js"
+export { Spinner, SPINNER_FRAMES, createSpinner, type CallableSpinner } from "./spinner"
+export { ProgressBar } from "./progress-bar"
+export { MultiProgress, type TaskHandle } from "./multi-progress"
+export * from "./ansi"
