@@ -86,6 +86,6 @@ return {
 
 ## See Also
 
-- [Building an App](../guides/building-an-app.md) — the guide that introduces shared stores at Level 2
-- [State Management](../guides/state-management.md) — createApp, createSlice API reference
+- [Building an App](../guide/building-an-app.md) — the guide that introduces shared stores at Level 2
+- [State Management](../guide/state-management.md) — createApp, createSlice API reference
 - [Hooks Reference](hooks.md) — useApp, useContentRect

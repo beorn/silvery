@@ -25,6 +25,8 @@ export default defineConfig({
     nav: [
       { text: "Guide", link: "/guide/getting-started" },
       { text: "API", link: "/api/box" },
+      { text: "Reference", link: "/reference/components" },
+      { text: "Deep Dives", link: "/deep-dives/architecture" },
       {
         text: "Examples",
         items: [
@@ -56,6 +58,8 @@ export default defineConfig({
             { text: "Building an App", link: "/guide/building-an-app" },
             { text: "Installation", link: "/guide/installation" },
             { text: "Why Silvery?", link: "/guide/why-silvery" },
+            { text: "Silvery vs Ink", link: "/guide/silvery-vs-ink" },
+            { text: "Comparison", link: "/guide/comparison" },
           ],
         },
         {
@@ -66,6 +70,8 @@ export default defineConfig({
             { text: "Scrolling", link: "/guide/scrolling" },
             { text: "Cursor API", link: "/guide/cursor-api" },
             { text: "Input Limitations", link: "/guide/input-limitations" },
+            { text: "State Management", link: "/guide/state-management" },
+            { text: "Event Handling", link: "/guide/event-handling" },
           ],
         },
         {
@@ -74,11 +80,18 @@ export default defineConfig({
             { text: "Layout Engine", link: "/guide/layout-engine" },
             { text: "React 19", link: "/guide/react-19" },
             { text: "Layouts", link: "/guide/layouts" },
+            { text: "Runtime Layers", link: "/guide/runtime-layers" },
+            { text: "Runtime Getting Started", link: "/guide/runtime-getting-started" },
+            { text: "Imports", link: "/guide/imports" },
+            { text: "Troubleshooting", link: "/guide/troubleshooting" },
           ],
         },
         {
           text: "Migration",
-          items: [{ text: "From Ink", link: "/guide/migration" }],
+          items: [
+            { text: "From Ink", link: "/guide/migration" },
+            { text: "Runtime Migration", link: "/guide/runtime-migration" },
+          ],
         },
         {
           text: "Examples",
@@ -121,19 +134,53 @@ export default defineConfig({
           text: "Functions",
           items: [{ text: "render", link: "/api/render" }],
         },
+      ],
+      "/reference/": [
         {
-          text: "Examples",
-          collapsed: false,
+          text: "Reference",
           items: [
-            { text: "Overview", link: "/examples/" },
-            { text: "Live Demo", link: "/examples/live-demo" },
-            { text: "Dashboard", link: "/examples/dashboard" },
-            { text: "Task List", link: "/examples/task-list" },
-            { text: "Kanban Board", link: "/examples/kanban" },
-            { text: "AI Assistants & Chat", link: "/examples/ai-assistants" },
-            { text: "CLI Wizards & Setup", link: "/examples/cli-wizards" },
-            { text: "Developer Tools", link: "/examples/developer-tools" },
-            { text: "Data Explorers & Tables", link: "/examples/data-explorers" },
+            { text: "Components", link: "/reference/components" },
+            { text: "Hooks", link: "/reference/hooks" },
+            { text: "Lifecycle", link: "/reference/lifecycle" },
+            { text: "Signals", link: "/reference/signals" },
+            { text: "Plugins", link: "/reference/plugins" },
+            { text: "Theming", link: "/reference/theming" },
+          ],
+        },
+        {
+          text: "Input & Output",
+          items: [
+            { text: "Input Features", link: "/reference/input-features" },
+            { text: "Streams", link: "/reference/streams" },
+            { text: "Text Cursor", link: "/reference/text-cursor" },
+            { text: "Text Sizing", link: "/reference/text-sizing" },
+          ],
+        },
+        {
+          text: "Layout & Rendering",
+          items: [
+            { text: "Scroll Regions", link: "/reference/scroll-regions" },
+            { text: "Robust Ops", link: "/reference/robust-ops" },
+            { text: "Terminal Capabilities", link: "/reference/terminal-capabilities" },
+            { text: "Terminal Matrix", link: "/reference/terminal-matrix" },
+          ],
+        },
+        {
+          text: "Tools",
+          items: [
+            { text: "Devtools", link: "/reference/devtools" },
+            { text: "Recipes", link: "/reference/recipes" },
+          ],
+        },
+      ],
+      "/deep-dives/": [
+        {
+          text: "Deep Dives",
+          items: [
+            { text: "Architecture", link: "/deep-dives/architecture" },
+            { text: "Performance", link: "/deep-dives/performance" },
+            { text: "Containment", link: "/deep-dives/containment" },
+            { text: "Focus Routing", link: "/deep-dives/focus-routing" },
           ],
         },
       ],

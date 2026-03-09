@@ -1267,16 +1267,42 @@ export function bufferToText(
       line += buffer.getCellChar(x, y)
     }
     if (trimTrailingWhitespace) {
-      line = line.trimEnd()
+      // Smart trim: find the rightmost cell that has any styling (fg, bg, attrs)
+      // or non-space character. This preserves styled trailing spaces (content)
+      // while removing unstyled buffer padding.
+      const contentEdge = getContentEdge(buffer, y)
+      // Use the wider of trimEnd position and content edge — trimEnd handles
+      // non-space chars, content edge handles styled spaces
+      const trimmed = line.trimEnd()
+      line = trimmed.length >= contentEdge ? trimmed : line.substring(0, contentEdge)
     }
     lines.push(line)
   }
 
   let result = lines.join("\n")
   if (trimEmptyLines) {
-    result = result.trimEnd()
+    // Remove trailing empty lines without stripping spaces from last content line
+    while (lines.length > 0 && lines[lines.length - 1]!.length === 0) {
+      lines.pop()
+    }
+    result = lines.join("\n")
   }
   return result
+}
+
+/**
+ * Find the rightmost column with non-default cell content on a row.
+ * A default cell has packed metadata === 0 (no fg, bg, attrs) AND char === ' '.
+ * Returns the column count (1-indexed), so the content edge for trimming.
+ */
+function getContentEdge(buffer: TerminalBuffer, y: number): number {
+  for (let x = buffer.width - 1; x >= 0; x--) {
+    // Check if cell has any styling (non-zero packed metadata means fg, bg, or attrs set)
+    if (buffer.getCellAttrs(x, y) !== 0) return x + 1
+    // Check if cell has a non-space character
+    if (buffer.getCellChar(x, y) !== " ") return x + 1
+  }
+  return 0
 }
 
 /**

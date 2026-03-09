@@ -1,4 +1,4 @@
-# silvery Examples & Showcases
+# Silvery Examples & Showcases
 
 ## Directory Structure
 
@@ -17,7 +17,7 @@
 
 ### Design Principles
 
-1. **Show, don't tell.** A showcase should demonstrate silvery features through working UI, not walls of text. Intro text is fine — but collapse it once the demo starts.
+1. **Show, don't tell.** A showcase should demonstrate Silvery features through working UI, not walls of text. Intro text is fine — but collapse it once the demo starts.
 
 2. **Auto-size to content.** `ScrollbackView`/`ScrollbackList` auto-size to their content — no manual height management. The output phase caps output at terminal height independently. Content that exceeds terminal height causes natural terminal scrolling.
 

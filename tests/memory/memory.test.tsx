@@ -81,7 +81,10 @@ describe("memory: mount/unmount cycles", () => {
     const heapBefore = getHeapUsedMB()
 
     for (let i = 0; i < 200; i++) {
-      const app = render(React.createElement(MountUnmountCycle, { visible: true }), { cols: 80, rows: 24 })
+      const app = render(React.createElement(MountUnmountCycle, { visible: true }), {
+        cols: 80,
+        rows: 24,
+      })
       // Verify it rendered
       expect(app.text).toContain("Mounted Component")
       app.unmount()

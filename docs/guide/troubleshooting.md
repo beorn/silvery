@@ -28,7 +28,7 @@
 
 ### Layout oscillation / infinite loops
 
-- Silvery has built-in containment for `useContentRect` (see [containment.md](deep-dives/containment.md)).
+- Silvery has built-in containment for `useContentRect` (see [containment.md](../deep-dives/containment.md)).
 - If you see oscillation, check for circular dependencies in layout — e.g., a component that changes its size based on `useContentRect` in a way that triggers another layout.
 - Avoid setting `width` or `height` dynamically based on `useContentRect` of the same Box.
 
@@ -86,7 +86,7 @@ VirtualList shows blank rows when:
 - **Normal case**: The component re-renders once layout completes (usually the same frame). Your UI should handle `width === 0` gracefully (return `null` or a placeholder).
 - **Not updating at all**: Ensure the component's parent has a concrete size. A chain of `flexGrow={1}` without a root-level size means layout can't resolve.
 - **In tests**: Call `app.debug()` after render — if the layout is correct in the debug output, the hook is working. If `width` stays 0, check that `createRenderer` has `cols` and `rows` set.
-- **Oscillation**: If the component changes its own size based on `useContentRect`, it can loop. See [containment.md](deep-dives/containment.md) for the built-in protection.
+- **Oscillation**: If the component changes its own size based on `useContentRect`, it can loop. See [containment.md](../deep-dives/containment.md) for the built-in protection.
 
 ## Debugging
 

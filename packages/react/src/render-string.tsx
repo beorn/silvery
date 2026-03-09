@@ -67,6 +67,15 @@ export interface RenderStringOptions {
    * and output generation instead of the global defaults.
    */
   pipelineConfig?: PipelineConfig
+
+  /**
+   * Trim trailing whitespace from each line.
+   * Default: true (trims trailing spaces)
+   *
+   * Set to false when rendering to stdout where trailing spaces are
+   * semantically significant (e.g., ink compat static renders).
+   */
+  trimTrailingWhitespace?: boolean
 }
 
 // ============================================================================
@@ -133,7 +142,7 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
     throw new Error("Layout engine not initialized. Use renderString() (async) or initialize with setLayoutEngine().")
   }
 
-  const { width = 80, height = 24, plain = false, pipelineConfig } = options
+  const { width = 80, height = 24, plain = false, pipelineConfig, trimTrailingWhitespace = true } = options
 
   // Track whether React committed new work (from layout notifications etc.)
   let hadReactCommit = false
@@ -225,7 +234,9 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
     })
   })
 
-  return plain ? bufferToText(buffer) : bufferToStyledText(buffer)
+  return plain
+    ? bufferToText(buffer, { trimTrailingWhitespace })
+    : bufferToStyledText(buffer, { trimTrailingWhitespace })
 }
 
 // ============================================================================

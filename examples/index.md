@@ -1,6 +1,6 @@
-# silvery Examples
+# Silvery Examples
 
-Interactive examples demonstrating silvery features. Organized by category.
+Interactive examples demonstrating Silvery features. Organized by category.
 
 ## Running Examples
 

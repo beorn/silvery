@@ -60,8 +60,26 @@ export type { UseFocusOptions, UseFocusResult, InkUseFocusManagerResult } from "
 // Render (Ink-compatible)
 // =============================================================================
 
-export { render } from "@silvery/react/render"
+import { render as silveryRender } from "@silvery/react/render"
 export type { RenderOptions, Instance } from "@silvery/react/render"
+
+/**
+ * Ink-compatible render function.
+ *
+ * Ink uses `render(element, { stdout, stdin, debug, ... })` where the second
+ * arg is options. Silvery uses `render(element, termDef, options)` where
+ * termDef is a separate concept. This wrapper adapts ink's 2-arg API to
+ * silvery's 3-arg API so that `{ stdout, debug }` is treated as render
+ * options, not as a TermDef.
+ */
+export function render(element: import("react").ReactNode, options?: Record<string, unknown>) {
+  if (!options) return silveryRender(element)
+  // Pass as 3rd arg (options) with explicit TermDef containing stdout/stdin
+  const termDef: Record<string, unknown> = {}
+  if (options.stdout) termDef.stdout = options.stdout
+  if (options.stdin) termDef.stdin = options.stdin
+  return silveryRender(element, termDef as any, options as any)
+}
 
 export { measureElement } from "@silvery/react/measureElement"
 export type { MeasureElementOutput } from "@silvery/react/measureElement"

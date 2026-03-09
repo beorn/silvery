@@ -1,6 +1,6 @@
 # Plugin Composition
 
-Silvery provides SlateJS-style plugins for extending app functionality. Plugins compose together to create "drivers" for automated testing and AI interaction. For the graduated introduction to the plugin architecture, see [Building an App](../guides/building-an-app.md). For the API reference, see [Event Handling](../guides/event-handling.md).
+Silvery provides SlateJS-style plugins for extending app functionality. Plugins compose together to create "drivers" for automated testing and AI interaction. For the graduated introduction to the plugin architecture, see [Building an App](../guide/building-an-app.md). For the API reference, see [Event Handling](../guide/event-handling.md).
 
 ## Built-in Plugins
 

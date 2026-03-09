@@ -35,8 +35,8 @@ interface EntryPoint {
 const entries: EntryPoint[] = [
   // --- Leaf packages (should NOT pull React) ---
   {
-    name: "@silvery/ansi",
-    specifier: "@silvery/ansi",
+    name: "@silvery/term (ansi)",
+    specifier: "@silvery/term",
     importExpr: "{ createTerm, detectColor, stripAnsi }",
     expectNoReact: true,
     expectNoReconciler: true,

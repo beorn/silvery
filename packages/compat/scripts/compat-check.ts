@@ -99,9 +99,9 @@ async function runInkTests() {
   await cloneIfNeeded(INK_REPO, INK_DIR, "ink")
 
   // Ink tests import from '../src/index.js' (relative).
-  // We replace src/index.js with a shim that re-exports from our bundle.
+  // tsx (used by ava via --import=tsx) resolves .js to .ts when both exist,
+  // so we must remove index.ts to prevent tsx from loading ink's original source.
 
-  const shimPath = join(INK_DIR, "src/index.js")
   const bundlePath = join(BUILD_DIR, "silvery-ink.js")
 
   const shimContent = `// Auto-generated shim — re-exports silvery's ink compat layer
@@ -111,8 +111,14 @@ export * from "${bundlePath}";
 import { render } from "${bundlePath}";
 export default render;
 `
+  const shimPath = join(INK_DIR, "src/index.js")
+  const origTsPath = join(INK_DIR, "src/index.ts")
   await Bun.write(shimPath, shimContent)
-  console.log("  Wrote ink shim at", shimPath)
+  // Remove index.ts so tsx doesn't resolve index.js → index.ts
+  if (existsSync(origTsPath)) {
+    await $`rm ${origTsPath}`.quiet()
+  }
+  console.log("  Wrote ink shim at", shimPath, "(removed index.ts)")
 
   // Install ink's dependencies (ava, sinon, strip-ansi, etc.)
   console.log("  Installing ink dependencies...")

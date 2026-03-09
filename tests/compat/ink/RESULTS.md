@@ -1,7 +1,7 @@
 # Ink Compatibility Audit Results
 
 Date: 2026-03-09
-silvery version: vendor/silvery (HEAD)
+Silvery version: vendor/silvery (HEAD)
 Ink version: 5.2.1 (tests adapted from github.com/vadimdemedes/ink)
 
 ## Summary
@@ -46,7 +46,7 @@ All tests involving `flexDirection="row"` on a parent Box render children vertic
 (column layout) instead of horizontally. This affects flex, gap, width-height,
 padding/margin X+right, and render-to-string layout tests.
 
-**Root cause**: silvery's renderStringSync may not apply `flexDirection="row"` the
+**Root cause**: Silvery's renderStringSync may not apply `flexDirection="row"` the
 same way as Ink's Yoga-based layout. Children stack vertically regardless of the
 `flexDirection` prop in string rendering mode.
 
@@ -55,27 +55,27 @@ margin.test.tsx (2/13), padding.test.tsx (2/13), render-to-string.test.tsx (4/28
 
 ### Category 2: ANSI code format differences (15 failures)
 
-silvery uses a different SGR encoding style than chalk:
+Silvery uses a different SGR encoding style than chalk:
 
-- silvery: `\x1b[0;38;5;2m` (reset-prefix style)
+- Silvery: `\x1b[0;38;5;2m` (reset-prefix style)
 - chalk: `\x1b[32m` (direct style)
 
 Both are semantically equivalent (produce the same visual output), but byte-level
-comparison fails. Also, silvery uses `\x1b[0m` as the close sequence for all styles
+comparison fails. Also, Silvery uses `\x1b[0m` as the close sequence for all styles
 rather than chalk's per-attribute close codes (`\x1b[39m`, `\x1b[27m`, etc.).
 
 **Affected files**: text.test.tsx (12/15), render-to-string.test.tsx (2/28)
 
 ### Category 3: Position (absolute/relative/static) not supported (8 failures)
 
-silvery does not implement CSS-style absolute/relative/static positioning with
+Silvery does not implement CSS-style absolute/relative/static positioning with
 top/left/bottom/right offsets. All positioned elements render in normal flow.
 
 **Affected files**: position.test.tsx (8/8)
 
 ### Category 4: ANSI cursor/erase sequence stripping (2 failures)
 
-silvery does not strip ANSI cursor movement sequences (`\x1b[1A`, `\x1b[2K`,
+Silvery does not strip ANSI cursor movement sequences (`\x1b[1A`, `\x1b[2K`,
 `\x1b[5;10H`, `\x1b[2J`) from text content. Ink strips these to prevent terminal
 corruption.
 
@@ -83,9 +83,9 @@ corruption.
 
 ### Category 5: Behavioral differences (3 failures)
 
-- `render empty fragment`: silvery renders a full-height empty buffer (newlines) instead of empty string
+- `render empty fragment`: Silvery renders a full-height empty buffer (newlines) instead of empty string
 - `captures initial render output before effect-driven state updates`: renderStringSync runs effects synchronously, so it captures final state instead of initial
-- `text outside Text component throws`: silvery does not throw when raw text is placed outside `<Text>`, it renders it
+- `text outside Text component throws`: Silvery does not throw when raw text is placed outside `<Text>`, it renders it
 
 **Affected files**: render-to-string.test.tsx (3/28)
 
@@ -128,10 +128,10 @@ additional surface area for future compatibility work.
 ## Methodology
 
 - Ink tests from AVA framework were manually converted to vitest
-- `import {render} from 'ink'` replaced with silvery's `renderToString`/`renderToStringAsync` helpers
-- `import chalk from 'chalk'` kept as-is (used directly, not through silvery compat)
-- `strip-ansi` replaced with silvery's own `stripAnsi` from `@silvery/ansi`
-- silvery's `renderStringSync` wraps output with `\x1b[0m` at start/end; a `stripBufferResets()` helper removes these to match Ink's output format
+- `import {render} from 'ink'` replaced with Silvery's `renderToString`/`renderToStringAsync` helpers
+- `import chalk from 'chalk'` kept as-is (used directly, not through Silvery compat)
+- `strip-ansi` replaced with Silvery's own `stripAnsi` from `@silvery/ansi`
+- Silvery's `renderStringSync` wraps output with `\x1b[0m` at start/end; a `stripBufferResets()` helper removes these to match Ink's output format
 - Layout engine must be initialized async before string rendering; tests use `beforeAll(async () => await initLayoutEngine())`
 - Tests run with `bun vitest run --project vendor vendor/silvery/tests/compat/`
 

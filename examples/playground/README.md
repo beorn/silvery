@@ -1,6 +1,6 @@
-# silvery Canvas Playground
+# Silvery Canvas Playground
 
-Interactive browser demo of silvery's Canvas 2D adapter. Renders React components to an HTML5 `<canvas>` element using the same layout engine and rendering pipeline as the terminal adapter.
+Interactive browser demo of Silvery's Canvas 2D adapter. Renders React components to an HTML5 `<canvas>` element using the same layout engine and rendering pipeline as the terminal adapter.
 
 ## Quick Start
 
@@ -33,13 +33,13 @@ Resize the browser window to see layouts recompute. The canvas size is shown in 
 
 ## Architecture
 
-The playground uses the same rendering pipeline as silvery's terminal mode:
+The playground uses the same rendering pipeline as Silvery's terminal mode:
 
 ```
 React JSX
   |  React reconciler builds SilveryNode tree
   v
-flexily layout engine (pure JS flexbox)
+Flexily layout engine (pure JS flexbox)
   |  Computes { x, y, width, height } for every node
   v
 Canvas adapter (CanvasRenderBuffer)

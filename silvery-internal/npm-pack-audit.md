@@ -42,13 +42,13 @@ The tarball includes files that should NOT be published:
 
 ### Should Consider Excluding (saves ~1.5+ MB packed)
 
-| Category                      | File Count  | Approximate Size | Issue                                            |
-| ----------------------------- | ----------- | ---------------- | ------------------------------------------------ |
-| Tests (`tests/`)              | 35 files    | ~150+ KB         | Test files, fixtures, benchmarks, results docs   |
-| Documentation (`docs/`)       | 90 files    | ~600+ KB         | Good for GitHub, not for npm. Use homepage link. |
-| Examples (`examples/`)        | 76 files    | ~700+ KB         | Better served via repo link or separate package  |
-| VitePress site (`docs/site/`) | 30+ files   | ~200+ KB         | Build artifacts, not library code                |
-| Images (`docs/images/`)       | 4 PNG files | ~182 KB          | Screenshots for docs site                        |
+| Category                              | File Count          | Approximate Size | Issue                                            |
+| ------------------------------------- | ------------------- | ---------------- | ------------------------------------------------ |
+| Tests (`tests/`)                      | 35 files            | ~150+ KB         | Test files, fixtures, benchmarks, results docs   |
+| Documentation (`docs/`)               | 90 files            | ~600+ KB         | Good for GitHub, not for npm. Use homepage link. |
+| Examples (`examples/`)                | 76 files            | ~700+ KB         | Better served via repo link or separate package  |
+| VitePress config (`docs/.vitepress/`) | Config + components | ~10 KB           | Build artifacts, not library code                |
+| Images (`docs/images/`)               | 4 PNG files         | ~182 KB          | Screenshots for docs site                        |
 
 ### Already Excluded (good)
 

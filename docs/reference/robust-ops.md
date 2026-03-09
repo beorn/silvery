@@ -1,6 +1,6 @@
 # Designing Robust Ops
 
-The examples in the [Building an App](../guides/building-an-app.md) Level 3 guide use index-based ops: `{ op: "toggleDone", index: 2 }`. This works for single-session undo but breaks when ops need to survive reordering — undo after other edits, concurrent users, or offline sync. If someone inserts at index 1, your `index: 2` now points to the wrong item.
+The examples in the [Building an App](../guide/building-an-app.md) Level 3 guide use index-based ops: `{ op: "toggleDone", index: 2 }`. This works for single-session undo but breaks when ops need to survive reordering — undo after other edits, concurrent users, or offline sync. If someone inserts at index 1, your `index: 2` now points to the wrong item.
 
 **Prefer identity-based ops**: `{ op: "toggleDone", id: "abc123" }`. This is the same principle behind CRDTs[^crdt] — operations that commute (produce the same result regardless of order) are safe for concurrent use.
 
@@ -25,7 +25,7 @@ You don't need to start here. Index-based is fine for simple undo. But when you 
 
 ## See Also
 
-- [Building an App — Level 3](../guides/building-an-app.md#level-3-everything-is-data) — where ops-as-data is introduced
+- [Building an App — Level 3](../guide/building-an-app.md#level-3-everything-is-data) — where ops-as-data is introduced
 
 ---
 

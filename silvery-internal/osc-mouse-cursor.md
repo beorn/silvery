@@ -4,7 +4,7 @@
 
 ## Problem
 
-Modern terminal emulators support OSC 22 to change the mouse cursor shape (pointer, text I-beam, crosshair, etc.). silvery should emit these sequences based on what's under the mouse:
+Modern terminal emulators support OSC 22 to change the mouse cursor shape (pointer, text I-beam, crosshair, etc.). Silvery should emit these sequences based on what's under the mouse:
 
 - **I-beam** over text input areas (TextInput, TextArea)
 - **Pointer** (hand) over clickable elements (buttons, links, fold toggles)

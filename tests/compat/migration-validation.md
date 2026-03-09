@@ -1,6 +1,6 @@
 # Migration Guide Validation: Real Ink Apps
 
-Validates the silvery migration guide (`docs/guides/migration.md`) against real-world Ink CLI applications. For each app, documents what Ink APIs it uses and whether `silvery/ink` covers them.
+Validates the Silvery migration guide (`docs/guide/migration.md`) against real-world Ink CLI applications. For each app, documents what Ink APIs it uses and whether `silvery/ink` covers them.
 
 ---
 
@@ -35,7 +35,7 @@ Validates the silvery migration guide (`docs/guides/migration.md`) against real-
 | `Key`            | Type      | 2     | Yes         | Keyboard key type annotation                                                                                        |
 | `RenderOptions`  | Type      | 2     | Yes         | Render configuration                                                                                                |
 | `TextProps`      | Type      | 1     | Yes         | Extending Text component props                                                                                      |
-| `DOMElement`     | Type      | 2     | Partial     | Used for `measureElement` ref typing. silvery uses different internal node types but `measureElement` accepts refs. |
+| `DOMElement`     | Type      | 2     | Partial     | Used for `measureElement` ref typing. Silvery uses different internal node types but `measureElement` accepts refs. |
 
 ### Public API Re-export
 
@@ -51,7 +51,7 @@ This is exactly the subset that `silvery/ink` exports.
 
 **Status: FULLY COMPATIBLE**
 
-All 13 Ink APIs used by Shopify CLI are exported by `silvery/ink`. The only edge case is `DOMElement` type — silvery uses `BoxHandle` for refs, but `measureElement` accepts the same ref pattern. Shopify's usage (`useRef<DOMElement>(null)`) would need the type changed to `BoxHandle`, but the runtime behavior is identical.
+All 13 Ink APIs used by Shopify CLI are exported by `silvery/ink`. The only edge case is `DOMElement` type — Silvery uses `BoxHandle` for refs, but `measureElement` accepts the same ref pattern. Shopify's usage (`useRef<DOMElement>(null)`) would need the type changed to `BoxHandle`, but the runtime behavior is identical.
 
 **Migration steps:**
 
@@ -85,17 +85,17 @@ All 13 Ink APIs used by Shopify CLI are exported by `silvery/ink`. The only edge
 
 ### Key Patterns
 
-1. **`<Static items={messages}>`** — Gatsby uses `Static` to freeze completed build messages in scrollback while progress updates render below. This is a core Ink pattern that silvery supports.
+1. **`<Static items={messages}>`** — Gatsby uses `Static` to freeze completed build messages in scrollback while progress updates render below. This is a core Ink pattern that Silvery supports.
 
-2. **`useStdout()` for responsive UI** — Reads `stdout.columns` and `stdout.rows`, listens for `resize` events. silvery's `useStdout()` provides identical API.
+2. **`useStdout()` for responsive UI** — Reads `stdout.columns` and `stdout.rows`, listens for `resize` events. Silvery's `useStdout()` provides identical API.
 
-3. **`<Text wrap="truncate">`** — Gatsby uses Ink's text truncation. silvery supports `wrap="truncate"`, `"truncate-start"`, and `"truncate-middle"` (more options than Ink).
+3. **`<Text wrap="truncate">`** — Gatsby uses Ink's text truncation. Silvery supports `wrap="truncate"`, `"truncate-start"`, and `"truncate-middle"` (more options than Ink).
 
 ### Migration Assessment
 
 **Status: FULLY COMPATIBLE (core APIs)**
 
-All core Ink APIs used by Gatsby CLI are covered. The only dependency needing attention is `ink-spinner`, which has a trivial silvery equivalent (`@silvery/ui` exports `<Spinner>`).
+All core Ink APIs used by Gatsby CLI are covered. The only dependency needing attention is `ink-spinner`, which has a trivial Silvery equivalent (`@silvery/ui` exports `<Spinner>`).
 
 **Migration steps:**
 
@@ -103,7 +103,7 @@ All core Ink APIs used by Gatsby CLI are covered. The only dependency needing at
 2. Replace `from 'ink'` with `from 'silvery/ink'`
 3. Replace `ink-spinner` with `import { Spinner } from '@silvery/ui'` (same `<Spinner>` API)
 
-**Behavioral difference:** Text that overflowed in Ink 3 will now wrap by default in silvery. Gatsby already uses `wrap="truncate"` where truncation is desired, so this should have no visible impact.
+**Behavioral difference:** Text that overflowed in Ink 3 will now wrap by default in Silvery. Gatsby already uses `wrap="truncate"` where truncation is desired, so this should have no visible impact.
 
 ---
 
@@ -124,7 +124,7 @@ All core Ink APIs used by Gatsby CLI are covered. The only dependency needing at
 
 ### Community Packages
 
-| Package                     | Version | Purpose            | silvery Equivalent                  |
+| Package                     | Version | Purpose            | Silvery Equivalent                  |
 | --------------------------- | ------- | ------------------ | ----------------------------------- |
 | `ink-select-input`          | 4.2.2   | Selection lists    | `@silvery/ui` `<SelectList>`        |
 | `ink-table`                 | 3.1.0   | Tabular output     | `@silvery/ui` `<Table>`             |
@@ -138,13 +138,13 @@ All core Ink APIs used by Gatsby CLI are covered. The only dependency needing at
 
 2. **Heavy community package reliance** — 5 community packages. This is the main migration challenge — not the core Ink API, but the ecosystem.
 
-3. **`ink-testing-library`** — Used for testing UI components. silvery's `@silvery/test` provides `createRenderer()` with richer capabilities (locators, auto-refresh).
+3. **`ink-testing-library`** — Used for testing UI components. Silvery's `@silvery/test` provides `createRenderer()` with richer capabilities (locators, auto-refresh).
 
 ### Migration Assessment
 
 **Status: CORE COMPATIBLE, ECOSYSTEM MIGRATION NEEDED**
 
-Core Ink APIs (`Box`, `Text`, `render`) are fully covered. The challenge is 5 community packages that need silvery equivalents:
+Core Ink APIs (`Box`, `Text`, `render`) are fully covered. The challenge is 5 community packages that need Silvery equivalents:
 
 - `ink-select-input` -> `@silvery/ui` `<SelectList>` (different API, similar functionality)
 - `ink-table` -> `@silvery/ui` `<Table>` (different API, richer features)
@@ -157,7 +157,7 @@ Core Ink APIs (`Box`, `Text`, `render`) are fully covered. The challenge is 5 co
 1. `bun remove ink ink-select-input ink-table ink-spinner ink-testing-library ink-use-stdout-dimensions`
 2. `bun add silvery`
 3. Replace `from 'ink'` with `from 'silvery/ink'`
-4. Replace community packages with silvery built-in equivalents (API changes required for select-input and table)
+4. Replace community packages with Silvery built-in equivalents (API changes required for select-input and table)
 5. Replace `ink-testing-library` with `@silvery/test` (API change: `render()` -> `createRenderer()`)
 
 ---
@@ -186,20 +186,20 @@ Core Ink APIs (`Box`, `Text`, `render`) are fully covered. The challenge is 5 co
 
 These Ink 6 APIs exist but none of the 3 apps use them:
 
-- `useFocus` / `useFocusManager` — silvery has tree-based focus (richer)
-- `useStderr` — silvery supports via `useStdout` pattern
-- `usePaste` — silvery has `usePaste` hook
-- `useCursor` — silvery has `useCursor` hook
-- `useBoxMetrics` / `useWindowSize` — Ink 6 additions, silvery has `useContentRect`
+- `useFocus` / `useFocusManager` — Silvery has tree-based focus (richer)
+- `useStderr` — Silvery supports via `useStdout` pattern
+- `usePaste` — Silvery has `usePaste` hook
+- `useCursor` — Silvery has `useCursor` hook
+- `useBoxMetrics` / `useWindowSize` — Ink 6 additions, Silvery has `useContentRect`
 - `useIsScreenReaderEnabled` — Ink 6 accessibility
 - `Newline`, `Spacer`, `Transform` — simple components, all covered by silvery/ink
-- `renderToString` — silvery has `renderStringSync`
+- `renderToString` — Silvery has `renderStringSync`
 
 ### Community Package Ecosystem
 
 The biggest migration challenge is the Ink community ecosystem (~50 packages). Of the community packages used by these apps:
 
-| ink-\* Package              | silvery Built-in Equivalent      |
+| ink-\* Package              | Silvery Built-in Equivalent      |
 | --------------------------- | -------------------------------- |
 | `ink-spinner`               | `@silvery/ui` `<Spinner>`        |
 | `ink-select-input`          | `@silvery/ui` `<SelectList>`     |
@@ -207,7 +207,7 @@ The biggest migration challenge is the Ink community ecosystem (~50 packages). O
 | `ink-testing-library`       | `@silvery/test` `createRenderer` |
 | `ink-use-stdout-dimensions` | `useStdout()` (built-in)         |
 
-silvery's `@silvery/ui` package includes 23+ components that cover most of the popular `ink-*` community packages, plus additional components not available in the Ink ecosystem (TextArea, ModalDialog, CommandPalette, Image, etc.).
+Silvery's `@silvery/ui` package includes 23+ components that cover most of the popular `ink-*` community packages, plus additional components not available in the Ink ecosystem (TextArea, ModalDialog, CommandPalette, Image, etc.).
 
 ---
 
@@ -219,7 +219,7 @@ silvery's `@silvery/ui` package includes 23+ components that cover most of the p
 
 2. **`render()` just needs `await`** — Shopify already uses async patterns; Gatsby and CDKTF would need minor async adjustment.
 
-3. **`measureElement()` works** — Shopify uses it; silvery exports it from `silvery/ink`.
+3. **`measureElement()` works** — Shopify uses it; Silvery exports it from `silvery/ink`.
 
 4. **`useContentRect()` as upgrade path** — Shopify's `measureElement` + manual re-render pattern could be simplified to `useContentRect()`.
 
@@ -227,7 +227,7 @@ silvery's `@silvery/ui` package includes 23+ components that cover most of the p
 
 ### Suggested Additions to Migration Guide
 
-1. **Community package mapping table** — Add a section listing popular `ink-*` packages and their silvery equivalents. This is the #1 migration friction point.
+1. **Community package mapping table** — Add a section listing popular `ink-*` packages and their Silvery equivalents. This is the #1 migration friction point.
 
 2. **`DOMElement` type migration** — Document that `DOMElement` refs should change to `BoxHandle`. This affects `measureElement` users.
 

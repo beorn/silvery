@@ -1,4 +1,4 @@
-# silvery API Audit
+# Silvery API Audit
 
 Catalog of every export from every entry point. Last updated 2026-03-09.
 

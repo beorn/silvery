@@ -205,4 +205,4 @@ and replayable.
 
 ## See Also
 
-- [docs/guides/state-management.md](../../docs/guides/state-management.md) — full state management guide covering createApp, createSlice, selectors, and effects middleware
+- [docs/guide/state-management.md](../../docs/guide/state-management.md) — full state management guide covering createApp, createSlice, selectors, and effects middleware

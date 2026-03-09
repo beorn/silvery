@@ -6,3 +6,4 @@ editset.json
 examples/web/viewer-registry.ts
 examples/web/dist/
 examples/playground/dist/
+docs/public/examples/dist/

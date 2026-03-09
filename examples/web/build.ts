@@ -11,7 +11,7 @@ import { join, dirname } from "node:path"
 
 const __dirname = dirname(new URL(import.meta.url).pathname)
 const distDir = join(__dirname, "dist")
-const docsDistDir = join(__dirname, "../../docs/site/public/examples/dist")
+const docsDistDir = join(__dirname, "../../docs/public/examples/dist")
 
 // Ensure dist directories exist
 await mkdir(distDir, { recursive: true })
@@ -351,20 +351,20 @@ if (!viewerResult.success) {
 await cp(distDir, docsDistDir, { recursive: true })
 
 // Copy showcase.html to docs public dir
-await cp(join(__dirname, "showcase.html"), join(__dirname, "../../docs/site/public/examples/showcase.html"))
+await cp(join(__dirname, "showcase.html"), join(__dirname, "../../docs/public/examples/showcase.html"))
 
 // Copy viewer.html to docs public dir (if it exists)
 try {
-  await cp(join(__dirname, "viewer.html"), join(__dirname, "../../docs/site/public/examples/viewer.html"))
+  await cp(join(__dirname, "viewer.html"), join(__dirname, "../../docs/public/examples/viewer.html"))
 } catch {
   // viewer.html may not exist yet — skip silently
 }
 
 // Copy xterm.css to docs public dir (needed by showcase.html in production)
-await mkdir(join(__dirname, "../../docs/site/public/examples/xterm"), { recursive: true })
+await mkdir(join(__dirname, "../../docs/public/examples/xterm"), { recursive: true })
 await cp(
   join(__dirname, "../../node_modules/@xterm/xterm/css/xterm.css"),
-  join(__dirname, "../../docs/site/public/examples/xterm/xterm.css"),
+  join(__dirname, "../../docs/public/examples/xterm/xterm.css"),
 )
 
 console.log("✓ Generated examples/web/viewer-registry.ts")
@@ -373,8 +373,8 @@ console.log("✓ Built examples/web/dist/dom-app.js")
 console.log("✓ Built examples/web/dist/xterm-app.js")
 console.log("✓ Built examples/web/dist/showcase-app.js")
 console.log("✓ Built examples/web/dist/viewer-app.js")
-console.log("✓ Copied to docs/site/public/examples/dist/")
-console.log("✓ Copied showcase.html to docs/site/public/examples/")
+console.log("✓ Copied to docs/public/examples/dist/")
+console.log("✓ Copied showcase.html to docs/public/examples/")
 console.log("\nOpen in browser:")
 console.log("  examples/web/canvas.html")
 console.log("  examples/web/dom.html")

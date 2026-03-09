@@ -1206,7 +1206,7 @@ function CLIWizardShowcase(): JSX.Element {
 
       {/* Progress indicator */}
       <Box marginBottom={1}>
-        <Text color="#585b70">  </Text>
+        <Text color="#585b70"> </Text>
         <Text>
           <Text color="#a6e3a1">{"━".repeat(filled)}</Text>
           <Text color="#313244">{"━".repeat(progressWidth - filled)}</Text>
@@ -1886,12 +1886,7 @@ function TextInputShowcase(): JSX.Element {
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Box
-        flexDirection="row"
-        borderStyle="round"
-        borderColor={termFocused ? "#89b4fa" : "#313244"}
-        paddingX={1}
-      >
+      <Box flexDirection="row" borderStyle="round" borderColor={termFocused ? "#89b4fa" : "#313244"} paddingX={1}>
         <Text color={termFocused ? "#89b4fa" : "#585b70"}>&gt; </Text>
         <Text color="#cdd6f4">{text}</Text>
         <Text color="#89b4fa">{termFocused ? "▋" : " "}</Text>

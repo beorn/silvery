@@ -7,7 +7,7 @@
 Overlay elements (modal dialogs, dropdowns, tooltips) need opaque backgrounds to cover the content beneath them. Currently, components like `ModalDialog` hardcode `backgroundColor="$surface"` which works but:
 
 1. **Hardcodes a specific token** — `$surface` is slightly elevated from `$bg`, but overlays might want to use the terminal's actual default background, which is whatever the user configured in their terminal emulator (not necessarily any theme token).
-2. **Cannot reference "terminal default background"** — The terminal's background is not a color value silvery knows at render time unless OSC 11 detection was performed. The `$bg` theme token is a _derived_ approximation, not the real terminal background.
+2. **Cannot reference "terminal default background"** — The terminal's background is not a color value Silvery knows at render time unless OSC 11 detection was performed. The `$bg` theme token is a _derived_ approximation, not the real terminal background.
 3. **Overlays on overlays** — A dropdown inside a dialog should use a different elevation from the dialog itself. There's no elevation system.
 
 ## Current State
