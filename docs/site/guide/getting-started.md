@@ -40,7 +40,7 @@ import { Box, Text, render, createTerm } from "@silvery/term"
 function App() {
   return (
     <Box borderStyle="round" padding={1}>
-      <Text>Hello from silvery!</Text>
+      <Text>Hello from Silvery!</Text>
     </Box>
   )
 }

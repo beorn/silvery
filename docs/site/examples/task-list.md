@@ -33,7 +33,7 @@ A scrollable task list with variable-height items and keyboard navigation.
 ```
   Tasks (7 items)
 +------------------------------------------+
-| [ ] Research silvery documentation          |
+| [ ] Research Silvery documentation          |
 |     - Read the API docs                  |
 |     - Try the examples                   |
 | [x] Install dependencies                 |
@@ -76,7 +76,7 @@ interface Task {
 const initialTasks: Task[] = [
   {
     id: "1",
-    title: "Research silvery documentation",
+    title: "Research Silvery documentation",
     done: false,
     subtasks: [
       { id: "1a", title: "Read the API docs", done: true },

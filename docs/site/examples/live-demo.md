@@ -34,7 +34,7 @@ function App() {
     <Box flexDirection="column" padding={1}>
       <Box borderStyle="single" borderColor="cyan" padding={1}>
         <Text bold color="cyan">
-          silvery Rendering
+          Silvery Rendering
         </Text>
         <Text color="green">
           Size: {width} x {height}

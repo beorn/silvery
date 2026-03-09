@@ -210,7 +210,7 @@ function Content({ width }) {
 **Silvery**: Just ask for dimensions where needed.
 
 ```tsx
-// silvery: Components know their size
+// Silvery: Components know their size
 function App() {
   return (
     <Box borderStyle="single">
