@@ -10,7 +10,7 @@
 
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
-import { renderToXterm } from "../../src/xterm/index.js"
+import { renderToXterm } from "../../packages/term/src/xterm/index.js"
 import { SHOWCASES, emitInput, setTermFocused } from "./showcases.js"
 import React from "react"
 

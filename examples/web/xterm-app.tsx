@@ -8,7 +8,7 @@
 import React from "react"
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
-import { renderToXterm, Box, Text, useContentRect } from "../../src/xterm/index.js"
+import { renderToXterm, Box, Text, useContentRect } from "../../packages/term/src/xterm/index.js"
 
 // Component that shows its dimensions (in cells, not pixels)
 function SizeDisplay() {

@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from "react"
-import { renderToCanvas, Box, Text, useContentRect } from "../../src/canvas/index.js"
+import { renderToCanvas, Box, Text, useContentRect } from "../../packages/ui/src/canvas/index.js"
 
 // Component that shows its dimensions
 function SizeDisplay() {

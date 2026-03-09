@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react"
-import { Box, Text, Divider, useContentRect } from "../../src/xterm/index.js"
+import { Box, Text, Divider, useContentRect } from "../../packages/term/src/xterm/index.js"
 
 // ============================================================================
 // Input Event Bus
