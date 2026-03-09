@@ -46,7 +46,7 @@
 ### Kitty keyboard shortcuts not working
 
 - Pass `kitty: true` to `run()` to enable the Kitty keyboard protocol.
-- Check that your terminal supports it (Ghostty, Kitty, WezTerm, foot — see [terminal-capabilities.md](reference/terminal-capabilities.md)).
+- Check that your terminal supports it (Ghostty, Kitty, WezTerm, foot — see [Terminal Capabilities](/reference/terminal-capabilities)).
 - iTerm2 and Terminal.app do not support the Kitty protocol.
 
 ### Flexily vs Yoga layout differences

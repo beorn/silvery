@@ -168,6 +168,7 @@ export function useStderr() {
 
 import { renderStringSync } from "@silvery/react/render-string"
 import { isLayoutEngineInitialized, setLayoutEngine } from "@silvery/term/layout-engine"
+import { createFlexilyZeroEngine } from "@silvery/term/adapters/flexily-zero-adapter"
 
 /**
  * Ink-compatible renderToString.
@@ -179,8 +180,6 @@ export function renderToString(
   options?: { columns?: number },
 ): string {
   if (!isLayoutEngineInitialized()) {
-    // Use flexily (sync) — no await needed
-    const { createFlexilyZeroEngine } = require("@silvery/term/adapters/flexily-zero-adapter") as any
     setLayoutEngine(createFlexilyZeroEngine())
   }
   return renderStringSync(node as import("react").ReactElement, {

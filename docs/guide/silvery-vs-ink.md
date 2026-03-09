@@ -8,7 +8,7 @@
 
 See [migration guide](migration.md) for switching the rendering layer.
 
-> Performance numbers in this document are from the **Ink comparison benchmark suite** (see [benchmarks/ink-comparison/](../benchmarks/ink-comparison/)). For raw benchmark tables, reproduce with `bun run bench`. For the full optimization catalog, see [performance.md](../deep-dives/performance.md).
+> Performance numbers in this document are from the **Ink comparison benchmark suite**. For raw benchmark tables, reproduce with `bun run bench`. For the full optimization catalog, see [performance.md](../deep-dives/performance.md).
 
 ---
 
@@ -196,7 +196,7 @@ Silvery supports pluggable layout engines with the same flexbox API:
 | RTL direction      | Supported         | Supported   |
 | Baseline alignment | Not supported     | Supported   |
 
-Both are fast enough for 60fps terminal UIs. Flexily is 5x smaller with comparable performance. See [Flexily vs Yoga](../../flexily/docs/yoga-comparison.md) for details.
+Both are fast enough for 60fps terminal UIs. Flexily is 5x smaller with comparable performance. See the [Flexily docs](https://beorn.github.io/flexily) for details.
 
 Note: Ink 6 uses Yoga NAPI (native C++), which is ~2x slower than both Flexily and Yoga WASM due to JS↔C++ bridge overhead.
 
@@ -211,16 +211,12 @@ Components need to know their dimensions to render content appropriately (charts
 - **Ink**: Thread terminal width through props, re-calculate on resize, re-render entire tree.
 - **Silvery**: Each pane reads `useContentRect()` and adapts. Resize triggers layout-only pass (21 µs for 1000 nodes).
 
-See [examples/dashboard](../examples/dashboard/) for a working multi-pane dashboard.
-
 ### Scrollable Task List
 
 A list of 500+ items where the user navigates with j/k.
 
 - **Ink**: Requires manual virtualization with height estimation. Height calculation is error-prone without layout feedback.
 - **Silvery**: `overflow="scroll"` handles everything. VirtualList component optimizes large lists.
-
-See [examples/task-list](../examples/task-list/) for a working example.
 
 ### Kanban Board
 
@@ -229,8 +225,6 @@ See [examples/task-list](../examples/task-list/) for a working example.
 - **Ink**: Complex width-threading (board→column→card), manual scroll per column, manual truncation.
 - **Silvery**: Columns and cards auto-size. Each column scrolls independently. Text auto-truncates.
 
-See [examples/kanban](../examples/kanban/) for a working 3-column board.
-
 ### Search with Live Filtering
 
 Type-ahead search with debounced results rendering.
@@ -238,7 +232,7 @@ Type-ahead search with debounced results rendering.
 - **Ink**: `useInput` for text capture, manual list rendering.
 - **Silvery**: `InputLayerProvider` for text input isolation, `useContentRect` for result count fitting.
 
-See [examples/search-filter](../examples/search-filter/) using `useTransition` + `useDeferredValue`.
+This pattern uses `useTransition` + `useDeferredValue` for responsive filtering.
 
 ### Simple CLI Prompt
 
