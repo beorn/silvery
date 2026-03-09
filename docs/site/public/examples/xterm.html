@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Silvery Terminal Demo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@6/css/xterm.min.css" />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        background: #1e1e1e;
+        color: #eee;
+        font-family: system-ui, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      #terminal {
+        width: 100%;
+        max-width: 600px;
+        height: calc(100vh - 32px);
+      }
+      /* Override xterm.js viewport background to match */
+      .xterm {
+        background: #1e1e1e;
+      }
+      .xterm-viewport {
+        background: #1e1e1e !important;
+      }
+      .error-msg {
+        color: #808080;
+        font-size: 14px;
+        text-align: center;
+        padding: 2rem;
+      }
+      .error-msg code {
+        display: block;
+        margin-top: 0.5rem;
+        color: #9cdcfe;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="terminal"></div>
+    <script type="module" src="./dist/xterm-app.js"></script>
+    <script>
+      // Show fallback if bundle fails to load
+      window.addEventListener(
+        "error",
+        function (e) {
+          if (e.filename && e.filename.includes("xterm-app")) {
+            document.body.innerHTML =
+              '<div class="error-msg">Build the examples to see this demo.<code>bun run examples/web/build.ts</code></div>'
+          }
+        },
+        true,
+      )
+    </script>
+  </body>
+</html>

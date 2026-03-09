@@ -1,0 +1,300 @@
+# Migration from Ink
+
+silvery is a drop-in replacement for Ink. Change your imports, and your app works.
+
+## Quick Start
+
+### Step 1: Install silvery
+
+```bash
+bun remove ink ink-testing-library
+bun add @silvery/term
+```
+
+### Step 2: Update Imports
+
+```diff
+- import { Box, Text, render, useInput, useApp } from 'ink';
++ import { Box, Text, render, useInput, useApp } from '@silvery/term';
+
+- import { render } from 'ink-testing-library';
++ import { render } from '@silvery/term/testing';
+```
+
+That's it. `render(<App />)` works without any term parameter — just add `await`:
+
+```tsx
+// Ink
+const { unmount, waitUntilExit } = render(<App />)
+
+// silvery — just add await
+const { unmount, waitUntilExit } = await render(<App />)
+```
+
+### Step 3: Run Tests
+
+```bash
+bun test
+```
+
+Most apps should work at this point.
+
+### Advanced: Explicit Terminal Control
+
+For production apps that need more control, you can create a term explicitly:
+
+```tsx
+import { render, createTerm } from "@silvery/term"
+
+using term = createTerm()
+const { unmount, waitUntilExit } = await render(<App />, term)
+```
+
+**Why use `createTerm()`?**
+
+- **Different contexts**: Swap term configurations for production, testing, or CI (colors, dimensions, capabilities).
+- **Better testing**: Mock terms that capture output, simulate terminal sizes, or disable colors.
+- **Explicit cleanup**: The `using` keyword (TC39 Explicit Resource Management) automatically restores cursor, raw mode, and alternate screen when the scope exits.
+
+Without `createTerm()`, silvery creates a default term internally — matching Ink's behavior exactly.
+
+::: tip Why is render() async?
+`render()` returns a handle synchronously (like Ink), but `await`-ing it waits for layout engine initialization. With Flexture (the default), this is near-instant — just a dynamic `import()`. With Yoga, it's a genuine WASM compilation step. For fully synchronous rendering, use `renderSync()` after initializing the engine manually. Most apps should just `await render(<App />)`.
+:::
+
+## What Works Identically
+
+These APIs are 100% compatible:
+
+| Category       | APIs                                                                     |
+| -------------- | ------------------------------------------------------------------------ |
+| **Render**     | `render(<App />)` — no term parameter needed                             |
+| **Components** | `<Box>`, `<Text>`, `<Newline>`, `<Spacer>`, `<Static>`                   |
+| **Hooks**      | `useInput()`, `useApp()`, `useStdout()`                                  |
+| **Styling**    | All Chalk styles work unchanged                                          |
+| **Flexbox**    | All flexbox props (direction, justify, align, wrap, grow, shrink, basis) |
+| **Borders**    | All border styles (single, double, round, bold, etc.)                    |
+
+## What's Different
+
+### 1. Components Know Their Size (The Big Win)
+
+**Ink**: Must manually thread width props.
+
+```tsx
+// Ink: Width must be passed down
+function Card({ width }: { width: number }) {
+  return <Text>{truncate(title, width)}</Text>
+}
+
+;<Card width={availableWidth - padding * 2} />
+```
+
+**silvery**: Components can ask for their size.
+
+```tsx
+// silvery: Just ask
+function Card() {
+  const { width } = useContentRect()
+  return <Text>{truncate(title, width)}</Text>
+}
+
+;<Card />
+```
+
+### 2. Text Wraps by Default
+
+**Ink**: Text overflows its container.
+
+```tsx
+// Ink: Broken layout
+<Box width={10}>
+  <Text>This is a very long text</Text>
+</Box>
+// Output: "This is a very long text" (overflows)
+```
+
+**silvery**: Text wraps to fit its container by default (word-aware wrapping).
+
+```tsx
+// silvery: Text wraps to container width
+<Box width={10}>
+  <Text>This is a very long text</Text>
+</Box>
+// Output:
+// "This is a"
+// "very long"
+// "text"
+```
+
+You can also truncate with an ellipsis instead of wrapping:
+
+```tsx
+// Truncation modes
+<Text wrap="truncate">This is a very long text</Text>      // "This is a…"
+<Text wrap="truncate-start">This is a very long text</Text> // "…long text"
+<Text wrap="truncate-middle">This is a very long text</Text> // "This…text"
+```
+
+**Migration**: If you rely on overflow, add `wrap={false}` to disable both wrapping and truncation.
+
+### 3. First Render Shows Zeros
+
+**Ink**: Components render once with final output.
+
+**silvery**: Components using `useContentRect()` render twice. First render has `{ width: 0, height: 0 }`, second has actual values.
+
+```tsx
+function Header() {
+  const { width } = useContentRect()
+  // First render: width=0
+  // Second render: width=80
+  return <Text>{"=".repeat(width)}</Text>
+}
+```
+
+This is usually invisible (both renders happen before first paint). Add a guard if needed:
+
+```tsx
+function Header() {
+  const { width } = useContentRect()
+  if (width === 0) return null
+  return <Text>{"=".repeat(width)}</Text>
+}
+```
+
+### 4. Scrolling Just Works
+
+**Ink**: Manual virtualization with height estimation.
+
+```tsx
+// Ink: Complex setup
+<ScrollableList
+  items={items}
+  height={availableHeight}
+  estimateHeight={(item) => calculateHeight(item, width)}
+  renderItem={(item) => <Card item={item} />}
+/>
+```
+
+**silvery**: Just render everything.
+
+```tsx
+// silvery: No config needed
+<Box overflow="scroll" scrollTo={selectedIdx}>
+  {items.map((item) => (
+    <Card key={item.id} item={item} />
+  ))}
+</Box>
+```
+
+**Migration**: Replace virtualization components with `overflow="scroll"`.
+
+### 5. measureElement() -> useContentRect()
+
+**Ink**: Use `measureElement()` after render.
+
+```tsx
+const ref = useRef()
+const { width } = measureElement(ref.current)
+// Need manual re-render to use width
+```
+
+**silvery**: `measureElement()` works for compatibility, but `useContentRect()` is simpler.
+
+```tsx
+const { width } = useContentRect()
+// Automatically re-renders with correct values
+```
+
+### 6. Hook Naming
+
+**Ink**: `useLayout` (if available)
+
+**silvery**: `useContentRect()` is preferred. `useLayout` is a deprecated alias.
+
+```diff
+- const { width } = useLayout();
++ const { width } = useContentRect();
+```
+
+## Known Incompatibilities
+
+### By Design
+
+| Behavior                | Ink       | silvery | Reason                       |
+| ----------------------- | --------- | ------- | ---------------------------- |
+| Text overflow           | Overflows | Wraps   | Better default               |
+| First render dimensions | N/A       | Zeros   | Required for layout feedback |
+| Internal APIs           | Exposed   | Hidden  | Not public API               |
+
+### Edge Cases
+
+| Issue             | Symptoms      | Workaround                             |
+| ----------------- | ------------- | -------------------------------------- |
+| Rapid re-renders  | Flicker       | silvery coalesces frames; usually fine |
+| Deep nesting      | Slower layout | Flatten tree if possible               |
+| Custom reconciler | Breaks        | Not supported                          |
+
+## Removing Width Prop Threading
+
+After migrating, you can simplify your code by removing manual width calculations:
+
+### Before (Ink)
+
+```tsx
+function Board({ width }: { width: number }) {
+  const colWidth = Math.floor((width - 2) / 3)
+  return (
+    <Box>
+      <Column width={colWidth} />
+      <Column width={colWidth} />
+      <Column width={colWidth} />
+    </Box>
+  )
+}
+
+function Column({ width, items }) {
+  return (
+    <Box width={width}>
+      {items.map((item) => (
+        <Card width={width - 2} item={item} />
+      ))}
+    </Box>
+  )
+}
+```
+
+### After (silvery)
+
+```tsx
+function Board() {
+  return (
+    <Box>
+      <Column />
+      <Column />
+      <Column />
+    </Box>
+  )
+}
+
+function Column({ items }) {
+  return (
+    <Box flexGrow={1}>
+      {items.map((item) => (
+        <Card item={item} />
+      ))}
+    </Box>
+  )
+}
+
+function Card({ item }) {
+  const { width } = useContentRect()
+  // Use width only where actually needed
+}
+```
+
+## Getting Help
+
+- **GitHub Issues**: Report bugs or request features
+- **Migration Problems**: Tag issue with `migration`

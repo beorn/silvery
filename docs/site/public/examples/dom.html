@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Silvery DOM Demo</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        background: #1e1e1e;
+        color: #eee;
+        font-family: system-ui, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      #app {
+        width: 100%;
+        max-width: 480px;
+        min-height: 200px;
+      }
+      .error-msg {
+        color: #808080;
+        font-size: 14px;
+        text-align: center;
+        padding: 2rem;
+      }
+      .error-msg code {
+        display: block;
+        margin-top: 0.5rem;
+        color: #9cdcfe;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./dist/dom-app.js"></script>
+    <script>
+      // Show fallback if bundle fails to load
+      window.addEventListener(
+        "error",
+        function (e) {
+          if (e.filename && e.filename.includes("dom-app")) {
+            document.body.innerHTML =
+              '<div class="error-msg">Build the examples to see this demo.<code>bun run examples/web/build.ts</code></div>'
+          }
+        },
+        true,
+      )
+    </script>
+  </body>
+</html>
