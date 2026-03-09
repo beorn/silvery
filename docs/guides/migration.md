@@ -8,7 +8,7 @@ Silvery is a drop-in replacement for Ink. Change your imports, and your app work
 
 ## Quick Start
 
-### Step 1: Install silvery
+### Step 1: Install Silvery
 
 ```bash
 bun remove ink ink-testing-library
@@ -60,7 +60,7 @@ const { unmount, waitUntilExit } = await render(<App />, term);
 - **Better testing**: Mock terms that capture output, simulate terminal sizes, or disable colors.
 - **Explicit cleanup**: The `using` keyword (TC39 Explicit Resource Management) automatically restores cursor, raw mode, and alternate screen when the scope exits.
 
-Without `createTerm()`, silvery creates a default term internally — matching Ink's behavior exactly.
+Without `createTerm()`, Silvery creates a default term internally — matching Ink's behavior exactly.
 
 ---
 

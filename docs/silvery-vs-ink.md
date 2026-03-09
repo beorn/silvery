@@ -39,8 +39,8 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 
 | Feature                     | Silvery                                                          | Ink                                                                              |
 | --------------------------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| **Memory in long sessions** | Constant — Flexily uses normal JS GC                            | Grows monotonically — Yoga WASM linear memory cannot shrink without module reset |
-| **Layout caching**          | Flexily fingerprints + caches unchanged subtrees                | Full tree recomputation on every pass                                            |
+| **Memory in long sessions** | Constant — Flexily uses normal JS GC                             | Grows monotonically — Yoga WASM linear memory cannot shrink without module reset |
+| **Layout caching**          | Flexily fingerprints + caches unchanged subtrees                 | Full tree recomputation on every pass                                            |
 | **Initialization**          | Synchronous — pure TypeScript import                             | Async WASM loading (Yoga) or native compilation (Yoga NAPI)                      |
 | **Native dependencies**     | None — pure JS/TS                                                | Yoga NAPI: C++ addon per platform; Yoga WASM: binary blob                        |
 | **Streaming output perf**   | Dirty tracking + buffer diff — only changed cells emit           | Full-screen repaint on every state change                                        |
@@ -58,21 +58,21 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 
 ### Architecture & Rendering
 
-| Feature                   | Silvery                                                                                       | Ink                                                                                                                                    |
-| ------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| React version             | 19                                                                                            | 18                                                                                                                                     |
-| **Layout feedback**       | `useContentRect()` / `useScreenRect()`                                                        | None — thread width props manually ([#5](https://github.com/vadimdemedes/ink/issues/5), open since 2016)                               |
-| **Scrollable containers** | `overflow="scroll"` with auto-measurement                                                     | Third-party or manual ([#222](https://github.com/vadimdemedes/ink/issues/222), [#765](https://github.com/vadimdemedes/ink/issues/765)) |
-| **Text truncation**       | Auto, ANSI-aware                                                                              | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                          |
+| Feature                   | Silvery                                                                                     | Ink                                                                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| React version             | 19                                                                                          | 18                                                                                                                                     |
+| **Layout feedback**       | `useContentRect()` / `useScreenRect()`                                                      | None — thread width props manually ([#5](https://github.com/vadimdemedes/ink/issues/5), open since 2016)                               |
+| **Scrollable containers** | `overflow="scroll"` with auto-measurement                                                   | Third-party or manual ([#222](https://github.com/vadimdemedes/ink/issues/222), [#765](https://github.com/vadimdemedes/ink/issues/765)) |
+| **Text truncation**       | Auto, ANSI-aware                                                                            | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                          |
 | Layout engines            | [Flexily](https://github.com/beorn/flexily) (7 KB, pure JS) or Yoga (WASM) — no native deps | Yoga NAPI (native C++ addon)                                                                                                           |
-| Incremental rendering     | Per-node dirty tracking                                                                       | Full re-render ([PR #836](https://github.com/vadimdemedes/ink/pull/836) exploring)                                                     |
-| Render targets            | Terminal, Canvas, DOM                                                                         | Terminal only                                                                                                                          |
-| Static rendering          | `renderStatic()`                                                                              | `Static` component                                                                                                                     |
-| CJK/IME sync              | DEC 2026 synchronized update (automatic)                                                      | In progress ([#759](https://github.com/vadimdemedes/ink/issues/759), [PR #846](https://github.com/vadimdemedes/ink/pull/846))          |
-| Non-TTY fallback          | `renderStatic()`                                                                              | [PR #854](https://github.com/vadimdemedes/ink/pull/854)                                                                                |
-| Concurrent React          | Not yet                                                                                       | [PR #850](https://github.com/vadimdemedes/ink/pull/850) exploring                                                                      |
-| **Box outline**           | `outlineStyle` — CSS outline equivalent, no layout impact                                     | None                                                                                                                                   |
-| **Transform component**   | `<Transform>` — per-line string transform (Ink-compatible)                                    | `<Transform>` — same API                                                                                                               |
+| Incremental rendering     | Per-node dirty tracking                                                                     | Full re-render ([PR #836](https://github.com/vadimdemedes/ink/pull/836) exploring)                                                     |
+| Render targets            | Terminal, Canvas, DOM                                                                       | Terminal only                                                                                                                          |
+| Static rendering          | `renderStatic()`                                                                            | `Static` component                                                                                                                     |
+| CJK/IME sync              | DEC 2026 synchronized update (automatic)                                                    | In progress ([#759](https://github.com/vadimdemedes/ink/issues/759), [PR #846](https://github.com/vadimdemedes/ink/pull/846))          |
+| Non-TTY fallback          | `renderStatic()`                                                                            | [PR #854](https://github.com/vadimdemedes/ink/pull/854)                                                                                |
+| Concurrent React          | Not yet                                                                                     | [PR #850](https://github.com/vadimdemedes/ink/pull/850) exploring                                                                      |
+| **Box outline**           | `outlineStyle` — CSS outline equivalent, no layout impact                                   | None                                                                                                                                   |
+| **Transform component**   | `<Transform>` — per-line string transform (Ink-compatible)                                  | `<Transform>` — same API                                                                                                               |
 
 ### Input & Interaction
 
@@ -111,20 +111,20 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 | Render targets     | Terminal, Canvas 2D, DOM                                | Terminal only                               |
 | Stream helpers     | AsyncIterable: merge, map, filter, throttle, debounce   | None                                        |
 | Community          | New                                                     | 50+ components, ~1.3M npm weekly (Feb 2026) |
-| Bundle (gzip)      | ~45 KB (Flexily) / ~76 KB (Yoga)                       | ~52 KB                                      |
+| Bundle (gzip)      | ~45 KB (Flexily) / ~76 KB (Yoga)                        | ~52 KB                                      |
 | Maintenance        | Active development                                      | Maintenance mode                            |
 
 ### Performance
 
-| Scenario                              | Silvery          | Ink                     |                          |
-| ------------------------------------- | ---------------- | ----------------------- | ------------------------ |
-| Cold render (1 component)             | 165 µs           | 271 µs                  | Silvery 1.6x faster      |
-| Cold render (1000 components)         | 463 ms           | 541 ms                  | Silvery 1.2x faster      |
-| Full React rerender (1000 components) | 630 ms           | 20.7 ms                 | Ink 30x faster           |
-| **Typical interactive update**        | **169 µs**       | **20.7 ms**             | **Silvery 100x+ faster** |
-| Layout (50-node kanban)               | 57 µs (Flexily) | 136 µs (Yoga NAPI)      | Flexily 2.4x faster     |
-| Terminal resize (1000 nodes)          | 21 µs            | Full re-render          | —                        |
-| Buffer diff (80x24, 10% changed)      | 34 µs            | N/A (row-based strings) | —                        |
+| Scenario                              | Silvery         | Ink                     |                          |
+| ------------------------------------- | --------------- | ----------------------- | ------------------------ |
+| Cold render (1 component)             | 165 µs          | 271 µs                  | Silvery 1.6x faster      |
+| Cold render (1000 components)         | 463 ms          | 541 ms                  | Silvery 1.2x faster      |
+| Full React rerender (1000 components) | 630 ms          | 20.7 ms                 | Ink 30x faster           |
+| **Typical interactive update**        | **169 µs**      | **20.7 ms**             | **Silvery 100x+ faster** |
+| Layout (50-node kanban)               | 57 µs (Flexily) | 136 µs (Yoga NAPI)      | Flexily 2.4x faster      |
+| Terminal resize (1000 nodes)          | 21 µs           | Full re-render          | —                        |
+| Buffer diff (80x24, 10% changed)      | 34 µs           | N/A (row-based strings) | —                        |
 
 **Understanding the rerender row:** When the _entire_ component tree re-renders from scratch (e.g., replacing the root element), Ink is 30x faster because its output is just string concatenation. Silvery runs a 5-phase pipeline (measure → layout → content → output) after React reconciliation — that's the cost of layout feedback. But this scenario almost never happens in real apps.
 
@@ -187,14 +187,14 @@ Terminal multiplexers (tmux, Zellij) can misinterpret frame boundaries during IM
 Silvery supports pluggable layout engines with the same flexbox API:
 
 |                    | Flexily (default) | Yoga (WASM) |
-| ------------------ | ------------------ | ----------- |
-| Size (gzip)        | 7 KB               | 38 KB       |
-| Language           | Pure JS            | C++ → WASM  |
-| Initialization     | Synchronous        | Async       |
-| 100-node layout    | 85 µs              | 88 µs       |
-| 50-node kanban     | 57 µs              | 54 µs       |
-| RTL direction      | Supported          | Supported   |
-| Baseline alignment | Not supported      | Supported   |
+| ------------------ | ----------------- | ----------- |
+| Size (gzip)        | 7 KB              | 38 KB       |
+| Language           | Pure JS           | C++ → WASM  |
+| Initialization     | Synchronous       | Async       |
+| 100-node layout    | 85 µs             | 88 µs       |
+| 50-node kanban     | 57 µs             | 54 µs       |
+| RTL direction      | Supported         | Supported   |
+| Baseline alignment | Not supported     | Supported   |
 
 Both are fast enough for 60fps terminal UIs. Flexily is 5x smaller with comparable performance. See [Flexily vs Yoga](../../flexily/docs/yoga-comparison.md) for details.
 
@@ -227,7 +227,7 @@ See [examples/task-list](../examples/task-list/) for a working example.
 3+ columns of cards, each column independently scrollable, cards showing truncated content.
 
 - **Ink**: Complex width-threading (board→column→card), manual scroll per column, manual truncation.
-- **silvery**: Columns and cards auto-size. Each column scrolls independently. Text auto-truncates.
+- **Silvery**: Columns and cards auto-size. Each column scrolls independently. Text auto-truncates.
 
 See [examples/kanban](../examples/kanban/) for a working 3-column board.
 
@@ -236,7 +236,7 @@ See [examples/kanban](../examples/kanban/) for a working 3-column board.
 Type-ahead search with debounced results rendering.
 
 - **Ink**: `useInput` for text capture, manual list rendering.
-- **silvery**: `InputLayerProvider` for text input isolation, `useContentRect` for result count fitting.
+- **Silvery**: `InputLayerProvider` for text input isolation, `useContentRect` for result count fitting.
 
 See [examples/search-filter](../examples/search-filter/) using `useTransition` + `useDeferredValue`.
 
@@ -245,7 +245,7 @@ See [examples/search-filter](../examples/search-filter/) using `useTransition` +
 One-shot question → answer → exit.
 
 - **Ink**: Excellent — large ecosystem of prompt components (ink-select-input, ink-text-input, ink-spinner).
-- **silvery**: Works, but fewer ready-made components. Ink's ecosystem is the better choice here.
+- **Silvery**: Works, but fewer ready-made components. Ink's ecosystem is the better choice here.
 
 ---
 
@@ -253,7 +253,7 @@ One-shot question → answer → exit.
 
 Tested scenarios derived from common Ink issues:
 
-| Scenario                                            | silvery Test                                           | Ink Issue                                               |
+| Scenario                                            | Silvery Test                                           | Ink Issue                                               |
 | --------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------- |
 | CJK character rendering (Chinese, Japanese, Korean) | `ime.test.tsx`                                         | [#759](https://github.com/vadimdemedes/ink/issues/759)  |
 | Double-width character alignment                    | `ime.test.tsx`, `wide-char-truncate.test.ts`           | [#759](https://github.com/vadimdemedes/ink/issues/759)  |
@@ -275,24 +275,24 @@ _Apple M1 Max, Bun 1.3.9, Feb 2026. Reproduce: `bun run bench:compare`_
 
 ### Full Pipeline (React Reconciliation + Layout + Output)
 
-| Components             | silvery (Flexily) | Ink 6 (Yoga NAPI) | Faster       |
-| ---------------------- | ------------------ | ----------------- | ------------ |
-| 1 Box+Text (80x24)     | 165 µs             | 271 µs            | silvery 1.6x |
-| 100 Box+Text (80x24)   | 45.0 ms            | 49.4 ms           | silvery 1.1x |
-| 1000 Box+Text (120x40) | 463 ms             | 541 ms            | silvery 1.2x |
+| Components             | Silvery (Flexily) | Ink 6 (Yoga NAPI) | Faster       |
+| ---------------------- | ----------------- | ----------------- | ------------ |
+| 1 Box+Text (80x24)     | 165 µs            | 271 µs            | Silvery 1.6x |
+| 100 Box+Text (80x24)   | 45.0 ms           | 49.4 ms           | Silvery 1.1x |
+| 1000 Box+Text (120x40) | 463 ms            | 541 ms            | Silvery 1.2x |
 
-silvery uses `createRenderer()` (headless). Ink uses `render()` with mock stdout + unmount per iteration.
+Silvery uses `createRenderer()` (headless). Ink uses `render()` with mock stdout + unmount per iteration.
 
 ### React Rerender (Apples-to-Apples)
 
 Both trigger full React reconciliation via `app.rerender()`:
 
-| Components             | silvery | Ink 6   | Faster  |
+| Components             | Silvery | Ink 6   | Faster  |
 | ---------------------- | ------- | ------- | ------- |
 | 100 Box+Text (80x24)   | 64.3 ms | 2.3 ms  | Ink 28x |
 | 1000 Box+Text (120x40) | 630 ms  | 20.7 ms | Ink 30x |
 
-Ink is faster because it writes directly to a string buffer. silvery runs the 5-phase pipeline after reconciliation.
+Ink is faster because it writes directly to a string buffer. Silvery runs the 5-phase pipeline after reconciliation.
 
 ### Silvery Dirty-Tracking Update (No Ink Equivalent)
 
@@ -320,9 +320,9 @@ Packed Uint32Array cell comparison with cursor-movement optimization.
 ### Layout Engine (Pure Layout, No React)
 
 | Benchmark      | Flexily (JS) | Yoga WASM | Yoga NAPI (C++) |
-| -------------- | ------------- | --------- | --------------- |
-| 100 nodes flat | 85 µs         | 88 µs     | 197 µs          |
-| 50-node kanban | 57 µs         | 54 µs     | 136 µs          |
+| -------------- | ------------ | --------- | --------------- |
+| 100 nodes flat | 85 µs        | 88 µs     | 197 µs          |
+| 50-node kanban | 57 µs        | 54 µs     | 136 µs          |
 
 ### Resize (Layout Only)
 
@@ -334,11 +334,11 @@ Packed Uint32Array cell comparison with cursor-movement optimization.
 
 ### Bundle Size
 
-| Package            | Size (gzip) |
-| ------------------ | ----------- |
-| silvery + Flexily | ~45 KB      |
-| silvery + Yoga     | ~76 KB      |
-| Ink                | ~52 KB      |
+| Package           | Size (gzip) |
+| ----------------- | ----------- |
+| Silvery + Flexily | ~45 KB      |
+| Silvery + Yoga    | ~76 KB      |
+| Ink               | ~52 KB      |
 
 ---
 
@@ -346,10 +346,10 @@ Packed Uint32Array cell comparison with cursor-movement optimization.
 
 These aren't theoretical differences. Production Ink-based CLIs have hit several of these issues:
 
-- **Memory**: Claude Code (Anthropic's CLI, built on Ink) reported [120+ GB memory usage](https://github.com/anthropics/claude-code/issues/4953) from Yoga WASM linear memory growth, crashing every 30-60 minutes. Versions 2.1.47–2.1.50 each fixed WASM memory leaks. silvery's pure-TS layout eliminates this entire bug category.
-- **Flicker**: Ink's approach of [clearing the entire terminal](https://github.com/vadimdemedes/ink/issues/359) on each render causes visible flicker, especially in tmux. A [Hacker News discussion](https://news.ycombinator.com/item?id=46844822) noted that Ink "literally clears the entire terminal including scrollback buffer on each full render." silvery's dirty tracking and DEC 2026 synchronized updates produce flicker-free output.
-- **Performance**: Developers have noted ["rough edges in rendering performance"](https://www.libhunt.com/posts/1476376-claude-opus-4-6) with Ink-based tools. silvery's 100x+ faster interactive updates (dirty tracking vs full re-render) directly address this.
-- **Missing capabilities**: Production CLIs lack mouse support, customizable keybindings, focus management, and modern terminal protocol support — all built into silvery.
+- **Memory**: Claude Code (Anthropic's CLI, built on Ink) reported [120+ GB memory usage](https://github.com/anthropics/claude-code/issues/4953) from Yoga WASM linear memory growth, crashing every 30-60 minutes. Versions 2.1.47–2.1.50 each fixed WASM memory leaks. Silvery's pure-TS layout eliminates this entire bug category.
+- **Flicker**: Ink's approach of [clearing the entire terminal](https://github.com/vadimdemedes/ink/issues/359) on each render causes visible flicker, especially in tmux. A [Hacker News discussion](https://news.ycombinator.com/item?id=46844822) noted that Ink "literally clears the entire terminal including scrollback buffer on each full render." Silvery's dirty tracking and DEC 2026 synchronized updates produce flicker-free output.
+- **Performance**: Developers have noted ["rough edges in rendering performance"](https://www.libhunt.com/posts/1476376-claude-opus-4-6) with Ink-based tools. Silvery's 100x+ faster interactive updates (dirty tracking vs full re-render) directly address this.
+- **Missing capabilities**: Production CLIs lack mouse support, customizable keybindings, focus management, and modern terminal protocol support — all built into Silvery.
 
 ---
 

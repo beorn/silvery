@@ -131,7 +131,7 @@ if (!isLayoutEngineInitialized()) {
 
 ## Engine Comparison
 
-| Feature             | Yoga (WASM)              | Flexily (Pure JS)    |
+| Feature             | Yoga (WASM)              | Flexily (Pure JS)     |
 | ------------------- | ------------------------ | --------------------- |
 | Initialization      | Async (WASM loading)     | Sync                  |
 | Performance         | Faster for large trees   | Good for small-medium |
@@ -159,10 +159,10 @@ if (!isLayoutEngineInitialized()) {
 Both engines implement the same flexbox algorithm. The difference is in execution:
 
 | Tree Size | Yoga   | Flexily |
-| --------- | ------ | -------- |
-| 10 nodes  | ~0.1ms | ~0.2ms   |
-| 100 nodes | ~1ms   | ~3ms     |
-| 500 nodes | ~5ms   | ~15ms    |
+| --------- | ------ | ------- |
+| 10 nodes  | ~0.1ms | ~0.2ms  |
+| 100 nodes | ~1ms   | ~3ms    |
+| 500 nodes | ~5ms   | ~15ms   |
 
 For typical TUI apps (10-50 nodes), both engines are effectively instant.
 

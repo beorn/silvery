@@ -1,6 +1,6 @@
 ---
-title: Building AI Assistants & Chat Apps with silvery
-description: Build terminal-based AI assistants with scrollable output, command palettes, and streaming-friendly rendering using silvery.
+title: Building AI Assistants & Chat Apps with Silvery
+description: Build terminal-based AI assistants with scrollable output, command palettes, and streaming-friendly rendering using Silvery.
 prev:
   text: Kanban Board
   link: /examples/kanban

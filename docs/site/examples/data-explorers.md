@@ -1,6 +1,6 @@
 ---
-title: Building Data Explorers & Tables with silvery
-description: Build terminal data explorers with sortable tables, virtual lists, responsive layouts, and real-time filtering using silvery.
+title: Building Data Explorers & Tables with Silvery
+description: Build terminal data explorers with sortable tables, virtual lists, responsive layouts, and real-time filtering using Silvery.
 prev:
   text: Developer Tools
   link: /examples/developer-tools

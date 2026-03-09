@@ -1,6 +1,6 @@
 ---
 title: Live Demo
-description: silvery rendered in the browser via xterm.js
+description: Silvery rendered in the browser via xterm.js
 prev:
   text: Overview
   link: /examples/

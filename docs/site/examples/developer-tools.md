@@ -1,6 +1,6 @@
 ---
-title: Building Developer Tools with silvery
-description: Build terminal REPLs, log viewers, and debuggers with virtual lists, command palettes, and Playwright-style testing using silvery.
+title: Building Developer Tools with Silvery
+description: Build terminal REPLs, log viewers, and debuggers with virtual lists, command palettes, and Playwright-style testing using Silvery.
 prev:
   text: CLI Wizards
   link: /examples/cli-wizards

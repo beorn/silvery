@@ -19,14 +19,14 @@ The test suite is organized by domain:
 | `pipeline.test.ts`              | 36    | Render pipeline: measure, layout, content, output phases              |
 | `ansi-parsing.test.ts`          | 29    | ANSI escape sequence parsing                                          |
 | `hooks.test.tsx`                | 28    | useContentRect, useFocusable, useFocusManager, useStdout              |
-| `layout-equivalence.test.tsx`   | 26    | Yoga vs Flexily layout engine parity                                 |
+| `layout-equivalence.test.tsx`   | 26    | Yoga vs Flexily layout engine parity                                  |
 | `render.test.ts`                | 24    | Core render API                                                       |
 | `memory.test.tsx`               | 20    | Memory leak detection, listener cleanup                               |
 | `accessibility.test.tsx`        | 20    | Screen reader compatibility                                           |
 | `react19.test.tsx`              | 18    | React 19 compatibility                                                |
 | `exit.test.tsx`                 | 17    | Process exit timing and useApp                                        |
 | `measureElement.test.tsx`       | 14    | Element measurement API                                               |
-| `layout-engines.test.ts`        | 14    | Yoga and Flexily engine interoperability                             |
+| `layout-engines.test.ts`        | 14    | Yoga and Flexily engine interoperability                              |
 | `border-dim-color.test.tsx`     | 13    | Border styling and colors                                             |
 | `integration.test.tsx`          | 13    | Component rendering integration                                       |
 | `rerender-bugs.test.tsx`        | 13    | Re-render bug reproductions                                           |

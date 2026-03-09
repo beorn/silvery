@@ -24,7 +24,7 @@ await run(<Counter />)
 ## Where to Start
 
 - **New to Silvery?** Start with [Getting Started](guides/getting-started.md) -- build your first app in 5 minutes
-- **Migrating from Ink?** Read [Silvery vs Ink](Silvery-vs-ink.md) and [Migration Guide](guides/migration.md)
+- **Migrating from Ink?** Read [Silvery vs Ink](silvery-vs-ink.md) and [Migration Guide](guides/migration.md)
 - **Building an app?** [Components](reference/components.md) + [Hooks](reference/hooks.md) + [Input Features](reference/input-features.md)
 - **Testing?** [Testing](testing.md) + [Plugins](reference/plugins.md) (withCommands, withDiagnostics)
 - **Understanding internals?** [Architecture](deep-dives/architecture.md) → [Internals](deep-dives/internals.md) → [Performance](deep-dives/performance.md)
@@ -108,7 +108,7 @@ Cross-cutting docs that don't fit a single category.
 | Document                              | Description                                                                |
 | ------------------------------------- | -------------------------------------------------------------------------- |
 | [Testing](testing.md)                 | Testing strategy, createRenderer, locators, withDiagnostics                |
-| [Silvery vs Ink](Silvery-vs-ink.md)   | Detailed feature/performance comparison with Ink                           |
+| [Silvery vs Ink](silvery-vs-ink.md)   | Detailed feature/performance comparison with Ink                           |
 | [Benchmarks](benchmarks.md)           | Raw benchmark tables and data                                              |
 | [Comparison](comparison.md)           | Cross-framework comparison (BubbleTea, Textual, Notcurses, FTXUI, blessed) |
 | [Troubleshooting](troubleshooting.md) | Common issues and debugging                                                |

@@ -2,7 +2,7 @@
 
 A feature comparison of major terminal UI frameworks across languages and ecosystems. Covers rendering, terminal protocols, layout, components, developer experience, and architecture. Values reflect the state of each framework as of early 2026.
 
-> For an in-depth Silvery vs Ink analysis with code examples, benchmarks, and migration guidance, see [silvery-vs-ink.md](Silvery-vs-ink.md).
+> For an in-depth Silvery vs Ink analysis with code examples, benchmarks, and migration guidance, see [silvery-vs-ink.md](silvery-vs-ink.md).
 
 **Legend:** ✅ Full support (built-in, documented) | ⚡ Best-in-class | 🔶 Partial support | ❌ Not supported | 🔧 Community/plugin
 
@@ -10,7 +10,7 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 
 ## Rendering
 
-| Feature                                   | silvery                                                | Ink                           | BubbleTea        | Textual               | Notcurses                 | FTXUI           | blessed   |
+| Feature                                   | Silvery                                                | Ink                           | BubbleTea        | Textual               | Notcurses                 | FTXUI           | blessed   |
 | ----------------------------------------- | ------------------------------------------------------ | ----------------------------- | ---------------- | --------------------- | ------------------------- | --------------- | --------- |
 | Incremental rendering (dirty tracking)    | ⚡ Per-node dirty flags [^1]                           | ❌ Full repaint               | ❌ Full repaint  | ✅ Dirty widgets      | ⚡ Damage map per ncplane | ❌ Full repaint | 🔶 Manual |
 | Style transition cache (minimal SGR diff) | ⚡ Interned styles + cached SGR transitions [^2]       | ❌                            | ❌               | 🔶                    | ✅                        | ❌              | ❌        |
@@ -20,9 +20,9 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 | Wide character support (CJK)              | ⚡ Built-in wcwidth + grapheme splitting + atomic diff | 🔶 Third-party `string-width` | ✅               | ✅                    | ⚡ Built-in wcwidth       | ✅              | 🔶        |
 | Frame rate limiting                       | ✅ Scheduler coalescing                                | ❌                            | 🔶 Manual `tick` | ✅ Configurable FPS   | ✅                        | ✅              | ❌        |
 
-[^1]: silvery tracks 7 independent dirty flags per node (`contentDirty`, `layoutDirty`, `paintDirty`, `subtreeDirty`, `childrenDirty`, `childPositionChanged`, `hasPrevBuffer`), enabling style-only changes to skip layout and content changes to skip paint.
+[^1]: Silvery tracks 7 independent dirty flags per node (`contentDirty`, `layoutDirty`, `paintDirty`, `subtreeDirty`, `childrenDirty`, `childPositionChanged`, `hasPrevBuffer`), enabling style-only changes to skip layout and content changes to skip paint.
 
-[^2]: With ~15-50 unique styles per TUI, silvery caches all (oldStyle, newStyle) SGR transition strings (~2,500 possible pairs), eliminating per-cell string building.
+[^2]: With ~15-50 unique styles per TUI, Silvery caches all (oldStyle, newStyle) SGR transition strings (~2,500 possible pairs), eliminating per-cell string building.
 
 [^3]: Ink has a PR exploring synchronized updates (#846) but it is not yet merged.
 
@@ -52,7 +52,7 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 
 | Feature                                      | Silvery                                                       | Ink                             | BubbleTea                            | Textual                        | Notcurses               | FTXUI              | blessed                  |
 | -------------------------------------------- | ------------------------------------------------------------- | ------------------------------- | ------------------------------------ | ------------------------------ | ----------------------- | ------------------ | ------------------------ |
-| Layout engine                                | ⚡ Flexbox (Flexily 7KB pure JS or Yoga) [^6]                | Flexbox (Yoga NAPI, native C++) | Manual                               | ⚡ CSS subset (grid + flexbox) | Manual ncplane stacking | Flexbox-like (C++) | Manual                   |
+| Layout engine                                | ⚡ Flexbox (Flexily 7KB pure JS or Yoga) [^6]                 | Flexbox (Yoga NAPI, native C++) | Manual                               | ⚡ CSS subset (grid + flexbox) | Manual ncplane stacking | Flexbox-like (C++) | Manual                   |
 | React/component model                        | ⚡ React 19, JSX, hooks                                       | ✅ React 18, JSX, hooks         | Elm architecture (Model-Update-View) | Widget classes                 | C structs               | C++ components     | Event emitter objects    |
 | Layout feedback (components know their size) | ⚡ `useContentRect()` / `useScreenRect()` — synchronous [^7]  | ❌ Open since 2016 (#5)         | ❌                                   | ✅ `size` property on widgets  | 🔶 ncplane dimensions   | 🔶                 | 🔶                       |
 | Virtual list / lazy rendering                | ✅ `VirtualList` component                                    | ❌                              | 🔧 `list` Bubble                     | ✅ Built-in `ListView`         | ❌                      | ❌                 | ✅ `List`                |

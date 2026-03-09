@@ -4,7 +4,7 @@ Raw benchmark data for Silvery performance. All numbers from Apple M1 Max, macOS
 
 Reproduce with `bun run bench` (internal) or `bun run bench:compare` (Silvery vs Ink). See [benchmark suite README](../benchmarks/ink-comparison/README.md) for Ink comparison methodology.
 
-For technical explanations of these optimizations, see [Performance Deep Dive](deep-dives/performance.md). For the head-to-head Ink comparison with context and code examples, see [Silvery vs Ink](Silvery-vs-ink.md).
+For technical explanations of these optimizations, see [Performance Deep Dive](deep-dives/performance.md). For the head-to-head Ink comparison with context and code examples, see [Silvery vs Ink](silvery-vs-ink.md).
 
 ---
 
@@ -27,8 +27,8 @@ Diff renders are 6-8x faster than first renders thanks to incremental rendering.
 | ----------------------------- | ----- | --------------------------------- |
 | `measurePhase (simple)`       | 4ns   | Cached, no dirty nodes            |
 | `measurePhase (100 children)` | 523ns | Selective traversal               |
-| `layoutPhase (simple)`        | 442ns | Flexily layout                   |
-| `layoutPhase (100 children)`  | 24us  | Flexily layout                   |
+| `layoutPhase (simple)`        | 442ns | Flexily layout                    |
+| `layoutPhase (100 children)`  | 24us  | Flexily layout                    |
 | `contentPhase (simple)`       | 1.7us | Incremental clone + dirty skip    |
 | `contentPhase (100 children)` | 3.4us | Incremental clone + dirty skip    |
 | `outputPhase (no changes)`    | 7.5us | Dirty bounding box skips all rows |
@@ -124,9 +124,9 @@ Packed Uint32Array cell comparison with cursor-movement optimization.
 ### Pure Layout (No React)
 
 | Benchmark             | Flexily (JS) | Yoga WASM | Yoga NAPI (C++) |
-| --------------------- | ------------- | --------- | --------------- |
-| 100 nodes flat list   | 90 us         | 84 us     | 234 us          |
-| 50-node kanban (3col) | 54 us         | 61 us     | 154 us          |
+| --------------------- | ------------ | --------- | --------------- |
+| 100 nodes flat list   | 90 us        | 84 us     | 234 us          |
+| 50-node kanban (3col) | 54 us        | 61 us     | 154 us          |
 
 Flexily (pure JS, 7KB) is 2.6x faster than Yoga NAPI for flat layouts. Matches Yoga WASM for kanban. Both significantly faster than Yoga NAPI (C++) due to NAPI bridge overhead.
 

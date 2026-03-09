@@ -29,7 +29,9 @@ function Responsive() {
 
 ```tsx
 <Box height={10} overflow="scroll">
-  {items.map(item => <Text key={item.id}>{item.name}</Text>)}
+  {items.map((item) => (
+    <Text key={item.id}>{item.name}</Text>
+  ))}
 </Box>
 ```
 
@@ -51,17 +53,17 @@ Command introspection, programmatic screenshots, scrollable streaming output. Sh
 
 ## Packages
 
-| Package | Description |
-| --- | --- |
-| [`silvery`](packages/) | Umbrella package (re-exports all `@silvery/*`) |
-| [`@silvery/react`](packages/react) | Core React reconciler and hooks |
-| [`@silvery/term`](packages/term) | Terminal rendering target |
-| [`@silvery/ansi`](packages/ansi) | ANSI styling (chalk replacement) |
-| [`@silvery/theme`](packages/theme) | Theming with 45 built-in palettes |
-| [`@silvery/tea`](packages/tea) | TEA state machine store |
-| [`@silvery/ui`](packages/ui) | Component library (23+ components) |
+| Package                              | Description                                        |
+| ------------------------------------ | -------------------------------------------------- |
+| [`silvery`](packages/)               | Umbrella package (re-exports all `@silvery/*`)     |
+| [`@silvery/react`](packages/react)   | Core React reconciler and hooks                    |
+| [`@silvery/term`](packages/term)     | Terminal rendering target                          |
+| [`@silvery/ansi`](packages/ansi)     | ANSI styling (chalk replacement)                   |
+| [`@silvery/theme`](packages/theme)   | Theming with 45 built-in palettes                  |
+| [`@silvery/tea`](packages/tea)       | TEA state machine store                            |
+| [`@silvery/ui`](packages/ui)         | Component library (23+ components)                 |
 | [`@silvery/compat`](packages/compat) | Ink/Chalk compatibility layers (drop-in migration) |
-| [`@silvery/test`](packages/test) | Testing utilities |
+| [`@silvery/test`](packages/test)     | Testing utilities                                  |
 
 ## Quick start
 
@@ -96,11 +98,11 @@ await run(<App />)
 
 Silvery is part of a family of terminal-focused libraries:
 
-| Project | What |
-| --- | --- |
-| [termless](https://termless.dev) | Headless terminal testing — like Playwright for terminal apps |
+| Project                                     | What                                                                    |
+| ------------------------------------------- | ----------------------------------------------------------------------- |
+| [termless](https://termless.dev)            | Headless terminal testing — like Playwright for terminal apps           |
 | [flexily](https://github.com/beorn/flexily) | Pure JS flexbox layout engine — Yoga-compatible, 2.5x faster, zero WASM |
-| [loggily](https://github.com/beorn/loggily) | Debug + structured logging + tracing in one library |
+| [loggily](https://github.com/beorn/loggily) | Debug + structured logging + tracing in one library                     |
 
 ## Vision
 

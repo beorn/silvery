@@ -69,7 +69,7 @@ Sucrase is purpose-built for development transforms. It strips types and convert
 | Code editor      | Monaco Editor  | VSCode engine, TypeScript intellisense, JSX |
 | JSX transpiler   | Sucrase        | Fast, small, browser-compatible             |
 | UI framework     | React          | Already a dependency of Silvery             |
-| Layout engine    | Flexily       | Pure JS, synchronous init, no WASM          |
+| Layout engine    | Flexily        | Pure JS, synchronous init, no WASM          |
 | Canvas rendering | silvery/canvas | The whole point                             |
 
 ## Project Structure

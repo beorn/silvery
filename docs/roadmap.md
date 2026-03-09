@@ -19,18 +19,18 @@ Terminal target is production-ready (used in [km](https://github.com/beorn/km)).
 
 ### What's left
 
-| Task | Bead |
-|------|------|
-| Validate migration guide against 3+ real Ink apps | — |
-| API surface audit (remove accidental public exports) | — |
-| Tree-shaking verification | km-Silvery.layered-arch |
-| Long-running memory test (10k+ render cycles) | — |
-| Fix border text overflow bug | — |
-| Bundle size measurement + comparison with Ink | km-Silvery.bundle-audit |
-| `npm pack --dry-run` clean tarball | — |
-| Publish `silvery@1.0.0` | — |
-| CHANGELOG.md | — |
-| Terminal compatibility matrix (Ghostty, Kitty, iTerm2, WezTerm, Terminal.app, Windows Terminal, tmux/Zellij) | km-Silvery.term-compat |
+| Task                                                                                                         | Bead                    |
+| ------------------------------------------------------------------------------------------------------------ | ----------------------- |
+| Validate migration guide against 3+ real Ink apps                                                            | —                       |
+| API surface audit (remove accidental public exports)                                                         | —                       |
+| Tree-shaking verification                                                                                    | km-silvery.layered-arch |
+| Long-running memory test (10k+ render cycles)                                                                | —                       |
+| Fix border text overflow bug                                                                                 | —                       |
+| Bundle size measurement + comparison with Ink                                                                | km-silvery.bundle-audit |
+| `npm pack --dry-run` clean tarball                                                                           | —                       |
+| Publish `silvery@1.0.0`                                                                                      | —                       |
+| CHANGELOG.md                                                                                                 | —                       |
+| Terminal compatibility matrix (Ghostty, Kitty, iTerm2, WezTerm, Terminal.app, Windows Terminal, tmux/Zellij) | km-silvery.term-compat  |
 
 ### Release sequence
 
@@ -44,14 +44,14 @@ Terminal target is production-ready (used in [km](https://github.com/beorn/km)).
 
 ## Future Targets
 
-| Target | Value | Status | Entry Point |
-|--------|-------|--------|-------------|
-| Terminal | High (proven) | Production | `@silvery/term` |
-| Canvas 2D | High | Experimental | `silvery/canvas` |
-| DOM | Medium | Experimental | `silvery/dom` |
-| WebGL | High | Future | — |
-| React Native | High | Future | — |
-| PDF/Email | Medium | Future | — |
+| Target       | Value         | Status       | Entry Point      |
+| ------------ | ------------- | ------------ | ---------------- |
+| Terminal     | High (proven) | Production   | `@silvery/term`  |
+| Canvas 2D    | High          | Experimental | `silvery/canvas` |
+| DOM          | Medium        | Experimental | `silvery/dom`    |
+| WebGL        | High          | Future       | —                |
+| React Native | High          | Future       | —                |
+| PDF/Email    | Medium        | Future       | —                |
 
 **Why multi-target matters**: Silvery's core innovation is two-phase rendering with synchronous layout feedback — components know their size during render via `useContentRect()`. This solves the "ResizeObserver dance" problem across all targets, not just terminals.
 
@@ -63,11 +63,11 @@ The two-phase pattern is framework-agnostic. Potential future adapters: Svelte (
 
 ## Semver Policy (post-1.0)
 
-| Change | Bump |
-|--------|------|
-| Breaking core API | Major (2.0) |
-| Breaking experimental targets | Minor (1.x) with notice |
-| New component/hook/entry point | Minor |
-| Bug fix, perf, docs | Patch |
+| Change                         | Bump                    |
+| ------------------------------ | ----------------------- |
+| Breaking core API              | Major (2.0)             |
+| Breaking experimental targets  | Minor (1.x) with notice |
+| New component/hook/entry point | Minor                   |
+| Bug fix, perf, docs            | Patch                   |
 
 The `silvery/ink` compat layer is part of the 1.0 stability contract.

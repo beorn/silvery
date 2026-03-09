@@ -1,6 +1,6 @@
 ---
-title: Building CLI Wizards & Setup Tools with silvery
-description: Build interactive CLI wizards with multi-step forms, selection lists, progress bars, and focus scopes using silvery.
+title: Building CLI Wizards & Setup Tools with Silvery
+description: Build interactive CLI wizards with multi-step forms, selection lists, progress bars, and focus scopes using Silvery.
 prev:
   text: AI Assistants
   link: /examples/ai-assistants

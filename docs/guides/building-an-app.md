@@ -49,7 +49,7 @@ Press `j` a few times:
 Count: 3
 ```
 
-`useState` is standard React. `useInput` is silvery's keyboard hook — a callback that receives raw key data; `run` starts the app and manages terminal I/O.
+`useState` is standard React. `useInput` is Silvery's keyboard hook — a callback that receives raw key data; `run` starts the app and manages terminal I/O.
 
 At Level 1, state lives inside a component and input handling is a function call — both invisible to everything outside this component.
 

@@ -326,10 +326,10 @@ interface ComputedLayout {
 
 ### Current Engines
 
-| Engine                 | Bundle Size | Speed       | Notes                         |
-| ---------------------- | ----------- | ----------- | ----------------------------- |
+| Engine                | Bundle Size | Speed       | Notes                         |
+| --------------------- | ----------- | ----------- | ----------------------------- |
 | **Flexily** (default) | 7 KB gzip   | 2.5x faster | Pure JS, synchronous init     |
-| **Yoga**               | 38 KB gzip  | Baseline    | WASM, async init, RTL support |
+| **Yoga**              | 38 KB gzip  | Baseline    | WASM, async init, RTL support |
 
 ## Package Decomposition (Future)
 

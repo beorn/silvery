@@ -6,7 +6,7 @@
 
 ## `withDomEvents()` — Component Event Handlers
 
-Adds React-style event handlers to silvery components. Events bubble up the tree, components can stop propagation, and hit testing maps mouse coordinates to nodes.
+Adds React-style event handlers to Silvery components. Events bubble up the tree, components can stop propagation, and hit testing maps mouse coordinates to nodes.
 
 ```tsx
 import { pipe, withDomEvents } from "@silvery/term/runtime"

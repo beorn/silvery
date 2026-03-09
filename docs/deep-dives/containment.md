@@ -28,7 +28,7 @@ This creates a circular dependency:
 
 In step 6, if the component instead changed its own box dimensions based on the size it read, layout would change again, triggering another notification, another re-render, another layout -- an infinite loop.
 
-This is the same fundamental problem that CSS Container Queries face. Browsers solve it with CSS containment (size containment prevents a container's children from affecting its size). silvery solves it with a bounded iteration loop.
+This is the same fundamental problem that CSS Container Queries face. Browsers solve it with CSS containment (size containment prevents a container's children from affecting its size). Silvery solves it with a bounded iteration loop.
 
 ---
 

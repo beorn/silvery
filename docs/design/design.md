@@ -844,7 +844,7 @@ See also [README.md](../README.md) for a comprehensive "Related Work" section wi
 - [Ink #796](https://github.com/vadimdemedes/ink/issues/796) - Process exit timing
 - [Ink #701](https://github.com/vadimdemedes/ink/issues/701) - Memory leaks in useInput
 
-See [silvery-vs-ink.md](../Silvery-vs-ink.md) for comprehensive analysis of Ink's issues and PRs.
+See [silvery-vs-ink.md](../silvery-vs-ink.md) for comprehensive analysis of Ink's issues and PRs.
 
 ### Prior Art (TUI Frameworks with Layout Feedback)
 
