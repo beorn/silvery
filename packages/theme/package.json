@@ -1,7 +1,7 @@
 {
   "name": "@silvery/theme",
   "version": "0.0.1",
-  "description": "Theming system with semantic color tokens — swatch replacement",
+  "description": "Theming system with semantic color tokens for silvery",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
   "repository": {
@@ -22,7 +22,5 @@
       "import": "./src/*"
     }
   },
-  "dependencies": {
-    "swatch": "github:beorn/swatch"
-  }
+  "dependencies": {}
 }

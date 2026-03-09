@@ -55,12 +55,10 @@
   },
   "dependencies": {
     "chalk": "^5.6.2",
-    "decant": "github:beorn/decant",
-    "loggily": "^0.0.1",
+    "loggily": "github:beorn/loggily",
     "react-reconciler": "^0.33.0",
     "slice-ansi": "^8.0.0",
     "string-width": "^8.2.0",
-    "swatch": "github:beorn/swatch",
     "zustand": "^5.0.11"
   },
   "devDependencies": {

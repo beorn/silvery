@@ -458,9 +458,9 @@ export {
   createYogaEngine,
   initYogaEngine,
   YogaLayoutEngine,
-  // Flexture adapter
-  createFlextureEngine,
-  FlextureLayoutEngine,
+  // Flexily adapter
+  createFlexilyEngine,
+  FlexilyLayoutEngine,
 } from "./render"
 export { renderString, renderStringSync, type RenderStringOptions } from "./render-string"
 export { measureElement } from "./measureElement"

@@ -28,7 +28,7 @@
  */
 
 import type { ReactElement } from "react"
-import { createFlextureZeroEngine } from "../adapters/flexture-zero-adapter"
+import { createFlexilyZeroEngine } from "../adapters/flexily-zero-adapter"
 import { terminalAdapter } from "../adapters/terminal-adapter"
 import { setLayoutEngine } from "../layout-engine"
 import { executeRenderAdapter } from "../pipeline"
@@ -97,7 +97,7 @@ let initialized = false
 function initXtermRenderer(): void {
   if (initialized) return
 
-  setLayoutEngine(createFlextureZeroEngine())
+  setLayoutEngine(createFlexilyZeroEngine())
   setRenderAdapter(terminalAdapter)
 
   initialized = true

@@ -12,7 +12,7 @@
  */
 
 import type { Color, Style, UnderlineStyle } from "../buffer"
-import { getActiveTheme, resolveThemeColor } from "swatch"
+import { getActiveTheme, resolveThemeColor } from "@silvery/theme"
 import type { BoxProps, TextProps } from "@silvery/tea/types"
 import { displayWidthAnsi } from "../unicode"
 import type { BorderChars, PipelineContext } from "./types"

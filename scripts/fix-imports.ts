@@ -154,7 +154,7 @@ function getNewRelativePath(fromEntry: FileEntry, targetEntry: FileEntry): strin
 const IMPORT_REGEX = /(?:from\s+['"])(\.{1,2}\/[^'"]+)(?:['"])/g
 const IMPORT_REGEX2 = /(?:import\s+['"])(\.{1,2}\/[^'"]+)(?:['"])/g
 const SILVERY_IMPORT = /(['"])@silvery\/(term|ansi)(?:\/([^'"]*?))?(['"])/g
-const DECANT_IMPORT = /(['"])decant(?:\/([^'"]*?))?(['"])/g
+const LOGGILY_IMPORT = /(['"])loggily(?:\/([^'"]*?))?(['"])/g
 const SWATCH_IMPORT = /(['"])swatch(?:\/([^'"]*?))?(['"])/g
 
 function rewriteFile(entry: FileEntry, map: Map<string, FileEntry>): { changed: boolean; content: string } {
@@ -198,8 +198,8 @@ function rewriteFile(entry: FileEntry, map: Map<string, FileEntry>): { changed: 
     return `${q1}@silvery/react${q2}`
   })
 
-  // Rewrite decant → loggily
-  content = content.replace(DECANT_IMPORT, (match, q1, subpath, q2) => {
+  // Rewrite loggily → loggily
+  content = content.replace(LOGGILY_IMPORT, (match, q1, subpath, q2) => {
     changed = true
     return subpath ? `${q1}loggily/${subpath}${q2}` : `${q1}loggily${q2}`
   })

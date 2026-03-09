@@ -13,7 +13,7 @@
  */
 
 import { appendFileSync } from "node:fs"
-import { type Logger, createLogger } from "decant"
+import { type Logger, createLogger } from "loggily"
 import { type TerminalBuffer, bufferToText, cellEquals } from "./buffer"
 import { buildMismatchContext, formatMismatchContext } from "@silvery/test/debug-mismatch"
 import {

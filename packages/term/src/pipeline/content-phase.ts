@@ -20,8 +20,8 @@ import { getBorderSize, getPadding } from "./helpers"
 import { renderBox, renderOutline, renderScrollIndicators } from "./render-box"
 import { parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
-import { pushContextTheme, popContextTheme } from "swatch"
-import type { Theme } from "swatch"
+import { pushContextTheme, popContextTheme } from "@silvery/theme"
+import type { Theme } from "@silvery/theme"
 import type { ClipBounds, ContentPhaseStats, NodeRenderState, NodeTraceEntry, PipelineContext } from "./types"
 
 /**

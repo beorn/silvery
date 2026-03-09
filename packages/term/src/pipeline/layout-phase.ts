@@ -4,7 +4,7 @@
  * Run Yoga layout calculation and propagate dimensions to all nodes.
  */
 
-import { createLogger } from "decant"
+import { createLogger } from "loggily"
 import { measureStats } from "@silvery/react/reconciler/nodes"
 import { type BoxProps, type TeaNode, type Rect, rectEqual } from "@silvery/tea/types"
 import { getBorderSize, getPadding } from "./helpers"

@@ -1,8 +1,8 @@
 /**
- * Flexture Layout Engine Adapter
+ * Flexily Layout Engine Adapter
  *
- * Wraps Flexture to implement the LayoutEngine interface.
- * Uses the default zero-allocation algorithm from flexture.
+ * Wraps Flexily to implement the LayoutEngine interface.
+ * Uses the default zero-allocation algorithm from flexily.
  */
 
 import {
@@ -29,7 +29,7 @@ import {
   FLEX_DIRECTION_COLUMN_REVERSE,
   FLEX_DIRECTION_ROW,
   FLEX_DIRECTION_ROW_REVERSE,
-  Node as FlextureNode,
+  Node as FlexilyNode,
   GUTTER_ALL,
   JUSTIFY_CENTER,
   JUSTIFY_FLEX_END,
@@ -48,7 +48,7 @@ import {
   WRAP_NO_WRAP,
   WRAP_WRAP,
   WRAP_WRAP_REVERSE,
-} from "flexture"
+} from "flexily"
 
 import type {
   AlignValue,
@@ -70,34 +70,34 @@ import type {
 } from "../layout-engine"
 
 // ============================================================================
-// Flexture Zero Node Adapter
+// Flexily Zero Node Adapter
 // ============================================================================
 
 /**
- * Wraps a Flexture zero-alloc node to implement LayoutNode interface.
- * Since Flexture already has a Yoga-compatible API, this is mostly delegation.
+ * Wraps a Flexily zero-alloc node to implement LayoutNode interface.
+ * Since Flexily already has a Yoga-compatible API, this is mostly delegation.
  */
-class FlextureZeroNodeAdapter implements LayoutNode {
-  private node: FlextureNode
+class FlexilyZeroNodeAdapter implements LayoutNode {
+  private node: FlexilyNode
 
-  constructor(node: FlextureNode) {
+  constructor(node: FlexilyNode) {
     this.node = node
   }
 
-  /** Get the underlying Flexture node (for tree operations) */
-  getFlextureNode(): FlextureNode {
+  /** Get the underlying Flexily node (for tree operations) */
+  getFlexilyNode(): FlexilyNode {
     return this.node
   }
 
   // Tree operations
   insertChild(child: LayoutNode, index: number): void {
-    const flextureChild = (child as FlextureZeroNodeAdapter).getFlextureNode()
-    this.node.insertChild(flextureChild, index)
+    const flexilyChild = (child as FlexilyZeroNodeAdapter).getFlexilyNode()
+    this.node.insertChild(flexilyChild, index)
   }
 
   removeChild(child: LayoutNode): void {
-    const flextureChild = (child as FlextureZeroNodeAdapter).getFlextureNode()
-    this.node.removeChild(flextureChild)
+    const flexilyChild = (child as FlexilyZeroNodeAdapter).getFlexilyNode()
+    this.node.removeChild(flexilyChild)
   }
 
   free(): void {
@@ -251,16 +251,16 @@ class FlextureZeroNodeAdapter implements LayoutNode {
 }
 
 // ============================================================================
-// Flexture Zero Layout Engine
+// Flexily Zero Layout Engine
 // ============================================================================
 
 /**
- * Layout engine implementation using Flexture zero-allocation variant.
+ * Layout engine implementation using Flexily zero-allocation variant.
  * Optimized for high-frequency layout with reduced GC pressure.
  */
-export class FlextureZeroLayoutEngine implements LayoutEngine {
+export class FlexilyZeroLayoutEngine implements LayoutEngine {
   private _constants: LayoutConstants = {
-    // Flex Direction (cast from Flexture's plain numbers to branded types)
+    // Flex Direction (cast from Flexily's plain numbers to branded types)
     FLEX_DIRECTION_COLUMN: FLEX_DIRECTION_COLUMN as FlexDirectionValue,
     FLEX_DIRECTION_COLUMN_REVERSE: FLEX_DIRECTION_COLUMN_REVERSE as FlexDirectionValue,
     FLEX_DIRECTION_ROW: FLEX_DIRECTION_ROW as FlexDirectionValue,
@@ -324,7 +324,7 @@ export class FlextureZeroLayoutEngine implements LayoutEngine {
   }
 
   createNode(): LayoutNode {
-    return new FlextureZeroNodeAdapter(FlextureNode.create())
+    return new FlexilyZeroNodeAdapter(FlexilyNode.create())
   }
 
   get constants(): LayoutConstants {
@@ -332,7 +332,7 @@ export class FlextureZeroLayoutEngine implements LayoutEngine {
   }
 
   get name(): string {
-    return "flexture-zero"
+    return "flexily-zero"
   }
 }
 
@@ -341,9 +341,9 @@ export class FlextureZeroLayoutEngine implements LayoutEngine {
 // ============================================================================
 
 /**
- * Create a Flexture zero-allocation layout engine.
- * Unlike Yoga, Flexture doesn't require async initialization.
+ * Create a Flexily zero-allocation layout engine.
+ * Unlike Yoga, Flexily doesn't require async initialization.
  */
-export function createFlextureZeroEngine(): FlextureZeroLayoutEngine {
-  return new FlextureZeroLayoutEngine()
+export function createFlexilyZeroEngine(): FlexilyZeroLayoutEngine {
+  return new FlexilyZeroLayoutEngine()
 }

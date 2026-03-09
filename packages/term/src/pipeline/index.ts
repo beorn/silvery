@@ -26,7 +26,7 @@
  *   Emit minimal ANSI sequences for changes
  */
 
-import { createLogger } from "decant"
+import { createLogger } from "loggily"
 import type { TerminalBuffer } from "../buffer"
 import type { CursorState } from "@silvery/react/hooks/useCursor"
 import type { TeaNode } from "@silvery/tea/types"
@@ -185,7 +185,7 @@ function executeRenderCore(
   } = opts
   // Dev warning: prevBuffer null after first render means incremental is disabled.
   // Intentional null (SILVERY_STRICT, static/one-shot) passes skipLayoutNotifications.
-  // console.warn (not decant) — must fire regardless of logger config.
+  // console.warn (not loggily) — must fire regardless of logger config.
   if (process?.env?.SILVERY_DEV && prevBuffer === null && root.prevLayout !== null && !skipLayoutNotifications) {
     console.warn(
       "[silvery] executeRender called with prevBuffer=null on frame 2+ — " +

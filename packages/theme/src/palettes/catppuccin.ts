@@ -1,0 +1,118 @@
+/**
+ * Catppuccin palettes — the most popular 4-flavor theme system.
+ */
+
+import type { ColorPalette } from "../types"
+import { brighten } from "../color"
+
+/** Catppuccin Mocha — the classic dark variant. */
+export const catppuccinMocha: ColorPalette = {
+  name: "catppuccin-mocha",
+  dark: true,
+  black: "#11111B",
+  red: "#F38BA8",
+  green: "#A6E3A1",
+  yellow: "#F9E2AF",
+  blue: "#89B4FA",
+  magenta: "#CBA6F7",
+  cyan: "#94E2D5",
+  white: "#A6ADC8",
+  brightBlack: "#313244",
+  brightRed: "#FAB387",
+  brightGreen: brighten("#A6E3A1", 0.15),
+  brightYellow: brighten("#F9E2AF", 0.15),
+  brightBlue: brighten("#89B4FA", 0.15),
+  brightMagenta: "#F5C2E7",
+  brightCyan: brighten("#94E2D5", 0.15),
+  brightWhite: "#CDD6F4",
+  foreground: "#CDD6F4",
+  background: "#1E1E2E",
+  cursorColor: "#CDD6F4",
+  cursorText: "#1E1E2E",
+  selectionBackground: "#6C7086",
+  selectionForeground: "#CDD6F4",
+}
+
+/** Catppuccin Frappe — muted dark variant. */
+export const catppuccinFrappe: ColorPalette = {
+  name: "catppuccin-frappe",
+  dark: true,
+  black: "#232634",
+  red: "#E78284",
+  green: "#A6D189",
+  yellow: "#E5C890",
+  blue: "#8CAAEE",
+  magenta: "#CA9EE6",
+  cyan: "#81C8BE",
+  white: "#A5ADCE",
+  brightBlack: "#414559",
+  brightRed: "#EF9F76",
+  brightGreen: brighten("#A6D189", 0.15),
+  brightYellow: brighten("#E5C890", 0.15),
+  brightBlue: brighten("#8CAAEE", 0.15),
+  brightMagenta: "#F4B8E4",
+  brightCyan: brighten("#81C8BE", 0.15),
+  brightWhite: "#C6D0F5",
+  foreground: "#C6D0F5",
+  background: "#303446",
+  cursorColor: "#C6D0F5",
+  cursorText: "#303446",
+  selectionBackground: "#737994",
+  selectionForeground: "#C6D0F5",
+}
+
+/** Catppuccin Macchiato — warm dark variant. */
+export const catppuccinMacchiato: ColorPalette = {
+  name: "catppuccin-macchiato",
+  dark: true,
+  black: "#181926",
+  red: "#ED8796",
+  green: "#A6DA95",
+  yellow: "#EED49F",
+  blue: "#8AADF4",
+  magenta: "#C6A0F6",
+  cyan: "#8BD5CA",
+  white: "#A5ADCB",
+  brightBlack: "#363A4F",
+  brightRed: "#F5A97F",
+  brightGreen: brighten("#A6DA95", 0.15),
+  brightYellow: brighten("#EED49F", 0.15),
+  brightBlue: brighten("#8AADF4", 0.15),
+  brightMagenta: "#F5BDE6",
+  brightCyan: brighten("#8BD5CA", 0.15),
+  brightWhite: "#CAD3F5",
+  foreground: "#CAD3F5",
+  background: "#24273A",
+  cursorColor: "#CAD3F5",
+  cursorText: "#24273A",
+  selectionBackground: "#6E738D",
+  selectionForeground: "#CAD3F5",
+}
+
+/** Catppuccin Latte — the light variant. */
+export const catppuccinLatte: ColorPalette = {
+  name: "catppuccin-latte",
+  dark: false,
+  black: "#DCE0E8",
+  red: "#D20F39",
+  green: "#40A02B",
+  yellow: "#DF8E1D",
+  blue: "#1E66F5",
+  magenta: "#8839EF",
+  cyan: "#179299",
+  white: "#6C6F85",
+  brightBlack: "#CCD0DA",
+  brightRed: "#FE640B",
+  brightGreen: brighten("#40A02B", 0.15),
+  brightYellow: brighten("#DF8E1D", 0.15),
+  brightBlue: brighten("#1E66F5", 0.15),
+  brightMagenta: "#EA76CB",
+  brightCyan: brighten("#179299", 0.15),
+  brightWhite: "#4C4F69",
+  foreground: "#4C4F69",
+  background: "#EFF1F5",
+  cursorColor: "#4C4F69",
+  cursorText: "#EFF1F5",
+  selectionBackground: "#9CA0B0",
+  selectionForeground: "#4C4F69",
+}

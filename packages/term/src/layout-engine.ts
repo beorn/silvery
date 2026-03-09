@@ -1,7 +1,7 @@
 /**
  * Layout Engine Abstraction
  *
- * Provides a pluggable interface for layout engines (Yoga, Flexture, etc.)
+ * Provides a pluggable interface for layout engines (Yoga, Flexily, etc.)
  * This allows silvery to use different layout backends without code changes.
  */
 
@@ -123,7 +123,7 @@ export type MeasureModeValue = number & { readonly __brand: "MeasureMode" }
 
 /**
  * Constants for layout configuration.
- * These are the same across Yoga and Flexture.
+ * These are the same across Yoga and Flexily.
  * Uses branded types for compile-time safety.
  */
 export interface LayoutConstants {
@@ -196,7 +196,7 @@ export interface LayoutConstants {
 
 /**
  * Abstract layout engine interface.
- * Implementations can wrap Yoga, Flexture, or other layout engines.
+ * Implementations can wrap Yoga, Flexily, or other layout engines.
  */
 export interface LayoutEngine {
   /** Create a new layout node */
@@ -229,7 +229,7 @@ export function setLayoutEngine(engine: LayoutEngine): void {
  */
 export function getLayoutEngine(): LayoutEngine {
   if (!layoutEngine) {
-    throw new Error("Layout engine not initialized. Call setLayoutEngine() or initYoga()/initFlexture() first.")
+    throw new Error("Layout engine not initialized. Call setLayoutEngine() or initYoga()/initFlexily() first.")
   }
   return layoutEngine
 }
@@ -256,32 +256,32 @@ export function getConstants(): LayoutConstants {
 /**
  * Layout engine type for configuration.
  *
- * - 'flexture': Zero-allocation Flexture (default, optimized for high-frequency layout)
- * - 'flexture-classic': Classic Flexture algorithm (for debugging/compatibility)
+ * - 'flexily': Zero-allocation Flexily (default, optimized for high-frequency layout)
+ * - 'flexily-classic': Classic Flexily algorithm (for debugging/compatibility)
  * - 'yoga': Facebook's WASM-based flexbox (most mature)
  */
-export type LayoutEngineType = "flexture" | "yoga"
+export type LayoutEngineType = "flexily" | "yoga"
 
 /**
  * Initialize the layout engine if not already set.
  *
- * @param engineType - 'flexture', 'flexture-classic', or 'yoga'. If not provided, checks
- *                     SILVERY_ENGINE env var, then defaults to 'flexture'.
+ * @param engineType - 'flexily', 'flexily-classic', or 'yoga'. If not provided, checks
+ *                     SILVERY_ENGINE env var, then defaults to 'flexily'.
  */
 export async function ensureDefaultLayoutEngine(engineType?: LayoutEngineType): Promise<void> {
   if (isLayoutEngineInitialized()) {
     return
   }
 
-  // Resolve engine type: option → env → 'flexture'
-  const resolved = engineType ?? (process.env.SILVERY_ENGINE?.toLowerCase() as LayoutEngineType) ?? "flexture"
+  // Resolve engine type: option → env → 'flexily'
+  const resolved = engineType ?? (process.env.SILVERY_ENGINE?.toLowerCase() as LayoutEngineType) ?? "flexily"
 
   if (resolved === "yoga") {
     const { initYogaEngine } = await import("./adapters/yoga-adapter.js")
     setLayoutEngine(await initYogaEngine())
   } else {
-    // 'flexture' (default) uses zero-allocation engine
-    const { createFlextureZeroEngine } = await import("./adapters/flexture-zero-adapter.js")
-    setLayoutEngine(createFlextureZeroEngine())
+    // 'flexily' (default) uses zero-allocation engine
+    const { createFlexilyZeroEngine } = await import("./adapters/flexily-zero-adapter.js")
+    setLayoutEngine(createFlexilyZeroEngine())
   }
 }

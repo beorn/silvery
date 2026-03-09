@@ -13,7 +13,7 @@
 
 import { EventEmitter } from "node:events"
 import process from "node:process"
-import { createLogger } from "decant"
+import { createLogger } from "loggily"
 import { type Term, createTerm } from "@silvery/ansi"
 import React, { useCallback, useEffect, useMemo, useRef, type ReactElement, type ReactNode } from "react"
 
@@ -95,8 +95,8 @@ export interface RenderOptions {
    */
   nonTTYMode?: NonTTYMode
   /**
-   * Layout engine to use (default: 'flexture', or SILVERY_ENGINE env var)
-   * - 'flexture': Pure JS, synchronous, smaller bundle
+   * Layout engine to use (default: 'flexily', or SILVERY_ENGINE env var)
+   * - 'flexily': Pure JS, synchronous, smaller bundle
    * - 'yoga': Facebook's WASM-based flexbox (more mature)
    */
   layoutEngine?: LayoutEngineType
@@ -187,7 +187,7 @@ const instances = new Map<NodeJS.WriteStream, SilveryInstance>()
 
 /**
  * Initialize layout engine if not already initialized.
- * @param engineType - 'flexture' or 'yoga'. Falls back to SILVERY_ENGINE env, then 'flexture'.
+ * @param engineType - 'flexily' or 'yoga'. Falls back to SILVERY_ENGINE env, then 'flexily'.
  */
 async function ensureLayoutEngineInitialized(engineType?: LayoutEngineType): Promise<void> {
   if (isLayoutEngineInitialized()) {
@@ -1123,6 +1123,6 @@ export { setLayoutEngine, isLayoutEngineInitialized, type LayoutEngineType } fro
 // Re-export adapters for custom engine initialization
 export { createYogaEngine, initYogaEngine, YogaLayoutEngine } from "@silvery/term/adapters/yoga-adapter"
 export {
-  createFlextureZeroEngine as createFlextureEngine,
-  FlextureZeroLayoutEngine as FlextureLayoutEngine,
-} from "@silvery/term/adapters/flexture-zero-adapter"
+  createFlexilyZeroEngine as createFlexilyEngine,
+  FlexilyZeroLayoutEngine as FlexilyLayoutEngine,
+} from "@silvery/term/adapters/flexily-zero-adapter"

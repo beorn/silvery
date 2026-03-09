@@ -20,7 +20,7 @@
  */
 
 import { createContext, useContext, useMemo, type ReactNode } from "react"
-import { createLogger } from "decant"
+import { createLogger } from "loggily"
 
 const log = createLogger("silvery:position-registry")
 
