@@ -5,7 +5,7 @@ Handle keyboard input in your app.
 ## Import
 
 ```tsx
-import { useInput } from "@silvery/term"
+import { useInput } from "silvery"
 ```
 
 ## Usage

@@ -198,7 +198,7 @@ import { run } from "@silvery/term/runtime"
 await run(<App />, { kitty: true })
 
 // Or with specific flags:
-import { KittyFlags } from "@silvery/term"
+import { KittyFlags } from "silvery"
 await run(<App />, { kitty: KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS })
 ```
 
@@ -222,7 +222,7 @@ When the protocol is active, the `Key` object includes additional fields:
 ### Protocol Control Functions
 
 ```typescript
-import { enableKittyKeyboard, disableKittyKeyboard, queryKittyKeyboard, KittyFlags } from "@silvery/term"
+import { enableKittyKeyboard, disableKittyKeyboard, queryKittyKeyboard, KittyFlags } from "silvery"
 
 enableKittyKeyboard(KittyFlags.DISAMBIGUATE) // CSI > flags u
 disableKittyKeyboard() // CSI < u (pop stack)
@@ -232,7 +232,7 @@ queryKittyKeyboard() // CSI ? u (detect support)
 ### Detection
 
 ```typescript
-import { detectKittySupport, detectKittyFromStdio } from "@silvery/term"
+import { detectKittySupport, detectKittyFromStdio } from "silvery"
 
 // Low-level: send query, parse response
 const supported = await detectKittySupport(write, read, timeout)
@@ -246,7 +246,7 @@ const supported = await detectKittyFromStdio(stdout, stdin, timeout)
 ### Basic Usage (Auto-detection)
 
 ```tsx
-import { render, useInput } from "@silvery/term"
+import { render, useInput } from "silvery"
 
 function App() {
   useInput((input, key) => {
@@ -399,7 +399,7 @@ useInput((input, key) => {
 Use `kittyMode: true` on `createRenderer` to route `press()` through Kitty encoding, and `keyToKittyAnsi()` to generate raw sequences:
 
 ```tsx
-import { createRenderer, keyToKittyAnsi } from "@silvery/term/testing"
+import { createRenderer, keyToKittyAnsi } from "@silvery/test"
 
 const render = createRenderer({ cols: 80, rows: 24, kittyMode: true })
 

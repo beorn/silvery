@@ -7,7 +7,7 @@ Silvery uses a pluggable layout engine architecture. It supports [Flexily](https
 For most apps, you don't need to configure anything. Silvery auto-initializes the default layout engine when you call `render()`:
 
 ```tsx
-import { render, Box, Text, createTerm } from "@silvery/term"
+import { render, Box, Text, createTerm } from "silvery"
 
 // Layout engine is initialized automatically
 using term = createTerm()
@@ -28,7 +28,7 @@ Flexily is a pure JavaScript layout engine with a Yoga-compatible API. It's the 
 If you want to explicitly set up Flexily (not usually necessary):
 
 ```tsx
-import { render, setLayoutEngine, createFlexxEngine, Box, Text } from "@silvery/term"
+import { render, setLayoutEngine, createFlexxEngine, Box, Text } from "silvery"
 
 // Initialize Flexily (synchronous - no await needed)
 setLayoutEngine(createFlexxEngine())
@@ -43,7 +43,7 @@ await render(<App />, term)
 Since Flexily doesn't require async initialization, you can use `renderSync()`:
 
 ```tsx
-import { renderSync, setLayoutEngine, createFlexxEngine } from "@silvery/term"
+import { renderSync, setLayoutEngine, createFlexxEngine } from "silvery"
 
 setLayoutEngine(createFlexxEngine())
 
@@ -63,7 +63,7 @@ function setLayoutEngine(engine: LayoutEngine): void
 Sets the global layout engine instance. Must be called before rendering if you want to use a non-default engine.
 
 ```tsx
-import { setLayoutEngine, createFlexxEngine } from "@silvery/term"
+import { setLayoutEngine, createFlexxEngine } from "silvery"
 
 setLayoutEngine(createFlexxEngine())
 ```
@@ -77,7 +77,7 @@ function createYogaEngine(yoga: Yoga): YogaLayoutEngine
 Creates a Yoga layout engine from an already-initialized Yoga instance. Use this when you've loaded Yoga yourself:
 
 ```tsx
-import { setLayoutEngine, createYogaEngine } from "@silvery/term"
+import { setLayoutEngine, createYogaEngine } from "silvery"
 import initYoga from "yoga-wasm-web"
 
 const yoga = await initYoga()
@@ -93,7 +93,7 @@ function initYogaEngine(): Promise<YogaLayoutEngine>
 Initializes Yoga using `yoga-wasm-web/auto` and returns a ready-to-use engine. This is what `render()` uses internally:
 
 ```tsx
-import { setLayoutEngine, initYogaEngine } from "@silvery/term"
+import { setLayoutEngine, initYogaEngine } from "silvery"
 
 const engine = await initYogaEngine()
 setLayoutEngine(engine)
@@ -108,7 +108,7 @@ function createFlexxEngine(): FlexxLayoutEngine
 Creates a Flexily layout engine. Unlike Yoga, this is synchronous:
 
 ```tsx
-import { setLayoutEngine, createFlexxEngine } from "@silvery/term"
+import { setLayoutEngine, createFlexxEngine } from "silvery"
 
 setLayoutEngine(createFlexxEngine())
 ```
@@ -122,7 +122,7 @@ function isLayoutEngineInitialized(): boolean
 Checks if a layout engine has been set:
 
 ```tsx
-import { isLayoutEngineInitialized, setLayoutEngine, createFlexxEngine } from "@silvery/term"
+import { isLayoutEngineInitialized, setLayoutEngine, createFlexxEngine } from "silvery"
 
 if (!isLayoutEngineInitialized()) {
   setLayoutEngine(createFlexxEngine())
@@ -238,7 +238,7 @@ See the [Flexily adapter source](https://github.com/beorn/silvery/blob/main/src/
 ### Example: Minimal Custom Engine
 
 ```ts
-import type { LayoutEngine, LayoutNode, LayoutConstants } from "@silvery/term"
+import type { LayoutEngine, LayoutNode, LayoutConstants } from "silvery"
 
 class SimpleNode implements LayoutNode {
   private width = 0
@@ -323,7 +323,7 @@ renderSync(term, <App />)
 If Yoga WASM fails to load, try Flexily as a fallback:
 
 ```tsx
-import { render, setLayoutEngine, createFlexxEngine, isLayoutEngineInitialized } from "@silvery/term"
+import { render, setLayoutEngine, createFlexxEngine, isLayoutEngineInitialized } from "silvery"
 
 using term = createTerm()
 

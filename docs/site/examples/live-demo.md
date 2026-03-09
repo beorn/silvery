@@ -26,7 +26,7 @@ Silvery's `RenderAdapter` interface abstracts the rendering target. The same com
 ### The Component
 
 ```tsx
-import { Box, Text, useContentRect } from "@silvery/term"
+import { Box, Text, useContentRect } from "silvery"
 
 function App() {
   const { width, height } = useContentRect()

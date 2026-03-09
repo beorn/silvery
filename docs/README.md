@@ -5,8 +5,7 @@
 Silvery is a React-based TUI framework with a graduated architecture. Your first app is five lines. When you need shared state, undo, testable I/O, or composable plugins — each level builds on the last. You never rewrite; you grow. The unifying idea: every level turns something invisible into data — state transitions, side effects, event processing — making it loggable, testable, replayable, and portable.
 
 ```tsx
-import { run, useInput } from "@silvery/term/runtime"
-import { Text } from "@silvery/term"
+import { run, useInput, Text } from "silvery"
 
 function Counter() {
   const [count, setCount] = useState(0)

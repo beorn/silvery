@@ -524,7 +524,7 @@ useEffect(() => {
 
 ```tsx
 import { useState, useEffect, useMemo } from "react"
-import { Box, Text, useFocusable, useCursor, useInput, useContentRect } from "@silvery/term"
+import { Box, Text, useFocusable, useCursor, useInput, useContentRect } from "silvery"
 
 interface TextInputProps {
   value: string

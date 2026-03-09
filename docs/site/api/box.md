@@ -5,7 +5,7 @@ The primary layout component. Uses Yoga (flexbox) for layout.
 ## Import
 
 ```tsx
-import { Box } from "@silvery/term"
+import { Box } from "silvery"
 ```
 
 ## Usage

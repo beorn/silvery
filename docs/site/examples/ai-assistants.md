@@ -38,7 +38,7 @@ Terminal-based AI assistants have unique UI requirements: streaming output that 
 A complete working chat interface in under 50 lines. Messages scroll automatically, the input field stays pinned at the bottom, and the user can send messages with Enter.
 
 ```tsx
-import { Box, Text, TextInput, useContentRect } from "@silvery/term"
+import { Box, Text, TextInput, useContentRect } from "silvery"
 import { run, useInput } from "@silvery/term/runtime"
 import { useState } from "react"
 
@@ -104,7 +104,7 @@ To add streaming, replace the echo stub with an async generator that appends tok
 For AI-driven applications where an agent needs to discover and execute actions, wrap the app with `withCommands`:
 
 ```tsx
-import { withCommands } from "@silvery/term"
+import { withCommands } from "silvery"
 
 const app = withCommands(render(<Chat />), {
   registry: commandRegistry,
@@ -134,7 +134,7 @@ Most TUI frameworks leave you to build chat infrastructure from scratch. Silvery
 Install Silvery and build your first AI assistant:
 
 ```bash
-bun add @silvery/term react flexily
+bun add silvery react
 ```
 
 See the [Getting Started guide](/guide/getting-started) for a full walkthrough, or explore the [component reference](/guide/components) for Box, Text, TextInput, VirtualList, and other building blocks.

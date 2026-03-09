@@ -11,10 +11,10 @@ This is the key addition in Silvery. Components can query their actual size inst
 ## Import
 
 ```tsx
-import { useContentRect } from "@silvery/term"
+import { useContentRect } from "silvery"
 
 // Deprecated alias (still works)
-import { useLayout } from "@silvery/term"
+import { useLayout } from "silvery"
 ```
 
 ## Usage

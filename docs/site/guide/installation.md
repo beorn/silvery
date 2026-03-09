@@ -10,19 +10,19 @@
 ::: code-group
 
 ```bash [bun]
-bun add @silvery/term
+bun add silvery
 ```
 
 ```bash [npm]
-npm install @silvery/term
+npm install silvery
 ```
 
 ```bash [yarn]
-yarn add @silvery/term
+yarn add silvery
 ```
 
 ```bash [pnpm]
-pnpm add @silvery/term
+pnpm add silvery
 ```
 
 :::
@@ -68,19 +68,19 @@ npx ts-node --esm app.tsx
 Silvery includes a testing library with auto-cleanup between renders:
 
 ```tsx
-import { createRenderer } from "@silvery/term/testing"
-import { Text } from "@silvery/term"
+import { createRenderer } from "@silvery/test"
+import { Text } from "silvery"
 
 const render = createRenderer()
 
 test("renders hello", () => {
-  const { lastFrame } = render(<Text>Hello</Text>)
-  expect(lastFrame()).toContain("Hello")
+  const app = render(<Text>Hello</Text>)
+  expect(app.text).toContain("Hello")
 })
 
 test("renders world", () => {
   // Previous render is auto-cleaned when render() is called again
-  const { lastFrame } = render(<Text>World</Text>)
-  expect(lastFrame()).toContain("World")
+  const app = render(<Text>World</Text>)
+  expect(app.text).toContain("World")
 })
 ```

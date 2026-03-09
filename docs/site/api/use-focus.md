@@ -11,7 +11,7 @@ Tree-based focus system hooks for managing focus state and navigation.
 ## Import
 
 ```tsx
-import { useFocusable, useFocusWithin, useFocusManager } from "@silvery/term"
+import { useFocusable, useFocusWithin, useFocusManager } from "silvery"
 ```
 
 ## useFocusable

@@ -42,7 +42,7 @@ export default defineConfig({
         text: "Links",
         items: [
           { text: "GitHub", link: "https://github.com/beorn/silvery" },
-          { text: "npm", link: "https://www.npmjs.com/package/@silvery/term" },
+          { text: "npm", link: "https://www.npmjs.com/package/silvery" },
         ],
       },
     ],

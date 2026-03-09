@@ -13,7 +13,7 @@ Silvery provides the same components as Ink, with some enhancements.
 The primary layout component. Uses Yoga (flexbox) for layout.
 
 ```tsx
-import { Box, Text } from "@silvery/term"
+import { Box, Text } from "silvery"
 ;<Box flexDirection="row" justifyContent="space-between">
   <Text>Left</Text>
   <Text>Right</Text>
@@ -64,7 +64,7 @@ See [Scrolling Guide](/guide/scrolling) for details.
 Renders text with styling. Supports Chalk strings.
 
 ```tsx
-import { Text } from "@silvery/term";
+import { Text } from "silvery";
 import chalk from "chalk";
 
 // Basic styling
@@ -106,7 +106,7 @@ Opt out with `wrap={false}` if you need overflow behavior.
 Renders a newline character.
 
 ```tsx
-import { Newline, Text } from "@silvery/term";
+import { Newline, Text } from "silvery";
 
 <Text>Line 1</Text>
 <Newline />
@@ -118,7 +118,7 @@ import { Newline, Text } from "@silvery/term";
 Flexible space that expands to fill available room.
 
 ```tsx
-import { Box, Spacer, Text } from "@silvery/term"
+import { Box, Spacer, Text } from "silvery"
 ;<Box>
   <Text>Left</Text>
   <Spacer />
@@ -131,7 +131,7 @@ import { Box, Spacer, Text } from "@silvery/term"
 Renders content that won't be updated. Useful for logs or output that scrolls up.
 
 ```tsx
-import { Static, Box, Text } from "@silvery/term"
+import { Static, Box, Text } from "silvery"
 
 function App() {
   const [logs, setLogs] = useState<string[]>([])
@@ -159,7 +159,7 @@ function App() {
 Single-line text input with full readline shortcuts (Ctrl+A/E, Ctrl+K/U, Alt+B/F, Ctrl+Y with kill ring).
 
 ```tsx
-import { TextInput } from "@silvery/term"
+import { TextInput } from "silvery"
 ;<TextInput value={text} onChange={setText} onSubmit={handleSubmit} placeholder="Type here..." prompt="> " />
 ```
 
@@ -168,7 +168,7 @@ import { TextInput } from "@silvery/term"
 Multi-line text editing with cursor navigation, line wrapping, and text selection.
 
 ```tsx
-import { TextArea } from "@silvery/term"
+import { TextArea } from "silvery"
 ;<TextArea
   value={text}
   onChange={setText}
@@ -203,7 +203,7 @@ Features: Shift+Arrow selection, Ctrl+A select all, Ctrl+Home/End document navig
 Single-select list with keyboard navigation (arrow keys, j/k, Home/End), disabled item support, and `maxVisible` for scroll windowing.
 
 ```tsx
-import { SelectList } from "@silvery/term"
+import { SelectList } from "silvery"
 ;<SelectList
   items={[
     { label: "React", value: "react" },
@@ -236,7 +236,7 @@ Simple interactive primitives for boolean toggles and clickable buttons.
 
 ## Shadcn-Style Components
 
-Higher-level pre-styled components using `$token` semantic colors. Import from `@silvery/term`:
+Higher-level pre-styled components using `$token` semantic colors. Import from `silvery`:
 
 | Component                               | Description                                          |
 | --------------------------------------- | ---------------------------------------------------- |

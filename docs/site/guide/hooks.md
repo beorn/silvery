@@ -7,7 +7,7 @@ Silvery provides the same hooks as Ink, plus layout feedback hooks.
 **Silvery only** - The key addition. Returns the computed dimensions of the component's container.
 
 ```tsx
-import { Box, Text, useContentRect } from "@silvery/term"
+import { Box, Text, useContentRect } from "silvery"
 
 function SizedBox() {
   const { width, height, x, y } = useContentRect()
@@ -60,7 +60,7 @@ In practice, both renders happen before the first paint, so this is usually invi
 **Silvery only** - Access the Term instance for terminal capabilities and styling.
 
 ```tsx
-import { useTerm } from "@silvery/term"
+import { useTerm } from "silvery"
 
 function ColoredOutput() {
   const term = useTerm()
@@ -92,7 +92,7 @@ Returns the `Term` instance passed to `render()`. Provides:
 Handle keyboard input.
 
 ```tsx
-import { useInput } from "@silvery/term"
+import { useInput } from "silvery"
 
 function App() {
   const [count, setCount] = useState(0)
@@ -138,7 +138,7 @@ useInput(
 Access app-level controls.
 
 ```tsx
-import { useApp } from "@silvery/term"
+import { useApp } from "silvery"
 
 function App() {
   const { exit } = useApp()
@@ -162,7 +162,7 @@ function App() {
 Access stdout stream and dimensions.
 
 ```tsx
-import { useStdout } from "@silvery/term"
+import { useStdout } from "silvery"
 
 function App() {
   const { stdout, write } = useStdout()
@@ -187,7 +187,7 @@ function App() {
 Returns focus state for the nearest focusable ancestor. The component must be rendered inside a `<Box focusable>` with a `testID`.
 
 ```tsx
-import { useFocusable, Box, Text } from "@silvery/term"
+import { useFocusable, Box, Text } from "silvery"
 
 function FocusableItem({ label }: { label: string }) {
   const { focused } = useFocusable()
@@ -216,7 +216,7 @@ Focus behavior is configured via Box props: `focusable`, `autoFocus`, `focusScop
 Returns whether any descendant of the specified Box (by `testID`) has focus.
 
 ```tsx
-import { useFocusWithin } from "@silvery/term"
+import { useFocusWithin } from "silvery"
 
 function Sidebar() {
   const hasFocus = useFocusWithin("sidebar")
@@ -235,7 +235,7 @@ function Sidebar() {
 Access the focus manager for programmatic focus control.
 
 ```tsx
-import { useFocusManager } from "@silvery/term"
+import { useFocusManager } from "silvery"
 
 function App() {
   const { activeId, focusNext, focusPrev, focus, blur } = useFocusManager()

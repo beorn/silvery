@@ -9,8 +9,8 @@ add effects-as-data when you need side effects (Level 4).
 ## Install
 
 ```ts
-import { tea, collect } from "@silvery/term/tea"
-import type { TeaResult, TeaReducer, EffectRunners, TeaSlice, EffectLike } from "@silvery/term/tea"
+import { tea, collect } from "@silvery/tea"
+import type { TeaResult, TeaReducer, EffectRunners, TeaSlice, EffectLike } from "@silvery/tea"
 ```
 
 Not a standalone package. Exported as a sub-path from Silvery.
@@ -22,7 +22,7 @@ Level 3 — ops as data. The reducer takes state and an operation, returns new s
 
 ```ts
 import { createStore } from "zustand"
-import { tea } from "@silvery/term/tea"
+import { tea } from "@silvery/tea"
 
 interface State {
   count: number
@@ -57,7 +57,7 @@ on a per-case basis.
 
 ```ts
 import { createStore } from "zustand"
-import { tea, type TeaResult, type EffectRunners } from "@silvery/term/tea"
+import { tea, type TeaResult, type EffectRunners } from "@silvery/tea"
 
 // Effects are plain objects with a `type` discriminant
 const log = (msg: string) => ({ type: "log" as const, msg })
@@ -165,7 +165,7 @@ the return value so assertions work uniformly whether the reducer returned plain
 or a tuple.
 
 ```ts
-import { collect } from "@silvery/term/tea"
+import { collect } from "@silvery/tea"
 
 const initial: State = { count: 0 }
 

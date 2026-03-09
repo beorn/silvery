@@ -49,7 +49,7 @@ All standard React hooks work correctly:
 
 ```tsx
 import { useState, useEffect, useTransition, useDeferredValue } from "react"
-import { Box, Text, useInput, useContentRect } from "@silvery/term"
+import { Box, Text, useInput, useContentRect } from "silvery"
 
 function App() {
   const [count, setCount] = useState(0)
@@ -84,7 +84,7 @@ Suspense boundaries work for lazy loading and data fetching patterns:
 
 ```tsx
 import { Suspense, lazy } from "react"
-import { Box, Text } from "@silvery/term"
+import { Box, Text } from "silvery"
 
 const HeavyComponent = lazy(() => import("./HeavyComponent"))
 
@@ -107,7 +107,7 @@ StrictMode works correctly with Silvery. Double-rendering in development mode (f
 
 ```tsx
 import { StrictMode } from "react"
-import { Box, Text, render, createTerm } from "@silvery/term"
+import { Box, Text, render, createTerm } from "silvery"
 
 function App() {
   return (
@@ -164,13 +164,13 @@ function SearchResults() {
 The Silvery testing library is configured for React 19's act() requirements:
 
 ```tsx
-import { createRenderer } from "@silvery/term/testing"
+import { createRenderer } from "@silvery/test"
 
 const render = createRenderer()
 
 test("component renders correctly", () => {
-  const { lastFrame } = render(<MyComponent />)
-  expect(lastFrame()).toContain("expected content")
+  const app = render(<MyComponent />)
+  expect(app.text).toContain("expected content")
 })
 ```
 
@@ -178,7 +178,7 @@ The testing environment automatically:
 
 - Sets `IS_REACT_ACT_ENVIRONMENT = true`
 - Wraps updates in `act()` for proper state flushing
-- Supports stdin simulation for input testing
+- Supports keyboard input via `app.press()`
 
 ## Migration from React 18
 

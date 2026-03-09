@@ -8,17 +8,17 @@ Silvery is a drop-in replacement for Ink. Change your imports, and your app work
 
 ```bash
 bun remove ink ink-testing-library
-bun add @silvery/term
+bun add silvery
 ```
 
 ### Step 2: Update Imports
 
 ```diff
 - import { Box, Text, render, useInput, useApp } from 'ink';
-+ import { Box, Text, render, useInput, useApp } from '@silvery/term';
++ import { Box, Text, render, useInput, useApp } from 'silvery';
 
 - import { render } from 'ink-testing-library';
-+ import { render } from '@silvery/term/testing';
++ import { render } from '@silvery/test';
 ```
 
 That's it. `render(<App />)` works without any term parameter — just add `await`:
@@ -44,7 +44,7 @@ Most apps should work at this point.
 For production apps that need more control, you can create a term explicitly:
 
 ```tsx
-import { render, createTerm } from "@silvery/term"
+import { render, createTerm } from "silvery"
 
 using term = createTerm()
 const { unmount, waitUntilExit } = await render(<App />, term)

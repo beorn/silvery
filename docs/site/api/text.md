@@ -5,7 +5,7 @@ Renders styled text. Supports ANSI escape codes and Chalk strings.
 ## Import
 
 ```tsx
-import { Text } from "@silvery/term"
+import { Text } from "silvery"
 ```
 
 ## Usage

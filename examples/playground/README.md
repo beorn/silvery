@@ -39,7 +39,7 @@ The playground uses the same rendering pipeline as silvery's terminal mode:
 React JSX
   |  React reconciler builds SilveryNode tree
   v
-Flexture layout engine (pure JS flexbox)
+flexily layout engine (pure JS flexbox)
   |  Computes { x, y, width, height } for every node
   v
 Canvas adapter (CanvasRenderBuffer)

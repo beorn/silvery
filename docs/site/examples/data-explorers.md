@@ -35,7 +35,7 @@ A complete data explorer with search filtering, a sortable table, and responsive
 
 ```tsx
 import { useState, useDeferredValue } from "react"
-import { Box, Text, Table, TextInput, useContentRect } from "@silvery/term"
+import { Box, Text, Table, TextInput, useContentRect } from "silvery"
 import { run, useInput } from "@silvery/term/runtime"
 
 // Sample data -- replace with your own data source
@@ -128,7 +128,7 @@ Data explorers need responsive tables, large dataset handling, and non-blocking 
 Install Silvery and build your first data explorer in minutes:
 
 ```bash
-bun add @silvery/term react flexily
+bun add silvery react
 ```
 
 Follow the [Getting Started guide](/guide/getting-started) for a full walkthrough, or explore the [Components](/guide/components) reference.

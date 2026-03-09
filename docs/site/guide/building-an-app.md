@@ -23,7 +23,7 @@ You're building a counter. One component, one piece of state, one input handler.
 ```tsx
 import { useState } from "react"
 import { run, useInput } from "@silvery/term/runtime"
-import { Text } from "@silvery/term"
+import { Text } from "silvery"
 
 function Counter() {
   const [count, setCount] = useState(0)
@@ -69,7 +69,7 @@ The double-arrow `() => (set, get) => ({...})` is Zustand's [state creator](http
 
 ```tsx
 import { createApp, useApp } from "@silvery/term/runtime"
-import { Box, Text } from "@silvery/term"
+import { Box, Text } from "silvery"
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(v, max))
 

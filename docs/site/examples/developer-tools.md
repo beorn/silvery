@@ -41,7 +41,7 @@ A log viewer with captured console output, a virtualized log list, and keyboard 
 
 ```tsx
 import { useState, useCallback } from "react"
-import { Box, Text, VirtualList, Console, patchConsole } from "@silvery/term"
+import { Box, Text, VirtualList, Console, patchConsole } from "silvery"
 import { run, useInput } from "@silvery/term/runtime"
 
 interface LogEntry {
@@ -110,7 +110,7 @@ Press `i`, `w`, or `e` to add log entries at different severity levels. Use `j`/
 Silvery ships with a Playwright-style testing API. Verify rendering and keyboard interaction without a real terminal:
 
 ```tsx
-import { createRenderer } from "@silvery/term/testing"
+import { createRenderer } from "@silvery/test"
 import { expect, test } from "vitest"
 
 const render = createRenderer({ cols: 100, rows: 24 })
@@ -143,7 +143,7 @@ Developer tools need to handle large datasets, complex shortcuts, and automated 
 Install Silvery and build your first developer tool:
 
 ```bash
-bun add @silvery/term
+bun add silvery
 ```
 
 Follow the [Getting Started guide](/guide/getting-started) to set up your project, then explore the [Components reference](/guide/components) for the full API.

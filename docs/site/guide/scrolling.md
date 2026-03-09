@@ -13,7 +13,7 @@ Silvery makes scrolling effortless. Just render your content and let Silvery han
 Add `overflow="scroll"` to any Box:
 
 ```tsx
-import { Box, Text } from "@silvery/term"
+import { Box, Text } from "silvery"
 
 const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`)
 
@@ -40,7 +40,7 @@ Silvery will:
 Use `scrollTo` to keep a specific item visible:
 
 ```tsx
-import { Box, Text, useInput } from "@silvery/term"
+import { Box, Text, useInput } from "silvery"
 import { useState } from "react"
 
 const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`)

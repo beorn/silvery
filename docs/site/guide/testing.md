@@ -38,19 +38,19 @@ The test suite is organized by domain:
 
 ## Using createRenderer
 
-The `createRenderer` function provides an ink-testing-library compatible API for testing Silvery components.
+The `createRenderer` function creates a render function with auto-cleanup between tests. Each call returns an `App` instance with locators, keyboard input, and text inspection.
 
 ### Basic Usage
 
 ```tsx
-import { createRenderer } from "@silvery/term/testing"
-import { Text } from "@silvery/term"
+import { createRenderer } from "@silvery/test"
+import { Text } from "silvery"
 
 const render = createRenderer()
 
 test("renders text", () => {
-  const { lastFrame } = render(<Text>Hello</Text>)
-  expect(lastFrame()).toContain("Hello")
+  const app = render(<Text>Hello</Text>)
+  expect(app.text).toContain("Hello")
 })
 ```
 
@@ -62,24 +62,24 @@ Each `render()` call automatically unmounts the previous render, so you don't ne
 const render = createRenderer()
 
 test("first test", () => {
-  const { lastFrame } = render(<Text>First</Text>)
-  expect(lastFrame()).toContain("First")
+  const app = render(<Text>First</Text>)
+  expect(app.text).toContain("First")
 })
 
 test("second test", () => {
   // Previous render is auto-cleaned
-  const { lastFrame } = render(<Text>Second</Text>)
-  expect(lastFrame()).toContain("Second")
+  const app = render(<Text>Second</Text>)
+  expect(app.text).toContain("Second")
 })
 ```
 
 ### Testing Keyboard Input
 
-Use `stdin.write()` to simulate keyboard input:
+Use `app.press()` to simulate keyboard input with named keys:
 
 ```tsx
 import { useState } from "react"
-import { Box, Text, useInput } from "@silvery/term"
+import { Box, Text, useInput } from "silvery"
 
 function Counter() {
   const [count, setCount] = useState(0)
@@ -92,40 +92,38 @@ function Counter() {
   return <Text>Count: {count}</Text>
 }
 
-test("increments with arrow keys", () => {
+test("increments with arrow keys", async () => {
   const render = createRenderer()
-  const { lastFrame, stdin } = render(<Counter />)
+  const app = render(<Counter />)
 
-  stdin.write("\x1b[A") // Up arrow
-  stdin.write("\x1b[A") // Up arrow
-  stdin.write("\x1b[B") // Down arrow
+  await app.press("ArrowUp")
+  await app.press("ArrowUp")
+  await app.press("ArrowDown")
 
-  expect(lastFrame()).toContain("Count: 1")
+  expect(app.text).toContain("Count: 1")
 })
 ```
 
-### Common Escape Sequences
+### Named Keys for press()
 
-| Key          | Sequence              |
-| ------------ | --------------------- |
-| Up Arrow     | `\x1b[A`              |
-| Down Arrow   | `\x1b[B`              |
-| Right Arrow  | `\x1b[C`              |
-| Left Arrow   | `\x1b[D`              |
-| Escape       | `\x1b`                |
-| Return/Enter | `\r`                  |
-| Tab          | `\t`                  |
-| Backspace    | `\b`                  |
-| Ctrl+C       | `\x03`                |
-| Ctrl+D       | `\x04`                |
-| Home         | `\x1b[H` or `\x1b[1~` |
-| End          | `\x1b[F` or `\x1b[4~` |
-| Page Up      | `\x1b[5~`             |
-| Page Down    | `\x1b[6~`             |
+| Key          | Name         |
+| ------------ | ------------ |
+| Up Arrow     | `ArrowUp`    |
+| Down Arrow   | `ArrowDown`  |
+| Right Arrow  | `ArrowRight` |
+| Left Arrow   | `ArrowLeft`  |
+| Escape       | `Escape`     |
+| Return/Enter | `Enter`      |
+| Tab          | `Tab`        |
+| Backspace    | `Backspace`  |
+| Home         | `Home`       |
+| End          | `End`        |
+| Page Up      | `PageUp`     |
+| Page Down    | `PageDown`   |
 
 ### Testing Re-renders
 
-Use `rerender()` to update props and verify state changes:
+Use `app.rerender()` to update props and verify state changes:
 
 ```tsx
 function Greeter({ name }: { name: string }) {
@@ -134,53 +132,47 @@ function Greeter({ name }: { name: string }) {
 
 test("updates on prop change", () => {
   const render = createRenderer()
-  const { lastFrame, rerender } = render(<Greeter name="Alice" />)
+  const app = render(<Greeter name="Alice" />)
 
-  expect(lastFrame()).toContain("Hello, Alice!")
+  expect(app.text).toContain("Hello, Alice!")
 
-  rerender(<Greeter name="Bob" />)
-  expect(lastFrame()).toContain("Hello, Bob!")
+  app.rerender(<Greeter name="Bob" />)
+  expect(app.text).toContain("Hello, Bob!")
 })
 ```
 
 ### Custom Dimensions
 
-Specify terminal dimensions per render:
-
-```tsx
-const render = createRenderer()
-
-// Default is 80x24
-const { lastFrame } = render(<WideComponent />, {
-  cols: 120,
-  rows: 40,
-})
-```
-
-Or set defaults at renderer creation:
+Specify terminal dimensions at renderer creation:
 
 ```tsx
 const render = createRenderer({
   cols: 120,
   rows: 40,
 })
+
+const app = render(<WideComponent />)
+expect(app.text).toContain("wide content")
 ```
 
 ### Frame Inspection
 
-Access all rendered frames for detailed testing:
+The App instance provides direct access to rendered output:
 
 ```tsx
-const { frames, lastFrame, clear } = render(<MyComponent />)
+const app = render(<MyComponent />)
 
-// frames is an array of all rendered outputs
-console.log(frames.length)
+// Plain text (no ANSI codes)
+const text = app.text
 
-// lastFrame() returns the most recent frame
-const current = lastFrame()
+// Text with ANSI styling
+const ansi = app.ansi
 
-// clear() resets the frame history
-clear()
+// All rendered frames (for history inspection)
+console.log(app.frames.length)
+
+// Clear the frame history
+app.clear()
 ```
 
 ## Test Utilities
@@ -190,10 +182,11 @@ clear()
 Remove ANSI escape codes for easier assertions:
 
 ```tsx
-import { stripAnsi } from "@silvery/term/testing"
+import { stripAnsi } from "@silvery/test"
 
-const { lastFrame } = render(<Text color="red">Hello</Text>)
-const text = stripAnsi(lastFrame()!)
+const app = render(<Text color="red">Hello</Text>)
+// app.text already strips ANSI, but stripAnsi is useful for app.ansi
+const text = stripAnsi(app.ansi)
 expect(text).toBe("Hello")
 ```
 
@@ -202,10 +195,10 @@ expect(text).toBe("Hello")
 Strip ANSI codes and normalize whitespace:
 
 ```tsx
-import { normalizeFrame } from "@silvery/term/testing"
+import { normalizeFrame } from "@silvery/test"
 
-const { lastFrame } = render(<MyComponent />)
-const normalized = normalizeFrame(lastFrame()!)
+const app = render(<MyComponent />)
+const normalized = normalizeFrame(app.ansi)
 // Strips ANSI, trims trailing whitespace, removes empty trailing lines
 ```
 
@@ -214,17 +207,17 @@ const normalized = normalizeFrame(lastFrame()!)
 Wait for async conditions:
 
 ```tsx
-import { waitFor } from "@silvery/term/testing"
+import { waitFor } from "@silvery/test"
 
 test("async update", async () => {
-  const { lastFrame } = render(<AsyncComponent />)
+  const app = render(<AsyncComponent />)
 
-  await waitFor(() => lastFrame()?.includes("Loaded"), {
+  await waitFor(() => app.text.includes("Loaded"), {
     timeout: 1000,
     interval: 10,
   })
 
-  expect(lastFrame()).toContain("Loaded")
+  expect(app.text).toContain("Loaded")
 })
 ```
 
@@ -233,7 +226,7 @@ test("async update", async () => {
 ### Testing Focus Management
 
 ```tsx
-import { useFocusable } from "@silvery/term"
+import { useFocusable } from "silvery"
 
 function FocusableItem({ testID }: { testID: string }) {
   const { focused } = useFocusable()
@@ -244,9 +237,9 @@ function FocusableItem({ testID }: { testID: string }) {
   )
 }
 
-test("focus navigation", () => {
+test("focus navigation", async () => {
   const render = createRenderer()
-  const { stdin, lastFrame } = render(
+  const app = render(
     <Box flexDirection="column">
       <FocusableItem testID="item1" />
       <FocusableItem testID="item2" />
@@ -254,15 +247,16 @@ test("focus navigation", () => {
   )
 
   // Tab to move focus
-  stdin.write("\t")
-  // Verify focus moved (check for cyan background in ANSI output)
+  await app.press("Tab")
+  // Verify focus moved using locator
+  expect(app.getByTestId("item2").textContent()).toBe("item2")
 })
 ```
 
 ### Testing Layout Dimensions
 
 ```tsx
-import { useContentRect, NodeContext } from "@silvery/term"
+import { useContentRect, NodeContext } from "silvery"
 
 function LayoutCapture({ onLayout }: { onLayout: (l: any) => void }) {
   const layout = useContentRect()
@@ -290,13 +284,13 @@ test("layout provides dimensions", () => {
 The test renderer (`createRenderer`) automatically provides `RuntimeContext`. Components using `useApp()` or `useInput()` work out of the box:
 
 ```tsx
-test("useApp exit function", () => {
+test("useApp exit function", async () => {
   const render = createRenderer()
   const app = render(<ComponentThatCallsExit />)
 
   // press() triggers input through RuntimeContext
   await app.press("q")
-  expect(app.exitCode).toBeDefined()
+  expect(app.exitCalled()).toBe(true)
 })
 ```
 

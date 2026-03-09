@@ -163,7 +163,7 @@ function ColumnSeparator() {
 Putting it all together:
 
 ```tsx
-import { render, Box, Text, useInput, useApp, createTerm } from "@silvery/term"
+import { render, Box, Text, useInput, useApp, createTerm } from "silvery"
 import { useState } from "react"
 
 function ScrollIndicator({ direction }) {

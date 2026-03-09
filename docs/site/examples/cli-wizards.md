@@ -42,7 +42,7 @@ A complete multi-step wizard using `run()`, `SelectList`, `TextInput`, and `Prog
 ```tsx
 import { useState, useEffect } from "react"
 import { run, useInput } from "@silvery/term/runtime"
-import { Box, Text, SelectList, TextInput, ProgressBar } from "@silvery/term"
+import { Box, Text, SelectList, TextInput, ProgressBar } from "silvery"
 
 type Step = "select" | "name" | "install" | "done"
 

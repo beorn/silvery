@@ -18,7 +18,7 @@ features:
     title: Familiar API
     details: "If you know Ink, you know Silvery -- same Box/Text/useInput patterns. Plus `silvery/ink` and `silvery/chalk` compat layers for effortless migration."
     link: /guide/migration
-    linkText: Migration guide
+    linkText: Ink comparison
   - icon: "\u26A1"
     title: Fast Incremental Rendering
     details: "Per-node dirty tracking with 7 independent flags. 28-192x fewer bytes on typical incremental updates. Only changed nodes re-render."
@@ -46,9 +46,7 @@ features:
     details: "Pure TypeScript. No WASM, no C++, no memory leaks. Runs on Node, Bun, and Deno."
 ---
 
-<div class="alpha-banner">
-  <strong>Alpha</strong> — under heavy development. APIs may change, things may break. <a href="https://github.com/beorn/silvery/issues">Feedback welcome</a>.
-</div>
+<p class="alpha-badge"><strong>Alpha</strong> — under heavy development. APIs may change.</p>
 
 ## Explore the Examples
 
@@ -89,8 +87,8 @@ bun add silvery react
 ```
 
 ```tsx
-import { Box, Text, useContentRect } from "@silvery/term"
-import { run, useInput } from "@silvery/term/runtime"
+import { useState } from "react"
+import { Box, Text, useContentRect, useInput, render, createTerm } from "silvery"
 
 function App() {
   const { width } = useContentRect() // Components know their size!
@@ -110,7 +108,8 @@ function App() {
   )
 }
 
-await run(<App />)
+using term = createTerm()
+await render(<App />, term)
 ```
 
 ## Ecosystem
@@ -148,18 +147,14 @@ Silvery is part of a family of terminal-focused libraries:
   margin: 0.35rem 0;
   line-height: 1.5;
 }
-.alpha-banner {
+.alpha-badge {
   margin: -0.5rem auto 2rem;
-  max-width: 640px;
-  padding: 0.6rem 1.2rem;
-  border-radius: 8px;
+  padding: 0.3rem 1rem;
+  border-radius: 999px;
   background: var(--vp-c-warning-soft);
   color: var(--vp-c-warning-1);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   text-align: center;
-}
-.alpha-banner a {
-  color: var(--vp-c-warning-1);
-  text-decoration: underline;
+  width: fit-content;
 }
 </style>

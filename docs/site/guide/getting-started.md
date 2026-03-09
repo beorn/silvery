@@ -11,22 +11,24 @@ Silvery is a terminal UI framework for React that lets components know their com
 ::: code-group
 
 ```bash [bun]
-bun add @silvery/term
+bun add silvery
 ```
 
 ```bash [npm]
-npm install @silvery/term
+npm install silvery
 ```
 
 ```bash [yarn]
-yarn add @silvery/term
+yarn add silvery
 ```
 
 ```bash [pnpm]
-pnpm add @silvery/term
+pnpm add silvery
 ```
 
 :::
+
+> **Package note:** `silvery` is an umbrella package that re-exports `@silvery/react` (components, hooks, render). For terminal-specific APIs (buffer, pipeline), import from `@silvery/term`. For theming, import from `@silvery/theme`.
 
 <LiveDemo xtermSrc="/examples/showcase.html?demo=layout-feedback" :height="250" />
 
@@ -35,7 +37,7 @@ pnpm add @silvery/term
 Create a file called `app.tsx`:
 
 ```tsx
-import { Box, Text, render, createTerm } from "@silvery/term"
+import { Box, Text, render, createTerm } from "silvery"
 
 function App() {
   return (
@@ -63,7 +65,7 @@ You should see a rounded box with "Hello from Silvery!" inside.
 The key feature of Silvery is `useContentRect()`. Components can query their computed dimensions:
 
 ```tsx
-import { Box, Text, render, useContentRect, createTerm } from "@silvery/term"
+import { Box, Text, render, useContentRect, createTerm } from "silvery"
 
 function SizedBox() {
   const { width, height } = useContentRect()
@@ -97,7 +99,7 @@ Each `SizedBox` will display its actual computed dimensions. No prop threading n
 Silvery handles scrolling automatically. Just use `overflow="scroll"`:
 
 ```tsx
-import { Box, Text, render, useInput, createTerm } from "@silvery/term"
+import { Box, Text, render, useInput, createTerm } from "silvery"
 import { useState } from "react"
 
 const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`)

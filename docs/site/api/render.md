@@ -5,7 +5,7 @@ Render a React element to the terminal.
 ## Import
 
 ```tsx
-import { render, createTerm } from "@silvery/term"
+import { render, createTerm } from "silvery"
 ```
 
 ## Signature
@@ -47,7 +47,7 @@ Returns a `Promise<Instance>` with the following methods:
 ### Basic Usage
 
 ```tsx
-import { render, Box, Text, createTerm } from "@silvery/term"
+import { render, Box, Text, createTerm } from "silvery"
 
 using term = createTerm()
 
@@ -62,7 +62,7 @@ await render(
 ### With Custom Options
 
 ```tsx
-import { render, Box, Text, createTerm } from "@silvery/term"
+import { render, Box, Text, createTerm } from "silvery"
 
 using term = createTerm()
 
@@ -82,7 +82,7 @@ await render(
 ### Programmatic Re-render
 
 ```tsx
-import { render, Text, createTerm } from "@silvery/term"
+import { render, Text, createTerm } from "silvery"
 
 using term = createTerm()
 
@@ -98,7 +98,7 @@ setInterval(() => {
 ### Async App with waitUntilExit
 
 ```tsx
-import { render, Box, Text, useApp, useInput, createTerm } from "@silvery/term"
+import { render, Box, Text, useApp, useInput, createTerm } from "silvery"
 
 function App() {
   const { exit } = useApp()
@@ -131,7 +131,7 @@ main()
 ### Alternate Screen Mode
 
 ```tsx
-import { render, Box, Text, createTerm } from "@silvery/term"
+import { render, Box, Text, createTerm } from "silvery"
 
 using term = createTerm()
 
@@ -151,7 +151,7 @@ await waitUntilExit()
 ### Using Term in Components
 
 ```tsx
-import { render, Box, Text, useTerm, createTerm } from "@silvery/term"
+import { render, Box, Text, useTerm, createTerm } from "silvery"
 
 function ColoredOutput() {
   const term = useTerm()
@@ -172,7 +172,7 @@ await render(<ColoredOutput />, term)
 For cases where Yoga is already initialized, use `renderSync`:
 
 ```tsx
-import { render, renderSync, Text, createTerm } from "@silvery/term"
+import { render, renderSync, Text, createTerm } from "silvery"
 
 using term = createTerm()
 
