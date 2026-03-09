@@ -14,35 +14,27 @@ hero:
       link: https://github.com/beorn/silvery
 
 features:
-  - icon: "\U0001F504"
-    title: Familiar API
+  - title: Familiar API
     details: "If you know Ink, you know Silvery -- same Box/Text/useInput patterns. Plus `silvery/ink` and `silvery/chalk` compat layers for effortless migration."
     link: /guide/migration
     linkText: Ink comparison
-  - icon: "\u26A1"
-    title: Fast Incremental Rendering
+  - title: Fast Incremental Rendering
     details: "Per-node dirty tracking with 7 independent flags. 28-192x fewer bytes on typical incremental updates. Only changed nodes re-render."
     link: /guide/why-silvery#incremental-rendering
     linkText: "* See benchmarks"
-  - icon: "\U0001F4D0"
-    title: Layout Feedback
+  - title: Layout Feedback
     details: "Components query their own dimensions via useContentRect(). No width prop drilling needed."
-  - icon: "\U0001F5C4\uFE0F"
-    title: Scrollable Containers
+  - title: Scrollable Containers
     details: 'overflow="scroll" with scrollTo just works. No manual virtualization needed.'
-  - icon: "\U0001F4E6"
-    title: 23+ Components
+  - title: 23+ Components
     details: "Box, Text, VirtualList, TextArea, SelectList, Table, Image, Spinner, ProgressBar, and more. Built-in scrolling, focus, and input handling."
-  - icon: "\U0001F310"
-    title: Beyond the Terminal
+  - title: Beyond the Terminal
     details: "Terminal today, Canvas and DOM tomorrow. The architecture separates rendering targets from the component model — same React components, different outputs."
     link: /roadmap
     linkText: See the roadmap
-  - icon: "\U0001F9E9"
-    title: TEA State Machines
+  - title: TEA State Machines
     details: "Optional Elm Architecture (TEA) reducers alongside React hooks. Pure (action, state) → [state, effects] functions for testing, replay, and undo."
-  - icon: "\U0001F6AB"
-    title: Zero Dependencies
+  - title: Zero Dependencies
     details: "Pure TypeScript. No WASM, no C++, no memory leaks. Runs on Node, Bun, and Deno."
 ---
 
