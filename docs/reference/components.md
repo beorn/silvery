@@ -189,7 +189,7 @@ Renders content once above the dynamic output. Useful for completed items in a s
 
 ## Viewport Architecture
 
-Four composable primitives for different rendering modes. See [docs/design/viewport-architecture.md](../design/viewport-architecture.md) for the full design.
+Four composable primitives for different rendering modes.
 
 ### Screen
 

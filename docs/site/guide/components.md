@@ -289,7 +289,7 @@ const loader = steps({ loadModules, parseConfig, validate })
 await loader.run({ clear: true })
 ```
 
-**React components** (for silvery/Ink apps):
+**React components** (for Silvery/Ink apps):
 
 ```tsx
 import { Spinner, ProgressBar, Tasks, Task } from "@silvery/ui/react"

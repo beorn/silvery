@@ -105,7 +105,7 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 
 ## Unique Strengths
 
-> Performance claims below are summary figures. See [benchmarks.md](benchmarks.md) for full benchmark data and [performance.md](deep-dives/performance.md) for optimization details.
+> Performance claims below are summary figures. See [benchmarks.md](../../silvery-internal/benchmarks.md) for full benchmark data and [performance.md](deep-dives/performance.md) for optimization details.
 
 ### Silvery
 

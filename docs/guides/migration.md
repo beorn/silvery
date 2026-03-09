@@ -328,7 +328,7 @@ grep -r "height={" src/
 
 ### Q: Can I contribute to Silvery?
 
-**A**: Yes! See [internals.md](../deep-dives/internals.md) for architecture details.
+**A**: Yes! See [Architecture](../deep-dives/architecture.md) for the high-level pipeline.
 
 ---
 

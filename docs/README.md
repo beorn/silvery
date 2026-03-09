@@ -26,8 +26,8 @@ await run(<Counter />)
 - **New to Silvery?** Start with [Getting Started](guides/getting-started.md) -- build your first app in 5 minutes
 - **Migrating from Ink?** Read [Silvery vs Ink](silvery-vs-ink.md) and [Migration Guide](guides/migration.md)
 - **Building an app?** [Components](reference/components.md) + [Hooks](reference/hooks.md) + [Input Features](reference/input-features.md)
-- **Testing?** [Testing](testing.md) + [Plugins](reference/plugins.md) (withCommands, withDiagnostics)
-- **Understanding internals?** [Architecture](deep-dives/architecture.md) → [Internals](deep-dives/internals.md) → [Performance](deep-dives/performance.md)
+- **Testing?** [Testing Guide](site/guide/testing.md) + [Plugins](reference/plugins.md) (withCommands, withDiagnostics)
+- **Understanding internals?** [Architecture](deep-dives/architecture.md) → [Performance](deep-dives/performance.md)
 - **Something broken?** [Troubleshooting](troubleshooting.md)
 - **Contributing?** See [CONTRIBUTING.md](../CONTRIBUTING.md)
 
@@ -78,39 +78,20 @@ API documentation for components, hooks, and subsystems.
 
 ## Deep Dives
 
-Architecture, internals, and performance analysis.
+Architecture and performance analysis.
 
-| Document                                                   | Description                                                    |
-| ---------------------------------------------------------- | -------------------------------------------------------------- |
-| [Architecture](deep-dives/architecture.md)                 | Five-phase pipeline, RenderAdapter interface                   |
-| [Internals](deep-dives/internals.md)                       | Reconciler, dirty tracking, content phase                      |
-| [Containment](deep-dives/containment.md)                   | Layout feedback loop prevention (useContentRect safe patterns) |
-| [Performance](deep-dives/performance.md)                   | Optimization techniques, profiling guide                       |
-| [Focus Routing](deep-dives/focus-routing.md)               | Focus-based input routing, commands, keybindings               |
-| [Architecture Enables](deep-dives/architecture-enables.md) | Effect combinators, structured logging, undo, time-travel      |
-
-## Design Documents
-
-Design rationale for implemented or proposed features.
-
-| Document                                                   | Description                                           |
-| ---------------------------------------------------------- | ----------------------------------------------------- |
-| [Terminal Rendering Design](design/design.md)              | Five-phase pipeline, Unicode, scrolling (implemented) |
-| [Mouse Events Design](design/mouse-events-design.md)       | React DOM parity for mouse events (implemented)       |
-| [DOM Render API Design](design/dom-api-design.md)          | Unified render API with nested mounting (RFC)         |
-| [Virtual Columns Design](design/virtual-columns-design.md) | 2D grid virtualization (RFC)                          |
-| [Canvas Playground Design](design/playground-design.md)    | Live-editing playground (RFC)                         |
+| Document                                     | Description                                                    |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| [Architecture](deep-dives/architecture.md)   | Five-phase pipeline, RenderAdapter interface                   |
+| [Containment](deep-dives/containment.md)     | Layout feedback loop prevention (useContentRect safe patterns) |
+| [Performance](deep-dives/performance.md)     | Optimization techniques, profiling guide                       |
+| [Focus Routing](deep-dives/focus-routing.md) | Focus-based input routing, commands, keybindings               |
 
 ## Top Level
 
-Cross-cutting docs that don't fit a single category.
-
 | Document                              | Description                                                                |
 | ------------------------------------- | -------------------------------------------------------------------------- |
-| [Testing](testing.md)                 | Testing strategy, createRenderer, locators, withDiagnostics                |
 | [Silvery vs Ink](silvery-vs-ink.md)   | Detailed feature/performance comparison with Ink                           |
-| [Benchmarks](benchmarks.md)           | Raw benchmark tables and data                                              |
 | [Comparison](comparison.md)           | Cross-framework comparison (BubbleTea, Textual, Notcurses, FTXUI, blessed) |
 | [Troubleshooting](troubleshooting.md) | Common issues and debugging                                                |
 | [Roadmap](roadmap.md)                 | Render targets, multi-platform vision                                      |
-| [Blog: Launch Post](blog-launch.md)   | Announcement blog post                                                     |

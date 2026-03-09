@@ -2,7 +2,7 @@
 
 Technical deep dive into Silvery's rendering pipeline optimizations. This document explains _how_ Silvery achieves its performance characteristics.
 
-For raw benchmark numbers, see [benchmarks.md](../benchmarks.md). For the head-to-head Ink comparison with context and code examples, see [Silvery vs Ink](../silvery-vs-ink.md).
+For raw benchmark numbers, see [benchmarks.md](../../../silvery-internal/benchmarks.md) (internal). For the head-to-head Ink comparison with context and code examples, see [Silvery vs Ink](../silvery-vs-ink.md).
 
 ## Key Insights
 

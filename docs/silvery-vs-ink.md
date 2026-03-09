@@ -8,7 +8,7 @@
 
 See [migration guide](guides/migration.md) for switching the rendering layer.
 
-> Performance numbers in this document are from the **Ink comparison benchmark suite** (see [benchmarks/ink-comparison/](../benchmarks/ink-comparison/)). For raw benchmark tables, see [benchmarks.md](benchmarks.md). For the full optimization catalog, see [performance.md](deep-dives/performance.md).
+> Performance numbers in this document are from the **Ink comparison benchmark suite** (see [benchmarks/ink-comparison/](../benchmarks/ink-comparison/)). For raw benchmark tables, see [benchmarks.md](../../silvery-internal/benchmarks.md) (internal). For the full optimization catalog, see [performance.md](deep-dives/performance.md).
 
 ---
 

@@ -16,7 +16,7 @@ hero:
 features:
   - icon: "\U0001F504"
     title: Familiar API
-    details: "If you know Ink, you know silvery -- same Box/Text/useInput patterns. Plus silvery/ink and silvery/chalk compat layers for effortless migration."
+    details: "If you know Ink, you know Silvery -- same Box/Text/useInput patterns. Plus silvery/ink and silvery/chalk compat layers for effortless migration."
     link: /guide/migration
     linkText: Migration guide
   - icon: "\u26A1"
