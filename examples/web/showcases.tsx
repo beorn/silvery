@@ -1128,6 +1128,7 @@ function CLIWizardShowcase(): JSX.Element {
   })
   const [done, setDone] = useState(false)
   const [flashStep, setFlashStep] = useState(-1)
+  const [textInput, setTextInput] = useState("")
 
   // Flash animation when a step completes
   useEffect(() => {
@@ -1136,7 +1137,7 @@ function CLIWizardShowcase(): JSX.Element {
     return () => clearTimeout(timer)
   }, [flashStep])
 
-  useInput((_input, key) => {
+  useInput((input, key) => {
     if (done) return
     const currentStep = WIZARD_STEPS[state.step]
     if (!currentStep) return
@@ -1147,8 +1148,25 @@ function CLIWizardShowcase(): JSX.Element {
       if (key.downArrow) setState((s) => ({ ...s, cursor: Math.min(opts.length - 1, s.cursor + 1) }))
     }
 
+    if (currentStep.type === "text") {
+      if (key.backspace) {
+        setTextInput((t) => t.slice(0, -1))
+        return
+      }
+      if (input) {
+        setTextInput((t) => t + input)
+        return
+      }
+    }
+
     if (key.return) {
-      const answer = currentStep.type === "select" ? currentStep.options![state.cursor]! : currentStep.answer
+      let answer: string
+      if (currentStep.type === "select") {
+        answer = currentStep.options![state.cursor]!
+      } else {
+        answer = textInput || currentStep.answer
+        setTextInput("")
+      }
       const newAnswers = [...state.answers, answer]
       setFlashStep(state.step)
       if (state.step + 1 >= WIZARD_STEPS.length) {
@@ -1162,6 +1180,11 @@ function CLIWizardShowcase(): JSX.Element {
     }
   })
 
+  // Progress bar: completed steps / total
+  const progress = Math.min(state.step, WIZARD_STEPS.length)
+  const progressWidth = 20
+  const filled = Math.round((progress / WIZARD_STEPS.length) * progressWidth)
+
   // Total pipe lines for gradient calculation
   const totalPipeLines = WIZARD_STEPS.length * 3 + 4
 
@@ -1171,7 +1194,7 @@ function CLIWizardShowcase(): JSX.Element {
   return (
     <Box flexDirection="column" padding={1} paddingLeft={2}>
       {/* Title bar */}
-      <Box marginBottom={1}>
+      <Box marginBottom={0}>
         <Text color="#cba6f7" bold>
           {"▲ "}
         </Text>
@@ -1179,6 +1202,19 @@ function CLIWizardShowcase(): JSX.Element {
           create-app
         </Text>
         <Text color="#6c7086"> v1.0</Text>
+      </Box>
+
+      {/* Progress indicator */}
+      <Box marginBottom={1}>
+        <Text color="#585b70">  </Text>
+        <Text>
+          <Text color="#a6e3a1">{"━".repeat(filled)}</Text>
+          <Text color="#313244">{"━".repeat(progressWidth - filled)}</Text>
+        </Text>
+        <Text color="#585b70">
+          {" "}
+          {progress}/{WIZARD_STEPS.length}
+        </Text>
       </Box>
 
       <Text>
@@ -1202,19 +1238,15 @@ function CLIWizardShowcase(): JSX.Element {
           return (
             <React.Fragment key={ws.label}>
               <Text>
-                <Text color={isFlashing ? "#f5e0dc" : "#a6e3a1"} bold={isFlashing}>
-                  {isFlashing ? "★" : "◆"}
+                <Text color={isFlashing ? "#f5e0dc" : "#a6e3a1"} bold>
+                  {isFlashing ? "★" : "✔"}
                 </Text>
-                <Text color="#cdd6f4"> {ws.label}</Text>
-                <Text color="#a6e3a1" bold>
+                <Text color="#a6adc8"> {ws.label}</Text>
+                <Text dim color="#585b70">
                   {" "}
-                  ✓
+                  ·{" "}
                 </Text>
-              </Text>
-              <Text>
-                <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
                 <Text bold color={stepColor}>
-                  {" "}
                   {state.answers[i]}
                 </Text>
               </Text>
@@ -1224,6 +1256,7 @@ function CLIWizardShowcase(): JSX.Element {
         }
 
         if (isActive && ws.type === "text") {
+          const displayText = textInput || ws.answer
           return (
             <React.Fragment key={ws.label}>
               <Text>
@@ -1237,8 +1270,15 @@ function CLIWizardShowcase(): JSX.Element {
               </Text>
               <Text>
                 <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
-                <Text color={stepColor}> {ws.answer}</Text>
+                <Text color={stepColor}> {displayText}</Text>
                 <Text color={stepColor}>▋</Text>
+              </Text>
+              <Text>
+                <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
+                <Text dim color="#585b70">
+                  {" "}
+                  type a name, then Enter
+                </Text>
               </Text>
               <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
             </React.Fragment>
@@ -1294,11 +1334,11 @@ function CLIWizardShowcase(): JSX.Element {
         <>
           <Text>
             <Text color="#a6e3a1" bold>
-              ◆
+              ✔
             </Text>
             <Text color="#a6e3a1" bold>
               {" "}
-              Done!
+              All done!
             </Text>
           </Text>
           <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
@@ -1306,9 +1346,9 @@ function CLIWizardShowcase(): JSX.Element {
           <Box flexDirection="column" marginLeft={1} borderStyle="round" borderColor="#45475a" paddingX={1}>
             <Text>
               <Text color="#cba6f7" bold>
-                Project{" "}
+                Project{"   "}
               </Text>
-              <Text color="#cdd6f4">my-app</Text>
+              <Text color="#cdd6f4">{state.answers[0] ?? "my-app"}</Text>
             </Text>
             <Text>
               <Text color="#89b4fa" bold>
@@ -1324,7 +1364,7 @@ function CLIWizardShowcase(): JSX.Element {
             </Text>
             <Text>
               <Text color="#f9e2af" bold>
-                Manager{" "}
+                Manager{"   "}
               </Text>
               <Text color="#cdd6f4">{state.answers[3] ?? "bun"}</Text>
             </Text>
@@ -1336,7 +1376,7 @@ function CLIWizardShowcase(): JSX.Element {
             </Text>
             <Text color="#a6e3a1">cd </Text>
             <Text color="#cdd6f4" bold>
-              my-app
+              {state.answers[0] ?? "my-app"}
             </Text>
             <Text color="#6c7086"> && </Text>
             <Text color="#a6e3a1">bun dev</Text>
@@ -1346,7 +1386,7 @@ function CLIWizardShowcase(): JSX.Element {
         <Text color="#45475a">└</Text>
       )}
 
-      <KeyHints hints="↑↓ select  Enter confirm" />
+      <KeyHints hints="↑↓ select  Enter confirm  Backspace delete" />
     </Box>
   )
 }
@@ -1685,23 +1725,48 @@ function DevToolsShowcase(): JSX.Element {
 
 function ScrollShowcase(): JSX.Element {
   const [scrollPos, setScrollPos] = useState(0)
+  const [selectedIdx, setSelectedIdx] = useState(0)
+  const visibleCount = 10
 
   useInput((_input, key) => {
-    if (key.upArrow) setScrollPos((p) => Math.max(0, p - 1))
-    if (key.downArrow) setScrollPos((p) => Math.min(20, p + 1))
+    if (key.upArrow) {
+      setSelectedIdx((idx) => {
+        const newIdx = Math.max(0, idx - 1)
+        setScrollPos((p) => (newIdx < p ? newIdx : p))
+        return newIdx
+      })
+    }
+    if (key.downArrow) {
+      setSelectedIdx((idx) => {
+        const newIdx = Math.min(29, idx + 1)
+        setScrollPos((p) => (newIdx >= p + visibleCount ? newIdx - visibleCount + 1 : p))
+        return newIdx
+      })
+    }
+  })
+
+  // Click to select item
+  useMouseClick(({ y }) => {
+    // Header area: 1 padding + 1 border-top = row 2 is first item
+    const itemY = y - 2
+    if (itemY >= 0 && itemY < visibleCount) {
+      setSelectedIdx(scrollPos + itemY)
+    }
   })
 
   const items = Array.from({ length: 30 }, (_, i) => `Item ${i + 1}`)
-  const visible = items.slice(scrollPos, scrollPos + 10)
+  const visible = items.slice(scrollPos, scrollPos + visibleCount)
 
   return (
     <Box flexDirection="column" padding={1}>
       <Box flexDirection="column" borderStyle="single" borderColor="#444">
         {visible.map((item, i) => {
-          const isHighlighted = i === 0
+          const globalIdx = scrollPos + i
+          const isSelected = globalIdx === selectedIdx
           return (
-            <Box key={scrollPos + i} paddingX={1}>
-              <Text bold={isHighlighted} color={isHighlighted ? "cyan" : "white"}>
+            <Box key={globalIdx} paddingX={1}>
+              <Text bold={isSelected} color={isSelected ? "cyan" : "white"}>
+                {isSelected ? "▸ " : "  "}
                 {item}
               </Text>
             </Box>
@@ -1709,7 +1774,7 @@ function ScrollShowcase(): JSX.Element {
         })}
       </Box>
 
-      <KeyHints hints="↑↓ scroll" />
+      <KeyHints hints="↑↓ navigate  click to select" />
     </Box>
   )
 }
@@ -1752,11 +1817,20 @@ function SizedPanel(): JSX.Element {
 
 function FocusShowcase(): JSX.Element {
   const [focusedPanel, setFocusedPanel] = useState(0)
+  const { width } = useContentRect()
 
   useInput((_input, key) => {
     if (key.tab) {
       setFocusedPanel((p) => (p + 1) % 3)
     }
+  })
+
+  // Click to focus panel
+  useMouseClick(({ x }) => {
+    const contentWidth = (width || 80) - 2 // subtract padding
+    const panelWidth = Math.floor((contentWidth - 2) / 3) // 3 panels with 2 gaps
+    const panelIdx = Math.min(2, Math.max(0, Math.floor((x - 1) / (panelWidth + 1))))
+    setFocusedPanel(panelIdx)
   })
 
   const labels = ["Panel A", "Panel B", "Panel C"]
@@ -1785,7 +1859,7 @@ function FocusShowcase(): JSX.Element {
         })}
       </Box>
 
-      <KeyHints hints="Tab / Shift+Tab cycle panels" />
+      <KeyHints hints="Tab cycle panels  click to focus" />
     </Box>
   )
 }
@@ -1812,14 +1886,19 @@ function TextInputShowcase(): JSX.Element {
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Box flexDirection="row" borderStyle="single" borderColor={termFocused ? "#444" : "#313244"} paddingX={1}>
-        <Text>&gt; </Text>
-        <Text>{text}</Text>
-        <Text color="cyan">{termFocused ? "▋" : " "}</Text>
+      <Box
+        flexDirection="row"
+        borderStyle="round"
+        borderColor={termFocused ? "#89b4fa" : "#313244"}
+        paddingX={1}
+      >
+        <Text color={termFocused ? "#89b4fa" : "#585b70"}>&gt; </Text>
+        <Text color="#cdd6f4">{text}</Text>
+        <Text color="#89b4fa">{termFocused ? "▋" : " "}</Text>
       </Box>
 
       <Box marginTop={1} paddingX={1}>
-        <Text color="#999">Echo: {text || "(empty)"}</Text>
+        <Text color="#6c7086">Echo: {text || "(empty)"}</Text>
       </Box>
 
       <KeyHints hints={termFocused ? "type text  Backspace delete  Esc clear" : "click to focus"} />
