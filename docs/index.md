@@ -47,8 +47,6 @@ features:
     linkText: Learn more
 ---
 
-<div class="alpha-banner">Alpha — under heavy development, APIs may change</div>
-
 ## Explore the Examples
 
 <div class="viewer-wrapper">
@@ -64,7 +62,7 @@ features:
 - **[Forms & Input](/examples/forms)** -- Multi-step wizards, SelectList, TextInput with readline
 - **[Tables & Data](/examples/tables)** -- Table component, VirtualList, responsive columns, search/filter
 - **[Scrollback](/examples/scrollback)** -- Dynamic inline mode: freeze-and-scroll, natural history (unique)
-- **[AI Chat](/examples/ai-chat)** -- Streaming output, scrollback, command introspection for agents
+- **[AI Coding Agent](/examples/ai-chat)** -- Streaming output, tool calls, command introspection for agents
 - **[Testing](/examples/testing)** -- Headless renderer, Playwright-style locators, press() simulation
 
 </div>
@@ -115,29 +113,29 @@ yarn add silvery react
 :::
 
 ```tsx
-import { useState } from "react"
-import { Box, Text, useContentRect, useInput, render, createTerm } from "silvery"
+import { useState } from "react";
+import { Box, Text, useContentRect, useInput, render, createTerm } from "silvery";
 
 function App() {
-  const { width } = useContentRect() // Components know their size!
-  const [count, setCount] = useState(0)
+  const { width } = useContentRect(); // Components know their size!
+  const [count, setCount] = useState(0);
 
   useInput((input, key) => {
-    if (input === "j" || key.downArrow) setCount((c) => c + 1)
-    if (input === "k" || key.upArrow) setCount((c) => c - 1)
-    if (input === "q") return "exit"
-  })
+    if (input === "j" || key.downArrow) setCount((c) => c + 1);
+    if (input === "k" || key.upArrow) setCount((c) => c - 1);
+    if (input === "q") return "exit";
+  });
 
   return (
     <Box flexDirection="column">
       <Text>Terminal width: {width}</Text>
       <Text>Count: {count}</Text>
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
-await render(<App />, term)
+using term = createTerm();
+await render(<App />, term);
 ```
 
 ## Ecosystem
@@ -149,19 +147,6 @@ Silvery is part of a family of terminal-focused libraries:
 - **[Loggily](https://beorn.github.io/loggily)** -- Debug + structured logging + tracing in one library
 
 <style>
-.alpha-banner {
-  position: fixed;
-  top: var(--vp-nav-height, 64px);
-  right: 32px;
-  z-index: 30;
-  background: var(--vp-c-warning-soft);
-  color: var(--vp-c-warning-1);
-  padding: 3px 12px;
-  border-radius: 0 0 6px 6px;
-  font-size: 0.75em;
-  font-weight: 500;
-  pointer-events: none;
-}
 .viewer-wrapper {
   margin: 1.5rem 0 2rem;
   border: 1px solid var(--vp-c-divider);
