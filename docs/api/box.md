@@ -250,7 +250,7 @@ Use `flexShrink={0}` for fixed elements and `flexGrow={1}` for flexible areas:
 ```tsx
 const [selected, setSelected] = useState(0)
 
-;<Box flexDirection="column" height={5} overflow="scroll" scrollTo={selected}>
+<Box flexDirection="column" height={5} overflow="scroll" scrollTo={selected}>
   {items.map((item, i) => (
     <Text key={i} inverse={i === selected}>
       {item}

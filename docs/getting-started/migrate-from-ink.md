@@ -87,7 +87,7 @@ function Card({ width }: { width: number }) {
   return <Text>{truncate(title, width)}</Text>
 }
 
-;<Card width={availableWidth - padding * 2} />
+<Card width={availableWidth - padding * 2} />
 ```
 
 **Silvery**: Components can ask for their size.
@@ -99,7 +99,7 @@ function Card() {
   return <Text>{truncate(title, width)}</Text>
 }
 
-;<Card />
+<Card />
 ```
 
 ### 2. Text Wraps by Default

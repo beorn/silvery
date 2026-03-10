@@ -270,7 +270,7 @@ await render(<Board />, term)
 ```tsx
 // Bad: manual height calculation
 const contentHeight = terminalRows - topBarHeight - bottomBarHeight
-;<Box height={contentHeight}>...</Box>
+<Box height={contentHeight}>...</Box>
 ```
 
 ### ✅ Do use flexbox

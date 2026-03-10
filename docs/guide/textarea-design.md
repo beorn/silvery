@@ -83,7 +83,7 @@ interface TextAreaProps {
 ```tsx
 const [text, setText] = useState("")
 
-;<TextArea value={text} onChange={setText} height={5} />
+<TextArea value={text} onChange={setText} height={5} />
 ```
 
 ### Chat Input Example
@@ -91,7 +91,7 @@ const [text, setText] = useState("")
 ```tsx
 const [message, setMessage] = useState("")
 
-;<TextArea
+<TextArea
   value={message}
   onChange={setMessage}
   height={3}
@@ -111,7 +111,7 @@ Note: `submitKey="enter"` means Enter submits, Shift+Enter inserts newline. This
 ```tsx
 const [code, setCode] = useState("")
 
-;<TextArea value={code} onChange={setCode} height={10} submitKey="ctrl+enter" />
+<TextArea value={code} onChange={setCode} height={10} submitKey="ctrl+enter" />
 ```
 
 ## Visual Design

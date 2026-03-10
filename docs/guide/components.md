@@ -14,7 +14,8 @@ The primary layout component. Uses Yoga (flexbox) for layout.
 
 ```tsx
 import { Box, Text } from "silvery"
-;<Box flexDirection="row" justifyContent="space-between">
+
+<Box flexDirection="row" justifyContent="space-between">
   <Text>Left</Text>
   <Text>Right</Text>
 </Box>
@@ -119,7 +120,8 @@ Flexible space that expands to fill available room.
 
 ```tsx
 import { Box, Spacer, Text } from "silvery"
-;<Box>
+
+<Box>
   <Text>Left</Text>
   <Spacer />
   <Text>Right</Text>
@@ -160,7 +162,8 @@ Single-line text input with full readline shortcuts (Ctrl+A/E, Ctrl+K/U, Alt+B/F
 
 ```tsx
 import { TextInput } from "silvery"
-;<TextInput value={text} onChange={setText} onSubmit={handleSubmit} placeholder="Type here..." prompt="> " />
+
+<TextInput value={text} onChange={setText} onSubmit={handleSubmit} placeholder="Type here..." prompt="> " />
 ```
 
 ### TextArea
@@ -169,7 +172,8 @@ Multi-line text editing with cursor navigation, line wrapping, and text selectio
 
 ```tsx
 import { TextArea } from "silvery"
-;<TextArea
+
+<TextArea
   value={text}
   onChange={setText}
   height={5}
@@ -204,7 +208,8 @@ Single-select list with keyboard navigation (arrow keys, j/k, Home/End), disable
 
 ```tsx
 import { SelectList } from "silvery"
-;<SelectList
+
+<SelectList
   items={[
     { label: "React", value: "react" },
     { label: "Vue", value: "vue" },

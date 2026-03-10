@@ -30,7 +30,7 @@ pnpm add silvery
 
 > **Package note:** `silvery` is an umbrella package that re-exports `@silvery/react` (components, hooks, render). For terminal-specific APIs (buffer, pipeline), import from `@silvery/term`. For theming, import from `@silvery/theme`.
 
-<LiveDemo xtermSrc="/examples/showcase.html?demo=layout-feedback" :height="250" />
+<LiveDemo xtermSrc="/examples/showcase.html?demo=dashboard" :height="400" />
 
 ## Your First App
 
