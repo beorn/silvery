@@ -900,12 +900,10 @@ function AgentExchangeView({
 
 function AgentStatusBar({
   exchanges,
-  hiddenCount,
   isAnimating,
   termFocused,
 }: {
   exchanges: AgentExchange[]
-  hiddenCount: number
   isAnimating: boolean
   termFocused: boolean
 }): JSX.Element {
@@ -918,15 +916,6 @@ function AgentStatusBar({
         <Text color="#cba6f7">{AGENT_MODEL}</Text>
         {"  "}
         {agentFormatTokens(cumulative.input)} in {"\u00B7"} {agentFormatTokens(cumulative.output)} out {"\u00B7"} {cost}
-        {hiddenCount > 0 && (
-          <>
-            {"  "}
-            <Text color="#45475a">
-              {"\u2191"}
-              {hiddenCount} more
-            </Text>
-          </>
-        )}
       </Text>
       <Text color="#585b70" dim>
         <AgentContextBar currentContext={cumulative.currentContext} />
@@ -1120,18 +1109,13 @@ function CodingAgentShowcase(): JSX.Element {
 
   const isAnimating = streamPhase !== "done"
 
-  // Show only the most recent exchanges — older ones "scroll off"
-  const maxVisible = isAnimating ? 3 : 4
-  const visibleExchanges = exchanges.slice(-maxVisible)
-  const hiddenCount = Math.max(0, exchanges.length - maxVisible)
-
   // Cumulative token stats for the last agent exchange
   const cumTokens = agentComputeTokens(exchanges)
 
   return (
     <Box flexDirection="column" padding={1} overflow="hidden">
-      {/* Visible exchange history */}
-      <Box flexDirection="column" flexGrow={1} overflow="hidden">
+      {/* Exchange history — anchored to bottom, older content scrolls off top */}
+      <Box flexDirection="column" flexGrow={1} overflow="hidden" justifyContent="flex-end">
         {/* Welcome text when no exchanges yet */}
         {exchanges.length === 0 && !isAnimating && (
           <Box flexDirection="column" paddingX={1} marginTop={1}>
@@ -1139,19 +1123,11 @@ function CodingAgentShowcase(): JSX.Element {
           </Box>
         )}
 
-        {visibleExchanges.map((ex, i) => {
-          const globalIdx = exchanges.length - visibleExchanges.length + i
-          const isLatest = globalIdx === exchanges.length - 1
-          const prevEx = i > 0 ? visibleExchanges[i - 1] : null
-          const showSeparator = prevEx && (prevEx.role === "user" || ex.role === "user") && i > 0
+        {exchanges.map((ex, i) => {
+          const isLatest = i === exchanges.length - 1
 
           return (
-            <Box key={ex.id} flexDirection="column">
-              {showSeparator && (
-                <Box paddingX={1}>
-                  <Text color="#313244">{"\u2500".repeat(40)}</Text>
-                </Box>
-              )}
+            <Box key={ex.id} flexDirection="column" marginTop={i > 0 ? 1 : 0}>
               <AgentExchangeView
                 exchange={ex}
                 streamPhase={streamPhase}
@@ -1192,12 +1168,7 @@ function CodingAgentShowcase(): JSX.Element {
       </Box>
 
       {/* Status bar */}
-      <AgentStatusBar
-        exchanges={exchanges}
-        hiddenCount={hiddenCount}
-        isAnimating={isAnimating}
-        termFocused={termFocused}
-      />
+      <AgentStatusBar exchanges={exchanges} isAnimating={isAnimating} termFocused={termFocused} />
     </Box>
   )
 }
@@ -2253,25 +2224,11 @@ function contrastText(hex: string): string {
   return luminance > 0.5 ? "#000000" : "#ffffff"
 }
 
-function PaletteCard({
-  palette,
-  isSelected,
-}: {
-  palette: ColorPalette
-  isSelected: boolean
-}): JSX.Element {
+function PaletteCard({ palette, isSelected }: { palette: ColorPalette; isSelected: boolean }): JSX.Element {
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="single"
-      borderColor={isSelected ? "#89b4fa" : "#444"}
-      width={36}
-    >
+    <Box flexDirection="column" borderStyle="single" borderColor={isSelected ? "#89b4fa" : "#444"} width={36}>
       {/* Header with palette name */}
-      <Box
-        backgroundColor={palette.background}
-        paddingX={1}
-      >
+      <Box backgroundColor={palette.background} paddingX={1}>
         <Text color={palette.foreground} bold={isSelected}>
           {isSelected ? "▸ " : "  "}
           {palette.name || "unnamed"}
@@ -2281,7 +2238,9 @@ function PaletteCard({
 
       {/* Normal ANSI colors row */}
       <Box flexDirection="row" backgroundColor={palette.background}>
-        <Box paddingX={1}><Text color={palette.foreground}>  </Text></Box>
+        <Box paddingX={1}>
+          <Text color={palette.foreground}> </Text>
+        </Box>
         {ANSI_LABELS.map((name) => (
           <ColorSwatch key={name} color={(palette as Record<string, string>)[name]!} />
         ))}
@@ -2289,7 +2248,9 @@ function PaletteCard({
 
       {/* Bright ANSI colors row */}
       <Box flexDirection="row" backgroundColor={palette.background}>
-        <Box paddingX={1}><Text color={palette.foreground}>  </Text></Box>
+        <Box paddingX={1}>
+          <Text color={palette.foreground}> </Text>
+        </Box>
         {BRIGHT_LABELS.map((name) => (
           <ColorSwatch key={name} color={(palette as Record<string, string>)[name]!} />
         ))}
@@ -2332,9 +2293,7 @@ function ThemeExplorerShowcase(): JSX.Element {
   // Determine layout: 2-column if wide enough, 1-column otherwise
   const twoCol = (width || 80) >= 74
   const contentHeight = (height || 24) - 3 // padding + key hints
-  const cardsPerCol = twoCol
-    ? Math.floor(contentHeight / 6)
-    : Math.floor(contentHeight / 6)
+  const cardsPerCol = twoCol ? Math.floor(contentHeight / 6) : Math.floor(contentHeight / 6)
 
   // Scroll to keep selected visible
   const totalVisible = twoCol ? cardsPerCol * 2 : cardsPerCol
@@ -2348,7 +2307,9 @@ function ThemeExplorerShowcase(): JSX.Element {
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
-        <Text bold color="#89b4fa">Theme Explorer</Text>
+        <Text bold color="#89b4fa">
+          Theme Explorer
+        </Text>
         <Text color="#6c7086"> — {PALETTE_NAMES.length} palettes from @silvery/theme</Text>
       </Box>
 
@@ -2357,13 +2318,7 @@ function ThemeExplorerShowcase(): JSX.Element {
           {col1.map((name) => {
             const palette = builtinPalettes[name]!
             const globalIdx = PALETTE_NAMES.indexOf(name)
-            return (
-              <PaletteCard
-                key={name}
-                palette={palette}
-                isSelected={globalIdx === selectedIdx}
-              />
-            )
+            return <PaletteCard key={name} palette={palette} isSelected={globalIdx === selectedIdx} />
           })}
         </Box>
         {twoCol && col2.length > 0 && (
@@ -2371,13 +2326,7 @@ function ThemeExplorerShowcase(): JSX.Element {
             {col2.map((name) => {
               const palette = builtinPalettes[name]!
               const globalIdx = PALETTE_NAMES.indexOf(name)
-              return (
-                <PaletteCard
-                  key={name}
-                  palette={palette}
-                  isSelected={globalIdx === selectedIdx}
-                />
-              )
+              return <PaletteCard key={name} palette={palette} isSelected={globalIdx === selectedIdx} />
             })}
           </Box>
         )}

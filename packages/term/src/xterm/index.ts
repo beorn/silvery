@@ -55,6 +55,30 @@ export interface XtermTerminal {
   write(data: string): void
   readonly cols: number
   readonly rows: number
+  /** Subscribe to terminal data (keyboard + mouse sequences). Required for input wiring. */
+  onData?: (callback: (data: string) => void) => { dispose(): void }
+  /** The hidden textarea xterm.js uses for focus. Required for focus tracking. */
+  textarea?: HTMLTextAreaElement | null
+}
+
+/** Mouse event info passed to onMouse callback */
+export interface XtermMouseInfo {
+  /** 0-indexed column */
+  x: number
+  /** 0-indexed row */
+  y: number
+  /** Mouse button (0=left, 1=middle, 2=right) */
+  button: number
+}
+
+/** Input handling options for renderToXterm */
+export interface XtermInputOptions {
+  /** Called on keyboard input (raw terminal data, after mouse sequences are filtered out) */
+  onKey?: (data: string) => void
+  /** Called on mouse press (SGR mode). Receives 0-indexed coordinates and button. */
+  onMouse?: (info: XtermMouseInfo) => void
+  /** Called when the terminal gains or loses focus */
+  onFocus?: (focused: boolean) => void
 }
 
 export interface XtermRenderOptions {
@@ -64,6 +88,16 @@ export interface XtermRenderOptions {
   rows?: number
   /** Called when the terminal is resized via fitAddon.fit() or resize() */
   onResize?: (cols: number, rows: number) => void
+  /**
+   * Enable automatic input handling (keyboard, mouse, focus).
+   *
+   * - `true` — enable mouse tracking and parse onData, but no callbacks
+   * - `{ onKey, onMouse, onFocus }` — enable with callbacks
+   * - `false` — disable (caller handles input manually)
+   *
+   * Default: `false` (backwards compatible)
+   */
+  input?: boolean | XtermInputOptions
 }
 
 export interface XtermInstance {
@@ -87,6 +121,13 @@ const CURSOR_HIDE = "\x1b[?25l"
 const CURSOR_SHOW = "\x1b[?25h"
 const CURSOR_HOME = "\x1b[H"
 const CLEAR_SCREEN = "\x1b[2J"
+
+// Mouse tracking: Normal mode + SGR extended mode
+const MOUSE_ENABLE = "\x1b[?1000h\x1b[?1006h"
+const MOUSE_DISABLE = "\x1b[?1000l\x1b[?1006l"
+
+// SGR mouse sequence regex: \x1b[<btn;x;yM (press) or \x1b[<btn;x;ym (release)
+const SGR_MOUSE_RE = /\x1b\[<(\d+);(\d+);(\d+)([Mm])/
 
 // ============================================================================
 // Initialization
@@ -205,8 +246,59 @@ export function renderToXterm(
   // deferred to requestAnimationFrame, which may not fire in iframes.
   doRender()
 
+  // ---- Input wiring ----
+  const disposables: Array<{ dispose(): void }> = []
+  const inputOpts = options.input
+  const inputEnabled = inputOpts === true || (typeof inputOpts === "object" && inputOpts !== null)
+  const inputCallbacks: XtermInputOptions = typeof inputOpts === "object" && inputOpts !== null ? inputOpts : {}
+
+  if (inputEnabled) {
+    // Enable SGR mouse tracking
+    terminal.write(MOUSE_ENABLE)
+
+    // Wire onData: parse mouse sequences, forward keyboard input
+    if (terminal.onData) {
+      const dataDisposable = terminal.onData((data: string) => {
+        const mouseMatch = data.match(SGR_MOUSE_RE)
+        if (mouseMatch) {
+          const btn = parseInt(mouseMatch[1]!, 10)
+          const x = parseInt(mouseMatch[2]!, 10) - 1 // 1-indexed → 0-indexed
+          const y = parseInt(mouseMatch[3]!, 10) - 1
+          const isPress = mouseMatch[4] === "M"
+          if (isPress && btn <= 2) {
+            inputCallbacks.onMouse?.({ x, y, button: btn })
+          }
+          return
+        }
+        inputCallbacks.onKey?.(data)
+      })
+      disposables.push(dataDisposable)
+    }
+
+    // Wire focus/blur tracking
+    if (terminal.textarea && inputCallbacks.onFocus) {
+      const textarea = terminal.textarea
+      const onFocus = () => inputCallbacks.onFocus!(true)
+      const onBlur = () => inputCallbacks.onFocus!(false)
+      textarea.addEventListener("focus", onFocus)
+      textarea.addEventListener("blur", onBlur)
+      disposables.push({
+        dispose() {
+          textarea.removeEventListener("focus", onFocus)
+          textarea.removeEventListener("blur", onBlur)
+        },
+      })
+    }
+  }
+
   const unmount = (): void => {
     unmounted = true
+    // Clean up input wiring
+    for (const d of disposables) d.dispose()
+    disposables.length = 0
+    if (inputEnabled) {
+      terminal.write(MOUSE_DISABLE)
+    }
     // Synchronous unmount ensures useEffect cleanups (e.g. clearInterval) run
     // before returning, preventing stale renders to the same terminal.
     reconciler.updateContainerSync(null, fiberRoot, null, null)
