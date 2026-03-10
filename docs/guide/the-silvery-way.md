@@ -364,7 +364,7 @@ function Counter() {
 // ✗ Can't share state across components. Can't serialize actions.
 
 // Sip 2: createApp — shared store, selective re-renders
-const app = createApp(() => (set) => ({
+const app = createApp(() => (set, get) => ({
   count: 0,
   increment() { set((s) => ({ count: s.count + 1 })) },
   save() { fetch("/api", { body: JSON.stringify(get()) }) },  // I/O in methods
@@ -378,10 +378,10 @@ function Counter() {
 
 // Sip 3: createSlice — same store, but actions become serializable data
 const Counter = createSlice(
-  () => ({ count: 0 }),
+  () => ({ count: signal(0) }),
   {
-    increment(s) { return { ...s, count: s.count + 1 } },
-    save(s) { fetch("/api", { body: JSON.stringify(s) }) },  // I/O still inline
+    increment(s) { s.count.value += 1 },
+    save(s) { fetch("/api", { body: JSON.stringify({ count: s.count.value }) }) },
   },
 )
 // store.apply({ op: "increment" })  — serializable, loggable, replayable
@@ -391,17 +391,18 @@ const Counter = createSlice(
 
 // Sip 4: effects as data — handlers return Effect[], runners execute them
 const Counter = createSlice(
-  () => ({ count: 0 }),
+  () => ({ count: signal(0) }),
   {
-    increment(s) { return { ...s, count: s.count + 1 } },
-    save(s): Effect[] {
-      return [{ effect: "http", url: "/api", body: s }]      // effect as DATA
+    increment(s) { s.count.value += 1 },
+    save(s): Effect[] {                                        // only this changes
+      return [{ effect: "http", url: "/api", body: { count: s.count.value } }]
     },
   },
 )
 // Test: just call the handler — no mocks, no fetch, no async
-const effects = Counter.save(initial)
-expect(effects).toContainEqual({ effect: "http", url: "/api", body: initial })
+const s = { count: signal(5) }
+const effects = Counter.save(s)
+expect(effects).toContainEqual({ effect: "http", url: "/api", body: { count: 5 } })
 // ✓ Everything is data. Pure, testable, replayable, swappable.
 ```
 
