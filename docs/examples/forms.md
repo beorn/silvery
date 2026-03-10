@@ -147,33 +147,51 @@ if (step === "install") return <ProgressUI />
 return <DoneUI />
 ```
 
-### TextInput with Readline
+### SelectList — Not Manual Cursor Tracking
 
-TextInput gives full readline editing out of the box:
+Use SelectList instead of building your own list with `useInput()` + cursor state. It handles arrow keys, j/k, Home/End, disabled items, scroll windowing, and selection callbacks:
+
+```tsx
+<SelectList
+  items={[
+    { label: "React", value: "react" },
+    { label: "Vue", value: "vue" },
+    { label: "Angular", value: "angular", disabled: true },
+  ]}
+  onSelect={(item) => handleSelection(item.value)}
+  maxVisible={5}
+/>
+```
+
+### TextInput — Full Readline Built In
+
+TextInput ships with Emacs keybindings out of the box — no manual key handling needed:
+
+- **Ctrl+A / Ctrl+E** — Home / End
+- **Ctrl+K / Ctrl+U** — Kill to end / Kill to start
+- **Alt+B / Alt+F** — Word backward / forward
+- **Ctrl+Y** — Yank (paste from kill ring)
+- **Ctrl+W** — Kill word backward
 
 ```tsx
 <TextInput
   placeholder="my-app"
-  onSubmit={(val) => {
-    setName(val || "my-app")
-    setStep("install")
-  }}
+  onSubmit={(val) => setName(val)}
   prompt="> "
 />
 ```
 
-Ctrl+A/E (Home/End), Ctrl+K/U (kill line), Alt+B/F (word movement), Ctrl+Y (yank) all work automatically.
+### Focus Scopes — Isolate Navigation Per Step
 
-### Focus Scopes
-
-Isolate Tab navigation per wizard step:
+Each wizard step wraps in `focusScope` so Tab cycles within that step, not the entire app:
 
 ```tsx
 <Box focusScope>
-  <TextInput ... />
-  <Button ... />
+  <SelectList items={options} onSelect={handleSelect} />
 </Box>
 ```
+
+When the step transitions, focus automatically moves to the new scope's first focusable element.
 
 ## Features Used
 

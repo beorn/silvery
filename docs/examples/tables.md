@@ -39,8 +39,9 @@ A process explorer with search filtering, a sortable table, and responsive colum
 
 ```tsx [explorer.tsx]
 import { useState, useDeferredValue } from "react"
-import { Box, Text, TextInput, useContentRect, render, useInput, useApp, createTerm } from "silvery"
+import { Box, Text, Table, TextInput, VirtualList, useContentRect, render, useApp, createTerm } from "silvery"
 
+// Sample data — replace with your own data source
 const processes = Array.from({ length: 500 }, (_, i) => ({
   pid: 1000 + i,
   name: ["node", "bun", "vim", "zsh", "git", "ssh", "tmux"][i % 7],
@@ -51,11 +52,11 @@ const processes = Array.from({ length: 500 }, (_, i) => ({
 
 function App() {
   const { exit } = useApp()
-  const { width } = useContentRect()
+  const { width, height } = useContentRect()
   const [query, setQuery] = useState("")
   const deferredQuery = useDeferredValue(query)
-  const [selected, setSelected] = useState(0)
 
+  // Filter rows against the deferred query so typing stays responsive
   const filtered = processes.filter(
     (p) =>
       p.name.includes(deferredQuery) ||
@@ -63,12 +64,7 @@ function App() {
       p.status.includes(deferredQuery),
   )
 
-  useInput((input, key) => {
-    if (input === "q") exit()
-    if (key.downArrow) setSelected((s) => Math.min(s + 1, filtered.length - 1))
-    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0))
-  })
-
+  // Responsive column widths
   const nameWidth = Math.max(8, Math.floor(width * 0.3))
   const statusWidth = Math.max(8, Math.floor(width * 0.2))
 
@@ -76,16 +72,26 @@ function App() {
     <Box flexDirection="column" width="100%" height="100%">
       <Box paddingX={1} height={1}>
         <Text bold>Filter: </Text>
-        <TextInput value={query} onChange={setQuery} placeholder="Search..." />
+        <TextInput value={query} onChange={setQuery} placeholder="Search by name, PID, or status..." />
       </Box>
+
       <Box paddingX={1} flexGrow={1}>
-        {/* Table header and rows would use Table component */}
-        <Text color="$muted">
-          {filtered.length} / {processes.length} processes
-        </Text>
+        <Table
+          columns={[
+            { header: "PID", key: "pid", width: 7, align: "right" },
+            { header: "Name", key: "name", width: nameWidth },
+            { header: "CPU %", key: "cpu", width: 8, align: "right" },
+            { header: "Mem MB", key: "mem", width: 9, align: "right" },
+            { header: "Status", key: "status", width: statusWidth },
+          ]}
+          data={filtered}
+        />
       </Box>
+
       <Box paddingX={1} height={1}>
-        <Text dimColor>q quit  ↑↓ navigate</Text>
+        <Text dimColor>
+          {filtered.length} / {processes.length} processes | q quit
+        </Text>
       </Box>
     </Box>
   )
