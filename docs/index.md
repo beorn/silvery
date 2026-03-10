@@ -83,7 +83,7 @@ features:
 - **`@silvery/term`** — Input system -- Input layer stack (DOM-style event bubbling), tree-based focus with spatial navigation, mouse support, command system
 - **`@silvery/tea`** — TEA state machines -- Pure `(action, state) → [state, effects]` reducers for testing, replay, and undo
 - **`@silvery/theme`** — Theming -- 38 palettes, semantic color tokens, auto-detection
-- **`@silvery/test`** — Built for AI -- Command introspection for agents, programmatic screenshots, scrollable streaming output
+- **`@silvery/test`** — [Testing](/examples/testing) -- Headless renderer, Playwright-style locators, press() simulation, programmatic screenshots
 
 </div>
 
