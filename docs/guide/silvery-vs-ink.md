@@ -10,7 +10,7 @@ Fixing it required a different rendering pipeline — layout first, then render 
 
 [Ink](https://github.com/vadimdemedes/ink) (2017) brought React to the terminal. ~1.3M npm weekly downloads, 50+ community components, used by Gatsby, Prisma, Terraform CDK, Shopify CLI, Claude Code, and many more. Mature, stable, actively maintained. Ink is a focused React renderer.
 
-[Silvery](https://github.com/beorn/silvery) (2025) is a ground-up reimplementation with a different rendering architecture. Beyond the renderer, it provides a complete terminal app toolkit. Silvery is a full terminal app framework.
+[Silvery](https://github.com/beorn/silvery) (2025) is a ground-up reimplementation with a different rendering architecture. At its core, it's a renderer — `Box`, `Text`, `useInput`, `render()` work the same as Ink. But it also ships optional framework layers (`@silvery/ui`, `@silvery/tea`, `@silvery/theme`) for teams that want a complete toolkit. Use as little or as much as you need.
 
 > For how Silvery compares to terminal UI frameworks beyond Ink (BubbleTea, Textual, Notcurses, FTXUI, blessed), see [comparison.md](comparison.md).
 
@@ -46,7 +46,7 @@ If your app uses `Box`, `Text`, `useInput`, and basic hooks, it works in both wi
 
 ## Where They Differ
 
-Ink is a focused renderer. Silvery is a framework. The differences fall into three categories: rendering architecture, interaction model, and developer tooling.
+Both are React renderers at the core. Silvery's optional packages add framework-level features. The differences fall into three categories: rendering architecture, interaction model, and developer tooling.
 
 ### Rendering Architecture
 
