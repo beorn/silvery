@@ -352,34 +352,60 @@ You don't chug TEA — you sip it. [`@silvery/tea`](/reference/packages) is a gr
 
 ::: tip ✨ Shiny — sip by sip
 
-Here's the full TEA for illustration — most apps won't go this far, and that's fine. The [state management guide](/guides/state-management) walks through each milestone in detail.
+Same counter, four levels. Each step changes only one thing — the rest stays the same.
 
 ```tsx
-// The full cup: a pure reducer that returns effects as data
-function reducer(state: State, op: Op): TeaResult<State, MyEffect> {
-  switch (op.type) {
-    case "increment":
-      return { ...state, count: state.count + 1 }             // pure state update
-    case "save":
-      return [state, [httpPost("/api", state), log("saved")]]  // state + effects
-  }
+// Sip 1: useState — local state, component-scoped
+function Counter() {
+  const [count, setCount] = useState(0)
+  return <Text>{count}</Text>
 }
+// ✓ Simple. Perfect for local UI state (form fields, toggles, hover).
+// ✗ Can't share state across components. Can't serialize actions.
 
-// Effect runners are declared separately — swap them for test/prod/replay
-const runners: EffectRunners<MyEffect, Op> = {
-  log: (e) => console.log(e.msg),
-  http: async (e, dispatch) => { /* fetch, then dispatch result back */ },
+// Sip 2: createApp — shared store, selective re-renders
+const app = createApp(() => (set) => ({
+  count: 0,
+  increment() { set((s) => ({ count: s.count + 1 })) },
+  save() { fetch("/api", { body: JSON.stringify(get()) }) },  // I/O in methods
+}))
+function Counter() {
+  const count = useApp((s) => s.count)  // only re-renders when count changes
+  return <Text>{count}</Text>
 }
+// ✓ Shared state. Selective re-renders. Centralized key handling.
+// ✗ Methods are opaque — can't log, replay, or test what actions were fired.
 
-// Wire it up with Zustand
-const store = createStore(tea({ count: 0 }, reducer, { runners }))
+// Sip 3: createSlice — same store, but actions become serializable data
+const Counter = createSlice(
+  () => ({ count: 0 }),
+  {
+    increment(s) { return { ...s, count: s.count + 1 } },
+    save(s) { fetch("/api", { body: JSON.stringify(s) }) },  // I/O still inline
+  },
+)
+// store.apply({ op: "increment" })  — serializable, loggable, replayable
+// No switch/case — createSlice infers the op union from your handler names.
+// ✓ Actions are data. Undo is trivial. AI agents can invoke by name.
+// ✗ Side effects (save) still live in handlers — can't test them.
 
-// Test: the reducer is a pure function — no mocks needed
-const [state, effects] = collect(reducer(initial, { type: "save" }))
-expect(effects).toContainEqual(httpPost("/api", initial))
+// Sip 4: effects as data — handlers return Effect[], runners execute them
+const Counter = createSlice(
+  () => ({ count: 0 }),
+  {
+    increment(s) { return { ...s, count: s.count + 1 } },
+    save(s): Effect[] {
+      return [{ effect: "http", url: "/api", body: s }]      // effect as DATA
+    },
+  },
+)
+// Test: just call the handler — no mocks, no fetch, no async
+const effects = Counter.save(initial)
+expect(effects).toContainEqual({ effect: "http", url: "/api", body: initial })
+// ✓ Everything is data. Pure, testable, replayable, swappable.
 ```
 
-**What you're seeing**: the reducer declares *what* should happen (pure data); runners decide *how* (swappable). `collect()` normalizes the return for testing. But remember — most components start at sip 1 (`useState`) or sip 2 (Zustand). You only reach for effects-as-data when you find yourself mocking `fetch` to test state logic.
+Most apps live at sip 2. That's fine — each sip is independently useful, and you move to the next only when you feel the pain the current level can't solve. The [state management guide](/guides/state-management) walks through each transition in detail.
 :::
 
 ::: danger 🩶 Tarnished — skipping straight to the hard stuff
