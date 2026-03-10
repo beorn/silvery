@@ -1,8 +1,16 @@
 # Silvery vs Ink
 
-[Ink](https://github.com/vadimdemedes/ink) (2017) brought React to the terminal. ~1.3M npm weekly downloads, 50+ community components, used by Gatsby, Prisma, Terraform CDK, Shopify CLI, Claude Code, and many more. Mature, stable, actively maintained.
+## Why Silvery Exists
 
-[Silvery](https://github.com/beorn/silvery) (2025) is a ground-up reimplementation with a different rendering architecture: components know their dimensions during render, not after. Beyond the renderer, it provides a complete terminal app toolkit -- input layering, command/keybinding systems, mouse support, 30+ components, multi-target rendering, and TEA state machines. Ink is a focused React renderer; Silvery is a full terminal app framework.
+Silvery started from a single frustration: **React terminal components can't know their own size during render.** In Ink, React renders first, then Yoga calculates layout — so components that need to adapt (truncate text, choose compact vs full layout, fit columns) must use post-render effects or prop drilling. This limitation ([Ink #5](https://github.com/vadimdemedes/ink/issues/5), open since 2016) cascades: no native scrolling, no automatic text truncation, no responsive layouts without workarounds.
+
+Fixing it required a different rendering pipeline — layout first, then render — which meant building from scratch. Once the core was working, the project grew into a full terminal app framework: input layering, commands, mouse support, 30+ components, theming, and TEA state machines.
+
+## The Two Projects
+
+[Ink](https://github.com/vadimdemedes/ink) (2017) brought React to the terminal. ~1.3M npm weekly downloads, 50+ community components, used by Gatsby, Prisma, Terraform CDK, Shopify CLI, Claude Code, and many more. Mature, stable, actively maintained. Ink is a focused React renderer.
+
+[Silvery](https://github.com/beorn/silvery) (2025) is a ground-up reimplementation with a different rendering architecture. Beyond the renderer, it provides a complete terminal app toolkit. Silvery is a full terminal app framework.
 
 > For how Silvery compares to terminal UI frameworks beyond Ink (BubbleTea, Textual, Notcurses, FTXUI, blessed), see [comparison.md](comparison.md).
 
@@ -26,14 +34,11 @@ Silvery and Ink share the same core ideas -- the migration path is intentionally
 - **Border styles** -- `single`, `double`, `round`, `bold`, `classic`, etc.
 - **`measureElement`** -- Both offer ways to measure rendered elements
 - **Layout metrics** -- Both provide hooks for element dimensions (`useContentRect` / `useBoxMetrics`)
-- **Synchronized updates** -- Both wrap output in DEC 2026 sequences to prevent tmux/Zellij flicker
 - **Kitty keyboard protocol** -- Both support extended modifiers and key event types
 - **`renderToString`** -- Both support synchronous string rendering without terminal setup
-- **`usePaste` / bracketed paste** -- Both handle pasted text
 - **Cursor positioning** -- Both provide `useCursor()` for IME support
 - **Screen reader support** -- Ink has ARIA roles/states; Silvery has basic support
 - **Node.js streams** -- Both render to stdout, read from stdin
-- **Concurrent React** -- Both support concurrent rendering (Ink opt-in, Silvery not yet)
 
 If your app uses `Box`, `Text`, `useInput`, and basic hooks, it works in both with minimal changes.
 
@@ -45,19 +50,23 @@ Ink is a focused renderer. Silvery is a framework. The differences fall into thr
 
 ### Rendering Architecture
 
-| Feature                   | Silvery                                                                              | Ink                                                                                                                                        |
-| ------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Layout feedback**       | `useContentRect()` / `useScreenRect()` -- synchronous, available during render       | `useBoxMetrics()` -- post-layout via `useEffect`, returns 0x0 until first measure                                                          |
-| **Incremental rendering** | Per-node dirty tracking with 7 independent flags; cell-level buffer diff             | Line-based diff (opt-in since v6.5.0); unchanged lines skipped, but any change rewrites entire line                                        |
-| **Scrollable containers** | `overflow="scroll"` with `scrollTo` -- framework handles measurement and clipping    | `overflow` supports `visible` and `hidden` only; scrolling requires manual virtualization                                                  |
-| **Text truncation**       | Automatic, ANSI-aware; text clips at Box boundaries                                  | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                              |
-| **Layout engines**        | [Flexily](https://beorn.github.io/flexily) (7 KB, pure JS) or Yoga WASM -- pluggable | Yoga WASM only (`yoga-layout` v3)                                                                                                          |
-| **Render targets**        | Terminal, Canvas 2D, DOM (experimental)                                              | Terminal only                                                                                                                              |
-| **Native dependencies**   | None -- pure JS/TS                                                                   | Yoga WASM binary blob (no native compilation, but not pure JS)                                                                             |
-| **Memory profile**        | Constant -- Flexily uses normal JS GC                                                | Yoga WASM uses a linear memory heap that can grow over long sessions ([discussion](https://github.com/anthropics/claude-code/issues/4953)) |
-| **Layout caching**        | Flexily fingerprints + caches unchanged subtrees                                     | Full tree recomputation on every layout pass                                                                                               |
-| **Initialization**        | Synchronous -- pure TypeScript import                                                | Async WASM loading                                                                                                                         |
-| **Box outline**           | `outlineStyle` -- CSS outline equivalent, no layout impact                           | None                                                                                                                                       |
+| Feature                     | Silvery                                                                              | Ink                                                                                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Responsive layout**       | `useContentRect()` / `useScreenRect()` -- synchronous, available during render       | `useBoxMetrics()` -- post-layout via `useEffect`, returns 0x0 until first measure                                                          |
+| **Incremental rendering**   | Per-node dirty tracking with 7 independent flags; cell-level buffer diff             | Line-based diff (opt-in since v6.5.0); unchanged lines skipped, but any change rewrites entire line                                        |
+| **ANSI compositing**        | Cell-level buffer with proper style stacking; ANSI sequences composed, not passed through | String concatenation; ANSI sequences emitted inline, no compositing layer                                                                 |
+| **Scrollable containers**   | `overflow="scroll"` with `scrollTo` -- framework handles measurement and clipping    | `overflow` supports `visible` and `hidden` only; scrolling requires manual virtualization                                                  |
+| **Dynamic scrollback**      | `useScrollback` -- items graduate from interactive area to terminal history (like Claude Code needs) | None -- all items must stay in the render tree                                                                                 |
+| **Text truncation**         | Automatic, ANSI-aware; text clips at Box boundaries                                  | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                              |
+| **CSS/W3C alignment**       | Flexbox defaults match W3C spec (`flexDirection: row`); `outlineStyle` (CSS outline, no layout impact) | Non-standard defaults (`flexDirection: column`); no outline                                                                   |
+| **Layout engines**          | [Flexily](https://beorn.github.io/flexily) (7 KB, pure JS) or Yoga WASM -- pluggable | Yoga WASM only (`yoga-layout` v3)                                                                                                          |
+| **Render targets**          | Terminal, Canvas 2D, DOM (experimental)                                              | Terminal only                                                                                                                              |
+| **Native dependencies**     | None -- pure TypeScript                                                              | Yoga WASM binary blob (no native compilation, but not pure JS)                                                                             |
+| **Memory profile**          | Constant -- Flexily uses normal JS GC                                                | Yoga WASM uses a linear memory heap that can grow over long sessions ([discussion](https://github.com/anthropics/claude-code/issues/4953)) |
+| **Layout caching**          | Flexily fingerprints + caches unchanged subtrees                                     | Full tree recomputation on every layout pass                                                                                               |
+| **Synchronized output**     | DEC synchronized output (mode 2026) for flicker-free rendering in tmux/Zellij        | None                                                                                                                                       |
+| **Bracketed paste**         | `usePaste` hook with automatic mode toggling                                         | None                                                                                                                                       |
+| **Initialization**          | Synchronous -- pure TypeScript import                                                | Async WASM loading                                                                                                                         |
 
 ### Interaction Model
 
@@ -80,12 +89,12 @@ Ink is a focused renderer. Silvery is a framework. The differences fall into thr
 | Feature                 | Silvery                                                                                                                                                   | Ink                                                                    |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | **Component library**   | 30+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Spinner, ProgressBar, Image, SplitView, etc.) | 5 built-in (Box, Text, Static, Newline, Spacer) + 50+ third-party      |
-| **Runtime layers**      | 3 architectures: TEA reducers, React hooks, Zustand stores -- composable in one app                                                                       | React hooks only                                                       |
+| **TEA state machines**  | Built-in `@silvery/tea`: pure `(action, state) -> [state, effects]` reducers with replay, undo, and serializable actions | None -- React hooks only (Zustand/Redux usable via React, but no TEA integration) |
 | **Plugin composition**  | `withCommands` / `withKeybindings` / `withDiagnostics` / `withRender`                                                                                     | None                                                                   |
-| **Testing**             | `createRenderer` + Playwright-style auto-locators, buffer assertions                                                                                      | `ink-testing-library`                                                  |
+| **Testing**             | Built-in `@silvery/test`: `createRenderer` + Playwright-style auto-locators, buffer assertions, visual snapshots | `ink-testing-library` (third-party)                                    |
 | **Render invariants**   | `withDiagnostics` -- verifies incremental render matches fresh render                                                                                     | None                                                                   |
 | **Screenshots**         | `bufferToHTML()` + Playwright -- programmatic visual capture                                                                                              | None                                                                   |
-| **Theme system**        | `@silvery/theme` with 45 built-in palettes, semantic color tokens, auto-detection                                                                         | None (manual chalk styling)                                            |
+| **Theme system**        | `@silvery/theme` with 38 built-in palettes, semantic color tokens, auto-detection                                                                         | None (manual chalk styling)                                            |
 | **Unicode utilities**   | Built-in: 28+ functions for grapheme splitting, display width, CJK detection, ANSI-aware truncation                                                       | Third-party: `string-width`, `cli-truncate`, `wrap-ansi`, `slice-ansi` |
 | **Console capture**     | Built-in `<Console />` component (composable, embeddable)                                                                                                 | `patchConsole()` (intercept-only)                                      |
 | **Resource cleanup**    | `using` / Disposable -- automatic teardown                                                                                                                | Manual `unmount()`                                                     |
@@ -113,7 +122,7 @@ _Benchmarks measure a specific scenario for each row. "Typical interactive updat
 | Terminal resize (1000 nodes)          | 21 us           | Full re-render    | --                       |
 | Buffer diff (80x24, 10% changed)      | 34 us           | N/A (line-based)  | --                       |
 
-**Understanding the rerender row:** When the _entire_ component tree re-renders from scratch (e.g., replacing the root element), Ink is 30x faster because its output is string concatenation. Silvery runs a 5-phase pipeline (measure, layout, content, output) after React reconciliation -- that is the cost of layout feedback. But this scenario rarely happens in real apps.
+**Understanding the rerender row:** When the _entire_ component tree re-renders from scratch (e.g., replacing the root element), Ink is 30x faster because its output is string concatenation. Silvery runs a 5-phase pipeline (measure, layout, content, output) after React reconciliation -- that is the cost of responsive layout. But this scenario rarely happens in real apps.
 
 **The row that matters -- "typical interactive update":** When a user presses a key (cursor move, scroll, toggle), only the changed nodes need updating. Silvery has per-node dirty tracking that bypasses React entirely -- 169 us for 1000 nodes. Ink's incremental rendering (v6.5.0+) improves output by skipping unchanged _lines_, but it still re-renders the entire React tree and runs full Yoga layout on every state change -- 20.7 ms. Silvery's dirty tracking skips React reconciliation, layout, and content generation for unchanged nodes -- a fundamentally different approach.
 
@@ -121,7 +130,7 @@ _Benchmarks measure a specific scenario for each row. "Typical interactive updat
 
 ## Key Differences Explained
 
-### Layout Feedback
+### Responsive Layout
 
 The core architectural difference. Ink renders components, then runs Yoga layout. `useBoxMetrics()` provides dimensions _after_ layout via `useEffect`, meaning the first render always sees `{width: 0, height: 0}`. Silvery runs layout first, then renders components with actual dimensions via `useContentRect()`.
 

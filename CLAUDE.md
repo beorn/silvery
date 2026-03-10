@@ -37,7 +37,7 @@ bun run compat            # Run Ink/Chalk compatibility checks
 | `packages/tea`    | `@silvery/tea`    | TEA state machine store (zustand-based)        |
 | `packages/compat` | `@silvery/compat` | Ink/Chalk compatibility layers                 |
 | `packages/test`   | `@silvery/test`   | Testing utilities (virtual renderer, locators) |
-| `packages/theme`  | `@silvery/theme`  | Theme tokens, 45 palettes, theme CLI           |
+| `packages/theme`  | `@silvery/theme`  | Theme tokens, 38 palettes, theme CLI           |
 
 The main `silvery` package re-exports `@silvery/react`. Users import from `silvery`, not the scoped packages.
 

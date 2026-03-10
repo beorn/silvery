@@ -1,6 +1,6 @@
 # Theming
 
-Silvery ships with a comprehensive theme system via `@silvery/theme`. It provides 45 built-in palettes from popular theme systems, a builder API for custom themes, and auto-generation from a single color.
+Silvery ships with a comprehensive theme system via `@silvery/theme`. It provides 38 built-in palettes from popular theme systems, a builder API for custom themes, and auto-generation from a single color.
 
 ## Architecture
 
@@ -75,7 +75,7 @@ Any color prop starting with `$` resolves against the active theme. Non-`$` valu
 
 ## Theme Explorer
 
-Browse all 45 built-in palettes, preview how they look in a terminal, or generate a custom theme from any color.
+Browse all 38 built-in palettes, preview how they look in a terminal, or generate a custom theme from any color.
 
 <script setup>
 import ThemeExplorer from '../.vitepress/components/ThemeExplorer.vue'
@@ -85,7 +85,7 @@ import ThemeExplorer from '../.vitepress/components/ThemeExplorer.vue'
 
 ## Built-in Palettes
 
-The `@silvery/theme` package includes 45 palettes from these theme families:
+The `@silvery/theme` package includes 38 palettes from these theme families:
 
 | Family      | Variants                        | Mode             |
 | ----------- | ------------------------------- | ---------------- |

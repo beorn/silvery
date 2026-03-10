@@ -13,7 +13,7 @@ Silvery is organized as a monorepo of focused packages. Most apps only need the 
 | `packages/tea`    | `@silvery/tea`    | TEA state machine store (zustand-based)                     |
 | `packages/compat` | `@silvery/compat` | Ink/Chalk compatibility layers                              |
 | `packages/test`   | `@silvery/test`   | Testing utilities (virtual renderer, locators)              |
-| `packages/theme`  | `@silvery/theme`  | Theme tokens, 45 palettes, theme CLI                        |
+| `packages/theme`  | `@silvery/theme`  | Theme tokens, 38 palettes, theme CLI                        |
 
 ## Import Conventions
 
@@ -106,7 +106,7 @@ TEA (The Elm Architecture) state machine store built on Zustand. Provides `creat
 
 ## `@silvery/theme`
 
-Theme system with 45 built-in palettes, auto-generation from a single color, semantic tokens, and contrast checking.
+Theme system with 38 built-in palettes, auto-generation from a single color, semantic tokens, and contrast checking.
 
 See the [Theming Guide](/guides/theming) for full documentation.
 

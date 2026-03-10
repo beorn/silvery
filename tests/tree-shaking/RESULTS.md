@@ -47,7 +47,7 @@ Ink does not tree-shake: importing `{ Text }` alone bundles 335.6 KB gzip (96% o
 | `@silvery/tea/core`         | 0.2 KB   | 0.2 KB   | No     | Pure TEA functions                   |
 | `@silvery/tea/store`        | 2.0 KB   | --       | No     | Zustand-based store                  |
 | `@silvery/tea/streams`      | 1.0 KB   | --       | No     | Stream combinators                   |
-| `@silvery/theme`            | 77.3 KB  | 17.7 KB  | Yes    | Theme engine + 45 palettes           |
+| `@silvery/theme`            | 77.3 KB  | 17.7 KB  | Yes    | Theme engine + 38 palettes           |
 | `@silvery/ui/cli`           | 22.9 KB  | 6.4 KB   | No     | Spinner, ProgressBar (React-free)    |
 | `@silvery/ui/wrappers`      | 18.6 KB  | --       | No     | withSpinner, withProgress            |
 
@@ -80,6 +80,6 @@ All 14 silvery entry points pass tree-shaking verification:
 
 3. **Silvery offers React-free packages.** Terminal primitives (`@silvery/term/ansi` at 6.6 KB gzip), state management (`@silvery/tea/core` at 0.2 KB), and CLI utilities (`@silvery/ui/cli` at 6.4 KB) all work without React. Ink has no equivalent -- it always bundles React.
 
-4. **Silvery's barrel is larger than Ink's barrel** (432 KB vs 352 KB gzip) because silvery ships more: a full layout engine (flexily), theme system (45 palettes), incremental renderer, and 30+ UI components. This is the only metric where Ink wins.
+4. **Silvery's barrel is larger than Ink's barrel** (432 KB vs 352 KB gzip) because silvery ships more: a full layout engine (flexily), theme system (38 palettes), incremental renderer, and 30+ UI components. This is the only metric where Ink wins.
 
 5. **Chalk compat is comparable.** `silvery/chalk` (4.9 KB gzip) vs `chalk` (4.1 KB gzip) -- a 0.8 KB difference for a drop-in replacement that integrates with silvery's theme system.

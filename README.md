@@ -6,7 +6,7 @@ Silvery is the only React terminal framework where components know their own dim
 
 Beyond layout feedback, Silvery provides a DOM-style input layer stack with modal isolation, spatial focus navigation, mouse support, and a command/keybinding system. Only changed nodes re-render.
 
-It ships 30+ built-in components, a theme engine with 45 palettes, and three composable runtime architectures (React hooks, TEA reducers, Zustand stores). Pure TypeScript, no WASM, no native dependencies.
+It ships 30+ built-in components, a theme engine with 38 palettes, and built-in TEA state machines for testable, replayable UI logic alongside React hooks. Pure TypeScript, no WASM, no native dependencies.
 
 ```
 npm install silvery react
@@ -43,7 +43,7 @@ await render(<App />, term).run()
 
 ## Key Capabilities
 
-### Layout feedback during render
+### Responsive layout
 
 `useContentRect()` returns actual dimensions synchronously -- no post-layout effect, no `{width: 0, height: 0}` on first render. Components adapt to their available space immediately.
 
@@ -128,7 +128,7 @@ Terminal today, Canvas 2D and DOM experimental. Same React components, different
 | [`@silvery/react`](packages/react)   | React reconciler, hooks, renderer         |
 | [`@silvery/term`](packages/term)     | Terminal rendering pipeline, ANSI styling |
 | [`@silvery/ui`](packages/ui)         | Component library (30+ components)        |
-| [`@silvery/theme`](packages/theme)   | Theming with 45 palettes                  |
+| [`@silvery/theme`](packages/theme)   | Theming with 38 palettes                  |
 | [`@silvery/tea`](packages/tea)       | TEA state machine store                   |
 | [`@silvery/compat`](packages/compat) | Ink/Chalk compatibility layers            |
 | [`@silvery/test`](packages/test)     | Testing utilities and locators            |
