@@ -47,6 +47,8 @@ features:
     linkText: Learn more
 ---
 
+<div class="alpha-banner">Alpha — under heavy development, APIs may change</div>
+
 ## Explore the Examples
 
 <div class="viewer-wrapper">
@@ -147,6 +149,20 @@ Silvery is part of a family of terminal-focused libraries:
 - **[Loggily](https://beorn.github.io/loggily)** -- Debug + structured logging + tracing in one library
 
 <style>
+.alpha-banner {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  background: var(--vp-c-warning-soft);
+  color: var(--vp-c-warning-1);
+  padding: 4px 16px;
+  border-radius: 0 0 8px 8px;
+  font-size: 0.8em;
+  font-weight: 500;
+  pointer-events: none;
+}
 .viewer-wrapper {
   margin: 1.5rem 0 2rem;
   border: 1px solid var(--vp-c-divider);
