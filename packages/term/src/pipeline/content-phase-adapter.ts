@@ -209,6 +209,7 @@ function renderBorder(
     rightVertical,
     style,
     isRowVisible,
+    clipBounds,
   )
 
   // Bottom border
@@ -270,12 +271,16 @@ function renderSideBorders(
   rightVertical: string,
   style: RenderStyle,
   isRowVisible: (row: number) => boolean,
+  clipBounds?: ClipRect,
 ): void {
+  const clipLeft = clipBounds?.left ?? -Infinity
+  const clipRight = clipBounds?.right ?? Infinity
   for (let row = startRow; row < endRow; row++) {
     if (!isRowVisible(row)) continue
-    if (showLeft) buffer.drawChar(x, row, leftVertical, style)
-    if (showRight && buffer.inBounds(x + width - 1, row)) {
-      buffer.drawChar(x + width - 1, row, rightVertical, style)
+    if (showLeft && x >= clipLeft && x < clipRight) buffer.drawChar(x, row, leftVertical, style)
+    const rightCol = x + width - 1
+    if (showRight && rightCol >= clipLeft && rightCol < clipRight && buffer.inBounds(rightCol, row)) {
+      buffer.drawChar(rightCol, row, rightVertical, style)
     }
   }
 }
@@ -327,6 +332,7 @@ function renderOutlineAdapter(
     outRightVertical,
     style,
     isRowVisible,
+    clipBounds,
   )
 
   // Bottom border

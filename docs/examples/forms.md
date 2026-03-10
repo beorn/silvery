@@ -33,43 +33,22 @@ Interactive CLI wizards guide users through multi-step configuration, installati
 
 ## Source Code
 
-A complete multi-step wizard:
+A complete multi-step wizard using Silvery's built-in components — SelectList handles keyboard navigation, TextInput provides readline editing, and ProgressBar shows progress. No manual `useInput()` for selection or text entry:
 
 ::: code-group
 
 ```tsx [wizard.tsx]
 import { useState, useEffect } from "react"
-import { Box, Text, render, useInput, useApp, createTerm } from "silvery"
+import { Box, Text, SelectList, TextInput, ProgressBar, render, useApp, createTerm } from "silvery"
 
 type Step = "select" | "name" | "install" | "done"
-
-const FRAMEWORKS = [
-  { label: "React", value: "react" },
-  { label: "Vue", value: "vue" },
-  { label: "Svelte", value: "svelte" },
-  { label: "Angular (coming soon)", value: "angular", disabled: true },
-]
 
 function Wizard() {
   const { exit } = useApp()
   const [step, setStep] = useState<Step>("select")
   const [framework, setFramework] = useState("")
   const [name, setName] = useState("")
-  const [cursor, setCursor] = useState(0)
   const [progress, setProgress] = useState(0)
-
-  useInput((input, key) => {
-    if (input === "q") exit()
-
-    if (step === "select") {
-      if (key.upArrow) setCursor((c) => Math.max(0, c - 1))
-      if (key.downArrow) setCursor((c) => Math.min(FRAMEWORKS.length - 1, c + 1))
-      if (key.return && !FRAMEWORKS[cursor]?.disabled) {
-        setFramework(FRAMEWORKS[cursor]!.label)
-        setStep("name")
-      }
-    }
-  })
 
   // Simulate installation progress
   useEffect(() => {
@@ -89,50 +68,48 @@ function Wizard() {
 
   if (step === "select") {
     return (
-      <Box flexDirection="column" gap={1}>
+      <Box flexDirection="column" gap={1} focusScope>
         <Text bold>Step 1: Choose a framework</Text>
-        {FRAMEWORKS.map((fw, i) => (
-          <Text
-            key={fw.value}
-            color={fw.disabled ? "$muted" : i === cursor ? "$primary" : undefined}
-            bold={i === cursor}
-            dimColor={fw.disabled}
-          >
-            {i === cursor ? "● " : "○ "}{fw.label}
-          </Text>
-        ))}
-        <Text color="$muted">Use arrow keys to navigate, Enter to select</Text>
+        <SelectList
+          items={[
+            { label: "React", value: "react" },
+            { label: "Vue", value: "vue" },
+            { label: "Svelte", value: "svelte" },
+            { label: "Angular (coming soon)", value: "angular", disabled: true },
+          ]}
+          onSelect={(item) => {
+            setFramework(item.label)
+            setStep("name")
+          }}
+          maxVisible={5}
+        />
+        <Text color="$muted">↑↓ navigate  Enter select</Text>
       </Box>
     )
   }
 
   if (step === "name") {
     return (
-      <Box flexDirection="column" gap={1}>
+      <Box flexDirection="column" gap={1} focusScope>
         <Text bold>Step 2: Project name</Text>
-        <Box>
-          <Text color="$primary">&gt; </Text>
-          <Text>{name || "my-app"}</Text>
-          <Text color="$primary">▋</Text>
-        </Box>
-        <Text color="$muted">Type a name and press Enter</Text>
+        <TextInput
+          placeholder="my-app"
+          onSubmit={(val) => {
+            setName(val || "my-app")
+            setStep("install")
+          }}
+          prompt="> "
+        />
+        <Text color="$muted">Type a name and press Enter (Ctrl+A/E, Ctrl+K/U, Alt+B/F all work)</Text>
       </Box>
     )
   }
 
   if (step === "install") {
-    const filled = Math.round(progress * 40)
     return (
       <Box flexDirection="column" gap={1}>
         <Text bold>Step 3: Installing {framework}...</Text>
-        <Box flexDirection="row">
-          <Box flexGrow={Math.round(progress * 100)}>
-            <Text color="$success">{"█".repeat(50)}</Text>
-          </Box>
-          <Box flexGrow={100 - Math.round(progress * 100)}>
-            <Text color="$muted">{"░".repeat(50)}</Text>
-          </Box>
-        </Box>
+        <ProgressBar value={progress} width={40} color="$success" />
         <Text color="$muted">Setting up {name || "my-app"}</Text>
       </Box>
     )
