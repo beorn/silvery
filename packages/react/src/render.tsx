@@ -11,7 +11,6 @@
  * Compatible with Ink's render API.
  */
 
-import { EventEmitter } from "node:events"
 import process from "node:process"
 import { createLogger } from "loggily"
 import { type Term, createTerm } from "@silvery/term/ansi"
@@ -209,40 +208,74 @@ async function ensureLayoutEngineInitialized(engineType?: LayoutEngineType): Pro
 // Internal App Component
 // ============================================================================
 
+// ============================================================================
+// Lightweight subscriber list — replaces EventEmitter from node:events
+// ============================================================================
+
+type InputHandler = (input: string, key: import("@silvery/tea/keys").Key) => void
+type PasteHandler = (text: string) => void
+
+interface SubscriberList {
+  input: Set<InputHandler>
+  paste: Set<PasteHandler>
+}
+
+function createSubscriberList(): SubscriberList {
+  return { input: new Set(), paste: new Set() }
+}
+
+// ============================================================================
+// App Props — callback-based, no Node.js types in the callback interface
+// ============================================================================
+
 interface AppProps {
   children: ReactNode
-  stdin: NodeJS.ReadStream
-  stdout: NodeJS.WriteStream
+  /** Subscribe to raw input chunks. Returns cleanup. Called by setRawMode. */
+  onInputSubscribe?: (handler: (chunk: string) => void) => () => void
+  /** Whether Ctrl+C should exit the app */
   exitOnCtrlC: boolean
+  /** Write function for stdout context */
+  stdoutWrite: (data: string) => void
+  /** The raw stdout stream (for StdoutContext.stdout) — still NodeJS.WriteStream for now */
+  stdout: NodeJS.WriteStream
   onExit: (error?: Error) => void
   onPause?: () => void
   onResume?: () => void
   onScrollback?: (lines: number) => void
   /** Get the root TeaNode for focus navigation. Provided by SilveryInstance. */
   getRoot?: () => import("@silvery/tea/types").TeaNode | null
+  /** Handle Tab/Shift+Tab/Escape focus cycling (default: true) */
+  handleFocusCycling?: boolean
 }
 
 /**
  * Internal App component that provides all contexts.
  * This is a functional component that manages focus state and provides
  * all the context values needed by hooks.
+ *
+ * Input is callback-driven — no EventEmitter, no stdin/stdout dependency.
+ * The caller (SilveryInstance for Node.js, renderToXterm for browser)
+ * provides `onInputSubscribe` which connects the input source.
  */
 function SilveryApp({
   children,
-  stdin,
-  stdout,
+  onInputSubscribe,
   exitOnCtrlC,
+  stdoutWrite,
+  stdout,
   onExit,
   onPause,
   onResume,
   onScrollback,
   getRoot: getRootProp,
+  handleFocusCycling = true,
 }: AppProps): ReactElement {
-  // Raw mode reference count
-  const rawModeCountRef = React.useRef(0)
-
-  // Input event emitter
-  const eventEmitter = useMemo(() => new EventEmitter(), [])
+  // Subscriber list — lightweight replacement for EventEmitter
+  const subscribersRef = useRef<SubscriberList | null>(null)
+  if (!subscribersRef.current) {
+    subscribersRef.current = createSubscriberList()
+  }
+  const subscribers = subscribersRef.current
 
   // Exit handler
   const handleExit = useCallback(
@@ -252,16 +285,9 @@ function SilveryApp({
     [onExit],
   )
 
-  // Raw mode support check
-  const isRawModeSupported = stdin.isTTY === true
-  log.debug?.(
-    `SilveryApp: stdin=${stdin === process.stdin ? "process.stdin" : "other"}, stdin.isTTY=${stdin.isTTY}, process.stdin.isTTY=${process.stdin.isTTY}, isRawModeSupported=${isRawModeSupported}`,
-  )
-
-  // Mutable refs for values accessed inside the stdin readable handler.
-  // Using refs prevents handleReadable identity from ever changing, which
-  // would cascade through setRawMode → stdinContext → useInput effects →
-  // stdin listener removal/re-addition, dropping keypresses during the gap.
+  // Mutable refs for values accessed inside the input handler.
+  // Using refs prevents handler identity from ever changing, which
+  // would cascade through subscription effects, dropping keypresses during the gap.
 
   const exitOnCtrlCRef = useRef(exitOnCtrlC)
   exitOnCtrlCRef.current = exitOnCtrlC
@@ -269,54 +295,50 @@ function SilveryApp({
   const handleExitRef = useRef(handleExit)
   handleExitRef.current = handleExit
 
-  // Refs for focus manager and root getter — accessed inside handleReadable
+  // Refs for focus manager and root getter — accessed inside input handler
   const focusManagerRef = useRef<import("@silvery/tea/focus-manager").FocusManager | null>(null)
   const getRootRef = useRef(getRootProp)
   getRootRef.current = getRootProp
+  const handleFocusCyclingRef = useRef(handleFocusCycling)
+  handleFocusCyclingRef.current = handleFocusCycling
 
-  // Stable stdin readable handler — created once, never changes identity.
+  // Stable input chunk handler — created once, never changes identity.
   // All mutable state is read via refs to avoid dependency cascade.
-  const handleReadableRef = useRef<(() => void) | null>(null)
-  if (handleReadableRef.current === null) {
-    handleReadableRef.current = () => {
-      log.debug?.("handleReadable called")
-      processInput()
+  const handleChunkRef = useRef<((chunk: string) => void) | null>(null)
+  if (handleChunkRef.current === null) {
+    handleChunkRef.current = (rawChunk: string) => {
+      log.debug?.(`handleChunk: ${JSON.stringify(rawChunk)}`)
 
-      function processInput() {
-        const chunk = stdin.read() as string | null
-        log.debug?.(`stdin.read() returned: ${chunk === null ? "null" : JSON.stringify(chunk)}`)
-        if (chunk === null) return
-
-        // Check for bracketed paste before splitting into individual keys.
-        const pasteResult = parseBracketedPaste(chunk)
-        if (pasteResult) {
-          // Emit paste as a single 'paste' event on the input emitter
-          eventEmitter.emit("paste", pasteResult.content)
-          processInput()
-          return
+      // Check for bracketed paste before splitting into individual keys.
+      const pasteResult = parseBracketedPaste(rawChunk)
+      if (pasteResult) {
+        for (const handler of subscribers.paste) {
+          handler(pasteResult.content)
         }
-
-        // Split multi-character chunks into individual keypresses.
-        // stdin.read() can return multiple characters buffered together
-        // (rapid typing, paste, or auto-repeat during heavy renders).
-        for (const keypress of splitRawInput(chunk)) {
-          handleChunk(keypress)
-        }
-        processInput() // Process next chunk if available
+        return
       }
 
-      function handleChunk(chunk: string) {
-        log.debug?.(`handleChunk: ${JSON.stringify(chunk)}`)
-        // Handle Ctrl+C
-        if (chunk === "\x03" && exitOnCtrlCRef.current) {
-          handleExitRef.current()
-          return
-        }
+      // Split multi-character chunks into individual keypresses.
+      // Raw input sources can deliver multiple characters in a single chunk
+      // (rapid typing, paste, or auto-repeat during heavy renders).
+      for (const keypress of splitRawInput(rawChunk)) {
+        processSingleKey(keypress)
+      }
+    }
 
-        // Default Tab/Shift+Tab focus cycling and Escape blur.
-        // Handled before dispatching to useInput handlers so it works
-        // automatically when focusable components exist. Tab events are
-        // consumed (not passed to useInput) — matching run() and createApp().
+    function processSingleKey(chunk: string) {
+      log.debug?.(`processSingleKey: ${JSON.stringify(chunk)}`)
+      // Handle Ctrl+C
+      if (chunk === "\x03" && exitOnCtrlCRef.current) {
+        handleExitRef.current()
+        return
+      }
+
+      // Default Tab/Shift+Tab focus cycling and Escape blur.
+      // Handled before dispatching to useInput handlers so it works
+      // automatically when focusable components exist. Tab events are
+      // consumed (not passed to useInput) — matching run() and createApp().
+      if (handleFocusCyclingRef.current) {
         const fm = focusManagerRef.current
         const root = getRootRef.current?.()
         if (fm && root) {
@@ -337,88 +359,55 @@ function SilveryApp({
             return
           }
         }
-
-        // All input handling runs at discrete priority so React commits
-        // synchronously. Without this, concurrent mode defers the commit
-        // and onCommit → scheduleRender() never fires.
-        runWithDiscreteEvent(() => {
-          eventEmitter.emit("input", chunk)
-        })
-        reconciler.flushSyncWork()
       }
+
+      // Parse the key and dispatch to subscribers
+      const [input, key] = parseKey(chunk)
+
+      // All input handling runs at discrete priority so React commits
+      // synchronously. Without this, concurrent mode defers the commit
+      // and onCommit → scheduleRender() never fires.
+      runWithDiscreteEvent(() => {
+        for (const handler of subscribers.input) {
+          handler(input, key)
+        }
+      })
+      reconciler.flushSyncWork()
     }
   }
-  const handleReadable = handleReadableRef.current
+  const handleChunk = handleChunkRef.current
 
-  // Set raw mode handler
-  const setRawMode = useCallback(
-    (enabled: boolean) => {
-      log.debug?.(
-        `setRawMode called: enabled=${enabled}, rawModeCount=${rawModeCountRef.current}, isRawModeSupported=${isRawModeSupported}`,
-      )
-      if (!isRawModeSupported) {
-        if (stdin === process.stdin) {
-          throw new Error(
-            "Raw mode is not supported on the current process.stdin. " +
-              "This usually happens when running without a TTY.",
-          )
-        }
-        throw new Error("Raw mode is not supported on the provided stdin.")
-      }
-
-      stdin.setEncoding("utf8")
-
-      if (enabled) {
-        if (rawModeCountRef.current === 0) {
-          log.debug?.("setRawMode: enabling raw mode, adding readable listener")
-          stdin.ref()
-          stdin.setRawMode(true)
-          stdin.on("readable", handleReadable)
-          log.debug?.(`setRawMode: stdin.isRaw=${stdin.isRaw}, listenerCount=${stdin.listenerCount("readable")}`)
-        }
-        rawModeCountRef.current++
-        log.debug?.(`setRawMode: rawModeCount incremented to ${rawModeCountRef.current}`)
-      } else {
-        rawModeCountRef.current = Math.max(0, rawModeCountRef.current - 1)
-        log.debug?.(`setRawMode: rawModeCount decremented to ${rawModeCountRef.current}`)
-        if (rawModeCountRef.current === 0) {
-          log.debug?.("setRawMode: disabling raw mode, removing readable listener")
-          stdin.setRawMode(false)
-          stdin.off("readable", handleReadable)
-          stdin.unref()
-        }
-      }
-    },
-    [stdin, isRawModeSupported, handleReadable],
-  )
+  // Subscribe to input source when available
+  useEffect(() => {
+    if (!onInputSubscribe) return
+    return onInputSubscribe(handleChunk)
+  }, [onInputSubscribe, handleChunk])
 
   const stdoutContextValue = useMemo(
     () => ({
       stdout,
-      write: (data: string) => stdout.write(data),
+      write: stdoutWrite,
       notifyScrollback: onScrollback,
     }),
-    [stdout, onScrollback],
+    [stdout, stdoutWrite, onScrollback],
   )
 
-  // RuntimeContext — typed event bus bridging from the existing EventEmitter
+  // RuntimeContext — direct subscriber list, no EventEmitter
   const runtimeContextValue = useMemo<RuntimeContextValue>(
     () => ({
       on(event, handler) {
         if (event === "input") {
-          const wrapped = (data: string | Buffer) => {
-            const [input, key] = parseKey(data)
-            ;(handler as (input: string, key: import("@silvery/tea/keys").Key) => void)(input, key)
-          }
-          eventEmitter.on("input", wrapped)
+          const typed = handler as InputHandler
+          subscribers.input.add(typed)
           return () => {
-            eventEmitter.removeListener("input", wrapped)
+            subscribers.input.delete(typed)
           }
         }
         if (event === "paste") {
-          eventEmitter.on("paste", handler)
+          const typed = handler as unknown as PasteHandler
+          subscribers.paste.add(typed)
           return () => {
-            eventEmitter.removeListener("paste", handler)
+            subscribers.paste.delete(typed)
           }
         }
         return () => {} // Unknown event — no-op cleanup
@@ -430,20 +419,12 @@ function SilveryApp({
       pause: onPause,
       resume: onResume,
     }),
-    [eventEmitter, handleExit, onPause, onResume],
+    [subscribers, handleExit, onPause, onResume],
   )
-
-  // Auto-enable raw mode when stdin is a TTY so useInput receives events.
-  // Without this, the event loop drains and the process exits immediately.
-  useEffect(() => {
-    if (!isRawModeSupported) return
-    setRawMode(true)
-    return () => setRawMode(false)
-  }, [isRawModeSupported, setRawMode])
 
   // Focus manager (tree-based focus system)
   const focusManager = useMemo(() => createFocusManager(), [])
-  // Store in ref so the stable handleReadable closure can access it
+  // Store in ref so the stable input handler closure can access it
   focusManagerRef.current = focusManager
 
   return (
@@ -561,9 +542,12 @@ class SilveryInstance {
     const tree = (
       <CursorProvider store={this.cursorStore}>
         <SilveryApp
-          stdin={this.stdin}
-          stdout={this.stdout}
+          onInputSubscribe={this.subscribeToInput}
           exitOnCtrlC={this.exitOnCtrlC}
+          stdoutWrite={(data: string) => {
+            this.stdout.write(data)
+          }}
+          stdout={this.stdout}
           onExit={this.handleExit}
           onPause={this.pause}
           onResume={this.resume}
@@ -764,6 +748,49 @@ class SilveryInstance {
     this.signalCleanup = () => {
       process.off("SIGINT", handleSignal)
       process.off("SIGTERM", handleSignal)
+    }
+  }
+
+  /**
+   * Subscribe to stdin input. Sets up raw mode and readable listener.
+   * Returns cleanup function that tears down raw mode.
+   *
+   * This is the Node.js-specific input adapter — it bridges stdin
+   * into the platform-agnostic callback that SilveryApp expects.
+   */
+  private subscribeToInput = (handler: (chunk: string) => void): (() => void) => {
+    const { stdin } = this
+    const isRawModeSupported = stdin.isTTY === true
+
+    log.debug?.(
+      `subscribeToInput: stdin=${stdin === process.stdin ? "process.stdin" : "other"}, isTTY=${stdin.isTTY}, isRawModeSupported=${isRawModeSupported}`,
+    )
+
+    if (!isRawModeSupported) {
+      log.debug?.("subscribeToInput: raw mode not supported, skipping")
+      return () => {}
+    }
+
+    // Set up readable handler that reads chunks and passes to handler
+    const handleReadable = () => {
+      let chunk: string | null
+      while ((chunk = stdin.read() as string | null) !== null) {
+        log.debug?.(`subscribeToInput: stdin.read() returned: ${JSON.stringify(chunk)}`)
+        handler(chunk)
+      }
+    }
+
+    stdin.setEncoding("utf8")
+    stdin.ref()
+    stdin.setRawMode(true)
+    stdin.on("readable", handleReadable)
+    log.debug?.(`subscribeToInput: enabled raw mode, stdin.isRaw=${stdin.isRaw}`)
+
+    return () => {
+      log.debug?.("subscribeToInput: cleanup — disabling raw mode")
+      stdin.setRawMode(false)
+      stdin.off("readable", handleReadable)
+      stdin.unref()
     }
   }
 }

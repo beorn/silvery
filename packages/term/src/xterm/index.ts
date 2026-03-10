@@ -7,9 +7,9 @@
  * The terminal adapter produces ANSI diff strings via `flush()`. xterm.js accepts ANSI
  * via `term.write()`. This entry point bridges the two.
  *
- * `renderToXterm()` is the current API for rendering silvery components to xterm.js.
- * It provides a lightweight renderer without the full runtime (no useInput, no
- * focus management, no event loop).
+ * `renderToXterm()` renders silvery components to xterm.js with full runtime support:
+ * useInput, focus management, and mouse events all work out of the box when
+ * `input: true` (or input callbacks) is provided.
  *
  * @example
  * ```tsx
@@ -27,18 +27,29 @@
  *
  * const term = new Terminal({ cols: 80, rows: 24 });
  * term.open(document.getElementById('terminal')!);
- * renderToXterm(<App />, term);
+ * renderToXterm(<App />, term, { input: true });
  * ```
  */
 
-import type { ReactElement } from "react"
+import React, { type ReactElement } from "react"
 import { createFlexilyZeroEngine } from "../adapters/flexily-zero-adapter"
 import { terminalAdapter } from "../adapters/terminal-adapter"
 import { setLayoutEngine } from "../layout-engine"
 import { executeRenderAdapter } from "../pipeline"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/react/reconciler"
+import {
+  createContainer,
+  createFiberRoot,
+  getContainerRoot,
+  reconciler,
+  runWithDiscreteEvent,
+} from "@silvery/react/reconciler"
 import type { RenderBuffer } from "../render-adapter"
 import { setRenderAdapter } from "../render-adapter"
+import { RuntimeContext, FocusManagerContext, type RuntimeContextValue } from "@silvery/react/context"
+import { createFocusManager } from "@silvery/tea/focus-manager"
+import { parseKey, splitRawInput } from "@silvery/tea/keys"
+import { parseBracketedPaste } from "../bracketed-paste"
+import { createXtermProvider, type XtermProvider } from "./xterm-provider"
 
 // Re-export components and hooks for convenience
 export { Box, type BoxProps } from "@silvery/react/components/Box"
@@ -46,9 +57,13 @@ export { Text, type TextProps } from "@silvery/react/components/Text"
 export { Divider, type DividerProps } from "@silvery/ui/components/Divider"
 export { useContentRect, useScreenRect } from "@silvery/react/hooks/useLayout"
 export { useApp } from "@silvery/react/hooks/useApp"
+export { useInput, type Key, type InputHandler, type UseInputOptions } from "@silvery/react/hooks/useInput"
 
 // Re-export adapter utilities
 export { terminalAdapter } from "../adapters/terminal-adapter"
+
+// Re-export provider for advanced usage
+export { createXtermProvider, type XtermProvider } from "./xterm-provider"
 
 // ============================================================================
 // Types
@@ -95,6 +110,8 @@ export interface XtermRenderOptions {
   /**
    * Enable automatic input handling (keyboard, mouse, focus).
    *
+   * When enabled, `useInput()` and focus management work inside rendered components.
+   *
    * - `true` — enable mouse tracking and parse onData, but no callbacks
    * - `{ onKey, onMouse, onFocus }` — enable with callbacks
    * - `false` — disable (caller handles input manually)
@@ -102,6 +119,15 @@ export interface XtermRenderOptions {
    * Default: `false` (backwards compatible)
    */
   input?: boolean | XtermInputOptions
+  /**
+   * Exit on Ctrl+C (default: true when input is enabled).
+   * When true, Ctrl+C will trigger the exit callback.
+   */
+  exitOnCtrlC?: boolean
+  /**
+   * Handle Tab/Shift+Tab/Escape focus cycling (default: true when input is enabled).
+   */
+  handleFocusCycling?: boolean
 }
 
 export interface XtermInstance {
@@ -126,13 +152,6 @@ const CURSOR_SHOW = "\x1b[?25h"
 const CURSOR_HOME = "\x1b[H"
 const CLEAR_SCREEN = "\x1b[2J"
 
-// Mouse tracking: Normal mode + SGR extended mode
-const MOUSE_ENABLE = "\x1b[?1000h\x1b[?1006h"
-const MOUSE_DISABLE = "\x1b[?1000l\x1b[?1006l"
-
-// SGR mouse sequence regex: \x1b[<btn;x;yM (press) or \x1b[<btn;x;ym (release)
-const SGR_MOUSE_RE = /\x1b\[<(\d+);(\d+);(\d+)([Mm])/
-
 // ============================================================================
 // Initialization
 // ============================================================================
@@ -149,6 +168,13 @@ function initXtermRenderer(): void {
 }
 
 // ============================================================================
+// Input handler type for subscriber list
+// ============================================================================
+
+type InputEventHandler = (input: string, key: import("@silvery/tea/keys").Key) => void
+type PasteEventHandler = (text: string) => void
+
+// ============================================================================
 // Render Functions
 // ============================================================================
 
@@ -158,12 +184,15 @@ function initXtermRenderer(): void {
  * Uses the terminal adapter to produce ANSI diff strings, then writes them
  * to the terminal via `term.write()`.
  *
- * @deprecated Prefer `run()` from `@silvery/term/runtime` with `{ terminal }` option
- * for new apps. It provides the full runtime (useInput, focus management, mouse events).
+ * When `input` is enabled, provides full runtime support:
+ * - `useInput()` works for keyboard input handling
+ * - Focus management (Tab/Shift+Tab/Escape cycling)
+ * - Mouse events via SGR protocol
+ * - Paste detection via bracketed paste sequences
  *
  * @param element - React element to render
  * @param terminal - xterm.js Terminal (or any object with write/cols/rows)
- * @param options - Render options (cols, rows overrides)
+ * @param options - Render options (cols, rows overrides, input handling)
  * @returns XtermInstance for controlling the render
  *
  * @example
@@ -171,12 +200,17 @@ function initXtermRenderer(): void {
  * const term = new Terminal({ cols: 80, rows: 24 });
  * term.open(container);
  *
- * const instance = renderToXterm(<App />, term);
+ * // With useInput support
+ * const instance = renderToXterm(<App />, term, { input: true });
  *
- * // Later: update the component
- * instance.rerender(<App newProps />);
+ * // With callbacks
+ * const instance = renderToXterm(<App />, term, {
+ *   input: {
+ *     onKey: (data) => console.log('key:', data),
+ *     onMouse: ({ x, y }) => console.log('click:', x, y),
+ *   },
+ * });
  *
- * // Clean up
  * instance.unmount();
  * ```
  */
@@ -213,6 +247,150 @@ export function renderToXterm(
   let renderScheduled = false
   let unmounted = false
 
+  // ---- Input / Runtime setup ----
+  const inputOpts = options.input
+  const inputEnabled = inputOpts === true || (typeof inputOpts === "object" && inputOpts !== null)
+  const inputCallbacks: XtermInputOptions = typeof inputOpts === "object" && inputOpts !== null ? inputOpts : {}
+  const exitOnCtrlC = options.exitOnCtrlC ?? inputEnabled
+  const handleFocusCycling = options.handleFocusCycling ?? inputEnabled
+
+  // Create xterm provider for input handling (only when input is enabled)
+  let provider: XtermProvider | null = null
+  let focusManager: ReturnType<typeof createFocusManager> | null = null
+  let runtimeContextValue: RuntimeContextValue | null = null
+
+  // Subscriber lists for RuntimeContext (no EventEmitter)
+  const inputHandlers = new Set<InputEventHandler>()
+  const pasteHandlers = new Set<PasteEventHandler>()
+
+  // Exit handler — uses doUnmount() indirection to avoid referencing
+  // the `unmount` const before it's declared.
+  let doUnmount: () => void = () => {}
+  const handleExit = (error?: Error) => {
+    doUnmount()
+  }
+
+  if (inputEnabled) {
+    provider = createXtermProvider(terminal)
+    focusManager = createFocusManager()
+
+    // Wire provider input to RuntimeContext subscribers + user callbacks
+    provider.onInput((chunk: string) => {
+      if (unmounted) return
+
+      // Check for bracketed paste
+      const pasteResult = parseBracketedPaste(chunk)
+      if (pasteResult) {
+        for (const handler of pasteHandlers) {
+          handler(pasteResult.content)
+        }
+        return
+      }
+
+      // Split and process individual keys
+      for (const keypress of splitRawInput(chunk)) {
+        processKey(keypress)
+      }
+    })
+
+    // Wire mouse events to user callback
+    if (inputCallbacks.onMouse) {
+      const onMouse = inputCallbacks.onMouse
+      provider.onMouse((info) => {
+        if (info.type === "press" && info.button <= 2) {
+          onMouse({ x: info.x, y: info.y, button: info.button })
+        }
+      })
+    }
+
+    // Wire focus events to user callback
+    if (inputCallbacks.onFocus) {
+      provider.onFocus(inputCallbacks.onFocus)
+    }
+
+    // Enable SGR mouse tracking
+    provider.enableMouse()
+
+    // Process a single keypress — handles Ctrl+C, focus cycling, then dispatches
+    function processKey(rawKey: string): void {
+      // Handle Ctrl+C
+      if (rawKey === "\x03" && exitOnCtrlC) {
+        handleExit()
+        return
+      }
+
+      // Focus cycling (Tab/Shift+Tab/Escape)
+      if (handleFocusCycling && focusManager) {
+        const treeRoot = getContainerRoot(container)
+        if (treeRoot) {
+          const [, key] = parseKey(rawKey)
+          if (key.tab && !key.shift) {
+            focusManager.focusNext(treeRoot)
+            reconciler.flushSyncWork()
+            return
+          }
+          if (key.tab && key.shift) {
+            focusManager.focusPrev(treeRoot)
+            reconciler.flushSyncWork()
+            return
+          }
+          if (key.escape && focusManager.activeElement) {
+            focusManager.blur()
+            reconciler.flushSyncWork()
+            return
+          }
+        }
+      }
+
+      // Parse and dispatch to RuntimeContext subscribers
+      const [input, key] = parseKey(rawKey)
+      runWithDiscreteEvent(() => {
+        for (const handler of inputHandlers) {
+          handler(input, key)
+        }
+      })
+      reconciler.flushSyncWork()
+
+      // Also call user callback
+      inputCallbacks.onKey?.(rawKey)
+    }
+
+    // Build RuntimeContext value
+    runtimeContextValue = {
+      on(event, handler) {
+        if (event === "input") {
+          const typed = handler as InputEventHandler
+          inputHandlers.add(typed)
+          return () => {
+            inputHandlers.delete(typed)
+          }
+        }
+        if (event === "paste") {
+          const typed = handler as unknown as PasteEventHandler
+          pasteHandlers.add(typed)
+          return () => {
+            pasteHandlers.delete(typed)
+          }
+        }
+        return () => {} // Unknown event — no-op cleanup
+      },
+      emit() {
+        // renderToXterm doesn't support view → runtime events
+      },
+      exit: handleExit,
+    }
+  }
+
+  // Wrap element with context providers when input is enabled
+  function wrapElement(el: ReactElement): ReactElement {
+    if (!inputEnabled || !runtimeContextValue || !focusManager) return el
+    return React.createElement(
+      FocusManagerContext.Provider,
+      { value: focusManager },
+      React.createElement(RuntimeContext.Provider, { value: runtimeContextValue }, el),
+    )
+  }
+
   function scheduleRender(): void {
     if (renderScheduled || unmounted) return
     renderScheduled = true
@@ -232,7 +410,7 @@ export function renderToXterm(
 
   function doRender(): void {
     if (unmounted) return
-    reconciler.updateContainerSync(currentElement, fiberRoot, null, null)
+    reconciler.updateContainerSync(wrapElement(currentElement), fiberRoot, null, null)
     reconciler.flushSyncWork()
 
     const prevBuffer = currentBuffer
@@ -253,66 +431,26 @@ export function renderToXterm(
   // deferred to requestAnimationFrame, which may not fire in iframes.
   doRender()
 
-  // ---- Input wiring ----
-  const disposables: Array<{ dispose(): void }> = []
-  const inputOpts = options.input
-  const inputEnabled = inputOpts === true || (typeof inputOpts === "object" && inputOpts !== null)
-  const inputCallbacks: XtermInputOptions = typeof inputOpts === "object" && inputOpts !== null ? inputOpts : {}
-
-  if (inputEnabled) {
-    // Enable SGR mouse tracking
-    terminal.write(MOUSE_ENABLE)
-
-    // Wire onData: parse mouse sequences, forward keyboard input
-    if (terminal.onData) {
-      const dataDisposable = terminal.onData((data: string) => {
-        const mouseMatch = data.match(SGR_MOUSE_RE)
-        if (mouseMatch) {
-          const btn = parseInt(mouseMatch[1]!, 10)
-          const x = parseInt(mouseMatch[2]!, 10) - 1 // 1-indexed → 0-indexed
-          const y = parseInt(mouseMatch[3]!, 10) - 1
-          const isPress = mouseMatch[4] === "M"
-          if (isPress && btn <= 2) {
-            inputCallbacks.onMouse?.({ x, y, button: btn })
-          }
-          return
-        }
-        inputCallbacks.onKey?.(data)
-      })
-      disposables.push(dataDisposable)
-    }
-
-    // Wire focus/blur tracking
-    if (terminal.textarea && inputCallbacks.onFocus) {
-      const textarea = terminal.textarea
-      const onFocus = () => inputCallbacks.onFocus!(true)
-      const onBlur = () => inputCallbacks.onFocus!(false)
-      textarea.addEventListener("focus", onFocus)
-      textarea.addEventListener("blur", onBlur)
-      disposables.push({
-        dispose() {
-          textarea.removeEventListener("focus", onFocus)
-          textarea.removeEventListener("blur", onBlur)
-        },
-      })
-    }
-  }
-
   const unmount = (): void => {
+    if (unmounted) return
     unmounted = true
-    // Clean up input wiring
-    for (const d of disposables) d.dispose()
-    disposables.length = 0
-    if (inputEnabled) {
-      terminal.write(MOUSE_DISABLE)
+
+    // Clean up provider (input wiring, mouse tracking)
+    if (provider) {
+      provider.disableMouse()
+      provider.dispose()
     }
     // Synchronous unmount ensures useEffect cleanups (e.g. clearInterval) run
     // before returning, preventing stale renders to the same terminal.
     reconciler.updateContainerSync(null, fiberRoot, null, null)
     reconciler.flushSyncWork()
+    // Clean up subscriber lists
+    inputHandlers.clear()
+    pasteHandlers.clear()
     // Show cursor on unmount
     terminal.write(CURSOR_SHOW)
   }
+  doUnmount = unmount
 
   return {
     rerender(newElement: ReactElement): void {

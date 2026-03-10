@@ -33,7 +33,6 @@
  * ```
  */
 
-import { EventEmitter } from "node:events"
 import type React from "react"
 import { useCallback, useId, useLayoutEffect, useMemo, useRef } from "react"
 import { RuntimeContext, type RuntimeContextValue } from "../context"
@@ -57,13 +56,29 @@ export interface InputBoundaryProps {
 }
 
 // =============================================================================
+// Subscriber list — lightweight replacement for EventEmitter
+// =============================================================================
+
+type InputHandler = (input: string, key: Key) => void
+type PasteHandler = (text: string) => void
+
+interface SubscriberList {
+  input: Set<InputHandler>
+  paste: Set<PasteHandler>
+}
+
+function createSubscriberList(): SubscriberList {
+  return { input: new Set(), paste: new Set() }
+}
+
+// =============================================================================
 // Helpers
 // =============================================================================
 
 /**
  * Reconstruct raw terminal data from parsed (input, key) pair.
  * This allows forwarding input from the parent layer stack to the
- * isolated child's RuntimeContext event emitter.
+ * isolated child's RuntimeContext subscriber list.
  */
 function toRawData(input: string, key: Key): string {
   const name = keyToName(key)
@@ -108,15 +123,15 @@ export function InputBoundary({
   exitKey = "Escape",
   children,
 }: InputBoundaryProps): React.JSX.Element {
-  // Create an isolated event emitter for children
-  const emitterRef = useRef<EventEmitter | null>(null)
-  if (!emitterRef.current) {
-    emitterRef.current = new EventEmitter()
+  // Create an isolated subscriber list for children (replaces EventEmitter)
+  const subscribersRef = useRef<SubscriberList | null>(null)
+  if (!subscribersRef.current) {
+    subscribersRef.current = createSubscriberList()
   }
-  const emitter = emitterRef.current
+  const subscribers = subscribersRef.current
 
   // Register a consuming layer in the parent when active.
-  // This layer intercepts ALL input and forwards to the isolated emitter.
+  // This layer intercepts ALL input and forwards to the isolated subscriber list.
   const activeRef = useRef(active)
   activeRef.current = active
 
@@ -140,35 +155,37 @@ export function InputBoundary({
         }
       }
 
-      // Forward to isolated scope
+      // Forward to isolated scope — parse from raw data so subscribers
+      // get the same (input, key) format as the parent RuntimeContext
       const raw = toRawData(input, key)
-      emitter.emit("input", raw)
+      const [parsedInput, parsedKey] = parseKey(raw)
+      for (const h of subscribers.input) {
+        h(parsedInput, parsedKey)
+      }
       return true
     },
-    [emitter],
+    [subscribers],
   )
 
   const layerId = useId()
   useInputLayer(`input-boundary-${layerId}`, handler)
 
-  // RuntimeContext — typed event bus for the isolated scope
+  // RuntimeContext — direct subscriber list for the isolated scope
   const runtimeContextValue = useMemo<RuntimeContextValue>(
     () => ({
       on(event, handler) {
         if (event === "input") {
-          const wrapped = (data: string | Buffer) => {
-            const [input, key] = parseKey(data)
-            ;(handler as (input: string, key: import("@silvery/tea/keys").Key) => void)(input, key)
-          }
-          emitter.on("input", wrapped)
+          const typed = handler as InputHandler
+          subscribers.input.add(typed)
           return () => {
-            emitter.removeListener("input", wrapped)
+            subscribers.input.delete(typed)
           }
         }
         if (event === "paste") {
-          emitter.on("paste", handler)
+          const typed = handler as unknown as PasteHandler
+          subscribers.paste.add(typed)
           return () => {
-            emitter.removeListener("paste", handler)
+            subscribers.paste.delete(typed)
           }
         }
         return () => {} // Unknown event — no-op cleanup
@@ -178,15 +195,16 @@ export function InputBoundary({
       },
       exit: () => {}, // InputBoundary doesn't control app exit
     }),
-    [emitter],
+    [subscribers],
   )
 
-  // Clean up emitter on unmount
+  // Clean up subscriber lists on unmount
   useLayoutEffect(() => {
     return () => {
-      emitter.removeAllListeners()
+      subscribers.input.clear()
+      subscribers.paste.clear()
     }
-  }, [emitter])
+  }, [subscribers])
 
   return (
     <RuntimeContext.Provider value={runtimeContextValue}>
