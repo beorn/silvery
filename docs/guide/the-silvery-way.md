@@ -449,12 +449,18 @@ expect(app.text).toContain("▶ Third item")  // What the user sees
 // Full buffer assertions — catches rendering bugs
 expect(app.getByText("Third item")).toHaveStyle({ inverse: true })
 
-// Termless for real-terminal testing (Alacritty, Ghostty, WezTerm backends)
-const term = createTermless({ backend: "ghostty" })
-await render(<App />, term)
-expect(term.screenshot()).toMatchSnapshot()
+// Resize the virtual terminal — test responsive layouts
+app.resize(40, 10)  // narrow terminal
+expect(app.text).not.toContain("Sidebar")  // collapsed at small widths
+app.resize(120, 40)  // wide terminal
+expect(app.text).toContain("Sidebar")  // visible again
+
+// Inspect the scrollback buffer — chat apps, logs, streaming output
+// Content that scrolled off-screen is still in the buffer
+expect(app.scrollback).toContain("Message from 10 minutes ago")
 ```
 
+Things you can't easily test any other way: terminal resize behavior, scrollback buffer contents, incremental rendering correctness.
 :::
 
 ::: danger 🩶 Tarnished
