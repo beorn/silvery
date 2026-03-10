@@ -26,7 +26,6 @@ export default defineConfig({
       { text: "Guide", link: "/guide/getting-started" },
       { text: "API", link: "/api/box" },
       { text: "Reference", link: "/reference/components" },
-      { text: "Deep Dives", link: "/deep-dives/architecture" },
       {
         text: "Examples",
         items: [
@@ -170,17 +169,6 @@ export default defineConfig({
           items: [
             { text: "Devtools", link: "/reference/devtools" },
             { text: "Recipes", link: "/reference/recipes" },
-          ],
-        },
-      ],
-      "/deep-dives/": [
-        {
-          text: "Deep Dives",
-          items: [
-            { text: "Architecture", link: "/deep-dives/architecture" },
-            { text: "Performance", link: "/deep-dives/performance" },
-            { text: "Containment", link: "/deep-dives/containment" },
-            { text: "Focus Routing", link: "/deep-dives/focus-routing" },
           ],
         },
       ],

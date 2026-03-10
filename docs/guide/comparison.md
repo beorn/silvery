@@ -105,7 +105,7 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 
 ## Unique Strengths
 
-> Performance claims below are summary figures. Reproduce with `bun run bench` for full benchmark data. See [performance.md](../deep-dives/performance.md) for optimization details.
+> Performance claims below are summary figures. Reproduce with `bun run bench` for full benchmark data.
 
 ### Silvery
 

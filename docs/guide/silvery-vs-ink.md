@@ -8,7 +8,7 @@
 
 See [migration guide](migration.md) for switching the rendering layer.
 
-> Performance numbers in this document are from the **Ink comparison benchmark suite**. For raw benchmark tables, reproduce with `bun run bench`. For the full optimization catalog, see [performance.md](../deep-dives/performance.md).
+> Performance numbers in this document are from the **Ink comparison benchmark suite**. Reproduce with `bun run bench` for raw benchmark tables.
 
 ---
 

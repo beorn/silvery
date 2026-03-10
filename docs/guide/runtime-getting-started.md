@@ -270,4 +270,4 @@ When your app outgrows `useState` and `useInput`, the progression guide shows ho
 
 - [Building an App](building-an-app.md) — from Counter to full TEA, one level at a time
 
-For API details, see [State Management](state-management.md) and [Event Handling](event-handling.md). You can also explore the [Components](../reference/components.md) and [Hooks](../reference/hooks.md) references, or dive into [Architecture](../deep-dives/architecture.md) for the five-phase pipeline internals.
+For API details, see [State Management](state-management.md) and [Event Handling](event-handling.md). You can also explore the [Components](../reference/components.md) and [Hooks](../reference/hooks.md) references.

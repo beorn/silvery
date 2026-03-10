@@ -345,5 +345,4 @@ For the full API, see [Plugins Reference](../reference/plugins.md).
 - [State Management](state-management.md) — createApp, createSlice, tea() middleware, createStore
 - [Runtime Layers](runtime-layers.md) — createApp, createRuntime, createStore API reference
 - [Input Features](../reference/input-features.md) — keyboard, mouse, hotkeys, modifier symbols
-- [Focus Routing](../deep-dives/focus-routing.md) — focus-based input routing pattern
 - [Plugins Reference](../reference/plugins.md) — withCommands, withKeybindings, withDiagnostics API
