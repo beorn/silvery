@@ -13,7 +13,7 @@ function ResponsiveCard() {
 }
 ```
 
-This is Silvery's core innovation — components know their size _during_ render, not after.
+Components know their size _during_ render, not after — no post-layout effects or prop drilling needed.
 
 ## useScreenRect
 

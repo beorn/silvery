@@ -4,7 +4,7 @@ layout: home
 hero:
   name: "Silvery"
   text: "Polished Terminal UIs in React"
-  tagline: "A React renderer for terminal applications — responsive layouts, scrollable containers, and lightning-fast incremental updates. Optional framework layers add 30+ components, theming, and TEA state machines."
+  tagline: "A React renderer for terminal applications — responsive layouts, scrollable containers, per-node incremental rendering, and comprehensive terminal protocol support. Optional framework layers add 30+ components, theming, and TEA state machines."
   actions:
     - theme: brand
       text: Get Started
@@ -14,12 +14,12 @@ hero:
       link: https://github.com/beorn/silvery
 
 features:
-  - title: Familiar Ink API
-    details: "Same Box/Text/useInput API you already know. Compatibility layers available for migrating existing apps with minimal changes."
+  - title: Familiar React API
+    details: "Same Box/Text/useInput patterns you already know. If you've used Ink, most code works with just an import change."
     link: /guide/silvery-vs-ink
     linkText: Ink comparison
   - title: Pure TypeScript
-    details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. Constant memory in long sessions."
+    details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. No memory leaks in long-running sessions."
   - title: 100x+ Faster Updates
     details: "Per-node dirty tracking with 7 independent flags. Only changed nodes re-render. Typical interactive updates in ~169us for 1000 nodes."
     link: /guide/silvery-vs-ink#performance

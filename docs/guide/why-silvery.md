@@ -1,6 +1,6 @@
 # Why Silvery?
 
-Silvery exists because of a fundamental constraint in how React terminal frameworks handle layout: **components can't know their own size during render**.
+Silvery started from a single frustration — **React terminal components can't know their own size during render** — and grew into a ground-up reimplementation that also addresses incremental rendering, terminal protocol support, and native dependency elimination.
 
 ## The Core Problem
 
@@ -23,12 +23,19 @@ No prop drilling, no post-render measurement, no `width: 0` on first paint. This
 
 ## What Else Comes With It
 
-Beyond responsive layout, Silvery provides a complete terminal app toolkit:
+Beyond responsive layout, the renderer provides:
 
-- **Fast interactive updates** — per-node dirty tracking means only changed nodes re-render ([benchmarks](/guide/silvery-vs-ink#performance))
-- **Stable memory** — pure JavaScript layout engine with normal garbage collection
-- **Rich interaction** — mouse events, spatial focus navigation, command system with keybindings, input layer stack
-- **30+ built-in components** — TextArea, VirtualList, Table, CommandPalette, and more ([component catalog](/guide/components))
-- **Zero native dependencies** — pure TypeScript, runs on Node, Bun, and Deno
+- **Per-node incremental rendering** — 7 independent dirty flags per node; only changed nodes re-render ([benchmarks](/guide/silvery-vs-ink#performance))
+- **ANSI-aware cell compositing** — proper style stacking, not just string concatenation
+- **Comprehensive terminal protocol support** — Kitty keyboard, SGR mouse, OSC 52 clipboard, synchronized output, Sixel/Kitty graphics, and more ([full list](/guide/silvery-vs-ink#terminal-protocol-coverage))
+- **Pure TypeScript** — no WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno
+- **Stable memory** — normal JavaScript garbage collection, no WASM heap growth
+
+Optional packages extend the renderer into a full framework:
+
+- **30+ components** (`@silvery/ui`) — TextArea, VirtualList, Table, CommandPalette, and more ([component catalog](/guide/components))
+- **Rich interaction** (`@silvery/term`) — mouse events, spatial focus navigation, command system with keybindings, input layer stack
+- **TEA state machines** (`@silvery/tea`) — pure `(action, state) → [state, effects]` for testing, replay, and undo
+- **Theming** (`@silvery/theme`) — 38 palettes with semantic color tokens
 
 If you know React, you know Silvery — the core API (`Box`, `Text`, `useInput`, `render`) is familiar. See the [getting started guide](/getting-started/quick-start) to try it, or the [detailed comparison](/guide/silvery-vs-ink) for technical details.
