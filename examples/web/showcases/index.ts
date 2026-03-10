@@ -6,7 +6,7 @@
  * mapping demo names to their React components.
  */
 
-export { emitInput, emitMouse, setTermFocused } from "./shared.js"
+export { emitMouse, setTermFocused } from "./shared.js"
 
 import { DashboardShowcase } from "./dashboard.js"
 import { CodingAgentShowcase } from "./coding-agent.js"

@@ -5,8 +5,8 @@
  */
 
 import React, { useState } from "react"
-import { Box, Text, useContentRect } from "@silvery/term/xterm/index.ts"
-import { useInput, useMouseClick, KeyHints } from "./shared.js"
+import { Box, Text, useContentRect, useInput } from "@silvery/term/xterm/index.ts"
+import { useMouseClick, KeyHints } from "./shared.js"
 
 export function FocusShowcase(): JSX.Element {
   const [focusedPanel, setFocusedPanel] = useState(0)

@@ -6,9 +6,9 @@
  */
 
 import React, { useState } from "react"
-import { Box, Text, useContentRect } from "@silvery/term/xterm/index.ts"
+import { Box, Text, useContentRect, useInput } from "@silvery/term/xterm/index.ts"
 import { builtinPalettes, type ColorPalette } from "@silvery/theme"
-import { useInput, useMouseClick, KeyHints } from "./shared.js"
+import { useMouseClick, KeyHints } from "./shared.js"
 
 // --- Data ---
 

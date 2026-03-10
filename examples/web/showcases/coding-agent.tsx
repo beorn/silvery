@@ -6,8 +6,8 @@
  */
 
 import React, { useState, useEffect, useRef } from "react"
-import { Box, Text } from "@silvery/term/xterm/index.ts"
-import { useInput, useTermFocused } from "./shared.js"
+import { Box, Text, useInput } from "@silvery/term/xterm/index.ts"
+import { useTermFocused } from "./shared.js"
 
 // --- Types ---
 

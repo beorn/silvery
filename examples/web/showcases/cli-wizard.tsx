@@ -6,8 +6,8 @@
  */
 
 import React, { useState } from "react"
-import { Box, Text } from "@silvery/term/xterm/index.ts"
-import { useInput, useMouseClick, KeyHints } from "./shared.js"
+import { Box, Text, useInput } from "@silvery/term/xterm/index.ts"
+import { useMouseClick, KeyHints } from "./shared.js"
 
 // --- Types ---
 

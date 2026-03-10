@@ -1,42 +1,12 @@
 /**
  * Shared infrastructure for browser showcase components.
  *
- * Input/mouse/focus event buses bridge xterm.js I/O to React hooks.
- * Each showcase imports these hooks to handle keyboard and mouse input.
+ * Mouse and focus event buses bridge xterm.js I/O to React hooks.
+ * Keyboard input is handled by silvery's RuntimeContext (via useInput from @silvery/term/xterm).
  */
 
 import React, { useState, useEffect, useRef } from "react"
 import { Box, Text } from "@silvery/term/xterm/index.ts"
-import { parseKey, type Key } from "@silvery/tea"
-
-// ============================================================================
-// Input Event Bus
-// ============================================================================
-
-export type KeyInfo = Key
-
-export type InputHandler = (input: string, key: KeyInfo) => void
-
-const inputListeners = new Set<InputHandler>()
-
-/** Called from showcase-app.tsx via term.onData() */
-export function emitInput(data: string): void {
-  const [input, key] = parseKey(data)
-  for (const cb of inputListeners) cb(input, key)
-}
-
-/** Subscribe to keyboard input */
-export function useInput(handler: InputHandler): void {
-  const ref = useRef(handler)
-  ref.current = handler
-  useEffect(() => {
-    const cb: InputHandler = (i, k) => ref.current(i, k)
-    inputListeners.add(cb)
-    return () => {
-      inputListeners.delete(cb)
-    }
-  }, [])
-}
 
 // ============================================================================
 // Mouse Event Bus
@@ -52,7 +22,7 @@ export type MouseHandler = (info: MouseInfo) => void
 
 const mouseListeners = new Set<MouseHandler>()
 
-/** Called from showcase-app.tsx via term.onBinary() */
+/** Called from showcase-app.tsx via renderToXterm input.onMouse */
 export function emitMouse(x: number, y: number, button: number): void {
   for (const cb of mouseListeners) cb({ x, y, button })
 }
@@ -77,7 +47,7 @@ export function useMouseClick(handler: MouseHandler): void {
 let _termFocused = false
 const focusListeners = new Set<(focused: boolean) => void>()
 
-/** Called from viewer-app.tsx when xterm gains/loses focus */
+/** Called from showcase-app.tsx via renderToXterm input.onFocus */
 export function setTermFocused(focused: boolean): void {
   _termFocused = focused
   for (const cb of focusListeners) cb(focused)

@@ -11,7 +11,7 @@
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
 import { renderToXterm } from "../../packages/term/src/xterm/index.js"
-import { SHOWCASES, emitInput, emitMouse, setTermFocused } from "./showcases/index.js"
+import { SHOWCASES, emitMouse, setTermFocused } from "./showcases/index.js"
 import React from "react"
 
 // =============================================================================
@@ -802,24 +802,8 @@ function createViewerApp(root: HTMLElement): void {
   term.open(termWrap)
   fitAddon.fit()
 
-  // Wire keyboard: when terminal has focus, forward to demo
-  term.onData((data) => emitInput(data))
-
-  // Wire mouse clicks: convert pixel coordinates to cell coordinates
-  const screenEl = termWrap.querySelector(".xterm-screen")
-  if (screenEl) {
-    screenEl.addEventListener("click", (e: Event) => {
-      const me = e as MouseEvent
-      const rect = (screenEl as HTMLElement).getBoundingClientRect()
-      const cellWidth = rect.width / term.cols
-      const cellHeight = rect.height / term.rows
-      const x = Math.floor((me.clientX - rect.left) / cellWidth)
-      const y = Math.floor((me.clientY - rect.top) / cellHeight)
-      emitMouse(x, y, 0)
-    })
-  }
-
   // Track terminal focus state for showcase cursor/outline
+  // (Keyboard input and mouse are handled by renderToXterm's input option via RuntimeContext)
   term.textarea?.addEventListener("focus", () => {
     setTermFocused(true)
     sidebarFocused = false
@@ -909,7 +893,12 @@ function createViewerApp(root: HTMLElement): void {
       }
 
       fitAddon.fit()
-      currentInstance = renderToXterm(React.createElement(demo.component), term)
+      currentInstance = renderToXterm(React.createElement(demo.component), term, {
+        input: {
+          onMouse: ({ x, y, button }) => emitMouse(x, y, button),
+          onFocus: (focused) => setTermFocused(focused),
+        },
+      })
     })
   }
 
