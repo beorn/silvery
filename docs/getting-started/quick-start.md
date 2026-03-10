@@ -94,31 +94,27 @@ await render(<App />, term)
 
 Each `SizedBox` will display its actual computed dimensions. No prop threading needed!
 
-## Scrollable Lists
+## Interactive Lists
 
-Silvery handles scrolling automatically. Just use `overflow="scroll"`:
+`SelectList` gives you keyboard-navigable selection out of the box — arrow keys, j/k, Home/End, disabled items, and scroll windowing. No manual `useInput()` or cursor state needed:
 
 ```tsx
-import { Box, Text, render, useInput, createTerm } from "silvery"
-import { useState } from "react"
-
-const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`)
+import { Box, Text, SelectList, render, createTerm } from "silvery"
 
 function App() {
-  const [selected, setSelected] = useState(0)
-
-  useInput((input, key) => {
-    if (key.downArrow) setSelected((s) => Math.min(s + 1, items.length - 1))
-    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0))
-  })
-
   return (
-    <Box flexDirection="column" height={10} overflow="scroll" scrollTo={selected}>
-      {items.map((item, i) => (
-        <Text key={i} inverse={i === selected}>
-          {item}
-        </Text>
-      ))}
+    <Box flexDirection="column" padding={1}>
+      <Text bold>Pick a framework:</Text>
+      <SelectList
+        items={[
+          { label: "React", value: "react" },
+          { label: "Vue", value: "vue" },
+          { label: "Svelte", value: "svelte" },
+          { label: "Angular (coming soon)", value: "angular", disabled: true },
+        ]}
+        onSelect={(item) => console.log(`Selected: ${item.value}`)}
+        maxVisible={5}
+      />
     </Box>
   )
 }
@@ -127,7 +123,31 @@ using term = createTerm()
 await render(<App />, term)
 ```
 
-Silvery measures all children, calculates which are visible, and only renders content for visible items. No height estimation or virtualization config needed.
+For large datasets, use `VirtualList` with `interactive` mode — it renders only visible items and handles keyboard navigation (j/k, Page Up/Down, Home/End):
+
+```tsx
+import { Box, VirtualList, Text, render, createTerm } from "silvery"
+
+const items = Array.from({ length: 1000 }, (_, i) => `Item ${i + 1}`)
+
+function App() {
+  return (
+    <VirtualList
+      items={items}
+      height={15}
+      itemHeight={1}
+      interactive
+      renderItem={(item, index, meta) => (
+        <Text inverse={meta?.isSelected}> {item} </Text>
+      )}
+      onSelect={(index) => console.log(`Selected: ${items[index]}`)}
+    />
+  )
+}
+
+using term = createTerm()
+await render(<App />, term)
+```
 
 ## Next Steps
 
