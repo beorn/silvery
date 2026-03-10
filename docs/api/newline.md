@@ -76,8 +76,12 @@ function Header({ title }: { title: string }) {
   );
 }
 
-<Box flexDirection="column">
-  <Header title="My App" />
-  <Text>Content goes here</Text>
-</Box>;
+function App() {
+  return (
+    <Box flexDirection="column">
+      <Header title="My App" />
+      <Text>Content goes here</Text>
+    </Box>
+  );
+}
 ```

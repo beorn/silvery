@@ -308,12 +308,17 @@ Basic text input with onChange/onSubmit:
 
 ```tsx
 import { TextInput } from "@silvery/term";
-<TextInput
-  value={query}
-  onChange={setQuery}
-  onSubmit={(value) => console.log("Submitted:", value)}
-  placeholder="type here..."
-/>;
+
+function Search() {
+  return (
+    <TextInput
+      value={query}
+      onChange={setQuery}
+      onSubmit={(value) => console.log("Submitted:", value)}
+      placeholder="type here..."
+    />
+  );
+}
 ```
 
 ## TextArea
@@ -524,16 +529,21 @@ A data table with headers, column alignment, and auto-sized columns.
 
 ```tsx
 import { Table } from "@silvery/term";
-<Table
-  columns={[
-    { header: "Name", key: "name" },
-    { header: "Age", key: "age", align: "right" },
-  ]}
-  data={[
-    { name: "Alice", age: 30 },
-    { name: "Bob", age: 25 },
-  ]}
-/>;
+
+function Users() {
+  return (
+    <Table
+      columns={[
+        { header: "Name", key: "name" },
+        { header: "Age", key: "age", align: "right" },
+      ]}
+      data={[
+        { name: "Alice", age: 30 },
+        { name: "Bob", age: 25 },
+      ]}
+    />
+  );
+}
 ```
 
 | Prop         | Type                                          | Description                                             |

@@ -15,10 +15,14 @@ The primary layout component. Uses Yoga (flexbox) for layout.
 ```tsx
 import { Box, Text } from "silvery";
 
-<Box flexDirection="row" justifyContent="space-between">
-  <Text>Left</Text>
-  <Text>Right</Text>
-</Box>;
+function Layout() {
+  return (
+    <Box flexDirection="row" justifyContent="space-between">
+      <Text>Left</Text>
+      <Text>Right</Text>
+    </Box>
+  );
+}
 ```
 
 ### Scrolling
