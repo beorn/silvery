@@ -140,6 +140,58 @@ import { Text } from "silvery"
 <Text>{chalk.green("Success")} and {chalk.yellow("warning")}</Text>
 ```
 
+## Compat Layer Architecture
+
+The Ink compatibility layer (`@silvery/compat`) is built as thin adapters that bridge Ink's APIs to silvery-native systems. Understanding the architecture helps you decide when to use Ink-compat hooks vs silvery-native ones.
+
+### How It Works
+
+`withInk()` composes two independent plugins:
+
+```typescript
+// withInk() = withInkCursor() + withInkFocus()
+const app = pipe(
+  createApp(store),
+  withReact(<App />),
+  withTerminal(process),
+  withInk(), // applies both adapters
+)
+```
+
+| Plugin | Ink API | Bridges to | Size |
+|--------|---------|------------|------|
+| `withInkCursor()` | `useCursor()` | silvery `CursorStore` | ~50 lines |
+| `withInkFocus()` | `useFocus()`, `useFocusManager()` | `InkFocusProvider` (flat list) | ~45 lines |
+
+Error handling is **not part of the compat layer** — silvery's built-in `SilveryErrorBoundary` wraps all apps automatically in `createApp()`.
+
+### Ink Focus vs Silvery Focus
+
+The two focus systems have fundamentally different designs:
+
+| | Ink Focus (`useFocus`) | Silvery Focus (`useFocusable`) |
+|---|---|---|
+| **Model** | Flat list of component-registered IDs | Tree of layout nodes with spatial awareness |
+| **Navigation** | Tab/Shift+Tab only | Tab, arrow keys (spatial), click-to-focus |
+| **Scoping** | None — all focusables in one global list | Focus scopes isolate regions (e.g., modal dialogs) |
+| **Registration** | Components call `add(id)` / `remove(id)` | Automatic from layout tree |
+| **Events** | None | DOM-style focus/blur with capture/target/bubble |
+
+**For new code, use silvery's focus system.** The Ink compat focus exists for apps migrating from Ink that already use `useFocus()` / `useFocusManager()`.
+
+### Ink Cursor vs Silvery Cursor
+
+Both systems write to the same `CursorStore` — `withInkCursor()` just provides the `InkCursorStoreCtx` context that Ink's `useCursor()` hook reads from. The underlying cursor mechanism is identical.
+
+### Gradual Migration Path
+
+You can incrementally drop Ink adapters as you adopt silvery-native APIs:
+
+1. **Start**: `withInk()` — everything works like Ink
+2. **Replace focus**: Switch from `useFocus()` to `useFocusable()`, drop `withInkFocus()`
+3. **Replace cursor**: Switch from Ink's `useCursor()` to silvery's `useCursor()`, drop `withInkCursor()`
+4. **Done**: No compat layer needed
+
 ## Silvery-Only Features
 
 These features have no Ink/Chalk equivalent:

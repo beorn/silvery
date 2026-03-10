@@ -126,6 +126,18 @@ expect(app.text).toContain("Hello")
 
 Ink and Chalk compatibility layers. Usually accessed via `silvery/ink` and `silvery/chalk` entry points rather than directly.
 
+The Ink compat layer is decomposed into composable plugins:
+
+| Plugin | What |
+|--------|------|
+| `withInkCursor()` | Bridges Ink's `useCursor()` to silvery's `CursorStore` (~50 lines) |
+| `withInkFocus()` | Provides Ink's flat-list focus system (`useFocus`/`useFocusManager`) (~45 lines) |
+| `withInk()` | Convenience: composes both adapters (~10 lines) |
+
+Import from `@silvery/compat/with-ink`, `@silvery/compat/with-ink-cursor`, or `@silvery/compat/with-ink-focus`. Also re-exported from `@silvery/tea/plugins`.
+
+See [Compat Layer Architecture](/reference/compatibility#compat-layer-architecture) for how the adapters bridge Ink APIs to silvery-native systems.
+
 ## See Also
 
 - [Import Conventions](/guide/imports) -- Detailed import guide

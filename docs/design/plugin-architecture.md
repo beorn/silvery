@@ -1,146 +1,93 @@
-# Plugin Architecture: withReact() + withInk()
+# Plugin Architecture
 
-## Status: Partially Implemented
+## Status: Implemented
 
-The `.Root` component pattern is implemented — plugins set `app.Root` to compose providers.
-The test renderer retains `wrapRoot` as a direct option for `render()`.
+Plugins are functions `(app) => enhancedApp` that compose via `pipe()`. The `.Root` component pattern lets plugins wrap the React element tree with providers.
 
-## Problem
+## Core Concepts
 
-Silvery has three entry points for rendering React elements, each with its own provider stack:
+### Plugin Shape
 
-1. **`render()`** (test renderer, `renderer.ts`) — wraps with `CursorProvider > TermContext > StdoutContext > FocusManagerContext > RuntimeContext`, plus optional `wrapRoot` callback
-2. **`run()`** / **`createApp()`** (runtime, `create-app.tsx`) — wraps with `CursorProvider > TermContext > StdoutContext > FocusManagerContext > RuntimeContext`, plus optional `Root` component from plugins
-3. **`renderToXterm()`** (xterm, `xterm/index.ts`) — no provider wrapping at all
-4. **Ink compat** (`ink.ts`) — reimplements provider wrapping: `CursorProvider > InkCursorStoreCtx > InkFocusProvider > InkErrorBoundary`, applied via `app.Root` (pipe) or `wrapRoot` (test renderer)
-
-Problems:
-
-- **Duplication**: Each entry point builds its own provider tree, with slight variations
-- **Ink reimplements**: The compat layer reimplements ~300 lines of render pipeline to add its providers
-- **xterm has nothing**: Web showcases have no access to silvery's focus management, cursor tracking, etc.
-
-## Proposed Solution: Composable Plugins
-
-A plugin is a function that wraps a React element with additional providers/behavior:
+A plugin is a function that takes an app and returns an enhanced app:
 
 ```typescript
-type Plugin = (element: ReactElement) => ReactElement
+type Plugin<T, U> = (app: T) => T & U
 ```
 
-### Built-in Plugins
+Plugins set `app.Root` — a React component that wraps children with providers. They compose by preserving the previous Root:
 
 ```typescript
-// Core React reconciler contexts (always applied)
-function withSilvery(opts: { term: Term; focusManager?: FocusManager; cursorStore?: CursorStore }): Plugin {
-  return (el) =>
-    createElement(
-      CursorProvider,
-      { store: opts.cursorStore ?? createCursorStore() },
-      createElement(
-        TermContext.Provider,
-        { value: opts.term },
-        createElement(
-          StdoutContext.Provider,
-          { value: { stdout: opts.term.stdout, write: () => {} } },
-          createElement(
-            FocusManagerContext.Provider,
-            { value: opts.focusManager ?? createFocusManager() },
-            createElement(RuntimeContext.Provider, { value: runtimeValue }, el),
-          ),
-        ),
-      ),
-    )
-}
-
-// Ink compatibility layer (adds Ink-specific contexts)
-function withInk(opts?: { cursorStore?: CursorStore }): Plugin {
-  return (el) =>
-    createElement(
-      InkCursorStoreCtx.Provider,
-      { value: opts?.cursorStore ?? createCursorStore() },
-      createElement(InkFocusProvider, null, createElement(InkErrorBoundary, null, el)),
-    )
-}
-
-// Theme provider
-function withTheme(palette: ColorPalette): Plugin {
-  return (el) => createElement(ThemeProvider, { palette }, el)
-}
+const PrevRoot = app.Root ?? Fragment
+const MyRoot = ({ children }) => (
+  <MyProvider>
+    <PrevRoot>{children}</PrevRoot>
+  </MyProvider>
+)
 ```
 
-### Composition
+### pipe() Composition
 
-Plugins compose via simple function chaining:
+Plugins compose left-to-right via `pipe()`:
 
 ```typescript
-function composePlugins(...plugins: Plugin[]): Plugin {
-  return (el) => plugins.reduceRight((acc, plugin) => plugin(acc), el)
-}
+const app = pipe(
+  createApp(store),
+  withReact(<App />),
+  withTerminal(process),
+  withInk(),
+)
+await app.run()
 ```
 
-### Usage
+Later plugins wrap earlier ones — `withInk()` wraps `withTerminal()` which wraps `withReact()`.
+
+### Built-in Error Boundary
+
+`SilveryErrorBoundary` is silvery's default error boundary, applied as the **outermost** wrapper in `createApp()` and `run()`. All apps get error catching for free — plugins don't need their own error boundaries.
+
+## Built-in Plugins
+
+### Core (silvery)
+
+| Plugin | What | Package |
+|--------|------|---------|
+| `withReact(<Element />)` | Mounts React element tree | `@silvery/tea` |
+| `withTerminal(process)` | Terminal I/O (stdin/stdout, raw mode, alternate screen) | `@silvery/tea` |
+| `withFocus()` | Tree-based focus management (scopes, spatial nav) | `@silvery/tea` |
+| `withDomEvents()` | DOM-style event dispatch (capture/target/bubble) | `@silvery/tea` |
+| `withCommands(opts)` | Named commands with keybindings and introspection | `@silvery/tea` |
+| `withKeybindings(opts)` | Configurable keybinding resolution | `@silvery/tea` |
+| `withDiagnostics()` | Render invariant checking | `@silvery/tea` |
+
+### Ink Compatibility (`@silvery/compat`)
+
+The Ink compat layer is decomposed into composable plugins:
+
+| Plugin | What | Lines |
+|--------|------|-------|
+| `withInkCursor()` | Bridges Ink's `useCursor` to silvery's `CursorStore` | ~50 |
+| `withInkFocus()` | Provides Ink's flat-list focus (`useFocus`/`useFocusManager`) | ~45 |
+| `withInk()` | Composes `withInkCursor()` + `withInkFocus()` | ~10 |
+
+`withInk()` is the convenience plugin — it applies both adapters in one call. For fine-grained control, use the individual plugins:
 
 ```typescript
-// Pure silvery app
-await run(<App />, {
-  plugins: [withTheme(catppuccinMocha)],
-})
+// All-in-one (most apps)
+const app = pipe(createApp(store), withReact(<App />), withTerminal(process), withInk())
 
-// Ink compat app
-const app = render(<InkApp />, {
-  plugins: [withInk()],
-})
-
-// xterm.js showcase with focus + theme
-const instance = renderToXterm(<Showcase />, term, {
-  plugins: [withTheme(nord)],
-})
-
-// Custom plugin
-function withAnalytics(): Plugin {
-  return (el) => createElement(AnalyticsProvider, null, el)
-}
-
-await run(<App />, {
-  plugins: [withTheme(dracula), withAnalytics()],
-})
+// Fine-grained (pick what you need)
+const app = pipe(createApp(store), withReact(<App />), withTerminal(process), withInkCursor())
 ```
 
-### Implementation Plan
+**Why decomposed?** Ink's `useCursor` and `useFocus` are independent APIs. An app using only `useCursor` shouldn't pay for the focus system. Decomposition also makes the mapping clearer: each thin adapter bridges one Ink API to its silvery-native equivalent.
 
-1. **Phase 1: `.Root` component pattern** (DONE)
-   - Plugins set `app.Root` — a React component wrapping children with providers
-   - Plugins compose: `const PrevRoot = app.Root ?? Fragment`
-   - `createApp()` reads `Root` from run options, applies inside silvery's core providers
-   - `render()` (test) retains `wrapRoot` callback for direct usage
-   - `withInk()` sets `app.Root` and injects it into run options
-
-2. **Phase 2: Add withTheme() to showcases**
-   - Apply `withTheme()` to all web showcases
-   - Enables theme switching in the showcase viewer
-
-### Design Principles
+## Design Principles
 
 - **Plugins are just React providers** — no custom API, no registration
 - **Composition order = nesting order** — later plugins wrap earlier ones
 - **Core providers always present** — plugins add on top of silvery's base stack
 - **`.Root` is the plugin extension point** — composable via `PrevRoot` pattern
-
-### Current Pattern
-
-```typescript
-// pipe() composition — plugins set app.Root:
-const app = pipe(
-  createApp(store),
-  withReact(<Board />),
-  withTerminal(process),
-  withInk(),  // sets app.Root to Ink providers wrapping PrevRoot
-)
-
-// Test renderer — wrapRoot still works for direct usage:
-render(<App />, { wrapRoot: (el) => <InkProviders>{el}</InkProviders> })
-```
+- **Error boundary is built-in** — `SilveryErrorBoundary` wraps everything in `createApp()`
 
 ## Alternatives Considered
 
