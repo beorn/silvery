@@ -1180,6 +1180,28 @@ function CLIWizardShowcase(): JSX.Element {
     }
   })
 
+  // Click to select options in select steps
+  useMouseClick(({ y }) => {
+    if (done) return
+    const currentStep = WIZARD_STEPS[state.step]
+    if (!currentStep || currentStep.type !== "select") return
+
+    // Calculate where options start in the terminal output:
+    // padding(1) + title(1) + version(1) + marginBottom(1) + progress(1) + marginBottom(1) +
+    // header "Configure..."(1) + pipe(1) = 8 rows of header
+    // Each completed step: label(1) + pipe(1) = 2 rows
+    // Active step label(1) = 1 row, then options start
+    const headerRows = 8
+    const completedRows = state.step * 2
+    const activeLabel = 1
+    const optionsStartY = headerRows + completedRows + activeLabel
+
+    const clickedOption = y - optionsStartY
+    if (clickedOption >= 0 && clickedOption < currentStep.options!.length) {
+      setState((s) => ({ ...s, cursor: clickedOption }))
+    }
+  })
+
   // Progress bar: completed steps / total
   const progress = Math.min(state.step, WIZARD_STEPS.length)
   const progressWidth = 20
