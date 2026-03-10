@@ -101,5 +101,19 @@ export type { DiagnosticOptions } from "./with-diagnostics"
 export { withInk } from "@silvery/compat/with-ink"
 export type { WithInkOptions, AppWithInk } from "@silvery/compat/with-ink"
 
+// =============================================================================
+// withInkCursor — Ink cursor compatibility adapter (from @silvery/compat)
+// =============================================================================
+
+export { withInkCursor } from "@silvery/compat/with-ink-cursor"
+export type { WithInkCursorOptions, AppWithInkCursor } from "@silvery/compat/with-ink-cursor"
+
+// =============================================================================
+// withInkFocus — Ink focus compatibility adapter (from @silvery/compat)
+// =============================================================================
+
+export { withInkFocus } from "@silvery/compat/with-ink-focus"
+export type { WithInkFocusOptions, AppWithInkFocus } from "@silvery/compat/with-ink-focus"
+
 // Scheduler errors (for catching incremental render mismatches)
 export { IncrementalRenderMismatchError } from "@silvery/term/scheduler"

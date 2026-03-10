@@ -139,6 +139,10 @@ export type { VirtualViewProps, VirtualViewHandle } from "@silvery/ui/components
 export { ErrorBoundary } from "@silvery/ui/components/ErrorBoundary"
 export type { ErrorBoundaryProps } from "@silvery/ui/components/ErrorBoundary"
 
+// Lightweight runtime-level error boundary (used as default root in createApp/run)
+export { SilveryErrorBoundary } from "./error-boundary"
+export type { SilveryErrorBoundaryProps } from "./error-boundary"
+
 // Input Components
 export { TextInput } from "@silvery/ui/components/TextInput"
 export type { TextInputProps, TextInputHandle } from "@silvery/ui/components/TextInput"

@@ -24,6 +24,14 @@
     "./with-ink": {
       "types": "./src/with-ink.ts",
       "import": "./src/with-ink.ts"
+    },
+    "./with-ink-cursor": {
+      "types": "./src/with-ink-cursor.ts",
+      "import": "./src/with-ink-cursor.ts"
+    },
+    "./with-ink-focus": {
+      "types": "./src/with-ink-focus.ts",
+      "import": "./src/with-ink-focus.ts"
     }
   },
   "dependencies": {

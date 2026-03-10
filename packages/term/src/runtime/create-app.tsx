@@ -53,6 +53,7 @@ import {
   StdoutContext,
   TermContext,
 } from "@silvery/react/context"
+import { SilveryErrorBoundary } from "@silvery/react/error-boundary"
 import { createFocusManager } from "@silvery/tea/focus-manager"
 import { createCursorStore, CursorProvider } from "@silvery/react/hooks/useCursor"
 import { createFocusEvent, dispatchFocusEvent } from "@silvery/tea/focus-events"
@@ -833,23 +834,26 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   // Wrap element with all required providers
+  // SilveryErrorBoundary is always the outermost wrapper — catches render errors gracefully.
   // If a Root component is provided (e.g., from withInk), wrap the element with it
   // inside silvery's contexts so it can access Term, Stdout, FocusManager, Runtime.
   const Root = RootComponent ?? React.Fragment
   const wrappedElement = (
-    <CursorProvider store={cursorStore}>
-      <TermContext.Provider value={mockTerm}>
-        <StdoutContext.Provider value={{ stdout: mockStdout, write: () => {} }}>
-          <FocusManagerContext.Provider value={focusManager}>
-            <RuntimeContext.Provider value={runtimeContextValue}>
-              <Root>
-                <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
-              </Root>
-            </RuntimeContext.Provider>
-          </FocusManagerContext.Provider>
-        </StdoutContext.Provider>
-      </TermContext.Provider>
-    </CursorProvider>
+    <SilveryErrorBoundary>
+      <CursorProvider store={cursorStore}>
+        <TermContext.Provider value={mockTerm}>
+          <StdoutContext.Provider value={{ stdout: mockStdout, write: () => {} }}>
+            <FocusManagerContext.Provider value={focusManager}>
+              <RuntimeContext.Provider value={runtimeContextValue}>
+                <Root>
+                  <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
+                </Root>
+              </RuntimeContext.Provider>
+            </FocusManagerContext.Provider>
+          </StdoutContext.Provider>
+        </TermContext.Provider>
+      </CursorProvider>
+    </SilveryErrorBoundary>
   )
 
   // Performance instrumentation — count renders per event

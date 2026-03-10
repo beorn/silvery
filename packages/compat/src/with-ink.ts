@@ -1,8 +1,11 @@
 /**
  * withInk() — Composable plugin for Ink compatibility.
  *
- * Wraps a React element tree with Ink-specific providers (error boundary,
- * focus system, cursor store) via the `.Root` component pattern.
+ * Composes withInkCursor() and withInkFocus() to wrap a React element tree
+ * with Ink-specific providers (focus system, cursor store).
+ *
+ * Error handling is provided by silvery's built-in SilveryErrorBoundary
+ * in createApp(), so withInk() no longer includes its own error boundary.
  *
  * ```tsx
  * const app = pipe(
@@ -16,10 +19,11 @@
  * @packageDocumentation
  */
 
-import React, { Component, Fragment, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
-import { createCursorStore, CursorProvider, type CursorStore } from "@silvery/react/hooks/useCursor"
+import React, { createContext, useCallback, useEffect, useMemo, useState } from "react"
+import type { CursorStore } from "@silvery/react/hooks/useCursor"
 import { EventEmitter } from "node:events"
-import type { ReactElement } from "react"
+import { withInkCursor } from "./with-ink-cursor"
+import { withInkFocus } from "./with-ink-focus"
 
 // =============================================================================
 // Types
@@ -33,8 +37,6 @@ export interface WithInkOptions {
   cursorStore?: CursorStore
   /** Custom input event emitter for focus navigation (Tab/Shift+Tab/Esc) */
   inputEmitter?: EventEmitter
-  /** Error handler for the error boundary */
-  onError?: (error: Error) => void
 }
 
 /**
@@ -92,7 +94,7 @@ export { InkFocusContext }
  * Ink-compatible FocusProvider component.
  * Manages focus state: list of focusables, active focus ID, tab navigation.
  */
-function InkFocusProvider({
+export function InkFocusProvider({
   children,
   inputEmitter,
 }: {
@@ -255,94 +257,6 @@ function InkFocusProvider({
 }
 
 // =============================================================================
-// Ink Error Boundary
-// =============================================================================
-
-interface InkErrorBoundaryProps {
-  children?: React.ReactNode
-  onError?: (error: Error) => void
-}
-
-interface InkErrorBoundaryState {
-  error: Error | null
-}
-
-class InkErrorBoundary extends Component<InkErrorBoundaryProps, InkErrorBoundaryState> {
-  state: InkErrorBoundaryState = { error: null }
-
-  static getDerivedStateFromError(error: Error): InkErrorBoundaryState {
-    return { error }
-  }
-
-  componentDidCatch(error: Error) {
-    this.props.onError?.(error)
-  }
-
-  render() {
-    if (this.state.error) {
-      const err = this.state.error
-      const stack = err.stack ?? ""
-      const frames = stack
-        .split("\n")
-        .filter((line) => line.match(/^\s+at\s/))
-        .map((line) => line.trim())
-      const firstFrame = frames[0] ?? ""
-      const fileMatch = firstFrame.match(/\((.+)\)$/) ?? firstFrame.match(/at (.+)$/)
-      const rawLocation = fileMatch?.[1] ?? ""
-
-      let location = rawLocation
-      const cwd = process.cwd()
-      for (const prefix of [cwd, `/private${cwd}`]) {
-        if (location.startsWith(`${prefix}/`)) {
-          location = location.slice(prefix.length + 1)
-          break
-        }
-      }
-
-      return React.createElement(
-        React.Fragment,
-        null,
-        React.createElement("silvery-text", { color: "red", bold: true }, "ERROR"),
-        " ",
-        err.message,
-        location ? `\n${location}` : null,
-      )
-    }
-    return this.props.children
-  }
-}
-
-// =============================================================================
-// createInkWrapRoot — Low-level wrapRoot function
-// =============================================================================
-
-/**
- * Internal: create a wrapping function for Ink providers.
- * Used by `withInk()` to build the InkRoot component.
- */
-function createInkWrapRoot(
-  options: WithInkOptions = {},
-): (element: ReactElement) => ReactElement {
-  const cursorStore = options.cursorStore ?? createCursorStore()
-  const { inputEmitter, onError } = options
-
-  return (el: ReactElement): ReactElement =>
-    React.createElement(
-      CursorProvider,
-      { store: cursorStore },
-      React.createElement(
-        InkCursorStoreCtx.Provider,
-        { value: cursorStore },
-        React.createElement(
-          InkFocusProvider,
-          { inputEmitter },
-          React.createElement(InkErrorBoundary, { onError }, el),
-        ),
-      ),
-    )
-}
-
-// =============================================================================
 // withInk — App-level plugin for pipe() composition
 // =============================================================================
 
@@ -366,15 +280,14 @@ export interface AppWithInk {
 /**
  * Ink compatibility plugin for pipe() composition.
  *
- * Wraps the React element tree with Ink-specific providers:
- * - `InkErrorBoundary` — catches render errors and displays them Ink-style
+ * Composes withInkCursor() and withInkFocus() to wrap the React element tree
+ * with Ink-specific providers:
  * - `InkFocusProvider` — Ink's focus management (useFocus/useFocusManager)
  * - `InkCursorStoreCtx` — cursor store context for Ink's useCursor hook
  * - `CursorProvider` — silvery cursor provider with the shared store
  *
- * The plugin sets `app.Root` to a component that wraps the element tree
- * with Ink providers, composing with any existing `app.Root`. It also wraps
- * `run()` to inject the Root into run options for `createApp()`.
+ * Error handling is provided by silvery's built-in SilveryErrorBoundary
+ * in createApp(), so withInk() no longer includes its own error boundary.
  *
  * @example
  * ```tsx
@@ -390,45 +303,19 @@ export interface AppWithInk {
  * await app.run()
  * ```
  *
- * @param options - Optional cursor store, input emitter, and error handler
+ * @param options - Optional cursor store and input emitter
  * @returns Plugin function `(app) => enhancedApp`
  */
 export function withInk<T extends RunnableApp>(
   options: WithInkOptions = {},
 ): (app: T) => T & AppWithInk {
-  const wrapRoot = createInkWrapRoot(options)
-
   return (app: T): T & AppWithInk => {
-    // Compose with previous Root: wrap PrevRoot inside Ink providers
-    const PrevRoot = app.Root ?? Fragment
-    const InkRoot = ({ children }: { children: React.ReactNode }) =>
-      wrapRoot(React.createElement(PrevRoot, null, children))
+    // Apply cursor adapter
+    const appWithCursor = withInkCursor({ cursorStore: options.cursorStore })(app)
 
-    const originalRun = app.run
+    // Apply focus adapter
+    const result = withInkFocus({ inputEmitter: options.inputEmitter })(appWithCursor)
 
-    return Object.assign(Object.create(app), {
-      Root: InkRoot,
-      run(...args: unknown[]) {
-        // Inject Root into run options so createApp() can use it
-        let existingOptions: Record<string, unknown> | undefined
-        if (args.length > 0 && typeof args[args.length - 1] === "object" && args[args.length - 1] !== null) {
-          const last = args[args.length - 1] as Record<string, unknown>
-          // Don't treat React elements as options
-          if (!("type" in last && "props" in last)) {
-            existingOptions = last
-          }
-        }
-
-        const runOptions: Record<string, unknown> = { ...existingOptions, Root: InkRoot }
-
-        // Replace or append options in args
-        if (existingOptions) {
-          const newArgs = [...args]
-          newArgs[newArgs.length - 1] = runOptions
-          return originalRun.apply(app, newArgs)
-        }
-        return originalRun.call(app, ...args, runOptions)
-      },
-    }) as T & AppWithInk
+    return result as unknown as T & AppWithInk
   }
 }
