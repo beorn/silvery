@@ -1,6 +1,6 @@
 # State Management
 
-Start with `useState` — standard React. When state gets shared across components, move to a store. When you need undo or replay, make state transitions into data. When side effects need testing, return them as data too. Each step makes your app more testable and composable — take them one at a time, when the complexity justifies it.
+Start with `useState` — standard React. When state gets shared across components, move to a store. When you need undo or replay, make state transitions into data. When side effects need testing, return them as data too. Each sip makes your app more testable and composable — take them one at a time, when the complexity justifies it.
 
 For the full conceptual progression with both state management _and_ event handling evolving together, see [Terminal Apps](/guides/terminal-apps).
 

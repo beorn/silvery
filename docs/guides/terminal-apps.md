@@ -12,7 +12,7 @@ The app evolves: Counter → Todo list → Board. At each level, both state mana
 | **4 — Pure Functions**                | Board + I/O             | Effects as data (return `[state, effects]`) | Custom plugins (vim modes, file watchers)   | Side effects + event processing |
 | **5 — Composable Machines**           | Board + Dialog + Search | Multiple slices, dispatch effects           | Plugin composition (`pipe()`)               | Cross-module communication      |
 
-Most web apps stop at Level 2. TUI apps with keyboard-driven interaction, undo, and multi-pane layouts often reach Level 3. The patterns are general — ops as data, effects as data, composable state machines work in any React framework. If you've heard of [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA), that's where Levels 3+4 land. You arrive there incrementally — one sip at a time.
+Most web apps stop at Level 2. TUI apps with keyboard-driven interaction, undo, and multi-pane layouts often reach Level 3. The patterns are general — ops as data, effects as data, composable state machines work in any React framework. You arrive there incrementally — one sip at a time.
 
 ## Level 1: Starting Simple
 
@@ -159,7 +159,11 @@ function ItemList() {
   return (
     <Box flexDirection="column">
       {items.map((item, i) => (
-        <Box key={item.id} onClick={() => store.setCursor(i)} onDoubleClick={() => store.startEdit(i)}>
+        <Box
+          key={item.id}
+          onClick={() => store.setCursor(i)}
+          onDoubleClick={() => store.startEdit(i)}
+        >
           <Text color={i === cursor ? "cyan" : undefined}>
             {i === cursor ? "> " : "  "}
             {item.text}
@@ -252,7 +256,13 @@ Meanwhile, event handlers have the same problem. `if (input === "j") moveCursor(
 **The fix**: turn input into named, serializable commands. Declare that `j` maps to the command `cursor_down`, and `cursor_down` produces the action `{ op: "moveCursor", delta: 1 }`:
 
 ```tsx
-import { pipe, withDomEvents, withCommands, withReact, createCommandRegistry } from "@silvery/tea/plugins"
+import {
+  pipe,
+  withDomEvents,
+  withCommands,
+  withReact,
+  createCommandRegistry,
+} from "@silvery/tea/plugins"
 
 const registry = createCommandRegistry({
   cursor_down: {
@@ -423,8 +433,16 @@ type AppPlugin<A, B> = (app: A) => B
 This is the [SlateJS](https://docs.slatejs.org/concepts/08-plugins) editor model: `withHistory(withReact(createEditor()))`. Each plugin overrides methods on the app — `press` for input interception, `click` for mouse dispatch. You compose them with `pipe()`:
 
 ```tsx
-import { pipe, withReact, withTerminal, withFocus, withDomEvents,
-         withCommands, withKeybindings, withDiagnostics } from "@silvery/tea/plugins"
+import {
+  pipe,
+  withReact,
+  withTerminal,
+  withFocus,
+  withDomEvents,
+  withCommands,
+  withKeybindings,
+  withDiagnostics,
+} from "@silvery/tea/plugins"
 
 const app = pipe(
   createApp(store), // kernel: event loop + state
@@ -620,15 +638,15 @@ The core ideas — making operations, effects, and events into data — have bee
 
 | System                                                        | What it covers                | Approach                                                                                         |
 | ------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------ |
-| **[Elm](https://guide.elm-lang.org/architecture/)**           | State + Effects + Composition | `update : Msg -> Model -> (Model, Cmd Msg)` — the gold standard. Enforces TEA at language level. |
+| **[Elm](https://guide.elm-lang.org/architecture/)**           | State + Effects + Composition | `update : Msg -> Model -> (Model, Cmd Msg)` — the gold standard. Enforces this at the language level. |
 | [Redux](https://redux.js.org/)                                | State (ops as data)           | `dispatch(action)` + reducer. Effects live in middleware (thunks/sagas), not return values.      |
-| [redux-loop](https://github.com/redux-loop/redux-loop)        | State + Effects               | Extends Redux: reducer returns `[state, effects]` — completing the TEA shape.                    |
+| [redux-loop](https://github.com/redux-loop/redux-loop)        | State + Effects               | Extends Redux: reducer returns `[state, effects]` — completing the Elm shape.                    |
 | **[SlateJS](https://docs.slatejs.org/)**                      | Event plugins                 | `withHistory(withReact(createEditor()))` — same `(editor) => editor` plugin shape.               |
 | [ProseMirror](https://prosemirror.net/)                       | Event plugins                 | Structured plugin hooks — more constrained, easier to reason about.                              |
 | [Express](https://expressjs.com/) / [Koa](https://koajs.com/) | Event middleware              | `app.use(middleware)` — onion model composition.                                                 |
 | **Silvery**                                                   | All of the above              | `createSlice` + `tea()` for state; `pipe()` + plugins for events. Incremental adoption.          |
 
-Redux got Level 3 right but stopped there. redux-loop completed the TEA shape. SlateJS pioneered the plugin-by-override model. This guide pieces these ideas into a single incremental progression for React.
+Redux got Level 3 right but stopped there. redux-loop completed the Elm shape. SlateJS pioneered the plugin-by-override model. This guide pieces these ideas into a single incremental progression for React.
 
 ## The Takeaway
 
