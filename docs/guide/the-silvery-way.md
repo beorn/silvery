@@ -473,9 +473,15 @@ expect(store.getState().selectedIndex).toBe(2)
 
 // Snapshot of ANSI strings — brittle, unreadable diffs
 expect(output).toMatchInlineSnapshot(`"\u001b[1m\u001b[34m..."`)
+
+// Manual resize testing — drag the terminal corner, squint at the output
+// "Looks fine to me" — until it doesn't, and you can't reproduce the bug
+
+// Manual scrollback checking — scroll up, visually scan for the right line
+// Hope you remember what it's supposed to look like
 ```
 
-If your test doesn't render, it doesn't test what the user sees. And if your test doesn't test what the user sees, it doesn't test what matters.
+Manual visual testing is slow, unrepeatable, and doesn't catch regressions. If you're resizing your terminal by hand to check layouts, that's a test you should automate.
 :::
 
 → [Testing guide](/guide/testing) · [Testing examples](/examples/testing)
