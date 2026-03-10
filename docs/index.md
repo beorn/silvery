@@ -3,42 +3,55 @@ layout: home
 
 hero:
   name: "Silvery"
-  text: "Polished terminal UIs in React"
-  tagline: "A React framework for building terminal applications — fast, complete, and familiar"
+  text: "Better Ink"
+  tagline: "A React framework for terminal UIs — drop-in Ink replacement with layout feedback, scrollable containers, and 100x+ faster interactive updates"
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/getting-started
+      link: /getting-started/quick-start
+    - theme: alt
+      text: Migrate from Ink
+      link: /getting-started/migrate-from-ink
     - theme: alt
       text: View on GitHub
       link: https://github.com/beorn/silvery
 
 features:
-  - title: Familiar API
-    details: "If you know Ink, you know Silvery -- same Box/Text/useInput patterns. Plus `silvery/ink` and `silvery/chalk` compat layers for effortless migration."
-    link: /guide/migration
-    linkText: Ink comparison
-  - title: Fast Incremental Rendering
-    details: "Per-node dirty tracking with 7 independent flags. 28-192x fewer bytes on typical incremental updates. Only changed nodes re-render."
-    link: /guide/why-silvery#incremental-rendering
-    linkText: "* See benchmarks"
+  - title: Drop-in Ink Replacement
+    details: "Same Box/Text/useInput API you already know. `silvery/ink` and `silvery/chalk` compat layers for effortless migration. Switch in minutes."
+    link: /getting-started/migrate-from-ink
+    linkText: Migration guide
   - title: Layout Feedback
-    details: "Components query their own dimensions via useContentRect(). No width prop drilling needed."
+    details: "Components query their own dimensions via useContentRect(). No width prop drilling needed. Ink's #1 issue since 2016, solved."
+  - title: 100x+ Faster Updates
+    details: "Per-node dirty tracking with 7 independent flags. Only changed nodes re-render. 169us vs Ink's 20.7ms for typical interactive updates."
+    link: /guide/silvery-vs-ink#performance
+    linkText: See benchmarks
   - title: Scrollable Containers
-    details: 'overflow="scroll" with scrollTo just works. No manual virtualization needed.'
+    details: 'overflow="scroll" with scrollTo just works. No manual virtualization needed. Ink''s #1 feature request since 2019, built in.'
   - title: 30+ Components
-    details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more. Built-in scrolling, focus, and input handling."
+    details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
+    link: /guides/components
+    linkText: Browse components
+  - title: Zero Dependencies
+    details: "Pure TypeScript. No WASM, no C++, no memory leaks. Runs on Node, Bun, and Deno. Constant memory in long sessions."
   - title: Beyond the Terminal
-    details: "Terminal today, Canvas and DOM tomorrow. The architecture separates rendering targets from the component model — same React components, different outputs."
-    link: /roadmap
+    details: "Terminal today, Canvas and DOM tomorrow. Same React components, different outputs. ~30% of the codebase is target-independent."
+    link: /guides/future-targets
     linkText: See the roadmap
   - title: TEA State Machines
-    details: "Optional Elm Architecture (TEA) reducers alongside React hooks. Pure (action, state) → [state, effects] functions for testing, replay, and undo."
-  - title: Zero Dependencies
-    details: "Pure TypeScript. No WASM, no C++, no memory leaks. Runs on Node, Bun, and Deno."
+    details: "Optional Elm Architecture (TEA) reducers alongside React hooks. Pure (action, state) -> [state, effects] functions for testing, replay, and undo."
+    link: /guides/state-management
+    linkText: Learn more
 ---
 
 <p class="alpha-badge"><strong>Alpha</strong> — under heavy development. APIs may change.</p>
+
+<div class="migration-callout">
+
+**Already using Ink?** Silvery is a drop-in replacement. Change your imports, and your app works. [Migrate in minutes &rarr;](/getting-started/migrate-from-ink)
+
+</div>
 
 ## Explore the Examples
 
@@ -164,5 +177,16 @@ Silvery is part of a family of terminal-focused libraries:
   font-size: 0.85rem;
   text-align: center;
   width: fit-content;
+}
+.migration-callout {
+  margin: -0.5rem 0 2rem;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  background: var(--vp-c-brand-soft);
+  border: 1px solid var(--vp-c-brand-2);
+  text-align: center;
+}
+.migration-callout p {
+  margin: 0;
 }
 </style>

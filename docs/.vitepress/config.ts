@@ -13,7 +13,7 @@ export default defineConfig({
 
   title: "Silvery",
   description:
-    "Silvery — React for modern terminals. Layout feedback, every terminal protocol, 100x+ faster incremental renders.",
+    "Silvery — Better Ink. A React framework for terminal UIs with layout feedback, scrollable containers, and 100x+ faster interactive updates.",
   base: "/",
 
   head: [["link", { rel: "icon", type: "image/svg+xml", href: "/logo.svg" }]],
@@ -23,9 +23,9 @@ export default defineConfig({
     siteTitle: "Silvery",
 
     nav: [
-      { text: "Guide", link: "/guide/getting-started" },
-      { text: "API", link: "/api/box" },
-      { text: "Reference", link: "/reference/components" },
+      { text: "Getting Started", link: "/getting-started/quick-start" },
+      { text: "Guides", link: "/guides/terminal-apps" },
+      { text: "Reference", link: "/reference/components-hooks" },
       {
         text: "Examples",
         items: [
@@ -39,6 +39,7 @@ export default defineConfig({
           { text: "Data Explorers & Tables", link: "/examples/data-explorers" },
         ],
       },
+      { text: "Blog", link: "/blog/" },
       {
         text: "Links",
         items: [
@@ -49,62 +50,81 @@ export default defineConfig({
     ],
 
     sidebar: {
-      "/guide/": [
+      "/getting-started/": [
         {
-          text: "Introduction",
+          text: "Getting Started",
           items: [
-            { text: "Getting Started", link: "/guide/getting-started" },
-            { text: "Building an App", link: "/guide/building-an-app" },
-            { text: "Installation", link: "/guide/installation" },
-            { text: "Why Silvery?", link: "/guide/why-silvery" },
-            { text: "Silvery vs Ink", link: "/guide/silvery-vs-ink" },
-            { text: "Comparison", link: "/guide/comparison" },
+            { text: "Quick Start", link: "/getting-started/quick-start" },
+            { text: "Migrate from Ink", link: "/getting-started/migrate-from-ink" },
+            { text: "Migrate from Chalk", link: "/getting-started/migrate-from-chalk" },
+          ],
+        },
+      ],
+      "/guides/": [
+        {
+          text: "Guides",
+          items: [
+            { text: "Terminal Apps", link: "/guides/terminal-apps" },
+            { text: "Components", link: "/guides/components" },
+            { text: "Theming", link: "/guides/theming" },
+            { text: "State Management", link: "/guides/state-management" },
+            { text: "Future Targets", link: "/guides/future-targets" },
+          ],
+        },
+      ],
+      "/reference/": [
+        {
+          text: "Reference",
+          items: [
+            { text: "Components & Hooks", link: "/reference/components-hooks" },
+            { text: "Packages", link: "/reference/packages" },
+            { text: "Ink/Chalk Compatibility", link: "/reference/compatibility" },
           ],
         },
         {
-          text: "Core Concepts",
+          text: "Components (API)",
           items: [
-            { text: "Components", link: "/guide/components" },
-            { text: "Hooks", link: "/guide/hooks" },
-            { text: "Scrolling", link: "/guide/scrolling" },
-            { text: "Cursor API", link: "/guide/cursor-api" },
-            { text: "Input Limitations", link: "/guide/input-limitations" },
-            { text: "State Management", link: "/guide/state-management" },
-            { text: "Event Handling", link: "/guide/event-handling" },
+            { text: "Box", link: "/api/box" },
+            { text: "Text", link: "/api/text" },
+            { text: "Newline", link: "/api/newline" },
+            { text: "Spacer", link: "/api/spacer" },
+            { text: "Static", link: "/api/static" },
           ],
         },
         {
-          text: "Advanced",
+          text: "Hooks (API)",
           items: [
-            { text: "Layout Engine", link: "/guide/layout-engine" },
-            { text: "React 19", link: "/guide/react-19" },
-            { text: "Layouts", link: "/guide/layouts" },
-            { text: "Runtime Layers", link: "/guide/runtime-layers" },
-            { text: "Runtime Getting Started", link: "/guide/runtime-getting-started" },
-            { text: "Imports", link: "/guide/imports" },
-            { text: "Troubleshooting", link: "/guide/troubleshooting" },
+            { text: "useContentRect", link: "/api/use-content-rect" },
+            { text: "useInput", link: "/api/use-input" },
+            { text: "useApp", link: "/api/use-app" },
+            { text: "useStdout", link: "/api/use-stdout" },
+            { text: "Focus Hooks", link: "/api/use-focus" },
           ],
         },
         {
-          text: "Migration",
-          items: [
-            { text: "From Ink", link: "/guide/migration" },
-            { text: "Runtime Migration", link: "/guide/runtime-migration" },
-          ],
+          text: "Functions (API)",
+          items: [{ text: "render", link: "/api/render" }],
         },
         {
-          text: "Examples",
-          collapsed: false,
+          text: "Deep Reference",
+          collapsed: true,
           items: [
-            { text: "Overview", link: "/examples/" },
-            { text: "Live Demo", link: "/examples/live-demo" },
-            { text: "Dashboard", link: "/examples/dashboard" },
-            { text: "Task List", link: "/examples/task-list" },
-            { text: "Kanban Board", link: "/examples/kanban" },
-            { text: "AI Assistants & Chat", link: "/examples/ai-assistants" },
-            { text: "CLI Wizards & Setup", link: "/examples/cli-wizards" },
-            { text: "Developer Tools", link: "/examples/developer-tools" },
-            { text: "Data Explorers & Tables", link: "/examples/data-explorers" },
+            { text: "Components", link: "/reference/components" },
+            { text: "Hooks", link: "/reference/hooks" },
+            { text: "Lifecycle", link: "/reference/lifecycle" },
+            { text: "Signals", link: "/reference/signals" },
+            { text: "Plugins", link: "/reference/plugins" },
+            { text: "Theming", link: "/reference/theming" },
+            { text: "Input Features", link: "/reference/input-features" },
+            { text: "Streams", link: "/reference/streams" },
+            { text: "Text Cursor", link: "/reference/text-cursor" },
+            { text: "Text Sizing", link: "/reference/text-sizing" },
+            { text: "Scroll Regions", link: "/reference/scroll-regions" },
+            { text: "Robust Ops", link: "/reference/robust-ops" },
+            { text: "Terminal Capabilities", link: "/reference/terminal-capabilities" },
+            { text: "Terminal Matrix", link: "/reference/terminal-matrix" },
+            { text: "Devtools", link: "/reference/devtools" },
+            { text: "Recipes", link: "/reference/recipes" },
           ],
         },
       ],
@@ -134,41 +154,52 @@ export default defineConfig({
           items: [{ text: "render", link: "/api/render" }],
         },
       ],
-      "/reference/": [
+      "/guide/": [
         {
-          text: "Reference",
+          text: "Guide (Legacy)",
+          collapsed: true,
           items: [
-            { text: "Components", link: "/reference/components" },
-            { text: "Hooks", link: "/reference/hooks" },
-            { text: "Lifecycle", link: "/reference/lifecycle" },
-            { text: "Signals", link: "/reference/signals" },
-            { text: "Plugins", link: "/reference/plugins" },
-            { text: "Theming", link: "/reference/theming" },
+            { text: "Getting Started", link: "/guide/getting-started" },
+            { text: "Building an App", link: "/guide/building-an-app" },
+            { text: "Installation", link: "/guide/installation" },
+            { text: "Why Silvery?", link: "/guide/why-silvery" },
+            { text: "Silvery vs Ink", link: "/guide/silvery-vs-ink" },
+            { text: "Comparison", link: "/guide/comparison" },
           ],
         },
         {
-          text: "Input & Output",
+          text: "Core Concepts",
+          collapsed: true,
           items: [
-            { text: "Input Features", link: "/reference/input-features" },
-            { text: "Streams", link: "/reference/streams" },
-            { text: "Text Cursor", link: "/reference/text-cursor" },
-            { text: "Text Sizing", link: "/reference/text-sizing" },
+            { text: "Components", link: "/guide/components" },
+            { text: "Hooks", link: "/guide/hooks" },
+            { text: "Scrolling", link: "/guide/scrolling" },
+            { text: "Cursor API", link: "/guide/cursor-api" },
+            { text: "Input Limitations", link: "/guide/input-limitations" },
+            { text: "State Management", link: "/guide/state-management" },
+            { text: "Event Handling", link: "/guide/event-handling" },
+            { text: "Theming", link: "/guide/theming" },
           ],
         },
         {
-          text: "Layout & Rendering",
+          text: "Advanced",
+          collapsed: true,
           items: [
-            { text: "Scroll Regions", link: "/reference/scroll-regions" },
-            { text: "Robust Ops", link: "/reference/robust-ops" },
-            { text: "Terminal Capabilities", link: "/reference/terminal-capabilities" },
-            { text: "Terminal Matrix", link: "/reference/terminal-matrix" },
+            { text: "Layout Engine", link: "/guide/layout-engine" },
+            { text: "React 19", link: "/guide/react-19" },
+            { text: "Layouts", link: "/guide/layouts" },
+            { text: "Runtime Layers", link: "/guide/runtime-layers" },
+            { text: "Runtime Getting Started", link: "/guide/runtime-getting-started" },
+            { text: "Imports", link: "/guide/imports" },
+            { text: "Troubleshooting", link: "/guide/troubleshooting" },
           ],
         },
         {
-          text: "Tools",
+          text: "Migration",
+          collapsed: true,
           items: [
-            { text: "Devtools", link: "/reference/devtools" },
-            { text: "Recipes", link: "/reference/recipes" },
+            { text: "From Ink", link: "/guide/migration" },
+            { text: "Runtime Migration", link: "/guide/runtime-migration" },
           ],
         },
       ],
@@ -186,6 +217,12 @@ export default defineConfig({
             { text: "Developer Tools", link: "/examples/developer-tools" },
             { text: "Data Explorers & Tables", link: "/examples/data-explorers" },
           ],
+        },
+      ],
+      "/blog/": [
+        {
+          text: "Blog",
+          items: [{ text: "Blog Home", link: "/blog/" }],
         },
       ],
     },
