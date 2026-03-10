@@ -1239,7 +1239,14 @@ function parseUnderlineStyle(subparam: number): UnderlineStyle {
 export function parseAnsiText(text: string): StyledSegment[] {
   const segments: StyledSegment[] = []
 
-  // Pre-process: strip OSC 8 hyperlink sequences and build a position-to-URL map.
+  // Step 1: Strip non-SGR CSI sequences (cursor movement, erase, etc.) that would
+  // otherwise leak through as literal text. SGR sequences end in 'm'; all
+  // other CSI sequences (ending in A-L, H, J, K, S, T, etc.) are stripped.
+  // This must happen BEFORE OSC 8 processing so hyperlink position tracking
+  // is based on the cleaned text (no position drift from stripped sequences).
+  const sanitizedText = text.replace(/\x1b\[[0-9;:]*[A-LN-Za-ln-z@`]/g, "")
+
+  // Step 2: Strip OSC 8 hyperlink sequences and build a position-to-URL map.
   // OSC 8 format: \x1b]8;;URL(\x1b\\ | \x07) for open, \x1b]8;;(\x1b\\ | \x07) for close.
   // We strip these from the text before SGR parsing and track which character
   // positions map to which hyperlink URL.
@@ -1252,9 +1259,9 @@ export function parseAnsiText(text: string): StyledSegment[] {
   let oscMatch: RegExpExecArray | null
   let oscLastIndex = 0
 
-  while ((oscMatch = oscPattern.exec(text)) !== null) {
+  while ((oscMatch = oscPattern.exec(sanitizedText)) !== null) {
     // Append text between last OSC and this one (preserving SGR codes)
-    cleaned += text.slice(oscLastIndex, oscMatch.index)
+    cleaned += sanitizedText.slice(oscLastIndex, oscMatch.index)
     const url = oscMatch[1]!
 
     if (url === "") {
@@ -1277,14 +1284,14 @@ export function parseAnsiText(text: string): StyledSegment[] {
     oscLastIndex = oscMatch.index + oscMatch[0].length
   }
   // Append remaining text after last OSC
-  cleaned += text.slice(oscLastIndex)
+  cleaned += sanitizedText.slice(oscLastIndex)
   // Close any still-open hyperlink
   if (currentHyperlink && rangeStart >= 0) {
     hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink })
   }
 
-  // If no OSC 8 sequences found, use original text for efficiency
-  const processText = hyperlinkRanges.length > 0 ? cleaned : text
+  // If no OSC 8 sequences found, use sanitized text for efficiency
+  const processText = hyperlinkRanges.length > 0 ? cleaned : sanitizedText
 
   // Extended pattern: matches SGR with semicolons AND colons (for 4:x, 58:2::r:g:b)
   const ansiPattern = /\x1b\[([0-9;:]*)m/g
