@@ -348,7 +348,7 @@ try {
 
 → [render()](/api/render) · [Lifecycle](/reference/lifecycle)
 
-## 9. Sip, Don't Chug
+## 9. Relax and Sip Some TEA
 
 [`@silvery/tea`](/reference/packages) is a gradual path, not a rewrite. Start with `useState` — that's fine for simple components. When state gets shared, move to `createSlice`. When you need testable side effects, return `Effect[]` from your handlers instead of calling `fetch` inline. Each sip makes your app more testable, replayable, and composable — but you take them one at a time, when the complexity justifies it.
 
@@ -498,7 +498,7 @@ Manual visual testing is slow, unrepeatable, and doesn't catch regressions. If y
 6. **Use semantic theme colors** — `$tokens`, not hardcoded values
 7. **Compose with factory functions** — `pipe()`, not class hierarchies
 8. **Clean up with `using`** — one keyword, zero leaks
-9. **Sip, don't chug** — gradually: useState → createSlice → effects as data
+9. **Relax and sip some TEA** — gradually: useState → createSlice → effects as data
 10. **Test what the user sees** — render the buffer, not just the state
 
 Keep it shiny. ✨
