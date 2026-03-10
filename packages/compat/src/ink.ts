@@ -1041,8 +1041,20 @@ export function render(element: import("react").ReactNode, options?: Record<stri
     }
 
     // Wrap element with contexts for useApp/useInput/useStdout
+    let lastRenderError: Error | null = null
+
     function wrapElement(el: import("react").ReactNode): import("react").ReactNode {
-      let wrapped = React.createElement(TermContext.Provider, { value: term }, el)
+      // Wrap user element in error boundary to catch render errors
+      let wrapped: import("react").ReactNode = React.createElement(
+        InkErrorBoundary,
+        {
+          onError: (error: Error) => {
+            lastRenderError = error
+          },
+        },
+        el,
+      )
+      wrapped = React.createElement(TermContext.Provider, { value: term }, wrapped)
       wrapped = React.createElement(StdoutContext.Provider, { value: stdoutCtx }, wrapped)
       wrapped = React.createElement(RuntimeContext.Provider, { value: runtimeCtx }, wrapped)
       return wrapped
@@ -1086,6 +1098,13 @@ export function render(element: import("react").ReactNode, options?: Record<stri
     // Initial render
     let currentElement = element
     renderFrameWithContext(currentElement)
+
+    // If an error was caught during render, reject the exit promise
+    if (lastRenderError) {
+      exitReject?.(lastRenderError)
+      // Prevent unhandled rejection by catching the promise
+      exitPromise.catch(() => {})
+    }
 
     // Listen for resize events on stdout to re-render (like Ink does)
     const onResize = () => {
