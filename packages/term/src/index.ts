@@ -71,6 +71,13 @@ export { createDOMAdapter, DOMRenderBuffer, injectDOMStyles } from "./adapters/d
 export type { DOMAdapterConfig } from "./adapters/dom-adapter"
 
 // =============================================================================
+// ANSI Sanitizer
+// =============================================================================
+
+export { sanitizeAnsi, tokenizeAnsi } from "./ansi-sanitize"
+export type { AnsiToken } from "./ansi-sanitize"
+
+// =============================================================================
 // ANSI Escape Sequences / Output
 // =============================================================================
 
