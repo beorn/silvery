@@ -28,10 +28,6 @@ export default defineConfig({
       { text: "Guides", link: "/guides/terminal-apps" },
       { text: "Reference", link: "/reference/components-hooks" },
       {
-        text: "Alpha",
-        items: [{ text: "Under heavy development — APIs may change", link: "/getting-started/quick-start" }],
-      },
-      {
         text: "Examples",
         items: [
           { text: "Live Demo", link: "/examples/live-demo" },
