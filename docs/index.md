@@ -16,10 +16,10 @@ hero:
 features:
   - title: Layout Feedback
     details: "Components query their own dimensions via useContentRect(). No width prop drilling needed. Responsive layouts just work."
-  - title: Familiar React API
+  - title: Familiar Ink API
     details: "Same Box/Text/useInput API you already know. Compatibility layers available for migrating existing apps with minimal changes."
-    link: /getting-started/migrate-from-ink
-    linkText: Migration guide
+    link: /guide/silvery-vs-ink
+    linkText: Ink comparison
   - title: 100x+ Faster Updates
     details: "Per-node dirty tracking with 7 independent flags. Only changed nodes re-render. Typical interactive updates in ~169us for 1000 nodes."
     link: /guide/silvery-vs-ink#performance
