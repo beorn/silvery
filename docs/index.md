@@ -14,24 +14,22 @@ hero:
       link: https://github.com/beorn/silvery
 
 features:
-  - title: Layout Feedback
-    details: "Components query their own dimensions via useContentRect(). No width prop drilling needed. Responsive layouts just work."
   - title: Familiar Ink API
     details: "Same Box/Text/useInput API you already know. Compatibility layers available for migrating existing apps with minimal changes."
     link: /guide/silvery-vs-ink
     linkText: Ink comparison
+  - title: Pure TypeScript
+    details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. Constant memory in long sessions."
   - title: 100x+ Faster Updates
     details: "Per-node dirty tracking with 7 independent flags. Only changed nodes re-render. Typical interactive updates in ~169us for 1000 nodes."
     link: /guide/silvery-vs-ink#performance
     linkText: See benchmarks
-  - title: Scrollable Containers
-    details: 'overflow="scroll" with scrollTo just works. No manual virtualization needed. The framework handles measurement, clipping, and scroll position.'
+  - title: Responsive Layout
+    details: "Full CSS Flexbox layout via Flexily (pure JS, Yoga-compatible). Components query their own dimensions via useContentRect() — no width prop drilling. Native scrollable containers with overflow=\"scroll\"."
   - title: 30+ Components
     details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
     link: /guides/components
     linkText: Browse components
-  - title: Pure TypeScript
-    details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. Constant memory in long sessions."
   - title: Beyond the Terminal
     details: "Terminal today, Canvas 2D and DOM experimental. Same React components, different rendering backends. ~30% of the codebase is target-independent."
     link: /guides/future-targets
