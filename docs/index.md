@@ -17,12 +17,12 @@ hero:
       link: https://github.com/beorn/silvery
 
 features:
-  - title: Ink-Compatible API
-    details: "Same Box/Text/useInput API you already know. silvery/ink and silvery/chalk compat layers for migration. Most Ink apps work with just an import change."
-    link: /getting-started/migrate-from-ink
-    linkText: Migration guide
   - title: Layout Feedback
     details: "Components query their own dimensions via useContentRect(). No width prop drilling needed. Responsive layouts just work."
+  - title: Familiar React API
+    details: "Same Box/Text/useInput API you already know. Compatibility layers available for migrating existing apps with minimal changes."
+    link: /getting-started/migrate-from-ink
+    linkText: Migration guide
   - title: 100x+ Faster Updates
     details: "Per-node dirty tracking with 7 independent flags. Only changed nodes re-render. Typical interactive updates in ~169us for 1000 nodes."
     link: /guide/silvery-vs-ink#performance

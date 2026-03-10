@@ -4,7 +4,7 @@ import LiveDemo from '../.vitepress/components/LiveDemo.vue'
 
 # Getting Started
 
-Silvery is a React framework for terminal applications with layout feedback, 30+ components, and built-in scrolling. If you've used Ink, the core API is familiar — `Box`, `Text`, `useInput` work the same way. The key addition: `useContentRect()` lets components query their own dimensions during render.
+Silvery is a React framework for terminal applications with layout feedback, 30+ components, and built-in scrolling. If you've used other React terminal frameworks, the API is familiar — `Box`, `Text`, `useInput` work the same way. The key addition: `useContentRect()` lets components query their own dimensions during render.
 
 ## Installation
 

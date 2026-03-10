@@ -133,15 +133,15 @@ Terminal today, Canvas 2D and DOM experimental. Same React components, different
 | [`@silvery/compat`](packages/compat) | Ink/Chalk compatibility layers            |
 | [`@silvery/test`](packages/test)     | Testing utilities and locators            |
 
-## Ink Compatibility
+## Compatibility
 
-If you have an existing Ink app, `silvery/ink` and `silvery/chalk` provide compatibility layers for migration. The core API (`Box`, `Text`, `useInput`, `render`) is intentionally familiar -- most Ink code works with minimal changes. See the [migration guide](docs/guide/migration.md) for details.
+`silvery/ink` and `silvery/chalk` provide compatibility layers for existing React terminal apps. The core API (`Box`, `Text`, `useInput`, `render`) is intentionally familiar -- most existing code works with minimal changes. See the [migration guide](docs/guide/migration.md) for details.
 
 ## When to Use Silvery
 
 Silvery is designed for **complex interactive TUIs** — dashboards, editors, kanban boards, chat interfaces. If you need scrollable containers, mouse support, spatial focus, or components that adapt to their size, Silvery provides these out of the box.
 
-For simple one-shot CLI prompts, Ink's mature ecosystem (50+ community components, 1.3M weekly downloads) may be a better fit today.
+For simple one-shot CLI prompts or spinners, mature alternatives with larger plugin ecosystems may be a better fit today.
 
 ## Ecosystem
 
@@ -157,20 +157,20 @@ See the [roadmap](https://silvery.dev/roadmap) for what's next.
 
 _Apple M1 Max, Bun 1.3.9. Reproduce: `bun run bench:compare`_
 
-| Scenario                                | Silvery | Ink     |
+| Scenario                                | Silvery | Ink 5   |
 | --------------------------------------- | ------- | ------- |
 | Cold render (1 component)               | 165 us  | 271 us  |
 | Cold render (1000 components)           | 463 ms  | 541 ms  |
 | Typical interactive update (1000 nodes) | 169 us  | 20.7 ms |
 | Layout (50-node kanban)                 | 57 us   | 88 us   |
 
-**Why the difference?** Interactive updates (cursor move, scroll, toggle) typically change one or two nodes. Silvery's per-node dirty tracking updates only those nodes — 169 us for a 1000-node tree. Ink re-renders the full React tree and runs complete Yoga layout on every state change — 20.7 ms. For the updates that dominate interactive use, Silvery is ~100x faster.
+**Why the difference?** Interactive updates (cursor move, scroll, toggle) typically change one or two nodes. Silvery's per-node dirty tracking updates only those nodes — 169 us for a 1000-node tree. Traditional full-tree renderers re-render the entire React tree and run complete layout on every state change — 20.7 ms. For the updates that dominate interactive use, Silvery is ~100x faster.
 
-Full re-renders where the entire tree changes are faster in Ink (string concatenation vs Silvery's 5-phase pipeline). That trade-off is inherent to supporting layout feedback, and full re-renders are rare in interactive apps.
+Full re-renders where the entire tree changes are comparable or faster in full-tree renderers (simpler string concatenation vs Silvery's 5-phase pipeline). That trade-off is inherent to supporting layout feedback, and full re-renders are rare in interactive apps.
 
 ## Documentation
 
-Full docs at [silvery.dev](https://silvery.dev) -- getting started guide, API reference, component catalog, and Ink migration guide.
+Full docs at [silvery.dev](https://silvery.dev) -- getting started guide, API reference, component catalog, and migration guide.
 
 ## Development
 
