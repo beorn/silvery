@@ -120,9 +120,9 @@ const handleInput = useCallback(
 useInput(handleInput)
 ```
 
-### Layout Feedback
+### Responsive Layout
 
-Components can know their size during render -- Silvery's core innovation:
+Components can know their size during render:
 
 ```typescript
 import { useContentRect } from '@silvery/term';

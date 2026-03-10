@@ -53,7 +53,7 @@ Terminal target is production-ready (used in [km](https://github.com/beorn/km)).
 | React Native | High          | Future       | —                |
 | PDF/Email    | Medium        | Future       | —                |
 
-**Why multi-target matters**: Silvery's core innovation is two-phase rendering with synchronous responsive layout — components know their size during render via `useContentRect()`. This solves the "ResizeObserver dance" problem across all targets, not just terminals.
+**Why multi-target matters**: Silvery's two-phase rendering provides synchronous responsive layout — components know their size during render via `useContentRect()`. This solves the "ResizeObserver dance" problem across all targets, not just terminals.
 
 **Reuse from core**: Reconciler (100%), layout engine (100%), `useContentRect` (100%), style system (partial). ~30% of the codebase is directly reusable.
 

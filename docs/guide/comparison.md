@@ -65,7 +65,7 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 
 [^6]: Silvery's Flexily layout engine is pure JavaScript (7 KB gzipped) with zero native dependencies. It matches Yoga WASM performance. Layout results are cached via fingerprinting, so unchanged subtrees skip recomputation entirely.
 
-[^7]: Silvery's core innovation: two-phase rendering runs layout before components render, so `useContentRect()` returns actual dimensions synchronously during render, not via a post-render callback. This eliminates an entire category of bugs around "width is 0 on first render."
+[^7]: Silvery's two-phase rendering runs layout before components render, so `useContentRect()` returns actual dimensions synchronously during render, not via a post-render callback. This eliminates an entire category of bugs around "width is 0 on first render."
 
 ---
 
