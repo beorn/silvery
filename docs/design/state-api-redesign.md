@@ -4,43 +4,40 @@ _Status: draft. Bead: km-5kh9r._
 
 ## The Problem
 
-The current API has six entry points for state management (`createApp`, `createSlice`, `createEffects`, `createStore`, `tea()`, `run()`), each with a different shape and a different mental model. Users have to learn which ones combine, in what order, and bridge them manually. The progression from simple to complex requires learning new concepts _and_ new APIs at each step.
+The current API has six entry points for state management (`createApp`, `createSlice`, `createEffects`, `createStore`, `tea()`, `run()`), each with a different shape and mental model. Users don't know which ones combine, in what order, or which to pick.
 
-The specific pain points:
-
-1. **`createApp` exposes Zustand internals.** The `() => (set, get) => ({...})` double-arrow is Zustand's StateCreator — users must learn Zustand to use Silvery.
-2. **`createSlice` and `createApp` are different layers that look like alternatives.** Slice defines state+actions with signals; App wraps them in Zustand with events. The jump between them requires learning three concepts at once.
-3. **"Slice" is the wrong name.** It implies "piece of a whole" (Redux/Zustand meaning), but most apps have one slice that IS the entire state.
-4. **Effects are defined separately.** `createEffects()` returns builders+runners, then you wire them into `createApp` via options. Three artifacts for one concept.
-5. **Two store systems.** `createApp` (Zustand-based) and `createStore` (TEA-based) solve the same problem differently. `tea()` is a middleware bridging them. Users don't know which to pick.
+Deeper issue: **state management is coupled to the runtime.** `createApp` bundles Zustand internals, event handling, and terminal lifecycle into one call. Users who want a different state management approach (Zustand directly, Jotai, MobX, plain useState) have no clean path.
 
 ## Design Principles
 
-1. **One shape.** There's one canonical way to define a domain: state + actions + effects. Call it a **model**.
-2. **One sip at a time.** Each sip adds a concept, not a new API. The same `createApp` call grows with you.
-3. **Zustand is an internal detail.** Users never write `(set, get) =>`. The framework bridges models to Zustand.
-4. **Effects live with their model.** Runners are defined alongside actions, not wired separately.
-5. **Composition scales.** One model → many models. Same `createApp`, same component access pattern.
+1. **Rendering and state are separate concerns.** Silvery is a rendering framework. State management is optional and pluggable.
+2. **`@silvery/tea` is a standalone state management library.** It works with Silvery, React DOM, React Native, or no framework at all.
+3. **`createApp` is the runtime host.** It handles events, commands, plugins, terminal lifecycle. It's state-agnostic — bring your own store, or use `@silvery/tea`, or just `useState`.
+4. **One sip at a time.** The progression adds concepts incrementally. You never switch APIs — you grow the same one.
 
-## The Shape
-
-### What an app IS
-
-An app is five things:
+## Package Boundaries
 
 ```
-Model       — state + actions + effects  (the domain, pure)
-Commands    — named user intents         (maps input → actions)
-Keybindings — key → command mapping      (configurable)
-Plugins     — runtime capabilities       (focus, mouse dispatch, diagnostics)
-Runtime     — terminal I/O + React       (the host)
+@silvery/tea     — state management library (standalone, framework-agnostic)
+                   createModel, signal, computed, apply, effects
+                   Works with any React framework or even vanilla JS
+
+@silvery/term    — terminal runtime (state-agnostic)
+                   createApp, run, terminal I/O, rendering pipeline
+                   Integrates with @silvery/tea but doesn't require it
+
+@silvery/react   — React reconciler, components, hooks
+@silvery/ui      — component library (SelectList, TextInput, ...)
+@silvery/theme   — theming (palettes, tokens, auto-detection)
 ```
 
-**Model** is the pure domain. Everything else is wiring. This document is primarily about Model and how it composes into an app.
+**The litmus test:** Someone building a React DOM app should be able to `npm install @silvery/tea` and use `createModel` + signals without touching terminal rendering.
+
+## `@silvery/tea` — The State Library
 
 ### Model
 
-A model bundles three things: reactive state, named actions (ops-as-data), and effect runners.
+A model bundles three things: reactive state, named actions (ops-as-data), and effect definitions.
 
 ```typescript
 import { createModel, signal, computed } from "@silvery/tea"
@@ -65,15 +62,14 @@ const Todo = createModel({
       s.items.value = s.items.value.map((item, i) =>
         i === index ? { ...item, done: !item.done } : item
       )
-      // Return effects as data
       return [
-        fx.persist({ data: s.items.value }),
-        fx.toast({ message: `Toggled ${s.items.value[index].text}` }),
+        Todo.fx.persist({ data: s.items.value }),
+        Todo.fx.toast({ message: `Toggled ${s.items.value[index].text}` }),
       ]
     },
   },
 
-  // Effect runners — execute the data returned by actions
+  // Effects — declares the effect vocabulary + how to run each one
   effects: {
     persist: async ({ data }: { data: unknown }) => {
       await fs.writeFile("data.json", JSON.stringify(data))
@@ -84,24 +80,126 @@ const Todo = createModel({
   },
 })
 
-// What you get:
+// Inferred types
 type TodoOp = typeof Todo.Op
 // { op: "moveCursor"; delta: number } | { op: "toggleDone"; index: number }
 
-typeof Todo.Effect
+type TodoEffect = typeof Todo.Effect
 // { type: "persist"; data: unknown } | { type: "toast"; message: string }
 ```
 
 **Key properties:**
 
-- `state` is a factory returning signals. Signals are the reactivity primitive — components read `.value` and auto-subscribe. `computed()` derives from other signals.
-- `actions` are pure functions: `(state, params?) → void | Effect[]`. The handler names + param types infer the `Op` union. No switch/case, no manual union.
-- `effects` defines runners keyed by type. Each key also becomes a typed builder on `fx` — `fx.persist({ data })` returns `{ type: "persist", data }`. Wrong keys or params = compile error.
-- The entire model is independently testable — call actions directly, assert on returned effects. No mocks.
+- **Signals** are the reactivity primitive. Components read `.value` and auto-subscribe. `computed()` derives from other signals. But signals are `@silvery/tea`'s choice — the runtime doesn't require them.
+- **Actions** are pure functions: `(state, params?) → void | Effect[]`. Handler names + param types infer the `Op` union automatically.
+- **Effects** are declared once in the model. Each key becomes a typed builder on `Todo.fx` and a runner. Actions return effect data; the model executes runners after the action completes.
+- **Independently testable.** Call actions directly, assert on returned effects. No mocks, no framework.
+
+### Calling actions and effects
+
+A model instance exposes both ergonomic direct calls and serializable data forms:
+
+```typescript
+const todo = Todo.create()
+
+// ── Actions ──
+
+// Direct call — ergonomic, day-to-day use
+todo.moveCursor({ delta: 1 })
+todo.toggleDone({ index: 2 })
+
+// Op-as-data — for undo, replay, AI, logging
+todo.apply({ op: "moveCursor", delta: 1 })
+todo.apply({ op: "toggleDone", index: 2 })
+
+// Both forms go through the same pipeline:
+// action handler → state update → effect runners → undo history / logs
+
+// ── Effects ──
+
+// Typed builder — autocomplete, compile-time checked
+Todo.fx.persist({ data: items })   // → { type: "persist", data: items }
+Todo.fx.toast({ message: "hi" })   // → { type: "toast", message: "hi" }
+Todo.fx.nope({ bad: true })        // compile error — no "nope" effect
+
+// Plain object — same thing, manual construction
+{ type: "persist", data: items }
+
+// ── Types ──
+typeof Todo.Op      // union of all action ops
+typeof Todo.Effect  // union of all effect types
+```
+
+The direct call (`todo.toggleDone(...)`) internally creates the op and routes through `apply`, so logging, undo history, and effect execution all fire regardless of which form you use. The op form (`todo.apply(...)`) is the same pipeline, just entered with explicit data.
+
+### How effects run
+
+Actions are pure — they update state and _return_ effect data. They never perform I/O. The model's runtime executes the returned effects after the action completes:
+
+```
+todo.toggleDone({ index: 2 })
+         │
+    ┌────▼──────────────────────┐
+    │ 1. Create op              │  { op: "toggleDone", index: 2 }
+    └────┬──────────────────────┘
+         │
+    ┌────▼──────────────────────┐
+    │ 2. Run action handler     │  toggleDone(state, { index: 2 })
+    │    State updates (sync)   │  s.items.value = ...
+    │    Returns effect data    │  → [{ type: "persist", ... }, { type: "toast", ... }]
+    └────┬──────────────────────┘
+         │
+    ┌────▼──────────────────────┐
+    │ 3. Record op              │  push to undo history, log, replay buffer
+    └────┬──────────────────────┘
+         │
+    ┌────▼──────────────────────┐
+    │ 4. Execute effect runners │  effects.persist({ data }) → fs.writeFile(...)
+    │    (async, fire-and-forget │  effects.toast({ message }) → showToast(...)
+    │     or dispatch-back)     │
+    └───────────────────────────┘
+```
+
+**Step 2 is pure.** The action handler sees state, mutates signals, and returns effect descriptions. It never calls `fetch()` or `fs.writeFile()` — those live in step 4.
+
+**Step 4 is impure.** The runners declared in `effects: { ... }` execute the data. They can be async, can fire-and-forget, or can dispatch back into the model (for request/response patterns):
+
+```typescript
+effects: {
+  // Fire-and-forget
+  persist: async ({ data }: { data: unknown }) => {
+    await fs.writeFile("data.json", JSON.stringify(data))
+  },
+
+  // Dispatch-back — async result re-enters the model as a new op
+  fetch: async ({ url, onSuccess }: { url: string; onSuccess: string }, dispatch) => {
+    const data = await fetch(url).then((r) => r.json())
+    dispatch({ op: onSuccess, data })  // re-enters as a new action
+  },
+}
+```
+
+**Swappable per environment.** The `effects` declaration is the default, but runners can be overridden at instantiation:
+
+```typescript
+// Production — real I/O
+const todo = Todo.create()
+
+// Tests — collect effects, don't execute
+const todo = Todo.create({ effects: "collect" })
+const effects = todo.toggleDone({ index: 0 })
+expect(effects).toContainEqual(Todo.fx.persist({ data: expect.any(Array) }))
+
+// Replay — skip I/O entirely
+const todo = Todo.create({ effects: "skip" })
+for (const op of replayLog) todo.apply(op)
+```
+
+This is the core value proposition: **actions are pure functions you can test, replay, and compose. Effects are data you can inspect, collect, swap, or skip.** The runners are just the last mile — and they're the only impure part.
 
 ### Model without effects
 
-Effects are optional. A model with just state + actions is the common case for UI-only state:
+Effects are optional. State + actions alone is the common case:
 
 ```typescript
 const Counter = createModel({
@@ -113,79 +211,36 @@ const Counter = createModel({
 })
 ```
 
-This is the same API. No separate "simple" path.
+### Model without signals
 
-## Composition
+For users who prefer plain state, models could accept plain objects with proxy-based mutation tracking (similar to Immer or Valtio):
 
-### Sip 1: `run()` — no model
-
-Standard React. `useState` + `useInput`. No framework state management.
-
-```tsx
-function Counter() {
-  const [count, setCount] = useState(0)
-  useInput((input) => {
-    if (input === "j") setCount((c) => c + 1)
-  })
-  return <Text>Count: {count}</Text>
-}
-
-await run(<Counter />)
-```
-
-No model, no store, no actions. `run()` is the host — it manages terminal I/O and React rendering. This is the floor.
-
-### Sip 2: `createApp` — one model, inline
-
-When state needs to be shared across components, move it to `createApp`. You can inline the model definition directly:
-
-```tsx
-const app = createApp({
-  state: () => ({
-    cursor: signal(0),
-    items: signal<Item[]>([
-      { id: "1", text: "Buy milk", done: false },
-      { id: "2", text: "Write docs", done: true },
-    ]),
-  }),
-
+```typescript
+const Counter = createModel({
+  state: { count: 0 },  // plain object — auto-proxied
   actions: {
-    moveCursor(s, { delta }: { delta: number }) {
-      s.cursor.value = clamp(s.cursor.value + delta, 0, s.items.value.length - 1)
-    },
-    toggleDone(s, { index }: { index: number }) {
-      s.items.value = s.items.value.map((item, i) =>
-        i === index ? { ...item, done: !item.done } : item
-      )
-    },
-  },
-
-  events: {
-    key(input, key, { apply }) {
-      if (input === "j") apply({ op: "moveCursor", delta: 1 })
-      if (input === "k") apply({ op: "moveCursor", delta: -1 })
-      if (input === "x") apply({ op: "toggleDone", index: this.cursor.value })
-      if (input === "q") return "exit"
-    },
+    increment(s) { s.count += 1 },  // mutation intercepted
   },
 })
-
-await app.run(<TodoView />)
 ```
 
-Components access state via `useApp`:
+This is an open question — see [Open Questions](#open-questions).
+
+### Using a model with React
+
+`@silvery/tea` provides a React hook for subscribing to model state:
 
 ```tsx
+import { useModel } from "@silvery/tea/react"
+
 function TodoList() {
-  const cursor = useApp((s) => s.cursor.value)
-  const items = useApp((s) => s.items.value)
+  const cursor = useModel(todo, (s) => s.cursor.value)
+  const items = useModel(todo, (s) => s.items.value)
   return (
     <Box flexDirection="column">
       {items.map((item, i) => (
-        <Text key={item.id} color={cursor === i ? "$primary" : undefined}>
-          {cursor === i ? "> " : "  "}
-          {item.done ? "[x] " : "[ ] "}
-          {item.text}
+        <Text key={item.id} inverse={cursor === i}>
+          {item.done ? "[x] " : "[ ] "}{item.text}
         </Text>
       ))}
     </Box>
@@ -193,38 +248,41 @@ function TodoList() {
 }
 ```
 
-**What changed from sip 1:** State moved from component to app. Actions are named and serializable. Events map input to actions. Components subscribe to slices of state.
+This hook works with any React renderer — Silvery, React DOM, React Native.
 
-**What's the same shape:** `{ state, actions }` — the model fields. `createApp` wraps an implicit model.
+### Multiple models
 
-### Sip 3: Extract the model
-
-When the domain gets complex or you want to test it independently, extract it:
+Models compose by namespace. They never import each other:
 
 ```typescript
-// todo-model.ts
-export const Todo = createModel({
-  state: () => ({ ... }),
-  actions: { ... },
-  effects: { ... },
-})
+const board = Board.create()
+const dialog = Dialog.create()
+const search = Search.create()
 
-// app.ts
-const app = createApp({
-  model: Todo,
-  events: { key(...) { ... } },
+// Cross-model communication via dispatch effects
+const Dialog = createModel({
+  // ...
+  actions: {
+    confirm(s) {
+      s.open.value = false
+      return [{ type: "dispatch", target: "board", op: "addItem", text: s.value.value }]
+    },
+  },
 })
 ```
 
-**What changed:** `{ state, actions, effects }` moved from inline to `createModel()`. The app definition shrinks to model + events.
+The `dispatch` effect is data — it describes intent without importing the target model. The host (e.g. `createApp`) wires up the routing.
 
-**What you gain:** The model is testable in isolation. Effects are bundled with the domain. The `Op` and `Effect` unions are exported types.
+## `createApp` — The Runtime Host
 
-### Sip 4: Commands + keybindings
+`createApp` is about **runtime composition**: how input reaches your app and how your app reaches the terminal. It's state-agnostic.
 
-When you want customizable keybindings, a command palette, or AI automation — turn events into named commands:
+### With `@silvery/tea` model (recommended path)
 
 ```typescript
+import { createApp } from "@silvery/term/runtime"
+import { Todo } from "./todo-model"
+
 const app = createApp({
   model: Todo,
 
@@ -233,48 +291,66 @@ const app = createApp({
       name: "Move Down",
       action: (ctx) => ({ op: "moveCursor", delta: 1 }),
     },
-    cursor_up: {
-      name: "Move Up",
-      action: (ctx) => ({ op: "moveCursor", delta: -1 }),
-    },
     toggle_done: {
       name: "Toggle Done",
       action: (ctx) => ({ op: "toggleDone", index: ctx.state.cursor.value }),
     },
   },
+})
 
-  keybindings: {
-    j: "cursor_down",
-    k: "cursor_up",
-    x: "toggle_done",
+await app.run(<TodoView />)
+```
+
+`createApp` recognizes a `@silvery/tea` model and wires up `apply`, effect routing, and state access automatically. Commands are part of `createApp` because they bridge input to state — they need both.
+
+### With Zustand (user's choice)
+
+```typescript
+import { create } from "zustand"
+
+const useStore = create((set) => ({
+  count: 0,
+  increment: () => set((s) => ({ count: s.count + 1 })),
+}))
+
+const app = createApp({
+  events: {
+    key(input) {
+      if (input === "j") useStore.getState().increment()
+      if (input === "q") return "exit"
+    },
   },
 })
 
-// Now available:
-app.cmd.cursor_down()        // invoke by name
-app.cmd.all()                // list for command palette
-// AI agent drives the app by command name, not key simulation
+await app.run(<Counter />)
 ```
 
-**What changed:** `events.key` replaced by `commands` + `keybindings`. Input is now data — remappable, discoverable, automatable.
+### With plain useState (simplest)
 
-### Sip 5: Multiple models
+```tsx
+await run(<Counter />)  // no createApp needed
+```
 
-When one model gets too big, split into independent state machines:
+### With multiple models
 
 ```typescript
-const Board = createModel({ state: () => ({ ... }), actions: { ... }, effects: { ... } })
-const Dialog = createModel({ state: () => ({ ... }), actions: { ... }, effects: { ... } })
-const Search = createModel({ state: () => ({ ... }), actions: { ... }, effects: { ... } })
-
 const app = createApp({
   models: {
     board: Board,
     dialog: Dialog,
     search: Search,
   },
-  commands: { ... },
-  keybindings: { ... },
+
+  commands: {
+    cursor_down: {
+      name: "Move Down",
+      action: (ctx) => ctx.board.apply({ op: "moveCursor", delta: 1 }),
+    },
+    open_search: {
+      name: "Search",
+      action: (ctx) => ctx.search.apply({ op: "open" }),
+    },
+  },
 })
 ```
 
@@ -282,162 +358,438 @@ Components access namespaced state:
 
 ```tsx
 function BoardView() {
-  const cursor = useApp((s) => s.board.cursor.value)
-  const items = useApp((s) => s.board.items.value)
+  const cursor = useModel(app.models.board, (s) => s.cursor.value)
   // ...
 }
 ```
 
-Commands target specific models:
-
-```typescript
-commands: {
-  cursor_down: {
-    name: "Move Down",
-    action: (ctx) => ctx.board.apply({ op: "moveCursor", delta: 1 }),
-  },
-  open_search: {
-    name: "Search",
-    action: (ctx) => ctx.search.apply({ op: "open" }),
-  },
-}
-```
-
-### Cross-model communication
-
-Models never import each other. They communicate through dispatch effects:
-
-```typescript
-const Dialog = createModel({
-  state: () => ({ open: signal(false), value: signal("") }),
-  actions: {
-    confirm(s) {
-      s.open.value = false
-      return [fx.dispatch("board", { op: "addItem", text: s.value.value })]
-    },
-  },
-  effects: {
-    dispatch: ({ target, ...op }, { models }) => {
-      models[target].apply(op)
-    },
-  },
-})
-```
-
-The `dispatch` effect is data — it describes intent ("tell board to add an item") without importing Board. The runner resolves it at runtime.
-
 ## Plugins
 
-Plugins add runtime capabilities that aren't part of the domain. They compose via `pipe()`:
+Plugins add runtime capabilities. They compose via `pipe()` and are state-agnostic:
 
 ```typescript
 const app = pipe(
-  createApp({ model: Todo, commands, keybindings }),
-  withFocus(),          // Tab/Shift-Tab navigation, focus scopes
-  withDomEvents(),      // onClick, onMouseDown on components
-  withDiagnostics(),    // Render validation, instrumentation
+  createApp({ model: Todo, commands }),
+  withKeybindings({       // key → command mapping (configurable, user-facing)
+    j: "cursor_down",
+    k: "cursor_up",
+    x: "toggle_done",
+  }),
+  withFocus(),            // Tab/Shift-Tab navigation, focus scopes
+  withDomEvents(),        // onClick, onMouseDown on components
+  withDiagnostics(),      // Render validation, instrumentation
 )
 ```
 
-Plugins are `(app) => enhancedApp` — the same SlateJS pattern. They override methods on the app (press, click) to intercept and process events before they reach commands.
+Plugins are `(app) => enhancedApp` — infrastructure, not domain. They don't define state or actions.
 
-**Key rule:** Plugins are infrastructure, not domain. They don't define state or actions — they add capabilities to the runtime (focus tracking, mouse hit-testing, debug checks).
+**Keybindings are a plugin**, not part of `createApp` or the model. They're a UI concern — the mapping from physical keys to command names. Different users, different terminals, different keybinding schemes. The model defines what actions exist; commands name them; keybindings wire keys to those names. Three separate concerns, three separate places.
 
-The full composition:
+## The Sip Progression
 
+The progression is about **adopting more structure**, not adopting Silvery's state library. Each sip works with any state approach — `@silvery/tea` is the recommended one, but never required.
+
+| Sip | What you add | State approach | Runtime |
+|-----|-------------|----------------|---------|
+| 1 | Nothing | `useState` | `run()` |
+| 2 | Shared state | Any store (tea, Zustand, Jotai, ...) | `createApp` |
+| 3 | Ops-as-data | `createModel` actions → typed Op union | `createApp` |
+| 4 | Commands | Named intents | `createApp` + commands |
+| 5 | Keybindings | Key → command mapping | `withKeybindings()` plugin |
+| 6 | Effects as data | `createModel` effects → typed Effect union | `createApp` |
+| 7 | Composition | Multiple models + dispatch effects | `createApp` + models |
+
+Sips 1-2 are state-agnostic. Sips 3+ are where `@silvery/tea` shines — but even there, you could hand-roll the ops-as-data pattern with any store.
+
+## Domain Model
+
+### Core concepts
+
+```mermaid
+classDiagram
+    direction TB
+
+    class Model {
+        +state: () → State
+        +actions: Record‹name, Handler›
+        +effects?: Record‹type, Runner›
+        +Op [inferred type]
+        +Effect [inferred type]
+        +fx: EffectBuilders
+        +create(overrides?) ModelInstance
+    }
+
+    class ModelInstance {
+        +state: State
+        +apply(op) Effect[]
+        +‹actionName›(params) Effect[]
+    }
+
+    class State {
+        signal values
+        computed values
+    }
+
+    class Op {
+        «discriminated union»
+        +op: string
+        +params: …
+    }
+
+    class EffectData {
+        «discriminated union»
+        +type: string
+        +params: …
+    }
+
+    class EffectRunner {
+        «function»
+        +(data, dispatch?) → void
+    }
+
+    Model --> ModelInstance : create()
+    Model ..> Op : infers from action names + params
+    Model ..> EffectData : infers from effects keys + params
+    Model --> EffectRunner : declares default runners
+    ModelInstance --> State : owns
+    ModelInstance --> Op : accepts via apply()
+    ModelInstance --> EffectData : returns from actions
+    EffectRunner --> EffectData : executes
+
+    note for Model "@silvery/tea\ncreateModel()"
+    note for Op "serializable, loggable\nundo, replay, AI"
+    note for EffectData "serializable\ntestable, swappable"
 ```
-using app = pipe(
-  createApp({ models, commands, keybindings })
-  ├─ withFocus()            focus tree, Tab/Escape
-  ├─ withDomEvents()        onClick, onMouseDown → components
-  ├─ withDiagnostics()      render invariant checks
-)
 
-await app.run(<View />)
+### How it integrates
+
+```mermaid
+classDiagram
+    direction LR
+
+    class StoreProtocol {
+        «interface»
+        +apply(op) void
+        +getState() object
+    }
+
+    class ModelInstance {
+        +state
+        +apply(op)
+        +‹actionName›(params)
+    }
+
+    class ZustandStore {
+        +useStore(selector)
+        +getState()
+        +setState()
+    }
+
+    class withOps {
+        «Zustand middleware»
+        wraps a Model definition
+    }
+
+    class AnyStore {
+        «your choice»
+        Jotai / MobX / Valtio / …
+    }
+
+    class App {
+        +commands?: Record‹name, Command›
+        +events?: EventHandlers
+        +run(element) AppHandle
+    }
+
+    class Command {
+        +name: string
+        +action(ctx) Op
+    }
+
+    class Plugin {
+        «function»
+        +(app) → enhanced app
+    }
+
+    class withKeybindings {
+        «Plugin»
+        key → command name
+    }
+    class withFocus {
+        «Plugin»
+        focus tree, Tab/Escape
+    }
+    class withDomEvents {
+        «Plugin»
+        onClick, onMouse*
+    }
+
+    ModelInstance ..|> StoreProtocol : implements
+    ZustandStore ..|> StoreProtocol : via adapter
+    AnyStore ..|> StoreProtocol : via adapter
+
+    withOps --> ModelInstance : wraps into Zustand
+    withOps --> ZustandStore : produces
+
+    App --> StoreProtocol : dispatches via (optional)
+    App --> Command : owns
+    Command --> StoreProtocol : calls apply()
+
+    Plugin --> App : enhances
+    withKeybindings --|> Plugin
+    withFocus --|> Plugin
+    withDomEvents --|> Plugin
+    withKeybindings --> Command : resolves keys to
+
+    note for App "@silvery/term\ncreateApp()"
+    note for withOps "@silvery/tea\nZustand middleware"
+    note for StoreProtocol "The only contract\nbetween runtime and state"
 ```
 
-## Architecture
+### Runtime pipeline
 
-```
-                    ┌─────────────────────┐
-                    │     createApp()      │
-                    │                      │
-  ┌────────┐       │  ┌──────┐ ┌──────┐  │
-  │  run() │       │  │Model │ │Model │  │
-  │        │       │  │state │ │state │  │
-  │useState│       │  │action│ │action│  │
-  │useInput│       │  │effect│ │effect│  │
-  │        │       │  └──────┘ └──────┘  │
-  │  (no   │       │                      │
-  │ model) │       │  commands             │
-  └────────┘       │  keybindings          │
-                    │                      │
-                    │  ┌────────────────┐  │
-                    │  │ Zustand bridge │  │  ← internal detail
-                    │  └────────────────┘  │
-                    └──────────┬───────────┘
-                               │
-                    ┌──────────┴───────────┐
-                    │  pipe() + plugins    │
-                    │  withFocus()         │
-                    │  withDomEvents()     │
-                    │  withDiagnostics()   │
-                    └──────────┬───────────┘
-                               │
-                    ┌──────────┴───────────┐
-                    │     app.run()        │
-                    │  React + Terminal    │
-                    └──────────────────────┘
+```mermaid
+sequenceDiagram
+    participant User
+    participant Keybindings as withKeybindings
+    participant Commands as Command System
+    participant Store as Store (any)
+    participant Action as Action Handler
+    participant React
+    participant Runners as Effect Runners
+
+    User->>Keybindings: keypress "j"
+    Keybindings->>Commands: resolve → "cursor_down"
+    Commands->>Store: apply({ op: "moveCursor", delta: 1 })
+    Store->>Action: moveCursor(state, { delta: 1 })
+    Action-->>Store: state updated + Effect[]
+    Store->>React: signal/state change → re-render
+    Store->>Runners: execute returned effects
+    Runners-->>Store: dispatch-back (optional)
 ```
 
-The pipeline at runtime:
+### Package ownership
 
+```mermaid
+graph TB
+    subgraph "@silvery/tea — state structure"
+        createModel[createModel]
+        signal[signal / computed]
+        withOps[withOps — Zustand middleware]
+        useModel[useModel — React hook]
+    end
+
+    subgraph "@silvery/term — runtime"
+        createApp[createApp]
+        run[run]
+        pipeline[rendering pipeline]
+    end
+
+    subgraph "plugins — via pipe()"
+        kb[withKeybindings]
+        focus[withFocus]
+        dom[withDomEvents]
+        diag[withDiagnostics]
+    end
+
+    subgraph "external — user's choice"
+        zustand[Zustand]
+        jotai[Jotai / Valtio / MobX]
+        useState[React useState]
+    end
+
+    createModel --> withOps
+    withOps --> zustand
+    createModel --> useModel
+
+    createApp --> run
+    createApp --> pipeline
+    kb --> createApp
+    focus --> createApp
+    dom --> createApp
+    diag --> createApp
+
+    createApp -.->|optional| createModel
+    createApp -.->|optional| zustand
+    createApp -.->|optional| jotai
+    createApp -.->|optional| useState
+
+    style createModel fill:#e8f5e9
+    style withOps fill:#e8f5e9
+    style signal fill:#e8f5e9
+    style useModel fill:#e8f5e9
+    style createApp fill:#e3f2fd
+    style run fill:#e3f2fd
+    style pipeline fill:#e3f2fd
 ```
-keypress / click / timer
-         │
-    ┌────▼─────┐
-    │ Plugins  │  focus routing, DOM event dispatch
-    └────┬─────┘
-         │
-    ┌────▼─────┐
-    │ Commands │  key → command name → action
-    └────┬─────┘
-         │
-    ┌────▼─────┐
-    │  apply() │  model.actions[op.op](state, params)
-    └────┬─────┘
-         │
-    ┌────▼─────┐
-    │  State   │  signal updates → Zustand → selective re-render
-    └────┬─────┘
-         │
-    ┌────▼─────┐
-    │ Effects  │  data → runners (persist, toast, dispatch, ...)
-    └──────────┘
-```
+
+The dashed lines are the key insight: **`createApp` has no hard dependency on any state library.** The only contract is `StoreProtocol` — `{ apply(op), getState() }` — and even that's optional (you can use raw event handlers instead).
+
+## Architecture Summary
+
+Three layers, loosely coupled:
+
+| Layer | Package | Concern | Depends on |
+|-------|---------|---------|------------|
+| **State structure** | `@silvery/tea` | ops-as-data, effects-as-data, signals | Nothing (standalone) |
+| **Runtime** | `@silvery/term` | events, commands, rendering, terminal I/O | `@silvery/react` |
+| **Plugins** | `pipe()` | keybindings, focus, DOM events, diagnostics | Runtime (App interface) |
+
+`@silvery/tea` enhances any store — as a Zustand middleware, as standalone `Model.create()`, or via the `StoreProtocol` interface. The runtime doesn't know or care which path you took.
 
 ## What Changes
 
 | Current | New | Why |
 |---------|-----|-----|
-| `createSlice(init, handlers)` | `createModel({ state, actions, effects? })` | Better name, bundles effects |
+| `createSlice(init, handlers)` | `createModel({ state, actions, effects? })` | Better name, bundles effects, standalone |
 | `createEffects({ ... })` | `effects` field in `createModel` | One definition, not two |
-| `createApp(() => (set, get) => {...}, handlers)` | `createApp({ model, events/commands })` | No Zustand exposure |
-| `tea(state, reducer, { runners })` | Removed — absorbed by `createApp` internals | Users don't need the bridge |
-| `createStore(config)` | Stays — escape hatch for framework-free TEA | Niche but real use case |
-| `run(element)` | Stays — sip 1, no model | The floor |
+| `createApp(() => (set, get) => {...})` | `createApp({ model?, events?, commands? })` | State-agnostic, no Zustand exposure |
+| keybindings in `createApp` | `withKeybindings()` plugin | UI concern, not state or runtime |
+| `tea(state, reducer, { runners })` | Removed — internal bridge no longer needed | `createApp` integrates with models directly |
+| `createStore(config)` | Stays — framework-free TEA store | Niche but real use case |
+| `run(element)` | Stays — sip 1, no state management | The floor |
 | `pipe()` + plugins | Stays — unchanged | Already clean |
+| `useApp(selector)` | `useModel(model, selector)` | Works with any React renderer |
+
+## Why `@silvery/tea` Over Zustand (or Jotai, or MobX)
+
+`@silvery/tea` isn't a replacement for Zustand — it's a different level of abstraction. You could use Zustand with Silvery and be perfectly happy. `@silvery/tea` earns its keep when your app needs things Zustand doesn't provide out of the box.
+
+### What Zustand gives you
+
+Zustand is excellent at shared reactive state. You define a store, components subscribe to slices, and re-renders are surgical. If all you need is "multiple components reading and writing the same state," Zustand (or Jotai, or Valtio) is the right tool and you should use it with Silvery directly.
+
+```typescript
+// Zustand — great for shared state
+const useStore = create((set) => ({
+  cursor: 0,
+  items: [],
+  moveCursor: (delta) => set((s) => ({ cursor: s.cursor + delta })),
+  toggleDone: (i) => set((s) => ({
+    items: s.items.map((item, j) => j === i ? { ...item, done: !item.done } : item),
+  })),
+}))
+```
+
+### What `@silvery/tea` adds
+
+**1. Ops-as-data.** Every state change is a serializable object. This unlocks undo/redo, time-travel debugging, collaboration (send ops over the wire), AI automation (LLMs emit structured ops), and replay.
+
+```typescript
+// Zustand: function call — executes and vanishes
+useStore.getState().toggleDone(2)
+
+// @silvery/tea: data — inspectable, serializable, reversible
+apply({ op: "toggleDone", index: 2 })
+```
+
+**2. Type-inferred op unions.** You write handlers; `createModel` infers the discriminated union. No manual type declaration, no switch/case boilerplate.
+
+```typescript
+const Todo = createModel({
+  actions: {
+    moveCursor(s, { delta }: { delta: number }) { ... },
+    toggleDone(s, { index }: { index: number }) { ... },
+  },
+})
+
+type Op = typeof Todo.Op
+// { op: "moveCursor"; delta: number } | { op: "toggleDone"; index: number }
+// ↑ inferred automatically from the handler signatures
+```
+
+**3. Effects as data.** Side effects are return values, not inline calls. Test state transitions without mocking fetch, fs, or anything else.
+
+```typescript
+// Zustand: I/O mixed into handler — need mocks to test
+toggleDone: async (i) => {
+  set(/* ... */)
+  await fetch("/api", { body: JSON.stringify(get().items) })  // untestable
+}
+
+// @silvery/tea: I/O described as data — test the pure function
+toggleDone(s, { index }) {
+  s.items.value = /* ... */
+  return [{ type: "persist", data: s.items.value }]  // testable
+}
+
+// Test: no mocks
+const effects = Todo.toggleDone(state, { index: 0 })
+expect(effects).toContainEqual({ type: "persist", data: expect.any(Array) })
+```
+
+**4. Composable state machines.** Independent models communicate through dispatch effects — no imports between them. Each model is testable in isolation.
+
+**5. Integrated effect runners.** Runners live alongside the model definition. Swap them per environment — production hits real APIs, tests collect effects, replays skip I/O entirely.
+
+### When to use what
+
+| Need | Use |
+|------|-----|
+| Shared reactive state | Zustand, Jotai, Valtio — or `@silvery/tea` |
+| Undo/redo | `@silvery/tea` (ops are data) |
+| Time-travel debugging | `@silvery/tea` (ops are data) |
+| AI automation | `@silvery/tea` (ops are structured data LLMs can emit) |
+| Testable side effects | `@silvery/tea` (effects as data) |
+| Customizable keybindings | `@silvery/tea` + commands (actions have names) |
+| Multiple independent state machines | `@silvery/tea` (models compose via dispatch effects) |
+| Simple UI state (toggles, forms) | `useState` — no library needed |
+
+The honest answer: most dashboard-style apps are fine with Zustand or even useState. `@silvery/tea` shines in keyboard-driven apps with complex state (editors, IDEs, multi-pane TUIs) where undo, replay, testability, and AI automation matter.
+
+## How `createApp` Stays State-Agnostic
+
+`createApp` integrates with any state library through a minimal protocol. When you pass a `@silvery/tea` model, it wires up automatically. When you bring your own store, you wire it yourself — `createApp` just provides the runtime.
+
+### The integration protocol
+
+For `createApp` to wire commands to state, it needs two things from your store:
+
+```typescript
+interface StoreProtocol<Op> {
+  apply(op: Op): void        // dispatch an action
+  getState(): unknown         // read current state (for command context)
+}
+```
+
+`@silvery/tea` models implement this natively. For other stores, you provide a thin adapter:
+
+```typescript
+// Zustand adapter — 3 lines
+const app = createApp({
+  store: {
+    apply: (op) => zustandStore.getState()[op.op]?.(op),
+    getState: () => zustandStore.getState(),
+  },
+  commands: { ... },
+})
+```
+
+Or skip the protocol entirely and handle events yourself:
+
+```typescript
+// No protocol — just event handlers
+const app = createApp({
+  events: {
+    key(input) {
+      if (input === "j") myStore.whatever()
+    },
+  },
+})
+```
+
+The protocol is opt-in. It exists so that `commands` and `keybindings` can dispatch to your store — if you don't use commands, you don't need it.
 
 ## Open Questions
 
-1. **Auto-signaling.** Should `state: () => ({ count: 0 })` auto-wrap plain values in signals? Reduces ceremony but hides the reactivity mechanism. Proposal: support both — plain object = auto-signaled, factory with explicit `signal()` = manual control.
+1. **Auto-signaling.** Should `state: { count: 0 }` auto-wrap in signals (Valtio-style proxy)? Reduces ceremony but hides reactivity. Proposal: support both — plain object = auto-proxied, explicit `signal()` = manual control.
 
-2. **Naming: "model" vs alternatives.** "Model" is Elm's term (good precedent) but overloaded elsewhere (MVC, ML). Alternatives: `machine` (emphasizes state machine), `domain` (too abstract), `module` (too generic). Leaning: **model**.
+2. **Naming: "model" vs alternatives.** "Model" is Elm's term (good precedent) but overloaded (MVC, ML). Alternatives: `machine`, `domain`, `store`. Leaning: **model**.
 
-3. **`useApp` with multiple models.** Should it be `useApp(s => s.board.cursor.value)` (namespaced) or `useBoard(s => s.cursor.value)` (generated hooks)? Namespaced is simpler; generated hooks are more ergonomic but add magic.
+3. **React bridge.** `useModel(model, selector)` needs a subscription mechanism. With signals, this could use `useSyncExternalStore` under the hood. Should `@silvery/tea/react` be a separate entry point or bundled?
 
-4. **Event handler shape.** The `events.key(input, key, ctx)` handler in sip 2 — should it match the current `EventHandler` signature or simplify? Currently receives `(data, ctx)` with `ctx` having `set`/`get`/`focusManager`. With models, `ctx` should have `apply` and `state` instead.
+4. **`createApp` integration contract.** What interface must a state library implement for `createApp` to wire it up? Proposal: `{ apply(op): Effect[], state: object }` — minimal protocol. `@silvery/tea` models implement this natively; other stores could implement it via a thin adapter.
 
-5. **Effect builder access.** In the current design, actions reference `fx.persist(...)` which comes from `createEffects`. With effects defined in the model, how do actions reference the builders? Options: (a) `this.fx.persist(...)`, (b) builders auto-available as a third argument, (c) `return [{ type: "persist", data }]` — plain objects, no builders. Leaning: **(c)** plain objects — the model definition already declares the types, so the builders are just convenience. TypeScript can validate the union.
+5. **Command context.** Commands need access to state to compute actions. With state-agnostic `createApp`, how does the command context work? Proposal: `createApp({ model })` injects `ctx.state` and `ctx.apply`; `createApp({ events })` injects a generic `ctx` that the user populates.
 
-6. **Backward compatibility.** `createSlice` and `createApp` have users (km, examples, tests). Migration path: keep old APIs as thin wrappers over `createModel` + new `createApp`, deprecate over one release cycle.
+6. **Migration path.** `createSlice` and current `createApp` have users. Keep old APIs as deprecated wrappers? One release cycle?
