@@ -175,8 +175,8 @@ async function generateRegistry(): Promise<void> {
     },
     "dev-tools": {
       name: "Log Viewer",
-      description: "Filterable log viewer with live search, scroll, and level coloring.",
-      features: ["Box", "Text", "borderStyle", "useInput", "useState", "wrap"],
+      description: "Filterable log viewer with TextInput search, scroll, and level coloring.",
+      features: ["Box", "Text", "TextInput", "borderStyle", "useInput", "wrap"],
     },
     "data-explorer": {
       name: "Process Explorer",
@@ -200,8 +200,8 @@ async function generateRegistry(): Promise<void> {
     },
     "text-input": {
       name: "Text Input",
-      description: "Live text echo with cursor, backspace, and clear.",
-      features: ["Box", "Text", "borderStyle", "useInput"],
+      description: "Full readline-style editing with kill ring, word movement, and focus ring.",
+      features: ["Box", "Text", "TextInput", "borderStyle", "outlineStyle"],
     },
     "theme-explorer": {
       name: "Theme Explorer",

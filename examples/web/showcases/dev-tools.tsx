@@ -209,7 +209,7 @@ export function DevToolsShowcase(): JSX.Element {
         ))}
       </Box>
 
-      <KeyHints hints="type to filter  Esc clear  \u2191\u2193 scroll  Ctrl+A/E begin/end" />
+      <KeyHints hints={"type to filter  Esc clear  \u2191\u2193 scroll  Ctrl+A/E begin/end"} />
     </Box>
   )
 }
