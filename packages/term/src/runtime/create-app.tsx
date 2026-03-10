@@ -231,6 +231,12 @@ export interface AppRunOptions {
    * (scoped width measurer + output phase). Typically from term.caps.
    */
   caps?: import("../terminal-caps.js").TerminalCaps
+  /**
+   * Root component that wraps the element tree with additional providers.
+   * Set by plugins (e.g., withInk) via the `app.Root` pattern.
+   * The Root component receives children and wraps them with providers.
+   */
+  Root?: React.ComponentType<{ children: React.ReactNode }>
   /** Providers and plain values to inject */
   [key: string]: unknown
 }
@@ -457,6 +463,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     textSizing: textSizingOption,
     focusReporting: focusReportingOption = false,
     caps: capsOption,
+    Root: RootComponent,
     ...injectValues
   } = options
 
@@ -826,13 +833,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   // Wrap element with all required providers
+  // If a Root component is provided (e.g., from withInk), wrap the element with it
+  // inside silvery's contexts so it can access Term, Stdout, FocusManager, Runtime.
+  const Root = RootComponent ?? React.Fragment
   const wrappedElement = (
     <CursorProvider store={cursorStore}>
       <TermContext.Provider value={mockTerm}>
         <StdoutContext.Provider value={{ stdout: mockStdout, write: () => {} }}>
           <FocusManagerContext.Provider value={focusManager}>
             <RuntimeContext.Provider value={runtimeContextValue}>
-              <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
+              <Root>
+                <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
+              </Root>
             </RuntimeContext.Provider>
           </FocusManagerContext.Provider>
         </StdoutContext.Provider>

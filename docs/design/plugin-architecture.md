@@ -1,21 +1,23 @@
 # Plugin Architecture: withReact() + withInk()
 
-## Status: Design Proposal
+## Status: Partially Implemented
+
+The `.Root` component pattern is implemented — plugins set `app.Root` to compose providers.
+The test renderer retains `wrapRoot` as a direct option for `render()`.
 
 ## Problem
 
 Silvery has three entry points for rendering React elements, each with its own provider stack:
 
 1. **`render()`** (test renderer, `renderer.ts`) — wraps with `CursorProvider > TermContext > StdoutContext > FocusManagerContext > RuntimeContext`, plus optional `wrapRoot` callback
-2. **`run()`** / **`createApp()`** (runtime, `create-app.tsx`) — wraps with `CursorProvider > TermContext > StdoutContext > FocusManagerContext > RuntimeContext`, hardcoded
+2. **`run()`** / **`createApp()`** (runtime, `create-app.tsx`) — wraps with `CursorProvider > TermContext > StdoutContext > FocusManagerContext > RuntimeContext`, plus optional `Root` component from plugins
 3. **`renderToXterm()`** (xterm, `xterm/index.ts`) — no provider wrapping at all
-4. **Ink compat** (`ink.ts`) — reimplements provider wrapping: `CursorProvider > InkCursorStoreCtx > InkFocusProvider > InkErrorBoundary`, applied via `wrapRoot`
+4. **Ink compat** (`ink.ts`) — reimplements provider wrapping: `CursorProvider > InkCursorStoreCtx > InkFocusProvider > InkErrorBoundary`, applied via `app.Root` (pipe) or `wrapRoot` (test renderer)
 
 Problems:
 
 - **Duplication**: Each entry point builds its own provider tree, with slight variations
 - **Ink reimplements**: The compat layer reimplements ~300 lines of render pipeline to add its providers
-- **No extension point**: `run()`/`createApp()` have no `wrapRoot` — apps can't inject providers
 - **xterm has nothing**: Web showcases have no access to silvery's focus management, cursor tracking, etc.
 
 ## Proposed Solution: Composable Plugins
@@ -107,38 +109,38 @@ await run(<App />, {
 
 ### Implementation Plan
 
-1. **Phase 1: Add `plugins` option to all entry points**
-   - Add `plugins?: Plugin[]` to `RunOptions`, `RenderOptions`, `XtermRenderOptions`
-   - Apply plugins in `wrapWithContexts()` / equivalent, after silvery's core providers
-   - Deprecate `wrapRoot` in favor of `plugins`
+1. **Phase 1: `.Root` component pattern** (DONE)
+   - Plugins set `app.Root` — a React component wrapping children with providers
+   - Plugins compose: `const PrevRoot = app.Root ?? Fragment`
+   - `createApp()` reads `Root` from run options, applies inside silvery's core providers
+   - `render()` (test) retains `wrapRoot` callback for direct usage
+   - `withInk()` sets `app.Root` and injects it into run options
 
-2. **Phase 2: Extract withInk() from ink.ts**
-   - Move the `withInk` function from ink.ts into `@silvery/compat`
-   - Have ink.ts `render()` pass `plugins: [withInk()]` to the test renderer
-   - Removes ~300 lines of reimplemented render pipeline from ink.ts
-
-3. **Phase 3: Add withTheme() to showcases**
+2. **Phase 2: Add withTheme() to showcases**
    - Apply `withTheme()` to all web showcases
    - Enables theme switching in the showcase viewer
 
 ### Design Principles
 
 - **Plugins are just React providers** — no custom API, no registration
-- **Composition order = nesting order** — first plugin = outermost wrapper
+- **Composition order = nesting order** — later plugins wrap earlier ones
 - **Core providers always present** — plugins add on top of silvery's base stack
-- **Backwards compatible** — `wrapRoot` still works (converted to a single plugin internally)
+- **`.Root` is the plugin extension point** — composable via `PrevRoot` pattern
 
-### Migration Path
+### Current Pattern
 
 ```typescript
-// Before (wrapRoot):
-render(<App />, { wrapRoot: (el) => <MyProvider>{el}</MyProvider> })
+// pipe() composition — plugins set app.Root:
+const app = pipe(
+  createApp(store),
+  withReact(<Board />),
+  withTerminal(process),
+  withInk(),  // sets app.Root to Ink providers wrapping PrevRoot
+)
 
-// After (plugins):
-render(<App />, { plugins: [(el) => <MyProvider>{el}</MyProvider>] })
+// Test renderer — wrapRoot still works for direct usage:
+render(<App />, { wrapRoot: createInkWrapRoot() })
 ```
-
-The `wrapRoot` option continues to work — internally it's treated as `plugins: [wrapRoot]`.
 
 ## Alternatives Considered
 

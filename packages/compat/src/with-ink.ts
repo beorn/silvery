@@ -2,7 +2,7 @@
  * withInk() — Composable plugin for Ink compatibility.
  *
  * Wraps a React element tree with Ink-specific providers (error boundary,
- * focus system, cursor store) via silvery's `wrapRoot` mechanism.
+ * focus system, cursor store) via the `.Root` component pattern.
  *
  * Two usage modes:
  *
@@ -28,7 +28,7 @@
  * @packageDocumentation
  */
 
-import React, { Component, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import React, { Component, Fragment, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { createCursorStore, CursorProvider, type CursorStore } from "@silvery/react/hooks/useCursor"
 import { EventEmitter } from "node:events"
 import type { ReactElement } from "react"
@@ -379,6 +379,7 @@ export function createInkWrapRoot(
  */
 interface RunnableApp {
   run(...args: unknown[]): unknown
+  Root?: React.ComponentType<{ children: React.ReactNode }>
   [key: string]: unknown
 }
 
@@ -388,6 +389,8 @@ interface RunnableApp {
 export interface AppWithInk {
   /** The Ink wrapRoot function applied by this plugin */
   readonly inkWrapRoot: (element: ReactElement) => ReactElement
+  /** Root component that wraps the element tree with Ink providers */
+  readonly Root: React.ComponentType<{ children: React.ReactNode }>
 }
 
 /**
@@ -399,8 +402,9 @@ export interface AppWithInk {
  * - `InkCursorStoreCtx` — cursor store context for Ink's useCursor hook
  * - `CursorProvider` — silvery cursor provider with the shared store
  *
- * The plugin injects these providers by wrapping `run()` to pass a `wrapRoot`
- * function to the underlying renderer.
+ * The plugin sets `app.Root` to a component that wraps the element tree
+ * with Ink providers, composing with any existing `app.Root`. It also wraps
+ * `run()` to inject the Root into run options for `createApp()`.
  *
  * @example
  * ```tsx
@@ -425,12 +429,18 @@ export function withInk<T extends RunnableApp>(
   const wrapRoot = createInkWrapRoot(options)
 
   return (app: T): T & AppWithInk => {
+    // Compose with previous Root: wrap PrevRoot inside Ink providers
+    const PrevRoot = app.Root ?? Fragment
+    const InkRoot = ({ children }: { children: React.ReactNode }) =>
+      wrapRoot(React.createElement(PrevRoot, null, children))
+
     const originalRun = app.run
 
     return Object.assign(Object.create(app), {
       inkWrapRoot: wrapRoot,
+      Root: InkRoot,
       run(...args: unknown[]) {
-        // Find or create the options object in the args
+        // Inject Root into run options so createApp() can use it
         let existingOptions: Record<string, unknown> | undefined
         if (args.length > 0 && typeof args[args.length - 1] === "object" && args[args.length - 1] !== null) {
           const last = args[args.length - 1] as Record<string, unknown>
@@ -440,17 +450,7 @@ export function withInk<T extends RunnableApp>(
           }
         }
 
-        const runOptions: Record<string, unknown> = { ...existingOptions }
-
-        // Chain wrapRoot: if there's already a wrapRoot, compose them
-        const existingWrapRoot = runOptions.wrapRoot as
-          | ((el: ReactElement) => ReactElement)
-          | undefined
-        if (existingWrapRoot) {
-          runOptions.wrapRoot = (el: ReactElement) => wrapRoot(existingWrapRoot(el))
-        } else {
-          runOptions.wrapRoot = wrapRoot
-        }
+        const runOptions: Record<string, unknown> = { ...existingOptions, Root: InkRoot }
 
         // Replace or append options in args
         if (existingOptions) {
