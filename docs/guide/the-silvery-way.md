@@ -8,7 +8,7 @@ Each principle is something people get wrong. If you're coming from Ink, Blessed
 
 ## 1. Use the Built-in Components
 
-@silvery/ui ships 30+ components. They handle keyboard navigation, theming, mouse support, kill ring, word movement, scroll indicators, and dozens of edge cases you haven't thought of yet. When you reimplement them, you lose all of that.
+[`@silvery/ui`](/reference/packages) ships 30+ components. They handle keyboard navigation, theming, mouse support, kill ring, word movement, scroll indicators, and dozens of edge cases you haven't thought of yet. When you reimplement them, you lose all of that.
 
 ::: tip ✨ Shiny
 
@@ -43,14 +43,14 @@ useInput((input, key) => {
 })
 ```
 
-You'll spend a week reimplementing what `SelectList` and `TextInput` give you in one line.
+You'll spend a week reimplementing what [`SelectList`](/guides/components#selectlist) and [`TextInput`](/guides/components#textinput) give you in one line.
 :::
 
 → [Components guide](/guides/components) · [Components & hooks reference](/reference/components-hooks)
 
 ## 2. Think in Flexbox
 
-Silvery uses CSS flexbox via Flexily — same mental model as web development. Let the layout engine compute positions and sizes. Components know their own size via `useContentRect()` — synchronous, during render, no effects, no 0×0 flash.
+Silvery uses CSS flexbox via [Flexily](/guide/layout-engine) — same mental model as web development. Let the layout engine compute positions and sizes. Components know their own size via `useContentRect()` — synchronous, during render, no effects, no 0×0 flash.
 
 ::: tip ✨ Shiny
 
@@ -134,7 +134,7 @@ Manual scroll offset tracking is the #1 source of off-by-one bugs in terminal ap
 
 ## 4. Focus Control
 
-Silvery has tree-based focus with spatial navigation. Focus determines which component receives input. Without focus management, overlapping key handlers create chaos — a modal opens but the background still handles keys.
+[`@silvery/react`](/reference/packages) provides tree-based focus with spatial navigation. Focus determines which component receives input. Without focus management, overlapping key handlers create chaos — a modal opens but the background still handles keys.
 
 ::: tip ✨ Shiny
 
@@ -182,7 +182,7 @@ If you're writing `if (isDialogOpen) return` in your input handlers, you don't h
 
 ## 5. Command System
 
-Named, serializable, introspectable actions. Commands make your app automatable (AI agents invoke commands by name), testable (fire commands in tests), and discoverable (CommandPalette lists them all).
+Named, serializable, introspectable actions. Commands make your app automatable (AI agents invoke commands by name), testable (fire commands in tests), and discoverable ([`CommandPalette`](/guides/components#shadcn-style-components) lists them all).
 
 ::: tip ✨ Shiny
 
@@ -231,7 +231,7 @@ Keybindings are a UI detail. Commands are the API. Build on commands; bind keys 
 
 ## 6. Semantic Theme Colors
 
-Themes are auto-detected from the terminal's palette via OSC queries — no configuration needed. Use semantic tokens and your app looks right in every terminal theme. 38 built-in palettes (Catppuccin, Nord, Dracula, Tokyo Night, Solarized, and more) work automatically.
+[`@silvery/theme`](/reference/packages) auto-detects your terminal's palette via OSC queries — no configuration needed. Use semantic tokens and your app looks right in every terminal theme. 38 built-in palettes (Catppuccin, Nord, Dracula, Tokyo Night, Solarized, and more) work automatically.
 
 ::: tip ✨ Shiny
 
@@ -348,7 +348,7 @@ try {
 
 ## 9. Relax and Sip Some TEA
 
-State management is where apps go from "demo" to "production." Silvery includes `@silvery/tea` — a ~30-line Zustand middleware implementing The Elm Architecture. Your reducer is a pure function: `(state, op) => state` for simple updates, or `(state, op) => [state, effects]` when you need side effects. Effects are data, not imperative calls — making your logic pure, testable, and replayable.
+State management is where apps go from "demo" to "production." Silvery includes [`@silvery/tea`](/reference/packages) — a ~30-line Zustand middleware implementing The Elm Architecture. Your reducer is a pure function: `(state, op) => state` for simple updates, or `(state, op) => [state, effects]` when you need side effects. Effects are data, not imperative calls — making your logic pure, testable, and replayable.
 
 ::: tip ✨ Shiny
 
@@ -413,7 +413,7 @@ When side effects live in your reducer, you can't test them, replay them, or swa
 
 ## 10. Test Against What the User Sees
 
-State assertions pass while the screen is garbled. `selectedIndex === 2` doesn't catch the selection rendering on the wrong row, or the border overlapping content, or the scroll indicator showing the wrong count. Test what the user actually sees.
+[`@silvery/test`](/reference/packages) gives you headless rendering with Playwright-style locators. State assertions pass while the screen is garbled — `selectedIndex === 2` doesn't catch the selection rendering on the wrong row, or the border overlapping content, or the scroll indicator showing the wrong count. Test what the user actually sees.
 
 ::: tip ✨ Shiny
 
@@ -456,7 +456,7 @@ If your test doesn't render, it doesn't test what the user sees. And if your tes
 
 ## The Silvery Way, at a Glance
 
-1. **Use the built-in components** — don't reimplement what @silvery/ui already handles
+1. **Use the built-in components** — don't reimplement what [`@silvery/ui`](/reference/packages) already handles
 2. **Think in flexbox** — let the layout engine do the math
 3. **Let the framework scroll** — `overflow="scroll"`, not manual slicing
 4. **Control focus** — use the focus tree, not guard clauses
