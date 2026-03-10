@@ -14,8 +14,6 @@ The app evolves: Counter → Todo list → Board. At each level, both state mana
 
 Most web apps stop at Level 2. TUI apps with keyboard-driven interaction, undo, and multi-pane layouts often reach Level 3. The patterns are general — ops as data, effects as data, composable state machines work in any React framework. If you've heard of [The Elm Architecture](https://guide.elm-lang.org/architecture/) (TEA), that's where Levels 3+4 land. You arrive there incrementally — one sip at a time.
 
----
-
 ## Level 1: Starting Simple
 
 You're building a counter. One component, one piece of state, one input handler. This is React at its simplest.
@@ -54,8 +52,6 @@ Count: 3
 At Level 1, state lives inside a component and input handling is a function call — both invisible to everything outside this component.
 
 **The wall**: A second component needs the same state — and threading it through props means every intermediate component has to know about data it doesn't use. And you want click targets — but `useInput` doesn't know about spatial coordinates.
-
----
 
 ## Level 2: Shared State + Spatial Events
 
@@ -182,8 +178,6 @@ const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
 State is shared and renders are efficient. Clicks resolve to components and events bubble. But the transitions and handlers are still invisible.
 
 **The wall**: You want undo — but `store.toggleDone()` mutated state and vanished. You want customizable keybindings — but `onClick={() => selectCard()}` has no name to show in a command palette, no binding to remap. Both problems have the same root: behavior is function calls that execute and disappear. You need to turn behavior into data.
-
----
 
 ## Level 3: Everything is Data
 
@@ -332,8 +326,6 @@ Component handlers and commands coexist naturally. `withDomEvents()` fires first
 Behavior is data now — serializable, reversible, replayable on both the state and event sides. But our domain functions still perform I/O directly.
 
 **The wall**: You want to test `toggleDone` — but it calls `fs.writeFile()` and `showToast()` directly. You want vim-style modal input — but the built-in command resolution is single-key. Both sides need the same thing: make the processing itself visible.
-
----
 
 ## Level 4: Pure Functions
 
@@ -505,8 +497,6 @@ Both sides of Level 4 do the same thing: make processing visible. Effects-as-dat
 
 **The wall**: Your single slice is 400 lines. A search feature change breaks the cursor because they share state and a single `apply()`.
 
----
-
 ## Level 5: Composable Machines
 
 Everything lives in one slice. That worked when the app was small, but now board, dialog, and search are entangled.
@@ -600,8 +590,6 @@ keypress / mouse / timer
     └─ dispatch → another machine.apply(...)
 ```
 
----
-
 ## Trade-offs: When Data Goes Too Far
 
 The progression from functions to data is not free. Each level buys something real — but it also costs something real.
@@ -626,8 +614,6 @@ The progression from functions to data is not free. Each level buys something re
 
 **The honest rule of thumb**: if you can't name a specific benefit you'd get from making something data (undo? replay? testing without mocks? customizable bindings?), keep it as a function call. The progression is opt-in at every level — and opting out is a valid choice.
 
----
-
 ## Prior Art
 
 The core ideas — making operations, effects, and events into data — have been discovered many times.
@@ -643,8 +629,6 @@ The core ideas — making operations, effects, and events into data — have bee
 | **Silvery**                                                   | All of the above              | `createSlice` + `tea()` for state; `pipe()` + plugins for events. Incremental adoption.          |
 
 Redux got Level 3 right but stopped there. redux-loop completed the TEA shape. SlateJS pioneered the plugin-by-override model. This guide pieces these ideas into a single incremental progression for React.
-
----
 
 ## The Takeaway
 

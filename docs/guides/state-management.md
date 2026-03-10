@@ -2,8 +2,6 @@
 
 > This page documents Silvery's state management APIs. For the guided progression from `useState` to TEA, see [Terminal Apps](/guides/terminal-apps).
 
----
-
 ## `createApp()` — Zustand Store
 
 `createApp()` is a Zustand middleware that bundles the store with centralized key handling, terminal I/O, and exit handling into a single `app.run(<Component />)` call.
@@ -54,8 +52,6 @@ function TodoList() {
 > **Why not `useReducer`?** React's `useReducer` is ops-as-data in disguise — `dispatch(action)` + a pure reducer. Solid for a single component tree, but no cross-component subscriptions and no selector — every dispatch re-renders every consumer. Zustand adds the subscription layer that makes it scale.
 
 As your app grows, selectors show their cost — Zustand runs every selector on every store update. If that becomes a bottleneck, [Signals](../reference/signals.md) give you fine-grained subscriptions. Skip them unless you have performance issues.
-
----
 
 ## `createSlice()` — Ops as Data
 
@@ -162,8 +158,6 @@ const TodoList = {
 
 For identity-based ops that survive reordering and concurrency, see [Designing Robust Ops](../reference/robust-ops.md).
 
----
-
 ## `tea()` — Zustand TEA Middleware
 
 Functions that need I/O return an `Effect[]` instead of performing side effects directly:
@@ -232,8 +226,6 @@ The fetch result re-enters the domain through `apply()`, so it shows up in logs,
 
 `tea()` provides `collect()` to capture effects in tests without running them. See [Runtime Layers](/guide/runtime-layers) for the full API.
 
----
-
 ## `createStore()` — Standalone TEA Store
 
 For apps that don't need `createApp`'s Zustand integration, `createStore()` provides a standalone TEA store with plugin composition:
@@ -251,15 +243,11 @@ Plugin composition via `compose(withFocusManagement(), withUndo())(update)` adds
 
 See [Runtime Layers](/guide/runtime-layers) for the full API.
 
----
-
 ## Appendix A: Scaling with Signals
 
 Signals (fine-grained reactivity via `@preact/signals-core`) are orthogonal to the levels — they optimize re-renders at any level by replacing selector-based subscriptions with automatic dependency tracking. Combined with per-entity signals and VirtualList, they scale to thousands of items.
 
 See [Scaling with Signals](../reference/signals.md) for the full guide.
-
----
 
 ## Appendix B: Designing Robust Ops
 

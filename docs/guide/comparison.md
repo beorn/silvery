@@ -8,8 +8,6 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 
 > Ratings reflect the author's assessment based on documented features, benchmarks, and public APIs. ⚡ indicates category-leading implementation, not just presence of a feature.
 
----
-
 ## Rendering
 
 | Feature                                   | Silvery                                                | Ink                           | BubbleTea        | Textual               | Notcurses                 | FTXUI           | blessed   |
@@ -27,8 +25,6 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 [^2]: With ~15-50 unique styles per TUI, Silvery caches all (oldStyle, newStyle) SGR transition strings (~2,500 possible pairs), eliminating per-cell string building.
 
 [^3]: Ink has a PR exploring synchronized updates (#846) but it is not yet merged.
-
----
 
 ## Terminal Protocols
 
@@ -48,8 +44,6 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 
 [^5]: Ink has a PR (#852) for Kitty keyboard support in review but not merged.
 
----
-
 ## Layout & Components
 
 | Feature                                      | Silvery                                                       | Ink                              | BubbleTea                               | Textual                        | Notcurses               | FTXUI              | blessed                  |
@@ -67,8 +61,6 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 
 [^7]: Silvery's two-phase rendering runs layout before components render, so `useContentRect()` returns actual dimensions synchronously during render, not via a post-render callback. This eliminates an entire category of bugs around "width is 0 on first render."
 
----
-
 ## Developer Experience
 
 | Feature                             | Silvery                                                   | Ink                      | BubbleTea                   | Textual                            | Notcurses | FTXUI    | blessed             |
@@ -85,8 +77,6 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 
 [^9]: The driver pattern composes `withCommands` + `withKeybindings` + `withDiagnostics` to expose all commands as callable functions with metadata (ID, name, help, keybindings). An AI agent can list available commands, inspect screen state, execute actions, and capture screenshots -- all programmatically.
 
----
-
 ## Architecture
 
 | Feature                 | Silvery                                                | Ink                                       | BubbleTea                          | Textual                               | Notcurses                | FTXUI                    | blessed                |
@@ -102,8 +92,6 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 | Maintenance status      | Active                                                 | Active                                    | Active                             | Active                                | Slow / winding down      | Active                   | Unmaintained           |
 
 [^10]: Ink uses Yoga WASM, whose linear memory grows monotonically and cannot shrink without a module reset. This has caused [120+ GB memory usage](https://github.com/anthropics/claude-code/issues/4953) in long-running production apps (e.g., Claude Code).
-
----
 
 ## Unique Strengths
 

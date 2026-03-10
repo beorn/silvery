@@ -18,8 +18,6 @@ See [migration guide](/getting-started/migrate-from-ink) for switching from Ink.
 
 > Performance numbers in this document are from the **Ink comparison benchmark suite**. Reproduce with `bun run bench` for raw benchmark tables.
 
----
-
 ## Compatibility at a Glance
 
 Silvery passes **162/162 of our Ink compatibility tests** (100%) and **78% of Ink's own test suite** (662/845). The 22% gap breaks down as:
@@ -36,8 +34,6 @@ Silvery passes **162/162 of our Ink compatibility tests** (100%) and **78% of In
 **Most failures won't affect your app.** The largest category (53) comes from Flexily following the CSS spec where Yoga doesn't — if you prefer browser-standard behavior, these are features, not bugs. If you need exact Yoga layout parity, Silvery supports Yoga as a pluggable layout engine.
 
 See [compatibility reference](/reference/compatibility) for the full API mapping.
-
----
 
 ## Shared Foundation
 
@@ -60,8 +56,6 @@ Silvery and Ink share the same core ideas -- the migration path is intentionally
 - **Node.js streams** -- Both render to stdout, read from stdin
 
 If your app uses `Box`, `Text`, `useInput`, and basic hooks, it works in both with minimal changes.
-
----
 
 ## Where They Differ
 
@@ -123,8 +117,6 @@ Both are React renderers at the core. The rendering architecture is the primary 
 | **Terminal inspection** | `SILVERY_DEV=1` inspector with tree visualization, dirty flags, focus path                                                                                | React DevTools integration                                                        |
 | **Community**           | New                                                                                                                                                       | Mature ecosystem, ~1.3M npm weekly downloads                                      |
 
----
-
 ## Performance
 
 _Apple M1 Max, Bun 1.3.9, Feb 2026. Reproduce: `bun run bench:compare`_
@@ -144,8 +136,6 @@ _Benchmarks measure a specific scenario for each row. "Typical interactive updat
 **Understanding the rerender row:** When the _entire_ component tree re-renders from scratch (e.g., replacing the root element), Ink is 30x faster because its output is string concatenation. Silvery runs a 5-phase pipeline (measure, layout, content, output) after React reconciliation -- that is the cost of responsive layout. But this scenario rarely happens in real apps.
 
 **The row that matters -- "typical interactive update":** When a user presses a key (cursor move, scroll, toggle), only the changed nodes need updating. Silvery has per-node dirty tracking that bypasses React entirely -- 169 us for 1000 nodes. Ink's incremental rendering (v6.5.0+) improves output by skipping unchanged _lines_, but it still re-renders the entire React tree and runs full Yoga layout on every state change -- 20.7 ms. Silvery's dirty tracking skips React reconciliation, layout, and content generation for unchanged nodes -- a fundamentally different approach.
-
----
 
 ## Key Differences Explained
 
@@ -245,8 +235,6 @@ Silvery implements SGR mouse protocol (mode 1006) with DOM-style event handling:
 
 Ink has no mouse support.
 
----
-
 ## Layout Engines
 
 Silvery supports pluggable layout engines with the same flexbox API:
@@ -283,8 +271,6 @@ await render(<App />, { layoutEngine: yoga })
 ```
 
 Most Ink apps use simple layouts (`flexDirection="column"`, padding, borders) that work identically in both engines. The differences surface with advanced flexbox features like `flexWrap`, `alignContent`, and percentage-based `flexBasis`.
-
----
 
 ## Terminal Protocol Coverage
 
@@ -358,8 +344,6 @@ Silvery implements a comprehensive set of terminal protocols. This matters for c
 
 Silvery uses these queries at startup for capability detection — automatically enabling Kitty keyboard, SGR mouse, synchronized output, and other features based on what the terminal supports.
 
----
-
 ## When to Choose What
 
 ### Choose Ink when:
@@ -378,8 +362,6 @@ Silvery uses these queries at startup for capability detection — automatically
 - You want multi-target rendering (terminal + canvas + DOM)
 - You care about interactive update performance (dirty tracking vs full re-render)
 - You want a complete component library without assembling third-party packages
-
----
 
 ## Real-World Scenarios
 
@@ -418,8 +400,6 @@ One-shot question, answer, exit.
 - **Ink**: Excellent -- large ecosystem of prompt components (ink-select-input, ink-text-input, ink-spinner).
 - **Silvery**: Built-in TextInput, SelectList, Spinner components. Works, but the community ecosystem is smaller.
 
----
-
 ## Real-World Impact
 
 These are not theoretical differences. Production Ink-based CLIs have encountered several of these limitations:
@@ -427,8 +407,6 @@ These are not theoretical differences. Production Ink-based CLIs have encountere
 - **Memory**: Large-scale Ink apps have encountered memory growth from Yoga's WASM linear memory, which cannot shrink once allocated (e.g., [Claude Code saw its process balloon over time](https://github.com/anthropics/claude-code/issues/4953)). Silvery avoids this class of problem by using a pure JavaScript layout engine with normal garbage collection.
 - **Flicker**: Earlier Ink versions [cleared the entire terminal area](https://github.com/vadimdemedes/ink/issues/359) on each render, causing visible flicker, especially in tmux. Ink v6.5.0+ added line-based incremental rendering and v6.7.0 added synchronized updates to mitigate this. Silvery's cell-level dirty tracking and buffer diff provide more granular flicker prevention.
 - **Missing capabilities**: Production CLIs have needed mouse support, customizable keybindings, scrollable containers, and complex focus management -- features that require additional libraries or manual implementation in Ink but are built into Silvery.
-
----
 
 ## Compatibility Coverage
 
@@ -447,8 +425,6 @@ Tested scenarios derived from common Ink issues:
 | Process exit timing                                 | `exit.test.tsx`                                        | [#796](https://github.com/vadimdemedes/ink/issues/796)  |
 | tmux rendering                                      | `terminal-multiplexers.test.ts`, `sync-update.test.ts` | [PR #846](https://github.com/vadimdemedes/ink/pull/846) |
 | Zellij rendering                                    | `terminal-multiplexers.test.ts`                        | [PR #846](https://github.com/vadimdemedes/ink/pull/846) |
-
----
 
 ## Appendix: Detailed Benchmarks
 

@@ -2,8 +2,6 @@
 
 > This page documents Silvery's event handling APIs. For the guided progression from callbacks to composable plugins, see [Building an App](../guides/terminal-apps.md).
 
----
-
 ## `withDomEvents()` — Component Event Handlers
 
 Adds React-style event handlers to Silvery components. Events bubble up the tree, components can stop propagation, and hit testing maps mouse coordinates to nodes.
@@ -48,8 +46,6 @@ const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
 | `onWheel`          | `SilveryWheelEvent` | Yes                 |
 | `onKeyDown`        | `SilveryKeyEvent`   | Yes                 |
 | `onKeyDownCapture` | `SilveryKeyEvent`   | Yes (capture phase) |
-
----
 
 ## `withCommands()` — Named Serializable Actions
 
@@ -135,8 +131,6 @@ driver.getState() // inspect state
 await driver.screenshot() // capture screen
 ```
 
----
-
 ## App Plugin Anatomy
 
 Every extension — `withDomEvents`, `withCommands`, `withKeybindings`, `withDiagnostics` — is an app plugin: a function that takes an app and returns an enhanced app.
@@ -176,8 +170,6 @@ await app.run()
 ```
 
 The rule: **subscribers never mutate the model.** They either do I/O or dispatch.
-
----
 
 ## Event Sources
 
@@ -224,8 +216,6 @@ function withFileWatcher(path: string) {
 }
 ```
 
----
-
 ## EventMap Type Safety
 
 All event types flow through a single `EventMap`:
@@ -268,8 +258,6 @@ app.dispatch.term.resize({ cols: 80, rows: 24 })
 // Raw — when you already have a message object
 app.dispatch({ type: "focus:revalidate" })
 ```
-
----
 
 ## Plugin Catalog
 
@@ -327,8 +315,6 @@ A single plugin can fill multiple roles — `withCommands` wraps `update` AND ad
 | `withDiagnostics()`         | Driver             | Render invariant checks                           |
 
 For the full API, see [Plugins Reference](../reference/plugins.md).
-
----
 
 ## See Also
 

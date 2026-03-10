@@ -486,8 +486,6 @@ Manual visual testing is slow, unrepeatable, and doesn't catch regressions. If y
 
 → [Testing guide](/guide/testing) · [Testing examples](/examples/testing)
 
----
-
 ## The Silvery Way, at a Glance
 
 1. **Use the built-in components** — don't reimplement what [`@silvery/ui`](/reference/packages) already handles

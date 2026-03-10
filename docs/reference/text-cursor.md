@@ -37,8 +37,6 @@ import {
 import type { WrappedLine } from "@silvery/term"
 ```
 
----
-
 ### cursorToRowCol(text, cursor, wrapWidth)
 
 Convert a flat cursor offset to a visual (row, col) position in word-wrapped text.
@@ -60,8 +58,6 @@ cursorToRowCol("hello world", 9, 8)
 cursorToRowCol("first\nsecond", 8, 80)
 // { row: 1, col: 2 } — "c" in "second"
 ```
-
----
 
 ### getWrappedLines(text, wrapWidth)
 
@@ -94,8 +90,6 @@ getWrappedLines("first\nsecond", 80)
 
 The `startOffset` enables converting a (row, col) back to a flat offset: `offset = lines[row].startOffset + col`.
 
----
-
 ### rowColToCursor(text, row, col, wrapWidth)
 
 Convert a visual (row, col) to a flat cursor offset. Clamps `col` to the line length if it exceeds it (important for stickyX on short lines).
@@ -112,8 +106,6 @@ rowColToCursor("hello world", 0, 5, 80)
 rowColToCursor("hi\nbye", 0, 10, 80)
 // 2 (clamped to end of "hi")
 ```
-
----
 
 ### cursorMoveUp(text, cursor, wrapWidth, stickyX?)
 
@@ -135,8 +127,6 @@ cursorMoveUp("hello\nworld", 2, 80)
 
 Returns `null` at the boundary to signal the caller should handle cross-block navigation (e.g., moving to the previous text block in a document editor).
 
----
-
 ### cursorMoveDown(text, cursor, wrapWidth, stickyX?)
 
 Move the cursor down one visual line. Returns the new cursor offset, or `null` if already on the last visual line.
@@ -154,8 +144,6 @@ cursorMoveDown("hello\nworld", 3, 80)
 cursorMoveDown("hello\nworld", 8, 80)
 // null
 ```
-
----
 
 ### countVisualLines(text, wrapWidth)
 
