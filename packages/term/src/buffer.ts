@@ -46,8 +46,21 @@ export interface CellAttrs {
  * - number: 256-color index (0-255)
  * - RGB object: true color
  * - null: default/inherit
+ * - DEFAULT_BG: terminal's default background (SGR 49), opaque but uses terminal's own bg color
  */
 export type Color = number | { r: number; g: number; b: number } | null
+
+/**
+ * Sentinel color representing the terminal's default background (SGR 49).
+ * Unlike `null` (transparent/inherit), this actively fills cells with the
+ * terminal's configured background, making the element opaque.
+ */
+export const DEFAULT_BG: Color = Object.freeze({ r: -1, g: -1, b: -1 })
+
+/** Check if a color is the default bg sentinel. */
+export function isDefaultBg(color: Color): boolean {
+  return color !== null && typeof color === "object" && color.r === -1
+}
 
 /**
  * A single cell in the terminal buffer.
@@ -1445,6 +1458,8 @@ function colorToCSS(color: Color): string | null {
   if (typeof color === "number") {
     return XTERM_256_PALETTE[color] ?? null
   }
+  // DEFAULT_BG sentinel → no CSS color (use inherited/default)
+  if (color.r === -1) return null
   return `rgb(${color.r},${color.g},${color.b})`
 }
 
@@ -1643,8 +1658,8 @@ function styleToAnsiCodes(style: Style): string {
     }
   }
 
-  // Background color
-  if (bg !== null) {
+  // Background color (DEFAULT_BG sentinel = terminal default, skip after reset)
+  if (bg !== null && !isDefaultBg(bg)) {
     if (typeof bg === "number") {
       codes.push(48, 5, bg)
     } else {

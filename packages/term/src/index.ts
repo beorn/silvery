@@ -12,7 +12,7 @@
 // =============================================================================
 
 export type { TerminalBuffer, Color } from "./buffer"
-export { colorEquals } from "./buffer"
+export { colorEquals, DEFAULT_BG, isDefaultBg } from "./buffer"
 
 // =============================================================================
 // Pipeline

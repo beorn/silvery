@@ -71,10 +71,13 @@ explicit color, the theme's `$separator` token is used automatically.
 | Token        | Use                                   | ANSI 16 Dark | Truecolor Dark |
 | ------------ | ------------------------------------- | ------------ | -------------- |
 | `$bg`        | Default background                    | (default)    | #2E3440        |
+| `$default`   | Terminal's actual default bg (SGR 49)  | (terminal)   | (terminal)     |
 | `$surface`   | Dialogs, overlays, popovers           | black        | #3B4252        |
 | `$separator` | Dividers, borders, rules              | gray         | #4C566A        |
 | `$chromebg`  | Title bars, status bars (inverted bg) | whiteBright  | #ECEFF4        |
 | `$chromefg`  | Text on chrome areas (inverted fg)    | black        | #2E3440        |
+
+`$default` is special — it's not a color value from the theme, but an instruction to use the terminal's actual default background (SGR 49). Use it when you want an overlay to be opaque without hardcoding a specific color. Unlike `$bg` (which is a theme-derived approximation), `$default` matches whatever the user configured in their terminal emulator.
 
 ### Status (3 tokens)
 

@@ -11,7 +11,7 @@
  * - getPadding, getBorderSize
  */
 
-import type { Color, Style, UnderlineStyle } from "../buffer"
+import { DEFAULT_BG, type Color, type Style, type UnderlineStyle } from "../buffer"
 import { getActiveTheme } from "@silvery/theme/state"
 import { resolveThemeColor } from "@silvery/theme/resolve"
 import type { BoxProps, TextProps } from "@silvery/tea/types"
@@ -52,6 +52,9 @@ const namedColors: Record<string, number> = {
  * Supports: $token (theme), named colors, hex (#rgb, #rrggbb), rgb(r,g,b)
  */
 export function parseColor(color: string): Color {
+  // Special token: terminal's default background (SGR 49)
+  if (color === "$default") return DEFAULT_BG
+
   // Resolve $token colors against the active theme
   if (color.startsWith("$")) {
     const resolved = resolveThemeColor(color, getActiveTheme())

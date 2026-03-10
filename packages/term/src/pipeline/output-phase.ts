@@ -13,6 +13,7 @@ import {
   colorEquals,
   createMutableCell,
   hasActiveAttrs,
+  isDefaultBg,
   styleEquals,
 } from "../buffer"
 import type { CursorState } from "@silvery/react/hooks/useCursor"
@@ -1636,8 +1637,8 @@ function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string 
     }
   }
 
-  // Background color
-  if (bg !== null) {
+  // Background color (DEFAULT_BG sentinel = terminal default, skip after reset)
+  if (bg !== null && !isDefaultBg(bg)) {
     if (typeof bg === "number") {
       result += `;48;5;${bg}`
     } else {
