@@ -4,7 +4,7 @@ import LiveDemo from '../.vitepress/components/LiveDemo.vue'
 
 # Components
 
-Silvery provides the same components as Ink, with some enhancements.
+Silvery provides layout, text, input, and display components for building terminal UIs.
 
 <LiveDemo xtermSrc="/examples/showcase.html?demo=text-input" :height="250" />
 
@@ -21,7 +21,7 @@ import { Box, Text } from "silvery"
 </Box>
 ```
 
-### New in Silvery: Scrolling
+### Scrolling
 
 Use `overflow="scroll"` with `scrollTo` for automatic scrolling:
 
@@ -57,8 +57,8 @@ See [Scrolling Guide](/guide/scrolling) for details.
 | `minHeight`      | `number`                                                                      | -              | Minimum height                                |
 | `borderStyle`    | `"single" \| "double" \| "round" \| "bold" \| "classic"`                      | -              | Border style                                  |
 | `borderColor`    | `string`                                                                      | -              | Border color                                  |
-| `overflow`       | `"visible" \| "hidden" \| "scroll"`                                           | `"visible"`    | **Silvery only**: Overflow behavior           |
-| `scrollTo`       | `number`                                                                      | -              | **Silvery only**: Child index to keep visible |
+| `overflow`       | `"visible" \| "hidden" \| "scroll"`                                           | `"visible"`    | Overflow behavior           |
+| `scrollTo`       | `number`                                                                      | -              | Child index to keep visible |
 
 ## Text
 
@@ -75,7 +75,7 @@ import chalk from "chalk";
 <Text>{chalk.red.bold("Error!")}</Text>
 ```
 
-### New in Silvery: Auto-Truncation
+### Auto-Truncation
 
 Text automatically truncates to fit available width:
 

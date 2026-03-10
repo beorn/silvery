@@ -1,8 +1,6 @@
 # useContentRect
 
-**Silvery only** - Returns the computed dimensions of the component's container.
-
-This is the key addition in Silvery. Components can query their actual size instead of manually threading width props.
+Returns the computed dimensions of the component's content area — width, height, and position. Components use this to adapt to their available space during render.
 
 ::: info Note
 `useLayout` is a deprecated alias for `useContentRect`. Both work identically, but prefer `useContentRect` for new code.
