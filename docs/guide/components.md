@@ -125,11 +125,15 @@ Flexible space that expands to fill available room.
 ```tsx
 import { Box, Spacer, Text } from "silvery";
 
-<Box>
-  <Text>Left</Text>
-  <Spacer />
-  <Text>Right</Text>
-</Box>;
+function Row() {
+  return (
+    <Box>
+      <Text>Left</Text>
+      <Spacer />
+      <Text>Right</Text>
+    </Box>
+  );
+}
 ```
 
 ## Static
