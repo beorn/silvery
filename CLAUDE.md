@@ -18,33 +18,33 @@ bun run compat            # Run Ink/Chalk compatibility checks
 
 ## Packages
 
-| Package           | npm                | What                                      |
-| ----------------- | ------------------ | ----------------------------------------- |
-| `packages/term`   | `@silvery/term`    | Terminal runtime, ANSI output, pipeline    |
-| `packages/react`  | `@silvery/react`   | React reconciler and hooks                 |
-| `packages/ui`     | `@silvery/ui`      | Component library (23+ components)         |
-| `packages/tea`    | `@silvery/tea`     | TEA state machine store (zustand-based)    |
-| `packages/compat` | `@silvery/compat`  | Ink/Chalk compatibility layers             |
-| `packages/test`   | `@silvery/test`    | Testing utilities (virtual renderer, locators) |
-| `packages/theme`  | `@silvery/theme`   | Theme tokens, 45 palettes, theme CLI       |
+| Package           | npm               | What                                           |
+| ----------------- | ----------------- | ---------------------------------------------- |
+| `packages/term`   | `@silvery/term`   | Terminal runtime, ANSI output, pipeline        |
+| `packages/react`  | `@silvery/react`  | React reconciler and hooks                     |
+| `packages/ui`     | `@silvery/ui`     | Component library (23+ components)             |
+| `packages/tea`    | `@silvery/tea`    | TEA state machine store (zustand-based)        |
+| `packages/compat` | `@silvery/compat` | Ink/Chalk compatibility layers                 |
+| `packages/test`   | `@silvery/test`   | Testing utilities (virtual renderer, locators) |
+| `packages/theme`  | `@silvery/theme`  | Theme tokens, 45 palettes, theme CLI           |
 
 The main `silvery` package re-exports `@silvery/react`. Users import from `silvery`, not the scoped packages.
 
 ## Structure
 
-| Directory    | What                                                     |
-| ------------ | -------------------------------------------------------- |
-| `packages/`  | Published packages (@silvery/term, @silvery/ui, etc.)    |
-| `src/`       | Root index.ts (re-exports @silvery/react)                |
-| `docs/`      | VitePress documentation site (silvery.dev)               |
-| `examples/`  | Interactive demos, web showcases, playground              |
-| `tests/`     | Test suites (compat, perf, tree-shaking, features)       |
-| `scripts/`   | Build and maintenance scripts                            |
+| Directory   | What                                                  |
+| ----------- | ----------------------------------------------------- |
+| `packages/` | Published packages (@silvery/term, @silvery/ui, etc.) |
+| `src/`      | Root index.ts (re-exports @silvery/react)             |
+| `docs/`     | VitePress documentation site (silvery.dev)            |
+| `examples/` | Interactive demos, web showcases, playground          |
+| `tests/`    | Test suites (compat, perf, tree-shaking, features)    |
+| `scripts/`  | Build and maintenance scripts                         |
 
 ## Key Internals
 
-| File                                         | What                                          |
-| -------------------------------------------- | --------------------------------------------- |
+| File                                          | What                                          |
+| --------------------------------------------- | --------------------------------------------- |
 | `packages/term/src/pipeline/content-phase.ts` | Incremental rendering (most complex)          |
 | `packages/term/src/pipeline/output-phase.ts`  | Buffer diff, ANSI output generation           |
 | `packages/term/src/pipeline/layout-phase.ts`  | Layout, scroll, sticky, screen rects          |

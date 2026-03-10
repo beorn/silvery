@@ -1175,7 +1175,7 @@ function CLIWizardShowcase(): JSX.Element {
   useMouseClick(({ y }) => {
     if (done) return
     const currentStep = WIZARD_STEPS[state.step]
-    if (!currentStep || currentStep.type !== "select") return
+    if (currentStep?.type !== "select") return
 
     // Calculate where options start in the terminal output:
     // padding(1) + title(1) + version(1) + marginBottom(1) + progress(1) + marginBottom(1) +

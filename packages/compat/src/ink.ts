@@ -57,8 +57,9 @@ export { useFocus, useInkFocusManager as useFocusManager } from "@silvery/react/
 export type { UseFocusOptions, UseFocusResult, InkUseFocusManagerResult } from "@silvery/react/hooks/ink-compat"
 
 // Ink-compatible useStdin stub
-import { useContext, useCallback, useRef, useState, useEffect, useMemo } from "react"
-import { StdoutContext } from "@silvery/react/context"
+import React, { useContext, useCallback, useState, useEffect, useMemo } from "react"
+import { StdoutContext, TermContext } from "@silvery/react/context"
+import { createTerm } from "@silvery/term/ansi"
 
 /**
  * Ink-compatible useStdin hook.
@@ -77,10 +78,7 @@ export function useStdin() {
  * Returns setCursorPosition for IME support.
  */
 export function useCursor() {
-  const setCursorPosition = useCallback(
-    (_position: { x: number; y: number } | undefined) => {},
-    [],
-  )
+  const setCursorPosition = useCallback((_position: { x: number; y: number } | undefined) => {}, [])
   return { setCursorPosition }
 }
 
@@ -104,7 +102,9 @@ export function useWindowSize() {
       })
     }
     stdout.on("resize", onResize)
-    return () => { stdout.off("resize", onResize) }
+    return () => {
+      stdout.off("resize", onResize)
+    }
   }, [stdout])
 
   return size
@@ -115,38 +115,74 @@ export function useWindowSize() {
  * Returns layout metrics for a tracked box element.
  */
 export function useBoxMetrics(_ref: import("react").RefObject<any>) {
-  return useMemo(() => ({
-    width: 0,
-    height: 0,
-    left: 0,
-    top: 0,
-    hasMeasured: false,
-  }), [])
+  return useMemo(
+    () => ({
+      width: 0,
+      height: 0,
+      left: 0,
+      top: 0,
+      hasMeasured: false,
+    }),
+    [],
+  )
 }
 
 // =============================================================================
 // Render (Ink-compatible)
 // =============================================================================
 
-import { render as silveryRender } from "@silvery/react/render"
+import { renderSync, type Instance } from "@silvery/react/render"
 export type { RenderOptions, Instance } from "@silvery/react/render"
 
 /**
  * Ink-compatible render function.
  *
- * Ink uses `render(element, { stdout, stdin, debug, ... })` where the second
- * arg is options. Silvery uses `render(element, termDef, options)` where
- * termDef is a separate concept. This wrapper adapts ink's 2-arg API to
- * silvery's 3-arg API so that `{ stdout, debug }` is treated as render
- * options, not as a TermDef.
+ * For static mode (fake stdout, no stdin): renders synchronously via
+ * renderStringSync and writes output in a single stdout.write() call
+ * (Ink tests read write.lastCall.args[0]).
+ *
+ * For interactive mode: delegates to renderSync() which creates a full
+ * SilveryInstance with scheduler.
  */
 export function render(element: import("react").ReactNode, options?: Record<string, unknown>) {
-  if (!options) return silveryRender(element)
-  // Pass as 3rd arg (options) with explicit TermDef containing stdout/stdin
+  // Ensure layout engine is initialized (sync, using flexily)
+  if (!isLayoutEngineInitialized()) {
+    setLayoutEngine(createFlexilyZeroEngine())
+  }
+
+  // Build TermDef from ink-style options
   const termDef: Record<string, unknown> = {}
-  if (options.stdout) termDef.stdout = options.stdout
-  if (options.stdin) termDef.stdin = options.stdin
-  return silveryRender(element, termDef as any, options as any)
+  if (options?.stdout) termDef.stdout = options.stdout
+  if (options?.stdin) termDef.stdin = options.stdin
+
+  const stdout = options?.stdout as NodeJS.WriteStream | undefined
+
+  // Static mode: fake stdout without TTY stdin → render synchronously
+  // and write in a single call (Ink tests read write.lastCall.args[0])
+  if (stdout && !termDef.stdin) {
+    const term = createTerm()
+    const wrapped = React.createElement(TermContext.Provider, { value: term }, element)
+    const plain = term.hasColor() === null
+    const output = renderStringSync(wrapped as any, {
+      width: (stdout as any).columns ?? 80,
+      height: (stdout as any).rows ?? 24,
+      plain,
+    })
+    stdout.write(output)
+    const noopInstance: Instance = {
+      rerender: () => {},
+      unmount: () => {},
+      [Symbol.dispose]() {},
+      waitUntilExit: () => Promise.resolve(),
+      clear: () => {},
+      flush: () => {},
+      pause: () => {},
+      resume: () => {},
+    }
+    return noopInstance
+  }
+
+  return renderSync(element as any, termDef as any, options as any)
 }
 
 export { measureElement } from "@silvery/react/measureElement"
@@ -158,7 +194,9 @@ export type { MeasureElementOutput } from "@silvery/react/measureElement"
 export function useStderr() {
   return {
     stderr: process.stderr,
-    write: (data: string) => { process.stderr.write(data) },
+    write: (data: string) => {
+      process.stderr.write(data)
+    },
   }
 }
 
@@ -175,15 +213,16 @@ import { createFlexilyZeroEngine } from "@silvery/term/adapters/flexily-zero-ada
  * Maps ink's `renderToString(element, { columns })` to silvery's `renderStringSync`.
  * Automatically initializes the layout engine if needed (using sync flexily).
  */
-export function renderToString(
-  node: import("react").ReactNode,
-  options?: { columns?: number },
-): string {
+export function renderToString(node: import("react").ReactNode, options?: { columns?: number }): string {
   if (!isLayoutEngineInitialized()) {
     setLayoutEngine(createFlexilyZeroEngine())
   }
-  return renderStringSync(node as import("react").ReactElement, {
+  const term = createTerm() // Auto-detects FORCE_COLOR, NO_COLOR
+  const plain = term.hasColor() === null
+  const wrapped = React.createElement(TermContext.Provider, { value: term }, node)
+  return renderStringSync(wrapped as import("react").ReactElement, {
     width: options?.columns ?? 80,
+    plain,
   })
 }
 

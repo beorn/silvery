@@ -61,7 +61,7 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 | Feature                   | Silvery                                                                                    | Ink                                                                                                                                    |
 | ------------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | React version             | 19                                                                                         | 18                                                                                                                                     |
-| **Layout feedback**       | `useContentRect()` / `useScreenRect()`                                                     | None — thread width props manually ([#5](https://github.com/vadimdemedes/ink/issues/5), open since 2016)                               |
+| **Layout feedback**       | `useContentRect()` / `useScreenRect()` — synchronous, per-component                        | `useBoxMetrics()` + `useWindowSize()` — post-layout via Yoga (added 2024)                                                              |
 | **Scrollable containers** | `overflow="scroll"` with auto-measurement                                                  | Third-party or manual ([#222](https://github.com/vadimdemedes/ink/issues/222), [#765](https://github.com/vadimdemedes/ink/issues/765)) |
 | **Text truncation**       | Auto, ANSI-aware                                                                           | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                          |
 | Layout engines            | [Flexily](https://beorn.github.io/flexily) (7 KB, pure JS) or Yoga (WASM) — no native deps | Yoga NAPI (native C++ addon)                                                                                                           |
@@ -76,26 +76,26 @@ _Performance: Apple M1 Max, Bun 1.3.9, Feb 2026. Run: `bun run bench:compare`_
 
 ### Input & Interaction
 
-| Feature                 | Silvery                                                           | Ink                                                                            |
-| ----------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Input handling          | `InputLayerProvider` stack (DOM-style bubbling, modal isolation)  | `useInput` only (flat, no isolation)                                           |
-| Kitty keyboard protocol | Full spec: ⌘/✦ modifiers, press/repeat/release, auto-detect       | [PR #852](https://github.com/vadimdemedes/ink/pull/852) in review              |
-| Focus system            | Tree-based: scopes, spatial navigation, autoFocus, click-to-focus | None                                                                           |
-| Command system          | `withCommands` — ID, name, help, keybindings, introspection       | None                                                                           |
-| Keybinding system       | `withKeybindings` — configurable, context-aware, macOS symbols    | None                                                                           |
-| Mouse support           | SGR protocol, DOM-style event props, hit testing, wheel/drag      | Basic via `useInput`                                                           |
-| Cursor API              | `useCursor()` — component-relative positioning                    | None ([#251](https://github.com/vadimdemedes/ink/issues/251), open since 2019) |
-| TextArea                | Multi-line editing with word wrap, readline, scroll               | None ([#676](https://github.com/vadimdemedes/ink/issues/676))                  |
-| Hotkey parsing          | `parseHotkey("⌘K")` — macOS symbols ⌘⌥⌃⇧✦                         | None                                                                           |
-| Hyperlinks              | `<Link>` — OSC 8 clickable URLs                                   | None                                                                           |
-| Inline images           | Kitty graphics + Sixel — auto-detect with text fallback           | None                                                                           |
-| Bracketed paste         | Built-in `usePaste` hook + runtime auto-enable                    | None                                                                           |
-| OSC 52 clipboard        | `copyToClipboard`/`requestClipboard` — works across SSH           | None                                                                           |
-| Outline prop            | `outlineStyle` — CSS outline equivalent without layout impact     | None                                                                           |
-| Unicode/CJK             | Built-in grapheme splitting + display width (28+ utils)           | Third-party `string-width`                                                     |
-| Console capture         | Built-in `<Console />` component (composable)                     | `patchConsole()` (intercept-only)                                              |
-| Exit handling           | `useExit` + `using` cleanup (Disposable)                          | `process.exit` handling                                                        |
-| Accessibility           | Basic                                                             | [PR #823](https://github.com/vadimdemedes/ink/pull/823) (screen reader)        |
+| Feature                 | Silvery                                                           | Ink                                                                     |
+| ----------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Input handling          | `InputLayerProvider` stack (DOM-style bubbling, modal isolation)  | `useInput` only (flat, no isolation)                                    |
+| Kitty keyboard protocol | Full spec: ⌘/✦ modifiers, press/repeat/release, auto-detect       | [PR #852](https://github.com/vadimdemedes/ink/pull/852) in review       |
+| Focus system            | Tree-based: scopes, spatial navigation, autoFocus, click-to-focus | None                                                                    |
+| Command system          | `withCommands` — ID, name, help, keybindings, introspection       | None                                                                    |
+| Keybinding system       | `withKeybindings` — configurable, context-aware, macOS symbols    | None                                                                    |
+| Mouse support           | SGR protocol, DOM-style event props, hit testing, wheel/drag      | Basic via `useInput`                                                    |
+| Cursor API              | `useCursor()` — component-relative positioning                    | `useCursor()` — IME cursor positioning (added 2024)                     |
+| TextArea                | Multi-line editing with word wrap, readline, scroll               | None ([#676](https://github.com/vadimdemedes/ink/issues/676))           |
+| Hotkey parsing          | `parseHotkey("⌘K")` — macOS symbols ⌘⌥⌃⇧✦                         | None                                                                    |
+| Hyperlinks              | `<Link>` — OSC 8 clickable URLs                                   | None                                                                    |
+| Inline images           | Kitty graphics + Sixel — auto-detect with text fallback           | None                                                                    |
+| Bracketed paste         | Built-in `usePaste` hook + runtime auto-enable                    | None                                                                    |
+| OSC 52 clipboard        | `copyToClipboard`/`requestClipboard` — works across SSH           | None                                                                    |
+| Outline prop            | `outlineStyle` — CSS outline equivalent without layout impact     | None                                                                    |
+| Unicode/CJK             | Built-in grapheme splitting + display width (28+ utils)           | Third-party `string-width`                                              |
+| Console capture         | Built-in `<Console />` component (composable)                     | `patchConsole()` (intercept-only)                                       |
+| Exit handling           | `useExit` + `using` cleanup (Disposable)                          | `process.exit` handling                                                 |
+| Accessibility           | Basic                                                             | [PR #823](https://github.com/vadimdemedes/ink/pull/823) (screen reader) |
 
 ### Developer Experience
 
