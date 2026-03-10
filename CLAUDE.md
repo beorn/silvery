@@ -2,6 +2,8 @@
 
 React framework for modern terminal UIs. Layout feedback, incremental rendering, multi-target (terminal, canvas, DOM).
 
+**[The Silvery Way](docs/guide/the-silvery-way.md)** — 10 principles for building canonical Silvery apps. Read it before building with Silvery.
+
 ## Central Abstraction: Term
 
 `createTerm()` is the terminal abstraction. It wraps a terminal backend (Node.js stdin/stdout, xterm.js, headless) and provides styling, capabilities, dimensions, and I/O. You pass it to `run()` or `render()`:
