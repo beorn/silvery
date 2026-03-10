@@ -280,16 +280,23 @@ function handleFocusNavigation(
       }
     }
   }
-  if (parsedKey.escape && focusManager.scopeStack.length > 0) {
-    // Escape: exit the current focus scope
-    const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
-    focusManager.exitScope()
-    // Restore focus to the scope node itself
-    const scopeNode = findByTestID(root, scopeId)
-    if (scopeNode) {
-      focusManager.focus(scopeNode, "keyboard")
+  if (parsedKey.escape) {
+    if (focusManager.scopeStack.length > 0) {
+      // Escape: exit the current focus scope
+      const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
+      focusManager.exitScope()
+      // Restore focus to the scope node itself
+      const scopeNode = findByTestID(root, scopeId)
+      if (scopeNode) {
+        focusManager.focus(scopeNode, "keyboard")
+      }
+      return true
     }
-    return true
+    if (focusManager.activeElement) {
+      // Escape with no scope: blur current focus
+      focusManager.blur()
+      return true
+    }
   }
   if (parsedKey.upArrow || parsedKey.downArrow || parsedKey.leftArrow || parsedKey.rightArrow) {
     const direction = parsedKey.upArrow ? "up" : parsedKey.downArrow ? "down" : parsedKey.leftArrow ? "left" : "right"
@@ -822,12 +829,13 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
         if (keyEvent.propagationStopped || keyEvent.defaultPrevented) {
           focusHandled = true
         }
+      }
 
-        // Default focus navigation (Tab, Shift+Tab, Enter, Escape, arrows) if not handled
-        if (!focusHandled) {
-          const root = getContainerRoot(container)
-          focusHandled = handleFocusNavigation(parsedKey, focusManager, root)
-        }
+      // Default focus navigation (Tab, Shift+Tab, Enter, Escape, arrows)
+      // Runs even without activeElement so Tab can start focus cycling.
+      if (!focusHandled) {
+        const root = getContainerRoot(container)
+        focusHandled = handleFocusNavigation(parsedKey, focusManager, root)
       }
 
       // Fall through to app's useInput handlers
@@ -1047,12 +1055,13 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
         if (keyEvent.propagationStopped || keyEvent.defaultPrevented) {
           focusHandled = true
         }
+      }
 
-        // Default focus navigation (Tab, Shift+Tab, Enter, Escape, arrows) if not handled
-        if (!focusHandled) {
-          const root = getContainerRoot(container)
-          focusHandled = handleFocusNavigation(parsedKey, focusManager, root)
-        }
+      // Default focus navigation (Tab, Shift+Tab, Enter, Escape, arrows)
+      // Runs even without activeElement so Tab can start focus cycling.
+      if (!focusHandled) {
+        const root = getContainerRoot(container)
+        focusHandled = handleFocusNavigation(parsedKey, focusManager, root)
       }
 
       // Fall through to app's useInput handlers

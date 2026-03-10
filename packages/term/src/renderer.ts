@@ -615,15 +615,42 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       // This mirrors the production path (render.tsx handleReadable)
       // where stdin.read() can return buffered characters.
       withActEnvironment(() => {
-        act(() => {
-          for (const keypress of splitRawInput(data)) {
-            instance.inputEmitter.emit("input", keypress)
+        for (const keypress of splitRawInput(data)) {
+          // Default Tab/Shift+Tab focus cycling and Escape blur.
+          // Matches production behavior in run.tsx and render.tsx.
+          // Tab events are consumed (not passed to useInput handlers).
+          // Each focus change runs in its own act() boundary so React
+          // commits the re-render before the next keypress or doRender().
+          const [, key] = parseKey(keypress)
+          if (key.tab && !key.shift) {
+            act(() => {
+              const root = getContainerRoot(instance.container)
+              focusManager.focusNext(root)
+            })
+            continue
           }
-        })
+          if (key.tab && key.shift) {
+            act(() => {
+              const root = getContainerRoot(instance.container)
+              focusManager.focusPrev(root)
+            })
+            continue
+          }
+          if (key.escape && focusManager.activeElement) {
+            act(() => {
+              focusManager.blur()
+            })
+            continue
+          }
+          act(() => {
+            instance.inputEmitter.emit("input", keypress)
+          })
+        }
       })
     } finally {
       instance.rendering = false
     }
+
     const t1 = performance.now()
     // doRender() handles SILVERY_STRICT checking internally
     let newFrame = doRender()

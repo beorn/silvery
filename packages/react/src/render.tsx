@@ -18,8 +18,9 @@ import { type Term, createTerm } from "@silvery/term/ansi"
 import React, { useCallback, useEffect, useMemo, useRef, type ReactElement, type ReactNode } from "react"
 
 const log = createLogger("silvery:render")
-import { RuntimeContext, type RuntimeContextValue, StdoutContext, TermContext } from "./context"
+import { FocusManagerContext, RuntimeContext, type RuntimeContextValue, StdoutContext, TermContext } from "./context"
 import { createCursorStore, CursorProvider, type CursorStore } from "./hooks/useCursor"
+import { createFocusManager } from "@silvery/tea/focus-manager"
 import { parseKey } from "@silvery/tea/keys"
 import { type LayoutEngineType, isLayoutEngineInitialized } from "@silvery/term/layout-engine"
 import { enableBracketedPaste, disableBracketedPaste, parseBracketedPaste } from "@silvery/term/bracketed-paste"
@@ -217,6 +218,8 @@ interface AppProps {
   onPause?: () => void
   onResume?: () => void
   onScrollback?: (lines: number) => void
+  /** Get the root TeaNode for focus navigation. Provided by SilveryInstance. */
+  getRoot?: () => import("@silvery/tea/types").TeaNode | null
 }
 
 /**
@@ -233,6 +236,7 @@ function SilveryApp({
   onPause,
   onResume,
   onScrollback,
+  getRoot: getRootProp,
 }: AppProps): ReactElement {
   // Raw mode reference count
   const rawModeCountRef = React.useRef(0)
@@ -264,6 +268,11 @@ function SilveryApp({
 
   const handleExitRef = useRef(handleExit)
   handleExitRef.current = handleExit
+
+  // Refs for focus manager and root getter — accessed inside handleReadable
+  const focusManagerRef = useRef<import("@silvery/tea/focus-manager").FocusManager | null>(null)
+  const getRootRef = useRef(getRootProp)
+  getRootRef.current = getRootProp
 
   // Stable stdin readable handler — created once, never changes identity.
   // All mutable state is read via refs to avoid dependency cascade.
@@ -302,6 +311,31 @@ function SilveryApp({
         if (chunk === "\x03" && exitOnCtrlCRef.current) {
           handleExitRef.current()
           return
+        }
+
+        // Default Tab/Shift+Tab focus cycling and Escape blur.
+        // Handled before dispatching to useInput handlers so it works
+        // automatically when focusable components exist. Tab events are
+        // consumed (not passed to useInput) — matching run() and createApp().
+        const fm = focusManagerRef.current
+        const root = getRootRef.current?.()
+        if (fm && root) {
+          const [, key] = parseKey(chunk)
+          if (key.tab && !key.shift) {
+            fm.focusNext(root)
+            reconciler.flushSyncWork()
+            return
+          }
+          if (key.tab && key.shift) {
+            fm.focusPrev(root)
+            reconciler.flushSyncWork()
+            return
+          }
+          if (key.escape && fm.activeElement) {
+            fm.blur()
+            reconciler.flushSyncWork()
+            return
+          }
         }
 
         // All input handling runs at discrete priority so React commits
@@ -407,9 +441,16 @@ function SilveryApp({
     return () => setRawMode(false)
   }, [isRawModeSupported, setRawMode])
 
+  // Focus manager (tree-based focus system)
+  const focusManager = useMemo(() => createFocusManager(), [])
+  // Store in ref so the stable handleReadable closure can access it
+  focusManagerRef.current = focusManager
+
   return (
     <StdoutContext.Provider value={stdoutContextValue}>
-      <RuntimeContext.Provider value={runtimeContextValue}>{children}</RuntimeContext.Provider>
+      <FocusManagerContext.Provider value={focusManager}>
+        <RuntimeContext.Provider value={runtimeContextValue}>{children}</RuntimeContext.Provider>
+      </FocusManagerContext.Provider>
     </StdoutContext.Provider>
   )
 }
@@ -527,6 +568,7 @@ class SilveryInstance {
           onPause={this.pause}
           onResume={this.resume}
           onScrollback={this.handleScrollback}
+          getRoot={() => (this.container ? getContainerRoot(this.container) : null)}
         >
           {element}
         </SilveryApp>

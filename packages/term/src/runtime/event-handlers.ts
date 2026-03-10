@@ -96,54 +96,58 @@ export function handleFocusNavigation(
   focusManager: FocusManager,
   container: Container,
 ): "consumed" | "continue" {
-  if (!focusManager.activeElement) return "continue"
-
   // Dispatch key event to focused node (capture + bubble phases)
-  const keyEvent = createKeyEvent(input, parsedKey, focusManager.activeElement)
-  dispatchKeyEvent(keyEvent)
+  if (focusManager.activeElement) {
+    const keyEvent = createKeyEvent(input, parsedKey, focusManager.activeElement)
+    dispatchKeyEvent(keyEvent)
 
-  // If focus system consumed the event, skip app handlers
-  if (keyEvent.propagationStopped || keyEvent.defaultPrevented) {
-    return "consumed"
+    // If focus system consumed the event, skip app handlers
+    if (keyEvent.propagationStopped || keyEvent.defaultPrevented) {
+      return "consumed"
+    }
   }
 
   const root = getContainerRoot(container)
 
-  // Tab: focus next
+  // Tab: focus next (works even when nothing is focused — starts from first)
   if (parsedKey.tab && !parsedKey.shift) {
     focusManager.focusNext(root)
     return "consumed"
   }
 
-  // Shift+Tab: focus previous
+  // Shift+Tab: focus previous (works even when nothing is focused — starts from last)
   if (parsedKey.tab && parsedKey.shift) {
     focusManager.focusPrev(root)
     return "consumed"
   }
 
   // Enter: if focused element has focusScope, enter that scope
-  if (parsedKey.return) {
+  if (parsedKey.return && focusManager.activeElement) {
     const activeEl = focusManager.activeElement
-    if (activeEl) {
-      const props = activeEl.props as Record<string, unknown>
-      const testID = typeof props.testID === "string" ? props.testID : null
-      if (props.focusScope && testID) {
-        focusManager.enterScope(testID)
-        focusManager.focusNext(root, activeEl)
-        return "consumed"
-      }
+    const props = activeEl.props as Record<string, unknown>
+    const testID = typeof props.testID === "string" ? props.testID : null
+    if (props.focusScope && testID) {
+      focusManager.enterScope(testID)
+      focusManager.focusNext(root, activeEl)
+      return "consumed"
     }
   }
 
-  // Escape: exit the current focus scope
-  if (parsedKey.escape && focusManager.scopeStack.length > 0) {
-    const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
-    focusManager.exitScope()
-    const scopeNode = findByTestID(root, scopeId)
-    if (scopeNode) {
-      focusManager.focus(scopeNode, "keyboard")
+  // Escape: blur current focus or exit the current focus scope
+  if (parsedKey.escape) {
+    if (focusManager.scopeStack.length > 0) {
+      const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
+      focusManager.exitScope()
+      const scopeNode = findByTestID(root, scopeId)
+      if (scopeNode) {
+        focusManager.focus(scopeNode, "keyboard")
+      }
+      return "consumed"
     }
-    return "consumed"
+    if (focusManager.activeElement) {
+      focusManager.blur()
+      return "consumed"
+    }
   }
 
   return "continue"
