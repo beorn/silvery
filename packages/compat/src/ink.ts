@@ -1913,8 +1913,18 @@ import { createFlexilyZeroEngine } from "@silvery/term/adapters/flexily-zero-ada
  * Ink-compatible renderToString.
  * Maps ink's `renderToString(element, { columns })` to silvery's `renderStringSync`.
  * Automatically initializes the layout engine if needed (using sync flexily).
+ *
+ * When `isScreenReaderEnabled` is true, walks the React element tree and produces
+ * accessible text with ARIA roles, labels, and states instead of visual rendering.
  */
-export function renderToString(node: import("react").ReactNode, options?: { columns?: number }): string {
+export function renderToString(
+  node: import("react").ReactNode,
+  options?: { columns?: number; isScreenReaderEnabled?: boolean },
+): string {
+  if (options?.isScreenReaderEnabled) {
+    return renderScreenReaderOutput(node)
+  }
+
   if (!isLayoutEngineInitialized()) {
     setLayoutEngine(createFlexilyZeroEngine())
   }
@@ -1956,6 +1966,170 @@ export function renderToString(node: import("react").ReactNode, options?: { colu
     return ""
   }
   return plain ? output : toChalkCompat(output)
+}
+
+// =============================================================================
+// Screen Reader Mode (ARIA-based text rendering)
+// =============================================================================
+
+/**
+ * ARIA state flags that can be set on elements via `aria-state` prop.
+ */
+interface AriaState {
+  busy?: boolean
+  checked?: boolean
+  disabled?: boolean
+  expanded?: boolean
+  multiline?: boolean
+  multiselectable?: boolean
+  readonly?: boolean
+  required?: boolean
+  selected?: boolean
+}
+
+/**
+ * Walk a React element tree and produce accessible text output.
+ *
+ * Rules:
+ * - `aria-hidden` → skip element entirely
+ * - `display="none"` → skip element entirely
+ * - `aria-label` → use label instead of children text
+ * - `aria-role` → prefix with "role: "
+ * - `aria-state` → prepend active states as "(state) "
+ * - Row direction → space-separated children
+ * - Column direction → newline-separated children
+ * - Plain text content (no ANSI codes)
+ */
+function renderScreenReaderOutput(node: import("react").ReactNode): string {
+  return walkNode(node, "row")
+}
+
+/**
+ * Recursively walk a React node and produce screen reader text.
+ * @param node - React node to walk
+ * @param parentDirection - flex direction of the parent container
+ */
+function walkNode(node: import("react").ReactNode, parentDirection: "row" | "column"): string {
+  // Null, undefined, boolean → empty
+  if (node == null || typeof node === "boolean") {
+    return ""
+  }
+
+  // String or number → literal text
+  if (typeof node === "string" || typeof node === "number") {
+    return String(node)
+  }
+
+  // Arrays/fragments → join children
+  if (Array.isArray(node)) {
+    const parts = node.map((child) => walkNode(child, parentDirection)).filter((s) => s !== "")
+    const sep = parentDirection === "column" ? "\n" : " "
+    return parts.join(sep)
+  }
+
+  // React element
+  if (React.isValidElement(node)) {
+    const props = node.props as Record<string, any>
+
+    // aria-hidden → skip entirely
+    if (props["aria-hidden"]) {
+      return ""
+    }
+
+    // display="none" → skip entirely
+    if (props.display === "none") {
+      return ""
+    }
+
+    // Determine this element's flex direction
+    const direction: "row" | "column" = props.flexDirection === "column" ? "column" : "row"
+
+    // Build the content: aria-label overrides children
+    let content: string
+    if (props["aria-label"] != null) {
+      content = String(props["aria-label"])
+    } else {
+      // Walk children
+      const children = props.children
+      content = walkChildren(children, direction)
+    }
+
+    // Build ARIA state prefix
+    const statePrefix = buildStatePrefix(props["aria-state"])
+
+    // Build role prefix
+    const role = props["aria-role"]
+
+    // Assemble output
+    if (role && statePrefix) {
+      return `${role}: ${statePrefix}${content}`
+    }
+    if (role) {
+      return `${role}: ${content}`
+    }
+    if (statePrefix) {
+      return `${statePrefix}${content}`
+    }
+
+    return content
+  }
+
+  return ""
+}
+
+/**
+ * Walk children of a React element, joining with direction-appropriate separator.
+ */
+function walkChildren(children: import("react").ReactNode, direction: "row" | "column"): string {
+  if (children == null) return ""
+
+  // Single child
+  if (!Array.isArray(children)) {
+    // React.Children.toArray normalizes fragments, filters nulls
+    const childArray = React.Children.toArray(children)
+    if (childArray.length <= 1) {
+      return walkNode(children, direction)
+    }
+    const parts = childArray.map((child) => walkNode(child, direction)).filter((s) => s !== "")
+    const sep = direction === "column" ? "\n" : " "
+    return parts.join(sep)
+  }
+
+  // Array of children
+  const parts = children.map((child) => walkNode(child, direction)).filter((s) => s !== "")
+  const sep = direction === "column" ? "\n" : " "
+  return parts.join(sep)
+}
+
+/**
+ * Build the state prefix string from aria-state object.
+ * Active (truthy) states become "(stateName) " prefix.
+ */
+function buildStatePrefix(state: AriaState | undefined): string {
+  if (!state) return ""
+
+  const activeStates: string[] = []
+  // Check each state in a consistent order
+  const stateNames: (keyof AriaState)[] = [
+    "busy",
+    "checked",
+    "disabled",
+    "expanded",
+    "multiline",
+    "multiselectable",
+    "readonly",
+    "required",
+    "selected",
+  ]
+
+  for (const name of stateNames) {
+    if (state[name]) {
+      activeStates.push(`(${name})`)
+    }
+  }
+
+  if (activeStates.length === 0) return ""
+  return activeStates.join(" ") + " "
 }
 
 // =============================================================================
