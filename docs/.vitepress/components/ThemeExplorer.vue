@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue"
+import { ref, computed, watch } from "vue"
 
 // ── Palette data (extracted from @silvery/theme built-in palettes) ──────
 const palettes = [
@@ -1165,6 +1165,13 @@ const searchQuery = ref("")
 
 const paletteMap = Object.fromEntries(palettes.map((p) => [p.name, p]))
 
+// When switching to gallery tab, reset detail tab if it's on 'terminal' (gallery has inline preview)
+watch(activeTab, (tab) => {
+  if (tab === "gallery" && detailTab.value === "terminal") {
+    detailTab.value = "tokens"
+  }
+})
+
 // ── Color utilities (mirrors @silvery/theme/color.ts) ────────────────
 function hexToRgb(hex) {
   const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)
@@ -1523,39 +1530,172 @@ function selectPalette(name) {
         </div>
       </div>
 
-      <!-- Palette grid -->
-      <div class="palette-grid">
-        <button
-          v-for="p in filteredPalettes"
-          :key="p.name"
-          :class="['palette-card', { selected: selectedPalette.name === p.name }]"
-          @click="selectPalette(p.name)"
-        >
-          <div class="palette-swatches" :style="{ background: p.background }">
-            <div class="swatch-row">
-              <span class="swatch" :style="{ background: p.red }"></span>
-              <span class="swatch" :style="{ background: p.green }"></span>
-              <span class="swatch" :style="{ background: p.yellow }"></span>
-              <span class="swatch" :style="{ background: p.blue }"></span>
-              <span class="swatch" :style="{ background: p.magenta }"></span>
-              <span class="swatch" :style="{ background: p.cyan }"></span>
+      <!-- Two-column layout: palette list + preview side by side -->
+      <div class="gallery-columns">
+        <!-- Palette list (scrollable) -->
+        <div class="palette-list">
+          <button
+            v-for="p in filteredPalettes"
+            :key="p.name"
+            :class="['palette-list-item', { selected: selectedPalette.name === p.name }]"
+            @click="selectPalette(p.name)"
+          >
+            <div class="palette-list-swatches" :style="{ background: p.background }">
+              <span class="swatch-mini" :style="{ background: p.red }"></span>
+              <span class="swatch-mini" :style="{ background: p.green }"></span>
+              <span class="swatch-mini" :style="{ background: p.yellow }"></span>
+              <span class="swatch-mini" :style="{ background: p.blue }"></span>
+              <span class="swatch-mini" :style="{ background: p.magenta }"></span>
+              <span class="swatch-mini" :style="{ background: p.cyan }"></span>
             </div>
-            <div class="swatch-row">
-              <span class="swatch" :style="{ background: p.brightRed }"></span>
-              <span class="swatch" :style="{ background: p.brightGreen }"></span>
-              <span class="swatch" :style="{ background: p.brightYellow }"></span>
-              <span class="swatch" :style="{ background: p.brightBlue }"></span>
-              <span class="swatch" :style="{ background: p.brightMagenta }"></span>
-              <span class="swatch" :style="{ background: p.brightCyan }"></span>
-            </div>
-          </div>
-          <div class="palette-label">
-            <span class="palette-name">{{ p.name }}</span>
+            <span class="palette-list-name">{{ p.name }}</span>
             <span :class="['mode-badge', p.dark ? 'dark' : 'light']">
               {{ p.dark ? "dark" : "light" }}
             </span>
+          </button>
+        </div>
+
+        <!-- Inline preview (visible alongside palette list) -->
+        <div v-if="activePalette && activeTheme" class="gallery-preview">
+          <div class="preview-container">
+            <div
+              class="preview-titlebar"
+              :style="{
+                background: activeTheme.inverse,
+                color: activeTheme.inversefg,
+              }"
+            >
+              <span class="preview-dots">
+                <span class="dot" :style="{ background: activeTheme.error }"></span>
+                <span class="dot" :style="{ background: activeTheme.warning }"></span>
+                <span class="dot" :style="{ background: activeTheme.success }"></span>
+              </span>
+              <span class="preview-title">{{ activePalette.name }}</span>
+            </div>
+            <div
+              class="preview-terminal"
+              :style="{
+                background: activeTheme.bg,
+                color: activeTheme.fg,
+              }"
+            >
+              <div
+                class="preview-statusbar"
+                :style="{
+                  background: activeTheme.surface,
+                  borderBottom: '1px solid ' + activeTheme.border,
+                }"
+              >
+                <span :style="{ color: activeTheme.primary }">Tasks</span>
+                <span :style="{ color: activeTheme.mutedfg }"> | </span>
+                <span :style="{ color: activeTheme.fg }">Notes</span>
+                <span :style="{ color: activeTheme.mutedfg }"> | </span>
+                <span :style="{ color: activeTheme.fg }">Calendar</span>
+              </div>
+              <div class="preview-content">
+                <div class="preview-line">
+                  <span :style="{ color: activeTheme.success }">&#10003;</span>
+                  <span :style="{ color: activeTheme.disabledfg, textDecoration: 'line-through' }">
+                    Set up dev environment</span
+                  >
+                </div>
+                <div
+                  class="preview-line preview-selected"
+                  :style="{
+                    background: activeTheme.selection,
+                    color: activeTheme.selectionfg,
+                  }"
+                >
+                  <span :style="{ color: activeTheme.primary }">&#9679;</span>
+                  <span> Build theme explorer</span>
+                  <span
+                    class="preview-tag"
+                    :style="{
+                      background: activeTheme.accent,
+                      color: activeTheme.accentfg,
+                    }"
+                    >in-progress</span
+                  >
+                </div>
+                <div class="preview-line">
+                  <span :style="{ color: activeTheme.mutedfg }">&#9675;</span>
+                  <span :style="{ color: activeTheme.fg }"> Write documentation</span>
+                </div>
+                <div class="preview-line">
+                  <span :style="{ color: activeTheme.error }">&#9679;</span>
+                  <span :style="{ color: activeTheme.fg }"> Fix rendering bug</span>
+                  <span
+                    class="preview-tag"
+                    :style="{
+                      background: activeTheme.error,
+                      color: activeTheme.errorfg,
+                    }"
+                    >P1</span
+                  >
+                </div>
+                <div class="preview-line">
+                  <span :style="{ color: activeTheme.warning }">&#9679;</span>
+                  <span :style="{ color: activeTheme.fg }"> Review pull request</span>
+                </div>
+                <div class="preview-line">
+                  <span :style="{ color: activeTheme.info }">&#9679;</span>
+                  <span :style="{ color: activeTheme.fg }"> Deploy to staging</span>
+                </div>
+                <div
+                  class="preview-input"
+                  :style="{
+                    borderTop: '1px solid ' + activeTheme.border,
+                  }"
+                >
+                  <span :style="{ color: activeTheme.mutedfg }">Search: </span>
+                  <span
+                    :style="{
+                      borderBottom: '1px solid ' + activeTheme.inputborder,
+                      color: activeTheme.fg,
+                    }"
+                    >theme ex</span
+                  ><!--
+                  --><span
+                    class="cursor-block"
+                    :style="{
+                      background: activeTheme.cursor,
+                      color: activeTheme.cursorfg,
+                    }"
+                    >&nbsp;</span
+                  >
+                </div>
+              </div>
+              <div
+                class="preview-footer"
+                :style="{
+                  background: activeTheme.surface,
+                  borderTop: '1px solid ' + activeTheme.border,
+                  color: activeTheme.mutedfg,
+                }"
+              >
+                <span :style="{ color: activeTheme.link }">silvery.dev</span>
+                <span> &mdash; 6 items</span>
+                <span :style="{ color: activeTheme.success }"> &#10003; synced</span>
+              </div>
+            </div>
           </div>
-        </button>
+
+          <!-- Token strip -->
+          <div class="token-strip">
+            <div class="strip-group">
+              <div class="strip-item" v-for="tok in ['primary', 'secondary', 'accent']" :key="tok">
+                <span class="strip-swatch" :style="{ background: activeTheme[tok] }"></span>
+                <span class="strip-label">{{ "$" + tok }}</span>
+              </div>
+            </div>
+            <div class="strip-group">
+              <div class="strip-item" v-for="tok in ['error', 'warning', 'success', 'info']" :key="tok">
+                <span class="strip-swatch" :style="{ background: activeTheme[tok] }"></span>
+                <span class="strip-label">{{ "$" + tok }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1591,19 +1731,19 @@ function selectPalette(name) {
     <div v-if="activePalette && activeTheme" class="detail-section">
       <!-- Detail tab bar -->
       <div class="detail-tabs">
-        <button :class="['detail-tab', { active: detailTab === 'terminal' }]" @click="detailTab = 'terminal'">
+        <button v-if="activeTab === 'custom'" :class="['detail-tab', { active: detailTab === 'terminal' }]" @click="detailTab = 'terminal'">
           Preview
         </button>
         <button :class="['detail-tab', { active: detailTab === 'tokens' }]" @click="detailTab = 'tokens'">
-          Semantic Tokens
+          Design Tokens
         </button>
         <button :class="['detail-tab', { active: detailTab === 'palette' }]" @click="detailTab = 'palette'">
           Palette Colors
         </button>
       </div>
 
-      <!-- Terminal preview -->
-      <div v-if="detailTab === 'terminal'" class="preview-pane">
+      <!-- Terminal preview (custom tab only — gallery has inline preview) -->
+      <div v-if="detailTab === 'terminal' && activeTab === 'custom'" class="preview-pane">
         <div class="preview-container">
           <div
             class="preview-titlebar"
@@ -1757,7 +1897,7 @@ function selectPalette(name) {
       <!-- Semantic tokens detail -->
       <div v-if="detailTab === 'tokens'" class="tokens-pane">
         <p class="tokens-intro">
-          These 33 semantic tokens are derived from the palette via <code>deriveTheme()</code>. Components reference
+          These 33 design tokens are derived from the palette via <code>deriveTheme()</code>. Components reference
           them with a <code>$</code> prefix (e.g. <code>color="$primary"</code>).
         </p>
         <div v-for="group in semanticGroups" :key="group.label" class="token-group">
@@ -1977,70 +2117,75 @@ function selectPalette(name) {
   background: var(--vp-c-bg-elv);
 }
 
-/* ── Palette grid ─────────────────────────────────────────────────── */
-.palette-grid {
+/* ── Gallery two-column layout ────────────────────────────────────── */
+.gallery-columns {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: 280px 1fr;
+  gap: 1.25rem;
+  align-items: start;
 }
 
-.palette-card {
-  border: 2px solid var(--vp-c-divider);
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    transform 0.15s;
-  background: var(--vp-c-bg);
-  text-align: left;
-  padding: 0;
-}
-
-.palette-card:hover {
-  border-color: var(--vp-c-brand-2);
-  transform: translateY(-1px);
-}
-
-.palette-card.selected {
-  border-color: var(--vp-c-brand-1);
-  box-shadow: 0 0 0 1px var(--vp-c-brand-1);
-}
-
-.palette-swatches {
-  padding: 10px 10px 6px;
+.palette-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  padding: 4px;
 }
 
-.swatch-row {
+.palette-list-item {
   display: flex;
-  gap: 3px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  background: none;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+  width: 100%;
 }
 
-.swatch {
-  flex: 1;
-  height: 14px;
+.palette-list-item:hover {
+  background: var(--vp-c-bg-soft);
+}
+
+.palette-list-item.selected {
+  border-color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+.palette-list-swatches {
+  display: flex;
+  gap: 2px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.swatch-mini {
+  width: 10px;
+  height: 10px;
   border-radius: 2px;
 }
 
-.palette-label {
-  padding: 6px 10px 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-}
-
-.palette-name {
-  font-size: 0.75rem;
+.palette-list-name {
+  font-size: 0.78rem;
   font-weight: 500;
   color: var(--vp-c-text-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+}
+
+.gallery-preview {
+  position: sticky;
+  top: 80px;
 }
 
 .mode-badge {
@@ -2498,8 +2643,11 @@ function selectPalette(name) {
 
 /* ── Responsive ───────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .palette-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  .gallery-columns {
+    grid-template-columns: 1fr;
+  }
+  .palette-list {
+    max-height: 200px;
   }
   .token-group-grid {
     grid-template-columns: 1fr;

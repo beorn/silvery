@@ -53,6 +53,44 @@ const generated = autoGenerateTheme("#5E81AC", "dark")
 const detected = await detectTheme()
 ```
 
+## Auto-Generation
+
+Generate a complete theme from a single primary color. The system uses HSL color manipulation to derive all 22 palette colors:
+
+- **Background/foreground** from lightness inversion
+- **Accent colors** from hue rotation (red at 0, green at 130, blue at 220, etc.)
+- **Surface ramp** from background blending
+- **Status colors** (error, warning, success, info) from standard hue positions
+
+```typescript
+import { autoGenerateTheme } from "@silvery/theme"
+
+const dark = autoGenerateTheme("#5E81AC", "dark")
+// Generates a full dark theme with blue as the primary accent
+
+const light = autoGenerateTheme("#E06C75", "light")
+// Generates a full light theme with red/rose as the primary accent
+```
+
+The auto-generated theme uses the input color as the exact `primary` token, then derives everything else to be harmonious with it.
+
+## Terminal Palette Detection
+
+Instead of shipping a palette, you can read the terminal's actual colors at startup. `detectTheme()` queries the terminal via OSC 4 (ANSI colors), OSC 10 (foreground), and OSC 11 (background), then derives a full theme from whatever the terminal reports:
+
+```typescript
+import { detectTheme } from "@silvery/theme"
+
+// Queries the terminal's live colors — matches whatever theme the user has configured
+const theme = await detectTheme()
+
+// Provide a fallback palette for terminals that don't respond to OSC queries (CI, tmux, etc.)
+import { getPaletteByName } from "@silvery/theme"
+const theme = await detectTheme({ fallback: getPaletteByName("nord") })
+```
+
+This means the app automatically matches the user's terminal theme — Dracula users get Dracula colors, Solarized users get Solarized colors, with no configuration on your end. Dark/light mode is detected from the background luminance.
+
 ## Using Themes in Components
 
 Wrap your app in `ThemeProvider` and reference tokens with the `$` prefix:
@@ -130,44 +168,6 @@ const palette = getPaletteByName("catppuccin-mocha")
 const names = Object.keys(builtinPalettes) // 45 entries
 ```
 
-## Auto-Generation
-
-Generate a complete theme from a single primary color. The system uses HSL color manipulation to derive all 22 palette colors:
-
-- **Background/foreground** from lightness inversion
-- **Accent colors** from hue rotation (red at 0, green at 130, blue at 220, etc.)
-- **Surface ramp** from background blending
-- **Status colors** (error, warning, success, info) from standard hue positions
-
-```typescript
-import { autoGenerateTheme } from "@silvery/theme"
-
-const dark = autoGenerateTheme("#5E81AC", "dark")
-// Generates a full dark theme with blue as the primary accent
-
-const light = autoGenerateTheme("#E06C75", "light")
-// Generates a full light theme with red/rose as the primary accent
-```
-
-The auto-generated theme uses the input color as the exact `primary` token, then derives everything else to be harmonious with it.
-
-## Terminal Palette Detection
-
-Instead of shipping a palette, you can read the terminal's actual colors at startup. `detectTheme()` queries the terminal via OSC 4 (ANSI colors), OSC 10 (foreground), and OSC 11 (background), then derives a full theme from whatever the terminal reports:
-
-```typescript
-import { detectTheme } from "@silvery/theme"
-
-// Queries the terminal's live colors — matches whatever theme the user has configured
-const theme = await detectTheme()
-
-// Provide a fallback palette for terminals that don't respond to OSC queries (CI, tmux, etc.)
-import { getPaletteByName } from "@silvery/theme"
-const theme = await detectTheme({ fallback: getPaletteByName("nord") })
-```
-
-This means the app automatically matches the user's terminal theme — Dracula users get Dracula colors, Solarized users get Solarized colors, with no configuration on your end. Dark/light mode is detected from the background luminance.
-
 ## Theme Builder
 
 The chainable builder API gives you control at every level:
@@ -201,9 +201,9 @@ const vars = themeToCSSVars(theme)
 Object.assign(element.style, vars)
 ```
 
-## Semantic Tokens
+## Design Tokens
 
-The 33 semantic tokens in a Theme follow a consistent naming pattern. Each area has a background token and a foreground (`fg`) token:
+Silvery's theme system uses [design tokens](https://tr.designtokens.org/format/) -- named values that represent visual decisions. The 33 tokens in a Theme follow a consistent naming pattern. Each area has a background token and a foreground (`fg`) token:
 
 | Token Pair                  | Purpose                                |
 | --------------------------- | -------------------------------------- |
