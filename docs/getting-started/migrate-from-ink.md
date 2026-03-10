@@ -87,7 +87,7 @@ function Card({ width }: { width: number }) {
   return <Text>{truncate(title, width)}</Text>
 }
 
-;<Card width={availableWidth - padding * 2} />
+<Card width={availableWidth - padding * 2} />
 ```
 
 **Silvery**: Components can ask for their size.
@@ -99,7 +99,7 @@ function Card() {
   return <Text>{truncate(title, width)}</Text>
 }
 
-;<Card />
+<Card />
 ```
 
 ### 2. Text Wraps by Default
@@ -222,11 +222,11 @@ const { width } = useContentRect()
 
 ### By Design
 
-| Behavior                | Ink       | Silvery | Reason                         |
-| ----------------------- | --------- | ------- | ------------------------------ |
-| Text overflow           | Overflows | Wraps   | Better default                 |
+| Behavior                | Ink       | Silvery | Reason                       |
+| ----------------------- | --------- | ------- | ---------------------------- |
+| Text overflow           | Overflows | Wraps   | Better default               |
 | First render dimensions | N/A       | Zeros   | Required for responsive layout |
-| Internal APIs           | Exposed   | Hidden  | Not public API                 |
+| Internal APIs           | Exposed   | Hidden  | Not public API               |
 
 ## Removing Width Prop Threading
 

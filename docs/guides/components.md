@@ -14,7 +14,7 @@ The primary layout component. Uses Yoga (flexbox) for layout.
 
 ```tsx
 import { Box, Text } from "silvery"
-;<Box flexDirection="row" justifyContent="space-between">
+<Box flexDirection="row" justifyContent="space-between">
   <Text>Left</Text>
   <Text>Right</Text>
 </Box>
@@ -38,24 +38,24 @@ See [Scrolling Guide](/guide/scrolling) for details.
 
 ### Props
 
-| Prop             | Type                                                                          | Default        | Description                 |
-| ---------------- | ----------------------------------------------------------------------------- | -------------- | --------------------------- |
-| `flexDirection`  | `"row" \| "column" \| "row-reverse" \| "column-reverse"`                      | `"row"`        | Main axis direction         |
-| `flexGrow`       | `number`                                                                      | `0`            | Grow factor                 |
-| `flexShrink`     | `number`                                                                      | `1`            | Shrink factor               |
-| `flexBasis`      | `number \| string`                                                            | -              | Initial size                |
-| `justifyContent` | `"flex-start" \| "flex-end" \| "center" \| "space-between" \| "space-around"` | `"flex-start"` | Main axis alignment         |
-| `alignItems`     | `"flex-start" \| "flex-end" \| "center" \| "stretch"`                         | `"stretch"`    | Cross axis alignment        |
-| `padding`        | `number`                                                                      | `0`            | Padding on all sides        |
-| `paddingX`       | `number`                                                                      | `0`            | Horizontal padding          |
-| `paddingY`       | `number`                                                                      | `0`            | Vertical padding            |
-| `margin`         | `number`                                                                      | `0`            | Margin on all sides         |
-| `width`          | `number \| string`                                                            | -              | Fixed or percentage width   |
-| `height`         | `number \| string`                                                            | -              | Fixed or percentage height  |
-| `minWidth`       | `number`                                                                      | -              | Minimum width               |
-| `minHeight`      | `number`                                                                      | -              | Minimum height              |
-| `borderStyle`    | `"single" \| "double" \| "round" \| "bold" \| "classic"`                      | -              | Border style                |
-| `borderColor`    | `string`                                                                      | -              | Border color                |
+| Prop             | Type                                                                          | Default        | Description                                   |
+| ---------------- | ----------------------------------------------------------------------------- | -------------- | --------------------------------------------- |
+| `flexDirection`  | `"row" \| "column" \| "row-reverse" \| "column-reverse"`                      | `"row"`        | Main axis direction                           |
+| `flexGrow`       | `number`                                                                      | `0`            | Grow factor                                   |
+| `flexShrink`     | `number`                                                                      | `1`            | Shrink factor                                 |
+| `flexBasis`      | `number \| string`                                                            | -              | Initial size                                  |
+| `justifyContent` | `"flex-start" \| "flex-end" \| "center" \| "space-between" \| "space-around"` | `"flex-start"` | Main axis alignment                           |
+| `alignItems`     | `"flex-start" \| "flex-end" \| "center" \| "stretch"`                         | `"stretch"`    | Cross axis alignment                          |
+| `padding`        | `number`                                                                      | `0`            | Padding on all sides                          |
+| `paddingX`       | `number`                                                                      | `0`            | Horizontal padding                            |
+| `paddingY`       | `number`                                                                      | `0`            | Vertical padding                              |
+| `margin`         | `number`                                                                      | `0`            | Margin on all sides                           |
+| `width`          | `number \| string`                                                            | -              | Fixed or percentage width                     |
+| `height`         | `number \| string`                                                            | -              | Fixed or percentage height                    |
+| `minWidth`       | `number`                                                                      | -              | Minimum width                                 |
+| `minHeight`      | `number`                                                                      | -              | Minimum height                                |
+| `borderStyle`    | `"single" \| "double" \| "round" \| "bold" \| "classic"`                      | -              | Border style                                  |
+| `borderColor`    | `string`                                                                      | -              | Border color                                  |
 | `overflow`       | `"visible" \| "hidden" \| "scroll"`                                           | `"visible"`    | Overflow behavior           |
 | `scrollTo`       | `number`                                                                      | -              | Child index to keep visible |
 
@@ -119,7 +119,7 @@ Flexible space that expands to fill available room.
 
 ```tsx
 import { Box, Spacer, Text } from "silvery"
-;<Box>
+<Box>
   <Text>Left</Text>
   <Spacer />
   <Text>Right</Text>
@@ -160,7 +160,7 @@ Single-line text input with full readline shortcuts (Ctrl+A/E, Ctrl+K/U, Alt+B/F
 
 ```tsx
 import { TextInput } from "silvery"
-;<TextInput value={text} onChange={setText} onSubmit={handleSubmit} placeholder="Type here..." prompt="> " />
+<TextInput value={text} onChange={setText} onSubmit={handleSubmit} placeholder="Type here..." prompt="> " />
 ```
 
 ### TextArea
@@ -169,7 +169,7 @@ Multi-line text editing with cursor navigation, line wrapping, and text selectio
 
 ```tsx
 import { TextArea } from "silvery"
-;<TextArea
+<TextArea
   value={text}
   onChange={setText}
   height={5}
@@ -204,7 +204,7 @@ Single-select list with keyboard navigation (arrow keys, j/k, Home/End), disable
 
 ```tsx
 import { SelectList } from "silvery"
-;<SelectList
+<SelectList
   items={[
     { label: "React", value: "react" },
     { label: "Vue", value: "vue" },

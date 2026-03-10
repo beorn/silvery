@@ -1731,11 +1731,7 @@ function selectPalette(name) {
     <div v-if="activePalette && activeTheme" class="detail-section">
       <!-- Detail tab bar -->
       <div class="detail-tabs">
-        <button
-          v-if="activeTab === 'custom'"
-          :class="['detail-tab', { active: detailTab === 'terminal' }]"
-          @click="detailTab = 'terminal'"
-        >
+        <button v-if="activeTab === 'custom'" :class="['detail-tab', { active: detailTab === 'terminal' }]" @click="detailTab = 'terminal'">
           Preview
         </button>
         <button :class="['detail-tab', { active: detailTab === 'tokens' }]" @click="detailTab = 'tokens'">
@@ -1901,8 +1897,8 @@ function selectPalette(name) {
       <!-- Semantic tokens detail -->
       <div v-if="detailTab === 'tokens'" class="tokens-pane">
         <p class="tokens-intro">
-          These 33 design tokens are derived from the palette via <code>deriveTheme()</code>. Components reference them
-          with a <code>$</code> prefix (e.g. <code>color="$primary"</code>).
+          These 33 design tokens are derived from the palette via <code>deriveTheme()</code>. Components reference
+          them with a <code>$</code> prefix (e.g. <code>color="$primary"</code>).
         </p>
         <div v-for="group in semanticGroups" :key="group.label" class="token-group">
           <h4 class="token-group-heading">{{ group.label }}</h4>
@@ -2150,9 +2146,7 @@ function selectPalette(name) {
   cursor: pointer;
   background: none;
   text-align: left;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s;
   width: 100%;
 }
 
