@@ -150,6 +150,7 @@ async function generateRegistry(): Promise<void> {
     "layout-feedback",
     "focus",
     "text-input",
+    "theme-explorer",
   ]
   const showcaseMeta: Record<string, { name: string; description: string; features: string[] }> = {
     dashboard: {
@@ -201,6 +202,11 @@ async function generateRegistry(): Promise<void> {
       name: "Text Input",
       description: "Live text echo with cursor, backspace, and clear.",
       features: ["Box", "Text", "borderStyle", "useInput"],
+    },
+    "theme-explorer": {
+      name: "Theme Explorer",
+      description: "Browse 14 built-in color palettes with ANSI swatches and sample text.",
+      features: ["Box", "Text", "backgroundColor", "useInput", "useContentRect", "@silvery/theme"],
     },
   }
 
