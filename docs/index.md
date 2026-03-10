@@ -10,9 +10,6 @@ hero:
       text: Get Started
       link: /getting-started/quick-start
     - theme: alt
-      text: Migrate from Ink
-      link: /getting-started/migrate-from-ink
-    - theme: alt
       text: View on GitHub
       link: https://github.com/beorn/silvery
 
