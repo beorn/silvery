@@ -77,7 +77,7 @@ These APIs are 100% compatible:
 
 ## What's Different
 
-### 1. Components Know Their Size (The Big Win)
+### 1. Components Know Their Size
 
 **Ink**: Must manually thread width props.
 
@@ -138,30 +138,23 @@ You can also truncate with an ellipsis instead of wrapping:
 
 **Migration**: If you rely on overflow, add `wrap={false}` to disable both wrapping and truncation.
 
-### 3. First Render Shows Zeros
+### 3. Initial Render Dimensions
 
-**Ink**: Components render once with final output.
+Silvery's `useContentRect()` returns `{ width: 0, height: 0 }` during the very first render pass of a component. The framework then runs layout and immediately triggers a second render with actual dimensions — both passes complete before any output reaches the terminal.
 
-**Silvery**: Components using `useContentRect()` render twice. First render has `{ width: 0, height: 0 }`, second has actual values.
+This is fundamentally different from Ink's `useBoxMetrics()`, which requires a visible re-render cycle via `useEffect`. In Silvery, the zeros are invisible to the user — they exist only as an internal implementation detail of the two-phase rendering pipeline.
 
-```tsx
-function Header() {
-  const { width } = useContentRect()
-  // First render: width=0
-  // Second render: width=80
-  return <Text>{"=".repeat(width)}</Text>
-}
-```
-
-This is usually invisible (both renders happen before first paint). Add a guard if needed:
+If your component does math with width/height (like `"=".repeat(width)`), add a guard:
 
 ```tsx
 function Header() {
   const { width } = useContentRect()
-  if (width === 0) return null
+  if (width === 0) return null  // Skip first layout pass
   return <Text>{"=".repeat(width)}</Text>
 }
 ```
+
+Most components work fine without a guard — `width: 0` just means "nothing to render yet" and the real dimensions arrive before the first paint.
 
 ### 4. Scrolling Just Works
 
@@ -192,19 +185,24 @@ function Header() {
 
 ### 5. measureElement() -> useContentRect()
 
-**Ink**: Use `measureElement()` after render.
+**Ink**: Use `measureElement()` with a ref and `useEffect` to measure after render.
 
 ```tsx
+// Ink
 const ref = useRef()
-const { width } = measureElement(ref.current)
-// Need manual re-render to use width
+useEffect(() => {
+  const { width } = measureElement(ref.current)
+  setWidth(width)
+}, [])
+return <Box ref={ref}>...</Box>
 ```
 
-**Silvery**: `measureElement()` works for compatibility, but `useContentRect()` is simpler.
+**Silvery**: `measureElement()` works for compatibility, but `useContentRect()` is simpler — no ref, no effect, no state.
 
 ```tsx
+// Silvery
 const { width } = useContentRect()
-// Automatically re-renders with correct values
+return <Box>...</Box>  // No ref needed
 ```
 
 ### 6. Hook Naming
@@ -224,13 +222,13 @@ const { width } = useContentRect()
 
 | Behavior                | Ink       | Silvery | Reason                          |
 | ----------------------- | --------- | ------- | ------------------------------- |
-| Default flexDirection   | row       | column  | silvery/ink compat handles this |
+| Default flexDirection   | row       | row     | Now aligned with CSS/Ink        |
 | Text overflow           | Overflows | Wraps   | Better default                  |
 | First render dimensions | N/A       | Zeros   | Required for layout feedback    |
 | Internal APIs           | Exposed   | Hidden  | Not public API                  |
 
 ::: tip Default Flex Direction
-Ink defaults `<Box>` to `flexDirection="row"`. Silvery defaults to `"column"`. The `silvery/ink` compat import handles this automatically — Box defaults to row in compat mode. If you import from `silvery` directly, add explicit `flexDirection="row"` where needed.
+Both Ink and Silvery default `<Box>` to `flexDirection="row"`, matching the W3C CSS spec.
 :::
 
 ### ANSI Encoding Differences
@@ -253,6 +251,9 @@ Silvery and Ink/Chalk produce visually identical terminal output but different b
 | `ink-text-input`      | `@silvery/ui` `TextInput`  |
 | `ink-table`           | `@silvery/ui` `Table`      |
 | `ink-testing-library` | `@silvery/test`            |
+| `ink-link`            | `Link` (built-in)          |
+
+Missing a package mapping? [File an issue](https://github.com/beorn/silvery/issues) or contribute a component.
 
 ### Edge Cases
 
@@ -261,6 +262,27 @@ Silvery and Ink/Chalk produce visually identical terminal output but different b
 | Rapid re-renders  | Flicker       | Silvery coalesces frames; usually fine |
 | Deep nesting      | Slower layout | Flatten tree if possible               |
 | Custom reconciler | Breaks        | Not supported                          |
+
+## Migrating Tests
+
+If you used `ink-testing-library`:
+
+```bash
+bun remove ink-testing-library
+bun add @silvery/test
+```
+
+```diff
+- import { render } from 'ink-testing-library'
++ import { createRenderer } from '@silvery/test'
+
+- const { lastFrame } = render(<App />)
+- expect(lastFrame()).toContain('hello')
++ const renderer = createRenderer(<App />)
++ expect(renderer.root).toContainText('hello')
+```
+
+`@silvery/test` provides auto-refreshing locators (`getByTestId`, `getByText`) and buffer assertions. See the [testing guide](/guide/testing) for details.
 
 ## Removing Width Prop Threading
 

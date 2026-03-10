@@ -2,13 +2,17 @@
 
 **A React framework for building terminal applications.**
 
-Silvery gives you the full React component model -- JSX, hooks, reconciliation -- with a rendering architecture designed for interactive terminal UIs. Components know their dimensions during render, containers scroll natively, input events bubble through a DOM-style layer stack, and only changed nodes re-render.
+Silvery is the only React terminal framework where components know their own dimensions during render. This single architectural change unlocks responsive layouts without prop drilling, native scrollable containers, and automatic text truncation — things that weren't possible in existing frameworks.
 
-It ships 30+ built-in components, a command/keybinding system, mouse support, a theme engine with 45 palettes, and three composable runtime architectures (React hooks, TEA reducers, Zustand stores). Pure TypeScript, no WASM, no native dependencies.
+Beyond layout feedback, Silvery provides a DOM-style input layer stack with modal isolation, spatial focus navigation, mouse support, and a command/keybinding system. Only changed nodes re-render.
+
+It ships 30+ built-in components, a theme engine with 45 palettes, and three composable runtime architectures (React hooks, TEA reducers, Zustand stores). Pure TypeScript, no WASM, no native dependencies.
 
 ```
 npm install silvery react
 ```
+
+> **Status:** Alpha — under active development. APIs may change. Early adopters and feedback welcome.
 
 ```tsx
 import { useState } from "react"
@@ -102,7 +106,7 @@ Built-in `TextArea` with word wrap, scrolling, cursor movement, selection, and u
 
 ### 30+ built-in components
 
-VirtualList, TextArea, TextInput, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, Console, and more -- with built-in scrolling, focus, and input handling.
+TextArea, TextInput, VirtualList, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, SplitView, Toast, Image, and more -- all with built-in scrolling, focus, and input handling.
 
 ### Theme system
 
@@ -114,7 +118,7 @@ Optional [Elm Architecture](https://guide.elm-lang.org/architecture/) alongside 
 
 ### Multi-target rendering
 
-Terminal today, Canvas 2D and DOM available now. Same React components, different rendering backends.
+Terminal today, Canvas 2D and DOM experimental. Same React components, different rendering backends.
 
 ## Packages
 
@@ -133,6 +137,12 @@ Terminal today, Canvas 2D and DOM available now. Same React components, differen
 
 If you have an existing Ink app, `silvery/ink` and `silvery/chalk` provide compatibility layers for migration. The core API (`Box`, `Text`, `useInput`, `render`) is intentionally familiar -- most Ink code works with minimal changes. See the [migration guide](docs/guide/migration.md) for details.
 
+## When to Use Silvery
+
+Silvery is designed for **complex interactive TUIs** — dashboards, editors, kanban boards, chat interfaces. If you need scrollable containers, mouse support, spatial focus, or components that adapt to their size, Silvery provides these out of the box.
+
+For simple one-shot CLI prompts, Ink's mature ecosystem (50+ community components, 1.3M weekly downloads) may be a better fit today.
+
 ## Ecosystem
 
 | Project                                    | What                                                           |
@@ -140,6 +150,8 @@ If you have an existing Ink app, `silvery/ink` and `silvery/chalk` provide compa
 | [Termless](https://termless.dev)           | Headless terminal testing -- like Playwright for terminal apps |
 | [Flexily](https://beorn.github.io/flexily) | Pure JS flexbox layout engine (Yoga-compatible, zero WASM)     |
 | [Loggily](https://beorn.github.io/loggily) | Debug + structured logging + tracing                           |
+
+See the [roadmap](https://silvery.dev/roadmap) for what's next.
 
 ## Performance
 
@@ -152,9 +164,9 @@ _Apple M1 Max, Bun 1.3.9. Reproduce: `bun run bench:compare`_
 | Typical interactive update (1000 nodes) | 169 us  | 20.7 ms |
 | Layout (50-node kanban)                 | 57 us   | 88 us   |
 
-The "typical interactive update" row is what matters for real apps. When a user presses a key, silvery's dirty tracking updates only the changed nodes (169 us). Ink re-renders the full React tree and runs complete layout (20.7 ms). For the updates that actually happen during interactive use, silvery is 100x+ faster.
+**Why the difference?** Interactive updates (cursor move, scroll, toggle) typically change one or two nodes. Silvery's per-node dirty tracking updates only those nodes — 169 us for a 1000-node tree. Ink re-renders the full React tree and runs complete Yoga layout on every state change — 20.7 ms. For the updates that dominate interactive use, Silvery is ~100x faster.
 
-Full re-renders where the entire component tree changes are faster in Ink (string concatenation vs silvery's 5-phase pipeline). But that scenario rarely occurs in interactive applications.
+Full re-renders where the entire tree changes are faster in Ink (string concatenation vs Silvery's 5-phase pipeline). That trade-off is inherent to supporting layout feedback, and full re-renders are rare in interactive apps.
 
 ## Documentation
 

@@ -1,52 +1,34 @@
 # Why Silvery?
 
-Silvery is a React framework for terminal UIs. It solves a fundamental problem that Ink — the current standard — can't fix without a rewrite: **components don't know their own size**.
+Silvery exists because of a fundamental constraint in how React terminal frameworks handle layout: **components can't know their own size during render**.
 
-## The Problem
+## The Core Problem
 
-In Ink, React renders _before_ layout runs. Components never learn their dimensions. Every app that needs responsive content threads width props through the entire tree:
+In existing React terminal frameworks, React renders components first, then a layout engine (like Yoga) calculates positions and sizes. By the time layout runs, rendering is already done. Components that need to adapt to their available space — truncating text, choosing between compact and full layouts, fitting content into columns — have to work around this with prop drilling or post-render effects.
 
-```tsx
-// Ink: width props cascade everywhere
-function Board({ width }: { width: number }) {
-  const colWidth = Math.floor((width - 2) / 3)
-  return (
-    <Box flexDirection="row">
-      <Column width={colWidth} items={todo} />
-      <Column width={colWidth} items={doing} />
-      <Column width={colWidth} items={done} />
-    </Box>
-  )
-}
-```
+This has been [a known limitation](https://github.com/vadimdemedes/ink/issues/5) since 2016. Addressing it requires a fundamentally different rendering pipeline.
 
-This is [Ink's #1 issue](https://github.com/vadimdemedes/ink/issues/5), open since 2016. It can't be fixed without changing Ink's render pipeline — which would be a breaking rewrite.
+## Silvery's Approach
 
-## The Fix
-
-Silvery runs layout first, then lets components render with actual dimensions:
+Silvery inverts the order: layout runs first, then components render with actual dimensions available via `useContentRect()`:
 
 ```tsx
-// Silvery: No width props needed
 function Card({ item }: { item: Item }) {
-  const { width } = useContentRect() // Just ask
+  const { width } = useContentRect()
   return <Text>{truncate(item.title, width - 4)}</Text>
 }
 ```
 
-This unlocks scrollable containers (`overflow="scroll"`), auto-truncation, and any feature that depends on "how much space do I have?"
+No prop drilling, no post-render measurement, no `width: 0` on first paint. This architectural change also unlocks native scrollable containers (`overflow="scroll"`) and automatic text truncation — features that depend on knowing "how much space do I have?"
 
-## What Else
+## What Else Comes With It
 
-Beyond layout feedback, Silvery provides:
+Beyond layout feedback, Silvery provides a complete terminal app toolkit:
 
-- **100x faster interactive updates** — per-node dirty tracking vs Ink's full-tree re-render
-- **Constant memory** — pure JS layout engine (Flexily) vs Yoga's monotonically growing WASM memory
-- **Modern input** — SGR mouse events, spatial focus navigation, command system, keybindings, input layer stack
-- **30+ components** — TextArea, VirtualList, SelectList, Table, CommandPalette, ModalDialog, Image, and more
-- **Zero native deps** — no C++ addons, no WASM blobs, runs on any JS runtime
-- **Flicker-free** — synchronized terminal updates, incremental buffer diff
+- **Fast interactive updates** — per-node dirty tracking means only changed nodes re-render ([benchmarks](/guide/silvery-vs-ink#performance))
+- **Stable memory** — pure JavaScript layout engine with normal garbage collection
+- **Rich interaction** — mouse events, spatial focus navigation, command system with keybindings, input layer stack
+- **30+ built-in components** — TextArea, VirtualList, Table, CommandPalette, and more ([component catalog](/guide/components))
+- **Zero native dependencies** — pure TypeScript, runs on Node, Bun, and Deno
 
-If you know Ink, you already know Silvery — `Box`, `Text`, `useInput`, `render()` all work the same way. See the [migration guide](/guide/migration) for the 5-minute switch.
-
-For the full feature-by-feature comparison with benchmarks, see [Silvery vs Ink](/guide/migration).
+If you know React, you know Silvery — the core API (`Box`, `Text`, `useInput`, `render`) is familiar. See the [getting started guide](/getting-started/quick-start) to try it, or the [full comparison with Ink](/guide/silvery-vs-ink) for technical details.

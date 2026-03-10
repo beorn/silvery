@@ -6,6 +6,8 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 
 **Legend:** ✅ Full support (built-in, documented) | ⚡ Best-in-class | 🔶 Partial support | ❌ Not supported | 🔧 Community/plugin
 
+> Ratings reflect the author's assessment based on documented features, benchmarks, and public APIs. ⚡ indicates category-leading implementation, not just presence of a feature.
+
 ---
 
 ## Rendering
@@ -16,7 +18,7 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 | Style transition cache (minimal SGR diff) | ⚡ Interned styles + cached SGR transitions [^2]       | ❌                            | ❌               | 🔶                    | ✅                        | ❌              | ❌        |
 | Damage rectangles / dirty regions         | ⚡ Row-level bounding box + bitset                     | ❌                            | ❌               | ✅ Per-widget regions | ⚡ Per-plane damage       | ❌              | ❌        |
 | Double buffering                          | ✅ Packed Uint32Array cells                            | ❌ String-based               | ✅               | ✅                    | ✅ ncplanes               | ✅              | 🔶        |
-| Synchronized output (DEC 2026)            | ⚡ Automatic                                           | ❌ [^3]                       | ✅ v2 alpha      | ✅                    | ✅                        | ❌              | ❌        |
+| Synchronized output (DEC 2026)            | ✅ Automatic                                           | ❌ [^3]                       | ✅ v2 alpha      | ✅                    | ✅                        | ❌              | ❌        |
 | Wide character support (CJK)              | ⚡ Built-in wcwidth + grapheme splitting + atomic diff | 🔶 Third-party `string-width` | ✅               | ✅                    | ⚡ Built-in wcwidth       | ✅              | 🔶        |
 | Frame rate limiting                       | ✅ Scheduler coalescing                                | ❌                            | 🔶 Manual `tick` | ✅ Configurable FPS   | ✅                        | ✅              | ❌        |
 
@@ -53,7 +55,7 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 | Feature                                      | Silvery                                                       | Ink                              | BubbleTea                            | Textual                        | Notcurses               | FTXUI              | blessed                  |
 | -------------------------------------------- | ------------------------------------------------------------- | -------------------------------- | ------------------------------------ | ------------------------------ | ----------------------- | ------------------ | ------------------------ |
 | Layout engine                                | ⚡ Flexbox (Flexily 7KB pure JS or Yoga) [^6]                 | Flexbox (Yoga WASM)              | Manual                               | ⚡ CSS subset (grid + flexbox) | Manual ncplane stacking | Flexbox-like (C++) | Manual                   |
-| React/component model                        | ⚡ React 19, JSX, hooks                                       | ✅ React 19, JSX, hooks          | Elm architecture (Model-Update-View) | Widget classes                 | C structs               | C++ components     | Event emitter objects    |
+| React/component model                        | ⚡ React 19, JSX, hooks                                       | ✅ React 19, JSX, hooks          | ⚡ Elm architecture (Model-Update-View) | Widget classes                 | C structs               | C++ components     | Event emitter objects    |
 | Layout feedback (components know their size) | ⚡ `useContentRect()` / `useScreenRect()` — synchronous [^7]  | 🔶 `useBoxMetrics()` post-layout | ❌                                   | ✅ `size` property on widgets  | 🔶 ncplane dimensions   | 🔶                 | 🔶                       |
 | Virtual list / lazy rendering                | ✅ `VirtualList` component                                    | ❌                               | 🔧 `list` Bubble                     | ✅ Built-in `ListView`         | ❌                      | ❌                 | ✅ `List`                |
 | Text input components                        | ✅ TextInput (with readline), TextArea (multi-line)           | 🔧 `ink-text-input`              | 🔧 `textinput` Bubble                | ✅ `Input`, `TextArea`         | ❌                      | ✅ `Input`         | ✅ `Textbox`, `Textarea` |
@@ -95,7 +97,7 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 | Language / runtime      | TypeScript / Bun or Node.js                            | JavaScript / Node.js                      | Go                                 | Python (3.8+)                         | C (C99)                  | C++ (17)                 | JavaScript / Node.js   |
 | Native dependencies     | None (pure JS/TS)                                      | Yoga WASM (binary blob)                   | None                               | None                                  | terminfo, FFI libs       | None                     | None                   |
 | Memory in long sessions | Constant (normal JS GC)                                | Grows (Yoga WASM linear memory) [^10]     | Constant                           | Constant                              | Constant                 | Constant                 | Grows (known leaks)    |
-| Render targets          | Terminal, Canvas 2D, DOM                               | Terminal only                             | Terminal only                      | Terminal + Web (Textual-web)          | Terminal only            | Terminal only            | Terminal only          |
+| Render targets          | Terminal, Canvas 2D, DOM (experimental)                | Terminal only                             | Terminal only                      | Terminal + Web (Textual-web)          | Terminal only            | Terminal only            | Terminal only          |
 | Community / ecosystem   | New (active development)                               | Mature (~1.3M npm weekly, 50+ components) | Large (Go ecosystem, 100+ Bubbles) | Growing (Python ecosystem)            | Niche (C specialists)    | Moderate (C++ community) | Legacy (unmaintained)  |
 | Maintenance status      | Active                                                 | Active                                    | Active                             | Active                                | Slow / winding down      | Active                   | Unmaintained           |
 
@@ -110,7 +112,7 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 ### Silvery
 
 - **Two-phase rendering with layout feedback**: Components know their dimensions during render via `useContentRect()` -- the only React-based TUI framework where this works synchronously.
-- **Per-node dirty tracking**: Interactive updates (keystroke, scroll) take ~169 us for 1000 nodes vs Ink's 20.7 ms full re-render -- 100x+ faster for the updates that matter.
+- **Per-node dirty tracking**: Interactive updates (keystroke, scroll) skip unchanged nodes entirely, avoiding full re-renders. See [detailed benchmarks](/guide/silvery-vs-ink#performance) for comparison data.
 - **Driver pattern for AI automation**: Composable plugins (`withCommands` + `withKeybindings` + `withDiagnostics`) expose the full command surface for programmatic control, introspection, and testing.
 
 ### Ink

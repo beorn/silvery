@@ -25,7 +25,7 @@ Terminal-based AI assistants have unique UI requirements: streaming output that 
 
 **Command introspection for AI agents.** The `withCommands` plugin exposes every action with an ID, name, description, and keybindings. Calling `cmd.all()` returns a structured list of everything the app can do. An AI agent can read this to decide which actions to invoke, turning the TUI into a programmable interface rather than a purely visual one.
 
-**Streaming-friendly incremental rendering.** When an LLM streams tokens, only the message being appended changes. Silvery tracks dirty flags per node and re-renders only what changed — 169us per update versus 20.7ms for a full-screen repaint ([benchmarks](/guide/why-silvery#performance)). At 50 tokens per second, that is the difference between smooth scrolling and visible flicker.
+**Streaming-friendly incremental rendering.** When an LLM streams tokens, only the message being appended changes. Silvery tracks dirty flags per node and re-renders only what changed — 169us per update versus 20.7ms for a full-screen repaint ([benchmarks](/guide/silvery-vs-ink#performance)). At 50 tokens per second, that is the difference between smooth scrolling and visible flicker.
 
 **Bracketed paste for code snippets.** The `usePaste` hook receives multi-line pasted text as a single event instead of individual keystrokes. Users can paste code blocks, stack traces, or configuration files directly into the input area without the app interpreting each line as a separate command.
 

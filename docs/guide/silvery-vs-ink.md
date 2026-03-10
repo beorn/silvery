@@ -52,9 +52,9 @@ Ink is a focused renderer. Silvery is a framework. The differences fall into thr
 | **Scrollable containers** | `overflow="scroll"` with `scrollTo` -- framework handles measurement and clipping    | `overflow` supports `visible` and `hidden` only; scrolling requires manual virtualization                                  |
 | **Text truncation**       | Automatic, ANSI-aware; text clips at Box boundaries                                  | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                              |
 | **Layout engines**        | [Flexily](https://beorn.github.io/flexily) (7 KB, pure JS) or Yoga WASM -- pluggable | Yoga WASM only (`yoga-layout` v3)                                                                                          |
-| **Render targets**        | Terminal, Canvas 2D, DOM                                                             | Terminal only                                                                                                              |
+| **Render targets**        | Terminal, Canvas 2D, DOM (experimental)                                              | Terminal only                                                                                                              |
 | **Native dependencies**   | None -- pure JS/TS                                                                   | Yoga WASM binary blob (no native compilation, but not pure JS)                                                             |
-| **Memory profile**        | Constant -- Flexily uses normal JS GC                                                | Yoga WASM linear memory can grow monotonically ([documented issue](https://github.com/anthropics/claude-code/issues/4953)) |
+| **Memory profile**        | Constant -- Flexily uses normal JS GC                                                | Yoga WASM uses a linear memory heap that can grow over long sessions ([discussion](https://github.com/anthropics/claude-code/issues/4953)) |
 | **Layout caching**        | Flexily fingerprints + caches unchanged subtrees                                     | Full tree recomputation on every layout pass                                                                               |
 | **Initialization**        | Synchronous -- pure TypeScript import                                                | Async WASM loading                                                                                                         |
 | **Box outline**           | `outlineStyle` -- CSS outline equivalent, no layout impact                           | None                                                                                                                       |
@@ -101,6 +101,8 @@ Ink is a focused renderer. Silvery is a framework. The differences fall into thr
 
 _Apple M1 Max, Bun 1.3.9, Feb 2026. Reproduce: `bun run bench:compare`_
 
+_Benchmarks measure a specific scenario for each row. "Typical interactive update" = single setState in a mounted 1000-node tree (e.g., moving a cursor). Silvery updates only the dirty subtree; Ink reconciles all nodes._
+
 | Scenario                              | Silvery         | Ink               |                          |
 | ------------------------------------- | --------------- | ----------------- | ------------------------ |
 | Cold render (1 component)             | 165 us          | 271 us            | Silvery 1.6x faster      |
@@ -113,9 +115,7 @@ _Apple M1 Max, Bun 1.3.9, Feb 2026. Reproduce: `bun run bench:compare`_
 
 **Understanding the rerender row:** When the _entire_ component tree re-renders from scratch (e.g., replacing the root element), Ink is 30x faster because its output is string concatenation. Silvery runs a 5-phase pipeline (measure, layout, content, output) after React reconciliation -- that is the cost of layout feedback. But this scenario rarely happens in real apps.
 
-**The row that matters -- "typical interactive update":** When a user presses a key (cursor move, scroll, toggle), only the changed nodes need updating. Silvery has per-node dirty tracking that bypasses React entirely -- 169 us for 1000 nodes. Ink re-renders the full React tree for any state change, then runs line-based diff on the output -- 20.7 ms. In practice, Silvery is **100x+ faster** for the updates that actually happen during interactive use.
-
-**Ink's incremental rendering** (v6.5.0+) improves output by skipping unchanged _lines_, but it still re-renders the entire React tree and runs full Yoga layout on every state change. Silvery's dirty tracking skips React reconciliation, layout, and content generation for unchanged nodes -- a fundamentally different approach.
+**The row that matters -- "typical interactive update":** When a user presses a key (cursor move, scroll, toggle), only the changed nodes need updating. Silvery has per-node dirty tracking that bypasses React entirely -- 169 us for 1000 nodes. Ink's incremental rendering (v6.5.0+) improves output by skipping unchanged _lines_, but it still re-renders the entire React tree and runs full Yoga layout on every state change -- 20.7 ms. Silvery's dirty tracking skips React reconciliation, layout, and content generation for unchanged nodes -- a fundamentally different approach.
 
 ---
 
@@ -301,9 +301,9 @@ One-shot question, answer, exit.
 
 These are not theoretical differences. Production Ink-based CLIs have encountered several of these limitations:
 
-- **Memory**: Claude Code (Anthropic's CLI, built on Ink) reported [120+ GB memory usage](https://github.com/anthropics/claude-code/issues/4953) from Yoga WASM linear memory growth, crashing every 30-60 minutes. Silvery's pure-TS layout eliminates this entire bug category.
-- **Flicker**: Ink's approach of [clearing the entire terminal](https://github.com/vadimdemedes/ink/issues/359) on each render caused visible flicker, especially in tmux. Ink v6.5.0+ added line-based incremental rendering and v6.7.0 added synchronized updates to mitigate this. Silvery's cell-level dirty tracking and buffer diff provide more granular flicker prevention.
-- **Missing capabilities**: Production CLIs have needed mouse support, customizable keybindings, scrollable containers, and complex focus management -- features that require significant custom code in Ink but are built into Silvery.
+- **Memory**: Large-scale Ink apps have encountered memory growth from Yoga's WASM linear memory, which cannot shrink once allocated (e.g., [Claude Code saw its process balloon over time](https://github.com/anthropics/claude-code/issues/4953)). Silvery avoids this class of problem by using a pure JavaScript layout engine with normal garbage collection.
+- **Flicker**: Earlier Ink versions [cleared the entire terminal area](https://github.com/vadimdemedes/ink/issues/359) on each render, causing visible flicker, especially in tmux. Ink v6.5.0+ added line-based incremental rendering and v6.7.0 added synchronized updates to mitigate this. Silvery's cell-level dirty tracking and buffer diff provide more granular flicker prevention.
+- **Missing capabilities**: Production CLIs have needed mouse support, customizable keybindings, scrollable containers, and complex focus management -- features that require additional libraries or manual implementation in Ink but are built into Silvery.
 
 ---
 

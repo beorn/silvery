@@ -320,7 +320,7 @@ Add more items to `recentItems` and they'll scroll automatically.
 
 ### Why Silvery for Dashboards
 
-- **Real-time updates** -- Silvery's incremental renderer tracks dirty flags per node. When one metric changes in a large dashboard, only that cell repaints -- 169us per update vs 20.7ms for a full re-render ([benchmarks](/guide/why-silvery#performance)). Smooth 30fps data refreshes without saturating the terminal.
+- **Real-time updates** -- Silvery's incremental renderer tracks dirty flags per node. When one metric changes in a large dashboard, only that cell repaints -- 169us per update vs 20.7ms for a full re-render ([benchmarks](/guide/silvery-vs-ink#performance)). Smooth 30fps data refreshes without saturating the terminal.
 
 - **Theming** -- `ThemeProvider` with semantic `$token` colors (`$primary`, `$success`, `$error`, `$muted`, `$border`) gives your dashboard a consistent look. Switch between `defaultDarkTheme` and `defaultLightTheme` or define custom palettes.
 

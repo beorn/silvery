@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: "Silvery"
-  text: "Better Ink"
-  tagline: "A React framework for terminal UIs — drop-in Ink replacement with layout feedback, scrollable containers, and 100x+ faster interactive updates"
+  text: "Polished Terminal UIs in React"
+  tagline: "A React framework for building terminal applications — responsive layouts, scrollable containers, and lightning-fast interactive updates"
   actions:
     - theme: brand
       text: Get Started
@@ -17,26 +17,26 @@ hero:
       link: https://github.com/beorn/silvery
 
 features:
-  - title: Drop-in Ink Replacement
-    details: "Same Box/Text/useInput API you already know. `silvery/ink` and `silvery/chalk` compat layers for effortless migration. Switch in minutes."
+  - title: Ink-Compatible API
+    details: "Same Box/Text/useInput API you already know. silvery/ink and silvery/chalk compat layers for migration. Most Ink apps work with just an import change."
     link: /getting-started/migrate-from-ink
     linkText: Migration guide
   - title: Layout Feedback
-    details: "Components query their own dimensions via useContentRect(). No width prop drilling needed. Ink's #1 issue since 2016, solved."
+    details: "Components query their own dimensions via useContentRect(). No width prop drilling needed. Responsive layouts just work."
   - title: 100x+ Faster Updates
-    details: "Per-node dirty tracking with 7 independent flags. Only changed nodes re-render. 169us vs Ink's 20.7ms for typical interactive updates."
+    details: "Per-node dirty tracking with 7 independent flags. Only changed nodes re-render. Typical interactive updates in ~169us for 1000 nodes."
     link: /guide/silvery-vs-ink#performance
     linkText: See benchmarks
   - title: Scrollable Containers
-    details: 'overflow="scroll" with scrollTo just works. No manual virtualization needed. Ink''s #1 feature request since 2019, built in.'
+    details: 'overflow="scroll" with scrollTo just works. No manual virtualization needed. The framework handles measurement, clipping, and scroll position.'
   - title: 30+ Components
     details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
     link: /guides/components
     linkText: Browse components
   - title: Zero Dependencies
-    details: "Pure TypeScript. No WASM, no C++, no memory leaks. Runs on Node, Bun, and Deno. Constant memory in long sessions."
+    details: "Pure TypeScript. No WASM, no C++. Runs on Node, Bun, and Deno. Constant memory in long sessions."
   - title: Beyond the Terminal
-    details: "Terminal today, Canvas and DOM tomorrow. Same React components, different outputs. ~30% of the codebase is target-independent."
+    details: "Terminal today, Canvas 2D and DOM experimental. Same React components, different rendering backends. ~30% of the codebase is target-independent."
     link: /guides/future-targets
     linkText: See the roadmap
   - title: TEA State Machines
@@ -49,7 +49,7 @@ features:
 
 <div class="migration-callout">
 
-**Already using Ink?** Silvery is a drop-in replacement. Change your imports, and your app works. [Migrate in minutes &rarr;](/getting-started/migrate-from-ink)
+**Coming from Ink?** Silvery's API is nearly identical — most apps work with just an import change. [See the migration guide &rarr;](/getting-started/migrate-from-ink)
 
 </div>
 
@@ -76,12 +76,12 @@ features:
 
 <div class="features-list">
 
-- **30+ components** -- VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more
+- **30+ components** -- TextArea, SelectList, Table, VirtualList, CommandPalette, ModalDialog, Tabs, TreeView, Toast, ProgressBar, and more
 - **Scrollable containers** -- `overflow="scroll"` with `scrollTo` just works. No manual virtualization.
 - **Three architectures** -- React hooks, Elm-style reducers, or Zustand stores. Choose per use case -- all three in one framework.
-- **Built for AI** -- Command introspection for agents, programmatic screenshots, scrollable streaming output. CLAUDE.md ships with the package.
+- **Built for AI** -- Command introspection for agents, programmatic screenshots, scrollable streaming output
 - **Input system** -- Input layer stack (DOM-style event bubbling), tree-based focus with spatial navigation, command system with keybinding resolution
-- **Zero native deps** -- Pure TypeScript. No WASM, no C++, no memory leaks. Runs on Node, Bun, and Deno.
+- **Zero native deps** -- Pure TypeScript. No WASM, no C++. Runs on Node, Bun, and Deno.
 
 </div>
 
