@@ -11,7 +11,7 @@ The new `silvery/runtime` API provides:
 - **Better testing** - All layers testable without a terminal
 - **Zustand integration** - Fine-grained subscriptions for complex apps
 - **Rich Key parsing** - Arrow keys, modifiers, special keys out of the box
-- **Unified API for Node.js and browser** - Same `run()` call with `{ terminal }` for xterm.js
+- **Browser support** - `renderToXterm()` from `@silvery/term/xterm` for xterm.js rendering
 
 ## Import Changes
 
@@ -227,13 +227,13 @@ function Card() {
 
 The following from the old Silvery API are **deprecated** and will be removed:
 
-| Deprecated              | Replacement                                             |
-| ----------------------- | ------------------------------------------------------- |
-| `render()`              | `run()` from silvery/runtime                            |
-| `renderToXterm()`       | `run(<App />, { terminal: term })` from silvery/runtime |
-| `useInput` from Silvery | `useInput` from silvery/runtime                         |
-| `useApp()` for exit     | `useExit()` or `return 'exit'`                          |
-| `RenderScheduler`       | Built into `run()` with automatic batching              |
+| Deprecated              | Replacement                                |
+| ----------------------- | ------------------------------------------ |
+| `render()`              | `run()` from silvery/runtime               |
+| `renderToXterm()`       | Still available from `@silvery/term/xterm` |
+| `useInput` from Silvery | `useInput` from silvery/runtime            |
+| `useApp()` for exit     | `useExit()` or `return 'exit'`             |
+| `RenderScheduler`       | Built into `run()` with automatic batching |
 
 ## Future
 

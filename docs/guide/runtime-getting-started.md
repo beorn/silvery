@@ -238,54 +238,35 @@ See [Input Features](../reference/input-features.md) for the full reference.
 
 ### Browser Rendering (xterm.js)
 
-The same `run()` API works in the browser via [xterm.js](https://xtermjs.org/). Pass a `terminal` option pointing to an xterm.js `Terminal` instance, and silvery renders to it instead of `process.stdout`:
+For browser rendering via [xterm.js](https://xtermjs.org/), use `renderToXterm()` from `@silvery/term/xterm`:
 
 ```tsx
-import { run, useInput } from "@silvery/term/runtime"
-import { Box, Text } from "silvery"
+import { renderToXterm, Box, Text, useContentRect } from "@silvery/term/xterm"
 import { Terminal } from "@xterm/xterm"
-import { useState } from "react"
 
 function App() {
-  const [count, setCount] = useState(0)
-
-  useInput((input, key) => {
-    if (input === "j" || key.downArrow) setCount((c) => c + 1)
-    if (input === "k" || key.upArrow) setCount((c) => c - 1)
-    if (input === "q") return "exit"
-  })
-
+  const { width, height } = useContentRect()
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold>Browser Counter</Text>
-      <Text>Count: {count} (j/k to change, q to quit)</Text>
+      <Text bold>Browser App</Text>
+      <Text>
+        Terminal size: {width} x {height}
+      </Text>
     </Box>
   )
 }
 
-// Set up xterm.js
 const term = new Terminal({ cols: 80, rows: 24 })
 term.open(document.getElementById("terminal")!)
 
-// Same run() API — just add { terminal }
-const handle = await run(<App />, {
-  terminal: term,
-  mouse: true,
-})
+const instance = renderToXterm(<App />, term)
 ```
 
-**Same components, same hooks, same code** -- the only difference is passing `{ terminal: term }` instead of letting `run()` use `process.stdout`.
+Key differences from Node.js `run()`:
 
-Key differences from Node.js mode:
-
-- **No Kitty protocol** -- xterm.js has its own keyboard handling, so `kitty` option is ignored
-- **No Ctrl+Z suspend** -- suspend/resume is a Node.js concept
-- **Resize handling** -- xterm.js doesn't emit SIGWINCH. Resize the terminal externally (e.g., via `FitAddon`) and the app re-renders automatically
-- **Mouse events** -- `mouse: true` enables SGR mouse tracking, which xterm.js supports natively
-
-::: info Legacy API
-For simpler use cases where you don't need the full runtime (no `useInput`, no focus management, no event loop), `renderToXterm()` from `@silvery/term/xterm` provides a lightweight renderer. The `run()` API is recommended for new apps because it provides the complete feature set.
-:::
+- **No runtime hooks** -- `renderToXterm()` is a lightweight renderer without `useInput`, focus management, or event loop
+- **Resize handling** -- Resize the terminal externally (e.g., via `FitAddon`) and the app re-renders automatically
+- **Input handling** -- Use the `onKey` and `onMouse` options for keyboard/mouse input
 
 ## Testing
 

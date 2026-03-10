@@ -7,16 +7,9 @@
  * The terminal adapter produces ANSI diff strings via `flush()`. xterm.js accepts ANSI
  * via `term.write()`. This entry point bridges the two.
  *
- * **Prefer `run()` from `@silvery/term/runtime` for new apps.** It provides the full
- * runtime (useInput, focus management, mouse events) with the same unified API:
- *
- * ```tsx
- * import { run } from '@silvery/term/runtime'
- * const handle = await run(<App />, { terminal: term, mouse: true })
- * ```
- *
- * `renderToXterm()` remains available for simpler use cases where you don't need
- * the full runtime (no useInput, no focus management, no event loop).
+ * `renderToXterm()` is the current API for rendering silvery components to xterm.js.
+ * It provides a lightweight renderer without the full runtime (no useInput, no
+ * focus management, no event loop).
  *
  * @example
  * ```tsx
