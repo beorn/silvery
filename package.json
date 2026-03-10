@@ -62,6 +62,7 @@
     "version": "changeset version",
     "release": "changeset publish",
     "theme": "bun packages/theme/src/cli.ts",
+    "demo": "bun examples/cli.ts",
     "compat": "bun packages/compat/scripts/compat-check.ts",
     "compat:ink": "bun packages/compat/scripts/compat-check.ts ink",
     "compat:chalk": "bun packages/compat/scripts/compat-check.ts chalk"

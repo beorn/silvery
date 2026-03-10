@@ -72,6 +72,52 @@ function rowText(buffer: TerminalRenderBuffer, row: number): string {
   return text.replace(/ +$/, "") // trim trailing spaces
 }
 
+describe("content-phase-adapter border clipping", () => {
+  test("horizontal border is clipped by overflow=hidden parent", () => {
+    // A bordered Box wider than its overflow=hidden parent — border chars
+    // should not extend past the parent's clip bounds
+    const buffer = renderViaAdapter(
+      <Box overflow="hidden" width={20} height={6} padding={1}>
+        <Box borderStyle="round" width={30} height={3}>
+          <Text>Content</Text>
+        </Box>
+      </Box>,
+      80,
+      10,
+    )
+
+    // The parent is 20 cols wide with padding=1, so content area is cols 1-18.
+    // The inner Box wants 30 cols but should be clipped at col 19 (exclusive).
+    const tb = buffer.getTerminalBuffer()
+    for (let row = 0; row < 6; row++) {
+      for (let col = 20; col < 80; col++) {
+        const cell = tb.getCell(col, row)
+        expect(cell.char, `row ${row} col ${col} should be empty`).toBe(" ")
+      }
+    }
+  })
+
+  test("outline is clipped by overflow=hidden parent", () => {
+    const buffer = renderViaAdapter(
+      <Box overflow="hidden" width={20} height={6} padding={1}>
+        <Box outlineStyle="single" outlineColor="red" width={30} height={3}>
+          <Text>Content</Text>
+        </Box>
+      </Box>,
+      80,
+      10,
+    )
+
+    const tb = buffer.getTerminalBuffer()
+    for (let row = 0; row < 6; row++) {
+      for (let col = 20; col < 80; col++) {
+        const cell = tb.getCell(col, row)
+        expect(cell.char, `row ${row} col ${col} should be empty`).toBe(" ")
+      }
+    }
+  })
+})
+
 describe("content-phase-adapter text clipping", () => {
   test("text is clipped to its layout width", () => {
     // A Text node inside a narrow Box — text should not extend past the Box

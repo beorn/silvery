@@ -23,6 +23,9 @@ interface KeyInfo {
   tab: boolean
   backspace: boolean
   delete: boolean
+  ctrl: boolean
+  meta: boolean
+  shift: boolean
 }
 
 type InputHandler = (input: string, key: KeyInfo) => void
@@ -41,8 +44,31 @@ export function emitInput(data: string): void {
     tab: data === "\t",
     backspace: data === "\x7f" || data === "\b",
     delete: data === "\x1b[3~",
+    ctrl: false,
+    meta: false,
+    shift: false,
   }
-  const input = data.length === 1 && data >= " " && data < "\x7f" ? data : ""
+
+  let input = ""
+
+  // Control characters: Ctrl+A=\x01 .. Ctrl+Z=\x1a
+  const code = data.length === 1 ? data.charCodeAt(0) : -1
+  if (code >= 1 && code <= 26) {
+    key.ctrl = true
+    input = String.fromCharCode(code + 96) // 'a' is 97
+  }
+  // Alt/Meta sequences: ESC followed by a character (e.g., Alt+B = \x1b b)
+  else if (data.length === 2 && data[0] === "\x1b" && data[1]! >= " ") {
+    key.meta = true
+    input = data[1]!
+  }
+  // Printable ASCII
+  else if (data.length === 1 && data >= " " && data < "\x7f") {
+    input = data
+    // Detect shift for uppercase letters
+    if (/[A-Z]/.test(input)) key.shift = true
+  }
+
   for (const cb of inputListeners) cb(input, key)
 }
 
@@ -1080,6 +1106,13 @@ function CodingAgentShowcase(): JSX.Element {
     if (key.backspace || key.delete) {
       setInputText((t) => t.slice(0, -1))
       return
+    }
+    // Readline shortcuts
+    if (key.ctrl) {
+      if (input === "u") { setInputText(""); return }  // Clear line
+      if (input === "k") { return }                     // Kill to end (cursor at end, no-op)
+      if (input === "w") { setInputText((t) => t.replace(/\S+\s*$/, "")); return } // Delete word
+      if (input === "h") { setInputText((t) => t.slice(0, -1)); return }           // Backspace
     }
     if (input && input >= " ") {
       setInputText((t) => t + input)

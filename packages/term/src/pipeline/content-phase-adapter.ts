@@ -189,6 +189,7 @@ function renderBorder(
       chars.topRight,
       chars.horizontal,
       style,
+      clipBounds,
     )
   }
 
@@ -225,6 +226,7 @@ function renderBorder(
       chars.bottomRight,
       bottomHorizontal,
       style,
+      clipBounds,
     )
   }
 }
@@ -240,15 +242,19 @@ function renderHorizontalBorder(
   rightCorner: string,
   horizontal: string,
   style: RenderStyle,
+  clipBounds?: ClipRect,
 ): void {
-  if (showLeft) buffer.drawChar(x, row, leftCorner, style)
+  const clipLeft = clipBounds?.left ?? -Infinity
+  const clipRight = clipBounds?.right ?? Infinity
+  if (showLeft && x >= clipLeft && x < clipRight) buffer.drawChar(x, row, leftCorner, style)
   for (let col = x + 1; col < x + width - 1; col++) {
-    if (buffer.inBounds(col, row)) {
+    if (col >= clipLeft && col < clipRight && buffer.inBounds(col, row)) {
       buffer.drawChar(col, row, horizontal, style)
     }
   }
-  if (showRight && buffer.inBounds(x + width - 1, row)) {
-    buffer.drawChar(x + width - 1, row, rightCorner, style)
+  const rightCol = x + width - 1
+  if (showRight && rightCol >= clipLeft && rightCol < clipRight && buffer.inBounds(rightCol, row)) {
+    buffer.drawChar(rightCol, row, rightCorner, style)
   }
 }
 
@@ -304,7 +310,7 @@ function renderOutlineAdapter(
 
   // Top border
   if (isRowVisible(y)) {
-    renderHorizontalBorder(buffer, x, y, width, true, true, chars.topLeft, chars.topRight, chars.horizontal, style)
+    renderHorizontalBorder(buffer, x, y, width, true, true, chars.topLeft, chars.topRight, chars.horizontal, style, clipBounds)
   }
 
   // Side borders
@@ -338,6 +344,7 @@ function renderOutlineAdapter(
       chars.bottomRight,
       outBottomHorizontal,
       style,
+      clipBounds,
     )
   }
 }
