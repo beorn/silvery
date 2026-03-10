@@ -7,22 +7,13 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import { Box, Text } from "@silvery/term/xterm/index.ts"
+import { parseKey, type Key } from "@silvery/tea"
 
 // ============================================================================
 // Input Event Bus
 // ============================================================================
 
-export interface KeyInfo {
-  upArrow: boolean
-  downArrow: boolean
-  leftArrow: boolean
-  rightArrow: boolean
-  return: boolean
-  escape: boolean
-  tab: boolean
-  backspace: boolean
-  delete: boolean
-}
+export type KeyInfo = Key
 
 export type InputHandler = (input: string, key: KeyInfo) => void
 
@@ -30,18 +21,7 @@ const inputListeners = new Set<InputHandler>()
 
 /** Called from showcase-app.tsx via term.onData() */
 export function emitInput(data: string): void {
-  const key: KeyInfo = {
-    upArrow: data === "\x1b[A",
-    downArrow: data === "\x1b[B",
-    rightArrow: data === "\x1b[C",
-    leftArrow: data === "\x1b[D",
-    return: data === "\r",
-    escape: data === "\x1b",
-    tab: data === "\t",
-    backspace: data === "\x7f" || data === "\b",
-    delete: data === "\x1b[3~",
-  }
-  const input = data.length === 1 && data >= " " && data < "\x7f" ? data : ""
+  const [input, key] = parseKey(data)
   for (const cb of inputListeners) cb(input, key)
 }
 

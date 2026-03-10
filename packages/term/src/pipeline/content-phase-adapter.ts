@@ -315,7 +315,19 @@ function renderOutlineAdapter(
 
   // Top border
   if (isRowVisible(y)) {
-    renderHorizontalBorder(buffer, x, y, width, true, true, chars.topLeft, chars.topRight, chars.horizontal, style, clipBounds)
+    renderHorizontalBorder(
+      buffer,
+      x,
+      y,
+      width,
+      true,
+      true,
+      chars.topLeft,
+      chars.topRight,
+      chars.horizontal,
+      style,
+      clipBounds,
+    )
   }
 
   // Side borders

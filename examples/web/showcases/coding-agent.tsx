@@ -772,6 +772,22 @@ export function CodingAgentShowcase(): JSX.Element {
       setInputText((t) => t.slice(0, -1))
       return
     }
+    // Readline shortcuts
+    if (key.ctrl) {
+      if (input === "u") {
+        setInputText("")
+        return
+      } // Clear line
+      if (input === "w") {
+        setInputText((t) => t.replace(/\S+\s*$/, ""))
+        return
+      } // Delete word back
+      if (input === "h") {
+        setInputText((t) => t.slice(0, -1))
+        return
+      } // Backspace
+      return // Don't insert ctrl chars as text
+    }
     if (input && input >= " ") {
       setInputText((t) => t + input)
     }
