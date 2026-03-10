@@ -1274,20 +1274,26 @@ export function bufferToText(
 
   for (let y = 0; y < buffer.height; y++) {
     let line = ""
+    // Track string offset for each column (needed because continuation cells
+    // are skipped, making string length != column count for wide chars)
+    let strOffset = 0
+    let contentEdgeStrOffset = 0
+    const contentEdge = trimTrailingWhitespace ? getContentEdge(buffer, y) : 0
     for (let x = 0; x < buffer.width; x++) {
       // Use zero-allocation accessors instead of getCell()
       if (buffer.isCellContinuation(x, y)) continue
       line += buffer.getCellChar(x, y)
+      strOffset++
+      // Track the string offset corresponding to the content edge column
+      if (x < contentEdge) {
+        contentEdgeStrOffset = strOffset
+      }
     }
     if (trimTrailingWhitespace) {
-      // Smart trim: find the rightmost cell that has any styling (fg, bg, attrs)
-      // or non-space character. This preserves styled trailing spaces (content)
+      // Smart trim: use content edge to preserve styled trailing spaces
       // while removing unstyled buffer padding.
-      const contentEdge = getContentEdge(buffer, y)
-      // Use the wider of trimEnd position and content edge — trimEnd handles
-      // non-space chars, content edge handles styled spaces
       const trimmed = line.trimEnd()
-      line = trimmed.length >= contentEdge ? trimmed : line.substring(0, contentEdge)
+      line = trimmed.length >= contentEdgeStrOffset ? trimmed : line.substring(0, contentEdgeStrOffset)
     }
     lines.push(line)
   }
@@ -1309,9 +1315,15 @@ export function bufferToText(
  * Returns the column count (1-indexed), so the content edge for trimming.
  */
 function getContentEdge(buffer: TerminalBuffer, y: number): number {
+  // Mask out structural flags (wide, continuation) that don't indicate actual content.
+  // True-color flags DO indicate styled content (they mean fg/bg is set in Maps).
+  const FLAG_MASK = ~(WIDE_FLAG | CONTINUATION_FLAG)
   for (let x = buffer.width - 1; x >= 0; x--) {
-    // Check if cell has any styling (non-zero packed metadata means fg, bg, or attrs set)
-    if (buffer.getCellAttrs(x, y) !== 0) return x + 1
+    // Skip continuation cells (trailing half of wide chars) — the main cell covers them
+    if (buffer.isCellContinuation(x, y)) continue
+    // Check if cell has any actual styling (fg, bg, text attrs) after masking structural flags
+    const attrs = buffer.getCellAttrs(x, y) & FLAG_MASK
+    if (attrs !== 0) return x + 1
     // Check if cell has a non-space character
     if (buffer.getCellChar(x, y) !== " ") return x + 1
   }

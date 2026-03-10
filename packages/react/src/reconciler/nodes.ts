@@ -286,6 +286,9 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
     } else if (typeof props.maxWidth === "number") {
       layoutNode.setMaxWidth(props.maxWidth)
     }
+  } else {
+    // Reset maxWidth when prop is removed (e.g., rerender without maxWidth)
+    layoutNode.setMaxWidth(Number.POSITIVE_INFINITY)
   }
 
   if (props.maxHeight !== undefined) {
@@ -294,6 +297,9 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
     } else if (typeof props.maxHeight === "number") {
       layoutNode.setMaxHeight(props.maxHeight)
     }
+  } else {
+    // Reset maxHeight when prop is removed (e.g., rerender without maxHeight)
+    layoutNode.setMaxHeight(Number.POSITIVE_INFINITY)
   }
 
   // Flex properties

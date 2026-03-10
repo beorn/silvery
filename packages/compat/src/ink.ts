@@ -23,13 +23,17 @@
  * @packageDocumentation
  */
 
-import React, { Component, useContext, useCallback, useState, useEffect, useMemo } from "react"
+import React, { Component, useContext, useCallback, useState, useEffect, useMemo, act } from "react"
 import { StdoutContext, RuntimeContext, TermContext } from "@silvery/react/context"
 import type { RuntimeContextValue, StdoutContextValue } from "@silvery/react/context"
 import { createTerm } from "@silvery/term/ansi"
 import { EventEmitter } from "node:events"
 import { parseKey } from "@silvery/tea/keys"
 import chalk from "chalk"
+import { createContainer, getContainerRoot } from "@silvery/react/reconciler"
+import { stringReconciler } from "@silvery/react/reconciler/string-reconciler"
+import { executeRender } from "@silvery/term/pipeline"
+import { bufferToStyledText, bufferToText, type TerminalBuffer } from "@silvery/term/buffer"
 
 /**
  * Get chalk's current color level at render time.
@@ -190,9 +194,265 @@ export type { UseAppResult } from "@silvery/react/hooks/useApp"
 export { useStdout } from "@silvery/react/hooks/useStdout"
 export type { UseStdoutResult } from "@silvery/react/hooks/useStdout"
 
-// Ink-compatible focus hooks
-export { useFocus, useInkFocusManager as useFocusManager } from "./ink-focus"
-export type { UseFocusOptions, UseFocusResult, InkUseFocusManagerResult } from "./ink-focus"
+// =============================================================================
+// Ink-compatible Focus System
+// =============================================================================
+
+// Ink's focus system is context-based with add/remove/focusNext/focusPrevious.
+// This is fundamentally different from silvery's tree-based FocusManager, so we
+// implement Ink's model directly for compat.
+
+import { createContext } from "react"
+
+type Focusable = { id: string; isActive: boolean }
+
+type InkFocusContextValue = {
+  activeId: string | undefined
+  add: (id: string, options: { autoFocus: boolean }) => void
+  remove: (id: string) => void
+  activate: (id: string) => void
+  deactivate: (id: string) => void
+  enableFocus: () => void
+  disableFocus: () => void
+  focusNext: () => void
+  focusPrevious: () => void
+  focus: (id: string) => void
+}
+
+const InkFocusContext = createContext<InkFocusContextValue>({
+  activeId: undefined,
+  add() {},
+  remove() {},
+  activate() {},
+  deactivate() {},
+  enableFocus() {},
+  disableFocus() {},
+  focusNext() {},
+  focusPrevious() {},
+  focus() {},
+})
+
+/**
+ * Ink-compatible useFocus hook.
+ * Registers a focusable component and tracks focus state.
+ */
+export function useFocus(opts?: { isActive?: boolean; autoFocus?: boolean; id?: string }): {
+  isFocused: boolean
+  focus: (id: string) => void
+} {
+  const { isActive = true, autoFocus = false, id: customId } = opts ?? {}
+  const ctx = useContext(InkFocusContext)
+
+  const id = useMemo(() => customId ?? Math.random().toString().slice(2, 7), [customId])
+
+  useEffect(() => {
+    ctx.add(id, { autoFocus })
+    return () => {
+      ctx.remove(id)
+    }
+  }, [id, autoFocus])
+
+  useEffect(() => {
+    if (isActive) {
+      ctx.activate(id)
+    } else {
+      ctx.deactivate(id)
+    }
+  }, [isActive, id])
+
+  return {
+    isFocused: Boolean(id) && ctx.activeId === id,
+    focus: ctx.focus,
+  }
+}
+
+/**
+ * Ink-compatible useFocusManager hook.
+ */
+export function useFocusManager(): {
+  enableFocus: () => void
+  disableFocus: () => void
+  focusNext: () => void
+  focusPrevious: () => void
+  focus: (id: string) => void
+  activeId: string | undefined
+} {
+  const ctx = useContext(InkFocusContext)
+  return {
+    enableFocus: ctx.enableFocus,
+    disableFocus: ctx.disableFocus,
+    focusNext: ctx.focusNext,
+    focusPrevious: ctx.focusPrevious,
+    focus: ctx.focus,
+    activeId: ctx.activeId,
+  }
+}
+
+/**
+ * Ink-compatible FocusProvider component.
+ * Manages focus state: list of focusables, active focus ID, tab navigation.
+ */
+function InkFocusProvider({
+  children,
+  inputEmitter,
+}: {
+  children: import("react").ReactNode
+  inputEmitter?: EventEmitter
+}) {
+  const [isFocusEnabled, setIsFocusEnabled] = useState(true)
+  const [activeFocusId, setActiveFocusId] = useState<string | undefined>(undefined)
+  const [, setFocusables] = useState<Focusable[]>([])
+  const focusablesCountRef = React.useRef(0)
+
+  const findNextFocusable = useCallback(
+    (currentFocusables: Focusable[], currentActiveFocusId: string | undefined): string | undefined => {
+      const activeIndex = currentFocusables.findIndex((f) => f.id === currentActiveFocusId)
+      for (let i = activeIndex + 1; i < currentFocusables.length; i++) {
+        if (currentFocusables[i]?.isActive) return currentFocusables[i]!.id
+      }
+      return undefined
+    },
+    [],
+  )
+
+  const findPreviousFocusable = useCallback(
+    (currentFocusables: Focusable[], currentActiveFocusId: string | undefined): string | undefined => {
+      const activeIndex = currentFocusables.findIndex((f) => f.id === currentActiveFocusId)
+      for (let i = activeIndex - 1; i >= 0; i--) {
+        if (currentFocusables[i]?.isActive) return currentFocusables[i]!.id
+      }
+      return undefined
+    },
+    [],
+  )
+
+  const focusNext = useCallback((): void => {
+    setFocusables((currentFocusables) => {
+      setActiveFocusId((currentActiveFocusId) => {
+        const firstFocusableId = currentFocusables.find((f) => f.isActive)?.id
+        const nextFocusableId = findNextFocusable(currentFocusables, currentActiveFocusId)
+        return nextFocusableId ?? firstFocusableId
+      })
+      return currentFocusables
+    })
+  }, [findNextFocusable])
+
+  const focusPrevious = useCallback((): void => {
+    setFocusables((currentFocusables) => {
+      setActiveFocusId((currentActiveFocusId) => {
+        const lastFocusableId = currentFocusables.findLast((f) => f.isActive)?.id
+        const previousFocusableId = findPreviousFocusable(currentFocusables, currentActiveFocusId)
+        return previousFocusableId ?? lastFocusableId
+      })
+      return currentFocusables
+    })
+  }, [findPreviousFocusable])
+
+  const enableFocus = useCallback((): void => {
+    setIsFocusEnabled(true)
+  }, [])
+  const disableFocus = useCallback((): void => {
+    setIsFocusEnabled(false)
+  }, [])
+
+  const focus = useCallback((id: string): void => {
+    setFocusables((currentFocusables) => {
+      if (currentFocusables.some((f) => f.id === id)) {
+        setActiveFocusId(id)
+      }
+      return currentFocusables
+    })
+  }, [])
+
+  const addFocusable = useCallback((id: string, { autoFocus }: { autoFocus: boolean }): void => {
+    setFocusables((currentFocusables) => {
+      focusablesCountRef.current = currentFocusables.length + 1
+      return [...currentFocusables, { id, isActive: true }]
+    })
+    if (autoFocus) {
+      setActiveFocusId((currentActiveFocusId) => {
+        if (!currentActiveFocusId) return id
+        return currentActiveFocusId
+      })
+    }
+  }, [])
+
+  const removeFocusable = useCallback((id: string): void => {
+    setActiveFocusId((currentActiveFocusId) => {
+      if (currentActiveFocusId === id) return undefined
+      return currentActiveFocusId
+    })
+    setFocusables((currentFocusables) => {
+      const filtered = currentFocusables.filter((f) => f.id !== id)
+      focusablesCountRef.current = filtered.length
+      return filtered
+    })
+  }, [])
+
+  const activateFocusable = useCallback((id: string): void => {
+    setFocusables((currentFocusables) => currentFocusables.map((f) => (f.id === id ? { ...f, isActive: true } : f)))
+  }, [])
+
+  const deactivateFocusable = useCallback((id: string): void => {
+    setActiveFocusId((currentActiveFocusId) => {
+      if (currentActiveFocusId === id) return undefined
+      return currentActiveFocusId
+    })
+    setFocusables((currentFocusables) => currentFocusables.map((f) => (f.id === id ? { ...f, isActive: false } : f)))
+  }, [])
+
+  // Tab/Shift+Tab/Esc focus navigation via inputEmitter
+  useEffect(() => {
+    if (!inputEmitter) return
+    const tab = "\t"
+    const shiftTab = "\x1b[Z"
+    const escape = "\x1b"
+    const handleInput = (data: string | Buffer) => {
+      const input = typeof data === "string" ? data : data.toString()
+      if (!isFocusEnabled || focusablesCountRef.current === 0) return
+      if (input === tab) focusNext()
+      else if (input === shiftTab) focusPrevious()
+      else if (input === escape) setActiveFocusId(undefined)
+    }
+    inputEmitter.on("input", handleInput)
+    return () => {
+      inputEmitter.removeListener("input", handleInput)
+    }
+  }, [isFocusEnabled, focusNext, focusPrevious, inputEmitter])
+
+  const contextValue = useMemo(
+    () => ({
+      activeId: activeFocusId,
+      add: addFocusable,
+      remove: removeFocusable,
+      activate: activateFocusable,
+      deactivate: deactivateFocusable,
+      enableFocus,
+      disableFocus,
+      focusNext,
+      focusPrevious,
+      focus,
+    }),
+    [
+      activeFocusId,
+      addFocusable,
+      removeFocusable,
+      activateFocusable,
+      deactivateFocusable,
+      enableFocus,
+      disableFocus,
+      focusNext,
+      focusPrevious,
+      focus,
+    ],
+  )
+
+  return React.createElement(InkFocusContext.Provider, { value: contextValue }, children)
+}
+
+export type UseFocusOptions = { isActive?: boolean; autoFocus?: boolean; id?: string }
+export type UseFocusResult = { isFocused: boolean; focus: (id: string) => void }
+export type InkUseFocusManagerResult = ReturnType<typeof useFocusManager>
 
 // Ink-compatible useStdin stub
 
@@ -867,74 +1127,79 @@ class InkErrorBoundary extends Component<InkErrorBoundaryProps, InkErrorBoundary
 
   render() {
     if (this.state.error) {
-      // Render error display like Ink does
+      // Render error display matching Ink's format exactly
       const err = this.state.error
       const stack = err.stack ?? ""
-      // Extract the first meaningful stack frame
+
+      // Extract stack frames
       const frames = stack
         .split("\n")
         .filter((line) => line.match(/^\s+at\s/))
         .map((line) => line.trim())
+
+      // Extract file:line from first frame
       const firstFrame = frames[0] ?? ""
-
-      // Extract file:line from "at Foo (file:line:col)" or "at file:line:col"
       const fileMatch = firstFrame.match(/\((.+)\)$/) ?? firstFrame.match(/at (.+)$/)
-      const location = fileMatch?.[1] ?? ""
+      const rawLocation = fileMatch?.[1] ?? ""
 
-      // Extract function name
-      const fnMatch = firstFrame.match(/at (\S+)/)
-      const fnName = fnMatch?.[1] ?? ""
+      // Make path relative (strip CWD prefix, handle /private on macOS)
+      let location = rawLocation
+      const cwd = process.cwd()
+      for (const prefix of [cwd, `/private${cwd}`]) {
+        if (location.startsWith(`${prefix}/`)) {
+          location = location.slice(prefix.length + 1)
+          break
+        }
+      }
 
-      // Build source lines if we have a location
-      let sourceBlock = ""
-      if (location) {
-        const parts = location.match(/(.+):(\d+):(\d+)/)
-        if (parts) {
-          const filePath = parts[1]!
-          const lineNum = Number.parseInt(parts[2]!, 10)
+      // Build source context
+      let sourceLines: string[] = []
+      if (rawLocation) {
+        const locParts = rawLocation.match(/(.+):(\d+):(\d+)/)
+        if (locParts) {
+          const filePath = locParts[1]!
+          const lineNum = Number.parseInt(locParts[2]!, 10)
           try {
             const fs = require("node:fs")
             const source = fs.readFileSync(filePath, "utf8") as string
-            const lines = source.split("\n")
+            const allLines = source.split("\n")
             const start = Math.max(0, lineNum - 4)
-            const end = Math.min(lines.length, lineNum + 4)
-            const sourceLines: string[] = []
+            const end = Math.min(allLines.length, lineNum + 4)
             for (let i = start; i < end; i++) {
-              sourceLines.push(` ${String(i + 1).padStart(String(end).length)}: ${lines[i]}`)
+              sourceLines.push(` ${String(i + 1).padStart(String(end).length)}: ${allLines[i]}`)
             }
-            sourceBlock = sourceLines.join("\n")
           } catch {
-            // Can't read source, skip
+            // Can't read source
           }
         }
       }
 
-      // Build stack trace display
+      // Build stack trace in Ink format: " - FunctionName (file:line:col)"
       const traceLines = frames.map((f) => {
         const m = f.match(/at (.+)/)
-        return m ? ` - ${m[1]}` : ` - ${f}`
+        if (!m) return ` - ${f}`
+        const content = m[1]!
+        // Make paths relative in trace lines too
+        let traceEntry = content
+        const cwd2 = process.cwd()
+        for (const prefix of [cwd2, `/private${cwd2}`]) {
+          traceEntry = traceEntry.split(`${prefix}/`).join("")
+        }
+        return ` - ${traceEntry}`
       })
 
-      const parts = [
-        "",
-        `  ERROR  ${err.message}`,
-        "",
-      ]
+      const output: string[] = ["", `  ERROR  ${err.message}`, ""]
       if (location) {
-        parts.push(` ${location}`)
-        parts.push("")
+        output.push(` ${location}`)
+        output.push("")
       }
-      if (sourceBlock) {
-        parts.push(...sourceBlock.split("\n"))
-        parts.push("")
+      if (sourceLines.length > 0) {
+        output.push(...sourceLines)
+        output.push("")
       }
-      parts.push(...traceLines)
+      output.push(...traceLines)
 
-      return React.createElement(
-        "silvery-box",
-        null,
-        React.createElement("silvery-text", null, parts.join("\n")),
-      )
+      return React.createElement("silvery-box", null, React.createElement("silvery-text", null, output.join("\n")))
     }
     return this.props.children
   }
@@ -1029,18 +1294,32 @@ export function render(element: import("react").ReactNode, options?: Record<stri
       write: (data: string) => stdout.write(data),
     }
 
-    // Set up stdin input handling if stdin is provided
+    // Set up stdin input handling if stdin is provided.
+    // After emitting input, we flush React work and re-render the pipeline
+    // so that state changes from input (e.g., focus changes from Tab)
+    // produce visible output before the next test assertion.
     if (stdin) {
       const onReadable = () => {
         let chunk: string | null
         while ((chunk = (stdin as any).read?.()) !== null && chunk !== undefined) {
           inputEmitter.emit("input", chunk)
         }
+        // After input is processed, schedule a flush + re-render.
+        // Use queueMicrotask to batch multiple chunks in one render.
+        if (!renderScheduled && !unmounted) {
+          renderScheduled = true
+          queueMicrotask(() => {
+            renderScheduled = false
+            if (!unmounted) {
+              flushAndRenderPipeline()
+            }
+          })
+        }
       }
       stdin.on("readable", onReadable)
     }
 
-    // Wrap element with contexts for useApp/useInput/useStdout
+    // Wrap element with contexts for useApp/useInput/useStdout/useFocus
     let lastRenderError: Error | null = null
 
     function wrapElement(el: import("react").ReactNode): import("react").ReactNode {
@@ -1054,32 +1333,110 @@ export function render(element: import("react").ReactNode, options?: Record<stri
         },
         el,
       )
+      // Ink-compatible focus system with tab navigation via inputEmitter
+      wrapped = React.createElement(InkFocusProvider, { inputEmitter }, wrapped)
       wrapped = React.createElement(TermContext.Provider, { value: term }, wrapped)
       wrapped = React.createElement(StdoutContext.Provider, { value: stdoutCtx }, wrapped)
       wrapped = React.createElement(RuntimeContext.Provider, { value: runtimeCtx }, wrapped)
       return wrapped
     }
 
-    // renderFrame with context wrapping
-    function renderFrameWithContext(el: import("react").ReactNode): string {
-      const wrapped = wrapElement(el)
+    // --- Persistent React tree for state preservation across rerenders ---
+    // Instead of calling renderStringSync (which creates/destroys the tree each time),
+    // we create the container and fiberRoot ONCE and update them on rerender.
+    let hadReactCommit = false
+    let renderScheduled = false
+    const container = createContainer(() => {
+      hadReactCommit = true
+      // Schedule a re-render when React commits new work (e.g., from state changes)
+      if (!renderScheduled && !unmounted) {
+        renderScheduled = true
+        queueMicrotask(() => {
+          renderScheduled = false
+          if (!unmounted) {
+            flushAndRenderPipeline()
+          }
+        })
+      }
+    })
+    const fiberRoot = stringReconciler.createContainer(
+      container,
+      1, // ConcurrentRoot
+      null, // hydrationCallbacks
+      false, // isStrictMode
+      null, // concurrentUpdatesByDefaultOverride
+      "", // identifierPrefix
+      () => {}, // onUncaughtError
+      () => {}, // onCaughtError
+      () => {}, // onRecoverableError
+      null, // onDefaultTransitionIndicator
+    )
+
+    /**
+     * Run a function with IS_REACT_ACT_ENVIRONMENT temporarily set to true.
+     * Ensures act() captures forceUpdate/setState from layout notifications.
+     */
+    function withActEnv(fn: () => void): void {
+      const prev = (globalThis as any).IS_REACT_ACT_ENVIRONMENT
+      ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+      try {
+        fn()
+      } finally {
+        ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = prev
+      }
+    }
+
+    /**
+     * Run the render pipeline and write output to stdout.
+     * Does NOT update the React tree — assumes it's already up to date.
+     */
+    function flushAndRenderPipeline(): string {
+      const width = (stdout as any).columns ?? 80
       const bufferHeight = (stdout as any).rows ?? 24
-      let layoutContentHeight = 0
-      let output = renderStringSync(wrapped as any, {
-        width: (stdout as any).columns ?? 80,
-        height: bufferHeight,
-        plain,
-        trimTrailingWhitespace: false,
-        trimEmptyLines: false,
-        onContentHeight: (h: number) => {
-          layoutContentHeight = h
-        },
+
+      // Flush any pending React work
+      withActEnv(() => {
+        act(() => {
+          stringReconciler.flushSyncWork()
+        })
       })
-      // Strip trailing spaces from each line (buffer fill padding), then trim rows.
-      // With ANSI colors, trailing spaces may be followed by reset codes like \x1b[0m.
-      output = output.replace(/ +(\x1b\[[0-9;]*m)*$/gm, "")
+
+      // Layout stabilization loop
+      let buffer!: TerminalBuffer
+      let rootNode: ReturnType<typeof getContainerRoot> | undefined
+      const MAX_ITERATIONS = 5
+      for (let i = 0; i < MAX_ITERATIONS; i++) {
+        hadReactCommit = false
+        withActEnv(() => {
+          act(() => {
+            const root = getContainerRoot(container)
+            rootNode = root
+            const result = executeRender(root, width, bufferHeight, null, undefined, undefined)
+            buffer = result.buffer
+          })
+          if (!hadReactCommit) {
+            act(() => {
+              stringReconciler.flushSyncWork()
+            })
+          }
+        })
+        if (!hadReactCommit) break
+      }
+
+      // Get content height from root node layout
+      const layoutContentHeight = rootNode?.contentRect?.height ?? 0
+
+      // Convert buffer to string
+      let output = plain
+        ? bufferToText(buffer, { trimTrailingWhitespace: true, trimEmptyLines: false })
+        : bufferToStyledText(buffer, { trimTrailingWhitespace: true, trimEmptyLines: false })
+
+      // Strip VS16 variation selectors that silvery adds for emoji presentation.
+      // Ink's tests don't expect these, and they cause assertion mismatches.
+      output = output.replace(/\uFE0F/g, "")
+
+      // Trim buffer padding rows using layout content height
       if (layoutContentHeight > 0 && layoutContentHeight < bufferHeight) {
-        // Use layout content height to trim buffer padding rows
         const lines = output.split("\n")
         output = lines.slice(0, layoutContentHeight).join("\n")
       } else {
@@ -1090,14 +1447,34 @@ export function render(element: import("react").ReactNode, options?: Record<stri
         }
         output = lines.join("\n")
       }
-      const result = plain ? output : toChalkCompat(output)
+      let result = plain ? output : toChalkCompat(output)
+      // Strip VS16 (emoji presentation selector) that silvery adds for terminal
+      // rendering. Ink doesn't add these, and tests compare exact strings.
+      result = result.replace(/\uFE0F/g, "")
       stdout.write(result)
       return result
     }
 
+    /**
+     * Render a frame: update the React tree with a new element, then run the pipeline.
+     */
+    function renderFrame(el: import("react").ReactNode): string {
+      const wrapped = wrapElement(el)
+
+      // Update the React tree (or mount initially)
+      withActEnv(() => {
+        act(() => {
+          stringReconciler.updateContainerSync(wrapped, fiberRoot, null, null)
+          stringReconciler.flushSyncWork()
+        })
+      })
+
+      return flushAndRenderPipeline()
+    }
+
     // Initial render
     let currentElement = element
-    renderFrameWithContext(currentElement)
+    renderFrame(currentElement)
 
     // If an error was caught during render, reject the exit promise
     if (lastRenderError) {
@@ -1109,7 +1486,7 @@ export function render(element: import("react").ReactNode, options?: Record<stri
     // Listen for resize events on stdout to re-render (like Ink does)
     const onResize = () => {
       if (!unmounted) {
-        renderFrameWithContext(currentElement)
+        renderFrame(currentElement)
       }
     }
     stdout.on("resize", onResize)
@@ -1119,12 +1496,19 @@ export function render(element: import("react").ReactNode, options?: Record<stri
       rerender: (newElement: import("react").ReactNode) => {
         if (unmounted) return
         currentElement = newElement
-        renderFrameWithContext(newElement)
+        renderFrame(newElement)
       },
       unmount: () => {
         if (unmounted) return
         unmounted = true
         stdout.off("resize", onResize)
+        // Unmount the React tree
+        withActEnv(() => {
+          act(() => {
+            stringReconciler.updateContainerSync(null, fiberRoot, null, null)
+            stringReconciler.flushSyncWork()
+          })
+        })
         exitResolve?.()
       },
       [Symbol.dispose]() {
@@ -1219,17 +1603,15 @@ export function renderToString(node: import("react").ReactNode, options?: { colu
     width: options?.columns ?? 80,
     height: bufferHeight,
     plain,
-    trimTrailingWhitespace: false,
+    trimTrailingWhitespace: true,
     trimEmptyLines: false,
     onContentHeight: (h: number) => {
       layoutContentHeight = h
     },
   })
-  // Strip trailing spaces from each line (buffer fill padding).
-  // With ANSI colors, trailing spaces may be followed by reset codes like \x1b[0m,
-  // so strip spaces + trailing ANSI escapes together.
-  output = output.replace(/ +(\x1b\[[0-9;]*m)*$/gm, "")
-  // Then trim buffer padding rows using content height from layout
+  // Strip VS16 variation selectors that silvery adds for emoji presentation
+  output = output.replace(/\uFE0F/g, "")
+  // Trim buffer padding rows using content height from layout
   if (layoutContentHeight > 0 && layoutContentHeight < bufferHeight) {
     const lines = output.split("\n")
     output = lines.slice(0, layoutContentHeight).join("\n")
@@ -1245,7 +1627,10 @@ export function renderToString(node: import("react").ReactNode, options?: { colu
   if (output.trim() === "") {
     return ""
   }
-  return plain ? output : toChalkCompat(output)
+  let result = plain ? output : toChalkCompat(output)
+  // Strip VS16 (emoji presentation selector) for Ink compatibility
+  result = result.replace(/\uFE0F/g, "")
+  return result
 }
 
 // =============================================================================

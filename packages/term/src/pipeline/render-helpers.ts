@@ -173,6 +173,19 @@ const borders: Record<NonNullable<BoxProps["borderStyle"]>, BorderChars> = {
  * Get border characters for a style.
  */
 export function getBorderChars(style: BoxProps["borderStyle"]): BorderChars {
+  if (style && typeof style === "object") {
+    // Custom border object (Ink compat): map Ink's top/bottom/left/right to
+    // silvery's horizontal/vertical format
+    const obj = style as Record<string, string>
+    return {
+      topLeft: obj.topLeft ?? "+",
+      topRight: obj.topRight ?? "+",
+      bottomLeft: obj.bottomLeft ?? "+",
+      bottomRight: obj.bottomRight ?? "+",
+      horizontal: obj.top ?? obj.horizontal ?? "-",
+      vertical: obj.left ?? obj.vertical ?? "|",
+    }
+  }
   return borders[style ?? "single"]
 }
 

@@ -1125,7 +1125,10 @@ const palettes = [
 
 // ── Grouping palettes by family ──────────────────────────────────────
 const families = [
-  { label: "Catppuccin", keys: ["catppuccin-mocha", "catppuccin-frappe", "catppuccin-macchiato", "catppuccin-latte"] },
+  {
+    label: "Catppuccin",
+    keys: ["catppuccin-mocha", "catppuccin-frappe", "catppuccin-macchiato", "catppuccin-latte"],
+  },
   { label: "Nord", keys: ["nord"] },
   { label: "Dracula", keys: ["dracula"] },
   { label: "Solarized", keys: ["solarized-dark", "solarized-light"] },
