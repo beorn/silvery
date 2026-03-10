@@ -4,7 +4,7 @@
 
 Silver tarnishes when you don't take care of it. So does your code. These are the principles that keep Silvery apps **shiny** — and the anti-patterns that let them go **tarnished**.
 
-Each principle is something people get wrong. If you're already doing the shiny thing, skip ahead.
+Each principle is something people get wrong. If you're coming from Ink, Blessed, or raw ANSI — we've all been there. These patterns are natural starting points, but Silvery gives you better tools. If you're already doing the shiny thing, skip ahead.
 
 ## 1. Use the Built-in Components
 
@@ -23,7 +23,7 @@ Each principle is something people get wrong. If you're already doing the shiny 
 <CommandPalette commands={commands} />
 ```
 
-All themed. All mouse-aware. All keyboard-navigable out of the box.
+All themed. All mouse-aware. All keyboard-navigable out of the box — saving you time and bugs.
 :::
 
 ::: danger 🩶 Tarnished
@@ -139,9 +139,9 @@ Silvery has tree-based focus with spatial navigation. Focus determines which com
 ::: tip ✨ Shiny
 
 ```tsx
-// Component declares itself focusable
+// Calling useFocus() registers this component in the focus tree
 function SearchBox() {
-  const { isFocused } = useFocus()
+  const { isFocused } = useFocus() // isFocused can be used for styling
   return <TextInput value={query} onChange={setQuery} />
 }
 
@@ -273,17 +273,13 @@ If you hardcode a color, you've married one theme. Semantic tokens marry them al
 
 → [Theming guide](/guides/theming) · [Theming reference](/reference/theming) · [Themes gallery](/themes)
 
-## 7. Factory Functions and `using` Cleanup
+## 7. Compose with Factory Functions
 
-Classes encourage hidden state. Factory functions return plain objects with explicit deps — composable, testable, swappable. `using` (TC39 Explicit Resource Management) ensures cleanup on every exit path — no leaked terminals, no orphaned processes, no hung event loops.
+Classes encourage hidden state and rigid hierarchies. Factory functions return plain objects with explicit deps — composable, testable, swappable. Silvery's plugin system is built on this: `pipe()` chains plugins together, each adding a capability.
 
 ::: tip ✨ Shiny
 
 ```tsx
-// Automatic cleanup — terminal restored on any exit (success, error, Ctrl+C)
-using term = createTerm()
-await render(<App />, term)
-
 // Composable plugins via pipe() — no inheritance hierarchy
 const app = pipe(baseApp, withFocus(), withDomEvents(), withCommands(opts))
 
@@ -291,6 +287,44 @@ const app = pipe(baseApp, withFocus(), withDomEvents(), withCommands(opts))
 function createEditor({ storage, parser }) {
   return { open, save, close }
 }
+
+// Easy to test — just pass mock deps
+const editor = createEditor({ storage: mockStorage, parser: mockParser })
+```
+
+:::
+
+::: danger 🩶 Tarnished
+
+```tsx
+// Class hierarchy — rigid, hard to test, hard to compose
+class MyApp extends BaseApp {
+  constructor() {
+    super()  // What does this do? Who knows
+    this.state = {}  // Hidden mutable state
+  }
+}
+
+// Global singletons — untestable, can't run two instances
+const app = GlobalApp.getInstance()
+```
+
+Composition scales. Inheritance doesn't.
+:::
+
+→ [Plugins](/reference/plugins)
+
+## 8. Clean Up with `using`
+
+`using` (TC39 Explicit Resource Management) ensures cleanup on every exit path — no leaked terminals, no orphaned processes, no hung event loops. One keyword replaces an entire class of bugs.
+
+::: tip ✨ Shiny
+
+```tsx
+// Automatic cleanup — terminal restored on any exit (success, error, Ctrl+C)
+using term = createTerm()
+await render(<App />, term)
+// term is disposed when it goes out of scope — always
 ```
 
 :::
@@ -305,22 +339,79 @@ try {
 } finally {
   term.dispose()  // Forgot this path? Terminal stays in raw mode
 }
-
-// Class hierarchy — rigid, hard to test, hard to compose
-class MyApp extends BaseApp {
-  constructor() {
-    super()  // What does this do? Who knows
-    this.state = {}  // Hidden mutable state
-  }
-}
 ```
 
 `using` is one keyword. Manual cleanup is a bug waiting to happen.
 :::
 
-→ [render()](/api/render) · [Lifecycle](/reference/lifecycle) · [Plugins](/reference/plugins)
+→ [render()](/api/render) · [Lifecycle](/reference/lifecycle)
 
-## 8. Test Against What the User Sees
+## 9. Relax and Sip Some TEA
+
+State management is where apps go from "demo" to "production." Silvery includes `@silvery/tea` — a ~30-line Zustand middleware implementing The Elm Architecture. Your reducer is a pure function: `(state, op) => state` for simple updates, or `(state, op) => [state, effects]` when you need side effects. Effects are data, not imperative calls — making your logic pure, testable, and replayable.
+
+::: tip ✨ Shiny
+
+```tsx
+import { createStore } from "zustand"
+import { tea, collect } from "@silvery/tea"
+
+type Op = { type: "increment" } | { type: "save" }
+
+// Pure reducer — no side effects, no async, no surprises
+function reducer(state: State, op: Op): TeaResult<State, MyEffect> {
+  switch (op.type) {
+    case "increment":
+      return { ...state, count: state.count + 1 }           // plain state
+    case "save":
+      return [state, [httpPost("/api", state), log("saved")]] // state + effects
+  }
+}
+
+// Effect runners are separate — swappable for test, production, replay
+const runners: EffectRunners<MyEffect, Op> = {
+  log: (e) => console.log(e.msg),
+  http: async (e, dispatch) => { /* ... */ },
+}
+
+const store = createStore(tea({ count: 0 }, reducer, { runners }))
+
+// Test: reducers are pure functions, test them directly
+const [state, effects] = collect(reducer(initial, { type: "save" }))
+expect(effects).toContainEqual(httpPost("/api", initial))
+```
+
+Pure reducers. Effects as data. Swappable runners. Testable without mocks.
+:::
+
+::: danger 🩶 Tarnished
+
+```tsx
+// Side effects mixed into state updates — untestable, unreplayable
+const [data, setData] = useState(null)
+const [loading, setLoading] = useState(false)
+
+async function handleSave() {
+  setLoading(true)
+  try {
+    await fetch("/api", { method: "POST", body: JSON.stringify(data) })
+    setData(null)
+  } catch (e) {
+    setError(e.message)
+  } finally {
+    setLoading(false)
+  }
+}
+// 5 state variables, 3 setState calls, an async function, a try/catch —
+// and you still can't test what effects the save produces without mocking fetch
+```
+
+When side effects live in your reducer, you can't test them, replay them, or swap them. TEA separates *what* should happen from *how*.
+:::
+
+→ [State management guide](/guides/state-management)
+
+## 10. Test Against What the User Sees
 
 State assertions pass while the screen is garbled. `selectedIndex === 2` doesn't catch the selection rendering on the wrong row, or the border overlapping content, or the scroll indicator showing the wrong count. Test what the user actually sees.
 
@@ -360,3 +451,20 @@ If your test doesn't render, it doesn't test what the user sees. And if your tes
 :::
 
 → [Testing guide](/guide/testing) · [Testing examples](/examples/testing)
+
+---
+
+## The Silvery Way, at a Glance
+
+1. **Use the built-in components** — don't reimplement what @silvery/ui already handles
+2. **Think in flexbox** — let the layout engine do the math
+3. **Let the framework scroll** — `overflow="scroll"`, not manual slicing
+4. **Control focus** — use the focus tree, not guard clauses
+5. **Use the command system** — named actions, not anonymous handlers
+6. **Use semantic theme colors** — `$tokens`, not hardcoded values
+7. **Compose with factory functions** — `pipe()`, not class hierarchies
+8. **Clean up with `using`** — one keyword, zero leaks
+9. **Sip some TEA** — pure reducers, effects as data
+10. **Test what the user sees** — render the buffer, not just the state
+
+Keep it shiny. ✨
