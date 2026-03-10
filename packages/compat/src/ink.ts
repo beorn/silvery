@@ -23,7 +23,7 @@
  * @packageDocumentation
  */
 
-import React, { Component, useContext, useCallback, useState, useEffect, useMemo, act } from "react"
+import React, { Component, useContext, useCallback, useState, useEffect, useMemo, useRef, act } from "react"
 import { StdoutContext, RuntimeContext, TermContext } from "@silvery/react/context"
 import type { RuntimeContextValue, StdoutContextValue } from "@silvery/react/context"
 import { createTerm } from "@silvery/term/ansi"
@@ -95,6 +95,47 @@ function ansi256ToRgb(index: number): [number, number, number] {
  */
 function convertColor(color: string | undefined): string | undefined {
   return color
+}
+
+/**
+ * Strip VS16 (U+FE0F) variation selectors that silvery adds to text-presentation
+ * emoji characters. Silvery's ensureEmojiPresentation adds VS16 to characters that
+ * are Extended_Pictographic but NOT Emoji_Presentation (e.g., ✔ U+2714, ☑ U+2611).
+ *
+ * This preserves VS16 in user content where it was already present (e.g., 🌡️, ⚠️)
+ * by only stripping VS16 after characters that match the text-presentation pattern.
+ */
+const TEXT_PRES_REGEX = /^\p{Extended_Pictographic}$/u
+const EMOJI_PRES_REGEX = /^\p{Emoji_Presentation}$/u
+
+function stripSilveryVS16(input: string): string {
+  // Fast path: no VS16 in the string
+  if (!input.includes("\uFE0F")) return input
+
+  // Walk through the string, removing VS16 only after text-presentation emoji
+  let result = ""
+  let i = 0
+  while (i < input.length) {
+    const cp = input.codePointAt(i)!
+    const char = String.fromCodePoint(cp)
+    const charLen = char.length
+
+    // Check if next position has VS16
+    if (i + charLen < input.length && input.charCodeAt(i + charLen) === 0xfe0f) {
+      // Only strip VS16 if the preceding char is text-presentation emoji
+      // (Extended_Pictographic AND NOT Emoji_Presentation)
+      if (TEXT_PRES_REGEX.test(char) && !EMOJI_PRES_REGEX.test(char)) {
+        // This is a text-presentation emoji that silvery decorated with VS16 — strip it
+        result += char
+        i += charLen + 1 // skip char + VS16
+        continue
+      }
+    }
+
+    result += char
+    i += charLen
+  }
+  return result
 }
 
 // =============================================================================
@@ -478,6 +519,35 @@ export function useCursor() {
 }
 
 /**
+ * Get terminal rows with fallback chain: stdout.rows -> env LINES -> default 24.
+ */
+function getTerminalRows(stdout: NodeJS.WriteStream): number {
+  const rows = (stdout as any).rows
+  if (rows != null && rows > 0) return rows
+  // Fall back to LINES env var (used by terminal-size and POSIX)
+  const envLines = process.env.LINES
+  if (envLines) {
+    const parsed = Number.parseInt(envLines, 10)
+    if (parsed > 0) return parsed
+  }
+  return 24
+}
+
+/**
+ * Get terminal columns with fallback chain: stdout.columns -> env COLUMNS -> default 80.
+ */
+function getTerminalColumns(stdout: NodeJS.WriteStream): number {
+  if (stdout.columns > 0) return stdout.columns
+  // Fall back to COLUMNS env var
+  const envCols = process.env.COLUMNS
+  if (envCols) {
+    const parsed = Number.parseInt(envCols, 10)
+    if (parsed > 0) return parsed
+  }
+  return 80
+}
+
+/**
  * Ink-compatible useWindowSize hook.
  * Returns current terminal dimensions.
  */
@@ -485,15 +555,15 @@ export function useWindowSize() {
   const ctx = useContext(StdoutContext)
   const stdout = ctx?.stdout ?? process.stdout
   const [size, setSize] = useState(() => ({
-    columns: stdout.columns || 80,
-    rows: (stdout as any).rows || 24,
+    columns: getTerminalColumns(stdout),
+    rows: getTerminalRows(stdout),
   }))
 
   useEffect(() => {
     const onResize = () => {
       setSize({
-        columns: stdout.columns || 80,
-        rows: (stdout as any).rows || 24,
+        columns: getTerminalColumns(stdout),
+        rows: getTerminalRows(stdout),
       })
     }
     stdout.on("resize", onResize)
@@ -506,20 +576,134 @@ export function useWindowSize() {
 }
 
 /**
+ * Extract the TeaNode from a ref that may point to a BoxHandle or a TeaNode.
+ * In silvery, Box's forwardRef exposes a BoxHandle via useImperativeHandle,
+ * which has getNode(). Ink users pass refs expecting direct DOM-like access.
+ */
+function resolveTeaNode(refValue: any): import("@silvery/tea/types").TeaNode | null {
+  if (!refValue) return null
+  // BoxHandle from silvery's Box component
+  if (typeof refValue.getNode === "function") {
+    return refValue.getNode()
+  }
+  // Direct TeaNode (has layoutNode property)
+  if (refValue.layoutNode !== undefined || refValue.contentRect !== undefined) {
+    return refValue
+  }
+  return null
+}
+
+/**
+ * Metrics state for useBoxMetrics.
+ */
+interface BoxMetrics {
+  width: number
+  height: number
+  left: number
+  top: number
+  hasMeasured: boolean
+}
+
+const ZERO_METRICS: BoxMetrics = { width: 0, height: 0, left: 0, top: 0, hasMeasured: false }
+
+/**
+ * Compare two BoxMetrics objects for equality.
+ */
+function metricsEqual(a: BoxMetrics, b: BoxMetrics): boolean {
+  return a.width === b.width && a.height === b.height && a.left === b.left && a.top === b.top && a.hasMeasured === b.hasMeasured
+}
+
+/**
  * Ink-compatible useBoxMetrics hook.
  * Returns layout metrics for a tracked box element.
+ *
+ * Wires into silvery's layout system by subscribing to layout changes
+ * on the referenced TeaNode's layoutSubscribers.
  */
-export function useBoxMetrics(_ref: import("react").RefObject<any>) {
-  return useMemo(
-    () => ({
-      width: 0,
-      height: 0,
-      left: 0,
-      top: 0,
-      hasMeasured: false,
-    }),
-    [],
-  )
+export function useBoxMetrics(ref: import("react").RefObject<any>) {
+  const [metrics, setMetrics] = useState<BoxMetrics>(ZERO_METRICS)
+
+  // Track the previously resolved node so we can detect ref switches
+  const prevNodeRef = useRef<import("@silvery/tea/types").TeaNode | null>(null)
+  // Track the last metrics we set to avoid unnecessary state updates
+  const lastMetricsRef = useRef<BoxMetrics>(ZERO_METRICS)
+
+  /**
+   * Update metrics only if they changed, to prevent infinite re-render loops.
+   */
+  const updateMetrics = useCallback((next: BoxMetrics) => {
+    if (!metricsEqual(lastMetricsRef.current, next)) {
+      lastMetricsRef.current = next
+      setMetrics(next)
+    }
+  }, [])
+
+  // Subscribe to layout changes. Re-runs on every render (no deps) to
+  // pick up ref changes (e.g., memoized component's ref becoming available).
+  useEffect(() => {
+    const node = resolveTeaNode(ref.current)
+
+    // Detect ref switch
+    if (node !== prevNodeRef.current) {
+      prevNodeRef.current = node
+      if (!node) {
+        updateMetrics(ZERO_METRICS)
+        return
+      }
+    }
+
+    if (!node) return
+
+    const onLayoutChange = () => {
+      const rect = node.contentRect
+      if (rect) {
+        updateMetrics({
+          width: rect.width,
+          height: rect.height,
+          left: rect.x,
+          top: rect.y,
+          hasMeasured: true,
+        })
+      }
+    }
+
+    // Read current layout if already computed
+    if (node.contentRect) {
+      onLayoutChange()
+    }
+
+    // Subscribe to future layout changes
+    node.layoutSubscribers.add(onLayoutChange)
+
+    return () => {
+      node.layoutSubscribers.delete(onLayoutChange)
+    }
+  })
+
+  // Listen for resize events on stdout to trigger re-measurement
+  const ctx = useContext(StdoutContext)
+  const stdout = ctx?.stdout ?? process.stdout
+
+  useEffect(() => {
+    const onResize = () => {
+      const node = resolveTeaNode(ref.current)
+      if (node?.contentRect) {
+        updateMetrics({
+          width: node.contentRect.width,
+          height: node.contentRect.height,
+          left: node.contentRect.x,
+          top: node.contentRect.y,
+          hasMeasured: true,
+        })
+      }
+    }
+    stdout.on("resize", onResize)
+    return () => {
+      stdout.off("resize", onResize)
+    }
+  }, [stdout, ref, updateMetrics])
+
+  return metrics
 }
 
 // =============================================================================
@@ -1394,26 +1578,39 @@ export function render(element: import("react").ReactNode, options?: Record<stri
       const width = (stdout as any).columns ?? 80
       const bufferHeight = (stdout as any).rows ?? 24
 
-      // Flush any pending React work
-      withActEnv(() => {
-        act(() => {
-          stringReconciler.flushSyncWork()
-        })
-      })
-
-      // Layout stabilization loop
+      // Layout stabilization loop.
+      // We interleave layout passes with React work flushes. The key ordering is:
+      //   1. Flush React work (commit pending state updates)
+      //   2. Run layout (executeRender — computes contentRect for all nodes)
+      //   3. Flush React work again (run effects that depend on layout data,
+      //      e.g., measureElement in useEffect/useLayoutEffect)
+      //   4. If new commits happened, loop
+      //
+      // This matches Ink's behavior where Yoga runs layout synchronously during
+      // React commit, so effects always see computed layout. silvery computes
+      // layout in a separate pipeline pass, so we flush effects after layout.
       let buffer!: TerminalBuffer
       let rootNode: ReturnType<typeof getContainerRoot> | undefined
       const MAX_ITERATIONS = 5
       for (let i = 0; i < MAX_ITERATIONS; i++) {
         hadReactCommit = false
         withActEnv(() => {
+          // Step 1: Flush any pending React work (commits tree, may run some effects)
+          act(() => {
+            stringReconciler.flushSyncWork()
+          })
+
+          // Step 2: Run layout pipeline (executeRender computes contentRect)
           act(() => {
             const root = getContainerRoot(container)
             rootNode = root
             const result = executeRender(root, width, bufferHeight, null, undefined, undefined)
             buffer = result.buffer
           })
+
+          // Step 3: Flush React work again to process effects that depend on
+          // layout data (e.g., useEffect calling measureElement after contentRect
+          // is populated). Also processes state updates from layout subscribers.
           if (!hadReactCommit) {
             act(() => {
               stringReconciler.flushSyncWork()
@@ -1431,9 +1628,11 @@ export function render(element: import("react").ReactNode, options?: Record<stri
         ? bufferToText(buffer, { trimTrailingWhitespace: true, trimEmptyLines: false })
         : bufferToStyledText(buffer, { trimTrailingWhitespace: true, trimEmptyLines: false })
 
-      // Strip VS16 variation selectors that silvery adds for emoji presentation.
-      // Ink's tests don't expect these, and they cause assertion mismatches.
-      output = output.replace(/\uFE0F/g, "")
+      // Strip VS16 variation selectors that silvery adds for text-presentation emoji.
+      // Silvery's ensureEmojiPresentation adds VS16 to Extended_Pictographic chars
+      // that are NOT Emoji_Presentation (e.g., ✔ U+2714). Ink doesn't do this.
+      // Only strip VS16 after such chars — keep VS16 in user content (e.g., 🌡️, ⚠️).
+      output = stripSilveryVS16(output)
 
       // Trim buffer padding rows using layout content height
       if (layoutContentHeight > 0 && layoutContentHeight < bufferHeight) {
@@ -1447,10 +1646,7 @@ export function render(element: import("react").ReactNode, options?: Record<stri
         }
         output = lines.join("\n")
       }
-      let result = plain ? output : toChalkCompat(output)
-      // Strip VS16 (emoji presentation selector) that silvery adds for terminal
-      // rendering. Ink doesn't add these, and tests compare exact strings.
-      result = result.replace(/\uFE0F/g, "")
+      const result = plain ? output : toChalkCompat(output)
       stdout.write(result)
       return result
     }
@@ -1558,8 +1754,62 @@ export function render(element: import("react").ReactNode, options?: Record<stri
   return instance
 }
 
-export { measureElement } from "@silvery/react/measureElement"
+import { measureElement as baseMeasureElement } from "@silvery/react/measureElement"
+import { calculateLayout } from "@silvery/react/reconciler/nodes"
 export type { MeasureElementOutput } from "@silvery/react/measureElement"
+
+/**
+ * Check if a node or any of its ancestors has dirty layout.
+ * When the reconciler adds/removes children, it marks the parent as layoutDirty
+ * and propagates subtreeDirty up to the root.
+ */
+function needsLayoutRecalculation(node: any): boolean {
+  // Walk up from node to root checking dirty flags
+  let current = node
+  while (current) {
+    if (current.layoutDirty || current.subtreeDirty || current.childrenDirty) return true
+    current = current.parent
+  }
+  return false
+}
+
+/**
+ * Ink-compatible measureElement that handles BoxHandle refs and computes
+ * layout on demand when contentRect is stale or hasn't been set yet.
+ *
+ * This bridges the timing gap between Ink (Yoga runs during commit, so
+ * effects see layout) and silvery (layout runs in a separate pipeline pass).
+ */
+export function measureElement(nodeOrHandle: any): import("@silvery/react/measureElement").MeasureElementOutput {
+  // Resolve BoxHandle → TeaNode
+  const node = (typeof nodeOrHandle?.getNode === "function") ? nodeOrHandle.getNode() : nodeOrHandle
+  if (!node) return { width: 0, height: 0 }
+
+  // If contentRect exists AND layout is not stale, use cached values
+  if (node.contentRect && !needsLayoutRecalculation(node)) {
+    return baseMeasureElement(node)
+  }
+
+  // contentRect is null or layout is dirty — walk up to root and
+  // calculate layout on demand so effects can read correct dimensions.
+  let root = node
+  while (root.parent) {
+    root = root.parent
+  }
+
+  if (root.layoutNode) {
+    // Use a sensible width — check process.stdout or default to 100
+    const termWidth = process.stdout?.columns || 100
+    const termHeight = (process.stdout as any)?.rows || 24
+    try {
+      calculateLayout(root, termWidth, termHeight)
+    } catch {
+      // Layout may fail if engine not initialized — fall back gracefully
+    }
+  }
+
+  return baseMeasureElement(node)
+}
 
 /**
  * Ink-compatible useStderr hook.
@@ -1609,8 +1859,8 @@ export function renderToString(node: import("react").ReactNode, options?: { colu
       layoutContentHeight = h
     },
   })
-  // Strip VS16 variation selectors that silvery adds for emoji presentation
-  output = output.replace(/\uFE0F/g, "")
+  // Strip VS16 variation selectors that silvery adds for text-presentation emoji
+  output = stripSilveryVS16(output)
   // Trim buffer padding rows using content height from layout
   if (layoutContentHeight > 0 && layoutContentHeight < bufferHeight) {
     const lines = output.split("\n")
@@ -1627,10 +1877,7 @@ export function renderToString(node: import("react").ReactNode, options?: { colu
   if (output.trim() === "") {
     return ""
   }
-  let result = plain ? output : toChalkCompat(output)
-  // Strip VS16 (emoji presentation selector) for Ink compatibility
-  result = result.replace(/\uFE0F/g, "")
-  return result
+  return plain ? output : toChalkCompat(output)
 }
 
 // =============================================================================

@@ -48,15 +48,35 @@ export interface MeasureElementOutput {
 }
 
 /**
- * Measure the dimensions of an Silvery element.
+ * Resolve a ref value to a TeaNode. Handles both direct TeaNode refs
+ * and BoxHandle refs (from silvery's Box component which uses useImperativeHandle).
+ * Ink users pass ref.current which resolves to a BoxHandle, not a TeaNode directly.
+ */
+function resolveNode(nodeOrHandle: any): TeaNode | null {
+  if (!nodeOrHandle) return null
+  // BoxHandle from silvery's Box component (has getNode method)
+  if (typeof nodeOrHandle.getNode === "function") {
+    return nodeOrHandle.getNode()
+  }
+  // Direct TeaNode
+  return nodeOrHandle as TeaNode
+}
+
+/**
+ * Measure the dimensions of a Silvery element.
  *
- * @param node - The SilveryNode to measure (obtained via ref)
+ * @param nodeOrHandle - The SilveryNode or BoxHandle to measure (obtained via ref)
  * @returns The computed width and height of the element
  *
  * Note: Returns { width: 0, height: 0 } if the element hasn't been laid out yet.
  * For automatic re-rendering on dimension changes, use the useContentRect() hook instead.
  */
-export function measureElement(node: TeaNode): MeasureElementOutput {
+export function measureElement(nodeOrHandle: TeaNode | unknown): MeasureElementOutput {
+  const node = resolveNode(nodeOrHandle)
+  if (!node) {
+    return { width: 0, height: 0 }
+  }
+
   // Prefer contentRect (set by silvery pipeline after layout phase)
   // This is the canonical source of truth after a render
   if (node.contentRect) {
