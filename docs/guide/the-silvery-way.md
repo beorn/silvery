@@ -348,49 +348,48 @@ try {
 
 ## 9. Relax and Sip Some TEA
 
-State management is where apps go from "demo" to "production." Silvery includes [`@silvery/tea`](/reference/packages) — a ~30-line Zustand middleware implementing The Elm Architecture. Your reducer is a pure function: `(state, op) => state` for simple updates, or `(state, op) => [state, effects]` when you need side effects. Effects are data, not imperative calls — making your logic pure, testable, and replayable.
+You don't chug TEA — you sip it. [`@silvery/tea`](/reference/packages) is a gradual path, not a rewrite. Start with `useState` — that's fine for simple components. When state gets shared, move to Zustand (`createApp`). When you need testable side effects, return `[state, effects]` from your reducer instead of calling `fetch` inline. Each sip makes your app more testable, replayable, and composable — but you take them one at a time, when the complexity justifies it.
 
-::: tip ✨ Shiny
+::: tip ✨ Shiny — sip by sip
 
 ```tsx
-import { createStore } from "zustand"
-import { tea, collect } from "@silvery/tea"
+// Sip 1: useState — fine for local component state
+const [query, setQuery] = useState("")
 
-type Op = { type: "increment" } | { type: "save" }
+// Sip 2: Zustand store — shared state, selective re-renders
+const app = createApp(() => (set) => ({
+  cursor: 0,
+  moveCursor(delta) { set((s) => ({ cursor: s.cursor + delta })) },
+}))
 
-// Pure reducer — no side effects, no async, no surprises
-function reducer(state: State, op: Op): TeaResult<State, MyEffect> {
+// Sip 3: ops as data — pure reducer, serializable actions
+function reducer(state: State, op: Op) {
   switch (op.type) {
     case "increment":
-      return { ...state, count: state.count + 1 }           // plain state
-    case "save":
-      return [state, [httpPost("/api", state), log("saved")]] // state + effects
+      return { ...state, count: state.count + 1 }
   }
 }
+const store = createStore(tea({ count: 0 }, reducer))
 
-// Effect runners are separate — swappable for test, production, replay
-const runners: EffectRunners<MyEffect, Op> = {
-  log: (e) => console.log(e.msg),
-  http: async (e, dispatch) => { /* ... */ },
+// Sip 4: effects as data — side effects become testable, replayable
+function reducer(state: State, op: Op): TeaResult<State, MyEffect> {
+  switch (op.type) {
+    case "save":
+      return [state, [httpPost("/api", state), log("saved")]]
+  }
 }
-
-const store = createStore(tea({ count: 0 }, reducer, { runners }))
-
-// Test: reducers are pure functions, test them directly
+// Test without mocks — just call the pure function
 const [state, effects] = collect(reducer(initial, { type: "save" }))
 expect(effects).toContainEqual(httpPost("/api", initial))
 ```
 
-Pure reducers. Effects as data. Swappable runners. Testable without mocks.
+Each sip is independently useful. Most components never need sip 4 — and that's fine.
 :::
 
-::: danger 🩶 Tarnished
+::: danger 🩶 Tarnished — skipping straight to the hard stuff
 
 ```tsx
-// Side effects mixed into state updates — untestable, unreplayable
-const [data, setData] = useState(null)
-const [loading, setLoading] = useState(false)
-
+// Mixing I/O into state logic — can't test, can't replay, can't swap environments
 async function handleSave() {
   setLoading(true)
   try {
@@ -402,11 +401,11 @@ async function handleSave() {
     setLoading(false)
   }
 }
-// 5 state variables, 3 setState calls, an async function, a try/catch —
-// and you still can't test what effects the save produces without mocking fetch
+// To test this, you need to mock fetch, mock setState, and hope the
+// error paths work. With TEA, you just call the reducer and check the output.
 ```
 
-When side effects live in your reducer, you can't test them, replay them, or swap them. TEA separates *what* should happen from *how*.
+`useState` isn't tarnished — mixing I/O into state updates is. When you find yourself mocking `fetch` to test state logic, it's time for the next sip.
 :::
 
 → [State management guide](/guides/state-management)
@@ -464,7 +463,7 @@ If your test doesn't render, it doesn't test what the user sees. And if your tes
 6. **Use semantic theme colors** — `$tokens`, not hardcoded values
 7. **Compose with factory functions** — `pipe()`, not class hierarchies
 8. **Clean up with `using`** — one keyword, zero leaks
-9. **Sip some TEA** — pure reducers, effects as data
+9. **Sip some TEA** — gradually: useState → Zustand → ops as data → effects as data
 10. **Test what the user sees** — render the buffer, not just the state
 
 Keep it shiny. ✨
