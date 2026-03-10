@@ -38,7 +38,7 @@ Pre-styled text (chalk, kleur, etc.) composes with silvery's style props automat
 import chalk from "chalk"
 
 // chalk.red applies to "red", silvery blue applies to "and blue"
-<Text color="blue">{chalk.red("red")} and blue</Text>
+;<Text color="blue">{chalk.red("red")} and blue</Text>
 ```
 
 The parser extracts chalk's red SGR into the cell's `fg` property for "red", then silvery's `color="blue"` sets `fg` for "and blue". No reset codes leak between them.

@@ -69,7 +69,7 @@ function Header({ title, status }: { title: string; status: string }) {
   )
 }
 
-<Header title="My App" status="Connected" />
+;<Header title="My App" status="Connected" />
 ```
 
 Output:
