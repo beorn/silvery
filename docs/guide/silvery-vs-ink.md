@@ -33,7 +33,7 @@ Silvery passes **162/162 of our Ink compatibility tests** (100%) and **78% of In
 
 **Most failures won't affect your app.** The largest category (53) comes from Flexily following the CSS spec where Yoga doesn't — if you prefer browser-standard behavior, these are features, not bugs. If you need exact Yoga layout parity, Silvery supports Yoga as a pluggable layout engine.
 
-See [compatibility reference](/reference/compatibility) for the full API mapping.
+The compat layer is built as thin adapters (~50 lines each) that bridge Ink's APIs to silvery-native systems. `withInk()` composes `withInkCursor()` + `withInkFocus()` — you can use them individually or drop them as you adopt silvery-native APIs. See [compatibility reference](/reference/compatibility) for the full API mapping and [compat layer architecture](/reference/compatibility#compat-layer-architecture) for how the bridge works.
 
 ## Shared Foundation
 
@@ -209,7 +209,7 @@ useInput((input, key) => {
 
 ### Focus System
 
-Ink provides tab-order focus with `useFocus()` -- components are focused in render order via Tab key. Silvery provides tree-based focus with scopes, spatial navigation (arrow keys move focus directionally), click-to-focus, `useFocusWithin`, and programmatic control:
+Ink provides tab-order focus with `useFocus()` — components register in a flat list and cycle via Tab/Shift+Tab. Silvery provides tree-based focus with scopes, spatial navigation (arrow keys move focus directionally based on layout position), click-to-focus, `useFocusWithin`, and DOM-style focus/blur events:
 
 ```tsx
 // Silvery: spatial focus navigation
@@ -221,6 +221,8 @@ Ink provides tab-order focus with `useFocus()` -- components are focused in rend
   </Row>
 </FocusScope>
 ```
+
+**Compat bridge:** `withInkFocus()` provides Ink's flat-list focus system as a thin plugin. Apps using Ink's `useFocus()` / `useFocusManager()` work unchanged. For new code, silvery's `useFocusable()` is strictly better — spatial awareness, focus scopes, event dispatch. See [Compat Layer Architecture](/reference/compatibility#compat-layer-architecture).
 
 ### Mouse Support
 
@@ -265,10 +267,11 @@ Flexily intentionally follows the **W3C CSS Flexbox specification** where Yoga d
 
 ```tsx
 import { render } from "silvery"
-import { yoga } from "silvery/yoga"
 
-await render(<App />, { layoutEngine: yoga })
+await render(<App />, { layoutEngine: "yoga" })
 ```
+
+Or set the `SILVERY_ENGINE=yoga` environment variable to switch globally without code changes.
 
 Most Ink apps use simple layouts (`flexDirection="column"`, padding, borders) that work identically in both engines. The differences surface with advanced flexbox features like `flexWrap`, `alignContent`, and percentage-based `flexBasis`.
 

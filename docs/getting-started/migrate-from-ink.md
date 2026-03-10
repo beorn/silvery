@@ -271,10 +271,11 @@ If your Ink app uses advanced flexbox features (`flexWrap`, `alignContent`, perc
 
 ```tsx
 import { render } from "silvery"
-import { yoga } from "silvery/yoga"
 
-await render(<App />, { layoutEngine: yoga })
+await render(<App />, { layoutEngine: "yoga" })
 ```
+
+Or set the `SILVERY_ENGINE=yoga` environment variable to switch globally without code changes.
 
 Most Ink apps use simple layouts that work identically in both engines.
 
