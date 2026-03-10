@@ -17,7 +17,7 @@ features:
   - title: Familiar React API
     details: "Same Box/Text/useInput patterns you already know. If you've used Ink, most code works with just an import change."
     link: /guide/silvery-vs-ink
-    linkText: Ink comparison
+    linkText: Ink compatibility guide
   - title: Pure TypeScript
     details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. No memory leaks in long-running sessions."
   - title: 100x+ Faster Updates
@@ -30,6 +30,10 @@ features:
     details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
     link: /guides/components
     linkText: Browse components
+  - title: Playwright-Style Testing
+    details: "Headless rendering, auto-refreshing locators, getByText/getByTestId queries, bounding box assertions, and press() input. Test terminal UIs like you test web apps."
+    link: /guide/testing
+    linkText: Testing guide
   - title: Beyond the Terminal
     details: "Terminal today, Canvas 2D and DOM experimental. Same React components, different rendering backends. ~30% of the codebase is target-independent."
     link: /guides/future-targets
@@ -41,12 +45,6 @@ features:
 ---
 
 <p class="alpha-badge"><strong>Alpha</strong> — under heavy development. APIs may change.</p>
-
-<div class="migration-callout">
-
-**Coming from Ink?** Silvery's API is nearly identical — most apps work with just an import change. [See the migration guide &rarr;](/getting-started/migrate-from-ink)
-
-</div>
 
 ## Explore the Examples
 
@@ -113,29 +111,29 @@ yarn add silvery react
 :::
 
 ```tsx
-import { useState } from "react";
-import { Box, Text, useContentRect, useInput, render, createTerm } from "silvery";
+import { useState } from "react"
+import { Box, Text, useContentRect, useInput, render, createTerm } from "silvery"
 
 function App() {
-  const { width } = useContentRect(); // Components know their size!
-  const [count, setCount] = useState(0);
+  const { width } = useContentRect() // Components know their size!
+  const [count, setCount] = useState(0)
 
   useInput((input, key) => {
-    if (input === "j" || key.downArrow) setCount((c) => c + 1);
-    if (input === "k" || key.upArrow) setCount((c) => c - 1);
-    if (input === "q") return "exit";
-  });
+    if (input === "j" || key.downArrow) setCount((c) => c + 1)
+    if (input === "k" || key.upArrow) setCount((c) => c - 1)
+    if (input === "q") return "exit"
+  })
 
   return (
     <Box flexDirection="column">
       <Text>Terminal width: {width}</Text>
       <Text>Count: {count}</Text>
     </Box>
-  );
+  )
 }
 
-using term = createTerm();
-await render(<App />, term);
+using term = createTerm()
+await render(<App />, term)
 ```
 
 ## Ecosystem
@@ -182,16 +180,5 @@ Silvery is part of a family of terminal-focused libraries:
   font-size: 0.85rem;
   text-align: center;
   width: fit-content;
-}
-.migration-callout {
-  margin: -0.5rem 0 2rem;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  background: var(--vp-c-brand-soft);
-  border: 1px solid var(--vp-c-brand-2);
-  text-align: center;
-}
-.migration-callout p {
-  margin: 0;
 }
 </style>

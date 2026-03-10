@@ -25,10 +25,10 @@ That's it. `render(<App />)` works without any term parameter — just add `awai
 
 ```tsx
 // Ink
-const { unmount, waitUntilExit } = render(<App />);
+const { unmount, waitUntilExit } = render(<App />)
 
 // Silvery — just add await
-const { unmount, waitUntilExit } = await render(<App />);
+const { unmount, waitUntilExit } = await render(<App />)
 ```
 
 ### Step 3: Run Tests
@@ -44,10 +44,10 @@ Most apps should work at this point.
 For production apps that need more control, you can create a term explicitly:
 
 ```tsx
-import { render, createTerm } from "silvery";
+import { render, createTerm } from "silvery"
 
-using term = createTerm();
-const { unmount, waitUntilExit } = await render(<App />, term);
+using term = createTerm()
+const { unmount, waitUntilExit } = await render(<App />, term)
 ```
 
 **Why use `createTerm()`?**
@@ -84,10 +84,12 @@ These APIs are 100% compatible:
 ```tsx
 // Ink: Width must be passed down
 function Card({ width }: { width: number }) {
-  return <Text>{truncate(title, width)}</Text>;
+  return <Text>{truncate(title, width)}</Text>
 }
 
-<Card width={availableWidth - padding * 2} />;
+function App() {
+  return <Card width={availableWidth - padding * 2} />
+}
 ```
 
 **Silvery**: Components can ask for their size.
@@ -95,11 +97,13 @@ function Card({ width }: { width: number }) {
 ```tsx
 // Silvery: Just ask
 function Card() {
-  const { width } = useContentRect();
-  return <Text>{truncate(title, width)}</Text>;
+  const { width } = useContentRect()
+  return <Text>{truncate(title, width)}</Text>
 }
 
-<Card />;
+function App() {
+  return <Card /> // No width prop needed!
+}
 ```
 
 ### 2. Text Wraps by Default
@@ -146,10 +150,10 @@ You can also truncate with an ellipsis instead of wrapping:
 
 ```tsx
 function Header() {
-  const { width } = useContentRect();
+  const { width } = useContentRect()
   // First render: width=0
   // Second render: width=80
-  return <Text>{"=".repeat(width)}</Text>;
+  return <Text>{"=".repeat(width)}</Text>
 }
 ```
 
@@ -157,9 +161,9 @@ This is usually invisible (both renders happen before first paint). Add a guard 
 
 ```tsx
 function Header() {
-  const { width } = useContentRect();
-  if (width === 0) return null;
-  return <Text>{"=".repeat(width)}</Text>;
+  const { width } = useContentRect()
+  if (width === 0) return null
+  return <Text>{"=".repeat(width)}</Text>
 }
 ```
 
@@ -195,15 +199,15 @@ function Header() {
 **Ink**: Use `measureElement()` after render.
 
 ```tsx
-const ref = useRef();
-const { width } = measureElement(ref.current);
+const ref = useRef()
+const { width } = measureElement(ref.current)
 // Need manual re-render to use width
 ```
 
 **Silvery**: `measureElement()` works for compatibility, but `useContentRect()` is simpler.
 
 ```tsx
-const { width } = useContentRect();
+const { width } = useContentRect()
 // Automatically re-renders with correct values
 ```
 
@@ -236,14 +240,14 @@ After migrating, you can simplify your code by removing manual width calculation
 
 ```tsx
 function Board({ width }: { width: number }) {
-  const colWidth = Math.floor((width - 2) / 3);
+  const colWidth = Math.floor((width - 2) / 3)
   return (
     <Box>
       <Column width={colWidth} />
       <Column width={colWidth} />
       <Column width={colWidth} />
     </Box>
-  );
+  )
 }
 
 function Column({ width, items }) {
@@ -253,7 +257,7 @@ function Column({ width, items }) {
         <Card width={width - 2} item={item} />
       ))}
     </Box>
-  );
+  )
 }
 ```
 
@@ -267,7 +271,7 @@ function Board() {
       <Column />
       <Column />
     </Box>
-  );
+  )
 }
 
 function Column({ items }) {
@@ -277,11 +281,11 @@ function Column({ items }) {
         <Card item={item} />
       ))}
     </Box>
-  );
+  )
 }
 
 function Card({ item }) {
-  const { width } = useContentRect();
+  const { width } = useContentRect()
   // Use width only where actually needed
 }
 ```
