@@ -222,12 +222,12 @@ const { width } = useContentRect()
 
 ### By Design
 
-| Behavior                | Ink       | Silvery | Reason                       |
-| ----------------------- | --------- | ------- | ---------------------------- |
+| Behavior                | Ink       | Silvery | Reason                          |
+| ----------------------- | --------- | ------- | ------------------------------- |
 | Default flexDirection   | row       | column  | silvery/ink compat handles this |
-| Text overflow           | Overflows | Wraps   | Better default               |
-| First render dimensions | N/A       | Zeros   | Required for layout feedback |
-| Internal APIs           | Exposed   | Hidden  | Not public API               |
+| Text overflow           | Overflows | Wraps   | Better default                  |
+| First render dimensions | N/A       | Zeros   | Required for layout feedback    |
+| Internal APIs           | Exposed   | Hidden  | Not public API                  |
 
 ::: tip Default Flex Direction
 Ink defaults `<Box>` to `flexDirection="row"`. Silvery defaults to `"column"`. The `silvery/ink` compat import handles this automatically — Box defaults to row in compat mode. If you import from `silvery` directly, add explicit `flexDirection="row"` where needed.
@@ -246,13 +246,13 @@ Silvery and Ink/Chalk produce visually identical terminal output but different b
 
 ### Community Package Mapping
 
-| Ink Package           | Silvery Equivalent          |
-| --------------------- | --------------------------- |
-| `ink-spinner`         | `@silvery/ui` `Spinner`     |
-| `ink-select-input`    | `@silvery/ui` `SelectList`  |
-| `ink-text-input`      | `@silvery/ui` `TextInput`   |
-| `ink-table`           | `@silvery/ui` `Table`       |
-| `ink-testing-library` | `@silvery/test`             |
+| Ink Package           | Silvery Equivalent         |
+| --------------------- | -------------------------- |
+| `ink-spinner`         | `@silvery/ui` `Spinner`    |
+| `ink-select-input`    | `@silvery/ui` `SelectList` |
+| `ink-text-input`      | `@silvery/ui` `TextInput`  |
+| `ink-table`           | `@silvery/ui` `Table`      |
+| `ink-testing-library` | `@silvery/test`            |
 
 ### Edge Cases
 

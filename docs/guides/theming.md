@@ -29,11 +29,7 @@ const theme = createTheme().preset("catppuccin-mocha").build()
 const theme = createTheme().primary("#5E81AC").dark().build()
 
 // From background + primary
-const theme = createTheme()
-  .bg("#2E3440")
-  .fg("#ECEFF4")
-  .primary("#EBCB8B")
-  .build()
+const theme = createTheme().bg("#2E3440").fg("#ECEFF4").primary("#EBCB8B").build()
 ```
 
 Or use the convenience functions:
@@ -91,31 +87,31 @@ import ThemeExplorer from '../.vitepress/components/ThemeExplorer.vue'
 
 The `@silvery/theme` package includes 45 palettes from these theme families:
 
-| Family | Variants | Mode |
-|--------|----------|------|
-| Catppuccin | Mocha, Frappe, Macchiato, Latte | 3 dark + 1 light |
-| Nord | Nord | dark |
-| Dracula | Dracula | dark |
-| Solarized | Dark, Light | 1 dark + 1 light |
-| Tokyo Night | Night, Storm, Day | 2 dark + 1 light |
-| One Dark | One Dark | dark |
-| Gruvbox | Dark, Light | 1 dark + 1 light |
-| Rose Pine | Pine, Moon, Dawn | 2 dark + 1 light |
-| Kanagawa | Wave, Dragon, Lotus | 2 dark + 1 light |
-| Everforest | Dark, Light | 1 dark + 1 light |
-| Monokai | Classic, Pro | 2 dark |
-| Snazzy | Snazzy | dark |
-| Material | Dark, Light | 1 dark + 1 light |
-| Palenight | Palenight | dark |
-| Ayu | Dark, Mirage, Light | 2 dark + 1 light |
-| Nightfox | Nightfox, Dawnfox | 1 dark + 1 light |
-| Horizon | Horizon | dark |
-| Moonfly | Moonfly | dark |
-| Nightfly | Nightfly | dark |
-| Oxocarbon | Dark, Light | 1 dark + 1 light |
-| Sonokai | Sonokai | dark |
-| Edge | Dark, Light | 1 dark + 1 light |
-| Modus | Vivendi, Operandi | 1 dark + 1 light |
+| Family      | Variants                        | Mode             |
+| ----------- | ------------------------------- | ---------------- |
+| Catppuccin  | Mocha, Frappe, Macchiato, Latte | 3 dark + 1 light |
+| Nord        | Nord                            | dark             |
+| Dracula     | Dracula                         | dark             |
+| Solarized   | Dark, Light                     | 1 dark + 1 light |
+| Tokyo Night | Night, Storm, Day               | 2 dark + 1 light |
+| One Dark    | One Dark                        | dark             |
+| Gruvbox     | Dark, Light                     | 1 dark + 1 light |
+| Rose Pine   | Pine, Moon, Dawn                | 2 dark + 1 light |
+| Kanagawa    | Wave, Dragon, Lotus             | 2 dark + 1 light |
+| Everforest  | Dark, Light                     | 1 dark + 1 light |
+| Monokai     | Classic, Pro                    | 2 dark           |
+| Snazzy      | Snazzy                          | dark             |
+| Material    | Dark, Light                     | 1 dark + 1 light |
+| Palenight   | Palenight                       | dark             |
+| Ayu         | Dark, Mirage, Light             | 2 dark + 1 light |
+| Nightfox    | Nightfox, Dawnfox               | 1 dark + 1 light |
+| Horizon     | Horizon                         | dark             |
+| Moonfly     | Moonfly                         | dark             |
+| Nightfly    | Nightfly                        | dark             |
+| Oxocarbon   | Dark, Light                     | 1 dark + 1 light |
+| Sonokai     | Sonokai                         | dark             |
+| Edge        | Dark, Light                     | 1 dark + 1 light |
+| Modus       | Vivendi, Operandi               | 1 dark + 1 light |
 
 Access any palette by name:
 
@@ -161,17 +157,10 @@ import { createTheme } from "@silvery/theme"
 const theme = createTheme().bg("#2E3440").build()
 
 // Override specific palette colors
-const theme = createTheme()
-  .preset("nord")
-  .primary("#A3BE8C")
-  .color("red", "#FF0000")
-  .build()
+const theme = createTheme().preset("nord").primary("#A3BE8C").color("red", "#FF0000").build()
 
 // Force light mode regardless of background
-const theme = createTheme()
-  .bg("#1a1a2e")
-  .light()
-  .build()
+const theme = createTheme().bg("#1a1a2e").light().build()
 ```
 
 ## CSS Export
@@ -194,22 +183,22 @@ Object.assign(element.style, vars)
 
 The 33 semantic tokens in a Theme follow a consistent naming pattern. Each area has a background token and a foreground (`fg`) token:
 
-| Token Pair | Purpose |
-|------------|---------|
-| `bg` / `fg` | Default background and text |
-| `surface` / `surfacefg` | Elevated content areas |
-| `popover` / `popoverfg` | Floating content (dropdowns, tooltips) |
-| `muted` / `mutedfg` | Hover states, secondary text |
-| `primary` / `primaryfg` | Brand accent |
-| `secondary` / `secondaryfg` | Alternate accent |
-| `accent` / `accentfg` | Attention/pop accent |
-| `error` / `errorfg` | Error/destructive states |
-| `warning` / `warningfg` | Caution states |
-| `success` / `successfg` | Positive states |
-| `info` / `infofg` | Neutral information |
-| `selection` / `selectionfg` | Selected items |
-| `inverse` / `inversefg` | Chrome (title/status bars) |
-| `cursor` / `cursorfg` | Text cursor |
+| Token Pair                  | Purpose                                |
+| --------------------------- | -------------------------------------- |
+| `bg` / `fg`                 | Default background and text            |
+| `surface` / `surfacefg`     | Elevated content areas                 |
+| `popover` / `popoverfg`     | Floating content (dropdowns, tooltips) |
+| `muted` / `mutedfg`         | Hover states, secondary text           |
+| `primary` / `primaryfg`     | Brand accent                           |
+| `secondary` / `secondaryfg` | Alternate accent                       |
+| `accent` / `accentfg`       | Attention/pop accent                   |
+| `error` / `errorfg`         | Error/destructive states               |
+| `warning` / `warningfg`     | Caution states                         |
+| `success` / `successfg`     | Positive states                        |
+| `info` / `infofg`           | Neutral information                    |
+| `selection` / `selectionfg` | Selected items                         |
+| `inverse` / `inversefg`     | Chrome (title/status bars)             |
+| `cursor` / `cursorfg`       | Text cursor                            |
 
 Plus 5 standalone tokens: `border`, `inputborder`, `focusborder`, `link`, `disabledfg`.
 

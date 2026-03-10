@@ -93,6 +93,12 @@ export function parseColor(color: string): Color {
     }
   }
 
+  // ansi256(N) — 256-color palette index (0-255)
+  const ansi256Match = color.match(/^ansi256\s*\(\s*(\d+)\s*\)$/i)
+  if (ansi256Match) {
+    return Number.parseInt(ansi256Match[1]!, 10)
+  }
+
   return null
 }
 

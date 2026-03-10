@@ -85,6 +85,14 @@ export interface RenderStringOptions {
    * (e.g., ink compat renders where `\n\n` padding is significant).
    */
   trimEmptyLines?: boolean
+
+  /**
+   * Callback to receive the computed content height (root node layout height).
+   * Useful for callers that need to know the actual content bounds
+   * (e.g., Ink compat layer needs to trim buffer padding but preserve
+   * content-area empty lines).
+   */
+  onContentHeight?: (height: number) => void
 }
 
 // ============================================================================
@@ -158,6 +166,7 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
     pipelineConfig,
     trimTrailingWhitespace = true,
     trimEmptyLines = true,
+    onContentHeight,
   } = options
 
   // Track whether React committed new work (from layout notifications etc.)
@@ -224,12 +233,14 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
   // layout notifications (useContentRect forceUpdate etc.), repeat until stable.
   // This matches the test renderer's multi-pass approach.
   let buffer!: TerminalBuffer
+  let rootNode: ReturnType<typeof getContainerRoot> | undefined
   const MAX_ITERATIONS = 5
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     hadReactCommit = false
     withActEnvironment(() => {
       act(() => {
         const root = getContainerRoot(container)
+        rootNode = root
         const result = executeRender(root, width, height, null, undefined, pipelineConfig)
         buffer = result.buffer
       })
@@ -240,6 +251,11 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
       }
     })
     if (!hadReactCommit) break
+  }
+
+  // Report content height if callback provided
+  if (onContentHeight && rootNode?.contentRect) {
+    onContentHeight(rootNode.contentRect.height)
   }
 
   // Unmount (cleanup)

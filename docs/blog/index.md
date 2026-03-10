@@ -8,4 +8,4 @@ Stay tuned for the launch post.
 
 ---
 
-*Follow development on [GitHub](https://github.com/beorn/silvery).*
+_Follow development on [GitHub](https://github.com/beorn/silvery)._

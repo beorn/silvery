@@ -4,16 +4,16 @@ Silvery is organized as a monorepo of focused packages. Most apps only need the 
 
 ## Package Overview
 
-| Package | npm | Description |
-|---------|-----|-------------|
-| `silvery` | `silvery` | Umbrella package (re-exports `@silvery/react`) |
-| `packages/term` | `@silvery/term` | Terminal runtime, ANSI output, rendering pipeline |
-| `packages/react` | `@silvery/react` | React reconciler, components, and hooks |
-| `packages/ui` | `@silvery/ui` | Component library (30+ components) + CLI progress utilities |
-| `packages/tea` | `@silvery/tea` | TEA state machine store (zustand-based) |
-| `packages/compat` | `@silvery/compat` | Ink/Chalk compatibility layers |
-| `packages/test` | `@silvery/test` | Testing utilities (virtual renderer, locators) |
-| `packages/theme` | `@silvery/theme` | Theme tokens, 45 palettes, theme CLI |
+| Package           | npm               | Description                                                 |
+| ----------------- | ----------------- | ----------------------------------------------------------- |
+| `silvery`         | `silvery`         | Umbrella package (re-exports `@silvery/react`)              |
+| `packages/term`   | `@silvery/term`   | Terminal runtime, ANSI output, rendering pipeline           |
+| `packages/react`  | `@silvery/react`  | React reconciler, components, and hooks                     |
+| `packages/ui`     | `@silvery/ui`     | Component library (30+ components) + CLI progress utilities |
+| `packages/tea`    | `@silvery/tea`    | TEA state machine store (zustand-based)                     |
+| `packages/compat` | `@silvery/compat` | Ink/Chalk compatibility layers                              |
+| `packages/test`   | `@silvery/test`   | Testing utilities (virtual renderer, locators)              |
+| `packages/theme`  | `@silvery/theme`  | Theme tokens, 45 palettes, theme CLI                        |
 
 ## Import Conventions
 
@@ -87,12 +87,14 @@ React reconciler adapted for terminal rendering. Provides the component model, h
 Component library with 30+ components plus CLI progress utilities.
 
 **CLI mode** (no React needed):
+
 ```ts
 import { Spinner, ProgressBar } from "@silvery/ui/cli"
 const stop = Spinner.start("Loading...")
 ```
 
 **Wrapper utilities**:
+
 ```ts
 import { withSpinner, withProgress } from "@silvery/ui/wrappers"
 const data = await withSpinner(fetchData(), "Loading...")

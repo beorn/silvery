@@ -3,49 +3,1124 @@ import { ref, computed } from "vue"
 
 // ── Palette data (extracted from @silvery/theme built-in palettes) ──────
 const palettes = [
-  { name: "catppuccin-mocha", dark: true, background: "#1E1E2E", foreground: "#CDD6F4", black: "#11111B", red: "#F38BA8", green: "#A6E3A1", yellow: "#F9E2AF", blue: "#89B4FA", magenta: "#CBA6F7", cyan: "#94E2D5", white: "#A6ADC8", brightBlack: "#313244", brightRed: "#FAB387", brightGreen: "#B3E7AF", brightYellow: "#FAE6BB", brightBlue: "#9BBFFB", brightMagenta: "#F5C2E7", brightCyan: "#A4E6DB", brightWhite: "#CDD6F4", cursorColor: "#CDD6F4", cursorText: "#1E1E2E", selectionBackground: "#6C7086", selectionForeground: "#CDD6F4" },
-  { name: "catppuccin-frappe", dark: true, background: "#303446", foreground: "#C6D0F5", black: "#232634", red: "#E78284", green: "#A6D189", yellow: "#E5C890", blue: "#8CAAEE", magenta: "#CA9EE6", cyan: "#81C8BE", white: "#A5ADCE", brightBlack: "#414559", brightRed: "#EF9F76", brightGreen: "#B3D89B", brightYellow: "#E9D0A1", brightBlue: "#9DB7F1", brightMagenta: "#F4B8E4", brightCyan: "#94D0C8", brightWhite: "#C6D0F5", cursorColor: "#C6D0F5", cursorText: "#303446", selectionBackground: "#737994", selectionForeground: "#C6D0F5" },
-  { name: "catppuccin-macchiato", dark: true, background: "#24273A", foreground: "#CAD3F5", black: "#181926", red: "#ED8796", green: "#A6DA95", yellow: "#EED49F", blue: "#8AADF4", magenta: "#C6A0F6", cyan: "#8BD5CA", white: "#A5ADCB", brightBlack: "#363A4F", brightRed: "#F5A97F", brightGreen: "#B3E0A5", brightYellow: "#F1DAAD", brightBlue: "#9CB9F6", brightMagenta: "#F5BDE6", brightCyan: "#9CDBD2", brightWhite: "#CAD3F5", cursorColor: "#CAD3F5", cursorText: "#24273A", selectionBackground: "#6E738D", selectionForeground: "#CAD3F5" },
-  { name: "catppuccin-latte", dark: false, background: "#EFF1F5", foreground: "#4C4F69", black: "#DCE0E8", red: "#D20F39", green: "#40A02B", yellow: "#DF8E1D", blue: "#1E66F5", magenta: "#8839EF", cyan: "#179299", white: "#6C6F85", brightBlack: "#CCD0DA", brightRed: "#FE640B", brightGreen: "#5DAE4B", brightYellow: "#E49F3F", brightBlue: "#407DF7", brightMagenta: "#EA76CB", brightCyan: "#3AA2A8", brightWhite: "#4C4F69", cursorColor: "#4C4F69", cursorText: "#EFF1F5", selectionBackground: "#9CA0B0", selectionForeground: "#4C4F69" },
-  { name: "nord", dark: true, background: "#2E3440", foreground: "#ECEFF4", black: "#2E3440", red: "#BF616A", green: "#A3BE8C", yellow: "#EBCB8B", blue: "#5E81AC", magenta: "#B48EAD", cyan: "#8FBCBB", white: "#D8DEE9", brightBlack: "#3B4252", brightRed: "#D08770", brightGreen: "#B1C89D", brightYellow: "#EED39C", brightBlue: "#7694B8", brightMagenta: "#B48EAD", brightCyan: "#A0C6C5", brightWhite: "#ECEFF4", cursorColor: "#ECEFF4", cursorText: "#2E3440", selectionBackground: "#4C566A", selectionForeground: "#ECEFF4" },
-  { name: "dracula", dark: true, background: "#282A36", foreground: "#F8F8F2", black: "#21222C", red: "#FF5555", green: "#50FA7B", yellow: "#F1FA8C", blue: "#BD93F9", magenta: "#BD93F9", cyan: "#8BE9FD", white: "#6272A4", brightBlack: "#44475A", brightRed: "#FFB86C", brightGreen: "#6AFB8F", brightYellow: "#F3FB9D", brightBlue: "#C7A3FA", brightMagenta: "#FF79C6", brightCyan: "#9CECFD", brightWhite: "#F8F8F2", cursorColor: "#F8F8F2", cursorText: "#282A36", selectionBackground: "#6272A4", selectionForeground: "#F8F8F2" },
-  { name: "solarized-dark", dark: true, background: "#073642", foreground: "#FDF6E3", black: "#002B36", red: "#DC322F", green: "#859900", yellow: "#B58900", blue: "#268BD2", magenta: "#6C71C4", cyan: "#2AA198", white: "#839496", brightBlack: "#586E75", brightRed: "#CB4B16", brightGreen: "#97A826", brightYellow: "#C09B26", brightBlue: "#479CD9", brightMagenta: "#D33682", brightCyan: "#4AAFA7", brightWhite: "#FDF6E3", cursorColor: "#FDF6E3", cursorText: "#073642", selectionBackground: "#586E75", selectionForeground: "#FDF6E3" },
-  { name: "solarized-light", dark: false, background: "#EEE8D5", foreground: "#073642", black: "#FDF6E3", red: "#DC322F", green: "#859900", yellow: "#B58900", blue: "#268BD2", magenta: "#6C71C4", cyan: "#2AA198", white: "#657B83", brightBlack: "#DDD6C1", brightRed: "#CB4B16", brightGreen: "#97A826", brightYellow: "#C09B26", brightBlue: "#479CD9", brightMagenta: "#D33682", brightCyan: "#4AAFA7", brightWhite: "#073642", cursorColor: "#073642", cursorText: "#EEE8D5", selectionBackground: "#839496", selectionForeground: "#073642" },
-  { name: "tokyo-night", dark: true, background: "#24283B", foreground: "#C0CAF5", black: "#1A1B26", red: "#F7768E", green: "#9ECE6A", yellow: "#E0AF68", blue: "#7AA2F7", magenta: "#BB9AF7", cyan: "#73DACA", white: "#A9B1D6", brightBlack: "#292E42", brightRed: "#FF9E64", brightGreen: "#ADD580", brightYellow: "#E5BB7F", brightBlue: "#8EB0F8", brightMagenta: "#FF007C", brightCyan: "#88E0D2", brightWhite: "#C0CAF5", cursorColor: "#C0CAF5", cursorText: "#24283B", selectionBackground: "#515C7E", selectionForeground: "#C0CAF5" },
-  { name: "tokyo-night-storm", dark: true, background: "#24283B", foreground: "#C0CAF5", black: "#1F2335", red: "#F7768E", green: "#9ECE6A", yellow: "#E0AF68", blue: "#7AA2F7", magenta: "#BB9AF7", cyan: "#73DACA", white: "#A9B1D6", brightBlack: "#292E42", brightRed: "#FF9E64", brightGreen: "#ADD580", brightYellow: "#E5BB7F", brightBlue: "#8EB0F8", brightMagenta: "#FF007C", brightCyan: "#88E0D2", brightWhite: "#C0CAF5", cursorColor: "#C0CAF5", cursorText: "#24283B", selectionBackground: "#515C7E", selectionForeground: "#C0CAF5" },
-  { name: "tokyo-night-day", dark: false, background: "#D5D6DB", foreground: "#3760BF", black: "#E1E2E7", red: "#F52A65", green: "#587539", yellow: "#8C6C3E", blue: "#2E7DE9", magenta: "#9854F1", cyan: "#118C74", white: "#6172B0", brightBlack: "#C4C5CB", brightRed: "#B15C00", brightGreen: "#718A57", brightYellow: "#9D825B", brightBlue: "#4D91EC", brightMagenta: "#F52A65", brightCyan: "#359D89", brightWhite: "#3760BF", cursorColor: "#3760BF", cursorText: "#D5D6DB", selectionBackground: "#99A7DF", selectionForeground: "#3760BF" },
-  { name: "one-dark", dark: true, background: "#282C34", foreground: "#ABB2BF", black: "#21252B", red: "#E06C75", green: "#98C379", yellow: "#E5C07B", blue: "#61AFEF", magenta: "#C678DD", cyan: "#56B6C2", white: "#ABB2BF", brightBlack: "#2C313A", brightRed: "#D19A66", brightGreen: "#A7CC8D", brightYellow: "#E9C98F", brightBlue: "#79BBF1", brightMagenta: "#E06C75", brightCyan: "#6FC1CB", brightWhite: "#ABB2BF", cursorColor: "#ABB2BF", cursorText: "#282C34", selectionBackground: "#3E4451", selectionForeground: "#ABB2BF" },
-  { name: "gruvbox-dark", dark: true, background: "#282828", foreground: "#EBDBB2", black: "#1D2021", red: "#FB4934", green: "#B8BB26", yellow: "#FABD2F", blue: "#83A598", magenta: "#D3869B", cyan: "#8EC07C", white: "#BDAE93", brightBlack: "#3C3836", brightRed: "#FE8019", brightGreen: "#C3C547", brightYellow: "#FBC74E", brightBlue: "#96B3A7", brightMagenta: "#D3869B", brightCyan: "#9FC990", brightWhite: "#EBDBB2", cursorColor: "#EBDBB2", cursorText: "#282828", selectionBackground: "#504945", selectionForeground: "#EBDBB2" },
-  { name: "gruvbox-light", dark: false, background: "#FBF1C7", foreground: "#3C3836", black: "#F9F5D7", red: "#CC241D", green: "#98971A", yellow: "#D79921", blue: "#458588", magenta: "#B16286", cyan: "#689D6A", white: "#665C54", brightBlack: "#EBDBB2", brightRed: "#D65D0E", brightGreen: "#A7A73C", brightYellow: "#DDA842", brightBlue: "#61979A", brightMagenta: "#B16286", brightCyan: "#7FAC80", brightWhite: "#3C3836", cursorColor: "#3C3836", cursorText: "#FBF1C7", selectionBackground: "#D5C4A1", selectionForeground: "#3C3836" },
-  { name: "rose-pine", dark: true, background: "#1F1D2E", foreground: "#E0DEF4", black: "#191724", red: "#EB6F92", green: "#31748F", yellow: "#F6C177", blue: "#3E8FB0", magenta: "#C4A7E7", cyan: "#9CCFD8", white: "#908CAA", brightBlack: "#26233A", brightRed: "#EA9A97", brightGreen: "#5089A0", brightYellow: "#F7CA8B", brightBlue: "#5BA0BC", brightMagenta: "#EBBCBA", brightCyan: "#ABD6DE", brightWhite: "#E0DEF4", cursorColor: "#E0DEF4", cursorText: "#1F1D2E", selectionBackground: "#524F67", selectionForeground: "#E0DEF4" },
-  { name: "rose-pine-moon", dark: true, background: "#2A273F", foreground: "#E0DEF4", black: "#232136", red: "#EB6F92", green: "#3E8FB0", yellow: "#F6C177", blue: "#3E8FB0", magenta: "#C4A7E7", cyan: "#9CCFD8", white: "#908CAA", brightBlack: "#393552", brightRed: "#EA9A97", brightGreen: "#5BA0BC", brightYellow: "#F7CA8B", brightBlue: "#5BA0BC", brightMagenta: "#EA9A97", brightCyan: "#ABD6DE", brightWhite: "#E0DEF4", cursorColor: "#E0DEF4", cursorText: "#2A273F", selectionBackground: "#56526E", selectionForeground: "#E0DEF4" },
-  { name: "rose-pine-dawn", dark: false, background: "#FFFAF3", foreground: "#575279", black: "#FAF4ED", red: "#B4637A", green: "#286983", yellow: "#EA9D34", blue: "#286983", magenta: "#907AA9", cyan: "#56949F", white: "#797593", brightBlack: "#F2E9E1", brightRed: "#D7827E", brightGreen: "#488096", brightYellow: "#EDAC52", brightBlue: "#488096", brightMagenta: "#D7827E", brightCyan: "#6FA4AD", brightWhite: "#575279", cursorColor: "#575279", cursorText: "#FFFAF3", selectionBackground: "#CECACD", selectionForeground: "#575279" },
-  { name: "kanagawa-wave", dark: true, background: "#1F1F28", foreground: "#DCD7BA", black: "#16161D", red: "#C34043", green: "#98BB6C", yellow: "#E6C384", blue: "#7E9CD8", magenta: "#957FB8", cyan: "#6A9589", white: "#727169", brightBlack: "#2A2A37", brightRed: "#FFA066", brightGreen: "#A7C582", brightYellow: "#EACC96", brightBlue: "#91ABDE", brightMagenta: "#D27E99", brightCyan: "#80A59B", brightWhite: "#DCD7BA", cursorColor: "#DCD7BA", cursorText: "#1F1F28", selectionBackground: "#54546D", selectionForeground: "#DCD7BA" },
-  { name: "kanagawa-dragon", dark: true, background: "#181616", foreground: "#C5C9C5", black: "#0D0C0C", red: "#C4746E", green: "#87A987", yellow: "#C4B28A", blue: "#8BA4B0", magenta: "#8992A7", cyan: "#8EA4A2", white: "#737C73", brightBlack: "#282727", brightRed: "#B6927B", brightGreen: "#99B699", brightYellow: "#CDBE9C", brightBlue: "#9CB2BC", brightMagenta: "#A292A3", brightCyan: "#9FB2B0", brightWhite: "#C5C9C5", cursorColor: "#C5C9C5", cursorText: "#181616", selectionBackground: "#49443C", selectionForeground: "#C5C9C5" },
-  { name: "kanagawa-lotus", dark: false, background: "#F2ECBC", foreground: "#545464", black: "#E5DDB0", red: "#C84053", green: "#6F894E", yellow: "#DE9800", blue: "#4D699B", magenta: "#624C83", cyan: "#597B75", white: "#716E61", brightBlack: "#DCD5AC", brightRed: "#CC6D00", brightGreen: "#859B69", brightYellow: "#E3A726", brightBlue: "#6880AA", brightMagenta: "#B35B79", brightCyan: "#728F8A", brightWhite: "#545464", cursorColor: "#545464", cursorText: "#F2ECBC", selectionBackground: "#C9CBD1", selectionForeground: "#545464" },
-  { name: "everforest-dark", dark: true, background: "#2D353B", foreground: "#D3C6AA", black: "#232A2E", red: "#E67E80", green: "#A7C080", yellow: "#DBBC7F", blue: "#7FBBB3", magenta: "#D699B6", cyan: "#83C092", white: "#859289", brightBlack: "#343F44", brightRed: "#E69875", brightGreen: "#B4C993", brightYellow: "#E0C692", brightBlue: "#92C5BE", brightMagenta: "#E67E80", brightCyan: "#96C9A2", brightWhite: "#D3C6AA", cursorColor: "#D3C6AA", cursorText: "#2D353B", selectionBackground: "#543A48", selectionForeground: "#D3C6AA" },
-  { name: "everforest-light", dark: false, background: "#FDF6E3", foreground: "#5C6A72", black: "#EFEBD4", red: "#F85552", green: "#8DA101", yellow: "#DFA000", blue: "#3A94C5", magenta: "#DF69BA", cyan: "#35A77C", white: "#939F91", brightBlack: "#F4F0D9", brightRed: "#F57D26", brightGreen: "#9EAF27", brightYellow: "#E4AE26", brightBlue: "#58A4CE", brightMagenta: "#F85552", brightCyan: "#53B490", brightWhite: "#5C6A72", cursorColor: "#5C6A72", cursorText: "#FDF6E3", selectionBackground: "#E0DCC7", selectionForeground: "#5C6A72" },
-  { name: "monokai", dark: true, background: "#272822", foreground: "#F8F8F2", black: "#1A1A1A", red: "#F92672", green: "#A6E22E", yellow: "#E6DB74", blue: "#66D9EF", magenta: "#AE81FF", cyan: "#66D9EF", white: "#A59F85", brightBlack: "#3E3D32", brightRed: "#FD971F", brightGreen: "#B3E64D", brightYellow: "#EAE089", brightBlue: "#7DDFF1", brightMagenta: "#F92672", brightCyan: "#7DDFF1", brightWhite: "#F8F8F2", cursorColor: "#F8F8F2", cursorText: "#272822", selectionBackground: "#575B4F", selectionForeground: "#F8F8F2" },
-  { name: "monokai-pro", dark: true, background: "#2D2A2E", foreground: "#FCFCFA", black: "#221F22", red: "#FF6188", green: "#A9DC76", yellow: "#FFD866", blue: "#78DCE8", magenta: "#AB9DF2", cyan: "#78DCE8", white: "#939293", brightBlack: "#403E41", brightRed: "#FC9867", brightGreen: "#B6E18B", brightYellow: "#FFDE7D", brightBlue: "#8CE1EB", brightMagenta: "#FF6188", brightCyan: "#8CE1EB", brightWhite: "#FCFCFA", cursorColor: "#FCFCFA", cursorText: "#2D2A2E", selectionBackground: "#5B595C", selectionForeground: "#FCFCFA" },
-  { name: "snazzy", dark: true, background: "#282A36", foreground: "#EFF0EB", black: "#222430", red: "#FF5C57", green: "#5AF78E", yellow: "#F3F99D", blue: "#57C7FF", magenta: "#B267E6", cyan: "#9AEDFE", white: "#97979B", brightBlack: "#34353E", brightRed: "#FF9F43", brightGreen: "#73F89F", brightYellow: "#F5FAAC", brightBlue: "#70CFFF", brightMagenta: "#FF6AC1", brightCyan: "#A9F0FE", brightWhite: "#EFF0EB", cursorColor: "#EFF0EB", cursorText: "#282A36", selectionBackground: "#525566", selectionForeground: "#EFF0EB" },
-  { name: "material-dark", dark: true, background: "#212121", foreground: "#EEFFFF", black: "#171717", red: "#FF5370", green: "#C3E88D", yellow: "#FFCB6B", blue: "#82AAFF", magenta: "#C792EA", cyan: "#89DDFF", white: "#545454", brightBlack: "#2C2C2C", brightRed: "#F78C6C", brightGreen: "#CCEB9E", brightYellow: "#FFD381", brightBlue: "#95B7FF", brightMagenta: "#F07178", brightCyan: "#9BE2FF", brightWhite: "#EEFFFF", cursorColor: "#EEFFFF", cursorText: "#212121", selectionBackground: "#404040", selectionForeground: "#EEFFFF" },
-  { name: "material-light", dark: false, background: "#FAFAFA", foreground: "#546E7A", black: "#ECF0F1", red: "#E53935", green: "#91B859", yellow: "#FFB62C", blue: "#6182B8", magenta: "#7C4DFF", cyan: "#39ADB5", white: "#90A4AE", brightBlack: "#EBF4F3", brightRed: "#F76D47", brightGreen: "#A2C372", brightYellow: "#FFC14C", brightBlue: "#7995C3", brightMagenta: "#FF5370", brightCyan: "#57B9C0", brightWhite: "#546E7A", cursorColor: "#546E7A", cursorText: "#FAFAFA", selectionBackground: "#C3CEE3", selectionForeground: "#546E7A" },
-  { name: "palenight", dark: true, background: "#292D3E", foreground: "#A6ACCD", black: "#1C1F2B", red: "#F07178", green: "#C3E88D", yellow: "#FFCB6B", blue: "#82AAFF", magenta: "#C792EA", cyan: "#89DDFF", white: "#676E95", brightBlack: "#343B51", brightRed: "#F78C6C", brightGreen: "#CCEB9E", brightYellow: "#FFD381", brightBlue: "#95B7FF", brightMagenta: "#FF5370", brightCyan: "#9BE2FF", brightWhite: "#A6ACCD", cursorColor: "#A6ACCD", cursorText: "#292D3E", selectionBackground: "#525975", selectionForeground: "#A6ACCD" },
-  { name: "ayu-dark", dark: true, background: "#0B0E14", foreground: "#BFBDB6", black: "#05070A", red: "#D95757", green: "#AAD94C", yellow: "#E6B450", blue: "#59C2FF", magenta: "#D2A6FF", cyan: "#95E6CB", white: "#636A72", brightBlack: "#11151C", brightRed: "#F29668", brightGreen: "#B7DF67", brightYellow: "#EABF6A", brightBlue: "#72CBFF", brightMagenta: "#F07178", brightCyan: "#A5EAD3", brightWhite: "#BFBDB6", cursorColor: "#BFBDB6", cursorText: "#0B0E14", selectionBackground: "#3D424D", selectionForeground: "#BFBDB6" },
-  { name: "ayu-mirage", dark: true, background: "#1F2430", foreground: "#CCCAC2", black: "#101521", red: "#FF6666", green: "#D5FF80", yellow: "#FFCC66", blue: "#73D0FF", magenta: "#DFBFFF", cyan: "#95E6CB", white: "#6C7A8B", brightBlack: "#171B24", brightRed: "#F29E74", brightGreen: "#DBFF93", brightYellow: "#FFD47D", brightBlue: "#88D7FF", brightMagenta: "#F28779", brightCyan: "#A5EAD3", brightWhite: "#CCCAC2", cursorColor: "#CCCAC2", cursorText: "#1F2430", selectionBackground: "#4A5167", selectionForeground: "#CCCAC2" },
-  { name: "ayu-light", dark: false, background: "#F8F9FA", foreground: "#5C6166", black: "#E7EAED", red: "#E65050", green: "#86B300", yellow: "#FFAA33", blue: "#399EE6", magenta: "#A37ACC", cyan: "#4CBF99", white: "#ABADB1", brightBlack: "#F3F4F5", brightRed: "#ED9366", brightGreen: "#98BE26", brightYellow: "#FFB752", brightBlue: "#57ADEA", brightMagenta: "#F07171", brightCyan: "#67C9A8", brightWhite: "#5C6166", cursorColor: "#5C6166", cursorText: "#F8F9FA", selectionBackground: "#D1D5DA", selectionForeground: "#5C6166" },
-  { name: "nightfox", dark: true, background: "#192330", foreground: "#CDCECF", black: "#131A24", red: "#C94F6D", green: "#81B29A", yellow: "#DBC074", blue: "#719CD6", magenta: "#9D79D6", cyan: "#63CDCF", white: "#71839B", brightBlack: "#212E3F", brightRed: "#F4A261", brightGreen: "#94BEA9", brightYellow: "#E0C989", brightBlue: "#86ABDC", brightMagenta: "#D67AD2", brightCyan: "#7AD5D6", brightWhite: "#CDCECF", cursorColor: "#CDCECF", cursorText: "#192330", selectionBackground: "#3D5171", selectionForeground: "#CDCECF" },
-  { name: "dawnfox", dark: false, background: "#FAF4ED", foreground: "#575279", black: "#EBE5DF", red: "#B4637A", green: "#618774", yellow: "#EA9D34", blue: "#286983", magenta: "#907AA9", cyan: "#56949F", white: "#A8A3B3", brightBlack: "#EBE0DF", brightRed: "#D7827E", brightGreen: "#799989", brightYellow: "#EDAC52", brightBlue: "#488096", brightMagenta: "#D685AF", brightCyan: "#6FA4AD", brightWhite: "#575279", cursorColor: "#575279", cursorText: "#FAF4ED", selectionBackground: "#D4CFC9", selectionForeground: "#575279" },
-  { name: "horizon", dark: true, background: "#1C1E26", foreground: "#D5D8DA", black: "#16161C", red: "#E95678", green: "#29D398", yellow: "#FAC29A", blue: "#26BBD9", magenta: "#B877DB", cyan: "#59E1E3", white: "#6C6F93", brightBlack: "#232530", brightRed: "#FAB795", brightGreen: "#49DAA7", brightYellow: "#FBCBA9", brightBlue: "#47C5DF", brightMagenta: "#EE64AC", brightCyan: "#72E6E7", brightWhite: "#D5D8DA", cursorColor: "#D5D8DA", cursorText: "#1C1E26", selectionBackground: "#474B61", selectionForeground: "#D5D8DA" },
-  { name: "moonfly", dark: true, background: "#080808", foreground: "#C6C6C6", black: "#121212", red: "#FF5D5D", green: "#8CC85F", yellow: "#E3C78A", blue: "#80A0FF", magenta: "#AE81FF", cyan: "#79DAC8", white: "#808080", brightBlack: "#1C1C1C", brightRed: "#DE935F", brightGreen: "#9DD077", brightYellow: "#E7CF9C", brightBlue: "#93AEFF", brightMagenta: "#FF5189", brightCyan: "#8DE0D0", brightWhite: "#C6C6C6", cursorColor: "#C6C6C6", cursorText: "#080808", selectionBackground: "#3A3A3A", selectionForeground: "#C6C6C6" },
-  { name: "nightfly", dark: true, background: "#011627", foreground: "#C3CCDC", black: "#081E2F", red: "#FC514E", green: "#A1CD5E", yellow: "#E3D18A", blue: "#82AAFF", magenta: "#C792EA", cyan: "#7FDBCA", white: "#7C8F8F", brightBlack: "#0E293F", brightRed: "#F78C6C", brightGreen: "#AFD576", brightYellow: "#E7D89C", brightBlue: "#95B7FF", brightMagenta: "#FF5874", brightCyan: "#92E0D2", brightWhite: "#C3CCDC", cursorColor: "#C3CCDC", cursorText: "#011627", selectionBackground: "#1D3B53", selectionForeground: "#C3CCDC" },
-  { name: "oxocarbon-dark", dark: true, background: "#161616", foreground: "#F3F3F3", black: "#131313", red: "#EE5396", green: "#42BE65", yellow: "#82CFFF", blue: "#78A9FF", magenta: "#BE95FF", cyan: "#08BDBA", white: "#5C5C5C", brightBlack: "#2A2A2A", brightRed: "#FF7EB6", brightGreen: "#5EC87C", brightYellow: "#95D6FF", brightBlue: "#8CB6FF", brightMagenta: "#FF7EB6", brightCyan: "#2DC7C4", brightWhite: "#F3F3F3", cursorColor: "#F3F3F3", cursorText: "#161616", selectionBackground: "#3D3D3D", selectionForeground: "#F3F3F3" },
-  { name: "oxocarbon-light", dark: false, background: "#FFFFFF", foreground: "#37474F", black: "#F3F3F3", red: "#EE5396", green: "#42BE65", yellow: "#FFAB91", blue: "#0F62FE", magenta: "#BE95FF", cyan: "#08BDBA", white: "#90A4AE", brightBlack: "#D5D5D5", brightRed: "#FF6F00", brightGreen: "#5EC87C", brightYellow: "#FFB8A2", brightBlue: "#337AFE", brightMagenta: "#FF7EB6", brightCyan: "#2DC7C4", brightWhite: "#37474F", cursorColor: "#37474F", cursorText: "#FFFFFF", selectionBackground: "#C3CEE3", selectionForeground: "#37474F" },
-  { name: "sonokai", dark: true, background: "#2C2E34", foreground: "#E2E2E3", black: "#181819", red: "#FC5D7C", green: "#9ED072", yellow: "#E7C664", blue: "#76CCE0", magenta: "#B39DF3", cyan: "#76CCE0", white: "#7F8490", brightBlack: "#33353F", brightRed: "#F39660", brightGreen: "#ADD787", brightYellow: "#EBCF7B", brightBlue: "#8BD4E5", brightMagenta: "#FC5D7C", brightCyan: "#8BD4E5", brightWhite: "#E2E2E3", cursorColor: "#E2E2E3", cursorText: "#2C2E34", selectionBackground: "#4A4C53", selectionForeground: "#E2E2E3" },
-  { name: "edge-dark", dark: true, background: "#2C2E34", foreground: "#C5CDD9", black: "#202023", red: "#EC7279", green: "#A0C980", yellow: "#DEB974", blue: "#6CB6EB", magenta: "#D38AEA", cyan: "#5DBBC1", white: "#758094", brightBlack: "#33353F", brightRed: "#DEB974", brightGreen: "#AED193", brightYellow: "#E3C489", brightBlue: "#82C1EE", brightMagenta: "#EC7279", brightCyan: "#75C5CA", brightWhite: "#C5CDD9", cursorColor: "#C5CDD9", cursorText: "#2C2E34", selectionBackground: "#4A4D55", selectionForeground: "#C5CDD9" },
-  { name: "edge-light", dark: false, background: "#FAFAFA", foreground: "#4B505B", black: "#DDE2E7", red: "#D05858", green: "#608E32", yellow: "#BE7E05", blue: "#5079BE", magenta: "#B05CCC", cyan: "#3A8B84", white: "#8790A0", brightBlack: "#EEF1F4", brightRed: "#BE7E05", brightGreen: "#789F51", brightYellow: "#C8912B", brightBlue: "#6A8DC8", brightMagenta: "#D05858", brightCyan: "#589C96", brightWhite: "#4B505B", cursorColor: "#4B505B", cursorText: "#FAFAFA", selectionBackground: "#C3CEE3", selectionForeground: "#4B505B" },
-  { name: "modus-vivendi", dark: true, background: "#000000", foreground: "#FFFFFF", black: "#000000", red: "#FF5F59", green: "#44BC44", yellow: "#D0BC00", blue: "#2FAFFF", magenta: "#B6A0FF", cyan: "#00D3D0", white: "#989898", brightBlack: "#1E1E1E", brightRed: "#FEC43F", brightGreen: "#60C660", brightYellow: "#D7C626", brightBlue: "#4EBBFF", brightMagenta: "#FEACD0", brightCyan: "#26DAD7", brightWhite: "#FFFFFF", cursorColor: "#FFFFFF", cursorText: "#000000", selectionBackground: "#3F3F3F", selectionForeground: "#FFFFFF" },
-  { name: "modus-operandi", dark: false, background: "#FFFFFF", foreground: "#000000", black: "#E0E0E0", red: "#A60000", green: "#006800", yellow: "#6F5500", blue: "#0031A9", magenta: "#531AB6", cyan: "#005E8B", white: "#595959", brightBlack: "#F2F2F2", brightRed: "#884900", brightGreen: "#267F26", brightYellow: "#856F26", brightBlue: "#2650B6", brightMagenta: "#721045", brightCyan: "#26769C", brightWhite: "#000000", cursorColor: "#000000", cursorText: "#FFFFFF", selectionBackground: "#C4C4C4", selectionForeground: "#000000" },
+  {
+    name: "catppuccin-mocha",
+    dark: true,
+    background: "#1E1E2E",
+    foreground: "#CDD6F4",
+    black: "#11111B",
+    red: "#F38BA8",
+    green: "#A6E3A1",
+    yellow: "#F9E2AF",
+    blue: "#89B4FA",
+    magenta: "#CBA6F7",
+    cyan: "#94E2D5",
+    white: "#A6ADC8",
+    brightBlack: "#313244",
+    brightRed: "#FAB387",
+    brightGreen: "#B3E7AF",
+    brightYellow: "#FAE6BB",
+    brightBlue: "#9BBFFB",
+    brightMagenta: "#F5C2E7",
+    brightCyan: "#A4E6DB",
+    brightWhite: "#CDD6F4",
+    cursorColor: "#CDD6F4",
+    cursorText: "#1E1E2E",
+    selectionBackground: "#6C7086",
+    selectionForeground: "#CDD6F4",
+  },
+  {
+    name: "catppuccin-frappe",
+    dark: true,
+    background: "#303446",
+    foreground: "#C6D0F5",
+    black: "#232634",
+    red: "#E78284",
+    green: "#A6D189",
+    yellow: "#E5C890",
+    blue: "#8CAAEE",
+    magenta: "#CA9EE6",
+    cyan: "#81C8BE",
+    white: "#A5ADCE",
+    brightBlack: "#414559",
+    brightRed: "#EF9F76",
+    brightGreen: "#B3D89B",
+    brightYellow: "#E9D0A1",
+    brightBlue: "#9DB7F1",
+    brightMagenta: "#F4B8E4",
+    brightCyan: "#94D0C8",
+    brightWhite: "#C6D0F5",
+    cursorColor: "#C6D0F5",
+    cursorText: "#303446",
+    selectionBackground: "#737994",
+    selectionForeground: "#C6D0F5",
+  },
+  {
+    name: "catppuccin-macchiato",
+    dark: true,
+    background: "#24273A",
+    foreground: "#CAD3F5",
+    black: "#181926",
+    red: "#ED8796",
+    green: "#A6DA95",
+    yellow: "#EED49F",
+    blue: "#8AADF4",
+    magenta: "#C6A0F6",
+    cyan: "#8BD5CA",
+    white: "#A5ADCB",
+    brightBlack: "#363A4F",
+    brightRed: "#F5A97F",
+    brightGreen: "#B3E0A5",
+    brightYellow: "#F1DAAD",
+    brightBlue: "#9CB9F6",
+    brightMagenta: "#F5BDE6",
+    brightCyan: "#9CDBD2",
+    brightWhite: "#CAD3F5",
+    cursorColor: "#CAD3F5",
+    cursorText: "#24273A",
+    selectionBackground: "#6E738D",
+    selectionForeground: "#CAD3F5",
+  },
+  {
+    name: "catppuccin-latte",
+    dark: false,
+    background: "#EFF1F5",
+    foreground: "#4C4F69",
+    black: "#DCE0E8",
+    red: "#D20F39",
+    green: "#40A02B",
+    yellow: "#DF8E1D",
+    blue: "#1E66F5",
+    magenta: "#8839EF",
+    cyan: "#179299",
+    white: "#6C6F85",
+    brightBlack: "#CCD0DA",
+    brightRed: "#FE640B",
+    brightGreen: "#5DAE4B",
+    brightYellow: "#E49F3F",
+    brightBlue: "#407DF7",
+    brightMagenta: "#EA76CB",
+    brightCyan: "#3AA2A8",
+    brightWhite: "#4C4F69",
+    cursorColor: "#4C4F69",
+    cursorText: "#EFF1F5",
+    selectionBackground: "#9CA0B0",
+    selectionForeground: "#4C4F69",
+  },
+  {
+    name: "nord",
+    dark: true,
+    background: "#2E3440",
+    foreground: "#ECEFF4",
+    black: "#2E3440",
+    red: "#BF616A",
+    green: "#A3BE8C",
+    yellow: "#EBCB8B",
+    blue: "#5E81AC",
+    magenta: "#B48EAD",
+    cyan: "#8FBCBB",
+    white: "#D8DEE9",
+    brightBlack: "#3B4252",
+    brightRed: "#D08770",
+    brightGreen: "#B1C89D",
+    brightYellow: "#EED39C",
+    brightBlue: "#7694B8",
+    brightMagenta: "#B48EAD",
+    brightCyan: "#A0C6C5",
+    brightWhite: "#ECEFF4",
+    cursorColor: "#ECEFF4",
+    cursorText: "#2E3440",
+    selectionBackground: "#4C566A",
+    selectionForeground: "#ECEFF4",
+  },
+  {
+    name: "dracula",
+    dark: true,
+    background: "#282A36",
+    foreground: "#F8F8F2",
+    black: "#21222C",
+    red: "#FF5555",
+    green: "#50FA7B",
+    yellow: "#F1FA8C",
+    blue: "#BD93F9",
+    magenta: "#BD93F9",
+    cyan: "#8BE9FD",
+    white: "#6272A4",
+    brightBlack: "#44475A",
+    brightRed: "#FFB86C",
+    brightGreen: "#6AFB8F",
+    brightYellow: "#F3FB9D",
+    brightBlue: "#C7A3FA",
+    brightMagenta: "#FF79C6",
+    brightCyan: "#9CECFD",
+    brightWhite: "#F8F8F2",
+    cursorColor: "#F8F8F2",
+    cursorText: "#282A36",
+    selectionBackground: "#6272A4",
+    selectionForeground: "#F8F8F2",
+  },
+  {
+    name: "solarized-dark",
+    dark: true,
+    background: "#073642",
+    foreground: "#FDF6E3",
+    black: "#002B36",
+    red: "#DC322F",
+    green: "#859900",
+    yellow: "#B58900",
+    blue: "#268BD2",
+    magenta: "#6C71C4",
+    cyan: "#2AA198",
+    white: "#839496",
+    brightBlack: "#586E75",
+    brightRed: "#CB4B16",
+    brightGreen: "#97A826",
+    brightYellow: "#C09B26",
+    brightBlue: "#479CD9",
+    brightMagenta: "#D33682",
+    brightCyan: "#4AAFA7",
+    brightWhite: "#FDF6E3",
+    cursorColor: "#FDF6E3",
+    cursorText: "#073642",
+    selectionBackground: "#586E75",
+    selectionForeground: "#FDF6E3",
+  },
+  {
+    name: "solarized-light",
+    dark: false,
+    background: "#EEE8D5",
+    foreground: "#073642",
+    black: "#FDF6E3",
+    red: "#DC322F",
+    green: "#859900",
+    yellow: "#B58900",
+    blue: "#268BD2",
+    magenta: "#6C71C4",
+    cyan: "#2AA198",
+    white: "#657B83",
+    brightBlack: "#DDD6C1",
+    brightRed: "#CB4B16",
+    brightGreen: "#97A826",
+    brightYellow: "#C09B26",
+    brightBlue: "#479CD9",
+    brightMagenta: "#D33682",
+    brightCyan: "#4AAFA7",
+    brightWhite: "#073642",
+    cursorColor: "#073642",
+    cursorText: "#EEE8D5",
+    selectionBackground: "#839496",
+    selectionForeground: "#073642",
+  },
+  {
+    name: "tokyo-night",
+    dark: true,
+    background: "#24283B",
+    foreground: "#C0CAF5",
+    black: "#1A1B26",
+    red: "#F7768E",
+    green: "#9ECE6A",
+    yellow: "#E0AF68",
+    blue: "#7AA2F7",
+    magenta: "#BB9AF7",
+    cyan: "#73DACA",
+    white: "#A9B1D6",
+    brightBlack: "#292E42",
+    brightRed: "#FF9E64",
+    brightGreen: "#ADD580",
+    brightYellow: "#E5BB7F",
+    brightBlue: "#8EB0F8",
+    brightMagenta: "#FF007C",
+    brightCyan: "#88E0D2",
+    brightWhite: "#C0CAF5",
+    cursorColor: "#C0CAF5",
+    cursorText: "#24283B",
+    selectionBackground: "#515C7E",
+    selectionForeground: "#C0CAF5",
+  },
+  {
+    name: "tokyo-night-storm",
+    dark: true,
+    background: "#24283B",
+    foreground: "#C0CAF5",
+    black: "#1F2335",
+    red: "#F7768E",
+    green: "#9ECE6A",
+    yellow: "#E0AF68",
+    blue: "#7AA2F7",
+    magenta: "#BB9AF7",
+    cyan: "#73DACA",
+    white: "#A9B1D6",
+    brightBlack: "#292E42",
+    brightRed: "#FF9E64",
+    brightGreen: "#ADD580",
+    brightYellow: "#E5BB7F",
+    brightBlue: "#8EB0F8",
+    brightMagenta: "#FF007C",
+    brightCyan: "#88E0D2",
+    brightWhite: "#C0CAF5",
+    cursorColor: "#C0CAF5",
+    cursorText: "#24283B",
+    selectionBackground: "#515C7E",
+    selectionForeground: "#C0CAF5",
+  },
+  {
+    name: "tokyo-night-day",
+    dark: false,
+    background: "#D5D6DB",
+    foreground: "#3760BF",
+    black: "#E1E2E7",
+    red: "#F52A65",
+    green: "#587539",
+    yellow: "#8C6C3E",
+    blue: "#2E7DE9",
+    magenta: "#9854F1",
+    cyan: "#118C74",
+    white: "#6172B0",
+    brightBlack: "#C4C5CB",
+    brightRed: "#B15C00",
+    brightGreen: "#718A57",
+    brightYellow: "#9D825B",
+    brightBlue: "#4D91EC",
+    brightMagenta: "#F52A65",
+    brightCyan: "#359D89",
+    brightWhite: "#3760BF",
+    cursorColor: "#3760BF",
+    cursorText: "#D5D6DB",
+    selectionBackground: "#99A7DF",
+    selectionForeground: "#3760BF",
+  },
+  {
+    name: "one-dark",
+    dark: true,
+    background: "#282C34",
+    foreground: "#ABB2BF",
+    black: "#21252B",
+    red: "#E06C75",
+    green: "#98C379",
+    yellow: "#E5C07B",
+    blue: "#61AFEF",
+    magenta: "#C678DD",
+    cyan: "#56B6C2",
+    white: "#ABB2BF",
+    brightBlack: "#2C313A",
+    brightRed: "#D19A66",
+    brightGreen: "#A7CC8D",
+    brightYellow: "#E9C98F",
+    brightBlue: "#79BBF1",
+    brightMagenta: "#E06C75",
+    brightCyan: "#6FC1CB",
+    brightWhite: "#ABB2BF",
+    cursorColor: "#ABB2BF",
+    cursorText: "#282C34",
+    selectionBackground: "#3E4451",
+    selectionForeground: "#ABB2BF",
+  },
+  {
+    name: "gruvbox-dark",
+    dark: true,
+    background: "#282828",
+    foreground: "#EBDBB2",
+    black: "#1D2021",
+    red: "#FB4934",
+    green: "#B8BB26",
+    yellow: "#FABD2F",
+    blue: "#83A598",
+    magenta: "#D3869B",
+    cyan: "#8EC07C",
+    white: "#BDAE93",
+    brightBlack: "#3C3836",
+    brightRed: "#FE8019",
+    brightGreen: "#C3C547",
+    brightYellow: "#FBC74E",
+    brightBlue: "#96B3A7",
+    brightMagenta: "#D3869B",
+    brightCyan: "#9FC990",
+    brightWhite: "#EBDBB2",
+    cursorColor: "#EBDBB2",
+    cursorText: "#282828",
+    selectionBackground: "#504945",
+    selectionForeground: "#EBDBB2",
+  },
+  {
+    name: "gruvbox-light",
+    dark: false,
+    background: "#FBF1C7",
+    foreground: "#3C3836",
+    black: "#F9F5D7",
+    red: "#CC241D",
+    green: "#98971A",
+    yellow: "#D79921",
+    blue: "#458588",
+    magenta: "#B16286",
+    cyan: "#689D6A",
+    white: "#665C54",
+    brightBlack: "#EBDBB2",
+    brightRed: "#D65D0E",
+    brightGreen: "#A7A73C",
+    brightYellow: "#DDA842",
+    brightBlue: "#61979A",
+    brightMagenta: "#B16286",
+    brightCyan: "#7FAC80",
+    brightWhite: "#3C3836",
+    cursorColor: "#3C3836",
+    cursorText: "#FBF1C7",
+    selectionBackground: "#D5C4A1",
+    selectionForeground: "#3C3836",
+  },
+  {
+    name: "rose-pine",
+    dark: true,
+    background: "#1F1D2E",
+    foreground: "#E0DEF4",
+    black: "#191724",
+    red: "#EB6F92",
+    green: "#31748F",
+    yellow: "#F6C177",
+    blue: "#3E8FB0",
+    magenta: "#C4A7E7",
+    cyan: "#9CCFD8",
+    white: "#908CAA",
+    brightBlack: "#26233A",
+    brightRed: "#EA9A97",
+    brightGreen: "#5089A0",
+    brightYellow: "#F7CA8B",
+    brightBlue: "#5BA0BC",
+    brightMagenta: "#EBBCBA",
+    brightCyan: "#ABD6DE",
+    brightWhite: "#E0DEF4",
+    cursorColor: "#E0DEF4",
+    cursorText: "#1F1D2E",
+    selectionBackground: "#524F67",
+    selectionForeground: "#E0DEF4",
+  },
+  {
+    name: "rose-pine-moon",
+    dark: true,
+    background: "#2A273F",
+    foreground: "#E0DEF4",
+    black: "#232136",
+    red: "#EB6F92",
+    green: "#3E8FB0",
+    yellow: "#F6C177",
+    blue: "#3E8FB0",
+    magenta: "#C4A7E7",
+    cyan: "#9CCFD8",
+    white: "#908CAA",
+    brightBlack: "#393552",
+    brightRed: "#EA9A97",
+    brightGreen: "#5BA0BC",
+    brightYellow: "#F7CA8B",
+    brightBlue: "#5BA0BC",
+    brightMagenta: "#EA9A97",
+    brightCyan: "#ABD6DE",
+    brightWhite: "#E0DEF4",
+    cursorColor: "#E0DEF4",
+    cursorText: "#2A273F",
+    selectionBackground: "#56526E",
+    selectionForeground: "#E0DEF4",
+  },
+  {
+    name: "rose-pine-dawn",
+    dark: false,
+    background: "#FFFAF3",
+    foreground: "#575279",
+    black: "#FAF4ED",
+    red: "#B4637A",
+    green: "#286983",
+    yellow: "#EA9D34",
+    blue: "#286983",
+    magenta: "#907AA9",
+    cyan: "#56949F",
+    white: "#797593",
+    brightBlack: "#F2E9E1",
+    brightRed: "#D7827E",
+    brightGreen: "#488096",
+    brightYellow: "#EDAC52",
+    brightBlue: "#488096",
+    brightMagenta: "#D7827E",
+    brightCyan: "#6FA4AD",
+    brightWhite: "#575279",
+    cursorColor: "#575279",
+    cursorText: "#FFFAF3",
+    selectionBackground: "#CECACD",
+    selectionForeground: "#575279",
+  },
+  {
+    name: "kanagawa-wave",
+    dark: true,
+    background: "#1F1F28",
+    foreground: "#DCD7BA",
+    black: "#16161D",
+    red: "#C34043",
+    green: "#98BB6C",
+    yellow: "#E6C384",
+    blue: "#7E9CD8",
+    magenta: "#957FB8",
+    cyan: "#6A9589",
+    white: "#727169",
+    brightBlack: "#2A2A37",
+    brightRed: "#FFA066",
+    brightGreen: "#A7C582",
+    brightYellow: "#EACC96",
+    brightBlue: "#91ABDE",
+    brightMagenta: "#D27E99",
+    brightCyan: "#80A59B",
+    brightWhite: "#DCD7BA",
+    cursorColor: "#DCD7BA",
+    cursorText: "#1F1F28",
+    selectionBackground: "#54546D",
+    selectionForeground: "#DCD7BA",
+  },
+  {
+    name: "kanagawa-dragon",
+    dark: true,
+    background: "#181616",
+    foreground: "#C5C9C5",
+    black: "#0D0C0C",
+    red: "#C4746E",
+    green: "#87A987",
+    yellow: "#C4B28A",
+    blue: "#8BA4B0",
+    magenta: "#8992A7",
+    cyan: "#8EA4A2",
+    white: "#737C73",
+    brightBlack: "#282727",
+    brightRed: "#B6927B",
+    brightGreen: "#99B699",
+    brightYellow: "#CDBE9C",
+    brightBlue: "#9CB2BC",
+    brightMagenta: "#A292A3",
+    brightCyan: "#9FB2B0",
+    brightWhite: "#C5C9C5",
+    cursorColor: "#C5C9C5",
+    cursorText: "#181616",
+    selectionBackground: "#49443C",
+    selectionForeground: "#C5C9C5",
+  },
+  {
+    name: "kanagawa-lotus",
+    dark: false,
+    background: "#F2ECBC",
+    foreground: "#545464",
+    black: "#E5DDB0",
+    red: "#C84053",
+    green: "#6F894E",
+    yellow: "#DE9800",
+    blue: "#4D699B",
+    magenta: "#624C83",
+    cyan: "#597B75",
+    white: "#716E61",
+    brightBlack: "#DCD5AC",
+    brightRed: "#CC6D00",
+    brightGreen: "#859B69",
+    brightYellow: "#E3A726",
+    brightBlue: "#6880AA",
+    brightMagenta: "#B35B79",
+    brightCyan: "#728F8A",
+    brightWhite: "#545464",
+    cursorColor: "#545464",
+    cursorText: "#F2ECBC",
+    selectionBackground: "#C9CBD1",
+    selectionForeground: "#545464",
+  },
+  {
+    name: "everforest-dark",
+    dark: true,
+    background: "#2D353B",
+    foreground: "#D3C6AA",
+    black: "#232A2E",
+    red: "#E67E80",
+    green: "#A7C080",
+    yellow: "#DBBC7F",
+    blue: "#7FBBB3",
+    magenta: "#D699B6",
+    cyan: "#83C092",
+    white: "#859289",
+    brightBlack: "#343F44",
+    brightRed: "#E69875",
+    brightGreen: "#B4C993",
+    brightYellow: "#E0C692",
+    brightBlue: "#92C5BE",
+    brightMagenta: "#E67E80",
+    brightCyan: "#96C9A2",
+    brightWhite: "#D3C6AA",
+    cursorColor: "#D3C6AA",
+    cursorText: "#2D353B",
+    selectionBackground: "#543A48",
+    selectionForeground: "#D3C6AA",
+  },
+  {
+    name: "everforest-light",
+    dark: false,
+    background: "#FDF6E3",
+    foreground: "#5C6A72",
+    black: "#EFEBD4",
+    red: "#F85552",
+    green: "#8DA101",
+    yellow: "#DFA000",
+    blue: "#3A94C5",
+    magenta: "#DF69BA",
+    cyan: "#35A77C",
+    white: "#939F91",
+    brightBlack: "#F4F0D9",
+    brightRed: "#F57D26",
+    brightGreen: "#9EAF27",
+    brightYellow: "#E4AE26",
+    brightBlue: "#58A4CE",
+    brightMagenta: "#F85552",
+    brightCyan: "#53B490",
+    brightWhite: "#5C6A72",
+    cursorColor: "#5C6A72",
+    cursorText: "#FDF6E3",
+    selectionBackground: "#E0DCC7",
+    selectionForeground: "#5C6A72",
+  },
+  {
+    name: "monokai",
+    dark: true,
+    background: "#272822",
+    foreground: "#F8F8F2",
+    black: "#1A1A1A",
+    red: "#F92672",
+    green: "#A6E22E",
+    yellow: "#E6DB74",
+    blue: "#66D9EF",
+    magenta: "#AE81FF",
+    cyan: "#66D9EF",
+    white: "#A59F85",
+    brightBlack: "#3E3D32",
+    brightRed: "#FD971F",
+    brightGreen: "#B3E64D",
+    brightYellow: "#EAE089",
+    brightBlue: "#7DDFF1",
+    brightMagenta: "#F92672",
+    brightCyan: "#7DDFF1",
+    brightWhite: "#F8F8F2",
+    cursorColor: "#F8F8F2",
+    cursorText: "#272822",
+    selectionBackground: "#575B4F",
+    selectionForeground: "#F8F8F2",
+  },
+  {
+    name: "monokai-pro",
+    dark: true,
+    background: "#2D2A2E",
+    foreground: "#FCFCFA",
+    black: "#221F22",
+    red: "#FF6188",
+    green: "#A9DC76",
+    yellow: "#FFD866",
+    blue: "#78DCE8",
+    magenta: "#AB9DF2",
+    cyan: "#78DCE8",
+    white: "#939293",
+    brightBlack: "#403E41",
+    brightRed: "#FC9867",
+    brightGreen: "#B6E18B",
+    brightYellow: "#FFDE7D",
+    brightBlue: "#8CE1EB",
+    brightMagenta: "#FF6188",
+    brightCyan: "#8CE1EB",
+    brightWhite: "#FCFCFA",
+    cursorColor: "#FCFCFA",
+    cursorText: "#2D2A2E",
+    selectionBackground: "#5B595C",
+    selectionForeground: "#FCFCFA",
+  },
+  {
+    name: "snazzy",
+    dark: true,
+    background: "#282A36",
+    foreground: "#EFF0EB",
+    black: "#222430",
+    red: "#FF5C57",
+    green: "#5AF78E",
+    yellow: "#F3F99D",
+    blue: "#57C7FF",
+    magenta: "#B267E6",
+    cyan: "#9AEDFE",
+    white: "#97979B",
+    brightBlack: "#34353E",
+    brightRed: "#FF9F43",
+    brightGreen: "#73F89F",
+    brightYellow: "#F5FAAC",
+    brightBlue: "#70CFFF",
+    brightMagenta: "#FF6AC1",
+    brightCyan: "#A9F0FE",
+    brightWhite: "#EFF0EB",
+    cursorColor: "#EFF0EB",
+    cursorText: "#282A36",
+    selectionBackground: "#525566",
+    selectionForeground: "#EFF0EB",
+  },
+  {
+    name: "material-dark",
+    dark: true,
+    background: "#212121",
+    foreground: "#EEFFFF",
+    black: "#171717",
+    red: "#FF5370",
+    green: "#C3E88D",
+    yellow: "#FFCB6B",
+    blue: "#82AAFF",
+    magenta: "#C792EA",
+    cyan: "#89DDFF",
+    white: "#545454",
+    brightBlack: "#2C2C2C",
+    brightRed: "#F78C6C",
+    brightGreen: "#CCEB9E",
+    brightYellow: "#FFD381",
+    brightBlue: "#95B7FF",
+    brightMagenta: "#F07178",
+    brightCyan: "#9BE2FF",
+    brightWhite: "#EEFFFF",
+    cursorColor: "#EEFFFF",
+    cursorText: "#212121",
+    selectionBackground: "#404040",
+    selectionForeground: "#EEFFFF",
+  },
+  {
+    name: "material-light",
+    dark: false,
+    background: "#FAFAFA",
+    foreground: "#546E7A",
+    black: "#ECF0F1",
+    red: "#E53935",
+    green: "#91B859",
+    yellow: "#FFB62C",
+    blue: "#6182B8",
+    magenta: "#7C4DFF",
+    cyan: "#39ADB5",
+    white: "#90A4AE",
+    brightBlack: "#EBF4F3",
+    brightRed: "#F76D47",
+    brightGreen: "#A2C372",
+    brightYellow: "#FFC14C",
+    brightBlue: "#7995C3",
+    brightMagenta: "#FF5370",
+    brightCyan: "#57B9C0",
+    brightWhite: "#546E7A",
+    cursorColor: "#546E7A",
+    cursorText: "#FAFAFA",
+    selectionBackground: "#C3CEE3",
+    selectionForeground: "#546E7A",
+  },
+  {
+    name: "palenight",
+    dark: true,
+    background: "#292D3E",
+    foreground: "#A6ACCD",
+    black: "#1C1F2B",
+    red: "#F07178",
+    green: "#C3E88D",
+    yellow: "#FFCB6B",
+    blue: "#82AAFF",
+    magenta: "#C792EA",
+    cyan: "#89DDFF",
+    white: "#676E95",
+    brightBlack: "#343B51",
+    brightRed: "#F78C6C",
+    brightGreen: "#CCEB9E",
+    brightYellow: "#FFD381",
+    brightBlue: "#95B7FF",
+    brightMagenta: "#FF5370",
+    brightCyan: "#9BE2FF",
+    brightWhite: "#A6ACCD",
+    cursorColor: "#A6ACCD",
+    cursorText: "#292D3E",
+    selectionBackground: "#525975",
+    selectionForeground: "#A6ACCD",
+  },
+  {
+    name: "ayu-dark",
+    dark: true,
+    background: "#0B0E14",
+    foreground: "#BFBDB6",
+    black: "#05070A",
+    red: "#D95757",
+    green: "#AAD94C",
+    yellow: "#E6B450",
+    blue: "#59C2FF",
+    magenta: "#D2A6FF",
+    cyan: "#95E6CB",
+    white: "#636A72",
+    brightBlack: "#11151C",
+    brightRed: "#F29668",
+    brightGreen: "#B7DF67",
+    brightYellow: "#EABF6A",
+    brightBlue: "#72CBFF",
+    brightMagenta: "#F07178",
+    brightCyan: "#A5EAD3",
+    brightWhite: "#BFBDB6",
+    cursorColor: "#BFBDB6",
+    cursorText: "#0B0E14",
+    selectionBackground: "#3D424D",
+    selectionForeground: "#BFBDB6",
+  },
+  {
+    name: "ayu-mirage",
+    dark: true,
+    background: "#1F2430",
+    foreground: "#CCCAC2",
+    black: "#101521",
+    red: "#FF6666",
+    green: "#D5FF80",
+    yellow: "#FFCC66",
+    blue: "#73D0FF",
+    magenta: "#DFBFFF",
+    cyan: "#95E6CB",
+    white: "#6C7A8B",
+    brightBlack: "#171B24",
+    brightRed: "#F29E74",
+    brightGreen: "#DBFF93",
+    brightYellow: "#FFD47D",
+    brightBlue: "#88D7FF",
+    brightMagenta: "#F28779",
+    brightCyan: "#A5EAD3",
+    brightWhite: "#CCCAC2",
+    cursorColor: "#CCCAC2",
+    cursorText: "#1F2430",
+    selectionBackground: "#4A5167",
+    selectionForeground: "#CCCAC2",
+  },
+  {
+    name: "ayu-light",
+    dark: false,
+    background: "#F8F9FA",
+    foreground: "#5C6166",
+    black: "#E7EAED",
+    red: "#E65050",
+    green: "#86B300",
+    yellow: "#FFAA33",
+    blue: "#399EE6",
+    magenta: "#A37ACC",
+    cyan: "#4CBF99",
+    white: "#ABADB1",
+    brightBlack: "#F3F4F5",
+    brightRed: "#ED9366",
+    brightGreen: "#98BE26",
+    brightYellow: "#FFB752",
+    brightBlue: "#57ADEA",
+    brightMagenta: "#F07171",
+    brightCyan: "#67C9A8",
+    brightWhite: "#5C6166",
+    cursorColor: "#5C6166",
+    cursorText: "#F8F9FA",
+    selectionBackground: "#D1D5DA",
+    selectionForeground: "#5C6166",
+  },
+  {
+    name: "nightfox",
+    dark: true,
+    background: "#192330",
+    foreground: "#CDCECF",
+    black: "#131A24",
+    red: "#C94F6D",
+    green: "#81B29A",
+    yellow: "#DBC074",
+    blue: "#719CD6",
+    magenta: "#9D79D6",
+    cyan: "#63CDCF",
+    white: "#71839B",
+    brightBlack: "#212E3F",
+    brightRed: "#F4A261",
+    brightGreen: "#94BEA9",
+    brightYellow: "#E0C989",
+    brightBlue: "#86ABDC",
+    brightMagenta: "#D67AD2",
+    brightCyan: "#7AD5D6",
+    brightWhite: "#CDCECF",
+    cursorColor: "#CDCECF",
+    cursorText: "#192330",
+    selectionBackground: "#3D5171",
+    selectionForeground: "#CDCECF",
+  },
+  {
+    name: "dawnfox",
+    dark: false,
+    background: "#FAF4ED",
+    foreground: "#575279",
+    black: "#EBE5DF",
+    red: "#B4637A",
+    green: "#618774",
+    yellow: "#EA9D34",
+    blue: "#286983",
+    magenta: "#907AA9",
+    cyan: "#56949F",
+    white: "#A8A3B3",
+    brightBlack: "#EBE0DF",
+    brightRed: "#D7827E",
+    brightGreen: "#799989",
+    brightYellow: "#EDAC52",
+    brightBlue: "#488096",
+    brightMagenta: "#D685AF",
+    brightCyan: "#6FA4AD",
+    brightWhite: "#575279",
+    cursorColor: "#575279",
+    cursorText: "#FAF4ED",
+    selectionBackground: "#D4CFC9",
+    selectionForeground: "#575279",
+  },
+  {
+    name: "horizon",
+    dark: true,
+    background: "#1C1E26",
+    foreground: "#D5D8DA",
+    black: "#16161C",
+    red: "#E95678",
+    green: "#29D398",
+    yellow: "#FAC29A",
+    blue: "#26BBD9",
+    magenta: "#B877DB",
+    cyan: "#59E1E3",
+    white: "#6C6F93",
+    brightBlack: "#232530",
+    brightRed: "#FAB795",
+    brightGreen: "#49DAA7",
+    brightYellow: "#FBCBA9",
+    brightBlue: "#47C5DF",
+    brightMagenta: "#EE64AC",
+    brightCyan: "#72E6E7",
+    brightWhite: "#D5D8DA",
+    cursorColor: "#D5D8DA",
+    cursorText: "#1C1E26",
+    selectionBackground: "#474B61",
+    selectionForeground: "#D5D8DA",
+  },
+  {
+    name: "moonfly",
+    dark: true,
+    background: "#080808",
+    foreground: "#C6C6C6",
+    black: "#121212",
+    red: "#FF5D5D",
+    green: "#8CC85F",
+    yellow: "#E3C78A",
+    blue: "#80A0FF",
+    magenta: "#AE81FF",
+    cyan: "#79DAC8",
+    white: "#808080",
+    brightBlack: "#1C1C1C",
+    brightRed: "#DE935F",
+    brightGreen: "#9DD077",
+    brightYellow: "#E7CF9C",
+    brightBlue: "#93AEFF",
+    brightMagenta: "#FF5189",
+    brightCyan: "#8DE0D0",
+    brightWhite: "#C6C6C6",
+    cursorColor: "#C6C6C6",
+    cursorText: "#080808",
+    selectionBackground: "#3A3A3A",
+    selectionForeground: "#C6C6C6",
+  },
+  {
+    name: "nightfly",
+    dark: true,
+    background: "#011627",
+    foreground: "#C3CCDC",
+    black: "#081E2F",
+    red: "#FC514E",
+    green: "#A1CD5E",
+    yellow: "#E3D18A",
+    blue: "#82AAFF",
+    magenta: "#C792EA",
+    cyan: "#7FDBCA",
+    white: "#7C8F8F",
+    brightBlack: "#0E293F",
+    brightRed: "#F78C6C",
+    brightGreen: "#AFD576",
+    brightYellow: "#E7D89C",
+    brightBlue: "#95B7FF",
+    brightMagenta: "#FF5874",
+    brightCyan: "#92E0D2",
+    brightWhite: "#C3CCDC",
+    cursorColor: "#C3CCDC",
+    cursorText: "#011627",
+    selectionBackground: "#1D3B53",
+    selectionForeground: "#C3CCDC",
+  },
+  {
+    name: "oxocarbon-dark",
+    dark: true,
+    background: "#161616",
+    foreground: "#F3F3F3",
+    black: "#131313",
+    red: "#EE5396",
+    green: "#42BE65",
+    yellow: "#82CFFF",
+    blue: "#78A9FF",
+    magenta: "#BE95FF",
+    cyan: "#08BDBA",
+    white: "#5C5C5C",
+    brightBlack: "#2A2A2A",
+    brightRed: "#FF7EB6",
+    brightGreen: "#5EC87C",
+    brightYellow: "#95D6FF",
+    brightBlue: "#8CB6FF",
+    brightMagenta: "#FF7EB6",
+    brightCyan: "#2DC7C4",
+    brightWhite: "#F3F3F3",
+    cursorColor: "#F3F3F3",
+    cursorText: "#161616",
+    selectionBackground: "#3D3D3D",
+    selectionForeground: "#F3F3F3",
+  },
+  {
+    name: "oxocarbon-light",
+    dark: false,
+    background: "#FFFFFF",
+    foreground: "#37474F",
+    black: "#F3F3F3",
+    red: "#EE5396",
+    green: "#42BE65",
+    yellow: "#FFAB91",
+    blue: "#0F62FE",
+    magenta: "#BE95FF",
+    cyan: "#08BDBA",
+    white: "#90A4AE",
+    brightBlack: "#D5D5D5",
+    brightRed: "#FF6F00",
+    brightGreen: "#5EC87C",
+    brightYellow: "#FFB8A2",
+    brightBlue: "#337AFE",
+    brightMagenta: "#FF7EB6",
+    brightCyan: "#2DC7C4",
+    brightWhite: "#37474F",
+    cursorColor: "#37474F",
+    cursorText: "#FFFFFF",
+    selectionBackground: "#C3CEE3",
+    selectionForeground: "#37474F",
+  },
+  {
+    name: "sonokai",
+    dark: true,
+    background: "#2C2E34",
+    foreground: "#E2E2E3",
+    black: "#181819",
+    red: "#FC5D7C",
+    green: "#9ED072",
+    yellow: "#E7C664",
+    blue: "#76CCE0",
+    magenta: "#B39DF3",
+    cyan: "#76CCE0",
+    white: "#7F8490",
+    brightBlack: "#33353F",
+    brightRed: "#F39660",
+    brightGreen: "#ADD787",
+    brightYellow: "#EBCF7B",
+    brightBlue: "#8BD4E5",
+    brightMagenta: "#FC5D7C",
+    brightCyan: "#8BD4E5",
+    brightWhite: "#E2E2E3",
+    cursorColor: "#E2E2E3",
+    cursorText: "#2C2E34",
+    selectionBackground: "#4A4C53",
+    selectionForeground: "#E2E2E3",
+  },
+  {
+    name: "edge-dark",
+    dark: true,
+    background: "#2C2E34",
+    foreground: "#C5CDD9",
+    black: "#202023",
+    red: "#EC7279",
+    green: "#A0C980",
+    yellow: "#DEB974",
+    blue: "#6CB6EB",
+    magenta: "#D38AEA",
+    cyan: "#5DBBC1",
+    white: "#758094",
+    brightBlack: "#33353F",
+    brightRed: "#DEB974",
+    brightGreen: "#AED193",
+    brightYellow: "#E3C489",
+    brightBlue: "#82C1EE",
+    brightMagenta: "#EC7279",
+    brightCyan: "#75C5CA",
+    brightWhite: "#C5CDD9",
+    cursorColor: "#C5CDD9",
+    cursorText: "#2C2E34",
+    selectionBackground: "#4A4D55",
+    selectionForeground: "#C5CDD9",
+  },
+  {
+    name: "edge-light",
+    dark: false,
+    background: "#FAFAFA",
+    foreground: "#4B505B",
+    black: "#DDE2E7",
+    red: "#D05858",
+    green: "#608E32",
+    yellow: "#BE7E05",
+    blue: "#5079BE",
+    magenta: "#B05CCC",
+    cyan: "#3A8B84",
+    white: "#8790A0",
+    brightBlack: "#EEF1F4",
+    brightRed: "#BE7E05",
+    brightGreen: "#789F51",
+    brightYellow: "#C8912B",
+    brightBlue: "#6A8DC8",
+    brightMagenta: "#D05858",
+    brightCyan: "#589C96",
+    brightWhite: "#4B505B",
+    cursorColor: "#4B505B",
+    cursorText: "#FAFAFA",
+    selectionBackground: "#C3CEE3",
+    selectionForeground: "#4B505B",
+  },
+  {
+    name: "modus-vivendi",
+    dark: true,
+    background: "#000000",
+    foreground: "#FFFFFF",
+    black: "#000000",
+    red: "#FF5F59",
+    green: "#44BC44",
+    yellow: "#D0BC00",
+    blue: "#2FAFFF",
+    magenta: "#B6A0FF",
+    cyan: "#00D3D0",
+    white: "#989898",
+    brightBlack: "#1E1E1E",
+    brightRed: "#FEC43F",
+    brightGreen: "#60C660",
+    brightYellow: "#D7C626",
+    brightBlue: "#4EBBFF",
+    brightMagenta: "#FEACD0",
+    brightCyan: "#26DAD7",
+    brightWhite: "#FFFFFF",
+    cursorColor: "#FFFFFF",
+    cursorText: "#000000",
+    selectionBackground: "#3F3F3F",
+    selectionForeground: "#FFFFFF",
+  },
+  {
+    name: "modus-operandi",
+    dark: false,
+    background: "#FFFFFF",
+    foreground: "#000000",
+    black: "#E0E0E0",
+    red: "#A60000",
+    green: "#006800",
+    yellow: "#6F5500",
+    blue: "#0031A9",
+    magenta: "#531AB6",
+    cyan: "#005E8B",
+    white: "#595959",
+    brightBlack: "#F2F2F2",
+    brightRed: "#884900",
+    brightGreen: "#267F26",
+    brightYellow: "#856F26",
+    brightBlue: "#2650B6",
+    brightMagenta: "#721045",
+    brightCyan: "#26769C",
+    brightWhite: "#000000",
+    cursorColor: "#000000",
+    cursorText: "#FFFFFF",
+    selectionBackground: "#C4C4C4",
+    selectionForeground: "#000000",
+  },
 ]
 
 // ── Grouping palettes by family ──────────────────────────────────────
@@ -111,8 +1186,11 @@ function blendColor(a, b, t) {
 }
 
 function rgbToHsl(r, g, b) {
-  r /= 255; g /= 255; b /= 255
-  const max = Math.max(r, g, b), min = Math.min(r, g, b)
+  r /= 255
+  g /= 255
+  b /= 255
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b)
   const l = (max + min) / 2
   if (max === min) return [0, 0, l]
   const d = max - min
@@ -208,9 +1286,22 @@ function deriveTheme(p) {
     link: p.blue,
     disabledfg: blendColor(fg, bg, 0.5),
     palette: [
-      p.black, p.red, p.green, p.yellow, p.blue, p.magenta, p.cyan, p.white,
-      p.brightBlack, p.brightRed, p.brightGreen, p.brightYellow,
-      p.brightBlue, p.brightMagenta, p.brightCyan, p.brightWhite,
+      p.black,
+      p.red,
+      p.green,
+      p.yellow,
+      p.blue,
+      p.magenta,
+      p.cyan,
+      p.white,
+      p.brightBlack,
+      p.brightRed,
+      p.brightGreen,
+      p.brightYellow,
+      p.brightBlue,
+      p.brightMagenta,
+      p.brightCyan,
+      p.brightWhite,
     ],
   }
 }
@@ -386,7 +1477,9 @@ async function copyCode() {
   try {
     await navigator.clipboard.writeText(getConfigCode())
     copied.value = true
-    setTimeout(() => { copied.value = false }, 2000)
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
   } catch {
     // Fallback
   }
@@ -405,16 +1498,10 @@ function selectPalette(name) {
   <div class="theme-explorer">
     <!-- Tab bar -->
     <div class="tabs">
-      <button
-        :class="['tab', { active: activeTab === 'gallery' }]"
-        @click="activeTab = 'gallery'"
-      >
+      <button :class="['tab', { active: activeTab === 'gallery' }]" @click="activeTab = 'gallery'">
         Built-in Palettes
       </button>
-      <button
-        :class="['tab', { active: activeTab === 'custom' }]"
-        @click="activeTab = 'custom'"
-      >
+      <button :class="['tab', { active: activeTab === 'custom' }]" @click="activeTab = 'custom'">
         Custom Generator
       </button>
     </div>
@@ -423,25 +1510,13 @@ function selectPalette(name) {
     <div v-if="activeTab === 'gallery'" class="gallery-panel">
       <!-- Filters -->
       <div class="filter-bar">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search palettes..."
-          class="search-input"
-        />
+        <input v-model="searchQuery" type="text" placeholder="Search palettes..." class="search-input" />
         <div class="filter-buttons">
-          <button
-            :class="['filter-btn', { active: filterMode === 'all' }]"
-            @click="filterMode = 'all'"
-          >All</button>
-          <button
-            :class="['filter-btn', { active: filterMode === 'dark' }]"
-            @click="filterMode = 'dark'"
-          >Dark</button>
-          <button
-            :class="['filter-btn', { active: filterMode === 'light' }]"
-            @click="filterMode = 'light'"
-          >Light</button>
+          <button :class="['filter-btn', { active: filterMode === 'all' }]" @click="filterMode = 'all'">All</button>
+          <button :class="['filter-btn', { active: filterMode === 'dark' }]" @click="filterMode = 'dark'">Dark</button>
+          <button :class="['filter-btn', { active: filterMode === 'light' }]" @click="filterMode = 'light'">
+            Light
+          </button>
         </div>
       </div>
 
@@ -474,7 +1549,7 @@ function selectPalette(name) {
           <div class="palette-label">
             <span class="palette-name">{{ p.name }}</span>
             <span :class="['mode-badge', p.dark ? 'dark' : 'light']">
-              {{ p.dark ? 'dark' : 'light' }}
+              {{ p.dark ? "dark" : "light" }}
             </span>
           </div>
         </button>
@@ -487,38 +1562,25 @@ function selectPalette(name) {
         <div class="control-group">
           <label class="control-label">Primary Color</label>
           <div class="color-input-row">
-            <input
-              type="color"
-              v-model="customHex"
-              class="color-picker"
-            />
-            <input
-              type="text"
-              v-model="customHex"
-              class="hex-input"
-              placeholder="#5E81AC"
-              maxlength="7"
-            />
+            <input type="color" v-model="customHex" class="color-picker" />
+            <input type="text" v-model="customHex" class="hex-input" placeholder="#5E81AC" maxlength="7" />
           </div>
         </div>
         <div class="control-group">
           <label class="control-label">Mode</label>
           <div class="filter-buttons">
-            <button
-              :class="['filter-btn', { active: customMode === 'dark' }]"
-              @click="customMode = 'dark'"
-            >Dark</button>
-            <button
-              :class="['filter-btn', { active: customMode === 'light' }]"
-              @click="customMode = 'light'"
-            >Light</button>
+            <button :class="['filter-btn', { active: customMode === 'dark' }]" @click="customMode = 'dark'">
+              Dark
+            </button>
+            <button :class="['filter-btn', { active: customMode === 'light' }]" @click="customMode = 'light'">
+              Light
+            </button>
           </div>
         </div>
       </div>
       <p class="custom-description">
-        Enter any hex color to auto-generate a complete theme. The system derives
-        all 22 palette colors using HSL color manipulation &mdash; background, foreground,
-        accents, and status colors all flow from your single input.
+        Enter any hex color to auto-generate a complete theme. The system derives all 22 palette colors using HSL color
+        manipulation &mdash; background, foreground, accents, and status colors all flow from your single input.
       </p>
     </div>
 
@@ -526,27 +1588,27 @@ function selectPalette(name) {
     <div v-if="activePalette && activeTheme" class="detail-section">
       <!-- Detail tab bar -->
       <div class="detail-tabs">
-        <button
-          :class="['detail-tab', { active: detailTab === 'terminal' }]"
-          @click="detailTab = 'terminal'"
-        >Preview</button>
-        <button
-          :class="['detail-tab', { active: detailTab === 'tokens' }]"
-          @click="detailTab = 'tokens'"
-        >Semantic Tokens</button>
-        <button
-          :class="['detail-tab', { active: detailTab === 'palette' }]"
-          @click="detailTab = 'palette'"
-        >Palette Colors</button>
+        <button :class="['detail-tab', { active: detailTab === 'terminal' }]" @click="detailTab = 'terminal'">
+          Preview
+        </button>
+        <button :class="['detail-tab', { active: detailTab === 'tokens' }]" @click="detailTab = 'tokens'">
+          Semantic Tokens
+        </button>
+        <button :class="['detail-tab', { active: detailTab === 'palette' }]" @click="detailTab = 'palette'">
+          Palette Colors
+        </button>
       </div>
 
       <!-- Terminal preview -->
       <div v-if="detailTab === 'terminal'" class="preview-pane">
         <div class="preview-container">
-          <div class="preview-titlebar" :style="{
-            background: activeTheme.inverse,
-            color: activeTheme.inversefg
-          }">
+          <div
+            class="preview-titlebar"
+            :style="{
+              background: activeTheme.inverse,
+              color: activeTheme.inversefg,
+            }"
+          >
             <span class="preview-dots">
               <span class="dot" :style="{ background: activeTheme.error }"></span>
               <span class="dot" :style="{ background: activeTheme.warning }"></span>
@@ -554,15 +1616,21 @@ function selectPalette(name) {
             </span>
             <span class="preview-title">{{ activePalette.name }}</span>
           </div>
-          <div class="preview-terminal" :style="{
-            background: activeTheme.bg,
-            color: activeTheme.fg
-          }">
+          <div
+            class="preview-terminal"
+            :style="{
+              background: activeTheme.bg,
+              color: activeTheme.fg,
+            }"
+          >
             <!-- Status bar -->
-            <div class="preview-statusbar" :style="{
-              background: activeTheme.surface,
-              borderBottom: '1px solid ' + activeTheme.border
-            }">
+            <div
+              class="preview-statusbar"
+              :style="{
+                background: activeTheme.surface,
+                borderBottom: '1px solid ' + activeTheme.border,
+              }"
+            >
               <span :style="{ color: activeTheme.primary }">Tasks</span>
               <span :style="{ color: activeTheme.mutedfg }"> | </span>
               <span :style="{ color: activeTheme.fg }">Notes</span>
@@ -573,18 +1641,27 @@ function selectPalette(name) {
             <div class="preview-content">
               <div class="preview-line">
                 <span :style="{ color: activeTheme.success }">&#10003;</span>
-                <span :style="{ color: activeTheme.disabledfg, textDecoration: 'line-through' }"> Set up dev environment</span>
+                <span :style="{ color: activeTheme.disabledfg, textDecoration: 'line-through' }">
+                  Set up dev environment</span
+                >
               </div>
-              <div class="preview-line preview-selected" :style="{
-                background: activeTheme.selection,
-                color: activeTheme.selectionfg
-              }">
+              <div
+                class="preview-line preview-selected"
+                :style="{
+                  background: activeTheme.selection,
+                  color: activeTheme.selectionfg,
+                }"
+              >
                 <span :style="{ color: activeTheme.primary }">&#9679;</span>
                 <span> Build theme explorer</span>
-                <span class="preview-tag" :style="{
-                  background: activeTheme.accent,
-                  color: activeTheme.accentfg
-                }">in-progress</span>
+                <span
+                  class="preview-tag"
+                  :style="{
+                    background: activeTheme.accent,
+                    color: activeTheme.accentfg,
+                  }"
+                  >in-progress</span
+                >
               </div>
               <div class="preview-line">
                 <span :style="{ color: activeTheme.mutedfg }">&#9675;</span>
@@ -593,10 +1670,14 @@ function selectPalette(name) {
               <div class="preview-line">
                 <span :style="{ color: activeTheme.error }">&#9679;</span>
                 <span :style="{ color: activeTheme.fg }"> Fix rendering bug</span>
-                <span class="preview-tag" :style="{
-                  background: activeTheme.error,
-                  color: activeTheme.errorfg
-                }">P1</span>
+                <span
+                  class="preview-tag"
+                  :style="{
+                    background: activeTheme.error,
+                    color: activeTheme.errorfg,
+                  }"
+                  >P1</span
+                >
               </div>
               <div class="preview-line">
                 <span :style="{ color: activeTheme.warning }">&#9679;</span>
@@ -607,26 +1688,39 @@ function selectPalette(name) {
                 <span :style="{ color: activeTheme.fg }"> Deploy to staging</span>
               </div>
               <!-- Input area -->
-              <div class="preview-input" :style="{
-                borderTop: '1px solid ' + activeTheme.border
-              }">
+              <div
+                class="preview-input"
+                :style="{
+                  borderTop: '1px solid ' + activeTheme.border,
+                }"
+              >
                 <span :style="{ color: activeTheme.mutedfg }">Search: </span>
-                <span :style="{
-                  borderBottom: '1px solid ' + activeTheme.inputborder,
-                  color: activeTheme.fg
-                }">theme ex</span><!--
-                --><span class="cursor-block" :style="{
-                  background: activeTheme.cursor,
-                  color: activeTheme.cursorfg
-                }">&nbsp;</span>
+                <span
+                  :style="{
+                    borderBottom: '1px solid ' + activeTheme.inputborder,
+                    color: activeTheme.fg,
+                  }"
+                  >theme ex</span
+                ><!--
+                --><span
+                  class="cursor-block"
+                  :style="{
+                    background: activeTheme.cursor,
+                    color: activeTheme.cursorfg,
+                  }"
+                  >&nbsp;</span
+                >
               </div>
             </div>
             <!-- Footer -->
-            <div class="preview-footer" :style="{
-              background: activeTheme.surface,
-              borderTop: '1px solid ' + activeTheme.border,
-              color: activeTheme.mutedfg
-            }">
+            <div
+              class="preview-footer"
+              :style="{
+                background: activeTheme.surface,
+                borderTop: '1px solid ' + activeTheme.border,
+                color: activeTheme.mutedfg,
+              }"
+            >
               <span :style="{ color: activeTheme.link }">silvery.dev</span>
               <span> &mdash; 6 items</span>
               <span :style="{ color: activeTheme.success }"> &#10003; synced</span>
@@ -639,19 +1733,19 @@ function selectPalette(name) {
           <div class="strip-group">
             <div class="strip-item" v-for="tok in ['primary', 'secondary', 'accent']" :key="tok">
               <span class="strip-swatch" :style="{ background: activeTheme[tok] }"></span>
-              <span class="strip-label">{{ '$' + tok }}</span>
+              <span class="strip-label">{{ "$" + tok }}</span>
             </div>
           </div>
           <div class="strip-group">
             <div class="strip-item" v-for="tok in ['error', 'warning', 'success', 'info']" :key="tok">
               <span class="strip-swatch" :style="{ background: activeTheme[tok] }"></span>
-              <span class="strip-label">{{ '$' + tok }}</span>
+              <span class="strip-label">{{ "$" + tok }}</span>
             </div>
           </div>
           <div class="strip-group">
             <div class="strip-item" v-for="tok in ['border', 'link', 'cursor']" :key="tok">
               <span class="strip-swatch" :style="{ background: activeTheme[tok] }"></span>
-              <span class="strip-label">{{ '$' + tok }}</span>
+              <span class="strip-label">{{ "$" + tok }}</span>
             </div>
           </div>
         </div>
@@ -660,8 +1754,8 @@ function selectPalette(name) {
       <!-- Semantic tokens detail -->
       <div v-if="detailTab === 'tokens'" class="tokens-pane">
         <p class="tokens-intro">
-          These 33 semantic tokens are derived from the palette via <code>deriveTheme()</code>.
-          Components reference them with a <code>$</code> prefix (e.g. <code>color="$primary"</code>).
+          These 33 semantic tokens are derived from the palette via <code>deriveTheme()</code>. Components reference
+          them with a <code>$</code> prefix (e.g. <code>color="$primary"</code>).
         </p>
         <div v-for="group in semanticGroups" :key="group.label" class="token-group">
           <h4 class="token-group-heading">{{ group.label }}</h4>
@@ -674,19 +1768,18 @@ function selectPalette(name) {
                   class="token-card-swatch token-card-swatch-text"
                   :style="{
                     background: activeTheme[tok.key.replace(/fg$/, '')] || activeTheme.bg,
-                    color: activeTheme[tok.key]
+                    color: activeTheme[tok.key],
                   }"
-                >Aa</div>
-                <div
-                  v-else
-                  class="token-card-swatch"
-                  :style="{ background: activeTheme[tok.key] }"
                 >
+                  Aa
+                </div>
+                <div v-else class="token-card-swatch" :style="{ background: activeTheme[tok.key] }">
                   <span
                     v-if="activeTheme[tok.key + 'fg']"
                     :style="{ color: activeTheme[tok.key + 'fg'] }"
                     class="token-card-swatch-text-overlay"
-                  >Aa</span>
+                    >Aa</span
+                  >
                 </div>
               </div>
               <div class="token-card-info">
@@ -702,20 +1795,24 @@ function selectPalette(name) {
       <!-- Palette colors detail -->
       <div v-if="detailTab === 'palette'" class="palette-pane">
         <p class="tokens-intro">
-          The 22 colors in the <code>ColorPalette</code>: 16 ANSI colors + 6 special colors.
-          These are the raw inputs that <code>deriveTheme()</code> transforms into semantic tokens.
+          The 22 colors in the <code>ColorPalette</code>: 16 ANSI colors + 6 special colors. These are the raw inputs
+          that <code>deriveTheme()</code> transforms into semantic tokens.
         </p>
 
         <h4 class="token-group-heading">Special Colors</h4>
         <div class="palette-special-grid">
-          <div class="palette-detail-item" v-for="f in [
-            { key: 'background', label: 'Background' },
-            { key: 'foreground', label: 'Foreground' },
-            { key: 'cursorColor', label: 'Cursor' },
-            { key: 'cursorText', label: 'Cursor Text' },
-            { key: 'selectionBackground', label: 'Selection BG' },
-            { key: 'selectionForeground', label: 'Selection FG' },
-          ]" :key="f.key">
+          <div
+            class="palette-detail-item"
+            v-for="f in [
+              { key: 'background', label: 'Background' },
+              { key: 'foreground', label: 'Foreground' },
+              { key: 'cursorColor', label: 'Cursor' },
+              { key: 'cursorText', label: 'Cursor Text' },
+              { key: 'selectionBackground', label: 'Selection BG' },
+              { key: 'selectionForeground', label: 'Selection FG' },
+            ]"
+            :key="f.key"
+          >
             <span class="palette-detail-swatch" :style="{ background: activePalette[f.key] }"></span>
             <span class="palette-detail-label">{{ f.label }}</span>
             <code class="palette-detail-hex">{{ activePalette[f.key] }}</code>
@@ -725,10 +1822,7 @@ function selectPalette(name) {
         <h4 class="token-group-heading">ANSI 16 Colors</h4>
         <div class="ansi-grid">
           <div v-for="c in ansiColors" :key="c.key" class="ansi-cell">
-            <div
-              class="ansi-swatch"
-              :style="{ background: activePalette[c.key] }"
-            >
+            <div class="ansi-swatch" :style="{ background: activePalette[c.key] }">
               <span :style="{ color: contrastFg(activePalette[c.key]) }">{{ c.index }}</span>
             </div>
             <span class="ansi-label">{{ c.label }}</span>
@@ -742,7 +1836,7 @@ function selectPalette(name) {
         <div class="code-header">
           <span class="code-label">Usage</span>
           <button class="copy-btn" @click="copyCode">
-            {{ copied ? 'Copied!' : 'Copy' }}
+            {{ copied ? "Copied!" : "Copy" }}
           </button>
         </div>
         <pre class="code-block"><code>{{ getConfigCode() }}</code></pre>
@@ -774,7 +1868,9 @@ function selectPalette(name) {
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .tab:hover {
@@ -804,7 +1900,9 @@ function selectPalette(name) {
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .detail-tab:hover {
@@ -857,7 +1955,9 @@ function selectPalette(name) {
   color: var(--vp-c-text-2);
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .filter-btn:not(:last-child) {
@@ -887,7 +1987,9 @@ function selectPalette(name) {
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.2s, transform 0.15s;
+  transition:
+    border-color 0.2s,
+    transform 0.15s;
   background: var(--vp-c-bg);
   text-align: left;
   padding: 0;
@@ -1111,7 +2213,9 @@ function selectPalette(name) {
 }
 
 @keyframes blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 /* ── Token strip (below terminal preview) ────────────────────────── */
@@ -1365,7 +2469,9 @@ function selectPalette(name) {
   color: var(--vp-c-text-2);
   font-size: 0.75rem;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .copy-btn:hover {

@@ -4,14 +4,14 @@ Silvery's architecture separates the component model from the rendering target. 
 
 ## Current Status
 
-| Target | Status | Entry Point |
-|--------|--------|-------------|
-| Terminal | Production | `@silvery/term` |
-| Canvas 2D | Experimental | `silvery/canvas` |
-| DOM | Experimental | `silvery/dom` |
-| WebGL | Future | -- |
-| React Native | Future | -- |
-| PDF/Email | Future | -- |
+| Target       | Status       | Entry Point      |
+| ------------ | ------------ | ---------------- |
+| Terminal     | Production   | `@silvery/term`  |
+| Canvas 2D    | Experimental | `silvery/canvas` |
+| DOM          | Experimental | `silvery/dom`    |
+| WebGL        | Future       | --               |
+| React Native | Future       | --               |
+| PDF/Email    | Future       | --               |
 
 ## Why Multi-Target Matters
 

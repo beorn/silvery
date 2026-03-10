@@ -71,7 +71,7 @@ explicit color, the theme's `$separator` token is used automatically.
 | Token        | Use                                   | ANSI 16 Dark | Truecolor Dark |
 | ------------ | ------------------------------------- | ------------ | -------------- |
 | `$bg`        | Default background                    | (default)    | #2E3440        |
-| `$default`   | Terminal's actual default bg (SGR 49)  | (terminal)   | (terminal)     |
+| `$default`   | Terminal's actual default bg (SGR 49) | (terminal)   | (terminal)     |
 | `$surface`   | Dialogs, overlays, popovers           | black        | #3B4252        |
 | `$separator` | Dividers, borders, rules              | gray         | #4C566A        |
 | `$chromebg`  | Title bars, status bars (inverted bg) | whiteBright  | #ECEFF4        |

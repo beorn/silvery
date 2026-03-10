@@ -48,15 +48,15 @@ import { Text } from "silvery"
 
 ## API Compatibility
 
-| Chalk Feature | silvery/chalk | Notes |
-|--------------|---------------|-------|
-| `chalk.red()` | Supported | All standard colors |
-| `chalk.bold()` | Supported | All modifiers |
-| `chalk.rgb()` | Supported | 24-bit color |
-| `chalk.hex()` | Supported | Hex color codes |
-| `chalk.bgRed()` | Supported | Background colors |
-| Chaining | Supported | `chalk.red.bold.underline()` |
-| Template literals | Supported | `` chalk`{red text}` `` |
+| Chalk Feature     | silvery/chalk | Notes                        |
+| ----------------- | ------------- | ---------------------------- |
+| `chalk.red()`     | Supported     | All standard colors          |
+| `chalk.bold()`    | Supported     | All modifiers                |
+| `chalk.rgb()`     | Supported     | 24-bit color                 |
+| `chalk.hex()`     | Supported     | Hex color codes              |
+| `chalk.bgRed()`   | Supported     | Background colors            |
+| Chaining          | Supported     | `chalk.red.bold.underline()` |
+| Template literals | Supported     | `` chalk`{red text}` ``      |
 
 ## Why Switch?
 
