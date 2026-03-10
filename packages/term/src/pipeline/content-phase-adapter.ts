@@ -186,11 +186,25 @@ function renderBorder(
   }
 
   // Side borders — extend range when top/bottom borders are hidden
+  const rightVertical = chars.rightVertical ?? chars.vertical
   const sideStart = showTop ? y + 1 : y
   const sideEnd = showBottom ? y + height - 1 : y + height
-  renderSideBorders(buffer, x, width, sideStart, sideEnd, showLeft, showRight, chars.vertical, style, isRowVisible)
+  renderSideBorders(
+    buffer,
+    x,
+    width,
+    sideStart,
+    sideEnd,
+    showLeft,
+    showRight,
+    chars.vertical,
+    rightVertical,
+    style,
+    isRowVisible,
+  )
 
   // Bottom border
+  const bottomHorizontal = chars.bottomHorizontal ?? chars.horizontal
   const bottomY = y + height - 1
   if (showBottom && isRowVisible(bottomY)) {
     renderHorizontalBorder(
@@ -202,7 +216,7 @@ function renderBorder(
       showRight,
       chars.bottomLeft,
       chars.bottomRight,
-      chars.horizontal,
+      bottomHorizontal,
       style,
     )
   }
@@ -239,15 +253,16 @@ function renderSideBorders(
   endRow: number,
   showLeft: boolean,
   showRight: boolean,
-  vertical: string,
+  leftVertical: string,
+  rightVertical: string,
   style: RenderStyle,
   isRowVisible: (row: number) => boolean,
 ): void {
   for (let row = startRow; row < endRow; row++) {
     if (!isRowVisible(row)) continue
-    if (showLeft) buffer.drawChar(x, row, vertical, style)
+    if (showLeft) buffer.drawChar(x, row, leftVertical, style)
     if (showRight && buffer.inBounds(x + width - 1, row)) {
-      buffer.drawChar(x + width - 1, row, vertical, style)
+      buffer.drawChar(x + width - 1, row, rightVertical, style)
     }
   }
 }
@@ -286,9 +301,23 @@ function renderOutlineAdapter(
   }
 
   // Side borders
-  renderSideBorders(buffer, x, width, y + 1, y + height - 1, true, true, chars.vertical, style, isRowVisible)
+  const outRightVertical = chars.rightVertical ?? chars.vertical
+  renderSideBorders(
+    buffer,
+    x,
+    width,
+    y + 1,
+    y + height - 1,
+    true,
+    true,
+    chars.vertical,
+    outRightVertical,
+    style,
+    isRowVisible,
+  )
 
   // Bottom border
+  const outBottomHorizontal = chars.bottomHorizontal ?? chars.horizontal
   const bottomY = y + height - 1
   if (isRowVisible(bottomY)) {
     renderHorizontalBorder(
@@ -300,7 +329,7 @@ function renderOutlineAdapter(
       true,
       chars.bottomLeft,
       chars.bottomRight,
-      chars.horizontal,
+      outBottomHorizontal,
       style,
     )
   }

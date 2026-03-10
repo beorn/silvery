@@ -239,8 +239,11 @@ export function createVirtualTextNode(props: TextProps): TeaNode {
  * Apply BoxProps to a layout node.
  * This maps Ink/Silvery props to the layout engine API.
  */
-export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
+export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?: BoxProps): void {
   const c = getConstants()
+  // Helper: true when a prop was set in oldProps but not in newProps (prop removed on rerender)
+  const wasRemoved = (prop: keyof BoxProps): boolean =>
+    oldProps !== undefined && oldProps[prop] !== undefined && props[prop] === undefined
 
   // Dimensions
   if (props.width !== undefined) {
@@ -251,6 +254,8 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
     } else if (props.width === "auto") {
       layoutNode.setWidthAuto()
     }
+  } else if (wasRemoved("width")) {
+    layoutNode.setWidthAuto()
   }
 
   if (props.height !== undefined) {
@@ -261,6 +266,8 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
     } else if (props.height === "auto") {
       layoutNode.setHeightAuto()
     }
+  } else if (wasRemoved("height")) {
+    layoutNode.setHeightAuto()
   }
 
   // Min/Max dimensions
@@ -270,6 +277,8 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
     } else if (typeof props.minWidth === "number") {
       layoutNode.setMinWidth(props.minWidth)
     }
+  } else if (wasRemoved("minWidth")) {
+    layoutNode.setMinWidth(0)
   }
 
   if (props.minHeight !== undefined) {
@@ -278,6 +287,8 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
     } else if (typeof props.minHeight === "number") {
       layoutNode.setMinHeight(props.minHeight)
     }
+  } else if (wasRemoved("minHeight")) {
+    layoutNode.setMinHeight(0)
   }
 
   if (props.maxWidth !== undefined) {
@@ -305,10 +316,14 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
   // Flex properties
   if (props.flexGrow !== undefined) {
     layoutNode.setFlexGrow(props.flexGrow)
+  } else if (wasRemoved("flexGrow")) {
+    layoutNode.setFlexGrow(0)
   }
 
   if (props.flexShrink !== undefined) {
     layoutNode.setFlexShrink(props.flexShrink)
+  } else if (wasRemoved("flexShrink")) {
+    layoutNode.setFlexShrink(1)
   }
 
   if (props.flexBasis !== undefined) {
@@ -319,6 +334,8 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
     } else if (typeof props.flexBasis === "number") {
       layoutNode.setFlexBasis(props.flexBasis)
     }
+  } else if (wasRemoved("flexBasis")) {
+    layoutNode.setFlexBasisAuto()
   }
 
   // Flex direction
@@ -330,6 +347,8 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
       "column-reverse": c.FLEX_DIRECTION_COLUMN_REVERSE,
     }
     layoutNode.setFlexDirection(directionMap[props.flexDirection] ?? c.FLEX_DIRECTION_COLUMN)
+  } else if (wasRemoved("flexDirection")) {
+    layoutNode.setFlexDirection(c.FLEX_DIRECTION_COLUMN)
   }
 
   // Flex wrap
@@ -340,23 +359,33 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
       "wrap-reverse": c.WRAP_WRAP_REVERSE,
     }
     layoutNode.setFlexWrap(wrapMap[props.flexWrap] ?? c.WRAP_NO_WRAP)
+  } else if (wasRemoved("flexWrap")) {
+    layoutNode.setFlexWrap(c.WRAP_NO_WRAP)
   }
 
   // Alignment
   if (props.alignItems !== undefined) {
     layoutNode.setAlignItems(alignToConstant(props.alignItems))
+  } else if (wasRemoved("alignItems")) {
+    layoutNode.setAlignItems(c.ALIGN_STRETCH)
   }
 
   if (props.alignSelf !== undefined && props.alignSelf !== "auto") {
     layoutNode.setAlignSelf(alignToConstant(props.alignSelf))
+  } else if (wasRemoved("alignSelf")) {
+    layoutNode.setAlignSelf(c.ALIGN_AUTO)
   }
 
   if (props.alignContent !== undefined) {
     layoutNode.setAlignContent(alignToConstant(props.alignContent))
+  } else if (wasRemoved("alignContent")) {
+    layoutNode.setAlignContent(c.ALIGN_FLEX_START)
   }
 
   if (props.justifyContent !== undefined) {
     layoutNode.setJustifyContent(justifyToConstant(props.justifyContent))
+  } else if (wasRemoved("justifyContent")) {
+    layoutNode.setJustifyContent(c.JUSTIFY_FLEX_START)
   }
 
   // Padding
@@ -368,17 +397,23 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
   // Gap
   if (props.gap !== undefined) {
     layoutNode.setGap(c.GUTTER_ALL, props.gap)
+  } else if (wasRemoved("gap")) {
+    layoutNode.setGap(c.GUTTER_ALL, 0)
   }
 
   // Display
   if (props.display !== undefined) {
     layoutNode.setDisplay(props.display === "none" ? c.DISPLAY_NONE : c.DISPLAY_FLEX)
+  } else if (wasRemoved("display")) {
+    layoutNode.setDisplay(c.DISPLAY_FLEX)
   }
 
   // Position
   // Note: 'sticky' is handled at render-time, not by layout engine. For layout purposes, treat as relative.
   if (props.position !== undefined) {
     layoutNode.setPositionType(props.position === "absolute" ? c.POSITION_TYPE_ABSOLUTE : c.POSITION_TYPE_RELATIVE)
+  } else if (wasRemoved("position")) {
+    layoutNode.setPositionType(c.POSITION_TYPE_RELATIVE)
   }
 
   // Overflow
@@ -390,6 +425,8 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps): void {
     } else {
       layoutNode.setOverflow(c.OVERFLOW_VISIBLE)
     }
+  } else if (wasRemoved("overflow")) {
+    layoutNode.setOverflow(c.OVERFLOW_VISIBLE)
   }
 
   // Border (affects layout - 1 cell per border side)

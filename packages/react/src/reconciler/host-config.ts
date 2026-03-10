@@ -349,7 +349,7 @@ export const hostConfig = {
     // Check if layout-affecting props changed
     if (layoutPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)) {
       if (instance.layoutNode) {
-        applyBoxProps(instance.layoutNode, newProps as BoxProps)
+        applyBoxProps(instance.layoutNode, newProps as BoxProps, oldProps as BoxProps)
         instance.layoutNode.markDirty()
       }
       instance.layoutDirty = true

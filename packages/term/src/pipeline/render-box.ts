@@ -126,24 +126,26 @@ export function renderBorder(
   }
 
   // Side borders — extend range when top/bottom borders are hidden
+  const rightVertical = chars.rightVertical ?? chars.vertical
   const sideStart = showTop ? y + 1 : y
   const sideEnd = showBottom ? y + height - 1 : y + height
   for (let row = sideStart; row < sideEnd; row++) {
     if (!isRowVisible(row)) continue
     if (showLeft && isColVisible(x)) buffer.setCell(x, row, { char: chars.vertical, fg: color, bg })
     if (showRight && x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
-      buffer.setCell(x + width - 1, row, { char: chars.vertical, fg: color, bg })
+      buffer.setCell(x + width - 1, row, { char: rightVertical, fg: color, bg })
     }
   }
 
   // Bottom border
+  const bottomHorizontal = chars.bottomHorizontal ?? chars.horizontal
   const bottomY = y + height - 1
   if (showBottom && isRowVisible(bottomY)) {
     if (showLeft && isColVisible(x)) {
       buffer.setCell(x, bottomY, { char: chars.bottomLeft, fg: color, bg })
     }
     for (let col = x + 1; col < x + width - 1 && col < buffer.width; col++) {
-      if (isColVisible(col)) buffer.setCell(col, bottomY, { char: chars.horizontal, fg: color, bg })
+      if (isColVisible(col)) buffer.setCell(col, bottomY, { char: bottomHorizontal, fg: color, bg })
     }
     if (showRight && x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
       buffer.setCell(x + width - 1, bottomY, {
@@ -210,24 +212,26 @@ export function renderOutline(
   }
 
   // Side borders — extend range when top/bottom are hidden
+  const outlineRightVertical = chars.rightVertical ?? chars.vertical
   const sideStart = showTop ? y + 1 : y
   const sideEnd = showBottom ? y + height - 1 : y + height
   for (let row = sideStart; row < sideEnd; row++) {
     if (!isRowVisible(row)) continue
     if (showLeft && isColVisible(x)) buffer.setCell(x, row, { char: chars.vertical, fg: color, bg, attrs })
     if (showRight && x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
-      buffer.setCell(x + width - 1, row, { char: chars.vertical, fg: color, bg, attrs })
+      buffer.setCell(x + width - 1, row, { char: outlineRightVertical, fg: color, bg, attrs })
     }
   }
 
   // Bottom border
+  const outlineBottomHorizontal = chars.bottomHorizontal ?? chars.horizontal
   const bottomY = y + height - 1
   if (showBottom && isRowVisible(bottomY)) {
     if (showLeft && isColVisible(x)) {
       buffer.setCell(x, bottomY, { char: chars.bottomLeft, fg: color, bg, attrs })
     }
     for (let col = x + 1; col < x + width - 1 && col < buffer.width; col++) {
-      if (isColVisible(col)) buffer.setCell(col, bottomY, { char: chars.horizontal, fg: color, bg, attrs })
+      if (isColVisible(col)) buffer.setCell(col, bottomY, { char: outlineBottomHorizontal, fg: color, bg, attrs })
     }
     if (showRight && x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
       buffer.setCell(x + width - 1, bottomY, {
