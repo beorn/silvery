@@ -160,7 +160,7 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: "Getting Started", link: "/guide/getting-started" },
-            { text: "Building an App", link: "/guide/building-an-app" },
+
             { text: "Installation", link: "/guide/installation" },
             { text: "Why Silvery?", link: "/guide/why-silvery" },
             { text: "Silvery vs Ink", link: "/guide/silvery-vs-ink" },
@@ -171,20 +171,22 @@ export default defineConfig({
           text: "Core Concepts",
           collapsed: true,
           items: [
-            { text: "Components", link: "/guide/components" },
+
             { text: "Hooks", link: "/guide/hooks" },
             { text: "Scrolling", link: "/guide/scrolling" },
             { text: "Cursor API", link: "/guide/cursor-api" },
             { text: "Input Limitations", link: "/guide/input-limitations" },
-            { text: "State Management", link: "/guide/state-management" },
+
             { text: "Event Handling", link: "/guide/event-handling" },
-            { text: "Theming", link: "/guide/theming" },
+
+            { text: "Testing", link: "/guide/testing" },
           ],
         },
         {
           text: "Advanced",
           collapsed: true,
           items: [
+            { text: "Kitty Protocol", link: "/guide/kitty-protocol" },
             { text: "Layout Engine", link: "/guide/layout-engine" },
             { text: "CSS Alignment", link: "/guide/css-alignment" },
             { text: "ANSI Layering", link: "/guide/ansi-layering" },
@@ -193,6 +195,7 @@ export default defineConfig({
             { text: "Runtime Layers", link: "/guide/runtime-layers" },
             { text: "Runtime Getting Started", link: "/guide/runtime-getting-started" },
             { text: "Imports", link: "/guide/imports" },
+            { text: "Textarea Design", link: "/guide/textarea-design" },
             { text: "Troubleshooting", link: "/guide/troubleshooting" },
           ],
         },
@@ -202,6 +205,14 @@ export default defineConfig({
           items: [
             { text: "From Ink", link: "/guide/migration" },
             { text: "Runtime Migration", link: "/guide/runtime-migration" },
+          ],
+        },
+        {
+          text: "Project",
+          collapsed: true,
+          items: [
+            { text: "Contributing", link: "/contributing" },
+            { text: "Roadmap", link: "/roadmap" },
           ],
         },
       ],
