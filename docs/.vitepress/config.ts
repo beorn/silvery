@@ -160,7 +160,6 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: "Getting Started", link: "/guide/getting-started" },
-
             { text: "Installation", link: "/guide/installation" },
             { text: "Why Silvery?", link: "/guide/why-silvery" },
             { text: "Silvery vs Ink", link: "/guide/silvery-vs-ink" },
@@ -171,14 +170,11 @@ export default defineConfig({
           text: "Core Concepts",
           collapsed: true,
           items: [
-
             { text: "Hooks", link: "/guide/hooks" },
             { text: "Scrolling", link: "/guide/scrolling" },
             { text: "Cursor API", link: "/guide/cursor-api" },
             { text: "Input Limitations", link: "/guide/input-limitations" },
-
             { text: "Event Handling", link: "/guide/event-handling" },
-
             { text: "Testing", link: "/guide/testing" },
           ],
         },
