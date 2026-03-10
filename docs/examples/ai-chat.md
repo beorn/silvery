@@ -67,7 +67,8 @@ function Chat() {
       <Box flexDirection="column" flexGrow={1} overflow="scroll" scrollTo={messages.length - 1} paddingX={1}>
         {messages.map((msg, i) => (
           <Text key={i} color={msg.role === "user" ? "cyan" : "white"}>
-            {msg.role === "user" ? "> " : "  "}{msg.content}
+            {msg.role === "user" ? "> " : "  "}
+            {msg.content}
           </Text>
         ))}
       </Box>
@@ -91,6 +92,7 @@ await run(<Chat />)
 :::
 
 This gives you:
+
 - A scrollable message history that grows as the conversation progresses
 - Automatic scroll-to-bottom when new messages arrive (`scrollTo={messages.length - 1}`)
 - A bordered input area with a prompt prefix and placeholder text
@@ -143,10 +145,7 @@ Update a message in-place as tokens arrive:
 const streamTokens = async (messageId: number, generator: AsyncGenerator<string>) => {
   for await (const token of generator) {
     setMessages((prev) =>
-      prev.map((m) => m.id === messageId
-        ? { ...m, content: m.content + token, streaming: true }
-        : m
-      )
+      prev.map((m) => (m.id === messageId ? { ...m, content: m.content + token, streaming: true } : m)),
     )
   }
 }
@@ -154,15 +153,15 @@ const streamTokens = async (messageId: number, generator: AsyncGenerator<string>
 
 ## Features Used
 
-| Feature | Usage |
-| --- | --- |
-| `overflow="scroll"` | Scrollable message history |
-| `scrollTo` | Auto-scroll to latest message |
-| `VirtualList` | Efficient rendering of long conversations |
-| `TextInput` | Message input with readline shortcuts |
-| `usePaste` | Multi-line code pasting |
-| `withCommands` | AI agent command introspection |
-| Incremental rendering | 169us per streaming token update |
+| Feature               | Usage                                     |
+| --------------------- | ----------------------------------------- |
+| `overflow="scroll"`   | Scrollable message history                |
+| `scrollTo`            | Auto-scroll to latest message             |
+| `VirtualList`         | Efficient rendering of long conversations |
+| `TextInput`           | Message input with readline shortcuts     |
+| `usePaste`            | Multi-line code pasting                   |
+| `withCommands`        | AI agent command introspection            |
+| Incremental rendering | 169us per streaming token update          |
 
 ## What Silvery Adds
 

@@ -48,8 +48,8 @@ Creates a virtual terminal and renderer:
 
 ```tsx
 const render = createRenderer({
-  cols: 80,    // Terminal width
-  rows: 24,    // Terminal height
+  cols: 80, // Terminal width
+  rows: 24, // Terminal height
 })
 
 const app = render(<MyApp />)
@@ -69,11 +69,11 @@ expect(app.text).not.toContain("Error")
 Simulate keyboard input. Supports single keys, modifiers, and special keys:
 
 ```tsx
-await app.press("j")          // Single character
-await app.press("Enter")      // Special key
-await app.press("Ctrl+K")     // Modifier + key
-await app.press("ArrowDown")  // Arrow key
-await app.press("Escape")     // Escape
+await app.press("j") // Single character
+await app.press("Enter") // Special key
+await app.press("Ctrl+K") // Modifier + key
+await app.press("ArrowDown") // Arrow key
+await app.press("Escape") // Escape
 ```
 
 ### `app.getByText(text)`
@@ -91,7 +91,7 @@ Find elements by `testID` prop:
 
 ```tsx
 // In your component:
-<Box testID="status-bar">
+;<Box testID="status-bar">
   <Text>Ready</Text>
 </Box>
 
@@ -156,7 +156,7 @@ test("wizard completes all steps", async () => {
 
   // Step 1: Select framework
   expect(app.text).toContain("Choose a framework")
-  await app.press("ArrowDown")  // Select React
+  await app.press("ArrowDown") // Select React
   await app.press("Enter")
 
   // Step 2: Enter name
@@ -206,15 +206,15 @@ test("scroll follows selection", async () => {
 
 ## Features Used
 
-| Feature | Usage |
-| --- | --- |
-| `createRenderer()` | Virtual terminal for headless testing |
-| `app.text` | Full rendered text content |
-| `app.press()` | Keyboard input simulation |
-| `app.getByText()` | Find elements by text content |
-| `app.getByTestId()` | Find elements by testID prop |
-| `app.locator()` | CSS-like element queries |
-| Snapshot testing | Visual regression via `toMatchSnapshot()` |
+| Feature             | Usage                                     |
+| ------------------- | ----------------------------------------- |
+| `createRenderer()`  | Virtual terminal for headless testing     |
+| `app.text`          | Full rendered text content                |
+| `app.press()`       | Keyboard input simulation                 |
+| `app.getByText()`   | Find elements by text content             |
+| `app.getByTestId()` | Find elements by testID prop              |
+| `app.locator()`     | CSS-like element queries                  |
+| Snapshot testing    | Visual regression via `toMatchSnapshot()` |
 
 ## Best Practices
 

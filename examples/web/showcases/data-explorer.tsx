@@ -65,7 +65,10 @@ export function DataExplorerShowcase(): JSX.Element {
           <Text bold color="#cdd6f4">
             Process Explorer
           </Text>
-          <Text color="#6c7086"> {"\u2014"} {rows.length} processes</Text>
+          <Text color="#6c7086">
+            {" "}
+            {"\u2014"} {rows.length} processes
+          </Text>
         </Text>
         <Text color="#6c7086">
           sorted by{" "}

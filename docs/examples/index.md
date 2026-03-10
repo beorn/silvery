@@ -4,9 +4,22 @@ import ShowcaseGallery from '../.vitepress/components/ShowcaseGallery.vue'
 
 # Examples
 
-Explore all Silvery showcases interactively. Click a demo to load it — keyboard input works inside the terminal.
+Explore Silvery's features through focused examples. Each page teaches a specific differentiator — click a demo to load it, keyboard input works inside the terminal.
 
 <ShowcaseGallery />
+
+## By Feature
+
+| Example                                  | What it teaches                 | Key components                         |
+| ---------------------------------------- | ------------------------------- | -------------------------------------- |
+| [Components](/examples/components)       | 30+ ready-made widgets          | SelectList, Tabs, ProgressBar, Spinner |
+| [Layout](/examples/layout)               | CSS flexbox for terminals       | Box, flexGrow, gap, justifyContent     |
+| [Forms & Input](/examples/forms)         | Interactive forms and wizards   | SelectList, TextInput, focusScope      |
+| [Tables & Data](/examples/tables)        | Data exploration and filtering  | Table, VirtualList, useContentRect()   |
+| [Scrollback](/examples/scrollback)       | Dynamic inline mode (unique)    | ScrollbackList, ScrollbackView         |
+| [Terminal Protocols](/examples/terminal) | Kitty keyboard, mouse, images   | Image, Canvas, parseHotkey()           |
+| [AI Chat](/examples/ai-chat)             | Streaming and real-time updates | VirtualList, TextInput, withCommands   |
+| [Testing](/examples/testing)             | Headless testing API            | createRenderer, press(), getByText()   |
 
 ## Running Examples
 
@@ -16,24 +29,32 @@ Clone the repository and run any example:
 git clone https://github.com/beorn/silvery
 cd silvery
 bun install
-bun run examples/dashboard/app.tsx
+
+# Run the example viewer (Storybook-style TUI):
+bun examples
+
+# Run a specific example:
+bun examples/interactive/ai-chat.tsx
+bun examples/interactive/cli-wizard.tsx
+bun examples/layout/dashboard.tsx
 ```
 
 ## Creating Your Own
 
-Start with the simplest example that matches your use case:
+Start with the example closest to your use case:
 
-| Use Case                | Start With          |
-| ----------------------- | ------------------- |
-| Single scrollable list  | Task List           |
-| Multi-pane layout       | Dashboard           |
-| Multiple scroll regions | Kanban              |
-| Responsive layout       | Dashboard           |
-| Keyboard navigation     | Task List or Kanban |
+| Use Case                  | Start With                         |
+| ------------------------- | ---------------------------------- |
+| Interactive form / wizard | [Forms & Input](/examples/forms)   |
+| Data table with search    | [Tables & Data](/examples/tables)  |
+| Multi-pane dashboard      | [Layout](/examples/layout)         |
+| Chat / streaming UI       | [AI Chat](/examples/ai-chat)       |
+| CLI tool with scrollback  | [Scrollback](/examples/scrollback) |
 
 All examples follow the same patterns:
 
-1. Use `useContentRect()` when you need dimensions
-2. Use `overflow="scroll"` + `scrollTo` for scrolling
-3. Use `useInput()` for keyboard handling
-4. Let flexbox handle proportional sizing
+1. Use `SelectList` for selection prompts (not manual cursor tracking)
+2. Use `TextInput` for text entry (built-in readline with Emacs keybindings)
+3. Use `useContentRect()` for responsive dimensions
+4. Use `overflow="scroll"` + `scrollTo` for scrolling
+5. Use `$token` colors for consistent theming

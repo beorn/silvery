@@ -83,7 +83,7 @@ function Wizard() {
           }}
           maxVisible={5}
         />
-        <Text color="$muted">↑↓ navigate  Enter select</Text>
+        <Text color="$muted">↑↓ navigate Enter select</Text>
       </Box>
     )
   }
@@ -117,8 +117,12 @@ function Wizard() {
 
   return (
     <Box flexDirection="column" gap={1}>
-      <Text color="$success" bold>Done!</Text>
-      <Text>Created {name || "my-app"} with {framework}.</Text>
+      <Text color="$success" bold>
+        Done!
+      </Text>
+      <Text>
+        Created {name || "my-app"} with {framework}.
+      </Text>
       <Text color="$muted">Press q to exit</Text>
     </Box>
   )
@@ -174,11 +178,7 @@ TextInput ships with Emacs keybindings out of the box — no manual key handling
 - **Ctrl+W** — Kill word backward
 
 ```tsx
-<TextInput
-  placeholder="my-app"
-  onSubmit={(val) => setName(val)}
-  prompt="> "
-/>
+<TextInput placeholder="my-app" onSubmit={(val) => setName(val)} prompt="> " />
 ```
 
 ### Focus Scopes — Isolate Navigation Per Step
@@ -195,15 +195,15 @@ When the step transitions, focus automatically moves to the new scope's first fo
 
 ## Features Used
 
-| Feature | Usage |
-| --- | --- |
-| `SelectList` | Single-select with keyboard navigation |
-| `TextInput` | Text entry with readline shortcuts |
-| `ProgressBar` | Visual installation progress |
-| `Spinner` | Loading animation |
-| `focusScope` | Tab navigation isolation per step |
-| `useInput()` | Custom keyboard handling |
-| `renderStatic()` | Pipe-friendly final output |
+| Feature          | Usage                                  |
+| ---------------- | -------------------------------------- |
+| `SelectList`     | Single-select with keyboard navigation |
+| `TextInput`      | Text entry with readline shortcuts     |
+| `ProgressBar`    | Visual installation progress           |
+| `Spinner`        | Loading animation                      |
+| `focusScope`     | Tab navigation isolation per step      |
+| `useInput()`     | Custom keyboard handling               |
+| `renderStatic()` | Pipe-friendly final output             |
 
 ## What Silvery Adds
 

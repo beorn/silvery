@@ -56,12 +56,13 @@ features:
 
 <div class="use-cases">
 
-- **[AI Assistants & Chat](/examples/ai-assistants)** -- Streaming output, scrollback history, command palettes
-- **[Dashboards & Monitoring](/examples/dashboard)** -- Multi-pane layouts with real-time data
-- **[Kanban & Project Boards](/examples/kanban)** -- Multi-column navigation with cards and focus management
-- **[CLI Wizards & Setup Tools](/examples/cli-wizards)** -- Step-by-step forms, selections, progress tracking
-- **[Developer Tools](/examples/developer-tools)** -- REPLs, log viewers, debuggers, profilers
-- **[Data Explorers & Tables](/examples/data-explorers)** -- Virtual lists, filtering, search, sortable tables
+- **[Components](/examples/components)** -- 30+ ready-made widgets: SelectList, Tabs, ProgressBar, Spinner, and more
+- **[Layout](/examples/layout)** -- CSS flexbox for terminals: responsive sizing, gap, scroll containers
+- **[Forms & Input](/examples/forms)** -- Multi-step wizards, SelectList, TextInput with readline
+- **[Tables & Data](/examples/tables)** -- Table component, VirtualList, responsive columns, search/filter
+- **[Scrollback](/examples/scrollback)** -- Dynamic inline mode: freeze-and-scroll, natural history (unique)
+- **[AI Chat](/examples/ai-chat)** -- Streaming output, scrollback, command introspection for agents
+- **[Testing](/examples/testing)** -- Headless renderer, Playwright-style locators, press() simulation
 
 </div>
 

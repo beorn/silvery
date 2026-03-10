@@ -60,18 +60,7 @@ interface LogEntry {
 // Data Generation
 // ============================================================================
 
-const SOURCES = [
-  "http",
-  "db",
-  "auth",
-  "cache",
-  "worker",
-  "api",
-  "scheduler",
-  "queue",
-  "metrics",
-  "ws",
-]
+const SOURCES = ["http", "db", "auth", "cache", "worker", "api", "scheduler", "queue", "metrics", "ws"]
 
 const LOG_TEMPLATES: Record<LogLevel, string[]> = {
   DEBUG: [
@@ -183,13 +172,7 @@ function formatTime(date: Date): string {
   })
 }
 
-function LogRow({
-  entry,
-  isSelected,
-}: {
-  entry: LogEntry
-  isSelected: boolean
-}): JSX.Element {
+function LogRow({ entry, isSelected }: { entry: LogEntry; isSelected: boolean }): JSX.Element {
   const badge = LEVEL_BADGES[entry.level]
   const color = LEVEL_COLORS[entry.level]
 
@@ -231,13 +214,7 @@ function LevelCounts({ entries }: { entries: LogEntry[] }): JSX.Element {
 }
 
 /** Inner component that reads the flex container's height via useContentRect */
-function LogListArea({
-  entries,
-  cursor,
-}: {
-  entries: LogEntry[]
-  cursor: number
-}): JSX.Element {
+function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number }): JSX.Element {
   const { height } = useContentRect()
 
   return (
@@ -247,9 +224,7 @@ function LogListArea({
       itemHeight={1}
       scrollTo={cursor}
       overscan={5}
-      renderItem={(entry, index) => (
-        <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />
-      )}
+      renderItem={(entry, index) => <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />}
     />
   )
 }
@@ -411,10 +386,7 @@ export function DevTools(): JSX.Element {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner
-      meta={meta}
-      controls="j/k navigate  g/G start/end  d/i/w/e add log  c clear  Esc/q quit"
-    >
+    <ExampleBanner meta={meta} controls="j/k navigate  g/G start/end  d/i/w/e add log  c clear  Esc/q quit">
       <DevTools />
     </ExampleBanner>,
     term,

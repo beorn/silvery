@@ -5,8 +5,8 @@ prev:
   text: Overview
   link: /examples/
 next:
-  text: Dashboard
-  link: /examples/dashboard
+  text: Components
+  link: /examples/components
 ---
 
 # Live Demo

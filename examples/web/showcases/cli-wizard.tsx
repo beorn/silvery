@@ -262,7 +262,9 @@ export function CLIWizardShowcase(): JSX.Element {
                       {"\u25CF"} {opt}
                     </Text>
                   ) : (
-                    <Text color="#6c7086">{"\u25CB"} {opt}</Text>
+                    <Text color="#6c7086">
+                      {"\u25CB"} {opt}
+                    </Text>
                   )}
                 </Text>
               ))}

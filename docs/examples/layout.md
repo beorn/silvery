@@ -59,7 +59,8 @@ function App() {
       <Box flexDirection="row" gap={1} paddingX={1}>
         {tabs.map((label, i) => (
           <Text key={label} bold={i === tab} inverse={i === tab}>
-            {" "}{label}{" "}
+            {" "}
+            {label}{" "}
           </Text>
         ))}
       </Box>
@@ -67,7 +68,7 @@ function App() {
         {tab === 0 && <StatsPane />}
       </Box>
       <Box paddingX={1}>
-        <Text dimColor>←→ tabs  q quit</Text>
+        <Text dimColor>←→ tabs q quit</Text>
       </Box>
     </Box>
   )
@@ -155,7 +156,9 @@ Add scrolling to any Box. Silvery measures children, calculates the visible rang
 ```tsx
 <Box flexDirection="column" flexGrow={1} overflow="scroll" scrollTo={selectedIndex}>
   {items.map((item, i) => (
-    <Text key={i} inverse={i === selectedIndex}>{item.name}</Text>
+    <Text key={i} inverse={i === selectedIndex}>
+      {item.name}
+    </Text>
   ))}
 </Box>
 ```
@@ -168,7 +171,9 @@ Equal-width columns via `flexGrow`. Each column scrolls independently (see the [
 <Box flexDirection="row" flexGrow={1}>
   {columns.map((col) => (
     <Box key={col.id} flexGrow={1} flexDirection="column" overflow="scroll">
-      {col.items.map(item => <Card key={item.id} {...item} />)}
+      {col.items.map((item) => (
+        <Card key={item.id} {...item} />
+      ))}
     </Box>
   ))}
 </Box>
@@ -176,15 +181,15 @@ Equal-width columns via `flexGrow`. Each column scrolls independently (see the [
 
 ## Features Used
 
-| Feature | Usage |
-| --- | --- |
-| `flexGrow` | Proportional progress bars and panel sizing |
-| `justifyContent` | Spacing between labels and values |
-| `gap` | Consistent spacing between items |
-| `overflow="scroll"` | Scrollable containers with auto-indicators |
-| `scrollTo={index}` | Keep selected item visible |
-| `useContentRect()` | Responsive layout feedback at render time |
-| `useInput()` | Tab switching and list navigation |
+| Feature             | Usage                                       |
+| ------------------- | ------------------------------------------- |
+| `flexGrow`          | Proportional progress bars and panel sizing |
+| `justifyContent`    | Spacing between labels and values           |
+| `gap`               | Consistent spacing between items            |
+| `overflow="scroll"` | Scrollable containers with auto-indicators  |
+| `scrollTo={index}`  | Keep selected item visible                  |
+| `useContentRect()`  | Responsive layout feedback at render time   |
+| `useInput()`        | Tab switching and list navigation           |
 
 ## Exercises
 

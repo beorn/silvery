@@ -11,7 +11,7 @@
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
 import { renderToXterm } from "../../packages/term/src/xterm/index.js"
-import { SHOWCASES, emitInput, emitMouse, setTermFocused } from "./showcases.js"
+import { SHOWCASES, emitInput, emitMouse, setTermFocused } from "./showcases/index.js"
 import React from "react"
 
 // =============================================================================

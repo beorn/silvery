@@ -138,7 +138,7 @@ interface RegistryEntry {
 async function generateRegistry(): Promise<void> {
   const entries: RegistryEntry[] = []
 
-  // Showcase entries (from showcases.tsx — these share one file, source shown differently)
+  // Showcase entries (from showcases/ directory — each showcase in its own file)
   const showcaseKeys = [
     "dashboard",
     "coding-agent",

@@ -86,16 +86,16 @@ function REPL() {
   const [input, setInput] = useState("")
   let nextId = entries.length
 
-  const handleSubmit = useCallback((text: string) => {
-    if (!text.trim()) return
-    setInput("")
-    const id = nextId++
-    // Add entry, simulate processing, then freeze
-    setEntries((prev) => [
-      ...prev,
-      { id, input: text, output: `Result: ${text.toUpperCase()}`, done: true },
-    ])
-  }, [nextId])
+  const handleSubmit = useCallback(
+    (text: string) => {
+      if (!text.trim()) return
+      setInput("")
+      const id = nextId++
+      // Add entry, simulate processing, then freeze
+      setEntries((prev) => [...prev, { id, input: text, output: `Result: ${text.toUpperCase()}`, done: true }])
+    },
+    [nextId],
+  )
 
   return (
     <ScrollbackList
@@ -145,10 +145,7 @@ await render(<App />, term, { mode: "inline" })
 The `isFrozen` callback controls which items are "done" and can be scrolled past:
 
 ```tsx
-<ScrollbackList
-  items={items}
-  isFrozen={(item) => item.status === "complete"}
->
+<ScrollbackList items={items} isFrozen={(item) => item.status === "complete"}>
   {(item) => <ItemView item={item} />}
 </ScrollbackList>
 ```
@@ -165,18 +162,19 @@ bun my-app.tsx | head    # Clean text, no escape sequences
 
 ## Features Used
 
-| Feature | Usage |
-| --- | --- |
-| `ScrollbackList` | Freeze-and-scroll item list |
-| `ScrollbackView` | Auto-sizing inline container |
-| `mode: "inline"` | Render in normal scrollback |
-| `isFrozen` | Control which items are done |
-| `footer` | Pinned input area at bottom |
-| `markers` | Visual separators between frozen items |
+| Feature          | Usage                                  |
+| ---------------- | -------------------------------------- |
+| `ScrollbackList` | Freeze-and-scroll item list            |
+| `ScrollbackView` | Auto-sizing inline container           |
+| `mode: "inline"` | Render in normal scrollback            |
+| `isFrozen`       | Control which items are done           |
+| `footer`         | Pinned input area at bottom            |
+| `markers`        | Visual separators between frozen items |
 
 ## What Makes This Unique
 
 No other TUI framework has this capability:
+
 - **Ink** always uses alternate screen for full apps
 - **Blessed** is alternate-screen only
 - **Bubble Tea / Ratatui** are alternate-screen only

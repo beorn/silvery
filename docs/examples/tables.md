@@ -58,10 +58,7 @@ function App() {
 
   // Filter rows against the deferred query so typing stays responsive
   const filtered = processes.filter(
-    (p) =>
-      p.name.includes(deferredQuery) ||
-      String(p.pid).includes(deferredQuery) ||
-      p.status.includes(deferredQuery),
+    (p) => p.name.includes(deferredQuery) || String(p.pid).includes(deferredQuery) || p.status.includes(deferredQuery),
   )
 
   // Responsive column widths
@@ -135,9 +132,7 @@ For thousands of rows, wrap in a VirtualList to keep memory constant:
   height={terminalHeight - 4}
   itemHeight={1}
   scrollTo={selected}
-  renderItem={(row, index) => (
-    <Text inverse={index === selected}>{formatRow(row)}</Text>
-  )}
+  renderItem={(row, index) => <Text inverse={index === selected}>{formatRow(row)}</Text>}
 />
 ```
 
@@ -159,14 +154,14 @@ The Table component handles header alignment and separators:
 
 ## Features Used
 
-| Feature | Usage |
-| --- | --- |
-| `Table` | Column alignment and headers |
-| `VirtualList` | Constant-memory rendering of large datasets |
-| `useContentRect()` | Responsive column widths |
-| `TextInput` | Real-time search filter |
-| `useDeferredValue` | Non-blocking filter during typing |
-| `useInput()` | Keyboard navigation |
+| Feature            | Usage                                       |
+| ------------------ | ------------------------------------------- |
+| `Table`            | Column alignment and headers                |
+| `VirtualList`      | Constant-memory rendering of large datasets |
+| `useContentRect()` | Responsive column widths                    |
+| `TextInput`        | Real-time search filter                     |
+| `useDeferredValue` | Non-blocking filter during typing           |
+| `useInput()`       | Keyboard navigation                         |
 
 ## Exercises
 

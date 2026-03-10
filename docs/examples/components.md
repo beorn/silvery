@@ -79,16 +79,16 @@ ProgressBar sizes itself via flex — no manual width calculations:
 
 ## Features Used
 
-| Feature | Usage |
-| --- | --- |
-| `SelectList` | Selection prompts with keyboard navigation |
-| `TextInput` | Text entry with readline shortcuts |
-| `ProgressBar` | Visual progress feedback |
-| `Spinner` | Loading animation |
-| `Box` | Flex layout, borders, padding |
-| `Text` | Styled text with `$token` colors |
-| `useInput()` | Keyboard handling |
-| `ThemeProvider` | Semantic color tokens |
+| Feature         | Usage                                      |
+| --------------- | ------------------------------------------ |
+| `SelectList`    | Selection prompts with keyboard navigation |
+| `TextInput`     | Text entry with readline shortcuts         |
+| `ProgressBar`   | Visual progress feedback                   |
+| `Spinner`       | Loading animation                          |
+| `Box`           | Flex layout, borders, padding              |
+| `Text`          | Styled text with `$token` colors           |
+| `useInput()`    | Keyboard handling                          |
+| `ThemeProvider` | Semantic color tokens                      |
 
 ## Exercises
 

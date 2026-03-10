@@ -63,17 +63,64 @@ interface ProcessInfo {
 // ============================================================================
 
 const PROCESS_NAMES = [
-  "node", "python3", "nginx", "redis-server", "postgres", "docker",
-  "sshd", "systemd", "cron", "rsyslogd", "webpack", "vite",
-  "chrome", "firefox", "code", "vim", "tmux", "bash", "zsh",
-  "containerd", "kubelet", "etcd", "coredns", "flannel",
-  "prometheus", "grafana", "elasticsearch", "kibana", "logstash",
-  "rabbitmq", "kafka", "zookeeper", "consul", "vault",
-  "haproxy", "traefik", "envoy", "istio-proxy", "jaeger",
-  "mysql", "mongo", "cassandra", "clickhouse", "influxdb",
-  "jenkins", "gitlab-runner", "buildkitd", "registry",
-  "cadvisor", "node-exporter", "alertmanager", "telegraf",
-  "bun", "deno", "esbuild", "swc", "turbo", "pnpm",
+  "node",
+  "python3",
+  "nginx",
+  "redis-server",
+  "postgres",
+  "docker",
+  "sshd",
+  "systemd",
+  "cron",
+  "rsyslogd",
+  "webpack",
+  "vite",
+  "chrome",
+  "firefox",
+  "code",
+  "vim",
+  "tmux",
+  "bash",
+  "zsh",
+  "containerd",
+  "kubelet",
+  "etcd",
+  "coredns",
+  "flannel",
+  "prometheus",
+  "grafana",
+  "elasticsearch",
+  "kibana",
+  "logstash",
+  "rabbitmq",
+  "kafka",
+  "zookeeper",
+  "consul",
+  "vault",
+  "haproxy",
+  "traefik",
+  "envoy",
+  "istio-proxy",
+  "jaeger",
+  "mysql",
+  "mongo",
+  "cassandra",
+  "clickhouse",
+  "influxdb",
+  "jenkins",
+  "gitlab-runner",
+  "buildkitd",
+  "registry",
+  "cadvisor",
+  "node-exporter",
+  "alertmanager",
+  "telegraf",
+  "bun",
+  "deno",
+  "esbuild",
+  "swc",
+  "turbo",
+  "pnpm",
 ]
 
 const USERS = ["root", "www-data", "postgres", "redis", "node", "admin", "deploy", "monitor"]
@@ -208,24 +255,16 @@ function ProcessRow({
       <Text bold={isSelected} color={isSelected ? "white" : undefined}>
         {displayName.padEnd(cols.nameW)}
       </Text>
-      <Text color={isSelected ? "white" : cpuColor}>
-        {proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%
-      </Text>
-      <Text color={isSelected ? "white" : memColor}>
-        {proc.mem.toFixed(1).padStart(cols.memW - 1)}%
-      </Text>
+      <Text color={isSelected ? "white" : cpuColor}>{proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%</Text>
+      <Text color={isSelected ? "white" : memColor}>{proc.mem.toFixed(1).padStart(cols.memW - 1)}%</Text>
       <Text>{"  "}</Text>
       <Text color={isSelected ? "white" : STATUS_COLORS[proc.status]}>
         {STATUS_ICONS[proc.status]} {proc.status.padEnd(cols.statusW - 2)}
       </Text>
       <Text color={isSelected ? "white" : "$muted"}>{proc.user.padEnd(cols.userW)}</Text>
-      <Text color={isSelected ? "white" : "$muted"}>
-        {String(proc.threads).padStart(cols.threadsW)}
-      </Text>
+      <Text color={isSelected ? "white" : "$muted"}>{String(proc.threads).padStart(cols.threadsW)}</Text>
       <Text>{"  "}</Text>
-      <Text color={isSelected ? "white" : "$muted"}>
-        {proc.uptime.padStart(cols.uptimeW)}
-      </Text>
+      <Text color={isSelected ? "white" : "$muted"}>{proc.uptime.padStart(cols.uptimeW)}</Text>
     </Box>
   )
 }
@@ -469,10 +508,7 @@ export function DataExplorer(): JSX.Element {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner
-      meta={meta}
-      controls="j/k navigate  d/u half-page  g/G start/end  / search  Esc/q quit"
-    >
+    <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  / search  Esc/q quit">
       <DataExplorer />
     </ExampleBanner>,
     term,

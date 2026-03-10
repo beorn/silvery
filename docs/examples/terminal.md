@@ -32,9 +32,15 @@ import { useInput } from "silvery"
 function App() {
   useInput((input, key) => {
     // With Kitty protocol, these are distinguishable:
-    if (key.ctrl && input === "k") { /* Ctrl+K */ }
-    if (key.meta && input === "k") { /* Cmd+K on macOS */ }
-    if (key.shift && key.tab) { /* Shift+Tab */ }
+    if (key.ctrl && input === "k") {
+      /* Ctrl+K */
+    }
+    if (key.meta && input === "k") {
+      /* Cmd+K on macOS */
+    }
+    if (key.shift && key.tab) {
+      /* Shift+Tab */
+    }
   })
   return <Text>Press keys...</Text>
 }
@@ -47,7 +53,7 @@ Define keyboard shortcuts using macOS modifier symbols:
 ```tsx
 import { parseHotkey, matchHotkey } from "silvery"
 
-const hotkey = parseHotkey("⌘K")  // Cmd+K
+const hotkey = parseHotkey("⌘K") // Cmd+K
 // or: parseHotkey("⌃⇧P")        // Ctrl+Shift+P
 
 useInput((input, key) => {
@@ -67,7 +73,7 @@ import { useMouse } from "silvery"
 function App() {
   useMouse((event) => {
     if (event.type === "click") {
-      setSelected(event.y)  // Row clicked
+      setSelected(event.y) // Row clicked
     }
     if (event.type === "scroll") {
       setOffset((o) => o + event.direction)
@@ -78,6 +84,7 @@ function App() {
 ```
 
 Mouse events work in:
+
 - Kitty, iTerm2, WezTerm (full support)
 - macOS Terminal, Windows Terminal (basic click/scroll)
 - xterm.js in the browser (full support)
@@ -100,6 +107,7 @@ function App() {
 ```
 
 Silvery auto-detects the best protocol:
+
 1. **Kitty graphics** — Full color, any size (Kitty, WezTerm)
 2. **Sixel** — Wide support (iTerm2, xterm, mlterm)
 3. **Text fallback** — Placeholder in unsupported terminals
@@ -164,28 +172,28 @@ bun examples/kitty/paint.tsx
 
 ## Features Used
 
-| Feature | Usage |
-| --- | --- |
-| Kitty keyboard | Unambiguous key identification |
-| `parseHotkey()` | macOS modifier symbol shortcuts |
-| `matchHotkey()` | Match keys against hotkey definitions |
-| Mouse tracking | Click and scroll events |
-| `Image` component | Inline image rendering |
-| `Canvas` component | Dynamic graphics via Canvas2D |
-| OSC queries | Terminal capability detection |
-| Protocol fallbacks | Graceful degradation |
+| Feature            | Usage                                 |
+| ------------------ | ------------------------------------- |
+| Kitty keyboard     | Unambiguous key identification        |
+| `parseHotkey()`    | macOS modifier symbol shortcuts       |
+| `matchHotkey()`    | Match keys against hotkey definitions |
+| Mouse tracking     | Click and scroll events               |
+| `Image` component  | Inline image rendering                |
+| `Canvas` component | Dynamic graphics via Canvas2D         |
+| OSC queries        | Terminal capability detection         |
+| Protocol fallbacks | Graceful degradation                  |
 
 ## Terminal Compatibility
 
-| Terminal | Kitty Keys | Mouse | Images | OSC |
-| --- | --- | --- | --- | --- |
-| Kitty | Full | Full | Kitty graphics | Full |
-| WezTerm | Full | Full | Kitty graphics | Full |
-| iTerm2 | Partial | Full | Sixel | Partial |
-| Ghostty | Full | Full | Kitty graphics | Full |
-| macOS Terminal | Basic | Click/scroll | None | None |
-| Windows Terminal | Partial | Full | Sixel | Partial |
-| xterm.js (browser) | Full | Full | None | Emulated |
+| Terminal           | Kitty Keys | Mouse        | Images         | OSC      |
+| ------------------ | ---------- | ------------ | -------------- | -------- |
+| Kitty              | Full       | Full         | Kitty graphics | Full     |
+| WezTerm            | Full       | Full         | Kitty graphics | Full     |
+| iTerm2             | Partial    | Full         | Sixel          | Partial  |
+| Ghostty            | Full       | Full         | Kitty graphics | Full     |
+| macOS Terminal     | Basic      | Click/scroll | None           | None     |
+| Windows Terminal   | Partial    | Full         | Sixel          | Partial  |
+| xterm.js (browser) | Full       | Full         | None           | Emulated |
 
 ## Exercises
 
