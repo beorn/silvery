@@ -2,8 +2,8 @@
  * One Dark palette — Atom's iconic dark theme.
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** One Dark — the classic Atom editor theme. */
 export const oneDark: ColorPalette = {
@@ -31,4 +31,4 @@ export const oneDark: ColorPalette = {
   cursorText: "#282C34",
   selectionBackground: "#5C6370",
   selectionForeground: "#ABB2BF",
-}
+};

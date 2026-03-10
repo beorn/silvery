@@ -26,4 +26,4 @@ export {
   executeRender,
   executeRenderAdapter,
   type PipelineContext,
-} from "./pipeline/index"
+} from "./pipeline/index";

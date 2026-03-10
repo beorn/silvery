@@ -121,18 +121,22 @@ console.log('Final items:', handle.store.getState().items);
 ### Key Handler Signature (createApp)
 
 ```typescript
-type KeyHandler<S> = (input: string, key: Key, ctx: { set: SetState<S>; get: GetState<S> }) => void | "exit"
+type KeyHandler<S> = (
+  input: string,
+  key: Key,
+  ctx: { set: SetState<S>; get: GetState<S> },
+) => void | "exit";
 ```
 
 ### AppHandle API
 
 ```typescript
 interface AppHandle<S> {
-  text: string
-  store: StoreApi<S> // Full Zustand store access
-  waitUntilExit(): Promise<void>
-  unmount(): void
-  press(key: string): Promise<void>
+  text: string;
+  store: StoreApi<S>; // Full Zustand store access
+  waitUntilExit(): Promise<void>;
+  unmount(): void;
+  press(key: string): Promise<void>;
 }
 ```
 
@@ -199,21 +203,21 @@ for await (const event of allEvents) {
 ```typescript
 // Schedule async work
 runtime.schedule(async () => {
-  const data = await fetchData()
-  return data
-})
+  const data = await fetchData();
+  return data;
+});
 
 // Receive result as event
 for await (const event of runtime.events()) {
   if (event.type === "effect") {
-    console.log("Data:", event.result)
+    console.log("Data:", event.result);
   }
 }
 
 // Cancel with AbortSignal
-const controller = new AbortController()
-runtime.schedule(async () => await longTask(), { signal: controller.signal })
-controller.abort() // Cancels the effect
+const controller = new AbortController();
+runtime.schedule(async () => await longTask(), { signal: controller.signal });
+controller.abort(); // Cancels the effect
 ```
 
 ## Layer 1.5: createStore() (TEA)
@@ -221,27 +225,35 @@ controller.abort() // Cancels the effect
 Between `createRuntime()` and the React layers sits a pure **TEA (The Elm Architecture) store**. It has no React dependency — use it for Elm-style apps or as the state backbone under React components.
 
 ```typescript
-import { createStore, silveryUpdate, defaultInit, withFocusManagement } from "@silvery/term/store"
-import { type Effect, type SilveryModel, type SilveryMsg, none, batch, dispatch, compose } from "@silvery/term/core"
+import { createStore, silveryUpdate, defaultInit, withFocusManagement } from "@silvery/term/store";
+import {
+  type Effect,
+  type SilveryModel,
+  type SilveryMsg,
+  none,
+  batch,
+  dispatch,
+  compose,
+} from "@silvery/term/core";
 
 // Extend the base model with your state
 interface AppModel extends SilveryModel {
-  count: number
-  items: string[]
+  count: number;
+  items: string[];
 }
 
-type AppMsg = SilveryMsg | { type: "increment" } | { type: "add-item"; text: string }
+type AppMsg = SilveryMsg | { type: "increment" } | { type: "add-item"; text: string };
 
 // Pure update: (msg, model) → [newModel, effects]
 function update(msg: AppMsg, model: AppModel): [AppModel, Effect[]] {
   switch (msg.type) {
     case "increment":
-      return [{ ...model, count: model.count + 1 }, [none]]
+      return [{ ...model, count: model.count + 1 }, [none]];
     case "add-item":
-      return [{ ...model, items: [...model.items, msg.text] }, [none]]
+      return [{ ...model, items: [...model.items, msg.text] }, [none]];
     default:
       // Delegate unhandled messages to the base Silvery update
-      return silveryUpdate(msg, model)
+      return silveryUpdate(msg, model);
   }
 }
 
@@ -249,16 +261,16 @@ function update(msg: AppMsg, model: AppModel): [AppModel, Effect[]] {
 const store = createStore({
   init: () => [{ ...defaultInit()[0], count: 0, items: [] } as AppModel, [none]],
   update: compose(withFocusManagement<AppModel, AppMsg>())(update),
-})
+});
 
 // Dispatch messages
-store.dispatch({ type: "increment" })
-store.getModel().count // 1
+store.dispatch({ type: "increment" });
+store.getModel().count; // 1
 
 // Subscribe to changes (compatible with React's useSyncExternalStore)
 const unsubscribe = store.subscribe(() => {
-  console.log("Model changed:", store.getModel().count)
-})
+  console.log("Model changed:", store.getModel().count);
+});
 ```
 
 ### Effects
@@ -276,11 +288,11 @@ function update(msg: AppMsg, model: AppModel): [AppModel, Effect[]] {
   switch (msg.type) {
     case "save":
       // Set loading flag, then queue a "save-complete" message
-      return [{ ...model, saving: true }, [dispatch({ type: "save-complete" } as AppMsg)]]
+      return [{ ...model, saving: true }, [dispatch({ type: "save-complete" } as AppMsg)]];
     case "save-complete":
-      return [{ ...model, saving: false }, [none]]
+      return [{ ...model, saving: false }, [none]];
     default:
-      return [model, [none]]
+      return [model, [none]];
   }
 }
 ```
@@ -290,18 +302,18 @@ function update(msg: AppMsg, model: AppModel): [AppModel, Effect[]] {
 Plugins wrap the update function, adding behavior before/after/around it:
 
 ```typescript
-import { type Plugin, compose } from "@silvery/term/core"
+import { type Plugin, compose } from "@silvery/term/core";
 
 // Logging plugin
 const logging: Plugin<AppModel, AppMsg> = (inner) => (msg, model) => {
-  console.log("→", msg.type)
-  const result = inner(msg, model)
-  console.log("←", result[0].count)
-  return result
-}
+  console.log("→", msg.type);
+  const result = inner(msg, model);
+  console.log("←", result[0].count);
+  return result;
+};
 
 // Compose: first plugin is outermost (sees messages first)
-const update = compose(logging, withFocusManagement())(baseUpdate)
+const update = compose(logging, withFocusManagement())(baseUpdate);
 ```
 
 ### Connecting to createRuntime()
@@ -329,22 +341,22 @@ for await (const event of merge(keyboardEvents, runtime.events())) {
 All layers use AsyncIterable streams. Compose them with helpers:
 
 ```typescript
-import { merge, map, filter, takeUntil, throttle } from "@silvery/term/runtime"
+import { merge, map, filter, takeUntil, throttle } from "@silvery/term/runtime";
 
 // Merge multiple sources
-const events = merge(keyboardEvents, timerEvents)
+const events = merge(keyboardEvents, timerEvents);
 
 // Transform
-const keyEvents = map(rawKeys, (k) => ({ type: "key", key: k }))
+const keyEvents = map(rawKeys, (k) => ({ type: "key", key: k }));
 
 // Filter
-const letters = filter(keyEvents, (e) => e.key.length === 1)
+const letters = filter(keyEvents, (e) => e.key.length === 1);
 
 // Stop on signal
-const bounded = takeUntil(events, abortSignal)
+const bounded = takeUntil(events, abortSignal);
 
 // Throttle
-const throttled = throttle(mouseMoves, 16) // ~60fps
+const throttled = throttle(mouseMoves, 16); // ~60fps
 ```
 
 ## Tick Sources
@@ -352,19 +364,19 @@ const throttled = throttle(mouseMoves, 16) // ~60fps
 For animations and periodic updates:
 
 ```typescript
-import { createTick, createFrameTick, createAdaptiveTick } from "@silvery/term/runtime"
+import { createTick, createFrameTick, createAdaptiveTick } from "@silvery/term/runtime";
 
 // Fixed interval
-const everySecond = createTick(1000)
+const everySecond = createTick(1000);
 
 // 60fps
-const frames = createFrameTick()
+const frames = createFrameTick();
 
 // Adaptive (slows when idle)
-const adaptive = createAdaptiveTick()
+const adaptive = createAdaptiveTick();
 
 // Use with merge
-const events = merge(keyboard, createTick(100))
+const events = merge(keyboard, createTick(100));
 for await (const event of events) {
   if (event.type === "tick") {
     // Update animation

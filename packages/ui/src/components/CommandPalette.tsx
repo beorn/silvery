@@ -20,10 +20,10 @@
  * />
  * ```
  */
-import React, { useCallback, useMemo, useState } from "react"
-import { useInput } from "@silvery/react/hooks/useInput"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React, { useCallback, useMemo, useState } from "react";
+import { useInput } from "@silvery/react/hooks/useInput";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -31,26 +31,26 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface CommandItem {
   /** Command display name */
-  name: string
+  name: string;
   /** Command description */
-  description?: string
+  description?: string;
   /** Keyboard shortcut hint */
-  shortcut?: string
+  shortcut?: string;
 }
 
 export interface CommandPaletteProps {
   /** Available commands */
-  commands: CommandItem[]
+  commands: CommandItem[];
   /** Called when a command is selected (Enter) */
-  onSelect?: (command: CommandItem) => void
+  onSelect?: (command: CommandItem) => void;
   /** Called when the palette is dismissed (Escape) */
-  onClose?: () => void
+  onClose?: () => void;
   /** Placeholder text for the filter input (default: "Search commands...") */
-  placeholder?: string
+  placeholder?: string;
   /** Max visible results (default: 10) */
-  maxVisible?: number
+  maxVisible?: number;
   /** Whether this component captures input (default: true) */
-  isActive?: boolean
+  isActive?: boolean;
 }
 
 // =============================================================================
@@ -59,13 +59,13 @@ export interface CommandPaletteProps {
 
 /** Case-insensitive fuzzy match: all query characters appear in order. */
 function fuzzyMatch(query: string, text: string): boolean {
-  const lower = text.toLowerCase()
-  const q = query.toLowerCase()
-  let qi = 0
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  let qi = 0;
   for (let i = 0; i < lower.length && qi < q.length; i++) {
-    if (lower[i] === q[qi]) qi++
+    if (lower[i] === q[qi]) qi++;
   }
-  return qi === q.length
+  return qi === q.length;
 }
 
 // =============================================================================
@@ -86,68 +86,78 @@ export function CommandPalette({
   maxVisible = 10,
   isActive = true,
 }: CommandPaletteProps): React.ReactElement {
-  const [query, setQuery] = useState("")
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [query, setQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const filtered = useMemo(() => {
-    if (!query) return commands
+    if (!query) return commands;
     return commands.filter(
-      (cmd) => fuzzyMatch(query, cmd.name) || (cmd.description && fuzzyMatch(query, cmd.description)),
-    )
-  }, [commands, query])
+      (cmd) =>
+        fuzzyMatch(query, cmd.name) || (cmd.description && fuzzyMatch(query, cmd.description)),
+    );
+  }, [commands, query]);
 
-  const visible = filtered.slice(0, maxVisible)
+  const visible = filtered.slice(0, maxVisible);
 
-  const clampIndex = useCallback((idx: number) => Math.max(0, Math.min(idx, filtered.length - 1)), [filtered.length])
+  const clampIndex = useCallback(
+    (idx: number) => Math.max(0, Math.min(idx, filtered.length - 1)),
+    [filtered.length],
+  );
 
   useInput(
     (input, key) => {
       // Navigation
       if (key.upArrow) {
-        setSelectedIndex((prev) => clampIndex(prev - 1))
-        return
+        setSelectedIndex((prev) => clampIndex(prev - 1));
+        return;
       }
       if (key.downArrow) {
-        setSelectedIndex((prev) => clampIndex(prev + 1))
-        return
+        setSelectedIndex((prev) => clampIndex(prev + 1));
+        return;
       }
 
       // Select
       if (key.return) {
-        const cmd = filtered[selectedIndex]
-        if (cmd) onSelect?.(cmd)
-        return
+        const cmd = filtered[selectedIndex];
+        if (cmd) onSelect?.(cmd);
+        return;
       }
 
       // Dismiss
       if (key.escape) {
-        onClose?.()
-        return
+        onClose?.();
+        return;
       }
 
       // Backspace
       if (key.backspace || key.delete) {
         setQuery((prev) => {
-          const next = prev.slice(0, -1)
-          setSelectedIndex(0)
-          return next
-        })
-        return
+          const next = prev.slice(0, -1);
+          setSelectedIndex(0);
+          return next;
+        });
+        return;
       }
 
       // Printable character
       if (input && input >= " " && !key.ctrl && !key.meta) {
         setQuery((prev) => {
-          setSelectedIndex(0)
-          return prev + input
-        })
+          setSelectedIndex(0);
+          return prev + input;
+        });
       }
     },
     { isActive },
-  )
+  );
 
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor="$border" backgroundColor="$surface" paddingX={1}>
+    <Box
+      flexDirection="column"
+      borderStyle="single"
+      borderColor="$border"
+      backgroundColor="$surface"
+      paddingX={1}
+    >
       {/* Search input */}
       <Box>
         <Text color="$primary" bold>
@@ -163,7 +173,7 @@ export function CommandPalette({
         <Text color="$disabledfg">No matching commands</Text>
       ) : (
         visible.map((cmd, i) => {
-          const isSelected = i === selectedIndex
+          const isSelected = i === selectedIndex;
           return (
             <Box key={cmd.name} gap={1}>
               <Text inverse={isSelected} color={isSelected ? "$primary" : "$fg"}>
@@ -176,11 +186,13 @@ export function CommandPalette({
                 </Text>
               )}
             </Box>
-          )
+          );
         })
       )}
       {/* Status */}
-      {filtered.length > maxVisible && <Text color="$disabledfg">{filtered.length - maxVisible} more...</Text>}
+      {filtered.length > maxVisible && (
+        <Text color="$disabledfg">{filtered.length - maxVisible} more...</Text>
+      )}
     </Box>
-  )
+  );
 }

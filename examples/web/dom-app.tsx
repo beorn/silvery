@@ -5,17 +5,17 @@
  * Advantages: text selection, accessibility, CSS integration.
  */
 
-import React, { useState } from "react"
-import { renderToDOM, Box, Text, useContentRect } from "../../packages/term/src/dom/index.js"
+import React, { useState } from "react";
+import { renderToDOM, Box, Text, useContentRect } from "../../packages/term/src/dom/index.js";
 
 // Component that shows its dimensions
 function SizeDisplay() {
-  const { width, height } = useContentRect()
+  const { width, height } = useContentRect();
   return (
     <Text color="green">
       Size: {Math.round(width)}px × {Math.round(height)}px
     </Text>
-  )
+  );
 }
 
 // Demo component with various styles
@@ -65,17 +65,17 @@ function App() {
         <Text dim>Text is selectable! Screen readers work. CSS hover states available.</Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 // Mount to container
-const container = document.getElementById("app") as HTMLElement
+const container = document.getElementById("app") as HTMLElement;
 if (container) {
   const instance = renderToDOM(<App />, container, {
     fontSize: 14,
     fontFamily: "monospace",
-  })
+  });
 
   // Expose for debugging
-  ;(window as any).silveryInstance = instance
+  (window as any).silveryInstance = instance;
 }

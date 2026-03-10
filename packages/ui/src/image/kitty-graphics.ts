@@ -15,19 +15,19 @@
  * - Images can be assigned an `i=<id>` for later deletion
  */
 
-const APC_START = "\x1b_G"
-const ST = "\x1b\\"
+const APC_START = "\x1b_G";
+const ST = "\x1b\\";
 
 /** Maximum base64 bytes per chunk (Kitty recommendation) */
-const MAX_CHUNK_SIZE = 4096
+const MAX_CHUNK_SIZE = 4096;
 
 export interface KittyImageOptions {
   /** Image width in terminal columns */
-  width?: number
+  width?: number;
   /** Image height in terminal rows */
-  height?: number
+  height?: number;
   /** Image ID for later reference/deletion (positive integer) */
-  id?: number
+  id?: number;
 }
 
 /**
@@ -53,34 +53,34 @@ export interface KittyImageOptions {
  * ```
  */
 export function encodeKittyImage(pngData: Buffer, opts?: KittyImageOptions): string {
-  const b64 = pngData.toString("base64")
-  const chunks = splitIntoChunks(b64, MAX_CHUNK_SIZE)
+  const b64 = pngData.toString("base64");
+  const chunks = splitIntoChunks(b64, MAX_CHUNK_SIZE);
 
   if (chunks.length === 0) {
     // Empty image — send a single empty payload
-    return `${APC_START}${buildParams(opts, 0)};${ST}`
+    return `${APC_START}${buildParams(opts, 0)};${ST}`;
   }
 
   if (chunks.length === 1) {
     // Single chunk — m=0 (last/only)
-    return `${APC_START}${buildParams(opts, 0)};${chunks[0]}${ST}`
+    return `${APC_START}${buildParams(opts, 0)};${chunks[0]}${ST}`;
   }
 
   // Multiple chunks
-  const parts: string[] = []
+  const parts: string[] = [];
 
   // First chunk carries full metadata, m=1 (more follows)
-  parts.push(`${APC_START}${buildParams(opts, 1)};${chunks[0]}${ST}`)
+  parts.push(`${APC_START}${buildParams(opts, 1)};${chunks[0]}${ST}`);
 
   // Middle chunks — only m=1
   for (let i = 1; i < chunks.length - 1; i++) {
-    parts.push(`${APC_START}m=1;${chunks[i]}${ST}`)
+    parts.push(`${APC_START}m=1;${chunks[i]}${ST}`);
   }
 
   // Last chunk — m=0
-  parts.push(`${APC_START}m=0;${chunks[chunks.length - 1]}${ST}`)
+  parts.push(`${APC_START}m=0;${chunks[chunks.length - 1]}${ST}`);
 
-  return parts.join("")
+  return parts.join("");
 }
 
 /**
@@ -97,7 +97,7 @@ export function encodeKittyImage(pngData: Buffer, opts?: KittyImageOptions): str
  * ```
  */
 export function deleteKittyImage(id: number): string {
-  return `${APC_START}a=d,d=i,i=${id}${ST}`
+  return `${APC_START}a=d,d=i,i=${id}${ST}`;
 }
 
 /**
@@ -112,22 +112,22 @@ export function deleteKittyImage(id: number): string {
  * @returns `true` if the terminal likely supports Kitty graphics
  */
 export function isKittyGraphicsSupported(): boolean {
-  const term = process.env.TERM ?? ""
-  const termProgram = process.env.TERM_PROGRAM ?? ""
+  const term = process.env.TERM ?? "";
+  const termProgram = process.env.TERM_PROGRAM ?? "";
 
   // Kitty terminal
-  if (term === "xterm-kitty" || termProgram === "kitty") return true
+  if (term === "xterm-kitty" || termProgram === "kitty") return true;
 
   // WezTerm supports Kitty graphics protocol
-  if (termProgram === "WezTerm") return true
+  if (termProgram === "WezTerm") return true;
 
   // Ghostty supports Kitty graphics
-  if (termProgram === "ghostty") return true
+  if (termProgram === "ghostty") return true;
 
   // Konsole 22.04+ supports Kitty graphics
-  if (termProgram === "konsole") return true
+  if (termProgram === "konsole") return true;
 
-  return false
+  return false;
 }
 
 // ============================================================================
@@ -138,24 +138,24 @@ export function isKittyGraphicsSupported(): boolean {
  * Build the Kitty graphics protocol parameter string for the first chunk.
  */
 function buildParams(opts: KittyImageOptions | undefined, more: 0 | 1): string {
-  const parts = [`a=T`, `f=100`, `m=${more}`]
+  const parts = [`a=T`, `f=100`, `m=${more}`];
 
-  if (opts?.width != null) parts.push(`s=${opts.width}`)
-  if (opts?.height != null) parts.push(`v=${opts.height}`)
-  if (opts?.id != null) parts.push(`i=${opts.id}`)
+  if (opts?.width != null) parts.push(`s=${opts.width}`);
+  if (opts?.height != null) parts.push(`v=${opts.height}`);
+  if (opts?.id != null) parts.push(`i=${opts.id}`);
 
-  return parts.join(",")
+  return parts.join(",");
 }
 
 /**
  * Split a string into chunks of at most `size` characters.
  */
 function splitIntoChunks(str: string, size: number): string[] {
-  if (str.length === 0) return []
+  if (str.length === 0) return [];
 
-  const chunks: string[] = []
+  const chunks: string[] = [];
   for (let i = 0; i < str.length; i += size) {
-    chunks.push(str.slice(i, i + size))
+    chunks.push(str.slice(i, i + size));
   }
-  return chunks
+  return chunks;
 }

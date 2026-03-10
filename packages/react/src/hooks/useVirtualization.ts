@@ -8,8 +8,8 @@
  * - When scrollTo is defined: actively track and scroll to that index
  * - When scrollTo is undefined: freeze scroll state (critical for multi-column layouts)
  */
-import { useMemo } from "react"
-import { useVirtualizer } from "./useVirtualizer"
+import { useMemo } from "react";
+import { useVirtualizer } from "./useVirtualizer";
 
 // =============================================================================
 // Types
@@ -17,57 +17,57 @@ import { useVirtualizer } from "./useVirtualizer"
 
 export interface VirtualizationConfig<T> {
   /** Array of items to virtualize */
-  items: T[]
+  items: T[];
 
   /** Size of the viewport (height for vertical, width for horizontal) */
-  viewportSize: number
+  viewportSize: number;
 
   /** Size of each item (fixed number or function for variable sizes) */
-  itemSize: number | ((item: T, index: number) => number)
+  itemSize: number | ((item: T, index: number) => number);
 
   /** Index to keep visible (scrolls if off-screen) */
-  scrollTo?: number
+  scrollTo?: number;
 
   /** Padding from edge before scrolling (in items) */
-  scrollPadding?: number
+  scrollPadding?: number;
 
   /** Extra items to render beyond viewport for smooth scrolling */
-  overscan?: number
+  overscan?: number;
 
   /** Maximum items to render at once */
-  maxRendered?: number
+  maxRendered?: number;
 
   /** Gap between items (for calculating visible count with variable sizes) */
-  gap?: number
+  gap?: number;
 }
 
 export interface VirtualizationResult {
   /** First item index to render */
-  startIndex: number
+  startIndex: number;
 
   /** Last item index to render (exclusive) */
-  endIndex: number
+  endIndex: number;
 
   /** Current selected index (for scroll position calculation) */
-  currentSelectedIndex: number
+  currentSelectedIndex: number;
 
   /** Current scroll offset */
-  scrollOffset: number
+  scrollOffset: number;
 
   /** Placeholder size before rendered items (for virtual scrolling) */
-  leadingPlaceholderSize: number
+  leadingPlaceholderSize: number;
 
   /** Placeholder size after rendered items */
-  trailingPlaceholderSize: number
+  trailingPlaceholderSize: number;
 
   /** Number of items hidden before viewport */
-  hiddenBefore: number
+  hiddenBefore: number;
 
   /** Number of items hidden after viewport */
-  hiddenAfter: number
+  hiddenAfter: number;
 
   /** Imperative scroll function */
-  scrollToItem: (index: number) => void
+  scrollToItem: (index: number) => void;
 }
 
 // =============================================================================
@@ -81,15 +81,16 @@ export interface VirtualizationResult {
  * count-based useVirtualizer engine and maps the result back to the legacy API.
  */
 export function useVirtualization<T>(config: VirtualizationConfig<T>): VirtualizationResult {
-  const { items, viewportSize, itemSize, scrollTo, scrollPadding, overscan, maxRendered, gap } = config
+  const { items, viewportSize, itemSize, scrollTo, scrollPadding, overscan, maxRendered, gap } =
+    config;
 
   // Convert items-based itemSize to index-based estimateHeight.
   // Memoize the adapter function to avoid recreating on every render
   // when the items reference or itemSize function changes.
   const estimateHeight = useMemo(() => {
-    if (typeof itemSize === "number") return itemSize
-    return (index: number) => itemSize(items[index]!, index)
-  }, [items, itemSize])
+    if (typeof itemSize === "number") return itemSize;
+    return (index: number) => itemSize(items[index]!, index);
+  }, [items, itemSize]);
 
   const result = useVirtualizer({
     count: items.length,
@@ -100,11 +101,13 @@ export function useVirtualization<T>(config: VirtualizationConfig<T>): Virtualiz
     overscan,
     maxRendered,
     gap,
-  })
+  });
 
   // Compute currentSelectedIndex (not returned by useVirtualizer)
   const currentSelectedIndex =
-    scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, items.length - 1)) : result.scrollOffset
+    scrollTo !== undefined
+      ? Math.max(0, Math.min(scrollTo, items.length - 1))
+      : result.scrollOffset;
 
   return {
     startIndex: result.range.startIndex,
@@ -116,5 +119,5 @@ export function useVirtualization<T>(config: VirtualizationConfig<T>): Virtualiz
     hiddenBefore: result.hiddenBefore,
     hiddenAfter: result.hiddenAfter,
     scrollToItem: result.scrollToItem,
-  }
+  };
 }

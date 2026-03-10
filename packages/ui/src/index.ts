@@ -26,9 +26,9 @@
  */
 
 // Re-export everything for convenience
-export * from "./types.js"
-export * from "./cli/index.js"
-export * from "./wrappers/index.js"
+export * from "./types.js";
+export * from "./cli/index.js";
+export * from "./wrappers/index.js";
 
 // Note: React components should be imported from "@silvery/ui/react"
 // to avoid requiring React as a dependency for CLI-only usage

@@ -1,50 +1,50 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue"
+import { ref, onMounted, onUnmounted } from "vue";
 
 const props = defineProps({
   xtermSrc: { type: String, default: "/examples/xterm.html" },
   height: { type: Number, default: 500 },
-})
+});
 
-const iframeRef = ref(null)
-const showBuildHint = ref(false)
-let timeout = null
+const iframeRef = ref(null);
+const showBuildHint = ref(false);
+let timeout = null;
 
 function onMessage(event) {
   if (event.data?.type === "silvery-ready") {
-    showBuildHint.value = false
+    showBuildHint.value = false;
     if (timeout) {
-      clearTimeout(timeout)
-      timeout = null
+      clearTimeout(timeout);
+      timeout = null;
     }
   }
 }
 
 onMounted(() => {
-  window.addEventListener("message", onMessage)
+  window.addEventListener("message", onMessage);
   timeout = setTimeout(() => {
-    showBuildHint.value = true
-  }, 3000)
-})
+    showBuildHint.value = true;
+  }, 3000);
+});
 
 onUnmounted(() => {
-  window.removeEventListener("message", onMessage)
+  window.removeEventListener("message", onMessage);
   if (timeout) {
-    clearTimeout(timeout)
-    timeout = null
+    clearTimeout(timeout);
+    timeout = null;
   }
   // Tell the iframe to clean up its React app and timers, then remove it
-  const iframe = iframeRef.value
+  const iframe = iframeRef.value;
   if (iframe) {
     try {
-      iframe.contentWindow?.postMessage({ type: "silvery-cleanup" }, "*")
+      iframe.contentWindow?.postMessage({ type: "silvery-cleanup" }, "*");
     } catch (_) {
       // Cross-origin or already destroyed — ignore
     }
-    iframe.removeAttribute("src")
-    iframe.remove()
+    iframe.removeAttribute("src");
+    iframe.remove();
   }
-})
+});
 </script>
 
 <template>

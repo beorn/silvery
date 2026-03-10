@@ -38,34 +38,40 @@ Terminal-based AI assistants have unique UI requirements: streaming output that 
 A complete working chat interface in under 50 lines. Messages scroll automatically, the input field stays pinned at the bottom, and the user can send messages with Enter.
 
 ```tsx
-import { Box, Text, TextInput, useContentRect } from "silvery"
-import { run, useInput } from "@silvery/term/runtime"
-import { useState } from "react"
+import { Box, Text, TextInput, useContentRect } from "silvery";
+import { run, useInput } from "@silvery/term/runtime";
+import { useState } from "react";
 
 interface Message {
-  role: "user" | "assistant"
-  content: string
+  role: "user" | "assistant";
+  content: string;
 }
 
 function Chat() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState("")
-  const { height } = useContentRect()
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
+  const { height } = useContentRect();
 
   async function send(text: string) {
-    if (!text.trim()) return
-    setInput("")
-    const userMsg: Message = { role: "user", content: text }
-    setMessages((prev) => [...prev, userMsg])
+    if (!text.trim()) return;
+    setInput("");
+    const userMsg: Message = { role: "user", content: text };
+    setMessages((prev) => [...prev, userMsg]);
 
     // Replace with your LLM call — response streams in via setMessages
-    const reply: Message = { role: "assistant", content: `Echo: ${text}` }
-    setMessages((prev) => [...prev, reply])
+    const reply: Message = { role: "assistant", content: `Echo: ${text}` };
+    setMessages((prev) => [...prev, reply]);
   }
 
   return (
     <Box flexDirection="column" width="100%" height="100%">
-      <Box flexDirection="column" flexGrow={1} overflow="scroll" scrollTo={messages.length - 1} paddingX={1}>
+      <Box
+        flexDirection="column"
+        flexGrow={1}
+        overflow="scroll"
+        scrollTo={messages.length - 1}
+        paddingX={1}
+      >
         {messages.map((msg, i) => (
           <Text key={i} color={msg.role === "user" ? "cyan" : "white"}>
             {msg.role === "user" ? "> " : "  "}
@@ -84,10 +90,10 @@ function Chat() {
         />
       </Box>
     </Box>
-  )
+  );
 }
 
-await run(<Chat />)
+await run(<Chat />);
 ```
 
 This gives you:
@@ -104,23 +110,23 @@ To add streaming, replace the echo stub with an async generator that appends tok
 For AI-driven applications where an agent needs to discover and execute actions, wrap the app with `withCommands`:
 
 ```tsx
-import { withCommands } from "silvery"
+import { withCommands } from "silvery";
 
 const app = withCommands(render(<Chat />), {
   registry: commandRegistry,
   getContext: () => appContext,
   handleAction: (action) => dispatch(action),
   getKeybindings: () => keybindings,
-})
+});
 
 // An AI agent can enumerate all available actions
-const commands = app.cmd.all()
+const commands = app.cmd.all();
 // [{ id: "send_message", name: "Send", keys: ["Enter"], ... },
 //  { id: "clear_history", name: "Clear", keys: ["Ctrl+L"], ... },
 //  { id: "toggle_model", name: "Switch Model", keys: ["Ctrl+M"], ... }]
 
 // And invoke them directly
-await app.cmd.send_message()
+await app.cmd.send_message();
 ```
 
 This turns the TUI from a visual interface into a structured API. The agent does not need to simulate keystrokes -- it calls commands by name and reads the screen state through `app.text` or `app.getState()`.

@@ -53,20 +53,23 @@
  * @packageDocumentation
  */
 
-import type { StateCreator } from "zustand"
+import type { StateCreator } from "zustand";
 
 // =============================================================================
 // Types
 // =============================================================================
 
 /** An effect is a plain object with a `type` discriminant. */
-export type EffectLike = { type: string }
+export type EffectLike = { type: string };
 
 /** Reducer result: plain state (no effects) or [state, effects]. */
-export type TeaResult<S, E extends EffectLike = EffectLike> = S | readonly [S, E[]]
+export type TeaResult<S, E extends EffectLike = EffectLike> = S | readonly [S, E[]];
 
 /** A reducer that takes state + operation and returns TeaResult. */
-export type TeaReducer<S, Op, E extends EffectLike = EffectLike> = (state: S, op: Op) => TeaResult<S, E>
+export type TeaReducer<S, Op, E extends EffectLike = EffectLike> = (
+  state: S,
+  op: Op,
+) => TeaResult<S, E>;
 
 /**
  * Effect runners keyed by effect `type`.
@@ -75,13 +78,16 @@ export type TeaReducer<S, Op, E extends EffectLike = EffectLike> = (state: S, op
  * communication (Elm's Cmd Msg pattern).
  */
 export type EffectRunners<E extends EffectLike, Op = unknown> = {
-  [K in E["type"]]?: (effect: Extract<E, { type: K }>, dispatch: (op: Op) => void) => void | Promise<void>
-}
+  [K in E["type"]]?: (
+    effect: Extract<E, { type: K }>,
+    dispatch: (op: Op) => void,
+  ) => void | Promise<void>;
+};
 
 /** Options for the tea() middleware. */
 export interface TeaOptions<E extends EffectLike, Op> {
   /** Effect runners. Keyed by effect type. Unmatched effects are silently dropped. */
-  runners?: EffectRunners<E, Op>
+  runners?: EffectRunners<E, Op>;
 }
 
 /**
@@ -92,8 +98,8 @@ export interface TeaOptions<E extends EffectLike, Op> {
  */
 export type TeaSlice<S, Op> = S & {
   /** Dispatch an operation through the reducer. */
-  dispatch: (op: Op) => void
-}
+  dispatch: (op: Op) => void;
+};
 
 // =============================================================================
 // Core: tea() middleware
@@ -117,31 +123,33 @@ export function tea<S extends object, Op, E extends EffectLike = EffectLike>(
   return (set, get) => {
     const dispatch = (op: Op): void => {
       // Extract domain state (everything except dispatch)
-      const { dispatch: _, ...currentState } = get()
-      const result = reducer(currentState as unknown as S, op)
+      const { dispatch: _, ...currentState } = get();
+      const result = reducer(currentState as unknown as S, op);
 
       // Detect: plain state vs [state, effects]
-      const [newState, effects] = Array.isArray(result) ? (result as [S, E[]]) : [result as S, [] as E[]]
+      const [newState, effects] = Array.isArray(result)
+        ? (result as [S, E[]])
+        : [result as S, [] as E[]];
 
       // Update Zustand store (spread domain state, keep dispatch)
-      set(newState as Partial<TeaSlice<S, Op>>)
+      set(newState as Partial<TeaSlice<S, Op>>);
 
       // Execute effects
       if (effects.length > 0 && options?.runners) {
         for (const effect of effects) {
-          const runner = options.runners[effect.type as E["type"]]
+          const runner = options.runners[effect.type as E["type"]];
           if (runner) {
-            ;(runner as (e: E, d: (op: Op) => void) => void)(effect, dispatch)
+            (runner as (e: E, d: (op: Op) => void) => void)(effect, dispatch);
           }
         }
       }
-    }
+    };
 
     return {
       ...initialState,
       dispatch,
-    } as TeaSlice<S, Op>
-  }
+    } as TeaSlice<S, Op>;
+  };
 }
 
 // =============================================================================
@@ -168,7 +176,7 @@ export function tea<S extends object, Op, E extends EffectLike = EffectLike>(
  */
 export function collect<S, E extends EffectLike = EffectLike>(result: TeaResult<S, E>): [S, E[]] {
   if (Array.isArray(result)) {
-    return result as [S, E[]]
+    return result as [S, E[]];
   }
-  return [result as S, []]
+  return [result as S, []];
 }

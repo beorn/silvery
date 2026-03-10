@@ -11,15 +11,15 @@
 // ============================================================================
 
 export interface TextMeasureStyle {
-  bold?: boolean
-  italic?: boolean
-  fontSize?: number
-  fontFamily?: string
+  bold?: boolean;
+  italic?: boolean;
+  fontSize?: number;
+  fontFamily?: string;
 }
 
 export interface TextMeasureResult {
-  width: number
-  height: number
+  width: number;
+  height: number;
 }
 
 export interface TextMeasurer {
@@ -27,12 +27,12 @@ export interface TextMeasurer {
    * Measure text dimensions.
    * Returns width in adapter units (cells for terminal, pixels for canvas).
    */
-  measureText(text: string, style?: TextMeasureStyle): TextMeasureResult
+  measureText(text: string, style?: TextMeasureStyle): TextMeasureResult;
 
   /**
    * Get the line height for the given style.
    */
-  getLineHeight(style?: TextMeasureStyle): number
+  getLineHeight(style?: TextMeasureStyle): number;
 }
 
 // ============================================================================
@@ -40,43 +40,43 @@ export interface TextMeasurer {
 // ============================================================================
 
 export interface RenderStyle {
-  fg?: string
-  bg?: string
+  fg?: string;
+  bg?: string;
   attrs?: {
-    bold?: boolean
-    dim?: boolean
-    italic?: boolean
-    underline?: boolean
-    underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed"
-    underlineColor?: string
-    strikethrough?: boolean
-    inverse?: boolean
-  }
+    bold?: boolean;
+    dim?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+    underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed";
+    underlineColor?: string;
+    strikethrough?: boolean;
+    inverse?: boolean;
+  };
 }
 
 export interface RenderBuffer {
-  readonly width: number
-  readonly height: number
+  readonly width: number;
+  readonly height: number;
 
   /**
    * Fill a rectangle with a style.
    */
-  fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void
+  fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void;
 
   /**
    * Draw text at a position.
    */
-  drawText(x: number, y: number, text: string, style: RenderStyle): void
+  drawText(x: number, y: number, text: string, style: RenderStyle): void;
 
   /**
    * Draw a single character at a position.
    */
-  drawChar(x: number, y: number, char: string, style: RenderStyle): void
+  drawChar(x: number, y: number, char: string, style: RenderStyle): void;
 
   /**
    * Check if coordinates are within bounds.
    */
-  inBounds(x: number, y: number): boolean
+  inBounds(x: number, y: number): boolean;
 }
 
 // ============================================================================
@@ -84,12 +84,12 @@ export interface RenderBuffer {
 // ============================================================================
 
 export interface BorderChars {
-  topLeft: string
-  topRight: string
-  bottomLeft: string
-  bottomRight: string
-  horizontal: string
-  vertical: string
+  topLeft: string;
+  topRight: string;
+  bottomLeft: string;
+  bottomRight: string;
+  horizontal: string;
+  vertical: string;
 }
 
 // ============================================================================
@@ -98,27 +98,27 @@ export interface BorderChars {
 
 export interface RenderAdapter {
   /** Adapter name for debugging */
-  name: string
+  name: string;
 
   /** Text measurement for this adapter */
-  measurer: TextMeasurer
+  measurer: TextMeasurer;
 
   /**
    * Create a buffer for rendering.
    */
-  createBuffer(width: number, height: number): RenderBuffer
+  createBuffer(width: number, height: number): RenderBuffer;
 
   /**
    * Flush the buffer to the output (terminal, canvas, etc.).
    * For terminal: returns ANSI diff string.
    * For canvas: draws directly, returns void.
    */
-  flush(buffer: RenderBuffer, prevBuffer: RenderBuffer | null): string | void
+  flush(buffer: RenderBuffer, prevBuffer: RenderBuffer | null): string | void;
 
   /**
    * Get border characters for the given style.
    */
-  getBorderChars(style: string): BorderChars
+  getBorderChars(style: string): BorderChars;
 }
 
 // ============================================================================
@@ -132,13 +132,13 @@ export interface RenderAdapter {
 // the lifetime of the process. Threading it through every pipeline function
 // would add significant plumbing for zero benefit -- there's no concurrency
 // or per-instance variation to protect against.
-let currentAdapter: RenderAdapter | null = null
+let currentAdapter: RenderAdapter | null = null;
 
 /**
  * Set the current render adapter.
  */
 export function setRenderAdapter(adapter: RenderAdapter): void {
-  currentAdapter = adapter
+  currentAdapter = adapter;
 }
 
 /**
@@ -147,23 +147,23 @@ export function setRenderAdapter(adapter: RenderAdapter): void {
  */
 export function getRenderAdapter(): RenderAdapter {
   if (!currentAdapter) {
-    throw new Error("No render adapter set. Call setRenderAdapter() first.")
+    throw new Error("No render adapter set. Call setRenderAdapter() first.");
   }
-  return currentAdapter
+  return currentAdapter;
 }
 
 /**
  * Check if a render adapter has been set.
  */
 export function hasRenderAdapter(): boolean {
-  return currentAdapter !== null
+  return currentAdapter !== null;
 }
 
 /**
  * Get the text measurer from the current adapter.
  */
 export function getTextMeasurer(): TextMeasurer {
-  return getRenderAdapter().measurer
+  return getRenderAdapter().measurer;
 }
 
 /**
@@ -171,9 +171,9 @@ export function getTextMeasurer(): TextMeasurer {
  * If no adapter is set, lazily imports and sets the terminal adapter.
  */
 export async function ensureRenderAdapterInitialized(): Promise<void> {
-  if (hasRenderAdapter()) return
+  if (hasRenderAdapter()) return;
 
   // Lazy import to avoid circular dependencies
-  const { terminalAdapter } = await import("./adapters/terminal-adapter.js")
-  setRenderAdapter(terminalAdapter)
+  const { terminalAdapter } = await import("./adapters/terminal-adapter.js");
+  setRenderAdapter(terminalAdapter);
 }

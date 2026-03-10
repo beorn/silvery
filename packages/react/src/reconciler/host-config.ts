@@ -6,11 +6,15 @@
  * and our custom terminal node tree.
  */
 
-import { createContext } from "react"
-import { DefaultEventPriority, DiscreteEventPriority, NoEventPriority } from "react-reconciler/constants.js"
-import type { BoxProps, TeaNode, TeaNodeType, TextProps } from "@silvery/tea/types"
-import { contentPropsChanged, layoutPropsChanged, propsEqual } from "./helpers"
-import { applyBoxProps, createNode, createVirtualTextNode } from "./nodes"
+import { createContext } from "react";
+import {
+  DefaultEventPriority,
+  DiscreteEventPriority,
+  NoEventPriority,
+} from "react-reconciler/constants.js";
+import type { BoxProps, TeaNode, TeaNodeType, TextProps } from "@silvery/tea/types";
+import { contentPropsChanged, layoutPropsChanged, propsEqual } from "./helpers";
+import { applyBoxProps, createNode, createVirtualTextNode } from "./nodes";
 
 // ============================================================================
 // Subtree Dirty Propagation
@@ -22,8 +26,8 @@ import { applyBoxProps, createNode, createVirtualTextNode } from "./nodes"
  */
 function markSubtreeDirty(node: TeaNode | null): void {
   while (node && !node.subtreeDirty) {
-    node.subtreeDirty = true
-    node = node.parent
+    node.subtreeDirty = true;
+    node = node.parent;
   }
 }
 
@@ -37,16 +41,16 @@ function markSubtreeDirty(node: TeaNode | null): void {
  * No-op when the node already has a layoutNode (normal path handles it).
  */
 function markLayoutAncestorDirty(node: TeaNode): void {
-  if (node.layoutNode) return
-  let ancestor: TeaNode | null = node.parent
+  if (node.layoutNode) return;
+  let ancestor: TeaNode | null = node.parent;
   while (ancestor && !ancestor.layoutNode) {
-    ancestor = ancestor.parent
+    ancestor = ancestor.parent;
   }
   if (ancestor?.layoutNode) {
-    ancestor.contentDirty = true
-    ancestor.paintDirty = true
-    ancestor.layoutDirty = true
-    ancestor.layoutNode.markDirty()
+    ancestor.contentDirty = true;
+    ancestor.paintDirty = true;
+    ancestor.layoutDirty = true;
+    ancestor.layoutNode.markDirty();
   }
 }
 
@@ -58,11 +62,11 @@ function markLayoutAncestorDirty(node: TeaNode): void {
  * Track whether we've already warned about Box-inside-Text
  * to avoid spamming the console on every re-render.
  */
-let hasWarnedBoxInsideText = false
+let hasWarnedBoxInsideText = false;
 
 /** Reset the warning flag (for testing). */
 export function _resetBoxInsideTextWarning(): void {
-  hasWarnedBoxInsideText = false
+  hasWarnedBoxInsideText = false;
 }
 
 // ============================================================================
@@ -73,22 +77,22 @@ export function _resetBoxInsideTextWarning(): void {
  * Container type - the root of our Silvery tree
  */
 export interface Container {
-  root: TeaNode
-  onRender: () => void
+  root: TeaNode;
+  onRender: () => void;
 }
 
 /**
  * Host context tracks whether we're inside a Text component
  */
 interface HostContext {
-  isInsideText: boolean
+  isInsideText: boolean;
 }
 
 // ============================================================================
 // Update Priority Management (for react-reconciler 0.33+)
 // ============================================================================
 
-let currentUpdatePriority = NoEventPriority
+let currentUpdatePriority = NoEventPriority;
 
 /**
  * Run a callback with DiscreteEventPriority so React treats state
@@ -97,12 +101,12 @@ let currentUpdatePriority = NoEventPriority
  * scheduler from deferring the commit.
  */
 export function runWithDiscreteEvent(fn: () => void): void {
-  const prev = currentUpdatePriority
-  currentUpdatePriority = DiscreteEventPriority
+  const prev = currentUpdatePriority;
+  currentUpdatePriority = DiscreteEventPriority;
   try {
-    fn()
+    fn();
   } finally {
-    currentUpdatePriority = prev
+    currentUpdatePriority = prev;
   }
 }
 
@@ -134,16 +138,16 @@ export const hostConfig = {
 
   // Context - tracks whether we're inside a Text component
   getRootHostContext(): HostContext {
-    return { isInsideText: false }
+    return { isInsideText: false };
   },
 
   getChildHostContext(parentHostContext: HostContext, type: TeaNodeType): HostContext {
     // Once inside a text node, stay inside
-    const isInsideText = parentHostContext.isInsideText || type === "silvery-text"
+    const isInsideText = parentHostContext.isInsideText || type === "silvery-text";
     if (isInsideText === parentHostContext.isInsideText) {
-      return parentHostContext
+      return parentHostContext;
     }
-    return { isInsideText }
+    return { isInsideText };
   },
 
   // Instance creation
@@ -160,15 +164,17 @@ export const hostConfig = {
       process.env.NODE_ENV !== "production" &&
       !hasWarnedBoxInsideText
     ) {
-      hasWarnedBoxInsideText = true
-      console.warn("Warning: <Box> cannot be nested inside <Text>. This produces undefined layout behavior.")
+      hasWarnedBoxInsideText = true;
+      console.warn(
+        "Warning: <Box> cannot be nested inside <Text>. This produces undefined layout behavior.",
+      );
     }
 
     // Nested text nodes become "virtual" - no layout node
     if (type === "silvery-text" && hostContext.isInsideText) {
-      return createVirtualTextNode(props as TextProps)
+      return createVirtualTextNode(props as TextProps);
     }
-    return createNode(type, props)
+    return createNode(type, props);
   },
 
   createTextInstance(text: string): TeaNode {
@@ -194,154 +200,158 @@ export const hostConfig = {
       layoutSubscribers: new Set(),
       textContent: text,
       isRawText: true,
-    }
-    return node
+    };
+    return node;
   },
 
   // Tree operations
   appendChild(parentInstance: TeaNode, child: TeaNode) {
     // React calls appendChild to move an existing child during keyed reorder.
     // Remove from old position first to avoid duplicating in the children array.
-    const existingIndex = parentInstance.children.indexOf(child)
+    const existingIndex = parentInstance.children.indexOf(child);
     if (existingIndex !== -1) {
-      parentInstance.children.splice(existingIndex, 1)
+      parentInstance.children.splice(existingIndex, 1);
       if (parentInstance.layoutNode && child.layoutNode) {
-        parentInstance.layoutNode.removeChild(child.layoutNode)
+        parentInstance.layoutNode.removeChild(child.layoutNode);
       }
     }
-    child.parent = parentInstance
-    parentInstance.children.push(child)
+    child.parent = parentInstance;
+    parentInstance.children.push(child);
     // Only add to layout tree if both nodes have layout nodes
     if (parentInstance.layoutNode && child.layoutNode) {
       // Count non-raw-text children for proper layout index
-      const layoutIndex = parentInstance.children.filter((c) => c.layoutNode !== null).length - 1
-      parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex)
+      const layoutIndex = parentInstance.children.filter((c) => c.layoutNode !== null).length - 1;
+      parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex);
     }
-    parentInstance.childrenDirty = true
-    parentInstance.contentDirty = true // Text measure cache must re-collect children
-    parentInstance.layoutDirty = true
-    parentInstance.layoutNode?.markDirty()
-    markLayoutAncestorDirty(parentInstance)
-    markSubtreeDirty(parentInstance)
+    parentInstance.childrenDirty = true;
+    parentInstance.contentDirty = true; // Text measure cache must re-collect children
+    parentInstance.layoutDirty = true;
+    parentInstance.layoutNode?.markDirty();
+    markLayoutAncestorDirty(parentInstance);
+    markSubtreeDirty(parentInstance);
   },
 
   appendInitialChild(parentInstance: TeaNode, child: TeaNode) {
-    child.parent = parentInstance
-    parentInstance.children.push(child)
+    child.parent = parentInstance;
+    parentInstance.children.push(child);
     // Only add to layout tree if both nodes have layout nodes
     if (parentInstance.layoutNode && child.layoutNode) {
-      const layoutIndex = parentInstance.children.filter((c) => c.layoutNode !== null).length - 1
-      parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex)
+      const layoutIndex = parentInstance.children.filter((c) => c.layoutNode !== null).length - 1;
+      parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex);
     }
   },
 
   appendChildToContainer(container: Container, child: TeaNode) {
     // Remove from old position if already a child (keyed reorder)
-    const existingIndex = container.root.children.indexOf(child)
+    const existingIndex = container.root.children.indexOf(child);
     if (existingIndex !== -1) {
-      container.root.children.splice(existingIndex, 1)
+      container.root.children.splice(existingIndex, 1);
       if (container.root.layoutNode && child.layoutNode) {
-        container.root.layoutNode.removeChild(child.layoutNode)
+        container.root.layoutNode.removeChild(child.layoutNode);
       }
     }
-    child.parent = container.root
-    container.root.children.push(child)
+    child.parent = container.root;
+    container.root.children.push(child);
     if (container.root.layoutNode && child.layoutNode) {
-      const layoutIndex = container.root.children.filter((c) => c.layoutNode !== null).length - 1
-      container.root.layoutNode.insertChild(child.layoutNode, layoutIndex)
+      const layoutIndex = container.root.children.filter((c) => c.layoutNode !== null).length - 1;
+      container.root.layoutNode.insertChild(child.layoutNode, layoutIndex);
     }
-    container.root.childrenDirty = true
-    container.root.contentDirty = true // Text measure cache must re-collect children
-    container.root.layoutDirty = true
-    container.root.layoutNode?.markDirty()
-    markSubtreeDirty(container.root)
+    container.root.childrenDirty = true;
+    container.root.contentDirty = true; // Text measure cache must re-collect children
+    container.root.layoutDirty = true;
+    container.root.layoutNode?.markDirty();
+    markSubtreeDirty(container.root);
   },
 
   removeChild(parentInstance: TeaNode, child: TeaNode) {
-    const index = parentInstance.children.indexOf(child)
+    const index = parentInstance.children.indexOf(child);
     if (index !== -1) {
-      parentInstance.children.splice(index, 1)
+      parentInstance.children.splice(index, 1);
       if (parentInstance.layoutNode && child.layoutNode) {
-        parentInstance.layoutNode.removeChild(child.layoutNode)
-        child.layoutNode.free()
+        parentInstance.layoutNode.removeChild(child.layoutNode);
+        child.layoutNode.free();
       }
-      child.parent = null
-      parentInstance.childrenDirty = true
-      parentInstance.contentDirty = true // Text measure cache must re-collect children
-      parentInstance.layoutDirty = true
-      parentInstance.layoutNode?.markDirty()
-      markLayoutAncestorDirty(parentInstance)
-      markSubtreeDirty(parentInstance)
+      child.parent = null;
+      parentInstance.childrenDirty = true;
+      parentInstance.contentDirty = true; // Text measure cache must re-collect children
+      parentInstance.layoutDirty = true;
+      parentInstance.layoutNode?.markDirty();
+      markLayoutAncestorDirty(parentInstance);
+      markSubtreeDirty(parentInstance);
     }
   },
 
   removeChildFromContainer(container: Container, child: TeaNode) {
-    const index = container.root.children.indexOf(child)
+    const index = container.root.children.indexOf(child);
     if (index !== -1) {
-      container.root.children.splice(index, 1)
+      container.root.children.splice(index, 1);
       if (container.root.layoutNode && child.layoutNode) {
-        container.root.layoutNode.removeChild(child.layoutNode)
-        child.layoutNode.free()
+        container.root.layoutNode.removeChild(child.layoutNode);
+        child.layoutNode.free();
       }
-      child.parent = null
-      container.root.childrenDirty = true
-      container.root.contentDirty = true // Text measure cache must re-collect children
-      container.root.layoutDirty = true
-      container.root.layoutNode?.markDirty()
-      markSubtreeDirty(container.root)
+      child.parent = null;
+      container.root.childrenDirty = true;
+      container.root.contentDirty = true; // Text measure cache must re-collect children
+      container.root.layoutDirty = true;
+      container.root.layoutNode?.markDirty();
+      markSubtreeDirty(container.root);
     }
   },
 
   insertBefore(parentInstance: TeaNode, child: TeaNode, beforeChild: TeaNode) {
     // React calls insertBefore to move an existing child during keyed reorder.
     // Remove from old position first to avoid duplicating in the children array.
-    const existingIndex = parentInstance.children.indexOf(child)
+    const existingIndex = parentInstance.children.indexOf(child);
     if (existingIndex !== -1) {
-      parentInstance.children.splice(existingIndex, 1)
+      parentInstance.children.splice(existingIndex, 1);
       if (parentInstance.layoutNode && child.layoutNode) {
-        parentInstance.layoutNode.removeChild(child.layoutNode)
+        parentInstance.layoutNode.removeChild(child.layoutNode);
       }
     }
-    const beforeIndex = parentInstance.children.indexOf(beforeChild)
+    const beforeIndex = parentInstance.children.indexOf(beforeChild);
     if (beforeIndex !== -1) {
-      child.parent = parentInstance
-      parentInstance.children.splice(beforeIndex, 0, child)
+      child.parent = parentInstance;
+      parentInstance.children.splice(beforeIndex, 0, child);
       if (parentInstance.layoutNode && child.layoutNode) {
         // Count non-raw-text children before this position for proper layout index
-        const layoutIndex = parentInstance.children.slice(0, beforeIndex).filter((c) => c.layoutNode !== null).length
-        parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex)
+        const layoutIndex = parentInstance.children
+          .slice(0, beforeIndex)
+          .filter((c) => c.layoutNode !== null).length;
+        parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex);
       }
-      parentInstance.childrenDirty = true
-      parentInstance.contentDirty = true // Text measure cache must re-collect children
-      parentInstance.layoutDirty = true
-      parentInstance.layoutNode?.markDirty()
-      markLayoutAncestorDirty(parentInstance)
-      markSubtreeDirty(parentInstance)
+      parentInstance.childrenDirty = true;
+      parentInstance.contentDirty = true; // Text measure cache must re-collect children
+      parentInstance.layoutDirty = true;
+      parentInstance.layoutNode?.markDirty();
+      markLayoutAncestorDirty(parentInstance);
+      markSubtreeDirty(parentInstance);
     }
   },
 
   insertInContainerBefore(container: Container, child: TeaNode, beforeChild: TeaNode) {
     // Remove from old position if already a child (keyed reorder)
-    const existingIndex = container.root.children.indexOf(child)
+    const existingIndex = container.root.children.indexOf(child);
     if (existingIndex !== -1) {
-      container.root.children.splice(existingIndex, 1)
+      container.root.children.splice(existingIndex, 1);
       if (container.root.layoutNode && child.layoutNode) {
-        container.root.layoutNode.removeChild(child.layoutNode)
+        container.root.layoutNode.removeChild(child.layoutNode);
       }
     }
-    const beforeIndex = container.root.children.indexOf(beforeChild)
+    const beforeIndex = container.root.children.indexOf(beforeChild);
     if (beforeIndex !== -1) {
-      child.parent = container.root
-      container.root.children.splice(beforeIndex, 0, child)
+      child.parent = container.root;
+      container.root.children.splice(beforeIndex, 0, child);
       if (container.root.layoutNode && child.layoutNode) {
-        const layoutIndex = container.root.children.slice(0, beforeIndex).filter((c) => c.layoutNode !== null).length
-        container.root.layoutNode.insertChild(child.layoutNode, layoutIndex)
+        const layoutIndex = container.root.children
+          .slice(0, beforeIndex)
+          .filter((c) => c.layoutNode !== null).length;
+        container.root.layoutNode.insertChild(child.layoutNode, layoutIndex);
       }
-      container.root.childrenDirty = true
-      container.root.contentDirty = true // Text measure cache must re-collect children
-      container.root.layoutDirty = true
-      container.root.layoutNode?.markDirty()
-      markSubtreeDirty(container.root)
+      container.root.childrenDirty = true;
+      container.root.contentDirty = true; // Text measure cache must re-collect children
+      container.root.layoutDirty = true;
+      container.root.layoutNode?.markDirty();
+      markSubtreeDirty(container.root);
     }
   },
 
@@ -353,7 +363,7 @@ export const hostConfig = {
     newProps: BoxProps | TextProps,
   ): boolean | null {
     // Return true if we need to update
-    return !propsEqual(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
+    return !propsEqual(oldProps as Record<string, unknown>, newProps as Record<string, unknown>);
   },
 
   // Note: react-reconciler 0.33+ changed the signature from
@@ -368,66 +378,80 @@ export const hostConfig = {
   ) {
     // Early exit if props are equal (React may call commitUpdate even when nothing changed)
     if (propsEqual(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)) {
-      instance.props = newProps
-      return
+      instance.props = newProps;
+      return;
     }
 
     // Check if layout-affecting props changed
-    if (layoutPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)) {
+    if (
+      layoutPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
+    ) {
       if (instance.layoutNode) {
-        applyBoxProps(instance.layoutNode, newProps as BoxProps, oldProps as BoxProps)
-        instance.layoutNode.markDirty()
+        applyBoxProps(instance.layoutNode, newProps as BoxProps, oldProps as BoxProps);
+        instance.layoutNode.markDirty();
       }
-      instance.layoutDirty = true
+      instance.layoutDirty = true;
     }
 
     // Check if content changed (text children, style props like backgroundColor)
     // Returns "text" for text content changes (affect layout) or "style" for
     // style-only changes (borderColor, color, etc. — don't affect layout).
-    const contentChanged = contentPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
+    const contentChanged = contentPropsChanged(
+      oldProps as Record<string, unknown>,
+      newProps as Record<string, unknown>,
+    );
     if (contentChanged) {
       // paintDirty: always set for any visual change. Content phase uses this
       // to know the node needs re-rendering (border, text style, bg, etc.).
-      instance.paintDirty = true
+      instance.paintDirty = true;
       // contentDirty: only for text content changes (not style-only changes).
       // Style-only changes (borderColor, color, bold) set paintDirty but NOT
       // contentDirty, so content phase won't cascade to children for border-only
       // changes where the content area is unchanged.
       if (contentChanged === "text") {
-        instance.contentDirty = true
+        instance.contentDirty = true;
         if (instance.layoutNode) {
-          instance.layoutNode.markDirty()
+          instance.layoutNode.markDirty();
         }
       }
       // bgDirty: specifically track backgroundColor changes (added/changed/removed).
       // Content phase uses this to cascade re-renders only when the content area
       // was actually affected (not for border-only paint changes).
       if (
-        (oldProps as Record<string, unknown>).backgroundColor !== (newProps as Record<string, unknown>).backgroundColor
+        (oldProps as Record<string, unknown>).backgroundColor !==
+        (newProps as Record<string, unknown>).backgroundColor
       ) {
-        instance.bgDirty = true
+        instance.bgDirty = true;
       }
       // Border removal: when borderStyle goes from truthy to falsy, stale border
       // characters (╭╮╰╯│─) persist in the cloned buffer because renderBox doesn't
       // draw anything at those positions. Setting bgDirty makes contentAreaAffected
       // true, triggering clearNodeRegion to fill the area with inherited bg.
       // Border *addition* doesn't need this — renderBorder overwrites the old cells.
-      if ((oldProps as Record<string, unknown>).borderStyle && !(newProps as Record<string, unknown>).borderStyle) {
-        instance.bgDirty = true
+      if (
+        (oldProps as Record<string, unknown>).borderStyle &&
+        !(newProps as Record<string, unknown>).borderStyle
+      ) {
+        instance.bgDirty = true;
       }
       // Outline removal: same issue — stale outline characters persist in the clone.
-      if ((oldProps as Record<string, unknown>).outlineStyle && !(newProps as Record<string, unknown>).outlineStyle) {
-        instance.bgDirty = true
+      if (
+        (oldProps as Record<string, unknown>).outlineStyle &&
+        !(newProps as Record<string, unknown>).outlineStyle
+      ) {
+        instance.bgDirty = true;
       }
       // Theme change: all descendants need re-rendering with new token values.
       // bgDirty makes contentAreaAffected=true, cascading parentRegionChanged
       // to force children to re-render with the new theme context.
-      if ((oldProps as Record<string, unknown>).theme !== (newProps as Record<string, unknown>).theme) {
-        instance.bgDirty = true
+      if (
+        (oldProps as Record<string, unknown>).theme !== (newProps as Record<string, unknown>).theme
+      ) {
+        instance.bgDirty = true;
       }
     }
 
-    instance.props = newProps
+    instance.props = newProps;
 
     // Only mark subtree/ancestor dirty when visual changes were detected.
     // Data attributes (data-*), event handlers, and other non-visual props
@@ -440,57 +464,59 @@ export const hostConfig = {
     // the scroll container, never reaching the container to re-render at the
     // new scroll position.
     const scrollToChanged =
-      (oldProps as Record<string, unknown>).scrollTo !== (newProps as Record<string, unknown>).scrollTo
+      (oldProps as Record<string, unknown>).scrollTo !==
+      (newProps as Record<string, unknown>).scrollTo;
     const scrollOffsetChanged =
-      (oldProps as Record<string, unknown>).scrollOffset !== (newProps as Record<string, unknown>).scrollOffset
+      (oldProps as Record<string, unknown>).scrollOffset !==
+      (newProps as Record<string, unknown>).scrollOffset;
     if (instance.layoutDirty || contentChanged || scrollToChanged || scrollOffsetChanged) {
-      markLayoutAncestorDirty(instance)
-      markSubtreeDirty(instance)
+      markLayoutAncestorDirty(instance);
+      markSubtreeDirty(instance);
     }
   },
 
   commitTextUpdate(textInstance: TeaNode, _oldText: string, newText: string) {
-    textInstance.textContent = newText
-    textInstance.props = { children: newText } as TextProps
-    textInstance.contentDirty = true
-    textInstance.paintDirty = true
+    textInstance.textContent = newText;
+    textInstance.props = { children: newText } as TextProps;
+    textInstance.contentDirty = true;
+    textInstance.paintDirty = true;
     // Text content change affects layout (measure function will return different size)
     // Walk up to the nearest layout ancestor so its measure cache is invalidated
-    markLayoutAncestorDirty(textInstance)
-    markSubtreeDirty(textInstance)
+    markLayoutAncestorDirty(textInstance);
+    markSubtreeDirty(textInstance);
   },
 
   // Finalization
   finalizeInitialChildren() {
-    return false
+    return false;
   },
 
   prepareForCommit() {
-    return null
+    return null;
   },
 
   resetAfterCommit(container: Container) {
     // Trigger render after React finishes committing
-    container.onRender()
+    container.onRender();
   },
 
   // Misc
   getPublicInstance(instance: TeaNode) {
-    return instance
+    return instance;
   },
 
   shouldSetTextContent() {
-    return false
+    return false;
   },
 
   clearContainer(container: Container) {
     for (const child of container.root.children) {
       if (container.root.layoutNode && child.layoutNode) {
-        container.root.layoutNode.removeChild(child.layoutNode)
-        child.layoutNode.free()
+        container.root.layoutNode.removeChild(child.layoutNode);
+        child.layoutNode.free();
       }
     }
-    container.root.children = []
+    container.root.children = [];
   },
 
   preparePortalMount() {
@@ -499,13 +525,13 @@ export const hostConfig = {
 
   getCurrentEventPriority() {
     if (currentUpdatePriority !== NoEventPriority) {
-      return currentUpdatePriority
+      return currentUpdatePriority;
     }
-    return DefaultEventPriority
+    return DefaultEventPriority;
   },
 
   getInstanceFromNode() {
-    return null
+    return null;
   },
 
   beforeActiveInstanceBlur() {
@@ -521,7 +547,7 @@ export const hostConfig = {
   },
 
   getInstanceFromScope() {
-    return null
+    return null;
   },
 
   detachDeletedInstance() {
@@ -530,22 +556,22 @@ export const hostConfig = {
 
   // React 19 / react-reconciler 0.33+ required methods
   setCurrentUpdatePriority(newPriority: number) {
-    currentUpdatePriority = newPriority
+    currentUpdatePriority = newPriority;
   },
 
   getCurrentUpdatePriority() {
-    return currentUpdatePriority
+    return currentUpdatePriority;
   },
 
   resolveUpdatePriority() {
     if (currentUpdatePriority !== NoEventPriority) {
-      return currentUpdatePriority
+      return currentUpdatePriority;
     }
-    return DefaultEventPriority
+    return DefaultEventPriority;
   },
 
   maySuspendCommit() {
-    return false
+    return false;
   },
 
   NotPendingTransition: null,
@@ -560,7 +586,7 @@ export const hostConfig = {
   },
 
   shouldAttemptEagerTransition() {
-    return false
+    return false;
   },
 
   trackSchedulerEvent() {
@@ -568,15 +594,15 @@ export const hostConfig = {
   },
 
   resolveEventType() {
-    return null
+    return null;
   },
 
   resolveEventTimeStamp() {
-    return -1.1
+    return -1.1;
   },
 
   preloadInstance() {
-    return true
+    return true;
   },
 
   startSuspendingCommit() {
@@ -588,7 +614,7 @@ export const hostConfig = {
   },
 
   waitForCommitToBeReady() {
-    return null
+    return null;
   },
 
   // ========================================================================
@@ -600,13 +626,13 @@ export const hostConfig = {
    * Called when React needs to hide content while showing a fallback.
    */
   hideInstance(instance: TeaNode) {
-    instance.hidden = true
-    instance.contentDirty = true
+    instance.hidden = true;
+    instance.contentDirty = true;
     // Mark parent dirty to trigger re-render
     if (instance.parent) {
-      instance.parent.contentDirty = true
+      instance.parent.contentDirty = true;
     }
-    markSubtreeDirty(instance)
+    markSubtreeDirty(instance);
   },
 
   /**
@@ -614,36 +640,36 @@ export const hostConfig = {
    * Called when the suspended content is ready to show.
    */
   unhideInstance(instance: TeaNode, _props: BoxProps | TextProps) {
-    instance.hidden = false
-    instance.contentDirty = true
+    instance.hidden = false;
+    instance.contentDirty = true;
     // Mark parent dirty to trigger re-render
     if (instance.parent) {
-      instance.parent.contentDirty = true
+      instance.parent.contentDirty = true;
     }
-    markSubtreeDirty(instance)
+    markSubtreeDirty(instance);
   },
 
   /**
    * Hide a text instance during Suspense.
    */
   hideTextInstance(textInstance: TeaNode) {
-    textInstance.hidden = true
-    textInstance.contentDirty = true
+    textInstance.hidden = true;
+    textInstance.contentDirty = true;
     if (textInstance.parent) {
-      textInstance.parent.contentDirty = true
+      textInstance.parent.contentDirty = true;
     }
-    markSubtreeDirty(textInstance)
+    markSubtreeDirty(textInstance);
   },
 
   /**
    * Unhide a text instance after Suspense resolves.
    */
   unhideTextInstance(textInstance: TeaNode, _text: string) {
-    textInstance.hidden = false
-    textInstance.contentDirty = true
+    textInstance.hidden = false;
+    textInstance.contentDirty = true;
     if (textInstance.parent) {
-      textInstance.parent.contentDirty = true
+      textInstance.parent.contentDirty = true;
     }
-    markSubtreeDirty(textInstance)
+    markSubtreeDirty(textInstance);
   },
-}
+};

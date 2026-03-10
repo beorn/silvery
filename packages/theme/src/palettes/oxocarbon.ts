@@ -3,8 +3,8 @@
  * Source: https://github.com/nyoom-engineering/oxocarbon.nvim
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Oxocarbon Dark — IBM Carbon-inspired dark variant. */
 export const oxocarbonDark: ColorPalette = {
@@ -32,7 +32,7 @@ export const oxocarbonDark: ColorPalette = {
   cursorText: "#161616",
   selectionBackground: "#404040",
   selectionForeground: "#F3F3F3",
-}
+};
 
 /** Oxocarbon Light — IBM Carbon-inspired light variant. */
 export const oxocarbonLight: ColorPalette = {
@@ -60,4 +60,4 @@ export const oxocarbonLight: ColorPalette = {
   cursorText: "#FFFFFF",
   selectionBackground: "#525252",
   selectionForeground: "#37474F",
-}
+};

@@ -3,8 +3,8 @@
  * Source: https://github.com/rebelot/kanagawa.nvim (palette.lua)
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Kanagawa Wave — the default dark variant, inspired by "The Great Wave off Kanagawa". */
 export const kanagawaWave: ColorPalette = {
@@ -32,7 +32,7 @@ export const kanagawaWave: ColorPalette = {
   cursorText: "#1F1F28", // sumiInk3
   selectionBackground: "#54546D", // sumiInk6
   selectionForeground: "#DCD7BA", // fujiWhite
-}
+};
 
 /** Kanagawa Dragon — a muted, earthy dark variant. */
 export const kanagawaDragon: ColorPalette = {
@@ -60,7 +60,7 @@ export const kanagawaDragon: ColorPalette = {
   cursorText: "#181616", // dragonBlack3
   selectionBackground: "#625e5a", // dragonBlack6
   selectionForeground: "#c5c9c5", // dragonWhite
-}
+};
 
 /** Kanagawa Lotus — the light variant, inspired by lotus flowers. */
 export const kanagawaLotus: ColorPalette = {
@@ -88,4 +88,4 @@ export const kanagawaLotus: ColorPalette = {
   cursorText: "#f2ecbc", // lotusWhite3
   selectionBackground: "#8a8980", // lotusGray3
   selectionForeground: "#545464", // lotusInk1
-}
+};

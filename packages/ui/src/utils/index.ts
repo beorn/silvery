@@ -10,4 +10,4 @@ export {
   DEFAULT_ETA_BUFFER_SIZE,
   type ETASample,
   type ETAResult,
-} from "./eta"
+} from "./eta";

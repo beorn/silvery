@@ -10,8 +10,8 @@
  * Supports forwardRef for imperative access to the underlying node.
  */
 
-import { type ForwardedRef, type JSX, type ReactNode, forwardRef } from "react"
-import type { TeaNode, TextProps as TextPropsType } from "@silvery/tea/types"
+import { type ForwardedRef, type JSX, type ReactNode, forwardRef } from "react";
+import type { TeaNode, TextProps as TextPropsType } from "@silvery/tea/types";
 
 // ============================================================================
 // Props
@@ -19,7 +19,7 @@ import type { TeaNode, TextProps as TextPropsType } from "@silvery/tea/types"
 
 export interface TextProps extends TextPropsType {
   /** Text content (string, number, or nested Text elements) */
-  children?: ReactNode
+  children?: ReactNode;
 }
 
 /**
@@ -27,7 +27,7 @@ export interface TextProps extends TextPropsType {
  */
 export interface TextHandle {
   /** Get the underlying SilveryNode */
-  getNode(): TeaNode | null
+  getNode(): TeaNode | null;
 }
 
 // ============================================================================
@@ -69,8 +69,11 @@ export interface TextHandle {
  * <Text ref={textRef}>Hello</Text>
  * ```
  */
-export const Text = forwardRef(function Text(props: TextProps, ref: ForwardedRef<TextHandle>): JSX.Element {
-  const { children, ...styleProps } = props
+export const Text = forwardRef(function Text(
+  props: TextProps,
+  ref: ForwardedRef<TextHandle>,
+): JSX.Element {
+  const { children, ...styleProps } = props;
 
   // For Text, we need to pass the ref through to the host element
   // The reconciler's getPublicInstance will return the SilveryNode
@@ -80,14 +83,14 @@ export const Text = forwardRef(function Text(props: TextProps, ref: ForwardedRef
       ref={(node: TeaNode | null) => {
         // Handle both callback refs and RefObjects
         if (typeof ref === "function") {
-          ref(node ? { getNode: () => node } : null)
+          ref(node ? { getNode: () => node } : null);
         } else if (ref) {
-          ref.current = node ? { getNode: () => node } : null
+          ref.current = node ? { getNode: () => node } : null;
         }
       }}
       {...styleProps}
     >
       {children}
     </silvery-text>
-  )
-})
+  );
+});

@@ -9,17 +9,17 @@
  * mutable state (pendingRerender, isRendering, etc.), which stays in create-app.tsx.
  */
 
-import type { StoreApi } from "zustand"
+import type { StoreApi } from "zustand";
 
-import { createKeyEvent, dispatchKeyEvent } from "@silvery/tea/focus-events"
-import type { FocusManager } from "@silvery/tea/focus-manager"
-import { findByTestID } from "@silvery/tea/focus-queries"
-import { type MouseEventProcessorState, processMouseEvent, hitTest } from "../mouse-events"
-import type { Container } from "@silvery/react/reconciler"
-import { getContainerRoot } from "@silvery/react/reconciler"
-import type { TeaNode } from "@silvery/tea/types"
-import type { Key } from "./keys"
-import type { EventHandler, EventHandlerContext, EventHandlers } from "./create-app"
+import { createKeyEvent, dispatchKeyEvent } from "@silvery/tea/focus-events";
+import type { FocusManager } from "@silvery/tea/focus-manager";
+import { findByTestID } from "@silvery/tea/focus-queries";
+import { type MouseEventProcessorState, processMouseEvent, hitTest } from "../mouse-events";
+import type { Container } from "@silvery/react/reconciler";
+import { getContainerRoot } from "@silvery/react/reconciler";
+import type { TeaNode } from "@silvery/tea/types";
+import type { Key } from "./keys";
+import type { EventHandler, EventHandlerContext, EventHandlers } from "./create-app";
 
 // ============================================================================
 // Types
@@ -29,10 +29,10 @@ import type { EventHandler, EventHandlerContext, EventHandlers } from "./create-
  * Namespaced event from a provider.
  */
 export interface NamespacedEvent {
-  type: string
-  provider: string
-  event: string
-  data: unknown
+  type: string;
+  provider: string;
+  event: string;
+  data: unknown;
 }
 
 // ============================================================================
@@ -52,31 +52,31 @@ export function createHandlerContext<S>(
   container: Container,
 ): EventHandlerContext<S> {
   // Detect tea() middleware: store state has a dispatch function
-  const state = store.getState() as Record<string, unknown>
-  const teaDispatch = typeof state.dispatch === "function" ? state.dispatch : undefined
+  const state = store.getState() as Record<string, unknown>;
+  const teaDispatch = typeof state.dispatch === "function" ? state.dispatch : undefined;
 
   return {
     set: store.setState,
     get: store.getState,
     focusManager,
     focus(testID: string) {
-      const root = getContainerRoot(container)
-      focusManager.focusById(testID, root, "programmatic")
+      const root = getContainerRoot(container);
+      focusManager.focusById(testID, root, "programmatic");
     },
     activateScope(scopeId: string) {
-      const root = getContainerRoot(container)
-      focusManager.activateScope(scopeId, root)
+      const root = getContainerRoot(container);
+      focusManager.activateScope(scopeId, root);
     },
     getFocusPath() {
-      const root = getContainerRoot(container)
-      return focusManager.getFocusPath(root)
+      const root = getContainerRoot(container);
+      return focusManager.getFocusPath(root);
     },
     dispatch: teaDispatch as EventHandlerContext<S>["dispatch"],
     hitTest(x: number, y: number) {
-      const root = getContainerRoot(container)
-      return hitTest(root, x, y)
+      const root = getContainerRoot(container);
+      return hitTest(root, x, y);
     },
-  }
+  };
 }
 
 // ============================================================================
@@ -98,59 +98,59 @@ export function handleFocusNavigation(
 ): "consumed" | "continue" {
   // Dispatch key event to focused node (capture + bubble phases)
   if (focusManager.activeElement) {
-    const keyEvent = createKeyEvent(input, parsedKey, focusManager.activeElement)
-    dispatchKeyEvent(keyEvent)
+    const keyEvent = createKeyEvent(input, parsedKey, focusManager.activeElement);
+    dispatchKeyEvent(keyEvent);
 
     // If focus system consumed the event, skip app handlers
     if (keyEvent.propagationStopped || keyEvent.defaultPrevented) {
-      return "consumed"
+      return "consumed";
     }
   }
 
-  const root = getContainerRoot(container)
+  const root = getContainerRoot(container);
 
   // Tab: focus next (works even when nothing is focused — starts from first)
   if (parsedKey.tab && !parsedKey.shift) {
-    focusManager.focusNext(root)
-    return "consumed"
+    focusManager.focusNext(root);
+    return "consumed";
   }
 
   // Shift+Tab: focus previous (works even when nothing is focused — starts from last)
   if (parsedKey.tab && parsedKey.shift) {
-    focusManager.focusPrev(root)
-    return "consumed"
+    focusManager.focusPrev(root);
+    return "consumed";
   }
 
   // Enter: if focused element has focusScope, enter that scope
   if (parsedKey.return && focusManager.activeElement) {
-    const activeEl = focusManager.activeElement
-    const props = activeEl.props as Record<string, unknown>
-    const testID = typeof props.testID === "string" ? props.testID : null
+    const activeEl = focusManager.activeElement;
+    const props = activeEl.props as Record<string, unknown>;
+    const testID = typeof props.testID === "string" ? props.testID : null;
     if (props.focusScope && testID) {
-      focusManager.enterScope(testID)
-      focusManager.focusNext(root, activeEl)
-      return "consumed"
+      focusManager.enterScope(testID);
+      focusManager.focusNext(root, activeEl);
+      return "consumed";
     }
   }
 
   // Escape: blur current focus or exit the current focus scope
   if (parsedKey.escape) {
     if (focusManager.scopeStack.length > 0) {
-      const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
-      focusManager.exitScope()
-      const scopeNode = findByTestID(root, scopeId)
+      const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!;
+      focusManager.exitScope();
+      const scopeNode = findByTestID(root, scopeId);
       if (scopeNode) {
-        focusManager.focus(scopeNode, "keyboard")
+        focusManager.focus(scopeNode, "keyboard");
       }
-      return "consumed"
+      return "consumed";
     }
     if (focusManager.activeElement) {
-      focusManager.blur()
-      return "consumed"
+      focusManager.blur();
+      return "consumed";
     }
   }
 
-  return "continue"
+  return "continue";
 }
 
 // ============================================================================
@@ -166,18 +166,18 @@ export function dispatchMouseEventToTree(
   mouseEventState: MouseEventProcessorState,
   root: TeaNode,
 ): void {
-  if (event.event !== "mouse" || !event.data) return
+  if (event.event !== "mouse" || !event.data) return;
 
   const mouseData = event.data as {
-    button: number
-    x: number
-    y: number
-    action: string
-    delta?: number
-    shift: boolean
-    meta: boolean
-    ctrl: boolean
-  }
+    button: number;
+    x: number;
+    y: number;
+    action: string;
+    delta?: number;
+    shift: boolean;
+    meta: boolean;
+    ctrl: boolean;
+  };
 
   processMouseEvent(
     mouseEventState,
@@ -192,7 +192,7 @@ export function dispatchMouseEventToTree(
       ctrl: mouseData.ctrl,
     },
     root,
-  )
+  );
 }
 
 // ============================================================================
@@ -212,19 +212,19 @@ export function invokeEventHandler<S>(
   mouseEventState: MouseEventProcessorState,
   container: Container,
 ): boolean | "flush" {
-  const namespacedHandler = handlers?.[event.type as keyof typeof handlers]
+  const namespacedHandler = handlers?.[event.type as keyof typeof handlers];
 
   if (namespacedHandler && typeof namespacedHandler === "function") {
-    const result = (namespacedHandler as EventHandler<unknown, S>)(event.data, ctx)
-    if (result === "exit") return false
-    if (result === "flush") return "flush"
+    const result = (namespacedHandler as EventHandler<unknown, S>)(event.data, ctx);
+    if (result === "exit") return false;
+    if (result === "flush") return "flush";
   }
 
   // DOM-level mouse event dispatch
-  const root = getContainerRoot(container)
-  dispatchMouseEventToTree(event, mouseEventState, root)
+  const root = getContainerRoot(container);
+  dispatchMouseEventToTree(event, mouseEventState, root);
 
-  return true
+  return true;
 }
 
 /**
@@ -238,17 +238,17 @@ export function dispatchKeyToHandlers<S>(
   ctx: EventHandlerContext<S>,
 ): "exit" | undefined {
   // Namespaced handler
-  const namespacedHandler = handlers?.["term:key" as keyof typeof handlers]
+  const namespacedHandler = handlers?.["term:key" as keyof typeof handlers];
   if (namespacedHandler && typeof namespacedHandler === "function") {
-    const result = (namespacedHandler as EventHandler<unknown, S>)({ input, key: parsedKey }, ctx)
-    if (result === "exit") return "exit"
+    const result = (namespacedHandler as EventHandler<unknown, S>)({ input, key: parsedKey }, ctx);
+    if (result === "exit") return "exit";
   }
 
   // Legacy handler
   if ((handlers as any)?.key) {
-    const result = (handlers as any).key(input, parsedKey, ctx)
-    if (result === "exit") return "exit"
+    const result = (handlers as any).key(input, parsedKey, ctx);
+    if (result === "exit") return "exit";
   }
 
-  return undefined
+  return undefined;
 }

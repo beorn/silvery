@@ -10,10 +10,10 @@
  * <ProgressBar />  // indeterminate (animated)
  * ```
  */
-import React, { useEffect, useState } from "react"
-import { useContentRect } from "@silvery/react/hooks/useLayout"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React, { useEffect, useState } from "react";
+import { useContentRect } from "@silvery/react/hooks/useLayout";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -21,30 +21,30 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface ProgressBarProps {
   /** Progress value 0-1 (omit for indeterminate) */
-  value?: number
+  value?: number;
   /** Width in columns (default: uses available width via useContentRect) */
-  width?: number
+  width?: number;
   /** Fill character (default: "█") */
-  fillChar?: string
+  fillChar?: string;
   /** Empty character (default: "░") */
-  emptyChar?: string
+  emptyChar?: string;
   /** Show percentage label (default: true for determinate) */
-  showPercentage?: boolean
+  showPercentage?: boolean;
   /** Label text */
-  label?: string
+  label?: string;
   /** Color of the filled portion */
-  color?: string
+  color?: string;
 }
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const DEFAULT_FILL = "█"
-const DEFAULT_EMPTY = "░"
-const DEFAULT_WIDTH = 30
-const INDETERMINATE_BLOCK_SIZE = 4
-const INDETERMINATE_INTERVAL = 100
+const DEFAULT_FILL = "█";
+const DEFAULT_EMPTY = "░";
+const DEFAULT_WIDTH = 30;
+const INDETERMINATE_BLOCK_SIZE = 4;
+const INDETERMINATE_INTERVAL = 100;
 
 // =============================================================================
 // Component
@@ -59,61 +59,61 @@ export function ProgressBar({
   label,
   color,
 }: ProgressBarProps): React.ReactElement {
-  const { width: contentWidth } = useContentRect()
-  const [bouncePos, setBouncePos] = useState(0)
-  const [bounceDir, setBounceDir] = useState(1)
+  const { width: contentWidth } = useContentRect();
+  const [bouncePos, setBouncePos] = useState(0);
+  const [bounceDir, setBounceDir] = useState(1);
 
-  const isDeterminate = value !== undefined
-  const showPct = showPercentage ?? isDeterminate
+  const isDeterminate = value !== undefined;
+  const showPct = showPercentage ?? isDeterminate;
 
   // Calculate available bar width
-  const labelWidth = label ? label.length + 1 : 0
-  const pctWidth = showPct ? 5 : 0 // " 100%"
-  const availableWidth = widthProp ?? (contentWidth > 0 ? contentWidth : DEFAULT_WIDTH)
-  const barWidth = Math.max(1, availableWidth - labelWidth - pctWidth)
+  const labelWidth = label ? label.length + 1 : 0;
+  const pctWidth = showPct ? 5 : 0; // " 100%"
+  const availableWidth = widthProp ?? (contentWidth > 0 ? contentWidth : DEFAULT_WIDTH);
+  const barWidth = Math.max(1, availableWidth - labelWidth - pctWidth);
 
   // Indeterminate animation
   useEffect(() => {
-    if (isDeterminate) return
+    if (isDeterminate) return;
 
     const timer = setInterval(() => {
       setBouncePos((prev) => {
-        const maxPos = barWidth - INDETERMINATE_BLOCK_SIZE
-        if (maxPos <= 0) return 0
+        const maxPos = barWidth - INDETERMINATE_BLOCK_SIZE;
+        if (maxPos <= 0) return 0;
 
-        const next = prev + bounceDir
+        const next = prev + bounceDir;
         if (next >= maxPos) {
-          setBounceDir(-1)
-          return maxPos
+          setBounceDir(-1);
+          return maxPos;
         }
         if (next <= 0) {
-          setBounceDir(1)
-          return 0
+          setBounceDir(1);
+          return 0;
         }
-        return next
-      })
-    }, INDETERMINATE_INTERVAL)
+        return next;
+      });
+    }, INDETERMINATE_INTERVAL);
 
-    return () => clearInterval(timer)
-  }, [isDeterminate, barWidth, bounceDir])
+    return () => clearInterval(timer);
+  }, [isDeterminate, barWidth, bounceDir]);
 
-  let filledPart: string
-  let emptyPart: string
+  let filledPart: string;
+  let emptyPart: string;
 
   if (isDeterminate) {
-    const clamped = Math.max(0, Math.min(1, value))
-    const filled = Math.round(clamped * barWidth)
-    filledPart = fillChar.repeat(filled)
-    emptyPart = emptyChar.repeat(barWidth - filled)
+    const clamped = Math.max(0, Math.min(1, value));
+    const filled = Math.round(clamped * barWidth);
+    filledPart = fillChar.repeat(filled);
+    emptyPart = emptyChar.repeat(barWidth - filled);
   } else {
     // Indeterminate: sliding block
-    const blockSize = Math.min(INDETERMINATE_BLOCK_SIZE, barWidth)
-    const pos = Math.max(0, Math.min(bouncePos, barWidth - blockSize))
-    filledPart = emptyChar.repeat(pos) + fillChar.repeat(blockSize)
-    emptyPart = emptyChar.repeat(barWidth - pos - blockSize)
+    const blockSize = Math.min(INDETERMINATE_BLOCK_SIZE, barWidth);
+    const pos = Math.max(0, Math.min(bouncePos, barWidth - blockSize));
+    filledPart = emptyChar.repeat(pos) + fillChar.repeat(blockSize);
+    emptyPart = emptyChar.repeat(barWidth - pos - blockSize);
   }
 
-  const pct = isDeterminate ? Math.round(Math.max(0, Math.min(1, value)) * 100) : 0
+  const pct = isDeterminate ? Math.round(Math.max(0, Math.min(1, value)) * 100) : 0;
 
   return (
     <Box>
@@ -122,5 +122,5 @@ export function ProgressBar({
       <Text dimColor>{emptyPart}</Text>
       {showPct && <Text> {pct}%</Text>}
     </Box>
-  )
+  );
 }

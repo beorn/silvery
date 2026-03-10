@@ -50,7 +50,7 @@ function App() {
         <Text dimColor>Press q to quit</Text>
       </Box>
     </Box>
-  )
+  );
 }
 ```
 
@@ -103,7 +103,7 @@ function Column({ items, selectedIndex }) {
         ))}
       </Box>
     </Box>
-  )
+  );
 }
 ```
 
@@ -120,13 +120,13 @@ For scroll indicators that fill available height with a background color:
 
 ```tsx
 function ScrollIndicator({ direction }: { direction: "left" | "right" }) {
-  const arrow = direction === "left" ? "‹" : "›"
+  const arrow = direction === "left" ? "‹" : "›";
 
   return (
     <Box width={1} flexGrow={1} backgroundColor="gray" justifyContent="center" alignItems="center">
       <Text color="white">{arrow}</Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -154,7 +154,7 @@ function ColumnSeparator() {
         <Text color="gray">│</Text>
       </Box>
     </Box>
-  )
+  );
 }
 ```
 
@@ -163,15 +163,15 @@ function ColumnSeparator() {
 Putting it all together:
 
 ```tsx
-import { render, Box, Text, useInput, useApp, createTerm } from "silvery"
-import { useState } from "react"
+import { render, Box, Text, useInput, useApp, createTerm } from "silvery";
+import { useState } from "react";
 
 function ScrollIndicator({ direction }) {
   return (
     <Box width={1} flexGrow={1} backgroundColor="gray" justifyContent="center" alignItems="center">
       <Text color="white">{direction === "left" ? "‹" : "›"}</Text>
     </Box>
-  )
+  );
 }
 
 function Column({ title, items, selectedIndex, isActive }) {
@@ -193,13 +193,13 @@ function Column({ title, items, selectedIndex, isActive }) {
         ))}
       </Box>
     </Box>
-  )
+  );
 }
 
 function Board() {
-  const { exit } = useApp()
-  const [colIndex, setColIndex] = useState(0)
-  const [cardIndex, setCardIndex] = useState(0)
+  const { exit } = useApp();
+  const [colIndex, setColIndex] = useState(0);
+  const [cardIndex, setCardIndex] = useState(0);
 
   const columns = [
     {
@@ -208,22 +208,22 @@ function Board() {
     },
     { title: "Doing", items: ["Task A", "Task B"] },
     { title: "Done", items: ["Task X", "Task Y", "Task Z"] },
-  ]
+  ];
 
   // Show scroll indicators if there are more columns than visible
-  const showLeftIndicator = colIndex > 0
-  const showRightIndicator = colIndex < columns.length - 1
+  const showLeftIndicator = colIndex > 0;
+  const showRightIndicator = colIndex < columns.length - 1;
 
   useInput((input, key) => {
-    if (input === "q") exit()
-    if (key.leftArrow) setColIndex((i) => Math.max(0, i - 1))
-    if (key.rightArrow) setColIndex((i) => Math.min(columns.length - 1, i + 1))
-    if (key.upArrow) setCardIndex((i) => Math.max(0, i - 1))
+    if (input === "q") exit();
+    if (key.leftArrow) setColIndex((i) => Math.max(0, i - 1));
+    if (key.rightArrow) setColIndex((i) => Math.min(columns.length - 1, i + 1));
+    if (key.upArrow) setCardIndex((i) => Math.max(0, i - 1));
     if (key.downArrow) {
-      const maxIndex = columns[colIndex].items.length - 1
-      setCardIndex((i) => Math.min(maxIndex, i + 1))
+      const maxIndex = columns[colIndex].items.length - 1;
+      setCardIndex((i) => Math.min(maxIndex, i + 1));
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" height="100%">
@@ -256,11 +256,11 @@ function Board() {
         <Text dimColor>←→ switch column ↑↓ select q quit</Text>
       </Box>
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
-await render(<Board />, term)
+using term = createTerm();
+await render(<Board />, term);
 ```
 
 ## Anti-Patterns to Avoid

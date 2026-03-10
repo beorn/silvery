@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue"
+import { ref, computed } from "vue";
 
 const demos = [
   { id: "dashboard", name: "Dashboard", height: 500 },
@@ -12,15 +12,15 @@ const demos = [
   { id: "text-input", name: "Text Input", height: 300 },
   { id: "focus", name: "Focus Panels", height: 400 },
   { id: "layout-feedback", name: "Layout Feedback", height: 400 },
-]
+];
 
-const active = ref(demos[0])
+const active = ref(demos[0]);
 
 function select(demo) {
-  active.value = demo
+  active.value = demo;
 }
 
-const iframeSrc = computed(() => `/examples/showcase.html?demo=${active.value.id}`)
+const iframeSrc = computed(() => `/examples/showcase.html?demo=${active.value.id}`);
 </script>
 
 <template>

@@ -21,19 +21,19 @@
  * ```
  */
 
-import { createOutputPhase } from "../pipeline/output-phase"
-import { takeUntil } from "@silvery/tea/streams"
-import { diff } from "./diff"
-import type { Buffer, Dims, Event, Runtime, RuntimeOptions } from "./types"
+import { createOutputPhase } from "../pipeline/output-phase";
+import { takeUntil } from "@silvery/tea/streams";
+import { diff } from "./diff";
+import type { Buffer, Dims, Event, Runtime, RuntimeOptions } from "./types";
 
 // =============================================================================
 // Event Channel - unified async iterable for all internal events
 // =============================================================================
 
 interface EventChannel {
-  push(event: Event): void
-  events(): AsyncIterable<Event>
-  dispose(): void
+  push(event: Event): void;
+  events(): AsyncIterable<Event>;
+  dispose(): void;
 }
 
 /**
@@ -44,29 +44,29 @@ interface EventChannel {
  * keyboard events are already AsyncIterable and merged at a higher level.
  */
 function createEventChannel(signal: AbortSignal): EventChannel {
-  const queue: Event[] = []
-  let pendingResolve: ((event: Event | null) => void) | undefined
-  let disposed = false
+  const queue: Event[] = [];
+  let pendingResolve: ((event: Event | null) => void) | undefined;
+  let disposed = false;
 
   // Resolve pending waiter on abort
   const onAbort = () => {
     if (pendingResolve) {
-      pendingResolve(null)
-      pendingResolve = undefined
+      pendingResolve(null);
+      pendingResolve = undefined;
     }
-  }
-  signal.addEventListener("abort", onAbort, { once: true })
+  };
+  signal.addEventListener("abort", onAbort, { once: true });
 
   return {
     push(event: Event): void {
-      if (disposed || signal.aborted) return
+      if (disposed || signal.aborted) return;
 
       if (pendingResolve) {
-        const r = pendingResolve
-        pendingResolve = undefined
-        r(event)
+        const r = pendingResolve;
+        pendingResolve = undefined;
+        r(event);
       } else {
-        queue.push(event)
+        queue.push(event);
       }
     },
 
@@ -76,39 +76,39 @@ function createEventChannel(signal: AbortSignal): EventChannel {
           return {
             async next(): Promise<IteratorResult<Event>> {
               if (disposed || signal.aborted) {
-                return { done: true, value: undefined }
+                return { done: true, value: undefined };
               }
 
               // Return queued event if available
               if (queue.length > 0) {
-                return { done: false, value: queue.shift()! }
+                return { done: false, value: queue.shift()! };
               }
 
               // Wait for next event or abort
               const event = await new Promise<Event | null>((resolve) => {
-                pendingResolve = resolve
-              })
+                pendingResolve = resolve;
+              });
 
               if (event === null || disposed || signal.aborted) {
-                return { done: true, value: undefined }
+                return { done: true, value: undefined };
               }
 
-              return { done: false, value: event }
+              return { done: false, value: event };
             },
-          }
+          };
         },
-      }
+      };
     },
 
     dispose(): void {
-      disposed = true
-      signal.removeEventListener("abort", onAbort)
+      disposed = true;
+      signal.removeEventListener("abort", onAbort);
       if (pendingResolve) {
-        pendingResolve(null)
-        pendingResolve = undefined
+        pendingResolve(null);
+        pendingResolve = undefined;
       }
     },
-  }
+  };
 }
 
 // =============================================================================
@@ -122,193 +122,198 @@ function createEventChannel(signal: AbortSignal): EventChannel {
  * @returns Runtime instance implementing Symbol.dispose
  */
 export function createRuntime(options: RuntimeOptions): Runtime {
-  const { target, signal: externalSignal, mode = "fullscreen" } = options
+  const { target, signal: externalSignal, mode = "fullscreen" } = options;
 
   // Inline mode needs persistent cursor tracking across frames.
   // If no outputPhaseFn provided, create one so prevCursorRow/prevOutputLines
   // persist between renders (bare diff() creates fresh state each call).
-  const fallbackOutputPhase = mode === "inline" ? createOutputPhase({}) : undefined
-  const outputPhaseFn = options.outputPhaseFn ?? fallbackOutputPhase
+  const fallbackOutputPhase = mode === "inline" ? createOutputPhase({}) : undefined;
+  const outputPhaseFn = options.outputPhaseFn ?? fallbackOutputPhase;
 
   // Internal abort controller for cleanup
-  const controller = new AbortController()
-  const signal = controller.signal
+  const controller = new AbortController();
+  const signal = controller.signal;
 
   // Wire external signal if provided - track for cleanup
-  let externalAbortHandler: (() => void) | undefined
+  let externalAbortHandler: (() => void) | undefined;
   if (externalSignal) {
     if (externalSignal.aborted) {
-      controller.abort()
+      controller.abort();
     } else {
-      externalAbortHandler = () => controller.abort()
+      externalAbortHandler = () => controller.abort();
       externalSignal.addEventListener("abort", externalAbortHandler, {
         once: true,
-      })
+      });
     }
   }
 
   // Track previous buffer for diffing
-  let prevBuffer: Buffer | null = null
+  let prevBuffer: Buffer | null = null;
 
   // Scrollback offset tracking (inline mode only)
-  let scrollbackOffset = 0
+  let scrollbackOffset = 0;
 
   // Track if disposed
-  let disposed = false
+  let disposed = false;
 
   // Unified event channel for resize and effect events
-  const eventChannel = createEventChannel(signal)
+  const eventChannel = createEventChannel(signal);
 
   // Subscribe to resize events if supported
-  let unsubscribeResize: (() => void) | undefined
+  let unsubscribeResize: (() => void) | undefined;
   if (target.onResize) {
     unsubscribeResize = target.onResize((dims) => {
-      eventChannel.push({ type: "resize", cols: dims.cols, rows: dims.rows })
-    })
+      eventChannel.push({ type: "resize", cols: dims.cols, rows: dims.rows });
+    });
   }
 
   // Effect ID counter
-  let effectId = 0
+  let effectId = 0;
 
   return {
     events(): AsyncIterable<Event> {
       // Return channel events wrapped with takeUntil for cleanup
-      return takeUntil(eventChannel.events(), signal)
+      return takeUntil(eventChannel.events(), signal);
     },
 
     schedule<T>(effect: () => Promise<T>, opts?: { signal?: AbortSignal }): void {
-      if (disposed) return
+      if (disposed) return;
 
-      const id = `effect-${effectId++}`
-      const effectSignal = opts?.signal
+      const id = `effect-${effectId++}`;
+      const effectSignal = opts?.signal;
 
       // Check if already aborted
-      if (effectSignal?.aborted) return
+      if (effectSignal?.aborted) return;
 
       // Execute effect asynchronously
       const execute = async () => {
         // Track abort handler for cleanup
-        let abortHandler: (() => void) | undefined
+        let abortHandler: (() => void) | undefined;
 
         try {
           if (effectSignal) {
             // Create abort race with cleanup
             const aborted = new Promise<never>((_resolve, reject) => {
-              abortHandler = () => reject(new Error("Effect aborted"))
+              abortHandler = () => reject(new Error("Effect aborted"));
               effectSignal.addEventListener("abort", abortHandler, {
                 once: true,
-              })
-            })
+              });
+            });
 
-            const result = await Promise.race([effect(), aborted])
+            const result = await Promise.race([effect(), aborted]);
 
             // Clean up abort listener after success
             if (abortHandler) {
-              effectSignal.removeEventListener("abort", abortHandler)
+              effectSignal.removeEventListener("abort", abortHandler);
             }
 
-            eventChannel.push({ type: "effect", id, result })
+            eventChannel.push({ type: "effect", id, result });
           } else {
-            const result = await effect()
-            eventChannel.push({ type: "effect", id, result })
+            const result = await effect();
+            eventChannel.push({ type: "effect", id, result });
           }
         } catch (error) {
           // Clean up abort listener on error too
           if (abortHandler && effectSignal) {
-            effectSignal.removeEventListener("abort", abortHandler)
+            effectSignal.removeEventListener("abort", abortHandler);
           }
 
           // Check for abort by name (handles DOMException, AbortError, etc.)
-          if (error instanceof Error && (error.message === "Effect aborted" || error.name === "AbortError")) {
+          if (
+            error instanceof Error &&
+            (error.message === "Effect aborted" || error.name === "AbortError")
+          ) {
             // Silently ignore aborted effects
-            return
+            return;
           }
           eventChannel.push({
             type: "error",
             error: error instanceof Error ? error : new Error(String(error)),
-          })
+          });
         }
-      }
+      };
 
       // Start immediately (microtask)
       queueMicrotask(() => {
-        void execute()
-      })
+        void execute();
+      });
     },
 
     render(buffer: Buffer): void {
-      if (disposed) return
+      if (disposed) return;
 
       // Compute diff internally (inline mode passes scrollback offset and terminal rows)
-      const offset = scrollbackOffset
-      scrollbackOffset = 0 // Consume the offset
-      const termRows = mode === "inline" ? target.getDims().rows : undefined
+      const offset = scrollbackOffset;
+      scrollbackOffset = 0; // Consume the offset
+      const termRows = mode === "inline" ? target.getDims().rows : undefined;
 
       // Use scoped output phase if provided (threads measurer/caps correctly),
       // otherwise fall back to raw diff() for backwards compatibility
-      let patch: string
+      let patch: string;
       if (outputPhaseFn) {
-        const prevBuf = prevBuffer?._buffer ?? null
-        const nextBuf = buffer._buffer
-        patch = outputPhaseFn(prevBuf, nextBuf, mode, offset, termRows)
+        const prevBuf = prevBuffer?._buffer ?? null;
+        const nextBuf = buffer._buffer;
+        patch = outputPhaseFn(prevBuf, nextBuf, mode, offset, termRows);
       } else {
-        patch = diff(prevBuffer, buffer, mode, offset, termRows)
+        patch = diff(prevBuffer, buffer, mode, offset, termRows);
       }
-      prevBuffer = buffer
+      prevBuffer = buffer;
 
       // Write to target
-      target.write(patch)
+      target.write(patch);
     },
 
     addScrollbackLines(lines: number): void {
-      if (mode !== "inline" || lines <= 0) return
-      scrollbackOffset += lines
+      if (mode !== "inline" || lines <= 0) return;
+      scrollbackOffset += lines;
     },
 
     invalidate(): void {
-      prevBuffer = null
+      prevBuffer = null;
     },
 
     resetInlineCursor(): void {
       // Reset inline cursor tracking — delegates to the output phase (either
       // the caller-provided one or the inline-mode fallback created above).
-      const fn = outputPhaseFn as { resetInlineState?: () => void } | undefined
-      fn?.resetInlineState?.()
+      const fn = outputPhaseFn as { resetInlineState?: () => void } | undefined;
+      fn?.resetInlineState?.();
     },
 
     getInlineCursorRow(): number {
-      const fn = outputPhaseFn as { getInlineCursorRow?: () => number } | undefined
-      return fn?.getInlineCursorRow?.() ?? -1
+      const fn = outputPhaseFn as { getInlineCursorRow?: () => number } | undefined;
+      return fn?.getInlineCursorRow?.() ?? -1;
     },
 
     promoteScrollback(content: string, lines: number): void {
-      const fn = outputPhaseFn as { promoteScrollback?: (c: string, l: number) => void } | undefined
-      fn?.promoteScrollback?.(content, lines)
+      const fn = outputPhaseFn as
+        | { promoteScrollback?: (c: string, l: number) => void }
+        | undefined;
+      fn?.promoteScrollback?.(content, lines);
     },
 
     getDims(): Dims {
-      return target.getDims()
+      return target.getDims();
     },
 
     [Symbol.dispose](): void {
-      if (disposed) return
-      disposed = true
+      if (disposed) return;
+      disposed = true;
 
       // Abort all pending operations
-      controller.abort()
+      controller.abort();
 
       // Remove external signal listener if still attached
       if (externalAbortHandler && externalSignal) {
-        externalSignal.removeEventListener("abort", externalAbortHandler)
+        externalSignal.removeEventListener("abort", externalAbortHandler);
       }
 
       // Unsubscribe from resize
       if (unsubscribeResize) {
-        unsubscribeResize()
+        unsubscribeResize();
       }
 
       // Dispose event channel
-      eventChannel.dispose()
+      eventChannel.dispose();
     },
-  }
+  };
 }

@@ -40,37 +40,37 @@ Most terminal UI libraries force you to chain sequential `readline` prompts or s
 A complete multi-step wizard using `run()`, `SelectList`, `TextInput`, and `ProgressBar`:
 
 ```tsx
-import { useState, useEffect } from "react"
-import { run, useInput } from "@silvery/term/runtime"
-import { Box, Text, SelectList, TextInput, ProgressBar } from "silvery"
+import { useState, useEffect } from "react";
+import { run, useInput } from "@silvery/term/runtime";
+import { Box, Text, SelectList, TextInput, ProgressBar } from "silvery";
 
-type Step = "select" | "name" | "install" | "done"
+type Step = "select" | "name" | "install" | "done";
 
 function Wizard() {
-  const [step, setStep] = useState<Step>("select")
-  const [framework, setFramework] = useState("")
-  const [name, setName] = useState("")
-  const [progress, setProgress] = useState(0)
+  const [step, setStep] = useState<Step>("select");
+  const [framework, setFramework] = useState("");
+  const [name, setName] = useState("");
+  const [progress, setProgress] = useState(0);
 
   useInput((input) => {
-    if (input === "q") return "exit"
-  })
+    if (input === "q") return "exit";
+  });
 
   // Simulate installation progress
   useEffect(() => {
-    if (step !== "install") return
+    if (step !== "install") return;
     const timer = setInterval(() => {
       setProgress((p) => {
         if (p >= 1) {
-          clearInterval(timer)
-          setStep("done")
-          return 1
+          clearInterval(timer);
+          setStep("done");
+          return 1;
         }
-        return p + 0.05
-      })
-    }, 100)
-    return () => clearInterval(timer)
-  }, [step])
+        return p + 0.05;
+      });
+    }, 100);
+    return () => clearInterval(timer);
+  }, [step]);
 
   if (step === "select") {
     return (
@@ -84,13 +84,13 @@ function Wizard() {
             { label: "Angular (coming soon)", value: "angular", disabled: true },
           ]}
           onSelect={(opt) => {
-            setFramework(opt.label)
-            setStep("name")
+            setFramework(opt.label);
+            setStep("name");
           }}
         />
         <Text dimColor>Use arrow keys to navigate, Enter to select</Text>
       </Box>
-    )
+    );
   }
 
   if (step === "name") {
@@ -100,14 +100,14 @@ function Wizard() {
         <TextInput
           placeholder="my-app"
           onSubmit={(val) => {
-            setName(val || "my-app")
-            setStep("install")
+            setName(val || "my-app");
+            setStep("install");
           }}
           prompt="> "
         />
         <Text dimColor>Type a name and press Enter</Text>
       </Box>
-    )
+    );
   }
 
   if (step === "install") {
@@ -117,7 +117,7 @@ function Wizard() {
         <ProgressBar value={progress} width={40} color="green" />
         <Text dimColor>Setting up {name}</Text>
       </Box>
-    )
+    );
   }
 
   return (
@@ -130,10 +130,10 @@ function Wizard() {
       </Text>
       <Text dimColor>Press q to exit</Text>
     </Box>
-  )
+  );
 }
 
-await run(<Wizard />)
+await run(<Wizard />);
 ```
 
 Run it with `bun wizard.tsx` or `npx tsx wizard.tsx`.

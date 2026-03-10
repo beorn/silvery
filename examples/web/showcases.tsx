@@ -5,28 +5,28 @@
  * on the VitePress docs site. Keyboard input via emitInput() event bus.
  */
 
-import React, { useState, useEffect, useRef } from "react"
-import { Box, Text, useContentRect } from "@silvery/term/xterm/index.ts"
-import { builtinPalettes, type ColorPalette } from "@silvery/theme"
+import React, { useState, useEffect, useRef } from "react";
+import { Box, Text, useContentRect } from "@silvery/term/xterm/index.ts";
+import { builtinPalettes, type ColorPalette } from "@silvery/theme";
 
 // ============================================================================
 // Input Event Bus
 // ============================================================================
 
 interface KeyInfo {
-  upArrow: boolean
-  downArrow: boolean
-  leftArrow: boolean
-  rightArrow: boolean
-  return: boolean
-  escape: boolean
-  tab: boolean
-  backspace: boolean
+  upArrow: boolean;
+  downArrow: boolean;
+  leftArrow: boolean;
+  rightArrow: boolean;
+  return: boolean;
+  escape: boolean;
+  tab: boolean;
+  backspace: boolean;
 }
 
-type InputHandler = (input: string, key: KeyInfo) => void
+type InputHandler = (input: string, key: KeyInfo) => void;
 
-const inputListeners = new Set<InputHandler>()
+const inputListeners = new Set<InputHandler>();
 
 /** Called from showcase-app.tsx via term.onData() */
 export function emitInput(data: string): void {
@@ -39,22 +39,22 @@ export function emitInput(data: string): void {
     escape: data === "\x1b",
     tab: data === "\t",
     backspace: data === "\x7f" || data === "\b",
-  }
-  const input = data.length === 1 && data >= " " && data < "\x7f" ? data : ""
-  for (const cb of inputListeners) cb(input, key)
+  };
+  const input = data.length === 1 && data >= " " && data < "\x7f" ? data : "";
+  for (const cb of inputListeners) cb(input, key);
 }
 
 /** Subscribe to keyboard input */
 function useInput(handler: InputHandler): void {
-  const ref = useRef(handler)
-  ref.current = handler
+  const ref = useRef(handler);
+  ref.current = handler;
   useEffect(() => {
-    const cb: InputHandler = (i, k) => ref.current(i, k)
-    inputListeners.add(cb)
+    const cb: InputHandler = (i, k) => ref.current(i, k);
+    inputListeners.add(cb);
     return () => {
-      inputListeners.delete(cb)
-    }
-  }, [])
+      inputListeners.delete(cb);
+    };
+  }, []);
 }
 
 // ============================================================================
@@ -62,57 +62,57 @@ function useInput(handler: InputHandler): void {
 // ============================================================================
 
 interface MouseInfo {
-  x: number
-  y: number
-  button: number
+  x: number;
+  y: number;
+  button: number;
 }
 
-type MouseHandler = (info: MouseInfo) => void
+type MouseHandler = (info: MouseInfo) => void;
 
-const mouseListeners = new Set<MouseHandler>()
+const mouseListeners = new Set<MouseHandler>();
 
 /** Called from showcase-app.tsx via term.onBinary() */
 export function emitMouse(x: number, y: number, button: number): void {
-  for (const cb of mouseListeners) cb({ x, y, button })
+  for (const cb of mouseListeners) cb({ x, y, button });
 }
 
 /** Subscribe to mouse click events */
 function useMouseClick(handler: MouseHandler): void {
-  const ref = useRef(handler)
-  ref.current = handler
+  const ref = useRef(handler);
+  ref.current = handler;
   useEffect(() => {
-    const cb: MouseHandler = (info) => ref.current(info)
-    mouseListeners.add(cb)
+    const cb: MouseHandler = (info) => ref.current(info);
+    mouseListeners.add(cb);
     return () => {
-      mouseListeners.delete(cb)
-    }
-  }, [])
+      mouseListeners.delete(cb);
+    };
+  }, []);
 }
 
 // ============================================================================
 // Focus State — tracks whether the xterm terminal has focus
 // ============================================================================
 
-let _termFocused = false
-const focusListeners = new Set<(focused: boolean) => void>()
+let _termFocused = false;
+const focusListeners = new Set<(focused: boolean) => void>();
 
 /** Called from viewer-app.tsx when xterm gains/loses focus */
 export function setTermFocused(focused: boolean): void {
-  _termFocused = focused
-  for (const cb of focusListeners) cb(focused)
+  _termFocused = focused;
+  for (const cb of focusListeners) cb(focused);
 }
 
 /** Hook: subscribe to terminal focus state */
 function useTermFocused(): boolean {
-  const [focused, setFocused] = useState(_termFocused)
+  const [focused, setFocused] = useState(_termFocused);
   useEffect(() => {
-    const cb = (f: boolean) => setFocused(f)
-    focusListeners.add(cb)
+    const cb = (f: boolean) => setFocused(f);
+    focusListeners.add(cb);
     return () => {
-      focusListeners.delete(cb)
-    }
-  }, [])
-  return focused
+      focusListeners.delete(cb);
+    };
+  }, []);
+  return focused;
 }
 
 // ============================================================================
@@ -124,55 +124,65 @@ function KeyHints({ hints }: { hints: string }): JSX.Element {
     <Box marginTop={1}>
       <Text color="#555">{hints}</Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
 // 1. DashboardShowcase — btop-inspired system monitor
 // ============================================================================
 
-const SPARKLINE = "▁▂▃▄▅▆▇█"
-const sparkChar = (v: number) => SPARKLINE[Math.min(7, Math.round((v / 100) * 7))]!
-const gaugeColor = (v: number) => (v > 70 ? "#f38ba8" : v > 40 ? "#f9e2af" : "#a6e3a1")
+const SPARKLINE = "▁▂▃▄▅▆▇█";
+const sparkChar = (v: number) => SPARKLINE[Math.min(7, Math.round((v / 100) * 7))]!;
+const gaugeColor = (v: number) => (v > 70 ? "#f38ba8" : v > 40 ? "#f9e2af" : "#a6e3a1");
 
 function DashboardShowcase(): JSX.Element {
-  const [tick, setTick] = useState(0)
-  const [activePanel, setActivePanel] = useState(0)
-  const [cpuHistory] = useState(() => Array.from({ length: 20 }, () => 20 + Math.floor(Math.random() * 40)))
-  const [memHistory] = useState(() => Array.from({ length: 20 }, () => 40 + Math.floor(Math.random() * 30)))
+  const [tick, setTick] = useState(0);
+  const [activePanel, setActivePanel] = useState(0);
+  const [cpuHistory] = useState(() =>
+    Array.from({ length: 20 }, () => 20 + Math.floor(Math.random() * 40)),
+  );
+  const [memHistory] = useState(() =>
+    Array.from({ length: 20 }, () => 40 + Math.floor(Math.random() * 30)),
+  );
 
   useEffect(() => {
     const id = setInterval(() => {
       setTick((t) => {
-        const newT = t + 1
+        const newT = t + 1;
         cpuHistory.push(
-          Math.max(5, Math.min(95, cpuHistory[cpuHistory.length - 1]! + Math.floor(Math.random() * 21) - 10)),
-        )
-        cpuHistory.shift()
+          Math.max(
+            5,
+            Math.min(95, cpuHistory[cpuHistory.length - 1]! + Math.floor(Math.random() * 21) - 10),
+          ),
+        );
+        cpuHistory.shift();
         memHistory.push(
-          Math.max(20, Math.min(90, memHistory[memHistory.length - 1]! + Math.floor(Math.random() * 11) - 5)),
-        )
-        memHistory.shift()
-        return newT
-      })
-    }, 1200)
-    return () => clearInterval(id)
-  }, [])
+          Math.max(
+            20,
+            Math.min(90, memHistory[memHistory.length - 1]! + Math.floor(Math.random() * 11) - 5),
+          ),
+        );
+        memHistory.shift();
+        return newT;
+      });
+    }, 1200);
+    return () => clearInterval(id);
+  }, []);
 
   useInput((_input, key) => {
-    if (key.leftArrow) setActivePanel((p) => Math.max(0, p - 1))
-    if (key.rightArrow) setActivePanel((p) => Math.min(2, p + 1))
-  })
+    if (key.leftArrow) setActivePanel((p) => Math.max(0, p - 1));
+    if (key.rightArrow) setActivePanel((p) => Math.min(2, p + 1));
+  });
 
-  const cpu = cpuHistory[cpuHistory.length - 1]!
-  const mem = memHistory[memHistory.length - 1]!
+  const cpu = cpuHistory[cpuHistory.length - 1]!;
+  const mem = memHistory[memHistory.length - 1]!;
 
   const cores = [
     { label: "C0", value: Math.max(5, cpu + ((tick * 3) % 15) - 7) },
     { label: "C1", value: Math.max(5, cpu - ((tick * 5) % 20) + 5) },
     { label: "C2", value: Math.max(5, cpu + ((tick * 2) % 18) - 3) },
     { label: "C3", value: Math.max(5, cpu - ((tick * 4) % 12) + 2) },
-  ].map((c) => ({ ...c, value: Math.min(99, c.value) }))
+  ].map((c) => ({ ...c, value: Math.min(99, c.value) }));
 
   const services = [
     { name: "api-gateway", status: "up" as const, uptime: "14d 6h", latency: "12ms" },
@@ -180,10 +190,11 @@ function DashboardShowcase(): JSX.Element {
     { name: "worker-pool", status: "warn" as const, uptime: "2h 15m", latency: "245ms" },
     { name: "cache-redis", status: "up" as const, uptime: "7d 3h", latency: "2ms" },
     { name: "mail-service", status: "down" as const, uptime: "0m", latency: "—" },
-  ]
+  ];
 
-  const statusIcon = (s: "up" | "warn" | "down") => (s === "up" ? "●" : s === "warn" ? "▲" : "✕")
-  const statusColor = (s: "up" | "warn" | "down") => (s === "up" ? "#a6e3a1" : s === "warn" ? "#f9e2af" : "#f38ba8")
+  const statusIcon = (s: "up" | "warn" | "down") => (s === "up" ? "●" : s === "warn" ? "▲" : "✕");
+  const statusColor = (s: "up" | "warn" | "down") =>
+    s === "up" ? "#a6e3a1" : s === "warn" ? "#f9e2af" : "#f38ba8";
 
   const allEvents = [
     { tag: "DEPLOY", color: "#a6e3a1", time: "14:23:01", msg: "v2.4.1 completed" },
@@ -194,9 +205,9 @@ function DashboardShowcase(): JSX.Element {
     { tag: "DB", color: "#89b4fa", time: "14:24:12", msg: "Migration v38 applied" },
     { tag: "SCALE", color: "#a6e3a1", time: "14:24:30", msg: "Workers → 8" },
     { tag: "HEALTH", color: "#a6e3a1", time: "14:24:45", msg: "All services green" },
-  ]
-  const eventOffset = tick % 4
-  const visibleEvents = allEvents.slice(eventOffset, eventOffset + 4)
+  ];
+  const eventOffset = tick % 4;
+  const visibleEvents = allEvents.slice(eventOffset, eventOffset + 4);
 
   return (
     <Box flexDirection="column" paddingX={1}>
@@ -260,7 +271,7 @@ function DashboardShowcase(): JSX.Element {
           </Box>
           {/* Per-core mini bars */}
           {cores.map((c) => {
-            const blocks = Math.round((c.value / 100) * 12)
+            const blocks = Math.round((c.value / 100) * 12);
             return (
               <Box key={c.label} flexDirection="row" gap={1}>
                 <Box width={5}>
@@ -275,7 +286,7 @@ function DashboardShowcase(): JSX.Element {
                   {String(c.value).padStart(2)}%
                 </Text>
               </Box>
-            )
+            );
           })}
         </Box>
 
@@ -334,7 +345,7 @@ function DashboardShowcase(): JSX.Element {
 
       <KeyHints hints="←→ panels" />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -342,28 +353,28 @@ function DashboardShowcase(): JSX.Element {
 // ============================================================================
 
 interface AgentToolCall {
-  tool: string
-  args: string
-  output: string[]
+  tool: string;
+  args: string;
+  output: string[];
 }
 
 interface AgentExchange {
-  id: number
-  role: "user" | "agent"
-  content: string
-  thinking?: string
-  toolCalls?: AgentToolCall[]
-  tokens?: { input: number; output: number }
+  id: number;
+  role: "user" | "agent";
+  content: string;
+  thinking?: string;
+  toolCalls?: AgentToolCall[];
+  tokens?: { input: number; output: number };
 }
 
-type AgentScriptEntry = Omit<AgentExchange, "id">
+type AgentScriptEntry = Omit<AgentExchange, "id">;
 
 // --- Constants ---
 
-const AGENT_MODEL = "claude-opus-4-6"
-const AGENT_INPUT_COST_PER_M = 15
-const AGENT_OUTPUT_COST_PER_M = 75
-const AGENT_CONTEXT_WINDOW = 200_000
+const AGENT_MODEL = "claude-opus-4-6";
+const AGENT_INPUT_COST_PER_M = 15;
+const AGENT_OUTPUT_COST_PER_M = 75;
+const AGENT_CONTEXT_WINDOW = 200_000;
 
 const AGENT_TOOL_ICONS: Record<string, string> = {
   Read: "\u25B8",
@@ -372,7 +383,7 @@ const AGENT_TOOL_ICONS: Record<string, string> = {
   Write: "\u25B8",
   Glob: "\u25B8",
   Grep: "\u25B8",
-}
+};
 
 const AGENT_TOOL_COLORS: Record<string, string> = {
   Read: "#89b4fa",
@@ -381,7 +392,7 @@ const AGENT_TOOL_COLORS: Record<string, string> = {
   Write: "#cba6f7",
   Glob: "#6c7086",
   Grep: "#94e2d5",
-}
+};
 
 const AGENT_TOOL_BORDER_COLORS: Record<string, string> = {
   Read: "#304060",
@@ -390,7 +401,7 @@ const AGENT_TOOL_BORDER_COLORS: Record<string, string> = {
   Write: "#3d2a5a",
   Glob: "#3a3a3a",
   Grep: "#2a4a4a",
-}
+};
 
 // --- Script: realistic multi-turn coding conversation ---
 
@@ -541,7 +552,8 @@ const AGENT_SCRIPT: AgentScriptEntry[] = [
   },
   {
     role: "agent",
-    content: "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
+    content:
+      "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
     tokens: { input: 8468, output: 156 },
   },
   {
@@ -551,7 +563,8 @@ const AGENT_SCRIPT: AgentScriptEntry[] = [
   },
   {
     role: "agent",
-    thinking: "Simple task \u2014 read the version from package.json and expose it on GET /health alongside uptime.",
+    thinking:
+      "Simple task \u2014 read the version from package.json and expose it on GET /health alongside uptime.",
     content: "Simple addition \u2014 reading package.json for the version, then adding the route.",
     toolCalls: [
       {
@@ -598,55 +611,66 @@ const AGENT_SCRIPT: AgentScriptEntry[] = [
       "All done! Summary:\n\u2022 Fixed token expiry bug (seconds vs milliseconds)\n\u2022 Added rate limiting (5 req/min per IP)\n\u2022 Added /health endpoint (v2.4.1)\n\nAll 17 tests pass.",
     tokens: { input: 22468, output: 224 },
   },
-]
+];
 
 // --- Token helpers ---
 
 function agentFormatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`
-  return String(n)
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
 }
 
 function agentFormatCost(inputTokens: number, outputTokens: number): string {
-  const cost = (inputTokens * AGENT_INPUT_COST_PER_M + outputTokens * AGENT_OUTPUT_COST_PER_M) / 1_000_000
-  if (cost < 0.01) return `$${cost.toFixed(4)}`
-  return `$${cost.toFixed(2)}`
+  const cost =
+    (inputTokens * AGENT_INPUT_COST_PER_M + outputTokens * AGENT_OUTPUT_COST_PER_M) / 1_000_000;
+  if (cost < 0.01) return `$${cost.toFixed(4)}`;
+  return `$${cost.toFixed(2)}`;
 }
 
 function agentComputeTokens(exchanges: AgentExchange[]): {
-  input: number
-  output: number
-  currentContext: number
+  input: number;
+  output: number;
+  currentContext: number;
 } {
-  let input = 0
-  let output = 0
-  let currentContext = 0
+  let input = 0;
+  let output = 0;
+  let currentContext = 0;
   for (const ex of exchanges) {
     if (ex.tokens) {
-      input += ex.tokens.input
-      output += ex.tokens.output
-      if (ex.tokens.input > currentContext) currentContext = ex.tokens.input
+      input += ex.tokens.input;
+      output += ex.tokens.output;
+      if (ex.tokens.input > currentContext) currentContext = ex.tokens.input;
     }
   }
-  return { input, output, currentContext }
+  return { input, output, currentContext };
 }
 
 // --- Streaming phases ---
 
-type AgentStreamPhase = "thinking" | "streaming" | "tools" | "done"
+type AgentStreamPhase = "thinking" | "streaming" | "tools" | "done";
 
 // --- Spinner ---
 
-const AGENT_SPINNER_FRAMES = ["\u2807", "\u2839", "\u2838", "\u283C", "\u2834", "\u2826", "\u2827", "\u2807", "\u280F"]
+const AGENT_SPINNER_FRAMES = [
+  "\u2807",
+  "\u2839",
+  "\u2838",
+  "\u283C",
+  "\u2834",
+  "\u2826",
+  "\u2827",
+  "\u2807",
+  "\u280F",
+];
 
 function AgentSpinner(): JSX.Element {
-  const [frame, setFrame] = useState(0)
+  const [frame, setFrame] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setFrame((f) => (f + 1) % AGENT_SPINNER_FRAMES.length), 80)
-    return () => clearInterval(id)
-  }, [])
-  return <Text color="#cba6f7">{AGENT_SPINNER_FRAMES[frame]}</Text>
+    const id = setInterval(() => setFrame((f) => (f + 1) % AGENT_SPINNER_FRAMES.length), 80);
+    return () => clearInterval(id);
+  }, []);
+  return <Text color="#cba6f7">{AGENT_SPINNER_FRAMES[frame]}</Text>;
 }
 
 // --- Thinking block ---
@@ -671,7 +695,7 @@ function AgentThinkingBlock({ text, done }: { text: string; done: boolean }): JS
         </Text>
       )}
     </Box>
-  )
+  );
 }
 
 // --- Tool call block ---
@@ -680,12 +704,12 @@ function AgentToolCallBlock({
   call,
   phase,
 }: {
-  call: AgentToolCall
-  phase: "pending" | "running" | "done"
+  call: AgentToolCall;
+  phase: "pending" | "running" | "done";
 }): JSX.Element {
-  const color = AGENT_TOOL_COLORS[call.tool] ?? "#a6adc8"
-  const borderColor = AGENT_TOOL_BORDER_COLORS[call.tool] ?? "#45475a"
-  const icon = AGENT_TOOL_ICONS[call.tool] ?? "\u25B8"
+  const color = AGENT_TOOL_COLORS[call.tool] ?? "#a6adc8";
+  const borderColor = AGENT_TOOL_BORDER_COLORS[call.tool] ?? "#45475a";
+  const icon = AGENT_TOOL_ICONS[call.tool] ?? "\u25B8";
 
   return (
     <Box flexDirection="column">
@@ -724,35 +748,35 @@ function AgentToolCallBlock({
                 <Text key={i} color="#a6e3a1">
                   {line}
                 </Text>
-              )
+              );
             if (line.startsWith("-"))
               return (
                 <Text key={i} color="#f38ba8">
                   {line}
                 </Text>
-              )
+              );
             if (line.startsWith("  \u2713") || line.startsWith("\u2713"))
               return (
                 <Text key={i} color="#a6e3a1">
                   {line}
                 </Text>
-              )
+              );
             if (line.includes("passed"))
               return (
                 <Text key={i} bold color="#a6e3a1">
                   {line}
                 </Text>
-              )
+              );
             return (
               <Text key={i} color="#a6adc8">
                 {line}
               </Text>
-            )
+            );
           })}
         </Box>
       )}
     </Box>
-  )
+  );
 }
 
 // --- Streaming text (word-by-word) ---
@@ -762,29 +786,29 @@ function AgentStreamingText({
   revealFraction,
   showCursor,
 }: {
-  fullText: string
-  revealFraction: number
-  showCursor: boolean
+  fullText: string;
+  revealFraction: number;
+  showCursor: boolean;
 }): JSX.Element {
-  let text = fullText
+  let text = fullText;
   if (revealFraction < 1) {
-    const words = fullText.split(/(\s+)/)
-    const totalWords = words.filter((w) => w.trim()).length
-    const revealWords = Math.ceil(totalWords * revealFraction)
+    const words = fullText.split(/(\s+)/);
+    const totalWords = words.filter((w) => w.trim()).length;
+    const revealWords = Math.ceil(totalWords * revealFraction);
 
-    let wordCount = 0
-    text = ""
+    let wordCount = 0;
+    text = "";
     for (const word of words) {
       if (word.trim()) {
-        wordCount++
-        if (wordCount > revealWords) break
+        wordCount++;
+        if (wordCount > revealWords) break;
       }
-      text += word
+      text += word;
     }
   }
 
   // Split on newlines to render as separate lines (Text doesn't handle \n as line breaks)
-  const lines = text.split("\n")
+  const lines = text.split("\n");
   return (
     <Box flexDirection="column">
       {lines.map((line, i) => (
@@ -794,23 +818,23 @@ function AgentStreamingText({
         </Text>
       ))}
     </Box>
-  )
+  );
 }
 
 // --- Context bar ---
 
 function AgentContextBar({ currentContext }: { currentContext: number }): JSX.Element {
-  const CTX_W = 12
-  const ctxFrac = currentContext / AGENT_CONTEXT_WINDOW
-  const ctxFilled = Math.round(Math.min(ctxFrac, 1) * CTX_W)
-  const ctxPct = Math.round(ctxFrac * 100)
-  const ctxColor = ctxPct > 80 ? "#f38ba8" : ctxPct > 50 ? "#f9e2af" : "#89b4fa"
+  const CTX_W = 12;
+  const ctxFrac = currentContext / AGENT_CONTEXT_WINDOW;
+  const ctxFilled = Math.round(Math.min(ctxFrac, 1) * CTX_W);
+  const ctxPct = Math.round(ctxFrac * 100);
+  const ctxColor = ctxPct > 80 ? "#f38ba8" : ctxPct > 50 ? "#f9e2af" : "#89b4fa";
   return (
     <Text color="#585b70">
       <Text color={ctxColor}>{"\u2588".repeat(ctxFilled)}</Text>
       <Text color="#313244">{"\u2591".repeat(CTX_W - ctxFilled)}</Text> {ctxPct}%
     </Text>
-  )
+  );
 }
 
 // --- Exchange rendering ---
@@ -822,15 +846,15 @@ function AgentExchangeView({
   isLatest,
   cumTokens,
 }: {
-  exchange: AgentExchange
-  streamPhase: AgentStreamPhase
-  revealFraction: number
-  isLatest: boolean
-  cumTokens?: { input: number; output: number }
+  exchange: AgentExchange;
+  streamPhase: AgentStreamPhase;
+  revealFraction: number;
+  isLatest: boolean;
+  cumTokens?: { input: number; output: number };
 }): JSX.Element {
-  const phase = isLatest ? streamPhase : "done"
-  const fraction = isLatest ? revealFraction : 1
-  const isUser = exchange.role === "user"
+  const phase = isLatest ? streamPhase : "done";
+  const fraction = isLatest ? revealFraction : 1;
+  const isUser = exchange.role === "user";
 
   if (isUser) {
     return (
@@ -844,12 +868,12 @@ function AgentExchangeView({
           </Text>
         </Text>
       </Box>
-    )
+    );
   }
 
   // Agent exchange
-  const toolCalls = exchange.toolCalls ?? []
-  const toolRevealCount = phase === "tools" || phase === "done" ? toolCalls.length : 0
+  const toolCalls = exchange.toolCalls ?? [];
+  const toolRevealCount = phase === "tools" || phase === "done" ? toolCalls.length : 0;
 
   return (
     <Box flexDirection="column" paddingX={1}>
@@ -887,13 +911,13 @@ function AgentExchangeView({
         <Box marginTop={0}>
           <Text dim color="#585b70">
             {"  "}
-            {agentFormatTokens(cumTokens.input)} in {"\u00B7"} {agentFormatTokens(cumTokens.output)} out {"\u00B7"}{" "}
-            {agentFormatCost(cumTokens.input, cumTokens.output)}
+            {agentFormatTokens(cumTokens.input)} in {"\u00B7"} {agentFormatTokens(cumTokens.output)}{" "}
+            out {"\u00B7"} {agentFormatCost(cumTokens.input, cumTokens.output)}
           </Text>
         </Box>
       )}
     </Box>
-  )
+  );
 }
 
 // --- Status bar ---
@@ -903,19 +927,20 @@ function AgentStatusBar({
   isAnimating,
   termFocused,
 }: {
-  exchanges: AgentExchange[]
-  isAnimating: boolean
-  termFocused: boolean
+  exchanges: AgentExchange[];
+  isAnimating: boolean;
+  termFocused: boolean;
 }): JSX.Element {
-  const cumulative = agentComputeTokens(exchanges)
-  const cost = agentFormatCost(cumulative.input, cumulative.output)
+  const cumulative = agentComputeTokens(exchanges);
+  const cost = agentFormatCost(cumulative.input, cumulative.output);
 
   return (
     <Box flexDirection="row" justifyContent="space-between">
       <Text color="#585b70" dim>
         <Text color="#cba6f7">{AGENT_MODEL}</Text>
         {"  "}
-        {agentFormatTokens(cumulative.input)} in {"\u00B7"} {agentFormatTokens(cumulative.output)} out {"\u00B7"} {cost}
+        {agentFormatTokens(cumulative.input)} in {"\u00B7"} {agentFormatTokens(cumulative.output)}{" "}
+        out {"\u00B7"} {cost}
       </Text>
       <Text color="#585b70" dim>
         <AgentContextBar currentContext={cumulative.currentContext} />
@@ -929,188 +954,197 @@ function AgentStatusBar({
         )}
       </Text>
     </Box>
-  )
+  );
 }
 
 // --- Script index (module-level to persist across re-renders) ---
-let agentScriptIdx = 0
+let agentScriptIdx = 0;
 
 function CodingAgentShowcase(): JSX.Element {
-  const [exchanges, setExchanges] = useState<AgentExchange[]>([])
-  const [inputText, setInputText] = useState("")
-  const [cursorVisible, setCursorVisible] = useState(true)
-  const termFocused = useTermFocused()
+  const [exchanges, setExchanges] = useState<AgentExchange[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [cursorVisible, setCursorVisible] = useState(true);
+  const termFocused = useTermFocused();
 
   // Streaming state
-  const [streamPhase, setStreamPhase] = useState<AgentStreamPhase>("done")
-  const [revealFraction, setRevealFraction] = useState(1)
-  const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const revealTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const nextIdRef = useRef(0)
-  const scriptIdxRef = useRef(0)
+  const [streamPhase, setStreamPhase] = useState<AgentStreamPhase>("done");
+  const [revealFraction, setRevealFraction] = useState(1);
+  const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nextIdRef = useRef(0);
+  const scriptIdxRef = useRef(0);
 
   // Blink cursor
   useEffect(() => {
-    const id = setInterval(() => setCursorVisible((v) => !v), 530)
-    return () => clearInterval(id)
-  }, [])
+    const id = setInterval(() => setCursorVisible((v) => !v), 530);
+    return () => clearInterval(id);
+  }, []);
 
   /** Cancel all streaming timers. */
   const cancelStreaming = () => {
     if (phaseTimerRef.current) {
-      clearTimeout(phaseTimerRef.current)
-      phaseTimerRef.current = null
+      clearTimeout(phaseTimerRef.current);
+      phaseTimerRef.current = null;
     }
     if (revealTimerRef.current) {
-      clearInterval(revealTimerRef.current)
-      revealTimerRef.current = null
+      clearInterval(revealTimerRef.current);
+      revealTimerRef.current = null;
     }
-  }
+  };
 
   /** Start streaming an exchange through its phases. */
   const startStreaming = (entry: AgentScriptEntry, id: number) => {
-    cancelStreaming()
-    const newExchange: AgentExchange = { ...entry, id }
+    cancelStreaming();
+    const newExchange: AgentExchange = { ...entry, id };
 
     // User messages: instant
     if (entry.role === "user") {
-      setExchanges((prev) => [...prev, newExchange])
-      setStreamPhase("done")
-      setRevealFraction(1)
-      return
+      setExchanges((prev) => [...prev, newExchange]);
+      setStreamPhase("done");
+      setRevealFraction(1);
+      return;
     }
 
     // Agent message: thinking -> streaming -> tools -> done
-    setExchanges((prev) => [...prev, newExchange])
+    setExchanges((prev) => [...prev, newExchange]);
 
     if (entry.thinking) {
-      setStreamPhase("thinking")
-      setRevealFraction(0)
+      setStreamPhase("thinking");
+      setRevealFraction(0);
       phaseTimerRef.current = setTimeout(() => {
-        setStreamPhase("streaming")
-        let frac = 0
+        setStreamPhase("streaming");
+        let frac = 0;
         revealTimerRef.current = setInterval(() => {
-          frac += 0.08
+          frac += 0.08;
           if (frac >= 1) {
-            frac = 1
-            if (revealTimerRef.current) clearInterval(revealTimerRef.current)
+            frac = 1;
+            if (revealTimerRef.current) clearInterval(revealTimerRef.current);
             if (entry.toolCalls?.length) {
-              setStreamPhase("tools")
-              phaseTimerRef.current = setTimeout(() => setStreamPhase("done"), 600 * (entry.toolCalls?.length ?? 1))
+              setStreamPhase("tools");
+              phaseTimerRef.current = setTimeout(
+                () => setStreamPhase("done"),
+                600 * (entry.toolCalls?.length ?? 1),
+              );
             } else {
-              setStreamPhase("done")
+              setStreamPhase("done");
             }
           }
-          setRevealFraction(frac)
-        }, 50)
-      }, 1200)
+          setRevealFraction(frac);
+        }, 50);
+      }, 1200);
     } else {
-      setStreamPhase("streaming")
-      let frac = 0
+      setStreamPhase("streaming");
+      let frac = 0;
       revealTimerRef.current = setInterval(() => {
-        frac += 0.12
+        frac += 0.12;
         if (frac >= 1) {
-          frac = 1
-          if (revealTimerRef.current) clearInterval(revealTimerRef.current)
+          frac = 1;
+          if (revealTimerRef.current) clearInterval(revealTimerRef.current);
           if (entry.toolCalls?.length) {
-            setStreamPhase("tools")
-            phaseTimerRef.current = setTimeout(() => setStreamPhase("done"), 600 * (entry.toolCalls?.length ?? 1))
+            setStreamPhase("tools");
+            phaseTimerRef.current = setTimeout(
+              () => setStreamPhase("done"),
+              600 * (entry.toolCalls?.length ?? 1),
+            );
           } else {
-            setStreamPhase("done")
+            setStreamPhase("done");
           }
         }
-        setRevealFraction(frac)
-      }, 50)
+        setRevealFraction(frac);
+      }, 50);
     }
-  }
+  };
 
   /** Advance to the next script entry. Returns true if there was something to advance. */
   const advance = () => {
-    if (streamPhase !== "done") return false
-    if (scriptIdxRef.current >= AGENT_SCRIPT.length) return false
+    if (streamPhase !== "done") return false;
+    if (scriptIdxRef.current >= AGENT_SCRIPT.length) return false;
 
-    const entry = AGENT_SCRIPT[scriptIdxRef.current]!
-    const id = nextIdRef.current++
-    scriptIdxRef.current++
-    startStreaming(entry, id)
+    const entry = AGENT_SCRIPT[scriptIdxRef.current]!;
+    const id = nextIdRef.current++;
+    scriptIdxRef.current++;
+    startStreaming(entry, id);
 
     // Auto-chain: user entry -> immediately start following agent entry
     if (entry.role === "user" && scriptIdxRef.current < AGENT_SCRIPT.length) {
-      const next = AGENT_SCRIPT[scriptIdxRef.current]!
+      const next = AGENT_SCRIPT[scriptIdxRef.current]!;
       if (next.role === "agent") {
-        const nextId = nextIdRef.current++
-        scriptIdxRef.current++
-        startStreaming(next, nextId)
+        const nextId = nextIdRef.current++;
+        scriptIdxRef.current++;
+        startStreaming(next, nextId);
       }
     }
-    return true
-  }
+    return true;
+  };
 
   // Auto-start the first exchange after a short delay
   useEffect(() => {
-    const timer = setTimeout(() => advance(), 1000)
-    return () => clearTimeout(timer)
-  }, [])
+    const timer = setTimeout(() => advance(), 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Auto-advance: when streaming finishes and there are more entries, continue
   useEffect(() => {
-    if (streamPhase !== "done") return
-    if (scriptIdxRef.current >= AGENT_SCRIPT.length) return
-    const timer = setTimeout(() => advance(), 800)
-    return () => clearTimeout(timer)
-  }, [streamPhase])
+    if (streamPhase !== "done") return;
+    if (scriptIdxRef.current >= AGENT_SCRIPT.length) return;
+    const timer = setTimeout(() => advance(), 800);
+    return () => clearTimeout(timer);
+  }, [streamPhase]);
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => cancelStreaming()
-  }, [])
+    return () => cancelStreaming();
+  }, []);
 
   // User types + Enter -> start next exchange (or skip streaming)
   useInput((input, key) => {
     if (key.return) {
       if (streamPhase !== "done") {
         // Skip current streaming
-        cancelStreaming()
-        setStreamPhase("done")
-        setRevealFraction(1)
-        return
+        cancelStreaming();
+        setStreamPhase("done");
+        setRevealFraction(1);
+        return;
       }
       if (inputText.length > 0) {
         // Submit user text as custom exchange, then advance to next agent response
-        const id = nextIdRef.current++
+        const id = nextIdRef.current++;
         const userExchange: AgentExchange = {
           id,
           role: "user",
           content: inputText,
           tokens: { input: inputText.length * 4, output: 0 },
-        }
-        setExchanges((prev) => [...prev, userExchange])
-        setInputText("")
+        };
+        setExchanges((prev) => [...prev, userExchange]);
+        setInputText("");
 
         // Skip past user entries in script to find next agent entry
-        while (scriptIdxRef.current < AGENT_SCRIPT.length && AGENT_SCRIPT[scriptIdxRef.current]!.role === "user") {
-          scriptIdxRef.current++
+        while (
+          scriptIdxRef.current < AGENT_SCRIPT.length &&
+          AGENT_SCRIPT[scriptIdxRef.current]!.role === "user"
+        ) {
+          scriptIdxRef.current++;
         }
         // Start the next agent entry
-        setTimeout(() => advance(), 150)
+        setTimeout(() => advance(), 150);
       } else {
-        advance()
+        advance();
       }
-      return
+      return;
     }
     if (key.backspace) {
-      setInputText((t) => t.slice(0, -1))
-      return
+      setInputText((t) => t.slice(0, -1));
+      return;
     }
     if (input && input >= " ") {
-      setInputText((t) => t + input)
+      setInputText((t) => t + input);
     }
-  })
+  });
 
-  const isAnimating = streamPhase !== "done"
+  const isAnimating = streamPhase !== "done";
 
   // Cumulative token stats for the last agent exchange
-  const cumTokens = agentComputeTokens(exchanges)
+  const cumTokens = agentComputeTokens(exchanges);
 
   return (
     <Box flexDirection="column" padding={1} overflow="hidden">
@@ -1124,7 +1158,7 @@ function CodingAgentShowcase(): JSX.Element {
         )}
 
         {exchanges.map((ex, i) => {
-          const isLatest = i === exchanges.length - 1
+          const isLatest = i === exchanges.length - 1;
 
           return (
             <Box key={ex.id} flexDirection="column" marginTop={i > 0 ? 1 : 0}>
@@ -1134,21 +1168,25 @@ function CodingAgentShowcase(): JSX.Element {
                 revealFraction={revealFraction}
                 isLatest={isLatest}
                 cumTokens={
-                  isLatest && streamPhase === "done" ? { input: cumTokens.input, output: cumTokens.output } : undefined
+                  isLatest && streamPhase === "done"
+                    ? { input: cumTokens.input, output: cumTokens.output }
+                    : undefined
                 }
               />
             </Box>
-          )
+          );
         })}
 
         {/* Done indicator */}
-        {scriptIdxRef.current >= AGENT_SCRIPT.length && streamPhase === "done" && exchanges.length > 0 && (
-          <Box paddingX={1} marginTop={0}>
-            <Text color="#a6e3a1" bold>
-              {"\u2714"} Session complete
-            </Text>
-          </Box>
-        )}
+        {scriptIdxRef.current >= AGENT_SCRIPT.length &&
+          streamPhase === "done" &&
+          exchanges.length > 0 && (
+            <Box paddingX={1} marginTop={0}>
+              <Text color="#a6e3a1" bold>
+                {"\u2714"} Session complete
+              </Text>
+            </Box>
+          )}
       </Box>
 
       {/* Input */}
@@ -1162,7 +1200,8 @@ function CodingAgentShowcase(): JSX.Element {
           {"\u276F"}{" "}
         </Text>
         <Text color={inputText ? "#cdd6f4" : "#585b70"} wrap="truncate">
-          {inputText || (isAnimating ? "" : termFocused ? "type a prompt, then Enter..." : "click to focus")}
+          {inputText ||
+            (isAnimating ? "" : termFocused ? "type a prompt, then Enter..." : "click to focus")}
         </Text>
         <Text color="#89b4fa">{!isAnimating && termFocused && cursorVisible ? "\u258B" : " "}</Text>
       </Box>
@@ -1170,7 +1209,7 @@ function CodingAgentShowcase(): JSX.Element {
       {/* Status bar */}
       <AgentStatusBar exchanges={exchanges} isAnimating={isAnimating} termFocused={termFocused} />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -1178,15 +1217,15 @@ function CodingAgentShowcase(): JSX.Element {
 // ============================================================================
 
 interface KanbanCard {
-  title: string
-  tag: { name: string; color: string; bg: string }
+  title: string;
+  tag: { name: string; color: string; bg: string };
 }
 
 interface KanbanColumn {
-  title: string
-  headerBg: string
-  headerColor: string
-  cards: KanbanCard[]
+  title: string;
+  headerBg: string;
+  headerColor: string;
+  cards: KanbanCard[];
 }
 
 const KANBAN_DATA: KanbanColumn[] = [
@@ -1220,64 +1259,64 @@ const KANBAN_DATA: KanbanColumn[] = [
       { title: "Initial wireframes", tag: { name: "design", color: "#f9e2af", bg: "#303020" } },
     ],
   },
-]
+];
 
 function KanbanShowcase(): JSX.Element {
-  const [col, setCol] = useState(1)
-  const [card, setCard] = useState(0)
-  const { width } = useContentRect()
+  const [col, setCol] = useState(1);
+  const [card, setCard] = useState(0);
+  const { width } = useContentRect();
 
   useInput((_input, key) => {
     if (key.leftArrow) {
-      setCol((c) => Math.max(0, c - 1))
-      setCard(0)
+      setCol((c) => Math.max(0, c - 1));
+      setCard(0);
     }
     if (key.rightArrow) {
-      setCol((c) => Math.min(2, c + 1))
-      setCard(0)
+      setCol((c) => Math.min(2, c + 1));
+      setCard(0);
     }
-    if (key.upArrow) setCard((c) => Math.max(0, c - 1))
+    if (key.upArrow) setCard((c) => Math.max(0, c - 1));
     if (key.downArrow) {
-      const maxCards = KANBAN_DATA[col]?.cards.length ?? 3
-      setCard((c) => Math.min(maxCards - 1, c + 1))
+      const maxCards = KANBAN_DATA[col]?.cards.length ?? 3;
+      setCard((c) => Math.min(maxCards - 1, c + 1));
     }
-  })
+  });
 
   // Mouse click to select column and card
   // Layout: padding=1, 3 columns with gap=1, each with border
   // Column starts: roughly at x = padding + colIdx * (colWidth + gap)
   // Cards start at y ~= 4 (padding + header + border + marginTop), each card ~4 rows tall
   useMouseClick(({ x, y }) => {
-    const contentWidth = (width || 80) - 2 // subtract padding
-    const colWidth = Math.floor((contentWidth - 2) / 3) // 3 cols with 2 gaps
-    const colIdx = Math.min(2, Math.max(0, Math.floor((x - 1) / (colWidth + 1))))
+    const contentWidth = (width || 80) - 2; // subtract padding
+    const colWidth = Math.floor((contentWidth - 2) / 3); // 3 cols with 2 gaps
+    const colIdx = Math.min(2, Math.max(0, Math.floor((x - 1) / (colWidth + 1))));
 
     // Cards start around row 4 (1 padding + 1 border + 1 header + 1 marginTop)
     // Each card is ~4 rows (1 border-top + 1 title + 1 tag + 1 border-bottom)
-    const cardStartY = 4
-    const cardHeight = 4
+    const cardStartY = 4;
+    const cardHeight = 4;
     if (y >= cardStartY) {
-      const cardIdx = Math.floor((y - cardStartY) / cardHeight)
-      const maxCards = KANBAN_DATA[colIdx]?.cards.length ?? 3
+      const cardIdx = Math.floor((y - cardStartY) / cardHeight);
+      const maxCards = KANBAN_DATA[colIdx]?.cards.length ?? 3;
       if (cardIdx < maxCards) {
-        setCol(colIdx)
-        setCard(cardIdx)
+        setCol(colIdx);
+        setCard(cardIdx);
       } else {
-        setCol(colIdx)
-        setCard(Math.max(0, maxCards - 1))
+        setCol(colIdx);
+        setCard(Math.max(0, maxCards - 1));
       }
     } else {
       // Clicked on header area — just select the column
-      setCol(colIdx)
-      setCard(0)
+      setCol(colIdx);
+      setCard(0);
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" padding={1}>
       <Box flexDirection="row" gap={1} flexGrow={1}>
         {KANBAN_DATA.map((column, colIdx) => {
-          const isFocused = colIdx === col
+          const isFocused = colIdx === col;
           return (
             <Box
               key={column.title}
@@ -1297,7 +1336,7 @@ function KanbanShowcase(): JSX.Element {
               {/* Cards */}
               <Box flexDirection="column" paddingX={1} marginTop={1}>
                 {column.cards.map((c, cardIdx) => {
-                  const isSelected = colIdx === col && cardIdx === card
+                  const isSelected = colIdx === col && cardIdx === card;
                   return (
                     <Box
                       key={c.title}
@@ -1307,7 +1346,10 @@ function KanbanShowcase(): JSX.Element {
                       borderColor={isSelected ? "#89dceb" : isFocused ? "#45475a" : "#313244"}
                       paddingX={1}
                     >
-                      <Text color={isSelected ? "#cdd6f4" : isFocused ? "#a6adc8" : "#6c7086"} bold={isSelected}>
+                      <Text
+                        color={isSelected ? "#cdd6f4" : isFocused ? "#a6adc8" : "#6c7086"}
+                        bold={isSelected}
+                      >
                         {isSelected && <Text color="#89dceb">▸ </Text>}
                         {c.title}
                       </Text>
@@ -1317,17 +1359,17 @@ function KanbanShowcase(): JSX.Element {
                         </Box>
                       </Box>
                     </Box>
-                  )
+                  );
                 })}
               </Box>
             </Box>
-          )
+          );
         })}
       </Box>
 
       <KeyHints hints="←→ columns  ↑↓ cards  click to select" />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -1335,9 +1377,9 @@ function KanbanShowcase(): JSX.Element {
 // ============================================================================
 
 interface WizardState {
-  step: number
-  cursor: number
-  answers: string[]
+  step: number;
+  cursor: number;
+  answers: string[];
 }
 
 const WIZARD_STEPS = [
@@ -1363,7 +1405,7 @@ const WIZARD_STEPS = [
     answer: "bun",
     defaultCursor: 0,
   },
-]
+];
 
 // Catppuccin Mocha palette gradient for the wizard pipe (purple → teal → green)
 const PIPE_GRADIENT = [
@@ -1374,15 +1416,15 @@ const PIPE_GRADIENT = [
   "#89dceb", // sky
   "#94e2d5", // teal
   "#a6e3a1", // green
-]
+];
 
 // Distinct bullet colors per step (Catppuccin Mocha)
-const STEP_COLORS = ["#cba6f7", "#89b4fa", "#89dceb", "#f9e2af"]
+const STEP_COLORS = ["#cba6f7", "#89b4fa", "#89dceb", "#f9e2af"];
 
 function GradientPipe({ index, total }: { index: number; total: number }): JSX.Element {
-  const gradientIdx = Math.floor((index / Math.max(1, total - 1)) * (PIPE_GRADIENT.length - 1))
-  const color = PIPE_GRADIENT[Math.min(gradientIdx, PIPE_GRADIENT.length - 1)]!
-  return <Text color={color}>│</Text>
+  const gradientIdx = Math.floor((index / Math.max(1, total - 1)) * (PIPE_GRADIENT.length - 1));
+  const color = PIPE_GRADIENT[Math.min(gradientIdx, PIPE_GRADIENT.length - 1)]!;
+  return <Text color={color}>│</Text>;
 }
 
 function CLIWizardShowcase(): JSX.Element {
@@ -1390,84 +1432,85 @@ function CLIWizardShowcase(): JSX.Element {
     step: 0,
     cursor: 0,
     answers: [],
-  })
-  const [done, setDone] = useState(false)
-  const [textInput, setTextInput] = useState("")
+  });
+  const [done, setDone] = useState(false);
+  const [textInput, setTextInput] = useState("");
 
   useInput((input, key) => {
-    if (done) return
-    const currentStep = WIZARD_STEPS[state.step]
-    if (!currentStep) return
+    if (done) return;
+    const currentStep = WIZARD_STEPS[state.step];
+    if (!currentStep) return;
 
     if (currentStep.type === "select") {
-      const opts = currentStep.options!
-      if (key.upArrow) setState((s) => ({ ...s, cursor: Math.max(0, s.cursor - 1) }))
-      if (key.downArrow) setState((s) => ({ ...s, cursor: Math.min(opts.length - 1, s.cursor + 1) }))
+      const opts = currentStep.options!;
+      if (key.upArrow) setState((s) => ({ ...s, cursor: Math.max(0, s.cursor - 1) }));
+      if (key.downArrow)
+        setState((s) => ({ ...s, cursor: Math.min(opts.length - 1, s.cursor + 1) }));
     }
 
     if (currentStep.type === "text") {
       if (key.backspace) {
-        setTextInput((t) => t.slice(0, -1))
-        return
+        setTextInput((t) => t.slice(0, -1));
+        return;
       }
       if (input) {
-        setTextInput((t) => t + input)
-        return
+        setTextInput((t) => t + input);
+        return;
       }
     }
 
     if (key.return) {
-      let answer: string
+      let answer: string;
       if (currentStep.type === "select") {
-        answer = currentStep.options![state.cursor]!
+        answer = currentStep.options![state.cursor]!;
       } else {
-        answer = textInput || currentStep.answer
-        setTextInput("")
+        answer = textInput || currentStep.answer;
+        setTextInput("");
       }
-      const newAnswers = [...state.answers, answer]
+      const newAnswers = [...state.answers, answer];
       if (state.step + 1 >= WIZARD_STEPS.length) {
-        setDone(true)
-        setState({ step: state.step + 1, cursor: 0, answers: newAnswers })
+        setDone(true);
+        setState({ step: state.step + 1, cursor: 0, answers: newAnswers });
       } else {
-        const nextStep = WIZARD_STEPS[state.step + 1]!
-        const nextCursor = nextStep.type === "select" ? (nextStep.defaultCursor ?? 0) : 0
-        setState({ step: state.step + 1, cursor: nextCursor, answers: newAnswers })
+        const nextStep = WIZARD_STEPS[state.step + 1]!;
+        const nextCursor = nextStep.type === "select" ? (nextStep.defaultCursor ?? 0) : 0;
+        setState({ step: state.step + 1, cursor: nextCursor, answers: newAnswers });
       }
     }
-  })
+  });
 
   // Click to select options in select steps
   useMouseClick(({ y }) => {
-    if (done) return
-    const currentStep = WIZARD_STEPS[state.step]
-    if (currentStep?.type !== "select") return
+    if (done) return;
+    const currentStep = WIZARD_STEPS[state.step];
+    if (currentStep?.type !== "select") return;
 
     // Calculate where options start in the terminal output:
     // padding(1) + title(1) + version(1) + marginBottom(1) + progress(1) + marginBottom(1) +
     // header "Configure..."(1) + pipe(1) = 8 rows of header
     // Each completed step: label(1) + pipe(1) = 2 rows
     // Active step label(1) = 1 row, then options start
-    const headerRows = 8
-    const completedRows = state.step * 2
-    const activeLabel = 1
-    const optionsStartY = headerRows + completedRows + activeLabel
+    const headerRows = 8;
+    const completedRows = state.step * 2;
+    const activeLabel = 1;
+    const optionsStartY = headerRows + completedRows + activeLabel;
 
-    const clickedOption = y - optionsStartY
+    const clickedOption = y - optionsStartY;
     if (clickedOption >= 0 && clickedOption < currentStep.options!.length) {
-      setState((s) => ({ ...s, cursor: clickedOption }))
+      setState((s) => ({ ...s, cursor: clickedOption }));
     }
-  })
+  });
 
   // Progress bar: completed steps / total
-  const progress = Math.min(state.step, WIZARD_STEPS.length)
-  const progressWidth = 20
-  const filled = Math.round((progress / WIZARD_STEPS.length) * progressWidth)
+  const progress = Math.min(state.step, WIZARD_STEPS.length);
+  const progressWidth = 20;
+  const filled = Math.round((progress / WIZARD_STEPS.length) * progressWidth);
 
   // Total pipe lines for gradient calculation
-  const totalPipeLines = WIZARD_STEPS.length * 3 + 4
+  const totalPipeLines = WIZARD_STEPS.length * 3 + 4;
 
   // Track line index for gradient
-  let pipeLineIdx = 0
+  let pipeLineIdx = 0;
 
   return (
     <Box flexDirection="column" padding={1} paddingLeft={2}>
@@ -1506,10 +1549,10 @@ function CLIWizardShowcase(): JSX.Element {
       <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
 
       {WIZARD_STEPS.map((ws, i) => {
-        const isDone = i < state.step
-        const isActive = i === state.step && !done
-        const isPending = i > state.step
-        const stepColor = STEP_COLORS[i % STEP_COLORS.length]!
+        const isDone = i < state.step;
+        const isActive = i === state.step && !done;
+        const isPending = i > state.step;
+        const stepColor = STEP_COLORS[i % STEP_COLORS.length]!;
 
         if (isDone) {
           return (
@@ -1529,11 +1572,11 @@ function CLIWizardShowcase(): JSX.Element {
               </Text>
               <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
             </React.Fragment>
-          )
+          );
         }
 
         if (isActive && ws.type === "text") {
-          const displayText = textInput || ws.answer
+          const displayText = textInput || ws.answer;
           return (
             <React.Fragment key={ws.label}>
               <Text>
@@ -1559,7 +1602,7 @@ function CLIWizardShowcase(): JSX.Element {
               </Text>
               <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
             </React.Fragment>
-          )
+          );
         }
 
         if (isActive && ws.type === "select") {
@@ -1589,7 +1632,7 @@ function CLIWizardShowcase(): JSX.Element {
               ))}
               <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
             </React.Fragment>
-          )
+          );
         }
 
         if (isPending) {
@@ -1601,10 +1644,10 @@ function CLIWizardShowcase(): JSX.Element {
               </Text>
               <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
             </React.Fragment>
-          )
+          );
         }
 
-        return null
+        return null;
       })}
 
       {done ? (
@@ -1620,7 +1663,13 @@ function CLIWizardShowcase(): JSX.Element {
           </Text>
           <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
           {/* Summary box with colored labels */}
-          <Box flexDirection="column" marginLeft={1} borderStyle="round" borderColor="#45475a" paddingX={1}>
+          <Box
+            flexDirection="column"
+            marginLeft={1}
+            borderStyle="round"
+            borderColor="#45475a"
+            paddingX={1}
+          >
             <Text>
               <Text color="#cba6f7" bold>
                 Project{"   "}
@@ -1665,7 +1714,7 @@ function CLIWizardShowcase(): JSX.Element {
 
       <KeyHints hints="↑↓ select  Enter confirm  Backspace delete" />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -1673,11 +1722,11 @@ function CLIWizardShowcase(): JSX.Element {
 // ============================================================================
 
 interface ProcessRow {
-  id: string
-  name: string
-  status: "running" | "idle" | "stopped"
-  cpu: number
-  mem: string
+  id: string;
+  name: string;
+  status: "running" | "idle" | "stopped";
+  cpu: number;
+  mem: string;
 }
 
 const PROCESS_DATA: ProcessRow[] = [
@@ -1691,32 +1740,36 @@ const PROCESS_DATA: ProcessRow[] = [
   { id: "1031", name: "cron-sched", status: "idle", cpu: 1, mem: "16 MB" },
   { id: "1032", name: "backup-agent", status: "stopped", cpu: 0, mem: "0 MB" },
   { id: "1033", name: "mail-service", status: "stopped", cpu: 0, mem: "0 MB" },
-]
+];
 
 function DataExplorerShowcase(): JSX.Element {
-  const [tick, setTick] = useState(0)
-  const [selectedRow, setSelectedRow] = useState(0)
+  const [tick, setTick] = useState(0);
+  const [selectedRow, setSelectedRow] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 2000)
-    return () => clearInterval(id)
-  }, [])
+    const id = setInterval(() => setTick((t) => t + 1), 2000);
+    return () => clearInterval(id);
+  }, []);
 
   useInput((_input, key) => {
-    if (key.upArrow) setSelectedRow((r) => Math.max(0, r - 1))
-    if (key.downArrow) setSelectedRow((r) => Math.min(PROCESS_DATA.length - 1, r + 1))
-  })
+    if (key.upArrow) setSelectedRow((r) => Math.max(0, r - 1));
+    if (key.downArrow) setSelectedRow((r) => Math.min(PROCESS_DATA.length - 1, r + 1));
+  });
 
   const rows = PROCESS_DATA.map((row) => ({
     ...row,
-    cpu: row.status === "running" ? Math.max(1, Math.min(99, row.cpu + ((tick * 7 + row.cpu) % 13) - 6)) : row.cpu,
-  })).sort((a, b) => b.cpu - a.cpu)
+    cpu:
+      row.status === "running"
+        ? Math.max(1, Math.min(99, row.cpu + ((tick * 7 + row.cpu) % 13) - 6))
+        : row.cpu,
+  })).sort((a, b) => b.cpu - a.cpu);
 
-  const statusIcon = (s: string) => (s === "running" ? "●" : s === "idle" ? "◐" : "○")
-  const statusColor = (s: string) => (s === "running" ? "#a6e3a1" : s === "idle" ? "#f9e2af" : "#f38ba8")
-  const cpuColor = (v: number) => (v > 50 ? "#f38ba8" : v > 20 ? "#f9e2af" : "#a6e3a1")
+  const statusIcon = (s: string) => (s === "running" ? "●" : s === "idle" ? "◐" : "○");
+  const statusColor = (s: string) =>
+    s === "running" ? "#a6e3a1" : s === "idle" ? "#f9e2af" : "#f38ba8";
+  const cpuColor = (v: number) => (v > 50 ? "#f38ba8" : v > 20 ? "#f9e2af" : "#a6e3a1");
 
-  const colW = { id: 6, name: 14, status: 3, cpu: 14, mem: 8 }
+  const colW = { id: 6, name: 14, status: 3, cpu: 14, mem: 8 };
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -1766,9 +1819,9 @@ function DataExplorerShowcase(): JSX.Element {
 
       {/* Rows */}
       {rows.map((row, i) => {
-        const isSelected = i === selectedRow
-        const bgColor = isSelected ? "#2a2a5e" : i % 2 === 0 ? "#1a1a2e" : "#1e1e3e"
-        const cpuBars = Math.round((row.cpu / 100) * 8)
+        const isSelected = i === selectedRow;
+        const bgColor = isSelected ? "#2a2a5e" : i % 2 === 0 ? "#1a1a2e" : "#1e1e3e";
+        const cpuBars = Math.round((row.cpu / 100) * 8);
         return (
           <Box key={row.id} flexDirection="row" backgroundColor={bgColor}>
             <Box width={colW.id} paddingX={1}>
@@ -1796,12 +1849,12 @@ function DataExplorerShowcase(): JSX.Element {
               <Text color={isSelected ? "#cdd6f4" : "#6c7086"}>{row.mem}</Text>
             </Box>
           </Box>
-        )
+        );
       })}
 
       <KeyHints hints="↑↓ select row" />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -1809,9 +1862,9 @@ function DataExplorerShowcase(): JSX.Element {
 // ============================================================================
 
 interface LogEntry {
-  time: string
-  level: "INFO" | "WARN" | "ERROR" | "DEBUG"
-  message: string
+  time: string;
+  level: "INFO" | "WARN" | "ERROR" | "DEBUG";
+  message: string;
 }
 
 const ALL_LOGS: LogEntry[] = [
@@ -1831,27 +1884,27 @@ const ALL_LOGS: LogEntry[] = [
   { time: "14:23:30", level: "ERROR", message: "Timeout: /api/analytics took 5200ms" },
   { time: "14:23:33", level: "INFO", message: "Health check: all services green" },
   { time: "14:23:38", level: "INFO", message: 'Request processed: 200 OK (23ms) for "/api/users"' },
-]
+];
 
 const levelColors: Record<string, string> = {
   INFO: "#a6e3a1",
   WARN: "#f9e2af",
   ERROR: "#f38ba8",
   DEBUG: "#89b4fa",
-}
+};
 
 const levelBg: Record<string, string> = {
   ERROR: "#302020",
   WARN: "#302a1a",
-}
+};
 
 /** Render message with colored quoted strings and underlined paths */
 function LogMessage({ text, query }: { text: string; query: string }): JSX.Element {
   // Split on quoted strings and paths
-  const parts: JSX.Element[] = []
-  const regex = /("(?:[^"\\]|\\.)*")|(\/([\w./-]+))/g
-  let lastIndex = 0
-  let match: RegExpExecArray | null
+  const parts: JSX.Element[] = [];
+  const regex = /("(?:[^"\\]|\\.)*")|(\/([\w./-]+))/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
 
   while ((match = regex.exec(text)) !== null) {
     // Text before match
@@ -1860,7 +1913,7 @@ function LogMessage({ text, query }: { text: string; query: string }): JSX.Eleme
         <Text key={`t${lastIndex}`} color="#cdd6f4">
           {text.slice(lastIndex, match.index)}
         </Text>,
-      )
+      );
     }
     if (match[1]) {
       // Quoted string — green
@@ -1868,42 +1921,42 @@ function LogMessage({ text, query }: { text: string; query: string }): JSX.Eleme
         <Text key={`q${match.index}`} color="#a6e3a1">
           {match[1]}
         </Text>,
-      )
+      );
     } else if (match[2]) {
       // Path — underline
       parts.push(
         <Text key={`p${match.index}`} color="#94e2d5" underline>
           {match[2]}
         </Text>,
-      )
+      );
     }
-    lastIndex = match.index + match[0].length
+    lastIndex = match.index + match[0].length;
   }
   if (lastIndex < text.length) {
     parts.push(
       <Text key={`e${lastIndex}`} color="#cdd6f4">
         {text.slice(lastIndex)}
       </Text>,
-    )
+    );
   }
 
   // If there's an active query, we wrap matching segments with inverse
   if (query) {
     // Simple approach: highlight in the plain text segments
-    const highlighted: JSX.Element[] = []
+    const highlighted: JSX.Element[] = [];
     for (const part of parts) {
-      const props = part.props as { color?: string; underline?: boolean; children: string }
-      const content = props.children
+      const props = part.props as { color?: string; underline?: boolean; children: string };
+      const content = props.children;
       if (typeof content !== "string") {
-        highlighted.push(part)
-        continue
+        highlighted.push(part);
+        continue;
       }
-      const lc = content.toLowerCase()
-      const qi = lc.indexOf(query)
+      const lc = content.toLowerCase();
+      const qi = lc.indexOf(query);
       if (qi === -1) {
-        highlighted.push(part)
+        highlighted.push(part);
       } else {
-        const key = part.key as string
+        const key = part.key as string;
         highlighted.push(
           <Text key={key}>
             <Text color={props.color}>{content.slice(0, qi)}</Text>
@@ -1912,45 +1965,47 @@ function LogMessage({ text, query }: { text: string; query: string }): JSX.Eleme
             </Text>
             <Text color={props.color}>{content.slice(qi + query.length)}</Text>
           </Text>,
-        )
+        );
       }
     }
-    return <Text wrap="truncate">{highlighted}</Text>
+    return <Text wrap="truncate">{highlighted}</Text>;
   }
 
-  return <Text wrap="truncate">{parts}</Text>
+  return <Text wrap="truncate">{parts}</Text>;
 }
 
 function DevToolsShowcase(): JSX.Element {
-  const [typedQuery, setTypedQuery] = useState("")
-  const [scrollOffset, setScrollOffset] = useState(0)
+  const [typedQuery, setTypedQuery] = useState("");
+  const [scrollOffset, setScrollOffset] = useState(0);
 
   useInput((input, key) => {
     if (input) {
-      setTypedQuery((q) => q + input)
-      setScrollOffset(0)
+      setTypedQuery((q) => q + input);
+      setScrollOffset(0);
     }
     if (key.backspace) {
-      setTypedQuery((q) => q.slice(0, -1))
-      setScrollOffset(0)
+      setTypedQuery((q) => q.slice(0, -1));
+      setScrollOffset(0);
     }
     if (key.escape) {
-      setTypedQuery("")
-      setScrollOffset(0)
+      setTypedQuery("");
+      setScrollOffset(0);
     }
-    if (key.upArrow) setScrollOffset((o) => Math.max(0, o - 1))
-    if (key.downArrow) setScrollOffset((o) => o + 1)
-  })
+    if (key.upArrow) setScrollOffset((o) => Math.max(0, o - 1));
+    if (key.downArrow) setScrollOffset((o) => o + 1);
+  });
 
-  const query = typedQuery.toLowerCase()
+  const query = typedQuery.toLowerCase();
   const filtered = query
-    ? ALL_LOGS.filter((l) => l.message.toLowerCase().includes(query) || l.level.toLowerCase().includes(query))
-    : ALL_LOGS
+    ? ALL_LOGS.filter(
+        (l) => l.message.toLowerCase().includes(query) || l.level.toLowerCase().includes(query),
+      )
+    : ALL_LOGS;
 
-  const maxVisible = 10
-  const maxOffset = Math.max(0, filtered.length - maxVisible)
-  const clampedOffset = Math.min(scrollOffset, maxOffset)
-  const visibleLogs = filtered.slice(clampedOffset, clampedOffset + maxVisible)
+  const maxVisible = 10;
+  const maxOffset = Math.max(0, filtered.length - maxVisible);
+  const clampedOffset = Math.min(scrollOffset, maxOffset);
+  const visibleLogs = filtered.slice(clampedOffset, clampedOffset + maxVisible);
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -1979,7 +2034,12 @@ function DevToolsShowcase(): JSX.Element {
       {/* Log entries */}
       <Box flexDirection="column" flexGrow={1}>
         {visibleLogs.map((log, i) => (
-          <Box key={clampedOffset + i} flexDirection="row" gap={1} backgroundColor={levelBg[log.level]}>
+          <Box
+            key={clampedOffset + i}
+            flexDirection="row"
+            gap={1}
+            backgroundColor={levelBg[log.level]}
+          >
             <Text color="#94e2d5">{log.time}</Text>
             <Box width={7} backgroundColor={levelBg[log.level]}>
               <Text bold color={levelColors[log.level]}>
@@ -1993,7 +2053,7 @@ function DevToolsShowcase(): JSX.Element {
 
       <KeyHints hints="type to filter  Esc clear  ↑↓ scroll" />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -2001,45 +2061,45 @@ function DevToolsShowcase(): JSX.Element {
 // ============================================================================
 
 function ScrollShowcase(): JSX.Element {
-  const [scrollPos, setScrollPos] = useState(0)
-  const [selectedIdx, setSelectedIdx] = useState(0)
-  const visibleCount = 10
+  const [scrollPos, setScrollPos] = useState(0);
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const visibleCount = 10;
 
   useInput((_input, key) => {
     if (key.upArrow) {
       setSelectedIdx((idx) => {
-        const newIdx = Math.max(0, idx - 1)
-        setScrollPos((p) => (newIdx < p ? newIdx : p))
-        return newIdx
-      })
+        const newIdx = Math.max(0, idx - 1);
+        setScrollPos((p) => (newIdx < p ? newIdx : p));
+        return newIdx;
+      });
     }
     if (key.downArrow) {
       setSelectedIdx((idx) => {
-        const newIdx = Math.min(29, idx + 1)
-        setScrollPos((p) => (newIdx >= p + visibleCount ? newIdx - visibleCount + 1 : p))
-        return newIdx
-      })
+        const newIdx = Math.min(29, idx + 1);
+        setScrollPos((p) => (newIdx >= p + visibleCount ? newIdx - visibleCount + 1 : p));
+        return newIdx;
+      });
     }
-  })
+  });
 
   // Click to select item
   useMouseClick(({ y }) => {
     // Header area: 1 padding + 1 border-top = row 2 is first item
-    const itemY = y - 2
+    const itemY = y - 2;
     if (itemY >= 0 && itemY < visibleCount) {
-      setSelectedIdx(scrollPos + itemY)
+      setSelectedIdx(scrollPos + itemY);
     }
-  })
+  });
 
-  const items = Array.from({ length: 30 }, (_, i) => `Item ${i + 1}`)
-  const visible = items.slice(scrollPos, scrollPos + visibleCount)
+  const items = Array.from({ length: 30 }, (_, i) => `Item ${i + 1}`);
+  const visible = items.slice(scrollPos, scrollPos + visibleCount);
 
   return (
     <Box flexDirection="column" padding={1}>
       <Box flexDirection="column" borderStyle="single" borderColor="#444">
         {visible.map((item, i) => {
-          const globalIdx = scrollPos + i
-          const isSelected = globalIdx === selectedIdx
+          const globalIdx = scrollPos + i;
+          const isSelected = globalIdx === selectedIdx;
           return (
             <Box key={globalIdx} paddingX={1}>
               <Text bold={isSelected} color={isSelected ? "cyan" : "white"}>
@@ -2047,13 +2107,13 @@ function ScrollShowcase(): JSX.Element {
                 {item}
               </Text>
             </Box>
-          )
+          );
         })}
       </Box>
 
       <KeyHints hints="↑↓ navigate  click to select" />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -2066,11 +2126,11 @@ function LayoutFeedbackShowcase(): JSX.Element {
       <SizedPanel />
       <KeyHints hints="resize browser to see dimensions change" />
     </Box>
-  )
+  );
 }
 
 function SizedPanel(): JSX.Element {
-  const { width, height } = useContentRect()
+  const { width, height } = useContentRect();
 
   return (
     <Box
@@ -2085,7 +2145,7 @@ function SizedPanel(): JSX.Element {
         Width: {width} Height: {height}
       </Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -2093,30 +2153,30 @@ function SizedPanel(): JSX.Element {
 // ============================================================================
 
 function FocusShowcase(): JSX.Element {
-  const [focusedPanel, setFocusedPanel] = useState(0)
-  const { width } = useContentRect()
+  const [focusedPanel, setFocusedPanel] = useState(0);
+  const { width } = useContentRect();
 
   useInput((_input, key) => {
     if (key.tab) {
-      setFocusedPanel((p) => (p + 1) % 3)
+      setFocusedPanel((p) => (p + 1) % 3);
     }
-  })
+  });
 
   // Click to focus panel
   useMouseClick(({ x }) => {
-    const contentWidth = (width || 80) - 2 // subtract padding
-    const panelWidth = Math.floor((contentWidth - 2) / 3) // 3 panels with 2 gaps
-    const panelIdx = Math.min(2, Math.max(0, Math.floor((x - 1) / (panelWidth + 1))))
-    setFocusedPanel(panelIdx)
-  })
+    const contentWidth = (width || 80) - 2; // subtract padding
+    const panelWidth = Math.floor((contentWidth - 2) / 3); // 3 panels with 2 gaps
+    const panelIdx = Math.min(2, Math.max(0, Math.floor((x - 1) / (panelWidth + 1))));
+    setFocusedPanel(panelIdx);
+  });
 
-  const labels = ["Panel A", "Panel B", "Panel C"]
+  const labels = ["Panel A", "Panel B", "Panel C"];
 
   return (
     <Box flexDirection="column" padding={1}>
       <Box flexDirection="row" gap={1}>
         {labels.map((label, i) => {
-          const isFocused = i === focusedPanel
+          const isFocused = i === focusedPanel;
           return (
             <Box
               key={label}
@@ -2132,13 +2192,13 @@ function FocusShowcase(): JSX.Element {
               </Text>
               <Text color={isFocused ? "cyan" : "#666"}>{isFocused ? "● focused" : "○"}</Text>
             </Box>
-          )
+          );
         })}
       </Box>
 
       <KeyHints hints="Tab cycle panels  click to focus" />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -2146,20 +2206,20 @@ function FocusShowcase(): JSX.Element {
 // ============================================================================
 
 function TextInputShowcase(): JSX.Element {
-  const [text, setText] = useState("")
-  const termFocused = useTermFocused()
+  const [text, setText] = useState("");
+  const termFocused = useTermFocused();
 
   useInput((input, key) => {
     if (input) {
-      setText((t) => t + input)
+      setText((t) => t + input);
     }
     if (key.backspace) {
-      setText((t) => t.slice(0, -1))
+      setText((t) => t.slice(0, -1));
     }
     if (key.escape) {
-      setText("")
+      setText("");
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -2180,7 +2240,7 @@ function TextInputShowcase(): JSX.Element {
 
       <KeyHints hints={termFocused ? "type text  Backspace delete  Esc clear" : "click to focus"} />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -2202,31 +2262,49 @@ const PALETTE_NAMES = [
   "everforest-dark",
   "one-dark",
   "monokai",
-]
+];
 
-const ANSI_LABELS = ["red", "green", "yellow", "blue", "magenta", "cyan"] as const
-const BRIGHT_LABELS = ["brightRed", "brightGreen", "brightYellow", "brightBlue", "brightMagenta", "brightCyan"] as const
+const ANSI_LABELS = ["red", "green", "yellow", "blue", "magenta", "cyan"] as const;
+const BRIGHT_LABELS = [
+  "brightRed",
+  "brightGreen",
+  "brightYellow",
+  "brightBlue",
+  "brightMagenta",
+  "brightCyan",
+] as const;
 
 function ColorSwatch({ color, label }: { color: string; label?: string }): JSX.Element {
   return (
     <Box backgroundColor={color} paddingX={1}>
       <Text color={contrastText(color)}>{label || "  "}</Text>
     </Box>
-  )
+  );
 }
 
 /** Simple contrast: use black text on light backgrounds, white on dark. */
 function contrastText(hex: string): string {
-  const r = parseInt(hex.slice(1, 3), 16)
-  const g = parseInt(hex.slice(3, 5), 16)
-  const b = parseInt(hex.slice(5, 7), 16)
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-  return luminance > 0.5 ? "#000000" : "#ffffff"
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? "#000000" : "#ffffff";
 }
 
-function PaletteCard({ palette, isSelected }: { palette: ColorPalette; isSelected: boolean }): JSX.Element {
+function PaletteCard({
+  palette,
+  isSelected,
+}: {
+  palette: ColorPalette;
+  isSelected: boolean;
+}): JSX.Element {
   return (
-    <Box flexDirection="column" borderStyle="single" borderColor={isSelected ? "#89b4fa" : "#444"} width={36}>
+    <Box
+      flexDirection="column"
+      borderStyle="single"
+      borderColor={isSelected ? "#89b4fa" : "#444"}
+      width={36}
+    >
       {/* Header with palette name */}
       <Box backgroundColor={palette.background} paddingX={1}>
         <Text color={palette.foreground} bold={isSelected}>
@@ -2265,44 +2343,44 @@ function PaletteCard({ palette, isSelected }: { palette: ColorPalette; isSelecte
         <Text color={palette.blue}>info</Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 function ThemeExplorerShowcase(): JSX.Element {
-  const [selectedIdx, setSelectedIdx] = useState(0)
-  const { width, height } = useContentRect()
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const { width, height } = useContentRect();
 
   useInput((_input, key) => {
     if (key.downArrow) {
-      setSelectedIdx((i) => Math.min(i + 1, PALETTE_NAMES.length - 1))
+      setSelectedIdx((i) => Math.min(i + 1, PALETTE_NAMES.length - 1));
     }
     if (key.upArrow) {
-      setSelectedIdx((i) => Math.max(i - 1, 0))
+      setSelectedIdx((i) => Math.max(i - 1, 0));
     }
-  })
+  });
 
   useMouseClick(({ y }) => {
     // Each card is ~6 rows tall. Account for 1-row padding at top.
-    const cardHeight = 6
-    const idx = Math.floor((y - 1) / cardHeight)
+    const cardHeight = 6;
+    const idx = Math.floor((y - 1) / cardHeight);
     if (idx >= 0 && idx < PALETTE_NAMES.length) {
-      setSelectedIdx(idx)
+      setSelectedIdx(idx);
     }
-  })
+  });
 
   // Determine layout: 2-column if wide enough, 1-column otherwise
-  const twoCol = (width || 80) >= 74
-  const contentHeight = (height || 24) - 3 // padding + key hints
-  const cardsPerCol = twoCol ? Math.floor(contentHeight / 6) : Math.floor(contentHeight / 6)
+  const twoCol = (width || 80) >= 74;
+  const contentHeight = (height || 24) - 3; // padding + key hints
+  const cardsPerCol = twoCol ? Math.floor(contentHeight / 6) : Math.floor(contentHeight / 6);
 
   // Scroll to keep selected visible
-  const totalVisible = twoCol ? cardsPerCol * 2 : cardsPerCol
-  const scrollOffset = Math.max(0, selectedIdx - totalVisible + 1)
-  const visiblePalettes = PALETTE_NAMES.slice(scrollOffset, scrollOffset + totalVisible)
+  const totalVisible = twoCol ? cardsPerCol * 2 : cardsPerCol;
+  const scrollOffset = Math.max(0, selectedIdx - totalVisible + 1);
+  const visiblePalettes = PALETTE_NAMES.slice(scrollOffset, scrollOffset + totalVisible);
 
   // Split into columns
-  const col1 = twoCol ? visiblePalettes.slice(0, cardsPerCol) : visiblePalettes
-  const col2 = twoCol ? visiblePalettes.slice(cardsPerCol) : []
+  const col1 = twoCol ? visiblePalettes.slice(0, cardsPerCol) : visiblePalettes;
+  const col2 = twoCol ? visiblePalettes.slice(cardsPerCol) : [];
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -2316,17 +2394,21 @@ function ThemeExplorerShowcase(): JSX.Element {
       <Box flexDirection="row" gap={1} flexGrow={1}>
         <Box flexDirection="column" gap={0}>
           {col1.map((name) => {
-            const palette = builtinPalettes[name]!
-            const globalIdx = PALETTE_NAMES.indexOf(name)
-            return <PaletteCard key={name} palette={palette} isSelected={globalIdx === selectedIdx} />
+            const palette = builtinPalettes[name]!;
+            const globalIdx = PALETTE_NAMES.indexOf(name);
+            return (
+              <PaletteCard key={name} palette={palette} isSelected={globalIdx === selectedIdx} />
+            );
           })}
         </Box>
         {twoCol && col2.length > 0 && (
           <Box flexDirection="column" gap={0}>
             {col2.map((name) => {
-              const palette = builtinPalettes[name]!
-              const globalIdx = PALETTE_NAMES.indexOf(name)
-              return <PaletteCard key={name} palette={palette} isSelected={globalIdx === selectedIdx} />
+              const palette = builtinPalettes[name]!;
+              const globalIdx = PALETTE_NAMES.indexOf(name);
+              return (
+                <PaletteCard key={name} palette={palette} isSelected={globalIdx === selectedIdx} />
+              );
             })}
           </Box>
         )}
@@ -2334,7 +2416,7 @@ function ThemeExplorerShowcase(): JSX.Element {
 
       <KeyHints hints="↑↓ browse palettes  click to select" />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -2353,4 +2435,4 @@ export const SHOWCASES: Record<string, () => JSX.Element> = {
   focus: FocusShowcase,
   "text-input": TextInputShowcase,
   "theme-explorer": ThemeExplorerShowcase,
-}
+};

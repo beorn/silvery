@@ -26,10 +26,10 @@ Silvery's `RenderAdapter` interface abstracts the rendering target. The same com
 ### The Component
 
 ```tsx
-import { Box, Text, useContentRect } from "silvery"
+import { Box, Text, useContentRect } from "silvery";
 
 function App() {
-  const { width, height } = useContentRect()
+  const { width, height } = useContentRect();
   return (
     <Box flexDirection="column" padding={1}>
       <Box borderStyle="single" borderColor="cyan" padding={1}>
@@ -52,7 +52,7 @@ function App() {
         </Box>
       </Box>
     </Box>
-  )
+  );
 }
 ```
 

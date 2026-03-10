@@ -4,17 +4,17 @@
  * Demonstrates silvery rendering React components to Canvas.
  */
 
-import React, { useState } from "react"
-import { renderToCanvas, Box, Text, useContentRect } from "../../packages/ui/src/canvas/index.js"
+import React, { useState } from "react";
+import { renderToCanvas, Box, Text, useContentRect } from "../../packages/ui/src/canvas/index.js";
 
 // Component that shows its dimensions
 function SizeDisplay() {
-  const { width, height } = useContentRect()
+  const { width, height } = useContentRect();
   return (
     <Text color="green">
       Size: {Math.round(width)}px × {Math.round(height)}px
     </Text>
-  )
+  );
 }
 
 // Demo component with various styles
@@ -64,17 +64,17 @@ function App() {
         <Text dim>Layout by Flexx, rendered to OffscreenCanvas, drawn to visible canvas</Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 // Mount to canvas
-const canvas = document.getElementById("canvas") as HTMLCanvasElement
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 if (canvas) {
   const instance = renderToCanvas(<App />, canvas, {
     fontSize: 14,
     fontFamily: "monospace",
-  })
+  });
 
   // Expose for debugging
-  ;(window as any).silveryInstance = instance
+  (window as any).silveryInstance = instance;
 }

@@ -10,7 +10,7 @@
 // ============================================================================
 
 /** Easing function: maps time progress (0-1) to value progress (0-1) */
-export type EasingFn = (t: number) => number
+export type EasingFn = (t: number) => number;
 
 // ============================================================================
 // Presets
@@ -24,9 +24,9 @@ export const easings = {
   easeInOut: (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
   easeInCubic: (t: number) => t * t * t,
   easeOutCubic: (t: number) => --t * t * t + 1,
-} as const satisfies Record<string, EasingFn>
+} as const satisfies Record<string, EasingFn>;
 
-export type EasingName = keyof typeof easings
+export type EasingName = keyof typeof easings;
 
 // ============================================================================
 // Resolver
@@ -34,5 +34,5 @@ export type EasingName = keyof typeof easings
 
 /** Resolve an easing — accepts a name string or a custom function. */
 export function resolveEasing(easing: EasingName | EasingFn): EasingFn {
-  return typeof easing === "function" ? easing : easings[easing]
+  return typeof easing === "function" ? easing : easings[easing];
 }

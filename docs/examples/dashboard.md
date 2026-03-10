@@ -40,15 +40,15 @@ bun run examples/dashboard/app.tsx
 ::: code-group
 
 ```tsx [app.tsx]
-import { Box, Text, render, useContentRect, useInput, useApp, createTerm } from "silvery"
-import { useState } from "react"
+import { Box, Text, render, useContentRect, useInput, useApp, createTerm } from "silvery";
+import { useState } from "react";
 
 // Sample data
 const stats = [
   { label: "CPU", value: 45 },
   { label: "Memory", value: 62 },
   { label: "Disk", value: 28 },
-]
+];
 
 const activities = [
   { time: "12:01", message: "User logged in" },
@@ -56,23 +56,23 @@ const activities = [
   { time: "11:58", message: "PR #42 merged" },
   { time: "11:55", message: "Deploy completed" },
   { time: "11:50", message: "Tests started" },
-]
+];
 
 const recentItems = [
   { name: "project-alpha", date: "2 hours ago" },
   { name: "report-q4.pdf", date: "Yesterday" },
   { name: "config.json", date: "3 days ago" },
   { name: "notes.md", date: "Last week" },
-]
+];
 
 function App() {
-  const { exit } = useApp()
+  const { exit } = useApp();
 
   useInput((input, key) => {
     if (input === "q" || key.escape) {
-      exit()
+      exit();
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" width="100%" height="100%">
@@ -80,21 +80,21 @@ function App() {
       <BottomSection />
       <StatusBar />
     </Box>
-  )
+  );
 }
 
 function TopSection() {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   // Responsive: stack vertically on narrow terminals
-  const isNarrow = width < 60
+  const isNarrow = width < 60;
 
   return (
     <Box flexDirection={isNarrow ? "column" : "row"} flexGrow={1}>
       <StatsPane />
       <ActivityPane />
     </Box>
-  )
+  );
 }
 
 function StatsPane() {
@@ -106,25 +106,25 @@ function StatsPane() {
         <StatRow key={stat.label} label={stat.label} value={stat.value} />
       ))}
     </Box>
-  )
+  );
 }
 
 function StatRow({ label, value }: { label: string; value: number }) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   // Calculate bar width based on available space
   // Account for label (8 chars) + spacing
-  const barWidth = Math.max(0, width - 12)
-  const filledWidth = Math.floor((barWidth * value) / 100)
-  const emptyWidth = barWidth - filledWidth
+  const barWidth = Math.max(0, width - 12);
+  const filledWidth = Math.floor((barWidth * value) / 100);
+  const emptyWidth = barWidth - filledWidth;
 
-  const bar = "=".repeat(filledWidth) + " ".repeat(emptyWidth)
+  const bar = "=".repeat(filledWidth) + " ".repeat(emptyWidth);
 
   return (
     <Text>
       {label.padEnd(8)} [{bar}]
     </Text>
-  )
+  );
 }
 
 function ActivityPane() {
@@ -136,35 +136,36 @@ function ActivityPane() {
         <ActivityRow key={i} time={activity.time} message={activity.message} />
       ))}
     </Box>
-  )
+  );
 }
 
 function ActivityRow({ time, message }: { time: string; message: string }) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   // Truncate message to fit available width
-  const timeWidth = 6 // "12:01 "
-  const maxMessageWidth = Math.max(0, width - timeWidth)
-  const truncatedMessage = message.length > maxMessageWidth ? message.slice(0, maxMessageWidth - 1) + "..." : message
+  const timeWidth = 6; // "12:01 "
+  const maxMessageWidth = Math.max(0, width - timeWidth);
+  const truncatedMessage =
+    message.length > maxMessageWidth ? message.slice(0, maxMessageWidth - 1) + "..." : message;
 
   return (
     <Text>
       <Text dimColor>{time}</Text> {truncatedMessage}
     </Text>
-  )
+  );
 }
 
 function BottomSection() {
-  const [selected, setSelected] = useState(0)
+  const [selected, setSelected] = useState(0);
 
   useInput((input, key) => {
     if (key.downArrow) {
-      setSelected((s) => Math.min(s + 1, recentItems.length - 1))
+      setSelected((s) => Math.min(s + 1, recentItems.length - 1));
     }
     if (key.upArrow) {
-      setSelected((s) => Math.max(s - 1, 0))
+      setSelected((s) => Math.max(s - 1, 0));
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" height={8} borderStyle="single" paddingX={1}>
@@ -172,25 +173,38 @@ function BottomSection() {
       <Text> </Text>
       <Box flexDirection="column" overflow="scroll" scrollTo={selected}>
         {recentItems.map((item, i) => (
-          <RecentItemRow key={item.name} name={item.name} date={item.date} isSelected={i === selected} />
+          <RecentItemRow
+            key={item.name}
+            name={item.name}
+            date={item.date}
+            isSelected={i === selected}
+          />
         ))}
       </Box>
     </Box>
-  )
+  );
 }
 
-function RecentItemRow({ name, date, isSelected }: { name: string; date: string; isSelected: boolean }) {
-  const { width } = useContentRect()
+function RecentItemRow({
+  name,
+  date,
+  isSelected,
+}: {
+  name: string;
+  date: string;
+  isSelected: boolean;
+}) {
+  const { width } = useContentRect();
 
   // Calculate space for name, leaving room for date
-  const dateWidth = date.length + 2
-  const nameWidth = Math.max(0, width - dateWidth - 2)
+  const dateWidth = date.length + 2;
+  const nameWidth = Math.max(0, width - dateWidth - 2);
 
-  const truncatedName = name.length > nameWidth ? name.slice(0, nameWidth - 1) + "..." : name
+  const truncatedName = name.length > nameWidth ? name.slice(0, nameWidth - 1) + "..." : name;
 
-  const padding = " ".repeat(Math.max(0, nameWidth - truncatedName.length))
+  const padding = " ".repeat(Math.max(0, nameWidth - truncatedName.length));
 
-  const prefix = isSelected ? "> " : "  "
+  const prefix = isSelected ? "> " : "  ";
 
   return (
     <Text inverse={isSelected}>
@@ -199,7 +213,7 @@ function RecentItemRow({ name, date, isSelected }: { name: string; date: string;
       {padding}
       <Text dimColor>{date}</Text>
     </Text>
-  )
+  );
 }
 
 function StatusBar() {
@@ -207,11 +221,11 @@ function StatusBar() {
     <Box paddingX={1}>
       <Text dimColor>Press q to quit | Arrow keys to navigate</Text>
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
-await render(<App />, term)
+using term = createTerm();
+await render(<App />, term);
 ```
 
 :::
@@ -224,15 +238,15 @@ The `TopSection` component uses `useContentRect()` to detect narrow terminals:
 
 ```tsx
 function TopSection() {
-  const { width } = useContentRect()
-  const isNarrow = width < 60
+  const { width } = useContentRect();
+  const isNarrow = width < 60;
 
   return (
     <Box flexDirection={isNarrow ? "column" : "row"}>
       <StatsPane />
       <ActivityPane />
     </Box>
-  )
+  );
 }
 ```
 
@@ -255,19 +269,19 @@ The `StatRow` component builds progress bars that fill available space:
 
 ```tsx
 function StatRow({ label, value }: { label: string; value: number }) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
-  const barWidth = Math.max(0, width - 12) // Account for label
-  const filledWidth = Math.floor((barWidth * value) / 100)
-  const emptyWidth = barWidth - filledWidth
+  const barWidth = Math.max(0, width - 12); // Account for label
+  const filledWidth = Math.floor((barWidth * value) / 100);
+  const emptyWidth = barWidth - filledWidth;
 
-  const bar = "=".repeat(filledWidth) + " ".repeat(emptyWidth)
+  const bar = "=".repeat(filledWidth) + " ".repeat(emptyWidth);
 
   return (
     <Text>
       {label.padEnd(8)} [{bar}]
     </Text>
-  )
+  );
 }
 ```
 
@@ -279,16 +293,17 @@ The `ActivityRow` component truncates long messages:
 
 ```tsx
 function ActivityRow({ time, message }: { time: string; message: string }) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
-  const maxMessageWidth = Math.max(0, width - 6)
-  const truncatedMessage = message.length > maxMessageWidth ? message.slice(0, maxMessageWidth - 1) + "..." : message
+  const maxMessageWidth = Math.max(0, width - 6);
+  const truncatedMessage =
+    message.length > maxMessageWidth ? message.slice(0, maxMessageWidth - 1) + "..." : message;
 
   return (
     <Text>
       <Text dimColor>{time}</Text> {truncatedMessage}
     </Text>
-  )
+  );
 }
 ```
 

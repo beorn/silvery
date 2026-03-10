@@ -13,7 +13,7 @@
  * Supported by: xterm (v282+), Ghostty, Kitty, WezTerm, iTerm2, foot, VTE
  */
 
-const CSI = "\x1b["
+const CSI = "\x1b[";
 
 /**
  * Enable terminal focus reporting.
@@ -21,14 +21,14 @@ const CSI = "\x1b["
  * when the terminal window gains or loses focus.
  */
 export function enableFocusReporting(write: (data: string) => void): void {
-  write(`${CSI}?1004h`)
+  write(`${CSI}?1004h`);
 }
 
 /**
  * Disable terminal focus reporting.
  */
 export function disableFocusReporting(write: (data: string) => void): void {
-  write(`${CSI}?1004l`)
+  write(`${CSI}?1004l`);
 }
 
 /**
@@ -39,10 +39,10 @@ export function disableFocusReporting(write: (data: string) => void): void {
  */
 export function parseFocusEvent(input: string): { type: "focus-in" | "focus-out" } | null {
   if (input.includes(`${CSI}I`)) {
-    return { type: "focus-in" }
+    return { type: "focus-in" };
   }
   if (input.includes(`${CSI}O`)) {
-    return { type: "focus-out" }
+    return { type: "focus-out" };
   }
-  return null
+  return null;
 }

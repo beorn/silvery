@@ -9,17 +9,17 @@ Returns the computed dimensions of the component's content area — width, heigh
 ## Import
 
 ```tsx
-import { useContentRect } from "silvery"
+import { useContentRect } from "silvery";
 
 // Deprecated alias (still works)
-import { useLayout } from "silvery"
+import { useLayout } from "silvery";
 ```
 
 ## Usage
 
 ```tsx
 function SizedBox() {
-  const { width, height } = useContentRect()
+  const { width, height } = useContentRect();
 
   return (
     <Box borderStyle="single">
@@ -27,7 +27,7 @@ function SizedBox() {
         Size: {width}x{height}
       </Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -56,11 +56,11 @@ If your component breaks on `width=0`, add a guard:
 
 ```tsx
 function Header() {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
-  if (width === 0) return null // Or a loading state
+  if (width === 0) return null; // Or a loading state
 
-  return <Text>{"=".repeat(width)}</Text>
+  return <Text>{"=".repeat(width)}</Text>;
 }
 ```
 
@@ -68,18 +68,18 @@ Or handle it in your rendering logic:
 
 ```tsx
 function ProgressBar({ progress }: { progress: number }) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   // Safe even when width=0
-  const filled = Math.floor(width * progress)
-  const empty = Math.max(0, width - filled)
+  const filled = Math.floor(width * progress);
+  const empty = Math.max(0, width - filled);
 
   return (
     <Text>
       {"#".repeat(filled)}
       {"-".repeat(empty)}
     </Text>
-  )
+  );
 }
 ```
 
@@ -89,10 +89,10 @@ function ProgressBar({ progress }: { progress: number }) {
 
 ```tsx
 function ResponsiveBox() {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   // Stack vertically on narrow terminals
-  const direction = width < 60 ? "column" : "row"
+  const direction = width < 60 ? "column" : "row";
 
   return (
     <Box flexDirection={direction}>
@@ -103,7 +103,7 @@ function ResponsiveBox() {
         <Text>Panel 2</Text>
       </Box>
     </Box>
-  )
+  );
 }
 ```
 
@@ -111,16 +111,16 @@ function ResponsiveBox() {
 
 ```tsx
 function CenteredText({ children }: { children: string }) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
-  const padding = Math.max(0, Math.floor((width - children.length) / 2))
+  const padding = Math.max(0, Math.floor((width - children.length) / 2));
 
   return (
     <Text>
       {" ".repeat(padding)}
       {children}
     </Text>
-  )
+  );
 }
 ```
 
@@ -128,13 +128,13 @@ function CenteredText({ children }: { children: string }) {
 
 ```tsx
 function TruncatedTitle({ title }: { title: string }) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   if (title.length <= width) {
-    return <Text>{title}</Text>
+    return <Text>{title}</Text>;
   }
 
-  return <Text>{title.slice(0, width - 1)}...</Text>
+  return <Text>{title.slice(0, width - 1)}...</Text>;
 }
 ```
 
@@ -142,7 +142,7 @@ function TruncatedTitle({ title }: { title: string }) {
 
 ```tsx
 function DebugOverlay({ children }: { children: React.ReactNode }) {
-  const { width, height, x, y } = useContentRect()
+  const { width, height, x, y } = useContentRect();
 
   return (
     <Box flexDirection="column">
@@ -151,7 +151,7 @@ function DebugOverlay({ children }: { children: React.ReactNode }) {
         {width}x{height} @ ({x},{y})
       </Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -159,11 +159,11 @@ function DebugOverlay({ children }: { children: React.ReactNode }) {
 
 ```tsx
 function ProportionalColumns() {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   // 30% / 70% split
-  const leftWidth = Math.floor(width * 0.3)
-  const rightWidth = width - leftWidth
+  const leftWidth = Math.floor(width * 0.3);
+  const rightWidth = width - leftWidth;
 
   return (
     <Box flexDirection="row">
@@ -174,7 +174,7 @@ function ProportionalColumns() {
         <Text>Main content</Text>
       </Box>
     </Box>
-  )
+  );
 }
 ```
 
@@ -185,23 +185,23 @@ function ProportionalColumns() {
 ```tsx
 // Ink: Thread width through props
 function App({ terminalWidth }) {
-  const contentWidth = terminalWidth - 4 // Account for borders
+  const contentWidth = terminalWidth - 4; // Account for borders
   return (
     <Box borderStyle="single">
       <Content width={contentWidth} />
     </Box>
-  )
+  );
 }
 
 function Content({ width }) {
-  const columnWidth = Math.floor(width / 3)
+  const columnWidth = Math.floor(width / 3);
   return (
     <Box flexDirection="row">
       <Column width={columnWidth} />
       <Column width={columnWidth} />
       <Column width={columnWidth} />
     </Box>
-  )
+  );
 }
 ```
 
@@ -214,7 +214,7 @@ function App() {
     <Box borderStyle="single">
       <Content />
     </Box>
-  )
+  );
 }
 
 function Content() {
@@ -224,11 +224,11 @@ function Content() {
       <Column />
       <Column />
     </Box>
-  )
+  );
 }
 
 function Column() {
-  const { width } = useContentRect() // Only query where actually needed
+  const { width } = useContentRect(); // Only query where actually needed
   // Use width for truncation, responsive behavior, etc.
 }
 ```

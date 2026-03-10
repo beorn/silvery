@@ -36,10 +36,18 @@
  *   --stress  Generate 200 exchanges instead of scripted content
  */
 
-import React, { useState, useEffect, useCallback, useRef } from "react"
-import { Box, Text, Link, Spinner, ScrollbackList, useScrollbackItem, TextInput } from "../../src/index.js"
-import { run, useInput, useExit, type Key } from "../../src/runtime/run.js"
-import type { ExampleMeta } from "../_banner.js"
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import {
+  Box,
+  Text,
+  Link,
+  Spinner,
+  ScrollbackList,
+  useScrollbackItem,
+  TextInput,
+} from "../../src/index.js";
+import { run, useInput, useExit, type Key } from "../../src/runtime/run.js";
+import type { ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Static Scrollback",
@@ -54,39 +62,39 @@ export const meta: ExampleMeta = {
     "OSC 133 markers",
     "context tracking",
   ],
-}
+};
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface ToolCall {
-  tool: string
-  args: string
-  output: string[]
+  tool: string;
+  args: string;
+  output: string[];
 }
 
 interface Exchange {
-  id: number
-  role: "user" | "agent" | "system"
-  content: string
-  thinking?: string
-  toolCalls?: ToolCall[]
-  tokens?: { input: number; output: number }
-  frozen: boolean
+  id: number;
+  role: "user" | "agent" | "system";
+  content: string;
+  thinking?: string;
+  toolCalls?: ToolCall[];
+  tokens?: { input: number; output: number };
+  frozen: boolean;
 }
 
 /** Script entry — exchange data before id/frozen are assigned. */
-type ScriptEntry = Omit<Exchange, "id" | "frozen">
+type ScriptEntry = Omit<Exchange, "id" | "frozen">;
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-const MODEL_NAME = "claude-opus-4-6"
-const INPUT_COST_PER_M = 15 // $/M input tokens
-const OUTPUT_COST_PER_M = 75 // $/M output tokens
-const CONTEXT_WINDOW = 200_000
+const MODEL_NAME = "claude-opus-4-6";
+const INPUT_COST_PER_M = 15; // $/M input tokens
+const OUTPUT_COST_PER_M = 75; // $/M output tokens
+const CONTEXT_WINDOW = 200_000;
 
 const TOOL_COLORS: Record<string, string> = {
   Read: "$info",
@@ -95,7 +103,7 @@ const TOOL_COLORS: Record<string, string> = {
   Write: "$accent",
   Glob: "$muted-fg",
   Grep: "$success",
-}
+};
 
 const TOOL_ICONS: Record<string, string> = {
   Read: "\u{1F4D6}",
@@ -104,10 +112,10 @@ const TOOL_ICONS: Record<string, string> = {
   Write: "\u{1F4DD}",
   Glob: "\u{1F50D}",
   Grep: "\u{1F50E}",
-}
+};
 
 /** Regex matching https/http URLs in output text. */
-const URL_RE = /https?:\/\/[^\s)]+/g
+const URL_RE = /https?:\/\/[^\s)]+/g;
 
 // ============================================================================
 // Script — Realistic coding agent story with thinking + tokens
@@ -145,7 +153,8 @@ const SCRIPT: ScriptEntry[] = [
     role: "agent",
     thinking:
       "Found it \u2014 decoded.exp is in seconds (Unix timestamp) but Date.now() returns milliseconds. Every token appears expired because exp (e.g. 1700000000) is always less than Date.now() (e.g. 1700000000000). I need to divide Date.now() by 1000, and change the throw to a refresh call.",
-    content: "Found it. The expiry check compares seconds (jwt.exp) to milliseconds (Date.now()). Fixing now.",
+    content:
+      "Found it. The expiry check compares seconds (jwt.exp) to milliseconds (Date.now()). Fixing now.",
     toolCalls: [
       {
         tool: "Edit",
@@ -264,7 +273,8 @@ const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "agent",
-    content: "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
+    content:
+      "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
     tokens: { input: 8468, output: 156 },
   },
   {
@@ -421,15 +431,15 @@ const SCRIPT: ScriptEntry[] = [
       "All done! Summary of changes:\n\u2022 Fixed token expiry bug (seconds vs milliseconds)\n\u2022 Added rate limiting (5 req/min per IP)\n\u2022 Added i18n support (\u65E5\u672C\u8A9E + Deutsch) \u{1F30D}\n\u2022 Added /health endpoint (v2.4.1)\n\nAll 21 tests pass. Ready to commit?",
     tokens: { input: 22468, output: 224 },
   },
-]
+];
 
 // ============================================================================
 // Stress test script — 200 programmatically generated exchanges
 // ============================================================================
 
 function generateStressScript(): ScriptEntry[] {
-  const exchanges: ScriptEntry[] = []
-  const tools = ["Read", "Edit", "Bash", "Write", "Grep", "Glob"]
+  const exchanges: ScriptEntry[] = [];
+  const tools = ["Read", "Edit", "Bash", "Write", "Grep", "Glob"];
   const files = [
     "src/auth.ts",
     "src/db.ts",
@@ -439,9 +449,9 @@ function generateStressScript(): ScriptEntry[] {
     "src/config.ts",
     "tests/integration.test.ts",
     "src/i18n/\u65E5\u672C\u8A9E.json",
-  ]
+  ];
 
-  let cumulativeInput = 4000
+  let cumulativeInput = 4000;
 
   for (let i = 0; i < 200; i++) {
     if (i % 5 === 0) {
@@ -451,22 +461,22 @@ function generateStressScript(): ScriptEntry[] {
         `Refactor ${files[i % files.length]} \u2014 it's too complex \u{1F527}`,
         `Why is test #${i} failing? \u{1F41B}`,
         `Add \u65E5\u672C\u8A9E translations for module ${i}`,
-      ]
+      ];
       exchanges.push({
         role: "user",
         content: prompts[Math.floor(i / 5) % prompts.length]!,
         tokens: { input: 40 + (i % 30), output: 0 },
-      })
+      });
     } else if (i % 5 === 4) {
       exchanges.push({
         role: "agent",
         content: `Done with batch ${Math.floor(i / 5) + 1}. ${3 + (i % 7)} tests pass. \u2705`,
         tokens: { input: cumulativeInput, output: 45 + (i % 60) },
-      })
+      });
     } else {
-      const tool = tools[i % tools.length]!
-      const file = files[i % files.length]!
-      cumulativeInput += 200 + (i % 300)
+      const tool = tools[i % tools.length]!;
+      const file = files[i % files.length]!;
+      cumulativeInput += 200 + (i % 300);
       exchanges.push({
         role: "agent",
         thinking: i % 3 === 0 ? `Analyzing ${file} for the reported issue...` : undefined,
@@ -485,18 +495,18 @@ function generateStressScript(): ScriptEntry[] {
           },
         ],
         tokens: { input: cumulativeInput, output: 120 + (i % 200) },
-      })
+      });
     }
 
     if (i === 80 || i === 160) {
       exchanges.push({
         role: "system",
         content: `\u{1F4E6} Compaction #${i === 80 ? 1 : 2}: context cleared. Scrollback preserved above.`,
-      })
+      });
     }
   }
 
-  return exchanges
+  return exchanges;
 }
 
 // ============================================================================
@@ -504,15 +514,15 @@ function generateStressScript(): ScriptEntry[] {
 // ============================================================================
 
 function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`
-  return String(n)
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return String(n);
 }
 
 function formatCost(inputTokens: number, outputTokens: number): string {
-  const cost = (inputTokens * INPUT_COST_PER_M + outputTokens * OUTPUT_COST_PER_M) / 1_000_000
-  if (cost < 0.01) return `$${cost.toFixed(4)}`
-  return `$${cost.toFixed(2)}`
+  const cost = (inputTokens * INPUT_COST_PER_M + outputTokens * OUTPUT_COST_PER_M) / 1_000_000;
+  if (cost < 0.01) return `$${cost.toFixed(4)}`;
+  return `$${cost.toFixed(2)}`;
 }
 
 /**
@@ -524,22 +534,22 @@ function formatCost(inputTokens: number, outputTokens: number): string {
  * - `totalCost`: sum of all (input + output) for cost calculation (each API call costs)
  */
 function computeCumulativeTokens(exchanges: Exchange[]): {
-  input: number
-  output: number
-  currentContext: number
+  input: number;
+  output: number;
+  currentContext: number;
 } {
-  let input = 0
-  let output = 0
-  let currentContext = 0
+  let input = 0;
+  let output = 0;
+  let currentContext = 0;
   for (const ex of exchanges) {
     if (ex.tokens) {
-      input += ex.tokens.input
-      output += ex.tokens.output
+      input += ex.tokens.input;
+      output += ex.tokens.output;
       // Context = last exchange's cumulative input (not the sum)
-      if (ex.tokens.input > currentContext) currentContext = ex.tokens.input
+      if (ex.tokens.input > currentContext) currentContext = ex.tokens.input;
     }
   }
-  return { input, output, currentContext }
+  return { input, output, currentContext };
 }
 
 // ============================================================================
@@ -547,43 +557,51 @@ function computeCumulativeTokens(exchanges: Exchange[]): {
 // ============================================================================
 
 /** Render a line with auto-linked URLs. */
-function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; color?: string }): JSX.Element {
-  const parts: JSX.Element[] = []
-  let lastIndex = 0
-  let match: RegExpExecArray | null
+function LinkifiedLine({
+  text,
+  dim,
+  color,
+}: {
+  text: string;
+  dim?: boolean;
+  color?: string;
+}): JSX.Element {
+  const parts: JSX.Element[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
 
-  URL_RE.lastIndex = 0
+  URL_RE.lastIndex = 0;
   while ((match = URL_RE.exec(text)) !== null) {
     if (match.index > lastIndex) {
       parts.push(
         <Text key={`t${lastIndex}`} dim={dim} color={color}>
           {text.slice(lastIndex, match.index)}
         </Text>,
-      )
+      );
     }
-    const url = match[0]
+    const url = match[0];
     parts.push(
       <Link key={`l${match.index}`} href={url} dim={dim}>
         {url}
       </Link>,
-    )
-    lastIndex = match.index + url.length
+    );
+    lastIndex = match.index + url.length;
   }
   if (lastIndex < text.length) {
     parts.push(
       <Text key={`t${lastIndex}`} dim={dim} color={color}>
         {text.slice(lastIndex)}
       </Text>,
-    )
+    );
   }
   if (parts.length === 0) {
     return (
       <Text dim={dim} color={color}>
         {text}
       </Text>
-    )
+    );
   }
-  return <Text>{parts}</Text>
+  return <Text>{parts}</Text>;
 }
 
 /** Thinking block — shows with spinner before agent response. */
@@ -607,13 +625,19 @@ function ThinkingBlock({ text, done }: { text: string; done: boolean }): JSX.Ele
         </Text>
       )}
     </Box>
-  )
+  );
 }
 
 /** Tool call with lifecycle: spinner -> output -> checkmark. */
-function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "running" | "done" }): JSX.Element {
-  const color = TOOL_COLORS[call.tool] ?? "gray"
-  const icon = TOOL_ICONS[call.tool] ?? "\u25B8"
+function ToolCallBlock({
+  call,
+  phase,
+}: {
+  call: ToolCall;
+  phase: "pending" | "running" | "done";
+}): JSX.Element {
+  const color = TOOL_COLORS[call.tool] ?? "gray";
+  const icon = TOOL_ICONS[call.tool] ?? "\u25B8";
 
   return (
     <Box flexDirection="column" marginTop={0}>
@@ -650,14 +674,14 @@ function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "ru
           paddingLeft={1}
         >
           {call.output.map((line, i) => {
-            if (line.startsWith("+")) return <LinkifiedLine key={i} text={line} color="$success" />
-            if (line.startsWith("-")) return <LinkifiedLine key={i} text={line} color="$error" />
-            return <LinkifiedLine key={i} text={line} />
+            if (line.startsWith("+")) return <LinkifiedLine key={i} text={line} color="$success" />;
+            if (line.startsWith("-")) return <LinkifiedLine key={i} text={line} color="$error" />;
+            return <LinkifiedLine key={i} text={line} />;
           })}
         </Box>
       )}
     </Box>
-  )
+  );
 }
 
 /** Streaming text — reveals content word by word. */
@@ -666,26 +690,26 @@ function StreamingText({
   revealFraction,
   showCursor,
 }: {
-  fullText: string
-  revealFraction: number
-  showCursor: boolean
+  fullText: string;
+  revealFraction: number;
+  showCursor: boolean;
 }): JSX.Element {
   if (revealFraction >= 1) {
-    return <Text>{fullText}</Text>
+    return <Text>{fullText}</Text>;
   }
 
-  const words = fullText.split(/(\s+)/)
-  const totalWords = words.filter((w) => w.trim()).length
-  const revealWords = Math.ceil(totalWords * revealFraction)
+  const words = fullText.split(/(\s+)/);
+  const totalWords = words.filter((w) => w.trim()).length;
+  const revealWords = Math.ceil(totalWords * revealFraction);
 
-  let wordCount = 0
-  let revealedText = ""
+  let wordCount = 0;
+  let revealedText = "";
   for (const word of words) {
     if (word.trim()) {
-      wordCount++
-      if (wordCount > revealWords) break
+      wordCount++;
+      if (wordCount > revealWords) break;
     }
-    revealedText += word
+    revealedText += word;
   }
 
   return (
@@ -693,7 +717,7 @@ function StreamingText({
       {revealedText}
       {showCursor && <Text color="$primary">{"\u258C"}</Text>}
     </Text>
-  )
+  );
 }
 
 // ============================================================================
@@ -714,23 +738,23 @@ function ExchangeItem({
   isFirstInGroup,
   isLastInGroup,
 }: {
-  exchange: Exchange
-  streamPhase: "thinking" | "streaming" | "tools" | "done"
-  revealFraction: number
-  pulse: boolean
-  isLatest: boolean
-  isFirstInGroup: boolean
-  isLastInGroup: boolean
+  exchange: Exchange;
+  streamPhase: "thinking" | "streaming" | "tools" | "done";
+  revealFraction: number;
+  pulse: boolean;
+  isLatest: boolean;
+  isFirstInGroup: boolean;
+  isLastInGroup: boolean;
 }): JSX.Element {
-  const { freeze } = useScrollbackItem()
+  const { freeze } = useScrollbackItem();
 
   // When the exchange is marked frozen in data, call freeze() imperatively.
   // This triggers ScrollbackList to render us as a string and push to scrollback.
   useEffect(() => {
     if (exchange.frozen) {
-      freeze()
+      freeze();
     }
-  }, [exchange.frozen, freeze])
+  }, [exchange.frozen, freeze]);
 
   if (exchange.role === "system") {
     return (
@@ -739,10 +763,10 @@ function ExchangeItem({
           {exchange.content}
         </Text>
       </Box>
-    )
+    );
   }
 
-  const isUser = exchange.role === "user"
+  const isUser = exchange.role === "user";
 
   // User messages: blue ❯ prefix, grouped like a list (padding at group edges only)
   if (isUser) {
@@ -759,21 +783,22 @@ function ExchangeItem({
         </Box>
         {isLastInGroup && <Text> </Text>}
       </Box>
-    )
+    );
   }
 
-  const outlineColor = "$success"
-  const icon = "\u25C6"
-  const name = "Agent"
-  const phase = isLatest ? streamPhase : "done"
-  const fraction = isLatest ? revealFraction : 1
+  const outlineColor = "$success";
+  const icon = "\u25C6";
+  const name = "Agent";
+  const phase = isLatest ? streamPhase : "done";
+  const fraction = isLatest ? revealFraction : 1;
 
   // Token badge for agent exchanges
-  const tokenBadge = exchange.tokens && phase === "done" ? ` ${formatTokens(exchange.tokens.output)} tokens` : ""
+  const tokenBadge =
+    exchange.tokens && phase === "done" ? ` ${formatTokens(exchange.tokens.output)} tokens` : "";
 
   // Tool call phases
-  const toolCalls = exchange.toolCalls ?? []
-  const toolRevealCount = phase === "tools" || phase === "done" ? toolCalls.length : 0
+  const toolCalls = exchange.toolCalls ?? [];
+  const toolRevealCount = phase === "tools" || phase === "done" ? toolCalls.length : 0;
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} paddingX={1}>
@@ -824,7 +849,7 @@ function ExchangeItem({
         </Box>
       )}
     </Box>
-  )
+  );
 }
 
 /** Status bar — single compact row. */
@@ -837,35 +862,35 @@ function StatusBar({
   frozenCount = 0,
   contextBaseline = 0,
 }: {
-  exchanges: Exchange[]
-  autoMode: boolean
-  compacting: boolean
-  done: boolean
-  elapsed: number
-  frozenCount?: number
-  contextBaseline?: number
+  exchanges: Exchange[];
+  autoMode: boolean;
+  compacting: boolean;
+  done: boolean;
+  elapsed: number;
+  frozenCount?: number;
+  contextBaseline?: number;
 }): JSX.Element {
-  const cumulative = computeCumulativeTokens(exchanges)
-  const cost = formatCost(cumulative.input, cumulative.output)
-  const minutes = Math.floor(elapsed / 60)
-  const seconds = elapsed % 60
-  const elapsedStr = `${minutes}:${seconds.toString().padStart(2, "0")}`
+  const cumulative = computeCumulativeTokens(exchanges);
+  const cost = formatCost(cumulative.input, cumulative.output);
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  const elapsedStr = `${minutes}:${seconds.toString().padStart(2, "0")}`;
 
   // Context bar — subtract baseline so bar resets after compaction
-  const CTX_W = 20
-  const effectiveContext = Math.max(0, cumulative.currentContext - contextBaseline)
-  const ctxFrac = effectiveContext / CONTEXT_WINDOW
-  const ctxFilled = Math.round(Math.min(ctxFrac, 1) * CTX_W)
-  const ctxPct = Math.round(ctxFrac * 100)
-  const ctxColor = ctxPct > 100 ? "$error" : ctxPct > 80 ? "$warning" : "$primary"
-  const ctxBar = "\u2588".repeat(ctxFilled) + "\u2591".repeat(CTX_W - ctxFilled)
+  const CTX_W = 20;
+  const effectiveContext = Math.max(0, cumulative.currentContext - contextBaseline);
+  const ctxFrac = effectiveContext / CONTEXT_WINDOW;
+  const ctxFilled = Math.round(Math.min(ctxFrac, 1) * CTX_W);
+  const ctxPct = Math.round(ctxFrac * 100);
+  const ctxColor = ctxPct > 100 ? "$error" : ctxPct > 80 ? "$warning" : "$primary";
+  const ctxBar = "\u2588".repeat(ctxFilled) + "\u2591".repeat(CTX_W - ctxFilled);
 
   // Build key hints — keep compact to avoid overflow
-  let keys: string
-  if (compacting) keys = "compacting..."
-  else if (done) keys = "esc quit"
-  else if (autoMode) keys = "tab stop  ^L clear  esc quit"
-  else keys = "\u23CE send  tab auto  ^L clear  esc quit"
+  let keys: string;
+  if (compacting) keys = "compacting...";
+  else if (done) keys = "esc quit";
+  else if (autoMode) keys = "tab stop  ^L clear  esc quit";
+  else keys = "\u23CE send  tab auto  ^L clear  esc quit";
 
   return (
     <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
@@ -890,7 +915,7 @@ function StatusBar({
         {cost}
       </Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -899,8 +924,8 @@ function StatusBar({
 
 /** Imperative handle for parent to control footer text (auto-typing, pre-fill). */
 interface FooterControl {
-  setText: (text: string) => void
-  getText: () => string
+  setText: (text: string) => void;
+  getText: () => string;
 }
 
 /**
@@ -922,41 +947,44 @@ function DemoFooter({
   frozenCount = 0,
   contextBaseline = 0,
 }: {
-  controlRef: React.RefObject<FooterControl>
-  onSubmit: (text: string) => void
-  streamPhase: StreamPhase
-  autoMode: boolean
-  done: boolean
-  compacting: boolean
-  exchanges: Exchange[]
-  frozenCount?: number
-  contextBaseline?: number
+  controlRef: React.RefObject<FooterControl>;
+  onSubmit: (text: string) => void;
+  streamPhase: StreamPhase;
+  autoMode: boolean;
+  done: boolean;
+  compacting: boolean;
+  exchanges: Exchange[];
+  frozenCount?: number;
+  contextBaseline?: number;
 }): JSX.Element {
-  const [inputText, setInputText] = useState("")
-  const inputTextRef = useRef(inputText)
-  inputTextRef.current = inputText
+  const [inputText, setInputText] = useState("");
+  const inputTextRef = useRef(inputText);
+  inputTextRef.current = inputText;
 
   // Expose control to parent for auto-typing and pre-fill
   controlRef.current = {
     setText: setInputText,
     getText: () => inputTextRef.current,
-  }
+  };
 
   // Elapsed time — lives here since it only affects the status bar
-  const startRef = useRef(Date.now())
-  const [elapsed, setElapsed] = useState(0)
+  const startRef = useRef(Date.now());
+  const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
-    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000)
-    return () => clearInterval(timer)
-  }, [])
+    const timer = setInterval(
+      () => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)),
+      1000,
+    );
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSubmit = useCallback(
     (text: string) => {
-      onSubmit(text)
-      setInputText("")
+      onSubmit(text);
+      setInputText("");
     },
     [onSubmit],
-  )
+  );
 
   return (
     <Box flexDirection="column">
@@ -981,7 +1009,7 @@ function DemoFooter({
         contextBaseline={contextBaseline}
       />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -989,303 +1017,303 @@ function DemoFooter({
 // ============================================================================
 
 /** How many live turns to keep in the dynamic area before freezing to scrollback. */
-const MAX_LIVE_TURNS = 3
+const MAX_LIVE_TURNS = 3;
 
 /** Streaming phases: thinking -> streaming text -> tool calls -> done */
-type StreamPhase = "thinking" | "streaming" | "tools" | "done"
+type StreamPhase = "thinking" | "streaming" | "tools" | "done";
 
 function CodingAgent({
   script,
   autoStart,
   fastMode,
 }: {
-  script: ScriptEntry[]
-  autoStart: boolean
-  fastMode: boolean
+  script: ScriptEntry[];
+  autoStart: boolean;
+  fastMode: boolean;
 }): JSX.Element {
-  const exit = useExit()
-  const [exchanges, setExchanges] = useState<Exchange[]>([])
-  const [scriptIdx, setScriptIdx] = useState(0)
-  const [done, setDone] = useState(false)
-  const [autoMode, setAutoMode] = useState(autoStart)
-  const [compacting, _setCompacting] = useState(false)
-  const compactingRef = useRef(false)
+  const exit = useExit();
+  const [exchanges, setExchanges] = useState<Exchange[]>([]);
+  const [scriptIdx, setScriptIdx] = useState(0);
+  const [done, setDone] = useState(false);
+  const [autoMode, setAutoMode] = useState(autoStart);
+  const [compacting, _setCompacting] = useState(false);
+  const compactingRef = useRef(false);
   const setCompacting = useCallback((v: boolean) => {
-    compactingRef.current = v
-    _setCompacting(v)
-  }, [])
+    compactingRef.current = v;
+    _setCompacting(v);
+  }, []);
   // Baseline subtracted from context after compaction (simulates context reset)
-  const contextBaselineRef = useRef(0)
-  const [pendingAdvance, setPendingAdvance] = useState(false)
+  const contextBaselineRef = useRef(0);
+  const [pendingAdvance, setPendingAdvance] = useState(false);
 
   // Streaming state
-  const [streamPhase, setStreamPhase] = useState<StreamPhase>("done")
-  const [revealFraction, setRevealFraction] = useState(1)
-  const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const revealTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const inputTypingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const nextIdRef = useRef(0)
+  const [streamPhase, setStreamPhase] = useState<StreamPhase>("done");
+  const [revealFraction, setRevealFraction] = useState(1);
+  const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inputTypingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nextIdRef = useRef(0);
 
   // Stable ref to latest advance() — avoids stale closure in setTimeout callbacks
-  const advanceRef = useRef<() => void>(() => {})
+  const advanceRef = useRef<() => void>(() => {});
 
   // Footer control — parent uses this to set/get input text for auto-typing and pre-fill.
   // Input text state lives in DemoFooter (not here) so typing doesn't re-render the exchange list.
-  const footerControlRef = useRef<FooterControl>({ setText: () => {}, getText: () => "" })
+  const footerControlRef = useRef<FooterControl>({ setText: () => {}, getText: () => "" });
 
   /** Cancel all streaming timers. */
   const cancelStreaming = useCallback(() => {
     if (phaseTimerRef.current) {
-      clearTimeout(phaseTimerRef.current)
-      phaseTimerRef.current = null
+      clearTimeout(phaseTimerRef.current);
+      phaseTimerRef.current = null;
     }
     if (revealTimerRef.current) {
-      clearInterval(revealTimerRef.current)
-      revealTimerRef.current = null
+      clearInterval(revealTimerRef.current);
+      revealTimerRef.current = null;
     }
     if (inputTypingTimerRef.current) {
-      clearInterval(inputTypingTimerRef.current)
-      inputTypingTimerRef.current = null
+      clearInterval(inputTypingTimerRef.current);
+      inputTypingTimerRef.current = null;
     }
-  }, [])
+  }, []);
 
   /** Start streaming an exchange through its phases. */
   const startStreaming = useCallback(
     (entry: ScriptEntry, id: number) => {
-      cancelStreaming()
-      const newExchange: Exchange = { ...entry, id, frozen: false }
+      cancelStreaming();
+      const newExchange: Exchange = { ...entry, id, frozen: false };
 
       // User messages and system messages: instant
       if (entry.role === "user" || entry.role === "system") {
-        setExchanges((prev) => [...prev, newExchange])
-        setStreamPhase("done")
-        setRevealFraction(1)
-        return
+        setExchanges((prev) => [...prev, newExchange]);
+        setStreamPhase("done");
+        setRevealFraction(1);
+        return;
       }
 
       // Fast mode: skip all animation
       if (fastMode) {
-        setExchanges((prev) => [...prev, newExchange])
-        setStreamPhase("done")
-        setRevealFraction(1)
-        return
+        setExchanges((prev) => [...prev, newExchange]);
+        setStreamPhase("done");
+        setRevealFraction(1);
+        return;
       }
 
       // Agent message: thinking -> streaming -> tools -> done
-      setExchanges((prev) => [...prev, newExchange])
+      setExchanges((prev) => [...prev, newExchange]);
 
       if (entry.thinking) {
         // Phase 1: Thinking
-        setStreamPhase("thinking")
-        setRevealFraction(0)
+        setStreamPhase("thinking");
+        setRevealFraction(0);
         phaseTimerRef.current = setTimeout(() => {
           // Phase 2: Streaming text
-          setStreamPhase("streaming")
-          let frac = 0
+          setStreamPhase("streaming");
+          let frac = 0;
           revealTimerRef.current = setInterval(() => {
-            frac += 0.08
+            frac += 0.08;
             if (frac >= 1) {
-              frac = 1
-              if (revealTimerRef.current) clearInterval(revealTimerRef.current)
+              frac = 1;
+              if (revealTimerRef.current) clearInterval(revealTimerRef.current);
               // Phase 3: Tool calls (if any)
               if (entry.toolCalls?.length) {
-                setStreamPhase("tools")
+                setStreamPhase("tools");
                 phaseTimerRef.current = setTimeout(
                   () => {
-                    setStreamPhase("done")
+                    setStreamPhase("done");
                   },
                   600 * (entry.toolCalls?.length ?? 1),
-                )
+                );
               } else {
-                setStreamPhase("done")
+                setStreamPhase("done");
               }
             }
-            setRevealFraction(frac)
-          }, 50)
-        }, 1200)
+            setRevealFraction(frac);
+          }, 50);
+        }, 1200);
       } else {
         // No thinking — go straight to streaming
-        setStreamPhase("streaming")
-        let frac = 0
+        setStreamPhase("streaming");
+        let frac = 0;
         revealTimerRef.current = setInterval(() => {
-          frac += 0.12
+          frac += 0.12;
           if (frac >= 1) {
-            frac = 1
-            if (revealTimerRef.current) clearInterval(revealTimerRef.current)
+            frac = 1;
+            if (revealTimerRef.current) clearInterval(revealTimerRef.current);
             if (entry.toolCalls?.length) {
-              setStreamPhase("tools")
+              setStreamPhase("tools");
               phaseTimerRef.current = setTimeout(
                 () => {
-                  setStreamPhase("done")
+                  setStreamPhase("done");
                 },
                 600 * (entry.toolCalls?.length ?? 1),
-              )
+              );
             } else {
-              setStreamPhase("done")
+              setStreamPhase("done");
             }
           }
-          setRevealFraction(frac)
-        }, 50)
+          setRevealFraction(frac);
+        }, 50);
       }
     },
     [fastMode, cancelStreaming],
-  )
+  );
 
   const compact = useCallback(() => {
-    if (done || compactingRef.current) return
-    cancelStreaming()
-    setStreamPhase("done")
-    setRevealFraction(1)
-    setCompacting(true)
+    if (done || compactingRef.current) return;
+    cancelStreaming();
+    setStreamPhase("done");
+    setRevealFraction(1);
+    setCompacting(true);
     setExchanges((prev) => {
       // Record current context level as baseline — post-compaction context
       // starts from ~0 again (simulates real context window reset after compaction)
-      const cumulative = computeCumulativeTokens(prev)
-      contextBaselineRef.current = cumulative.currentContext
-      return prev.map((ex) => ({ ...ex, frozen: true }))
-    })
+      const cumulative = computeCumulativeTokens(prev);
+      contextBaselineRef.current = cumulative.currentContext;
+      return prev.map((ex) => ({ ...ex, frozen: true }));
+    });
 
     setTimeout(
       () => {
-        setCompacting(false)
-        setPendingAdvance(true)
+        setCompacting(false);
+        setPendingAdvance(true);
       },
       fastMode ? 300 : 3000,
-    )
-  }, [done, cancelStreaming, setCompacting, fastMode])
+    );
+  }, [done, cancelStreaming, setCompacting, fastMode]);
 
   /** Skip current streaming — jump to done. */
   const skipStreaming = useCallback(() => {
-    if (streamPhase === "done") return false
-    cancelStreaming()
-    setStreamPhase("done")
-    setRevealFraction(1)
-    return true
-  }, [streamPhase, cancelStreaming])
+    if (streamPhase === "done") return false;
+    cancelStreaming();
+    setStreamPhase("done");
+    setRevealFraction(1);
+    return true;
+  }, [streamPhase, cancelStreaming]);
 
   /** Advance to the next script entry. */
   const advance = useCallback(() => {
-    if (done || compactingRef.current) return
-    if (streamPhase !== "done") return // Still streaming
+    if (done || compactingRef.current) return;
+    if (streamPhase !== "done") return; // Still streaming
 
     if (scriptIdx >= script.length) {
       // Final compaction: freeze everything before showing "done"
       if (!compactingRef.current && exchanges.some((ex) => !ex.frozen)) {
-        compact()
-        return
+        compact();
+        return;
       }
-      setDone(true)
-      return
+      setDone(true);
+      return;
     }
 
     // Freeze exchanges beyond the live window
     setExchanges((prev) => {
-      const cutoff = Math.max(0, prev.length - MAX_LIVE_TURNS + 1)
-      return prev.map((ex, i) => (i < cutoff ? { ...ex, frozen: true } : ex))
-    })
+      const cutoff = Math.max(0, prev.length - MAX_LIVE_TURNS + 1);
+      return prev.map((ex, i) => (i < cutoff ? { ...ex, frozen: true } : ex));
+    });
 
-    const entry = script[scriptIdx]!
+    const entry = script[scriptIdx]!;
 
-    const id = nextIdRef.current++
-    setScriptIdx((i) => i + 1)
-    startStreaming(entry, id)
+    const id = nextIdRef.current++;
+    setScriptIdx((i) => i + 1);
+    startStreaming(entry, id);
 
     // Auto-chain: user entry → immediately start the following agent entry
     // so one Enter press sends message AND starts agent response
     if (entry.role === "user") {
-      const nextIdx = scriptIdx + 1
+      const nextIdx = scriptIdx + 1;
       if (nextIdx < script.length && script[nextIdx]!.role === "agent") {
-        const nextEntry = script[nextIdx]!
-        const nextId = nextIdRef.current++
-        setScriptIdx((i) => i + 1)
-        startStreaming(nextEntry, nextId)
+        const nextEntry = script[nextIdx]!;
+        const nextId = nextIdRef.current++;
+        setScriptIdx((i) => i + 1);
+        startStreaming(nextEntry, nextId);
       }
     }
-  }, [scriptIdx, done, streamPhase, script, startStreaming, compact, fastMode])
-  advanceRef.current = advance
+  }, [scriptIdx, done, streamPhase, script, startStreaming, compact, fastMode]);
+  advanceRef.current = advance;
 
   // Auto-continue after compaction
   useEffect(() => {
-    if (!pendingAdvance) return
-    setPendingAdvance(false)
-    advance()
-  }, [pendingAdvance, advance])
+    if (!pendingAdvance) return;
+    setPendingAdvance(false);
+    advance();
+  }, [pendingAdvance, advance]);
 
   // Auto-advance on mount
   useEffect(() => {
-    advance()
+    advance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []);
 
   // Auto-advance when streaming finishes — type out next user message char-by-char
   useEffect(() => {
-    if (!autoMode || done || compacting) return
-    if (streamPhase !== "done") return
+    if (!autoMode || done || compacting) return;
+    if (streamPhase !== "done") return;
 
-    const nextEntry = script[scriptIdx]
+    const nextEntry = script[scriptIdx];
     if (nextEntry?.role === "user" && !fastMode) {
       // Simulate typing the next user message char-by-char
-      const fullMsg = nextEntry.content
-      let charIdx = 0
-      footerControlRef.current.setText("")
+      const fullMsg = nextEntry.content;
+      let charIdx = 0;
+      footerControlRef.current.setText("");
       inputTypingTimerRef.current = setInterval(() => {
-        charIdx++
+        charIdx++;
         if (charIdx >= fullMsg.length) {
-          footerControlRef.current.setText(fullMsg)
-          if (inputTypingTimerRef.current) clearInterval(inputTypingTimerRef.current)
-          inputTypingTimerRef.current = null
+          footerControlRef.current.setText(fullMsg);
+          if (inputTypingTimerRef.current) clearInterval(inputTypingTimerRef.current);
+          inputTypingTimerRef.current = null;
           // Brief pause after typing completes, then advance
           autoTimerRef.current = setTimeout(() => {
-            footerControlRef.current.setText("")
-            advance()
-          }, 300)
+            footerControlRef.current.setText("");
+            advance();
+          }, 300);
         } else {
-          footerControlRef.current.setText(fullMsg.slice(0, charIdx))
+          footerControlRef.current.setText(fullMsg.slice(0, charIdx));
         }
-      }, 30)
+      }, 30);
       return () => {
         if (inputTypingTimerRef.current) {
-          clearInterval(inputTypingTimerRef.current)
-          inputTypingTimerRef.current = null
+          clearInterval(inputTypingTimerRef.current);
+          inputTypingTimerRef.current = null;
         }
-        if (autoTimerRef.current) clearTimeout(autoTimerRef.current)
-      }
+        if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+      };
     }
 
     // Non-user entries or fast mode: advance after a brief delay
-    autoTimerRef.current = setTimeout(advance, 400)
+    autoTimerRef.current = setTimeout(advance, 400);
     return () => {
-      if (autoTimerRef.current) clearTimeout(autoTimerRef.current)
-    }
-  }, [autoMode, done, compacting, streamPhase, scriptIdx, advance, script, fastMode])
+      if (autoTimerRef.current) clearTimeout(autoTimerRef.current);
+    };
+  }, [autoMode, done, compacting, streamPhase, scriptIdx, advance, script, fastMode]);
 
   // Auto-exit when done in auto mode
   useEffect(() => {
-    if (!autoMode || !done) return
-    const timer = setTimeout(exit, 1000)
-    return () => clearTimeout(timer)
-  }, [autoMode, done, exit])
+    if (!autoMode || !done) return;
+    const timer = setTimeout(exit, 1000);
+    return () => clearTimeout(timer);
+  }, [autoMode, done, exit]);
 
   // Clean up streaming timers on unmount — if user presses q while streaming,
   // revealTimerRef (setInterval) would otherwise run forever.
   useEffect(() => {
-    return () => cancelStreaming()
-  }, [cancelStreaming])
+    return () => cancelStreaming();
+  }, [cancelStreaming]);
 
   // Auto-compact when the current context reaches 95% of the context window.
   // Token values are cumulative — each exchange's input is the total context at
   // that point. We subtract contextBaseline (set during compaction) so that
   // post-compaction exchanges don't immediately re-trigger compaction.
   useEffect(() => {
-    if (done || compactingRef.current) return
-    const active = exchanges.filter((ex) => !ex.frozen)
-    const cumulative = computeCumulativeTokens(active)
-    const effectiveContext = Math.max(0, cumulative.currentContext - contextBaselineRef.current)
+    if (done || compactingRef.current) return;
+    const active = exchanges.filter((ex) => !ex.frozen);
+    const cumulative = computeCumulativeTokens(active);
+    const effectiveContext = Math.max(0, cumulative.currentContext - contextBaselineRef.current);
     if (effectiveContext >= CONTEXT_WINDOW * 0.95) {
-      compact()
+      compact();
     }
-  }, [exchanges, done, compact])
+  }, [exchanges, done, compact]);
 
   // Terminal resize: no special handling needed.
   // useScrollback's resize path re-emits frozen items at the new width,
@@ -1295,82 +1323,82 @@ function CodingAgent({
   // Guard: skip before first advance (exchanges empty) to avoid pre-filling with
   // script[0] which advance() is about to consume — that creates a duplicate.
   useEffect(() => {
-    if (autoMode || done || streamPhase !== "done" || exchanges.length === 0) return
-    const nextEntry = script[scriptIdx]
+    if (autoMode || done || streamPhase !== "done" || exchanges.length === 0) return;
+    const nextEntry = script[scriptIdx];
     if (nextEntry?.role === "user" && !footerControlRef.current.getText()) {
-      footerControlRef.current.setText(nextEntry.content)
+      footerControlRef.current.setText(nextEntry.content);
     }
-  }, [autoMode, done, streamPhase, scriptIdx, script, exchanges.length])
+  }, [autoMode, done, streamPhase, scriptIdx, script, exchanges.length]);
 
   /** Handle Enter from TextInput — submit user text or advance script. */
   const handleSubmit = useCallback(
     (text: string) => {
       if (streamPhase !== "done") {
-        skipStreaming()
-        return
+        skipStreaming();
+        return;
       }
-      if (done) return "exit"
+      if (done) return "exit";
 
       if (text.trim()) {
         // Add the user's typed text as a visible exchange
-        const id = nextIdRef.current++
+        const id = nextIdRef.current++;
         const userExchange: Exchange = {
           id,
           role: "user",
           content: text,
           tokens: { input: text.length * 4, output: 0 },
           frozen: false,
-        }
-        setExchanges((prev) => [...prev, userExchange])
+        };
+        setExchanges((prev) => [...prev, userExchange]);
         // Note: DemoFooter clears inputText after calling onSubmit
 
         // Skip past any user entries in the script to find the next agent entry
-        let nextIdx = scriptIdx
+        let nextIdx = scriptIdx;
         while (nextIdx < script.length && script[nextIdx]!.role === "user") {
-          nextIdx++
+          nextIdx++;
         }
-        setScriptIdx(nextIdx)
+        setScriptIdx(nextIdx);
 
         // Continue with the next agent entry after a brief pause
-        setTimeout(() => advanceRef.current(), 150)
+        setTimeout(() => advanceRef.current(), 150);
       } else {
         // No text — just advance the script
-        advanceRef.current()
+        advanceRef.current();
       }
     },
     [streamPhase, skipStreaming, done, scriptIdx, script],
-  )
+  );
 
-  const lastCtrlDRef = useRef(0)
+  const lastCtrlDRef = useRef(0);
 
   useInput((input: string, key: Key) => {
-    if (key.escape) return "exit"
+    if (key.escape) return "exit";
     // Ctrl-D twice within 500ms exits
     if (key.ctrl && input === "d") {
-      const now = Date.now()
-      if (now - lastCtrlDRef.current < 500) return "exit"
-      lastCtrlDRef.current = now
-      return
+      const now = Date.now();
+      if (now - lastCtrlDRef.current < 500) return "exit";
+      lastCtrlDRef.current = now;
+      return;
     }
     if (key.tab) {
-      setAutoMode((m) => !m)
-      return
+      setAutoMode((m) => !m);
+      return;
     }
     if (key.ctrl && input === "l") {
-      compact()
-      return
+      compact();
+      return;
     }
-  })
+  });
 
   // Pulse animation for live icons
-  const [pulse, setPulse] = useState(false)
+  const [pulse, setPulse] = useState(false);
   useEffect(() => {
-    const timer = setInterval(() => setPulse((p) => !p), 800)
-    return () => clearInterval(timer)
-  }, [])
+    const timer = setInterval(() => setPulse((p) => !p), 800);
+    return () => clearInterval(timer);
+  }, []);
 
   // Count frozen for header display
-  const frozenCount = exchanges.filter((ex) => ex.frozen).length
+  const frozenCount = exchanges.filter((ex) => ex.frozen).length;
 
   return (
     <Box flexDirection="column" paddingX={1}>
@@ -1415,22 +1443,30 @@ function CodingAgent({
         }
       >
         {(exchange, index) => {
-          const isLatest = index === exchanges.length - 1
-          const prevRole = index > 0 ? exchanges[index - 1]!.role : null
-          const nextRole = index < exchanges.length - 1 ? exchanges[index + 1]!.role : null
-          const isFirstInGroup = exchange.role !== prevRole
-          const isLastInGroup = exchange.role !== nextRole
+          const isLatest = index === exchanges.length - 1;
+          const prevRole = index > 0 ? exchanges[index - 1]!.role : null;
+          const nextRole = index < exchanges.length - 1 ? exchanges[index + 1]!.role : null;
+          const isFirstInGroup = exchange.role !== prevRole;
+          const isLastInGroup = exchange.role !== nextRole;
 
           return (
             <Box flexDirection="column">
               {/* Compaction overlay */}
               {compacting && isLatest && (
-                <Box flexDirection="column" borderStyle="round" borderColor="$warning" paddingX={1} overflow="hidden">
+                <Box
+                  flexDirection="column"
+                  borderStyle="round"
+                  borderColor="$warning"
+                  paddingX={1}
+                  overflow="hidden"
+                >
                   <Text color="$warning" bold>
                     <Spinner type="arc" /> Compacting context
                   </Text>
                   <Text> </Text>
-                  <Text color="$muted">Freezing exchanges into terminal scrollback. Scroll up to review.</Text>
+                  <Text color="$muted">
+                    Freezing exchanges into terminal scrollback. Scroll up to review.
+                  </Text>
                 </Box>
               )}
 
@@ -1470,11 +1506,11 @@ function CodingAgent({
 
               {/* Input prompt moved to footer — see footer prop on ScrollbackList */}
             </Box>
-          )
+          );
         }}
       </ScrollbackList>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -1482,24 +1518,24 @@ function CodingAgent({
 // ============================================================================
 
 async function main() {
-  const args = process.argv.slice(2)
-  const isStress = args.includes("--stress")
-  const isAuto = args.includes("--auto")
-  const isFast = args.includes("--fast")
+  const args = process.argv.slice(2);
+  const isStress = args.includes("--stress");
+  const isAuto = args.includes("--auto");
+  const isFast = args.includes("--fast");
 
-  const script = isStress ? generateStressScript() : SCRIPT
+  const script = isStress ? generateStressScript() : SCRIPT;
 
   // NOTE: Inline mode may exhibit a "jump up" during frame transitions due to
   // cursor offset calculation in the output phase. The main fix was applied in
   // prior commits (simplify inline mode, fix cursor offset). If content still
   // jumps, investigate inlineFullRender() scrollbackOffset tracking.
-  const mode = args.includes("--fullscreen") ? "fullscreen" : "inline"
+  const mode = args.includes("--fullscreen") ? "fullscreen" : "inline";
   using handle = await run(<CodingAgent script={script} autoStart={isAuto} fastMode={isFast} />, {
     mode: mode as "inline" | "fullscreen",
-  })
-  await handle.waitUntilExit()
+  });
+  await handle.waitUntilExit();
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

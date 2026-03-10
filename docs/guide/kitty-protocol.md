@@ -139,7 +139,7 @@ Send the query sequence and check for a response:
 
 ```typescript
 // Query current keyboard mode
-stdout.write("\x1b[?u")
+stdout.write("\x1b[?u");
 
 // Terminal will respond with:
 // CSI ? flags u   (if supported)
@@ -152,29 +152,29 @@ stdout.write("\x1b[?u")
 async function detectKittyProtocol(stdin, stdout): Promise<boolean> {
   return new Promise((resolve) => {
     const timeout = setTimeout(() => {
-      cleanup()
-      resolve(false)
-    }, 100)
+      cleanup();
+      resolve(false);
+    }, 100);
 
     function onData(data: Buffer) {
-      const str = data.toString()
+      const str = data.toString();
       // Look for CSI ? <number> u response
       if (/\x1b\[\?\d+u/.test(str)) {
-        cleanup()
-        resolve(true)
+        cleanup();
+        resolve(true);
       }
     }
 
     function cleanup() {
-      clearTimeout(timeout)
-      stdin.removeListener("data", onData)
+      clearTimeout(timeout);
+      stdin.removeListener("data", onData);
     }
 
-    stdin.on("data", onData)
+    stdin.on("data", onData);
 
     // Query current mode, then query device attributes (fallback)
-    stdout.write("\x1b[?u\x1b[c")
-  })
+    stdout.write("\x1b[?u\x1b[c");
+  });
 }
 ```
 
@@ -193,13 +193,13 @@ If the terminal doesn't respond to `CSI ? u`, it will respond to `CSI c` (device
 Pass `kitty: true` to `run()` for auto-detection and graceful fallback:
 
 ```tsx
-import { run } from "@silvery/term/runtime"
+import { run } from "@silvery/term/runtime";
 
-await run(<App />, { kitty: true })
+await run(<App />, { kitty: true });
 
 // Or with specific flags:
-import { KittyFlags } from "silvery"
-await run(<App />, { kitty: KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS })
+import { KittyFlags } from "silvery";
+await run(<App />, { kitty: KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS });
 ```
 
 Silvery handles the full lifecycle: query support, enable on startup, disable on exit (including crash/SIGINT).
@@ -222,23 +222,23 @@ When the protocol is active, the `Key` object includes additional fields:
 ### Protocol Control Functions
 
 ```typescript
-import { enableKittyKeyboard, disableKittyKeyboard, queryKittyKeyboard, KittyFlags } from "silvery"
+import { enableKittyKeyboard, disableKittyKeyboard, queryKittyKeyboard, KittyFlags } from "silvery";
 
-enableKittyKeyboard(KittyFlags.DISAMBIGUATE) // CSI > flags u
-disableKittyKeyboard() // CSI < u (pop stack)
-queryKittyKeyboard() // CSI ? u (detect support)
+enableKittyKeyboard(KittyFlags.DISAMBIGUATE); // CSI > flags u
+disableKittyKeyboard(); // CSI < u (pop stack)
+queryKittyKeyboard(); // CSI ? u (detect support)
 ```
 
 ### Detection
 
 ```typescript
-import { detectKittySupport, detectKittyFromStdio } from "silvery"
+import { detectKittySupport, detectKittyFromStdio } from "silvery";
 
 // Low-level: send query, parse response
-const supported = await detectKittySupport(write, read, timeout)
+const supported = await detectKittySupport(write, read, timeout);
 
 // Convenience: detect using real stdio
-const supported = await detectKittyFromStdio(stdout, stdin, timeout)
+const supported = await detectKittyFromStdio(stdout, stdin, timeout);
 ```
 
 ## API Design Examples
@@ -246,7 +246,7 @@ const supported = await detectKittyFromStdio(stdout, stdin, timeout)
 ### Basic Usage (Auto-detection)
 
 ```tsx
-import { render, useInput } from "silvery"
+import { render, useInput } from "silvery";
 
 function App() {
   useInput((input, key) => {
@@ -257,46 +257,46 @@ function App() {
     if (key.ctrl && input === "i") {
       // User pressed Ctrl+I (NOT Tab!)
     }
-  })
+  });
 
-  return <Text>Tab and Ctrl+I are now different!</Text>
+  return <Text>Tab and Ctrl+I are now different!</Text>;
 }
 
 // Enable Kitty protocol (falls back gracefully)
-using term = createTerm()
-await render(<App />, { kittyKeyboard: true })
+using term = createTerm();
+await render(<App />, { kittyKeyboard: true });
 ```
 
 ### Key Release Events
 
 ```tsx
 function Game() {
-  const [isJumping, setIsJumping] = useState(false)
+  const [isJumping, setIsJumping] = useState(false);
 
   useInput((input, key) => {
     if (input === " ") {
       if (key.eventType === "press") {
-        setIsJumping(true)
+        setIsJumping(true);
       } else if (key.eventType === "release") {
-        setIsJumping(false)
+        setIsJumping(false);
       }
     }
-  })
+  });
 
-  return <Text>{isJumping ? "Jumping!" : "On ground"}</Text>
+  return <Text>{isJumping ? "Jumping!" : "On ground"}</Text>;
 }
 
-using term = createTerm()
+using term = createTerm();
 await render(<Game />, {
   kittyKeyboard: { reportRelease: true },
-})
+});
 ```
 
 ### Checking Protocol Support
 
 ```tsx
 function App() {
-  const rt = useRuntime()
+  const rt = useRuntime();
   // Kitty support is detected at runtime startup via detectKittyFromStdio()
   // The run() and createApp() runtimes handle this automatically with kitty: true
 
@@ -305,7 +305,7 @@ function App() {
       <Text>Kitty protocol: check terminal capabilities</Text>
       <Text dimColor>Tip: Use Kitty, WezTerm, or iTerm2 for enhanced keyboard support</Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -330,14 +330,14 @@ useInput((input, key) => {
   if (key.tab) {
     // Still works - might be Tab or Ctrl+I
   }
-})
+});
 
 // Enhanced code can check for disambiguation
 useInput((input, key) => {
   if (key.kittyProtocol) {
     // Can trust that Tab and Ctrl+I are distinct
   }
-})
+});
 ```
 
 ## Before/After Comparison
@@ -349,12 +349,12 @@ useInput((input, key) => {
   // PROBLEM: Cannot distinguish these
   if (key.tab) {
     // Could be Tab OR Ctrl+I - no way to know
-    handleIndent() // User wanted Ctrl+I for something else!
+    handleIndent(); // User wanted Ctrl+I for something else!
   }
 
   // PROBLEM: Cannot detect key release
   if (input === "w") {
-    moveForward() // Keeps triggering on repeat
+    moveForward(); // Keeps triggering on repeat
     // No way to know when user lifts finger
   }
 
@@ -363,7 +363,7 @@ useInput((input, key) => {
     // This is Alt+S, but user pressed Cmd+S
     // Cmd is intercepted by terminal
   }
-})
+});
 ```
 
 ### After (Kitty Protocol)
@@ -372,26 +372,26 @@ useInput((input, key) => {
 useInput((input, key) => {
   // SOLVED: Tab and Ctrl+I are distinct
   if (key.tab && !key.ctrl) {
-    handleIndent()
+    handleIndent();
   }
   if (key.ctrl && input === "i") {
-    showInfo() // Separate action!
+    showInfo(); // Separate action!
   }
 
   // SOLVED: Key release detection
   if (input === "w") {
     if (key.eventType === "press") {
-      startMovingForward()
+      startMovingForward();
     } else if (key.eventType === "release") {
-      stopMovingForward()
+      stopMovingForward();
     }
   }
 
   // SOLVED: Super modifier available (if terminal supports)
   if (key.super && input === "s") {
-    save() // Actually Cmd+S on macOS
+    save(); // Actually Cmd+S on macOS
   }
-})
+});
 ```
 
 ## Testing
@@ -399,19 +399,19 @@ useInput((input, key) => {
 Use `kittyMode: true` on `createRenderer` to route `press()` through Kitty encoding, and `keyToKittyAnsi()` to generate raw sequences:
 
 ```tsx
-import { createRenderer, keyToKittyAnsi } from "@silvery/test"
+import { createRenderer, keyToKittyAnsi } from "@silvery/test";
 
-const render = createRenderer({ cols: 80, rows: 24, kittyMode: true })
+const render = createRenderer({ cols: 80, rows: 24, kittyMode: true });
 
 test("Super+j triggers action", async () => {
-  const app = render(<App />)
-  await app.press("Super+j")
-  expect(app.text).toContain("action triggered")
-})
+  const app = render(<App />);
+  await app.press("Super+j");
+  expect(app.text).toContain("action triggered");
+});
 
 // Generate raw sequences for direct stdin writing
-keyToKittyAnsi("Super+j") // '\x1b[106;9u'
-keyToKittyAnsi("Meta+Enter") // '\x1b[13;3u'
+keyToKittyAnsi("Super+j"); // '\x1b[106;9u'
+keyToKittyAnsi("Meta+Enter"); // '\x1b[13;3u'
 ```
 
 ## References

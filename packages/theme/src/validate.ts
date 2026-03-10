@@ -2,14 +2,14 @@
  * Palette validation — checks ColorPalette fields and contrast.
  */
 
-import { hexToRgb } from "./color"
-import { COLOR_PALETTE_FIELDS, type ColorPalette } from "./types"
+import { hexToRgb } from "./color";
+import { COLOR_PALETTE_FIELDS, type ColorPalette } from "./types";
 
 /** Validation result from validateColorPalette(). */
 export interface ValidationResult {
-  valid: boolean
-  errors: string[]
-  warnings: string[]
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
 }
 
 /**
@@ -20,30 +20,30 @@ export interface ValidationResult {
  * - Warns on low-contrast foreground/background combinations
  */
 export function validateColorPalette(p: ColorPalette): ValidationResult {
-  const errors: string[] = []
-  const warnings: string[] = []
+  const errors: string[] = [];
+  const warnings: string[] = [];
 
   // Required color fields
   for (const field of COLOR_PALETTE_FIELDS) {
-    const val = p[field]
+    const val = p[field];
     if (!val || typeof val !== "string") {
-      errors.push(`${field} is required and must be a non-empty string`)
+      errors.push(`${field} is required and must be a non-empty string`);
     }
   }
 
   // Contrast warnings (only for hex colors)
   if (p.foreground && p.background) {
-    const fgRgb = hexToRgb(p.foreground)
-    const bgRgb = hexToRgb(p.background)
+    const fgRgb = hexToRgb(p.foreground);
+    const bgRgb = hexToRgb(p.background);
     if (fgRgb && bgRgb) {
-      const fgSum = fgRgb[0] + fgRgb[1] + fgRgb[2]
-      const bgSum = bgRgb[0] + bgRgb[1] + bgRgb[2]
-      const fgIsLight = fgSum > 384
-      const bgIsLight = bgSum > 384
+      const fgSum = fgRgb[0] + fgRgb[1] + fgRgb[2];
+      const bgSum = bgRgb[0] + bgRgb[1] + bgRgb[2];
+      const fgIsLight = fgSum > 384;
+      const bgIsLight = bgSum > 384;
       if (fgIsLight === bgIsLight) {
         warnings.push(
           `Low contrast: foreground (${p.foreground}) and background (${p.background}) have similar lightness`,
-        )
+        );
       }
     }
   }
@@ -52,5 +52,5 @@ export function validateColorPalette(p: ColorPalette): ValidationResult {
     valid: errors.length === 0,
     errors,
     warnings,
-  }
+  };
 }

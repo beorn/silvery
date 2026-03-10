@@ -15,7 +15,7 @@
  * Run: bun vendor/silvery/examples/kitty/rich-input.tsx
  */
 
-import React, { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react";
 import {
   render,
   Box,
@@ -34,22 +34,22 @@ import {
   detectKittyFromStdio,
   type Key,
   type ParsedMouse,
-} from "../../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+} from "../../src/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Mouse & Keys",
   description: "Combined keyboard + mouse input showcase with Kitty protocol",
   features: ["parseHotkey()", "parseMouseSequence()", "⌘ ⌥ ⌃ ⇧ ✦"],
-}
+};
 
-type Mode = "normal" | "insert"
+type Mode = "normal" | "insert";
 type EventEntry = {
-  index: number
-  type: "key" | "mouse"
-  summary: string
-  color?: string
-}
+  index: number;
+  type: "key" | "mouse";
+  summary: string;
+  color?: string;
+};
 
 // Keybinding definitions with macOS symbols
 const KEYBINDINGS = [
@@ -63,139 +63,139 @@ const KEYBINDINGS = [
   { hotkey: "⌘s", action: "Save (Kitty only)", mode: "both" as const },
   { hotkey: "✦⌘x", action: "Special action (Kitty only)", mode: "normal" as const },
   { hotkey: "q", action: "Quit", mode: "normal" as const },
-]
+];
 
-const ITEMS = ["Inbox", "Today", "Upcoming", "Projects", "Archive", "Trash"]
+const ITEMS = ["Inbox", "Today", "Upcoming", "Projects", "Archive", "Trash"];
 
 function RichInputDemo({ kittySupported }: { kittySupported: boolean }): JSX.Element {
-  const { exit } = useApp()
-  const stdin = process.stdin
-  const [mode, setMode] = useState<Mode>("normal")
-  const [cursor, setCursor] = useState(0)
-  const [events, setEvents] = useState<EventEntry[]>([])
-  const [insertText, setInsertText] = useState("")
-  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null)
-  const counterRef = useRef(0)
+  const { exit } = useApp();
+  const stdin = process.stdin;
+  const [mode, setMode] = useState<Mode>("normal");
+  const [cursor, setCursor] = useState(0);
+  const [events, setEvents] = useState<EventEntry[]>([]);
+  const [insertText, setInsertText] = useState("");
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const counterRef = useRef(0);
 
   // Enable mouse tracking
   useEffect(() => {
-    process.stdout.write(enableMouse())
+    process.stdout.write(enableMouse());
     return () => {
-      process.stdout.write(disableMouse())
-    }
-  }, [])
+      process.stdout.write(disableMouse());
+    };
+  }, []);
 
   function addEvent(type: "key" | "mouse", summary: string, color?: string) {
-    counterRef.current++
-    setEvents((prev) => [...prev.slice(-18), { index: counterRef.current, type, summary, color }])
+    counterRef.current++;
+    setEvents((prev) => [...prev.slice(-18), { index: counterRef.current, type, summary, color }]);
   }
 
   // Listen to raw stdin for mouse events + Kitty key details
   useEffect(() => {
     const onData = (data: Buffer) => {
-      const raw = data.toString()
+      const raw = data.toString();
 
       if (isMouseSequence(raw)) {
-        const parsed = parseMouseSequence(raw)
-        if (!parsed) return
+        const parsed = parseMouseSequence(raw);
+        if (!parsed) return;
 
-        setMousePos({ x: parsed.x, y: parsed.y })
+        setMousePos({ x: parsed.x, y: parsed.y });
 
-        const mods: string[] = []
-        if (parsed.ctrl) mods.push("⌃")
-        if (parsed.shift) mods.push("⇧")
-        if (parsed.meta) mods.push("⌥")
-        const modStr = mods.length > 0 ? mods.join("") + " " : ""
+        const mods: string[] = [];
+        if (parsed.ctrl) mods.push("⌃");
+        if (parsed.shift) mods.push("⇧");
+        if (parsed.meta) mods.push("⌥");
+        const modStr = mods.length > 0 ? mods.join("") + " " : "";
 
         if (parsed.action === "down") {
-          const btn = ["Left", "Middle", "Right"][parsed.button] ?? `Btn${parsed.button}`
-          addEvent("mouse", `${modStr}${btn} click at (${parsed.x},${parsed.y})`, "blue")
+          const btn = ["Left", "Middle", "Right"][parsed.button] ?? `Btn${parsed.button}`;
+          addEvent("mouse", `${modStr}${btn} click at (${parsed.x},${parsed.y})`, "blue");
         } else if (parsed.action === "wheel") {
           addEvent(
             "mouse",
             `${modStr}Scroll ${parsed.delta! < 0 ? "up" : "down"} at (${parsed.x},${parsed.y})`,
             "magenta",
-          )
+          );
         }
       }
-    }
+    };
 
-    stdin.on("data", onData)
+    stdin.on("data", onData);
     return () => {
-      stdin.off("data", onData)
-    }
-  }, [stdin])
+      stdin.off("data", onData);
+    };
+  }, [stdin]);
 
   useInput((input: string, key: Key) => {
     // Always: Ctrl+C or q (in normal mode) to quit
     if (key.ctrl && input === "c") {
-      addEvent("key", "⌃C  Quit", "red")
-      exit()
-      return
+      addEvent("key", "⌃C  Quit", "red");
+      exit();
+      return;
     }
 
     if (mode === "normal") {
       if (input === "q") {
-        addEvent("key", "q  Quit", "red")
-        exit()
-        return
+        addEvent("key", "q  Quit", "red");
+        exit();
+        return;
       }
       if (input === "i") {
-        setMode("insert")
-        setInsertText("")
-        addEvent("key", "i  Enter insert mode", "green")
-        return
+        setMode("insert");
+        setInsertText("");
+        addEvent("key", "i  Enter insert mode", "green");
+        return;
       }
       if (input === "j" || key.downArrow) {
-        setCursor((c) => Math.min(c + 1, ITEMS.length - 1))
-        addEvent("key", `${input === "j" ? "j" : "Arrow"}  Move down`)
-        return
+        setCursor((c) => Math.min(c + 1, ITEMS.length - 1));
+        addEvent("key", `${input === "j" ? "j" : "Arrow"}  Move down`);
+        return;
       }
       if (input === "k" || key.upArrow) {
-        setCursor((c) => Math.max(c - 1, 0))
-        addEvent("key", `${input === "k" ? "k" : "Arrow"}  Move up`)
-        return
+        setCursor((c) => Math.max(c - 1, 0));
+        addEvent("key", `${input === "k" ? "k" : "Arrow"}  Move up`);
+        return;
       }
       if (input === "J" && key.shift) {
-        addEvent("key", "⇧J  Move item down", "yellow")
-        return
+        addEvent("key", "⇧J  Move item down", "yellow");
+        return;
       }
       if (input === "K" && key.shift) {
-        addEvent("key", "⇧K  Move item up", "yellow")
-        return
+        addEvent("key", "⇧K  Move item up", "yellow");
+        return;
       }
       // Kitty-only: Super modifier
       if (key.super && input === "s") {
-        addEvent("key", "⌘S  Save", "green")
-        return
+        addEvent("key", "⌘S  Save", "green");
+        return;
       }
       if (key.hyper && key.super && input === "x") {
-        addEvent("key", "✦⌘X  Special action!", "magenta")
-        return
+        addEvent("key", "✦⌘X  Special action!", "magenta");
+        return;
       }
 
       // Log unhandled keys
       if (input && input >= " ") {
-        addEvent("key", `${input}  (unbound)`, "gray")
+        addEvent("key", `${input}  (unbound)`, "gray");
       }
     } else if (mode === "insert") {
       if (key.escape) {
-        setMode("normal")
-        addEvent("key", "Esc  Normal mode", "green")
-        return
+        setMode("normal");
+        addEvent("key", "Esc  Normal mode", "green");
+        return;
       }
       if (key.backspace) {
-        setInsertText((t) => t.slice(0, -1))
-        addEvent("key", "Backspace", "gray")
-        return
+        setInsertText((t) => t.slice(0, -1));
+        addEvent("key", "Backspace", "gray");
+        return;
       }
       if (input && input >= " ") {
-        setInsertText((t) => t + input)
-        addEvent("key", `'${input}'`, "gray")
-        return
+        setInsertText((t) => t + input);
+        addEvent("key", `'${input}'`, "gray");
+        return;
       }
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -208,7 +208,8 @@ function RichInputDemo({ kittySupported }: { kittySupported: boolean }): JSX.Ele
           </Text>
         </Text>
         <Text>
-          <Text bold>Kitty:</Text> {kittySupported ? <Text color="green">yes</Text> : <Text color="yellow">no</Text>}
+          <Text bold>Kitty:</Text>{" "}
+          {kittySupported ? <Text color="green">yes</Text> : <Text color="yellow">no</Text>}
         </Text>
         {mousePos && (
           <Text>
@@ -253,9 +254,9 @@ function RichInputDemo({ kittySupported }: { kittySupported: boolean }): JSX.Ele
               Keybindings
             </Text>
             {KEYBINDINGS.filter((kb) => kb.mode === "both" || kb.mode === mode).map((kb, i) => {
-              const parsed = parseHotkey(kb.hotkey)
-              const hotkeyDisplay = formatHotkey(kb.hotkey, parsed)
-              const needsKitty = kb.hotkey.includes("⌘") || kb.hotkey.includes("✦")
+              const parsed = parseHotkey(kb.hotkey);
+              const hotkeyDisplay = formatHotkey(kb.hotkey, parsed);
+              const needsKitty = kb.hotkey.includes("⌘") || kb.hotkey.includes("✦");
               return (
                 <Text key={i} dimColor={needsKitty && !kittySupported}>
                   <Text bold color="yellow">
@@ -264,7 +265,7 @@ function RichInputDemo({ kittySupported }: { kittySupported: boolean }): JSX.Ele
                   {kb.action}
                   {needsKitty && !kittySupported ? <Text dim> (needs Kitty)</Text> : ""}
                 </Text>
-              )
+              );
             })}
           </Box>
         </Box>
@@ -280,7 +281,9 @@ function RichInputDemo({ kittySupported }: { kittySupported: boolean }): JSX.Ele
           ) : (
             events.map((e, i) => (
               <Text key={i} dimColor={i < events.length - 1}>
-                <Text color={e.type === "key" ? "cyan" : "blue"}>{e.type === "key" ? "KEY" : "PTR"}</Text>{" "}
+                <Text color={e.type === "key" ? "cyan" : "blue"}>
+                  {e.type === "key" ? "KEY" : "PTR"}
+                </Text>{" "}
                 <Text color={(e.color ?? "white") as any}>{e.summary}</Text>
               </Text>
             ))
@@ -288,43 +291,43 @@ function RichInputDemo({ kittySupported }: { kittySupported: boolean }): JSX.Ele
         </Box>
       </Box>
     </Box>
-  )
+  );
 }
 
 function formatHotkey(raw: string, parsed: ReturnType<typeof parseHotkey>): string {
   // Use the raw string if it already uses symbols
-  if (/[⌘⌥⌃⇧✦]/.test(raw)) return raw
+  if (/[⌘⌥⌃⇧✦]/.test(raw)) return raw;
   // Otherwise build from parsed
-  const parts: string[] = []
-  if (parsed.ctrl) parts.push("⌃")
-  if (parsed.shift) parts.push("⇧")
-  if (parsed.alt) parts.push("⌥")
-  if (parsed.super) parts.push("⌘")
-  if (parsed.hyper) parts.push("✦")
-  parts.push(parsed.key)
-  return parts.join("")
+  const parts: string[] = [];
+  if (parsed.ctrl) parts.push("⌃");
+  if (parsed.shift) parts.push("⇧");
+  if (parsed.alt) parts.push("⌥");
+  if (parsed.super) parts.push("⌘");
+  if (parsed.hyper) parts.push("✦");
+  parts.push(parsed.key);
+  return parts.join("");
 }
 
 async function main() {
   const cleanup = () => {
-    const stdout = process.stdout
-    stdout.write("\x1b[?1003l\x1b[?1006l") // Disable mouse
-    stdout.write("\x1b[?25h") // Show cursor
-    stdout.write("\x1b[?1049l") // Exit alternate screen
-    stdout.write("\x1b[0m") // Reset colors
+    const stdout = process.stdout;
+    stdout.write("\x1b[?1003l\x1b[?1006l"); // Disable mouse
+    stdout.write("\x1b[?25h"); // Show cursor
+    stdout.write("\x1b[?1049l"); // Exit alternate screen
+    stdout.write("\x1b[0m"); // Reset colors
     if (process.stdin.isTTY && process.stdin.isRaw) {
       try {
-        process.stdin.setRawMode(false)
+        process.stdin.setRawMode(false);
       } catch {}
     }
-  }
+  };
   process.on("uncaughtException", (err) => {
-    cleanup()
-    throw err
-  })
+    cleanup();
+    throw err;
+  });
 
   // Detect Kitty support
-  const kittyResult = await detectKittyFromStdio(process.stdout, process.stdin)
+  const kittyResult = await detectKittyFromStdio(process.stdout, process.stdin);
 
   // Enable Kitty with full flags if supported
   if (kittyResult.supported) {
@@ -333,39 +336,39 @@ async function main() {
       KittyFlags.REPORT_EVENTS |
       KittyFlags.REPORT_ALTERNATE |
       KittyFlags.REPORT_ALL_KEYS |
-      KittyFlags.REPORT_TEXT
-    process.stdout.write(enableKittyKeyboard(flags))
+      KittyFlags.REPORT_TEXT;
+    process.stdout.write(enableKittyKeyboard(flags));
   }
 
-  using term = createTerm()
+  using term = createTerm();
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="i insert  Esc normal  j/k navigate  q quit">
       <RichInputDemo kittySupported={kittyResult.supported} />
     </ExampleBanner>,
     term,
-  )
-  await waitUntilExit()
+  );
+  await waitUntilExit();
 
   // Cleanup
   if (kittyResult.supported) {
-    process.stdout.write(disableKittyKeyboard())
+    process.stdout.write(disableKittyKeyboard());
   }
 }
 
 if (import.meta.main) {
   main().catch((err) => {
     // Restore terminal on crash
-    const stdout = process.stdout
-    stdout.write("\x1b[?1003l\x1b[?1006l") // Disable mouse
-    stdout.write("\x1b[?25h") // Show cursor
-    stdout.write("\x1b[?1049l") // Exit alternate screen
-    stdout.write("\x1b[0m") // Reset colors
+    const stdout = process.stdout;
+    stdout.write("\x1b[?1003l\x1b[?1006l"); // Disable mouse
+    stdout.write("\x1b[?25h"); // Show cursor
+    stdout.write("\x1b[?1049l"); // Exit alternate screen
+    stdout.write("\x1b[0m"); // Reset colors
     if (process.stdin.isTTY && process.stdin.isRaw) {
       try {
-        process.stdin.setRawMode(false)
+        process.stdin.setRawMode(false);
       } catch {}
     }
-    console.error(err)
-    process.exit(1)
-  })
+    console.error(err);
+    process.exit(1);
+  });
 }

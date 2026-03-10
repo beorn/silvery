@@ -50,23 +50,23 @@ Both are React renderers at the core. The rendering architecture is the primary 
 
 ### Rendering Architecture
 
-| Feature                     | Silvery                                                                              | Ink                                                                                                                                        |
-| --------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Responsive layout**       | `useContentRect()` / `useScreenRect()` -- synchronous, available during render       | `useBoxMetrics()` -- post-layout via `useEffect`, returns 0x0 until first measure                                                          |
-| **Incremental rendering**   | Per-node dirty tracking with 7 independent flags; cell-level buffer diff             | Line-based diff (opt-in since v6.5.0); unchanged lines skipped, but any change rewrites entire line                                        |
-| **ANSI compositing**        | Cell-level buffer with proper style stacking; ANSI sequences composed, not passed through | String concatenation; ANSI sequences emitted inline, no compositing layer                                                                 |
-| **Scrollable containers**   | `overflow="scroll"` with `scrollTo` -- framework handles measurement and clipping    | `overflow` supports `visible` and `hidden` only; scrolling requires manual virtualization                                                  |
-| **Dynamic scrollback**      | `useScrollback` -- items graduate from interactive area to terminal history (like Claude Code needs) | None -- all items must stay in the render tree                                                                                 |
-| **Text truncation**         | Automatic, ANSI-aware; text clips at Box boundaries                                  | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                              |
-| **CSS/W3C alignment**       | Flexbox defaults match W3C spec (`flexDirection: row`); `outlineStyle` (CSS outline, no layout impact) | Non-standard defaults (`flexDirection: column`); no outline                                                                   |
-| **Layout engines**          | [Flexily](https://beorn.github.io/flexily) (7 KB, pure JS) or Yoga WASM -- pluggable | Yoga WASM only (`yoga-layout` v3)                                                                                                          |
-| **Render targets**          | Terminal, Canvas 2D, DOM (experimental)                                              | Terminal only                                                                                                                              |
-| **Native dependencies**     | None -- pure TypeScript                                                              | Yoga WASM binary blob (no native compilation, but not pure JS)                                                                             |
-| **Memory profile**          | Constant -- Flexily uses normal JS GC                                                | Yoga WASM uses a linear memory heap that can grow over long sessions ([discussion](https://github.com/anthropics/claude-code/issues/4953)) |
-| **Layout caching**          | Flexily fingerprints + caches unchanged subtrees                                     | Full tree recomputation on every layout pass                                                                                               |
-| **Synchronized output**     | DEC synchronized output (mode 2026) for flicker-free rendering in tmux/Zellij        | None                                                                                                                                       |
-| **Bracketed paste**         | `usePaste` hook with automatic mode toggling                                         | None                                                                                                                                       |
-| **Initialization**          | Synchronous -- pure TypeScript import                                                | Async WASM loading                                                                                                                         |
+| Feature                   | Silvery                                                                                                | Ink                                                                                                                                        |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Responsive layout**     | `useContentRect()` / `useScreenRect()` -- synchronous, available during render                         | `useBoxMetrics()` -- post-layout via `useEffect`, returns 0x0 until first measure                                                          |
+| **Incremental rendering** | Per-node dirty tracking with 7 independent flags; cell-level buffer diff                               | Line-based diff (opt-in since v6.5.0); unchanged lines skipped, but any change rewrites entire line                                        |
+| **ANSI compositing**      | Cell-level buffer with proper style stacking; ANSI sequences composed, not passed through              | String concatenation; ANSI sequences emitted inline, no compositing layer                                                                  |
+| **Scrollable containers** | `overflow="scroll"` with `scrollTo` -- framework handles measurement and clipping                      | `overflow` supports `visible` and `hidden` only; scrolling requires manual virtualization                                                  |
+| **Dynamic scrollback**    | `useScrollback` -- items graduate from interactive area to terminal history (like Claude Code needs)   | None -- all items must stay in the render tree                                                                                             |
+| **Text truncation**       | Automatic, ANSI-aware; text clips at Box boundaries                                                    | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                              |
+| **CSS/W3C alignment**     | Flexbox defaults match W3C spec (`flexDirection: row`); `outlineStyle` (CSS outline, no layout impact) | Non-standard defaults (`flexDirection: column`); no outline                                                                                |
+| **Layout engines**        | [Flexily](https://beorn.github.io/flexily) (7 KB, pure JS) or Yoga WASM -- pluggable                   | Yoga WASM only (`yoga-layout` v3)                                                                                                          |
+| **Render targets**        | Terminal, Canvas 2D, DOM (experimental)                                                                | Terminal only                                                                                                                              |
+| **Native dependencies**   | None -- pure TypeScript                                                                                | Yoga WASM binary blob (no native compilation, but not pure JS)                                                                             |
+| **Memory profile**        | Constant -- Flexily uses normal JS GC                                                                  | Yoga WASM uses a linear memory heap that can grow over long sessions ([discussion](https://github.com/anthropics/claude-code/issues/4953)) |
+| **Layout caching**        | Flexily fingerprints + caches unchanged subtrees                                                       | Full tree recomputation on every layout pass                                                                                               |
+| **Synchronized output**   | DEC synchronized output (mode 2026) for flicker-free rendering in tmux/Zellij                          | None                                                                                                                                       |
+| **Bracketed paste**       | `usePaste` hook with automatic mode toggling                                                           | None                                                                                                                                       |
+| **Initialization**        | Synchronous -- pure TypeScript import                                                                  | Async WASM loading                                                                                                                         |
 
 ### Interaction Model
 
@@ -86,23 +86,23 @@ Both are React renderers at the core. The rendering architecture is the primary 
 
 ### Developer Experience
 
-| Feature                 | Silvery                                                                                                                                                   | Ink                                                                    |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| **Component library**   | 30+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Spinner, ProgressBar, Image, SplitView, etc.) | 5 built-in (Box, Text, Static, Newline, Spacer) + 50+ third-party      |
-| **TEA state machines**  | Built-in `@silvery/tea`: pure `(action, state) -> [state, effects]` reducers with replay, undo, and serializable actions | None -- React hooks only (Zustand/Redux usable via React, but no TEA integration) |
-| **Plugin composition**  | `withCommands` / `withKeybindings` / `withDiagnostics` / `withRender`                                                                                     | None                                                                   |
-| **Testing**             | Built-in `@silvery/test`: `createRenderer` + Playwright-style auto-locators, buffer assertions, visual snapshots | `ink-testing-library` (third-party)                                    |
-| **Render invariants**   | `withDiagnostics` -- verifies incremental render matches fresh render                                                                                     | None                                                                   |
-| **Screenshots**         | `bufferToHTML()` + Playwright -- programmatic visual capture                                                                                              | None                                                                   |
-| **Theme system**        | `@silvery/theme` with 38 built-in palettes, semantic color tokens, auto-detection                                                                         | None (manual chalk styling)                                            |
-| **Unicode utilities**   | Built-in: 28+ functions for grapheme splitting, display width, CJK detection, ANSI-aware truncation                                                       | Third-party: `string-width`, `cli-truncate`, `wrap-ansi`, `slice-ansi` |
-| **Console capture**     | Built-in `<Console />` component (composable, embeddable)                                                                                                 | `patchConsole()` (intercept-only)                                      |
-| **Resource cleanup**    | `using` / Disposable -- automatic teardown                                                                                                                | Manual `unmount()`                                                     |
-| **Stream helpers**      | AsyncIterable: merge, map, filter, throttle, debounce                                                                                                     | None                                                                   |
-| **Animation**           | `useAnimation`, easing functions, `useAnimatedTransition`                                                                                                 | None (manual `setInterval`)                                            |
-| **Non-TTY detection**   | `isTTY()`, `resolveNonTTYMode()`, `renderString()` fallback                                                                                               | Terminal size detection for piped processes (v6.7.0)                   |
-| **Terminal inspection** | `SILVERY_DEV=1` inspector with tree visualization, dirty flags, focus path                                                                                | React DevTools integration                                             |
-| **Community**           | New                                                                                                                                                       | Mature ecosystem, ~1.3M npm weekly downloads                           |
+| Feature                 | Silvery                                                                                                                                                   | Ink                                                                               |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| **Component library**   | 30+ built-in (VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Toast, Spinner, ProgressBar, Image, SplitView, etc.) | 5 built-in (Box, Text, Static, Newline, Spacer) + 50+ third-party                 |
+| **TEA state machines**  | Built-in `@silvery/tea`: pure `(action, state) -> [state, effects]` reducers with replay, undo, and serializable actions                                  | None -- React hooks only (Zustand/Redux usable via React, but no TEA integration) |
+| **Plugin composition**  | `withCommands` / `withKeybindings` / `withDiagnostics` / `withRender`                                                                                     | None                                                                              |
+| **Testing**             | Built-in `@silvery/test`: `createRenderer` + Playwright-style auto-locators, buffer assertions, visual snapshots                                          | `ink-testing-library` (third-party)                                               |
+| **Render invariants**   | `withDiagnostics` -- verifies incremental render matches fresh render                                                                                     | None                                                                              |
+| **Screenshots**         | `bufferToHTML()` + Playwright -- programmatic visual capture                                                                                              | None                                                                              |
+| **Theme system**        | `@silvery/theme` with 38 built-in palettes, semantic color tokens, auto-detection                                                                         | None (manual chalk styling)                                                       |
+| **Unicode utilities**   | Built-in: 28+ functions for grapheme splitting, display width, CJK detection, ANSI-aware truncation                                                       | Third-party: `string-width`, `cli-truncate`, `wrap-ansi`, `slice-ansi`            |
+| **Console capture**     | Built-in `<Console />` component (composable, embeddable)                                                                                                 | `patchConsole()` (intercept-only)                                                 |
+| **Resource cleanup**    | `using` / Disposable -- automatic teardown                                                                                                                | Manual `unmount()`                                                                |
+| **Stream helpers**      | AsyncIterable: merge, map, filter, throttle, debounce                                                                                                     | None                                                                              |
+| **Animation**           | `useAnimation`, easing functions, `useAnimatedTransition`                                                                                                 | None (manual `setInterval`)                                                       |
+| **Non-TTY detection**   | `isTTY()`, `resolveNonTTYMode()`, `renderString()` fallback                                                                                               | Terminal size detection for piped processes (v6.7.0)                              |
+| **Terminal inspection** | `SILVERY_DEV=1` inspector with tree visualization, dirty flags, focus path                                                                                | React DevTools integration                                                        |
+| **Community**           | New                                                                                                                                                       | Mature ecosystem, ~1.3M npm weekly downloads                                      |
 
 ---
 
@@ -137,25 +137,25 @@ The core architectural difference. Ink renders components, then runs Yoga layout
 ```tsx
 // Ink: useBoxMetrics returns 0x0 on first render, updates via effect
 function Card() {
-  const ref = useRef(null)
-  const { width, hasMeasured } = useBoxMetrics(ref)
+  const ref = useRef(null);
+  const { width, hasMeasured } = useBoxMetrics(ref);
   if (!hasMeasured)
     return (
       <Box ref={ref}>
         <Text>Loading...</Text>
       </Box>
-    )
+    );
   return (
     <Box ref={ref}>
       <Text>{truncate(title, width)}</Text>
     </Box>
-  )
+  );
 }
 
 // Silvery: useContentRect returns actual dimensions immediately
 function Card() {
-  const { width } = useContentRect()
-  return <Text>{truncate(title, width)}</Text>
+  const { width } = useContentRect();
+  return <Text>{truncate(title, width)}</Text>;
 }
 ```
 
@@ -219,7 +219,11 @@ Silvery implements SGR mouse protocol (mode 1006) with DOM-style event handling:
 
 ```tsx
 // Silvery: DOM-style mouse events
-<Box onClick={(e) => selectItem(e.target)} onMouseDown={(e) => startDrag(e)} onWheel={(e) => scroll(e.deltaY)}>
+<Box
+  onClick={(e) => selectItem(e.target)}
+  onMouseDown={(e) => startDrag(e)}
+  onWheel={(e) => scroll(e.deltaY)}
+>
   <Text>Click me</Text>
 </Box>
 ```
@@ -252,69 +256,69 @@ Silvery implements a comprehensive set of terminal protocols. This matters for c
 
 ### Escape Sequences
 
-| Category | Protocol | Silvery | Ink |
-| --- | --- | --- | --- |
-| **SGR Styling** | 16/256/Truecolor, bold, italic, dim, underline, strikethrough, inverse | Full | Full |
-| **Extended Underlines** | ISO 8613-6: single, double, curly, dotted, dashed + underline color (SGR 58/59) | Full | None |
-| **Cursor Control** | CUP, CUU/D/F/B, EL, ED, DECSCUSR (block/underline/bar cursors) | Full | Partial |
-| **Scroll Regions** | DECSTBM (set/reset), SU/SD (scroll up/down) | Full | None |
+| Category                | Protocol                                                                        | Silvery | Ink     |
+| ----------------------- | ------------------------------------------------------------------------------- | ------- | ------- |
+| **SGR Styling**         | 16/256/Truecolor, bold, italic, dim, underline, strikethrough, inverse          | Full    | Full    |
+| **Extended Underlines** | ISO 8613-6: single, double, curly, dotted, dashed + underline color (SGR 58/59) | Full    | None    |
+| **Cursor Control**      | CUP, CUU/D/F/B, EL, ED, DECSCUSR (block/underline/bar cursors)                  | Full    | Partial |
+| **Scroll Regions**      | DECSTBM (set/reset), SU/SD (scroll up/down)                                     | Full    | None    |
 
 ### DEC Private Modes
 
-| Mode | What | Silvery | Ink |
-| --- | --- | --- | --- |
-| 25 (DECTCEM) | Cursor visibility | Yes | Yes |
-| 1000 (X10) | Basic mouse tracking | Yes | No |
-| 1002 | Button event tracking (press + drag) | Yes | No |
-| 1004 | Focus in/out reporting | Yes | No |
-| 1006 (SGR) | Extended mouse protocol (large coordinates) | Yes | No |
-| 1049 | Alternate screen buffer | Yes | Yes |
-| 2004 | Bracketed paste mode | Yes | No |
-| 2026 | Synchronized output (flicker-free) | Yes | No |
-| DECRPM | Mode query (`CSI ? mode $ p`) | Yes | No |
+| Mode         | What                                        | Silvery | Ink |
+| ------------ | ------------------------------------------- | ------- | --- |
+| 25 (DECTCEM) | Cursor visibility                           | Yes     | Yes |
+| 1000 (X10)   | Basic mouse tracking                        | Yes     | No  |
+| 1002         | Button event tracking (press + drag)        | Yes     | No  |
+| 1004         | Focus in/out reporting                      | Yes     | No  |
+| 1006 (SGR)   | Extended mouse protocol (large coordinates) | Yes     | No  |
+| 1049         | Alternate screen buffer                     | Yes     | Yes |
+| 2004         | Bracketed paste mode                        | Yes     | No  |
+| 2026         | Synchronized output (flicker-free)          | Yes     | No  |
+| DECRPM       | Mode query (`CSI ? mode $ p`)               | Yes     | No  |
 
 ### OSC Sequences
 
-| OSC | What | Silvery | Ink |
-| --- | --- | --- | --- |
-| 0/2 | Window title | Yes | No |
-| 4 | Palette color query/set | Yes | No |
-| 7 | Directory reporting (shell integration) | Yes | No |
-| 8 | Hyperlinks (clickable URLs) | Yes | No |
-| 9 | iTerm2 notifications | Yes | No |
-| 22 | Mouse cursor shape (pointer, text, crosshair, etc.) | Yes | No |
-| 52 | Clipboard access (copy/paste over SSH) | Yes | No |
-| 66 | Text sizing protocol (Kitty v0.40+, Ghostty) | Yes | No |
-| 99 | Kitty notifications | Yes | No |
-| 133 | Semantic prompt markers (shell integration) | Yes | No |
+| OSC | What                                                | Silvery | Ink |
+| --- | --------------------------------------------------- | ------- | --- |
+| 0/2 | Window title                                        | Yes     | No  |
+| 4   | Palette color query/set                             | Yes     | No  |
+| 7   | Directory reporting (shell integration)             | Yes     | No  |
+| 8   | Hyperlinks (clickable URLs)                         | Yes     | No  |
+| 9   | iTerm2 notifications                                | Yes     | No  |
+| 22  | Mouse cursor shape (pointer, text, crosshair, etc.) | Yes     | No  |
+| 52  | Clipboard access (copy/paste over SSH)              | Yes     | No  |
+| 66  | Text sizing protocol (Kitty v0.40+, Ghostty)        | Yes     | No  |
+| 99  | Kitty notifications                                 | Yes     | No  |
+| 133 | Semantic prompt markers (shell integration)         | Yes     | No  |
 
 ### Keyboard & Input
 
-| Protocol | What | Silvery | Ink |
-| --- | --- | --- | --- |
-| Kitty keyboard | All 5 flags (disambiguate, events, alternate, all keys, text) | Full | None [^5] |
-| Modifier detection | Shift, Alt, Ctrl, Super/Cmd, Hyper, CapsLock, NumLock | Full | Basic |
-| Key event types | Press, repeat, release | Full | Press only |
-| Bracketed paste | `usePaste` hook with auto-enable | Full | None |
-| Focus reporting | Focus in/out events | Full | None |
+| Protocol           | What                                                          | Silvery | Ink        |
+| ------------------ | ------------------------------------------------------------- | ------- | ---------- |
+| Kitty keyboard     | All 5 flags (disambiguate, events, alternate, all keys, text) | Full    | None [^5]  |
+| Modifier detection | Shift, Alt, Ctrl, Super/Cmd, Hyper, CapsLock, NumLock         | Full    | Basic      |
+| Key event types    | Press, repeat, release                                        | Full    | Press only |
+| Bracketed paste    | `usePaste` hook with auto-enable                              | Full    | None       |
+| Focus reporting    | Focus in/out events                                           | Full    | None       |
 
 ### Graphics
 
-| Protocol | What | Silvery | Ink |
-| --- | --- | --- | --- |
-| Kitty graphics | PNG transmission with chunking, ID-based management | Full | None |
-| Sixel | RGBA-to-Sixel encoder with color quantization | Full | None |
-| Auto-detect | Try Kitty, fall back to Sixel, fall back to text placeholder | Yes | N/A |
+| Protocol       | What                                                         | Silvery | Ink  |
+| -------------- | ------------------------------------------------------------ | ------- | ---- |
+| Kitty graphics | PNG transmission with chunking, ID-based management          | Full    | None |
+| Sixel          | RGBA-to-Sixel encoder with color quantization                | Full    | None |
+| Auto-detect    | Try Kitty, fall back to Sixel, fall back to text placeholder | Yes     | N/A  |
 
 ### Terminal Queries
 
-| Query | What | Silvery | Ink |
-| --- | --- | --- | --- |
-| CPR (DSR 6) | Cursor position | Yes | No |
-| CSI 14t | Pixel dimensions | Yes | No |
-| CSI 18t | Text area size (rows/cols) | Yes | No |
-| DA1/DA2/DA3 | Device attributes | Yes | No |
-| XTVERSION | Terminal identification | Yes | No |
+| Query       | What                       | Silvery | Ink |
+| ----------- | -------------------------- | ------- | --- |
+| CPR (DSR 6) | Cursor position            | Yes     | No  |
+| CSI 14t     | Pixel dimensions           | Yes     | No  |
+| CSI 18t     | Text area size (rows/cols) | Yes     | No  |
+| DA1/DA2/DA3 | Device attributes          | Yes     | No  |
+| XTVERSION   | Terminal identification    | Yes     | No  |
 
 Silvery uses these queries at startup for capability detection — automatically enabling Kitty keyboard, SGR mouse, synchronized output, and other features based on what the terminal supports.
 

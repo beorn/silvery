@@ -13,9 +13,9 @@ export const measureStats = {
   textCollects: 0,
   displayWidthCalls: 0,
   reset() {
-    this.calls = 0
-    this.cacheHits = 0
-    this.textCollects = 0
-    this.displayWidthCalls = 0
+    this.calls = 0;
+    this.cacheHits = 0;
+    this.textCollects = 0;
+    this.displayWidthCalls = 0;
   },
-}
+};

@@ -17,9 +17,9 @@
  *   q/Escape        - Quit
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from "react"
-import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
+import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   render,
   renderStatic,
@@ -36,24 +36,24 @@ import {
   createTerm,
   type Key,
   type Theme,
-} from "../src/index.js"
+} from "../src/index.js";
 
 // =============================================================================
 // Auto-Discovery
 // =============================================================================
 
 interface Example {
-  name: string
-  file: string
-  description: string
-  category: string
+  name: string;
+  file: string;
+  description: string;
+  category: string;
   /** Export name of the main component (enables live preview) */
-  component?: string
+  component?: string;
   /** API features showcased */
-  features?: string[]
+  features?: string[];
 }
 
-const CATEGORY_DIRS = ["layout", "interactive", "runtime", "inline", "kitty"] as const
+const CATEGORY_DIRS = ["layout", "interactive", "runtime", "inline", "kitty"] as const;
 
 const CATEGORY_ORDER: Record<string, number> = {
   Layout: 0,
@@ -61,7 +61,7 @@ const CATEGORY_ORDER: Record<string, number> = {
   Runtime: 2,
   Inline: 3,
   "Kitty Protocol": 4,
-}
+};
 
 const CATEGORY_COLOR: Record<string, string> = {
   Layout: "magenta",
@@ -69,31 +69,31 @@ const CATEGORY_COLOR: Record<string, string> = {
   Runtime: "green",
   Inline: "yellow",
   "Kitty Protocol": "blue",
-}
+};
 
 async function discoverExamples(): Promise<Example[]> {
-  const baseDir = new URL(".", import.meta.url).pathname
-  const results: Example[] = []
+  const baseDir = new URL(".", import.meta.url).pathname;
+  const results: Example[] = [];
 
-  const CATEGORY_DISPLAY: Record<string, string> = { kitty: "Kitty Protocol" }
+  const CATEGORY_DISPLAY: Record<string, string> = { kitty: "Kitty Protocol" };
 
   for (const dir of CATEGORY_DIRS) {
-    const category = CATEGORY_DISPLAY[dir] ?? dir.charAt(0).toUpperCase() + dir.slice(1)
-    const glob = new Bun.Glob("*.tsx")
-    const dirPath = resolve(baseDir, dir)
+    const category = CATEGORY_DISPLAY[dir] ?? dir.charAt(0).toUpperCase() + dir.slice(1);
+    const glob = new Bun.Glob("*.tsx");
+    const dirPath = resolve(baseDir, dir);
 
     for (const file of glob.scanSync({ cwd: dirPath })) {
       try {
-        const mod = await import(resolve(dirPath, file))
-        if (!mod.meta?.name) continue
+        const mod = await import(resolve(dirPath, file));
+        if (!mod.meta?.name) continue;
 
         // Find first exported function that isn't meta or default
-        let component: string | undefined
+        let component: string | undefined;
         for (const [key, value] of Object.entries(mod)) {
-          if (key === "meta" || key === "default") continue
+          if (key === "meta" || key === "default") continue;
           if (typeof value === "function") {
-            component = key
-            break
+            component = key;
+            break;
           }
         }
 
@@ -104,7 +104,7 @@ async function discoverExamples(): Promise<Example[]> {
           category,
           component,
           features: mod.meta.features,
-        })
+        });
       } catch {
         // Skip files that fail to import
       }
@@ -112,12 +112,12 @@ async function discoverExamples(): Promise<Example[]> {
   }
 
   results.sort((a, b) => {
-    const catDiff = (CATEGORY_ORDER[a.category] ?? 99) - (CATEGORY_ORDER[b.category] ?? 99)
-    if (catDiff !== 0) return catDiff
-    return a.name.localeCompare(b.name)
-  })
+    const catDiff = (CATEGORY_ORDER[a.category] ?? 99) - (CATEGORY_ORDER[b.category] ?? 99);
+    if (catDiff !== 0) return catDiff;
+    return a.name.localeCompare(b.name);
+  });
 
-  return results
+  return results;
 }
 
 // =============================================================================
@@ -163,7 +163,7 @@ const KEYWORDS = new Set([
   "in",
   "as",
   "using",
-])
+]);
 
 const REACT_KEYWORDS = new Set([
   "useState",
@@ -176,84 +176,96 @@ const REACT_KEYWORDS = new Set([
   "useTerm",
   "useContentRect",
   "useScrollback",
-])
+]);
 
 function highlightLine(line: string): React.ReactNode {
-  if (line.trimStart().startsWith("//") || line.trimStart().startsWith("*") || line.trimStart().startsWith("/*")) {
+  if (
+    line.trimStart().startsWith("//") ||
+    line.trimStart().startsWith("*") ||
+    line.trimStart().startsWith("/*")
+  ) {
     return (
       <Text dim color="gray">
         {line}
       </Text>
-    )
+    );
   }
 
-  const parts: React.ReactNode[] = []
+  const parts: React.ReactNode[] = [];
   const regex =
-    /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(<\/?[A-Z]\w*)|(\b[a-zA-Z_]\w*\b)|(\s+)|([^\s"'`<\w]+)/g
-  let match: RegExpExecArray | null
-  let i = 0
+    /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(<\/?[A-Z]\w*)|(\b[a-zA-Z_]\w*\b)|(\s+)|([^\s"'`<\w]+)/g;
+  let match: RegExpExecArray | null;
+  let i = 0;
 
   while ((match = regex.exec(line)) !== null) {
-    const [full, str, jsxTag, word] = match
+    const [full, str, jsxTag, word] = match;
     if (str) {
       parts.push(
         <Text key={i++} color="green">
           {str}
         </Text>,
-      )
+      );
     } else if (jsxTag) {
       parts.push(
         <Text key={i++} color="cyan">
           {jsxTag}
         </Text>,
-      )
+      );
     } else if (word && KEYWORDS.has(word)) {
       parts.push(
         <Text key={i++} color="magenta" bold>
           {word}
         </Text>,
-      )
+      );
     } else if (word && REACT_KEYWORDS.has(word)) {
       parts.push(
         <Text key={i++} color="yellow">
           {word}
         </Text>,
-      )
+      );
     } else {
-      parts.push(<Text key={i++}>{full}</Text>)
+      parts.push(<Text key={i++}>{full}</Text>);
     }
   }
 
-  return parts.length > 0 ? <>{parts}</> : <Text>{line}</Text>
+  return parts.length > 0 ? <>{parts}</> : <Text>{line}</Text>;
 }
 
 // =============================================================================
 // Components
 // =============================================================================
 
-function Sidebar({ examples, cursor, theme }: { examples: Example[]; cursor: number; theme: Theme }) {
+function Sidebar({
+  examples,
+  cursor,
+  theme,
+}: {
+  examples: Example[];
+  cursor: number;
+  theme: Theme;
+}) {
   const { groups, scrollToChild } = useMemo(() => {
     const result: {
-      category: string
-      items: { example: Example; globalIdx: number }[]
-    }[] = []
-    let currentCat = ""
-    let childIdx = 0
-    let targetChild = 0
+      category: string;
+      items: { example: Example; globalIdx: number }[];
+    }[] = [];
+    let currentCat = "";
+    let childIdx = 0;
+    let targetChild = 0;
 
     for (let i = 0; i < examples.length; i++) {
-      const ex = examples[i]!
+      const ex = examples[i]!;
       if (ex.category !== currentCat) {
-        currentCat = ex.category
-        result.push({ category: currentCat, items: [] })
-        childIdx++
+        currentCat = ex.category;
+        result.push({ category: currentCat, items: [] });
+        childIdx++;
       }
-      if (i === cursor) targetChild = childIdx
-      result[result.length - 1]!.items.push({ example: ex, globalIdx: i })
-      childIdx++
+      if (i === cursor) targetChild = childIdx;
+      result[result.length - 1]!.items.push({ example: ex, globalIdx: i });
+      childIdx++;
     }
-    return { groups: result, scrollToChild: targetChild }
-  }, [examples, cursor])
+    return { groups: result, scrollToChild: targetChild };
+  }, [examples, cursor]);
 
   return (
     <Box
@@ -272,76 +284,83 @@ function Sidebar({ examples, cursor, theme }: { examples: Example[]; cursor: num
             </Text>
           </Box>
           {group.items.map(({ example, globalIdx }) => {
-            const selected = globalIdx === cursor
+            const selected = globalIdx === cursor;
             return (
-              <Box key={example.name} paddingX={1} backgroundColor={selected ? "$primary" : undefined}>
+              <Box
+                key={example.name}
+                paddingX={1}
+                backgroundColor={selected ? "$primary" : undefined}
+              >
                 <Text color={selected ? "$text" : "$text"} bold={selected} wrap="truncate">
                   {selected ? "\u25B8 " : "  "}
                   {example.name}
                 </Text>
               </Box>
-            )
+            );
           })}
         </React.Fragment>
       ))}
     </Box>
-  )
+  );
 }
 
 /** Pad content lines to fill the full height — prevents stale pixel artifacts
  *  from the incremental renderer when switching between previews of different heights. */
 function padLines(contentLines: string[], totalHeight: number): string[] {
-  if (contentLines.length >= totalHeight) return contentLines.slice(0, totalHeight)
-  return [...contentLines, ...Array<string>(totalHeight - contentLines.length).fill("")]
+  if (contentLines.length >= totalHeight) return contentLines.slice(0, totalHeight);
+  return [...contentLines, ...Array<string>(totalHeight - contentLines.length).fill("")];
 }
 
 function Preview({ example, theme }: { example: Example; theme: Theme }) {
-  const { width, height } = useContentRect()
-  const [lines, setLines] = useState<string[] | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const { width, height } = useContentRect();
+  const [lines, setLines] = useState<string[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLines(null)
-    setError(null)
+    setLines(null);
+    setError(null);
 
     if (!example.component) {
-      setError("no-component")
-      return
+      setError("no-component");
+      return;
     }
 
     // Wait for layout dimensions
-    if (width === 0 || height === 0) return
+    if (width === 0 || height === 0) return;
 
-    let cancelled = false
-    const path = new URL(example.file, import.meta.url).pathname
+    let cancelled = false;
+    const path = new URL(example.file, import.meta.url).pathname;
 
     import(path)
       .then(async (mod: Record<string, unknown>) => {
-        if (cancelled) return
-        const Comp = mod[example.component!] as React.ComponentType | undefined
+        if (cancelled) return;
+        const Comp = mod[example.component!] as React.ComponentType | undefined;
         if (!Comp) {
-          setError(`Export "${example.component}" not found`)
-          return
+          setError(`Export "${example.component}" not found`);
+          return;
         }
 
         // Render in sandboxed static mode — useInput becomes a no-op,
         // useApp gets a stub exit(), no terminal needed.
         // Wrap in ThemeProvider so previews pick up the active theme.
-        const output = await renderStatic(React.createElement(ThemeProvider, { theme }, React.createElement(Comp)), {
-          width,
-          height,
-        })
-        if (!cancelled) setLines(output.split("\n"))
-        return undefined
+        const output = await renderStatic(
+          React.createElement(ThemeProvider, { theme }, React.createElement(Comp)),
+          {
+            width,
+            height,
+          },
+        );
+        if (!cancelled) setLines(output.split("\n"));
+        return undefined;
       })
       .catch((e: Error) => {
-        if (!cancelled) setError(e.message || String(e))
-      })
+        if (!cancelled) setError(e.message || String(e));
+      });
 
     return () => {
-      cancelled = true
-    }
-  }, [example.file, example.component, width, height])
+      cancelled = true;
+    };
+  }, [example.file, example.component, width, height]);
 
   // All paths pad to full height to clear stale pixels from prior previews
   const renderLines = (contentLines: string[]) => (
@@ -352,32 +371,36 @@ function Preview({ example, theme }: { example: Example; theme: Theme }) {
         </Text>
       ))}
     </Box>
-  )
+  );
 
   if (error === "no-component") {
-    return renderLines(["", " No live preview — uses non-React API.", " Press Enter to run standalone."])
+    return renderLines([
+      "",
+      " No live preview — uses non-React API.",
+      " Press Enter to run standalone.",
+    ]);
   }
 
   if (error) {
-    return renderLines(["", ` Error: ${error}`])
+    return renderLines(["", ` Error: ${error}`]);
   }
 
   if (!lines) {
-    return renderLines(["", " Loading preview..."])
+    return renderLines(["", " Loading preview..."]);
   }
 
-  return renderLines(lines)
+  return renderLines(lines);
 }
 
 function SourceCode({ example }: { example: Example }) {
   const lines = useMemo(() => {
     try {
-      const path = new URL(example.file, import.meta.url).pathname
-      return readFileSync(path, "utf-8").split("\n")
+      const path = new URL(example.file, import.meta.url).pathname;
+      return readFileSync(path, "utf-8").split("\n");
     } catch {
-      return ["// Could not load file"]
+      return ["// Could not load file"];
     }
-  }, [example.file])
+  }, [example.file]);
 
   return (
     <Box flexDirection="column" flexGrow={1} paddingX={1}>
@@ -390,71 +413,71 @@ function SourceCode({ example }: { example: Example }) {
         </Text>
       ))}
     </Box>
-  )
+  );
 }
 
-const THEME_NAMES = Object.keys(builtinThemes)
+const THEME_NAMES = Object.keys(builtinThemes);
 
 function Viewer({ examples }: { examples: Example[] }) {
-  const { exit } = useApp()
-  const [cursor, setCursor] = useState(0)
-  const [tab, setTab] = useState<"view" | "source">("view")
-  const [running, setRunning] = useState<string | null>(null)
-  const [themeIdx, setThemeIdx] = useState(THEME_NAMES.indexOf("ansi16-dark"))
+  const { exit } = useApp();
+  const [cursor, setCursor] = useState(0);
+  const [tab, setTab] = useState<"view" | "source">("view");
+  const [running, setRunning] = useState<string | null>(null);
+  const [themeIdx, setThemeIdx] = useState(THEME_NAMES.indexOf("ansi16-dark"));
 
-  const theme = builtinThemes[THEME_NAMES[themeIdx]!]!
-  const maxCursor = examples.length - 1
-  const selected = examples[cursor]!
+  const theme = builtinThemes[THEME_NAMES[themeIdx]!]!;
+  const maxCursor = examples.length - 1;
+  const selected = examples[cursor]!;
 
   const runExample = useCallback(
     (idx: number) => {
-      const example = examples[idx]
-      if (!example) return
-      setRunning(example.name)
-      exit()
+      const example = examples[idx];
+      if (!example) return;
+      setRunning(example.name);
+      exit();
 
-      const file = new URL(example.file, import.meta.url).pathname
+      const file = new URL(example.file, import.meta.url).pathname;
       const proc = Bun.spawn(["bun", "run", file], {
         stdio: ["inherit", "inherit", "inherit"],
         env: { ...process.env, SILVERY_THEME: theme.name },
-      })
-      void proc.exited.then(() => process.exit(0))
+      });
+      void proc.exited.then(() => process.exit(0));
     },
     [examples, exit, theme.name],
-  )
+  );
 
   useInput((input: string, key: Key) => {
-    if (running) return
+    if (running) return;
 
     if (input === "q" || key.escape) {
-      exit()
-      return
+      exit();
+      return;
     }
 
     if (key.tab) {
-      setTab((t) => (t === "view" ? "source" : "view"))
-      return
+      setTab((t) => (t === "view" ? "source" : "view"));
+      return;
     }
 
     if (key.downArrow || input === "j") {
-      setCursor((prev) => Math.min(maxCursor, prev + 1))
+      setCursor((prev) => Math.min(maxCursor, prev + 1));
     }
     if (key.upArrow || input === "k") {
-      setCursor((prev) => Math.max(0, prev - 1))
+      setCursor((prev) => Math.max(0, prev - 1));
     }
     if (key.home || input === "g") {
-      setCursor(0)
+      setCursor(0);
     }
     if (key.end || input === "G") {
-      setCursor(maxCursor)
+      setCursor(maxCursor);
     }
     if (key.return) {
-      runExample(cursor)
+      runExample(cursor);
     }
     if (input === "t") {
-      setThemeIdx((i) => (i + 1) % THEME_NAMES.length)
+      setThemeIdx((i) => (i + 1) % THEME_NAMES.length);
     }
-  })
+  });
 
   if (running) {
     return (
@@ -463,10 +486,11 @@ function Viewer({ examples }: { examples: Example[] }) {
           <Text color="$muted">Launching {running}...</Text>
         </Box>
       </ThemeProvider>
-    )
+    );
   }
 
-  const runLabel = selected.category === "Inline" || selected.category === "Runtime" ? "run" : "run interactive"
+  const runLabel =
+    selected.category === "Inline" || selected.category === "Runtime" ? "run" : "run interactive";
 
   return (
     <ThemeProvider theme={theme}>
@@ -494,7 +518,13 @@ function Viewer({ examples }: { examples: Example[] }) {
           <Sidebar examples={examples} cursor={cursor} theme={theme} />
 
           {/* Content area with tabs */}
-          <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" overflow="hidden">
+          <Box
+            flexDirection="column"
+            flexGrow={1}
+            borderStyle="round"
+            borderColor="$border"
+            overflow="hidden"
+          >
             {/* Info banner */}
             <Box paddingX={1} flexDirection="column">
               <Text wrap="truncate">
@@ -537,13 +567,14 @@ function Viewer({ examples }: { examples: Example[] }) {
         {/* Bottom bar */}
         <Box paddingX={1}>
           <Text color="$muted">
-            <Text bold>j</Text>/<Text bold>k</Text> navigate <Text bold>Tab</Text> {tab === "view" ? "source" : "view"}{" "}
-            <Text bold>Enter</Text> {runLabel} <Text bold>t</Text> theme <Text bold>q</Text> quit
+            <Text bold>j</Text>/<Text bold>k</Text> navigate <Text bold>Tab</Text>{" "}
+            {tab === "view" ? "source" : "view"} <Text bold>Enter</Text> {runLabel}{" "}
+            <Text bold>t</Text> theme <Text bold>q</Text> quit
           </Text>
         </Box>
       </Box>
     </ThemeProvider>
-  )
+  );
 }
 
 // =============================================================================
@@ -551,11 +582,11 @@ function Viewer({ examples }: { examples: Example[] }) {
 // =============================================================================
 
 async function main() {
-  const examples = await discoverExamples()
+  const examples = await discoverExamples();
 
-  using term = createTerm()
-  const { waitUntilExit } = await render(<Viewer examples={examples} />, term)
-  await waitUntilExit()
+  using term = createTerm();
+  const { waitUntilExit } = await render(<Viewer examples={examples} />, term);
+  await waitUntilExit();
 }
 
-main().catch(console.error)
+main().catch(console.error);

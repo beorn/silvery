@@ -5,8 +5,8 @@
  * Uses character cells as units, ANSI codes for styling.
  */
 
-import { type Color, TerminalBuffer } from "../buffer"
-import { outputPhase } from "../pipeline/output-phase"
+import { type Color, TerminalBuffer } from "../buffer";
+import { outputPhase } from "../pipeline/output-phase";
 import type {
   BorderChars,
   RenderAdapter,
@@ -15,8 +15,8 @@ import type {
   TextMeasureResult,
   TextMeasureStyle,
   TextMeasurer,
-} from "../render-adapter"
-import { type Measurer, displayWidth } from "../unicode"
+} from "../render-adapter";
+import { type Measurer, displayWidth } from "../unicode";
 
 // ============================================================================
 // Border Characters
@@ -79,7 +79,7 @@ const BORDER_CHARS: Record<string, BorderChars> = {
     horizontal: "-",
     vertical: "|",
   },
-}
+};
 
 // ============================================================================
 // Terminal Measurer
@@ -87,19 +87,19 @@ const BORDER_CHARS: Record<string, BorderChars> = {
 
 /** Create a terminal text measurer, optionally using an explicit width measurer. */
 export function createTerminalMeasurer(measurer?: Measurer): TextMeasurer {
-  const dw = measurer ? measurer.displayWidth.bind(measurer) : displayWidth
+  const dw = measurer ? measurer.displayWidth.bind(measurer) : displayWidth;
   return {
     measureText(text: string, _style?: TextMeasureStyle): TextMeasureResult {
-      return { width: dw(text), height: 1 }
+      return { width: dw(text), height: 1 };
     },
     getLineHeight(_style?: TextMeasureStyle): number {
-      return 1
+      return 1;
     },
-  }
+  };
 }
 
 /** Default terminal measurer (uses module-level displayWidth / scoped measurer). */
-export const terminalMeasurer: TextMeasurer = createTerminalMeasurer()
+export const terminalMeasurer: TextMeasurer = createTerminalMeasurer();
 
 // ============================================================================
 // Terminal Render Buffer
@@ -109,54 +109,54 @@ export const terminalMeasurer: TextMeasurer = createTerminalMeasurer()
  * Wraps TerminalBuffer to implement the RenderBuffer interface.
  */
 export class TerminalRenderBuffer implements RenderBuffer {
-  private buffer: TerminalBuffer
-  private dw: (text: string) => number
+  private buffer: TerminalBuffer;
+  private dw: (text: string) => number;
 
   constructor(width: number, height: number, measurer?: Measurer) {
-    this.buffer = new TerminalBuffer(width, height)
-    this.dw = measurer ? measurer.displayWidth.bind(measurer) : displayWidth
+    this.buffer = new TerminalBuffer(width, height);
+    this.dw = measurer ? measurer.displayWidth.bind(measurer) : displayWidth;
   }
 
   get width(): number {
-    return this.buffer.width
+    return this.buffer.width;
   }
 
   get height(): number {
-    return this.buffer.height
+    return this.buffer.height;
   }
 
   /**
    * Get the underlying TerminalBuffer for output phase.
    */
   getTerminalBuffer(): TerminalBuffer {
-    return this.buffer
+    return this.buffer;
   }
 
   fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void {
-    const cellStyle = this.convertStyle(style)
+    const cellStyle = this.convertStyle(style);
     for (let row = y; row < y + height; row++) {
       for (let col = x; col < x + width; col++) {
         if (this.buffer.inBounds(col, row)) {
           this.buffer.setCell(col, row, {
             char: " ",
             ...cellStyle,
-          })
+          });
         }
       }
     }
   }
 
   drawText(x: number, y: number, text: string, style: RenderStyle): void {
-    const cellStyle = this.convertStyle(style)
-    let col = x
+    const cellStyle = this.convertStyle(style);
+    let col = x;
     for (const char of text) {
-      if (!this.buffer.inBounds(col, y)) break
-      const charWidth = this.dw(char)
+      if (!this.buffer.inBounds(col, y)) break;
+      const charWidth = this.dw(char);
       this.buffer.setCell(col, y, {
         char,
         ...cellStyle,
         wide: charWidth > 1,
-      })
+      });
       // Mark continuation cells for wide characters
       for (let i = 1; i < charWidth; i++) {
         if (this.buffer.inBounds(col + i, y)) {
@@ -164,10 +164,10 @@ export class TerminalRenderBuffer implements RenderBuffer {
             char: "",
             ...cellStyle,
             continuation: true,
-          })
+          });
         }
       }
-      col += charWidth
+      col += charWidth;
     }
   }
 
@@ -176,27 +176,27 @@ export class TerminalRenderBuffer implements RenderBuffer {
       this.buffer.setCell(x, y, {
         char,
         ...this.convertStyle(style),
-      })
+      });
     }
   }
 
   inBounds(x: number, y: number): boolean {
-    return this.buffer.inBounds(x, y)
+    return this.buffer.inBounds(x, y);
   }
 
   private convertStyle(style: RenderStyle): {
-    fg: Color
-    bg: Color
-    underlineColor: Color
+    fg: Color;
+    bg: Color;
+    underlineColor: Color;
     attrs: {
-      bold?: boolean
-      dim?: boolean
-      italic?: boolean
-      underline?: boolean
-      underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed" | false
-      strikethrough?: boolean
-      inverse?: boolean
-    }
+      bold?: boolean;
+      dim?: boolean;
+      italic?: boolean;
+      underline?: boolean;
+      underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed" | false;
+      strikethrough?: boolean;
+      inverse?: boolean;
+    };
   } {
     return {
       fg: this.parseColor(style.fg),
@@ -211,42 +211,42 @@ export class TerminalRenderBuffer implements RenderBuffer {
         strikethrough: style.attrs?.strikethrough,
         inverse: style.attrs?.inverse,
       },
-    }
+    };
   }
 
   /**
    * Parse a color string to the Color type used by TerminalBuffer.
    */
   private parseColor(color: string | undefined): Color {
-    if (!color) return null
+    if (!color) return null;
 
     // Hex color
     if (color.startsWith("#")) {
-      const hex = color.slice(1)
+      const hex = color.slice(1);
       if (hex.length === 6) {
         return {
           r: Number.parseInt(hex.slice(0, 2), 16),
           g: Number.parseInt(hex.slice(2, 4), 16),
           b: Number.parseInt(hex.slice(4, 6), 16),
-        }
+        };
       }
       if (hex.length === 3) {
         return {
           r: Number.parseInt(hex[0]! + hex[0]!, 16),
           g: Number.parseInt(hex[1]! + hex[1]!, 16),
           b: Number.parseInt(hex[2]! + hex[2]!, 16),
-        }
+        };
       }
     }
 
     // RGB color
-    const rgbMatch = color.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/)
+    const rgbMatch = color.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
     if (rgbMatch) {
       return {
         r: Number.parseInt(rgbMatch[1]!, 10),
         g: Number.parseInt(rgbMatch[2]!, 10),
         b: Number.parseInt(rgbMatch[3]!, 10),
-      }
+      };
     }
 
     // Named ANSI colors - map to 256-color indices
@@ -269,15 +269,15 @@ export class TerminalRenderBuffer implements RenderBuffer {
       brightmagenta: 13,
       brightcyan: 14,
       brightwhite: 15,
-    }
+    };
 
-    const normalized = color.toLowerCase().replace(/[^a-z]/g, "")
-    const index = namedColors[normalized]
+    const normalized = color.toLowerCase().replace(/[^a-z]/g, "");
+    const index = namedColors[normalized];
     if (index !== undefined) {
-      return index
+      return index;
     }
 
-    return null
+    return null;
   }
 }
 
@@ -290,16 +290,18 @@ export const terminalAdapter: RenderAdapter = {
   measurer: terminalMeasurer,
 
   createBuffer(width: number, height: number): RenderBuffer {
-    return new TerminalRenderBuffer(width, height)
+    return new TerminalRenderBuffer(width, height);
   },
 
   flush(buffer: RenderBuffer, prevBuffer: RenderBuffer | null): string {
-    const termBuffer = (buffer as TerminalRenderBuffer).getTerminalBuffer()
-    const prevTermBuffer = prevBuffer ? (prevBuffer as TerminalRenderBuffer).getTerminalBuffer() : null
-    return outputPhase(prevTermBuffer, termBuffer)
+    const termBuffer = (buffer as TerminalRenderBuffer).getTerminalBuffer();
+    const prevTermBuffer = prevBuffer
+      ? (prevBuffer as TerminalRenderBuffer).getTerminalBuffer()
+      : null;
+    return outputPhase(prevTermBuffer, termBuffer);
   },
 
   getBorderChars(style: string): BorderChars {
-    return BORDER_CHARS[style] ?? BORDER_CHARS.single!
+    return BORDER_CHARS[style] ?? BORDER_CHARS.single!;
   },
-}
+};

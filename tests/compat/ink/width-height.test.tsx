@@ -2,14 +2,14 @@
  * Ink compat test: width-height (from ink/test/width-height.tsx)
  * Skips tests that use Ink's render() with {stdout, debug} options (incompatible API)
  */
-import React from "react"
-import { test, expect, beforeAll } from "vitest"
-import { Box, Text } from "../../../packages/compat/src/ink"
-import { renderToString, renderToStringAsync, initLayoutEngine } from "./helpers/render-to-string"
+import React from "react";
+import { test, expect, beforeAll } from "vitest";
+import { Box, Text } from "../../../packages/compat/src/ink";
+import { renderToString, renderToStringAsync, initLayoutEngine } from "./helpers/render-to-string";
 
 beforeAll(async () => {
-  await initLayoutEngine()
-})
+  await initLayoutEngine();
+});
 
 test("set width", () => {
   const output = renderToString(
@@ -19,9 +19,9 @@ test("set width", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A    B")
-})
+  );
+  expect(output).toBe("A    B");
+});
 
 test("set width in percent", () => {
   const output = renderToString(
@@ -31,9 +31,9 @@ test("set width in percent", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A    B")
-})
+  );
+  expect(output).toBe("A    B");
+});
 
 test("set min width", () => {
   const smallerOutput = renderToString(
@@ -43,8 +43,8 @@ test("set min width", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(smallerOutput).toBe("A    B")
+  );
+  expect(smallerOutput).toBe("A    B");
 
   const largerOutput = renderToString(
     <Box>
@@ -53,9 +53,9 @@ test("set min width", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(largerOutput).toBe("AAAAAB")
-})
+  );
+  expect(largerOutput).toBe("AAAAAB");
+});
 
 test("set height", () => {
   const output = renderToString(
@@ -63,9 +63,9 @@ test("set height", () => {
       <Text>A</Text>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("AB\n\n\n")
-})
+  );
+  expect(output).toBe("AB\n\n\n");
+});
 
 test("set height in percent", () => {
   const output = renderToString(
@@ -75,9 +75,9 @@ test("set height in percent", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A\n\n\nB\n\n")
-})
+  );
+  expect(output).toBe("A\n\n\nB\n\n");
+});
 
 test("cut text over the set height", () => {
   const output = renderToString(
@@ -85,17 +85,17 @@ test("cut text over the set height", () => {
       <Text>AAAABBBBCCCC</Text>
     </Box>,
     { columns: 4 },
-  )
-  expect(output).toBe("AAAA\nBBBB")
-})
+  );
+  expect(output).toBe("AAAA\nBBBB");
+});
 
 test("set min height", () => {
   const smallerOutput = renderToString(
     <Box minHeight={4}>
       <Text>A</Text>
     </Box>,
-  )
-  expect(smallerOutput).toBe("A\n\n\n")
+  );
+  expect(smallerOutput).toBe("A\n\n\n");
 
   const largerOutput = renderToString(
     <Box minHeight={2}>
@@ -103,9 +103,9 @@ test("set min height", () => {
         <Text>A</Text>
       </Box>
     </Box>,
-  )
-  expect(largerOutput).toBe("A\n\n\n")
-})
+  );
+  expect(largerOutput).toBe("A\n\n\n");
+});
 
 test("set min height in percent", () => {
   const output = renderToString(
@@ -115,9 +115,9 @@ test("set min height in percent", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A\n\n\nB\n\n")
-})
+  );
+  expect(output).toBe("A\n\n\nB\n\n");
+});
 
 test("set max width", () => {
   const constrainedOutput = renderToString(
@@ -128,8 +128,8 @@ test("set max width", () => {
       <Text>B</Text>
     </Box>,
     { columns: 10 },
-  )
-  expect(constrainedOutput).toBe("AAAB\nAA")
+  );
+  expect(constrainedOutput).toBe("AAAB\nAA");
 
   const unconstrainedOutput = renderToString(
     <Box>
@@ -138,9 +138,9 @@ test("set max width", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(unconstrainedOutput).toBe("AAAB")
-})
+  );
+  expect(unconstrainedOutput).toBe("AAAB");
+});
 
 test("set max height", () => {
   const constrainedOutput = renderToString(
@@ -149,16 +149,16 @@ test("set max height", () => {
         <Text>A</Text>
       </Box>
     </Box>,
-  )
-  expect(constrainedOutput).toBe("A\n")
+  );
+  expect(constrainedOutput).toBe("A\n");
 
   const unconstrainedOutput = renderToString(
     <Box maxHeight={4}>
       <Text>A</Text>
     </Box>,
-  )
-  expect(unconstrainedOutput).toBe("A")
-})
+  );
+  expect(unconstrainedOutput).toBe("A");
+});
 
 test("set max height in percent", () => {
   const output = renderToString(
@@ -170,9 +170,9 @@ test("set max height in percent", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A\n\n\nB\n\n")
-})
+  );
+  expect(output).toBe("A\n\n\nB\n\n");
+});
 
 test("set width - async", async () => {
   const output = await renderToStringAsync(
@@ -182,9 +182,9 @@ test("set width - async", async () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A    B")
-})
+  );
+  expect(output).toBe("A    B");
+});
 
 test("set height - async", async () => {
   const output = await renderToStringAsync(
@@ -192,6 +192,6 @@ test("set height - async", async () => {
       <Text>A</Text>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("AB\n\n\n")
-})
+  );
+  expect(output).toBe("AB\n\n\n");
+});

@@ -17,35 +17,35 @@
  *   Esc/q - Quit
  */
 
-import React from "react"
-import { Box, Text } from "../../src/index.js"
-import { createApp, useApp } from "../../src/runtime/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+import React from "react";
+import { Box, Text } from "../../src/index.js";
+import { createApp, useApp } from "../../src/runtime/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Todo App",
   description: "Layer 3: createApp() with Zustand store for shared state",
   features: ["createApp()", "Zustand store", "useApp()"],
-}
+};
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface Todo {
-  id: number
-  text: string
-  completed: boolean
+  id: number;
+  text: string;
+  completed: boolean;
 }
 
 interface State {
-  todos: Todo[]
-  cursor: number
-  nextId: number
-  addTodo: (text: string) => void
-  toggleTodo: () => void
-  deleteTodo: () => void
-  moveCursor: (delta: number) => void
+  todos: Todo[];
+  cursor: number;
+  nextId: number;
+  addTodo: (text: string) => void;
+  toggleTodo: () => void;
+  deleteTodo: () => void;
+  moveCursor: (delta: number) => void;
 }
 
 // ============================================================================
@@ -76,11 +76,11 @@ const app = createApp<Record<string, unknown>, State>(
 
     deleteTodo: () =>
       set((s) => {
-        const newTodos = s.todos.filter((_, i) => i !== s.cursor)
+        const newTodos = s.todos.filter((_, i) => i !== s.cursor);
         return {
           todos: newTodos,
           cursor: Math.min(s.cursor, newTodos.length - 1),
-        }
+        };
       }),
 
     moveCursor: (delta: number) =>
@@ -93,33 +93,33 @@ const app = createApp<Record<string, unknown>, State>(
   {
     "term:key": (data: unknown, { get }: { get: () => State }) => {
       const { input: k, key } = data as {
-        input: string
-        key: { escape: boolean }
-      }
-      const state = get()
-      if (key.escape) return "exit"
+        input: string;
+        key: { escape: boolean };
+      };
+      const state = get();
+      if (key.escape) return "exit";
       switch (k) {
         case "j":
-          state.moveCursor(1)
-          break
+          state.moveCursor(1);
+          break;
         case "k":
-          state.moveCursor(-1)
-          break
+          state.moveCursor(-1);
+          break;
         case "x":
-          state.toggleTodo()
-          break
+          state.toggleTodo();
+          break;
         case "d":
-          if (state.todos.length > 0) state.deleteTodo()
-          break
+          if (state.todos.length > 0) state.deleteTodo();
+          break;
         case "a":
-          state.addTodo(`New todo ${state.nextId}`)
-          break
+          state.addTodo(`New todo ${state.nextId}`);
+          break;
         case "q":
-          return "exit"
+          return "exit";
       }
     },
   },
-)
+);
 
 // ============================================================================
 // Components
@@ -133,12 +133,12 @@ function TodoItem({ todo, isCursor }: { todo: Todo; isCursor: boolean }) {
         {todo.completed ? "✓" : "○"} {todo.text}
       </Text>
     </Box>
-  )
+  );
 }
 
 function TodoList() {
-  const todos = useApp((s: State) => s.todos)
-  const cursor = useApp((s: State) => s.cursor)
+  const todos = useApp((s: State) => s.todos);
+  const cursor = useApp((s: State) => s.cursor);
 
   return (
     <Box flexDirection="column">
@@ -147,7 +147,7 @@ function TodoList() {
       ))}
       {todos.length === 0 && <Text dimColor>No todos. Press 'a' to add one.</Text>}
     </Box>
-  )
+  );
 }
 
 function App() {
@@ -157,7 +157,7 @@ function App() {
       <Text> </Text>
       <Text dimColor>j/k: move • x: toggle • a: add • d: delete • Esc/q: quit</Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -169,13 +169,13 @@ async function main() {
     <ExampleBanner meta={meta} controls="j/k move  x toggle  a add  d delete  Esc/q quit">
       <App />
     </ExampleBanner>,
-  )
+  );
 
-  await handle.waitUntilExit()
+  await handle.waitUntilExit();
 
-  console.log("\nFinal state:", handle.store.getState().todos.length, "todos")
+  console.log("\nFinal state:", handle.store.getState().todos.length, "todos");
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

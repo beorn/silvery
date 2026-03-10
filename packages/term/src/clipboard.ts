@@ -12,8 +12,8 @@
  * Supported by: Ghostty, Kitty, WezTerm, iTerm2, xterm, foot, tmux
  */
 
-const ESC = "\x1b"
-const BEL = "\x07"
+const ESC = "\x1b";
+const BEL = "\x07";
 
 // ============================================================================
 // Clipboard Operations
@@ -24,8 +24,8 @@ const BEL = "\x07"
  * Encodes the text as base64 and writes the OSC 52 sequence to stdout.
  */
 export function copyToClipboard(stdout: NodeJS.WriteStream, text: string): void {
-  const base64 = Buffer.from(text).toString("base64")
-  stdout.write(`${ESC}]52;c;${base64}${BEL}`)
+  const base64 = Buffer.from(text).toString("base64");
+  stdout.write(`${ESC}]52;c;${base64}${BEL}`);
 }
 
 /**
@@ -35,7 +35,7 @@ export function copyToClipboard(stdout: NodeJS.WriteStream, text: string): void 
  * Use parseClipboardResponse() to decode the response.
  */
 export function requestClipboard(stdout: NodeJS.WriteStream): void {
-  stdout.write(`${ESC}]52;c;?${BEL}`)
+  stdout.write(`${ESC}]52;c;?${BEL}`);
 }
 
 // ============================================================================
@@ -43,7 +43,7 @@ export function requestClipboard(stdout: NodeJS.WriteStream): void {
 // ============================================================================
 
 /** OSC 52 response prefix */
-const OSC52_PREFIX = `${ESC}]52;c;`
+const OSC52_PREFIX = `${ESC}]52;c;`;
 
 /**
  * Parse an OSC 52 clipboard response and decode the base64 content.
@@ -54,21 +54,21 @@ const OSC52_PREFIX = `${ESC}]52;c;`
  * Handles both BEL (\x07) and ST (ESC \) terminators.
  */
 export function parseClipboardResponse(input: string): string | null {
-  const prefixIdx = input.indexOf(OSC52_PREFIX)
-  if (prefixIdx === -1) return null
+  const prefixIdx = input.indexOf(OSC52_PREFIX);
+  if (prefixIdx === -1) return null;
 
-  const contentStart = prefixIdx + OSC52_PREFIX.length
+  const contentStart = prefixIdx + OSC52_PREFIX.length;
 
   // Reject the query marker — it's not a response
-  if (input[contentStart] === "?") return null
+  if (input[contentStart] === "?") return null;
 
   // Find terminator: BEL (\x07) or ST (ESC \)
-  let contentEnd = input.indexOf(BEL, contentStart)
+  let contentEnd = input.indexOf(BEL, contentStart);
   if (contentEnd === -1) {
-    contentEnd = input.indexOf(`${ESC}\\`, contentStart)
+    contentEnd = input.indexOf(`${ESC}\\`, contentStart);
   }
-  if (contentEnd === -1) return null
+  if (contentEnd === -1) return null;
 
-  const base64 = input.slice(contentStart, contentEnd)
-  return Buffer.from(base64, "base64").toString("utf-8")
+  const base64 = input.slice(contentStart, contentEnd);
+  return Buffer.from(base64, "base64").toString("utf-8");
 }

@@ -4,7 +4,7 @@
  * Wraps components with the same context hierarchy as the real renderer,
  * allowing examples that use useInput, useApp, etc. to work in the viewer.
  */
-import { EventEmitter } from "events"
+import { EventEmitter } from "events";
 
 // Placeholder for future example bridging
 // Real implementation would provide:
@@ -13,14 +13,14 @@ import { EventEmitter } from "events"
 // - FocusManagerContext for focus system
 
 export interface ExampleHost {
-  inputEmitter: EventEmitter
-  destroy: () => void
+  inputEmitter: EventEmitter;
+  destroy: () => void;
 }
 
 export function createExampleHost(): ExampleHost {
-  const inputEmitter = new EventEmitter()
+  const inputEmitter = new EventEmitter();
   return {
     inputEmitter,
     destroy: () => inputEmitter.removeAllListeners(),
-  }
+  };
 }

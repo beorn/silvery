@@ -36,10 +36,10 @@ The Canvas adapter renders Silvery components to an HTML5 Canvas element. This e
 - Pixel-perfect rendering without DOM layout overhead
 
 ```tsx
-import { render } from "silvery/canvas"
+import { render } from "silvery/canvas";
 
-const canvas = document.getElementById("app") as HTMLCanvasElement
-render(<App />, canvas)
+const canvas = document.getElementById("app") as HTMLCanvasElement;
+render(<App />, canvas);
 ```
 
 ## DOM
@@ -51,10 +51,10 @@ The DOM adapter renders Silvery components as standard HTML elements. This bridg
 - Useful for web-based terminal emulators and admin panels
 
 ```tsx
-import { render } from "silvery/dom"
+import { render } from "silvery/dom";
 
-const root = document.getElementById("app")!
-render(<App />, root)
+const root = document.getElementById("app")!;
+render(<App />, root);
 ```
 
 ## Beyond React

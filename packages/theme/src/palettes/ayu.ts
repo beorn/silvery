@@ -4,8 +4,8 @@
  * Reference: https://github.com/Shatur/neovim-ayu
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Ayu Dark — deep dark variant with warm accents. */
 export const ayuDark: ColorPalette = {
@@ -33,7 +33,7 @@ export const ayuDark: ColorPalette = {
   cursorText: "#0B0E14",
   selectionBackground: "#565B66",
   selectionForeground: "#BFBDB6",
-}
+};
 
 /** Ayu Mirage — balanced dark variant with softer contrast. */
 export const ayuMirage: ColorPalette = {
@@ -61,7 +61,7 @@ export const ayuMirage: ColorPalette = {
   cursorText: "#1F2430",
   selectionBackground: "#707A8C",
   selectionForeground: "#CCCAC2",
-}
+};
 
 /** Ayu Light — clean light variant. */
 export const ayuLight: ColorPalette = {
@@ -89,4 +89,4 @@ export const ayuLight: ColorPalette = {
   cursorText: "#F8F9FA",
   selectionBackground: "#8A9199",
   selectionForeground: "#5C6166",
-}
+};

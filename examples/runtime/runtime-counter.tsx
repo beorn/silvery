@@ -12,8 +12,8 @@
  * Usage: bun examples/runtime-counter.tsx
  */
 
-import React from "react"
-import { Box, Text } from "../../src/index.js"
+import React from "react";
+import { Box, Text } from "../../src/index.js";
 import {
   createRuntime,
   ensureLayoutEngine,
@@ -21,21 +21,21 @@ import {
   type Dims,
   type Event,
   type RenderTarget,
-} from "../../src/runtime/index.js"
-import type { ExampleMeta } from "../_banner.js"
+} from "../../src/runtime/index.js";
+import type { ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Runtime Counter",
   description: "Layer 1 event loop: events() AsyncIterable + schedule()",
   features: ["createRuntime()", "event loop", "dispatch()"],
-}
+};
 
 // ============================================================================
 // State & Types
 // ============================================================================
 
 interface State {
-  count: number
+  count: number;
 }
 
 // ============================================================================
@@ -46,17 +46,17 @@ function reducer(state: State, event: Event): State {
   switch (event.type) {
     case "resize":
       // Just trigger re-render, state unchanged
-      return state
+      return state;
     case "effect":
       // Effect completed - increment count
       // Note: event.id is auto-generated ("effect-0", "effect-1", ...),
       // event.result is whatever schedule() callback returned
       if (event.result === "increment") {
-        return { ...state, count: state.count + 1 }
+        return { ...state, count: state.count + 1 };
       }
-      return state
+      return state;
     default:
-      return state
+      return state;
   }
 }
 
@@ -78,7 +78,7 @@ function view(state: State, dims: Dims): React.ReactElement {
       </Text>
       <Text dimColor>Press Ctrl+C to quit</Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -86,41 +86,41 @@ function view(state: State, dims: Dims): React.ReactElement {
 // ============================================================================
 
 function createTerminalTarget(): RenderTarget & { cleanup: () => void } {
-  const resizeHandlers = new Set<(dims: Dims) => void>()
+  const resizeHandlers = new Set<(dims: Dims) => void>();
 
   const onResizeHandler = () => {
     const dims = {
       cols: process.stdout.columns || 80,
       rows: process.stdout.rows || 24,
-    }
+    };
     for (const handler of resizeHandlers) {
-      handler(dims)
+      handler(dims);
     }
-  }
+  };
 
-  process.stdout.on("resize", onResizeHandler)
+  process.stdout.on("resize", onResizeHandler);
 
   return {
     write(frame: string): void {
-      process.stdout.write(frame)
+      process.stdout.write(frame);
     },
 
     getDims(): Dims {
       return {
         cols: process.stdout.columns || 80,
         rows: process.stdout.rows || 24,
-      }
+      };
     },
 
     onResize(handler: (dims: Dims) => void): () => void {
-      resizeHandlers.add(handler)
-      return () => resizeHandlers.delete(handler)
+      resizeHandlers.add(handler);
+      return () => resizeHandlers.delete(handler);
     },
 
     cleanup(): void {
-      process.stdout.off("resize", onResizeHandler)
+      process.stdout.off("resize", onResizeHandler);
     },
-  }
+  };
 }
 
 // ============================================================================
@@ -129,69 +129,69 @@ function createTerminalTarget(): RenderTarget & { cleanup: () => void } {
 
 async function main() {
   // Initialize layout engine
-  await ensureLayoutEngine()
+  await ensureLayoutEngine();
 
   // Create terminal target
-  const target = createTerminalTarget()
+  const target = createTerminalTarget();
 
   // Create runtime with abort signal for cleanup
-  const controller = new AbortController()
-  const runtime = createRuntime({ target, signal: controller.signal })
+  const controller = new AbortController();
+  const runtime = createRuntime({ target, signal: controller.signal });
 
   // Handle Ctrl+C
   process.on("SIGINT", () => {
-    controller.abort()
-  })
+    controller.abort();
+  });
 
   // Initial state
-  let state: State = { count: 0 }
+  let state: State = { count: 0 };
 
   // Clear screen and hide cursor
-  process.stdout.write("\x1b[2J\x1b[H\x1b[?25l")
+  process.stdout.write("\x1b[2J\x1b[H\x1b[?25l");
 
   try {
     // Initial render
-    runtime.render(layout(view(state, runtime.getDims()), runtime.getDims()))
+    runtime.render(layout(view(state, runtime.getDims()), runtime.getDims()));
 
     // Schedule periodic increments using effects
     const scheduleIncrement = () => {
       runtime.schedule(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        return "increment"
-      })
-    }
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        return "increment";
+      });
+    };
 
     // Start first increment
-    scheduleIncrement()
+    scheduleIncrement();
 
     // Event loop
     for await (const event of runtime.events()) {
       // Update state
-      const newState = reducer(state, event)
+      const newState = reducer(state, event);
 
       // Re-render if state changed or resize occurred
       if (newState !== state || event.type === "resize") {
-        state = newState
-        runtime.render(layout(view(state, runtime.getDims()), runtime.getDims()))
+        state = newState;
+        runtime.render(layout(view(state, runtime.getDims()), runtime.getDims()));
       }
 
       // Schedule next increment after effect completes
       if (event.type === "effect" && event.id.startsWith("effect-")) {
-        scheduleIncrement()
+        scheduleIncrement();
       }
     }
   } finally {
     // Cleanup
-    runtime[Symbol.dispose]()
-    target.cleanup()
+    runtime[Symbol.dispose]();
+    target.cleanup();
 
     // Show cursor and reset
-    process.stdout.write("\x1b[?25h\x1b[0m\n")
-    console.log("Final count:", state.count)
+    process.stdout.write("\x1b[?25h\x1b[0m\n");
+    console.log("Final count:", state.count);
   }
 }
 
 // Run
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

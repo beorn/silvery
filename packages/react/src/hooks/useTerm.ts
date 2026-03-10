@@ -1,6 +1,6 @@
-import type { Term } from "@silvery/term/ansi"
-import { useContext } from "react"
-import { TermContext } from "../context"
+import type { Term } from "@silvery/term/ansi";
+import { useContext } from "react";
+import { TermContext } from "../context";
 
 /**
  * Hook to access the Term in components.
@@ -17,9 +17,9 @@ import { TermContext } from "../context"
  * ```
  */
 export function useTerm(): Term {
-  const term = useContext(TermContext)
+  const term = useContext(TermContext);
   if (!term) {
-    throw new Error("useTerm must be used within a render(element, term) context")
+    throw new Error("useTerm must be used within a render(element, term) context");
   }
-  return term
+  return term;
 }

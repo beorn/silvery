@@ -6,14 +6,14 @@
  * Run: bun run examples/playground/build.ts
  */
 
-import { mkdir } from "node:fs/promises"
-import { join, dirname } from "node:path"
+import { mkdir } from "node:fs/promises";
+import { join, dirname } from "node:path";
 
-const __dirname = dirname(new URL(import.meta.url).pathname)
-const distDir = join(__dirname, "dist")
+const __dirname = dirname(new URL(import.meta.url).pathname);
+const distDir = join(__dirname, "dist");
 
 // Ensure dist directory exists
-await mkdir(distDir, { recursive: true })
+await mkdir(distDir, { recursive: true });
 
 // Browser-safe defines for Node.js globals.
 // loggily and @silvery/ansi access process.env at module init,
@@ -36,7 +36,7 @@ const browserDefines: Record<string, string> = {
   "process.env.LANG": "undefined",
   "process.env.LC_ALL": "undefined",
   "process.env.LC_CTYPE": "undefined",
-}
+};
 
 const result = await Bun.build({
   entrypoints: [join(__dirname, "playground-app.tsx")],
@@ -46,16 +46,16 @@ const result = await Bun.build({
   minify: false,
   sourcemap: "external",
   define: browserDefines,
-})
+});
 
 if (!result.success) {
-  console.error("Playground build failed:")
+  console.error("Playground build failed:");
   for (const log of result.logs) {
-    console.error(log)
+    console.error(log);
   }
-  process.exit(1)
+  process.exit(1);
 }
 
-console.log("Built examples/playground/dist/playground-app.js")
-console.log("\nOpen in browser:")
-console.log("  examples/playground/index.html")
+console.log("Built examples/playground/dist/playground-app.js");
+console.log("\nOpen in browser:");
+console.log("  examples/playground/index.html");

@@ -58,7 +58,7 @@ The fast-path skip condition (all must be false to skip):
   !layoutChanged && // node.layoutChangedThisFrame
   !node.subtreeDirty &&
   !node.childrenDirty &&
-  !childPositionChanged // any child's x/y differs from prevLayout
+  !childPositionChanged; // any child's x/y differs from prevLayout
 ```
 
 If `hasPrevBuffer` is false (first render or dimension change), nothing is skipped.
@@ -93,7 +93,7 @@ These five computed values in `renderNodeToBuffer` control the entire incrementa
 // Did this node's layout position/size change?
 // Uses layoutChangedThisFrame (set by propagateLayout in layout phase)
 // instead of the stale !rectEqual(prevLayout, contentRect).
-layoutChanged = node.layoutChangedThisFrame
+layoutChanged = node.layoutChangedThisFrame;
 
 // Did the CONTENT AREA change? (excludes border-only paint changes)
 // absoluteChildMutated: absolute child had children mount/unmount/reorder, layout change,
@@ -104,25 +104,26 @@ contentAreaAffected =
   childPositionChanged ||
   node.childrenDirty ||
   node.bgDirty ||
-  absoluteChildMutated
+  absoluteChildMutated;
 
 // Should we clear this node's region with inherited bg?
 // Only when: buffer has stale pixels AND content area changed AND no own bg fill
-parentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
+parentRegionCleared =
+  (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor;
 
 // Can we skip the bg fill? Only when clone has correct bg already
-skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected
+skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected;
 
 // Must children re-render? (content area was modified on a cloned buffer)
-parentRegionChanged = (hasPrevBuffer || ancestorCleared) && contentAreaAffected
+parentRegionChanged = (hasPrevBuffer || ancestorCleared) && contentAreaAffected;
 ```
 
 ### How the cascade propagates to children
 
 ```typescript
 // Normal containers:
-childHasPrev = childrenDirty || childPositionChanged || parentRegionChanged ? false : hasPrevBuffer
-childAncestorCleared = parentRegionCleared || (ancestorCleared && !props.backgroundColor)
+childHasPrev = childrenDirty || childPositionChanged || parentRegionChanged ? false : hasPrevBuffer;
+childAncestorCleared = parentRegionCleared || (ancestorCleared && !props.backgroundColor);
 ```
 
 Key insight: a Box with `backgroundColor` **breaks** the ancestorCleared cascade. Its `renderBox` fill covers stale pixels, so children don't need to know about ancestor clears. Without this, border cells at boundaries get overwritten.
@@ -184,11 +185,12 @@ Text nodes with no explicit background inherit bg from their nearest ancestor Bo
 
 ```typescript
 // content-phase.ts: compute and pass inherited bg
-const textInheritedBg = findInheritedBg(node).color
-renderText(node, buffer, layout, props, scrollOffset, clipBounds, textInheritedBg)
+const textInheritedBg = findInheritedBg(node).color;
+renderText(node, buffer, layout, props, scrollOffset, clipBounds, textInheritedBg);
 
 // render-text.ts → renderGraphemes: use inherited bg instead of buffer read
-const existingBg = style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : buffer.getCellBg(col, y) // legacy fallback for external callers
+const existingBg =
+  style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : buffer.getCellBg(col, y); // legacy fallback for external callers
 ```
 
 **Why not getCellBg?** The old approach read bg from the buffer (`getCellBg`), creating a coupling between text rendering and buffer state. On incremental renders, the cloned buffer could have stale bg at positions outside the parent's bg-filled region (e.g., overflow text, moved nodes). Using `inheritedBg` from the render tree is deterministic regardless of buffer state.
@@ -290,11 +292,11 @@ Otherwise: falls back to `inlineFullRender()` (reliable, handles all edge cases)
 Inter-frame cursor state (`InlineCursorState`) is captured in the `createOutputPhase()` closure — no module-level globals. Each `createOutputPhase()` call gets its own state. Bare `outputPhase()` calls use fresh state each time (always fall back to full render — safe default for tests).
 
 ```typescript
-const render = createOutputPhase({ underlineStyles: true })
-render(null, buf1, "inline") // first render → inits cursor tracking
-render(buf1, buf2, "inline") // incremental (state persists in closure)
+const render = createOutputPhase({ underlineStyles: true });
+render(null, buf1, "inline"); // first render → inits cursor tracking
+render(buf1, buf2, "inline"); // incremental (state persists in closure)
 
-outputPhase(buf1, buf2, "inline") // bare → always full render (no shared state)
+outputPhase(buf1, buf2, "inline"); // bare → always full render (no shared state)
 ```
 
 ### Relative cursor positioning
@@ -486,25 +488,29 @@ describe("regression: <brief description>", () => {
 For `withDiagnostics` driver tests (full app):
 
 ```typescript
-import { describe, test } from "vitest"
-import { createBoardDriver } from "@km/tui/driver.ts"
-import { createFakeRepo } from "@km/storage"
-import { withDiagnostics } from "silvery"
-import { item } from "@km/tui/tests/helpers/board-test.ts"
+import { describe, test } from "vitest";
+import { createBoardDriver } from "@km/tui/driver.ts";
+import { createFakeRepo } from "@km/storage";
+import { withDiagnostics } from "silvery";
+import { item } from "@km/tui/tests/helpers/board-test.ts";
 
 describe("regression: <brief description>", () => {
   test("repro from fuzz/user report", async () => {
-    const nodes = item.root("board", item("Column 1", item("Task A"), item("Task B")), item("Column 2", item("Task C")))
+    const nodes = item.root(
+      "board",
+      item("Column 1", item("Task A"), item("Task B")),
+      item("Column 2", item("Task C")),
+    );
     const driver = withDiagnostics(createBoardDriver(createFakeRepo({ nodes }), "board"), {
       checkIncremental: true,
       checkReplay: true,
       checkStability: true,
-    })
+    });
 
     // Reproduce the sequence that triggered the bug
-    await driver.cmd.down()
-    await driver.cmd.down()
+    await driver.cmd.down();
+    await driver.cmd.down();
     // Diagnostics auto-check after each command — throws on mismatch
-  })
-})
+  });
+});
 ```

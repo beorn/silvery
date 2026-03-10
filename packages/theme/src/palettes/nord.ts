@@ -2,8 +2,8 @@
  * Nord palette — Arctic, north-bluish clean.
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Nord — the classic dark arctic theme. */
 export const nord: ColorPalette = {
@@ -31,4 +31,4 @@ export const nord: ColorPalette = {
   cursorText: "#2E3440",
   selectionBackground: "#4C566A",
   selectionForeground: "#ECEFF4",
-}
+};

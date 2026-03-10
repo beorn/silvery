@@ -2,9 +2,9 @@
  * React ProgressBar component for silvery/Ink TUI apps
  */
 
-import React, { useState, useEffect, useRef } from "react"
-import type { ProgressBarProps } from "../types.js"
-import { getETA, DEFAULT_ETA_BUFFER_SIZE, type ETASample } from "../utils/eta"
+import React, { useState, useEffect, useRef } from "react";
+import type { ProgressBarProps } from "../types.js";
+import { getETA, DEFAULT_ETA_BUFFER_SIZE, type ETASample } from "../utils/eta";
 
 /**
  * Progress bar component for React TUI apps
@@ -35,53 +35,53 @@ export function ProgressBar({
   color = "cyan",
 }: ProgressBarProps): React.ReactElement {
   // ETA calculation state
-  const [eta, setEta] = useState<string>("--:--")
-  const etaBuffer = useRef<ETASample[]>([])
+  const [eta, setEta] = useState<string>("--:--");
+  const etaBuffer = useRef<ETASample[]>([]);
 
   // Update ETA buffer when value changes
   useEffect(() => {
-    const now = Date.now()
-    etaBuffer.current.push({ time: now, value })
+    const now = Date.now();
+    etaBuffer.current.push({ time: now, value });
 
     if (etaBuffer.current.length > DEFAULT_ETA_BUFFER_SIZE) {
-      etaBuffer.current.shift()
+      etaBuffer.current.shift();
     }
 
     // Calculate ETA using shared utility
-    const result = getETA(etaBuffer.current, value, total)
-    setEta(result.formatted)
-  }, [value, total])
+    const result = getETA(etaBuffer.current, value, total);
+    setEta(result.formatted);
+  }, [value, total]);
 
-  const percent = total > 0 ? value / total : 0
-  const percentDisplay = `${Math.round(percent * 100)}%`
+  const percent = total > 0 ? value / total : 0;
+  const percentDisplay = `${Math.round(percent * 100)}%`;
 
-  const filledWidth = Math.round(width * percent)
-  const emptyWidth = width - filledWidth
+  const filledWidth = Math.round(width * percent);
+  const emptyWidth = width - filledWidth;
 
-  const bar = "█".repeat(filledWidth) + "░".repeat(emptyWidth)
+  const bar = "█".repeat(filledWidth) + "░".repeat(emptyWidth);
 
   // Build the display parts
-  const parts: string[] = []
+  const parts: string[] = [];
 
   if (label) {
-    parts.push(label)
+    parts.push(label);
   }
 
-  parts.push(`[${bar}]`)
+  parts.push(`[${bar}]`);
 
   if (showPercentage) {
-    parts.push(percentDisplay.padStart(4))
+    parts.push(percentDisplay.padStart(4));
   }
 
   if (showETA) {
-    parts.push(`ETA: ${eta}`)
+    parts.push(`ETA: ${eta}`);
   }
 
   return (
     <span data-progressx-bar data-color={color} data-percent={percent}>
       {parts.join(" ")}
     </span>
-  )
+  );
 }
 
 /**
@@ -102,36 +102,36 @@ export function ProgressBar({
  * ```
  */
 export function useProgressBar(initialTotal: number) {
-  const [value, setValue] = useState(0)
-  const [total, setTotal] = useState(initialTotal)
-  const etaBuffer = useRef<ETASample[]>([])
-  const [eta, setEta] = useState<string>("--:--")
+  const [value, setValue] = useState(0);
+  const [total, setTotal] = useState(initialTotal);
+  const etaBuffer = useRef<ETASample[]>([]);
+  const [eta, setEta] = useState<string>("--:--");
 
   const update = (newValue: number) => {
-    setValue(newValue)
+    setValue(newValue);
 
     // Update ETA buffer
-    const now = Date.now()
-    etaBuffer.current.push({ time: now, value: newValue })
+    const now = Date.now();
+    etaBuffer.current.push({ time: now, value: newValue });
     if (etaBuffer.current.length > DEFAULT_ETA_BUFFER_SIZE) {
-      etaBuffer.current.shift()
+      etaBuffer.current.shift();
     }
 
     // Calculate ETA using shared utility
-    const result = getETA(etaBuffer.current, newValue, total)
-    setEta(result.formatted)
-  }
+    const result = getETA(etaBuffer.current, newValue, total);
+    setEta(result.formatted);
+  };
 
-  const increment = (amount = 1) => update(value + amount)
+  const increment = (amount = 1) => update(value + amount);
 
   const reset = (newTotal?: number) => {
-    setValue(0)
-    if (newTotal !== undefined) setTotal(newTotal)
-    etaBuffer.current = []
-    setEta("--:--")
-  }
+    setValue(0);
+    if (newTotal !== undefined) setTotal(newTotal);
+    etaBuffer.current = [];
+    setEta("--:--");
+  };
 
-  const percent = total > 0 ? Math.round((value / total) * 100) : 0
+  const percent = total > 0 ? Math.round((value / total) * 100) : 0;
 
   return {
     value,
@@ -142,5 +142,5 @@ export function useProgressBar(initialTotal: number) {
     increment,
     reset,
     setTotal,
-  }
+  };
 }

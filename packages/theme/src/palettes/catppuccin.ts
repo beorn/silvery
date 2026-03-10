@@ -2,8 +2,8 @@
  * Catppuccin palettes — the most popular 4-flavor theme system.
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Catppuccin Mocha — the classic dark variant. */
 export const catppuccinMocha: ColorPalette = {
@@ -31,7 +31,7 @@ export const catppuccinMocha: ColorPalette = {
   cursorText: "#1E1E2E",
   selectionBackground: "#6C7086",
   selectionForeground: "#CDD6F4",
-}
+};
 
 /** Catppuccin Frappe — muted dark variant. */
 export const catppuccinFrappe: ColorPalette = {
@@ -59,7 +59,7 @@ export const catppuccinFrappe: ColorPalette = {
   cursorText: "#303446",
   selectionBackground: "#737994",
   selectionForeground: "#C6D0F5",
-}
+};
 
 /** Catppuccin Macchiato — warm dark variant. */
 export const catppuccinMacchiato: ColorPalette = {
@@ -87,7 +87,7 @@ export const catppuccinMacchiato: ColorPalette = {
   cursorText: "#24273A",
   selectionBackground: "#6E738D",
   selectionForeground: "#CAD3F5",
-}
+};
 
 /** Catppuccin Latte — the light variant. */
 export const catppuccinLatte: ColorPalette = {
@@ -115,4 +115,4 @@ export const catppuccinLatte: ColorPalette = {
   cursorText: "#EFF1F5",
   selectionBackground: "#9CA0B0",
   selectionForeground: "#4C4F69",
-}
+};

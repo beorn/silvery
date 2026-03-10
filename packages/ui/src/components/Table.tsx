@@ -17,68 +17,76 @@
  * />
  * ```
  */
-import React from "react"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React from "react";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TableColumn {
-  header: string
+  header: string;
   /** Key to extract from data row, or index for array data */
-  key?: string
+  key?: string;
   /** Column width (auto if omitted) */
-  width?: number
+  width?: number;
   /** Text alignment */
-  align?: "left" | "right" | "center"
+  align?: "left" | "right" | "center";
 }
 
 export interface TableProps {
   /** Column definitions */
-  columns: TableColumn[]
+  columns: TableColumn[];
   /** Data rows — array of objects or arrays */
-  data: Array<Record<string, unknown> | unknown[]>
+  data: Array<Record<string, unknown> | unknown[]>;
   /** Show header row (default: true) */
-  showHeader?: boolean
+  showHeader?: boolean;
   /** Border between columns (default: " │ ") */
-  separator?: string
+  separator?: string;
   /** Header style */
-  headerBold?: boolean
+  headerBold?: boolean;
 }
 
 // =============================================================================
 // Helpers
 // =============================================================================
 
-function getCellValue(row: Record<string, unknown> | unknown[], col: TableColumn, colIndex: number): string {
+function getCellValue(
+  row: Record<string, unknown> | unknown[],
+  col: TableColumn,
+  colIndex: number,
+): string {
   if (Array.isArray(row)) {
-    const val = row[colIndex]
-    return val == null ? "" : String(val)
+    const val = row[colIndex];
+    return val == null ? "" : String(val);
   }
   if (col.key) {
-    const val = row[col.key]
-    return val == null ? "" : String(val)
+    const val = row[col.key];
+    return val == null ? "" : String(val);
   }
-  return ""
+  return "";
 }
 
-function alignText(text: string, width: number, align: "left" | "right" | "center" = "left"): string {
-  if (text.length >= width) return text.slice(0, width)
+function alignText(
+  text: string,
+  width: number,
+  align: "left" | "right" | "center" = "left",
+): string {
+  if (text.length >= width) return text.slice(0, width);
 
-  const pad = width - text.length
+  const pad = width - text.length;
 
   switch (align) {
     case "right":
-      return " ".repeat(pad) + text
+      return " ".repeat(pad) + text;
     case "center": {
-      const leftPad = Math.floor(pad / 2)
-      const rightPad = pad - leftPad
-      return " ".repeat(leftPad) + text + " ".repeat(rightPad)
+      const leftPad = Math.floor(pad / 2);
+      const rightPad = pad - leftPad;
+      return " ".repeat(leftPad) + text + " ".repeat(rightPad);
     }
     default:
-      return text + " ".repeat(pad)
+      return text + " ".repeat(pad);
   }
 }
 
@@ -95,31 +103,33 @@ export function Table({
 }: TableProps): React.ReactElement {
   // Calculate column widths
   const colWidths = columns.map((col, colIndex) => {
-    if (col.width) return col.width
+    if (col.width) return col.width;
 
-    let maxWidth = col.header.length
+    let maxWidth = col.header.length;
     for (const row of data) {
-      const cellText = getCellValue(row, col, colIndex)
-      maxWidth = Math.max(maxWidth, cellText.length)
+      const cellText = getCellValue(row, col, colIndex);
+      maxWidth = Math.max(maxWidth, cellText.length);
     }
-    return maxWidth
-  })
+    return maxWidth;
+  });
 
   // Build header row
-  const headerCells = columns.map((col, i) => alignText(col.header, colWidths[i]!, col.align))
-  const headerLine = headerCells.join(separator)
+  const headerCells = columns.map((col, i) => alignText(col.header, colWidths[i]!, col.align));
+  const headerLine = headerCells.join(separator);
 
   // Build separator line
-  const separatorLine = colWidths.map((w) => "─".repeat(w)).join(separator.replace(/[^│]/g, "─").replace(/│/g, "┼"))
+  const separatorLine = colWidths
+    .map((w) => "─".repeat(w))
+    .join(separator.replace(/[^│]/g, "─").replace(/│/g, "┼"));
 
   // Build data rows
   const dataRows = data.map((row) => {
     const cells = columns.map((col, i) => {
-      const value = getCellValue(row, col, i)
-      return alignText(value, colWidths[i]!, col.align)
-    })
-    return cells.join(separator)
-  })
+      const value = getCellValue(row, col, i);
+      return alignText(value, colWidths[i]!, col.align);
+    });
+    return cells.join(separator);
+  });
 
   return (
     <Box flexDirection="column">
@@ -135,5 +145,5 @@ export function Table({
         <Text key={i}>{row}</Text>
       ))}
     </Box>
-  )
+  );
 }

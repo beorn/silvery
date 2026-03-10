@@ -10,14 +10,14 @@
  */
 
 // @ts-expect-error - react-reconciler has no type declarations
-import Reconciler from "react-reconciler"
-import type { TeaNode } from "@silvery/tea/types"
-import { type Container, hostConfig } from "./host-config"
-import { createRootNode } from "./nodes"
+import Reconciler from "react-reconciler";
+import type { TeaNode } from "@silvery/tea/types";
+import { type Container, hostConfig } from "./host-config";
+import { createRootNode } from "./nodes";
 
 // Re-export only what's needed by render.tsx and testing/index.tsx
-export type { Container } from "./host-config"
-export { runWithDiscreteEvent, _resetBoxInsideTextWarning } from "./host-config"
+export type { Container } from "./host-config";
+export { runWithDiscreteEvent, _resetBoxInsideTextWarning } from "./host-config";
 
 // ============================================================================
 // Reconciler Export
@@ -26,14 +26,14 @@ export { runWithDiscreteEvent, _resetBoxInsideTextWarning } from "./host-config"
 /**
  * Create the React reconciler instance.
  */
-export const reconciler = Reconciler(hostConfig)
+export const reconciler = Reconciler(hostConfig);
 
 /**
  * Create a container for rendering.
  */
 export function createContainer(onRender: () => void): Container {
-  const root = createRootNode()
-  return { root, onRender }
+  const root = createRootNode();
+  return { root, onRender };
 }
 
 /**
@@ -51,12 +51,12 @@ export function createFiberRoot(container: Container) {
     () => {}, // onCaughtError
     () => {}, // onRecoverableError
     null, // onDefaultTransitionIndicator
-  )
+  );
 }
 
 /**
  * Get the root SilveryNode from a container.
  */
 export function getContainerRoot(container: Container): TeaNode {
-  return container.root
+  return container.root;
 }

@@ -9,31 +9,40 @@
  * - Submit with Ctrl+Enter
  */
 
-import React, { useState } from "react"
-import { render, Box, Text, TextArea, useInput, useApp, createTerm, type Key } from "../../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+import React, { useState } from "react";
+import {
+  render,
+  Box,
+  Text,
+  TextArea,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "../../src/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "TextArea",
   description: "Multi-line text input with word wrap, scrolling, and kill operations",
   features: ["TextArea", "useContentRect()", "Ctrl+Enter submit"],
-}
+};
 
 export function NoteEditor(): JSX.Element {
-  const { exit } = useApp()
-  const [notes, setNotes] = useState<string[]>([])
-  const [value, setValue] = useState("")
+  const { exit } = useApp();
+  const [notes, setNotes] = useState<string[]>([]);
+  const [value, setValue] = useState("");
 
   useInput((input: string, key: Key) => {
     if (key.escape) {
-      exit()
+      exit();
     }
-  })
+  });
 
   function handleSubmit(text: string) {
     if (text.trim()) {
-      setNotes((prev) => [...prev, text.trim()])
-      setValue("")
+      setNotes((prev) => [...prev, text.trim()]);
+      setValue("");
     }
   }
 
@@ -77,20 +86,20 @@ export function NoteEditor(): JSX.Element {
         </Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 async function main() {
-  using term = createTerm()
+  using term = createTerm();
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="Ctrl+Enter submit  Esc quit">
       <NoteEditor />
     </ExampleBanner>,
     term,
-  )
-  await waitUntilExit()
+  );
+  await waitUntilExit();
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

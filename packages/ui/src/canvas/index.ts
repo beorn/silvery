@@ -22,27 +22,31 @@
  * ```
  */
 
-import type { ReactElement } from "react"
+import type { ReactElement } from "react";
 import {
   type CanvasAdapterConfig,
   CanvasRenderBuffer,
   createCanvasAdapter,
-} from "@silvery/term/adapters/canvas-adapter"
-import { createBrowserRenderer, initBrowserRenderer, renderOnce } from "@silvery/term/browser-renderer"
-import type { RenderBuffer } from "@silvery/term/render-adapter"
+} from "@silvery/term/adapters/canvas-adapter";
+import {
+  createBrowserRenderer,
+  initBrowserRenderer,
+  renderOnce,
+} from "@silvery/term/browser-renderer";
+import type { RenderBuffer } from "@silvery/term/render-adapter";
 
 // Re-export components and hooks for convenience
-export { Box, type BoxProps } from "@silvery/react/components/Box"
-export { Text, type TextProps } from "@silvery/react/components/Text"
-export { useContentRect, useScreenRect } from "@silvery/react/hooks/useLayout"
-export { useApp } from "@silvery/react/hooks/useApp"
+export { Box, type BoxProps } from "@silvery/react/components/Box";
+export { Text, type TextProps } from "@silvery/react/components/Text";
+export { useContentRect, useScreenRect } from "@silvery/react/hooks/useLayout";
+export { useApp } from "@silvery/react/hooks/useApp";
 
 // Re-export adapter utilities
 export {
   createCanvasAdapter,
   CanvasRenderBuffer,
   type CanvasAdapterConfig,
-} from "@silvery/term/adapters/canvas-adapter"
+} from "@silvery/term/adapters/canvas-adapter";
 
 // ============================================================================
 // Types
@@ -50,22 +54,22 @@ export {
 
 export interface CanvasRenderOptions extends CanvasAdapterConfig {
   /** Width of the canvas (default: canvas.width) */
-  width?: number
+  width?: number;
   /** Height of the canvas (default: canvas.height) */
-  height?: number
+  height?: number;
 }
 
 export interface CanvasInstance {
   /** Re-render with a new element */
-  rerender: (element: ReactElement) => void
+  rerender: (element: ReactElement) => void;
   /** Unmount and clean up */
-  unmount: () => void
+  unmount: () => void;
   /** Dispose (alias for unmount) — enables `using` */
-  [Symbol.dispose](): void
+  [Symbol.dispose](): void;
   /** Get the current buffer */
-  getBuffer: () => RenderBuffer | null
+  getBuffer: () => RenderBuffer | null;
   /** Force a re-render */
-  refresh: () => void
+  refresh: () => void;
 }
 
 // ============================================================================
@@ -74,14 +78,14 @@ export interface CanvasInstance {
 
 const canvasAdapterFactory = {
   createAdapter: (config: CanvasAdapterConfig) => createCanvasAdapter(config),
-}
+};
 
 /**
  * Initialize the canvas rendering system.
  * Called automatically by renderToCanvas, but can be called manually.
  */
 export function initCanvasRenderer(config: CanvasAdapterConfig = {}): void {
-  initBrowserRenderer(canvasAdapterFactory, config)
+  initBrowserRenderer(canvasAdapterFactory, config);
 }
 
 // ============================================================================
@@ -113,30 +117,30 @@ export function renderToCanvas(
   canvas: HTMLCanvasElement,
   options: CanvasRenderOptions = {},
 ): CanvasInstance {
-  initCanvasRenderer(options)
+  initCanvasRenderer(options);
 
-  const pixelWidth = options.width ?? canvas.width
-  const pixelHeight = options.height ?? canvas.height
+  const pixelWidth = options.width ?? canvas.width;
+  const pixelHeight = options.height ?? canvas.height;
 
   // Ensure canvas dimensions match
-  if (canvas.width !== pixelWidth) canvas.width = pixelWidth
-  if (canvas.height !== pixelHeight) canvas.height = pixelHeight
+  if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+  if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
 
   // Convert pixel dimensions to cell dimensions for the layout engine.
   // The layout engine operates in cell units (columns x rows), not pixels.
-  const fontSize = options.fontSize ?? 14
-  const lineHeightMultiplier = options.lineHeight ?? 1.2
-  const charWidth = fontSize * 0.6
-  const lineHeight = fontSize * lineHeightMultiplier
-  const cols = Math.floor(pixelWidth / charWidth)
-  const rows = Math.floor(pixelHeight / lineHeight)
+  const fontSize = options.fontSize ?? 14;
+  const lineHeightMultiplier = options.lineHeight ?? 1.2;
+  const charWidth = fontSize * 0.6;
+  const lineHeight = fontSize * lineHeightMultiplier;
+  const cols = Math.floor(pixelWidth / charWidth);
+  const rows = Math.floor(pixelHeight / lineHeight);
 
   return createBrowserRenderer<CanvasRenderBuffer>(element, cols, rows, (buffer) => {
-    const ctx = canvas.getContext("2d")
+    const ctx = canvas.getContext("2d");
     if (ctx) {
-      ctx.drawImage(buffer.canvas, 0, 0)
+      ctx.drawImage(buffer.canvas, 0, 0);
     }
-  })
+  });
 }
 
 /**
@@ -155,15 +159,15 @@ export function renderCanvasOnce(
   height: number,
   options: CanvasAdapterConfig = {},
 ): CanvasRenderBuffer {
-  initCanvasRenderer(options)
+  initCanvasRenderer(options);
 
   // Convert pixel dimensions to cell dimensions for the layout engine
-  const fontSize = options.fontSize ?? 14
-  const lineHeightMultiplier = options.lineHeight ?? 1.2
-  const charWidth = fontSize * 0.6
-  const lineHeight = fontSize * lineHeightMultiplier
-  const cols = Math.floor(width / charWidth)
-  const rows = Math.floor(height / lineHeight)
+  const fontSize = options.fontSize ?? 14;
+  const lineHeightMultiplier = options.lineHeight ?? 1.2;
+  const charWidth = fontSize * 0.6;
+  const lineHeight = fontSize * lineHeightMultiplier;
+  const cols = Math.floor(width / charWidth);
+  const rows = Math.floor(height / lineHeight);
 
-  return renderOnce<CanvasRenderBuffer>(element, cols, rows)
+  return renderOnce<CanvasRenderBuffer>(element, cols, rows);
 }

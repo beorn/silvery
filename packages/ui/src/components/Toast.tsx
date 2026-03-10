@@ -21,68 +21,68 @@
  * }
  * ```
  */
-import React, { useCallback, useEffect, useRef, useState } from "react"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type ToastVariant = "default" | "success" | "error" | "warning" | "info"
+export type ToastVariant = "default" | "success" | "error" | "warning" | "info";
 
 export interface ToastData {
   /** Unique toast ID (auto-generated if not provided) */
-  id: string
+  id: string;
   /** Toast title text */
-  title: string
+  title: string;
   /** Optional description text */
-  description?: string
+  description?: string;
   /** Visual variant (default: "default") */
-  variant: ToastVariant
+  variant: ToastVariant;
   /** Auto-dismiss duration in ms (default: 3000, 0 = no auto-dismiss) */
-  duration: number
+  duration: number;
 }
 
 export interface ToastOptions {
   /** Toast title text */
-  title: string
+  title: string;
   /** Optional description text */
-  description?: string
+  description?: string;
   /** Visual variant (default: "default") */
-  variant?: ToastVariant
+  variant?: ToastVariant;
   /** Auto-dismiss duration in ms (default: 3000, 0 = no auto-dismiss) */
-  duration?: number
+  duration?: number;
 }
 
 export interface UseToastResult {
   /** Show a new toast notification */
-  toast: (options: ToastOptions) => string
+  toast: (options: ToastOptions) => string;
   /** Currently visible toasts */
-  toasts: ToastData[]
+  toasts: ToastData[];
   /** Dismiss a specific toast by ID */
-  dismiss: (id: string) => void
+  dismiss: (id: string) => void;
   /** Dismiss all toasts */
-  dismissAll: () => void
+  dismissAll: () => void;
 }
 
 export interface ToastContainerProps {
   /** Toasts to render */
-  toasts: ToastData[]
+  toasts: ToastData[];
   /** Maximum visible toasts (default: 5) */
-  maxVisible?: number
+  maxVisible?: number;
 }
 
 export interface ToastItemProps {
   /** Toast data to render */
-  toast: ToastData
+  toast: ToastData;
 }
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const DEFAULT_DURATION = 3000
+const DEFAULT_DURATION = 3000;
 
 const VARIANT_COLORS: Record<ToastVariant, string> = {
   default: "$fg",
@@ -90,7 +90,7 @@ const VARIANT_COLORS: Record<ToastVariant, string> = {
   error: "$error",
   warning: "$warning",
   info: "$info",
-}
+};
 
 const VARIANT_ICONS: Record<ToastVariant, string> = {
   default: "i",
@@ -98,13 +98,13 @@ const VARIANT_ICONS: Record<ToastVariant, string> = {
   error: "x",
   warning: "!",
   info: "i",
-}
+};
 
 // =============================================================================
 // Hook
 // =============================================================================
 
-let nextToastId = 0
+let nextToastId = 0;
 
 /**
  * Hook for managing toast notifications.
@@ -114,63 +114,63 @@ let nextToastId = 0
  * Toasts auto-dismiss after `duration` ms (default: 3000).
  */
 export function useToast(): UseToastResult {
-  const [toasts, setToasts] = useState<ToastData[]>([])
-  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const [toasts, setToasts] = useState<ToastData[]>([]);
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const dismiss = useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id))
-    const timer = timersRef.current.get(id)
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+    const timer = timersRef.current.get(id);
     if (timer) {
-      clearTimeout(timer)
-      timersRef.current.delete(id)
+      clearTimeout(timer);
+      timersRef.current.delete(id);
     }
-  }, [])
+  }, []);
 
   const dismissAll = useCallback(() => {
-    setToasts([])
+    setToasts([]);
     for (const timer of timersRef.current.values()) {
-      clearTimeout(timer)
+      clearTimeout(timer);
     }
-    timersRef.current.clear()
-  }, [])
+    timersRef.current.clear();
+  }, []);
 
   const toast = useCallback(
     (options: ToastOptions): string => {
-      const id = `toast-${++nextToastId}`
+      const id = `toast-${++nextToastId}`;
       const data: ToastData = {
         id,
         title: options.title,
         description: options.description,
         variant: options.variant ?? "default",
         duration: options.duration ?? DEFAULT_DURATION,
-      }
+      };
 
-      setToasts((prev) => [...prev, data])
+      setToasts((prev) => [...prev, data]);
 
       if (data.duration > 0) {
         const timer = setTimeout(() => {
-          dismiss(id)
-        }, data.duration)
-        timersRef.current.set(id, timer)
+          dismiss(id);
+        }, data.duration);
+        timersRef.current.set(id, timer);
       }
 
-      return id
+      return id;
     },
     [dismiss],
-  )
+  );
 
   // Cleanup timers on unmount
   useEffect(() => {
-    const timers = timersRef.current
+    const timers = timersRef.current;
     return () => {
       for (const timer of timers.values()) {
-        clearTimeout(timer)
+        clearTimeout(timer);
       }
-      timers.clear()
-    }
-  }, [])
+      timers.clear();
+    };
+  }, []);
 
-  return { toast, toasts, dismiss, dismissAll }
+  return { toast, toasts, dismiss, dismissAll };
 }
 
 // =============================================================================
@@ -184,8 +184,8 @@ export function useToast(): UseToastResult {
  * description text.
  */
 export function ToastItem({ toast }: ToastItemProps): React.ReactElement {
-  const color = VARIANT_COLORS[toast.variant]
-  const icon = VARIANT_ICONS[toast.variant]
+  const color = VARIANT_COLORS[toast.variant];
+  const icon = VARIANT_ICONS[toast.variant];
 
   return (
     <Box borderStyle="single" borderColor="$border" paddingX={1} backgroundColor="$surface">
@@ -195,7 +195,7 @@ export function ToastItem({ toast }: ToastItemProps): React.ReactElement {
       <Text> {toast.title}</Text>
       {toast.description && <Text color="$mutedfg"> {toast.description}</Text>}
     </Box>
-  )
+  );
 }
 
 /**
@@ -203,8 +203,11 @@ export function ToastItem({ toast }: ToastItemProps): React.ReactElement {
  *
  * Place at the bottom of your layout to show toasts as they appear.
  */
-export function ToastContainer({ toasts, maxVisible = 5 }: ToastContainerProps): React.ReactElement {
-  const visible = toasts.slice(-maxVisible)
+export function ToastContainer({
+  toasts,
+  maxVisible = 5,
+}: ToastContainerProps): React.ReactElement {
+  const visible = toasts.slice(-maxVisible);
 
   return (
     <Box flexDirection="column">
@@ -212,5 +215,5 @@ export function ToastContainer({ toasts, maxVisible = 5 }: ToastContainerProps):
         <ToastItem key={t.id} toast={t} />
       ))}
     </Box>
-  )
+  );
 }

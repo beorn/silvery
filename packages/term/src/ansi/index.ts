@@ -21,11 +21,11 @@
 // Term API (NewWay)
 // =============================================================================
 
-export { createTerm } from "./term"
-export type { Term, StyleChain } from "./term"
+export { createTerm } from "./term";
+export type { Term, StyleChain, TermState, TermEvents } from "./term";
 
-import { createTerm as _createTerm } from "./term"
-import type { Term } from "./term"
+import { createTerm as _createTerm } from "./term";
+import type { Term } from "./term";
 
 /**
  * Default term instance for convenience, lazily initialized on first access.
@@ -40,24 +40,24 @@ import type { Term } from "./term"
  * if (term.hasColor()) { ... }
  * ```
  */
-let _lazyTerm: Term | undefined
+let _lazyTerm: Term | undefined;
 export const term: Term = new Proxy({} as Term, {
   get(_target, prop, receiver) {
-    if (!_lazyTerm) _lazyTerm = _createTerm()
-    return Reflect.get(_lazyTerm, prop, receiver)
+    if (!_lazyTerm) _lazyTerm = _createTerm();
+    return Reflect.get(_lazyTerm, prop, receiver);
   },
   apply(_target, thisArg, args) {
-    if (!_lazyTerm) _lazyTerm = _createTerm()
-    return Reflect.apply(_lazyTerm as unknown as (...args: unknown[]) => unknown, thisArg, args)
+    if (!_lazyTerm) _lazyTerm = _createTerm();
+    return Reflect.apply(_lazyTerm as unknown as (...args: unknown[]) => unknown, thisArg, args);
   },
   has(_target, prop) {
-    if (!_lazyTerm) _lazyTerm = _createTerm()
-    return Reflect.has(_lazyTerm, prop)
+    if (!_lazyTerm) _lazyTerm = _createTerm();
+    return Reflect.has(_lazyTerm, prop);
   },
-})
+});
 
-export { patchConsole } from "./patch-console"
-export type { PatchedConsole, PatchConsoleOptions, ConsoleStats } from "./patch-console"
+export { patchConsole } from "./patch-console";
+export type { PatchedConsole, PatchConsoleOptions, ConsoleStats } from "./patch-console";
 
 // =============================================================================
 // Types
@@ -73,7 +73,7 @@ export type {
   ConsoleMethod,
   ConsoleEntry,
   CreateTermOptions,
-} from "./types"
+} from "./types";
 
 // =============================================================================
 // Detection Functions
@@ -87,14 +87,14 @@ export {
   detectExtendedUnderline,
   detectTerminalCaps,
   defaultCaps,
-} from "./detection"
-export type { TerminalCaps } from "./detection"
+} from "./detection";
+export type { TerminalCaps } from "./detection";
 
 // =============================================================================
 // Utilities
 // =============================================================================
 
-export { ANSI_REGEX, stripAnsi, displayLength } from "./utils"
+export { ANSI_REGEX, stripAnsi, displayLength } from "./utils";
 
 // =============================================================================
 // Underline Functions
@@ -108,13 +108,13 @@ export {
   doubleUnderline,
   underlineColor,
   styledUnderline,
-} from "./underline"
+} from "./underline";
 
 // =============================================================================
 // Hyperlink Functions
 // =============================================================================
 
-export { hyperlink } from "./hyperlink"
+export { hyperlink } from "./hyperlink";
 
 // =============================================================================
 // ANSI Terminal Control Helpers
@@ -143,7 +143,7 @@ export {
   scrollDown,
   enableKittyKeyboard,
   disableKittyKeyboard,
-} from "./ansi"
+} from "./ansi";
 
 // =============================================================================
 // Background Override — Compose styled text inside Box with backgroundColor
@@ -154,7 +154,7 @@ export {
  * When text is wrapped with this, silvery won't warn/throw about chalk bg + silvery bg conflicts.
  * Exported for silvery to detect this marker in text content.
  */
-export const BG_OVERRIDE_CODE = 9999
+export const BG_OVERRIDE_CODE = 9999;
 
 /**
  * Compose styled text with an explicit background inside a Box that has its own
@@ -194,5 +194,5 @@ export const BG_OVERRIDE_CODE = 9999
  * ```
  */
 export function bgOverride(text: string): string {
-  return `\x1b[${BG_OVERRIDE_CODE}m${text}`
+  return `\x1b[${BG_OVERRIDE_CODE}m${text}`;
 }

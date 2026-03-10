@@ -2,8 +2,8 @@
  * Solarized palettes — precision colors for machines and people.
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Solarized Dark — Ethan Schoonover's classic dark variant. */
 export const solarizedDark: ColorPalette = {
@@ -31,7 +31,7 @@ export const solarizedDark: ColorPalette = {
   cursorText: "#073642",
   selectionBackground: "#657B83",
   selectionForeground: "#FDF6E3",
-}
+};
 
 /** Solarized Light — Ethan Schoonover's classic light variant. */
 export const solarizedLight: ColorPalette = {
@@ -59,4 +59,4 @@ export const solarizedLight: ColorPalette = {
   cursorText: "#EEE8D5",
   selectionBackground: "#93A1A1",
   selectionForeground: "#073642",
-}
+};

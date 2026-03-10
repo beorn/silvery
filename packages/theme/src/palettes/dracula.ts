@@ -2,8 +2,8 @@
  * Dracula palette — dark theme with vibrant accents.
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Dracula — vibrant dark theme. */
 export const dracula: ColorPalette = {
@@ -31,4 +31,4 @@ export const dracula: ColorPalette = {
   cursorText: "#282A36",
   selectionBackground: "#6272A4",
   selectionForeground: "#F8F8F2",
-}
+};

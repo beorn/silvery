@@ -4,23 +4,23 @@
  * All generators return a complete ColorPalette (22 fields).
  */
 
-import { hexToRgb, hexToHsl, hslToHex, brighten, darken, blend } from "./color"
-import { importBase16 as importBase16Internal } from "./import/base16"
-import { getPaletteByName } from "./palettes/index"
-import type { ColorPalette, HueName } from "./types"
+import { hexToRgb, hexToHsl, hslToHex, brighten, darken, blend } from "./color";
+import { importBase16 as importBase16Internal } from "./import/base16";
+import { getPaletteByName } from "./palettes/index";
+import type { ColorPalette, HueName } from "./types";
 
 // ============================================================================
 // Luminance
 // ============================================================================
 
 function luminance(hex: string): number {
-  const rgb = hexToRgb(hex)
-  if (!rgb) return 0.5
-  return (rgb[0] + rgb[1] + rgb[2]) / (255 * 3)
+  const rgb = hexToRgb(hex);
+  if (!rgb) return 0.5;
+  return (rgb[0] + rgb[1] + rgb[2]) / (255 * 3);
 }
 
 function isDarkColor(hex: string): boolean {
-  return luminance(hex) < 0.5
+  return luminance(hex) < 0.5;
 }
 
 // ============================================================================
@@ -37,13 +37,13 @@ const targetHues: Record<HueName, number> = {
   blue: 220,
   purple: 280,
   pink: 330,
-}
+};
 
 /** Find which hue slot the primary color best matches by hue angle proximity. */
 export function assignPrimaryToSlot(primary: string): HueName {
-  const hsl = hexToHsl(primary)
-  if (!hsl) return "blue"
-  const h = hsl[0]
+  const hsl = hexToHsl(primary);
+  if (!hsl) return "blue";
+  const h = hsl[0];
   const slots: [number, number, HueName][] = [
     [0, 15, "red"],
     [15, 45, "orange"],
@@ -54,16 +54,16 @@ export function assignPrimaryToSlot(primary: string): HueName {
     [260, 310, "purple"],
     [310, 345, "pink"],
     [345, 360, "red"],
-  ]
+  ];
   for (const [lo, hi, name] of slots) {
-    if (h >= lo && h < hi) return name
+    if (h >= lo && h < hi) return name;
   }
-  return "blue"
+  return "blue";
 }
 
 /** Generate 8 accent hues from a primary, placing it in its natural slot. */
 function generateAccentsFromPrimary(primary: string): Record<HueName, string> {
-  const hsl = hexToHsl(primary)
+  const hsl = hexToHsl(primary);
   if (!hsl) {
     return {
       red: "#BF616A",
@@ -74,15 +74,15 @@ function generateAccentsFromPrimary(primary: string): Record<HueName, string> {
       blue: "#5E81AC",
       purple: "#B48EAD",
       pink: "#D4879C",
-    }
+    };
   }
-  const [, s, l] = hsl
-  const slot = assignPrimaryToSlot(primary)
-  const result = {} as Record<HueName, string>
+  const [, s, l] = hsl;
+  const slot = assignPrimaryToSlot(primary);
+  const result = {} as Record<HueName, string>;
   for (const [name, targetH] of Object.entries(targetHues) as [HueName, number][]) {
-    result[name] = name === slot ? primary : hslToHex(targetH, s, l)
+    result[name] = name === slot ? primary : hslToHex(targetH, s, l);
   }
-  return result
+  return result;
 }
 
 // ============================================================================
@@ -95,7 +95,7 @@ function generateAccentsFromPrimary(primary: string): Record<HueName, string> {
  * Maps base00–base0F to ANSI palette colors, derives special colors.
  */
 export function fromBase16(yamlOrJson: string): ColorPalette {
-  return importBase16Internal(yamlOrJson)
+  return importBase16Internal(yamlOrJson);
 }
 
 // ============================================================================
@@ -104,15 +104,15 @@ export function fromBase16(yamlOrJson: string): ColorPalette {
 
 interface FromColorsOptions {
   /** Background color (infers dark/light). */
-  background?: string
+  background?: string;
   /** Foreground/text color. Generated if omitted. */
-  foreground?: string
+  foreground?: string;
   /** Primary accent color. Generated if omitted. */
-  primary?: string
+  primary?: string;
   /** Force dark mode. */
-  dark?: boolean
+  dark?: boolean;
   /** Theme name. */
-  name?: string
+  name?: string;
 }
 
 /**
@@ -122,12 +122,12 @@ interface FromColorsOptions {
  * generated via surface ramp (from bg) and hue rotation (from primary).
  */
 export function fromColors(opts: FromColorsOptions): ColorPalette {
-  const dark = opts.dark ?? (opts.background ? isDarkColor(opts.background) : true)
-  const step = dark ? brighten : darken
+  const dark = opts.dark ?? (opts.background ? isDarkColor(opts.background) : true);
+  const step = dark ? brighten : darken;
 
   // Generate background if not provided
-  const bg = opts.background ?? (dark ? "#2E3440" : "#FFFFFF")
-  const fg = opts.foreground ?? step(bg, 0.85)
+  const bg = opts.background ?? (dark ? "#2E3440" : "#FFFFFF");
+  const fg = opts.foreground ?? step(bg, 0.85);
 
   // Generate accents from primary or defaults
   const accents = opts.primary
@@ -141,13 +141,13 @@ export function fromColors(opts: FromColorsOptions): ColorPalette {
         blue: "#5E81AC",
         purple: "#B48EAD",
         pink: "#D4879C",
-      }
+      };
 
   // Surface ramp for grayscale ANSI colors
-  const black = dark ? darken(bg, 0.05) : darken(bg, 0.1)
-  const white = dark ? blend(fg, bg, 0.3) : blend(bg, fg, 0.3)
-  const brightBlack = step(bg, 0.15)
-  const brightWhite = dark ? fg : brighten(fg, 0.1)
+  const black = dark ? darken(bg, 0.05) : darken(bg, 0.1);
+  const white = dark ? blend(fg, bg, 0.3) : blend(bg, fg, 0.3);
+  const brightBlack = step(bg, 0.15);
+  const brightWhite = dark ? fg : brighten(fg, 0.1);
 
   return {
     name: opts.name ?? (dark ? "generated-dark" : "generated-light"),
@@ -174,7 +174,7 @@ export function fromColors(opts: FromColorsOptions): ColorPalette {
     cursorText: bg,
     selectionBackground: blend(bg, accents.blue, 0.3),
     selectionForeground: fg,
-  }
+  };
 }
 
 // ============================================================================
@@ -187,7 +187,7 @@ export function fromColors(opts: FromColorsOptions): ColorPalette {
  * @returns The ColorPalette, or undefined if not found.
  */
 export function fromPreset(name: string): ColorPalette | undefined {
-  return getPaletteByName(name)
+  return getPaletteByName(name);
 }
 
 // ============================================================================
@@ -196,22 +196,22 @@ export function fromPreset(name: string): ColorPalette | undefined {
 
 /** Old ThemePalette shape for migration. */
 interface OldThemePalette {
-  name: string
-  dark: boolean
-  crust: string
-  base: string
-  surface: string
-  overlay: string
-  subtext: string
-  text: string
-  red: string
-  orange: string
-  yellow: string
-  green: string
-  teal: string
-  blue: string
-  purple: string
-  pink: string
+  name: string;
+  dark: boolean;
+  crust: string;
+  base: string;
+  surface: string;
+  overlay: string;
+  subtext: string;
+  text: string;
+  red: string;
+  orange: string;
+  yellow: string;
+  green: string;
+  teal: string;
+  blue: string;
+  purple: string;
+  pink: string;
 }
 
 /**
@@ -251,5 +251,5 @@ export function themePaletteToColorPalette(p: OldThemePalette): ColorPalette {
     cursorText: p.base,
     selectionBackground: p.overlay,
     selectionForeground: p.text,
-  }
+  };
 }

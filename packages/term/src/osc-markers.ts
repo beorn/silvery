@@ -29,4 +29,4 @@ export const OSC133 = {
   commandStart: "\x1b]133;C\x07",
   /** Mark command output end (exit code defaults to 0 = success) */
   commandEnd: (exitCode?: number) => `\x1b]133;D;${exitCode ?? 0}\x07`,
-} as const
+} as const;

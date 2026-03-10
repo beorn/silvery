@@ -38,10 +38,10 @@
  * ```
  */
 
-import type { ReactElement } from "react"
-import type { ScrollbackMarkerCallbacks } from "@silvery/react/hooks/useScrollback"
-import type { ReactNode } from "react"
-import { ScrollbackView } from "./ScrollbackView"
+import type { ReactElement } from "react";
+import type { ScrollbackMarkerCallbacks } from "@silvery/react/hooks/useScrollback";
+import type { ReactNode } from "react";
+import { ScrollbackView } from "./ScrollbackView";
 
 // ============================================================================
 // Types
@@ -49,32 +49,32 @@ import { ScrollbackView } from "./ScrollbackView"
 
 export interface ScrollbackListProps<T> {
   /** Array of items to render. */
-  items: T[]
+  items: T[];
   /** Render function for each item. Receives item and its index. */
-  children?: (item: T, index: number) => ReactNode
+  children?: (item: T, index: number) => ReactNode;
   /** Render function for each item. Alternative to children — prefer this for performance
    *  as it can be wrapped in useCallback for memoization. */
-  renderItem?: (item: T, index: number) => ReactNode
+  renderItem?: (item: T, index: number) => ReactNode;
   /** Extract a unique key for each item. */
-  keyExtractor: (item: T, index: number) => string | number
+  keyExtractor: (item: T, index: number) => string | number;
   /**
    * Data-driven frozen predicate. Items matching this predicate are frozen
    * immediately on render (no effect roundtrip needed). Works in addition
    * to the freeze() callback from useScrollbackItem.
    */
-  isFrozen?: (item: T, index: number) => boolean
+  isFrozen?: (item: T, index: number) => boolean;
   /** Optional footer pinned at the bottom of the terminal. */
-  footer?: ReactNode
+  footer?: ReactNode;
   /** @deprecated Footer now auto-sizes to content. This prop is ignored. */
-  footerHeight?: number
+  footerHeight?: number;
   /** OSC 133 marker configuration, forwarded to useScrollback. */
-  markers?: boolean | ScrollbackMarkerCallbacks<T>
+  markers?: boolean | ScrollbackMarkerCallbacks<T>;
   /** Terminal width in columns. Default: process.stdout.columns. */
-  width?: number
+  width?: number;
   /** Output stream for writing frozen items. Default: process.stdout. */
-  stdout?: { write(data: string): boolean }
+  stdout?: { write(data: string): boolean };
   /** Called when recovery from inconsistent state occurs. */
-  onRecovery?: () => void
+  onRecovery?: () => void;
 }
 
 // ============================================================================
@@ -88,5 +88,5 @@ export interface ScrollbackListProps<T> {
  * management to ScrollbackView without maxHistory (unlimited by default).
  */
 export function ScrollbackList<T>(props: ScrollbackListProps<T>): ReactElement {
-  return <ScrollbackView {...props} />
+  return <ScrollbackView {...props} />;
 }

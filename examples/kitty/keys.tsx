@@ -17,7 +17,7 @@
  * Run: bun vendor/silvery/examples/kitty/key-explorer.tsx
  */
 
-import React, { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react";
 import {
   render,
   Box,
@@ -32,34 +32,34 @@ import {
   detectKittyFromStdio,
   type Key,
   type ParsedKeypress,
-} from "../../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+} from "../../src/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Key Events",
   description: "Interactive key chord tester with color-coded modifiers",
   features: ["parseKeypress()", "detectKittySupport()", "⌘ ⌥ ⌃ ⇧ ✦ symbols", "KittyFlags"],
-}
+};
 
 const EVENT_TYPES: Record<number, string> = {
   1: "press",
   2: "repeat",
   3: "release",
-}
+};
 
 interface KeyEvent {
-  index: number
-  input: string
-  key: Key
-  parsed: ParsedKeypress
-  raw: string
+  index: number;
+  input: string;
+  key: Key;
+  parsed: ParsedKeypress;
+  raw: string;
 }
 
 /** Modifier definition with display name, symbol, and color */
 interface ModDef {
-  symbol: string
-  label: string
-  color: string
+  symbol: string;
+  label: string;
+  color: string;
 }
 
 const MODIFIER_DEFS: ModDef[] = [
@@ -68,50 +68,50 @@ const MODIFIER_DEFS: ModDef[] = [
   { symbol: "⌥", label: "Alt", color: "blue" },
   { symbol: "⌘", label: "Super", color: "green" },
   { symbol: "✦", label: "Hyper", color: "magenta" },
-]
+];
 
 function KeyExplorer({ kittySupported }: { kittySupported: boolean }): JSX.Element {
-  const { exit } = useApp()
-  const [events, setEvents] = useState<KeyEvent[]>([])
-  const [latest, setLatest] = useState<KeyEvent | null>(null)
-  const counterRef = useRef(0)
-  const stdin = process.stdin
+  const { exit } = useApp();
+  const [events, setEvents] = useState<KeyEvent[]>([]);
+  const [latest, setLatest] = useState<KeyEvent | null>(null);
+  const counterRef = useRef(0);
+  const stdin = process.stdin;
 
   // Listen to raw stdin for full ParsedKeypress info
   useEffect(() => {
     const onData = (data: Buffer) => {
-      const raw = data.toString()
+      const raw = data.toString();
       // Skip mouse sequences
-      if (raw.startsWith("\x1b[<")) return
+      if (raw.startsWith("\x1b[<")) return;
 
-      const parsed = parseKeypress(raw)
+      const parsed = parseKeypress(raw);
       // Don't log the quit key
-      if (parsed.name === "escape" || (raw === "q" && !parsed.ctrl && !parsed.meta)) return
+      if (parsed.name === "escape" || (raw === "q" && !parsed.ctrl && !parsed.meta)) return;
 
-      counterRef.current++
-      const [input, key] = parseInputKey(raw)
+      counterRef.current++;
+      const [input, key] = parseInputKey(raw);
       const event: KeyEvent = {
         index: counterRef.current,
         input,
         key,
         parsed,
         raw,
-      }
-      setLatest(event)
-      setEvents((prev) => [...prev.slice(-14), event])
-    }
+      };
+      setLatest(event);
+      setEvents((prev) => [...prev.slice(-14), event]);
+    };
 
-    stdin.on("data", onData)
+    stdin.on("data", onData);
     return () => {
-      stdin.off("data", onData)
-    }
-  }, [stdin])
+      stdin.off("data", onData);
+    };
+  }, [stdin]);
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) {
-      exit()
+      exit();
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -171,14 +171,20 @@ function KeyExplorer({ kittySupported }: { kittySupported: boolean }): JSX.Eleme
         </Box>
       </Box>
     </Box>
-  )
+  );
 }
 
 function KeyDetails({ event }: { event: KeyEvent }): JSX.Element {
-  const { parsed, raw } = event
+  const { parsed, raw } = event;
 
   // Determine which modifiers are active
-  const modActive: boolean[] = [parsed.ctrl, parsed.shift, parsed.meta || parsed.option, parsed.super, parsed.hyper]
+  const modActive: boolean[] = [
+    parsed.ctrl,
+    parsed.shift,
+    parsed.meta || parsed.option,
+    parsed.super,
+    parsed.hyper,
+  ];
 
   return (
     <Box flexDirection="column">
@@ -243,7 +249,7 @@ function KeyDetails({ event }: { event: KeyEvent }): JSX.Element {
         <Text bold>Sequence:</Text> <Text dim>{JSON.stringify(parsed.sequence)}</Text>
       </Text>
     </Box>
-  )
+  );
 }
 
 function ModBadge({ mod, active }: { mod: ModDef; active: boolean }): JSX.Element {
@@ -252,42 +258,48 @@ function ModBadge({ mod, active }: { mod: ModDef; active: boolean }): JSX.Elemen
       <Text backgroundColor={mod.color as any} color="white" bold>
         {` ${mod.symbol} ${mod.label} `}
       </Text>
-    )
+    );
   }
   return (
     <Text dim color="gray">
       {`  ${mod.symbol}  `}
     </Text>
-  )
+  );
 }
 
-function KeyField({ label, value }: { label: string; value: string | boolean | undefined }): JSX.Element {
+function KeyField({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | boolean | undefined;
+}): JSX.Element {
   if (value === undefined) {
-    return <Text dim>{label}: --</Text>
+    return <Text dim>{label}: --</Text>;
   }
   return (
     <Text>
       {label}: <Text color="yellow">{String(value)}</Text>
     </Text>
-  )
+  );
 }
 
 function formatEventSummary(event: KeyEvent): string {
-  const parts: string[] = []
-  const { parsed } = event
-  if (parsed.ctrl) parts.push("⌃")
-  if (parsed.shift) parts.push("⇧")
-  if (parsed.meta || parsed.option) parts.push("⌥")
-  if (parsed.super) parts.push("⌘")
-  if (parsed.hyper) parts.push("✦")
-  parts.push(parsed.name || JSON.stringify(event.input))
-  if (parsed.eventType) parts.push(`(${EVENT_TYPES[parsed.eventType]})`)
-  return parts.join("")
+  const parts: string[] = [];
+  const { parsed } = event;
+  if (parsed.ctrl) parts.push("⌃");
+  if (parsed.shift) parts.push("⇧");
+  if (parsed.meta || parsed.option) parts.push("⌥");
+  if (parsed.super) parts.push("⌘");
+  if (parsed.hyper) parts.push("✦");
+  parts.push(parsed.name || JSON.stringify(event.input));
+  if (parsed.eventType) parts.push(`(${EVENT_TYPES[parsed.eventType]})`);
+  return parts.join("");
 }
 
 /** Parse raw input into [input, Key] using the same logic as the runtime */
 function parseInputKey(raw: string): [string, Key] {
-  const parsed = parseKeypress(raw)
+  const parsed = parseKeypress(raw);
   const key: Key = {
     upArrow: parsed.name === "up",
     downArrow: parsed.name === "down",
@@ -308,33 +320,33 @@ function parseInputKey(raw: string): [string, Key] {
     super: parsed.super,
     hyper: parsed.hyper,
     eventType: parsed.eventType,
-  }
+  };
 
   // For printable chars, input is the character itself
-  const input = parsed.name.length === 1 ? parsed.name : ""
-  return [input, key]
+  const input = parsed.name.length === 1 ? parsed.name : "";
+  return [input, key];
 }
 
 async function main() {
   const cleanup = () => {
-    const stdout = process.stdout
-    stdout.write("\x1b[?1003l\x1b[?1006l") // Disable mouse
-    stdout.write("\x1b[?25h") // Show cursor
-    stdout.write("\x1b[?1049l") // Exit alternate screen
-    stdout.write("\x1b[0m") // Reset colors
+    const stdout = process.stdout;
+    stdout.write("\x1b[?1003l\x1b[?1006l"); // Disable mouse
+    stdout.write("\x1b[?25h"); // Show cursor
+    stdout.write("\x1b[?1049l"); // Exit alternate screen
+    stdout.write("\x1b[0m"); // Reset colors
     if (process.stdin.isTTY && process.stdin.isRaw) {
       try {
-        process.stdin.setRawMode(false)
+        process.stdin.setRawMode(false);
       } catch {}
     }
-  }
+  };
   process.on("uncaughtException", (err) => {
-    cleanup()
-    throw err
-  })
+    cleanup();
+    throw err;
+  });
 
   // Detect Kitty support before starting the app
-  const kittyResult = await detectKittyFromStdio(process.stdout, process.stdin)
+  const kittyResult = await detectKittyFromStdio(process.stdout, process.stdin);
 
   // Enable Kitty with all reporting flags if supported
   if (kittyResult.supported) {
@@ -343,41 +355,41 @@ async function main() {
       KittyFlags.REPORT_EVENTS |
       KittyFlags.REPORT_ALTERNATE |
       KittyFlags.REPORT_ALL_KEYS |
-      KittyFlags.REPORT_TEXT
-    process.stdout.write(enableKittyKeyboard(flags))
+      KittyFlags.REPORT_TEXT;
+    process.stdout.write(enableKittyKeyboard(flags));
   }
 
-  using term = createTerm()
+  using term = createTerm();
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="q/Esc quit">
       <KeyExplorer kittySupported={kittyResult.supported} />
     </ExampleBanner>,
     term,
-  )
-  await waitUntilExit()
+  );
+  await waitUntilExit();
 
   // Cleanup: disable Kitty protocol
   if (kittyResult.supported) {
-    process.stdout.write(disableKittyKeyboard())
+    process.stdout.write(disableKittyKeyboard());
   }
 }
 
 if (import.meta.main) {
   try {
-    await main()
+    await main();
   } catch (err) {
     // Restore terminal on crash
-    const stdout = process.stdout
-    stdout.write("\x1b[?1003l\x1b[?1006l") // Disable mouse
-    stdout.write("\x1b[?25h") // Show cursor
-    stdout.write("\x1b[?1049l") // Exit alternate screen
-    stdout.write("\x1b[0m") // Reset colors
+    const stdout = process.stdout;
+    stdout.write("\x1b[?1003l\x1b[?1006l"); // Disable mouse
+    stdout.write("\x1b[?25h"); // Show cursor
+    stdout.write("\x1b[?1049l"); // Exit alternate screen
+    stdout.write("\x1b[0m"); // Reset colors
     if (process.stdin.isTTY && process.stdin.isRaw) {
       try {
-        process.stdin.setRawMode(false)
+        process.stdin.setRawMode(false);
       } catch {}
     }
-    console.error(err)
-    process.exit(1)
+    console.error(err);
+    process.exit(1);
   }
 }

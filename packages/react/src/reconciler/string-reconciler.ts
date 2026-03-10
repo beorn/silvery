@@ -11,8 +11,8 @@
  */
 
 // @ts-expect-error - react-reconciler has no type declarations
-import Reconciler from "react-reconciler"
-import { hostConfig } from "./host-config"
+import Reconciler from "react-reconciler";
+import { hostConfig } from "./host-config";
 
 /**
  * Dedicated reconciler for string rendering.
@@ -24,4 +24,4 @@ import { hostConfig } from "./host-config"
 export const stringReconciler = Reconciler({
   ...hostConfig,
   isPrimaryRenderer: false,
-})
+});

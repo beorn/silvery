@@ -17,9 +17,9 @@
  * </Form>
  * ```
  */
-import React from "react"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React from "react";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -27,24 +27,24 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface FormProps {
   /** Called when Enter is pressed within the form (optional) */
-  onSubmit?: () => void
+  onSubmit?: () => void;
   /** Gap between form fields (default: 1) */
-  gap?: number
+  gap?: number;
   /** Form children (typically FormField components) */
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export interface FormFieldProps {
   /** Field label text */
-  label: string
+  label: string;
   /** Error message to display below the input */
-  error?: string
+  error?: string;
   /** Optional description text below the label */
-  description?: string
+  description?: string;
   /** Whether the field is required (shows * indicator) */
-  required?: boolean
+  required?: boolean;
   /** Field input children */
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 // =============================================================================
@@ -62,7 +62,7 @@ export function Form({ onSubmit: _onSubmit, gap = 1, children }: FormProps): Rea
     <Box flexDirection="column" gap={gap}>
       {children}
     </Box>
-  )
+  );
 }
 
 /**
@@ -71,7 +71,13 @@ export function Form({ onSubmit: _onSubmit, gap = 1, children }: FormProps): Rea
  * Renders a label above the input with optional required indicator,
  * description text, and error message in `$error` color.
  */
-export function FormField({ label, error, description, required, children }: FormFieldProps): React.ReactElement {
+export function FormField({
+  label,
+  error,
+  description,
+  required,
+  children,
+}: FormFieldProps): React.ReactElement {
   return (
     <Box flexDirection="column">
       <Text color="$mutedfg" bold>
@@ -82,5 +88,5 @@ export function FormField({ label, error, description, required, children }: For
       <Box>{children}</Box>
       {error && <Text color="$error">{error}</Text>}
     </Box>
-  )
+  );
 }

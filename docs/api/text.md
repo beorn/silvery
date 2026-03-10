@@ -5,7 +5,7 @@ Renders styled text. Supports ANSI escape codes and Chalk strings.
 ## Import
 
 ```tsx
-import { Text } from "silvery"
+import { Text } from "silvery";
 ```
 
 ## Usage
@@ -173,18 +173,18 @@ function Status({ type, message }: { type: "success" | "error" | "warning"; mess
     success: "green",
     error: "red",
     warning: "yellow",
-  }
+  };
   const icons = {
     success: "✓",
     error: "✗",
     warning: "⚠",
-  }
+  };
 
   return (
     <Text color={colors[type]}>
       {icons[type]} {message}
     </Text>
-  )
+  );
 }
 ```
 
@@ -197,7 +197,7 @@ function MenuItem({ label, isSelected }: { label: string; isSelected: boolean })
       {isSelected ? "> " : "  "}
       {label}
     </Text>
-  )
+  );
 }
 ```
 
@@ -209,6 +209,6 @@ function Code({ children }: { children: string }) {
     <Text backgroundColor="gray" color="white">
       {` ${children} `}
     </Text>
-  )
+  );
 }
 ```

@@ -42,20 +42,20 @@ export const THEME_TOKEN_KEYS: readonly string[] = [
   "focusborder",
   "link",
   "disabledfg",
-] as const
+] as const;
 
 /** Result of theme validation. */
 export interface ThemeValidationResult {
   /** Whether the theme has all required tokens. */
-  valid: boolean
+  valid: boolean;
   /** Token keys that are required but missing or empty. */
-  missing: string[]
+  missing: string[];
   /** Token keys that exist on the object but are not recognized theme tokens. */
-  extra: string[]
+  extra: string[];
 }
 
 /** All recognized keys on Theme (tokens + metadata). */
-const ALL_KNOWN_KEYS = new Set([...THEME_TOKEN_KEYS, "name", "palette"])
+const ALL_KNOWN_KEYS = new Set([...THEME_TOKEN_KEYS, "name", "palette"]);
 
 /**
  * Validate a Theme object — check that all required tokens are present.
@@ -72,21 +72,21 @@ const ALL_KNOWN_KEYS = new Set([...THEME_TOKEN_KEYS, "name", "palette"])
  * ```
  */
 export function validateTheme(theme: Record<string, unknown>): ThemeValidationResult {
-  const missing: string[] = []
-  const extra: string[] = []
+  const missing: string[] = [];
+  const extra: string[] = [];
 
   // Check for missing or empty required tokens
   for (const key of THEME_TOKEN_KEYS) {
-    const val = theme[key]
+    const val = theme[key];
     if (val === undefined || val === null || val === "") {
-      missing.push(key)
+      missing.push(key);
     }
   }
 
   // Check for unrecognized keys (exclude prototype properties)
   for (const key of Object.keys(theme)) {
     if (!ALL_KNOWN_KEYS.has(key)) {
-      extra.push(key)
+      extra.push(key);
     }
   }
 
@@ -94,5 +94,5 @@ export function validateTheme(theme: Record<string, unknown>): ThemeValidationRe
     valid: missing.length === 0,
     missing,
     extra,
-  }
+  };
 }

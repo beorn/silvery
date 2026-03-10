@@ -4,8 +4,8 @@
  * Single-choice selection list with keyboard navigation.
  */
 
-import React, { useState, useEffect, useCallback } from "react"
-import type { SelectProps, SelectOption } from "../types.js"
+import React, { useState, useEffect, useCallback } from "react";
+import type { SelectProps, SelectOption } from "../types.js";
 
 /**
  * Scrollable single-choice selection list
@@ -40,45 +40,55 @@ export function Select<T>({
   onHighlightChange,
 }: SelectProps<T>): React.ReactElement {
   // Find the index of the currently selected value
-  const selectedIndex = options.findIndex((opt) => opt.value === value)
+  const selectedIndex = options.findIndex((opt) => opt.value === value);
 
   // Internal highlight state (for uncontrolled mode)
-  const [internalHighlightIndex, setInternalHighlightIndex] = useState(selectedIndex >= 0 ? selectedIndex : 0)
+  const [internalHighlightIndex, setInternalHighlightIndex] = useState(
+    selectedIndex >= 0 ? selectedIndex : 0,
+  );
 
   // Use controlled or internal highlight index
-  const highlightIndex = controlledHighlightIndex ?? internalHighlightIndex
+  const highlightIndex = controlledHighlightIndex ?? internalHighlightIndex;
 
   // Calculate scroll window
-  const scrollOffset = Math.max(0, Math.min(highlightIndex - Math.floor(maxVisible / 2), options.length - maxVisible))
-  const visibleOptions = options.slice(scrollOffset, scrollOffset + maxVisible)
-  const hasMoreAbove = scrollOffset > 0
-  const hasMoreBelow = scrollOffset + maxVisible < options.length
+  const scrollOffset = Math.max(
+    0,
+    Math.min(highlightIndex - Math.floor(maxVisible / 2), options.length - maxVisible),
+  );
+  const visibleOptions = options.slice(scrollOffset, scrollOffset + maxVisible);
+  const hasMoreAbove = scrollOffset > 0;
+  const hasMoreBelow = scrollOffset + maxVisible < options.length;
 
   // Sync internal highlight when value changes externally
   useEffect(() => {
     if (controlledHighlightIndex === undefined && selectedIndex >= 0) {
-      setInternalHighlightIndex(selectedIndex)
+      setInternalHighlightIndex(selectedIndex);
     }
-  }, [selectedIndex, controlledHighlightIndex])
+  }, [selectedIndex, controlledHighlightIndex]);
 
   return (
     <div data-silvery-select>
       {hasMoreAbove && <div data-silvery-select-scroll-indicator="up">...</div>}
       {visibleOptions.map((option, visibleIdx) => {
-        const actualIndex = scrollOffset + visibleIdx
-        const isSelected = option.value === value
-        const isHighlighted = actualIndex === highlightIndex
+        const actualIndex = scrollOffset + visibleIdx;
+        const isSelected = option.value === value;
+        const isHighlighted = actualIndex === highlightIndex;
 
         return (
-          <div key={actualIndex} data-silvery-select-option data-selected={isSelected} data-highlighted={isHighlighted}>
+          <div
+            key={actualIndex}
+            data-silvery-select-option
+            data-selected={isSelected}
+            data-highlighted={isHighlighted}
+          >
             <span data-silvery-select-indicator>{isSelected ? ">" : " "}</span>
             <span data-silvery-select-label>{option.label}</span>
           </div>
-        )
+        );
       })}
       {hasMoreBelow && <div data-silvery-select-scroll-indicator="down">...</div>}
     </div>
-  )
+  );
 }
 
 /**
@@ -112,37 +122,38 @@ export function useSelect<T>({
   initialValue,
   onChange,
 }: {
-  options: SelectOption<T>[]
-  initialValue?: T
-  onChange?: (value: T) => void
+  options: SelectOption<T>[];
+  initialValue?: T;
+  onChange?: (value: T) => void;
 }): {
-  value: T | undefined
-  highlightIndex: number
-  moveUp: () => void
-  moveDown: () => void
-  select: () => void
-  setHighlightIndex: (index: number) => void
+  value: T | undefined;
+  highlightIndex: number;
+  moveUp: () => void;
+  moveDown: () => void;
+  select: () => void;
+  setHighlightIndex: (index: number) => void;
 } {
-  const initialIndex = initialValue !== undefined ? options.findIndex((opt) => opt.value === initialValue) : 0
+  const initialIndex =
+    initialValue !== undefined ? options.findIndex((opt) => opt.value === initialValue) : 0;
 
-  const [highlightIndex, setHighlightIndex] = useState(Math.max(0, initialIndex))
-  const [value, setValue] = useState<T | undefined>(initialValue)
+  const [highlightIndex, setHighlightIndex] = useState(Math.max(0, initialIndex));
+  const [value, setValue] = useState<T | undefined>(initialValue);
 
   const moveUp = useCallback(() => {
-    setHighlightIndex((i) => Math.max(0, i - 1))
-  }, [])
+    setHighlightIndex((i) => Math.max(0, i - 1));
+  }, []);
 
   const moveDown = useCallback(() => {
-    setHighlightIndex((i) => Math.min(options.length - 1, i + 1))
-  }, [options.length])
+    setHighlightIndex((i) => Math.min(options.length - 1, i + 1));
+  }, [options.length]);
 
   const select = useCallback(() => {
-    const option = options[highlightIndex]
+    const option = options[highlightIndex];
     if (option) {
-      setValue(option.value)
-      onChange?.(option.value)
+      setValue(option.value);
+      onChange?.(option.value);
     }
-  }, [highlightIndex, options, onChange])
+  }, [highlightIndex, options, onChange]);
 
   return {
     value,
@@ -151,5 +162,5 @@ export function useSelect<T>({
     moveDown,
     select,
     setHighlightIndex,
-  }
+  };
 }

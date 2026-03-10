@@ -22,10 +22,10 @@
  * />
  * ```
  */
-import React, { forwardRef, useImperativeHandle } from "react"
-import { useVirtualization } from "@silvery/react/hooks/useVirtualization"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React, { forwardRef, useImperativeHandle } from "react";
+import { useVirtualization } from "@silvery/react/hooks/useVirtualization";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -33,59 +33,59 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface HorizontalVirtualListProps<T> {
   /** Array of items to render */
-  items: T[]
+  items: T[];
 
   /** Width of the list viewport in columns */
-  width: number
+  width: number;
 
   /** Width of each item (fixed number or function for variable widths) */
-  itemWidth: number | ((item: T, index: number) => number)
+  itemWidth: number | ((item: T, index: number) => number);
 
   /** Index to keep visible (scrolls if off-screen) */
-  scrollTo?: number
+  scrollTo?: number;
 
   /** Extra items to render left/right of viewport for smooth scrolling (default: 1) */
-  overscan?: number
+  overscan?: number;
 
   /** Maximum items to render at once (default: 20) */
-  maxRendered?: number
+  maxRendered?: number;
 
   /** Render function for each item */
-  renderItem: (item: T, index: number) => React.ReactNode
+  renderItem: (item: T, index: number) => React.ReactNode;
 
   /** Show built-in overflow indicators (◀N/▶N) */
-  overflowIndicator?: boolean
+  overflowIndicator?: boolean;
 
   /** Custom overflow indicator renderer. Replaces built-in indicators when provided. */
-  renderOverflowIndicator?: (direction: "before" | "after", hiddenCount: number) => React.ReactNode
+  renderOverflowIndicator?: (direction: "before" | "after", hiddenCount: number) => React.ReactNode;
 
   /** Width in chars of each overflow indicator (default: 0). Reserves viewport space for indicators. */
-  overflowIndicatorWidth?: number
+  overflowIndicatorWidth?: number;
 
   /** Optional key extractor (defaults to index) */
-  keyExtractor?: (item: T, index: number) => string | number
+  keyExtractor?: (item: T, index: number) => string | number;
 
   /** Height of the list (optional, uses parent height if not specified) */
-  height?: number
+  height?: number;
 
   /** Gap between items in columns (default: 0) */
-  gap?: number
+  gap?: number;
 
   /** Render separator between items (alternative to gap) */
-  renderSeparator?: () => React.ReactNode
+  renderSeparator?: () => React.ReactNode;
 }
 
 export interface HorizontalVirtualListHandle {
   /** Scroll to a specific item index */
-  scrollToItem(index: number): void
+  scrollToItem(index: number): void;
 }
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const DEFAULT_OVERSCAN = 1
-const DEFAULT_MAX_RENDERED = 20
+const DEFAULT_OVERSCAN = 1;
+const DEFAULT_MAX_RENDERED = 20;
 
 /**
  * Padding from edge before scrolling (in items).
@@ -95,7 +95,7 @@ const DEFAULT_MAX_RENDERED = 20
  *
  * @see calcEdgeBasedScrollOffset in scroll-utils.ts for the algorithm
  */
-const SCROLL_PADDING = 1
+const SCROLL_PADDING = 1;
 
 // =============================================================================
 // Helpers
@@ -119,13 +119,13 @@ function calcTotalItemsWidth<T>(
   itemWidth: number | ((item: T, index: number) => number),
   gap: number,
 ): number {
-  if (items.length === 0) return 0
-  if (typeof itemWidth === "number") return items.length * itemWidth + (items.length - 1) * gap
-  let total = 0
+  if (items.length === 0) return 0;
+  if (typeof itemWidth === "number") return items.length * itemWidth + (items.length - 1) * gap;
+  let total = 0;
   for (let i = 0; i < items.length; i++) {
-    total += itemWidth(items[i], i) + (i > 0 ? gap : 0)
+    total += itemWidth(items[i], i) + (i > 0 ? gap : 0);
   }
-  return total
+  return total;
 }
 
 /**
@@ -143,18 +143,18 @@ function calcActualVisibleCount<T>(
   // HVL's rendering loop includes such items (clipped by overflow="hidden"),
   // so the visible count should match for accurate overflow indicators.
   if (typeof itemWidth === "number") {
-    return Math.max(1, Math.ceil(viewport / (itemWidth + gap)))
+    return Math.max(1, Math.ceil(viewport / (itemWidth + gap)));
   }
-  let usedSize = 0
-  let count = 0
+  let usedSize = 0;
+  let count = 0;
   for (let i = startFrom; i < items.length; i++) {
-    const size = itemWidth(items[i], i)
-    const sizeWithGap = size + (count > 0 ? gap : 0)
-    usedSize += sizeWithGap
-    count++
-    if (usedSize >= viewport) break
+    const size = itemWidth(items[i], i);
+    const sizeWithGap = size + (count > 0 ? gap : 0);
+    usedSize += sizeWithGap;
+    count++;
+    if (usedSize >= viewport) break;
   }
-  return Math.max(1, count)
+  return Math.max(1, count);
 }
 
 /**
@@ -170,14 +170,14 @@ function calcItemOverflow<T>(
   itemWidth: number | ((item: T, index: number) => number),
   gap: number,
 ): number {
-  if (targetIndex < scrollOffset || targetIndex >= items.length) return 0
+  if (targetIndex < scrollOffset || targetIndex >= items.length) return 0;
   // Sum widths from scrollOffset to targetIndex (inclusive)
-  let pos = 0
+  let pos = 0;
   for (let i = scrollOffset; i <= targetIndex; i++) {
-    const w = typeof itemWidth === "number" ? itemWidth : itemWidth(items[i]!, i)
-    pos += w + (i > scrollOffset ? gap : 0)
+    const w = typeof itemWidth === "number" ? itemWidth : itemWidth(items[i]!, i);
+    pos += w + (i > scrollOffset ? gap : 0);
   }
-  return pos - viewport
+  return pos - viewport;
 }
 
 // =============================================================================
@@ -220,11 +220,11 @@ function HorizontalVirtualListInner<T>(
   // This prevents layout shift: without reservation, the first render uses full width,
   // then a second render detects overflow and shrinks the viewport by 2 chars,
   // causing all columns to reflow visibly.
-  const totalItemsWidth = calcTotalItemsWidth(items, itemWidth, gap)
-  const allItemsFit = totalItemsWidth <= width
-  const hasIndicatorRenderer = renderOverflowIndicator != null || overflowIndicator === true
-  const indicatorReserved = hasIndicatorRenderer ? overflowIndicatorWidth * 2 : 0
-  const effectiveViewport = Math.max(1, width - indicatorReserved)
+  const totalItemsWidth = calcTotalItemsWidth(items, itemWidth, gap);
+  const allItemsFit = totalItemsWidth <= width;
+  const hasIndicatorRenderer = renderOverflowIndicator != null || overflowIndicator === true;
+  const indicatorReserved = hasIndicatorRenderer ? overflowIndicatorWidth * 2 : 0;
+  const effectiveViewport = Math.max(1, width - indicatorReserved);
 
   // Use shared virtualization hook for scroll state management
   const { startIndex, endIndex, scrollOffset, scrollToItem } = useVirtualization({
@@ -236,10 +236,10 @@ function HorizontalVirtualListInner<T>(
     overscan,
     maxRendered,
     gap,
-  })
+  });
 
   // Expose scrollToItem method via ref for imperative scrolling
-  useImperativeHandle(ref, () => ({ scrollToItem }), [scrollToItem])
+  useImperativeHandle(ref, () => ({ scrollToItem }), [scrollToItem]);
 
   // Empty state
   if (items.length === 0) {
@@ -247,13 +247,13 @@ function HorizontalVirtualListInner<T>(
       <Box flexDirection="row" width={width} height={height}>
         {/* Empty - nothing to render */}
       </Box>
-    )
+    );
   }
 
   // When all items fit, override scrollOffset to 0. useVirtualization may compute
   // a non-zero offset due to average-based estimation with variable widths
   // (e.g., collapsed=3 vs expanded=76 averages to 39.5, underestimating visible count).
-  let displayScrollOffset = allItemsFit ? 0 : scrollOffset
+  let displayScrollOffset = allItemsFit ? 0 : scrollOffset;
 
   // Fix partial visibility: useVirtualization reserves space for both overflow
   // indicators (left + right), but at the edges only one shows. Recalculate
@@ -262,53 +262,73 @@ function HorizontalVirtualListInner<T>(
   // If they don't, bump the offset to fully reveal the cursor item.
   if (scrollTo !== undefined && !allItemsFit && scrollTo >= displayScrollOffset) {
     // Determine which indicators would show at the current offset
-    const wouldShowLeft = hasIndicatorRenderer && displayScrollOffset > 0
-    const prelimVisibleCount = calcActualVisibleCount(items, displayScrollOffset, effectiveViewport, itemWidth, gap)
-    const wouldShowRight = hasIndicatorRenderer && items.length - displayScrollOffset - prelimVisibleCount > 0
+    const wouldShowLeft = hasIndicatorRenderer && displayScrollOffset > 0;
+    const prelimVisibleCount = calcActualVisibleCount(
+      items,
+      displayScrollOffset,
+      effectiveViewport,
+      itemWidth,
+      gap,
+    );
+    const wouldShowRight =
+      hasIndicatorRenderer && items.length - displayScrollOffset - prelimVisibleCount > 0;
     // Actual viewport uses only the indicators that will actually render
     const actualIndicatorWidth =
-      (wouldShowLeft ? overflowIndicatorWidth : 0) + (wouldShowRight ? overflowIndicatorWidth : 0)
-    const actualViewport = Math.max(1, width - actualIndicatorWidth)
+      (wouldShowLeft ? overflowIndicatorWidth : 0) + (wouldShowRight ? overflowIndicatorWidth : 0);
+    const actualViewport = Math.max(1, width - actualIndicatorWidth);
 
-    const overflow = calcItemOverflow(items, displayScrollOffset, scrollTo, actualViewport, itemWidth, gap)
+    const overflow = calcItemOverflow(
+      items,
+      displayScrollOffset,
+      scrollTo,
+      actualViewport,
+      itemWidth,
+      gap,
+    );
     if (overflow > 0) {
       // Scroll right by 1 to push the partially clipped item into full view.
-      const maxOffset = Math.max(0, items.length - 1)
-      displayScrollOffset = Math.min(maxOffset, displayScrollOffset + 1)
+      const maxOffset = Math.max(0, items.length - 1);
+      displayScrollOffset = Math.min(maxOffset, displayScrollOffset + 1);
     }
   }
 
   // Compute how many items actually fit starting from the display scroll offset.
   // Uses actual item widths rather than averages for accurate overflow detection.
-  const visibleCount = calcActualVisibleCount(items, displayScrollOffset, effectiveViewport, itemWidth, gap)
+  const visibleCount = calcActualVisibleCount(
+    items,
+    displayScrollOffset,
+    effectiveViewport,
+    itemWidth,
+    gap,
+  );
 
   // Viewport-based item window: render items from displayScrollOffset that fit in the
   // viewport, intersected with useVirtualization's render window (respects maxRendered).
   // No overscan beyond the viewport edge — terminal UI doesn't benefit from pre-rendering
   // off-screen items, and they'd appear in the DOM tree despite being visually clipped.
-  const vpStart = Math.max(startIndex, displayScrollOffset)
-  const rawVpEnd = Math.min(endIndex, displayScrollOffset + visibleCount + overscan)
-  let vpEnd = vpStart
-  let usedWidth = 0
+  const vpStart = Math.max(startIndex, displayScrollOffset);
+  const rawVpEnd = Math.min(endIndex, displayScrollOffset + visibleCount + overscan);
+  let vpEnd = vpStart;
+  let usedWidth = 0;
   for (let i = vpStart; i < rawVpEnd; i++) {
-    const w = typeof itemWidth === "number" ? itemWidth : itemWidth(items[i]!, i)
-    usedWidth += w + (vpEnd > vpStart ? gap : 0)
-    vpEnd = i + 1
-    if (usedWidth >= effectiveViewport) break // This item fills/exceeds viewport, include but stop
+    const w = typeof itemWidth === "number" ? itemWidth : itemWidth(items[i]!, i);
+    usedWidth += w + (vpEnd > vpStart ? gap : 0);
+    vpEnd = i + 1;
+    if (usedWidth >= effectiveViewport) break; // This item fills/exceeds viewport, include but stop
   }
-  const visibleItems = items.slice(vpStart, vpEnd)
+  const visibleItems = items.slice(vpStart, vpEnd);
 
   // Viewport-based overflow detection
-  const overflowBefore = displayScrollOffset
-  const overflowAfter = Math.max(0, items.length - displayScrollOffset - visibleCount)
+  const overflowBefore = displayScrollOffset;
+  const overflowAfter = Math.max(0, items.length - displayScrollOffset - visibleCount);
 
   // Only render overflow indicators when there are actually hidden items in that direction.
   // Space is still reserved via indicatorReserved/effectiveViewport to prevent layout shift;
   // when an indicator is not shown, an empty spacer of the same width fills its slot.
-  const hasCustomIndicator = renderOverflowIndicator != null
-  const showIndicators = hasCustomIndicator || overflowIndicator === true
-  const showLeftIndicator = showIndicators && overflowBefore > 0
-  const showRightIndicator = showIndicators && overflowAfter > 0
+  const hasCustomIndicator = renderOverflowIndicator != null;
+  const showIndicators = hasCustomIndicator || overflowIndicator === true;
+  const showLeftIndicator = showIndicators && overflowBefore > 0;
+  const showRightIndicator = showIndicators && overflowAfter > 0;
 
   return (
     <Box flexDirection="row" width={width} height={height}>
@@ -333,9 +353,9 @@ function HorizontalVirtualListInner<T>(
         {/* Render visible items — flexShrink={0} prevents flex from shrinking
             overscan items; they render at full size and get clipped by overflow="hidden" */}
         {visibleItems.map((item, i) => {
-          const actualIndex = vpStart + i
-          const key = keyExtractor ? keyExtractor(item, actualIndex) : actualIndex
-          const isLast = i === visibleItems.length - 1
+          const actualIndex = vpStart + i;
+          const key = keyExtractor ? keyExtractor(item, actualIndex) : actualIndex;
+          const isLast = i === visibleItems.length - 1;
 
           return (
             <React.Fragment key={key}>
@@ -343,7 +363,7 @@ function HorizontalVirtualListInner<T>(
               {!isLast && renderSeparator && renderSeparator()}
               {!isLast && gap > 0 && !renderSeparator && <Box width={gap} flexShrink={0} />}
             </React.Fragment>
-          )
+          );
         })}
       </Box>
 
@@ -363,12 +383,12 @@ function HorizontalVirtualListInner<T>(
         <Box width={overflowIndicatorWidth} flexShrink={0} />
       )}
     </Box>
-  )
+  );
 }
 
 // Export with forwardRef - use type assertion for generic component
 export const HorizontalVirtualList = forwardRef(HorizontalVirtualListInner) as <T>(
   props: HorizontalVirtualListProps<T> & {
-    ref?: React.ForwardedRef<HorizontalVirtualListHandle>
+    ref?: React.ForwardedRef<HorizontalVirtualListHandle>;
   },
-) => React.ReactElement
+) => React.ReactElement;

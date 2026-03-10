@@ -25,7 +25,7 @@ features:
     link: /guide/silvery-vs-ink#performance
     linkText: See benchmarks
   - title: Responsive Layout
-    details: "Full CSS Flexbox layout via Flexily (pure JS, Yoga-compatible). Components query their own dimensions via useContentRect() — no width prop drilling. Native scrollable containers with overflow=\"scroll\"."
+    details: 'Full CSS Flexbox layout via Flexily (pure JS, Yoga-compatible). Components query their own dimensions via useContentRect() — no width prop drilling. Native scrollable containers with overflow="scroll".'
   - title: 30+ Components
     details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
     link: /guides/components
@@ -113,29 +113,29 @@ yarn add silvery react
 :::
 
 ```tsx
-import { useState } from "react"
-import { Box, Text, useContentRect, useInput, render, createTerm } from "silvery"
+import { useState } from "react";
+import { Box, Text, useContentRect, useInput, render, createTerm } from "silvery";
 
 function App() {
-  const { width } = useContentRect() // Components know their size!
-  const [count, setCount] = useState(0)
+  const { width } = useContentRect(); // Components know their size!
+  const [count, setCount] = useState(0);
 
   useInput((input, key) => {
-    if (input === "j" || key.downArrow) setCount((c) => c + 1)
-    if (input === "k" || key.upArrow) setCount((c) => c - 1)
-    if (input === "q") return "exit"
-  })
+    if (input === "j" || key.downArrow) setCount((c) => c + 1);
+    if (input === "k" || key.upArrow) setCount((c) => c - 1);
+    if (input === "q") return "exit";
+  });
 
   return (
     <Box flexDirection="column">
       <Text>Terminal width: {width}</Text>
       <Text>Count: {count}</Text>
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
-await render(<App />, term)
+using term = createTerm();
+await render(<App />, term);
 ```
 
 ## Ecosystem

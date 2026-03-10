@@ -15,18 +15,18 @@ npm install silvery react
 > **Status:** Alpha — under active development. APIs may change. Early adopters and feedback welcome.
 
 ```tsx
-import { useState } from "react"
-import { render, Box, Text, useInput, useContentRect, createTerm } from "silvery"
+import { useState } from "react";
+import { render, Box, Text, useInput, useContentRect, createTerm } from "silvery";
 
 function App() {
-  const { width } = useContentRect()
-  const [count, setCount] = useState(0)
+  const { width } = useContentRect();
+  const [count, setCount] = useState(0);
 
   useInput((input) => {
-    if (input === "j") setCount((c) => c + 1)
-    if (input === "k") setCount((c) => c - 1)
-    if (input === "q") return "exit"
-  })
+    if (input === "j") setCount((c) => c + 1);
+    if (input === "k") setCount((c) => c - 1);
+    if (input === "q") return "exit";
+  });
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -34,11 +34,11 @@ function App() {
       <Text>Count: {count}</Text>
       <Text dim>j/k = change, q = quit</Text>
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
-await render(<App />, term).run()
+using term = createTerm();
+await render(<App />, term).run();
 ```
 
 ## Renderer
@@ -49,8 +49,8 @@ await render(<App />, term).run()
 
 ```tsx
 function Responsive() {
-  const { width } = useContentRect()
-  return width > 80 ? <FullDashboard /> : <CompactView />
+  const { width } = useContentRect();
+  return width > 80 ? <FullDashboard /> : <CompactView />;
 }
 ```
 
@@ -99,7 +99,7 @@ Named commands with IDs, help text, configurable keybindings, and runtime intros
 const MyComponent = withCommands(BaseComponent, () => [
   { id: "save", label: "Save", keys: ["ctrl+s"], action: () => save() },
   { id: "quit", label: "Quit", keys: ["q", "ctrl+c"], action: () => exit() },
-])
+]);
 ```
 
 ### Mouse support

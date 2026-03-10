@@ -15,7 +15,7 @@
 // Mouse Parsing (SGR mode 1006)
 // =============================================================================
 
-export { parseMouseSequence, isMouseSequence, type ParsedMouse } from "./mouse"
+export { parseMouseSequence, isMouseSequence, type ParsedMouse } from "./mouse";
 
 // =============================================================================
 // Mouse Events (DOM-level)
@@ -36,7 +36,7 @@ export {
   type MouseEventProps,
   type MouseEventProcessorOptions,
   type MouseEventProcessorState,
-} from "./mouse-events"
+} from "./mouse-events";
 
 // =============================================================================
 // Hit Registry (mouse target resolution)
@@ -50,8 +50,8 @@ export {
   useHitRegionCallback,
   resetHitRegionIdCounter,
   Z_INDEX,
-} from "./hit-registry"
-export type { HitTarget, HitRegion } from "./hit-registry"
+} from "./hit-registry";
+export type { HitTarget, HitRegion } from "./hit-registry";
 
 // =============================================================================
 // ANSI Escape Sequences
@@ -70,19 +70,19 @@ export {
   notifyITerm2,
   notifyKitty,
   reportDirectory,
-} from "./output"
+} from "./output";
 
 // =============================================================================
 // Kitty Protocol Detection
 // =============================================================================
 
-export { detectKittySupport, detectKittyFromStdio, type KittyDetectResult } from "./kitty-detect"
+export { detectKittySupport, detectKittyFromStdio, type KittyDetectResult } from "./kitty-detect";
 
 // =============================================================================
 // Terminal Capability Detection
 // =============================================================================
 
-export { detectTerminalCaps, type TerminalCaps } from "./terminal-caps"
+export { detectTerminalCaps, type TerminalCaps } from "./terminal-caps";
 
 // =============================================================================
 // Bracketed Paste
@@ -94,14 +94,14 @@ export {
   parseBracketedPaste,
   PASTE_START,
   PASTE_END,
-} from "./bracketed-paste"
-export type { BracketedPasteResult } from "./bracketed-paste"
+} from "./bracketed-paste";
+export type { BracketedPasteResult } from "./bracketed-paste";
 
 // =============================================================================
 // OSC 52 Clipboard
 // =============================================================================
 
-export { copyToClipboard, requestClipboard, parseClipboardResponse } from "./clipboard"
+export { copyToClipboard, requestClipboard, parseClipboardResponse } from "./clipboard";
 
 // =============================================================================
 // Key Parsing
@@ -115,5 +115,5 @@ export {
   parseKeypress,
   parseKey,
   emptyKey,
-} from "@silvery/tea/keys"
-export type { ParsedKeypress, ParsedHotkey } from "@silvery/tea/keys"
+} from "@silvery/tea/keys";
+export type { ParsedKeypress, ParsedHotkey } from "@silvery/tea/keys";

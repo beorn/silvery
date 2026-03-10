@@ -19,24 +19,24 @@
  *   Ctrl+K/U (kill to end/beginning of text vs wrapped line)
  *   Home/End, Up/Down, PageUp/PageDown, Enter, Escape
  */
-import type { Key } from "@silvery/tea/keys"
+import type { Key } from "@silvery/tea/keys";
 
 // =============================================================================
 // Kill Ring
 // =============================================================================
 
 /** Maximum entries in the global kill ring */
-export const MAX_KILL_RING_SIZE = 10
+export const MAX_KILL_RING_SIZE = 10;
 
 /** Global kill ring shared across all readline instances */
-export const killRing: string[] = []
+export const killRing: string[] = [];
 
 /** Add text to the front of the kill ring, evicting oldest if full */
 export function addToKillRing(text: string): void {
-  if (!text) return
-  killRing.unshift(text)
+  if (!text) return;
+  killRing.unshift(text);
   if (killRing.length > MAX_KILL_RING_SIZE) {
-    killRing.pop()
+    killRing.pop();
   }
 }
 
@@ -45,22 +45,22 @@ export function addToKillRing(text: string): void {
 // =============================================================================
 
 function findWordBoundary(value: string, cursor: number, direction: 1 | -1): number {
-  let pos = cursor
-  const peek = direction > 0 ? (p: number) => value[p] : (p: number) => value[p - 1]
-  const inBounds = direction > 0 ? (p: number) => p < value.length : (p: number) => p > 0
-  while (inBounds(pos) && /\s/.test(peek(pos) ?? "")) pos += direction
-  while (inBounds(pos) && !/\s/.test(peek(pos) ?? "")) pos += direction
-  return pos
+  let pos = cursor;
+  const peek = direction > 0 ? (p: number) => value[p] : (p: number) => value[p - 1];
+  const inBounds = direction > 0 ? (p: number) => p < value.length : (p: number) => p > 0;
+  while (inBounds(pos) && /\s/.test(peek(pos) ?? "")) pos += direction;
+  while (inBounds(pos) && !/\s/.test(peek(pos) ?? "")) pos += direction;
+  return pos;
 }
 
 /** Find the start of the previous word (for Alt+B, Ctrl+W) */
 export function findPrevWordStart(value: string, cursor: number): number {
-  return findWordBoundary(value, cursor, -1)
+  return findWordBoundary(value, cursor, -1);
 }
 
 /** Find the end of the next word (for Alt+F, Alt+D) */
 export function findNextWordEnd(value: string, cursor: number): number {
-  return findWordBoundary(value, cursor, 1)
+  return findWordBoundary(value, cursor, 1);
 }
 
 // =============================================================================
@@ -69,17 +69,17 @@ export function findNextWordEnd(value: string, cursor: number): number {
 
 /** Yank state for Alt+Y kill-ring cycling */
 export interface YankState {
-  lastYankIndex: number
-  yankStart: number
-  yankEnd: number
+  lastYankIndex: number;
+  yankStart: number;
+  yankEnd: number;
 }
 
 /** Result from handleReadlineKey — new value/cursor plus updated yank state */
 export interface ReadlineKeyResult {
-  value: string
-  cursor: number
+  value: string;
+  cursor: number;
   /** null = reset yank state (non-yank op), YankState = yank/cycle was performed */
-  yankState: YankState | null
+  yankState: YankState | null;
 }
 
 /**
@@ -105,22 +105,22 @@ export function handleReadlineKey(
 
   // Left / Ctrl+B
   if (key.leftArrow || (key.ctrl && input === "b")) {
-    return { value, cursor: cursor > 0 ? cursor - 1 : cursor, yankState: null }
+    return { value, cursor: cursor > 0 ? cursor - 1 : cursor, yankState: null };
   }
 
   // Right / Ctrl+F
   if (key.rightArrow || (key.ctrl && input === "f")) {
-    return { value, cursor: cursor < value.length ? cursor + 1 : cursor, yankState: null }
+    return { value, cursor: cursor < value.length ? cursor + 1 : cursor, yankState: null };
   }
 
   // Alt+B: word backwards
   if (key.meta && input === "b") {
-    return { value, cursor: findPrevWordStart(value, cursor), yankState: null }
+    return { value, cursor: findPrevWordStart(value, cursor), yankState: null };
   }
 
   // Alt+F: word forwards
   if (key.meta && input === "f") {
-    return { value, cursor: findNextWordEnd(value, cursor), yankState: null }
+    return { value, cursor: findNextWordEnd(value, cursor), yankState: null };
   }
 
   // =========================================================================
@@ -129,34 +129,34 @@ export function handleReadlineKey(
 
   // Ctrl+W: kill word backwards
   if (key.ctrl && input === "w") {
-    if (cursor === 0) return { value, cursor, yankState: null }
-    const newCursor = findPrevWordStart(value, cursor)
-    addToKillRing(value.slice(newCursor, cursor))
+    if (cursor === 0) return { value, cursor, yankState: null };
+    const newCursor = findPrevWordStart(value, cursor);
+    addToKillRing(value.slice(newCursor, cursor));
     return {
       value: value.slice(0, newCursor) + value.slice(cursor),
       cursor: newCursor,
       yankState: null,
-    }
+    };
   }
 
   // Alt+Backspace: same as Ctrl+W
   if (key.meta && key.backspace) {
-    if (cursor === 0) return { value, cursor, yankState: null }
-    const newCursor = findPrevWordStart(value, cursor)
-    addToKillRing(value.slice(newCursor, cursor))
+    if (cursor === 0) return { value, cursor, yankState: null };
+    const newCursor = findPrevWordStart(value, cursor);
+    addToKillRing(value.slice(newCursor, cursor));
     return {
       value: value.slice(0, newCursor) + value.slice(cursor),
       cursor: newCursor,
       yankState: null,
-    }
+    };
   }
 
   // Alt+D: kill word forwards
   if (key.meta && input === "d") {
-    if (cursor >= value.length) return { value, cursor, yankState: null }
-    const newEnd = findNextWordEnd(value, cursor)
-    addToKillRing(value.slice(cursor, newEnd))
-    return { value: value.slice(0, cursor) + value.slice(newEnd), cursor, yankState: null }
+    if (cursor >= value.length) return { value, cursor, yankState: null };
+    const newEnd = findNextWordEnd(value, cursor);
+    addToKillRing(value.slice(cursor, newEnd));
+    return { value: value.slice(0, cursor) + value.slice(newEnd), cursor, yankState: null };
   }
 
   // =========================================================================
@@ -165,28 +165,28 @@ export function handleReadlineKey(
 
   // Ctrl+Y: yank from kill ring
   if (key.ctrl && input === "y") {
-    if (killRing.length === 0) return { value, cursor, yankState }
-    const text = killRing[0] ?? ""
-    const newCursor = cursor + text.length
+    if (killRing.length === 0) return { value, cursor, yankState };
+    const text = killRing[0] ?? "";
+    const newCursor = cursor + text.length;
     return {
       value: value.slice(0, cursor) + text + value.slice(cursor),
       cursor: newCursor,
       yankState: { lastYankIndex: 0, yankStart: cursor, yankEnd: newCursor },
-    }
+    };
   }
 
   // Alt+Y: cycle through kill ring (only after Ctrl+Y)
   if (key.meta && input === "y") {
-    if (!yankState || killRing.length <= 1) return { value, cursor, yankState }
-    const nextIndex = (yankState.lastYankIndex + 1) % killRing.length
-    const text = killRing[nextIndex] ?? ""
-    const newValue = value.slice(0, yankState.yankStart) + text + value.slice(yankState.yankEnd)
-    const newCursor = yankState.yankStart + text.length
+    if (!yankState || killRing.length <= 1) return { value, cursor, yankState };
+    const nextIndex = (yankState.lastYankIndex + 1) % killRing.length;
+    const text = killRing[nextIndex] ?? "";
+    const newValue = value.slice(0, yankState.yankStart) + text + value.slice(yankState.yankEnd);
+    const newCursor = yankState.yankStart + text.length;
     return {
       value: newValue,
       cursor: newCursor,
       yankState: { lastYankIndex: nextIndex, yankStart: yankState.yankStart, yankEnd: newCursor },
-    }
+    };
   }
 
   // =========================================================================
@@ -195,12 +195,13 @@ export function handleReadlineKey(
 
   // Ctrl+T: transpose characters
   if (key.ctrl && input === "t") {
-    if (cursor < 2) return { value, cursor, yankState: null }
+    if (cursor < 2) return { value, cursor, yankState: null };
     return {
-      value: value.slice(0, cursor - 2) + value[cursor - 1] + value[cursor - 2] + value.slice(cursor),
+      value:
+        value.slice(0, cursor - 2) + value[cursor - 1] + value[cursor - 2] + value.slice(cursor),
       cursor,
       yankState: null,
-    }
+    };
   }
 
   // Ctrl+H: delete char before cursor
@@ -210,9 +211,9 @@ export function handleReadlineKey(
         value: value.slice(0, cursor - 1) + value.slice(cursor),
         cursor: cursor - 1,
         yankState: null,
-      }
+      };
     }
-    return { value, cursor, yankState: null }
+    return { value, cursor, yankState: null };
   }
 
   // Backspace / Delete key
@@ -222,17 +223,17 @@ export function handleReadlineKey(
         value: value.slice(0, cursor - 1) + value.slice(cursor),
         cursor: cursor - 1,
         yankState: null,
-      }
+      };
     }
-    return { value, cursor, yankState: null }
+    return { value, cursor, yankState: null };
   }
 
   // Ctrl+D: delete at cursor
   if (key.ctrl && input === "d") {
     if (cursor < value.length) {
-      return { value: value.slice(0, cursor) + value.slice(cursor + 1), cursor, yankState: null }
+      return { value: value.slice(0, cursor) + value.slice(cursor + 1), cursor, yankState: null };
     }
-    return { value, cursor, yankState: null }
+    return { value, cursor, yankState: null };
   }
 
   // =========================================================================
@@ -244,8 +245,8 @@ export function handleReadlineKey(
       value: value.slice(0, cursor) + input + value.slice(cursor),
       cursor: cursor + input.length,
       yankState: null,
-    }
+    };
   }
 
-  return null
+  return null;
 }

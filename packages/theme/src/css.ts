@@ -5,8 +5,8 @@
  * suitable for applying as inline styles or injecting into a stylesheet.
  */
 
-import type { Theme } from "./types"
-import { THEME_TOKEN_KEYS } from "./validate-theme"
+import type { Theme } from "./types";
+import { THEME_TOKEN_KEYS } from "./validate-theme";
 
 /**
  * Convert a Theme to CSS custom properties.
@@ -30,22 +30,22 @@ import { THEME_TOKEN_KEYS } from "./validate-theme"
  * ```
  */
 export function themeToCSSVars(theme: Theme): Record<string, string> {
-  const vars: Record<string, string> = {}
+  const vars: Record<string, string> = {};
 
   // Semantic tokens
   for (const key of THEME_TOKEN_KEYS) {
-    const value = theme[key as keyof Theme]
+    const value = theme[key as keyof Theme];
     if (typeof value === "string") {
-      vars[`--${key}`] = value
+      vars[`--${key}`] = value;
     }
   }
 
   // Palette colors
   if (theme.palette) {
     for (let i = 0; i < theme.palette.length; i++) {
-      vars[`--color${i}`] = theme.palette[i]!
+      vars[`--color${i}`] = theme.palette[i]!;
     }
   }
 
-  return vars
+  return vars;
 }

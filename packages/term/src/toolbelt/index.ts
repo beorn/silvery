@@ -37,25 +37,25 @@ export {
   checkLayoutInvariants,
   VirtualTerminal,
   type DiagnosticOptions,
-} from "@silvery/tea/with-diagnostics"
+} from "@silvery/tea/with-diagnostics";
 
 // =============================================================================
 // Error Types
 // =============================================================================
 
-export { IncrementalRenderMismatchError } from "../scheduler"
+export { IncrementalRenderMismatchError } from "../scheduler";
 
 // =============================================================================
 // Buffer Comparison
 // =============================================================================
 
-export { compareBuffers, formatMismatch, type BufferMismatch } from "@silvery/test/compare-buffers"
+export { compareBuffers, formatMismatch, type BufferMismatch } from "@silvery/test/compare-buffers";
 
 // =============================================================================
 // Pipeline Internals (for manual ANSI replay verification)
 // =============================================================================
 
-export { outputPhase } from "../pipeline"
+export { outputPhase } from "../pipeline";
 
 // =============================================================================
 // Mismatch Debug Utilities
@@ -69,4 +69,4 @@ export {
   formatMismatchContext,
   type NodeDebugInfo,
   type MismatchDebugContext,
-} from "@silvery/test/debug-mismatch"
+} from "@silvery/test/debug-mismatch";

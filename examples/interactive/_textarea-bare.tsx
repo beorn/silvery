@@ -8,11 +8,11 @@
  * If chars are NOT eaten → bug is from two useInput hooks
  */
 
-import React, { useState } from "react"
-import { render, Box, Text, TextArea, createTerm } from "../../src/index.js"
+import React, { useState } from "react";
+import { render, Box, Text, TextArea, createTerm } from "../../src/index.js";
 
 function BareTextArea(): JSX.Element {
-  const [value, setValue] = useState("")
+  const [value, setValue] = useState("");
 
   // NO parent useInput — only TextArea's internal one
   return (
@@ -33,13 +33,13 @@ function BareTextArea(): JSX.Element {
         </Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 async function main() {
-  using term = createTerm()
-  const { waitUntilExit } = await render(<BareTextArea />, term)
-  await waitUntilExit()
+  using term = createTerm();
+  const { waitUntilExit } = await render(<BareTextArea />, term);
+  await waitUntilExit();
 }
 
-main().catch(console.error)
+main().catch(console.error);

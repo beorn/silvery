@@ -35,16 +35,16 @@
  * ```
  */
 
-import type { TeaNode } from "@silvery/tea/types"
+import type { TeaNode } from "@silvery/tea/types";
 
 /**
  * Output from measureElement.
  */
 export interface MeasureElementOutput {
   /** Element width in terminal columns */
-  width: number
+  width: number;
   /** Element height in terminal rows */
-  height: number
+  height: number;
 }
 
 /**
@@ -53,13 +53,13 @@ export interface MeasureElementOutput {
  * Ink users pass ref.current which resolves to a BoxHandle, not a TeaNode directly.
  */
 function resolveNode(nodeOrHandle: any): TeaNode | null {
-  if (!nodeOrHandle) return null
+  if (!nodeOrHandle) return null;
   // BoxHandle from silvery's Box component (has getNode method)
   if (typeof nodeOrHandle.getNode === "function") {
-    return nodeOrHandle.getNode()
+    return nodeOrHandle.getNode();
   }
   // Direct TeaNode
-  return nodeOrHandle as TeaNode
+  return nodeOrHandle as TeaNode;
 }
 
 /**
@@ -72,9 +72,9 @@ function resolveNode(nodeOrHandle: any): TeaNode | null {
  * For automatic re-rendering on dimension changes, use the useContentRect() hook instead.
  */
 export function measureElement(nodeOrHandle: TeaNode | unknown): MeasureElementOutput {
-  const node = resolveNode(nodeOrHandle)
+  const node = resolveNode(nodeOrHandle);
   if (!node) {
-    return { width: 0, height: 0 }
+    return { width: 0, height: 0 };
   }
 
   // Prefer contentRect (set by silvery pipeline after layout phase)
@@ -83,17 +83,17 @@ export function measureElement(nodeOrHandle: TeaNode | unknown): MeasureElementO
     return {
       width: node.contentRect.width,
       height: node.contentRect.height,
-    }
+    };
   }
 
   // Fall back to layoutNode for backward compatibility
   // (handles case where measureElement is called before silvery pipeline runs)
-  const width = node.layoutNode?.getComputedWidth() ?? 0
-  const height = node.layoutNode?.getComputedHeight() ?? 0
+  const width = node.layoutNode?.getComputedWidth() ?? 0;
+  const height = node.layoutNode?.getComputedHeight() ?? 0;
 
   return {
     // Handle NaN from Yoga (returned before calculateLayout is called)
     width: Number.isNaN(width) ? 0 : width,
     height: Number.isNaN(height) ? 0 : height,
-  }
+  };
 }

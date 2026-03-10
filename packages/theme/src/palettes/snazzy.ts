@@ -3,8 +3,8 @@
  * Source: https://github.com/sindresorhus/hyper-snazzy
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Snazzy — clean dark theme by Sindre Sorhus. */
 export const snazzy: ColorPalette = {
@@ -32,4 +32,4 @@ export const snazzy: ColorPalette = {
   cursorText: "#282a36", // background
   selectionBackground: "#686868", // light black / muted chrome
   selectionForeground: "#eff0eb", // foreground
-}
+};

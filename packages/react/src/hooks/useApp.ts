@@ -10,8 +10,8 @@
  * for testing or string output.
  */
 
-import { useContext } from "react"
-import { RuntimeContext } from "../context"
+import { useContext } from "react";
+import { RuntimeContext } from "../context";
 
 // ============================================================================
 // Types
@@ -23,23 +23,23 @@ export interface UseAppResult {
    * Optionally pass an error to indicate the app exited due to an error.
    * No-op in static mode.
    */
-  exit: (error?: Error) => void
+  exit: (error?: Error) => void;
   /**
    * Pause rendering output (for screen switching). Input still works.
    * Returns undefined if not supported.
    */
-  pause?: () => void
+  pause?: () => void;
   /**
    * Resume rendering after pause. Forces a full redraw.
    * Returns undefined if not supported.
    */
-  resume?: () => void
+  resume?: () => void;
 }
 
 // No-op fallback for static mode
 const staticResult: UseAppResult = {
   exit: () => {},
-}
+};
 
 // ============================================================================
 // Hook Implementation
@@ -67,15 +67,15 @@ const staticResult: UseAppResult = {
  * ```
  */
 export function useApp(): UseAppResult {
-  const rt = useContext(RuntimeContext)
+  const rt = useContext(RuntimeContext);
 
   if (!rt) {
-    return staticResult
+    return staticResult;
   }
 
   return {
     exit: rt.exit,
     pause: rt.pause,
     resume: rt.resume,
-  }
+  };
 }

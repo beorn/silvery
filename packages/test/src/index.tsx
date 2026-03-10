@@ -81,29 +81,29 @@
  * ```
  */
 
-import { ensureDefaultLayoutEngine } from "@silvery/term/layout-engine"
+import { ensureDefaultLayoutEngine } from "@silvery/term/layout-engine";
 
 // Re-export App for type usage
-export type { App } from "@silvery/term/app"
-export { createAutoLocator, type AutoLocator, type FilterOptions } from "./auto-locator"
-export type { BoundTerm } from "@silvery/term/bound-term"
+export type { App } from "@silvery/term/app";
+export { createAutoLocator, type AutoLocator, type FilterOptions } from "./auto-locator";
+export type { BoundTerm } from "@silvery/term/bound-term";
 
 // Re-export buffer utilities for testing convenience
-export { bufferToText, bufferToStyledText, bufferToHTML } from "@silvery/term/buffer"
-export type { TerminalBuffer } from "@silvery/term/buffer"
+export { bufferToText, bufferToStyledText, bufferToHTML } from "@silvery/term/buffer";
+export type { TerminalBuffer } from "@silvery/term/buffer";
 
 // Re-export locator API for DOM queries (legacy, prefer App.locator())
-export { createLocator, type SilveryLocator } from "./locator"
-export type { Rect } from "@silvery/tea/types"
+export { createLocator, type SilveryLocator } from "./locator";
+export type { Rect } from "@silvery/tea/types";
 
 // Re-export keyboard utilities
-export { keyToAnsi, keyToKittyAnsi, CODE_TO_KEY } from "@silvery/tea/keys"
+export { keyToAnsi, keyToKittyAnsi, CODE_TO_KEY } from "@silvery/tea/keys";
 
 // Re-export debug utilities
-export { debugTree, type DebugTreeOptions } from "./debug"
+export { debugTree, type DebugTreeOptions } from "./debug";
 
 // Re-export buffer comparison utilities
-export { compareBuffers, formatMismatch, type BufferMismatch } from "./compare-buffers"
+export { compareBuffers, formatMismatch, type BufferMismatch } from "./compare-buffers";
 
 // Re-export render API
 export {
@@ -117,7 +117,7 @@ export {
   type PerRenderOptions,
   type Store,
   type StoreOptions,
-} from "@silvery/term/renderer"
+} from "@silvery/term/renderer";
 
 // ============================================================================
 // Module Initialization
@@ -126,19 +126,19 @@ export {
 // Configure React to recognize this as a testing environment for act() support
 // This suppresses the "testing environment not configured" warning
 // @ts-expect-error - React internal flag for testing environments
-globalThis.IS_REACT_ACT_ENVIRONMENT = true
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 // Initialize default layout engine via top-level await.
 // This ensures render()/createRenderer() work immediately after import.
-await ensureDefaultLayoutEngine()
+await ensureDefaultLayoutEngine();
 
 // ============================================================================
 // Utility Functions
 // ============================================================================
 
 // Re-export stripAnsi from unicode.ts (canonical implementation)
-import { stripAnsi } from "@silvery/term/unicode"
-export { stripAnsi } from "@silvery/term/unicode"
+import { stripAnsi } from "@silvery/term/unicode";
+export { stripAnsi } from "@silvery/term/unicode";
 
 /**
  * Normalize frame output for comparison.
@@ -151,21 +151,24 @@ export function normalizeFrame(frame: string): string {
     .split("\n")
     .map((line) => line.trimEnd())
     .join("\n")
-    .trimEnd()
+    .trimEnd();
 }
 
 /**
  * Wait for a condition to be true, polling at intervals.
  * Useful for waiting for async state updates.
  */
-export async function waitFor(condition: () => boolean, { timeout = 1000, interval = 10 } = {}): Promise<void> {
-  const start = Date.now()
+export async function waitFor(
+  condition: () => boolean,
+  { timeout = 1000, interval = 10 } = {},
+): Promise<void> {
+  const start = Date.now();
   while (!condition()) {
     if (Date.now() - start > timeout) {
-      throw new Error(`waitFor timed out after ${timeout}ms`)
+      throw new Error(`waitFor timed out after ${timeout}ms`);
     }
     await new Promise<void>((resolve) => {
-      setTimeout(resolve, interval)
-    })
+      setTimeout(resolve, interval);
+    });
   }
 }

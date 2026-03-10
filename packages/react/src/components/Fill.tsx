@@ -31,34 +31,41 @@
  * ```
  */
 
-import React, { type JSX, type ReactNode, useMemo, Children, isValidElement, cloneElement } from "react"
-import { type Measurer, displayWidth } from "@silvery/term/unicode"
+import React, {
+  type JSX,
+  type ReactNode,
+  useMemo,
+  Children,
+  isValidElement,
+  cloneElement,
+} from "react";
+import { type Measurer, displayWidth } from "@silvery/term/unicode";
 
 /** Maximum fill width in columns. Covers ultrawide terminals (8K at 5px font ≈ 1500 cols). */
-const MAX_FILL_COLS = 500
+const MAX_FILL_COLS = 500;
 
 export interface FillProps {
   /** Content to repeat (typically a styled Text element or plain string) */
-  children: ReactNode
+  children: ReactNode;
   /** Optional explicit measurer for width calculation (avoids module-level global) */
-  measurer?: Measurer
+  measurer?: Measurer;
 }
 
 /**
  * Extract plain text content from React children (strings, numbers, nested elements).
  */
 function extractText(children: ReactNode): string {
-  let text = ""
+  let text = "";
   Children.forEach(children, (child) => {
     if (typeof child === "string") {
-      text += child
+      text += child;
     } else if (typeof child === "number") {
-      text += String(child)
+      text += String(child);
     } else if (isValidElement(child) && (child as React.ReactElement<any>).props.children != null) {
-      text += extractText((child as React.ReactElement<any>).props.children as ReactNode)
+      text += extractText((child as React.ReactElement<any>).props.children as ReactNode);
     }
-  })
-  return text
+  });
+  return text;
 }
 
 /**
@@ -67,14 +74,14 @@ function extractText(children: ReactNode): string {
  * Falls back to plain text fragment for string children.
  */
 function renderWithText(children: ReactNode, text: string): JSX.Element {
-  const childArray = Children.toArray(children)
-  const firstChild = childArray[0]
+  const childArray = Children.toArray(children);
+  const firstChild = childArray[0];
 
   if (isValidElement(firstChild)) {
-    return cloneElement(firstChild as React.ReactElement<any>, { wrap: "clip" }, text)
+    return cloneElement(firstChild as React.ReactElement<any>, { wrap: "clip" }, text);
   }
 
-  return <>{text}</>
+  return <>{text}</>;
 }
 
 /**
@@ -88,18 +95,18 @@ function renderWithText(children: ReactNode, text: string): JSX.Element {
  */
 export function Fill({ children, measurer }: FillProps): JSX.Element {
   const repeatedText = useMemo(() => {
-    const pattern = extractText(children)
-    if (!pattern) return null
+    const pattern = extractText(children);
+    if (!pattern) return null;
 
     // Use explicit measurer when available, fall back to module-level convenience function
-    const dw = measurer ? measurer.displayWidth.bind(measurer) : displayWidth
-    const unitWidth = dw(pattern)
-    if (unitWidth <= 0) return null
+    const dw = measurer ? measurer.displayWidth.bind(measurer) : displayWidth;
+    const unitWidth = dw(pattern);
+    if (unitWidth <= 0) return null;
 
-    const count = Math.ceil(MAX_FILL_COLS / unitWidth)
-    return pattern.repeat(count)
-  }, [children, measurer])
+    const count = Math.ceil(MAX_FILL_COLS / unitWidth);
+    return pattern.repeat(count);
+  }, [children, measurer]);
 
-  if (!repeatedText) return <>{children}</>
-  return renderWithText(children, repeatedText)
+  if (!repeatedText) return <>{children}</>;
+  return renderWithText(children, repeatedText);
 }

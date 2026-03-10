@@ -7,58 +7,68 @@
  * - Registry functions (getThemeByName, getPaletteByName)
  */
 
-import { deriveTheme } from "../derive"
-import type { Theme, ColorPalette } from "../types"
+import { deriveTheme } from "../derive";
+import type { Theme, ColorPalette } from "../types";
 
 // ── Re-export all palette definitions ──────────────────────────────
-export { catppuccinMocha, catppuccinFrappe, catppuccinMacchiato, catppuccinLatte } from "./catppuccin"
-export { nord } from "./nord"
-export { dracula } from "./dracula"
-export { solarizedDark, solarizedLight } from "./solarized"
-export { tokyoNight, tokyoNightStorm, tokyoNightDay } from "./tokyo-night"
-export { oneDark } from "./one-dark"
-export { gruvboxDark, gruvboxLight } from "./gruvbox"
-export { rosePine, rosePineMoon, rosePineDawn } from "./rose-pine"
-export { kanagawaWave, kanagawaDragon, kanagawaLotus } from "./kanagawa"
-export { everforestDark, everforestLight } from "./everforest"
-export { monokai, monokaiPro } from "./monokai"
-export { snazzy } from "./snazzy"
-export { materialDark, materialLight } from "./material"
-export { palenight } from "./palenight"
-export { ayuDark, ayuMirage, ayuLight } from "./ayu"
-export { nightfox, dawnfox } from "./nightfox"
-export { horizon } from "./horizon"
-export { moonfly } from "./moonfly"
-export { nightfly } from "./nightfly"
-export { oxocarbonDark, oxocarbonLight } from "./oxocarbon"
-export { sonokai } from "./sonokai"
-export { edgeDark, edgeLight } from "./edge"
-export { modusVivendi, modusOperandi } from "./modus"
+export {
+  catppuccinMocha,
+  catppuccinFrappe,
+  catppuccinMacchiato,
+  catppuccinLatte,
+} from "./catppuccin";
+export { nord } from "./nord";
+export { dracula } from "./dracula";
+export { solarizedDark, solarizedLight } from "./solarized";
+export { tokyoNight, tokyoNightStorm, tokyoNightDay } from "./tokyo-night";
+export { oneDark } from "./one-dark";
+export { gruvboxDark, gruvboxLight } from "./gruvbox";
+export { rosePine, rosePineMoon, rosePineDawn } from "./rose-pine";
+export { kanagawaWave, kanagawaDragon, kanagawaLotus } from "./kanagawa";
+export { everforestDark, everforestLight } from "./everforest";
+export { monokai, monokaiPro } from "./monokai";
+export { snazzy } from "./snazzy";
+export { materialDark, materialLight } from "./material";
+export { palenight } from "./palenight";
+export { ayuDark, ayuMirage, ayuLight } from "./ayu";
+export { nightfox, dawnfox } from "./nightfox";
+export { horizon } from "./horizon";
+export { moonfly } from "./moonfly";
+export { nightfly } from "./nightfly";
+export { oxocarbonDark, oxocarbonLight } from "./oxocarbon";
+export { sonokai } from "./sonokai";
+export { edgeDark, edgeLight } from "./edge";
+export { modusVivendi, modusOperandi } from "./modus";
 
 // ── Import for registry ────────────────────────────────────────────
-import { catppuccinMocha, catppuccinFrappe, catppuccinMacchiato, catppuccinLatte } from "./catppuccin"
-import { nord } from "./nord"
-import { dracula } from "./dracula"
-import { solarizedDark, solarizedLight } from "./solarized"
-import { tokyoNight, tokyoNightStorm, tokyoNightDay } from "./tokyo-night"
-import { oneDark } from "./one-dark"
-import { gruvboxDark, gruvboxLight } from "./gruvbox"
-import { rosePine, rosePineMoon, rosePineDawn } from "./rose-pine"
-import { kanagawaWave, kanagawaDragon, kanagawaLotus } from "./kanagawa"
-import { everforestDark, everforestLight } from "./everforest"
-import { monokai, monokaiPro } from "./monokai"
-import { snazzy } from "./snazzy"
-import { materialDark, materialLight } from "./material"
-import { palenight } from "./palenight"
-import { ayuDark, ayuMirage, ayuLight } from "./ayu"
-import { nightfox, dawnfox } from "./nightfox"
-import { horizon } from "./horizon"
-import { moonfly } from "./moonfly"
-import { nightfly } from "./nightfly"
-import { oxocarbonDark, oxocarbonLight } from "./oxocarbon"
-import { sonokai } from "./sonokai"
-import { edgeDark, edgeLight } from "./edge"
-import { modusVivendi, modusOperandi } from "./modus"
+import {
+  catppuccinMocha,
+  catppuccinFrappe,
+  catppuccinMacchiato,
+  catppuccinLatte,
+} from "./catppuccin";
+import { nord } from "./nord";
+import { dracula } from "./dracula";
+import { solarizedDark, solarizedLight } from "./solarized";
+import { tokyoNight, tokyoNightStorm, tokyoNightDay } from "./tokyo-night";
+import { oneDark } from "./one-dark";
+import { gruvboxDark, gruvboxLight } from "./gruvbox";
+import { rosePine, rosePineMoon, rosePineDawn } from "./rose-pine";
+import { kanagawaWave, kanagawaDragon, kanagawaLotus } from "./kanagawa";
+import { everforestDark, everforestLight } from "./everforest";
+import { monokai, monokaiPro } from "./monokai";
+import { snazzy } from "./snazzy";
+import { materialDark, materialLight } from "./material";
+import { palenight } from "./palenight";
+import { ayuDark, ayuMirage, ayuLight } from "./ayu";
+import { nightfox, dawnfox } from "./nightfox";
+import { horizon } from "./horizon";
+import { moonfly } from "./moonfly";
+import { nightfly } from "./nightfly";
+import { oxocarbonDark, oxocarbonLight } from "./oxocarbon";
+import { sonokai } from "./sonokai";
+import { edgeDark, edgeLight } from "./edge";
+import { modusVivendi, modusOperandi } from "./modus";
 
 // ============================================================================
 // ANSI 16 Themes (no palette required — hardcoded for any terminal)
@@ -118,7 +128,7 @@ export const ansi16DarkTheme: Theme = {
     "cyanBright",
     "whiteBright",
   ],
-}
+};
 
 /** Light ANSI 16 theme — works on any terminal. Primary = blue. */
 export const ansi16LightTheme: Theme = {
@@ -174,17 +184,17 @@ export const ansi16LightTheme: Theme = {
     "cyanBright",
     "whiteBright",
   ],
-}
+};
 
 // ============================================================================
 // Default Truecolor Themes (derived from Nord palette)
 // ============================================================================
 
 /** Dark truecolor theme — derived from Nord. */
-export const defaultDarkTheme: Theme = deriveTheme(nord)
+export const defaultDarkTheme: Theme = deriveTheme(nord);
 
 /** Light truecolor theme — derived from Catppuccin Latte. */
-export const defaultLightTheme: Theme = deriveTheme(catppuccinLatte)
+export const defaultLightTheme: Theme = deriveTheme(catppuccinLatte);
 
 // ============================================================================
 // Registry
@@ -258,7 +268,7 @@ export const builtinPalettes: Record<string, ColorPalette> = {
   // Modus
   "modus-vivendi": modusVivendi,
   "modus-operandi": modusOperandi,
-}
+};
 
 /** All built-in themes, indexed by name (includes backward-compat aliases). */
 export const builtinThemes: Record<string, Theme> = {
@@ -273,21 +283,21 @@ export const builtinThemes: Record<string, Theme> = {
   light: defaultLightTheme,
   "ansi16-dark": ansi16DarkTheme,
   "ansi16-light": ansi16LightTheme,
-}
+};
 
 /** Resolve a theme by name. Defaults to dark-ansi16. */
 export function getThemeByName(name?: string): Theme {
-  if (!name) return ansi16DarkTheme
+  if (!name) return ansi16DarkTheme;
   // Check pre-built themes first
-  const builtin = builtinThemes[name]
-  if (builtin) return builtin
+  const builtin = builtinThemes[name];
+  if (builtin) return builtin;
   // Check palettes (derive on first access)
-  const palette = builtinPalettes[name]
-  if (palette) return deriveTheme(palette)
-  return ansi16DarkTheme
+  const palette = builtinPalettes[name];
+  if (palette) return deriveTheme(palette);
+  return ansi16DarkTheme;
 }
 
 /** Resolve a palette by name. Returns undefined if not found. */
 export function getPaletteByName(name: string): ColorPalette | undefined {
-  return builtinPalettes[name]
+  return builtinPalettes[name];
 }

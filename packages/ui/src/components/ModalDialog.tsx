@@ -17,9 +17,9 @@
  * </ModalDialog>
  * ```
  */
-import React from "react"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React from "react";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -27,31 +27,31 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface ModalDialogProps {
   /** Border color (default: $border). Cyan is reserved for text input focus rings. */
-  borderColor?: string
+  borderColor?: string;
   /** Dialog title (rendered bold in titleColor or borderColor) */
-  title?: string
+  title?: string;
   /** Title color override (default: $primary). Separate from border for independent styling. */
-  titleColor?: string
+  titleColor?: string;
   /** Title alignment (default: center) */
-  titleAlign?: "center" | "flex-start" | "flex-end"
+  titleAlign?: "center" | "flex-start" | "flex-end";
   /** Toggle hotkey character (e.g., "?" for help). Renders [X] prefix in title. */
-  hotkey?: string
+  hotkey?: string;
   /** Content to render on the right side of the title bar (e.g., hotkey indicator, match count) */
-  titleRight?: React.ReactNode
+  titleRight?: React.ReactNode;
   /** Dialog width */
-  width?: number
+  width?: number;
   /** Dialog height (optional, omit for auto-height) */
-  height?: number
+  height?: number;
   /** Footer hint text (rendered dimColor at bottom) */
-  footer?: React.ReactNode
+  footer?: React.ReactNode;
   /** Footer alignment (default: center) */
-  footerAlign?: "center" | "flex-start" | "flex-end"
+  footerAlign?: "center" | "flex-start" | "flex-end";
   /** Called when ESC is pressed (optional convenience handler) */
-  onClose?: () => void
+  onClose?: () => void;
   /** Whether to create a focus scope (default: true, for future focus system integration) */
-  focusScope?: boolean
+  focusScope?: boolean;
   /** Dialog children */
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 // =============================================================================
@@ -68,13 +68,17 @@ export interface ModalDialogProps {
  *
  * Brackets are dim, the hotkey letter is bold/bright.
  */
-export function formatTitleWithHotkey(title: string, hotkey: string, color?: string): React.ReactElement {
-  const idx = title.toLowerCase().indexOf(hotkey.toLowerCase())
+export function formatTitleWithHotkey(
+  title: string,
+  hotkey: string,
+  color?: string,
+): React.ReactElement {
+  const idx = title.toLowerCase().indexOf(hotkey.toLowerCase());
   if (idx >= 0 && hotkey.length === 1 && hotkey.toLowerCase() !== hotkey.toUpperCase()) {
     // Letter found in title — highlight it inline: prefix + [X] + rest
-    const before = title.slice(0, idx)
-    const matched = title[idx]
-    const after = title.slice(idx + 1)
+    const before = title.slice(0, idx);
+    const matched = title[idx];
+    const after = title.slice(idx + 1);
     return (
       <Text color={color} bold>
         {before}
@@ -87,7 +91,7 @@ export function formatTitleWithHotkey(title: string, hotkey: string, color?: str
         </Text>
         {after}
       </Text>
-    )
+    );
   }
   // Hotkey not in title (or symbol) — prepend [X] Title
   return (
@@ -101,7 +105,7 @@ export function formatTitleWithHotkey(title: string, hotkey: string, color?: str
       </Text>{" "}
       {title}
     </Text>
-  )
+  );
 }
 
 // =============================================================================
@@ -133,9 +137,9 @@ export function ModalDialog({
   focusScope: _focusScope = true,
   children,
 }: ModalDialogProps): React.ReactElement {
-  const effectiveTitleColor = titleColor ?? "$primary"
+  const effectiveTitleColor = titleColor ?? "$primary";
   // When titleRight is provided, use space-between layout for the title bar
-  const effectiveTitleAlign = titleRight ? "space-between" : titleAlign
+  const effectiveTitleAlign = titleRight ? "space-between" : titleAlign;
 
   return (
     <Box
@@ -171,9 +175,11 @@ export function ModalDialog({
       {footer && (
         <>
           <Text> </Text>
-          <Box justifyContent={footerAlign}>{typeof footer === "string" ? <Text dimColor>{footer}</Text> : footer}</Box>
+          <Box justifyContent={footerAlign}>
+            {typeof footer === "string" ? <Text dimColor>{footer}</Text> : footer}
+          </Box>
         </>
       )}
     </Box>
-  )
+  );
 }

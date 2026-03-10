@@ -14,28 +14,28 @@
  *   Esc/q - Quit
  */
 
-import React, { useState, useCallback } from "react"
-import { Box, Text } from "../../src/index.js"
-import { run, useInput, type Key } from "../../src/runtime/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+import React, { useState, useCallback } from "react";
+import { Box, Text } from "../../src/index.js";
+import { run, useInput, type Key } from "../../src/runtime/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Run Counter",
   description: "Layer 2: run() with React hooks and useRuntimeInput",
   features: ["run()", "useState", "useInput"],
-}
+};
 
 function Counter() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
   useInput(
     useCallback((input: string, key: Key) => {
-      if (input === "j") setCount((c) => c + 1)
-      if (input === "k") setCount((c) => c - 1)
-      if (input === "r") setCount(0)
-      if (input === "q" || key.escape) return "exit"
+      if (input === "j") setCount((c) => c + 1);
+      if (input === "k") setCount((c) => c - 1);
+      if (input === "r") setCount(0);
+      if (input === "q" || key.escape) return "exit";
     }, []),
-  )
+  );
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -48,7 +48,7 @@ function Counter() {
       <Text> </Text>
       <Text dimColor>j/k: increment/decrement • r: reset • Esc/q: quit</Text>
     </Box>
-  )
+  );
 }
 
 async function main() {
@@ -56,14 +56,14 @@ async function main() {
     <ExampleBanner meta={meta} controls="j/k inc/dec  r reset  Esc/q quit">
       <Counter />
     </ExampleBanner>,
-  )
+  );
 
   // Wait until user presses q
-  await handle.waitUntilExit()
+  await handle.waitUntilExit();
 
-  console.log("\nGoodbye!")
+  console.log("\nGoodbye!");
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

@@ -2,8 +2,8 @@
  * Tokyo Night palette — a clean dark theme inspired by Tokyo city lights.
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Tokyo Night — the default dark variant. */
 export const tokyoNight: ColorPalette = {
@@ -31,7 +31,7 @@ export const tokyoNight: ColorPalette = {
   cursorText: "#24283B",
   selectionBackground: "#545C7E",
   selectionForeground: "#C0CAF5",
-}
+};
 
 /** Tokyo Night Storm — slightly lighter background. */
 export const tokyoNightStorm: ColorPalette = {
@@ -59,7 +59,7 @@ export const tokyoNightStorm: ColorPalette = {
   cursorText: "#24283B",
   selectionBackground: "#545C7E",
   selectionForeground: "#C0CAF5",
-}
+};
 
 /** Tokyo Night Day — the light variant. */
 export const tokyoNightDay: ColorPalette = {
@@ -87,4 +87,4 @@ export const tokyoNightDay: ColorPalette = {
   cursorText: "#D5D6DB",
   selectionBackground: "#9699A3",
   selectionForeground: "#3760BF",
-}
+};

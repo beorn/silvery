@@ -17,15 +17,15 @@ Pure functions for composing AsyncIterables. No EventEmitters, no callbacks.
 Merge multiple AsyncIterables into one. Values emit in arrival order.
 
 ```typescript
-import { merge, map } from "@silvery/term/streams"
+import { merge, map } from "@silvery/term/streams";
 
-const keys = term.keys()
-const resizes = term.resizes()
+const keys = term.keys();
+const resizes = term.resizes();
 
 const events = merge(
   map(keys, (k) => ({ type: "key", ...k })),
   map(resizes, (r) => ({ type: "resize", ...r })),
-)
+);
 
 for await (const event of events) {
   // Process any event
@@ -44,7 +44,7 @@ for await (const event of events) {
 Transform each value.
 
 ```typescript
-const keyEvents = map(keys, (k) => ({ type: "key", key: k }))
+const keyEvents = map(keys, (k) => ({ type: "key", key: k }));
 ```
 
 ### filter(source, predicate)
@@ -52,7 +52,7 @@ const keyEvents = map(keys, (k) => ({ type: "key", key: k }))
 Keep values matching predicate.
 
 ```typescript
-const letters = filter(keys, (k) => /^[a-z]$/.test(k.key))
+const letters = filter(keys, (k) => /^[a-z]$/.test(k.key));
 ```
 
 ### filterMap(source, fn)
@@ -60,7 +60,7 @@ const letters = filter(keys, (k) => /^[a-z]$/.test(k.key))
 Filter + map in one pass. Return `undefined` to skip.
 
 ```typescript
-const keyEvents = filterMap(events, (e) => (e.type === "key" ? e : undefined))
+const keyEvents = filterMap(events, (e) => (e.type === "key" ? e : undefined));
 ```
 
 ### takeUntil(source, signal)
@@ -68,7 +68,7 @@ const keyEvents = filterMap(events, (e) => (e.type === "key" ? e : undefined))
 Stop when AbortSignal fires. Graceful completion (no error).
 
 ```typescript
-const controller = new AbortController()
+const controller = new AbortController();
 
 // Later: controller.abort() ends iteration
 for await (const event of takeUntil(events, controller.signal)) {
@@ -81,7 +81,7 @@ for await (const event of takeUntil(events, controller.signal)) {
 Take first n values.
 
 ```typescript
-const first3 = take(events, 3)
+const first3 = take(events, 3);
 ```
 
 ## Composition Helpers
@@ -91,7 +91,7 @@ const first3 = take(events, 3)
 Concatenate in sequence (not interleaved).
 
 ```typescript
-const all = concat(header, body, footer)
+const all = concat(header, body, footer);
 ```
 
 ### zip(...sources)
@@ -99,7 +99,7 @@ const all = concat(header, body, footer)
 Zip together. Completes at shortest source.
 
 ```typescript
-const pairs = zip(keys, timestamps) // [key, timestamp][]
+const pairs = zip(keys, timestamps); // [key, timestamp][]
 ```
 
 ### batch(source, size)
@@ -107,7 +107,7 @@ const pairs = zip(keys, timestamps) // [key, timestamp][]
 Collect into arrays of size n.
 
 ```typescript
-const batched = batch(events, 10) // AsyncIterable<Event[]>
+const batched = batch(events, 10); // AsyncIterable<Event[]>
 ```
 
 ## Rate Limiting
@@ -117,7 +117,7 @@ const batched = batch(events, 10) // AsyncIterable<Event[]>
 Emit first, then ignore for duration.
 
 ```typescript
-const throttled = throttle(mouseMoves, 16) // ~60fps
+const throttled = throttle(mouseMoves, 16); // ~60fps
 ```
 
 ### debounce(source, ms)
@@ -125,7 +125,7 @@ const throttled = throttle(mouseMoves, 16) // ~60fps
 **Note**: True debouncing is complex with pull-based iterables. This implementation yields only the final value after source completes.
 
 ```typescript
-const debounced = debounce(source, 300) // Last value after source ends
+const debounced = debounce(source, 300); // Last value after source ends
 ```
 
 ## Testing Helpers
@@ -138,7 +138,7 @@ Create AsyncIterable from array.
 const events = fromArray([
   { type: "key", key: "j" },
   { type: "key", key: "k" },
-])
+]);
 ```
 
 ### fromArrayWithDelay(items, ms)
@@ -146,7 +146,7 @@ const events = fromArray([
 Create with delay between items.
 
 ```typescript
-const slow = fromArrayWithDelay([1, 2, 3], 100) // 100ms gaps
+const slow = fromArrayWithDelay([1, 2, 3], 100); // 100ms gaps
 ```
 
 ## Cleanup Guarantee
@@ -159,7 +159,7 @@ All helpers clean up properly on:
 
 ```typescript
 for await (const event of merge(a, b, c)) {
-  if (done) break // All 3 sources get return() called
+  if (done) break; // All 3 sources get return() called
 }
 ```
 
@@ -171,7 +171,7 @@ for await (const event of merge(a, b, c)) {
 
    ```typescript
    for await (const e of events) {
-     await slowWork() // Blocks next event
+     await slowWork(); // Blocks next event
    }
    ```
 
@@ -187,15 +187,15 @@ Bridge to React hooks via AbortController:
 
 ```typescript
 useEffect(() => {
-  const controller = new AbortController()
-  const events = takeUntil(runtime.events(), controller.signal)
+  const controller = new AbortController();
+  const events = takeUntil(runtime.events(), controller.signal);
 
-  ;(async () => {
+  (async () => {
     for await (const event of events) {
-      if (event.type === "key") handler(event.key)
+      if (event.type === "key") handler(event.key);
     }
-  })()
+  })();
 
-  return () => controller.abort()
-}, [])
+  return () => controller.abort();
+}, []);
 ```

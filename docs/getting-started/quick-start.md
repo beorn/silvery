@@ -37,18 +37,18 @@ pnpm add silvery
 Create a file called `app.tsx`:
 
 ```tsx
-import { Box, Text, render, createTerm } from "silvery"
+import { Box, Text, render, createTerm } from "silvery";
 
 function App() {
   return (
     <Box borderStyle="round" padding={1}>
       <Text>Hello from Silvery!</Text>
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
-await render(<App />, term)
+using term = createTerm();
+await render(<App />, term);
 ```
 
 Run it:
@@ -65,17 +65,17 @@ You should see a rounded box with "Hello from Silvery!" inside.
 Components can query their own dimensions during render — no prop drilling needed:
 
 ```tsx
-import { Box, Text, render, useContentRect, createTerm } from "silvery"
+import { Box, Text, render, useContentRect, createTerm } from "silvery";
 
 function SizedBox() {
-  const { width, height } = useContentRect()
+  const { width, height } = useContentRect();
   return (
     <Box borderStyle="single" flexGrow={1}>
       <Text>
         I am {width}x{height}
       </Text>
     </Box>
-  )
+  );
 }
 
 function App() {
@@ -85,11 +85,11 @@ function App() {
       <SizedBox />
       <SizedBox />
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
-await render(<App />, term)
+using term = createTerm();
+await render(<App />, term);
 ```
 
 Each `SizedBox` will display its actual computed dimensions. No prop threading needed!
@@ -99,18 +99,18 @@ Each `SizedBox` will display its actual computed dimensions. No prop threading n
 Silvery handles scrolling automatically. Just use `overflow="scroll"`:
 
 ```tsx
-import { Box, Text, render, useInput, createTerm } from "silvery"
-import { useState } from "react"
+import { Box, Text, render, useInput, createTerm } from "silvery";
+import { useState } from "react";
 
-const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`)
+const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`);
 
 function App() {
-  const [selected, setSelected] = useState(0)
+  const [selected, setSelected] = useState(0);
 
   useInput((input, key) => {
-    if (key.downArrow) setSelected((s) => Math.min(s + 1, items.length - 1))
-    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0))
-  })
+    if (key.downArrow) setSelected((s) => Math.min(s + 1, items.length - 1));
+    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0));
+  });
 
   return (
     <Box flexDirection="column" height={10} overflow="scroll" scrollTo={selected}>
@@ -120,11 +120,11 @@ function App() {
         </Text>
       ))}
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
-await render(<App />, term)
+using term = createTerm();
+await render(<App />, term);
 ```
 
 Silvery measures all children, calculates which are visible, and only renders content for visible items. No height estimation or virtualization config needed.

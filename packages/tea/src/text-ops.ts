@@ -28,7 +28,9 @@
  * - `delete`: text was deleted starting at `offset` (the deleted content is
  *   stored in `text` so the operation can be inverted)
  */
-export type TextOp = { type: "insert"; offset: number; text: string } | { type: "delete"; offset: number; text: string }
+export type TextOp =
+  | { type: "insert"; offset: number; text: string }
+  | { type: "delete"; offset: number; text: string };
 
 // =============================================================================
 // Core Functions
@@ -42,27 +44,29 @@ export type TextOp = { type: "insert"; offset: number; text: string } | { type: 
  */
 export function applyTextOp(text: string, op: TextOp): string {
   if (op.offset < 0 || op.offset > text.length) {
-    throw new RangeError(`TextOp offset ${op.offset} out of bounds for text of length ${text.length}`)
+    throw new RangeError(
+      `TextOp offset ${op.offset} out of bounds for text of length ${text.length}`,
+    );
   }
 
   if (op.type === "insert") {
-    return text.slice(0, op.offset) + op.text + text.slice(op.offset)
+    return text.slice(0, op.offset) + op.text + text.slice(op.offset);
   }
 
   // delete
-  const end = op.offset + op.text.length
+  const end = op.offset + op.text.length;
   if (end > text.length) {
     throw new RangeError(
       `TextOp delete extends past end: offset=${op.offset}, deleteLen=${op.text.length}, textLen=${text.length}`,
-    )
+    );
   }
-  const actual = text.slice(op.offset, end)
+  const actual = text.slice(op.offset, end);
   if (actual !== op.text) {
     throw new Error(
       `TextOp delete mismatch at offset ${op.offset}: expected ${JSON.stringify(op.text)}, got ${JSON.stringify(actual)}`,
-    )
+    );
   }
-  return text.slice(0, op.offset) + text.slice(end)
+  return text.slice(0, op.offset) + text.slice(end);
 }
 
 /**
@@ -73,9 +77,9 @@ export function applyTextOp(text: string, op: TextOp): string {
  */
 export function invertTextOp(op: TextOp): TextOp {
   if (op.type === "insert") {
-    return { type: "delete", offset: op.offset, text: op.text }
+    return { type: "delete", offset: op.offset, text: op.text };
   }
-  return { type: "insert", offset: op.offset, text: op.text }
+  return { type: "insert", offset: op.offset, text: op.text };
 }
 
 /**
@@ -95,9 +99,9 @@ export function mergeTextOps(a: TextOp, b: TextOp): TextOp | null {
   // insert + insert: b inserts right after a's inserted text
   if (a.type === "insert" && b.type === "insert") {
     if (b.offset === a.offset + a.text.length) {
-      return { type: "insert", offset: a.offset, text: a.text + b.text }
+      return { type: "insert", offset: a.offset, text: a.text + b.text };
     }
-    return null
+    return null;
   }
 
   // delete + delete
@@ -105,22 +109,22 @@ export function mergeTextOps(a: TextOp, b: TextOp): TextOp | null {
     // Backspace sequence: b deletes the character just before a's range.
     // After a deletes at offset X, the next backspace deletes at offset X-1.
     if (b.offset + b.text.length === a.offset) {
-      return { type: "delete", offset: b.offset, text: b.text + a.text }
+      return { type: "delete", offset: b.offset, text: b.text + a.text };
     }
     // Forward-delete sequence: b deletes at the same position as a (because
     // after a removed its text, the next character slid into the same offset).
     if (b.offset === a.offset) {
-      return { type: "delete", offset: a.offset, text: a.text + b.text }
+      return { type: "delete", offset: a.offset, text: a.text + b.text };
     }
-    return null
+    return null;
   }
 
   // insert + delete that exactly cancels the insert
   if (a.type === "insert" && b.type === "delete") {
     if (b.offset === a.offset && b.text === a.text) {
-      return null // operations cancel out
+      return null; // operations cancel out
     }
   }
 
-  return null
+  return null;
 }

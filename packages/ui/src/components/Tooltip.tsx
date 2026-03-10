@@ -17,9 +17,9 @@
  * </Tooltip>
  * ```
  */
-import React from "react"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React from "react";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -27,11 +27,11 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface TooltipProps {
   /** Tooltip text content */
-  content: string
+  content: string;
   /** Whether the tooltip is visible (default: false) */
-  show?: boolean
+  show?: boolean;
   /** Tooltip children (target element) */
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 // =============================================================================
@@ -56,5 +56,5 @@ export function Tooltip({ content, show = false, children }: TooltipProps): Reac
         </Box>
       )}
     </Box>
-  )
+  );
 }

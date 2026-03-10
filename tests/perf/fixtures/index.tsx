@@ -5,9 +5,9 @@
  * across render, layout, diff, and memory benchmarks.
  */
 
-import React from "react"
-import { Box, Text, useContentRect } from "@silvery/react"
-import type { ReactElement } from "react"
+import React from "react";
+import { Box, Text, useContentRect } from "@silvery/react";
+import type { ReactElement } from "react";
 
 // ============================================================================
 // Simple Components
@@ -19,7 +19,7 @@ export function SimpleItem({ label }: { label: string }): ReactElement {
     <Box>
       <Text>{label}</Text>
     </Box>
-  )
+  );
 }
 
 /** Box+Text with styling — tests styled content rendering. */
@@ -30,17 +30,17 @@ export function StyledItem({ label, index }: { label: string; index: number }): 
         {label}
       </Text>
     </Box>
-  )
+  );
 }
 
 /** Component that uses useContentRect — triggers two-phase rendering. */
 export function ResponsiveItem({ label }: { label: string }): ReactElement {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
   return (
     <Box>
       <Text>{width > 0 ? `${label} (w=${width})` : label}</Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -52,14 +52,24 @@ export function FlatList({ count, styled }: { count: number; styled?: boolean })
   return (
     <Box flexDirection="column">
       {Array.from({ length: count }, (_, i) =>
-        styled ? <StyledItem key={i} label={`Item ${i}`} index={i} /> : <SimpleItem key={i} label={`Item ${i}`} />,
+        styled ? (
+          <StyledItem key={i} label={`Item ${i}`} index={i} />
+        ) : (
+          <SimpleItem key={i} label={`Item ${i}`} />
+        ),
       )}
     </Box>
-  )
+  );
 }
 
 /** Kanban board: N columns, each with M cards. */
-export function KanbanBoard({ columns, cardsPerColumn }: { columns: number; cardsPerColumn: number }): ReactElement {
+export function KanbanBoard({
+  columns,
+  cardsPerColumn,
+}: {
+  columns: number;
+  cardsPerColumn: number;
+}): ReactElement {
   return (
     <Box flexDirection="row" gap={1}>
       {Array.from({ length: columns }, (_, col) => (
@@ -75,7 +85,7 @@ export function KanbanBoard({ columns, cardsPerColumn }: { columns: number; card
         </Box>
       ))}
     </Box>
-  )
+  );
 }
 
 /** Dashboard layout: header, sidebar + content, footer. */
@@ -114,23 +124,29 @@ export function Dashboard({ widgetCount }: { widgetCount: number }): ReactElemen
         <Text dimColor>Status bar</Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 /** Deeply nested component tree — stress tests tree traversal. */
 export function DeepTree({ depth }: { depth: number }): ReactElement {
   if (depth === 0) {
-    return <Text>Leaf</Text>
+    return <Text>Leaf</Text>;
   }
   return (
     <Box paddingLeft={1}>
       <DeepTree depth={depth - 1} />
     </Box>
-  )
+  );
 }
 
 /** Scrollable list — overflow="scroll" container with many items. */
-export function ScrollableList({ count, visibleHeight }: { count: number; visibleHeight: number }): ReactElement {
+export function ScrollableList({
+  count,
+  visibleHeight,
+}: {
+  count: number;
+  visibleHeight: number;
+}): ReactElement {
   return (
     <Box height={visibleHeight} overflow="scroll">
       {Array.from({ length: count }, (_, i) => (
@@ -139,7 +155,7 @@ export function ScrollableList({ count, visibleHeight }: { count: number; visibl
         </Box>
       ))}
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -153,7 +169,7 @@ export function CounterApp({ count }: { count: number }): ReactElement {
       <Text bold>Counter</Text>
       <Text>Count: {count}</Text>
     </Box>
-  )
+  );
 }
 
 /** List with a single highlighted item — simulates cursor movement. */
@@ -168,5 +184,5 @@ export function CursorList({ count, cursor }: { count: number; cursor: number })
         </Box>
       ))}
     </Box>
-  )
+  );
 }

@@ -5,12 +5,12 @@
  * Bridges ansi Term with silvery measurement capabilities.
  */
 
-import type { Term, TerminalCaps } from "./ansi/index"
-import { createWidthMeasurer, type Measurer } from "./unicode"
-import { createOutputPhase } from "./pipeline/output-phase"
-import type { PipelineConfig } from "./pipeline"
+import type { Term, TerminalCaps } from "./ansi/index";
+import { createWidthMeasurer, type Measurer } from "./unicode";
+import { createOutputPhase } from "./pipeline/output-phase";
+import type { PipelineConfig } from "./pipeline";
 
-export type { Measurer } from "./unicode"
+export type { Measurer } from "./unicode";
 
 /**
  * Term extended with measurement capabilities.
@@ -24,10 +24,10 @@ export interface MeasuredTerm extends Term, Measurer {}
  * methods (displayWidth, graphemeWidth, wrapText, etc.) to the term.
  */
 export function withMeasurer(term: Term): MeasuredTerm {
-  const caps = term.caps
+  const caps = term.caps;
   const measurer = createWidthMeasurer(
     caps ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizingSupported } : {},
-  )
+  );
 
   return Object.create(term, {
     textEmojiWide: { get: () => measurer.textEmojiWide, enumerable: true },
@@ -38,7 +38,7 @@ export function withMeasurer(term: Term): MeasuredTerm {
     wrapText: { value: measurer.wrapText.bind(measurer), enumerable: true },
     sliceByWidth: { value: measurer.sliceByWidth.bind(measurer), enumerable: true },
     sliceByWidthFromEnd: { value: measurer.sliceByWidthFromEnd.bind(measurer), enumerable: true },
-  }) as MeasuredTerm
+  }) as MeasuredTerm;
 }
 
 /**
@@ -52,14 +52,18 @@ export function withMeasurer(term: Term): MeasuredTerm {
  */
 export function createPipeline(
   options: {
-    caps?: TerminalCaps
-    measurer?: Measurer
+    caps?: TerminalCaps;
+    measurer?: Measurer;
   } = {},
 ): PipelineConfig {
-  const { caps, measurer: explicitMeasurer } = options
+  const { caps, measurer: explicitMeasurer } = options;
   const measurer =
     explicitMeasurer ??
-    createWidthMeasurer(caps ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizingSupported } : {})
+    createWidthMeasurer(
+      caps
+        ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizingSupported }
+        : {},
+    );
   const outputPhaseFn = createOutputPhase(
     caps
       ? {
@@ -69,6 +73,6 @@ export function createPipeline(
         }
       : {},
     measurer,
-  )
-  return { measurer, outputPhaseFn }
+  );
+  return { measurer, outputPhaseFn };
 }

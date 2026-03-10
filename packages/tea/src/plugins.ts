@@ -16,7 +16,7 @@
 // withCommands — Command system
 // =============================================================================
 
-export { withCommands } from "./with-commands"
+export { withCommands } from "./with-commands";
 export type {
   WithCommandsOptions,
   CommandDef,
@@ -27,21 +27,25 @@ export type {
   AppWithCommands,
   AppState,
   KeybindingDef,
-} from "./with-commands"
+} from "./with-commands";
 
 // =============================================================================
 // withKeybindings — Keybinding resolution
 // =============================================================================
 
-export { withKeybindings } from "./with-keybindings"
-export type { WithKeybindingsOptions, KeybindingContext, ExtendedKeybindingDef } from "./with-keybindings"
+export { withKeybindings } from "./with-keybindings";
+export type {
+  WithKeybindingsOptions,
+  KeybindingContext,
+  ExtendedKeybindingDef,
+} from "./with-keybindings";
 
 // =============================================================================
 // withDiagnostics — Testing invariants
 // =============================================================================
 
-export { withDiagnostics, VirtualTerminal } from "./with-diagnostics"
-export type { DiagnosticOptions } from "./with-diagnostics"
+export { withDiagnostics, VirtualTerminal } from "./with-diagnostics";
+export type { DiagnosticOptions } from "./with-diagnostics";
 
 // Scheduler errors (for catching incremental render mismatches)
-export { IncrementalRenderMismatchError } from "@silvery/term/scheduler"
+export { IncrementalRenderMismatchError } from "@silvery/term/scheduler";

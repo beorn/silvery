@@ -10,13 +10,13 @@ Every cell in the terminal buffer stores structured style data:
 
 ```typescript
 interface Cell {
-  char: string // The grapheme at this position
-  fg: Color // Foreground color (256-color index, RGB, or null)
-  bg: Color // Background color (separate from fg)
-  underlineColor: Color // Independent underline color (SGR 58)
-  attrs: CellAttrs // bold, dim, italic, underline, strikethrough, etc.
-  wide: boolean // CJK/emoji double-width flag
-  hyperlink?: string // OSC 8 hyperlink URL
+  char: string; // The grapheme at this position
+  fg: Color; // Foreground color (256-color index, RGB, or null)
+  bg: Color; // Background color (separate from fg)
+  underlineColor: Color; // Independent underline color (SGR 58)
+  attrs: CellAttrs; // bold, dim, italic, underline, strikethrough, etc.
+  wide: boolean; // CJK/emoji double-width flag
+  hyperlink?: string; // OSC 8 hyperlink URL
 }
 ```
 
@@ -35,10 +35,10 @@ The output phase reads the cell buffer and produces minimal ANSI escape sequence
 Pre-styled text (chalk, kleur, etc.) composes with silvery's style props automatically. Each cell's properties are resolved independently -- no manual reset management.
 
 ```tsx
-import chalk from "chalk"
+import chalk from "chalk";
 
 // chalk.red applies to "red", silvery blue applies to "and blue"
-<Text color="blue">{chalk.red("red")} and blue</Text>
+<Text color="blue">{chalk.red("red")} and blue</Text>;
 ```
 
 The parser extracts chalk's red SGR into the cell's `fg` property for "red", then silvery's `color="blue"` sets `fg` for "and blue". No reset codes leak between them.

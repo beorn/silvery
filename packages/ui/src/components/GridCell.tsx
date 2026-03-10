@@ -17,17 +17,17 @@
  * ```
  */
 
-import type { ReactNode } from "react"
-import { Box } from "@silvery/react/components/Box"
-import { useGridPosition } from "@silvery/react/hooks/useGridPosition"
+import type { ReactNode } from "react";
+import { Box } from "@silvery/react/components/Box";
+import { useGridPosition } from "@silvery/react/hooks/useGridPosition";
 
 export interface GridCellProps {
   /** Section index (e.g., column index in a kanban board). */
-  sectionIndex: number
+  sectionIndex: number;
   /** Item index within the section. */
-  itemIndex: number
+  itemIndex: number;
   /** Child content to render. */
-  children: ReactNode
+  children: ReactNode;
 }
 
 /**
@@ -37,6 +37,6 @@ export interface GridCellProps {
  * Position tracking uses useScreenRectCallback (zero re-renders).
  */
 export function GridCell({ sectionIndex, itemIndex, children }: GridCellProps) {
-  useGridPosition(sectionIndex, itemIndex)
-  return <Box>{children}</Box>
+  useGridPosition(sectionIndex, itemIndex);
+  return <Box>{children}</Box>;
 }

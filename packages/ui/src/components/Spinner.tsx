@@ -10,8 +10,8 @@
  * <Spinner type="bounce" interval={120} />
  * ```
  */
-import React, { useEffect, useState } from "react"
-import { Text } from "@silvery/react/components/Text"
+import React, { useEffect, useState } from "react";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -19,11 +19,11 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface SpinnerProps {
   /** Spinner style preset */
-  type?: "dots" | "line" | "arc" | "bounce"
+  type?: "dots" | "line" | "arc" | "bounce";
   /** Label text shown after spinner */
-  label?: string
+  label?: string;
   /** Animation interval in ms (default: 80) */
-  interval?: number
+  interval?: number;
 }
 
 // =============================================================================
@@ -35,30 +35,30 @@ const FRAMES: Record<NonNullable<SpinnerProps["type"]>, readonly string[]> = {
   line: ["|", "/", "—", "\\"],
   arc: ["◜", "◠", "◝", "◞", "◡", "◟"],
   bounce: ["⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈"],
-}
+};
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function Spinner({ type = "dots", label, interval = 80 }: SpinnerProps): React.ReactElement {
-  const [frameIndex, setFrameIndex] = useState(0)
-  const frames = FRAMES[type]
+  const [frameIndex, setFrameIndex] = useState(0);
+  const frames = FRAMES[type];
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setFrameIndex((prev) => (prev + 1) % frames.length)
-    }, interval)
+      setFrameIndex((prev) => (prev + 1) % frames.length);
+    }, interval);
 
-    return () => clearInterval(timer)
-  }, [frames.length, interval])
+    return () => clearInterval(timer);
+  }, [frames.length, interval]);
 
-  const frame = frames[frameIndex % frames.length]!
+  const frame = frames[frameIndex % frames.length]!;
 
   return (
     <Text>
       {frame}
       {label ? ` ${label}` : ""}
     </Text>
-  )
+  );
 }

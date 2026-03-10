@@ -22,7 +22,7 @@ Silvery is organized as a monorepo of focused packages. Most apps only need the 
 Most apps import everything from `silvery`:
 
 ```tsx
-import { Box, Text, render, useContentRect, useInput, createTerm } from "silvery"
+import { Box, Text, render, useContentRect, useInput, createTerm } from "silvery";
 ```
 
 ### Layered Imports
@@ -31,35 +31,35 @@ For fine-grained control, import from scoped packages:
 
 ```tsx
 // Terminal-specific APIs
-import { createTerm, Pipeline } from "@silvery/term"
+import { createTerm, Pipeline } from "@silvery/term";
 
 // React reconciler and hooks
-import { Box, Text, useContentRect } from "@silvery/react"
+import { Box, Text, useContentRect } from "@silvery/react";
 
 // TEA state management
-import { createSlice, createStore } from "@silvery/tea"
+import { createSlice, createStore } from "@silvery/tea";
 
 // Theme system
-import { createTheme, presetTheme } from "@silvery/theme"
+import { createTheme, presetTheme } from "@silvery/theme";
 
 // Testing
-import { createRenderer } from "@silvery/test"
+import { createRenderer } from "@silvery/test";
 
 // UI components
-import { Spinner, ProgressBar, Table } from "@silvery/ui"
+import { Spinner, ProgressBar, Table } from "@silvery/ui";
 ```
 
 ### Runtime Entry Points
 
 ```tsx
 // High-level app framework
-import { run, createApp, useApp } from "@silvery/term/runtime"
+import { run, createApp, useApp } from "@silvery/term/runtime";
 
 // Ink-compatible API
-import { Box, Text, render } from "silvery/ink"
+import { Box, Text, render } from "silvery/ink";
 
 // Chalk-compatible styling
-import chalk from "silvery/chalk"
+import chalk from "silvery/chalk";
 ```
 
 ## `silvery` (Umbrella)
@@ -89,15 +89,15 @@ Component library with 30+ components plus CLI progress utilities.
 **CLI mode** (no React needed):
 
 ```ts
-import { Spinner, ProgressBar } from "@silvery/ui/cli"
-const stop = Spinner.start("Loading...")
+import { Spinner, ProgressBar } from "@silvery/ui/cli";
+const stop = Spinner.start("Loading...");
 ```
 
 **Wrapper utilities**:
 
 ```ts
-import { withSpinner, withProgress } from "@silvery/ui/wrappers"
-const data = await withSpinner(fetchData(), "Loading...")
+import { withSpinner, withProgress } from "@silvery/ui/wrappers";
+const data = await withSpinner(fetchData(), "Loading...");
 ```
 
 ## `@silvery/tea`
@@ -115,11 +115,11 @@ See the [Theming Guide](/guides/theming) for full documentation.
 Testing utilities with Playwright-style auto-locators, buffer assertions, and virtual rendering.
 
 ```tsx
-import { createRenderer } from "@silvery/test"
+import { createRenderer } from "@silvery/test";
 
-const render = createRenderer()
-const app = render(<App />)
-expect(app.text).toContain("Hello")
+const render = createRenderer();
+const app = render(<App />);
+expect(app.text).toContain("Hello");
 ```
 
 ## `@silvery/compat`

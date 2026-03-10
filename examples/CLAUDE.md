@@ -45,10 +45,10 @@ function App() {
     >
       {(item) => <ItemView item={item} />}
     </ScrollbackList>
-  )
+  );
 }
 
-await render(<App />, term, { mode: "inline" })
+await render(<App />, term, { mode: "inline" });
 ```
 
 `ScrollbackView` auto-sizes to its content — no manual height management. The output phase independently caps output at terminal height (via `inlineFullRender()`), so content that exceeds the terminal causes natural scrolling. The footer stays pinned at the bottom of the content.

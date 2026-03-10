@@ -19,15 +19,15 @@
  */
 
 // React integration
-export { ThemeProvider, useTheme } from "./ThemeContext"
-export type { ThemeProviderProps } from "./ThemeContext"
+export { ThemeProvider, useTheme } from "./ThemeContext";
+export type { ThemeProviderProps } from "./ThemeContext";
 
 // Core types
-export type { Theme, ColorPalette, HueName, AnsiPrimary, AnsiColorName } from "./types"
-export { COLOR_PALETTE_FIELDS } from "./types"
+export type { Theme, ColorPalette, HueName, AnsiPrimary, AnsiColorName } from "./types";
+export { COLOR_PALETTE_FIELDS } from "./types";
 
 // Derivation
-export { deriveTheme } from "./derive"
+export { deriveTheme } from "./derive";
 
 // Color utilities
 export {
@@ -42,51 +42,51 @@ export {
   hexToHsl,
   hslToHex,
   rgbToHsl,
-} from "./color"
-export type { HSL } from "./color"
+} from "./color";
+export type { HSL } from "./color";
 
 // Token resolution
-export { resolveThemeColor } from "./resolve"
+export { resolveThemeColor } from "./resolve";
 
 // ANSI 16 theme generation
-export { generateTheme } from "./generate"
+export { generateTheme } from "./generate";
 
 // Builder API
-export { createTheme, quickTheme, presetTheme } from "./builder"
+export { createTheme, quickTheme, presetTheme } from "./builder";
 
 // Palette generators
-export { fromBase16, fromColors, fromPreset } from "./generators"
+export { fromBase16, fromColors, fromPreset } from "./generators";
 
 // Active theme state (side-effectful)
-export { setActiveTheme, getActiveTheme, pushContextTheme, popContextTheme } from "./state"
+export { setActiveTheme, getActiveTheme, pushContextTheme, popContextTheme } from "./state";
 
 // Validation
-export { validateColorPalette } from "./validate"
-export type { ValidationResult } from "./validate"
-export { validateTheme, THEME_TOKEN_KEYS } from "./validate-theme"
-export type { ThemeValidationResult } from "./validate-theme"
+export { validateColorPalette } from "./validate";
+export type { ValidationResult } from "./validate";
+export { validateTheme, THEME_TOKEN_KEYS } from "./validate-theme";
+export type { ThemeValidationResult } from "./validate-theme";
 
 // Contrast checking
-export { checkContrast } from "./contrast"
-export type { ContrastResult } from "./contrast"
+export { checkContrast } from "./contrast";
+export type { ContrastResult } from "./contrast";
 
 // Token aliasing
-export { resolveAliases, resolveTokenAlias } from "./alias"
+export { resolveAliases, resolveTokenAlias } from "./alias";
 
 // CSS variables export
-export { themeToCSSVars } from "./css"
+export { themeToCSSVars } from "./css";
 
 // Auto-generate themes from a single color
-export { autoGenerateTheme } from "./auto-generate"
+export { autoGenerateTheme } from "./auto-generate";
 
 // Base16 import/export
-export { importBase16 } from "./import/base16"
-export { exportBase16 } from "./export/base16"
-export type { Base16Scheme } from "./import/types"
+export { importBase16 } from "./import/base16";
+export { exportBase16 } from "./export/base16";
+export type { Base16Scheme } from "./import/types";
 
 // Terminal detection
-export { detectTerminalPalette, detectTheme } from "./detect"
-export type { DetectedPalette, DetectThemeOptions } from "./detect"
+export { detectTerminalPalette, detectTheme } from "./detect";
+export type { DetectedPalette, DetectThemeOptions } from "./detect";
 
 // Built-in themes (pre-derived)
 export {
@@ -96,7 +96,7 @@ export {
   defaultLightTheme,
   builtinThemes,
   getThemeByName,
-} from "./palettes/index"
+} from "./palettes/index";
 
 // Built-in palettes (45 palettes from 15 theme families)
 export {
@@ -145,4 +145,4 @@ export {
   edgeLight,
   modusVivendi,
   modusOperandi,
-} from "./palettes/index"
+} from "./palettes/index";

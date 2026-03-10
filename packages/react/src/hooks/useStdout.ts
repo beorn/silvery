@@ -5,8 +5,8 @@
  * Compatible with Ink's useStdout API.
  */
 
-import { useContext } from "react"
-import { StdoutContext } from "../context"
+import { useContext } from "react";
+import { StdoutContext } from "../context";
 
 // ============================================================================
 // Types
@@ -14,9 +14,9 @@ import { StdoutContext } from "../context"
 
 export interface UseStdoutResult {
   /** The stdout stream */
-  stdout: NodeJS.WriteStream
+  stdout: NodeJS.WriteStream;
   /** Write to stdout */
-  write: (data: string) => void
+  write: (data: string) => void;
 }
 
 // ============================================================================
@@ -40,14 +40,14 @@ export interface UseStdoutResult {
  * ```
  */
 export function useStdout(): UseStdoutResult {
-  const context = useContext(StdoutContext)
+  const context = useContext(StdoutContext);
 
   if (!context) {
-    throw new Error("useStdout must be used within an Silvery application")
+    throw new Error("useStdout must be used within an Silvery application");
   }
 
   return {
     stdout: context.stdout,
     write: context.write,
-  }
+  };
 }

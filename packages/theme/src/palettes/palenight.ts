@@ -4,8 +4,8 @@
  * Reference: https://github.com/JonathanSpeek/palenight-iterm2
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Palenight — the soft, purple-tinted Material dark variant. */
 export const palenight: ColorPalette = {
@@ -33,4 +33,4 @@ export const palenight: ColorPalette = {
   cursorText: "#292d3e", // background
   selectionBackground: "#4e5579", // guides/invisibles
   selectionForeground: "#a6accd", // foreground
-}
+};

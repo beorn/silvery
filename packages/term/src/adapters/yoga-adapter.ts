@@ -17,7 +17,7 @@ import type {
   Wrap,
   Yoga,
   Node as YogaNode,
-} from "yoga-wasm-web"
+} from "yoga-wasm-web";
 import type {
   AlignValue,
   DirectionValue,
@@ -35,7 +35,7 @@ import type {
   OverflowValue,
   PositionTypeValue,
   WrapValue,
-} from "../layout-engine"
+} from "../layout-engine";
 
 // ============================================================================
 // Yoga Node Adapter
@@ -45,209 +45,209 @@ import type {
  * Wraps a Yoga node to implement LayoutNode interface.
  */
 class YogaNodeAdapter implements LayoutNode {
-  private node: YogaNode
-  private yoga: Yoga
-  private hasMeasureFunc = false
+  private node: YogaNode;
+  private yoga: Yoga;
+  private hasMeasureFunc = false;
 
   constructor(node: YogaNode, yoga: Yoga) {
-    this.node = node
-    this.yoga = yoga
+    this.node = node;
+    this.yoga = yoga;
   }
 
   /** Get the underlying Yoga node (for tree operations) */
   getYogaNode(): YogaNode {
-    return this.node
+    return this.node;
   }
 
   // Tree operations
   insertChild(child: LayoutNode, index: number): void {
-    const yogaChild = (child as YogaNodeAdapter).getYogaNode()
-    this.node.insertChild(yogaChild, index)
+    const yogaChild = (child as YogaNodeAdapter).getYogaNode();
+    this.node.insertChild(yogaChild, index);
   }
 
   removeChild(child: LayoutNode): void {
-    const yogaChild = (child as YogaNodeAdapter).getYogaNode()
-    this.node.removeChild(yogaChild)
+    const yogaChild = (child as YogaNodeAdapter).getYogaNode();
+    this.node.removeChild(yogaChild);
   }
 
   free(): void {
-    this.node.free()
+    this.node.free();
   }
 
   // Measure function
   setMeasureFunc(measureFunc: MeasureFunc): void {
-    this.hasMeasureFunc = true
+    this.hasMeasureFunc = true;
     this.node.setMeasureFunc((width, widthMode, height, heightMode) => {
-      const widthModeStr = this.measureModeToString(widthMode)
-      const heightModeStr = this.measureModeToString(heightMode)
-      return measureFunc(width, widthModeStr, height, heightModeStr)
-    })
+      const widthModeStr = this.measureModeToString(widthMode);
+      const heightModeStr = this.measureModeToString(heightMode);
+      return measureFunc(width, widthModeStr, height, heightModeStr);
+    });
   }
 
   // Dirty tracking - forces layout recalculation
   // Yoga only allows markDirty() on leaf nodes with measure functions
   markDirty(): void {
     if (this.hasMeasureFunc) {
-      this.node.markDirty()
+      this.node.markDirty();
     }
   }
 
   private measureModeToString(mode: number): MeasureMode {
-    if (mode === this.yoga.MEASURE_MODE_EXACTLY) return "exactly"
-    if (mode === this.yoga.MEASURE_MODE_AT_MOST) return "at-most"
-    return "undefined"
+    if (mode === this.yoga.MEASURE_MODE_EXACTLY) return "exactly";
+    if (mode === this.yoga.MEASURE_MODE_AT_MOST) return "at-most";
+    return "undefined";
   }
 
   // Dimension setters
   setWidth(value: number): void {
-    this.node.setWidth(value)
+    this.node.setWidth(value);
   }
   setWidthPercent(value: number): void {
-    this.node.setWidthPercent(value)
+    this.node.setWidthPercent(value);
   }
   setWidthAuto(): void {
-    this.node.setWidthAuto()
+    this.node.setWidthAuto();
   }
   setHeight(value: number): void {
-    this.node.setHeight(value)
+    this.node.setHeight(value);
   }
   setHeightPercent(value: number): void {
-    this.node.setHeightPercent(value)
+    this.node.setHeightPercent(value);
   }
   setHeightAuto(): void {
-    this.node.setHeightAuto()
+    this.node.setHeightAuto();
   }
   setMinWidth(value: number): void {
-    this.node.setMinWidth(value)
+    this.node.setMinWidth(value);
   }
   setMinWidthPercent(value: number): void {
-    this.node.setMinWidthPercent(value)
+    this.node.setMinWidthPercent(value);
   }
   setMinHeight(value: number): void {
-    this.node.setMinHeight(value)
+    this.node.setMinHeight(value);
   }
   setMinHeightPercent(value: number): void {
-    this.node.setMinHeightPercent(value)
+    this.node.setMinHeightPercent(value);
   }
   setMaxWidth(value: number): void {
-    this.node.setMaxWidth(value)
+    this.node.setMaxWidth(value);
   }
   setMaxWidthPercent(value: number): void {
-    this.node.setMaxWidthPercent(value)
+    this.node.setMaxWidthPercent(value);
   }
   setMaxHeight(value: number): void {
-    this.node.setMaxHeight(value)
+    this.node.setMaxHeight(value);
   }
   setMaxHeightPercent(value: number): void {
-    this.node.setMaxHeightPercent(value)
+    this.node.setMaxHeightPercent(value);
   }
 
   // Flex properties
   setFlexGrow(value: number): void {
-    this.node.setFlexGrow(value)
+    this.node.setFlexGrow(value);
   }
   setFlexShrink(value: number): void {
-    this.node.setFlexShrink(value)
+    this.node.setFlexShrink(value);
   }
   setFlexBasis(value: number): void {
-    this.node.setFlexBasis(value)
+    this.node.setFlexBasis(value);
   }
   setFlexBasisPercent(value: number): void {
-    this.node.setFlexBasisPercent(value)
+    this.node.setFlexBasisPercent(value);
   }
   setFlexBasisAuto(): void {
-    this.node.setFlexBasisAuto()
+    this.node.setFlexBasisAuto();
   }
   setFlexDirection(direction: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded FlexDirection type
-    this.node.setFlexDirection(direction as FlexDirection)
+    this.node.setFlexDirection(direction as FlexDirection);
   }
   setFlexWrap(wrap: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Wrap type
-    this.node.setFlexWrap(wrap as Wrap)
+    this.node.setFlexWrap(wrap as Wrap);
   }
 
   // Alignment
   setAlignItems(align: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Align type
-    this.node.setAlignItems(align as Align)
+    this.node.setAlignItems(align as Align);
   }
   setAlignSelf(align: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Align type
-    this.node.setAlignSelf(align as Align)
+    this.node.setAlignSelf(align as Align);
   }
   setAlignContent(align: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Align type
-    this.node.setAlignContent(align as Align)
+    this.node.setAlignContent(align as Align);
   }
   setJustifyContent(justify: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Justify type
-    this.node.setJustifyContent(justify as Justify)
+    this.node.setJustifyContent(justify as Justify);
   }
 
   // Spacing
   setPadding(edge: number, value: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
-    this.node.setPadding(edge as Edge, value)
+    this.node.setPadding(edge as Edge, value);
   }
   setMargin(edge: number, value: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
-    this.node.setMargin(edge as Edge, value)
+    this.node.setMargin(edge as Edge, value);
   }
   setBorder(edge: number, value: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
-    this.node.setBorder(edge as Edge, value)
+    this.node.setBorder(edge as Edge, value);
   }
   setGap(gutter: number, value: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Gutter type
-    this.node.setGap(gutter as Gutter, value)
+    this.node.setGap(gutter as Gutter, value);
   }
 
   // Display & Position
   setDisplay(display: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Display type
-    this.node.setDisplay(display as Display)
+    this.node.setDisplay(display as Display);
   }
   setPositionType(positionType: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded PositionType type
-    this.node.setPositionType(positionType as PositionType)
+    this.node.setPositionType(positionType as PositionType);
   }
   setPosition(edge: number, value: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
-    this.node.setPosition(edge as Edge, value)
+    this.node.setPosition(edge as Edge, value);
   }
   setPositionPercent(edge: number, value: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Edge type
-    this.node.setPositionPercent(edge as Edge, value)
+    this.node.setPositionPercent(edge as Edge, value);
   }
   setOverflow(overflow: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Overflow type
-    this.node.setOverflow(overflow as Overflow)
+    this.node.setOverflow(overflow as Overflow);
   }
 
   // Aspect Ratio
   setAspectRatio(value: number): void {
-    this.node.setAspectRatio(value)
+    this.node.setAspectRatio(value);
   }
 
   // Layout calculation
   calculateLayout(width: number, height: number, direction?: number): void {
     // LayoutEngine uses plain numbers; Yoga uses branded Direction type
-    this.node.calculateLayout(width, height, (direction ?? this.yoga.DIRECTION_LTR) as Direction)
+    this.node.calculateLayout(width, height, (direction ?? this.yoga.DIRECTION_LTR) as Direction);
   }
 
   // Layout results
   getComputedLeft(): number {
-    return this.node.getComputedLeft()
+    return this.node.getComputedLeft();
   }
   getComputedTop(): number {
-    return this.node.getComputedTop()
+    return this.node.getComputedTop();
   }
   getComputedWidth(): number {
-    return this.node.getComputedWidth()
+    return this.node.getComputedWidth();
   }
   getComputedHeight(): number {
-    return this.node.getComputedHeight()
+    return this.node.getComputedHeight();
   }
 }
 
@@ -259,16 +259,17 @@ class YogaNodeAdapter implements LayoutNode {
  * Layout engine implementation using Yoga (WASM).
  */
 export class YogaLayoutEngine implements LayoutEngine {
-  private yoga: Yoga
-  private _constants: LayoutConstants
+  private yoga: Yoga;
+  private _constants: LayoutConstants;
 
   constructor(yoga: Yoga) {
-    this.yoga = yoga
+    this.yoga = yoga;
     // Cast Yoga's branded types to our LayoutEngine branded types at the adapter boundary
     this._constants = {
       // Flex Direction
       FLEX_DIRECTION_COLUMN: yoga.FLEX_DIRECTION_COLUMN as unknown as FlexDirectionValue,
-      FLEX_DIRECTION_COLUMN_REVERSE: yoga.FLEX_DIRECTION_COLUMN_REVERSE as unknown as FlexDirectionValue,
+      FLEX_DIRECTION_COLUMN_REVERSE:
+        yoga.FLEX_DIRECTION_COLUMN_REVERSE as unknown as FlexDirectionValue,
       FLEX_DIRECTION_ROW: yoga.FLEX_DIRECTION_ROW as unknown as FlexDirectionValue,
       FLEX_DIRECTION_ROW_REVERSE: yoga.FLEX_DIRECTION_ROW_REVERSE as unknown as FlexDirectionValue,
 
@@ -327,19 +328,19 @@ export class YogaLayoutEngine implements LayoutEngine {
       MEASURE_MODE_UNDEFINED: yoga.MEASURE_MODE_UNDEFINED as unknown as MeasureModeValue,
       MEASURE_MODE_EXACTLY: yoga.MEASURE_MODE_EXACTLY as unknown as MeasureModeValue,
       MEASURE_MODE_AT_MOST: yoga.MEASURE_MODE_AT_MOST as unknown as MeasureModeValue,
-    }
+    };
   }
 
   createNode(): LayoutNode {
-    return new YogaNodeAdapter(this.yoga.Node.create(), this.yoga)
+    return new YogaNodeAdapter(this.yoga.Node.create(), this.yoga);
   }
 
   get constants(): LayoutConstants {
-    return this._constants
+    return this._constants;
   }
 
   get name(): string {
-    return "yoga"
+    return "yoga";
   }
 }
 
@@ -351,7 +352,7 @@ export class YogaLayoutEngine implements LayoutEngine {
  * Create a Yoga layout engine from an initialized Yoga instance.
  */
 export function createYogaEngine(yoga: Yoga): YogaLayoutEngine {
-  return new YogaLayoutEngine(yoga)
+  return new YogaLayoutEngine(yoga);
 }
 
 /**
@@ -360,7 +361,7 @@ export function createYogaEngine(yoga: Yoga): YogaLayoutEngine {
  */
 export async function initYogaEngine(): Promise<YogaLayoutEngine> {
   const { default: yoga } = (await import("yoga-wasm-web/auto")) as {
-    default: Yoga
-  }
-  return new YogaLayoutEngine(yoga)
+    default: Yoga;
+  };
+  return new YogaLayoutEngine(yoga);
 }

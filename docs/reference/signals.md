@@ -7,50 +7,52 @@ As your app grows, selectors show their cost. Zustand runs _every_ selector on _
 With signals, the factory returns a plain object — signals _are_ the reactive state, so you don't need Zustand's `set()`:
 
 ```tsx
-import { signal, computed, batch } from "@preact/signals-core"
+import { signal, computed, batch } from "@preact/signals-core";
 
 const app = createApp(
   () => {
-    const cursor = signal(0)
+    const cursor = signal(0);
     const items = signal([
       { id: "1", text: "Buy milk", done: false },
       { id: "2", text: "Write docs", done: true },
       { id: "3", text: "Fix bug", done: false },
-    ])
-    const doneCount = computed(() => items.value.filter((i) => i.done).length)
+    ]);
+    const doneCount = computed(() => items.value.filter((i) => i.done).length);
 
     return {
       cursor,
       items,
       doneCount,
       moveCursor(delta: number) {
-        cursor.value = clamp(cursor.value + delta, 0, items.value.length - 1)
+        cursor.value = clamp(cursor.value + delta, 0, items.value.length - 1);
       },
       toggleDone() {
-        const i = cursor.value
-        items.value = items.value.map((item, j) => (j === i ? { ...item, done: !item.done } : item))
+        const i = cursor.value;
+        items.value = items.value.map((item, j) =>
+          j === i ? { ...item, done: !item.done } : item,
+        );
       },
-    }
+    };
   },
   {
     key(input, key, { store }) {
-      if (input === "j") store.moveCursor(1)
-      if (input === "k") store.moveCursor(-1)
-      if (input === "x") store.toggleDone()
-      if (input === "q") return "exit"
+      if (input === "j") store.moveCursor(1);
+      if (input === "k") store.moveCursor(-1);
+      if (input === "x") store.toggleDone();
+      if (input === "q") return "exit";
     },
   },
-)
+);
 ```
 
 `signal()` creates reactive state. `computed()` derives from signals — `doneCount` recomputes only when `items` changes, not on cursor moves. `batch()` groups multiple signal writes into a single notification:
 
 ```tsx
 batch(() => {
-  cursor.value = 0
-  items.value = newItems
-  filter.value = ""
-})
+  cursor.value = 0;
+  items.value = newItems;
+  filter.value = "";
+});
 // → one notification, one re-render
 ```
 
@@ -65,21 +67,21 @@ Your todo list has 5,000 items and the cursor stutters. Two techniques help at a
 **Per-entity signals** — `Map<string, Signal<T>>` gives each item its own signal. Edit one item → 1 re-render:
 
 ```tsx
-const cursor = signal<string>("item-0")
-const items = new Map<string, Signal<ItemData>>()
+const cursor = signal<string>("item-0");
+const items = new Map<string, Signal<ItemData>>();
 
 return {
   cursor,
   items,
   currentItem: computed(() => items.get(cursor.value)?.value),
   updateItem(id: string, data: ItemData) {
-    const s = items.get(id)
-    if (s) s.value = data // only this item's subscribers re-render
+    const s = items.get(id);
+    if (s) s.value = data; // only this item's subscribers re-render
   },
   removeItem(id: string) {
-    items.delete(id) // clean up — stale signals leak memory
+    items.delete(id); // clean up — stale signals leak memory
   },
-}
+};
 ```
 
 **VirtualList** — only mount the ~50 visible rows. Combined with per-entity signals: edit one item → 1 re-render. Move cursor → 2 re-renders. O(visible), not O(total).

@@ -11,15 +11,15 @@
  * behavior where each item is rendered exactly once.
  */
 
-import { useRef, type JSX, type ReactNode } from "react"
+import { useRef, type JSX, type ReactNode } from "react";
 
 export interface StaticProps<T> {
   /** Items to render */
-  items: T[]
+  items: T[];
   /** Render function for each item */
-  children: (item: T, index: number) => ReactNode
+  children: (item: T, index: number) => ReactNode;
   /** Style to apply to the container */
-  style?: Record<string, unknown>
+  style?: Record<string, unknown>;
 }
 
 /**
@@ -47,22 +47,22 @@ export function Static<T>({ items, children, style }: StaticProps<T>): JSX.Eleme
   // Track previously rendered items to implement write-once semantics.
   // Once an item has been rendered, its React element is frozen and reused
   // on subsequent renders — the children callback is NOT called again for it.
-  const renderedRef = useRef<ReactNode[]>([])
+  const renderedRef = useRef<ReactNode[]>([]);
 
   // Render only new items (items beyond what we've already rendered)
-  const prevCount = renderedRef.current.length
+  const prevCount = renderedRef.current.length;
   if (items.length > prevCount) {
     for (let i = prevCount; i < items.length; i++) {
-      renderedRef.current.push(children(items[i]!, i))
+      renderedRef.current.push(children(items[i]!, i));
     }
   } else if (items.length < prevCount) {
     // Items were removed — truncate the rendered cache
-    renderedRef.current.length = items.length
+    renderedRef.current.length = items.length;
   }
 
   return (
     <silvery-box flexDirection="column" {...style}>
       {renderedRef.current}
     </silvery-box>
-  )
+  );
 }

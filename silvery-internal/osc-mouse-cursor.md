@@ -41,15 +41,23 @@ Where `cursor-name` is one of the X11/CSS cursor names:
 ```ts
 /** Set the mouse cursor shape via OSC 22 */
 export function setMouseCursor(shape: MouseCursorShape): string {
-  return `\x1b]22;${shape}\x07`
+  return `\x1b]22;${shape}\x07`;
 }
 
 /** Reset the mouse cursor to default via OSC 22 */
 export function resetMouseCursor(): string {
-  return `\x1b]22;default\x07`
+  return `\x1b]22;default\x07`;
 }
 
-export type MouseCursorShape = "default" | "text" | "pointer" | "crosshair" | "move" | "not-allowed" | "wait" | "help"
+export type MouseCursorShape =
+  | "default"
+  | "text"
+  | "pointer"
+  | "crosshair"
+  | "move"
+  | "not-allowed"
+  | "wait"
+  | "help";
 ```
 
 ### Layer 2: Component prop (`cursor` on Box)

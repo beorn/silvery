@@ -66,18 +66,22 @@
  * </Box>
  * ```
  */
-export { Box } from "./components/Box"
-export { Console } from "@silvery/ui/components/Console"
-export { VirtualList } from "@silvery/ui/components/VirtualList"
-export type { VirtualListProps, VirtualListHandle, ItemMeta } from "@silvery/ui/components/VirtualList"
-export { HorizontalVirtualList } from "@silvery/ui/components/HorizontalVirtualList"
+export { Box } from "./components/Box";
+export { Console } from "@silvery/ui/components/Console";
+export { VirtualList } from "@silvery/ui/components/VirtualList";
+export type {
+  VirtualListProps,
+  VirtualListHandle,
+  ItemMeta,
+} from "@silvery/ui/components/VirtualList";
+export { HorizontalVirtualList } from "@silvery/ui/components/HorizontalVirtualList";
 export type {
   HorizontalVirtualListProps,
   HorizontalVirtualListHandle,
-} from "@silvery/ui/components/HorizontalVirtualList"
-export { SplitView } from "@silvery/ui/components/SplitView"
-export type { SplitViewProps } from "@silvery/ui/components/SplitView"
-export type { LayoutNode as SplitLayoutNode } from "@silvery/term/pane-manager"
+} from "@silvery/ui/components/HorizontalVirtualList";
+export { SplitView } from "@silvery/ui/components/SplitView";
+export type { SplitViewProps } from "@silvery/ui/components/SplitView";
+export type { LayoutNode as SplitLayoutNode } from "@silvery/term/pane-manager";
 export {
   createLeaf,
   splitPane,
@@ -87,7 +91,7 @@ export {
   resizeSplit,
   swapPanes,
   getTabOrder as getSplitTabOrder,
-} from "@silvery/term/pane-manager"
+} from "@silvery/term/pane-manager";
 
 /**
  * Re-export Text component - renders text content.
@@ -102,27 +106,27 @@ export {
  * <Text>{chalk.bold('Chalk works too')}</Text>
  * ```
  */
-export { Text } from "./components/Text"
+export { Text } from "./components/Text";
 
-export { Link } from "./components/Link"
-export type { LinkProps } from "./components/Link"
-export { Transform } from "./components/Transform"
-export type { TransformProps } from "./components/Transform"
-export { Fill } from "./components/Fill"
-export type { FillProps } from "./components/Fill"
-export { Newline } from "./components/Newline"
-export { Spacer } from "./components/Spacer"
-export { Static } from "./components/Static"
-export { ScrollbackList } from "@silvery/ui/components/ScrollbackList"
-export type { ScrollbackListProps } from "@silvery/ui/components/ScrollbackList"
+export { Link } from "./components/Link";
+export type { LinkProps } from "./components/Link";
+export { Transform } from "./components/Transform";
+export type { TransformProps } from "./components/Transform";
+export { Fill } from "./components/Fill";
+export type { FillProps } from "./components/Fill";
+export { Newline } from "./components/Newline";
+export { Spacer } from "./components/Spacer";
+export { Static } from "./components/Static";
+export { ScrollbackList } from "@silvery/ui/components/ScrollbackList";
+export type { ScrollbackListProps } from "@silvery/ui/components/ScrollbackList";
 
 // Viewport Architecture (Phase 2)
-export { Screen } from "@silvery/ui/components/Screen"
-export type { ScreenProps } from "@silvery/ui/components/Screen"
-export { ScrollbackView } from "@silvery/ui/components/ScrollbackView"
-export type { ScrollbackViewProps } from "@silvery/ui/components/ScrollbackView"
-export { VirtualView } from "@silvery/ui/components/VirtualView"
-export type { VirtualViewProps, VirtualViewHandle } from "@silvery/ui/components/VirtualView"
+export { Screen } from "@silvery/ui/components/Screen";
+export type { ScreenProps } from "@silvery/ui/components/Screen";
+export { ScrollbackView } from "@silvery/ui/components/ScrollbackView";
+export type { ScrollbackViewProps } from "@silvery/ui/components/ScrollbackView";
+export { VirtualView } from "@silvery/ui/components/VirtualView";
+export type { VirtualViewProps, VirtualViewHandle } from "@silvery/ui/components/VirtualView";
 
 /**
  * Re-export ErrorBoundary component - catches render errors in children.
@@ -136,72 +140,80 @@ export type { VirtualViewProps, VirtualViewHandle } from "@silvery/ui/components
  * </ErrorBoundary>
  * ```
  */
-export { ErrorBoundary } from "@silvery/ui/components/ErrorBoundary"
-export type { ErrorBoundaryProps } from "@silvery/ui/components/ErrorBoundary"
+export { ErrorBoundary } from "@silvery/ui/components/ErrorBoundary";
+export type { ErrorBoundaryProps } from "@silvery/ui/components/ErrorBoundary";
 
 // Input Components
-export { TextInput } from "@silvery/ui/components/TextInput"
-export type { TextInputProps, TextInputHandle } from "@silvery/ui/components/TextInput"
+export { TextInput } from "@silvery/ui/components/TextInput";
+export type { TextInputProps, TextInputHandle } from "@silvery/ui/components/TextInput";
 
-export { TextArea } from "@silvery/ui/components/TextArea"
-export type { TextAreaProps, TextAreaHandle, TextAreaSelection } from "@silvery/ui/components/TextArea"
+export { TextArea } from "@silvery/ui/components/TextArea";
+export type {
+  TextAreaProps,
+  TextAreaHandle,
+  TextAreaSelection,
+} from "@silvery/ui/components/TextArea";
 
-export { useTextArea, clampScroll } from "@silvery/ui/components/useTextArea"
-export type { UseTextAreaOptions, UseTextAreaResult } from "@silvery/ui/components/useTextArea"
+export { useTextArea, clampScroll } from "@silvery/ui/components/useTextArea";
+export type { UseTextAreaOptions, UseTextAreaResult } from "@silvery/ui/components/useTextArea";
 
-export { EditContextDisplay } from "@silvery/ui/components/EditContextDisplay"
-export type { EditContextDisplayProps } from "@silvery/ui/components/EditContextDisplay"
+export { EditContextDisplay } from "@silvery/ui/components/EditContextDisplay";
+export type { EditContextDisplayProps } from "@silvery/ui/components/EditContextDisplay";
 
 // Display Components
-export { CursorLine } from "@silvery/ui/components/CursorLine"
-export type { CursorLineProps } from "@silvery/ui/components/CursorLine"
+export { CursorLine } from "@silvery/ui/components/CursorLine";
+export type { CursorLineProps } from "@silvery/ui/components/CursorLine";
 
 // Dialog Components
-export { ModalDialog, formatTitleWithHotkey } from "@silvery/ui/components/ModalDialog"
-export type { ModalDialogProps } from "@silvery/ui/components/ModalDialog"
+export { ModalDialog, formatTitleWithHotkey } from "@silvery/ui/components/ModalDialog";
+export type { ModalDialogProps } from "@silvery/ui/components/ModalDialog";
 
-export { PickerDialog } from "@silvery/ui/components/PickerDialog"
-export type { PickerDialogProps } from "@silvery/ui/components/PickerDialog"
+export { PickerDialog } from "@silvery/ui/components/PickerDialog";
+export type { PickerDialogProps } from "@silvery/ui/components/PickerDialog";
 
-export { PickerList } from "@silvery/ui/components/PickerList"
-export type { PickerListProps } from "@silvery/ui/components/PickerList"
+export { PickerList } from "@silvery/ui/components/PickerList";
+export type { PickerListProps } from "@silvery/ui/components/PickerList";
 
 // Focusable Controls
-export { Toggle } from "@silvery/ui/components/Toggle"
-export type { ToggleProps } from "@silvery/ui/components/Toggle"
+export { Toggle } from "@silvery/ui/components/Toggle";
+export type { ToggleProps } from "@silvery/ui/components/Toggle";
 
-export { Button } from "@silvery/ui/components/Button"
-export type { ButtonProps } from "@silvery/ui/components/Button"
+export { Button } from "@silvery/ui/components/Button";
+export type { ButtonProps } from "@silvery/ui/components/Button";
 
 // Input Hooks
-export { useReadline } from "@silvery/ui/components/useReadline"
-export type { ReadlineState, UseReadlineOptions, UseReadlineResult } from "@silvery/ui/components/useReadline"
+export { useReadline } from "@silvery/ui/components/useReadline";
+export type {
+  ReadlineState,
+  UseReadlineOptions,
+  UseReadlineResult,
+} from "@silvery/ui/components/useReadline";
 
 // Widget Components
-export { Spinner } from "@silvery/ui/components/Spinner"
-export type { SpinnerProps } from "@silvery/ui/components/Spinner"
+export { Spinner } from "@silvery/ui/components/Spinner";
+export type { SpinnerProps } from "@silvery/ui/components/Spinner";
 
-export { ProgressBar } from "@silvery/ui/components/ProgressBar"
-export type { ProgressBarProps } from "@silvery/ui/components/ProgressBar"
+export { ProgressBar } from "@silvery/ui/components/ProgressBar";
+export type { ProgressBarProps } from "@silvery/ui/components/ProgressBar";
 
-export { SelectList } from "@silvery/ui/components/SelectList"
-export type { SelectListProps, SelectOption } from "@silvery/ui/components/SelectList"
+export { SelectList } from "@silvery/ui/components/SelectList";
+export type { SelectListProps, SelectOption } from "@silvery/ui/components/SelectList";
 
-export { Table } from "@silvery/ui/components/Table"
-export type { TableProps, TableColumn } from "@silvery/ui/components/Table"
+export { Table } from "@silvery/ui/components/Table";
+export type { TableProps, TableColumn } from "@silvery/ui/components/Table";
 
-export { Badge } from "@silvery/ui/components/Badge"
-export type { BadgeProps } from "@silvery/ui/components/Badge"
+export { Badge } from "@silvery/ui/components/Badge";
+export type { BadgeProps } from "@silvery/ui/components/Badge";
 
-export { Divider } from "@silvery/ui/components/Divider"
-export type { DividerProps } from "@silvery/ui/components/Divider"
+export { Divider } from "@silvery/ui/components/Divider";
+export type { DividerProps } from "@silvery/ui/components/Divider";
 
 // Form Components
-export { Form, FormField } from "@silvery/ui/components/Form"
-export type { FormProps, FormFieldProps } from "@silvery/ui/components/Form"
+export { Form, FormField } from "@silvery/ui/components/Form";
+export type { FormProps, FormFieldProps } from "@silvery/ui/components/Form";
 
 // Toast / Notification
-export { useToast, ToastContainer, ToastItem } from "@silvery/ui/components/Toast"
+export { useToast, ToastContainer, ToastItem } from "@silvery/ui/components/Toast";
 export type {
   ToastData,
   ToastOptions,
@@ -209,41 +221,45 @@ export type {
   UseToastResult,
   ToastContainerProps,
   ToastItemProps,
-} from "@silvery/ui/components/Toast"
+} from "@silvery/ui/components/Toast";
 
 // Command Palette
-export { CommandPalette } from "@silvery/ui/components/CommandPalette"
-export type { CommandPaletteProps, CommandItem } from "@silvery/ui/components/CommandPalette"
+export { CommandPalette } from "@silvery/ui/components/CommandPalette";
+export type { CommandPaletteProps, CommandItem } from "@silvery/ui/components/CommandPalette";
 
 // Tree View
-export { TreeView } from "@silvery/ui/components/TreeView"
-export type { TreeViewProps, TreeNode } from "@silvery/ui/components/TreeView"
+export { TreeView } from "@silvery/ui/components/TreeView";
+export type { TreeViewProps, TreeNode } from "@silvery/ui/components/TreeView";
 
 // Breadcrumb
-export { Breadcrumb } from "@silvery/ui/components/Breadcrumb"
-export type { BreadcrumbProps, BreadcrumbItem } from "@silvery/ui/components/Breadcrumb"
+export { Breadcrumb } from "@silvery/ui/components/Breadcrumb";
+export type { BreadcrumbProps, BreadcrumbItem } from "@silvery/ui/components/Breadcrumb";
 
 // Tabs
-export { Tabs, TabList, Tab, TabPanel } from "@silvery/ui/components/Tabs"
-export type { TabsProps, TabListProps, TabProps, TabPanelProps } from "@silvery/ui/components/Tabs"
+export { Tabs, TabList, Tab, TabPanel } from "@silvery/ui/components/Tabs";
+export type { TabsProps, TabListProps, TabProps, TabPanelProps } from "@silvery/ui/components/Tabs";
 
 // Tooltip
-export { Tooltip } from "@silvery/ui/components/Tooltip"
-export type { TooltipProps } from "@silvery/ui/components/Tooltip"
+export { Tooltip } from "@silvery/ui/components/Tooltip";
+export type { TooltipProps } from "@silvery/ui/components/Tooltip";
 
 // Skeleton
-export { Skeleton } from "@silvery/ui/components/Skeleton"
-export type { SkeletonProps } from "@silvery/ui/components/Skeleton"
+export { Skeleton } from "@silvery/ui/components/Skeleton";
+export type { SkeletonProps } from "@silvery/ui/components/Skeleton";
 
 // Image Component
-export { Image } from "@silvery/ui/image/Image"
-export type { ImageProps } from "@silvery/ui/image/Image"
+export { Image } from "@silvery/ui/image/Image";
+export type { ImageProps } from "@silvery/ui/image/Image";
 
 // Image Protocol Encoders
-export { encodeKittyImage, deleteKittyImage, isKittyGraphicsSupported } from "@silvery/ui/image/kitty-graphics"
-export type { KittyImageOptions } from "@silvery/ui/image/kitty-graphics"
-export { encodeSixel, isSixelSupported } from "@silvery/ui/image/sixel-encoder"
-export type { SixelImageData } from "@silvery/ui/image/sixel-encoder"
+export {
+  encodeKittyImage,
+  deleteKittyImage,
+  isKittyGraphicsSupported,
+} from "@silvery/ui/image/kitty-graphics";
+export type { KittyImageOptions } from "@silvery/ui/image/kitty-graphics";
+export { encodeSixel, isSixelSupported } from "@silvery/ui/image/sixel-encoder";
+export type { SixelImageData } from "@silvery/ui/image/sixel-encoder";
 
 // =============================================================================
 // Hooks
@@ -263,7 +279,12 @@ export type { SixelImageData } from "@silvery/ui/image/sixel-encoder"
  * }
  * ```
  */
-export { useContentRect, useContentRectCallback, useScreenRect, useScreenRectCallback } from "./hooks/useLayout"
+export {
+  useContentRect,
+  useContentRectCallback,
+  useScreenRect,
+  useScreenRectCallback,
+} from "./hooks/useLayout";
 
 /**
  * Keyboard input hook.
@@ -279,7 +300,7 @@ export { useContentRect, useContentRectCallback, useScreenRect, useScreenRectCal
  * });
  * ```
  */
-export { useInput } from "./hooks/useInput"
+export { useInput } from "./hooks/useInput";
 
 /**
  * App control hook - provides exit function.
@@ -293,20 +314,20 @@ export { useInput } from "./hooks/useInput"
  * exit(new Error('Failed'));  // Exit with error
  * ```
  */
-export { useApp } from "./hooks/useApp"
+export { useApp } from "./hooks/useApp";
 
-export { useStdout } from "./hooks/useStdout"
-export { useFocusManager } from "./hooks/useFocusManager"
+export { useStdout } from "./hooks/useStdout";
+export { useFocusManager } from "./hooks/useFocusManager";
 
 // Focus system (tree-based)
-export { createFocusManager } from "@silvery/tea/focus-manager"
+export { createFocusManager } from "@silvery/tea/focus-manager";
 export type {
   FocusManager,
   FocusManagerOptions,
   FocusChangeCallback,
   FocusOrigin,
   FocusSnapshot,
-} from "@silvery/tea/focus-manager"
+} from "@silvery/tea/focus-manager";
 export {
   findFocusableAncestor,
   findEnclosingScope,
@@ -314,15 +335,24 @@ export {
   findByTestID,
   findSpatialTarget,
   getExplicitFocusLink,
-} from "@silvery/tea/focus-queries"
-export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "@silvery/tea/focus-events"
-export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "@silvery/tea/focus-events"
-export { useFocusable } from "./hooks/useFocusable"
-export type { UseFocusableResult } from "./hooks/useFocusable"
-export { useFocusWithin } from "./hooks/useFocusWithin"
+} from "@silvery/tea/focus-queries";
+export {
+  createKeyEvent,
+  createFocusEvent,
+  dispatchKeyEvent,
+  dispatchFocusEvent,
+} from "@silvery/tea/focus-events";
+export type {
+  SilveryKeyEvent,
+  SilveryFocusEvent,
+  FocusEventProps,
+} from "@silvery/tea/focus-events";
+export { useFocusable } from "./hooks/useFocusable";
+export type { UseFocusableResult } from "./hooks/useFocusable";
+export { useFocusWithin } from "./hooks/useFocusWithin";
 
-export { useTerm } from "./hooks/useTerm"
-export { useConsole } from "./hooks/useConsole"
+export { useTerm } from "./hooks/useTerm";
+export { useConsole } from "./hooks/useConsole";
 export {
   useCursor,
   resetCursorState,
@@ -330,14 +360,14 @@ export {
   subscribeCursor,
   createCursorStore,
   CursorProvider,
-} from "./hooks/useCursor"
-export type { CursorPosition, CursorState, CursorAccessors, CursorStore } from "./hooks/useCursor"
-export { useScrollback } from "./hooks/useScrollback"
-export type { UseScrollbackOptions, ScrollbackMarkerCallbacks } from "./hooks/useScrollback"
-export { useVirtualizer } from "./hooks/useVirtualizer"
-export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualizer"
-export { useScrollbackItem } from "./hooks/useScrollbackItem"
-export type { ScrollbackItemContext } from "./hooks/useScrollbackItem"
+} from "./hooks/useCursor";
+export type { CursorPosition, CursorState, CursorAccessors, CursorStore } from "./hooks/useCursor";
+export { useScrollback } from "./hooks/useScrollback";
+export type { UseScrollbackOptions, ScrollbackMarkerCallbacks } from "./hooks/useScrollback";
+export { useVirtualizer } from "./hooks/useVirtualizer";
+export type { VirtualizerConfig, VirtualizerResult } from "./hooks/useVirtualizer";
+export { useScrollbackItem } from "./hooks/useScrollbackItem";
+export type { ScrollbackItemContext } from "./hooks/useScrollbackItem";
 
 /**
  * Re-export React concurrent features for TUI responsiveness.
@@ -364,18 +394,18 @@ export type { ScrollbackItemContext } from "./hooks/useScrollbackItem"
  * }
  * ```
  */
-export { useTransition, useDeferredValue, useId } from "react"
+export { useTransition, useDeferredValue, useId } from "react";
 
 // Runtime hook
-export { useRuntime } from "./hooks/useRuntime"
+export { useRuntime } from "./hooks/useRuntime";
 
 // Contexts for advanced usage (usually hooks are preferred)
-export { TermContext, FocusManagerContext, RuntimeContext } from "./context"
-export type { RuntimeContextValue, BaseRuntimeEvents } from "./context"
+export { TermContext, FocusManagerContext, RuntimeContext } from "./context";
+export type { RuntimeContextValue, BaseRuntimeEvents } from "./context";
 
 // Theming
-export { ThemeProvider, useTheme } from "@silvery/theme/ThemeContext"
-export type { ThemeProviderProps } from "@silvery/theme/ThemeContext"
+export { ThemeProvider, useTheme } from "@silvery/theme/ThemeContext";
+export type { ThemeProviderProps } from "@silvery/theme/ThemeContext";
 export {
   defaultDarkTheme,
   defaultLightTheme,
@@ -387,15 +417,15 @@ export {
   generateTheme,
   detectTheme,
   deriveTheme,
-} from "@silvery/theme"
-export type { Theme, AnsiPrimary, DetectThemeOptions } from "@silvery/theme"
+} from "@silvery/theme";
+export type { Theme, AnsiPrimary, DetectThemeOptions } from "@silvery/theme";
 
 // =============================================================================
 // Re-exports from term/ansi
 // =============================================================================
 
 // Term primitives (so consumers don't need to import from term directly)
-export { createTerm, term, patchConsole } from "@silvery/term/ansi"
+export { createTerm, term, patchConsole } from "@silvery/term/ansi";
 export type {
   Term,
   StyleChain,
@@ -404,7 +434,7 @@ export type {
   ConsoleStats,
   ColorLevel,
   ConsoleEntry,
-} from "@silvery/term/ansi"
+} from "@silvery/term/ansi";
 
 // Hit Registry (mouse support)
 export {
@@ -415,7 +445,7 @@ export {
   useHitRegionCallback,
   resetHitRegionIdCounter,
   Z_INDEX,
-} from "@silvery/term/hit-registry"
+} from "@silvery/term/hit-registry";
 
 // =============================================================================
 // Render Functions
@@ -461,9 +491,9 @@ export {
   // Flexily adapter
   createFlexilyEngine,
   FlexilyLayoutEngine,
-} from "./render"
-export { renderString, renderStringSync, type RenderStringOptions } from "./render-string"
-export { measureElement } from "./measureElement"
+} from "./render";
+export { renderString, renderStringSync, type RenderStringOptions } from "./render-string";
+export { measureElement } from "./measureElement";
 
 // TermDef resolution utilities
 export {
@@ -473,7 +503,7 @@ export {
   isTermDef,
   createInputEvents,
   type ResolvedTermDef,
-} from "@silvery/term/term-def"
+} from "@silvery/term/term-def";
 
 // ANSI escape sequences for terminal control
 export {
@@ -496,8 +526,8 @@ export {
   resetCursorStyle,
   setMouseCursorShape,
   resetMouseCursorShape,
-} from "@silvery/term/output"
-export type { CursorShape, MouseCursorShape } from "@silvery/term/output"
+} from "@silvery/term/output";
+export type { CursorShape, MouseCursorShape } from "@silvery/term/output";
 
 // Bracketed paste mode (DEC private mode 2004)
 export {
@@ -506,11 +536,11 @@ export {
   parseBracketedPaste,
   PASTE_START,
   PASTE_END,
-} from "@silvery/term/bracketed-paste"
-export type { BracketedPasteResult } from "@silvery/term/bracketed-paste"
+} from "@silvery/term/bracketed-paste";
+export type { BracketedPasteResult } from "@silvery/term/bracketed-paste";
 
 // OSC 52 clipboard support
-export { copyToClipboard, requestClipboard, parseClipboardResponse } from "@silvery/term/clipboard"
+export { copyToClipboard, requestClipboard, parseClipboardResponse } from "@silvery/term/clipboard";
 
 // OSC 4 palette color query/set
 export {
@@ -518,19 +548,28 @@ export {
   setPaletteColor,
   parsePaletteResponse,
   queryMultiplePaletteColors,
-} from "@silvery/term/osc-palette"
+} from "@silvery/term/osc-palette";
 
 // OSC 133 semantic prompt markers
-export { OSC133 } from "@silvery/term/osc-markers"
+export { OSC133 } from "@silvery/term/osc-markers";
 
 // Kitty protocol detection
-export { detectKittySupport, detectKittyFromStdio, type KittyDetectResult } from "@silvery/term/kitty-detect"
+export {
+  detectKittySupport,
+  detectKittyFromStdio,
+  type KittyDetectResult,
+} from "@silvery/term/kitty-detect";
 
 // Terminal capability detection
-export { detectTerminalCaps, defaultCaps, type TerminalCaps } from "@silvery/term/terminal-caps"
+export { detectTerminalCaps, defaultCaps, type TerminalCaps } from "@silvery/term/terminal-caps";
 
 // Terminal capability visual test
-export { runTermtest, TERMTEST_SECTIONS, type TermtestSection, type TermtestOptions } from "@silvery/term/termtest"
+export {
+  runTermtest,
+  TERMTEST_SECTIONS,
+  type TermtestSection,
+  type TermtestOptions,
+} from "@silvery/term/termtest";
 
 // Output-phase capability configuration (suppress unsupported SGR codes)
 export {
@@ -538,13 +577,13 @@ export {
   createOutputPhase,
   type OutputPhaseFn,
   type OutputCaps,
-} from "@silvery/term/pipeline/output-phase"
+} from "@silvery/term/pipeline/output-phase";
 
 // Pipeline configuration
-export { type PipelineConfig, type PipelineContext } from "@silvery/term/pipeline"
+export { type PipelineConfig, type PipelineContext } from "@silvery/term/pipeline";
 
 // withRender plugin
-export { withRender, type RenderTerm } from "@silvery/tea/with-render"
+export { withRender, type RenderTerm } from "@silvery/tea/with-render";
 
 // Text sizing protocol (OSC 66) — PUA character width control
 export {
@@ -552,10 +591,10 @@ export {
   isPrivateUseArea,
   isTextSizingLikelySupported,
   detectTextSizingSupport,
-} from "@silvery/term/text-sizing"
+} from "@silvery/term/text-sizing";
 
 // CSI 6n cursor position query
-export { queryCursorPosition, queryCursorFromStdio } from "@silvery/term/cursor-query"
+export { queryCursorPosition, queryCursorFromStdio } from "@silvery/term/cursor-query";
 
 // OSC 10/11/12 terminal color queries
 export {
@@ -569,7 +608,7 @@ export {
   resetBackgroundColor,
   resetCursorColor,
   detectColorScheme,
-} from "@silvery/term/terminal-colors"
+} from "@silvery/term/terminal-colors";
 
 // DA1/DA2/DA3 + XTVERSION device attribute queries
 export {
@@ -579,19 +618,29 @@ export {
   queryTerminalVersion,
   queryDeviceAttributes,
   type DeviceAttributes,
-} from "@silvery/term/device-attrs"
+} from "@silvery/term/device-attrs";
 
 // Focus reporting (CSI ?1004h)
-export { enableFocusReporting, disableFocusReporting, parseFocusEvent } from "@silvery/term/focus-reporting"
+export {
+  enableFocusReporting,
+  disableFocusReporting,
+  parseFocusEvent,
+} from "@silvery/term/focus-reporting";
 
 // DECRQM mode query
-export { queryMode, queryModes, DecMode } from "@silvery/term/mode-query"
+export { queryMode, queryModes, DecMode } from "@silvery/term/mode-query";
 
 // CSI 14t/18t pixel and text area size queries
-export { queryTextAreaPixels, queryTextAreaSize, queryCellSize } from "@silvery/term/pixel-size"
+export { queryTextAreaPixels, queryTextAreaSize, queryCellSize } from "@silvery/term/pixel-size";
 
 // Layout engine types
-export type { LayoutEngine, LayoutNode, LayoutConstants, MeasureFunc, MeasureMode } from "@silvery/term/layout-engine"
+export type {
+  LayoutEngine,
+  LayoutNode,
+  LayoutConstants,
+  MeasureFunc,
+  MeasureMode,
+} from "@silvery/term/layout-engine";
 
 // Render adapter (for canvas, DOM, etc.)
 export {
@@ -600,7 +649,7 @@ export {
   hasRenderAdapter,
   getTextMeasurer,
   ensureRenderAdapterInitialized,
-} from "@silvery/term/render-adapter"
+} from "@silvery/term/render-adapter";
 export type {
   RenderAdapter,
   RenderBuffer,
@@ -609,26 +658,30 @@ export type {
   TextMeasureResult,
   TextMeasureStyle,
   BorderChars,
-} from "@silvery/term/render-adapter"
+} from "@silvery/term/render-adapter";
 
 // Canvas adapter
-export { createCanvasAdapter, CanvasRenderBuffer } from "@silvery/term/adapters/canvas-adapter"
-export type { CanvasAdapterConfig } from "@silvery/term/adapters/canvas-adapter"
+export { createCanvasAdapter, CanvasRenderBuffer } from "@silvery/term/adapters/canvas-adapter";
+export type { CanvasAdapterConfig } from "@silvery/term/adapters/canvas-adapter";
 
 // DOM adapter
-export { createDOMAdapter, DOMRenderBuffer, injectDOMStyles } from "@silvery/term/adapters/dom-adapter"
-export type { DOMAdapterConfig } from "@silvery/term/adapters/dom-adapter"
+export {
+  createDOMAdapter,
+  DOMRenderBuffer,
+  injectDOMStyles,
+} from "@silvery/term/adapters/dom-adapter";
+export type { DOMAdapterConfig } from "@silvery/term/adapters/dom-adapter";
 
 // App types (unified render API)
-export type { App } from "@silvery/term/app"
-export type { AutoLocator, FilterOptions } from "@silvery/test/auto-locator"
-export type { BoundTerm } from "@silvery/term/bound-term"
+export type { App } from "@silvery/term/app";
+export type { AutoLocator, FilterOptions } from "@silvery/test/auto-locator";
+export type { BoundTerm } from "@silvery/term/bound-term";
 
 // Types
-export type { BoxProps, BoxHandle } from "./components/Box"
-export type { TextProps, TextHandle } from "./components/Text"
-export type { Rect } from "@silvery/tea/types"
-export type { Key, InputHandler, UseInputOptions } from "./hooks/useInput"
+export type { BoxProps, BoxHandle } from "./components/Box";
+export type { TextProps, TextHandle } from "./components/Text";
+export type { Rect } from "@silvery/tea/types";
+export type { Key, InputHandler, UseInputOptions } from "./hooks/useInput";
 export {
   keyToName,
   keyToModifiers,
@@ -637,13 +690,13 @@ export {
   parseKeypress,
   parseKey,
   emptyKey,
-} from "@silvery/tea/keys"
-export type { ParsedKeypress, ParsedHotkey } from "@silvery/tea/keys"
-export type { UseAppResult } from "./hooks/useApp"
-export type { UseStdoutResult } from "./hooks/useStdout"
-export type { UseFocusManagerResult } from "./hooks/useFocusManager"
-export type { RenderOptions, Instance, RenderMode, NonTTYMode } from "./render"
-export type { MeasureElementOutput } from "./measureElement"
+} from "@silvery/tea/keys";
+export type { ParsedKeypress, ParsedHotkey } from "@silvery/tea/keys";
+export type { UseAppResult } from "./hooks/useApp";
+export type { UseStdoutResult } from "./hooks/useStdout";
+export type { UseFocusManagerResult } from "./hooks/useFocusManager";
+export type { RenderOptions, Instance, RenderMode, NonTTYMode } from "./render";
+export type { MeasureElementOutput } from "./measureElement";
 export type {
   TeaNode,
   // Event types
@@ -658,11 +711,11 @@ export type {
   EventSource,
   // TermDef for render configuration
   TermDef,
-} from "@silvery/tea/types"
-export type { HitTarget, HitRegion } from "@silvery/term/hit-registry"
+} from "@silvery/tea/types";
+export type { HitTarget, HitRegion } from "@silvery/term/hit-registry";
 
 // Mouse parsing (SGR mode 1006)
-export { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/term/mouse"
+export { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/term/mouse";
 
 // Mouse events (DOM-level)
 export {
@@ -680,11 +733,11 @@ export {
   type MouseEventProps,
   type MouseEventProcessorOptions,
   type MouseEventProcessorState,
-} from "@silvery/term/mouse-events"
+} from "@silvery/term/mouse-events";
 
 // Non-TTY utilities
-export { isTTY, resolveNonTTYMode, stripAnsi } from "@silvery/term/non-tty"
-export type { NonTTYOptions, ResolvedNonTTYMode } from "@silvery/term/non-tty"
+export { isTTY, resolveNonTTYMode, stripAnsi } from "@silvery/term/non-tty";
+export type { NonTTYOptions, ResolvedNonTTYMode } from "@silvery/term/non-tty";
 
 // =============================================================================
 // DevTools
@@ -705,7 +758,7 @@ export type { NonTTYOptions, ResolvedNonTTYMode } from "@silvery/term/non-tty"
  * // Or use env var: DEBUG_DEVTOOLS=1 bun run app.ts
  * ```
  */
-export { connectDevTools, isDevToolsConnected } from "@silvery/term/devtools"
+export { connectDevTools, isDevToolsConnected } from "@silvery/term/devtools";
 
 // =============================================================================
 // Inspector (silvery-native debug introspection)
@@ -734,8 +787,8 @@ export {
   inspectTree,
   inspectFrame,
   autoEnableInspector,
-} from "@silvery/term/inspector"
-export type { InspectorOptions } from "@silvery/term/inspector"
+} from "@silvery/term/inspector";
+export type { InspectorOptions } from "@silvery/term/inspector";
 
 // =============================================================================
 // Unicode Text Utilities
@@ -788,9 +841,9 @@ export {
   // Utilities
   normalizeText,
   getFirstCodePoint,
-} from "@silvery/term/unicode"
+} from "@silvery/term/unicode";
 
-export type { StyledSegment } from "@silvery/term/unicode"
+export type { StyledSegment } from "@silvery/term/unicode";
 
 // Width measurer factory
 export {
@@ -799,10 +852,10 @@ export {
   runWithMeasurer,
   type Measurer,
   type WidthMeasurer,
-} from "@silvery/term/unicode"
+} from "@silvery/term/unicode";
 
 // Measurer composition (term + measurement)
-export { withMeasurer, createPipeline, type MeasuredTerm } from "@silvery/term/measurer"
+export { withMeasurer, createPipeline, type MeasuredTerm } from "@silvery/term/measurer";
 
 // =============================================================================
 // Text Cursor Utilities
@@ -830,8 +883,8 @@ export {
   cursorMoveUp,
   cursorMoveDown,
   countVisualLines,
-} from "@silvery/tea/text-cursor"
-export type { WrappedLine } from "@silvery/tea/text-cursor"
+} from "@silvery/tea/text-cursor";
+export type { WrappedLine } from "@silvery/tea/text-cursor";
 
 // =============================================================================
 // Edit Context
@@ -854,14 +907,22 @@ export type { WrappedLine } from "@silvery/tea/text-cursor"
  * const inv = invertTextOp(op)              // delete "hi " at 0
  * ```
  */
-export { createTermEditContext } from "./edit-context"
-export type { EditContextLike, TermEditContext, TermEditContextOptions } from "./edit-context"
+export { createTermEditContext } from "./edit-context";
+export type { EditContextLike, TermEditContext, TermEditContextOptions } from "./edit-context";
 
-export { applyTextOp, invertTextOp, mergeTextOps } from "@silvery/tea/text-ops"
-export type { TextOp } from "@silvery/tea/text-ops"
+export { applyTextOp, invertTextOp, mergeTextOps } from "@silvery/tea/text-ops";
+export type { TextOp } from "@silvery/tea/text-ops";
 
-export { useEditContext, activeEditContextRef, activeEditTargetRef } from "./hooks/use-edit-context"
-export type { UseEditContextOptions, UseEditContextResult, EditTarget } from "./hooks/use-edit-context"
+export {
+  useEditContext,
+  activeEditContextRef,
+  activeEditTargetRef,
+} from "./hooks/use-edit-context";
+export type {
+  UseEditContextOptions,
+  UseEditContextResult,
+  EditTarget,
+} from "./hooks/use-edit-context";
 
 // =============================================================================
 // Scroll Utilities
@@ -883,7 +944,7 @@ export type { UseEditContextOptions, UseEditContextResult, EditTarget } from "./
  * );
  * ```
  */
-export { calcEdgeBasedScrollOffset } from "@silvery/term/scroll-utils"
+export { calcEdgeBasedScrollOffset } from "@silvery/term/scroll-utils";
 
 // Scroll Region Optimization (DECSTBM)
 export {
@@ -893,8 +954,8 @@ export {
   scrollDown,
   moveCursor,
   supportsScrollRegions,
-} from "@silvery/term/scroll-region"
-export type { ScrollRegionConfig } from "@silvery/term/scroll-region"
+} from "@silvery/term/scroll-region";
+export type { ScrollRegionConfig } from "@silvery/term/scroll-region";
 
 // =============================================================================
 // Plugin Composition (SlateJS-style)
@@ -922,7 +983,7 @@ export type { ScrollRegionConfig } from "@silvery/term/scroll-region"
  * console.log(app.cmd.down.help); // Command metadata
  * ```
  */
-export { withCommands } from "@silvery/tea/with-commands"
+export { withCommands } from "@silvery/tea/with-commands";
 export type {
   WithCommandsOptions,
   CommandDef,
@@ -933,17 +994,21 @@ export type {
   AppWithCommands,
   AppState,
   KeybindingDef,
-} from "@silvery/tea/with-commands"
+} from "@silvery/tea/with-commands";
 
-export { withKeybindings } from "@silvery/tea/with-keybindings"
-export type { WithKeybindingsOptions, KeybindingContext, ExtendedKeybindingDef } from "@silvery/tea/with-keybindings"
+export { withKeybindings } from "@silvery/tea/with-keybindings";
+export type {
+  WithKeybindingsOptions,
+  KeybindingContext,
+  ExtendedKeybindingDef,
+} from "@silvery/tea/with-keybindings";
 
 // Diagnostic tools - prefer importing from '@silvery/term/toolbelt' for new code
-export { withDiagnostics, VirtualTerminal } from "@silvery/tea/with-diagnostics"
-export type { DiagnosticOptions } from "@silvery/tea/with-diagnostics"
+export { withDiagnostics, VirtualTerminal } from "@silvery/tea/with-diagnostics";
+export type { DiagnosticOptions } from "@silvery/tea/with-diagnostics";
 
 // Scheduler errors (for catching incremental render mismatches)
-export { IncrementalRenderMismatchError } from "@silvery/term/scheduler"
+export { IncrementalRenderMismatchError } from "@silvery/term/scheduler";
 
 // =============================================================================
 // Input Layer Stack
@@ -985,16 +1050,16 @@ export {
   InputLayerContext,
   useInputLayer,
   useInputLayerContext,
-} from "./contexts/InputLayerContext"
+} from "./contexts/InputLayerContext";
 export type {
   InputLayerHandler,
   InputLayer,
   InputLayerContextValue,
   InputLayerProviderProps,
-} from "./contexts/InputLayerContext"
+} from "./contexts/InputLayerContext";
 
-export { InputBoundary } from "./contexts/InputBoundary"
-export type { InputBoundaryProps } from "./contexts/InputBoundary"
+export { InputBoundary } from "./contexts/InputBoundary";
+export type { InputBoundaryProps } from "./contexts/InputBoundary";
 
 // =============================================================================
 // Position Registry (2D Grid Virtualization)
@@ -1021,11 +1086,15 @@ export type { InputBoundaryProps } from "./contexts/InputBoundary"
  * </PositionRegistryProvider>
  * ```
  */
-export { PositionRegistryProvider, usePositionRegistry, createPositionRegistry } from "./hooks/usePositionRegistry"
-export type { PositionRegistry, ScreenRect } from "./hooks/usePositionRegistry"
-export { useGridPosition } from "./hooks/useGridPosition"
-export { GridCell } from "@silvery/ui/components/GridCell"
-export type { GridCellProps } from "@silvery/ui/components/GridCell"
+export {
+  PositionRegistryProvider,
+  usePositionRegistry,
+  createPositionRegistry,
+} from "./hooks/usePositionRegistry";
+export type { PositionRegistry, ScreenRect } from "./hooks/usePositionRegistry";
+export { useGridPosition } from "./hooks/useGridPosition";
+export { GridCell } from "@silvery/ui/components/GridCell";
+export type { GridCellProps } from "@silvery/ui/components/GridCell";
 
 // =============================================================================
 // Animation
@@ -1047,12 +1116,12 @@ export type { GridCellProps } from "@silvery/ui/components/GridCell"
  * Note: `useAnimatedTransition` is the animation interpolation hook.
  * React's `useTransition` (concurrent mode) is exported separately above.
  */
-export { easings, resolveEasing, useAnimation, useInterval } from "@silvery/ui/animation"
-export { useTransition as useAnimatedTransition } from "@silvery/ui/animation/index"
+export { easings, resolveEasing, useAnimation, useInterval } from "@silvery/ui/animation";
+export { useTransition as useAnimatedTransition } from "@silvery/ui/animation/index";
 export type {
   EasingFn,
   EasingName,
   UseAnimationOptions,
   UseAnimationResult,
   UseTransitionOptions,
-} from "@silvery/ui/animation"
+} from "@silvery/ui/animation";

@@ -5,7 +5,7 @@
  * for projects that only need ANSI stripping without chalk.
  */
 
-import stringWidth from "string-width"
+import stringWidth from "string-width";
 
 // =============================================================================
 // ANSI Regex Pattern
@@ -19,7 +19,7 @@ import stringWidth from "string-width"
  * - Extended SGR codes: \x1b[4:3m (curly underline), \x1b[58:2::r:g:bm (underline color)
  * - OSC 8 hyperlink sequences: \x1b]8;;<url>\x1b\\ (opening and closing)
  */
-export const ANSI_REGEX = /\x1b\[[0-9;:]*m|\x1b\]8;;[^\x1b]*\x1b\\/g
+export const ANSI_REGEX = /\x1b\[[0-9;:]*m|\x1b\]8;;[^\x1b]*\x1b\\/g;
 
 // =============================================================================
 // String Utilities
@@ -38,7 +38,7 @@ export const ANSI_REGEX = /\x1b\[[0-9;:]*m|\x1b\]8;;[^\x1b]*\x1b\\/g
  * ```
  */
 export function stripAnsi(text: string): string {
-  return text.replace(ANSI_REGEX, "")
+  return text.replace(ANSI_REGEX, "");
 }
 
 /**
@@ -56,5 +56,5 @@ export function stripAnsi(text: string): string {
  * ```
  */
 export function displayLength(text: string): number {
-  return stringWidth(stripAnsi(text))
+  return stringWidth(stripAnsi(text));
 }

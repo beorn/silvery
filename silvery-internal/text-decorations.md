@@ -22,16 +22,16 @@ SlateJS uses a `decorate` function that runs on each text node and returns an ar
 
 ```ts
 const decorate = ([node, path]) => {
-  const ranges = []
+  const ranges = [];
   for (const [start, end] of searchMatches(node.text, query)) {
     ranges.push({
       anchor: { path, offset: start },
       focus: { path, offset: end },
       highlight: true,
-    })
+    });
   }
-  return ranges
-}
+  return ranges;
+};
 ```
 
 ### CodeMirror Decorations
@@ -50,31 +50,31 @@ Similar to CodeMirror: `DecorationSet` with inline decorations, node decorations
 /** A decoration range that overlays styles on text without modifying it */
 export interface Decoration {
   /** Start offset in the text (inclusive) */
-  from: number
+  from: number;
   /** End offset in the text (exclusive) */
-  to: number
+  to: number;
   /** Style properties to apply to this range */
-  style: DecorationStyle
+  style: DecorationStyle;
 }
 
 /** Style properties for a decoration */
 export interface DecorationStyle {
   /** Foreground color */
-  color?: string
+  color?: string;
   /** Background color */
-  backgroundColor?: string
+  backgroundColor?: string;
   /** Bold text */
-  bold?: boolean
+  bold?: boolean;
   /** Italic text */
-  italic?: boolean
+  italic?: boolean;
   /** Underline text */
-  underline?: boolean
+  underline?: boolean;
   /** Strikethrough text */
-  strikethrough?: boolean
+  strikethrough?: boolean;
   /** Dim (reduced intensity) */
-  dimColor?: boolean
+  dimColor?: boolean;
   /** Inverse (swap fg/bg) */
-  inverse?: boolean
+  inverse?: boolean;
 }
 ```
 

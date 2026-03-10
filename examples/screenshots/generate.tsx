@@ -17,18 +17,18 @@
  *   docs/images/layout-feedback.png - Layout feedback with useContentRect() values
  */
 
-import { mkdir } from "node:fs/promises"
-import { dirname, resolve } from "node:path"
-import React, { useState } from "react"
-import { render, createRenderer, ensureEngine, bufferToHTML } from "../../src/testing/index.tsx"
-import { Box, Text, Divider, useContentRect, useApp } from "../../src/index.js"
-import { createScreenshotter } from "../../src/screenshot.js"
+import { mkdir } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import React, { useState } from "react";
+import { render, createRenderer, ensureEngine, bufferToHTML } from "../../src/testing/index.tsx";
+import { Box, Text, Divider, useContentRect, useApp } from "../../src/index.js";
+import { createScreenshotter } from "../../src/screenshot.js";
 
 // ============================================================================
 // Output directory
 // ============================================================================
 
-const OUTPUT_DIR = resolve(dirname(import.meta.path), "../../docs/images")
+const OUTPUT_DIR = resolve(dirname(import.meta.path), "../../docs/images");
 
 // ============================================================================
 // Screenshot Components
@@ -39,18 +39,18 @@ const OUTPUT_DIR = resolve(dirname(import.meta.path), "../../docs/images")
 // --- 1. Dashboard -----------------------------------------------------------
 
 function ProgressBar({ percent, width = 24 }: { percent: number; width?: number }): JSX.Element {
-  const filled = Math.round((percent / 100) * width)
-  const empty = width - filled
-  const dot = filled < width ? "\u2578" : ""
-  const filledBar = "\u2501".repeat(Math.max(0, filled - (dot ? 1 : 0)))
-  const emptyBar = "\u2500".repeat(Math.max(0, empty - (dot ? 0 : 0)))
+  const filled = Math.round((percent / 100) * width);
+  const empty = width - filled;
+  const dot = filled < width ? "\u2578" : "";
+  const filledBar = "\u2501".repeat(Math.max(0, filled - (dot ? 1 : 0)));
+  const emptyBar = "\u2500".repeat(Math.max(0, empty - (dot ? 0 : 0)));
   return (
     <Text>
       <Text color="green">{filledBar}</Text>
       <Text color="green">{dot}</Text>
       <Text dim>{emptyBar}</Text>
     </Text>
-  )
+  );
 }
 
 function DashboardScreenshot(): JSX.Element {
@@ -64,7 +64,13 @@ function DashboardScreenshot(): JSX.Element {
 
       <Box flexGrow={1} flexDirection="row" gap={1}>
         {/* System Stats pane (selected) */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$primary" padding={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$primary"
+          padding={1}
+        >
           <Box marginBottom={1}>
             <Text bold color="$primary">
               System Stats
@@ -108,7 +114,13 @@ function DashboardScreenshot(): JSX.Element {
         </Box>
 
         {/* Recent Activity pane */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" padding={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$border"
+          padding={1}
+        >
           <Box marginBottom={1}>
             <Text bold color="white">
               Recent Activity
@@ -124,7 +136,13 @@ function DashboardScreenshot(): JSX.Element {
         </Box>
 
         {/* Project Progress pane */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" padding={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$border"
+          padding={1}
+        >
           <Box marginBottom={1}>
             <Text bold color="white">
               Project Progress
@@ -164,7 +182,7 @@ function DashboardScreenshot(): JSX.Element {
         </Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 // --- 2. Task List -----------------------------------------------------------
@@ -199,11 +217,11 @@ function TaskListScreenshot(): JSX.Element {
     },
     { id: 7, title: "Set up staging environment", completed: false, priority: "low" as const },
     { id: 8, title: "Refactor notification service", completed: true, priority: "medium" as const },
-  ]
-  const cursor = 2
+  ];
+  const cursor = 2;
 
-  const priorityLabels = { high: "P1", medium: "P2", low: "P3" }
-  const priorityColors = { high: "red", medium: "yellow", low: "green" }
+  const priorityLabels = { high: "P1", medium: "P2", low: "P3" };
+  const priorityColors = { high: "red", medium: "yellow", low: "green" };
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -226,11 +244,11 @@ function TaskListScreenshot(): JSX.Element {
         paddingX={1}
       >
         {tasks.map((task, index) => {
-          const checkbox = task.completed ? "\u2611" : "\u2610"
-          const isSelected = index === cursor
-          const showSeparator = index < tasks.length - 1
-          const label = priorityLabels[task.priority]
-          const labelColor = priorityColors[task.priority]
+          const checkbox = task.completed ? "\u2611" : "\u2610";
+          const isSelected = index === cursor;
+          const showSeparator = index < tasks.length - 1;
+          const label = priorityLabels[task.priority];
+          const labelColor = priorityColors[task.priority];
 
           return (
             <Box key={task.id} flexDirection="column">
@@ -254,7 +272,7 @@ function TaskListScreenshot(): JSX.Element {
               )}
               {showSeparator && <Divider />}
             </Box>
-          )
+          );
         })}
       </Box>
 
@@ -284,7 +302,7 @@ function TaskListScreenshot(): JSX.Element {
         </Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 // --- 3. Kanban Board --------------------------------------------------------
@@ -334,7 +352,7 @@ function KanbanScreenshot(): JSX.Element {
         { title: "Initial wireframes", tags: ["design"], isSelected: false },
       ],
     },
-  ]
+  ];
 
   const tagColors: Record<string, string> = {
     frontend: "cyan",
@@ -344,7 +362,7 @@ function KanbanScreenshot(): JSX.Element {
     docs: "blue",
     ux: "white",
     security: "red",
-  }
+  };
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -420,13 +438,21 @@ function KanbanScreenshot(): JSX.Element {
         quit
       </Text>
     </Box>
-  )
+  );
 }
 
 // --- 4. Layout Feedback -----------------------------------------------------
 
-function LayoutPane({ title, color, grow = 1 }: { title: string; color: string; grow?: number }): JSX.Element {
-  const rect = useContentRect()
+function LayoutPane({
+  title,
+  color,
+  grow = 1,
+}: {
+  title: string;
+  color: string;
+  grow?: number;
+}): JSX.Element {
+  const rect = useContentRect();
   return (
     <Box flexGrow={grow} borderStyle="round" borderColor={color} padding={1} flexDirection="column">
       <Text bold color={color}>
@@ -438,7 +464,7 @@ function LayoutPane({ title, color, grow = 1 }: { title: string; color: string; 
         </Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 function LayoutFeedbackScreenshot(): JSX.Element {
@@ -476,7 +502,7 @@ function LayoutFeedbackScreenshot(): JSX.Element {
         quit
       </Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -484,11 +510,11 @@ function LayoutFeedbackScreenshot(): JSX.Element {
 // ============================================================================
 
 interface ScreenshotConfig {
-  name: string
-  filename: string
-  element: JSX.Element
-  cols: number
-  rows: number
+  name: string;
+  filename: string;
+  element: JSX.Element;
+  cols: number;
+  rows: number;
 }
 
 const screenshots: ScreenshotConfig[] = [
@@ -520,48 +546,48 @@ const screenshots: ScreenshotConfig[] = [
     cols: 90,
     rows: 20,
   },
-]
+];
 
 async function main() {
-  await mkdir(OUTPUT_DIR, { recursive: true })
+  await mkdir(OUTPUT_DIR, { recursive: true });
 
-  await ensureEngine()
-  await using screenshotter = createScreenshotter()
+  await ensureEngine();
+  await using screenshotter = createScreenshotter();
 
   for (const config of screenshots) {
-    const { name, filename, element, cols, rows } = config
-    const outputPath = resolve(OUTPUT_DIR, filename)
+    const { name, filename, element, cols, rows } = config;
+    const outputPath = resolve(OUTPUT_DIR, filename);
 
-    console.log(`Generating ${name} (${cols}x${rows})...`)
+    console.log(`Generating ${name} (${cols}x${rows})...`);
 
-    const app = render(element, { cols, rows })
-    const buffer = app.lastBuffer()
+    const app = render(element, { cols, rows });
+    const buffer = app.lastBuffer();
 
     if (!buffer) {
-      console.error(`  ERROR: No buffer for ${name}`)
-      app.unmount()
-      continue
+      console.error(`  ERROR: No buffer for ${name}`);
+      app.unmount();
+      continue;
     }
 
     const html = bufferToHTML(buffer, {
       fontFamily: "JetBrains Mono, Menlo, Consolas, monospace",
       fontSize: 14,
       theme: "dark",
-    })
+    });
 
-    await screenshotter.capture(html, outputPath)
-    console.log(`  Saved: ${outputPath}`)
+    await screenshotter.capture(html, outputPath);
+    console.log(`  Saved: ${outputPath}`);
 
-    app.unmount()
+    app.unmount();
   }
 
-  console.log("\nDone! Generated screenshots:")
+  console.log("\nDone! Generated screenshots:");
   for (const config of screenshots) {
-    console.log(`  docs/images/${config.filename}`)
+    console.log(`  docs/images/${config.filename}`);
   }
 }
 
 main().catch((err) => {
-  console.error("Screenshot generation failed:", err)
-  process.exit(1)
-})
+  console.error("Screenshot generation failed:", err);
+  process.exit(1);
+});

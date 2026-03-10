@@ -68,19 +68,19 @@ npx ts-node --esm app.tsx
 Silvery includes a testing library with auto-cleanup between renders:
 
 ```tsx
-import { createRenderer } from "@silvery/test"
-import { Text } from "silvery"
+import { createRenderer } from "@silvery/test";
+import { Text } from "silvery";
 
-const render = createRenderer()
+const render = createRenderer();
 
 test("renders hello", () => {
-  const app = render(<Text>Hello</Text>)
-  expect(app.text).toContain("Hello")
-})
+  const app = render(<Text>Hello</Text>);
+  expect(app.text).toContain("Hello");
+});
 
 test("renders world", () => {
   // Previous render is auto-cleaned when render() is called again
-  const app = render(<Text>World</Text>)
-  expect(app.text).toContain("World")
-})
+  const app = render(<Text>World</Text>);
+  expect(app.text).toContain("World");
+});
 ```

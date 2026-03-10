@@ -5,32 +5,32 @@ Common patterns for building Silvery apps.
 ## Modal Dialog
 
 ```tsx
-import { Box, Text, useInputLayer } from "@silvery/term"
+import { Box, Text, useInputLayer } from "@silvery/term";
 
 function ConfirmDialog({ message, onConfirm, onCancel }) {
   useInputLayer("confirm-dialog", (input, key) => {
     if (input === "y") {
-      onConfirm()
-      return true
+      onConfirm();
+      return true;
     }
     if (input === "n" || key.escape) {
-      onCancel()
-      return true
+      onCancel();
+      return true;
     }
-    return false
-  })
+    return false;
+  });
 
   return (
     <Box borderStyle="round" paddingX={2} paddingY={1} flexDirection="column">
       <Text>{message}</Text>
       <Text dimColor>[y] Confirm [n] Cancel</Text>
     </Box>
-  )
+  );
 }
 
 // Usage: conditionally render above your main content
 function App() {
-  const [showConfirm, setShowConfirm] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false);
   return (
     <Box flexDirection="column">
       <MainContent />
@@ -38,26 +38,26 @@ function App() {
         <ConfirmDialog
           message="Delete this item?"
           onConfirm={() => {
-            deleteItem()
-            setShowConfirm(false)
+            deleteItem();
+            setShowConfirm(false);
           }}
           onCancel={() => setShowConfirm(false)}
         />
       )}
     </Box>
-  )
+  );
 }
 ```
 
 ## Search-Filter List
 
 ```tsx
-import { Box, Text, TextInput, useContentRect } from "@silvery/term"
+import { Box, Text, TextInput, useContentRect } from "@silvery/term";
 
 function FilterList({ items }) {
-  const [query, setQuery] = useState("")
-  const [cursor, setCursor] = useState(0)
-  const filtered = items.filter((item) => item.toLowerCase().includes(query.toLowerCase()))
+  const [query, setQuery] = useState("");
+  const [cursor, setCursor] = useState(0);
+  const filtered = items.filter((item) => item.toLowerCase().includes(query.toLowerCase()));
 
   return (
     <Box flexDirection="column">
@@ -66,8 +66,8 @@ function FilterList({ items }) {
         <TextInput
           value={query}
           onChange={(v) => {
-            setQuery(v)
-            setCursor(0)
+            setQuery(v);
+            setCursor(0);
           }}
         />
       </Box>
@@ -81,17 +81,17 @@ function FilterList({ items }) {
         {filtered.length} / {items.length} items
       </Text>
     </Box>
-  )
+  );
 }
 ```
 
 ## Master-Detail Layout
 
 ```tsx
-import { Box, Text, useContentRect } from "@silvery/term"
+import { Box, Text, useContentRect } from "@silvery/term";
 
 function MasterDetail({ items, selectedIndex }) {
-  const selected = items[selectedIndex]
+  const selected = items[selectedIndex];
 
   return (
     <Box flexDirection="row" width="100%">
@@ -110,14 +110,14 @@ function MasterDetail({ items, selectedIndex }) {
         <Text>{selected.body}</Text>
       </Box>
     </Box>
-  )
+  );
 }
 ```
 
 ## Streaming Output (AI/LLM)
 
 ```tsx
-import { Box, Text, Static } from "@silvery/term"
+import { Box, Text, Static } from "@silvery/term";
 
 function StreamingChat({ messages, streamingText }) {
   return (
@@ -143,7 +143,7 @@ function StreamingChat({ messages, streamingText }) {
         </Box>
       )}
     </Box>
-  )
+  );
 }
 ```
 
@@ -152,7 +152,7 @@ function StreamingChat({ messages, streamingText }) {
 Pin a footer or status bar to the bottom of a container using `stickyBottom`:
 
 ```tsx
-import { Box, Text } from "@silvery/term"
+import { Box, Text } from "@silvery/term";
 
 function Layout({ children }) {
   return (
@@ -162,7 +162,7 @@ function Layout({ children }) {
         <Text color="white"> Status: Ready </Text>
       </Box>
     </Box>
-  )
+  );
 }
 ```
 
@@ -173,11 +173,11 @@ grows to fill the container, the footer moves to its natural position
 ## Progress Tracking
 
 ```tsx
-import { Box, Text, ProgressBar, Spinner } from "@silvery/term"
+import { Box, Text, ProgressBar, Spinner } from "@silvery/term";
 
 function TaskProgress({ tasks }) {
-  const done = tasks.filter((t) => t.status === "done").length
-  const running = tasks.find((t) => t.status === "running")
+  const done = tasks.filter((t) => t.status === "done").length;
+  const running = tasks.find((t) => t.status === "running");
 
   return (
     <Box flexDirection="column" gap={1}>
@@ -203,6 +203,6 @@ function TaskProgress({ tasks }) {
         </Text>
       ))}
     </Box>
-  )
+  );
 }
 ```

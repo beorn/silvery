@@ -3,8 +3,8 @@
  * Source: https://github.com/EdenEast/nightfox.nvim
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Nightfox — dark blue-toned variant. */
 export const nightfox: ColorPalette = {
@@ -32,7 +32,7 @@ export const nightfox: ColorPalette = {
   cursorText: "#192330",
   selectionBackground: "#39506D",
   selectionForeground: "#CDCECF",
-}
+};
 
 /** Dawnfox — warm light variant inspired by Rose Pine Dawn. */
 export const dawnfox: ColorPalette = {
@@ -60,4 +60,4 @@ export const dawnfox: ColorPalette = {
   cursorText: "#FAF4ED",
   selectionBackground: "#BDBFC9",
   selectionForeground: "#575279",
-}
+};

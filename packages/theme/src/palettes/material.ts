@@ -4,8 +4,8 @@
  * Reference: https://material-theme.com/docs/reference/color-palette/
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Material Darker — the deep dark Material variant. */
 export const materialDark: ColorPalette = {
@@ -33,7 +33,7 @@ export const materialDark: ColorPalette = {
   cursorText: "#212121", // background
   selectionBackground: "#424242", // guides/line_numbers
   selectionForeground: "#eeffff", // foreground
-}
+};
 
 /** Material Lighter — the light Material variant. */
 export const materialLight: ColorPalette = {
@@ -61,4 +61,4 @@ export const materialLight: ColorPalette = {
   cursorText: "#fafafa", // background
   selectionBackground: "#cfd8dc", // line_numbers
   selectionForeground: "#546E7A", // foreground
-}
+};

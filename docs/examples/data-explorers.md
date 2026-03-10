@@ -34,9 +34,9 @@ Terminal data explorers need to handle thousands of rows, resize gracefully acro
 A complete data explorer with search filtering, a sortable table, and responsive column widths.
 
 ```tsx
-import { useState, useDeferredValue } from "react"
-import { Box, Text, Table, TextInput, useContentRect } from "silvery"
-import { run, useInput } from "@silvery/term/runtime"
+import { useState, useDeferredValue } from "react";
+import { Box, Text, Table, TextInput, useContentRect } from "silvery";
+import { run, useInput } from "@silvery/term/runtime";
 
 // Sample data -- replace with your own data source
 const processes = Array.from({ length: 500 }, (_, i) => ({
@@ -45,34 +45,41 @@ const processes = Array.from({ length: 500 }, (_, i) => ({
   cpu: (Math.random() * 100).toFixed(1),
   mem: (Math.random() * 8192).toFixed(0),
   status: i % 5 === 0 ? "sleeping" : "running",
-}))
+}));
 
 function App() {
-  const { width } = useContentRect()
-  const [query, setQuery] = useState("")
-  const deferredQuery = useDeferredValue(query)
-  const [selected, setSelected] = useState(0)
+  const { width } = useContentRect();
+  const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
+  const [selected, setSelected] = useState(0);
 
   // Filter rows against the deferred query so typing stays responsive
   const filtered = processes.filter(
-    (p) => p.name.includes(deferredQuery) || String(p.pid).includes(deferredQuery) || p.status.includes(deferredQuery),
-  )
+    (p) =>
+      p.name.includes(deferredQuery) ||
+      String(p.pid).includes(deferredQuery) ||
+      p.status.includes(deferredQuery),
+  );
 
   useInput((input, key) => {
-    if (key.downArrow) setSelected((s) => Math.min(s + 1, filtered.length - 1))
-    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0))
-    if (input === "q") return "exit"
-  })
+    if (key.downArrow) setSelected((s) => Math.min(s + 1, filtered.length - 1));
+    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0));
+    if (input === "q") return "exit";
+  });
 
   // Responsive column widths based on available terminal width
-  const nameWidth = Math.max(8, Math.floor(width * 0.3))
-  const statusWidth = Math.max(8, Math.floor(width * 0.2))
+  const nameWidth = Math.max(8, Math.floor(width * 0.3));
+  const statusWidth = Math.max(8, Math.floor(width * 0.2));
 
   return (
     <Box flexDirection="column" width="100%" height="100%">
       <Box paddingX={1} height={1}>
         <Text bold>Filter: </Text>
-        <TextInput value={query} onChange={setQuery} placeholder="Search by name, PID, or status..." />
+        <TextInput
+          value={query}
+          onChange={setQuery}
+          placeholder="Search by name, PID, or status..."
+        />
       </Box>
 
       <Box paddingX={1} flexGrow={1}>
@@ -94,10 +101,10 @@ function App() {
         </Text>
       </Box>
     </Box>
-  )
+  );
 }
 
-await run(<App />)
+await run(<App />);
 ```
 
 This example demonstrates several patterns working together:

@@ -5,29 +5,29 @@
  * This file contains only terminal control sequences and constants.
  */
 
-import { hostname } from "node:os"
+import { hostname } from "node:os";
 
 // ============================================================================
 // ANSI Escape Codes
 // ============================================================================
 
-const ESC = "\x1b"
-const CSI = `${ESC}[`
+const ESC = "\x1b";
+const CSI = `${ESC}[`;
 
 // Cursor control
-const CURSOR_HIDE = `${CSI}?25l`
-const CURSOR_SHOW = `${CSI}?25h`
-const CURSOR_HOME = `${CSI}H`
+const CURSOR_HIDE = `${CSI}?25l`;
+const CURSOR_SHOW = `${CSI}?25h`;
+const CURSOR_HOME = `${CSI}H`;
 
 // Synchronized Update Mode (DEC private mode 2026)
 // Tells the terminal to batch output and paint atomically, preventing tearing.
 // Supported by: Ghostty, Kitty, WezTerm, iTerm2, Foot, Alacritty 0.14+, tmux 3.2+
 // Terminals that don't support it safely ignore these sequences.
-const SYNC_BEGIN = `${CSI}?2026h`
-const SYNC_END = `${CSI}?2026l`
+const SYNC_BEGIN = `${CSI}?2026h`;
+const SYNC_END = `${CSI}?2026l`;
 
 // Style reset
-const RESET = `${CSI}0m`
+const RESET = `${CSI}0m`;
 
 // SGR (Select Graphic Rendition) codes
 const SGR = {
@@ -87,7 +87,7 @@ const SGR = {
   bgBrightMagenta: 105,
   bgBrightCyan: 106,
   bgBrightWhite: 107,
-} as const
+} as const;
 
 // ============================================================================
 // Cursor Movement
@@ -98,50 +98,50 @@ const SGR = {
  * Terminal positions are 1-indexed.
  */
 function moveCursor(x: number, y: number): string {
-  return `${CSI}${y + 1};${x + 1}H`
+  return `${CSI}${y + 1};${x + 1}H`;
 }
 
 /**
  * Generate ANSI sequence to move cursor up N lines.
  */
 function cursorUp(n: number): string {
-  if (n <= 0) return ""
-  if (n === 1) return `${CSI}A`
-  return `${CSI}${n}A`
+  if (n <= 0) return "";
+  if (n === 1) return `${CSI}A`;
+  return `${CSI}${n}A`;
 }
 
 /**
  * Generate ANSI sequence to move cursor down N lines.
  */
 function cursorDown(n: number): string {
-  if (n <= 0) return ""
-  if (n === 1) return `${CSI}B`
-  return `${CSI}${n}B`
+  if (n <= 0) return "";
+  if (n === 1) return `${CSI}B`;
+  return `${CSI}${n}B`;
 }
 
 /**
  * Generate ANSI sequence to move cursor right N columns.
  */
 function cursorRight(n: number): string {
-  if (n <= 0) return ""
-  if (n === 1) return `${CSI}C`
-  return `${CSI}${n}C`
+  if (n <= 0) return "";
+  if (n === 1) return `${CSI}C`;
+  return `${CSI}${n}C`;
 }
 
 /**
  * Generate ANSI sequence to move cursor left N columns.
  */
 function cursorLeft(n: number): string {
-  if (n <= 0) return ""
-  if (n === 1) return `${CSI}D`
-  return `${CSI}${n}D`
+  if (n <= 0) return "";
+  if (n === 1) return `${CSI}D`;
+  return `${CSI}${n}D`;
 }
 
 /**
  * Generate ANSI sequence to move cursor to column.
  */
 function cursorToColumn(x: number): string {
-  return `${CSI}${x + 1}G`
+  return `${CSI}${x + 1}G`;
 }
 
 // ============================================================================
@@ -151,13 +151,13 @@ function cursorToColumn(x: number): string {
 /**
  * Terminal cursor shape. Combined with blink parameter in setCursorStyle().
  */
-export type CursorShape = "block" | "underline" | "bar"
+export type CursorShape = "block" | "underline" | "bar";
 
 const CURSOR_SHAPE_CODES: Record<CursorShape, { blink: number; steady: number }> = {
   block: { blink: 1, steady: 2 },
   underline: { blink: 3, steady: 4 },
   bar: { blink: 5, steady: 6 },
-}
+};
 
 /**
  * Set the terminal cursor shape via DECSCUSR (CSI Ps SP q).
@@ -169,15 +169,15 @@ const CURSOR_SHAPE_CODES: Record<CursorShape, { blink: number; steady: number }>
  * @param blink - Whether the cursor should blink (default: false)
  */
 export function setCursorStyle(shape: CursorShape, blink = false): string {
-  const code = blink ? CURSOR_SHAPE_CODES[shape].blink : CURSOR_SHAPE_CODES[shape].steady
-  return `${CSI}${code} q`
+  const code = blink ? CURSOR_SHAPE_CODES[shape].blink : CURSOR_SHAPE_CODES[shape].steady;
+  return `${CSI}${code} q`;
 }
 
 /**
  * Reset the terminal cursor style to the terminal's default (DECSCUSR 0).
  */
 export function resetCursorStyle(): string {
-  return `${CSI}0 q`
+  return `${CSI}0 q`;
 }
 
 // ============================================================================
@@ -194,7 +194,7 @@ export function resetCursorStyle(): string {
  * content appearing at wrong Y positions (bug km-x7ih).
  */
 export function enterAlternateScreen(): string {
-  return `${CSI}?1049h${CSI}2J${CURSOR_HOME}${CURSOR_HIDE}`
+  return `${CSI}?1049h${CSI}2J${CURSOR_HOME}${CURSOR_HIDE}`;
 }
 
 /**
@@ -204,21 +204,21 @@ export function enterAlternateScreen(): string {
  * when not in sync mode is a harmless no-op.
  */
 export function leaveAlternateScreen(): string {
-  return `${SYNC_END}${CURSOR_SHOW}${CSI}?1049l`
+  return `${SYNC_END}${CURSOR_SHOW}${CSI}?1049l`;
 }
 
 /**
  * Enable mouse tracking.
  */
 export function enableMouse(): string {
-  return `${CSI}?1000h${CSI}?1002h${CSI}?1006h`
+  return `${CSI}?1000h${CSI}?1002h${CSI}?1006h`;
 }
 
 /**
  * Disable mouse tracking.
  */
 export function disableMouse(): string {
-  return `${CSI}?1006l${CSI}?1002l${CSI}?1000l`
+  return `${CSI}?1006l${CSI}?1002l${CSI}?1000l`;
 }
 
 /**
@@ -238,7 +238,7 @@ export const KittyFlags = {
   REPORT_ALTERNATE: 4,
   REPORT_ALL_KEYS: 8,
   REPORT_TEXT: 16,
-} as const
+} as const;
 
 /**
  * Enable Kitty keyboard protocol (push mode).
@@ -249,7 +249,7 @@ export const KittyFlags = {
  * @param flags Bitfield of KittyFlags (default: DISAMBIGUATE)
  */
 export function enableKittyKeyboard(flags = KittyFlags.DISAMBIGUATE): string {
-  return `${CSI}>${flags}u`
+  return `${CSI}>${flags}u`;
 }
 
 /**
@@ -258,7 +258,7 @@ export function enableKittyKeyboard(flags = KittyFlags.DISAMBIGUATE): string {
  * Parse the response to detect which flags the terminal supports.
  */
 export function queryKittyKeyboard(): string {
-  return `${CSI}?u`
+  return `${CSI}?u`;
 }
 
 /**
@@ -266,7 +266,7 @@ export function queryKittyKeyboard(): string {
  * Sends CSI < u to restore previous keyboard mode.
  */
 export function disableKittyKeyboard(): string {
-  return `${CSI}<u`
+  return `${CSI}<u`;
 }
 
 // ============================================================================
@@ -274,17 +274,17 @@ export function disableKittyKeyboard(): string {
 // ============================================================================
 
 /** BEL character — basic terminal bell/notification */
-export const BEL = "\x07"
+export const BEL = "\x07";
 
 /** iTerm2 notification (OSC 9) */
 export function notifyITerm2(message: string): string {
-  return `${ESC}]9;${message}${BEL}`
+  return `${ESC}]9;${message}${BEL}`;
 }
 
 /** Kitty notification (OSC 99) with optional title */
 export function notifyKitty(message: string, opts?: { title?: string }): string {
-  const params = opts?.title ? `;t=t;${opts.title}` : ""
-  return `${ESC}]99;i=1:d=0${params};${message}${ESC}\\`
+  const params = opts?.title ? `;t=t;${opts.title}` : "";
+  return `${ESC}]99;i=1:d=0${params};${message}${ESC}\\`;
 }
 
 /**
@@ -295,16 +295,20 @@ export function notifyKitty(message: string, opts?: { title?: string }): string 
  * - Kitty → OSC 99
  * - Others → BEL (audible/visual bell)
  */
-export function notify(stdout: NodeJS.WriteStream, message: string, opts?: { title?: string }): void {
-  const termProgram = process.env.TERM_PROGRAM ?? ""
-  const term = process.env.TERM ?? ""
+export function notify(
+  stdout: NodeJS.WriteStream,
+  message: string,
+  opts?: { title?: string },
+): void {
+  const termProgram = process.env.TERM_PROGRAM ?? "";
+  const term = process.env.TERM ?? "";
 
   if (termProgram === "iTerm.app") {
-    stdout.write(notifyITerm2(message))
+    stdout.write(notifyITerm2(message));
   } else if (term === "xterm-kitty") {
-    stdout.write(notifyKitty(message, opts))
+    stdout.write(notifyKitty(message, opts));
   } else {
-    stdout.write(BEL)
+    stdout.write(BEL);
   }
 }
 
@@ -318,7 +322,7 @@ export function notify(stdout: NodeJS.WriteStream, message: string, opts?: { tit
  * Widely supported: xterm, Ghostty, iTerm2, Kitty, WezTerm, Alacritty, foot.
  */
 export function setWindowTitle(stdout: NodeJS.WriteStream, title: string): void {
-  stdout.write(`${ESC}]2;${title}${BEL}`)
+  stdout.write(`${ESC}]2;${title}${BEL}`);
 }
 
 /**
@@ -327,7 +331,7 @@ export function setWindowTitle(stdout: NodeJS.WriteStream, title: string): void 
  * dock/taskbar icon name.
  */
 export function setWindowAndIconTitle(stdout: NodeJS.WriteStream, title: string): void {
-  stdout.write(`${ESC}]0;${title}${BEL}`)
+  stdout.write(`${ESC}]0;${title}${BEL}`);
 }
 
 /**
@@ -335,7 +339,7 @@ export function setWindowAndIconTitle(stdout: NodeJS.WriteStream, title: string)
  * The terminal typically reverts to its default title (shell command, etc.).
  */
 export function resetWindowTitle(stdout: NodeJS.WriteStream): void {
-  stdout.write(`${ESC}]2;${BEL}`)
+  stdout.write(`${ESC}]2;${BEL}`);
 }
 
 // ============================================================================
@@ -347,9 +351,9 @@ export function resetWindowTitle(stdout: NodeJS.WriteStream): void {
  */
 export function reportDirectory(stdout: NodeJS.WriteStream, path: string): void {
   // OSC 7 format: ESC ] 7 ; file://hostname/path BEL
-  const host = hostname()
-  const encoded = encodeURI(path).replace(/#/g, "%23")
-  stdout.write(`${ESC}]7;file://${host}${encoded}${BEL}`)
+  const host = hostname();
+  const encoded = encodeURI(path).replace(/#/g, "%23");
+  stdout.write(`${ESC}]7;file://${host}${encoded}${BEL}`);
 }
 
 // ============================================================================
@@ -362,7 +366,15 @@ export function reportDirectory(stdout: NodeJS.WriteStream, path: string): void 
  * Uses X11/CSS cursor names. Supported by: Ghostty, Kitty (>=0.33), foot,
  * WezTerm (partial). Terminals that don't support OSC 22 safely ignore it.
  */
-export type MouseCursorShape = "default" | "text" | "pointer" | "crosshair" | "move" | "not-allowed" | "wait" | "help"
+export type MouseCursorShape =
+  | "default"
+  | "text"
+  | "pointer"
+  | "crosshair"
+  | "move"
+  | "not-allowed"
+  | "wait"
+  | "help";
 
 /**
  * Generate OSC 22 sequence to set the mouse cursor shape.
@@ -371,7 +383,7 @@ export type MouseCursorShape = "default" | "text" | "pointer" | "crosshair" | "m
  * @returns ANSI escape sequence string
  */
 export function setMouseCursorShape(shape: MouseCursorShape): string {
-  return `${ESC}]22;${shape}${BEL}`
+  return `${ESC}]22;${shape}${BEL}`;
 }
 
 /**
@@ -380,7 +392,7 @@ export function setMouseCursorShape(shape: MouseCursorShape): string {
  * @returns ANSI escape sequence string
  */
 export function resetMouseCursorShape(): string {
-  return `${ESC}]22;default${BEL}`
+  return `${ESC}]22;default${BEL}`;
 }
 
 // ============================================================================
@@ -403,4 +415,4 @@ export const ANSI = {
   cursorLeft,
   cursorRight,
   cursorToColumn,
-} as const
+} as const;

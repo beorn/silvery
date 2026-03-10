@@ -9,8 +9,8 @@ add effects-as-data when you need side effects (Level 4).
 ## Install
 
 ```ts
-import { tea, collect } from "@silvery/tea"
-import type { TeaResult, TeaReducer, EffectRunners, TeaSlice, EffectLike } from "@silvery/tea"
+import { tea, collect } from "@silvery/tea";
+import type { TeaResult, TeaReducer, EffectRunners, TeaSlice, EffectLike } from "@silvery/tea";
 ```
 
 Not a standalone package. Exported as a sub-path from Silvery.
@@ -21,30 +21,30 @@ Level 3 — ops as data. The reducer takes state and an operation, returns new s
 `tea()` wraps it as a Zustand state creator with `dispatch`.
 
 ```ts
-import { createStore } from "zustand"
-import { tea } from "@silvery/tea"
+import { createStore } from "zustand";
+import { tea } from "@silvery/tea";
 
 interface State {
-  count: number
+  count: number;
 }
 
-type Op = { type: "increment" } | { type: "decrement" } | { type: "reset" }
+type Op = { type: "increment" } | { type: "decrement" } | { type: "reset" };
 
 function reducer(state: State, op: Op): State {
   switch (op.type) {
     case "increment":
-      return { ...state, count: state.count + 1 }
+      return { ...state, count: state.count + 1 };
     case "decrement":
-      return { ...state, count: state.count - 1 }
+      return { ...state, count: state.count - 1 };
     case "reset":
-      return { ...state, count: 0 }
+      return { ...state, count: 0 };
   }
 }
 
-const store = createStore(tea({ count: 0 }, reducer))
+const store = createStore(tea({ count: 0 }, reducer));
 
-store.getState().dispatch({ type: "increment" })
-store.getState().count // 1
+store.getState().dispatch({ type: "increment" });
+store.getState().count; // 1
 ```
 
 No effects, no runners, no ceremony. Plain `(state, op) => state`.
@@ -56,27 +56,27 @@ needs a side effect, return `[state, effects]` instead of plain state. Mix freel
 on a per-case basis.
 
 ```ts
-import { createStore } from "zustand"
-import { tea, type TeaResult, type EffectRunners } from "@silvery/tea"
+import { createStore } from "zustand";
+import { tea, type TeaResult, type EffectRunners } from "@silvery/tea";
 
 // Effects are plain objects with a `type` discriminant
-const log = (msg: string) => ({ type: "log" as const, msg })
-const save = (url: string, body: unknown) => ({ type: "save" as const, url, body })
+const log = (msg: string) => ({ type: "log" as const, msg });
+const save = (url: string, body: unknown) => ({ type: "save" as const, url, body });
 
-type MyEffect = ReturnType<typeof log> | ReturnType<typeof save>
+type MyEffect = ReturnType<typeof log> | ReturnType<typeof save>;
 
 interface State {
-  count: number
+  count: number;
 }
 
-type Op = { type: "increment" } | { type: "save" }
+type Op = { type: "increment" } | { type: "save" };
 
 function reducer(state: State, op: Op): TeaResult<State, MyEffect> {
   switch (op.type) {
     case "increment":
-      return { ...state, count: state.count + 1 } // Level 3: plain state
+      return { ...state, count: state.count + 1 }; // Level 3: plain state
     case "save":
-      return [state, [save("/api/count", state), log("saved")]] // Level 4: [state, effects]
+      return [state, [save("/api/count", state), log("saved")]]; // Level 4: [state, effects]
   }
 }
 
@@ -84,15 +84,15 @@ function reducer(state: State, op: Op): TeaResult<State, MyEffect> {
 const runners: EffectRunners<MyEffect, Op> = {
   log: (effect) => console.log(effect.msg),
   save: async (effect, dispatch) => {
-    await fetch(effect.url, { method: "POST", body: JSON.stringify(effect.body) })
+    await fetch(effect.url, { method: "POST", body: JSON.stringify(effect.body) });
     // Round-trip: dispatch back into the reducer (Elm's Cmd Msg pattern)
-    dispatch({ type: "increment" })
+    dispatch({ type: "increment" });
   },
-}
+};
 
-const store = createStore(tea({ count: 0 }, reducer, { runners }))
+const store = createStore(tea({ count: 0 }, reducer, { runners }));
 
-store.getState().dispatch({ type: "save" })
+store.getState().dispatch({ type: "save" });
 // -> state unchanged, effects executed: POST /api/count + console.log("saved")
 ```
 
@@ -136,26 +136,29 @@ Returns: `[S, E[]]` — always a tuple. Plain state becomes `[state, []]`.
 
 ```ts
 // An effect must have a `type` discriminant
-type EffectLike = { type: string }
+type EffectLike = { type: string };
 
 // Reducer return: plain state (no effects) or [state, effects]
-type TeaResult<S, E extends EffectLike = EffectLike> = S | readonly [S, E[]]
+type TeaResult<S, E extends EffectLike = EffectLike> = S | readonly [S, E[]];
 
 // A reducer function
-type TeaReducer<S, Op, E extends EffectLike = EffectLike> = (state: S, op: Op) => TeaResult<S, E>
+type TeaReducer<S, Op, E extends EffectLike = EffectLike> = (state: S, op: Op) => TeaResult<S, E>;
 
 // Runners keyed by effect type. Each receives the effect + dispatch for round-trips.
 type EffectRunners<E extends EffectLike, Op = unknown> = {
-  [K in E["type"]]?: (effect: Extract<E, { type: K }>, dispatch: (op: Op) => void) => void | Promise<void>
-}
+  [K in E["type"]]?: (
+    effect: Extract<E, { type: K }>,
+    dispatch: (op: Op) => void,
+  ) => void | Promise<void>;
+};
 
 // Options for tea()
 interface TeaOptions<E extends EffectLike, Op> {
-  runners?: EffectRunners<E, Op>
+  runners?: EffectRunners<E, Op>;
 }
 
 // The store shape: domain state + dispatch
-type TeaSlice<S, Op> = S & { dispatch: (op: Op) => void }
+type TeaSlice<S, Op> = S & { dispatch: (op: Op) => void };
 ```
 
 ## Testing
@@ -165,29 +168,29 @@ the return value so assertions work uniformly whether the reducer returned plain
 or a tuple.
 
 ```ts
-import { collect } from "@silvery/tea"
+import { collect } from "@silvery/tea";
 
-const initial: State = { count: 0 }
+const initial: State = { count: 0 };
 
 // Level 3 case: plain state
-const [state1, effects1] = collect(reducer(initial, { type: "increment" }))
-expect(state1.count).toBe(1)
-expect(effects1).toEqual([])
+const [state1, effects1] = collect(reducer(initial, { type: "increment" }));
+expect(state1.count).toBe(1);
+expect(effects1).toEqual([]);
 
 // Level 4 case: state + effects
-const [state2, effects2] = collect(reducer(initial, { type: "save" }))
-expect(state2).toEqual(initial)
-expect(effects2).toContainEqual(save("/api/count", initial))
-expect(effects2).toContainEqual(log("saved"))
+const [state2, effects2] = collect(reducer(initial, { type: "save" }));
+expect(state2).toEqual(initial);
+expect(effects2).toContainEqual(save("/api/count", initial));
+expect(effects2).toContainEqual(log("saved"));
 ```
 
 Effect runners are tested separately — inject mock dispatch, assert on calls:
 
 ```ts
-const dispatched: Op[] = []
-const mockDispatch = (op: Op) => dispatched.push(op)
+const dispatched: Op[] = [];
+const mockDispatch = (op: Op) => dispatched.push(op);
 
-runners.save!(save("/api/count", { count: 5 }), mockDispatch)
+runners.save!(save("/api/count", { count: 5 }), mockDispatch);
 // assert: dispatched contains expected round-trip ops
 ```
 

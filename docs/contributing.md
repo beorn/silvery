@@ -76,40 +76,40 @@ bun run test:fast
 Silvery provides a testing library with auto-cleanup between renders:
 
 ```tsx
-import { createRenderer } from "@silvery/term/testing"
-import { Box, Text } from "@silvery/term"
+import { createRenderer } from "@silvery/term/testing";
+import { Box, Text } from "@silvery/term";
 
 // Create a render function (default: 80 columns, 24 rows)
-const render = createRenderer()
+const render = createRenderer();
 
 // Or with custom dimensions
-const wideRender = createRenderer({ cols: 120, rows: 40 })
+const wideRender = createRenderer({ cols: 120, rows: 40 });
 
 test("renders text", () => {
   const { lastFrame, rerender, stdin } = render(
     <Box>
       <Text>Hello</Text>
     </Box>,
-  )
+  );
 
-  expect(lastFrame()).toContain("Hello")
+  expect(lastFrame()).toContain("Hello");
 
   // Send input to components using useInput
-  stdin.write("q")
+  stdin.write("q");
 
   // Re-render with new props
   rerender(
     <Box>
       <Text>World</Text>
     </Box>,
-  )
-})
+  );
+});
 
 test("another test", () => {
   // Previous render is auto-cleaned when render() is called again
-  const { lastFrame } = render(<Text>Fresh start</Text>)
-  expect(lastFrame()).toContain("Fresh start")
-})
+  const { lastFrame } = render(<Text>Fresh start</Text>);
+  expect(lastFrame()).toContain("Fresh start");
+});
 
 // Per-render dimension overrides
 test("wide render", () => {
@@ -118,24 +118,24 @@ test("wide render", () => {
       <Text>Wide</Text>
     </Box>,
     { cols: 120, rows: 24 },
-  )
-})
+  );
+});
 ```
 
 ### Testing Utilities
 
 ```tsx
-import { createRenderer, stripAnsi, normalizeFrame, waitFor } from "@silvery/term/testing"
+import { createRenderer, stripAnsi, normalizeFrame, waitFor } from "@silvery/term/testing";
 
 // Strip ANSI codes for easier assertions
-const plainText = stripAnsi("\u001B[32mGreen\u001B[39m")
+const plainText = stripAnsi("\u001B[32mGreen\u001B[39m");
 // => 'Green'
 
 // Normalize frame output (strips ANSI, trims whitespace)
-const normalized = normalizeFrame(frame)
+const normalized = normalizeFrame(frame);
 
 // Wait for async conditions
-await waitFor(() => lastFrame().includes("loaded"), { timeout: 1000 })
+await waitFor(() => lastFrame().includes("loaded"), { timeout: 1000 });
 ```
 
 ## Code Style
@@ -176,14 +176,14 @@ Key style rules:
 ```tsx
 // Good: Factory function + using cleanup
 function MyComponent() {
-  const { width } = useContentRect()
-  const [selected, setSelected] = useState(0)
+  const { width } = useContentRect();
+  const [selected, setSelected] = useState(0);
 
   useInput((input, key) => {
-    if (key.downArrow) setSelected((s) => s + 1)
-  })
+    if (key.downArrow) setSelected((s) => s + 1);
+  });
 
-  return <Text>Width: {width}</Text>
+  return <Text>Width: {width}</Text>;
 }
 ```
 

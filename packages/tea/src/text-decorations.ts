@@ -37,21 +37,21 @@
  */
 export interface DecorationStyle {
   /** Foreground color (hex, named, or $token) */
-  color?: string
+  color?: string;
   /** Background color (hex, named, or $token) */
-  backgroundColor?: string
+  backgroundColor?: string;
   /** Bold text */
-  bold?: boolean
+  bold?: boolean;
   /** Italic text */
-  italic?: boolean
+  italic?: boolean;
   /** Underline text */
-  underline?: boolean
+  underline?: boolean;
   /** Strikethrough text */
-  strikethrough?: boolean
+  strikethrough?: boolean;
   /** Dim (reduced intensity) */
-  dimColor?: boolean
+  dimColor?: boolean;
   /** Inverse (swap fg/bg) */
-  inverse?: boolean
+  inverse?: boolean;
 }
 
 /**
@@ -62,11 +62,11 @@ export interface DecorationStyle {
  */
 export interface Decoration {
   /** Start offset in the text (inclusive) */
-  from: number
+  from: number;
   /** End offset in the text (exclusive) */
-  to: number
+  to: number;
   /** Style properties to apply to this range */
-  style: DecorationStyle
+  style: DecorationStyle;
 }
 
 /**
@@ -75,19 +75,19 @@ export interface Decoration {
  */
 export interface StyledSegment {
   /** Start offset (inclusive) */
-  from: number
+  from: number;
   /** End offset (exclusive) */
-  to: number
+  to: number;
   /** Merged style from all overlapping decorations */
-  style: DecorationStyle
+  style: DecorationStyle;
   /** Whether this segment is within the selection */
-  selected?: boolean
+  selected?: boolean;
 }
 
 /** Selection range as [start, end) character offsets */
 export interface SelectionRange {
-  start: number
-  end: number
+  start: number;
+  end: number;
 }
 
 // =============================================================================
@@ -119,45 +119,45 @@ export function splitIntoSegments(
   decorations: readonly Decoration[],
   selection: SelectionRange | null,
 ): StyledSegment[] {
-  if (lineStart >= lineEnd) return []
+  if (lineStart >= lineEnd) return [];
 
   // Collect all boundary points within the line range
-  const boundaries = new Set<number>()
-  boundaries.add(lineStart)
-  boundaries.add(lineEnd)
+  const boundaries = new Set<number>();
+  boundaries.add(lineStart);
+  boundaries.add(lineEnd);
 
   // Add decoration boundaries (clipped to line range)
   for (const dec of decorations) {
-    if (dec.to <= lineStart || dec.from >= lineEnd) continue
-    boundaries.add(Math.max(dec.from, lineStart))
-    boundaries.add(Math.min(dec.to, lineEnd))
+    if (dec.to <= lineStart || dec.from >= lineEnd) continue;
+    boundaries.add(Math.max(dec.from, lineStart));
+    boundaries.add(Math.min(dec.to, lineEnd));
   }
 
   // Add selection boundaries (clipped to line range)
   if (selection && selection.start < lineEnd && selection.end > lineStart) {
-    boundaries.add(Math.max(selection.start, lineStart))
-    boundaries.add(Math.min(selection.end, lineEnd))
+    boundaries.add(Math.max(selection.start, lineStart));
+    boundaries.add(Math.min(selection.end, lineEnd));
   }
 
   // Sort boundaries
-  const sorted = Array.from(boundaries).sort((a, b) => a - b)
+  const sorted = Array.from(boundaries).sort((a, b) => a - b);
 
   // Build segments
-  const segments: StyledSegment[] = []
+  const segments: StyledSegment[] = [];
   for (let i = 0; i < sorted.length - 1; i++) {
-    const from = sorted[i]!
-    const to = sorted[i + 1]!
-    if (from >= to) continue
+    const from = sorted[i]!;
+    const to = sorted[i + 1]!;
+    if (from >= to) continue;
 
     // Check if this segment is within the selection
-    const isSelected = selection !== null && from >= selection.start && to <= selection.end
+    const isSelected = selection !== null && from >= selection.start && to <= selection.end;
 
     // Merge styles from all overlapping decorations (later wins for conflicts)
-    const mergedStyle: DecorationStyle = {}
+    const mergedStyle: DecorationStyle = {};
     for (const dec of decorations) {
-      if (dec.from >= to || dec.to <= from) continue
+      if (dec.from >= to || dec.to <= from) continue;
       // Merge: later decoration properties override earlier ones
-      Object.assign(mergedStyle, dec.style)
+      Object.assign(mergedStyle, dec.style);
     }
 
     segments.push({
@@ -165,10 +165,10 @@ export function splitIntoSegments(
       to,
       style: mergedStyle,
       ...(isSelected ? { selected: true } : {}),
-    })
+    });
   }
 
-  return segments
+  return segments;
 }
 
 // =============================================================================
@@ -188,25 +188,25 @@ export function createSearchDecorations(
   query: string,
   style: DecorationStyle = { backgroundColor: "yellow", color: "black" },
 ): Decoration[] {
-  if (!query || !text) return []
+  if (!query || !text) return [];
 
-  const decorations: Decoration[] = []
-  const lowerText = text.toLowerCase()
-  const lowerQuery = query.toLowerCase()
-  let pos = 0
+  const decorations: Decoration[] = [];
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  let pos = 0;
 
   while (pos < lowerText.length) {
-    const idx = lowerText.indexOf(lowerQuery, pos)
-    if (idx === -1) break
+    const idx = lowerText.indexOf(lowerQuery, pos);
+    if (idx === -1) break;
     decorations.push({
       from: idx,
       to: idx + query.length,
       style,
-    })
-    pos = idx + 1 // Allow overlapping matches
+    });
+    pos = idx + 1; // Allow overlapping matches
   }
 
-  return decorations
+  return decorations;
 }
 
 /**
@@ -227,27 +227,27 @@ export function adjustDecorations(
   deletedLength: number,
   insertedLength: number,
 ): Decoration[] {
-  const delta = insertedLength - deletedLength
-  const editEnd = editStart + deletedLength
+  const delta = insertedLength - deletedLength;
+  const editEnd = editStart + deletedLength;
 
   return decorations
     .map((dec) => {
       // Decoration is entirely before the edit — no change
-      if (dec.to <= editStart) return dec
+      if (dec.to <= editStart) return dec;
 
       // Decoration is entirely after the edit — shift by delta
       if (dec.from >= editEnd) {
-        return { ...dec, from: dec.from + delta, to: dec.to + delta }
+        return { ...dec, from: dec.from + delta, to: dec.to + delta };
       }
 
       // Decoration overlaps the edit region — adjust boundaries
-      const newFrom = dec.from < editStart ? dec.from : editStart + insertedLength
-      const newTo = dec.to <= editEnd ? editStart + insertedLength : dec.to + delta
+      const newFrom = dec.from < editStart ? dec.from : editStart + insertedLength;
+      const newTo = dec.to <= editEnd ? editStart + insertedLength : dec.to + delta;
 
       // If the decoration collapses to zero width, remove it
-      if (newFrom >= newTo) return null
+      if (newFrom >= newTo) return null;
 
-      return { ...dec, from: newFrom, to: newTo }
+      return { ...dec, from: newFrom, to: newTo };
     })
-    .filter((dec): dec is Decoration => dec !== null)
+    .filter((dec): dec is Decoration => dec !== null);
 }

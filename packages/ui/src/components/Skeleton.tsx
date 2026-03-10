@@ -12,9 +12,9 @@
  * <Skeleton width={10} shape="circle" />
  * ```
  */
-import React from "react"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React from "react";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -22,21 +22,21 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface SkeletonProps {
   /** Width in columns (default: 20) */
-  width?: number
+  width?: number;
   /** Height in rows (default: 1) */
-  height?: number
+  height?: number;
   /** Placeholder character (default: "░") */
-  char?: string
+  char?: string;
   /** Shape hint: "line" for single-line, "block" for multi-line (default: auto from height) */
-  shape?: "line" | "block" | "circle"
+  shape?: "line" | "block" | "circle";
 }
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const DEFAULT_WIDTH = 20
-const DEFAULT_CHAR = "░"
+const DEFAULT_WIDTH = 20;
+const DEFAULT_CHAR = "░";
 
 // =============================================================================
 // Component
@@ -55,13 +55,13 @@ export function Skeleton({
   char = DEFAULT_CHAR,
   shape,
 }: SkeletonProps): React.ReactElement {
-  const resolvedShape = shape ?? (heightProp && heightProp > 1 ? "block" : "line")
-  const height = heightProp ?? (resolvedShape === "circle" ? 1 : 1)
+  const resolvedShape = shape ?? (heightProp && heightProp > 1 ? "block" : "line");
+  const height = heightProp ?? (resolvedShape === "circle" ? 1 : 1);
 
   if (resolvedShape === "circle") {
     // Render a centered shorter line to suggest a circular avatar
-    const circleWidth = Math.min(width, 6)
-    const pad = Math.max(0, Math.floor((width - circleWidth) / 2))
+    const circleWidth = Math.min(width, 6);
+    const pad = Math.max(0, Math.floor((width - circleWidth) / 2));
     return (
       <Box>
         <Text color="$muted">
@@ -69,11 +69,11 @@ export function Skeleton({
           {char.repeat(circleWidth)}
         </Text>
       </Box>
-    )
+    );
   }
 
-  const line = char.repeat(width)
-  const rows = Array.from({ length: height }, (_, i) => i)
+  const line = char.repeat(width);
+  const rows = Array.from({ length: height }, (_, i) => i);
 
   return (
     <Box flexDirection="column">
@@ -83,5 +83,5 @@ export function Skeleton({
         </Text>
       ))}
     </Box>
-  )
+  );
 }

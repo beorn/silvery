@@ -27,44 +27,44 @@
  * ```
  */
 
-import type { TeaNode, Rect } from "@silvery/tea/types"
+import type { TeaNode, Rect } from "@silvery/tea/types";
 
 /**
  * Locator interface - lazy reference to nodes matching a query
  */
 export interface SilveryLocator {
   // Core queries (return new Locators)
-  getByText(text: string | RegExp): SilveryLocator
-  getByTestId(id: string): SilveryLocator
+  getByText(text: string | RegExp): SilveryLocator;
+  getByTestId(id: string): SilveryLocator;
 
   // Attribute selector (CSS-like: '[data-selected="true"]')
-  locator(selector: string): SilveryLocator
+  locator(selector: string): SilveryLocator;
 
   // Narrowing
-  first(): SilveryLocator
-  last(): SilveryLocator
-  nth(index: number): SilveryLocator
+  first(): SilveryLocator;
+  last(): SilveryLocator;
+  nth(index: number): SilveryLocator;
 
   // Resolution (actually finds nodes)
-  resolve(): TeaNode | null
-  resolveAll(): TeaNode[]
-  count(): number
+  resolve(): TeaNode | null;
+  resolveAll(): TeaNode[];
+  count(): number;
 
   // Utilities
-  textContent(): string
-  getAttribute(name: string): string | undefined
-  boundingBox(): Rect | null
-  isVisible(): boolean
+  textContent(): string;
+  getAttribute(name: string): string | undefined;
+  boundingBox(): Rect | null;
+  isVisible(): boolean;
 }
 
 // Query predicate type
-type NodePredicate = (node: TeaNode) => boolean
+type NodePredicate = (node: TeaNode) => boolean;
 
 /**
  * Create a locator rooted at the given container node
  */
 export function createLocator(root: TeaNode): SilveryLocator {
-  return new LocatorImpl(root, [])
+  return new LocatorImpl(root, []);
 }
 
 /**
@@ -81,118 +81,118 @@ class LocatorImpl implements SilveryLocator {
     const predicate: NodePredicate = (node) => {
       // Match nodes that have text content directly (raw text nodes)
       // OR Text nodes that contain text (but not their parent containers)
-      const content = getNodeTextContent(node)
-      if (!content) return false
+      const content = getNodeTextContent(node);
+      if (!content) return false;
 
       // Only match if this node directly contains text or is an silvery-text
       // Skip silvery-box and silvery-root which contain text via children
       if (node.type !== "silvery-text") {
-        return false
+        return false;
       }
 
       // Skip raw text nodes if their parent also matches (match parent Text instead)
       // This prevents matching both the Text component AND its raw text child
       if (node.isRawText && node.parent?.type === "silvery-text") {
-        return false
+        return false;
       }
 
       if (typeof text === "string") {
-        return content.includes(text)
+        return content.includes(text);
       }
-      return text.test(content)
-    }
-    return new LocatorImpl(this.root, [...this.predicates, predicate])
+      return text.test(content);
+    };
+    return new LocatorImpl(this.root, [...this.predicates, predicate]);
   }
 
   getByTestId(id: string): SilveryLocator {
     const predicate: NodePredicate = (node) => {
-      return getNodeProp(node, "testID") === id
-    }
-    return new LocatorImpl(this.root, [...this.predicates, predicate])
+      return getNodeProp(node, "testID") === id;
+    };
+    return new LocatorImpl(this.root, [...this.predicates, predicate]);
   }
 
   locator(selector: string): SilveryLocator {
-    const predicate = parseSelector(selector)
+    const predicate = parseSelector(selector);
     if (!predicate) {
       // Invalid selector - return locator that matches nothing
-      return new LocatorImpl(this.root, [() => false])
+      return new LocatorImpl(this.root, [() => false]);
     }
-    return new LocatorImpl(this.root, [...this.predicates, predicate])
+    return new LocatorImpl(this.root, [...this.predicates, predicate]);
   }
 
   first(): SilveryLocator {
-    return new LocatorImpl(this.root, this.predicates, { type: "first" })
+    return new LocatorImpl(this.root, this.predicates, { type: "first" });
   }
 
   last(): SilveryLocator {
-    return new LocatorImpl(this.root, this.predicates, { type: "last" })
+    return new LocatorImpl(this.root, this.predicates, { type: "last" });
   }
 
   nth(index: number): SilveryLocator {
     return new LocatorImpl(this.root, this.predicates, {
       type: "nth",
       index,
-    })
+    });
   }
 
   resolve(): TeaNode | null {
-    const nodes = this.resolveAll()
+    const nodes = this.resolveAll();
     if (this.indexSelector) {
       switch (this.indexSelector.type) {
         case "first":
-          return nodes[0] ?? null
+          return nodes[0] ?? null;
         case "last":
-          return nodes[nodes.length - 1] ?? null
+          return nodes[nodes.length - 1] ?? null;
         case "nth":
-          return nodes[this.indexSelector.index ?? 0] ?? null
+          return nodes[this.indexSelector.index ?? 0] ?? null;
       }
     }
-    return nodes[0] ?? null
+    return nodes[0] ?? null;
   }
 
   resolveAll(): TeaNode[] {
     if (this.predicates.length === 0) {
       // No predicates - return root's children (or root if querying root)
-      return [this.root]
+      return [this.root];
     }
 
-    const matches: TeaNode[] = []
+    const matches: TeaNode[] = [];
     walkTree(this.root, (node) => {
       if (this.predicates.every((p) => p(node))) {
-        matches.push(node)
+        matches.push(node);
       }
-    })
-    return matches
+    });
+    return matches;
   }
 
   count(): number {
-    return this.resolveAll().length
+    return this.resolveAll().length;
   }
 
   textContent(): string {
-    const node = this.resolve()
-    if (!node) return ""
-    return getNodeTextContent(node)
+    const node = this.resolve();
+    if (!node) return "";
+    return getNodeTextContent(node);
   }
 
   getAttribute(name: string): string | undefined {
-    const node = this.resolve()
-    if (!node) return undefined
-    return getNodeProp(node, name)
+    const node = this.resolve();
+    if (!node) return undefined;
+    return getNodeProp(node, name);
   }
 
   boundingBox(): Rect | null {
-    const node = this.resolve()
-    if (!node) return null
-    return node.screenRect ?? null
+    const node = this.resolve();
+    if (!node) return null;
+    return node.screenRect ?? null;
   }
 
   isVisible(): boolean {
-    const box = this.boundingBox()
-    if (!box) return false
+    const box = this.boundingBox();
+    if (!box) return false;
     // Check if any part of the node is within viewport
     // Note: We don't have viewport bounds here, so just check if it has dimensions
-    return box.width > 0 && box.height > 0
+    return box.width > 0 && box.height > 0;
   }
 }
 
@@ -200,9 +200,9 @@ class LocatorImpl implements SilveryLocator {
  * Walk tree depth-first, calling visitor for each node
  */
 function walkTree(node: TeaNode, visitor: (node: TeaNode) => void): void {
-  visitor(node)
+  visitor(node);
   for (const child of node.children) {
-    walkTree(child, visitor)
+    walkTree(child, visitor);
   }
 }
 
@@ -212,20 +212,20 @@ function walkTree(node: TeaNode, visitor: (node: TeaNode) => void): void {
 function getNodeTextContent(node: TeaNode): string {
   // Raw text nodes have textContent set directly
   if (node.textContent !== undefined) {
-    return node.textContent
+    return node.textContent;
   }
   // Concatenate children's text content
-  return node.children.map(getNodeTextContent).join("")
+  return node.children.map(getNodeTextContent).join("");
 }
 
 /**
  * Get a prop value from node
  */
 function getNodeProp(node: TeaNode, name: string): string | undefined {
-  const props = node.props as Record<string, unknown>
-  const value = props[name]
-  if (value === undefined || value === null) return undefined
-  return String(value)
+  const props = node.props as Record<string, unknown>;
+  const value = props[name];
+  if (value === undefined || value === null) return undefined;
+  return String(value);
 }
 
 /**
@@ -236,24 +236,24 @@ function getNodeProp(node: TeaNode, name: string): string | undefined {
  * - Combinators: > (child), + (adjacent sibling), space (descendant)
  */
 function parseSelector(selector: string): NodePredicate | null {
-  const trimmed = selector.trim()
+  const trimmed = selector.trim();
 
   // Detect unsupported selectors and throw helpful errors
-  detectUnsupportedSelectors(trimmed)
+  detectUnsupportedSelectors(trimmed);
 
   // Check for combinators
   if (trimmed.includes(">")) {
-    return parseChildCombinator(trimmed)
+    return parseChildCombinator(trimmed);
   }
   if (trimmed.includes("+")) {
-    return parseAdjacentSiblingCombinator(trimmed)
+    return parseAdjacentSiblingCombinator(trimmed);
   }
   if (trimmed.includes(" ") && !trimmed.startsWith("[")) {
-    return parseDescendantCombinator(trimmed)
+    return parseDescendantCombinator(trimmed);
   }
 
   // Single selector
-  return parseSingleSelector(trimmed)
+  return parseSingleSelector(trimmed);
 }
 
 /**
@@ -264,21 +264,21 @@ function detectUnsupportedSelectors(selector: string): void {
   if (selector.includes("::")) {
     throw new Error(
       `Unsupported selector: pseudo-elements like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nIf you need pseudo-element support, see bead km-silvery-css-select for discussion about switching to css-select library.`,
-    )
+    );
   }
 
   // Pseudo-classes (:hover, :nth-child, :not, etc.)
   if (selector.includes(":")) {
     throw new Error(
       `Unsupported selector: pseudo-classes like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nIf you need pseudo-class support, see bead km-silvery-css-select for discussion about switching to css-select library.`,
-    )
+    );
   }
 
   // Class selectors (.class)
   if (/\.[a-zA-Z]/.test(selector)) {
     throw new Error(
       `Unsupported selector: class selectors like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nTip: Use [class="myclass"] or [class*="myclass"] instead, or see bead km-silvery-css-select for css-select library.`,
-    )
+    );
   }
 
   // Tag/type selectors (div, span, etc.)
@@ -286,7 +286,7 @@ function detectUnsupportedSelectors(selector: string): void {
   if (/^[a-z][a-z0-9-]*$/i.test(selector) && selector.length > 1) {
     throw new Error(
       `Unsupported selector: tag/type selectors like "${selector}" are not supported.\nThe custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\nTip: Use [data-view="${selector}"] or similar attribute selector, or see bead km-silvery-css-select for css-select library.`,
-    )
+    );
   }
 
   // Universal selector (*)
@@ -295,7 +295,7 @@ function detectUnsupportedSelectors(selector: string): void {
       `Unsupported selector: universal selector "*" is not supported.\n` +
         `The custom selector engine only supports: #id, [attr], [attr="value"], and basic combinators (>, +, space).\n` +
         "If you need universal selector support, see bead km-silvery-css-select for css-select library.",
-    )
+    );
   }
 }
 
@@ -305,125 +305,125 @@ function detectUnsupportedSelectors(selector: string): void {
  */
 function parseSingleSelector(selector: string): NodePredicate | null {
   // Parse compound selector into parts
-  const parts: NodePredicate[] = []
-  let remaining = selector
+  const parts: NodePredicate[] = [];
+  let remaining = selector;
 
   // Extract ID if present
-  const idMatch = remaining.match(/^#([a-zA-Z0-9_-]+)/)
+  const idMatch = remaining.match(/^#([a-zA-Z0-9_-]+)/);
   if (idMatch) {
-    const id = idMatch[1]!
-    parts.push((node: TeaNode) => getNodeProp(node, "id") === id)
+    const id = idMatch[1]!;
+    parts.push((node: TeaNode) => getNodeProp(node, "id") === id);
     // Remove ID from selector string
-    remaining = remaining.slice(idMatch[0].length)
+    remaining = remaining.slice(idMatch[0].length);
   }
 
   // Extract all attribute selectors
-  const attrRegex = /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g
+  const attrRegex = /\[([a-zA-Z_][a-zA-Z0-9_-]*)(?:([~^$*]?)=["']([^"']*)["'])?\]/g;
   for (const match of remaining.matchAll(attrRegex)) {
-    const [, attr, op, value] = match
-    if (!attr) continue
+    const [, attr, op, value] = match;
+    if (!attr) continue;
 
     if (value === undefined) {
       // Presence check [attr] - value group didn't match
-      parts.push((node: TeaNode) => getNodeProp(node, attr) !== undefined)
+      parts.push((node: TeaNode) => getNodeProp(node, attr) !== undefined);
     } else {
       // Value check [attr="value"] - value group matched
       parts.push((node: TeaNode) => {
-        const nodeValue = getNodeProp(node, attr)
-        if (nodeValue === undefined) return false
+        const nodeValue = getNodeProp(node, attr);
+        if (nodeValue === undefined) return false;
         switch (op) {
           case "":
-            return nodeValue === value
+            return nodeValue === value;
           case "^":
-            return nodeValue.startsWith(value ?? "")
+            return nodeValue.startsWith(value ?? "");
           case "$":
-            return nodeValue.endsWith(value ?? "")
+            return nodeValue.endsWith(value ?? "");
           case "*":
-            return nodeValue.includes(value ?? "")
+            return nodeValue.includes(value ?? "");
           default:
-            return false
+            return false;
         }
-      })
+      });
     }
   }
 
   // If no parts matched, invalid selector
-  if (parts.length === 0) return null
+  if (parts.length === 0) return null;
 
   // Compound selector - all parts must match
-  return (node: TeaNode) => parts.every((pred) => pred(node))
+  return (node: TeaNode) => parts.every((pred) => pred(node));
 }
 
 /**
  * Parse child combinator: A > B (B is direct child of A)
  */
 function parseChildCombinator(selector: string): NodePredicate | null {
-  const parts = selector.split(">").map((s) => s.trim())
-  if (parts.length !== 2) return null
+  const parts = selector.split(">").map((s) => s.trim());
+  if (parts.length !== 2) return null;
 
-  const [parentSel, childSel] = parts
-  const parentPred = parseSingleSelector(parentSel!)
-  const childPred = parseSingleSelector(childSel!)
+  const [parentSel, childSel] = parts;
+  const parentPred = parseSingleSelector(parentSel!);
+  const childPred = parseSingleSelector(childSel!);
 
-  if (!parentPred || !childPred) return null
+  if (!parentPred || !childPred) return null;
 
   return (node: TeaNode) => {
-    if (!childPred(node)) return false
+    if (!childPred(node)) return false;
     // Check if parent matches
-    return node.parent !== null && parentPred(node.parent)
-  }
+    return node.parent !== null && parentPred(node.parent);
+  };
 }
 
 /**
  * Parse adjacent sibling combinator: A + B (B immediately follows A)
  */
 function parseAdjacentSiblingCombinator(selector: string): NodePredicate | null {
-  const parts = selector.split("+").map((s) => s.trim())
-  if (parts.length !== 2) return null
+  const parts = selector.split("+").map((s) => s.trim());
+  if (parts.length !== 2) return null;
 
-  const [prevSel, nextSel] = parts
-  const prevPred = parseSingleSelector(prevSel!)
-  const nextPred = parseSingleSelector(nextSel!)
+  const [prevSel, nextSel] = parts;
+  const prevPred = parseSingleSelector(prevSel!);
+  const nextPred = parseSingleSelector(nextSel!);
 
-  if (!prevPred || !nextPred) return null
+  if (!prevPred || !nextPred) return null;
 
   return (node: TeaNode) => {
-    if (!nextPred(node)) return false
-    if (!node.parent) return false
+    if (!nextPred(node)) return false;
+    if (!node.parent) return false;
 
     // Find this node's index in parent's children
-    const siblings = node.parent.children
-    const index = siblings.indexOf(node)
-    if (index <= 0) return false
+    const siblings = node.parent.children;
+    const index = siblings.indexOf(node);
+    if (index <= 0) return false;
 
     // Check if previous sibling matches
-    const prevSibling = siblings[index - 1]
-    return prevSibling !== undefined && prevPred(prevSibling)
-  }
+    const prevSibling = siblings[index - 1];
+    return prevSibling !== undefined && prevPred(prevSibling);
+  };
 }
 
 /**
  * Parse descendant combinator: A B (B is descendant of A)
  */
 function parseDescendantCombinator(selector: string): NodePredicate | null {
-  const parts = selector.split(/\s+/).filter((s) => s.length > 0)
-  if (parts.length !== 2) return null
+  const parts = selector.split(/\s+/).filter((s) => s.length > 0);
+  if (parts.length !== 2) return null;
 
-  const [ancestorSel, descendantSel] = parts
-  const ancestorPred = parseSingleSelector(ancestorSel!)
-  const descendantPred = parseSingleSelector(descendantSel!)
+  const [ancestorSel, descendantSel] = parts;
+  const ancestorPred = parseSingleSelector(ancestorSel!);
+  const descendantPred = parseSingleSelector(descendantSel!);
 
-  if (!ancestorPred || !descendantPred) return null
+  if (!ancestorPred || !descendantPred) return null;
 
   return (node: TeaNode) => {
-    if (!descendantPred(node)) return false
+    if (!descendantPred(node)) return false;
 
     // Walk up the tree to find ancestor
-    let current = node.parent
+    let current = node.parent;
     while (current) {
-      if (ancestorPred(current)) return true
-      current = current.parent
+      if (ancestorPred(current)) return true;
+      current = current.parent;
     }
-    return false
-  }
+    return false;
+  };
 }

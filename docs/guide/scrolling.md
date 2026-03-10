@@ -13,9 +13,9 @@ Silvery makes scrolling effortless. Just render your content and let Silvery han
 Add `overflow="scroll"` to any Box:
 
 ```tsx
-import { Box, Text } from "silvery"
+import { Box, Text } from "silvery";
 
-const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`)
+const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`);
 
 function App() {
   return (
@@ -24,7 +24,7 @@ function App() {
         <Text key={i}>{item}</Text>
       ))}
     </Box>
-  )
+  );
 }
 ```
 
@@ -40,18 +40,18 @@ Silvery will:
 Use `scrollTo` to keep a specific item visible:
 
 ```tsx
-import { Box, Text, useInput } from "silvery"
-import { useState } from "react"
+import { Box, Text, useInput } from "silvery";
+import { useState } from "react";
 
-const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`)
+const items = Array.from({ length: 100 }, (_, i) => `Item ${i + 1}`);
 
 function App() {
-  const [selected, setSelected] = useState(0)
+  const [selected, setSelected] = useState(0);
 
   useInput((input, key) => {
-    if (key.downArrow) setSelected((s) => Math.min(s + 1, items.length - 1))
-    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0))
-  })
+    if (key.downArrow) setSelected((s) => Math.min(s + 1, items.length - 1));
+    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0));
+  });
 
   return (
     <Box flexDirection="column" height={10} overflow="scroll" scrollTo={selected}>
@@ -61,7 +61,7 @@ function App() {
         </Text>
       ))}
     </Box>
-  )
+  );
 }
 ```
 
@@ -79,7 +79,7 @@ function TaskList({ tasks, selectedIndex }) {
         <TaskRow key={task.id} task={task} isSelected={i === selectedIndex} />
       ))}
     </Box>
-  )
+  );
 }
 
 function TaskRow({ task, isSelected }) {
@@ -96,7 +96,7 @@ function TaskRow({ task, isSelected }) {
         </Text>
       ))}
     </Box>
-  )
+  );
 }
 ```
 

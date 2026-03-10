@@ -13,12 +13,12 @@ Silvery provides layout, text, input, and display components for building termin
 The primary layout component. Uses Yoga (flexbox) for layout.
 
 ```tsx
-import { Box, Text } from "silvery"
+import { Box, Text } from "silvery";
 
 <Box flexDirection="row" justifyContent="space-between">
   <Text>Left</Text>
   <Text>Right</Text>
-</Box>
+</Box>;
 ```
 
 ### Scrolling
@@ -39,24 +39,24 @@ See [Scrolling Guide](/guide/scrolling) for details.
 
 ### Props
 
-| Prop             | Type                                                                          | Default        | Description                                   |
-| ---------------- | ----------------------------------------------------------------------------- | -------------- | --------------------------------------------- |
-| `flexDirection`  | `"row" \| "column" \| "row-reverse" \| "column-reverse"`                      | `"row"`        | Main axis direction                           |
-| `flexGrow`       | `number`                                                                      | `0`            | Grow factor                                   |
-| `flexShrink`     | `number`                                                                      | `1`            | Shrink factor                                 |
-| `flexBasis`      | `number \| string`                                                            | -              | Initial size                                  |
-| `justifyContent` | `"flex-start" \| "flex-end" \| "center" \| "space-between" \| "space-around"` | `"flex-start"` | Main axis alignment                           |
-| `alignItems`     | `"flex-start" \| "flex-end" \| "center" \| "stretch"`                         | `"stretch"`    | Cross axis alignment                          |
-| `padding`        | `number`                                                                      | `0`            | Padding on all sides                          |
-| `paddingX`       | `number`                                                                      | `0`            | Horizontal padding                            |
-| `paddingY`       | `number`                                                                      | `0`            | Vertical padding                              |
-| `margin`         | `number`                                                                      | `0`            | Margin on all sides                           |
-| `width`          | `number \| string`                                                            | -              | Fixed or percentage width                     |
-| `height`         | `number \| string`                                                            | -              | Fixed or percentage height                    |
-| `minWidth`       | `number`                                                                      | -              | Minimum width                                 |
-| `minHeight`      | `number`                                                                      | -              | Minimum height                                |
-| `borderStyle`    | `"single" \| "double" \| "round" \| "bold" \| "classic"`                      | -              | Border style                                  |
-| `borderColor`    | `string`                                                                      | -              | Border color                                  |
+| Prop             | Type                                                                          | Default        | Description                 |
+| ---------------- | ----------------------------------------------------------------------------- | -------------- | --------------------------- |
+| `flexDirection`  | `"row" \| "column" \| "row-reverse" \| "column-reverse"`                      | `"row"`        | Main axis direction         |
+| `flexGrow`       | `number`                                                                      | `0`            | Grow factor                 |
+| `flexShrink`     | `number`                                                                      | `1`            | Shrink factor               |
+| `flexBasis`      | `number \| string`                                                            | -              | Initial size                |
+| `justifyContent` | `"flex-start" \| "flex-end" \| "center" \| "space-between" \| "space-around"` | `"flex-start"` | Main axis alignment         |
+| `alignItems`     | `"flex-start" \| "flex-end" \| "center" \| "stretch"`                         | `"stretch"`    | Cross axis alignment        |
+| `padding`        | `number`                                                                      | `0`            | Padding on all sides        |
+| `paddingX`       | `number`                                                                      | `0`            | Horizontal padding          |
+| `paddingY`       | `number`                                                                      | `0`            | Vertical padding            |
+| `margin`         | `number`                                                                      | `0`            | Margin on all sides         |
+| `width`          | `number \| string`                                                            | -              | Fixed or percentage width   |
+| `height`         | `number \| string`                                                            | -              | Fixed or percentage height  |
+| `minWidth`       | `number`                                                                      | -              | Minimum width               |
+| `minHeight`      | `number`                                                                      | -              | Minimum height              |
+| `borderStyle`    | `"single" \| "double" \| "round" \| "bold" \| "classic"`                      | -              | Border style                |
+| `borderColor`    | `string`                                                                      | -              | Border color                |
 | `overflow`       | `"visible" \| "hidden" \| "scroll"`                                           | `"visible"`    | Overflow behavior           |
 | `scrollTo`       | `number`                                                                      | -              | Child index to keep visible |
 
@@ -119,13 +119,13 @@ import { Newline, Text } from "silvery";
 Flexible space that expands to fill available room.
 
 ```tsx
-import { Box, Spacer, Text } from "silvery"
+import { Box, Spacer, Text } from "silvery";
 
 <Box>
   <Text>Left</Text>
   <Spacer />
   <Text>Right</Text>
-</Box>
+</Box>;
 ```
 
 ## Static
@@ -133,17 +133,17 @@ import { Box, Spacer, Text } from "silvery"
 Renders content that won't be updated. Useful for logs or output that scrolls up.
 
 ```tsx
-import { Static, Box, Text } from "silvery"
+import { Static, Box, Text } from "silvery";
 
 function App() {
-  const [logs, setLogs] = useState<string[]>([])
+  const [logs, setLogs] = useState<string[]>([]);
 
   return (
     <Box flexDirection="column">
       <Static items={logs}>{(log, i) => <Text key={i}>{log}</Text>}</Static>
       <Text>Current status...</Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -161,9 +161,15 @@ function App() {
 Single-line text input with full readline shortcuts (Ctrl+A/E, Ctrl+K/U, Alt+B/F, Ctrl+Y with kill ring).
 
 ```tsx
-import { TextInput } from "silvery"
+import { TextInput } from "silvery";
 
-<TextInput value={text} onChange={setText} onSubmit={handleSubmit} placeholder="Type here..." prompt="> " />
+<TextInput
+  value={text}
+  onChange={setText}
+  onSubmit={handleSubmit}
+  placeholder="Type here..."
+  prompt="> "
+/>;
 ```
 
 ### TextArea
@@ -171,7 +177,7 @@ import { TextInput } from "silvery"
 Multi-line text editing with cursor navigation, line wrapping, and text selection.
 
 ```tsx
-import { TextArea } from "silvery"
+import { TextArea } from "silvery";
 
 <TextArea
   value={text}
@@ -181,7 +187,7 @@ import { TextArea } from "silvery"
   submitKey="ctrl+enter"
   onSubmit={handleSubmit}
   scrollMargin={1}
-/>
+/>;
 ```
 
 | Prop           | Type                                      | Default        | Description                                     |
@@ -207,7 +213,7 @@ Features: Shift+Arrow selection, Ctrl+A select all, Ctrl+Home/End document navig
 Single-select list with keyboard navigation (arrow keys, j/k, Home/End), disabled item support, and `maxVisible` for scroll windowing.
 
 ```tsx
-import { SelectList } from "silvery"
+import { SelectList } from "silvery";
 
 <SelectList
   items={[
@@ -216,7 +222,7 @@ import { SelectList } from "silvery"
     { label: "Svelte", value: "svelte" },
   ]}
   onSelect={(item) => console.log(item.value)}
-/>
+/>;
 ```
 
 ### Toggle, Button
@@ -286,35 +292,35 @@ yarn add @silvery/ui
 **CLI mode** (direct stdout, no React):
 
 ```ts
-import { Spinner, ProgressBar, MultiProgress } from "@silvery/ui/cli"
+import { Spinner, ProgressBar, MultiProgress } from "@silvery/ui/cli";
 
-const stop = Spinner.start("Loading...")
-await doWork()
-stop()
+const stop = Spinner.start("Loading...");
+await doWork();
+stop();
 ```
 
 **Wrappers** (ergonomic async adapters):
 
 ```ts
-import { withSpinner, withProgress } from "@silvery/ui/wrappers"
+import { withSpinner, withProgress } from "@silvery/ui/wrappers";
 
-const data = await withSpinner(fetchData(), "Loading data...")
+const data = await withSpinner(fetchData(), "Loading data...");
 ```
 
 **Declarative steps**:
 
 ```ts
-import { steps } from "@silvery/ui/progress"
+import { steps } from "@silvery/ui/progress";
 
-const loader = steps({ loadModules, parseConfig, validate })
-await loader.run({ clear: true })
+const loader = steps({ loadModules, parseConfig, validate });
+await loader.run({ clear: true });
 ```
 
 **React components** (for Silvery/Ink apps):
 
 ```tsx
-import { Spinner, ProgressBar, Tasks, Task } from "@silvery/ui/react"
-import { TextInput, Select } from "@silvery/ui/input"
+import { Spinner, ProgressBar, Tasks, Task } from "@silvery/ui/react";
+import { TextInput, Select } from "@silvery/ui/input";
 ```
 
 See the [@silvery/ui README](https://github.com/beorn/silvery/tree/main/packages/ui) for full documentation.

@@ -24,18 +24,18 @@
  * ```
  */
 
-import type { ReactNode } from "react"
-import { type AutoLocator, createAutoLocator } from "@silvery/test/auto-locator"
-import { type BoundTerm, createBoundTerm } from "./bound-term"
-import type { TerminalBuffer } from "./buffer"
-import { bufferToHTML, bufferToStyledText, bufferToText } from "./buffer"
-import { type Screenshotter, createScreenshotter } from "./screenshot"
-import { keyToAnsi, keyToKittyAnsi } from "@silvery/tea/keys"
-import type { ParsedMouse } from "./mouse"
-import { createMouseEventProcessor, processMouseEvent } from "./mouse-events"
-import type { FocusManager } from "@silvery/tea/focus-manager"
-import { pointInRect } from "@silvery/tea/tree-utils"
-import type { TeaNode } from "@silvery/tea/types"
+import type { ReactNode } from "react";
+import { type AutoLocator, createAutoLocator } from "@silvery/test/auto-locator";
+import { type BoundTerm, createBoundTerm } from "./bound-term";
+import type { TerminalBuffer } from "./buffer";
+import { bufferToHTML, bufferToStyledText, bufferToText } from "./buffer";
+import { type Screenshotter, createScreenshotter } from "./screenshot";
+import { keyToAnsi, keyToKittyAnsi } from "@silvery/tea/keys";
+import type { ParsedMouse } from "./mouse";
+import { createMouseEventProcessor, processMouseEvent } from "./mouse-events";
+import type { FocusManager } from "@silvery/tea/focus-manager";
+import { pointInRect } from "@silvery/tea/tree-utils";
+import type { TeaNode } from "@silvery/tea/types";
 
 /**
  * App interface - unified return type from render()
@@ -44,129 +44,129 @@ export interface App {
   // === Content/Document Perspective ===
 
   /** Full rendered text (no ANSI codes) */
-  readonly text: string
+  readonly text: string;
 
   /** Full rendered text with ANSI styling */
-  readonly ansi: string
+  readonly ansi: string;
 
   /** Get node at content coordinates */
-  nodeAt(x: number, y: number): TeaNode | null
+  nodeAt(x: number, y: number): TeaNode | null;
 
   /** Get locator by testID attribute */
-  getByTestId(id: string): AutoLocator
+  getByTestId(id: string): AutoLocator;
 
   /** Get locator by text content */
-  getByText(text: string | RegExp): AutoLocator
+  getByText(text: string | RegExp): AutoLocator;
 
   /** Get locator by CSS-style selector */
-  locator(selector: string): AutoLocator
+  locator(selector: string): AutoLocator;
 
   // === Actions (return this for chaining) ===
 
   /** Send a key press (uses keyToAnsi internally) */
-  press(key: string): Promise<this>
+  press(key: string): Promise<this>;
 
   /** Send multiple key presses */
-  pressSequence(...keys: string[]): Promise<this>
+  pressSequence(...keys: string[]): Promise<this>;
 
   /** Type text input */
-  type(text: string): Promise<this>
+  type(text: string): Promise<this>;
 
   /** Simulate a mouse click at (x, y) terminal coordinates */
-  click(x: number, y: number, options?: { button?: number }): Promise<this>
+  click(x: number, y: number, options?: { button?: number }): Promise<this>;
 
   /** Simulate a double-click at (x, y) terminal coordinates */
-  doubleClick(x: number, y: number, options?: { button?: number }): Promise<this>
+  doubleClick(x: number, y: number, options?: { button?: number }): Promise<this>;
 
   /** Simulate a mouse wheel event at (x, y) with delta (-1=up, +1=down) */
-  wheel(x: number, y: number, delta: number): Promise<this>
+  wheel(x: number, y: number, delta: number): Promise<this>;
 
   /** Resize the virtual terminal and re-render. Only available in test renderer. */
-  resize(cols: number, rows: number): void
+  resize(cols: number, rows: number): void;
 
   /** Wait until app exits */
-  run(): Promise<void>
+  run(): Promise<void>;
 
   // === Terminal Binding ===
 
   /** Bound terminal for screen-space access */
-  readonly term: BoundTerm
+  readonly term: BoundTerm;
 
   // === Lifecycle (Instance compatibility) ===
 
   /** Re-render with a new element */
-  rerender(element: ReactNode): void
+  rerender(element: ReactNode): void;
 
   /** Unmount the component and clean up */
-  unmount(): void
+  unmount(): void;
 
   /** Dispose (alias for unmount) — enables `using` */
-  [Symbol.dispose](): void
+  [Symbol.dispose](): void;
 
   /** Promise that resolves when the app exits (alias for run()) */
-  waitUntilExit(): Promise<void>
+  waitUntilExit(): Promise<void>;
 
   /** Clear the terminal output */
-  clear(): void
+  clear(): void;
 
   // === Screenshot ===
 
   /** Render current buffer to PNG. Requires Playwright (lazy-loaded on first call). */
-  screenshot(outputPath?: string): Promise<Buffer>
+  screenshot(outputPath?: string): Promise<Buffer>;
 
   // === Debug ===
 
   /** Print component tree to console */
-  debug(): void
+  debug(): void;
 
   // === Testing extras ===
 
   /** Render the current tree from scratch (no incremental buffer reuse).
    *  Returns the fresh buffer without updating incremental state.
    *  Only available in test renderer - throws otherwise. */
-  freshRender(): TerminalBuffer
+  freshRender(): TerminalBuffer;
 
   /** Check if exit() was called */
-  exitCalled(): boolean
+  exitCalled(): boolean;
 
   /** Get error passed to exit() */
-  exitError(): Error | undefined
+  exitError(): Error | undefined;
 
   /** Send raw stdin input (for sync test helpers; prefer app.press() for new code) */
-  readonly stdin: { write: (data: string) => void }
+  readonly stdin: { write: (data: string) => void };
 
   // === Internal/Legacy (kept for silvery test compatibility, not for external use) ===
 
   /** All rendered frames (internal) */
-  readonly frames: string[]
+  readonly frames: string[];
 
   /** Get last frame with ANSI codes (internal - use app.ansi instead) */
-  lastFrame(): string | undefined
+  lastFrame(): string | undefined;
 
   /** Get last buffer (internal - use app.term.buffer instead) */
-  lastBuffer(): TerminalBuffer | undefined
+  lastBuffer(): TerminalBuffer | undefined;
 
   /** Get last frame as plain text (internal - use app.text instead) */
-  lastFrameText(): string | undefined
+  lastFrameText(): string | undefined;
 
   /** Get container root node (internal - use app.locator() instead) */
-  getContainer(): TeaNode
+  getContainer(): TeaNode;
 
   // === Focus System ===
 
   /** Focus a node by testID */
-  focus(testID: string): void
+  focus(testID: string): void;
 
   /** Get the focus path from focused node to root (testID[]) */
-  getFocusPath(): string[]
+  getFocusPath(): string[];
 
   /** Direct access to the FocusManager instance */
-  readonly focusManager: FocusManager
+  readonly focusManager: FocusManager;
 
   // === Cursor State ===
 
   /** Get the current cursor state for this silvery instance (per-instance, not global). */
-  getCursorState(): import("@silvery/react/hooks/useCursor").CursorState | null
+  getCursorState(): import("@silvery/react/hooks/useCursor").CursorState | null;
 }
 
 /**
@@ -174,59 +174,59 @@ export interface App {
  */
 export interface AppOptions {
   /** Function to get current container root */
-  getContainer: () => TeaNode
+  getContainer: () => TeaNode;
 
   /** Function to get current buffer */
-  getBuffer: () => TerminalBuffer | null
+  getBuffer: () => TerminalBuffer | null;
 
   /** Function to send input */
-  sendInput: (data: string) => void
+  sendInput: (data: string) => void;
 
   /** Function to rerender */
-  rerender: (element: ReactNode) => void
+  rerender: (element: ReactNode) => void;
 
   /** Function to unmount */
-  unmount: () => void
+  unmount: () => void;
 
   /** Function to wait for exit */
-  waitUntilExit: () => Promise<void>
+  waitUntilExit: () => Promise<void>;
 
   /** Function to clear output */
-  clear: () => void
+  clear: () => void;
 
   /** Function to check if exit was called */
-  exitCalled?: () => boolean
+  exitCalled?: () => boolean;
 
   /** Function to get exit error */
-  exitError?: () => Error | undefined
+  exitError?: () => Error | undefined;
 
   /** Fresh render function (test renderer only) */
-  freshRender?: () => TerminalBuffer
+  freshRender?: () => TerminalBuffer;
 
   /** Debug print function */
-  debugFn?: () => void
+  debugFn?: () => void;
 
   /** Captured frames array (internal) */
-  frames?: string[]
+  frames?: string[];
 
   /** Terminal dimensions */
-  columns: number
-  rows: number
+  columns: number;
+  rows: number;
 
   /** Use Kitty keyboard protocol encoding for press(). When true, press() uses keyToKittyAnsi. */
-  kittyMode?: boolean
+  kittyMode?: boolean;
 
   /** Wrap a callback in act() + doRender() for the test renderer. Ensures React state updates from mouse handlers are flushed. */
-  actAndRender?: (fn: () => void) => void
+  actAndRender?: (fn: () => void) => void;
 
   /** Resize the virtual terminal (test renderer only). */
-  resize?: (cols: number, rows: number) => void
+  resize?: (cols: number, rows: number) => void;
 
   /** Focus manager instance for focus system */
-  focusManager?: FocusManager
+  focusManager?: FocusManager;
 
   /** Per-instance cursor state accessor */
-  getCursorState?: () => import("@silvery/react/hooks/useCursor").CursorState | null
+  getCursorState?: () => import("@silvery/react/hooks/useCursor").CursorState | null;
 }
 
 /**
@@ -252,82 +252,82 @@ export function buildApp(options: AppOptions): App {
     actAndRender,
     resize: resizeFn,
     focusManager: fm,
-  } = options
+  } = options;
 
   // Create auto-refreshing locator factory
-  const createLocator = () => createAutoLocator(getContainer)
+  const createLocator = () => createAutoLocator(getContainer);
 
   // Create bound terminal
   const getText = () => {
-    const buffer = getBuffer()
-    return buffer ? bufferToText(buffer) : ""
-  }
+    const buffer = getBuffer();
+    return buffer ? bufferToText(buffer) : "";
+  };
 
   // Note: BoundTerm is created lazily since buffer may not exist initially
-  let boundTerm: BoundTerm | null = null
+  let boundTerm: BoundTerm | null = null;
 
   // Mouse event processor for click/doubleClick/wheel
-  const mouseState = createMouseEventProcessor()
+  const mouseState = createMouseEventProcessor();
 
   // Screenshotter is created lazily on first screenshot() call
-  let screenshotter: Screenshotter | null = null
+  let screenshotter: Screenshotter | null = null;
 
   const app: App = {
     // === Content/Document Perspective ===
 
     get text(): string {
-      return getText()
+      return getText();
     },
 
     get ansi(): string {
-      const buffer = getBuffer()
-      return buffer ? bufferToStyledText(buffer) : ""
+      const buffer = getBuffer();
+      return buffer ? bufferToStyledText(buffer) : "";
     },
 
     nodeAt(x: number, y: number): TeaNode | null {
-      const root = getContainer()
-      return findNodeAtContentPosition(root, x, y)
+      const root = getContainer();
+      return findNodeAtContentPosition(root, x, y);
     },
 
     getByTestId(id: string): AutoLocator {
-      return createLocator().getByTestId(id)
+      return createLocator().getByTestId(id);
     },
 
     getByText(text: string | RegExp): AutoLocator {
-      return createLocator().getByText(text)
+      return createLocator().getByText(text);
     },
 
     locator(selector: string): AutoLocator {
-      return createLocator().locator(selector)
+      return createLocator().locator(selector);
     },
 
     // === Actions ===
 
     async press(key: string): Promise<App> {
-      const sequence = kittyMode ? keyToKittyAnsi(key) : keyToAnsi(key)
-      sendInput(sequence)
+      const sequence = kittyMode ? keyToKittyAnsi(key) : keyToAnsi(key);
+      sendInput(sequence);
       // Allow microtask to flush for test synchronization
-      await Promise.resolve()
-      return app
+      await Promise.resolve();
+      return app;
     },
 
     async pressSequence(...keys: string[]): Promise<App> {
       for (const key of keys) {
-        await app.press(key)
+        await app.press(key);
       }
-      return app
+      return app;
     },
 
     async type(text: string): Promise<App> {
       for (const char of text) {
-        sendInput(char)
+        sendInput(char);
       }
-      await Promise.resolve()
-      return app
+      await Promise.resolve();
+      return app;
     },
 
     async click(x: number, y: number, options?: { button?: number }): Promise<App> {
-      const button = options?.button ?? 0
+      const button = options?.button ?? 0;
       const doClick = () => {
         const parsed: ParsedMouse = {
           button,
@@ -337,22 +337,22 @@ export function buildApp(options: AppOptions): App {
           shift: false,
           meta: false,
           ctrl: false,
-        }
-        processMouseEvent(mouseState, parsed, getContainer())
-        const upParsed: ParsedMouse = { ...parsed, action: "up" }
-        processMouseEvent(mouseState, upParsed, getContainer())
-      }
+        };
+        processMouseEvent(mouseState, parsed, getContainer());
+        const upParsed: ParsedMouse = { ...parsed, action: "up" };
+        processMouseEvent(mouseState, upParsed, getContainer());
+      };
       if (actAndRender) {
-        actAndRender(doClick)
+        actAndRender(doClick);
       } else {
-        doClick()
+        doClick();
       }
-      await Promise.resolve()
-      return app
+      await Promise.resolve();
+      return app;
     },
 
     async doubleClick(x: number, y: number, options?: { button?: number }): Promise<App> {
-      const button = options?.button ?? 0
+      const button = options?.button ?? 0;
       const doDblClick = () => {
         const baseParsed: ParsedMouse = {
           button,
@@ -362,21 +362,21 @@ export function buildApp(options: AppOptions): App {
           shift: false,
           meta: false,
           ctrl: false,
-        }
+        };
         // First click
-        processMouseEvent(mouseState, baseParsed, getContainer())
-        processMouseEvent(mouseState, { ...baseParsed, action: "up" }, getContainer())
+        processMouseEvent(mouseState, baseParsed, getContainer());
+        processMouseEvent(mouseState, { ...baseParsed, action: "up" }, getContainer());
         // Second click (triggers double-click detection)
-        processMouseEvent(mouseState, baseParsed, getContainer())
-        processMouseEvent(mouseState, { ...baseParsed, action: "up" }, getContainer())
-      }
+        processMouseEvent(mouseState, baseParsed, getContainer());
+        processMouseEvent(mouseState, { ...baseParsed, action: "up" }, getContainer());
+      };
       if (actAndRender) {
-        actAndRender(doDblClick)
+        actAndRender(doDblClick);
       } else {
-        doDblClick()
+        doDblClick();
       }
-      await Promise.resolve()
-      return app
+      await Promise.resolve();
+      return app;
     },
 
     async wheel(x: number, y: number, delta: number): Promise<App> {
@@ -390,33 +390,33 @@ export function buildApp(options: AppOptions): App {
           shift: false,
           meta: false,
           ctrl: false,
-        }
-        processMouseEvent(mouseState, parsed, getContainer())
-      }
+        };
+        processMouseEvent(mouseState, parsed, getContainer());
+      };
       if (actAndRender) {
-        actAndRender(doWheel)
+        actAndRender(doWheel);
       } else {
-        doWheel()
+        doWheel();
       }
-      await Promise.resolve()
-      return app
+      await Promise.resolve();
+      return app;
     },
 
     resize(cols: number, rows: number): void {
       if (!resizeFn) {
-        throw new Error("resize() is only available in test renderer")
+        throw new Error("resize() is only available in test renderer");
       }
-      resizeFn(cols, rows)
+      resizeFn(cols, rows);
     },
 
     async run(): Promise<void> {
-      return waitUntilExit()
+      return waitUntilExit();
     },
 
     // === Terminal Binding ===
 
     get term(): BoundTerm {
-      const buffer = getBuffer()
+      const buffer = getBuffer();
       if (!buffer) {
         // Return a dummy bound term if no buffer yet
         const dummyBuffer = {
@@ -433,27 +433,27 @@ export function buildApp(options: AppOptions): App {
           setCell: () => {},
           clear: () => {},
           inBounds: () => false,
-        } as unknown as TerminalBuffer
-        return createBoundTerm(dummyBuffer, getContainer, getText)
+        } as unknown as TerminalBuffer;
+        return createBoundTerm(dummyBuffer, getContainer, getText);
       }
       if (!boundTerm || boundTerm.buffer !== buffer) {
-        boundTerm = createBoundTerm(buffer, getContainer, getText)
+        boundTerm = createBoundTerm(buffer, getContainer, getText);
       }
-      return boundTerm
+      return boundTerm;
     },
 
     // === Screenshot ===
 
     async screenshot(outputPath?: string): Promise<Buffer> {
-      const buffer = getBuffer()
+      const buffer = getBuffer();
       if (!buffer) {
-        throw new Error("No buffer available for screenshot")
+        throw new Error("No buffer available for screenshot");
       }
-      const html = bufferToHTML(buffer)
+      const html = bufferToHTML(buffer);
       if (!screenshotter) {
-        screenshotter = createScreenshotter()
+        screenshotter = createScreenshotter();
       }
-      return screenshotter.capture(html, outputPath)
+      return screenshotter.capture(html, outputPath);
     },
 
     // === Lifecycle ===
@@ -462,13 +462,13 @@ export function buildApp(options: AppOptions): App {
     unmount() {
       // Close screenshotter if it was created
       if (screenshotter) {
-        screenshotter.close().catch(() => {})
-        screenshotter = null
+        screenshotter.close().catch(() => {});
+        screenshotter = null;
       }
-      unmount()
+      unmount();
     },
     [Symbol.dispose]() {
-      app.unmount()
+      app.unmount();
     },
     waitUntilExit,
     clear,
@@ -477,9 +477,9 @@ export function buildApp(options: AppOptions): App {
 
     debug(): void {
       if (debugFn) {
-        debugFn()
+        debugFn();
       } else {
-        console.log(app.text)
+        console.log(app.text);
       }
     },
 
@@ -487,9 +487,9 @@ export function buildApp(options: AppOptions): App {
 
     freshRender(): TerminalBuffer {
       if (!freshRenderFn) {
-        throw new Error("freshRender() is only available in test renderer")
+        throw new Error("freshRender() is only available in test renderer");
       }
-      return freshRenderFn()
+      return freshRenderFn();
     },
 
     exitCalled,
@@ -503,69 +503,69 @@ export function buildApp(options: AppOptions): App {
     frames,
 
     lastFrame(): string | undefined {
-      return frames[frames.length - 1]
+      return frames[frames.length - 1];
     },
 
     lastBuffer(): TerminalBuffer | undefined {
-      return getBuffer() ?? undefined
+      return getBuffer() ?? undefined;
     },
 
     lastFrameText(): string | undefined {
-      const buffer = getBuffer()
-      return buffer ? bufferToText(buffer) : undefined
+      const buffer = getBuffer();
+      return buffer ? bufferToText(buffer) : undefined;
     },
 
     getContainer(): TeaNode {
-      return getContainer()
+      return getContainer();
     },
 
     // === Focus System ===
 
     focus(testID: string): void {
       if (fm) {
-        const root = getContainer()
-        fm.focusById(testID, root, "programmatic")
+        const root = getContainer();
+        fm.focusById(testID, root, "programmatic");
       }
     },
 
     getFocusPath(): string[] {
       if (fm) {
-        const root = getContainer()
-        return fm.getFocusPath(root)
+        const root = getContainer();
+        return fm.getFocusPath(root);
       }
-      return []
+      return [];
     },
 
     get focusManager(): FocusManager {
       if (!fm) {
-        throw new Error("FocusManager not available — pass focusManager to buildApp()")
+        throw new Error("FocusManager not available — pass focusManager to buildApp()");
       }
-      return fm
+      return fm;
     },
 
     getCursorState() {
-      return options.getCursorState?.() ?? null
+      return options.getCursorState?.() ?? null;
     },
-  }
+  };
 
-  return app
+  return app;
 }
 
 /**
  * Find node at content coordinates (not screen coordinates)
  */
 function findNodeAtContentPosition(node: TeaNode, x: number, y: number): TeaNode | null {
-  const rect = node.contentRect
-  if (!rect) return null
+  const rect = node.contentRect;
+  if (!rect) return null;
 
   if (!pointInRect(x, y, rect)) {
-    return null
+    return null;
   }
 
   for (const child of node.children) {
-    const found = findNodeAtContentPosition(child, x, y)
-    if (found) return found
+    const found = findNodeAtContentPosition(child, x, y);
+    if (found) return found;
   }
 
-  return node
+  return node;
 }

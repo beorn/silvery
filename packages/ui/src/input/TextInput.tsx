@@ -2,8 +2,8 @@
  * React TextInput component for silvery/Ink TUI apps
  */
 
-import React, { useState, useCallback } from "react"
-import type { TextInputProps } from "../types.js"
+import React, { useState, useCallback } from "react";
+import type { TextInputProps } from "../types.js";
 
 /**
  * Single-line text input component for React TUI apps
@@ -54,21 +54,21 @@ export function TextInput({
   focused = true,
 }: TextInputProps): React.ReactElement {
   // Calculate display value (masked or plain)
-  const displayValue = mask ? mask.repeat(value.length) : value
+  const displayValue = mask ? mask.repeat(value.length) : value;
 
   // Find matching autocomplete suggestion
-  const suggestion = getAutocompleteSuggestion(value, autocomplete)
+  const suggestion = getAutocompleteSuggestion(value, autocomplete);
 
   // Cursor position defaults to end of input
-  const cursor = cursorPosition ?? value.length
+  const cursor = cursorPosition ?? value.length;
 
   // Build the display: value + cursor + suggestion suffix
-  const beforeCursor = displayValue.slice(0, cursor)
-  const afterCursor = displayValue.slice(cursor)
-  const suggestionSuffix = suggestion ? suggestion.slice(value.length) : ""
+  const beforeCursor = displayValue.slice(0, cursor);
+  const afterCursor = displayValue.slice(cursor);
+  const suggestionSuffix = suggestion ? suggestion.slice(value.length) : "";
 
   // Show placeholder if empty and not focused or no value
-  const showPlaceholder = !value && placeholder
+  const showPlaceholder = !value && placeholder;
 
   return (
     <span data-silvery-ui-text-input data-focused={focused}>
@@ -87,7 +87,7 @@ export function TextInput({
         </>
       )}
     </span>
-  )
+  );
 }
 
 /**
@@ -113,77 +113,77 @@ export function TextInput({
  */
 export function useTextInput(
   options: {
-    initialValue?: string
-    mask?: string
-    autocomplete?: string[]
-    onSubmit?: (value: string) => void
+    initialValue?: string;
+    mask?: string;
+    autocomplete?: string[];
+    onSubmit?: (value: string) => void;
   } = {},
 ): {
-  value: string
-  setValue: (value: string) => void
-  displayValue: string
-  suggestion: string | undefined
-  cursorPosition: number
-  setCursorPosition: (pos: number) => void
-  handleInput: (input: string, key: InputKey) => void
-  acceptSuggestion: () => void
-  clear: () => void
+  value: string;
+  setValue: (value: string) => void;
+  displayValue: string;
+  suggestion: string | undefined;
+  cursorPosition: number;
+  setCursorPosition: (pos: number) => void;
+  handleInput: (input: string, key: InputKey) => void;
+  acceptSuggestion: () => void;
+  clear: () => void;
 } {
-  const [value, setValue] = useState(options.initialValue ?? "")
-  const [cursorPosition, setCursorPosition] = useState(value.length)
+  const [value, setValue] = useState(options.initialValue ?? "");
+  const [cursorPosition, setCursorPosition] = useState(value.length);
 
-  const displayValue = options.mask ? options.mask.repeat(value.length) : value
+  const displayValue = options.mask ? options.mask.repeat(value.length) : value;
 
-  const suggestion = getAutocompleteSuggestion(value, options.autocomplete)
+  const suggestion = getAutocompleteSuggestion(value, options.autocomplete);
 
   const handleInput = useCallback(
     (input: string, key: InputKey) => {
       if (key.return) {
-        options.onSubmit?.(value)
-        return
+        options.onSubmit?.(value);
+        return;
       }
 
       if (key.backspace || key.delete) {
         if (cursorPosition > 0) {
-          setValue((v) => v.slice(0, cursorPosition - 1) + v.slice(cursorPosition))
-          setCursorPosition((p) => Math.max(0, p - 1))
+          setValue((v) => v.slice(0, cursorPosition - 1) + v.slice(cursorPosition));
+          setCursorPosition((p) => Math.max(0, p - 1));
         }
-        return
+        return;
       }
 
       if (key.leftArrow) {
-        setCursorPosition((p) => Math.max(0, p - 1))
-        return
+        setCursorPosition((p) => Math.max(0, p - 1));
+        return;
       }
 
       if (key.rightArrow) {
-        setCursorPosition((p) => Math.min(value.length, p + 1))
-        return
+        setCursorPosition((p) => Math.min(value.length, p + 1));
+        return;
       }
 
       // Ignore control characters
       if (key.ctrl || key.meta || !input) {
-        return
+        return;
       }
 
       // Insert character at cursor position
-      setValue((v) => v.slice(0, cursorPosition) + input + v.slice(cursorPosition))
-      setCursorPosition((p) => p + input.length)
+      setValue((v) => v.slice(0, cursorPosition) + input + v.slice(cursorPosition));
+      setCursorPosition((p) => p + input.length);
     },
     [value, cursorPosition, options.onSubmit],
-  )
+  );
 
   const acceptSuggestion = useCallback(() => {
     if (suggestion) {
-      setValue(suggestion)
-      setCursorPosition(suggestion.length)
+      setValue(suggestion);
+      setCursorPosition(suggestion.length);
     }
-  }, [suggestion])
+  }, [suggestion]);
 
   const clear = useCallback(() => {
-    setValue("")
-    setCursorPosition(0)
-  }, [])
+    setValue("");
+    setCursorPosition(0);
+  }, []);
 
   return {
     value,
@@ -195,23 +195,23 @@ export function useTextInput(
     handleInput,
     acceptSuggestion,
     clear,
-  }
+  };
 }
 
 /** Key object type (matches Ink's Key interface) */
 interface InputKey {
-  return?: boolean
-  backspace?: boolean
-  delete?: boolean
-  leftArrow?: boolean
-  rightArrow?: boolean
-  upArrow?: boolean
-  downArrow?: boolean
-  tab?: boolean
-  escape?: boolean
-  ctrl?: boolean
-  meta?: boolean
-  shift?: boolean
+  return?: boolean;
+  backspace?: boolean;
+  delete?: boolean;
+  leftArrow?: boolean;
+  rightArrow?: boolean;
+  upArrow?: boolean;
+  downArrow?: boolean;
+  tab?: boolean;
+  escape?: boolean;
+  ctrl?: boolean;
+  meta?: boolean;
+  shift?: boolean;
 }
 
 /**
@@ -219,9 +219,11 @@ interface InputKey {
  */
 function getAutocompleteSuggestion(value: string, autocomplete?: string[]): string | undefined {
   if (!value || !autocomplete?.length) {
-    return undefined
+    return undefined;
   }
 
-  const lowerValue = value.toLowerCase()
-  return autocomplete.find((item) => item.toLowerCase().startsWith(lowerValue) && item.length > value.length)
+  const lowerValue = value.toLowerCase();
+  return autocomplete.find(
+    (item) => item.toLowerCase().startsWith(lowerValue) && item.length > value.length,
+  );
 }

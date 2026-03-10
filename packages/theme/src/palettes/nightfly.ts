@@ -3,8 +3,8 @@
  * Source: https://github.com/bluz71/vim-nightfly-colors
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Nightfly — midnight-blue dark theme. */
 export const nightfly: ColorPalette = {
@@ -32,4 +32,4 @@ export const nightfly: ColorPalette = {
   cursorText: "#011627",
   selectionBackground: "#2C3043",
   selectionForeground: "#C3CCDC",
-}
+};

@@ -23,14 +23,14 @@
  * />
  * ```
  */
-import React, { useCallback, useRef, useState } from "react"
-import { useInput } from "@silvery/react/hooks/useInput"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
-import { CursorLine } from "./CursorLine"
-import { ModalDialog } from "./ModalDialog"
-import { PickerList } from "./PickerList"
-import { useReadline } from "./useReadline"
+import React, { useCallback, useRef, useState } from "react";
+import { useInput } from "@silvery/react/hooks/useInput";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
+import { CursorLine } from "./CursorLine";
+import { ModalDialog } from "./ModalDialog";
+import { PickerList } from "./PickerList";
+import { useReadline } from "./useReadline";
 
 // =============================================================================
 // Types
@@ -38,39 +38,39 @@ import { useReadline } from "./useReadline"
 
 export interface PickerDialogProps<T> {
   /** Dialog title */
-  title: string
+  title: string;
   /** Placeholder text when input is empty */
-  placeholder?: string
+  placeholder?: string;
   /** Items to display in the result list */
-  items: T[]
+  items: T[];
   /** Render function for each item. `selected` is true for the highlighted item. */
-  renderItem: (item: T, selected: boolean) => React.ReactNode
+  renderItem: (item: T, selected: boolean) => React.ReactNode;
   /** Unique key for each item */
-  keyExtractor: (item: T) => string
+  keyExtractor: (item: T) => string;
   /** Called when an item is confirmed (Enter) */
-  onSelect: (item: T) => void
+  onSelect: (item: T) => void;
   /** Called when the dialog is cancelled (Esc) */
-  onCancel: () => void
+  onCancel: () => void;
   /** Called when the input text changes (for filtering) */
-  onChange?: (query: string) => void
+  onChange?: (query: string) => void;
   /** Initial input value */
-  initialValue?: string
+  initialValue?: string;
   /** Message when items list is empty */
-  emptyMessage?: string
+  emptyMessage?: string;
   /** Maximum visible items before scrolling (default: 10) */
-  maxVisible?: number
+  maxVisible?: number;
   /** Dialog width */
-  width?: number
+  width?: number;
   /** Dialog height (auto-sized if omitted) */
-  height?: number
+  height?: number;
   /** Footer content */
-  footer?: React.ReactNode
+  footer?: React.ReactNode;
   /** Input prompt prefix (e.g., "/ " or "All > ") */
-  prompt?: string
+  prompt?: string;
   /** Prompt color */
-  promptColor?: string
+  promptColor?: string;
   /** Whether the input is active (default: true) */
-  isActive?: boolean
+  isActive?: boolean;
 }
 
 // =============================================================================
@@ -106,25 +106,25 @@ export function PickerDialog<T>({
   promptColor,
   isActive = true,
 }: PickerDialogProps<T>): React.ReactElement {
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Refs for stable callbacks in useInput closures
-  const onSelectRef = useRef(onSelect)
-  onSelectRef.current = onSelect
-  const onCancelRef = useRef(onCancel)
-  onCancelRef.current = onCancel
-  const itemsRef = useRef(items)
-  itemsRef.current = items
-  const selectedIndexRef = useRef(selectedIndex)
-  selectedIndexRef.current = selectedIndex
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  const selectedIndexRef = useRef(selectedIndex);
+  selectedIndexRef.current = selectedIndex;
 
   // Readline hook for text editing (kill ring, word movement, etc.)
   const readline = useReadline({
     initialValue,
     onChange: useCallback(
       (value: string) => {
-        onChange?.(value)
-        setSelectedIndex(0)
+        onChange?.(value);
+        setSelectedIndex(0);
       },
       [onChange],
     ),
@@ -132,52 +132,54 @@ export function PickerDialog<T>({
     handleEnter: false, // We handle Enter for item selection
     handleEscape: false, // We handle Esc for cancel
     handleVerticalArrows: false, // We handle Up/Down for list navigation
-  })
+  });
 
-  const clampedIndex = items.length > 0 ? Math.min(selectedIndex, items.length - 1) : 0
+  const clampedIndex = items.length > 0 ? Math.min(selectedIndex, items.length - 1) : 0;
   if (clampedIndex !== selectedIndex) {
-    setSelectedIndex(clampedIndex)
+    setSelectedIndex(clampedIndex);
   }
 
   // Effective max visible for page navigation step size
-  const effectiveMaxVisible = Math.min(maxVisible, items.length)
+  const effectiveMaxVisible = Math.min(maxVisible, items.length);
 
   // Navigation handler (separate from readline text editing)
   useInput(
     (_input, key) => {
       if (key.escape) {
-        onCancelRef.current()
-        return
+        onCancelRef.current();
+        return;
       }
       if (key.return) {
-        const currentItems = itemsRef.current
-        const idx = selectedIndexRef.current
-        const item = currentItems[Math.min(idx, currentItems.length - 1)]
-        if (item) onSelectRef.current(item)
-        return
+        const currentItems = itemsRef.current;
+        const idx = selectedIndexRef.current;
+        const item = currentItems[Math.min(idx, currentItems.length - 1)];
+        if (item) onSelectRef.current(item);
+        return;
       }
       if (key.upArrow) {
-        setSelectedIndex((i) => Math.max(0, i - 1))
-        return
+        setSelectedIndex((i) => Math.max(0, i - 1));
+        return;
       }
       if (key.downArrow) {
-        setSelectedIndex((i) => Math.min(i + 1, Math.max(0, itemsRef.current.length - 1)))
-        return
+        setSelectedIndex((i) => Math.min(i + 1, Math.max(0, itemsRef.current.length - 1)));
+        return;
       }
       if (key.pageUp) {
-        setSelectedIndex((i) => Math.max(0, i - effectiveMaxVisible))
-        return
+        setSelectedIndex((i) => Math.max(0, i - effectiveMaxVisible));
+        return;
       }
       if (key.pageDown) {
-        setSelectedIndex((i) => Math.min(i + effectiveMaxVisible, Math.max(0, itemsRef.current.length - 1)))
-        return
+        setSelectedIndex((i) =>
+          Math.min(i + effectiveMaxVisible, Math.max(0, itemsRef.current.length - 1)),
+        );
+        return;
       }
     },
     { isActive },
-  )
+  );
 
   // Show placeholder when input is empty
-  const showPlaceholder = !readline.value && placeholder
+  const showPlaceholder = !readline.value && placeholder;
 
   return (
     <ModalDialog title={title} width={width} height={height} footer={footer}>
@@ -188,7 +190,11 @@ export function PickerDialog<T>({
           {showPlaceholder ? (
             <Text dimColor>{placeholder}</Text>
           ) : (
-            <CursorLine beforeCursor={readline.beforeCursor} afterCursor={readline.afterCursor} showCursor={isActive} />
+            <CursorLine
+              beforeCursor={readline.beforeCursor}
+              afterCursor={readline.afterCursor}
+              showCursor={isActive}
+            />
           )}
         </Box>
         <Text dimColor>{"─".repeat(40)}</Text>
@@ -204,5 +210,5 @@ export function PickerDialog<T>({
         maxVisible={maxVisible}
       />
     </ModalDialog>
-  )
+  );
 }

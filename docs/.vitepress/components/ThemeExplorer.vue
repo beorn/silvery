@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from "vue"
+import { ref, computed, watch } from "vue";
 
 // ── Palette data (extracted from @silvery/theme built-in palettes) ──────
 const palettes = [
@@ -1121,7 +1121,7 @@ const palettes = [
     selectionBackground: "#C4C4C4",
     selectionForeground: "#000000",
   },
-]
+];
 
 // ── Grouping palettes by family ──────────────────────────────────────
 const families = [
@@ -1151,114 +1151,114 @@ const families = [
   { label: "Sonokai", keys: ["sonokai"] },
   { label: "Edge", keys: ["edge-dark", "edge-light"] },
   { label: "Modus", keys: ["modus-vivendi", "modus-operandi"] },
-]
+];
 
 // ── State ────────────────────────────────────────────────────────────
-const activeTab = ref("gallery") // "gallery" | "custom"
-const detailTab = ref("terminal") // "terminal" | "tokens" | "palette"
-const selectedPalette = ref(palettes[0])
-const filterMode = ref("all") // "all" | "dark" | "light"
-const customHex = ref("#5E81AC")
-const customMode = ref("dark")
-const copied = ref(false)
-const searchQuery = ref("")
+const activeTab = ref("gallery"); // "gallery" | "custom"
+const detailTab = ref("terminal"); // "terminal" | "tokens" | "palette"
+const selectedPalette = ref(palettes[0]);
+const filterMode = ref("all"); // "all" | "dark" | "light"
+const customHex = ref("#5E81AC");
+const customMode = ref("dark");
+const copied = ref(false);
+const searchQuery = ref("");
 
-const paletteMap = Object.fromEntries(palettes.map((p) => [p.name, p]))
+const paletteMap = Object.fromEntries(palettes.map((p) => [p.name, p]));
 
 // When switching to gallery tab, reset detail tab if it's on 'terminal' (gallery has inline preview)
 watch(activeTab, (tab) => {
   if (tab === "gallery" && detailTab.value === "terminal") {
-    detailTab.value = "tokens"
+    detailTab.value = "tokens";
   }
-})
+});
 
 // ── Color utilities (mirrors @silvery/theme/color.ts) ────────────────
 function hexToRgb(hex) {
-  const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)
-  if (!match) return null
-  return [parseInt(match[1], 16), parseInt(match[2], 16), parseInt(match[3], 16)]
+  const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (!match) return null;
+  return [parseInt(match[1], 16), parseInt(match[2], 16), parseInt(match[3], 16)];
 }
 
 function rgbToHex(r, g, b) {
-  const clamp = (n) => Math.max(0, Math.min(255, Math.round(n)))
-  return `#${clamp(r).toString(16).padStart(2, "0")}${clamp(g).toString(16).padStart(2, "0")}${clamp(b).toString(16).padStart(2, "0")}`.toUpperCase()
+  const clamp = (n) => Math.max(0, Math.min(255, Math.round(n)));
+  return `#${clamp(r).toString(16).padStart(2, "0")}${clamp(g).toString(16).padStart(2, "0")}${clamp(b).toString(16).padStart(2, "0")}`.toUpperCase();
 }
 
 function blendColor(a, b, t) {
-  const rgbA = hexToRgb(a)
-  const rgbB = hexToRgb(b)
-  if (!rgbA || !rgbB) return a
+  const rgbA = hexToRgb(a);
+  const rgbB = hexToRgb(b);
+  if (!rgbA || !rgbB) return a;
   return rgbToHex(
     rgbA[0] + (rgbB[0] - rgbA[0]) * t,
     rgbA[1] + (rgbB[1] - rgbA[1]) * t,
     rgbA[2] + (rgbB[2] - rgbA[2]) * t,
-  )
+  );
 }
 
 function rgbToHsl(r, g, b) {
-  r /= 255
-  g /= 255
-  b /= 255
+  r /= 255;
+  g /= 255;
+  b /= 255;
   const max = Math.max(r, g, b),
-    min = Math.min(r, g, b)
-  const l = (max + min) / 2
-  if (max === min) return [0, 0, l]
-  const d = max - min
-  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
-  let h = 0
-  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6
-  else if (max === g) h = ((b - r) / d + 2) / 6
-  else h = ((r - g) / d + 4) / 6
-  return [h * 360, s, l]
+    min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = 0;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return [h * 360, s, l];
 }
 
 function hslToHex(h, s, l) {
-  h = ((h % 360) + 360) % 360
-  const a = s * Math.min(l, 1 - l)
+  h = ((h % 360) + 360) % 360;
+  const a = s * Math.min(l, 1 - l);
   const f = (n) => {
-    const k = (n + h / 30) % 12
-    return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
-  }
-  return rgbToHex(f(0) * 255, f(8) * 255, f(4) * 255)
+    const k = (n + h / 30) % 12;
+    return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+  };
+  return rgbToHex(f(0) * 255, f(8) * 255, f(4) * 255);
 }
 
 function hexToHsl(hex) {
-  const rgb = hexToRgb(hex)
-  if (!rgb) return null
-  return rgbToHsl(rgb[0], rgb[1], rgb[2])
+  const rgb = hexToRgb(hex);
+  if (!rgb) return null;
+  return rgbToHsl(rgb[0], rgb[1], rgb[2]);
 }
 
 function contrastFg(bg) {
-  const rgb = hexToRgb(bg)
-  if (!rgb) return "#FFFFFF"
+  const rgb = hexToRgb(bg);
+  if (!rgb) return "#FFFFFF";
   const [r, g, b] = rgb.map((c) => {
-    const s = c / 255
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
-  })
-  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-  return luminance > 0.179 ? "#000000" : "#FFFFFF"
+    const s = c / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance > 0.179 ? "#000000" : "#FFFFFF";
 }
 
 function desaturateColor(color, amount) {
-  const hsl = hexToHsl(color)
-  if (!hsl) return color
-  const [h, s, l] = hsl
-  return hslToHex(h, s * (1 - amount), l)
+  const hsl = hexToHsl(color);
+  if (!hsl) return color;
+  const [h, s, l] = hsl;
+  return hslToHex(h, s * (1 - amount), l);
 }
 
 function complementColor(color) {
-  const hsl = hexToHsl(color)
-  if (!hsl) return color
-  const [h, s, l] = hsl
-  return hslToHex(h + 180, s, l)
+  const hsl = hexToHsl(color);
+  if (!hsl) return color;
+  const [h, s, l] = hsl;
+  return hslToHex(h + 180, s, l);
 }
 
 // ── Derive theme from palette (mirrors @silvery/theme/derive.ts) ─────
 function deriveTheme(p) {
-  const dark = p.dark !== false
-  const primaryColor = dark ? p.yellow : p.blue
-  const bg = p.background
-  const fg = p.foreground
+  const dark = p.dark !== false;
+  const primaryColor = dark ? p.yellow : p.blue;
+  const bg = p.background;
+  const fg = p.foreground;
 
   return {
     name: p.name || (dark ? "derived-dark" : "derived-light"),
@@ -1313,7 +1313,7 @@ function deriveTheme(p) {
       p.brightCyan,
       p.brightWhite,
     ],
-  }
+  };
 }
 
 // ── Semantic token groups for the detail view ────────────────────────
@@ -1376,7 +1376,7 @@ const semanticGroups = [
       { key: "disabledfg", label: "disabledfg", desc: "Disabled text" },
     ],
   },
-]
+];
 
 // ── ANSI palette fields ─────────────────────────────────────────────
 const ansiColors = [
@@ -1396,35 +1396,35 @@ const ansiColors = [
   { key: "brightMagenta", label: "Bright Magenta", index: 13 },
   { key: "brightCyan", label: "Bright Cyan", index: 14 },
   { key: "brightWhite", label: "Bright White", index: 15 },
-]
+];
 
 // ── Filtering ───────────────────────────────────────────────────────
 const filteredPalettes = computed(() => {
-  let result = palettes
-  if (filterMode.value === "dark") result = result.filter((p) => p.dark)
-  else if (filterMode.value === "light") result = result.filter((p) => !p.dark)
+  let result = palettes;
+  if (filterMode.value === "dark") result = result.filter((p) => p.dark);
+  else if (filterMode.value === "light") result = result.filter((p) => !p.dark);
   if (searchQuery.value) {
-    const q = searchQuery.value.toLowerCase()
-    result = result.filter((p) => p.name.includes(q))
+    const q = searchQuery.value.toLowerCase();
+    result = result.filter((p) => p.name.includes(q));
   }
-  return result
-})
+  return result;
+});
 
 // ── Auto-generate theme from custom hex ─────────────────────────────
 function generateCustomPalette(primaryColor, mode) {
-  const hsl = hexToHsl(primaryColor)
-  if (!hsl) return null
-  const [h, s] = hsl
-  const dark = mode === "dark"
-  const bgL = dark ? 0.12 : 0.97
-  const fgL = dark ? 0.87 : 0.13
-  const bgS = Math.min(s, 0.15)
-  const bg = hslToHex(h, bgS, bgL)
-  const fg = hslToHex(h, bgS * 0.5, fgL)
-  const accentL = dark ? 0.65 : 0.45
-  const accentS = Math.max(s, 0.5)
-  const brightOffset = dark ? 0.1 : -0.1
-  const brightL = accentL + brightOffset
+  const hsl = hexToHsl(primaryColor);
+  if (!hsl) return null;
+  const [h, s] = hsl;
+  const dark = mode === "dark";
+  const bgL = dark ? 0.12 : 0.97;
+  const fgL = dark ? 0.87 : 0.13;
+  const bgS = Math.min(s, 0.15);
+  const bg = hslToHex(h, bgS, bgL);
+  const fg = hslToHex(h, bgS * 0.5, fgL);
+  const accentL = dark ? 0.65 : 0.45;
+  const accentS = Math.max(s, 0.5);
+  const brightOffset = dark ? 0.1 : -0.1;
+  const brightL = accentL + brightOffset;
   return {
     name: `custom-${mode}`,
     dark,
@@ -1450,56 +1450,56 @@ function generateCustomPalette(primaryColor, mode) {
     cursorText: bg,
     selectionBackground: dark ? hslToHex(h, bgS, bgL + 0.15) : hslToHex(h, bgS, bgL - 0.15),
     selectionForeground: dark ? fg : hslToHex(h, bgS * 0.5, fgL),
-  }
+  };
 }
 
 const customPalette = computed(() => {
-  if (!/^#[0-9a-f]{6}$/i.test(customHex.value)) return null
-  return generateCustomPalette(customHex.value, customMode.value)
-})
+  if (!/^#[0-9a-f]{6}$/i.test(customHex.value)) return null;
+  return generateCustomPalette(customHex.value, customMode.value);
+});
 
 // ── Active palette and derived theme ────────────────────────────────
 const activePalette = computed(() => {
-  if (activeTab.value === "custom" && customPalette.value) return customPalette.value
-  return selectedPalette.value
-})
+  if (activeTab.value === "custom" && customPalette.value) return customPalette.value;
+  return selectedPalette.value;
+});
 
 const activeTheme = computed(() => {
-  if (!activePalette.value) return null
-  return deriveTheme(activePalette.value)
-})
+  if (!activePalette.value) return null;
+  return deriveTheme(activePalette.value);
+});
 
 // ── Copy config code ────────────────────────────────────────────────
 function getConfigCode() {
-  const p = activePalette.value
-  if (!p) return ""
+  const p = activePalette.value;
+  if (!p) return "";
   if (activeTab.value === "custom") {
     return `import { autoGenerateTheme } from "@silvery/theme"
 
-const theme = autoGenerateTheme("${customHex.value}", "${customMode.value}")`
+const theme = autoGenerateTheme("${customHex.value}", "${customMode.value}")`;
   }
   return `import { createTheme } from "@silvery/theme"
 
-const theme = createTheme().preset("${p.name}").build()`
+const theme = createTheme().preset("${p.name}").build()`;
 }
 
 async function copyCode() {
   try {
-    await navigator.clipboard.writeText(getConfigCode())
-    copied.value = true
+    await navigator.clipboard.writeText(getConfigCode());
+    copied.value = true;
     setTimeout(() => {
-      copied.value = false
-    }, 2000)
+      copied.value = false;
+    }, 2000);
   } catch {
     // Fallback
   }
 }
 
 function selectPalette(name) {
-  const p = paletteMap[name]
+  const p = paletteMap[name];
   if (p) {
-    selectedPalette.value = p
-    activeTab.value = "gallery"
+    selectedPalette.value = p;
+    activeTab.value = "gallery";
   }
 }
 </script>
@@ -1520,11 +1520,29 @@ function selectPalette(name) {
     <div v-if="activeTab === 'gallery'" class="gallery-panel">
       <!-- Filters -->
       <div class="filter-bar">
-        <input v-model="searchQuery" type="text" placeholder="Search palettes..." class="search-input" />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search palettes..."
+          class="search-input"
+        />
         <div class="filter-buttons">
-          <button :class="['filter-btn', { active: filterMode === 'all' }]" @click="filterMode = 'all'">All</button>
-          <button :class="['filter-btn', { active: filterMode === 'dark' }]" @click="filterMode = 'dark'">Dark</button>
-          <button :class="['filter-btn', { active: filterMode === 'light' }]" @click="filterMode = 'light'">
+          <button
+            :class="['filter-btn', { active: filterMode === 'all' }]"
+            @click="filterMode = 'all'"
+          >
+            All
+          </button>
+          <button
+            :class="['filter-btn', { active: filterMode === 'dark' }]"
+            @click="filterMode = 'dark'"
+          >
+            Dark
+          </button>
+          <button
+            :class="['filter-btn', { active: filterMode === 'light' }]"
+            @click="filterMode = 'light'"
+          >
             Light
           </button>
         </div>
@@ -1689,7 +1707,11 @@ function selectPalette(name) {
               </div>
             </div>
             <div class="strip-group">
-              <div class="strip-item" v-for="tok in ['error', 'warning', 'success', 'info']" :key="tok">
+              <div
+                class="strip-item"
+                v-for="tok in ['error', 'warning', 'success', 'info']"
+                :key="tok"
+              >
                 <span class="strip-swatch" :style="{ background: activeTheme[tok] }"></span>
                 <span class="strip-label">{{ "$" + tok }}</span>
               </div>
@@ -1706,24 +1728,37 @@ function selectPalette(name) {
           <label class="control-label">Primary Color</label>
           <div class="color-input-row">
             <input type="color" v-model="customHex" class="color-picker" />
-            <input type="text" v-model="customHex" class="hex-input" placeholder="#5E81AC" maxlength="7" />
+            <input
+              type="text"
+              v-model="customHex"
+              class="hex-input"
+              placeholder="#5E81AC"
+              maxlength="7"
+            />
           </div>
         </div>
         <div class="control-group">
           <label class="control-label">Mode</label>
           <div class="filter-buttons">
-            <button :class="['filter-btn', { active: customMode === 'dark' }]" @click="customMode = 'dark'">
+            <button
+              :class="['filter-btn', { active: customMode === 'dark' }]"
+              @click="customMode = 'dark'"
+            >
               Dark
             </button>
-            <button :class="['filter-btn', { active: customMode === 'light' }]" @click="customMode = 'light'">
+            <button
+              :class="['filter-btn', { active: customMode === 'light' }]"
+              @click="customMode = 'light'"
+            >
               Light
             </button>
           </div>
         </div>
       </div>
       <p class="custom-description">
-        Enter any hex color to auto-generate a complete theme. The system derives all 22 palette colors using HSL color
-        manipulation &mdash; background, foreground, accents, and status colors all flow from your single input.
+        Enter any hex color to auto-generate a complete theme. The system derives all 22 palette
+        colors using HSL color manipulation &mdash; background, foreground, accents, and status
+        colors all flow from your single input.
       </p>
     </div>
 
@@ -1731,13 +1766,23 @@ function selectPalette(name) {
     <div v-if="activePalette && activeTheme" class="detail-section">
       <!-- Detail tab bar -->
       <div class="detail-tabs">
-        <button v-if="activeTab === 'custom'" :class="['detail-tab', { active: detailTab === 'terminal' }]" @click="detailTab = 'terminal'">
+        <button
+          v-if="activeTab === 'custom'"
+          :class="['detail-tab', { active: detailTab === 'terminal' }]"
+          @click="detailTab = 'terminal'"
+        >
           Preview
         </button>
-        <button :class="['detail-tab', { active: detailTab === 'tokens' }]" @click="detailTab = 'tokens'">
+        <button
+          :class="['detail-tab', { active: detailTab === 'tokens' }]"
+          @click="detailTab = 'tokens'"
+        >
           Design Tokens
         </button>
-        <button :class="['detail-tab', { active: detailTab === 'palette' }]" @click="detailTab = 'palette'">
+        <button
+          :class="['detail-tab', { active: detailTab === 'palette' }]"
+          @click="detailTab = 'palette'"
+        >
           Palette Colors
         </button>
       </div>
@@ -1880,7 +1925,11 @@ function selectPalette(name) {
             </div>
           </div>
           <div class="strip-group">
-            <div class="strip-item" v-for="tok in ['error', 'warning', 'success', 'info']" :key="tok">
+            <div
+              class="strip-item"
+              v-for="tok in ['error', 'warning', 'success', 'info']"
+              :key="tok"
+            >
               <span class="strip-swatch" :style="{ background: activeTheme[tok] }"></span>
               <span class="strip-label">{{ "$" + tok }}</span>
             </div>
@@ -1897,8 +1946,9 @@ function selectPalette(name) {
       <!-- Semantic tokens detail -->
       <div v-if="detailTab === 'tokens'" class="tokens-pane">
         <p class="tokens-intro">
-          These 33 design tokens are derived from the palette via <code>deriveTheme()</code>. Components reference
-          them with a <code>$</code> prefix (e.g. <code>color="$primary"</code>).
+          These 33 design tokens are derived from the palette via <code>deriveTheme()</code>.
+          Components reference them with a <code>$</code> prefix (e.g.
+          <code>color="$primary"</code>).
         </p>
         <div v-for="group in semanticGroups" :key="group.label" class="token-group">
           <h4 class="token-group-heading">{{ group.label }}</h4>
@@ -1938,8 +1988,8 @@ function selectPalette(name) {
       <!-- Palette colors detail -->
       <div v-if="detailTab === 'palette'" class="palette-pane">
         <p class="tokens-intro">
-          The 22 colors in the <code>ColorPalette</code>: 16 ANSI colors + 6 special colors. These are the raw inputs
-          that <code>deriveTheme()</code> transforms into semantic tokens.
+          The 22 colors in the <code>ColorPalette</code>: 16 ANSI colors + 6 special colors. These
+          are the raw inputs that <code>deriveTheme()</code> transforms into semantic tokens.
         </p>
 
         <h4 class="token-group-heading">Special Colors</h4>
@@ -1956,7 +2006,10 @@ function selectPalette(name) {
             ]"
             :key="f.key"
           >
-            <span class="palette-detail-swatch" :style="{ background: activePalette[f.key] }"></span>
+            <span
+              class="palette-detail-swatch"
+              :style="{ background: activePalette[f.key] }"
+            ></span>
             <span class="palette-detail-label">{{ f.label }}</span>
             <code class="palette-detail-hex">{{ activePalette[f.key] }}</code>
           </div>
@@ -2146,7 +2199,9 @@ function selectPalette(name) {
   cursor: pointer;
   background: none;
   text-align: left;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   width: 100%;
 }
 

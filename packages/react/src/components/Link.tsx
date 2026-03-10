@@ -13,9 +13,9 @@
  * ```
  */
 
-import { type ReactNode } from "react"
-import type { SilveryMouseEvent } from "@silvery/term/mouse-events"
-import { Text } from "./Text"
+import { type ReactNode } from "react";
+import type { SilveryMouseEvent } from "@silvery/term/mouse-events";
+import { Text } from "./Text";
 
 // ============================================================================
 // OSC 8 Escape Sequences
@@ -23,11 +23,11 @@ import { Text } from "./Text"
 
 /** Open an OSC 8 hyperlink. Format: ESC ] 8 ; params ; URI ST */
 function osc8Open(href: string): string {
-  return `\x1b]8;;${href}\x1b\\`
+  return `\x1b]8;;${href}\x1b\\`;
 }
 
 /** Close an OSC 8 hyperlink. Format: ESC ] 8 ; ; ST */
-const OSC8_CLOSE = "\x1b]8;;\x1b\\"
+const OSC8_CLOSE = "\x1b]8;;\x1b\\";
 
 // ============================================================================
 // Props
@@ -35,19 +35,19 @@ const OSC8_CLOSE = "\x1b]8;;\x1b\\"
 
 export interface LinkProps {
   /** The URL to link to (http/https for external, custom schemes for internal) */
-  href: string
+  href: string;
   /** Link text content */
-  children?: ReactNode
+  children?: ReactNode;
   /** Link text color (defaults to "blue") */
-  color?: string
+  color?: string;
   /** Whether to underline the link text (defaults to true) */
-  underline?: boolean
+  underline?: boolean;
   /** Whether to dim the link text */
-  dim?: boolean
+  dim?: boolean;
   /** Called when the link is clicked. Use preventDefault() to suppress default navigation. */
-  onClick?: (event: SilveryMouseEvent) => void
+  onClick?: (event: SilveryMouseEvent) => void;
   /** Test ID for locator queries */
-  testID?: string
+  testID?: string;
 }
 
 // ============================================================================
@@ -61,12 +61,20 @@ export interface LinkProps {
  * render it as a clickable link. The component also registers an onClick
  * handler for mouse-driven interaction within silvery.
  */
-export function Link({ href, children, color = "$link", underline = true, dim, onClick, testID }: LinkProps) {
+export function Link({
+  href,
+  children,
+  color = "$link",
+  underline = true,
+  dim,
+  onClick,
+  testID,
+}: LinkProps) {
   return (
     <Text color={color} underline={underline} dim={dim} onClick={onClick} testID={testID}>
       {osc8Open(href)}
       {children}
       {OSC8_CLOSE}
     </Text>
-  )
+  );
 }

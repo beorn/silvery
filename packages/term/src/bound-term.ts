@@ -15,80 +15,84 @@
  * ```
  */
 
-import type { Cell, TerminalBuffer } from "./buffer"
-import type { TeaNode } from "@silvery/tea/types"
+import type { Cell, TerminalBuffer } from "./buffer";
+import type { TeaNode } from "@silvery/tea/types";
 
 /**
  * BoundTerm interface - terminal with node awareness
  */
 export interface BoundTerm {
   /** Get cell at screen coordinates */
-  cell(x: number, y: number): Cell
+  cell(x: number, y: number): Cell;
 
   /** Get node at screen coordinates */
-  nodeAt(x: number, y: number): TeaNode | null
+  nodeAt(x: number, y: number): TeaNode | null;
 
   /** Get visible text (plain, no ANSI) */
-  readonly text: string
+  readonly text: string;
 
   /** Terminal dimensions */
-  readonly columns: number
-  readonly rows: number
+  readonly columns: number;
+  readonly rows: number;
 
   /** Access underlying buffer */
-  readonly buffer: TerminalBuffer
+  readonly buffer: TerminalBuffer;
 }
 
 /**
  * Create a BoundTerm from a buffer and root node getter
  */
-export function createBoundTerm(buffer: TerminalBuffer, getRoot: () => TeaNode, getText: () => string): BoundTerm {
+export function createBoundTerm(
+  buffer: TerminalBuffer,
+  getRoot: () => TeaNode,
+  getText: () => string,
+): BoundTerm {
   return {
     cell(x: number, y: number): Cell {
-      return buffer.getCell(x, y)
+      return buffer.getCell(x, y);
     },
 
     nodeAt(x: number, y: number): TeaNode | null {
-      const root = getRoot()
-      return findNodeAtScreenPosition(root, x, y)
+      const root = getRoot();
+      return findNodeAtScreenPosition(root, x, y);
     },
 
     get text(): string {
-      return getText()
+      return getText();
     },
 
     get columns(): number {
-      return buffer.width
+      return buffer.width;
     },
 
     get rows(): number {
-      return buffer.height
+      return buffer.height;
     },
 
     get buffer(): TerminalBuffer {
-      return buffer
+      return buffer;
     },
-  }
+  };
 }
 
 /**
  * Find the deepest node at the given screen coordinates
  */
 function findNodeAtScreenPosition(node: TeaNode, x: number, y: number): TeaNode | null {
-  const rect = node.screenRect
-  if (!rect) return null
+  const rect = node.screenRect;
+  if (!rect) return null;
 
   // Check if point is within this node's bounds
   if (x < rect.x || x >= rect.x + rect.width || y < rect.y || y >= rect.y + rect.height) {
-    return null
+    return null;
   }
 
   // Check children (deepest match wins)
   for (const child of node.children) {
-    const found = findNodeAtScreenPosition(child, x, y)
-    if (found) return found
+    const found = findNodeAtScreenPosition(child, x, y);
+    if (found) return found;
   }
 
   // No child matched, this node is the deepest match
-  return node
+  return node;
 }

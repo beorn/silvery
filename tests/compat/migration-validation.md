@@ -42,7 +42,7 @@ Validates the Silvery migration guide (`docs/guide/migration.md`) against real-w
 Shopify wraps Ink in a public API module (`cli-kit/src/public/node/ink.ts`):
 
 ```ts
-export { Box, Text, Static, useInput, useStdin, useStdout, measureElement } from "ink"
+export { Box, Text, Static, useInput, useStdin, useStdout, measureElement } from "ink";
 ```
 
 This is exactly the subset that `silvery/ink` exports.

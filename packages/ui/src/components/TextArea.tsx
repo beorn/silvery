@@ -43,13 +43,13 @@
  * - Enter: Insert newline (replaces selection, or submit with submitKey)
  * - Typing with selection: Replaces selected text
  */
-import { forwardRef, useImperativeHandle } from "react"
-import { useContentRect } from "@silvery/react/hooks/useLayout"
-import { useFocusable } from "@silvery/react/hooks/useFocusable"
-import { useCursor } from "@silvery/react/hooks/useCursor"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
-import { useTextArea } from "./useTextArea"
+import { forwardRef, useImperativeHandle } from "react";
+import { useContentRect } from "@silvery/react/hooks/useLayout";
+import { useFocusable } from "@silvery/react/hooks/useFocusable";
+import { useCursor } from "@silvery/react/hooks/useCursor";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
+import { useTextArea } from "./useTextArea";
 
 // =============================================================================
 // Types
@@ -57,45 +57,45 @@ import { useTextArea } from "./useTextArea"
 
 export interface TextAreaProps {
   /** Current value (controlled) */
-  value?: string
+  value?: string;
   /** Initial value (uncontrolled) */
-  defaultValue?: string
+  defaultValue?: string;
   /** Called when value changes */
-  onChange?: (value: string) => void
+  onChange?: (value: string) => void;
   /** Called on submit (Ctrl+Enter by default, or Enter if submitKey="enter") */
-  onSubmit?: (value: string) => void
+  onSubmit?: (value: string) => void;
   /** Key to trigger submit: "ctrl+enter" (default), "enter", or "meta+enter" */
-  submitKey?: "ctrl+enter" | "enter" | "meta+enter"
+  submitKey?: "ctrl+enter" | "enter" | "meta+enter";
   /** Placeholder text when empty */
-  placeholder?: string
+  placeholder?: string;
   /** Whether input is focused/active (overrides focus system) */
-  isActive?: boolean
+  isActive?: boolean;
   /** Visible height in rows (required) */
-  height: number
+  height: number;
   /** Cursor style: 'block' (inverse) or 'underline' */
-  cursorStyle?: "block" | "underline"
+  cursorStyle?: "block" | "underline";
   /** Number of context lines to keep visible above/below cursor when scrolling (default: 1) */
-  scrollMargin?: number
+  scrollMargin?: number;
   /** When true, ignore all input and dim the text */
-  disabled?: boolean
+  disabled?: boolean;
   /** Maximum number of characters allowed */
-  maxLength?: number
+  maxLength?: number;
   /** Test ID for focus system identification */
-  testID?: string
+  testID?: string;
 }
 
 /** Selection range as [start, end) character offsets */
-export { type TextAreaSelection } from "./useTextArea"
+export { type TextAreaSelection } from "./useTextArea";
 
 export interface TextAreaHandle {
   /** Clear the input */
-  clear: () => void
+  clear: () => void;
   /** Get current value */
-  getValue: () => string
+  getValue: () => string;
   /** Set value programmatically */
-  setValue: (value: string) => void
+  setValue: (value: string) => void;
   /** Get the current selection range, or null if no selection */
-  getSelection: () => import("./useTextArea").TextAreaSelection | null
+  getSelection: () => import("./useTextArea").TextAreaSelection | null;
 }
 
 // =============================================================================
@@ -124,10 +124,10 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   // When testID is set, the component participates in the focus tree and
   // isActive derives from focus state. Without testID, default to true
   // for backward compatibility.
-  const { focused } = useFocusable()
-  const isActive = isActiveProp ?? (testID ? focused : true)
+  const { focused } = useFocusable();
+  const isActive = isActiveProp ?? (testID ? focused : true);
 
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   const ta = useTextArea({
     value: controlledValue,
@@ -141,7 +141,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     scrollMargin,
     disabled,
     maxLength,
-  })
+  });
 
   // Imperative handle
   useImperativeHandle(ref, () => ({
@@ -149,7 +149,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     getValue: () => ta.value,
     setValue: ta.setValue,
     getSelection: ta.getSelection,
-  }))
+  }));
 
   // =========================================================================
   // Rendering
@@ -160,62 +160,72 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
     col: ta.cursorCol,
     row: ta.visibleCursorRow,
     visible: isActive && !disabled && !ta.selection,
-  })
+  });
 
-  const showPlaceholder = !ta.value && placeholder
+  const showPlaceholder = !ta.value && placeholder;
 
   if (showPlaceholder) {
     return (
-      <Box focusable testID={testID} flexDirection="column" height={height} justifyContent="center" alignItems="center">
+      <Box
+        focusable
+        testID={testID}
+        flexDirection="column"
+        height={height}
+        justifyContent="center"
+        alignItems="center"
+      >
         <Text dimColor>{placeholder}</Text>
       </Box>
-    )
+    );
   }
 
   return (
     <Box focusable testID={testID} key={ta.scrollOffset} flexDirection="column" height={height}>
       {ta.visibleLines.map((wl, i) => {
-        const absoluteRow = ta.scrollOffset + i
-        const isCursorRow = absoluteRow === ta.cursorRow
-        const lineStart = wl.startOffset
-        const lineEnd = lineStart + wl.line.length
+        const absoluteRow = ta.scrollOffset + i;
+        const isCursorRow = absoluteRow === ta.cursorRow;
+        const lineStart = wl.startOffset;
+        const lineEnd = lineStart + wl.line.length;
 
         // Check if this line has any selection overlap
-        const hasSelectionOnLine = ta.selection && lineStart < ta.selection.end && lineEnd > ta.selection.start
+        const hasSelectionOnLine =
+          ta.selection && lineStart < ta.selection.end && lineEnd > ta.selection.start;
 
         if (disabled) {
           return (
             <Text key={absoluteRow} dimColor>
               {wl.line || " "}
             </Text>
-          )
+          );
         }
 
         if (hasSelectionOnLine) {
           // Compute selection overlap on this line (in line-local coordinates)
-          const selStart = Math.max(0, ta.selection!.start - lineStart)
-          const selEnd = Math.min(wl.line.length, ta.selection!.end - lineStart)
+          const selStart = Math.max(0, ta.selection!.start - lineStart);
+          const selEnd = Math.min(wl.line.length, ta.selection!.end - lineStart);
 
-          const before = wl.line.slice(0, selStart)
-          const selected = wl.line.slice(selStart, selEnd)
-          const after = wl.line.slice(selEnd)
+          const before = wl.line.slice(0, selStart);
+          const selected = wl.line.slice(selStart, selEnd);
+          const after = wl.line.slice(selEnd);
 
           return (
             <Text key={absoluteRow}>
               {before}
-              <Text inverse>{selected || (selEnd === wl.line.length && isCursorRow ? " " : "")}</Text>
+              <Text inverse>
+                {selected || (selEnd === wl.line.length && isCursorRow ? " " : "")}
+              </Text>
               {after}
             </Text>
-          )
+          );
         }
 
         if (!isCursorRow) {
-          return <Text key={absoluteRow}>{wl.line || " "}</Text>
+          return <Text key={absoluteRow}>{wl.line || " "}</Text>;
         }
 
-        const beforeCursor = wl.line.slice(0, ta.cursorCol)
-        const atCursor = wl.line[ta.cursorCol] ?? " "
-        const afterCursor = wl.line.slice(ta.cursorCol + 1)
+        const beforeCursor = wl.line.slice(0, ta.cursorCol);
+        const atCursor = wl.line[ta.cursorCol] ?? " ";
+        const afterCursor = wl.line.slice(ta.cursorCol + 1);
 
         // Active: plain text (real cursor handles it). Inactive: fake cursor.
         const cursorEl = isActive ? (
@@ -224,7 +234,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
           <Text inverse>{atCursor}</Text>
         ) : (
           <Text underline>{atCursor}</Text>
-        )
+        );
 
         return (
           <Text key={absoluteRow}>
@@ -232,8 +242,8 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
             {cursorEl}
             {afterCursor}
           </Text>
-        )
+        );
       })}
     </Box>
-  )
-})
+  );
+});

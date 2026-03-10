@@ -14,7 +14,7 @@
  */
 
 /** Regex to match a CPR response: CSI row ; col R */
-const CPR_RESPONSE_RE = /\x1b\[(\d+);(\d+)R/
+const CPR_RESPONSE_RE = /\x1b\[(\d+);(\d+)R/;
 
 /**
  * Query the terminal cursor position.
@@ -31,18 +31,18 @@ export async function queryCursorPosition(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<{ row: number; col: number } | null> {
-  write("\x1b[6n")
+  write("\x1b[6n");
 
-  const data = await read(timeoutMs)
-  if (data == null) return null
+  const data = await read(timeoutMs);
+  if (data == null) return null;
 
-  const match = CPR_RESPONSE_RE.exec(data)
-  if (!match) return null
+  const match = CPR_RESPONSE_RE.exec(data);
+  if (!match) return null;
 
   return {
     row: parseInt(match[1]!, 10),
     col: parseInt(match[2]!, 10),
-  }
+  };
 }
 
 /**
@@ -54,32 +54,32 @@ export async function queryCursorFromStdio(
   stdin: NodeJS.ReadStream,
   timeoutMs = 200,
 ): Promise<{ row: number; col: number } | null> {
-  const wasRaw = stdin.isRaw
-  if (!wasRaw) stdin.setRawMode(true)
+  const wasRaw = stdin.isRaw;
+  if (!wasRaw) stdin.setRawMode(true);
 
   try {
     const write = (s: string) => {
-      stdout.write(s)
-    }
+      stdout.write(s);
+    };
 
     const read = (ms: number): Promise<string | null> =>
       new Promise((resolve) => {
         const timer = setTimeout(() => {
-          stdin.removeListener("data", onData)
-          resolve(null)
-        }, ms)
+          stdin.removeListener("data", onData);
+          resolve(null);
+        }, ms);
 
         function onData(chunk: Buffer) {
-          clearTimeout(timer)
-          stdin.removeListener("data", onData)
-          resolve(chunk.toString())
+          clearTimeout(timer);
+          stdin.removeListener("data", onData);
+          resolve(chunk.toString());
         }
 
-        stdin.on("data", onData)
-      })
+        stdin.on("data", onData);
+      });
 
-    return await queryCursorPosition(write, read, timeoutMs)
+    return await queryCursorPosition(write, read, timeoutMs);
   } finally {
-    if (!wasRaw) stdin.setRawMode(false)
+    if (!wasRaw) stdin.setRawMode(false);
   }
 }

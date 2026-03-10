@@ -25,45 +25,62 @@
  * ```
  */
 
-import process from "node:process"
-import { createContext, useContext, useEffect, type ReactElement } from "react"
+import process from "node:process";
+import { createContext, useContext, useEffect, type ReactElement } from "react";
 
-import { createTerm } from "../ansi/index"
+import { createTerm } from "../ansi/index";
 import {
   FocusManagerContext,
   RuntimeContext,
   type RuntimeContextValue,
   StdoutContext,
   TermContext,
-} from "@silvery/react/context"
-import { createFocusManager, type FocusManager } from "@silvery/tea/focus-manager"
-import { createCursorStore, CursorProvider } from "@silvery/react/hooks/useCursor"
-import { createFocusEvent, createKeyEvent, dispatchFocusEvent, dispatchKeyEvent } from "@silvery/tea/focus-events"
-import { findByTestID } from "@silvery/tea/focus-queries"
-import { executeRender } from "../pipeline"
-import { createPipeline } from "../measurer"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/react/reconciler"
-import { merge, takeUntil } from "@silvery/tea/streams"
-import { createBuffer } from "./create-buffer"
-import { createRuntime } from "./create-runtime"
-import { type InputHandler, type Key, parseKey } from "./keys"
-import { splitRawInput } from "@silvery/tea/keys"
-import type { TerminalBuffer } from "../buffer"
-import type { TeaNode, Rect } from "@silvery/tea/types"
-import { parseBracketedPaste } from "../bracketed-paste"
-import { isMouseSequence, parseMouseSequence } from "../mouse"
-import { createMouseEventProcessor, processMouseEvent } from "../mouse-events"
-import { enableBracketedPaste, disableBracketedPaste } from "../bracketed-paste"
-import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output"
-import { detectKittyFromStdio } from "../kitty-detect"
-import { isTextSizingLikelySupported } from "../text-sizing"
-import { ensureLayoutEngine } from "./layout"
-import { captureTerminalState, performSuspend, CTRL_C, CTRL_Z } from "./terminal-lifecycle"
-import type { Buffer, Dims, Event, RenderTarget, Runtime } from "./types"
-import type { XtermTerminal } from "../xterm/index.js"
+} from "@silvery/react/context";
+import { createFocusManager, type FocusManager } from "@silvery/tea/focus-manager";
+import { createCursorStore, CursorProvider } from "@silvery/react/hooks/useCursor";
+import {
+  createFocusEvent,
+  createKeyEvent,
+  dispatchFocusEvent,
+  dispatchKeyEvent,
+} from "@silvery/tea/focus-events";
+import { findByTestID } from "@silvery/tea/focus-queries";
+import { executeRender } from "../pipeline";
+import { createPipeline } from "../measurer";
+import {
+  createContainer,
+  createFiberRoot,
+  getContainerRoot,
+  reconciler,
+} from "@silvery/react/reconciler";
+import { merge, takeUntil } from "@silvery/tea/streams";
+import { createBuffer } from "./create-buffer";
+import { createRuntime } from "./create-runtime";
+import { type InputHandler, type Key, parseKey } from "./keys";
+import { splitRawInput } from "@silvery/tea/keys";
+import type { TerminalBuffer } from "../buffer";
+import type { TeaNode, Rect } from "@silvery/tea/types";
+import { parseBracketedPaste } from "../bracketed-paste";
+import { isMouseSequence, parseMouseSequence } from "../mouse";
+import { createMouseEventProcessor, processMouseEvent } from "../mouse-events";
+import { enableBracketedPaste, disableBracketedPaste } from "../bracketed-paste";
+import {
+  enableKittyKeyboard,
+  disableKittyKeyboard,
+  KittyFlags,
+  enableMouse,
+  disableMouse,
+} from "../output";
+import { detectKittyFromStdio } from "../kitty-detect";
+import { isTextSizingLikelySupported } from "../text-sizing";
+import { ensureLayoutEngine } from "./layout";
+import { captureTerminalState, performSuspend, CTRL_C, CTRL_Z } from "./terminal-lifecycle";
+import type { Buffer, Dims, Event, RenderTarget, Runtime } from "./types";
+import type { XtermTerminal } from "../xterm/index.js";
+import type { Term } from "../ansi/term";
 
 // Re-export types from keys.ts
-export type { Key, InputHandler } from "./keys"
+export type { Key, InputHandler } from "./keys";
 
 // ============================================================================
 // Types
@@ -74,27 +91,27 @@ export type { Key, InputHandler } from "./keys"
  */
 export interface RunOptions {
   /** Terminal dimensions (default: from process.stdout) */
-  cols?: number
-  rows?: number
+  cols?: number;
+  rows?: number;
   /** Standard output (default: process.stdout) */
-  stdout?: NodeJS.WriteStream
+  stdout?: NodeJS.WriteStream;
   /** Standard input (default: process.stdin) */
-  stdin?: NodeJS.ReadStream
+  stdin?: NodeJS.ReadStream;
   /** Abort signal for external cleanup */
-  signal?: AbortSignal
+  signal?: AbortSignal;
   /**
    * Enable Kitty keyboard protocol.
    * - `true`: auto-detect and enable with DISAMBIGUATE flag (1)
    * - number: enable with specific KittyFlags bitfield
    * - `false`/undefined: don't enable (default)
    */
-  kitty?: boolean | number
+  kitty?: boolean | number;
   /**
    * Enable SGR mouse tracking (mode 1006).
    * When true, enables mouse events and disables on cleanup.
    * Default: false
    */
-  mouse?: boolean
+  mouse?: boolean;
   /**
    * Render mode: fullscreen (alt screen, default) or inline (scrollback-compatible).
    * In inline mode:
@@ -103,7 +120,7 @@ export interface RunOptions {
    * - useScrollback() works correctly (cursor displacement tracked)
    * - Exit restores cursor and moves to end (no alt screen restore)
    */
-  mode?: "fullscreen" | "inline"
+  mode?: "fullscreen" | "inline";
   /**
    * Enable Kitty text sizing protocol (OSC 66) for PUA characters.
    * When enabled, nerdfont/powerline icons are measured as 2-wide and
@@ -113,36 +130,36 @@ export interface RunOptions {
    * - `"auto"`: enable if terminal likely supports it (Kitty 0.40+, Ghostty)
    * - `false`/undefined: disabled (default)
    */
-  textSizing?: boolean | "auto"
+  textSizing?: boolean | "auto";
   /**
    * Terminal capabilities for width measurement and output suppression.
    * When provided, configures the render pipeline to use these caps
    * (scoped width measurer + output phase). Typically from term.caps
    * (auto-detected) or manual override.
    */
-  caps?: import("../terminal-caps.js").TerminalCaps
+  caps?: import("../terminal-caps.js").TerminalCaps;
   /**
    * Handle Ctrl+Z by suspending the process (save terminal state,
    * send SIGTSTP, restore on SIGCONT). Default: true
    */
-  suspendOnCtrlZ?: boolean
+  suspendOnCtrlZ?: boolean;
   /**
    * Handle Ctrl+C by restoring terminal and exiting with code 130.
    * Default: true
    */
-  exitOnCtrlC?: boolean
+  exitOnCtrlC?: boolean;
   /** Called before suspend. Return false to prevent. */
-  onSuspend?: () => boolean | void
+  onSuspend?: () => boolean | void;
   /** Called after resume from suspend. */
-  onResume?: () => void
+  onResume?: () => void;
   /** Called on Ctrl+C. Return false to prevent exit. */
-  onInterrupt?: () => boolean | void
+  onInterrupt?: () => boolean | void;
   /**
    * xterm.js terminal for browser rendering.
    * When provided, run() uses the terminal for input/output instead of stdin/stdout.
    * This enables the same API for both Node.js and browser environments.
    */
-  terminal?: XtermTerminal
+  terminal?: XtermTerminal;
 }
 
 /**
@@ -150,15 +167,15 @@ export interface RunOptions {
  */
 export interface RunHandle {
   /** Current rendered text (no ANSI) */
-  readonly text: string
+  readonly text: string;
   /** Wait until the app exits */
-  waitUntilExit(): Promise<void>
+  waitUntilExit(): Promise<void>;
   /** Unmount and cleanup */
-  unmount(): void
+  unmount(): void;
   /** Dispose (alias for unmount) — enables `using` */
-  [Symbol.dispose](): void
+  [Symbol.dispose](): void;
   /** Send a key press */
-  press(key: string): Promise<void>
+  press(key: string): Promise<void>;
 }
 
 // ============================================================================
@@ -167,26 +184,26 @@ export interface RunHandle {
 
 /** Internal context for run()'s own runtime handle + exit. */
 interface RunInternalContextValue {
-  runtime: Runtime
-  exit: () => void
+  runtime: Runtime;
+  exit: () => void;
 }
 
-const RunInternalContext = createContext<RunInternalContextValue | null>(null)
+const RunInternalContext = createContext<RunInternalContextValue | null>(null);
 
 interface InputContextValue {
-  subscribe: (handler: InputHandler) => () => void
+  subscribe: (handler: InputHandler) => () => void;
 }
 
-const InputContext = createContext<InputContextValue | null>(null)
+const InputContext = createContext<InputContextValue | null>(null);
 
 /** Paste handler callback type */
-export type PasteHandler = (text: string) => void
+export type PasteHandler = (text: string) => void;
 
 interface PasteContextValue {
-  subscribe: (handler: PasteHandler) => () => void
+  subscribe: (handler: PasteHandler) => () => void;
 }
 
-const PasteContext = createContext<PasteContextValue | null>(null)
+const PasteContext = createContext<PasteContextValue | null>(null);
 
 // ============================================================================
 // Hooks
@@ -207,21 +224,21 @@ const PasteContext = createContext<PasteContextValue | null>(null)
  * ```
  */
 export function useInput(handler: InputHandler): void {
-  const ctx = useContext(InputContext)
+  const ctx = useContext(InputContext);
 
   useEffect(() => {
-    if (!ctx) return
-    return ctx.subscribe(handler)
-  }, [ctx, handler])
+    if (!ctx) return;
+    return ctx.subscribe(handler);
+  }, [ctx, handler]);
 }
 
 /**
  * Hook for programmatic exit.
  */
 export function useExit(): () => void {
-  const ctx = useContext(RunInternalContext)
-  if (!ctx) throw new Error("useExit must be used within run()")
-  return ctx.exit
+  const ctx = useContext(RunInternalContext);
+  if (!ctx) throw new Error("useExit must be used within run()");
+  return ctx.exit;
 }
 
 /**
@@ -239,12 +256,12 @@ export function useExit(): () => void {
  * ```
  */
 export function usePaste(handler: PasteHandler): void {
-  const ctx = useContext(PasteContext)
+  const ctx = useContext(PasteContext);
 
   useEffect(() => {
-    if (!ctx) return
-    return ctx.subscribe(handler)
-  }, [ctx, handler])
+    if (!ctx) return;
+    return ctx.subscribe(handler);
+  }, [ctx, handler]);
 }
 
 // ============================================================================
@@ -266,52 +283,58 @@ function handleFocusNavigation(
   layoutFn?: (node: TeaNode) => Rect | null,
 ): boolean {
   if (parsedKey.tab && !parsedKey.shift) {
-    focusManager.focusNext(root)
-    return true
+    focusManager.focusNext(root);
+    return true;
   }
   if (parsedKey.tab && parsedKey.shift) {
-    focusManager.focusPrev(root)
-    return true
+    focusManager.focusPrev(root);
+    return true;
   }
   if (parsedKey.return) {
     // Enter: if focused element has focusScope, enter that scope
-    const activeEl = focusManager.activeElement
+    const activeEl = focusManager.activeElement;
     if (activeEl) {
-      const props = activeEl.props as Record<string, unknown>
-      const testID = typeof props.testID === "string" ? props.testID : null
+      const props = activeEl.props as Record<string, unknown>;
+      const testID = typeof props.testID === "string" ? props.testID : null;
       if (props.focusScope && testID) {
-        focusManager.enterScope(testID)
+        focusManager.enterScope(testID);
         // Focus the first focusable child within the scope
-        focusManager.focusNext(root, activeEl)
-        return true
+        focusManager.focusNext(root, activeEl);
+        return true;
       }
     }
   }
   if (parsedKey.escape) {
     if (focusManager.scopeStack.length > 0) {
       // Escape: exit the current focus scope
-      const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!
-      focusManager.exitScope()
+      const scopeId = focusManager.scopeStack[focusManager.scopeStack.length - 1]!;
+      focusManager.exitScope();
       // Restore focus to the scope node itself
-      const scopeNode = findByTestID(root, scopeId)
+      const scopeNode = findByTestID(root, scopeId);
       if (scopeNode) {
-        focusManager.focus(scopeNode, "keyboard")
+        focusManager.focus(scopeNode, "keyboard");
       }
-      return true
+      return true;
     }
     if (focusManager.activeElement) {
       // Escape with no scope: blur current focus
-      focusManager.blur()
-      return true
+      focusManager.blur();
+      return true;
     }
   }
   if (parsedKey.upArrow || parsedKey.downArrow || parsedKey.leftArrow || parsedKey.rightArrow) {
-    const direction = parsedKey.upArrow ? "up" : parsedKey.downArrow ? "down" : parsedKey.leftArrow ? "left" : "right"
-    focusManager.focusDirection(root, direction, layoutFn)
+    const direction = parsedKey.upArrow
+      ? "up"
+      : parsedKey.downArrow
+        ? "down"
+        : parsedKey.leftArrow
+          ? "left"
+          : "right";
+    focusManager.focusDirection(root, direction, layoutFn);
     // Don't consume arrow events — let them fall through to app handlers
-    return false
+    return false;
   }
-  return false
+  return false;
 }
 
 // ============================================================================
@@ -321,13 +344,42 @@ function handleFocusNavigation(
 /**
  * Run a React component with the silvery-loop runtime.
  *
- * This is Layer 2 - it provides React hooks (useState, useEffect)
- * with simple keyboard input handling via useInput().
+ * Accepts either a Term instance or RunOptions:
+ * - `run(<App />, term)` — Term handles streams, run() handles rendering
+ * - `run(<App />, { cols, rows, ... })` — classic options API
  *
- * For more control (custom event loop), use createRuntime() directly (Layer 1).
+ * This is Layer 2 — React hooks (useState, useEffect) with keyboard input via useInput().
  * For stores and providers, use createApp() (Layer 3).
  */
-export async function run(element: ReactElement, options: RunOptions = {}): Promise<RunHandle> {
+export async function run(element: ReactElement, term: Term): Promise<RunHandle>;
+export async function run(element: ReactElement, options?: RunOptions): Promise<RunHandle>;
+export async function run(
+  element: ReactElement,
+  optionsOrTerm: RunOptions | Term = {},
+): Promise<RunHandle> {
+  // Detect Term vs RunOptions by duck-typing: Term has getState() + events()
+  if (isTerm(optionsOrTerm)) {
+    const term = optionsOrTerm as Term;
+    return runWithOptions(element, {
+      stdin: term.stdin,
+      stdout: term.stdout,
+      cols: term.cols ?? undefined,
+      rows: term.rows ?? undefined,
+      caps: term.caps,
+    });
+  }
+
+  return runWithOptions(element, optionsOrTerm as RunOptions);
+}
+
+/** Duck-type check: Term has getState and events as functions */
+function isTerm(obj: unknown): obj is Term {
+  if (typeof obj !== "object" || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  return typeof o.getState === "function" && typeof o.events === "function";
+}
+
+async function runWithOptions(element: ReactElement, options: RunOptions = {}): Promise<RunHandle> {
   const {
     cols: explicitCols,
     rows: explicitRows,
@@ -345,148 +397,162 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     onResume: onResumeHook,
     onInterrupt: onInterruptHook,
     terminal: xtermTerminal,
-  } = options
+  } = options;
 
-  const xtermMode = !!xtermTerminal
+  const xtermMode = !!xtermTerminal;
 
   // For xterm mode, don't use process.stdin/stdout
-  const stdin = xtermMode ? (null as unknown as NodeJS.ReadStream) : (explicitStdin ?? process.stdin)
-  const headless = !xtermMode && explicitCols != null && explicitRows != null && !explicitStdout
-  const cols = xtermMode ? xtermTerminal!.cols : (explicitCols ?? process.stdout.columns ?? 80)
-  const rows = xtermMode ? xtermTerminal!.rows : (explicitRows ?? process.stdout.rows ?? 24)
-  const stdout = xtermMode ? (null as unknown as NodeJS.WriteStream) : (explicitStdout ?? process.stdout)
+  const stdin = xtermMode
+    ? (null as unknown as NodeJS.ReadStream)
+    : (explicitStdin ?? process.stdin);
+  const headless = !xtermMode && explicitCols != null && explicitRows != null && !explicitStdout;
+  const cols = xtermMode ? xtermTerminal!.cols : (explicitCols ?? process.stdout.columns ?? 80);
+  const rows = xtermMode ? xtermTerminal!.rows : (explicitRows ?? process.stdout.rows ?? 24);
+  const stdout = xtermMode
+    ? (null as unknown as NodeJS.WriteStream)
+    : (explicitStdout ?? process.stdout);
 
   // Initialize layout engine
-  await ensureLayoutEngine()
+  await ensureLayoutEngine();
 
   // Create abort controller for cleanup
-  const controller = new AbortController()
-  const signal = controller.signal
+  const controller = new AbortController();
+  const signal = controller.signal;
 
   // Wire external signal
   if (externalSignal) {
     if (externalSignal.aborted) {
-      controller.abort()
+      controller.abort();
     } else {
       externalSignal.addEventListener("abort", () => controller.abort(), {
         once: true,
-      })
+      });
     }
   }
 
   // Track current dimensions
-  let currentDims: Dims = { cols, rows }
+  let currentDims: Dims = { cols, rows };
 
   // Protocol tracking
-  let kittyEnabled = false
-  let kittyFlags: number = KittyFlags.DISAMBIGUATE
-  let mouseEnabled = false
-  let bracketedPasteEnabled = false
+  let kittyEnabled = false;
+  let kittyFlags: number = KittyFlags.DISAMBIGUATE;
+  let mouseEnabled = false;
+  let bracketedPasteEnabled = false;
 
   // Resolve textSizing from caps + option
   // In xterm mode, isTextSizingLikelySupported() checks process/env which may not exist
   const textSizingEnabled =
     textSizingOption === true ||
-    (textSizingOption === "auto" && (capsOption?.textSizingSupported ?? (!xtermMode && isTextSizingLikelySupported())))
+    (textSizingOption === "auto" &&
+      (capsOption?.textSizingSupported ?? (!xtermMode && isTextSizingLikelySupported())));
 
   // Create pipeline config from caps (scoped width measurer + output phase)
   const pipelineConfig = capsOption
     ? createPipeline({ caps: { ...capsOption, textSizingSupported: textSizingEnabled } })
-    : undefined
+    : undefined;
 
   // Focus manager (tree-based focus system) with event dispatch wiring
   const focusManager = createFocusManager({
     onFocusChange(oldNode, newNode, _origin) {
       // Dispatch blur event on the old element
       if (oldNode) {
-        const blurEvent = createFocusEvent("blur", oldNode, newNode)
-        dispatchFocusEvent(blurEvent)
+        const blurEvent = createFocusEvent("blur", oldNode, newNode);
+        dispatchFocusEvent(blurEvent);
       }
       // Dispatch focus event on the new element
       if (newNode) {
-        const focusEvent = createFocusEvent("focus", newNode, oldNode)
-        dispatchFocusEvent(focusEvent)
+        const focusEvent = createFocusEvent("focus", newNode, oldNode);
+        dispatchFocusEvent(focusEvent);
       }
     },
-  })
+  });
 
   // Per-instance cursor state (replaces module-level globals)
-  const cursorStore = createCursorStore()
+  const cursorStore = createCursorStore();
 
   // Mouse event processor for DOM-level dispatch (with click-to-focus)
-  const mouseEventState = createMouseEventProcessor({ focusManager })
+  const mouseEventState = createMouseEventProcessor({ focusManager });
 
   // Input handlers
-  const inputHandlers = new Set<InputHandler>()
-  const pasteHandlers = new Set<PasteHandler>()
-  let shouldExit = false
+  const inputHandlers = new Set<InputHandler>();
+  const pasteHandlers = new Set<PasteHandler>();
+  let shouldExit = false;
 
   // ========================================================================
   // Render Batching
   // ========================================================================
 
-  let renderScheduled = false
-  let currentBuffer: Buffer
-  let prevTermBuffer: TerminalBuffer | null = null
+  let renderScheduled = false;
+  let currentBuffer: Buffer;
+  let prevTermBuffer: TerminalBuffer | null = null;
 
   // Reconcile React state, run render pipeline, return Buffer for output.
   function doRender(): Buffer {
-    const _t0 = performance.now()
-    reconciler.updateContainerSync(wrappedElement, fiberRoot, null, () => {})
-    reconciler.flushSyncWork()
-    const _t1 = performance.now()
+    const _t0 = performance.now();
+    reconciler.updateContainerSync(wrappedElement, fiberRoot, null, () => {});
+    reconciler.flushSyncWork();
+    const _t1 = performance.now();
 
-    const rootNode = getContainerRoot(container)
-    const dims = runtime.getDims()
-    const height = modeOption === "inline" ? NaN : dims.rows
-    const { buffer: termBuffer } = executeRender(rootNode, dims.cols, height, prevTermBuffer, undefined, pipelineConfig)
-    prevTermBuffer = termBuffer
-    const _t2 = performance.now()
+    const rootNode = getContainerRoot(container);
+    const dims = runtime.getDims();
+    const height = modeOption === "inline" ? NaN : dims.rows;
+    const { buffer: termBuffer } = executeRender(
+      rootNode,
+      dims.cols,
+      height,
+      prevTermBuffer,
+      undefined,
+      pipelineConfig,
+    );
+    prevTermBuffer = termBuffer;
+    const _t2 = performance.now();
 
-    const buf = createBuffer(termBuffer, rootNode)
-    const _t3 = performance.now()
+    const buf = createBuffer(termBuffer, rootNode);
+    const _t3 = performance.now();
 
     if (!xtermMode && process.env.SILVERY_PROFILE_RENDER) {
-      logRenderProfile(_t0, _t1, _t2, _t3)
+      logRenderProfile(_t0, _t1, _t2, _t3);
     }
-    return buf
+    return buf;
   }
 
   // Batched render - coalesces multiple calls within same tick
   function scheduleRender(): void {
-    if (renderScheduled || shouldExit) return
-    renderScheduled = true
+    if (renderScheduled || shouldExit) return;
+    renderScheduled = true;
 
     queueMicrotask(() => {
       if (shouldExit) {
-        renderScheduled = false
-        return
+        renderScheduled = false;
+        return;
       }
 
-      currentBuffer = doRender()
-      runtime.render(currentBuffer)
-      renderScheduled = false
-    })
+      currentBuffer = doRender();
+      runtime.render(currentBuffer);
+      renderScheduled = false;
+    });
   }
 
   /** SILVERY_PROFILE_RENDER: per-phase timing to stderr */
   function logRenderProfile(t0: number, t1: number, t2: number, t3: number): void {
-    const react = (t1 - t0).toFixed(1)
-    const pipeline = (t2 - t1).toFixed(1)
-    const buffer = (t3 - t2).toFixed(1)
-    const total = (t3 - t0).toFixed(1)
-    const phases = (globalThis as any).__silvery_last_pipeline
+    const react = (t1 - t0).toFixed(1);
+    const pipeline = (t2 - t1).toFixed(1);
+    const buffer = (t3 - t2).toFixed(1);
+    const total = (t3 - t0).toFixed(1);
+    const phases = (globalThis as any).__silvery_last_pipeline;
     if (phases) {
-      const m = phases.measure.toFixed(1)
-      const l = phases.layout.toFixed(1)
-      const s = phases.scroll.toFixed(1)
-      const c = phases.content.toFixed(1)
-      const o = phases.output.toFixed(1)
+      const m = phases.measure.toFixed(1);
+      const l = phases.layout.toFixed(1);
+      const s = phases.scroll.toFixed(1);
+      const c = phases.content.toFixed(1);
+      const o = phases.output.toFixed(1);
       process.stderr.write(
         `[render] react=${react}ms pipeline=${pipeline}ms (measure=${m} layout=${l} scroll=${s} content=${c} output=${o}) buffer=${buffer}ms total=${total}ms\n`,
-      )
+      );
     } else {
-      process.stderr.write(`[render] react=${react}ms pipeline=${pipeline}ms buffer=${buffer}ms total=${total}ms\n`)
+      process.stderr.write(
+        `[render] react=${react}ms pipeline=${pipeline}ms buffer=${buffer}ms total=${total}ms\n`,
+      );
     }
   }
 
@@ -497,34 +563,34 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
   function createKeyboardSource(): AsyncIterable<Event> {
     return {
       async *[Symbol.asyncIterator]() {
-        if (!stdin.isTTY) return
+        if (!stdin.isTTY) return;
 
-        stdin.setRawMode(true)
-        stdin.resume()
-        stdin.setEncoding("utf8")
+        stdin.setRawMode(true);
+        stdin.resume();
+        stdin.setEncoding("utf8");
 
         try {
           while (!signal.aborted) {
             const rawKey = await new Promise<string | null>((resolve) => {
               const onData = (data: string) => {
-                stdin.off("data", onData)
-                resolve(data)
-              }
+                stdin.off("data", onData);
+                resolve(data);
+              };
               const onAbort = () => {
-                stdin.off("data", onData)
-                resolve(null)
-              }
-              stdin.on("data", onData)
-              signal.addEventListener("abort", onAbort, { once: true })
-            })
+                stdin.off("data", onData);
+                resolve(null);
+              };
+              stdin.on("data", onData);
+              signal.addEventListener("abort", onAbort, { once: true });
+            });
 
-            if (rawKey === null || signal.aborted) break
+            if (rawKey === null || signal.aborted) break;
 
             // Intercept lifecycle keys BEFORE they reach useInput handlers.
             // In raw mode, Ctrl+C (\x03) and Ctrl+Z (\x1a) don't generate
             // signals — we must handle the raw bytes ourselves.
             if (!headless && rawKey === CTRL_Z && suspendOption) {
-              const prevented = onSuspendHook?.() === false
+              const prevented = onSuspendHook?.() === false;
               if (!prevented) {
                 const state = captureTerminalState({
                   alternateScreen: modeOption === "fullscreen",
@@ -534,31 +600,31 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
                   kittyFlags,
                   bracketedPaste: bracketedPasteEnabled,
                   rawMode: true,
-                })
+                });
                 performSuspend(state, stdout, stdin, () => {
                   // After resume, trigger a full re-render
-                  runtime.invalidate()
-                  onResumeHook?.()
-                })
+                  runtime.invalidate();
+                  onResumeHook?.();
+                });
               }
-              continue
+              continue;
             }
             if (!headless && rawKey === CTRL_C && exitOnCtrlCOption) {
-              const prevented = onInterruptHook?.() === false
+              const prevented = onInterruptHook?.() === false;
               if (!prevented) {
-                exit()
-                break
+                exit();
+                break;
               }
-              continue
+              continue;
             }
 
             // Check for bracketed paste before splitting into individual keys.
             // Pasted text arrives wrapped in markers and should be emitted as
             // a single paste event, not character-by-character.
-            const pasteResult = parseBracketedPaste(rawKey)
+            const pasteResult = parseBracketedPaste(rawKey);
             if (pasteResult) {
-              yield { type: "paste" as const, content: pasteResult.content }
-              continue
+              yield { type: "paste" as const, content: pasteResult.content };
+              continue;
             }
 
             // Split multi-character chunks into individual keypresses.
@@ -567,7 +633,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
             for (const keyChunk of splitRawInput(rawKey)) {
               // Check for mouse sequences first
               if (isMouseSequence(keyChunk)) {
-                const parsed = parseMouseSequence(keyChunk)
+                const parsed = parseMouseSequence(keyChunk);
                 if (parsed) {
                   yield {
                     type: "mouse" as const,
@@ -579,12 +645,12 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
                     shift: parsed.shift,
                     meta: parsed.meta,
                     ctrl: parsed.ctrl,
-                  }
-                  continue
+                  };
+                  continue;
                 }
               }
 
-              const [input, key] = parseKey(keyChunk)
+              const [input, key] = parseKey(keyChunk);
 
               yield {
                 type: "key" as const,
@@ -597,7 +663,7 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
                 super: key.super,
                 hyper: key.hyper,
                 eventType: key.eventType,
-              }
+              };
             }
           }
         } finally {
@@ -607,11 +673,11 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
             // (bracketed paste, mouse, kitty, cursor show). This prevents a
             // race where disabling raw mode before writing those sequences
             // leaves the terminal in a broken state.
-            stdin.pause()
+            stdin.pause();
           }
         }
       },
-    }
+    };
   }
 
   // ========================================================================
@@ -626,43 +692,43 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
   function createXtermKeyboardSource(): AsyncIterable<Event> {
     return {
       async *[Symbol.asyncIterator]() {
-        if (!xtermTerminal!.onData) return
+        if (!xtermTerminal!.onData) return;
 
-        const queue: string[] = []
-        let resolve: (() => void) | null = null
+        const queue: string[] = [];
+        let resolve: (() => void) | null = null;
 
         const disposable = xtermTerminal!.onData((data: string) => {
-          queue.push(data)
+          queue.push(data);
           if (resolve) {
-            const r = resolve
-            resolve = null
-            r()
+            const r = resolve;
+            resolve = null;
+            r();
           }
-        })
+        });
 
         try {
           while (!signal.aborted) {
             if (queue.length === 0) {
               await new Promise<void>((r) => {
-                resolve = r
-                signal.addEventListener("abort", () => r(), { once: true })
-              })
+                resolve = r;
+                signal.addEventListener("abort", () => r(), { once: true });
+              });
             }
-            if (signal.aborted) break
+            if (signal.aborted) break;
 
             while (queue.length > 0) {
-              const rawKey = queue.shift()!
+              const rawKey = queue.shift()!;
 
               // Check for bracketed paste
-              const pasteResult = parseBracketedPaste(rawKey)
+              const pasteResult = parseBracketedPaste(rawKey);
               if (pasteResult) {
-                yield { type: "paste" as const, content: pasteResult.content }
-                continue
+                yield { type: "paste" as const, content: pasteResult.content };
+                continue;
               }
 
               for (const keyChunk of splitRawInput(rawKey)) {
                 if (isMouseSequence(keyChunk)) {
-                  const parsed = parseMouseSequence(keyChunk)
+                  const parsed = parseMouseSequence(keyChunk);
                   if (parsed) {
                     yield {
                       type: "mouse" as const,
@@ -674,12 +740,12 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
                       shift: parsed.shift,
                       meta: parsed.meta,
                       ctrl: parsed.ctrl,
-                    }
-                    continue
+                    };
+                    continue;
                   }
                 }
 
-                const [input, key] = parseKey(keyChunk)
+                const [input, key] = parseKey(keyChunk);
                 yield {
                   type: "key" as const,
                   key: keyChunk,
@@ -691,15 +757,15 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
                   super: key.super,
                   hyper: key.hyper,
                   eventType: key.eventType,
-                }
+                };
               }
             }
           }
         } finally {
-          disposable.dispose()
+          disposable.dispose();
         }
       },
-    }
+    };
   }
 
   // ========================================================================
@@ -715,33 +781,33 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     : xtermMode
       ? {
           write(frame: string): void {
-            xtermTerminal!.write(frame)
+            xtermTerminal!.write(frame);
           },
           getDims(): Dims {
-            return currentDims
+            return currentDims;
           },
           // No onResize — xterm.js doesn't emit SIGWINCH.
           // Caller handles resize via instance.resize() or terminal.resize().
         }
       : {
           write(frame: string): void {
-            stdout.write(frame)
+            stdout.write(frame);
           },
           getDims(): Dims {
-            return currentDims
+            return currentDims;
           },
           onResize(handler: (dims: Dims) => void): () => void {
             const onResize = () => {
               currentDims = {
                 cols: stdout.columns || 80,
                 rows: stdout.rows || 24,
-              }
-              handler(currentDims)
-            }
-            stdout.on("resize", onResize)
-            return () => stdout.off("resize", onResize)
+              };
+              handler(currentDims);
+            };
+            stdout.on("resize", onResize);
+            return () => stdout.off("resize", onResize);
           },
-        }
+        };
 
   // Create runtime
   const runtime = createRuntime({
@@ -749,102 +815,102 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     signal,
     mode: modeOption,
     outputPhaseFn: pipelineConfig?.outputPhaseFn,
-  })
+  });
 
   // Exit function
   const exit = () => {
-    shouldExit = true
-    controller.abort()
-  }
+    shouldExit = true;
+    controller.abort();
+  };
 
   // Input context value (run() runtime's own subscription system)
   const inputContextValue: InputContextValue = {
     subscribe(handler: InputHandler) {
-      inputHandlers.add(handler)
-      return () => inputHandlers.delete(handler)
+      inputHandlers.add(handler);
+      return () => inputHandlers.delete(handler);
     },
-  }
+  };
 
   // Paste context value (run()'s own hook system)
   const pasteContextValue: PasteContextValue = {
     subscribe(handler: PasteHandler) {
-      pasteHandlers.add(handler)
-      return () => pasteHandlers.delete(handler)
+      pasteHandlers.add(handler);
+      return () => pasteHandlers.delete(handler);
     },
-  }
+  };
 
   // Internal runtime context (for useExit)
   const runInternalContextValue: RunInternalContextValue = {
     runtime,
     exit,
-  }
+  };
 
   // RuntimeContext — typed event bus bridging from run()'s handler Sets
   const unifiedRuntimeValue: RuntimeContextValue = {
     on(event, handler) {
       if (event === "input") {
         const wrapped: InputHandler = (input, key) => {
-          ;(handler as (input: string, key: import("@silvery/tea/keys").Key) => void)(input, key)
-        }
-        inputHandlers.add(wrapped)
-        return () => inputHandlers.delete(wrapped)
+          (handler as (input: string, key: import("@silvery/tea/keys").Key) => void)(input, key);
+        };
+        inputHandlers.add(wrapped);
+        return () => inputHandlers.delete(wrapped);
       }
       if (event === "paste") {
-        pasteHandlers.add(handler as (text: string) => void)
-        return () => pasteHandlers.delete(handler as (text: string) => void)
+        pasteHandlers.add(handler as (text: string) => void);
+        return () => pasteHandlers.delete(handler as (text: string) => void);
       }
-      return () => {} // Unknown event — no-op cleanup
+      return () => {}; // Unknown event — no-op cleanup
     },
     emit() {
       // run() runtime doesn't support view → runtime events yet
     },
     exit,
-  }
+  };
 
   // Create SilveryNode container (persistent for React state)
   const container = createContainer(() => {
     // Schedule render when React state changes
-    scheduleRender()
-  })
+    scheduleRender();
+  });
 
   // Create React fiber root
-  const fiberRoot = createFiberRoot(container)
+  const fiberRoot = createFiberRoot(container);
 
   // Create mock stdout for contexts.
   // Must support resize events so ScrollbackView can detect terminal size changes
   // and re-emit frozen items at the new width. Must forward writes to the real
   // target so useScrollback's resize path (clear screen + re-emit frozen items)
   // actually reaches the terminal.
-  const resizeListeners = new Set<() => void>()
+  const resizeListeners = new Set<() => void>();
   const mockStdout = {
     columns: cols,
     rows: rows,
     write: (data: string) => {
-      target.write(data)
-      return true
+      target.write(data);
+      return true;
     },
     isTTY: false,
     on(event: string, handler: () => void) {
-      if (event === "resize") resizeListeners.add(handler)
-      return mockStdout
+      if (event === "resize") resizeListeners.add(handler);
+      return mockStdout;
     },
     off(event: string, handler: () => void) {
-      if (event === "resize") resizeListeners.delete(handler)
-      return mockStdout
+      if (event === "resize") resizeListeners.delete(handler);
+      return mockStdout;
     },
     once: () => mockStdout,
     removeListener(event: string, handler: () => void) {
-      if (event === "resize") resizeListeners.delete(handler)
-      return mockStdout
+      if (event === "resize") resizeListeners.delete(handler);
+      return mockStdout;
     },
     addListener(event: string, handler: () => void) {
-      if (event === "resize") resizeListeners.add(handler)
-      return mockStdout
+      if (event === "resize") resizeListeners.add(handler);
+      return mockStdout;
     },
-  } as unknown as NodeJS.WriteStream
+  } as unknown as NodeJS.WriteStream;
 
   // Create mock term for useTerm()
-  const mockTerm = createTerm({ color: "truecolor" })
+  const mockTerm = createTerm({ color: "truecolor" });
 
   // Wrap element with all required providers
   const wrappedElement = (
@@ -857,7 +923,8 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
             notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
             resetInlineCursor: () => runtime.resetInlineCursor(),
             getInlineCursorRow: () => runtime.getInlineCursorRow(),
-            promoteScrollback: (content: string, lines: number) => runtime.promoteScrollback(content, lines),
+            promoteScrollback: (content: string, lines: number) =>
+              runtime.promoteScrollback(content, lines),
           }}
         >
           <FocusManagerContext.Provider value={focusManager}>
@@ -872,65 +939,65 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
         </StdoutContext.Provider>
       </TermContext.Provider>
     </CursorProvider>
-  )
+  );
 
   // Initial render (synchronous, not batched)
-  currentBuffer = doRender()
+  currentBuffer = doRender();
 
   // Setup terminal: fullscreen clears screen, inline just hides cursor
   if (xtermMode) {
     // xterm.js terminal setup — no kitty keyboard, no bracketed paste (xterm.js handles these)
     if (modeOption === "inline") {
-      xtermTerminal!.write("\x1b[?25l") // Hide cursor only
+      xtermTerminal!.write("\x1b[?25l"); // Hide cursor only
     } else {
-      xtermTerminal!.write("\x1b[2J\x1b[H\x1b[?25l") // Clear screen + home + hide cursor
+      xtermTerminal!.write("\x1b[2J\x1b[H\x1b[?25l"); // Clear screen + home + hide cursor
     }
 
     // Mouse tracking (SGR mode — xterm.js supports this)
     if (mouseOption) {
-      xtermTerminal!.write(enableMouse())
-      mouseEnabled = true
+      xtermTerminal!.write(enableMouse());
+      mouseEnabled = true;
     }
   } else if (!headless) {
     if (modeOption === "inline") {
-      stdout.write("\x1b[?25l") // Hide cursor only
+      stdout.write("\x1b[?25l"); // Hide cursor only
     } else {
-      stdout.write("\x1b[2J\x1b[H\x1b[?25l") // Clear screen + home + hide cursor
+      stdout.write("\x1b[2J\x1b[H\x1b[?25l"); // Clear screen + home + hide cursor
     }
 
     // Kitty keyboard protocol
     if (kittyOption != null && kittyOption !== false) {
       if (kittyOption === true) {
-        const result = await detectKittyFromStdio(stdout, stdin as NodeJS.ReadStream)
+        const result = await detectKittyFromStdio(stdout, stdin as NodeJS.ReadStream);
         if (result.supported) {
-          stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE))
-          kittyEnabled = true
-          kittyFlags = KittyFlags.DISAMBIGUATE
+          stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE));
+          kittyEnabled = true;
+          kittyFlags = KittyFlags.DISAMBIGUATE;
         }
       } else {
-        stdout.write(enableKittyKeyboard(kittyOption as 1))
-        kittyEnabled = true
-        kittyFlags = kittyOption as number
+        stdout.write(enableKittyKeyboard(kittyOption as 1));
+        kittyEnabled = true;
+        kittyFlags = kittyOption as number;
       }
     }
 
     // Mouse tracking
     if (mouseOption) {
-      stdout.write(enableMouse())
-      mouseEnabled = true
+      stdout.write(enableMouse());
+      mouseEnabled = true;
     }
 
     // Bracketed paste mode
-    enableBracketedPaste(stdout)
-    bracketedPasteEnabled = true
+    enableBracketedPaste(stdout);
+    bracketedPasteEnabled = true;
   }
-  runtime.render(currentBuffer)
+  runtime.render(currentBuffer);
 
   // Exit promise
-  let exitResolve: () => void
+  let exitResolve: () => void;
   const exitPromise = new Promise<void>((resolve) => {
-    exitResolve = resolve
-  })
+    exitResolve = resolve;
+  });
 
   // ========================================================================
   // Event Loop
@@ -943,32 +1010,32 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
   function processEvent(event: Event & { parsedKey?: Key; input?: string }): boolean {
     // Handle key events with parsed key
     if (event.type === "key" && "parsedKey" in event) {
-      const { input, parsedKey } = event as { input: string; parsedKey: Key; key?: string }
+      const { input, parsedKey } = event as { input: string; parsedKey: Key; key?: string };
 
       // Focus system: dispatch key event to focused node first
-      let focusHandled = false
+      let focusHandled = false;
       if (focusManager.activeElement) {
-        const keyEvent = createKeyEvent(input, parsedKey, focusManager.activeElement)
-        dispatchKeyEvent(keyEvent)
+        const keyEvent = createKeyEvent(input, parsedKey, focusManager.activeElement);
+        dispatchKeyEvent(keyEvent);
 
         if (keyEvent.propagationStopped || keyEvent.defaultPrevented) {
-          focusHandled = true
+          focusHandled = true;
         }
       }
 
       // Default focus navigation (Tab, Shift+Tab, Enter, Escape, arrows)
       // Runs even without activeElement so Tab can start focus cycling.
       if (!focusHandled) {
-        const root = getContainerRoot(container)
-        focusHandled = handleFocusNavigation(parsedKey, focusManager, root)
+        const root = getContainerRoot(container);
+        focusHandled = handleFocusNavigation(parsedKey, focusManager, root);
       }
 
       // Fall through to app's useInput handlers
       if (!focusHandled) {
         for (const handler of inputHandlers) {
-          const result = handler(input, parsedKey)
+          const result = handler(input, parsedKey);
           if (result === "exit") {
-            return false
+            return false;
           }
         }
       }
@@ -977,17 +1044,17 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     // Handle mouse events with DOM-level dispatch
     if (event.type === "mouse") {
       const mouseData = event as {
-        x: number
-        y: number
-        button: number
-        action: string
-        delta?: number
-        shift: boolean
-        meta: boolean
-        ctrl: boolean
-      }
+        x: number;
+        y: number;
+        button: number;
+        action: string;
+        delta?: number;
+        shift: boolean;
+        meta: boolean;
+        ctrl: boolean;
+      };
 
-      const root = getContainerRoot(container)
+      const root = getContainerRoot(container);
 
       processMouseEvent(
         mouseEventState,
@@ -1002,14 +1069,14 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
           ctrl: mouseData.ctrl,
         },
         root,
-      )
+      );
     }
 
     // Handle paste events
     if (event.type === "paste") {
-      const { content } = event as { content: string }
+      const { content } = event as { content: string };
       for (const handler of pasteHandlers) {
-        handler(content)
+        handler(content);
       }
     }
 
@@ -1017,142 +1084,142 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
     // Without scheduleRender(), a resize with no pending key events would
     // leave stale content on screen until the user's next keystroke.
     if (event.type === "resize") {
-      prevTermBuffer = null
-      runtime.invalidate()
+      prevTermBuffer = null;
+      runtime.invalidate();
 
       // Update mockStdout dimensions and notify ScrollbackView.
       // Without this, ScrollbackView never detects the resize and
       // frozen items are never re-emitted at the new width.
-      const newDims = runtime.getDims()
-      mockStdout.columns = newDims.cols
-      mockStdout.rows = newDims.rows
-      for (const handler of resizeListeners) handler()
+      const newDims = runtime.getDims();
+      mockStdout.columns = newDims.cols;
+      mockStdout.rows = newDims.rows;
+      for (const handler of resizeListeners) handler();
 
-      scheduleRender()
+      scheduleRender();
     }
 
-    return true
+    return true;
   }
 
   const eventLoop = async () => {
     // Merge keyboard and runtime events
-    const keyboardEvents = xtermMode ? createXtermKeyboardSource() : createKeyboardSource()
-    const runtimeEvents = runtime.events()
-    const allEvents = merge(keyboardEvents, runtimeEvents)
+    const keyboardEvents = xtermMode ? createXtermKeyboardSource() : createKeyboardSource();
+    const runtimeEvents = runtime.events();
+    const allEvents = merge(keyboardEvents, runtimeEvents);
 
     // Event coalescing: pump events into a queue, drain all pending
     // events before rendering. This batches auto-repeat keys (e.g.,
     // holding 'j') so multiple state mutations share one render pass.
-    const eventQueue: (Event & { parsedKey?: Key; input?: string })[] = []
-    let eventQueueResolve: (() => void) | null = null
+    const eventQueue: (Event & { parsedKey?: Key; input?: string })[] = [];
+    let eventQueueResolve: (() => void) | null = null;
 
     // Pump events from async iterable into the shared queue
     const pumpEvents = async () => {
       try {
         for await (const event of takeUntil(allEvents, signal)) {
-          eventQueue.push(event as Event & { parsedKey?: Key; input?: string })
+          eventQueue.push(event as Event & { parsedKey?: Key; input?: string });
           if (eventQueueResolve) {
-            const resolve = eventQueueResolve
-            eventQueueResolve = null
-            resolve()
+            const resolve = eventQueueResolve;
+            eventQueueResolve = null;
+            resolve();
           }
-          if (shouldExit) break
+          if (shouldExit) break;
         }
       } finally {
         // Signal end of events
         if (eventQueueResolve) {
-          const resolve = eventQueueResolve
-          eventQueueResolve = null
-          resolve()
+          const resolve = eventQueueResolve;
+          eventQueueResolve = null;
+          resolve();
         }
       }
-    }
+    };
 
     // Start pump in background
-    pumpEvents().catch(console.error)
+    pumpEvents().catch(console.error);
 
     try {
       while (!shouldExit && !signal.aborted) {
         // Wait for at least one event
         if (eventQueue.length === 0) {
           await new Promise<void>((resolve) => {
-            eventQueueResolve = resolve
-            signal.addEventListener("abort", () => resolve(), { once: true })
-          })
+            eventQueueResolve = resolve;
+            signal.addEventListener("abort", () => resolve(), { once: true });
+          });
         }
 
-        if (shouldExit || signal.aborted) break
-        if (eventQueue.length === 0) continue
+        if (shouldExit || signal.aborted) break;
+        if (eventQueue.length === 0) continue;
 
         // Yield to microtask queue so the pump can push any additional
         // pending events before we drain. Without this, the first event
         // after idle always processes solo (1-event batch), even when
         // auto-repeat has queued multiple events in the term provider.
-        await Promise.resolve()
+        await Promise.resolve();
 
         // Drain events in capped batches. Each event triggers ~3 setState
         // cascades (useReadline + onChange + useEffect sync). React's
         // NESTED_UPDATE_LIMIT is 50, so 16 × 3 = 48 stays safely under.
         // Between batches, flush React state (resets the update counter)
         // but defer the expensive layout+render to after all events drain.
-        const MAX_BATCH = 16
+        const MAX_BATCH = 16;
         while (eventQueue.length > 0 && !shouldExit) {
-          const batch = eventQueue.splice(0, MAX_BATCH)
+          const batch = eventQueue.splice(0, MAX_BATCH);
           for (const event of batch) {
-            if (shouldExit) break
+            if (shouldExit) break;
             if (!processEvent(event)) {
-              exit()
-              break
+              exit();
+              break;
             }
           }
 
           // Flush React state to reset NESTED_UPDATE_LIMIT counter.
           // This is cheap (just React reconciliation, no layout/render).
           if (!shouldExit && eventQueue.length > 0) {
-            reconciler.updateContainerSync(wrappedElement, fiberRoot, null, () => {})
-            reconciler.flushSyncWork()
+            reconciler.updateContainerSync(wrappedElement, fiberRoot, null, () => {});
+            reconciler.flushSyncWork();
           }
         }
 
         // One render for the entire drain — layout + content + output.
         if (!shouldExit) {
-          currentBuffer = doRender()
-          runtime.render(currentBuffer)
+          currentBuffer = doRender();
+          runtime.render(currentBuffer);
         }
       }
     } finally {
       try {
         // Unmount React tree so useEffect cleanup functions fire
         // (clears intervals, timeouts, subscriptions in components)
-        reconciler.updateContainerSync(null, fiberRoot, null, () => {})
-        reconciler.flushSyncWork()
+        reconciler.updateContainerSync(null, fiberRoot, null, () => {});
+        reconciler.flushSyncWork();
 
         // Cleanup
-        runtime[Symbol.dispose]()
+        runtime[Symbol.dispose]();
         if (xtermMode) {
           // xterm.js cleanup: disable mouse if enabled, show cursor
-          if (mouseEnabled) xtermTerminal!.write(disableMouse())
-          xtermTerminal!.write("\x1b[?25h\x1b[0m\n")
+          if (mouseEnabled) xtermTerminal!.write(disableMouse());
+          xtermTerminal!.write("\x1b[?25h\x1b[0m\n");
         } else if (!headless) {
-          disableBracketedPaste(stdout)
-          if (mouseEnabled) stdout.write(disableMouse())
-          if (kittyEnabled) stdout.write(disableKittyKeyboard())
-          stdout.write("\x1b[?25h\x1b[0m\n")
+          disableBracketedPaste(stdout);
+          if (mouseEnabled) stdout.write(disableMouse());
+          if (kittyEnabled) stdout.write(disableKittyKeyboard());
+          stdout.write("\x1b[?25h\x1b[0m\n");
         }
       } finally {
         // Always restore raw mode + resolve exit, even if React unmount
         // throws. Without this inner finally, an error in useEffect
         // cleanup would leave the terminal in raw mode.
         if (!xtermMode && stdin.isTTY && (stdin as NodeJS.ReadStream).isRaw) {
-          stdin.setRawMode(false)
+          stdin.setRawMode(false);
         }
-        exitResolve()
+        exitResolve();
       }
     }
-  }
+  };
 
   // Start loop in background
-  eventLoop().catch(console.error)
+  eventLoop().catch(console.error);
 
   // ========================================================================
   // Return Handle
@@ -1160,53 +1227,53 @@ export async function run(element: ReactElement, options: RunOptions = {}): Prom
 
   return {
     get text() {
-      return currentBuffer.text
+      return currentBuffer.text;
     },
     waitUntilExit() {
-      return exitPromise
+      return exitPromise;
     },
     unmount() {
-      exit()
+      exit();
     },
     [Symbol.dispose]() {
-      exit()
+      exit();
     },
     async press(key: string) {
       // Parse the key
-      const [input, parsedKey] = parseKey(key)
+      const [input, parsedKey] = parseKey(key);
 
       // Focus system: dispatch key event to focused node first
-      let focusHandled = false
+      let focusHandled = false;
       if (focusManager.activeElement) {
-        const keyEvent = createKeyEvent(input, parsedKey, focusManager.activeElement)
-        dispatchKeyEvent(keyEvent)
+        const keyEvent = createKeyEvent(input, parsedKey, focusManager.activeElement);
+        dispatchKeyEvent(keyEvent);
 
         if (keyEvent.propagationStopped || keyEvent.defaultPrevented) {
-          focusHandled = true
+          focusHandled = true;
         }
       }
 
       // Default focus navigation (Tab, Shift+Tab, Enter, Escape, arrows)
       // Runs even without activeElement so Tab can start focus cycling.
       if (!focusHandled) {
-        const root = getContainerRoot(container)
-        focusHandled = handleFocusNavigation(parsedKey, focusManager, root)
+        const root = getContainerRoot(container);
+        focusHandled = handleFocusNavigation(parsedKey, focusManager, root);
       }
 
       // Fall through to app's useInput handlers
       if (!focusHandled) {
         for (const handler of inputHandlers) {
-          const result = handler(input, parsedKey)
+          const result = handler(input, parsedKey);
           if (result === "exit") {
-            exit()
-            break
+            exit();
+            break;
           }
         }
       }
 
       // Synchronous render for testing (not batched)
-      currentBuffer = doRender()
-      await Promise.resolve()
+      currentBuffer = doRender();
+      await Promise.resolve();
     },
-  }
+  };
 }

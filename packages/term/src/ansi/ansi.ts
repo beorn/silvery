@@ -16,16 +16,16 @@
 // =============================================================================
 
 /** Escape character (0x1B) */
-const ESC = "\x1b"
+const ESC = "\x1b";
 
 /** Control Sequence Introducer: ESC [ */
-const CSI = `${ESC}[`
+const CSI = `${ESC}[`;
 
 /** Operating System Command: ESC ] */
-const OSC = `${ESC}]`
+const OSC = `${ESC}]`;
 
 /** Bell character (0x07) -- used as string terminator in OSC sequences */
-const BEL = "\x07"
+const BEL = "\x07";
 
 // =============================================================================
 // Screen
@@ -36,28 +36,28 @@ const BEL = "\x07"
  * The alternate screen preserves the main scrollback buffer.
  */
 export function enterAltScreen(): string {
-  return `${CSI}?1049h`
+  return `${CSI}?1049h`;
 }
 
 /**
  * Leave the alternate screen buffer and restore the main screen.
  */
 export function leaveAltScreen(): string {
-  return `${CSI}?1049l`
+  return `${CSI}?1049l`;
 }
 
 /**
  * Clear the entire screen (ED 2 -- Erase in Display, all).
  */
 export function clearScreen(): string {
-  return `${CSI}2J`
+  return `${CSI}2J`;
 }
 
 /**
  * Clear the current line (EL 2 -- Erase in Line, entire line).
  */
 export function clearLine(): string {
-  return `${CSI}2K`
+  return `${CSI}2K`;
 }
 
 // =============================================================================
@@ -69,28 +69,28 @@ export function clearLine(): string {
  * Uses 0-indexed row/col; converts to 1-indexed CUP (Cursor Position).
  */
 export function cursorTo(row: number, col: number): string {
-  return `${CSI}${row + 1};${col + 1}H`
+  return `${CSI}${row + 1};${col + 1}H`;
 }
 
 /**
  * Move cursor to the home position (top-left, row 0, col 0).
  */
 export function cursorHome(): string {
-  return `${CSI}H`
+  return `${CSI}H`;
 }
 
 /**
  * Hide the cursor (DEC private mode 25, reset).
  */
 export function cursorHide(): string {
-  return `${CSI}?25l`
+  return `${CSI}?25l`;
 }
 
 /**
  * Show the cursor (DEC private mode 25, set).
  */
 export function cursorShow(): string {
-  return `${CSI}?25h`
+  return `${CSI}?25h`;
 }
 
 /**
@@ -106,8 +106,8 @@ export function cursorShow(): string {
  * Supported by: xterm, Ghostty, Kitty, WezTerm, iTerm2, Alacritty, foot.
  */
 export function cursorStyle(style: "block" | "underline" | "beam"): string {
-  const code = style === "block" ? 2 : style === "underline" ? 4 : 6
-  return `${CSI}${code} q`
+  const code = style === "block" ? 2 : style === "underline" ? 4 : 6;
+  return `${CSI}${code} q`;
 }
 
 // =============================================================================
@@ -119,7 +119,7 @@ export function cursorStyle(style: "block" | "underline" | "beam"): string {
  * Does not affect icon title. Widely supported.
  */
 export function setTitle(title: string): string {
-  return `${OSC}2;${title}${BEL}`
+  return `${OSC}2;${title}${BEL}`;
 }
 
 /**
@@ -131,7 +131,7 @@ export function setTitle(title: string): string {
  * - 1006: SGR extended coordinates (supports >223 columns)
  */
 export function enableMouse(): string {
-  return `${CSI}?1000h${CSI}?1002h${CSI}?1006h`
+  return `${CSI}?1000h${CSI}?1002h${CSI}?1006h`;
 }
 
 /**
@@ -140,7 +140,7 @@ export function enableMouse(): string {
  * Disables in reverse order of enabling.
  */
 export function disableMouse(): string {
-  return `${CSI}?1006l${CSI}?1002l${CSI}?1000l`
+  return `${CSI}?1006l${CSI}?1002l${CSI}?1000l`;
 }
 
 /**
@@ -149,14 +149,14 @@ export function disableMouse(): string {
  * paste from typed input.
  */
 export function enableBracketedPaste(): string {
-  return `${CSI}?2004h`
+  return `${CSI}?2004h`;
 }
 
 /**
  * Disable bracketed paste mode.
  */
 export function disableBracketedPaste(): string {
-  return `${CSI}?2004l`
+  return `${CSI}?2004l`;
 }
 
 /**
@@ -166,7 +166,7 @@ export function disableBracketedPaste(): string {
  * Terminals that don't support it safely ignore this sequence.
  */
 export function enableSyncUpdate(): string {
-  return `${CSI}?2026h`
+  return `${CSI}?2026h`;
 }
 
 /**
@@ -174,7 +174,7 @@ export function enableSyncUpdate(): string {
  * Sending this when not in sync mode is a harmless no-op.
  */
 export function disableSyncUpdate(): string {
-  return `${CSI}?2026l`
+  return `${CSI}?2026l`;
 }
 
 // =============================================================================
@@ -188,14 +188,14 @@ export function disableSyncUpdate(): string {
  * Supported by most modern terminals: xterm, iTerm2, Kitty, Ghostty, WezTerm, etc.
  */
 export function setScrollRegion(top: number, bottom: number): string {
-  return `${CSI}${top + 1};${bottom + 1}r`
+  return `${CSI}${top + 1};${bottom + 1}r`;
 }
 
 /**
  * Reset the scroll region to the full terminal height.
  */
 export function resetScrollRegion(): string {
-  return `${CSI}r`
+  return `${CSI}r`;
 }
 
 /**
@@ -203,8 +203,8 @@ export function resetScrollRegion(): string {
  * New blank lines appear at the bottom.
  */
 export function scrollUp(n: number): string {
-  if (n <= 0) return ""
-  return `${CSI}${n}S`
+  if (n <= 0) return "";
+  return `${CSI}${n}S`;
 }
 
 /**
@@ -212,8 +212,8 @@ export function scrollUp(n: number): string {
  * New blank lines appear at the top.
  */
 export function scrollDown(n: number): string {
-  if (n <= 0) return ""
-  return `${CSI}${n}T`
+  if (n <= 0) return "";
+  return `${CSI}${n}T`;
 }
 
 // =============================================================================
@@ -239,7 +239,7 @@ export function scrollDown(n: number): string {
  * @param flags Bitfield of Kitty keyboard flags
  */
 export function enableKittyKeyboard(flags: number): string {
-  return `${CSI}>${flags}u`
+  return `${CSI}>${flags}u`;
 }
 
 /**
@@ -247,5 +247,5 @@ export function enableKittyKeyboard(flags: number): string {
  * Sends CSI < u to restore the previous keyboard mode.
  */
 export function disableKittyKeyboard(): string {
-  return `${CSI}<u`
+  return `${CSI}<u`;
 }

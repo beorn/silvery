@@ -26,7 +26,7 @@ If **no**, only append-only output works (use `renderString()`).
 **Detection:**
 
 ```ts
-term.hasCursor() // stdout.isTTY && TERM !== 'dumb'
+term.hasCursor(); // stdout.isTTY && TERM !== 'dumb'
 ```
 
 ### 2. Color Level (`term.hasColor()`)
@@ -43,7 +43,7 @@ What color codes does the terminal support?
 **Detection:**
 
 ```ts
-term.hasColor() // null | 'basic' | '256' | 'truecolor'
+term.hasColor(); // null | 'basic' | '256' | 'truecolor'
 ```
 
 ### 3. Input Capability (`term.hasInput()`)
@@ -51,7 +51,7 @@ term.hasColor() // null | 'basic' | '256' | 'truecolor'
 Can the app read individual keystrokes (raw mode)?
 
 ```ts
-term.hasInput() // stdin.isTTY && setRawMode available
+term.hasInput(); // stdin.isTTY && setRawMode available
 ```
 
 Required for: `useInput`, keyboard navigation, interactive TUIs.
@@ -67,7 +67,7 @@ Beyond raw capabilities, the **environment** affects what's practical:
 ### TTY Status
 
 ```ts
-process.stdout.isTTY // true if connected to terminal
+process.stdout.isTTY; // true if connected to terminal
 ```
 
 When `false` (piped, redirected, CI):
@@ -174,43 +174,43 @@ This is how Ink handles the same problem.
 ## Creating a Term
 
 ```ts
-import { createTerm } from "@silvery/ansi"
+import { createTerm } from "@silvery/ansi";
 
 // Default (process.stdout/stdin) - Disposable
-using term = createTerm()
+using term = createTerm();
 
 // Custom streams
-using term = createTerm({ stdout: customOut, stdin: customIn })
+using term = createTerm({ stdout: customOut, stdin: customIn });
 
 // For testing
 using term = createTerm({
   stdout: new MockWriteStream({ cols: 80, rows: 24 }),
   stdin: new MockReadStream(),
-})
+});
 ```
 
 ## Term API
 
 ```ts
 // Detection
-term.hasCursor() // boolean - can use cursor control?
-term.hasInput() // boolean - can read keystrokes (raw mode)?
-term.hasColor() // null | 'basic' | '256' | 'truecolor'
+term.hasCursor(); // boolean - can use cursor control?
+term.hasInput(); // boolean - can read keystrokes (raw mode)?
+term.hasColor(); // null | 'basic' | '256' | 'truecolor'
 
 // Dimensions
-term.cols // number | undefined
-term.rows // number | undefined
+term.cols; // number | undefined
+term.rows; // number | undefined
 
 // Styling
-term.chalk.red("error")
-term.chalk.bold.green("success")
+term.chalk.red("error");
+term.chalk.bold.green("success");
 
 // Utilities
-term.stripAnsi(str)
-term.write(str)
+term.stripAnsi(str);
+term.write(str);
 
 // Cleanup
-term.dispose() // or let `using` handle it
+term.dispose(); // or let `using` handle it
 ```
 
 ## Code Examples
@@ -239,50 +239,50 @@ if (term.hasCursor() && term.hasInput()) {
 ### Adaptive Components
 
 ```tsx
-import { useTerm, Box, Text } from "@silvery/term"
+import { useTerm, Box, Text } from "@silvery/term";
 
 function StatusLine({ status }: { status: string }) {
-  const term = useTerm()
+  const term = useTerm();
 
   // Same component, adapts to capabilities
-  const color = term.hasColor() ? "green" : undefined
+  const color = term.hasColor() ? "green" : undefined;
 
   return (
     <Box>
       <Text color={color}>{status}</Text>
     </Box>
-  )
+  );
 }
 ```
 
 ### Console Component
 
 ```tsx
-import { createTerm } from "@silvery/ansi"
-import { render, Console, Box, Text } from "@silvery/term"
+import { createTerm } from "@silvery/ansi";
+import { render, Console, Box, Text } from "@silvery/term";
 
-using term = createTerm()
+using term = createTerm();
 
 using app = await render(
   <Box flexDirection="column">
     <Console /> {/* Worker output appears here */}
     <Text>My UI below</Text>
   </Box>,
-)
+);
 
 // Now console.log() calls appear in the Console component
-console.log("This shows in <Console />")
+console.log("This shows in <Console />");
 ```
 
 ### Test Reporter Pattern
 
 ```tsx
-import { createTerm } from "@silvery/ansi"
-import { render, renderString, Console, Box } from "@silvery/term"
+import { createTerm } from "@silvery/ansi";
+import { render, renderString, Console, Box } from "@silvery/term";
 
 class Reporter {
-  private term = createTerm()
-  private app: RenderInstance | null = null
+  private term = createTerm();
+  private app: RenderInstance | null = null;
 
   async onTestRunStart() {
     if (this.term.hasCursor()) {
@@ -292,22 +292,22 @@ class Reporter {
           <Console />
           <ReporterUI state={this.state} />
         </Box>,
-      )
+      );
     }
   }
 
   onTestCaseResult(result: TestResult) {
     if (this.app) {
-      this.setState({ results: [...this.state.results, result] })
+      this.setState({ results: [...this.state.results, result] });
     } else {
-      console.log(renderString(<ResultDot result={result} />))
+      console.log(renderString(<ResultDot result={result} />));
     }
   }
 
   onTestRunEnd() {
-    this.app?.dispose()
-    console.log(renderString(<Summary stats={this.stats} />))
-    this.term.dispose()
+    this.app?.dispose();
+    console.log(renderString(<Summary stats={this.stats} />));
+    this.term.dispose();
   }
 }
 ```
@@ -421,10 +421,10 @@ When `kitty: <number>`, Silvery skips detection and enables with the specified f
 For manual detection outside of `run()`:
 
 ```typescript
-import { detectKittyFromStdio, detectKittySupport, type KittyDetectResult } from "@silvery/term"
+import { detectKittyFromStdio, detectKittySupport, type KittyDetectResult } from "@silvery/term";
 
 // Convenience: uses real stdin/stdout
-const result = await detectKittyFromStdio(process.stdout, process.stdin, 200)
+const result = await detectKittyFromStdio(process.stdout, process.stdin, 200);
 // result: { supported: boolean, flags: number, buffered?: string }
 
 // Low-level: custom I/O functions
@@ -432,7 +432,7 @@ const result = await detectKittySupport(
   (s) => socket.write(s), // write function
   (ms) => readWithTimeout(ms), // read function (returns string | null)
   200, // timeout in ms
-)
+);
 ```
 
 The `buffered` field contains any non-response data read during detection (user input that arrived while waiting).
@@ -442,19 +442,24 @@ The `buffered` field contains any non-response data read during detection (user 
 Manual control functions (auto-enable handles these for you):
 
 ```typescript
-import { enableKittyKeyboard, disableKittyKeyboard, queryKittyKeyboard, KittyFlags } from "@silvery/term"
+import {
+  enableKittyKeyboard,
+  disableKittyKeyboard,
+  queryKittyKeyboard,
+  KittyFlags,
+} from "@silvery/term";
 
 // Enable with default flags (disambiguate only)
-stdout.write(enableKittyKeyboard())
+stdout.write(enableKittyKeyboard());
 
 // Enable with specific flags
-stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS))
+stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS));
 
 // Query terminal support (response: CSI ? flags u)
-stdout.write(queryKittyKeyboard())
+stdout.write(queryKittyKeyboard());
 
 // Disable (pop mode stack)
-stdout.write(disableKittyKeyboard())
+stdout.write(disableKittyKeyboard());
 ```
 
 ### Flags
@@ -495,9 +500,9 @@ All seven modifiers are independently distinguishable. Parsed values on the `Key
 
 ```typescript
 useInput((input, key) => {
-  if (key.super && input === "j") handleCmdJ() // ⌘J
-  if (key.hyper && key.ctrl) handleHyperCtrl() // ✦⌃
-})
+  if (key.super && input === "j") handleCmdJ(); // ⌘J
+  if (key.hyper && key.ctrl) handleHyperCtrl(); // ✦⌃
+});
 ```
 
 ### Extended Key Fields
@@ -519,10 +524,10 @@ When `REPORT_EVENTS` (flag 2) is enabled, the terminal reports press (1), repeat
 
 ```typescript
 useInput((input, key) => {
-  if (key.eventType === 1) onKeyDown(input) // Initial press
-  if (key.eventType === 2) onKeyRepeat(input) // Key held down
-  if (key.eventType === 3) onKeyUp(input) // Key released
-})
+  if (key.eventType === 1) onKeyDown(input); // Initial press
+  if (key.eventType === 2) onKeyRepeat(input); // Key held down
+  if (key.eventType === 3) onKeyUp(input); // Key released
+});
 ```
 
 ### Terminal Support
@@ -573,11 +578,11 @@ Column and row are 1-indexed in the protocol, parsed to 0-indexed by `parseMouse
 ### Parsing
 
 ```typescript
-import { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/term"
+import { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/term";
 
 // Quick check
 if (isMouseSequence(rawInput)) {
-  const event = parseMouseSequence(rawInput)
+  const event = parseMouseSequence(rawInput);
   // event: { button: 0, x: 9, y: 4, action: "down", shift: false, meta: false, ctrl: false }
 }
 ```
@@ -624,16 +629,16 @@ Text is base64-encoded in the escape sequence. Terminals support both BEL (`\x07
 ### API
 
 ```tsx
-import { copyToClipboard, requestClipboard, parseClipboardResponse } from "@silvery/term"
+import { copyToClipboard, requestClipboard, parseClipboardResponse } from "@silvery/term";
 
 // Copy text to system clipboard
-copyToClipboard(process.stdout, "Hello, clipboard!")
+copyToClipboard(process.stdout, "Hello, clipboard!");
 
 // Request clipboard contents (terminal sends response asynchronously)
-requestClipboard(process.stdout)
+requestClipboard(process.stdout);
 
 // Parse the terminal's response
-const text = parseClipboardResponse(rawInput) // string | null
+const text = parseClipboardResponse(rawInput); // string | null
 ```
 
 | Function                 | Description                                                     |
@@ -677,16 +682,22 @@ Paste end:    CSI 201 ~         (ESC [ 201 ~)
 ### API
 
 ```tsx
-import { enableBracketedPaste, disableBracketedPaste, parseBracketedPaste, PASTE_START, PASTE_END } from "@silvery/term"
+import {
+  enableBracketedPaste,
+  disableBracketedPaste,
+  parseBracketedPaste,
+  PASTE_START,
+  PASTE_END,
+} from "@silvery/term";
 
 // Enable/disable (the run() runtime handles this automatically)
-enableBracketedPaste(process.stdout)
-disableBracketedPaste(process.stdout)
+enableBracketedPaste(process.stdout);
+disableBracketedPaste(process.stdout);
 
 // Parse pasted content from raw input
-const result = parseBracketedPaste(rawInput)
+const result = parseBracketedPaste(rawInput);
 if (result) {
-  console.log("Pasted:", result.content)
+  console.log("Pasted:", result.content);
 }
 ```
 
@@ -703,17 +714,17 @@ if (result) {
 The `run()` runtime automatically enables bracketed paste mode. Use the `usePaste` hook (from `silvery/runtime`) to receive paste events:
 
 ```tsx
-import { usePaste } from "@silvery/term/runtime"
+import { usePaste } from "@silvery/term/runtime";
 
 usePaste((text) => {
-  insertText(text)
-})
+  insertText(text);
+});
 ```
 
 For the `render()` API, use the `onPaste` option on `useInput`:
 
 ```tsx
-useInput(handler, { onPaste: (text) => handlePaste(text) })
+useInput(handler, { onPaste: (text) => handlePaste(text) });
 ```
 
 ### Terminal Support
@@ -734,14 +745,14 @@ useInput(handler, { onPaste: (text) => handlePaste(text) })
 Silvery provides a notification API that auto-detects the terminal and sends notifications using the best available method.
 
 ```tsx
-import { notify, notifyITerm2, notifyKitty, BEL } from "@silvery/term"
+import { notify, notifyITerm2, notifyKitty, BEL } from "@silvery/term";
 
 // Auto-detect terminal and send notification
-notify(process.stdout, "Build complete", { title: "silvery" })
+notify(process.stdout, "Build complete", { title: "silvery" });
 
 // Terminal-specific functions
-notifyITerm2("Build complete") // OSC 9 (iTerm2)
-notifyKitty("Build complete", { title: "silvery" }) // OSC 99 (Kitty)
+notifyITerm2("Build complete"); // OSC 9 (iTerm2)
+notifyKitty("Build complete", { title: "silvery" }); // OSC 99 (Kitty)
 ```
 
 | Function       | Protocol | Description                                         |
@@ -790,7 +801,7 @@ The text sizing protocol (OSC 66) lets the app specify how many cells a characte
 
 ```tsx
 // Auto-detect and enable
-await run(<App />, { textSizing: "auto" })
+await run(<App />, { textSizing: "auto" });
 ```
 
 See [text-sizing.md](text-sizing.md) for full documentation.

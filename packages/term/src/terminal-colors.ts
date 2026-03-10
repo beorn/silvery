@@ -21,8 +21,8 @@
  * Supported by: xterm, Ghostty, Kitty, WezTerm, iTerm2, foot, Alacritty
  */
 
-const ESC = "\x1b"
-const BEL = "\x07"
+const ESC = "\x1b";
+const BEL = "\x07";
 
 // ============================================================================
 // Response Parsing (shared)
@@ -31,7 +31,7 @@ const BEL = "\x07"
 /**
  * Regex for an OSC color response body: rgb:R/G/B (1-4 hex digits per channel)
  */
-const RGB_BODY_RE = /rgb:([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})/
+const RGB_BODY_RE = /rgb:([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})/;
 
 /**
  * Normalize a hex color channel to 2-digit hex.
@@ -43,11 +43,11 @@ const RGB_BODY_RE = /rgb:([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,
 function normalizeHexChannel(hex: string): string {
   switch (hex.length) {
     case 1:
-      return hex + hex
+      return hex + hex;
     case 2:
-      return hex
+      return hex;
     default:
-      return hex.slice(0, 2)
+      return hex.slice(0, 2);
   }
 }
 
@@ -59,28 +59,28 @@ function normalizeHexChannel(hex: string): string {
  * @returns Normalized #RRGGBB hex string, or null if not a valid response
  */
 function parseOscColorResponse(input: string, oscCode: number): string | null {
-  const prefix = `${ESC}]${oscCode};`
-  const prefixIdx = input.indexOf(prefix)
-  if (prefixIdx === -1) return null
+  const prefix = `${ESC}]${oscCode};`;
+  const prefixIdx = input.indexOf(prefix);
+  if (prefixIdx === -1) return null;
 
-  const bodyStart = prefixIdx + prefix.length
+  const bodyStart = prefixIdx + prefix.length;
 
   // Find terminator: BEL (\x07) or ST (ESC \)
-  let bodyEnd = input.indexOf(BEL, bodyStart)
+  let bodyEnd = input.indexOf(BEL, bodyStart);
   if (bodyEnd === -1) {
-    bodyEnd = input.indexOf(`${ESC}\\`, bodyStart)
+    bodyEnd = input.indexOf(`${ESC}\\`, bodyStart);
   }
-  if (bodyEnd === -1) return null
+  if (bodyEnd === -1) return null;
 
-  const body = input.slice(bodyStart, bodyEnd)
-  const match = RGB_BODY_RE.exec(body)
-  if (!match) return null
+  const body = input.slice(bodyStart, bodyEnd);
+  const match = RGB_BODY_RE.exec(body);
+  if (!match) return null;
 
-  const r = normalizeHexChannel(match[1]!)
-  const g = normalizeHexChannel(match[2]!)
-  const b = normalizeHexChannel(match[3]!)
+  const r = normalizeHexChannel(match[1]!);
+  const g = normalizeHexChannel(match[2]!);
+  const b = normalizeHexChannel(match[3]!);
 
-  return `#${r}${g}${b}`
+  return `#${r}${g}${b}`;
 }
 
 // ============================================================================
@@ -101,12 +101,12 @@ async function queryOscColor(
   oscCode: number,
   timeoutMs: number,
 ): Promise<string | null> {
-  write(`${ESC}]${oscCode};?${BEL}`)
+  write(`${ESC}]${oscCode};?${BEL}`);
 
-  const data = await read(timeoutMs)
-  if (data == null) return null
+  const data = await read(timeoutMs);
+  if (data == null) return null;
 
-  return parseOscColorResponse(data, oscCode)
+  return parseOscColorResponse(data, oscCode);
 }
 
 /**
@@ -118,7 +118,7 @@ export async function queryForegroundColor(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<string | null> {
-  return queryOscColor(write, read, 10, timeoutMs)
+  return queryOscColor(write, read, 10, timeoutMs);
 }
 
 /**
@@ -130,7 +130,7 @@ export async function queryBackgroundColor(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<string | null> {
-  return queryOscColor(write, read, 11, timeoutMs)
+  return queryOscColor(write, read, 11, timeoutMs);
 }
 
 /**
@@ -142,7 +142,7 @@ export async function queryCursorColor(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<string | null> {
-  return queryOscColor(write, read, 12, timeoutMs)
+  return queryOscColor(write, read, 12, timeoutMs);
 }
 
 // ============================================================================
@@ -151,17 +151,17 @@ export async function queryCursorColor(
 
 /** Set the terminal foreground (text) color. */
 export function setForegroundColor(write: (data: string) => void, color: string): void {
-  write(`${ESC}]10;${color}${BEL}`)
+  write(`${ESC}]10;${color}${BEL}`);
 }
 
 /** Set the terminal background color. */
 export function setBackgroundColor(write: (data: string) => void, color: string): void {
-  write(`${ESC}]11;${color}${BEL}`)
+  write(`${ESC}]11;${color}${BEL}`);
 }
 
 /** Set the terminal cursor color. */
 export function setCursorColor(write: (data: string) => void, color: string): void {
-  write(`${ESC}]12;${color}${BEL}`)
+  write(`${ESC}]12;${color}${BEL}`);
 }
 
 // ============================================================================
@@ -170,17 +170,17 @@ export function setCursorColor(write: (data: string) => void, color: string): vo
 
 /** Reset the terminal foreground color to default. */
 export function resetForegroundColor(write: (data: string) => void): void {
-  write(`${ESC}]110${BEL}`)
+  write(`${ESC}]110${BEL}`);
 }
 
 /** Reset the terminal background color to default. */
 export function resetBackgroundColor(write: (data: string) => void): void {
-  write(`${ESC}]111${BEL}`)
+  write(`${ESC}]111${BEL}`);
 }
 
 /** Reset the terminal cursor color to default. */
 export function resetCursorColor(write: (data: string) => void): void {
-  write(`${ESC}]112${BEL}`)
+  write(`${ESC}]112${BEL}`);
 }
 
 // ============================================================================
@@ -203,14 +203,14 @@ export async function detectColorScheme(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<"light" | "dark" | null> {
-  const bg = await queryBackgroundColor(write, read, timeoutMs)
-  if (bg == null) return null
+  const bg = await queryBackgroundColor(write, read, timeoutMs);
+  if (bg == null) return null;
 
   // Parse #RRGGBB
-  const r = parseInt(bg.slice(1, 3), 16) / 255
-  const g = parseInt(bg.slice(3, 5), 16) / 255
-  const b = parseInt(bg.slice(5, 7), 16) / 255
+  const r = parseInt(bg.slice(1, 3), 16) / 255;
+  const g = parseInt(bg.slice(3, 5), 16) / 255;
+  const b = parseInt(bg.slice(5, 7), 16) / 255;
 
-  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-  return luminance > 0.5 ? "light" : "dark"
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance > 0.5 ? "light" : "dark";
 }

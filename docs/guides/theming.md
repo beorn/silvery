@@ -23,35 +23,35 @@ You can enter at any layer: one color, a full palette, or a complete theme.
 The fastest way to use a theme is with the builder API:
 
 ```typescript
-import { createTheme } from "@silvery/theme"
+import { createTheme } from "@silvery/theme";
 
 // From a built-in palette
-const theme = createTheme().preset("catppuccin-mocha").build()
+const theme = createTheme().preset("catppuccin-mocha").build();
 
 // From a single color
-const theme = createTheme().primary("#5E81AC").dark().build()
+const theme = createTheme().primary("#5E81AC").dark().build();
 
 // From background + primary
-const theme = createTheme().bg("#2E3440").fg("#ECEFF4").primary("#EBCB8B").build()
+const theme = createTheme().bg("#2E3440").fg("#ECEFF4").primary("#EBCB8B").build();
 ```
 
 Or use the convenience functions:
 
 ```typescript
-import { presetTheme, quickTheme, autoGenerateTheme, detectTheme } from "@silvery/theme"
+import { presetTheme, quickTheme, autoGenerateTheme, detectTheme } from "@silvery/theme";
 
 // Load a preset
-const nord = presetTheme("nord")
+const nord = presetTheme("nord");
 
 // Quick theme from a color name or hex
-const theme = quickTheme("blue", "dark")
-const custom = quickTheme("#E06C75", "light")
+const theme = quickTheme("blue", "dark");
+const custom = quickTheme("#E06C75", "light");
 
 // Full auto-generation from a single hex color
-const generated = autoGenerateTheme("#5E81AC", "dark")
+const generated = autoGenerateTheme("#5E81AC", "dark");
 
 // Use the terminal's own palette (queries colors via OSC 4/10/11)
-const detected = await detectTheme()
+const detected = await detectTheme();
 ```
 
 ## Auto-Generation
@@ -64,12 +64,12 @@ Generate a complete theme from a single primary color. The system uses HSL color
 - **Status colors** (error, warning, success, info) from standard hue positions
 
 ```typescript
-import { autoGenerateTheme } from "@silvery/theme"
+import { autoGenerateTheme } from "@silvery/theme";
 
-const dark = autoGenerateTheme("#5E81AC", "dark")
+const dark = autoGenerateTheme("#5E81AC", "dark");
 // Generates a full dark theme with blue as the primary accent
 
-const light = autoGenerateTheme("#E06C75", "light")
+const light = autoGenerateTheme("#E06C75", "light");
 // Generates a full light theme with red/rose as the primary accent
 ```
 
@@ -80,14 +80,14 @@ The auto-generated theme uses the input color as the exact `primary` token, then
 Instead of shipping a palette, you can read the terminal's actual colors at startup. `detectTheme()` queries the terminal via OSC 4 (ANSI colors), OSC 10 (foreground), and OSC 11 (background), then derives a full theme from whatever the terminal reports:
 
 ```typescript
-import { detectTheme } from "@silvery/theme"
+import { detectTheme } from "@silvery/theme";
 
 // Queries the terminal's live colors — matches whatever theme the user has configured
-const theme = await detectTheme()
+const theme = await detectTheme();
 
 // Provide a fallback palette for terminals that don't respond to OSC queries (CI, tmux, etc.)
-import { getPaletteByName } from "@silvery/theme"
-const theme = await detectTheme({ fallback: getPaletteByName("nord") })
+import { getPaletteByName } from "@silvery/theme";
+const theme = await detectTheme({ fallback: getPaletteByName("nord") });
 ```
 
 This means the app automatically matches the user's terminal theme — Dracula users get Dracula colors, Solarized users get Solarized colors, with no configuration on your end. Dark/light mode is detected from the background luminance.
@@ -97,10 +97,10 @@ This means the app automatically matches the user's terminal theme — Dracula u
 Wrap your app in `ThemeProvider` and reference tokens with the `$` prefix:
 
 ```tsx
-import { ThemeProvider, Box, Text } from "silvery"
-import { presetTheme } from "@silvery/theme"
+import { ThemeProvider, Box, Text } from "silvery";
+import { presetTheme } from "@silvery/theme";
 
-const theme = presetTheme("dracula")
+const theme = presetTheme("dracula");
 
 function App() {
   return (
@@ -111,7 +111,7 @@ function App() {
         <Text color="$error">Error state</Text>
       </Box>
     </ThemeProvider>
-  )
+  );
 }
 ```
 
@@ -160,13 +160,13 @@ The `@silvery/theme` package includes 38 palettes from these theme families:
 Access any palette by name:
 
 ```typescript
-import { getPaletteByName, builtinPalettes } from "@silvery/theme"
+import { getPaletteByName, builtinPalettes } from "@silvery/theme";
 
 // Get a specific palette
-const palette = getPaletteByName("catppuccin-mocha")
+const palette = getPaletteByName("catppuccin-mocha");
 
 // List all palette names
-const names = Object.keys(builtinPalettes) // 45 entries
+const names = Object.keys(builtinPalettes); // 45 entries
 ```
 
 ## Theme Builder
@@ -174,16 +174,16 @@ const names = Object.keys(builtinPalettes) // 45 entries
 The chainable builder API gives you control at every level:
 
 ```typescript
-import { createTheme } from "@silvery/theme"
+import { createTheme } from "@silvery/theme";
 
 // Minimal -- just a background (mode inferred from luminance)
-const theme = createTheme().bg("#2E3440").build()
+const theme = createTheme().bg("#2E3440").build();
 
 // Override specific palette colors
-const theme = createTheme().preset("nord").primary("#A3BE8C").color("red", "#FF0000").build()
+const theme = createTheme().preset("nord").primary("#A3BE8C").color("red", "#FF0000").build();
 
 // Force light mode regardless of background
-const theme = createTheme().bg("#1a1a2e").light().build()
+const theme = createTheme().bg("#1a1a2e").light().build();
 ```
 
 ## CSS Export
@@ -191,15 +191,15 @@ const theme = createTheme().bg("#1a1a2e").light().build()
 Convert any theme to CSS custom properties for web use:
 
 ```typescript
-import { themeToCSSVars } from "@silvery/theme"
-import { presetTheme } from "@silvery/theme"
+import { themeToCSSVars } from "@silvery/theme";
+import { presetTheme } from "@silvery/theme";
 
-const theme = presetTheme("dracula")
-const vars = themeToCSSVars(theme)
+const theme = presetTheme("dracula");
+const vars = themeToCSSVars(theme);
 // { "--bg": "#282A36", "--fg": "#F8F8F2", "--primary": "#F1FA8C", ... }
 
 // Apply to a DOM element
-Object.assign(element.style, vars)
+Object.assign(element.style, vars);
 ```
 
 ## Design Tokens
@@ -230,11 +230,11 @@ Plus 5 standalone tokens: `border`, `inputborder`, `focusborder`, `link`, `disab
 The `@silvery/theme` package includes WCAG 2.1 contrast checking:
 
 ```typescript
-import { checkContrast } from "@silvery/theme"
+import { checkContrast } from "@silvery/theme";
 
-const result = checkContrast("#FFFFFF", "#000000")
+const result = checkContrast("#FFFFFF", "#000000");
 // { ratio: 21, aa: true, aaa: true }
 
-const poor = checkContrast("#777777", "#888888")
+const poor = checkContrast("#777777", "#888888");
 // { ratio: ~1.3, aa: false, aaa: false }
 ```

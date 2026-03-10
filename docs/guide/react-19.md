@@ -48,22 +48,22 @@ These are all implemented in Silvery's reconciler, ensuring compatibility with R
 All standard React hooks work correctly:
 
 ```tsx
-import { useState, useEffect, useTransition, useDeferredValue } from "react"
-import { Box, Text, useInput, useContentRect } from "silvery"
+import { useState, useEffect, useTransition, useDeferredValue } from "react";
+import { Box, Text, useInput, useContentRect } from "silvery";
 
 function App() {
-  const [count, setCount] = useState(0)
-  const [isPending, startTransition] = useTransition()
-  const deferredCount = useDeferredValue(count)
-  const { width, height } = useContentRect()
+  const [count, setCount] = useState(0);
+  const [isPending, startTransition] = useTransition();
+  const deferredCount = useDeferredValue(count);
+  const { width, height } = useContentRect();
 
   useInput((input, key) => {
     if (key.return) {
       startTransition(() => {
-        setCount((c) => c + 1)
-      })
+        setCount((c) => c + 1);
+      });
     }
-  })
+  });
 
   return (
     <Box flexDirection="column">
@@ -74,7 +74,7 @@ function App() {
         {width}x{height}
       </Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -83,17 +83,17 @@ function App() {
 Suspense boundaries work for lazy loading and data fetching patterns:
 
 ```tsx
-import { Suspense, lazy } from "react"
-import { Box, Text } from "silvery"
+import { Suspense, lazy } from "react";
+import { Box, Text } from "silvery";
 
-const HeavyComponent = lazy(() => import("./HeavyComponent"))
+const HeavyComponent = lazy(() => import("./HeavyComponent"));
 
 function App() {
   return (
     <Suspense fallback={<Text>Loading...</Text>}>
       <HeavyComponent />
     </Suspense>
-  )
+  );
 }
 ```
 
@@ -106,24 +106,24 @@ Terminal UIs typically don't benefit as much from Suspense as web apps, but it's
 StrictMode works correctly with Silvery. Double-rendering in development mode (for detecting side effects) doesn't cause output issues:
 
 ```tsx
-import { StrictMode } from "react"
-import { Box, Text, render, createTerm } from "silvery"
+import { StrictMode } from "react";
+import { Box, Text, render, createTerm } from "silvery";
 
 function App() {
   return (
     <Box>
       <Text>Hello World</Text>
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
+using term = createTerm();
 await render(
   <StrictMode>
     <App />
   </StrictMode>,
   term,
-)
+);
 ```
 
 ### Concurrent Rendering
@@ -136,26 +136,26 @@ Silvery supports React's concurrent rendering features. The reconciler properly 
 
 ```tsx
 function SearchResults() {
-  const [query, setQuery] = useState("")
-  const [isPending, startTransition] = useTransition()
-  const deferredQuery = useDeferredValue(query)
+  const [query, setQuery] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const deferredQuery = useDeferredValue(query);
 
   useInput((input) => {
     // Immediate feedback
-    setQuery((q) => q + input)
+    setQuery((q) => q + input);
 
     // Deferred expensive operation
     startTransition(() => {
       // Heavy computation here
-    })
-  })
+    });
+  });
 
   return (
     <Box flexDirection="column">
       <Text>Query: {query}</Text>
       <Text dim={isPending}>Results for: {deferredQuery}</Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -164,14 +164,14 @@ function SearchResults() {
 The Silvery testing library is configured for React 19's act() requirements:
 
 ```tsx
-import { createRenderer } from "@silvery/test"
+import { createRenderer } from "@silvery/test";
 
-const render = createRenderer()
+const render = createRenderer();
 
 test("component renders correctly", () => {
-  const app = render(<MyComponent />)
-  expect(app.text).toContain("expected content")
-})
+  const app = render(<MyComponent />);
+  expect(app.text).toContain("expected content");
+});
 ```
 
 The testing environment automatically:

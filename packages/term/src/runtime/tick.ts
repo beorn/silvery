@@ -29,74 +29,74 @@
 export function createTick(intervalMs: number, signal?: AbortSignal): AsyncIterable<number> {
   return {
     [Symbol.asyncIterator]: () => createTickIterator(intervalMs, signal),
-  }
+  };
 }
 
 /**
  * Create the actual tick iterator.
  */
 function createTickIterator(intervalMs: number, signal?: AbortSignal): AsyncIterator<number> {
-  let count = 0
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let pendingResolve: ((result: IteratorResult<number>) => void) | undefined
-  let done = false
+  let count = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let pendingResolve: ((result: IteratorResult<number>) => void) | undefined;
+  let done = false;
 
   // Handle abort signal
   const onAbort = () => {
-    done = true
+    done = true;
     if (timer) {
-      clearTimeout(timer)
-      timer = undefined
+      clearTimeout(timer);
+      timer = undefined;
     }
     if (pendingResolve) {
-      pendingResolve({ done: true, value: undefined })
-      pendingResolve = undefined
+      pendingResolve({ done: true, value: undefined });
+      pendingResolve = undefined;
     }
-  }
+  };
 
   if (signal) {
     if (signal.aborted) {
-      done = true
+      done = true;
     } else {
-      signal.addEventListener("abort", onAbort, { once: true })
+      signal.addEventListener("abort", onAbort, { once: true });
     }
   }
 
   return {
     async next(): Promise<IteratorResult<number>> {
       if (done) {
-        return { done: true, value: undefined }
+        return { done: true, value: undefined };
       }
 
       return new Promise<IteratorResult<number>>((resolve, _reject) => {
-        pendingResolve = resolve
+        pendingResolve = resolve;
 
         timer = setTimeout(() => {
           if (!done) {
-            const value = count++
-            pendingResolve = undefined
-            resolve({ done: false, value })
+            const value = count++;
+            pendingResolve = undefined;
+            resolve({ done: false, value });
           }
-        }, intervalMs)
-      })
+        }, intervalMs);
+      });
     },
 
     async return(): Promise<IteratorResult<number>> {
-      done = true
+      done = true;
       if (timer) {
-        clearTimeout(timer)
-        timer = undefined
+        clearTimeout(timer);
+        timer = undefined;
       }
       if (signal) {
-        signal.removeEventListener("abort", onAbort)
+        signal.removeEventListener("abort", onAbort);
       }
       if (pendingResolve) {
-        pendingResolve({ done: true, value: undefined })
-        pendingResolve = undefined
+        pendingResolve({ done: true, value: undefined });
+        pendingResolve = undefined;
       }
-      return { done: true, value: undefined }
+      return { done: true, value: undefined };
     },
-  }
+  };
 }
 
 /**
@@ -106,7 +106,7 @@ function createTickIterator(intervalMs: number, signal?: AbortSignal): AsyncIter
  * @returns AsyncIterable that yields frame numbers
  */
 export function createFrameTick(signal?: AbortSignal): AsyncIterable<number> {
-  return createTick(16, signal)
+  return createTick(16, signal);
 }
 
 /**
@@ -116,7 +116,7 @@ export function createFrameTick(signal?: AbortSignal): AsyncIterable<number> {
  * @returns AsyncIterable that yields second counts
  */
 export function createSecondTick(signal?: AbortSignal): AsyncIterable<number> {
-  return createTick(1000, signal)
+  return createTick(1000, signal);
 }
 
 /**
@@ -133,87 +133,87 @@ export function createAdaptiveTick(
   targetFps = 60,
   signal?: AbortSignal,
 ): AsyncIterable<{ tick: number; elapsed: number; delta: number }> {
-  const targetMs = 1000 / targetFps
-  let lastTime = Date.now()
-  let tick = 0
+  const targetMs = 1000 / targetFps;
+  let lastTime = Date.now();
+  let tick = 0;
 
   return {
     [Symbol.asyncIterator]: () => {
-      let done = false
-      let timer: ReturnType<typeof setTimeout> | undefined
+      let done = false;
+      let timer: ReturnType<typeof setTimeout> | undefined;
       let pendingResolve:
         | ((
             result: IteratorResult<{
-              tick: number
-              elapsed: number
-              delta: number
+              tick: number;
+              elapsed: number;
+              delta: number;
             }>,
           ) => void)
-        | undefined
+        | undefined;
 
       const onAbort = () => {
-        done = true
+        done = true;
         if (timer) {
-          clearTimeout(timer)
-          timer = undefined
+          clearTimeout(timer);
+          timer = undefined;
         }
         if (pendingResolve) {
-          pendingResolve({ done: true, value: undefined })
-          pendingResolve = undefined
+          pendingResolve({ done: true, value: undefined });
+          pendingResolve = undefined;
         }
-      }
+      };
 
       if (signal) {
         if (signal.aborted) {
-          done = true
+          done = true;
         } else {
-          signal.addEventListener("abort", onAbort, { once: true })
+          signal.addEventListener("abort", onAbort, { once: true });
         }
       }
 
       return {
         async next(): Promise<IteratorResult<{ tick: number; elapsed: number; delta: number }>> {
           if (done) {
-            return { done: true, value: undefined }
+            return { done: true, value: undefined };
           }
 
           return new Promise((resolve) => {
-            pendingResolve = resolve
-            const now = Date.now()
-            const elapsed = now - lastTime
-            const delay = Math.max(0, targetMs - elapsed)
+            pendingResolve = resolve;
+            const now = Date.now();
+            const elapsed = now - lastTime;
+            const delay = Math.max(0, targetMs - elapsed);
 
             timer = setTimeout(() => {
               if (!done) {
-                const currentTime = Date.now()
-                const delta = currentTime - lastTime
-                lastTime = currentTime
-                pendingResolve = undefined
+                const currentTime = Date.now();
+                const delta = currentTime - lastTime;
+                lastTime = currentTime;
+                pendingResolve = undefined;
                 resolve({
                   done: false,
                   value: { tick: tick++, elapsed: currentTime, delta },
-                })
+                });
               }
-            }, delay)
-          })
+            }, delay);
+          });
         },
 
         async return(): Promise<IteratorResult<{ tick: number; elapsed: number; delta: number }>> {
-          done = true
+          done = true;
           if (timer) {
-            clearTimeout(timer)
-            timer = undefined
+            clearTimeout(timer);
+            timer = undefined;
           }
           if (signal) {
-            signal.removeEventListener("abort", onAbort)
+            signal.removeEventListener("abort", onAbort);
           }
           if (pendingResolve) {
-            pendingResolve({ done: true, value: undefined })
-            pendingResolve = undefined
+            pendingResolve({ done: true, value: undefined });
+            pendingResolve = undefined;
           }
-          return { done: true, value: undefined }
+          return { done: true, value: undefined };
         },
-      }
+      };
     },
-  }
+  };
 }

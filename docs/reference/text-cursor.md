@@ -33,8 +33,8 @@ import {
   cursorMoveUp,
   cursorMoveDown,
   countVisualLines,
-} from "@silvery/term"
-import type { WrappedLine } from "@silvery/term"
+} from "@silvery/term";
+import type { WrappedLine } from "@silvery/term";
 ```
 
 ---
@@ -44,20 +44,24 @@ import type { WrappedLine } from "@silvery/term"
 Convert a flat cursor offset to a visual (row, col) position in word-wrapped text.
 
 ```ts
-function cursorToRowCol(text: string, cursor: number, wrapWidth: number): { row: number; col: number }
+function cursorToRowCol(
+  text: string,
+  cursor: number,
+  wrapWidth: number,
+): { row: number; col: number };
 ```
 
 ```ts
 // Single line, no wrapping needed
-cursorToRowCol("hello world", 5, 80)
+cursorToRowCol("hello world", 5, 80);
 // { row: 0, col: 5 }
 
 // Text wraps at width 8: "hello wo" / "rld"
-cursorToRowCol("hello world", 9, 8)
+cursorToRowCol("hello world", 9, 8);
 // { row: 1, col: 1 } — "r" is col 1 on visual line 1
 
 // Multi-line text
-cursorToRowCol("first\nsecond", 8, 80)
+cursorToRowCol("first\nsecond", 8, 80);
 // { row: 1, col: 2 } — "c" in "second"
 ```
 
@@ -68,24 +72,24 @@ cursorToRowCol("first\nsecond", 8, 80)
 Get all wrapped display lines with their starting character offsets.
 
 ```ts
-function getWrappedLines(text: string, wrapWidth: number): WrappedLine[]
+function getWrappedLines(text: string, wrapWidth: number): WrappedLine[];
 ```
 
 ```ts
 interface WrappedLine {
-  line: string // Text content of this visual line
-  startOffset: number // Offset in the original text where this line starts
+  line: string; // Text content of this visual line
+  startOffset: number; // Offset in the original text where this line starts
 }
 ```
 
 ```ts
-getWrappedLines("hello world", 8)
+getWrappedLines("hello world", 8);
 // [
 //   { line: "hello wo", startOffset: 0 },
 //   { line: "rld",      startOffset: 8 },
 // ]
 
-getWrappedLines("first\nsecond", 80)
+getWrappedLines("first\nsecond", 80);
 // [
 //   { line: "first",  startOffset: 0 },
 //   { line: "second", startOffset: 6 },
@@ -101,15 +105,15 @@ The `startOffset` enables converting a (row, col) back to a flat offset: `offset
 Convert a visual (row, col) to a flat cursor offset. Clamps `col` to the line length if it exceeds it (important for stickyX on short lines).
 
 ```ts
-function rowColToCursor(text: string, row: number, col: number, wrapWidth: number): number
+function rowColToCursor(text: string, row: number, col: number, wrapWidth: number): number;
 ```
 
 ```ts
-rowColToCursor("hello world", 0, 5, 80)
+rowColToCursor("hello world", 0, 5, 80);
 // 5
 
 // Col exceeds line length — clamps to end
-rowColToCursor("hi\nbye", 0, 10, 80)
+rowColToCursor("hi\nbye", 0, 10, 80);
 // 2 (clamped to end of "hi")
 ```
 
@@ -120,16 +124,21 @@ rowColToCursor("hi\nbye", 0, 10, 80)
 Move the cursor up one visual line. Returns the new cursor offset, or `null` if already on the first visual line.
 
 ```ts
-function cursorMoveUp(text: string, cursor: number, wrapWidth: number, stickyX?: number): number | null
+function cursorMoveUp(
+  text: string,
+  cursor: number,
+  wrapWidth: number,
+  stickyX?: number,
+): number | null;
 ```
 
 ```ts
 // Move up from second line to first
-cursorMoveUp("hello\nworld", 8, 80)
+cursorMoveUp("hello\nworld", 8, 80);
 // 2 — moved from col 2 in "world" to col 2 in "hello"
 
 // Already on first line — returns null (boundary)
-cursorMoveUp("hello\nworld", 2, 80)
+cursorMoveUp("hello\nworld", 2, 80);
 // null
 ```
 
@@ -142,16 +151,21 @@ Returns `null` at the boundary to signal the caller should handle cross-block na
 Move the cursor down one visual line. Returns the new cursor offset, or `null` if already on the last visual line.
 
 ```ts
-function cursorMoveDown(text: string, cursor: number, wrapWidth: number, stickyX?: number): number | null
+function cursorMoveDown(
+  text: string,
+  cursor: number,
+  wrapWidth: number,
+  stickyX?: number,
+): number | null;
 ```
 
 ```ts
 // Move down from first line to second
-cursorMoveDown("hello\nworld", 3, 80)
+cursorMoveDown("hello\nworld", 3, 80);
 // 9 — moved from col 3 in "hello" to col 3 in "world"
 
 // Already on last line — returns null (boundary)
-cursorMoveDown("hello\nworld", 8, 80)
+cursorMoveDown("hello\nworld", 8, 80);
 // null
 ```
 
@@ -162,17 +176,17 @@ cursorMoveDown("hello\nworld", 8, 80)
 Count the total number of visual lines after word wrapping.
 
 ```ts
-function countVisualLines(text: string, wrapWidth: number): number
+function countVisualLines(text: string, wrapWidth: number): number;
 ```
 
 ```ts
-countVisualLines("hello world", 80)
+countVisualLines("hello world", 80);
 // 1
 
-countVisualLines("hello world", 8)
+countVisualLines("hello world", 8);
 // 2 — wraps to "hello wo" / "rld"
 
-countVisualLines("one\ntwo\nthree", 80)
+countVisualLines("one\ntwo\nthree", 80);
 // 3
 ```
 
@@ -193,15 +207,15 @@ Without stickyX, pressing Down from col 18 would clamp to col 5 on "short", then
 With stickyX, the caller preserves the original column:
 
 ```ts
-const originalCol = 18
-const stickyX = originalCol
+const originalCol = 18;
+const stickyX = originalCol;
 
 // Down from "This is a long line.." col 18
-const pos1 = cursorMoveDown(text, cursor, 20, stickyX)
+const pos1 = cursorMoveDown(text, cursor, 20, stickyX);
 // Lands at col 5 (clamped to "short" length), but stickyX=18 is preserved
 
 // Down again from "short"
-const pos2 = cursorMoveDown(text, pos1!, 20, stickyX)
+const pos2 = cursorMoveDown(text, pos1!, 20, stickyX);
 // Lands at col 18 on "Another long line..." — stickyX restored
 ```
 
@@ -214,16 +228,16 @@ The text-cursor functions accept `stickyX` but don't store it -- the caller mana
 Use text-cursor functions with your own state (Slate, Zustand, or plain React state):
 
 ```ts
-import { cursorToRowCol, cursorMoveDown, cursorMoveUp, countVisualLines } from "@silvery/term"
+import { cursorToRowCol, cursorMoveDown, cursorMoveUp, countVisualLines } from "@silvery/term";
 
 // In your state manager or hook:
 function handleArrowDown(text: string, cursor: number, width: number, stickyX: number) {
-  const newCursor = cursorMoveDown(text, cursor, width, stickyX)
+  const newCursor = cursorMoveDown(text, cursor, width, stickyX);
   if (newCursor !== null) {
-    return { cursor: newCursor, stickyX } // Stay in same block
+    return { cursor: newCursor, stickyX }; // Stay in same block
   }
   // null = boundary — move to next block
-  return moveToNextBlock(stickyX)
+  return moveToNextBlock(stickyX);
 }
 ```
 
@@ -232,26 +246,32 @@ function handleArrowDown(text: string, cursor: number, width: number, stickyX: n
 The `null` return from `cursorMoveUp` / `cursorMoveDown` signals a boundary. In a block-based editor (like Slate or a markdown document), use this to transition between blocks:
 
 ```ts
-function handleVerticalMove(direction: "up" | "down", block: Block, cursor: number, width: number, stickyX: number) {
-  const moveFn = direction === "up" ? cursorMoveUp : cursorMoveDown
-  const newCursor = moveFn(block.text, cursor, width, stickyX)
+function handleVerticalMove(
+  direction: "up" | "down",
+  block: Block,
+  cursor: number,
+  width: number,
+  stickyX: number,
+) {
+  const moveFn = direction === "up" ? cursorMoveUp : cursorMoveDown;
+  const newCursor = moveFn(block.text, cursor, width, stickyX);
 
   if (newCursor !== null) {
     // Stayed within the block
-    return { blockId: block.id, cursor: newCursor }
+    return { blockId: block.id, cursor: newCursor };
   }
 
   // Crossed the boundary — move to adjacent block
-  const adjacent = direction === "up" ? getPreviousBlock(block.id) : getNextBlock(block.id)
+  const adjacent = direction === "up" ? getPreviousBlock(block.id) : getNextBlock(block.id);
 
-  if (!adjacent) return null // No adjacent block
+  if (!adjacent) return null; // No adjacent block
 
   // Enter adjacent block at the correct visual position
-  const lines = countVisualLines(adjacent.text, width)
-  const targetRow = direction === "up" ? lines - 1 : 0
-  const newOffset = rowColToCursor(adjacent.text, targetRow, stickyX, width)
+  const lines = countVisualLines(adjacent.text, width);
+  const targetRow = direction === "up" ? lines - 1 : 0;
+  const newOffset = rowColToCursor(adjacent.text, targetRow, stickyX, width);
 
-  return { blockId: adjacent.id, cursor: newOffset }
+  return { blockId: adjacent.id, cursor: newOffset };
 }
 ```
 
@@ -261,15 +281,17 @@ Use `cursorToRowCol` to position a cursor overlay in your component:
 
 ```tsx
 function TextWithCursor({ text, cursor, width }: Props) {
-  const { row, col } = cursorToRowCol(text, cursor, width)
-  const lines = getWrappedLines(text, width)
+  const { row, col } = cursorToRowCol(text, cursor, width);
+  const lines = getWrappedLines(text, width);
 
   return (
     <Box flexDirection="column">
       {lines.map((wl, i) => (
-        <Text key={i}>{i === row ? wl.line.slice(0, col) + "|" + wl.line.slice(col) : wl.line}</Text>
+        <Text key={i}>
+          {i === row ? wl.line.slice(0, col) + "|" + wl.line.slice(col) : wl.line}
+        </Text>
       ))}
     </Box>
-  )
+  );
 }
 ```

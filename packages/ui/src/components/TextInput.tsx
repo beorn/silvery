@@ -26,12 +26,12 @@
  * - Alt+Y: Cycle kill ring
  * - Ctrl+T: Transpose characters
  */
-import { useCallback, useImperativeHandle, forwardRef, useState, useEffect } from "react"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
-import { useReadline } from "./useReadline"
-import { useFocusable } from "@silvery/react/hooks/useFocusable"
-import { useCursor } from "@silvery/react/hooks/useCursor"
+import { useCallback, useImperativeHandle, forwardRef, useState, useEffect } from "react";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
+import { useReadline } from "./useReadline";
+import { useFocusable } from "@silvery/react/hooks/useFocusable";
+import { useCursor } from "@silvery/react/hooks/useCursor";
 
 // =============================================================================
 // Types
@@ -39,46 +39,46 @@ import { useCursor } from "@silvery/react/hooks/useCursor"
 
 export interface TextInputProps {
   /** Current value (controlled) */
-  value?: string
+  value?: string;
   /** Initial value (uncontrolled) */
-  defaultValue?: string
+  defaultValue?: string;
   /** Called when value changes */
-  onChange?: (value: string) => void
+  onChange?: (value: string) => void;
   /** Called when Enter is pressed */
-  onSubmit?: (value: string) => void
+  onSubmit?: (value: string) => void;
   /** Called on Ctrl+D with empty input */
-  onEOF?: () => void
+  onEOF?: () => void;
   /** Placeholder text when empty */
-  placeholder?: string
+  placeholder?: string;
   /** Whether input is focused/active (overrides focus system) */
-  isActive?: boolean
+  isActive?: boolean;
   /** Prompt prefix (e.g., "$ " or "> ") */
-  prompt?: string
+  prompt?: string;
   /** Prompt color */
-  promptColor?: string
+  promptColor?: string;
   /** Text color */
-  color?: string
+  color?: string;
   /** Cursor style: 'block' (inverse) or 'underline' */
-  cursorStyle?: "block" | "underline"
+  cursorStyle?: "block" | "underline";
   /** Show underline below input */
-  showUnderline?: boolean
+  showUnderline?: boolean;
   /** Underline width (default: 40) */
-  underlineWidth?: number
+  underlineWidth?: number;
   /** Mask character for passwords */
-  mask?: string
+  mask?: string;
   /** Test ID for focus system identification */
-  testID?: string
+  testID?: string;
 }
 
 export interface TextInputHandle {
   /** Clear the input */
-  clear: () => void
+  clear: () => void;
   /** Get current value */
-  getValue: () => string
+  getValue: () => string;
   /** Set value programmatically */
-  setValue: (value: string) => void
+  setValue: (value: string) => void;
   /** Get kill ring contents */
-  getKillRing: () => string[]
+  getKillRing: () => string[];
 }
 
 // =============================================================================
@@ -109,18 +109,18 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   // When testID is set, the component participates in the focus tree and
   // isActive derives from focus state. Without testID, default to true
   // for backward compatibility.
-  const { focused } = useFocusable()
-  const isActive = isActiveProp ?? (testID ? focused : true)
+  const { focused } = useFocusable();
+  const isActive = isActiveProp ?? (testID ? focused : true);
 
   // Track whether we're in controlled mode
-  const isControlled = controlledValue !== undefined
+  const isControlled = controlledValue !== undefined;
 
   // Use readline hook
   const readline = useReadline({
     initialValue: isControlled ? (controlledValue ?? "") : defaultValue,
     onChange: useCallback(
       (newValue: string) => {
-        onChange?.(newValue)
+        onChange?.(newValue);
       },
       [onChange],
     ),
@@ -128,19 +128,19 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     handleEnter: !!onSubmit,
     onSubmit,
     onEOF,
-  })
+  });
 
   // Sync controlled value to readline
-  const [lastControlledValue, setLastControlledValue] = useState(controlledValue)
+  const [lastControlledValue, setLastControlledValue] = useState(controlledValue);
   useEffect(() => {
     if (isControlled && controlledValue !== lastControlledValue) {
-      readline.setValue(controlledValue ?? "")
-      setLastControlledValue(controlledValue)
+      readline.setValue(controlledValue ?? "");
+      setLastControlledValue(controlledValue);
     }
-  }, [isControlled, controlledValue, lastControlledValue, readline])
+  }, [isControlled, controlledValue, lastControlledValue, readline]);
 
   // Handle Enter separately for onSubmit
-  const { value, cursor, clear, setValue, killRing } = readline
+  const { value, cursor, clear, setValue, killRing } = readline;
 
   // Imperative handle for parent control
   useImperativeHandle(ref, () => ({
@@ -148,24 +148,28 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     getValue: () => value,
     setValue,
     getKillRing: () => killRing,
-  }))
+  }));
 
   // Compute display value (with optional mask)
-  const displayValue = mask ? mask.repeat(value.length) : value
-  const displayBeforeCursor = displayValue.slice(0, cursor)
-  const displayAtCursor = displayValue[cursor] ?? " "
-  const displayAfterCursor = displayValue.slice(cursor + 1)
-  const showPlaceholder = !value && placeholder
+  const displayValue = mask ? mask.repeat(value.length) : value;
+  const displayBeforeCursor = displayValue.slice(0, cursor);
+  const displayAtCursor = displayValue[cursor] ?? " ";
+  const displayAfterCursor = displayValue.slice(cursor + 1);
+  const showPlaceholder = !value && placeholder;
 
   // Always show visual cursor (inverse/underline). When active, the hardware
   // cursor is also positioned via useCursor() for terminal blink support.
   const cursorEl =
-    cursorStyle === "underline" ? <Text underline>{displayAtCursor}</Text> : <Text inverse>{displayAtCursor}</Text>
+    cursorStyle === "underline" ? (
+      <Text underline>{displayAtCursor}</Text>
+    ) : (
+      <Text inverse>{displayAtCursor}</Text>
+    );
   useCursor({
     col: prompt.length + displayBeforeCursor.length,
     row: 0,
     visible: isActive,
-  })
+  });
 
   return (
     <Box focusable testID={testID} flexDirection="column">
@@ -186,5 +190,5 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
       </Text>
       {showUnderline && <Text dimColor>{"─".repeat(underlineWidth)}</Text>}
     </Box>
-  )
-})
+  );
+});

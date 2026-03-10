@@ -20,56 +20,56 @@
  * All fields are required hex strings (#RRGGBB).
  */
 export interface ColorPalette {
-  name?: string
-  dark?: boolean
+  name?: string;
+  dark?: boolean;
 
   // ── 16 ANSI palette ────────────────────────────────────────────
   /** ANSI 0 — normal black */
-  black: string
+  black: string;
   /** ANSI 1 — normal red */
-  red: string
+  red: string;
   /** ANSI 2 — normal green */
-  green: string
+  green: string;
   /** ANSI 3 — normal yellow */
-  yellow: string
+  yellow: string;
   /** ANSI 4 — normal blue */
-  blue: string
+  blue: string;
   /** ANSI 5 — normal magenta */
-  magenta: string
+  magenta: string;
   /** ANSI 6 — normal cyan */
-  cyan: string
+  cyan: string;
   /** ANSI 7 — normal white */
-  white: string
+  white: string;
   /** ANSI 8 — bright black */
-  brightBlack: string
+  brightBlack: string;
   /** ANSI 9 — bright red */
-  brightRed: string
+  brightRed: string;
   /** ANSI 10 — bright green */
-  brightGreen: string
+  brightGreen: string;
   /** ANSI 11 — bright yellow */
-  brightYellow: string
+  brightYellow: string;
   /** ANSI 12 — bright blue */
-  brightBlue: string
+  brightBlue: string;
   /** ANSI 13 — bright magenta */
-  brightMagenta: string
+  brightMagenta: string;
   /** ANSI 14 — bright cyan */
-  brightCyan: string
+  brightCyan: string;
   /** ANSI 15 — bright white */
-  brightWhite: string
+  brightWhite: string;
 
   // ── 6 special colors ────────────────────────────────────────────
   /** Default text color */
-  foreground: string
+  foreground: string;
   /** Default background color */
-  background: string
+  background: string;
   /** Cursor block/line color */
-  cursorColor: string
+  cursorColor: string;
   /** Text rendered under the cursor */
-  cursorText: string
+  cursorText: string;
   /** Background color of selected text */
-  selectionBackground: string
+  selectionBackground: string;
   /** Text color of selected text */
-  selectionForeground: string
+  selectionForeground: string;
 }
 
 /** All 22 color field names on ColorPalette. */
@@ -96,7 +96,7 @@ export const COLOR_PALETTE_FIELDS = [
   "cursorText",
   "selectionBackground",
   "selectionForeground",
-] as const
+] as const;
 
 /** Name of one of the 16 ANSI palette colors. */
 export type AnsiColorName =
@@ -115,7 +115,7 @@ export type AnsiColorName =
   | "brightBlue"
   | "brightMagenta"
   | "brightCyan"
-  | "brightWhite"
+  | "brightWhite";
 
 // ============================================================================
 // Theme — 33 Semantic Tokens for UI Consumption
@@ -130,85 +130,85 @@ export type AnsiColorName =
  */
 export interface Theme {
   /** Human-readable theme name */
-  name: string
+  name: string;
 
   // ── 14 pairs (area + text-on-area) ──────────────────────────────
   /** Default background */
-  bg: string
+  bg: string;
   /** Default text */
-  fg: string
+  fg: string;
   /** Elevated content area background */
-  surface: string
+  surface: string;
   /** Text on elevated surface */
-  surfacefg: string
+  surfacefg: string;
   /** Floating content background (popover, dropdown) */
-  popover: string
+  popover: string;
   /** Text on floating content */
-  popoverfg: string
+  popoverfg: string;
   /** Muted area background (hover state) */
-  muted: string
+  muted: string;
   /** Secondary/muted text (~70% contrast) */
-  mutedfg: string
+  mutedfg: string;
   /** Brand accent area */
-  primary: string
+  primary: string;
   /** Text on primary accent area */
-  primaryfg: string
+  primaryfg: string;
   /** Alternate accent area */
-  secondary: string
+  secondary: string;
   /** Text on secondary accent area */
-  secondaryfg: string
+  secondaryfg: string;
   /** Attention/pop accent area */
-  accent: string
+  accent: string;
   /** Text on accent area */
-  accentfg: string
+  accentfg: string;
   /** Error/destructive area */
-  error: string
+  error: string;
   /** Text on error area */
-  errorfg: string
+  errorfg: string;
   /** Warning/caution area */
-  warning: string
+  warning: string;
   /** Text on warning area */
-  warningfg: string
+  warningfg: string;
   /** Success/positive area */
-  success: string
+  success: string;
   /** Text on success area */
-  successfg: string
+  successfg: string;
   /** Neutral info area */
-  info: string
+  info: string;
   /** Text on info area */
-  infofg: string
+  infofg: string;
   /** Selected items background */
-  selection: string
+  selection: string;
   /** Text on selected items */
-  selectionfg: string
+  selectionfg: string;
   /** Chrome area (status/title bar) */
-  inverse: string
+  inverse: string;
   /** Text on chrome area */
-  inversefg: string
+  inversefg: string;
   /** Cursor color */
-  cursor: string
+  cursor: string;
   /** Text under cursor */
-  cursorfg: string
+  cursorfg: string;
 
   // ── 5 standalone tokens ─────────────────────────────────────────
   /** Structural dividers, borders */
-  border: string
+  border: string;
   /** Interactive control borders (inputs, buttons) */
-  inputborder: string
+  inputborder: string;
   /** Focus border (always blue) */
-  focusborder: string
+  focusborder: string;
   /** Hyperlinks */
-  link: string
+  link: string;
   /** Disabled/placeholder text (~50% contrast) */
-  disabledfg: string
+  disabledfg: string;
 
   // ── 16 palette passthrough ──────────────────────────────────────
   /** 16 ANSI colors ($color0–$color15) */
-  palette: string[]
+  palette: string[];
 }
 
 /** Supported primary colors for ANSI 16 theme generation. */
-export type AnsiPrimary = "yellow" | "cyan" | "magenta" | "green" | "red" | "blue" | "white"
+export type AnsiPrimary = "yellow" | "cyan" | "magenta" | "green" | "red" | "blue" | "white";
 
 /** Accent hue name — the 8 hue names for palette generators. */
-export type HueName = "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "purple" | "pink"
+export type HueName = "red" | "orange" | "yellow" | "green" | "teal" | "blue" | "purple" | "pink";

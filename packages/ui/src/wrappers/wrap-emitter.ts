@@ -2,29 +2,29 @@
  * wrapEmitter - Track EventEmitter state changes with progress indicators
  */
 
-import type { EventEmitter } from "events"
-import { Spinner } from "../cli/spinner"
+import type { EventEmitter } from "events";
+import { Spinner } from "../cli/spinner";
 
 /** Event handler configuration */
 interface EventConfig {
   /** Display text for this event */
-  text?: string
+  text?: string;
   /** Dynamic text based on event data */
-  getText?: (data: unknown) => string
+  getText?: (data: unknown) => string;
   /** Mark spinner as succeeded */
-  succeed?: boolean
+  succeed?: boolean;
   /** Mark spinner as failed */
-  fail?: boolean
+  fail?: boolean;
   /** Stop tracking */
-  stop?: boolean
+  stop?: boolean;
 }
 
 /** Configuration for wrapEmitter */
 interface WrapEmitterConfig {
   /** Event handlers */
-  events: Record<string, EventConfig>
+  events: Record<string, EventConfig>;
   /** Initial text */
-  initialText?: string
+  initialText?: string;
 }
 
 /**
@@ -47,52 +47,52 @@ interface WrapEmitterConfig {
  * ```
  */
 export function wrapEmitter(emitter: EventEmitter, config: WrapEmitterConfig): () => void {
-  const spinner = new Spinner(config.initialText ?? "")
-  const handlers: Map<string, (...args: unknown[]) => void> = new Map()
+  const spinner = new Spinner(config.initialText ?? "");
+  const handlers: Map<string, (...args: unknown[]) => void> = new Map();
 
-  spinner.start()
+  spinner.start();
 
   // Set up event handlers
   for (const [eventName, eventConfig] of Object.entries(config.events)) {
     const handler = (data: unknown) => {
       // Update text
       if (eventConfig.getText) {
-        spinner.currentText = eventConfig.getText(data)
+        spinner.currentText = eventConfig.getText(data);
       } else if (eventConfig.text) {
-        spinner.currentText = eventConfig.text
+        spinner.currentText = eventConfig.text;
       }
 
       // Handle terminal states
       if (eventConfig.succeed) {
-        spinner.succeed()
-        cleanup()
+        spinner.succeed();
+        cleanup();
       } else if (eventConfig.fail) {
-        const message = data instanceof Error ? data.message : String(data ?? "Failed")
-        spinner.fail(message)
-        cleanup()
+        const message = data instanceof Error ? data.message : String(data ?? "Failed");
+        spinner.fail(message);
+        cleanup();
       } else if (eventConfig.stop) {
-        spinner.stop()
-        cleanup()
+        spinner.stop();
+        cleanup();
       }
-    }
+    };
 
-    handlers.set(eventName, handler)
-    emitter.on(eventName, handler)
+    handlers.set(eventName, handler);
+    emitter.on(eventName, handler);
   }
 
   // Cleanup function
   function cleanup() {
     for (const [eventName, handler] of handlers) {
-      emitter.off(eventName, handler)
+      emitter.off(eventName, handler);
     }
-    handlers.clear()
+    handlers.clear();
   }
 
   // Return stop function
   return () => {
-    spinner.stop()
-    cleanup()
-  }
+    spinner.stop();
+    cleanup();
+  };
 }
 
 /**
@@ -109,50 +109,50 @@ export async function waitForEvent(
   eventName: string,
   text: string,
   options: {
-    errorEvent?: string
-    timeout?: number
+    errorEvent?: string;
+    timeout?: number;
   } = {},
 ): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const spinner = new Spinner(text)
-    spinner.start()
+    const spinner = new Spinner(text);
+    spinner.start();
 
-    let timer: ReturnType<typeof setTimeout> | null = null
+    let timer: ReturnType<typeof setTimeout> | null = null;
 
     const cleanup = () => {
-      emitter.off(eventName, successHandler)
+      emitter.off(eventName, successHandler);
       if (options.errorEvent) {
-        emitter.off(options.errorEvent, errorHandler)
+        emitter.off(options.errorEvent, errorHandler);
       }
       if (timer) {
-        clearTimeout(timer)
+        clearTimeout(timer);
       }
-    }
+    };
 
     const successHandler = (data: unknown) => {
-      cleanup()
-      spinner.succeed()
-      resolve(data)
-    }
+      cleanup();
+      spinner.succeed();
+      resolve(data);
+    };
 
     const errorHandler = (error: unknown) => {
-      cleanup()
-      spinner.fail(error instanceof Error ? error.message : "Error")
-      reject(error instanceof Error ? error : new Error(String(error)))
-    }
+      cleanup();
+      spinner.fail(error instanceof Error ? error.message : "Error");
+      reject(error instanceof Error ? error : new Error(String(error)));
+    };
 
-    emitter.once(eventName, successHandler)
+    emitter.once(eventName, successHandler);
 
     if (options.errorEvent) {
-      emitter.once(options.errorEvent, errorHandler)
+      emitter.once(options.errorEvent, errorHandler);
     }
 
     if (options.timeout) {
       timer = setTimeout(() => {
-        cleanup()
-        spinner.fail("Timeout")
-        reject(new Error(`Timeout waiting for ${eventName}`))
-      }, options.timeout)
+        cleanup();
+        spinner.fail("Timeout");
+        reject(new Error(`Timeout waiting for ${eventName}`));
+      }, options.timeout);
     }
-  })
+  });
 }

@@ -24,7 +24,7 @@
  * ```
  */
 
-export { Spinner, useSpinnerFrame } from "./Spinner"
-export { ProgressBar, useProgressBar } from "./ProgressBar"
-export { Task, Tasks, useTasks } from "./Tasks"
-export { ProgressProvider, useProgress, ProgressIndicator } from "./context"
+export { Spinner, useSpinnerFrame } from "./Spinner";
+export { ProgressBar, useProgressBar } from "./ProgressBar";
+export { Task, Tasks, useTasks } from "./Tasks";
+export { ProgressProvider, useProgress, ProgressIndicator } from "./context";

@@ -1,15 +1,15 @@
-import type { ConsoleEntry, PatchedConsole } from "@silvery/term/ansi"
-import type { ReactElement, ReactNode } from "react"
-import { useConsole } from "@silvery/react/hooks/useConsole"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import type { ConsoleEntry, PatchedConsole } from "@silvery/term/ansi";
+import type { ReactElement, ReactNode } from "react";
+import { useConsole } from "@silvery/react/hooks/useConsole";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 interface ConsoleProps {
   /** The patched console to render entries from */
-  console: PatchedConsole
+  console: PatchedConsole;
 
   /** Optional render function for custom entry rendering */
-  children?: (entry: ConsoleEntry, index: number) => ReactNode
+  children?: (entry: ConsoleEntry, index: number) => ReactNode;
 }
 
 /**
@@ -19,19 +19,19 @@ interface ConsoleProps {
 function formatArgs(args: unknown[]): string {
   return args
     .map((arg) => {
-      if (typeof arg === "string") return arg
+      if (typeof arg === "string") return arg;
       if (typeof arg === "number" || typeof arg === "boolean") {
-        return String(arg)
+        return String(arg);
       }
-      if (arg === null) return "null"
-      if (arg === undefined) return "undefined"
+      if (arg === null) return "null";
+      if (arg === undefined) return "undefined";
       try {
-        return JSON.stringify(arg)
+        return JSON.stringify(arg);
       } catch {
-        return String(arg)
+        return String(arg);
       }
     })
-    .join(" ")
+    .join(" ");
 }
 
 /**
@@ -61,7 +61,7 @@ function formatArgs(args: unknown[]): string {
  * ```
  */
 export function Console({ console: patched, children }: ConsoleProps): ReactElement {
-  const entries = useConsole(patched)
+  const entries = useConsole(patched);
 
   return (
     <Box flexDirection="column">
@@ -75,5 +75,5 @@ export function Console({ console: patched, children }: ConsoleProps): ReactElem
         ),
       )}
     </Box>
-  )
+  );
 }

@@ -7,10 +7,10 @@ Silvery provides hooks for input handling, layout queries, and terminal access.
 Returns the computed dimensions of the component's content area — width, height, and position.
 
 ```tsx
-import { Box, Text, useContentRect } from "silvery"
+import { Box, Text, useContentRect } from "silvery";
 
 function SizedBox() {
-  const { width, height, x, y } = useContentRect()
+  const { width, height, x, y } = useContentRect();
 
   return (
     <Box borderStyle="single">
@@ -21,7 +21,7 @@ function SizedBox() {
         Position: ({x}, {y})
       </Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -44,12 +44,12 @@ On the first render, dimensions are `{ width: 0, height: 0, x: 0, y: 0 }`. This 
 
 ```tsx
 function Header() {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   // Guard against first render if needed
-  if (width === 0) return null
+  if (width === 0) return null;
 
-  return <Text>{"=".repeat(width)}</Text>
+  return <Text>{"=".repeat(width)}</Text>;
 }
 ```
 
@@ -60,10 +60,10 @@ In practice, both renders happen before the first paint, so this is usually invi
 Access the Term instance for terminal capabilities and styling.
 
 ```tsx
-import { useTerm } from "silvery"
+import { useTerm } from "silvery";
 
 function ColoredOutput() {
-  const term = useTerm()
+  const term = useTerm();
 
   return (
     <Box>
@@ -72,7 +72,7 @@ function ColoredOutput() {
         Terminal size: {term.columns}x{term.rows}
       </Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -92,18 +92,18 @@ Returns the `Term` instance passed to `render()`. Provides:
 Handle keyboard input.
 
 ```tsx
-import { useInput } from "silvery"
+import { useInput } from "silvery";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
   useInput((input, key) => {
-    if (key.upArrow) setCount((c) => c + 1)
-    if (key.downArrow) setCount((c) => c - 1)
-    if (input === "q") process.exit()
-  })
+    if (key.upArrow) setCount((c) => c + 1);
+    if (key.downArrow) setCount((c) => c - 1);
+    if (input === "q") process.exit();
+  });
 
-  return <Text>Count: {count}</Text>
+  return <Text>Count: {count}</Text>;
 }
 ```
 
@@ -138,16 +138,16 @@ useInput(
 Access app-level controls.
 
 ```tsx
-import { useApp } from "silvery"
+import { useApp } from "silvery";
 
 function App() {
-  const { exit } = useApp()
+  const { exit } = useApp();
 
   useInput((input) => {
-    if (input === "q") exit()
-  })
+    if (input === "q") exit();
+  });
 
-  return <Text>Press q to quit</Text>
+  return <Text>Press q to quit</Text>;
 }
 ```
 
@@ -162,16 +162,16 @@ function App() {
 Access stdout stream and dimensions.
 
 ```tsx
-import { useStdout } from "silvery"
+import { useStdout } from "silvery";
 
 function App() {
-  const { stdout, write } = useStdout()
+  const { stdout, write } = useStdout();
 
   return (
     <Text>
       Terminal: {stdout.columns}x{stdout.rows}
     </Text>
-  )
+  );
 }
 ```
 
@@ -187,16 +187,16 @@ function App() {
 Returns focus state for the nearest focusable ancestor. The component must be rendered inside a `<Box focusable>` with a `testID`.
 
 ```tsx
-import { useFocusable, Box, Text } from "silvery"
+import { useFocusable, Box, Text } from "silvery";
 
 function FocusableItem({ label }: { label: string }) {
-  const { focused } = useFocusable()
+  const { focused } = useFocusable();
 
   return (
     <Box testID={label} focusable borderStyle={focused ? "double" : "single"}>
       <Text>{label}</Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -216,17 +216,17 @@ Focus behavior is configured via Box props: `focusable`, `autoFocus`, `focusScop
 Returns whether any descendant of the specified Box (by `testID`) has focus.
 
 ```tsx
-import { useFocusWithin } from "silvery"
+import { useFocusWithin } from "silvery";
 
 function Sidebar() {
-  const hasFocus = useFocusWithin("sidebar")
+  const hasFocus = useFocusWithin("sidebar");
 
   return (
     <Box testID="sidebar" borderColor={hasFocus ? "blue" : "gray"}>
       <FocusableItem testID="item1" />
       <FocusableItem testID="item2" />
     </Box>
-  )
+  );
 }
 ```
 
@@ -235,10 +235,10 @@ function Sidebar() {
 Access the focus manager for programmatic focus control.
 
 ```tsx
-import { useFocusManager } from "silvery"
+import { useFocusManager } from "silvery";
 
 function App() {
-  const { activeId, focusNext, focusPrev, focus, blur } = useFocusManager()
+  const { activeId, focusNext, focusPrev, focus, blur } = useFocusManager();
 
   return (
     <Box flexDirection="column">
@@ -247,7 +247,7 @@ function App() {
       <FocusableItem label="Second" />
       <FocusableItem label="Third" />
     </Box>
-  )
+  );
 }
 ```
 

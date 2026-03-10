@@ -9,8 +9,8 @@
  * silvery's render pipeline where React context isn't accessible.
  */
 
-import type { Theme } from "./types"
-import { ansi16DarkTheme } from "./palettes/index"
+import type { Theme } from "./types";
+import { ansi16DarkTheme } from "./palettes/index";
 
 // ============================================================================
 // Active Theme
@@ -20,16 +20,16 @@ import { ansi16DarkTheme } from "./palettes/index"
  * The currently active theme, set by ThemeProvider during render.
  * Used by parseColor() to resolve $token strings without React context access.
  */
-let _activeTheme: Theme = ansi16DarkTheme
+let _activeTheme: Theme = ansi16DarkTheme;
 
 /** Set the active theme (called by ThemeProvider). */
 export function setActiveTheme(theme: Theme): void {
-  _activeTheme = theme
+  _activeTheme = theme;
 }
 
 /** Get the active theme (called by parseColor in render-helpers). */
 export function getActiveTheme(): Theme {
-  return _contextStack.length > 0 ? _contextStack[_contextStack.length - 1]! : _activeTheme
+  return _contextStack.length > 0 ? _contextStack[_contextStack.length - 1]! : _activeTheme;
 }
 
 // ============================================================================
@@ -45,14 +45,14 @@ export function getActiveTheme(): Theme {
  * This enables CSS custom property-like cascading: the nearest ancestor
  * Box with a theme prop determines $token resolution for its subtree.
  */
-const _contextStack: Theme[] = []
+const _contextStack: Theme[] = [];
 
 /** Push a context theme (called by content phase for Box nodes with theme prop). */
 export function pushContextTheme(theme: Theme): void {
-  _contextStack.push(theme)
+  _contextStack.push(theme);
 }
 
 /** Pop a context theme (called by content phase after processing Box subtree). */
 export function popContextTheme(): void {
-  _contextStack.pop()
+  _contextStack.pop();
 }

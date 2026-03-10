@@ -5,19 +5,19 @@
  * The terminal adapter produces ANSI escape sequences, xterm.js renders them.
  */
 
-import React from "react"
-import { Terminal } from "@xterm/xterm"
-import { FitAddon } from "@xterm/addon-fit"
-import { renderToXterm, Box, Text, useContentRect } from "../../packages/term/src/xterm/index.js"
+import React from "react";
+import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import { renderToXterm, Box, Text, useContentRect } from "../../packages/term/src/xterm/index.js";
 
 // Component that shows its dimensions (in cells, not pixels)
 function SizeDisplay() {
-  const { width, height } = useContentRect()
+  const { width, height } = useContentRect();
   return (
     <Text color="green">
       Size: {width} cols x {height} rows
     </Text>
-  )
+  );
 }
 
 // Demo component with various styles
@@ -65,11 +65,11 @@ function App() {
         <Text dim>Layout by Flexx, ANSI output via terminal adapter, rendered by xterm.js</Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 // Set up xterm.js terminal
-const termContainer = document.getElementById("terminal") as HTMLElement
+const termContainer = document.getElementById("terminal") as HTMLElement;
 if (termContainer) {
   const term = new Terminal({
     cursorBlink: false,
@@ -82,24 +82,24 @@ if (termContainer) {
       background: "#1a1a2e",
       foreground: "#eee",
     },
-  })
+  });
 
-  const fitAddon = new FitAddon()
-  term.loadAddon(fitAddon)
-  term.open(termContainer)
-  fitAddon.fit()
+  const fitAddon = new FitAddon();
+  term.loadAddon(fitAddon);
+  term.open(termContainer);
+  fitAddon.fit();
 
-  const instance = renderToXterm(<App />, term)
+  const instance = renderToXterm(<App />, term);
 
   // Re-fit and re-render on window resize
   // Must use resize() (not refresh()) — clears the old buffer so the
   // next render does a full repaint at the new dimensions.
   window.addEventListener("resize", () => {
-    fitAddon.fit()
-    instance.resize(term.cols, term.rows)
-  })
+    fitAddon.fit();
+    instance.resize(term.cols, term.rows);
+  });
 
   // Expose for debugging
-  ;(window as any).silveryInstance = instance
-  ;(window as any).xtermTerminal = term
+  (window as any).silveryInstance = instance;
+  (window as any).xtermTerminal = term;
 }

@@ -5,26 +5,26 @@
  * live resize, and theme controls. Communicates with the host page via window messages.
  */
 
-import React, { useState, useEffect, useCallback } from "react"
-import { renderToCanvas, Box, Text, useContentRect } from "../../src/canvas/index.js"
+import React, { useState, useEffect, useCallback } from "react";
+import { renderToCanvas, Box, Text, useContentRect } from "../../src/canvas/index.js";
 
 // ============================================================================
 // Shared components
 // ============================================================================
 
 function SizeDisplay() {
-  const { width, height } = useContentRect()
+  const { width, height } = useContentRect();
   return (
     <Text color="green">
       {Math.round(width)}px x {Math.round(height)}px
     </Text>
-  )
+  );
 }
 
 function Divider({ color = "gray" }: { color?: string }) {
-  const { width } = useContentRect()
-  const line = "\u2500".repeat(Math.max(1, Math.floor(width / 8)))
-  return <Text color={color}>{line}</Text>
+  const { width } = useContentRect();
+  const line = "\u2500".repeat(Math.max(1, Math.floor(width / 8)));
+  return <Text color={color}>{line}</Text>;
 }
 
 // ============================================================================
@@ -44,7 +44,7 @@ function HelloWorld() {
         </Box>
       </Box>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -88,7 +88,7 @@ function TextStyles() {
         </Box>
       </Box>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -103,7 +103,7 @@ function ColorsAndBackgrounds() {
     { bg: "yellow", fg: "black", label: "Yellow" },
     { bg: "magenta", fg: "white", label: "Magenta" },
     { bg: "cyan", fg: "black", label: "Cyan" },
-  ]
+  ];
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -128,7 +128,7 @@ function ColorsAndBackgrounds() {
         <Text color="rgb(147, 130, 220)">Custom RGB</Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -162,7 +162,13 @@ function FlexboxLayout() {
         Nested columns:
       </Text>
       <Box flexDirection="row" gap={1}>
-        <Box borderStyle="round" borderColor="magenta" padding={1} flexGrow={1} flexDirection="column">
+        <Box
+          borderStyle="round"
+          borderColor="magenta"
+          padding={1}
+          flexGrow={1}
+          flexDirection="column"
+        >
           <Text bold color="magenta">
             Panel A
           </Text>
@@ -179,7 +185,7 @@ function FlexboxLayout() {
         </Box>
       </Box>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -192,7 +198,7 @@ function BorderStyles() {
     { style: "double", color: "yellow" },
     { style: "round", color: "green" },
     { style: "bold", color: "magenta" },
-  ]
+  ];
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -213,7 +219,7 @@ function BorderStyles() {
         ))}
       </Box>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -229,14 +235,26 @@ function Dashboard() {
         </Text>
       </Box>
       <Box flexDirection="row" gap={1} marginTop={1}>
-        <Box borderStyle="round" borderColor="green" padding={1} flexGrow={1} flexDirection="column">
+        <Box
+          borderStyle="round"
+          borderColor="green"
+          padding={1}
+          flexGrow={1}
+          flexDirection="column"
+        >
           <Text bold color="green">
             CPU
           </Text>
           <Text color="brightGreen">|||||||....</Text>
           <Text>65%</Text>
         </Box>
-        <Box borderStyle="round" borderColor="yellow" padding={1} flexGrow={1} flexDirection="column">
+        <Box
+          borderStyle="round"
+          borderColor="yellow"
+          padding={1}
+          flexGrow={1}
+          flexDirection="column"
+        >
           <Text bold color="yellow">
             Memory
           </Text>
@@ -261,7 +279,7 @@ function Dashboard() {
         <Text color="red"> ERR disk space low on /var</Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -269,8 +287,8 @@ function Dashboard() {
 // ============================================================================
 
 function Responsive() {
-  const { width } = useContentRect()
-  const isWide = width > 350
+  const { width } = useContentRect();
+  const isWide = width > 350;
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -280,7 +298,13 @@ function Responsive() {
       <Text color="gray">Resize the canvas to see layout adapt ({Math.round(width)}px wide)</Text>
       <Divider />
       <Box flexDirection={isWide ? "row" : "column"} gap={1} marginTop={1}>
-        <Box borderStyle="single" borderColor="cyan" padding={1} flexGrow={1} flexDirection="column">
+        <Box
+          borderStyle="single"
+          borderColor="cyan"
+          padding={1}
+          flexGrow={1}
+          flexDirection="column"
+        >
           <Text bold color="cyan">
             Main Content
           </Text>
@@ -303,7 +327,7 @@ function Responsive() {
         </Box>
       </Box>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -318,101 +342,103 @@ const PRESETS: Record<string, { label: string; component: React.FC }> = {
   borders: { label: "Borders", component: BorderStyles },
   dashboard: { label: "Dashboard", component: Dashboard },
   responsive: { label: "Responsive", component: Responsive },
-}
+};
 
 // ============================================================================
 // Root App
 // ============================================================================
 
 function App({ preset: initialPreset }: { preset: string }) {
-  const [currentPreset, setPreset] = useState(initialPreset)
+  const [currentPreset, setPreset] = useState(initialPreset);
 
   useEffect(() => {
     // Listen for preset changes from host page
     function handleMessage(e: MessageEvent) {
       if (e.data?.type === "set-preset" && PRESETS[e.data.preset]) {
-        setPreset(e.data.preset)
+        setPreset(e.data.preset);
       }
     }
-    window.addEventListener("message", handleMessage)
-    return () => window.removeEventListener("message", handleMessage)
-  }, [])
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
-  const Component = PRESETS[currentPreset]?.component ?? HelloWorld
-  return <Component />
+  const Component = PRESETS[currentPreset]?.component ?? HelloWorld;
+  return <Component />;
 }
 
 // ============================================================================
 // Mount
 // ============================================================================
 
-const canvas = document.getElementById("canvas") as HTMLCanvasElement
+const canvas = document.getElementById("canvas") as HTMLCanvasElement;
 if (canvas) {
   // Read initial preset from URL hash
-  const hash = window.location.hash.slice(1)
-  const initialPreset = PRESETS[hash] ? hash : "hello"
+  const hash = window.location.hash.slice(1);
+  const initialPreset = PRESETS[hash] ? hash : "hello";
 
   let instance = renderToCanvas(<App preset={initialPreset} />, canvas, {
     fontSize: 14,
     fontFamily: "monospace",
-  })
+  });
 
   // Handle resize
   function handleResize() {
-    const container = canvas.parentElement
-    if (!container) return
-    const rect = container.getBoundingClientRect()
-    const newWidth = Math.floor(rect.width)
-    const newHeight = Math.max(300, Math.floor(rect.height))
+    const container = canvas.parentElement;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const newWidth = Math.floor(rect.width);
+    const newHeight = Math.max(300, Math.floor(rect.height));
     if (canvas.width !== newWidth || canvas.height !== newHeight) {
-      canvas.width = newWidth
-      canvas.height = newHeight
+      canvas.width = newWidth;
+      canvas.height = newHeight;
       // Re-render with new dimensions
-      instance.unmount()
-      const hash = window.location.hash.slice(1)
-      const preset = PRESETS[hash] ? hash : "hello"
+      instance.unmount();
+      const hash = window.location.hash.slice(1);
+      const preset = PRESETS[hash] ? hash : "hello";
       instance = renderToCanvas(<App preset={preset} />, canvas, {
         fontSize: 14,
         fontFamily: "monospace",
         width: newWidth,
         height: newHeight,
-      })
+      });
     }
   }
 
   // Listen for preset changes and re-render
   window.addEventListener("message", (e) => {
     if (e.data?.type === "set-preset" && PRESETS[e.data.preset]) {
-      window.location.hash = e.data.preset
-      instance.unmount()
-      const container = canvas.parentElement
-      const w = container ? Math.floor(container.getBoundingClientRect().width) : canvas.width
-      const h = container ? Math.max(300, Math.floor(container.getBoundingClientRect().height)) : canvas.height
-      canvas.width = w
-      canvas.height = h
+      window.location.hash = e.data.preset;
+      instance.unmount();
+      const container = canvas.parentElement;
+      const w = container ? Math.floor(container.getBoundingClientRect().width) : canvas.width;
+      const h = container
+        ? Math.max(300, Math.floor(container.getBoundingClientRect().height))
+        : canvas.height;
+      canvas.width = w;
+      canvas.height = h;
       instance = renderToCanvas(<App preset={e.data.preset} />, canvas, {
         fontSize: 14,
         fontFamily: "monospace",
         width: w,
         height: h,
-      })
+      });
     }
-  })
+  });
 
-  const resizeObserver = new ResizeObserver(handleResize)
-  const container = canvas.parentElement
-  if (container) resizeObserver.observe(container)
+  const resizeObserver = new ResizeObserver(handleResize);
+  const container = canvas.parentElement;
+  if (container) resizeObserver.observe(container);
 
   // Initial size
-  handleResize()
+  handleResize();
 
   // Expose for debugging
-  ;(window as any).silveryInstance = instance
-  ;(window as any).PRESETS = Object.keys(PRESETS)
+  (window as any).silveryInstance = instance;
+  (window as any).PRESETS = Object.keys(PRESETS);
 }
 
 // Export presets list for the host page
-;(window as any).PRESET_LIST = Object.entries(PRESETS).map(([id, { label }]) => ({
+(window as any).PRESET_LIST = Object.entries(PRESETS).map(([id, { label }]) => ({
   id,
   label,
-}))
+}));

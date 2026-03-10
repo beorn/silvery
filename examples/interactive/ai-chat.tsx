@@ -16,7 +16,7 @@
  *   q or Ctrl+C - Quit
  */
 
-import React, { useState, useCallback, useEffect, useRef } from "react"
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   render,
   Box,
@@ -28,25 +28,25 @@ import {
   useApp,
   createTerm,
   type Key,
-} from "../../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+} from "../../src/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "AI Chat",
   description: "VirtualList chat with simulated streaming responses and TextInput",
   features: ["VirtualList", "useContentRect()", "TextInput", "variable-height items"],
-}
+};
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface Message {
-  id: number
-  role: "user" | "assistant" | "system"
-  content: string
-  timestamp: Date
-  streaming?: boolean
+  id: number;
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp: Date;
+  streaming?: boolean;
 }
 
 // ============================================================================
@@ -60,7 +60,7 @@ const AI_RESPONSES = [
   "That's an interesting perspective. Terminal UIs have a certain elegance — they're fast, lightweight, and accessible over SSH.\n\nWith modern frameworks, we can bring the best of both worlds: rich interaction and visual design in a text-based environment.",
   "Here's a concrete example of what makes this special:\n\n```tsx\nfunction Chat() {\n  const { width } = useContentRect()\n  // width is available during render!\n  // No useEffect, no layout thrashing\n  const cols = width > 100 ? 3 : width > 60 ? 2 : 1\n  return <Grid columns={cols}>...</Grid>\n}\n```\n\nThe component adapts instantly to size changes.",
   "Great observation! The streaming effect you see in this chat is just setTimeout with progressive string slicing. But the underlying VirtualList handles the variable-height messages efficiently — each message can be any height and the viewport calculation adapts.",
-]
+];
 
 // ============================================================================
 // Components
@@ -71,13 +71,13 @@ function formatTime(date: Date): string {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  })
+  });
 }
 
 function MessageBubble({ message, width }: { message: Message; width: number }): JSX.Element {
-  const isUser = message.role === "user"
-  const isSystem = message.role === "system"
-  const maxContentWidth = Math.max(20, width - 4)
+  const isUser = message.role === "user";
+  const isSystem = message.role === "system";
+  const maxContentWidth = Math.max(20, width - 4);
 
   if (isSystem) {
     return (
@@ -86,11 +86,16 @@ function MessageBubble({ message, width }: { message: Message; width: number }):
           {message.content}
         </Text>
       </Box>
-    )
+    );
   }
 
   return (
-    <Box flexDirection="column" paddingX={1} marginBottom={1} alignItems={isUser ? "flex-end" : "flex-start"}>
+    <Box
+      flexDirection="column"
+      paddingX={1}
+      marginBottom={1}
+      alignItems={isUser ? "flex-end" : "flex-start"}
+    >
       <Box gap={1}>
         <Text bold color={isUser ? "$primary" : "$success"}>
           {isUser ? "You" : "Assistant"}
@@ -117,7 +122,7 @@ function MessageBubble({ message, width }: { message: Message; width: number }):
         </Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 function Header(): JSX.Element {
@@ -128,7 +133,7 @@ function Header(): JSX.Element {
       </Text>
       <Text color="$muted">Powered by VirtualList + useContentRect</Text>
     </Box>
-  )
+  );
 }
 
 function StatusBar({ messageCount }: { messageCount: number }): JSX.Element {
@@ -146,7 +151,7 @@ function StatusBar({ messageCount }: { messageCount: number }): JSX.Element {
         quit
       </Text>
     </Box>
-  )
+  );
 }
 
 /** Separate component so useContentRect() reads the flexGrow container's actual height */
@@ -155,24 +160,24 @@ function MessageArea({
   scrollIndex,
   width,
 }: {
-  messages: Message[]
-  scrollIndex: number
-  width: number
+  messages: Message[];
+  scrollIndex: number;
+  width: number;
 }): JSX.Element {
-  const { height } = useContentRect()
+  const { height } = useContentRect();
 
   const estimateHeight = useCallback(
     (msg: Message) => {
-      const contentWidth = Math.min(68, Math.max(16, width - 8))
-      const lines = msg.content.split("\n")
-      let totalLines = 0
+      const contentWidth = Math.min(68, Math.max(16, width - 8));
+      const lines = msg.content.split("\n");
+      let totalLines = 0;
       for (const line of lines) {
-        totalLines += Math.max(1, Math.ceil((line.length + 1) / contentWidth))
+        totalLines += Math.max(1, Math.ceil((line.length + 1) / contentWidth));
       }
-      return totalLines + 4
+      return totalLines + 4;
     },
     [width],
-  )
+  );
 
   return (
     <VirtualList
@@ -183,18 +188,18 @@ function MessageArea({
       overscan={3}
       renderItem={(msg) => <MessageBubble key={msg.id} message={msg} width={width} />}
     />
-  )
+  );
 }
 
 // ============================================================================
 // Main App
 // ============================================================================
 
-let nextId = 1
+let nextId = 1;
 
 function Chat(): JSX.Element {
-  const { exit } = useApp()
-  const { width } = useContentRect()
+  const { exit } = useApp();
+  const { width } = useContentRect();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: nextId++,
@@ -202,25 +207,25 @@ function Chat(): JSX.Element {
       content: "Welcome to silvery AI Chat! Type a message and press Enter to chat.",
       timestamp: new Date(),
     },
-  ])
-  const [inputValue, setInputValue] = useState("")
-  const [isStreaming, setIsStreaming] = useState(false)
-  const [scrollIndex, setScrollIndex] = useState(0)
-  const [inputActive, setInputActive] = useState(true)
-  const streamingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  ]);
+  const [inputValue, setInputValue] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [scrollIndex, setScrollIndex] = useState(0);
+  const [inputActive, setInputActive] = useState(true);
+  const streamingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Auto-scroll to latest message
   useEffect(() => {
     if (messages.length > 0) {
-      setScrollIndex(messages.length - 1)
+      setScrollIndex(messages.length - 1);
     }
-  }, [messages.length])
+  }, [messages.length]);
 
   // Simulate AI streaming response
   const simulateResponse = useCallback(
     (userMessage: string) => {
-      const fullResponse = AI_RESPONSES[Math.floor(Math.random() * AI_RESPONSES.length)]!
-      const assistantId = nextId++
+      const fullResponse = AI_RESPONSES[Math.floor(Math.random() * AI_RESPONSES.length)]!;
+      const assistantId = nextId++;
 
       // Add empty assistant message
       setMessages((prev) => [
@@ -232,20 +237,20 @@ function Chat(): JSX.Element {
           timestamp: new Date(),
           streaming: true,
         },
-      ])
-      setIsStreaming(true)
+      ]);
+      setIsStreaming(true);
 
       // Stream characters progressively
-      let charIndex = 0
+      let charIndex = 0;
       const streamInterval = setInterval(() => {
-        charIndex += 2 + Math.floor(Math.random() * 3)
+        charIndex += 2 + Math.floor(Math.random() * 3);
         if (charIndex >= fullResponse.length) {
-          charIndex = fullResponse.length
-          clearInterval(streamInterval)
-          setIsStreaming(false)
-          setInputActive(true)
+          charIndex = fullResponse.length;
+          clearInterval(streamInterval);
+          setIsStreaming(false);
+          setInputActive(true);
         }
-        const partial = fullResponse.slice(0, charIndex)
+        const partial = fullResponse.slice(0, charIndex);
         setMessages((prev) =>
           prev.map((m) =>
             m.id === assistantId
@@ -256,18 +261,18 @@ function Chat(): JSX.Element {
                 }
               : m,
           ),
-        )
-      }, 30)
+        );
+      }, 30);
 
-      streamingRef.current = streamInterval
+      streamingRef.current = streamInterval;
     },
     [setMessages],
-  )
+  );
 
   const handleSubmit = useCallback(
     (value: string) => {
-      const trimmed = value.trim()
-      if (!trimmed || isStreaming) return
+      const trimmed = value.trim();
+      if (!trimmed || isStreaming) return;
 
       // Add user message
       setMessages((prev) => [
@@ -278,22 +283,26 @@ function Chat(): JSX.Element {
           content: trimmed,
           timestamp: new Date(),
         },
-      ])
-      setInputValue("")
-      setInputActive(false)
+      ]);
+      setInputValue("");
+      setInputActive(false);
 
       // Simulate AI response after a brief delay
-      setTimeout(() => simulateResponse(trimmed), 500)
+      setTimeout(() => simulateResponse(trimmed), 500);
     },
     [isStreaming, simulateResponse],
-  )
+  );
 
   useInput((input: string, key: Key) => {
-    if (key.escape || (key.ctrl && input === "c") || (input === "q" && inputActive && !inputValue)) {
-      if (streamingRef.current) clearInterval(streamingRef.current)
-      exit()
+    if (
+      key.escape ||
+      (key.ctrl && input === "c") ||
+      (input === "q" && inputActive && !inputValue)
+    ) {
+      if (streamingRef.current) clearInterval(streamingRef.current);
+      exit();
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" flexGrow={1}>
@@ -319,7 +328,7 @@ function Chat(): JSX.Element {
 
       <StatusBar messageCount={messages.length} />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -327,16 +336,16 @@ function Chat(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm()
+  using term = createTerm();
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="Type + Enter send  Esc quit">
       <Chat />
     </ExampleBanner>,
     term,
-  )
-  await waitUntilExit()
+  );
+  await waitUntilExit();
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

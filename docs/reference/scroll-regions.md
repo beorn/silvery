@@ -25,7 +25,7 @@ import {
   scrollDown,
   moveCursor,
   supportsScrollRegions,
-} from "@silvery/term"
+} from "@silvery/term";
 ```
 
 | Function                               | Description                           |
@@ -40,7 +40,7 @@ import {
 ## useScrollRegion Hook
 
 ```ts
-import { useScrollRegion } from "@silvery/term/hooks"
+import { useScrollRegion } from "@silvery/term/hooks";
 ```
 
 Tracks scroll offset changes and emits DECSTBM sequences automatically.
@@ -53,13 +53,13 @@ function ScrollableArea({ items, scrollOffset }) {
     bottom: 20, // 0-indexed screen row
     scrollOffset,
     // enabled: true  // default: auto-detect
-  })
+  });
 
   // scrollDelta tells you how many rows shifted:
   //   > 0 = scrolled down (new rows at bottom)
   //   < 0 = scrolled up (new rows at top)
   //   0   = no scroll (full repaint)
-  return <VirtualList items={items} />
+  return <VirtualList items={items} />;
 }
 ```
 

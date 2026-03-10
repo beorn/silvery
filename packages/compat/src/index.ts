@@ -8,5 +8,5 @@
  * @packageDocumentation
  */
 
-export * as ink from "./ink"
-export * as chalk from "./chalk"
+export * as ink from "./ink";
+export * as chalk from "./chalk";

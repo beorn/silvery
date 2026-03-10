@@ -5,13 +5,13 @@
  * This is an internal function used by the runtime.
  */
 
-import { outputPhase } from "../pipeline"
-import type { Buffer } from "./types"
+import { outputPhase } from "../pipeline";
+import type { Buffer } from "./types";
 
 /**
  * Diff mode for ANSI output.
  */
-export type DiffMode = "fullscreen" | "inline"
+export type DiffMode = "fullscreen" | "inline";
 
 /**
  * Compute the minimal ANSI diff between two buffers.
@@ -38,10 +38,10 @@ export function diff(
   scrollbackOffset = 0,
   termRows?: number,
 ): string {
-  const prevBuffer = prev?._buffer ?? null
-  const nextBuffer = next._buffer
+  const prevBuffer = prev?._buffer ?? null;
+  const nextBuffer = next._buffer;
 
-  return outputPhase(prevBuffer, nextBuffer, mode, scrollbackOffset, termRows)
+  return outputPhase(prevBuffer, nextBuffer, mode, scrollbackOffset, termRows);
 }
 
 /**
@@ -52,5 +52,5 @@ export function diff(
  * @returns Full ANSI output
  */
 export function render(buffer: Buffer, mode: DiffMode = "fullscreen"): string {
-  return outputPhase(null, buffer._buffer, mode)
+  return outputPhase(null, buffer._buffer, mode);
 }

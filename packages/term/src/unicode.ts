@@ -11,21 +11,27 @@
  * - Combining characters: Diacritics, emoji modifiers that take 0 columns
  */
 
-import { BG_OVERRIDE_CODE } from "./ansi/index"
-import sliceAnsi from "slice-ansi"
-import stringWidth from "string-width"
-import { type Cell, type Style, type TerminalBuffer, type UnderlineStyle, createMutableCell } from "./buffer"
-import { isPrivateUseArea } from "./text-sizing"
+import { BG_OVERRIDE_CODE } from "./ansi/index";
+import sliceAnsi from "slice-ansi";
+import stringWidth from "string-width";
+import {
+  type Cell,
+  type Style,
+  type TerminalBuffer,
+  type UnderlineStyle,
+  createMutableCell,
+} from "./buffer";
+import { isPrivateUseArea } from "./text-sizing";
 
 // Re-export for consumers of silvery
-export { BG_OVERRIDE_CODE }
+export { BG_OVERRIDE_CODE };
 
 // ============================================================================
 // Grapheme Segmentation
 // ============================================================================
 
 // Singleton Intl.Segmenter instance (stateless, reusable)
-const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" })
+const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 
 // ============================================================================
 // Performance: LRU Cache for displayWidth
@@ -37,42 +43,42 @@ const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" })
  * but the same strings are often measured repeatedly.
  */
 class DisplayWidthCache {
-  private cache = new Map<string, number>()
-  private maxSize: number
+  private cache = new Map<string, number>();
+  private maxSize: number;
 
   constructor(maxSize = 1000) {
-    this.maxSize = maxSize
+    this.maxSize = maxSize;
   }
 
   get(text: string): number | undefined {
-    const cached = this.cache.get(text)
+    const cached = this.cache.get(text);
     if (cached !== undefined) {
       // Move to end (most recently used)
-      this.cache.delete(text)
-      this.cache.set(text, cached)
+      this.cache.delete(text);
+      this.cache.set(text, cached);
     }
-    return cached
+    return cached;
   }
 
   set(text: string, width: number): void {
     // Evict oldest if at capacity
     if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value
+      const firstKey = this.cache.keys().next().value;
       if (firstKey !== undefined) {
-        this.cache.delete(firstKey)
+        this.cache.delete(firstKey);
       }
     }
-    this.cache.set(text, width)
+    this.cache.set(text, width);
   }
 
   clear(): void {
-    this.cache.clear()
+    this.cache.clear();
   }
 }
 
 // Cache size: 10K entries should be enough for most TUI apps
 // Each entry is a string key + number value, ~100 bytes, so 10K = ~1MB
-const displayWidthCache = new DisplayWidthCache(10000)
+const displayWidthCache = new DisplayWidthCache(10000);
 
 // ============================================================================
 // Text Sizing Protocol (OSC 66) State
@@ -83,13 +89,13 @@ const displayWidthCache = new DisplayWidthCache(10000)
  * Modern terminals (Ghostty, iTerm, Kitty) render text-presentation emoji
  * as 2-wide. Terminal.app renders them as 1-wide.
  */
-const DEFAULT_TEXT_EMOJI_WIDE = true
+const DEFAULT_TEXT_EMOJI_WIDE = true;
 
 /**
  * Default text sizing mode: false.
  * When enabled via a Measurer, PUA characters are treated as 2-wide.
  */
-const DEFAULT_TEXT_SIZING_ENABLED = false
+const DEFAULT_TEXT_SIZING_ENABLED = false;
 
 // ============================================================================
 // Scoped Measurer (pipeline execution context)
@@ -100,7 +106,7 @@ const DEFAULT_TEXT_SIZING_ENABLED = false
  * Set by runWithMeasurer() during executeRender, restored after.
  * When null, module-level functions use the lazy default measurer.
  */
-let _scopedMeasurer: WidthMeasurer | null = null
+let _scopedMeasurer: WidthMeasurer | null = null;
 
 /**
  * Run a function with a specific measurer as the active scope.
@@ -108,12 +114,12 @@ let _scopedMeasurer: WidthMeasurer | null = null
  * will use this measurer instead of the lazy default for the duration.
  */
 export function runWithMeasurer<T>(measurer: WidthMeasurer, fn: () => T): T {
-  const prev = _scopedMeasurer
-  _scopedMeasurer = measurer
+  const prev = _scopedMeasurer;
+  _scopedMeasurer = measurer;
   try {
-    return fn()
+    return fn();
   } finally {
-    _scopedMeasurer = prev
+    _scopedMeasurer = prev;
   }
 }
 
@@ -139,8 +145,8 @@ export function setTextSizingEnabled(_enabled: boolean): void {
  * Use measurer.textSizingEnabled for scoped queries.
  */
 export function isTextSizingEnabled(): boolean {
-  if (_scopedMeasurer) return _scopedMeasurer.textSizingEnabled
-  return DEFAULT_TEXT_SIZING_ENABLED
+  if (_scopedMeasurer) return _scopedMeasurer.textSizingEnabled;
+  return DEFAULT_TEXT_SIZING_ENABLED;
 }
 
 // ============================================================================
@@ -152,110 +158,113 @@ export function isTextSizingEnabled(): boolean {
  * Created by createWidthMeasurer() from TerminalCaps.
  */
 export interface Measurer {
-  readonly textEmojiWide: boolean
-  readonly textSizingEnabled: boolean
-  displayWidth(text: string): number
-  displayWidthAnsi(text: string): number
-  graphemeWidth(grapheme: string): number
-  wrapText(text: string, width: number, trim?: boolean, hard?: boolean): string[]
-  sliceByWidth(text: string, maxWidth: number): string
-  sliceByWidthFromEnd(text: string, maxWidth: number): string
+  readonly textEmojiWide: boolean;
+  readonly textSizingEnabled: boolean;
+  displayWidth(text: string): number;
+  displayWidthAnsi(text: string): number;
+  graphemeWidth(grapheme: string): number;
+  wrapText(text: string, width: number, trim?: boolean, hard?: boolean): string[];
+  sliceByWidth(text: string, maxWidth: number): string;
+  sliceByWidthFromEnd(text: string, maxWidth: number): string;
 }
 
 /** Backward-compatible alias for Measurer. */
-export type WidthMeasurer = Measurer
+export type WidthMeasurer = Measurer;
 
 /**
  * Strip OSC 8 hyperlink sequences before passing to slice-ansi.
  * slice-ansi doesn't understand OSC sequences and corrupts them.
  */
-const OSC8_RE = /\x1b\]8;;[^\x07\x1b]*(?:\x07|\x1b\\)/g
+const OSC8_RE = /\x1b\]8;;[^\x07\x1b]*(?:\x07|\x1b\\)/g;
 function stripOsc8ForSlice(text: string): string {
-  return text.replace(OSC8_RE, "")
+  return text.replace(OSC8_RE, "");
 }
 
 /**
  * Create a width measurer scoped to terminal capabilities.
  * Each measurer has its own caches (no shared global state).
  */
-export function createWidthMeasurer(caps: { textEmojiWide?: boolean; textSizingEnabled?: boolean } = {}): Measurer {
-  const textEmojiWide = caps.textEmojiWide ?? true
-  const textSizingEnabled = caps.textSizingEnabled ?? false
-  const cache = new DisplayWidthCache(10000)
+export function createWidthMeasurer(
+  caps: { textEmojiWide?: boolean; textSizingEnabled?: boolean } = {},
+): Measurer {
+  const textEmojiWide = caps.textEmojiWide ?? true;
+  const textSizingEnabled = caps.textSizingEnabled ?? false;
+  const cache = new DisplayWidthCache(10000);
 
   function measuredGraphemeWidth(grapheme: string): number {
-    const width = stringWidth(grapheme)
-    if (width !== 1) return width
-    if (textEmojiWide && isTextPresentationEmoji(grapheme)) return 2
+    const width = stringWidth(grapheme);
+    if (width !== 1) return width;
+    if (textEmojiWide && isTextPresentationEmoji(grapheme)) return 2;
     if (textSizingEnabled) {
-      const cp = grapheme.codePointAt(0)
-      if (cp !== undefined && isPrivateUseArea(cp)) return 2
+      const cp = grapheme.codePointAt(0);
+      if (cp !== undefined && isPrivateUseArea(cp)) return 2;
     }
-    return width
+    return width;
   }
 
   function measuredDisplayWidth(text: string): number {
-    const cached = cache.get(text)
-    if (cached !== undefined) return cached
+    const cached = cache.get(text);
+    if (cached !== undefined) return cached;
 
-    let width: number
-    const needsSlowPath = MAY_CONTAIN_TEXT_EMOJI.test(text) || (textSizingEnabled && MAY_CONTAIN_PUA.test(text))
+    let width: number;
+    const needsSlowPath =
+      MAY_CONTAIN_TEXT_EMOJI.test(text) || (textSizingEnabled && MAY_CONTAIN_PUA.test(text));
     if (!needsSlowPath) {
-      width = stringWidth(text)
+      width = stringWidth(text);
     } else {
-      const stripped = stripAnsi(text)
-      width = 0
+      const stripped = stripAnsi(text);
+      width = 0;
       for (const grapheme of splitGraphemes(stripped)) {
-        width += measuredGraphemeWidth(grapheme)
+        width += measuredGraphemeWidth(grapheme);
       }
     }
-    cache.set(text, width)
-    return width
+    cache.set(text, width);
+    return width;
   }
 
   function measuredDisplayWidthAnsi(text: string): number {
-    return measuredDisplayWidth(stripAnsi(text))
+    return measuredDisplayWidth(stripAnsi(text));
   }
 
   function measuredSliceByWidth(text: string, maxWidth: number): string {
     if (hasAnsi(text)) {
-      return sliceAnsi(stripOsc8ForSlice(text), 0, maxWidth)
+      return sliceAnsi(stripOsc8ForSlice(text), 0, maxWidth);
     }
-    let width = 0
-    let result = ""
-    const graphemes = splitGraphemes(text)
+    let width = 0;
+    let result = "";
+    const graphemes = splitGraphemes(text);
     for (const grapheme of graphemes) {
-      const gWidth = measuredGraphemeWidth(grapheme)
-      if (width + gWidth > maxWidth) break
-      result += grapheme
-      width += gWidth
+      const gWidth = measuredGraphemeWidth(grapheme);
+      if (width + gWidth > maxWidth) break;
+      result += grapheme;
+      width += gWidth;
     }
-    return result
+    return result;
   }
 
   function measuredSliceByWidthFromEnd(text: string, maxWidth: number): string {
-    const totalWidth = measuredDisplayWidthAnsi(text)
-    if (totalWidth <= maxWidth) return text
+    const totalWidth = measuredDisplayWidthAnsi(text);
+    if (totalWidth <= maxWidth) return text;
     if (hasAnsi(text)) {
-      const cleaned = stripOsc8ForSlice(text)
-      const cleanedWidth = measuredDisplayWidthAnsi(cleaned)
-      const startIndex = cleanedWidth - maxWidth
-      return sliceAnsi(cleaned, startIndex)
+      const cleaned = stripOsc8ForSlice(text);
+      const cleanedWidth = measuredDisplayWidthAnsi(cleaned);
+      const startIndex = cleanedWidth - maxWidth;
+      return sliceAnsi(cleaned, startIndex);
     }
-    const graphemes = splitGraphemes(text)
-    let width = 0
-    let startIdx = graphemes.length
+    const graphemes = splitGraphemes(text);
+    let width = 0;
+    let startIdx = graphemes.length;
     for (let i = graphemes.length - 1; i >= 0; i--) {
-      const gWidth = measuredGraphemeWidth(graphemes[i]!)
-      if (width + gWidth > maxWidth) break
-      width += gWidth
-      startIdx = i
+      const gWidth = measuredGraphemeWidth(graphemes[i]!);
+      if (width + gWidth > maxWidth) break;
+      width += gWidth;
+      startIdx = i;
     }
-    return graphemes.slice(startIdx).join("")
+    return graphemes.slice(startIdx).join("");
   }
 
   function measuredWrapText(text: string, width: number, trim?: boolean, hard?: boolean): string[] {
-    return wrapTextWithMeasurer(text, width, measurer, trim ?? false, hard ?? false)
+    return wrapTextWithMeasurer(text, width, measurer, trim ?? false, hard ?? false);
   }
 
   const measurer: Measurer = {
@@ -267,26 +276,26 @@ export function createWidthMeasurer(caps: { textEmojiWide?: boolean; textSizingE
     wrapText: measuredWrapText,
     sliceByWidth: measuredSliceByWidth,
     sliceByWidthFromEnd: measuredSliceByWidthFromEnd,
-  }
+  };
 
-  return measurer
+  return measurer;
 }
 
 /** Alias for createWidthMeasurer. */
-export const createMeasurer = createWidthMeasurer
+export const createMeasurer = createWidthMeasurer;
 
 // ============================================================================
 // Default Measurer (lazy singleton for module-level convenience functions)
 // ============================================================================
 
-let _defaultMeasurer: Measurer | undefined
+let _defaultMeasurer: Measurer | undefined;
 
 /** Get the default measurer (lazy init, uses default caps). */
 function getDefaultMeasurer(): Measurer {
   if (!_defaultMeasurer) {
-    _defaultMeasurer = createWidthMeasurer()
+    _defaultMeasurer = createWidthMeasurer();
   }
-  return _defaultMeasurer
+  return _defaultMeasurer;
 }
 
 /**
@@ -294,7 +303,7 @@ function getDefaultMeasurer(): Measurer {
  * Kept as a no-op for backward compatibility.
  */
 export function withMeasurer<T>(_measurer: WidthMeasurer, fn: () => T): T {
-  return fn()
+  return fn();
 }
 
 /**
@@ -308,16 +317,16 @@ export function withMeasurer<T>(_measurer: WidthMeasurer, fn: () => T): T {
  * - "한국어" -> ["한", "국", "어"]
  */
 export function splitGraphemes(text: string): string[] {
-  return [...segmenter.segment(text)].map((s) => s.segment)
+  return [...segmenter.segment(text)].map((s) => s.segment);
 }
 
 /**
  * Count the number of graphemes in a string.
  */
 export function graphemeCount(text: string): number {
-  let count = 0
-  for (const _ of segmenter.segment(text)) count++
-  return count
+  let count = 0;
+  for (const _ of segmenter.segment(text)) count++;
+  return count;
 }
 
 // ============================================================================
@@ -337,16 +346,16 @@ export function graphemeCount(text: string): number {
  * emoji presentation -- if char+VS16 is RGI emoji, the terminal likely
  * renders the bare char as 2-wide.
  */
-const TEXT_PRESENTATION_EMOJI_REGEX = /^\p{Extended_Pictographic}$/u
-const EMOJI_PRESENTATION_REGEX = /^\p{Emoji_Presentation}$/u
+const TEXT_PRESENTATION_EMOJI_REGEX = /^\p{Extended_Pictographic}$/u;
+const EMOJI_PRESENTATION_REGEX = /^\p{Emoji_Presentation}$/u;
 // @ts-expect-error -- RGI_Emoji v flag needs es2024 target but works at runtime
-const RGI_EMOJI_REGEX = /^\p{RGI_Emoji}$/v
+const RGI_EMOJI_REGEX = /^\p{RGI_Emoji}$/v;
 
 /**
  * Cache for isTextPresentationEmoji results.
  * Maps first code point to boolean.
  */
-const textPresentationEmojiCache = new Map<number, boolean>()
+const textPresentationEmojiCache = new Map<number, boolean>();
 
 /**
  * Check if a grapheme is a text-presentation emoji that terminals render wide.
@@ -357,34 +366,34 @@ const textPresentationEmojiCache = new Map<number, boolean>()
  * modern terminals despite string-width reporting width 1.
  */
 function isTextPresentationEmoji(grapheme: string): boolean {
-  const cp = grapheme.codePointAt(0)
-  if (cp === undefined) return false
+  const cp = grapheme.codePointAt(0);
+  if (cp === undefined) return false;
 
   // Check cache
-  const cached = textPresentationEmojiCache.get(cp)
-  if (cached !== undefined) return cached
+  const cached = textPresentationEmojiCache.get(cp);
+  if (cached !== undefined) return cached;
 
   // Multi-codepoint graphemes (with VS16, ZWJ, etc.) are already handled
   // correctly by string-width. Only check single-codepoint graphemes.
-  const singleChar = String.fromCodePoint(cp)
+  const singleChar = String.fromCodePoint(cp);
   if (singleChar.length !== grapheme.length) {
-    textPresentationEmojiCache.set(cp, false)
-    return false
+    textPresentationEmojiCache.set(cp, false);
+    return false;
   }
 
   // Must be Extended_Pictographic but NOT Emoji_Presentation
-  const isExtPict = TEXT_PRESENTATION_EMOJI_REGEX.test(grapheme)
-  const isEmojiPres = EMOJI_PRESENTATION_REGEX.test(grapheme)
+  const isExtPict = TEXT_PRESENTATION_EMOJI_REGEX.test(grapheme);
+  const isEmojiPres = EMOJI_PRESENTATION_REGEX.test(grapheme);
   if (!isExtPict || isEmojiPres) {
-    textPresentationEmojiCache.set(cp, false)
-    return false
+    textPresentationEmojiCache.set(cp, false);
+    return false;
   }
 
   // Check if adding VS16 makes it an RGI emoji sequence
-  const withVs16 = grapheme + "\uFE0F"
-  const result = RGI_EMOJI_REGEX.test(withVs16)
-  textPresentationEmojiCache.set(cp, result)
-  return result
+  const withVs16 = grapheme + "\uFE0F";
+  const result = RGI_EMOJI_REGEX.test(withVs16);
+  textPresentationEmojiCache.set(cp, result);
+  return result;
 }
 
 // ============================================================================
@@ -406,9 +415,9 @@ function isTextPresentationEmoji(grapheme: string): boolean {
  * ```
  */
 export function ensureEmojiPresentation(char: string): string {
-  if (char.includes("\uFE0F")) return char // Already has VS16
-  if (isTextPresentationEmoji(char)) return char + "\uFE0F"
-  return char
+  if (char.includes("\uFE0F")) return char; // Already has VS16
+  if (isTextPresentationEmoji(char)) return char + "\uFE0F";
+  return char;
 }
 
 // ============================================================================
@@ -426,13 +435,13 @@ export function ensureEmojiPresentation(char: string): string {
  * - Other scattered ranges
  */
 const MAY_CONTAIN_TEXT_EMOJI =
-  /[\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u25AA\u25AB\u25B6\u25C0\u25FB-\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u261D\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692-\u2697\u2699\u269B\u269C\u26A0\u26A1\u26A7\u26AA\u26AB\u26B0\u26B1\u26BD\u26BE\u26C4\u26C5\u26C8\u26CE\u26CF\u26D1\u26D3\u26D4\u26E9\u26EA\u26F0-\u26F5\u26F7-\u26FA\u26FD\u2702\u2705\u2708-\u270D\u270F\u2712\u2714\u2716\u271D\u2721\u2728\u2733\u2734\u2744\u2747\u274C\u274E\u2753-\u2755\u2757\u2763\u2764\u2795-\u2797\u27A1\u27B0\u27BF\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B50\u2B55\u3030\u303D\u3297\u3299]/
+  /[\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u25AA\u25AB\u25B6\u25C0\u25FB-\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u261D\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692-\u2697\u2699\u269B\u269C\u26A0\u26A1\u26A7\u26AA\u26AB\u26B0\u26B1\u26BD\u26BE\u26C4\u26C5\u26C8\u26CE\u26CF\u26D1\u26D3\u26D4\u26E9\u26EA\u26F0-\u26F5\u26F7-\u26FA\u26FD\u2702\u2705\u2708-\u270D\u270F\u2712\u2714\u2716\u271D\u2721\u2728\u2733\u2734\u2744\u2747\u274C\u274E\u2753-\u2755\u2757\u2763\u2764\u2795-\u2797\u27A1\u27B0\u27BF\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B50\u2B55\u3030\u303D\u3297\u3299]/;
 
 /**
  * Fast pre-check regex for BMP Private Use Area characters (U+E000-U+F8FF).
  * Used to gate the slow grapheme-by-grapheme path when text sizing is enabled.
  */
-const MAY_CONTAIN_PUA = /[\uE000-\uF8FF]/
+const MAY_CONTAIN_PUA = /[\uE000-\uF8FF]/;
 
 /**
  * Get the display width of a string (number of terminal columns).
@@ -449,31 +458,33 @@ const MAY_CONTAIN_PUA = /[\uE000-\uF8FF]/
  * Results are cached for performance.
  */
 export function displayWidth(text: string): number {
-  if (_scopedMeasurer) return _scopedMeasurer.displayWidth(text)
+  if (_scopedMeasurer) return _scopedMeasurer.displayWidth(text);
   // Check cache first
-  const cached = displayWidthCache.get(text)
+  const cached = displayWidthCache.get(text);
   if (cached !== undefined) {
-    return cached
+    return cached;
   }
 
-  let width: number
+  let width: number;
   // Fast path: if text cannot contain text-presentation emoji, use string-width directly.
   // Default measurer does not enable text sizing, so PUA check uses the constant default.
-  const needsSlowPath = MAY_CONTAIN_TEXT_EMOJI.test(text) || (DEFAULT_TEXT_SIZING_ENABLED && MAY_CONTAIN_PUA.test(text))
+  const needsSlowPath =
+    MAY_CONTAIN_TEXT_EMOJI.test(text) ||
+    (DEFAULT_TEXT_SIZING_ENABLED && MAY_CONTAIN_PUA.test(text));
   if (!needsSlowPath) {
-    width = stringWidth(text)
+    width = stringWidth(text);
   } else {
     // Slow path: strip ANSI codes first (they'd inflate the grapheme count),
     // then split into graphemes and sum corrected widths
-    const stripped = stripAnsi(text)
-    width = 0
+    const stripped = stripAnsi(text);
+    width = 0;
     for (const grapheme of splitGraphemes(stripped)) {
-      width += graphemeWidth(grapheme)
+      width += graphemeWidth(grapheme);
     }
   }
 
-  displayWidthCache.set(text, width)
-  return width
+  displayWidthCache.set(text, width);
+  return width;
 }
 
 /**
@@ -488,34 +499,34 @@ export function displayWidth(text: string): number {
  * column, leading to truncation or overlap.
  */
 export function graphemeWidth(grapheme: string): number {
-  if (_scopedMeasurer) return _scopedMeasurer.graphemeWidth(grapheme)
-  const width = stringWidth(grapheme)
+  if (_scopedMeasurer) return _scopedMeasurer.graphemeWidth(grapheme);
+  const width = stringWidth(grapheme);
   // If string-width already says 2 (or 0), trust it
-  if (width !== 1) return width
+  if (width !== 1) return width;
   // Check if this is a text-presentation emoji that terminals render wide.
   // Uses DEFAULT_TEXT_EMOJI_WIDE (true) — assumes modern terminal.
-  if (DEFAULT_TEXT_EMOJI_WIDE && isTextPresentationEmoji(grapheme)) return 2
+  if (DEFAULT_TEXT_EMOJI_WIDE && isTextPresentationEmoji(grapheme)) return 2;
   // Default module-level function does not enable text sizing.
   // Scoped measurers handle PUA via their own graphemeWidth.
   if (DEFAULT_TEXT_SIZING_ENABLED) {
-    const cp = grapheme.codePointAt(0)
-    if (cp !== undefined && isPrivateUseArea(cp)) return 2
+    const cp = grapheme.codePointAt(0);
+    if (cp !== undefined && isPrivateUseArea(cp)) return 2;
   }
-  return width
+  return width;
 }
 
 /**
  * Check if a grapheme is a wide character (takes 2 columns).
  */
 export function isWideGrapheme(grapheme: string): boolean {
-  return graphemeWidth(grapheme) === 2
+  return graphemeWidth(grapheme) === 2;
 }
 
 /**
  * Check if a grapheme is zero-width (combining character, ZWJ, etc.).
  */
 export function isZeroWidthGrapheme(grapheme: string): boolean {
-  return stringWidth(grapheme) === 0
+  return stringWidth(grapheme) === 0;
 }
 
 // ============================================================================
@@ -536,37 +547,37 @@ export function truncateText(
   maxWidth: number,
   ellipsis = "\u2026", // Unicode ellipsis (single character)
 ): string {
-  const textWidth = displayWidth(text)
+  const textWidth = displayWidth(text);
 
   // No truncation needed
   if (textWidth <= maxWidth) {
-    return text
+    return text;
   }
 
-  const ellipsisWidth = displayWidth(ellipsis)
-  const targetWidth = maxWidth - ellipsisWidth
+  const ellipsisWidth = displayWidth(ellipsis);
+  const targetWidth = maxWidth - ellipsisWidth;
 
   if (targetWidth <= 0) {
     // Not enough space for even the ellipsis
-    return maxWidth > 0 ? ellipsis.slice(0, maxWidth) : ""
+    return maxWidth > 0 ? ellipsis.slice(0, maxWidth) : "";
   }
 
   // Use ANSI-aware grapheme splitting when text contains escape sequences
   // (including OSC 8 hyperlinks) to avoid counting escape bytes as visible width.
-  const graphemes = hasAnsi(text) ? splitGraphemesAnsiAware(text) : splitGraphemes(text)
-  let result = ""
-  let currentWidth = 0
+  const graphemes = hasAnsi(text) ? splitGraphemesAnsiAware(text) : splitGraphemes(text);
+  let result = "";
+  let currentWidth = 0;
 
   for (const grapheme of graphemes) {
-    const gWidth = graphemeWidth(grapheme)
+    const gWidth = graphemeWidth(grapheme);
     if (currentWidth + gWidth > targetWidth) {
-      break
+      break;
     }
-    result += grapheme
-    currentWidth += gWidth
+    result += grapheme;
+    currentWidth += gWidth;
   }
 
-  return result + ellipsis
+  return result + ellipsis;
 }
 
 /**
@@ -584,31 +595,31 @@ export function padText(
   align: "left" | "right" | "center" = "left",
   padChar = " ",
 ): string {
-  const textWidth = displayWidth(text)
-  const padWidth = width - textWidth
+  const textWidth = displayWidth(text);
+  const padWidth = width - textWidth;
 
   if (padWidth <= 0) {
-    return text
+    return text;
   }
 
-  const padCharWidth = displayWidth(padChar)
+  const padCharWidth = displayWidth(padChar);
   if (padCharWidth === 0) {
     // Can't pad with zero-width characters
-    return text
+    return text;
   }
 
   // Calculate number of pad characters needed
-  const padCount = Math.floor(padWidth / padCharWidth)
+  const padCount = Math.floor(padWidth / padCharWidth);
 
   switch (align) {
     case "left":
-      return text + padChar.repeat(padCount)
+      return text + padChar.repeat(padCount);
     case "right":
-      return padChar.repeat(padCount) + text
+      return padChar.repeat(padCount) + text;
     case "center": {
-      const leftPad = Math.floor(padCount / 2)
-      const rightPad = padCount - leftPad
-      return padChar.repeat(leftPad) + text + padChar.repeat(rightPad)
+      const leftPad = Math.floor(padCount / 2);
+      const rightPad = padCount - leftPad;
+      return padChar.repeat(leftPad) + text + padChar.repeat(rightPad);
     }
   }
 }
@@ -631,29 +642,29 @@ export function constrainText(
   pad = false,
   ellipsis = "…",
 ): { lines: string[]; truncated: boolean } {
-  const allLines = wrapText(text, width)
-  const truncated = allLines.length > maxLines
-  let lines = allLines.slice(0, maxLines)
+  const allLines = wrapText(text, width);
+  const truncated = allLines.length > maxLines;
+  let lines = allLines.slice(0, maxLines);
 
   if (truncated && lines.length > 0) {
-    const lastIdx = lines.length - 1
-    const lastLine = lines[lastIdx]
+    const lastIdx = lines.length - 1;
+    const lastLine = lines[lastIdx];
     if (lastLine) {
-      const ellipsisLen = displayWidth(ellipsis)
-      const lastLineLen = displayWidth(lastLine)
+      const ellipsisLen = displayWidth(ellipsis);
+      const lastLineLen = displayWidth(lastLine);
       if (lastLineLen + ellipsisLen <= width) {
-        lines[lastIdx] = lastLine + ellipsis
+        lines[lastIdx] = lastLine + ellipsis;
       } else {
-        lines[lastIdx] = truncateText(lastLine, width, ellipsis)
+        lines[lastIdx] = truncateText(lastLine, width, ellipsis);
       }
     }
   }
 
   if (pad) {
-    lines = lines.map((line) => padText(line, width))
+    lines = lines.map((line) => padText(line, width));
   }
 
-  return { lines, truncated }
+  return { lines, truncated };
 }
 
 /**
@@ -661,7 +672,7 @@ export function constrainText(
  */
 function isWordBoundary(grapheme: string): boolean {
   // Common word boundary characters
-  return grapheme === " " || grapheme === "-" || grapheme === "\t"
+  return grapheme === " " || grapheme === "-" || grapheme === "\t";
 }
 
 /**
@@ -673,22 +684,26 @@ function isWordBoundary(grapheme: string): boolean {
  * Accepts an explicit graphemeWidth function so it works with both the
  * module-level default and per-measurer instances.
  */
-function isBreakBeforeOperatorWith(graphemes: string[], spaceIndex: number, gWidthFn: (g: string) => number): boolean {
+function isBreakBeforeOperatorWith(
+  graphemes: string[],
+  spaceIndex: number,
+  gWidthFn: (g: string) => number,
+): boolean {
   // Look for pattern: [current space] [operator] [space]
   // spaceIndex is the index of the current space in the graphemes array
-  let j = spaceIndex + 1
+  let j = spaceIndex + 1;
   // Skip any zero-width characters (ANSI escapes)
-  while (j < graphemes.length && gWidthFn(graphemes[j]!) === 0) j++
-  if (j >= graphemes.length) return false
-  const nextChar = graphemes[j]!
+  while (j < graphemes.length && gWidthFn(graphemes[j]!) === 0) j++;
+  if (j >= graphemes.length) return false;
+  const nextChar = graphemes[j]!;
   // Must be a single visible character that is not alphanumeric or space
-  if (gWidthFn(nextChar) !== 1) return false
-  if (/^[a-zA-Z0-9\s]$/.test(nextChar)) return false
+  if (gWidthFn(nextChar) !== 1) return false;
+  if (/^[a-zA-Z0-9\s]$/.test(nextChar)) return false;
   // Check that it's followed by a space (it's an infix operator, not a prefix)
-  let k = j + 1
-  while (k < graphemes.length && gWidthFn(graphemes[k]!) === 0) k++
-  if (k >= graphemes.length) return false
-  return graphemes[k] === " "
+  let k = j + 1;
+  while (k < graphemes.length && gWidthFn(graphemes[k]!) === 0) k++;
+  if (k >= graphemes.length) return false;
+  return graphemes[k] === " ";
 }
 
 /**
@@ -696,15 +711,15 @@ function isBreakBeforeOperatorWith(graphemes: string[], spaceIndex: number, gWid
  * CJK text doesn't use spaces between words, so any character boundary is valid.
  */
 function canBreakAnywhere(grapheme: string): boolean {
-  return isCJK(grapheme)
+  return isCJK(grapheme);
 }
 
 // ANSI CSI pattern: ESC [ (params) (letter)
-const ANSI_CSI_RE = /^\x1b\[[0-9;:?]*[A-Za-z]/
+const ANSI_CSI_RE = /^\x1b\[[0-9;:?]*[A-Za-z]/;
 // ANSI OSC pattern: ESC ] ... (BEL or ST)
-const ANSI_OSC_RE = /^\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/
+const ANSI_OSC_RE = /^\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/;
 // Single-char escape: ESC followed by one letter
-const ANSI_SINGLE_RE = /^\x1b[DME78(B]/
+const ANSI_SINGLE_RE = /^\x1b[DME78(B]/;
 
 /**
  * Split text into graphemes, keeping ANSI escape sequences as single zero-width tokens.
@@ -713,48 +728,48 @@ const ANSI_SINGLE_RE = /^\x1b[DME78(B]/
  */
 function splitGraphemesAnsiAware(text: string): string[] {
   if (!hasAnsi(text)) {
-    return splitGraphemes(text)
+    return splitGraphemes(text);
   }
 
-  const result: string[] = []
-  let pos = 0
+  const result: string[] = [];
+  let pos = 0;
 
   while (pos < text.length) {
     if (text[pos] === "\x1b") {
       // Try to match an ANSI sequence starting at pos
-      const remaining = text.slice(pos)
-      const csi = remaining.match(ANSI_CSI_RE)
+      const remaining = text.slice(pos);
+      const csi = remaining.match(ANSI_CSI_RE);
       if (csi) {
-        result.push(csi[0])
-        pos += csi[0].length
-        continue
+        result.push(csi[0]);
+        pos += csi[0].length;
+        continue;
       }
-      const osc = remaining.match(ANSI_OSC_RE)
+      const osc = remaining.match(ANSI_OSC_RE);
       if (osc) {
-        result.push(osc[0])
-        pos += osc[0].length
-        continue
+        result.push(osc[0]);
+        pos += osc[0].length;
+        continue;
       }
-      const single = remaining.match(ANSI_SINGLE_RE)
+      const single = remaining.match(ANSI_SINGLE_RE);
       if (single) {
-        result.push(single[0])
-        pos += single[0].length
-        continue
+        result.push(single[0]);
+        pos += single[0].length;
+        continue;
       }
     }
 
     // Find the next ESC or end of string
-    const nextEsc = text.indexOf("\x1b", pos + 1)
-    const chunk = nextEsc === -1 ? text.slice(pos) : text.slice(pos, nextEsc)
+    const nextEsc = text.indexOf("\x1b", pos + 1);
+    const chunk = nextEsc === -1 ? text.slice(pos) : text.slice(pos, nextEsc);
 
     // Split this non-ANSI chunk into graphemes
     for (const g of splitGraphemes(chunk)) {
-      result.push(g)
+      result.push(g);
     }
-    pos += chunk.length
+    pos += chunk.length;
   }
 
-  return result
+  return result;
 }
 
 /**
@@ -772,8 +787,20 @@ function splitGraphemesAnsiAware(text: string): string[] {
  * @param trim - Trim trailing spaces on broken lines and skip leading spaces on continuation lines (useful for rendering)
  * @returns Array of wrapped lines
  */
-export function wrapText(text: string, width: number, preserveNewlines = true, trim = false): string[] {
-  return wrapTextWithMeasurer(text, width, _scopedMeasurer ?? undefined, trim, false, preserveNewlines)
+export function wrapText(
+  text: string,
+  width: number,
+  preserveNewlines = true,
+  trim = false,
+): string[] {
+  return wrapTextWithMeasurer(
+    text,
+    width,
+    _scopedMeasurer ?? undefined,
+    trim,
+    false,
+    preserveNewlines,
+  );
 }
 
 /**
@@ -789,49 +816,55 @@ function wrapTextWithMeasurer(
   preserveNewlines = true,
 ): string[] {
   if (width <= 0) {
-    return []
+    return [];
   }
 
-  const gWidthFn = measurer ? measurer.graphemeWidth.bind(measurer) : graphemeWidth
+  const gWidthFn = measurer ? measurer.graphemeWidth.bind(measurer) : graphemeWidth;
 
-  const lines: string[] = []
+  const lines: string[] = [];
 
   // Split by newlines first if preserving
-  const inputLines = preserveNewlines ? text.split("\n") : [text.replace(/\n/g, " ")]
+  const inputLines = preserveNewlines ? text.split("\n") : [text.replace(/\n/g, " ")];
 
   for (const line of inputLines) {
     // Handle empty lines
     if (line === "") {
-      lines.push("")
-      continue
+      lines.push("");
+      continue;
     }
 
     // If the line contains ANSI escape sequences, split them out so they
     // don't consume display width.  We interleave visible graphemes with
     // zero-width ANSI "tokens" that are appended to currentLine untouched.
-    const graphemes = splitGraphemesAnsiAware(line)
-    let currentLine = ""
-    let currentWidth = 0
-    let isFirstLineOfParagraph = true
+    const graphemes = splitGraphemesAnsiAware(line);
+    let currentLine = "";
+    let currentWidth = 0;
+    let isFirstLineOfParagraph = true;
 
     // Track the last valid break point
-    let lastBreakIndex = -1 // Index in currentLine (character position)
-    let lastBreakWidth = 0 // Width at break point
-    let lastBreakGraphemeIndex = -1 // Index in graphemes array
+    let lastBreakIndex = -1; // Index in currentLine (character position)
+    let lastBreakWidth = 0; // Width at break point
+    let lastBreakGraphemeIndex = -1; // Index in graphemes array
 
     for (let i = 0; i < graphemes.length; i++) {
-      const grapheme = graphemes[i]!
-      const gWidth = gWidthFn(grapheme)
+      const grapheme = graphemes[i]!;
+      const gWidth = gWidthFn(grapheme);
 
       // Handle zero-width characters
       if (gWidth === 0) {
-        currentLine += grapheme
-        continue
+        currentLine += grapheme;
+        continue;
       }
 
       // In trim mode, skip leading spaces on continuation lines
-      if (trim && !isFirstLineOfParagraph && currentWidth === 0 && isWordBoundary(grapheme) && grapheme !== "-") {
-        continue
+      if (
+        trim &&
+        !isFirstLineOfParagraph &&
+        currentWidth === 0 &&
+        isWordBoundary(grapheme) &&
+        grapheme !== "-"
+      ) {
+        continue;
       }
 
       // Check if this grapheme is a break point
@@ -839,84 +872,84 @@ function wrapTextWithMeasurer(
       if (isWordBoundary(grapheme)) {
         // Include the boundary character, then mark as break point
         if (currentWidth + gWidth <= width) {
-          currentLine += grapheme
-          currentWidth += gWidth
+          currentLine += grapheme;
+          currentWidth += gWidth;
           // Suppress break point if the next word is a lone operator (e.g. "+", "=")
           // to avoid orphaning operators at the start of the next line.
           if (grapheme !== " " || !isBreakBeforeOperatorWith(graphemes, i, gWidthFn)) {
-            lastBreakIndex = currentLine.length
-            lastBreakWidth = currentWidth
-            lastBreakGraphemeIndex = i + 1
+            lastBreakIndex = currentLine.length;
+            lastBreakWidth = currentWidth;
+            lastBreakGraphemeIndex = i + 1;
           }
-          continue
+          continue;
         }
         // Space/hyphen doesn't fit — break here (before the boundary char).
         // The current line is complete; the boundary char is consumed as the break.
         if (currentLine) {
-          let lineToAdd = currentLine
-          if (trim) lineToAdd = lineToAdd.trimEnd()
-          lines.push(lineToAdd)
-          isFirstLineOfParagraph = false
+          let lineToAdd = currentLine;
+          if (trim) lineToAdd = lineToAdd.trimEnd();
+          lines.push(lineToAdd);
+          isFirstLineOfParagraph = false;
         }
-        currentLine = ""
-        currentWidth = 0
-        lastBreakIndex = -1
-        lastBreakWidth = 0
-        lastBreakGraphemeIndex = -1
-        continue
+        currentLine = "";
+        currentWidth = 0;
+        lastBreakIndex = -1;
+        lastBreakWidth = 0;
+        lastBreakGraphemeIndex = -1;
+        continue;
       } else if (canBreakAnywhere(grapheme)) {
         // CJK: can break before this character
-        lastBreakIndex = currentLine.length
-        lastBreakWidth = currentWidth
-        lastBreakGraphemeIndex = i
+        lastBreakIndex = currentLine.length;
+        lastBreakWidth = currentWidth;
+        lastBreakGraphemeIndex = i;
       }
 
       // Would this grapheme overflow?
       if (currentWidth + gWidth > width) {
         if (lastBreakIndex > 0) {
           // We have a valid break point - use it
-          let lineToAdd = currentLine.slice(0, lastBreakIndex)
-          if (trim) lineToAdd = lineToAdd.trimEnd()
-          lines.push(lineToAdd)
-          isFirstLineOfParagraph = false
+          let lineToAdd = currentLine.slice(0, lastBreakIndex);
+          if (trim) lineToAdd = lineToAdd.trimEnd();
+          lines.push(lineToAdd);
+          isFirstLineOfParagraph = false;
 
           // Reset and continue from break point
-          currentLine = currentLine.slice(lastBreakIndex)
-          currentWidth = currentWidth - lastBreakWidth
+          currentLine = currentLine.slice(lastBreakIndex);
+          currentWidth = currentWidth - lastBreakWidth;
 
           // Rewind to process graphemes after the break
-          i = lastBreakGraphemeIndex - 1
-          currentLine = ""
-          currentWidth = 0
-          lastBreakIndex = -1
-          lastBreakWidth = 0
-          lastBreakGraphemeIndex = -1
+          i = lastBreakGraphemeIndex - 1;
+          currentLine = "";
+          currentWidth = 0;
+          lastBreakIndex = -1;
+          lastBreakWidth = 0;
+          lastBreakGraphemeIndex = -1;
         } else {
           // No break point found - must do character wrap
           if (currentLine) {
-            if (trim) currentLine = currentLine.trimEnd()
-            lines.push(currentLine)
-            isFirstLineOfParagraph = false
+            if (trim) currentLine = currentLine.trimEnd();
+            lines.push(currentLine);
+            isFirstLineOfParagraph = false;
           }
-          currentLine = grapheme
-          currentWidth = gWidth
-          lastBreakIndex = -1
-          lastBreakWidth = 0
-          lastBreakGraphemeIndex = -1
+          currentLine = grapheme;
+          currentWidth = gWidth;
+          lastBreakIndex = -1;
+          lastBreakWidth = 0;
+          lastBreakGraphemeIndex = -1;
         }
       } else {
-        currentLine += grapheme
-        currentWidth += gWidth
+        currentLine += grapheme;
+        currentWidth += gWidth;
       }
     }
 
     // Push remaining content
     if (currentLine) {
-      lines.push(currentLine)
+      lines.push(currentLine);
     }
   }
 
-  return lines
+  return lines;
 }
 
 /**
@@ -930,7 +963,7 @@ function wrapTextWithMeasurer(
  * @returns Sliced string from the start
  */
 export function sliceByWidth(text: string, maxWidth: number): string {
-  return (_scopedMeasurer ?? getDefaultMeasurer()).sliceByWidth(text, maxWidth)
+  return (_scopedMeasurer ?? getDefaultMeasurer()).sliceByWidth(text, maxWidth);
 }
 
 /**
@@ -943,31 +976,31 @@ export function sliceByWidth(text: string, maxWidth: number): string {
  * @returns Sliced string
  */
 export function sliceByWidthRange(text: string, start: number, end?: number): string {
-  const graphemes = splitGraphemes(text)
-  let result = ""
-  let currentCol = 0
-  const endCol = end ?? Number.POSITIVE_INFINITY
+  const graphemes = splitGraphemes(text);
+  let result = "";
+  let currentCol = 0;
+  const endCol = end ?? Number.POSITIVE_INFINITY;
 
   for (const grapheme of graphemes) {
-    const gWidth = graphemeWidth(grapheme)
+    const gWidth = graphemeWidth(grapheme);
 
     // Haven't reached start yet
     if (currentCol + gWidth <= start) {
-      currentCol += gWidth
-      continue
+      currentCol += gWidth;
+      continue;
     }
 
     // Past the end
     if (currentCol >= endCol) {
-      break
+      break;
     }
 
     // This grapheme is at least partially in range
-    result += grapheme
-    currentCol += gWidth
+    result += grapheme;
+    currentCol += gWidth;
   }
 
-  return result
+  return result;
 }
 
 /**
@@ -980,7 +1013,7 @@ export function sliceByWidthRange(text: string, start: number, end?: number): st
  * @returns Sliced string from the end
  */
 export function sliceByWidthFromEnd(text: string, maxWidth: number): string {
-  return (_scopedMeasurer ?? getDefaultMeasurer()).sliceByWidthFromEnd(text, maxWidth)
+  return (_scopedMeasurer ?? getDefaultMeasurer()).sliceByWidthFromEnd(text, maxWidth);
 }
 
 // ============================================================================
@@ -1009,22 +1042,22 @@ export function writeTextToBuffer(
   text: string,
   style: Style = { fg: null, bg: null, attrs: {} },
 ): number {
-  const graphemes = splitGraphemes(text)
-  let col = x
-  let combineCell: Cell | null = null
+  const graphemes = splitGraphemes(text);
+  let col = x;
+  let combineCell: Cell | null = null;
 
   for (const grapheme of graphemes) {
-    const width = graphemeWidth(grapheme)
+    const width = graphemeWidth(grapheme);
 
     if (width === 0) {
       // Zero-width character: combine with previous cell.
       // Use readCellInto to avoid allocating a fresh Cell on each combine.
       if (col > 0 && buffer.inBounds(col - 1, y)) {
         // Lazy-init reusable cell (zero-width combining is uncommon)
-        combineCell ??= createMutableCell()
-        buffer.readCellInto(col - 1, y, combineCell)
-        combineCell.char = combineCell.char + grapheme
-        buffer.setCell(col - 1, y, combineCell)
+        combineCell ??= createMutableCell();
+        buffer.readCellInto(col - 1, y, combineCell);
+        combineCell.char = combineCell.char + grapheme;
+        buffer.setCell(col - 1, y, combineCell);
       }
     } else if (width === 1) {
       // Normal single-width character
@@ -1036,13 +1069,13 @@ export function writeTextToBuffer(
           attrs: style.attrs,
           wide: false,
           continuation: false,
-        })
+        });
       }
-      col++
+      col++;
     } else if (width === 2) {
       // Wide character: takes 2 cells
       // For text-presentation emoji, add VS16 so terminals render at 2 columns
-      const outputChar = ensureEmojiPresentation(grapheme)
+      const outputChar = ensureEmojiPresentation(grapheme);
       if (buffer.inBounds(col, y)) {
         buffer.setCell(col, y, {
           char: outputChar,
@@ -1051,7 +1084,7 @@ export function writeTextToBuffer(
           attrs: style.attrs,
           wide: true,
           continuation: false,
-        })
+        });
       }
       if (buffer.inBounds(col + 1, y)) {
         buffer.setCell(col + 1, y, {
@@ -1061,18 +1094,18 @@ export function writeTextToBuffer(
           attrs: style.attrs,
           wide: false,
           continuation: true,
-        })
+        });
       }
-      col += 2
+      col += 2;
     }
 
     // Stop if we've gone past the buffer edge
     if (col >= buffer.width) {
-      break
+      break;
     }
   }
 
-  return col
+  return col;
 }
 
 /**
@@ -1095,13 +1128,13 @@ export function writeTextTruncated(
   style: Style = { fg: null, bg: null, attrs: {} },
   ellipsis = "\u2026",
 ): void {
-  const textWidth = displayWidth(text)
+  const textWidth = displayWidth(text);
 
   if (textWidth <= maxWidth) {
-    writeTextToBuffer(buffer, x, y, text, style)
+    writeTextToBuffer(buffer, x, y, text, style);
   } else {
-    const truncated = truncateText(text, maxWidth, ellipsis)
-    writeTextToBuffer(buffer, x, y, truncated, style)
+    const truncated = truncateText(text, maxWidth, ellipsis);
+    writeTextToBuffer(buffer, x, y, truncated, style);
   }
 }
 
@@ -1122,8 +1155,8 @@ export function writeLinesToBuffer(
   style: Style = { fg: null, bg: null, attrs: {} },
 ): void {
   for (let i = 0; i < lines.length; i++) {
-    if (y + i >= buffer.height) break
-    writeTextToBuffer(buffer, x, y + i, lines[i]!, style)
+    if (y + i >= buffer.height) break;
+    writeTextToBuffer(buffer, x, y + i, lines[i]!, style);
   }
 }
 
@@ -1145,7 +1178,7 @@ export function stripAnsi(text: string): string {
     .replace(/\x1b\[[0-9;:?]*[A-Za-z]/g, "") // CSI sequences (including SGR with colons)
     .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, "") // OSC sequences
     .replace(/\x1b[DME78]/g, "") // Single-char sequences
-    .replace(/\x1b\(B/g, "") // Character set selection
+    .replace(/\x1b\(B/g, ""); // Character set selection
 }
 
 /**
@@ -1153,7 +1186,7 @@ export function stripAnsi(text: string): string {
  * ANSI sequences don't contribute to display width.
  */
 export function displayWidthAnsi(text: string): number {
-  return displayWidth(stripAnsi(text))
+  return displayWidth(stripAnsi(text));
 }
 
 /**
@@ -1167,8 +1200,8 @@ export function displayWidthAnsi(text: string): number {
 export function truncateAnsi(text: string, maxWidth: number, ellipsis = "\u2026"): string {
   // Simple approach: if text has ANSI, strip and truncate
   // A more sophisticated approach would preserve styles
-  const stripped = stripAnsi(text)
-  return truncateText(stripped, maxWidth, ellipsis)
+  const stripped = stripAnsi(text);
+  return truncateText(stripped, maxWidth, ellipsis);
 }
 
 // ============================================================================
@@ -1179,30 +1212,30 @@ export function truncateAnsi(text: string, maxWidth: number, ellipsis = "\u2026"
 
 /** Styled text segment with associated ANSI colors/attributes */
 export interface StyledSegment {
-  text: string
-  fg?: number | null // SGR color code (30-37, 90-97, or 38;5;N / 38;2;r;g;b)
-  bg?: number | null // SGR color code (40-47, 100-107, or 48;5;N / 48;2;r;g;b)
+  text: string;
+  fg?: number | null; // SGR color code (30-37, 90-97, or 38;5;N / 38;2;r;g;b)
+  bg?: number | null; // SGR color code (40-47, 100-107, or 48;5;N / 48;2;r;g;b)
   /**
    * Underline color (SGR 58).
    * Same format as fg/bg: packed RGB with 0x1000000 marker, or 256-color index.
    */
-  underlineColor?: number | null
-  bold?: boolean
-  dim?: boolean
-  italic?: boolean
-  underline?: boolean
+  underlineColor?: number | null;
+  bold?: boolean;
+  dim?: boolean;
+  italic?: boolean;
+  underline?: boolean;
   /**
    * Underline style variant (SGR 4:x).
    * Uses UnderlineStyle from buffer.ts.
    */
-  underlineStyle?: UnderlineStyle
-  inverse?: boolean
-  bgOverride?: boolean // Set when BG_OVERRIDE_CODE (9999) is present
+  underlineStyle?: UnderlineStyle;
+  inverse?: boolean;
+  bgOverride?: boolean; // Set when BG_OVERRIDE_CODE (9999) is present
   /**
    * OSC 8 hyperlink URL.
    * Set when the segment is inside an OSC 8 hyperlink sequence.
    */
-  hyperlink?: string
+  hyperlink?: string;
 }
 
 /**
@@ -1212,19 +1245,19 @@ export interface StyledSegment {
 function parseUnderlineStyle(subparam: number): UnderlineStyle {
   switch (subparam) {
     case 0:
-      return false
+      return false;
     case 1:
-      return "single"
+      return "single";
     case 2:
-      return "double"
+      return "double";
     case 3:
-      return "curly"
+      return "curly";
     case 4:
-      return "dotted"
+      return "dotted";
     case 5:
-      return "dashed"
+      return "dashed";
     default:
-      return "single" // Unknown, default to single
+      return "single"; // Unknown, default to single
   }
 }
 
@@ -1237,212 +1270,213 @@ function parseUnderlineStyle(subparam: number): UnderlineStyle {
  * - Underline color (58;5;N for 256-color, 58;2;r;g;b for RGB)
  */
 export function parseAnsiText(text: string): StyledSegment[] {
-  const segments: StyledSegment[] = []
+  const segments: StyledSegment[] = [];
 
   // Step 1: Strip non-SGR CSI sequences (cursor movement, erase, etc.) that would
   // otherwise leak through as literal text. SGR sequences end in 'm'; all
   // other CSI sequences (ending in A-L, H, J, K, S, T, etc.) are stripped.
   // This must happen BEFORE OSC 8 processing so hyperlink position tracking
   // is based on the cleaned text (no position drift from stripped sequences).
-  const sanitizedText = text.replace(/\x1b\[[0-9;:]*[A-LN-Za-ln-z@`]/g, "")
+  const sanitizedText = text.replace(/\x1b\[[0-9;:]*[A-LN-Za-ln-z@`]/g, "");
 
   // Step 2: Strip OSC 8 hyperlink sequences and build a position-to-URL map.
   // OSC 8 format: \x1b]8;;URL(\x1b\\ | \x07) for open, \x1b]8;;(\x1b\\ | \x07) for close.
   // We strip these from the text before SGR parsing and track which character
   // positions map to which hyperlink URL.
-  const oscPattern = /\x1b\]8;;([^\x07\x1b]*)(?:\x07|\x1b\\)/g
-  let currentHyperlink: string | undefined
+  const oscPattern = /\x1b\]8;;([^\x07\x1b]*)(?:\x07|\x1b\\)/g;
+  let currentHyperlink: string | undefined;
   // Map from character index in cleaned text to hyperlink URL
-  const hyperlinkRanges: Array<{ start: number; end: number; url: string }> = []
-  let rangeStart = -1
-  let cleaned = ""
-  let oscMatch: RegExpExecArray | null
-  let oscLastIndex = 0
+  const hyperlinkRanges: Array<{ start: number; end: number; url: string }> = [];
+  let rangeStart = -1;
+  let cleaned = "";
+  let oscMatch: RegExpExecArray | null;
+  let oscLastIndex = 0;
 
   while ((oscMatch = oscPattern.exec(sanitizedText)) !== null) {
     // Append text between last OSC and this one (preserving SGR codes)
-    cleaned += sanitizedText.slice(oscLastIndex, oscMatch.index)
-    const url = oscMatch[1]!
+    cleaned += sanitizedText.slice(oscLastIndex, oscMatch.index);
+    const url = oscMatch[1]!;
 
     if (url === "") {
       // Close hyperlink
       if (currentHyperlink && rangeStart >= 0) {
-        hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink })
+        hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink });
       }
-      currentHyperlink = undefined
-      rangeStart = -1
+      currentHyperlink = undefined;
+      rangeStart = -1;
     } else {
       // Open hyperlink
       if (currentHyperlink && rangeStart >= 0) {
         // Close previous unclosed hyperlink
-        hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink })
+        hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink });
       }
-      currentHyperlink = url
-      rangeStart = cleaned.length
+      currentHyperlink = url;
+      rangeStart = cleaned.length;
     }
 
-    oscLastIndex = oscMatch.index + oscMatch[0].length
+    oscLastIndex = oscMatch.index + oscMatch[0].length;
   }
   // Append remaining text after last OSC
-  cleaned += sanitizedText.slice(oscLastIndex)
+  cleaned += sanitizedText.slice(oscLastIndex);
   // Close any still-open hyperlink
   if (currentHyperlink && rangeStart >= 0) {
-    hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink })
+    hyperlinkRanges.push({ start: rangeStart, end: cleaned.length, url: currentHyperlink });
   }
 
   // If no OSC 8 sequences found, use sanitized text for efficiency
-  const processText = hyperlinkRanges.length > 0 ? cleaned : sanitizedText
+  const processText = hyperlinkRanges.length > 0 ? cleaned : sanitizedText;
 
   // Extended pattern: matches SGR with semicolons AND colons (for 4:x, 58:2::r:g:b)
-  const ansiPattern = /\x1b\[([0-9;:]*)m/g
+  const ansiPattern = /\x1b\[([0-9;:]*)m/g;
 
-  let currentStyle: Omit<StyledSegment, "text"> = {}
-  let lastIndex = 0
-  let match: RegExpExecArray | null
+  let currentStyle: Omit<StyledSegment, "text"> = {};
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
 
   // Helper to find hyperlink URL for a position in the cleaned text.
   // Positions in cleaned text map directly to hyperlinkRanges since OSC 8
   // sequences were stripped but SGR sequences remain at the same indices.
   function getHyperlinkAt(pos: number): string | undefined {
     for (const range of hyperlinkRanges) {
-      if (pos >= range.start && pos < range.end) return range.url
+      if (pos >= range.start && pos < range.end) return range.url;
     }
-    return undefined
+    return undefined;
   }
 
   while ((match = ansiPattern.exec(processText)) !== null) {
     // Add text before this escape sequence
     if (match.index > lastIndex) {
-      const content = processText.slice(lastIndex, match.index)
+      const content = processText.slice(lastIndex, match.index);
       if (content.length > 0) {
         if (hyperlinkRanges.length > 0) {
           // Split content into runs by hyperlink URL.
           // lastIndex is the position of content[0] in processText/cleaned.
-          let segStart = 0
+          let segStart = 0;
           for (let ci = 0; ci < content.length; ci++) {
-            const hl = getHyperlinkAt(lastIndex + ci)
-            const prevHl = ci > 0 ? getHyperlinkAt(lastIndex + ci - 1) : undefined
+            const hl = getHyperlinkAt(lastIndex + ci);
+            const prevHl = ci > 0 ? getHyperlinkAt(lastIndex + ci - 1) : undefined;
             if (ci > 0 && hl !== prevHl) {
-              const sub = content.slice(segStart, ci)
+              const sub = content.slice(segStart, ci);
               if (sub.length > 0) {
-                const seg: StyledSegment = { text: sub, ...currentStyle }
-                if (prevHl) seg.hyperlink = prevHl
-                segments.push(seg)
+                const seg: StyledSegment = { text: sub, ...currentStyle };
+                if (prevHl) seg.hyperlink = prevHl;
+                segments.push(seg);
               }
-              segStart = ci
+              segStart = ci;
             }
           }
           // Push remaining
-          const sub = content.slice(segStart)
+          const sub = content.slice(segStart);
           if (sub.length > 0) {
-            const hl = getHyperlinkAt(lastIndex + segStart)
-            const seg: StyledSegment = { text: sub, ...currentStyle }
-            if (hl) seg.hyperlink = hl
-            segments.push(seg)
+            const hl = getHyperlinkAt(lastIndex + segStart);
+            const seg: StyledSegment = { text: sub, ...currentStyle };
+            if (hl) seg.hyperlink = hl;
+            segments.push(seg);
           }
         } else {
-          segments.push({ text: content, ...currentStyle })
+          segments.push({ text: content, ...currentStyle });
         }
       }
     }
 
     // Parse SGR codes - split by semicolon first, then handle colon subparams
-    const rawParams = match[1]!
+    const rawParams = match[1]!;
 
     // Handle colon-separated sequences (like 4:3 for curly underline, 58:2::r:g:b)
     // Split by semicolon first to get top-level params
-    const params = rawParams.split(";")
+    const params = rawParams.split(";");
 
     for (let i = 0; i < params.length; i++) {
-      const param = params[i]!
+      const param = params[i]!;
 
       // Check if this param has colon subparameters (e.g., "4:3", "58:2::255:0:0")
       if (param.includes(":")) {
-        const subparts = param.split(":").map((s) => (s === "" ? 0 : Number(s)))
-        const mainCode = subparts[0]!
+        const subparts = param.split(":").map((s) => (s === "" ? 0 : Number(s)));
+        const mainCode = subparts[0]!;
 
         if (mainCode === 4) {
           // SGR 4:x - underline style
-          const styleCode = subparts[1] ?? 1
-          currentStyle.underlineStyle = parseUnderlineStyle(styleCode)
-          currentStyle.underline = currentStyle.underlineStyle !== false
+          const styleCode = subparts[1] ?? 1;
+          currentStyle.underlineStyle = parseUnderlineStyle(styleCode);
+          currentStyle.underline = currentStyle.underlineStyle !== false;
         } else if (mainCode === 58) {
           // SGR 58 - underline color
           // Format: 58:5:N (256-color) or 58:2::r:g:b (RGB, note double colon)
           if (subparts[1] === 5 && subparts[2] !== undefined) {
-            currentStyle.underlineColor = subparts[2]
+            currentStyle.underlineColor = subparts[2];
           } else if (subparts[1] === 2) {
             // RGB: 58:2::r:g:b (indices 3,4,5 after the empty slot)
             // or 58:2:r:g:b (indices 2,3,4)
             // Handle both formats by looking for valid RGB values
-            const r = subparts[3] ?? subparts[2] ?? 0
-            const g = subparts[4] ?? subparts[3] ?? 0
-            const b = subparts[5] ?? subparts[4] ?? 0
-            currentStyle.underlineColor = 0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
+            const r = subparts[3] ?? subparts[2] ?? 0;
+            const g = subparts[4] ?? subparts[3] ?? 0;
+            const b = subparts[5] ?? subparts[4] ?? 0;
+            currentStyle.underlineColor =
+              0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
           }
         } else if (mainCode === 38) {
           // SGR 38:2::r:g:b or 38:5:N format
           if (subparts[1] === 5 && subparts[2] !== undefined) {
-            currentStyle.fg = subparts[2]
+            currentStyle.fg = subparts[2];
           } else if (subparts[1] === 2) {
-            const r = subparts[3] ?? subparts[2] ?? 0
-            const g = subparts[4] ?? subparts[3] ?? 0
-            const b = subparts[5] ?? subparts[4] ?? 0
-            currentStyle.fg = 0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
+            const r = subparts[3] ?? subparts[2] ?? 0;
+            const g = subparts[4] ?? subparts[3] ?? 0;
+            const b = subparts[5] ?? subparts[4] ?? 0;
+            currentStyle.fg = 0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
           }
         } else if (mainCode === 48) {
           // SGR 48:2::r:g:b or 48:5:N format
           if (subparts[1] === 5 && subparts[2] !== undefined) {
-            currentStyle.bg = subparts[2]
+            currentStyle.bg = subparts[2];
           } else if (subparts[1] === 2) {
-            const r = subparts[3] ?? subparts[2] ?? 0
-            const g = subparts[4] ?? subparts[3] ?? 0
-            const b = subparts[5] ?? subparts[4] ?? 0
-            currentStyle.bg = 0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
+            const r = subparts[3] ?? subparts[2] ?? 0;
+            const g = subparts[4] ?? subparts[3] ?? 0;
+            const b = subparts[5] ?? subparts[4] ?? 0;
+            currentStyle.bg = 0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
           }
         }
-        continue
+        continue;
       }
 
       // Standard semicolon-separated params
-      const code = Number(param)
+      const code = Number(param);
       switch (code) {
         case 0:
           // Reset
-          currentStyle = {}
-          break
+          currentStyle = {};
+          break;
         case 1:
-          currentStyle.bold = true
-          break
+          currentStyle.bold = true;
+          break;
         case 2:
-          currentStyle.dim = true
-          break
+          currentStyle.dim = true;
+          break;
         case 3:
-          currentStyle.italic = true
-          break
+          currentStyle.italic = true;
+          break;
         case 4:
           // Plain SGR 4 - simple underline (no subparam)
-          currentStyle.underline = true
-          currentStyle.underlineStyle = "single"
-          break
+          currentStyle.underline = true;
+          currentStyle.underlineStyle = "single";
+          break;
         case 7:
-          currentStyle.inverse = true
-          break
+          currentStyle.inverse = true;
+          break;
         case 22:
-          currentStyle.bold = false
-          currentStyle.dim = false
-          break
+          currentStyle.bold = false;
+          currentStyle.dim = false;
+          break;
         case 23:
-          currentStyle.italic = false
-          break
+          currentStyle.italic = false;
+          break;
         case 24:
           // SGR 24 - underline off
-          currentStyle.underline = false
-          currentStyle.underlineStyle = false
-          break
+          currentStyle.underline = false;
+          currentStyle.underlineStyle = false;
+          break;
         case 27:
-          currentStyle.inverse = false
-          break
+          currentStyle.inverse = false;
+          break;
         case 30:
         case 31:
         case 32:
@@ -1451,25 +1485,28 @@ export function parseAnsiText(text: string): StyledSegment[] {
         case 35:
         case 36:
         case 37:
-          currentStyle.fg = code
-          break
+          currentStyle.fg = code;
+          break;
         case 38: {
           // Extended color: 38;5;N (256 color) or 38;2;r;g;b (true color)
-          const nextParams = params.slice(i + 1).map(Number)
+          const nextParams = params.slice(i + 1).map(Number);
           if (nextParams[0] === 5 && nextParams[1] !== undefined) {
-            currentStyle.fg = nextParams[1]
-            i += 2
+            currentStyle.fg = nextParams[1];
+            i += 2;
           } else if (nextParams[0] === 2 && nextParams[3] !== undefined) {
             // True color - store as RGB values packed
             currentStyle.fg =
-              0x1000000 | ((nextParams[1]! & 0xff) << 16) | ((nextParams[2]! & 0xff) << 8) | (nextParams[3]! & 0xff)
-            i += 4
+              0x1000000 |
+              ((nextParams[1]! & 0xff) << 16) |
+              ((nextParams[2]! & 0xff) << 8) |
+              (nextParams[3]! & 0xff);
+            i += 4;
           }
-          break
+          break;
         }
         case 39:
-          currentStyle.fg = null // Default foreground
-          break
+          currentStyle.fg = null; // Default foreground
+          break;
         case 40:
         case 41:
         case 42:
@@ -1478,42 +1515,48 @@ export function parseAnsiText(text: string): StyledSegment[] {
         case 45:
         case 46:
         case 47:
-          currentStyle.bg = code
-          break
+          currentStyle.bg = code;
+          break;
         case 48: {
           // Extended color: 48;5;N (256 color) or 48;2;r;g;b (true color)
-          const nextParams = params.slice(i + 1).map(Number)
+          const nextParams = params.slice(i + 1).map(Number);
           if (nextParams[0] === 5 && nextParams[1] !== undefined) {
-            currentStyle.bg = nextParams[1]
-            i += 2
+            currentStyle.bg = nextParams[1];
+            i += 2;
           } else if (nextParams[0] === 2 && nextParams[3] !== undefined) {
             // True color - store as RGB values packed
             currentStyle.bg =
-              0x1000000 | ((nextParams[1]! & 0xff) << 16) | ((nextParams[2]! & 0xff) << 8) | (nextParams[3]! & 0xff)
-            i += 4
+              0x1000000 |
+              ((nextParams[1]! & 0xff) << 16) |
+              ((nextParams[2]! & 0xff) << 8) |
+              (nextParams[3]! & 0xff);
+            i += 4;
           }
-          break
+          break;
         }
         case 49:
-          currentStyle.bg = null // Default background
-          break
+          currentStyle.bg = null; // Default background
+          break;
         case 58: {
           // Underline color: 58;5;N (256 color) or 58;2;r;g;b (true color)
-          const nextParams = params.slice(i + 1).map(Number)
+          const nextParams = params.slice(i + 1).map(Number);
           if (nextParams[0] === 5 && nextParams[1] !== undefined) {
-            currentStyle.underlineColor = nextParams[1]
-            i += 2
+            currentStyle.underlineColor = nextParams[1];
+            i += 2;
           } else if (nextParams[0] === 2 && nextParams[3] !== undefined) {
             // True color - store as RGB values packed
             currentStyle.underlineColor =
-              0x1000000 | ((nextParams[1]! & 0xff) << 16) | ((nextParams[2]! & 0xff) << 8) | (nextParams[3]! & 0xff)
-            i += 4
+              0x1000000 |
+              ((nextParams[1]! & 0xff) << 16) |
+              ((nextParams[2]! & 0xff) << 8) |
+              (nextParams[3]! & 0xff);
+            i += 4;
           }
-          break
+          break;
         }
         case 59:
-          currentStyle.underlineColor = null // Default underline color
-          break
+          currentStyle.underlineColor = null; // Default underline color
+          break;
         case 90:
         case 91:
         case 92:
@@ -1522,8 +1565,8 @@ export function parseAnsiText(text: string): StyledSegment[] {
         case 95:
         case 96:
         case 97:
-          currentStyle.fg = code // Bright foreground colors
-          break
+          currentStyle.fg = code; // Bright foreground colors
+          break;
         case 100:
         case 101:
         case 102:
@@ -1532,62 +1575,62 @@ export function parseAnsiText(text: string): StyledSegment[] {
         case 105:
         case 106:
         case 107:
-          currentStyle.bg = code // Bright background colors
-          break
+          currentStyle.bg = code; // Bright background colors
+          break;
         case BG_OVERRIDE_CODE:
           // Private code: signals intentional bg override, skip conflict detection
-          currentStyle.bgOverride = true
-          break
+          currentStyle.bgOverride = true;
+          break;
       }
     }
 
-    lastIndex = match.index + match[0].length
+    lastIndex = match.index + match[0].length;
   }
 
   // Add remaining text
   if (lastIndex < processText.length) {
-    const content = processText.slice(lastIndex)
+    const content = processText.slice(lastIndex);
     if (content.length > 0) {
       if (hyperlinkRanges.length > 0) {
         // Split remaining content by hyperlink URL
-        let segStart = 0
+        let segStart = 0;
         for (let ci = 0; ci < content.length; ci++) {
-          const hl = getHyperlinkAt(lastIndex + ci)
-          const prevHl = ci > 0 ? getHyperlinkAt(lastIndex + ci - 1) : undefined
+          const hl = getHyperlinkAt(lastIndex + ci);
+          const prevHl = ci > 0 ? getHyperlinkAt(lastIndex + ci - 1) : undefined;
           if (ci > 0 && hl !== prevHl) {
-            const sub = content.slice(segStart, ci)
+            const sub = content.slice(segStart, ci);
             if (sub.length > 0) {
-              const seg: StyledSegment = { text: sub, ...currentStyle }
-              if (prevHl) seg.hyperlink = prevHl
-              segments.push(seg)
+              const seg: StyledSegment = { text: sub, ...currentStyle };
+              if (prevHl) seg.hyperlink = prevHl;
+              segments.push(seg);
             }
-            segStart = ci
+            segStart = ci;
           }
         }
-        const sub = content.slice(segStart)
+        const sub = content.slice(segStart);
         if (sub.length > 0) {
-          const hl = getHyperlinkAt(lastIndex + segStart)
-          const seg: StyledSegment = { text: sub, ...currentStyle }
-          if (hl) seg.hyperlink = hl
-          segments.push(seg)
+          const hl = getHyperlinkAt(lastIndex + segStart);
+          const seg: StyledSegment = { text: sub, ...currentStyle };
+          if (hl) seg.hyperlink = hl;
+          segments.push(seg);
         }
       } else {
-        segments.push({ text: content, ...currentStyle })
+        segments.push({ text: content, ...currentStyle });
       }
     }
   }
 
-  return segments
+  return segments;
 }
 
-const ANSI_TEST_REGEX = /\x1b(?:\[[0-9;]*[A-Za-z]|\])/
+const ANSI_TEST_REGEX = /\x1b(?:\[[0-9;]*[A-Za-z]|\])/;
 
 /**
  * Check if text contains ANSI escape sequences (SGR or OSC).
  */
 export function hasAnsi(text: string): boolean {
   // Use a non-global regex for testing to avoid lastIndex issues
-  return ANSI_TEST_REGEX.test(text)
+  return ANSI_TEST_REGEX.test(text);
 }
 
 // ============================================================================
@@ -1601,36 +1644,36 @@ export function hasAnsi(text: string): boolean {
  * @returns { width, height } in display columns and rows
  */
 export function measureText(text: string): { width: number; height: number } {
-  const lines = text.split("\n")
-  let maxWidth = 0
+  const lines = text.split("\n");
+  let maxWidth = 0;
 
   for (const line of lines) {
-    const lineWidth = displayWidth(line)
+    const lineWidth = displayWidth(line);
     if (lineWidth > maxWidth) {
-      maxWidth = lineWidth
+      maxWidth = lineWidth;
     }
   }
 
   return {
     width: maxWidth,
     height: lines.length,
-  }
+  };
 }
 
 /**
  * Check if a string contains any wide characters.
  */
 export function hasWideCharacters(text: string): boolean {
-  const graphemes = splitGraphemes(text)
-  return graphemes.some(isWideGrapheme)
+  const graphemes = splitGraphemes(text);
+  return graphemes.some(isWideGrapheme);
 }
 
 /**
  * Check if a string contains any combining/zero-width characters.
  */
 export function hasZeroWidthCharacters(text: string): boolean {
-  const graphemes = splitGraphemes(text)
-  return graphemes.some(isZeroWidthGrapheme)
+  const graphemes = splitGraphemes(text);
+  return graphemes.some(isZeroWidthGrapheme);
 }
 
 /**
@@ -1638,7 +1681,7 @@ export function hasZeroWidthCharacters(text: string): boolean {
  * Applies Unicode NFC normalization.
  */
 export function normalizeText(text: string): string {
-  return text.normalize("NFC")
+  return text.normalize("NFC");
 }
 
 // ============================================================================
@@ -1679,14 +1722,14 @@ const CHAR_RANGES = {
     (cp >= 0x1f900 && cp <= 0x1f9ff) || // Supplemental Symbols and Pictographs
     (cp >= 0x2600 && cp <= 0x26ff) || // Misc symbols
     (cp >= 0x2700 && cp <= 0x27bf), // Dingbats
-} as const
+} as const;
 
 /**
  * Get the first code point of a string.
  */
 export function getFirstCodePoint(str: string): number {
-  const cp = str.codePointAt(0)
-  return cp ?? 0
+  const cp = str.codePointAt(0);
+  return cp ?? 0;
 }
 
 /**
@@ -1694,14 +1737,14 @@ export function getFirstCodePoint(str: string): number {
  * Note: This is a heuristic, not comprehensive.
  */
 export function isLikelyEmoji(grapheme: string): boolean {
-  const cp = getFirstCodePoint(grapheme)
-  return CHAR_RANGES.isEmoji(cp) || grapheme.includes("\u200d") // Contains ZWJ
+  const cp = getFirstCodePoint(grapheme);
+  return CHAR_RANGES.isEmoji(cp) || grapheme.includes("\u200d"); // Contains ZWJ
 }
 
 /**
  * Check if a grapheme is a CJK character.
  */
 export function isCJK(grapheme: string): boolean {
-  const cp = getFirstCodePoint(grapheme)
-  return CHAR_RANGES.isCJK(cp) || CHAR_RANGES.isJapaneseKana(cp) || CHAR_RANGES.isHangul(cp)
+  const cp = getFirstCodePoint(grapheme);
+  return CHAR_RANGES.isCJK(cp) || CHAR_RANGES.isJapaneseKana(cp) || CHAR_RANGES.isHangul(cp);
 }

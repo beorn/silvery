@@ -20,6 +20,6 @@
  * ```
  */
 
-export { TextInput, useTextInput } from "./TextInput"
-export { Select, useSelect } from "./Select"
-export type { TextInputProps, TextInputOptions, SelectProps, SelectOption } from "../types.js"
+export { TextInput, useTextInput } from "./TextInput";
+export { Select, useSelect } from "./Select";
+export type { TextInputProps, TextInputOptions, SelectProps, SelectOption } from "../types.js";

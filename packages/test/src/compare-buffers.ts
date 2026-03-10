@@ -5,20 +5,20 @@
  * mismatch found (or null if buffers are identical).
  */
 
-import { type Cell, type TerminalBuffer, cellEquals } from "@silvery/term/buffer"
+import { type Cell, type TerminalBuffer, cellEquals } from "@silvery/term/buffer";
 
 /**
  * A single cell mismatch between two buffers.
  */
 export interface BufferMismatch {
   /** Column of the mismatched cell */
-  x: number
+  x: number;
   /** Row of the mismatched cell */
-  y: number
+  y: number;
   /** Cell from buffer A (e.g., incremental render) */
-  cellA: Cell
+  cellA: Cell;
   /** Cell from buffer B (e.g., fresh render) */
-  cellB: Cell
+  cellB: Cell;
 }
 
 /**
@@ -27,8 +27,8 @@ export interface BufferMismatch {
  * @returns The first mismatch found, or null if buffers are identical.
  */
 export function compareBuffers(a: TerminalBuffer, b: TerminalBuffer): BufferMismatch | null {
-  const width = Math.max(a.width, b.width)
-  const height = Math.max(a.height, b.height)
+  const width = Math.max(a.width, b.width);
+  const height = Math.max(a.height, b.height);
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -42,7 +42,7 @@ export function compareBuffers(a: TerminalBuffer, b: TerminalBuffer): BufferMism
             attrs: {},
             wide: false,
             continuation: false,
-          }
+          };
       const cellB = b.inBounds(x, y)
         ? b.getCell(x, y)
         : {
@@ -53,15 +53,15 @@ export function compareBuffers(a: TerminalBuffer, b: TerminalBuffer): BufferMism
             attrs: {},
             wide: false,
             continuation: false,
-          }
+          };
 
       if (!cellEquals(cellA, cellB)) {
-        return { x, y, cellA, cellB }
+        return { x, y, cellA, cellB };
       }
     }
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -70,32 +70,32 @@ export function compareBuffers(a: TerminalBuffer, b: TerminalBuffer): BufferMism
 export function formatMismatch(
   mismatch: BufferMismatch,
   context?: {
-    incrementalText?: string
-    freshText?: string
-    seed?: number
-    iteration?: number
-    key?: string
+    incrementalText?: string;
+    freshText?: string;
+    seed?: number;
+    iteration?: number;
+    key?: string;
   },
 ): string {
-  const { x, y, cellA, cellB } = mismatch
+  const { x, y, cellA, cellB } = mismatch;
   const lines: string[] = [
     `Buffer mismatch at (${x}, ${y})`,
     `  incremental: char=${JSON.stringify(cellA.char)} fg=${JSON.stringify(cellA.fg)} bg=${JSON.stringify(cellA.bg)} attrs=${JSON.stringify(cellA.attrs)}`,
     `  fresh:       char=${JSON.stringify(cellB.char)} fg=${JSON.stringify(cellB.fg)} bg=${JSON.stringify(cellB.bg)} attrs=${JSON.stringify(cellB.attrs)}`,
-  ]
+  ];
 
-  if (context?.seed !== undefined) lines.push(`  seed: ${context.seed}`)
+  if (context?.seed !== undefined) lines.push(`  seed: ${context.seed}`);
   if (context?.iteration !== undefined) {
-    lines.push(`  iteration: ${context.iteration}`)
+    lines.push(`  iteration: ${context.iteration}`);
   }
-  if (context?.key) lines.push(`  key: ${JSON.stringify(context.key)}`)
+  if (context?.key) lines.push(`  key: ${JSON.stringify(context.key)}`);
 
   if (context?.incrementalText) {
-    lines.push("", "--- incremental ---", context.incrementalText)
+    lines.push("", "--- incremental ---", context.incrementalText);
   }
   if (context?.freshText) {
-    lines.push("", "--- fresh ---", context.freshText)
+    lines.push("", "--- fresh ---", context.freshText);
   }
 
-  return lines.join("\n")
+  return lines.join("\n");
 }

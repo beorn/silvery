@@ -25,10 +25,10 @@ That's it. `render(<App />)` works without any term parameter — just add `awai
 
 ```tsx
 // Ink
-const { unmount, waitUntilExit } = render(<App />)
+const { unmount, waitUntilExit } = render(<App />);
 
 // Silvery — just add await
-const { unmount, waitUntilExit } = await render(<App />)
+const { unmount, waitUntilExit } = await render(<App />);
 ```
 
 ### Step 3: Run Tests
@@ -44,10 +44,10 @@ Most apps should work at this point.
 For production apps that need more control, you can create a term explicitly:
 
 ```tsx
-import { render, createTerm } from "silvery"
+import { render, createTerm } from "silvery";
 
-using term = createTerm()
-const { unmount, waitUntilExit } = await render(<App />, term)
+using term = createTerm();
+const { unmount, waitUntilExit } = await render(<App />, term);
 ```
 
 **Why use `createTerm()`?**
@@ -84,10 +84,10 @@ These APIs are 100% compatible:
 ```tsx
 // Ink: Width must be passed down
 function Card({ width }: { width: number }) {
-  return <Text>{truncate(title, width)}</Text>
+  return <Text>{truncate(title, width)}</Text>;
 }
 
-<Card width={availableWidth - padding * 2} />
+<Card width={availableWidth - padding * 2} />;
 ```
 
 **Silvery**: Components can ask for their size.
@@ -95,11 +95,11 @@ function Card({ width }: { width: number }) {
 ```tsx
 // Silvery: Just ask
 function Card() {
-  const { width } = useContentRect()
-  return <Text>{truncate(title, width)}</Text>
+  const { width } = useContentRect();
+  return <Text>{truncate(title, width)}</Text>;
 }
 
-<Card />
+<Card />;
 ```
 
 ### 2. Text Wraps by Default
@@ -148,9 +148,9 @@ If your component does math with width/height (like `"=".repeat(width)`), add a 
 
 ```tsx
 function Header() {
-  const { width } = useContentRect()
-  if (width === 0) return null // Skip first layout pass
-  return <Text>{"=".repeat(width)}</Text>
+  const { width } = useContentRect();
+  if (width === 0) return null; // Skip first layout pass
+  return <Text>{"=".repeat(width)}</Text>;
 }
 ```
 
@@ -189,20 +189,20 @@ Most components work fine without a guard — `width: 0` just means "nothing to 
 
 ```tsx
 // Ink
-const ref = useRef()
+const ref = useRef();
 useEffect(() => {
-  const { width } = measureElement(ref.current)
-  setWidth(width)
-}, [])
-return <Box ref={ref}>...</Box>
+  const { width } = measureElement(ref.current);
+  setWidth(width);
+}, []);
+return <Box ref={ref}>...</Box>;
 ```
 
 **Silvery**: `measureElement()` works for compatibility, but `useContentRect()` is simpler — no ref, no effect, no state.
 
 ```tsx
 // Silvery
-const { width } = useContentRect()
-return <Box>...</Box> // No ref needed
+const { width } = useContentRect();
+return <Box>...</Box>; // No ref needed
 ```
 
 ### 6. Hook Naming
@@ -220,12 +220,12 @@ return <Box>...</Box> // No ref needed
 
 ### By Design
 
-| Behavior                | Ink       | Silvery | Reason                       |
-| ----------------------- | --------- | ------- | ---------------------------- |
-| Default flexDirection   | row       | row     | Now aligned with CSS/Ink     |
-| Text overflow           | Overflows | Wraps   | Better default               |
+| Behavior                | Ink       | Silvery | Reason                         |
+| ----------------------- | --------- | ------- | ------------------------------ |
+| Default flexDirection   | row       | row     | Now aligned with CSS/Ink       |
+| Text overflow           | Overflows | Wraps   | Better default                 |
 | First render dimensions | N/A       | Zeros   | Required for responsive layout |
-| Internal APIs           | Exposed   | Hidden  | Not public API               |
+| Internal APIs           | Exposed   | Hidden  | Not public API                 |
 
 ::: tip Default Flex Direction
 Both Ink and Silvery default `<Box>` to `flexDirection="row"`, matching the W3C CSS spec.
@@ -284,14 +284,14 @@ After migrating, you can simplify your code by removing manual width calculation
 
 ```tsx
 function Board({ width }: { width: number }) {
-  const colWidth = Math.floor((width - 2) / 3)
+  const colWidth = Math.floor((width - 2) / 3);
   return (
     <Box>
       <Column width={colWidth} />
       <Column width={colWidth} />
       <Column width={colWidth} />
     </Box>
-  )
+  );
 }
 
 function Column({ width, items }) {
@@ -301,7 +301,7 @@ function Column({ width, items }) {
         <Card width={width - 2} item={item} />
       ))}
     </Box>
-  )
+  );
 }
 ```
 
@@ -315,7 +315,7 @@ function Board() {
       <Column />
       <Column />
     </Box>
-  )
+  );
 }
 
 function Column({ items }) {
@@ -325,11 +325,11 @@ function Column({ items }) {
         <Card item={item} />
       ))}
     </Box>
-  )
+  );
 }
 
 function Card({ item }) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
   // Use width only where actually needed
 }
 ```

@@ -17,24 +17,24 @@
  */
 export interface ParsedMouse {
   /** Mouse button: 0=left, 1=middle, 2=right */
-  button: number
+  button: number;
   /** Column (0-indexed) */
-  x: number
+  x: number;
   /** Row (0-indexed) */
-  y: number
+  y: number;
   /** Event action */
-  action: "down" | "up" | "move" | "wheel"
+  action: "down" | "up" | "move" | "wheel";
   /** Wheel delta: -1 for up, +1 for down */
-  delta?: number
+  delta?: number;
   /** Shift was held */
-  shift: boolean
+  shift: boolean;
   /** Alt/Meta was held */
-  meta: boolean
+  meta: boolean;
   /** Ctrl was held */
-  ctrl: boolean
+  ctrl: boolean;
 }
 
-const SGR_MOUSE_RE = /^\x1b\[<(\d+);(\d+);(\d+)([Mm])$/
+const SGR_MOUSE_RE = /^\x1b\[<(\d+);(\d+);(\d+)([Mm])$/;
 
 /**
  * Parse an SGR mouse sequence.
@@ -42,22 +42,22 @@ const SGR_MOUSE_RE = /^\x1b\[<(\d+);(\d+);(\d+)([Mm])$/
  * @returns ParsedMouse or null if not a valid mouse sequence
  */
 export function parseMouseSequence(input: string): ParsedMouse | null {
-  const m = SGR_MOUSE_RE.exec(input)
-  if (!m) return null
+  const m = SGR_MOUSE_RE.exec(input);
+  if (!m) return null;
 
-  const raw = parseInt(m[1]!)
-  const x = parseInt(m[2]!) - 1 // 1-indexed → 0-indexed
-  const y = parseInt(m[3]!) - 1
-  const terminator = m[4]!
+  const raw = parseInt(m[1]!);
+  const x = parseInt(m[2]!) - 1; // 1-indexed → 0-indexed
+  const y = parseInt(m[3]!) - 1;
+  const terminator = m[4]!;
 
-  const shift = !!(raw & 4)
-  const meta = !!(raw & 8)
-  const ctrl = !!(raw & 16)
-  const motion = !!(raw & 32)
-  const isWheel = !!(raw & 64)
+  const shift = !!(raw & 4);
+  const meta = !!(raw & 8);
+  const ctrl = !!(raw & 16);
+  const motion = !!(raw & 32);
+  const isWheel = !!(raw & 64);
 
   if (isWheel) {
-    const wheelButton = raw & 3 // 0=up, 1=down, 2=left, 3=right
+    const wheelButton = raw & 3; // 0=up, 1=down, 2=left, 3=right
     return {
       button: 0,
       x,
@@ -67,17 +67,17 @@ export function parseMouseSequence(input: string): ParsedMouse | null {
       shift,
       meta,
       ctrl,
-    }
+    };
   }
 
-  const button = raw & 3
-  const action = motion ? "move" : terminator === "M" ? "down" : "up"
-  return { button, x, y, action, shift, meta, ctrl }
+  const button = raw & 3;
+  const action = motion ? "move" : terminator === "M" ? "down" : "up";
+  return { button, x, y, action, shift, meta, ctrl };
 }
 
-const SGR_MOUSE_TEST_RE = /^\x1b\[<\d+;\d+;\d+[Mm]$/
+const SGR_MOUSE_TEST_RE = /^\x1b\[<\d+;\d+;\d+[Mm]$/;
 
 /** Check if a raw input string is a mouse sequence */
 export function isMouseSequence(input: string): boolean {
-  return SGR_MOUSE_TEST_RE.test(input)
+  return SGR_MOUSE_TEST_RE.test(input);
 }

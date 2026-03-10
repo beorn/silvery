@@ -20,7 +20,7 @@
  */
 
 /** Regex for DECRPM response: CSI ? mode ; Ps $ y */
-const DECRPM_RESPONSE_RE = /\x1b\[\?(\d+);(\d+)\$y/
+const DECRPM_RESPONSE_RE = /\x1b\[\?(\d+);(\d+)\$y/;
 
 /** Well-known DEC private mode constants. */
 export const DecMode = {
@@ -36,9 +36,9 @@ export const DecMode = {
   SYNC_OUTPUT: 2026,
   /** Focus reporting */
   FOCUS_REPORTING: 1004,
-} as const
+} as const;
 
-type ModeState = "set" | "reset" | "unknown"
+type ModeState = "set" | "reset" | "unknown";
 
 /**
  * Query the state of a single DEC private mode.
@@ -55,27 +55,27 @@ export async function queryMode(
   mode: number,
   timeoutMs = 200,
 ): Promise<ModeState> {
-  write(`\x1b[?${mode}$p`)
+  write(`\x1b[?${mode}$p`);
 
-  const data = await read(timeoutMs)
-  if (data == null) return "unknown"
+  const data = await read(timeoutMs);
+  if (data == null) return "unknown";
 
-  const match = DECRPM_RESPONSE_RE.exec(data)
-  if (!match) return "unknown"
+  const match = DECRPM_RESPONSE_RE.exec(data);
+  if (!match) return "unknown";
 
-  const reportedMode = parseInt(match[1]!, 10)
-  if (reportedMode !== mode) return "unknown"
+  const reportedMode = parseInt(match[1]!, 10);
+  if (reportedMode !== mode) return "unknown";
 
-  const ps = parseInt(match[2]!, 10)
+  const ps = parseInt(match[2]!, 10);
   switch (ps) {
     case 1:
     case 3:
-      return "set"
+      return "set";
     case 2:
     case 4:
-      return "reset"
+      return "reset";
     default:
-      return "unknown"
+      return "unknown";
   }
 }
 
@@ -95,12 +95,12 @@ export async function queryModes(
   modes: number[],
   timeoutMs = 200,
 ): Promise<Map<number, ModeState>> {
-  const results = new Map<number, ModeState>()
+  const results = new Map<number, ModeState>();
 
   for (const mode of modes) {
-    const state = await queryMode(write, read, mode, timeoutMs)
-    results.set(mode, state)
+    const state = await queryMode(write, read, mode, timeoutMs);
+    results.set(mode, state);
   }
 
-  return results
+  return results;
 }

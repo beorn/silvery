@@ -33,7 +33,7 @@
  * ```
  */
 
-export { Spinner, SPINNER_FRAMES, createSpinner, type CallableSpinner } from "./spinner"
-export { ProgressBar } from "./progress-bar"
-export { MultiProgress, type TaskHandle } from "./multi-progress"
-export * from "./ansi"
+export { Spinner, SPINNER_FRAMES, createSpinner, type CallableSpinner } from "./spinner";
+export { ProgressBar } from "./progress-bar";
+export { MultiProgress, type TaskHandle } from "./multi-progress";
+export * from "./ansi";

@@ -5,7 +5,7 @@
  * elements to opposite ends of a container.
  */
 
-import type { JSX } from "react"
+import type { JSX } from "react";
 
 /**
  * Fills available space in the parent container.
@@ -28,5 +28,5 @@ import type { JSX } from "react"
  * ```
  */
 export function Spacer(): JSX.Element {
-  return <silvery-box flexGrow={1} />
+  return <silvery-box flexGrow={1} />;
 }

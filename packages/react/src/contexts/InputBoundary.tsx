@@ -33,13 +33,13 @@
  * ```
  */
 
-import { EventEmitter } from "node:events"
-import type React from "react"
-import { useCallback, useId, useLayoutEffect, useMemo, useRef } from "react"
-import { RuntimeContext, type RuntimeContextValue } from "../context"
-import type { Key } from "../hooks/useInput"
-import { keyToAnsi, keyToName, parseKey } from "@silvery/tea/keys"
-import { InputLayerProvider, useInputLayer } from "./InputLayerContext"
+import { EventEmitter } from "node:events";
+import type React from "react";
+import { useCallback, useId, useLayoutEffect, useMemo, useRef } from "react";
+import { RuntimeContext, type RuntimeContextValue } from "../context";
+import type { Key } from "../hooks/useInput";
+import { keyToAnsi, keyToName, parseKey } from "@silvery/tea/keys";
+import { InputLayerProvider, useInputLayer } from "./InputLayerContext";
 
 // =============================================================================
 // Types
@@ -47,13 +47,13 @@ import { InputLayerProvider, useInputLayer } from "./InputLayerContext"
 
 export interface InputBoundaryProps {
   /** Whether the boundary is active (focused). When true, input flows to children. */
-  active: boolean
+  active: boolean;
   /** Called when the escape key is pressed while the boundary is active. */
-  onEscape?: () => void
+  onEscape?: () => void;
   /** Key to exit the boundary (default: Escape). Set to null to disable. */
-  exitKey?: string | null
+  exitKey?: string | null;
   /** Children to render inside the isolated input scope. */
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 // =============================================================================
@@ -66,20 +66,20 @@ export interface InputBoundaryProps {
  * isolated child's RuntimeContext event emitter.
  */
 function toRawData(input: string, key: Key): string {
-  const name = keyToName(key)
+  const name = keyToName(key);
   if (name) {
-    const mods: string[] = []
-    if (key.ctrl) mods.push("Control")
-    if (key.shift) mods.push("Shift")
-    if (key.meta) mods.push("Meta")
-    if (key.super) mods.push("Super")
-    if (key.hyper) mods.push("Hyper")
-    mods.push(name)
-    return keyToAnsi(mods.join("+"))
+    const mods: string[] = [];
+    if (key.ctrl) mods.push("Control");
+    if (key.shift) mods.push("Shift");
+    if (key.meta) mods.push("Meta");
+    if (key.super) mods.push("Super");
+    if (key.hyper) mods.push("Hyper");
+    mods.push(name);
+    return keyToAnsi(mods.join("+"));
   }
   // Regular character with ctrl modifier
-  if (key.ctrl) return keyToAnsi(`Control+${input}`)
-  return input
+  if (key.ctrl) return keyToAnsi(`Control+${input}`);
+  return input;
 }
 
 // =============================================================================
@@ -109,47 +109,47 @@ export function InputBoundary({
   children,
 }: InputBoundaryProps): React.JSX.Element {
   // Create an isolated event emitter for children
-  const emitterRef = useRef<EventEmitter | null>(null)
+  const emitterRef = useRef<EventEmitter | null>(null);
   if (!emitterRef.current) {
-    emitterRef.current = new EventEmitter()
+    emitterRef.current = new EventEmitter();
   }
-  const emitter = emitterRef.current
+  const emitter = emitterRef.current;
 
   // Register a consuming layer in the parent when active.
   // This layer intercepts ALL input and forwards to the isolated emitter.
-  const activeRef = useRef(active)
-  activeRef.current = active
+  const activeRef = useRef(active);
+  activeRef.current = active;
 
-  const onEscapeRef = useRef(onEscape)
-  onEscapeRef.current = onEscape
+  const onEscapeRef = useRef(onEscape);
+  onEscapeRef.current = onEscape;
 
-  const exitKeyRef = useRef(exitKey)
-  exitKeyRef.current = exitKey
+  const exitKeyRef = useRef(exitKey);
+  exitKeyRef.current = exitKey;
 
   const handler = useCallback(
     (input: string, key: Key): boolean => {
-      if (!activeRef.current) return false
+      if (!activeRef.current) return false;
 
       // Check exit key before forwarding
-      const currentExitKey = exitKeyRef.current
+      const currentExitKey = exitKeyRef.current;
       if (currentExitKey !== null) {
-        const name = keyToName(key)
+        const name = keyToName(key);
         if (name === currentExitKey || (!name && input === currentExitKey)) {
-          onEscapeRef.current?.()
-          return true
+          onEscapeRef.current?.();
+          return true;
         }
       }
 
       // Forward to isolated scope
-      const raw = toRawData(input, key)
-      emitter.emit("input", raw)
-      return true
+      const raw = toRawData(input, key);
+      emitter.emit("input", raw);
+      return true;
     },
     [emitter],
-  )
+  );
 
-  const layerId = useId()
-  useInputLayer(`input-boundary-${layerId}`, handler)
+  const layerId = useId();
+  useInputLayer(`input-boundary-${layerId}`, handler);
 
   // RuntimeContext — typed event bus for the isolated scope
   const runtimeContextValue = useMemo<RuntimeContextValue>(
@@ -157,21 +157,21 @@ export function InputBoundary({
       on(event, handler) {
         if (event === "input") {
           const wrapped = (data: string | Buffer) => {
-            const [input, key] = parseKey(data)
-            ;(handler as (input: string, key: import("@silvery/tea/keys").Key) => void)(input, key)
-          }
-          emitter.on("input", wrapped)
+            const [input, key] = parseKey(data);
+            (handler as (input: string, key: import("@silvery/tea/keys").Key) => void)(input, key);
+          };
+          emitter.on("input", wrapped);
           return () => {
-            emitter.removeListener("input", wrapped)
-          }
+            emitter.removeListener("input", wrapped);
+          };
         }
         if (event === "paste") {
-          emitter.on("paste", handler)
+          emitter.on("paste", handler);
           return () => {
-            emitter.removeListener("paste", handler)
-          }
+            emitter.removeListener("paste", handler);
+          };
         }
-        return () => {} // Unknown event — no-op cleanup
+        return () => {}; // Unknown event — no-op cleanup
       },
       emit() {
         // InputBoundary doesn't support view → runtime events
@@ -179,18 +179,18 @@ export function InputBoundary({
       exit: () => {}, // InputBoundary doesn't control app exit
     }),
     [emitter],
-  )
+  );
 
   // Clean up emitter on unmount
   useLayoutEffect(() => {
     return () => {
-      emitter.removeAllListeners()
-    }
-  }, [emitter])
+      emitter.removeAllListeners();
+    };
+  }, [emitter]);
 
   return (
     <RuntimeContext.Provider value={runtimeContextValue}>
       <InputLayerProvider>{children}</InputLayerProvider>
     </RuntimeContext.Provider>
-  )
+  );
 }

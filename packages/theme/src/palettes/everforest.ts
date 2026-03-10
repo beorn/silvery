@@ -3,8 +3,8 @@
  * Source: https://github.com/sainnhe/everforest (medium background variants)
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Everforest Dark — warm green-based dark theme (medium background). */
 export const everforestDark: ColorPalette = {
@@ -32,7 +32,7 @@ export const everforestDark: ColorPalette = {
   cursorText: "#2d353b", // bg0
   selectionBackground: "#4f585e", // bg4
   selectionForeground: "#d3c6aa", // fg
-}
+};
 
 /** Everforest Light — warm green-based light theme (medium background). */
 export const everforestLight: ColorPalette = {
@@ -60,4 +60,4 @@ export const everforestLight: ColorPalette = {
   cursorText: "#fdf6e3", // bg0
   selectionBackground: "#e0dcc7", // bg4
   selectionForeground: "#5c6a72", // fg
-}
+};

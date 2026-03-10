@@ -28,19 +28,29 @@
  * ```
  */
 
-import type { ReactElement } from "react"
-import { type DOMAdapterConfig, DOMRenderBuffer, createDOMAdapter, injectDOMStyles } from "../adapters/dom-adapter"
-import { createBrowserRenderer, initBrowserRenderer, renderOnce } from "../browser-renderer"
-import type { RenderBuffer } from "../render-adapter"
+import type { ReactElement } from "react";
+import {
+  type DOMAdapterConfig,
+  DOMRenderBuffer,
+  createDOMAdapter,
+  injectDOMStyles,
+} from "../adapters/dom-adapter";
+import { createBrowserRenderer, initBrowserRenderer, renderOnce } from "../browser-renderer";
+import type { RenderBuffer } from "../render-adapter";
 
 // Re-export components and hooks for convenience
-export { Box, type BoxProps } from "@silvery/react/components/Box"
-export { Text, type TextProps } from "@silvery/react/components/Text"
-export { useContentRect, useScreenRect } from "@silvery/react/hooks/useLayout"
-export { useApp } from "@silvery/react/hooks/useApp"
+export { Box, type BoxProps } from "@silvery/react/components/Box";
+export { Text, type TextProps } from "@silvery/react/components/Text";
+export { useContentRect, useScreenRect } from "@silvery/react/hooks/useLayout";
+export { useApp } from "@silvery/react/hooks/useApp";
 
 // Re-export adapter utilities
-export { createDOMAdapter, DOMRenderBuffer, injectDOMStyles, type DOMAdapterConfig } from "../adapters/dom-adapter"
+export {
+  createDOMAdapter,
+  DOMRenderBuffer,
+  injectDOMStyles,
+  type DOMAdapterConfig,
+} from "../adapters/dom-adapter";
 
 // ============================================================================
 // Types
@@ -48,40 +58,40 @@ export { createDOMAdapter, DOMRenderBuffer, injectDOMStyles, type DOMAdapterConf
 
 export interface DOMRenderOptions extends DOMAdapterConfig {
   /** Width of the container (default: container.clientWidth or 800) */
-  width?: number
+  width?: number;
   /** Height of the container (default: container.clientHeight or 600) */
-  height?: number
+  height?: number;
   /** Inject global CSS styles (default: true) */
-  injectStyles?: boolean
+  injectStyles?: boolean;
 }
 
 export interface DOMInstance {
   /** Re-render with a new element */
-  rerender: (element: ReactElement) => void
+  rerender: (element: ReactElement) => void;
   /** Unmount and clean up */
-  unmount: () => void
+  unmount: () => void;
   /** Dispose (alias for unmount) — enables `using` */
-  [Symbol.dispose](): void
+  [Symbol.dispose](): void;
   /** Get the current buffer */
-  getBuffer: () => RenderBuffer | null
+  getBuffer: () => RenderBuffer | null;
   /** Force a re-render */
-  refresh: () => void
+  refresh: () => void;
   /** Get the container element */
-  getContainer: () => HTMLElement
+  getContainer: () => HTMLElement;
 }
 
 // ============================================================================
 // Initialization
 // ============================================================================
 
-const domAdapterFactory = { createAdapter: (config: DOMAdapterConfig) => createDOMAdapter(config) }
+const domAdapterFactory = { createAdapter: (config: DOMAdapterConfig) => createDOMAdapter(config) };
 
 /**
  * Initialize the DOM rendering system.
  * Called automatically by renderToDOM, but can be called manually.
  */
 export function initDOMRenderer(config: DOMAdapterConfig = {}): void {
-  initBrowserRenderer(domAdapterFactory, config)
+  initBrowserRenderer(domAdapterFactory, config);
 }
 
 // ============================================================================
@@ -113,46 +123,46 @@ export function renderToDOM(
   container: HTMLElement,
   options: DOMRenderOptions = {},
 ): DOMInstance {
-  const { injectStyles = true, ...adapterConfig } = options
+  const { injectStyles = true, ...adapterConfig } = options;
 
   if (injectStyles) {
-    injectDOMStyles(adapterConfig.classPrefix)
+    injectDOMStyles(adapterConfig.classPrefix);
   }
 
-  initDOMRenderer(adapterConfig)
+  initDOMRenderer(adapterConfig);
 
-  const pixelWidth = options.width ?? (container.clientWidth || 800)
-  const pixelHeight = options.height ?? (container.clientHeight || 600)
+  const pixelWidth = options.width ?? (container.clientWidth || 800);
+  const pixelHeight = options.height ?? (container.clientHeight || 600);
 
   // Convert pixel dimensions to cell dimensions for the layout engine.
   // The layout engine operates in cell units (columns x rows), not pixels.
   // We estimate cell size from font metrics: charWidth ~ fontSize * 0.6, lineHeight ~ fontSize * lineHeight.
-  const fontSize = adapterConfig.fontSize ?? 14
-  const lineHeightMultiplier = adapterConfig.lineHeight ?? 1.2
-  const charWidth = fontSize * 0.6
-  const lineHeight = fontSize * lineHeightMultiplier
-  const cols = Math.floor(pixelWidth / charWidth)
-  const rows = Math.floor(pixelHeight / lineHeight)
+  const fontSize = adapterConfig.fontSize ?? 14;
+  const lineHeightMultiplier = adapterConfig.lineHeight ?? 1.2;
+  const charWidth = fontSize * 0.6;
+  const lineHeight = fontSize * lineHeightMultiplier;
+  const cols = Math.floor(pixelWidth / charWidth);
+  const rows = Math.floor(pixelHeight / lineHeight);
 
   const base = createBrowserRenderer<DOMRenderBuffer>(
     element,
     cols,
     rows,
     (buffer) => {
-      buffer.setContainer(container)
-      buffer.render()
+      buffer.setContainer(container);
+      buffer.render();
     },
     () => {
-      container.innerHTML = ""
+      container.innerHTML = "";
     },
-  )
+  );
 
   return {
     ...base,
     getContainer(): HTMLElement {
-      return container
+      return container;
     },
-  }
+  };
 }
 
 /**
@@ -171,24 +181,24 @@ export function renderDOMOnce(
   height: number,
   options: DOMAdapterConfig = {},
 ): string {
-  initDOMRenderer(options)
+  initDOMRenderer(options);
 
   // Convert pixel dimensions to cell dimensions for the layout engine
-  const fontSize = options.fontSize ?? 14
-  const lineHeightMultiplier = options.lineHeight ?? 1.2
-  const charWidth = fontSize * 0.6
-  const lineHeight = fontSize * lineHeightMultiplier
-  const cols = Math.floor(width / charWidth)
-  const rows = Math.floor(height / lineHeight)
+  const fontSize = options.fontSize ?? 14;
+  const lineHeightMultiplier = options.lineHeight ?? 1.2;
+  const charWidth = fontSize * 0.6;
+  const lineHeight = fontSize * lineHeightMultiplier;
+  const cols = Math.floor(width / charWidth);
+  const rows = Math.floor(height / lineHeight);
 
-  const buffer = renderOnce<DOMRenderBuffer>(element, cols, rows)
+  const buffer = renderOnce<DOMRenderBuffer>(element, cols, rows);
 
   if (typeof document !== "undefined") {
-    const tempContainer = document.createElement("div")
-    buffer.setContainer(tempContainer)
-    buffer.render()
-    return tempContainer.innerHTML
+    const tempContainer = document.createElement("div");
+    buffer.setContainer(tempContainer);
+    buffer.render();
+    return tempContainer.innerHTML;
   }
 
-  return "<!-- DOM rendering requires browser environment -->"
+  return "<!-- DOM rendering requires browser environment -->";
 }

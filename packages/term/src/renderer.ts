@@ -9,34 +9,39 @@
  * - createRenderer(opts | store) — factory with auto-cleanup
  */
 
-import { EventEmitter } from "node:events"
-import React, { type ReactElement, type ReactNode, act } from "react"
-import { type App, buildApp } from "./app.js"
-import { type TerminalBuffer, cellEquals } from "./buffer.js"
+import { EventEmitter } from "node:events";
+import React, { type ReactElement, type ReactNode, act } from "react";
+import { type App, buildApp } from "./app.js";
+import { type TerminalBuffer, cellEquals } from "./buffer.js";
 import {
   FocusManagerContext,
   RuntimeContext,
   type RuntimeContextValue,
   StdoutContext,
   TermContext,
-} from "@silvery/react/context"
-import { createFocusManager } from "@silvery/tea/focus-manager"
+} from "@silvery/react/context";
+import { createFocusManager } from "@silvery/tea/focus-manager";
 import {
   type LayoutEngine,
   ensureDefaultLayoutEngine,
   isLayoutEngineInitialized,
   setLayoutEngine,
-} from "./layout-engine.js"
-import { executeRender } from "./pipeline.js"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/react/reconciler"
+} from "./layout-engine.js";
+import { executeRender } from "./pipeline.js";
+import {
+  createContainer,
+  createFiberRoot,
+  getContainerRoot,
+  reconciler,
+} from "@silvery/react/reconciler";
 
-import { createTerm } from "./ansi/index"
-import { bufferToText } from "./buffer.js"
-import { buildMismatchContext, formatMismatchContext } from "@silvery/test/debug-mismatch"
-import { createCursorStore, CursorProvider } from "@silvery/react/hooks/useCursor"
-import { keyToAnsi, parseKey, splitRawInput } from "@silvery/tea/keys"
-import { IncrementalRenderMismatchError } from "./scheduler.js"
-import { debugTree } from "@silvery/test/debug"
+import { createTerm } from "./ansi/index";
+import { bufferToText } from "./buffer.js";
+import { buildMismatchContext, formatMismatchContext } from "@silvery/test/debug-mismatch";
+import { createCursorStore, CursorProvider } from "@silvery/react/hooks/useCursor";
+import { keyToAnsi, parseKey, splitRawInput } from "@silvery/tea/keys";
+import { IncrementalRenderMismatchError } from "./scheduler.js";
+import { debugTree } from "@silvery/test/debug";
 
 // ============================================================================
 // Defensive Guards
@@ -46,29 +51,29 @@ import { debugTree } from "@silvery/test/debug"
  * Track all active (mounted) render instances to detect leaks.
  * Uses a Set of WeakRefs so GC can clean up unreferenced apps.
  */
-const activeRenders = new Set<WeakRef<{ unmount: () => void; id: number }>>()
-let renderIdCounter = 0
+const activeRenders = new Set<WeakRef<{ unmount: () => void; id: number }>>();
+let renderIdCounter = 0;
 
 /**
  * Maximum number of active render instances before throwing.
  * Set high to allow large test files (each test may create a render without unmount),
  * but catch genuine leaks like infinite loops creating renders.
  */
-const ACTIVE_RENDER_LEAK_THRESHOLD = 1000
+const ACTIVE_RENDER_LEAK_THRESHOLD = 1000;
 
 /**
  * Prune GC'd entries from activeRenders and return live count.
  */
 function pruneAndCountActiveRenders(): number {
-  let count = 0
+  let count = 0;
   for (const ref of activeRenders) {
     if (ref.deref() === undefined) {
-      activeRenders.delete(ref)
+      activeRenders.delete(ref);
     } else {
-      count++
+      count++;
     }
   }
-  return count
+  return count;
 }
 
 /**
@@ -81,7 +86,7 @@ function assertLayoutEngine(): void {
       "silvery: Layout engine not initialized. " +
         "Call `await ensureEngine()` before render(), or use the testing module " +
         "which initializes it automatically via top-level await.",
-    )
+    );
   }
 }
 
@@ -94,17 +99,17 @@ function assertLayoutEngine(): void {
  */
 export interface RenderOptions {
   /** Terminal width for layout. Default: 80 */
-  cols?: number
+  cols?: number;
   /** Terminal height for layout. Default: 24 */
-  rows?: number
+  rows?: number;
   /** Layout engine to use. Default: current global engine */
-  layoutEngine?: LayoutEngine
+  layoutEngine?: LayoutEngine;
   /** Enable debug output. Default: false */
-  debug?: boolean
+  debug?: boolean;
   /** Enable incremental rendering. Default: true */
-  incremental?: boolean
+  incremental?: boolean;
   /** Use Kitty keyboard protocol encoding for press(). When true, press() uses keyToKittyAnsi. */
-  kittyMode?: boolean
+  kittyMode?: boolean;
   /**
    * Use production-like single-pass layout in doRender().
    *
@@ -119,7 +124,7 @@ export interface RenderOptions {
    *
    * Use this to make tests exercise the same rendering pipeline as production.
    */
-  singlePassLayout?: boolean
+  singlePassLayout?: boolean;
   /**
    * Auto-render on async React commits (e.g., setTimeout → setState).
    *
@@ -130,7 +135,7 @@ export interface RenderOptions {
    *
    * Default: false (renderer only renders on explicit triggers).
    */
-  autoRender?: boolean
+  autoRender?: boolean;
   /**
    * Callback fired after each frame render.
    *
@@ -138,7 +143,21 @@ export interface RenderOptions {
    * Fires after initial render, sendInput, rerender, and (if autoRender)
    * async state changes.
    */
-  onFrame?: (frame: string, buffer: TerminalBuffer) => void
+  onFrame?: (frame: string, buffer: TerminalBuffer) => void;
+  /**
+   * Wrap the root element with additional providers.
+   * Called with the element after silvery's internal contexts are applied.
+   * Use this to inject additional context providers (e.g., Ink compatibility wrappers).
+   * The wrapper is applied INSIDE silvery's contexts, so wrapped providers
+   * can access silvery's Term, Stdout, FocusManager, and Runtime contexts.
+   */
+  wrapRoot?: (element: React.ReactElement) => React.ReactElement;
+  /**
+   * External stdin stream to bridge to the renderer's input.
+   * When provided, readable data from this stream is forwarded to the renderer's
+   * input handler (equivalent to calling app.stdin.write()).
+   */
+  stdin?: NodeJS.ReadStream;
 }
 
 /**
@@ -147,19 +166,19 @@ export interface RenderOptions {
  */
 export interface Store {
   /** Terminal columns */
-  readonly cols: number
+  readonly cols: number;
   /** Terminal rows */
-  readonly rows: number
+  readonly rows: number;
   /** Async event stream (if present, enables interactive mode) */
-  events?(): AsyncIterable<StoreEvent>
+  events?(): AsyncIterable<StoreEvent>;
 }
 
 /**
  * Event from a store's event stream.
  */
 export interface StoreEvent {
-  type: string
-  data: unknown
+  type: string;
+  data: unknown;
 }
 
 /**
@@ -167,11 +186,11 @@ export interface StoreEvent {
  */
 export interface StoreOptions {
   /** Terminal columns. Default: 80 */
-  cols?: number
+  cols?: number;
   /** Terminal rows. Default: 24 */
-  rows?: number
+  rows?: number;
   /** Event source for interactive mode */
-  events?: AsyncIterable<StoreEvent>
+  events?: AsyncIterable<StoreEvent>;
 }
 
 // ============================================================================
@@ -179,17 +198,17 @@ export interface StoreOptions {
 // ============================================================================
 
 // Layout engine initialization promise (lazy)
-let engineReady: Promise<void> | null = null
+let engineReady: Promise<void> | null = null;
 
 /**
  * Ensure layout engine is initialized (async, cached).
  */
 export async function ensureEngine(): Promise<void> {
-  if (isLayoutEngineInitialized()) return
+  if (isLayoutEngineInitialized()) return;
   if (!engineReady) {
-    engineReady = ensureDefaultLayoutEngine()
+    engineReady = ensureDefaultLayoutEngine();
   }
-  await engineReady
+  await engineReady;
 }
 
 // ============================================================================
@@ -200,31 +219,31 @@ export async function ensureEngine(): Promise<void> {
  * Internal state for a render instance.
  */
 interface RenderInstance {
-  frames: string[]
-  container: ReturnType<typeof createContainer>
+  frames: string[];
+  container: ReturnType<typeof createContainer>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React reconciler internal type
-  fiberRoot: any
-  prevBuffer: TerminalBuffer | null
-  mounted: boolean
+  fiberRoot: any;
+  prevBuffer: TerminalBuffer | null;
+  mounted: boolean;
   /** True while inside act() or doRender() — detects re-entrant calls */
-  rendering: boolean
-  columns: number
-  rows: number
-  inputEmitter: EventEmitter
-  debug: boolean
-  incremental: boolean
+  rendering: boolean;
+  columns: number;
+  rows: number;
+  inputEmitter: EventEmitter;
+  debug: boolean;
+  incremental: boolean;
   /** Render count for SILVERY_STRICT checking (skip first render) */
-  renderCount: number
+  renderCount: number;
   /** Use production-like single-pass layout (no stabilization loop) */
-  singlePassLayout: boolean
+  singlePassLayout: boolean;
 }
 
 function isStore(arg: unknown): arg is Store {
   // Store has cols and rows as required (not optional) properties.
   // RenderOptions has them as optional. Disambiguate by checking for
   // RenderOptions-only traits.
-  if (arg === null || typeof arg !== "object") return false
-  const obj = arg as Record<string, unknown>
+  if (arg === null || typeof arg !== "object") return false;
+  const obj = arg as Record<string, unknown>;
   return (
     typeof obj.cols === "number" &&
     typeof obj.rows === "number" &&
@@ -234,8 +253,10 @@ function isStore(arg: unknown): arg is Store {
     !("singlePassLayout" in obj) &&
     !("autoRender" in obj) &&
     !("onFrame" in obj) &&
-    !("kittyMode" in obj)
-  )
+    !("kittyMode" in obj) &&
+    !("wrapRoot" in obj) &&
+    !("stdin" in obj)
+  );
 }
 
 /**
@@ -259,37 +280,39 @@ function isStore(arg: unknown): arg is Store {
  */
 export function render(element: ReactElement, optsOrStore: RenderOptions | Store = {}): App {
   // Guard: layout engine must be initialized
-  assertLayoutEngine()
+  assertLayoutEngine();
 
-  const storeMode = isStore(optsOrStore)
-  const cols = storeMode ? optsOrStore.cols : (optsOrStore.cols ?? 80)
-  const rows = storeMode ? optsOrStore.rows : (optsOrStore.rows ?? 24)
-  const debug = storeMode ? false : (optsOrStore.debug ?? false)
+  const storeMode = isStore(optsOrStore);
+  const cols = storeMode ? optsOrStore.cols : (optsOrStore.cols ?? 80);
+  const rows = storeMode ? optsOrStore.rows : (optsOrStore.rows ?? 24);
+  const debug = storeMode ? false : (optsOrStore.debug ?? false);
   // Incremental rendering is enabled by default for all renders
   // Store mode also supports incremental - the RenderInstance tracks prevBuffer
-  const incremental = storeMode ? true : (optsOrStore.incremental ?? true)
-  const singlePassLayout = storeMode ? false : (optsOrStore.singlePassLayout ?? false)
-  const kittyMode = storeMode ? false : (optsOrStore.kittyMode ?? false)
-  const autoRender = storeMode ? false : (optsOrStore.autoRender ?? false)
-  const onFrame = storeMode ? undefined : optsOrStore.onFrame
+  const incremental = storeMode ? true : (optsOrStore.incremental ?? true);
+  const singlePassLayout = storeMode ? false : (optsOrStore.singlePassLayout ?? false);
+  const kittyMode = storeMode ? false : (optsOrStore.kittyMode ?? false);
+  const autoRender = storeMode ? false : (optsOrStore.autoRender ?? false);
+  const onFrame = storeMode ? undefined : optsOrStore.onFrame;
+  const wrapRoot = storeMode ? undefined : optsOrStore.wrapRoot;
+  const stdinStream = storeMode ? undefined : optsOrStore.stdin;
 
   // Guard: detect render leaks (absurd number of active instances)
-  const liveCount = pruneAndCountActiveRenders()
+  const liveCount = pruneAndCountActiveRenders();
   if (liveCount >= ACTIVE_RENDER_LEAK_THRESHOLD) {
     throw new Error(
       `silvery: ${liveCount} active render instances without unmount(). ` +
         "This is a render leak. Use createRenderer() for auto-cleanup, " +
         "or call unmount() when done with each render.",
-    )
+    );
   }
 
   // Set layout engine if provided
   if (!storeMode && optsOrStore.layoutEngine) {
-    setLayoutEngine(optsOrStore.layoutEngine)
+    setLayoutEngine(optsOrStore.layoutEngine);
   }
 
   // Unique ID for this render instance (for tracking/debugging)
-  const renderId = ++renderIdCounter
+  const renderId = ++renderIdCounter;
 
   const instance: RenderInstance = {
     frames: [],
@@ -305,115 +328,122 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     incremental,
     renderCount: 0,
     singlePassLayout,
-  }
+  };
 
   // Track whether React committed new work (from layout notifications etc.)
-  let hadReactCommit = false
-  let autoRenderScheduled = false
-  let inRenderCycle = false // true during doRender() and explicit operations
+  let hadReactCommit = false;
+  let autoRenderScheduled = false;
+  let inRenderCycle = false; // true during doRender() and explicit operations
   instance.container = createContainer(() => {
-    hadReactCommit = true
+    hadReactCommit = true;
     // Auto-render: schedule a microtask re-render on async React commits
     // (e.g., setTimeout → setState). Skipped during explicit render operations
     // (rendering=true or inRenderCycle=true) since those call doRender() themselves.
-    if (autoRender && !instance.rendering && !inRenderCycle && !autoRenderScheduled && instance.mounted) {
-      autoRenderScheduled = true
+    if (
+      autoRender &&
+      !instance.rendering &&
+      !inRenderCycle &&
+      !autoRenderScheduled &&
+      instance.mounted
+    ) {
+      autoRenderScheduled = true;
       queueMicrotask(() => {
-        autoRenderScheduled = false
-        if (!instance.mounted || instance.rendering || inRenderCycle) return
-        inRenderCycle = true
+        autoRenderScheduled = false;
+        if (!instance.mounted || instance.rendering || inRenderCycle) return;
+        inRenderCycle = true;
         try {
-          const newFrame = doRender()
-          instance.frames.push(newFrame)
-          onFrame?.(newFrame, instance.prevBuffer!)
+          const newFrame = doRender();
+          instance.frames.push(newFrame);
+          onFrame?.(newFrame, instance.prevBuffer!);
         } finally {
-          inRenderCycle = false
+          inRenderCycle = false;
         }
-      })
+      });
     }
-  })
+  });
 
-  instance.fiberRoot = createFiberRoot(instance.container)
+  instance.fiberRoot = createFiberRoot(instance.container);
 
   // Track exit state
-  let exitCalledFlag = false
-  let exitErrorValue: Error | undefined
+  let exitCalledFlag = false;
+  let exitErrorValue: Error | undefined;
 
   const handleExit = (error?: Error) => {
-    exitCalledFlag = true
-    exitErrorValue = error
+    exitCalledFlag = true;
+    exitErrorValue = error;
     if (debug) {
-      console.log("[silvery] exit() called", error ? `with error: ${error.message}` : "")
+      console.log("[silvery] exit() called", error ? `with error: ${error.message}` : "");
     }
-  }
+  };
 
   // Create mock stdout with mutable dimensions and event support (for resize)
-  const stdoutEmitter = new EventEmitter()
+  const stdoutEmitter = new EventEmitter();
   const mockStdout = {
     columns: instance.columns,
     rows: instance.rows,
     write: () => true,
     isTTY: true,
     on: (event: string, listener: (...args: unknown[]) => void) => {
-      stdoutEmitter.on(event, listener)
-      return mockStdout
+      stdoutEmitter.on(event, listener);
+      return mockStdout;
     },
     off: (event: string, listener: (...args: unknown[]) => void) => {
-      stdoutEmitter.off(event, listener)
-      return mockStdout
+      stdoutEmitter.off(event, listener);
+      return mockStdout;
     },
     once: (event: string, listener: (...args: unknown[]) => void) => {
-      stdoutEmitter.once(event, listener)
-      return mockStdout
+      stdoutEmitter.once(event, listener);
+      return mockStdout;
     },
     removeListener: (event: string, listener: (...args: unknown[]) => void) => {
-      stdoutEmitter.removeListener(event, listener)
-      return mockStdout
+      stdoutEmitter.removeListener(event, listener);
+      return mockStdout;
     },
     addListener: (event: string, listener: (...args: unknown[]) => void) => {
-      stdoutEmitter.addListener(event, listener)
-      return mockStdout
+      stdoutEmitter.addListener(event, listener);
+      return mockStdout;
     },
-  } as unknown as NodeJS.WriteStream
+  } as unknown as NodeJS.WriteStream;
 
   // Create mock term
-  const mockTerm = createTerm({ color: "truecolor" })
+  const mockTerm = createTerm({ color: "truecolor" });
 
   // Focus manager (tree-based focus system)
-  const focusManager = createFocusManager()
+  const focusManager = createFocusManager();
 
   // Per-instance cursor state (replaces module-level globals)
-  const cursorStore = createCursorStore()
+  const cursorStore = createCursorStore();
 
   // RuntimeContext — typed event bus bridging from test renderer's inputEmitter
   const runtimeValue: RuntimeContextValue = {
     on(event, handler) {
       if (event === "input") {
         const wrapped = (data: string | Buffer) => {
-          const [input, key] = parseKey(data)
-          ;(handler as (input: string, key: import("@silvery/tea/keys").Key) => void)(input, key)
-        }
-        instance.inputEmitter.on("input", wrapped)
+          const [input, key] = parseKey(data);
+          (handler as (input: string, key: import("@silvery/tea/keys").Key) => void)(input, key);
+        };
+        instance.inputEmitter.on("input", wrapped);
         return () => {
-          instance.inputEmitter.removeListener("input", wrapped)
-        }
+          instance.inputEmitter.removeListener("input", wrapped);
+        };
       }
       if (event === "paste") {
-        instance.inputEmitter.on("paste", handler)
+        instance.inputEmitter.on("paste", handler);
         return () => {
-          instance.inputEmitter.removeListener("paste", handler)
-        }
+          instance.inputEmitter.removeListener("paste", handler);
+        };
       }
-      return () => {} // Unknown event — no-op cleanup
+      return () => {}; // Unknown event — no-op cleanup
     },
     emit() {
       // Test renderer doesn't support view → runtime events
     },
     exit: handleExit,
-  }
+  };
 
   // Wrap element with contexts
   function wrapWithContexts(el: ReactElement): ReactElement {
+    const inner = wrapRoot ? wrapRoot(el) : el;
     return React.createElement(
       CursorProvider,
       { store: cursorStore },
@@ -426,17 +456,17 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           React.createElement(
             FocusManagerContext.Provider,
             { value: focusManager },
-            React.createElement(RuntimeContext.Provider, { value: runtimeValue }, el),
+            React.createElement(RuntimeContext.Provider, { value: runtimeValue }, inner),
           ),
         ),
       ),
-    )
+    );
   }
 
   // Check SILVERY_STRICT for automatic incremental checking (like scheduler does)
   // Note: "0" and "false" are treated as disabled
-  const strictEnv = process.env.SILVERY_STRICT || process.env.SILVERY_CHECK_INCREMENTAL
-  const strictMode = incremental && strictEnv && strictEnv !== "0" && strictEnv !== "false"
+  const strictEnv = process.env.SILVERY_STRICT || process.env.SILVERY_CHECK_INCREMENTAL;
+  const strictMode = incremental && strictEnv && strictEnv !== "0" && strictEnv !== "false";
 
   // Render function that executes the pipeline.
   //
@@ -456,8 +486,8 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // With IS_REACT_ACT_ENVIRONMENT=true (set by silvery/testing), state updates
   // outside act() boundaries may be dropped.
   function doRender(): string {
-    let output: string
-    let buffer!: TerminalBuffer
+    let output: string;
+    let buffer!: TerminalBuffer;
 
     if (instance.singlePassLayout) {
       // Production-matching single-pass: one executeRender, no stabilization
@@ -477,54 +507,54 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       // work from layout notifications. If React committed new work, run
       // one more executeRender to pick up the changes.
       for (let pass = 0; pass < 2; pass++) {
-        hadReactCommit = false
+        hadReactCommit = false;
         withActEnvironment(() => {
           act(() => {
-            const root = getContainerRoot(instance.container)
+            const root = getContainerRoot(instance.container);
             const result = executeRender(
               root,
               instance.columns,
               instance.rows,
               incremental ? instance.prevBuffer : null,
-            )
-            output = result.output
-            buffer = result.buffer
-            instance.prevBuffer = buffer
-            instance.renderCount++
-          })
+            );
+            output = result.output;
+            buffer = result.buffer;
+            instance.prevBuffer = buffer;
+            instance.renderCount++;
+          });
           if (!hadReactCommit) {
             act(() => {
-              reconciler.flushSyncWork()
-            })
+              reconciler.flushSyncWork();
+            });
           }
-        })
-        if (!hadReactCommit) break
+        });
+        if (!hadReactCommit) break;
       }
     } else {
       // Classic multi-pass layout stabilization loop
-      const MAX_LAYOUT_ITERATIONS = 5
-      let iterationCount = 0
+      const MAX_LAYOUT_ITERATIONS = 5;
+      let iterationCount = 0;
 
       for (let iteration = 0; iteration < MAX_LAYOUT_ITERATIONS; iteration++) {
-        hadReactCommit = false
-        iterationCount++
+        hadReactCommit = false;
+        iterationCount++;
 
         // Run the render pipeline inside act() so that forceUpdate/setState
         // from notifyLayoutSubscribers (Phase 2.7) are properly captured.
         withActEnvironment(() => {
           act(() => {
-            const root = getContainerRoot(instance.container)
+            const root = getContainerRoot(instance.container);
             const result = executeRender(
               root,
               instance.columns,
               instance.rows,
               incremental ? instance.prevBuffer : null,
-            )
-            output = result.output
-            buffer = result.buffer
-            instance.prevBuffer = buffer
-            instance.renderCount++
-          })
+            );
+            output = result.output;
+            buffer = result.buffer;
+            instance.prevBuffer = buffer;
+            instance.renderCount++;
+          });
           // Flush any React work scheduled during executeRender (e.g. from
           // useSyncExternalStore updates triggered by Phase 2.7 callbacks).
           // Without this, external store changes from layout notification callbacks
@@ -532,14 +562,14 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           // stale text in the buffer (e.g. breadcrumb showing old cursor position).
           if (!hadReactCommit) {
             act(() => {
-              reconciler.flushSyncWork()
-            })
+              reconciler.flushSyncWork();
+            });
           }
-        })
+        });
 
         // If React didn't commit any new work from layout notifications,
         // the layout is stable — no more iterations needed.
-        if (!hadReactCommit) break
+        if (!hadReactCommit) break;
       }
 
       // When multiple iterations ran, the final buffer's dirty rows only cover
@@ -548,74 +578,75 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       // scan, causing those rows to be skipped → garbled output. Mark all rows
       // dirty so the output phase does a full diff scan.
       if (incremental && buffer && iterationCount > 1) {
-        buffer.markAllRowsDirty()
+        buffer.markAllRowsDirty();
       }
     }
 
     // SILVERY_STRICT: Compare incremental vs fresh on every render (like scheduler)
     // Skip first render (nothing to compare against)
     if (strictMode && instance.renderCount > 1) {
-      const root = getContainerRoot(instance.container)
-      const freshBuffer = doFreshRender()
+      const root = getContainerRoot(instance.container);
+      const freshBuffer = doFreshRender();
       for (let y = 0; y < buffer!.height; y++) {
         for (let x = 0; x < buffer!.width; x++) {
-          const a = buffer!.getCell(x, y)
-          const b = freshBuffer.getCell(x, y)
+          const a = buffer!.getCell(x, y);
+          const b = freshBuffer.getCell(x, y);
           if (!cellEquals(a, b)) {
             // Re-run fresh render with write trap to capture what writes here
-            let trapInfo = ""
-            const trap = { x, y, log: [] as string[] }
-            ;(globalThis as any).__silvery_write_trap = trap
+            let trapInfo = "";
+            const trap = { x, y, log: [] as string[] };
+            (globalThis as any).__silvery_write_trap = trap;
             try {
-              doFreshRender()
+              doFreshRender();
             } catch {
               // ignore
             }
-            ;(globalThis as any).__silvery_write_trap = null
+            (globalThis as any).__silvery_write_trap = null;
             if (trap.log.length > 0) {
-              trapInfo = `\nWRITE TRAP (${trap.log.length} writes to (${x},${y})):\n${trap.log.join("\n")}\n`
+              trapInfo = `\nWRITE TRAP (${trap.log.length} writes to (${x},${y})):\n${trap.log.join("\n")}\n`;
             } else {
-              trapInfo = `\nWRITE TRAP: NO WRITES to (${x},${y})\n`
+              trapInfo = `\nWRITE TRAP: NO WRITES to (${x},${y})\n`;
             }
 
             // Build rich debug context
-            const ctx = buildMismatchContext(root, x, y, a, b, instance.renderCount)
-            const debugInfo = formatMismatchContext(ctx)
+            const ctx = buildMismatchContext(root, x, y, a, b, instance.renderCount);
+            const debugInfo = formatMismatchContext(ctx);
 
             // Include text output for full picture
-            const incText = bufferToText(buffer!)
-            const freshText = bufferToText(freshBuffer)
-            const msg = debugInfo + trapInfo + `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
-            throw new IncrementalRenderMismatchError(msg)
+            const incText = bufferToText(buffer!);
+            const freshText = bufferToText(freshBuffer);
+            const msg =
+              debugInfo + trapInfo + `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`;
+            throw new IncrementalRenderMismatchError(msg);
           }
         }
       }
     }
 
-    return output!
+    return output!;
   }
 
   // Fresh render: renders from scratch without updating incremental state
   function doFreshRender(): TerminalBuffer {
-    const root = getContainerRoot(instance.container)
+    const root = getContainerRoot(instance.container);
     const { buffer } = executeRender(root, instance.columns, instance.rows, null, {
       skipLayoutNotifications: true,
       skipScrollStateUpdates: true,
-    })
-    return buffer
+    });
+    return buffer;
   }
 
   // Synchronously update React tree within act()
-  instance.rendering = true
+  instance.rendering = true;
   try {
     withActEnvironment(() => {
       act(() => {
-        reconciler.updateContainerSync(wrapWithContexts(element), instance.fiberRoot, null, null)
-        reconciler.flushSyncWork()
-      })
-    })
+        reconciler.updateContainerSync(wrapWithContexts(element), instance.fiberRoot, null, null);
+        reconciler.flushSyncWork();
+      });
+    });
   } finally {
-    instance.rendering = false
+    instance.rendering = false;
   }
 
   // Execute the render pipeline.
@@ -626,35 +657,47 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // frame comes after the event loop starts. For tests, we need the initial
   // state to be stable. singlePassLayout only affects subsequent renders
   // (sendInput/press) to match production's processEventBatch path.
-  const savedSinglePass = instance.singlePassLayout
-  instance.singlePassLayout = false
-  const output = doRender()
-  instance.singlePassLayout = savedSinglePass
+  const savedSinglePass = instance.singlePassLayout;
+  instance.singlePassLayout = false;
+  const output = doRender();
+  instance.singlePassLayout = savedSinglePass;
 
-  instance.frames.push(output)
-  onFrame?.(output, instance.prevBuffer!)
+  instance.frames.push(output);
+  onFrame?.(output, instance.prevBuffer!);
 
   if (debug) {
-    console.log("[silvery] Initial render:", output)
+    console.log("[silvery] Initial render:", output);
+  }
+
+  // Set up stdin bridge: forward external stdin data to the renderer's input
+  let stdinOnReadable: (() => void) | undefined;
+  if (stdinStream) {
+    stdinOnReadable = () => {
+      let chunk: string | null;
+      while ((chunk = (stdinStream as any).read?.()) !== null && chunk !== undefined) {
+        instance.inputEmitter.emit("input", chunk);
+      }
+    };
+    stdinStream.on("readable", stdinOnReadable);
   }
 
   // Helper functions for App
-  const getContainer = () => getContainerRoot(instance.container)
-  const getBuffer = () => instance.prevBuffer
+  const getContainer = () => getContainerRoot(instance.container);
+  const getBuffer = () => instance.prevBuffer;
 
   const sendInput = (data: string) => {
     if (!instance.mounted) {
-      throw new Error("Cannot write to stdin after unmount")
+      throw new Error("Cannot write to stdin after unmount");
     }
     if (instance.rendering) {
       throw new Error(
         "silvery: Re-entrant render detected. " +
           "Cannot call press()/stdin.write() from inside a React render or effect. " +
           "Use setTimeout or an event handler instead.",
-      )
+      );
     }
-    const t0 = performance.now()
-    instance.rendering = true
+    const t0 = performance.now();
+    instance.rendering = true;
     try {
       // Split multi-character data into individual keypresses.
       // This mirrors the production path (render.tsx handleReadable)
@@ -666,58 +709,58 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           // Tab events are consumed (not passed to useInput handlers).
           // Each focus change runs in its own act() boundary so React
           // commits the re-render before the next keypress or doRender().
-          const [, key] = parseKey(keypress)
+          const [, key] = parseKey(keypress);
           if (key.tab && !key.shift) {
             act(() => {
-              const root = getContainerRoot(instance.container)
-              focusManager.focusNext(root)
-            })
-            continue
+              const root = getContainerRoot(instance.container);
+              focusManager.focusNext(root);
+            });
+            continue;
           }
           if (key.tab && key.shift) {
             act(() => {
-              const root = getContainerRoot(instance.container)
-              focusManager.focusPrev(root)
-            })
-            continue
+              const root = getContainerRoot(instance.container);
+              focusManager.focusPrev(root);
+            });
+            continue;
           }
           if (key.escape && focusManager.activeElement) {
             act(() => {
-              focusManager.blur()
-            })
-            continue
+              focusManager.blur();
+            });
+            continue;
           }
           act(() => {
-            instance.inputEmitter.emit("input", keypress)
-          })
+            instance.inputEmitter.emit("input", keypress);
+          });
         }
-      })
+      });
     } finally {
-      instance.rendering = false
+      instance.rendering = false;
     }
 
-    const t1 = performance.now()
+    const t1 = performance.now();
     // doRender() handles SILVERY_STRICT checking internally
-    let newFrame = doRender()
+    let newFrame = doRender();
 
     // In single-pass mode, flush effects after doRender() — matching
     // production's processEventBatch pattern (lines 1107-1118 of create-app.tsx).
     // Production does: doRender → await Promise.resolve() → check pendingRerender → repeat.
     // In tests, we use act(flushSyncWork) as the synchronous equivalent.
-    let doRenderCount = 1
+    let doRenderCount = 1;
     if (instance.singlePassLayout) {
-      const MAX_EFFECT_FLUSHES = 5
+      const MAX_EFFECT_FLUSHES = 5;
       for (let flush = 0; flush < MAX_EFFECT_FLUSHES; flush++) {
-        hadReactCommit = false
+        hadReactCommit = false;
         withActEnvironment(() => {
           act(() => {
-            reconciler.flushSyncWork()
-          })
-        })
-        if (!hadReactCommit) break
+            reconciler.flushSyncWork();
+          });
+        });
+        if (!hadReactCommit) break;
         // React committed new work from effects — re-render
-        newFrame = doRender()
-        doRenderCount++
+        newFrame = doRender();
+        doRenderCount++;
       }
     }
 
@@ -726,121 +769,132 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     // earlier doRender calls are invisible to callers using outputPhase to diff
     // against an older prevBuffer. Mark all rows dirty for correctness.
     if (incremental && doRenderCount > 1 && instance.prevBuffer) {
-      instance.prevBuffer.markAllRowsDirty()
+      instance.prevBuffer.markAllRowsDirty();
     }
 
-    const t2 = performance.now()
-    instance.frames.push(newFrame)
-    onFrame?.(newFrame, instance.prevBuffer!)
+    const t2 = performance.now();
+    instance.frames.push(newFrame);
+    onFrame?.(newFrame, instance.prevBuffer!);
     if (debug) {
-      console.log("[silvery] stdin.write:", newFrame)
+      console.log("[silvery] stdin.write:", newFrame);
     }
     // Expose timing on global for benchmarking
-    ;(globalThis as any).__silvery_last_timing = {
+    (globalThis as any).__silvery_last_timing = {
       actMs: t1 - t0,
       renderMs: t2 - t1,
-    }
-  }
+    };
+  };
 
   const rerenderFn = (newElement: ReactNode) => {
     if (!instance.mounted) {
-      throw new Error("Cannot rerender after unmount")
+      throw new Error("Cannot rerender after unmount");
     }
     if (instance.rendering) {
       throw new Error(
-        "silvery: Re-entrant render detected. " + "Cannot call rerender() from inside a React render or effect.",
-      )
+        "silvery: Re-entrant render detected. " +
+          "Cannot call rerender() from inside a React render or effect.",
+      );
     }
-    instance.rendering = true
+    instance.rendering = true;
     try {
       withActEnvironment(() => {
         act(() => {
-          reconciler.updateContainerSync(wrapWithContexts(newElement as ReactElement), instance.fiberRoot, null, null)
-          reconciler.flushSyncWork()
-        })
-      })
+          reconciler.updateContainerSync(
+            wrapWithContexts(newElement as ReactElement),
+            instance.fiberRoot,
+            null,
+            null,
+          );
+          reconciler.flushSyncWork();
+        });
+      });
     } finally {
-      instance.rendering = false
+      instance.rendering = false;
     }
-    const newFrame = doRender()
-    instance.frames.push(newFrame)
-    onFrame?.(newFrame, instance.prevBuffer!)
+    const newFrame = doRender();
+    instance.frames.push(newFrame);
+    onFrame?.(newFrame, instance.prevBuffer!);
     if (debug) {
-      console.log("[silvery] Rerender:", newFrame)
+      console.log("[silvery] Rerender:", newFrame);
     }
-  }
+  };
 
   // Track this render for leak detection
-  const renderTracker = { unmount: () => {}, id: renderId }
-  const renderRef = new WeakRef(renderTracker)
-  activeRenders.add(renderRef)
+  const renderTracker = { unmount: () => {}, id: renderId };
+  const renderRef = new WeakRef(renderTracker);
+  activeRenders.add(renderRef);
 
   const unmountFn = () => {
     if (!instance.mounted) {
-      throw new Error("Already unmounted")
+      throw new Error("Already unmounted");
     }
     withActEnvironment(() => {
       act(() => {
-        reconciler.updateContainer(null, instance.fiberRoot, null, () => {})
-      })
-    })
-    instance.mounted = false
-    instance.inputEmitter.removeAllListeners()
+        reconciler.updateContainer(null, instance.fiberRoot, null, () => {});
+      });
+    });
+    instance.mounted = false;
+    instance.inputEmitter.removeAllListeners();
+
+    // Clean up stdin bridge
+    if (stdinStream && stdinOnReadable) {
+      stdinStream.removeListener("readable", stdinOnReadable);
+    }
 
     // Untrack this render
-    activeRenders.delete(renderRef)
+    activeRenders.delete(renderRef);
 
     if (debug) {
-      console.log("[silvery] Unmounted")
+      console.log("[silvery] Unmounted");
     }
-  }
-  renderTracker.unmount = unmountFn
+  };
+  renderTracker.unmount = unmountFn;
 
   const clearFn = () => {
-    instance.frames.length = 0
-    instance.prevBuffer = null
-  }
+    instance.frames.length = 0;
+    instance.prevBuffer = null;
+  };
 
   const debugFn = () => {
-    console.log(debugTree(getContainerRoot(instance.container)))
-  }
+    console.log(debugTree(getContainerRoot(instance.container)));
+  };
 
   // actAndRender: wrap a callback in act() so React state updates are flushed,
   // then doRender() to update the buffer. Used by click/wheel/doubleClick.
   const actAndRenderFn = (fn: () => void) => {
-    if (!instance.mounted) return
+    if (!instance.mounted) return;
     withActEnvironment(() => {
       act(() => {
-        fn()
-      })
-    })
-    const newFrame = doRender()
-    instance.frames.push(newFrame)
-    onFrame?.(newFrame, instance.prevBuffer!)
-  }
+        fn();
+      });
+    });
+    const newFrame = doRender();
+    instance.frames.push(newFrame);
+    onFrame?.(newFrame, instance.prevBuffer!);
+  };
 
   // Resize: update dimensions, clear prevBuffer, re-render (matches scheduler resize behavior)
   const resizeFn = (newCols: number, newRows: number) => {
     if (!instance.mounted) {
-      throw new Error("Cannot resize after unmount")
+      throw new Error("Cannot resize after unmount");
     }
-    instance.columns = newCols
-    instance.rows = newRows
-    mockStdout.columns = newCols
-    mockStdout.rows = newRows
+    instance.columns = newCols;
+    instance.rows = newRows;
+    mockStdout.columns = newCols;
+    mockStdout.rows = newRows;
     // Emit resize event so component-level listeners (e.g., ScrollbackView's
     // width tracking) fire before the render, matching real terminal behavior.
-    stdoutEmitter.emit("resize")
+    stdoutEmitter.emit("resize");
     // Clear prevBuffer to force full redraw (matches scheduler.setupResizeListener)
-    instance.prevBuffer = null
+    instance.prevBuffer = null;
     // Re-render at new dimensions
-    const newFrame = doRender()
-    instance.frames.push(newFrame)
-    onFrame?.(newFrame, instance.prevBuffer!)
+    const newFrame = doRender();
+    instance.frames.push(newFrame);
+    onFrame?.(newFrame, instance.prevBuffer!);
     if (debug) {
-      console.log("[silvery] Resize:", newCols, "x", newRows)
+      console.log("[silvery] Resize:", newCols, "x", newRows);
     }
-  }
+  };
 
   // Build unified App instance
   return buildApp({
@@ -863,7 +917,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     resize: resizeFn,
     focusManager,
     getCursorState: cursorStore.accessors.getCursorState,
-  })
+  });
 }
 
 // ============================================================================
@@ -882,18 +936,18 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
  * ```
  */
 export function createStore(options: StoreOptions = {}): Store {
-  const { cols = 80, rows = 24, events: eventsSource } = options
+  const { cols = 80, rows = 24, events: eventsSource } = options;
 
   const store: Store = {
     cols,
     rows,
-  }
+  };
 
   if (eventsSource) {
-    store.events = () => eventsSource
+    store.events = () => eventsSource;
   }
 
-  return store
+  return store;
 }
 
 // ============================================================================
@@ -905,11 +959,11 @@ export function createStore(options: StoreOptions = {}): Store {
  */
 export interface PerRenderOptions {
   /** Enable incremental rendering for this render. */
-  incremental?: boolean
+  incremental?: boolean;
   /** Use production-like single-pass layout. See RenderOptions.singlePassLayout. */
-  singlePassLayout?: boolean
+  singlePassLayout?: boolean;
   /** Use Kitty keyboard protocol encoding for press(). */
-  kittyMode?: boolean
+  kittyMode?: boolean;
 }
 
 /**
@@ -932,30 +986,30 @@ export interface PerRenderOptions {
 export function createRenderer(
   optsOrStore: RenderOptions | Store = {},
 ): (el: ReactElement, overrides?: PerRenderOptions) => App {
-  let current: App | null = null
+  let current: App | null = null;
 
   // Default to incremental: true for test renders (matches production behavior)
   // User can explicitly pass incremental: false to disable
   // Note: When passed a Store-like object (cols/rows only), convert to RenderOptions with incremental
   const baseOpts = isStore(optsOrStore)
     ? { incremental: true, cols: optsOrStore.cols, rows: optsOrStore.rows }
-    : { incremental: true, ...optsOrStore }
+    : { incremental: true, ...optsOrStore };
 
   return (element: ReactElement, overrides?: PerRenderOptions): App => {
     if (current) {
       try {
-        current.unmount()
+        current.unmount();
       } catch {
         // Already unmounted
       }
     }
-    let opts = baseOpts
+    let opts = baseOpts;
     if (overrides && !isStore(opts)) {
-      opts = { ...opts, ...overrides }
+      opts = { ...opts, ...overrides };
     }
-    current = render(element, opts)
-    return current
-  }
+    current = render(element, opts);
+    return current;
+  };
 }
 
 // ============================================================================
@@ -967,9 +1021,9 @@ export function createRenderer(
  */
 export interface SyncRunResult extends Iterable<string> {
   /** Current rendered text */
-  readonly text: string
+  readonly text: string;
   /** The app being driven */
-  readonly app: App
+  readonly app: App;
 }
 
 /**
@@ -977,11 +1031,11 @@ export interface SyncRunResult extends Iterable<string> {
  */
 export interface AsyncRunResult extends AsyncIterable<string>, PromiseLike<void> {
   /** Current rendered text */
-  readonly text: string
+  readonly text: string;
   /** The app being driven */
-  readonly app: App
+  readonly app: App;
   /** Unmount and stop the event loop */
-  unmount(): void
+  unmount(): void;
 }
 
 /**
@@ -999,44 +1053,44 @@ export interface AsyncRunResult extends AsyncIterable<string>, PromiseLike<void>
  * expect(app.text).toContain('Count: 2')
  * ```
  */
-export function run(app: App, events: string[]): SyncRunResult
-export function run(app: App, events: Iterable<string>): SyncRunResult
-export function run(app: App, events?: AsyncIterable<string>): AsyncRunResult
+export function run(app: App, events: string[]): SyncRunResult;
+export function run(app: App, events: Iterable<string>): SyncRunResult;
+export function run(app: App, events?: AsyncIterable<string>): AsyncRunResult;
 export function run(
   app: App,
   events?: string[] | Iterable<string> | AsyncIterable<string>,
 ): SyncRunResult | AsyncRunResult {
   // Sync path: array or sync iterable
   if (events !== undefined && !isAsyncIterable(events)) {
-    const iter = Array.isArray(events) ? events : events
-    const processedEvents: string[] = []
+    const iter = Array.isArray(events) ? events : events;
+    const processedEvents: string[] = [];
 
     for (const key of iter) {
-      app.stdin.write(keyToAnsi(key))
-      processedEvents.push(key)
+      app.stdin.write(keyToAnsi(key));
+      processedEvents.push(key);
     }
 
     return {
       get text() {
-        return app.text
+        return app.text;
       },
       app,
       [Symbol.iterator]() {
-        return processedEvents[Symbol.iterator]()
+        return processedEvents[Symbol.iterator]();
       },
-    }
+    };
   }
 
   // Async path
-  let stopped = false
+  let stopped = false;
   const unmount = () => {
-    stopped = true
-    app.unmount()
-  }
+    stopped = true;
+    app.unmount();
+  };
 
   const asyncResult: AsyncRunResult = {
     get text() {
-      return app.text
+      return app.text;
     },
     app,
     unmount,
@@ -1049,59 +1103,59 @@ export function run(
       const promise = (async () => {
         if (events) {
           for await (const key of events) {
-            if (stopped) break
-            await app.press(key)
+            if (stopped) break;
+            await app.press(key);
           }
         } else {
           // No events — wait until exit
-          await app.run()
+          await app.run();
         }
-      })()
-      return promise.then(onfulfilled, onrejected)
+      })();
+      return promise.then(onfulfilled, onrejected);
     },
 
     // AsyncIterable — `for await (const text of run(app, asyncEvents))`
     [Symbol.asyncIterator](): AsyncIterator<string> {
       if (!events) {
         // No events source — yield current text, then done
-        let yielded = false
+        let yielded = false;
         return {
           async next(): Promise<IteratorResult<string>> {
             if (yielded || stopped) {
-              return { done: true, value: undefined as unknown as string }
+              return { done: true, value: undefined as unknown as string };
             }
-            yielded = true
-            return { done: false, value: app.text }
+            yielded = true;
+            return { done: false, value: app.text };
           },
-        }
+        };
       }
 
-      const iter = (events as AsyncIterable<string>)[Symbol.asyncIterator]()
+      const iter = (events as AsyncIterable<string>)[Symbol.asyncIterator]();
       return {
         async next(): Promise<IteratorResult<string>> {
           if (stopped) {
-            return { done: true, value: undefined as unknown as string }
+            return { done: true, value: undefined as unknown as string };
           }
-          const result = await iter.next()
+          const result = await iter.next();
           if (result.done) {
-            return { done: true, value: undefined as unknown as string }
+            return { done: true, value: undefined as unknown as string };
           }
-          await app.press(result.value)
-          return { done: false, value: app.text }
+          await app.press(result.value);
+          return { done: false, value: app.text };
         },
         async return(): Promise<IteratorResult<string>> {
-          unmount()
-          return { done: true, value: undefined as unknown as string }
+          unmount();
+          return { done: true, value: undefined as unknown as string };
         },
-      }
+      };
     },
-  }
+  };
 
-  return asyncResult
+  return asyncResult;
 }
 
 function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
-  return value !== null && typeof value === "object" && Symbol.asyncIterator in value
+  return value !== null && typeof value === "object" && Symbol.asyncIterator in value;
 }
 
 /**
@@ -1109,12 +1163,12 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
  * This ensures act() works correctly without polluting the global scope.
  */
 function withActEnvironment(fn: () => void): void {
-  const prev = (globalThis as any).IS_REACT_ACT_ENVIRONMENT
-  ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+  const prev = (globalThis as any).IS_REACT_ACT_ENVIRONMENT;
+  (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
   try {
-    fn()
+    fn();
   } finally {
-    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = prev
+    (globalThis as any).IS_REACT_ACT_ENVIRONMENT = prev;
   }
 }
 
@@ -1127,12 +1181,12 @@ function withActEnvironment(fn: () => void): void {
  * Useful for tests to verify cleanup.
  */
 export function getActiveRenderCount(): number {
-  return pruneAndCountActiveRenders()
+  return pruneAndCountActiveRenders();
 }
 
 // ============================================================================
 // Re-exports
 // ============================================================================
 
-export { keyToAnsi } from "@silvery/tea/keys"
-export type { App } from "./app.js"
+export { keyToAnsi } from "@silvery/tea/keys";
+export type { App } from "./app.js";

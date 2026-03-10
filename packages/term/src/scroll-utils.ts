@@ -50,26 +50,26 @@ export function calcEdgeBasedScrollOffset(
   padding = 1,
 ): number {
   // If everything fits, no scrolling needed
-  if (totalCount <= visibleCount) return 0
+  if (totalCount <= visibleCount) return 0;
 
   // Reduce padding when viewport is too small to have a non-empty safe zone.
   // With padding=1 and visibleCount=2, paddedStart > paddedEnd (inverted zone),
   // causing every re-render to trigger a scroll in one direction.
-  const effectivePadding = padding * 2 >= visibleCount ? 0 : padding
+  const effectivePadding = padding * 2 >= visibleCount ? 0 : padding;
 
   // Calculate visible range
-  const visibleStart = currentOffset
-  const visibleEnd = currentOffset + visibleCount - 1
+  const visibleStart = currentOffset;
+  const visibleEnd = currentOffset + visibleCount - 1;
 
   // Define the "safe zone" where cursor doesn't trigger scroll
-  const paddedStart = visibleStart + effectivePadding
-  const paddedEnd = visibleEnd - effectivePadding
+  const paddedStart = visibleStart + effectivePadding;
+  const paddedEnd = visibleEnd - effectivePadding;
 
-  let newOffset = currentOffset
+  let newOffset = currentOffset;
 
   if (selectedIndex < paddedStart) {
     // Scrolling UP/LEFT: place item `effectivePadding` rows from top
-    newOffset = Math.max(0, selectedIndex - effectivePadding)
+    newOffset = Math.max(0, selectedIndex - effectivePadding);
   } else if (
     effectivePadding === 0 &&
     selectedIndex === paddedStart &&
@@ -85,13 +85,16 @@ export function calcEdgeBasedScrollOffset(
     // right works (cursor past last visible triggers scroll) but scrolling left doesn't
     // (cursor at first visible doesn't trigger), creating asymmetric behavior.
     // Use original padding for the offset formula to show context before the cursor.
-    newOffset = Math.max(0, selectedIndex - padding)
+    newOffset = Math.max(0, selectedIndex - padding);
   } else if (selectedIndex > paddedEnd) {
     // Scrolling DOWN/RIGHT: place item `effectivePadding` rows from bottom
     // The +1 converts from 0-indexed offset to correct position
-    newOffset = Math.min(totalCount - visibleCount, selectedIndex - visibleCount + effectivePadding + 1)
+    newOffset = Math.min(
+      totalCount - visibleCount,
+      selectedIndex - visibleCount + effectivePadding + 1,
+    );
   }
 
   // Clamp to valid range
-  return Math.max(0, Math.min(newOffset, totalCount - visibleCount))
+  return Math.max(0, Math.min(newOffset, totalCount - visibleCount));
 }

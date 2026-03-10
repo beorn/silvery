@@ -7,20 +7,20 @@
  * Replaces the flat focus list in context.ts (FocusContext with focusables Map).
  */
 
-import type { TeaNode, Rect } from "./types"
+import type { TeaNode, Rect } from "./types";
 import {
   findByTestID,
   findFocusableAncestor,
   getTabOrder,
   findSpatialTarget,
   getExplicitFocusLink,
-} from "./focus-queries"
+} from "./focus-queries";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type FocusOrigin = "keyboard" | "mouse" | "programmatic"
+export type FocusOrigin = "keyboard" | "mouse" | "programmatic";
 
 /**
  * Callback fired when focus changes. Used by the runtime to dispatch
@@ -30,79 +30,83 @@ export type FocusOrigin = "keyboard" | "mouse" | "programmatic"
  * @param newNode - The node gaining focus (null on blur)
  * @param origin - How focus was acquired
  */
-export type FocusChangeCallback = (oldNode: TeaNode | null, newNode: TeaNode | null, origin: FocusOrigin | null) => void
+export type FocusChangeCallback = (
+  oldNode: TeaNode | null,
+  newNode: TeaNode | null,
+  origin: FocusOrigin | null,
+) => void;
 
 export interface FocusSnapshot {
-  activeId: string | null
-  previousId: string | null
-  focusOrigin: FocusOrigin | null
-  scopeStack: readonly string[]
+  activeId: string | null;
+  previousId: string | null;
+  focusOrigin: FocusOrigin | null;
+  scopeStack: readonly string[];
   /** The currently active peer scope (WPF FocusScope model) */
-  activeScopeId: string | null
+  activeScopeId: string | null;
 }
 
 export interface FocusManagerOptions {
   /** Called when focus changes — wire up event dispatch here */
-  onFocusChange?: FocusChangeCallback
+  onFocusChange?: FocusChangeCallback;
 }
 
 export interface FocusManager {
   /** Currently focused node */
-  readonly activeElement: TeaNode | null
+  readonly activeElement: TeaNode | null;
   /** testID of the currently focused node */
-  readonly activeId: string | null
+  readonly activeId: string | null;
   /** Previously focused node */
-  readonly previousElement: TeaNode | null
+  readonly previousElement: TeaNode | null;
   /** testID of the previously focused node */
-  readonly previousId: string | null
+  readonly previousId: string | null;
   /** How focus was most recently acquired */
-  readonly focusOrigin: FocusOrigin | null
+  readonly focusOrigin: FocusOrigin | null;
   /** Stack of active focus scope IDs */
-  readonly scopeStack: readonly string[]
+  readonly scopeStack: readonly string[];
   /** Map of scope ID -> last focused testID within that scope */
-  readonly scopeMemory: Readonly<Record<string, string>>
+  readonly scopeMemory: Readonly<Record<string, string>>;
 
   /** Focus a specific node */
-  focus(node: TeaNode, origin?: FocusOrigin): void
+  focus(node: TeaNode, origin?: FocusOrigin): void;
   /** Focus a node by testID (requires root for tree search) */
-  focusById(id: string, root: TeaNode, origin?: FocusOrigin): void
+  focusById(id: string, root: TeaNode, origin?: FocusOrigin): void;
   /** Clear focus */
-  blur(): void
+  blur(): void;
 
   /** Push a focus scope onto the stack */
-  enterScope(scopeId: string): void
+  enterScope(scopeId: string): void;
   /** Pop the current focus scope */
-  exitScope(): void
+  exitScope(): void;
 
   /** The currently active peer scope ID (WPF FocusScope model) */
-  readonly activeScopeId: string | null
+  readonly activeScopeId: string | null;
   /**
    * Activate a peer focus scope. Saves current focus in the old scope's memory,
    * switches to the new scope, and restores the remembered focus (or focuses
    * the first focusable element in the scope subtree).
    */
-  activateScope(scopeId: string, root: TeaNode): void
+  activateScope(scopeId: string, root: TeaNode): void;
 
   /** Get the testID path from focused node to root */
-  getFocusPath(root: TeaNode): string[]
+  getFocusPath(root: TeaNode): string[];
   /** Check if a subtree rooted at testID contains the focused node */
-  hasFocusWithin(root: TeaNode, testID: string): boolean
+  hasFocusWithin(root: TeaNode, testID: string): boolean;
 
   /** Focus the next focusable node in tab order */
-  focusNext(root: TeaNode, scope?: TeaNode): void
+  focusNext(root: TeaNode, scope?: TeaNode): void;
   /** Focus the previous focusable node in tab order */
-  focusPrev(root: TeaNode, scope?: TeaNode): void
+  focusPrev(root: TeaNode, scope?: TeaNode): void;
   /** Focus in a spatial direction (up/down/left/right) */
   focusDirection(
     root: TeaNode,
     direction: "up" | "down" | "left" | "right",
     layoutFn?: (node: TeaNode) => Rect | null,
-  ): void
+  ): void;
 
   /** Subscribe for React integration (useSyncExternalStore) */
-  subscribe(listener: () => void): () => void
+  subscribe(listener: () => void): () => void;
   /** Get immutable snapshot for useSyncExternalStore */
-  getSnapshot(): FocusSnapshot
+  getSnapshot(): FocusSnapshot;
 }
 
 // ============================================================================
@@ -110,32 +114,32 @@ export interface FocusManager {
 // ============================================================================
 
 export function createFocusManager(options?: FocusManagerOptions): FocusManager {
-  const onFocusChange = options?.onFocusChange
+  const onFocusChange = options?.onFocusChange;
 
   // Internal state
-  let activeElement: TeaNode | null = null
-  let activeId: string | null = null
-  let previousElement: TeaNode | null = null
-  let previousId: string | null = null
-  let focusOrigin: FocusOrigin | null = null
-  const scopeStack: string[] = []
-  const scopeMemory: Record<string, string> = {}
-  let activeScopeId: string | null = null
+  let activeElement: TeaNode | null = null;
+  let activeId: string | null = null;
+  let previousElement: TeaNode | null = null;
+  let previousId: string | null = null;
+  let focusOrigin: FocusOrigin | null = null;
+  const scopeStack: string[] = [];
+  const scopeMemory: Record<string, string> = {};
+  let activeScopeId: string | null = null;
 
   // Subscriber management
-  const listeners = new Set<() => void>()
-  let snapshot: FocusSnapshot | null = null
+  const listeners = new Set<() => void>();
+  let snapshot: FocusSnapshot | null = null;
 
   function notify(): void {
-    snapshot = null // Invalidate cached snapshot
+    snapshot = null; // Invalidate cached snapshot
     for (const listener of listeners) {
-      listener()
+      listener();
     }
   }
 
   function getTestID(node: TeaNode): string | null {
-    const props = node.props as Record<string, unknown>
-    return typeof props.testID === "string" ? props.testID : null
+    const props = node.props as Record<string, unknown>;
+    return typeof props.testID === "string" ? props.testID : null;
   }
 
   // ---- Focus operations ----
@@ -145,85 +149,85 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     if (activeElement === node) {
       // Still update origin if different
       if (focusOrigin !== origin) {
-        focusOrigin = origin
-        notify()
+        focusOrigin = origin;
+        notify();
       }
-      return
+      return;
     }
 
-    const oldElement = activeElement
-    previousElement = activeElement
-    previousId = activeId
-    activeElement = node
-    activeId = getTestID(node)
-    focusOrigin = origin
+    const oldElement = activeElement;
+    previousElement = activeElement;
+    previousId = activeId;
+    activeElement = node;
+    activeId = getTestID(node);
+    focusOrigin = origin;
 
     // Remember this focus in the current scope
     if (activeId && scopeStack.length > 0) {
-      scopeMemory[scopeStack[scopeStack.length - 1]!] = activeId
+      scopeMemory[scopeStack[scopeStack.length - 1]!] = activeId;
     }
 
-    notify()
+    notify();
 
     // Fire focus change callback (after state is updated)
-    onFocusChange?.(oldElement, node, origin)
+    onFocusChange?.(oldElement, node, origin);
   }
 
   function focusById(id: string, root: TeaNode, origin: FocusOrigin = "programmatic"): void {
-    const node = findByTestID(root, id)
+    const node = findByTestID(root, id);
     if (node) {
       // Walk up to the nearest focusable ancestor if the found node isn't focusable
-      const focusable = findFocusableAncestor(node)
+      const focusable = findFocusableAncestor(node);
       if (focusable) {
-        focus(focusable, origin)
-        return
+        focus(focusable, origin);
+        return;
       }
     }
     // Virtual focus: set the ID without a DOM node. This enables named focus
     // targets (e.g. "board-area", "detail-pane") without requiring wrapper Boxes
     // that would disrupt layout.
-    const oldElement = activeElement
-    previousElement = activeElement
-    previousId = activeId
-    activeElement = null
-    activeId = id
-    focusOrigin = origin
-    notify()
+    const oldElement = activeElement;
+    previousElement = activeElement;
+    previousId = activeId;
+    activeElement = null;
+    activeId = id;
+    focusOrigin = origin;
+    notify();
 
     // Fire focus change callback (old element blurs, no new node for virtual focus)
-    onFocusChange?.(oldElement, null, origin)
+    onFocusChange?.(oldElement, null, origin);
   }
 
   function blur(): void {
-    if (!activeElement && !activeId) return
+    if (!activeElement && !activeId) return;
 
-    const oldElement = activeElement
-    previousElement = activeElement
-    previousId = activeId
-    activeElement = null
-    activeId = null
-    focusOrigin = null
+    const oldElement = activeElement;
+    previousElement = activeElement;
+    previousId = activeId;
+    activeElement = null;
+    activeId = null;
+    focusOrigin = null;
 
-    notify()
+    notify();
 
     // Fire focus change callback (after state is updated)
-    onFocusChange?.(oldElement, null, null)
+    onFocusChange?.(oldElement, null, null);
   }
 
   // ---- Scope management ----
 
   function enterScope(scopeId: string): void {
-    scopeStack.push(scopeId)
-    notify()
+    scopeStack.push(scopeId);
+    notify();
   }
 
   function exitScope(): void {
-    const exited = scopeStack.pop()
-    if (exited === undefined) return
+    const exited = scopeStack.pop();
+    if (exited === undefined) return;
 
     // Restore focus to the remembered element in the parent scope
     // (Caller is responsible for providing root to restore if needed)
-    notify()
+    notify();
   }
 
   // ---- Peer scope activation (WPF FocusScope model) ----
@@ -231,58 +235,58 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
   function activateScope(scopeId: string, root: TeaNode): void {
     // Save current focus in the outgoing scope's memory
     if (activeScopeId && activeId) {
-      scopeMemory[activeScopeId] = activeId
+      scopeMemory[activeScopeId] = activeId;
     }
 
     // Switch scope
-    activeScopeId = scopeId
+    activeScopeId = scopeId;
 
     // Restore focus: remembered element, or first focusable in scope
-    const remembered = scopeMemory[scopeId]
+    const remembered = scopeMemory[scopeId];
     if (remembered) {
-      focusById(remembered, root, "programmatic")
+      focusById(remembered, root, "programmatic");
     } else {
-      const scopeNode = findByTestID(root, scopeId)
+      const scopeNode = findByTestID(root, scopeId);
       if (scopeNode) {
-        const order = getTabOrder(root, scopeNode)
+        const order = getTabOrder(root, scopeNode);
         if (order.length > 0) {
-          focus(order[0]!, "programmatic")
+          focus(order[0]!, "programmatic");
         }
       }
     }
 
-    notify()
+    notify();
   }
 
   // ---- Tree queries ----
 
   function getFocusPath(root: TeaNode): string[] {
-    if (!activeElement) return []
+    if (!activeElement) return [];
 
-    const path: string[] = []
-    let current: TeaNode | null = activeElement
+    const path: string[] = [];
+    let current: TeaNode | null = activeElement;
     while (current && current !== root.parent) {
-      const id = getTestID(current)
-      if (id) path.push(id)
-      current = current.parent
+      const id = getTestID(current);
+      if (id) path.push(id);
+      current = current.parent;
     }
-    return path
+    return path;
   }
 
   function hasFocusWithin(root: TeaNode, testID: string): boolean {
-    if (!activeElement) return false
+    if (!activeElement) return false;
 
     // Find the node with the given testID
-    const target = findByTestID(root, testID)
-    if (!target) return false
+    const target = findByTestID(root, testID);
+    if (!target) return false;
 
     // Walk up from activeElement to see if we pass through target
-    let current: TeaNode | null = activeElement
+    let current: TeaNode | null = activeElement;
     while (current) {
-      if (current === target) return true
-      current = current.parent
+      if (current === target) return true;
+      current = current.parent;
     }
-    return false
+    return false;
   }
 
   // ---- Navigation ----
@@ -293,49 +297,49 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
    * is non-empty, find the topmost scope node in the tree by testID.
    */
   function resolveScope(root: TeaNode, explicitScope?: TeaNode): TeaNode | undefined {
-    if (explicitScope) return explicitScope
+    if (explicitScope) return explicitScope;
 
     if (scopeStack.length > 0) {
-      const scopeId = scopeStack[scopeStack.length - 1]!
-      const scopeNode = findByTestID(root, scopeId)
-      if (scopeNode) return scopeNode
+      const scopeId = scopeStack[scopeStack.length - 1]!;
+      const scopeNode = findByTestID(root, scopeId);
+      if (scopeNode) return scopeNode;
     }
 
-    return undefined
+    return undefined;
   }
 
   function focusNext(root: TeaNode, scope?: TeaNode): void {
-    const effectiveScope = resolveScope(root, scope)
-    const order = getTabOrder(root, effectiveScope)
-    if (order.length === 0) return
+    const effectiveScope = resolveScope(root, scope);
+    const order = getTabOrder(root, effectiveScope);
+    if (order.length === 0) return;
 
     if (!activeElement) {
       // Nothing focused — focus the first element
-      focus(order[0]!, "keyboard")
-      return
+      focus(order[0]!, "keyboard");
+      return;
     }
 
-    const currentIndex = order.indexOf(activeElement)
+    const currentIndex = order.indexOf(activeElement);
     // Wrap around to the first element
-    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % order.length
-    focus(order[nextIndex]!, "keyboard")
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % order.length;
+    focus(order[nextIndex]!, "keyboard");
   }
 
   function focusPrev(root: TeaNode, scope?: TeaNode): void {
-    const effectiveScope = resolveScope(root, scope)
-    const order = getTabOrder(root, effectiveScope)
-    if (order.length === 0) return
+    const effectiveScope = resolveScope(root, scope);
+    const order = getTabOrder(root, effectiveScope);
+    if (order.length === 0) return;
 
     if (!activeElement) {
       // Nothing focused — focus the last element
-      focus(order[order.length - 1]!, "keyboard")
-      return
+      focus(order[order.length - 1]!, "keyboard");
+      return;
     }
 
-    const currentIndex = order.indexOf(activeElement)
+    const currentIndex = order.indexOf(activeElement);
     // Wrap around to the last element
-    const prevIndex = currentIndex <= 0 ? order.length - 1 : currentIndex - 1
-    focus(order[prevIndex]!, "keyboard")
+    const prevIndex = currentIndex <= 0 ? order.length - 1 : currentIndex - 1;
+    focus(order[prevIndex]!, "keyboard");
   }
 
   function focusDirection(
@@ -343,31 +347,31 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     direction: "up" | "down" | "left" | "right",
     layoutFn?: (node: TeaNode) => Rect | null,
   ): void {
-    if (!activeElement) return
+    if (!activeElement) return;
 
     // Check for explicit focus link first
-    const explicitTarget = getExplicitFocusLink(activeElement, direction)
+    const explicitTarget = getExplicitFocusLink(activeElement, direction);
     if (explicitTarget) {
-      focusById(explicitTarget, root, "keyboard")
-      return
+      focusById(explicitTarget, root, "keyboard");
+      return;
     }
 
     // Fall back to spatial navigation
-    const candidates = getTabOrder(root)
-    const resolvedLayoutFn = layoutFn ?? ((node: TeaNode) => node.screenRect)
-    const target = findSpatialTarget(activeElement, direction, candidates, resolvedLayoutFn)
+    const candidates = getTabOrder(root);
+    const resolvedLayoutFn = layoutFn ?? ((node: TeaNode) => node.screenRect);
+    const target = findSpatialTarget(activeElement, direction, candidates, resolvedLayoutFn);
     if (target) {
-      focus(target, "keyboard")
+      focus(target, "keyboard");
     }
   }
 
   // ---- Subscribe/snapshot for useSyncExternalStore ----
 
   function subscribe(listener: () => void): () => void {
-    listeners.add(listener)
+    listeners.add(listener);
     return () => {
-      listeners.delete(listener)
-    }
+      listeners.delete(listener);
+    };
   }
 
   function getSnapshot(): FocusSnapshot {
@@ -378,37 +382,37 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
         focusOrigin,
         scopeStack: [...scopeStack],
         activeScopeId,
-      }
+      };
     }
-    return snapshot
+    return snapshot;
   }
 
   // ---- Public interface ----
 
   return {
     get activeElement() {
-      return activeElement
+      return activeElement;
     },
     get activeId() {
-      return activeId
+      return activeId;
     },
     get previousElement() {
-      return previousElement
+      return previousElement;
     },
     get previousId() {
-      return previousId
+      return previousId;
     },
     get focusOrigin() {
-      return focusOrigin
+      return focusOrigin;
     },
     get scopeStack() {
-      return scopeStack as readonly string[]
+      return scopeStack as readonly string[];
     },
     get scopeMemory() {
-      return scopeMemory as Readonly<Record<string, string>>
+      return scopeMemory as Readonly<Record<string, string>>;
     },
     get activeScopeId() {
-      return activeScopeId
+      return activeScopeId;
     },
 
     focus,
@@ -428,5 +432,5 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
 
     subscribe,
     getSnapshot,
-  }
+  };
 }

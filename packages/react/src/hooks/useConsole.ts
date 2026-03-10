@@ -1,5 +1,5 @@
-import type { ConsoleEntry, PatchedConsole } from "@silvery/term/ansi"
-import { useEffect, useState } from "react"
+import type { ConsoleEntry, PatchedConsole } from "@silvery/term/ansi";
+import { useEffect, useState } from "react";
 
 /**
  * Hook to subscribe to console entries from a PatchedConsole.
@@ -24,24 +24,24 @@ import { useEffect, useState } from "react"
  * ```
  */
 export function useConsole(patched: PatchedConsole, debounceMs = 200): readonly ConsoleEntry[] {
-  const [entries, setEntries] = useState<readonly ConsoleEntry[]>(patched.getSnapshot)
+  const [entries, setEntries] = useState<readonly ConsoleEntry[]>(patched.getSnapshot);
 
   useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null
+    let timer: ReturnType<typeof setTimeout> | null = null;
     const unsub = patched.subscribe(() => {
-      if (timer) return
+      if (timer) return;
       timer = setTimeout(() => {
-        timer = null
-        setEntries(patched.getSnapshot())
-      }, debounceMs)
-    })
+        timer = null;
+        setEntries(patched.getSnapshot());
+      }, debounceMs);
+    });
     // Pick up entries that arrived before subscribe
-    setEntries(patched.getSnapshot())
+    setEntries(patched.getSnapshot());
     return () => {
-      unsub()
-      if (timer) clearTimeout(timer)
-    }
-  }, [patched, debounceMs])
+      unsub();
+      if (timer) clearTimeout(timer);
+    };
+  }, [patched, debounceMs]);
 
-  return entries
+  return entries;
 }

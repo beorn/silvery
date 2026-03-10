@@ -14,8 +14,8 @@ Silvery inverts the order: layout runs first, then components render with actual
 
 ```tsx
 function Card({ item }: { item: Item }) {
-  const { width } = useContentRect()
-  return <Text>{truncate(item.title, width - 4)}</Text>
+  const { width } = useContentRect();
+  return <Text>{truncate(item.title, width - 4)}</Text>;
 }
 ```
 

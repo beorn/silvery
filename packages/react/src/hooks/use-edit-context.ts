@@ -9,11 +9,11 @@
  * Auto-saves on unmount if value changed and not explicitly cancelled.
  */
 
-import { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react"
-import { createTermEditContext } from "../edit-context"
-import type { TermEditContext } from "../edit-context"
-import type { TextOp } from "@silvery/tea/text-ops"
-import { rowColToCursor, countVisualLines } from "@silvery/tea/text-cursor"
+import { useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { createTermEditContext } from "../edit-context";
+import type { TermEditContext } from "../edit-context";
+import type { TextOp } from "@silvery/tea/text-ops";
+import { rowColToCursor, countVisualLines } from "@silvery/tea/text-cursor";
 
 // =============================================================================
 // Types
@@ -21,27 +21,27 @@ import { rowColToCursor, countVisualLines } from "@silvery/tea/text-cursor"
 
 export interface UseEditContextOptions {
   /** Initial text value */
-  initialValue?: string
+  initialValue?: string;
   /** Called when value changes (every keystroke) */
-  onChange?: (value: string) => void
+  onChange?: (value: string) => void;
   /** Called when Enter is pressed (text.confirm command) */
-  onConfirm?: (value: string) => void
+  onConfirm?: (value: string) => void;
   /** Called when exiting edit mode (Escape) */
-  onCancel?: () => void
+  onCancel?: () => void;
   /** Called when save() is invoked (auto-save on block navigate) */
-  onSave?: (value: string) => void
+  onSave?: (value: string) => void;
   /** Called when Enter creates a new tree node (split at boundary) */
-  onSplitAtBoundary?: (offset: number) => void
+  onSplitAtBoundary?: (offset: number) => void;
   /** Called when Backspace at start needs a tree merge */
-  onMergeBackward?: () => void
+  onMergeBackward?: () => void;
   /** Available width for visual line wrapping */
-  wrapWidth?: number
+  wrapWidth?: number;
   /** Initial cursor position */
-  initialCursorPos?: "start" | "end"
+  initialCursorPos?: "start" | "end";
   /** Preferred cursor column preserved across block boundaries (visual column index) */
-  stickyX?: number
+  stickyX?: number;
   /** Called on each text operation (for undo log) */
-  onTextOp?: (op: TextOp) => void
+  onTextOp?: (op: TextOp) => void;
 }
 
 /**
@@ -52,44 +52,44 @@ export interface UseEditContextOptions {
  * (in silvery, a lower layer) to avoid importing from km-tui.
  */
 export interface EditTarget {
-  insertChar(char: string): void
-  deleteBackward(): void
-  deleteForward(): void
-  cursorLeft(): void
-  cursorRight(): void
-  cursorUp(): boolean
-  cursorDown(): boolean
-  cursorStart(): void
-  cursorEnd(): void
-  deleteWord(): void
-  deleteToStart(): void
-  deleteToEnd(): void
-  confirm(): void
-  cancel(): void
-  save(): void
-  getCursorOffset(): number
-  getContent(): string
-  insertBreak(): boolean
-  replaceContent(content: string, cursor: number): void
+  insertChar(char: string): void;
+  deleteBackward(): void;
+  deleteForward(): void;
+  cursorLeft(): void;
+  cursorRight(): void;
+  cursorUp(): boolean;
+  cursorDown(): boolean;
+  cursorStart(): void;
+  cursorEnd(): void;
+  deleteWord(): void;
+  deleteToStart(): void;
+  deleteToEnd(): void;
+  confirm(): void;
+  cancel(): void;
+  save(): void;
+  getCursorOffset(): number;
+  getContent(): string;
+  insertBreak(): boolean;
+  replaceContent(content: string, cursor: number): void;
 }
 
 export interface UseEditContextResult {
   /** Current text value */
-  value: string
+  value: string;
   /** Cursor position (character offset) */
-  cursor: number
+  cursor: number;
   /** Text before cursor (for rendering) */
-  beforeCursor: string
+  beforeCursor: string;
   /** Text after cursor (for rendering) */
-  afterCursor: string
+  afterCursor: string;
   /** Clear the input */
-  clear: () => void
+  clear: () => void;
   /** Set value programmatically */
-  setValue: (value: string) => void
+  setValue: (value: string) => void;
   /** The underlying TermEditContext (for advanced usage) */
-  editContext: TermEditContext
+  editContext: TermEditContext;
   /** BlockEditTarget-compatible object for command system integration */
-  target: EditTarget
+  target: EditTarget;
 }
 
 /**
@@ -99,7 +99,7 @@ export interface UseEditContextResult {
  */
 export const activeEditContextRef: { current: TermEditContext | null } = {
   current: null,
-}
+};
 
 /**
  * Shared mutable ref for the active edit target.
@@ -109,7 +109,7 @@ export const activeEditContextRef: { current: TermEditContext | null } = {
  */
 export const activeEditTargetRef: { current: EditTarget | null } = {
   current: null,
-}
+};
 
 // =============================================================================
 // Hook
@@ -152,176 +152,178 @@ export function useEditContext({
   onTextOp,
 }: UseEditContextOptions = {}): UseEditContextResult {
   // Stable refs for callbacks (avoid stale closures)
-  const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
-  const onConfirmRef = useRef(onConfirm)
-  onConfirmRef.current = onConfirm
-  const onCancelRef = useRef(onCancel)
-  onCancelRef.current = onCancel
-  const onSaveRef = useRef(onSave)
-  onSaveRef.current = onSave
-  const onSplitRef = useRef(onSplitAtBoundary)
-  onSplitRef.current = onSplitAtBoundary
-  const onMergeBackwardRef = useRef(onMergeBackward)
-  onMergeBackwardRef.current = onMergeBackward
-  const onTextOpRef = useRef(onTextOp)
-  onTextOpRef.current = onTextOp
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const onConfirmRef = useRef(onConfirm);
+  onConfirmRef.current = onConfirm;
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
+  const onSaveRef = useRef(onSave);
+  onSaveRef.current = onSave;
+  const onSplitRef = useRef(onSplitAtBoundary);
+  onSplitRef.current = onSplitAtBoundary;
+  const onMergeBackwardRef = useRef(onMergeBackward);
+  onMergeBackwardRef.current = onMergeBackward;
+  const onTextOpRef = useRef(onTextOp);
+  onTextOpRef.current = onTextOp;
 
   // Track whether cancel was called (suppresses auto-save on unmount)
-  const cancelledRef = useRef(false)
-  const initialValueRef = useRef(initialValue)
+  const cancelledRef = useRef(false);
+  const initialValueRef = useRef(initialValue);
 
   // Force re-render counter — bumped on every text/cursor change
-  const [_version, setVersion] = useState(0)
-  const forceRender = useCallback(() => setVersion((v) => v + 1), [])
+  const [_version, setVersion] = useState(0);
+  const forceRender = useCallback(() => setVersion((v) => v + 1), []);
 
   // Create TermEditContext (stable across renders)
   const ctx = useMemo(() => {
-    const effectiveWrapWidth = wrapWidth ?? Infinity
-    let cursorPos: number
+    const effectiveWrapWidth = wrapWidth ?? Infinity;
+    let cursorPos: number;
     if (stickyX != null && initialValue.length > 0) {
       // Preserve preferred column across block boundaries:
       // position cursor at stickyX column on the target row
       const targetRow =
-        initialCursorPos === "start" ? 0 : Math.max(0, countVisualLines(initialValue, effectiveWrapWidth) - 1)
-      cursorPos = rowColToCursor(initialValue, targetRow, stickyX, effectiveWrapWidth)
+        initialCursorPos === "start"
+          ? 0
+          : Math.max(0, countVisualLines(initialValue, effectiveWrapWidth) - 1);
+      cursorPos = rowColToCursor(initialValue, targetRow, stickyX, effectiveWrapWidth);
     } else {
-      cursorPos = initialCursorPos === "start" ? 0 : initialValue.length
+      cursorPos = initialCursorPos === "start" ? 0 : initialValue.length;
     }
     return createTermEditContext({
       text: initialValue,
       selectionStart: cursorPos,
       selectionEnd: cursorPos,
       wrapWidth: effectiveWrapWidth,
-    })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps -- intentionally stable
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- intentionally stable
 
   // Subscribe to text updates for onChange, onTextOp, and re-rendering
   useLayoutEffect(() => {
     const unsub = ctx.onTextUpdate((op: TextOp) => {
-      onChangeRef.current?.(ctx.text)
-      onTextOpRef.current?.(op)
-      forceRender()
-    })
-    return unsub
-  }, [ctx, forceRender])
+      onChangeRef.current?.(ctx.text);
+      onTextOpRef.current?.(op);
+      forceRender();
+    });
+    return unsub;
+  }, [ctx, forceRender]);
 
   // Update wrapWidth when it changes
   useEffect(() => {
     if (wrapWidth !== undefined) {
-      ctx.setWrapWidth(wrapWidth)
+      ctx.setWrapWidth(wrapWidth);
     }
-  }, [wrapWidth, ctx])
+  }, [wrapWidth, ctx]);
 
   // Build BlockEditTarget-compatible object for board-actions.ts
   const target = useMemo(
     () => ({
       insertChar(char: string) {
-        ctx.insertChar(char)
+        ctx.insertChar(char);
       },
       deleteBackward() {
-        ctx.deleteBackward()
+        ctx.deleteBackward();
       },
       deleteForward() {
-        ctx.deleteForward()
+        ctx.deleteForward();
       },
       cursorLeft() {
-        ctx.moveCursor("left")
-        forceRender()
+        ctx.moveCursor("left");
+        forceRender();
       },
       cursorRight() {
-        ctx.moveCursor("right")
-        forceRender()
+        ctx.moveCursor("right");
+        forceRender();
       },
       cursorUp(): boolean {
-        const moved = ctx.moveCursor("up")
-        if (moved) forceRender()
-        return moved
+        const moved = ctx.moveCursor("up");
+        if (moved) forceRender();
+        return moved;
       },
       cursorDown(): boolean {
-        const moved = ctx.moveCursor("down")
-        if (moved) forceRender()
-        return moved
+        const moved = ctx.moveCursor("down");
+        if (moved) forceRender();
+        return moved;
       },
       cursorStart() {
-        ctx.setCursorOffset(0)
-        forceRender()
+        ctx.setCursorOffset(0);
+        forceRender();
       },
       cursorEnd() {
-        ctx.setCursorOffset(ctx.text.length)
-        forceRender()
+        ctx.setCursorOffset(ctx.text.length);
+        forceRender();
       },
       deleteWord() {
-        ctx.deleteWord()
+        ctx.deleteWord();
       },
       deleteToStart() {
-        ctx.deleteToStart()
+        ctx.deleteToStart();
       },
       deleteToEnd() {
-        ctx.deleteToEnd()
+        ctx.deleteToEnd();
       },
       confirm() {
-        cancelledRef.current = true
-        onConfirmRef.current?.(ctx.text)
+        cancelledRef.current = true;
+        onConfirmRef.current?.(ctx.text);
       },
       cancel() {
-        cancelledRef.current = true
-        onCancelRef.current?.()
+        cancelledRef.current = true;
+        onCancelRef.current?.();
       },
       save() {
-        const fn = onSaveRef.current ?? onConfirmRef.current
-        fn?.(ctx.text)
-        initialValueRef.current = ctx.text
+        const fn = onSaveRef.current ?? onConfirmRef.current;
+        fn?.(ctx.text);
+        initialValueRef.current = ctx.text;
       },
       getCursorOffset() {
-        return ctx.selectionStart
+        return ctx.selectionStart;
       },
       getContent() {
-        return ctx.text
+        return ctx.text;
       },
       insertBreak(): boolean {
         // Signal that this editor supports outliner-style Enter (split/new sibling).
         // The actual node creation is handled by TEXT_LINEBREAK_* actions in board-actions.ts.
-        return !!onSplitRef.current
+        return !!onSplitRef.current;
       },
       replaceContent(content: string, cursor: number) {
         // Replace entire text and set cursor position
-        ctx.updateText(0, ctx.text.length, content)
-        ctx.setCursorOffset(cursor)
-        initialValueRef.current = content
-        forceRender()
+        ctx.updateText(0, ctx.text.length, content);
+        ctx.setCursorOffset(cursor);
+        initialValueRef.current = content;
+        forceRender();
       },
     }),
     [ctx, forceRender],
-  )
+  );
 
   // Register as active edit context + target on mount, clean up on unmount.
   // useLayoutEffect ensures registration happens before the next input event.
   useLayoutEffect(() => {
-    activeEditContextRef.current = ctx
-    activeEditTargetRef.current = target
+    activeEditContextRef.current = ctx;
+    activeEditTargetRef.current = target;
     return () => {
       if (activeEditContextRef.current === ctx) {
-        activeEditContextRef.current = null
+        activeEditContextRef.current = null;
       }
       if (activeEditTargetRef.current === target) {
-        activeEditTargetRef.current = null
+        activeEditTargetRef.current = null;
       }
       // Auto-save on unmount if value was modified and not explicitly cancelled
       if (!cancelledRef.current) {
-        const currentValue = ctx.text
+        const currentValue = ctx.text;
         if (currentValue !== initialValueRef.current) {
-          onConfirmRef.current?.(currentValue)
+          onConfirmRef.current?.(currentValue);
         }
       }
-    }
-  }, [ctx, target])
+    };
+  }, [ctx, target]);
 
   // Derive display values from TermEditContext
-  const text = ctx.text
-  const cursorPos = ctx.selectionStart
-  const beforeCursor = text.slice(0, cursorPos)
-  const afterCursor = text.slice(cursorPos)
+  const text = ctx.text;
+  const cursorPos = ctx.selectionStart;
+  const beforeCursor = text.slice(0, cursorPos);
+  const afterCursor = text.slice(cursorPos);
 
   return {
     value: text,
@@ -329,21 +331,21 @@ export function useEditContext({
     beforeCursor,
     afterCursor,
     clear: useCallback(() => {
-      ctx.updateText(0, ctx.text.length, "")
-      ctx.setCursorOffset(0)
-      onChangeRef.current?.("")
-      forceRender()
+      ctx.updateText(0, ctx.text.length, "");
+      ctx.setCursorOffset(0);
+      onChangeRef.current?.("");
+      forceRender();
     }, [ctx, forceRender]),
     setValue: useCallback(
       (value: string) => {
-        ctx.updateText(0, ctx.text.length, value)
-        ctx.setCursorOffset(value.length)
-        onChangeRef.current?.(value)
-        forceRender()
+        ctx.updateText(0, ctx.text.length, value);
+        ctx.setCursorOffset(value.length);
+        onChangeRef.current?.(value);
+        forceRender();
       },
       [ctx, forceRender],
     ),
     editContext: ctx,
     target,
-  }
+  };
 }

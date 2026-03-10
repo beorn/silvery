@@ -5,13 +5,17 @@ Render a React element to the terminal.
 ## Import
 
 ```tsx
-import { render, createTerm } from "silvery"
+import { render, createTerm } from "silvery";
 ```
 
 ## Signature
 
 ```tsx
-function render(element: ReactElement, term?: Term | TermDef, options?: RenderOptions): RenderHandle
+function render(
+  element: ReactElement,
+  term?: Term | TermDef,
+  options?: RenderOptions,
+): RenderHandle;
 ```
 
 ### Parameters
@@ -47,24 +51,24 @@ Returns a `Promise<Instance>` with the following methods:
 ### Basic Usage
 
 ```tsx
-import { render, Box, Text, createTerm } from "silvery"
+import { render, Box, Text, createTerm } from "silvery";
 
-using term = createTerm()
+using term = createTerm();
 
 await render(
   <Box>
     <Text>Hello, World!</Text>
   </Box>,
   term,
-)
+);
 ```
 
 ### With Custom Options
 
 ```tsx
-import { render, Box, Text, createTerm } from "silvery"
+import { render, Box, Text, createTerm } from "silvery";
 
-using term = createTerm()
+using term = createTerm();
 
 await render(
   <Box>
@@ -76,64 +80,64 @@ await render(
     alternateScreen: true,
     debug: true,
   },
-)
+);
 ```
 
 ### Programmatic Re-render
 
 ```tsx
-import { render, Text, createTerm } from "silvery"
+import { render, Text, createTerm } from "silvery";
 
-using term = createTerm()
+using term = createTerm();
 
-const { rerender } = await render(<Text>Count: 0</Text>, term)
+const { rerender } = await render(<Text>Count: 0</Text>, term);
 
-let count = 0
+let count = 0;
 setInterval(() => {
-  count++
-  rerender(<Text>Count: {count}</Text>)
-}, 1000)
+  count++;
+  rerender(<Text>Count: {count}</Text>);
+}, 1000);
 ```
 
 ### Async App with waitUntilExit
 
 ```tsx
-import { render, Box, Text, useApp, useInput, createTerm } from "silvery"
+import { render, Box, Text, useApp, useInput, createTerm } from "silvery";
 
 function App() {
-  const { exit } = useApp()
+  const { exit } = useApp();
 
   useInput((input) => {
     if (input === "q") {
-      exit()
+      exit();
     }
-  })
+  });
 
   return (
     <Box>
       <Text>Press 'q' to quit</Text>
     </Box>
-  )
+  );
 }
 
 async function main() {
-  using term = createTerm()
+  using term = createTerm();
 
-  const { waitUntilExit } = await render(<App />, term)
+  const { waitUntilExit } = await render(<App />, term);
 
-  await waitUntilExit()
-  console.log("App exited!")
+  await waitUntilExit();
+  console.log("App exited!");
 }
 
-main()
+main();
 ```
 
 ### Alternate Screen Mode
 
 ```tsx
-import { render, Box, Text, createTerm } from "silvery"
+import { render, Box, Text, createTerm } from "silvery";
 
-using term = createTerm()
+using term = createTerm();
 
 // Uses alternate screen buffer - terminal is restored on exit
 const { waitUntilExit } = await render(
@@ -143,28 +147,28 @@ const { waitUntilExit } = await render(
     <Text>Terminal will be restored when you exit</Text>
   </Box>,
   { alternateScreen: true },
-)
+);
 
-await waitUntilExit()
+await waitUntilExit();
 ```
 
 ### Using Term in Components
 
 ```tsx
-import { render, Box, Text, useTerm, createTerm } from "silvery"
+import { render, Box, Text, useTerm, createTerm } from "silvery";
 
 function ColoredOutput() {
-  const term = useTerm()
+  const term = useTerm();
 
   return (
     <Box>
       <Text>{term.green("Success!")} Operation completed.</Text>
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
-await render(<ColoredOutput />, term)
+using term = createTerm();
+await render(<ColoredOutput />, term);
 ```
 
 ## Synchronous Variant
@@ -172,15 +176,15 @@ await render(<ColoredOutput />, term)
 For cases where Yoga is already initialized, use `renderSync`:
 
 ```tsx
-import { render, renderSync, Text, createTerm } from "silvery"
+import { render, renderSync, Text, createTerm } from "silvery";
 
-using term = createTerm()
+using term = createTerm();
 
 // Initialize Yoga with first render
-await render(<Text>Loading...</Text>, term)
+await render(<Text>Loading...</Text>, term);
 
 // Subsequent renders can be synchronous
-const instance = renderSync(<Text>Ready!</Text>, term)
+const instance = renderSync(<Text>Ready!</Text>, term);
 ```
 
 ## Notes

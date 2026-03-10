@@ -9,15 +9,15 @@ Silvery provides best-in-class terminal input handling: full Kitty keyboard prot
 Standard terminal input that works everywhere. Handles arrow keys, function keys, Ctrl combinations, Alt/Meta sequences, and printable characters.
 
 ```tsx
-import { useInput, type Key } from "@silvery/term/runtime"
+import { useInput, type Key } from "@silvery/term/runtime";
 
 useInput((input, key) => {
-  if (input === "j" || key.downArrow) moveDown()
-  if (key.ctrl && input === "s") save()
-  if (key.meta && input === "p") openPalette() // ⌥P
-  if (key.return) submit()
-  if (input === "q") return "exit"
-})
+  if (input === "j" || key.downArrow) moveDown();
+  if (key.ctrl && input === "s") save();
+  if (key.meta && input === "p") openPalette(); // ⌥P
+  if (key.return) submit();
+  if (input === "q") return "exit";
+});
 ```
 
 **Limitations**: Legacy ANSI cannot distinguish Cmd ⌘ from other modifiers, cannot report key release events, and many key combinations produce ambiguous sequences.
@@ -37,29 +37,29 @@ The [Kitty protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/) elimina
 #### Enabling in Your App
 
 ```tsx
-import { run } from "@silvery/term/runtime"
-import { KittyFlags } from "@silvery/term"
+import { run } from "@silvery/term/runtime";
+import { KittyFlags } from "@silvery/term";
 
 // Auto-detect: query terminal, enable if supported, disable on cleanup
-await run(<App />, { kitty: true })
+await run(<App />, { kitty: true });
 
 // Specific flags for advanced features
 await run(<App />, {
   kitty: KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS,
-})
+});
 ```
 
 #### Using Cmd ⌘ and Hyper ✦
 
 ```tsx
 useInput((input, key) => {
-  if (key.super && input === "s") save() // ⌘S
+  if (key.super && input === "s") save(); // ⌘S
   if (key.super && key.shift && input === "p") {
     // ⌘⇧P
-    openCommandPalette()
+    openCommandPalette();
   }
-  if (key.hyper && input === "j") hyperJump() // ✦J
-})
+  if (key.hyper && input === "j") hyperJump(); // ✦J
+});
 ```
 
 #### Event Types (Press/Repeat/Release)
@@ -69,14 +69,14 @@ Requires `KittyFlags.REPORT_EVENTS`:
 ```tsx
 await run(<App />, {
   kitty: KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS,
-})
+});
 
 // In your component:
 useInput((input, key) => {
-  if (key.eventType === 1) onKeyDown(input) // Press
-  if (key.eventType === 2) onKeyHeld(input) // Repeat (key held down)
-  if (key.eventType === 3) onKeyUp(input) // Release
-})
+  if (key.eventType === 1) onKeyDown(input); // Press
+  if (key.eventType === 2) onKeyHeld(input); // Repeat (key held down)
+  if (key.eventType === 3) onKeyUp(input); // Release
+});
 ```
 
 #### Extended Key Fields
@@ -96,24 +96,24 @@ The `ParsedKeypress` object (from `parseKeypress()`) includes additional Kitty f
 Detect whether the terminal supports Kitty protocol before enabling:
 
 ```tsx
-import { detectKittyFromStdio } from "@silvery/term"
+import { detectKittyFromStdio } from "@silvery/term";
 
-const result = await detectKittyFromStdio(process.stdout, process.stdin)
+const result = await detectKittyFromStdio(process.stdout, process.stdin);
 if (result.supported) {
-  console.log(`Kitty protocol supported, flags: ${result.flags}`)
+  console.log(`Kitty protocol supported, flags: ${result.flags}`);
 }
 ```
 
 Low-level detection for custom I/O:
 
 ```tsx
-import { detectKittySupport } from "@silvery/term"
+import { detectKittySupport } from "@silvery/term";
 
 const result = await detectKittySupport(
   (s) => socket.write(s),
   (ms) => readWithTimeout(socket, ms),
   200, // timeout in ms
-)
+);
 ```
 
 #### Low-Level Protocol Control
@@ -121,11 +121,16 @@ const result = await detectKittySupport(
 For manual protocol management (auto-enable handles this for you):
 
 ```tsx
-import { enableKittyKeyboard, disableKittyKeyboard, queryKittyKeyboard, KittyFlags } from "@silvery/term"
+import {
+  enableKittyKeyboard,
+  disableKittyKeyboard,
+  queryKittyKeyboard,
+  KittyFlags,
+} from "@silvery/term";
 
-stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS))
+stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS));
 // ... app runs ...
-stdout.write(disableKittyKeyboard()) // Restore previous mode
+stdout.write(disableKittyKeyboard()); // Restore previous mode
 ```
 
 #### KittyFlags Reference
@@ -162,10 +167,10 @@ Silvery supports SGR mouse tracking for click, drag, scroll, and motion events w
 #### Enabling in Your App
 
 ```tsx
-await run(<App />, { mouse: true })
+await run(<App />, { mouse: true });
 
 // Combine with Kitty for full input support
-await run(<App />, { kitty: true, mouse: true })
+await run(<App />, { kitty: true, mouse: true });
 ```
 
 #### Mouse Event Handling
@@ -173,10 +178,10 @@ await run(<App />, { kitty: true, mouse: true })
 Mouse events flow through the runtime event system. The `ParsedMouse` type describes each event:
 
 ```tsx
-import { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/term"
+import { parseMouseSequence, isMouseSequence, type ParsedMouse } from "@silvery/term";
 
 // Manual parsing (runtime handles this automatically)
-const event = parseMouseSequence("\x1b[<0;10;5M")
+const event = parseMouseSequence("\x1b[<0;10;5M");
 // → { button: 0, x: 9, y: 4, action: "down", shift: false, meta: false, ctrl: false }
 ```
 
@@ -239,23 +244,23 @@ All three are enabled/disabled together by `enableMouse()`/`disableMouse()`.
 Parse a hotkey string into its base key and modifier flags. Supports multiple formats:
 
 ```tsx
-import { parseHotkey } from "@silvery/term"
+import { parseHotkey } from "@silvery/term";
 
 // Playwright-style (plus-separated)
-parseHotkey("Control+c") // { key: 'c', ctrl: true, ... }
-parseHotkey("Shift+ArrowUp") // { key: 'ArrowUp', shift: true, ... }
-parseHotkey("Super+Shift+p") // { key: 'p', super: true, shift: true, ... }
+parseHotkey("Control+c"); // { key: 'c', ctrl: true, ... }
+parseHotkey("Shift+ArrowUp"); // { key: 'ArrowUp', shift: true, ... }
+parseHotkey("Super+Shift+p"); // { key: 'p', super: true, shift: true, ... }
 
 // Lowercase aliases
-parseHotkey("ctrl+c") // { key: 'c', ctrl: true, ... }
-parseHotkey("cmd+s") // { key: 's', super: true, ... }
-parseHotkey("opt+x") // { key: 'x', alt: true, ... }
+parseHotkey("ctrl+c"); // { key: 'c', ctrl: true, ... }
+parseHotkey("cmd+s"); // { key: 's', super: true, ... }
+parseHotkey("opt+x"); // { key: 'x', alt: true, ... }
 
 // macOS symbol prefix (no + needed)
-parseHotkey("⌘j") // { key: 'j', super: true, ... }
-parseHotkey("⌃⇧a") // { key: 'a', ctrl: true, shift: true, ... }
-parseHotkey("✦⌘x") // { key: 'x', hyper: true, super: true, ... }
-parseHotkey("⌥⌘p") // { key: 'p', alt: true, super: true, ... }
+parseHotkey("⌘j"); // { key: 'j', super: true, ... }
+parseHotkey("⌃⇧a"); // { key: 'a', ctrl: true, shift: true, ... }
+parseHotkey("✦⌘x"); // { key: 'x', hyper: true, super: true, ... }
+parseHotkey("⌥⌘p"); // { key: 'p', alt: true, super: true, ... }
 ```
 
 ### matchHotkey
@@ -263,28 +268,28 @@ parseHotkey("⌥⌘p") // { key: 'p', alt: true, super: true, ... }
 Match a parsed hotkey against a live key event:
 
 ```tsx
-import { parseHotkey, matchHotkey } from "@silvery/term"
+import { parseHotkey, matchHotkey } from "@silvery/term";
 
-const saveHotkey = parseHotkey("⌘s")
+const saveHotkey = parseHotkey("⌘s");
 
 useInput((input, key) => {
   if (matchHotkey(saveHotkey, key, input)) {
-    save()
+    save();
   }
-})
+});
 ```
 
 ### ParsedHotkey Type
 
 ```tsx
 interface ParsedHotkey {
-  key: string // Base key name or character
-  ctrl: boolean // ⌃ Control
-  meta: boolean // Meta
-  shift: boolean // ⇧ Shift
-  alt: boolean // ⌥ Alt/Option
-  super: boolean // ⌘ Cmd/Super
-  hyper: boolean // ✦ Hyper
+  key: string; // Base key name or character
+  ctrl: boolean; // ⌃ Control
+  meta: boolean; // Meta
+  shift: boolean; // ⇧ Shift
+  alt: boolean; // ⌥ Alt/Option
+  super: boolean; // ⌘ Cmd/Super
+  hyper: boolean; // ✦ Hyper
 }
 ```
 
@@ -322,8 +327,8 @@ Both `run()` and `createApp().run()` accept input protocol options:
 
 ```tsx
 interface RunOptions {
-  kitty?: boolean | number // true = auto-detect, number = specific KittyFlags
-  mouse?: boolean // true = enable SGR mouse tracking
+  kitty?: boolean | number; // true = auto-detect, number = specific KittyFlags
+  mouse?: boolean; // true = enable SGR mouse tracking
   // ... other options
 }
 ```

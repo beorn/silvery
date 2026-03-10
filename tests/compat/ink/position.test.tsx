@@ -2,14 +2,14 @@
  * Ink compat test: position (from ink/test/position.tsx)
  * Skips tests that use Ink's render() with {stdout, debug} options
  */
-import React from "react"
-import { test, expect, beforeAll } from "vitest"
-import { Box, Text } from "../../../packages/compat/src/ink"
-import { renderToString, renderToStringAsync, initLayoutEngine } from "./helpers/render-to-string"
+import React from "react";
+import { test, expect, beforeAll } from "vitest";
+import { Box, Text } from "../../../packages/compat/src/ink";
+import { renderToString, renderToStringAsync, initLayoutEngine } from "./helpers/render-to-string";
 
 beforeAll(async () => {
-  await initLayoutEngine()
-})
+  await initLayoutEngine();
+});
 
 test("absolute position with top and left offsets", () => {
   const output = renderToString(
@@ -18,9 +18,9 @@ test("absolute position with top and left offsets", () => {
         <Text>X</Text>
       </Box>
     </Box>,
-  )
-  expect(output).toBe("\n  X\n")
-})
+  );
+  expect(output).toBe("\n  X\n");
+});
 
 test("absolute position with bottom and right offsets", () => {
   const output = renderToString(
@@ -29,9 +29,9 @@ test("absolute position with bottom and right offsets", () => {
         <Text>X</Text>
       </Box>
     </Box>,
-  )
-  expect(output).toBe("\n\n    X\n")
-})
+  );
+  expect(output).toBe("\n\n    X\n");
+});
 
 test("absolute position with percentage offsets", () => {
   const output = renderToString(
@@ -40,9 +40,9 @@ test("absolute position with percentage offsets", () => {
         <Text>X</Text>
       </Box>
     </Box>,
-  )
-  expect(output).toBe("\n\n   X\n")
-})
+  );
+  expect(output).toBe("\n\n   X\n");
+});
 
 test("absolute position with percentage bottom and right offsets", () => {
   const output = renderToString(
@@ -51,9 +51,9 @@ test("absolute position with percentage bottom and right offsets", () => {
         <Text>X</Text>
       </Box>
     </Box>,
-  )
-  expect(output).toBe("\n  X\n\n")
-})
+  );
+  expect(output).toBe("\n  X\n\n");
+});
 
 test("relative position offsets visual position while keeping flow", () => {
   const output = renderToString(
@@ -63,9 +63,9 @@ test("relative position offsets visual position while keeping flow", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe(" BA")
-})
+  );
+  expect(output).toBe(" BA");
+});
 
 test("static position ignores offsets", () => {
   const output = renderToString(
@@ -75,9 +75,9 @@ test("static position ignores offsets", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("AB")
-})
+  );
+  expect(output).toBe("AB");
+});
 
 test("static position ignores percentage offsets", () => {
   const output = renderToString(
@@ -87,9 +87,9 @@ test("static position ignores percentage offsets", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("AB")
-})
+  );
+  expect(output).toBe("AB");
+});
 
 test("absolute position - async", async () => {
   const output = await renderToStringAsync(
@@ -98,6 +98,6 @@ test("absolute position - async", async () => {
         <Text>X</Text>
       </Box>
     </Box>,
-  )
-  expect(output).toBe("\n  X\n")
-})
+  );
+  expect(output).toBe("\n  X\n");
+});

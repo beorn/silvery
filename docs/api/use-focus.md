@@ -11,7 +11,7 @@ Tree-based focus system hooks for managing focus state and navigation.
 ## Import
 
 ```tsx
-import { useFocusable, useFocusWithin, useFocusManager } from "silvery"
+import { useFocusable, useFocusWithin, useFocusManager } from "silvery";
 ```
 
 ## useFocusable
@@ -22,7 +22,7 @@ Returns focus state for the nearest focusable ancestor. The component must be re
 
 ```tsx
 function FocusableItem({ label }: { label: string }) {
-  const { focused } = useFocusable()
+  const { focused } = useFocusable();
 
   return (
     <Box testID="item" focusable>
@@ -31,7 +31,7 @@ function FocusableItem({ label }: { label: string }) {
         {label}
       </Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -52,14 +52,14 @@ Returns whether any descendant of the specified Box (by `testID`) has focus.
 
 ```tsx
 function Sidebar() {
-  const hasFocus = useFocusWithin("sidebar")
+  const hasFocus = useFocusWithin("sidebar");
 
   return (
     <Box testID="sidebar" borderColor={hasFocus ? "blue" : "gray"}>
       <FocusableItem testID="item1" />
       <FocusableItem testID="item2" />
     </Box>
-  )
+  );
 }
 ```
 
@@ -83,7 +83,7 @@ Access the focus manager for programmatic focus control across all focusable com
 
 ```tsx
 function App() {
-  const { activeId, focused, focusNext, focusPrev, blur } = useFocusManager()
+  const { activeId, focused, focusNext, focusPrev, blur } = useFocusManager();
 
   return (
     <Box flexDirection="column">
@@ -92,7 +92,7 @@ function App() {
       <FocusableItem label="Second" />
       <FocusableItem label="Third" />
     </Box>
-  )
+  );
 }
 ```
 
@@ -140,13 +140,13 @@ Focus behavior is configured via props on `<Box>`:
 
 ```tsx
 function Button({ label }: { label: string }) {
-  const { focused } = useFocusable()
+  const { focused } = useFocusable();
 
   return (
     <Box testID={label} focusable borderStyle={focused ? "double" : "single"}>
       <Text inverse={focused}>{label}</Text>
     </Box>
-  )
+  );
 }
 
 function Form() {
@@ -156,7 +156,7 @@ function Form() {
       <Button label="Cancel" />
       <Button label="Help" />
     </Box>
-  )
+  );
 }
 ```
 
@@ -164,14 +164,14 @@ function Form() {
 
 ```tsx
 function SearchInput() {
-  const { focused } = useFocusable()
+  const { focused } = useFocusable();
 
   return (
     <Box testID="search" focusable autoFocus borderStyle={focused ? "double" : "single"}>
       <Text>Search: </Text>
       <Text inverse={focused}>_</Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -185,7 +185,7 @@ function Dialog() {
       <Button label="OK" />
       <Button label="Cancel" />
     </Box>
-  )
+  );
 }
 ```
 
@@ -193,13 +193,13 @@ function Dialog() {
 
 ```tsx
 function Navigation() {
-  const { focus } = useFocusManager()
+  const { focus } = useFocusManager();
 
   useInput((input) => {
-    if (input === "1") focus("first")
-    if (input === "2") focus("second")
-    if (input === "3") focus("third")
-  })
+    if (input === "1") focus("first");
+    if (input === "2") focus("second");
+    if (input === "3") focus("third");
+  });
 
   return (
     <Box flexDirection="column">
@@ -207,17 +207,17 @@ function Navigation() {
       <FocusableItem testID="second" label="Second (2)" />
       <FocusableItem testID="third" label="Third (3)" />
     </Box>
-  )
+  );
 }
 
 function FocusableItem({ testID, label }: { testID: string; label: string }) {
-  const { focused } = useFocusable()
+  const { focused } = useFocusable();
 
   return (
     <Box testID={testID} focusable>
       <Text inverse={focused}>{label}</Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -225,13 +225,13 @@ function FocusableItem({ testID, label }: { testID: string; label: string }) {
 
 ```tsx
 function Panel({ id, children }: { id: string; children: React.ReactNode }) {
-  const hasFocus = useFocusWithin(id)
+  const hasFocus = useFocusWithin(id);
 
   return (
     <Box testID={id} borderColor={hasFocus ? "cyan" : "gray"}>
       {children}
     </Box>
-  )
+  );
 }
 
 function Layout() {
@@ -246,7 +246,7 @@ function Layout() {
         <FocusableItem testID="content2" label="Content 2" />
       </Panel>
     </Box>
-  )
+  );
 }
 ```
 
@@ -254,14 +254,14 @@ function Layout() {
 
 ```tsx
 function MenuItem({ label, onSelect }: { label: string; onSelect: () => void }) {
-  const { focused } = useFocusable()
+  const { focused } = useFocusable();
 
   return (
     <Box
       testID={label}
       focusable
       onKeyDown={(e) => {
-        if (e.key === "Enter") onSelect()
+        if (e.key === "Enter") onSelect();
       }}
     >
       <Text color={focused ? "cyan" : undefined}>
@@ -269,7 +269,7 @@ function MenuItem({ label, onSelect }: { label: string; onSelect: () => void }) 
         {label}
       </Text>
     </Box>
-  )
+  );
 }
 ```
 

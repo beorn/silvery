@@ -10,9 +10,14 @@
  * - Delegates to adapter for text measurement and styling
  */
 
-import { type RenderBuffer, type RenderStyle, getRenderAdapter, hasRenderAdapter } from "../render-adapter"
-import type { BoxProps, TeaNode, Rect, TextProps } from "@silvery/tea/types"
-import { getBorderSize, getPadding } from "./helpers"
+import {
+  type RenderBuffer,
+  type RenderStyle,
+  getRenderAdapter,
+  hasRenderAdapter,
+} from "../render-adapter";
+import type { BoxProps, TeaNode, Rect, TextProps } from "@silvery/tea/types";
+import { getBorderSize, getPadding } from "./helpers";
 
 // ============================================================================
 // Main Entry Point
@@ -26,19 +31,19 @@ import { getBorderSize, getPadding } from "./helpers"
  */
 export function contentPhaseAdapter(root: TeaNode): RenderBuffer {
   if (!hasRenderAdapter()) {
-    throw new Error("contentPhaseAdapter called without a render adapter set")
+    throw new Error("contentPhaseAdapter called without a render adapter set");
   }
 
-  const layout = root.contentRect
+  const layout = root.contentRect;
   if (!layout) {
-    throw new Error("contentPhaseAdapter called before layout phase")
+    throw new Error("contentPhaseAdapter called before layout phase");
   }
 
-  const adapter = getRenderAdapter()
-  const buffer = adapter.createBuffer(layout.width, layout.height)
+  const adapter = getRenderAdapter();
+  const buffer = adapter.createBuffer(layout.width, layout.height);
 
-  renderNodeToBuffer(root, buffer)
-  return buffer
+  renderNodeToBuffer(root, buffer);
+  return buffer;
 }
 
 // ============================================================================
@@ -54,51 +59,51 @@ function renderNodeToBuffer(
   scrollOffset = 0,
   clipBounds?: { top: number; bottom: number },
 ): void {
-  const layout = node.contentRect
-  if (!layout) return
+  const layout = node.contentRect;
+  if (!layout) return;
 
   // Skip nodes without layout (raw text and virtual text nodes)
-  if (!node.layoutNode) return
+  if (!node.layoutNode) return;
 
   // Skip hidden nodes (Suspense support)
-  if (node.hidden) return
+  if (node.hidden) return;
 
-  const props = node.props as BoxProps & TextProps
+  const props = node.props as BoxProps & TextProps;
 
   // Skip display="none" nodes
-  if (props.display === "none") return
+  if (props.display === "none") return;
 
   // Check if this is a scrollable container
-  const isScrollContainer = props.overflow === "scroll" && node.scrollState
+  const isScrollContainer = props.overflow === "scroll" && node.scrollState;
 
   // Render based on node type
   if (node.type === "silvery-box") {
-    renderBox(node, buffer, layout, props, clipBounds, scrollOffset)
+    renderBox(node, buffer, layout, props, clipBounds, scrollOffset);
 
     // Scroll indicators
     if (isScrollContainer && node.scrollState) {
-      renderScrollIndicators(node, buffer, layout, props, node.scrollState)
+      renderScrollIndicators(node, buffer, layout, props, node.scrollState);
     }
   } else if (node.type === "silvery-text") {
-    renderText(node, buffer, layout, props, scrollOffset, clipBounds)
+    renderText(node, buffer, layout, props, scrollOffset, clipBounds);
   }
 
   // Render children
   if (isScrollContainer && node.scrollState) {
-    renderScrollContainerChildren(node, buffer, props, clipBounds)
+    renderScrollContainerChildren(node, buffer, props, clipBounds);
   } else {
-    renderNormalChildren(node, buffer, scrollOffset, props, clipBounds)
+    renderNormalChildren(node, buffer, scrollOffset, props, clipBounds);
   }
 
   // Render outline AFTER children — outline overlaps content at edges
   if (node.type === "silvery-box" && props.outlineStyle) {
-    const { x, width, height } = layout
-    const outlineY = layout.y - scrollOffset
-    renderOutlineAdapter(buffer, x, outlineY, width, height, props, clipBounds)
+    const { x, width, height } = layout;
+    const outlineY = layout.y - scrollOffset;
+    renderOutlineAdapter(buffer, x, outlineY, width, height, props, clipBounds);
   }
 
   // Clear content dirty flag
-  node.contentDirty = false
+  node.contentDirty = false;
 }
 
 // ============================================================================
@@ -116,32 +121,32 @@ function renderBox(
   clipBounds?: { top: number; bottom: number },
   scrollOffset = 0,
 ): void {
-  const { x, width, height } = layout
-  const y = layout.y - scrollOffset
+  const { x, width, height } = layout;
+  const y = layout.y - scrollOffset;
 
   // Skip if completely outside clip bounds
   if (clipBounds && (y + height <= clipBounds.top || y >= clipBounds.bottom)) {
-    return
+    return;
   }
 
   // Fill background if set
   if (props.backgroundColor) {
-    const style: RenderStyle = { bg: props.backgroundColor }
+    const style: RenderStyle = { bg: props.backgroundColor };
 
     if (clipBounds) {
-      const clippedY = Math.max(y, clipBounds.top)
-      const clippedHeight = Math.min(y + height, clipBounds.bottom) - clippedY
+      const clippedY = Math.max(y, clipBounds.top);
+      const clippedHeight = Math.min(y + height, clipBounds.bottom) - clippedY;
       if (clippedHeight > 0) {
-        buffer.fillRect(x, clippedY, width, clippedHeight, style)
+        buffer.fillRect(x, clippedY, width, clippedHeight, style);
       }
     } else {
-      buffer.fillRect(x, y, width, height, style)
+      buffer.fillRect(x, y, width, height, style);
     }
   }
 
   // Render border if set
   if (props.borderStyle) {
-    renderBorder(buffer, x, y, width, height, props, clipBounds)
+    renderBorder(buffer, x, y, width, height, props, clipBounds);
   }
 }
 
@@ -157,17 +162,19 @@ function renderBorder(
   props: BoxProps,
   clipBounds?: { top: number; bottom: number },
 ): void {
-  const adapter = getRenderAdapter()
-  const chars = adapter.getBorderChars(props.borderStyle ?? "single")
-  const style: RenderStyle = props.borderColor ? { fg: props.borderColor } : {}
+  const adapter = getRenderAdapter();
+  const chars = adapter.getBorderChars(props.borderStyle ?? "single");
+  const style: RenderStyle = props.borderColor ? { fg: props.borderColor } : {};
 
-  const showTop = props.borderTop !== false
-  const showBottom = props.borderBottom !== false
-  const showLeft = props.borderLeft !== false
-  const showRight = props.borderRight !== false
+  const showTop = props.borderTop !== false;
+  const showBottom = props.borderBottom !== false;
+  const showLeft = props.borderLeft !== false;
+  const showRight = props.borderRight !== false;
 
   const isRowVisible = (row: number): boolean =>
-    clipBounds ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row) : buffer.inBounds(0, row)
+    clipBounds
+      ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row)
+      : buffer.inBounds(0, row);
 
   // Top border
   if (showTop && isRowVisible(y)) {
@@ -182,13 +189,13 @@ function renderBorder(
       chars.topRight,
       chars.horizontal,
       style,
-    )
+    );
   }
 
   // Side borders — extend range when top/bottom borders are hidden
-  const rightVertical = chars.rightVertical ?? chars.vertical
-  const sideStart = showTop ? y + 1 : y
-  const sideEnd = showBottom ? y + height - 1 : y + height
+  const rightVertical = chars.rightVertical ?? chars.vertical;
+  const sideStart = showTop ? y + 1 : y;
+  const sideEnd = showBottom ? y + height - 1 : y + height;
   renderSideBorders(
     buffer,
     x,
@@ -201,11 +208,11 @@ function renderBorder(
     rightVertical,
     style,
     isRowVisible,
-  )
+  );
 
   // Bottom border
-  const bottomHorizontal = chars.bottomHorizontal ?? chars.horizontal
-  const bottomY = y + height - 1
+  const bottomHorizontal = chars.bottomHorizontal ?? chars.horizontal;
+  const bottomY = y + height - 1;
   if (showBottom && isRowVisible(bottomY)) {
     renderHorizontalBorder(
       buffer,
@@ -218,7 +225,7 @@ function renderBorder(
       chars.bottomRight,
       bottomHorizontal,
       style,
-    )
+    );
   }
 }
 
@@ -234,14 +241,14 @@ function renderHorizontalBorder(
   horizontal: string,
   style: RenderStyle,
 ): void {
-  if (showLeft) buffer.drawChar(x, row, leftCorner, style)
+  if (showLeft) buffer.drawChar(x, row, leftCorner, style);
   for (let col = x + 1; col < x + width - 1; col++) {
     if (buffer.inBounds(col, row)) {
-      buffer.drawChar(col, row, horizontal, style)
+      buffer.drawChar(col, row, horizontal, style);
     }
   }
   if (showRight && buffer.inBounds(x + width - 1, row)) {
-    buffer.drawChar(x + width - 1, row, rightCorner, style)
+    buffer.drawChar(x + width - 1, row, rightCorner, style);
   }
 }
 
@@ -259,10 +266,10 @@ function renderSideBorders(
   isRowVisible: (row: number) => boolean,
 ): void {
   for (let row = startRow; row < endRow; row++) {
-    if (!isRowVisible(row)) continue
-    if (showLeft) buffer.drawChar(x, row, leftVertical, style)
+    if (!isRowVisible(row)) continue;
+    if (showLeft) buffer.drawChar(x, row, leftVertical, style);
     if (showRight && buffer.inBounds(x + width - 1, row)) {
-      buffer.drawChar(x + width - 1, row, rightVertical, style)
+      buffer.drawChar(x + width - 1, row, rightVertical, style);
     }
   }
 }
@@ -286,22 +293,35 @@ function renderOutlineAdapter(
   props: BoxProps,
   clipBounds?: { top: number; bottom: number },
 ): void {
-  const adapter = getRenderAdapter()
-  const chars = adapter.getBorderChars(props.outlineStyle ?? "single")
-  const style: RenderStyle = {}
-  if (props.outlineColor) style.fg = props.outlineColor
-  if (props.outlineDimColor) style.attrs = { dim: true }
+  const adapter = getRenderAdapter();
+  const chars = adapter.getBorderChars(props.outlineStyle ?? "single");
+  const style: RenderStyle = {};
+  if (props.outlineColor) style.fg = props.outlineColor;
+  if (props.outlineDimColor) style.attrs = { dim: true };
 
   const isRowVisible = (row: number): boolean =>
-    clipBounds ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row) : buffer.inBounds(0, row)
+    clipBounds
+      ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row)
+      : buffer.inBounds(0, row);
 
   // Top border
   if (isRowVisible(y)) {
-    renderHorizontalBorder(buffer, x, y, width, true, true, chars.topLeft, chars.topRight, chars.horizontal, style)
+    renderHorizontalBorder(
+      buffer,
+      x,
+      y,
+      width,
+      true,
+      true,
+      chars.topLeft,
+      chars.topRight,
+      chars.horizontal,
+      style,
+    );
   }
 
   // Side borders
-  const outRightVertical = chars.rightVertical ?? chars.vertical
+  const outRightVertical = chars.rightVertical ?? chars.vertical;
   renderSideBorders(
     buffer,
     x,
@@ -314,11 +334,11 @@ function renderOutlineAdapter(
     outRightVertical,
     style,
     isRowVisible,
-  )
+  );
 
   // Bottom border
-  const outBottomHorizontal = chars.bottomHorizontal ?? chars.horizontal
-  const bottomY = y + height - 1
+  const outBottomHorizontal = chars.bottomHorizontal ?? chars.horizontal;
+  const bottomY = y + height - 1;
   if (isRowVisible(bottomY)) {
     renderHorizontalBorder(
       buffer,
@@ -331,7 +351,7 @@ function renderOutlineAdapter(
       chars.bottomRight,
       outBottomHorizontal,
       style,
-    )
+    );
   }
 }
 
@@ -344,13 +364,13 @@ function renderOutlineAdapter(
  * Mirrors findInheritedBg() in content-phase.ts.
  */
 function findAncestorBg(node: TeaNode): string | undefined {
-  let current = node.parent
+  let current = node.parent;
   while (current) {
-    const bg = (current.props as BoxProps).backgroundColor
-    if (bg) return bg
-    current = current.parent
+    const bg = (current.props as BoxProps).backgroundColor;
+    if (bg) return bg;
+    current = current.parent;
   }
-  return undefined
+  return undefined;
 }
 
 /**
@@ -364,18 +384,24 @@ function renderText(
   scrollOffset = 0,
   clipBounds?: { top: number; bottom: number },
 ): void {
-  const { x } = layout
-  const y = layout.y - scrollOffset
+  const { x } = layout;
+  const y = layout.y - scrollOffset;
 
   // Collect text content from children
-  const text = collectTextContent(node)
-  if (!text) return
+  const text = collectTextContent(node);
+  if (!text) return;
 
   // Map underline style to supported values
-  const underlineStyle = props.underlineStyle as "single" | "double" | "curly" | "dotted" | "dashed" | undefined
+  const underlineStyle = props.underlineStyle as
+    | "single"
+    | "double"
+    | "curly"
+    | "dotted"
+    | "dashed"
+    | undefined;
 
   // Inherit bg from nearest ancestor Box with backgroundColor
-  const inheritedBg = props.backgroundColor ?? findAncestorBg(node)
+  const inheritedBg = props.backgroundColor ?? findAncestorBg(node);
 
   // Build style from props
   const style: RenderStyle = {
@@ -391,15 +417,15 @@ function renderText(
       strikethrough: props.strikethrough,
       inverse: props.inverse,
     },
-  }
+  };
 
   // Simple text rendering - draw at position
   // TODO: Handle wrapping, truncation for canvas (currently simple single-line)
   if (clipBounds && (y < clipBounds.top || y >= clipBounds.bottom)) {
-    return // Skip if outside clip bounds
+    return; // Skip if outside clip bounds
   }
 
-  buffer.drawText(x, y, text, style)
+  buffer.drawText(x, y, text, style);
 }
 
 /**
@@ -408,14 +434,14 @@ function renderText(
 function collectTextContent(node: TeaNode): string {
   // Raw text nodes have textContent set directly
   if (node.isRawText && node.textContent !== undefined) {
-    return node.textContent
+    return node.textContent;
   }
 
-  let result = ""
+  let result = "";
   for (const child of node.children) {
-    result += collectTextContent(child)
+    result += collectTextContent(child);
   }
-  return result
+  return result;
 }
 
 // ============================================================================
@@ -423,16 +449,16 @@ function collectTextContent(node: TeaNode): string {
 // ============================================================================
 
 interface ScrollState {
-  offset: number
-  contentHeight: number
-  viewportHeight: number
-  firstVisibleChild: number
-  lastVisibleChild: number
+  offset: number;
+  contentHeight: number;
+  viewportHeight: number;
+  firstVisibleChild: number;
+  lastVisibleChild: number;
   stickyChildren?: Array<{
-    index: number
-    naturalTop: number
-    renderOffset: number
-  }>
+    index: number;
+    naturalTop: number;
+    renderOffset: number;
+  }>;
 }
 
 /**
@@ -445,29 +471,29 @@ function renderScrollIndicators(
   props: BoxProps,
   scrollState: ScrollState,
 ): void {
-  const { x, width, height } = layout
-  const y = layout.y
+  const { x, width, height } = layout;
+  const y = layout.y;
 
-  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, right: 0 }
-  const canScrollUp = scrollState.offset > 0
-  const canScrollDown = scrollState.offset + scrollState.viewportHeight < scrollState.contentHeight
+  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, right: 0 };
+  const canScrollUp = scrollState.offset > 0;
+  const canScrollDown = scrollState.offset + scrollState.viewportHeight < scrollState.contentHeight;
 
-  const indicatorX = x + width - border.right - 1
-  const style: RenderStyle = { fg: props.borderColor ?? "#808080" }
+  const indicatorX = x + width - border.right - 1;
+  const style: RenderStyle = { fg: props.borderColor ?? "#808080" };
 
   // Up indicator
   if (canScrollUp) {
-    const indicatorY = y + border.top
+    const indicatorY = y + border.top;
     if (buffer.inBounds(indicatorX, indicatorY)) {
-      buffer.drawChar(indicatorX, indicatorY, "▲", style)
+      buffer.drawChar(indicatorX, indicatorY, "▲", style);
     }
   }
 
   // Down indicator
   if (canScrollDown) {
-    const indicatorY = y + height - border.bottom - 1
+    const indicatorY = y + height - border.bottom - 1;
     if (buffer.inBounds(indicatorX, indicatorY)) {
-      buffer.drawChar(indicatorX, indicatorY, "▼", style)
+      buffer.drawChar(indicatorX, indicatorY, "▼", style);
     }
   }
 }
@@ -485,45 +511,47 @@ function renderScrollContainerChildren(
   props: BoxProps,
   clipBounds?: { top: number; bottom: number },
 ): void {
-  const layout = node.contentRect
-  const ss = node.scrollState as ScrollState | undefined
-  if (!layout || !ss) return
+  const layout = node.contentRect;
+  const ss = node.scrollState as ScrollState | undefined;
+  if (!layout || !ss) return;
 
-  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-  const padding = getPadding(props)
+  const border = props.borderStyle
+    ? getBorderSize(props)
+    : { top: 0, bottom: 0, left: 0, right: 0 };
+  const padding = getPadding(props);
 
   const nodeClip = {
     top: layout.y + border.top + padding.top,
     bottom: layout.y + layout.height - border.bottom - padding.bottom,
-  }
+  };
 
   const childClipBounds = clipBounds
     ? {
         top: Math.max(clipBounds.top, nodeClip.top),
         bottom: Math.min(clipBounds.bottom, nodeClip.bottom),
       }
-    : nodeClip
+    : nodeClip;
 
   // Render visible children
   for (let i = 0; i < node.children.length; i++) {
-    const child = node.children[i]
-    if (!child) continue
-    const childProps = child.props as BoxProps
+    const child = node.children[i];
+    if (!child) continue;
+    const childProps = child.props as BoxProps;
 
-    if (childProps.position === "sticky") continue
-    if (i < ss.firstVisibleChild || i > ss.lastVisibleChild) continue
+    if (childProps.position === "sticky") continue;
+    if (i < ss.firstVisibleChild || i > ss.lastVisibleChild) continue;
 
-    renderNodeToBuffer(child, buffer, ss.offset, childClipBounds)
+    renderNodeToBuffer(child, buffer, ss.offset, childClipBounds);
   }
 
   // Render sticky children
   if (ss.stickyChildren) {
     for (const sticky of ss.stickyChildren) {
-      const child = node.children[sticky.index]
-      if (!child?.contentRect) continue
+      const child = node.children[sticky.index];
+      if (!child?.contentRect) continue;
 
-      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset
-      renderNodeToBuffer(child, buffer, stickyScrollOffset, childClipBounds)
+      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset;
+      renderNodeToBuffer(child, buffer, stickyScrollOffset, childClipBounds);
     }
   }
 }
@@ -538,46 +566,48 @@ function renderNormalChildren(
   props: BoxProps,
   clipBounds?: { top: number; bottom: number },
 ): void {
-  const layout = node.contentRect
-  if (!layout) return
+  const layout = node.contentRect;
+  if (!layout) return;
 
-  let effectiveClipBounds = clipBounds
+  let effectiveClipBounds = clipBounds;
 
   if (props.overflow === "hidden") {
-    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-    const padding = getPadding(props)
+    const border = props.borderStyle
+      ? getBorderSize(props)
+      : { top: 0, bottom: 0, left: 0, right: 0 };
+    const padding = getPadding(props);
 
     // Adjust layout position by scrollOffset to get screen coordinates
-    const adjustedY = layout.y - scrollOffset
+    const adjustedY = layout.y - scrollOffset;
     const nodeClip = {
       top: adjustedY + border.top + padding.top,
       bottom: adjustedY + layout.height - border.bottom - padding.bottom,
-    }
+    };
 
     effectiveClipBounds = clipBounds
       ? {
           top: Math.max(clipBounds.top, nodeClip.top),
           bottom: Math.min(clipBounds.bottom, nodeClip.bottom),
         }
-      : nodeClip
+      : nodeClip;
   }
 
-  const hasStickyChildren = !!(node.stickyChildren && node.stickyChildren.length > 0)
+  const hasStickyChildren = !!(node.stickyChildren && node.stickyChildren.length > 0);
 
   // First pass: render non-sticky children
   for (const child of node.children) {
-    const childProps = child.props as BoxProps
-    if (hasStickyChildren && childProps.position === "sticky") continue
-    renderNodeToBuffer(child, buffer, scrollOffset, effectiveClipBounds)
+    const childProps = child.props as BoxProps;
+    if (hasStickyChildren && childProps.position === "sticky") continue;
+    renderNodeToBuffer(child, buffer, scrollOffset, effectiveClipBounds);
   }
 
   // Second pass: render sticky children at their computed positions
   if (node.stickyChildren) {
     for (const sticky of node.stickyChildren) {
-      const child = node.children[sticky.index]
-      if (!child?.contentRect) continue
-      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset
-      renderNodeToBuffer(child, buffer, stickyScrollOffset, effectiveClipBounds)
+      const child = node.children[sticky.index];
+      if (!child?.contentRect) continue;
+      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset;
+      renderNodeToBuffer(child, buffer, stickyScrollOffset, effectiveClipBounds);
     }
   }
 }

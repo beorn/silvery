@@ -2,9 +2,9 @@
  * React Spinner component for silvery/Ink TUI apps
  */
 
-import React, { useState, useEffect } from "react"
-import type { SpinnerProps, SpinnerStyle } from "../types.js"
-import { SPINNER_FRAMES, SPINNER_INTERVALS } from "../cli/spinner"
+import React, { useState, useEffect } from "react";
+import type { SpinnerProps, SpinnerStyle } from "../types.js";
+import { SPINNER_FRAMES, SPINNER_INTERVALS } from "../cli/spinner";
 
 /**
  * Animated spinner component for React TUI apps
@@ -21,20 +21,24 @@ import { SPINNER_FRAMES, SPINNER_INTERVALS } from "../cli/spinner"
  * <Spinner label="Processing..." style="arc" color="yellow" />
  * ```
  */
-export function Spinner({ label, style = "dots", color = "cyan" }: SpinnerProps): React.ReactElement {
-  const [frameIndex, setFrameIndex] = useState(0)
-  const frames = SPINNER_FRAMES[style]
-  const interval = SPINNER_INTERVALS[style]
+export function Spinner({
+  label,
+  style = "dots",
+  color = "cyan",
+}: SpinnerProps): React.ReactElement {
+  const [frameIndex, setFrameIndex] = useState(0);
+  const frames = SPINNER_FRAMES[style];
+  const interval = SPINNER_INTERVALS[style];
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setFrameIndex((i) => (i + 1) % frames.length)
-    }, interval)
+      setFrameIndex((i) => (i + 1) % frames.length);
+    }, interval);
 
-    return () => clearInterval(timer)
-  }, [frames.length, interval])
+    return () => clearInterval(timer);
+  }, [frames.length, interval]);
 
-  const frame = frames[frameIndex]
+  const frame = frames[frameIndex];
 
   // Note: In a real silvery app, you'd use <Text color={color}> etc.
   // This is a generic React component that can be styled by the consumer
@@ -43,7 +47,7 @@ export function Spinner({ label, style = "dots", color = "cyan" }: SpinnerProps)
       {frame}
       {label && <span> {label}</span>}
     </span>
-  )
+  );
 }
 
 /**
@@ -58,17 +62,17 @@ export function Spinner({ label, style = "dots", color = "cyan" }: SpinnerProps)
  * ```
  */
 export function useSpinnerFrame(style: SpinnerStyle = "dots"): string {
-  const [frameIndex, setFrameIndex] = useState(0)
-  const frames = SPINNER_FRAMES[style]
-  const interval = SPINNER_INTERVALS[style]
+  const [frameIndex, setFrameIndex] = useState(0);
+  const frames = SPINNER_FRAMES[style];
+  const interval = SPINNER_INTERVALS[style];
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setFrameIndex((i) => (i + 1) % frames.length)
-    }, interval)
+      setFrameIndex((i) => (i + 1) % frames.length);
+    }, interval);
 
-    return () => clearInterval(timer)
-  }, [frames.length, interval])
+    return () => clearInterval(timer);
+  }, [frames.length, interval]);
 
-  return frames[frameIndex]!
+  return frames[frameIndex]!;
 }

@@ -8,7 +8,7 @@ Both `run()` (Layer 2) and `createApp().run()` (Layer 3) enable lifecycle handli
 
 ```tsx
 // Ctrl+Z suspends, Ctrl+C exits — no config needed
-await run(<App />)
+await run(<App />);
 ```
 
 ## Options
@@ -55,19 +55,19 @@ When the user presses Ctrl+C:
 await run(<App />, {
   onSuspend: () => {
     // Pause background timers before suspend
-    pauseTimers()
+    pauseTimers();
   },
   onResume: () => {
     // Refresh data that may have changed while suspended
-    refetchData()
+    refetchData();
   },
   onInterrupt: () => {
     if (hasUnsavedChanges) {
-      showConfirmDialog()
-      return false // Prevent exit
+      showConfirmDialog();
+      return false; // Prevent exit
     }
   },
-})
+});
 ```
 
 ## Low-Level API
@@ -84,7 +84,7 @@ import {
   CTRL_Z,
   type TerminalLifecycleOptions,
   type TerminalState,
-} from "@silvery/term/runtime"
+} from "@silvery/term/runtime";
 
 // Capture current state
 const state = captureTerminalState({
@@ -93,30 +93,30 @@ const state = captureTerminalState({
   kitty: true,
   kittyFlags: 3,
   bracketedPaste: true,
-})
+});
 
 // Manual suspend/resume
-restoreTerminalState(stdout, stdin) // Before suspend
+restoreTerminalState(stdout, stdin); // Before suspend
 // ... process suspends ...
-resumeTerminalState(state, stdout, stdin) // After resume
+resumeTerminalState(state, stdout, stdin); // After resume
 
 // Or use the all-in-one helper
 performSuspend(state, stdout, stdin, () => {
-  console.log("Resumed!")
-})
+  console.log("Resumed!");
+});
 ```
 
 ### TerminalState
 
 ```typescript
 interface TerminalState {
-  rawMode: boolean
-  alternateScreen: boolean
-  cursorHidden: boolean
-  mouseEnabled: boolean
-  kittyEnabled: boolean
-  kittyFlags: number
-  bracketedPaste: boolean
+  rawMode: boolean;
+  alternateScreen: boolean;
+  cursorHidden: boolean;
+  mouseEnabled: boolean;
+  kittyEnabled: boolean;
+  kittyFlags: number;
+  bracketedPaste: boolean;
 }
 ```
 

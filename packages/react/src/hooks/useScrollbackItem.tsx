@@ -19,7 +19,7 @@
  * ```
  */
 
-import { createContext, useContext, useMemo, type ReactElement, type ReactNode } from "react"
+import { createContext, useContext, useMemo, type ReactElement, type ReactNode } from "react";
 
 // ============================================================================
 // Types
@@ -30,20 +30,20 @@ export interface ScrollbackItemContext {
   /** Signal that this item is complete and should freeze into scrollback.
    *  Optionally pass a snapshot JSX element to use instead of re-rendering
    *  the item's live children. */
-  freeze: (snapshot?: ReactElement) => void
+  freeze: (snapshot?: ReactElement) => void;
   /** Whether this item has already been frozen into scrollback. */
-  isFrozen: boolean
+  isFrozen: boolean;
   /** The index of this item in the items array. */
-  index: number
+  index: number;
   /** True when item is close to the scrollback boundary (Phase 2 feature). */
-  nearScrollback: boolean
+  nearScrollback: boolean;
 }
 
 // ============================================================================
 // Context
 // ============================================================================
 
-const ScrollbackItemCtx = createContext<ScrollbackItemContext | null>(null)
+const ScrollbackItemCtx = createContext<ScrollbackItemContext | null>(null);
 
 // ============================================================================
 // Hook
@@ -56,11 +56,11 @@ const ScrollbackItemCtx = createContext<ScrollbackItemContext | null>(null)
  * Throws if used outside of a ScrollbackList.
  */
 export function useScrollbackItem(): ScrollbackItemContext {
-  const ctx = useContext(ScrollbackItemCtx)
+  const ctx = useContext(ScrollbackItemCtx);
   if (!ctx) {
-    throw new Error("useScrollbackItem() must be used inside a ScrollbackList item")
+    throw new Error("useScrollbackItem() must be used inside a ScrollbackList item");
   }
-  return ctx
+  return ctx;
 }
 
 // ============================================================================
@@ -68,7 +68,7 @@ export function useScrollbackItem(): ScrollbackItemContext {
 // ============================================================================
 
 interface ScrollbackItemProviderProps extends ScrollbackItemContext {
-  children: ReactNode
+  children: ReactNode;
 }
 
 /**
@@ -82,6 +82,9 @@ export function ScrollbackItemProvider({
   index,
   nearScrollback,
 }: ScrollbackItemProviderProps) {
-  const value = useMemo(() => ({ freeze, isFrozen, index, nearScrollback }), [freeze, isFrozen, index, nearScrollback])
-  return <ScrollbackItemCtx.Provider value={value}>{children}</ScrollbackItemCtx.Provider>
+  const value = useMemo(
+    () => ({ freeze, isFrozen, index, nearScrollback }),
+    [freeze, isFrozen, index, nearScrollback],
+  );
+  return <ScrollbackItemCtx.Provider value={value}>{children}</ScrollbackItemCtx.Provider>;
 }

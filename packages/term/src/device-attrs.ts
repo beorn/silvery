@@ -27,16 +27,16 @@
  */
 
 /** Regex for DA1 response: CSI ? params c */
-const DA1_RESPONSE_RE = /\x1b\[\?([\d;]+)c/
+const DA1_RESPONSE_RE = /\x1b\[\?([\d;]+)c/;
 
 /** Regex for DA2 response: CSI > params c */
-const DA2_RESPONSE_RE = /\x1b\[>([\d;]+)c/
+const DA2_RESPONSE_RE = /\x1b\[>([\d;]+)c/;
 
 /** Regex for DA3 response: DCS ! | hex ST */
-const DA3_RESPONSE_RE = /\x1bP!\|([0-9a-fA-F]*)\x1b\\/
+const DA3_RESPONSE_RE = /\x1bP!\|([0-9a-fA-F]*)\x1b\\/;
 
 /** Regex for XTVERSION response: DCS > | text ST */
-const XTVERSION_RESPONSE_RE = /\x1bP>\|([^\x1b]*)\x1b\\/
+const XTVERSION_RESPONSE_RE = /\x1bP>\|([^\x1b]*)\x1b\\/;
 
 // ============================================================================
 // DA1 — Primary Device Attributes
@@ -57,16 +57,16 @@ export async function queryPrimaryDA(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<{ params: number[] } | null> {
-  write("\x1b[c")
+  write("\x1b[c");
 
-  const data = await read(timeoutMs)
-  if (data == null) return null
+  const data = await read(timeoutMs);
+  if (data == null) return null;
 
-  const match = DA1_RESPONSE_RE.exec(data)
-  if (!match) return null
+  const match = DA1_RESPONSE_RE.exec(data);
+  if (!match) return null;
 
-  const params = match[1]!.split(";").map((s) => parseInt(s, 10))
-  return { params }
+  const params = match[1]!.split(";").map((s) => parseInt(s, 10));
+  return { params };
 }
 
 // ============================================================================
@@ -88,22 +88,22 @@ export async function querySecondaryDA(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<{ type: number; version: number; id: number } | null> {
-  write("\x1b[>c")
+  write("\x1b[>c");
 
-  const data = await read(timeoutMs)
-  if (data == null) return null
+  const data = await read(timeoutMs);
+  if (data == null) return null;
 
-  const match = DA2_RESPONSE_RE.exec(data)
-  if (!match) return null
+  const match = DA2_RESPONSE_RE.exec(data);
+  if (!match) return null;
 
-  const parts = match[1]!.split(";")
-  if (parts.length < 3) return null
+  const parts = match[1]!.split(";");
+  if (parts.length < 3) return null;
 
   return {
     type: parseInt(parts[0]!, 10),
     version: parseInt(parts[1]!, 10),
     id: parseInt(parts[2]!, 10),
-  }
+  };
 }
 
 // ============================================================================
@@ -124,15 +124,15 @@ export async function queryTertiaryDA(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<string | null> {
-  write("\x1b[=c")
+  write("\x1b[=c");
 
-  const data = await read(timeoutMs)
-  if (data == null) return null
+  const data = await read(timeoutMs);
+  if (data == null) return null;
 
-  const match = DA3_RESPONSE_RE.exec(data)
-  if (!match) return null
+  const match = DA3_RESPONSE_RE.exec(data);
+  if (!match) return null;
 
-  return match[1]!
+  return match[1]!;
 }
 
 // ============================================================================
@@ -156,15 +156,15 @@ export async function queryTerminalVersion(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<string | null> {
-  write("\x1b[>0q")
+  write("\x1b[>0q");
 
-  const data = await read(timeoutMs)
-  if (data == null) return null
+  const data = await read(timeoutMs);
+  if (data == null) return null;
 
-  const match = XTVERSION_RESPONSE_RE.exec(data)
-  if (!match) return null
+  const match = XTVERSION_RESPONSE_RE.exec(data);
+  if (!match) return null;
 
-  return match[1]!
+  return match[1]!;
 }
 
 // ============================================================================
@@ -173,9 +173,9 @@ export async function queryTerminalVersion(
 
 /** Combined device attributes result. */
 export interface DeviceAttributes {
-  da1: { params: number[] } | null
-  da2: { type: number; version: number; id: number } | null
-  version: string | null
+  da1: { params: number[] } | null;
+  da2: { type: number; version: number; id: number } | null;
+  version: string | null;
 }
 
 /**
@@ -193,36 +193,36 @@ export async function queryDeviceAttributes(
   stdin: NodeJS.ReadStream,
   timeoutMs = 200,
 ): Promise<DeviceAttributes> {
-  const wasRaw = stdin.isRaw
-  if (!wasRaw) stdin.setRawMode(true)
+  const wasRaw = stdin.isRaw;
+  if (!wasRaw) stdin.setRawMode(true);
 
   try {
     const write = (s: string) => {
-      stdout.write(s)
-    }
+      stdout.write(s);
+    };
 
     const read = (ms: number): Promise<string | null> =>
       new Promise((resolve) => {
         const timer = setTimeout(() => {
-          stdin.removeListener("data", onData)
-          resolve(null)
-        }, ms)
+          stdin.removeListener("data", onData);
+          resolve(null);
+        }, ms);
 
         function onData(chunk: Buffer) {
-          clearTimeout(timer)
-          stdin.removeListener("data", onData)
-          resolve(chunk.toString())
+          clearTimeout(timer);
+          stdin.removeListener("data", onData);
+          resolve(chunk.toString());
         }
 
-        stdin.on("data", onData)
-      })
+        stdin.on("data", onData);
+      });
 
-    const da1 = await queryPrimaryDA(write, read, timeoutMs)
-    const da2 = await querySecondaryDA(write, read, timeoutMs)
-    const version = await queryTerminalVersion(write, read, timeoutMs)
+    const da1 = await queryPrimaryDA(write, read, timeoutMs);
+    const da2 = await querySecondaryDA(write, read, timeoutMs);
+    const version = await queryTerminalVersion(write, read, timeoutMs);
 
-    return { da1, da2, version }
+    return { da1, da2, version };
   } finally {
-    if (!wasRaw) stdin.setRawMode(false)
+    if (!wasRaw) stdin.setRawMode(false);
   }
 }

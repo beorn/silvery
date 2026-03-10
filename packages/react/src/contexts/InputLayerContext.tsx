@@ -24,10 +24,10 @@
  * @see docs/future/silvery-command-api-research.md
  */
 
-import type React from "react"
-import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react"
-import type { Key } from "../hooks/useInput"
-import { useInput } from "../hooks/useInput"
+import type React from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef } from "react";
+import type { Key } from "../hooks/useInput";
+import { useInput } from "../hooks/useInput";
 
 // =============================================================================
 // Types
@@ -39,16 +39,16 @@ import { useInput } from "../hooks/useInput"
  * @param key - Key modifier information
  * @returns true if the event was consumed, false to bubble to next layer
  */
-export type InputLayerHandler = (input: string, key: Key) => boolean
+export type InputLayerHandler = (input: string, key: Key) => boolean;
 
 /**
  * A layer in the input stack.
  */
 export interface InputLayer {
   /** Unique identifier for this layer (used for removal) */
-  id: string
+  id: string;
   /** Handler function */
-  handler: InputLayerHandler
+  handler: InputLayerHandler;
 }
 
 /**
@@ -59,32 +59,32 @@ export interface InputLayerContextValue {
    * Push a layer onto the stack.
    * Layers are processed in LIFO order (most recent first).
    */
-  push: (layer: InputLayer) => void
+  push: (layer: InputLayer) => void;
 
   /**
    * Remove a layer from the stack by ID.
    */
-  pop: (id: string) => void
+  pop: (id: string) => void;
 
   /**
    * Dispatch input to the layer stack.
    * Walks stack from top to bottom, stopping when a handler returns true.
    */
-  dispatch: (input: string, key: Key) => void
+  dispatch: (input: string, key: Key) => void;
 }
 
 // =============================================================================
 // Context
 // =============================================================================
 
-const InputLayerContext = createContext<InputLayerContextValue | null>(null)
+const InputLayerContext = createContext<InputLayerContextValue | null>(null);
 
 // =============================================================================
 // Provider
 // =============================================================================
 
 export interface InputLayerProviderProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 /**
@@ -108,26 +108,26 @@ export interface InputLayerProviderProps {
  */
 export function InputLayerProvider({ children }: InputLayerProviderProps): React.JSX.Element {
   // Use ref to avoid re-renders when layers change
-  const layersRef = useRef<InputLayer[]>([])
+  const layersRef = useRef<InputLayer[]>([]);
 
   const push = useCallback((layer: InputLayer) => {
-    const existing = layersRef.current
-    const existingIndex = existing.findIndex((l) => l.id === layer.id)
+    const existing = layersRef.current;
+    const existingIndex = existing.findIndex((l) => l.id === layer.id);
 
     if (existingIndex >= 0) {
       // Update existing layer in place (preserve position)
-      const updated = [...existing]
-      updated[existingIndex] = layer
-      layersRef.current = updated
+      const updated = [...existing];
+      updated[existingIndex] = layer;
+      layersRef.current = updated;
     } else {
       // Add new layer at the end
-      layersRef.current = [...existing, layer]
+      layersRef.current = [...existing, layer];
     }
-  }, [])
+  }, []);
 
   const pop = useCallback((id: string) => {
-    layersRef.current = layersRef.current.filter((l) => l.id !== id)
-  }, [])
+    layersRef.current = layersRef.current.filter((l) => l.id !== id);
+  }, []);
 
   const dispatch = useCallback((input: string, key: Key) => {
     // Walk stack from first-registered (start) to last-registered (end).
@@ -141,25 +141,25 @@ export function InputLayerProvider({ children }: InputLayerProviderProps): React
     // To have child handle first (like DOM event bubbling where the
     // innermost/focused element handles events first), we process
     // from START (index 0) to END.
-    const layers = layersRef.current
+    const layers = layersRef.current;
     for (let i = 0; i < layers.length; i++) {
-      const layer = layers[i]
+      const layer = layers[i];
       if (layer?.handler(input, key)) {
         // Handler consumed the event, stop bubbling
-        return
+        return;
       }
     }
     // Event bubbled through all layers without being consumed
-  }, [])
+  }, []);
 
   // Single useInput at the root that dispatches to layer stack
   useInput((input, key) => {
-    dispatch(input, key)
-  })
+    dispatch(input, key);
+  });
 
-  const contextValue = useMemo(() => ({ push, pop, dispatch }), [push, pop, dispatch])
+  const contextValue = useMemo(() => ({ push, pop, dispatch }), [push, pop, dispatch]);
 
-  return <InputLayerContext.Provider value={contextValue}>{children}</InputLayerContext.Provider>
+  return <InputLayerContext.Provider value={contextValue}>{children}</InputLayerContext.Provider>;
 }
 
 // =============================================================================
@@ -175,11 +175,11 @@ export function InputLayerProvider({ children }: InputLayerProviderProps): React
  * @throws Error if used outside InputLayerProvider
  */
 export function useInputLayerContext(): InputLayerContextValue {
-  const ctx = useContext(InputLayerContext)
+  const ctx = useContext(InputLayerContext);
   if (!ctx) {
-    throw new Error("useInputLayerContext must be used within an InputLayerProvider")
+    throw new Error("useInputLayerContext must be used within an InputLayerProvider");
   }
-  return ctx
+  return ctx;
 }
 
 /**
@@ -214,7 +214,7 @@ export function useInputLayerContext(): InputLayerContextValue {
  * ```
  */
 export function useInputLayer(id: string, handler: InputLayerHandler): void {
-  const ctx = useContext(InputLayerContext)
+  const ctx = useContext(InputLayerContext);
 
   // Use useLayoutEffect for synchronous registration
   // This ensures the handler is registered before the component's first paint
@@ -222,18 +222,18 @@ export function useInputLayer(id: string, handler: InputLayerHandler): void {
     if (!ctx) {
       // Not inside InputLayerProvider - silently no-op
       // This allows components to work in both layered and non-layered contexts
-      return
+      return;
     }
 
-    ctx.push({ id, handler })
+    ctx.push({ id, handler });
     return () => {
-      ctx.pop(id)
-    }
-  }, [ctx, id, handler])
+      ctx.pop(id);
+    };
+  }, [ctx, id, handler]);
 }
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export { InputLayerContext }
+export { InputLayerContext };

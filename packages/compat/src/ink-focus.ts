@@ -10,8 +10,8 @@
  * - useFocusManager returns { focusNext, focusPrevious, focus(id) }
  */
 
-import { useFocusable } from "@silvery/react/hooks/useFocusable"
-import { useFocusManager as useSilveryFocusManager } from "@silvery/react/hooks/useFocusManager"
+import { useFocusable } from "@silvery/react/hooks/useFocusable";
+import { useFocusManager as useSilveryFocusManager } from "@silvery/react/hooks/useFocusManager";
 
 // ============================================================================
 // useFocus (ink-compatible)
@@ -19,16 +19,16 @@ import { useFocusManager as useSilveryFocusManager } from "@silvery/react/hooks/
 
 export interface UseFocusOptions {
   /** Auto-focus this component on mount */
-  autoFocus?: boolean
+  autoFocus?: boolean;
   /** Whether this component is active/focusable (not currently used, kept for API compat) */
-  isActive?: boolean
+  isActive?: boolean;
   /** Unique identifier for this focusable (not currently used, kept for API compat) */
-  id?: string
+  id?: string;
 }
 
 export interface UseFocusResult {
   /** Whether this component is currently focused */
-  isFocused: boolean
+  isFocused: boolean;
 }
 
 /**
@@ -56,8 +56,8 @@ export interface UseFocusResult {
  * ```
  */
 export function useFocus(_opts?: UseFocusOptions): UseFocusResult {
-  const { focused } = useFocusable()
-  return { isFocused: focused }
+  const { focused } = useFocusable();
+  return { isFocused: focused };
 }
 
 // ============================================================================
@@ -66,15 +66,15 @@ export function useFocus(_opts?: UseFocusOptions): UseFocusResult {
 
 export interface InkUseFocusManagerResult {
   /** Focus the next focusable element */
-  focusNext: () => void
+  focusNext: () => void;
   /** Focus the previous focusable element */
-  focusPrevious: () => void
+  focusPrevious: () => void;
   /** Focus a specific element by id */
-  focus: (id: string) => void
+  focus: (id: string) => void;
   /** Enable focus management (no-op, kept for ink API compatibility) */
-  enableFocus: () => void
+  enableFocus: () => void;
   /** Disable focus management (no-op, kept for ink API compatibility) */
-  disableFocus: () => void
+  disableFocus: () => void;
 }
 
 /**
@@ -100,12 +100,12 @@ export interface InkUseFocusManagerResult {
  * ```
  */
 export function useInkFocusManager(): InkUseFocusManagerResult {
-  const fm = useSilveryFocusManager()
+  const fm = useSilveryFocusManager();
   return {
     focusNext: fm.focusNext,
     focusPrevious: fm.focusPrevious,
     focus: (id: string) => fm.focus(id),
     enableFocus: fm.enableFocus,
     disableFocus: fm.disableFocus,
-  }
+  };
 }

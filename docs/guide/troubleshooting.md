@@ -104,8 +104,8 @@ tail -f /tmp/silvery.log
 ### Test Debug
 
 ```tsx
-const app = render(<MyComponent />)
-app.debug() // Print current frame to console
-console.log(app.ansi) // Print with colors
-console.log(app.text) // Print plain text (no ANSI)
+const app = render(<MyComponent />);
+app.debug(); // Print current frame to console
+console.log(app.ansi); // Print with colors
+console.log(app.text); // Print plain text (no ANSI)
 ```

@@ -3,8 +3,8 @@
  * Source: https://github.com/protesilaos/modus-themes
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Modus Vivendi — elegant dark theme with maximum legibility. */
 export const modusVivendi: ColorPalette = {
@@ -32,7 +32,7 @@ export const modusVivendi: ColorPalette = {
   cursorText: "#000000",
   selectionBackground: "#535353",
   selectionForeground: "#FFFFFF",
-}
+};
 
 /** Modus Operandi — elegant light theme with maximum legibility. */
 export const modusOperandi: ColorPalette = {
@@ -60,4 +60,4 @@ export const modusOperandi: ColorPalette = {
   cursorText: "#FFFFFF",
   selectionBackground: "#9F9F9F",
   selectionForeground: "#000000",
-}
+};

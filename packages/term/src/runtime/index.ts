@@ -30,7 +30,7 @@ export type {
   NamespacedEvent,
   ProviderEventKey,
   EventData,
-} from "./types"
+} from "./types";
 
 // Terminal provider
 export {
@@ -39,17 +39,17 @@ export {
   type TermState,
   type TermEvents,
   type TermProviderOptions,
-} from "./term-provider"
+} from "./term-provider";
 
 // Layer 0: Pure render functions
-export { layout, layoutSync, ensureLayoutEngine, type LayoutOptions } from "./layout"
-export { diff, render, type DiffMode } from "./diff"
+export { layout, layoutSync, ensureLayoutEngine, type LayoutOptions } from "./layout";
+export { diff, render, type DiffMode } from "./diff";
 
 // Buffer helper
-export { createBuffer } from "./create-buffer"
+export { createBuffer } from "./create-buffer";
 
 // Layer 1: Runtime kernel
-export { createRuntime } from "./create-runtime"
+export { createRuntime } from "./create-runtime";
 
 // Layer 2: React integration
 export {
@@ -62,10 +62,10 @@ export {
   type InputHandler,
   type PasteHandler,
   type Key,
-} from "./run"
+} from "./run";
 
 // Key parsing utilities
-export { parseKey, emptyKey } from "./keys"
+export { parseKey, emptyKey } from "./keys";
 
 // Terminal lifecycle (suspend/resume, interrupt)
 export {
@@ -77,11 +77,11 @@ export {
   CTRL_Z,
   type TerminalLifecycleOptions,
   type TerminalState,
-} from "./terminal-lifecycle"
+} from "./terminal-lifecycle";
 
 // Layer 1.5: TEA store (re-exported for discoverability)
-export { createStore, silveryUpdate, defaultInit, withFocusManagement } from "@silvery/tea/store"
-export type { StoreConfig, StoreApi } from "@silvery/tea/store"
+export { createStore, silveryUpdate, defaultInit, withFocusManagement } from "@silvery/tea/store";
+export type { StoreConfig, StoreApi } from "@silvery/tea/store";
 
 // Layer 3: Store integration
 export {
@@ -96,10 +96,10 @@ export {
   type EventHandler,
   type EventHandlers,
   type EventHandlerContext,
-} from "./create-app"
+} from "./create-app";
 
 // Time/tick sources
-export { createTick, createFrameTick, createSecondTick, createAdaptiveTick } from "./tick"
+export { createTick, createFrameTick, createSecondTick, createAdaptiveTick } from "./tick";
 
 // Stream helpers (re-export from streams module)
 export {
@@ -116,4 +116,4 @@ export {
   zip,
   fromArray,
   fromArrayWithDelay,
-} from "@silvery/tea/streams"
+} from "@silvery/tea/streams";

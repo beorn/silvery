@@ -7,25 +7,25 @@
  * - Typing remains responsive even with heavy filtering
  */
 
-import React, { useState, useDeferredValue, useTransition } from "react"
-import { render, Box, Text, useInput, useApp, createTerm, type Key } from "../../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+import React, { useState, useDeferredValue, useTransition } from "react";
+import { render, Box, Text, useInput, useApp, createTerm, type Key } from "../../src/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Search Filter",
   description: "useTransition + useDeferredValue for responsive concurrent search",
   features: ["useDeferredValue", "useTransition", "useInput"],
-}
+};
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface Item {
-  id: number
-  name: string
-  category: string
-  tags: string[]
+  id: number;
+  name: string;
+  category: string;
+  tags: string[];
 }
 
 // ============================================================================
@@ -123,7 +123,7 @@ const items: Item[] = [
     category: "config",
     tags: ["monitoring", "metrics", "logs"],
   },
-]
+];
 
 // ============================================================================
 // Components
@@ -138,19 +138,19 @@ function SearchInput({ value, onChange }: { value: string; onChange: (v: string)
       <Text>{value}</Text>
       <Text dim>|</Text>
     </Box>
-  )
+  );
 }
 
 function FilteredList({ query, isPending }: { query: string; isPending: boolean }) {
   // Simulate expensive filtering (in real app this might be fuzzy search)
   const filtered = items.filter((item) => {
-    const searchLower = query.toLowerCase()
+    const searchLower = query.toLowerCase();
     return (
       item.name.toLowerCase().includes(searchLower) ||
       item.category.toLowerCase().includes(searchLower) ||
       item.tags.some((tag) => tag.toLowerCase().includes(searchLower))
-    )
-  })
+    );
+  });
 
   return (
     <Box flexDirection="column" marginTop={1}>
@@ -173,41 +173,41 @@ function FilteredList({ query, isPending }: { query: string; isPending: boolean 
         </Text>
       )}
     </Box>
-  )
+  );
 }
 
 export function SearchApp(): JSX.Element {
-  const { exit } = useApp()
-  const [query, setQuery] = useState("")
+  const { exit } = useApp();
+  const [query, setQuery] = useState("");
 
   // useDeferredValue: The filtered list uses a deferred version of the query
   // This keeps typing responsive while the list catches up
-  const deferredQuery = useDeferredValue(query)
+  const deferredQuery = useDeferredValue(query);
 
   // useTransition: Mark filtering as low-priority (optional, shows pending state)
-  const [isPending, startTransition] = useTransition()
+  const [isPending, startTransition] = useTransition();
 
   useInput((input: string, key: Key) => {
     if (key.escape) {
-      exit()
-      return
+      exit();
+      return;
     }
 
     if (key.backspace || key.delete) {
       // Backspace: remove last character
       startTransition(() => {
-        setQuery((prev) => prev.slice(0, -1))
-      })
-      return
+        setQuery((prev) => prev.slice(0, -1));
+      });
+      return;
     }
 
     // Add printable characters
     if (input && !key.ctrl && !key.meta) {
       startTransition(() => {
-        setQuery((prev) => prev + input)
-      })
+        setQuery((prev) => prev + input);
+      });
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -230,7 +230,7 @@ export function SearchApp(): JSX.Element {
         quit
       </Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -238,16 +238,16 @@ export function SearchApp(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm()
+  using term = createTerm();
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="type to search  Esc quit">
       <SearchApp />
     </ExampleBanner>,
     term,
-  )
-  await waitUntilExit()
+  );
+  await waitUntilExit();
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

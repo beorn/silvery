@@ -6,8 +6,8 @@
  * the current interpolated position. Targets ~30fps.
  */
 
-import { useState, useEffect, useRef } from "react"
-import { resolveEasing, type EasingName, type EasingFn } from "./easing"
+import { useState, useEffect, useRef } from "react";
+import { resolveEasing, type EasingName, type EasingFn } from "./easing";
 
 // ============================================================================
 // Types
@@ -15,9 +15,9 @@ import { resolveEasing, type EasingName, type EasingFn } from "./easing"
 
 export interface UseTransitionOptions {
   /** Duration in milliseconds (default: 300) */
-  duration?: number
+  duration?: number;
   /** Easing function or preset name (default: "easeOut") */
-  easing?: EasingName | EasingFn
+  easing?: EasingName | EasingFn;
 }
 
 // ============================================================================
@@ -25,7 +25,7 @@ export interface UseTransitionOptions {
 // ============================================================================
 
 /** ~30fps tick interval for terminal animations */
-const TICK_MS = 33
+const TICK_MS = 33;
 
 // ============================================================================
 // Hook
@@ -47,64 +47,64 @@ const TICK_MS = 33
  * ```
  */
 export function useTransition(targetValue: number, options?: UseTransitionOptions): number {
-  const { duration = 300, easing = "easeOut" } = options ?? {}
+  const { duration = 300, easing = "easeOut" } = options ?? {};
 
-  const [currentValue, setCurrentValue] = useState(targetValue)
+  const [currentValue, setCurrentValue] = useState(targetValue);
 
-  const fromRef = useRef(targetValue)
-  const toRef = useRef(targetValue)
-  const startTimeRef = useRef(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const isFirstRef = useRef(true)
+  const fromRef = useRef(targetValue);
+  const toRef = useRef(targetValue);
+  const startTimeRef = useRef(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isFirstRef = useRef(true);
 
-  const easingFn = resolveEasing(easing)
+  const easingFn = resolveEasing(easing);
 
   useEffect(() => {
     // On first render, snap to target without animation
     if (isFirstRef.current) {
-      isFirstRef.current = false
-      return
+      isFirstRef.current = false;
+      return;
     }
 
     // If target hasn't changed, nothing to do
-    if (targetValue === toRef.current) return
+    if (targetValue === toRef.current) return;
 
     // Start from wherever we currently are
-    fromRef.current = currentValue
-    toRef.current = targetValue
-    startTimeRef.current = performance.now()
+    fromRef.current = currentValue;
+    toRef.current = targetValue;
+    startTimeRef.current = performance.now();
 
     // Clear any existing interval
     if (intervalRef.current !== null) {
-      clearInterval(intervalRef.current)
+      clearInterval(intervalRef.current);
     }
 
     intervalRef.current = setInterval(() => {
-      const elapsed = performance.now() - startTimeRef.current
-      const raw = Math.min(elapsed / duration, 1)
-      const eased = easingFn(raw)
-      const interpolated = fromRef.current + (toRef.current - fromRef.current) * eased
+      const elapsed = performance.now() - startTimeRef.current;
+      const raw = Math.min(elapsed / duration, 1);
+      const eased = easingFn(raw);
+      const interpolated = fromRef.current + (toRef.current - fromRef.current) * eased;
 
-      setCurrentValue(interpolated)
+      setCurrentValue(interpolated);
 
       if (raw >= 1) {
         // Snap to exact target and stop
-        setCurrentValue(toRef.current)
+        setCurrentValue(toRef.current);
         if (intervalRef.current !== null) {
-          clearInterval(intervalRef.current)
-          intervalRef.current = null
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
         }
       }
-    }, TICK_MS)
+    }, TICK_MS);
 
     return () => {
       if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
-    }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetValue, duration, easingFn])
+  }, [targetValue, duration, easingFn]);
 
-  return currentValue
+  return currentValue;
 }

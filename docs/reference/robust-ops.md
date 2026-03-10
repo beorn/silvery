@@ -6,13 +6,13 @@ The examples in the [Building an App](../guide/building-an-app.md) Level 3 guide
 
 ```typescript
 // Fragile — depends on ordering
-type FragileOp = { op: "toggleDone"; index: number }
+type FragileOp = { op: "toggleDone"; index: number };
 
 // Robust — works regardless of order
-type RobustOp = { op: "toggleDone"; id: string }
+type RobustOp = { op: "toggleDone"; id: string };
 
 // Gold standard — idempotent (applying twice = applying once)
-type IdempotentOp = { op: "setDone"; id: string; done: boolean }
+type IdempotentOp = { op: "setDone"; id: string; done: boolean };
 ```
 
 | Op style                   | Undo    | Concurrent | Offline sync       |

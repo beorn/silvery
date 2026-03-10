@@ -13,9 +13,9 @@
  * ```
  */
 
-import { useEffect, useRef } from "react"
-import { useScreenRectCallback } from "./useLayout"
-import { usePositionRegistry } from "./usePositionRegistry"
+import { useEffect, useRef } from "react";
+import { useScreenRectCallback } from "./useLayout";
+import { usePositionRegistry } from "./usePositionRegistry";
 
 /**
  * Register the current component's screen position in the PositionRegistry.
@@ -24,30 +24,30 @@ import { usePositionRegistry } from "./usePositionRegistry"
  * No-ops gracefully if no PositionRegistryProvider is present.
  */
 export function useGridPosition(sectionIndex: number, itemIndex: number): void {
-  const registry = usePositionRegistry()
+  const registry = usePositionRegistry();
 
   // Track current indices in refs so the cleanup function always has the latest values
-  const sectionRef = useRef(sectionIndex)
-  const itemRef = useRef(itemIndex)
-  sectionRef.current = sectionIndex
-  itemRef.current = itemIndex
+  const sectionRef = useRef(sectionIndex);
+  const itemRef = useRef(itemIndex);
+  sectionRef.current = sectionIndex;
+  itemRef.current = itemIndex;
 
   // Register position on every layout update (no re-renders)
   useScreenRectCallback((rect) => {
-    registry?.register(sectionRef.current, itemRef.current, rect)
-  })
+    registry?.register(sectionRef.current, itemRef.current, rect);
+  });
 
   // Unregister on unmount
   useEffect(() => {
     return () => {
-      registry?.unregister(sectionRef.current, itemRef.current)
-    }
-  }, [registry])
+      registry?.unregister(sectionRef.current, itemRef.current);
+    };
+  }, [registry]);
 
   // If indices change, unregister old position
   useEffect(() => {
     return () => {
-      registry?.unregister(sectionIndex, itemIndex)
-    }
-  }, [registry, sectionIndex, itemIndex])
+      registry?.unregister(sectionIndex, itemIndex);
+    };
+  }, [registry, sectionIndex, itemIndex]);
 }

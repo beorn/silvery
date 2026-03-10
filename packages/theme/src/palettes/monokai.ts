@@ -4,8 +4,8 @@
  * Pro source: https://monokai.pro/ (default "Pro" filter)
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Monokai Classic — the original Sublime Text Monokai colors. */
 export const monokai: ColorPalette = {
@@ -33,7 +33,7 @@ export const monokai: ColorPalette = {
   cursorText: "#272822", // classic Monokai background
   selectionBackground: "#75715E", // comments
   selectionForeground: "#F8F8F2", // foreground
-}
+};
 
 /** Monokai Pro — the modern, refined Monokai with balanced colors. */
 export const monokaiPro: ColorPalette = {
@@ -61,4 +61,4 @@ export const monokaiPro: ColorPalette = {
   cursorText: "#2d2a2e", // editor background
   selectionBackground: "#727072", // borders/muted chrome
   selectionForeground: "#fcfcfa", // foreground
-}
+};

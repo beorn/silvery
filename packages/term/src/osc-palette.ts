@@ -34,8 +34,8 @@
  * The km-tui theme system would consume these to adapt its ThemeProvider.
  */
 
-const ESC = "\x1b"
-const BEL = "\x07"
+const ESC = "\x1b";
+const BEL = "\x07";
 
 // ============================================================================
 // Query
@@ -53,8 +53,8 @@ const BEL = "\x07"
  * @param write Function to write data to the terminal (e.g., stdout.write.bind(stdout))
  */
 export function queryPaletteColor(index: number, write: (data: string) => void): void {
-  if (index < 0 || index > 255) throw new RangeError(`Palette index must be 0-255, got ${index}`)
-  write(`${ESC}]4;${index};?${BEL}`)
+  if (index < 0 || index > 255) throw new RangeError(`Palette index must be 0-255, got ${index}`);
+  write(`${ESC}]4;${index};?${BEL}`);
 }
 
 /**
@@ -68,7 +68,7 @@ export function queryPaletteColor(index: number, write: (data: string) => void):
  */
 export function queryMultiplePaletteColors(indices: number[], write: (data: string) => void): void {
   for (const index of indices) {
-    queryPaletteColor(index, write)
+    queryPaletteColor(index, write);
   }
 }
 
@@ -89,8 +89,8 @@ export function queryMultiplePaletteColors(indices: number[], write: (data: stri
  * @param write Function to write data to the terminal
  */
 export function setPaletteColor(index: number, color: string, write: (data: string) => void): void {
-  if (index < 0 || index > 255) throw new RangeError(`Palette index must be 0-255, got ${index}`)
-  write(`${ESC}]4;${index};${color}${BEL}`)
+  if (index < 0 || index > 255) throw new RangeError(`Palette index must be 0-255, got ${index}`);
+  write(`${ESC}]4;${index};${color}${BEL}`);
 }
 
 // ============================================================================
@@ -98,13 +98,13 @@ export function setPaletteColor(index: number, color: string, write: (data: stri
 // ============================================================================
 
 /** OSC 4 response prefix */
-const OSC4_PREFIX = `${ESC}]4;`
+const OSC4_PREFIX = `${ESC}]4;`;
 
 /**
  * Regex for the OSC 4 response body: `<index>;rgb:<R>/<G>/<B>`
  * Captures: index, R, G, B (each 1-4 hex digits)
  */
-const OSC4_BODY_RE = /^(\d+);rgb:([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})$/
+const OSC4_BODY_RE = /^(\d+);rgb:([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})$/;
 
 /**
  * Parse an OSC 4 palette color response.
@@ -118,31 +118,31 @@ const OSC4_BODY_RE = /^(\d+);rgb:([0-9a-fA-F]{1,4})\/([0-9a-fA-F]{1,4})\/([0-9a-
  * @returns Parsed result with index and normalized color string, or null if not an OSC 4 response
  */
 export function parsePaletteResponse(input: string): { index: number; color: string } | null {
-  const prefixIdx = input.indexOf(OSC4_PREFIX)
-  if (prefixIdx === -1) return null
+  const prefixIdx = input.indexOf(OSC4_PREFIX);
+  if (prefixIdx === -1) return null;
 
-  const bodyStart = prefixIdx + OSC4_PREFIX.length
+  const bodyStart = prefixIdx + OSC4_PREFIX.length;
 
   // Find terminator: BEL (\x07) or ST (ESC \)
-  let bodyEnd = input.indexOf(BEL, bodyStart)
+  let bodyEnd = input.indexOf(BEL, bodyStart);
   if (bodyEnd === -1) {
-    bodyEnd = input.indexOf(`${ESC}\\`, bodyStart)
+    bodyEnd = input.indexOf(`${ESC}\\`, bodyStart);
   }
-  if (bodyEnd === -1) return null
+  if (bodyEnd === -1) return null;
 
-  const body = input.slice(bodyStart, bodyEnd)
-  const match = OSC4_BODY_RE.exec(body)
-  if (!match) return null
+  const body = input.slice(bodyStart, bodyEnd);
+  const match = OSC4_BODY_RE.exec(body);
+  if (!match) return null;
 
-  const index = Number.parseInt(match[1]!, 10)
-  if (index < 0 || index > 255) return null
+  const index = Number.parseInt(match[1]!, 10);
+  if (index < 0 || index > 255) return null;
 
   // Normalize color channels to 2-digit hex (scale 4-digit to 2-digit)
-  const r = normalizeHexChannel(match[2]!)
-  const g = normalizeHexChannel(match[3]!)
-  const b = normalizeHexChannel(match[4]!)
+  const r = normalizeHexChannel(match[2]!);
+  const g = normalizeHexChannel(match[3]!);
+  const b = normalizeHexChannel(match[4]!);
 
-  return { index, color: `#${r}${g}${b}` }
+  return { index, color: `#${r}${g}${b}` };
 }
 
 /**
@@ -156,14 +156,14 @@ export function parsePaletteResponse(input: string): { index: number; color: str
 function normalizeHexChannel(hex: string): string {
   switch (hex.length) {
     case 1:
-      return hex + hex
+      return hex + hex;
     case 2:
-      return hex
+      return hex;
     case 3:
-      return hex.slice(0, 2)
+      return hex.slice(0, 2);
     case 4:
-      return hex.slice(0, 2)
+      return hex.slice(0, 2);
     default:
-      return hex.slice(0, 2)
+      return hex.slice(0, 2);
   }
 }

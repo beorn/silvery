@@ -4,7 +4,7 @@
  * Uses ANSI color names (not hex) so it works on any terminal without truecolor support.
  */
 
-import type { AnsiPrimary, Theme } from "./types"
+import type { AnsiPrimary, Theme } from "./types";
 
 /**
  * Generate a complete ANSI 16 theme from a primary color + dark/light preference.
@@ -71,5 +71,5 @@ export function generateTheme(primary: AnsiPrimary, dark: boolean): Theme {
       "cyanBright",
       "whiteBright",
     ],
-  }
+  };
 }

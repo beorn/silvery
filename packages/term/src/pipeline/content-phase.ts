@@ -13,16 +13,22 @@
  *   Region clearing: findInheritedBg, clearNodeRegion, clippedFill
  */
 
-import type { Color } from "../buffer"
-import { TerminalBuffer } from "../buffer"
-import type { BoxProps, TeaNode, TextProps } from "@silvery/tea/types"
-import { getBorderSize, getPadding } from "./helpers"
-import { renderBox, renderOutline, renderScrollIndicators } from "./render-box"
-import { parseColor } from "./render-helpers"
-import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
-import { pushContextTheme, popContextTheme } from "@silvery/theme/state"
-import type { Theme } from "@silvery/theme/types"
-import type { ClipBounds, ContentPhaseStats, NodeRenderState, NodeTraceEntry, PipelineContext } from "./types"
+import type { Color } from "../buffer";
+import { TerminalBuffer } from "../buffer";
+import type { BoxProps, TeaNode, TextProps } from "@silvery/tea/types";
+import { getBorderSize, getPadding } from "./helpers";
+import { renderBox, renderOutline, renderScrollIndicators } from "./render-box";
+import { parseColor } from "./render-helpers";
+import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text";
+import { pushContextTheme, popContextTheme } from "@silvery/theme/state";
+import type { Theme } from "@silvery/theme/types";
+import type {
+  ClipBounds,
+  ContentPhaseStats,
+  NodeRenderState,
+  NodeTraceEntry,
+  PipelineContext,
+} from "./types";
 
 /**
  * Render all nodes to a terminal buffer.
@@ -31,38 +37,45 @@ import type { ClipBounds, ContentPhaseStats, NodeRenderState, NodeTraceEntry, Pi
  * @param prevBuffer Previous buffer for incremental rendering (optional)
  * @returns A TerminalBuffer with the rendered content
  */
-export function contentPhase(root: TeaNode, prevBuffer?: TerminalBuffer | null, ctx?: PipelineContext): TerminalBuffer {
-  const layout = root.contentRect
+export function contentPhase(
+  root: TeaNode,
+  prevBuffer?: TerminalBuffer | null,
+  ctx?: PipelineContext,
+): TerminalBuffer {
+  const layout = root.contentRect;
   if (!layout) {
-    throw new Error("contentPhase called before layout phase")
+    throw new Error("contentPhase called before layout phase");
   }
 
   // Resolve instrumentation from ctx (if provided) or module-level globals
-  const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
-  const stats = ctx?.stats ?? _contentPhaseStats
-  const nodeTrace = ctx?.nodeTrace ?? _nodeTrace
-  const nodeTraceEnabled = ctx?.nodeTraceEnabled ?? _nodeTraceEnabled
+  const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled;
+  const stats = ctx?.stats ?? _contentPhaseStats;
+  const nodeTrace = ctx?.nodeTrace ?? _nodeTrace;
+  const nodeTraceEnabled = ctx?.nodeTraceEnabled ?? _nodeTraceEnabled;
 
   // Clone prevBuffer if same dimensions, else create fresh
-  const hasPrevBuffer = prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
+  const hasPrevBuffer =
+    prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height;
 
   if (instrumentEnabled) {
-    _contentPhaseCallCount++
-    stats._prevBufferNull = prevBuffer == null ? 1 : 0
-    stats._prevBufferDimMismatch = prevBuffer && !hasPrevBuffer ? 1 : 0
-    stats._hasPrevBuffer = hasPrevBuffer ? 1 : 0
-    stats._layoutW = layout.width
-    stats._layoutH = layout.height
-    stats._prevW = prevBuffer?.width ?? 0
-    stats._prevH = prevBuffer?.height ?? 0
-    stats._callCount = _contentPhaseCallCount
+    _contentPhaseCallCount++;
+    stats._prevBufferNull = prevBuffer == null ? 1 : 0;
+    stats._prevBufferDimMismatch = prevBuffer && !hasPrevBuffer ? 1 : 0;
+    stats._hasPrevBuffer = hasPrevBuffer ? 1 : 0;
+    stats._layoutW = layout.width;
+    stats._layoutH = layout.height;
+    stats._prevW = prevBuffer?.width ?? 0;
+    stats._prevH = prevBuffer?.height ?? 0;
+    stats._callCount = _contentPhaseCallCount;
   }
 
-  const t0 = instrumentEnabled ? performance.now() : 0
-  const buffer = hasPrevBuffer ? prevBuffer.clone() : new TerminalBuffer(layout.width, layout.height)
-  const tClone = instrumentEnabled ? performance.now() - t0 : 0
+  const t0 = instrumentEnabled ? performance.now() : 0;
+  const buffer = hasPrevBuffer
+    ? prevBuffer.clone()
+    : new TerminalBuffer(layout.width, layout.height);
+  const tClone = instrumentEnabled ? performance.now() - t0 : 0;
 
-  const t1 = instrumentEnabled ? performance.now() : 0
+  const t1 = instrumentEnabled ? performance.now() : 0;
   renderNodeToBuffer(
     root,
     buffer,
@@ -73,8 +86,8 @@ export function contentPhase(root: TeaNode, prevBuffer?: TerminalBuffer | null, 
       ancestorCleared: false,
     },
     ctx,
-  )
-  const tRender = instrumentEnabled ? performance.now() - t1 : 0
+  );
+  const tRender = instrumentEnabled ? performance.now() - t1 : 0;
 
   if (instrumentEnabled) {
     // Expose sub-phase timing for profiling
@@ -82,32 +95,32 @@ export function contentPhase(root: TeaNode, prevBuffer?: TerminalBuffer | null, 
       clone: tClone,
       render: tRender,
       ...structuredClone(stats),
-    }
-    ;(globalThis as any).__silvery_content_detail = snap
-    const arr = ((globalThis as any).__silvery_content_all ??= [] as (typeof snap)[])
-    arr.push(snap)
+    };
+    (globalThis as any).__silvery_content_detail = snap;
+    const arr = ((globalThis as any).__silvery_content_all ??= [] as (typeof snap)[]);
+    arr.push(snap);
     for (const key of Object.keys(stats) as (keyof ContentPhaseStats)[]) {
-      ;(stats as any)[key] = 0
+      (stats as any)[key] = 0;
     }
-    stats.cascadeMinDepth = 999
-    stats.cascadeNodes = ""
-    stats.scrollClearReason = ""
-    stats.normalRepaintReason = ""
+    stats.cascadeMinDepth = 999;
+    stats.cascadeNodes = "";
+    stats.scrollClearReason = "";
+    stats.normalRepaintReason = "";
   }
 
   // Export node trace for SILVERY_STRICT diagnosis
   if (nodeTraceEnabled && nodeTrace.length > 0) {
-    const traceArr = ((globalThis as any).__silvery_node_trace ??= [] as NodeTraceEntry[][])
-    traceArr.push([...nodeTrace])
-    nodeTrace.length = 0
+    const traceArr = ((globalThis as any).__silvery_node_trace ??= [] as NodeTraceEntry[][]);
+    traceArr.push([...nodeTrace]);
+    nodeTrace.length = 0;
   }
 
   // Sync prevLayout after content phase to prevent staleness on subsequent frames.
   // Without this, prevLayout stays at the old value from propagateLayout, causing
   // hasChildPositionChanged and clearExcessArea to use stale coordinates.
-  syncPrevLayout(root)
+  syncPrevLayout(root);
 
-  return buffer
+  return buffer;
 }
 
 /**
@@ -123,16 +136,20 @@ export function contentPhase(root: TeaNode, prevBuffer?: TerminalBuffer | null, 
  *    different cascade behavior (layoutChanged true vs false).
  */
 function syncPrevLayout(node: TeaNode): void {
-  node.prevLayout = node.contentRect
+  node.prevLayout = node.contentRect;
   for (const child of node.children) {
-    syncPrevLayout(child)
+    syncPrevLayout(child);
   }
 }
 
 /** Instrumentation enabled when SILVERY_STRICT, SILVERY_CHECK_INCREMENTAL, or SILVERY_INSTRUMENT is set */
 const _instrumentEnabled =
   typeof process !== "undefined" &&
-  !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL || process.env?.SILVERY_INSTRUMENT)
+  !!(
+    process.env?.SILVERY_STRICT ||
+    process.env?.SILVERY_CHECK_INCREMENTAL ||
+    process.env?.SILVERY_INSTRUMENT
+  );
 
 /** Mutable stats counters — reset after each contentPhase call */
 const _contentPhaseStats: ContentPhaseStats = {
@@ -164,28 +181,29 @@ const _contentPhaseStats: ContentPhaseStats = {
   _prevW: 0,
   _prevH: 0,
   _callCount: 0,
-}
+};
 
-let _contentPhaseCallCount = 0
+let _contentPhaseCallCount = 0;
 
 /** Module-level node trace (fallback when ctx.nodeTrace is not provided) */
-const _nodeTrace: NodeTraceEntry[] = []
+const _nodeTrace: NodeTraceEntry[] = [];
 const _nodeTraceEnabled =
-  typeof process !== "undefined" && !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL)
+  typeof process !== "undefined" &&
+  !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL);
 
 /** DIAG: compute node depth in tree */
 function _getNodeDepth(node: TeaNode): number {
-  let depth = 0
-  let n: TeaNode | null = node.parent
+  let depth = 0;
+  let n: TeaNode | null = node.parent;
   while (n) {
-    depth++
-    n = n.parent
+    depth++;
+    n = n.parent;
   }
-  return depth
+  return depth;
 }
 
 // Re-export for consumers who need to clear bg conflict warnings
-export { clearBgConflictWarnings, setBgConflictMode }
+export { clearBgConflictWarnings, setBgConflictMode };
 
 // ============================================================================
 // Core Rendering
@@ -200,15 +218,15 @@ function renderNodeToBuffer(
   nodeState: NodeRenderState,
   ctx?: PipelineContext,
 ): void {
-  const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared } = nodeState
+  const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared } = nodeState;
   // Resolve instrumentation from ctx or module globals
-  const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
-  const stats = ctx?.stats ?? _contentPhaseStats
-  const nodeTrace = ctx?.nodeTrace ?? _nodeTrace
-  const nodeTraceEnabled = ctx?.nodeTraceEnabled ?? _nodeTraceEnabled
-  if (instrumentEnabled) stats.nodesVisited++
-  const layout = node.contentRect
-  if (!layout) return
+  const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled;
+  const stats = ctx?.stats ?? _contentPhaseStats;
+  const nodeTrace = ctx?.nodeTrace ?? _nodeTrace;
+  const nodeTraceEnabled = ctx?.nodeTraceEnabled ?? _nodeTraceEnabled;
+  if (instrumentEnabled) stats.nodesVisited++;
+  const layout = node.contentRect;
+  if (!layout) return;
 
   // Skip nodes without Yoga (raw text and virtual text nodes)
   // Their content is rendered by their parent silvery-text via collectTextContent()
@@ -217,19 +235,19 @@ function renderNodeToBuffer(
     // Without this, virtual text children keep stale subtreeDirty=true from
     // creation, causing markSubtreeDirty to stop early and never reach the
     // layout ancestor — producing 0-byte diffs on text content changes.
-    clearVirtualTextFlags(node)
-    return
+    clearVirtualTextFlags(node);
+    return;
   }
 
   // Skip hidden nodes (Suspense support)
   // When a Suspense boundary shows a fallback, the hidden subtree is not rendered
-  if (node.hidden) return
+  if (node.hidden) return;
 
-  const props = node.props as BoxProps & TextProps
+  const props = node.props as BoxProps & TextProps;
 
   // Skip display="none" nodes - they have 0x0 dimensions and shouldn't render
   // Also skip their children since the entire subtree is hidden
-  if (props.display === "none") return
+  if (props.display === "none") return;
 
   // Skip nodes entirely off-screen (viewport clipping).
   // The scroll container's VirtualList already handles most culling, but this
@@ -250,9 +268,9 @@ function renderNodeToBuffer(
   // the visible area. The subtreeDirty flag on ancestors is maintained
   // because we don't clear it — markSubtreeDirty() already set it during
   // reconciliation/layout, and not clearing here preserves that signal.
-  const screenY = layout.y - scrollOffset
+  const screenY = layout.y - scrollOffset;
   if (screenY >= buffer.height || screenY + layout.height <= 0) {
-    return
+    return;
   }
 
   // FAST PATH: Skip entire subtree if unchanged and we have a previous buffer
@@ -266,11 +284,11 @@ function renderNodeToBuffer(
   // real render may have prevLayout=null (new nodes), making layoutChanged=true.
   // This asymmetry causes contentAreaAffected→clearNodeRegion to fire in incremental
   // but not fresh, wiping sibling content. layoutChangedThisFrame is symmetric.
-  const layoutChanged = node.layoutChangedThisFrame
+  const layoutChanged = node.layoutChangedThisFrame;
 
   // Check if any child shifted position (sibling shift from size changes).
   // Gap space between children belongs to this container, so must re-render.
-  const childPositionChanged = hasPrevBuffer && !layoutChanged && hasChildPositionChanged(node)
+  const childPositionChanged = hasPrevBuffer && !layoutChanged && hasChildPositionChanged(node);
 
   // FAST PATH: Skip unchanged subtrees when we have a valid previous buffer.
   // The cloned buffer already has correct pixels for clean nodes.
@@ -282,15 +300,15 @@ function renderNodeToBuffer(
     !layoutChanged &&
     !node.subtreeDirty &&
     !node.childrenDirty &&
-    !childPositionChanged
+    !childPositionChanged;
 
   // Node ID for tracing (only trace named nodes to keep compact)
-  const _nodeId = instrumentEnabled ? ((props.id as string | undefined) ?? "") : ""
-  const _traceThis = instrumentEnabled && nodeTraceEnabled && _nodeId
+  const _nodeId = instrumentEnabled ? ((props.id as string | undefined) ?? "") : "";
+  const _traceThis = instrumentEnabled && nodeTraceEnabled && _nodeId;
 
   if (skipFastPath) {
     if (instrumentEnabled) {
-      stats.nodesSkipped++
+      stats.nodesSkipped++;
       if (_traceThis) {
         nodeTrace.push({
           id: _nodeId,
@@ -305,31 +323,31 @@ function renderNodeToBuffer(
           flags: "",
           decision: "SKIPPED",
           layoutChanged,
-        })
+        });
       }
     }
-    clearDirtyFlags(node)
-    return
+    clearDirtyFlags(node);
+    return;
   }
   if (instrumentEnabled) {
-    stats.nodesRendered++
-    if (!hasPrevBuffer) stats.noPrevBuffer++
-    if (node.contentDirty) stats.flagContentDirty++
-    if (node.paintDirty) stats.flagPaintDirty++
-    if (layoutChanged) stats.flagLayoutChanged++
-    if (node.subtreeDirty) stats.flagSubtreeDirty++
-    if (node.childrenDirty) stats.flagChildrenDirty++
-    if (childPositionChanged) stats.flagChildPositionChanged++
+    stats.nodesRendered++;
+    if (!hasPrevBuffer) stats.noPrevBuffer++;
+    if (node.contentDirty) stats.flagContentDirty++;
+    if (node.paintDirty) stats.flagPaintDirty++;
+    if (layoutChanged) stats.flagLayoutChanged++;
+    if (node.subtreeDirty) stats.flagSubtreeDirty++;
+    if (node.childrenDirty) stats.flagChildrenDirty++;
+    if (childPositionChanged) stats.flagChildPositionChanged++;
   }
 
   // Push per-subtree theme override (if this Box has a theme prop).
   // Placed after all early returns and fast-path skip — only active during
   // actual rendering. Popped at the end of this function after all child passes.
-  const nodeTheme = (props as BoxProps).theme as Theme | undefined
-  if (nodeTheme) pushContextTheme(nodeTheme)
+  const nodeTheme = (props as BoxProps).theme as Theme | undefined;
+  if (nodeTheme) pushContextTheme(nodeTheme);
 
   // Check if this is a scrollable container
-  const isScrollContainer = props.overflow === "scroll" && node.scrollState
+  const isScrollContainer = props.overflow === "scroll" && node.scrollState;
 
   // Does this node's OWN visual state need re-rendering?
   // True when content/style changed, children restructured, or layout shifted.
@@ -358,7 +376,7 @@ function renderNodeToBuffer(
   // Uses bgDirty (set by reconciler when backgroundColor specifically changes) rather
   // than checking current props.backgroundColor — catches bg removal (cyan → undefined)
   // where current value is falsy but stale pixels must still be cleared.
-  const textPaintDirty = node.type === "silvery-text" && node.paintDirty
+  const textPaintDirty = node.type === "silvery-text" && node.paintDirty;
 
   // absoluteChildMutated: an absolute child had its children added/removed/reordered,
   // or its layout changed. In the two-pass rendering model (normal-flow first, absolute
@@ -376,12 +394,12 @@ function renderNodeToBuffer(
     node.subtreeDirty &&
     node.children !== undefined &&
     node.children.some((child) => {
-      const cp = child.props as BoxProps
+      const cp = child.props as BoxProps;
       return (
         cp.position === "absolute" &&
         (child.childrenDirty || child.layoutChangedThisFrame || hasChildPositionChanged(child))
-      )
-    })
+      );
+    });
 
   const contentAreaAffected =
     node.contentDirty ||
@@ -390,7 +408,7 @@ function renderNodeToBuffer(
     node.childrenDirty ||
     node.bgDirty ||
     textPaintDirty ||
-    absoluteChildMutated
+    absoluteChildMutated;
 
   // subtreeDirtyWithBg: a descendant changed inside a Box with backgroundColor.
   // When a child Text shrinks, trailing chars from the old longer text survive in
@@ -398,7 +416,8 @@ function renderNodeToBuffer(
   // must re-render on top of the fresh fill. This is NOT added to contentAreaAffected
   // because non-bg boxes don't need region clearing for subtreeDirty — only bg-bearing
   // boxes need their fill to overwrite stale child pixels.
-  const subtreeDirtyWithBg = hasPrevBuffer && !contentAreaAffected && node.subtreeDirty && !!props.backgroundColor
+  const subtreeDirtyWithBg =
+    hasPrevBuffer && !contentAreaAffected && node.subtreeDirty && !!props.backgroundColor;
 
   // Clear this node's region when its content area changed but has no backgroundColor.
   // Without bg, renderBox won't fill, so stale pixels from the cloned buffer
@@ -409,7 +428,8 @@ function renderNodeToBuffer(
   // - ancestorCleared=true: buffer is a clone but hasPrevBuffer=false was passed
   //   (ancestor cleared its region, but this node may need to clear its sub-region)
   // On a truly fresh buffer (first render), both are false — no wasteful clear.
-  const parentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
+  const parentRegionCleared =
+    (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor;
 
   // skipBgFill: in incremental mode, skip the bg fill when the cloned buffer
   // already has the correct bg at this node's position. That's ONLY when:
@@ -427,11 +447,13 @@ function renderNodeToBuffer(
   // When ancestorCleared=true, the buffer at our position was erased to the
   // inherited bg, NOT our bg — so we must re-fill.
   // When hasPrevBuffer=false AND ancestorCleared=false, it's a fresh render.
-  const skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !subtreeDirtyWithBg
+  const skipBgFill =
+    hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !subtreeDirtyWithBg;
 
   // parentRegionChanged: this node's content area was modified on a cloned buffer.
   // Children must re-render (childHasPrev=false) because their pixels may be stale.
-  const parentRegionChanged = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || subtreeDirtyWithBg)
+  const parentRegionChanged =
+    (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || subtreeDirtyWithBg);
 
   // DIAG: Per-node trace and cascade tracking (gated on instrumentation)
   if (instrumentEnabled) {
@@ -445,10 +467,11 @@ function renderNodeToBuffer(
         childPositionChanged && "CP",
       ]
         .filter(Boolean)
-        .join(",")
-      const childrenNeedRepaint_ = node.childrenDirty || childPositionChanged || parentRegionChanged
-      const childHasPrev_ = childrenNeedRepaint_ ? false : hasPrevBuffer
-      const childAncestorCleared_ = parentRegionCleared || ancestorCleared
+        .join(",");
+      const childrenNeedRepaint_ =
+        node.childrenDirty || childPositionChanged || parentRegionChanged;
+      const childHasPrev_ = childrenNeedRepaint_ ? false : hasPrevBuffer;
+      const childAncestorCleared_ = parentRegionCleared || ancestorCleared;
       nodeTrace.push({
         id: _nodeId,
         type: node.type,
@@ -469,14 +492,14 @@ function renderNodeToBuffer(
         childAncestorCleared: childAncestorCleared_,
         skipBgFill,
         bgColor: props.backgroundColor as string | undefined,
-      })
+      });
     }
     if (parentRegionChanged && node.children.length > 0) {
-      const depth = _getNodeDepth(node)
+      const depth = _getNodeDepth(node);
       if (depth < stats.cascadeMinDepth) {
-        stats.cascadeMinDepth = depth
+        stats.cascadeMinDepth = depth;
       }
-      const id = (node.props as Record<string, unknown>).id ?? node.type
+      const id = (node.props as Record<string, unknown>).id ?? node.type;
       const flags = [
         node.contentDirty && "C",
         node.paintDirty && "P",
@@ -485,15 +508,15 @@ function renderNodeToBuffer(
         childPositionChanged && "CP",
       ]
         .filter(Boolean)
-        .join("")
-      const entry = `${id}@${depth}[${flags}:${node.children.length}ch]`
-      stats.cascadeNodes += (stats.cascadeNodes ? " " : "") + entry
+        .join("");
+      const entry = `${id}@${depth}[${flags}:${node.children.length}ch]`;
+      stats.cascadeNodes += (stats.cascadeNodes ? " " : "") + entry;
     }
   }
 
   if (parentRegionCleared) {
-    if (instrumentEnabled) stats.clearOps++
-    clearNodeRegion(node, buffer, layout, scrollOffset, clipBounds, layoutChanged)
+    if (instrumentEnabled) stats.clearOps++;
+    clearNodeRegion(node, buffer, layout, scrollOffset, clipBounds, layoutChanged);
   } else if (layoutChanged && node.prevLayout) {
     // Even when parentRegionCleared is false, a shrinking node needs its excess
     // area cleared. Key scenario: absolute-positioned overlays (e.g., search dialog)
@@ -502,37 +525,46 @@ function renderNodeToBuffer(
     // but the cloned buffer still has stale pixels from the old larger layout.
     // Also applies to nodes WITH backgroundColor: renderBox fills only the NEW
     // (smaller) region, leaving stale pixels in the excess area.
-    clearExcessArea(node, buffer, layout, scrollOffset, clipBounds, layoutChanged)
+    clearExcessArea(node, buffer, layout, scrollOffset, clipBounds, layoutChanged);
   }
 
   // Compute inherited bg once for boxes — used by border and outline rendering
   // to preserve parent backgrounds on border cells (prevents transparent holes).
-  const boxInheritedBg = node.type === "silvery-box" && !props.backgroundColor ? findInheritedBg(node).color : undefined
+  const boxInheritedBg =
+    node.type === "silvery-box" && !props.backgroundColor ? findInheritedBg(node).color : undefined;
 
   // Render based on node type
   if (node.type === "silvery-box") {
-    if (instrumentEnabled) stats.boxNodes++
-    renderBox(node, buffer, layout, props, nodeState, skipBgFill, boxInheritedBg)
+    if (instrumentEnabled) stats.boxNodes++;
+    renderBox(node, buffer, layout, props, nodeState, skipBgFill, boxInheritedBg);
   } else if (node.type === "silvery-text") {
-    if (instrumentEnabled) stats.textNodes++
+    if (instrumentEnabled) stats.textNodes++;
     // Pass inherited bg/fg from nearest ancestor with backgroundColor/color.
     // This decouples text inheritance from buffer state, which is critical
     // for incremental rendering: getCellBg on a cloned buffer may return stale
     // bg at positions outside the parent's bg-filled region (overflow text).
     // Foreground inheritance matches CSS semantics: Box color cascades to Text children.
-    const textInheritedBg = findInheritedBg(node).color
-    const textInheritedFg = findInheritedFg(node)
-    renderText(node, buffer, layout, props, nodeState, textInheritedBg, textInheritedFg, ctx)
+    const textInheritedBg = findInheritedBg(node).color;
+    const textInheritedFg = findInheritedFg(node);
+    renderText(node, buffer, layout, props, nodeState, textInheritedBg, textInheritedFg, ctx);
   }
 
   // Render children
   if (isScrollContainer) {
-    renderScrollContainerChildren(node, buffer, props, nodeState, parentRegionCleared, parentRegionChanged, ctx)
+    renderScrollContainerChildren(
+      node,
+      buffer,
+      props,
+      nodeState,
+      parentRegionCleared,
+      parentRegionChanged,
+      ctx,
+    );
 
     // Render overflow indicators AFTER children so they survive viewport clear.
     // renderScrollContainerChildren may clear the viewport (Tier 2) which would
     // overwrite indicators drawn before children.
-    renderScrollIndicators(node, buffer, layout, props, node.scrollState!, ctx)
+    renderScrollIndicators(node, buffer, layout, props, node.scrollState!, ctx);
   } else {
     renderNormalChildren(
       node,
@@ -543,26 +575,26 @@ function renderNodeToBuffer(
       parentRegionCleared,
       parentRegionChanged,
       ctx,
-    )
+    );
   }
 
   // Render outline AFTER children — outline overlaps content at edges
   if (node.type === "silvery-box" && props.outlineStyle) {
-    const { x, width, height } = layout
-    const y = layout.y - scrollOffset
-    renderOutline(buffer, x, y, width, height, props, clipBounds, boxInheritedBg)
+    const { x, width, height } = layout;
+    const y = layout.y - scrollOffset;
+    renderOutline(buffer, x, y, width, height, props, clipBounds, boxInheritedBg);
   }
 
   // Clear dirty flags
-  node.contentDirty = false
-  node.paintDirty = false
-  node.bgDirty = false
-  node.subtreeDirty = false
-  node.childrenDirty = false
-  node.layoutChangedThisFrame = false
+  node.contentDirty = false;
+  node.paintDirty = false;
+  node.bgDirty = false;
+  node.subtreeDirty = false;
+  node.childrenDirty = false;
+  node.layoutChangedThisFrame = false;
 
   // Pop per-subtree theme override (after ALL child passes including absolute/sticky)
-  if (nodeTheme) popContextTheme()
+  if (nodeTheme) popContextTheme();
 }
 
 /**
@@ -577,22 +609,30 @@ function renderScrollContainerChildren(
   parentRegionChanged = false,
   ctx?: PipelineContext,
 ): void {
-  const { clipBounds, hasPrevBuffer, ancestorCleared } = nodeState
+  const { clipBounds, hasPrevBuffer, ancestorCleared } = nodeState;
   // Resolve instrumentation from ctx or module globals
-  const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
-  const stats = ctx?.stats ?? _contentPhaseStats
-  const layout = node.contentRect
-  const ss = node.scrollState
-  if (!layout || !ss) return
+  const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled;
+  const stats = ctx?.stats ?? _contentPhaseStats;
+  const layout = node.contentRect;
+  const ss = node.scrollState;
+  if (!layout || !ss) return;
 
-  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-  const padding = getPadding(props)
+  const border = props.borderStyle
+    ? getBorderSize(props)
+    : { top: 0, bottom: 0, left: 0, right: 0 };
+  const padding = getPadding(props);
   // Scroll containers clip vertically (for scrolling) but NOT horizontally.
   // Horizontal clipping is only for overflow="hidden" containers (e.g., HVL).
-  const childClipBounds = computeChildClipBounds(layout, props, clipBounds, 0, /* horizontal */ false)
+  const childClipBounds = computeChildClipBounds(
+    layout,
+    props,
+    clipBounds,
+    0,
+    /* horizontal */ false,
+  );
 
   // Determine if scroll offset changed since last render.
-  const scrollOffsetChanged = ss.offset !== ss.prevOffset
+  const scrollOffsetChanged = ss.offset !== ss.prevOffset;
 
   // Three-tier strategy for scroll container updates:
   //
@@ -615,56 +655,57 @@ function renderScrollContainerChildren(
   // After a shift, these overwritten pixels corrupt items at new positions
   // that skip rendering (hasPrevBuffer=true, no dirty flags). Fall back
   // to full viewport clear (tier 2) when sticky children are present.
-  const hasStickyChildren = !!(ss.stickyChildren && ss.stickyChildren.length > 0)
+  const hasStickyChildren = !!(ss.stickyChildren && ss.stickyChildren.length > 0);
   // Detect when visible range changed (items became hidden or newly visible).
   // When lastVisibleChild decreases, stale pixels from now-hidden items remain
   // in the cloned buffer and must be cleared.
   const visibleRangeChanged =
-    ss.firstVisibleChild !== ss.prevFirstVisibleChild || ss.lastVisibleChild !== ss.prevLastVisibleChild
+    ss.firstVisibleChild !== ss.prevFirstVisibleChild ||
+    ss.lastVisibleChild !== ss.prevLastVisibleChild;
   const scrollOnly =
     hasPrevBuffer &&
     scrollOffsetChanged &&
     !node.childrenDirty &&
     !parentRegionChanged &&
     !hasStickyChildren &&
-    !visibleRangeChanged
+    !visibleRangeChanged;
   const needsViewportClear =
     hasPrevBuffer &&
     !scrollOnly &&
-    (scrollOffsetChanged || node.childrenDirty || parentRegionChanged || visibleRangeChanged)
+    (scrollOffsetChanged || node.childrenDirty || parentRegionChanged || visibleRangeChanged);
 
   if (instrumentEnabled) {
-    stats.scrollContainerCount++
+    stats.scrollContainerCount++;
     if (needsViewportClear || scrollOnly) {
-      stats.scrollViewportCleared++
-      const reasons: string[] = []
-      if (scrollOnly) reasons.push("SHIFT")
-      if (scrollOffsetChanged) reasons.push(`scrollOffset(${ss.prevOffset}->${ss.offset})`)
-      if (node.childrenDirty) reasons.push("childrenDirty")
-      if (parentRegionChanged) reasons.push("parentRegionChanged")
+      stats.scrollViewportCleared++;
+      const reasons: string[] = [];
+      if (scrollOnly) reasons.push("SHIFT");
+      if (scrollOffsetChanged) reasons.push(`scrollOffset(${ss.prevOffset}->${ss.offset})`);
+      if (node.childrenDirty) reasons.push("childrenDirty");
+      if (parentRegionChanged) reasons.push("parentRegionChanged");
       reasons.push(
         `vp=${ss.viewportHeight} content=${ss.contentHeight} vis=${ss.firstVisibleChild}-${ss.lastVisibleChild}`,
-      )
-      stats.scrollClearReason = reasons.join("+")
+      );
+      stats.scrollClearReason = reasons.join("+");
     }
   }
 
   // Compute viewport geometry (shared by both paths)
-  const clearY = childClipBounds.top
-  const clearHeight = childClipBounds.bottom - childClipBounds.top
-  const contentX = layout.x + border.left + padding.left
-  const contentWidth = layout.width - border.left - border.right - padding.left - padding.right
+  const clearY = childClipBounds.top;
+  const clearHeight = childClipBounds.bottom - childClipBounds.top;
+  const contentX = layout.x + border.left + padding.left;
+  const contentWidth = layout.width - border.left - border.right - padding.left - padding.right;
   const scrollBg =
     needsViewportClear || scrollOnly
       ? props.backgroundColor
         ? parseColor(props.backgroundColor)
         : findInheritedBg(node).color
-      : null
+      : null;
 
   // Buffer shift: shift viewport contents instead of full clear.
   // After shift, previously-visible children's pixels are at correct positions.
   // Exposed rows (top/bottom edge) are filled with scrollBg (null = no bg).
-  const scrollDelta = ss.offset - (ss.prevOffset ?? ss.offset)
+  const scrollDelta = ss.offset - (ss.prevOffset ?? ss.offset);
   if (scrollOnly && clearHeight > 0) {
     // Clear scroll indicator rows before shifting. Borderless scroll indicators
     // (overflowIndicator) paint a full-width bar (fg=15/bg=8) on the first/last
@@ -674,22 +715,22 @@ function renderScrollContainerChildren(
     // Clearing these rows to scrollBg before the shift ensures the shift carries
     // correct bg. The indicators are re-rendered after children by
     // renderScrollIndicators.
-    const showBorderless = props.overflowIndicator === true
+    const showBorderless = props.overflowIndicator === true;
     if (showBorderless && !border.top && !border.bottom) {
-      const topIndicatorY = clearY
-      const bottomIndicatorY = clearY + clearHeight - 1
+      const topIndicatorY = clearY;
+      const bottomIndicatorY = clearY + clearHeight - 1;
       if (ss.prevOffset != null && ss.prevOffset > 0) {
         // Previous frame had items hidden above → top indicator was showing
-        buffer.fill(contentX, topIndicatorY, contentWidth, 1, { char: " ", bg: scrollBg })
+        buffer.fill(contentX, topIndicatorY, contentWidth, 1, { char: " ", bg: scrollBg });
       }
       // Previous frame had items hidden below → bottom indicator was showing
       // (safe to always clear bottom row since it will be re-rendered)
-      buffer.fill(contentX, bottomIndicatorY, contentWidth, 1, { char: " ", bg: scrollBg })
+      buffer.fill(contentX, bottomIndicatorY, contentWidth, 1, { char: " ", bg: scrollBg });
     }
     buffer.scrollRegion(contentX, clearY, contentWidth, clearHeight, scrollDelta, {
       char: " ",
       bg: scrollBg,
-    })
+    });
   }
 
   // Full viewport clear (tier 2)
@@ -697,21 +738,23 @@ function renderScrollContainerChildren(
     buffer.fill(contentX, clearY, contentWidth, clearHeight, {
       char: " ",
       bg: scrollBg,
-    })
+    });
   }
 
   // Determine per-child hasPrev and ancestorCleared.
   // - scrollOnly: per-child based on previous visibility
   // - needsViewportClear: all false (full re-render)
   // - otherwise: preserve parent's hasPrevBuffer
-  const defaultChildHasPrev = needsViewportClear ? false : hasPrevBuffer
-  const defaultChildAncestorCleared = needsViewportClear ? true : ancestorCleared || parentRegionCleared
+  const defaultChildHasPrev = needsViewportClear ? false : hasPrevBuffer;
+  const defaultChildAncestorCleared = needsViewportClear
+    ? true
+    : ancestorCleared || parentRegionCleared;
 
   // For buffer shift: children that were fully visible in BOTH the previous
   // and current frames have correct pixels after the shift (childHasPrev=true).
   // Newly visible children need full rendering (childHasPrev=false).
-  const prevVisTop = ss.prevOffset ?? ss.offset
-  const prevVisBottom = prevVisTop + ss.viewportHeight
+  const prevVisTop = ss.prevOffset ?? ss.offset;
+  const prevVisBottom = prevVisTop + ss.viewportHeight;
 
   // When sticky children exist and we're in tier 3 (subtreeDirty only, no
   // viewport clear), force ALL first-pass items to re-render. This is needed
@@ -725,7 +768,7 @@ function renderScrollContainerChildren(
   // Performance: this re-renders all visible items (~20-50) instead of just
   // dirty ones (~2-3). Only applies to scroll containers with sticky children
   // in tier 3 (not tier 1/2 which already handle this via shift/viewport clear).
-  const stickyForceRefresh = hasStickyChildren && hasPrevBuffer && !needsViewportClear
+  const stickyForceRefresh = hasStickyChildren && hasPrevBuffer && !needsViewportClear;
 
   // Full viewport clear for sticky containers: clear to blank (bg=null) to
   // match fresh buffer state. The cloned buffer has stale sticky header content
@@ -738,46 +781,46 @@ function renderScrollContainerChildren(
   // Uses bg=null (not scrollBg/inherited bg) because fresh render starts with
   // a blank buffer — the viewport has null bg before any content renders.
   if (stickyForceRefresh && clearHeight > 0) {
-    buffer.fill(contentX, clearY, contentWidth, clearHeight, { char: " ", bg: null })
+    buffer.fill(contentX, clearY, contentWidth, clearHeight, { char: " ", bg: null });
   }
 
   // First pass: render non-sticky visible children with scroll offset
   for (let i = 0; i < node.children.length; i++) {
-    const child = node.children[i]
-    if (!child) continue
-    const childProps = child.props as BoxProps
+    const child = node.children[i];
+    if (!child) continue;
+    const childProps = child.props as BoxProps;
 
     // Skip sticky children - they're rendered in second pass
     if (childProps.position === "sticky") {
-      continue
+      continue;
     }
 
     // Skip children that are completely outside the visible range
     if (i < ss.firstVisibleChild || i > ss.lastVisibleChild) {
-      continue
+      continue;
     }
 
     // Determine per-child hasPrev for buffer shift mode
-    let thisChildHasPrev = defaultChildHasPrev
-    let thisChildAncestorCleared = defaultChildAncestorCleared
+    let thisChildHasPrev = defaultChildHasPrev;
+    let thisChildAncestorCleared = defaultChildAncestorCleared;
     if (scrollOnly) {
       // Check if child was fully visible in the previous frame
-      const childRect = child.contentRect
+      const childRect = child.contentRect;
       if (childRect) {
-        const childTop = childRect.y - layout.y - border.top - padding.top
-        const childBottom = childTop + childRect.height
-        const wasFullyVisible = childTop >= prevVisTop && childBottom <= prevVisBottom
-        thisChildHasPrev = wasFullyVisible
+        const childTop = childRect.y - layout.y - border.top - padding.top;
+        const childBottom = childTop + childRect.height;
+        const wasFullyVisible = childTop >= prevVisTop && childBottom <= prevVisBottom;
+        thisChildHasPrev = wasFullyVisible;
         // Shifted children: their pixels are intact (not cleared)
         // Newly visible: exposed region was filled by scrollRegion
-        thisChildAncestorCleared = wasFullyVisible ? ancestorCleared || parentRegionCleared : true
+        thisChildAncestorCleared = wasFullyVisible ? ancestorCleared || parentRegionCleared : true;
       }
     }
 
     // Force fresh rendering when sticky children exist (see stickyForceRefresh).
     if (stickyForceRefresh && thisChildHasPrev) {
-      thisChildHasPrev = false
-      thisChildAncestorCleared = false
+      thisChildHasPrev = false;
+      thisChildAncestorCleared = false;
     }
 
     // Render visible children with scroll offset applied.
@@ -791,20 +834,20 @@ function renderScrollContainerChildren(
         ancestorCleared: thisChildAncestorCleared,
       },
       ctx,
-    )
+    );
   }
 
   // Second pass: render sticky children at their computed positions
   // Rendered last so they appear on top of other content
   if (ss.stickyChildren) {
     for (const sticky of ss.stickyChildren) {
-      const child = node.children[sticky.index]
-      if (!child?.contentRect) continue
+      const child = node.children[sticky.index];
+      if (!child?.contentRect) continue;
 
       // Calculate the scroll offset that would place the child at its sticky position
       // stickyOffset = naturalTop - renderOffset
       // This makes the child render at renderOffset instead of its natural position
-      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset
+      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset;
 
       // Sticky children always re-render (hasPrevBuffer=false) since their
       // effective scroll offset may change even when the container's doesn't.
@@ -829,7 +872,7 @@ function renderScrollContainerChildren(
           ancestorCleared: false,
         },
         ctx,
-      )
+      );
     }
   }
 }
@@ -847,28 +890,30 @@ function renderNormalChildren(
   parentRegionChanged = false,
   ctx?: PipelineContext,
 ): void {
-  const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared } = nodeState
+  const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared } = nodeState;
   // Resolve instrumentation from ctx or module globals
-  const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
-  const stats = ctx?.stats ?? _contentPhaseStats
-  const layout = node.contentRect
-  if (!layout) return
+  const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled;
+  const stats = ctx?.stats ?? _contentPhaseStats;
+  const layout = node.contentRect;
+  if (!layout) return;
 
   // For overflow='hidden' containers, clip children to content area (both vertical and horizontal)
   const effectiveClipBounds =
-    props.overflow === "hidden" ? computeChildClipBounds(layout, props, clipBounds, scrollOffset) : clipBounds
+    props.overflow === "hidden"
+      ? computeChildClipBounds(layout, props, clipBounds, scrollOffset)
+      : clipBounds;
 
   // Non-scroll sticky children support. When the layout phase computes
   // node.stickyChildren, we use the same two-pass pattern as scroll containers:
   // first pass renders non-sticky children, second pass renders sticky children
   // at their computed renderOffset positions.
-  const hasStickyChildren = !!(node.stickyChildren && node.stickyChildren.length > 0)
+  const hasStickyChildren = !!(node.stickyChildren && node.stickyChildren.length > 0);
 
   // When sticky children exist and hasPrevBuffer is true, force all first-pass
   // children to re-render. The cloned buffer may have stale pixels from previous
   // frames' sticky positions. This matches the stickyForceRefresh pattern from
   // scroll containers (Tier 3).
-  const stickyForceRefresh = hasStickyChildren && hasPrevBuffer
+  const stickyForceRefresh = hasStickyChildren && hasPrevBuffer;
 
   // Pre-clear the content area to bg=null when stickyForceRefresh is true.
   // Fresh renders start with a blank buffer (null bg everywhere). The cloned
@@ -876,27 +921,29 @@ function renderNormalChildren(
   // getCellBg/inheritedBg, so stale bg leaks through. Clearing to null matches
   // fresh render state before any content renders.
   if (stickyForceRefresh) {
-    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-    const padding = getPadding(props)
-    const contentX = layout.x + border.left + padding.left
-    const contentY = layout.y + border.top + padding.top
-    const contentWidth = layout.width - border.left - border.right - padding.left - padding.right
-    const contentHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom
-    buffer.fill(contentX, contentY, contentWidth, contentHeight, { char: " ", bg: null })
+    const border = props.borderStyle
+      ? getBorderSize(props)
+      : { top: 0, bottom: 0, left: 0, right: 0 };
+    const padding = getPadding(props);
+    const contentX = layout.x + border.left + padding.left;
+    const contentY = layout.y + border.top + padding.top;
+    const contentWidth = layout.width - border.left - border.right - padding.left - padding.right;
+    const contentHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom;
+    buffer.fill(contentX, contentY, contentWidth, contentHeight, { char: " ", bg: null });
   }
 
   // Force children to re-render when parent's region was modified on a clone,
   // children were restructured, or sibling positions shifted.
-  const childrenNeedRepaint = node.childrenDirty || childPositionChanged || parentRegionChanged
+  const childrenNeedRepaint = node.childrenDirty || childPositionChanged || parentRegionChanged;
   if (instrumentEnabled && childrenNeedRepaint && hasPrevBuffer) {
-    stats.normalChildrenRepaint++
-    const reasons: string[] = []
-    if (node.childrenDirty) reasons.push("childrenDirty")
-    if (childPositionChanged) reasons.push("childPositionChanged")
-    if (parentRegionChanged) reasons.push("parentRegionChanged")
-    stats.normalRepaintReason = reasons.join("+")
+    stats.normalChildrenRepaint++;
+    const reasons: string[] = [];
+    if (node.childrenDirty) reasons.push("childrenDirty");
+    if (childPositionChanged) reasons.push("childPositionChanged");
+    if (parentRegionChanged) reasons.push("parentRegionChanged");
+    stats.normalRepaintReason = reasons.join("+");
   }
-  let childHasPrev = childrenNeedRepaint ? false : hasPrevBuffer
+  let childHasPrev = childrenNeedRepaint ? false : hasPrevBuffer;
   // childAncestorCleared: tells descendants that STALE pixels exist in the buffer.
   // Only parentRegionCleared (no bg fill → stale pixels remain) propagates this.
   // parentRegionChanged WITHOUT parentRegionCleared means the parent filled its bg,
@@ -904,13 +951,13 @@ function renderNormalChildren(
   // there would cause children to re-fill, overwriting border cells at boundaries.
   // When this node has backgroundColor, its renderBox fill covers any stale
   // pixels from ancestor clears — so children don't need ancestorCleared.
-  let childAncestorCleared = parentRegionCleared || (ancestorCleared && !props.backgroundColor)
+  let childAncestorCleared = parentRegionCleared || (ancestorCleared && !props.backgroundColor);
 
   // Override child flags when sticky force refresh is active — all first-pass
   // children must re-render fresh (matching the scroll container pattern).
   if (stickyForceRefresh) {
-    childHasPrev = false
-    childAncestorCleared = false
+    childHasPrev = false;
+    childAncestorCleared = false;
   }
 
   // Multi-pass rendering to match CSS paint order:
@@ -924,17 +971,17 @@ function renderNormalChildren(
   // Pre-scan: detect if any non-absolute, non-sticky sibling is dirty. When
   // true, absolute children in the third pass must force-repaint because the
   // first pass may have overwritten their pixels in the cloned buffer.
-  let hasAbsoluteChildren = false
+  let hasAbsoluteChildren = false;
 
   // First pass: render normal-flow children (skip sticky + absolute), track dirty state
   for (const child of node.children) {
-    const childProps = child.props as BoxProps
+    const childProps = child.props as BoxProps;
     if (childProps.position === "absolute") {
-      hasAbsoluteChildren = true
-      continue // Skip — rendered in third pass
+      hasAbsoluteChildren = true;
+      continue; // Skip — rendered in third pass
     }
     if (hasStickyChildren && childProps.position === "sticky") {
-      continue // Skip — rendered in second pass
+      continue; // Skip — rendered in second pass
     }
 
     renderNodeToBuffer(
@@ -947,20 +994,20 @@ function renderNormalChildren(
         ancestorCleared: childAncestorCleared,
       },
       ctx,
-    )
+    );
   }
 
   // Second pass: render sticky children at their computed positions.
   // Rendered after normal-flow so they appear on top of other content.
   if (node.stickyChildren) {
     for (const sticky of node.stickyChildren) {
-      const child = node.children[sticky.index]
-      if (!child?.contentRect) continue
+      const child = node.children[sticky.index];
+      if (!child?.contentRect) continue;
 
       // Calculate the scroll offset that would place the child at its sticky position.
       // stickyScrollOffset = naturalTop - renderOffset
       // This makes the child render at renderOffset instead of its natural position.
-      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset
+      const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset;
 
       // Sticky children always re-render (hasPrevBuffer=false) since their
       // effective position may change between frames.
@@ -979,15 +1026,15 @@ function renderNormalChildren(
           ancestorCleared: false,
         },
         ctx,
-      )
+      );
     }
   }
 
   // Third pass: render absolute children on top (CSS paint order)
   if (hasAbsoluteChildren) {
     for (const child of node.children) {
-      const childProps = child.props as BoxProps
-      if (childProps.position !== "absolute") continue
+      const childProps = child.props as BoxProps;
+      if (childProps.position !== "absolute") continue;
 
       // Both hasPrevBuffer and ancestorCleared must be false for absolute children
       // in the second pass. The buffer at the absolute child's position contains
@@ -1012,7 +1059,7 @@ function renderNormalChildren(
           ancestorCleared: false,
         },
         ctx,
-      )
+      );
     }
   }
 }
@@ -1025,19 +1072,19 @@ function renderNormalChildren(
  * Clear dirty flags on a subtree that was skipped during incremental rendering.
  */
 function clearDirtyFlags(node: TeaNode): void {
-  node.contentDirty = false
-  node.paintDirty = false
-  node.bgDirty = false
-  node.subtreeDirty = false
-  node.childrenDirty = false
-  node.layoutChangedThisFrame = false
+  node.contentDirty = false;
+  node.paintDirty = false;
+  node.bgDirty = false;
+  node.subtreeDirty = false;
+  node.childrenDirty = false;
+  node.layoutChangedThisFrame = false;
   for (const child of node.children) {
     if (child.layoutNode) {
-      clearDirtyFlags(child)
+      clearDirtyFlags(child);
     } else {
       // Virtual text children also need flags cleared — they're rendered by
       // their parent's collectTextContent(), not by renderNodeToBuffer().
-      clearVirtualTextFlags(child)
+      clearVirtualTextFlags(child);
     }
   }
 }
@@ -1050,14 +1097,14 @@ function clearDirtyFlags(node: TeaNode): void {
  * markSubtreeDirty() propagation on future updates.
  */
 function clearVirtualTextFlags(node: TeaNode): void {
-  node.contentDirty = false
-  node.paintDirty = false
-  node.bgDirty = false
-  node.subtreeDirty = false
-  node.childrenDirty = false
-  node.layoutChangedThisFrame = false
+  node.contentDirty = false;
+  node.paintDirty = false;
+  node.bgDirty = false;
+  node.subtreeDirty = false;
+  node.childrenDirty = false;
+  node.layoutChangedThisFrame = false;
   for (const child of node.children) {
-    clearVirtualTextFlags(child)
+    clearVirtualTextFlags(child);
   }
 }
 
@@ -1069,12 +1116,15 @@ function clearVirtualTextFlags(node: TeaNode): void {
 function hasChildPositionChanged(node: TeaNode): boolean {
   for (const child of node.children) {
     if (child.contentRect && child.prevLayout) {
-      if (child.contentRect.x !== child.prevLayout.x || child.contentRect.y !== child.prevLayout.y) {
-        return true
+      if (
+        child.contentRect.x !== child.prevLayout.x ||
+        child.contentRect.y !== child.prevLayout.y
+      ) {
+        return true;
       }
     }
   }
-  return false
+  return false;
 }
 
 /**
@@ -1091,31 +1141,33 @@ function computeChildClipBounds(
    *  Scroll containers should use horizontal=false — they clip vertically but not horizontally. */
   horizontal = true,
 ): ClipBounds {
-  const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
-  const padding = getPadding(props)
-  const adjustedY = layout.y - scrollOffset
+  const border = props.borderStyle
+    ? getBorderSize(props)
+    : { top: 0, bottom: 0, left: 0, right: 0 };
+  const padding = getPadding(props);
+  const adjustedY = layout.y - scrollOffset;
   const nodeClip: ClipBounds = {
     top: adjustedY + border.top + padding.top,
     bottom: adjustedY + layout.height - border.bottom - padding.bottom,
-  }
+  };
   if (horizontal) {
-    nodeClip.left = layout.x + border.left + padding.left
-    nodeClip.right = layout.x + layout.width - border.right - padding.right
+    nodeClip.left = layout.x + border.left + padding.left;
+    nodeClip.right = layout.x + layout.width - border.right - padding.right;
   }
-  if (!parentClip) return nodeClip
+  if (!parentClip) return nodeClip;
   const result: ClipBounds = {
     top: Math.max(parentClip.top, nodeClip.top),
     bottom: Math.min(parentClip.bottom, nodeClip.bottom),
-  }
+  };
   if (horizontal && nodeClip.left !== undefined && nodeClip.right !== undefined) {
-    result.left = Math.max(parentClip.left ?? 0, nodeClip.left)
-    result.right = Math.min(parentClip.right ?? Infinity, nodeClip.right)
+    result.left = Math.max(parentClip.left ?? 0, nodeClip.left);
+    result.right = Math.min(parentClip.right ?? Infinity, nodeClip.right);
   } else if (parentClip.left !== undefined && parentClip.right !== undefined) {
     // Pass through parent's horizontal clip bounds without adding own
-    result.left = parentClip.left
-    result.right = parentClip.right
+    result.left = parentClip.left;
+    result.right = parentClip.right;
   }
-  return result
+  return result;
 }
 
 // ============================================================================
@@ -1126,9 +1178,9 @@ function computeChildClipBounds(
  * Result of finding inherited background - includes both color and ancestor bounds.
  */
 interface InheritedBgResult {
-  color: Color
+  color: Color;
   /** The rect of the ancestor that has the background color (for clipping) */
-  ancestorRect: { x: number; y: number; width: number; height: number } | null
+  ancestorRect: { x: number; y: number; width: number; height: number } | null;
 }
 
 /**
@@ -1140,18 +1192,18 @@ interface InheritedBgResult {
  * color can bleed into sibling areas that should have different backgrounds.
  */
 function findInheritedBg(node: TeaNode): InheritedBgResult {
-  let current = node.parent
+  let current = node.parent;
   while (current) {
-    const bg = (current.props as BoxProps).backgroundColor
+    const bg = (current.props as BoxProps).backgroundColor;
     if (bg) {
       return {
         color: parseColor(bg),
         ancestorRect: current.contentRect,
-      }
+      };
     }
-    current = current.parent
+    current = current.parent;
   }
-  return { color: null, ancestorRect: null }
+  return { color: null, ancestorRect: null };
 }
 
 /**
@@ -1160,13 +1212,13 @@ function findInheritedBg(node: TeaNode): InheritedBgResult {
  * explicit `color` prop inherit from the nearest Box ancestor that sets one.
  */
 function findInheritedFg(node: TeaNode): Color {
-  let current = node.parent
+  let current = node.parent;
   while (current) {
-    const fg = (current.props as BoxProps).color
-    if (fg) return parseColor(fg)
-    current = current.parent
+    const fg = (current.props as BoxProps).color;
+    if (fg) return parseColor(fg);
+    current = current.parent;
   }
-  return null
+  return null;
 }
 
 /**
@@ -1184,56 +1236,58 @@ function clearNodeRegion(
   clipBounds: ClipBounds | undefined,
   layoutChanged: boolean,
 ): void {
-  const inherited = findInheritedBg(node)
-  const clearBg = inherited.color
-  const screenY = layout.y - scrollOffset
+  const inherited = findInheritedBg(node);
+  const clearBg = inherited.color;
+  const screenY = layout.y - scrollOffset;
 
   // Clip to parent's contentRect to prevent oversized children from clearing
   // beyond their parent's bounds and bleeding inherited bg into sibling regions.
-  const parentRect = node.parent?.contentRect
-  const parentBottom = parentRect ? parentRect.y - scrollOffset + parentRect.height : undefined
+  const parentRect = node.parent?.contentRect;
+  const parentBottom = parentRect ? parentRect.y - scrollOffset + parentRect.height : undefined;
 
-  const clearY = clipBounds ? Math.max(screenY, clipBounds.top) : screenY
-  let clearBottom = clipBounds ? Math.min(screenY + layout.height, clipBounds.bottom) : screenY + layout.height
+  const clearY = clipBounds ? Math.max(screenY, clipBounds.top) : screenY;
+  let clearBottom = clipBounds
+    ? Math.min(screenY + layout.height, clipBounds.bottom)
+    : screenY + layout.height;
   if (parentBottom !== undefined) {
-    clearBottom = Math.min(clearBottom, parentBottom)
+    clearBottom = Math.min(clearBottom, parentBottom);
   }
 
   // Clip horizontally to clipBounds (overflow:hidden containers) and to the
   // colored ancestor's bounds (prevents inherited bg bleeding into siblings).
-  let clearX = layout.x
-  let clearWidth = layout.width
+  let clearX = layout.x;
+  let clearWidth = layout.width;
   if (clipBounds?.left !== undefined && clipBounds.right !== undefined) {
     if (clearX < clipBounds.left) {
-      clearWidth -= clipBounds.left - clearX
-      clearX = clipBounds.left
+      clearWidth -= clipBounds.left - clearX;
+      clearX = clipBounds.left;
     }
     if (clearX + clearWidth > clipBounds.right) {
-      clearWidth = Math.max(0, clipBounds.right - clearX)
+      clearWidth = Math.max(0, clipBounds.right - clearX);
     }
   }
   if (inherited.ancestorRect) {
-    const ancestorRight = inherited.ancestorRect.x + inherited.ancestorRect.width
-    const ancestorLeft = inherited.ancestorRect.x
+    const ancestorRight = inherited.ancestorRect.x + inherited.ancestorRect.width;
+    const ancestorLeft = inherited.ancestorRect.x;
     if (clearX < ancestorLeft) {
-      clearWidth -= ancestorLeft - clearX
-      clearX = ancestorLeft
+      clearWidth -= ancestorLeft - clearX;
+      clearX = ancestorLeft;
     }
     if (clearX + clearWidth > ancestorRight) {
-      clearWidth = Math.max(0, ancestorRight - clearX)
+      clearWidth = Math.max(0, ancestorRight - clearX);
     }
   }
 
-  const clearHeight = clearBottom - clearY
+  const clearHeight = clearBottom - clearY;
   if (clearHeight > 0 && clearWidth > 0) {
     buffer.fill(clearX, clearY, clearWidth, clearHeight, {
       char: " ",
       bg: clearBg,
-    })
+    });
   }
 
   // Delegate excess area clearing to shared helper
-  clearExcessArea(node, buffer, layout, scrollOffset, clipBounds, layoutChanged, inherited)
+  clearExcessArea(node, buffer, layout, scrollOffset, clipBounds, layoutChanged, inherited);
 }
 
 /**
@@ -1262,11 +1316,11 @@ function clearExcessArea(
   layoutChanged: boolean,
   inherited?: InheritedBgResult,
 ): void {
-  if (!layoutChanged || !node.prevLayout) return
-  const prev = node.prevLayout
+  if (!layoutChanged || !node.prevLayout) return;
+  const prev = node.prevLayout;
 
   // Only clear if the node actually shrank in at least one dimension
-  if (prev.width <= layout.width && prev.height <= layout.height) return
+  if (prev.width <= layout.width && prev.height <= layout.height) return;
 
   // Skip excess clearing when the node MOVED (changed x or y position).
   // The right/bottom excess formulas use new-x + old-y coordinates, which
@@ -1277,23 +1331,23 @@ function clearExcessArea(
   // When the node moved, the parent handles old-pixel cleanup:
   // - Parent's clearNodeRegion covers old pixels within parent's current rect
   // - Parent's clearExcessArea covers old pixels outside parent's rect
-  if (prev.x !== layout.x || prev.y !== layout.y) return
+  if (prev.x !== layout.x || prev.y !== layout.y) return;
 
-  if (!inherited) inherited = findInheritedBg(node)
-  const clearBg = inherited.color
-  const screenY = layout.y - scrollOffset
-  const prevScreenY = prev.y - scrollOffset
+  if (!inherited) inherited = findInheritedBg(node);
+  const clearBg = inherited.color;
+  const screenY = layout.y - scrollOffset;
+  const prevScreenY = prev.y - scrollOffset;
 
   // Clip to prevent excess clearing from bleeding outside valid bounds.
   // Start with the colored ancestor's rect (prevents bg color bleed),
   // then further restrict to the immediate parent's content area (prevents
   // overwriting parent's border characters).
-  const clipRect = inherited.ancestorRect ?? node.parent?.contentRect
-  if (!clipRect) return
+  const clipRect = inherited.ancestorRect ?? node.parent?.contentRect;
+  if (!clipRect) return;
 
-  const clipRectScreenY = clipRect.y - scrollOffset
-  let clipRectBottom = clipRectScreenY + clipRect.height
-  let clipRectRight = clipRect.x + clipRect.width
+  const clipRectScreenY = clipRect.y - scrollOffset;
+  let clipRectBottom = clipRectScreenY + clipRect.height;
+  let clipRectRight = clipRect.x + clipRect.width;
 
   // Always inset by the immediate parent's border/padding.
   // Without this, a child's excess clearing extends into the parent's
@@ -1301,27 +1355,32 @@ function clearExcessArea(
   // (The old code skipped inset when clip rect came from a colored ancestor,
   // assuming "its bg fill covers its border area" — but bg fill only covers
   // the inside, while renderBorder draws characters on the border row.)
-  const parent = node.parent
+  const parent = node.parent;
   if (parent?.contentRect) {
-    const parentProps = parent.props as BoxProps
-    const border = getBorderSize(parentProps)
-    const padding = getPadding(parentProps)
-    const parentRight = parent.contentRect.x + parent.contentRect.width - border.right - padding.right
+    const parentProps = parent.props as BoxProps;
+    const border = getBorderSize(parentProps);
+    const padding = getPadding(parentProps);
+    const parentRight =
+      parent.contentRect.x + parent.contentRect.width - border.right - padding.right;
     const parentBottom =
-      parent.contentRect.y - scrollOffset + parent.contentRect.height - border.bottom - padding.bottom
-    clipRectRight = Math.min(clipRectRight, parentRight)
-    clipRectBottom = Math.min(clipRectBottom, parentBottom)
+      parent.contentRect.y -
+      scrollOffset +
+      parent.contentRect.height -
+      border.bottom -
+      padding.bottom;
+    clipRectRight = Math.min(clipRectRight, parentRight);
+    clipRectBottom = Math.min(clipRectBottom, parentBottom);
   }
 
   // Clear right margin (old was wider than new)
   if (prev.width > layout.width) {
-    let excessX = layout.x + layout.width
-    let excessWidth = prev.width - layout.width
+    let excessX = layout.x + layout.width;
+    let excessWidth = prev.width - layout.width;
     // Clip horizontally to parent's content area (inside border/padding).
     // Without this, excess clearing of a child that previously filled a wider
     // layout extends into the parent's right border, overwriting border chars.
     if (excessX + excessWidth > clipRectRight) {
-      excessWidth = Math.max(0, clipRectRight - excessX)
+      excessWidth = Math.max(0, clipRectRight - excessX);
     }
     if (excessWidth > 0) {
       clippedFill(
@@ -1333,16 +1392,16 @@ function clearExcessArea(
         clipBounds,
         clipRectBottom,
         clearBg,
-      )
+      );
     }
   }
 
   // Clear bottom margin (old was taller than new)
   if (prev.height > layout.height) {
-    let bottomWidth = prev.width
+    let bottomWidth = prev.width;
     // Clip horizontally to parent's content area
     if (layout.x + bottomWidth > clipRectRight) {
-      bottomWidth = Math.max(0, clipRectRight - layout.x)
+      bottomWidth = Math.max(0, clipRectRight - layout.x);
     }
     clippedFill(
       buffer,
@@ -1353,7 +1412,7 @@ function clearExcessArea(
       clipBounds,
       clipRectBottom,
       clearBg,
-    )
+    );
   }
 }
 
@@ -1368,21 +1427,24 @@ function clippedFill(
   outerBottom: number,
   bg: Color,
 ): void {
-  const clippedTop = clipBounds ? Math.max(top, clipBounds.top) : top
-  const clippedBottom = Math.min(clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom, outerBottom)
-  let clippedX = x
-  let clippedWidth = width
+  const clippedTop = clipBounds ? Math.max(top, clipBounds.top) : top;
+  const clippedBottom = Math.min(
+    clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom,
+    outerBottom,
+  );
+  let clippedX = x;
+  let clippedWidth = width;
   if (clipBounds?.left !== undefined && clipBounds.right !== undefined) {
     if (clippedX < clipBounds.left) {
-      clippedWidth -= clipBounds.left - clippedX
-      clippedX = clipBounds.left
+      clippedWidth -= clipBounds.left - clippedX;
+      clippedX = clipBounds.left;
     }
     if (clippedX + clippedWidth > clipBounds.right) {
-      clippedWidth = Math.max(0, clipBounds.right - clippedX)
+      clippedWidth = Math.max(0, clipBounds.right - clippedX);
     }
   }
-  const height = clippedBottom - clippedTop
+  const height = clippedBottom - clippedTop;
   if (height > 0 && clippedWidth > 0) {
-    buffer.fill(clippedX, clippedTop, clippedWidth, height, { char: " ", bg })
+    buffer.fill(clippedX, clippedTop, clippedWidth, height, { char: " ", bg });
   }
 }

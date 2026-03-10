@@ -15,15 +15,15 @@
  * @see https://sw.kovidgoyal.net/kitty/text-sizing-protocol/
  */
 
-const OSC = "\x1b]"
-const ST = "\x07" // BEL terminator (more compatible than ESC \)
+const OSC = "\x1b]";
+const ST = "\x07"; // BEL terminator (more compatible than ESC \)
 
 /**
  * Wrap text in an OSC 66 sequence that tells the terminal to render it
  * in exactly `width` cells.
  */
 export function textSized(text: string, width: number): string {
-  return `${OSC}66;w=${width};${text}${ST}`
+  return `${OSC}66;w=${width};${text}${ST}`;
 }
 
 /**
@@ -35,7 +35,7 @@ export function isPrivateUseArea(cp: number): boolean {
     (cp >= 0xe000 && cp <= 0xf8ff) || // BMP PUA
     (cp >= 0xf0000 && cp <= 0xffffd) || // Supplementary PUA-A
     (cp >= 0x100000 && cp <= 0x10fffd) // Supplementary PUA-B
-  )
+  );
 }
 
 /**
@@ -44,21 +44,21 @@ export function isPrivateUseArea(cp: number): boolean {
  * definitive detection via cursor position reports.
  */
 export function isTextSizingLikelySupported(): boolean {
-  const termProgram = process.env.TERM_PROGRAM?.toLowerCase() ?? ""
-  const termVersion = process.env.TERM_PROGRAM_VERSION ?? ""
+  const termProgram = process.env.TERM_PROGRAM?.toLowerCase() ?? "";
+  const termVersion = process.env.TERM_PROGRAM_VERSION ?? "";
 
   // Kitty v0.40+ supports OSC 66
   if (termProgram === "kitty") {
-    const parts = termVersion.split(".")
-    const major = Number(parts[0]) || 0
-    const minor = Number(parts[1]) || 0
-    if (major > 0 || (major === 0 && minor >= 40)) return true
+    const parts = termVersion.split(".");
+    const major = Number(parts[0]) || 0;
+    const minor = Number(parts[1]) || 0;
+    if (major > 0 || (major === 0 && minor >= 40)) return true;
   }
 
   // Ghostty supports text sizing (Kitty protocol compatibility)
-  if (termProgram === "ghostty") return true
+  if (termProgram === "ghostty") return true;
 
-  return false
+  return false;
 }
 
 /**
@@ -81,27 +81,29 @@ export async function detectTextSizingSupport(
   // 2. OSC 66 w=2 with a space character
   // 3. Request CPR (cursor position report)
   // If cursor is at column 3 (1-indexed), w=2 worked
-  const testSequence = "\r" + textSized(" ", 2) + "\x1b[6n" + "\r\x1b[K"
-  write(testSequence)
+  const testSequence = "\r" + textSized(" ", 2) + "\x1b[6n" + "\r\x1b[K";
+  write(testSequence);
 
   try {
     const response = await Promise.race([
       read(),
-      new Promise<string>((_resolve, reject) => setTimeout(() => reject(new Error("timeout")), timeout)),
-    ])
+      new Promise<string>((_resolve, reject) =>
+        setTimeout(() => reject(new Error("timeout")), timeout),
+      ),
+    ]);
 
     // Parse CPR response: ESC [ row ; col R
-    const match = response.match(/\x1b\[(\d+);(\d+)R/)
+    const match = response.match(/\x1b\[(\d+);(\d+)R/);
     if (match) {
-      const col = Number(match[2])
+      const col = Number(match[2]);
       // Column 3 means the space occupied 2 cells (col is 1-indexed, started at 1)
       if (col === 3) {
-        return { supported: true, widthOnly: false }
+        return { supported: true, widthOnly: false };
       }
     }
 
-    return { supported: false, widthOnly: false }
+    return { supported: false, widthOnly: false };
   } catch {
-    return { supported: false, widthOnly: false }
+    return { supported: false, widthOnly: false };
   }
 }

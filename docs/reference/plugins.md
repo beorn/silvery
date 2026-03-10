@@ -54,7 +54,7 @@ function run(store, element, options = {}) {
     withTerminal(process, options), // mouse, kitty, paste all on by default
     withFocus(),
     withDomEvents(),
-  ).run()
+  ).run();
 }
 ```
 
@@ -67,28 +67,28 @@ Every option on `run()` maps to a plugin. When you need more control — custom 
 Adds a `cmd` object for direct command invocation with metadata.
 
 ```tsx
-import { withCommands } from "@silvery/term"
+import { withCommands } from "@silvery/term";
 
 const app = withCommands(render(<Board />), {
   registry: commandRegistry,
   getContext: () => buildCommandContext(state),
   handleAction: (action) => dispatch(action),
   getKeybindings: () => keybindings,
-})
+});
 
 // Direct command invocation
-await app.cmd.down()
-await app.cmd["cursor_down"]()
+await app.cmd.down();
+await app.cmd["cursor_down"]();
 
 // Command metadata
-app.cmd.down.id // 'cursor_down'
-app.cmd.down.name // 'Move Down'
-app.cmd.down.help // 'Move cursor down'
-app.cmd.down.keys // ['j', 'ArrowDown']
+app.cmd.down.id; // 'cursor_down'
+app.cmd.down.name; // 'Move Down'
+app.cmd.down.help; // 'Move cursor down'
+app.cmd.down.keys; // ['j', 'ArrowDown']
 
 // Introspection
-app.cmd.all() // All commands with metadata
-app.getState() // { screen, commands, focus }
+app.cmd.all(); // All commands with metadata
+app.getState(); // { screen, commands, focus }
 ```
 
 ## withKeybindings
@@ -96,18 +96,18 @@ app.getState() // { screen, commands, focus }
 Routes `press()` calls to commands via keybinding lookup. Wraps a `withCommands`-enhanced app.
 
 ```tsx
-import { withKeybindings } from "@silvery/term"
+import { withKeybindings } from "@silvery/term";
 
 const app = withKeybindings(withCommands(render(<Board />), cmdOpts), {
   bindings: defaultKeybindings,
   getKeyContext: () => ({ mode: "normal", hasSelection: false }),
-})
+});
 
 // Press 'j' -> resolves to cursor_down -> calls app.cmd.down()
-await app.press("j")
+await app.press("j");
 
 // Unbound keys pass through to useInput handlers
-await app.press("x")
+await app.press("x");
 ```
 
 ## withDiagnostics
@@ -115,7 +115,7 @@ await app.press("x")
 Adds buffer and rendering invariant checks after command execution. Imported from `silvery/toolbelt`.
 
 ```tsx
-import { withDiagnostics } from "@silvery/term/toolbelt"
+import { withDiagnostics } from "@silvery/term/toolbelt";
 
 const driver = withDiagnostics(app, {
   checkIncremental: true, // Verify incremental vs fresh render match
@@ -123,10 +123,10 @@ const driver = withDiagnostics(app, {
   checkReplay: true, // Verify ANSI replay produces correct result
   captureOnFailure: true, // Save screenshot on diagnostic failure
   screenshotDir: "/tmp/silvery-diagnostics",
-})
+});
 
 // Commands now run invariant checks automatically
-await driver.cmd.down() // Throws if any check fails (with screenshot path)
+await driver.cmd.down(); // Throws if any check fails (with screenshot path)
 ```
 
 ## Screenshots
@@ -134,8 +134,8 @@ await driver.cmd.down() // Throws if any check fails (with screenshot path)
 The App interface supports direct screenshot capture via `bufferToHTML()` + lazy Playwright rendering:
 
 ```tsx
-const png = await app.screenshot("/tmp/board.png") // Save to file
-const buffer = await app.screenshot() // Get Buffer
+const png = await app.screenshot("/tmp/board.png"); // Save to file
+const buffer = await app.screenshot(); // Get Buffer
 ```
 
 No TTY server or external processes needed. Playwright is lazy-loaded on first call.
@@ -146,7 +146,7 @@ Compose plugins to create a "driver" for automated testing or AI interaction:
 
 ```tsx
 function createBoardDriver(repo: Repo, rootId: string) {
-  const { app, state, dispatch } = setupBoardApp(repo, rootId)
+  const { app, state, dispatch } = setupBoardApp(repo, rootId);
 
   return withDiagnostics(
     withKeybindings(
@@ -158,7 +158,7 @@ function createBoardDriver(repo: Repo, rootId: string) {
       }),
       { bindings: keybindings, getKeyContext: () => state.keyContext },
     ),
-  )
+  );
 }
 ```
 

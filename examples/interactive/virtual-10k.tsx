@@ -21,37 +21,37 @@
  *   Esc/q or Ctrl+C   - Quit
  */
 
-import React, { useState, useCallback, useMemo } from "react"
-import { Box, Text, Divider, VirtualList, useContentRect } from "../../src/index.js"
-import { run, useInput, type Key } from "../../src/runtime/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+import React, { useState, useCallback, useMemo } from "react";
+import { Box, Text, Divider, VirtualList, useContentRect } from "../../src/index.js";
+import { run, useInput, type Key } from "../../src/runtime/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Virtual 10K",
   description: "VirtualList scrolling through 10,000 items with instant navigation",
   features: ["VirtualList", "10K items", "useContentRect()", "variable itemHeight"],
-}
+};
 
 // ============================================================================
 // Types
 // ============================================================================
 
 interface Item {
-  id: number
-  title: string
-  priority: "P0" | "P1" | "P2" | "P3"
-  status: "todo" | "in-progress" | "done" | "blocked"
-  tags: string[]
-  progress: number
-  description: string
+  id: number;
+  title: string;
+  priority: "P0" | "P1" | "P2" | "P3";
+  status: "todo" | "in-progress" | "done" | "blocked";
+  tags: string[];
+  progress: number;
+  description: string;
 }
 
 // ============================================================================
 // Data Generation
 // ============================================================================
 
-const PRIORITIES: Item["priority"][] = ["P0", "P1", "P2", "P3"]
-const STATUSES: Item["status"][] = ["todo", "in-progress", "done", "blocked"]
+const PRIORITIES: Item["priority"][] = ["P0", "P1", "P2", "P3"];
+const STATUSES: Item["status"][] = ["todo", "in-progress", "done", "blocked"];
 const TAG_POOL = [
   "frontend",
   "backend",
@@ -65,7 +65,7 @@ const TAG_POOL = [
   "devops",
   "mobile",
   "infra",
-]
+];
 
 const ADJECTIVES = [
   "Implement",
@@ -80,7 +80,7 @@ const ADJECTIVES = [
   "Migrate",
   "Configure",
   "Deploy",
-]
+];
 
 const NOUNS = [
   "authentication flow",
@@ -99,32 +99,32 @@ const NOUNS = [
   "file upload",
   "websocket handler",
   "session manager",
-]
+];
 
 function seededRandom(seed: number): () => number {
-  let s = seed
+  let s = seed;
   return () => {
-    s = (s * 1664525 + 1013904223) & 0x7fffffff
-    return s / 0x7fffffff
-  }
+    s = (s * 1664525 + 1013904223) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
 }
 
 function generateItems(count: number): Item[] {
-  const rng = seededRandom(42)
-  const items: Item[] = []
+  const rng = seededRandom(42);
+  const items: Item[] = [];
 
   for (let i = 0; i < count; i++) {
-    const adj = ADJECTIVES[Math.floor(rng() * ADJECTIVES.length)]!
-    const noun = NOUNS[Math.floor(rng() * NOUNS.length)]!
-    const priority = PRIORITIES[Math.floor(rng() * PRIORITIES.length)]!
-    const status = STATUSES[Math.floor(rng() * STATUSES.length)]!
-    const tagCount = 1 + Math.floor(rng() * 3)
-    const tags: string[] = []
+    const adj = ADJECTIVES[Math.floor(rng() * ADJECTIVES.length)]!;
+    const noun = NOUNS[Math.floor(rng() * NOUNS.length)]!;
+    const priority = PRIORITIES[Math.floor(rng() * PRIORITIES.length)]!;
+    const status = STATUSES[Math.floor(rng() * STATUSES.length)]!;
+    const tagCount = 1 + Math.floor(rng() * 3);
+    const tags: string[] = [];
     for (let t = 0; t < tagCount; t++) {
-      const tag = TAG_POOL[Math.floor(rng() * TAG_POOL.length)]!
-      if (!tags.includes(tag)) tags.push(tag)
+      const tag = TAG_POOL[Math.floor(rng() * TAG_POOL.length)]!;
+      if (!tags.includes(tag)) tags.push(tag);
     }
-    const progress = status === "done" ? 100 : status === "todo" ? 0 : Math.floor(rng() * 90) + 5
+    const progress = status === "done" ? 100 : status === "todo" ? 0 : Math.floor(rng() * 90) + 5;
 
     items.push({
       id: i + 1,
@@ -134,14 +134,14 @@ function generateItems(count: number): Item[] {
       tags,
       progress,
       description: `Task #${i + 1}: ${adj.toLowerCase()} the ${noun} for improved reliability.`,
-    })
+    });
   }
 
-  return items
+  return items;
 }
 
-const TOTAL_ITEMS = 10_000
-const ALL_ITEMS = generateItems(TOTAL_ITEMS)
+const TOTAL_ITEMS = 10_000;
+const ALL_ITEMS = generateItems(TOTAL_ITEMS);
 
 // ============================================================================
 // Components
@@ -152,33 +152,39 @@ const PRIORITY_COLORS: Record<Item["priority"], string> = {
   P1: "yellow",
   P2: "cyan",
   P3: "gray",
-}
+};
 
 const STATUS_ICONS: Record<Item["status"], string> = {
   todo: "\u25cb",
   "in-progress": "\u25d4",
   done: "\u25cf",
   blocked: "\u25a0",
-}
+};
 
 const STATUS_COLORS: Record<Item["status"], string> = {
   todo: "gray",
   "in-progress": "yellow",
   done: "green",
   blocked: "red",
-}
+};
 
-function ProgressBar({ percent, width: barWidth }: { percent: number; width: number }): JSX.Element {
-  const effectiveWidth = Math.max(5, barWidth)
-  const filled = Math.round((percent / 100) * effectiveWidth)
-  const empty = effectiveWidth - filled
+function ProgressBar({
+  percent,
+  width: barWidth,
+}: {
+  percent: number;
+  width: number;
+}): JSX.Element {
+  const effectiveWidth = Math.max(5, barWidth);
+  const filled = Math.round((percent / 100) * effectiveWidth);
+  const empty = effectiveWidth - filled;
 
   return (
     <Text>
       <Text color="green">{"\u2588".repeat(filled)}</Text>
       <Text dim>{"\u2591".repeat(empty)}</Text>
     </Text>
-  )
+  );
 }
 
 function ItemRow({
@@ -186,11 +192,11 @@ function ItemRow({
   isSelected,
   showDetail,
 }: {
-  item: Item
-  isSelected: boolean
-  showDetail: boolean
+  item: Item;
+  isSelected: boolean;
+  showDetail: boolean;
 }): JSX.Element {
-  const idStr = String(item.id).padStart(5, " ")
+  const idStr = String(item.id).padStart(5, " ");
 
   return (
     <Box flexDirection="column" paddingX={1} backgroundColor={isSelected ? "$primary" : undefined}>
@@ -221,16 +227,24 @@ function ItemRow({
         </Box>
       )}
     </Box>
-  )
+  );
 }
 
-function ScrollIndicator({ current, total, width }: { current: number; total: number; width: number }): JSX.Element {
-  const percent = total > 0 ? Math.round(((current + 1) / total) * 100) : 0
+function ScrollIndicator({
+  current,
+  total,
+  width,
+}: {
+  current: number;
+  total: number;
+  width: number;
+}): JSX.Element {
+  const percent = total > 0 ? Math.round(((current + 1) / total) * 100) : 0;
 
   // Progress bar
-  const barWidth = Math.max(10, Math.min(30, width - 40))
-  const filled = Math.round((percent / 100) * barWidth)
-  const empty = barWidth - filled
+  const barWidth = Math.max(10, Math.min(30, width - 40));
+  const filled = Math.round((percent / 100) * barWidth);
+  const empty = barWidth - filled;
 
   return (
     <Box gap={2} paddingX={1}>
@@ -247,7 +261,7 @@ function ScrollIndicator({ current, total, width }: { current: number; total: nu
         {percent}%
       </Text>
     </Box>
-  )
+  );
 }
 
 function StatsBar({ items }: { items: Item[] }): JSX.Element {
@@ -255,23 +269,23 @@ function StatsBar({ items }: { items: Item[] }): JSX.Element {
     let p0 = 0,
       p1 = 0,
       p2 = 0,
-      p3 = 0
+      p3 = 0;
     let todo = 0,
       inProg = 0,
       done = 0,
-      blocked = 0
+      blocked = 0;
     for (const item of items) {
-      if (item.priority === "P0") p0++
-      else if (item.priority === "P1") p1++
-      else if (item.priority === "P2") p2++
-      else p3++
-      if (item.status === "todo") todo++
-      else if (item.status === "in-progress") inProg++
-      else if (item.status === "done") done++
-      else blocked++
+      if (item.priority === "P0") p0++;
+      else if (item.priority === "P1") p1++;
+      else if (item.priority === "P2") p2++;
+      else p3++;
+      if (item.status === "todo") todo++;
+      else if (item.status === "in-progress") inProg++;
+      else if (item.status === "done") done++;
+      else blocked++;
     }
-    return { p0, p1, p2, p3, todo, inProg, done, blocked }
-  }, [items])
+    return { p0, p1, p2, p3, todo, inProg, done, blocked };
+  }, [items]);
 
   return (
     <Box gap={2} paddingX={1}>
@@ -297,7 +311,7 @@ function StatsBar({ items }: { items: Item[] }): JSX.Element {
         {STATUS_ICONS.blocked} {stats.blocked}
       </Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -305,62 +319,62 @@ function StatsBar({ items }: { items: Item[] }): JSX.Element {
 // ============================================================================
 
 function VirtualBenchmark(): JSX.Element {
-  const { width, height } = useContentRect()
-  const [cursor, setCursor] = useState(0)
-  const [showDetail, setShowDetail] = useState(false)
+  const { width, height } = useContentRect();
+  const [cursor, setCursor] = useState(0);
+  const [showDetail, setShowDetail] = useState(false);
 
   // Calculate available list height
   // stats (1) + separator (1) + scroll indicator (1) + help (1) + borders
-  const listHeight = Math.max(5, height - 5)
-  const halfPage = Math.max(1, Math.floor(listHeight / 2))
+  const listHeight = Math.max(5, height - 5);
+  const halfPage = Math.max(1, Math.floor(listHeight / 2));
 
   const itemHeight = useCallback(
     (_item: Item, index: number) => {
-      if (showDetail && index === cursor) return 2
-      return 1
+      if (showDetail && index === cursor) return 2;
+      return 1;
     },
     [showDetail, cursor],
-  )
+  );
 
   useInput(
     useCallback(
       (input: string, key: Key) => {
         if (input === "q" || key.escape || (key.ctrl && input === "c")) {
-          return "exit"
+          return "exit";
         }
 
         // Navigation
         if (input === "j" || key.downArrow) {
-          setCursor((c) => Math.min(TOTAL_ITEMS - 1, c + 1))
+          setCursor((c) => Math.min(TOTAL_ITEMS - 1, c + 1));
         }
         if (input === "k" || key.upArrow) {
-          setCursor((c) => Math.max(0, c - 1))
+          setCursor((c) => Math.max(0, c - 1));
         }
 
         // Half-page
         if (input === "d" || key.pageDown) {
-          setCursor((c) => Math.min(TOTAL_ITEMS - 1, c + halfPage))
+          setCursor((c) => Math.min(TOTAL_ITEMS - 1, c + halfPage));
         }
         if (input === "u" || key.pageUp) {
-          setCursor((c) => Math.max(0, c - halfPage))
+          setCursor((c) => Math.max(0, c - halfPage));
         }
 
         // Jump to start/end
         if (input === "g" || key.home) {
-          setCursor(0)
+          setCursor(0);
         }
         if (input === "G" || key.end) {
-          setCursor(TOTAL_ITEMS - 1)
+          setCursor(TOTAL_ITEMS - 1);
         }
 
         // Toggle detail view
         if (key.return || input === " ") {
-          setShowDetail((d) => !d)
+          setShowDetail((d) => !d);
         }
       },
       [halfPage],
     ),
-  )
+  );
 
   return (
     <Box flexDirection="column" width="100%" height="100%">
@@ -420,7 +434,7 @@ function VirtualBenchmark(): JSX.Element {
         </Text>
       </Box>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -429,13 +443,16 @@ function VirtualBenchmark(): JSX.Element {
 
 async function main() {
   const handle = await run(
-    <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit"
+    >
       <VirtualBenchmark />
     </ExampleBanner>,
-  )
-  await handle.waitUntilExit()
+  );
+  await handle.waitUntilExit();
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

@@ -35,62 +35,62 @@
  */
 export interface Key {
   /** Up arrow key was pressed */
-  upArrow: boolean
+  upArrow: boolean;
   /** Down arrow key was pressed */
-  downArrow: boolean
+  downArrow: boolean;
   /** Left arrow key was pressed */
-  leftArrow: boolean
+  leftArrow: boolean;
   /** Right arrow key was pressed */
-  rightArrow: boolean
+  rightArrow: boolean;
   /** Page Down key was pressed */
-  pageDown: boolean
+  pageDown: boolean;
   /** Page Up key was pressed */
-  pageUp: boolean
+  pageUp: boolean;
   /** Home key was pressed */
-  home: boolean
+  home: boolean;
   /** End key was pressed */
-  end: boolean
+  end: boolean;
   /** Return (Enter) key was pressed */
-  return: boolean
+  return: boolean;
   /** Escape key was pressed */
-  escape: boolean
+  escape: boolean;
   /** Ctrl key was pressed */
-  ctrl: boolean
+  ctrl: boolean;
   /** Shift key was pressed */
-  shift: boolean
+  shift: boolean;
   /** Tab key was pressed */
-  tab: boolean
+  tab: boolean;
   /** Backspace key was pressed */
-  backspace: boolean
+  backspace: boolean;
   /** Delete key was pressed */
-  delete: boolean
+  delete: boolean;
   /** Meta key (Alt/Option on macOS, Alt on other platforms) was pressed */
-  meta: boolean
+  meta: boolean;
   /** Super key (Cmd on macOS, Win on Windows) was pressed. Requires Kitty protocol. */
-  super: boolean
+  super: boolean;
   /** Hyper key was pressed. Requires Kitty protocol. */
-  hyper: boolean
+  hyper: boolean;
   /** Kitty event type: 1=press, 2=repeat, 3=release. Only set with Kitty flag 2 (report events). */
-  eventType?: 1 | 2 | 3
+  eventType?: 1 | 2 | 3;
 }
 
 /**
  * Input handler callback type.
  * Return 'exit' to exit the app.
  */
-export type InputHandler = (input: string, key: Key) => void | "exit"
+export type InputHandler = (input: string, key: Key) => void | "exit";
 
 /**
  * Parsed hotkey from a string like "ctrl+shift+a" or "Control+ArrowUp".
  */
 export interface ParsedHotkey {
-  key: string
-  ctrl: boolean
-  meta: boolean
-  shift: boolean
-  alt: boolean
-  super: boolean
-  hyper: boolean
+  key: string;
+  ctrl: boolean;
+  meta: boolean;
+  shift: boolean;
+  alt: boolean;
+  super: boolean;
+  hyper: boolean;
 }
 
 // ============================================================================
@@ -127,7 +127,7 @@ const KEY_MAP: Record<string, string | null> = {
   Meta: null,
   Super: null,
   Hyper: null,
-}
+};
 
 const MODIFIER_ALIASES: Record<string, string> = {
   ctrl: "Control",
@@ -146,13 +146,13 @@ const MODIFIER_ALIASES: Record<string, string> = {
   "⌘": "Super",
   hyper: "Hyper",
   "✦": "Hyper",
-}
+};
 
 /** Modifier symbols that can be used as prefixes without + separator (e.g. ⌘J, ⌃⇧J) */
-const MODIFIER_SYMBOLS = new Set(["⌃", "⇧", "⌥", "⌘", "✦"])
+const MODIFIER_SYMBOLS = new Set(["⌃", "⇧", "⌥", "⌘", "✦"]);
 
 function normalizeModifier(mod: string): string {
-  return MODIFIER_ALIASES[mod.toLowerCase()] ?? mod
+  return MODIFIER_ALIASES[mod.toLowerCase()] ?? mod;
 }
 
 /**
@@ -174,47 +174,47 @@ function normalizeModifier(mod: string): string {
  */
 export function keyToAnsi(key: string): string {
   // Split on + for combos: 'Control+Shift+a' -> ['Control', 'Shift', 'a']
-  const parts = key.split("+")
-  const mainKey = parts.pop()!
+  const parts = key.split("+");
+  const mainKey = parts.pop()!;
   // Normalize modifier aliases: ctrl->Control, shift->Shift, alt->Alt, meta->Meta
-  const modifiers = parts.map(normalizeModifier)
+  const modifiers = parts.map(normalizeModifier);
 
   // Super/Hyper modifiers require Kitty keyboard protocol encoding
   // (standard ANSI cannot represent Cmd/Super)
   if (modifiers.includes("Super") || modifiers.includes("Hyper")) {
-    return keyToKittyAnsi(key)
+    return keyToKittyAnsi(key);
   }
 
   // Single char without modifiers
   if (!modifiers.length && mainKey.length === 1) {
-    return mainKey
+    return mainKey;
   }
 
   // Ctrl+letter -> control code (ASCII 1-26)
   if (modifiers.includes("Control") && mainKey.length === 1) {
-    const code = mainKey.toLowerCase().charCodeAt(0) - 96
-    if (code >= 1 && code <= 26) return String.fromCharCode(code)
+    const code = mainKey.toLowerCase().charCodeAt(0) - 96;
+    if (code >= 1 && code <= 26) return String.fromCharCode(code);
   }
 
   // Ctrl+/ -> \x1f (Unit Separator, standard terminal convention)
   if (modifiers.includes("Control") && mainKey === "/") {
-    return "\x1f"
+    return "\x1f";
   }
 
   // Ctrl+Enter -> \n (legacy terminal: \r = Enter, \n = Ctrl+Enter/Ctrl+J)
   if (modifiers.includes("Control") && mainKey === "Enter") {
-    return "\n"
+    return "\n";
   }
 
   // Alt+key -> ESC prefix (standard terminal convention)
   // Alt/Meta/Option keys send ESC followed by the key
   if ((modifiers.includes("Alt") || modifiers.includes("Meta")) && mainKey.length === 1) {
-    return `\x1b${mainKey}`
+    return `\x1b${mainKey}`;
   }
 
   // Shift+Tab -> backtab (universally \x1b[Z across all terminal emulators)
   if (modifiers.includes("Shift") && mainKey === "Tab") {
-    return "\x1b[Z"
+    return "\x1b[Z";
   }
 
   // Modified arrow/function keys -> xterm-style CSI 1;modifier sequences
@@ -226,23 +226,23 @@ export function keyToAnsi(key: string): string {
     ArrowLeft: "D",
     Home: "H",
     End: "F",
-  }
+  };
   if (modifiers.length > 0 && mainKey in ARROW_SUFFIX) {
-    let mod = 1
-    if (modifiers.includes("Shift")) mod += 1
-    if (modifiers.includes("Alt") || modifiers.includes("Meta")) mod += 2
-    if (modifiers.includes("Control")) mod += 4
-    if (modifiers.includes("Super")) mod += 8
-    if (modifiers.includes("Hyper")) mod += 16
-    return `\x1b[1;${mod}${ARROW_SUFFIX[mainKey]}`
+    let mod = 1;
+    if (modifiers.includes("Shift")) mod += 1;
+    if (modifiers.includes("Alt") || modifiers.includes("Meta")) mod += 2;
+    if (modifiers.includes("Control")) mod += 4;
+    if (modifiers.includes("Super")) mod += 8;
+    if (modifiers.includes("Hyper")) mod += 16;
+    return `\x1b[1;${mod}${ARROW_SUFFIX[mainKey]}`;
   }
 
   // Look up base key in map
-  const base = KEY_MAP[mainKey]
-  if (base !== undefined && base !== null) return base
+  const base = KEY_MAP[mainKey];
+  if (base !== undefined && base !== null) return base;
 
   // Fallback: return as-is (single char or unknown key)
-  return mainKey
+  return mainKey;
 }
 
 // ============================================================================
@@ -350,7 +350,7 @@ export const CODE_TO_KEY: Record<string, string> = {
 
   // Shift+Tab
   "[Z": "tab",
-}
+};
 
 // ============================================================================
 // Key Parsing Constants
@@ -365,14 +365,39 @@ const NON_ALPHANUMERIC_KEYS = [
   "escape",
   "delete",
   // Note: 'space' is intentionally NOT included - users typically want ' ' as input
-]
+];
 
-const SHIFT_CODES = new Set(["[a", "[b", "[c", "[d", "[e", "[2$", "[3$", "[5$", "[6$", "[7$", "[8$", "[Z"])
+const SHIFT_CODES = new Set([
+  "[a",
+  "[b",
+  "[c",
+  "[d",
+  "[e",
+  "[2$",
+  "[3$",
+  "[5$",
+  "[6$",
+  "[7$",
+  "[8$",
+  "[Z",
+]);
 
-const CTRL_CODES = new Set(["Oa", "Ob", "Oc", "Od", "Oe", "[2^", "[3^", "[5^", "[6^", "[7^", "[8^"])
+const CTRL_CODES = new Set([
+  "Oa",
+  "Ob",
+  "Oc",
+  "Od",
+  "Oe",
+  "[2^",
+  "[3^",
+  "[5^",
+  "[6^",
+  "[7^",
+  "[8^",
+]);
 
-const META_KEY_CODE_RE = /^(?:\x1b)([a-zA-Z0-9])$/
-const FN_KEY_RE = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+)?([a-zA-Z]))/
+const META_KEY_CODE_RE = /^(?:\x1b)([a-zA-Z0-9])$/;
+const FN_KEY_RE = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+)?([a-zA-Z]))/;
 
 // ============================================================================
 // Kitty Keyboard Protocol
@@ -390,10 +415,10 @@ const FN_KEY_RE = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+
  *  5: event_type (optional)
  *  6: text_codepoints (colon-separated, optional — requires REPORT_TEXT flag)
  */
-const KITTY_RE = /^\x1b\[(\d+)(?::(\d+))?(?::(\d+))?(?:;(\d+)(?::(\d+))?(?:;([\d:]+))?)?u$/
+const KITTY_RE = /^\x1b\[(\d+)(?::(\d+))?(?::(\d+))?(?:;(\d+)(?::(\d+))?(?:;([\d:]+))?)?u$/;
 
 /** Matches xterm modifyOtherKeys format: CSI 27 ; modifier ; keycode ~ */
-const MODIFY_OTHER_KEYS_RE = /^\x1b\[27;(\d+);(\d+)~$/
+const MODIFY_OTHER_KEYS_RE = /^\x1b\[27;(\d+);(\d+)~$/;
 
 /**
  * Kitty-enhanced special key sequences:
@@ -401,7 +426,7 @@ const MODIFY_OTHER_KEYS_RE = /^\x1b\[27;(\d+);(\d+)~$/
  * These are legacy CSI sequences enhanced with the :eventType field.
  * Examples: \x1b[1;1:1A (up arrow press), \x1b[3;1:3~ (delete release)
  */
-const KITTY_SPECIAL_RE = /^\x1b\[(\d+);(\d+):(\d+)([A-Za-z~])$/
+const KITTY_SPECIAL_RE = /^\x1b\[(\d+);(\d+):(\d+)([A-Za-z~])$/;
 
 /** Letter-terminated special key names (CSI 1 ; mods letter) */
 const KITTY_SPECIAL_LETTER_KEYS: Record<string, string> = {
@@ -416,7 +441,7 @@ const KITTY_SPECIAL_LETTER_KEYS: Record<string, string> = {
   Q: "f2",
   R: "f3",
   S: "f4",
-}
+};
 
 /** Number-terminated special key names (CSI number ; mods ~) */
 const KITTY_SPECIAL_NUMBER_KEYS: Record<number, string> = {
@@ -438,16 +463,16 @@ const KITTY_SPECIAL_NUMBER_KEYS: Record<number, string> = {
   21: "f10",
   23: "f11",
   24: "f12",
-}
+};
 
 /** Valid Unicode codepoint range, excluding surrogates */
 function isValidCodepoint(cp: number): boolean {
-  return cp >= 0 && cp <= 0x10_ffff && !(cp >= 0xd8_00 && cp <= 0xdf_ff)
+  return cp >= 0 && cp <= 0x10_ffff && !(cp >= 0xd8_00 && cp <= 0xdf_ff);
 }
 
 /** Safely convert codepoint to string, returning '?' for invalid values */
 function safeFromCodePoint(cp: number): string {
-  return isValidCodepoint(cp) ? String.fromCodePoint(cp) : "?"
+  return isValidCodepoint(cp) ? String.fromCodePoint(cp) : "?";
 }
 
 /** Maps Kitty codepoints to key names for non-printable/functional keys */
@@ -548,11 +573,11 @@ const KITTY_CODEPOINT_MAP: Record<number, string> = {
   57452: "rightmeta",
   57453: "isoLevel3Shift",
   57454: "isoLevel5Shift",
-}
+};
 
 /** Lookup a Kitty codepoint to a key name */
 function kittyCodepointToName(cp: number): string | undefined {
-  return KITTY_CODEPOINT_MAP[cp]
+  return KITTY_CODEPOINT_MAP[cp];
 }
 
 // ============================================================================
@@ -560,44 +585,44 @@ function kittyCodepointToName(cp: number): string | undefined {
 // ============================================================================
 
 export interface ParsedKeypress {
-  name: string
-  ctrl: boolean
-  meta: boolean
-  shift: boolean
-  option: boolean
-  super: boolean
-  hyper: boolean
+  name: string;
+  ctrl: boolean;
+  meta: boolean;
+  shift: boolean;
+  option: boolean;
+  super: boolean;
+  hyper: boolean;
   /** Kitty event type: 1=press, 2=repeat, 3=release. Only set with Kitty flag 2 (report events). */
-  eventType?: 1 | 2 | 3
+  eventType?: 1 | 2 | 3;
   /** The character when Shift is held. From Kitty shifted_codepoint. */
-  shiftedKey?: string
+  shiftedKey?: string;
   /** The key on a standard US layout (for non-Latin keyboards). From Kitty base_layout_key. */
-  baseLayoutKey?: string
+  baseLayoutKey?: string;
   /** CapsLock is active. Kitty modifier bit 6. */
-  capsLock?: boolean
+  capsLock?: boolean;
   /** NumLock is active. Kitty modifier bit 7. */
-  numLock?: boolean
+  numLock?: boolean;
   /** Decoded text from Kitty REPORT_TEXT mode. */
-  associatedText?: string
-  sequence: string
+  associatedText?: string;
+  sequence: string;
   /** Raw input string, identical to sequence for most keys. */
-  raw?: string
-  code?: string
+  raw?: string;
+  code?: string;
   /** Whether this key was parsed from the Kitty keyboard protocol. */
-  isKittyProtocol?: boolean
+  isKittyProtocol?: boolean;
   /**
    * Whether this key represents printable text input.
    * When false, the key is a control/function/modifier key that should not
    * produce text input (e.g., arrows, function keys, capslock, media keys).
    * Only set by the kitty protocol parser.
    */
-  isPrintable?: boolean
+  isPrintable?: boolean;
   /**
    * Text associated with the key.
    * For printable kitty keys, defaults to the character from the codepoint.
    * When REPORT_TEXT flag is active, contains the decoded text-as-codepoints.
    */
-  text?: string
+  text?: string;
 }
 
 /**
@@ -605,18 +630,18 @@ export interface ParsedKeypress {
  * Accepts string or Buffer (Buffer support for stdin compatibility).
  */
 export function parseKeypress(s: string | Buffer): ParsedKeypress {
-  let input: string
+  let input: string;
 
   if (Buffer.isBuffer(s)) {
     if (s[0] !== undefined && s[0]! > 127 && s[1] === undefined) {
-      const buf = Buffer.from(s)
-      buf[0]! -= 128
-      input = `\x1b${buf.toString()}`
+      const buf = Buffer.from(s);
+      buf[0]! -= 128;
+      input = `\x1b${buf.toString()}`;
     } else {
-      input = s.toString()
+      input = s.toString();
     }
   } else {
-    input = s ?? ""
+    input = s ?? "";
   }
 
   const key: ParsedKeypress = {
@@ -628,174 +653,178 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
     super: false,
     hyper: false,
     sequence: input,
-  }
+  };
 
   if (input === "\r") {
-    key.name = "return"
+    key.name = "return";
   } else if (input === "\n") {
     // In legacy terminal mode, Enter sends \r. The only way to get \n is
     // Ctrl+Enter (or Ctrl+J, same byte). Treat it as ctrl+return so
     // TextArea's submitKey="ctrl+enter" works without Kitty protocol.
-    key.name = "return"
-    key.ctrl = true
+    key.name = "return";
+    key.ctrl = true;
   } else if (input === "\t") {
-    key.name = "tab"
+    key.name = "tab";
   } else if (input === "\b" || input === "\x1b\b") {
-    key.name = "backspace"
-    key.meta = input.charAt(0) === "\x1b"
+    key.name = "backspace";
+    key.meta = input.charAt(0) === "\x1b";
   } else if (input === "\x7f" || input === "\x1b\x7f") {
     // Modern terminals send \x7f for Backspace key (not \x08).
     // The actual Delete key sends \x1b[3~ (handled by CODE_TO_KEY).
-    key.name = "backspace"
-    key.meta = input.charAt(0) === "\x1b"
+    key.name = "backspace";
+    key.meta = input.charAt(0) === "\x1b";
   } else if (input === "\x1b" || input === "\x1b\x1b") {
-    key.name = "escape"
-    key.meta = input.length === 2
+    key.name = "escape";
+    key.meta = input.length === 2;
   } else if (input === " " || input === "\x1b ") {
-    key.name = "space"
-    key.meta = input.length === 2
+    key.name = "space";
+    key.meta = input.length === 2;
   } else if (input.length === 1 && input <= "\x1a") {
     // ctrl+letter
-    key.name = String.fromCharCode(input.charCodeAt(0) + "a".charCodeAt(0) - 1)
-    key.ctrl = true
+    key.name = String.fromCharCode(input.charCodeAt(0) + "a".charCodeAt(0) - 1);
+    key.ctrl = true;
   } else if (input === "\x1f") {
     // Ctrl+/ sends 0x1F (Unit Separator) in terminals
-    key.name = "/"
-    key.ctrl = true
+    key.name = "/";
+    key.ctrl = true;
   } else if (input.length === 1 && input >= "0" && input <= "9") {
-    key.name = "number"
+    key.name = "number";
   } else if (input.length === 1 && input >= "a" && input <= "z") {
-    key.name = input
+    key.name = input;
   } else if (input.length === 1 && input >= "A" && input <= "Z") {
-    key.name = input.toLowerCase()
-    key.shift = true
+    key.name = input.toLowerCase();
+    key.shift = true;
   } else {
     // Try Kitty keyboard protocol first (CSI codepoint ; modifiers u)
     // Must be checked before FN_KEY_RE because 'u' matches [a-zA-Z]
-    const kittyParts = KITTY_RE.exec(input)
+    const kittyParts = KITTY_RE.exec(input);
     // Kitty-enhanced special keys: CSI number ; modifiers : eventType {letter|~}
-    const kittySpecialParts = !kittyParts && KITTY_SPECIAL_RE.exec(input)
+    const kittySpecialParts = !kittyParts && KITTY_SPECIAL_RE.exec(input);
     // xterm modifyOtherKeys format: CSI 27 ; modifier ; keycode ~
     // Sent by Ghostty, xterm, and others for modified keys like Ctrl+Enter
-    const modifyOtherKeysParts = !kittyParts && !kittySpecialParts && MODIFY_OTHER_KEYS_RE.exec(input)
+    const modifyOtherKeysParts =
+      !kittyParts && !kittySpecialParts && MODIFY_OTHER_KEYS_RE.exec(input);
 
     if (kittySpecialParts) {
       // Kitty-enhanced special key: CSI number ; modifiers : eventType {letter|~}
-      const number = Number(kittySpecialParts[1])
-      const modifier = Math.max(0, Number(kittySpecialParts[2]) - 1)
-      const eventType = Number(kittySpecialParts[3])
-      const terminator = kittySpecialParts[4]!
+      const number = Number(kittySpecialParts[1]);
+      const modifier = Math.max(0, Number(kittySpecialParts[2]) - 1);
+      const eventType = Number(kittySpecialParts[3]);
+      const terminator = kittySpecialParts[4]!;
 
-      const name = terminator === "~" ? KITTY_SPECIAL_NUMBER_KEYS[number] : KITTY_SPECIAL_LETTER_KEYS[terminator]
+      const name =
+        terminator === "~"
+          ? KITTY_SPECIAL_NUMBER_KEYS[number]
+          : KITTY_SPECIAL_LETTER_KEYS[terminator];
 
-      key.isKittyProtocol = true
-      key.isPrintable = false
-      key.raw = input
-      key.name = name ?? ""
+      key.isKittyProtocol = true;
+      key.isPrintable = false;
+      key.raw = input;
+      key.name = name ?? "";
 
-      key.shift = !!(modifier & 1)
-      key.option = !!(modifier & 2) // alt
-      key.ctrl = !!(modifier & 4)
-      key.super = !!(modifier & 8)
-      key.hyper = !!(modifier & 16)
-      key.meta = !!(modifier & 32)
-      key.capsLock = !!(modifier & 64)
-      key.numLock = !!(modifier & 128)
+      key.shift = !!(modifier & 1);
+      key.option = !!(modifier & 2); // alt
+      key.ctrl = !!(modifier & 4);
+      key.super = !!(modifier & 8);
+      key.hyper = !!(modifier & 16);
+      key.meta = !!(modifier & 32);
+      key.capsLock = !!(modifier & 64);
+      key.numLock = !!(modifier & 128);
 
       if (eventType >= 1 && eventType <= 3) {
-        key.eventType = eventType as 1 | 2 | 3
+        key.eventType = eventType as 1 | 2 | 3;
       }
     } else if (kittyParts || modifyOtherKeysParts) {
-      let codepoint: number
-      let modifier: number
+      let codepoint: number;
+      let modifier: number;
       if (kittyParts) {
-        codepoint = Number(kittyParts[1])
-        modifier = Math.max(0, Number(kittyParts[4] || 1) - 1)
+        codepoint = Number(kittyParts[1]);
+        modifier = Math.max(0, Number(kittyParts[4] || 1) - 1);
       } else {
-        const mokParts = modifyOtherKeysParts as RegExpExecArray
-        modifier = Math.max(0, Number(mokParts[1]) - 1)
-        codepoint = Number(mokParts[2])
+        const mokParts = modifyOtherKeysParts as RegExpExecArray;
+        modifier = Math.max(0, Number(mokParts[1]) - 1);
+        codepoint = Number(mokParts[2]);
       }
 
       // Mark as kitty protocol
       if (kittyParts) {
-        key.isKittyProtocol = true
-        key.raw = input
+        key.isKittyProtocol = true;
+        key.raw = input;
 
         // Handle invalid codepoints (above U+10FFFF or surrogates)
         if (!isValidCodepoint(codepoint)) {
-          key.name = ""
-          key.isPrintable = false
-          return key
+          key.name = "";
+          key.isPrintable = false;
+          return key;
         }
       }
 
-      key.shift = !!(modifier & 1)
-      key.option = !!(modifier & 2) // alt (in kitty protocol, bit 2 = alt/option)
-      key.ctrl = !!(modifier & 4)
-      key.super = !!(modifier & 8) // super (Cmd on macOS)
-      key.hyper = !!(modifier & 16) // hyper
-      key.meta = !!(modifier & 32) // meta (kitty distinguishes meta from alt)
-      key.capsLock = !!(modifier & 64)
-      key.numLock = !!(modifier & 128)
+      key.shift = !!(modifier & 1);
+      key.option = !!(modifier & 2); // alt (in kitty protocol, bit 2 = alt/option)
+      key.ctrl = !!(modifier & 4);
+      key.super = !!(modifier & 8); // super (Cmd on macOS)
+      key.hyper = !!(modifier & 16); // hyper
+      key.meta = !!(modifier & 32); // meta (kitty distinguishes meta from alt)
+      key.capsLock = !!(modifier & 64);
+      key.numLock = !!(modifier & 128);
 
       // Event type from Kitty protocol (group 5): 1=press, 2=repeat, 3=release
       if (kittyParts?.[5]) {
-        const et = Number(kittyParts[5]) as 1 | 2 | 3
-        if (et >= 1 && et <= 3) key.eventType = et
+        const et = Number(kittyParts[5]) as 1 | 2 | 3;
+        if (et >= 1 && et <= 3) key.eventType = et;
       }
 
       // Shifted codepoint (group 2)
       if (kittyParts?.[2]) {
-        key.shiftedKey = String.fromCodePoint(Number(kittyParts[2]))
+        key.shiftedKey = String.fromCodePoint(Number(kittyParts[2]));
       }
 
       // Base layout key (group 3)
       if (kittyParts?.[3]) {
-        key.baseLayoutKey = String.fromCodePoint(Number(kittyParts[3]))
+        key.baseLayoutKey = String.fromCodePoint(Number(kittyParts[3]));
       }
 
       // Text-as-codepoints (group 6) — requires REPORT_TEXT flag
-      let textFromProtocol: string | undefined
+      let textFromProtocol: string | undefined;
       if (kittyParts?.[6]) {
         textFromProtocol = kittyParts[6]
           .split(":")
           .map((cp) => safeFromCodePoint(Number(cp)))
-          .join("")
-        key.associatedText = textFromProtocol
-        key.text = textFromProtocol
+          .join("");
+        key.associatedText = textFromProtocol;
+        key.text = textFromProtocol;
       }
 
       // Map codepoint to key name and determine printability
       if (codepoint === 32) {
-        key.name = "space"
-        key.isPrintable = true
+        key.name = "space";
+        key.isPrintable = true;
       } else if (codepoint === 13) {
-        key.name = "return"
-        key.isPrintable = true
+        key.name = "return";
+        key.isPrintable = true;
       } else {
-        const mapped = kittyCodepointToName(codepoint)
+        const mapped = kittyCodepointToName(codepoint);
         if (mapped) {
-          key.name = mapped
-          key.isPrintable = false
+          key.name = mapped;
+          key.isPrintable = false;
         } else if (codepoint >= 1 && codepoint <= 26) {
           // Ctrl+letter comes as codepoint 1-26
-          key.name = String.fromCodePoint(codepoint + 96) // 'a' is 97
-          key.isPrintable = false
+          key.name = String.fromCodePoint(codepoint + 96); // 'a' is 97
+          key.isPrintable = false;
         } else if (codepoint >= 32 && codepoint <= 126) {
           // Printable ASCII
-          key.name = String.fromCharCode(codepoint).toLowerCase()
+          key.name = String.fromCharCode(codepoint).toLowerCase();
           if (codepoint >= 65 && codepoint <= 90) {
-            key.shift = true
-            key.name = String.fromCharCode(codepoint + 32)
+            key.shift = true;
+            key.name = String.fromCharCode(codepoint + 32);
           }
-          key.isPrintable = true
+          key.isPrintable = true;
         } else if (isValidCodepoint(codepoint)) {
-          key.name = safeFromCodePoint(codepoint)
-          key.isPrintable = true
+          key.name = safeFromCodePoint(codepoint);
+          key.isPrintable = true;
         } else {
-          key.name = ""
-          key.isPrintable = false
+          key.name = "";
+          key.isPrintable = false;
         }
       }
 
@@ -803,49 +832,49 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
       // provided by the protocol, so keys like space and return produce their
       // expected text input (' ' and '\r' respectively).
       if (kittyParts && key.isPrintable && !textFromProtocol) {
-        key.text = safeFromCodePoint(codepoint)
+        key.text = safeFromCodePoint(codepoint);
       }
     } else if (KITTY_RE.test(input)) {
       // Matched kitty pattern but was rejected (e.g., invalid codepoint in the
       // parseKittyKeypress path above returned early). Return safe empty keypress.
-      key.isKittyProtocol = true
-      key.isPrintable = false
-      key.raw = input
-      return key
+      key.isKittyProtocol = true;
+      key.isPrintable = false;
+      key.raw = input;
+      return key;
     } else {
-      let parts = META_KEY_CODE_RE.exec(input)
+      let parts = META_KEY_CODE_RE.exec(input);
       if (parts) {
-        key.meta = true
-        key.shift = /^[A-Z]$/.test(parts[1] ?? "")
+        key.meta = true;
+        key.shift = /^[A-Z]$/.test(parts[1] ?? "");
       } else {
-        parts = FN_KEY_RE.exec(input)
+        parts = FN_KEY_RE.exec(input);
         if (parts) {
-          const segs = input.split("")
+          const segs = input.split("");
           if (segs[0] === "\u001b" && segs[1] === "\u001b") {
-            key.option = true
+            key.option = true;
           }
 
           // Reassemble key code
-          const code = [parts[1], parts[2], parts[4], parts[6]].filter(Boolean).join("")
-          const modifier = (Number(parts[3] || parts[5] || 1) - 1) as number
+          const code = [parts[1], parts[2], parts[4], parts[6]].filter(Boolean).join("");
+          const modifier = (Number(parts[3] || parts[5] || 1) - 1) as number;
 
-          key.ctrl = !!(modifier & 4)
-          key.meta = !!(modifier & 2) // alt
-          key.super = !!(modifier & 8) // super (Cmd on macOS)
-          key.hyper = !!(modifier & 16) // hyper
-          key.shift = !!(modifier & 1)
-          key.capsLock = !!(modifier & 64)
-          key.numLock = !!(modifier & 128)
-          key.code = code
-          key.name = CODE_TO_KEY[code] ?? ""
-          key.shift = SHIFT_CODES.has(code) || key.shift
-          key.ctrl = CTRL_CODES.has(code) || key.ctrl
+          key.ctrl = !!(modifier & 4);
+          key.meta = !!(modifier & 2); // alt
+          key.super = !!(modifier & 8); // super (Cmd on macOS)
+          key.hyper = !!(modifier & 16); // hyper
+          key.shift = !!(modifier & 1);
+          key.capsLock = !!(modifier & 64);
+          key.numLock = !!(modifier & 128);
+          key.code = code;
+          key.name = CODE_TO_KEY[code] ?? "";
+          key.shift = SHIFT_CODES.has(code) || key.shift;
+          key.ctrl = CTRL_CODES.has(code) || key.ctrl;
         }
       }
     }
   }
 
-  return key
+  return key;
 }
 
 /**
@@ -855,7 +884,7 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
  * @returns Tuple of [cleanedInput, Key]
  */
 export function parseKey(rawInput: string | Buffer): [string, Key] {
-  const keypress = parseKeypress(rawInput)
+  const keypress = parseKeypress(rawInput);
 
   const key: Key = {
     upArrow: keypress.name === "up",
@@ -877,17 +906,17 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
     super: keypress.super,
     hyper: keypress.hyper,
     eventType: keypress.eventType,
-  }
+  };
 
-  let input = keypress.ctrl ? keypress.name : keypress.sequence
+  let input = keypress.ctrl ? keypress.name : keypress.sequence;
 
   if (NON_ALPHANUMERIC_KEYS.includes(keypress.name)) {
-    input = ""
+    input = "";
   }
 
   // Strip meta prefix if remaining
   if (input.startsWith("\u001b")) {
-    input = input.slice(1)
+    input = input.slice(1);
   }
 
   // Filter out escape sequence fragments that leak through
@@ -897,18 +926,18 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
     // For Kitty-encoded keys (Super/Hyper modifiers), preserve the key name
     // since the raw sequence was CSI codepoint;modifiers u
     if (keypress.super || keypress.hyper) {
-      input = keypress.name
+      input = keypress.name;
     } else {
-      input = ""
+      input = "";
     }
   }
 
   // Detect shift for uppercase letters
   if (input.length === 1 && typeof input[0] === "string" && /[A-Z]/.test(input[0])) {
-    key.shift = true
+    key.shift = true;
   }
 
-  return [input, key]
+  return [input, key];
 }
 
 /**
@@ -934,7 +963,7 @@ export function emptyKey(): Key {
     meta: false,
     super: false,
     hyper: false,
-  }
+  };
 }
 
 // ============================================================================
@@ -948,20 +977,20 @@ export function emptyKey(): Key {
  * or "" if no special key is pressed.
  */
 export function keyToName(key: Key): string {
-  if (key.upArrow) return "ArrowUp"
-  if (key.downArrow) return "ArrowDown"
-  if (key.leftArrow) return "ArrowLeft"
-  if (key.rightArrow) return "ArrowRight"
-  if (key.return) return "Enter"
-  if (key.escape) return "Escape"
-  if (key.backspace) return "Backspace"
-  if (key.delete) return "Delete"
-  if (key.tab) return "Tab"
-  if (key.pageUp) return "PageUp"
-  if (key.pageDown) return "PageDown"
-  if (key.home) return "Home"
-  if (key.end) return "End"
-  return ""
+  if (key.upArrow) return "ArrowUp";
+  if (key.downArrow) return "ArrowDown";
+  if (key.leftArrow) return "ArrowLeft";
+  if (key.rightArrow) return "ArrowRight";
+  if (key.return) return "Enter";
+  if (key.escape) return "Escape";
+  if (key.backspace) return "Backspace";
+  if (key.delete) return "Delete";
+  if (key.tab) return "Tab";
+  if (key.pageUp) return "PageUp";
+  if (key.pageDown) return "PageDown";
+  if (key.home) return "Home";
+  if (key.end) return "End";
+  return "";
 }
 
 /**
@@ -969,12 +998,12 @@ export function keyToName(key: Key): string {
  * `alt` is always false (terminals cannot distinguish alt from meta).
  */
 export function keyToModifiers(key: Key): {
-  ctrl: boolean
-  meta: boolean
-  shift: boolean
-  alt: boolean
-  super: boolean
-  hyper: boolean
+  ctrl: boolean;
+  meta: boolean;
+  shift: boolean;
+  alt: boolean;
+  super: boolean;
+  hyper: boolean;
 } {
   return {
     ctrl: !!key.ctrl,
@@ -983,7 +1012,7 @@ export function keyToModifiers(key: Key): {
     alt: false,
     super: !!key.super,
     hyper: !!key.hyper,
-  }
+  };
 }
 
 /**
@@ -1003,24 +1032,24 @@ export function keyToModifiers(key: Key): {
  */
 export function parseHotkey(keyStr: string): ParsedHotkey {
   // Support macOS symbol prefix format: ⌘J, ⌃⇧J, ✦⌘J
-  let remaining = keyStr
-  const symbolMods = new Set<string>()
+  let remaining = keyStr;
+  const symbolMods = new Set<string>();
   for (const char of remaining) {
     if (MODIFIER_SYMBOLS.has(char)) {
-      symbolMods.add(char)
+      symbolMods.add(char);
     } else {
-      break
+      break;
     }
   }
 
   if (symbolMods.size > 0) {
-    remaining = remaining.slice(symbolMods.size)
-    if (remaining.startsWith("+")) remaining = remaining.slice(1)
+    remaining = remaining.slice(symbolMods.size);
+    if (remaining.startsWith("+")) remaining = remaining.slice(1);
   }
 
-  const parts = remaining.split("+")
-  const key = parts.pop() || keyStr
-  const modifiers = new Set([...parts.map((p) => p.toLowerCase()), ...symbolMods])
+  const parts = remaining.split("+");
+  const key = parts.pop() || keyStr;
+  const modifiers = new Set([...parts.map((p) => p.toLowerCase()), ...symbolMods]);
 
   return {
     key,
@@ -1033,9 +1062,13 @@ export function parseHotkey(keyStr: string): ParsedHotkey {
       modifiers.has("⌥"),
     shift: modifiers.has("shift") || modifiers.has("⇧"),
     alt: false, // alt and meta are indistinguishable in terminals; use meta
-    super: modifiers.has("super") || modifiers.has("cmd") || modifiers.has("command") || modifiers.has("⌘"),
+    super:
+      modifiers.has("super") ||
+      modifiers.has("cmd") ||
+      modifiers.has("command") ||
+      modifiers.has("⌘"),
     hyper: modifiers.has("hyper") || modifiers.has("✦"),
-  }
+  };
 }
 
 /**
@@ -1048,24 +1081,25 @@ export function parseHotkey(keyStr: string): ParsedHotkey {
  */
 export function matchHotkey(hotkey: ParsedHotkey, key: Key, input?: string): boolean {
   // Check modifiers
-  if (!!hotkey.ctrl !== !!key.ctrl) return false
-  if (!!hotkey.meta !== !!key.meta) return false
-  if (!!hotkey.super !== !!key.super) return false
-  if (!!hotkey.hyper !== !!key.hyper) return false
-  if (!!hotkey.alt !== false) return false // terminals can't distinguish alt from meta
+  if (!!hotkey.ctrl !== !!key.ctrl) return false;
+  if (!!hotkey.meta !== !!key.meta) return false;
+  if (!!hotkey.super !== !!key.super) return false;
+  if (!!hotkey.hyper !== !!key.hyper) return false;
+  if (!!hotkey.alt !== false) return false; // terminals can't distinguish alt from meta
 
   // For single uppercase letters (A-Z), shift is implicit
-  const isUppercaseLetter = hotkey.key.length === 1 && hotkey.key >= "A" && hotkey.key <= "Z" && !hotkey.shift
-  if (!isUppercaseLetter && !!hotkey.shift !== !!key.shift) return false
+  const isUppercaseLetter =
+    hotkey.key.length === 1 && hotkey.key >= "A" && hotkey.key <= "Z" && !hotkey.shift;
+  if (!isUppercaseLetter && !!hotkey.shift !== !!key.shift) return false;
 
   // Check key name against Key boolean fields
-  const name = keyToName(key)
-  if (name && name === hotkey.key) return true
+  const name = keyToName(key);
+  if (name && name === hotkey.key) return true;
 
   // Check against input string
-  if (input !== undefined && input === hotkey.key) return true
+  if (input !== undefined && input === hotkey.key) return true;
 
-  return false
+  return false;
 }
 
 // ============================================================================
@@ -1073,9 +1107,9 @@ export function matchHotkey(hotkey: ParsedHotkey, key: Key, input?: string): boo
 // ============================================================================
 
 /** Reverse map: key name → Kitty codepoint */
-const NAME_TO_KITTY_CODEPOINT: Record<string, number> = {}
+const NAME_TO_KITTY_CODEPOINT: Record<string, number> = {};
 for (const [cp, name] of Object.entries(KITTY_CODEPOINT_MAP)) {
-  NAME_TO_KITTY_CODEPOINT[name] = Number(cp)
+  NAME_TO_KITTY_CODEPOINT[name] = Number(cp);
 }
 
 /** Playwright-style key name → CSI u codepoint for keys using CSI u format */
@@ -1085,7 +1119,7 @@ const PLAYWRIGHT_TO_KITTY_CSI_U: Record<string, number> = {
   Backspace: 127,
   Tab: 9,
   Space: 32,
-}
+};
 
 /** Playwright-style key name → Kitty enhanced special key suffix (letter-terminated) */
 const PLAYWRIGHT_TO_KITTY_SPECIAL_LETTER: Record<string, string> = {
@@ -1099,7 +1133,7 @@ const PLAYWRIGHT_TO_KITTY_SPECIAL_LETTER: Record<string, string> = {
   F2: "Q",
   F3: "R",
   F4: "S",
-}
+};
 
 /** Playwright-style key name → Kitty enhanced special key number (tilde-terminated) */
 const PLAYWRIGHT_TO_KITTY_SPECIAL_TILDE: Record<string, number> = {
@@ -1115,7 +1149,7 @@ const PLAYWRIGHT_TO_KITTY_SPECIAL_TILDE: Record<string, number> = {
   F10: 21,
   F11: 23,
   F12: 24,
-}
+};
 
 /**
  * Convert a Playwright-style key string to a Kitty keyboard protocol ANSI sequence.
@@ -1135,59 +1169,59 @@ const PLAYWRIGHT_TO_KITTY_SPECIAL_TILDE: Record<string, number> = {
  * ```
  */
 export function keyToKittyAnsi(key: string): string {
-  const parts = key.split("+")
-  const mainKey = parts.pop()!
-  const modifiers = parts.map(normalizeModifier)
+  const parts = key.split("+");
+  const mainKey = parts.pop()!;
+  const modifiers = parts.map(normalizeModifier);
 
   // Calculate modifier bitfield
-  let mod = 0
-  if (modifiers.includes("Shift")) mod |= 1
-  if (modifiers.includes("Alt") || modifiers.includes("Meta")) mod |= 2
-  if (modifiers.includes("Control")) mod |= 4
-  if (modifiers.includes("Super")) mod |= 8
-  if (modifiers.includes("Hyper")) mod |= 16
+  let mod = 0;
+  if (modifiers.includes("Shift")) mod |= 1;
+  if (modifiers.includes("Alt") || modifiers.includes("Meta")) mod |= 2;
+  if (modifiers.includes("Control")) mod |= 4;
+  if (modifiers.includes("Super")) mod |= 8;
+  if (modifiers.includes("Hyper")) mod |= 16;
 
   // Check for letter-terminated special keys (arrow keys, home, end, F1-F4)
-  const specialLetter = PLAYWRIGHT_TO_KITTY_SPECIAL_LETTER[mainKey]
+  const specialLetter = PLAYWRIGHT_TO_KITTY_SPECIAL_LETTER[mainKey];
   if (specialLetter) {
-    return `\x1b[1;${mod + 1}${specialLetter}`
+    return `\x1b[1;${mod + 1}${specialLetter}`;
   }
 
   // Check for tilde-terminated special keys (insert, delete, pageup, F5-F12)
-  const specialNumber = PLAYWRIGHT_TO_KITTY_SPECIAL_TILDE[mainKey]
+  const specialNumber = PLAYWRIGHT_TO_KITTY_SPECIAL_TILDE[mainKey];
   if (specialNumber !== undefined) {
-    return `\x1b[${specialNumber};${mod + 1}~`
+    return `\x1b[${specialNumber};${mod + 1}~`;
   }
 
   // Check CSI u format keys
-  const csiUCodepoint = PLAYWRIGHT_TO_KITTY_CSI_U[mainKey]
+  const csiUCodepoint = PLAYWRIGHT_TO_KITTY_CSI_U[mainKey];
   if (csiUCodepoint !== undefined) {
     if (mod > 0) {
-      return `\x1b[${csiUCodepoint};${mod + 1}u`
+      return `\x1b[${csiUCodepoint};${mod + 1}u`;
     }
-    return `\x1b[${csiUCodepoint}u`
+    return `\x1b[${csiUCodepoint}u`;
   }
 
   // Single character — use Unicode codepoint in CSI u format
   if (mainKey.length === 1) {
-    const codepoint = mainKey.charCodeAt(0)
+    const codepoint = mainKey.charCodeAt(0);
     if (mod > 0) {
-      return `\x1b[${codepoint};${mod + 1}u`
+      return `\x1b[${codepoint};${mod + 1}u`;
     }
-    return `\x1b[${codepoint}u`
+    return `\x1b[${codepoint}u`;
   }
 
   // Try lowercase as direct kitty name (e.g., "return", "escape")
-  const cp = NAME_TO_KITTY_CODEPOINT[mainKey.toLowerCase()]
+  const cp = NAME_TO_KITTY_CODEPOINT[mainKey.toLowerCase()];
   if (cp !== undefined) {
     if (mod > 0) {
-      return `\x1b[${cp};${mod + 1}u`
+      return `\x1b[${cp};${mod + 1}u`;
     }
-    return `\x1b[${cp}u`
+    return `\x1b[${cp}u`;
   }
 
   // Fallback: return as-is (not a kitty key)
-  return keyToAnsi(key)
+  return keyToAnsi(key);
 }
 
 // ============================================================================
@@ -1195,7 +1229,7 @@ export function keyToKittyAnsi(key: string): string {
 // ============================================================================
 
 /** Grapheme segmenter for splitting non-escape text into visual characters */
-const graphemeSegmenter = new Intl.Segmenter("en", { granularity: "grapheme" })
+const graphemeSegmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
 
 /**
  * Split raw terminal input into individual keypresses.
@@ -1217,75 +1251,75 @@ const graphemeSegmenter = new Intl.Segmenter("en", { granularity: "grapheme" })
 export function* splitRawInput(data: string): Generator<string> {
   // Single character fast path (most common case in real terminal I/O)
   if (data.length <= 1) {
-    if (data.length === 1) yield data
-    return
+    if (data.length === 1) yield data;
+    return;
   }
 
-  let i = 0
-  let textStart = -1 // start of accumulated non-escape text
+  let i = 0;
+  let textStart = -1; // start of accumulated non-escape text
 
   while (i < data.length) {
     if (data.charCodeAt(i) === 0x1b) {
       // Flush accumulated text before this escape sequence
       if (textStart >= 0) {
-        yield* splitGraphemes(data.slice(textStart, i))
-        textStart = -1
+        yield* splitGraphemes(data.slice(textStart, i));
+        textStart = -1;
       }
 
       // ESC — start of escape sequence
       if (i + 1 >= data.length) {
         // Bare ESC at end of chunk
-        yield "\x1b"
-        i++
-        continue
+        yield "\x1b";
+        i++;
+        continue;
       }
 
-      const next = data.charCodeAt(i + 1)
+      const next = data.charCodeAt(i + 1);
 
       if (next === 0x5b) {
         // CSI sequence: ESC [ params final-byte
         // Final byte is in range 0x40-0x7E (@A-Z[\]^_`a-z{|}~)
-        let j = i + 2
+        let j = i + 2;
         while (j < data.length) {
-          const c = data.charCodeAt(j)
+          const c = data.charCodeAt(j);
           if (c >= 0x40 && c <= 0x7e) {
-            j++ // include the final byte
-            break
+            j++; // include the final byte
+            break;
           }
-          j++
+          j++;
         }
-        yield data.slice(i, j)
-        i = j
+        yield data.slice(i, j);
+        i = j;
       } else if (next === 0x4f) {
         // SS3 sequence: ESC O + one letter
-        const end = Math.min(i + 3, data.length)
-        yield data.slice(i, end)
-        i = end
+        const end = Math.min(i + 3, data.length);
+        yield data.slice(i, end);
+        i = end;
       } else if (next === 0x1b) {
         // Double ESC
-        yield "\x1b\x1b"
-        i += 2
+        yield "\x1b\x1b";
+        i += 2;
       } else {
         // Meta + single char (Alt+key)
-        yield data.slice(i, i + 2)
-        i += 2
+        yield data.slice(i, i + 2);
+        i += 2;
       }
     } else {
       // Non-escape: accumulate into text run for grapheme splitting
-      if (textStart < 0) textStart = i
-      i++
+      if (textStart < 0) textStart = i;
+      i++;
     }
   }
 
   // Flush final text run
   if (textStart >= 0) {
-    yield* splitGraphemes(data.slice(textStart))
+    yield* splitGraphemes(data.slice(textStart));
   }
 }
 
 /** Split a non-escape text run into grapheme clusters */
 function* splitGraphemes(text: string): Generator<string> {
   for (const { segment } of graphemeSegmenter.segment(text)) {
-    yield segment
+    yield segment;
   }
 }

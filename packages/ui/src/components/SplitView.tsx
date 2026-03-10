@@ -10,42 +10,42 @@
  * and focus highlight.
  */
 
-import React from "react"
-import type { LayoutNode } from "@silvery/term/pane-manager"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React from "react";
+import type { LayoutNode } from "@silvery/term/pane-manager";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type { LayoutNode }
+export type { LayoutNode };
 
 export interface SplitViewProps {
   /** Layout tree describing the split arrangement */
-  layout: LayoutNode
+  layout: LayoutNode;
   /** Render function for each leaf pane */
-  renderPane: (id: string) => React.ReactNode
+  renderPane: (id: string) => React.ReactNode;
   /** Optional: ID of the focused pane (for border highlighting) */
-  focusedPaneId?: string
+  focusedPaneId?: string;
   /** Optional: show borders around panes (default: true) */
-  showBorders?: boolean
+  showBorders?: boolean;
   /** Optional: border style for focused pane */
-  focusedBorderColor?: string
+  focusedBorderColor?: string;
   /** Optional: border style for unfocused panes */
-  unfocusedBorderColor?: string
+  unfocusedBorderColor?: string;
   /** Optional: render pane title in border */
-  renderPaneTitle?: (id: string) => string
+  renderPaneTitle?: (id: string) => string;
 }
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-const MIN_PANE_WIDTH = 20
-const MIN_PANE_HEIGHT = 5
-const DEFAULT_FOCUSED_COLOR = "green"
-const DEFAULT_UNFOCUSED_COLOR = "gray"
+const MIN_PANE_WIDTH = 20;
+const MIN_PANE_HEIGHT = 5;
+const DEFAULT_FOCUSED_COLOR = "green";
+const DEFAULT_UNFOCUSED_COLOR = "gray";
 
 // ============================================================================
 // Component
@@ -66,7 +66,7 @@ export function SplitView(props: SplitViewProps): React.ReactElement {
     focusedBorderColor = DEFAULT_FOCUSED_COLOR,
     unfocusedBorderColor = DEFAULT_UNFOCUSED_COLOR,
     renderPaneTitle,
-  } = props
+  } = props;
 
   return (
     <Box flexGrow={1} flexDirection="column">
@@ -80,7 +80,7 @@ export function SplitView(props: SplitViewProps): React.ReactElement {
         renderPaneTitle={renderPaneTitle}
       />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -88,18 +88,25 @@ export function SplitView(props: SplitViewProps): React.ReactElement {
 // ============================================================================
 
 interface LayoutNodeViewProps {
-  node: LayoutNode
-  renderPane: (id: string) => React.ReactNode
-  focusedPaneId?: string
-  showBorders: boolean
-  focusedBorderColor: string
-  unfocusedBorderColor: string
-  renderPaneTitle?: (id: string) => string
+  node: LayoutNode;
+  renderPane: (id: string) => React.ReactNode;
+  focusedPaneId?: string;
+  showBorders: boolean;
+  focusedBorderColor: string;
+  unfocusedBorderColor: string;
+  renderPaneTitle?: (id: string) => string;
 }
 
 function LayoutNodeView(props: LayoutNodeViewProps): React.ReactElement {
-  const { node, renderPane, focusedPaneId, showBorders, focusedBorderColor, unfocusedBorderColor, renderPaneTitle } =
-    props
+  const {
+    node,
+    renderPane,
+    focusedPaneId,
+    showBorders,
+    focusedBorderColor,
+    unfocusedBorderColor,
+    renderPaneTitle,
+  } = props;
 
   if (node.type === "leaf") {
     return (
@@ -112,14 +119,14 @@ function LayoutNodeView(props: LayoutNodeViewProps): React.ReactElement {
         unfocusedBorderColor={unfocusedBorderColor}
         title={renderPaneTitle?.(node.id)}
       />
-    )
+    );
   }
 
   // Split node: render two children with flex proportions
   // Use integer flex values to express the ratio without floating point issues.
   // ratio=0.5 => flexGrow 50:50, ratio=0.3 => flexGrow 30:70, etc.
-  const firstFlex = Math.round(node.ratio * 100)
-  const secondFlex = 100 - firstFlex
+  const firstFlex = Math.round(node.ratio * 100);
+  const secondFlex = 100 - firstFlex;
 
   return (
     <Box flexGrow={1} flexDirection={node.direction === "horizontal" ? "row" : "column"}>
@@ -156,28 +163,36 @@ function LayoutNodeView(props: LayoutNodeViewProps): React.ReactElement {
         />
       </Box>
     </Box>
-  )
+  );
 }
 
 interface LeafPaneProps {
-  id: string
-  renderPane: (id: string) => React.ReactNode
-  isFocused: boolean
-  showBorders: boolean
-  focusedBorderColor: string
-  unfocusedBorderColor: string
-  title?: string
+  id: string;
+  renderPane: (id: string) => React.ReactNode;
+  isFocused: boolean;
+  showBorders: boolean;
+  focusedBorderColor: string;
+  unfocusedBorderColor: string;
+  title?: string;
 }
 
 function LeafPane(props: LeafPaneProps): React.ReactElement {
-  const { id, renderPane, isFocused, showBorders, focusedBorderColor, unfocusedBorderColor, title } = props
+  const {
+    id,
+    renderPane,
+    isFocused,
+    showBorders,
+    focusedBorderColor,
+    unfocusedBorderColor,
+    title,
+  } = props;
 
   if (!showBorders) {
     return (
       <Box flexGrow={1} testID={`pane-${id}`}>
         {renderPane(id)}
       </Box>
-    )
+    );
   }
 
   return (
@@ -195,5 +210,5 @@ function LeafPane(props: LeafPaneProps): React.ReactElement {
       )}
       <Box flexGrow={1}>{renderPane(id)}</Box>
     </Box>
-  )
+  );
 }

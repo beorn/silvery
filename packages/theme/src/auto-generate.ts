@@ -5,10 +5,10 @@
  * for the full palette from one input color.
  */
 
-import { hexToHsl, hslToHex, blend, contrastFg } from "./color"
-import { fromColors } from "./generators"
-import { deriveTheme } from "./derive"
-import type { Theme } from "./types"
+import { hexToHsl, hslToHex, blend, contrastFg } from "./color";
+import { fromColors } from "./generators";
+import { deriveTheme } from "./derive";
+import type { Theme } from "./types";
 
 /**
  * Generate a complete Theme from a single primary color.
@@ -33,59 +33,59 @@ import type { Theme } from "./types"
  * ```
  */
 export function autoGenerateTheme(primaryColor: string, mode: "dark" | "light"): Theme {
-  const hsl = hexToHsl(primaryColor)
+  const hsl = hexToHsl(primaryColor);
   if (!hsl) {
     // Fallback: use default colors if input is not valid hex
-    const palette = fromColors({ dark: mode === "dark" })
-    return deriveTheme(palette)
+    const palette = fromColors({ dark: mode === "dark" });
+    return deriveTheme(palette);
   }
 
-  const [h, s] = hsl
-  const dark = mode === "dark"
+  const [h, s] = hsl;
+  const dark = mode === "dark";
 
   // Generate background and foreground based on mode
-  const bgL = dark ? 0.12 : 0.97
-  const fgL = dark ? 0.87 : 0.13
+  const bgL = dark ? 0.12 : 0.97;
+  const fgL = dark ? 0.87 : 0.13;
   // Use low saturation for bg/fg to keep them neutral
-  const bgS = Math.min(s, 0.15)
-  const bg = hslToHex(h, bgS, bgL)
-  const fg = hslToHex(h, bgS * 0.5, fgL)
+  const bgS = Math.min(s, 0.15);
+  const bg = hslToHex(h, bgS, bgL);
+  const fg = hslToHex(h, bgS * 0.5, fgL);
 
   // Generate accent colors from hue rotations
   // Standard hue positions for semantic colors
-  const redHue = 0
-  const yellowHue = 45
-  const greenHue = 130
-  const cyanHue = 185
-  const blueHue = 220
-  const magentaHue = 300
+  const redHue = 0;
+  const yellowHue = 45;
+  const greenHue = 130;
+  const cyanHue = 185;
+  const blueHue = 220;
+  const magentaHue = 300;
 
   // Use the primary's saturation and adjust lightness for the mode
-  const accentL = dark ? 0.65 : 0.45
-  const accentS = Math.max(s, 0.5) // Ensure accents are reasonably saturated
+  const accentL = dark ? 0.65 : 0.45;
+  const accentS = Math.max(s, 0.5); // Ensure accents are reasonably saturated
 
-  const red = hslToHex(redHue, accentS, accentL)
-  const green = hslToHex(greenHue, accentS, accentL)
-  const yellow = hslToHex(yellowHue, accentS, accentL)
-  const blue = hslToHex(blueHue, accentS, accentL)
-  const magenta = hslToHex(magentaHue, accentS, accentL)
-  const cyan = hslToHex(cyanHue, accentS, accentL)
+  const red = hslToHex(redHue, accentS, accentL);
+  const green = hslToHex(greenHue, accentS, accentL);
+  const yellow = hslToHex(yellowHue, accentS, accentL);
+  const blue = hslToHex(blueHue, accentS, accentL);
+  const magenta = hslToHex(magentaHue, accentS, accentL);
+  const cyan = hslToHex(cyanHue, accentS, accentL);
 
   // Bright variants: increase lightness slightly
-  const brightOffset = dark ? 0.1 : -0.1
-  const brightL = accentL + brightOffset
-  const brightRed = hslToHex(30, accentS, brightL) // orange-ish
-  const brightGreen = hslToHex(greenHue, accentS, brightL)
-  const brightYellow = hslToHex(yellowHue, accentS, brightL)
-  const brightBlue = hslToHex(blueHue, accentS, brightL)
-  const brightMagenta = hslToHex(330, accentS, brightL) // pink-ish
-  const brightCyan = hslToHex(cyanHue, accentS, brightL)
+  const brightOffset = dark ? 0.1 : -0.1;
+  const brightL = accentL + brightOffset;
+  const brightRed = hslToHex(30, accentS, brightL); // orange-ish
+  const brightGreen = hslToHex(greenHue, accentS, brightL);
+  const brightYellow = hslToHex(yellowHue, accentS, brightL);
+  const brightBlue = hslToHex(blueHue, accentS, brightL);
+  const brightMagenta = hslToHex(330, accentS, brightL); // pink-ish
+  const brightCyan = hslToHex(cyanHue, accentS, brightL);
 
   // Surface colors from background
-  const black = dark ? hslToHex(h, bgS, bgL * 0.7) : hslToHex(h, bgS, bgL * 0.92)
-  const white = dark ? hslToHex(h, bgS * 0.3, 0.6) : hslToHex(h, bgS * 0.3, 0.35)
-  const brightBlack = dark ? hslToHex(h, bgS, bgL + 0.08) : hslToHex(h, bgS, bgL - 0.08)
-  const brightWhite = dark ? fg : hslToHex(h, bgS * 0.5, fgL - 0.05)
+  const black = dark ? hslToHex(h, bgS, bgL * 0.7) : hslToHex(h, bgS, bgL * 0.92);
+  const white = dark ? hslToHex(h, bgS * 0.3, 0.6) : hslToHex(h, bgS * 0.3, 0.35);
+  const brightBlack = dark ? hslToHex(h, bgS, bgL + 0.08) : hslToHex(h, bgS, bgL - 0.08);
+  const brightWhite = dark ? fg : hslToHex(h, bgS * 0.5, fgL - 0.05);
 
   const palette = {
     name: `generated-${mode}`,
@@ -112,15 +112,15 @@ export function autoGenerateTheme(primaryColor: string, mode: "dark" | "light"):
     cursorText: bg,
     selectionBackground: blend(bg, primaryColor, 0.3),
     selectionForeground: fg,
-  }
+  };
 
   // Derive the full theme, then override primary with the input color
-  const theme = deriveTheme(palette)
+  const theme = deriveTheme(palette);
 
   // Override primary to be exactly the input color
   return {
     ...theme,
     primary: primaryColor,
     primaryfg: contrastFg(primaryColor),
-  }
+  };
 }

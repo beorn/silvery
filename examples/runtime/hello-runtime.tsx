@@ -7,16 +7,22 @@
  * Usage: bun examples/hello-runtime.tsx
  */
 
-import React from "react"
-import { Box, Text } from "../../src/index.js"
-import { createRuntime, ensureLayoutEngine, layout, type Dims, type RenderTarget } from "../../src/runtime/index.js"
-import type { ExampleMeta } from "../_banner.js"
+import React from "react";
+import { Box, Text } from "../../src/index.js";
+import {
+  createRuntime,
+  ensureLayoutEngine,
+  layout,
+  type Dims,
+  type RenderTarget,
+} from "../../src/runtime/index.js";
+import type { ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Hello Runtime",
   description: "Simplest Layer 1 API: createRuntime(), layout(), Symbol.dispose",
   features: ["createRuntime()", "layout()", "renderString()"],
-}
+};
 
 // Simple terminal target
 const termTarget: RenderTarget = {
@@ -25,7 +31,7 @@ const termTarget: RenderTarget = {
     cols: process.stdout.columns || 80,
     rows: process.stdout.rows || 24,
   }),
-}
+};
 
 // Simple view
 function HelloView({ name }: { name: string }): React.ReactElement {
@@ -36,40 +42,40 @@ function HelloView({ name }: { name: string }): React.ReactElement {
       </Text>
       <Text dimColor>Welcome to silvery-loop</Text>
     </Box>
-  )
+  );
 }
 
 async function main() {
   // Initialize layout engine (required once)
-  await ensureLayoutEngine()
+  await ensureLayoutEngine();
 
   // Create runtime
-  const runtime = createRuntime({ target: termTarget })
+  const runtime = createRuntime({ target: termTarget });
 
   // Render
-  const buffer = layout(<HelloView name="World" />, runtime.getDims())
-  runtime.render(buffer)
+  const buffer = layout(<HelloView name="World" />, runtime.getDims());
+  runtime.render(buffer);
 
   // Wait a moment to see the output
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // Update with new content
-  const buffer2 = layout(<HelloView name="silvery-loop" />, runtime.getDims())
-  runtime.render(buffer2)
+  const buffer2 = layout(<HelloView name="silvery-loop" />, runtime.getDims());
+  runtime.render(buffer2);
 
   // Wait again
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // Cleanup
-  runtime[Symbol.dispose]()
+  runtime[Symbol.dispose]();
 
-  console.log("\nDone!")
+  console.log("\nDone!");
 }
 
 if (import.meta.main) {
   try {
-    await main()
+    await main();
   } catch (e) {
-    console.error(e)
+    console.error(e);
   }
 }

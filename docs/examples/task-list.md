@@ -57,20 +57,20 @@ bun run examples/task-list/app.tsx
 ::: code-group
 
 ```tsx [app.tsx]
-import { Box, Text, render, useContentRect, useInput, useApp, createTerm } from "silvery"
-import { useState } from "react"
+import { Box, Text, render, useContentRect, useInput, useApp, createTerm } from "silvery";
+import { useState } from "react";
 
 interface Subtask {
-  id: string
-  title: string
-  done: boolean
+  id: string;
+  title: string;
+  done: boolean;
 }
 
 interface Task {
-  id: string
-  title: string
-  done: boolean
-  subtasks?: Subtask[]
+  id: string;
+  title: string;
+  done: boolean;
+  subtasks?: Subtask[];
 }
 
 const initialTasks: Task[] = [
@@ -126,33 +126,35 @@ const initialTasks: Task[] = [
     title: "Release v1.0",
     done: false,
   },
-]
+];
 
 function App() {
-  const { exit } = useApp()
-  const [tasks, setTasks] = useState(initialTasks)
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const { exit } = useApp();
+  const [tasks, setTasks] = useState(initialTasks);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   useInput((input, key) => {
     if (input === "q" || key.escape) {
-      exit()
+      exit();
     }
 
     if (key.downArrow) {
-      setSelectedIndex((i) => Math.min(i + 1, tasks.length - 1))
+      setSelectedIndex((i) => Math.min(i + 1, tasks.length - 1));
     }
 
     if (key.upArrow) {
-      setSelectedIndex((i) => Math.max(i - 1, 0))
+      setSelectedIndex((i) => Math.max(i - 1, 0));
     }
 
     if (input === " " || key.return) {
       // Toggle selected task
-      setTasks((prev) => prev.map((task, i) => (i === selectedIndex ? { ...task, done: !task.done } : task)))
+      setTasks((prev) =>
+        prev.map((task, i) => (i === selectedIndex ? { ...task, done: !task.done } : task)),
+      );
     }
-  })
+  });
 
-  const completedCount = tasks.filter((t) => t.done).length
+  const completedCount = tasks.filter((t) => t.done).length;
 
   return (
     <Box flexDirection="column" width="100%" height="100%">
@@ -160,11 +162,11 @@ function App() {
       <TaskList tasks={tasks} selectedIndex={selectedIndex} />
       <HelpBar />
     </Box>
-  )
+  );
 }
 
 function Header({ total, completed }: { total: number; completed: number }) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   return (
     <Box paddingX={1} marginBottom={1}>
@@ -174,53 +176,71 @@ function Header({ total, completed }: { total: number; completed: number }) {
         ({completed}/{total} done)
       </Text>
     </Box>
-  )
+  );
 }
 
 function TaskList({ tasks, selectedIndex }: { tasks: Task[]; selectedIndex: number }) {
   return (
-    <Box flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll" scrollTo={selectedIndex}>
+    <Box
+      flexDirection="column"
+      flexGrow={1}
+      borderStyle="single"
+      overflow="scroll"
+      scrollTo={selectedIndex}
+    >
       {tasks.map((task, i) => (
         <TaskRow key={task.id} task={task} isSelected={i === selectedIndex} />
       ))}
     </Box>
-  )
+  );
 }
 
 function TaskRow({ task, isSelected }: { task: Task; isSelected: boolean }) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
-  const checkbox = task.done ? "[x]" : "[ ]"
-  const prefix = isSelected ? ">" : " "
+  const checkbox = task.done ? "[x]" : "[ ]";
+  const prefix = isSelected ? ">" : " ";
 
   // Calculate available width for title
   // prefix (1) + space (1) + checkbox (3) + space (1) = 6 chars
-  const titleWidth = Math.max(0, width - 6)
+  const titleWidth = Math.max(0, width - 6);
 
-  const truncatedTitle = task.title.length > titleWidth ? task.title.slice(0, titleWidth - 1) + "..." : task.title
+  const truncatedTitle =
+    task.title.length > titleWidth ? task.title.slice(0, titleWidth - 1) + "..." : task.title;
 
   return (
     <Box flexDirection="column">
-      <Text backgroundColor={isSelected ? "cyan" : undefined} color={isSelected ? "black" : undefined}>
+      <Text
+        backgroundColor={isSelected ? "cyan" : undefined}
+        color={isSelected ? "black" : undefined}
+      >
         {prefix} {checkbox} {truncatedTitle}
       </Text>
       {task.subtasks?.map((subtask) => (
         <SubtaskRow key={subtask.id} subtask={subtask} isParentSelected={isSelected} />
       ))}
     </Box>
-  )
+  );
 }
 
-function SubtaskRow({ subtask, isParentSelected }: { subtask: Subtask; isParentSelected: boolean }) {
-  const { width } = useContentRect()
+function SubtaskRow({
+  subtask,
+  isParentSelected,
+}: {
+  subtask: Subtask;
+  isParentSelected: boolean;
+}) {
+  const { width } = useContentRect();
 
-  const checkbox = subtask.done ? "x" : " "
+  const checkbox = subtask.done ? "x" : " ";
 
   // Subtasks are indented: 4 spaces + "- [x] " = 10 chars
-  const titleWidth = Math.max(0, width - 10)
+  const titleWidth = Math.max(0, width - 10);
 
   const truncatedTitle =
-    subtask.title.length > titleWidth ? subtask.title.slice(0, titleWidth - 1) + "..." : subtask.title
+    subtask.title.length > titleWidth
+      ? subtask.title.slice(0, titleWidth - 1) + "..."
+      : subtask.title;
 
   return (
     <Text
@@ -230,7 +250,7 @@ function SubtaskRow({ subtask, isParentSelected }: { subtask: Subtask; isParentS
     >
       {"    "}- [{checkbox}] {truncatedTitle}
     </Text>
-  )
+  );
 }
 
 function HelpBar() {
@@ -238,11 +258,11 @@ function HelpBar() {
     <Box paddingX={1} marginTop={1}>
       <Text dimColor>Up/Down: navigate | Space/Enter: toggle | q: quit</Text>
     </Box>
-  )
+  );
 }
 
-using term = createTerm()
-await render(<App />, term)
+using term = createTerm();
+await render(<App />, term);
 ```
 
 :::
@@ -256,12 +276,18 @@ The `TaskList` component wraps tasks in a scrollable container:
 ```tsx
 function TaskList({ tasks, selectedIndex }: { tasks: Task[]; selectedIndex: number }) {
   return (
-    <Box flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll" scrollTo={selectedIndex}>
+    <Box
+      flexDirection="column"
+      flexGrow={1}
+      borderStyle="single"
+      overflow="scroll"
+      scrollTo={selectedIndex}
+    >
       {tasks.map((task, i) => (
         <TaskRow key={task.id} task={task} isSelected={i === selectedIndex} />
       ))}
     </Box>
-  )
+  );
 }
 ```
 
@@ -284,7 +310,7 @@ function TaskRow({ task, isSelected }: { task: Task; isSelected: boolean }) {
         <SubtaskRow key={subtask.id} subtask={subtask} />
       ))}
     </Box>
-  )
+  );
 }
 ```
 
@@ -309,17 +335,19 @@ The `useInput` hook handles arrow keys and toggling:
 ```tsx
 useInput((input, key) => {
   if (key.downArrow) {
-    setSelectedIndex((i) => Math.min(i + 1, tasks.length - 1))
+    setSelectedIndex((i) => Math.min(i + 1, tasks.length - 1));
   }
 
   if (key.upArrow) {
-    setSelectedIndex((i) => Math.max(i - 1, 0))
+    setSelectedIndex((i) => Math.max(i - 1, 0));
   }
 
   if (input === " " || key.return) {
-    setTasks((prev) => prev.map((task, i) => (i === selectedIndex ? { ...task, done: !task.done } : task)))
+    setTasks((prev) =>
+      prev.map((task, i) => (i === selectedIndex ? { ...task, done: !task.done } : task)),
+    );
   }
-})
+});
 ```
 
 ### Text Truncation
@@ -327,8 +355,9 @@ useInput((input, key) => {
 Both tasks and subtasks truncate long titles:
 
 ```tsx
-const titleWidth = Math.max(0, width - 6)
-const truncatedTitle = task.title.length > titleWidth ? task.title.slice(0, titleWidth - 1) + "..." : task.title
+const titleWidth = Math.max(0, width - 6);
+const truncatedTitle =
+  task.title.length > titleWidth ? task.title.slice(0, titleWidth - 1) + "..." : task.title;
 ```
 
 The available width comes from `useContentRect()`.

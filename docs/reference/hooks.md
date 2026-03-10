@@ -5,11 +5,11 @@
 Returns the content area dimensions (excluding padding and borders) of the nearest Box ancestor.
 
 ```tsx
-import { useContentRect } from "@silvery/term"
+import { useContentRect } from "@silvery/term";
 
 function ResponsiveCard() {
-  const { width, height, x, y } = useContentRect()
-  return <Text>{`Content area: ${width}x${height} at (${x},${y})`}</Text>
+  const { width, height, x, y } = useContentRect();
+  return <Text>{`Content area: ${width}x${height} at (${x},${y})`}</Text>;
 }
 ```
 
@@ -20,10 +20,10 @@ Components know their size _during_ render, not after — no post-layout effects
 Returns the absolute screen position and dimensions.
 
 ```tsx
-import { useScreenRect } from "@silvery/term"
+import { useScreenRect } from "@silvery/term";
 
 function Tooltip() {
-  const { x, y, width, height } = useScreenRect()
+  const { x, y, width, height } = useScreenRect();
   // Position tooltip relative to screen coordinates
 }
 ```
@@ -33,14 +33,14 @@ function Tooltip() {
 Registers a keyboard input handler. Return `"exit"` to exit the app.
 
 ```tsx
-import { useInput, type Key } from "@silvery/term/runtime"
+import { useInput, type Key } from "@silvery/term/runtime";
 
 function App() {
   useInput((input: string, key: Key) => {
-    if (input === "j" || key.downArrow) moveCursor(1)
-    if (input === "k" || key.upArrow) moveCursor(-1)
-    if (input === "q") return "exit"
-  })
+    if (input === "j" || key.downArrow) moveCursor(1);
+    if (input === "k" || key.upArrow) moveCursor(-1);
+    if (input === "q") return "exit";
+  });
 }
 ```
 
@@ -49,49 +49,49 @@ function App() {
 ```typescript
 interface Key {
   // Navigation
-  upArrow: boolean
-  downArrow: boolean
-  leftArrow: boolean
-  rightArrow: boolean
-  pageUp: boolean
-  pageDown: boolean
-  home: boolean
-  end: boolean
+  upArrow: boolean;
+  downArrow: boolean;
+  leftArrow: boolean;
+  rightArrow: boolean;
+  pageUp: boolean;
+  pageDown: boolean;
+  home: boolean;
+  end: boolean;
 
   // Action keys
-  return: boolean
-  escape: boolean
-  tab: boolean
-  backspace: boolean
-  delete: boolean
+  return: boolean;
+  escape: boolean;
+  tab: boolean;
+  backspace: boolean;
+  delete: boolean;
 
   // Modifiers — always available
-  ctrl: boolean // ⌃ Ctrl
-  shift: boolean // ⇧ Shift
-  meta: boolean // ⌥ Opt/Alt
+  ctrl: boolean; // ⌃ Ctrl
+  shift: boolean; // ⇧ Shift
+  meta: boolean; // ⌥ Opt/Alt
 
   // Modifiers — require Kitty protocol (pass kitty: true to run())
-  super: boolean // ⌘ Cmd/Super
-  hyper: boolean // ✦ Hyper
+  super: boolean; // ⌘ Cmd/Super
+  hyper: boolean; // ✦ Hyper
 
   // Kitty protocol extensions
-  eventType?: 1 | 2 | 3 // 1=press, 2=repeat, 3=release (requires REPORT_EVENTS flag)
+  eventType?: 1 | 2 | 3; // 1=press, 2=repeat, 3=release (requires REPORT_EVENTS flag)
 }
 ```
 
 **Modifier symbols**: Use macOS symbols in `parseHotkey()` for concise hotkey definitions:
 
 ```tsx
-import { parseHotkey, matchHotkey } from "@silvery/term"
+import { parseHotkey, matchHotkey } from "@silvery/term";
 
-const save = parseHotkey("⌘s")
-const palette = parseHotkey("⌃⇧p")
-const hyperJump = parseHotkey("✦j")
+const save = parseHotkey("⌘s");
+const palette = parseHotkey("⌃⇧p");
+const hyperJump = parseHotkey("✦j");
 
 useInput((input, key) => {
-  if (matchHotkey(save, key, input)) save()
-  if (matchHotkey(palette, key, input)) openPalette()
-})
+  if (matchHotkey(save, key, input)) save();
+  if (matchHotkey(palette, key, input)) openPalette();
+});
 ```
 
 See [Input Features](input-features.md) for the full modifier reference, mouse events, and Kitty protocol details.
@@ -101,21 +101,21 @@ See [Input Features](input-features.md) for the full modifier reference, mouse e
 Access app-level controls:
 
 ```tsx
-import { useApp } from "@silvery/term"
+import { useApp } from "@silvery/term";
 
 function App() {
-  const { exit } = useApp()
+  const { exit } = useApp();
 
   useInput((input) => {
-    if (input === "q") exit()
-  })
+    if (input === "q") exit();
+  });
 }
 ```
 
 With Layer 3 (createApp), `useApp` also accesses the Zustand store:
 
 ```tsx
-const cursor = useApp((s) => s.cursor)
+const cursor = useApp((s) => s.cursor);
 ```
 
 ## useTerm
@@ -123,17 +123,17 @@ const cursor = useApp((s) => s.cursor)
 Access terminal capabilities and styling:
 
 ```tsx
-import { useTerm } from "@silvery/term"
+import { useTerm } from "@silvery/term";
 
 function StatusLine() {
-  const term = useTerm()
+  const term = useTerm();
 
   return (
     <Text>
       {term.hasColor() ? term.green("OK") : "OK"}
       {` ${term.cols}x${term.rows}`}
     </Text>
-  )
+  );
 }
 ```
 
@@ -144,15 +144,15 @@ Makes a component focusable within the tree-based focus system. Reads focus stat
 The component must have a `testID` prop and `focusable` on its Box ancestor. Optionally set `autoFocus` for initial focus on mount.
 
 ```tsx
-import { useFocusable } from "@silvery/term"
+import { useFocusable } from "@silvery/term";
 
 function FocusablePanel() {
-  const { focused, focus, blur, focusOrigin } = useFocusable()
+  const { focused, focus, blur, focusOrigin } = useFocusable();
   return (
     <Box testID="panel" focusable borderStyle="single" borderColor={focused ? "green" : "gray"}>
       <Text>{focused ? "Focused!" : "Click to focus"}</Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -168,16 +168,16 @@ function FocusablePanel() {
 Returns `true` if focus is anywhere within a subtree. Walks from the focused node up to check if it passes through the given `testID`.
 
 ```tsx
-import { useFocusWithin } from "@silvery/term"
+import { useFocusWithin } from "@silvery/term";
 
 function Sidebar() {
-  const hasFocus = useFocusWithin("sidebar")
+  const hasFocus = useFocusWithin("sidebar");
   return (
     <Box testID="sidebar" borderColor={hasFocus ? "blue" : "gray"}>
       <FocusableItem testID="item1" />
       <FocusableItem testID="item2" />
     </Box>
-  )
+  );
 }
 ```
 
@@ -186,15 +186,15 @@ function Sidebar() {
 Ink-compatible wrapper around `useFocusable`. Returns `{ isFocused }` instead of `{ focused }`.
 
 ```tsx
-import { useFocus } from "@silvery/term"
+import { useFocus } from "@silvery/term";
 
 function FocusableItem() {
-  const { isFocused } = useFocus()
+  const { isFocused } = useFocus();
   return (
     <Box testID="item" focusable>
       <Text color={isFocused ? "green" : "white"}>Item</Text>
     </Box>
-  )
+  );
 }
 ```
 
@@ -211,17 +211,17 @@ For new code, prefer `useFocusable()` which returns richer state (`focused`, `fo
 Ink-compatible wrapper around `useFocusManager`. Provides the same API shape as Ink's `useFocusManager`.
 
 ```tsx
-import { useInkFocusManager } from "@silvery/term"
+import { useInkFocusManager } from "@silvery/term";
 
 function Navigation() {
-  const { focusNext, focusPrevious } = useInkFocusManager()
+  const { focusNext, focusPrevious } = useInkFocusManager();
 
   useInput((input, key) => {
-    if (key.tab && key.shift) focusPrevious()
-    else if (key.tab) focusNext()
-  })
+    if (key.tab && key.shift) focusPrevious();
+    else if (key.tab) focusNext();
+  });
 
-  return <Text>Tab to navigate</Text>
+  return <Text>Tab to navigate</Text>;
 }
 ```
 
@@ -240,14 +240,14 @@ For new code, prefer `useFocusManager()` which returns the full Silvery focus ma
 Receives bracketed paste events. Only available in the `run()` runtime (Layer 2).
 
 ```tsx
-import { usePaste } from "@silvery/term/runtime"
+import { usePaste } from "@silvery/term/runtime";
 
 function Editor() {
   usePaste((text) => {
-    insertText(text)
-  })
+    insertText(text);
+  });
 
-  return <Text>{content}</Text>
+  return <Text>{content}</Text>;
 }
 ```
 
@@ -256,11 +256,11 @@ The handler receives the full pasted text as a single string, rather than indivi
 For the `render()` API (Layer 1), use the `onPaste` option on `useInput` instead:
 
 ```tsx
-import { useInput } from "@silvery/term"
+import { useInput } from "@silvery/term";
 
 useInput(handler, {
   onPaste: (text) => insertText(text),
-})
+});
 ```
 
 ## useAnimation
@@ -268,14 +268,14 @@ useInput(handler, {
 Drive a 0-to-1 animation over a duration with easing. Targets ~30fps (33ms interval) since terminals don't benefit from higher refresh rates.
 
 ```tsx
-import { useAnimation } from "@silvery/term"
+import { useAnimation } from "@silvery/term";
 
 function FadeIn({ children }) {
   const { value, isAnimating, reset } = useAnimation({
     duration: 300,
     easing: "easeOut",
-  })
-  return <Text dimColor={value < 1}>{children}</Text>
+  });
+  return <Text dimColor={value < 1}>{children}</Text>;
 }
 ```
 
@@ -300,11 +300,11 @@ function FadeIn({ children }) {
 Smoothly interpolate between numeric values. When the target changes, animates from the current position to the new target. If the target changes mid-animation, restarts from the current interpolated position.
 
 ```tsx
-import { useAnimatedTransition } from "@silvery/term"
+import { useAnimatedTransition } from "@silvery/term";
 
 function ScrollOffset({ target }) {
-  const smooth = useAnimatedTransition(target, { duration: 200, easing: "easeOut" })
-  return <Box marginTop={Math.round(smooth)}>...</Box>
+  const smooth = useAnimatedTransition(target, { duration: 200, easing: "easeOut" });
+  return <Box marginTop={Math.round(smooth)}>...</Box>;
 }
 ```
 
@@ -321,12 +321,12 @@ Returns the current interpolated `number`. On first render, returns the target v
 Run a callback on a fixed interval. Uses a ref for the callback to avoid stale closures (Dan Abramov's pattern). The callback is NOT called on mount -- only on subsequent ticks.
 
 ```tsx
-import { useInterval } from "@silvery/term"
+import { useInterval } from "@silvery/term";
 
 function Clock() {
-  const [time, setTime] = useState(Date.now())
-  useInterval(() => setTime(Date.now()), 1000)
-  return <Text>{new Date(time).toLocaleTimeString()}</Text>
+  const [time, setTime] = useState(Date.now());
+  useInterval(() => setTime(Date.now()), 1000);
+  return <Text>{new Date(time).toLocaleTimeString()}</Text>;
 }
 ```
 
@@ -341,15 +341,15 @@ function Clock() {
 Terminal scroll region optimization hook. When scroll offset changes, uses DECSTBM to natively shift content instead of re-rendering the entire area. See [Scroll Region Optimization](scroll-regions.md) for full details.
 
 ```tsx
-import { useScrollRegion } from "@silvery/term/hooks"
+import { useScrollRegion } from "@silvery/term/hooks";
 
 function ScrollableArea({ items, scrollOffset }) {
   const { isActive, scrollDelta } = useScrollRegion({
     top: 2,
     bottom: 20,
     scrollOffset,
-  })
-  return <VirtualList items={items} />
+  });
+  return <VirtualList items={items} />;
 }
 ```
 
@@ -373,13 +373,13 @@ Push frozen items to terminal scrollback. Tracks a contiguous frozen prefix — 
 Pair with VirtualList's `virtualized` prop for the complete experience.
 
 ```tsx
-import { useScrollback } from "@silvery/term"
+import { useScrollback } from "@silvery/term";
 
 const frozenCount = useScrollback(items, {
   frozen: (item) => item.complete,
   render: (item) => `  ✓ ${item.title}`,
   width: terminalWidth,
-})
+});
 ```
 
 | Option    | Type                                   | Description                                      |

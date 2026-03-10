@@ -49,27 +49,27 @@ That's a complete, working TUI app. `run()` handles terminal setup, keyboard inp
 Use `useInput` to handle keyboard events. Return `'exit'` from the handler to quit the app.
 
 ```typescript
-import { run, useInput, type Key } from "@silvery/term/runtime"
+import { run, useInput, type Key } from "@silvery/term/runtime";
 
 useInput((input: string, key: Key) => {
   // Regular characters
-  if (input === "a") doSomething()
+  if (input === "a") doSomething();
 
   // Special keys
-  if (key.return) submit()
-  if (key.escape) cancel()
-  if (key.tab) nextField()
+  if (key.return) submit();
+  if (key.escape) cancel();
+  if (key.tab) nextField();
 
   // Arrow keys
-  if (key.upArrow) moveCursor(-1)
-  if (key.downArrow) moveCursor(1)
+  if (key.upArrow) moveCursor(-1);
+  if (key.downArrow) moveCursor(1);
 
   // Modifiers
-  if (key.ctrl && input === "c") return "exit"
+  if (key.ctrl && input === "c") return "exit";
 
   // Text input
-  if (input.length === 1) addChar(input)
-})
+  if (input.length === 1) addChar(input);
+});
 ```
 
 The `Key` object provides booleans for special keys and modifiers:
@@ -77,31 +77,31 @@ The `Key` object provides booleans for special keys and modifiers:
 ```typescript
 interface Key {
   // Navigation
-  upArrow: boolean
-  downArrow: boolean
-  leftArrow: boolean
-  rightArrow: boolean
-  pageDown: boolean
-  pageUp: boolean
-  home: boolean
-  end: boolean
+  upArrow: boolean;
+  downArrow: boolean;
+  leftArrow: boolean;
+  rightArrow: boolean;
+  pageDown: boolean;
+  pageUp: boolean;
+  home: boolean;
+  end: boolean;
 
   // Action keys
-  return: boolean // Enter key
-  escape: boolean
-  tab: boolean
-  backspace: boolean
-  delete: boolean
+  return: boolean; // Enter key
+  escape: boolean;
+  tab: boolean;
+  backspace: boolean;
+  delete: boolean;
 
   // Modifiers
-  ctrl: boolean // ⌃ Ctrl
-  shift: boolean // ⇧ Shift
-  meta: boolean // ⌥ Opt/Alt
-  super: boolean // ⌘ Cmd/Super (requires Kitty protocol)
-  hyper: boolean // ✦ Hyper (requires Kitty protocol)
+  ctrl: boolean; // ⌃ Ctrl
+  shift: boolean; // ⇧ Shift
+  meta: boolean; // ⌥ Opt/Alt
+  super: boolean; // ⌘ Cmd/Super (requires Kitty protocol)
+  hyper: boolean; // ✦ Hyper (requires Kitty protocol)
 
   // Kitty protocol extensions
-  eventType?: 1 | 2 | 3 // 1=press, 2=repeat, 3=release (requires REPORT_EVENTS)
+  eventType?: 1 | 2 | 3; // 1=press, 2=repeat, 3=release (requires REPORT_EVENTS)
 }
 ```
 
@@ -110,14 +110,14 @@ Wrap handlers in `useCallback` when they depend on state to prevent unnecessary 
 ```typescript
 const handleInput = useCallback(
   (input: string, key: Key) => {
-    if (input === "j" || key.downArrow) setCursor((c) => Math.min(c + 1, items.length - 1))
-    if (input === "k" || key.upArrow) setCursor((c) => Math.max(c - 1, 0))
-    if (input === "q") return "exit"
+    if (input === "j" || key.downArrow) setCursor((c) => Math.min(c + 1, items.length - 1));
+    if (input === "k" || key.upArrow) setCursor((c) => Math.max(c - 1, 0));
+    if (input === "q") return "exit";
   },
   [items.length],
-)
+);
 
-useInput(handleInput)
+useInput(handleInput);
 ```
 
 ### Responsive Layout
@@ -202,10 +202,10 @@ await handle.waitUntilExit();
 
 ```typescript
 interface RunHandle {
-  text: string // Current rendered text (no ANSI)
-  waitUntilExit(): Promise<void>
-  unmount(): void
-  press(key: string): Promise<void> // For testing
+  text: string; // Current rendered text (no ANSI)
+  waitUntilExit(): Promise<void>;
+  unmount(): void;
+  press(key: string): Promise<void>; // For testing
 }
 ```
 
@@ -241,37 +241,37 @@ See [Input Features](../reference/input-features.md) for the full reference.
 The same `run()` API works in the browser via [xterm.js](https://xtermjs.org/). Pass a `terminal` option pointing to an xterm.js `Terminal` instance, and silvery renders to it instead of `process.stdout`:
 
 ```tsx
-import { run, useInput } from "@silvery/term/runtime"
-import { Box, Text } from "silvery"
-import { Terminal } from "@xterm/xterm"
-import { useState } from "react"
+import { run, useInput } from "@silvery/term/runtime";
+import { Box, Text } from "silvery";
+import { Terminal } from "@xterm/xterm";
+import { useState } from "react";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
   useInput((input, key) => {
-    if (input === "j" || key.downArrow) setCount((c) => c + 1)
-    if (input === "k" || key.upArrow) setCount((c) => c - 1)
-    if (input === "q") return "exit"
-  })
+    if (input === "j" || key.downArrow) setCount((c) => c + 1);
+    if (input === "k" || key.upArrow) setCount((c) => c - 1);
+    if (input === "q") return "exit";
+  });
 
   return (
     <Box flexDirection="column" padding={1}>
       <Text bold>Browser Counter</Text>
       <Text>Count: {count} (j/k to change, q to quit)</Text>
     </Box>
-  )
+  );
 }
 
 // Set up xterm.js
-const term = new Terminal({ cols: 80, rows: 24 })
-term.open(document.getElementById("terminal")!)
+const term = new Terminal({ cols: 80, rows: 24 });
+term.open(document.getElementById("terminal")!);
 
 // Same run() API — just add { terminal }
 const handle = await run(<App />, {
   terminal: term,
   mouse: true,
-})
+});
 ```
 
 **Same components, same hooks, same code** -- the only difference is passing `{ terminal: term }` instead of letting `run()` use `process.stdout`.

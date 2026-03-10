@@ -18,8 +18,14 @@
  * - SGR attributes (reset via CSI 0 m)
  */
 
-import { writeSync } from "node:fs"
-import { enableKittyKeyboard, disableKittyKeyboard, enableMouse, disableMouse, resetCursorStyle } from "../output"
+import { writeSync } from "node:fs";
+import {
+  enableKittyKeyboard,
+  disableKittyKeyboard,
+  enableMouse,
+  disableMouse,
+  resetCursorStyle,
+} from "../output";
 
 // ============================================================================
 // Types
@@ -30,28 +36,28 @@ import { enableKittyKeyboard, disableKittyKeyboard, enableMouse, disableMouse, r
  */
 export interface TerminalLifecycleOptions {
   /** Handle Ctrl+Z by suspending the process. Default: true */
-  suspendOnCtrlZ?: boolean
+  suspendOnCtrlZ?: boolean;
   /** Handle Ctrl+C by exiting the process. Default: true */
-  exitOnCtrlC?: boolean
+  exitOnCtrlC?: boolean;
   /** Called before suspend. Return false to prevent. */
-  onSuspend?: () => boolean | void
+  onSuspend?: () => boolean | void;
   /** Called after resume from suspend. */
-  onResume?: () => void
+  onResume?: () => void;
   /** Called on Ctrl+C. Return false to prevent exit. */
-  onInterrupt?: () => boolean | void
+  onInterrupt?: () => boolean | void;
 }
 
 /**
  * Snapshot of terminal protocol state for save/restore across suspend/resume.
  */
 export interface TerminalState {
-  rawMode: boolean
-  alternateScreen: boolean
-  cursorHidden: boolean
-  mouseEnabled: boolean
-  kittyEnabled: boolean
-  kittyFlags: number
-  bracketedPaste: boolean
+  rawMode: boolean;
+  alternateScreen: boolean;
+  cursorHidden: boolean;
+  mouseEnabled: boolean;
+  kittyEnabled: boolean;
+  kittyFlags: number;
+  bracketedPaste: boolean;
 }
 
 // ============================================================================
@@ -65,13 +71,13 @@ export interface TerminalState {
  * since terminal state is not directly queryable from the OS.
  */
 export function captureTerminalState(opts: {
-  alternateScreen?: boolean
-  cursorHidden?: boolean
-  mouse?: boolean
-  kitty?: boolean
-  kittyFlags?: number
-  bracketedPaste?: boolean
-  rawMode?: boolean
+  alternateScreen?: boolean;
+  cursorHidden?: boolean;
+  mouse?: boolean;
+  kitty?: boolean;
+  kittyFlags?: number;
+  bracketedPaste?: boolean;
+  rawMode?: boolean;
 }): TerminalState {
   return {
     rawMode: opts.rawMode ?? true,
@@ -81,7 +87,7 @@ export function captureTerminalState(opts: {
     kittyEnabled: opts.kitty ?? false,
     kittyFlags: opts.kittyFlags ?? 1,
     bracketedPaste: opts.bracketedPaste ?? false,
-  }
+  };
 }
 
 // ============================================================================
@@ -106,15 +112,15 @@ export function restoreTerminalState(stdout: NodeJS.WriteStream, stdin: NodeJS.R
     resetCursorStyle(), // Reset cursor shape to terminal default (DECSCUSR 0)
     "\x1b[?25h", // Show cursor
     "\x1b[?1049l", // Exit alternate screen
-  ].join("")
+  ].join("");
 
   // Use writeSync for reliability during signal handlers
   try {
-    writeSync((stdout as unknown as { fd: number }).fd, sequences)
+    writeSync((stdout as unknown as { fd: number }).fd, sequences);
   } catch {
     // Fallback to async write if fd is unavailable
     try {
-      stdout.write(sequences)
+      stdout.write(sequences);
     } catch {
       // Terminal may already be gone (e.g., SSH disconnect)
     }
@@ -123,7 +129,7 @@ export function restoreTerminalState(stdout: NodeJS.WriteStream, stdin: NodeJS.R
   // Disable raw mode on stdin
   if (stdin.isTTY && stdin.isRaw) {
     try {
-      stdin.setRawMode(false)
+      stdin.setRawMode(false);
     } catch {
       // Ignore - stdin may already be closed
     }
@@ -141,49 +147,53 @@ export function restoreTerminalState(stdout: NodeJS.WriteStream, stdin: NodeJS.R
  * order: raw mode first, then alternate screen, then protocols, then
  * trigger a full redraw via synthetic resize.
  */
-export function resumeTerminalState(state: TerminalState, stdout: NodeJS.WriteStream, stdin: NodeJS.ReadStream): void {
+export function resumeTerminalState(
+  state: TerminalState,
+  stdout: NodeJS.WriteStream,
+  stdin: NodeJS.ReadStream,
+): void {
   // Re-enable raw mode first (needed to receive key input)
   if (state.rawMode && stdin.isTTY) {
     try {
-      stdin.setRawMode(true)
-      stdin.resume()
+      stdin.setRawMode(true);
+      stdin.resume();
     } catch {
       // Ignore - may fail if stdin is closed
     }
   }
 
   // Build the sequence of escape codes to restore TUI state
-  const sequences: string[] = []
+  const sequences: string[] = [];
 
   if (state.alternateScreen) {
-    sequences.push("\x1b[?1049h") // Enter alternate screen
+    sequences.push("\x1b[?1049h"); // Enter alternate screen
   }
 
   // Clear screen and home cursor (always needed after resume to get a clean slate)
-  sequences.push("\x1b[2J\x1b[H")
+  sequences.push("\x1b[2J\x1b[H");
 
   if (state.cursorHidden) {
-    sequences.push("\x1b[?25l") // Hide cursor
+    sequences.push("\x1b[?25l"); // Hide cursor
   }
 
   if (state.kittyEnabled) {
-    sequences.push(enableKittyKeyboard(state.kittyFlags as 1))
+    sequences.push(enableKittyKeyboard(state.kittyFlags as 1));
   }
 
   if (state.mouseEnabled) {
-    sequences.push(enableMouse())
+    sequences.push(enableMouse());
   }
 
   if (state.bracketedPaste) {
-    sequences.push("\x1b[?2004h") // Enable bracketed paste
+    sequences.push("\x1b[?2004h"); // Enable bracketed paste
   }
 
   // Write all sequences
   try {
-    writeSync((stdout as unknown as { fd: number }).fd, sequences.join(""))
+    writeSync((stdout as unknown as { fd: number }).fd, sequences.join(""));
   } catch {
     try {
-      stdout.write(sequences.join(""))
+      stdout.write(sequences.join(""));
     } catch {
       // Terminal may be gone
     }
@@ -191,7 +201,7 @@ export function resumeTerminalState(state: TerminalState, stdout: NodeJS.WriteSt
 
   // Emit synthetic resize to trigger full redraw.
   // The screen was cleared, so the runtime needs to render a complete frame.
-  stdout.emit("resize")
+  stdout.emit("resize");
 }
 
 // ============================================================================
@@ -214,17 +224,17 @@ export function performSuspend(
   onResume?: () => void,
 ): void {
   // Restore terminal to normal
-  restoreTerminalState(stdout, stdin)
+  restoreTerminalState(stdout, stdin);
 
   // Register one-time SIGCONT handler BEFORE sending SIGTSTP
   process.once("SIGCONT", () => {
     // Re-enter TUI mode
-    resumeTerminalState(state, stdout, stdin)
-    onResume?.()
-  })
+    resumeTerminalState(state, stdout, stdin);
+    onResume?.();
+  });
 
   // Actually suspend the process
-  process.kill(process.pid, "SIGTSTP")
+  process.kill(process.pid, "SIGTSTP");
 }
 
 // ============================================================================
@@ -232,7 +242,7 @@ export function performSuspend(
 // ============================================================================
 
 /** Ctrl+C raw byte (ETX - End of Text) */
-export const CTRL_C = "\x03"
+export const CTRL_C = "\x03";
 
 /** Ctrl+Z raw byte (SUB - Substitute) */
-export const CTRL_Z = "\x1a"
+export const CTRL_Z = "\x1a";

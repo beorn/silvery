@@ -1,47 +1,47 @@
-import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
-import { Box, Text, useCursor } from "silvery"
+import { describe, test, expect } from "vitest";
+import { createRenderer } from "@silvery/test";
+import { Box, Text, useCursor } from "silvery";
 
 describe("useCursor", () => {
   test("sets cursor position relative to parent Box screenRect", () => {
-    const render = createRenderer({ cols: 40, rows: 10 })
+    const render = createRenderer({ cols: 40, rows: 10 });
 
     // useCursor reads NodeContext from the nearest ancestor Box.
     // The cursor is positioned at parent.screenRect + (col, row).
     function CursorText() {
-      useCursor({ col: 3, row: 0 })
+      useCursor({ col: 3, row: 0 });
       return (
         <Box>
           <Text>Hello</Text>
         </Box>
-      )
+      );
     }
 
     const app = render(
       <Box>
         <CursorText />
       </Box>,
-    )
+    );
 
-    expect(app.text).toContain("Hello")
-    const cursor = app.getCursorState()
-    expect(cursor).not.toBeNull()
-    expect(cursor!.visible).toBe(true)
+    expect(app.text).toContain("Hello");
+    const cursor = app.getCursorState();
+    expect(cursor).not.toBeNull();
+    expect(cursor!.visible).toBe(true);
     // Parent Box is at (0, 0), so cursor = (0+3, 0+0)
-    expect(cursor!.x).toBe(3)
-    expect(cursor!.y).toBe(0)
-  })
+    expect(cursor!.x).toBe(3);
+    expect(cursor!.y).toBe(0);
+  });
 
   test("cursor position uses parent Box's screen position", () => {
-    const render = createRenderer({ cols: 40, rows: 10 })
+    const render = createRenderer({ cols: 40, rows: 10 });
 
     function CursorText() {
-      useCursor({ col: 1, row: 0 })
+      useCursor({ col: 1, row: 0 });
       return (
         <Box>
           <Text>Inner</Text>
         </Box>
-      )
+      );
     }
 
     const app = render(
@@ -50,145 +50,145 @@ describe("useCursor", () => {
         <Text>Line 1</Text>
         <CursorText />
       </Box>,
-    )
+    );
 
-    const cursor = app.getCursorState()
-    expect(cursor).not.toBeNull()
+    const cursor = app.getCursorState();
+    expect(cursor).not.toBeNull();
     // useCursor reads NodeContext from the outer column Box, which is at (0, 0).
     // So cursor = (0+1, 0+0) = (1, 0) — NOT (1, 2).
     // This is by design: cursor position is relative to the NodeContext provider.
-    expect(cursor!.x).toBe(1)
-    expect(cursor!.y).toBe(0)
-  })
+    expect(cursor!.x).toBe(1);
+    expect(cursor!.y).toBe(0);
+  });
 
   test("visible=false results in no cursor", () => {
-    const render = createRenderer({ cols: 40, rows: 10 })
+    const render = createRenderer({ cols: 40, rows: 10 });
 
     function CursorBox() {
-      useCursor({ col: 0, row: 0, visible: false })
+      useCursor({ col: 0, row: 0, visible: false });
       return (
         <Box>
           <Text>Hello</Text>
         </Box>
-      )
+      );
     }
 
     const app = render(
       <Box>
         <CursorBox />
       </Box>,
-    )
-    const cursor = app.getCursorState()
-    expect(cursor).toBeNull()
-  })
+    );
+    const cursor = app.getCursorState();
+    expect(cursor).toBeNull();
+  });
 
   test("cursor clears on unmount", () => {
-    const render = createRenderer({ cols: 40, rows: 10 })
+    const render = createRenderer({ cols: 40, rows: 10 });
 
     function CursorBox() {
-      useCursor({ col: 5, row: 0 })
+      useCursor({ col: 5, row: 0 });
       return (
         <Box>
           <Text>Cursor here</Text>
         </Box>
-      )
+      );
     }
 
     function App({ show }: { show: boolean }) {
-      return <Box>{show ? <CursorBox /> : <Text>No cursor</Text>}</Box>
+      return <Box>{show ? <CursorBox /> : <Text>No cursor</Text>}</Box>;
     }
 
-    const app = render(<App show={true} />)
-    expect(app.getCursorState()).not.toBeNull()
+    const app = render(<App show={true} />);
+    expect(app.getCursorState()).not.toBeNull();
 
-    app.rerender(<App show={false} />)
-    expect(app.getCursorState()).toBeNull()
-  })
+    app.rerender(<App show={false} />);
+    expect(app.getCursorState()).toBeNull();
+  });
 
   test("without NodeContext (no parent Box), cursor is null", () => {
-    const render = createRenderer({ cols: 40, rows: 10 })
+    const render = createRenderer({ cols: 40, rows: 10 });
 
     function CursorBox() {
-      useCursor({ col: 3, row: 0 })
+      useCursor({ col: 3, row: 0 });
       return (
         <Box>
           <Text>Hello</Text>
         </Box>
-      )
+      );
     }
 
     // No parent Box wrapping CursorBox — NodeContext is null
-    const app = render(<CursorBox />)
-    const cursor = app.getCursorState()
-    expect(cursor).toBeNull()
-  })
+    const app = render(<CursorBox />);
+    const cursor = app.getCursorState();
+    expect(cursor).toBeNull();
+  });
 
   test("cursor row offset works", () => {
-    const render = createRenderer({ cols: 40, rows: 10 })
+    const render = createRenderer({ cols: 40, rows: 10 });
 
     function CursorBox() {
-      useCursor({ col: 2, row: 3 })
+      useCursor({ col: 2, row: 3 });
       return (
         <Box>
           <Text>Content</Text>
         </Box>
-      )
+      );
     }
 
     const app = render(
       <Box>
         <CursorBox />
       </Box>,
-    )
+    );
 
-    const cursor = app.getCursorState()
-    expect(cursor).not.toBeNull()
-    expect(cursor!.x).toBe(2)
-    expect(cursor!.y).toBe(3)
-  })
+    const cursor = app.getCursorState();
+    expect(cursor).not.toBeNull();
+    expect(cursor!.x).toBe(2);
+    expect(cursor!.y).toBe(3);
+  });
 
   test("cursor shape is passed through", () => {
-    const render = createRenderer({ cols: 40, rows: 10 })
+    const render = createRenderer({ cols: 40, rows: 10 });
 
     function CursorBox() {
-      useCursor({ col: 0, row: 0, shape: "bar" })
+      useCursor({ col: 0, row: 0, shape: "bar" });
       return (
         <Box>
           <Text>Hello</Text>
         </Box>
-      )
+      );
     }
 
     const app = render(
       <Box>
         <CursorBox />
       </Box>,
-    )
+    );
 
-    const cursor = app.getCursorState()
-    expect(cursor).not.toBeNull()
-    expect(cursor!.shape).toBe("bar")
-  })
+    const cursor = app.getCursorState();
+    expect(cursor).not.toBeNull();
+    expect(cursor!.shape).toBe("bar");
+  });
 
   test("last writer wins when multiple components use useCursor", () => {
-    const render = createRenderer({ cols: 40, rows: 10 })
+    const render = createRenderer({ cols: 40, rows: 10 });
 
     function First() {
-      useCursor({ col: 1, row: 0 })
+      useCursor({ col: 1, row: 0 });
       return (
         <Box>
           <Text>First</Text>
         </Box>
-      )
+      );
     }
 
     function Second() {
-      useCursor({ col: 99, row: 0 })
+      useCursor({ col: 99, row: 0 });
       return (
         <Box>
           <Text>Second</Text>
         </Box>
-      )
+      );
     }
 
     const app = render(
@@ -196,27 +196,27 @@ describe("useCursor", () => {
         <First />
         <Second />
       </Box>,
-    )
+    );
 
     // Both set cursor -- the store holds the last one that fired
-    const cursor = app.getCursorState()
-    expect(cursor).not.toBeNull()
+    const cursor = app.getCursorState();
+    expect(cursor).not.toBeNull();
     // We can't guarantee which fires last due to subscriber order,
     // but at least one should have set cursor state
-    expect(cursor!.visible).toBe(true)
-  })
+    expect(cursor!.visible).toBe(true);
+  });
 
   test("cursor is isolated per silvery instance", () => {
-    const render1 = createRenderer({ cols: 40, rows: 10 })
-    const render2 = createRenderer({ cols: 40, rows: 10 })
+    const render1 = createRenderer({ cols: 40, rows: 10 });
+    const render2 = createRenderer({ cols: 40, rows: 10 });
 
     function WithCursor() {
-      useCursor({ col: 5, row: 3 })
+      useCursor({ col: 5, row: 3 });
       return (
         <Box>
           <Text>App1</Text>
         </Box>
-      )
+      );
     }
 
     function NoCursor() {
@@ -224,82 +224,82 @@ describe("useCursor", () => {
         <Box>
           <Text>App2</Text>
         </Box>
-      )
+      );
     }
 
     const app1 = render1(
       <Box>
         <WithCursor />
       </Box>,
-    )
-    const app2 = render2(<NoCursor />)
+    );
+    const app2 = render2(<NoCursor />);
 
-    expect(app1.getCursorState()).not.toBeNull()
-    expect(app1.getCursorState()!.x).toBe(5)
-    expect(app1.getCursorState()!.y).toBe(3)
+    expect(app1.getCursorState()).not.toBeNull();
+    expect(app1.getCursorState()!.x).toBe(5);
+    expect(app1.getCursorState()!.y).toBe(3);
     // App2 has no useCursor, so its cursor state should be null
-    expect(app2.getCursorState()).toBeNull()
-  })
+    expect(app2.getCursorState()).toBeNull();
+  });
 
   test("cursor updates when only col changes (no layout change)", () => {
-    const render = createRenderer({ cols: 40, rows: 10 })
+    const render = createRenderer({ cols: 40, rows: 10 });
 
     // When the cursor position changes but the component's layout stays
     // the same (e.g., moving cursor within TextInput without changing text),
     // the cursor store should still be updated via the useLayoutEffect
     // that watches col/row/shape changes.
     function CursorBox({ col }: { col: number }) {
-      useCursor({ col, row: 0 })
+      useCursor({ col, row: 0 });
       return (
         <Box>
           <Text>Hello</Text>
         </Box>
-      )
+      );
     }
 
     const app = render(
       <Box>
         <CursorBox col={0} />
       </Box>,
-    )
-    expect(app.getCursorState()).not.toBeNull()
-    expect(app.getCursorState()!.x).toBe(0)
+    );
+    expect(app.getCursorState()).not.toBeNull();
+    expect(app.getCursorState()!.x).toBe(0);
 
     // Change only col — layout stays the same
     app.rerender(
       <Box>
         <CursorBox col={5} />
       </Box>,
-    )
-    expect(app.getCursorState()!.x).toBe(5)
-  })
+    );
+    expect(app.getCursorState()!.x).toBe(5);
+  });
 
   test("cursor updates when both col and layout change", () => {
-    const render = createRenderer({ cols: 40, rows: 10 })
+    const render = createRenderer({ cols: 40, rows: 10 });
 
     function CursorBox({ col, text }: { col: number; text: string }) {
-      useCursor({ col, row: 0 })
+      useCursor({ col, row: 0 });
       return (
         <Box>
           <Text>{text}</Text>
         </Box>
-      )
+      );
     }
 
     const app = render(
       <Box>
         <CursorBox col={0} text="Hello" />
       </Box>,
-    )
-    expect(app.getCursorState()).not.toBeNull()
-    expect(app.getCursorState()!.x).toBe(0)
+    );
+    expect(app.getCursorState()).not.toBeNull();
+    expect(app.getCursorState()!.x).toBe(0);
 
     // Change both text (triggers layout) and col
     app.rerender(
       <Box>
         <CursorBox col={5} text="Hello World" />
       </Box>,
-    )
-    expect(app.getCursorState()!.x).toBe(5)
-  })
-})
+    );
+    expect(app.getCursorState()!.x).toBe(5);
+  });
+});

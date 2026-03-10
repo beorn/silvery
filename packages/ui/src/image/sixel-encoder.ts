@@ -18,19 +18,19 @@
  * with a simple nearest-color palette approach.
  */
 
-const DCS_START = "\x1bP"
-const ST = "\x1b\\"
+const DCS_START = "\x1bP";
+const ST = "\x1b\\";
 
 /** Sixel introduces a color with `#<index>;2;<r>;<g>;<b>` (RGB percentages 0-100) */
-const SIXEL_NEWLINE = "-"
+const SIXEL_NEWLINE = "-";
 
 export interface SixelImageData {
   /** Image width in pixels */
-  width: number
+  width: number;
   /** Image height in pixels */
-  height: number
+  height: number;
   /** RGBA pixel data (4 bytes per pixel: R, G, B, A), row-major order */
-  data: Uint8Array
+  data: Uint8Array;
 }
 
 /**
@@ -54,108 +54,108 @@ export interface SixelImageData {
  * ```
  */
 export function encodeSixel(imageData: SixelImageData): string {
-  const { width, height, data } = imageData
+  const { width, height, data } = imageData;
 
   if (width === 0 || height === 0 || data.length === 0) {
-    return `${DCS_START}q${ST}`
+    return `${DCS_START}q${ST}`;
   }
 
   // Build a simple palette by collecting unique (quantized) colors
-  const palette = new Map<string, number>()
-  const pixelColors = new Uint16Array(width * height) // palette index per pixel (0 = transparent)
-  let nextColorIndex = 1 // 0 reserved for transparent/background
+  const palette = new Map<string, number>();
+  const pixelColors = new Uint16Array(width * height); // palette index per pixel (0 = transparent)
+  let nextColorIndex = 1; // 0 reserved for transparent/background
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const offset = (y * width + x) * 4
-      const r = data[offset]!
-      const g = data[offset + 1]!
-      const b = data[offset + 2]!
-      const a = data[offset + 3]!
+      const offset = (y * width + x) * 4;
+      const r = data[offset]!;
+      const g = data[offset + 1]!;
+      const b = data[offset + 2]!;
+      const a = data[offset + 3]!;
 
       if (a < 128) {
         // Transparent — leave as 0
-        continue
+        continue;
       }
 
       // Quantize to 6-bit per channel (64 levels) to keep palette small
-      const qr = (r >> 2) & 0x3f
-      const qg = (g >> 2) & 0x3f
-      const qb = (b >> 2) & 0x3f
-      const key = `${qr},${qg},${qb}`
+      const qr = (r >> 2) & 0x3f;
+      const qg = (g >> 2) & 0x3f;
+      const qb = (b >> 2) & 0x3f;
+      const key = `${qr},${qg},${qb}`;
 
-      let idx = palette.get(key)
+      let idx = palette.get(key);
       if (idx == null) {
         if (nextColorIndex >= 256) {
           // Palette full — find closest existing color (simple fallback)
-          idx = 1
+          idx = 1;
         } else {
-          idx = nextColorIndex++
-          palette.set(key, idx)
+          idx = nextColorIndex++;
+          palette.set(key, idx);
         }
       }
 
-      pixelColors[y * width + x] = idx
+      pixelColors[y * width + x] = idx;
     }
   }
 
   // Build Sixel data
-  const parts: string[] = []
+  const parts: string[] = [];
 
   // Raster attributes: Pan;Pad;Ph;Pv (aspect ratio 1:1, width, height)
-  parts.push(`"1;1;${width};${height}`)
+  parts.push(`"1;1;${width};${height}`);
 
   // Define palette colors
   for (const [key, idx] of palette) {
-    const [qr, qg, qb] = key.split(",").map(Number)
+    const [qr, qg, qb] = key.split(",").map(Number);
     // Convert from 6-bit (0-63) to percentage (0-100)
-    const rPct = Math.round((qr! / 63) * 100)
-    const gPct = Math.round((qg! / 63) * 100)
-    const bPct = Math.round((qb! / 63) * 100)
-    parts.push(`#${idx};2;${rPct};${gPct};${bPct}`)
+    const rPct = Math.round((qr! / 63) * 100);
+    const gPct = Math.round((qg! / 63) * 100);
+    const bPct = Math.round((qb! / 63) * 100);
+    parts.push(`#${idx};2;${rPct};${gPct};${bPct}`);
   }
 
   // Encode pixel data in 6-row bands
   for (let bandY = 0; bandY < height; bandY += 6) {
     if (bandY > 0) {
-      parts.push(SIXEL_NEWLINE) // Move to next sixel row
+      parts.push(SIXEL_NEWLINE); // Move to next sixel row
     }
 
     // For each color in the palette, emit the sixel row
     // (Only emit colors that appear in this band)
-    const bandColors = new Set<number>()
+    const bandColors = new Set<number>();
     for (let dy = 0; dy < 6 && bandY + dy < height; dy++) {
       for (let x = 0; x < width; x++) {
-        const ci = pixelColors[(bandY + dy) * width + x]!
-        if (ci > 0) bandColors.add(ci)
+        const ci = pixelColors[(bandY + dy) * width + x]!;
+        if (ci > 0) bandColors.add(ci);
       }
     }
 
-    let first = true
+    let first = true;
     for (const colorIdx of bandColors) {
       if (!first) {
-        parts.push("$") // Carriage return within sixel line (reposition to start)
+        parts.push("$"); // Carriage return within sixel line (reposition to start)
       }
-      first = false
+      first = false;
 
-      parts.push(`#${colorIdx}`)
+      parts.push(`#${colorIdx}`);
 
       // Build the sixel characters for this color in this band
       for (let x = 0; x < width; x++) {
-        let sixelBits = 0
+        let sixelBits = 0;
         for (let dy = 0; dy < 6; dy++) {
-          const y = bandY + dy
+          const y = bandY + dy;
           if (y < height && pixelColors[y * width + x] === colorIdx) {
-            sixelBits |= 1 << dy
+            sixelBits |= 1 << dy;
           }
         }
         // Sixel character = bits + 63 (0x3F)
-        parts.push(String.fromCharCode(sixelBits + 63))
+        parts.push(String.fromCharCode(sixelBits + 63));
       }
     }
   }
 
-  return `${DCS_START}q${parts.join("")}${ST}`
+  return `${DCS_START}q${parts.join("")}${ST}`;
 }
 
 /**
@@ -171,24 +171,24 @@ export function encodeSixel(imageData: SixelImageData): string {
  * @returns `true` if the terminal likely supports Sixel
  */
 export function isSixelSupported(): boolean {
-  const term = process.env.TERM ?? ""
-  const termProgram = process.env.TERM_PROGRAM ?? ""
+  const term = process.env.TERM ?? "";
+  const termProgram = process.env.TERM_PROGRAM ?? "";
 
   // mlterm supports Sixel natively
-  if (termProgram === "mlterm" || term.startsWith("mlterm")) return true
+  if (termProgram === "mlterm" || term.startsWith("mlterm")) return true;
 
   // foot supports Sixel
-  if (termProgram === "foot" || term === "foot" || term === "foot-extra") return true
+  if (termProgram === "foot" || term === "foot" || term === "foot-extra") return true;
 
   // WezTerm supports Sixel
-  if (termProgram === "WezTerm") return true
+  if (termProgram === "WezTerm") return true;
 
   // mintty supports Sixel
-  if (termProgram === "mintty") return true
+  if (termProgram === "mintty") return true;
 
   // xterm might support Sixel if compiled with +sixel
   // We can't know for sure from env alone, so we don't claim support
   // (the user can set protocol='sixel' explicitly)
 
-  return false
+  return false;
 }

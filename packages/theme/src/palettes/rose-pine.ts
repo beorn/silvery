@@ -2,8 +2,8 @@
  * Rosé Pine palettes — all natural pine, faux fur and a bit of soho vibes.
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Rosé Pine — the main dark variant. */
 export const rosePine: ColorPalette = {
@@ -31,7 +31,7 @@ export const rosePine: ColorPalette = {
   cursorText: "#1F1D2E",
   selectionBackground: "#6E6A86",
   selectionForeground: "#E0DEF4",
-}
+};
 
 /** Rosé Pine Moon — slightly lighter dark variant. */
 export const rosePineMoon: ColorPalette = {
@@ -59,7 +59,7 @@ export const rosePineMoon: ColorPalette = {
   cursorText: "#2A273F",
   selectionBackground: "#6E6A86",
   selectionForeground: "#E0DEF4",
-}
+};
 
 /** Rosé Pine Dawn — the light variant. */
 export const rosePineDawn: ColorPalette = {
@@ -87,4 +87,4 @@ export const rosePineDawn: ColorPalette = {
   cursorText: "#FFFAF3",
   selectionBackground: "#9893A5",
   selectionForeground: "#575279",
-}
+};

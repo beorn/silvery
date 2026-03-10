@@ -24,10 +24,10 @@
  * </Tabs>
  * ```
  */
-import React, { createContext, useCallback, useContext, useState } from "react"
-import { useInput } from "@silvery/react/hooks/useInput"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React, { createContext, useCallback, useContext, useState } from "react";
+import { useInput } from "@silvery/react/hooks/useInput";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -35,34 +35,34 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface TabsProps {
   /** Default active tab value (uncontrolled) */
-  defaultValue?: string
+  defaultValue?: string;
   /** Controlled active tab value */
-  value?: string
+  value?: string;
   /** Called when the active tab changes */
-  onChange?: (value: string) => void
+  onChange?: (value: string) => void;
   /** Whether tab input is active (default: true) */
-  isActive?: boolean
+  isActive?: boolean;
   /** Tab children (TabList + TabPanel components) */
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export interface TabListProps {
   /** Tab children */
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export interface TabProps {
   /** Unique tab identifier */
-  value: string
+  value: string;
   /** Tab label children */
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export interface TabPanelProps {
   /** Tab value this panel corresponds to */
-  value: string
+  value: string;
   /** Panel content */
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 // =============================================================================
@@ -70,10 +70,10 @@ export interface TabPanelProps {
 // =============================================================================
 
 interface TabsContextValue {
-  activeValue: string
-  setActiveValue: (value: string) => void
-  tabValues: string[]
-  registerTab: (value: string) => void
+  activeValue: string;
+  setActiveValue: (value: string) => void;
+  tabValues: string[];
+  registerTab: (value: string) => void;
 }
 
 const TabsContext = createContext<TabsContextValue>({
@@ -81,10 +81,10 @@ const TabsContext = createContext<TabsContextValue>({
   setActiveValue: () => {},
   tabValues: [],
   registerTab: () => {},
-})
+});
 
 function useTabsContext(): TabsContextValue {
-  return useContext(TabsContext)
+  return useContext(TabsContext);
 }
 
 // =============================================================================
@@ -104,52 +104,52 @@ export function Tabs({
   isActive = true,
   children,
 }: TabsProps): React.ReactElement {
-  const isControlled = controlledValue !== undefined
-  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue ?? "")
-  const [tabValues, setTabValues] = useState<string[]>([])
+  const isControlled = controlledValue !== undefined;
+  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue ?? "");
+  const [tabValues, setTabValues] = useState<string[]>([]);
 
-  const activeValue = isControlled ? controlledValue : uncontrolledValue
+  const activeValue = isControlled ? controlledValue : uncontrolledValue;
 
   const setActiveValue = useCallback(
     (val: string) => {
-      if (!isControlled) setUncontrolledValue(val)
-      onChange?.(val)
+      if (!isControlled) setUncontrolledValue(val);
+      onChange?.(val);
     },
     [isControlled, onChange],
-  )
+  );
 
   const registerTab = useCallback((val: string) => {
-    setTabValues((prev) => (prev.includes(val) ? prev : [...prev, val]))
-  }, [])
+    setTabValues((prev) => (prev.includes(val) ? prev : [...prev, val]));
+  }, []);
 
   // Keyboard navigation between tabs
   useInput(
     (_input, key) => {
-      if (tabValues.length === 0) return
+      if (tabValues.length === 0) return;
 
-      const currentIdx = tabValues.indexOf(activeValue)
-      if (currentIdx < 0) return
+      const currentIdx = tabValues.indexOf(activeValue);
+      if (currentIdx < 0) return;
 
       if (key.rightArrow || _input === "l") {
-        const next = (currentIdx + 1) % tabValues.length
-        setActiveValue(tabValues[next]!)
-        return
+        const next = (currentIdx + 1) % tabValues.length;
+        setActiveValue(tabValues[next]!);
+        return;
       }
 
       if (key.leftArrow || _input === "h") {
-        const next = (currentIdx - 1 + tabValues.length) % tabValues.length
-        setActiveValue(tabValues[next]!)
-        return
+        const next = (currentIdx - 1 + tabValues.length) % tabValues.length;
+        setActiveValue(tabValues[next]!);
+        return;
       }
     },
     { isActive },
-  )
+  );
 
   return (
     <TabsContext.Provider value={{ activeValue, setActiveValue, tabValues, registerTab }}>
       <Box flexDirection="column">{children}</Box>
     </TabsContext.Provider>
-  )
+  );
 }
 
 /**
@@ -162,7 +162,7 @@ export function TabList({ children }: TabListProps): React.ReactElement {
     <Box flexDirection="row" gap={1} borderBottom borderColor="$border">
       {children}
     </Box>
-  )
+  );
 }
 
 /**
@@ -172,13 +172,13 @@ export function TabList({ children }: TabListProps): React.ReactElement {
  * with `$primary` color; inactive tabs use `$mutedfg`.
  */
 export function Tab({ value, children }: TabProps): React.ReactElement {
-  const { activeValue, registerTab } = useTabsContext()
-  const isActive = activeValue === value
+  const { activeValue, registerTab } = useTabsContext();
+  const isActive = activeValue === value;
 
   // Register this tab's value for keyboard navigation
   React.useEffect(() => {
-    registerTab(value)
-  }, [value, registerTab])
+    registerTab(value);
+  }, [value, registerTab]);
 
   return (
     <Box>
@@ -186,7 +186,7 @@ export function Tab({ value, children }: TabProps): React.ReactElement {
         {children}
       </Text>
     </Box>
-  )
+  );
 }
 
 /**
@@ -195,9 +195,9 @@ export function Tab({ value, children }: TabProps): React.ReactElement {
  * Only renders its children when the corresponding tab is active.
  */
 export function TabPanel({ value, children }: TabPanelProps): React.ReactElement | null {
-  const { activeValue } = useTabsContext()
+  const { activeValue } = useTabsContext();
 
-  if (activeValue !== value) return null
+  if (activeValue !== value) return null;
 
-  return <Box flexDirection="column">{children}</Box>
+  return <Box flexDirection="column">{children}</Box>;
 }

@@ -8,30 +8,30 @@
  *   Sidebar (220px) | Demo pane (flex) | Source pane (380px, collapsible)
  */
 
-import { Terminal } from "@xterm/xterm"
-import { FitAddon } from "@xterm/addon-fit"
-import { renderToXterm } from "../../packages/term/src/xterm/index.js"
-import { SHOWCASES, emitInput, emitMouse, setTermFocused } from "./showcases.js"
-import React from "react"
+import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import { renderToXterm } from "../../packages/term/src/xterm/index.js";
+import { SHOWCASES, emitInput, emitMouse, setTermFocused } from "./showcases.js";
+import React from "react";
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface DemoEntry {
-  id: string
-  name: string
-  description: string
-  category: string
-  features: string[]
-  source: string
-  component?: () => JSX.Element
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  features: string[];
+  source: string;
+  component?: () => JSX.Element;
 }
 
 interface Category {
-  name: string
-  color: string
-  items: DemoEntry[]
+  name: string;
+  color: string;
+  items: DemoEntry[];
 }
 
 // =============================================================================
@@ -43,11 +43,11 @@ interface Category {
 // for now we define it inline from the showcases.
 
 interface DemoMeta {
-  name: string
-  description: string
-  category: string
-  features: string[]
-  source: string
+  name: string;
+  description: string;
+  category: string;
+  features: string[];
+  source: string;
 }
 
 const DEMO_METADATA: Record<string, DemoMeta> = {
@@ -55,7 +55,15 @@ const DEMO_METADATA: Record<string, DemoMeta> = {
     name: "System Dashboard",
     description: "Real-time metrics, service status, and event feed with live updating data.",
     category: "Showcases",
-    features: ["Box", "Text", "borderStyle", "flexDirection", "useInput", "useEffect", "setInterval"],
+    features: [
+      "Box",
+      "Text",
+      "borderStyle",
+      "flexDirection",
+      "useInput",
+      "useEffect",
+      "setInterval",
+    ],
     source: `import React, { useState, useEffect } from "react"
 import { Box, Text, useInput } from "@silvery/term"
 
@@ -102,7 +110,8 @@ function DashboardShowcase() {
   },
   "coding-agent": {
     name: "Coding Agent",
-    description: "Claude Code-style coding agent with tool calls, code diffs, and streaming output.",
+    description:
+      "Claude Code-style coding agent with tool calls, code diffs, and streaming output.",
     category: "Showcases",
     features: ["Box", "Text", "outlineStyle", "flexDirection", "wrap"],
     source: `import React from "react"
@@ -479,7 +488,7 @@ function TextInputShowcase() {
   )
 }`,
   },
-}
+};
 
 const CATEGORY_CONFIG: Record<string, { color: string; order: number }> = {
   Showcases: { color: "#f9e2af", order: 0 },
@@ -487,14 +496,14 @@ const CATEGORY_CONFIG: Record<string, { color: string; order: number }> = {
   Interactive: { color: "#89dceb", order: 2 },
   Runtime: { color: "#a6e3a1", order: 3 },
   Inline: { color: "#fab387", order: 4 },
-}
+};
 
 function buildRegistry(): { categories: Category[]; allDemos: DemoEntry[] } {
-  const allDemos: DemoEntry[] = []
+  const allDemos: DemoEntry[] = [];
 
   for (const [id, component] of Object.entries(SHOWCASES)) {
-    const meta = DEMO_METADATA[id]
-    if (!meta) continue
+    const meta = DEMO_METADATA[id];
+    if (!meta) continue;
     allDemos.push({
       id,
       name: meta.name,
@@ -503,28 +512,30 @@ function buildRegistry(): { categories: Category[]; allDemos: DemoEntry[] } {
       features: meta.features,
       source: meta.source,
       component: component as () => JSX.Element,
-    })
+    });
   }
 
   // Group by category
-  const catMap = new Map<string, DemoEntry[]>()
+  const catMap = new Map<string, DemoEntry[]>();
   for (const demo of allDemos) {
-    const list = catMap.get(demo.category) ?? []
-    list.push(demo)
-    catMap.set(demo.category, list)
+    const list = catMap.get(demo.category) ?? [];
+    list.push(demo);
+    catMap.set(demo.category, list);
   }
 
-  const categories: Category[] = []
+  const categories: Category[] = [];
   for (const [name, items] of catMap) {
     categories.push({
       name,
       color: CATEGORY_CONFIG[name]?.color ?? "#cdd6f4",
       items,
-    })
+    });
   }
-  categories.sort((a, b) => (CATEGORY_CONFIG[a.name]?.order ?? 99) - (CATEGORY_CONFIG[b.name]?.order ?? 99))
+  categories.sort(
+    (a, b) => (CATEGORY_CONFIG[a.name]?.order ?? 99) - (CATEGORY_CONFIG[b.name]?.order ?? 99),
+  );
 
-  return { categories, allDemos }
+  return { categories, allDemos };
 }
 
 // =============================================================================
@@ -567,47 +578,47 @@ const KW = new Set([
   "in",
   "default",
   "using",
-])
+]);
 
 function highlightSource(code: string): string {
   return code
     .split("\n")
     .map((line, i) => {
-      const num = `<span class="line-num">${String(i + 1).padStart(3)}</span> `
-      const trimmed = line.trimStart()
+      const num = `<span class="line-num">${String(i + 1).padStart(3)}</span> `;
+      const trimmed = line.trimStart();
 
       // Comment lines
       if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")) {
-        return num + `<span class="hl-comment">${esc(line)}</span>`
+        return num + `<span class="hl-comment">${esc(line)}</span>`;
       }
 
       // Token-by-token highlighting
-      let result = ""
+      let result = "";
       const re =
-        /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(<\/?[A-Z]\w*)|(\b[a-zA-Z_]\w*\b)|(:\s*)([A-Z]\w*)|([^\s"'`<\w]+|\s+)/g
-      let m: RegExpExecArray | null
+        /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(<\/?[A-Z]\w*)|(\b[a-zA-Z_]\w*\b)|(:\s*)([A-Z]\w*)|([^\s"'`<\w]+|\s+)/g;
+      let m: RegExpExecArray | null;
       while ((m = re.exec(line)) !== null) {
-        const [full, str, jsxTag, word, colonSpace, typeName] = m
+        const [full, str, jsxTag, word, colonSpace, typeName] = m;
         if (str) {
-          result += `<span class="hl-string">${esc(str)}</span>`
+          result += `<span class="hl-string">${esc(str)}</span>`;
         } else if (jsxTag) {
-          result += `<span class="hl-jsx">${esc(jsxTag)}</span>`
+          result += `<span class="hl-jsx">${esc(jsxTag)}</span>`;
         } else if (word && KW.has(word)) {
-          result += `<span class="hl-keyword">${esc(word)}</span>`
+          result += `<span class="hl-keyword">${esc(word)}</span>`;
         } else if (colonSpace && typeName) {
-          result += `<span class="hl-punct">${esc(colonSpace)}</span><span class="hl-type">${esc(typeName)}</span>`
+          result += `<span class="hl-punct">${esc(colonSpace)}</span><span class="hl-type">${esc(typeName)}</span>`;
         } else {
-          result += esc(full!)
+          result += esc(full!);
         }
       }
 
-      return num + result
+      return num + result;
     })
-    .join("\n")
+    .join("\n");
 }
 
 function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 // =============================================================================
@@ -619,18 +630,18 @@ function el<K extends keyof HTMLElementTagNameMap>(
   attrs?: Record<string, string>,
   ...children: (HTMLElement | string)[]
 ): HTMLElementTagNameMap[K] {
-  const e = document.createElement(tag)
+  const e = document.createElement(tag);
   if (attrs) {
     for (const [k, v] of Object.entries(attrs)) {
-      if (k === "className") e.className = v
-      else e.setAttribute(k, v)
+      if (k === "className") e.className = v;
+      else e.setAttribute(k, v);
     }
   }
   for (const child of children) {
-    if (typeof child === "string") e.appendChild(document.createTextNode(child))
-    else e.appendChild(child)
+    if (typeof child === "string") e.appendChild(document.createTextNode(child));
+    else e.appendChild(child);
   }
-  return e
+  return e;
 }
 
 // =============================================================================
@@ -638,19 +649,19 @@ function el<K extends keyof HTMLElementTagNameMap>(
 // =============================================================================
 
 function createViewerApp(root: HTMLElement): void {
-  const { categories, allDemos } = buildRegistry()
+  const { categories, allDemos } = buildRegistry();
   if (allDemos.length === 0) {
-    root.textContent = "No demos found."
-    return
+    root.textContent = "No demos found.";
+    return;
   }
 
-  let selectedIdx = 0
-  let sourceVisible = window.innerWidth >= 900
-  let sidebarFocused = false
-  let currentInstance: ReturnType<typeof renderToXterm> | null = null
+  let selectedIdx = 0;
+  let sourceVisible = window.innerWidth >= 900;
+  let sidebarFocused = false;
+  let currentInstance: ReturnType<typeof renderToXterm> | null = null;
 
   // ─── Inject styles ─────────────────────────────────────────────────
-  const style = document.createElement("style")
+  const style = document.createElement("style");
   style.textContent = `
     /* Layout */
     #viewer-root { display: flex; flex-direction: column; width: 100%; height: 100%; }
@@ -707,8 +718,8 @@ function createViewerApp(root: HTMLElement): void {
       .vw-source-toggle { display: block; }
       .vw-source { position: absolute; right: 0; top: 0; bottom: 0; z-index: 20; box-shadow: -4px 0 20px rgba(0,0,0,0.5); }
     }
-  `
-  document.head.appendChild(style)
+  `;
+  document.head.appendChild(style);
 
   // ─── Build DOM ─────────────────────────────────────────────────────
 
@@ -719,67 +730,67 @@ function createViewerApp(root: HTMLElement): void {
     el("span", { className: "vw-header-brand" }, "silvery"),
     el("span", { className: "vw-header-title" }, "Interactive Examples"),
     el("span", { className: "vw-header-badge" }, `${allDemos.length} demos`),
-  )
+  );
 
   // Sidebar
-  const sidebar = el("div", { className: "vw-sidebar" })
-  const sidebarItems: HTMLElement[] = []
+  const sidebar = el("div", { className: "vw-sidebar" });
+  const sidebarItems: HTMLElement[] = [];
 
   for (const cat of categories) {
-    const catHeader = el("div", { className: "vw-cat-header" })
-    const dot = el("span", { className: "vw-cat-dot" })
-    dot.style.backgroundColor = cat.color
-    catHeader.appendChild(dot)
-    catHeader.appendChild(document.createTextNode(cat.name))
-    sidebar.appendChild(catHeader)
+    const catHeader = el("div", { className: "vw-cat-header" });
+    const dot = el("span", { className: "vw-cat-dot" });
+    dot.style.backgroundColor = cat.color;
+    catHeader.appendChild(dot);
+    catHeader.appendChild(document.createTextNode(cat.name));
+    sidebar.appendChild(catHeader);
 
     for (const demo of cat.items) {
-      const idx = allDemos.indexOf(demo)
-      const item = el("div", { className: "vw-item" }, demo.name)
-      item.dataset.idx = String(idx)
+      const idx = allDemos.indexOf(demo);
+      const item = el("div", { className: "vw-item" }, demo.name);
+      item.dataset.idx = String(idx);
       item.addEventListener("click", () => {
-        selectDemo(idx)
-        sidebarFocused = true
-      })
-      sidebar.appendChild(item)
-      sidebarItems[idx] = item
+        selectDemo(idx);
+        sidebarFocused = true;
+      });
+      sidebar.appendChild(item);
+      sidebarItems[idx] = item;
     }
   }
 
   // Terminal pane
-  const termWrap = el("div", { className: "vw-term-wrap" })
-  const sourceToggle = el("button", { className: "vw-source-toggle" }, "Source")
-  termWrap.appendChild(sourceToggle)
+  const termWrap = el("div", { className: "vw-term-wrap" });
+  const sourceToggle = el("button", { className: "vw-source-toggle" }, "Source");
+  termWrap.appendChild(sourceToggle);
 
   // Info bar
-  const infoDiv = el("div", { className: "vw-info" })
-  const infoName = el("div", { className: "vw-info-name" })
-  const infoDesc = el("div", { className: "vw-info-desc" })
-  const badgesDiv = el("div", { className: "vw-badges" })
-  const keyHints = el("div", { className: "vw-keyhints" })
-  infoDiv.append(infoName, infoDesc, badgesDiv, keyHints)
+  const infoDiv = el("div", { className: "vw-info" });
+  const infoName = el("div", { className: "vw-info-name" });
+  const infoDesc = el("div", { className: "vw-info-desc" });
+  const badgesDiv = el("div", { className: "vw-badges" });
+  const keyHints = el("div", { className: "vw-keyhints" });
+  infoDiv.append(infoName, infoDesc, badgesDiv, keyHints);
 
   // Main pane
-  const mainPane = el("div", { className: "vw-main" })
-  mainPane.append(termWrap, infoDiv)
+  const mainPane = el("div", { className: "vw-main" });
+  mainPane.append(termWrap, infoDiv);
 
   // Source pane
-  const sourcePane = el("div", { className: `vw-source${sourceVisible ? "" : " hidden"}` })
-  const sourceHeader = el("div", { className: "vw-source-header" })
-  const sourceTitle = el("span", { className: "vw-source-title" }, "Source")
-  const copyBtn = el("button", { className: "vw-source-btn" }, "Copy")
-  sourceHeader.append(sourceTitle, copyBtn)
-  const sourceCodeWrap = el("div", { className: "vw-source-code" })
-  const sourcePre = el("pre")
-  sourceCodeWrap.appendChild(sourcePre)
-  sourcePane.append(sourceHeader, sourceCodeWrap)
+  const sourcePane = el("div", { className: `vw-source${sourceVisible ? "" : " hidden"}` });
+  const sourceHeader = el("div", { className: "vw-source-header" });
+  const sourceTitle = el("span", { className: "vw-source-title" }, "Source");
+  const copyBtn = el("button", { className: "vw-source-btn" }, "Copy");
+  sourceHeader.append(sourceTitle, copyBtn);
+  const sourceCodeWrap = el("div", { className: "vw-source-code" });
+  const sourcePre = el("pre");
+  sourceCodeWrap.appendChild(sourcePre);
+  sourcePane.append(sourceHeader, sourceCodeWrap);
 
   // Body
-  const body = el("div", { className: "vw-body" })
-  body.append(sidebar, mainPane, sourcePane)
+  const body = el("div", { className: "vw-body" });
+  body.append(sidebar, mainPane, sourcePane);
 
   // Root
-  root.append(header, body)
+  root.append(header, body);
 
   // ─── Terminal setup ────────────────────────────────────────────────
   const term = new Terminal({
@@ -795,206 +806,206 @@ function createViewerApp(root: HTMLElement): void {
       cursor: "#f5e0dc",
       selectionBackground: "rgba(137, 220, 235, 0.25)",
     },
-  })
+  });
 
-  const fitAddon = new FitAddon()
-  term.loadAddon(fitAddon)
-  term.open(termWrap)
-  fitAddon.fit()
+  const fitAddon = new FitAddon();
+  term.loadAddon(fitAddon);
+  term.open(termWrap);
+  fitAddon.fit();
 
   // Wire keyboard: when terminal has focus, forward to demo
-  term.onData((data) => emitInput(data))
+  term.onData((data) => emitInput(data));
 
   // Wire mouse clicks: convert pixel coordinates to cell coordinates
-  const screenEl = termWrap.querySelector(".xterm-screen")
+  const screenEl = termWrap.querySelector(".xterm-screen");
   if (screenEl) {
     screenEl.addEventListener("click", (e: Event) => {
-      const me = e as MouseEvent
-      const rect = (screenEl as HTMLElement).getBoundingClientRect()
-      const cellWidth = rect.width / term.cols
-      const cellHeight = rect.height / term.rows
-      const x = Math.floor((me.clientX - rect.left) / cellWidth)
-      const y = Math.floor((me.clientY - rect.top) / cellHeight)
-      emitMouse(x, y, 0)
-    })
+      const me = e as MouseEvent;
+      const rect = (screenEl as HTMLElement).getBoundingClientRect();
+      const cellWidth = rect.width / term.cols;
+      const cellHeight = rect.height / term.rows;
+      const x = Math.floor((me.clientX - rect.left) / cellWidth);
+      const y = Math.floor((me.clientY - rect.top) / cellHeight);
+      emitMouse(x, y, 0);
+    });
   }
 
   // Track terminal focus state for showcase cursor/outline
   term.textarea?.addEventListener("focus", () => {
-    setTermFocused(true)
-    sidebarFocused = false
-  })
+    setTermFocused(true);
+    sidebarFocused = false;
+  });
   term.textarea?.addEventListener("blur", () => {
-    setTermFocused(false)
-  })
+    setTermFocused(false);
+  });
 
   // Click terminal to focus it (unfocus sidebar)
   termWrap.addEventListener("click", () => {
-    sidebarFocused = false
-  })
+    sidebarFocused = false;
+  });
 
   // ─── Selection logic ───────────────────────────────────────────────
   function selectDemo(idx: number): void {
-    if (idx < 0 || idx >= allDemos.length) return
-    const prev = selectedIdx
-    selectedIdx = idx
+    if (idx < 0 || idx >= allDemos.length) return;
+    const prev = selectedIdx;
+    selectedIdx = idx;
 
     // Update sidebar highlight
-    if (sidebarItems[prev]) sidebarItems[prev]!.classList.remove("selected")
+    if (sidebarItems[prev]) sidebarItems[prev]!.classList.remove("selected");
     if (sidebarItems[idx]) {
-      sidebarItems[idx]!.classList.add("selected")
-      sidebarItems[idx]!.scrollIntoView({ block: "nearest" })
+      sidebarItems[idx]!.classList.add("selected");
+      sidebarItems[idx]!.scrollIntoView({ block: "nearest" });
     }
 
-    const demo = allDemos[idx]!
+    const demo = allDemos[idx]!;
 
     // Update URL hash for deep linking (without triggering hashchange)
-    history.replaceState(null, "", `#${demo.id}`)
+    history.replaceState(null, "", `#${demo.id}`);
 
     // Update info
-    infoName.textContent = demo.name
-    infoDesc.textContent = demo.description
-    badgesDiv.innerHTML = ""
+    infoName.textContent = demo.name;
+    infoDesc.textContent = demo.description;
+    badgesDiv.innerHTML = "";
     for (const feat of demo.features) {
-      badgesDiv.appendChild(el("span", { className: "vw-badge" }, feat))
+      badgesDiv.appendChild(el("span", { className: "vw-badge" }, feat));
     }
 
     // Key hints based on whether demo has component
     if (demo.component) {
       keyHints.innerHTML =
-        "<kbd>j</kbd><kbd>k</kbd> navigate &nbsp; <kbd>Enter</kbd> select &nbsp; <kbd>s</kbd> toggle source &nbsp; Click terminal for keyboard input"
+        "<kbd>j</kbd><kbd>k</kbd> navigate &nbsp; <kbd>Enter</kbd> select &nbsp; <kbd>s</kbd> toggle source &nbsp; Click terminal for keyboard input";
     } else {
       keyHints.innerHTML =
-        "<kbd>j</kbd><kbd>k</kbd> navigate &nbsp; <kbd>s</kbd> toggle source &nbsp; Run in terminal: <code>bun run examples/...</code>"
+        "<kbd>j</kbd><kbd>k</kbd> navigate &nbsp; <kbd>s</kbd> toggle source &nbsp; Run in terminal: <code>bun run examples/...</code>";
     }
 
     // Update source pane
-    sourcePre.innerHTML = highlightSource(demo.source)
+    sourcePre.innerHTML = highlightSource(demo.source);
 
     // Render demo in terminal
-    renderDemo(demo)
+    renderDemo(demo);
 
     // Auto-focus terminal so keyboard input works immediately
-    term.focus()
+    term.focus();
   }
 
-  let pendingRenderFrame: number | null = null
+  let pendingRenderFrame: number | null = null;
 
   function renderDemo(demo: DemoEntry): void {
     // Cancel any pending deferred render from a previous switch
     if (pendingRenderFrame !== null) {
-      cancelAnimationFrame(pendingRenderFrame)
-      pendingRenderFrame = null
+      cancelAnimationFrame(pendingRenderFrame);
+      pendingRenderFrame = null;
     }
 
     // Cleanup previous — unmount React tree, then fully reset xterm
     if (currentInstance) {
-      currentInstance.unmount()
-      currentInstance = null
+      currentInstance.unmount();
+      currentInstance = null;
     }
     // Full reset: clear scrollback + visible buffer, reset terminal state
-    term.reset()
+    term.reset();
 
     // Defer new render by one frame — ensures any pending requestAnimationFrame
     // callbacks from the old demo's render scheduler have fired (and bailed via
     // their unmounted flag), and any queued xterm.write() calls have been processed.
     pendingRenderFrame = requestAnimationFrame(() => {
-      pendingRenderFrame = null
-      term.reset() // Clean slate after old async work drained
+      pendingRenderFrame = null;
+      term.reset(); // Clean slate after old async work drained
 
       if (!demo.component) {
-        term.writeln("\r\n  This example requires a full terminal runtime.")
-        term.writeln(`\r\n  Run: bun run examples/${demo.id}`)
-        return
+        term.writeln("\r\n  This example requires a full terminal runtime.");
+        term.writeln(`\r\n  Run: bun run examples/${demo.id}`);
+        return;
       }
 
-      fitAddon.fit()
-      currentInstance = renderToXterm(React.createElement(demo.component), term)
-    })
+      fitAddon.fit();
+      currentInstance = renderToXterm(React.createElement(demo.component), term);
+    });
   }
 
   // ─── Copy button ───────────────────────────────────────────────────
   copyBtn.addEventListener("click", () => {
-    const demo = allDemos[selectedIdx]
-    if (!demo) return
+    const demo = allDemos[selectedIdx];
+    if (!demo) return;
     void navigator.clipboard.writeText(demo.source).then(() => {
-      copyBtn.textContent = "Copied!"
+      copyBtn.textContent = "Copied!";
       setTimeout(() => {
-        copyBtn.textContent = "Copy"
-      }, 1500)
-      return undefined
-    })
-  })
+        copyBtn.textContent = "Copy";
+      }, 1500);
+      return undefined;
+    });
+  });
 
   // ─── Source toggle ─────────────────────────────────────────────────
   function toggleSource(): void {
-    sourceVisible = !sourceVisible
-    sourcePane.classList.toggle("hidden", !sourceVisible)
+    sourceVisible = !sourceVisible;
+    sourcePane.classList.toggle("hidden", !sourceVisible);
     // Refit terminal after layout change
     requestAnimationFrame(() => {
-      fitAddon.fit()
-      if (currentInstance) currentInstance.refresh()
-    })
+      fitAddon.fit();
+      if (currentInstance) currentInstance.refresh();
+    });
   }
 
-  sourceToggle.addEventListener("click", toggleSource)
+  sourceToggle.addEventListener("click", toggleSource);
 
   // ─── Keyboard navigation ──────────────────────────────────────────
   document.addEventListener("keydown", (e: KeyboardEvent) => {
     // Only handle sidebar navigation when sidebar is focused or no terminal focus
     if (sidebarFocused || document.activeElement === document.body) {
       if (e.key === "ArrowDown" || e.key === "j") {
-        e.preventDefault()
-        selectDemo(Math.min(allDemos.length - 1, selectedIdx + 1))
+        e.preventDefault();
+        selectDemo(Math.min(allDemos.length - 1, selectedIdx + 1));
       } else if (e.key === "ArrowUp" || e.key === "k") {
-        e.preventDefault()
-        selectDemo(Math.max(0, selectedIdx - 1))
+        e.preventDefault();
+        selectDemo(Math.max(0, selectedIdx - 1));
       } else if (e.key === "Enter") {
-        e.preventDefault()
-        sidebarFocused = false
-        term.focus()
+        e.preventDefault();
+        sidebarFocused = false;
+        term.focus();
       } else if (e.key === "s" || e.key === "S") {
-        e.preventDefault()
-        toggleSource()
+        e.preventDefault();
+        toggleSource();
       }
     }
-  })
+  });
 
   // Click sidebar to focus it
   sidebar.addEventListener("click", () => {
-    sidebarFocused = true
-  })
+    sidebarFocused = true;
+  });
 
   // ─── Resize handling ───────────────────────────────────────────────
   window.addEventListener("resize", () => {
-    fitAddon.fit()
-    if (currentInstance) currentInstance.refresh()
-  })
+    fitAddon.fit();
+    if (currentInstance) currentInstance.refresh();
+  });
 
   // ─── Initial selection (from URL hash or default) ──────────────────
-  const hashId = window.location.hash.slice(1)
-  const hashIdx = hashId ? allDemos.findIndex((d) => d.id === hashId) : -1
-  selectDemo(hashIdx >= 0 ? hashIdx : 0)
+  const hashId = window.location.hash.slice(1);
+  const hashIdx = hashId ? allDemos.findIndex((d) => d.id === hashId) : -1;
+  selectDemo(hashIdx >= 0 ? hashIdx : 0);
 
   // Handle browser back/forward navigation
   window.addEventListener("hashchange", () => {
-    const id = window.location.hash.slice(1)
-    const idx = allDemos.findIndex((d) => d.id === id)
-    if (idx >= 0 && idx !== selectedIdx) selectDemo(idx)
-  })
+    const id = window.location.hash.slice(1);
+    const idx = allDemos.findIndex((d) => d.id === id);
+    if (idx >= 0 && idx !== selectedIdx) selectDemo(idx);
+  });
 
   // Signal ready to parent
-  window.parent.postMessage({ type: "silvery-ready" }, "*")
+  window.parent.postMessage({ type: "silvery-ready" }, "*");
 
   // Expose for debugging
-  ;(window as any).silveryViewer = { term, allDemos, selectDemo }
+  (window as any).silveryViewer = { term, allDemos, selectDemo };
 }
 
 // =============================================================================
 // Boot
 // =============================================================================
 
-const root = document.getElementById("viewer-root")
+const root = document.getElementById("viewer-root");
 if (root) {
-  createViewerApp(root)
+  createViewerApp(root);
 }

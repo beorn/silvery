@@ -9,8 +9,8 @@
  *   - ansi16: direct aliases into the 22 palette colors (no blending)
  */
 
-import { blend, contrastFg, desaturate, complement } from "./color"
-import type { ColorPalette, Theme } from "./types"
+import { blend, contrastFg, desaturate, complement } from "./color";
+import type { ColorPalette, Theme } from "./types";
 
 /**
  * Derive a complete Theme from a ColorPalette.
@@ -21,14 +21,17 @@ import type { ColorPalette, Theme } from "./types"
  * @param palette - The 22-color terminal palette
  * @param mode - "truecolor" (default) for rich derivation, "ansi16" for direct aliases
  */
-export function deriveTheme(palette: ColorPalette, mode: "ansi16" | "truecolor" = "truecolor"): Theme {
-  if (mode === "ansi16") return deriveAnsi16Theme(palette)
-  return deriveTruecolorTheme(palette)
+export function deriveTheme(
+  palette: ColorPalette,
+  mode: "ansi16" | "truecolor" = "truecolor",
+): Theme {
+  if (mode === "ansi16") return deriveAnsi16Theme(palette);
+  return deriveTruecolorTheme(palette);
 }
 
 function deriveTruecolorTheme(p: ColorPalette): Theme {
-  const dark = p.dark ?? true
-  const primaryColor = dark ? p.yellow : p.blue
+  const dark = p.dark ?? true;
+  const primaryColor = dark ? p.yellow : p.blue;
 
   return {
     name: p.name ?? (dark ? "derived-dark" : "derived-light"),
@@ -89,12 +92,12 @@ function deriveTruecolorTheme(p: ColorPalette): Theme {
       p.brightCyan,
       p.brightWhite,
     ],
-  }
+  };
 }
 
 function deriveAnsi16Theme(p: ColorPalette): Theme {
-  const dark = p.dark ?? true
-  const primaryColor = dark ? p.yellow : p.blue
+  const dark = p.dark ?? true;
+  const primaryColor = dark ? p.yellow : p.blue;
 
   return {
     name: p.name ?? (dark ? "derived-ansi16-dark" : "derived-ansi16-light"),
@@ -155,5 +158,5 @@ function deriveAnsi16Theme(p: ColorPalette): Theme {
       p.brightCyan,
       p.brightWhite,
     ],
-  }
+  };
 }

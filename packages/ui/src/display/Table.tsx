@@ -2,8 +2,8 @@
  * React Table component for silvery/Ink TUI apps
  */
 
-import React from "react"
-import type { TableProps, TableColumn } from "../types.js"
+import React from "react";
+import type { TableProps, TableColumn } from "../types.js";
 
 /**
  * Unicode box drawing characters for borders
@@ -20,7 +20,7 @@ const BOX = {
   topT: "┬",
   bottomT: "┴",
   cross: "┼",
-} as const
+} as const;
 
 /**
  * Data grid display component for React TUI apps
@@ -47,38 +47,38 @@ const BOX = {
  */
 export function Table({ columns, data, border = false }: TableProps): React.ReactElement {
   // Calculate effective column widths
-  const effectiveColumns = calculateColumnWidths(columns, data)
+  const effectiveColumns = calculateColumnWidths(columns, data);
 
-  const lines: string[] = []
+  const lines: string[] = [];
 
   if (border) {
     // Top border
-    lines.push(buildBorderLine(effectiveColumns, "top"))
+    lines.push(buildBorderLine(effectiveColumns, "top"));
   }
 
   // Header row
-  lines.push(buildDataRow(effectiveColumns, getHeaderRow(effectiveColumns), border))
+  lines.push(buildDataRow(effectiveColumns, getHeaderRow(effectiveColumns), border));
 
   if (border) {
     // Separator after header
-    lines.push(buildBorderLine(effectiveColumns, "middle"))
+    lines.push(buildBorderLine(effectiveColumns, "middle"));
   }
 
   // Data rows
   for (const row of data) {
-    lines.push(buildDataRow(effectiveColumns, row, border))
+    lines.push(buildDataRow(effectiveColumns, row, border));
   }
 
   if (border) {
     // Bottom border
-    lines.push(buildBorderLine(effectiveColumns, "bottom"))
+    lines.push(buildBorderLine(effectiveColumns, "bottom"));
   }
 
   return (
     <span data-table data-border={border}>
       {lines.join("\n")}
     </span>
-  )
+  );
 }
 
 /**
@@ -90,30 +90,32 @@ function calculateColumnWidths(
 ): Array<TableColumn & { effectiveWidth: number }> {
   return columns.map((col) => {
     if (col.width !== undefined) {
-      return { ...col, effectiveWidth: col.width }
+      return { ...col, effectiveWidth: col.width };
     }
 
     // Calculate width from content
-    let maxWidth = col.header.length
+    let maxWidth = col.header.length;
 
     for (const row of data) {
-      const value = String(row[col.key] ?? "")
-      maxWidth = Math.max(maxWidth, value.length)
+      const value = String(row[col.key] ?? "");
+      maxWidth = Math.max(maxWidth, value.length);
     }
 
-    return { ...col, effectiveWidth: maxWidth }
-  })
+    return { ...col, effectiveWidth: maxWidth };
+  });
 }
 
 /**
  * Create header row object from columns
  */
-function getHeaderRow(columns: Array<TableColumn & { effectiveWidth: number }>): Record<string, unknown> {
-  const row: Record<string, unknown> = {}
+function getHeaderRow(
+  columns: Array<TableColumn & { effectiveWidth: number }>,
+): Record<string, unknown> {
+  const row: Record<string, unknown> = {};
   for (const col of columns) {
-    row[col.key] = col.header
+    row[col.key] = col.header;
   }
-  return row
+  return row;
 }
 
 /**
@@ -123,13 +125,15 @@ function buildBorderLine(
   columns: Array<TableColumn & { effectiveWidth: number }>,
   position: "top" | "middle" | "bottom",
 ): string {
-  const left = position === "top" ? BOX.topLeft : position === "bottom" ? BOX.bottomLeft : BOX.leftT
-  const right = position === "top" ? BOX.topRight : position === "bottom" ? BOX.bottomRight : BOX.rightT
-  const join = position === "top" ? BOX.topT : position === "bottom" ? BOX.bottomT : BOX.cross
+  const left =
+    position === "top" ? BOX.topLeft : position === "bottom" ? BOX.bottomLeft : BOX.leftT;
+  const right =
+    position === "top" ? BOX.topRight : position === "bottom" ? BOX.bottomRight : BOX.rightT;
+  const join = position === "top" ? BOX.topT : position === "bottom" ? BOX.bottomT : BOX.cross;
 
-  const segments = columns.map((col) => BOX.horizontal.repeat(col.effectiveWidth + 2))
+  const segments = columns.map((col) => BOX.horizontal.repeat(col.effectiveWidth + 2));
 
-  return left + segments.join(join) + right
+  return left + segments.join(join) + right;
 }
 
 /**
@@ -141,15 +145,15 @@ function buildDataRow(
   border: boolean,
 ): string {
   const cells = columns.map((col) => {
-    const value = String(row[col.key] ?? "")
-    return formatCell(value, col.effectiveWidth, col.align ?? "left")
-  })
+    const value = String(row[col.key] ?? "");
+    return formatCell(value, col.effectiveWidth, col.align ?? "left");
+  });
 
   if (border) {
-    return BOX.vertical + " " + cells.join(" " + BOX.vertical + " ") + " " + BOX.vertical
+    return BOX.vertical + " " + cells.join(" " + BOX.vertical + " ") + " " + BOX.vertical;
   }
 
-  return cells.join("  ")
+  return cells.join("  ");
 }
 
 /**
@@ -158,22 +162,22 @@ function buildDataRow(
 function formatCell(value: string, width: number, align: "left" | "center" | "right"): string {
   // Truncate if too long
   if (value.length > width) {
-    return value.slice(0, width - 1) + "…"
+    return value.slice(0, width - 1) + "…";
   }
 
   // Pad according to alignment
-  const padding = width - value.length
+  const padding = width - value.length;
 
   switch (align) {
     case "right":
-      return " ".repeat(padding) + value
+      return " ".repeat(padding) + value;
     case "center": {
-      const leftPad = Math.floor(padding / 2)
-      const rightPad = padding - leftPad
-      return " ".repeat(leftPad) + value + " ".repeat(rightPad)
+      const leftPad = Math.floor(padding / 2);
+      const rightPad = padding - leftPad;
+      return " ".repeat(leftPad) + value + " ".repeat(rightPad);
     }
     case "left":
     default:
-      return value + " ".repeat(padding)
+      return value + " ".repeat(padding);
   }
 }

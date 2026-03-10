@@ -8,32 +8,32 @@
  * - Flexbox layout for proportional sizing
  */
 
-import React, { useState } from "react"
-import { render, Box, Text, useInput, useApp, createTerm, type Key } from "../../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+import React, { useState } from "react";
+import { render, Box, Text, useInput, useApp, createTerm, type Key } from "../../src/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Kanban Board",
   description: "3-column kanban with card movement and independent scroll",
   features: ["Box flexDirection", "useInput", "backgroundColor", "multi-column layout"],
-}
+};
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type ColumnId = "todo" | "inProgress" | "done"
+type ColumnId = "todo" | "inProgress" | "done";
 
 interface Card {
-  id: number
-  title: string
-  tags: string[]
+  id: number;
+  title: string;
+  tags: string[];
 }
 
 interface Column {
-  id: ColumnId
-  title: string
-  cards: Card[]
+  id: ColumnId;
+  title: string;
+  cards: Card[];
 }
 
 // ============================================================================
@@ -74,7 +74,7 @@ const initialColumns: Column[] = [
       { id: 15, title: "Database schema", tags: ["backend"] },
     ],
   },
-]
+];
 
 // ============================================================================
 // Components
@@ -88,20 +88,25 @@ const tagColors: Record<string, string> = {
   docs: "blue",
   ux: "white",
   security: "red",
-}
+};
 
 function Tag({ name }: { name: string }): JSX.Element {
-  const color = tagColors[name] ?? "$muted"
+  const color = tagColors[name] ?? "$muted";
   return (
     <Text color={color} dim>
       #{name}
     </Text>
-  )
+  );
 }
 
 function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }): JSX.Element {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "$primary" : "$border"} paddingX={1}>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={isSelected ? "$primary" : "$border"}
+      paddingX={1}
+    >
       {isSelected ? (
         <Text backgroundColor="$primary" color="black" bold>
           {card.title}
@@ -115,7 +120,7 @@ function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }
         ))}
       </Box>
     </Box>
-  )
+  );
 }
 
 function ColumnComponent({
@@ -123,12 +128,17 @@ function ColumnComponent({
   isSelected,
   selectedCardIndex,
 }: {
-  column: Column
-  isSelected: boolean
-  selectedCardIndex: number
+  column: Column;
+  isSelected: boolean;
+  selectedCardIndex: number;
 }): JSX.Element {
   return (
-    <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor={isSelected ? "$primary" : "$border"}>
+    <Box
+      flexDirection="column"
+      flexGrow={1}
+      borderStyle="single"
+      borderColor={isSelected ? "$primary" : "$border"}
+    >
       <Box backgroundColor={isSelected ? "$primary" : undefined} paddingX={1}>
         <Text bold color={isSelected ? "black" : "$text"}>
           {column.title}
@@ -145,7 +155,11 @@ function ColumnComponent({
         gap={1}
       >
         {column.cards.map((card, cardIndex) => (
-          <CardComponent key={card.id} card={card} isSelected={isSelected && cardIndex === selectedCardIndex} />
+          <CardComponent
+            key={card.id}
+            card={card}
+            isSelected={isSelected && cardIndex === selectedCardIndex}
+          />
         ))}
 
         {column.cards.length === 0 && (
@@ -155,7 +169,7 @@ function ColumnComponent({
         )}
       </Box>
     </Box>
-  )
+  );
 }
 
 function HelpBar(): JSX.Element {
@@ -179,68 +193,68 @@ function HelpBar(): JSX.Element {
       </Text>{" "}
       quit
     </Text>
-  )
+  );
 }
 
 export function KanbanBoard(): JSX.Element {
-  const { exit } = useApp()
-  const [columns, setColumns] = useState<Column[]>(initialColumns)
-  const [selectedColumn, setSelectedColumn] = useState(0)
-  const [selectedCard, setSelectedCard] = useState(0)
+  const { exit } = useApp();
+  const [columns, setColumns] = useState<Column[]>(initialColumns);
+  const [selectedColumn, setSelectedColumn] = useState(0);
+  const [selectedCard, setSelectedCard] = useState(0);
 
-  const currentColumn = columns[selectedColumn]
-  const currentColumnCards = currentColumn?.cards ?? []
-  const boundedSelectedCard = Math.min(selectedCard, Math.max(0, currentColumnCards.length - 1))
+  const currentColumn = columns[selectedColumn];
+  const currentColumnCards = currentColumn?.cards ?? [];
+  const boundedSelectedCard = Math.min(selectedCard, Math.max(0, currentColumnCards.length - 1));
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) {
-      exit()
+      exit();
     }
 
     // Column navigation
     if (key.leftArrow || input === "h") {
-      setSelectedColumn((prev) => Math.max(0, prev - 1))
-      setSelectedCard(0)
+      setSelectedColumn((prev) => Math.max(0, prev - 1));
+      setSelectedCard(0);
     }
     if (key.rightArrow || input === "l") {
-      setSelectedColumn((prev) => Math.min(columns.length - 1, prev + 1))
-      setSelectedCard(0)
+      setSelectedColumn((prev) => Math.min(columns.length - 1, prev + 1));
+      setSelectedCard(0);
     }
 
     // Card navigation
     if (key.upArrow || input === "k") {
-      setSelectedCard((prev) => Math.max(0, prev - 1))
+      setSelectedCard((prev) => Math.max(0, prev - 1));
     }
     if (key.downArrow || input === "j") {
-      setSelectedCard((prev) => Math.min(currentColumnCards.length - 1, prev + 1))
+      setSelectedCard((prev) => Math.min(currentColumnCards.length - 1, prev + 1));
     }
 
     // Move card between columns
     if (input === "<" || input === ",") {
-      moveCard(-1)
+      moveCard(-1);
     }
     if (input === ">" || input === ".") {
-      moveCard(1)
+      moveCard(1);
     }
-  })
+  });
 
   function moveCard(direction: number): void {
-    const targetColumnIndex = selectedColumn + direction
-    if (targetColumnIndex < 0 || targetColumnIndex >= columns.length) return
-    if (currentColumnCards.length === 0) return
+    const targetColumnIndex = selectedColumn + direction;
+    if (targetColumnIndex < 0 || targetColumnIndex >= columns.length) return;
+    if (currentColumnCards.length === 0) return;
 
-    const cardToMove = currentColumnCards[boundedSelectedCard]
-    if (!cardToMove) return
+    const cardToMove = currentColumnCards[boundedSelectedCard];
+    if (!cardToMove) return;
 
     setColumns((prev) => {
-      const next = prev.map((col) => ({ ...col, cards: [...col.cards] }))
-      next[selectedColumn]!.cards.splice(boundedSelectedCard, 1)
-      next[targetColumnIndex]!.cards.push(cardToMove)
-      return next
-    })
+      const next = prev.map((col) => ({ ...col, cards: [...col.cards] }));
+      next[selectedColumn]!.cards.splice(boundedSelectedCard, 1);
+      next[targetColumnIndex]!.cards.push(cardToMove);
+      return next;
+    });
 
-    setSelectedColumn(targetColumnIndex)
-    setSelectedCard(columns[targetColumnIndex]!.cards.length)
+    setSelectedColumn(targetColumnIndex);
+    setSelectedCard(columns[targetColumnIndex]!.cards.length);
   }
 
   return (
@@ -258,7 +272,7 @@ export function KanbanBoard(): JSX.Element {
 
       <HelpBar />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -266,16 +280,16 @@ export function KanbanBoard(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm()
+  using term = createTerm();
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="h/l column  j/k card  </> move  Esc/q quit">
       <KanbanBoard />
     </ExampleBanner>,
     term,
-  )
-  await waitUntilExit()
+  );
+  await waitUntilExit();
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

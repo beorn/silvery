@@ -10,8 +10,8 @@
  * <Badge label="Custom" color="magenta" />
  * ```
  */
-import React from "react"
-import { Text } from "@silvery/react/components/Text"
+import React from "react";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -19,11 +19,11 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface BadgeProps {
   /** Badge text */
-  label: string
+  label: string;
   /** Color variant */
-  variant?: "default" | "primary" | "success" | "warning" | "error"
+  variant?: "default" | "primary" | "success" | "warning" | "error";
   /** Custom color (overrides variant) */
-  color?: string
+  color?: string;
 }
 
 // =============================================================================
@@ -36,19 +36,19 @@ const VARIANT_COLORS: Record<NonNullable<BadgeProps["variant"]>, string> = {
   success: "$success",
   warning: "$warning",
   error: "$error",
-}
+};
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function Badge({ label, variant = "default", color }: BadgeProps): React.ReactElement {
-  const resolvedColor = color ?? VARIANT_COLORS[variant]
+  const resolvedColor = color ?? VARIANT_COLORS[variant];
 
   return (
     <Text color={resolvedColor} bold>
       {" "}
       {label}{" "}
     </Text>
-  )
+  );
 }

@@ -29,9 +29,9 @@
  * ```
  */
 
-import React, { forwardRef, useImperativeHandle } from "react"
-import { useVirtualizer } from "@silvery/react/hooks/useVirtualizer"
-import { Box } from "@silvery/react/components/Box"
+import React, { forwardRef, useImperativeHandle } from "react";
+import { useVirtualizer } from "@silvery/react/hooks/useVirtualizer";
+import { Box } from "@silvery/react/components/Box";
 
 // =============================================================================
 // Types
@@ -39,69 +39,69 @@ import { Box } from "@silvery/react/components/Box"
 
 export interface VirtualViewProps<T> {
   /** Array of items to render */
-  items: T[]
+  items: T[];
 
   /** Height of the viewport in rows */
-  height: number
+  height: number;
 
   /** Estimated height of each item in rows (fixed or per-index function). Default: 1 */
-  estimateHeight?: number | ((index: number) => number)
+  estimateHeight?: number | ((index: number) => number);
 
   /** Render function for each item */
-  renderItem: (item: T, index: number) => React.ReactNode
+  renderItem: (item: T, index: number) => React.ReactNode;
 
   /** Index to scroll to (declarative). When undefined, scroll state freezes. */
-  scrollTo?: number
+  scrollTo?: number;
 
   /** Extra items to render beyond viewport for smooth scrolling. Default: 5 */
-  overscan?: number
+  overscan?: number;
 
   /** Maximum items to render at once. Default: 100 */
-  maxRendered?: number
+  maxRendered?: number;
 
   /** Padding from edge before scrolling (in items). Default: 2 */
-  scrollPadding?: number
+  scrollPadding?: number;
 
   /** Show overflow indicators (▲N/▼N). Default: false */
-  overflowIndicator?: boolean
+  overflowIndicator?: boolean;
 
   /** Optional key extractor (defaults to index) */
-  keyExtractor?: (item: T, index: number) => string | number
+  keyExtractor?: (item: T, index: number) => string | number;
 
   /** Width of the viewport (optional, uses parent width if not specified) */
-  width?: number
+  width?: number;
 
   /** Gap between items in rows. Default: 0 */
-  gap?: number
+  gap?: number;
 
   /** Render separator between items (alternative to gap) */
-  renderSeparator?: () => React.ReactNode
+  renderSeparator?: () => React.ReactNode;
 
   /** Mouse wheel handler for scrolling */
-  onWheel?: (event: { deltaY: number }) => void
+  onWheel?: (event: { deltaY: number }) => void;
 
   /** Called when the visible range reaches near the end of the list (infinite scroll). */
-  onEndReached?: () => void
+  onEndReached?: () => void;
   /** How many items from the end to trigger onEndReached. Default: 5 */
-  onEndReachedThreshold?: number
+  onEndReachedThreshold?: number;
 
   /** Content rendered after all items inside the scroll container (e.g., hidden count indicator) */
-  listFooter?: React.ReactNode
+  listFooter?: React.ReactNode;
 }
 
 export interface VirtualViewHandle {
   /** Imperatively scroll to a specific item index */
-  scrollToItem(index: number): void
+  scrollToItem(index: number): void;
 }
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const DEFAULT_ESTIMATE_HEIGHT = 1
-const DEFAULT_OVERSCAN = 5
-const DEFAULT_MAX_RENDERED = 100
-const DEFAULT_SCROLL_PADDING = 2
+const DEFAULT_ESTIMATE_HEIGHT = 1;
+const DEFAULT_OVERSCAN = 5;
+const DEFAULT_MAX_RENDERED = 100;
+const DEFAULT_SCROLL_PADDING = 2;
 
 // =============================================================================
 // Component
@@ -138,7 +138,7 @@ function VirtualViewInner<T>(
   ref: React.ForwardedRef<VirtualViewHandle>,
 ): React.ReactElement {
   // Convert item-based estimateHeight to index-based for useVirtualizer
-  const indexEstimate = typeof estimateHeight === "function" ? estimateHeight : estimateHeight
+  const indexEstimate = typeof estimateHeight === "function" ? estimateHeight : estimateHeight;
 
   const { range, leadingHeight, trailingHeight, scrollOffset, scrollToItem } = useVirtualizer({
     count: items.length,
@@ -152,10 +152,10 @@ function VirtualViewInner<T>(
     getItemKey: keyExtractor ? (index) => keyExtractor(items[index]!, index) : undefined,
     onEndReached,
     onEndReachedThreshold,
-  })
+  });
 
   // Expose scrollToItem method via ref
-  useImperativeHandle(ref, () => ({ scrollToItem }), [scrollToItem])
+  useImperativeHandle(ref, () => ({ scrollToItem }), [scrollToItem]);
 
   // Empty state
   if (items.length === 0) {
@@ -163,20 +163,21 @@ function VirtualViewInner<T>(
       <Box flexDirection="column" height={height} width={width}>
         {/* Empty - nothing to render */}
       </Box>
-    )
+    );
   }
 
   // Get the slice of items to render
-  const { startIndex, endIndex } = range
-  const visibleItems = items.slice(startIndex, endIndex)
+  const { startIndex, endIndex } = range;
+  const visibleItems = items.slice(startIndex, endIndex);
 
   // Calculate scrollTo index for silvery Box overflow="scroll"
-  const hasTopPlaceholder = leadingHeight > 0
-  const currentSelectedIndex = scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, items.length - 1)) : scrollOffset
-  const selectedIndexInSlice = currentSelectedIndex - startIndex
-  const isSelectedInSlice = selectedIndexInSlice >= 0 && selectedIndexInSlice < visibleItems.length
-  const scrollToIndex = hasTopPlaceholder ? selectedIndexInSlice + 1 : selectedIndexInSlice
-  const boxScrollTo = isSelectedInSlice ? Math.max(0, scrollToIndex) : undefined
+  const hasTopPlaceholder = leadingHeight > 0;
+  const currentSelectedIndex =
+    scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, items.length - 1)) : scrollOffset;
+  const selectedIndexInSlice = currentSelectedIndex - startIndex;
+  const isSelectedInSlice = selectedIndexInSlice >= 0 && selectedIndexInSlice < visibleItems.length;
+  const scrollToIndex = hasTopPlaceholder ? selectedIndexInSlice + 1 : selectedIndexInSlice;
+  const boxScrollTo = isSelectedInSlice ? Math.max(0, scrollToIndex) : undefined;
 
   return (
     <Box
@@ -193,9 +194,9 @@ function VirtualViewInner<T>(
 
       {/* Render visible items */}
       {visibleItems.map((item, i) => {
-        const originalIndex = startIndex + i
-        const key = keyExtractor ? keyExtractor(item, originalIndex) : originalIndex
-        const isLast = i === visibleItems.length - 1
+        const originalIndex = startIndex + i;
+        const key = keyExtractor ? keyExtractor(item, originalIndex) : originalIndex;
+        const isLast = i === visibleItems.length - 1;
 
         return (
           <React.Fragment key={key}>
@@ -203,7 +204,7 @@ function VirtualViewInner<T>(
             {!isLast && renderSeparator && renderSeparator()}
             {!isLast && gap > 0 && !renderSeparator && <Box height={gap} flexShrink={0} />}
           </React.Fragment>
-        )
+        );
       })}
 
       {/* Footer content (e.g., filter hidden count) */}
@@ -212,10 +213,10 @@ function VirtualViewInner<T>(
       {/* Trailing placeholder for virtual height */}
       {trailingHeight > 0 && <Box height={trailingHeight} flexShrink={0} />}
     </Box>
-  )
+  );
 }
 
 // Export with forwardRef - use type assertion for generic component
 export const VirtualView = forwardRef(VirtualViewInner) as <T>(
   props: VirtualViewProps<T> & { ref?: React.ForwardedRef<VirtualViewHandle> },
-) => React.ReactElement
+) => React.ReactElement;

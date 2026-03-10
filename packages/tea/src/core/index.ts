@@ -28,8 +28,8 @@
 // TEA Types (The Elm Architecture)
 // =============================================================================
 
-import type { FocusOrigin } from "../focus-manager.js"
-export type { FocusOrigin } from "../focus-manager.js"
+import type { FocusOrigin } from "../focus-manager.js";
+export type { FocusOrigin } from "../focus-manager.js";
 
 /**
  * The model type that silvery manages for focus state.
@@ -40,18 +40,18 @@ export type { FocusOrigin } from "../focus-manager.js"
  */
 export interface SilveryModel {
   focus: {
-    activeId: string | null
-    previousId: string | null
-    origin: FocusOrigin | null
-    scopeStack: string[]
-    scopeMemory: Record<string, string>
-  }
+    activeId: string | null;
+    previousId: string | null;
+    origin: FocusOrigin | null;
+    scopeStack: string[];
+    scopeMemory: Record<string, string>;
+  };
 }
 
 /**
  * Direction type used in spatial navigation messages.
  */
-export type Direction = "up" | "down" | "left" | "right"
+export type Direction = "up" | "down" | "left" | "right";
 
 /**
  * Message types that silvery understands.
@@ -69,21 +69,21 @@ export type SilveryMsg =
   | { type: "scope-enter"; scopeId: string }
   | { type: "scope-exit" }
   | {
-      type: "term:key"
-      key: string
-      input: string
-      ctrl: boolean
-      meta: boolean
-      shift: boolean
+      type: "term:key";
+      key: string;
+      input: string;
+      ctrl: boolean;
+      meta: boolean;
+      shift: boolean;
     }
   | {
-      type: "term:mouse"
-      action: "down" | "up" | "move" | "scroll"
-      x: number
-      y: number
-      button: number
+      type: "term:mouse";
+      action: "down" | "up" | "move" | "scroll";
+      x: number;
+      y: number;
+      button: number;
     }
-  | { type: "term:resize"; cols: number; rows: number }
+  | { type: "term:resize"; cols: number; rows: number };
 
 /**
  * Effect commands returned by update functions.
@@ -95,7 +95,10 @@ export type SilveryMsg =
  * - `batch`: Multiple effects to execute
  * - `dispatch`: Queue another message (no re-entrant dispatch)
  */
-export type Effect = { type: "none" } | { type: "batch"; effects: Effect[] } | { type: "dispatch"; msg: SilveryMsg }
+export type Effect =
+  | { type: "none" }
+  | { type: "batch"; effects: Effect[] }
+  | { type: "dispatch"; msg: SilveryMsg };
 
 /**
  * Subscription descriptor (for future use).
@@ -104,36 +107,36 @@ export type Effect = { type: "none" } | { type: "batch"; effects: Effect[] } | {
  * that produce messages over time. The store manages their lifecycle.
  */
 export type Sub = {
-  type: "none"
-}
+  type: "none";
+};
 
 // =============================================================================
 // Effect Constructors
 // =============================================================================
 
 /** No-op effect. */
-export const none: Effect = { type: "none" }
+export const none: Effect = { type: "none" };
 
 /** Batch multiple effects. */
 export function batch(...effects: Effect[]): Effect {
   // Flatten nested batches and filter out none effects
-  const flat: Effect[] = []
+  const flat: Effect[] = [];
   for (const e of effects) {
-    if (e.type === "none") continue
+    if (e.type === "none") continue;
     if (e.type === "batch") {
-      flat.push(...e.effects)
+      flat.push(...e.effects);
     } else {
-      flat.push(e)
+      flat.push(e);
     }
   }
-  if (flat.length === 0) return none
-  if (flat.length === 1) return flat[0]!
-  return { type: "batch", effects: flat }
+  if (flat.length === 0) return none;
+  if (flat.length === 1) return flat[0]!;
+  return { type: "batch", effects: flat };
 }
 
 /** Queue a message dispatch as an effect. */
 export function dispatch(msg: SilveryMsg): Effect {
-  return { type: "dispatch", msg }
+  return { type: "dispatch", msg };
 }
 
 // =============================================================================
@@ -159,7 +162,7 @@ export function dispatch(msg: SilveryMsg): Effect {
  */
 export type Plugin<Model, Msg> = (
   innerUpdate: (msg: Msg, model: Model) => [Model, Effect[]],
-) => (msg: Msg, model: Model) => [Model, Effect[]]
+) => (msg: Msg, model: Model) => [Model, Effect[]];
 
 /**
  * Compose multiple plugins into a single update function wrapper.
@@ -176,28 +179,38 @@ export type Plugin<Model, Msg> = (
  */
 export function compose<Model, Msg>(...plugins: Plugin<Model, Msg>[]): Plugin<Model, Msg> {
   return (innerUpdate) => {
-    let update = innerUpdate
+    let update = innerUpdate;
     // Apply right-to-left so first plugin is outermost
     for (let i = plugins.length - 1; i >= 0; i--) {
-      update = plugins[i]!(update)
+      update = plugins[i]!(update);
     }
-    return update
-  }
+    return update;
+  };
 }
 
 // =============================================================================
 // Focus Manager (pure, no React)
 // =============================================================================
 
-export { createFocusManager } from "../focus-manager.js"
-export type { FocusManager, FocusManagerOptions, FocusChangeCallback, FocusSnapshot } from "../focus-manager.js"
+export { createFocusManager } from "../focus-manager.js";
+export type {
+  FocusManager,
+  FocusManagerOptions,
+  FocusChangeCallback,
+  FocusSnapshot,
+} from "../focus-manager.js";
 
 // =============================================================================
 // Focus Events (pure, no React)
 // =============================================================================
 
-export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "../focus-events.js"
-export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "../focus-events.js"
+export {
+  createKeyEvent,
+  createFocusEvent,
+  dispatchKeyEvent,
+  dispatchFocusEvent,
+} from "../focus-events.js";
+export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "../focus-events.js";
 
 // =============================================================================
 // Focus Queries (pure, no React)
@@ -209,17 +222,17 @@ export {
   findByTestID,
   findSpatialTarget,
   getExplicitFocusLink,
-} from "../focus-queries.js"
+} from "../focus-queries.js";
 
 // =============================================================================
 // Slices (ops-as-data helper)
 // =============================================================================
 
-export { createSlice } from "./slice.js"
-export type { Slice, SliceWithInit, InferOp } from "./slice.js"
+export { createSlice } from "./slice.js";
+export type { Slice, SliceWithInit, InferOp } from "./slice.js";
 
 // =============================================================================
 // Shared Types (pure)
 // =============================================================================
 
-export type { TeaNode, Rect } from "../types.js"
+export type { TeaNode, Rect } from "../types.js";

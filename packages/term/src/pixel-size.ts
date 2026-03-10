@@ -19,10 +19,10 @@
  */
 
 /** Regex for CSI 4 ; height ; width t (pixel size response) */
-const PIXEL_RESPONSE_RE = /\x1b\[4;(\d+);(\d+)t/
+const PIXEL_RESPONSE_RE = /\x1b\[4;(\d+);(\d+)t/;
 
 /** Regex for CSI 8 ; rows ; cols t (text area size response) */
-const TEXT_AREA_RESPONSE_RE = /\x1b\[8;(\d+);(\d+)t/
+const TEXT_AREA_RESPONSE_RE = /\x1b\[8;(\d+);(\d+)t/;
 
 // ============================================================================
 // Pixel Size Query
@@ -41,18 +41,18 @@ export async function queryTextAreaPixels(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<{ width: number; height: number } | null> {
-  write("\x1b[14t")
+  write("\x1b[14t");
 
-  const data = await read(timeoutMs)
-  if (data == null) return null
+  const data = await read(timeoutMs);
+  if (data == null) return null;
 
-  const match = PIXEL_RESPONSE_RE.exec(data)
-  if (!match) return null
+  const match = PIXEL_RESPONSE_RE.exec(data);
+  if (!match) return null;
 
   return {
     height: parseInt(match[1]!, 10),
     width: parseInt(match[2]!, 10),
-  }
+  };
 }
 
 // ============================================================================
@@ -72,18 +72,18 @@ export async function queryTextAreaSize(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<{ cols: number; rows: number } | null> {
-  write("\x1b[18t")
+  write("\x1b[18t");
 
-  const data = await read(timeoutMs)
-  if (data == null) return null
+  const data = await read(timeoutMs);
+  if (data == null) return null;
 
-  const match = TEXT_AREA_RESPONSE_RE.exec(data)
-  if (!match) return null
+  const match = TEXT_AREA_RESPONSE_RE.exec(data);
+  if (!match) return null;
 
   return {
     rows: parseInt(match[1]!, 10),
     cols: parseInt(match[2]!, 10),
-  }
+  };
 }
 
 // ============================================================================
@@ -104,16 +104,16 @@ export async function queryCellSize(
   read: (timeoutMs: number) => Promise<string | null>,
   timeoutMs = 200,
 ): Promise<{ width: number; height: number } | null> {
-  const pixels = await queryTextAreaPixels(write, read, timeoutMs)
-  if (pixels == null) return null
+  const pixels = await queryTextAreaPixels(write, read, timeoutMs);
+  if (pixels == null) return null;
 
-  const size = await queryTextAreaSize(write, read, timeoutMs)
-  if (size == null) return null
+  const size = await queryTextAreaSize(write, read, timeoutMs);
+  if (size == null) return null;
 
-  if (size.cols === 0 || size.rows === 0) return null
+  if (size.cols === 0 || size.rows === 0) return null;
 
   return {
     width: pixels.width / size.cols,
     height: pixels.height / size.rows,
-  }
+  };
 }

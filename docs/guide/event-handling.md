@@ -9,9 +9,9 @@
 Adds React-style event handlers to Silvery components. Events bubble up the tree, components can stop propagation, and hit testing maps mouse coordinates to nodes.
 
 ```tsx
-import { pipe, withDomEvents } from "@silvery/term/runtime"
+import { pipe, withDomEvents } from "@silvery/term/runtime";
 
-const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
+const app = pipe(createApp(store), withReact(<Board />), withDomEvents());
 ```
 
 ### How it works
@@ -25,8 +25,8 @@ const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
 <Box
   onKeyDown={(e) => {
     if (e.key.escape) {
-      closeDialog()
-      e.stopPropagation() // don't let Escape reach the parent
+      closeDialog();
+      e.stopPropagation(); // don't let Escape reach the parent
     }
   }}
 >
@@ -56,7 +56,7 @@ const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
 Turns input into named, serializable commands. Keys and clicks resolve to commands; commands produce actions.
 
 ```tsx
-import { pipe, withDomEvents, withCommands } from "@silvery/term/runtime"
+import { pipe, withDomEvents, withCommands } from "@silvery/term/runtime";
 
 const registry = createCommandRegistry({
   cursor_down: {
@@ -75,7 +75,7 @@ const registry = createCommandRegistry({
     name: "Select",
     execute: (ctx) => ({ op: "select", nodeId: ctx.clickedNodeId }),
   },
-})
+});
 
 const app = pipe(
   createApp(store),
@@ -93,7 +93,7 @@ const app = pipe(
       },
     },
   }),
-)
+);
 ```
 
 ### Mouse commands
@@ -121,18 +121,18 @@ const app = pipe(
   withReact(<Board />),
   withDomEvents(), // component handlers fire first
   withCommands(opts), // unhandled events resolve to commands
-)
+);
 ```
 
 ### The driver pattern (testing + AI)
 
 ```tsx
-const driver = pipe(app, withKeybindings(bindings), withDiagnostics())
+const driver = pipe(app, withKeybindings(bindings), withDiagnostics());
 
-driver.cmd.all() // list available commands
-await driver.cmd.cursor_down() // execute by name
-driver.getState() // inspect state
-await driver.screenshot() // capture screen
+driver.cmd.all(); // list available commands
+await driver.cmd.cursor_down(); // execute by name
+driver.getState(); // inspect state
+await driver.screenshot(); // capture screen
 ```
 
 ---
@@ -144,7 +144,7 @@ await driver.screenshot() // capture screen
 Every extension — `withDomEvents`, `withCommands`, `withKeybindings`, `withDiagnostics` — is an app plugin: a function that takes an app and returns an enhanced app.
 
 ```tsx
-type AppPlugin<M, Msg> = (app: App<M, Msg>) => App<M, Msg>
+type AppPlugin<M, Msg> = (app: App<M, Msg>) => App<M, Msg>;
 ```
 
 A plugin has two parts: a **slice** (pure reducer for its state) and a **plugin function** (event wiring, subscriptions, API surface):
@@ -153,22 +153,22 @@ A plugin has two parts: a **slice** (pure reducer for its state) and a **plugin 
 function withTerminal(proc: NodeJS.Process) {
   return {
     slice: (msg: AppEvent, term: TermState): TermState => {
-      if (msg.type === "term:resize") return { ...term, cols: msg.data.cols, rows: msg.data.rows }
-      return term
+      if (msg.type === "term:resize") return { ...term, cols: msg.data.cols, rows: msg.data.rows };
+      return term;
     },
 
     plugin: (app) => {
-      const { events } = app
-      app.events = () => [...events(), terminalInput(proc.stdin), resizeStream(proc.stdout)]
+      const { events } = app;
+      app.events = () => [...events(), terminalInput(proc.stdin), resizeStream(proc.stdout)];
 
       app.subscribe(
         (s) => s.renderBuffer,
         (buf) => diffAndWrite(proc.stdout, buf),
-      )
+      );
 
-      return app
+      return app;
     },
-  }
+  };
 }
 ```
 
@@ -179,8 +179,8 @@ The kernel composes all slices — every slice sees every message, no plugin can
 Plugins react to model changes via `app.subscribe`. Cleanup is automatic via `using`:
 
 ```tsx
-using app = pipe(createApp(store), withTerminal(process), withFocus())
-await app.run()
+using app = pipe(createApp(store), withTerminal(process), withFocus());
+await app.run();
 // all subscriptions cleaned up via [Symbol.dispose]
 ```
 
@@ -202,14 +202,14 @@ React components are the most natural way to add reactive sources:
 
 ```tsx
 function FileWatcher({ path }: { path: string }) {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    const watcher = watch(path, (ev) => dispatch({ type: "fs:change", data: ev }))
-    return () => watcher.close()
-  }, [path])
+    const watcher = watch(path, (ev) => dispatch({ type: "fs:change", data: ev }));
+    return () => watcher.close();
+  }, [path]);
 
-  return null // renderless
+  return null; // renderless
 }
 ```
 
@@ -221,15 +221,15 @@ Plugins can add event sources by overriding `app.events`:
 function withFileWatcher(path: string) {
   return {
     slice: (msg: AppEvent, fs: FsState): FsState => {
-      if (msg.type === "fs:change") return { ...fs, lastChange: msg.data }
-      return fs
+      if (msg.type === "fs:change") return { ...fs, lastChange: msg.data };
+      return fs;
     },
     plugin: (app) => {
-      const { events } = app
-      app.events = () => [...events(), fileWatch(path)]
-      return app
+      const { events } = app;
+      app.events = () => [...events(), fileWatch(path)];
+      return app;
     },
-  }
+  };
 }
 ```
 
@@ -241,27 +241,29 @@ All event types flow through a single `EventMap`:
 
 ```tsx
 interface EventMap {
-  "term:key": { input: string; key: Key }
-  "term:mouse": ParsedMouse
-  "term:paste": { text: string }
-  "term:resize": { cols: number; rows: number }
+  "term:key": { input: string; key: Key };
+  "term:mouse": ParsedMouse;
+  "term:paste": { text: string };
+  "term:resize": { cols: number; rows: number };
 }
 
-type AppEvent<K extends keyof EventMap = keyof EventMap> = K extends K ? { type: K; data: EventMap[K] } : never
+type AppEvent<K extends keyof EventMap = keyof EventMap> = K extends K
+  ? { type: K; data: EventMap[K] }
+  : never;
 ```
 
 Sources are typed against the map:
 
 ```tsx
-function terminalInput(stdin): EventStream<AppEvent<"term:key" | "term:mouse" | "term:paste">>
+function terminalInput(stdin): EventStream<AppEvent<"term:key" | "term:mouse" | "term:paste">>;
 ```
 
 Extend the map for custom events:
 
 ```tsx
 interface MyEventMap extends EventMap {
-  "fs:change": { path: string; kind: string }
-  "timer:tick": { now: number }
+  "fs:change": { path: string; kind: string };
+  "timer:tick": { now: number };
 }
 ```
 
@@ -270,12 +272,12 @@ interface MyEventMap extends EventMap {
 `app.dispatch` is both callable and a typed proxy:
 
 ```tsx
-app.dispatch.focus.revalidate()
-app.dispatch.focus.changed({ from: "a", to: "b" })
-app.dispatch.term.resize({ cols: 80, rows: 24 })
+app.dispatch.focus.revalidate();
+app.dispatch.focus.changed({ from: "a", to: "b" });
+app.dispatch.term.resize({ cols: 80, rows: 24 });
 
 // Raw — when you already have a message object
-app.dispatch({ type: "focus:revalidate" })
+app.dispatch({ type: "focus:revalidate" });
 ```
 
 ---
@@ -288,7 +290,7 @@ app.dispatch({ type: "focus:revalidate" })
 
 ```tsx
 // Simple: batteries included
-await run(store, <App />)
+await run(store, <App />);
 
 // Equivalent to:
 const app = pipe(
@@ -297,8 +299,8 @@ const app = pipe(
   withTerminal(process), // ALL terminal I/O: stdin→events, stdout→output, lifecycle
   withFocus(), // processing: Tab/Shift+Tab, focus scopes
   withDomEvents(), // processing: dispatch to component tree
-)
-await app.run()
+);
+await app.run();
 
 // Power user: pick exactly what you need
 const app = pipe(
@@ -309,7 +311,7 @@ const app = pipe(
   withCommands(registry),
   withKeybindings(bindings),
   withDiagnostics(),
-)
+);
 ```
 
 ### Plugin roles

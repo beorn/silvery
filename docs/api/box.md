@@ -5,7 +5,7 @@ The primary layout component. Uses Yoga (flexbox) for layout.
 ## Import
 
 ```tsx
-import { Box } from "silvery"
+import { Box } from "silvery";
 ```
 
 ## Usage
@@ -141,10 +141,10 @@ The `ComputedLayout` type:
 
 ```ts
 interface ComputedLayout {
-  x: number // X position relative to root
-  y: number // Y position relative to root
-  width: number // Computed width in columns
-  height: number // Computed height in rows
+  x: number; // X position relative to root
+  y: number; // Y position relative to root
+  width: number; // Computed width in columns
+  height: number; // Computed height in rows
 }
 ```
 
@@ -346,15 +346,18 @@ const [selected, setSelected] = useState(0)
 
 ```tsx
 function MeasuredBox() {
-  const [size, setSize] = useState({ width: 0, height: 0 })
+  const [size, setSize] = useState({ width: 0, height: 0 });
 
   return (
-    <Box flexGrow={1} onLayout={(layout) => setSize({ width: layout.width, height: layout.height })}>
+    <Box
+      flexGrow={1}
+      onLayout={(layout) => setSize({ width: layout.width, height: layout.height })}
+    >
       <Text>
         Size: {size.width}x{size.height}
       </Text>
     </Box>
-  )
+  );
 }
 ```
 

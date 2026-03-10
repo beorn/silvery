@@ -27,15 +27,15 @@
  * - `c1` — C1 control character (0x80–0x9F)
  */
 export interface AnsiToken {
-  type: "text" | "csi" | "osc" | "esc" | "dcs" | "pm" | "apc" | "sos" | "c1"
-  value: string
+  type: "text" | "csi" | "osc" | "esc" | "dcs" | "pm" | "apc" | "sos" | "c1";
+  value: string;
 }
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const ESC = 0x1b
+const ESC = 0x1b;
 
 /** Characters that introduce ST-terminated string sequences after ESC. */
 const STRING_SEQUENCE_INTROS: Record<number, AnsiToken["type"]> = {
@@ -43,7 +43,7 @@ const STRING_SEQUENCE_INTROS: Record<number, AnsiToken["type"]> = {
   0x5e: "pm", // '^' — Privacy Message
   0x5f: "apc", // '_' — Application Program Command
   0x58: "sos", // 'X' — Start of String
-}
+};
 
 /** C1 control codes (8-bit mode) that correspond to string sequence introducers. */
 const C1_STRING_SEQUENCE_MAP: Record<number, AnsiToken["type"]> = {
@@ -51,7 +51,7 @@ const C1_STRING_SEQUENCE_MAP: Record<number, AnsiToken["type"]> = {
   0x9e: "pm", // PM
   0x9f: "apc", // APC
   0x98: "sos", // SOS
-}
+};
 
 // =============================================================================
 // Tokenizer
@@ -68,95 +68,95 @@ const C1_STRING_SEQUENCE_MAP: Record<number, AnsiToken["type"]> = {
  * @returns Array of tokens
  */
 export function tokenizeAnsi(text: string): AnsiToken[] {
-  const tokens: AnsiToken[] = []
-  const len = text.length
-  let i = 0
-  let textStart = i
+  const tokens: AnsiToken[] = [];
+  const len = text.length;
+  let i = 0;
+  let textStart = i;
 
   function flushText(): void {
     if (i > textStart) {
-      tokens.push({ type: "text", value: text.slice(textStart, i) })
+      tokens.push({ type: "text", value: text.slice(textStart, i) });
     }
   }
 
   while (i < len) {
-    const code = text.charCodeAt(i)
+    const code = text.charCodeAt(i);
 
     // Check for C1 control characters (0x80–0x9F) in 8-bit mode
     if (code >= 0x80 && code <= 0x9f) {
-      flushText()
+      flushText();
 
-      const c1Type = C1_STRING_SEQUENCE_MAP[code]
+      const c1Type = C1_STRING_SEQUENCE_MAP[code];
       if (c1Type) {
         // C1 string sequence introducer — consume until ST
-        const start = i
-        i++
-        i = findST(text, i, len)
-        tokens.push({ type: c1Type, value: text.slice(start, i) })
+        const start = i;
+        i++;
+        i = findST(text, i, len);
+        tokens.push({ type: c1Type, value: text.slice(start, i) });
       } else if (code === 0x9b) {
         // CSI in 8-bit mode
-        const start = i
-        i++
-        i = consumeCSI(text, i, len)
-        tokens.push({ type: "csi", value: text.slice(start, i) })
+        const start = i;
+        i++;
+        i = consumeCSI(text, i, len);
+        tokens.push({ type: "csi", value: text.slice(start, i) });
       } else if (code === 0x9d) {
         // OSC in 8-bit mode
-        const start = i
-        i++
-        i = findOSCEnd(text, i, len)
-        tokens.push({ type: "osc", value: text.slice(start, i) })
+        const start = i;
+        i++;
+        i = findOSCEnd(text, i, len);
+        tokens.push({ type: "osc", value: text.slice(start, i) });
       } else {
         // Other C1 control character
-        tokens.push({ type: "c1", value: text[i] })
-        i++
+        tokens.push({ type: "c1", value: text[i] });
+        i++;
       }
-      textStart = i
-      continue
+      textStart = i;
+      continue;
     }
 
     // Check for ESC (0x1B)
     if (code === ESC) {
-      flushText()
+      flushText();
 
       if (i + 1 >= len) {
         // Incomplete escape at end of string — treat as malformed
-        tokens.push({ type: "esc", value: text[i] })
-        i++
-        textStart = i
-        continue
+        tokens.push({ type: "esc", value: text[i] });
+        i++;
+        textStart = i;
+        continue;
       }
 
-      const next = text.charCodeAt(i + 1)
+      const next = text.charCodeAt(i + 1);
 
       // CSI: ESC + '['
       if (next === 0x5b) {
-        const start = i
-        i += 2
-        i = consumeCSI(text, i, len)
-        tokens.push({ type: "csi", value: text.slice(start, i) })
-        textStart = i
-        continue
+        const start = i;
+        i += 2;
+        i = consumeCSI(text, i, len);
+        tokens.push({ type: "csi", value: text.slice(start, i) });
+        textStart = i;
+        continue;
       }
 
       // OSC: ESC + ']'
       if (next === 0x5d) {
-        const start = i
-        i += 2
-        i = findOSCEnd(text, i, len)
-        tokens.push({ type: "osc", value: text.slice(start, i) })
-        textStart = i
-        continue
+        const start = i;
+        i += 2;
+        i = findOSCEnd(text, i, len);
+        tokens.push({ type: "osc", value: text.slice(start, i) });
+        textStart = i;
+        continue;
       }
 
       // String sequences: DCS (P), PM (^), APC (_), SOS (X)
-      const stringType = STRING_SEQUENCE_INTROS[next]
+      const stringType = STRING_SEQUENCE_INTROS[next];
       if (stringType) {
-        const start = i
-        i += 2
-        i = findST(text, i, len)
-        tokens.push({ type: stringType, value: text.slice(start, i) })
-        textStart = i
-        continue
+        const start = i;
+        i += 2;
+        i = findST(text, i, len);
+        tokens.push({ type: stringType, value: text.slice(start, i) });
+        textStart = i;
+        continue;
       }
 
       // Simple two-byte escape sequence: ESC + byte (0x30–0x7E)
@@ -164,24 +164,24 @@ export function tokenizeAnsi(text: string): AnsiToken[] {
       // 0x40–0x5F: Fe (C1 equivalents, e.g. ESC D = IND, ESC M = RI)
       // 0x60–0x7E: Fs (independent functions)
       if (next >= 0x30 && next <= 0x7e) {
-        tokens.push({ type: "esc", value: text.slice(i, i + 2) })
-        i += 2
-        textStart = i
-        continue
+        tokens.push({ type: "esc", value: text.slice(i, i + 2) });
+        i += 2;
+        textStart = i;
+        continue;
       }
 
       // Unknown/malformed escape — emit just ESC as an esc token
-      tokens.push({ type: "esc", value: text[i] })
-      i++
-      textStart = i
-      continue
+      tokens.push({ type: "esc", value: text[i] });
+      i++;
+      textStart = i;
+      continue;
     }
 
-    i++
+    i++;
   }
 
-  flushText()
-  return tokens
+  flushText();
+  return tokens;
 }
 
 // =============================================================================
@@ -197,27 +197,27 @@ export function tokenizeAnsi(text: string): AnsiToken[] {
 function consumeCSI(text: string, i: number, len: number): number {
   // Parameter bytes: 0x30–0x3F (digits, semicolons, colons, etc.)
   while (i < len) {
-    const c = text.charCodeAt(i)
-    if (c < 0x30 || c > 0x3f) break
-    i++
+    const c = text.charCodeAt(i);
+    if (c < 0x30 || c > 0x3f) break;
+    i++;
   }
 
   // Intermediate bytes: 0x20–0x2F (space, !, ", #, etc.)
   while (i < len) {
-    const c = text.charCodeAt(i)
-    if (c < 0x20 || c > 0x2f) break
-    i++
+    const c = text.charCodeAt(i);
+    if (c < 0x20 || c > 0x2f) break;
+    i++;
   }
 
   // Final byte: 0x40–0x7E
   if (i < len) {
-    const c = text.charCodeAt(i)
+    const c = text.charCodeAt(i);
     if (c >= 0x40 && c <= 0x7e) {
-      i++
+      i++;
     }
   }
 
-  return i
+  return i;
 }
 
 // =============================================================================
@@ -232,11 +232,11 @@ function consumeCSI(text: string, i: number, len: number): number {
 function findST(text: string, i: number, len: number): number {
   while (i < len) {
     if (text.charCodeAt(i) === ESC && i + 1 < len && text.charCodeAt(i + 1) === 0x5c) {
-      return i + 2 // past ESC + '\'
+      return i + 2; // past ESC + '\'
     }
-    i++
+    i++;
   }
-  return len
+  return len;
 }
 
 /**
@@ -246,18 +246,18 @@ function findST(text: string, i: number, len: number): number {
  */
 function findOSCEnd(text: string, i: number, len: number): number {
   while (i < len) {
-    const code = text.charCodeAt(i)
+    const code = text.charCodeAt(i);
     // BEL terminator
     if (code === 0x07) {
-      return i + 1
+      return i + 1;
     }
     // ST terminator (ESC + '\')
     if (code === ESC && i + 1 < len && text.charCodeAt(i + 1) === 0x5c) {
-      return i + 2
+      return i + 2;
     }
-    i++
+    i++;
   }
-  return len
+  return len;
 }
 
 // =============================================================================
@@ -278,29 +278,29 @@ function findOSCEnd(text: string, i: number, len: number): number {
 function isCSISGR(value: string): boolean {
   // Must end with 'm'
   if (value.length < 2 || value.charCodeAt(value.length - 1) !== 0x6d) {
-    return false
+    return false;
   }
 
   // Find start of parameters (skip ESC[ or C1 CSI)
-  let start: number
+  let start: number;
   if (value.charCodeAt(0) === ESC) {
     // ESC [ ... m
-    start = 2
+    start = 2;
   } else {
     // C1 CSI (0x9B) ... m
-    start = 1
+    start = 1;
   }
 
   // Everything between start and the final 'm' must be parameter bytes (0x30–0x3F).
   // If any intermediate byte (0x20–0x2F) is present, it's not a pure SGR.
   for (let i = start; i < value.length - 1; i++) {
-    const c = value.charCodeAt(i)
+    const c = value.charCodeAt(i);
     if (c < 0x30 || c > 0x3f) {
-      return false
+      return false;
     }
   }
 
-  return true
+  return true;
 }
 
 /**
@@ -338,29 +338,29 @@ function isCSISGR(value: string): boolean {
  * ```
  */
 export function sanitizeAnsi(text: string): string {
-  if (text.length === 0) return ""
+  if (text.length === 0) return "";
 
-  const tokens = tokenizeAnsi(text)
-  let result = ""
+  const tokens = tokenizeAnsi(text);
+  let result = "";
 
   for (const token of tokens) {
     switch (token.type) {
       case "text":
-        result += token.value
-        break
+        result += token.value;
+        break;
       case "csi":
         // Only keep SGR sequences (color/style codes)
         if (isCSISGR(token.value)) {
-          result += token.value
+          result += token.value;
         }
-        break
+        break;
       case "osc":
         // OSC sequences are safe (hyperlinks, titles, etc.)
-        result += token.value
-        break
+        result += token.value;
+        break;
       // Strip everything else: esc, dcs, pm, apc, sos, c1
     }
   }
 
-  return result
+  return result;
 }

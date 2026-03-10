@@ -5,10 +5,10 @@
  * depth limit to prevent infinite loops from circular references.
  */
 
-import type { Theme } from "./types"
+import type { Theme } from "./types";
 
 /** Maximum depth for alias chain resolution before treating as circular. */
-const MAX_ALIAS_DEPTH = 10
+const MAX_ALIAS_DEPTH = 10;
 
 /**
  * Resolve all token aliases in a theme.
@@ -30,13 +30,13 @@ const MAX_ALIAS_DEPTH = 10
  * ```
  */
 export function resolveAliases(theme: Record<string, string>): Record<string, string> {
-  const result: Record<string, string> = {}
+  const result: Record<string, string> = {};
 
   for (const key of Object.keys(theme)) {
-    result[key] = resolveAlias(key, theme, 0)
+    result[key] = resolveAlias(key, theme, 0);
   }
 
-  return result
+  return result;
 }
 
 /**
@@ -48,19 +48,19 @@ export function resolveAliases(theme: Record<string, string>): Record<string, st
  * @returns The resolved concrete value, or the raw alias string if unresolvable
  */
 function resolveAlias(key: string, tokens: Record<string, string>, depth: number): string {
-  if (depth >= MAX_ALIAS_DEPTH) return tokens[key] ?? ""
+  if (depth >= MAX_ALIAS_DEPTH) return tokens[key] ?? "";
 
-  const value = tokens[key]
-  if (value === undefined) return ""
+  const value = tokens[key];
+  if (value === undefined) return "";
 
   // Not an alias — return the concrete value
-  if (!value.startsWith("$")) return value
+  if (!value.startsWith("$")) return value;
 
   // Strip the `$` prefix and look up the referenced token
-  const refKey = value.slice(1)
-  if (!(refKey in tokens)) return value // Unknown reference, return as-is
+  const refKey = value.slice(1);
+  if (!(refKey in tokens)) return value; // Unknown reference, return as-is
 
-  return resolveAlias(refKey, tokens, depth + 1)
+  return resolveAlias(refKey, tokens, depth + 1);
 }
 
 /**
@@ -73,22 +73,22 @@ function resolveAlias(key: string, tokens: Record<string, string>, depth: number
  * @returns The resolved concrete value
  */
 export function resolveTokenAlias(value: string, theme: Theme): string {
-  if (!value.startsWith("$")) return value
+  if (!value.startsWith("$")) return value;
 
-  const seen = new Set<string>()
-  let current = value
+  const seen = new Set<string>();
+  let current = value;
 
   for (let i = 0; i < MAX_ALIAS_DEPTH; i++) {
-    if (!current.startsWith("$")) return current
+    if (!current.startsWith("$")) return current;
 
-    const key = current.slice(1) as keyof Theme
-    if (seen.has(key)) return current // Circular reference
-    seen.add(key)
+    const key = current.slice(1) as keyof Theme;
+    if (seen.has(key)) return current; // Circular reference
+    seen.add(key);
 
-    const resolved = theme[key]
-    if (typeof resolved !== "string") return current
-    current = resolved
+    const resolved = theme[key];
+    if (typeof resolved !== "string") return current;
+    current = resolved;
   }
 
-  return current
+  return current;
 }

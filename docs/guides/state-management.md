@@ -43,8 +43,8 @@ Components access the store via `useApp(selector)`. Zustand tracks which slice e
 
 ```tsx
 function TodoList() {
-  const cursor = useApp((s) => s.cursor)
-  const items = useApp((s) => s.items)
+  const cursor = useApp((s) => s.cursor);
+  const items = useApp((s) => s.items);
   // only re-renders when cursor or items change
 }
 ```
@@ -89,22 +89,22 @@ The store wires in via `.create()`:
 ```tsx
 const app = createApp(
   () => {
-    const { state, apply } = TodoList.create()
+    const { state, apply } = TodoList.create();
     return {
       ...state,
       doneCount: computed(() => state.items.value.filter((i) => i.done).length),
       apply,
-    }
+    };
   },
   {
     key(input, key, { store }) {
-      if (input === "j") store.apply({ op: "moveCursor", delta: 1 })
-      if (input === "k") store.apply({ op: "moveCursor", delta: -1 })
-      if (input === "x") store.apply({ op: "toggleDone", index: store.cursor.value })
-      if (input === "q") return "exit"
+      if (input === "j") store.apply({ op: "moveCursor", delta: 1 });
+      if (input === "k") store.apply({ op: "moveCursor", delta: -1 });
+      if (input === "x") store.apply({ op: "toggleDone", index: store.cursor.value });
+      if (input === "q") return "exit";
     },
   },
-)
+);
 ```
 
 ### Undo pattern
@@ -115,26 +115,26 @@ Define an `inverse` function — TypeScript's exhaustive narrowing ensures every
 function inverse(op: TodoOp): TodoOp {
   switch (op.op) {
     case "moveCursor":
-      return { op: "moveCursor", delta: -op.delta }
+      return { op: "moveCursor", delta: -op.delta };
     case "toggleDone":
-      return op // toggling is its own inverse
+      return op; // toggling is its own inverse
   }
 }
 
-const undoStack: TodoOp[] = []
-const redoStack: TodoOp[] = []
+const undoStack: TodoOp[] = [];
+const redoStack: TodoOp[] = [];
 
 function applyWithUndo(op: TodoOp) {
-  undoStack.push(inverse(op))
-  TodoList.apply(state, op)
-  redoStack.length = 0
+  undoStack.push(inverse(op));
+  TodoList.apply(state, op);
+  redoStack.length = 0;
 }
 
 function undo() {
-  const op = undoStack.pop()
-  if (!op) return
-  redoStack.push(inverse(op))
-  TodoList.apply(state, op)
+  const op = undoStack.pop();
+  if (!op) return;
+  redoStack.push(inverse(op));
+  TodoList.apply(state, op);
 }
 ```
 
@@ -184,11 +184,11 @@ Tests assert on returned effects — no mocks, no fakes:
 
 ```tsx
 test("toggleDone persists and toasts", () => {
-  const s = { cursor: signal(0), items: signal([{ text: "Buy milk", done: false }]) }
-  const effects = TodoList.toggleDone(s, { index: 0 })
-  expect(effects).toContainEqual({ effect: "persist", data: expect.any(Array) })
-  expect(effects).toContainEqual({ effect: "toast", message: "Toggled Buy milk" })
-})
+  const s = { cursor: signal(0), items: signal([{ text: "Buy milk", done: false }]) };
+  const effects = TodoList.toggleDone(s, { index: 0 });
+  expect(effects).toContainEqual({ effect: "persist", data: expect.any(Array) });
+  expect(effects).toContainEqual({ effect: "toast", message: "Toggled Buy milk" });
+});
 ```
 
 The `effects` option in `createApp()` intercepts effect arrays returned from `.apply()` and routes them to declared runners:
@@ -239,12 +239,12 @@ The fetch result re-enters the domain through `apply()`, so it shows up in logs,
 For apps that don't need `createApp`'s Zustand integration, `createStore()` provides a standalone TEA store with plugin composition:
 
 ```tsx
-import { createStore } from "@silvery/term/store"
+import { createStore } from "@silvery/term/store";
 
 const store = createStore(initialState, update, {
   effects: { persist, toast },
   plugins: [withUndo(), withLogging()],
-})
+});
 ```
 
 Plugin composition via `compose(withFocusManagement(), withUndo())(update)` adds cross-cutting concerns without touching individual machines.

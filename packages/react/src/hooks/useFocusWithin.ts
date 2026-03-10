@@ -5,9 +5,9 @@
  * Uses useSyncExternalStore for tear-free reads from FocusManager.
  */
 
-import { useCallback, useContext, useSyncExternalStore } from "react"
-import { FocusManagerContext, NodeContext } from "../context"
-import type { FocusSnapshot } from "@silvery/tea/focus-manager"
+import { useCallback, useContext, useSyncExternalStore } from "react";
+import { FocusManagerContext, NodeContext } from "../context";
+import type { FocusSnapshot } from "@silvery/tea/focus-manager";
 
 // ============================================================================
 // Hook Implementation
@@ -36,39 +36,39 @@ import type { FocusSnapshot } from "@silvery/tea/focus-manager"
  * ```
  */
 export function useFocusWithin(testID: string): boolean {
-  const fm = useContext(FocusManagerContext)
-  const node = useContext(NodeContext)
+  const fm = useContext(FocusManagerContext);
+  const node = useContext(NodeContext);
 
   // Subscribe to FocusManager state
   const subscribe = useCallback(
     (listener: () => void) => {
-      if (!fm) return () => {}
-      return fm.subscribe(listener)
+      if (!fm) return () => {};
+      return fm.subscribe(listener);
     },
     [fm],
-  )
+  );
 
   const getSnapshot = useCallback(() => {
-    if (!fm) return null
-    return fm.getSnapshot()
-  }, [fm])
+    if (!fm) return null;
+    return fm.getSnapshot();
+  }, [fm]);
 
-  const snapshot: FocusSnapshot | null = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+  const snapshot: FocusSnapshot | null = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   // If no active focus, can't be within
-  if (!snapshot?.activeId) return false
+  if (!snapshot?.activeId) return false;
 
   // Walk up from the focused node to find the root node so we can use
   // findByTestID. We need the render tree root.
   // The current node context gives us a reference into the tree.
-  if (!node) return false
+  if (!node) return false;
 
   // Walk up to find the root of the render tree
-  let root = node
+  let root = node;
   while (root.parent) {
-    root = root.parent
+    root = root.parent;
   }
 
   // Use FocusManager's hasFocusWithin which walks from activeElement up
-  return fm!.hasFocusWithin(root, testID)
+  return fm!.hasFocusWithin(root, testID);
 }

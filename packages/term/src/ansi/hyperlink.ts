@@ -7,7 +7,7 @@
  * @see https://gist.github.com/egmontkob/eb114294efbcd5adb1944c9f3cb5feda
  */
 
-import { buildHyperlink } from "./constants"
+import { buildHyperlink } from "./constants";
 
 // =============================================================================
 // Hyperlink Functions
@@ -34,5 +34,5 @@ import { buildHyperlink } from "./constants"
 export function hyperlink(text: string, url: string): string {
   // Most modern terminals support OSC 8, so we emit it unconditionally.
   // Unsupported terminals will just show the text.
-  return buildHyperlink(text, url)
+  return buildHyperlink(text, url);
 }

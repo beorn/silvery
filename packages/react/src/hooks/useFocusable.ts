@@ -5,9 +5,9 @@
  * Uses useSyncExternalStore for tear-free reads from FocusManager.
  */
 
-import { useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from "react"
-import { FocusManagerContext, NodeContext } from "../context"
-import type { FocusOrigin, FocusSnapshot } from "@silvery/tea/focus-manager"
+import { useCallback, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
+import { FocusManagerContext, NodeContext } from "../context";
+import type { FocusOrigin, FocusSnapshot } from "@silvery/tea/focus-manager";
 
 // ============================================================================
 // Types
@@ -15,13 +15,13 @@ import type { FocusOrigin, FocusSnapshot } from "@silvery/tea/focus-manager"
 
 export interface UseFocusableResult {
   /** Whether this node is currently focused */
-  focused: boolean
+  focused: boolean;
   /** Focus this node programmatically */
-  focus: () => void
+  focus: () => void;
   /** Remove focus from this node */
-  blur: () => void
+  blur: () => void;
   /** How focus was most recently acquired (keyboard, mouse, programmatic) */
-  focusOrigin: FocusOrigin | null
+  focusOrigin: FocusOrigin | null;
 }
 
 // ============================================================================
@@ -50,72 +50,74 @@ export interface UseFocusableResult {
  * ```
  */
 export function useFocusable(): UseFocusableResult {
-  const fm = useContext(FocusManagerContext)
-  const node = useContext(NodeContext)
+  const fm = useContext(FocusManagerContext);
+  const node = useContext(NodeContext);
 
   // Read testID from the current node's props
-  const testID = node ? (((node.props as Record<string, unknown>).testID as string | undefined) ?? null) : null
+  const testID = node
+    ? (((node.props as Record<string, unknown>).testID as string | undefined) ?? null)
+    : null;
 
   // Read autoFocus from the current node's props
-  const autoFocus = node ? !!(node.props as Record<string, unknown>).autoFocus : false
+  const autoFocus = node ? !!(node.props as Record<string, unknown>).autoFocus : false;
 
   // Subscribe to FocusManager state via useSyncExternalStore
   const subscribe = useCallback(
     (listener: () => void) => {
-      if (!fm) return () => {}
-      return fm.subscribe(listener)
+      if (!fm) return () => {};
+      return fm.subscribe(listener);
     },
     [fm],
-  )
+  );
 
   const getSnapshot = useCallback(() => {
-    if (!fm) return null
-    return fm.getSnapshot()
-  }, [fm])
+    if (!fm) return null;
+    return fm.getSnapshot();
+  }, [fm]);
 
-  const snapshot: FocusSnapshot | null = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
+  const snapshot: FocusSnapshot | null = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   // Derive focused state from snapshot
-  const focused = testID !== null && snapshot !== null && snapshot.activeId === testID
-  const focusOrigin = focused ? snapshot!.focusOrigin : null
+  const focused = testID !== null && snapshot !== null && snapshot.activeId === testID;
+  const focusOrigin = focused ? snapshot!.focusOrigin : null;
 
   // Auto-focus on mount if autoFocus prop is set
   useEffect(() => {
     if (fm && node && autoFocus) {
-      fm.focus(node, "programmatic")
+      fm.focus(node, "programmatic");
     }
-  }, [fm, node, autoFocus])
+  }, [fm, node, autoFocus]);
 
   // Clean up: if this node is focused when unmounting, blur it
   useEffect(() => {
     return () => {
       if (fm && fm.activeElement === node) {
-        fm.blur()
+        fm.blur();
       }
-    }
-  }, [fm, node])
+    };
+  }, [fm, node]);
 
   // Memoize focus/blur callbacks
   const focus = useMemo(() => {
     return () => {
       if (fm && node) {
-        fm.focus(node, "programmatic")
+        fm.focus(node, "programmatic");
       }
-    }
-  }, [fm, node])
+    };
+  }, [fm, node]);
 
   const blur = useMemo(() => {
     return () => {
       if (fm && focused) {
-        fm.blur()
+        fm.blur();
       }
-    }
-  }, [fm, focused])
+    };
+  }, [fm, focused]);
 
   return {
     focused,
     focus,
     blur,
     focusOrigin,
-  }
+  };
 }

@@ -12,12 +12,14 @@ TextArea provides multi-line text editing in terminal applications. It combines:
 - Text selection (always enabled)
 
 ```tsx
-import { TextArea } from "silvery"
+import { TextArea } from "silvery";
 
 function App() {
-  const [value, setValue] = useState("")
+  const [value, setValue] = useState("");
 
-  return <TextArea value={value} onChange={setValue} height={5} placeholder="Type your message..." />
+  return (
+    <TextArea value={value} onChange={setValue} height={5} placeholder="Type your message..." />
+  );
 }
 ```
 
@@ -50,31 +52,31 @@ Unlike web text inputs, terminal TextArea must handle:
 ```typescript
 interface TextAreaProps {
   /** Current value (controlled) */
-  value?: string
+  value?: string;
   /** Initial value (uncontrolled) */
-  defaultValue?: string
+  defaultValue?: string;
   /** Called when value changes */
-  onChange?: (value: string) => void
+  onChange?: (value: string) => void;
   /** Called on submit (Ctrl+Enter by default, or Enter if submitKey="enter") */
-  onSubmit?: (value: string) => void
+  onSubmit?: (value: string) => void;
   /** Key to trigger submit: "ctrl+enter" (default), "enter", or "meta+enter" */
-  submitKey?: "ctrl+enter" | "enter" | "meta+enter"
+  submitKey?: "ctrl+enter" | "enter" | "meta+enter";
   /** Placeholder text when empty */
-  placeholder?: string
+  placeholder?: string;
   /** Whether input is focused/active (overrides focus system) */
-  isActive?: boolean
+  isActive?: boolean;
   /** Visible height in rows (required) */
-  height: number
+  height: number;
   /** Cursor style: 'block' (inverse) or 'underline' */
-  cursorStyle?: "block" | "underline"
+  cursorStyle?: "block" | "underline";
   /** Number of context lines to keep visible above/below cursor when scrolling (default: 1) */
-  scrollMargin?: number
+  scrollMargin?: number;
   /** When true, ignore all input and dim the text */
-  disabled?: boolean
+  disabled?: boolean;
   /** Maximum number of characters allowed */
-  maxLength?: number
+  maxLength?: number;
   /** Test ID for focus system identification */
-  testID?: string
+  testID?: string;
 }
 ```
 
@@ -192,10 +194,10 @@ Disabled:
 ```typescript
 interface CursorPosition {
   /** Line index (0-based) */
-  line: number
+  line: number;
 
   /** Column index (0-based, in grapheme clusters) */
-  column: number
+  column: number;
 }
 ```
 
@@ -287,30 +289,30 @@ Wrapping prefers breaking at:
 ```typescript
 function findWrapPoint(line: string, width: number): number {
   // 1. If line fits, no wrap needed
-  if (visualWidth(line) <= width) return line.length
+  if (visualWidth(line) <= width) return line.length;
 
   // 2. Find last breakable point within width
-  let lastBreak = -1
-  let currentWidth = 0
+  let lastBreak = -1;
+  let currentWidth = 0;
 
   for (let i = 0; i < line.length; i++) {
-    const char = line[i]
-    const charWidth = getCharWidth(char)
+    const char = line[i];
+    const charWidth = getCharWidth(char);
 
     if (currentWidth + charWidth > width) {
       // Would exceed width
-      return lastBreak >= 0 ? lastBreak + 1 : i
+      return lastBreak >= 0 ? lastBreak + 1 : i;
     }
 
-    currentWidth += charWidth
+    currentWidth += charWidth;
 
     // Track break opportunities
     if (isWhitespace(char) || isPunctuation(char) || isCJK(char)) {
-      lastBreak = i
+      lastBreak = i;
     }
   }
 
-  return line.length
+  return line.length;
 }
 ```
 
@@ -336,7 +338,7 @@ Cursor at end of "world":
 ```typescript
 interface ScrollState {
   /** First visible line (0-based) */
-  scrollTop: number
+  scrollTop: number;
 }
 ```
 
@@ -346,20 +348,20 @@ The viewport follows the cursor:
 
 ```typescript
 function adjustScroll(cursor: CursorPosition, scrollTop: number, visibleLines: number): number {
-  const cursorLine = cursor.line
+  const cursorLine = cursor.line;
 
   // Cursor above viewport
   if (cursorLine < scrollTop) {
-    return cursorLine
+    return cursorLine;
   }
 
   // Cursor below viewport
   if (cursorLine >= scrollTop + visibleLines) {
-    return cursorLine - visibleLines + 1
+    return cursorLine - visibleLines + 1;
   }
 
   // Cursor visible, no change
-  return scrollTop
+  return scrollTop;
 }
 ```
 
@@ -368,14 +370,14 @@ function adjustScroll(cursor: CursorPosition, scrollTop: number, visibleLines: n
 Optional padding to keep cursor away from edges:
 
 ```typescript
-const SCROLL_MARGIN = 1 // Keep 1 line of context
+const SCROLL_MARGIN = 1; // Keep 1 line of context
 
 // Scroll when cursor is within margin of edge
 if (cursorLine < scrollTop + SCROLL_MARGIN) {
-  scrollTop = Math.max(0, cursorLine - SCROLL_MARGIN)
+  scrollTop = Math.max(0, cursorLine - SCROLL_MARGIN);
 }
 if (cursorLine >= scrollTop + visibleLines - SCROLL_MARGIN) {
-  scrollTop = cursorLine - visibleLines + SCROLL_MARGIN + 1
+  scrollTop = cursorLine - visibleLines + SCROLL_MARGIN + 1;
 }
 ```
 
@@ -384,42 +386,52 @@ if (cursorLine >= scrollTop + visibleLines - SCROLL_MARGIN) {
 ### Insert Character
 
 ```typescript
-function insertChar(value: string, cursor: CursorPosition, char: string): { value: string; cursor: CursorPosition } {
-  const offset = positionToOffset(value, cursor)
-  const newValue = value.slice(0, offset) + char + value.slice(offset)
+function insertChar(
+  value: string,
+  cursor: CursorPosition,
+  char: string,
+): { value: string; cursor: CursorPosition } {
+  const offset = positionToOffset(value, cursor);
+  const newValue = value.slice(0, offset) + char + value.slice(offset);
 
   return {
     value: newValue,
     cursor: { line: cursor.line, column: cursor.column + 1 },
-  }
+  };
 }
 ```
 
 ### Insert Newline
 
 ```typescript
-function insertNewline(value: string, cursor: CursorPosition): { value: string; cursor: CursorPosition } {
-  const offset = positionToOffset(value, cursor)
-  const newValue = value.slice(0, offset) + "\n" + value.slice(offset)
+function insertNewline(
+  value: string,
+  cursor: CursorPosition,
+): { value: string; cursor: CursorPosition } {
+  const offset = positionToOffset(value, cursor);
+  const newValue = value.slice(0, offset) + "\n" + value.slice(offset);
 
   return {
     value: newValue,
     cursor: { line: cursor.line + 1, column: 0 },
-  }
+  };
 }
 ```
 
 ### Delete Character (Backspace)
 
 ```typescript
-function deleteBackward(value: string, cursor: CursorPosition): { value: string; cursor: CursorPosition } {
+function deleteBackward(
+  value: string,
+  cursor: CursorPosition,
+): { value: string; cursor: CursorPosition } {
   if (cursor.line === 0 && cursor.column === 0) {
-    return { value, cursor } // Nothing to delete
+    return { value, cursor }; // Nothing to delete
   }
 
-  const offset = positionToOffset(value, cursor)
-  const prevGrapheme = getPreviousGrapheme(value, offset)
-  const newValue = value.slice(0, offset - prevGrapheme.length) + value.slice(offset)
+  const offset = positionToOffset(value, cursor);
+  const prevGrapheme = getPreviousGrapheme(value, offset);
+  const newValue = value.slice(0, offset - prevGrapheme.length) + value.slice(offset);
 
   // Calculate new cursor position
   const newCursor =
@@ -428,25 +440,28 @@ function deleteBackward(value: string, cursor: CursorPosition): { value: string;
       : {
           line: cursor.line - 1,
           column: getLineLength(value, cursor.line - 1),
-        }
+        };
 
-  return { value: newValue, cursor: newCursor }
+  return { value: newValue, cursor: newCursor };
 }
 ```
 
 ### Delete Forward
 
 ```typescript
-function deleteForward(value: string, cursor: CursorPosition): { value: string; cursor: CursorPosition } {
-  const offset = positionToOffset(value, cursor)
+function deleteForward(
+  value: string,
+  cursor: CursorPosition,
+): { value: string; cursor: CursorPosition } {
+  const offset = positionToOffset(value, cursor);
   if (offset >= value.length) {
-    return { value, cursor } // Nothing to delete
+    return { value, cursor }; // Nothing to delete
   }
 
-  const nextGrapheme = getNextGrapheme(value, offset)
-  const newValue = value.slice(0, offset) + value.slice(offset + nextGrapheme.length)
+  const nextGrapheme = getNextGrapheme(value, offset);
+  const newValue = value.slice(0, offset) + value.slice(offset + nextGrapheme.length);
 
-  return { value: newValue, cursor } // Cursor stays in place
+  return { value: newValue, cursor }; // Cursor stays in place
 }
 ```
 
@@ -457,27 +472,33 @@ Selection is always available:
 ### Extend Selection
 
 ```typescript
-function extendSelection(selection: Selection, direction: "left" | "right" | "up" | "down"): Selection {
+function extendSelection(
+  selection: Selection,
+  direction: "left" | "right" | "up" | "down",
+): Selection {
   // Anchor stays fixed, cursor moves
   return {
     anchor: selection.anchor,
     cursor: moveCursor(selection.cursor, direction),
-  }
+  };
 }
 ```
 
 ### Delete Selection
 
 ```typescript
-function deleteSelection(value: string, selection: Selection): { value: string; cursor: CursorPosition } {
-  const [start, end] = normalizeSelection(selection)
-  const startOffset = positionToOffset(value, start)
-  const endOffset = positionToOffset(value, end)
+function deleteSelection(
+  value: string,
+  selection: Selection,
+): { value: string; cursor: CursorPosition } {
+  const [start, end] = normalizeSelection(selection);
+  const startOffset = positionToOffset(value, start);
+  const endOffset = positionToOffset(value, end);
 
   return {
     value: value.slice(0, startOffset) + value.slice(endOffset),
     cursor: start,
-  }
+  };
 }
 ```
 
@@ -488,7 +509,7 @@ function selectAll(value: string): Selection {
   return {
     anchor: { line: 0, column: 0 },
     cursor: getEndPosition(value),
-  }
+  };
 }
 ```
 
@@ -545,10 +566,10 @@ Note: `meta+enter` requires the [Kitty keyboard protocol](/guide/kitty-protocol)
 
 ```typescript
 // Use string-width or similar library
-import stringWidth from "string-width"
+import stringWidth from "string-width";
 
 function getCharWidth(char: string): number {
-  return stringWidth(char) // Returns 1 or 2
+  return stringWidth(char); // Returns 1 or 2
 }
 ```
 
@@ -561,10 +582,10 @@ Use a grapheme splitter to handle:
 - Regional indicators (flags)
 
 ```typescript
-const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" })
+const segmenter = new Intl.Segmenter(undefined, { granularity: "grapheme" });
 
 function splitGraphemes(text: string): string[] {
-  return [...segmenter.segment(text)].map((s) => s.segment)
+  return [...segmenter.segment(text)].map((s) => s.segment);
 }
 ```
 
@@ -587,19 +608,19 @@ Invalid: 7 (would be "inside" 世)
 ```typescript
 interface TextAreaState {
   // Cursor position (always tracked)
-  cursor: CursorPosition
+  cursor: CursorPosition;
 
   // Selection anchor (only when selection enabled and active)
-  selectionAnchor: CursorPosition | null
+  selectionAnchor: CursorPosition | null;
 
   // Scroll position
-  scrollTop: number
+  scrollTop: number;
 
   // Column memory for vertical movement
-  targetColumn: number
+  targetColumn: number;
 
   // Focus state
-  isFocused: boolean
+  isFocused: boolean;
 }
 ```
 
@@ -609,33 +630,33 @@ TextArea can be built with a custom hook for flexibility:
 
 ```typescript
 interface UseTextAreaOptions {
-  value: string
-  onChange: (value: string) => void
-  onSubmit?: (value: string) => void
-  submitKey?: "ctrl+enter" | "meta+enter" | "enter"
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit?: (value: string) => void;
+  submitKey?: "ctrl+enter" | "meta+enter" | "enter";
 }
 
 interface UseTextAreaReturn {
   // Computed from value
-  lines: string[]
-  visualLines: VisualLine[]
+  lines: string[];
+  visualLines: VisualLine[];
 
   // Cursor/selection state
-  cursor: CursorPosition
-  selection: Selection | null
+  cursor: CursorPosition;
+  selection: Selection | null;
 
   // Scroll state
-  scrollTop: number
+  scrollTop: number;
 
   // Event handlers
-  handleInput: (input: string, key: Key) => void
+  handleInput: (input: string, key: Key) => void;
 
   // Imperative API
-  moveCursor: (direction: Direction) => void
-  selectAll: () => void
+  moveCursor: (direction: Direction) => void;
+  selectAll: () => void;
 }
 
-function useTextArea(options: UseTextAreaOptions): UseTextAreaReturn
+function useTextArea(options: UseTextAreaOptions): UseTextAreaReturn;
 ```
 
 This allows building custom TextArea variants while reusing the core logic.
@@ -646,10 +667,10 @@ TextArea benefits from Silvery's `useContentRect()`:
 
 ```tsx
 function TextArea({ value, onChange, height = 3 }: TextAreaProps) {
-  const { width } = useContentRect()
+  const { width } = useContentRect();
 
   // Calculate visible lines based on actual width
-  const visualLines = useMemo(() => wrapText(value, width), [value, width])
+  const visualLines = useMemo(() => wrapText(value, width), [value, width]);
 
   return (
     <Box flexDirection="column" height={height}>
@@ -657,7 +678,7 @@ function TextArea({ value, onChange, height = 3 }: TextAreaProps) {
         <Text key={i}>{renderLine(line, cursor, selection)}</Text>
       ))}
     </Box>
-  )
+  );
 }
 ```
 
@@ -668,47 +689,52 @@ Without `useContentRect()`, we'd need to thread width props down, complicating t
 ### 1. Split into Lines
 
 ```typescript
-const lines = value.split("\n")
+const lines = value.split("\n");
 ```
 
 ### 2. Wrap Lines
 
 ```typescript
-const visualLines = lines.flatMap((line) => wrapLine(line, width))
+const visualLines = lines.flatMap((line) => wrapLine(line, width));
 ```
 
 ### 3. Slice to Viewport
 
 ```typescript
-const visibleLines = visualLines.slice(scrollTop, scrollTop + height)
+const visibleLines = visualLines.slice(scrollTop, scrollTop + height);
 ```
 
 ### 4. Render Each Line
 
 ```typescript
-function renderLine(line: string, cursor: CursorPosition, selection: Selection | null, lineIndex: number): string {
-  let result = ""
+function renderLine(
+  line: string,
+  cursor: CursorPosition,
+  selection: Selection | null,
+  lineIndex: number,
+): string {
+  let result = "";
 
   for (let col = 0; col < line.length; col++) {
-    const char = line[col]
-    const isUnderCursor = lineIndex === cursor.line && col === cursor.column
-    const isSelected = selection && isInSelection(lineIndex, col, selection)
+    const char = line[col];
+    const isUnderCursor = lineIndex === cursor.line && col === cursor.column;
+    const isSelected = selection && isInSelection(lineIndex, col, selection);
 
     if (isUnderCursor) {
-      result += chalk.inverse(char || " ")
+      result += chalk.inverse(char || " ");
     } else if (isSelected) {
-      result += chalk.inverse(char)
+      result += chalk.inverse(char);
     } else {
-      result += char
+      result += char;
     }
   }
 
   // Render cursor at end of line if needed
   if (lineIndex === cursor.line && cursor.column === line.length) {
-    result += chalk.inverse(" ")
+    result += chalk.inverse(" ");
   }
 
-  return result
+  return result;
 }
 ```
 
@@ -749,13 +775,13 @@ Use requestAnimationFrame/setImmediate to batch updates:
 
 ```typescript
 function handleInput(char: string) {
-  pendingInput += char
+  pendingInput += char;
   if (!rafScheduled) {
-    rafScheduled = true
+    rafScheduled = true;
     setImmediate(() => {
-      flushInput()
-      rafScheduled = false
-    })
+      flushInput();
+      rafScheduled = false;
+    });
   }
 }
 ```

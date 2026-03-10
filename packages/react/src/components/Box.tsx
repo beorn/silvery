@@ -21,9 +21,9 @@ import {
   useLayoutEffect,
   useRef,
   useState,
-} from "react"
-import { NodeContext } from "../context"
-import type { BoxProps as BoxPropsType, TeaNode, Rect } from "@silvery/tea/types"
+} from "react";
+import { NodeContext } from "../context";
+import type { BoxProps as BoxPropsType, TeaNode, Rect } from "@silvery/tea/types";
 
 // ============================================================================
 // Props
@@ -31,7 +31,7 @@ import type { BoxProps as BoxPropsType, TeaNode, Rect } from "@silvery/tea/types
 
 export interface BoxProps extends BoxPropsType {
   /** Child elements */
-  children?: ReactNode
+  children?: ReactNode;
 }
 
 /**
@@ -39,11 +39,11 @@ export interface BoxProps extends BoxPropsType {
  */
 export interface BoxHandle {
   /** Get the underlying SilveryNode */
-  getNode(): TeaNode | null
+  getNode(): TeaNode | null;
   /** Get the current content-relative layout rect */
-  getContentRect(): Rect | null
+  getContentRect(): Rect | null;
   /** Get the current screen-relative layout rect */
-  getScreenRect(): Rect | null
+  getScreenRect(): Rect | null;
 }
 
 // ============================================================================
@@ -86,33 +86,36 @@ export interface BoxHandle {
  * </Box>
  * ```
  */
-export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<BoxHandle>): JSX.Element {
-  const { children, onLayout, ...restProps } = props
-  const nodeRef = useRef<TeaNode | null>(null)
-  const [node, setNode] = useState<TeaNode | null>(null)
+export const Box = forwardRef(function Box(
+  props: BoxProps,
+  ref: ForwardedRef<BoxHandle>,
+): JSX.Element {
+  const { children, onLayout, ...restProps } = props;
+  const nodeRef = useRef<TeaNode | null>(null);
+  const [node, setNode] = useState<TeaNode | null>(null);
 
   // Track the last layout we reported to onLayout to avoid duplicate calls
-  const lastReportedLayout = useRef<Rect | null>(null)
+  const lastReportedLayout = useRef<Rect | null>(null);
 
   // After mount, ref points to the SilveryNode. Update state once to provide
   // the node to children via context. Only runs on mount ([] deps).
   useLayoutEffect(() => {
     if (nodeRef.current) {
-      setNode(nodeRef.current)
+      setNode(nodeRef.current);
     }
-  }, [])
+  }, []);
 
   // Wire up onLayout callback - subscribe to layout changes
   useLayoutEffect(() => {
-    if (!onLayout || !node) return
+    if (!onLayout || !node) return;
 
     // Create subscriber callback
     const handleLayoutChange = () => {
-      const layout = node.contentRect
-      if (!layout) return
+      const layout = node.contentRect;
+      if (!layout) return;
 
       // Only call onLayout if layout actually changed
-      const last = lastReportedLayout.current
+      const last = lastReportedLayout.current;
       if (
         !last ||
         last.x !== layout.x ||
@@ -120,23 +123,23 @@ export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<Bo
         last.width !== layout.width ||
         last.height !== layout.height
       ) {
-        lastReportedLayout.current = layout
-        onLayout(layout)
+        lastReportedLayout.current = layout;
+        onLayout(layout);
       }
-    }
+    };
 
     // Subscribe to layout changes
-    node.layoutSubscribers.add(handleLayoutChange)
+    node.layoutSubscribers.add(handleLayoutChange);
 
     // Call immediately if we already have layout
     if (node.contentRect) {
-      handleLayoutChange()
+      handleLayoutChange();
     }
 
     return () => {
-      node.layoutSubscribers.delete(handleLayoutChange)
-    }
-  }, [node, onLayout])
+      node.layoutSubscribers.delete(handleLayoutChange);
+    };
+  }, [node, onLayout]);
 
   // Expose imperative methods via ref
   useImperativeHandle(
@@ -147,7 +150,7 @@ export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<Bo
       getScreenRect: () => nodeRef.current?.screenRect ?? null,
     }),
     [],
-  )
+  );
 
   // Render silvery-box with ref, wrap children in NodeContext
   // The reconciler creates an SilveryNode, ref gives us access to it
@@ -155,5 +158,5 @@ export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<Bo
     <silvery-box ref={nodeRef} {...restProps}>
       <NodeContext.Provider value={node}>{children}</NodeContext.Provider>
     </silvery-box>
-  )
-})
+  );
+});

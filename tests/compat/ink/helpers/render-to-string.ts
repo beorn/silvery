@@ -4,38 +4,45 @@
  * Applies ANSI conversion (silvery → chalk format), VS16 stripping,
  * content height trimming, and empty fragment detection to match Ink output.
  */
-import React from "react"
-import { renderStringSync } from "../../../../packages/react/src/render-string"
-import { ensureDefaultLayoutEngine, isLayoutEngineInitialized } from "../../../../packages/term/src/layout-engine"
-import { createTerm } from "../../../../packages/term/src/ansi"
-import { TermContext } from "../../../../packages/react/src/context"
-import { currentChalkLevel, stripSilveryVS16, toChalkCompat } from "../../../../packages/compat/src/ink"
-import { stripAnsi } from "../../../../packages/term/src/unicode"
+import React from "react";
+import { renderStringSync } from "../../../../packages/react/src/render-string";
+import {
+  ensureDefaultLayoutEngine,
+  isLayoutEngineInitialized,
+} from "../../../../packages/term/src/layout-engine";
+import { createTerm } from "../../../../packages/term/src/ansi";
+import { TermContext } from "../../../../packages/react/src/context";
+import {
+  currentChalkLevel,
+  stripSilveryVS16,
+  toChalkCompat,
+} from "../../../../packages/compat/src/ink";
+import { stripAnsi } from "../../../../packages/term/src/unicode";
 
 type RenderToStringOptions = {
-  columns?: number
-}
+  columns?: number;
+};
 
-let engineReady = false
+let engineReady = false;
 
 async function ensureEngine(): Promise<void> {
   if (engineReady || isLayoutEngineInitialized()) {
-    engineReady = true
-    return
+    engineReady = true;
+    return;
   }
-  await ensureDefaultLayoutEngine()
-  engineReady = true
+  await ensureDefaultLayoutEngine();
+  engineReady = true;
 }
 
 function doRender(node: React.JSX.Element, options?: RenderToStringOptions): string {
-  const chalkHasColors = currentChalkLevel() > 0
-  const colorLevel = chalkHasColors ? ("truecolor" as const) : null
-  const term = createTerm({ color: colorLevel })
-  const plain = term.hasColor() === null
-  const wrapped = React.createElement(TermContext.Provider, { value: term }, node)
+  const chalkHasColors = currentChalkLevel() > 0;
+  const colorLevel = chalkHasColors ? ("truecolor" as const) : null;
+  const term = createTerm({ color: colorLevel });
+  const plain = term.hasColor() === null;
+  const wrapped = React.createElement(TermContext.Provider, { value: term }, node);
 
-  const bufferHeight = 24
-  let layoutContentHeight = 0
+  const bufferHeight = 24;
+  let layoutContentHeight = 0;
   let output = renderStringSync(wrapped as React.ReactElement, {
     width: options?.columns ?? 100,
     height: bufferHeight,
@@ -43,38 +50,41 @@ function doRender(node: React.JSX.Element, options?: RenderToStringOptions): str
     trimTrailingWhitespace: true,
     trimEmptyLines: false,
     onContentHeight: (h: number) => {
-      layoutContentHeight = h
+      layoutContentHeight = h;
     },
-  })
+  });
 
-  output = stripSilveryVS16(output)
+  output = stripSilveryVS16(output);
 
   // Trim buffer padding rows using content height from layout
   if (layoutContentHeight > 0 && layoutContentHeight < bufferHeight) {
-    const lines = output.split("\n")
-    output = lines.slice(0, layoutContentHeight).join("\n")
+    const lines = output.split("\n");
+    output = lines.slice(0, layoutContentHeight).join("\n");
   } else {
     // Fall back: strip trailing empty lines (content height unknown or fills buffer)
-    const lines = output.split("\n")
-    while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop()
-    output = lines.join("\n")
+    const lines = output.split("\n");
+    while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
+    output = lines.join("\n");
   }
 
   // Empty fragment → empty string (strip ANSI to detect styled-but-empty output)
-  if (stripAnsi(output).trim() === "") return ""
+  if (stripAnsi(output).trim() === "") return "";
 
-  return plain ? output : toChalkCompat(output)
+  return plain ? output : toChalkCompat(output);
 }
 
 /**
  * Synchronous render to string (requires layout engine to be initialized).
  */
-export const renderToString = (node: React.JSX.Element, options?: RenderToStringOptions): string => {
+export const renderToString = (
+  node: React.JSX.Element,
+  options?: RenderToStringOptions,
+): string => {
   if (!isLayoutEngineInitialized()) {
-    throw new Error("Layout engine not initialized. Call initLayoutEngine() in beforeAll().")
+    throw new Error("Layout engine not initialized. Call initLayoutEngine() in beforeAll().");
   }
-  return doRender(node, options)
-}
+  return doRender(node, options);
+};
 
 /**
  * Async render to string (auto-initializes layout engine).
@@ -83,11 +93,11 @@ export const renderToStringAsync = async (
   node: React.JSX.Element,
   options?: RenderToStringOptions,
 ): Promise<string> => {
-  await ensureEngine()
-  return doRender(node, options)
-}
+  await ensureEngine();
+  return doRender(node, options);
+};
 
 /**
  * Initialize the layout engine (call in beforeAll).
  */
-export const initLayoutEngine = ensureEngine
+export const initLayoutEngine = ensureEngine;

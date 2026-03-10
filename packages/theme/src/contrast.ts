@@ -5,16 +5,16 @@
  * contrast ratios and check AA/AAA compliance levels.
  */
 
-import { hexToRgb } from "./color"
+import { hexToRgb } from "./color";
 
 /** Result of a contrast check between two colors. */
 export interface ContrastResult {
   /** The contrast ratio (1:1 to 21:1), expressed as a single number (e.g. 4.5). */
-  ratio: number
+  ratio: number;
   /** Whether the ratio meets WCAG AA for normal text (>= 4.5:1). */
-  aa: boolean
+  aa: boolean;
   /** Whether the ratio meets WCAG AAA for normal text (>= 7:1). */
-  aaa: boolean
+  aaa: boolean;
 }
 
 /**
@@ -22,8 +22,8 @@ export interface ContrastResult {
  * Per WCAG 2.1: linearize, then weight by standard coefficients.
  */
 function channelLuminance(c: number): number {
-  const s = c / 255
-  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  const s = c / 255;
+  return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
 }
 
 /**
@@ -31,9 +31,13 @@ function channelLuminance(c: number): number {
  * Returns a value between 0 (darkest) and 1 (lightest).
  */
 function relativeLuminance(hex: string): number | null {
-  const rgb = hexToRgb(hex)
-  if (!rgb) return null
-  return 0.2126 * channelLuminance(rgb[0]) + 0.7152 * channelLuminance(rgb[1]) + 0.0722 * channelLuminance(rgb[2])
+  const rgb = hexToRgb(hex);
+  if (!rgb) return null;
+  return (
+    0.2126 * channelLuminance(rgb[0]) +
+    0.7152 * channelLuminance(rgb[1]) +
+    0.0722 * channelLuminance(rgb[2])
+  );
 }
 
 /**
@@ -56,20 +60,20 @@ function relativeLuminance(hex: string): number | null {
  * ```
  */
 export function checkContrast(fg: string, bg: string): ContrastResult | null {
-  const fgLum = relativeLuminance(fg)
-  const bgLum = relativeLuminance(bg)
-  if (fgLum === null || bgLum === null) return null
+  const fgLum = relativeLuminance(fg);
+  const bgLum = relativeLuminance(bg);
+  if (fgLum === null || bgLum === null) return null;
 
-  const lighter = Math.max(fgLum, bgLum)
-  const darker = Math.min(fgLum, bgLum)
-  const ratio = (lighter + 0.05) / (darker + 0.05)
+  const lighter = Math.max(fgLum, bgLum);
+  const darker = Math.min(fgLum, bgLum);
+  const ratio = (lighter + 0.05) / (darker + 0.05);
 
   // Round to 2 decimal places for practical use
-  const roundedRatio = Math.round(ratio * 100) / 100
+  const roundedRatio = Math.round(ratio * 100) / 100;
 
   return {
     ratio: roundedRatio,
     aa: roundedRatio >= 4.5,
     aaa: roundedRatio >= 7,
-  }
+  };
 }

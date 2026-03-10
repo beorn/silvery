@@ -4,9 +4,9 @@
  * Core types for the Silvery renderer architecture.
  */
 
-import type { FocusEventProps } from "./focus-events"
-import type { LayoutNode } from "@silvery/term/layout-engine"
-import type { MouseEventProps } from "@silvery/term/mouse-events"
+import type { FocusEventProps } from "./focus-events";
+import type { LayoutNode } from "@silvery/term/layout-engine";
+import type { MouseEventProps } from "@silvery/term/mouse-events";
 
 // ============================================================================
 // Layout Types
@@ -18,22 +18,22 @@ import type { MouseEventProps } from "@silvery/term/mouse-events"
  */
 export interface Rect {
   /** X position (0-indexed terminal column) */
-  x: number
+  x: number;
   /** Y position (0-indexed terminal row) */
-  y: number
+  y: number;
   /** Width in terminal columns */
-  width: number
+  width: number;
   /** Height in terminal rows */
-  height: number
+  height: number;
 }
 
 /**
  * Check if two rects are equal (same position and size).
  */
 export function rectEqual(a: Rect | null, b: Rect | null): boolean {
-  if (a === b) return true
-  if (!a || !b) return false
-  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
 // ============================================================================
@@ -43,78 +43,90 @@ export function rectEqual(a: Rect | null, b: Rect | null): boolean {
 /**
  * Silvery node types - the primitive elements in the render tree.
  */
-export type TeaNodeType = "silvery-root" | "silvery-box" | "silvery-text"
+export type TeaNodeType = "silvery-root" | "silvery-box" | "silvery-text";
 
 /**
  * Flexbox properties that can be applied to Box nodes.
  */
 export interface FlexboxProps {
   // Size
-  width?: number | string
-  height?: number | string
-  minWidth?: number | string
-  minHeight?: number | string
-  maxWidth?: number | string
-  maxHeight?: number | string
+  width?: number | string;
+  height?: number | string;
+  minWidth?: number | string;
+  minHeight?: number | string;
+  maxWidth?: number | string;
+  maxHeight?: number | string;
 
   // Flex
-  flexGrow?: number
-  flexShrink?: number
-  flexBasis?: number | string
-  flexDirection?: "row" | "column" | "row-reverse" | "column-reverse"
-  flexWrap?: "nowrap" | "wrap" | "wrap-reverse"
+  flexGrow?: number;
+  flexShrink?: number;
+  flexBasis?: number | string;
+  flexDirection?: "row" | "column" | "row-reverse" | "column-reverse";
+  flexWrap?: "nowrap" | "wrap" | "wrap-reverse";
 
   // Alignment
-  alignItems?: "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
-  alignSelf?: "auto" | "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
-  alignContent?: "flex-start" | "flex-end" | "center" | "stretch" | "space-between" | "space-around"
-  justifyContent?: "flex-start" | "flex-end" | "center" | "space-between" | "space-around" | "space-evenly"
+  alignItems?: "flex-start" | "flex-end" | "center" | "stretch" | "baseline";
+  alignSelf?: "auto" | "flex-start" | "flex-end" | "center" | "stretch" | "baseline";
+  alignContent?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "stretch"
+    | "space-between"
+    | "space-around";
+  justifyContent?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "space-between"
+    | "space-around"
+    | "space-evenly";
 
   // Spacing
-  padding?: number
-  paddingTop?: number
-  paddingBottom?: number
-  paddingLeft?: number
-  paddingRight?: number
-  paddingX?: number
-  paddingY?: number
-  margin?: number
-  marginTop?: number
-  marginBottom?: number
-  marginLeft?: number
-  marginRight?: number
-  marginX?: number
-  marginY?: number
-  gap?: number
+  padding?: number;
+  paddingTop?: number;
+  paddingBottom?: number;
+  paddingLeft?: number;
+  paddingRight?: number;
+  paddingX?: number;
+  paddingY?: number;
+  margin?: number;
+  marginTop?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+  marginRight?: number;
+  marginX?: number;
+  marginY?: number;
+  gap?: number;
 
   // Position
-  position?: "relative" | "absolute" | "sticky"
+  position?: "relative" | "absolute" | "sticky";
 
   // Position offsets (used with position='absolute' or position='relative')
-  top?: number | string
-  left?: number | string
-  bottom?: number | string
-  right?: number | string
+  top?: number | string;
+  left?: number | string;
+  bottom?: number | string;
+  right?: number | string;
 
   // Sticky offsets (only used when position='sticky')
   // The element will "stick" when it reaches this offset from the container edge
-  stickyTop?: number
-  stickyBottom?: number
+  stickyTop?: number;
+  stickyBottom?: number;
 
   // Aspect ratio
-  aspectRatio?: number
+  aspectRatio?: number;
 
   // Display
-  display?: "flex" | "none"
+  display?: "flex" | "none";
 
   // Overflow
-  overflow?: "visible" | "hidden" | "scroll"
+  overflow?: "visible" | "hidden" | "scroll";
 
   // Scroll control (only used when overflow='scroll')
   /** Child index to ensure visible (edge-based: only scrolls if off-screen) */
-  scrollTo?: number
+  scrollTo?: number;
   /** Explicit scroll offset in rows (used when scrollTo is undefined for frozen scroll state) */
-  scrollOffset?: number
+  scrollOffset?: number;
 }
 
 /**
@@ -123,11 +135,11 @@ export interface FlexboxProps {
  */
 export interface TestProps {
   /** Element ID for DOM queries and visual debugging */
-  id?: string
+  id?: string;
   /** Test ID for querying nodes (like Playwright's data-testid) */
-  testID?: string
+  testID?: string;
   /** Allow arbitrary data-* attributes for testing */
-  [key: `data-${string}`]: unknown
+  [key: `data-${string}`]: unknown;
 }
 
 /**
@@ -139,45 +151,53 @@ export interface TestProps {
  * - 'dotted': dotted underline (SGR 4:4)
  * - 'dashed': dashed underline (SGR 4:5)
  */
-export type UnderlineStyle = false | "single" | "double" | "curly" | "dotted" | "dashed"
+export type UnderlineStyle = false | "single" | "double" | "curly" | "dotted" | "dashed";
 
 /**
  * Style properties for text rendering.
  */
 export interface StyleProps {
-  color?: string
-  backgroundColor?: string
-  bold?: boolean
-  dim?: boolean
+  color?: string;
+  backgroundColor?: string;
+  bold?: boolean;
+  dim?: boolean;
   /** Alias for dim (Ink compatibility) */
-  dimColor?: boolean
-  italic?: boolean
+  dimColor?: boolean;
+  italic?: boolean;
   /** Enable underline. Use underlineStyle for style variants. */
-  underline?: boolean
+  underline?: boolean;
   /**
    * Underline style variant: 'single' | 'double' | 'curly' | 'dotted' | 'dashed'.
    * Setting this implies underline=true. Takes precedence over underline prop.
    */
-  underlineStyle?: UnderlineStyle
+  underlineStyle?: UnderlineStyle;
   /**
    * Underline color (independent of text color).
    * Uses SGR 58 (underline color). Falls back to text color if not specified.
    */
-  underlineColor?: string
-  strikethrough?: boolean
-  inverse?: boolean
+  underlineColor?: string;
+  strikethrough?: boolean;
+  inverse?: boolean;
 }
 
 /**
  * Props for Box component.
  */
-export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEventProps, FocusEventProps {
-  borderStyle?: "single" | "double" | "round" | "bold" | "singleDouble" | "doubleSingle" | "classic"
-  borderColor?: string
-  borderTop?: boolean
-  borderBottom?: boolean
-  borderLeft?: boolean
-  borderRight?: boolean
+export interface BoxProps
+  extends FlexboxProps, StyleProps, TestProps, MouseEventProps, FocusEventProps {
+  borderStyle?:
+    | "single"
+    | "double"
+    | "round"
+    | "bold"
+    | "singleDouble"
+    | "doubleSingle"
+    | "classic";
+  borderColor?: string;
+  borderTop?: boolean;
+  borderBottom?: boolean;
+  borderLeft?: boolean;
+  borderRight?: boolean;
 
   /**
    * Outline style — renders border characters at the box edges without affecting layout.
@@ -189,30 +209,37 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
    * Use cases: selection indicators, hover highlights, focus rings — anything that
    * should visually frame a box without shifting content.
    */
-  outlineStyle?: "single" | "double" | "round" | "bold" | "singleDouble" | "doubleSingle" | "classic"
+  outlineStyle?:
+    | "single"
+    | "double"
+    | "round"
+    | "bold"
+    | "singleDouble"
+    | "doubleSingle"
+    | "classic";
   /** Foreground color for the outline */
-  outlineColor?: string
+  outlineColor?: string;
   /** Apply dim styling to the outline */
-  outlineDimColor?: boolean
+  outlineDimColor?: boolean;
   /** Show top outline edge (default: true) */
-  outlineTop?: boolean
+  outlineTop?: boolean;
   /** Show bottom outline edge (default: true) */
-  outlineBottom?: boolean
+  outlineBottom?: boolean;
   /** Show left outline edge (default: true) */
-  outlineLeft?: boolean
+  outlineLeft?: boolean;
   /** Show right outline edge (default: true) */
-  outlineRight?: boolean
+  outlineRight?: boolean;
 
   /**
    * Override theme for this subtree — $token colors resolve against this theme.
    * Pushed onto the context theme stack during content phase tree walk.
    */
-  theme?: import("@silvery/theme").Theme
+  theme?: import("@silvery/theme").Theme;
 
   /** CSS pointer-events equivalent. "none" makes this node and its subtree invisible to hit testing. */
-  pointerEvents?: "auto" | "none"
+  pointerEvents?: "auto" | "none";
 
-  onLayout?: (layout: Rect) => void
+  onLayout?: (layout: Rect) => void;
 
   /**
    * Show scroll overflow indicators (▲N / ▼N) for scrollable containers.
@@ -222,17 +249,24 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
    *
    * Only applies when overflow='scroll'.
    */
-  overflowIndicator?: boolean
+  overflowIndicator?: boolean;
 }
 
 /**
  * Props for Text component.
  */
 export interface TextProps extends StyleProps, TestProps, MouseEventProps {
-  children?: React.ReactNode
-  wrap?: "wrap" | "truncate" | "truncate-start" | "truncate-middle" | "truncate-end" | "clip" | boolean
+  children?: React.ReactNode;
+  wrap?:
+    | "wrap"
+    | "truncate"
+    | "truncate-start"
+    | "truncate-middle"
+    | "truncate-end"
+    | "clip"
+    | boolean;
   /** Internal transform function applied to each rendered line. Used by Transform component. */
-  internal_transform?: (line: string, index: number) => string
+  internal_transform?: (line: string, index: number) => string;
 }
 
 /**
@@ -246,141 +280,141 @@ export interface TextProps extends StyleProps, TestProps, MouseEventProps {
  */
 export interface TeaNode {
   /** Node type */
-  type: TeaNodeType
+  type: TeaNodeType;
 
   /** Props passed to this node */
-  props: BoxProps | TextProps | Record<string, unknown>
+  props: BoxProps | TextProps | Record<string, unknown>;
 
   /** Child nodes */
-  children: TeaNode[]
+  children: TeaNode[];
 
   /** Parent node (null for root) */
-  parent: TeaNode | null
+  parent: TeaNode | null;
 
   /** The layout node for layout calculation (null for raw text nodes) */
-  layoutNode: LayoutNode | null
+  layoutNode: LayoutNode | null;
 
   /** Computed layout from previous render (for change detection) */
-  prevLayout: Rect | null
+  prevLayout: Rect | null;
 
   /**
    * Content-relative position (like CSS offsetTop/offsetLeft).
    * Position within the scrollable content, ignoring scroll offsets.
    * Set after layout phase.
    */
-  contentRect: Rect | null
+  contentRect: Rect | null;
 
   /**
    * Screen-relative position (like CSS getBoundingClientRect).
    * Actual position on the terminal screen, accounting for scroll offsets.
    * Set after screen rect phase.
    */
-  screenRect: Rect | null
+  screenRect: Rect | null;
 
   /** Previous screen rect (for change detection in notifyLayoutSubscribers) */
-  prevScreenRect: Rect | null
+  prevScreenRect: Rect | null;
 
   /** True if layout changed THIS frame (position or size).
    *  Set by propagateLayout in layout phase. Cleared by content phase.
    *  This is the authoritative signal for "did layout change?" — unlike
    *  !rectEqual(prevLayout, contentRect) which becomes stale when layout
    *  phase skips (no dirty nodes). */
-  layoutChangedThisFrame: boolean
+  layoutChangedThisFrame: boolean;
 
   /** True if layout-affecting props changed and Yoga needs recalculation.
    *  Set by reconciler on prop changes. Cleared after layout phase. */
-  layoutDirty: boolean
+  layoutDirty: boolean;
 
   /** True if content changed but layout didn't (e.g., text content update).
    *  Set by reconciler. Cleared by content phase after rendering.
    *  NOTE: measure phase may clear this for its text-collection cache —
    *  paintDirty acts as the surviving witness for style changes. */
-  contentDirty: boolean
+  contentDirty: boolean;
 
   /** True if visual props changed (color, backgroundColor, borderStyle, etc.).
    *  Set by reconciler alongside contentDirty. Survives measure phase clearing
    *  of contentDirty, ensuring content phase still detects style changes.
    *  Cleared by content phase after rendering. */
-  paintDirty: boolean
+  paintDirty: boolean;
 
   /** True if backgroundColor specifically changed (added, modified, or removed).
    *  Set by reconciler when backgroundColor prop changes. Used by content phase
    *  to avoid cascading re-renders for border-only paint changes (borderColor
    *  doesn't affect the content area). Cleared by content phase. */
-  bgDirty: boolean
+  bgDirty: boolean;
 
   /** True if this node or any descendant has dirty content/layout.
    *  Propagated upward by reconciler when any descendant is dirtied.
    *  When only subtreeDirty (no other flags), the node's OWN rendering is
    *  skipped — only descendants are traversed. Cleared by content phase. */
-  subtreeDirty: boolean
+  subtreeDirty: boolean;
 
   /** True if direct children were added, removed, or reordered.
    *  Set by reconciler on child list changes. Triggers own repaint
    *  (gap regions may need clearing) and forces child re-render.
    *  Cleared by content phase. */
-  childrenDirty: boolean
+  childrenDirty: boolean;
 
   /** Callbacks subscribed to layout changes (used by useContentRect) */
-  layoutSubscribers: Set<() => void>
+  layoutSubscribers: Set<() => void>;
 
   /** Text content for text nodes */
-  textContent?: string
+  textContent?: string;
 
   /** True if this is a raw text node (created by createTextInstance) */
-  isRawText?: boolean
+  isRawText?: boolean;
 
   /** True if this node is hidden (for Suspense support) */
-  hidden?: boolean
+  hidden?: boolean;
 
   /** Sticky children with computed render positions (for non-scroll containers).
    *  When a parent has sticky children but is NOT a scroll container, this array
    *  holds the computed render offsets. Same shape as scrollState.stickyChildren. */
   stickyChildren?: Array<{
     /** Index of the sticky child */
-    index: number
+    index: number;
     /** Computed Y offset to render at (relative to parent content area) */
-    renderOffset: number
+    renderOffset: number;
     /** Original natural Y position (relative to parent content area) */
-    naturalTop: number
+    naturalTop: number;
     /** Height of the sticky element */
-    height: number
-  }>
+    height: number;
+  }>;
 
   /** Scroll state for overflow='scroll' containers */
   scrollState?: {
     /** Current scroll offset (in terminal rows) */
-    offset: number
+    offset: number;
     /** Previous scroll offset from last render (for incremental rendering) */
-    prevOffset: number
+    prevOffset: number;
     /** Total content height (all children) */
-    contentHeight: number
+    contentHeight: number;
     /** Visible height (container height minus borders/padding) */
-    viewportHeight: number
+    viewportHeight: number;
     /** Index of first visible child */
-    firstVisibleChild: number
+    firstVisibleChild: number;
     /** Index of last visible child */
-    lastVisibleChild: number
+    lastVisibleChild: number;
     /** Previous first visible child from last render (for incremental rendering) */
-    prevFirstVisibleChild: number
+    prevFirstVisibleChild: number;
     /** Previous last visible child from last render (for incremental rendering) */
-    prevLastVisibleChild: number
+    prevLastVisibleChild: number;
     /** Count of items hidden above viewport */
-    hiddenAbove: number
+    hiddenAbove: number;
     /** Count of items hidden below viewport */
-    hiddenBelow: number
+    hiddenBelow: number;
     /** Sticky children with their computed render positions */
     stickyChildren?: Array<{
       /** Index of the sticky child */
-      index: number
+      index: number;
       /** Computed Y offset to render at (relative to viewport, not content) */
-      renderOffset: number
+      renderOffset: number;
       /** Original natural Y position (before sticky adjustment) */
-      naturalTop: number
+      naturalTop: number;
       /** Height of the sticky element */
-      height: number
-    }>
-  }
+      height: number;
+    }>;
+  };
 }
 
 // ============================================================================
@@ -391,18 +425,18 @@ export interface TeaNode {
  * Text attributes that can be applied to a cell.
  */
 export interface CellAttrs {
-  bold?: boolean
-  dim?: boolean
-  italic?: boolean
+  bold?: boolean;
+  dim?: boolean;
+  italic?: boolean;
   /** Simple underline flag (for backwards compatibility) */
-  underline?: boolean
+  underline?: boolean;
   /**
    * Underline style: 'single' | 'double' | 'curly' | 'dotted' | 'dashed'.
    * When set, takes precedence over the underline boolean.
    */
-  underlineStyle?: UnderlineStyle
-  strikethrough?: boolean
-  inverse?: boolean
+  underlineStyle?: UnderlineStyle;
+  strikethrough?: boolean;
+  inverse?: boolean;
 }
 
 /**
@@ -410,28 +444,28 @@ export interface CellAttrs {
  */
 export interface Cell {
   /** The character (grapheme cluster) in this cell */
-  char: string
+  char: string;
   /** Foreground color (ANSI code or RGB) */
-  fg: string | null
+  fg: string | null;
   /** Background color (ANSI code or RGB) */
-  bg: string | null
+  bg: string | null;
   /** Text attributes */
-  attrs: CellAttrs
+  attrs: CellAttrs;
   /** True if this is a wide character (CJK) that takes 2 cells */
-  wide: boolean
+  wide: boolean;
   /** True if this cell is the continuation of a wide character */
-  continuation: boolean
+  continuation: boolean;
 }
 
 /**
  * Interface for the terminal buffer.
  */
 export interface TerminalBuffer {
-  readonly width: number
-  readonly height: number
-  getCell(x: number, y: number): Cell
-  setCell(x: number, y: number, cell: Cell): void
-  clear(): void
+  readonly width: number;
+  readonly height: number;
+  getCell(x: number, y: number): Cell;
+  setCell(x: number, y: number, cell: Cell): void;
+  clear(): void;
 }
 
 // ============================================================================
@@ -442,89 +476,89 @@ export interface TerminalBuffer {
  * Keyboard event with key information and modifiers.
  */
 export interface KeyEvent {
-  type: "key"
+  type: "key";
   /** The key pressed (character or key name like 'ArrowUp') */
-  key: string
+  key: string;
   /** Ctrl modifier was held */
-  ctrl?: boolean
+  ctrl?: boolean;
   /** Meta/Alt modifier was held */
-  meta?: boolean
+  meta?: boolean;
   /** Shift modifier was held */
-  shift?: boolean
+  shift?: boolean;
   /** Alt/Option modifier was held */
-  alt?: boolean
+  alt?: boolean;
   /** Super/Cmd modifier was held. Requires Kitty protocol. */
-  super?: boolean
+  super?: boolean;
   /** Hyper modifier was held. Requires Kitty protocol. */
-  hyper?: boolean
+  hyper?: boolean;
   /** Kitty event type: 1=press, 2=repeat, 3=release. Requires Kitty flag 2. */
-  eventType?: 1 | 2 | 3
+  eventType?: 1 | 2 | 3;
   /** CapsLock is active. Kitty modifier bit 6. */
-  capsLock?: boolean
+  capsLock?: boolean;
   /** NumLock is active. Kitty modifier bit 7. */
-  numLock?: boolean
+  numLock?: boolean;
 }
 
 /**
  * Mouse event with position and button information.
  */
 export interface MouseEvent {
-  type: "mouse"
+  type: "mouse";
   /** X position in terminal columns (0-indexed) */
-  x: number
+  x: number;
   /** Y position in terminal rows (0-indexed) */
-  y: number
+  y: number;
   /** Mouse button (0=left, 1=middle, 2=right) */
-  button: number
+  button: number;
   /** Event action */
-  action: "down" | "up" | "move" | "wheel"
+  action: "down" | "up" | "move" | "wheel";
   /** Wheel delta for scroll events */
-  delta?: number
+  delta?: number;
 }
 
 /**
  * Terminal resize event.
  */
 export interface ResizeEvent {
-  type: "resize"
+  type: "resize";
   /** New width in columns */
-  width: number
+  width: number;
   /** New height in rows */
-  height: number
+  height: number;
 }
 
 /**
  * Terminal focus event.
  */
 export interface FocusEvent {
-  type: "focus"
+  type: "focus";
 }
 
 /**
  * Terminal blur event.
  */
 export interface BlurEvent {
-  type: "blur"
+  type: "blur";
 }
 
 /**
  * Signal event (SIGINT, SIGTERM, etc.).
  */
 export interface SignalEvent {
-  type: "signal"
+  type: "signal";
   /** Signal name (e.g., 'SIGINT', 'SIGTERM') */
-  signal: string
+  signal: string;
 }
 
 /**
  * Custom event for extensibility.
  */
 export interface CustomEvent {
-  type: "custom"
+  type: "custom";
   /** Event name */
-  name: string
+  name: string;
   /** Event data */
-  data: unknown
+  data: unknown;
 }
 
 /**
@@ -534,16 +568,23 @@ export interface CustomEvent {
  * the render loop runs until exit() is called. When events are absent,
  * the render completes when the UI is stable.
  */
-export type Event = KeyEvent | MouseEvent | ResizeEvent | FocusEvent | BlurEvent | SignalEvent | CustomEvent
+export type Event =
+  | KeyEvent
+  | MouseEvent
+  | ResizeEvent
+  | FocusEvent
+  | BlurEvent
+  | SignalEvent
+  | CustomEvent;
 
 /**
  * Event source that can be subscribed to and unsubscribed from.
  */
 export interface EventSource {
   /** Subscribe to events, returns unsubscribe function */
-  subscribe(handler: (event: Event) => void): () => void
+  subscribe(handler: (event: Event) => void): () => void;
   /** Convert to async iterable */
-  [Symbol.asyncIterator](): AsyncIterator<Event>
+  [Symbol.asyncIterator](): AsyncIterator<Event>;
 }
 
 // ============================================================================
@@ -552,7 +593,7 @@ export interface EventSource {
 
 // ColorLevel is re-exported from ansi in index.ts
 // Import here for use in TermDef
-import type { ColorLevel } from "@silvery/term/ansi"
+import type { ColorLevel } from "@silvery/term/ansi";
 
 /**
  * Minimal surface for configuring render().
@@ -586,16 +627,16 @@ export interface TermDef {
   // -------------------------------------------------------------------------
 
   /** Output stream (used for dimensions if not specified) */
-  stdout?: NodeJS.WriteStream
+  stdout?: NodeJS.WriteStream;
 
   /** Width in columns (default: stdout?.columns ?? 80) */
-  width?: number
+  width?: number;
 
   /** Height in rows (default: stdout?.rows ?? 24) */
-  height?: number
+  height?: number;
 
   /** Color support (true=detect, false=none, or specific level) */
-  colors?: boolean | ColorLevel | null
+  colors?: boolean | ColorLevel | null;
 
   // -------------------------------------------------------------------------
   // Input Configuration
@@ -607,7 +648,7 @@ export interface TermDef {
    * When present, render runs until exit() is called.
    * When absent, render completes when UI is stable.
    */
-  events?: AsyncIterable<Event> | EventSource
+  events?: AsyncIterable<Event> | EventSource;
 
   /**
    * Standard input stream.
@@ -615,7 +656,7 @@ export interface TermDef {
    * When provided (and events is not), automatically creates input events
    * from stdin, enabling interactive mode.
    */
-  stdin?: NodeJS.ReadStream
+  stdin?: NodeJS.ReadStream;
 }
 
 // ============================================================================
@@ -626,10 +667,10 @@ export interface TermDef {
  * Options passed to the render function.
  */
 export interface RenderOptions {
-  stdout?: NodeJS.WriteStream
-  stdin?: NodeJS.ReadStream
-  exitOnCtrlC?: boolean
-  debug?: boolean
+  stdout?: NodeJS.WriteStream;
+  stdin?: NodeJS.ReadStream;
+  exitOnCtrlC?: boolean;
+  debug?: boolean;
 }
 
 /**
@@ -637,11 +678,11 @@ export interface RenderOptions {
  */
 export interface RenderInstance {
   /** Re-render with new element */
-  rerender: (element: React.ReactNode) => void
+  rerender: (element: React.ReactNode) => void;
   /** Unmount and clean up */
-  unmount: () => void
+  unmount: () => void;
   /** Wait for render to complete */
-  waitUntilExit: () => Promise<void>
+  waitUntilExit: () => Promise<void>;
   /** Clear terminal output */
-  clear: () => void
+  clear: () => void;
 }

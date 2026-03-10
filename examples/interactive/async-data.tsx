@@ -7,32 +7,41 @@
  * - Error handling with ErrorBoundary
  */
 
-import React, { Suspense, useState, use } from "react"
-import { render, Box, Text, useInput, useApp, createTerm, ErrorBoundary, type Key } from "../../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+import React, { Suspense, useState, use } from "react";
+import {
+  render,
+  Box,
+  Text,
+  useInput,
+  useApp,
+  createTerm,
+  ErrorBoundary,
+  type Key,
+} from "../../src/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Async Data",
   description: "React Suspense with independent data sources and error boundaries",
   features: ["React Suspense", "use() hook", "ErrorBoundary"],
-}
+};
 
 // ============================================================================
 // Data Fetching (simulated)
 // ============================================================================
 
 // Cache for promises (React's use() requires stable promise references)
-const cache = new Map<string, Promise<unknown>>()
+const cache = new Map<string, Promise<unknown>>();
 
 function fetchData<T>(key: string, ms: number, data: T): Promise<T> {
   if (!cache.has(key)) {
-    cache.set(key, new Promise<T>((resolve) => setTimeout(() => resolve(data), ms)))
+    cache.set(key, new Promise<T>((resolve) => setTimeout(() => resolve(data), ms)));
   }
-  return cache.get(key) as Promise<T>
+  return cache.get(key) as Promise<T>;
 }
 
 function clearCache() {
-  cache.clear()
+  cache.clear();
 }
 
 // ============================================================================
@@ -40,9 +49,9 @@ function clearCache() {
 // ============================================================================
 
 interface UserData {
-  name: string
-  email: string
-  role: string
+  name: string;
+  email: string;
+  role: string;
 }
 
 function UserProfile() {
@@ -52,7 +61,7 @@ function UserProfile() {
       email: "alice@example.com",
       role: "Developer",
     }),
-  )
+  );
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="$success" padding={1}>
@@ -63,13 +72,13 @@ function UserProfile() {
       <Text>Email: {user.email}</Text>
       <Text>Role: {user.role}</Text>
     </Box>
-  )
+  );
 }
 
 interface StatsData {
-  projects: number
-  commits: number
-  reviews: number
+  projects: number;
+  commits: number;
+  reviews: number;
 }
 
 function Statistics() {
@@ -79,7 +88,7 @@ function Statistics() {
       commits: 847,
       reviews: 156,
     }),
-  )
+  );
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="$primary" padding={1}>
@@ -90,13 +99,13 @@ function Statistics() {
       <Text>Commits: {stats.commits}</Text>
       <Text>Reviews: {stats.reviews}</Text>
     </Box>
-  )
+  );
 }
 
 interface Activity {
-  id: number
-  action: string
-  time: string
+  id: number;
+  action: string;
+  time: string;
 }
 
 function RecentActivity() {
@@ -106,7 +115,7 @@ function RecentActivity() {
       { id: 2, action: "Reviewed PR #421", time: "4h ago" },
       { id: 3, action: "Created issue #89", time: "1d ago" },
     ]),
-  )
+  );
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="$warning" padding={1}>
@@ -119,7 +128,7 @@ function RecentActivity() {
         </Text>
       ))}
     </Box>
-  )
+  );
 }
 
 // Loading fallbacks
@@ -128,7 +137,7 @@ function LoadingBox({ label, color }: { label: string; color: string }) {
     <Box borderStyle="round" borderColor="$border" padding={1}>
       <Text color="$muted">Loading {label}...</Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -136,20 +145,20 @@ function LoadingBox({ label, color }: { label: string; color: string }) {
 // ============================================================================
 
 export function AsyncDataApp(): JSX.Element {
-  const { exit } = useApp()
-  const [refreshKey, setRefreshKey] = useState(0)
+  const { exit } = useApp();
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) {
-      exit()
-      return
+      exit();
+      return;
     }
     if (input === "r") {
       // Refresh: clear cache and force re-render
-      clearCache()
-      setRefreshKey((k) => k + 1)
+      clearCache();
+      setRefreshKey((k) => k + 1);
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" padding={1} key={refreshKey}>
@@ -186,7 +195,7 @@ export function AsyncDataApp(): JSX.Element {
         quit
       </Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -194,16 +203,16 @@ export function AsyncDataApp(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm()
+  using term = createTerm();
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="r refresh  Esc/q quit">
       <AsyncDataApp />
     </ExampleBanner>,
     term,
-  )
-  await waitUntilExit()
+  );
+  await waitUntilExit();
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

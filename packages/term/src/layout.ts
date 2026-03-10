@@ -22,5 +22,5 @@ export {
   useContentRectCallback,
   useScreenRect,
   useScreenRectCallback,
-} from "@silvery/react/hooks/useLayout"
-export type { Rect } from "@silvery/tea/types"
+} from "@silvery/react/hooks/useLayout";
+export type { Rect } from "@silvery/tea/types";

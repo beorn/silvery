@@ -11,7 +11,7 @@
  */
 export class IncrementalRenderMismatchError extends Error {
   constructor(message: string) {
-    super(message)
-    this.name = "IncrementalRenderMismatchError"
+    super(message);
+    this.name = "IncrementalRenderMismatchError";
   }
 }

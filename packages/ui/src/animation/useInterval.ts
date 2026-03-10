@@ -5,7 +5,7 @@
  * The callback is NOT called on mount — only on subsequent ticks.
  */
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef } from "react";
 
 // ============================================================================
 // Hook
@@ -22,18 +22,18 @@ import { useEffect, useRef } from "react"
  * @param enabled - Whether the interval is active (default: true)
  */
 export function useInterval(callback: () => void, ms: number, enabled = true): void {
-  const callbackRef = useRef(callback)
-  callbackRef.current = callback
+  const callbackRef = useRef(callback);
+  callbackRef.current = callback;
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled) return;
 
     const id = setInterval(() => {
-      callbackRef.current()
-    }, ms)
+      callbackRef.current();
+    }, ms);
 
     return () => {
-      clearInterval(id)
-    }
-  }, [ms, enabled])
+      clearInterval(id);
+    };
+  }, [ms, enabled]);
 }

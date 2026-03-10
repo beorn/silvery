@@ -270,7 +270,9 @@
   <body>
     <header>
       <h1>silvery Canvas Playground</h1>
-      <span class="subtitle">React components rendered to HTML5 Canvas via the silvery rendering pipeline</span>
+      <span class="subtitle"
+        >React components rendered to HTML5 Canvas via the silvery rendering pipeline</span
+      >
     </header>
 
     <div class="preset-bar">
@@ -317,19 +319,20 @@
             <span class="string">'silvery/canvas'</span>;
 
             <span class="keyword">function</span>
-            <span class="component">App</span>() { <span class="keyword">const</span> { width, height } =
-            <span class="component">useContentRect</span>(); <span class="keyword">return</span> ( &lt;<span
+            <span class="component">App</span>() { <span class="keyword">const</span> { width,
+            height } = <span class="component">useContentRect</span>();
+            <span class="keyword">return</span> ( &lt;<span class="component">Box</span>
+            <span class="prop">borderStyle</span>=<span class="string">"single"</span>&gt; &lt;<span
               class="component"
-              >Box</span
-            >
-            <span class="prop">borderStyle</span>=<span class="string">"single"</span>&gt; &lt;<span class="component"
               >Text</span
-            >&gt; {width}px x {height}px &lt;/<span class="component">Text</span>&gt; &lt;/<span class="component"
+            >&gt; {width}px x {height}px &lt;/<span class="component">Text</span>&gt; &lt;/<span
+              class="component"
               >Box</span
             >&gt; ); }
 
-            <span class="keyword">const</span> canvas = document.getElementById(<span class="string">'canvas'</span>);
-            <span class="component">renderToCanvas</span>(&lt;<span class="component">App</span>
+            <span class="keyword">const</span> canvas = document.getElementById(<span class="string"
+              >'canvas'</span
+            >); <span class="component">renderToCanvas</span>(&lt;<span class="component">App</span>
             /&gt;, canvas);
           </div>
         </div>
@@ -367,36 +370,36 @@
 
     <script>
       // Preset button handling
-      const buttons = document.querySelectorAll(".preset-btn")
-      const sizeLabel = document.getElementById("size-label")
-      const canvas = document.getElementById("canvas")
-      let currentPreset = "hello"
+      const buttons = document.querySelectorAll(".preset-btn");
+      const sizeLabel = document.getElementById("size-label");
+      const canvas = document.getElementById("canvas");
+      let currentPreset = "hello";
 
       function setPreset(preset) {
-        currentPreset = preset
+        currentPreset = preset;
         buttons.forEach((btn) => {
-          btn.classList.toggle("active", btn.dataset.preset === preset)
-        })
+          btn.classList.toggle("active", btn.dataset.preset === preset);
+        });
         // Send message to the app (loaded via module script below)
-        window.postMessage({ type: "set-preset", preset }, "*")
+        window.postMessage({ type: "set-preset", preset }, "*");
       }
 
       buttons.forEach((btn) => {
-        btn.addEventListener("click", () => setPreset(btn.dataset.preset))
-      })
+        btn.addEventListener("click", () => setPreset(btn.dataset.preset));
+      });
 
       // Update size label
       function updateSizeLabel() {
         if (canvas && sizeLabel) {
-          sizeLabel.textContent = canvas.width + " x " + canvas.height
+          sizeLabel.textContent = canvas.width + " x " + canvas.height;
         }
       }
 
       const resizeObserver = new ResizeObserver(() => {
-        requestAnimationFrame(updateSizeLabel)
-      })
-      if (canvas) resizeObserver.observe(canvas)
-      updateSizeLabel()
+        requestAnimationFrame(updateSizeLabel);
+      });
+      if (canvas) resizeObserver.observe(canvas);
+      updateSizeLabel();
 
       // Keyboard shortcuts for switching presets
       const presetKeys = {
@@ -407,12 +410,12 @@
         5: "borders",
         6: "dashboard",
         7: "responsive",
-      }
+      };
       document.addEventListener("keydown", (e) => {
-        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return
-        const preset = presetKeys[e.key]
-        if (preset) setPreset(preset)
-      })
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+        const preset = presetKeys[e.key];
+        if (preset) setPreset(preset);
+      });
     </script>
 
     <script type="module" src="./dist/playground-app.js"></script>

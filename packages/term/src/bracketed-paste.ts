@@ -19,10 +19,10 @@
 // ============================================================================
 
 /** Escape sequence that marks the beginning of pasted text */
-export const PASTE_START = "\x1b[200~"
+export const PASTE_START = "\x1b[200~";
 
 /** Escape sequence that marks the end of pasted text */
-export const PASTE_END = "\x1b[201~"
+export const PASTE_END = "\x1b[201~";
 
 // ============================================================================
 // Protocol Control
@@ -33,7 +33,7 @@ export const PASTE_END = "\x1b[201~"
  * Writes CSI ? 2004 h to the output stream.
  */
 export function enableBracketedPaste(stdout: NodeJS.WriteStream): void {
-  stdout.write("\x1b[?2004h")
+  stdout.write("\x1b[?2004h");
 }
 
 /**
@@ -41,7 +41,7 @@ export function enableBracketedPaste(stdout: NodeJS.WriteStream): void {
  * Writes CSI ? 2004 l to the output stream.
  */
 export function disableBracketedPaste(stdout: NodeJS.WriteStream): void {
-  stdout.write("\x1b[?2004l")
+  stdout.write("\x1b[?2004l");
 }
 
 // ============================================================================
@@ -50,8 +50,8 @@ export function disableBracketedPaste(stdout: NodeJS.WriteStream): void {
 
 /** Result of parsing a bracketed paste sequence */
 export interface BracketedPasteResult {
-  type: "paste"
-  content: string
+  type: "paste";
+  content: string;
 }
 
 /**
@@ -61,15 +61,15 @@ export interface BracketedPasteResult {
  * sequence (PASTE_START ... PASTE_END), or null if no paste markers are found.
  */
 export function parseBracketedPaste(input: string): BracketedPasteResult | null {
-  const startIdx = input.indexOf(PASTE_START)
-  if (startIdx === -1) return null
+  const startIdx = input.indexOf(PASTE_START);
+  if (startIdx === -1) return null;
 
-  const contentStart = startIdx + PASTE_START.length
-  const endIdx = input.indexOf(PASTE_END, contentStart)
-  if (endIdx === -1) return null
+  const contentStart = startIdx + PASTE_START.length;
+  const endIdx = input.indexOf(PASTE_END, contentStart);
+  if (endIdx === -1) return null;
 
   return {
     type: "paste",
     content: input.slice(contentStart, endIdx),
-  }
+  };
 }

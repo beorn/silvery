@@ -5,11 +5,11 @@
  * plus a React component for rendering images in terminal UIs.
  */
 
-export { encodeKittyImage, deleteKittyImage, isKittyGraphicsSupported } from "./kitty-graphics"
-export type { KittyImageOptions } from "./kitty-graphics"
+export { encodeKittyImage, deleteKittyImage, isKittyGraphicsSupported } from "./kitty-graphics";
+export type { KittyImageOptions } from "./kitty-graphics";
 
-export { encodeSixel, isSixelSupported } from "./sixel-encoder"
-export type { SixelImageData } from "./sixel-encoder"
+export { encodeSixel, isSixelSupported } from "./sixel-encoder";
+export type { SixelImageData } from "./sixel-encoder";
 
-export { Image } from "./Image"
-export type { ImageProps } from "./Image"
+export { Image } from "./Image";
+export type { ImageProps } from "./Image";

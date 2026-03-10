@@ -16,8 +16,8 @@
  * @packageDocumentation
  */
 
-import type { Effect, SilveryModel, SilveryMsg, Plugin } from "../core"
-import { none } from "../core"
+import type { Effect, SilveryModel, SilveryMsg, Plugin } from "../core";
+import { none } from "../core";
 
 // =============================================================================
 // Types
@@ -28,9 +28,9 @@ import { none } from "../core"
  */
 export interface StoreConfig<Model extends SilveryModel, Msg extends SilveryMsg> {
   /** Initialize model and effects. Called once on store creation. */
-  init: () => [Model, Effect[]]
+  init: () => [Model, Effect[]];
   /** Pure update function: (msg, model) -> [newModel, effects] */
-  update: (msg: Msg, model: Model) => [Model, Effect[]]
+  update: (msg: Msg, model: Model) => [Model, Effect[]];
 }
 
 /**
@@ -38,13 +38,13 @@ export interface StoreConfig<Model extends SilveryModel, Msg extends SilveryMsg>
  */
 export interface StoreApi<Model extends SilveryModel, Msg extends SilveryMsg> {
   /** Send a message through the update function. */
-  dispatch(msg: Msg): void
+  dispatch(msg: Msg): void;
   /** Get the current model. */
-  getModel(): Model
+  getModel(): Model;
   /** Subscribe to model changes. Returns unsubscribe function. */
-  subscribe(listener: () => void): () => void
+  subscribe(listener: () => void): () => void;
   /** Get a derived value from the model via selector. */
-  getSnapshot<T>(selector: (model: Model) => T): T
+  getSnapshot<T>(selector: (model: Model) => T): T;
 }
 
 // =============================================================================
@@ -59,11 +59,14 @@ export interface StoreApi<Model extends SilveryModel, Msg extends SilveryMsg> {
  * the node tree, which the store doesn't have — those are handled
  * at the React integration layer).
  */
-export function withFocusManagement<Model extends SilveryModel, Msg extends SilveryMsg>(): Plugin<Model, Msg> {
+export function withFocusManagement<Model extends SilveryModel, Msg extends SilveryMsg>(): Plugin<
+  Model,
+  Msg
+> {
   return (innerUpdate) => (msg, model) => {
     switch (msg.type) {
       case "focus": {
-        const focusMsg = msg as Extract<SilveryMsg, { type: "focus" }>
+        const focusMsg = msg as Extract<SilveryMsg, { type: "focus" }>;
         const newModel = {
           ...model,
           focus: {
@@ -80,8 +83,8 @@ export function withFocusManagement<Model extends SilveryModel, Msg extends Silv
                   }
                 : model.focus.scopeMemory,
           },
-        }
-        return [newModel as Model, [none]]
+        };
+        return [newModel as Model, [none]];
       }
 
       case "blur": {
@@ -93,20 +96,20 @@ export function withFocusManagement<Model extends SilveryModel, Msg extends Silv
             activeId: null,
             origin: null,
           },
-        }
-        return [newModel as Model, [none]]
+        };
+        return [newModel as Model, [none]];
       }
 
       case "scope-enter": {
-        const scopeMsg = msg as Extract<SilveryMsg, { type: "scope-enter" }>
+        const scopeMsg = msg as Extract<SilveryMsg, { type: "scope-enter" }>;
         const newModel = {
           ...model,
           focus: {
             ...model.focus,
             scopeStack: [...model.focus.scopeStack, scopeMsg.scopeId],
           },
-        }
-        return [newModel as Model, [none]]
+        };
+        return [newModel as Model, [none]];
       }
 
       case "scope-exit": {
@@ -116,14 +119,14 @@ export function withFocusManagement<Model extends SilveryModel, Msg extends Silv
             ...model.focus,
             scopeStack: model.focus.scopeStack.slice(0, -1),
           },
-        }
-        return [newModel as Model, [none]]
+        };
+        return [newModel as Model, [none]];
       }
 
       default:
-        return innerUpdate(msg, model)
+        return innerUpdate(msg, model);
     }
-  }
+  };
 }
 
 // =============================================================================
@@ -140,7 +143,7 @@ export function silveryUpdate<Model extends SilveryModel, Msg extends SilveryMsg
   _msg: Msg,
   model: Model,
 ): [Model, Effect[]] {
-  return [model, [none]]
+  return [model, [none]];
 }
 
 // =============================================================================
@@ -162,7 +165,7 @@ export function defaultInit(): [SilveryModel, Effect[]] {
       },
     },
     [none],
-  ]
+  ];
 }
 
 // =============================================================================
@@ -198,102 +201,102 @@ export function createStore<Model extends SilveryModel, Msg extends SilveryMsg>(
   config: StoreConfig<Model, Msg>,
 ): StoreApi<Model, Msg> {
   // Initialize
-  const [initialModel, initialEffects] = config.init()
-  let model = initialModel
+  const [initialModel, initialEffects] = config.init();
+  let model = initialModel;
 
   // Subscriber management
-  const listeners = new Set<() => void>()
+  const listeners = new Set<() => void>();
 
   function notify(): void {
     for (const listener of listeners) {
-      listener()
+      listener();
     }
   }
 
   // Effect execution with queue for dispatch effects
-  let isDispatching = false
-  const dispatchQueue: Msg[] = []
+  let isDispatching = false;
+  const dispatchQueue: Msg[] = [];
 
   function executeEffects(effects: Effect[]): void {
     for (const effect of effects) {
-      executeEffect(effect)
+      executeEffect(effect);
     }
   }
 
   function executeEffect(effect: Effect): void {
     switch (effect.type) {
       case "none":
-        break
+        break;
       case "batch":
-        executeEffects(effect.effects)
-        break
+        executeEffects(effect.effects);
+        break;
       case "dispatch":
         // Queue dispatch effects to prevent re-entrant dispatch
-        dispatchQueue.push(effect.msg as Msg)
-        break
+        dispatchQueue.push(effect.msg as Msg);
+        break;
     }
   }
 
   function dispatch(msg: Msg): void {
     if (isDispatching) {
       // Queue if we're already in a dispatch cycle
-      dispatchQueue.push(msg)
-      return
+      dispatchQueue.push(msg);
+      return;
     }
 
-    isDispatching = true
+    isDispatching = true;
     try {
       // Run update
-      const [newModel, effects] = config.update(msg, model)
-      const changed = newModel !== model
-      model = newModel
+      const [newModel, effects] = config.update(msg, model);
+      const changed = newModel !== model;
+      model = newModel;
 
       // Execute effects (may queue more dispatches)
-      executeEffects(effects)
+      executeEffects(effects);
 
       // Notify subscribers if model changed
       if (changed) {
-        notify()
+        notify();
       }
 
       // Process queued dispatches
       while (dispatchQueue.length > 0) {
-        const queued = dispatchQueue.shift()!
-        const [nextModel, nextEffects] = config.update(queued, model)
-        const nextChanged = nextModel !== model
-        model = nextModel
-        executeEffects(nextEffects)
+        const queued = dispatchQueue.shift()!;
+        const [nextModel, nextEffects] = config.update(queued, model);
+        const nextChanged = nextModel !== model;
+        model = nextModel;
+        executeEffects(nextEffects);
         if (nextChanged) {
-          notify()
+          notify();
         }
       }
     } finally {
-      isDispatching = false
+      isDispatching = false;
     }
   }
 
   function getModel(): Model {
-    return model
+    return model;
   }
 
   function subscribe(listener: () => void): () => void {
-    listeners.add(listener)
+    listeners.add(listener);
     return () => {
-      listeners.delete(listener)
-    }
+      listeners.delete(listener);
+    };
   }
 
   function getSnapshot<T>(selector: (model: Model) => T): T {
-    return selector(model)
+    return selector(model);
   }
 
   // Execute initial effects and drain any queued dispatches
-  executeEffects(initialEffects)
+  executeEffects(initialEffects);
   while (dispatchQueue.length > 0) {
-    const queued = dispatchQueue.shift()!
-    const [nextModel, nextEffects] = config.update(queued, model)
-    model = nextModel
-    executeEffects(nextEffects)
+    const queued = dispatchQueue.shift()!;
+    const [nextModel, nextEffects] = config.update(queued, model);
+    model = nextModel;
+    executeEffects(nextEffects);
     // No notify during init — no subscribers yet
   }
 
@@ -302,5 +305,5 @@ export function createStore<Model extends SilveryModel, Msg extends SilveryMsg>(
     getModel,
     subscribe,
     getSnapshot,
-  }
+  };
 }

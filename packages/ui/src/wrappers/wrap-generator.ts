@@ -2,9 +2,9 @@
  * wrapGenerator - Consume a generator while showing progress
  */
 
-import type { ProgressGenerator } from "../types.js"
-import { ProgressBar } from "../cli/progress-bar"
-import { CURSOR_HIDE, CURSOR_SHOW, write, isTTY } from "../cli/ansi"
+import type { ProgressGenerator } from "../types.js";
+import { ProgressBar } from "../cli/progress-bar";
+import { CURSOR_HIDE, CURSOR_SHOW, write, isTTY } from "../cli/ansi";
 
 /**
  * Consume a progress generator while displaying progress
@@ -29,60 +29,60 @@ export async function wrapGenerator<T>(
   textOrFormat: string | ((progress: { current: number; total: number }) => string),
   options: { clearOnComplete?: boolean } = {},
 ): Promise<T> {
-  const stream = process.stdout
-  const isTty = isTTY(stream)
+  const stream = process.stdout;
+  const isTty = isTTY(stream);
 
-  const isCustomFormat = typeof textOrFormat === "function"
-  const label = isCustomFormat ? "" : textOrFormat
+  const isCustomFormat = typeof textOrFormat === "function";
+  const label = isCustomFormat ? "" : textOrFormat;
 
   const bar = new ProgressBar({
     format: label ? `${label} [:bar] :current/:total :percent` : ":bar :current/:total :percent",
     hideCursor: true,
-  })
+  });
 
   if (isTty) {
-    write(CURSOR_HIDE, stream)
+    write(CURSOR_HIDE, stream);
   }
 
-  let started = false
-  let result: IteratorResult<{ current: number; total: number }, T>
+  let started = false;
+  let result: IteratorResult<{ current: number; total: number }, T>;
 
   try {
     // Consume the generator
     while (true) {
-      result = generator.next()
+      result = generator.next();
 
       if (result.done) {
-        break
+        break;
       }
 
-      const { current, total } = result.value
+      const { current, total } = result.value;
 
       if (!started) {
-        bar.start(current, total)
-        started = true
+        bar.start(current, total);
+        started = true;
       } else {
-        bar.update(current)
+        bar.update(current);
       }
     }
 
     // Stop bar
     if (started) {
-      bar.stop(options.clearOnComplete)
+      bar.stop(options.clearOnComplete);
     }
     if (isTty) {
-      write(CURSOR_SHOW, stream)
+      write(CURSOR_SHOW, stream);
     }
 
-    return result.value
+    return result.value;
   } catch (error) {
     if (started) {
-      bar.stop()
+      bar.stop();
     }
     if (isTty) {
-      write(CURSOR_SHOW, stream)
+      write(CURSOR_SHOW, stream);
     }
-    throw error
+    throw error;
   }
 }
 
@@ -102,42 +102,42 @@ export async function* withIterableProgress<T>(
   label: string,
   options: { clearOnComplete?: boolean } = {},
 ): AsyncGenerator<T, void, unknown> {
-  const stream = process.stdout
-  const isTty = isTTY(stream)
+  const stream = process.stdout;
+  const isTty = isTTY(stream);
 
   // Try to get length if array
-  const items = Array.isArray(iterable) ? iterable : null
-  const total = items?.length ?? 0
+  const items = Array.isArray(iterable) ? iterable : null;
+  const total = items?.length ?? 0;
 
   const bar = new ProgressBar({
     format: `${label} [:bar] :current/:total :percent`,
     total,
     hideCursor: true,
-  })
+  });
 
   if (isTty) {
-    write(CURSOR_HIDE, stream)
+    write(CURSOR_HIDE, stream);
   }
 
-  let current = 0
-  bar.start(0, total)
+  let current = 0;
+  bar.start(0, total);
 
   try {
     for await (const item of iterable as AsyncIterable<T>) {
-      yield item
-      current++
-      bar.update(current)
+      yield item;
+      current++;
+      bar.update(current);
     }
 
-    bar.stop(options.clearOnComplete)
+    bar.stop(options.clearOnComplete);
     if (isTty) {
-      write(CURSOR_SHOW, stream)
+      write(CURSOR_SHOW, stream);
     }
   } catch (error) {
-    bar.stop()
+    bar.stop();
     if (isTty) {
-      write(CURSOR_SHOW, stream)
+      write(CURSOR_SHOW, stream);
     }
-    throw error
+    throw error;
   }
 }

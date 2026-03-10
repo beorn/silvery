@@ -54,18 +54,21 @@ export const LAYOUT_PROPS = new Set([
   "overflow",
   // Note: scrollTo intentionally excluded - it doesn't affect layout dimensions,
   // only scroll offset which is handled in scrollPhase (reads props.scrollTo directly)
-])
+]);
 
 /**
  * Check if layout-affecting props changed.
  */
-export function layoutPropsChanged(oldProps: Record<string, unknown>, newProps: Record<string, unknown>): boolean {
+export function layoutPropsChanged(
+  oldProps: Record<string, unknown>,
+  newProps: Record<string, unknown>,
+): boolean {
   for (const prop of LAYOUT_PROPS) {
     if (oldProps[prop] !== newProps[prop]) {
-      return true
+      return true;
     }
   }
-  return false
+  return false;
 }
 
 /**
@@ -80,14 +83,14 @@ export function contentPropsChanged(
 ): "text" | "style" | false {
   // Children change triggers content change ONLY for primitive children (text)
   // Array children are React elements that get reconciled separately
-  const oldChildren = oldProps.children
-  const newChildren = newProps.children
+  const oldChildren = oldProps.children;
+  const newChildren = newProps.children;
   if (oldChildren !== newChildren) {
     // Only trigger for primitive children (string, number) that affect text rendering
-    const oldIsPrimitive = typeof oldChildren === "string" || typeof oldChildren === "number"
-    const newIsPrimitive = typeof newChildren === "string" || typeof newChildren === "number"
+    const oldIsPrimitive = typeof oldChildren === "string" || typeof oldChildren === "number";
+    const newIsPrimitive = typeof newChildren === "string" || typeof newChildren === "number";
     if (oldIsPrimitive || newIsPrimitive) {
-      return "text" // Text changes affect layout (measure returns different result)
+      return "text"; // Text changes affect layout (measure returns different result)
     }
     // Array/object children are React elements - don't set contentDirty
     // (child nodes will be updated via their own commitUpdate calls)
@@ -122,33 +125,33 @@ export function contentPropsChanged(
     "outlineRight",
     "internal_transform",
     "theme",
-  ]
+  ];
 
   for (const prop of styleProps) {
     if (oldProps[prop] !== newProps[prop]) {
-      return "style"
+      return "style";
     }
   }
 
-  return false
+  return false;
 }
 
 /**
  * Shallow compare two prop objects.
  */
 export function propsEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
-  const keysA = Object.keys(a)
-  const keysB = Object.keys(b)
+  const keysA = Object.keys(a);
+  const keysB = Object.keys(b);
 
   if (keysA.length !== keysB.length) {
-    return false
+    return false;
   }
 
   for (const key of keysA) {
     if (a[key] !== b[key]) {
-      return false
+      return false;
     }
   }
 
-  return true
+  return true;
 }

@@ -7,25 +7,34 @@
  * - onLayout callback for responding to size changes
  */
 
-import React, { useRef, useState, useEffect } from "react"
-import { render, Box, Text, useInput, useApp, createTerm, type BoxHandle, type Key } from "../../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+import React, { useRef, useState, useEffect } from "react";
+import {
+  render,
+  Box,
+  Text,
+  useInput,
+  useApp,
+  createTerm,
+  type BoxHandle,
+  type Key,
+} from "../../src/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Layout Ref",
   description: "useContentRect + useScreenRect for imperative layout measurement",
   features: ["forwardRef", "BoxHandle", "onLayout", "getContentRect()"],
-}
+};
 
 // ============================================================================
 // Components
 // ============================================================================
 
 interface LayoutInfo {
-  x: number
-  y: number
-  width: number
-  height: number
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }
 
 function ResizablePane({
@@ -33,11 +42,11 @@ function ResizablePane({
   color,
   onLayoutChange,
 }: {
-  title: string
-  color: string
-  onLayoutChange: (info: LayoutInfo) => void
+  title: string;
+  color: string;
+  onLayoutChange: (info: LayoutInfo) => void;
 }) {
-  const boxRef = useRef<BoxHandle>(null)
+  const boxRef = useRef<BoxHandle>(null);
 
   // onLayout callback fires when this Box's dimensions change
   return (
@@ -53,29 +62,29 @@ function ResizablePane({
         {title}
       </Text>
     </Box>
-  )
+  );
 }
 
 function ImperativeAccessDemo() {
-  const boxRef = useRef<BoxHandle>(null)
-  const [info, setInfo] = useState<string>("Click 'i' to inspect")
+  const boxRef = useRef<BoxHandle>(null);
+  const [info, setInfo] = useState<string>("Click 'i' to inspect");
 
   const inspect = () => {
     if (!boxRef.current) {
-      setInfo("No ref attached")
-      return
+      setInfo("No ref attached");
+      return;
     }
 
-    const content = boxRef.current.getContentRect()
-    const screen = boxRef.current.getScreenRect()
-    const node = boxRef.current.getNode()
+    const content = boxRef.current.getContentRect();
+    const screen = boxRef.current.getScreenRect();
+    const node = boxRef.current.getNode();
 
     setInfo(
       `Content: ${content?.width}x${content?.height} at (${content?.x},${content?.y})\n` +
         `Screen: ${screen?.width}x${screen?.height} at (${screen?.x},${screen?.y})\n` +
         `Node: ${node ? "available" : "null"}`,
-    )
-  }
+    );
+  };
 
   return (
     <Box ref={boxRef} flexDirection="column" borderStyle="double" borderColor="magenta" padding={1}>
@@ -89,32 +98,32 @@ function ImperativeAccessDemo() {
       {/* Expose inspect function via closure */}
       <InspectTrigger onInspect={inspect} />
     </Box>
-  )
+  );
 }
 
 // Hidden component to trigger inspect on keypress
 function InspectTrigger({ onInspect }: { onInspect: () => void }) {
   useInput((input: string) => {
     if (input === "i") {
-      onInspect()
+      onInspect();
     }
-  })
-  return null
+  });
+  return null;
 }
 
 export function LayoutRefApp(): JSX.Element {
-  const { exit } = useApp()
-  const [layouts, setLayouts] = useState<Record<string, LayoutInfo>>({})
+  const { exit } = useApp();
+  const [layouts, setLayouts] = useState<Record<string, LayoutInfo>>({});
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) {
-      exit()
+      exit();
     }
-  })
+  });
 
   const handleLayoutChange = (pane: string) => (info: LayoutInfo) => {
-    setLayouts((prev) => ({ ...prev, [pane]: info }))
-  }
+    setLayouts((prev) => ({ ...prev, [pane]: info }));
+  };
 
   return (
     <Box flexDirection="column" padding={1}>
@@ -161,7 +170,7 @@ export function LayoutRefApp(): JSX.Element {
         quit
       </Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -169,16 +178,16 @@ export function LayoutRefApp(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm()
+  using term = createTerm();
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="i inspect  Esc/q quit">
       <LayoutRefApp />
     </ExampleBanner>,
     term,
-  )
-  await waitUntilExit()
+  );
+  await waitUntilExit();
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

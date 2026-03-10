@@ -5,8 +5,8 @@
  * Handles auto-detection of events from stdin, dimension defaults, etc.
  */
 
-import type { ColorLevel, Term } from "./ansi/index"
-import type { Event, TermDef } from "@silvery/tea/types"
+import type { ColorLevel, Term } from "./ansi/index";
+import type { Event, TermDef } from "@silvery/tea/types";
 
 // ============================================================================
 // Resolved TermDef
@@ -17,22 +17,22 @@ import type { Event, TermDef } from "@silvery/tea/types"
  */
 export interface ResolvedTermDef {
   /** Output stream (may be mock for static rendering) */
-  stdout: NodeJS.WriteStream | null
+  stdout: NodeJS.WriteStream | null;
 
   /** Width in columns */
-  width: number
+  width: number;
 
   /** Height in rows */
-  height: number
+  height: number;
 
   /** Color level (null = no colors) */
-  colors: ColorLevel | null
+  colors: ColorLevel | null;
 
   /** Event source (null = static mode) */
-  events: AsyncIterable<Event> | null
+  events: AsyncIterable<Event> | null;
 
   /** Whether this is static mode (no events = render until stable) */
-  isStatic: boolean
+  isStatic: boolean;
 }
 
 // ============================================================================
@@ -42,8 +42,8 @@ export interface ResolvedTermDef {
 /**
  * Default dimensions when not detectable.
  */
-const DEFAULT_WIDTH = 80
-const DEFAULT_HEIGHT = 24
+const DEFAULT_WIDTH = 80;
+const DEFAULT_HEIGHT = 24;
 
 /**
  * Check if a value is a Term instance (duck typing).
@@ -51,25 +51,25 @@ const DEFAULT_HEIGHT = 24
 export function isTerm(value: unknown): value is Term {
   // Term can be a callable Proxy (typeof === 'function') or object
   if (!value || (typeof value !== "object" && typeof value !== "function")) {
-    return false
+    return false;
   }
-  const obj = value as Record<string, unknown>
+  const obj = value as Record<string, unknown>;
   return (
     typeof obj.hasCursor === "function" &&
     typeof obj.hasInput === "function" &&
     typeof obj.hasColor === "function" &&
     typeof obj.write === "function"
-  )
+  );
 }
 
 /**
  * Check if a value is a TermDef (not a Term).
  */
 export function isTermDef(value: unknown): value is TermDef {
-  if (!value || typeof value !== "object") return false
+  if (!value || typeof value !== "object") return false;
   // TermDef doesn't have hasCursor method
-  const obj = value as Record<string, unknown>
-  return typeof obj.hasCursor !== "function"
+  const obj = value as Record<string, unknown>;
+  return typeof obj.hasCursor !== "function";
 }
 
 /**
@@ -80,31 +80,31 @@ export function isTermDef(value: unknown): value is TermDef {
  */
 export function resolveTermDef(def: TermDef): ResolvedTermDef {
   // Resolve dimensions
-  const width = def.width ?? def.stdout?.columns ?? DEFAULT_WIDTH
-  const height = def.height ?? def.stdout?.rows ?? DEFAULT_HEIGHT
+  const width = def.width ?? def.stdout?.columns ?? DEFAULT_WIDTH;
+  const height = def.height ?? def.stdout?.rows ?? DEFAULT_HEIGHT;
 
   // Resolve colors
-  let colors: ColorLevel | null = null
+  let colors: ColorLevel | null = null;
   if (def.colors === true) {
     // Auto-detect from stdout
-    colors = detectColorLevel(def.stdout)
+    colors = detectColorLevel(def.stdout);
   } else if (def.colors === false || def.colors === null) {
-    colors = null
+    colors = null;
   } else if (def.colors) {
-    colors = def.colors
+    colors = def.colors;
   } else {
     // Default: auto-detect
-    colors = detectColorLevel(def.stdout)
+    colors = detectColorLevel(def.stdout);
   }
 
   // Resolve events
-  let events: AsyncIterable<Event> | null = null
+  let events: AsyncIterable<Event> | null = null;
   if (def.events) {
     // Explicit events provided
-    events = def.events
+    events = def.events;
   } else if (def.stdin) {
     // Auto-create events from stdin
-    events = createInputEvents(def.stdin)
+    events = createInputEvents(def.stdin);
   }
 
   return {
@@ -114,7 +114,7 @@ export function resolveTermDef(def: TermDef): ResolvedTermDef {
     colors,
     events,
     isStatic: events === null,
-  }
+  };
 }
 
 /**
@@ -132,7 +132,7 @@ export function resolveFromTerm(term: Term): ResolvedTermDef {
     // Term instances always have interactive capabilities
     events: createInputEvents(term.stdin),
     isStatic: false,
-  }
+  };
 }
 
 // ============================================================================
@@ -145,36 +145,36 @@ export function resolveFromTerm(term: Term): ResolvedTermDef {
 function detectColorLevel(stdout?: NodeJS.WriteStream): ColorLevel | null {
   // Check environment variables
   if (process.env.NO_COLOR !== undefined) {
-    return null
+    return null;
   }
 
   if (process.env.FORCE_COLOR !== undefined) {
-    const level = Number.parseInt(process.env.FORCE_COLOR, 10)
-    if (level === 0) return null
-    if (level === 1) return "basic"
-    if (level === 2) return "256"
-    if (level >= 3) return "truecolor"
-    return "basic"
+    const level = Number.parseInt(process.env.FORCE_COLOR, 10);
+    if (level === 0) return null;
+    if (level === 1) return "basic";
+    if (level === 2) return "256";
+    if (level >= 3) return "truecolor";
+    return "basic";
   }
 
   // Check COLORTERM for truecolor
   if (process.env.COLORTERM === "truecolor" || process.env.COLORTERM === "24bit") {
-    return "truecolor"
+    return "truecolor";
   }
 
   // Check if TTY
   if (!stdout?.isTTY) {
-    return null
+    return null;
   }
 
   // Check TERM for 256 color support
-  const term = process.env.TERM ?? ""
+  const term = process.env.TERM ?? "";
   if (term.includes("256color") || term.includes("256")) {
-    return "256"
+    return "256";
   }
 
   // Default to basic if TTY
-  return "basic"
+  return "basic";
 }
 
 // ============================================================================
@@ -189,13 +189,13 @@ function detectColorLevel(stdout?: NodeJS.WriteStream): ColorLevel | null {
 export function createInputEvents(stdin: NodeJS.ReadStream): AsyncIterable<Event> {
   return {
     [Symbol.asyncIterator](): AsyncIterator<Event> {
-      const buffer: Event[] = []
-      let resolveNext: ((value: IteratorResult<Event>) => void) | null = null
-      let done = false
+      const buffer: Event[] = [];
+      let resolveNext: ((value: IteratorResult<Event>) => void) | null = null;
+      let done = false;
 
       // Set up stdin reading
       const handleData = (chunk: Buffer | string) => {
-        const data = typeof chunk === "string" ? chunk : chunk.toString("utf8")
+        const data = typeof chunk === "string" ? chunk : chunk.toString("utf8");
 
         // Convert raw input to key events
         // This is simplified - real implementation would parse ANSI sequences
@@ -204,38 +204,38 @@ export function createInputEvents(stdin: NodeJS.ReadStream): AsyncIterable<Event
             type: "key",
             key: char,
             ctrl: char.charCodeAt(0) < 32 && char !== "\r" && char !== "\n" && char !== "\t",
-          }
+          };
 
           if (resolveNext) {
-            resolveNext({ value: event, done: false })
-            resolveNext = null
+            resolveNext({ value: event, done: false });
+            resolveNext = null;
           } else {
-            buffer.push(event)
+            buffer.push(event);
           }
         }
-      }
+      };
 
       const handleEnd = () => {
-        done = true
+        done = true;
         if (resolveNext) {
-          resolveNext({ value: undefined as unknown as Event, done: true })
-          resolveNext = null
+          resolveNext({ value: undefined as unknown as Event, done: true });
+          resolveNext = null;
         }
-      }
+      };
 
       // Only set up if stdin supports raw mode
       if (stdin.isTTY && typeof stdin.setRawMode === "function") {
-        stdin.setEncoding("utf8")
-        stdin.on("data", handleData)
-        stdin.on("end", handleEnd)
+        stdin.setEncoding("utf8");
+        stdin.on("data", handleData);
+        stdin.on("end", handleEnd);
       }
 
       return {
         next(): Promise<IteratorResult<Event>> {
           // Return buffered event if available
-          const buffered = buffer.shift()
+          const buffered = buffer.shift();
           if (buffered) {
-            return Promise.resolve({ value: buffered, done: false })
+            return Promise.resolve({ value: buffered, done: false });
           }
 
           // If done, return done
@@ -243,25 +243,25 @@ export function createInputEvents(stdin: NodeJS.ReadStream): AsyncIterable<Event
             return Promise.resolve({
               value: undefined as unknown as Event,
               done: true,
-            })
+            });
           }
 
           // Wait for next event
           return new Promise((resolve) => {
-            resolveNext = resolve
-          })
+            resolveNext = resolve;
+          });
         },
 
         return(): Promise<IteratorResult<Event>> {
-          done = true
-          stdin.off("data", handleData)
-          stdin.off("end", handleEnd)
+          done = true;
+          stdin.off("data", handleData);
+          stdin.off("end", handleEnd);
           return Promise.resolve({
             value: undefined as unknown as Event,
             done: true,
-          })
+          });
         },
-      }
+      };
     },
-  }
+  };
 }

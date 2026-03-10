@@ -1,20 +1,20 @@
-import React from "react"
-import { Box, Text, ThemeProvider, getThemeByName, type Theme } from "../src/index.js"
+import React from "react";
+import { Box, Text, ThemeProvider, getThemeByName, type Theme } from "../src/index.js";
 
 export interface ExampleMeta {
-  name: string
-  description: string
+  name: string;
+  description: string;
   /** API features showcased, e.g. ["VirtualList", "useContentRect()"] */
-  features?: string[]
+  features?: string[];
 }
 
 interface Props {
-  meta: ExampleMeta
+  meta: ExampleMeta;
   /** Short controls legend, e.g. "j/k navigate  q quit" */
-  controls?: string
+  controls?: string;
   /** Override theme (from viewer). Falls back to SILVERY_THEME env var. */
-  theme?: Theme
-  children: React.ReactNode
+  theme?: Theme;
+  children: React.ReactNode;
 }
 
 /**
@@ -22,7 +22,7 @@ interface Props {
  * Wraps children in ThemeProvider for consistent theming.
  */
 export function ExampleBanner({ meta, controls, theme, children }: Props) {
-  const resolvedTheme = theme ?? getThemeByName(process.env.SILVERY_THEME)
+  const resolvedTheme = theme ?? getThemeByName(process.env.SILVERY_THEME);
 
   return (
     <ThemeProvider theme={resolvedTheme}>
@@ -56,5 +56,5 @@ export function ExampleBanner({ meta, controls, theme, children }: Props) {
         {children}
       </Box>
     </ThemeProvider>
-  )
+  );
 }

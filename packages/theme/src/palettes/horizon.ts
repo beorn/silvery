@@ -3,8 +3,8 @@
  * Source: https://github.com/jolaleye/horizon-theme-vscode
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Horizon — warm dark variant with vivid accents. */
 export const horizon: ColorPalette = {
@@ -32,4 +32,4 @@ export const horizon: ColorPalette = {
   cursorText: "#1C1E26",
   selectionBackground: "#2E303E",
   selectionForeground: "#D5D8DA",
-}
+};

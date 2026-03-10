@@ -47,35 +47,35 @@
  * - Yield an **object** `{ current, total }` to update progress on current sub-step
  */
 
-import { MultiProgress, type TaskHandle } from "../cli/multi-progress"
-import { stepsDeclarative, type StepsRunner } from "./declarative"
-import type { StepsDef } from "./step-node"
+import { MultiProgress, type TaskHandle } from "../cli/multi-progress";
+import { stepsDeclarative, type StepsRunner } from "./declarative";
+import type { StepsDef } from "./step-node";
 
 // Re-export step() context helper
-export { step } from "./als-context"
+export { step } from "./als-context";
 
 // Re-export types from declarative
-export type { StepsRunner } from "./declarative"
-export type { StepsDef, StepNode } from "./step-node"
-export type { StepContext } from "./als-context"
+export type { StepsRunner } from "./declarative";
+export type { StepsDef, StepNode } from "./step-node";
+export type { StepContext } from "./als-context";
 
 // Node.js globals for yielding to event loop
-declare function setImmediate(callback: (value?: unknown) => void): unknown
-declare function setTimeout(callback: (value?: unknown) => void, ms: number): unknown
+declare function setImmediate(callback: (value?: unknown) => void): unknown;
+declare function setTimeout(callback: (value?: unknown) => void, ms: number): unknown;
 
 /** Progress update (object form) */
 interface ProgressUpdate {
-  current?: number
-  total?: number
+  current?: number;
+  total?: number;
 }
 
 /** Declare all sub-steps upfront (optional, yield as first value) */
 interface DeclareSteps {
-  declare: string[]
+  declare: string[];
 }
 
 /** What generators can yield */
-type StepYield = string | ProgressUpdate | DeclareSteps
+type StepYield = string | ProgressUpdate | DeclareSteps;
 
 /**
  * Controller for creating and updating sub-steps
@@ -84,35 +84,40 @@ type StepYield = string | ProgressUpdate | DeclareSteps
  */
 export interface StepController {
   /** Create a new sub-step (auto-completes previous sub-step) */
-  new (label: string): void
+  new (label: string): void;
 
   /** Update progress on current sub-step */
-  progress(current: number, total: number): void
+  progress(current: number, total: number): void;
 
   /** Explicitly complete current sub-step (optional - new() auto-completes) */
-  done(): void
+  done(): void;
 }
 
 /** Work function types */
-type SyncWork<T> = () => T
-type AsyncWork<T> = () => PromiseLike<T>
-type SyncGeneratorWork<T> = () => Generator<StepYield, T, unknown>
-type AsyncGeneratorWork<T> = () => AsyncGenerator<StepYield, T, unknown>
+type SyncWork<T> = () => T;
+type AsyncWork<T> = () => PromiseLike<T>;
+type SyncGeneratorWork<T> = () => Generator<StepYield, T, unknown>;
+type AsyncGeneratorWork<T> = () => AsyncGenerator<StepYield, T, unknown>;
 /** Work function with step controller for sub-step progress */
-type WorkWithStep<T> = (step: StepController) => T | PromiseLike<T>
+type WorkWithStep<T> = (step: StepController) => T | PromiseLike<T>;
 
-type WorkFn<T> = SyncWork<T> | AsyncWork<T> | SyncGeneratorWork<T> | AsyncGeneratorWork<T> | WorkWithStep<T>
+type WorkFn<T> =
+  | SyncWork<T>
+  | AsyncWork<T>
+  | SyncGeneratorWork<T>
+  | AsyncGeneratorWork<T>
+  | WorkWithStep<T>;
 
 /** Step definition */
 interface StepDef<T = unknown> {
-  title: string
-  work: WorkFn<T>
+  title: string;
+  work: WorkFn<T>;
 }
 
 /** Options for execute() */
 export interface ExecuteOptions {
   /** Clear progress display after completion (default: false) */
-  clear?: boolean
+  clear?: boolean;
 }
 
 export interface StepBuilder {
@@ -130,14 +135,14 @@ export interface StepBuilder {
    *   - `"string"` - Creates a new sub-step with that label
    *   - `{ current: N, total: M }` - Updates progress on current sub-step
    */
-  run<T>(title: string, work: WorkFn<T>): StepBuilder
+  run<T>(title: string, work: WorkFn<T>): StepBuilder;
 
   /**
    * Execute all steps in sequence
    * @param options - Execution options
    * @returns Results keyed by step title
    */
-  execute(options?: ExecuteOptions): Promise<Record<string, unknown>>
+  execute(options?: ExecuteOptions): Promise<Record<string, unknown>>;
 }
 
 /**
@@ -163,16 +168,16 @@ export interface StepBuilder {
  *   .execute();
  * ```
  */
-export function steps<T extends StepsDef>(def: T): StepsRunner<T>
-export function steps(): StepBuilder
+export function steps<T extends StepsDef>(def: T): StepsRunner<T>;
+export function steps(): StepBuilder;
 export function steps<T extends StepsDef>(def?: T): StepsRunner<T> | StepBuilder {
   // Declarative mode: object passed
   if (def !== undefined) {
-    return stepsDeclarative(def)
+    return stepsDeclarative(def);
   }
 
   // Fluent mode: no arguments
-  return createFluentBuilder()
+  return createFluentBuilder();
 }
 
 /**
@@ -180,71 +185,71 @@ export function steps<T extends StepsDef>(def?: T): StepsRunner<T> | StepBuilder
  * This satisfies the type union while being harmless if not used.
  */
 function createNoopStepController(): StepController {
-  const controller = (_label: string) => {}
-  controller.progress = (_current: number, _total: number) => {}
-  controller.done = () => {}
+  const controller = (_label: string) => {};
+  controller.progress = (_current: number, _total: number) => {};
+  controller.done = () => {};
   // StepController uses `new` as a callable signature, not a constructor
-  return controller as unknown as StepController
+  return controller as unknown as StepController;
 }
 
 /**
  * Create the fluent step builder (legacy mode)
  */
 function createFluentBuilder(): StepBuilder {
-  const stepList: StepDef[] = []
+  const stepList: StepDef[] = [];
 
   const builder: StepBuilder = {
     run<T>(title: string, work: WorkFn<T>): StepBuilder {
-      stepList.push({ title, work: work as WorkFn<unknown> })
-      return builder
+      stepList.push({ title, work: work as WorkFn<unknown> });
+      return builder;
     },
 
     async execute(options?: ExecuteOptions): Promise<Record<string, unknown>> {
-      const multi = new MultiProgress()
-      const handles = new Map<string, TaskHandle>()
-      const results: Record<string, unknown> = {}
+      const multi = new MultiProgress();
+      const handles = new Map<string, TaskHandle>();
+      const results: Record<string, unknown> = {};
 
       // Register all steps upfront (shows pending state)
       for (const step of stepList) {
-        handles.set(step.title, multi.add(step.title, { type: "spinner" }))
+        handles.set(step.title, multi.add(step.title, { type: "spinner" }));
       }
 
-      multi.start()
+      multi.start();
 
       try {
         for (const step of stepList) {
-          const handle = handles.get(step.title)!
+          const handle = handles.get(step.title)!;
 
           // Yield to event loop before potentially blocking work
-          await new Promise((resolve) => setImmediate(resolve))
+          await new Promise((resolve) => setImmediate(resolve));
 
-          const result = step.work(createNoopStepController())
+          const result = step.work(createNoopStepController());
 
           if (isAsyncGenerator(result)) {
             // Async generator: parent stays static while sub-steps animate
-            results[step.title] = await runAsyncGenerator(result, handle, step.title, multi)
+            results[step.title] = await runAsyncGenerator(result, handle, step.title, multi);
           } else if (isSyncGenerator(result)) {
             // Sync generator: same handling
-            results[step.title] = await runSyncGenerator(result, handle, step.title, multi)
+            results[step.title] = await runSyncGenerator(result, handle, step.title, multi);
           } else if (isPromiseLike(result)) {
-            handle.start()
-            results[step.title] = await result
-            handle.complete()
+            handle.start();
+            results[step.title] = await result;
+            handle.complete();
           } else {
-            handle.start()
-            results[step.title] = result
-            handle.complete()
+            handle.start();
+            results[step.title] = result;
+            handle.complete();
           }
         }
       } finally {
-        multi.stop(options?.clear ?? false)
+        multi.stop(options?.clear ?? false);
       }
 
-      return results
+      return results;
     },
-  }
+  };
 
-  return builder
+  return builder;
 }
 
 /**
@@ -261,61 +266,64 @@ function processYield(value: StepYield, state: GeneratorState, multi: MultiProgr
         type: "spinner",
         indent: 1,
         insertAfter: state.lastInsertId,
-      })
-      state.lastInsertId = handle.id
-      state.declaredSteps.set(label, handle)
+      });
+      state.lastInsertId = handle.id;
+      state.declaredSteps.set(label, handle);
     }
-    return
+    return;
   }
 
   if (typeof value === "string") {
     // String = start a sub-step with this label
     if (state.currentHandle && state.currentLabel) {
-      const elapsed = Date.now() - state.subStepStartTime
-      state.currentHandle.complete(elapsed)
+      const elapsed = Date.now() - state.subStepStartTime;
+      state.currentHandle.complete(elapsed);
     }
 
-    state.currentLabel = value
-    state.subStepStartTime = Date.now()
+    state.currentLabel = value;
+    state.subStepStartTime = Date.now();
 
     // Use pre-declared handle if available, otherwise create new one
-    const declared = state.declaredSteps.get(value)
+    const declared = state.declaredSteps.get(value);
     if (declared) {
-      state.currentHandle = declared
-      state.currentHandle.start()
+      state.currentHandle = declared;
+      state.currentHandle.start();
     } else {
       state.currentHandle = multi.add(value, {
         type: "spinner",
         indent: 1,
         insertAfter: state.lastInsertId,
-      })
-      state.lastInsertId = state.currentHandle.id
-      state.currentHandle.start()
+      });
+      state.lastInsertId = state.currentHandle.id;
+      state.currentHandle.start();
     }
   } else if (value && typeof value === "object") {
     // Object = progress update on current sub-step
-    const { current, total } = value as ProgressUpdate
+    const { current, total } = value as ProgressUpdate;
     if (state.currentHandle && total && total > 0) {
-      state.currentHandle.setTitle(`${state.currentLabel} (${current ?? 0}/${total})`)
+      state.currentHandle.setTitle(`${state.currentLabel} (${current ?? 0}/${total})`);
     }
   }
 }
 
 function isDeclareSteps(value: StepYield): value is DeclareSteps {
   return (
-    value !== null && typeof value === "object" && "declare" in value && Array.isArray((value as DeclareSteps).declare)
-  )
+    value !== null &&
+    typeof value === "object" &&
+    "declare" in value &&
+    Array.isArray((value as DeclareSteps).declare)
+  );
 }
 
 /** State for generator processing */
 interface GeneratorState {
-  currentLabel: string | undefined
-  currentHandle: TaskHandle | null
-  lastInsertId: string
-  subStepStartTime: number
-  startTime: number
+  currentLabel: string | undefined;
+  currentHandle: TaskHandle | null;
+  lastInsertId: string;
+  subStepStartTime: number;
+  startTime: number;
   /** Pre-declared sub-steps (pending until started) */
-  declaredSteps: Map<string, TaskHandle>
+  declaredSteps: Map<string, TaskHandle>;
 }
 
 /**
@@ -334,30 +342,30 @@ async function runAsyncGenerator<T>(
     subStepStartTime: Date.now(),
     startTime: Date.now(),
     declaredSteps: new Map(),
-  }
+  };
 
-  let result = await gen.next()
+  let result = await gen.next();
 
   while (!result.done) {
-    processYield(result.value, state, multi)
+    processYield(result.value, state, multi);
 
     // Yield to event loop for animation
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    result = await gen.next()
+    result = await gen.next();
   }
 
   // Complete final sub-step
   if (state.currentHandle && state.currentLabel) {
-    const elapsed = Date.now() - state.subStepStartTime
-    state.currentHandle.complete(elapsed)
+    const elapsed = Date.now() - state.subStepStartTime;
+    state.currentHandle.complete(elapsed);
   }
 
   // Complete parent step
-  const totalElapsed = Date.now() - state.startTime
-  parentHandle.complete(totalElapsed)
+  const totalElapsed = Date.now() - state.startTime;
+  parentHandle.complete(totalElapsed);
 
-  return result.value
+  return result.value;
 }
 
 /**
@@ -376,30 +384,30 @@ async function runSyncGenerator<T>(
     subStepStartTime: Date.now(),
     startTime: Date.now(),
     declaredSteps: new Map(),
-  }
+  };
 
-  let result = gen.next()
+  let result = gen.next();
 
   while (!result.done) {
-    processYield(result.value, state, multi)
+    processYield(result.value, state, multi);
 
     // Yield to event loop for animation
-    await new Promise((resolve) => setTimeout(resolve, 0))
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
-    result = gen.next()
+    result = gen.next();
   }
 
   // Complete final sub-step
   if (state.currentHandle && state.currentLabel) {
-    const elapsed = Date.now() - state.subStepStartTime
-    state.currentHandle.complete(elapsed)
+    const elapsed = Date.now() - state.subStepStartTime;
+    state.currentHandle.complete(elapsed);
   }
 
   // Complete parent step
-  const totalElapsed = Date.now() - state.startTime
-  parentHandle.complete(totalElapsed)
+  const totalElapsed = Date.now() - state.startTime;
+  parentHandle.complete(totalElapsed);
 
-  return result.value
+  return result.value;
 }
 
 function isAsyncGenerator(value: unknown): value is AsyncGenerator<StepYield, unknown, unknown> {
@@ -408,7 +416,7 @@ function isAsyncGenerator(value: unknown): value is AsyncGenerator<StepYield, un
     typeof value === "object" &&
     typeof (value as AsyncGenerator).next === "function" &&
     typeof (value as AsyncGenerator)[Symbol.asyncIterator] === "function"
-  )
+  );
 }
 
 function isSyncGenerator(value: unknown): value is Generator<StepYield, unknown, unknown> {
@@ -417,9 +425,13 @@ function isSyncGenerator(value: unknown): value is Generator<StepYield, unknown,
     typeof value === "object" &&
     typeof (value as Generator).next === "function" &&
     typeof (value as Generator)[Symbol.iterator] === "function"
-  )
+  );
 }
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
-  return value !== null && typeof value === "object" && typeof (value as PromiseLike<unknown>).then === "function"
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    typeof (value as PromiseLike<unknown>).then === "function"
+  );
 }

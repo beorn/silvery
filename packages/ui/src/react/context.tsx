@@ -2,33 +2,33 @@
  * React context for progress state management
  */
 
-import React, { createContext, useContext, useState, useCallback } from "react"
-import type { SpinnerStyle } from "../types.js"
-import { Spinner } from "./Spinner"
+import React, { createContext, useContext, useState, useCallback } from "react";
+import type { SpinnerStyle } from "../types.js";
+import { Spinner } from "./Spinner";
 
 /** Progress context state */
 interface ProgressContextState {
   /** Currently showing a spinner */
-  isLoading: boolean
+  isLoading: boolean;
   /** Loading message */
-  loadingText: string
+  loadingText: string;
   /** Spinner style */
-  spinnerStyle: SpinnerStyle
+  spinnerStyle: SpinnerStyle;
 
   /** Show a spinner with message */
-  showSpinner: (text: string, style?: SpinnerStyle) => void
+  showSpinner: (text: string, style?: SpinnerStyle) => void;
   /** Hide the spinner */
-  hideSpinner: () => void
+  hideSpinner: () => void;
 
   /** Progress bar state */
-  progress: { current: number; total: number } | null
+  progress: { current: number; total: number } | null;
   /** Update progress */
-  updateProgress: (current: number, total?: number) => void
+  updateProgress: (current: number, total?: number) => void;
   /** Clear progress */
-  clearProgress: () => void
+  clearProgress: () => void;
 }
 
-const ProgressContext = createContext<ProgressContextState | null>(null)
+const ProgressContext = createContext<ProgressContextState | null>(null);
 
 /**
  * Progress context provider
@@ -55,35 +55,35 @@ const ProgressContext = createContext<ProgressContextState | null>(null)
  * ```
  */
 export function ProgressProvider({ children }: { children: React.ReactNode }): React.ReactElement {
-  const [isLoading, setIsLoading] = useState(false)
-  const [loadingText, setLoadingText] = useState("")
-  const [spinnerStyle, setSpinnerStyle] = useState<SpinnerStyle>("dots")
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState("");
+  const [spinnerStyle, setSpinnerStyle] = useState<SpinnerStyle>("dots");
   const [progress, setProgress] = useState<{
-    current: number
-    total: number
-  } | null>(null)
+    current: number;
+    total: number;
+  } | null>(null);
 
   const showSpinner = useCallback((text: string, style: SpinnerStyle = "dots") => {
-    setLoadingText(text)
-    setSpinnerStyle(style)
-    setIsLoading(true)
-  }, [])
+    setLoadingText(text);
+    setSpinnerStyle(style);
+    setIsLoading(true);
+  }, []);
 
   const hideSpinner = useCallback(() => {
-    setIsLoading(false)
-    setLoadingText("")
-  }, [])
+    setIsLoading(false);
+    setLoadingText("");
+  }, []);
 
   const updateProgress = useCallback((current: number, total?: number) => {
     setProgress((prev) => ({
       current,
       total: total ?? prev?.total ?? 100,
-    }))
-  }, [])
+    }));
+  }, []);
 
   const clearProgress = useCallback(() => {
-    setProgress(null)
-  }, [])
+    setProgress(null);
+  }, []);
 
   const value: ProgressContextState = {
     isLoading,
@@ -94,9 +94,9 @@ export function ProgressProvider({ children }: { children: React.ReactNode }): R
     progress,
     updateProgress,
     clearProgress,
-  }
+  };
 
-  return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>
+  return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>;
 }
 
 /**
@@ -114,13 +114,13 @@ export function ProgressProvider({ children }: { children: React.ReactNode }): R
  * ```
  */
 export function useProgress(): ProgressContextState {
-  const context = useContext(ProgressContext)
+  const context = useContext(ProgressContext);
 
   if (!context) {
-    throw new Error("useProgress must be used within a ProgressProvider")
+    throw new Error("useProgress must be used within a ProgressProvider");
   }
 
-  return context
+  return context;
 }
 
 /**
@@ -135,11 +135,11 @@ export function useProgress(): ProgressContextState {
  * ```
  */
 export function ProgressIndicator(): React.ReactElement | null {
-  const { isLoading, loadingText, spinnerStyle } = useProgress()
+  const { isLoading, loadingText, spinnerStyle } = useProgress();
 
   if (!isLoading) {
-    return null
+    return null;
   }
 
-  return <Spinner label={loadingText} style={spinnerStyle} />
+  return <Spinner label={loadingText} style={spinnerStyle} />;
 }

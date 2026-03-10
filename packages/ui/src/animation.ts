@@ -13,12 +13,12 @@
  * @packageDocumentation
  */
 
-export { easings, resolveEasing, useAnimation, useInterval } from "./animation/index"
-export { useTransition as useAnimatedTransition } from "./animation/index"
+export { easings, resolveEasing, useAnimation, useInterval } from "./animation/index";
+export { useTransition as useAnimatedTransition } from "./animation/index";
 export type {
   EasingFn,
   EasingName,
   UseAnimationOptions,
   UseAnimationResult,
   UseTransitionOptions,
-} from "./animation/index"
+} from "./animation/index";

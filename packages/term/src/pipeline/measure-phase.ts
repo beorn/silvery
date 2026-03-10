@@ -4,10 +4,10 @@
  * Handle fit-content nodes by measuring their intrinsic content size.
  */
 
-import type { BoxProps, TeaNode } from "@silvery/tea/types"
-import { displayWidthAnsi } from "../unicode"
-import { getBorderSize, getPadding } from "./helpers"
-import type { PipelineContext } from "./types"
+import type { BoxProps, TeaNode } from "@silvery/tea/types";
+import { displayWidthAnsi } from "../unicode";
+import { getBorderSize, getPadding } from "./helpers";
+import type { PipelineContext } from "./types";
 
 /**
  * Handle fit-content nodes by measuring their intrinsic content size.
@@ -18,21 +18,21 @@ import type { PipelineContext } from "./types"
 export function measurePhase(root: TeaNode, ctx?: PipelineContext): void {
   traverseTree(root, (node) => {
     // Skip nodes without Yoga (raw text nodes)
-    if (!node.layoutNode) return
+    if (!node.layoutNode) return;
 
-    const props = node.props as BoxProps
+    const props = node.props as BoxProps;
 
     if (props.width === "fit-content" || props.height === "fit-content") {
-      const intrinsicSize = measureIntrinsicSize(node, ctx)
+      const intrinsicSize = measureIntrinsicSize(node, ctx);
 
       if (props.width === "fit-content") {
-        node.layoutNode.setWidth(intrinsicSize.width)
+        node.layoutNode.setWidth(intrinsicSize.width);
       }
       if (props.height === "fit-content") {
-        node.layoutNode.setHeight(intrinsicSize.height)
+        node.layoutNode.setHeight(intrinsicSize.height);
       }
     }
-  })
+  });
 }
 
 /**
@@ -45,66 +45,66 @@ function measureIntrinsicSize(
   node: TeaNode,
   ctx?: PipelineContext,
 ): {
-  width: number
-  height: number
+  width: number;
+  height: number;
 } {
-  const props = node.props as BoxProps
+  const props = node.props as BoxProps;
 
   // display="none" nodes have 0x0 intrinsic size
   if (props.display === "none") {
-    return { width: 0, height: 0 }
+    return { width: 0, height: 0 };
   }
 
   if (node.type === "silvery-text") {
-    const text = collectTextContent(node)
-    const lines = text.split("\n")
-    const width = Math.max(...lines.map((line) => getTextWidth(line, ctx)))
+    const text = collectTextContent(node);
+    const lines = text.split("\n");
+    const width = Math.max(...lines.map((line) => getTextWidth(line, ctx)));
     return {
       width,
       height: lines.length,
-    }
+    };
   }
 
   // For boxes, measure based on flex direction
-  const isRow = props.flexDirection === "row" || props.flexDirection === "row-reverse"
+  const isRow = props.flexDirection === "row" || props.flexDirection === "row-reverse";
 
-  let width = 0
-  let height = 0
+  let width = 0;
+  let height = 0;
 
   for (const child of node.children) {
-    const childSize = measureIntrinsicSize(child, ctx)
+    const childSize = measureIntrinsicSize(child, ctx);
 
     if (isRow) {
-      width += childSize.width
-      height = Math.max(height, childSize.height)
+      width += childSize.width;
+      height = Math.max(height, childSize.height);
     } else {
-      width = Math.max(width, childSize.width)
-      height += childSize.height
+      width = Math.max(width, childSize.width);
+      height += childSize.height;
     }
   }
 
   // Add padding
-  const padding = getPadding(props)
-  width += padding.left + padding.right
-  height += padding.top + padding.bottom
+  const padding = getPadding(props);
+  width += padding.left + padding.right;
+  height += padding.top + padding.bottom;
 
   // Add border
   if (props.borderStyle) {
-    const border = getBorderSize(props)
-    width += border.left + border.right
-    height += border.top + border.bottom
+    const border = getBorderSize(props);
+    width += border.left + border.right;
+    height += border.top + border.bottom;
   }
 
-  return { width, height }
+  return { width, height };
 }
 
 /**
  * Traverse tree in depth-first order.
  */
 function traverseTree(node: TeaNode, callback: (node: TeaNode) => void): void {
-  callback(node)
+  callback(node);
   for (const child of node.children) {
-    traverseTree(child, callback)
+    traverseTree(child, callback);
   }
 }
 
@@ -113,8 +113,8 @@ function traverseTree(node: TeaNode, callback: (node: TeaNode) => void): void {
  * Uses ANSI-aware width calculation to handle styled text.
  */
 function getTextWidth(text: string, ctx?: PipelineContext): number {
-  if (ctx) return ctx.measurer.displayWidthAnsi(text)
-  return displayWidthAnsi(text)
+  if (ctx) return ctx.measurer.displayWidthAnsi(text);
+  return displayWidthAnsi(text);
 }
 
 /**
@@ -123,11 +123,11 @@ function getTextWidth(text: string, ctx?: PipelineContext): number {
  */
 function collectTextContent(node: TeaNode): string {
   if (node.textContent !== undefined) {
-    return node.textContent
+    return node.textContent;
   }
-  let result = ""
+  let result = "";
   for (const child of node.children) {
-    result += collectTextContent(child)
+    result += collectTextContent(child);
   }
-  return result
+  return result;
 }

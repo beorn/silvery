@@ -28,17 +28,17 @@ export const UNDERLINE_CODES = {
   dashed: "\x1b[4:5m",
   /** Reset extended underline (same as none) */
   reset: "\x1b[4:0m",
-} as const
+} as const;
 
 // =============================================================================
 // Standard Underline (Fallback)
 // =============================================================================
 
 /** Standard underline on (SGR 4) - works on all terminals */
-export const UNDERLINE_STANDARD = "\x1b[4m"
+export const UNDERLINE_STANDARD = "\x1b[4m";
 
 /** Standard underline off (SGR 24) */
-export const UNDERLINE_RESET_STANDARD = "\x1b[24m"
+export const UNDERLINE_RESET_STANDARD = "\x1b[24m";
 
 // =============================================================================
 // Underline Color (SGR 58/59)
@@ -47,14 +47,14 @@ export const UNDERLINE_RESET_STANDARD = "\x1b[24m"
 /**
  * Reset underline color to default (SGR 59)
  */
-export const UNDERLINE_COLOR_RESET = "\x1b[59m"
+export const UNDERLINE_COLOR_RESET = "\x1b[59m";
 
 /**
  * Build underline color escape code for RGB values.
  * Format: \x1b[58:2::r:g:bm (SGR 58 with RGB color space)
  */
 export function buildUnderlineColorCode(r: number, g: number, b: number): string {
-  return `\x1b[58:2::${r}:${g}:${b}m`
+  return `\x1b[58:2::${r}:${g}:${b}m`;
 }
 
 // =============================================================================
@@ -62,15 +62,15 @@ export function buildUnderlineColorCode(r: number, g: number, b: number): string
 // =============================================================================
 
 /** OSC 8 hyperlink start sequence */
-export const HYPERLINK_START = "\x1b]8;;"
+export const HYPERLINK_START = "\x1b]8;;";
 
 /** OSC 8 hyperlink end sequence (ST - String Terminator) */
-export const HYPERLINK_END = "\x1b\\"
+export const HYPERLINK_END = "\x1b\\";
 
 /**
  * Build a hyperlink escape sequence.
  * Format: \x1b]8;;<url>\x1b\\ <text> \x1b]8;;\x1b\\
  */
 export function buildHyperlink(text: string, url: string): string {
-  return `${HYPERLINK_START}${url}${HYPERLINK_END}${text}${HYPERLINK_START}${HYPERLINK_END}`
+  return `${HYPERLINK_START}${url}${HYPERLINK_END}${text}${HYPERLINK_START}${HYPERLINK_END}`;
 }

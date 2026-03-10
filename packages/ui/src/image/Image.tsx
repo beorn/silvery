@@ -26,30 +26,30 @@
  * ```
  */
 
-import { readFileSync } from "node:fs"
-import { type JSX, useContext, useEffect, useMemo, useRef } from "react"
-import { StdoutContext } from "@silvery/react/context"
-import { useContentRect } from "@silvery/react/hooks/useLayout"
-import { encodeKittyImage, isKittyGraphicsSupported, deleteKittyImage } from "./kitty-graphics"
-import { isSixelSupported } from "./sixel-encoder"
+import { readFileSync } from "node:fs";
+import { type JSX, useContext, useEffect, useMemo, useRef } from "react";
+import { StdoutContext } from "@silvery/react/context";
+import { useContentRect } from "@silvery/react/hooks/useLayout";
+import { encodeKittyImage, isKittyGraphicsSupported, deleteKittyImage } from "./kitty-graphics";
+import { isSixelSupported } from "./sixel-encoder";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type ImageProtocol = "kitty" | "sixel" | "auto"
+export type ImageProtocol = "kitty" | "sixel" | "auto";
 
 export interface ImageProps {
   /** PNG image data (Buffer) or file path (string) to a PNG file */
-  src: Buffer | string
+  src: Buffer | string;
   /** Width in terminal columns. If omitted, uses available width from layout. */
-  width?: number
+  width?: number;
   /** Height in terminal rows. If omitted, defaults to half the width (rough aspect ratio). */
-  height?: number
+  height?: number;
   /** Text to display when image rendering is not supported. Default: "[image]" */
-  fallback?: string
+  fallback?: string;
   /** Which protocol to use. Default: "auto" (tries Kitty, then Sixel, then fallback) */
-  protocol?: ImageProtocol
+  protocol?: ImageProtocol;
 }
 
 // ============================================================================
@@ -62,16 +62,16 @@ export interface ImageProps {
  */
 function detectProtocol(preferred: ImageProtocol): "kitty" | "sixel" | null {
   if (preferred === "kitty") {
-    return isKittyGraphicsSupported() ? "kitty" : null
+    return isKittyGraphicsSupported() ? "kitty" : null;
   }
   if (preferred === "sixel") {
-    return isSixelSupported() ? "sixel" : null
+    return isSixelSupported() ? "sixel" : null;
   }
 
   // Auto-detect: prefer Kitty, fall back to Sixel
-  if (isKittyGraphicsSupported()) return "kitty"
-  if (isSixelSupported()) return "sixel"
-  return null
+  if (isKittyGraphicsSupported()) return "kitty";
+  if (isSixelSupported()) return "sixel";
+  return null;
 }
 
 // ============================================================================
@@ -79,7 +79,7 @@ function detectProtocol(preferred: ImageProtocol): "kitty" | "sixel" | null {
 // ============================================================================
 
 /** Incrementing image ID counter for Kitty protocol */
-let nextImageId = 1
+let nextImageId = 1;
 
 /**
  * Renders a bitmap image in the terminal.
@@ -99,47 +99,47 @@ export function Image({
   fallback = "[image]",
   protocol: preferredProtocol = "auto",
 }: ImageProps): JSX.Element {
-  const contentRect = useContentRect()
-  const stdoutCtx = useContext(StdoutContext)
-  const imageIdRef = useRef<number | null>(null)
+  const contentRect = useContentRect();
+  const stdoutCtx = useContext(StdoutContext);
+  const imageIdRef = useRef<number | null>(null);
 
   // Resolve image data
   const pngData = useMemo(() => {
-    if (Buffer.isBuffer(src)) return src
+    if (Buffer.isBuffer(src)) return src;
     // String path — read file synchronously (during render is fine for a path)
     try {
-      return readFileSync(src)
+      return readFileSync(src);
     } catch {
-      return null
+      return null;
     }
-  }, [src])
+  }, [src]);
 
   // Determine effective dimensions
-  const effectiveWidth = requestedWidth ?? contentRect.width
-  const effectiveHeight = requestedHeight ?? Math.max(1, Math.floor(effectiveWidth / 2))
+  const effectiveWidth = requestedWidth ?? contentRect.width;
+  const effectiveHeight = requestedHeight ?? Math.max(1, Math.floor(effectiveWidth / 2));
 
   // Detect protocol support
-  const activeProtocol = useMemo(() => detectProtocol(preferredProtocol), [preferredProtocol])
+  const activeProtocol = useMemo(() => detectProtocol(preferredProtocol), [preferredProtocol]);
 
   // Assign a stable image ID for Kitty (for cleanup on unmount)
   if (activeProtocol === "kitty" && imageIdRef.current == null) {
-    imageIdRef.current = nextImageId++
+    imageIdRef.current = nextImageId++;
   }
 
   // Write image escape sequences after render
   useEffect(() => {
-    if (!pngData || !stdoutCtx || !activeProtocol) return
-    if (effectiveWidth <= 0 || effectiveHeight <= 0) return
+    if (!pngData || !stdoutCtx || !activeProtocol) return;
+    if (effectiveWidth <= 0 || effectiveHeight <= 0) return;
 
-    const { write } = stdoutCtx
+    const { write } = stdoutCtx;
 
     if (activeProtocol === "kitty") {
       const seq = encodeKittyImage(pngData, {
         width: effectiveWidth,
         height: effectiveHeight,
         id: imageIdRef.current ?? undefined,
-      })
-      write(seq)
+      });
+      write(seq);
     } else if (activeProtocol === "sixel") {
       // For Sixel, we would need the decoded pixel data.
       // Since we receive PNG, and decoding PNG requires a library,
@@ -152,17 +152,17 @@ export function Image({
       // (not PNG), this would need a flag. For now, Sixel falls through
       // to fallback when src is PNG.
     }
-  }, [pngData, stdoutCtx, activeProtocol, effectiveWidth, effectiveHeight])
+  }, [pngData, stdoutCtx, activeProtocol, effectiveWidth, effectiveHeight]);
 
   // Cleanup: delete Kitty image on unmount
   useEffect(() => {
-    const id = imageIdRef.current
-    if (activeProtocol !== "kitty" || id == null || !stdoutCtx) return
+    const id = imageIdRef.current;
+    if (activeProtocol !== "kitty" || id == null || !stdoutCtx) return;
 
     return () => {
-      stdoutCtx.write(deleteKittyImage(id))
-    }
-  }, [activeProtocol, stdoutCtx])
+      stdoutCtx.write(deleteKittyImage(id));
+    };
+  }, [activeProtocol, stdoutCtx]);
 
   // If no protocol or no image data, render fallback text
   if (!activeProtocol || !pngData) {
@@ -170,18 +170,20 @@ export function Image({
       <silvery-box width={effectiveWidth} height={effectiveHeight}>
         <silvery-text>{fallback}</silvery-text>
       </silvery-box>
-    )
+    );
   }
 
   // Reserve visual space with an empty box.
   // The image is drawn over this space via stdout escape sequences.
   // Fill with spaces so the cell buffer allocates the right area.
-  const spaceLine = " ".repeat(Math.max(0, effectiveWidth))
-  const spaceContent = Array.from({ length: Math.max(0, effectiveHeight) }, () => spaceLine).join("\n")
+  const spaceLine = " ".repeat(Math.max(0, effectiveWidth));
+  const spaceContent = Array.from({ length: Math.max(0, effectiveHeight) }, () => spaceLine).join(
+    "\n",
+  );
 
   return (
     <silvery-box width={effectiveWidth} height={effectiveHeight}>
       <silvery-text>{spaceContent}</silvery-text>
     </silvery-box>
-  )
+  );
 }

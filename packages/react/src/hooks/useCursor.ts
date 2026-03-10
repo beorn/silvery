@@ -21,9 +21,9 @@ import React, {
   useLayoutEffect,
   useRef,
   type ReactNode,
-} from "react"
-import type { CursorShape } from "@silvery/term/output"
-import { useScreenRectCallback, type Rect } from "./useLayout"
+} from "react";
+import type { CursorShape } from "@silvery/term/output";
+import { useScreenRectCallback, type Rect } from "./useLayout";
 
 // ============================================================================
 // Types
@@ -31,24 +31,24 @@ import { useScreenRectCallback, type Rect } from "./useLayout"
 
 export interface CursorPosition {
   /** Column offset within the component (0-indexed) */
-  col: number
+  col: number;
   /** Row offset within the component (0-indexed) */
-  row: number
+  row: number;
   /** Whether the cursor should be visible. Default: true */
-  visible?: boolean
+  visible?: boolean;
   /** Terminal cursor shape (DECSCUSR). Default: terminal default */
-  shape?: CursorShape
+  shape?: CursorShape;
 }
 
 export interface CursorState {
   /** Absolute terminal X position (0-indexed) */
-  x: number
+  x: number;
   /** Absolute terminal Y position (0-indexed) */
-  y: number
+  y: number;
   /** Whether cursor is visible */
-  visible: boolean
+  visible: boolean;
   /** Terminal cursor shape (DECSCUSR) */
-  shape?: CursorShape
+  shape?: CursorShape;
 }
 
 // ============================================================================
@@ -60,8 +60,8 @@ export interface CursorState {
  * Created by createCursorStore() and threaded to consumers that can't use hooks.
  */
 export interface CursorAccessors {
-  getCursorState(): CursorState | null
-  subscribeCursor(listener: () => void): () => void
+  getCursorState(): CursorState | null;
+  subscribeCursor(listener: () => void): () => void;
 }
 
 // ============================================================================
@@ -69,10 +69,10 @@ export interface CursorAccessors {
 // ============================================================================
 
 export interface CursorStore {
-  state: CursorState | null
-  listeners: Set<() => void>
-  accessors: CursorAccessors
-  setCursorState(state: CursorState | null): void
+  state: CursorState | null;
+  listeners: Set<() => void>;
+  accessors: CursorAccessors;
+  setCursorState(state: CursorState | null): void;
 }
 
 /**
@@ -85,63 +85,63 @@ export function createCursorStore(): CursorStore {
     listeners: new Set(),
     accessors: null!,
     setCursorState(s: CursorState | null) {
-      store.state = s
-      for (const listener of store.listeners) listener()
+      store.state = s;
+      for (const listener of store.listeners) listener();
     },
-  }
+  };
   store.accessors = {
     getCursorState: () => store.state,
     subscribeCursor: (listener: () => void) => {
-      store.listeners.add(listener)
+      store.listeners.add(listener);
       return () => {
-        store.listeners.delete(listener)
-      }
+        store.listeners.delete(listener);
+      };
     },
-  }
-  return store
+  };
+  return store;
 }
 
 // ============================================================================
 // React Context
 // ============================================================================
 
-const CursorCtx = createContext<CursorStore | null>(null)
+const CursorCtx = createContext<CursorStore | null>(null);
 
 /**
  * Provider that gives its subtree an isolated cursor store.
  * Wrap your silvery app root in this to isolate cursor state per instance.
  */
 export function CursorProvider({ store, children }: { store: CursorStore; children?: ReactNode }) {
-  return React.createElement(CursorCtx.Provider, { value: store }, children)
+  return React.createElement(CursorCtx.Provider, { value: store }, children);
 }
 
 // ============================================================================
 // Module-level Fallback (deprecated — for bare render() without provider)
 // ============================================================================
 
-let _globalCursorState: CursorState | null = null
-let _globalCursorListeners = new Set<() => void>()
+let _globalCursorState: CursorState | null = null;
+let _globalCursorListeners = new Set<() => void>();
 
 function globalSetCursorState(state: CursorState | null): void {
-  _globalCursorState = state
-  for (const listener of _globalCursorListeners) listener()
+  _globalCursorState = state;
+  for (const listener of _globalCursorListeners) listener();
 }
 
 function globalGetCursorState(): CursorState | null {
-  return _globalCursorState
+  return _globalCursorState;
 }
 
 function globalSubscribeCursor(listener: () => void): () => void {
-  _globalCursorListeners.add(listener)
+  _globalCursorListeners.add(listener);
   return () => {
-    _globalCursorListeners.delete(listener)
-  }
+    _globalCursorListeners.delete(listener);
+  };
 }
 
 /** For testing -- reset global fallback state between tests. */
 export function resetCursorState(): void {
-  _globalCursorState = null
-  _globalCursorListeners = new Set()
+  _globalCursorState = null;
+  _globalCursorListeners = new Set();
 }
 
 // ============================================================================
@@ -158,75 +158,75 @@ export function resetCursorState(): void {
  * Falls back to module-level globals otherwise (backward compat).
  */
 export function useCursor(position: CursorPosition): void {
-  const { col, row, visible = true, shape } = position
-  const store = useContext(CursorCtx)
+  const { col, row, visible = true, shape } = position;
+  const store = useContext(CursorCtx);
 
   // Resolve set/get functions from context or global fallback
-  const set = store ? store.setCursorState.bind(store) : globalSetCursorState
-  const get = store ? store.accessors.getCursorState : globalGetCursorState
+  const set = store ? store.setCursorState.bind(store) : globalSetCursorState;
+  const get = store ? store.accessors.getCursorState : globalGetCursorState;
 
   // Keep current args in refs so the callback always reads fresh values
-  const colRef = useRef(col)
-  const rowRef = useRef(row)
-  const visibleRef = useRef(visible)
-  const shapeRef = useRef(shape)
-  const setRef = useRef(set)
-  const getRef = useRef(get)
-  const lastRectRef = useRef<Rect | null>(null)
-  colRef.current = col
-  rowRef.current = row
-  visibleRef.current = visible
-  shapeRef.current = shape
-  setRef.current = set
-  getRef.current = get
+  const colRef = useRef(col);
+  const rowRef = useRef(row);
+  const visibleRef = useRef(visible);
+  const shapeRef = useRef(shape);
+  const setRef = useRef(set);
+  const getRef = useRef(get);
+  const lastRectRef = useRef<Rect | null>(null);
+  colRef.current = col;
+  rowRef.current = row;
+  visibleRef.current = visible;
+  shapeRef.current = shape;
+  setRef.current = set;
+  getRef.current = get;
 
   // Called synchronously during layout (useLayoutEffect) whenever
   // the component's screen position changes.
   useScreenRectCallback(
     useCallback((rect) => {
-      lastRectRef.current = rect
+      lastRectRef.current = rect;
       if (!visibleRef.current) {
-        return
+        return;
       }
       setRef.current({
         x: rect.x + colRef.current,
         y: rect.y + rowRef.current,
         visible: true,
         shape: shapeRef.current,
-      })
+      });
     }, []),
-  )
+  );
 
   // When col/row/shape change without a layout change, update cursor
   // position from the last known screen rect. This handles the common case
   // where typing moves the cursor within a component but the component's
   // layout position stays the same (e.g., TextInput cursor moves on keystroke).
   useLayoutEffect(() => {
-    const rect = lastRectRef.current
-    if (!rect || !visible) return
+    const rect = lastRectRef.current;
+    if (!rect || !visible) return;
     set({
       x: rect.x + col,
       y: rect.y + row,
       visible: true,
       shape,
-    })
-  }, [col, row, shape, visible, set])
+    });
+  }, [col, row, shape, visible, set]);
 
   // On unmount or when visible becomes false, clear cursor state
   useEffect(() => {
     if (!visible) {
       // If we are hiding, clear state now
-      const current = getRef.current()
+      const current = getRef.current();
       if (current) {
-        setRef.current(null)
+        setRef.current(null);
       }
     }
 
     return () => {
       // On unmount, clear cursor state
-      setRef.current(null)
-    }
-  }, [visible])
+      setRef.current(null);
+    };
+  }, [visible]);
 }
 
 // ============================================================================
@@ -238,11 +238,11 @@ export function useCursor(position: CursorPosition): void {
  * These module-level functions are the global fallback for backward compat.
  */
 function getCursorState(): CursorState | null {
-  return globalGetCursorState()
+  return globalGetCursorState();
 }
 
 function subscribeCursor(listener: () => void): () => void {
-  return globalSubscribeCursor(listener)
+  return globalSubscribeCursor(listener);
 }
 
-export { getCursorState, subscribeCursor }
+export { getCursorState, subscribeCursor };

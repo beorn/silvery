@@ -21,9 +21,9 @@
  * ```
  */
 
-import { type Key, parseKey } from "./keys"
-import { isMouseSequence, parseMouseSequence, type ParsedMouse } from "../mouse"
-import type { Dims, Provider, ProviderEvent } from "./types"
+import { type Key, parseKey } from "./keys";
+import { isMouseSequence, parseMouseSequence, type ParsedMouse } from "../mouse";
+import type { Dims, Provider, ProviderEvent } from "./types";
 
 // ============================================================================
 // Input Splitting
@@ -35,9 +35,9 @@ import type { Dims, Provider, ProviderEvent } from "./types"
  */
 interface SplitResult {
   /** Fully parsed key/mouse sequences */
-  sequences: string[]
+  sequences: string[];
   /** Incomplete CSI sequence at end of chunk (needs next chunk to complete) */
-  incomplete: string | null
+  incomplete: string | null;
 }
 
 /**
@@ -58,50 +58,50 @@ interface SplitResult {
  * - Everything else is a single byte
  */
 function splitRawInput(raw: string): SplitResult {
-  const sequences: string[] = []
-  let i = 0
+  const sequences: string[] = [];
+  let i = 0;
   while (i < raw.length) {
     if (raw[i] === "\x1b") {
       // Escape sequence
       if (i + 1 >= raw.length) {
         // Bare ESC at end
-        sequences.push("\x1b")
-        i++
+        sequences.push("\x1b");
+        i++;
       } else if (raw[i + 1] === "[") {
         // CSI sequence: ESC [ ... <letter or ~>
-        let j = i + 2
-        while (j < raw.length && !isCSITerminator(raw[j]!)) j++
+        let j = i + 2;
+        while (j < raw.length && !isCSITerminator(raw[j]!)) j++;
         if (j < raw.length) {
-          j++ // include terminator
-          sequences.push(raw.slice(i, j))
-          i = j
+          j++; // include terminator
+          sequences.push(raw.slice(i, j));
+          i = j;
         } else {
           // Incomplete CSI — hit end of chunk without finding terminator.
           // Return it as incomplete so caller can buffer for next chunk.
-          return { sequences, incomplete: raw.slice(i) }
+          return { sequences, incomplete: raw.slice(i) };
         }
       } else if (raw[i + 1] === "O") {
         // SS3 sequence: ESC O <letter>
-        const end = Math.min(i + 3, raw.length)
-        sequences.push(raw.slice(i, end))
-        i = end
+        const end = Math.min(i + 3, raw.length);
+        sequences.push(raw.slice(i, end));
+        i = end;
       } else {
         // Meta key: ESC + char
-        sequences.push(raw.slice(i, i + 2))
-        i += 2
+        sequences.push(raw.slice(i, i + 2));
+        i += 2;
       }
     } else {
       // Single byte (printable char, ctrl code, etc.)
-      sequences.push(raw[i]!)
-      i++
+      sequences.push(raw[i]!);
+      i++;
     }
   }
-  return { sequences, incomplete: null }
+  return { sequences, incomplete: null };
 }
 
 /** CSI sequences end with a letter (A-Z, a-z) or ~ */
 function isCSITerminator(ch: string): boolean {
-  return (ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z") || ch === "~"
+  return (ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z") || ch === "~";
 }
 
 // ============================================================================
@@ -112,33 +112,33 @@ function isCSITerminator(ch: string): boolean {
  * Terminal state.
  */
 export interface TermState {
-  cols: number
-  rows: number
+  cols: number;
+  rows: number;
 }
 
 /**
  * Terminal events.
  */
 export interface TermEvents {
-  key: { input: string; key: Key }
-  mouse: ParsedMouse
-  resize: Dims
-  [key: string]: unknown
+  key: { input: string; key: Key };
+  mouse: ParsedMouse;
+  resize: Dims;
+  [key: string]: unknown;
 }
 
 /**
  * Terminal provider type.
  */
-export type TermProvider = Provider<TermState, TermEvents>
+export type TermProvider = Provider<TermState, TermEvents>;
 
 /**
  * Options for createTermProvider.
  */
 export interface TermProviderOptions {
   /** Initial columns (default: from stdout or 80) */
-  cols?: number
+  cols?: number;
   /** Initial rows (default: from stdout or 24) */
-  rows?: number
+  rows?: number;
 }
 
 // ============================================================================
@@ -158,79 +158,79 @@ export function createTermProvider(
   stdout: NodeJS.WriteStream,
   options: TermProviderOptions = {},
 ): TermProvider {
-  const { cols = stdout.columns || 80, rows = stdout.rows || 24 } = options
+  const { cols = stdout.columns || 80, rows = stdout.rows || 24 } = options;
 
   // Current state
-  let state: TermState = { cols, rows }
+  let state: TermState = { cols, rows };
 
   // Subscribers
-  const listeners = new Set<(state: TermState) => void>()
+  const listeners = new Set<(state: TermState) => void>();
 
   // Disposed flag
-  let disposed = false
+  let disposed = false;
 
   // Abort controller for cleanup
-  const controller = new AbortController()
-  const signal = controller.signal
+  const controller = new AbortController();
+  const signal = controller.signal;
 
   // Shared stdin cleanup — set by events(), callable from dispose as safety net
-  let stdinCleanup: (() => void) | null = null
+  let stdinCleanup: (() => void) | null = null;
 
   // Resize handler
   const onResize = () => {
     state = {
       cols: stdout.columns || 80,
       rows: stdout.rows || 24,
-    }
-    listeners.forEach((l) => l(state))
-  }
+    };
+    listeners.forEach((l) => l(state));
+  };
 
   // Subscribe to resize
-  stdout.on("resize", onResize)
+  stdout.on("resize", onResize);
 
   return {
     getState(): TermState {
-      return state
+      return state;
     },
 
     subscribe(listener: (state: TermState) => void): () => void {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     },
 
     async *events(): AsyncGenerator<ProviderEvent<TermEvents>, void, undefined> {
-      if (disposed) return
+      if (disposed) return;
 
       // Set up stdin for raw mode if TTY
       if (stdin.isTTY) {
-        stdin.setRawMode(true)
-        stdin.resume()
-        stdin.setEncoding("utf8")
+        stdin.setRawMode(true);
+        stdin.resume();
+        stdin.setEncoding("utf8");
       }
 
       // Queued events
-      const queue: ProviderEvent<TermEvents>[] = []
-      let eventResolve: (() => void) | null = null
+      const queue: ProviderEvent<TermEvents>[] = [];
+      let eventResolve: (() => void) | null = null;
 
       // Single-key handler: parses one key sequence and enqueues an event.
       // Mouse sequences are detected and parsed separately.
       const onKey = (raw: string) => {
         if (isMouseSequence(raw)) {
-          const parsed = parseMouseSequence(raw)
+          const parsed = parseMouseSequence(raw);
           if (parsed) {
-            queue.push({ type: "mouse", data: parsed })
-            return
+            queue.push({ type: "mouse", data: parsed });
+            return;
           }
         }
-        const [input, key] = parseKey(raw)
-        queue.push({ type: "key", data: { input, key } })
-      }
+        const [input, key] = parseKey(raw);
+        queue.push({ type: "key", data: { input, key } });
+      };
 
       // Cross-chunk buffer for incomplete CSI sequences.
       // When an SGR mouse sequence (or other CSI) splits across two stdin
       // data events, we buffer the incomplete prefix and prepend it to the
       // next chunk so the sequence can be reassembled.
-      let incompleteCSI: string | null = null
+      let incompleteCSI: string | null = null;
 
       // stdin handler: splits multi-char chunks into individual keystrokes.
       // When the OS buffers key repeat events, stdin delivers "jjjjj" as a
@@ -238,18 +238,18 @@ export function createTermProvider(
       const onChunk = (chunk: string) => {
         // Prepend any buffered incomplete CSI from the previous chunk
         if (incompleteCSI !== null) {
-          chunk = incompleteCSI + chunk
-          incompleteCSI = null
+          chunk = incompleteCSI + chunk;
+          incompleteCSI = null;
         }
-        const { sequences, incomplete } = splitRawInput(chunk)
-        for (const raw of sequences) onKey(raw)
-        incompleteCSI = incomplete
+        const { sequences, incomplete } = splitRawInput(chunk);
+        for (const raw of sequences) onKey(raw);
+        incompleteCSI = incomplete;
         if (eventResolve) {
-          const resolve = eventResolve
-          eventResolve = null
-          resolve()
+          const resolve = eventResolve;
+          eventResolve = null;
+          resolve();
         }
-      }
+      };
 
       // Resize handler for events
       const onResizeEvent = () => {
@@ -259,76 +259,76 @@ export function createTermProvider(
             cols: stdout.columns || 80,
             rows: stdout.rows || 24,
           },
-        }
-        queue.push(event)
+        };
+        queue.push(event);
         if (eventResolve) {
-          const resolve = eventResolve
-          eventResolve = null
-          resolve()
+          const resolve = eventResolve;
+          eventResolve = null;
+          resolve();
         }
-      }
+      };
 
       // Subscribe — track the cleanup function for use by both finally and dispose
-      stdin.on("data", onChunk)
-      stdout.on("resize", onResizeEvent)
+      stdin.on("data", onChunk);
+      stdout.on("resize", onResizeEvent);
       stdinCleanup = () => {
-        stdin.off("data", onChunk)
-        stdout.off("resize", onResizeEvent)
+        stdin.off("data", onChunk);
+        stdout.off("resize", onResizeEvent);
         if (stdin.isTTY) {
-          stdin.setRawMode(false)
+          stdin.setRawMode(false);
         }
         // Always pause stdin — on("data") unconditionally sets readableFlowing=true,
         // so we must unconditionally pause to release the event loop reference.
-        stdin.pause()
-      }
+        stdin.pause();
+      };
 
       try {
         while (!disposed && !signal.aborted) {
           // Wait for event
           if (queue.length === 0) {
             await new Promise<void>((resolve) => {
-              eventResolve = resolve
-              signal.addEventListener("abort", () => resolve(), { once: true })
-            })
+              eventResolve = resolve;
+              signal.addEventListener("abort", () => resolve(), { once: true });
+            });
           }
 
           // Check if aborted while waiting
-          if (disposed || signal.aborted) break
+          if (disposed || signal.aborted) break;
 
           // Yield queued events
           while (queue.length > 0) {
-            yield queue.shift()!
+            yield queue.shift()!;
           }
         }
       } finally {
         if (stdinCleanup) {
-          const fn = stdinCleanup
-          stdinCleanup = null
-          fn()
+          const fn = stdinCleanup;
+          stdinCleanup = null;
+          fn();
         }
       }
     },
 
     [Symbol.dispose](): void {
-      if (disposed) return
-      disposed = true
+      if (disposed) return;
+      disposed = true;
 
       // Abort pending waits
-      controller.abort()
+      controller.abort();
 
       // Remove resize listener
-      stdout.off("resize", onResize)
+      stdout.off("resize", onResize);
 
       // Clear listeners
-      listeners.clear()
+      listeners.clear();
 
       // Safety net: clean up stdin in case events() generator's finally
       // hasn't run yet (e.g., async .return() propagation is delayed)
       if (stdinCleanup) {
-        const fn = stdinCleanup
-        stdinCleanup = null
-        fn()
+        const fn = stdinCleanup;
+        stdinCleanup = null;
+        fn();
       }
     },
-  }
+  };
 }

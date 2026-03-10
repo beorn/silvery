@@ -18,20 +18,20 @@
  * ```
  */
 
-import { hexToRgb } from "./color"
-import { deriveTheme } from "./derive"
-import { fromColors, assignPrimaryToSlot } from "./generators"
-import { getPaletteByName } from "./palettes/index"
-import type { Theme, ColorPalette, HueName } from "./types"
+import { hexToRgb } from "./color";
+import { deriveTheme } from "./derive";
+import { fromColors, assignPrimaryToSlot } from "./generators";
+import { getPaletteByName } from "./palettes/index";
+import type { Theme, ColorPalette, HueName } from "./types";
 
 // ============================================================================
 // Luminance
 // ============================================================================
 
 function isDarkColor(hex: string): boolean {
-  const rgb = hexToRgb(hex)
-  if (!rgb) return true
-  return (rgb[0] + rgb[1] + rgb[2]) / (255 * 3) < 0.5
+  const rgb = hexToRgb(hex);
+  if (!rgb) return true;
+  return (rgb[0] + rgb[1] + rgb[2]) / (255 * 3) < 0.5;
 }
 
 // ============================================================================
@@ -39,96 +39,96 @@ function isDarkColor(hex: string): boolean {
 // ============================================================================
 
 interface ThemeBuilderState {
-  dark?: boolean
-  bgColor?: string
-  fgColor?: string
-  primaryColor?: string
-  colors: Partial<ColorPalette>
-  presetPalette?: ColorPalette
+  dark?: boolean;
+  bgColor?: string;
+  fgColor?: string;
+  primaryColor?: string;
+  colors: Partial<ColorPalette>;
+  presetPalette?: ColorPalette;
 }
 
 export interface ThemeBuilder {
   /** Set background color. */
-  bg(color: string): ThemeBuilder
+  bg(color: string): ThemeBuilder;
   /** Set foreground color. */
-  fg(color: string): ThemeBuilder
+  fg(color: string): ThemeBuilder;
   /** Set primary accent color. */
-  primary(color: string): ThemeBuilder
+  primary(color: string): ThemeBuilder;
   /** Alias for `.primary()`. */
-  accent(color: string): ThemeBuilder
+  accent(color: string): ThemeBuilder;
   /** Force dark mode. */
-  dark(): ThemeBuilder
+  dark(): ThemeBuilder;
   /** Force light mode. */
-  light(): ThemeBuilder
+  light(): ThemeBuilder;
   /** Set any palette color by name. */
-  color(name: keyof Omit<ColorPalette, "name" | "dark">, value: string): ThemeBuilder
+  color(name: keyof Omit<ColorPalette, "name" | "dark">, value: string): ThemeBuilder;
   /** Set full palette at once. */
-  palette(p: ColorPalette): ThemeBuilder
+  palette(p: ColorPalette): ThemeBuilder;
   /** Load a built-in palette by name. */
-  preset(name: string): ThemeBuilder
+  preset(name: string): ThemeBuilder;
   /** Derive the final Theme from accumulated state. */
-  build(): Theme
+  build(): Theme;
 }
 
 /** Create a chainable theme builder. */
 export function createTheme(): ThemeBuilder {
-  const state: ThemeBuilderState = { colors: {} }
+  const state: ThemeBuilderState = { colors: {} };
 
   const builder: ThemeBuilder = {
     bg(color) {
-      state.bgColor = color
-      return builder
+      state.bgColor = color;
+      return builder;
     },
     fg(color) {
-      state.fgColor = color
-      return builder
+      state.fgColor = color;
+      return builder;
     },
     primary(color) {
-      state.primaryColor = color
-      return builder
+      state.primaryColor = color;
+      return builder;
     },
     accent(color) {
-      return builder.primary(color)
+      return builder.primary(color);
     },
     dark() {
-      state.dark = true
-      return builder
+      state.dark = true;
+      return builder;
     },
     light() {
-      state.dark = false
-      return builder
+      state.dark = false;
+      return builder;
     },
     color(name, value) {
-      ;(state.colors as Record<string, string>)[name] = value
-      return builder
+      (state.colors as Record<string, string>)[name] = value;
+      return builder;
     },
     palette(p) {
-      state.presetPalette = p
-      return builder
+      state.presetPalette = p;
+      return builder;
     },
     preset(name) {
-      const p = getPaletteByName(name)
-      if (p) state.presetPalette = p
-      return builder
+      const p = getPaletteByName(name);
+      if (p) state.presetPalette = p;
+      return builder;
     },
 
     build(): Theme {
-      const isDark = state.dark ?? (state.bgColor ? isDarkColor(state.bgColor) : true)
+      const isDark = state.dark ?? (state.bgColor ? isDarkColor(state.bgColor) : true);
 
-      let palette: ColorPalette
+      let palette: ColorPalette;
 
       if (state.presetPalette) {
         // Start from preset, apply overrides
-        palette = { ...state.presetPalette }
-        if (state.bgColor) palette.background = state.bgColor
-        if (state.fgColor) palette.foreground = state.fgColor
+        palette = { ...state.presetPalette };
+        if (state.bgColor) palette.background = state.bgColor;
+        if (state.fgColor) palette.foreground = state.fgColor;
         if (state.primaryColor) {
           // Override the appropriate color slot
-          const slot = assignPrimaryToSlot(state.primaryColor)
-          const ansiName = hueToAnsiField(slot)
-          ;(palette as unknown as Record<string, string>)[ansiName] = state.primaryColor
+          const slot = assignPrimaryToSlot(state.primaryColor);
+          const ansiName = hueToAnsiField(slot);
+          (palette as unknown as Record<string, string>)[ansiName] = state.primaryColor;
         }
-        palette.dark = isDark
+        palette.dark = isDark;
       } else {
         // Generate from minimal input
         palette = fromColors({
@@ -136,19 +136,20 @@ export function createTheme(): ThemeBuilder {
           foreground: state.fgColor,
           primary: state.primaryColor,
           dark: isDark,
-        })
+        });
       }
 
       // Apply explicit color overrides
       for (const [key, val] of Object.entries(state.colors)) {
-        if (val !== undefined && typeof val === "string") (palette as unknown as Record<string, string>)[key] = val
+        if (val !== undefined && typeof val === "string")
+          (palette as unknown as Record<string, string>)[key] = val;
       }
 
-      return deriveTheme(palette)
+      return deriveTheme(palette);
     },
-  }
+  };
 
-  return builder
+  return builder;
 }
 
 /** Map a HueName to the corresponding ColorPalette field. */
@@ -162,8 +163,8 @@ function hueToAnsiField(hue: HueName): keyof ColorPalette {
     blue: "blue",
     purple: "magenta",
     pink: "brightMagenta",
-  }
-  return map[hue]
+  };
+  return map[hue];
 }
 
 // ============================================================================
@@ -180,9 +181,9 @@ function hueToAnsiField(hue: HueName): keyof ColorPalette {
  * ```
  */
 export function quickTheme(primaryOrHex: string, mode?: "dark" | "light"): Theme {
-  const b = createTheme()
+  const b = createTheme();
   if (primaryOrHex.startsWith("#")) {
-    b.primary(primaryOrHex)
+    b.primary(primaryOrHex);
   } else {
     const namedColors: Record<string, string> = {
       red: "#BF616A",
@@ -196,12 +197,12 @@ export function quickTheme(primaryOrHex: string, mode?: "dark" | "light"): Theme
       pink: "#D4879C",
       magenta: "#B48EAD",
       white: "#ECEFF4",
-    }
-    b.primary(namedColors[primaryOrHex] ?? "#5E81AC")
+    };
+    b.primary(namedColors[primaryOrHex] ?? "#5E81AC");
   }
-  if (mode === "dark") b.dark()
-  else if (mode === "light") b.light()
-  return b.build()
+  if (mode === "dark") b.dark();
+  else if (mode === "light") b.light();
+  return b.build();
 }
 
 /**
@@ -214,5 +215,5 @@ export function quickTheme(primaryOrHex: string, mode?: "dark" | "light"): Theme
  * ```
  */
 export function presetTheme(name: string): Theme {
-  return createTheme().preset(name).build()
+  return createTheme().preset(name).build();
 }

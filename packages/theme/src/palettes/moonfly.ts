@@ -3,8 +3,8 @@
  * Source: https://github.com/bluz71/vim-moonfly-colors
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Moonfly — dark charcoal theme. */
 export const moonfly: ColorPalette = {
@@ -32,4 +32,4 @@ export const moonfly: ColorPalette = {
   cursorText: "#080808",
   selectionBackground: "#323437",
   selectionForeground: "#C6C6C6",
-}
+};

@@ -26,7 +26,7 @@ import type {
   TextMeasureResult,
   TextMeasureStyle,
   TextMeasurer,
-} from "../render-adapter"
+} from "../render-adapter";
 
 // ============================================================================
 // Configuration
@@ -34,17 +34,17 @@ import type {
 
 export interface DOMAdapterConfig {
   /** Font size in pixels (default: 14) */
-  fontSize?: number
+  fontSize?: number;
   /** Font family (default: 'monospace') */
-  fontFamily?: string
+  fontFamily?: string;
   /** Line height multiplier (default: 1.2) */
-  lineHeight?: number
+  lineHeight?: number;
   /** Background color (default: '#1e1e1e') */
-  backgroundColor?: string
+  backgroundColor?: string;
   /** Default foreground color (default: '#d4d4d4') */
-  foregroundColor?: string
+  foregroundColor?: string;
   /** CSS class prefix (default: 'silvery') */
-  classPrefix?: string
+  classPrefix?: string;
 }
 
 const DEFAULT_CONFIG: Required<DOMAdapterConfig> = {
@@ -54,7 +54,7 @@ const DEFAULT_CONFIG: Required<DOMAdapterConfig> = {
   backgroundColor: "#1e1e1e",
   foregroundColor: "#d4d4d4",
   classPrefix: "silvery",
-}
+};
 
 // ============================================================================
 // Border Characters (same as terminal/canvas for consistency)
@@ -93,7 +93,7 @@ const BORDER_CHARS: Record<string, BorderChars> = {
     horizontal: "━",
     vertical: "┃",
   },
-}
+};
 
 // ============================================================================
 // Color Conversion
@@ -118,13 +118,13 @@ const ANSI_COLORS: Record<string, string> = {
   brightmagenta: "#ff00ff",
   brightcyan: "#00ffff",
   brightwhite: "#ffffff",
-}
+};
 
 function resolveColor(color: string | undefined, fallback: string): string {
-  if (!color) return fallback
-  if (color.startsWith("#") || color.startsWith("rgb")) return color
-  const named = ANSI_COLORS[color.toLowerCase()]
-  return named ?? color
+  if (!color) return fallback;
+  if (color.startsWith("#") || color.startsWith("rgb")) return color;
+  const named = ANSI_COLORS[color.toLowerCase()];
+  return named ?? color;
 }
 
 // ============================================================================
@@ -141,13 +141,13 @@ function createDOMMeasurer(_config: Required<DOMAdapterConfig>): TextMeasurer {
       return {
         width: text.length,
         height: 1,
-      }
+      };
     },
 
     getLineHeight(_style?: TextMeasureStyle): number {
-      return 1
+      return 1;
     },
-  }
+  };
 }
 
 // ============================================================================
@@ -155,9 +155,9 @@ function createDOMMeasurer(_config: Required<DOMAdapterConfig>): TextMeasurer {
 // ============================================================================
 
 interface TextRun {
-  text: string
-  style: RenderStyle
-  x: number
+  text: string;
+  style: RenderStyle;
+  x: number;
 }
 
 // ============================================================================
@@ -165,73 +165,73 @@ interface TextRun {
 // ============================================================================
 
 export class DOMRenderBuffer implements RenderBuffer {
-  readonly width: number
-  readonly height: number
+  readonly width: number;
+  readonly height: number;
 
-  private config: Required<DOMAdapterConfig>
-  private lines: Map<number, TextRun[]>
-  private backgrounds: Map<string, { x: number; y: number; w: number; h: number; color: string }>
+  private config: Required<DOMAdapterConfig>;
+  private lines: Map<number, TextRun[]>;
+  private backgrounds: Map<string, { x: number; y: number; w: number; h: number; color: string }>;
 
   // Cell-to-pixel conversion factors
-  private readonly charWidth: number
-  private readonly cellHeight: number
+  private readonly charWidth: number;
+  private readonly cellHeight: number;
 
   // Container element (set when flushing)
-  private container: HTMLElement | null = null
+  private container: HTMLElement | null = null;
 
   constructor(width: number, height: number, config: Required<DOMAdapterConfig>) {
-    this.width = width
-    this.height = height
-    this.config = config
-    this.lines = new Map()
-    this.backgrounds = new Map()
+    this.width = width;
+    this.height = height;
+    this.config = config;
+    this.lines = new Map();
+    this.backgrounds = new Map();
 
     // Compute cell dimensions for coordinate conversion.
     // Width/height are in cell units (cols/rows); rendering converts to pixels.
-    this.charWidth = config.fontSize * 0.6
-    this.cellHeight = config.fontSize * config.lineHeight
+    this.charWidth = config.fontSize * 0.6;
+    this.cellHeight = config.fontSize * config.lineHeight;
   }
 
   /**
    * Set the container element for rendering.
    */
   setContainer(container: HTMLElement): void {
-    this.container = container
+    this.container = container;
   }
 
   /**
    * Get the container element.
    */
   getContainer(): HTMLElement | null {
-    return this.container
+    return this.container;
   }
 
   fillRect(x: number, y: number, width: number, height: number, style: RenderStyle): void {
     if (style.bg) {
-      const key = `${x},${y},${width},${height}`
+      const key = `${x},${y},${width},${height}`;
       this.backgrounds.set(key, {
         x,
         y,
         w: width,
         h: height,
         color: resolveColor(style.bg, this.config.backgroundColor),
-      })
+      });
     }
   }
 
   drawText(x: number, y: number, text: string, style: RenderStyle): void {
     if (!this.lines.has(y)) {
-      this.lines.set(y, [])
+      this.lines.set(y, []);
     }
-    this.lines.get(y)!.push({ text, style, x })
+    this.lines.get(y)!.push({ text, style, x });
   }
 
   drawChar(x: number, y: number, char: string, style: RenderStyle): void {
-    this.drawText(x, y, char, style)
+    this.drawText(x, y, char, style);
   }
 
   inBounds(x: number, y: number): boolean {
-    return x >= 0 && x < this.width && y >= 0 && y < this.height
+    return x >= 0 && x < this.width && y >= 0 && y < this.height;
   }
 
   /**
@@ -241,19 +241,19 @@ export class DOMRenderBuffer implements RenderBuffer {
    */
   render(): void {
     if (!this.container) {
-      throw new Error("DOMRenderBuffer: No container set. Call setContainer() first.")
+      throw new Error("DOMRenderBuffer: No container set. Call setContainer() first.");
     }
 
-    const container = this.container
-    const cw = this.charWidth
-    const ch = this.cellHeight
+    const container = this.container;
+    const cw = this.charWidth;
+    const ch = this.cellHeight;
 
     // Container dimensions in pixels (convert cell units back to pixels)
-    const containerWidthPx = this.width * cw
-    const containerHeightPx = this.height * ch
+    const containerWidthPx = this.width * cw;
+    const containerHeightPx = this.height * ch;
 
     // Clear previous content
-    container.innerHTML = ""
+    container.innerHTML = "";
 
     // Set container styles
     container.style.cssText = `
@@ -267,12 +267,12 @@ export class DOMRenderBuffer implements RenderBuffer {
 			overflow: hidden;
 			width: ${containerWidthPx}px;
 			height: ${containerHeightPx}px;
-		`
+		`;
 
     // Render background rectangles (convert cell coords to pixels)
     for (const bg of this.backgrounds.values()) {
-      const bgDiv = document.createElement("div")
-      bgDiv.className = `${this.config.classPrefix}-bg`
+      const bgDiv = document.createElement("div");
+      bgDiv.className = `${this.config.classPrefix}-bg`;
       bgDiv.style.cssText = `
 				position: absolute;
 				left: ${bg.x * cw}px;
@@ -280,80 +280,82 @@ export class DOMRenderBuffer implements RenderBuffer {
 				width: ${bg.w * cw}px;
 				height: ${bg.h * ch}px;
 				background-color: ${bg.color};
-			`
-      container.appendChild(bgDiv)
+			`;
+      container.appendChild(bgDiv);
     }
 
     // Render text lines (convert cell coords to pixels)
-    const sortedLines = Array.from(this.lines.entries()).sort((a, b) => a[0] - b[0])
+    const sortedLines = Array.from(this.lines.entries()).sort((a, b) => a[0] - b[0]);
 
     for (const [y, runs] of sortedLines) {
-      const lineDiv = document.createElement("div")
-      lineDiv.className = `${this.config.classPrefix}-line`
+      const lineDiv = document.createElement("div");
+      lineDiv.className = `${this.config.classPrefix}-line`;
       lineDiv.style.cssText = `
 				position: absolute;
 				left: 0;
 				top: ${y * ch}px;
 				height: ${ch}px;
 				white-space: pre;
-			`
+			`;
 
       // Sort runs by x position
-      const sortedRuns = runs.sort((a, b) => a.x - b.x)
+      const sortedRuns = runs.sort((a, b) => a.x - b.x);
 
       for (const run of sortedRuns) {
-        const span = document.createElement("span")
-        span.className = `${this.config.classPrefix}-text`
-        span.textContent = run.text
+        const span = document.createElement("span");
+        span.className = `${this.config.classPrefix}-text`;
+        span.textContent = run.text;
 
         // Apply styles (convert cell x to pixel x)
-        const styles: string[] = [`position: absolute`, `left: ${run.x * cw}px`]
+        const styles: string[] = [`position: absolute`, `left: ${run.x * cw}px`];
 
         if (run.style.fg) {
-          styles.push(`color: ${resolveColor(run.style.fg, this.config.foregroundColor)}`)
+          styles.push(`color: ${resolveColor(run.style.fg, this.config.foregroundColor)}`);
         }
         if (run.style.bg) {
-          styles.push(`background-color: ${resolveColor(run.style.bg, this.config.backgroundColor)}`)
+          styles.push(
+            `background-color: ${resolveColor(run.style.bg, this.config.backgroundColor)}`,
+          );
         }
 
-        const attrs = run.style.attrs
+        const attrs = run.style.attrs;
         if (attrs) {
-          if (attrs.bold) styles.push("font-weight: bold")
-          if (attrs.dim) styles.push("opacity: 0.5")
-          if (attrs.italic) styles.push("font-style: italic")
+          if (attrs.bold) styles.push("font-weight: bold");
+          if (attrs.dim) styles.push("opacity: 0.5");
+          if (attrs.italic) styles.push("font-style: italic");
 
           // Underline handling
           if (attrs.underline || attrs.underlineStyle) {
-            const underlineStyle = attrs.underlineStyle ?? "single"
+            const underlineStyle = attrs.underlineStyle ?? "single";
             const underlineColor = attrs.underlineColor
               ? resolveColor(attrs.underlineColor, this.config.foregroundColor)
-              : "currentColor"
+              : "currentColor";
 
             switch (underlineStyle) {
               case "double":
-                styles.push(`text-decoration: underline double ${underlineColor}`)
-                break
+                styles.push(`text-decoration: underline double ${underlineColor}`);
+                break;
               case "curly":
-                styles.push(`text-decoration: underline wavy ${underlineColor}`)
-                break
+                styles.push(`text-decoration: underline wavy ${underlineColor}`);
+                break;
               case "dotted":
-                styles.push(`text-decoration: underline dotted ${underlineColor}`)
-                break
+                styles.push(`text-decoration: underline dotted ${underlineColor}`);
+                break;
               case "dashed":
-                styles.push(`text-decoration: underline dashed ${underlineColor}`)
-                break
+                styles.push(`text-decoration: underline dashed ${underlineColor}`);
+                break;
               default:
-                styles.push(`text-decoration: underline solid ${underlineColor}`)
+                styles.push(`text-decoration: underline solid ${underlineColor}`);
             }
           }
 
           if (attrs.strikethrough) {
-            const existing = styles.find((s) => s.startsWith("text-decoration:"))
+            const existing = styles.find((s) => s.startsWith("text-decoration:"));
             if (existing) {
-              const idx = styles.indexOf(existing)
-              styles[idx] = existing.replace("underline", "underline line-through")
+              const idx = styles.indexOf(existing);
+              styles[idx] = existing.replace("underline", "underline line-through");
             } else {
-              styles.push("text-decoration: line-through")
+              styles.push("text-decoration: line-through");
             }
           }
 
@@ -361,19 +363,19 @@ export class DOMRenderBuffer implements RenderBuffer {
             // Swap foreground/background
             const fg = run.style.fg
               ? resolveColor(run.style.fg, this.config.foregroundColor)
-              : this.config.foregroundColor
+              : this.config.foregroundColor;
             const bg = run.style.bg
               ? resolveColor(run.style.bg, this.config.backgroundColor)
-              : this.config.backgroundColor
-            styles.push(`color: ${bg}`, `background-color: ${fg}`)
+              : this.config.backgroundColor;
+            styles.push(`color: ${bg}`, `background-color: ${fg}`);
           }
         }
 
-        span.style.cssText = styles.join("; ")
-        lineDiv.appendChild(span)
+        span.style.cssText = styles.join("; ");
+        lineDiv.appendChild(span);
       }
 
-      container.appendChild(lineDiv)
+      container.appendChild(lineDiv);
     }
   }
 
@@ -381,8 +383,8 @@ export class DOMRenderBuffer implements RenderBuffer {
    * Clear the buffer.
    */
   clear(): void {
-    this.lines.clear()
-    this.backgrounds.clear()
+    this.lines.clear();
+    this.backgrounds.clear();
   }
 }
 
@@ -391,45 +393,45 @@ export class DOMRenderBuffer implements RenderBuffer {
 // ============================================================================
 
 export function createDOMAdapter(config: DOMAdapterConfig = {}): RenderAdapter {
-  const cfg = { ...DEFAULT_CONFIG, ...config }
-  const measurer = createDOMMeasurer(cfg)
+  const cfg = { ...DEFAULT_CONFIG, ...config };
+  const measurer = createDOMMeasurer(cfg);
 
   return {
     name: "dom",
     measurer,
 
     createBuffer(width: number, height: number): RenderBuffer {
-      return new DOMRenderBuffer(width, height, cfg)
+      return new DOMRenderBuffer(width, height, cfg);
     },
 
     flush(buffer: RenderBuffer, _prevBuffer: RenderBuffer | null): void {
       // DOM buffer renders directly when render() is called
-      const domBuffer = buffer as DOMRenderBuffer
+      const domBuffer = buffer as DOMRenderBuffer;
       if (domBuffer.getContainer()) {
-        domBuffer.render()
+        domBuffer.render();
       }
     },
 
     getBorderChars(style: string): BorderChars {
-      return BORDER_CHARS[style] ?? BORDER_CHARS.single!
+      return BORDER_CHARS[style] ?? BORDER_CHARS.single!;
     },
-  }
+  };
 }
 
 // ============================================================================
 // Inject Global Styles (Optional)
 // ============================================================================
 
-let stylesInjected = false
+let stylesInjected = false;
 
 /**
  * Inject global CSS styles for silvery DOM rendering.
  * Call once at application startup if you want default styling.
  */
 export function injectDOMStyles(classPrefix = "silvery"): void {
-  if (stylesInjected || typeof document === "undefined") return
+  if (stylesInjected || typeof document === "undefined") return;
 
-  const style = document.createElement("style")
+  const style = document.createElement("style");
   style.textContent = `
 		.${classPrefix}-container {
 			font-family: monospace;
@@ -446,7 +448,7 @@ export function injectDOMStyles(classPrefix = "silvery"): void {
 		.${classPrefix}-text::selection {
 			background-color: rgba(100, 150, 255, 0.3);
 		}
-	`
-  document.head.appendChild(style)
-  stylesInjected = true
+	`;
+  document.head.appendChild(style);
+  stylesInjected = true;
 }

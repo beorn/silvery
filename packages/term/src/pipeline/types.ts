@@ -2,8 +2,8 @@
  * Shared types for the Silvery render pipeline.
  */
 
-import type { Cell } from "../buffer"
-import type { Measurer } from "../unicode"
+import type { Cell } from "../buffer";
+import type { Measurer } from "../unicode";
 
 /**
  * Context threaded through the render pipeline.
@@ -18,43 +18,43 @@ import type { Measurer } from "../unicode"
  *   module-level globals when absent for backward compat).
  */
 export interface PipelineContext {
-  readonly measurer: Measurer
+  readonly measurer: Measurer;
   // Phase 3: instrumentation (all optional for backward compat)
-  readonly instrumentEnabled?: boolean
-  readonly stats?: ContentPhaseStats
-  readonly nodeTrace?: NodeTraceEntry[]
-  readonly nodeTraceEnabled?: boolean
-  readonly bgConflictMode?: BgConflictMode
-  readonly warnedBgConflicts?: Set<string>
+  readonly instrumentEnabled?: boolean;
+  readonly stats?: ContentPhaseStats;
+  readonly nodeTrace?: NodeTraceEntry[];
+  readonly nodeTraceEnabled?: boolean;
+  readonly bgConflictMode?: BgConflictMode;
+  readonly warnedBgConflicts?: Set<string>;
 }
 
 /**
  * Background conflict detection mode.
  * Set via SILVERY_BG_CONFLICT env var: 'ignore' | 'warn' | 'throw'
  */
-export type BgConflictMode = "ignore" | "warn" | "throw"
+export type BgConflictMode = "ignore" | "warn" | "throw";
 
 /**
  * Per-node trace entry for SILVERY_STRICT diagnosis.
  */
 export interface NodeTraceEntry {
-  id: string
-  type: string
-  depth: number
-  rect: string
-  prevLayout: string
-  hasPrev: boolean
-  ancestorCleared: boolean
-  flags: string
-  decision: string
-  layoutChanged: boolean
-  contentAreaAffected?: boolean
-  parentRegionCleared?: boolean
-  parentRegionChanged?: boolean
-  childHasPrev?: boolean
-  childAncestorCleared?: boolean
-  skipBgFill?: boolean
-  bgColor?: string
+  id: string;
+  type: string;
+  depth: number;
+  rect: string;
+  prevLayout: string;
+  hasPrev: boolean;
+  ancestorCleared: boolean;
+  flags: string;
+  decision: string;
+  layoutChanged: boolean;
+  contentAreaAffected?: boolean;
+  parentRegionCleared?: boolean;
+  parentRegionChanged?: boolean;
+  childHasPrev?: boolean;
+  childAncestorCleared?: boolean;
+  skipBgFill?: boolean;
+  bgColor?: string;
 }
 
 /**
@@ -62,45 +62,45 @@ export interface NodeTraceEntry {
  * Reset after each contentPhase call.
  */
 export interface ContentPhaseStats {
-  nodesVisited: number
-  nodesRendered: number
-  nodesSkipped: number
-  textNodes: number
-  boxNodes: number
-  clearOps: number
+  nodesVisited: number;
+  nodesRendered: number;
+  nodesSkipped: number;
+  textNodes: number;
+  boxNodes: number;
+  clearOps: number;
   // Per-flag breakdown: why nodes weren't skipped
-  noPrevBuffer: number
-  flagContentDirty: number
-  flagPaintDirty: number
-  flagLayoutChanged: number
-  flagSubtreeDirty: number
-  flagChildrenDirty: number
-  flagChildPositionChanged: number
+  noPrevBuffer: number;
+  flagContentDirty: number;
+  flagPaintDirty: number;
+  flagLayoutChanged: number;
+  flagSubtreeDirty: number;
+  flagChildrenDirty: number;
+  flagChildPositionChanged: number;
   // Scroll container diagnostics
-  scrollContainerCount: number
-  scrollViewportCleared: number
-  scrollClearReason: string
+  scrollContainerCount: number;
+  scrollViewportCleared: number;
+  scrollClearReason: string;
   // Normal container diagnostics
-  normalChildrenRepaint: number
-  normalRepaintReason: string
+  normalChildrenRepaint: number;
+  normalRepaintReason: string;
   // Cascade diagnostics
-  cascadeMinDepth: number
-  cascadeNodes: string
+  cascadeMinDepth: number;
+  cascadeNodes: string;
   // Top-level prevBuffer diagnostics
-  _prevBufferNull: number
-  _prevBufferDimMismatch: number
-  _hasPrevBuffer: number
-  _layoutW: number
-  _layoutH: number
-  _prevW: number
-  _prevH: number
-  _callCount: number
+  _prevBufferNull: number;
+  _prevBufferDimMismatch: number;
+  _hasPrevBuffer: number;
+  _layoutW: number;
+  _layoutH: number;
+  _prevW: number;
+  _prevH: number;
+  _callCount: number;
 }
 
 /**
  * Clip bounds for viewport clipping.
  */
-export type ClipBounds = { top: number; bottom: number; left?: number; right?: number }
+export type ClipBounds = { top: number; bottom: number; left?: number; right?: number };
 
 /**
  * Per-node render state that changes at each tree level.
@@ -115,33 +115,33 @@ export type ClipBounds = { top: number; bottom: number; left?: number; right?: n
  * for the entire render pass.
  */
 export interface NodeRenderState {
-  scrollOffset: number
-  clipBounds?: ClipBounds
-  hasPrevBuffer: boolean
-  ancestorCleared: boolean
+  scrollOffset: number;
+  clipBounds?: ClipBounds;
+  hasPrevBuffer: boolean;
+  ancestorCleared: boolean;
 }
 
 /**
  * Cell change for diffing.
  */
 export interface CellChange {
-  x: number
-  y: number
-  cell: Cell
+  x: number;
+  y: number;
+  cell: Cell;
 }
 
 /**
  * Border character sets.
  */
 export interface BorderChars {
-  topLeft: string
-  topRight: string
-  bottomLeft: string
-  bottomRight: string
-  horizontal: string
-  vertical: string
+  topLeft: string;
+  topRight: string;
+  bottomLeft: string;
+  bottomRight: string;
+  horizontal: string;
+  vertical: string;
   /** Bottom horizontal character. When absent, falls back to `horizontal`. */
-  bottomHorizontal?: string
+  bottomHorizontal?: string;
   /** Right vertical character. When absent, falls back to `vertical`. */
-  rightVertical?: string
+  rightVertical?: string;
 }

@@ -1,12 +1,12 @@
 /**
  * Transform component tests
  */
-import { describe, test, expect } from "vitest"
-import { createRenderer } from "@silvery/test"
-import { Box, Text } from "silvery"
-import { Transform } from "../../packages/compat/src/ink"
+import { describe, test, expect } from "vitest";
+import { createRenderer } from "@silvery/test";
+import { Box, Text } from "silvery";
+import { Transform } from "../../packages/compat/src/ink";
 
-const render = createRenderer({ cols: 80, rows: 10 })
+const render = createRenderer({ cols: 80, rows: 10 });
 
 describe("Transform", () => {
   test("transforms single text child", () => {
@@ -14,9 +14,9 @@ describe("Transform", () => {
       <Transform transform={(output) => `[${output}]`}>
         <Text>hello</Text>
       </Transform>,
-    )
-    expect(app.text).toBe("[hello]")
-  })
+    );
+    expect(app.text).toBe("[hello]");
+  });
 
   test("transforms concatenated children text", () => {
     const app = render(
@@ -24,18 +24,18 @@ describe("Transform", () => {
         <Text>hello </Text>
         <Text>world</Text>
       </Transform>,
-    )
-    expect(app.text).toBe("[hello world]")
-  })
+    );
+    expect(app.text).toBe("[hello world]");
+  });
 
   test("transforms each line separately", () => {
     const app = render(
       <Transform transform={(line, index) => `${index}: ${line}`}>
         <Text>{"first\nsecond"}</Text>
       </Transform>,
-    )
-    expect(app.text).toBe("0: first\n1: second")
-  })
+    );
+    expect(app.text).toBe("0: first\n1: second");
+  });
 
   test("transforms uppercase", () => {
     const app = render(
@@ -43,7 +43,7 @@ describe("Transform", () => {
         <Text>hello </Text>
         <Text>world</Text>
       </Transform>,
-    )
-    expect(app.text).toBe("HELLO WORLD")
-  })
-})
+    );
+    expect(app.text).toBe("HELLO WORLD");
+  });
+});

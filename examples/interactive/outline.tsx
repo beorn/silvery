@@ -14,30 +14,39 @@
  * Run: bun vendor/silvery/examples/interactive/outline.tsx
  */
 
-import React, { useState } from "react"
-import { render, Box, Text, useInput, useApp, useContentRect, createTerm, type Key } from "../../src/index.js"
-import { ExampleBanner, type ExampleMeta } from "../_banner.js"
+import React, { useState } from "react";
+import {
+  render,
+  Box,
+  Text,
+  useInput,
+  useApp,
+  useContentRect,
+  createTerm,
+  type Key,
+} from "../../src/index.js";
+import { ExampleBanner, type ExampleMeta } from "../_banner.js";
 
 export const meta: ExampleMeta = {
   name: "Outline vs Border",
   description: "Side-by-side comparison showing outline (no layout impact) vs border",
   features: ["outlineStyle", "borderStyle", "useContentRect()", "layout dimensions"],
-}
+};
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type StyleVariant = "single" | "double" | "round" | "bold"
+type StyleVariant = "single" | "double" | "round" | "bold";
 
-const STYLES: StyleVariant[] = ["single", "double", "round", "bold"]
+const STYLES: StyleVariant[] = ["single", "double", "round", "bold"];
 
 // ============================================================================
 // Components
 // ============================================================================
 
 function ContentWithSize({ label }: { label: string }): JSX.Element {
-  const { width, height } = useContentRect()
+  const { width, height } = useContentRect();
 
   return (
     <Box flexDirection="column">
@@ -56,65 +65,87 @@ function ContentWithSize({ label }: { label: string }): JSX.Element {
       <Text dim>jumps over the lazy</Text>
       <Text dim>dog on a sunny day.</Text>
     </Box>
-  )
+  );
 }
 
-function BorderPanel({ style, highlight }: { style: StyleVariant; highlight: boolean }): JSX.Element {
+function BorderPanel({
+  style,
+  highlight,
+}: {
+  style: StyleVariant;
+  highlight: boolean;
+}): JSX.Element {
   return (
     <Box flexDirection="column" flexGrow={1} gap={1}>
       <Text bold color={highlight ? "$primary" : "white"}>
         borderStyle="{style}"
       </Text>
-      <Box borderStyle={style} borderColor={highlight ? "$primary" : "$border"} width={30} height={9}>
+      <Box
+        borderStyle={style}
+        borderColor={highlight ? "$primary" : "$border"}
+        width={30}
+        height={9}
+      >
         <ContentWithSize label="Border Box" />
       </Box>
       <Text dim>Border adds to layout.</Text>
       <Text dim>Content is pushed inward.</Text>
     </Box>
-  )
+  );
 }
 
-function OutlinePanel({ style, highlight }: { style: StyleVariant; highlight: boolean }): JSX.Element {
+function OutlinePanel({
+  style,
+  highlight,
+}: {
+  style: StyleVariant;
+  highlight: boolean;
+}): JSX.Element {
   return (
     <Box flexDirection="column" flexGrow={1} gap={1}>
       <Text bold color={highlight ? "$warning" : "white"}>
         outlineStyle="{style}"
       </Text>
-      <Box outlineStyle={style} outlineColor={highlight ? "$warning" : "$border"} width={30} height={9}>
+      <Box
+        outlineStyle={style}
+        outlineColor={highlight ? "$warning" : "$border"}
+        width={30}
+        height={9}
+      >
         <ContentWithSize label="Outline Box" />
       </Box>
       <Text dim>Outline overlaps content.</Text>
       <Text dim>No layout impact at all.</Text>
     </Box>
-  )
+  );
 }
 
 export function OutlineDemo(): JSX.Element {
-  const { exit } = useApp()
-  const [styleIndex, setStyleIndex] = useState(0)
-  const [focusedSide, setFocusedSide] = useState<"border" | "outline">("border")
+  const { exit } = useApp();
+  const [styleIndex, setStyleIndex] = useState(0);
+  const [focusedSide, setFocusedSide] = useState<"border" | "outline">("border");
 
-  const currentStyle = STYLES[styleIndex]!
+  const currentStyle = STYLES[styleIndex]!;
 
   useInput((input: string, key: Key) => {
     if (input === "q" || key.escape) {
-      exit()
-      return
+      exit();
+      return;
     }
 
     // Toggle focus between panels
     if (key.tab || input === "\t") {
-      setFocusedSide((prev) => (prev === "border" ? "outline" : "border"))
+      setFocusedSide((prev) => (prev === "border" ? "outline" : "border"));
     }
 
     // Cycle through border/outline styles
     if (key.rightArrow || input === "l") {
-      setStyleIndex((prev) => (prev + 1) % STYLES.length)
+      setStyleIndex((prev) => (prev + 1) % STYLES.length);
     }
     if (key.leftArrow || input === "h") {
-      setStyleIndex((prev) => (prev - 1 + STYLES.length) % STYLES.length)
+      setStyleIndex((prev) => (prev - 1 + STYLES.length) % STYLES.length);
     }
-  })
+  });
 
   return (
     <Box flexDirection="column" padding={1} gap={1}>
@@ -148,7 +179,7 @@ export function OutlineDemo(): JSX.Element {
         quit
       </Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -156,16 +187,16 @@ export function OutlineDemo(): JSX.Element {
 // ============================================================================
 
 async function main() {
-  using term = createTerm()
+  using term = createTerm();
   const { waitUntilExit } = await render(
     <ExampleBanner meta={meta} controls="Tab toggle  h/l style  Esc/q quit">
       <OutlineDemo />
     </ExampleBanner>,
     term,
-  )
-  await waitUntilExit()
+  );
+  await waitUntilExit();
 }
 
 if (import.meta.main) {
-  main().catch(console.error)
+  main().catch(console.error);
 }

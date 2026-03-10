@@ -23,7 +23,7 @@
  * ```
  */
 
-import type { JSX, ReactNode } from "react"
+import type { JSX, ReactNode } from "react";
 
 // ============================================================================
 // Props
@@ -31,9 +31,9 @@ import type { JSX, ReactNode } from "react"
 
 export interface TransformProps {
   /** Function that transforms each line of output */
-  transform: (line: string, index: number) => string
+  transform: (line: string, index: number) => string;
   /** Text content (string, number, or nested Text elements) */
-  children?: ReactNode
+  children?: ReactNode;
 }
 
 // ============================================================================
@@ -48,8 +48,8 @@ export interface TransformProps {
  */
 export function Transform({ transform, children }: TransformProps): JSX.Element | null {
   if (children === undefined || children === null) {
-    return null
+    return null;
   }
 
-  return <silvery-text internal_transform={transform}>{children}</silvery-text>
+  return <silvery-text internal_transform={transform}>{children}</silvery-text>;
 }

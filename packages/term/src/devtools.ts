@@ -15,9 +15,9 @@
  * @module
  */
 
-import { reconciler } from "@silvery/react/reconciler"
+import { reconciler } from "@silvery/react/reconciler";
 
-let connected = false
+let connected = false;
 
 /**
  * Connect to React DevTools standalone app.
@@ -36,29 +36,29 @@ let connected = false
  * ```
  */
 export async function connectDevTools(): Promise<boolean> {
-  if (connected) return true
+  if (connected) return true;
 
   try {
     // Polyfill WebSocket for Node.js environments (required by react-devtools-core)
     if (typeof globalThis.WebSocket === "undefined") {
       try {
         // @ts-expect-error -- ws is an optional peer dependency
-        const ws = await import("ws")
-        globalThis.WebSocket = ws.default ?? ws
+        const ws = await import("ws");
+        globalThis.WebSocket = ws.default ?? ws;
       } catch {
         // ws not available -- devtools won't be able to connect
         console.warn(
           "silvery devtools: WebSocket polyfill (ws) not available. " +
             "Install ws for DevTools support: bun add -d ws",
-        )
-        return false
+        );
+        return false;
       }
     }
 
     // Ensure window/self exist for react-devtools-core internals
     if (typeof globalThis.window === "undefined") {
       // @ts-expect-error -- polyfill for devtools
-      globalThis.window = globalThis
+      globalThis.window = globalThis;
     }
 
     // Configure component filters to hide silvery internals from the DevTools tree.
@@ -69,29 +69,29 @@ export async function connectDevTools(): Promise<boolean> {
       globalThis.__REACT_DEVTOOLS_COMPONENT_FILTERS__ = [
         { type: 1, value: 7, isEnabled: true },
         { type: 2, value: "SilveryApp", isEnabled: true, isValid: true },
-      ]
+      ];
     }
 
     // @ts-expect-error -- react-devtools-core has no type declarations
-    const devtools = await import("react-devtools-core")
-    devtools.initialize()
-    devtools.connectToDevTools()
+    const devtools = await import("react-devtools-core");
+    devtools.initialize();
+    devtools.connectToDevTools();
 
     // Inject renderer info so DevTools can identify silvery.
     // rendererPackageName and rendererVersion are read from the host config
     // passed to Reconciler() -- see reconciler/host-config.ts.
-    reconciler.injectIntoDevTools()
+    reconciler.injectIntoDevTools();
 
-    connected = true
-    return true
+    connected = true;
+    return true;
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error)
+    const message = error instanceof Error ? error.message : String(error);
     console.warn(
       `silvery devtools: Failed to connect to React DevTools. ` +
         `Install react-devtools-core: bun add -d react-devtools-core\n` +
         `  Error: ${message}`,
-    )
-    return false
+    );
+    return false;
   }
 }
 
@@ -99,7 +99,7 @@ export async function connectDevTools(): Promise<boolean> {
  * Check if DevTools are currently connected.
  */
 export function isDevToolsConnected(): boolean {
-  return connected
+  return connected;
 }
 
 /**
@@ -108,16 +108,16 @@ export function isDevToolsConnected(): boolean {
  */
 export async function autoConnectDevTools(): Promise<void> {
   if (process.env.DEBUG_DEVTOOLS === "1" || process.env.DEBUG_DEVTOOLS === "true") {
-    await connectDevTools()
+    await connectDevTools();
   }
 }
 
 // Global type augmentation for devtools polyfills
 declare global {
   var __REACT_DEVTOOLS_COMPONENT_FILTERS__: Array<{
-    type: number
-    value: number | string
-    isEnabled: boolean
-    isValid?: boolean
-  }>
+    type: number;
+    value: number | string;
+    isEnabled: boolean;
+    isValid?: boolean;
+  }>;
 }

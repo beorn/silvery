@@ -10,12 +10,16 @@
  *   const html = await term.renderStatic(<Report />)
  */
 
-import type { Term } from "@silvery/term/ansi"
-import type { ReactElement } from "react"
-import type { TerminalBuffer } from "@silvery/term/buffer"
-import { createPipeline, type MeasuredTerm } from "@silvery/term/measurer"
-import { executeRender, type ExecuteRenderOptions, type PipelineConfig } from "@silvery/term/pipeline"
-import type { TeaNode } from "./types"
+import type { Term } from "@silvery/term/ansi";
+import type { ReactElement } from "react";
+import type { TerminalBuffer } from "@silvery/term/buffer";
+import { createPipeline, type MeasuredTerm } from "@silvery/term/measurer";
+import {
+  executeRender,
+  type ExecuteRenderOptions,
+  type PipelineConfig,
+} from "@silvery/term/pipeline";
+import type { TeaNode } from "./types";
 
 /**
  * Extended Term with render pipeline capabilities.
@@ -24,7 +28,7 @@ import type { TeaNode } from "./types"
  */
 export interface RenderTerm extends MeasuredTerm {
   /** Pipeline configuration (measurer + output phase) */
-  readonly pipelineConfig: PipelineConfig
+  readonly pipelineConfig: PipelineConfig;
   /**
    * Run the full render pipeline.
    */
@@ -34,12 +38,15 @@ export interface RenderTerm extends MeasuredTerm {
     height: number,
     prevBuffer: TerminalBuffer | null,
     options?: ExecuteRenderOptions | "fullscreen" | "inline",
-  ): { output: string; buffer: TerminalBuffer }
+  ): { output: string; buffer: TerminalBuffer };
   /**
    * Render a React element to a string using this terminal's caps.
    * Uses the term's width measurer for correct text measurement.
    */
-  renderStatic(element: ReactElement, options?: { width?: number; height?: number; plain?: boolean }): Promise<string>
+  renderStatic(
+    element: ReactElement,
+    options?: { width?: number; height?: number; plain?: boolean },
+  ): Promise<string>;
 }
 
 /**
@@ -52,8 +59,8 @@ export interface RenderTerm extends MeasuredTerm {
  * @returns Extended term with render and measurement capabilities
  */
 export function withRender(term: Term): RenderTerm {
-  const pipelineConfig = createPipeline({ caps: term.caps })
-  const { measurer } = pipelineConfig
+  const pipelineConfig = createPipeline({ caps: term.caps });
+  const { measurer } = pipelineConfig;
 
   function renderPipeline(
     root: TeaNode,
@@ -62,15 +69,15 @@ export function withRender(term: Term): RenderTerm {
     prevBuffer: TerminalBuffer | null,
     options?: ExecuteRenderOptions | "fullscreen" | "inline",
   ): { output: string; buffer: TerminalBuffer } {
-    return executeRender(root, width, height, prevBuffer, options, pipelineConfig)
+    return executeRender(root, width, height, prevBuffer, options, pipelineConfig);
   }
 
   async function renderStaticFn(
     element: ReactElement,
     options?: { width?: number; height?: number; plain?: boolean },
   ): Promise<string> {
-    const { renderString } = await import("@silvery/react/render-string")
-    return renderString(element, { ...options, pipelineConfig })
+    const { renderString } = await import("@silvery/react/render-string");
+    return renderString(element, { ...options, pipelineConfig });
   }
 
   // Return a proxy that extends the original term with measurer methods and render capabilities
@@ -88,5 +95,5 @@ export function withRender(term: Term): RenderTerm {
     pipelineConfig: { value: pipelineConfig, enumerable: true },
     render: { value: renderPipeline, enumerable: true },
     renderStatic: { value: renderStaticFn, enumerable: true },
-  }) as RenderTerm
+  }) as RenderTerm;
 }

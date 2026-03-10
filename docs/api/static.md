@@ -5,7 +5,7 @@ Renders items that are written to the terminal once and never updated. Useful fo
 ## Import
 
 ```tsx
-import { Static } from "silvery"
+import { Static } from "silvery";
 ```
 
 ## Usage

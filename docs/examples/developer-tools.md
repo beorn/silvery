@@ -40,41 +40,42 @@ Unlike browser-based dev tools, terminal tools run where your code runs. They st
 A log viewer with captured console output, a virtualized log list, and keyboard navigation:
 
 ```tsx
-import { useState, useCallback } from "react"
-import { Box, Text, VirtualList, Console, patchConsole } from "silvery"
-import { run, useInput } from "@silvery/term/runtime"
+import { useState, useCallback } from "react";
+import { Box, Text, VirtualList, Console, patchConsole } from "silvery";
+import { run, useInput } from "@silvery/term/runtime";
 
 interface LogEntry {
-  time: string
-  level: "info" | "warn" | "error"
-  message: string
+  time: string;
+  level: "info" | "warn" | "error";
+  message: string;
 }
 
 function LogViewer() {
-  const [logs, setLogs] = useState<LogEntry[]>([])
-  const [selected, setSelected] = useState(0)
-  const [patched] = useState(() => patchConsole(console))
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [selected, setSelected] = useState(0);
+  const [patched] = useState(() => patchConsole(console));
 
   // Simulate incoming log entries
   const addLog = useCallback((level: LogEntry["level"], message: string) => {
-    const time = new Date().toISOString().slice(11, 23)
-    setLogs((prev) => [...prev, { time, level, message }])
-  }, [])
+    const time = new Date().toISOString().slice(11, 23);
+    setLogs((prev) => [...prev, { time, level, message }]);
+  }, []);
 
   useInput((input, key) => {
     if (input === "j" || key.downArrow) {
-      setSelected((s) => Math.min(s + 1, logs.length - 1))
+      setSelected((s) => Math.min(s + 1, logs.length - 1));
     }
     if (input === "k" || key.upArrow) {
-      setSelected((s) => Math.max(s - 1, 0))
+      setSelected((s) => Math.max(s - 1, 0));
     }
-    if (input === "i") addLog("info", `Request handled in ${(Math.random() * 100) | 0}ms`)
-    if (input === "w") addLog("warn", "Connection pool near capacity")
-    if (input === "e") addLog("error", "Timeout after 30s on /api/data")
-    if (input === "q") return "exit"
-  })
+    if (input === "i") addLog("info", `Request handled in ${(Math.random() * 100) | 0}ms`);
+    if (input === "w") addLog("warn", "Connection pool near capacity");
+    if (input === "e") addLog("error", "Timeout after 30s on /api/data");
+    if (input === "q") return "exit";
+  });
 
-  const levelColor = (level: string) => (level === "error" ? "red" : level === "warn" ? "yellow" : "green")
+  const levelColor = (level: string) =>
+    level === "error" ? "red" : level === "warn" ? "yellow" : "green";
 
   return (
     <Box flexDirection="row" width="100%" height="100%">
@@ -97,10 +98,10 @@ function LogViewer() {
         <Console console={patched} />
       </Box>
     </Box>
-  )
+  );
 }
 
-await run(<LogViewer />)
+await run(<LogViewer />);
 ```
 
 Press `i`, `w`, or `e` to add log entries at different severity levels. Use `j`/`k` or arrow keys to scroll through the virtualized list. Press `q` to exit. Console output from `console.log()` calls appears in the right panel, captured by the `Console` component.
@@ -110,28 +111,28 @@ Press `i`, `w`, or `e` to add log entries at different severity levels. Use `j`/
 Silvery ships with a Playwright-style testing API. Verify rendering and keyboard interaction without a real terminal:
 
 ```tsx
-import { createRenderer } from "@silvery/test"
-import { expect, test } from "vitest"
+import { createRenderer } from "@silvery/test";
+import { expect, test } from "vitest";
 
-const render = createRenderer({ cols: 100, rows: 24 })
+const render = createRenderer({ cols: 100, rows: 24 });
 
 test("log viewer navigates entries", async () => {
-  const app = render(<LogViewer />)
+  const app = render(<LogViewer />);
 
   // Add some entries
-  await app.press("i")
-  await app.press("e")
-  await app.press("w")
+  await app.press("i");
+  await app.press("e");
+  await app.press("w");
 
-  expect(app.text).toContain("INFO")
-  expect(app.text).toContain("ERROR")
+  expect(app.text).toContain("INFO");
+  expect(app.text).toContain("ERROR");
 
   // Navigate down
-  await app.press("j")
-  await app.press("j")
+  await app.press("j");
+  await app.press("j");
 
-  expect(app.text).toContain("WARN")
-})
+  expect(app.text).toContain("WARN");
+});
 ```
 
 ## What Silvery Adds

@@ -2,7 +2,7 @@
  * Type definitions for @silvery/ansi
  */
 
-import type { TerminalCaps } from "./detection"
+import type { TerminalCaps } from "./detection";
 
 // =============================================================================
 // Color Types
@@ -14,13 +14,13 @@ import type { TerminalCaps } from "./detection"
  * - '256': 256 colors (SGR 38;5;n)
  * - 'truecolor': 16M colors (SGR 38;2;r;g;b)
  */
-export type ColorLevel = "basic" | "256" | "truecolor"
+export type ColorLevel = "basic" | "256" | "truecolor";
 
 /**
  * RGB color tuple for underline color.
  * Each component is 0-255.
  */
-export type RGB = [r: number, g: number, b: number]
+export type RGB = [r: number, g: number, b: number];
 
 /**
  * Standard ANSI color names (the 16 base colors).
@@ -45,26 +45,26 @@ export type AnsiColorName =
   | "blueBright"
   | "magentaBright"
   | "cyanBright"
-  | "whiteBright"
+  | "whiteBright";
 
 /**
  * Hex color string pattern.
  * Accepts 3-digit (#rgb) and 6-digit (#rrggbb) hex colors.
  */
-type HexColor = `#${string}`
+type HexColor = `#${string}`;
 
 /**
  * RGB function-style color string pattern.
  * Format: rgb(r,g,b) where r, g, b are 0-255.
  */
-type RgbColor = `rgb(${string})`
+type RgbColor = `rgb(${string})`;
 
 /**
  * Theme token color string pattern.
  * Format: $name — resolved against the active theme at render time.
  * Examples: $primary, $surface, $error, $bg, $fg, $muted-fg
  */
-type ThemeToken = `$${string}`
+type ThemeToken = `$${string}`;
 
 /**
  * Type-safe color value accepted by ansi APIs.
@@ -79,7 +79,7 @@ type ThemeToken = `$${string}`
  * The union of known literals provides autocompletion in editors while
  * the `string & {}` fallback allows arbitrary color strings.
  */
-export type Color = AnsiColorName | HexColor | RgbColor | ThemeToken | (string & {})
+export type Color = AnsiColorName | HexColor | RgbColor | ThemeToken | (string & {});
 
 // =============================================================================
 // Underline Types
@@ -94,7 +94,7 @@ export type Color = AnsiColorName | HexColor | RgbColor | ThemeToken | (string &
  * - `dotted`: Dotted line (SGR 4:4)
  * - `dashed`: Dashed line (SGR 4:5)
  */
-export type UnderlineStyle = "single" | "double" | "curly" | "dotted" | "dashed"
+export type UnderlineStyle = "single" | "double" | "curly" | "dotted" | "dashed";
 
 // =============================================================================
 // Style Types
@@ -104,14 +104,14 @@ export type UnderlineStyle = "single" | "double" | "curly" | "dotted" | "dashed"
  * Style options for term.style() method.
  */
 export interface StyleOptions {
-  color?: Color
-  bgColor?: Color
-  bold?: boolean
-  dim?: boolean
-  italic?: boolean
-  underline?: boolean
-  strikethrough?: boolean
-  inverse?: boolean
+  color?: Color;
+  bgColor?: Color;
+  bold?: boolean;
+  dim?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strikethrough?: boolean;
+  inverse?: boolean;
 }
 
 // =============================================================================
@@ -121,15 +121,15 @@ export interface StyleOptions {
 /**
  * Console method names that can be intercepted.
  */
-export type ConsoleMethod = "log" | "info" | "warn" | "error" | "debug"
+export type ConsoleMethod = "log" | "info" | "warn" | "error" | "debug";
 
 /**
  * Entry captured from console.
  */
 export interface ConsoleEntry {
-  method: ConsoleMethod
-  args: unknown[]
-  stream: "stdout" | "stderr"
+  method: ConsoleMethod;
+  args: unknown[];
+  stream: "stdout" | "stderr";
 }
 
 // =============================================================================
@@ -140,17 +140,17 @@ export interface ConsoleEntry {
  * Options for createTerm().
  */
 export interface CreateTermOptions {
-  stdout?: NodeJS.WriteStream
-  stdin?: NodeJS.ReadStream
+  stdout?: NodeJS.WriteStream;
+  stdin?: NodeJS.ReadStream;
 
   // Override auto-detection (for testing or forcing)
-  color?: ColorLevel | null // override hasColor()
-  unicode?: boolean // override hasUnicode()
-  cursor?: boolean // override hasCursor()
+  color?: ColorLevel | null; // override hasColor()
+  unicode?: boolean; // override hasUnicode()
+  cursor?: boolean; // override hasCursor()
 
   // Terminal capabilities override
-  caps?: Partial<TerminalCaps>
+  caps?: Partial<TerminalCaps>;
 }
 
 // Re-export TerminalCaps from detection for convenience
-export type { TerminalCaps } from "./detection"
+export type { TerminalCaps } from "./detection";

@@ -3,8 +3,8 @@
  * Source: https://github.com/sainnhe/edge (default style)
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Edge Dark — clean dark variant with balanced accents. */
 export const edgeDark: ColorPalette = {
@@ -32,7 +32,7 @@ export const edgeDark: ColorPalette = {
   cursorText: "#2C2E34",
   selectionBackground: "#414550",
   selectionForeground: "#C5CDD9",
-}
+};
 
 /** Edge Light — clean, readable light variant. */
 export const edgeLight: ColorPalette = {
@@ -60,4 +60,4 @@ export const edgeLight: ColorPalette = {
   cursorText: "#FAFAFA",
   selectionBackground: "#DDE2E7",
   selectionForeground: "#4B505B",
-}
+};

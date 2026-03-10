@@ -21,22 +21,22 @@ Most web apps stop at Level 2. TUI apps with keyboard-driven interaction, undo, 
 You're building a counter. One component, one piece of state, one input handler. This is React at its simplest.
 
 ```tsx
-import { useState } from "react"
-import { run, useInput } from "@silvery/term/runtime"
-import { Text } from "silvery"
+import { useState } from "react";
+import { run, useInput } from "@silvery/term/runtime";
+import { Text } from "silvery";
 
 function Counter() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
   useInput((input) => {
-    if (input === "j") setCount((c) => c + 1)
-    if (input === "k") setCount((c) => c - 1)
-  })
+    if (input === "j") setCount((c) => c + 1);
+    if (input === "k") setCount((c) => c - 1);
+  });
 
-  return <Text>Count: {count}</Text>
+  return <Text>Count: {count}</Text>;
 }
 
-await run(<Counter />)
+await run(<Counter />);
 ```
 
 ```
@@ -68,10 +68,10 @@ The standard solution is a shared store. [Zustand](https://github.com/pmndrs/zus
 The double-arrow `() => (set, get) => ({...})` is Zustand's [state creator](https://zustand.docs.pmnd.rs/guides/updating-state) pattern — `set` merges new state, `get` reads current state:
 
 ```tsx
-import { createApp, useApp } from "@silvery/term/runtime"
-import { Box, Text } from "silvery"
+import { createApp, useApp } from "@silvery/term/runtime";
+import { Box, Text } from "silvery";
 
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(v, max))
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(v, max));
 
 const app = createApp(
   () => (set, get) => ({
@@ -82,31 +82,31 @@ const app = createApp(
       { id: "3", text: "Fix bug", done: false },
     ],
     moveCursor(delta: number) {
-      set((s) => ({ cursor: clamp(s.cursor + delta, 0, s.items.length - 1) }))
+      set((s) => ({ cursor: clamp(s.cursor + delta, 0, s.items.length - 1) }));
     },
     toggleDone() {
       set((s) => ({
         items: s.items.map((item, i) => (i === s.cursor ? { ...item, done: !item.done } : item)),
-      }))
+      }));
     },
   }),
   {
     key(input, key, { store }) {
-      if (input === "j") store.moveCursor(1)
-      if (input === "k") store.moveCursor(-1)
-      if (input === "x") store.toggleDone()
-      if (input === "q") return "exit"
+      if (input === "j") store.moveCursor(1);
+      if (input === "k") store.moveCursor(-1);
+      if (input === "x") store.toggleDone();
+      if (input === "q") return "exit";
     },
   },
-)
+);
 ```
 
 Components access the store via `useApp(selector)`. Selectors are a widespread pattern — Redux, Zustand, MobX, Recoil all use them. The idea: a function that extracts the slice of state a component cares about. Zustand tracks which slice each component selected and only re-renders when that slice changes:
 
 ```tsx
 function TodoList() {
-  const cursor = useApp((s) => s.cursor)
-  const items = useApp((s) => s.items)
+  const cursor = useApp((s) => s.cursor);
+  const items = useApp((s) => s.items);
   return (
     <Box flexDirection="column">
       {items.map((item, i) => (
@@ -117,17 +117,17 @@ function TodoList() {
         </Text>
       ))}
     </Box>
-  )
+  );
 }
 
 function StatusBar() {
-  const items = useApp((s) => s.items)
-  const done = items.filter((i) => i.done).length
+  const items = useApp((s) => s.items);
+  const done = items.filter((i) => i.done).length;
   return (
     <Text dimColor>
       {done}/{items.length} done
     </Text>
-  )
+  );
 }
 
 await app.run(
@@ -135,7 +135,7 @@ await app.run(
     <TodoList />
     <StatusBar />
   </Box>,
-)
+);
 ```
 
 ```
@@ -154,16 +154,20 @@ await app.run(
 The `withDomEvents()` plugin adds React-style event handlers to Silvery components. Events bubble up the tree, components can stop propagation, and hit testing maps mouse coordinates to nodes:
 
 ```tsx
-import { pipe, withDomEvents } from "@silvery/term/runtime"
+import { pipe, withDomEvents } from "@silvery/term/runtime";
 
 function ItemList() {
-  const items = useApp((s) => s.items)
-  const cursor = useApp((s) => s.cursor)
+  const items = useApp((s) => s.items);
+  const cursor = useApp((s) => s.cursor);
 
   return (
     <Box flexDirection="column">
       {items.map((item, i) => (
-        <Box key={item.id} onClick={() => store.setCursor(i)} onDoubleClick={() => store.startEdit(i)}>
+        <Box
+          key={item.id}
+          onClick={() => store.setCursor(i)}
+          onDoubleClick={() => store.startEdit(i)}
+        >
           <Text color={i === cursor ? "cyan" : undefined}>
             {i === cursor ? "> " : "  "}
             {item.text}
@@ -171,10 +175,10 @@ function ItemList() {
         </Box>
       ))}
     </Box>
-  )
+  );
 }
 
-const app = pipe(createApp(store), withReact(<Board />), withDomEvents())
+const app = pipe(createApp(store), withReact(<Board />), withDomEvents());
 ```
 
 `withDomEvents()` intercepts events before the base handler. Keyboard events dispatch through the focus tree (capture → target → bubble). Mouse events are hit-tested against the render tree — the deepest node at `(x, y)` receives the event, which bubbles up through ancestors. Same event model as React DOM: `onClick`, `onDoubleClick`, `onMouseDown`, `onMouseUp`, `onMouseMove`, `onMouseEnter`, `onMouseLeave`, `onWheel`, `onKeyDown`, `onKeyDownCapture`.
@@ -194,8 +198,8 @@ This is the level where Silvery's architecture clicks. Two invisible things beco
 In Level 2, store methods are function calls that mutate and disappear. **The fix**: turn operations into data. Instead of calling functions that mutate state, call functions that produce a serializable description of _what happened_:
 
 ```tsx
-store.apply({ op: "moveCursor", delta: 1 })
-store.apply({ op: "toggleDone", index: 2 })
+store.apply({ op: "moveCursor", delta: 1 });
+store.apply({ op: "toggleDone", index: 2 });
 ```
 
 These are just JSON — plain objects you can inspect, store, and manipulate. Once operations are data:
@@ -235,17 +239,17 @@ Now undo is trivial — define an `inverse` function that returns the op which w
 function inverse(op: TodoOp): TodoOp {
   switch (op.op) {
     case "moveCursor":
-      return { op: "moveCursor", delta: -op.delta }
+      return { op: "moveCursor", delta: -op.delta };
     case "toggleDone":
-      return op // toggling is its own inverse
+      return op; // toggling is its own inverse
   }
 }
 
-const undoStack: TodoOp[] = []
+const undoStack: TodoOp[] = [];
 
 function applyWithUndo(op: TodoOp) {
-  undoStack.push(inverse(op))
-  TodoList.apply(state, op)
+  undoStack.push(inverse(op));
+  TodoList.apply(state, op);
 }
 ```
 
@@ -258,7 +262,7 @@ Meanwhile, event handlers have the same problem. `if (input === "j") moveCursor(
 **The fix**: turn input into named, serializable commands. Declare that `j` maps to the command `cursor_down`, and `cursor_down` produces the action `{ op: "moveCursor", delta: 1 }`:
 
 ```tsx
-import { pipe, withDomEvents, withCommands } from "@silvery/term/runtime"
+import { pipe, withDomEvents, withCommands } from "@silvery/term/runtime";
 
 const registry = createCommandRegistry({
   cursor_down: {
@@ -277,7 +281,7 @@ const registry = createCommandRegistry({
     name: "Select",
     execute: (ctx) => ({ op: "select", nodeId: ctx.clickedNodeId }),
   },
-})
+});
 
 const app = pipe(
   createApp(store),
@@ -295,7 +299,7 @@ const app = pipe(
       },
     },
   }),
-)
+);
 ```
 
 Once input is data:
@@ -318,11 +322,11 @@ keypress/click → command → op → state change → screen
 The driver pattern makes this concrete for testing and AI:
 
 ```tsx
-const driver = pipe(app, withKeybindings(bindings), withDiagnostics())
+const driver = pipe(app, withKeybindings(bindings), withDiagnostics());
 
-driver.cmd.all() // list available commands
-await driver.cmd.cursor_down() // execute by name
-driver.getState() // inspect state
+driver.cmd.all(); // list available commands
+await driver.cmd.cursor_down(); // execute by name
+driver.getState(); // inspect state
 ```
 
 ### Hybrid: components + commands
@@ -372,11 +376,11 @@ Tests assert on what the function _says should happen_ — no mocks, no fakes, n
 
 ```tsx
 test("toggleDone persists and toasts", () => {
-  const s = { cursor: signal(0), items: signal([{ text: "Buy milk", done: false }]) }
-  const effects = TodoList.toggleDone(s, { index: 0 })
-  expect(effects).toContainEqual({ effect: "persist", data: expect.any(Array) })
-  expect(effects).toContainEqual({ effect: "toast", message: "Toggled Buy milk" })
-})
+  const s = { cursor: signal(0), items: signal([{ text: "Buy milk", done: false }]) };
+  const effects = TodoList.toggleDone(s, { index: 0 });
+  expect(effects).toContainEqual({ effect: "persist", data: expect.any(Array) });
+  expect(effects).toContainEqual({ effect: "toast", message: "Toggled Buy milk" });
+});
 ```
 
 The runtime dispatches effects to actual runners — swap them per platform:
@@ -423,7 +427,7 @@ Step back: `apply(state, op) → [new state, effects]`. This is [The Elm Archite
 Every extension in this guide — `withDomEvents`, `withCommands`, `withKeybindings` — is the same thing: an app plugin. A function that takes an app and returns an enhanced app:
 
 ```tsx
-type AppPlugin<M, Msg> = (app: App<M, Msg>) => App<M, Msg>
+type AppPlugin<M, Msg> = (app: App<M, Msg>) => App<M, Msg>;
 ```
 
 This is the [SlateJS](https://docs.slatejs.org/concepts/08-plugins) editor model: `withHistory(withReact(createEditor()))`. Each plugin overrides methods on the app — `update` for event processing, `events` for event sources. You compose them with `pipe()`:
@@ -438,7 +442,7 @@ const app = pipe(
   withCommands(opts), // processing: key/mouse → named commands
   withKeybindings(bindings), // API: press() → keybinding resolution
   withDiagnostics(), // API: render invariant checks
-)
+);
 ```
 
 A plugin has two parts: a **slice** (pure reducer for its state) and a **plugin function** (event wiring, subscriptions, API surface):
@@ -447,23 +451,23 @@ A plugin has two parts: a **slice** (pure reducer for its state) and a **plugin 
 function withVimModes() {
   return {
     slice: (msg: AppEvent, vim: VimState): VimState => {
-      if (msg.type !== "term:key") return vim
-      if (vim.mode === "normal" && msg.data.input === "i") return { ...vim, mode: "insert" }
-      if (vim.mode === "insert" && msg.data.key.escape) return { ...vim, mode: "normal" }
-      return vim
+      if (msg.type !== "term:key") return vim;
+      if (vim.mode === "normal" && msg.data.input === "i") return { ...vim, mode: "insert" };
+      if (vim.mode === "insert" && msg.data.key.escape) return { ...vim, mode: "normal" };
+      return vim;
     },
 
     plugin: (app) => {
-      const { update } = app
+      const { update } = app;
       app.update = (msg, model) => {
         if (msg.type === "term:key" && model.vim.mode === "insert") {
-          return update(msg, model) // skip command resolution, let it reach text input
+          return update(msg, model); // skip command resolution, let it reach text input
         }
-        return update(msg, model)
-      }
-      return app
+        return update(msg, model);
+      };
+      return app;
     },
-  }
+  };
 }
 ```
 
@@ -483,14 +487,14 @@ React components are the most natural way to add reactive sources:
 
 ```tsx
 function FileWatcher({ path }: { path: string }) {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    const watcher = watch(path, (ev) => dispatch({ type: "fs:change", data: ev }))
-    return () => watcher.close()
-  }, [path])
+    const watcher = watch(path, (ev) => dispatch({ type: "fs:change", data: ev }));
+    return () => watcher.close();
+  }, [path]);
 
-  return null // renderless
+  return null; // renderless
 }
 ```
 
@@ -534,29 +538,29 @@ const Dialog = createSlice(
 ```tsx
 const app = createApp(
   () => {
-    const board = Board.create()
-    const dialog = Dialog.create()
-    const search = Search.create()
+    const board = Board.create();
+    const dialog = Dialog.create();
+    const search = Search.create();
     return {
       board: { ...board.state, dispatch: board.apply },
       dialog: { ...dialog.state, dispatch: dialog.apply },
       search: { ...search.state, dispatch: search.apply },
-    }
+    };
   },
   {
     effects: {
       dispatch: ({ target, op, ...params }, { store }) => {
-        const machine = (store as any)[target]
-        if (machine?.dispatch) return machine.dispatch({ op, ...params })
+        const machine = (store as any)[target];
+        if (machine?.dispatch) return machine.dispatch({ op, ...params });
       },
     },
     key(input, key, { store }) {
-      if (input === "/") store.dialog.dispatch({ op: "open", kind: "search" })
-      if (input === "j") store.board.dispatch({ op: "moveCursor", delta: 1 })
-      if (input === "q") return "exit"
+      if (input === "/") store.dialog.dispatch({ op: "open", kind: "search" });
+      if (input === "j") store.board.dispatch({ op: "moveCursor", delta: 1 });
+      if (input === "q") return "exit";
     },
   },
-)
+);
 ```
 
 Each state machine is independently testable — call `Dialog.confirm(dialogState)` directly and assert on the effects it returns, without touching Board.

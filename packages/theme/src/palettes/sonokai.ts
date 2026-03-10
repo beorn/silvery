@@ -3,8 +3,8 @@
  * Source: https://github.com/sainnhe/sonokai (default style)
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Sonokai — vivid dark theme with Monokai-inspired accents. */
 export const sonokai: ColorPalette = {
@@ -32,4 +32,4 @@ export const sonokai: ColorPalette = {
   cursorText: "#2C2E34",
   selectionBackground: "#414550",
   selectionForeground: "#E2E2E3",
-}
+};

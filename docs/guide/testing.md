@@ -43,15 +43,15 @@ The `createRenderer` function creates a render function with auto-cleanup betwee
 ### Basic Usage
 
 ```tsx
-import { createRenderer } from "@silvery/test"
-import { Text } from "silvery"
+import { createRenderer } from "@silvery/test";
+import { Text } from "silvery";
 
-const render = createRenderer()
+const render = createRenderer();
 
 test("renders text", () => {
-  const app = render(<Text>Hello</Text>)
-  expect(app.text).toContain("Hello")
-})
+  const app = render(<Text>Hello</Text>);
+  expect(app.text).toContain("Hello");
+});
 ```
 
 ### Auto-Cleanup
@@ -59,18 +59,18 @@ test("renders text", () => {
 Each `render()` call automatically unmounts the previous render, so you don't need explicit cleanup:
 
 ```tsx
-const render = createRenderer()
+const render = createRenderer();
 
 test("first test", () => {
-  const app = render(<Text>First</Text>)
-  expect(app.text).toContain("First")
-})
+  const app = render(<Text>First</Text>);
+  expect(app.text).toContain("First");
+});
 
 test("second test", () => {
   // Previous render is auto-cleaned
-  const app = render(<Text>Second</Text>)
-  expect(app.text).toContain("Second")
-})
+  const app = render(<Text>Second</Text>);
+  expect(app.text).toContain("Second");
+});
 ```
 
 ### Testing Keyboard Input
@@ -78,30 +78,30 @@ test("second test", () => {
 Use `app.press()` to simulate keyboard input with named keys:
 
 ```tsx
-import { useState } from "react"
-import { Box, Text, useInput } from "silvery"
+import { useState } from "react";
+import { Box, Text, useInput } from "silvery";
 
 function Counter() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
   useInput((input, key) => {
-    if (input === "+" || key.upArrow) setCount((c) => c + 1)
-    if (input === "-" || key.downArrow) setCount((c) => c - 1)
-  })
+    if (input === "+" || key.upArrow) setCount((c) => c + 1);
+    if (input === "-" || key.downArrow) setCount((c) => c - 1);
+  });
 
-  return <Text>Count: {count}</Text>
+  return <Text>Count: {count}</Text>;
 }
 
 test("increments with arrow keys", async () => {
-  const render = createRenderer()
-  const app = render(<Counter />)
+  const render = createRenderer();
+  const app = render(<Counter />);
 
-  await app.press("ArrowUp")
-  await app.press("ArrowUp")
-  await app.press("ArrowDown")
+  await app.press("ArrowUp");
+  await app.press("ArrowUp");
+  await app.press("ArrowDown");
 
-  expect(app.text).toContain("Count: 1")
-})
+  expect(app.text).toContain("Count: 1");
+});
 ```
 
 ### Named Keys for press()
@@ -127,18 +127,18 @@ Use `app.rerender()` to update props and verify state changes:
 
 ```tsx
 function Greeter({ name }: { name: string }) {
-  return <Text>Hello, {name}!</Text>
+  return <Text>Hello, {name}!</Text>;
 }
 
 test("updates on prop change", () => {
-  const render = createRenderer()
-  const app = render(<Greeter name="Alice" />)
+  const render = createRenderer();
+  const app = render(<Greeter name="Alice" />);
 
-  expect(app.text).toContain("Hello, Alice!")
+  expect(app.text).toContain("Hello, Alice!");
 
-  app.rerender(<Greeter name="Bob" />)
-  expect(app.text).toContain("Hello, Bob!")
-})
+  app.rerender(<Greeter name="Bob" />);
+  expect(app.text).toContain("Hello, Bob!");
+});
 ```
 
 ### Custom Dimensions
@@ -149,10 +149,10 @@ Specify terminal dimensions at renderer creation:
 const render = createRenderer({
   cols: 120,
   rows: 40,
-})
+});
 
-const app = render(<WideComponent />)
-expect(app.text).toContain("wide content")
+const app = render(<WideComponent />);
+expect(app.text).toContain("wide content");
 ```
 
 ### Frame Inspection
@@ -160,19 +160,19 @@ expect(app.text).toContain("wide content")
 The App instance provides direct access to rendered output:
 
 ```tsx
-const app = render(<MyComponent />)
+const app = render(<MyComponent />);
 
 // Plain text (no ANSI codes)
-const text = app.text
+const text = app.text;
 
 // Text with ANSI styling
-const ansi = app.ansi
+const ansi = app.ansi;
 
 // All rendered frames (for history inspection)
-console.log(app.frames.length)
+console.log(app.frames.length);
 
 // Clear the frame history
-app.clear()
+app.clear();
 ```
 
 ## Test Utilities
@@ -182,12 +182,12 @@ app.clear()
 Remove ANSI escape codes for easier assertions:
 
 ```tsx
-import { stripAnsi } from "@silvery/test"
+import { stripAnsi } from "@silvery/test";
 
-const app = render(<Text color="red">Hello</Text>)
+const app = render(<Text color="red">Hello</Text>);
 // app.text already strips ANSI, but stripAnsi is useful for app.ansi
-const text = stripAnsi(app.ansi)
-expect(text).toBe("Hello")
+const text = stripAnsi(app.ansi);
+expect(text).toBe("Hello");
 ```
 
 ### normalizeFrame
@@ -195,10 +195,10 @@ expect(text).toBe("Hello")
 Strip ANSI codes and normalize whitespace:
 
 ```tsx
-import { normalizeFrame } from "@silvery/test"
+import { normalizeFrame } from "@silvery/test";
 
-const app = render(<MyComponent />)
-const normalized = normalizeFrame(app.ansi)
+const app = render(<MyComponent />);
+const normalized = normalizeFrame(app.ansi);
 // Strips ANSI, trims trailing whitespace, removes empty trailing lines
 ```
 
@@ -207,18 +207,18 @@ const normalized = normalizeFrame(app.ansi)
 Wait for async conditions:
 
 ```tsx
-import { waitFor } from "@silvery/test"
+import { waitFor } from "@silvery/test";
 
 test("async update", async () => {
-  const app = render(<AsyncComponent />)
+  const app = render(<AsyncComponent />);
 
   await waitFor(() => app.text.includes("Loaded"), {
     timeout: 1000,
     interval: 10,
-  })
+  });
 
-  expect(app.text).toContain("Loaded")
-})
+  expect(app.text).toContain("Loaded");
+});
 ```
 
 ## Test Patterns
@@ -226,57 +226,57 @@ test("async update", async () => {
 ### Testing Focus Management
 
 ```tsx
-import { useFocusable } from "silvery"
+import { useFocusable } from "silvery";
 
 function FocusableItem({ testID }: { testID: string }) {
-  const { focused } = useFocusable()
+  const { focused } = useFocusable();
   return (
     <Box testID={testID} focusable>
       <Text backgroundColor={focused ? "cyan" : undefined}>{testID}</Text>
     </Box>
-  )
+  );
 }
 
 test("focus navigation", async () => {
-  const render = createRenderer()
+  const render = createRenderer();
   const app = render(
     <Box flexDirection="column">
       <FocusableItem testID="item1" />
       <FocusableItem testID="item2" />
     </Box>,
-  )
+  );
 
   // Tab to move focus
-  await app.press("Tab")
+  await app.press("Tab");
   // Verify focus moved using locator
-  expect(app.getByTestId("item2").textContent()).toBe("item2")
-})
+  expect(app.getByTestId("item2").textContent()).toBe("item2");
+});
 ```
 
 ### Testing Layout Dimensions
 
 ```tsx
-import { useContentRect, NodeContext } from "silvery"
+import { useContentRect, NodeContext } from "silvery";
 
 function LayoutCapture({ onLayout }: { onLayout: (l: any) => void }) {
-  const layout = useContentRect()
-  React.useEffect(() => onLayout(layout), [layout])
-  return <Text>Content</Text>
+  const layout = useContentRect();
+  React.useEffect(() => onLayout(layout), [layout]);
+  return <Text>Content</Text>;
 }
 
 test("layout provides dimensions", () => {
-  let capturedLayout = null
-  const render = createRenderer()
+  let capturedLayout = null;
+  const render = createRenderer();
 
   render(
     <Box width={40} height={10}>
       <LayoutCapture onLayout={(l) => (capturedLayout = l)} />
     </Box>,
-  )
+  );
 
-  expect(capturedLayout).toHaveProperty("width")
-  expect(capturedLayout).toHaveProperty("height")
-})
+  expect(capturedLayout).toHaveProperty("width");
+  expect(capturedLayout).toHaveProperty("height");
+});
 ```
 
 ### Testing with RuntimeContext
@@ -285,13 +285,13 @@ The test renderer (`createRenderer`) automatically provides `RuntimeContext`. Co
 
 ```tsx
 test("useApp exit function", async () => {
-  const render = createRenderer()
-  const app = render(<ComponentThatCallsExit />)
+  const render = createRenderer();
+  const app = render(<ComponentThatCallsExit />);
 
   // press() triggers input through RuntimeContext
-  await app.press("q")
-  expect(app.exitCalled()).toBe(true)
-})
+  await app.press("q");
+  expect(app.exitCalled()).toBe(true);
+});
 ```
 
 ## Running Tests
@@ -320,8 +320,8 @@ Bug fixes include regression tests named after issue IDs:
 describe("Bug km-r0nz: Columns view vertical spacing", () => {
   it("items should have consistent vertical spacing", () => {
     // Reproduction of original bug
-  })
-})
+  });
+});
 ```
 
 ### Compatibility Tests
@@ -332,10 +332,10 @@ Ink API compatibility is verified through:
 describe("Ink API Compatibility", () => {
   describe("Component Exports", () => {
     test("Box component exists and is a function", () => {
-      expect(typeof Box).toBe("function")
-    })
-  })
-})
+      expect(typeof Box).toBe("function");
+    });
+  });
+});
 ```
 
 ### Performance Tests
@@ -344,20 +344,20 @@ Performance benchmarks use timing utilities:
 
 ```tsx
 function benchmark(fn: () => void, iterations = 5) {
-  const runs = []
+  const runs = [];
   for (let i = 0; i < iterations; i++) {
-    const start = performance.now()
-    fn()
-    runs.push(performance.now() - start)
+    const start = performance.now();
+    fn();
+    runs.push(performance.now() - start);
   }
   return {
     min: Math.min(...runs),
     avg: runs.reduce((a, b) => a + b) / runs.length,
-  }
+  };
 }
 
 test("renders 200 components efficiently", () => {
-  const stats = benchmark(() => render(<LargeList items={200} />))
-  expect(stats.avg).toBeLessThan(100) // ms
-})
+  const stats = benchmark(() => render(<LargeList items={200} />));
+  expect(stats.avg).toBeLessThan(100); // ms
+});
 ```

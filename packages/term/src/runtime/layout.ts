@@ -5,23 +5,28 @@
  * This is Layer 0 - no runtime, no events, just pure rendering.
  */
 
-import { createTerm } from "../ansi/index"
-import React, { type ReactElement } from "react"
-import { bufferToStyledText, bufferToText } from "../buffer"
-import { StdoutContext, TermContext } from "@silvery/react/context"
-import { ensureDefaultLayoutEngine, isLayoutEngineInitialized } from "../layout-engine"
-import { executeRender } from "../pipeline"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/react/reconciler"
-import type { Buffer, Dims } from "./types"
+import { createTerm } from "../ansi/index";
+import React, { type ReactElement } from "react";
+import { bufferToStyledText, bufferToText } from "../buffer";
+import { StdoutContext, TermContext } from "@silvery/react/context";
+import { ensureDefaultLayoutEngine, isLayoutEngineInitialized } from "../layout-engine";
+import { executeRender } from "../pipeline";
+import {
+  createContainer,
+  createFiberRoot,
+  getContainerRoot,
+  reconciler,
+} from "@silvery/react/reconciler";
+import type { Buffer, Dims } from "./types";
 
 /**
  * Options for the layout function.
  */
 export interface LayoutOptions {
   /** Skip layout notifications (for static renders). Default: true */
-  skipLayoutNotifications?: boolean
+  skipLayoutNotifications?: boolean;
   /** Strip ANSI codes for plain text output. Default: false */
-  plain?: boolean
+  plain?: boolean;
 }
 
 /**
@@ -30,7 +35,7 @@ export interface LayoutOptions {
  */
 export async function ensureLayoutEngine(): Promise<void> {
   if (!isLayoutEngineInitialized()) {
-    await ensureDefaultLayoutEngine()
+    await ensureDefaultLayoutEngine();
   }
 }
 
@@ -56,17 +61,17 @@ export async function ensureLayoutEngine(): Promise<void> {
  */
 export function layout(element: ReactElement, dims: Dims, options: LayoutOptions = {}): Buffer {
   if (!isLayoutEngineInitialized()) {
-    throw new Error("Layout engine not initialized. Call ensureLayoutEngine() first.")
+    throw new Error("Layout engine not initialized. Call ensureLayoutEngine() first.");
   }
 
-  const { skipLayoutNotifications = true, plain = false } = options
-  const { cols: width, rows: height } = dims
+  const { skipLayoutNotifications = true, plain = false } = options;
+  const { cols: width, rows: height } = dims;
 
   // Create container for React reconciliation
-  const container = createContainer(() => {})
+  const container = createContainer(() => {});
 
   // Create fiber root
-  const fiberRoot = createFiberRoot(container)
+  const fiberRoot = createFiberRoot(container);
 
   // Create minimal mock stdout for components that use useStdout
   const mockStdout = {
@@ -79,10 +84,10 @@ export function layout(element: ReactElement, dims: Dims, options: LayoutOptions
     once: () => mockStdout,
     removeListener: () => mockStdout,
     addListener: () => mockStdout,
-  } as unknown as NodeJS.WriteStream
+  } as unknown as NodeJS.WriteStream;
 
   // Create mock term for components that use useTerm()
-  const mockTerm = createTerm({ color: plain ? null : "truecolor" })
+  const mockTerm = createTerm({ color: plain ? null : "truecolor" });
 
   // Wrap with minimal contexts (no input handling needed)
   const wrapped = React.createElement(
@@ -98,36 +103,36 @@ export function layout(element: ReactElement, dims: Dims, options: LayoutOptions
       },
       element,
     ),
-  )
+  );
 
   // Mount, render, and unmount - all without act warnings
   withoutActWarnings(() => {
-    reconciler.updateContainerSync(wrapped, fiberRoot, null, null)
-    reconciler.flushSyncWork()
-  })
+    reconciler.updateContainerSync(wrapped, fiberRoot, null, null);
+    reconciler.flushSyncWork();
+  });
 
   // Execute render pipeline (skip layout notifications for static renders)
-  const root = getContainerRoot(container)
+  const root = getContainerRoot(container);
   const { buffer: termBuffer } = executeRender(root, width, height, null, {
     skipLayoutNotifications,
-  })
+  });
 
   // Get text representations
-  const text = bufferToText(termBuffer)
-  const ansi = bufferToStyledText(termBuffer)
+  const text = bufferToText(termBuffer);
+  const ansi = bufferToStyledText(termBuffer);
 
   // Unmount (cleanup)
   withoutActWarnings(() => {
-    reconciler.updateContainerSync(null, fiberRoot, null, null)
-    reconciler.flushSyncWork()
-  })
+    reconciler.updateContainerSync(null, fiberRoot, null, null);
+    reconciler.flushSyncWork();
+  });
 
   return {
     text,
     ansi,
     nodes: root,
     _buffer: termBuffer,
-  }
+  };
 }
 
 /**
@@ -135,7 +140,7 @@ export function layout(element: ReactElement, dims: Dims, options: LayoutOptions
  * Throws if engine not ready.
  */
 export function layoutSync(element: ReactElement, dims: Dims, options: LayoutOptions = {}): Buffer {
-  return layout(element, dims, options)
+  return layout(element, dims, options);
 }
 
 /**
@@ -143,11 +148,11 @@ export function layoutSync(element: ReactElement, dims: Dims, options: LayoutOpt
  * Used for static renders where we don't use act() and don't need layout feedback.
  */
 function withoutActWarnings(fn: () => void): void {
-  const prev = (globalThis as any).IS_REACT_ACT_ENVIRONMENT
-  ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = false
+  const prev = (globalThis as any).IS_REACT_ACT_ENVIRONMENT;
+  (globalThis as any).IS_REACT_ACT_ENVIRONMENT = false;
   try {
-    fn()
+    fn();
   } finally {
-    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = prev
+    (globalThis as any).IS_REACT_ACT_ENVIRONMENT = prev;
   }
 }

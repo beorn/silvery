@@ -8,13 +8,13 @@
  * @see https://github.com/chriskempson/base16
  */
 
-import { blend } from "../color"
-import type { ColorPalette } from "../types"
+import { blend } from "../color";
+import type { ColorPalette } from "../types";
 
 /** Strip `#` prefix from a hex color string and uppercase. */
 function stripHash(hex: string): string {
-  const bare = hex.startsWith("#") ? hex.slice(1) : hex
-  return bare.toUpperCase()
+  const bare = hex.startsWith("#") ? hex.slice(1) : hex;
+  return bare.toUpperCase();
 }
 
 /**
@@ -28,16 +28,18 @@ function stripHash(hex: string): string {
  *   cyan → base0C, blue → base0D, magenta → base0E, brightMagenta → base0F.
  */
 export function exportBase16(palette: ColorPalette): string {
-  const dark = palette.dark ?? true
+  const dark = palette.dark ?? true;
 
   // base04: between white (base03/muted fg) and foreground (base05)
-  const base04 = blend(palette.white, palette.foreground, 0.33)
+  const base04 = blend(palette.white, palette.foreground, 0.33);
 
   // base06: light foreground — between fg and the inverse extreme
-  const base06 = dark ? blend(palette.foreground, "#FFFFFF", 0.15) : blend(palette.foreground, "#000000", 0.15)
+  const base06 = dark
+    ? blend(palette.foreground, "#FFFFFF", 0.15)
+    : blend(palette.foreground, "#000000", 0.15);
 
   // base07: lightest background — use black (the deepest bg extreme)
-  const base07 = palette.black
+  const base07 = palette.black;
 
   const lines = [
     `scheme: "${palette.name ?? "exported"}"`,
@@ -58,7 +60,7 @@ export function exportBase16(palette: ColorPalette): string {
     `base0D: "${stripHash(palette.blue)}"`,
     `base0E: "${stripHash(palette.magenta)}"`,
     `base0F: "${stripHash(palette.brightMagenta)}"`,
-  ]
+  ];
 
-  return lines.join("\n") + "\n"
+  return lines.join("\n") + "\n";
 }

@@ -12,8 +12,8 @@
  * <CursorLine beforeCursor="" afterCursor="start" cursorStyle="underline" />
  * ```
  */
-import React from "react"
-import { Text } from "@silvery/react/components/Text"
+import React from "react";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -21,15 +21,15 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface CursorLineProps {
   /** Text before the cursor position */
-  beforeCursor: string
+  beforeCursor: string;
   /** Text after the cursor position (first char gets cursor highlight) */
-  afterCursor: string
+  afterCursor: string;
   /** Text color */
-  color?: string
+  color?: string;
   /** Whether to show the cursor (default: true) */
-  showCursor?: boolean
+  showCursor?: boolean;
   /** Cursor style: 'block' (inverse) or 'underline' (default: block) */
-  cursorStyle?: "block" | "underline"
+  cursorStyle?: "block" | "underline";
 }
 
 // =============================================================================
@@ -56,16 +56,20 @@ export function CursorLine({
         {beforeCursor}
         {afterCursor}
       </Text>
-    )
+    );
 
-  const cursorChar = afterCursor[0] ?? " "
-  const rest = afterCursor.slice(1)
+  const cursorChar = afterCursor[0] ?? " ";
+  const rest = afterCursor.slice(1);
 
   return (
     <Text color={color}>
       {beforeCursor}
-      {cursorStyle === "block" ? <Text inverse>{cursorChar}</Text> : <Text underline>{cursorChar}</Text>}
+      {cursorStyle === "block" ? (
+        <Text inverse>{cursorChar}</Text>
+      ) : (
+        <Text underline>{cursorChar}</Text>
+      )}
       {rest}
     </Text>
-  )
+  );
 }

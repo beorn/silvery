@@ -1,14 +1,14 @@
 /**
  * Ink compat test: flex (from ink/test/flex.tsx)
  */
-import React from "react"
-import { test, expect, beforeAll } from "vitest"
-import { Box, Text } from "../../../packages/compat/src/ink"
-import { renderToString, initLayoutEngine } from "./helpers/render-to-string"
+import React from "react";
+import { test, expect, beforeAll } from "vitest";
+import { Box, Text } from "../../../packages/compat/src/ink";
+import { renderToString, initLayoutEngine } from "./helpers/render-to-string";
 
 beforeAll(async () => {
-  await initLayoutEngine()
-})
+  await initLayoutEngine();
+});
 
 test("grow equally", () => {
   const output = renderToString(
@@ -20,9 +20,9 @@ test("grow equally", () => {
         <Text>B</Text>
       </Box>
     </Box>,
-  )
-  expect(output).toBe("A  B")
-})
+  );
+  expect(output).toBe("A  B");
+});
 
 test("grow one element", () => {
   const output = renderToString(
@@ -32,9 +32,9 @@ test("grow one element", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A    B")
-})
+  );
+  expect(output).toBe("A    B");
+});
 
 test("do not shrink", () => {
   const output = renderToString(
@@ -49,9 +49,9 @@ test("do not shrink", () => {
         <Text>C</Text>
       </Box>
     </Box>,
-  )
-  expect(output).toBe("A     B     C")
-})
+  );
+  expect(output).toBe("A     B     C");
+});
 
 test("shrink equally", () => {
   const output = renderToString(
@@ -64,9 +64,9 @@ test("shrink equally", () => {
       </Box>
       <Text>C</Text>
     </Box>,
-  )
-  expect(output).toBe("A    B   C")
-})
+  );
+  expect(output).toBe("A    B   C");
+});
 
 test("set flex basis with flexDirection='row' container", () => {
   const output = renderToString(
@@ -76,9 +76,9 @@ test("set flex basis with flexDirection='row' container", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A  B")
-})
+  );
+  expect(output).toBe("A  B");
+});
 
 test("set flex basis in percent with flexDirection='row' container", () => {
   const output = renderToString(
@@ -88,9 +88,9 @@ test("set flex basis in percent with flexDirection='row' container", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A  B")
-})
+  );
+  expect(output).toBe("A  B");
+});
 
 test("set flex basis with flexDirection='column' container", () => {
   const output = renderToString(
@@ -100,9 +100,9 @@ test("set flex basis with flexDirection='column' container", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A\n\n\nB\n\n")
-})
+  );
+  expect(output).toBe("A\n\n\nB\n\n");
+});
 
 test("set flex basis in percent with flexDirection='column' container", () => {
   const output = renderToString(
@@ -112,6 +112,6 @@ test("set flex basis in percent with flexDirection='column' container", () => {
       </Box>
       <Text>B</Text>
     </Box>,
-  )
-  expect(output).toBe("A\n\n\nB\n\n")
-})
+  );
+  expect(output).toBe("A\n\n\nB\n\n");
+});

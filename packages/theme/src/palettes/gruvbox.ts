@@ -2,8 +2,8 @@
  * Gruvbox palettes — retro groove color scheme.
  */
 
-import type { ColorPalette } from "../types"
-import { brighten } from "../color"
+import type { ColorPalette } from "../types";
+import { brighten } from "../color";
 
 /** Gruvbox Dark — warm retro dark theme. */
 export const gruvboxDark: ColorPalette = {
@@ -31,7 +31,7 @@ export const gruvboxDark: ColorPalette = {
   cursorText: "#282828",
   selectionBackground: "#665C54",
   selectionForeground: "#EBDBB2",
-}
+};
 
 /** Gruvbox Light — warm retro light theme. */
 export const gruvboxLight: ColorPalette = {
@@ -59,4 +59,4 @@ export const gruvboxLight: ColorPalette = {
   cursorText: "#FBF1C7",
   selectionBackground: "#A89984",
   selectionForeground: "#3C3836",
-}
+};

@@ -5,8 +5,8 @@
  * Each fixture is a pure component — no external dependencies beyond silvery.
  */
 
-import React, { useState, useCallback, useEffect } from "react"
-import { Box, Text, useInput, useContentRect, TextInput } from "@silvery/react"
+import React, { useState, useCallback, useEffect } from "react";
+import { Box, Text, useInput, useContentRect, TextInput } from "@silvery/react";
 
 // ============================================================================
 // SimpleBox — Minimal box with text content
@@ -17,7 +17,7 @@ export function SimpleBox({ label = "Hello" }: { label?: string }) {
     <Box borderStyle="single" padding={1}>
       <Text>{label}</Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -44,7 +44,7 @@ export function ComplexLayout() {
         </Box>
       </Box>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -53,7 +53,7 @@ export function ComplexLayout() {
 
 export function NestedFlex({ depth = 5 }: { depth?: number }) {
   if (depth <= 0) {
-    return <Text>Leaf</Text>
+    return <Text>Leaf</Text>;
   }
   return (
     <Box
@@ -64,7 +64,7 @@ export function NestedFlex({ depth = 5 }: { depth?: number }) {
       <NestedFlex depth={depth - 1} />
       <NestedFlex depth={depth - 1} />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -72,21 +72,21 @@ export function NestedFlex({ depth = 5 }: { depth?: number }) {
 // ============================================================================
 
 export function InteractiveForm() {
-  const [name, setName] = useState("")
-  const [submitted, setSubmitted] = useState(false)
+  const [name, setName] = useState("");
+  const [submitted, setSubmitted] = useState(false);
 
   useInput((input, key) => {
     if (key.return && name.length > 0) {
-      setSubmitted(true)
+      setSubmitted(true);
     }
-  })
+  });
 
   if (submitted) {
     return (
       <Box flexDirection="column">
         <Text color="green">Submitted: {name}</Text>
       </Box>
-    )
+    );
   }
 
   return (
@@ -94,7 +94,7 @@ export function InteractiveForm() {
       <Text bold>Enter your name:</Text>
       <TextInput value={name} onChange={setName} />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -102,15 +102,15 @@ export function InteractiveForm() {
 // ============================================================================
 
 export function LargeList({ count = 1000 }: { count?: number }) {
-  const [selected, setSelected] = useState(0)
+  const [selected, setSelected] = useState(0);
 
   useInput((_input, key) => {
-    if (key.downArrow) setSelected((s) => Math.min(s + 1, count - 1))
-    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0))
-  })
+    if (key.downArrow) setSelected((s) => Math.min(s + 1, count - 1));
+    if (key.upArrow) setSelected((s) => Math.max(s - 1, 0));
+  });
 
   // Render all items (without virtualization, for stress testing)
-  const items: React.ReactElement[] = []
+  const items: React.ReactElement[] = [];
   for (let i = 0; i < count; i++) {
     items.push(
       <Box key={i}>
@@ -119,14 +119,14 @@ export function LargeList({ count = 1000 }: { count?: number }) {
           Item {i + 1}
         </Text>
       </Box>,
-    )
+    );
   }
 
   return (
     <Box flexDirection="column" overflow="hidden">
       {items}
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -146,7 +146,7 @@ export function UnicodeContent() {
       <Text>Combining: e\u0301 n\u0303 o\u0308</Text>
       <Text>Mixed: Hello你好😀World</Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -175,7 +175,7 @@ export function ChalkStyledContent() {
         All styles combined
       </Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -183,7 +183,7 @@ export function ChalkStyledContent() {
 // ============================================================================
 
 export function ResponsiveBox() {
-  const { width, height } = useContentRect()
+  const { width, height } = useContentRect();
   return (
     <Box flexDirection="column">
       <Text>
@@ -191,7 +191,7 @@ export function ResponsiveBox() {
       </Text>
       {width > 40 ? <Text>Wide layout</Text> : <Text>Narrow layout</Text>}
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -199,18 +199,18 @@ export function ResponsiveBox() {
 // ============================================================================
 
 export function Counter({ initial = 0 }: { initial?: number }) {
-  const [count, setCount] = useState(initial)
+  const [count, setCount] = useState(initial);
 
   useInput((input) => {
-    if (input === "j" || input === "+") setCount((c) => c + 1)
-    if (input === "k" || input === "-") setCount((c) => c - 1)
-  })
+    if (input === "j" || input === "+") setCount((c) => c + 1);
+    if (input === "k" || input === "-") setCount((c) => c - 1);
+  });
 
   return (
     <Box>
       <Text>Count: {count}</Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -218,21 +218,21 @@ export function Counter({ initial = 0 }: { initial?: number }) {
 // ============================================================================
 
 export function RapidUpdater({ onRender }: { onRender?: (count: number) => void }) {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
 
   useInput((input) => {
-    if (input === "u") setCount((c) => c + 1)
-  })
+    if (input === "u") setCount((c) => c + 1);
+  });
 
   useEffect(() => {
-    onRender?.(count)
-  })
+    onRender?.(count);
+  });
 
   return (
     <Box>
       <Text>Renders: {count}</Text>
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -240,7 +240,7 @@ export function RapidUpdater({ onRender }: { onRender?: (count: number) => void 
 // ============================================================================
 
 export function MountUnmountCycle({ visible = true }: { visible?: boolean }) {
-  if (!visible) return null
+  if (!visible) return null;
 
   return (
     <Box flexDirection="column" borderStyle="single">
@@ -248,7 +248,7 @@ export function MountUnmountCycle({ visible = true }: { visible?: boolean }) {
       <ResponsiveBox />
       <SimpleBox label="Nested" />
     </Box>
-  )
+  );
 }
 
 // ============================================================================
@@ -256,18 +256,18 @@ export function MountUnmountCycle({ visible = true }: { visible?: boolean }) {
 // ============================================================================
 
 export function ScrollableContent({ lineCount = 50 }: { lineCount?: number }) {
-  const lines: React.ReactElement[] = []
+  const lines: React.ReactElement[] = [];
   for (let i = 0; i < lineCount; i++) {
     lines.push(
       <Text key={i}>
         Line {i + 1}: {"=".repeat(30)}
       </Text>,
-    )
+    );
   }
 
   return (
     <Box flexDirection="column" height={10} overflow="scroll">
       {lines}
     </Box>
-  )
+  );
 }

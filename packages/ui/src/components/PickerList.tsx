@@ -25,9 +25,9 @@
  * />
  * ```
  */
-import React from "react"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React from "react";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -35,17 +35,17 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface PickerListProps<T> {
   /** Items to display */
-  items: T[]
+  items: T[];
   /** Currently selected index (caller-managed) */
-  selectedIndex: number
+  selectedIndex: number;
   /** Render function for each item. `selected` is true for the highlighted item. */
-  renderItem: (item: T, selected: boolean) => React.ReactNode
+  renderItem: (item: T, selected: boolean) => React.ReactNode;
   /** Unique key for each item */
-  keyExtractor: (item: T) => string
+  keyExtractor: (item: T) => string;
   /** Message when items list is empty (default: "No items") */
-  emptyMessage?: string
+  emptyMessage?: string;
   /** Maximum visible items before scrolling (default: 10) */
-  maxVisible?: number
+  maxVisible?: number;
 }
 
 // =============================================================================
@@ -66,16 +66,22 @@ export function PickerList<T>({
   emptyMessage = "No items",
   maxVisible = 10,
 }: PickerListProps<T>): React.ReactElement {
-  const clampedIndex = items.length > 0 ? Math.min(selectedIndex, items.length - 1) : 0
-  const effectiveMaxVisible = Math.min(maxVisible, items.length)
+  const clampedIndex = items.length > 0 ? Math.min(selectedIndex, items.length - 1) : 0;
+  const effectiveMaxVisible = Math.min(maxVisible, items.length);
 
   // Scroll offset: center the selected item in the visible window
   const scrollOffset =
     items.length > effectiveMaxVisible
-      ? Math.max(0, Math.min(clampedIndex - Math.floor(effectiveMaxVisible / 2), items.length - effectiveMaxVisible))
-      : 0
+      ? Math.max(
+          0,
+          Math.min(
+            clampedIndex - Math.floor(effectiveMaxVisible / 2),
+            items.length - effectiveMaxVisible,
+          ),
+        )
+      : 0;
 
-  const visibleItems = items.slice(scrollOffset, scrollOffset + effectiveMaxVisible)
+  const visibleItems = items.slice(scrollOffset, scrollOffset + effectiveMaxVisible);
 
   return (
     <Box flexDirection="column" flexGrow={1} flexShrink={1} overflow="hidden">
@@ -83,11 +89,13 @@ export function PickerList<T>({
         <Text dimColor>{emptyMessage}</Text>
       ) : (
         visibleItems.map((item, i) => {
-          const actualIndex = scrollOffset + i
-          const isSelected = actualIndex === clampedIndex
-          return <React.Fragment key={keyExtractor(item)}>{renderItem(item, isSelected)}</React.Fragment>
+          const actualIndex = scrollOffset + i;
+          const isSelected = actualIndex === clampedIndex;
+          return (
+            <React.Fragment key={keyExtractor(item)}>{renderItem(item, isSelected)}</React.Fragment>
+          );
         })
       )}
     </Box>
-  )
+  );
 }

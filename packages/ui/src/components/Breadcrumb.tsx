@@ -17,9 +17,9 @@
  * // Renders: Home > Settings > Profile
  * ```
  */
-import React from "react"
-import { Box } from "@silvery/react/components/Box"
-import { Text } from "@silvery/react/components/Text"
+import React from "react";
+import { Box } from "@silvery/react/components/Box";
+import { Text } from "@silvery/react/components/Text";
 
 // =============================================================================
 // Types
@@ -27,14 +27,14 @@ import { Text } from "@silvery/react/components/Text"
 
 export interface BreadcrumbItem {
   /** Display label */
-  label: string
+  label: string;
 }
 
 export interface BreadcrumbProps {
   /** Breadcrumb items (left to right) */
-  items: BreadcrumbItem[]
+  items: BreadcrumbItem[];
   /** Separator character between items (default: "/") */
-  separator?: string
+  separator?: string;
 }
 
 // =============================================================================
@@ -50,13 +50,13 @@ export interface BreadcrumbProps {
  */
 export function Breadcrumb({ items, separator = "/" }: BreadcrumbProps): React.ReactElement {
   if (items.length === 0) {
-    return <Box />
+    return <Box />;
   }
 
   return (
     <Box>
       {items.map((item, i) => {
-        const isLast = i === items.length - 1
+        const isLast = i === items.length - 1;
 
         return (
           <React.Fragment key={i}>
@@ -65,8 +65,8 @@ export function Breadcrumb({ items, separator = "/" }: BreadcrumbProps): React.R
               {item.label}
             </Text>
           </React.Fragment>
-        )
+        );
       })}
     </Box>
-  )
+  );
 }

@@ -4,4 +4,4 @@
  * @packageDocumentation
  */
 
-export * from "./exports"
+export * from "./exports";
