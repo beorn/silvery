@@ -1,0 +1,2 @@
+# oxfmt reads this file — exclude docs markdown (code blocks aren't real JS/TS)
+docs/**/*.md
