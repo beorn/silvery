@@ -76,6 +76,15 @@ export interface RenderStringOptions {
    * semantically significant (e.g., ink compat static renders).
    */
   trimTrailingWhitespace?: boolean
+
+  /**
+   * Trim trailing empty lines from the output.
+   * Default: true (removes trailing empty lines)
+   *
+   * Set to false when padding/margin at the bottom should be preserved
+   * (e.g., ink compat renders where `\n\n` padding is significant).
+   */
+  trimEmptyLines?: boolean
 }
 
 // ============================================================================
@@ -142,7 +151,14 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
     throw new Error("Layout engine not initialized. Use renderString() (async) or initialize with setLayoutEngine().")
   }
 
-  const { width = 80, height = 24, plain = false, pipelineConfig, trimTrailingWhitespace = true } = options
+  const {
+    width = 80,
+    height = 24,
+    plain = false,
+    pipelineConfig,
+    trimTrailingWhitespace = true,
+    trimEmptyLines = true,
+  } = options
 
   // Track whether React committed new work (from layout notifications etc.)
   let hadReactCommit = false
@@ -235,8 +251,8 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
   })
 
   return plain
-    ? bufferToText(buffer, { trimTrailingWhitespace })
-    : bufferToStyledText(buffer, { trimTrailingWhitespace })
+    ? bufferToText(buffer, { trimTrailingWhitespace, trimEmptyLines })
+    : bufferToStyledText(buffer, { trimTrailingWhitespace, trimEmptyLines })
 }
 
 // ============================================================================

@@ -1,7 +1,8 @@
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
-import { DEFAULT_BG, isDefaultBg } from "@silvery/term/buffer"
+import { DEFAULT_BG, isDefaultBg } from "@silvery/term"
+// @ts-expect-error - deep import for internal testing
 import { parseColor } from "@silvery/term/pipeline/render-helpers"
 
 describe("$default background", () => {
