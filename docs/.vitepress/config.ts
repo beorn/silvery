@@ -186,6 +186,8 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: "Layout Engine", link: "/guide/layout-engine" },
+            { text: "CSS Alignment", link: "/guide/css-alignment" },
+            { text: "ANSI Layering", link: "/guide/ansi-layering" },
             { text: "React 19", link: "/guide/react-19" },
             { text: "Layouts", link: "/guide/layouts" },
             { text: "Runtime Layers", link: "/guide/runtime-layers" },
