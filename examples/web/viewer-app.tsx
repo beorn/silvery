@@ -55,15 +55,7 @@ const DEMO_METADATA: Record<string, DemoMeta> = {
     name: "System Dashboard",
     description: "Real-time metrics, service status, and event feed with live updating data.",
     category: "Showcases",
-    features: [
-      "Box",
-      "Text",
-      "borderStyle",
-      "flexDirection",
-      "useInput",
-      "useEffect",
-      "setInterval",
-    ],
+    features: ["Box", "Text", "borderStyle", "flexDirection", "useInput", "useEffect", "setInterval"],
     source: `import React, { useState, useEffect } from "react"
 import { Box, Text, useInput } from "@silvery/term"
 
@@ -531,9 +523,7 @@ function buildRegistry(): { categories: Category[]; allDemos: DemoEntry[] } {
       items,
     })
   }
-  categories.sort(
-    (a, b) => (CATEGORY_CONFIG[a.name]?.order ?? 99) - (CATEGORY_CONFIG[b.name]?.order ?? 99),
-  )
+  categories.sort((a, b) => (CATEGORY_CONFIG[a.name]?.order ?? 99) - (CATEGORY_CONFIG[b.name]?.order ?? 99))
 
   return { categories, allDemos }
 }

@@ -61,12 +61,7 @@ import { executeRender } from "../pipeline"
 import { createPipeline } from "../measurer"
 import { isTextSizingLikelySupported } from "../text-sizing"
 import { IncrementalRenderMismatchError } from "../scheduler"
-import {
-  createContainer,
-  createFiberRoot,
-  getContainerRoot,
-  reconciler,
-} from "@silvery/react/reconciler"
+import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/react/reconciler"
 import { map, merge, takeUntil } from "@silvery/tea/streams"
 import { createBuffer } from "./create-buffer"
 import { createRuntime } from "./create-runtime"
@@ -81,13 +76,7 @@ import { keyToAnsi, keyToKittyAnsi } from "@silvery/tea/keys"
 import { parseKey, type Key } from "./keys"
 import { ensureLayoutEngine } from "./layout"
 import { createMouseEventProcessor } from "../mouse-events"
-import {
-  enableKittyKeyboard,
-  disableKittyKeyboard,
-  KittyFlags,
-  enableMouse,
-  disableMouse,
-} from "../output"
+import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output"
 import { enableFocusReporting, disableFocusReporting } from "../focus-reporting"
 import { detectKittyFromStdio } from "../kitty-detect"
 import { captureTerminalState, performSuspend } from "./terminal-lifecycle"
@@ -688,9 +677,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       const decoded = symbolize(str)
       // Truncate for readability but keep enough to identify content
       const preview =
-        decoded.length > 400
-          ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100)
-          : decoded
+        decoded.length > 400 ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100) : decoded
       fs.appendFileSync(
         "/tmp/silvery-trace.log",
         `[${String(seq).padStart(4, "0")}] +${ms}ms (${str.length}b): ${preview}\n`,
@@ -743,8 +730,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Resolve textSizing from caps + option (matches run.tsx gate)
   const textSizingEnabled =
     textSizingOption === true ||
-    (textSizingOption === "auto" &&
-      (capsOption?.textSizingSupported ?? isTextSizingLikelySupported()))
+    (textSizingOption === "auto" && (capsOption?.textSizingSupported ?? isTextSizingLikelySupported()))
 
   // Create pipeline config from caps (scoped width measurer + output phase)
   const pipelineConfig = capsOption
@@ -917,8 +903,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               stdout: mockStdout,
               write: () => {},
               notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
-              promoteScrollback: (content: string, lines: number) =>
-                runtime.promoteScrollback(content, lines),
+              promoteScrollback: (content: string, lines: number) => runtime.promoteScrollback(content, lines),
               resetInlineCursor: () => runtime.resetInlineCursor(),
               getInlineCursorRow: () => runtime.getInlineCursorRow(),
             }}
@@ -926,9 +911,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             <FocusManagerContext.Provider value={focusManager}>
               <RuntimeContext.Provider value={runtimeContextValue}>
                 <Root>
-                  <StoreContext.Provider value={store as StoreApi<unknown>}>
-                    {element}
-                  </StoreContext.Provider>
+                  <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
                 </Root>
               </RuntimeContext.Provider>
             </FocusManagerContext.Provider>
@@ -1031,8 +1014,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // createApp bypasses Scheduler/Renderer which have this check built-in,
     // so we add it here to catch incremental rendering bugs at runtime.
     const strictEnv =
-      typeof process !== "undefined" &&
-      (process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL)
+      typeof process !== "undefined" && (process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL)
     if (strictEnv && strictEnv !== "0" && strictEnv !== "false" && wasIncremental) {
       const { buffer: freshBuffer } = executeRender(
         rootNode,
@@ -1217,10 +1199,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
   if (_ansiTrace) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require("node:fs").appendFileSync(
-      "/tmp/silvery-trace.log",
-      "=== RUNTIME.RENDER (initial) ===\n",
-    )
+    require("node:fs").appendFileSync("/tmp/silvery-trace.log", "=== RUNTIME.RENDER (initial) ===\n")
   }
   runtime.render(currentBuffer)
   if (_perfLog) {
@@ -1397,8 +1376,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (shouldExit || events.length === 0) return null
     _renderCount = 0
     _eventStart = performance.now()
-
-
 
     // Intercept lifecycle keys (Ctrl+Z, Ctrl+C) BEFORE they reach app handlers.
     // These must be handled at the runtime level, not by individual components.

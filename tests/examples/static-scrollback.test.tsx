@@ -55,9 +55,7 @@ function TestFooter({
 
   return (
     <Box flexDirection="column">
-      <Text color="$muted">
-        {done ? "[done]" : autoMode ? "[auto]" : "[ready]"}
-      </Text>
+      <Text color="$muted">{done ? "[done]" : autoMode ? "[auto]" : "[ready]"}</Text>
       {!done && (
         <Box>
           <Text bold>{"❯ "}</Text>
@@ -113,10 +111,7 @@ function TestCodingAgent({ script = TEST_SCRIPT }: { script?: typeof TEST_SCRIPT
     }
     const entry = script[scriptIdx]!
     const id = nextId.current++
-    setExchanges((prev) => [
-      ...prev.map((ex) => ({ ...ex, frozen: true })),
-      { ...entry, id, frozen: false },
-    ])
+    setExchanges((prev) => [...prev.map((ex) => ({ ...ex, frozen: true })), { ...entry, id, frozen: false }])
     setScriptIdx((idx) => idx + 1)
   }, [scriptIdx, script])
 

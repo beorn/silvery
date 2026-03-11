@@ -7,13 +7,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from "react"
 import { test, expect, beforeAll } from "vitest"
 import { stripAnsi } from "@silvery/test"
-import {
-  Box,
-  Text,
-  render,
-  measureElement,
-  type DOMElement,
-} from "../../../packages/compat/src/ink"
+import { Box, Text, render, measureElement, type DOMElement } from "../../../packages/compat/src/ink"
 import createStdout from "./helpers/create-stdout"
 import { initLayoutEngine } from "./helpers/render-to-string"
 

@@ -86,7 +86,9 @@ test("column - align self stretch", () => {
       </Box>
     </Box>,
   )
-  expect(output).toBe("\u250c\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502X    \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2518")
+  expect(output).toBe(
+    "\u250c\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502X    \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2518",
+  )
 })
 
 test("row - align self stretch", () => {

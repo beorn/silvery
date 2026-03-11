@@ -121,11 +121,7 @@ console.log('Final items:', handle.store.getState().items)
 ### Key Handler Signature (createApp)
 
 ```typescript
-type KeyHandler<S> = (
-  input: string,
-  key: Key,
-  ctx: { set: SetState<S>; get: GetState<S> },
-) => void | "exit"
+type KeyHandler<S> = (input: string, key: Key, ctx: { set: SetState<S>; get: GetState<S> }) => void | "exit"
 ```
 
 ### AppHandle API
@@ -226,15 +222,7 @@ Between `createRuntime()` and the React layers sits a pure **TEA (The Elm Archit
 
 ```typescript
 import { createStore, silveryUpdate, defaultInit, withFocusManagement } from "@silvery/term/store"
-import {
-  type Effect,
-  type SilveryModel,
-  type SilveryMsg,
-  none,
-  batch,
-  dispatch,
-  compose,
-} from "@silvery/term/core"
+import { type Effect, type SilveryModel, type SilveryMsg, none, batch, dispatch, compose } from "@silvery/term/core"
 
 // Extend the base model with your state
 interface AppModel extends SilveryModel {

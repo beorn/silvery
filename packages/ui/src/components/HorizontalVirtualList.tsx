@@ -263,28 +263,14 @@ function HorizontalVirtualListInner<T>(
   if (scrollTo !== undefined && !allItemsFit && scrollTo >= displayScrollOffset) {
     // Determine which indicators would show at the current offset
     const wouldShowLeft = hasIndicatorRenderer && displayScrollOffset > 0
-    const prelimVisibleCount = calcActualVisibleCount(
-      items,
-      displayScrollOffset,
-      effectiveViewport,
-      itemWidth,
-      gap,
-    )
-    const wouldShowRight =
-      hasIndicatorRenderer && items.length - displayScrollOffset - prelimVisibleCount > 0
+    const prelimVisibleCount = calcActualVisibleCount(items, displayScrollOffset, effectiveViewport, itemWidth, gap)
+    const wouldShowRight = hasIndicatorRenderer && items.length - displayScrollOffset - prelimVisibleCount > 0
     // Actual viewport uses only the indicators that will actually render
     const actualIndicatorWidth =
       (wouldShowLeft ? overflowIndicatorWidth : 0) + (wouldShowRight ? overflowIndicatorWidth : 0)
     const actualViewport = Math.max(1, width - actualIndicatorWidth)
 
-    const overflow = calcItemOverflow(
-      items,
-      displayScrollOffset,
-      scrollTo,
-      actualViewport,
-      itemWidth,
-      gap,
-    )
+    const overflow = calcItemOverflow(items, displayScrollOffset, scrollTo, actualViewport, itemWidth, gap)
     if (overflow > 0) {
       // Scroll right by 1 to push the partially clipped item into full view.
       const maxOffset = Math.max(0, items.length - 1)
@@ -294,13 +280,7 @@ function HorizontalVirtualListInner<T>(
 
   // Compute how many items actually fit starting from the display scroll offset.
   // Uses actual item widths rather than averages for accurate overflow detection.
-  const visibleCount = calcActualVisibleCount(
-    items,
-    displayScrollOffset,
-    effectiveViewport,
-    itemWidth,
-    gap,
-  )
+  const visibleCount = calcActualVisibleCount(items, displayScrollOffset, effectiveViewport, itemWidth, gap)
 
   // Viewport-based item window: render items from displayScrollOffset that fit in the
   // viewport, intersected with useVirtualization's render window (respects maxRendered).

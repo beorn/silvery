@@ -140,9 +140,7 @@ describe("createSearchDecorations", () => {
 
   test("finds single match", () => {
     const decs = createSearchDecorations("hello world", "world")
-    expect(decs).toEqual([
-      { from: 6, to: 11, style: { backgroundColor: "yellow", color: "black" } },
-    ])
+    expect(decs).toEqual([{ from: 6, to: 11, style: { backgroundColor: "yellow", color: "black" } }])
   })
 
   test("finds multiple matches", () => {

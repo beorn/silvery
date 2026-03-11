@@ -59,11 +59,7 @@ export function createPipeline(
   const { caps, measurer: explicitMeasurer } = options
   const measurer =
     explicitMeasurer ??
-    createWidthMeasurer(
-      caps
-        ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizingSupported }
-        : {},
-    )
+    createWidthMeasurer(caps ? { textEmojiWide: caps.textEmojiWide, textSizingEnabled: caps.textSizingSupported } : {})
   const outputPhaseFn = createOutputPhase(
     caps
       ? {

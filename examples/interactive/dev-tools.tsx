@@ -60,18 +60,7 @@ interface LogEntry {
 // Data Generation
 // ============================================================================
 
-const SOURCES = [
-  "http",
-  "db",
-  "auth",
-  "cache",
-  "worker",
-  "api",
-  "scheduler",
-  "queue",
-  "metrics",
-  "ws",
-]
+const SOURCES = ["http", "db", "auth", "cache", "worker", "api", "scheduler", "queue", "metrics", "ws"]
 
 const LOG_TEMPLATES: Record<LogLevel, string[]> = {
   DEBUG: [
@@ -235,9 +224,7 @@ function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number 
       itemHeight={1}
       scrollTo={cursor}
       overscan={5}
-      renderItem={(entry, index) => (
-        <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />
-      )}
+      renderItem={(entry, index) => <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />}
     />
   )
 }
@@ -399,10 +386,7 @@ export function DevTools(): JSX.Element {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner
-      meta={meta}
-      controls="j/k navigate  g/G start/end  d/i/w/e add log  c clear  Esc/q quit"
-    >
+    <ExampleBanner meta={meta} controls="j/k navigate  g/G start/end  d/i/w/e add log  c clear  Esc/q quit">
       <DevTools />
     </ExampleBanner>,
     term,

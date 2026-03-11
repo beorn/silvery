@@ -378,9 +378,7 @@ describe("sanitizeAnsi", () => {
       "\x1b[0m", // SGR reset (keep)
     ].join("")
 
-    expect(sanitizeAnsi(input)).toBe(
-      "\x1b[31m" + "text" + "\x1b]8;;url\x1b\\" + "link" + "\x1b]8;;\x1b\\" + "\x1b[0m",
-    )
+    expect(sanitizeAnsi(input)).toBe("\x1b[31m" + "text" + "\x1b]8;;url\x1b\\" + "link" + "\x1b]8;;\x1b\\" + "\x1b[0m")
   })
 
   test("bare 'm' CSI (ESC[m) is SGR reset — preserved", () => {

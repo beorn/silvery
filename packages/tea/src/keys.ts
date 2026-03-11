@@ -370,20 +370,7 @@ const NON_ALPHANUMERIC_KEYS = [
   // Use key.return / key.escape boolean flags to detect these keys.
 ]
 
-const SHIFT_CODES = new Set([
-  "[a",
-  "[b",
-  "[c",
-  "[d",
-  "[e",
-  "[2$",
-  "[3$",
-  "[5$",
-  "[6$",
-  "[7$",
-  "[8$",
-  "[Z",
-])
+const SHIFT_CODES = new Set(["[a", "[b", "[c", "[d", "[e", "[2$", "[3$", "[5$", "[6$", "[7$", "[8$", "[Z"])
 
 const CTRL_CODES = new Set(["Oa", "Ob", "Oc", "Od", "Oe", "[2^", "[3^", "[5^", "[6^", "[7^", "[8^"])
 
@@ -693,8 +680,7 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
     const kittySpecialParts = !kittyParts && KITTY_SPECIAL_RE.exec(input)
     // xterm modifyOtherKeys format: CSI 27 ; modifier ; keycode ~
     // Sent by Ghostty, xterm, and others for modified keys like Ctrl+Enter
-    const modifyOtherKeysParts =
-      !kittyParts && !kittySpecialParts && MODIFY_OTHER_KEYS_RE.exec(input)
+    const modifyOtherKeysParts = !kittyParts && !kittySpecialParts && MODIFY_OTHER_KEYS_RE.exec(input)
 
     if (kittySpecialParts) {
       // Kitty-enhanced special key: CSI number ; modifiers : eventType {letter|~}
@@ -703,10 +689,7 @@ export function parseKeypress(s: string | Buffer): ParsedKeypress {
       const eventType = Number(kittySpecialParts[3])
       const terminator = kittySpecialParts[4]!
 
-      const name =
-        terminator === "~"
-          ? KITTY_SPECIAL_NUMBER_KEYS[number]
-          : KITTY_SPECIAL_LETTER_KEYS[terminator]
+      const name = terminator === "~" ? KITTY_SPECIAL_NUMBER_KEYS[number] : KITTY_SPECIAL_LETTER_KEYS[terminator]
 
       key.isKittyProtocol = true
       key.isPrintable = false
@@ -1072,11 +1055,7 @@ export function parseHotkey(keyStr: string): ParsedHotkey {
       modifiers.has("⌥"),
     shift: modifiers.has("shift") || modifiers.has("⇧"),
     alt: false, // alt and meta are indistinguishable in terminals; use meta
-    super:
-      modifiers.has("super") ||
-      modifiers.has("cmd") ||
-      modifiers.has("command") ||
-      modifiers.has("⌘"),
+    super: modifiers.has("super") || modifiers.has("cmd") || modifiers.has("command") || modifiers.has("⌘"),
     hyper: modifiers.has("hyper") || modifiers.has("✦"),
   }
 }
@@ -1098,8 +1077,7 @@ export function matchHotkey(hotkey: ParsedHotkey, key: Key, input?: string): boo
   if (!!hotkey.alt !== false) return false // terminals can't distinguish alt from meta
 
   // For single uppercase letters (A-Z), shift is implicit
-  const isUppercaseLetter =
-    hotkey.key.length === 1 && hotkey.key >= "A" && hotkey.key <= "Z" && !hotkey.shift
+  const isUppercaseLetter = hotkey.key.length === 1 && hotkey.key >= "A" && hotkey.key <= "Z" && !hotkey.shift
   if (!isUppercaseLetter && !!hotkey.shift !== !!key.shift) return false
 
   // Check key name against Key boolean fields

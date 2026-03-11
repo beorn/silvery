@@ -126,8 +126,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (!this.state.hasError) return
 
     // Reset error state when resetKey changes
-    const resetKeyChanged =
-      this.props.resetKey !== undefined && prevProps.resetKey !== this.props.resetKey
+    const resetKeyChanged = this.props.resetKey !== undefined && prevProps.resetKey !== this.props.resetKey
 
     // Reset error state when any element in resetKeys changes (shallow comparison)
     const resetKeysChanged =

@@ -103,8 +103,14 @@ function createScreen(cols: number, rows: number) {
           // OSC — skip to BEL or ST
           let j = i + 2
           while (j < ansi.length) {
-            if (ansi[j] === "\x07") { j++; break }
-            if (ansi[j] === "\x1b" && ansi[j + 1] === "\\") { j += 2; break }
+            if (ansi[j] === "\x07") {
+              j++
+              break
+            }
+            if (ansi[j] === "\x1b" && ansi[j + 1] === "\\") {
+              j += 2
+              break
+            }
             j++
           }
           i = j
@@ -178,7 +184,8 @@ function bufferWithLines(width: number, height: number, lines: string[]): Termin
 
 describe("inline: first render", () => {
   test("renders content on first frame", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -189,7 +196,8 @@ describe("inline: first render", () => {
   })
 
   test("first render with single line", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -200,7 +208,8 @@ describe("inline: first render", () => {
   })
 
   test("first render with empty buffer produces no visible content", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -211,7 +220,8 @@ describe("inline: first render", () => {
   })
 
   test("first render fills full width", () => {
-    const COLS = 20, ROWS = 5
+    const COLS = 20,
+      ROWS = 5
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -228,7 +238,8 @@ describe("inline: first render", () => {
 
 describe("inline: incremental rendering", () => {
   test("updates only changed content", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -243,7 +254,8 @@ describe("inline: incremental rendering", () => {
   })
 
   test("no output when buffers are identical", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
 
     const buf1 = bufferWithLines(COLS, ROWS, ["Static", "Content"])
@@ -256,7 +268,8 @@ describe("inline: incremental rendering", () => {
   })
 
   test("updates first line only", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -270,7 +283,8 @@ describe("inline: incremental rendering", () => {
   })
 
   test("updates last line only", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -290,7 +304,8 @@ describe("inline: incremental rendering", () => {
 
 describe("inline: content growth", () => {
   test("content grows by adding new lines", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -304,7 +319,8 @@ describe("inline: content growth", () => {
   })
 
   test("content grows from 1 to many lines", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -324,7 +340,8 @@ describe("inline: content growth", () => {
 
 describe("inline: content shrinking", () => {
   test("erases orphan lines when content shrinks", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -338,7 +355,8 @@ describe("inline: content shrinking", () => {
   })
 
   test("erases all lines when content shrinks to single line", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -352,7 +370,8 @@ describe("inline: content shrinking", () => {
   })
 
   test("progressive shrinking across multiple frames", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -377,7 +396,8 @@ describe("inline: content shrinking", () => {
 
 describe("inline: scrollback promotion", () => {
   test("single freeze cycle: frozen content stays on-screen", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -394,7 +414,8 @@ describe("inline: scrollback promotion", () => {
   })
 
   test("multiple sequential freeze cycles: frozen content stays on-screen", () => {
-    const COLS = 40, ROWS = 15
+    const COLS = 40,
+      ROWS = 15
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -416,7 +437,8 @@ describe("inline: scrollback promotion", () => {
   })
 
   test("bulk freeze: frozen items stay on-screen", () => {
-    const COLS = 40, ROWS = 12
+    const COLS = 40,
+      ROWS = 12
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -432,7 +454,8 @@ describe("inline: scrollback promotion", () => {
   })
 
   test("freeze + content shrink simultaneously", () => {
-    const COLS = 40, ROWS = 12
+    const COLS = 40,
+      ROWS = 12
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -448,7 +471,8 @@ describe("inline: scrollback promotion", () => {
   })
 
   test("freeze + content growth simultaneously", () => {
-    const COLS = 40, ROWS = 12
+    const COLS = 40,
+      ROWS = 12
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -464,7 +488,8 @@ describe("inline: scrollback promotion", () => {
   })
 
   test("freeze all items one by one: frozen content stays on-screen", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -485,7 +510,8 @@ describe("inline: scrollback promotion", () => {
   })
 
   test("promotion followed by normal shrink in next frame", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -516,15 +542,14 @@ describe("inline: scrollback promotion", () => {
 
 describe("inline: terminal height capping", () => {
   test("caps output to termRows when content exceeds terminal", () => {
-    const COLS = 40, ROWS = 5 // terminal is only 5 rows
+    const COLS = 40,
+      ROWS = 5 // terminal is only 5 rows
     const BUFFER_ROWS = 20
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
     // Content has 8 lines but terminal only has 5
-    const buf = bufferWithLines(COLS, BUFFER_ROWS, [
-      "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8",
-    ])
+    const buf = bufferWithLines(COLS, BUFFER_ROWS, ["L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8"])
     screen.feed(op(null, buf, "inline", 0, ROWS))
 
     // Should show bottom 5 lines (capped to termRows)
@@ -533,7 +558,8 @@ describe("inline: terminal height capping", () => {
   })
 
   test("content that fits within terminal shows all lines", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -550,7 +576,8 @@ describe("inline: terminal height capping", () => {
 
 describe("inline: scrollback offset", () => {
   test("handles scrollback offset from external writes", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -575,7 +602,8 @@ describe("inline: scrollback offset", () => {
 
 describe("inline: cursor positioning", () => {
   test("cursor at custom position does not cause bleed on shrink", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -589,7 +617,8 @@ describe("inline: cursor positioning", () => {
   })
 
   test("cursor hidden: content renders without cursor artifacts", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -603,7 +632,8 @@ describe("inline: cursor positioning", () => {
   })
 
   test("cursor moves between rows across frames", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -624,7 +654,8 @@ describe("inline: cursor positioning", () => {
 
 describe("inline: resetInlineState", () => {
   test("reset forces full re-render on next frame", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -641,7 +672,8 @@ describe("inline: resetInlineState", () => {
   })
 
   test("reset clears pending promotion", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -674,7 +706,8 @@ describe("inline: cursor row tracking", () => {
   })
 
   test("tracks cursor row after first render", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
 
     const buf = bufferWithLines(COLS, ROWS, ["A", "B", "C"])
@@ -685,7 +718,8 @@ describe("inline: cursor row tracking", () => {
   })
 
   test("tracks cursor row with visible cursor", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
 
     const buf = bufferWithLines(COLS, ROWS, ["A", "B", "C"])
@@ -696,7 +730,8 @@ describe("inline: cursor row tracking", () => {
   })
 
   test("resets to -1 after resetInlineState", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
 
     const buf = bufferWithLines(COLS, ROWS, ["Content"])
@@ -714,7 +749,8 @@ describe("inline: cursor row tracking", () => {
 
 describe("inline: bare outputPhase()", () => {
   test("bare call renders content", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const screen = createScreen(COLS, ROWS)
 
     const buf = bufferWithLines(COLS, ROWS, ["Direct", "Call"])
@@ -724,7 +760,8 @@ describe("inline: bare outputPhase()", () => {
   })
 
   test("bare call always falls back to full render", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const screen = createScreen(COLS, ROWS)
 
     const buf1 = bufferWithLines(COLS, ROWS, ["Frame 1"])
@@ -745,7 +782,8 @@ describe("inline: bare outputPhase()", () => {
 
 describe("inline: multi-frame scenarios", () => {
   test("task runner: items complete and freeze over time", () => {
-    const COLS = 50, ROWS = 20
+    const COLS = 50,
+      ROWS = 20
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -761,11 +799,7 @@ describe("inline: multi-frame scenarios", () => {
 
     // Frame 2: react done → freeze — stays on-screen
     op.promoteScrollback!("  react: done\x1b[K\r\n", 1)
-    let next = bufferWithLines(COLS, ROWS, [
-      "Installing packages...",
-      "  lodash: installing...",
-      "  chalk: pending",
-    ])
+    let next = bufferWithLines(COLS, ROWS, ["Installing packages...", "  lodash: installing...", "  chalk: pending"])
     screen.feed(op(prev, next, "inline", 0, ROWS))
     prev = next
 
@@ -775,10 +809,7 @@ describe("inline: multi-frame scenarios", () => {
 
     // Frame 3: lodash done → freeze — stays on-screen
     op.promoteScrollback!("  lodash: done\x1b[K\r\n", 1)
-    next = bufferWithLines(COLS, ROWS, [
-      "Installing packages...",
-      "  chalk: installing...",
-    ])
+    next = bufferWithLines(COLS, ROWS, ["Installing packages...", "  chalk: installing..."])
     screen.feed(op(prev, next, "inline", 0, ROWS))
     prev = next
 
@@ -795,7 +826,8 @@ describe("inline: multi-frame scenarios", () => {
   })
 
   test("chat interface: messages freeze as new ones arrive", () => {
-    const COLS = 60, ROWS = 20
+    const COLS = 60,
+      ROWS = 20
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -822,7 +854,8 @@ describe("inline: multi-frame scenarios", () => {
   })
 
   test("spinner animation: rapid updates without freezing", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -849,7 +882,8 @@ describe("inline: multi-frame scenarios", () => {
 
 describe("inline: edge cases", () => {
   test("content with trailing empty lines", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -861,7 +895,8 @@ describe("inline: edge cases", () => {
   })
 
   test("wide buffer with narrow terminal rows", () => {
-    const COLS = 80, ROWS = 3
+    const COLS = 80,
+      ROWS = 3
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -872,7 +907,8 @@ describe("inline: edge cases", () => {
   })
 
   test("alternating grow and shrink", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -905,7 +941,8 @@ describe("inline: edge cases", () => {
   })
 
   test("content replaces entirely different text", () => {
-    const COLS = 40, ROWS = 10
+    const COLS = 40,
+      ROWS = 10
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -919,7 +956,8 @@ describe("inline: edge cases", () => {
   })
 
   test("very long lines within buffer width", () => {
-    const COLS = 80, ROWS = 5
+    const COLS = 80,
+      ROWS = 5
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 
@@ -933,7 +971,8 @@ describe("inline: edge cases", () => {
   })
 
   test("promotion with multi-line frozen content", () => {
-    const COLS = 40, ROWS = 15
+    const COLS = 40,
+      ROWS = 15
     const op = createOutputPhase({})
     const screen = createScreen(COLS, ROWS)
 

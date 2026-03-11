@@ -43,18 +43,13 @@ export function Select<T>({
   const selectedIndex = options.findIndex((opt) => opt.value === value)
 
   // Internal highlight state (for uncontrolled mode)
-  const [internalHighlightIndex, setInternalHighlightIndex] = useState(
-    selectedIndex >= 0 ? selectedIndex : 0,
-  )
+  const [internalHighlightIndex, setInternalHighlightIndex] = useState(selectedIndex >= 0 ? selectedIndex : 0)
 
   // Use controlled or internal highlight index
   const highlightIndex = controlledHighlightIndex ?? internalHighlightIndex
 
   // Calculate scroll window
-  const scrollOffset = Math.max(
-    0,
-    Math.min(highlightIndex - Math.floor(maxVisible / 2), options.length - maxVisible),
-  )
+  const scrollOffset = Math.max(0, Math.min(highlightIndex - Math.floor(maxVisible / 2), options.length - maxVisible))
   const visibleOptions = options.slice(scrollOffset, scrollOffset + maxVisible)
   const hasMoreAbove = scrollOffset > 0
   const hasMoreBelow = scrollOffset + maxVisible < options.length
@@ -75,12 +70,7 @@ export function Select<T>({
         const isHighlighted = actualIndex === highlightIndex
 
         return (
-          <div
-            key={actualIndex}
-            data-silvery-select-option
-            data-selected={isSelected}
-            data-highlighted={isHighlighted}
-          >
+          <div key={actualIndex} data-silvery-select-option data-selected={isSelected} data-highlighted={isHighlighted}>
             <span data-silvery-select-indicator>{isSelected ? ">" : " "}</span>
             <span data-silvery-select-label>{option.label}</span>
           </div>
@@ -133,8 +123,7 @@ export function useSelect<T>({
   select: () => void
   setHighlightIndex: (index: number) => void
 } {
-  const initialIndex =
-    initialValue !== undefined ? options.findIndex((opt) => opt.value === initialValue) : 0
+  const initialIndex = initialValue !== undefined ? options.findIndex((opt) => opt.value === initialValue) : 0
 
   const [highlightIndex, setHighlightIndex] = useState(Math.max(0, initialIndex))
   const [value, setValue] = useState<T | undefined>(initialValue)

@@ -141,22 +141,12 @@ export function generateLabel(fnName: string): string {
  * Check if a value is a StepsDef (nested group)
  */
 export function isStepsDef(value: unknown): value is StepsDef {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    typeof value !== "function"
-  )
+  return typeof value === "object" && value !== null && !Array.isArray(value) && typeof value !== "function"
 }
 
 /**
  * Check if a value is a tuple [label, function]
  */
 export function isLabelTuple(value: unknown): value is [string, (...args: unknown[]) => unknown] {
-  return (
-    Array.isArray(value) &&
-    value.length === 2 &&
-    typeof value[0] === "string" &&
-    typeof value[1] === "function"
-  )
+  return Array.isArray(value) && value.length === 2 && typeof value[0] === "string" && typeof value[1] === "function"
 }

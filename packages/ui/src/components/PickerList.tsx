@@ -72,13 +72,7 @@ export function PickerList<T>({
   // Scroll offset: center the selected item in the visible window
   const scrollOffset =
     items.length > effectiveMaxVisible
-      ? Math.max(
-          0,
-          Math.min(
-            clampedIndex - Math.floor(effectiveMaxVisible / 2),
-            items.length - effectiveMaxVisible,
-          ),
-        )
+      ? Math.max(0, Math.min(clampedIndex - Math.floor(effectiveMaxVisible / 2), items.length - effectiveMaxVisible))
       : 0
 
   const visibleItems = items.slice(scrollOffset, scrollOffset + effectiveMaxVisible)
@@ -91,9 +85,7 @@ export function PickerList<T>({
         visibleItems.map((item, i) => {
           const actualIndex = scrollOffset + i
           const isSelected = actualIndex === clampedIndex
-          return (
-            <React.Fragment key={keyExtractor(item)}>{renderItem(item, isSelected)}</React.Fragment>
-          )
+          return <React.Fragment key={keyExtractor(item)}>{renderItem(item, isSelected)}</React.Fragment>
         })
       )}
     </Box>

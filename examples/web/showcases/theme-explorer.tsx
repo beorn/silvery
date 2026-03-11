@@ -30,14 +30,7 @@ const PALETTE_NAMES = [
 ]
 
 const ANSI_LABELS = ["red", "green", "yellow", "blue", "magenta", "cyan"] as const
-const BRIGHT_LABELS = [
-  "brightRed",
-  "brightGreen",
-  "brightYellow",
-  "brightBlue",
-  "brightMagenta",
-  "brightCyan",
-] as const
+const BRIGHT_LABELS = ["brightRed", "brightGreen", "brightYellow", "brightBlue", "brightMagenta", "brightCyan"] as const
 
 // --- Helpers ---
 
@@ -60,20 +53,9 @@ function ColorSwatch({ color, label }: { color: string; label?: string }): JSX.E
   )
 }
 
-function PaletteCard({
-  palette,
-  isSelected,
-}: {
-  palette: ColorPalette
-  isSelected: boolean
-}): JSX.Element {
+function PaletteCard({ palette, isSelected }: { palette: ColorPalette; isSelected: boolean }): JSX.Element {
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="single"
-      borderColor={isSelected ? "#89b4fa" : "#444"}
-      width={36}
-    >
+    <Box flexDirection="column" borderStyle="single" borderColor={isSelected ? "#89b4fa" : "#444"} width={36}>
       {/* Header with palette name */}
       <Box backgroundColor={palette.background} paddingX={1}>
         <Text color={palette.foreground} bold={isSelected}>
@@ -170,9 +152,7 @@ export function ThemeExplorerShowcase(): JSX.Element {
           {col1.map((name) => {
             const palette = builtinPalettes[name]!
             const globalIdx = PALETTE_NAMES.indexOf(name)
-            return (
-              <PaletteCard key={name} palette={palette} isSelected={globalIdx === selectedIdx} />
-            )
+            return <PaletteCard key={name} palette={palette} isSelected={globalIdx === selectedIdx} />
           })}
         </Box>
         {twoCol && col2.length > 0 && (
@@ -180,9 +160,7 @@ export function ThemeExplorerShowcase(): JSX.Element {
             {col2.map((name) => {
               const palette = builtinPalettes[name]!
               const globalIdx = PALETTE_NAMES.indexOf(name)
-              return (
-                <PaletteCard key={name} palette={palette} isSelected={globalIdx === selectedIdx} />
-              )
+              return <PaletteCard key={name} palette={palette} isSelected={globalIdx === selectedIdx} />
             })}
           </Box>
         )}

@@ -4,15 +4,7 @@
  */
 import React, { Suspense, act, useEffect, useState } from "react"
 import { test, expect, beforeAll, vi } from "vitest"
-import {
-  render,
-  Box,
-  Text,
-  useInput,
-  useCursor,
-  useStdout,
-  useStderr,
-} from "../../../packages/compat/src/ink"
+import { render, Box, Text, useInput, useCursor, useStdout, useStderr } from "../../../packages/compat/src/ink"
 import { ensureDefaultLayoutEngine } from "../../../packages/term/src/layout-engine"
 import createStdout, { type FakeStdout } from "./helpers/create-stdout"
 import { createStdin, emitReadable } from "./helpers/create-stdin"
@@ -207,9 +199,7 @@ function DebugStderrWriteApp() {
 test("debug mode: useStdout().write() replays latest frame", async () => {
   const stdout = createStdout()
   const { unmount } = render(<DebugStdoutWriteApp />, { stdout, debug: true })
-  await waitForCondition(() =>
-    getWriteCalls(stdout).some((write) => write.includes("from stdout hook\nHello")),
-  )
+  await waitForCondition(() => getWriteCalls(stdout).some((write) => write.includes("from stdout hook\nHello")))
 
   const writes = getWriteCalls(stdout)
   const hookWrite = writes.find((write) => write.includes("from stdout hook\nHello"))
@@ -228,9 +218,7 @@ test("debug mode: useStdout().write() does not leak into stderr", async () => {
     stderr,
     debug: true,
   })
-  await waitForCondition(() =>
-    getWriteCalls(stdout).some((write) => write.includes("from stdout hook\nHello")),
-  )
+  await waitForCondition(() => getWriteCalls(stdout).some((write) => write.includes("from stdout hook\nHello")))
 
   const stderrWrites = getWriteCalls(stderr)
   expect(stderrWrites.some((write) => write.includes("from stdout hook\n"))).toBe(false)
@@ -248,9 +236,7 @@ test("debug mode: useStderr().write() replays latest frame without empty writes"
     stderr,
     debug: true,
   })
-  await waitForCondition(() =>
-    getWriteCalls(stderr).some((write) => write.includes("from stderr hook\n")),
-  )
+  await waitForCondition(() => getWriteCalls(stderr).some((write) => write.includes("from stderr hook\n")))
   await waitForCondition(() => getWriteCalls(stdout).length > 1)
 
   const stdoutWrites = getWriteCalls(stdout)
@@ -261,9 +247,7 @@ test("debug mode: useStderr().write() replays latest frame without empty writes"
   expect(stderrWrites.some((write) => write.includes("Hello"))).toBe(false)
   expect(stdoutWritesAfterInitialRender.length).toBeGreaterThan(0)
   expect(stdoutWritesAfterInitialRender.some((write) => write.includes("Hello"))).toBe(true)
-  expect(
-    stdoutWritesAfterInitialRender.some((write) => write.includes("from stderr hook\n")),
-  ).toBe(false)
+  expect(stdoutWritesAfterInitialRender.some((write) => write.includes("from stderr hook\n"))).toBe(false)
   expect(stdoutWrites).not.toContain("")
   expect(stderrWrites).not.toContain("")
 
@@ -310,9 +294,7 @@ test("debug mode: useStdout().write() replays rerendered frame", async () => {
     stdout,
     debug: true,
   })
-  await waitForCondition(() =>
-    getWriteCalls(stdout).some((write) => write.includes("from stdout hook\nUpdated")),
-  )
+  await waitForCondition(() => getWriteCalls(stdout).some((write) => write.includes("from stdout hook\nUpdated")))
 
   const stdoutWrites = getWriteCalls(stdout)
 
@@ -331,9 +313,7 @@ test("debug mode: useStderr().write() replays rerendered frame", async () => {
     stderr,
     debug: true,
   })
-  await waitForCondition(() =>
-    getWriteCalls(stderr).some((write) => write.includes("from stderr hook\n")),
-  )
+  await waitForCondition(() => getWriteCalls(stderr).some((write) => write.includes("from stderr hook\n")))
   await waitForCondition(() =>
     getWriteCalls(stdout)
       .slice(1)
@@ -349,9 +329,7 @@ test("debug mode: useStderr().write() replays rerendered frame", async () => {
   expect(stderrWrites.some((write) => write.includes("Initial"))).toBe(false)
   expect(stdoutWritesAfterInitialRender.some((write) => write.includes("Updated"))).toBe(true)
   expect(stdoutWritesAfterInitialRender.some((write) => write.includes("Initial"))).toBe(false)
-  expect(
-    stdoutWritesAfterInitialRender.some((write) => write.includes("from stderr hook\n")),
-  ).toBe(false)
+  expect(stdoutWritesAfterInitialRender.some((write) => write.includes("from stderr hook\n"))).toBe(false)
   expect(stdoutWrites).not.toContain("")
   expect(stderrWrites).not.toContain("")
 

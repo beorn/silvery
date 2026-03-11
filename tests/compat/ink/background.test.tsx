@@ -5,12 +5,7 @@ import React from "react"
 import { test, expect, beforeAll } from "vitest"
 import chalk from "chalk"
 import { Box, Text } from "../../../packages/compat/src/ink"
-import {
-  renderToString,
-  initLayoutEngine,
-  enableTestColors,
-  disableTestColors,
-} from "./helpers/render-to-string"
+import { renderToString, initLayoutEngine, enableTestColors, disableTestColors } from "./helpers/render-to-string"
 
 const ansi = {
   bgRed: "\u001B[41m",
@@ -100,9 +95,7 @@ test("Complex nested structure with background inheritance", () => {
       </Box>
     </Box>,
   )
-  expect(output).toBe(
-    `${ansi.bgYellow}Outer: ${ansi.bgBlue}Inner: ${ansi.bgRed}Explicit${ansi.bgReset}`,
-  )
+  expect(output).toBe(`${ansi.bgYellow}Outer: ${ansi.bgBlue}Inner: ${ansi.bgRed}Explicit${ansi.bgReset}`)
 })
 
 test("Text-only backgroundColor colors text content but does not fill Box width", () => {
@@ -112,7 +105,5 @@ test("Text-only backgroundColor colors text content but does not fill Box width"
     </Box>,
   )
   // Text-only bg colors just the text, not the remaining space to fill Box width
-  expect(output).toBe(
-    `${ansi.bgRed}Hello ${ansi.bgReset}\n${ansi.bgRed}World!!${ansi.bgReset}`,
-  )
+  expect(output).toBe(`${ansi.bgRed}Hello ${ansi.bgReset}\n${ansi.bgRed}World!!${ansi.bgReset}`)
 })

@@ -64,11 +64,7 @@ export function CursorLine({
   return (
     <Text color={color}>
       {beforeCursor}
-      {cursorStyle === "block" ? (
-        <Text inverse>{cursorChar}</Text>
-      ) : (
-        <Text underline>{cursorChar}</Text>
-      )}
+      {cursorStyle === "block" ? <Text inverse>{cursorChar}</Text> : <Text underline>{cursorChar}</Text>}
       {rest}
     </Text>
   )

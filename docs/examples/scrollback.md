@@ -94,10 +94,7 @@ function REPL() {
       setInput("")
       const id = nextId++
       // Add entry, simulate processing, then freeze
-      setEntries((prev) => [
-        ...prev,
-        { id, input: text, output: `Result: ${text.toUpperCase()}`, done: true },
-      ])
+      setEntries((prev) => [...prev, { id, input: text, output: `Result: ${text.toUpperCase()}`, done: true }])
     },
     [nextId],
   )

@@ -172,15 +172,7 @@ Single-line text input with full readline shortcuts (Ctrl+A/E, Ctrl+K/U, Alt+B/F
 import { TextInput } from "silvery"
 
 function MyInput() {
-  return (
-    <TextInput
-      value={text}
-      onChange={setText}
-      onSubmit={handleSubmit}
-      placeholder="Type here..."
-      prompt="> "
-    />
-  )
+  return <TextInput value={text} onChange={setText} onSubmit={handleSubmit} placeholder="Type here..." prompt="> " />
 }
 ```
 
@@ -251,19 +243,19 @@ Simple interactive primitives for boolean toggles and clickable buttons.
 
 ## Display Components
 
-| Component     | Description                                                |
-| ------------- | ---------------------------------------------------------- |
-| `Spinner`     | Animated spinner with presets (dots, line, arc, bounce)    |
-| `ProgressBar` | Determinate and indeterminate progress with custom fill    |
-| `Table`       | Column-aligned table with header, per-column alignment     |
-| `Badge`       | Styled label/tag                                           |
-| `Divider`     | Horizontal rule                                            |
+| Component     | Description                                                                                  |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| `Spinner`     | Animated spinner with presets (dots, line, arc, bounce)                                      |
+| `ProgressBar` | Determinate and indeterminate progress with custom fill                                      |
+| `Table`       | Column-aligned table with header, per-column alignment                                       |
+| `Badge`       | Styled label/tag                                                                             |
+| `Divider`     | Horizontal rule                                                                              |
 | `VirtualList` | O(1) scroll for thousands of items — see [List Components](/guide/scrolling#list-components) |
-| `VirtualView` | Virtualized arbitrary content                              |
-| `Console`     | Captures `console.log` output via `patchConsole()`         |
-| `Transform`   | Per-line string transformation on children                 |
-| `Image`       | Kitty graphics / Sixel with text fallback                  |
-| `Link`        | OSC 8 hyperlink                                            |
+| `VirtualView` | Virtualized arbitrary content                                                                |
+| `Console`     | Captures `console.log` output via `patchConsole()`                                           |
+| `Transform`   | Per-line string transformation on children                                                   |
+| `Image`       | Kitty graphics / Sixel with text fallback                                                    |
+| `Link`        | OSC 8 hyperlink                                                                              |
 
 ## Shadcn-Style Components
 

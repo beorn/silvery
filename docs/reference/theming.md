@@ -27,12 +27,12 @@ function App() {
 
 Any color prop on `Box` or `Text` that starts with `$` resolves against the active theme:
 
-| Prop              | Components | Example                      |
-| ----------------- | ---------- | ---------------------------- |
-| `color`           | Box, Text  | `color="$primary"`           |
+| Prop              | Components | Example                         |
+| ----------------- | ---------- | ------------------------------- |
+| `color`           | Box, Text  | `color="$primary"`              |
 | `backgroundColor` | Box, Text  | `backgroundColor="$surface-bg"` |
-| `borderColor`     | Box        | `borderColor="$separator"`   |
-| `outlineColor`    | Box        | `outlineColor="$focusring"`  |
+| `borderColor`     | Box        | `borderColor="$separator"`      |
+| `outlineColor`    | Box        | `outlineColor="$focusring"`     |
 
 Non-`$` values pass through unchanged (`color="red"`, `color="#ff0000"`).
 

@@ -136,7 +136,7 @@ The examples above use `render()`, which gives you a React renderer with layout 
 ```tsx
 import { run, useInput } from "@silvery/term/runtime"
 
-await run(<App />)  // Full terminal setup, keyboard, mouse — all auto-configured
+await run(<App />) // Full terminal setup, keyboard, mouse — all auto-configured
 ```
 
 See [Getting Started with silvery/runtime](runtime-getting-started.md) for the full guide.

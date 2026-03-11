@@ -10,12 +10,7 @@
  * - Delegates to adapter for text measurement and styling
  */
 
-import {
-  type RenderBuffer,
-  type RenderStyle,
-  getRenderAdapter,
-  hasRenderAdapter,
-} from "../render-adapter"
+import { type RenderBuffer, type RenderStyle, getRenderAdapter, hasRenderAdapter } from "../render-adapter"
 import type { BoxProps, TeaNode, Rect, TextProps } from "@silvery/tea/types"
 import { getBorderSize, getPadding } from "./helpers"
 import { displayWidth } from "../unicode"
@@ -59,12 +54,7 @@ interface ClipRect {
   right?: number
 }
 
-function renderNodeToBuffer(
-  node: TeaNode,
-  buffer: RenderBuffer,
-  scrollOffset = 0,
-  clipBounds?: ClipRect,
-): void {
+function renderNodeToBuffer(node: TeaNode, buffer: RenderBuffer, scrollOffset = 0, clipBounds?: ClipRect): void {
   const layout = node.contentRect
   if (!layout) return
 
@@ -147,9 +137,7 @@ function renderBox(
       const clippedHeight = Math.min(y + height, clipBounds.bottom) - clippedY
       const clippedX = clipBounds.left !== undefined ? Math.max(x, clipBounds.left) : x
       const clippedWidth =
-        clipBounds.right !== undefined
-          ? Math.min(x + width, clipBounds.right) - clippedX
-          : width - (clippedX - x)
+        clipBounds.right !== undefined ? Math.min(x + width, clipBounds.right) - clippedX : width - (clippedX - x)
       if (clippedHeight > 0 && clippedWidth > 0) {
         buffer.fillRect(clippedX, clippedY, clippedWidth, clippedHeight, style)
       }
@@ -186,9 +174,7 @@ function renderBorder(
   const showRight = props.borderRight !== false
 
   const isRowVisible = (row: number): boolean =>
-    clipBounds
-      ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row)
-      : buffer.inBounds(0, row)
+    clipBounds ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row) : buffer.inBounds(0, row)
 
   // Top border
   if (showTop && isRowVisible(y)) {
@@ -293,12 +279,7 @@ function renderSideBorders(
     if (!isRowVisible(row)) continue
     if (showLeft && x >= clipLeft && x < clipRight) buffer.drawChar(x, row, leftVertical, style)
     const rightCol = x + width - 1
-    if (
-      showRight &&
-      rightCol >= clipLeft &&
-      rightCol < clipRight &&
-      buffer.inBounds(rightCol, row)
-    ) {
+    if (showRight && rightCol >= clipLeft && rightCol < clipRight && buffer.inBounds(rightCol, row)) {
       buffer.drawChar(rightCol, row, rightVertical, style)
     }
   }
@@ -330,9 +311,7 @@ function renderOutlineAdapter(
   if (props.outlineDimColor) style.attrs = { dim: true }
 
   const isRowVisible = (row: number): boolean =>
-    clipBounds
-      ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row)
-      : buffer.inBounds(0, row)
+    clipBounds ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row) : buffer.inBounds(0, row)
 
   // Top border
   if (isRowVisible(y)) {
@@ -425,13 +404,7 @@ function renderText(
   if (!text) return
 
   // Map underline style to supported values
-  const underlineStyle = props.underlineStyle as
-    | "single"
-    | "double"
-    | "curly"
-    | "dotted"
-    | "dashed"
-    | undefined
+  const underlineStyle = props.underlineStyle as "single" | "double" | "curly" | "dotted" | "dashed" | undefined
 
   // Inherit bg from nearest ancestor Box with backgroundColor
   const inheritedBg = props.backgroundColor ?? findAncestorBg(node)
@@ -647,9 +620,7 @@ function renderNormalChildren(
   let effectiveClipBounds = clipBounds
 
   if (props.overflow === "hidden") {
-    const border = props.borderStyle
-      ? getBorderSize(props)
-      : { top: 0, bottom: 0, left: 0, right: 0 }
+    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
     const padding = getPadding(props)
 
     // Adjust layout position by scrollOffset to get screen coordinates

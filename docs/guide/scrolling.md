@@ -144,7 +144,9 @@ What this page covers. Render all your children, let the layout engine handle th
 
 ```tsx
 <Box flexDirection="column" overflow="scroll" scrollTo={selected}>
-  {items.map((item, i) => <Row key={item.id} item={item} />)}
+  {items.map((item, i) => (
+    <Row key={item.id} item={item} />
+  ))}
 </Box>
 ```
 
@@ -182,27 +184,21 @@ For lists where items complete over time — task runners, test output, chat mes
 
 ```tsx
 import { ScrollbackList } from "silvery"
-
-<ScrollbackList
-  items={tasks}
-  keyExtractor={(t) => t.id}
-  isFrozen={(t) => t.done}
-  footer={<StatusBar />}
->
+;<ScrollbackList items={tasks} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} footer={<StatusBar />}>
   {(task) => <TaskRow task={task} />}
 </ScrollbackList>
 ```
 
 ### Which One?
 
-| | overflow="scroll" | VirtualList | ScrollbackList |
-|---|---|---|---|
-| **List size** | Up to ~1000 | Any size | Any size |
-| **Rendering** | All children created, visible ones rendered | Only visible items created | Active items rendered, frozen items in scrollback |
-| **Screen mode** | Fullscreen or inline | Fullscreen | Inline only |
-| **Height** | Set on Box | `height` prop | Auto-sized |
-| **Keyboard** | Manual (`useInput`) | Built-in (`interactive`) or manual (`scrollTo`) | Manual |
-| **Use case** | General scrolling | Large data sets, file lists, logs | Task runners, REPLs, chat, CI output |
+|                 | overflow="scroll"                           | VirtualList                                     | ScrollbackList                                    |
+| --------------- | ------------------------------------------- | ----------------------------------------------- | ------------------------------------------------- |
+| **List size**   | Up to ~1000                                 | Any size                                        | Any size                                          |
+| **Rendering**   | All children created, visible ones rendered | Only visible items created                      | Active items rendered, frozen items in scrollback |
+| **Screen mode** | Fullscreen or inline                        | Fullscreen                                      | Inline only                                       |
+| **Height**      | Set on Box                                  | `height` prop                                   | Auto-sized                                        |
+| **Keyboard**    | Manual (`useInput`)                         | Built-in (`interactive`) or manual (`scrollTo`) | Manual                                            |
+| **Use case**    | General scrolling                           | Large data sets, file lists, logs               | Task runners, REPLs, chat, CI output              |
 
 ## Comparison with Ink
 

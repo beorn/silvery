@@ -100,9 +100,7 @@ function Wizard() {
           }}
           prompt="> "
         />
-        <Text color="$muted">
-          Type a name and press Enter (Ctrl+A/E, Ctrl+K/U, Alt+B/F all work)
-        </Text>
+        <Text color="$muted">Type a name and press Enter (Ctrl+A/E, Ctrl+K/U, Alt+B/F all work)</Text>
       </Box>
     )
   }

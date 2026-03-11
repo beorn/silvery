@@ -52,24 +52,14 @@ export function FlatList({ count, styled }: { count: number; styled?: boolean })
   return (
     <Box flexDirection="column">
       {Array.from({ length: count }, (_, i) =>
-        styled ? (
-          <StyledItem key={i} label={`Item ${i}`} index={i} />
-        ) : (
-          <SimpleItem key={i} label={`Item ${i}`} />
-        ),
+        styled ? <StyledItem key={i} label={`Item ${i}`} index={i} /> : <SimpleItem key={i} label={`Item ${i}`} />,
       )}
     </Box>
   )
 }
 
 /** Kanban board: N columns, each with M cards. */
-export function KanbanBoard({
-  columns,
-  cardsPerColumn,
-}: {
-  columns: number
-  cardsPerColumn: number
-}): ReactElement {
+export function KanbanBoard({ columns, cardsPerColumn }: { columns: number; cardsPerColumn: number }): ReactElement {
   return (
     <Box flexDirection="row" gap={1}>
       {Array.from({ length: columns }, (_, col) => (
@@ -140,13 +130,7 @@ export function DeepTree({ depth }: { depth: number }): ReactElement {
 }
 
 /** Scrollable list — overflow="scroll" container with many items. */
-export function ScrollableList({
-  count,
-  visibleHeight,
-}: {
-  count: number
-  visibleHeight: number
-}): ReactElement {
+export function ScrollableList({ count, visibleHeight }: { count: number; visibleHeight: number }): ReactElement {
   return (
     <Box height={visibleHeight} overflow="scroll">
       {Array.from({ length: count }, (_, i) => (

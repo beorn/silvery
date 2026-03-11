@@ -69,10 +69,7 @@ export interface TextHandle {
  * <Text ref={textRef}>Hello</Text>
  * ```
  */
-export const Text = forwardRef(function Text(
-  props: TextProps,
-  ref: ForwardedRef<TextHandle>,
-): JSX.Element {
+export const Text = forwardRef(function Text(props: TextProps, ref: ForwardedRef<TextHandle>): JSX.Element {
   const { children, ...styleProps } = props
 
   // For Text, we need to pass the ref through to the host element

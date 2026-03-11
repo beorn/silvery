@@ -39,10 +39,7 @@ interface SilveryErrorBoundaryState {
  * Must be a class component (React limitation for error boundaries).
  * Renders error info using silvery-text host elements — no Box/Text dependency.
  */
-export class SilveryErrorBoundary extends Component<
-  SilveryErrorBoundaryProps,
-  SilveryErrorBoundaryState
-> {
+export class SilveryErrorBoundary extends Component<SilveryErrorBoundaryProps, SilveryErrorBoundaryState> {
   override state: SilveryErrorBoundaryState = { error: null }
 
   static getDerivedStateFromError(error: Error): SilveryErrorBoundaryState {

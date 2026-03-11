@@ -29,6 +29,19 @@ const CHALK_REPO = "https://github.com/chalk/chalk.git"
 
 const target = process.argv[2] // "ink", "chalk", or undefined (both)
 
+/** Remove `test.failing(` marks for specific test names (Ink/Yoga bugs that silvery passes). */
+async function patchFailingMarks(filePath: string, testNames: string[]) {
+  let content = await Bun.file(filePath).text()
+  for (const name of testNames) {
+    // Match: test.failing('name' or test.failing("name"
+    const pattern = `test.failing('${name}'`
+    const patternDQ = `test.failing("${name}"`
+    content = content.replace(pattern, `test('${name}'`)
+    content = content.replace(patternDQ, `test("${name}"`)
+  }
+  await Bun.write(filePath, content)
+}
+
 async function cloneIfNeeded(repo: string, dir: string, name: string) {
   if (existsSync(dir)) {
     console.log(`  ${name}: using cached clone at ${dir}`)
@@ -114,6 +127,13 @@ await initInkCompat();
     await $`rm ${origTsPath}`.quiet()
   }
   console.log("  Wrote ink shim (removed index.ts)")
+
+  // Remove .failing() marks for tests that silvery passes (Ink/Yoga bugs that Flexily gets right)
+  await patchFailingMarks(join(INK_DIR, "test/width-height.tsx"), ["set min width in percent"])
+  await patchFailingMarks(join(INK_DIR, "test/flex-justify-content.tsx"), [
+    "row - align two text nodes with equal space around them",
+  ])
+  console.log("  Patched .failing() marks for tests silvery passes")
 
   // Run ava
   console.log("  Running ink tests with ava...\n")

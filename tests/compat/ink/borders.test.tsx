@@ -87,12 +87,7 @@ test("single node - box with horizontal alignment", () => {
 
 test("single node - box with vertical alignment", () => {
   const output = renderToString(
-    <Box
-      borderStyle="round"
-      height={20}
-      alignItems="center"
-      alignSelf="flex-start"
-    >
+    <Box borderStyle="round" height={20} alignItems="center" alignSelf="flex-start">
       <Text>Hello World</Text>
     </Box>,
   )
@@ -135,12 +130,7 @@ test("multiple nodes - box with horizontal alignment", () => {
 
 test("multiple nodes - box with vertical alignment", () => {
   const output = renderToString(
-    <Box
-      borderStyle="round"
-      height={20}
-      alignItems="center"
-      alignSelf="flex-start"
-    >
+    <Box borderStyle="round" height={20} alignItems="center" alignSelf="flex-start">
       <Text>{"Hello "}World</Text>
     </Box>,
   )

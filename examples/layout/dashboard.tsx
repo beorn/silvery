@@ -89,12 +89,7 @@ function StatsPane(): JSX.Element {
               <Text bold color="$success">
                 {stat.value}%
               </Text>
-              {stat.change && (
-                <Text color={stat.change.startsWith("+") ? "$success" : "$error"}>
-                  {" "}
-                  {stat.change}
-                </Text>
-              )}
+              {stat.change && <Text color={stat.change.startsWith("+") ? "$success" : "$error"}> {stat.change}</Text>}
             </Box>
           </Box>
           <ProgressBar value={stat.value} />
@@ -143,8 +138,7 @@ export function Dashboard(): JSX.Element {
     if (key.leftArrow || input === "h") setTab((t) => Math.max(0, t - 1))
     if (key.rightArrow || input === "l") setTab((t) => Math.min(tabs.length - 1, t + 1))
     if (tab === 2) {
-      if (key.downArrow || input === "j")
-        setSelected((s) => Math.min(s + 1, recentItems.length - 1))
+      if (key.downArrow || input === "j") setSelected((s) => Math.min(s + 1, recentItems.length - 1))
       if (key.upArrow || input === "k") setSelected((s) => Math.max(s - 1, 0))
     }
   })

@@ -37,12 +37,7 @@ export {
 // Focus Events
 // =============================================================================
 
-export {
-  createKeyEvent,
-  createFocusEvent,
-  dispatchKeyEvent,
-  dispatchFocusEvent,
-} from "@silvery/tea/focus-events"
+export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "@silvery/tea/focus-events"
 export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "@silvery/tea/focus-events"
 
 // =============================================================================

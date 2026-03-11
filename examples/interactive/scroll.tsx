@@ -49,15 +49,8 @@ export function ScrollExample() {
         height={10}
       >
         {items.map((item, index) => (
-          <Box
-            key={item.id}
-            paddingX={1}
-            backgroundColor={index === selectedIndex ? "$primary" : undefined}
-          >
-            <Text
-              color={index === selectedIndex ? "black" : "white"}
-              bold={index === selectedIndex}
-            >
+          <Box key={item.id} paddingX={1} backgroundColor={index === selectedIndex ? "$primary" : undefined}>
+            <Text color={index === selectedIndex ? "black" : "white"} bold={index === selectedIndex}>
               {item.title}
             </Text>
           </Box>

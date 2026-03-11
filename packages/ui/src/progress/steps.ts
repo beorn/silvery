@@ -101,12 +101,7 @@ type AsyncGeneratorWork<T> = () => AsyncGenerator<StepYield, T, unknown>
 /** Work function with step controller for sub-step progress */
 type WorkWithStep<T> = (step: StepController) => T | PromiseLike<T>
 
-type WorkFn<T> =
-  | SyncWork<T>
-  | AsyncWork<T>
-  | SyncGeneratorWork<T>
-  | AsyncGeneratorWork<T>
-  | WorkWithStep<T>
+type WorkFn<T> = SyncWork<T> | AsyncWork<T> | SyncGeneratorWork<T> | AsyncGeneratorWork<T> | WorkWithStep<T>
 
 /** Step definition */
 interface StepDef<T = unknown> {
@@ -308,10 +303,7 @@ function processYield(value: StepYield, state: GeneratorState, multi: MultiProgr
 
 function isDeclareSteps(value: StepYield): value is DeclareSteps {
   return (
-    value !== null &&
-    typeof value === "object" &&
-    "declare" in value &&
-    Array.isArray((value as DeclareSteps).declare)
+    value !== null && typeof value === "object" && "declare" in value && Array.isArray((value as DeclareSteps).declare)
   )
 }
 
@@ -429,9 +421,5 @@ function isSyncGenerator(value: unknown): value is Generator<StepYield, unknown,
 }
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    typeof (value as PromiseLike<unknown>).then === "function"
-  )
+  return value !== null && typeof value === "object" && typeof (value as PromiseLike<unknown>).then === "function"
 }

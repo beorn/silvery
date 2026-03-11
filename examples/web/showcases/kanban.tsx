@@ -142,10 +142,7 @@ export function KanbanShowcase(): JSX.Element {
                       borderColor={isSelected ? "#89dceb" : isFocused ? "#45475a" : "#313244"}
                       paddingX={1}
                     >
-                      <Text
-                        color={isSelected ? "#cdd6f4" : isFocused ? "#a6adc8" : "#6c7086"}
-                        bold={isSelected}
-                      >
+                      <Text color={isSelected ? "#cdd6f4" : isFocused ? "#a6adc8" : "#6c7086"} bold={isSelected}>
                         {isSelected && <Text color="#89dceb">{"\u25B8"} </Text>}
                         {c.title}
                       </Text>

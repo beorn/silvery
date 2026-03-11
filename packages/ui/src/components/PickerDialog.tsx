@@ -169,9 +169,7 @@ export function PickerDialog<T>({
         return
       }
       if (key.pageDown) {
-        setSelectedIndex((i) =>
-          Math.min(i + effectiveMaxVisible, Math.max(0, itemsRef.current.length - 1)),
-        )
+        setSelectedIndex((i) => Math.min(i + effectiveMaxVisible, Math.max(0, itemsRef.current.length - 1)))
         return
       }
     },
@@ -190,11 +188,7 @@ export function PickerDialog<T>({
           {showPlaceholder ? (
             <Text dimColor>{placeholder}</Text>
           ) : (
-            <CursorLine
-              beforeCursor={readline.beforeCursor}
-              afterCursor={readline.afterCursor}
-              showCursor={isActive}
-            />
+            <CursorLine beforeCursor={readline.beforeCursor} afterCursor={readline.afterCursor} showCursor={isActive} />
           )}
         </Box>
         <Text dimColor>{"─".repeat(40)}</Text>

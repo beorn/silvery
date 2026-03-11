@@ -225,27 +225,27 @@ Silvery's theme system uses [design tokens](https://tr.designtokens.org/format/)
 
 **Surface pairs** — base name = text color, `*bg` = background:
 
-| Token Pair                      | Purpose                                |
-| ------------------------------- | -------------------------------------- |
-| `bg` / `fg`                     | Default background and text            |
-| `surfacebg` / `surface`         | Elevated content areas                 |
-| `popoverbg` / `popover`         | Floating content (dropdowns, tooltips) |
-| `mutedbg` / `muted`             | Hover states, secondary text           |
-| `selectionbg` / `selection`     | Selected items                         |
-| `inversebg` / `inverse`         | Chrome (title/status bars)             |
-| `cursorbg` / `cursor`           | Text cursor                            |
+| Token Pair                  | Purpose                                |
+| --------------------------- | -------------------------------------- |
+| `bg` / `fg`                 | Default background and text            |
+| `surfacebg` / `surface`     | Elevated content areas                 |
+| `popoverbg` / `popover`     | Floating content (dropdowns, tooltips) |
+| `mutedbg` / `muted`         | Hover states, secondary text           |
+| `selectionbg` / `selection` | Selected items                         |
+| `inversebg` / `inverse`     | Chrome (title/status bars)             |
+| `cursorbg` / `cursor`       | Text cursor                            |
 
 **Accent pairs** — base name = area background, `*fg` = text on that area:
 
-| Token Pair                  | Purpose                                |
-| --------------------------- | -------------------------------------- |
-| `primary` / `primaryfg`     | Brand accent                           |
-| `secondary` / `secondaryfg` | Alternate accent                       |
-| `accent` / `accentfg`       | Attention/pop accent                   |
-| `error` / `errorfg`         | Error/destructive states               |
-| `warning` / `warningfg`     | Caution states                         |
-| `success` / `successfg`     | Positive states                        |
-| `info` / `infofg`           | Neutral information                    |
+| Token Pair                  | Purpose                  |
+| --------------------------- | ------------------------ |
+| `primary` / `primaryfg`     | Brand accent             |
+| `secondary` / `secondaryfg` | Alternate accent         |
+| `accent` / `accentfg`       | Attention/pop accent     |
+| `error` / `errorfg`         | Error/destructive states |
+| `warning` / `warningfg`     | Caution states           |
+| `success` / `successfg`     | Positive states          |
+| `info` / `infofg`           | Neutral information      |
 
 Plus 5 standalone tokens: `border`, `inputborder`, `focusborder`, `link`, `disabledfg`.
 

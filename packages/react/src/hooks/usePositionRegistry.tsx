@@ -224,9 +224,7 @@ const PositionRegistryContext = createContext<PositionRegistry | null>(null)
  */
 export function PositionRegistryProvider({ children }: { children: ReactNode }) {
   const registry = useMemo(() => createPositionRegistry(), [])
-  return (
-    <PositionRegistryContext.Provider value={registry}>{children}</PositionRegistryContext.Provider>
-  )
+  return <PositionRegistryContext.Provider value={registry}>{children}</PositionRegistryContext.Provider>
 }
 
 /**

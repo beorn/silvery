@@ -103,10 +103,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
       // Should always have at least the status bar with "context"
       expect(term.screen).toContainText("context")
       // Should have substantial content — not just 1-2 lines
-      expect(
-        nonBlankLines,
-        `Too few non-blank lines after Enter press ${i + 1}: ${nonBlankLines}`,
-      ).toBeGreaterThan(2)
+      expect(nonBlankLines, `Too few non-blank lines after Enter press ${i + 1}: ${nonBlankLines}`).toBeGreaterThan(2)
     }
   })
 
@@ -121,9 +118,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
       await handle.press("Enter")
       const hasContent = screenHasContent(term.screen!)
       const screenText = term.screen!.getText()
-      expect(hasContent, `Screen blank after Enter press ${i + 1}. Screen text:\n${screenText}`).toBe(
-        true,
-      )
+      expect(hasContent, `Screen blank after Enter press ${i + 1}. Screen text:\n${screenText}`).toBe(true)
       expect(term.screen).toContainText("context")
     }
   })

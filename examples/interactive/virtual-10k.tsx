@@ -168,13 +168,7 @@ const STATUS_COLORS: Record<Item["status"], string> = {
   blocked: "$error",
 }
 
-function ProgressBar({
-  percent,
-  width: barWidth,
-}: {
-  percent: number
-  width: number
-}): JSX.Element {
+function ProgressBar({ percent, width: barWidth }: { percent: number; width: number }): JSX.Element {
   const effectiveWidth = Math.max(5, barWidth)
   const filled = Math.round((percent / 100) * effectiveWidth)
   const empty = effectiveWidth - filled
@@ -207,9 +201,7 @@ function ItemRow({
           {item.priority}
         </Text>
         <Text> </Text>
-        <Text bold={isSelected}>
-          {item.title}
-        </Text>
+        <Text bold={isSelected}>{item.title}</Text>
         <Text> </Text>
         {item.tags.map((tag) => (
           <Text key={tag} dim color="$info">
@@ -230,15 +222,7 @@ function ItemRow({
   )
 }
 
-function ScrollIndicator({
-  current,
-  total,
-  width,
-}: {
-  current: number
-  total: number
-  width: number
-}): JSX.Element {
+function ScrollIndicator({ current, total, width }: { current: number; total: number; width: number }): JSX.Element {
   const percent = total > 0 ? Math.round(((current + 1) / total) * 100) : 0
 
   // Progress bar
@@ -443,10 +427,7 @@ function VirtualBenchmark(): JSX.Element {
 
 async function main() {
   const handle = await run(
-    <ExampleBanner
-      meta={meta}
-      controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit"
-    >
+    <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit">
       <VirtualBenchmark />
     </ExampleBanner>,
   )

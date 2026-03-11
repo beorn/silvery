@@ -46,6 +46,9 @@ import { SilveryErrorBoundary } from "@silvery/react/error-boundary"
 import { InkCursorStoreCtx } from "./with-ink-cursor"
 import { InkFocusContext, InkFocusProvider } from "./with-ink-focus"
 import { useInput as silveryUseInput } from "@silvery/react/hooks/useInput"
+import { RuntimeContext } from "@silvery/react/context"
+import EventEmitter from "node:events"
+import { Buffer } from "node:buffer"
 
 // =============================================================================
 // Ink-Compatible Error Boundary
@@ -162,7 +165,9 @@ class InkErrorBoundary extends Component<InkErrorBoundaryProps, InkErrorBoundary
 
       // ERROR label + message
       children.push(
-        React.createElement("silvery-box", { key: "header" },
+        React.createElement(
+          "silvery-box",
+          { key: "header" },
           React.createElement("silvery-text", { backgroundColor: "red", color: "white" }, " ERROR "),
           React.createElement("silvery-text", {}, ` ${err.message}`),
         ),
@@ -171,7 +176,9 @@ class InkErrorBoundary extends Component<InkErrorBoundaryProps, InkErrorBoundary
       // File location
       if (filePath && origin) {
         children.push(
-          React.createElement("silvery-box", { key: "location", marginTop: 1 },
+          React.createElement(
+            "silvery-box",
+            { key: "location", marginTop: 1 },
             React.createElement("silvery-text", { dimColor: true }, `${filePath}:${origin.line}:${origin.column}`),
           ),
         )
@@ -181,16 +188,26 @@ class InkErrorBoundary extends Component<InkErrorBoundaryProps, InkErrorBoundary
       if (excerpt && origin) {
         const codeLines = excerpt.map(({ line, value }) => {
           const lineNum = String(line).padStart(lineWidth, " ")
-          return React.createElement("silvery-box", { key: `code-${line}` },
-            React.createElement("silvery-text", {
-              dimColor: line !== origin.line,
-              backgroundColor: line === origin.line ? "red" : undefined,
-              color: line === origin.line ? "white" : undefined,
-            }, `${lineNum}:`),
-            React.createElement("silvery-text", {
-              backgroundColor: line === origin.line ? "red" : undefined,
-              color: line === origin.line ? "white" : undefined,
-            }, ` ${value}`),
+          return React.createElement(
+            "silvery-box",
+            { key: `code-${line}` },
+            React.createElement(
+              "silvery-text",
+              {
+                dimColor: line !== origin.line,
+                backgroundColor: line === origin.line ? "red" : undefined,
+                color: line === origin.line ? "white" : undefined,
+              },
+              `${lineNum}:`,
+            ),
+            React.createElement(
+              "silvery-text",
+              {
+                backgroundColor: line === origin.line ? "red" : undefined,
+                color: line === origin.line ? "white" : undefined,
+              },
+              ` ${value}`,
+            ),
           )
         })
         children.push(
@@ -203,16 +220,23 @@ class InkErrorBoundary extends Component<InkErrorBoundaryProps, InkErrorBoundary
         const stackLines = stack.map((line, i) => {
           const parsed = parseStackLine(line)
           if (!parsed) {
-            return React.createElement("silvery-box", { key: `stack-${i}` },
+            return React.createElement(
+              "silvery-box",
+              { key: `stack-${i}` },
               React.createElement("silvery-text", { dimColor: true }, `- ${line.trim()}`),
             )
           }
           const cleanFile = cleanupPath(parsed.file)
-          return React.createElement("silvery-box", { key: `stack-${i}` },
+          return React.createElement(
+            "silvery-box",
+            { key: `stack-${i}` },
             React.createElement("silvery-text", { dimColor: true }, "- "),
             React.createElement("silvery-text", { dimColor: true, bold: true }, parsed.function ?? ""),
-            React.createElement("silvery-text", { dimColor: true, color: "gray" },
-              ` (${cleanFile ?? ""}:${parsed.line}:${parsed.column})`),
+            React.createElement(
+              "silvery-text",
+              { dimColor: true, color: "gray" },
+              ` (${cleanFile ?? ""}:${parsed.line}:${parsed.column})`,
+            ),
           )
         })
         children.push(
@@ -335,11 +359,7 @@ export function stripSilveryVS16(input: string): string {
 // Components (Ink-compatible)
 // =============================================================================
 
-import {
-  Box as SilveryBox,
-  type BoxProps as SilveryBoxProps,
-  type BoxHandle,
-} from "@silvery/react/components/Box"
+import { Box as SilveryBox, type BoxProps as SilveryBoxProps, type BoxHandle } from "@silvery/react/components/Box"
 export type { BoxHandle } from "@silvery/react/components/Box"
 
 /**
@@ -361,8 +381,7 @@ export type BoxProps = SilveryBoxProps
 export const Box = React.forwardRef<BoxHandle, BoxProps>(function InkBox(props, ref) {
   // Map Ink's per-axis overflow props to silvery's unified overflow
   const { overflowX, overflowY, ...rest } = props as any
-  const overflow =
-    rest.overflow ?? (overflowX === "hidden" || overflowY === "hidden" ? "hidden" : undefined)
+  const overflow = rest.overflow ?? (overflowX === "hidden" || overflowY === "hidden" ? "hidden" : undefined)
 
   return React.createElement(SilveryBox, {
     flexDirection: "row",
@@ -379,10 +398,7 @@ export const Box = React.forwardRef<BoxHandle, BoxProps>(function InkBox(props, 
 
 import { Text as SilveryText } from "@silvery/react/components/Text"
 export type { TextProps, TextHandle } from "@silvery/react/components/Text"
-import type {
-  TextProps as SilveryTextProps,
-  TextHandle as SilveryTextHandle,
-} from "@silvery/react/components/Text"
+import type { TextProps as SilveryTextProps, TextHandle as SilveryTextHandle } from "@silvery/react/components/Text"
 
 /**
  * Ink-compatible Text component.
@@ -395,30 +411,28 @@ import type {
  *
  * This matches Ink's text sanitization behavior from sanitize-ansi.ts.
  */
-export const Text = React.forwardRef<SilveryTextHandle, SilveryTextProps>(
-  function InkText(props, ref) {
-    const sanitizedChildren = sanitizeChildren(props.children)
-    // When chalk has no color support (FORCE_COLOR=0), strip style props to match
-    // Ink behavior. Ink uses chalk to apply styles, so chalk.level=0 means no
-    // styles are applied. But embedded ANSI sequences in text content are preserved.
-    const hasColors = currentChalkLevel() > 0
-    const passProps = hasColors
-      ? {
-          ...props,
-          color: convertColor(props.color),
-          backgroundColor: convertColor(props.backgroundColor),
-          ref,
-          children: sanitizedChildren,
-        }
-      : {
-          // Only pass layout-affecting props, not visual style props
-          wrap: props.wrap,
-          ref,
-          children: sanitizedChildren,
-        }
-    return React.createElement(SilveryText, passProps)
-  },
-)
+export const Text = React.forwardRef<SilveryTextHandle, SilveryTextProps>(function InkText(props, ref) {
+  const sanitizedChildren = sanitizeChildren(props.children)
+  // When chalk has no color support (FORCE_COLOR=0), strip style props to match
+  // Ink behavior. Ink uses chalk to apply styles, so chalk.level=0 means no
+  // styles are applied. But embedded ANSI sequences in text content are preserved.
+  const hasColors = currentChalkLevel() > 0
+  const passProps = hasColors
+    ? {
+        ...props,
+        color: convertColor(props.color),
+        backgroundColor: convertColor(props.backgroundColor),
+        ref,
+        children: sanitizedChildren,
+      }
+    : {
+        // Only pass layout-affecting props, not visual style props
+        wrap: props.wrap,
+        ref,
+        children: sanitizedChildren,
+      }
+  return React.createElement(SilveryText, passProps)
+})
 
 /** Recursively sanitize string children, preserving React elements. */
 function sanitizeChildren(children: React.ReactNode): React.ReactNode {
@@ -483,7 +497,11 @@ function extractTextFromElement(node: React.ReactNode): string {
  * This matches Ink's behavior where Static content is rendered separately
  * and placed above the dynamic content.
  */
-export function Static<T>({ items, children: renderItem, style }: {
+export function Static<T>({
+  items,
+  children: renderItem,
+  style,
+}: {
   items: T[]
   children: (item: T, index: number) => React.ReactNode
   style?: Record<string, any>
@@ -664,6 +682,8 @@ interface InkStdinState {
   /** Number of active raw mode subscribers */
   rawModeCount: number
   setRawMode: (value: boolean) => void
+  setBracketedPasteMode: (value: boolean) => void
+  internal_eventEmitter: EventEmitter
 }
 
 const InkStdinCtx = createContext<InkStdinState>({
@@ -671,6 +691,8 @@ const InkStdinCtx = createContext<InkStdinState>({
   isRawModeSupported: process.stdin.isTTY ?? false,
   rawModeCount: 0,
   setRawMode: () => {},
+  setBracketedPasteMode: () => {},
+  internal_eventEmitter: new EventEmitter(),
 })
 
 /**
@@ -680,9 +702,12 @@ const InkStdinCtx = createContext<InkStdinState>({
  * - Last subscriber disables raw mode + unrefs stdin
  * - Throws if raw mode is not supported (stdin.isTTY is false)
  */
-function createInkStdinState(stdin: NodeJS.ReadStream): InkStdinState {
+function createInkStdinState(stdin: NodeJS.ReadStream, stdout?: NodeJS.WriteStream): InkStdinState {
   const isRawModeSupported = stdin.isTTY ?? false
   let rawModeCount = 0
+  let bracketedPasteModeEnabledCount = 0
+  const internal_eventEmitter = new EventEmitter()
+  internal_eventEmitter.setMaxListeners(Infinity)
 
   const setRawMode = (value: boolean) => {
     if (!isRawModeSupported) {
@@ -708,11 +733,30 @@ function createInkStdinState(stdin: NodeJS.ReadStream): InkStdinState {
     }
   }
 
+  const setBracketedPasteMode = (value: boolean) => {
+    const out = stdout ?? process.stdout
+    if (!(out as any).isTTY) return
+
+    if (value) {
+      if (bracketedPasteModeEnabledCount === 0) {
+        out.write("\x1b[?2004h")
+      }
+      bracketedPasteModeEnabledCount++
+    } else {
+      if (bracketedPasteModeEnabledCount === 0) return
+      if (--bracketedPasteModeEnabledCount === 0) {
+        out.write("\x1b[?2004l")
+      }
+    }
+  }
+
   return {
     stdin,
     isRawModeSupported,
     rawModeCount: 0,
     setRawMode,
+    setBracketedPasteMode,
+    internal_eventEmitter,
   }
 }
 
@@ -727,6 +771,48 @@ export function useStdin() {
     setRawMode: ctx.setRawMode,
     isRawModeSupported: ctx.isRawModeSupported,
   }
+}
+
+/**
+ * Ink-compatible usePaste hook.
+ *
+ * Enables bracketed paste mode and calls the handler when the user pastes text.
+ * Paste content is delivered as a single string, not forwarded to useInput handlers.
+ */
+export function usePaste(handler: (text: string) => void, options: { isActive?: boolean } = {}): void {
+  const ctx = useContext(InkStdinCtx)
+  const rt = useContext(RuntimeContext)
+
+  useEffect(() => {
+    if (options.isActive === false) return
+    ctx.setRawMode(true)
+    ctx.setBracketedPasteMode(true)
+    return () => {
+      ctx.setRawMode(false)
+      ctx.setBracketedPasteMode(false)
+    }
+  }, [options.isActive, ctx.setRawMode, ctx.setBracketedPasteMode])
+
+  // Subscribe to paste events from silvery's RuntimeContext (interactive path)
+  useEffect(() => {
+    if (options.isActive === false) return
+    if (!rt) return
+    return rt.on("paste", (text: string) => {
+      handler(text)
+    })
+  }, [options.isActive, rt, handler])
+
+  // Subscribe to paste events from InkStdinCtx (test renderer path)
+  useEffect(() => {
+    if (options.isActive === false) return
+    const handlePaste = (text: string) => {
+      handler(text)
+    }
+    ctx.internal_eventEmitter.on("paste", handlePaste)
+    return () => {
+      ctx.internal_eventEmitter.removeListener("paste", handlePaste)
+    }
+  }, [options.isActive, ctx.internal_eventEmitter, handler])
 }
 
 /**
@@ -1180,10 +1266,7 @@ interface InkInstance extends Instance {
  * When no custom stdout (real terminal): delegates to renderSync() which
  * creates a full SilveryInstance with scheduler.
  */
-export function render(
-  element: import("react").ReactNode,
-  options?: Record<string, unknown>,
-): InkInstance {
+export function render(element: import("react").ReactNode, options?: Record<string, unknown>): InkInstance {
   // Enable Ink-compatible strict validation (text must be inside <Text>,
   // <Box> cannot be inside <Text>)
   setInkStrictValidation(true)
@@ -1209,11 +1292,17 @@ export function render(
         const output = renderScreenReaderOutput(newElement)
         stdout.write(output)
       },
-      unmount: () => { unmounted = true },
-      [Symbol.dispose]() { instance.unmount() },
+      unmount: () => {
+        unmounted = true
+      },
+      [Symbol.dispose]() {
+        instance.unmount()
+      },
       waitUntilExit: () => Promise.resolve(),
       waitUntilRenderFlush: () => Promise.resolve(),
-      cleanup: () => { instance.unmount() },
+      cleanup: () => {
+        instance.unmount()
+      },
       clear: () => {},
       flush: () => {},
       pause: () => {},
@@ -1232,10 +1321,8 @@ export function render(
     // Ink requires all three: alternateScreen=true, interactive mode, and stdout.isTTY.
     // interactive defaults to stdout.isTTY when not explicitly set.
     const isTTY = (stdout as any).isTTY === true
-    const resolvedInteractive =
-      options?.interactive !== undefined ? Boolean(options.interactive) : isTTY
-    const useAltScreen =
-      (options?.alternateScreen as boolean) === true && resolvedInteractive && isTTY
+    const resolvedInteractive = options?.interactive !== undefined ? Boolean(options.interactive) : isTTY
+    const useAltScreen = (options?.alternateScreen as boolean) === true && resolvedInteractive && isTTY
     let altScreenExited = false
 
     if (useAltScreen) {
@@ -1579,9 +1666,7 @@ function needsLayoutRecalculation(node: any): boolean {
  * This bridges the timing gap between Ink (Yoga runs during commit, so
  * effects see layout) and silvery (layout runs in a separate pipeline pass).
  */
-export function measureElement(
-  nodeOrHandle: any,
-): import("@silvery/react/measureElement").MeasureElementOutput {
+export function measureElement(nodeOrHandle: any): import("@silvery/react/measureElement").MeasureElementOutput {
   // Resolve BoxHandle → TeaNode
   const node = typeof nodeOrHandle?.getNode === "function" ? nodeOrHandle.getNode() : nodeOrHandle
   if (!node) return { width: 0, height: 0 }
@@ -1644,11 +1729,7 @@ export function useStderr() {
 // =============================================================================
 
 import { renderStringSync } from "@silvery/react/render-string"
-import {
-  isLayoutEngineInitialized,
-  setLayoutEngine,
-  ensureDefaultLayoutEngine,
-} from "@silvery/term/layout-engine"
+import { isLayoutEngineInitialized, setLayoutEngine, ensureDefaultLayoutEngine } from "@silvery/term/layout-engine"
 import { createFlexilyZeroEngine } from "@silvery/term/adapters/flexily-zero-adapter"
 
 /**

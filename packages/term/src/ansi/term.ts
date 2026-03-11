@@ -30,14 +30,7 @@ import type {
   TermScreen,
   TerminalCaps,
 } from "./types"
-import {
-  defaultCaps,
-  detectColor,
-  detectCursor,
-  detectInput,
-  detectTerminalCaps,
-  detectUnicode,
-} from "./detection"
+import { defaultCaps, detectColor, detectCursor, detectInput, detectTerminalCaps, detectUnicode } from "./detection"
 import type { ProviderEvent } from "../runtime/types"
 import { createTermProvider, type TermState, type TermEvents } from "../runtime/term-provider"
 
@@ -402,9 +395,7 @@ function isTermBackend(obj: unknown): obj is TermEmulatorBackend {
 function isHeadlessDims(obj: unknown): boolean {
   if (typeof obj !== "object" || obj === null) return false
   const o = obj as Record<string, unknown>
-  return (
-    typeof o.cols === "number" && typeof o.rows === "number" && !("stdout" in o) && !("stdin" in o)
-  )
+  return typeof o.cols === "number" && typeof o.rows === "number" && !("stdout" in o) && !("stdin" in o)
 }
 
 /**
@@ -428,8 +419,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
       : undefined
 
   // Create chalk instance with appropriate color level
-  const chalkLevel =
-    cachedColor === null ? 0 : cachedColor === "basic" ? 1 : cachedColor === "256" ? 2 : 3
+  const chalkLevel = cachedColor === null ? 0 : cachedColor === "basic" ? 1 : cachedColor === "256" ? 2 : 3
   const chalkInstance = new Chalk({ level: chalkLevel })
 
   // Lazy Provider — only created when getState/subscribe/events is called.
@@ -470,8 +460,7 @@ function createNodeTerm(options: CreateTermOptions): Term {
 
     // Provider methods (lazy — Provider created on first access)
     getState: (): TermState => getProvider().getState(),
-    subscribe: (listener: (state: TermState) => void): (() => void) =>
-      getProvider().subscribe(listener),
+    subscribe: (listener: (state: TermState) => void): (() => void) => getProvider().subscribe(listener),
     events: (): AsyncIterable<ProviderEvent<TermEvents>> => getProvider().events(),
 
     // Utilities

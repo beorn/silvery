@@ -18,16 +18,7 @@
 
 import { deflateSync } from "node:zlib"
 import React, { useState, useMemo } from "react"
-import {
-  render,
-  Box,
-  Text,
-  Image,
-  useInput,
-  useApp,
-  createTerm,
-  type Key,
-} from "../../src/index.js"
+import { render, Box, Text, Image, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { isKittyGraphicsSupported } from "../../src/image/kitty-graphics.js"
 import { isSixelSupported } from "../../src/image/sixel-encoder.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"

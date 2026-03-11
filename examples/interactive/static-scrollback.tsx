@@ -37,15 +37,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react"
-import {
-  Box,
-  Text,
-  Link,
-  Spinner,
-  ScrollbackList,
-  useScrollbackItem,
-  TextInput,
-} from "../../src/index.js"
+import { Box, Text, Link, Spinner, ScrollbackList, useScrollbackItem, TextInput } from "../../src/index.js"
 import { run, useInput, useExit, type Key } from "@silvery/term/runtime"
 import type { ExampleMeta } from "../_banner.js"
 
@@ -153,8 +145,7 @@ export const SCRIPT: ScriptEntry[] = [
     role: "agent",
     thinking:
       "Found it \u2014 decoded.exp is in seconds (Unix timestamp) but Date.now() returns milliseconds. Every token appears expired because exp (e.g. 1700000000) is always less than Date.now() (e.g. 1700000000000). I need to divide Date.now() by 1000, and change the throw to a refresh call.",
-    content:
-      "Found it. The expiry check compares seconds (jwt.exp) to milliseconds (Date.now()). Fixing now.",
+    content: "Found it. The expiry check compares seconds (jwt.exp) to milliseconds (Date.now()). Fixing now.",
     toolCalls: [
       {
         tool: "Edit",
@@ -273,8 +264,7 @@ export const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "agent",
-    content:
-      "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
+    content: "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
     tokens: { input: 8468, output: 156 },
   },
   {
@@ -557,15 +547,7 @@ function computeCumulativeTokens(exchanges: Exchange[]): {
 // ============================================================================
 
 /** Render a line with auto-linked URLs. */
-function LinkifiedLine({
-  text,
-  dim,
-  color,
-}: {
-  text: string
-  dim?: boolean
-  color?: string
-}): JSX.Element {
+function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; color?: string }): JSX.Element {
   const parts: JSX.Element[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
@@ -629,13 +611,7 @@ function ThinkingBlock({ text, done }: { text: string; done: boolean }): JSX.Ele
 }
 
 /** Tool call with lifecycle: spinner -> output -> checkmark. */
-function ToolCallBlock({
-  call,
-  phase,
-}: {
-  call: ToolCall
-  phase: "pending" | "running" | "done"
-}): JSX.Element {
+function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "running" | "done" }): JSX.Element {
   const color = TOOL_COLORS[call.tool] ?? "gray"
   const icon = TOOL_ICONS[call.tool] ?? "\u25B8"
 
@@ -649,9 +625,7 @@ function ToolCallBlock({
         ) : phase === "done" ? (
           <Text color="$success">{"\u2713 "}</Text>
         ) : (
-          <Text color="$muted">
-            {"\u25CB "}
-          </Text>
+          <Text color="$muted">{"\u25CB "}</Text>
         )}
         <Text color={color} bold>
           {call.tool}
@@ -793,8 +767,7 @@ function ExchangeItem({
   const fraction = isLatest ? revealFraction : 1
 
   // Token badge for agent exchanges
-  const tokenBadge =
-    exchange.tokens && phase === "done" ? ` ${formatTokens(exchange.tokens.output)} tokens` : ""
+  const tokenBadge = exchange.tokens && phase === "done" ? ` ${formatTokens(exchange.tokens.output)} tokens` : ""
 
   // Tool call phases
   const toolCalls = exchange.toolCalls ?? []
@@ -807,11 +780,7 @@ function ExchangeItem({
         <Text bold color={outlineColor}>
           <Text dimColor={!pulse && phase !== "done"}>{icon}</Text> {name}
         </Text>
-        {tokenBadge && (
-          <Text color="$muted">
-            {tokenBadge}
-          </Text>
-        )}
+        {tokenBadge && <Text color="$muted">{tokenBadge}</Text>}
       </Text>
 
       {/* Thinking block */}
@@ -861,6 +830,7 @@ function StatusBar({
   elapsed,
   frozenCount = 0,
   contextBaseline = 0,
+  ctrlDPending = false,
 }: {
   exchanges: Exchange[]
   autoMode: boolean
@@ -869,6 +839,7 @@ function StatusBar({
   elapsed: number
   frozenCount?: number
   contextBaseline?: number
+  ctrlDPending?: boolean
 }): JSX.Element {
   const cumulative = computeCumulativeTokens(exchanges)
   const cost = formatCost(cumulative.input, cumulative.output)
@@ -887,14 +858,15 @@ function StatusBar({
 
   // Build key hints — keep compact to avoid overflow
   let keys: string
-  if (compacting) keys = "compacting..."
+  if (ctrlDPending) keys = "press Ctrl-D again to exit"
+  else if (compacting) keys = "compacting..."
   else if (done) keys = "esc quit"
   else if (autoMode) keys = "tab stop  ^L clear  esc quit"
   else keys = "\u23CE send  tab auto  ^L clear  esc quit"
 
   return (
     <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
-      <Text color="$muted">
+      <Text color="$muted" wrap="truncate">
         <Text color="$primary">{elapsedStr}</Text>
         {"  "}
         {keys}
@@ -907,8 +879,9 @@ function StatusBar({
             </Text>
           </>
         )}
+        {"  "}
       </Text>
-      <Text color="$muted">
+      <Text color="$muted" wrap="truncate">
         context <Text color={ctxColor}>{ctxBar}</Text>{" "}
         <Text color={ctxPct > 100 ? "$error" : undefined}>{ctxPct}%</Text>
         {"  "}
@@ -946,6 +919,7 @@ function DemoFooter({
   exchanges,
   frozenCount = 0,
   contextBaseline = 0,
+  ctrlDPending = false,
 }: {
   controlRef: React.RefObject<FooterControl>
   onSubmit: (text: string) => void
@@ -956,6 +930,7 @@ function DemoFooter({
   exchanges: Exchange[]
   frozenCount?: number
   contextBaseline?: number
+  ctrlDPending?: boolean
 }): JSX.Element {
   const [inputText, setInputText] = useState("")
   const inputTextRef = useRef(inputText)
@@ -971,10 +946,7 @@ function DemoFooter({
   const startRef = useRef(Date.now())
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
-    const timer = setInterval(
-      () => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)),
-      1000,
-    )
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000)
     return () => clearInterval(timer)
   }, [])
 
@@ -1007,6 +979,7 @@ function DemoFooter({
         elapsed={elapsed}
         frozenCount={frozenCount}
         contextBaseline={contextBaseline}
+        ctrlDPending={ctrlDPending}
       />
     </Box>
   )
@@ -1045,6 +1018,7 @@ export function CodingAgent({
   // Baseline subtracted from context after compaction (simulates context reset)
   const contextBaselineRef = useRef(0)
   const [pendingAdvance, setPendingAdvance] = useState(false)
+  const [ctrlDPending, setCtrlDPending] = useState(false)
 
   // Streaming state
   const [streamPhase, setStreamPhase] = useState<StreamPhase>("done")
@@ -1060,7 +1034,10 @@ export function CodingAgent({
 
   // Footer control — parent uses this to set/get input text for auto-typing and pre-fill.
   // Input text state lives in DemoFooter (not here) so typing doesn't re-render the exchange list.
-  const footerControlRef = useRef<FooterControl>({ setText: () => {}, getText: () => "" })
+  const footerControlRef = useRef<FooterControl>({
+    setText: () => {},
+    getText: () => "",
+  })
 
   /** Cancel all streaming timers. */
   const cancelStreaming = useCallback(() => {
@@ -1219,15 +1196,17 @@ export function CodingAgent({
     setScriptIdx((i) => i + 1)
     startStreaming(entry, id)
 
-    // Auto-chain: user entry → immediately start the following agent entry
-    // so one Enter press sends message AND starts agent response
-    if (entry.role === "user") {
-      const nextIdx = scriptIdx + 1
-      if (nextIdx < script.length && script[nextIdx]!.role === "agent") {
-        const nextEntry = script[nextIdx]!
-        const nextId = nextIdRef.current++
+    // Auto-chain: after processing any entry, chain through all consecutive
+    // agent entries. This makes the demo feel like a real AI agent working —
+    // agent turns advance automatically, only user turns pause for input.
+    {
+      let chainIdx = scriptIdx + 1
+      while (chainIdx < script.length && script[chainIdx]!.role !== "user") {
+        const chainEntry = script[chainIdx]!
+        const chainId = nextIdRef.current++
         setScriptIdx((i) => i + 1)
-        startStreaming(nextEntry, nextId)
+        startStreaming(chainEntry, chainId)
+        chainIdx++
       }
     }
   }, [scriptIdx, done, streamPhase, script, startStreaming, compact, fastMode])
@@ -1288,6 +1267,30 @@ export function CodingAgent({
     }
   }, [autoMode, done, compacting, streamPhase, scriptIdx, advance, script, fastMode])
 
+  // Auto-advance agent turns — in manual mode, agent entries auto-advance
+  // after streaming finishes. Only user entries pause for input.
+  // This makes the demo feel like a real AI agent working.
+  useEffect(() => {
+    if (autoMode || done || compacting) return
+    if (streamPhase !== "done") return
+
+    const nextEntry = script[scriptIdx]
+    // If the next entry is NOT a user entry, auto-advance after a brief delay
+    if (nextEntry && nextEntry.role !== "user") {
+      autoTimerRef.current = setTimeout(() => advanceRef.current(), fastMode ? 100 : 400)
+      return () => {
+        if (autoTimerRef.current) clearTimeout(autoTimerRef.current)
+      }
+    }
+    // If all entries consumed, auto-advance to trigger final compaction/done
+    if (!nextEntry && scriptIdx >= script.length && exchanges.length > 0) {
+      autoTimerRef.current = setTimeout(() => advanceRef.current(), fastMode ? 100 : 400)
+      return () => {
+        if (autoTimerRef.current) clearTimeout(autoTimerRef.current)
+      }
+    }
+  }, [autoMode, done, compacting, streamPhase, scriptIdx, script, fastMode, exchanges.length])
+
   // Auto-exit when done in auto mode
   useEffect(() => {
     if (!autoMode || !done) return
@@ -1330,7 +1333,7 @@ export function CodingAgent({
     }
   }, [autoMode, done, streamPhase, scriptIdx, script, exchanges.length])
 
-  /** Handle Enter from TextInput — submit user text or advance script. */
+  /** Handle Enter from TextInput — submit user text or skip streaming. */
   const handleSubmit = useCallback(
     (text: string) => {
       if (streamPhase !== "done") {
@@ -1361,10 +1364,8 @@ export function CodingAgent({
 
         // Continue with the next agent entry after a brief pause
         setTimeout(() => advanceRef.current(), 150)
-      } else {
-        // No text — just advance the script
-        advanceRef.current()
       }
+      // Empty text: do nothing — agent advances automatically on timer
     },
     [streamPhase, skipStreaming, done, scriptIdx, script],
   )
@@ -1378,7 +1379,13 @@ export function CodingAgent({
       const now = Date.now()
       if (now - lastCtrlDRef.current < 500) return "exit"
       lastCtrlDRef.current = now
+      setCtrlDPending(true)
       return
+    }
+    // Clear Ctrl-D pending state on any other key
+    if (lastCtrlDRef.current > 0) {
+      lastCtrlDRef.current = 0
+      setCtrlDPending(false)
     }
     if (key.tab) {
       setAutoMode((m) => !m)
@@ -1439,6 +1446,7 @@ export function CodingAgent({
             exchanges={exchanges}
             frozenCount={frozenCount}
             contextBaseline={contextBaselineRef.current}
+            ctrlDPending={ctrlDPending}
           />
         }
       >
@@ -1453,20 +1461,12 @@ export function CodingAgent({
             <Box flexDirection="column">
               {/* Compaction overlay */}
               {compacting && isLatest && (
-                <Box
-                  flexDirection="column"
-                  borderStyle="round"
-                  borderColor="$warning"
-                  paddingX={1}
-                  overflow="hidden"
-                >
+                <Box flexDirection="column" borderStyle="round" borderColor="$warning" paddingX={1} overflow="hidden">
                   <Text color="$warning" bold>
                     <Spinner type="arc" /> Compacting context
                   </Text>
                   <Text> </Text>
-                  <Text color="$muted">
-                    Freezing exchanges into terminal scrollback. Scroll up to review.
-                  </Text>
+                  <Text color="$muted">Freezing exchanges into terminal scrollback. Scroll up to review.</Text>
                 </Box>
               )}
 

@@ -72,9 +72,7 @@ interface RunnableApp {
  * @param element - The React element to render
  * @returns Plugin function that binds the element to the app
  */
-export function withReact<T extends RunnableApp>(
-  element: ReactElement,
-): (app: T) => T & AppWithReact {
+export function withReact<T extends RunnableApp>(element: ReactElement): (app: T) => T & AppWithReact {
   return (app: T): T & AppWithReact => {
     const originalRun = app.run
 
@@ -82,12 +80,7 @@ export function withReact<T extends RunnableApp>(
       element,
       run(...args: unknown[]) {
         // If run() is called without an element, inject our bound element
-        if (
-          args.length === 0 ||
-          typeof args[0] !== "object" ||
-          args[0] === null ||
-          !("type" in (args[0] as object))
-        ) {
+        if (args.length === 0 || typeof args[0] !== "object" || args[0] === null || !("type" in (args[0] as object))) {
           // args[0] is likely options, not an element
           return originalRun.call(app, element, ...args)
         }

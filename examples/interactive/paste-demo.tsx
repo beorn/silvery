@@ -55,13 +55,7 @@ function PasteIndicator(): JSX.Element {
   )
 }
 
-function PasteEventCard({
-  event,
-  isLatest,
-}: {
-  event: PasteEvent
-  isLatest: boolean
-}): JSX.Element {
+function PasteEventCard({ event, isLatest }: { event: PasteEvent; isLatest: boolean }): JSX.Element {
   const preview = event.text.length > 60 ? event.text.slice(0, 57) + "..." : event.text
   const displayText = preview.replace(/\n/g, "\\n").replace(/\t/g, "\\t")
 

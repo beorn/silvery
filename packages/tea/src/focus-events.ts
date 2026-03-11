@@ -234,9 +234,7 @@ export function dispatchFocusEvent(event: SilveryFocusEvent): void {
   for (const node of path) {
     if (event.propagationStopped) break
 
-    const handler = (node.props as Record<string, unknown>)[handlerProp] as
-      | ((e: SilveryFocusEvent) => void)
-      | undefined
+    const handler = (node.props as Record<string, unknown>)[handlerProp] as ((e: SilveryFocusEvent) => void) | undefined
     if (handler) {
       mutableEvent.currentTarget = node
       handler(event)

@@ -95,7 +95,11 @@ function TodoList() {
 function StatusBar() {
   const items = useApp((s) => s.items)
   const done = items.filter((i) => i.done).length
-  return <Text dimColor>{done}/{items.length} done</Text>
+  return (
+    <Text dimColor>
+      {done}/{items.length} done
+    </Text>
+  )
 }
 
 await app.run(

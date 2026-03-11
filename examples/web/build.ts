@@ -156,20 +156,11 @@ async function generateRegistry(): Promise<void> {
     dashboard: {
       name: "System Dashboard",
       description: "Real-time metrics, service status, and event feed with live updating data.",
-      features: [
-        "Box",
-        "Text",
-        "borderStyle",
-        "flexDirection",
-        "useInput",
-        "useEffect",
-        "setInterval",
-      ],
+      features: ["Box", "Text", "borderStyle", "flexDirection", "useInput", "useEffect", "setInterval"],
     },
     "coding-agent": {
       name: "Coding Agent",
-      description:
-        "Claude Code-style coding agent with tool calls, code diffs, and streaming output.",
+      description: "Claude Code-style coding agent with tool calls, code diffs, and streaming output.",
       features: ["Box", "Text", "outlineStyle", "flexDirection", "wrap"],
     },
     kanban: {
@@ -236,9 +227,7 @@ async function generateRegistry(): Promise<void> {
   // Scan example directories
   for (const cat of categories) {
     const dir = join(__dirname, "..", cat.dir)
-    const files = (await readdir(dir)).filter(
-      (f) => f.endsWith(".tsx") && !skipFiles.has(`${cat.dir}/${f}`),
-    )
+    const files = (await readdir(dir)).filter((f) => f.endsWith(".tsx") && !skipFiles.has(`${cat.dir}/${f}`))
 
     for (const file of files.sort()) {
       const source = await Bun.file(join(dir, file)).text()
@@ -256,8 +245,7 @@ async function generateRegistry(): Promise<void> {
         const featMatch = metaStr.match(/features:\s*\[([^\]]*)\]/)
         if (nameMatch) name = nameMatch[1]!
         if (descMatch) description = descMatch[1]!
-        if (featMatch)
-          features = featMatch[1]!.match(/"([^"]+)"/g)?.map((s) => s.replace(/"/g, "")) ?? []
+        if (featMatch) features = featMatch[1]!.match(/"([^"]+)"/g)?.map((s) => s.replace(/"/g, "")) ?? []
       }
 
       entries.push({
@@ -369,17 +357,11 @@ if (!viewerResult.success) {
 await cp(distDir, docsDistDir, { recursive: true })
 
 // Copy showcase.html to docs public dir
-await cp(
-  join(__dirname, "showcase.html"),
-  join(__dirname, "../../docs/public/examples/showcase.html"),
-)
+await cp(join(__dirname, "showcase.html"), join(__dirname, "../../docs/public/examples/showcase.html"))
 
 // Copy viewer.html to docs public dir (if it exists)
 try {
-  await cp(
-    join(__dirname, "viewer.html"),
-    join(__dirname, "../../docs/public/examples/viewer.html"),
-  )
+  await cp(join(__dirname, "viewer.html"), join(__dirname, "../../docs/public/examples/viewer.html"))
 } catch {
   // viewer.html may not exist yet — skip silently
 }

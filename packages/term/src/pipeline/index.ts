@@ -65,13 +65,7 @@ export { outputPhase } from "./output-phase"
 
 import { contentPhaseAdapter } from "./content-phase-adapter"
 import { clearBgConflictWarnings, contentPhase } from "./content-phase"
-import {
-  layoutPhase,
-  notifyLayoutSubscribers,
-  screenRectPhase,
-  scrollPhase,
-  stickyPhase,
-} from "./layout-phase"
+import { layoutPhase, notifyLayoutSubscribers, screenRectPhase, scrollPhase, stickyPhase } from "./layout-phase"
 // Import for orchestration
 import { measurePhase } from "./measure-phase"
 import { outputPhase } from "./output-phase"
@@ -157,9 +151,7 @@ export function executeRender(
   // Create PipelineContext from config measurer (if provided).
   // The context is threaded explicitly through the pipeline, eliminating
   // the need for pipeline functions to read the _scopedMeasurer global.
-  const ctx: PipelineContext | undefined = config?.measurer
-    ? { measurer: config.measurer }
-    : undefined
+  const ctx: PipelineContext | undefined = config?.measurer ? { measurer: config.measurer } : undefined
 
   if (config?.measurer) {
     // Keep runWithMeasurer for backward compat: output-phase and other
@@ -194,12 +186,7 @@ function executeRenderCore(
   // Dev warning: prevBuffer null after first render means incremental is disabled.
   // Intentional null (SILVERY_STRICT, static/one-shot) passes skipLayoutNotifications.
   // console.warn (not loggily) — must fire regardless of logger config.
-  if (
-    process?.env?.SILVERY_DEV &&
-    prevBuffer === null &&
-    root.prevLayout !== null &&
-    !skipLayoutNotifications
-  ) {
+  if (process?.env?.SILVERY_DEV && prevBuffer === null && root.prevLayout !== null && !skipLayoutNotifications) {
     console.warn(
       "[silvery] executeRender called with prevBuffer=null on frame 2+ — " +
         "incremental content rendering is disabled (full render every frame). " +
@@ -305,8 +292,7 @@ function executeRenderCore(
     total,
     incremental: prevBuffer !== null,
   }
-  ;(globalThis as any).__silvery_render_count =
-    ((globalThis as any).__silvery_render_count ?? 0) + 1
+  ;(globalThis as any).__silvery_render_count = ((globalThis as any).__silvery_render_count ?? 0) + 1
 
   return { output, buffer }
 }

@@ -295,9 +295,7 @@ export const terminalAdapter: RenderAdapter = {
 
   flush(buffer: RenderBuffer, prevBuffer: RenderBuffer | null): string {
     const termBuffer = (buffer as TerminalRenderBuffer).getTerminalBuffer()
-    const prevTermBuffer = prevBuffer
-      ? (prevBuffer as TerminalRenderBuffer).getTerminalBuffer()
-      : null
+    const prevTermBuffer = prevBuffer ? (prevBuffer as TerminalRenderBuffer).getTerminalBuffer() : null
     return outputPhase(prevTermBuffer, termBuffer)
   },
 

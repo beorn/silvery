@@ -86,8 +86,8 @@ function createScreen(cols: number, rows: number) {
               break
             case "H": {
               // CUP - cursor position
-              cursorY = Math.max(0, (parseInt(paramParts[0] || "1", 10) - 1))
-              cursorX = Math.max(0, (parseInt(paramParts[1] || "1", 10) - 1))
+              cursorY = Math.max(0, parseInt(paramParts[0] || "1", 10) - 1)
+              cursorX = Math.max(0, parseInt(paramParts[1] || "1", 10) - 1)
               break
             }
             case "J": // ED - erase display
@@ -216,22 +216,10 @@ describe("inline bleed: stale lines after scrollback promotion", () => {
     const screen = createScreen(COLS, ROWS)
 
     // Frame 1: 5 lines of content
-    const buf1 = bufferWithLines(COLS, ROWS, [
-      "Item 1",
-      "Item 2",
-      "Item 3",
-      "Item 4",
-      "Footer",
-    ])
+    const buf1 = bufferWithLines(COLS, ROWS, ["Item 1", "Item 2", "Item 3", "Item 4", "Footer"])
     const frame1 = outputPhase(null, buf1, "inline", 0, ROWS)
     screen.feed(frame1)
-    expect(screen.getNonEmptyLines()).toEqual([
-      "Item 1",
-      "Item 2",
-      "Item 3",
-      "Item 4",
-      "Footer",
-    ])
+    expect(screen.getNonEmptyLines()).toEqual(["Item 1", "Item 2", "Item 3", "Item 4", "Footer"])
 
     // Frame 2: Freeze "Item 1" — promote to scrollback.
     // Live content shrinks: 4 lines (Items 2-4 + Footer).
@@ -264,39 +252,21 @@ describe("inline bleed: stale lines after scrollback promotion", () => {
     const buf2 = bufferWithLines(COLS, ROWS, ["Task B", "Task C", "Task D", "Task E", "Status"])
     screen.feed(outputPhase(buf1, buf2, "inline", 0, ROWS))
 
-    expect(screen.getNonEmptyLines()).toEqual([
-      "Task A",
-      "Task B",
-      "Task C",
-      "Task D",
-      "Task E",
-      "Status",
-    ])
+    expect(screen.getNonEmptyLines()).toEqual(["Task A", "Task B", "Task C", "Task D", "Task E", "Status"])
 
     // Freeze cycle 2: freeze Task B — next render overwrites frozen Task A, frozen Task B stays on-screen
     outputPhase.promoteScrollback!("Task B\x1b[K\r\n", 1)
     const buf3 = bufferWithLines(COLS, ROWS, ["Task C", "Task D", "Task E", "Status"])
     screen.feed(outputPhase(buf2, buf3, "inline", 0, ROWS))
 
-    expect(screen.getNonEmptyLines()).toEqual([
-      "Task B",
-      "Task C",
-      "Task D",
-      "Task E",
-      "Status",
-    ])
+    expect(screen.getNonEmptyLines()).toEqual(["Task B", "Task C", "Task D", "Task E", "Status"])
 
     // Freeze cycle 3: freeze Task C — next render overwrites frozen Task B, frozen Task C stays on-screen
     outputPhase.promoteScrollback!("Task C\x1b[K\r\n", 1)
     const buf4 = bufferWithLines(COLS, ROWS, ["Task D", "Task E", "Status"])
     screen.feed(outputPhase(buf3, buf4, "inline", 0, ROWS))
 
-    expect(screen.getNonEmptyLines()).toEqual([
-      "Task C",
-      "Task D",
-      "Task E",
-      "Status",
-    ])
+    expect(screen.getNonEmptyLines()).toEqual(["Task C", "Task D", "Task E", "Status"])
   })
 
   test("content shrinking without promotion erases orphan lines", () => {
@@ -306,13 +276,7 @@ describe("inline bleed: stale lines after scrollback promotion", () => {
     const screen = createScreen(COLS, ROWS)
 
     // Frame 1: 5 lines
-    const buf1 = bufferWithLines(COLS, ROWS, [
-      "Alpha",
-      "Bravo",
-      "Charlie",
-      "Delta",
-      "Echo",
-    ])
+    const buf1 = bufferWithLines(COLS, ROWS, ["Alpha", "Bravo", "Charlie", "Delta", "Echo"])
     screen.feed(outputPhase(null, buf1, "inline", 0, ROWS))
     expect(screen.getNonEmptyLines()).toEqual(["Alpha", "Bravo", "Charlie", "Delta", "Echo"])
 
@@ -349,13 +313,7 @@ describe("inline bleed: stale lines after scrollback promotion", () => {
     const screen = createScreen(COLS, ROWS)
 
     // Frame 1: 5 live items
-    const buf1 = bufferWithLines(COLS, ROWS, [
-      "Item 1",
-      "Item 2",
-      "Item 3",
-      "Item 4",
-      "Item 5",
-    ])
+    const buf1 = bufferWithLines(COLS, ROWS, ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"])
     screen.feed(outputPhase(null, buf1, "inline", 0, ROWS))
     expect(screen.getNonEmptyLines()).toHaveLength(5)
 
@@ -388,11 +346,7 @@ describe("inline bleed: stale lines after scrollback promotion", () => {
 
       const remaining = allItems.slice(i + 1)
       // When all items are frozen, the live buffer has no content (empty first line)
-      const nextBuf = bufferWithLines(
-        COLS,
-        ROWS,
-        remaining.length > 0 ? remaining : [],
-      )
+      const nextBuf = bufferWithLines(COLS, ROWS, remaining.length > 0 ? remaining : [])
       const frame = outputPhase(prevBuf, nextBuf, "inline", 0, ROWS)
       screen.feed(frame)
       prevBuf = nextBuf
@@ -410,13 +364,7 @@ describe("inline bleed: stale lines after scrollback promotion", () => {
     const screen = createScreen(COLS, ROWS)
 
     // Frame 1: 5 lines
-    const buf1 = bufferWithLines(COLS, ROWS, [
-      "Item 1",
-      "Item 2",
-      "Item 3",
-      "Item 4",
-      "Item 5",
-    ])
+    const buf1 = bufferWithLines(COLS, ROWS, ["Item 1", "Item 2", "Item 3", "Item 4", "Item 5"])
     screen.feed(outputPhase(null, buf1, "inline", 0, ROWS))
     expect(screen.getNonEmptyLines()).toHaveLength(5)
 
@@ -445,13 +393,7 @@ describe("inline bleed: stale lines after scrollback promotion", () => {
     const screen = createScreen(COLS, ROWS)
 
     // Frame 1: 5 lines with cursor on row 2 (not at bottom)
-    const buf1 = bufferWithLines(COLS, ROWS, [
-      "Line 0",
-      "Line 1",
-      "Line 2",
-      "Line 3",
-      "Line 4",
-    ])
+    const buf1 = bufferWithLines(COLS, ROWS, ["Line 0", "Line 1", "Line 2", "Line 3", "Line 4"])
     const cursorPos = { x: 3, y: 2, visible: true }
     screen.feed(outputPhase(null, buf1, "inline", 0, ROWS, cursorPos))
     expect(screen.getNonEmptyLines()).toHaveLength(5)
@@ -473,38 +415,16 @@ describe("inline bleed: stale lines after scrollback promotion", () => {
     const screen = createScreen(COLS, ROWS)
 
     // Frame 1: 6 items
-    const buf1 = bufferWithLines(COLS, ROWS, [
-      "Job 1",
-      "Job 2",
-      "Job 3",
-      "Job 4",
-      "Job 5",
-      "Spinner",
-    ])
+    const buf1 = bufferWithLines(COLS, ROWS, ["Job 1", "Job 2", "Job 3", "Job 4", "Job 5", "Spinner"])
     screen.feed(outputPhase(null, buf1, "inline", 0, ROWS))
     expect(screen.getNonEmptyLines()).toHaveLength(6)
 
     // Freeze Job 1, add Job 6 (content stays same size)
     outputPhase.promoteScrollback!("Job 1\x1b[K\r\n", 1)
-    const buf2 = bufferWithLines(COLS, ROWS, [
-      "Job 2",
-      "Job 3",
-      "Job 4",
-      "Job 5",
-      "Job 6",
-      "Spinner",
-    ])
+    const buf2 = bufferWithLines(COLS, ROWS, ["Job 2", "Job 3", "Job 4", "Job 5", "Job 6", "Spinner"])
     screen.feed(outputPhase(buf1, buf2, "inline", 0, ROWS))
     // Frozen Job 1 stays on-screen alongside live content.
-    expect(screen.getNonEmptyLines()).toEqual([
-      "Job 1",
-      "Job 2",
-      "Job 3",
-      "Job 4",
-      "Job 5",
-      "Job 6",
-      "Spinner",
-    ])
+    expect(screen.getNonEmptyLines()).toEqual(["Job 1", "Job 2", "Job 3", "Job 4", "Job 5", "Job 6", "Spinner"])
 
     // Freeze Jobs 2 and 3 simultaneously, Job 6 also done (net shrink by 1)
     // This render overwrites frozen Job 1 from previous cycle.
@@ -513,12 +433,6 @@ describe("inline bleed: stale lines after scrollback promotion", () => {
     screen.feed(outputPhase(buf2, buf3, "inline", 0, ROWS))
 
     // Frozen Jobs 2, 3 stay on-screen. Previous frozen Job 1 overwritten.
-    expect(screen.getNonEmptyLines()).toEqual([
-      "Job 2",
-      "Job 3",
-      "Job 4",
-      "Job 5",
-      "Spinner",
-    ])
+    expect(screen.getNonEmptyLines()).toEqual(["Job 2", "Job 3", "Job 4", "Job 5", "Spinner"])
   })
 })

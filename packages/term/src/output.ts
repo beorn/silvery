@@ -295,11 +295,7 @@ export function notifyKitty(message: string, opts?: { title?: string }): string 
  * - Kitty → OSC 99
  * - Others → BEL (audible/visual bell)
  */
-export function notify(
-  stdout: NodeJS.WriteStream,
-  message: string,
-  opts?: { title?: string },
-): void {
+export function notify(stdout: NodeJS.WriteStream, message: string, opts?: { title?: string }): void {
   const termProgram = process.env.TERM_PROGRAM ?? ""
   const term = process.env.TERM ?? ""
 
@@ -366,15 +362,7 @@ export function reportDirectory(stdout: NodeJS.WriteStream, path: string): void 
  * Uses X11/CSS cursor names. Supported by: Ghostty, Kitty (>=0.33), foot,
  * WezTerm (partial). Terminals that don't support OSC 22 safely ignore it.
  */
-export type MouseCursorShape =
-  | "default"
-  | "text"
-  | "pointer"
-  | "crosshair"
-  | "move"
-  | "not-allowed"
-  | "wait"
-  | "help"
+export type MouseCursorShape = "default" | "text" | "pointer" | "crosshair" | "move" | "not-allowed" | "wait" | "help"
 
 /**
  * Generate OSC 22 sequence to set the mouse cursor shape.

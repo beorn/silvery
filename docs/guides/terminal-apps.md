@@ -159,11 +159,7 @@ function ItemList() {
   return (
     <Box flexDirection="column">
       {items.map((item, i) => (
-        <Box
-          key={item.id}
-          onClick={() => store.setCursor(i)}
-          onDoubleClick={() => store.startEdit(i)}
-        >
+        <Box key={item.id} onClick={() => store.setCursor(i)} onDoubleClick={() => store.startEdit(i)}>
           <Text color={i === cursor ? "cyan" : undefined}>
             {i === cursor ? "> " : "  "}
             {item.text}
@@ -256,13 +252,7 @@ Meanwhile, event handlers have the same problem. `if (input === "j") moveCursor(
 **The fix**: turn input into named, serializable commands. Declare that `j` maps to the command `cursor_down`, and `cursor_down` produces the action `{ op: "moveCursor", delta: 1 }`:
 
 ```tsx
-import {
-  pipe,
-  withDomEvents,
-  withCommands,
-  withReact,
-  createCommandRegistry,
-} from "@silvery/tea/plugins"
+import { pipe, withDomEvents, withCommands, withReact, createCommandRegistry } from "@silvery/tea/plugins"
 
 const registry = createCommandRegistry({
   cursor_down: {
@@ -636,15 +626,15 @@ The progression from functions to data is not free. Each level buys something re
 
 The core ideas — making operations, effects, and events into data — have been discovered many times.
 
-| System                                                        | What it covers                | Approach                                                                                         |
-| ------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------ |
+| System                                                        | What it covers                | Approach                                                                                              |
+| ------------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
 | **[Elm](https://guide.elm-lang.org/architecture/)**           | State + Effects + Composition | `update : Msg -> Model -> (Model, Cmd Msg)` — the gold standard. Enforces this at the language level. |
-| [Redux](https://redux.js.org/)                                | State (ops as data)           | `dispatch(action)` + reducer. Effects live in middleware (thunks/sagas), not return values.      |
-| [redux-loop](https://github.com/redux-loop/redux-loop)        | State + Effects               | Extends Redux: reducer returns `[state, effects]` — completing the Elm shape.                    |
-| **[SlateJS](https://docs.slatejs.org/)**                      | Event plugins                 | `withHistory(withReact(createEditor()))` — same `(editor) => editor` plugin shape.               |
-| [ProseMirror](https://prosemirror.net/)                       | Event plugins                 | Structured plugin hooks — more constrained, easier to reason about.                              |
-| [Express](https://expressjs.com/) / [Koa](https://koajs.com/) | Event middleware              | `app.use(middleware)` — onion model composition.                                                 |
-| **Silvery**                                                   | All of the above              | `createSlice` + `tea()` for state; `pipe()` + plugins for events. Incremental adoption.          |
+| [Redux](https://redux.js.org/)                                | State (ops as data)           | `dispatch(action)` + reducer. Effects live in middleware (thunks/sagas), not return values.           |
+| [redux-loop](https://github.com/redux-loop/redux-loop)        | State + Effects               | Extends Redux: reducer returns `[state, effects]` — completing the Elm shape.                         |
+| **[SlateJS](https://docs.slatejs.org/)**                      | Event plugins                 | `withHistory(withReact(createEditor()))` — same `(editor) => editor` plugin shape.                    |
+| [ProseMirror](https://prosemirror.net/)                       | Event plugins                 | Structured plugin hooks — more constrained, easier to reason about.                                   |
+| [Express](https://expressjs.com/) / [Koa](https://koajs.com/) | Event middleware              | `app.use(middleware)` — onion model composition.                                                      |
+| **Silvery**                                                   | All of the above              | `createSlice` + `tea()` for state; `pipe()` + plugins for events. Incremental adoption.               |
 
 Redux got Level 3 right but stopped there. redux-loop completed the Elm shape. SlateJS pioneered the plugin-by-override model. This guide pieces these ideas into a single incremental progression for React.
 

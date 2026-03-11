@@ -11,12 +11,7 @@ import { deriveTheme } from "../derive"
 import type { Theme, ColorPalette } from "../types"
 
 // ── Re-export all palette definitions ──────────────────────────────
-export {
-  catppuccinMocha,
-  catppuccinFrappe,
-  catppuccinMacchiato,
-  catppuccinLatte,
-} from "./catppuccin"
+export { catppuccinMocha, catppuccinFrappe, catppuccinMacchiato, catppuccinLatte } from "./catppuccin"
 export { nord } from "./nord"
 export { dracula } from "./dracula"
 export { solarizedDark, solarizedLight } from "./solarized"
@@ -41,12 +36,7 @@ export { edgeDark, edgeLight } from "./edge"
 export { modusVivendi, modusOperandi } from "./modus"
 
 // ── Import for registry ────────────────────────────────────────────
-import {
-  catppuccinMocha,
-  catppuccinFrappe,
-  catppuccinMacchiato,
-  catppuccinLatte,
-} from "./catppuccin"
+import { catppuccinMocha, catppuccinFrappe, catppuccinMacchiato, catppuccinLatte } from "./catppuccin"
 import { nord } from "./nord"
 import { dracula } from "./dracula"
 import { solarizedDark, solarizedLight } from "./solarized"

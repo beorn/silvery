@@ -219,9 +219,7 @@ export function ScrollbackView<T>({
   // Resolve render function: renderItem takes precedence over children
   const render = renderItem ?? children
   if (!render) {
-    throw new Error(
-      "ScrollbackView requires either a `renderItem` prop or `children` render function",
-    )
+    throw new Error("ScrollbackView requires either a `renderItem` prop or `children` render function")
   }
 
   // Set of item keys that have been marked as frozen via freeze()

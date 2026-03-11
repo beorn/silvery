@@ -91,14 +91,15 @@ import "@termless/test/matchers"
 using term = createTermless({ cols: 80, rows: 24 })
 const handle = await run(<App />, term)
 
-expect(term.screen).toContainText("Hello")   // termless screen assertion
-await handle.press("j")                       // input via handle
+expect(term.screen).toContainText("Hello") // termless screen assertion
+await handle.press("j") // input via handle
 expect(term.screen).toContainText("Count: 1")
 ```
 
 `createTermless(dims)` wraps `createTerm(createXtermBackend(), dims)`. The Term exposes `screen` and `scrollback` from the emulator for assertions.
 
 Three kinds of Term:
+
 - `createTerm()` — Node.js terminal (real stdin/stdout)
 - `createTerm({ cols, rows })` — Headless (no output)
 - `createTermless({ cols, rows })` — Terminal emulator (real ANSI processing, screen/scrollback)

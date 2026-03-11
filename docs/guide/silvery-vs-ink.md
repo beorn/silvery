@@ -65,23 +65,23 @@ Both are React renderers at the core. The rendering architecture is the primary 
 
 ### Rendering Architecture
 
-| Feature                   | Silvery                                                                                                | Ink                                                                                                                                        |
-| ------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Responsive layout**     | `useContentRect()` / `useScreenRect()` -- synchronous, available during render                         | `useBoxMetrics()` -- post-layout via `useEffect`, returns 0x0 until first measure (added on master, post-v6.8.0; not yet released as of 2026-03)         |
-| **Incremental rendering** | Per-node dirty tracking with 7 independent flags; cell-level buffer diff                               | Line-based diff (opt-in since v6.5.0); unchanged lines skipped, but any change rewrites entire line                                        |
-| **ANSI compositing**      | Cell-level buffer with proper style stacking; ANSI sequences composed, not passed through              | String concatenation; ANSI sequences emitted inline, no compositing layer                                                                  |
-| **Scrollable containers** | `overflow="scroll"` with `scrollTo` -- framework handles measurement and clipping                      | `overflow` supports `visible` and `hidden` only; scrolling requires manual virtualization                                                  |
-| **Dynamic scrollback**    | `useScrollback` -- items graduate from interactive area to terminal history (like Claude Code needs)   | None -- all items must stay in the render tree                                                                                             |
-| **Text truncation**       | Automatic, ANSI-aware; text clips at Box boundaries                                                    | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                              |
-| **CSS/W3C alignment**     | Flexbox defaults match W3C spec (`flexDirection: row`); `outlineStyle` (CSS outline, no layout impact) | Non-standard defaults (`flexDirection: column`); no outline                                                                                |
-| **Layout engines**        | [Flexily](https://beorn.github.io/flexily) (7 KB, pure JS) or Yoga WASM -- pluggable                   | Yoga WASM only (`yoga-layout` v3)                                                                                                          |
-| **Render targets**        | Terminal, Canvas 2D, DOM (experimental)                                                                | Terminal only                                                                                                                              |
-| **Native dependencies**   | None -- pure TypeScript                                                                                | Yoga WASM binary blob (no native compilation, but not pure JS)                                                                             |
-| **Memory profile**        | Constant -- Flexily uses normal JS GC                                                                  | Yoga WASM uses a linear memory heap that can grow over long sessions ([discussion](https://github.com/anthropics/claude-code/issues/4953)) |
-| **Layout caching**        | Flexily fingerprints + caches unchanged subtrees                                                       | Full tree recomputation on every layout pass                                                                                               |
-| **Synchronized output**   | DEC synchronized output (mode 2026) for flicker-free rendering in tmux/Zellij                          | None                                                                                                                                       |
-| **Bracketed paste**       | `usePaste` hook with automatic mode toggling                                                           | `usePaste` hook (added on master, post-v6.8.0, as of 2026-03)                                                                                             |
-| **Initialization**        | Synchronous -- pure TypeScript import                                                                  | Async WASM loading                                                                                                                         |
+| Feature                   | Silvery                                                                                                | Ink                                                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Responsive layout**     | `useContentRect()` / `useScreenRect()` -- synchronous, available during render                         | `useBoxMetrics()` -- post-layout via `useEffect`, returns 0x0 until first measure (added on master, post-v6.8.0; not yet released as of 2026-03) |
+| **Incremental rendering** | Per-node dirty tracking with 7 independent flags; cell-level buffer diff                               | Line-based diff (opt-in since v6.5.0); unchanged lines skipped, but any change rewrites entire line                                              |
+| **ANSI compositing**      | Cell-level buffer with proper style stacking; ANSI sequences composed, not passed through              | String concatenation; ANSI sequences emitted inline, no compositing layer                                                                        |
+| **Scrollable containers** | `overflow="scroll"` with `scrollTo` -- framework handles measurement and clipping                      | `overflow` supports `visible` and `hidden` only; scrolling requires manual virtualization                                                        |
+| **Dynamic scrollback**    | `useScrollback` -- items graduate from interactive area to terminal history (like Claude Code needs)   | None -- all items must stay in the render tree                                                                                                   |
+| **Text truncation**       | Automatic, ANSI-aware; text clips at Box boundaries                                                    | Manual per-component ([#584](https://github.com/vadimdemedes/ink/issues/584))                                                                    |
+| **CSS/W3C alignment**     | Flexbox defaults match W3C spec (`flexDirection: row`); `outlineStyle` (CSS outline, no layout impact) | Non-standard defaults (`flexDirection: column`); no outline                                                                                      |
+| **Layout engines**        | [Flexily](https://beorn.github.io/flexily) (7 KB, pure JS) or Yoga WASM -- pluggable                   | Yoga WASM only (`yoga-layout` v3)                                                                                                                |
+| **Render targets**        | Terminal, Canvas 2D, DOM (experimental)                                                                | Terminal only                                                                                                                                    |
+| **Native dependencies**   | None -- pure TypeScript                                                                                | Yoga WASM binary blob (no native compilation, but not pure JS)                                                                                   |
+| **Memory profile**        | Constant -- Flexily uses normal JS GC                                                                  | Yoga WASM uses a linear memory heap that can grow over long sessions ([discussion](https://github.com/anthropics/claude-code/issues/4953))       |
+| **Layout caching**        | Flexily fingerprints + caches unchanged subtrees                                                       | Full tree recomputation on every layout pass                                                                                                     |
+| **Synchronized output**   | DEC synchronized output (mode 2026) for flicker-free rendering in tmux/Zellij                          | None                                                                                                                                             |
+| **Bracketed paste**       | `usePaste` hook with automatic mode toggling                                                           | `usePaste` hook (added on master, post-v6.8.0, as of 2026-03)                                                                                    |
+| **Initialization**        | Synchronous -- pure TypeScript import                                                                  | Async WASM loading                                                                                                                               |
 
 ### Interaction Model
 
@@ -232,11 +232,7 @@ Silvery implements SGR mouse protocol (mode 1006) with DOM-style event handling:
 
 ```tsx
 // Silvery: DOM-style mouse events
-<Box
-  onClick={(e) => selectItem(e.target)}
-  onMouseDown={(e) => startDrag(e)}
-  onWheel={(e) => scroll(e.deltaY)}
->
+<Box onClick={(e) => selectItem(e.target)} onMouseDown={(e) => startDrag(e)} onWheel={(e) => scroll(e.deltaY)}>
   <Text>Click me</Text>
 </Box>
 ```
@@ -300,17 +296,17 @@ Silvery implements a comprehensive set of terminal protocols. This matters for c
 
 ### DEC Private Modes
 
-| Mode         | What                                        | Silvery | Ink         |
-| ------------ | ------------------------------------------- | ------- | ----------- |
-| 25 (DECTCEM) | Cursor visibility                           | Yes     | Yes         |
-| 1000 (X10)   | Basic mouse tracking                        | Yes     | No          |
-| 1002         | Button event tracking (press + drag)        | Yes     | No          |
-| 1004         | Focus in/out reporting                      | Yes     | No          |
-| 1006 (SGR)   | Extended mouse protocol (large coordinates) | Yes     | No          |
-| 1049         | Alternate screen buffer                     | Yes     | Yes         |
+| Mode         | What                                        | Silvery | Ink                         |
+| ------------ | ------------------------------------------- | ------- | --------------------------- |
+| 25 (DECTCEM) | Cursor visibility                           | Yes     | Yes                         |
+| 1000 (X10)   | Basic mouse tracking                        | Yes     | No                          |
+| 1002         | Button event tracking (press + drag)        | Yes     | No                          |
+| 1004         | Focus in/out reporting                      | Yes     | No                          |
+| 1006 (SGR)   | Extended mouse protocol (large coordinates) | Yes     | No                          |
+| 1049         | Alternate screen buffer                     | Yes     | Yes                         |
 | 2004         | Bracketed paste mode                        | Yes     | Post-v6.8.0 (as of 2026-03) |
-| 2026         | Synchronized output (flicker-free)          | Yes     | No          |
-| DECRPM       | Mode query (`CSI ? mode $ p`)               | Yes     | No          |
+| 2026         | Synchronized output (flicker-free)          | Yes     | No                          |
+| DECRPM       | Mode query (`CSI ? mode $ p`)               | Yes     | No                          |
 
 ### OSC Sequences
 
@@ -329,13 +325,13 @@ Silvery implements a comprehensive set of terminal protocols. This matters for c
 
 ### Keyboard & Input
 
-| Protocol           | What                                                          | Silvery | Ink                           |
-| ------------------ | ------------------------------------------------------------- | ------- | ----------------------------- |
+| Protocol           | What                                                          | Silvery | Ink                                          |
+| ------------------ | ------------------------------------------------------------- | ------- | -------------------------------------------- |
 | Kitty keyboard     | All 5 flags (disambiguate, events, alternate, all keys, text) | Full    | Added on master (post-v6.8.0, as of 2026-03) |
-| Modifier detection | Shift, Alt, Ctrl, Super/Cmd, Hyper, CapsLock, NumLock         | Full    | Basic                         |
-| Key event types    | Press, repeat, release                                        | Full    | Press only                    |
+| Modifier detection | Shift, Alt, Ctrl, Super/Cmd, Hyper, CapsLock, NumLock         | Full    | Basic                                        |
+| Key event types    | Press, repeat, release                                        | Full    | Press only                                   |
 | Bracketed paste    | `usePaste` hook with auto-enable                              | Full    | `usePaste` hook (post-v6.8.0, as of 2026-03) |
-| Focus reporting    | Focus in/out events                                           | Full    | None                          |
+| Focus reporting    | Focus in/out events                                           | Full    | None                                         |
 
 ### Graphics
 

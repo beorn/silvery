@@ -197,10 +197,7 @@ export function normalizeFrame(frame: string): string {
  * Wait for a condition to be true, polling at intervals.
  * Useful for waiting for async state updates.
  */
-export async function waitFor(
-  condition: () => boolean,
-  { timeout = 1000, interval = 10 } = {},
-): Promise<void> {
+export async function waitFor(condition: () => boolean, { timeout = 1000, interval = 10 } = {}): Promise<void> {
   const start = Date.now()
   while (!condition()) {
     if (Date.now() - start > timeout) {

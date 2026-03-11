@@ -223,7 +223,5 @@ function getAutocompleteSuggestion(value: string, autocomplete?: string[]): stri
   }
 
   const lowerValue = value.toLowerCase()
-  return autocomplete.find(
-    (item) => item.toLowerCase().startsWith(lowerValue) && item.length > value.length,
-  )
+  return autocomplete.find((item) => item.toLowerCase().startsWith(lowerValue) && item.length > value.length)
 }

@@ -38,11 +38,7 @@ describe("flicker: useContentRect stabilization", () => {
       React.createElement(
         Box,
         { flexDirection: "row" },
-        React.createElement(
-          Box,
-          { width: 30, borderStyle: "single" },
-          React.createElement(SizedPanel),
-        ),
+        React.createElement(Box, { width: 30, borderStyle: "single" }, React.createElement(SizedPanel)),
         React.createElement(Box, { flexGrow: 1 }, React.createElement(Text, null, "Main")),
       ),
     )

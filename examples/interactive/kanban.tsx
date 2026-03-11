@@ -101,12 +101,7 @@ function Tag({ name }: { name: string }): JSX.Element {
 
 function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }): JSX.Element {
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor={isSelected ? "$primary" : "$border"}
-      paddingX={1}
-    >
+    <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "$primary" : "$border"} paddingX={1}>
       {isSelected ? (
         <Text backgroundColor="$primary" color="black" bold>
           {card.title}
@@ -133,12 +128,7 @@ function ColumnComponent({
   selectedCardIndex: number
 }): JSX.Element {
   return (
-    <Box
-      flexDirection="column"
-      flexGrow={1}
-      borderStyle="single"
-      borderColor={isSelected ? "$primary" : "$border"}
-    >
+    <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor={isSelected ? "$primary" : "$border"}>
       <Box backgroundColor={isSelected ? "$primary" : undefined} paddingX={1}>
         <Text bold color={isSelected ? "black" : "$text"}>
           {column.title}
@@ -155,11 +145,7 @@ function ColumnComponent({
         gap={1}
       >
         {column.cards.map((card, cardIndex) => (
-          <CardComponent
-            key={card.id}
-            card={card}
-            isSelected={isSelected && cardIndex === selectedCardIndex}
-          />
+          <CardComponent key={card.id} card={card} isSelected={isSelected && cardIndex === selectedCardIndex} />
         ))}
 
         {column.cards.length === 0 && (

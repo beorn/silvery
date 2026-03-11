@@ -108,8 +108,7 @@ contentAreaAffected =
 
 // Should we clear this node's region with inherited bg?
 // Only when: buffer has stale pixels AND content area changed AND no own bg fill
-parentRegionCleared =
-  (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
+parentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
 
 // Can we skip the bg fill? Only when clone has correct bg already
 skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected
@@ -189,8 +188,7 @@ const textInheritedBg = findInheritedBg(node).color
 renderText(node, buffer, layout, props, scrollOffset, clipBounds, textInheritedBg)
 
 // render-text.ts → renderGraphemes: use inherited bg instead of buffer read
-const existingBg =
-  style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : buffer.getCellBg(col, y) // legacy fallback for external callers
+const existingBg = style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : buffer.getCellBg(col, y) // legacy fallback for external callers
 ```
 
 **Why not getCellBg?** The old approach read bg from the buffer (`getCellBg`), creating a coupling between text rendering and buffer state. On incremental renders, the cloned buffer could have stale bg at positions outside the parent's bg-filled region (e.g., overflow text, moved nodes). Using `inheritedBg` from the render tree is deterministic regardless of buffer state.
@@ -286,6 +284,7 @@ In fullscreen mode, the output phase diffs prev/next buffers and emits only chan
 - Cursor tracking initialized (`state.prevCursorRow >= 0` — set after first render)
 
 Content height changes (grow/shrink) are handled incrementally:
+
 - **Growth**: `changesToAnsi` writes new content cells. Cursor extends to new bottom row using `\r\n` (which creates terminal lines). CUD (`\x1b[nB`) is NOT used past the old bottom — it's clamped and won't scroll.
 - **Shrinkage**: `changesToAnsi` clears old content cells (writes spaces). Orphan lines below new content are erased with `\x1b[K`.
 
@@ -500,11 +499,7 @@ import { item } from "@km/tui/tests/helpers/board-test.ts"
 
 describe("regression: <brief description>", () => {
   test("repro from fuzz/user report", async () => {
-    const nodes = item.root(
-      "board",
-      item("Column 1", item("Task A"), item("Task B")),
-      item("Column 2", item("Task C")),
-    )
+    const nodes = item.root("board", item("Column 1", item("Task A"), item("Task B")), item("Column 2", item("Task C")))
     const driver = withDiagnostics(createBoardDriver(createFakeRepo({ nodes }), "board"), {
       checkIncremental: true,
       checkReplay: true,

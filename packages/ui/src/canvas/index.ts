@@ -28,11 +28,7 @@ import {
   CanvasRenderBuffer,
   createCanvasAdapter,
 } from "@silvery/term/adapters/canvas-adapter"
-import {
-  createBrowserRenderer,
-  initBrowserRenderer,
-  renderOnce,
-} from "@silvery/term/browser-renderer"
+import { createBrowserRenderer, initBrowserRenderer, renderOnce } from "@silvery/term/browser-renderer"
 import type { RenderBuffer } from "@silvery/term/render-adapter"
 
 // Re-export components and hooks for convenience

@@ -108,9 +108,7 @@ function calculateColumnWidths(
 /**
  * Create header row object from columns
  */
-function getHeaderRow(
-  columns: Array<TableColumn & { effectiveWidth: number }>,
-): Record<string, unknown> {
+function getHeaderRow(columns: Array<TableColumn & { effectiveWidth: number }>): Record<string, unknown> {
   const row: Record<string, unknown> = {}
   for (const col of columns) {
     row[col.key] = col.header
@@ -126,8 +124,7 @@ function buildBorderLine(
   position: "top" | "middle" | "bottom",
 ): string {
   const left = position === "top" ? BOX.topLeft : position === "bottom" ? BOX.bottomLeft : BOX.leftT
-  const right =
-    position === "top" ? BOX.topRight : position === "bottom" ? BOX.bottomRight : BOX.rightT
+  const right = position === "top" ? BOX.topRight : position === "bottom" ? BOX.bottomRight : BOX.rightT
   const join = position === "top" ? BOX.topT : position === "bottom" ? BOX.bottomT : BOX.cross
 
   const segments = columns.map((col) => BOX.horizontal.repeat(col.effectiveWidth + 2))

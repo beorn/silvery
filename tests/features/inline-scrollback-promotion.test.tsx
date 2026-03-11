@@ -183,17 +183,12 @@ describe("inline mode with pre-existing terminal content", () => {
     // After 6 Enter presses on a 20-row terminal, frozen content should
     // have been pushed into terminal scrollback
     const scrollbackText = term.scrollback!.getText()
-    expect(
-      scrollbackText.length,
-      "No content in terminal scrollback after 6 Enter presses",
-    ).toBeGreaterThan(0)
+    expect(scrollbackText.length, "No content in terminal scrollback after 6 Enter presses").toBeGreaterThan(0)
 
     // The scrollback should contain actual app content (not just shell prompt)
     const allScrollback = scrollbackText
     const hasAppContent =
-      allScrollback.includes("Agent") ||
-      allScrollback.includes("auth") ||
-      allScrollback.includes("Fix the login")
+      allScrollback.includes("Agent") || allScrollback.includes("auth") || allScrollback.includes("Fix the login")
     expect(hasAppContent, "Scrollback has no app content").toBe(true)
   })
 
@@ -217,10 +212,7 @@ describe("inline mode with pre-existing terminal content", () => {
     // (or higher if content was pushed into scrollback by growth)
     const linesAfter = term.screen!.getLines()
     const appStartAfter = linesAfter.findIndex(
-      (l: string) =>
-        l.includes("Static Scrollback") ||
-        l.includes("Fix the login") ||
-        l.includes("Agent"),
+      (l: string) => l.includes("Static Scrollback") || l.includes("Fix the login") || l.includes("Agent"),
     )
 
     // Content should NOT have jumped to row 0 (which is where the shell prompt was)
@@ -232,10 +224,7 @@ describe("inline mode with pre-existing terminal content", () => {
       const linesOfContent = linesAfter.filter((l: string) => l.trim().length > 0).length
       if (linesOfContent < 35) {
         // Screen isn't full — content shouldn't be at the very top
-        expect(
-          appStartAfter,
-          `Content jumped from row ${appStartBefore} to row ${appStartAfter}`,
-        ).toBeGreaterThan(0)
+        expect(appStartAfter, `Content jumped from row ${appStartBefore} to row ${appStartAfter}`).toBeGreaterThan(0)
       }
     }
   })
@@ -258,15 +247,12 @@ describe("clean screen baseline (no shell prompt)", () => {
     term = createTermless({ cols: 120, rows: 40 })
     const emulator = (term as unknown as Record<string, unknown>)._emulator as { feed(data: string): void }
 
-    handle = await run(
-      <CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />,
-      {
-        mode: "inline",
-        writable: { write: (s: string) => emulator.feed(s) },
-        cols: 120,
-        rows: 40,
-      },
-    )
+    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, {
+      mode: "inline",
+      writable: { write: (s: string) => emulator.feed(s) },
+      cols: 120,
+      rows: 40,
+    })
 
     expect(term.screen).toContainText("Static Scrollback")
 

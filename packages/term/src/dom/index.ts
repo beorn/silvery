@@ -29,12 +29,7 @@
  */
 
 import type { ReactElement } from "react"
-import {
-  type DOMAdapterConfig,
-  DOMRenderBuffer,
-  createDOMAdapter,
-  injectDOMStyles,
-} from "../adapters/dom-adapter"
+import { type DOMAdapterConfig, DOMRenderBuffer, createDOMAdapter, injectDOMStyles } from "../adapters/dom-adapter"
 import { createBrowserRenderer, initBrowserRenderer, renderOnce } from "../browser-renderer"
 import type { RenderBuffer } from "../render-adapter"
 
@@ -45,12 +40,7 @@ export { useContentRect, useScreenRect } from "@silvery/react/hooks/useLayout"
 export { useApp } from "@silvery/react/hooks/useApp"
 
 // Re-export adapter utilities
-export {
-  createDOMAdapter,
-  DOMRenderBuffer,
-  injectDOMStyles,
-  type DOMAdapterConfig,
-} from "../adapters/dom-adapter"
+export { createDOMAdapter, DOMRenderBuffer, injectDOMStyles, type DOMAdapterConfig } from "../adapters/dom-adapter"
 
 // ============================================================================
 // Types
