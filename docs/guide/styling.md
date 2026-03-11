@@ -1,8 +1,8 @@
-# Semantic Colors
+# Styling
 
-_How to color the shiniest Silvery apps_
+_Colors, typography, and component defaults for the shiniest Silvery apps_
 
-Colors tarnish fast. A hardcoded `"red"` here, a `"$success"` where you meant "brand emphasis" there — suddenly your UI is a patchwork that breaks on every theme. These principles keep your colors **shiny**.
+Colors tarnish fast. Typography gets inconsistent. A hardcoded `"red"` here, a `"$success"` where you meant "brand emphasis" there — suddenly your UI is a patchwork that breaks on every theme. These principles keep your apps **shiny**.
 
 ## 1. Don't Specify Colors
 
@@ -26,6 +26,10 @@ Most Silvery components already use the correct semantic colors by default. **Th
 | `<H1>`, `<H2>`, `<H3>` | `$primary`/`$accent`/`$fg` + bold                                   |
 | `<Muted>`              | `$muted` text                                                       |
 | `<Lead>`               | `italic` text                                                       |
+| `<Code>`               | `$mutedbg` background                                               |
+| `<Blockquote>`         | `$muted` border + italic                                            |
+| `<P>`                  | body text (semantic wrapper)                                        |
+| `<LI>`                 | `•` bullet + indented content                                       |
 
 ::: tip ✨ Shiny
 
@@ -112,13 +116,18 @@ Status colors for heading hierarchy — "green heading" looks like success, "red
 Use the built-in typography presets (inspired by [shadcn/ui](https://ui.shadcn.com/docs/components/typography)) instead of remembering which combination of color + bold to use:
 
 ```tsx
-import { H1, H2, H3, Muted, Lead } from "silvery"
+import { H1, H2, H3, Muted, Lead, Code, Blockquote, P, LI } from "silvery"
 
-<H1>Settings</H1>                    // auto: $primary + bold
-<H2>General</H2>                      // auto: $accent + bold
-<H3>Appearance</H3>                   // auto: $fg + bold
-<Muted>Requires restart</Muted>       // auto: $muted
-<Lead>Welcome to the app</Lead>       // auto: italic
+<H1>Settings</H1>                    // $primary + bold
+<H2>General</H2>                      // $accent + bold
+<H3>Appearance</H3>                   // bold
+<P>Use dark colors for the UI.</P>    // plain body text
+<Muted>Requires restart</Muted>       // $muted
+<Lead>Welcome to the app</Lead>       // italic
+<Code>npm install silvery</Code>      // $mutedbg background
+<Blockquote>Less is more.</Blockquote> // │ border + italic
+<LI>First item</LI>                   // • bullet
+<LI>Second item</LI>
 ```
 
 Zero color props — the presets handle it. This is the easiest way to get correct hierarchy.

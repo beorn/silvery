@@ -4,7 +4,7 @@ React framework for modern terminal UIs. Layout feedback, incremental rendering,
 
 **[The Silvery Way](docs/guide/the-silvery-way.md)** — 10 principles for building canonical Silvery apps. Read it before building with Silvery.
 
-**[Semantic Colors](docs/guide/semantic-colors.md)** — Which `$token` to use for which element. Read it before choosing colors.
+**[Styling Guide](docs/guide/styling.md)** — Semantic colors, typography presets, and component defaults. Read it before styling anything.
 
 ## Central Abstraction: Term
 

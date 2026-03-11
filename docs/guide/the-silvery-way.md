@@ -273,7 +273,7 @@ console.log("\x1b[31mError\x1b[0m")
 If you hardcode a color, you've married one theme. Semantic tokens marry them all.
 :::
 
-→ [Theming guide](/guides/theming) · [Theming reference](/reference/theming) · [Themes gallery](/themes)
+→ [Styling guide](/guide/styling) · [Theming reference](/reference/theming) · [Themes gallery](/themes)
 
 ## 7. Compose with Factory Functions
 

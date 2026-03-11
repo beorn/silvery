@@ -127,7 +127,7 @@ const RANDOM_AGENT_RESPONSES: ScriptEntry[] = [
     thinking: "Let me analyze the codebase to understand the current structure.",
     content: "I'll look at the relevant files and make the changes.",
     toolCalls: [
-      { tool: "Read", args: "src/index.ts", output: ['export function main() { /* ... */ }'] },
+      { tool: "Read", args: "src/index.ts", output: ["export function main() { /* ... */ }"] },
       { tool: "Edit", args: "src/index.ts", output: ["+  // Updated implementation"] },
     ],
     tokens: { input: 12400, output: 890 },
@@ -994,11 +994,7 @@ function DemoFooter({
         borderStyle="round"
         prompt={"\u276F "}
         placeholder={
-          ctrlDPending
-            ? "Press Ctrl-D again to exit"
-            : done
-              ? "Session complete"
-              : "Type a message or press tab"
+          ctrlDPending ? "Press Ctrl-D again to exit" : done ? "Session complete" : "Type a message or press tab"
         }
         isActive={!done}
       />

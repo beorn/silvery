@@ -48,12 +48,7 @@ import { RuntimeContext } from "@silvery/react/context"
 import EventEmitter from "node:events"
 import { renderScreenReaderOutput } from "@silvery/react/accessibility"
 import { Buffer } from "node:buffer"
-import {
-  enableKittyKeyboard,
-  disableKittyKeyboard,
-  queryKittyKeyboard,
-  KittyFlags,
-} from "@silvery/term"
+import { enableKittyKeyboard, disableKittyKeyboard, queryKittyKeyboard, KittyFlags } from "@silvery/term"
 
 // =============================================================================
 // Error boundary: uses SilveryErrorBoundary from @silvery/react (rich display with

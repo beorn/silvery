@@ -171,7 +171,7 @@ export { PickerList } from "@silvery/ui/components/PickerList"
 export type { PickerListProps } from "@silvery/ui/components/PickerList"
 
 // Typography Presets
-export { H1, H2, H3, Muted, Lead } from "@silvery/ui/components/Typography"
+export { H1, H2, H3, Muted, Lead, Code, Blockquote, P, LI } from "@silvery/ui/components/Typography"
 export type { TypographyProps } from "@silvery/ui/components/Typography"
 
 // Focusable Controls

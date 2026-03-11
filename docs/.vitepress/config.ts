@@ -70,6 +70,7 @@ export default defineConfig({
         collapsed: false,
         items: [
           { text: "Terminal Apps", link: "/guides/terminal-apps" },
+          { text: "Styling", link: "/guide/styling" },
           { text: "Components", link: "/guides/components" },
           { text: "Theming", link: "/guides/theming" },
           { text: "State Management", link: "/guides/state-management" },
