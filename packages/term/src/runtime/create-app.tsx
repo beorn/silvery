@@ -856,7 +856,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     <SilveryErrorBoundary>
       <CursorProvider store={cursorStore}>
         <TermContext.Provider value={mockTerm}>
-          <StdoutContext.Provider value={{ stdout: mockStdout, write: () => {} }}>
+          <StdoutContext.Provider
+            value={{
+              stdout: mockStdout,
+              write: () => {},
+              notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
+              promoteScrollback: (content: string, lines: number) =>
+                runtime.promoteScrollback(content, lines),
+              resetInlineCursor: () => runtime.resetInlineCursor(),
+              getInlineCursorRow: () => runtime.getInlineCursorRow(),
+            }}
+          >
             <FocusManagerContext.Provider value={focusManager}>
               <RuntimeContext.Provider value={runtimeContextValue}>
                 <Root>
@@ -1094,8 +1104,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("node:fs").appendFileSync("/tmp/silvery-trace.log", "=== ALT SCREEN + CLEAR ===\n")
     }
-    if (alternateScreen) stdout.write("\x1b[?1049h")
-    stdout.write("\x1b[2J\x1b[H\x1b[?25l")
+    if (alternateScreen) {
+      stdout.write("\x1b[?1049h")
+      stdout.write("\x1b[2J\x1b[H")
+    }
+    stdout.write("\x1b[?25l")
 
     // Kitty keyboard protocol
     if (kittyOption != null && kittyOption !== false) {
