@@ -67,7 +67,7 @@ describe("border rendering", () => {
   // Hidden border sides
   // =========================================================================
 
-  test("hide left border - leading space and correct width", () => {
+  test("hide left border - horizontal extends to left edge", () => {
     const r = createRenderer({ cols: 20, rows: 5 })
     const app = r(
       <Box borderStyle="round" borderLeft={false} width={10}>
@@ -78,13 +78,13 @@ describe("border rendering", () => {
     const topRow = Array.from({ length: 10 }, (_, x) => buffer.getCell(x, 0).char).join("")
     const botRow = Array.from({ length: 10 }, (_, x) => buffer.getCell(x, 2).char).join("")
 
-    // Top/bottom rows: space at col 0 (where left border would be), horizontal, right corner
-    expect(topRow[0]).toBe(" ")
+    // Top/bottom rows: horizontal bar extends to left edge (no space), right corner
+    expect(topRow[0]).toBe("─")
     expect(topRow).toContain("─")
     expect(topRow).toContain("╮")
     expect(topRow).not.toContain("╭")
 
-    expect(botRow[0]).toBe(" ")
+    expect(botRow[0]).toBe("─")
     expect(botRow).toContain("╯")
     expect(botRow).not.toContain("╰")
 

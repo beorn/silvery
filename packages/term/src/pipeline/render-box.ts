@@ -118,7 +118,9 @@ export function renderBorder(
   // Top border
   if (showTop && isRowVisible(y)) {
     if (showLeft && isColVisible(x)) buffer.setCell(x, y, { char: chars.topLeft, fg: color, bg })
-    for (let col = x + 1; col < x + width - 1 && col < buffer.width; col++) {
+    const hStart = showLeft ? x + 1 : x
+    const hEnd = showRight ? x + width - 1 : x + width
+    for (let col = hStart; col < hEnd && col < buffer.width; col++) {
       if (isColVisible(col)) buffer.setCell(col, y, { char: chars.horizontal, fg: color, bg })
     }
     if (showRight && x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
@@ -145,7 +147,9 @@ export function renderBorder(
     if (showLeft && isColVisible(x)) {
       buffer.setCell(x, bottomY, { char: chars.bottomLeft, fg: color, bg })
     }
-    for (let col = x + 1; col < x + width - 1 && col < buffer.width; col++) {
+    const bStart = showLeft ? x + 1 : x
+    const bEnd = showRight ? x + width - 1 : x + width
+    for (let col = bStart; col < bEnd && col < buffer.width; col++) {
       if (isColVisible(col)) buffer.setCell(col, bottomY, { char: bottomHorizontal, fg: color, bg })
     }
     if (showRight && x + width - 1 < buffer.width && isColVisible(x + width - 1)) {
