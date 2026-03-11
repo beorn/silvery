@@ -315,10 +315,12 @@ export function createTermProvider(
         }
       }
 
-      // Enable bracketed paste and focus reporting for TTY input
+      // Enable bracketed paste for TTY input.
+      // Note: focus reporting is NOT enabled here — it's controlled by the
+      // focusReporting option in create-app.tsx and run.tsx. Unconditionally
+      // enabling it causes CSI I/O sequences to leak to screen in inline mode.
       if (stdin.isTTY) {
         enableBracketedPaste(stdout)
-        enableFocusReporting((data) => stdout.write(data))
       }
 
       // Subscribe — track the cleanup function for use by both finally and dispose
@@ -326,7 +328,6 @@ export function createTermProvider(
       stdout.on("resize", onResizeEvent)
       stdinCleanup = () => {
         if (stdin.isTTY) {
-          disableFocusReporting((data) => stdout.write(data))
           disableBracketedPaste(stdout)
         }
         stdin.off("data", onChunk)
