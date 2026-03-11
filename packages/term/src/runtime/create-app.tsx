@@ -971,15 +971,24 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     const rootNode = getContainerRoot(container)
     const dims = runtime.getDims()
 
+    const isInline = !alternateScreen
+
     // Invalidate prevBuffer on dimension change (resize).
     // Both pipeline-level (_prevTermBuffer) and runtime-level (runtime.invalidate())
     // must be cleared — otherwise the ANSI diff compares different-sized buffers.
-    if (
-      _prevTermBuffer &&
-      (dims.cols !== _prevTermBuffer.width || dims.rows !== _prevTermBuffer.height)
-    ) {
-      _prevTermBuffer = null
-      runtime.invalidate()
+    //
+    // In inline mode, only WIDTH changes trigger invalidation. Height changes are
+    // normal (content grows/shrinks as items are added/frozen) and are handled
+    // incrementally by the output phase. Invalidating on height causes the runtime's
+    // prevBuffer to be null, which triggers the first-render clear path with \x1b[J
+    // — wiping the entire visible screen including shell prompt content above the app.
+    if (_prevTermBuffer) {
+      const widthChanged = dims.cols !== _prevTermBuffer.width
+      const heightChanged = !isInline && dims.rows !== _prevTermBuffer.height
+      if (widthChanged || heightChanged) {
+        _prevTermBuffer = null
+        runtime.invalidate()
+      }
     }
 
     // Clear diagnostic arrays before the render so we capture only this render's data
@@ -1007,6 +1016,11 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       dims.cols,
       dims.rows,
       wasIncremental ? _prevTermBuffer : null,
+      // Always use fullscreen mode here — the pipeline's output is discarded.
+      // The runtime's render() handles inline mode output separately.
+      // Using inline mode here would modify the shared inline cursor state
+      // (prevCursorRow, prevBuffer) before runtime.render() gets a chance,
+      // causing the runtime to produce 0-byte output.
       undefined,
       pipelineConfig,
     )

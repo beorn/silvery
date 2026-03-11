@@ -277,30 +277,29 @@ function handleScrollbackPromotion(
   output += inlineCursorSuffix(cursorPos ?? null, next, termRows)
 
   // 6. Update tracking for subsequent incremental renders.
-  //    CRITICAL: track total on-screen lines (frozen + live), not just live lines.
-  //    Frozen lines remain visible until the terminal naturally scrolls them into
-  //    scrollback. The next render must move the cursor past them to reach the
-  //    render region start.
+  //    Track cursor position and output lines relative to the LIVE content only.
+  //    Frozen content has been written as raw ANSI above the live content and is
+  //    now "owned" by the terminal — it stays on screen until natural scrolling
+  //    pushes it into terminal scrollback. The next render only needs to cursor-up
+  //    to the start of the live content area, not past the frozen content.
+  //
+  //    This is critical for real terminals where pre-existing content (shell prompt,
+  //    direnv output) sits above the app. If prevCursorRow included frozenLineCount,
+  //    the cursor-up would overshoot into the shell prompt area, clearing it.
   let startLine = 0
   if (termRows != null && nextContentLines > termRows) startLine = nextContentLines - termRows
   state.prevBuffer = next
 
-  // Cursor row within the TOTAL on-screen area (frozen + live).
-  // The cursor suffix positioned it within the live content; we need to offset
-  // by frozenLineCount since frozen lines are still on-screen above.
+  // Cursor row within the LIVE content area only (not including frozen lines).
+  // inlineCursorSuffix already positioned the cursor within the live content.
   if (cursorPos?.visible) {
     const visibleRow = cursorPos.y - startLine
     state.prevCursorRow =
-      frozenLineCount + (visibleRow >= 0 && visibleRow < maxOutputLines ? visibleRow : maxOutputLines - 1)
+      visibleRow >= 0 && visibleRow < maxOutputLines ? visibleRow : maxOutputLines - 1
   } else {
-    state.prevCursorRow = totalOnScreen - 1
+    state.prevCursorRow = maxOutputLines - 1
   }
-  // Account for terminal scroll clamping: cursor-up is clamped at terminal row 0,
-  // so if the total output caused scrolling, the effective cursor position shifts.
-  if (terminalScroll > 0) {
-    state.prevCursorRow = Math.max(0, state.prevCursorRow - terminalScroll)
-  }
-  state.prevOutputLines = Math.min(totalOnScreen, termRows ?? totalOnScreen)
+  state.prevOutputLines = maxOutputLines
 
   return output
 }
