@@ -856,13 +856,13 @@ function StatusBar({
   const ctxColor = ctxPct > 100 ? "$error" : ctxPct > 80 ? "$warning" : "$primary"
   const ctxBar = "\u2588".repeat(ctxFilled) + "\u2591".repeat(CTX_W - ctxFilled)
 
-  // Build key hints — keep compact to avoid overflow
+  // Build key hints — minimal, obvious keys omitted
   let keys: string
-  if (ctrlDPending) keys = "press Ctrl-D again to exit"
+  if (ctrlDPending) keys = "Ctrl-D again to exit"
   else if (compacting) keys = "compacting..."
   else if (done) keys = "esc quit"
-  else if (autoMode) keys = "tab stop  ^L clear  esc quit"
-  else keys = "\u23CE send  tab auto  ^L clear  esc quit"
+  else if (autoMode) keys = "tab manual  esc quit"
+  else keys = "tab auto  esc quit"
 
   return (
     <Box flexDirection="row" justifyContent="space-between" paddingX={1}>

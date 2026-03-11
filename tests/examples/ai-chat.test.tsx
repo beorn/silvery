@@ -82,10 +82,13 @@ describe("ai-chat example (in-process termless)", { timeout: 15000 }, () => {
   test("Enter 1: rate limiting turn, no overlapping borders", async () => {
     // Submits pre-filled "Nice. Can you also add rate limiting?" then
     // fastMode chains through all agent entries (Grep, Edit, Bash, summary).
+    // With working timer rendering, auto-advance effects fire during settle,
+    // so rate limiting text may scroll to scrollback.
     await handle.press("Enter")
     await settle()
 
-    expect(term.screen).toContainText("rate limit")
+    const allText = (term.scrollback?.getText() ?? "") + term.screen!.getText()
+    expect(allText).toContain("rate limit")
     expect(term.screen).toContainText("ctx")
     assertNoOverlappingBorders(term.screen!)
   })

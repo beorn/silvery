@@ -619,6 +619,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let renderPaused = false
   let isRendering = false // Re-entrancy guard for store subscription
   let inEventHandler = false // True during processEvent/press — suppresses subscription renders
+  let pendingRerender = false // Deferred render flag for re-entrancy
 
   // ========================================================================
   // ANSI Trace: SILVERY_TRACE=1 logs all stdout writes with decoded sequences
@@ -834,8 +835,36 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
   let exit: () => void
 
-  // Create SilveryNode container
-  const container = createContainer(() => {})
+  // Create SilveryNode container.
+  // onRender fires during React's resetAfterCommit — inside the commit phase.
+  // Calling doRender from there would be re-entrant (doRender calls updateContainerSync
+  // which triggers commit which calls onRender again). Always defer via microtask.
+  // Without this callback, setInterval/setTimeout-driven setState never flushes to terminal.
+  const container = createContainer(() => {
+    if (shouldExit) return
+    if (inEventHandler) {
+      // During processEvent/press: just flag, caller's flush loop handles it.
+      pendingRerender = true
+      return
+    }
+    // Always defer — onRender fires during React commit, re-entry is unsafe.
+    if (!pendingRerender) {
+      pendingRerender = true
+      queueMicrotask(() => {
+        if (!pendingRerender) return
+        pendingRerender = false
+        if (!shouldExit && !isRendering) {
+          isRendering = true
+          try {
+            currentBuffer = doRender()
+            runtime.render(currentBuffer)
+          } finally {
+            isRendering = false
+          }
+        }
+      })
+    }
+  })
 
   // Create React fiber root
   const fiberRoot = createFiberRoot(container)
@@ -1289,8 +1318,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   //    Queue a microtask to render after the current render completes — but only
   //    if NOT in an event handler (the flush loop handles it).
   // 3. Neither: render immediately (standalone setState from timeout/interval).
-  //
-  let pendingRerender = false
   storeUnsubscribeFn = store.subscribe(() => {
     if (shouldExit) return
     if (_ansiTrace) {
