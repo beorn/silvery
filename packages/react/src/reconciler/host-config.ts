@@ -69,6 +69,19 @@ export function _resetBoxInsideTextWarning(): void {
   hasWarnedBoxInsideText = false
 }
 
+/**
+ * Ink-compatible strict validation mode.
+ * When enabled, the reconciler throws errors instead of warnings for:
+ * - Raw text directly inside a Box (must be inside Text)
+ * - Box nested inside Text
+ */
+let inkStrictValidation = false
+
+/** Enable/disable Ink-compatible strict validation. */
+export function setInkStrictValidation(enabled: boolean): void {
+  inkStrictValidation = enabled
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -157,17 +170,17 @@ export const hostConfig = {
     _rootContainer: unknown,
     hostContext: HostContext,
   ): TeaNode {
-    // Warn when a Box is nested inside a Text (block inside inline)
-    if (
-      type === "silvery-box" &&
-      hostContext.isInsideText &&
-      process.env.NODE_ENV !== "production" &&
-      !hasWarnedBoxInsideText
-    ) {
-      hasWarnedBoxInsideText = true
-      console.warn(
-        "Warning: <Box> cannot be nested inside <Text>. This produces undefined layout behavior.",
-      )
+    // Ink-compat: throw when a Box is nested inside a Text
+    if (type === "silvery-box" && hostContext.isInsideText) {
+      if (inkStrictValidation) {
+        throw new Error("<Box> can\u2019t be nested inside <Text> component")
+      }
+      if (process.env.NODE_ENV !== "production" && !hasWarnedBoxInsideText) {
+        hasWarnedBoxInsideText = true
+        console.warn(
+          "Warning: <Box> cannot be nested inside <Text>. This produces undefined layout behavior.",
+        )
+      }
     }
 
     // Nested text nodes become "virtual" - no layout node
@@ -177,7 +190,17 @@ export const hostConfig = {
     return createNode(type, props)
   },
 
-  createTextInstance(text: string): TeaNode {
+  createTextInstance(
+    text: string,
+    _rootContainer: unknown,
+    hostContext: HostContext,
+  ): TeaNode {
+    // Ink-compat: throw when text appears directly in a Box (outside Text)
+    if (inkStrictValidation && !hostContext.isInsideText && text.trim().length > 0) {
+      throw new Error(
+        `Text string "${text}" must be rendered inside <Text> component`,
+      )
+    }
     // Raw text nodes don't have layout nodes - they're just data nodes
     // Their content is rendered by their parent silvery-text element
     const node: TeaNode = {

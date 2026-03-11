@@ -14,11 +14,11 @@ import { createTerm } from "../../../../packages/term/src/ansi"
 import { TermContext } from "../../../../packages/react/src/context"
 import {
   currentChalkLevel,
-  stripSilveryVS16,
   toChalkCompat,
   restoreColonFormatSGR,
 } from "../../../../packages/compat/src/ink"
 import { stripAnsi } from "../../../../packages/term/src/unicode"
+import chalk, { supportsColor } from "chalk"
 
 type RenderToStringOptions = {
   columns?: number
@@ -59,7 +59,10 @@ function doRender(node: React.JSX.Element, options?: RenderToStringOptions): str
     },
   })
 
-  output = stripSilveryVS16(output)
+  // NOTE: VS16 stripping removed — silvery's ensureEmojiPresentation adds VS16
+  // to text-presentation emojis, but we preserve them since Ink also preserves
+  // user-provided VS16. The compat layer in ink.ts still strips VS16 in the
+  // render() path for the upstream compat test runner.
   output = restoreColonFormatSGR(output)
 
   // Trim buffer padding rows using content height from layout
@@ -107,3 +110,17 @@ export const renderToStringAsync = async (
  * Initialize the layout engine (call in beforeAll).
  */
 export const initLayoutEngine = ensureEngine
+
+/**
+ * Force chalk to output colors even in non-TTY environments for testing.
+ */
+export function enableTestColors(): void {
+  chalk.level = 3
+}
+
+/**
+ * Restore chalk's automatic color detection.
+ */
+export function disableTestColors(): void {
+  chalk.level = supportsColor ? supportsColor.level : 0
+}

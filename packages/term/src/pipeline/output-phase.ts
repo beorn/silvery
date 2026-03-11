@@ -925,21 +925,27 @@ function inlineIncrementalRender(
   const nextContentLines = findLastContentLine(next) + 1
   const prevContentLines = findLastContentLine(prev) + 1
 
-  // Content height changed — full render handles line erasure/growth
-  if (nextContentLines !== prevContentLines) {
+  // Compute visible ranges for both prev and next content
+  const prevMaxOutputLines = termRows != null ? Math.min(prevContentLines, termRows) : prevContentLines
+  const maxOutputLines = termRows != null ? Math.min(nextContentLines, termRows) : nextContentLines
+  let prevStartLine = 0
+  if (termRows != null && prevContentLines > termRows) {
+    prevStartLine = prevContentLines - termRows
+  }
+  let startLine = 0
+  if (termRows != null && nextContentLines > termRows) {
+    startLine = nextContentLines - termRows
+  }
+
+  // When the visible window shifts (content exceeds termRows and startLine changes),
+  // the entire visible region is different — fall back to full render.
+  if (startLine !== prevStartLine) {
     return inlineFullRender(state, prev, next, scrollbackOffset, termRows, cursorPos, ctx)
   }
 
   // Diff buffers
   const { pool, count } = diffBuffers(prev, next)
-  if (count === 0) return ""
-
-  // Compute visible range (same logic as bufferToAnsi for inline)
-  const maxOutputLines = termRows != null ? Math.min(nextContentLines, termRows) : nextContentLines
-  let startLine = 0
-  if (termRows != null && nextContentLines > termRows) {
-    startLine = nextContentLines - termRows
-  }
+  if (count === 0 && nextContentLines === prevContentLines) return ""
 
   // Move cursor from tracked row to row 0 of render region
   let output = ""
@@ -949,22 +955,79 @@ function inlineIncrementalRender(
   output += "\r"
   output += "\x1b[?25l" // hide cursor during update
 
-  // Emit changes with relative positioning
-  const changes = changesToAnsi(pool, count, "inline", ctx, next, startLine, maxOutputLines)
+  // Emit changes with relative positioning.
+  // Use the larger of prev/next output lines so changesToAnsi processes all
+  // visible cells including rows that shrank (need clearing) or grew (need writing).
+  const effectiveOutputLines = Math.max(prevMaxOutputLines, maxOutputLines)
+  const changes = changesToAnsi(pool, count, "inline", ctx, next, startLine, effectiveOutputLines)
   output += changes.output
 
   // After changesToAnsi, cursor is at changes.finalY (render-relative).
-  // inlineCursorSuffix assumes cursor is at (maxOutputLines - 1) — the last row.
-  // Move cursor to that position before calling the suffix.
+  // We need to position cursor at the effective bottom row, then handle
+  // growth/shrinkage, and end at (maxOutputLines - 1) for inlineCursorSuffix.
   const finalY = changes.finalY
+  const prevBottomRow = prevMaxOutputLines - 1
   const bottomRow = maxOutputLines - 1
-  if (finalY >= 0 && finalY < bottomRow) {
-    const dy = bottomRow - finalY
-    output += dy === 1 ? "\r\n" : `\r\x1b[${dy}B`
-  } else if (finalY >= 0) {
-    // Already at or past bottom — just ensure column 0
-    // (shouldn't be past bottom, but defensive)
+
+  if (maxOutputLines > prevMaxOutputLines) {
+    // Content grew: rows beyond the previous bottom don't exist on the terminal.
+    // CUD (\x1b[nB) is clamped at the terminal edge and won't create new lines.
+    // Use \r\n for each new row to ensure the terminal extends naturally.
+    //
+    // changesToAnsi may have already moved past prevBottomRow using \r\n
+    // (creating new terminal lines in the process). Only add \r\n for
+    // rows beyond what changesToAnsi already reached.
+    const fromRow = finalY >= 0 ? finalY : 0
+    if (fromRow >= bottomRow) {
+      // changesToAnsi already reached or passed the new bottom — nothing to do
+    } else if (fromRow >= prevBottomRow) {
+      // Cursor already past old bottom (changesToAnsi extended the terminal).
+      // Only need \r\n for remaining rows.
+      const remainingRows = bottomRow - fromRow
+      for (let i = 0; i < remainingRows; i++) {
+        output += "\r\n"
+      }
+    } else {
+      // Cursor is still within the old content area.
+      // First, move to the old bottom row using CUD (safe, rows exist on terminal)
+      if (fromRow < prevBottomRow) {
+        const dy = prevBottomRow - fromRow
+        output += dy === 1 ? "\r\n" : `\r\x1b[${dy}B`
+      }
+      // Then extend to new bottom with \r\n for each new row
+      const newRows = bottomRow - prevBottomRow
+      for (let i = 0; i < newRows; i++) {
+        output += "\r\n"
+      }
+    }
+  } else if (maxOutputLines < prevMaxOutputLines) {
+    // Content shrank: erase orphan lines below the new content.
+    // changesToAnsi already wrote empty cells to clear the old content,
+    // but we need \x1b[K to clear any residual characters.
+    // The cursor is at finalY after changesToAnsi — move to the new bottom first.
+    const fromRow = finalY >= 0 ? finalY : 0
+    if (fromRow < bottomRow) {
+      const dy = bottomRow - fromRow
+      output += dy === 1 ? "\r\n" : `\r\x1b[${dy}B`
+    } else if (fromRow > bottomRow) {
+      // Cursor is past the new bottom (was erasing orphan rows) — move back up
+      output += `\x1b[${fromRow - bottomRow}A`
+    }
+    // Now at new bottom row. Erase orphan lines below.
+    for (let y = maxOutputLines; y < prevMaxOutputLines; y++) {
+      output += "\n\r\x1b[K"
+    }
+    // Move back up to new bottom
+    const up = prevMaxOutputLines - maxOutputLines
+    if (up > 0) output += `\x1b[${up}A`
+  } else {
+    // Same height: move to bottom row if not already there
+    if (finalY >= 0 && finalY < bottomRow) {
+      const dy = bottomRow - finalY
+      output += dy === 1 ? "\r\n" : `\r\x1b[${dy}B`
+    }
   }
+
   output += inlineCursorSuffix(cursorPos ?? null, next, termRows)
 
   // Update tracking

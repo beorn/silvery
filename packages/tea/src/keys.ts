@@ -70,6 +70,10 @@ export interface Key {
   super: boolean
   /** Hyper key was pressed. Requires Kitty protocol. */
   hyper: boolean
+  /** CapsLock is active. Requires Kitty protocol. */
+  capsLock: boolean
+  /** NumLock is active. Requires Kitty protocol. */
+  numLock: boolean
   /** Kitty event type: 1=press, 2=repeat, 3=release. Only set with Kitty flag 2 (report events). */
   eventType?: 1 | 2 | 3
 }
@@ -359,12 +363,11 @@ export const CODE_TO_KEY: Record<string, string> = {
 const NON_ALPHANUMERIC_KEYS = [
   ...Object.values(CODE_TO_KEY),
   "backspace",
-  "return",
-  "enter",
   "tab",
-  "escape",
   "delete",
-  // Note: 'space' is intentionally NOT included - users typically want ' ' as input
+  // Note: 'return', 'enter', 'escape', and 'space' are intentionally NOT included.
+  // Users may need the raw character as input ('\r' for return, '\x1b' for escape).
+  // Use key.return / key.escape boolean flags to detect these keys.
 ]
 
 const SHIFT_CODES = new Set([
@@ -893,30 +896,47 @@ export function parseKey(rawInput: string | Buffer): [string, Key] {
     meta: keypress.name !== "escape" && (keypress.meta || keypress.option),
     super: keypress.super,
     hyper: keypress.hyper,
+    capsLock: keypress.capsLock ?? false,
+    numLock: keypress.numLock ?? false,
     eventType: keypress.eventType,
   }
 
-  let input = keypress.ctrl ? keypress.name : keypress.sequence
+  let input: string
 
-  if (NON_ALPHANUMERIC_KEYS.includes(keypress.name)) {
-    input = ""
-  }
-
-  // Strip meta prefix if remaining
-  if (input.startsWith("\u001b")) {
-    input = input.slice(1)
-  }
-
-  // Filter out escape sequence fragments that leak through
-  // e.g., "[2~" from Insert key, "[A" from arrows when not fully parsed
-  // Single "[" and "]" are allowed — they're valid key bindings
-  if ((input.startsWith("[") && input.length > 1) || (input.startsWith("O") && input.length > 1)) {
-    // For Kitty-encoded keys (Super/Hyper modifiers), preserve the key name
-    // since the raw sequence was CSI codepoint;modifiers u
-    if (keypress.super || keypress.hyper) {
+  if (keypress.isKittyProtocol) {
+    // Kitty protocol: use text field for printable keys, key name for ctrl+letter
+    if (keypress.isPrintable) {
+      input = keypress.text ?? keypress.name
+    } else if (keypress.ctrl && keypress.name.length === 1) {
+      // Ctrl+letter via codepoint 1-26: provide the letter name so handlers
+      // (e.g., exitOnCtrlC checking input === 'c' && key.ctrl) still work.
       input = keypress.name
     } else {
       input = ""
+    }
+  } else {
+    input = keypress.ctrl ? keypress.name : keypress.sequence
+
+    if (NON_ALPHANUMERIC_KEYS.includes(keypress.name)) {
+      input = ""
+    }
+
+    // Strip meta prefix if remaining
+    if (input.startsWith("\u001b")) {
+      input = input.slice(1)
+    }
+
+    // Filter out escape sequence fragments that leak through
+    // e.g., "[2~" from Insert key, "[A" from arrows when not fully parsed
+    // Single "[" and "]" are allowed — they're valid key bindings
+    if ((input.startsWith("[") && input.length > 1) || (input.startsWith("O") && input.length > 1)) {
+      // For Kitty-encoded keys (Super/Hyper modifiers), preserve the key name
+      // since the raw sequence was CSI codepoint;modifiers u
+      if (keypress.super || keypress.hyper) {
+        input = keypress.name
+      } else {
+        input = ""
+      }
     }
   }
 
@@ -951,6 +971,8 @@ export function emptyKey(): Key {
     meta: false,
     super: false,
     hyper: false,
+    capsLock: false,
+    numLock: false,
   }
 }
 
@@ -1250,7 +1272,7 @@ export function* splitRawInput(data: string): Generator<string> {
     if (data.charCodeAt(i) === 0x1b) {
       // Flush accumulated text before this escape sequence
       if (textStart >= 0) {
-        yield* splitGraphemes(data.slice(textStart, i))
+        yield* splitNonEscapeText(data.slice(textStart, i))
         textStart = -1
       }
 
@@ -1284,16 +1306,45 @@ export function* splitRawInput(data: string): Generator<string> {
         yield data.slice(i, end)
         i = end
       } else if (next === 0x1b) {
-        // Double ESC
-        yield "\x1b\x1b"
-        i += 2
+        // Double ESC: meta + escape, OR meta + CSI/SS3 sequence
+        // Check if a control sequence follows the double ESC
+        if (i + 2 < data.length) {
+          const third = data.charCodeAt(i + 2)
+          if (third === 0x5b) {
+            // Meta + CSI: ESC ESC [ params final-byte (e.g., meta+arrow)
+            let j = i + 3
+            while (j < data.length) {
+              const c = data.charCodeAt(j)
+              if (c >= 0x40 && c <= 0x7e) {
+                j++ // include the final byte
+                break
+              }
+              j++
+            }
+            yield data.slice(i, j)
+            i = j
+          } else if (third === 0x4f) {
+            // Meta + SS3: ESC ESC O letter
+            const end = Math.min(i + 4, data.length)
+            yield data.slice(i, end)
+            i = end
+          } else {
+            // Plain double ESC (meta+escape)
+            yield "\x1b\x1b"
+            i += 2
+          }
+        } else {
+          // Double ESC at end of chunk
+          yield "\x1b\x1b"
+          i += 2
+        }
       } else {
         // Meta + single char (Alt+key)
         yield data.slice(i, i + 2)
         i += 2
       }
     } else {
-      // Non-escape: accumulate into text run for grapheme splitting
+      // Non-escape: accumulate into text run
       if (textStart < 0) textStart = i
       i++
     }
@@ -1301,7 +1352,34 @@ export function* splitRawInput(data: string): Generator<string> {
 
   // Flush final text run
   if (textStart >= 0) {
-    yield* splitGraphemes(data.slice(textStart))
+    yield* splitNonEscapeText(data.slice(textStart))
+  }
+}
+
+/**
+ * Split non-escape text, keeping most characters together as one chunk.
+ *
+ * Only delete (0x7F) and backspace (0x08) are split out individually because
+ * they can arrive as rapid repeats in a single stdin chunk. Other control
+ * characters like \r and \t may legitimately appear inside pasted text and
+ * should NOT be split out (matching Ink's input-parser behavior).
+ */
+function* splitNonEscapeText(text: string): Generator<string> {
+  let segmentStart = 0
+  for (let i = 0; i < text.length; i++) {
+    const ch = text.charCodeAt(i)
+    if (ch === 0x7f || ch === 0x08) {
+      // Flush text before this delete/backspace
+      if (i > segmentStart) {
+        yield text.slice(segmentStart, i)
+      }
+      yield text[i]!
+      segmentStart = i + 1
+    }
+  }
+  // Flush remaining text
+  if (segmentStart < text.length) {
+    yield text.slice(segmentStart)
   }
 }
 

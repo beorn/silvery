@@ -67,7 +67,7 @@ export interface FlexboxProps {
   // Alignment
   alignItems?: "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
   alignSelf?: "auto" | "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
-  alignContent?: "flex-start" | "flex-end" | "center" | "stretch" | "space-between" | "space-around"
+  alignContent?: "flex-start" | "flex-end" | "center" | "stretch" | "space-between" | "space-around" | "space-evenly"
   justifyContent?:
     | "flex-start"
     | "flex-end"

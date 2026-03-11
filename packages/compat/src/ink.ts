@@ -24,6 +24,8 @@
  */
 
 import React, {
+  Component,
+  createContext,
   useContext,
   useCallback,
   useState,
@@ -32,6 +34,7 @@ import React, {
   useMemo,
   useRef,
 } from "react"
+import * as fs from "node:fs"
 import { StdoutContext, TermContext } from "@silvery/react/context"
 import { bufferToStyledText, bufferToText, type TerminalBuffer } from "@silvery/term/buffer"
 import { stripAnsi } from "@silvery/term/unicode"
@@ -43,6 +46,185 @@ import { SilveryErrorBoundary } from "@silvery/react/error-boundary"
 import { InkCursorStoreCtx } from "./with-ink-cursor"
 import { InkFocusContext, InkFocusProvider } from "./with-ink-focus"
 import { useInput as silveryUseInput } from "@silvery/react/hooks/useInput"
+
+// =============================================================================
+// Ink-Compatible Error Boundary
+// =============================================================================
+
+interface InkErrorBoundaryProps {
+  children?: React.ReactNode
+  onError?: (error: Error) => void
+}
+
+interface InkErrorBoundaryState {
+  error: Error | null
+}
+
+/**
+ * Parse a stack line to extract function name, file, line, column.
+ * Handles both `at Foo (file:line:col)` and `at file:line:col` formats.
+ */
+function parseStackLine(line: string): { function?: string; file?: string; line?: number; column?: number } | null {
+  const trimmed = line.trim()
+  if (!trimmed.startsWith("at ")) return null
+
+  const rest = trimmed.slice(3)
+  // Match: functionName (file:line:col)
+  const match1 = rest.match(/^(.+?)\s+\((.+?):(\d+):(\d+)\)$/)
+  if (match1) {
+    return { function: match1[1], file: match1[2], line: Number(match1[3]), column: Number(match1[4]) }
+  }
+  // Match: file:line:col (no function name)
+  const match2 = rest.match(/^(.+?):(\d+):(\d+)$/)
+  if (match2) {
+    return { file: match2[1], line: Number(match2[2]), column: Number(match2[3]) }
+  }
+  return null
+}
+
+/**
+ * Clean up file path by removing cwd prefix and file:// protocol.
+ */
+function cleanupPath(filePath: string | undefined): string | undefined {
+  if (!filePath) return filePath
+  let p = filePath
+  const cwdPath = process.cwd()
+  // Remove file:// protocol
+  p = p.replace(/^file:\/\//, "")
+  // Remove cwd prefix
+  for (const prefix of [cwdPath, `/private${cwdPath}`]) {
+    if (p.startsWith(`${prefix}/`)) {
+      p = p.slice(prefix.length + 1)
+      break
+    }
+  }
+  return p
+}
+
+/**
+ * Get source code excerpt around a line number (±3 lines).
+ */
+function getCodeExcerpt(filePath: string, line: number): Array<{ line: number; value: string }> | null {
+  try {
+    if (!fs.existsSync(filePath)) return null
+    const source = fs.readFileSync(filePath, "utf8")
+    const lines = source.split("\n")
+    const start = Math.max(0, line - 4)
+    const end = Math.min(lines.length, line + 3)
+    const result: Array<{ line: number; value: string }> = []
+    for (let i = start; i < end; i++) {
+      result.push({ line: i + 1, value: lines[i] ?? "" })
+    }
+    return result
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Ink-compatible error boundary.
+ * Catches render errors and displays them with source location and code excerpt,
+ * matching Ink's ErrorOverview component output format.
+ */
+class InkErrorBoundary extends Component<InkErrorBoundaryProps, InkErrorBoundaryState> {
+  override state: InkErrorBoundaryState = { error: null }
+
+  static getDerivedStateFromError(error: Error): InkErrorBoundaryState {
+    return { error }
+  }
+
+  override componentDidCatch(error: Error) {
+    this.props.onError?.(error)
+  }
+
+  override render() {
+    if (this.state.error) {
+      const err = this.state.error
+      const stack = err.stack ? err.stack.split("\n").slice(1) : []
+      const origin = stack.length > 0 ? parseStackLine(stack[0]!) : null
+      const filePath = cleanupPath(origin?.file)
+
+      // Get source code excerpt
+      let excerpt: Array<{ line: number; value: string }> | null = null
+      let lineWidth = 0
+      if (filePath && origin?.line) {
+        excerpt = getCodeExcerpt(filePath, origin.line)
+        if (excerpt) {
+          for (const { line } of excerpt) {
+            lineWidth = Math.max(lineWidth, String(line).length)
+          }
+        }
+      }
+
+      // Build the error display using silvery host elements (Box/Text)
+      // Format: padding=1 column layout with ERROR label, location, code, and stack
+      const children: React.ReactNode[] = []
+
+      // ERROR label + message
+      children.push(
+        React.createElement("silvery-box", { key: "header" },
+          React.createElement("silvery-text", { backgroundColor: "red", color: "white" }, " ERROR "),
+          React.createElement("silvery-text", {}, ` ${err.message}`),
+        ),
+      )
+
+      // File location
+      if (filePath && origin) {
+        children.push(
+          React.createElement("silvery-box", { key: "location", marginTop: 1 },
+            React.createElement("silvery-text", { dimColor: true }, `${filePath}:${origin.line}:${origin.column}`),
+          ),
+        )
+      }
+
+      // Source code excerpt
+      if (excerpt && origin) {
+        const codeLines = excerpt.map(({ line, value }) => {
+          const lineNum = String(line).padStart(lineWidth, " ")
+          return React.createElement("silvery-box", { key: `code-${line}` },
+            React.createElement("silvery-text", {
+              dimColor: line !== origin.line,
+              backgroundColor: line === origin.line ? "red" : undefined,
+              color: line === origin.line ? "white" : undefined,
+            }, `${lineNum}:`),
+            React.createElement("silvery-text", {
+              backgroundColor: line === origin.line ? "red" : undefined,
+              color: line === origin.line ? "white" : undefined,
+            }, ` ${value}`),
+          )
+        })
+        children.push(
+          React.createElement("silvery-box", { key: "code", marginTop: 1, flexDirection: "column" }, ...codeLines),
+        )
+      }
+
+      // Stack trace
+      if (stack.length > 0) {
+        const stackLines = stack.map((line, i) => {
+          const parsed = parseStackLine(line)
+          if (!parsed) {
+            return React.createElement("silvery-box", { key: `stack-${i}` },
+              React.createElement("silvery-text", { dimColor: true }, `- ${line.trim()}`),
+            )
+          }
+          const cleanFile = cleanupPath(parsed.file)
+          return React.createElement("silvery-box", { key: `stack-${i}` },
+            React.createElement("silvery-text", { dimColor: true }, "- "),
+            React.createElement("silvery-text", { dimColor: true, bold: true }, parsed.function ?? ""),
+            React.createElement("silvery-text", { dimColor: true, color: "gray" },
+              ` (${cleanFile ?? ""}:${parsed.line}:${parsed.column})`),
+          )
+        })
+        children.push(
+          React.createElement("silvery-box", { key: "stack", marginTop: 1, flexDirection: "column" }, ...stackLines),
+        )
+      }
+
+      return React.createElement("silvery-box", { flexDirection: "column", padding: 1 }, ...children)
+    }
+    return this.props.children
+  }
+}
 
 /**
  * Get chalk's current color level at render time.
@@ -251,16 +433,152 @@ function sanitizeChildren(children: React.ReactNode): React.ReactNode {
 
 export { Newline } from "@silvery/react/components/Newline"
 export { Spacer } from "@silvery/react/components/Spacer"
-export { Static } from "@silvery/react/components/Static"
 export { Transform } from "@silvery/react/components/Transform"
 export type { TransformProps } from "@silvery/react/components/Transform"
+
+// =============================================================================
+// Ink-Compatible Static Component
+// =============================================================================
+
+/**
+ * Store for tracking Static component output.
+ * Ink renders static content separately from dynamic content:
+ * - Static output is accumulated across renders (fullStaticOutput)
+ * - In debug mode, each frame writes fullStaticOutput + dynamicOutput
+ * - Static output always gets a trailing \n appended
+ */
+interface InkStaticStore {
+  /** All rendered static items as text lines */
+  renderedCount: number
+  /** Accumulated full static output (grows with each new item) */
+  fullStaticOutput: string
+}
+
+const InkStaticStoreCtx = createContext<InkStaticStore | null>(null)
+
+/**
+ * Extract plain text from a React element tree.
+ * Used to convert Static item render output to text without going through
+ * the full silvery render pipeline.
+ */
+function extractTextFromElement(node: React.ReactNode): string {
+  if (node == null || typeof node === "boolean") return ""
+  if (typeof node === "string") return node
+  if (typeof node === "number") return String(node)
+  if (Array.isArray(node)) return node.map(extractTextFromElement).join("")
+  if (React.isValidElement(node)) {
+    const props = node.props as Record<string, any>
+    return extractTextFromElement(props.children)
+  }
+  return ""
+}
+
+/**
+ * Ink-compatible Static component for the compat layer.
+ *
+ * Renders nothing to the tree (returns null). Instead, converts items to text
+ * and stores them in the InkStaticStore context. The render/writeFrame functions
+ * read the store and prepend static output to the frame.
+ *
+ * This matches Ink's behavior where Static content is rendered separately
+ * and placed above the dynamic content.
+ */
+export function Static<T>({ items, children: renderItem, style }: {
+  items: T[]
+  children: (item: T, index: number) => React.ReactNode
+  style?: Record<string, any>
+}): React.ReactElement | null {
+  const store = useContext(InkStaticStoreCtx)
+  // Fallback ref for when no static store is available (always called per hooks rules)
+  const renderedRef = useRef<React.ReactNode[]>([])
+
+  // When no static store is available (e.g., called outside the compat render()),
+  // fall back to rendering items in the tree like the silvery native Static component
+  if (!store) {
+    const prevCount = renderedRef.current.length
+    if (items.length > prevCount) {
+      for (let i = prevCount; i < items.length; i++) {
+        renderedRef.current.push(renderItem(items[i]!, i))
+      }
+    } else if (items.length < prevCount) {
+      renderedRef.current.length = items.length
+    }
+    return React.createElement("silvery-box", { flexDirection: "column", ...style }, ...renderedRef.current)
+  }
+
+  // Compute new items since last render
+  if (items.length > store.renderedCount) {
+    // Strip any previous padding suffix before appending new items
+    const paddingBottom = (style?.paddingBottom as number) ?? 0
+    if (paddingBottom > 0 && store.fullStaticOutput.length > 0) {
+      // Remove trailing padding that was added in a previous render
+      const paddingSuffix = "\n".repeat(paddingBottom)
+      if (store.fullStaticOutput.endsWith(paddingSuffix)) {
+        store.fullStaticOutput = store.fullStaticOutput.slice(0, -paddingSuffix.length)
+      }
+    }
+
+    const newItems = items.slice(store.renderedCount)
+    const newLines = newItems.map((item, i) => {
+      const element = renderItem(item, store.renderedCount + i)
+      return extractTextFromElement(element)
+    })
+    // Each item is on its own line, static output gets trailing \n from Ink's renderer
+    const newStaticOutput = newLines.join("\n") + "\n"
+    store.fullStaticOutput += newStaticOutput
+    store.renderedCount = items.length
+
+    // Apply paddingBottom from style — adds extra blank lines after items
+    if (paddingBottom > 0) {
+      store.fullStaticOutput += "\n".repeat(paddingBottom)
+    }
+  }
+
+  // Return null — Static content is handled outside the normal render tree
+  return null
+}
 
 // =============================================================================
 // Hooks (Ink-compatible)
 // =============================================================================
 
-export { useInput } from "@silvery/react/hooks/useInput"
-export type { Key, InputHandler, UseInputOptions } from "@silvery/react/hooks/useInput"
+import type { Key as SilveryKey, UseInputOptions } from "@silvery/react/hooks/useInput"
+
+/**
+ * Ink-compatible Key type with string eventType.
+ */
+export interface Key extends Omit<SilveryKey, "eventType"> {
+  eventType?: "press" | "repeat" | "release"
+}
+
+export type InputHandler = (input: string, key: Key) => void
+
+export type { UseInputOptions }
+
+/** Map numeric eventType (1/2/3) to Ink's string format. */
+function mapEventType(et: 1 | 2 | 3 | undefined): "press" | "repeat" | "release" | undefined {
+  if (et === 1) return "press"
+  if (et === 2) return "repeat"
+  if (et === 3) return "release"
+  return undefined
+}
+
+/**
+ * Ink-compatible useInput hook.
+ *
+ * Wraps silvery's useInput to produce Ink-compatible Key objects:
+ * - eventType: maps from numeric (1/2/3) to string ('press'/'repeat'/'release')
+ * - capsLock/numLock: passed through from silvery's Key
+ */
+export function useInput(handler: InputHandler, options?: UseInputOptions): void {
+  silveryUseInput((input: string, silveryKey: SilveryKey) => {
+    const inkKey: Key = {
+      ...silveryKey,
+      eventType: mapEventType(silveryKey.eventType),
+    }
+    handler(input, inkKey)
+  }, options)
+}
 
 export { useApp } from "@silvery/react/hooks/useApp"
 export type { UseAppResult } from "@silvery/react/hooks/useApp"
@@ -332,17 +650,82 @@ export type UseFocusOptions = { isActive?: boolean; autoFocus?: boolean; id?: st
 export type UseFocusResult = { isFocused: boolean; focus: (id: string) => void }
 export type InkUseFocusManagerResult = ReturnType<typeof useFocusManager>
 
-// Ink-compatible useStdin stub
+// =============================================================================
+// Ink-compatible useStdin with raw mode tracking
+// =============================================================================
+
+/**
+ * Context for per-instance stdin management.
+ * Tracks raw mode reference counting and stdin ref/unref.
+ */
+interface InkStdinState {
+  stdin: NodeJS.ReadStream
+  isRawModeSupported: boolean
+  /** Number of active raw mode subscribers */
+  rawModeCount: number
+  setRawMode: (value: boolean) => void
+}
+
+const InkStdinCtx = createContext<InkStdinState>({
+  stdin: process.stdin,
+  isRawModeSupported: process.stdin.isTTY ?? false,
+  rawModeCount: 0,
+  setRawMode: () => {},
+})
+
+/**
+ * Create stdin state for a render instance.
+ * Implements raw mode reference counting:
+ * - First subscriber enables raw mode + refs stdin
+ * - Last subscriber disables raw mode + unrefs stdin
+ * - Throws if raw mode is not supported (stdin.isTTY is false)
+ */
+function createInkStdinState(stdin: NodeJS.ReadStream): InkStdinState {
+  const isRawModeSupported = stdin.isTTY ?? false
+  let rawModeCount = 0
+
+  const setRawMode = (value: boolean) => {
+    if (!isRawModeSupported) {
+      throw new Error(
+        "Raw mode is not supported on the current process.stdin, which Ink uses as input stream by default.\nRead about how to prevent this error on https://github.com/vadimdemedes/ink/#nested-ink-rendering",
+      )
+    }
+
+    if (value) {
+      rawModeCount++
+      if (rawModeCount === 1) {
+        // First subscriber: enable raw mode and ref stdin
+        if (stdin.setRawMode) stdin.setRawMode(true)
+        if (stdin.ref) stdin.ref()
+      }
+    } else {
+      rawModeCount = Math.max(0, rawModeCount - 1)
+      if (rawModeCount === 0) {
+        // Last subscriber: disable raw mode and unref stdin
+        if (stdin.setRawMode) stdin.setRawMode(false)
+        if (stdin.unref) stdin.unref()
+      }
+    }
+  }
+
+  return {
+    stdin,
+    isRawModeSupported,
+    rawModeCount: 0,
+    setRawMode,
+  }
+}
 
 /**
  * Ink-compatible useStdin hook.
  * Returns stdin stream and raw mode controls.
  */
 export function useStdin() {
+  const ctx = useContext(InkStdinCtx)
   return {
-    stdin: process.stdin,
-    setRawMode: (_value: boolean) => {},
-    isRawModeSupported: process.stdin.isTTY ?? false,
+    stdin: ctx.stdin,
+    setRawMode: ctx.setRawMode,
+    isRawModeSupported: ctx.isRawModeSupported,
   }
 }
 
@@ -359,26 +742,32 @@ export function useStdin() {
 export function useCursor() {
   const store = useContext(InkCursorStoreCtx)
 
-  // Clear cursor state on unmount (useLayoutEffect for synchronous cleanup
-  // before the next render pipeline output is emitted)
+  // Buffer for render-phase setCursorPosition calls.
+  // Applied in useLayoutEffect (after commit) to prevent cursor state from
+  // leaking when a component renders but doesn't commit (e.g., Suspense).
+  const pendingRef = useRef<{ x: number; y: number } | null | undefined>(undefined)
+
+  // Apply buffered cursor state after commit, clear on unmount.
+  // No deps array: runs every render to pick up position changes from render phase.
   useLayoutEffect(() => {
+    if (store && pendingRef.current !== undefined) {
+      const pos = pendingRef.current
+      if (pos) {
+        store.setCursorState({ x: pos.x, y: pos.y, visible: true })
+      } else {
+        store.setCursorState(null)
+      }
+    }
     return () => {
       store?.setCursorState(null)
     }
-  }, [store])
+  })
 
   const setCursorPosition = useCallback(
     (position: { x: number; y: number } | undefined) => {
       if (!store) return
-      if (position) {
-        store.setCursorState({
-          x: position.x,
-          y: position.y,
-          visible: true,
-        })
-      } else {
-        store.setCursorState(null)
-      }
+      // Buffer the position — applied in useLayoutEffect after React commits
+      pendingRef.current = position ?? null
     },
     [store],
   )
@@ -769,6 +1158,7 @@ function convertBufferOutputToInkFormatSimple(input: string): string {
 
 import { renderSync, type Instance } from "@silvery/react/render"
 import { render as silveryTestRender } from "@silvery/term/renderer"
+import { setInkStrictValidation } from "@silvery/react/reconciler/host-config"
 export type { RenderOptions, Instance } from "@silvery/react/render"
 
 /**
@@ -794,6 +1184,10 @@ export function render(
   element: import("react").ReactNode,
   options?: Record<string, unknown>,
 ): InkInstance {
+  // Enable Ink-compatible strict validation (text must be inside <Text>,
+  // <Box> cannot be inside <Text>)
+  setInkStrictValidation(true)
+
   // Ensure layout engine is initialized synchronously.
   // For Yoga, call initInkCompat() before render() to async-init the engine.
   if (!isLayoutEngineInitialized()) {
@@ -834,9 +1228,73 @@ export function render(
     const chalkHasColors = currentChalkLevel() > 0
     const plain = !chalkHasColors
 
+    // Alternate screen: enter on mount, exit on unmount.
+    // Ink requires all three: alternateScreen=true, interactive mode, and stdout.isTTY.
+    // interactive defaults to stdout.isTTY when not explicitly set.
+    const isTTY = (stdout as any).isTTY === true
+    const resolvedInteractive =
+      options?.interactive !== undefined ? Boolean(options.interactive) : isTTY
+    const useAltScreen =
+      (options?.alternateScreen as boolean) === true && resolvedInteractive && isTTY
+    let altScreenExited = false
+
+    if (useAltScreen) {
+      stdout.write("\x1b[?1049h")
+    }
+
+    const stderr = options?.stderr as NodeJS.WriteStream | undefined
+    const debug = (options?.debug as boolean) ?? false
+
+    // Per-instance stdin state for raw mode tracking
+    const stdinState = createInkStdinState((stdin ?? process.stdin) as NodeJS.ReadStream)
+
     // Per-instance cursor store for Ink's useCursor hook
     const cursorStore = createCursorStore()
     let cursorWasShown = false
+
+    // Per-instance static output store for Ink's Static component
+    const staticStore: InkStaticStore = { renderedCount: 0, fullStaticOutput: "" }
+
+    // Track latest rendered output for debug mode replay (useStdout/useStderr write).
+    // Set in writeFrame (onFrame callback) after each render. In debug mode,
+    // hook writes that fire before the first frame are deferred and flushed
+    // when writeFrame first runs.
+    let lastOutput = ""
+    // Deferred debug writes: queued when effects fire before the first writeFrame
+    let pendingDebugWrites: Array<{ target: "stdout" | "stderr"; data: string }> = []
+
+    /**
+     * Compute processed output from a terminal buffer.
+     * Converts buffer to text, strips VS16, applies chalk compat.
+     */
+    function processBuffer(buffer: TerminalBuffer): string {
+      // Always use bufferToStyledText (even in plain mode) so that getContentEdge()
+      // can detect styled trailing spaces (e.g., `chalk.red(' ERROR ')`) and not
+      // trim them. If plain mode, strip ANSI codes after trimming.
+      let output = bufferToStyledText(buffer, { trimTrailingWhitespace: true, trimEmptyLines: true })
+      output = stripSilveryVS16(output)
+      output = toChalkCompat(output)
+      return plain ? stripAnsi(output) : output
+    }
+
+    /**
+     * Flush any deferred debug writes (queued before the first frame was ready).
+     * Called from writeFrame once lastOutput is available.
+     */
+    function flushPendingDebugWrites(): void {
+      if (pendingDebugWrites.length === 0) return
+      const pending = pendingDebugWrites
+      pendingDebugWrites = []
+      for (const { target, data } of pending) {
+        if (target === "stdout") {
+          stdout.write(data + lastOutput)
+        } else {
+          const stderrTarget = stderr ?? process.stderr
+          stderrTarget.write(data)
+          stdout.write(lastOutput)
+        }
+      }
+    }
 
     // Bridge component: uses silvery's useInput to forward Tab/Shift+Tab/Escape
     // to Ink's InkFocusContext. This sits inside both RuntimeContext (for useInput)
@@ -852,35 +1310,115 @@ export function render(
       return React.createElement(React.Fragment, null, children)
     }
 
-    // Ink-specific root wrapper: error boundary + focus system + cursor store
+    /**
+     * Ink-compatible writeToStdout: writes data to stdout.
+     * In debug mode, appends the latest frame after the data.
+     * In non-debug mode, just writes the data directly.
+     * If no frame is available yet (initial mount effects), queues for deferred write.
+     */
+    function writeToStdout(data: string): void {
+      if (debug) {
+        if (lastOutput) {
+          stdout.write(data + lastOutput)
+        } else {
+          pendingDebugWrites.push({ target: "stdout", data })
+        }
+      } else {
+        stdout.write(data)
+      }
+    }
+
+    /**
+     * Ink-compatible writeToStderr: writes data to stderr.
+     * In debug mode, writes data to stderr and replays the latest frame to stdout.
+     * In non-debug mode, writes data to stderr (or stdout as fallback).
+     * If no frame is available yet (initial mount effects), queues for deferred write.
+     */
+    function writeToStderr(data: string): void {
+      const target = stderr ?? process.stderr
+      if (debug) {
+        if (lastOutput) {
+          target.write(data)
+          stdout.write(lastOutput)
+        } else {
+          pendingDebugWrites.push({ target: "stderr", data })
+        }
+      } else {
+        target.write(data)
+      }
+    }
+
+    // Ink-specific root wrapper: error boundary + focus system + cursor store + stdio contexts
     function wrapWithInkProviders(el: import("react").ReactElement): import("react").ReactElement {
+      // Override StdoutContext with Ink-compatible write that supports debug mode
+      const stdoutCtxValue = { stdout, write: writeToStdout }
+      // Provide stderr context for useStderr hook
+      const stderrCtxValue = { stderr: stderr ?? process.stderr, write: writeToStderr }
+
       return React.createElement(
-        SilveryErrorBoundary,
+        InkErrorBoundary,
         null,
         React.createElement(
-          CursorProvider,
-          { store: cursorStore },
+          InkStaticStoreCtx.Provider,
+          { value: staticStore },
           React.createElement(
-            InkCursorStoreCtx.Provider,
-            { value: cursorStore },
-            React.createElement(InkFocusProvider, null, React.createElement(InkFocusBridge, null, el)),
+            InkStdinCtx.Provider,
+            { value: stdinState },
+            React.createElement(
+              CursorProvider,
+              { store: cursorStore },
+              React.createElement(
+                InkCursorStoreCtx.Provider,
+                { value: cursorStore },
+                React.createElement(
+                  StdoutContext.Provider,
+                  { value: stdoutCtxValue },
+                  React.createElement(
+                    InkStderrCtx.Provider,
+                    { value: stderrCtxValue },
+                    React.createElement(InkFocusProvider, null, React.createElement(InkFocusBridge, null, el)),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       )
     }
 
     /**
+     * onBufferReady: fires inside act() before effects on subsequent renders.
+     * Sets lastOutput so debug-mode writeToStdout/writeToStderr can replay the frame.
+     * Note: On the initial render, effects fire before onBufferReady (different code path
+     * in renderer.ts), so deferred writes handle that case.
+     */
+    function handleBufferReady(_frame: string, buffer: TerminalBuffer): void {
+      let result = processBuffer(buffer)
+      if (staticStore.fullStaticOutput) {
+        result = staticStore.fullStaticOutput + result
+      }
+      lastOutput = result
+    }
+
+    /**
      * Post-process a rendered buffer and write to stdout.
      * Converts buffer to text, applies VS16 stripping, chalk compat, line trimming, and cursor emission.
+     * Also flushes any deferred debug writes that were queued before the first frame.
      */
     function writeFrame(_frame: string, buffer: TerminalBuffer): void {
-      let output = plain
-        ? bufferToText(buffer, { trimTrailingWhitespace: true, trimEmptyLines: false })
-        : bufferToStyledText(buffer, { trimTrailingWhitespace: true, trimEmptyLines: false })
+      // Suppress output after alternate screen exit to prevent replay on primary screen
+      if (altScreenExited) return
 
-      output = stripSilveryVS16(output)
+      let result = processBuffer(buffer)
 
-      const result = plain ? output : toChalkCompat(output)
+      // Prepend accumulated static output (Ink writes fullStaticOutput + dynamicOutput in debug mode)
+      if (staticStore.fullStaticOutput) {
+        result = staticStore.fullStaticOutput + result
+      }
+
+      // Update lastOutput and flush deferred debug writes
+      lastOutput = result
+      flushPendingDebugWrites()
 
       // Cursor: only emit sequences when useCursor() is actively used.
       // Ink hides the cursor once at startup via cli-cursor, not per-frame.
@@ -913,6 +1451,7 @@ export function render(
       rows: (stdout as any).rows ?? 24,
       autoRender: true,
       onFrame: writeFrame,
+      onBufferReady: handleBufferReady,
       wrapRoot: wrapWithInkProviders,
       stdin: stdin as NodeJS.ReadStream | undefined,
     })
@@ -923,6 +1462,16 @@ export function render(
     }
     stdout.on("resize", onResize)
 
+    /** Exit the alternate screen and suppress further output */
+    function exitAlternateScreen() {
+      if (useAltScreen && !altScreenExited) {
+        altScreenExited = true
+        stdout.write("\x1b[?1049l")
+        // Restore cursor visibility after leaving alternate screen
+        stdout.write("\x1b[?25h")
+      }
+    }
+
     let unmounted = false
     const instance: InkInstance = {
       rerender: (newElement: import("react").ReactNode) => {
@@ -932,13 +1481,23 @@ export function render(
       unmount: () => {
         if (unmounted) return
         unmounted = true
+        exitAlternateScreen()
         stdout.off("resize", onResize)
         app.unmount()
       },
       [Symbol.dispose]() {
         instance.unmount()
       },
-      waitUntilExit: () => app.waitUntilExit(),
+      waitUntilExit: () => {
+        // In Ink, exit() triggers unmount + resolves/rejects waitUntilExit.
+        // Silvery's test renderer doesn't auto-unmount on exit(), so we do it here.
+        if (app.exitCalled()) {
+          instance.unmount()
+          const err = app.exitError()
+          return err ? Promise.reject(err) : Promise.resolve()
+        }
+        return app.waitUntilExit()
+      },
       waitUntilRenderFlush: () => Promise.resolve(),
       cleanup: () => {
         instance.unmount()
@@ -964,9 +1523,21 @@ export function render(
 
   // Always provide stdout and stdin for the interactive path
   // so renderSync creates a full interactive instance (not static mode)
+  const resolvedStdin = (stdin ?? process.stdin) as NodeJS.ReadStream
   const termDef: Record<string, unknown> = {
     stdout: stdout ?? process.stdout,
-    stdin: stdin ?? process.stdin,
+    stdin: resolvedStdin,
+  }
+
+  // Enable raw mode on stdin BEFORE rendering so it's active before any React
+  // effects fire. This prevents a race condition where the PTY's ICRNL flag
+  // converts \r to \n: Ink fixtures write __READY__ from a child useEffect
+  // (which fires before the parent SilveryApp's input subscription effect that
+  // enables raw mode). Without early raw mode, \r written by the test after
+  // seeing __READY__ may arrive before raw mode disables ICRNL.
+  const earlyRawMode = resolvedStdin.isTTY === true
+  if (earlyRawMode) {
+    resolvedStdin.setRawMode(true)
   }
 
   const silveryInstance = renderSync(element as any, termDef as any, inkOptions as any)
@@ -1041,10 +1612,25 @@ export function measureElement(
   return baseMeasureElement(node)
 }
 
+// =============================================================================
+// Ink Stderr Context (for test-mode render with custom stderr)
+// =============================================================================
+
+interface InkStderrContextValue {
+  stderr: NodeJS.WriteStream
+  write: (data: string) => void
+}
+
+const InkStderrCtx = createContext<InkStderrContextValue | null>(null)
+
 /**
  * Ink-compatible useStderr hook.
+ * When used inside compat render() with a custom stderr, returns that stderr.
+ * Otherwise falls back to process.stderr.
  */
 export function useStderr() {
+  const ctx = useContext(InkStderrCtx)
+  if (ctx) return ctx
   return {
     stderr: process.stderr,
     write: (data: string) => {
@@ -1104,7 +1690,13 @@ export function renderToString(
   const colorLevel = chalkHasColors ? ("truecolor" as const) : null
   const term = createTerm({ color: colorLevel })
   const plain = term.hasColor() === null
-  const wrapped = React.createElement(TermContext.Provider, { value: term }, node)
+  // Create a static store for the Static component to populate during renderStringSync
+  const staticStore: InkStaticStore = { renderedCount: 0, fullStaticOutput: "" }
+  const wrapped = React.createElement(
+    InkStaticStoreCtx.Provider,
+    { value: staticStore },
+    React.createElement(TermContext.Provider, { value: term }, node),
+  )
   const bufferHeight = 24
   let layoutContentHeight = 0
   let output = renderStringSync(wrapped as import("react").ReactElement, {
@@ -1131,9 +1723,20 @@ export function renderToString(
   }
   // If result is only whitespace/newlines/ANSI resets (empty fragment), return empty string
   if (stripAnsi(output).trim() === "") {
+    // Even if the visual buffer is empty, there might be static output
+    if (staticStore.fullStaticOutput) {
+      // Static-only output: prepend static output. Ink writes fullStaticOutput + dynamicOutput.
+      // Dynamic is empty string when tree is empty.
+      return staticStore.fullStaticOutput.replace(/\n$/, "")
+    }
     return ""
   }
-  return plain ? output : toChalkCompat(output)
+  // Prepend static output if present (Ink writes fullStaticOutput + dynamicOutput)
+  const dynamicOutput = plain ? output : toChalkCompat(output)
+  if (staticStore.fullStaticOutput) {
+    return staticStore.fullStaticOutput + dynamicOutput
+  }
+  return dynamicOutput
 }
 
 // =============================================================================

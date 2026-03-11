@@ -282,10 +282,14 @@ In fullscreen mode, the output phase diffs prev/next buffers and emits only chan
 
 - `scrollbackOffset === 0` (no external stdout writes between frames)
 - Buffer dimensions unchanged (`prev.width === next.width && prev.height === next.height`)
-- Content height unchanged (`prevContentLines === nextContentLines`)
+- Visible window unchanged (`startLine` is the same — when content exceeds `termRows`, the visible window shifts)
 - Cursor tracking initialized (`state.prevCursorRow >= 0` — set after first render)
 
-Otherwise: falls back to `inlineFullRender()` (reliable, handles all edge cases).
+Content height changes (grow/shrink) are handled incrementally:
+- **Growth**: `changesToAnsi` writes new content cells. Cursor extends to new bottom row using `\r\n` (which creates terminal lines). CUD (`\x1b[nB`) is NOT used past the old bottom — it's clamped and won't scroll.
+- **Shrinkage**: `changesToAnsi` clears old content cells (writes spaces). Orphan lines below new content are erased with `\x1b[K`.
+
+Falls back to `inlineFullRender()` when: scrollback offset > 0, buffer dimensions changed, visible window shifted, or cursor tracking uninitialized.
 
 ### Instance-scoped cursor tracking
 

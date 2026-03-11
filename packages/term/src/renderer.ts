@@ -145,6 +145,15 @@ export interface RenderOptions {
    */
   onFrame?: (frame: string, buffer: TerminalBuffer) => void
   /**
+   * Callback fired after each pipeline execution, before React effects flush.
+   *
+   * Called inside act() after executeRender produces the buffer but before
+   * useLayoutEffect/useEffect callbacks run. Use this to make pipeline output
+   * available to effects (e.g., Ink compat debug mode where useStdout().write()
+   * needs to replay the latest frame).
+   */
+  onBufferReady?: (frame: string, buffer: TerminalBuffer) => void
+  /**
    * Wrap the root element with additional providers.
    * Called with the element after silvery's internal contexts are applied.
    * Use this to inject additional context providers (e.g., Ink compatibility wrappers).
@@ -293,6 +302,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   const kittyMode = storeMode ? false : (optsOrStore.kittyMode ?? false)
   const autoRender = storeMode ? false : (optsOrStore.autoRender ?? false)
   const onFrame = storeMode ? undefined : optsOrStore.onFrame
+  const onBufferReady = storeMode ? undefined : optsOrStore.onBufferReady
   const wrapRoot = storeMode ? undefined : optsOrStore.wrapRoot
   const stdinStream = storeMode ? undefined : optsOrStore.stdin
 
@@ -521,6 +531,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             buffer = result.buffer
             instance.prevBuffer = buffer
             instance.renderCount++
+            onBufferReady?.(output, buffer)
           })
           if (!hadReactCommit) {
             act(() => {
@@ -554,6 +565,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             buffer = result.buffer
             instance.prevBuffer = buffer
             instance.renderCount++
+            onBufferReady?.(output, buffer)
           })
           // Flush any React work scheduled during executeRender (e.g. from
           // useSyncExternalStore updates triggered by Phase 2.7 callbacks).

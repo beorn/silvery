@@ -152,6 +152,7 @@ export interface LayoutConstants {
   ALIGN_BASELINE: AlignValue
   ALIGN_SPACE_BETWEEN: AlignValue
   ALIGN_SPACE_AROUND: AlignValue
+  ALIGN_SPACE_EVENLY: AlignValue
 
   // Justify
   JUSTIFY_FLEX_START: JustifyValue

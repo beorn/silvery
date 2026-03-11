@@ -91,6 +91,29 @@ function splitRawInput(raw: string): SplitResult {
         const end = Math.min(i + 3, raw.length)
         sequences.push(raw.slice(i, end))
         i = end
+      } else if (raw[i + 1] === "\x1b") {
+        // Double ESC: meta + escape, OR meta + CSI/SS3 sequence
+        if (i + 2 < raw.length && raw[i + 2] === "[") {
+          // Meta + CSI: ESC ESC [ params terminator (e.g., meta+arrow)
+          let j = i + 3
+          while (j < raw.length && !isCSITerminator(raw[j]!)) j++
+          if (j < raw.length) {
+            j++ // include terminator
+            sequences.push(raw.slice(i, j))
+            i = j
+          } else {
+            return { sequences, incomplete: raw.slice(i) }
+          }
+        } else if (i + 2 < raw.length && raw[i + 2] === "O") {
+          // Meta + SS3: ESC ESC O letter
+          const end = Math.min(i + 4, raw.length)
+          sequences.push(raw.slice(i, end))
+          i = end
+        } else {
+          // Plain double ESC (meta+escape)
+          sequences.push("\x1b\x1b")
+          i += 2
+        }
       } else {
         // Meta key: ESC + char
         sequences.push(raw.slice(i, i + 2))

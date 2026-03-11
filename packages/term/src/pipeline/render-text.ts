@@ -196,15 +196,25 @@ export function collectTextContent(node: TeaNode, parentContext: StyleContext = 
   }
 
   // Otherwise, collect from children
+  // Matching Ink's squashTextNodes: apply internal_transform to the full text
+  // of each child node (not per-line), using the child index as the index argument.
   let result = ""
-  for (const child of node.children) {
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i]!
     // If child is a Text node (virtual/nested) with style props, apply ANSI codes
     if (child.type === "silvery-text" && child.props && !child.layoutNode) {
       const childProps = child.props as TextProps
       // Merge child props with parent context to get effective child style
       const childContext = mergeStyleContext(parentContext, childProps)
       // Recursively collect with child's context
-      const childContent = collectTextContent(child, childContext)
+      let childContent = collectTextContent(child, childContext)
+      // Apply internal_transform from virtual text nodes (nested Transform components).
+      // Matches Ink's squashTextNodes: transform is applied to the full concatenated
+      // text of the child, with index = child position in parent's children array.
+      const childTransform = (childProps as any).internal_transform
+      if (childTransform && childContent.length > 0) {
+        childContent = childTransform(childContent, i)
+      }
       // Apply styles with proper push/pop (child style, then restore parent)
       result += applyTextStyleAnsi(childContent, childContext, parentContext)
     } else {
@@ -249,12 +259,18 @@ interface TextWithBg {
 /**
  * Collect plain text content from a node tree (no ANSI codes).
  * Used to compute DOM-level truncation budget before ANSI serialization.
+ * Applies internal_transform on child nodes to match Ink's squashTextNodes.
  */
 function collectPlainText(node: TeaNode): string {
   if (node.textContent !== undefined) return node.textContent
   let result = ""
-  for (const child of node.children) {
-    result += collectPlainText(child)
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i]!
+    let childText = collectPlainText(child)
+    if (childText.length > 0 && child.props && (child.props as any).internal_transform) {
+      childText = (child.props as any).internal_transform(childText, i)
+    }
+    result += childText
   }
   return result
 }
@@ -306,7 +322,8 @@ function collectTextWithBg(
   let currentOffset = offset
   let displayWidthCollected = 0
 
-  for (const child of node.children) {
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i]!
     // Stop collecting if budget exhausted
     if (maxDisplayWidth !== undefined && displayWidthCollected >= maxDisplayWidth) break
 
@@ -321,11 +338,21 @@ function collectTextWithBg(
       // Recursively collect with child's context and budget
       const childResult = collectTextWithBg(child, childContext, currentOffset, childBudget, ctx)
 
+      // Apply internal_transform from virtual text nodes (nested Transform components).
+      // Matches Ink's squashTextNodes: transform is applied to the full concatenated
+      // text of the child, with index = child position in parent's children array.
+      const childTransform = (childProps as any).internal_transform
+      if (childTransform && childResult.text.length > 0) {
+        childResult.text = childTransform(childResult.text, i)
+      }
+
       // Apply ANSI styles for fg/attrs (but NOT bg) with push/pop
       const styledText = applyTextStyleAnsi(childResult.text, childContext, parentContext)
       result += styledText
 
-      // Track bg segment if this child (or its ancestors) has backgroundColor
+      // Track bg segment if this child (or its ancestors) has backgroundColor.
+      // When backgroundColor is "" (empty string), create a null-bg segment to
+      // explicitly clear inherited background (e.g., from a parent Box).
       if (childContext.backgroundColor) {
         const bg = parseColor(childContext.backgroundColor)
         if (bg !== null) {
@@ -337,6 +364,15 @@ function collectTextWithBg(
             })
           }
         }
+      } else if (childProps.backgroundColor === "" && childResult.plainLen > 0) {
+        // Explicit backgroundColor="" clears inherited bg (from parent Text
+        // or ancestor Box's inheritedBg). Push a null-bg segment so
+        // applyBgSegmentsToLine overrides inheritedBg to null for this range.
+        bgSegments.push({
+          start: currentOffset,
+          end: currentOffset + childResult.plainLen,
+          bg: null,
+        })
       }
 
       // Include child's nested bg segments
@@ -548,12 +584,17 @@ function findLineStart(normalized: string, plainLine: string, fromOffset: number
 
 /**
  * Format text into lines based on wrap mode.
+ *
+ * @param trim - When true, trims trailing spaces on broken lines and skips leading
+ *   spaces on continuation lines. When false (e.g., text has backgroundColor),
+ *   preserves trailing spaces so background color covers them. Defaults to true.
  */
 export function formatTextLines(
   text: string,
   width: number,
   wrap: TextProps["wrap"],
   ctx?: PipelineContext,
+  trim = true,
 ): string[] {
   // Guard against width <= 0 to prevent infinite loops
   // This can happen with display="none" nodes (0x0 dimensions)
@@ -588,10 +629,11 @@ export function formatTextLines(
   }
 
   // wrap === true or wrap === 'wrap' - word-aware wrapping
-  // Uses wrapText from unicode.ts with trim=true for rendering
-  // (trims trailing spaces on broken lines, skips leading spaces on continuation lines)
-  if (ctx) return ctx.measurer.wrapText(normalizedText, width, true, true)
-  return wrapText(normalizedText, width, true, true)
+  // Uses wrapText from unicode.ts with trim for rendering
+  // (when trim=true, trims trailing spaces on broken lines, skips leading spaces
+  // on continuation lines; when trim=false, preserves spaces for bg-colored text)
+  if (ctx) return ctx.measurer.wrapText(normalizedText, width, true, trim)
+  return wrapText(normalizedText, width, true, trim)
 }
 
 /**
@@ -1112,6 +1154,15 @@ export function renderText(
   // Apply scroll offset
   y -= scrollOffset
 
+  // Explicit backgroundColor="" on a Text node means "no background" — force
+  // null bg to override both inherited bg from ancestor Boxes and any bg
+  // already in the buffer cells (set by Box's renderBox fill). The sentinel
+  // value `null` is used instead of `undefined` so renderGraphemes uses it
+  // directly instead of falling back to buffer.getCellBg().
+  if (props.backgroundColor === "") {
+    inheritedBg = null
+  }
+
   // Clip to bounds if specified
   if (clipBounds) {
     if (y + height <= clipBounds.top || y >= clipBounds.bottom) {
@@ -1158,7 +1209,14 @@ export function renderText(
   }
 
   // Handle wrapping/truncation
-  let lines = formatTextLines(text, width, props.wrap, ctx)
+  // When text has background color (from own prop, nested children, or inherited
+  // from parent Box), preserve trailing spaces on wrapped lines so the background
+  // color covers them. Ink preserves these spaces for the same reason.
+  const hasBg =
+    style.bg !== null ||
+    bgSegments.length > 0 ||
+    (inheritedBg !== undefined && inheritedBg !== null)
+  let lines = formatTextLines(text, width, props.wrap, ctx, !hasBg)
 
   // Apply internal_transform if present (used by Transform component).
   // Transform is applied per-line after formatting, matching ink's behavior.

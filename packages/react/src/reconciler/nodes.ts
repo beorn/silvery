@@ -194,14 +194,26 @@ export function createNode(
 
 /**
  * Collect text content from a node and its children (for measure function).
+ *
+ * Matches Ink's squashTextNodes behavior: applies internal_transform on
+ * virtual child nodes so that layout measurement accounts for the width
+ * of transformed text. This ensures layout allocates enough space for
+ * the transform's output (e.g., adding brackets or indices).
  */
 function collectNodeTextContent(node: TeaNode): string {
   if (node.textContent !== undefined) {
     return node.textContent
   }
   let result = ""
-  for (const child of node.children) {
-    result += collectNodeTextContent(child)
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i]!
+    let childText = collectNodeTextContent(child)
+    // Apply internal_transform from virtual text nodes (nested Transform components),
+    // matching Ink's squashTextNodes which calls childNode.internal_transform(nodeText, index)
+    if (childText.length > 0 && child.props && (child.props as any).internal_transform) {
+      childText = (child.props as any).internal_transform(childText, i)
+    }
+    result += childText
   }
   return result
 }
@@ -558,6 +570,7 @@ function alignToConstant(align: string): number {
     baseline: c.ALIGN_BASELINE,
     "space-between": c.ALIGN_SPACE_BETWEEN,
     "space-around": c.ALIGN_SPACE_AROUND,
+    "space-evenly": c.ALIGN_SPACE_EVENLY,
   }
   return map[align] ?? c.ALIGN_STRETCH
 }
