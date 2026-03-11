@@ -892,7 +892,7 @@ function StatusBar({
   if (ctrlDPending) keys = "Ctrl-D again to exit"
   else if (compacting) keys = "compacting..."
   else if (done) keys = "esc quit"
-  else keys = "tab generate  esc quit"
+  else keys = "esc quit"
 
   return (
     <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
@@ -987,25 +987,23 @@ function DemoFooter({
 
   return (
     <Box flexDirection="column">
-      <Box borderStyle="round" borderColor="$focusborder" paddingX={1}>
-        <TextInput
-          value={inputText}
-          onChange={setInputText}
-          onSubmit={handleSubmit}
-          prompt={"\u276F "}
-          promptColor="$focusborder"
-          placeholder={
-            ctrlDPending
-              ? "Press Ctrl-D again to exit"
-              : streamPhase !== "done"
-                ? "\u23CE skip"
-                : done
-                  ? "Session complete"
-                  : ""
-          }
-          isActive={!done}
-        />
-      </Box>
+      <TextInput
+        value={inputText}
+        onChange={setInputText}
+        onSubmit={handleSubmit}
+        borderStyle="round"
+        prompt={"\u276F "}
+        placeholder={
+          ctrlDPending
+            ? "Press Ctrl-D again to exit"
+            : streamPhase !== "done"
+              ? "\u23CE skip"
+              : done
+                ? "Session complete"
+                : "Type a message or press tab"
+        }
+        isActive={!done}
+      />
       <StatusBar
         exchanges={exchanges}
         compacting={compacting}
