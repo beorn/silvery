@@ -35,6 +35,7 @@ import React, {
 import { StdoutContext, TermContext } from "@silvery/react/context"
 import { bufferToStyledText, bufferToText, type TerminalBuffer } from "@silvery/term/buffer"
 import { stripAnsi } from "@silvery/term/unicode"
+import { tokenizeAnsi as tokenizeAnsiEsc } from "@silvery/term/ansi-sanitize"
 import { createTerm } from "@silvery/term/ansi"
 import chalk from "chalk"
 import { createCursorStore, CursorProvider, type CursorStore } from "@silvery/react/hooks/useCursor"
@@ -583,118 +584,7 @@ export function useBoxMetrics(ref: import("react").RefObject<any>) {
 // ANSI Sanitization (Ink-compatible)
 // =============================================================================
 
-// Port of Ink's sanitize-ansi.ts and ansi-tokenizer.ts.
-// Strips non-SGR ANSI sequences (cursor movement, screen clear, etc.)
-// while preserving SGR (colors/styles) and OSC (hyperlinks) sequences.
-
-const ESC = "\u001B"
-const BEL = "\u0007"
-const ST_CHAR = "\u009C" // C1 String Terminator
-const CSI_CHAR = "\u009B" // C1 CSI
-const OSC_CHAR = "\u009D" // C1 OSC
-const DCS_CHAR = "\u0090" // C1 DCS
-const PM_CHAR = "\u009E" // C1 PM
-const APC_CHAR = "\u009F" // C1 APC
-const SOS_CHAR = "\u0098" // C1 SOS
-
-const isCsiParam = (cp: number) => cp >= 0x30 && cp <= 0x3f
-const isCsiIntermediate = (cp: number) => cp >= 0x20 && cp <= 0x2f
-const isCsiFinal = (cp: number) => cp >= 0x40 && cp <= 0x7e
-const isEscIntermediate = (cp: number) => cp >= 0x20 && cp <= 0x2f
-const isEscFinal = (cp: number) => cp >= 0x30 && cp <= 0x7e
-const isC1Control = (cp: number) => cp >= 0x80 && cp <= 0x9f
-
-const sgrParamsRegex = /^[\d:;]*$/
-
-/**
- * Check if text contains any ANSI control characters.
- */
-function hasAnsiControl(text: string): boolean {
-  if (text.includes(ESC)) return true
-  for (const ch of text) {
-    const cp = ch.codePointAt(0)!
-    if (isC1Control(cp)) return true
-  }
-  return false
-}
-
-/**
- * Find the index of a control string terminator (ST, BEL, or ESC \).
- * Returns the index AFTER the terminator, or undefined if not found.
- */
-function findST(text: string, from: number, allowBel: boolean): number | undefined {
-  for (let i = from; i < text.length; i++) {
-    const ch = text[i]!
-    if (allowBel && ch === BEL) return i + 1
-    if (ch === ST_CHAR) return i + 1
-    if (ch === ESC) {
-      const next = text[i + 1]
-      if (next === ESC) {
-        i++
-        continue
-      } // tmux double-ESC
-      if (next === "\\") return i + 2
-    }
-  }
-  return undefined
-}
-
-/**
- * Read a CSI sequence starting at `from` (after the CSI introducer).
- * Returns the end index and parsed components, or undefined if malformed.
- */
-function readCSI(
-  text: string,
-  from: number,
-): { end: number; params: string; intermediates: string; final: string } | undefined {
-  let i = from
-  // Parameter bytes
-  while (i < text.length && isCsiParam(text.charCodeAt(i))) i++
-  const params = text.slice(from, i)
-  // Intermediate bytes
-  const intStart = i
-  while (i < text.length && isCsiIntermediate(text.charCodeAt(i))) i++
-  const intermediates = text.slice(intStart, i)
-  // Final byte
-  if (i >= text.length || !isCsiFinal(text.charCodeAt(i))) return undefined
-  return { end: i + 1, params, intermediates, final: text[i]! }
-}
-
-type ControlStringInfo = { type: "osc" | "dcs" | "pm" | "apc" | "sos"; allowBel: boolean }
-
-function getControlStringEsc(ch: string): ControlStringInfo | undefined {
-  switch (ch) {
-    case "]":
-      return { type: "osc", allowBel: true }
-    case "P":
-      return { type: "dcs", allowBel: false }
-    case "^":
-      return { type: "pm", allowBel: false }
-    case "_":
-      return { type: "apc", allowBel: false }
-    case "X":
-      return { type: "sos", allowBel: false }
-    default:
-      return undefined
-  }
-}
-
-function getControlStringC1(ch: string): ControlStringInfo | undefined {
-  switch (ch) {
-    case OSC_CHAR:
-      return { type: "osc", allowBel: true }
-    case DCS_CHAR:
-      return { type: "dcs", allowBel: false }
-    case PM_CHAR:
-      return { type: "pm", allowBel: false }
-    case APC_CHAR:
-      return { type: "apc", allowBel: false }
-    case SOS_CHAR:
-      return { type: "sos", allowBel: false }
-    default:
-      return undefined
-  }
-}
+// ANSI sanitization — delegates to silvery's tokenizer, adds colon-format SGR tracking.
 
 // =============================================================================
 // Colon-format SGR tracking
@@ -767,177 +657,53 @@ export function restoreColonFormatSGR(output: string): string {
 }
 
 /**
- * Sanitize ANSI sequences in text content.
+ * Sanitize ANSI sequences in text content using silvery's tokenizer.
  *
- * Preserves:
- * - SGR sequences (colors, bold, italic, etc.): CSI with final='m', no intermediates, only digit/colon/semicolon params
- * - OSC sequences (hyperlinks, etc.)
- *
- * Strips:
- * - Cursor movement (CSI A/B/C/D/H/etc.)
- * - Screen clearing (CSI J/K)
- * - DCS, PM, APC, SOS control strings
- * - Non-SGR CSI sequences with intermediates or non-standard params
- * - ESC sequences with intermediates (e.g., ESC # 8)
- * - C1 control characters
- * - Standalone ST bytes
- * - Invalid/malformed sequences (and everything after them)
+ * Preserves SGR (colors/styles) and OSC 8 hyperlinks.
+ * Strips cursor movement, screen clearing, non-hyperlink OSC, DCS, PM, APC, SOS, C1 controls.
+ * Also tracks colon-format SGR for round-trip restoration via restoreColonFormatSGR().
  */
 function sanitizeAnsi(text: string): string {
-  if (!hasAnsiControl(text)) return text
+  if (text.length === 0) return ""
 
-  let output = ""
-  let textStart = 0
+  const tokens = tokenizeAnsiEsc(text)
+  let result = ""
 
-  for (let i = 0; i < text.length; ) {
-    const ch = text[i]!
-
-    if (ch === ESC) {
-      const next = text[i + 1]
-      if (next === undefined) {
-        // Incomplete ESC at end — treat rest as malformed, drop it
-        output += text.slice(textStart, i)
-        return output
-      }
-
-      if (next === "[") {
-        // ESC [ = CSI
-        const csi = readCSI(text, i + 2)
-        if (!csi) {
-          // Malformed CSI — drop everything from here on
-          output += text.slice(textStart, i)
-          return output
+  for (const token of tokens) {
+    switch (token.type) {
+      case "text":
+        result += token.value
+        break
+      case "csi":
+        // Only keep SGR sequences (final byte 'm')
+        if (token.value.charCodeAt(token.value.length - 1) === 0x6d) {
+          result += token.value
+          registerColonFormatSGR(token.value)
         }
-        // Flush text before this sequence
-        if (i > textStart) output += text.slice(textStart, i)
-        // Only keep SGR: final='m', no intermediates, params are digits/colons/semicolons
-        if (csi.final === "m" && csi.intermediates === "" && sgrParamsRegex.test(csi.params)) {
-          const sgrSeq = text.slice(i, csi.end)
-          output += sgrSeq
-          // Track colon-format SGR for round-trip restoration
-          registerColonFormatSGR(sgrSeq)
+        break
+      case "osc":
+        // Only keep OSC 8 (hyperlinks): ESC]8;... or \x9D8;...
+        // Strip other OSC sequences (window title, etc.)
+        if (isOSC8(token.value)) {
+          result += token.value
         }
-        // Otherwise strip (cursor movement etc.)
-        i = csi.end
-        textStart = i
-        continue
-      }
-
-      // Check for control string introduced by ESC (], P, ^, _, X)
-      const cs = getControlStringEsc(next)
-      if (cs) {
-        const stEnd = findST(text, i + 2, cs.allowBel)
-        if (stEnd === undefined) {
-          // Incomplete control string — drop everything from here
-          output += text.slice(textStart, i)
-          return output
-        }
-        if (i > textStart) output += text.slice(textStart, i)
-        // Keep OSC 8 (hyperlinks), strip all other OSC (title, etc.) and DCS/PM/APC/SOS
-        if (cs.type === "osc") {
-          const oscContent = text.slice(i + 2, stEnd)
-          if (oscContent.startsWith("8;")) {
-            output += text.slice(i, stEnd)
-          }
-        }
-        i = stEnd
-        textStart = i
-        continue
-      }
-
-      // ESC followed by intermediate characters (ESC # 8, ESC ( B, etc.)
-      if (isEscIntermediate(next.charCodeAt(0))) {
-        // Read through intermediates to find final byte
-        let j = i + 1
-        while (j < text.length && isEscIntermediate(text.charCodeAt(j))) j++
-        if (j >= text.length || !isEscFinal(text.charCodeAt(j))) {
-          // Incomplete/malformed — drop everything from here
-          output += text.slice(textStart, i)
-          return output
-        }
-        // Strip the complete ESC sequence
-        if (i > textStart) output += text.slice(textStart, i)
-        i = j + 1
-        textStart = i
-        continue
-      }
-
-      // ESC followed by a final byte (e.g., ESC c = reset)
-      if (isEscFinal(next.charCodeAt(0))) {
-        if (i > textStart) output += text.slice(textStart, i)
-        i += 2
-        textStart = i
-        continue
-      }
-
-      // Lone ESC followed by something unexpected — skip the ESC
-      if (i > textStart) output += text.slice(textStart, i)
-      i++
-      textStart = i
-      continue
+        break
+      // Strip everything else: esc, dcs, pm, apc, sos, c1
     }
-
-    // C1 CSI character (0x9B)
-    if (ch === CSI_CHAR) {
-      const csi = readCSI(text, i + 1)
-      if (!csi) {
-        output += text.slice(textStart, i)
-        return output
-      }
-      if (i > textStart) output += text.slice(textStart, i)
-      if (csi.final === "m" && csi.intermediates === "" && sgrParamsRegex.test(csi.params)) {
-        output += text.slice(i, csi.end)
-      }
-      i = csi.end
-      textStart = i
-      continue
-    }
-
-    // C1 control string characters (OSC, DCS, PM, APC, SOS)
-    const c1cs = getControlStringC1(ch)
-    if (c1cs) {
-      const stEnd = findST(text, i + 1, c1cs.allowBel)
-      if (stEnd === undefined) {
-        output += text.slice(textStart, i)
-        return output
-      }
-      if (i > textStart) output += text.slice(textStart, i)
-      if (c1cs.type === "osc") {
-        const oscContent = text.slice(i + 1, stEnd)
-        if (oscContent.startsWith("8;")) {
-          output += text.slice(i, stEnd)
-        }
-      }
-      i = stEnd
-      textStart = i
-      continue
-    }
-
-    // Standalone ST character
-    if (ch === ST_CHAR) {
-      if (i > textStart) output += text.slice(textStart, i)
-      i++
-      textStart = i
-      continue
-    }
-
-    // Other C1 control characters (0x80-0x9F not handled above)
-    const cp = ch.codePointAt(0)!
-    if (isC1Control(cp)) {
-      if (i > textStart) output += text.slice(textStart, i)
-      i++
-      textStart = i
-      continue
-    }
-
-    i++
   }
 
-  if (textStart < text.length) {
-    output += text.slice(textStart)
-  }
+  return result
+}
 
-  return output
+/** Check if an OSC token is OSC 8 (hyperlink). */
+function isOSC8(value: string): boolean {
+  // OSC 8 starts with ESC]8; or \x9D8;
+  if (value.charCodeAt(0) === 0x1b) {
+    // ESC ] 8 ;
+    return value.charCodeAt(2) === 0x38 && value.charCodeAt(3) === 0x3b
+  }
+  // C1 OSC: \x9D 8 ;
+  return value.charCodeAt(1) === 0x38 && value.charCodeAt(2) === 0x3b
 }
 
 // =============================================================================
