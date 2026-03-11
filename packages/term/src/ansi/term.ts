@@ -542,7 +542,6 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
  * Create a terminal backed by a termless emulator — real ANSI processing, screen/scrollback.
  */
 function createBackendTerm(emulator: TermEmulator): Term {
-  let state: TermState = { cols: emulator.cols, rows: emulator.rows }
   let disposed = false
   const controller = new AbortController()
 
@@ -558,7 +557,7 @@ function createBackendTerm(emulator: TermEmulator): Term {
     stdin: process.stdin,
     write: (str: string) => emulator.feed(str),
     writeLine: (str: string) => emulator.feed(str + "\n"),
-    getState: (): TermState => state,
+    getState: (): TermState => ({ cols: emulator.cols, rows: emulator.rows }),
     subscribe: (): (() => void) => () => {},
     async *events(): AsyncIterable<ProviderEvent<TermEvents>> {
       if (disposed) return
