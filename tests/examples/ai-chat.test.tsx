@@ -119,10 +119,15 @@ describe("ai-chat example (in-process termless)", { timeout: 10000 }, () => {
   })
 
   test("resize to 80x24: content reflows, borders survive", async () => {
-    // TODO: resize not yet supported on createTerm(backend, dims)
-    // term.resize(80, 24) — needs emulator.resize() + re-render trigger
-    // For now, verify final state at original size
+    // Resize from 120x40 to 80x24
+    term.resize!(80, 24)
+    // Wait for re-render at new dimensions
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(term.cols).toBe(80)
+    expect(term.rows).toBe(24)
     expect(term.screen).toContainText("context")
     expect(term.screen!.getText()).toContain("│")
+    assertNoOverlappingBorders(term.screen!)
   })
 })
