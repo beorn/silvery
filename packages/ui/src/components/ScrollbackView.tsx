@@ -354,9 +354,9 @@ export function ScrollbackView<T>({
 
   // Render live items with memoized wrappers
   return (
-    <silvery-box ref={outerNodeRef} flexDirection="column">
-      {/* Content area: live (unfrozen) items */}
-      <silvery-box flexDirection="column">
+    <silvery-box ref={outerNodeRef} flexDirection="column" flexGrow={1}>
+      {/* Content area: live (unfrozen) items, grows to push footer to bottom */}
+      <silvery-box flexDirection="column" flexGrow={1}>
         {liveItems.map(({ item, index, key }) => (
           <MemoItem key={key} item={item} index={index} freeze={getFreeze(key)} renderFn={render} />
         ))}
