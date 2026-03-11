@@ -170,6 +170,10 @@ export type { PickerDialogProps } from "@silvery/ui/components/PickerDialog"
 export { PickerList } from "@silvery/ui/components/PickerList"
 export type { PickerListProps } from "@silvery/ui/components/PickerList"
 
+// Typography Presets
+export { H1, H2, H3, Muted, Lead } from "@silvery/ui/components/Typography"
+export type { TypographyProps } from "@silvery/ui/components/Typography"
+
 // Focusable Controls
 export { Toggle } from "@silvery/ui/components/Toggle"
 export type { ToggleProps } from "@silvery/ui/components/Toggle"
