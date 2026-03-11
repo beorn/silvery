@@ -40,18 +40,22 @@ describe("scrollback promotion: border preservation", () => {
     expect(scrollbackText).toContain("╰")
   })
 
-  test("last promoted box retains ╰ bottom border", async () => {
+  test("promoted boxes on screen retain ╰ bottom border before entering scrollback", async () => {
     term = createTermless({ cols: 120, rows: 40 })
     handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
-    // 4 presses: scrollback has content with complete box borders
+    // 4 presses: promoted boxes may still be on-screen (not yet scrolled into scrollback).
+    // Whether on-screen or in scrollback, ╰ must be present.
     for (let i = 0; i < 4; i++) {
       await handle.press("Enter")
     }
 
+    const screenText = term.screen!.getText()
     const scrollbackText = term.scrollback!.getText()
-    expect(scrollbackText.length).toBeGreaterThan(0)
-    expect(scrollbackText).toContain("╰")
+    const allText = scrollbackText + screenText
+    expect(allText).toContain("╭")
+    expect(allText).toContain("│")
+    expect(allText).toContain("╰")
   })
 })
 
@@ -173,8 +177,65 @@ describe("scrollback promotion: no blank screen on Enter", () => {
       expect(
         nonBlankLines,
         `After Enter ${i + 1}: only ${nonBlankLines}/${lines.length} non-blank lines\n` +
-          lines.map((l: string, idx: number) => `  ${idx}: ${l.slice(0, 80)}`).join("\n"),
+          lines.map((l: string, idx: number) => `  ${idx}: "${l.trimEnd().slice(0, 80)}"`).join("\n"),
       ).toBeGreaterThan(2)
     }
+  })
+
+  test("dump screen state at each step for debugging", async () => {
+    term = createTermless({ cols: 80, rows: 12 })
+    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+
+    const snapshots: string[] = []
+    const snapshot = (label: string) => {
+      const lines = term.screen!.getLines()
+      const scrollback = term.scrollback!.getText()
+      const nonBlank = lines.filter((l: string) => l.trim().length > 0).length
+      snapshots.push(
+        `\n=== ${label} (${nonBlank}/${lines.length} non-blank, scrollback=${scrollback.length} chars) ===\n` +
+          lines.map((l: string, i: number) => `  ${String(i).padStart(2)}: "${l.trimEnd().slice(0, 75)}"`).join("\n"),
+      )
+    }
+
+    snapshot("initial")
+    for (let i = 0; i < 8; i++) {
+      await handle.press("Enter")
+      snapshot(`Enter ${i + 1}`)
+    }
+
+    // This test always passes — it's for visual inspection of output.
+    // Check that we never have a blank screen.
+    for (let i = 0; i < 8; i++) {
+      const s = snapshots[i + 1]!
+      const match = s.match(/\((\d+)\//)
+      const nonBlank = parseInt(match![1]!)
+      expect(nonBlank, `Blank screen detected:\n${snapshots.join("\n")}`).toBeGreaterThan(0)
+    }
+  })
+
+  test("content fills screen properly — no excess blank area after promotion", async () => {
+    // After promotion, the live content + padding should fill the terminal.
+    // The screen should not show content crammed into just 2-3 lines with
+    // the rest blank. Verify that the non-blank content area is reasonable.
+    term = createTermless({ cols: 120, rows: 24 })
+    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+
+    // Advance to a point where promotion has happened
+    for (let i = 0; i < 4; i++) {
+      await handle.press("Enter")
+    }
+
+    // At this point we should have content from the latest exchanges.
+    // With 24 rows and MAX_LIVE_TURNS=3, the live content should be
+    // at least 5-10 lines (status bar + latest exchanges with borders).
+    const lines = term.screen!.getLines()
+    const nonBlankLines = lines.filter((l: string) => l.trim().length > 0).length
+
+    // At least 5 non-blank lines (agent response with border + status bar)
+    expect(nonBlankLines).toBeGreaterThanOrEqual(5)
+
+    // The content should start near the top of the screen, not pushed down
+    const firstContentLine = lines.findIndex((l: string) => l.trim().length > 0)
+    expect(firstContentLine).toBeLessThanOrEqual(3) // Content starts within first 3 rows
   })
 })

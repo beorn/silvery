@@ -278,7 +278,7 @@ export async function run(
     alternateScreen: mode !== "inline",
     kitty: rest.kitty ?? caps.kittyKeyboard,
     mouse: rest.mouse ?? mode !== "inline",
-    focusReporting: rest.focusReporting ?? true,
+    focusReporting: rest.focusReporting ?? mode !== "inline",
     textSizing: rest.textSizing ?? "auto",
   })
   return wrapHandle(handle)

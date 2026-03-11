@@ -252,27 +252,15 @@ function handleScrollbackPromotion(
   const maxOutputLines = termRows != null ? Math.min(nextContentLines, termRows) : nextContentLines
   output += bufferToAnsi(next, "inline", ctx, maxOutputLines)
 
-  // 3b. Pad with blank lines to ensure ALL frozen content scrolls into scrollback.
-  //     Without padding, when live content is shorter than termRows, the last
-  //     frozen lines remain on the visible screen instead of entering scrollback.
-  //     The terminal only scrolls content into scrollback when writing past the
-  //     bottom row, so we need: frozenLineCount + liveLines >= termRows + frozenLineCount,
-  //     i.e., liveLines >= termRows. Pad cleared lines to fill the terminal.
-  let effectiveOutputLines = maxOutputLines
-  if (termRows != null && maxOutputLines < termRows) {
-    const padLines = termRows - maxOutputLines
-    for (let i = 0; i < padLines; i++) {
-      output += "\r\n\x1b[K"
-    }
-    effectiveOutputLines = termRows
-  }
+  // Total lines on-screen: frozen + live. The terminal may scroll if this exceeds
+  // termRows, naturally pushing frozen lines into scrollback. No padding needed —
+  // we track ALL on-screen lines so the next render can overwrite them cleanly.
+  const totalOnScreen = frozenLineCount + maxOutputLines
 
   // 4. Erase leftover lines at bottom (if content shrank)
-  //    Account for frozen + live content: we wrote frozenLineCount + effectiveOutputLines total lines.
   const oldTotalLines = state.prevOutputLines
-  const nextLastLine = frozenLineCount + effectiveOutputLines - 1
-  const totalWritten = frozenLineCount + effectiveOutputLines
-  const terminalScroll = termRows != null ? Math.max(0, totalWritten - termRows) : 0
+  const nextLastLine = totalOnScreen - 1
+  const terminalScroll = termRows != null ? Math.max(0, totalOnScreen - termRows) : 0
   const lastOccupied = Math.max(oldTotalLines - 1 - terminalScroll, 0)
   if (lastOccupied > nextLastLine) {
     for (let y = nextLastLine + 1; y <= lastOccupied; y++) {
@@ -282,23 +270,37 @@ function handleScrollbackPromotion(
     if (up > 0) output += `\x1b[${up}A`
   }
 
-  // 5. Move cursor back up to the end of actual live content.
-  //    After padding, the cursor is at the bottom of the padded area. Move it
-  //    back up so that (a) cursor suffix positions correctly and (b) subsequent
-  //    incremental renders track the cursor at the right row.
-  if (termRows != null && effectiveOutputLines > maxOutputLines) {
-    const upFromPad = effectiveOutputLines - maxOutputLines
-    output += `\x1b[${upFromPad}A`
-  }
-
-  // 6. Cursor suffix (hardware cursor positioning)
+  // 5. Cursor suffix (hardware cursor positioning)
+  //    Cursor is at the end of live content (row totalOnScreen - 1 relative to
+  //    render region start). inlineCursorSuffix moves it to the useCursor position
+  //    within the live content area.
   output += inlineCursorSuffix(cursorPos ?? null, next, termRows)
 
-  // 7. Update tracking for subsequent incremental renders
+  // 6. Update tracking for subsequent incremental renders.
+  //    CRITICAL: track total on-screen lines (frozen + live), not just live lines.
+  //    Frozen lines remain visible until the terminal naturally scrolls them into
+  //    scrollback. The next render must move the cursor past them to reach the
+  //    render region start.
   let startLine = 0
   if (termRows != null && nextContentLines > termRows) startLine = nextContentLines - termRows
   state.prevBuffer = next
-  updateInlineCursorRow(state, cursorPos, maxOutputLines, startLine)
+
+  // Cursor row within the TOTAL on-screen area (frozen + live).
+  // The cursor suffix positioned it within the live content; we need to offset
+  // by frozenLineCount since frozen lines are still on-screen above.
+  if (cursorPos?.visible) {
+    const visibleRow = cursorPos.y - startLine
+    state.prevCursorRow =
+      frozenLineCount + (visibleRow >= 0 && visibleRow < maxOutputLines ? visibleRow : maxOutputLines - 1)
+  } else {
+    state.prevCursorRow = totalOnScreen - 1
+  }
+  // Account for terminal scroll clamping: cursor-up is clamped at terminal row 0,
+  // so if the total output caused scrolling, the effective cursor position shifts.
+  if (terminalScroll > 0) {
+    state.prevCursorRow = Math.max(0, state.prevCursorRow - terminalScroll)
+  }
+  state.prevOutputLines = Math.min(totalOnScreen, termRows ?? totalOnScreen)
 
   return output
 }
@@ -1124,7 +1126,6 @@ function inlineFullRender(
   if (cursorOffset > 0) {
     prefix = `\x1b[${cursorOffset}A\r`
   }
-
   // bufferToAnsi handles: hide cursor, render content lines with
   // \x1b[K (clear to EOL) on each line, and reset style at end.
   let output = prefix + bufferToAnsi(next, "inline", ctx, maxOutputLines)

@@ -93,19 +93,20 @@ describe("ai-chat example (in-process termless)", { timeout: 10000 }, () => {
     assertNoOverlappingBorders(term.screen!)
   })
 
-  test("Enter 4: early content moves to scrollback", async () => {
+  test("Enter 4: content accumulates, box chars preserved", async () => {
     await handle.press("Enter")
 
     expect(term.screen).toContainText("rate limiting")
 
+    // Box drawing chars survive whether on-screen or in scrollback.
+    // Without forced padding, promoted content stays on-screen until
+    // natural terminal scrolling pushes it into scrollback.
+    const screenText = term.screen!.getText()
     const scrollbackText = term.scrollback!.getText()
-    if (scrollbackText.length > 0) {
-      expect(scrollbackText).toContain("Fix the login bug")
-      // Box drawing chars survive scrollback promotion
-      expect(scrollbackText).toContain("╭")
-      expect(scrollbackText).toContain("│")
-      expect(scrollbackText).toContain("╰")
-    }
+    const allText = scrollbackText + screenText
+    expect(allText).toContain("╭")
+    expect(allText).toContain("│")
+    expect(allText).toContain("╰")
     assertNoOverlappingBorders(term.screen!)
   })
 
