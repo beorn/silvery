@@ -22,7 +22,7 @@
  */
 
 import { Chalk, type ChalkInstance } from "chalk"
-import type { ColorLevel, CreateTermOptions, TerminalCaps } from "./types"
+import type { ColorLevel, CreateTermOptions, TermEmulator, TermScreen, TerminalCaps } from "./types"
 import {
   defaultCaps,
   detectColor,
@@ -292,6 +292,22 @@ export interface Term extends Disposable, StyleChain {
    * Strip ANSI escape codes from string.
    */
   stripAnsi(str: string): string
+
+  // -------------------------------------------------------------------------
+  // Terminal Emulator (present when created with a termless backend)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Visible screen region. Only available when created with a terminal backend.
+   * Provides getText(), getLines(), containsText() for assertions.
+   */
+  readonly screen?: TermScreen
+
+  /**
+   * Scrollback region. Only available when created with a terminal backend.
+   * Provides getText(), getLines(), containsText() for assertions.
+   */
+  readonly scrollback?: TermScreen
 }
 
 // =============================================================================
@@ -305,6 +321,7 @@ export interface Term extends Disposable, StyleChain {
  * - `createTerm()` — Node.js terminal (auto-detect from process.stdin/stdout)
  * - `createTerm({ stdout, stdin, ... })` — Node.js with custom streams/overrides
  * - `createTerm({ cols, rows })` — Headless for testing (no I/O, fixed dims)
+ * - `createTerm(emulator)` — Terminal emulator backend (termless) for testing
  *
  * Detection results are cached at creation time for consistency.
  *
@@ -317,20 +334,38 @@ export interface Term extends Disposable, StyleChain {
  * // Headless for testing
  * const term = createTerm({ cols: 80, rows: 24 })
  *
+ * // Terminal emulator (termless) for full ANSI testing
+ * const emulator = createTerminal({ backend: createXtermBackend(), cols: 80, rows: 24 })
+ * using term = createTerm(emulator)
+ * await run(<App />, term)
+ * expect(term.screen).toContainText("Hello")
+ *
  * // Custom streams
  * const term = createTerm({ stdout: customStream })
  * ```
  */
 export function createTerm(options?: CreateTermOptions): Term
 export function createTerm(dims: { cols: number; rows: number }): Term
+export function createTerm(emulator: TermEmulator): Term
 export function createTerm(
-  optionsOrDims?: CreateTermOptions | { cols: number; rows: number },
+  optionsOrDimsOrEmulator?: CreateTermOptions | { cols: number; rows: number } | TermEmulator,
 ): Term {
-  // Detect headless dims: has cols + rows but no stdout/stdin/color/caps
-  if (optionsOrDims && isHeadlessDims(optionsOrDims)) {
-    return createHeadlessTerm(optionsOrDims as { cols: number; rows: number })
+  // Detect terminal emulator (termless): has feed + screen
+  if (optionsOrDimsOrEmulator && isTermEmulator(optionsOrDimsOrEmulator)) {
+    return createBackendTerm(optionsOrDimsOrEmulator as TermEmulator)
   }
-  return createNodeTerm((optionsOrDims as CreateTermOptions) ?? {})
+  // Detect headless dims: has cols + rows but no stdout/stdin/color/caps
+  if (optionsOrDimsOrEmulator && isHeadlessDims(optionsOrDimsOrEmulator)) {
+    return createHeadlessTerm(optionsOrDimsOrEmulator as { cols: number; rows: number })
+  }
+  return createNodeTerm((optionsOrDimsOrEmulator as CreateTermOptions) ?? {})
+}
+
+/** Detect terminal emulator: has feed() + screen */
+function isTermEmulator(obj: unknown): obj is TermEmulator {
+  if (typeof obj !== "object" || obj === null) return false
+  const o = obj as Record<string, unknown>
+  return typeof o.feed === "function" && typeof o.screen === "object" && o.screen !== null
 }
 
 /** Detect headless dims: has cols and rows numbers, no stdout */
@@ -475,6 +510,57 @@ function createHeadlessTerm(dims: { cols: number; rows: number }): Term {
 
   Object.defineProperty(term, "cols", { get: () => dims.cols, enumerable: true })
   Object.defineProperty(term, "rows", { get: () => dims.rows, enumerable: true })
+
+  return term as Term
+}
+
+/**
+ * Create a terminal backed by a termless emulator — real ANSI processing, screen/scrollback.
+ */
+function createBackendTerm(emulator: TermEmulator): Term {
+  let state: TermState = { cols: emulator.cols, rows: emulator.rows }
+  let disposed = false
+  const controller = new AbortController()
+
+  const chalkInstance = new Chalk({ level: 3 }) // Emulators support truecolor
+
+  const termBase = {
+    hasCursor: () => true,
+    hasInput: () => false,
+    hasColor: () => "truecolor" as ColorLevel | null,
+    hasUnicode: () => true,
+    caps: undefined as TerminalCaps | undefined,
+    stdout: process.stdout,
+    stdin: process.stdin,
+    write: (str: string) => emulator.feed(str),
+    writeLine: (str: string) => emulator.feed(str + "\n"),
+    getState: (): TermState => state,
+    subscribe: (): (() => void) => () => {},
+    async *events(): AsyncIterable<ProviderEvent<TermEvents>> {
+      if (disposed) return
+      await new Promise<void>((resolve) => {
+        controller.signal.addEventListener("abort", () => resolve(), { once: true })
+      })
+    },
+    stripAnsi,
+    // Store emulator for run() to detect and auto-wire writable
+    _emulator: emulator,
+    [Symbol.dispose]: () => {
+      if (disposed) return
+      disposed = true
+      controller.abort()
+      emulator.close().catch(() => {})
+    },
+  }
+
+  // Add getters on termBase — Proxy intercepts all property access through termBase first,
+  // so Object.defineProperty on the Proxy result won't work for these.
+  Object.defineProperty(termBase, "cols", { get: () => emulator.cols, enumerable: true })
+  Object.defineProperty(termBase, "rows", { get: () => emulator.rows, enumerable: true })
+  Object.defineProperty(termBase, "screen", { get: () => emulator.screen, enumerable: true })
+  Object.defineProperty(termBase, "scrollback", { get: () => emulator.scrollback, enumerable: true })
+
+  const term = createStyleProxy(chalkInstance, termBase)
 
   return term as Term
 }

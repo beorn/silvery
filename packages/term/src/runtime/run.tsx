@@ -231,6 +231,22 @@ export async function run(
   // Term path: pass Term as provider + its streams, auto-enable from Term caps
   if (isTerm(optionsOrTerm)) {
     const term = optionsOrTerm as Term
+    const emulator = (term as Record<string, unknown>)._emulator as
+      | { feed(data: string): void }
+      | undefined
+
+    // Emulator-backed term: headless mode with writable routing to emulator
+    if (emulator) {
+      const app = createApp(() => () => ({}))
+      const handle = await app.run(element, {
+        writable: { write: (s: string) => emulator.feed(s) },
+        cols: term.cols ?? 80,
+        rows: term.rows ?? 24,
+      })
+      return wrapHandle(handle)
+    }
+
+    // Real terminal: full setup
     const caps = term.caps ?? detectTerminalCaps()
     const app = createApp(() => () => ({}))
     const handle = await app.run(element, {
@@ -265,9 +281,11 @@ export async function run(
   return wrapHandle(handle)
 }
 
-/** Duck-type check: Term has getState and events as functions */
+/** Duck-type check: Term has getState and events as functions.
+ *  Note: Term is a Proxy wrapping chalk, so typeof is "function" not "object". */
 function isTerm(obj: unknown): obj is Term {
-  if (typeof obj !== "object" || obj === null) return false
+  if (obj == null) return false
+  if (typeof obj !== "object" && typeof obj !== "function") return false
   const o = obj as Record<string, unknown>
   return typeof o.getState === "function" && typeof o.events === "function"
 }

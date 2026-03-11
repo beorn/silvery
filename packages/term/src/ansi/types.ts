@@ -154,3 +154,40 @@ export interface CreateTermOptions {
 
 // Re-export TerminalCaps from detection for convenience
 export type { TerminalCaps } from "./detection"
+
+// =============================================================================
+// Terminal Emulator Types (duck-types for termless integration)
+// =============================================================================
+
+/**
+ * A screen region — duck-type matching termless RegionView.
+ * Provides text content and line access for assertions.
+ */
+export interface TermScreen {
+  getText(): string
+  getLines(): string[]
+  containsText?(text: string): boolean
+}
+
+/**
+ * A terminal emulator backend — duck-type matching termless Terminal.
+ * Accepts ANSI output, provides screen/scrollback for inspection.
+ *
+ * Pass to createTerm() for in-process terminal emulation:
+ * ```ts
+ * import { createTerminal } from "@termless/core"
+ * import { createXtermBackend } from "@termless/xtermjs"
+ *
+ * const emulator = createTerminal({ backend: createXtermBackend(), cols: 80, rows: 24 })
+ * using term = createTerm(emulator)
+ * ```
+ */
+export interface TermEmulator {
+  readonly cols: number
+  readonly rows: number
+  readonly screen: TermScreen
+  readonly scrollback: TermScreen
+  feed(data: Uint8Array | string): void
+  resize(cols: number, rows: number): void
+  close(): Promise<void>
+}

@@ -73,6 +73,8 @@ export type {
   ConsoleMethod,
   ConsoleEntry,
   CreateTermOptions,
+  TermEmulator,
+  TermScreen,
 } from "./types"
 
 // =============================================================================
