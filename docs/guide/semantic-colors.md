@@ -2,6 +2,48 @@
 
 Which `$token` to use for which element. Scan for your element type, get the answer.
 
+## The #1 Rule: Don't Specify Colors
+
+Most Silvery components already use the correct semantic colors by default. **The best color code is no color code.**
+
+| Component | What's automatic | You just set |
+| --- | --- | --- |
+| `<Text>` | `$fg` text color | Nothing — it's the default |
+| `<TextInput>` | `$inputborder` → `$focusborder` on focus, `$control` prompt, cursor | `borderStyle` to enable borders |
+| `<TextArea>` | `$inputborder` → `$focusborder` on focus | `borderStyle` to enable borders |
+| `<ModalDialog>` | `$surfacebg` background, `$border` border, `$primary` title | Nothing — all automatic |
+| `<CommandPalette>` | `$surfacebg` background, `$border` border | Nothing |
+| `<Toast>` | `$surfacebg` background, `$border` border | Nothing |
+| `<SelectList>` | `inverse` for selection, `dimColor` for disabled | Nothing |
+| `<Badge>` | Variant-based: `$success`, `$error`, `$warning`, `$primary` | `variant` name |
+| `<ErrorBoundary>` | `$error` border | Nothing |
+| `<Divider>` | `dimColor` for line character | Nothing |
+| `<ProgressBar>` | `dimColor` for empty portion | `color` for filled portion |
+| `<Spinner>` | `$fg` | Nothing |
+| `<Button>` | `inverse` when focused/active | Nothing |
+
+**If you're writing `color="$something"` on a standard component, ask yourself: should the component handle this automatically?** If yes, fix the component — don't patch it at the call site.
+
+```tsx
+// ✅ The Silvery Way — let components handle their own colors
+<ModalDialog title="Confirm">         // auto: $surfacebg, $border, $primary title
+  <Text>Are you sure?</Text>          // auto: $fg
+</ModalDialog>
+
+<TextInput borderStyle="round" />     // auto: $inputborder → $focusborder on focus
+
+// ❌ Fighting the framework
+<Box backgroundColor="$surfacebg" borderColor="$border" borderStyle="round">
+  <Text color="$primary" bold>Confirm</Text>
+  <Text color="$fg">Are you sure?</Text>
+  <TextInput borderColor={focused ? "$focusborder" : "$inputborder"} />
+</Box>
+```
+
+## When You Do Need Colors
+
+Only specify colors when you're building custom UI that doesn't map to a standard component, or when you need status/accent emphasis on text.
+
 ## Quick Reference
 
 ### Text Hierarchy
