@@ -809,7 +809,10 @@ function ExchangeItem({
   const fraction = isLatest ? revealFraction : 1
 
   // Token badge for agent exchanges
-  const tokenBadge = exchange.tokens && phase === "done" ? ` ${formatTokens(exchange.tokens.output)} tokens` : ""
+  const tokenBadge = exchange.tokens && phase === "done" ? `${formatTokens(exchange.tokens.output)} tokens` : ""
+
+  // Build border title: "◆ Agent · 624 tokens"
+  const borderTitle = tokenBadge ? `${icon} ${name} \u00B7 ${tokenBadge}` : `${icon} ${name}`
 
   // Tool call phases
   const toolCalls = exchange.toolCalls ?? []
@@ -817,12 +820,11 @@ function ExchangeItem({
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} paddingX={1}>
-      {/* Header: icon + name + token badge */}
+      {/* Header: agent name + token badge — compact label style */}
       <Text>
-        <Text bold color="$success">
-          <Text dimColor={!pulse && phase !== "done"}>{icon}</Text> {name}
+        <Text bold color="$success" dimColor={!pulse && phase !== "done"}>
+          {borderTitle}
         </Text>
-        {tokenBadge && <Text color="$muted">{tokenBadge}</Text>}
       </Text>
 
       {/* Thinking block */}
@@ -904,7 +906,7 @@ function StatusBar({
   else keys = "esc quit"
 
   return (
-    <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
+    <Box flexDirection="row" justifyContent="space-between">
       <Text color="$muted" wrap="truncate">
         <Text color="$primary">{elapsedStr}</Text>
         {"  "}
@@ -947,6 +949,9 @@ interface FooterControl {
  * This is the "lift state down" pattern: move state to the lowest component
  * that needs it.
  */
+/** Auto-submit idle timeout in ms. */
+const AUTO_SUBMIT_DELAY = 20_000
+
 function DemoFooter({
   controlRef,
   onSubmit,
@@ -957,6 +962,7 @@ function DemoFooter({
   frozenCount = 0,
   contextBaseline = 0,
   ctrlDPending = false,
+  nextMessage = "",
 }: {
   controlRef: React.RefObject<FooterControl>
   onSubmit: (text: string) => void
@@ -967,6 +973,7 @@ function DemoFooter({
   frozenCount?: number
   contextBaseline?: number
   ctrlDPending?: boolean
+  nextMessage?: string
 }): JSX.Element {
   const terminalFocused = useTerminalFocused()
   const [inputText, setInputText] = useState("")
@@ -987,13 +994,40 @@ function DemoFooter({
     return () => clearInterval(timer)
   }, [])
 
+  // Auto-submit: if user is idle for AUTO_SUBMIT_DELAY, submit the placeholder message.
+  // Resets on any typing. Only fires when streaming is done and there's a next message.
+  const autoSubmitRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (autoSubmitRef.current) clearTimeout(autoSubmitRef.current)
+    if (done || compacting || streamPhase !== "done" || !nextMessage || inputText) return
+    autoSubmitRef.current = setTimeout(() => {
+      onSubmit(nextMessage)
+    }, AUTO_SUBMIT_DELAY)
+    return () => {
+      if (autoSubmitRef.current) clearTimeout(autoSubmitRef.current)
+    }
+  }, [done, compacting, streamPhase, nextMessage, inputText, onSubmit])
+
   const handleSubmit = useCallback(
     (text: string) => {
+      // If input is empty and there's a next scripted message, submit that
+      if (!text.trim() && nextMessage) {
+        onSubmit(nextMessage)
+        setInputText("")
+        return
+      }
       onSubmit(text)
       setInputText("")
     },
-    [onSubmit],
+    [onSubmit, nextMessage],
   )
+
+  // Dynamic placeholder: show the next scripted message so user can see what'll auto-send
+  const placeholder = ctrlDPending
+    ? "Press Ctrl-D again to exit"
+    : nextMessage
+      ? nextMessage
+      : "Type a message or press Tab"
 
   return (
     <Box flexDirection="column">
@@ -1003,18 +1037,20 @@ function DemoFooter({
         onSubmit={handleSubmit}
         borderStyle="round"
         prompt={"\u276F "}
-        placeholder={ctrlDPending ? "Press Ctrl-D again to exit" : "Type a message or press Tab"}
+        placeholder={placeholder}
         isActive={!done && terminalFocused}
       />
-      <StatusBar
-        exchanges={exchanges}
-        compacting={compacting}
-        done={done}
-        elapsed={elapsed}
-        frozenCount={frozenCount}
-        contextBaseline={contextBaseline}
-        ctrlDPending={ctrlDPending}
-      />
+      <Box backgroundColor="$muted-bg" paddingX={1}>
+        <StatusBar
+          exchanges={exchanges}
+          compacting={compacting}
+          done={done}
+          elapsed={elapsed}
+          frozenCount={frozenCount}
+          contextBaseline={contextBaseline}
+          ctrlDPending={ctrlDPending}
+        />
+      </Box>
     </Box>
   )
 }
@@ -1368,18 +1404,14 @@ export function CodingAgent({
   // useScrollback's resize path re-emits frozen items at the new width,
   // and the layout engine re-renders live content automatically.
 
-  // Pre-fill input with next scripted user message in manual mode.
-  // Guard: skip before first advance (exchanges empty) to avoid pre-filling with
-  // script[0] which advance() is about to consume — that creates a duplicate.
-  // Also skip if user has gone off-script (Tab or custom text).
-  useEffect(() => {
-    if (autoMode || done || streamPhase !== "done" || exchanges.length === 0) return
-    if (offScriptRef.current) return
-    const nextEntry = script[scriptIdx]
-    if (nextEntry?.role === "user" && !footerControlRef.current.getText()) {
-      footerControlRef.current.setText(nextEntry.content)
-    }
-  }, [autoMode, done, streamPhase, scriptIdx, script, exchanges.length])
+  // Next scripted user message — shown as placeholder in footer, auto-submitted after 20s idle.
+  // Replaces the old pre-fill approach (which typed text into the input).
+  const nextUserMessage =
+    !autoMode && !done && !offScriptRef.current && streamPhase === "done" && exchanges.length > 0
+      ? script[scriptIdx]?.role === "user"
+        ? script[scriptIdx]!.content
+        : ""
+      : ""
 
   /** Handle Enter from TextInput — submit user text or skip streaming. */
   const handleSubmit = useCallback(
@@ -1422,7 +1454,7 @@ export function CodingAgent({
           }, 150)
         }
       }
-      // Empty text: do nothing — agent advances automatically on timer
+      // Empty text after nextMessage handling: no-op
     },
     [streamPhase, skipStreaming, done, scriptIdx, script, startStreaming],
   )
@@ -1515,6 +1547,7 @@ export function CodingAgent({
             frozenCount={frozenCount}
             contextBaseline={contextBaselineRef.current}
             ctrlDPending={ctrlDPending}
+            nextMessage={nextUserMessage}
           />
         }
       >

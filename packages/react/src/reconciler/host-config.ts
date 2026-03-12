@@ -12,6 +12,17 @@ import type { BoxProps, TeaNode, TeaNodeType, TextProps } from "@silvery/tea/typ
 import { contentPropsChanged, layoutPropsChanged, propsEqual } from "./helpers"
 import { applyBoxProps, createNode, createVirtualTextNode } from "./nodes"
 
+/**
+ * Normalize Ink intrinsic element types to Silvery equivalents.
+ * Ink uses `ink-box` / `ink-text` as intrinsic element names;
+ * Silvery uses `silvery-box` / `silvery-text`.
+ */
+function normalizeNodeType(type: string): TeaNodeType {
+  if (type === "ink-box") return "silvery-box"
+  if (type === "ink-text") return "silvery-text"
+  return type as TeaNodeType
+}
+
 // ============================================================================
 // Subtree Dirty Propagation
 // ============================================================================
@@ -151,8 +162,10 @@ export const hostConfig = {
   },
 
   getChildHostContext(parentHostContext: HostContext, type: TeaNodeType): HostContext {
+    // Normalize Ink intrinsic types (ink-box → silvery-box, ink-text → silvery-text)
+    const normalizedType = normalizeNodeType(type)
     // Once inside a text node, stay inside
-    const isInsideText = parentHostContext.isInsideText || type === "silvery-text"
+    const isInsideText = parentHostContext.isInsideText || normalizedType === "silvery-text"
     if (isInsideText === parentHostContext.isInsideText) {
       return parentHostContext
     }
@@ -166,6 +179,14 @@ export const hostConfig = {
     _rootContainer: unknown,
     hostContext: HostContext,
   ): TeaNode {
+    // Normalize Ink intrinsic types (ink-box → silvery-box, ink-text → silvery-text)
+    type = normalizeNodeType(type)
+    // Ink-compat: flatten `style` prop from intrinsic ink-box/ink-text elements.
+    // Ink's intrinsic elements use `<ink-box style={{marginLeft: 1}}>` where the
+    // style object contains layout props. Silvery expects them as top-level props.
+    if ("style" in props && props.style && typeof props.style === "object") {
+      props = { ...props.style, ...props } as BoxProps | TextProps
+    }
     // Ink-compat: throw when a Box is nested inside a Text
     if (type === "silvery-box" && hostContext.isInsideText) {
       if (inkStrictValidation) {
@@ -383,6 +404,13 @@ export const hostConfig = {
     newProps: BoxProps | TextProps,
     _finishedWork: unknown,
   ) {
+    // Ink-compat: flatten `style` prop from intrinsic ink-box/ink-text elements
+    if ("style" in oldProps && oldProps.style && typeof oldProps.style === "object") {
+      oldProps = { ...oldProps.style, ...oldProps } as BoxProps | TextProps
+    }
+    if ("style" in newProps && newProps.style && typeof newProps.style === "object") {
+      newProps = { ...newProps.style, ...newProps } as BoxProps | TextProps
+    }
     // Early exit if props are equal (React may call commitUpdate even when nothing changed)
     if (propsEqual(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)) {
       instance.props = newProps

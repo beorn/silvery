@@ -198,7 +198,7 @@ describe("bug 3: unintuitive advancement", () => {
     expect(text).toContain("Fixed it")
   })
 
-  test("empty Enter does NOT advance the script", async () => {
+  test("Enter on empty input submits placeholder (next scripted message)", async () => {
     term = createTermless({ cols: 120, rows: 40 })
     handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
@@ -207,14 +207,14 @@ describe("bug 3: unintuitive advancement", () => {
     const before = term.screen!.getText()
     expect(before).toContain("Fixed it")
 
-    // Clear pre-filled text by pressing Ctrl-U, then press Enter with empty input
+    // Clear any pre-filled text, then press Enter — should submit placeholder (next scripted user message)
     await handle.press("ctrl+u")
     await handle.press("Enter")
-    await settle()
+    await settle(1500)
 
-    // Should NOT have advanced — "All done!" should NOT appear
+    // Should have advanced via placeholder submission — "All done!" should now appear
     const after = term.screen!.getText()
-    expect(after).not.toContain("All done!")
+    expect(after).toContain("All done!")
   })
 
   test("submitting typed text adds user message to exchanges", async () => {
