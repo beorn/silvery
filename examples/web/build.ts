@@ -211,7 +211,9 @@ async function generateRegistry(): Promise<void> {
   // --- Scan example directories ---
   for (const cat of categories) {
     const dir = join(__dirname, "..", cat.dir)
-    const files = (await readdir(dir)).filter((f) => f.endsWith(".tsx") && !skipFiles.has(`${cat.dir}/${f}`))
+    const files = (await readdir(dir)).filter(
+      (f) => f.endsWith(".tsx") && !skipFiles.has(`${cat.dir}/${f}`),
+    )
 
     for (const file of files.sort()) {
       const source = await Bun.file(join(dir, file)).text()
@@ -327,11 +329,17 @@ if (!viewerResult.success) {
 await cp(distDir, docsDistDir, { recursive: true })
 
 // Copy showcase.html to docs public dir
-await cp(join(__dirname, "showcase.html"), join(__dirname, "../../docs/public/examples/showcase.html"))
+await cp(
+  join(__dirname, "showcase.html"),
+  join(__dirname, "../../docs/public/examples/showcase.html"),
+)
 
 // Copy viewer.html to docs public dir (if it exists)
 try {
-  await cp(join(__dirname, "viewer.html"), join(__dirname, "../../docs/public/examples/viewer.html"))
+  await cp(
+    join(__dirname, "viewer.html"),
+    join(__dirname, "../../docs/public/examples/viewer.html"),
+  )
 } catch {
   // viewer.html may not exist yet — skip silently
 }

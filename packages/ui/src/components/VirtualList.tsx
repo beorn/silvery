@@ -35,7 +35,14 @@
  * />
  * ```
  */
-import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
+import React, {
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
 import { useInput } from "@silvery/react/hooks/useInput"
 import { VirtualView } from "./VirtualView"
 import type { VirtualViewHandle } from "./VirtualView"
@@ -234,7 +241,8 @@ function VirtualListInner<T>(
   const activeItems = virtualizedCount > 0 ? items.slice(virtualizedCount) : items
 
   // Adjust scrollTo to account for virtual items
-  const adjustedScrollTo = scrollTo !== undefined ? Math.max(0, scrollTo - virtualizedCount) : undefined
+  const adjustedScrollTo =
+    scrollTo !== undefined ? Math.max(0, scrollTo - virtualizedCount) : undefined
 
   // ── Adapt props for VirtualView ──────────────────────────────
 

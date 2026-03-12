@@ -52,7 +52,11 @@ export interface TableProps {
 // Helpers
 // =============================================================================
 
-function getCellValue(row: Record<string, unknown> | unknown[], col: TableColumn, colIndex: number): string {
+function getCellValue(
+  row: Record<string, unknown> | unknown[],
+  col: TableColumn,
+  colIndex: number,
+): string {
   if (Array.isArray(row)) {
     const val = row[colIndex]
     return val == null ? "" : String(val)
@@ -64,7 +68,11 @@ function getCellValue(row: Record<string, unknown> | unknown[], col: TableColumn
   return ""
 }
 
-function alignText(text: string, width: number, align: "left" | "right" | "center" = "left"): string {
+function alignText(
+  text: string,
+  width: number,
+  align: "left" | "right" | "center" = "left",
+): string {
   if (text.length >= width) return text.slice(0, width)
 
   const pad = width - text.length
@@ -110,7 +118,9 @@ export function Table({
   const headerLine = headerCells.join(separator)
 
   // Build separator line
-  const separatorLine = colWidths.map((w) => "─".repeat(w)).join(separator.replace(/[^│]/g, "─").replace(/│/g, "┼"))
+  const separatorLine = colWidths
+    .map((w) => "─".repeat(w))
+    .join(separator.replace(/[^│]/g, "─").replace(/│/g, "┼"))
 
   // Build data rows
   const dataRows = data.map((row) => {

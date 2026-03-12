@@ -16,19 +16,29 @@ const gaugeColor = (v: number) => (v > 70 ? "#f38ba8" : v > 40 ? "#f9e2af" : "#a
 
 export function DashboardShowcase(): JSX.Element {
   const [tick, setTick] = useState(0)
-  const [cpuHistory] = useState(() => Array.from({ length: 20 }, () => 20 + Math.floor(Math.random() * 40)))
-  const [memHistory] = useState(() => Array.from({ length: 20 }, () => 40 + Math.floor(Math.random() * 30)))
+  const [cpuHistory] = useState(() =>
+    Array.from({ length: 20 }, () => 20 + Math.floor(Math.random() * 40)),
+  )
+  const [memHistory] = useState(() =>
+    Array.from({ length: 20 }, () => 40 + Math.floor(Math.random() * 30)),
+  )
 
   useEffect(() => {
     const id = setInterval(() => {
       setTick((t) => {
         const newT = t + 1
         cpuHistory.push(
-          Math.max(5, Math.min(95, cpuHistory[cpuHistory.length - 1]! + Math.floor(Math.random() * 21) - 10)),
+          Math.max(
+            5,
+            Math.min(95, cpuHistory[cpuHistory.length - 1]! + Math.floor(Math.random() * 21) - 10),
+          ),
         )
         cpuHistory.shift()
         memHistory.push(
-          Math.max(20, Math.min(90, memHistory[memHistory.length - 1]! + Math.floor(Math.random() * 11) - 5)),
+          Math.max(
+            20,
+            Math.min(90, memHistory[memHistory.length - 1]! + Math.floor(Math.random() * 11) - 5),
+          ),
         )
         memHistory.shift()
         return newT
@@ -55,8 +65,10 @@ export function DashboardShowcase(): JSX.Element {
     { name: "mail-service", status: "down" as const, uptime: "0m", latency: "\u2014" },
   ]
 
-  const statusIcon = (s: "up" | "warn" | "down") => (s === "up" ? "\u25CF" : s === "warn" ? "\u25B2" : "\u2715")
-  const statusColor = (s: "up" | "warn" | "down") => (s === "up" ? "#a6e3a1" : s === "warn" ? "#f9e2af" : "#f38ba8")
+  const statusIcon = (s: "up" | "warn" | "down") =>
+    s === "up" ? "\u25CF" : s === "warn" ? "\u25B2" : "\u2715"
+  const statusColor = (s: "up" | "warn" | "down") =>
+    s === "up" ? "#a6e3a1" : s === "warn" ? "#f9e2af" : "#f38ba8"
 
   const allEvents = [
     { tag: "DEPLOY", color: "#a6e3a1", time: "14:23:01", msg: "v2.4.1 completed" },
@@ -88,7 +100,13 @@ export function DashboardShowcase(): JSX.Element {
       {/* Top row: Metrics + Services */}
       <Box flexDirection="row" gap={1}>
         {/* Metrics panel */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="#45475a" paddingX={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="#45475a"
+          paddingX={1}
+        >
           <Text bold color="#a6adc8">
             CPU / Memory
           </Text>
@@ -147,7 +165,13 @@ export function DashboardShowcase(): JSX.Element {
         </Box>
 
         {/* Services panel */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="#45475a" paddingX={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="#45475a"
+          paddingX={1}
+        >
           <Text bold color="#a6adc8">
             Services
           </Text>

@@ -64,7 +64,13 @@ function DashboardScreenshot(): JSX.Element {
 
       <Box flexGrow={1} flexDirection="row" gap={1}>
         {/* System Stats pane (selected) */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$primary" padding={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$primary"
+          padding={1}
+        >
           <Box marginBottom={1}>
             <Text bold color="$primary">
               System Stats
@@ -108,7 +114,13 @@ function DashboardScreenshot(): JSX.Element {
         </Box>
 
         {/* Recent Activity pane */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" padding={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$border"
+          padding={1}
+        >
           <Box marginBottom={1}>
             <Text bold>Recent Activity</Text>
           </Box>
@@ -122,7 +134,13 @@ function DashboardScreenshot(): JSX.Element {
         </Box>
 
         {/* Project Progress pane */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" padding={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$border"
+          padding={1}
+        >
           <Box marginBottom={1}>
             <Text bold>Project Progress</Text>
           </Box>
@@ -421,7 +439,15 @@ function KanbanScreenshot(): JSX.Element {
 
 // --- 4. Layout Feedback -----------------------------------------------------
 
-function LayoutPane({ title, color, grow = 1 }: { title: string; color: string; grow?: number }): JSX.Element {
+function LayoutPane({
+  title,
+  color,
+  grow = 1,
+}: {
+  title: string
+  color: string
+  grow?: number
+}): JSX.Element {
   const rect = useContentRect()
   return (
     <Box flexGrow={grow} borderStyle="round" borderColor={color} padding={1} flexDirection="column">

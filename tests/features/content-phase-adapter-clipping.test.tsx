@@ -12,7 +12,12 @@ import { setRenderAdapter, hasRenderAdapter } from "@silvery/term/render-adapter
 import { terminalAdapter, TerminalRenderBuffer } from "@silvery/term/adapters/terminal-adapter"
 import { setLayoutEngine } from "@silvery/term/layout-engine"
 import { createFlexilyZeroEngine } from "@silvery/term/adapters/flexily-zero-adapter"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/react/reconciler"
+import {
+  createContainer,
+  createFiberRoot,
+  getContainerRoot,
+  reconciler,
+} from "@silvery/react/reconciler"
 import {
   measurePhase,
   layoutPhase,
@@ -30,7 +35,11 @@ function setupAdapter() {
 }
 
 /** Render a React element through the adapter pipeline and return the buffer. */
-function renderViaAdapter(element: React.ReactElement, cols: number, rows: number): TerminalRenderBuffer {
+function renderViaAdapter(
+  element: React.ReactElement,
+  cols: number,
+  rows: number,
+): TerminalRenderBuffer {
   setupAdapter()
 
   const container = createContainer(() => {})

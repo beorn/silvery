@@ -59,7 +59,10 @@ export interface StoreApi<Model extends SilveryModel, Msg extends SilveryMsg> {
  * the node tree, which the store doesn't have — those are handled
  * at the React integration layer).
  */
-export function withFocusManagement<Model extends SilveryModel, Msg extends SilveryMsg>(): Plugin<Model, Msg> {
+export function withFocusManagement<Model extends SilveryModel, Msg extends SilveryMsg>(): Plugin<
+  Model,
+  Msg
+> {
   return (innerUpdate) => (msg, model) => {
     switch (msg.type) {
       case "focus": {

@@ -163,7 +163,9 @@ import { createTerm, type Term } from "@silvery/term"
  * })
  * ```
  */
-export function createTermless(dims: { cols: number; rows: number } = { cols: 80, rows: 24 }): Term {
+export function createTermless(
+  dims: { cols: number; rows: number } = { cols: 80, rows: 24 },
+): Term {
   // Lazy import — only loads xterm.js when createTermless is called
   const { createXtermBackend } = require("@termless/xtermjs") as {
     createXtermBackend: () => import("@silvery/term").TermEmulatorBackend
@@ -197,7 +199,10 @@ export function normalizeFrame(frame: string): string {
  * Wait for a condition to be true, polling at intervals.
  * Useful for waiting for async state updates.
  */
-export async function waitFor(condition: () => boolean, { timeout = 1000, interval = 10 } = {}): Promise<void> {
+export async function waitFor(
+  condition: () => boolean,
+  { timeout = 1000, interval = 10 } = {},
+): Promise<void> {
   const start = Date.now()
   while (!condition()) {
     if (Date.now() - start > timeout) {

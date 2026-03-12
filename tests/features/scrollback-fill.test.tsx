@@ -23,7 +23,10 @@ function ShortContentApp(): JSX.Element {
 
   useInput((input) => {
     if (input === "a") {
-      setItems((prev) => [...prev, { id: prev.length + 1, text: `Item ${prev.length + 1}`, done: false }])
+      setItems((prev) => [
+        ...prev,
+        { id: prev.length + 1, text: `Item ${prev.length + 1}`, done: false },
+      ])
     }
     if (input === "q") return "exit"
   })

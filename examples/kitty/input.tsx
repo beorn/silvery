@@ -208,7 +208,8 @@ function RichInputDemo({ kittySupported }: { kittySupported: boolean }): JSX.Ele
           </Text>
         </Text>
         <Text>
-          <Text bold>Kitty:</Text> {kittySupported ? <Text color="green">yes</Text> : <Text color="yellow">no</Text>}
+          <Text bold>Kitty:</Text>{" "}
+          {kittySupported ? <Text color="green">yes</Text> : <Text color="yellow">no</Text>}
         </Text>
         {mousePos && (
           <Text>
@@ -280,7 +281,9 @@ function RichInputDemo({ kittySupported }: { kittySupported: boolean }): JSX.Ele
           ) : (
             events.map((e, i) => (
               <Text key={i} dimColor={i < events.length - 1}>
-                <Text color={e.type === "key" ? "cyan" : "blue"}>{e.type === "key" ? "KEY" : "PTR"}</Text>{" "}
+                <Text color={e.type === "key" ? "cyan" : "blue"}>
+                  {e.type === "key" ? "KEY" : "PTR"}
+                </Text>{" "}
                 <Text color={(e.color ?? "white") as any}>{e.summary}</Text>
               </Text>
             ))

@@ -33,7 +33,11 @@ function channelLuminance(c: number): number {
 function relativeLuminance(hex: string): number | null {
   const rgb = hexToRgb(hex)
   if (!rgb) return null
-  return 0.2126 * channelLuminance(rgb[0]) + 0.7152 * channelLuminance(rgb[1]) + 0.0722 * channelLuminance(rgb[2])
+  return (
+    0.2126 * channelLuminance(rgb[0]) +
+    0.7152 * channelLuminance(rgb[1]) +
+    0.0722 * channelLuminance(rgb[2])
+  )
 }
 
 /**

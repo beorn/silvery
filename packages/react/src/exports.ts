@@ -69,7 +69,11 @@
 export { Box } from "./components/Box"
 export { Console } from "@silvery/ui/components/Console"
 export { VirtualList } from "@silvery/ui/components/VirtualList"
-export type { VirtualListProps, VirtualListHandle, ItemMeta } from "@silvery/ui/components/VirtualList"
+export type {
+  VirtualListProps,
+  VirtualListHandle,
+  ItemMeta,
+} from "@silvery/ui/components/VirtualList"
 export { HorizontalVirtualList } from "@silvery/ui/components/HorizontalVirtualList"
 export type {
   HorizontalVirtualListProps,
@@ -148,7 +152,11 @@ export { TextInput } from "@silvery/ui/components/TextInput"
 export type { TextInputProps, TextInputHandle } from "@silvery/ui/components/TextInput"
 
 export { TextArea } from "@silvery/ui/components/TextArea"
-export type { TextAreaProps, TextAreaHandle, TextAreaSelection } from "@silvery/ui/components/TextArea"
+export type {
+  TextAreaProps,
+  TextAreaHandle,
+  TextAreaSelection,
+} from "@silvery/ui/components/TextArea"
 
 export { useTextArea, clampScroll } from "@silvery/ui/components/useTextArea"
 export type { UseTextAreaOptions, UseTextAreaResult } from "@silvery/ui/components/useTextArea"
@@ -201,7 +209,11 @@ export type { ButtonProps } from "@silvery/ui/components/Button"
 
 // Input Hooks
 export { useReadline } from "@silvery/ui/components/useReadline"
-export type { ReadlineState, UseReadlineOptions, UseReadlineResult } from "@silvery/ui/components/useReadline"
+export type {
+  ReadlineState,
+  UseReadlineOptions,
+  UseReadlineResult,
+} from "@silvery/ui/components/useReadline"
 
 // Widget Components
 export { Spinner } from "@silvery/ui/components/Spinner"
@@ -266,7 +278,11 @@ export { Image } from "@silvery/ui/image/Image"
 export type { ImageProps } from "@silvery/ui/image/Image"
 
 // Image Protocol Encoders
-export { encodeKittyImage, deleteKittyImage, isKittyGraphicsSupported } from "@silvery/ui/image/kitty-graphics"
+export {
+  encodeKittyImage,
+  deleteKittyImage,
+  isKittyGraphicsSupported,
+} from "@silvery/ui/image/kitty-graphics"
 export type { KittyImageOptions } from "@silvery/ui/image/kitty-graphics"
 export { encodeSixel, isSixelSupported } from "@silvery/ui/image/sixel-encoder"
 export type { SixelImageData } from "@silvery/ui/image/sixel-encoder"
@@ -289,7 +305,12 @@ export type { SixelImageData } from "@silvery/ui/image/sixel-encoder"
  * }
  * ```
  */
-export { useContentRect, useContentRectCallback, useScreenRect, useScreenRectCallback } from "./hooks/useLayout"
+export {
+  useContentRect,
+  useContentRectCallback,
+  useScreenRect,
+  useScreenRectCallback,
+} from "./hooks/useLayout"
 
 /**
  * Keyboard input hook.
@@ -342,7 +363,12 @@ export {
   findSpatialTarget,
   getExplicitFocusLink,
 } from "@silvery/tea/focus-queries"
-export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "@silvery/tea/focus-events"
+export {
+  createKeyEvent,
+  createFocusEvent,
+  dispatchKeyEvent,
+  dispatchFocusEvent,
+} from "@silvery/tea/focus-events"
 export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "@silvery/tea/focus-events"
 export { useFocusable } from "./hooks/useFocusable"
 export type { UseFocusableResult } from "./hooks/useFocusable"
@@ -559,13 +585,22 @@ export {
 export { OSC133 } from "@silvery/term/osc-markers"
 
 // Kitty protocol detection
-export { detectKittySupport, detectKittyFromStdio, type KittyDetectResult } from "@silvery/term/kitty-detect"
+export {
+  detectKittySupport,
+  detectKittyFromStdio,
+  type KittyDetectResult,
+} from "@silvery/term/kitty-detect"
 
 // Terminal capability detection
 export { detectTerminalCaps, defaultCaps, type TerminalCaps } from "@silvery/term/terminal-caps"
 
 // Terminal capability visual test
-export { runTermtest, TERMTEST_SECTIONS, type TermtestSection, type TermtestOptions } from "@silvery/term/termtest"
+export {
+  runTermtest,
+  TERMTEST_SECTIONS,
+  type TermtestSection,
+  type TermtestOptions,
+} from "@silvery/term/termtest"
 
 // Output-phase capability configuration (suppress unsupported SGR codes)
 export {
@@ -617,7 +652,11 @@ export {
 } from "@silvery/term/device-attrs"
 
 // Focus reporting (CSI ?1004h)
-export { enableFocusReporting, disableFocusReporting, parseFocusEvent } from "@silvery/term/focus-reporting"
+export {
+  enableFocusReporting,
+  disableFocusReporting,
+  parseFocusEvent,
+} from "@silvery/term/focus-reporting"
 
 // DECRQM mode query
 export { queryMode, queryModes, DecMode } from "@silvery/term/mode-query"
@@ -626,7 +665,13 @@ export { queryMode, queryModes, DecMode } from "@silvery/term/mode-query"
 export { queryTextAreaPixels, queryTextAreaSize, queryCellSize } from "@silvery/term/pixel-size"
 
 // Layout engine types
-export type { LayoutEngine, LayoutNode, LayoutConstants, MeasureFunc, MeasureMode } from "@silvery/term/layout-engine"
+export type {
+  LayoutEngine,
+  LayoutNode,
+  LayoutConstants,
+  MeasureFunc,
+  MeasureMode,
+} from "@silvery/term/layout-engine"
 
 // Render adapter (for canvas, DOM, etc.)
 export {
@@ -651,7 +696,11 @@ export { createCanvasAdapter, CanvasRenderBuffer } from "@silvery/term/adapters/
 export type { CanvasAdapterConfig } from "@silvery/term/adapters/canvas-adapter"
 
 // DOM adapter
-export { createDOMAdapter, DOMRenderBuffer, injectDOMStyles } from "@silvery/term/adapters/dom-adapter"
+export {
+  createDOMAdapter,
+  DOMRenderBuffer,
+  injectDOMStyles,
+} from "@silvery/term/adapters/dom-adapter"
 export type { DOMAdapterConfig } from "@silvery/term/adapters/dom-adapter"
 
 // App types (unified render API)
@@ -897,7 +946,11 @@ export { applyTextOp, invertTextOp, mergeTextOps } from "@silvery/tea/text-ops"
 export type { TextOp } from "@silvery/tea/text-ops"
 
 export { useEditContext, activeEditContextRef, activeEditTargetRef } from "./hooks/use-edit-context"
-export type { UseEditContextOptions, UseEditContextResult, EditTarget } from "./hooks/use-edit-context"
+export type {
+  UseEditContextOptions,
+  UseEditContextResult,
+  EditTarget,
+} from "./hooks/use-edit-context"
 
 // =============================================================================
 // Scroll Utilities
@@ -972,7 +1025,11 @@ export type {
 } from "@silvery/tea/with-commands"
 
 export { withKeybindings } from "@silvery/tea/with-keybindings"
-export type { WithKeybindingsOptions, KeybindingContext, ExtendedKeybindingDef } from "@silvery/tea/with-keybindings"
+export type {
+  WithKeybindingsOptions,
+  KeybindingContext,
+  ExtendedKeybindingDef,
+} from "@silvery/tea/with-keybindings"
 
 // Diagnostic tools - prefer importing from '@silvery/term/toolbelt' for new code
 export { withDiagnostics, VirtualTerminal } from "@silvery/tea/with-diagnostics"
@@ -1057,7 +1114,11 @@ export type { InputBoundaryProps } from "./contexts/InputBoundary"
  * </PositionRegistryProvider>
  * ```
  */
-export { PositionRegistryProvider, usePositionRegistry, createPositionRegistry } from "./hooks/usePositionRegistry"
+export {
+  PositionRegistryProvider,
+  usePositionRegistry,
+  createPositionRegistry,
+} from "./hooks/usePositionRegistry"
 export type { PositionRegistry, ScreenRect } from "./hooks/usePositionRegistry"
 export { useGridPosition } from "./hooks/useGridPosition"
 export { GridCell } from "@silvery/ui/components/GridCell"
@@ -1083,7 +1144,14 @@ export type { GridCellProps } from "@silvery/ui/components/GridCell"
  * Note: `useAnimatedTransition` is the animation interpolation hook.
  * React's `useTransition` (concurrent mode) is exported separately above.
  */
-export { easings, resolveEasing, useAnimation, useInterval, useTimeout, useLatest } from "@silvery/ui/animation"
+export {
+  easings,
+  resolveEasing,
+  useAnimation,
+  useInterval,
+  useTimeout,
+  useLatest,
+} from "@silvery/ui/animation"
 export { useTransition as useAnimatedTransition } from "@silvery/ui/animation/index"
 export type {
   EasingFn,

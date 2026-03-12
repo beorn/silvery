@@ -58,7 +58,12 @@ export type {
 } from "./core"
 
 // Focus events
-export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "./focus-events"
+export {
+  createKeyEvent,
+  createFocusEvent,
+  dispatchKeyEvent,
+  dispatchFocusEvent,
+} from "./focus-events"
 
 // Focus queries
 export {
@@ -94,7 +99,15 @@ export type { DelayEffect, IntervalEffect, CancelEffect, TimerEffect } from "./e
 // Keys
 // =============================================================================
 
-export { keyToName, keyToModifiers, parseHotkey, matchHotkey, parseKeypress, parseKey, emptyKey } from "./keys"
+export {
+  keyToName,
+  keyToModifiers,
+  parseHotkey,
+  matchHotkey,
+  parseKeypress,
+  parseKey,
+  emptyKey,
+} from "./keys"
 export type { ParsedKeypress, ParsedHotkey, Key } from "./keys"
 
 // =============================================================================
@@ -198,7 +211,11 @@ export type {
 } from "./with-commands"
 
 export { withKeybindings } from "./with-keybindings"
-export type { WithKeybindingsOptions, KeybindingContext, ExtendedKeybindingDef } from "./with-keybindings"
+export type {
+  WithKeybindingsOptions,
+  KeybindingContext,
+  ExtendedKeybindingDef,
+} from "./with-keybindings"
 
 export { withDiagnostics, checkLayoutInvariants, VirtualTerminal } from "./with-diagnostics"
 export type { DiagnosticOptions } from "./with-diagnostics"

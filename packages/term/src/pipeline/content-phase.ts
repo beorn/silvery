@@ -22,7 +22,13 @@ import { parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
 import { pushContextTheme, popContextTheme } from "@silvery/theme/state"
 import type { Theme } from "@silvery/theme/types"
-import type { ClipBounds, ContentPhaseStats, NodeRenderState, NodeTraceEntry, PipelineContext } from "./types"
+import type {
+  ClipBounds,
+  ContentPhaseStats,
+  NodeRenderState,
+  NodeTraceEntry,
+  PipelineContext,
+} from "./types"
 
 /**
  * Render all nodes to a terminal buffer.
@@ -31,7 +37,11 @@ import type { ClipBounds, ContentPhaseStats, NodeRenderState, NodeTraceEntry, Pi
  * @param prevBuffer Previous buffer for incremental rendering (optional)
  * @returns A TerminalBuffer with the rendered content
  */
-export function contentPhase(root: TeaNode, prevBuffer?: TerminalBuffer | null, ctx?: PipelineContext): TerminalBuffer {
+export function contentPhase(
+  root: TeaNode,
+  prevBuffer?: TerminalBuffer | null,
+  ctx?: PipelineContext,
+): TerminalBuffer {
   const layout = root.contentRect
   if (!layout) {
     throw new Error("contentPhase called before layout phase")
@@ -44,7 +54,8 @@ export function contentPhase(root: TeaNode, prevBuffer?: TerminalBuffer | null, 
   const nodeTraceEnabled = ctx?.nodeTraceEnabled ?? _nodeTraceEnabled
 
   // Clone prevBuffer if same dimensions, else create fresh
-  const hasPrevBuffer = prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
+  const hasPrevBuffer =
+    prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
 
   if (instrumentEnabled) {
     _contentPhaseCallCount++
@@ -59,7 +70,9 @@ export function contentPhase(root: TeaNode, prevBuffer?: TerminalBuffer | null, 
   }
 
   const t0 = instrumentEnabled ? performance.now() : 0
-  const buffer = hasPrevBuffer ? prevBuffer.clone() : new TerminalBuffer(layout.width, layout.height)
+  const buffer = hasPrevBuffer
+    ? prevBuffer.clone()
+    : new TerminalBuffer(layout.width, layout.height)
   const tClone = instrumentEnabled ? performance.now() - t0 : 0
 
   const t1 = instrumentEnabled ? performance.now() : 0
@@ -132,7 +145,11 @@ function syncPrevLayout(node: TeaNode): void {
 /** Instrumentation enabled when SILVERY_STRICT, SILVERY_CHECK_INCREMENTAL, or SILVERY_INSTRUMENT is set */
 const _instrumentEnabled =
   typeof process !== "undefined" &&
-  !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL || process.env?.SILVERY_INSTRUMENT)
+  !!(
+    process.env?.SILVERY_STRICT ||
+    process.env?.SILVERY_CHECK_INCREMENTAL ||
+    process.env?.SILVERY_INSTRUMENT
+  )
 
 /** Mutable stats counters — reset after each contentPhase call */
 const _contentPhaseStats: ContentPhaseStats = {
@@ -171,7 +188,8 @@ let _contentPhaseCallCount = 0
 /** Module-level node trace (fallback when ctx.nodeTrace is not provided) */
 const _nodeTrace: NodeTraceEntry[] = []
 const _nodeTraceEnabled =
-  typeof process !== "undefined" && !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL)
+  typeof process !== "undefined" &&
+  !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL)
 
 /** DIAG: compute node depth in tree */
 function _getNodeDepth(node: TeaNode): number {
@@ -398,7 +416,8 @@ function renderNodeToBuffer(
   // must re-render on top of the fresh fill. This is NOT added to contentAreaAffected
   // because non-bg boxes don't need region clearing for subtreeDirty — only bg-bearing
   // boxes need their fill to overwrite stale child pixels.
-  const subtreeDirtyWithBg = hasPrevBuffer && !contentAreaAffected && node.subtreeDirty && !!props.backgroundColor
+  const subtreeDirtyWithBg =
+    hasPrevBuffer && !contentAreaAffected && node.subtreeDirty && !!props.backgroundColor
 
   // Clear this node's region when its content area changed but has no backgroundColor.
   // Without bg, renderBox won't fill, so stale pixels from the cloned buffer
@@ -409,7 +428,8 @@ function renderNodeToBuffer(
   // - ancestorCleared=true: buffer is a clone but hasPrevBuffer=false was passed
   //   (ancestor cleared its region, but this node may need to clear its sub-region)
   // On a truly fresh buffer (first render), both are false — no wasteful clear.
-  const parentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
+  const parentRegionCleared =
+    (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
 
   // skipBgFill: in incremental mode, skip the bg fill when the cloned buffer
   // already has the correct bg at this node's position. That's ONLY when:
@@ -427,11 +447,13 @@ function renderNodeToBuffer(
   // When ancestorCleared=true, the buffer at our position was erased to the
   // inherited bg, NOT our bg — so we must re-fill.
   // When hasPrevBuffer=false AND ancestorCleared=false, it's a fresh render.
-  const skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !subtreeDirtyWithBg
+  const skipBgFill =
+    hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !subtreeDirtyWithBg
 
   // parentRegionChanged: this node's content area was modified on a cloned buffer.
   // Children must re-render (childHasPrev=false) because their pixels may be stale.
-  const parentRegionChanged = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || subtreeDirtyWithBg)
+  const parentRegionChanged =
+    (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || subtreeDirtyWithBg)
 
   // DIAG: Per-node trace and cascade tracking (gated on instrumentation)
   if (instrumentEnabled) {
@@ -507,7 +529,8 @@ function renderNodeToBuffer(
 
   // Compute inherited bg once for boxes — used by border and outline rendering
   // to preserve parent backgrounds on border cells (prevents transparent holes).
-  const boxInheritedBg = node.type === "silvery-box" && !props.backgroundColor ? findInheritedBg(node).color : undefined
+  const boxInheritedBg =
+    node.type === "silvery-box" && !props.backgroundColor ? findInheritedBg(node).color : undefined
 
   // Render based on node type
   if (node.type === "silvery-box") {
@@ -527,7 +550,15 @@ function renderNodeToBuffer(
 
   // Render children
   if (isScrollContainer) {
-    renderScrollContainerChildren(node, buffer, props, nodeState, parentRegionCleared, parentRegionChanged, ctx)
+    renderScrollContainerChildren(
+      node,
+      buffer,
+      props,
+      nodeState,
+      parentRegionCleared,
+      parentRegionChanged,
+      ctx,
+    )
 
     // Render overflow indicators AFTER children so they survive viewport clear.
     // renderScrollContainerChildren may clear the viewport (Tier 2) which would
@@ -627,7 +658,8 @@ function renderScrollContainerChildren(
   // When lastVisibleChild decreases, stale pixels from now-hidden items remain
   // in the cloned buffer and must be cleared.
   const visibleRangeChanged =
-    ss.firstVisibleChild !== ss.prevFirstVisibleChild || ss.lastVisibleChild !== ss.prevLastVisibleChild
+    ss.firstVisibleChild !== ss.prevFirstVisibleChild ||
+    ss.lastVisibleChild !== ss.prevLastVisibleChild
   const scrollOnly =
     hasPrevBuffer &&
     scrollOffsetChanged &&
@@ -712,7 +744,9 @@ function renderScrollContainerChildren(
   // - needsViewportClear: all false (full re-render)
   // - otherwise: preserve parent's hasPrevBuffer
   const defaultChildHasPrev = needsViewportClear ? false : hasPrevBuffer
-  const defaultChildAncestorCleared = needsViewportClear ? true : ancestorCleared || parentRegionCleared
+  const defaultChildAncestorCleared = needsViewportClear
+    ? true
+    : ancestorCleared || parentRegionCleared
 
   // For buffer shift: children that were fully visible in BOTH the previous
   // and current frames have correct pixels after the shift (childHasPrev=true).
@@ -866,7 +900,9 @@ function renderNormalChildren(
   const clipX = (props.overflowX ?? props.overflow) === "hidden"
   const clipY = (props.overflowY ?? props.overflow) === "hidden"
   const effectiveClipBounds =
-    clipX || clipY ? computeChildClipBounds(layout, props, clipBounds, scrollOffset, clipX, clipY) : clipBounds
+    clipX || clipY
+      ? computeChildClipBounds(layout, props, clipBounds, scrollOffset, clipX, clipY)
+      : clipBounds
 
   // Non-scroll sticky children support. When the layout phase computes
   // node.stickyChildren, we use the same two-pass pattern as scroll containers:
@@ -886,7 +922,9 @@ function renderNormalChildren(
   // getCellBg/inheritedBg, so stale bg leaks through. Clearing to null matches
   // fresh render state before any content renders.
   if (stickyForceRefresh) {
-    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
+    const border = props.borderStyle
+      ? getBorderSize(props)
+      : { top: 0, bottom: 0, left: 0, right: 0 }
     const padding = getPadding(props)
     const contentX = layout.x + border.left + padding.left
     const contentY = layout.y + border.top + padding.top
@@ -1079,7 +1117,10 @@ function clearVirtualTextFlags(node: TeaNode): void {
 function hasChildPositionChanged(node: TeaNode): boolean {
   for (const child of node.children) {
     if (child.contentRect && child.prevLayout) {
-      if (child.contentRect.x !== child.prevLayout.x || child.contentRect.y !== child.prevLayout.y) {
+      if (
+        child.contentRect.x !== child.prevLayout.x ||
+        child.contentRect.y !== child.prevLayout.y
+      ) {
         return true
       }
     }
@@ -1207,7 +1248,9 @@ function clearNodeRegion(
   const parentBottom = parentRect ? parentRect.y - scrollOffset + parentRect.height : undefined
 
   const clearY = clipBounds ? Math.max(screenY, clipBounds.top) : screenY
-  let clearBottom = clipBounds ? Math.min(screenY + layout.height, clipBounds.bottom) : screenY + layout.height
+  let clearBottom = clipBounds
+    ? Math.min(screenY + layout.height, clipBounds.bottom)
+    : screenY + layout.height
   if (parentBottom !== undefined) {
     clearBottom = Math.min(clearBottom, parentBottom)
   }
@@ -1319,9 +1362,14 @@ function clearExcessArea(
     const parentProps = parent.props as BoxProps
     const border = getBorderSize(parentProps)
     const padding = getPadding(parentProps)
-    const parentRight = parent.contentRect.x + parent.contentRect.width - border.right - padding.right
+    const parentRight =
+      parent.contentRect.x + parent.contentRect.width - border.right - padding.right
     const parentBottom =
-      parent.contentRect.y - scrollOffset + parent.contentRect.height - border.bottom - padding.bottom
+      parent.contentRect.y -
+      scrollOffset +
+      parent.contentRect.height -
+      border.bottom -
+      padding.bottom
     clipRectRight = Math.min(clipRectRight, parentRight)
     clipRectBottom = Math.min(clipRectBottom, parentBottom)
   }
@@ -1382,7 +1430,10 @@ function clippedFill(
   bg: Color,
 ): void {
   const clippedTop = clipBounds ? Math.max(top, clipBounds.top) : top
-  const clippedBottom = Math.min(clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom, outerBottom)
+  const clippedBottom = Math.min(
+    clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom,
+    outerBottom,
+  )
   let clippedX = x
   let clippedWidth = width
   if (clipBounds?.left !== undefined && clipBounds.right !== undefined) {

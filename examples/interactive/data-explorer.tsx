@@ -41,7 +41,13 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 export const meta: ExampleMeta = {
   name: "Data Explorer",
   description: "Process explorer table with search, VirtualList, and responsive column widths",
-  features: ["useContentRect()", "TextInput", "useInput()", "responsive layout", "useDeferredValue"],
+  features: [
+    "useContentRect()",
+    "TextInput",
+    "useInput()",
+    "responsive layout",
+    "useDeferredValue",
+  ],
 }
 
 // ============================================================================
@@ -250,7 +256,8 @@ function ProcessRow({
   const memColor = proc.mem > 40 ? "$warning" : "$muted"
 
   // Truncate name to fit column
-  const displayName = proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\u2026" : proc.name
+  const displayName =
+    proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\u2026" : proc.name
 
   return (
     <Box paddingX={1} backgroundColor={isSelected ? "$primary" : undefined}>
@@ -258,21 +265,33 @@ function ProcessRow({
       <Text bold={isSelected} color={isSelected ? "white" : undefined}>
         {displayName.padEnd(cols.nameW)}
       </Text>
-      <Text color={isSelected ? "white" : cpuColor}>{proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%</Text>
-      <Text color={isSelected ? "white" : memColor}>{proc.mem.toFixed(1).padStart(cols.memW - 1)}%</Text>
+      <Text color={isSelected ? "white" : cpuColor}>
+        {proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%
+      </Text>
+      <Text color={isSelected ? "white" : memColor}>
+        {proc.mem.toFixed(1).padStart(cols.memW - 1)}%
+      </Text>
       <Text>{"  "}</Text>
       <Text color={isSelected ? "white" : STATUS_COLORS[proc.status]}>
         {STATUS_ICONS[proc.status]} {proc.status.padEnd(cols.statusW - 2)}
       </Text>
       <Text color={isSelected ? "white" : "$muted"}>{proc.user.padEnd(cols.userW)}</Text>
-      <Text color={isSelected ? "white" : "$muted"}>{String(proc.threads).padStart(cols.threadsW)}</Text>
+      <Text color={isSelected ? "white" : "$muted"}>
+        {String(proc.threads).padStart(cols.threadsW)}
+      </Text>
       <Text>{"  "}</Text>
       <Text color={isSelected ? "white" : "$muted"}>{proc.uptime.padStart(cols.uptimeW)}</Text>
     </Box>
   )
 }
 
-function SummaryBar({ processes, query }: { processes: ProcessInfo[]; query: string }): JSX.Element {
+function SummaryBar({
+  processes,
+  query,
+}: {
+  processes: ProcessInfo[]
+  query: string
+}): JSX.Element {
   const stats = useMemo(() => {
     let running = 0
     let totalCpu = 0
@@ -475,8 +494,8 @@ export function DataExplorer(): JSX.Element {
       {/* Scroll indicator + help */}
       <Box paddingX={1} justifyContent="space-between">
         <Muted>
-          <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>/</Kbd> search <Kbd>Esc/q</Kbd>{" "}
-          quit
+          <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>/</Kbd>{" "}
+          search <Kbd>Esc/q</Kbd> quit
         </Muted>
         <Muted>
           {effectiveCursor + 1}/{filtered.length}
@@ -493,7 +512,10 @@ export function DataExplorer(): JSX.Element {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  / search  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="j/k navigate  d/u half-page  g/G start/end  / search  Esc/q quit"
+    >
       <DataExplorer />
     </ExampleBanner>,
     term,

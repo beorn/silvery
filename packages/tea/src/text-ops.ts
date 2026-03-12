@@ -28,7 +28,9 @@
  * - `delete`: text was deleted starting at `offset` (the deleted content is
  *   stored in `text` so the operation can be inverted)
  */
-export type TextOp = { type: "insert"; offset: number; text: string } | { type: "delete"; offset: number; text: string }
+export type TextOp =
+  | { type: "insert"; offset: number; text: string }
+  | { type: "delete"; offset: number; text: string }
 
 // =============================================================================
 // Core Functions
@@ -42,7 +44,9 @@ export type TextOp = { type: "insert"; offset: number; text: string } | { type: 
  */
 export function applyTextOp(text: string, op: TextOp): string {
   if (op.offset < 0 || op.offset > text.length) {
-    throw new RangeError(`TextOp offset ${op.offset} out of bounds for text of length ${text.length}`)
+    throw new RangeError(
+      `TextOp offset ${op.offset} out of bounds for text of length ${text.length}`,
+    )
   }
 
   if (op.type === "insert") {

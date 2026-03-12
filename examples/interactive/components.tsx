@@ -68,31 +68,35 @@ function TypographyTab(): JSX.Element {
   return (
     <Box flexDirection="column" gap={1} paddingX={1} overflow="scroll" flexGrow={1}>
       <H1>Getting Started with Silvery</H1>
-      <Lead>Build modern terminal UIs with React — layout feedback, semantic theming, and 30+ components.</Lead>
+      <Lead>
+        Build modern terminal UIs with React — layout feedback, semantic theming, and 30+
+        components.
+      </Lead>
 
       <HR />
 
       <H2>Installation</H2>
       <P>
-        Install silvery and its peer dependencies. The framework uses <Strong>React 19</Strong> with a custom reconciler
-        — no DOM required.
+        Install silvery and its peer dependencies. The framework uses <Strong>React 19</Strong> with
+        a custom reconciler — no DOM required.
       </P>
       <CodeBlock>{"bun add silvery @silvery/react @silvery/ui"}</CodeBlock>
 
       <H2>Core Concepts</H2>
       <P>
-        Silvery follows <Em>The Silvery Way</Em> — 10 principles that keep your TUI apps shiny. Here are the most
-        important ones:
+        Silvery follows <Em>The Silvery Way</Em> — 10 principles that keep your TUI apps shiny. Here
+        are the most important ones:
       </P>
 
       <H3>Use Built-in Components</H3>
       <P>
-        The <Code>@silvery/ui</Code> package ships 30+ components. They handle keyboard navigation, theming, mouse
-        support, and dozens of edge cases.
+        The <Code>@silvery/ui</Code> package ships 30+ components. They handle keyboard navigation,
+        theming, mouse support, and dozens of edge cases.
       </P>
       <UL>
         <LI>
-          <Strong>SelectList</Strong> — keyboard-navigable single-select with j/k, wrapping, and scroll
+          <Strong>SelectList</Strong> — keyboard-navigable single-select with j/k, wrapping, and
+          scroll
         </LI>
         <LI>
           <Strong>TextInput</Strong> — full readline: Ctrl+A/E/K/U, Alt+B/F, kill ring, clipboard
@@ -107,7 +111,8 @@ function TypographyTab(): JSX.Element {
 
       <H3>Semantic Theme Colors</H3>
       <P>
-        Use <Code>$tokens</Code> instead of hardcoded colors. Your app adapts to 38 built-in palettes automatically:
+        Use <Code>$tokens</Code> instead of hardcoded colors. Your app adapts to 38 built-in
+        palettes automatically:
       </P>
       <OL>
         <LI>
@@ -128,13 +133,14 @@ function TypographyTab(): JSX.Element {
       </OL>
 
       <Blockquote>
-        Less is more. The best color code is no color code — most components already use the right tokens.
+        Less is more. The best color code is no color code — most components already use the right
+        tokens.
       </Blockquote>
 
       <H3>Think in Flexbox</H3>
       <P>
-        Silvery uses CSS flexbox via Flexily. Components know their size via <Code>useContentRect()</Code> —
-        synchronous, during render. No effects, no flash.
+        Silvery uses CSS flexbox via Flexily. Components know their size via{" "}
+        <Code>useContentRect()</Code> — synchronous, during render. No effects, no flash.
       </P>
 
       <Small>Last updated: silvery v0.0.1 — see silvery.dev for full documentation</Small>
@@ -210,7 +216,11 @@ function InputsTab(): JSX.Element {
           />
 
           <H2>Select List</H2>
-          <Box borderStyle="round" borderColor={focusIndex === 2 ? "$focusborder" : "$border"} paddingX={1}>
+          <Box
+            borderStyle="round"
+            borderColor={focusIndex === 2 ? "$focusborder" : "$border"}
+            paddingX={1}
+          >
             <SelectList
               items={frameworkItems}
               highlightedIndex={selectedFramework}
@@ -231,8 +241,18 @@ function InputsTab(): JSX.Element {
             paddingY={1}
             gap={1}
           >
-            <Toggle value={darkMode} onChange={setDarkMode} label="Dark mode" isActive={focusIndex === 3} />
-            <Toggle value={notifications} onChange={setNotifications} label="Notifications" isActive={false} />
+            <Toggle
+              value={darkMode}
+              onChange={setDarkMode}
+              label="Dark mode"
+              isActive={focusIndex === 3}
+            />
+            <Toggle
+              value={notifications}
+              onChange={setNotifications}
+              label="Notifications"
+              isActive={false}
+            />
             <Toggle value={autoSave} onChange={setAutoSave} label="Auto-save" isActive={false} />
           </Box>
 
@@ -242,13 +262,23 @@ function InputsTab(): JSX.Element {
           <HR />
 
           <H2>Current Values</H2>
-          <Box flexDirection="column" backgroundColor="$surfacebg" paddingX={1} paddingY={1} borderStyle="round">
+          <Box
+            flexDirection="column"
+            backgroundColor="$surfacebg"
+            paddingX={1}
+            paddingY={1}
+            borderStyle="round"
+          >
             <Text color="$surface">
               <Strong>Text:</Strong> {textValue || <Muted>(empty)</Muted>}
             </Text>
             <Text color="$surface">
               <Strong>Area:</Strong>{" "}
-              {areaValue ? areaValue.split("\n")[0] + (areaValue.includes("\n") ? "..." : "") : <Muted>(empty)</Muted>}
+              {areaValue ? (
+                areaValue.split("\n")[0] + (areaValue.includes("\n") ? "..." : "")
+              ) : (
+                <Muted>(empty)</Muted>
+              )}
             </Text>
             <Text color="$surface">
               <Strong>Framework:</Strong> {frameworkItems[selectedFramework]?.label}
@@ -380,12 +410,20 @@ function DisplayTab(): JSX.Element {
       </Box>
 
       {showModal && (
-        <Box position="absolute" display="flex" justifyContent="center" alignItems="center" width="100%" height="100%">
+        <Box
+          position="absolute"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          width="100%"
+          height="100%"
+        >
           <ModalDialog title="Component Gallery" width={50} footer="ESC or q to close">
             <Box flexDirection="column" gap={1}>
               <P>
-                This gallery demonstrates <Strong>silvery</Strong>'s built-in UI components. Every component uses
-                semantic theme tokens — they adapt to any of the 38 built-in palettes automatically.
+                This gallery demonstrates <Strong>silvery</Strong>'s built-in UI components. Every
+                component uses semantic theme tokens — they adapt to any of the 38 built-in palettes
+                automatically.
               </P>
               <HR />
               <Box flexDirection="column">
@@ -450,7 +488,10 @@ function ComponentsApp(): JSX.Element {
 export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="h/l tab  Tab cycle inputs  j/k navigate  Enter modal  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="h/l tab  Tab cycle inputs  j/k navigate  Enter modal  Esc/q quit"
+    >
       <ComponentsApp />
     </ExampleBanner>,
     term,

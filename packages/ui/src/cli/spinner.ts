@@ -48,7 +48,8 @@ export class Spinner {
   private isSpinning = false
 
   constructor(textOrOptions?: string | SpinnerOptions) {
-    const options: SpinnerOptions = typeof textOrOptions === "string" ? { text: textOrOptions } : (textOrOptions ?? {})
+    const options: SpinnerOptions =
+      typeof textOrOptions === "string" ? { text: textOrOptions } : (textOrOptions ?? {})
 
     this.text = options.text ?? ""
     this.style = options.style ?? "dots"

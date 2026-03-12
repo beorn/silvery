@@ -16,7 +16,10 @@ export { VirtualList } from "./components/VirtualList"
 export type { VirtualListProps, VirtualListHandle } from "./components/VirtualList"
 
 export { HorizontalVirtualList } from "./components/HorizontalVirtualList"
-export type { HorizontalVirtualListProps, HorizontalVirtualListHandle } from "./components/HorizontalVirtualList"
+export type {
+  HorizontalVirtualListProps,
+  HorizontalVirtualListHandle,
+} from "./components/HorizontalVirtualList"
 
 export { SplitView } from "./components/SplitView"
 export type { SplitViewProps } from "./components/SplitView"

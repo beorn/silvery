@@ -23,16 +23,21 @@ const createStdout = (columns?: number, isTTY?: boolean): FakeStdout => {
   Object.defineProperties(writeFn, {
     lastCall: {
       get: () =>
-        calls.length > 0 ? { args: calls[calls.length - 1], firstArg: calls[calls.length - 1]![0] } : undefined,
+        calls.length > 0
+          ? { args: calls[calls.length - 1], firstArg: calls[calls.length - 1]![0] }
+          : undefined,
     },
-    firstCall: { get: () => (calls.length > 0 ? { args: calls[0], firstArg: calls[0]![0] } : undefined) },
+    firstCall: {
+      get: () => (calls.length > 0 ? { args: calls[0], firstArg: calls[0]![0] } : undefined),
+    },
     callCount: { get: () => calls.length },
     calledOnce: { get: () => calls.length === 1 },
     called: { get: () => calls.length > 0 },
     getCalls: { value: () => calls.map((args, i) => ({ args, firstArg: args[0], callId: i })) },
     getCall: { value: (i: number) => ({ args: calls[i], firstArg: calls[i]?.[0] }) },
     calledOnceWithExactly: {
-      value: (...expected: unknown[]) => calls.length === 1 && JSON.stringify(calls[0]) === JSON.stringify(expected),
+      value: (...expected: unknown[]) =>
+        calls.length === 1 && JSON.stringify(calls[0]) === JSON.stringify(expected),
     },
     resetHistory: {
       value: () => {

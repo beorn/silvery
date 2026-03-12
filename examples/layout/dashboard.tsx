@@ -163,7 +163,8 @@ function tickState(prev: ReturnType<typeof createInitialState>) {
   const memory: MemoryMetrics = {
     ...prev.memory,
     used: Math.max(4, usedJitter),
-    swap: (jitter((prev.memory.swap / prev.memory.swapTotal) * 100, 5) / 100) * prev.memory.swapTotal,
+    swap:
+      (jitter((prev.memory.swap / prev.memory.swapTotal) * 100, 5) / 100) * prev.memory.swapTotal,
     history: pushHistory(prev.memory.history, (usedJitter / totalMem) * 100),
   }
 
@@ -196,7 +197,15 @@ function SectionHeader({ children }: { children: React.ReactNode }): JSX.Element
   return <H2>{children}</H2>
 }
 
-function LabelValue({ label, value, color }: { label: string; value: string; color?: string }): JSX.Element {
+function LabelValue({
+  label,
+  value,
+  color,
+}: {
+  label: string
+  value: string
+  color?: string
+}): JSX.Element {
   return (
     <Box gap={1}>
       <Muted>{label}</Muted>
@@ -252,7 +261,11 @@ function CpuPane({ cores }: { cores: CoreMetrics[] }): JSX.Element {
 
 // --- Memory Tab ---
 
-function StackedBar({ segments }: { segments: { value: number; color: string; char?: string }[] }): JSX.Element {
+function StackedBar({
+  segments,
+}: {
+  segments: { value: number; color: string; char?: string }[]
+}): JSX.Element {
   return (
     <Box>
       {segments.map((seg, i) => (
@@ -274,7 +287,11 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }): JSX.Element {
       <SectionHeader>Memory</SectionHeader>
       <Box gap={2}>
         <LabelValue label="Total:" value={`${total.toFixed(1)} GB`} />
-        <LabelValue label="Used:" value={`${memory.used.toFixed(1)} GB`} color={severityColor(usedPct)} />
+        <LabelValue
+          label="Used:"
+          value={`${memory.used.toFixed(1)} GB`}
+          color={severityColor(usedPct)}
+        />
       </Box>
       <Box flexDirection="column">
         <Muted>Memory Breakdown</Muted>
@@ -434,18 +451,46 @@ function WideLayout({
   return (
     <Box flexDirection="column" flexGrow={1} gap={1}>
       <Box flexDirection="row" gap={1} flexGrow={1}>
-        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexDirection="column">
+        <Box
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$border"
+          paddingX={1}
+          paddingY={1}
+          flexDirection="column"
+        >
           <CpuPane cores={cores} />
         </Box>
-        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexDirection="column">
+        <Box
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$border"
+          paddingX={1}
+          paddingY={1}
+          flexDirection="column"
+        >
           <MemoryPane memory={memory} />
         </Box>
       </Box>
       <Box flexDirection="row" gap={1} flexGrow={1}>
-        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexDirection="column">
+        <Box
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$border"
+          paddingX={1}
+          paddingY={1}
+          flexDirection="column"
+        >
           <NetworkPane network={network} />
         </Box>
-        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexDirection="column">
+        <Box
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$border"
+          paddingX={1}
+          paddingY={1}
+          flexDirection="column"
+        >
           <ProcessPane processes={processes} />
         </Box>
       </Box>
@@ -484,7 +529,12 @@ export function Dashboard(): JSX.Element {
             <Kbd>q</Kbd> quit
           </Muted>
         </Box>
-        <WideLayout cores={state.cores} memory={state.memory} network={state.network} processes={state.processes} />
+        <WideLayout
+          cores={state.cores}
+          memory={state.memory}
+          network={state.network}
+          processes={state.processes}
+        />
       </Box>
     )
   }

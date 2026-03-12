@@ -81,7 +81,8 @@ export interface VirtualizationResult {
  * count-based useVirtualizer engine and maps the result back to the legacy API.
  */
 export function useVirtualization<T>(config: VirtualizationConfig<T>): VirtualizationResult {
-  const { items, viewportSize, itemSize, scrollTo, scrollPadding, overscan, maxRendered, gap } = config
+  const { items, viewportSize, itemSize, scrollTo, scrollPadding, overscan, maxRendered, gap } =
+    config
 
   // Convert items-based itemSize to index-based estimateHeight.
   // Memoize the adapter function to avoid recreating on every render

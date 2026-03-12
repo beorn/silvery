@@ -177,7 +177,9 @@ export function Image({
   // The image is drawn over this space via stdout escape sequences.
   // Fill with spaces so the cell buffer allocates the right area.
   const spaceLine = " ".repeat(Math.max(0, effectiveWidth))
-  const spaceContent = Array.from({ length: Math.max(0, effectiveHeight) }, () => spaceLine).join("\n")
+  const spaceContent = Array.from({ length: Math.max(0, effectiveHeight) }, () => spaceLine).join(
+    "\n",
+  )
 
   return (
     <silvery-box width={effectiveWidth} height={effectiveHeight}>

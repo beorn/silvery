@@ -13,7 +13,13 @@ import React, { useState } from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer, render, getActiveRenderCount } from "@silvery/test"
 import { Box, Text, useContentRect } from "@silvery/react"
-import { SimpleBox, Counter, ResponsiveBox, MountUnmountCycle, ComplexLayout } from "../fixtures/index.tsx"
+import {
+  SimpleBox,
+  Counter,
+  ResponsiveBox,
+  MountUnmountCycle,
+  ComplexLayout,
+} from "../fixtures/index.tsx"
 
 // ============================================================================
 // Helpers

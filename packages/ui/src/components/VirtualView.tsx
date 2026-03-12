@@ -172,7 +172,8 @@ function VirtualViewInner<T>(
 
   // Calculate scrollTo index for silvery Box overflow="scroll"
   const hasTopPlaceholder = leadingHeight > 0
-  const currentSelectedIndex = scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, items.length - 1)) : scrollOffset
+  const currentSelectedIndex =
+    scrollTo !== undefined ? Math.max(0, Math.min(scrollTo, items.length - 1)) : scrollOffset
   const selectedIndexInSlice = currentSelectedIndex - startIndex
   const isSelectedInSlice = selectedIndexInSlice >= 0 && selectedIndexInSlice < visibleItems.length
   const scrollToIndex = hasTopPlaceholder ? selectedIndexInSlice + 1 : selectedIndexInSlice

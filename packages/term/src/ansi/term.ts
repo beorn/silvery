@@ -30,7 +30,14 @@ import type {
   TermScreen,
   TerminalCaps,
 } from "./types"
-import { defaultCaps, detectColor, detectCursor, detectInput, detectTerminalCaps, detectUnicode } from "./detection"
+import {
+  defaultCaps,
+  detectColor,
+  detectCursor,
+  detectInput,
+  detectTerminalCaps,
+  detectUnicode,
+} from "./detection"
 import type { ProviderEvent } from "../runtime/types"
 import { createTermProvider, type TermState, type TermEvents } from "../runtime/term-provider"
 
@@ -361,7 +368,11 @@ export function createTerm(
   // Two-arg: createTerm(backend, { cols, rows }) — raw backend + dims
   if (second && first && isTermBackend(first)) {
     const { createTerminal } = require("@termless/core") as {
-      createTerminal: (opts: { backend: TermEmulatorBackend; cols: number; rows: number }) => TermEmulator
+      createTerminal: (opts: {
+        backend: TermEmulatorBackend
+        cols: number
+        rows: number
+      }) => TermEmulator
     }
     const emulator = createTerminal({ backend: first as TermEmulatorBackend, ...second })
     return createBackendTerm(emulator)
@@ -388,14 +399,18 @@ function isTermEmulator(obj: unknown): obj is TermEmulator {
 function isTermBackend(obj: unknown): obj is TermEmulatorBackend {
   if (typeof obj !== "object" || obj === null) return false
   const o = obj as Record<string, unknown>
-  return typeof o.init === "function" && typeof o.name === "string" && typeof o.destroy === "function"
+  return (
+    typeof o.init === "function" && typeof o.name === "string" && typeof o.destroy === "function"
+  )
 }
 
 /** Detect headless dims: has cols and rows numbers, no stdout */
 function isHeadlessDims(obj: unknown): boolean {
   if (typeof obj !== "object" || obj === null) return false
   const o = obj as Record<string, unknown>
-  return typeof o.cols === "number" && typeof o.rows === "number" && !("stdout" in o) && !("stdin" in o)
+  return (
+    typeof o.cols === "number" && typeof o.rows === "number" && !("stdout" in o) && !("stdin" in o)
+  )
 }
 
 /**
@@ -419,7 +434,8 @@ function createNodeTerm(options: CreateTermOptions): Term {
       : undefined
 
   // Create chalk instance with appropriate color level
-  const chalkLevel = cachedColor === null ? 0 : cachedColor === "basic" ? 1 : cachedColor === "256" ? 2 : 3
+  const chalkLevel =
+    cachedColor === null ? 0 : cachedColor === "basic" ? 1 : cachedColor === "256" ? 2 : 3
   const chalkInstance = new Chalk({ level: chalkLevel })
 
   // Lazy Provider — only created when getState/subscribe/events is called.
@@ -460,7 +476,8 @@ function createNodeTerm(options: CreateTermOptions): Term {
 
     // Provider methods (lazy — Provider created on first access)
     getState: (): TermState => getProvider().getState(),
-    subscribe: (listener: (state: TermState) => void): (() => void) => getProvider().subscribe(listener),
+    subscribe: (listener: (state: TermState) => void): (() => void) =>
+      getProvider().subscribe(listener),
     events: (): AsyncIterable<ProviderEvent<TermEvents>> => getProvider().events(),
 
     // Utilities

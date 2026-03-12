@@ -349,7 +349,10 @@ function MeasuredBox() {
   const [size, setSize] = useState({ width: 0, height: 0 })
 
   return (
-    <Box flexGrow={1} onLayout={(layout) => setSize({ width: layout.width, height: layout.height })}>
+    <Box
+      flexGrow={1}
+      onLayout={(layout) => setSize({ width: layout.width, height: layout.height })}
+    >
       <Text>
         Size: {size.width}x{size.height}
       </Text>

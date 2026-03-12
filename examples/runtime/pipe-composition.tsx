@@ -133,7 +133,9 @@ const baseApp = createApp<Record<string, unknown>, State>(
         case " ":
         case "x":
           set(() => ({
-            items: items.map((item, i) => (i === cursor ? { ...item, selected: !item.selected } : item)),
+            items: items.map((item, i) =>
+              i === cursor ? { ...item, selected: !item.selected } : item,
+            ),
           }))
           break
         case "a":

@@ -9,7 +9,17 @@
  */
 
 import React, { useState, useMemo } from "react"
-import { render, Box, Text, Kbd, Muted, useInput, useApp, createTerm, type Key } from "../../src/index.js"
+import {
+  render,
+  Box,
+  Text,
+  Kbd,
+  Muted,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -153,7 +163,8 @@ function StatusBar({
     <Box justifyContent="space-between">
       <Muted>
         {" "}
-        <Kbd>j/k</Kbd> navigate <Kbd>space</Kbd> toggle <Kbd>enter</Kbd> expand <Kbd>Esc/q</Kbd> quit
+        <Kbd>j/k</Kbd> navigate <Kbd>space</Kbd> toggle <Kbd>enter</Kbd> expand <Kbd>Esc/q</Kbd>{" "}
+        quit
       </Muted>
       <Muted>
         {" "}
@@ -212,7 +223,9 @@ export function TaskList(): JSX.Element {
     }
     if (input === " ") {
       // Toggle completion
-      setTasks((prev) => prev.map((task, idx) => (idx === cursor ? { ...task, completed: !task.completed } : task)))
+      setTasks((prev) =>
+        prev.map((task, idx) => (idx === cursor ? { ...task, completed: !task.completed } : task)),
+      )
     }
     if (key.return || input === "e") {
       // Toggle expand/collapse subtasks
@@ -254,7 +267,12 @@ export function TaskList(): JSX.Element {
         })}
       </Box>
 
-      <StatusBar tasks={tasks} cursor={cursor} scrollOffset={scrollOffset} visibleCount={visibleCount} />
+      <StatusBar
+        tasks={tasks}
+        cursor={cursor}
+        scrollOffset={scrollOffset}
+        visibleCount={visibleCount}
+      />
     </Box>
   )
 }

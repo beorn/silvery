@@ -46,7 +46,11 @@ export function TextInputShowcase(): JSX.Element {
       </Box>
 
       <KeyHints
-        hints={termFocused ? "type text  Ctrl+A/E begin/end  Ctrl+K/U kill  Ctrl+W word  Esc clear" : "click to focus"}
+        hints={
+          termFocused
+            ? "type text  Ctrl+A/E begin/end  Ctrl+K/U kill  Ctrl+W word  Esc clear"
+            : "click to focus"
+        }
       />
     </Box>
   )

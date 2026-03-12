@@ -29,7 +29,12 @@
 
 import type { App } from "@silvery/term/app"
 import { createFocusManager, type FocusManager, type FocusManagerOptions } from "./focus-manager"
-import { createFocusEvent, createKeyEvent, dispatchFocusEvent, dispatchKeyEvent } from "./focus-events"
+import {
+  createFocusEvent,
+  createKeyEvent,
+  dispatchFocusEvent,
+  dispatchKeyEvent,
+} from "./focus-events"
 import { parseHotkey, parseKey } from "./keys"
 
 // =============================================================================

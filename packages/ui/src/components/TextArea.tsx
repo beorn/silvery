@@ -198,7 +198,14 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
   }
 
   return (
-    <Box focusable testID={testID} key={ta.scrollOffset} flexDirection="column" height={height} {...borderProps}>
+    <Box
+      focusable
+      testID={testID}
+      key={ta.scrollOffset}
+      flexDirection="column"
+      height={height}
+      {...borderProps}
+    >
       {ta.visibleLines.map((wl, i) => {
         const absoluteRow = ta.scrollOffset + i
         const isCursorRow = absoluteRow === ta.cursorRow
@@ -206,7 +213,8 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
         const lineEnd = lineStart + wl.line.length
 
         // Check if this line has any selection overlap
-        const hasSelectionOnLine = ta.selection && lineStart < ta.selection.end && lineEnd > ta.selection.start
+        const hasSelectionOnLine =
+          ta.selection && lineStart < ta.selection.end && lineEnd > ta.selection.start
 
         if (disabled) {
           return (
@@ -228,7 +236,9 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
           return (
             <Text key={absoluteRow}>
               {before}
-              <Text inverse>{selected || (selEnd === wl.line.length && isCursorRow ? " " : "")}</Text>
+              <Text inverse>
+                {selected || (selEnd === wl.line.length && isCursorRow ? " " : "")}
+              </Text>
               {after}
             </Text>
           )

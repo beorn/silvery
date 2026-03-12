@@ -17,7 +17,8 @@ export function shallow<T>(a: T, b: T): boolean {
   const keysB = Object.keys(b)
   if (keysA.length !== keysB.length) return false
   for (const key of keysA) {
-    if (!Object.is((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])) return false
+    if (!Object.is((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]))
+      return false
   }
   return true
 }
@@ -43,7 +44,10 @@ export function shallow<T>(a: T, b: T): boolean {
  */
 export function useTerm(): Term
 export function useTerm<T>(selector: (term: Term) => T, equalityFn?: (a: T, b: T) => boolean): T
-export function useTerm<T>(selector?: (term: Term) => T, equalityFn?: (a: T, b: T) => boolean): Term | T {
+export function useTerm<T>(
+  selector?: (term: Term) => T,
+  equalityFn?: (a: T, b: T) => boolean,
+): Term | T {
   const term = useContext(TermContext)
   if (!term) {
     throw new Error("useTerm must be used within a render(element, term) context")
@@ -56,7 +60,11 @@ export function useTerm<T>(selector?: (term: Term) => T, equalityFn?: (a: T, b: 
   return useTermSelector(term, selector, equalityFn)
 }
 
-function useTermSelector<T>(term: Term, selector: (term: Term) => T, equalityFn?: (a: T, b: T) => boolean): T {
+function useTermSelector<T>(
+  term: Term,
+  selector: (term: Term) => T,
+  equalityFn?: (a: T, b: T) => boolean,
+): T {
   const prevRef = useRef<T | undefined>(undefined)
   const isEqual = equalityFn ?? Object.is
 

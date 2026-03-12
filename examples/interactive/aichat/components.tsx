@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react"
 import { Box, Text, Link, Spinner, TextInput, useTerminalFocused } from "silvery"
 import type { Exchange, ToolCall } from "./types.js"
-import { TOOL_COLORS, TOOL_ICONS, URL_RE, RANDOM_USER_COMMANDS, CONTEXT_WINDOW } from "./script.js"
+import { TOOL_COLORS, URL_RE, RANDOM_USER_COMMANDS, CONTEXT_WINDOW } from "./script.js"
 import type { StreamPhase } from "./state.js"
 import { formatTokens, formatCost, computeCumulativeTokens } from "./state.js"
 
@@ -39,7 +39,15 @@ function splitTitleBody(content: string): { title: string; body: string } {
 // ============================================================================
 
 /** Render a line with auto-linked URLs. */
-function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; color?: string }): JSX.Element {
+function LinkifiedLine({
+  text,
+  dim,
+  color,
+}: {
+  text: string
+  dim?: boolean
+  color?: string
+}): JSX.Element {
   const parts: JSX.Element[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
@@ -94,9 +102,14 @@ function ThinkingBlock({ text, done }: { text: string; done: boolean }): JSX.Ele
 }
 
 /** Tool call with lifecycle: spinner -> output -> checkmark. */
-function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "running" | "done" }): JSX.Element {
+function ToolCallBlock({
+  call,
+  phase,
+}: {
+  call: ToolCall
+  phase: "pending" | "running" | "done"
+}): JSX.Element {
   const color = TOOL_COLORS[call.tool] ?? "$muted"
-  const icon = TOOL_ICONS[call.tool] ?? "▸"
 
   return (
     <Box flexDirection="column" marginTop={0}>
@@ -225,8 +238,10 @@ export function ExchangeItem({
 
   // Metadata: token count + thought indicator
   const metaParts: string[] = []
-  if (exchange.tokens && phase === "done") metaParts.push(`${formatTokens(exchange.tokens.output)} tokens`)
-  if (exchange.thinking && (phase === "done" || phase === "streaming")) metaParts.push("thought for 1s")
+  if (exchange.tokens && phase === "done")
+    metaParts.push(`${formatTokens(exchange.tokens.output)} tokens`)
+  if (exchange.thinking && (phase === "done" || phase === "streaming"))
+    metaParts.push("thought for 1s")
   const metaStr = metaParts.length > 0 ? ` (${metaParts.join(" · ")})` : ""
 
   // Split content into title (first sentence) and body (rest)
@@ -325,11 +340,7 @@ export function StatusBar({
   const ctxColor = ctxPct > 100 ? "$error" : ctxPct > 80 ? "$warning" : "$primary"
   const ctxBar = "█".repeat(ctxFilled) + "░".repeat(CTX_W - ctxFilled)
 
-  let keys: string
-  if (ctrlDPending) keys = "Ctrl-D again to exit"
-  else if (compacting) keys = "compacting..."
-  else if (done) keys = "esc quit"
-  else keys = "esc quit"
+  const keys = ctrlDPending ? "Ctrl-D again to exit" : compacting ? "compacting..." : "esc quit"
 
   return (
     <Box flexDirection="row" justifyContent="space-between" width="100%">
@@ -339,7 +350,7 @@ export function StatusBar({
         {keys}
       </Text>
       <Text color="$muted" wrap="truncate">
-        ctx {ctxBar} {ctxPct}%{"  "}
+        ctx <Text color={ctxColor}>{ctxBar}</Text> {ctxPct}%{"  "}
         {cost}
       </Text>
     </Box>
@@ -383,11 +394,16 @@ export function DemoFooter({
   const startRef = useRef(Date.now())
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
-    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000)
+    const timer = setInterval(
+      () => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)),
+      1000,
+    )
     return () => clearInterval(timer)
   }, [])
 
-  const [randomIdx, setRandomIdx] = useState(() => Math.floor(Math.random() * RANDOM_USER_COMMANDS.length))
+  const [randomIdx, setRandomIdx] = useState(() =>
+    Math.floor(Math.random() * RANDOM_USER_COMMANDS.length),
+  )
   const randomPlaceholder = RANDOM_USER_COMMANDS[randomIdx % RANDOM_USER_COMMANDS.length]!
   const effectiveMessage = nextMessage || randomPlaceholder
   const placeholder = !terminalFocused

@@ -158,7 +158,10 @@ export type ProviderEvent<Events extends Record<string, unknown>> = {
  * >;
  * ```
  */
-export interface Provider<State = unknown, Events extends Record<string, unknown> = Record<string, never>> {
+export interface Provider<
+  State = unknown,
+  Events extends Record<string, unknown> = Record<string, never>,
+> {
   /** Get current state (Zustand-compatible) */
   getState(): State
 
@@ -181,7 +184,9 @@ export interface Provider<State = unknown, Events extends Record<string, unknown
  * | { type: 'sync:data'; data: Item[] }
  * | ...
  */
-export type NamespacedEvent<Providers extends Record<string, Provider<unknown, Record<string, unknown>>>> = {
+export type NamespacedEvent<
+  Providers extends Record<string, Provider<unknown, Record<string, unknown>>>,
+> = {
   [P in keyof Providers]: Providers[P] extends Provider<unknown, infer E>
     ? {
         [K in keyof E & string]: {
@@ -198,8 +203,9 @@ export type NamespacedEvent<Providers extends Record<string, Provider<unknown, R
  * Given { term: TermProvider, sync: SyncProvider }, produces:
  * 'term:key' | 'term:resize' | 'sync:data' | ...
  */
-export type ProviderEventKey<Providers extends Record<string, Provider<unknown, Record<string, unknown>>>> =
-  NamespacedEvent<Providers>["type"]
+export type ProviderEventKey<
+  Providers extends Record<string, Provider<unknown, Record<string, unknown>>>,
+> = NamespacedEvent<Providers>["type"]
 
 /**
  * Get the data type for a specific event key.

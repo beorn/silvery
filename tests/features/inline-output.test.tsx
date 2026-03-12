@@ -807,7 +807,11 @@ describe("inline: multi-frame scenarios", () => {
 
     // Frame 2: react done → freeze — stays on-screen
     op.promoteScrollback!("  react: done\x1b[K\r\n", 1)
-    let next = bufferWithLines(COLS, ROWS, ["Installing packages...", "  lodash: installing...", "  chalk: pending"])
+    let next = bufferWithLines(COLS, ROWS, [
+      "Installing packages...",
+      "  lodash: installing...",
+      "  chalk: pending",
+    ])
     screen.feed(op(prev, next, "inline", 0, ROWS))
     prev = next
 

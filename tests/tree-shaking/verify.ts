@@ -191,12 +191,15 @@ async function verifyEntry(entry: EntryPoint, tmpDir: string): Promise<Result> {
   await writeFile(entryFile, `${importLine}\nconsole.log(typeof ${useIdent})\n`)
 
   try {
-    const proc = Bun.spawn(["bun", "build", "--bundle", "--target=node", "--outfile", outFile, entryFile], {
-      // Use the km monorepo root so bun can resolve workspace:* packages
-      cwd: join(import.meta.dirname, "../../../.."),
-      stdout: "pipe",
-      stderr: "pipe",
-    })
+    const proc = Bun.spawn(
+      ["bun", "build", "--bundle", "--target=node", "--outfile", outFile, entryFile],
+      {
+        // Use the km monorepo root so bun can resolve workspace:* packages
+        cwd: join(import.meta.dirname, "../../../.."),
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    )
 
     const exitCode = await proc.exited
     if (exitCode !== 0) {
@@ -222,7 +225,8 @@ async function verifyEntry(entry: EntryPoint, tmpDir: string): Promise<Result> {
       /\bReact\.createElement\b/.test(bundleContent)
 
     // Check for react-reconciler
-    result.hasReconciler = bundleContent.includes("react-reconciler") || bundleContent.includes("createContainer")
+    result.hasReconciler =
+      bundleContent.includes("react-reconciler") || bundleContent.includes("createContainer")
 
     result.reactViolation = entry.expectNoReact === true && result.hasReact
     result.reconcilerViolation = entry.expectNoReconciler === true && result.hasReconciler
@@ -279,7 +283,9 @@ async function main() {
     console.log("VIOLATIONS:")
     for (const v of violations) {
       if (v.reactViolation) {
-        console.log(`  ${v.name}: React leaked into bundle (${(v.bundleSize / 1024).toFixed(1)} KB)`)
+        console.log(
+          `  ${v.name}: React leaked into bundle (${(v.bundleSize / 1024).toFixed(1)} KB)`,
+        )
       }
       if (v.reconcilerViolation) {
         console.log(`  ${v.name}: react-reconciler leaked into bundle`)

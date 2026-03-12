@@ -21,7 +21,8 @@ const log = createLogger("silvery:layout")
 export function layoutPhase(root: TeaNode, width: number, height: number): void {
   // Check if dimensions changed from previous layout
   const prevLayout = root.contentRect
-  const dimensionsChanged = prevLayout && (prevLayout.width !== width || prevLayout.height !== height)
+  const dimensionsChanged =
+    prevLayout && (prevLayout.width !== width || prevLayout.height !== height)
 
   // Only recalculate if something changed (dirty nodes or dimensions)
   if (!dimensionsChanged && !hasLayoutDirtyNodes(root)) {
@@ -213,7 +214,8 @@ function calculateScrollState(node: TeaNode, props: BoxProps, skipStateUpdates: 
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
   const padding = getPadding(props)
 
-  const rawViewportHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom
+  const rawViewportHeight =
+    layout.height - border.top - border.bottom - padding.top - padding.bottom
 
   // Calculate total content height and child positions
   let contentHeight = 0
@@ -422,7 +424,11 @@ function calculateScrollState(node: TeaNode, props: BoxProps, skipStateUpdates: 
   // Mark node dirty if scroll offset or visible range changed (for incremental rendering)
   // Without this, contentPhase would skip the container and children would
   // remain at their old pixel positions in the cloned buffer
-  if (scrollOffset !== prevOffset || firstVisible !== prevFirstVisible || lastVisible !== prevLastVisible) {
+  if (
+    scrollOffset !== prevOffset ||
+    firstVisible !== prevFirstVisible ||
+    lastVisible !== prevLastVisible
+  ) {
     node.subtreeDirty = true
   }
 
@@ -485,9 +491,12 @@ export function stickyPhase(root: TeaNode): void {
     const layout = node.contentRect
     if (!layout || !node.layoutNode) return
 
-    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
+    const border = props.borderStyle
+      ? getBorderSize(props)
+      : { top: 0, bottom: 0, left: 0, right: 0 }
     const padding = getPadding(props)
-    const parentContentHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom
+    const parentContentHeight =
+      layout.height - border.top - border.bottom - padding.top - padding.bottom
 
     const newStickyChildren: NonNullable<TeaNode["stickyChildren"]> = []
 

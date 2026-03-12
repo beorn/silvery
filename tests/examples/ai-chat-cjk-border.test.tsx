@@ -23,7 +23,8 @@ const settle = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 const CJK_SCRIPT: ScriptEntry[] = [
   {
     role: "user",
-    content: "Now add i18n support for error messages. We need 日本語 (Japanese) and Deutsch (German). 🌍",
+    content:
+      "Now add i18n support for error messages. We need 日本語 (Japanese) and Deutsch (German). 🌍",
     tokens: { input: 146, output: 0 },
   },
   {

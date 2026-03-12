@@ -265,7 +265,10 @@ describe("scrollback promotion overflow", () => {
     // Box border characters should be present (round style: ╭╮╰╯│─)
     const allText = (term.scrollback?.getText() ?? "") + term.screen!.getText()
     const hasBorderChars =
-      allText.includes("│") || allText.includes("─") || allText.includes("╭") || allText.includes("╰")
+      allText.includes("│") ||
+      allText.includes("─") ||
+      allText.includes("╭") ||
+      allText.includes("╰")
     expect(hasBorderChars, "No border characters found after promotion").toBe(true)
   })
 
@@ -310,7 +313,9 @@ describe("scrollback chaos invariants", () => {
     expect(screenText, `[${iteration}] NaN after ${action}`).not.toContain("NaN")
 
     // 3. Footer must always be visible on screen
-    expect(term.screen!.getText(), `[${iteration}] Footer missing after ${action}`).toContain("Input here")
+    expect(term.screen!.getText(), `[${iteration}] Footer missing after ${action}`).toContain(
+      "Input here",
+    )
 
     // 4. Screen should have reasonable content (not mostly blank)
     // At least 20% of lines should have content

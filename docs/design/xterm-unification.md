@@ -69,7 +69,10 @@ The xterm provider wraps `terminal.onData` and `terminal.textarea` focus events 
 `createApp` uses `RenderTarget` for output. For xterm.js:
 
 ```typescript
-function createXtermRenderTarget(terminal: XtermTerminal, provider: Provider<TermState, TermEvents>): RenderTarget {
+function createXtermRenderTarget(
+  terminal: XtermTerminal,
+  provider: Provider<TermState, TermEvents>,
+): RenderTarget {
   return {
     write(frame: string): void {
       terminal.write(frame)

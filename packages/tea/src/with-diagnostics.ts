@@ -147,7 +147,9 @@ export class VirtualTerminal {
   ) {
     this.grid = Array.from({ length: height }, () => Array(width).fill(" "))
     this.wideMarker = Array.from({ length: height }, () => Array(width).fill(false))
-    this.styles = Array.from({ length: height }, () => Array.from({ length: width }, () => createDefaultVTermStyle()))
+    this.styles = Array.from({ length: height }, () =>
+      Array.from({ length: width }, () => createDefaultVTermStyle()),
+    )
     this.sgr = createDefaultVTermStyle()
   }
 
@@ -712,10 +714,14 @@ function walkLayout(
   if (parentRect && !parentRect.clipped) {
     const TOLERANCE = 1
     if (rect.x + rect.width > parentRect.x + parentRect.width + TOLERANCE) {
-      violations.push(`${id}: overflows parent right (${rect.x + rect.width} > ${parentRect.x + parentRect.width})`)
+      violations.push(
+        `${id}: overflows parent right (${rect.x + rect.width} > ${parentRect.x + parentRect.width})`,
+      )
     }
     if (rect.y + rect.height > parentRect.y + parentRect.height + TOLERANCE) {
-      violations.push(`${id}: overflows parent bottom (${rect.y + rect.height} > ${parentRect.y + parentRect.height})`)
+      violations.push(
+        `${id}: overflows parent bottom (${rect.y + rect.height} > ${parentRect.y + parentRect.height})`,
+      )
     }
     if (rect.x < parentRect.x - TOLERANCE) {
       violations.push(`${id}: overflows parent left (${rect.x} < ${parentRect.x})`)
@@ -760,7 +766,10 @@ function walkLayout(
  * @param options - Diagnostic check configuration (all enabled by default)
  * @returns App with wrapped cmd that runs diagnostic checks
  */
-export function withDiagnostics<T extends AppWithCommands>(app: T, options: DiagnosticOptions = {}): T {
+export function withDiagnostics<T extends AppWithCommands>(
+  app: T,
+  options: DiagnosticOptions = {},
+): T {
   // All checks enabled by default when plugin is used
   const {
     checkIncremental = true,
@@ -776,7 +785,10 @@ export function withDiagnostics<T extends AppWithCommands>(app: T, options: Diag
   if (!checkIncremental && !checkStability && !checkReplay && !checkLayout) return app
 
   /** Capture screenshot on diagnostic failure (best-effort, never masks original error) */
-  async function captureFailureScreenshot(commandId: string, checkType: string): Promise<string | null> {
+  async function captureFailureScreenshot(
+    commandId: string,
+    checkType: string,
+  ): Promise<string | null> {
     if (!captureOnFailure) return null
     try {
       await mkdir(screenshotDir, { recursive: true })
@@ -824,7 +836,9 @@ export function withDiagnostics<T extends AppWithCommands>(app: T, options: Diag
                 const incrementalText = app.text
                 const freshText = fresh
                   ? Array.from({ length: fresh.height }, (_, y) =>
-                      Array.from({ length: fresh.width }, (_, x) => fresh.getCellChar(x, y)).join(""),
+                      Array.from({ length: fresh.width }, (_, x) => fresh.getCellChar(x, y)).join(
+                        "",
+                      ),
                     ).join("\n")
                   : "(no fresh buffer)"
                 const screenshotPath = await captureFailureScreenshot(command.id, "incremental")
@@ -895,12 +909,16 @@ export function withDiagnostics<T extends AppWithCommands>(app: T, options: Diag
             const styleMismatches = vterm.compareStylesToBuffer(afterBuffer)
             if (styleMismatches.length > 0) {
               const first5 = styleMismatches.slice(0, 5)
-              const details = first5.map((m) => `  (${m.x},${m.y}) char="${m.char}": ${m.diffs.join(", ")}`).join("\n")
+              const details = first5
+                .map((m) => `  (${m.x},${m.y}) char="${m.char}": ${m.diffs.join(", ")}`)
+                .join("\n")
               const screenshotPath = await captureFailureScreenshot(command.id, "replay-style")
               throw new Error(
                 `SILVERY_DIAGNOSTIC: ANSI replay style mismatch after ${command.id}\n` +
                   `  ${styleMismatches.length} cells have style differences:\n${details}` +
-                  (styleMismatches.length > 5 ? `\n  ... and ${styleMismatches.length - 5} more` : "") +
+                  (styleMismatches.length > 5
+                    ? `\n  ... and ${styleMismatches.length - 5} more`
+                    : "") +
                   (screenshotPath ? `\n  Screenshot saved: ${screenshotPath}` : ""),
               )
             }

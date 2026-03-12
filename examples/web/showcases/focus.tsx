@@ -46,7 +46,9 @@ export function FocusShowcase(): JSX.Element {
               <Text bold color={isFocused ? "cyan" : "white"}>
                 {label}
               </Text>
-              <Text color={isFocused ? "cyan" : "#666"}>{isFocused ? "\u25CF focused" : "\u25CB"}</Text>
+              <Text color={isFocused ? "cyan" : "#666"}>
+                {isFocused ? "\u25CF focused" : "\u25CB"}
+              </Text>
             </Box>
           )
         })}

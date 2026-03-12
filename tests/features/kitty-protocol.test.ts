@@ -10,7 +10,12 @@ import { describe, expect, test } from "vitest"
 import { parseKeypress } from "../../packages/tea/src/keys"
 
 // Helper to create kitty protocol CSI u sequences
-function kittyKey(codepoint: number, modifiers?: number, eventType?: number, textCodepoints?: number[]): string {
+function kittyKey(
+  codepoint: number,
+  modifiers?: number,
+  eventType?: number,
+  textCodepoints?: number[],
+): string {
   let seq = `\x1b[${codepoint}`
   if (modifiers !== undefined || eventType !== undefined || textCodepoints !== undefined) {
     seq += `;${modifiers ?? 1}`

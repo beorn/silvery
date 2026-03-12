@@ -71,7 +71,13 @@ export function Form({ onSubmit: _onSubmit, gap = 1, children }: FormProps): Rea
  * Renders a label above the input with optional required indicator,
  * description text, and error message in `$error` color.
  */
-export function FormField({ label, error, description, required, children }: FormFieldProps): React.ReactElement {
+export function FormField({
+  label,
+  error,
+  description,
+  required,
+  children,
+}: FormFieldProps): React.ReactElement {
   return (
     <Box flexDirection="column">
       <Text color="$muted" bold>

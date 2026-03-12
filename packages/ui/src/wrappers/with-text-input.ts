@@ -4,7 +4,14 @@
 
 import chalk from "chalk"
 import type { TextInputOptions } from "../types.js"
-import { CURSOR_HIDE, CURSOR_SHOW, CURSOR_TO_START, CLEAR_LINE_END, write, isTTY } from "../cli/ansi"
+import {
+  CURSOR_HIDE,
+  CURSOR_SHOW,
+  CURSOR_TO_START,
+  CLEAR_LINE_END,
+  write,
+  isTTY,
+} from "../cli/ansi"
 
 /**
  * Prompt for text input in the terminal
@@ -28,7 +35,10 @@ import { CURSOR_HIDE, CURSOR_SHOW, CURSOR_TO_START, CLEAR_LINE_END, write, isTTY
  * });
  * ```
  */
-export async function withTextInput(prompt: string, options: TextInputOptions = {}): Promise<string> {
+export async function withTextInput(
+  prompt: string,
+  options: TextInputOptions = {},
+): Promise<string> {
   const stream = options.stream ?? process.stdout
   const inputStream = options.inputStream ?? process.stdin
   const isTty = isTTY(stream)
@@ -384,5 +394,7 @@ function getAutocompleteSuggestion(value: string, autocomplete?: string[]): stri
   }
 
   const lowerValue = value.toLowerCase()
-  return autocomplete.find((item) => item.toLowerCase().startsWith(lowerValue) && item.length > value.length)
+  return autocomplete.find(
+    (item) => item.toLowerCase().startsWith(lowerValue) && item.length > value.length,
+  )
 }

@@ -225,11 +225,16 @@ export function usePaste(handler: PasteHandler): void {
  */
 export async function run(element: ReactElement, term: Term): Promise<RunHandle>
 export async function run(element: ReactElement, options?: RunOptions): Promise<RunHandle>
-export async function run(element: ReactElement, optionsOrTerm: RunOptions | Term = {}): Promise<RunHandle> {
+export async function run(
+  element: ReactElement,
+  optionsOrTerm: RunOptions | Term = {},
+): Promise<RunHandle> {
   // Term path: pass Term as provider + its streams, auto-enable from Term caps
   if (isTerm(optionsOrTerm)) {
     const term = optionsOrTerm as Term
-    const emulator = (term as Record<string, unknown>)._emulator as { feed(data: string): void } | undefined
+    const emulator = (term as Record<string, unknown>)._emulator as
+      | { feed(data: string): void }
+      | undefined
 
     // Emulator-backed term: headless mode with writable routing to emulator
     if (emulator) {

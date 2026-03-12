@@ -70,7 +70,12 @@ describe("ScrollbackList", () => {
 
     const r = createRenderer({ cols: 80, rows: 24 })
     const app = r(
-      <ScrollbackList items={tasks} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} stdout={mockStdout}>
+      <ScrollbackList
+        items={tasks}
+        keyExtractor={(t) => t.id}
+        isFrozen={(t) => t.done}
+        stdout={mockStdout}
+      >
         {(task) => <TaskItem task={task} />}
       </ScrollbackList>,
     )
@@ -97,7 +102,12 @@ describe("ScrollbackList", () => {
 
     const r = createRenderer({ cols: 80, rows: 24 })
     const app = r(
-      <ScrollbackList items={tasks} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} stdout={mockStdout}>
+      <ScrollbackList
+        items={tasks}
+        keyExtractor={(t) => t.id}
+        isFrozen={(t) => t.done}
+        stdout={mockStdout}
+      >
         {(task) => <TaskItem task={task} />}
       </ScrollbackList>,
     )
@@ -162,7 +172,12 @@ describe("ScrollbackList", () => {
 
     const r = createRenderer({ cols: 80, rows: 24 })
     const app = r(
-      <ScrollbackList items={tasks} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} stdout={mockStdout}>
+      <ScrollbackList
+        items={tasks}
+        keyExtractor={(t) => t.id}
+        isFrozen={(t) => t.done}
+        stdout={mockStdout}
+      >
         {(task) => <TaskItem task={task} />}
       </ScrollbackList>,
     )
@@ -193,7 +208,12 @@ describe("ScrollbackList", () => {
     ]
 
     const app = r(
-      <ScrollbackList items={tasks0} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} stdout={mockStdout}>
+      <ScrollbackList
+        items={tasks0}
+        keyExtractor={(t) => t.id}
+        isFrozen={(t) => t.done}
+        stdout={mockStdout}
+      >
         {(task) => <TaskItem task={task} />}
       </ScrollbackList>,
     )
@@ -212,7 +232,12 @@ describe("ScrollbackList", () => {
     ]
 
     app.rerender(
-      <ScrollbackList items={tasks1} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} stdout={mockStdout}>
+      <ScrollbackList
+        items={tasks1}
+        keyExtractor={(t) => t.id}
+        isFrozen={(t) => t.done}
+        stdout={mockStdout}
+      >
         {(task) => <TaskItem task={task} />}
       </ScrollbackList>,
     )
@@ -230,7 +255,12 @@ describe("ScrollbackList", () => {
     ]
 
     app.rerender(
-      <ScrollbackList items={tasks2} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} stdout={mockStdout}>
+      <ScrollbackList
+        items={tasks2}
+        keyExtractor={(t) => t.id}
+        isFrozen={(t) => t.done}
+        stdout={mockStdout}
+      >
         {(task) => <TaskItem task={task} />}
       </ScrollbackList>,
     )
@@ -255,7 +285,12 @@ describe("ScrollbackList", () => {
 
     const r = createRenderer({ cols: 80, rows: 24 })
     r(
-      <ScrollbackList items={tasks} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} stdout={mockStdout}>
+      <ScrollbackList
+        items={tasks}
+        keyExtractor={(t) => t.id}
+        isFrozen={(t) => t.done}
+        stdout={mockStdout}
+      >
         {(task) => <TaskItem task={task} />}
       </ScrollbackList>,
     )
@@ -339,7 +374,12 @@ describe("ScrollbackList", () => {
     ]
 
     const app = r(
-      <ScrollbackList items={tasks0} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} stdout={mockStdout}>
+      <ScrollbackList
+        items={tasks0}
+        keyExtractor={(t) => t.id}
+        isFrozen={(t) => t.done}
+        stdout={mockStdout}
+      >
         {(task) => <TaskItem task={task} />}
       </ScrollbackList>,
     )
@@ -353,7 +393,12 @@ describe("ScrollbackList", () => {
     ]
 
     app.rerender(
-      <ScrollbackList items={tasks1} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} stdout={mockStdout}>
+      <ScrollbackList
+        items={tasks1}
+        keyExtractor={(t) => t.id}
+        isFrozen={(t) => t.done}
+        stdout={mockStdout}
+      >
         {(task) => <TaskItem task={task} />}
       </ScrollbackList>,
     )
@@ -369,7 +414,12 @@ describe("ScrollbackList", () => {
     ]
 
     app.rerender(
-      <ScrollbackList items={tasks2} keyExtractor={(t) => t.id} isFrozen={(t) => t.done} stdout={mockStdout}>
+      <ScrollbackList
+        items={tasks2}
+        keyExtractor={(t) => t.id}
+        isFrozen={(t) => t.done}
+        stdout={mockStdout}
+      >
         {(task) => <TaskItem task={task} />}
       </ScrollbackList>,
     )

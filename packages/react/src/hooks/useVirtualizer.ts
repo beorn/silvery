@@ -80,7 +80,10 @@ function getHeight(index: number, estimateHeight: number | ((index: number) => n
 }
 
 /** Calculate average item height by sampling. */
-function calcAverageHeight(count: number, estimateHeight: number | ((index: number) => number)): number {
+function calcAverageHeight(
+  count: number,
+  estimateHeight: number | ((index: number) => number),
+): number {
   if (count === 0) return 1
   if (typeof estimateHeight === "number") return estimateHeight
 
@@ -135,7 +138,13 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
   // passive effects don't flush within the same doRender() cycle, so the scroll
   // offset update was deferred until the next keypress.
   const scrollOffsetRef = useRef(
-    calcEdgeBasedScrollOffset(selectedIndexRef.current, 0, estimatedVisibleCount, count, scrollPadding),
+    calcEdgeBasedScrollOffset(
+      selectedIndexRef.current,
+      0,
+      estimatedVisibleCount,
+      count,
+      scrollPadding,
+    ),
   )
   const [, setScrollOffset] = useState(() => scrollOffsetRef.current)
 

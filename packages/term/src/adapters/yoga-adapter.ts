@@ -268,7 +268,8 @@ export class YogaLayoutEngine implements LayoutEngine {
     this._constants = {
       // Flex Direction
       FLEX_DIRECTION_COLUMN: yoga.FLEX_DIRECTION_COLUMN as unknown as FlexDirectionValue,
-      FLEX_DIRECTION_COLUMN_REVERSE: yoga.FLEX_DIRECTION_COLUMN_REVERSE as unknown as FlexDirectionValue,
+      FLEX_DIRECTION_COLUMN_REVERSE:
+        yoga.FLEX_DIRECTION_COLUMN_REVERSE as unknown as FlexDirectionValue,
       FLEX_DIRECTION_ROW: yoga.FLEX_DIRECTION_ROW as unknown as FlexDirectionValue,
       FLEX_DIRECTION_ROW_REVERSE: yoga.FLEX_DIRECTION_ROW_REVERSE as unknown as FlexDirectionValue,
 

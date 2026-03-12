@@ -49,7 +49,9 @@ export interface XtermProvider {
    * Subscribe to mouse events (SGR mode, parsed).
    * Returns cleanup function.
    */
-  onMouse(handler: (info: { x: number; y: number; button: number; type: "press" | "release" }) => void): () => void
+  onMouse(
+    handler: (info: { x: number; y: number; button: number; type: "press" | "release" }) => void,
+  ): () => void
 
   /**
    * Subscribe to focus changes.
@@ -85,7 +87,9 @@ export interface XtermProvider {
  */
 export function createXtermProvider(terminal: XtermTerminal): XtermProvider {
   const inputHandlers = new Set<(chunk: string) => void>()
-  const mouseHandlers = new Set<(info: { x: number; y: number; button: number; type: "press" | "release" }) => void>()
+  const mouseHandlers = new Set<
+    (info: { x: number; y: number; button: number; type: "press" | "release" }) => void
+  >()
   const focusHandlers = new Set<(focused: boolean) => void>()
   const disposables: Array<{ dispose(): void }> = []
   let disposed = false

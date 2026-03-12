@@ -193,7 +193,8 @@ const AGENT_SCRIPT: AgentScriptEntry[] = [
   },
   {
     role: "agent",
-    content: "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
+    content:
+      "Rate limiting added: 5 attempts per minute per IP on the login endpoint. All 15 tests pass.",
     tokens: { input: 8468, output: 156 },
   },
   {
@@ -203,7 +204,8 @@ const AGENT_SCRIPT: AgentScriptEntry[] = [
   },
   {
     role: "agent",
-    thinking: "Simple task — read the version from package.json and expose it on GET /health alongside uptime.",
+    thinking:
+      "Simple task — read the version from package.json and expose it on GET /health alongside uptime.",
     content: "Simple addition — reading package.json for the version, then adding the route.",
     toolCalls: [
       {
@@ -261,7 +263,8 @@ function agentFormatTokens(n: number): string {
 }
 
 function agentFormatCost(inputTokens: number, outputTokens: number): string {
-  const cost = (inputTokens * AGENT_INPUT_COST_PER_M + outputTokens * AGENT_OUTPUT_COST_PER_M) / 1_000_000
+  const cost =
+    (inputTokens * AGENT_INPUT_COST_PER_M + outputTokens * AGENT_OUTPUT_COST_PER_M) / 1_000_000
   if (cost < 0.01) return `$${cost.toFixed(4)}`
   return `$${cost.toFixed(2)}`
 }
@@ -524,8 +527,8 @@ function AgentExchangeView({
         <Box marginTop={0}>
           <Text color="$muted">
             {"  "}
-            {agentFormatTokens(cumTokens.input)} in {"·"} {agentFormatTokens(cumTokens.output)} out {"·"}{" "}
-            {agentFormatCost(cumTokens.input, cumTokens.output)}
+            {agentFormatTokens(cumTokens.input)} in {"·"} {agentFormatTokens(cumTokens.output)} out{" "}
+            {"·"} {agentFormatCost(cumTokens.input, cumTokens.output)}
           </Text>
         </Box>
       )}
@@ -625,7 +628,10 @@ export function CodingAgentShowcase(): JSX.Element {
             if (revealTimerRef.current) clearInterval(revealTimerRef.current)
             if (entry.toolCalls?.length) {
               setStreamPhase("tools")
-              phaseTimerRef.current = setTimeout(() => setStreamPhase("done"), 800 * (entry.toolCalls?.length ?? 1))
+              phaseTimerRef.current = setTimeout(
+                () => setStreamPhase("done"),
+                800 * (entry.toolCalls?.length ?? 1),
+              )
             } else {
               setStreamPhase("done")
             }
@@ -643,7 +649,10 @@ export function CodingAgentShowcase(): JSX.Element {
           if (revealTimerRef.current) clearInterval(revealTimerRef.current)
           if (entry.toolCalls?.length) {
             setStreamPhase("tools")
-            phaseTimerRef.current = setTimeout(() => setStreamPhase("done"), 800 * (entry.toolCalls?.length ?? 1))
+            phaseTimerRef.current = setTimeout(
+              () => setStreamPhase("done"),
+              800 * (entry.toolCalls?.length ?? 1),
+            )
           } else {
             setStreamPhase("done")
           }
@@ -704,7 +713,10 @@ export function CodingAgentShowcase(): JSX.Element {
       setInputText("")
 
       // Skip past user entries in script to find next agent entry
-      while (scriptIdxRef.current < AGENT_SCRIPT.length && AGENT_SCRIPT[scriptIdxRef.current]!.role === "user") {
+      while (
+        scriptIdxRef.current < AGENT_SCRIPT.length &&
+        AGENT_SCRIPT[scriptIdxRef.current]!.role === "user"
+      ) {
         scriptIdxRef.current++
       }
       // Start the next agent entry
@@ -741,7 +753,9 @@ export function CodingAgentShowcase(): JSX.Element {
                 revealFraction={revealFraction}
                 isLatest={isLatest}
                 cumTokens={
-                  isLatest && streamPhase === "done" ? { input: cumTokens.input, output: cumTokens.output } : undefined
+                  isLatest && streamPhase === "done"
+                    ? { input: cumTokens.input, output: cumTokens.output }
+                    : undefined
                 }
               />
             </Box>
@@ -749,13 +763,15 @@ export function CodingAgentShowcase(): JSX.Element {
         })}
 
         {/* Done indicator */}
-        {scriptIdxRef.current >= AGENT_SCRIPT.length && streamPhase === "done" && exchanges.length > 0 && (
-          <Box paddingX={1} marginTop={0}>
-            <Text color="$success" bold>
-              {"✔"} Session complete
-            </Text>
-          </Box>
-        )}
+        {scriptIdxRef.current >= AGENT_SCRIPT.length &&
+          streamPhase === "done" &&
+          exchanges.length > 0 && (
+            <Box paddingX={1} marginTop={0}>
+              <Text color="$success" bold>
+                {"✔"} Session complete
+              </Text>
+            </Box>
+          )}
       </Box>
 
       {/* Input — uses @silvery/ui TextInput with full readline support */}

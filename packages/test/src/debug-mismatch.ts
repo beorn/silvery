@@ -245,7 +245,11 @@ function analyzeFastPath(node: TeaNode | null, scrollAncestors: TeaNode[]): stri
 
   const flags = node
   const allClean =
-    !flags.contentDirty && !flags.paintDirty && !flags.subtreeDirty && !flags.childrenDirty && !flags.layoutDirty
+    !flags.contentDirty &&
+    !flags.paintDirty &&
+    !flags.subtreeDirty &&
+    !flags.childrenDirty &&
+    !flags.layoutDirty
 
   if (allClean) {
     analysis.push("⚠ ALL DIRTY FLAGS FALSE - fast-path likely skipped this node")
@@ -265,7 +269,9 @@ function analyzeFastPath(node: TeaNode | null, scrollAncestors: TeaNode[]): stri
       )
       analysis.push("  → Node should have been skipped, but mismatch suggests it should render")
     } else if (inVisibleRange) {
-      analysis.push(`✓ Node index ${childIndex} is in visible range [${ss.firstVisibleChild}..${ss.lastVisibleChild}]`)
+      analysis.push(
+        `✓ Node index ${childIndex} is in visible range [${ss.firstVisibleChild}..${ss.lastVisibleChild}]`,
+      )
     }
 
     // Check scroll offset
@@ -299,7 +305,10 @@ function analyzeFastPath(node: TeaNode | null, scrollAncestors: TeaNode[]): stri
     let siblingMoved = false
     for (const sibling of node.parent.children) {
       if (sibling !== node && sibling.contentRect && sibling.prevLayout) {
-        if (sibling.contentRect.x !== sibling.prevLayout.x || sibling.contentRect.y !== sibling.prevLayout.y) {
+        if (
+          sibling.contentRect.x !== sibling.prevLayout.x ||
+          sibling.contentRect.y !== sibling.prevLayout.y
+        ) {
           siblingMoved = true
           break
         }
@@ -465,7 +474,11 @@ function formatRect(rect: Rect | null): string {
   return `{x:${rect.x}, y:${rect.y}, w:${rect.width}, h:${rect.height}}`
 }
 
-function formatScrollState(lines: string[], scroll: NonNullable<NodeDebugInfo["scroll"]>, indent = "  "): void {
+function formatScrollState(
+  lines: string[],
+  scroll: NonNullable<NodeDebugInfo["scroll"]>,
+  indent = "  ",
+): void {
   if (scroll.offsetChanged) {
     lines.push(`${indent}⚠ SCROLL CHANGED: offset ${scroll.prevOffset} → ${scroll.offset}`)
   } else {

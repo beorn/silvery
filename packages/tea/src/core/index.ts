@@ -95,7 +95,10 @@ export type SilveryMsg =
  * - `batch`: Multiple effects to execute
  * - `dispatch`: Queue another message (no re-entrant dispatch)
  */
-export type Effect = { type: "none" } | { type: "batch"; effects: Effect[] } | { type: "dispatch"; msg: SilveryMsg }
+export type Effect =
+  | { type: "none" }
+  | { type: "batch"; effects: Effect[] }
+  | { type: "dispatch"; msg: SilveryMsg }
 
 /**
  * Subscription descriptor (for future use).
@@ -190,13 +193,23 @@ export function compose<Model, Msg>(...plugins: Plugin<Model, Msg>[]): Plugin<Mo
 // =============================================================================
 
 export { createFocusManager } from "../focus-manager.js"
-export type { FocusManager, FocusManagerOptions, FocusChangeCallback, FocusSnapshot } from "../focus-manager.js"
+export type {
+  FocusManager,
+  FocusManagerOptions,
+  FocusChangeCallback,
+  FocusSnapshot,
+} from "../focus-manager.js"
 
 // =============================================================================
 // Focus Events (pure, no React)
 // =============================================================================
 
-export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "../focus-events.js"
+export {
+  createKeyEvent,
+  createFocusEvent,
+  dispatchKeyEvent,
+  dispatchFocusEvent,
+} from "../focus-events.js"
 export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "../focus-events.js"
 
 // =============================================================================

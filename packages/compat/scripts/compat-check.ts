@@ -49,7 +49,8 @@ async function addFailingMarks(filePath: string, testNames: string[]) {
     // Match: test('name' or test("name" — but NOT test.failing('name' (already marked)
     const patternSQ = `test('${name}'`
     const patternDQ = `test("${name}"`
-    if (content.includes(`test.failing('${name}'`) || content.includes(`test.failing("${name}"`)) continue
+    if (content.includes(`test.failing('${name}'`) || content.includes(`test.failing("${name}"`))
+      continue
     content = content.replace(patternSQ, `test.failing('${name}'`)
     content = content.replace(patternDQ, `test.failing("${name}"`)
   }

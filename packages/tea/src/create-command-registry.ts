@@ -61,7 +61,10 @@ export interface CommandDefInput<TContext = unknown, TAction = unknown> {
 /**
  * A record mapping command IDs to their definitions.
  */
-export type CommandDefs<TContext = unknown, TAction = unknown> = Record<string, CommandDefInput<TContext, TAction>>
+export type CommandDefs<TContext = unknown, TAction = unknown> = Record<
+  string,
+  CommandDefInput<TContext, TAction>
+>
 
 // =============================================================================
 // Implementation

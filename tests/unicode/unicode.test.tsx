@@ -141,7 +141,11 @@ describe("unicode: CJK truncation", () => {
   test("CJK in fixed-width box truncates correctly", () => {
     const r = createRenderer({ cols: 10, rows: 3 })
     const app = r(
-      React.createElement(Box, { width: 6 }, React.createElement(Text, null, "\u4F60\u597D\u4E16\u754C\u4F60\u597D")),
+      React.createElement(
+        Box,
+        { width: 6 },
+        React.createElement(Text, null, "\u4F60\u597D\u4E16\u754C\u4F60\u597D"),
+      ),
     )
     // Should not crash, and should produce output within bounds
     const text = app.text

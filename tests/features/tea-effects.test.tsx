@@ -19,7 +19,12 @@ type State = {
   count: number
 }
 
-type Msg = { type: "start" } | { type: "tick" } | { type: "stop" } | { type: "delayedAction" } | { type: "delayFired" }
+type Msg =
+  | { type: "start" }
+  | { type: "tick" }
+  | { type: "stop" }
+  | { type: "delayedAction" }
+  | { type: "delayFired" }
 
 type Effect = TimerEffect<Msg>
 
@@ -28,7 +33,10 @@ const init: State = { phase: "idle", count: 0 }
 function update(state: State, msg: Msg): TeaResult<State, Effect> {
   switch (msg.type) {
     case "start":
-      return [{ ...state, phase: "counting", count: 0 }, [fx.interval(30, { type: "tick" }, "counter")]]
+      return [
+        { ...state, phase: "counting", count: 0 },
+        [fx.interval(30, { type: "tick" }, "counter")],
+      ]
     case "tick":
       if (state.count >= 5) return [{ ...state, phase: "done" }, [fx.cancel("counter")]]
       return { ...state, count: state.count + 1 }
@@ -227,7 +235,8 @@ describe("useTea hook", () => {
           return [{ ...s, phase: "counting" as const }, [fx.interval(15, { type: "tick" }, "t")]]
         if (msg.type === "tick") {
           ticks.push(s.count)
-          if (s.count >= 3) return [{ ...s, phase: "done" as const, count: s.count + 1 }, [fx.cancel("t")]]
+          if (s.count >= 3)
+            return [{ ...s, phase: "done" as const, count: s.count + 1 }, [fx.cancel("t")]]
           return { ...s, count: s.count + 1 }
         }
         return s

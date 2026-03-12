@@ -67,8 +67,21 @@ export interface FlexboxProps {
   // Alignment
   alignItems?: "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
   alignSelf?: "auto" | "flex-start" | "flex-end" | "center" | "stretch" | "baseline"
-  alignContent?: "flex-start" | "flex-end" | "center" | "stretch" | "space-between" | "space-around" | "space-evenly"
-  justifyContent?: "flex-start" | "flex-end" | "center" | "space-between" | "space-around" | "space-evenly"
+  alignContent?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "stretch"
+    | "space-between"
+    | "space-around"
+    | "space-evenly"
+  justifyContent?:
+    | "flex-start"
+    | "flex-end"
+    | "center"
+    | "space-between"
+    | "space-around"
+    | "space-evenly"
 
   // Spacing
   padding?: number
@@ -175,7 +188,8 @@ export interface StyleProps {
 /**
  * Props for Box component.
  */
-export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEventProps, FocusEventProps {
+export interface BoxProps
+  extends FlexboxProps, StyleProps, TestProps, MouseEventProps, FocusEventProps {
   borderStyle?: "single" | "double" | "round" | "bold" | "singleDouble" | "doubleSingle" | "classic"
   borderColor?: string
   borderTop?: boolean
@@ -193,7 +207,14 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
    * Use cases: selection indicators, hover highlights, focus rings — anything that
    * should visually frame a box without shifting content.
    */
-  outlineStyle?: "single" | "double" | "round" | "bold" | "singleDouble" | "doubleSingle" | "classic"
+  outlineStyle?:
+    | "single"
+    | "double"
+    | "round"
+    | "bold"
+    | "singleDouble"
+    | "doubleSingle"
+    | "classic"
   /** Foreground color for the outline */
   outlineColor?: string
   /** Apply dim styling to the outline */
@@ -234,7 +255,14 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
  */
 export interface TextProps extends StyleProps, TestProps, MouseEventProps {
   children?: React.ReactNode
-  wrap?: "wrap" | "truncate" | "truncate-start" | "truncate-middle" | "truncate-end" | "clip" | boolean
+  wrap?:
+    | "wrap"
+    | "truncate"
+    | "truncate-start"
+    | "truncate-middle"
+    | "truncate-end"
+    | "clip"
+    | boolean
   /** Internal transform function applied to each rendered line. Used by Transform component. */
   internal_transform?: (line: string, index: number) => string
 }
@@ -538,7 +566,14 @@ export interface CustomEvent {
  * the render loop runs until exit() is called. When events are absent,
  * the render completes when the UI is stable.
  */
-export type Event = KeyEvent | MouseEvent | ResizeEvent | FocusEvent | BlurEvent | SignalEvent | CustomEvent
+export type Event =
+  | KeyEvent
+  | MouseEvent
+  | ResizeEvent
+  | FocusEvent
+  | BlurEvent
+  | SignalEvent
+  | CustomEvent
 
 /**
  * Event source that can be subscribed to and unsubscribed from.

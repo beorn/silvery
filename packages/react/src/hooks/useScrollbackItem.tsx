@@ -82,6 +82,9 @@ export function ScrollbackItemProvider({
   index,
   nearScrollback,
 }: ScrollbackItemProviderProps) {
-  const value = useMemo(() => ({ freeze, isFrozen, index, nearScrollback }), [freeze, isFrozen, index, nearScrollback])
+  const value = useMemo(
+    () => ({ freeze, isFrozen, index, nearScrollback }),
+    [freeze, isFrozen, index, nearScrollback],
+  )
   return <ScrollbackItemCtx.Provider value={value}>{children}</ScrollbackItemCtx.Provider>
 }

@@ -4,10 +4,17 @@
  */
 
 import React, { createContext, useContext } from "react"
-import { Box as SilveryBox, type BoxProps as SilveryBoxProps, type BoxHandle } from "@silvery/react/components/Box"
+import {
+  Box as SilveryBox,
+  type BoxProps as SilveryBoxProps,
+  type BoxHandle,
+} from "@silvery/react/components/Box"
 import { Static as SilveryStatic } from "@silvery/react/components/Static"
 import { Text as SilveryText } from "@silvery/react/components/Text"
-import type { TextProps as SilveryTextProps, TextHandle as SilveryTextHandle } from "@silvery/react/components/Text"
+import type {
+  TextProps as SilveryTextProps,
+  TextHandle as SilveryTextHandle,
+} from "@silvery/react/components/Text"
 
 import {
   currentChalkLevel,
@@ -75,40 +82,42 @@ export type { TextProps, TextHandle } from "@silvery/react/components/Text"
  *
  * This matches Ink's text sanitization behavior from sanitize-ansi.ts.
  */
-export const Text = React.forwardRef<SilveryTextHandle, SilveryTextProps>(function InkText(props, ref) {
-  // Scan original children for user-provided VS16 before sanitization
-  scanChildrenForVS16(props.children)
-  const sanitizedChildren = sanitizeChildren(props.children)
-  // Track embedded ANSI in children so processBuffer knows whether to strip
-  // prop-based ANSI codes when chalk has no colors (FORCE_COLOR=0).
-  const renderState = React.useContext(InkRenderStateCtx)
-  if (renderState && !renderState.hasEmbeddedAnsi) {
-    if (childrenContainAnsi(sanitizedChildren)) {
-      renderState.hasEmbeddedAnsi = true
+export const Text = React.forwardRef<SilveryTextHandle, SilveryTextProps>(
+  function InkText(props, ref) {
+    // Scan original children for user-provided VS16 before sanitization
+    scanChildrenForVS16(props.children)
+    const sanitizedChildren = sanitizeChildren(props.children)
+    // Track embedded ANSI in children so processBuffer knows whether to strip
+    // prop-based ANSI codes when chalk has no colors (FORCE_COLOR=0).
+    const renderState = React.useContext(InkRenderStateCtx)
+    if (renderState && !renderState.hasEmbeddedAnsi) {
+      if (childrenContainAnsi(sanitizedChildren)) {
+        renderState.hasEmbeddedAnsi = true
+      }
     }
-  }
-  // ForceStylesCtx is always true in the render() path so buffer cells
-  // are styled for correct content edge detection (trailing whitespace).
-  // When chalk has no colors, processBuffer handles ANSI stripping.
-  const hasColors = currentChalkLevel() > 0
-  const forceStyles = React.useContext(ForceStylesCtx)
-  const passProps =
-    hasColors || forceStyles
-      ? {
-          ...props,
-          color: props.color,
-          backgroundColor: props.backgroundColor,
-          ref,
-          children: sanitizedChildren,
-        }
-      : {
-          // Only pass layout-affecting props, not visual style props
-          wrap: props.wrap,
-          ref,
-          children: sanitizedChildren,
-        }
-  return React.createElement(SilveryText, passProps)
-})
+    // ForceStylesCtx is always true in the render() path so buffer cells
+    // are styled for correct content edge detection (trailing whitespace).
+    // When chalk has no colors, processBuffer handles ANSI stripping.
+    const hasColors = currentChalkLevel() > 0
+    const forceStyles = React.useContext(ForceStylesCtx)
+    const passProps =
+      hasColors || forceStyles
+        ? {
+            ...props,
+            color: props.color,
+            backgroundColor: props.backgroundColor,
+            ref,
+            children: sanitizedChildren,
+          }
+        : {
+            // Only pass layout-affecting props, not visual style props
+            wrap: props.wrap,
+            ref,
+            children: sanitizedChildren,
+          }
+    return React.createElement(SilveryText, passProps)
+  },
+)
 
 // =============================================================================
 // Static

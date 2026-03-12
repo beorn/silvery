@@ -39,7 +39,9 @@ interface SilveryErrorBoundaryState {
  * Parse a stack line to extract function name, file, line, column.
  * Handles both `at Foo (file:line:col)` and `at file:line:col` formats.
  */
-function parseStackLine(line: string): { function?: string; file?: string; line?: number; column?: number } | null {
+function parseStackLine(
+  line: string,
+): { function?: string; file?: string; line?: number; column?: number } | null {
   const trimmed = line.trim()
   if (!trimmed.startsWith("at ")) return null
 
@@ -84,7 +86,10 @@ function cleanupPath(filePath: string | undefined): string | undefined {
 /**
  * Get source code excerpt around a line number (±3 lines).
  */
-function getCodeExcerpt(filePath: string, line: number): Array<{ line: number; value: string }> | null {
+function getCodeExcerpt(
+  filePath: string,
+  line: number,
+): Array<{ line: number; value: string }> | null {
   try {
     if (!fs.existsSync(filePath)) return null
     const source = fs.readFileSync(filePath, "utf8")
@@ -112,7 +117,10 @@ function getCodeExcerpt(filePath: string, line: number): Array<{ line: number; v
  * Renders error info using silvery-box/silvery-text host elements — no Box/Text dependency.
  * Shows: ERROR label, error message, file location, source code excerpt, and stack trace.
  */
-export class SilveryErrorBoundary extends Component<SilveryErrorBoundaryProps, SilveryErrorBoundaryState> {
+export class SilveryErrorBoundary extends Component<
+  SilveryErrorBoundaryProps,
+  SilveryErrorBoundaryState
+> {
   override state: SilveryErrorBoundaryState = { error: null }
 
   static getDerivedStateFromError(error: Error): SilveryErrorBoundaryState {
@@ -151,7 +159,11 @@ export class SilveryErrorBoundary extends Component<SilveryErrorBoundaryProps, S
         React.createElement(
           "silvery-box",
           { key: "header" },
-          React.createElement("silvery-text", { backgroundColor: "red", color: "white" }, " ERROR "),
+          React.createElement(
+            "silvery-text",
+            { backgroundColor: "red", color: "white" },
+            " ERROR ",
+          ),
           React.createElement("silvery-text", {}, ` ${err.message}`),
         ),
       )
@@ -162,7 +174,11 @@ export class SilveryErrorBoundary extends Component<SilveryErrorBoundaryProps, S
           React.createElement(
             "silvery-box",
             { key: "location", marginTop: 1 },
-            React.createElement("silvery-text", { dimColor: true }, `${filePath}:${origin.line}:${origin.column}`),
+            React.createElement(
+              "silvery-text",
+              { dimColor: true },
+              `${filePath}:${origin.line}:${origin.column}`,
+            ),
           ),
         )
       }
@@ -194,7 +210,11 @@ export class SilveryErrorBoundary extends Component<SilveryErrorBoundaryProps, S
           )
         })
         children.push(
-          React.createElement("silvery-box", { key: "code", marginTop: 1, flexDirection: "column" }, ...codeLines),
+          React.createElement(
+            "silvery-box",
+            { key: "code", marginTop: 1, flexDirection: "column" },
+            ...codeLines,
+          ),
         )
       }
 
@@ -214,7 +234,11 @@ export class SilveryErrorBoundary extends Component<SilveryErrorBoundaryProps, S
             "silvery-box",
             { key: `stack-${i}` },
             React.createElement("silvery-text", { dimColor: true }, "- "),
-            React.createElement("silvery-text", { dimColor: true, bold: true }, parsed.function ?? ""),
+            React.createElement(
+              "silvery-text",
+              { dimColor: true, bold: true },
+              parsed.function ?? "",
+            ),
             React.createElement(
               "silvery-text",
               { dimColor: true, color: "gray" },
@@ -223,11 +247,19 @@ export class SilveryErrorBoundary extends Component<SilveryErrorBoundaryProps, S
           )
         })
         children.push(
-          React.createElement("silvery-box", { key: "stack", marginTop: 1, flexDirection: "column" }, ...stackLines),
+          React.createElement(
+            "silvery-box",
+            { key: "stack", marginTop: 1, flexDirection: "column" },
+            ...stackLines,
+          ),
         )
       }
 
-      return React.createElement("silvery-box", { flexDirection: "column", padding: 1 }, ...children)
+      return React.createElement(
+        "silvery-box",
+        { flexDirection: "column", padding: 1 },
+        ...children,
+      )
     }
     return this.props.children
   }

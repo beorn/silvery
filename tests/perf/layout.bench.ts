@@ -11,7 +11,12 @@
  */
 
 import { bench, describe } from "vitest"
-import { ensureDefaultLayoutEngine, getLayoutEngine, getConstants, type LayoutNode } from "@silvery/term/layout-engine"
+import {
+  ensureDefaultLayoutEngine,
+  getLayoutEngine,
+  getConstants,
+  type LayoutNode,
+} from "@silvery/term/layout-engine"
 
 // Top-level await for layout engine initialization —
 // beforeAll with async doesn't reliably complete before bench() in vitest bench mode.
@@ -54,7 +59,12 @@ function createDeepTree(depth: number, width: number, height: number): LayoutNod
   return root
 }
 
-function createKanbanTree(columns: number, cardsPerColumn: number, width: number, height: number): LayoutNode {
+function createKanbanTree(
+  columns: number,
+  cardsPerColumn: number,
+  width: number,
+  height: number,
+): LayoutNode {
   const root = engine.createNode()
   root.setWidth(width)
   root.setHeight(height)

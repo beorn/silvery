@@ -6,7 +6,10 @@
  */
 import React from "react"
 import { renderStringSync } from "../../../../packages/react/src/render-string"
-import { ensureDefaultLayoutEngine, isLayoutEngineInitialized } from "../../../../packages/term/src/layout-engine"
+import {
+  ensureDefaultLayoutEngine,
+  isLayoutEngineInitialized,
+} from "../../../../packages/term/src/layout-engine"
 import { createTerm } from "../../../../packages/term/src/ansi"
 import { TermContext } from "../../../../packages/react/src/context"
 import { currentChalkLevel, restoreColonFormatSGR } from "../../../../packages/compat/src/ink"
@@ -78,7 +81,10 @@ function doRender(node: React.JSX.Element, options?: RenderToStringOptions): str
 /**
  * Synchronous render to string (requires layout engine to be initialized).
  */
-export const renderToString = (node: React.JSX.Element, options?: RenderToStringOptions): string => {
+export const renderToString = (
+  node: React.JSX.Element,
+  options?: RenderToStringOptions,
+): string => {
   if (!isLayoutEngineInitialized()) {
     throw new Error("Layout engine not initialized. Call initLayoutEngine() in beforeAll().")
   }

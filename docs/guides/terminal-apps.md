@@ -159,7 +159,11 @@ function ItemList() {
   return (
     <Box flexDirection="column">
       {items.map((item, i) => (
-        <Box key={item.id} onClick={() => store.setCursor(i)} onDoubleClick={() => store.startEdit(i)}>
+        <Box
+          key={item.id}
+          onClick={() => store.setCursor(i)}
+          onDoubleClick={() => store.startEdit(i)}
+        >
           <Text color={i === cursor ? "cyan" : undefined}>
             {i === cursor ? "> " : "  "}
             {item.text}
@@ -252,7 +256,13 @@ Meanwhile, event handlers have the same problem. `if (input === "j") moveCursor(
 **The fix**: turn input into named, serializable commands. Declare that `j` maps to the command `cursor_down`, and `cursor_down` produces the action `{ op: "moveCursor", delta: 1 }`:
 
 ```tsx
-import { pipe, withDomEvents, withCommands, withReact, createCommandRegistry } from "@silvery/tea/plugins"
+import {
+  pipe,
+  withDomEvents,
+  withCommands,
+  withReact,
+  createCommandRegistry,
+} from "@silvery/tea/plugins"
 
 const registry = createCommandRegistry({
   cursor_down: {

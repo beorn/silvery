@@ -231,9 +231,21 @@ function ImagesTab(): JSX.Element {
     return [
       { name: "Rainbow", description: "HSV color wheel gradient", png: generateRainbow(pw, ph) },
       { name: "Plasma", description: "Sine-wave plasma interference", png: generatePlasma(pw, ph) },
-      { name: "Mandelbrot", description: "Fractal escape-time coloring", png: generateMandelbrot(pw, ph) },
-      { name: "RGB Cube", description: "Red-Green-Blue gradient grid", png: generateGradientGrid(pw, ph) },
-      { name: "Checker", description: "Hue-shifted checkerboard", png: generateCheckerPattern(pw, ph) },
+      {
+        name: "Mandelbrot",
+        description: "Fractal escape-time coloring",
+        png: generateMandelbrot(pw, ph),
+      },
+      {
+        name: "RGB Cube",
+        description: "Red-Green-Blue gradient grid",
+        png: generateGradientGrid(pw, ph),
+      },
+      {
+        name: "Checker",
+        description: "Hue-shifted checkerboard",
+        png: generateCheckerPattern(pw, ph),
+      },
     ]
   }, [])
 
@@ -433,7 +445,8 @@ function PaintTab(): JSX.Element {
 
       <Muted>
         {" "}
-        <Kbd>1-0</Kbd> color <Kbd>e</Kbd> eraser <Kbd>c</Kbd> clear (click canvas in Kitty/Ghostty for mouse paint)
+        <Kbd>1-0</Kbd> color <Kbd>e</Kbd> eraser <Kbd>c</Kbd> clear (click canvas in Kitty/Ghostty
+        for mouse paint)
       </Muted>
     </Box>
   )

@@ -13,7 +13,14 @@
  * @packageDocumentation
  */
 
-export { easings, resolveEasing, useAnimation, useInterval, useTimeout, useLatest } from "./animation/index"
+export {
+  easings,
+  resolveEasing,
+  useAnimation,
+  useInterval,
+  useTimeout,
+  useLatest,
+} from "./animation/index"
 export { useTransition as useAnimatedTransition } from "./animation/index"
 export type {
   EasingFn,

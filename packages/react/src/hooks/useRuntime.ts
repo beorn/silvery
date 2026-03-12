@@ -37,6 +37,8 @@ import { RuntimeContext, type BaseRuntimeEvents, type RuntimeContextValue } from
  * For input-only components, prefer useInput() which throws a clear error
  * when called outside a runtime.
  */
-export function useRuntime<E extends BaseRuntimeEvents = BaseRuntimeEvents>(): RuntimeContextValue<E> | null {
+export function useRuntime<
+  E extends BaseRuntimeEvents = BaseRuntimeEvents,
+>(): RuntimeContextValue<E> | null {
   return useContext(RuntimeContext) as RuntimeContextValue<E> | null
 }

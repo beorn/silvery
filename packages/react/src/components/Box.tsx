@@ -86,7 +86,10 @@ export interface BoxHandle {
  * </Box>
  * ```
  */
-export const Box = forwardRef(function Box(props: BoxProps, ref: ForwardedRef<BoxHandle>): JSX.Element {
+export const Box = forwardRef(function Box(
+  props: BoxProps,
+  ref: ForwardedRef<BoxHandle>,
+): JSX.Element {
   const { children, onLayout, ...restProps } = props
   const nodeRef = useRef<TeaNode | null>(null)
   const [node, setNode] = useState<TeaNode | null>(null)

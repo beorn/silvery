@@ -95,7 +95,9 @@ function buildRegistry(): { categories: Category[]; allDemos: DemoEntry[] } {
       items,
     })
   }
-  categories.sort((a, b) => (CATEGORY_CONFIG[a.name]?.order ?? 99) - (CATEGORY_CONFIG[b.name]?.order ?? 99))
+  categories.sort(
+    (a, b) => (CATEGORY_CONFIG[a.name]?.order ?? 99) - (CATEGORY_CONFIG[b.name]?.order ?? 99),
+  )
 
   return { categories, allDemos }
 }

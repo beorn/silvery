@@ -182,7 +182,11 @@ export function withTerminal<T extends RunnableApp>(
 
         // Find or create options argument
         let existingOptions: Record<string, unknown> | undefined
-        if (args.length > 0 && typeof args[args.length - 1] === "object" && args[args.length - 1] !== null) {
+        if (
+          args.length > 0 &&
+          typeof args[args.length - 1] === "object" &&
+          args[args.length - 1] !== null
+        ) {
           existingOptions = args[args.length - 1] as Record<string, unknown>
           // Don't treat React elements as options
           if ("type" in existingOptions && "props" in existingOptions) {

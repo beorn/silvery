@@ -58,7 +58,9 @@ if (listOnly) {
 }
 
 const filesToProcess =
-  fileFilters.length > 0 ? allTestFiles.filter((f) => fileFilters.some((ff) => f.includes(ff))) : allTestFiles
+  fileFilters.length > 0
+    ? allTestFiles.filter((f) => fileFilters.some((ff) => f.includes(ff)))
+    : allTestFiles
 
 // ---------------------------------------------------------------------------
 // Classification
@@ -93,7 +95,10 @@ const KITTY_FILES = new Set(["kitty-keyboard"])
 // Known expected failures (same as compat-check.ts addFailingMarks)
 const EXPECTED_FAILURES: Record<string, string[]> = {
   "flex-wrap": ["row - no wrap", "column - no wrap"],
-  "width-height": ["set aspect ratio with width and height", "set aspect ratio with maxHeight constraint"],
+  "width-height": [
+    "set aspect ratio with width and height",
+    "set aspect ratio with maxHeight constraint",
+  ],
   overflow: [
     "overflowX - single text node in a box with border inside overflow container",
     "overflowX - multiple text nodes in a box with border inside overflow container",
@@ -299,7 +304,8 @@ function transform(code: string, fileName: string): string {
     "./helpers/test-renderer": 'import { renderAsync } from "../helpers/test-renderer"',
     "./helpers/run": null, // PTY — not available
     "./helpers/term": null, // PTY — not available
-    "./helpers/force-colors": 'import { enableTestColors, disableTestColors } from "../helpers/render-to-string"',
+    "./helpers/force-colors":
+      'import { enableTestColors, disableTestColors } from "../helpers/render-to-string"',
   })
 
   // 5. Replace third-party imports
@@ -370,7 +376,10 @@ function transform(code: string, fileName: string): string {
   out = out.replace(/import\s+vm\s+from\s*['"]node:vm['"];?\n?/g, "")
 
   // 6. Handle expected failures / silvery passes
-  const allFailures = [...(EXPECTED_FAILURES[fileName] ?? []), ...(RENDER_MODE_FAILURES[fileName] ?? [])]
+  const allFailures = [
+    ...(EXPECTED_FAILURES[fileName] ?? []),
+    ...(RENDER_MODE_FAILURES[fileName] ?? []),
+  ]
   for (const name of allFailures) {
     // Match test('name' / test("name" / test.serial(\n\t'name' — with optional whitespace
     const esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
@@ -396,12 +405,18 @@ function transform(code: string, fileName: string): string {
   if (passes) {
     for (const name of passes) {
       const esc = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-      out = out.replace(new RegExp(`test\\.failing\\(\\s*(['"])${esc}\\1`, "g"), (m, q) => `test(${q}${name}${q}`)
+      out = out.replace(
+        new RegExp(`test\\.failing\\(\\s*(['"])${esc}\\1`, "g"),
+        (m, q) => `test(${q}${name}${q}`,
+      )
     }
   }
 
   // 7. Add layout engine init if needed
-  if ((out.includes("renderToString") || out.includes("renderToStringAsync")) && !out.includes("initLayoutEngine()")) {
+  if (
+    (out.includes("renderToString") || out.includes("renderToStringAsync")) &&
+    !out.includes("initLayoutEngine()")
+  ) {
     // Find position after last import line — insert beforeAll there
     const importEnd = findLastImportEnd(out)
     // If initLayoutEngine isn't already imported (e.g. from render-to-string helper), add it
@@ -502,9 +517,19 @@ function findLastImportEnd(code: string): number {
   const lastImportLine = code.slice(0, lastPos).split("\n").length - 1
   for (let i = lastImportLine + 1; i < Math.min(lastImportLine + 5, lines.length); i++) {
     const line = lines[i]!.trim()
-    if (line.startsWith("const ") && !line.includes("{") && !line.endsWith("(") && !line.endsWith("=>")) {
+    if (
+      line.startsWith("const ") &&
+      !line.includes("{") &&
+      !line.endsWith("(") &&
+      !line.endsWith("=>")
+    ) {
       lastPos = lines.slice(0, i + 1).join("\n").length
-    } else if (line !== "" && !line.startsWith("//") && !line.startsWith("/*") && !line.startsWith("*")) {
+    } else if (
+      line !== "" &&
+      !line.startsWith("//") &&
+      !line.startsWith("/*") &&
+      !line.startsWith("*")
+    ) {
       break
     }
   }
@@ -596,7 +621,10 @@ function transformFixture(source: string, fixtureName: string): string {
   // We keep function/class/type definitions and imports.
 
   // Remove render() calls (with or without assignment, including multi-line)
-  out = out.replace(/^(?:const\s+(?:\{[^}]+\}|\w+)\s*=\s*)?(?:_inkRender|render)\([\s\S]*?\);?\s*$/gm, "")
+  out = out.replace(
+    /^(?:const\s+(?:\{[^}]+\}|\w+)\s*=\s*)?(?:_inkRender|render)\([\s\S]*?\);?\s*$/gm,
+    "",
+  )
 
   // Remove await statements (waitUntilExit, etc.)
   out = out.replace(/^await\s+.*$/gm, "")
@@ -659,7 +687,9 @@ function transformFixture(source: string, fixtureName: string): string {
   let createFixtureBody = ""
   if (componentJSX) {
     // Replace process.argv refs in the JSX
-    let jsx = componentJSX.replace(/process\.argv\[2\]/g, "args[0]").replace(/process\.argv\[3\]/g, "args[1]")
+    let jsx = componentJSX
+      .replace(/process\.argv\[2\]/g, "args[0]")
+      .replace(/process\.argv\[3\]/g, "args[1]")
     // Also replace local `test` variable references with args[0] for conditional render patterns
     // e.g., test === 'multipleHooks' ? <A /> : <B test={test} />
     if (jsx.includes("test ===") || jsx.includes("{test}")) {
@@ -716,7 +746,10 @@ function transformPtyTest(source: string, fileName: string, fixtureRefs: string[
   let out = transform(source, fileName)
 
   // Remove the header that transform() added — we'll add our own
-  out = out.replace(/^\/\*\*\n \* Auto-generated from ink\/test\/.*?\n \* DO NOT EDIT.*?\n \*\/\n/, "")
+  out = out.replace(
+    /^\/\*\*\n \* Auto-generated from ink\/test\/.*?\n \* DO NOT EDIT.*?\n \*\/\n/,
+    "",
+  )
 
   // Replace term/run helper imports with create-term helper
   // (transform() removed these as "PTY — not available", so we add them back)
@@ -752,10 +785,16 @@ function transformPtyTest(source: string, fileName: string, fixtureRefs: string[
 
   // Add fixture imports
   const fixtureImports = fixtureRefs
-    .map((name) => `import { createFixture as ${fixtureNameToIdent(name)}Fixture } from "./fixtures/${name}"`)
+    .map(
+      (name) =>
+        `import { createFixture as ${fixtureNameToIdent(name)}Fixture } from "./fixtures/${name}"`,
+    )
     .join("\n")
   if (fixtureImports) {
-    out = out.replace(/(import type \{ ExecutionContext \} from "\.\.\/helpers\/ava-shim"\n)/, `$1${fixtureImports}\n`)
+    out = out.replace(
+      /(import type \{ ExecutionContext \} from "\.\.\/helpers\/ava-shim"\n)/,
+      `$1${fixtureImports}\n`,
+    )
   }
 
   // Replace term('name', ['arg']) → termFixture(nameFixture(['arg']))
@@ -767,14 +806,17 @@ function transformPtyTest(source: string, fileName: string, fixtureRefs: string[
   })
 
   // Replace run('name', opts) → runFixture(nameFixture([]), cols)
-  out = out.replace(/(?:await\s+)?run\(\s*['"]([^'"]+)['"]\s*(?:,\s*(\{[^}]*\}))?\s*\)/g, (_match, name, opts) => {
-    let cols = "100"
-    if (opts) {
-      const colMatch = opts.match(/columns:\s*(\d+)/)
-      if (colMatch) cols = colMatch[1]!
-    }
-    return `await runFixture(${fixtureNameToIdent(name)}Fixture([]), ${cols})`
-  })
+  out = out.replace(
+    /(?:await\s+)?run\(\s*['"]([^'"]+)['"]\s*(?:,\s*(\{[^}]*\}))?\s*\)/g,
+    (_match, name, opts) => {
+      let cols = "100"
+      if (opts) {
+        const colMatch = opts.match(/columns:\s*(\d+)/)
+        if (colMatch) cols = colMatch[1]!
+      }
+      return `await runFixture(${fixtureNameToIdent(name)}Fixture([]), ${cols})`
+    },
+  )
 
   // Replace FakeTimers.install() with vitest fake timers wrapped in a clock-like API
   out = out.replace(
@@ -788,7 +830,10 @@ function transformPtyTest(source: string, fileName: string, fixtureRefs: string[
 
   // Add vi import if FakeTimers or stub were used
   if (source.includes("FakeTimers") || source.includes("stub")) {
-    out = out.replace(/(import test from "\.\.\/helpers\/ava-shim")/, 'import { vi } from "vitest"\n$1')
+    out = out.replace(
+      /(import test from "\.\.\/helpers\/ava-shim")/,
+      'import { vi } from "vitest"\n$1',
+    )
   }
 
   // Header + cleanup
@@ -896,7 +941,9 @@ for (const fileName of filesToProcess) {
   generated++
 }
 
-console.log(`\n${generated} test files generated, ${fixturesGenerated} fixtures generated, ${skipped} skipped`)
+console.log(
+  `\n${generated} test files generated, ${fixturesGenerated} fixtures generated, ${skipped} skipped`,
+)
 if (skippedFiles.length > 0) {
   console.log(`Skipped: ${skippedFiles.join(", ")}`)
 }

@@ -170,7 +170,9 @@ function printNoMatch(query: string, examples: Example[]): void {
     console.error(`  ${WHITE}${ex.name}${RESET}`)
   }
 
-  console.error(`\n${DIM}Run ${BOLD}bunx silvery example${RESET}${DIM} for full list with descriptions.${RESET}\n`)
+  console.error(
+    `\n${DIM}Run ${BOLD}bunx silvery example${RESET}${DIM} for full list with descriptions.${RESET}\n`,
+  )
 }
 
 // =============================================================================

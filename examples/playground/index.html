@@ -270,7 +270,9 @@
   <body>
     <header>
       <h1>silvery Canvas Playground</h1>
-      <span class="subtitle">React components rendered to HTML5 Canvas via the silvery rendering pipeline</span>
+      <span class="subtitle"
+        >React components rendered to HTML5 Canvas via the silvery rendering pipeline</span
+      >
     </header>
 
     <div class="preset-bar">
@@ -317,19 +319,20 @@
             <span class="string">'silvery/canvas'</span>;
 
             <span class="keyword">function</span>
-            <span class="component">App</span>() { <span class="keyword">const</span> { width, height } =
-            <span class="component">useContentRect</span>(); <span class="keyword">return</span> ( &lt;<span
+            <span class="component">App</span>() { <span class="keyword">const</span> { width,
+            height } = <span class="component">useContentRect</span>();
+            <span class="keyword">return</span> ( &lt;<span class="component">Box</span>
+            <span class="prop">borderStyle</span>=<span class="string">"single"</span>&gt; &lt;<span
               class="component"
-              >Box</span
-            >
-            <span class="prop">borderStyle</span>=<span class="string">"single"</span>&gt; &lt;<span class="component"
               >Text</span
-            >&gt; {width}px x {height}px &lt;/<span class="component">Text</span>&gt; &lt;/<span class="component"
+            >&gt; {width}px x {height}px &lt;/<span class="component">Text</span>&gt; &lt;/<span
+              class="component"
               >Box</span
             >&gt; ); }
 
-            <span class="keyword">const</span> canvas = document.getElementById(<span class="string">'canvas'</span>);
-            <span class="component">renderToCanvas</span>(&lt;<span class="component">App</span>
+            <span class="keyword">const</span> canvas = document.getElementById(<span class="string"
+              >'canvas'</span
+            >); <span class="component">renderToCanvas</span>(&lt;<span class="component">App</span>
             /&gt;, canvas);
           </div>
         </div>

@@ -91,7 +91,10 @@ export function inspectFrame(stats: RenderStats): void {
  * Walks the SilveryNode tree and formats each node with its type, testID,
  * layout rect, and dirty flags.
  */
-export function inspectTree(rootNode: TeaNode, options?: { depth?: number; showLayout?: boolean }): string {
+export function inspectTree(
+  rootNode: TeaNode,
+  options?: { depth?: number; showLayout?: boolean },
+): string {
   const maxDepth = options?.depth ?? 10
   const showLayout = options?.showLayout ?? true
   const lines: string[] = []

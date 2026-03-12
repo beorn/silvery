@@ -133,7 +133,8 @@ export function clampScroll(
   if (viewportHeight <= 0) return 0
   // Effective margin: disabled when content fits in viewport, and clamped so
   // the cursor can still reach the first/last row.
-  const effectiveMargin = totalLines <= viewportHeight ? 0 : Math.min(margin, Math.floor((viewportHeight - 1) / 2))
+  const effectiveMargin =
+    totalLines <= viewportHeight ? 0 : Math.min(margin, Math.floor((viewportHeight - 1) / 2))
   let scroll = currentScroll
   if (cursorRow < scroll + effectiveMargin) {
     scroll = cursorRow - effectiveMargin
@@ -209,7 +210,11 @@ export function useTextArea({
   const updateValue = useCallback(
     (newValue: string, newCursor: number) => {
       // Enforce maxLength: allow deletions (shorter) but reject insertions beyond limit
-      if (maxLength !== undefined && newValue.length > maxLength && newValue.length > stateRef.current.value.length) {
+      if (
+        maxLength !== undefined &&
+        newValue.length > maxLength &&
+        newValue.length > stateRef.current.value.length
+      ) {
         return
       }
       stateRef.current.value = newValue
@@ -299,7 +304,8 @@ export function useTextArea({
       const { value, cursor } = stateRef.current
       const lines = getWrappedLines(value, wrapWidth)
       const { row: cRow, col: cCol } = cursorToRowCol(value, cursor, wrapWidth)
-      const hasSelection = selectionAnchorRef.current !== null && selectionAnchorRef.current !== cursor
+      const hasSelection =
+        selectionAnchorRef.current !== null && selectionAnchorRef.current !== cursor
 
       // Helper: clear selection state
       const clearSelection = () => {
@@ -367,7 +373,9 @@ export function useTextArea({
       // Shift+Right / Ctrl+Shift+Right
       if (key.rightArrow && key.shift) {
         stickyXRef.current = null
-        const target = key.ctrl ? findNextWordEnd(value, cursor) : Math.min(value.length, cursor + 1)
+        const target = key.ctrl
+          ? findNextWordEnd(value, cursor)
+          : Math.min(value.length, cursor + 1)
         moveCursor(target, value, true)
         yankStateRef.current = null
         return
@@ -380,7 +388,11 @@ export function useTextArea({
           stickyXRef.current = targetX
           const targetLine = lines[cRow - 1]
           if (targetLine) {
-            moveCursor(targetLine.startOffset + Math.min(targetX, targetLine.line.length), value, true)
+            moveCursor(
+              targetLine.startOffset + Math.min(targetX, targetLine.line.length),
+              value,
+              true,
+            )
           }
         }
         yankStateRef.current = null
@@ -394,7 +406,11 @@ export function useTextArea({
           stickyXRef.current = targetX
           const targetLine = lines[cRow + 1]
           if (targetLine) {
-            moveCursor(targetLine.startOffset + Math.min(targetX, targetLine.line.length), value, true)
+            moveCursor(
+              targetLine.startOffset + Math.min(targetX, targetLine.line.length),
+              value,
+              true,
+            )
           }
         }
         yankStateRef.current = null
@@ -428,7 +444,11 @@ export function useTextArea({
           stickyXRef.current = targetX
           const targetLine = lines[cRow - 1]
           if (targetLine) {
-            moveCursor(targetLine.startOffset + Math.min(targetX, targetLine.line.length), value, false)
+            moveCursor(
+              targetLine.startOffset + Math.min(targetX, targetLine.line.length),
+              value,
+              false,
+            )
           }
         } else {
           clearSelection()
@@ -443,7 +463,11 @@ export function useTextArea({
           stickyXRef.current = targetX
           const targetLine = lines[cRow + 1]
           if (targetLine) {
-            moveCursor(targetLine.startOffset + Math.min(targetX, targetLine.line.length), value, false)
+            moveCursor(
+              targetLine.startOffset + Math.min(targetX, targetLine.line.length),
+              value,
+              false,
+            )
           }
         } else {
           clearSelection()
@@ -583,7 +607,11 @@ export function useTextArea({
         }
         if (result.value !== value) {
           // Enforce maxLength for readline insertions
-          if (maxLength !== undefined && result.value.length > maxLength && result.value.length > value.length) {
+          if (
+            maxLength !== undefined &&
+            result.value.length > maxLength &&
+            result.value.length > value.length
+          ) {
             yankStateRef.current = result.yankState
             return
           }

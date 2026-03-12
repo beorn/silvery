@@ -21,7 +21,10 @@ import type { ColorPalette, Theme } from "./types"
  * @param palette - The 22-color terminal palette
  * @param mode - "truecolor" (default) for rich derivation, "ansi16" for direct aliases
  */
-export function deriveTheme(palette: ColorPalette, mode: "ansi16" | "truecolor" = "truecolor"): Theme {
+export function deriveTheme(
+  palette: ColorPalette,
+  mode: "ansi16" | "truecolor" = "truecolor",
+): Theme {
   if (mode === "ansi16") return deriveAnsi16Theme(palette)
   return deriveTruecolorTheme(palette)
 }

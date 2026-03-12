@@ -39,7 +39,13 @@ export type { BoundTerm } from "./bound-term"
 // Layout Engine
 // =============================================================================
 
-export type { LayoutEngine, LayoutNode, LayoutConstants, MeasureFunc, MeasureMode } from "./layout-engine"
+export type {
+  LayoutEngine,
+  LayoutNode,
+  LayoutConstants,
+  MeasureFunc,
+  MeasureMode,
+} from "./layout-engine"
 
 // =============================================================================
 // Render Adapter
@@ -133,7 +139,12 @@ export { copyToClipboard, requestClipboard, parseClipboardResponse } from "./cli
 // OSC 4 Palette Color Query/Set
 // =============================================================================
 
-export { queryPaletteColor, setPaletteColor, parsePaletteResponse, queryMultiplePaletteColors } from "./osc-palette"
+export {
+  queryPaletteColor,
+  setPaletteColor,
+  parsePaletteResponse,
+  queryMultiplePaletteColors,
+} from "./osc-palette"
 
 // =============================================================================
 // OSC 133 Semantic Prompt Markers
@@ -163,13 +174,23 @@ export { detectTerminalCaps, defaultCaps, type TerminalCaps } from "./terminal-c
 // Terminal Capability Visual Test
 // =============================================================================
 
-export { runTermtest, TERMTEST_SECTIONS, type TermtestSection, type TermtestOptions } from "./termtest"
+export {
+  runTermtest,
+  TERMTEST_SECTIONS,
+  type TermtestSection,
+  type TermtestOptions,
+} from "./termtest"
 
 // =============================================================================
 // Text Sizing (OSC 66)
 // =============================================================================
 
-export { textSized, isPrivateUseArea, isTextSizingLikelySupported, detectTextSizingSupport } from "./text-sizing"
+export {
+  textSized,
+  isPrivateUseArea,
+  isTextSizingLikelySupported,
+  detectTextSizingSupport,
+} from "./text-sizing"
 
 // =============================================================================
 // CSI 6n Cursor Position Query
@@ -229,7 +250,14 @@ export { queryTextAreaPixels, queryTextAreaSize, queryCellSize } from "./pixel-s
 // TermDef Resolution
 // =============================================================================
 
-export { resolveTermDef, resolveFromTerm, isTerm, isTermDef, createInputEvents, type ResolvedTermDef } from "./term-def"
+export {
+  resolveTermDef,
+  resolveFromTerm,
+  isTerm,
+  isTermDef,
+  createInputEvents,
+  type ResolvedTermDef,
+} from "./term-def"
 
 // =============================================================================
 // Hit Registry (Mouse Support) — React-free core only
@@ -346,7 +374,13 @@ export {
 export type { StyledSegment } from "./unicode"
 
 // Width measurer factory
-export { createWidthMeasurer, createMeasurer, runWithMeasurer, type Measurer, type WidthMeasurer } from "./unicode"
+export {
+  createWidthMeasurer,
+  createMeasurer,
+  runWithMeasurer,
+  type Measurer,
+  type WidthMeasurer,
+} from "./unicode"
 
 // Measurer composition (term + measurement)
 export { withMeasurer, createPipeline, type MeasuredTerm } from "./measurer"
@@ -419,7 +453,13 @@ export type {
 } from "./ansi/index"
 
 // Detection
-export { detectCursor, detectInput, detectColor, detectUnicode, detectExtendedUnderline } from "./ansi/index"
+export {
+  detectCursor,
+  detectInput,
+  detectColor,
+  detectUnicode,
+  detectExtendedUnderline,
+} from "./ansi/index"
 
 // Utilities
 export { ANSI_REGEX, displayLength } from "./ansi/index"

@@ -98,7 +98,9 @@ export function childrenContainAnsi(children: React.ReactNode): boolean {
   if (typeof children === "string") return containsAnsiEscapes(children)
   if (Array.isArray(children)) return children.some((c) => childrenContainAnsi(c))
   if (React.isValidElement(children)) {
-    return childrenContainAnsi((children.props as Record<string, unknown>).children as React.ReactNode)
+    return childrenContainAnsi(
+      (children.props as Record<string, unknown>).children as React.ReactNode,
+    )
   }
   return false
 }

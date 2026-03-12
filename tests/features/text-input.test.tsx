@@ -15,7 +15,13 @@ import { Box, Text, TextInput } from "silvery"
 // ============================================================================
 
 /** Controlled TextInput that displays cursor position for assertions */
-function ControlledInput({ initial = "", onChangeLog }: { initial?: string; onChangeLog?: (value: string) => void }) {
+function ControlledInput({
+  initial = "",
+  onChangeLog,
+}: {
+  initial?: string
+  onChangeLog?: (value: string) => void
+}) {
   const [value, setValue] = useState(initial)
   return (
     <Box flexDirection="column">

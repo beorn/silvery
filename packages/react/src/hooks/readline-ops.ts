@@ -197,7 +197,8 @@ export function handleReadlineKey(
   if (key.ctrl && input === "t") {
     if (cursor < 2) return { value, cursor, yankState: null }
     return {
-      value: value.slice(0, cursor - 2) + value[cursor - 1] + value[cursor - 2] + value.slice(cursor),
+      value:
+        value.slice(0, cursor - 2) + value[cursor - 1] + value[cursor - 2] + value.slice(cursor),
       cursor,
       yankState: null,
     }

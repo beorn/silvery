@@ -154,7 +154,9 @@ export function DevToolsShowcase(): JSX.Element {
 
   const query = typedQuery.toLowerCase()
   const filtered = query
-    ? ALL_LOGS.filter((l) => l.message.toLowerCase().includes(query) || l.level.toLowerCase().includes(query))
+    ? ALL_LOGS.filter(
+        (l) => l.message.toLowerCase().includes(query) || l.level.toLowerCase().includes(query),
+      )
     : ALL_LOGS
 
   const maxVisible = 10
@@ -197,7 +199,12 @@ export function DevToolsShowcase(): JSX.Element {
       {/* Log entries */}
       <Box flexDirection="column" flexGrow={1}>
         {visibleLogs.map((log, i) => (
-          <Box key={clampedOffset + i} flexDirection="row" gap={1} backgroundColor={levelBg[log.level]}>
+          <Box
+            key={clampedOffset + i}
+            flexDirection="row"
+            gap={1}
+            backgroundColor={levelBg[log.level]}
+          >
             <Text color="#94e2d5">{log.time}</Text>
             <Box width={7} backgroundColor={levelBg[log.level]}>
               <Text bold color={levelColors[log.level]}>

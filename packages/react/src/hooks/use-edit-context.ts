@@ -183,7 +183,9 @@ export function useEditContext({
       // Preserve preferred column across block boundaries:
       // position cursor at stickyX column on the target row
       const targetRow =
-        initialCursorPos === "start" ? 0 : Math.max(0, countVisualLines(initialValue, effectiveWrapWidth) - 1)
+        initialCursorPos === "start"
+          ? 0
+          : Math.max(0, countVisualLines(initialValue, effectiveWrapWidth) - 1)
       cursorPos = rowColToCursor(initialValue, targetRow, stickyX, effectiveWrapWidth)
     } else {
       cursorPos = initialCursorPos === "start" ? 0 : initialValue.length

@@ -19,7 +19,13 @@
  */
 
 import { writeSync } from "node:fs"
-import { enableKittyKeyboard, disableKittyKeyboard, enableMouse, disableMouse, resetCursorStyle } from "../output"
+import {
+  enableKittyKeyboard,
+  disableKittyKeyboard,
+  enableMouse,
+  disableMouse,
+  resetCursorStyle,
+} from "../output"
 
 // ============================================================================
 // Types
@@ -145,7 +151,11 @@ export function restoreTerminalState(stdout: NodeJS.WriteStream, stdin: NodeJS.R
  * order: raw mode first, then alternate screen, then protocols, then
  * trigger a full redraw via synthetic resize.
  */
-export function resumeTerminalState(state: TerminalState, stdout: NodeJS.WriteStream, stdin: NodeJS.ReadStream): void {
+export function resumeTerminalState(
+  state: TerminalState,
+  stdout: NodeJS.WriteStream,
+  stdin: NodeJS.ReadStream,
+): void {
   // Re-enable raw mode first (needed to receive key input)
   if (state.rawMode && stdin.isTTY) {
     try {
