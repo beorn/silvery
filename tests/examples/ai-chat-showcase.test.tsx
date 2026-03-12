@@ -12,7 +12,7 @@
  * Uses a minimal TestCodingAgent that mirrors the real CodingAgent's state
  * machine but strips streaming animation (instant reveal) for testability.
  * Does NOT use ScrollbackList — uses a simple list so all items remain in
- * app.text (ScrollbackList removes frozen items from the render tree).
+ * app.text (ScrollbackList auto-freezes items that scroll off-screen).
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react"
@@ -30,10 +30,9 @@ interface Exchange {
   role: "user" | "agent" | "system"
   content: string
   thinking?: string
-  frozen: boolean
 }
 
-const TEST_SCRIPT: Array<Omit<Exchange, "id" | "frozen">> = [
+const TEST_SCRIPT: Array<Omit<Exchange, "id">> = [
   { role: "user", content: "Fix the login bug in auth.ts" },
   { role: "agent", content: "Let me look at the auth module.", thinking: "Reading auth.ts..." },
   { role: "agent", content: "Found the bug. Fixing now." },
@@ -111,7 +110,7 @@ function TestCodingAgent({ script = TEST_SCRIPT }: { script?: typeof TEST_SCRIPT
     }
     const entry = script[scriptIdx]!
     const id = nextId.current++
-    setExchanges((prev) => [...prev.map((ex) => ({ ...ex, frozen: true })), { ...entry, id, frozen: false }])
+    setExchanges((prev) => [...prev, { ...entry, id }])
     setScriptIdx((idx) => idx + 1)
   }, [scriptIdx, script])
 

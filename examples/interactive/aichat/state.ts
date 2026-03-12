@@ -55,21 +55,17 @@ export type DemoResult = TeaResult<DemoState, DemoEffect>
 // Constants
 // ============================================================================
 
-/** How many live turns to keep in the dynamic area before freezing to scrollback. */
-export const MAX_LIVE_TURNS = 3
-
 const INTRO_TEXT = [
   "Coding agent simulation showcasing ScrollbackList:",
   " • ScrollbackList — declarative list with automatic scrollback",
-  " • useScrollbackItem() — imperative freeze() from within items",
-  " • isFrozen prop — data-driven freezing for completed items",
+  " • Auto-freeze — items freeze when they scroll off-screen",
   " • OSC 8 hyperlinks — clickable file paths and URLs",
   " • OSC 133 markers — Cmd+↑/↓ to jump between exchanges",
   " • $token theme colors — semantic color tokens",
 ].join("\n")
 
 export const INIT_STATE: DemoState = {
-  exchanges: [{ id: 0, role: "system", content: INTRO_TEXT, frozen: false }],
+  exchanges: [{ id: 0, role: "system", content: INTRO_TEXT }],
   scriptIdx: 0,
   streamPhase: "done",
   revealFraction: 1,
@@ -139,7 +135,7 @@ export function getNextMessage(state: DemoState, script: ScriptEntry[], autoMode
 
 export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoMode: boolean) {
   function addExchange(state: DemoState, entry: ScriptEntry): DemoState {
-    const exchange: Exchange = { ...entry, id: state.nextId, frozen: false }
+    const exchange: Exchange = { ...entry, id: state.nextId }
     return { ...state, exchanges: [...state.exchanges, exchange], nextId: state.nextId + 1 }
   }
 
@@ -152,11 +148,6 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
       return [{ ...s, streamPhase: "thinking", revealFraction: 0 }, [fx.delay(1200, { type: "endThinking" })]]
     }
     return [{ ...s, streamPhase: "streaming", revealFraction: 0 }, [fx.interval(50, { type: "streamTick" }, "reveal")]]
-  }
-
-  function freezeOld(exchanges: Exchange[]): Exchange[] {
-    const cutoff = Math.max(0, exchanges.length - MAX_LIVE_TURNS + 1)
-    return exchanges.map((ex, i) => (i < cutoff ? { ...ex, frozen: true } : ex))
   }
 
   function autoAdvanceEffects(state: DemoState): DemoEffect[] {
@@ -176,7 +167,6 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
     const entry = script[state.scriptIdx]!
     let s: DemoState = {
       ...state,
-      exchanges: freezeOld(state.exchanges),
       scriptIdx: state.scriptIdx + 1,
     }
     let effects = [...extraEffects]
@@ -313,7 +303,7 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
             revealFraction: 1,
             compacting: true,
             contextBaseline: cumulative.currentContext,
-            exchanges: state.exchanges.map((ex) => ({ ...ex, frozen: true })),
+            exchanges: state.exchanges,
             autoTyping: null,
           },
           [fx.cancel("reveal"), fx.cancel("typing"), fx.delay(fastMode ? 300 : 3000, { type: "compactDone" })],

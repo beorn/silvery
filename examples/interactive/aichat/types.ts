@@ -13,8 +13,7 @@ export interface Exchange {
   thinking?: string
   toolCalls?: ToolCall[]
   tokens?: { input: number; output: number }
-  frozen: boolean
 }
 
-/** Script entry — exchange data before id/frozen are assigned. */
-export type ScriptEntry = Omit<Exchange, "id" | "frozen">
+/** Script entry — exchange data before id is assigned. */
+export type ScriptEntry = Omit<Exchange, "id">

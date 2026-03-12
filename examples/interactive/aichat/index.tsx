@@ -34,15 +34,7 @@ export const meta: ExampleMeta = {
   name: "AI Coding Agent",
   description: "Coding agent showcase — ScrollbackList, streaming, context tracking",
   demo: true,
-  features: [
-    "ScrollbackList",
-    "useScrollbackItem()",
-    "isFrozen",
-    "inline mode",
-    "streaming",
-    "OSC 8 links",
-    "OSC 133 markers",
-  ],
+  features: ["ScrollbackList", "auto-freeze", "inline mode", "streaming", "OSC 8 links", "OSC 133 markers"],
 }
 
 // ============================================================================
@@ -68,14 +60,11 @@ export function AIChat({
   useAutoExit(autoStart, state.done, exit)
   useKeyBindings(state, send, footerControlRef, exit)
 
-  const frozenCount = state.exchanges.filter((ex) => ex.frozen).length
-
   return (
     <Box flexDirection="column" paddingX={1}>
       <ScrollbackList
         items={state.exchanges}
         keyExtractor={(ex) => ex.id}
-        isFrozen={(ex) => ex.frozen}
         markers={true}
         footer={
           <DemoFooter
@@ -85,7 +74,6 @@ export function AIChat({
             done={state.done}
             compacting={state.compacting}
             exchanges={state.exchanges}
-            frozenCount={frozenCount}
             contextBaseline={state.contextBaseline}
             ctrlDPending={state.ctrlDPending}
             nextMessage={getNextMessage(state, script, autoStart)}
@@ -146,8 +134,7 @@ if (import.meta.main) {
 function useAutoCompact(state: DemoState, send: (msg: DemoMsg) => void) {
   useEffect(() => {
     if (state.done || state.compacting) return
-    const active = state.exchanges.filter((ex) => !ex.frozen)
-    const cumulative = computeCumulativeTokens(active)
+    const cumulative = computeCumulativeTokens(state.exchanges)
     const effective = Math.max(0, cumulative.currentContext - state.contextBaseline)
     if (effective >= CONTEXT_WINDOW * 0.95) send({ type: "compact" })
   }, [state.exchanges, state.done, state.compacting, state.contextBaseline, send])

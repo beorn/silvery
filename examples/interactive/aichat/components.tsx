@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from "react"
-import { Box, Text, Link, Spinner, useScrollbackItem, TextInput, useTerminalFocused } from "silvery"
+import { Box, Text, Link, Spinner, TextInput, useTerminalFocused } from "silvery"
 import type { Exchange, ToolCall } from "./types.js"
 import { TOOL_COLORS, TOOL_ICONS, URL_RE, RANDOM_USER_COMMANDS, CONTEXT_WINDOW } from "./script.js"
 import type { StreamPhase } from "./state.js"
@@ -189,14 +189,6 @@ export function ExchangeItem({
   isFirstInGroup: boolean
   isLastInGroup: boolean
 }): JSX.Element {
-  const { freeze } = useScrollbackItem()
-
-  useEffect(() => {
-    if (exchange.frozen) {
-      freeze()
-    }
-  }, [exchange.frozen, freeze])
-
   if (exchange.role === "system") {
     return (
       <Box flexDirection="column">
@@ -309,7 +301,6 @@ export function StatusBar({
   compacting,
   done,
   elapsed,
-  frozenCount = 0,
   contextBaseline = 0,
   ctrlDPending = false,
 }: {
@@ -317,7 +308,6 @@ export function StatusBar({
   compacting: boolean
   done: boolean
   elapsed: number
-  frozenCount?: number
   contextBaseline?: number
   ctrlDPending?: boolean
 }): JSX.Element {
@@ -349,12 +339,6 @@ export function StatusBar({
         {keys}
       </Text>
       <Text color="$muted" wrap="truncate">
-        {frozenCount > 0 && (
-          <>
-            {"↑"}
-            {frozenCount} in scrollback{"  "}
-          </>
-        )}
         ctx {ctxBar} {ctxPct}%{"  "}
         {cost}
       </Text>
@@ -375,7 +359,6 @@ export function DemoFooter({
   done,
   compacting,
   exchanges,
-  frozenCount = 0,
   contextBaseline = 0,
   ctrlDPending = false,
   nextMessage = "",
@@ -387,7 +370,6 @@ export function DemoFooter({
   done: boolean
   compacting: boolean
   exchanges: Exchange[]
-  frozenCount?: number
   contextBaseline?: number
   ctrlDPending?: boolean
   nextMessage?: string
@@ -482,7 +464,6 @@ export function DemoFooter({
           compacting={compacting}
           done={done}
           elapsed={elapsed}
-          frozenCount={frozenCount}
           contextBaseline={contextBaseline}
           ctrlDPending={ctrlDPending}
         />
