@@ -4,12 +4,12 @@ Silvery provides compatibility layers for both Ink and Chalk, making migration s
 
 ## Compatibility Summary
 
-| Test suite                                  | Pass rate         | Notes                          |
-| ------------------------------------------- | ----------------- | ------------------------------ |
-| Ink's own test suite (via `bun run compat`) | **188/262 (72%)** | Real Ink tests, Flexily engine |
-| Chalk's own test suite                      | **32/32 (100%)**  | Full Chalk API compatibility   |
+| Test suite                                  | Pass rate           | Notes                          |
+| ------------------------------------------- | ------------------- | ------------------------------ |
+| Ink's own test suite (via `bun run compat`) | **804/813 (98.9%)** | Real Ink tests, Flexily engine |
+| Chalk's own test suite                      | **32/32 (100%)**    | Full Chalk API compatibility   |
 
-Compatibility is tested by cloning the real Ink and Chalk repos and running their original test suites against silvery's compat layer (`bun run compat`). The 74 Ink test failures are primarily PTY/process test infrastructure (43), layout edge cases, and unimplemented features like screen reader support. Most apps will not encounter these gaps. See [Silvery vs Ink](/guide/silvery-vs-ink#compatibility-at-a-glance) for the full breakdown.
+Compatibility is tested by cloning the real Ink and Chalk repos and running their original test suites against silvery's compat layer (`bun run compat`). The 9 remaining Ink test failures are edge cases in the Flexily layout engine (flex-wrap, aspect ratio) and minor compat gaps (overflowX, measure-element, render-to-string). For exact Yoga layout parity, silvery supports Yoga as a pluggable engine. See [Silvery vs Ink](/guide/silvery-vs-ink#compatibility-at-a-glance) for the full breakdown.
 
 ## Ink Compatibility
 

@@ -1,6 +1,6 @@
 # Ink Compatibility Audit Results
 
-Date: 2026-03-09
+Date: 2026-03-12
 Silvery version: vendor/silvery (HEAD)
 Ink version: 5.2.1 (tests adapted from github.com/vadimdemedes/ink)
 
@@ -8,9 +8,11 @@ Ink version: 5.2.1 (tests adapted from github.com/vadimdemedes/ink)
 
 | Category    | Passed | Total | %          |
 | ----------- | ------ | ----- | ---------- |
-| **Chalk**   | 28     | 28    | **100.0%** |
-| **Ink**     | 67     | 122   | **54.9%**  |
-| **Overall** | 95     | 150   | **63.3%**  |
+| **Chalk**   | 32     | 32    | **100.0%** |
+| **Ink**     | 804    | 813   | **98.9%**  |
+| **Overall** | 836    | 845   | **98.9%**  |
+
+> **Note**: The per-file results below are from an earlier audit (hand-ported vitest subset). The summary above reflects the current real upstream compat check (`bun run compat`), which runs the full Ink test suite (813 tests).
 
 ## Per-File Results
 
@@ -137,8 +139,10 @@ additional surface area for future compatibility work.
 
 ## Recommendations
 
-1. **Fix flexDirection="row" in string rendering** - This single issue would fix ~32 of 55 failures, bringing Ink compat from 55% to ~84%
-2. **Normalize SGR output format** - Match chalk's encoding style (or provide a flag) to pass color comparison tests
-3. **Port remaining layout tests** - overflow, borders, background, flex-align/justify/wrap, text-width (~165 more tests)
-4. **Implement position offsets** - absolute/relative positioning with top/left/bottom/right
-5. **Strip cursor/erase ANSI sequences** from text content to match Ink's sanitization behavior
+> **Note**: The recommendations below are from the original audit. Most have been addressed — compat is now at 98.9% (804/813). See ANALYSIS.md for the 9 remaining failures.
+
+1. ~~**Fix flexDirection="row" in string rendering**~~ — Fixed
+2. ~~**Normalize SGR output format**~~ — Fixed
+3. ~~**Port remaining layout tests**~~ — Done (813 tests now run)
+4. ~~**Implement position offsets**~~ — Fixed
+5. ~~**Strip cursor/erase ANSI sequences**~~ — Fixed

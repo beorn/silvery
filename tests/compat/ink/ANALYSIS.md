@@ -8,16 +8,21 @@ Ink test suite: vadimdemedes/ink (master, cloned to /tmp/silvery-compat/ink)
 
 | Metric          | Count        |
 | --------------- | ------------ |
-| Total Ink tests | 845          |
-| Passed          | 662          |
-| Failed          | 183          |
-| Compat rate     | **78.3%**    |
+| Total Ink tests | 813          |
+| Passed          | 804          |
+| Failed          | 9            |
+| Compat rate     | **98.9%**    |
 | Chalk tests     | 32/32 (100%) |
 
-The 183 failures break down into 8 categories. ~53 are layout engine differences
-(Flexily vs Yoga), ~43 are PTY/process-based tests that crash because silvery's
-compat layer doesn't produce a working standalone binary, and the rest are missing
-features and implementation gaps in the compat layer.
+The 9 remaining failures are edge cases: Flexily layout differences (flex-wrap, aspect ratio), overflow clipping edge cases, measure-element timing, and render-to-string effect timing.
+
+> **Note**: The detailed category breakdown below is from an earlier audit when compat was at 78.3% (662/845). Most of those issues have since been fixed. The 9 remaining failures are:
+>
+> - flex-wrap: 2 (Flexily W3C spec vs Yoga behavior)
+> - width-height: 2 (aspect ratio — not exposed in LayoutNode interface)
+> - overflow: 3 (overflowX clipping edge cases)
+> - measure-element: 1 (post-state-change re-measurement)
+> - render-to-string: 1 (effect timing in synchronous render)
 
 ## Summary by Category
 
@@ -587,8 +592,7 @@ test suite was written against Yoga:
 | gap combined         | 2     | **Maybe**                                                                                                                    |
 | Borders              | 10    | **No** — border rendering is in silvery's content phase, not the layout engine                                               |
 
-**Estimated Yoga impact**: ~28-33 additional passes (out of 53 layout failures),
-bringing compat from 78.3% to ~82%.
+**Estimated Yoga impact**: With compat now at 98.9%, switching to Yoga would likely fix the 4 layout-related failures (flex-wrap + aspect ratio), bringing compat to ~99.4%.
 
 The remaining ~20 layout-related failures (position offsets, aspectRatio, borders)
 require changes to silvery's LayoutNode interface and rendering pipeline regardless
@@ -638,14 +642,14 @@ To enable Yoga testing, modify `packages/compat/src/ink.ts`:
 
 ---
 
-## Path to 90% Compatibility
+## Path to 100% Compatibility
 
-Fixing items 1-4 above would resolve approximately 62 failures, bringing the total
-from 662/845 (78.3%) to ~724/845 (85.7%).
+As of 2026-03-12, compat is at 98.9% (804/813). The 9 remaining failures require:
 
-Adding items 5-7 would resolve another ~17 failures: ~741/845 (87.7%).
+1. **Flexily flex-wrap fixes** (2 tests) — W3C spec divergence from Yoga
+2. **Expose aspectRatio in LayoutNode** (2 tests) — Flexily supports it, silvery's interface doesn't expose it
+3. **Overflow edge cases** (3 tests) — overflowX clipping differences
+4. **measure-element timing** (1 test) — re-measurement after state changes
+5. **render-to-string effect timing** (1 test) — synchronous render captures final vs initial state
 
-Getting PTY fixtures working (item 8) would add ~43 more: ~784/845 (92.8%).
-
-The remaining ~61 failures (screen reader, cursor, kitty protocol) are specialized
-features that could be deprioritized for an initial migration story.
+For exact Yoga layout parity (items 1-2), silvery supports Yoga as a pluggable engine.
