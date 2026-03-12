@@ -292,9 +292,22 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
     if (!hadReactCommit) break
   }
 
-  // Report content height if callback provided
-  if (onContentHeight && rootNode?.contentRect) {
-    onContentHeight(rootNode.contentRect.height)
+  // Report content height if callback provided.
+  // Compute from children's outer bottom edges (including margins) rather than
+  // root.contentRect.height which equals the buffer height (root stretches to fill).
+  if (onContentHeight && rootNode) {
+    let maxBottom = 0
+    let hasChildren = false
+    for (const child of rootNode.children) {
+      if (child.contentRect) {
+        hasChildren = true
+        const props = child.props as Record<string, unknown>
+        const mb = (props.marginBottom as number) ?? (props.marginY as number) ?? (props.margin as number) ?? 0
+        const childBottom = child.contentRect.y + child.contentRect.height + mb
+        if (childBottom > maxBottom) maxBottom = childBottom
+      }
+    }
+    onContentHeight(hasChildren ? maxBottom : 0)
   }
 
   // Unmount (cleanup)

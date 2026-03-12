@@ -365,10 +365,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
 
   /**
    * Get the content extent of the root node's children (for buffer padding trimming).
-   * Returns the max bottom edge of the root's direct children, which represents
-   * the actual content height. The root itself stretches to fill the terminal,
-   * but its children have specific layout-computed heights.
-   * Returns undefined if no children have layout.
+   * Returns the max outer bottom edge of the root's direct children, including
+   * margins. The root itself stretches to fill the terminal, but its children
+   * have specific layout-computed heights plus margins that extend beyond.
+   * Returns 0 if no children have layout (empty tree).
+   * Returns undefined if root has no layout at all.
    */
   const getRootContentHeight = (): number | undefined => {
     try {
@@ -379,7 +380,11 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       for (const child of root.children) {
         if (child.contentRect) {
           hasChildren = true
-          const childBottom = child.contentRect.y + child.contentRect.height
+          // contentRect includes marginTop in the y position but NOT marginBottom
+          // in the height. Read marginBottom from props to get the full outer extent.
+          const props = child.props as Record<string, unknown>
+          const mb = (props.marginBottom as number) ?? (props.marginY as number) ?? (props.margin as number) ?? 0
+          const childBottom = child.contentRect.y + child.contentRect.height + mb
           if (childBottom > maxBottom) maxBottom = childBottom
         }
       }
