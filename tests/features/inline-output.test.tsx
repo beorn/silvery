@@ -996,3 +996,87 @@ describe("inline: edge cases", () => {
     expect(screen.getNonEmptyLines()).toEqual(["H1", "H2", "Body 1", "Body 2", "Footer"])
   })
 })
+
+// ============================================================================
+// Regression: height shrink drift (cursor tracking)
+// ============================================================================
+
+describe("inline: height shrink drift regression", () => {
+  test("large shrink does not drift cursor across frames", () => {
+    // Simulates a multiline TextInput (5 lines) being cleared to 1 line,
+    // then new content appearing. If cursor tracking drifts, the second
+    // shrink→grow cycle renders at the wrong position.
+    const COLS = 40,
+      ROWS = 20
+    const op = createOutputPhase({})
+    const screen = createScreen(COLS, ROWS)
+
+    // Frame 1: 5-line content (like a multiline text input)
+    const buf1 = bufferWithLines(COLS, ROWS, ["Header", "Line 2", "Line 3", "Line 4", "Footer"])
+    screen.feed(op(null, buf1, "inline", 0, ROWS))
+    expect(screen.getNonEmptyLines()).toEqual(["Header", "Line 2", "Line 3", "Line 4", "Footer"])
+
+    // Frame 2: shrink to 2 lines (input cleared, agent response starts)
+    const buf2 = bufferWithLines(COLS, ROWS, ["Header", "Response"])
+    screen.feed(op(buf1, buf2, "inline", 0, ROWS))
+    expect(screen.getNonEmptyLines()).toEqual(["Header", "Response"])
+
+    // Frame 3: grow to 4 lines (agent response continues)
+    const buf3 = bufferWithLines(COLS, ROWS, ["Header", "Response", "More text", "Even more"])
+    screen.feed(op(buf2, buf3, "inline", 0, ROWS))
+    expect(screen.getNonEmptyLines()).toEqual(["Header", "Response", "More text", "Even more"])
+
+    // Frame 4: shrink again to 2 (new exchange cycle)
+    const buf4 = bufferWithLines(COLS, ROWS, ["Header", "New input"])
+    screen.feed(op(buf3, buf4, "inline", 0, ROWS))
+    expect(screen.getNonEmptyLines()).toEqual(["Header", "New input"])
+  })
+
+  test("shrink from 8 to 2 lines then grow back", () => {
+    const COLS = 40,
+      ROWS = 20
+    const op = createOutputPhase({})
+    const screen = createScreen(COLS, ROWS)
+
+    const lines8 = ["A", "B", "C", "D", "E", "F", "G", "H"]
+    const buf1 = bufferWithLines(COLS, ROWS, lines8)
+    screen.feed(op(null, buf1, "inline", 0, ROWS))
+    expect(screen.getNonEmptyLines()).toEqual(lines8)
+
+    // Dramatic shrink
+    const buf2 = bufferWithLines(COLS, ROWS, ["A", "B"])
+    screen.feed(op(buf1, buf2, "inline", 0, ROWS))
+    expect(screen.getNonEmptyLines()).toEqual(["A", "B"])
+
+    // Grow back to 5
+    const buf3 = bufferWithLines(COLS, ROWS, ["A", "B", "C2", "D2", "E2"])
+    screen.feed(op(buf2, buf3, "inline", 0, ROWS))
+    expect(screen.getNonEmptyLines()).toEqual(["A", "B", "C2", "D2", "E2"])
+  })
+
+  test("repeated shrink-grow cycles maintain correct positioning", () => {
+    const COLS = 40,
+      ROWS = 20
+    const op = createOutputPhase({})
+    const screen = createScreen(COLS, ROWS)
+
+    let prev = bufferWithLines(COLS, ROWS, ["Init"])
+    screen.feed(op(null, prev, "inline", 0, ROWS))
+
+    // 10 cycles of grow → shrink to stress cursor tracking
+    for (let i = 0; i < 10; i++) {
+      const big = [`Cycle ${i}`, "Line 2", "Line 3", "Line 4", "Line 5"]
+      const small = [`Cycle ${i} done`]
+
+      const bufBig = bufferWithLines(COLS, ROWS, big)
+      screen.feed(op(prev, bufBig, "inline", 0, ROWS))
+      expect(screen.getNonEmptyLines()).toEqual(big)
+      prev = bufBig
+
+      const bufSmall = bufferWithLines(COLS, ROWS, small)
+      screen.feed(op(prev, bufSmall, "inline", 0, ROWS))
+      expect(screen.getNonEmptyLines()).toEqual(small)
+      prev = bufSmall
+    }
+  })
+})

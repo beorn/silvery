@@ -151,6 +151,49 @@ describe("inline mode focus reporting default", () => {
     expect(stdout.output).toContain(FOCUS_ENABLE)
     handle.unmount()
   })
+
+  test("focus reporting is enabled after stdin listener is attached (no ESC[I leak)", async () => {
+    // Regression: focus reporting was enabled before the input parser's stdin
+    // listener was attached. The terminal's immediate CSI I response leaked
+    // as raw "[[I" text. Fix: defer focus reporting to after pumpEvents()
+    // starts (which synchronously attaches the stdin listener).
+    const stdout = createMockStdout()
+    const stdin = createMockStdin()
+
+    // Track when stdin "data" listener is attached and when focus enable is written
+    let stdinListenerTime = 0
+    let focusEnableTime = 0
+    const origOn = stdin.on.bind(stdin)
+    stdin.on = function (event: string, ...args: any[]) {
+      if (event === "data" && !stdinListenerTime) stdinListenerTime = Date.now()
+      return origOn(event, ...args)
+    } as any
+
+    const origWrite = stdout.stream.write.bind(stdout.stream)
+    stdout.stream.write = function (data: string | Uint8Array) {
+      const str = typeof data === "string" ? data : new TextDecoder().decode(data)
+      if (str.includes(FOCUS_ENABLE) && !focusEnableTime) focusEnableTime = Date.now()
+      return origWrite(data)
+    } as any
+
+    const handle = await run(<Text>hello</Text>, {
+      stdout: stdout.stream,
+      stdin,
+      cols: 40,
+      rows: 10,
+      focusReporting: true,
+      kitty: false,
+      mouse: false,
+    })
+    await settle(50)
+
+    // Both should have fired
+    expect(stdinListenerTime).toBeGreaterThan(0)
+    expect(focusEnableTime).toBeGreaterThan(0)
+    // stdin listener must be attached BEFORE focus reporting is enabled
+    expect(stdinListenerTime).toBeLessThanOrEqual(focusEnableTime)
+    handle.unmount()
+  })
 })
 
 // ============================================================================
