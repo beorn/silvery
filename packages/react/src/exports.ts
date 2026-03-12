@@ -1091,3 +1091,37 @@ export type {
   UseAnimationResult,
   UseTransitionOptions,
 } from "@silvery/ui/animation"
+
+// =============================================================================
+// TEA State Machines
+// =============================================================================
+
+/**
+ * TEA (The Elm Architecture) for React.
+ *
+ * `useTea` is like `useReducer` but the reducer can return `[state, effects]`.
+ * Effects are plain data — timer effects (delay, interval, cancel) are built-in.
+ * All timers auto-cleanup on unmount. Pure update functions are testable with `collect()`.
+ *
+ * ```tsx
+ * import { useTea } from "silvery"
+ * import { fx, collect } from "silvery"
+ *
+ * function update(state, msg) {
+ *   switch (msg.type) {
+ *     case "start": return [{ ...state, phase: "go" }, [fx.delay(1000, { type: "done" })]]
+ *     case "done": return { ...state, phase: "idle" }
+ *   }
+ * }
+ *
+ * // In React:
+ * const [state, send] = useTea(initialState, update)
+ *
+ * // In tests (no React, no timers):
+ * const [newState, effects] = collect(update(state, { type: "start" }))
+ * expect(effects).toContainEqual(fx.delay(1000, { type: "done" }))
+ * ```
+ */
+export { useTea } from "@silvery/ui/hooks/useTea"
+export { fx, collect } from "@silvery/tea"
+export type { TeaResult, EffectLike, TimerEffect } from "@silvery/tea"

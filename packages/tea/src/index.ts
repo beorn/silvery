@@ -84,6 +84,13 @@ export { tea, collect } from "./tea"
 export type { TeaResult, TeaReducer, EffectRunners, TeaSlice, EffectLike, TeaOptions } from "./tea"
 
 // =============================================================================
+// Effects (built-in timer effects)
+// =============================================================================
+
+export { fx, createTimerRunners } from "./effects"
+export type { DelayEffect, IntervalEffect, CancelEffect, TimerEffect } from "./effects"
+
+// =============================================================================
 // Keys
 // =============================================================================
 
