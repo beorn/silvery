@@ -993,13 +993,15 @@ function inlineIncrementalRender(
       // Cursor is past the new bottom (was erasing orphan rows) — move back up
       output += `\x1b[${fromRow - bottomRow}A`
     }
-    // Now at new bottom row. Erase orphan lines below.
-    for (let y = maxOutputLines; y < prevMaxOutputLines; y++) {
+    // Now at new bottom row (bottomRow). Erase orphan lines below by moving
+    // down one line at a time, erasing each. This leaves cursor at the last
+    // orphan row (prevMaxOutputLines - 1).
+    const orphanCount = prevMaxOutputLines - maxOutputLines
+    for (let y = 0; y < orphanCount; y++) {
       output += "\n\r\x1b[K"
     }
-    // Move back up to new bottom
-    const up = prevMaxOutputLines - maxOutputLines
-    if (up > 0) output += `\x1b[${up}A`
+    // Move back up from last orphan row to new bottom row
+    if (orphanCount > 0) output += `\x1b[${orphanCount}A`
   } else {
     // Same height: move to bottom row if not already there
     if (finalY >= 0 && finalY < bottomRow) {

@@ -1232,11 +1232,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       mouseEnabled = true
     }
 
-    // Focus reporting
-    if (focusReportingOption) {
-      enableFocusReporting((s) => stdout.write(s))
-      focusReportingEnabled = true
-    }
+    // Focus reporting is deferred to after the event loop starts (see below).
+    // Enabling it here would cause the terminal's immediate CSI I/O response
+    // to arrive before the input parser's stdin listener is attached, leaking
+    // raw escape sequences to the screen.
   }
   if (_ansiTrace) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -1626,8 +1625,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       }
     }
 
-    // Start pump in background
+    // Start pump in background — this synchronously runs the term-provider
+    // generator body, which attaches the stdin data listener. After this call,
+    // stdin is being consumed, so terminal responses won't leak as raw text.
     pumpEvents().catch(console.error)
+
+    // Enable focus reporting NOW — after stdin listener is attached.
+    // Must be deferred from the init phase because the terminal's immediate
+    // CSI I/O response would leak before the input parser was ready.
+    if (focusReportingOption && !focusReportingEnabled) {
+      enableFocusReporting((s) => stdout.write(s))
+      focusReportingEnabled = true
+    }
 
     try {
       while (!shouldExit && !signal.aborted) {
