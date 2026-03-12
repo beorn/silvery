@@ -1023,7 +1023,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // The log is captured during the render and included in any mismatch error.
     ;(globalThis as any).__silvery_cell_debug = undefined
     const _cellDebugVal = typeof process !== "undefined" ? process.env?.SILVERY_CELL_DEBUG : undefined
-    if (_cellDebugVal && _cellDebugVal.includes(",")) {
+    if (_cellDebugVal?.includes(",")) {
       const [cx, cy] = _cellDebugVal.split(",").map(Number)
       if (Number.isFinite(cx) && Number.isFinite(cy)) {
         ;(globalThis as any).__silvery_cell_debug = { x: cx, y: cy, log: [] as string[] }

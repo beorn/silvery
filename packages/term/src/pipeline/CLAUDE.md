@@ -430,17 +430,17 @@ Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content a
 
 ## Common Blind Paths
 
-| Blind Path                                    | Why It Doesn't Work                                                            | What to Do Instead                                                                          |
-| --------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| Broader viewport clearing                     | Causes 12ms regression (re-renders ~50 children vs 2 dirty ones)               | Only clear viewport for Tier 2 triggers (childrenDirty, scroll+sticky, parentRegionChanged) |
-| Using `needsOwnRepaint` for cascade           | Includes `paintDirty`; border color changes cascade through ~200 child nodes   | Use `contentAreaAffected` — excludes pure paint changes                                     |
-| Pre-clearing only current sticky positions    | Old positions also have stale bg in the buffer                                 | Clear entire viewport to `null` bg                                                          |
-| `hasPrevBuffer=false` without clearing buffer | Text reads stale bg via `getCellBg` regardless of hasPrevBuffer flag           | Clear viewport first, then set `hasPrevBuffer=false`                                        |
-| `ancestorCleared=true` for sticky second pass | Transparent spacer Boxes clear their region, wiping overlapping sticky content | Use `ancestorCleared=false` — matches fresh render semantics                                |
-| Blaming the terminal emulator                 | If 3 terminals show the same glitch, it's your code                            | Use `withDiagnostics` + `SILVERY_STRICT=1` first                                            |
-| Hand-rolling VirtualTerminal tests            | Too simple to catch real app complexity                                        | Use `withDiagnostics(createBoardDriver(...))`                                               |
-| Reading code paths without a failing test     | Wastes 20+ turns on theorizing                                                 | Write failing test first, THEN trace code                                                   |
-| Row pre-check: only packed metadata + chars   | Misses true-color Map diffs (fgColors/bgColors) when both cells have TC flag   | Always include `rowExtrasEquals()` in the row pre-check                                     |
+| Blind Path                                    | Why It Doesn't Work                                                            | What to Do Instead                                                                           |
+| --------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Broader viewport clearing                     | Causes 12ms regression (re-renders ~50 children vs 2 dirty ones)               | Only clear viewport for Tier 2 triggers (childrenDirty, scroll+sticky, parentRegionChanged)  |
+| Using `needsOwnRepaint` for cascade           | Includes `paintDirty`; border color changes cascade through ~200 child nodes   | Use `contentAreaAffected` — excludes pure paint changes                                      |
+| Pre-clearing only current sticky positions    | Old positions also have stale bg in the buffer                                 | Clear entire viewport to `null` bg                                                           |
+| `hasPrevBuffer=false` without clearing buffer | Text reads stale bg via `getCellBg` regardless of hasPrevBuffer flag           | Clear viewport first, then set `hasPrevBuffer=false`                                         |
+| `ancestorCleared=true` for sticky second pass | Transparent spacer Boxes clear their region, wiping overlapping sticky content | Use `ancestorCleared=false` — matches fresh render semantics                                 |
+| Blaming the terminal emulator                 | If 3 terminals show the same glitch, it's your code                            | Use `withDiagnostics` + `SILVERY_STRICT=1` first                                             |
+| Hand-rolling VirtualTerminal tests            | Too simple to catch real app complexity                                        | Use `withDiagnostics(createBoardDriver(...))`                                                |
+| Reading code paths without a failing test     | Wastes 20+ turns on theorizing                                                 | Write failing test first, THEN trace code                                                    |
+| Row pre-check: only packed metadata + chars   | Misses true-color Map diffs (fgColors/bgColors) when both cells have TC flag   | Always include `rowExtrasEquals()` in the row pre-check                                      |
 | Clearing overflow at immediate parent only    | Child-level clear overwrites grandparent's border (parent-first render order)  | Use recursive `hasDescendantOverflowChanged` so the bordered ancestor detects and handles it |
 
 ## Effective Strategies (Priority Order)
@@ -461,19 +461,19 @@ Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content a
 
 ## Symptom → Check Cross-Reference
 
-| Symptom                                           | Check First                                                                                         |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Stale background color persists                   | `bgDirty` flag; `getCellBg` coupling; is region being cleared?                                      |
-| Border artifacts after color change               | `paintDirty` vs `contentAreaAffected` distinction; border-only change should NOT cascade            |
-| Scroll glitch (content jumps/disappears)          | Scroll tier selection; Tier 1 unsafe with sticky; Tier 3 needs `stickyForceRefresh`                 |
-| Children blank after parent changes               | `parentRegionChanged` → `childHasPrev=false`; is viewport clear setting `childHasPrev` correctly?   |
-| Absolute child disappears                         | Two-pass rendering order; absolute children need `ancestorCleared=false` in second pass             |
-| Content correct initially, wrong after navigation | Incremental rendering bug; `SILVERY_STRICT=1` will catch it                                         |
-| Colors wrong but characters correct (garble)      | Output phase: `diffBuffers` row pre-check skipping true-color Map diffs; check `rowExtrasEquals`    |
-| Text bg different from parent Box bg              | `getCellBg` reading stale buffer; check if region was cleared to correct bg                         |
-| Flickering on every render                        | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of content phase           |
-| Stale overlay pixels after shrink (black area)    | `clearExcessArea` not called; check `parentRegionCleared` + `forceRepaint` interaction              |
-| CJK/wide char garble, text shifts right           | `bufferToAnsi` cursor drift: wide char without continuation at col+1. Run `SILVERY_STRICT_OUTPUT=1` |
+| Symptom                                                    | Check First                                                                                                                    |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Stale background color persists                            | `bgDirty` flag; `getCellBg` coupling; is region being cleared?                                                                 |
+| Border artifacts after color change                        | `paintDirty` vs `contentAreaAffected` distinction; border-only change should NOT cascade                                       |
+| Scroll glitch (content jumps/disappears)                   | Scroll tier selection; Tier 1 unsafe with sticky; Tier 3 needs `stickyForceRefresh`                                            |
+| Children blank after parent changes                        | `parentRegionChanged` → `childHasPrev=false`; is viewport clear setting `childHasPrev` correctly?                              |
+| Absolute child disappears                                  | Two-pass rendering order; absolute children need `ancestorCleared=false` in second pass                                        |
+| Content correct initially, wrong after navigation          | Incremental rendering bug; `SILVERY_STRICT=1` will catch it                                                                    |
+| Colors wrong but characters correct (garble)               | Output phase: `diffBuffers` row pre-check skipping true-color Map diffs; check `rowExtrasEquals`                               |
+| Text bg different from parent Box bg                       | `getCellBg` reading stale buffer; check if region was cleared to correct bg                                                    |
+| Flickering on every render                                 | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of content phase                                      |
+| Stale overlay pixels after shrink (black area)             | `clearExcessArea` not called; check `parentRegionCleared` + `forceRepaint` interaction                                         |
+| CJK/wide char garble, text shifts right                    | `bufferToAnsi` cursor drift: wide char without continuation at col+1. Run `SILVERY_STRICT_OUTPUT=1`                            |
 | Stale chars in ancestor border/padding after child shrinks | Descendant overflow: `clearExcessArea` clips to immediate parent. Use `hasDescendantOverflowChanged()` for recursive detection |
 
 ## Quick Regression Test Template

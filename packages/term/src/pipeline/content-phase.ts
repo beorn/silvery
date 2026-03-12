@@ -1337,7 +1337,17 @@ function clearDescendantOverflowRegions(
   const nodeLeft = layout.x
   const nodeTop = layout.y - scrollOffset
 
-  _clearDescendantOverflow(node.children, buffer, nodeLeft, nodeTop, nodeRight, nodeBottom, scrollOffset, clipBounds, clearBg)
+  _clearDescendantOverflow(
+    node.children,
+    buffer,
+    nodeLeft,
+    nodeTop,
+    nodeRight,
+    nodeBottom,
+    scrollOffset,
+    clipBounds,
+    clearBg,
+  )
 }
 
 function _clearDescendantOverflow(
@@ -1401,7 +1411,17 @@ function _clearDescendantOverflow(
     }
     // Recurse into subtree-dirty children to find deeper overflows
     if (child.subtreeDirty && child.children !== undefined) {
-      _clearDescendantOverflow(child.children, buffer, nodeLeft, nodeTop, nodeRight, nodeBottom, scrollOffset, clipBounds, clearBg)
+      _clearDescendantOverflow(
+        child.children,
+        buffer,
+        nodeLeft,
+        nodeTop,
+        nodeRight,
+        nodeBottom,
+        scrollOffset,
+        clipBounds,
+        clearBg,
+      )
     }
   }
 }
@@ -1467,7 +1487,10 @@ function clearNodeRegion(
     const _cellDbg2 = (globalThis as any).__silvery_cell_debug as { x: number; y: number; log: string[] } | undefined
     if (_cellDbg2) {
       const covers =
-        clearX <= _cellDbg2.x && clearX + clearWidth > _cellDbg2.x && clearY <= _cellDbg2.y && clearY + clearHeight > _cellDbg2.y
+        clearX <= _cellDbg2.x &&
+        clearX + clearWidth > _cellDbg2.x &&
+        clearY <= _cellDbg2.y &&
+        clearY + clearHeight > _cellDbg2.y
       if (covers) {
         const id = ((node.props as Record<string, unknown>).id as string) ?? node.type
         _cellDbg2.log.push(
