@@ -589,7 +589,7 @@ function renderScrollContainerChildren(
   const padding = getPadding(props)
   // Scroll containers clip vertically (for scrolling) but NOT horizontally.
   // Horizontal clipping is only for overflow="hidden" containers (e.g., HVL).
-  const childClipBounds = computeChildClipBounds(layout, props, clipBounds, 0, /* horizontal */ false)
+  const childClipBounds = computeChildClipBounds(layout, props, clipBounds, 0, /* horizontal */ false, /* vertical */ true)
 
   // Determine if scroll offset changed since last render.
   const scrollOffsetChanged = ss.offset !== ss.prevOffset
@@ -854,9 +854,14 @@ function renderNormalChildren(
   const layout = node.contentRect
   if (!layout) return
 
-  // For overflow='hidden' containers, clip children to content area (both vertical and horizontal)
+  // For overflow='hidden' containers, clip children to content area.
+  // Supports per-axis clipping: overflowX/overflowY override the shorthand overflow prop.
+  const clipX = (props.overflowX ?? props.overflow) === "hidden"
+  const clipY = (props.overflowY ?? props.overflow) === "hidden"
   const effectiveClipBounds =
-    props.overflow === "hidden" ? computeChildClipBounds(layout, props, clipBounds, scrollOffset) : clipBounds
+    clipX || clipY
+      ? computeChildClipBounds(layout, props, clipBounds, scrollOffset, clipX, clipY)
+      : clipBounds
 
   // Non-scroll sticky children support. When the layout phase computes
   // node.stickyChildren, we use the same two-pass pattern as scroll containers:
@@ -1086,26 +1091,29 @@ function computeChildClipBounds(
   props: BoxProps,
   parentClip: ClipBounds | undefined,
   scrollOffset = 0,
-  /** When true, compute left/right clip bounds (for overflow="hidden" containers).
-   *  When false, only compute vertical bounds and pass through parent's horizontal bounds.
-   *  Scroll containers should use horizontal=false — they clip vertically but not horizontally. */
+  /** Compute left/right clip bounds for horizontal overflow clipping. */
   horizontal = true,
+  /** Compute top/bottom clip bounds for vertical overflow clipping.
+   *  Defaults to true — scroll containers pass vertical=true, horizontal=false. */
+  vertical = true,
 ): ClipBounds {
   const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
   const padding = getPadding(props)
   const adjustedY = layout.y - scrollOffset
-  const nodeClip: ClipBounds = {
-    top: adjustedY + border.top + padding.top,
-    bottom: adjustedY + layout.height - border.bottom - padding.bottom,
-  }
+  const nodeClip: ClipBounds = vertical
+    ? {
+        top: adjustedY + border.top + padding.top,
+        bottom: adjustedY + layout.height - border.bottom - padding.bottom,
+      }
+    : { top: -Infinity, bottom: Infinity }
   if (horizontal) {
     nodeClip.left = layout.x + border.left + padding.left
     nodeClip.right = layout.x + layout.width - border.right - padding.right
   }
   if (!parentClip) return nodeClip
   const result: ClipBounds = {
-    top: Math.max(parentClip.top, nodeClip.top),
-    bottom: Math.min(parentClip.bottom, nodeClip.bottom),
+    top: vertical ? Math.max(parentClip.top, nodeClip.top) : parentClip.top,
+    bottom: vertical ? Math.min(parentClip.bottom, nodeClip.bottom) : parentClip.bottom,
   }
   if (horizontal && nodeClip.left !== undefined && nodeClip.right !== undefined) {
     result.left = Math.max(parentClip.left ?? 0, nodeClip.left)
