@@ -26,7 +26,7 @@
  * - Alt+Y: Cycle kill ring
  * - Ctrl+T: Transpose characters
  */
-import { useCallback, useImperativeHandle, forwardRef, useState, useEffect } from "react"
+import { useCallback, useImperativeHandle, forwardRef, useState, useEffect, useRef } from "react"
 import { Box } from "@silvery/react/components/Box"
 import { Text } from "@silvery/react/components/Text"
 import { useReadline } from "./useReadline"
@@ -124,11 +124,17 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   // Track whether we're in controlled mode
   const isControlled = controlledValue !== undefined
 
+  // Track value changes that originated from internal editing (keystroke → onChange).
+  // When the parent feeds back the same value via controlledValue, we skip
+  // readline.setValue() since readline already has the correct cursor position.
+  const internalChangeRef = useRef(false)
+
   // Use readline hook
   const readline = useReadline({
     initialValue: isControlled ? (controlledValue ?? "") : defaultValue,
     onChange: useCallback(
       (newValue: string) => {
+        internalChangeRef.current = true
         onChange?.(newValue)
       },
       [onChange],
@@ -139,11 +145,18 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
     onEOF,
   })
 
-  // Sync controlled value to readline
+  // Sync controlled value to readline — only for external changes.
+  // Internal changes (from editing) already have correct cursor position.
   const [lastControlledValue, setLastControlledValue] = useState(controlledValue)
   useEffect(() => {
     if (isControlled && controlledValue !== lastControlledValue) {
-      readline.setValue(controlledValue ?? "")
+      if (internalChangeRef.current) {
+        // Change originated from our own editing — readline already has correct state
+        internalChangeRef.current = false
+      } else {
+        // External change — sync readline (cursor goes to end)
+        readline.setValue(controlledValue ?? "")
+      }
       setLastControlledValue(controlledValue)
     }
   }, [isControlled, controlledValue, lastControlledValue, readline])
