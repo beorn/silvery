@@ -900,7 +900,7 @@ function StatusBar({
   else keys = "esc quit"
 
   return (
-    <Box flexDirection="row" justifyContent="space-between">
+    <Box flexDirection="row" justifyContent="space-between" width="100%">
       <Text color="$muted" wrap="truncate">
         {elapsedStr}
         {"  "}
@@ -1398,22 +1398,24 @@ export function CodingAgent({
 
   return (
     <Box flexDirection="column" paddingX={1}>
-      <Box flexDirection="column">
-        <Text> </Text>
-        <Text bold>Static Scrollback</Text>
-        <Text> </Text>
-        <Text>Coding agent simulation showcasing ScrollbackList:</Text>
-        <Text> {"•"} ScrollbackList — declarative list with automatic scrollback</Text>
-        <Text> {"•"} useScrollbackItem() — imperative freeze() from within items</Text>
-        <Text> {"•"} isFrozen prop — data-driven freezing for completed items</Text>
-        <Text> {"•"} OSC 8 hyperlinks — clickable file paths and URLs</Text>
-        <Text>
-          {" "}
-          {"•"} OSC 133 markers — Cmd+{"↑"}/{"↓"} to jump between exchanges
-        </Text>
-        <Text> {"•"} $token theme colors — semantic color tokens</Text>
-        <Text> </Text>
-      </Box>
+      {frozenCount === 0 && (
+        <Box flexDirection="column">
+          <Text> </Text>
+          <Text bold>Static Scrollback</Text>
+          <Text> </Text>
+          <Text>Coding agent simulation showcasing ScrollbackList:</Text>
+          <Text> {"•"} ScrollbackList — declarative list with automatic scrollback</Text>
+          <Text> {"•"} useScrollbackItem() — imperative freeze() from within items</Text>
+          <Text> {"•"} isFrozen prop — data-driven freezing for completed items</Text>
+          <Text> {"•"} OSC 8 hyperlinks — clickable file paths and URLs</Text>
+          <Text>
+            {" "}
+            {"•"} OSC 133 markers — Cmd+{"↑"}/{"↓"} to jump between exchanges
+          </Text>
+          <Text> {"•"} $token theme colors — semantic color tokens</Text>
+          <Text> </Text>
+        </Box>
+      )}
 
       <ScrollbackList
         items={state.exchanges}
