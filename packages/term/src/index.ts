@@ -74,7 +74,13 @@ export type { DOMAdapterConfig } from "./adapters/dom-adapter"
 // ANSI Sanitizer
 // =============================================================================
 
-export { sanitizeAnsi, tokenizeAnsi, isCSISGR, extractColonSGRReplacements, createColonSGRTracker } from "./ansi-sanitize"
+export {
+  sanitizeAnsi,
+  tokenizeAnsi,
+  isCSISGR,
+  extractColonSGRReplacements,
+  createColonSGRTracker,
+} from "./ansi-sanitize"
 export type { AnsiToken, ColonSGRReplacement } from "./ansi-sanitize"
 
 // =============================================================================

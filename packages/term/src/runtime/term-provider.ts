@@ -212,6 +212,13 @@ export function createTermProvider(
     listeners.forEach((l) => l(state))
   }
 
+  // Increase max listeners to avoid warnings in apps with many subscribers
+  // (e.g., ScrollbackList items each using useTerm for reactive state)
+  if (typeof stdout.setMaxListeners === "function") {
+    const current = stdout.getMaxListeners?.() ?? 10
+    if (current < 50) stdout.setMaxListeners(50)
+  }
+
   // Subscribe to resize
   stdout.on("resize", onResize)
 

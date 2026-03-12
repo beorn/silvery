@@ -132,6 +132,7 @@ await initInkCompat();
   await patchFailingMarks(join(INK_DIR, "test/width-height.tsx"), ["set min width in percent"])
   await patchFailingMarks(join(INK_DIR, "test/flex-justify-content.tsx"), [
     "row - align two text nodes with equal space around them",
+    "column - align two text nodes with equal space around them",
   ])
   console.log("  Patched .failing() marks for tests silvery passes")
 

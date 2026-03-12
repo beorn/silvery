@@ -64,12 +64,91 @@ export function currentChalkLevel(): number {
 }
 
 /**
+ * Resolve terminal column count using Ink's fallback chain:
+ * process.env.COLUMNS → process.stdout.columns → process.stderr.columns → 80
+ */
+function resolveTerminalColumns(): number {
+  if (process.env.COLUMNS) {
+    const val = Number(process.env.COLUMNS)
+    if (val > 0) return val
+  }
+  if (process.stdout?.columns && process.stdout.columns > 0) return process.stdout.columns
+  if (process.stderr?.columns && process.stderr.columns > 0) return process.stderr.columns
+  return 80
+}
+
+/**
+ * Resolve terminal row count using Ink's fallback chain:
+ * process.env.LINES → process.stdout.rows → process.stderr.rows → 24
+ */
+function resolveTerminalRows(): number {
+  if (process.env.LINES) {
+    const val = Number(process.env.LINES)
+    if (val > 0) return val
+  }
+  if (process.stdout?.rows && process.stdout.rows > 0) return process.stdout.rows
+  if (process.stderr?.rows && process.stderr.rows > 0) return process.stderr.rows
+  return 24
+}
+
+/**
+ * Context that signals style props should always be passed to silvery's Text,
+ * even when chalk has no colors. This ensures buffer cells are styled so that
+ * getContentEdge() can detect styled trailing spaces during trimming.
+ * The render() path enables this; renderToString() does not.
+ */
+const ForceStylesCtx = React.createContext(false)
+
+/**
+ * Track text-presentation emoji codepoints that the user provided WITH VS16.
+ * When silvery's ensureEmojiPresentation adds VS16 to bare text-presentation
+ * emojis (e.g., ✔ → ✔️), stripSilveryVS16 strips them. But when the user's
+ * original text already had VS16 (e.g., 🌡️, ⚠️), we must preserve it.
+ *
+ * This set is populated by the Ink compat Text component before rendering,
+ * and consulted by stripSilveryVS16 during buffer post-processing.
+ */
+const _userVS16Codepoints = new Set<number>()
+
+/**
+ * Scan text content for text-presentation emojis that already have VS16.
+ * Records their base codepoints in the module-level set so that
+ * stripSilveryVS16 knows to preserve the user's VS16.
+ */
+function registerUserVS16(text: string): void {
+  if (!text.includes("\uFE0F")) return
+  let i = 0
+  while (i < text.length) {
+    const cp = text.codePointAt(i)!
+    const char = String.fromCodePoint(cp)
+    const charLen = char.length
+    if (i + charLen < text.length && text.charCodeAt(i + charLen) === 0xfe0f) {
+      if (isTextPresentationEmoji(char)) {
+        _userVS16Codepoints.add(cp)
+      }
+    }
+    i += charLen
+  }
+}
+
+/** Recursively scan React children for user-provided VS16 in string content. */
+function scanChildrenForVS16(children: React.ReactNode): void {
+  if (typeof children === "string") {
+    registerUserVS16(children)
+  } else if (Array.isArray(children)) {
+    for (const child of children) scanChildrenForVS16(child)
+  } else if (React.isValidElement(children)) {
+    scanChildrenForVS16((children.props as Record<string, unknown>).children as React.ReactNode)
+  }
+}
+
+/**
  * Strip VS16 (U+FE0F) variation selectors that silvery adds to text-presentation
  * emoji characters. Silvery's ensureEmojiPresentation adds VS16 to characters that
  * are Extended_Pictographic but NOT Emoji_Presentation (e.g., ✔ U+2714, ☑ U+2611).
  *
- * This preserves VS16 in user content where it was already present (e.g., 🌡️, ⚠️)
- * by only stripping VS16 after characters that match the text-presentation pattern.
+ * Preserves VS16 for codepoints in the _userVS16Codepoints set — these had VS16
+ * in the user's original text and should not be stripped.
  */
 /** @internal */
 export function stripSilveryVS16(input: string): string {
@@ -77,6 +156,7 @@ export function stripSilveryVS16(input: string): string {
   if (!input.includes("\uFE0F")) return input
 
   // Walk through the string, removing VS16 only after text-presentation emoji
+  // that did NOT have VS16 in the user's original text
   let result = ""
   let i = 0
   while (i < input.length) {
@@ -87,12 +167,14 @@ export function stripSilveryVS16(input: string): string {
     // Check if next position has VS16
     if (i + charLen < input.length && input.charCodeAt(i + charLen) === 0xfe0f) {
       // Only strip VS16 if the preceding char is text-presentation emoji
-      // (Extended_Pictographic AND NOT Emoji_Presentation)
+      // AND the user's original text did NOT have VS16 for this codepoint
       if (isTextPresentationEmoji(char)) {
-        // This is a text-presentation emoji that silvery decorated with VS16 — strip it
-        result += char
-        i += charLen + 1 // skip char + VS16
-        continue
+        if (!_userVS16Codepoints.has(cp)) {
+          // This is a text-presentation emoji that silvery decorated with VS16 — strip it
+          result += char
+          i += charLen + 1 // skip char + VS16
+          continue
+        }
       }
     }
 
@@ -160,25 +242,33 @@ import type { TextProps as SilveryTextProps, TextHandle as SilveryTextHandle } f
  * This matches Ink's text sanitization behavior from sanitize-ansi.ts.
  */
 export const Text = React.forwardRef<SilveryTextHandle, SilveryTextProps>(function InkText(props, ref) {
+  // Scan original children for user-provided VS16 before sanitization
+  scanChildrenForVS16(props.children)
   const sanitizedChildren = sanitizeChildren(props.children)
   // When chalk has no color support (FORCE_COLOR=0), strip style props to match
   // Ink behavior. Ink uses chalk to apply styles, so chalk.level=0 means no
   // styles are applied. But embedded ANSI sequences in text content are preserved.
+  //
+  // Exception: when ForceStylesCtx is true (render() path with buffer-based output),
+  // always pass style props so buffer cells are styled for content edge detection.
+  // processBuffer strips ANSI codes when chalk has no colors.
   const hasColors = currentChalkLevel() > 0
-  const passProps = hasColors
-    ? {
-        ...props,
-        color: props.color,
-        backgroundColor: props.backgroundColor,
-        ref,
-        children: sanitizedChildren,
-      }
-    : {
-        // Only pass layout-affecting props, not visual style props
-        wrap: props.wrap,
-        ref,
-        children: sanitizedChildren,
-      }
+  const forceStyles = React.useContext(ForceStylesCtx)
+  const passProps =
+    hasColors || forceStyles
+      ? {
+          ...props,
+          color: props.color,
+          backgroundColor: props.backgroundColor,
+          ref,
+          children: sanitizedChildren,
+        }
+      : {
+          // Only pass layout-affecting props, not visual style props
+          wrap: props.wrap,
+          ref,
+          children: sanitizedChildren,
+        }
   return React.createElement(SilveryText, passProps)
 })
 
@@ -883,11 +973,13 @@ export function render(element: import("react").ReactNode, options?: Record<stri
   // When custom stdout is provided (test mode): delegate to silvery's test
   // renderer with autoRender for async state changes and onFrame for stdout writes.
   if (stdout) {
-    // Always render with color (plain=false) so that embedded ANSI sequences in
-    // text children are preserved. Ink preserves embedded ANSI even when chalk has
-    // no color support. The Text component already strips style props when chalk
-    // has no colors, so only chalk-applied styles are affected.
+    // Always render with ANSI codes (plain=false) so that bufferToStyledText can
+    // detect styled trailing spaces via content edge detection and ANSI reset codes.
+    // When ForceStylesCtx is true, the Text component passes style props even when
+    // chalk has no colors, so buffer cells are styled for correct trimming.
+    // processBuffer strips ANSI codes when chalk has no color support.
     const plain = false
+    const chalkHasColors = currentChalkLevel() > 0
 
     // Alternate screen: enter on mount, exit on unmount.
     // Ink requires all three: alternateScreen=true, interactive mode, and stdout.isTTY.
@@ -950,7 +1042,12 @@ export function render(element: import("react").ReactNode, options?: Record<stri
       // silvery's pipeline converts colon-format (38:2::R:G:B) to semicolon-format
       // (38;2;R;G;B) during rendering. This converts them back to match Ink's behavior.
       output = restoreColonFormatSGR(output)
-      if (plain) output = stripAnsi(output)
+      // Strip ANSI when plain mode or when chalk has no colors. In no-color mode,
+      // ForceStylesCtx causes Text to pass style props for content edge detection,
+      // but the final output should not contain those ANSI codes.
+      // Note: this also strips embedded user ANSI sequences, which matches Ink's
+      // behavior — when chalk.level=0, Ink's chalk-based rendering strips all ANSI.
+      if (plain || !chalkHasColors) output = stripAnsi(output)
 
       // Trim buffer padding: keep only lines up to the root's layout content height.
       // The buffer is sized to the terminal (e.g., 24 rows), but layout content may
@@ -1053,27 +1150,31 @@ export function render(element: import("react").ReactNode, options?: Record<stri
       const stderrCtxValue = { stderr: stderr ?? process.stderr, write: writeToStderr }
 
       return React.createElement(
-        SilveryErrorBoundary,
-        null,
+        ForceStylesCtx.Provider,
+        { value: true },
         React.createElement(
-          InkStaticStoreCtx.Provider,
-          { value: staticStore },
+          SilveryErrorBoundary,
+          null,
           React.createElement(
-            InkStdinCtx.Provider,
-            { value: stdinState },
+            InkStaticStoreCtx.Provider,
+            { value: staticStore },
             React.createElement(
-              CursorProvider,
-              { store: cursorStore },
+              InkStdinCtx.Provider,
+              { value: stdinState },
               React.createElement(
-                InkCursorStoreCtx.Provider,
-                { value: cursorStore },
+                CursorProvider,
+                { store: cursorStore },
                 React.createElement(
-                  StdoutContext.Provider,
-                  { value: stdoutCtxValue },
+                  InkCursorStoreCtx.Provider,
+                  { value: cursorStore },
                   React.createElement(
-                    StderrContext.Provider,
-                    { value: stderrCtxValue },
-                    React.createElement(InkFocusProvider, null, React.createElement(InkFocusBridge, null, el)),
+                    StdoutContext.Provider,
+                    { value: stdoutCtxValue },
+                    React.createElement(
+                      StderrContext.Provider,
+                      { value: stderrCtxValue },
+                      React.createElement(InkFocusProvider, null, React.createElement(InkFocusBridge, null, el)),
+                    ),
                   ),
                 ),
               ),
@@ -1143,9 +1244,13 @@ export function render(element: import("react").ReactNode, options?: Record<stri
 
     // Delegate to silvery's test renderer with wrapRoot for Ink contexts
     // and stdin bridging handled natively by the renderer
+    // Resolve terminal dimensions with Ink-compatible fallback chain:
+    // stdout.columns/rows → process.env.COLUMNS/LINES → process.stdout → process.stderr → defaults
+    const resolvedCols = (stdout as any).columns || resolveTerminalColumns()
+    const resolvedRows = (stdout as any).rows != null ? (stdout as any).rows : resolveTerminalRows()
     const app = silveryTestRender(element as import("react").ReactElement, {
-      cols: (stdout as any).columns ?? 80,
-      rows: (stdout as any).rows ?? 24,
+      cols: resolvedCols,
+      rows: resolvedRows,
       autoRender: true,
       onFrame: writeFrame,
       onBufferReady: handleBufferReady,
@@ -1155,7 +1260,9 @@ export function render(element: import("react").ReactNode, options?: Record<stri
 
     // Listen for resize events on stdout
     const onResize = () => {
-      app.resize((stdout as any).columns ?? 80, (stdout as any).rows ?? 24)
+      const newCols = (stdout as any).columns || resolveTerminalColumns()
+      const newRows = (stdout as any).rows != null ? (stdout as any).rows : resolveTerminalRows()
+      app.resize(newCols, newRows)
     }
     stdout.on("resize", onResize)
 

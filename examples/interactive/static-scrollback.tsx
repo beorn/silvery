@@ -46,7 +46,6 @@ import {
   useScrollbackItem,
   TextInput,
   useTerminalFocused,
-  useTerm,
 } from "../../src/index.js"
 import { run, useInput, useExit, type Key } from "@silvery/term/runtime"
 import type { ExampleMeta } from "../_banner.js"
@@ -680,16 +679,7 @@ function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "ru
         )}
       </Text>
       {phase === "done" && (
-        <Box
-          flexDirection="column"
-          borderStyle="bold"
-          borderColor="$border"
-          borderLeft
-          borderRight={false}
-          borderTop={false}
-          borderBottom={false}
-          paddingLeft={1}
-        >
+        <Box flexDirection="column" paddingLeft={2}>
           {call.output.map((line, i) => {
             if (line.startsWith("+")) return <LinkifiedLine key={i} text={line} color="$success" />
             if (line.startsWith("-")) return <LinkifiedLine key={i} text={line} color="$error" />
@@ -785,20 +775,16 @@ function ExchangeItem({
 
   const isUser = exchange.role === "user"
 
-  // User messages: blue ❯ prefix, grouped like a list (padding at group edges only)
+  // User messages: blue ❯ marker, content left-aligned to it
   if (isUser) {
     return (
-      <Box flexDirection="column">
-        {isFirstInGroup && <Text> </Text>}
-        <Box paddingX={1}>
-          <Text>
-            <Text bold color="$focusring">
-              {"\u276F"}{" "}
-            </Text>
-            {exchange.content}
-          </Text>
+      <Box paddingX={1} flexDirection="row">
+        <Text bold color="$focusring">
+          {"\u276F"}{" "}
+        </Text>
+        <Box flexShrink={1}>
+          <Text>{exchange.content}</Text>
         </Box>
-        {isLastInGroup && <Text> </Text>}
       </Box>
     )
   }
@@ -819,24 +805,25 @@ function ExchangeItem({
   const toolCalls = exchange.toolCalls ?? []
   const toolRevealCount = phase === "tools" || phase === "done" ? toolCalls.length : 0
 
-  // Border title line: ╭─ ◆ Agent · 624 tokens ─────────╮
-  const cols = useTerm((t) => t.cols)
-  const labelPad = ` ${borderTitle} `
-  const fillLen = Math.max(0, cols - labelPad.length - 4) // 4 = ╭─ + ─╮
-  const fill = "\u2500".repeat(fillLen)
-
   return (
     <Box flexDirection="column">
-      {/* Custom border-top with embedded label */}
-      <Text color={outlineColor}>
-        {"\u256D\u2500"}
+      {/* Agent label */}
+      <Text>
         <Text bold color="$success" dimColor={!pulse && phase !== "done"}>
-          {labelPad}
+          {borderTitle}
         </Text>
-        <Text color={outlineColor}>{fill}{"\u256E"}</Text>
       </Text>
 
-      <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} borderTop={false} paddingX={1}>
+      <Box
+        flexDirection="column"
+        borderStyle="bold"
+        borderColor={outlineColor}
+        borderLeft
+        borderRight={false}
+        borderTop={false}
+        borderBottom={false}
+        paddingLeft={1}
+      >
         {/* Thinking block */}
         {exchange.thinking && (phase === "thinking" || phase === "streaming") && (
           <ThinkingBlock text={exchange.thinking} done={phase !== "thinking"} />
@@ -844,14 +831,11 @@ function ExchangeItem({
 
         {/* Agent content */}
         {(phase === "streaming" || phase === "tools" || phase === "done") && (
-          <>
-            <StreamingText
-              fullText={exchange.content}
-              revealFraction={phase === "streaming" ? fraction : 1}
-              showCursor={phase === "streaming" && fraction < 1}
-            />
-            <Text> </Text>
-          </>
+          <StreamingText
+            fullText={exchange.content}
+            revealFraction={phase === "streaming" ? fraction : 1}
+            showCursor={phase === "streaming" && fraction < 1}
+          />
         )}
 
         {/* Tool calls */}
@@ -914,23 +898,18 @@ function StatusBar({
   return (
     <Box flexDirection="row" justifyContent="space-between">
       <Text color="$muted" wrap="truncate">
-        <Text color="$primary">{elapsedStr}</Text>
+        {elapsedStr}
         {"  "}
         {keys}
-        {"  "}
       </Text>
       <Text color="$muted" wrap="truncate">
         {frozenCount > 0 && (
           <>
-            <Text color="$muted">
-              {"\u2191"}
-              {frozenCount} in scrollback
-            </Text>
-            {" \u2502 "}
+            {"\u2191"}
+            {frozenCount} in scrollback{"  "}
           </>
         )}
-        ctx <Text color={ctxColor}>{ctxBar}</Text> <Text color={ctxPct > 100 ? "$error" : undefined}>{ctxPct}%</Text>
-        {"  "}
+        ctx {ctxBar} {ctxPct}%{"  "}
         {cost}
       </Text>
     </Box>
@@ -1046,7 +1025,7 @@ function DemoFooter({
         placeholder={placeholder}
         isActive={!done && terminalFocused}
       />
-      <Box backgroundColor="$muted-bg" paddingX={1}>
+      <Box paddingX={1}>
         <StatusBar
           exchanges={exchanges}
           compacting={compacting}
@@ -1521,27 +1500,23 @@ export function CodingAgent({
 
   return (
     <Box flexDirection="column" paddingX={1}>
-      {/* Header — only shown before any exchanges exist.
-       *  Hidden as soon as the first exchange appears (not tied to frozen state)
-       *  to avoid a visual jump when items first freeze. */}
-      {exchanges.length === 0 && (
-        <Box flexDirection="column">
-          <Text> </Text>
-          <Text bold>Static Scrollback</Text>
-          <Text> </Text>
-          <Text>Coding agent simulation showcasing ScrollbackList:</Text>
-          <Text> {"\u2022"} ScrollbackList — declarative list with automatic scrollback</Text>
-          <Text> {"\u2022"} useScrollbackItem() — imperative freeze() from within items</Text>
-          <Text> {"\u2022"} isFrozen prop — data-driven freezing for completed items</Text>
-          <Text> {"\u2022"} OSC 8 hyperlinks — clickable file paths and URLs</Text>
-          <Text>
-            {" "}
-            {"\u2022"} OSC 133 markers — Cmd+{"\u2191"}/{"\u2193"} to jump between exchanges
-          </Text>
-          <Text> {"\u2022"} $token theme colors — semantic color tokens</Text>
-          <Text> </Text>
-        </Box>
-      )}
+      {/* Header — always shown; scrolls away naturally as exchanges grow. */}
+      <Box flexDirection="column">
+        <Text> </Text>
+        <Text bold>Static Scrollback</Text>
+        <Text> </Text>
+        <Text>Coding agent simulation showcasing ScrollbackList:</Text>
+        <Text> {"\u2022"} ScrollbackList — declarative list with automatic scrollback</Text>
+        <Text> {"\u2022"} useScrollbackItem() — imperative freeze() from within items</Text>
+        <Text> {"\u2022"} isFrozen prop — data-driven freezing for completed items</Text>
+        <Text> {"\u2022"} OSC 8 hyperlinks — clickable file paths and URLs</Text>
+        <Text>
+          {" "}
+          {"\u2022"} OSC 133 markers — Cmd+{"\u2191"}/{"\u2193"} to jump between exchanges
+        </Text>
+        <Text> {"\u2022"} $token theme colors — semantic color tokens</Text>
+        <Text> </Text>
+      </Box>
 
       <ScrollbackList
         items={exchanges}
@@ -1572,6 +1547,9 @@ export function CodingAgent({
 
           return (
             <Box flexDirection="column">
+              {/* Spacing between turns */}
+              {index > 0 && <Text> </Text>}
+
               {/* Compaction overlay */}
               {compacting && isLatest && (
                 <Box flexDirection="column" borderStyle="round" borderColor="$warning" paddingX={1} overflow="hidden">

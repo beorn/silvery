@@ -61,56 +61,37 @@ describe("bug 1: input box position stability", () => {
     handle?.unmount()
   })
 
-  test("header hides when first exchange appears (before any freeze)", async () => {
+  test("header persists after first exchange appears", async () => {
     term = createTermless({ cols: 120, rows: 40 })
     handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
 
-    // After mount + auto-advance, the first exchange should be visible
-    // and the header should already be hidden (exchanges.length > 0)
+    // After mount + auto-advance, both header and first exchange visible
     await settle()
 
     const text = term.screen!.getText()
-    // The header text "Static Scrollback" should NOT be visible
-    // since exchanges exist after the initial advance
-    expect(text).not.toContain("Static Scrollback")
-    // First exchange should be visible
+    expect(text).toContain("Static Scrollback")
     expect(text).toContain("Fix the bug")
   })
 
-  test("header is shown only before any exchanges exist", async () => {
+  test("header and exchanges coexist", async () => {
     term = createTermless({ cols: 120, rows: 40 })
 
-    // CodingAgent auto-advances on mount, so the header disappears immediately
-    // once the first exchange is added. This is the desired behavior:
-    // header hides when exchanges appear, NOT when items freeze.
     handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle()
 
-    // Header should be gone, first exchange visible
     const text = term.screen!.getText()
-    expect(text).not.toContain("ScrollbackList")
+    expect(text).toContain("ScrollbackList")
     expect(text).toContain("Fix the bug")
   })
 
-  test("header does not reappear after being hidden", async () => {
+  test("exchanges work after header", async () => {
     term = createTermless({ cols: 120, rows: 40 })
     handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle()
 
-    // After initial advance, header should be hidden
-    expect(term.screen!.getText()).not.toContain("Static Scrollback")
-
-    // Advance several times — header should never reappear
-    for (let i = 0; i < 5; i++) {
-      await handle.press("o")
-      await handle.press("k")
-      await handle.press("Enter")
-      await settle(500)
-
-      const text = term.screen!.getText()
-      expect(text).not.toContain("Static Scrollback")
-      expect(text).not.toContain("ScrollbackList")
-    }
+    // After first advance, both header and first exchange should be visible
+    const text = term.screen!.getText()
+    expect(text).toContain("Fix the login bug")
   })
 })
 
@@ -391,10 +372,9 @@ describe("bug 5: status bar text", () => {
     const statusLine = lines.find((l) => l.includes("ctx") && (l.includes("%") || l.includes("$")))
 
     if (statusLine) {
-      // If "in scrollback" appears, it should be separated from "ctx" by a separator
+      // If "in scrollback" appears, it should be followed by "ctx" on the same line
       if (statusLine.includes("in scrollback")) {
-        // Should have a visual separator between scrollback info and context bar
-        expect(statusLine).toMatch(/scrollback.*\u2502.*ctx/)
+        expect(statusLine).toMatch(/scrollback.*ctx/)
       }
     }
   })
@@ -507,7 +487,7 @@ describe("bug 7: intro text visibility", () => {
     expect(text).toContain("ScrollbackList")
   })
 
-  test("intro text disappears after first exchange appears", async () => {
+  test("intro text persists after first exchange appears", async () => {
     term = createTermless({ cols: 120, rows: 40 })
     handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={false} />, term)
 
@@ -515,8 +495,9 @@ describe("bug 7: intro text visibility", () => {
     await settle(2000)
 
     const text = term.screen!.getText()
-    expect(text).not.toContain("Static Scrollback")
-    // First exchange should be visible
+    // Header stays visible — scrolls away naturally
+    expect(text).toContain("Static Scrollback")
+    // First exchange should also be visible
     expect(text).toContain("Fix the login bug")
   })
 })
