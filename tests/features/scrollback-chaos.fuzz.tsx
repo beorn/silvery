@@ -420,7 +420,7 @@ describe("CodingAgent scrollback fuzz", () => {
     dims: { cols: number; rows: number } = { cols: 100, rows: 25 },
     shellLines: number = 3,
   ) {
-    const { CodingAgent, SCRIPT } = await import("../../examples/interactive/static-scrollback")
+    const { CodingAgent, SCRIPT } = await import("../../examples/interactive/ai-chat")
     term = createTermless(dims)
     const emulator = (term as unknown as Record<string, unknown>)._emulator as {
       feed(data: string): void
@@ -430,7 +430,7 @@ describe("CodingAgent scrollback fuzz", () => {
     for (let i = 0; i < shellLines; i++) {
       emulator.feed(`shell-line-${i}\r\n`)
     }
-    emulator.feed("$ bun run examples/interactive/static-scrollback.tsx\r\n")
+    emulator.feed("$ bun run examples/interactive/ai-chat.tsx\r\n")
 
     handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, {
       mode: "inline",

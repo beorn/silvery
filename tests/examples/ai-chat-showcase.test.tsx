@@ -1,5 +1,5 @@
 /**
- * Spec-level tests for the static-scrollback (ai-chat) showcase.
+ * Spec-level tests for the ai-chat showcase.
  *
  * Tests the core interaction patterns of the CodingAgent:
  * - Initial render (first exchange visible, footer with prompt)
@@ -159,7 +159,7 @@ function TestCodingAgent({ script = TEST_SCRIPT }: { script?: typeof TEST_SCRIPT
 // Tests
 // ============================================================================
 
-describe("static-scrollback showcase", () => {
+describe("ai-chat showcase", () => {
   // -------------------------------------------------------------------------
   // Initial render
   // -------------------------------------------------------------------------

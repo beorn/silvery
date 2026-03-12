@@ -19,7 +19,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
-import { CodingAgent, SCRIPT } from "../../examples/interactive/static-scrollback"
+import { CodingAgent, SCRIPT } from "../../examples/interactive/ai-chat"
 
 // ============================================================================
 // Helper: simulate a real terminal with pre-existing content
@@ -207,7 +207,7 @@ describe("inline mode with pre-existing terminal content", () => {
     // Find where app content starts
     const linesBefore = term.screen!.getLines()
     const appStartBefore = linesBefore.findIndex(
-      (l: string) => l.includes("Static Scrollback") || l.includes("Fix the login"),
+      (l: string) => l.includes("AI Chat") || l.includes("Fix the login"),
     )
 
     await handle.press("Enter")
@@ -216,7 +216,7 @@ describe("inline mode with pre-existing terminal content", () => {
     // (or higher if content was pushed into scrollback by growth)
     const linesAfter = term.screen!.getLines()
     const appStartAfter = linesAfter.findIndex(
-      (l: string) => l.includes("Static Scrollback") || l.includes("Fix the login") || l.includes("Agent"),
+      (l: string) => l.includes("AI Chat") || l.includes("Fix the login") || l.includes("Agent"),
     )
 
     // Content should NOT have jumped to row 0 (which is where the shell prompt was)

@@ -1,5 +1,5 @@
 /**
- * Regression tests for ai-chat (static-scrollback) showcase bugs.
+ * Regression tests for ai-chat showcase bugs.
  *
  * Bug 1: Input box jumps up — header should hide before items freeze, not during
  * Bug 2: Ctrl-D exit — after first Ctrl-D, show "press Ctrl-D again to exit"
@@ -19,7 +19,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
-import { CodingAgent, SCRIPT, type ScriptEntry } from "../../examples/interactive/static-scrollback"
+import { CodingAgent, SCRIPT, type ScriptEntry } from "../../examples/interactive/ai-chat"
 
 // ============================================================================
 // Short script for testing — structured to test advancement behavior
@@ -69,7 +69,7 @@ describe("bug 1: input box position stability", () => {
     await settle()
 
     const text = term.screen!.getText()
-    expect(text).toContain("Static Scrollback")
+    expect(text).toContain("AI Chat")
     expect(text).toContain("Fix the bug")
   })
 
@@ -483,7 +483,7 @@ describe("bug 7: intro text visibility", () => {
     // Check immediately (before the 1500ms auto-advance fires)
     await settle(100)
     const text = term.screen!.getText()
-    expect(text).toContain("Static Scrollback")
+    expect(text).toContain("AI Chat")
     expect(text).toContain("ScrollbackList")
   })
 
@@ -496,7 +496,7 @@ describe("bug 7: intro text visibility", () => {
 
     const text = term.screen!.getText()
     // Header stays visible — scrolls away naturally
-    expect(text).toContain("Static Scrollback")
+    expect(text).toContain("AI Chat")
     // First exchange should also be visible
     expect(text).toContain("Fix the login bug")
   })

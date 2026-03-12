@@ -15,7 +15,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
-import { CodingAgent, type ScriptEntry } from "../../examples/interactive/static-scrollback"
+import { CodingAgent, type ScriptEntry } from "../../examples/interactive/ai-chat"
 
 const settle = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 

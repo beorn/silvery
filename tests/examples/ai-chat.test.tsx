@@ -16,8 +16,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term, TermScreen } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
-import { CodingAgent } from "../../examples/interactive/static-scrollback"
-import { SCRIPT } from "../../examples/interactive/static-scrollback/script"
+import { CodingAgent, SCRIPT } from "../../examples/interactive/ai-chat"
 
 // ============================================================================
 // Helpers

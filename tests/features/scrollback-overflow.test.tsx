@@ -377,7 +377,7 @@ describe("CodingAgent inline scrollback with shell prompt", () => {
     dims: { cols: number; rows: number } = { cols: 120, rows: 40 },
     shellLines: number = 5,
   ) {
-    const { CodingAgent, SCRIPT } = await import("../../examples/interactive/static-scrollback")
+    const { CodingAgent, SCRIPT } = await import("../../examples/interactive/ai-chat")
     term = createTermless(dims)
     const emulator = (term as unknown as Record<string, unknown>)._emulator as {
       feed(data: string): void
@@ -387,7 +387,7 @@ describe("CodingAgent inline scrollback with shell prompt", () => {
     for (let i = 0; i < shellLines; i++) {
       emulator.feed(`shell-line-${i}\r\n`)
     }
-    emulator.feed("$ bun run examples/interactive/static-scrollback.tsx\r\n")
+    emulator.feed("$ bun run examples/interactive/ai-chat.tsx\r\n")
 
     handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, {
       mode: "inline",

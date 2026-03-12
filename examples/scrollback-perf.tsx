@@ -6,7 +6,7 @@
  *
  * Modes:
  *   --simple   Simple items (Box + 2 Text nodes)
- *   --complex  Complex items matching static-scrollback (default)
+ *   --complex  Complex items matching ai-chat (default)
  *   --timers   Add pulse/elapsed timers like the real demo
  */
 import React, { useState, useEffect, useRef } from "react"
@@ -36,7 +36,7 @@ function SimpleItem({ item, isLatest }: { item: Item; isLatest: boolean }) {
   )
 }
 
-/** Complex item — matches static-scrollback's ExchangeItem */
+/** Complex item — matches ai-chat's ExchangeItem */
 function ComplexItem({ item }: { item: Item }) {
   if (item.role === "user") {
     return (
@@ -137,7 +137,7 @@ function TestApp({ itemCount }: { itemCount: number }) {
   // When NOT lifted: inputText lives in parent (causes full re-render)
   const [inputText, setInputText] = useState("")
 
-  // Optional timers (like static-scrollback)
+  // Optional timers (like ai-chat)
   const [_pulse, setPulse] = useState(false)
   const [_elapsed, setElapsed] = useState(0)
   const startRef = useRef(Date.now())

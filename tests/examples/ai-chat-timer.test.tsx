@@ -17,7 +17,7 @@ import "@termless/test/matchers"
 import type { Term } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
 import { Box, Text } from "../../packages/react/src/index"
-import { CodingAgent, SCRIPT, type ScriptEntry } from "../../examples/interactive/static-scrollback"
+import { CodingAgent, SCRIPT, type ScriptEntry } from "../../examples/interactive/ai-chat"
 
 const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms))
 
@@ -108,13 +108,13 @@ describe("bug 2: intro text visible at start", () => {
     await settle(50)
 
     const text = term.screen!.getText()
-    // The intro mentions "Static Scrollback" or key features
+    // The intro mentions "AI Chat" or key features
     // Since advance() runs immediately on mount, the header disappears instantly.
     // This is the bug — user never sees the intro.
     // For now, just verify what the current behavior is:
     // If exchanges exist, header is hidden. If not, it's shown.
     // The issue is that useEffect(() => advance(), []) fires before the user sees the header.
-    const hasHeader = text.includes("Static Scrollback") || text.includes("ScrollbackList")
+    const hasHeader = text.includes("AI Chat") || text.includes("ScrollbackList")
     const hasExchanges = text.includes("Fix the login bug") || text.includes("❯")
 
     // Current (buggy) behavior: header is gone because advance() already ran

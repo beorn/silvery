@@ -13,7 +13,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
-import { CodingAgent, SCRIPT } from "../../examples/interactive/static-scrollback"
+import { CodingAgent, SCRIPT } from "../../examples/interactive/ai-chat"
 
 describe("scrollback promotion: border preservation", () => {
   let term: Term
