@@ -64,13 +64,7 @@ function Chat() {
 
   return (
     <Box flexDirection="column" width="100%" height="100%">
-      <Box
-        flexDirection="column"
-        flexGrow={1}
-        overflow="scroll"
-        scrollTo={messages.length - 1}
-        paddingX={1}
-      >
+      <Box flexDirection="column" flexGrow={1} overflow="scroll" scrollTo={messages.length - 1} paddingX={1}>
         {messages.map((msg, i) => (
           <Text key={i} color={msg.role === "user" ? "cyan" : "white"}>
             {msg.role === "user" ? "> " : "  "}
@@ -151,9 +145,7 @@ Update a message in-place as tokens arrive:
 const streamTokens = async (messageId: number, generator: AsyncGenerator<string>) => {
   for await (const token of generator) {
     setMessages((prev) =>
-      prev.map((m) =>
-        m.id === messageId ? { ...m, content: m.content + token, streaming: true } : m,
-      ),
+      prev.map((m) => (m.id === messageId ? { ...m, content: m.content + token, streaming: true } : m)),
     )
   }
 }

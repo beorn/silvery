@@ -445,8 +445,7 @@ function PaintTab(): JSX.Element {
 
       <Muted>
         {" "}
-        <Kbd>1-0</Kbd> color <Kbd>e</Kbd> eraser <Kbd>c</Kbd> clear (click canvas in Kitty/Ghostty
-        for mouse paint)
+        <Kbd>1-0</Kbd> color <Kbd>e</Kbd> eraser <Kbd>c</Kbd> clear (click canvas in Kitty/Ghostty for mouse paint)
       </Muted>
     </Box>
   )

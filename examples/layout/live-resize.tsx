@@ -54,8 +54,7 @@ const CARDS: CardData[] = [
     value: "42%",
     detail: "4 cores, 2.4 GHz base",
     color: "green",
-    sparkline:
-      "\u2582\u2583\u2585\u2587\u2586\u2584\u2583\u2585\u2587\u2588\u2586\u2584\u2583\u2582\u2583\u2585",
+    sparkline: "\u2582\u2583\u2585\u2587\u2586\u2584\u2583\u2585\u2587\u2588\u2586\u2584\u2583\u2582\u2583\u2585",
   },
   {
     title: "Memory",
@@ -63,8 +62,7 @@ const CARDS: CardData[] = [
     value: "8.2 GB",
     detail: "of 16 GB (51% used)",
     color: "cyan",
-    sparkline:
-      "\u2584\u2584\u2585\u2585\u2585\u2586\u2586\u2586\u2585\u2585\u2586\u2586\u2587\u2587\u2586\u2586",
+    sparkline: "\u2584\u2584\u2585\u2585\u2585\u2586\u2586\u2586\u2585\u2585\u2586\u2586\u2587\u2587\u2586\u2586",
   },
   {
     title: "Disk I/O",
@@ -72,8 +70,7 @@ const CARDS: CardData[] = [
     value: "234 MB/s",
     detail: "Read: 180 MB/s Write: 54 MB/s",
     color: "yellow",
-    sparkline:
-      "\u2581\u2582\u2583\u2587\u2588\u2587\u2584\u2582\u2581\u2582\u2585\u2587\u2586\u2583\u2582\u2581",
+    sparkline: "\u2581\u2582\u2583\u2587\u2588\u2587\u2584\u2582\u2581\u2582\u2585\u2587\u2586\u2583\u2582\u2581",
   },
   {
     title: "Network",
@@ -81,8 +78,7 @@ const CARDS: CardData[] = [
     value: "1.2 Gb/s",
     detail: "In: 800 Mb/s Out: 400 Mb/s",
     color: "magenta",
-    sparkline:
-      "\u2583\u2584\u2585\u2586\u2587\u2586\u2585\u2584\u2585\u2586\u2587\u2588\u2587\u2586\u2585\u2584",
+    sparkline: "\u2583\u2584\u2585\u2586\u2587\u2586\u2585\u2584\u2585\u2586\u2587\u2588\u2587\u2586\u2585\u2584",
   },
   {
     title: "Processes",
@@ -90,8 +86,7 @@ const CARDS: CardData[] = [
     value: "247",
     detail: "12 running, 235 sleeping",
     color: "blue",
-    sparkline:
-      "\u2585\u2585\u2585\u2586\u2585\u2585\u2585\u2585\u2586\u2585\u2585\u2585\u2586\u2585\u2585\u2585",
+    sparkline: "\u2585\u2585\u2585\u2586\u2585\u2585\u2585\u2585\u2586\u2585\u2585\u2585\u2586\u2585\u2585\u2585",
   },
   {
     title: "Temperature",
@@ -99,8 +94,7 @@ const CARDS: CardData[] = [
     value: "62 C",
     detail: "Max: 85 C (safe range)",
     color: "red",
-    sparkline:
-      "\u2583\u2583\u2584\u2584\u2585\u2585\u2586\u2586\u2585\u2585\u2584\u2584\u2583\u2584\u2585\u2585",
+    sparkline: "\u2583\u2583\u2584\u2584\u2585\u2585\u2586\u2586\u2585\u2585\u2584\u2584\u2583\u2584\u2585\u2585",
   },
 ]
 
@@ -112,13 +106,7 @@ function MetricCard({ card, compact }: { card: CardData; compact: boolean }): JS
   if (compact) {
     // Minimal: single-line card for narrow terminals
     return (
-      <Box
-        borderStyle="round"
-        borderColor={card.color}
-        paddingX={1}
-        flexDirection="row"
-        justifyContent="space-between"
-      >
+      <Box borderStyle="round" borderColor={card.color} paddingX={1} flexDirection="row" justifyContent="space-between">
         <H1 color={card.color}>{card.title}</H1>
         <H3>{card.value}</H3>
       </Box>
@@ -127,13 +115,7 @@ function MetricCard({ card, compact }: { card: CardData; compact: boolean }): JS
 
   // Full card with sparkline and details
   return (
-    <Box
-      borderStyle="round"
-      borderColor={card.color}
-      paddingX={1}
-      flexDirection="column"
-      flexGrow={1}
-    >
+    <Box borderStyle="round" borderColor={card.color} paddingX={1} flexDirection="column" flexGrow={1}>
       <Box justifyContent="space-between">
         <H1 color={card.color}>{card.title}</H1>
         <H1 color={card.color}>{card.value}</H1>
@@ -233,13 +215,12 @@ function CodeSnippet({ width }: { width: number }): JSX.Element {
       <H1 color="yellow">How it works:</H1>
       <Text color="gray">
         {"  "}
-        <Text color="magenta">const</Text> {"{"} width {"}"} ={" "}
-        <Text color="cyan">useContentRect</Text>()
+        <Text color="magenta">const</Text> {"{"} width {"}"} = <Text color="cyan">useContentRect</Text>()
       </Text>
       <Text color="gray">
         {"  "}
-        <Text color="magenta">const</Text> columns = width {">"} 100 ? <Text color="green">3</Text>{" "}
-        : width {">"} 60 ? <Text color="green">2</Text> : <Text color="green">1</Text>
+        <Text color="magenta">const</Text> columns = width {">"} 100 ? <Text color="green">3</Text> : width {">"} 60 ?{" "}
+        <Text color="green">2</Text> : <Text color="green">1</Text>
       </Text>
       <Text dim italic>
         {"  "}// No useEffect, no layout thrashing. Synchronous.

@@ -141,8 +141,7 @@ export function createTheme(): ThemeBuilder {
 
       // Apply explicit color overrides
       for (const [key, val] of Object.entries(state.colors)) {
-        if (val !== undefined && typeof val === "string")
-          (palette as unknown as Record<string, string>)[key] = val
+        if (val !== undefined && typeof val === "string") (palette as unknown as Record<string, string>)[key] = val
       }
 
       return deriveTheme(palette)

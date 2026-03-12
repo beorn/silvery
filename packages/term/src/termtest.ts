@@ -68,9 +68,7 @@ export function runTermtest(options?: TermtestOptions): void {
   w.write(`  Program: ${caps.program || "(unknown)"}\n`)
   w.write(`  TERM: ${caps.term || "(unknown)"}\n`)
   w.write(`  COLORTERM: ${process.env.COLORTERM || "(unset)"}\n`)
-  w.write(
-    `  Detected: color=${caps.colorLevel} dark=${caps.darkBackground} nerdfont=${caps.nerdfont}\n`,
-  )
+  w.write(`  Detected: color=${caps.colorLevel} dark=${caps.darkBackground} nerdfont=${caps.nerdfont}\n`)
   w.write(`  Underline: styles=${caps.underlineStyles} color=${caps.underlineColor}\n`)
   w.write(`  Emoji wide: ${caps.textEmojiWide}\n`)
 
@@ -94,19 +92,15 @@ export function runTermtest(options?: TermtestOptions): void {
     w.write(row("4:4 Dotted", `${CSI}4:4mThe quick brown fox${RESET}`) + "\n")
     w.write(row("4:5 Dashed", `${CSI}4:5mThe quick brown fox${RESET}`) + "\n")
     w.write(
-      row(
-        "After 4:x (clean?)",
-        `${CSI}4:3m${RESET}This text should be normal — if garbled, 4:x corrupted SGR state`,
-      ) + "\n",
+      row("After 4:x (clean?)", `${CSI}4:3m${RESET}This text should be normal — if garbled, 4:x corrupted SGR state`) +
+        "\n",
     )
 
     w.write(sectionHeader("SGR 58 Underline Color (Terminal.app BREAKS here)"))
     w.write(row("58;5;1 Red UL", `${sgr(4)}${CSI}58;5;1mThe quick brown fox${RESET}`) + "\n")
     w.write(row("58;5;2 Green UL", `${sgr(4)}${CSI}58;5;2mThe quick brown fox${RESET}`) + "\n")
     w.write(row("58;5;4 Blue UL", `${sgr(4)}${CSI}58;5;4mThe quick brown fox${RESET}`) + "\n")
-    w.write(
-      row("58;2;R;G;B TC UL", `${sgr(4)}${CSI}58;2;255;128;0mThe quick brown fox${RESET}`) + "\n",
-    )
+    w.write(row("58;2;R;G;B TC UL", `${sgr(4)}${CSI}58;2;255;128;0mThe quick brown fox${RESET}`) + "\n")
     w.write(
       row(
         "After SGR 58 (clean?)",

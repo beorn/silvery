@@ -46,13 +46,7 @@ export interface ButtonProps {
  * Renders `[ label ]` with inverse styling when focused. Activates on
  * Enter or Space key press.
  */
-export function Button({
-  label,
-  onPress,
-  isActive,
-  testID,
-  color,
-}: ButtonProps): React.ReactElement {
+export function Button({ label, onPress, isActive, testID, color }: ButtonProps): React.ReactElement {
   const { focused } = useFocusable()
 
   // isActive prop overrides focus state (same pattern as TextInput)

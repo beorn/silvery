@@ -258,12 +258,7 @@ test("render select input for screen readers", () => {
         const screenReaderLabel = `${index + 1}. ${item}`
 
         return (
-          <Box
-            key={item}
-            aria-label={screenReaderLabel}
-            aria-role="listitem"
-            aria-state={{ selected: isSelected }}
-          >
+          <Box key={item} aria-label={screenReaderLabel} aria-role="listitem" aria-state={{ selected: isSelected }}>
             <Text>{item}</Text>
           </Box>
         )
@@ -271,9 +266,7 @@ test("render select input for screen readers", () => {
     </Box>,
   )
 
-  expect(output).toBe(
-    "list: Select a color:\nlistitem: 1. Red\nlistitem: (selected) 2. Green\nlistitem: 3. Blue",
-  )
+  expect(output).toBe("list: Select a color:\nlistitem: 1. Red\nlistitem: (selected) 2. Green\nlistitem: 3. Blue")
 })
 
 test("render multi-line text with roles", () => {

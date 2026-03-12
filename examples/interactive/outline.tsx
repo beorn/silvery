@@ -70,24 +70,13 @@ function ContentWithSize({ label }: { label: string }): JSX.Element {
   )
 }
 
-function BorderPanel({
-  style,
-  highlight,
-}: {
-  style: StyleVariant
-  highlight: boolean
-}): JSX.Element {
+function BorderPanel({ style, highlight }: { style: StyleVariant; highlight: boolean }): JSX.Element {
   return (
     <Box flexDirection="column" flexGrow={1} gap={1}>
       <Text bold color={highlight ? "$primary" : undefined}>
         borderStyle="{style}"
       </Text>
-      <Box
-        borderStyle={style}
-        borderColor={highlight ? "$primary" : "$border"}
-        width={30}
-        height={9}
-      >
+      <Box borderStyle={style} borderColor={highlight ? "$primary" : "$border"} width={30} height={9}>
         <ContentWithSize label="Border Box" />
       </Box>
       <Muted>Border adds to layout.</Muted>
@@ -96,24 +85,13 @@ function BorderPanel({
   )
 }
 
-function OutlinePanel({
-  style,
-  highlight,
-}: {
-  style: StyleVariant
-  highlight: boolean
-}): JSX.Element {
+function OutlinePanel({ style, highlight }: { style: StyleVariant; highlight: boolean }): JSX.Element {
   return (
     <Box flexDirection="column" flexGrow={1} gap={1}>
       <Text bold color={highlight ? "$warning" : undefined}>
         outlineStyle="{style}"
       </Text>
-      <Box
-        outlineStyle={style}
-        outlineColor={highlight ? "$warning" : "$border"}
-        width={30}
-        height={9}
-      >
+      <Box outlineStyle={style} outlineColor={highlight ? "$warning" : "$border"} width={30} height={9}>
         <ContentWithSize label="Outline Box" />
       </Box>
       <Muted>Outline overlaps content.</Muted>

@@ -22,13 +22,7 @@ import { parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
 import { pushContextTheme, popContextTheme } from "@silvery/theme/state"
 import type { Theme } from "@silvery/theme/types"
-import type {
-  ClipBounds,
-  ContentPhaseStats,
-  NodeRenderState,
-  NodeTraceEntry,
-  PipelineContext,
-} from "./types"
+import type { ClipBounds, ContentPhaseStats, NodeRenderState, NodeTraceEntry, PipelineContext } from "./types"
 
 /**
  * Render all nodes to a terminal buffer.
@@ -37,11 +31,7 @@ import type {
  * @param prevBuffer Previous buffer for incremental rendering (optional)
  * @returns A TerminalBuffer with the rendered content
  */
-export function contentPhase(
-  root: TeaNode,
-  prevBuffer?: TerminalBuffer | null,
-  ctx?: PipelineContext,
-): TerminalBuffer {
+export function contentPhase(root: TeaNode, prevBuffer?: TerminalBuffer | null, ctx?: PipelineContext): TerminalBuffer {
   const layout = root.contentRect
   if (!layout) {
     throw new Error("contentPhase called before layout phase")
@@ -54,8 +44,7 @@ export function contentPhase(
   const nodeTraceEnabled = ctx?.nodeTraceEnabled ?? _nodeTraceEnabled
 
   // Clone prevBuffer if same dimensions, else create fresh
-  const hasPrevBuffer =
-    prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
+  const hasPrevBuffer = prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
 
   if (instrumentEnabled) {
     _contentPhaseCallCount++
@@ -70,9 +59,7 @@ export function contentPhase(
   }
 
   const t0 = instrumentEnabled ? performance.now() : 0
-  const buffer = hasPrevBuffer
-    ? prevBuffer.clone()
-    : new TerminalBuffer(layout.width, layout.height)
+  const buffer = hasPrevBuffer ? prevBuffer.clone() : new TerminalBuffer(layout.width, layout.height)
   const tClone = instrumentEnabled ? performance.now() - t0 : 0
 
   const t1 = instrumentEnabled ? performance.now() : 0
@@ -145,11 +132,7 @@ function syncPrevLayout(node: TeaNode): void {
 /** Instrumentation enabled when SILVERY_STRICT, SILVERY_CHECK_INCREMENTAL, or SILVERY_INSTRUMENT is set */
 const _instrumentEnabled =
   typeof process !== "undefined" &&
-  !!(
-    process.env?.SILVERY_STRICT ||
-    process.env?.SILVERY_CHECK_INCREMENTAL ||
-    process.env?.SILVERY_INSTRUMENT
-  )
+  !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL || process.env?.SILVERY_INSTRUMENT)
 
 /** Mutable stats counters — reset after each contentPhase call */
 const _contentPhaseStats: ContentPhaseStats = {
@@ -188,8 +171,7 @@ let _contentPhaseCallCount = 0
 /** Module-level node trace (fallback when ctx.nodeTrace is not provided) */
 const _nodeTrace: NodeTraceEntry[] = []
 const _nodeTraceEnabled =
-  typeof process !== "undefined" &&
-  !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL)
+  typeof process !== "undefined" && !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL)
 
 /** DIAG: compute node depth in tree */
 function _getNodeDepth(node: TeaNode): number {
@@ -306,7 +288,33 @@ function renderNodeToBuffer(
   const _nodeId = instrumentEnabled ? ((props.id as string | undefined) ?? "") : ""
   const _traceThis = instrumentEnabled && nodeTraceEnabled && _nodeId
 
+  // Cell debug: log nodes that cover the target cell
+  const _cellDbg = (globalThis as any).__silvery_cell_debug as { x: number; y: number; log: string[] } | undefined
+  const _coversCellNow =
+    _cellDbg &&
+    layout.x <= _cellDbg.x &&
+    layout.x + layout.width > _cellDbg.x &&
+    screenY <= _cellDbg.y &&
+    screenY + layout.height > _cellDbg.y
+  const _coversCellPrev =
+    _cellDbg &&
+    node.prevLayout &&
+    node.prevLayout.x <= _cellDbg.x &&
+    node.prevLayout.x + node.prevLayout.width > _cellDbg.x &&
+    node.prevLayout.y - scrollOffset <= _cellDbg.y &&
+    node.prevLayout.y - scrollOffset + node.prevLayout.height > _cellDbg.y
+
   if (skipFastPath) {
+    if (_cellDbg && (_coversCellNow || _coversCellPrev)) {
+      const id = (props.id as string) ?? node.type
+      const depth = _getNodeDepth(node)
+      const prev = node.prevLayout
+      _cellDbg.log.push(
+        `SKIP ${id}@${depth} rect=${layout.x},${screenY} ${layout.width}x${layout.height}` +
+          ` prev=${prev ? `${prev.x},${prev.y - scrollOffset} ${prev.width}x${prev.height}` : "null"}` +
+          ` coversNow=${_coversCellNow} coversPrev=${_coversCellPrev}`,
+      )
+    }
     if (instrumentEnabled) {
       stats.nodesSkipped++
       if (_traceThis) {
@@ -401,6 +409,20 @@ function renderNodeToBuffer(
       )
     })
 
+  // descendantOverflowChanged: a descendant (child, grandchild, etc.) was overflowing
+  // THIS node's rect in the previous frame and its layout changed (shrank/moved).
+  // clearExcessArea on the descendant clips to its immediate parent's content area,
+  // leaving stale pixels in THIS node's border/padding area and beyond THIS node's rect.
+  // By including this in contentAreaAffected, the node clears its region (removing stale
+  // overflow pixels, restoring borders) and forces children to re-render. The overflow
+  // area beyond the node's rect is handled by clearDescendantOverflowRegions.
+  //
+  // Recursive detection is critical: a grandchild overflowing a child AND this node
+  // must be caught at THIS level so the border is properly restored (depth 5 detects
+  // depth 7's overflow rather than depth 6 clearing into depth 5's border area).
+  const descendantOverflowChanged =
+    hasPrevBuffer && node.subtreeDirty && node.children !== undefined && hasDescendantOverflowChanged(node)
+
   const contentAreaAffected =
     node.contentDirty ||
     layoutChanged ||
@@ -408,7 +430,8 @@ function renderNodeToBuffer(
     node.childrenDirty ||
     node.bgDirty ||
     textPaintDirty ||
-    absoluteChildMutated
+    absoluteChildMutated ||
+    descendantOverflowChanged
 
   // subtreeDirtyWithBg: a descendant changed inside a Box with backgroundColor.
   // When a child Text shrinks, trailing chars from the old longer text survive in
@@ -416,8 +439,7 @@ function renderNodeToBuffer(
   // must re-render on top of the fresh fill. This is NOT added to contentAreaAffected
   // because non-bg boxes don't need region clearing for subtreeDirty — only bg-bearing
   // boxes need their fill to overwrite stale child pixels.
-  const subtreeDirtyWithBg =
-    hasPrevBuffer && !contentAreaAffected && node.subtreeDirty && !!props.backgroundColor
+  const subtreeDirtyWithBg = hasPrevBuffer && !contentAreaAffected && node.subtreeDirty && !!props.backgroundColor
 
   // Clear this node's region when its content area changed but has no backgroundColor.
   // Without bg, renderBox won't fill, so stale pixels from the cloned buffer
@@ -428,8 +450,7 @@ function renderNodeToBuffer(
   // - ancestorCleared=true: buffer is a clone but hasPrevBuffer=false was passed
   //   (ancestor cleared its region, but this node may need to clear its sub-region)
   // On a truly fresh buffer (first render), both are false — no wasteful clear.
-  const parentRegionCleared =
-    (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
+  const parentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
 
   // skipBgFill: in incremental mode, skip the bg fill when the cloned buffer
   // already has the correct bg at this node's position. That's ONLY when:
@@ -447,13 +468,11 @@ function renderNodeToBuffer(
   // When ancestorCleared=true, the buffer at our position was erased to the
   // inherited bg, NOT our bg — so we must re-fill.
   // When hasPrevBuffer=false AND ancestorCleared=false, it's a fresh render.
-  const skipBgFill =
-    hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !subtreeDirtyWithBg
+  const skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !subtreeDirtyWithBg
 
   // parentRegionChanged: this node's content area was modified on a cloned buffer.
   // Children must re-render (childHasPrev=false) because their pixels may be stale.
-  const parentRegionChanged =
-    (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || subtreeDirtyWithBg)
+  const parentRegionChanged = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || subtreeDirtyWithBg)
 
   // DIAG: Per-node trace and cascade tracking (gated on instrumentation)
   if (instrumentEnabled) {
@@ -513,6 +532,32 @@ function renderNodeToBuffer(
     }
   }
 
+  // Cell debug: log render decision for nodes covering target cell
+  if (_cellDbg && (_coversCellNow || _coversCellPrev)) {
+    const id = (props.id as string) ?? node.type
+    const depth = _getNodeDepth(node)
+    const prev = node.prevLayout
+    const flags = [
+      node.contentDirty && "C",
+      node.paintDirty && "P",
+      layoutChanged && "L",
+      node.subtreeDirty && "S",
+      node.childrenDirty && "Ch",
+      childPositionChanged && "CP",
+      node.bgDirty && "B",
+    ]
+      .filter(Boolean)
+      .join(",")
+    _cellDbg.log.push(
+      `RENDER ${id}@${depth} rect=${layout.x},${screenY} ${layout.width}x${layout.height}` +
+        ` prev=${prev ? `${prev.x},${prev.y - scrollOffset} ${prev.width}x${prev.height}` : "null"}` +
+        ` flags=[${flags}] hasPrev=${hasPrevBuffer} ancClr=${ancestorCleared}` +
+        ` caa=${contentAreaAffected} prc=${parentRegionCleared} prm=${parentRegionChanged}` +
+        ` coversNow=${_coversCellNow} coversPrev=${_coversCellPrev}` +
+        ` bg=${props.backgroundColor ?? "none"}`,
+    )
+  }
+
   if (parentRegionCleared) {
     if (instrumentEnabled) stats.clearOps++
     clearNodeRegion(node, buffer, layout, scrollOffset, clipBounds, layoutChanged)
@@ -527,10 +572,19 @@ function renderNodeToBuffer(
     clearExcessArea(node, buffer, layout, scrollOffset, clipBounds, layoutChanged)
   }
 
+  // Clear descendant overflow regions: areas where descendants' previous layouts
+  // extended beyond THIS node's rect. clearNodeRegion covers the node's interior,
+  // but overflow content is beyond it. This is separate from parentRegionCleared
+  // because overflow is OUTSIDE the rect — it needs clearing even for nodes with
+  // backgroundColor (whose interior is handled by renderBox's bg fill).
+  // Runs BEFORE renderBox so borders drawn by renderBox aren't overwritten.
+  if (descendantOverflowChanged) {
+    clearDescendantOverflowRegions(node, buffer, layout, scrollOffset, clipBounds)
+  }
+
   // Compute inherited bg once for boxes — used by border and outline rendering
   // to preserve parent backgrounds on border cells (prevents transparent holes).
-  const boxInheritedBg =
-    node.type === "silvery-box" && !props.backgroundColor ? findInheritedBg(node).color : undefined
+  const boxInheritedBg = node.type === "silvery-box" && !props.backgroundColor ? findInheritedBg(node).color : undefined
 
   // Render based on node type
   if (node.type === "silvery-box") {
@@ -550,15 +604,7 @@ function renderNodeToBuffer(
 
   // Render children
   if (isScrollContainer) {
-    renderScrollContainerChildren(
-      node,
-      buffer,
-      props,
-      nodeState,
-      parentRegionCleared,
-      parentRegionChanged,
-      ctx,
-    )
+    renderScrollContainerChildren(node, buffer, props, nodeState, parentRegionCleared, parentRegionChanged, ctx)
 
     // Render overflow indicators AFTER children so they survive viewport clear.
     // renderScrollContainerChildren may clear the viewport (Tier 2) which would
@@ -658,8 +704,7 @@ function renderScrollContainerChildren(
   // When lastVisibleChild decreases, stale pixels from now-hidden items remain
   // in the cloned buffer and must be cleared.
   const visibleRangeChanged =
-    ss.firstVisibleChild !== ss.prevFirstVisibleChild ||
-    ss.lastVisibleChild !== ss.prevLastVisibleChild
+    ss.firstVisibleChild !== ss.prevFirstVisibleChild || ss.lastVisibleChild !== ss.prevLastVisibleChild
   const scrollOnly =
     hasPrevBuffer &&
     scrollOffsetChanged &&
@@ -744,9 +789,7 @@ function renderScrollContainerChildren(
   // - needsViewportClear: all false (full re-render)
   // - otherwise: preserve parent's hasPrevBuffer
   const defaultChildHasPrev = needsViewportClear ? false : hasPrevBuffer
-  const defaultChildAncestorCleared = needsViewportClear
-    ? true
-    : ancestorCleared || parentRegionCleared
+  const defaultChildAncestorCleared = needsViewportClear ? true : ancestorCleared || parentRegionCleared
 
   // For buffer shift: children that were fully visible in BOTH the previous
   // and current frames have correct pixels after the shift (childHasPrev=true).
@@ -900,9 +943,7 @@ function renderNormalChildren(
   const clipX = (props.overflowX ?? props.overflow) === "hidden"
   const clipY = (props.overflowY ?? props.overflow) === "hidden"
   const effectiveClipBounds =
-    clipX || clipY
-      ? computeChildClipBounds(layout, props, clipBounds, scrollOffset, clipX, clipY)
-      : clipBounds
+    clipX || clipY ? computeChildClipBounds(layout, props, clipBounds, scrollOffset, clipX, clipY) : clipBounds
 
   // Non-scroll sticky children support. When the layout phase computes
   // node.stickyChildren, we use the same two-pass pattern as scroll containers:
@@ -922,9 +963,7 @@ function renderNormalChildren(
   // getCellBg/inheritedBg, so stale bg leaks through. Clearing to null matches
   // fresh render state before any content renders.
   if (stickyForceRefresh) {
-    const border = props.borderStyle
-      ? getBorderSize(props)
-      : { top: 0, bottom: 0, left: 0, right: 0 }
+    const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
     const padding = getPadding(props)
     const contentX = layout.x + border.left + padding.left
     const contentY = layout.y + border.top + padding.top
@@ -1117,10 +1156,55 @@ function clearVirtualTextFlags(node: TeaNode): void {
 function hasChildPositionChanged(node: TeaNode): boolean {
   for (const child of node.children) {
     if (child.contentRect && child.prevLayout) {
+      if (child.contentRect.x !== child.prevLayout.x || child.contentRect.y !== child.prevLayout.y) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * Check if any descendant was overflowing THIS node's rect and had its layout change.
+ * Recursive: a grandchild overflowing a child AND this node is detected here.
+ *
+ * When a descendant overflows (prevLayout extends beyond this node's rect) and then
+ * shrinks, clearExcessArea on the descendant clips to its immediate parent's content
+ * area, leaving stale pixels in this node's border/padding area and beyond this node's
+ * rect. By detecting at THIS level, the node clears its region (restoring borders)
+ * and handles overflow beyond its rect via clearDescendantOverflowRegions.
+ *
+ * Only follows subtreeDirty paths for efficiency — layoutChangedThisFrame on a
+ * descendant implies subtreeDirty on all its ancestors.
+ */
+function hasDescendantOverflowChanged(node: TeaNode): boolean {
+  const rect = node.contentRect!
+  return _checkDescendantOverflow(node.children, rect.x, rect.y, rect.x + rect.width, rect.y + rect.height)
+}
+
+function _checkDescendantOverflow(
+  children: readonly TeaNode[],
+  nodeLeft: number,
+  nodeTop: number,
+  nodeRight: number,
+  nodeBottom: number,
+): boolean {
+  for (const child of children) {
+    // Check this child's previous layout against the ancestor's rect
+    if (child.prevLayout && child.layoutChangedThisFrame) {
+      const prev = child.prevLayout
       if (
-        child.contentRect.x !== child.prevLayout.x ||
-        child.contentRect.y !== child.prevLayout.y
+        prev.x + prev.width > nodeRight ||
+        prev.y + prev.height > nodeBottom ||
+        prev.x < nodeLeft ||
+        prev.y < nodeTop
       ) {
+        return true
+      }
+    }
+    // Recurse into subtree-dirty children to find deeper overflows
+    if (child.subtreeDirty && child.children !== undefined) {
+      if (_checkDescendantOverflow(child.children, nodeLeft, nodeTop, nodeRight, nodeBottom)) {
         return true
       }
     }
@@ -1224,6 +1308,105 @@ function findInheritedFg(node: TeaNode): Color {
 }
 
 /**
+ * Clear overflow regions: areas where children's prevLayouts extended beyond
+ * this node's rect. Called when childOverflowChanged detected stale overflow.
+ *
+ * clearNodeRegion handles the node's own rect. This function handles the
+ * overflow area — pixels that a child rendered OUTSIDE the parent's rect
+ * in a previous frame (via overflow:visible behavior). When the child shrinks,
+ * those pixels become stale in the cloned buffer.
+ *
+ * Clears each child's overflow extent, clipped to buffer bounds.
+ */
+/**
+ * Clear areas where descendants' previous layouts overflowed beyond THIS node's rect.
+ * Only clears OUTSIDE the node's rect — interior clearing is handled by clearNodeRegion
+ * and renderBox. Recursive: follows subtreeDirty paths to find all overflowing descendants.
+ */
+function clearDescendantOverflowRegions(
+  node: TeaNode,
+  buffer: TerminalBuffer,
+  layout: NonNullable<TeaNode["contentRect"]>,
+  scrollOffset: number,
+  clipBounds: ClipBounds | undefined,
+): void {
+  const inherited = findInheritedBg(node)
+  const clearBg = inherited.color
+  const nodeRight = layout.x + layout.width
+  const nodeBottom = layout.y - scrollOffset + layout.height
+  const nodeLeft = layout.x
+  const nodeTop = layout.y - scrollOffset
+
+  _clearDescendantOverflow(node.children, buffer, nodeLeft, nodeTop, nodeRight, nodeBottom, scrollOffset, clipBounds, clearBg)
+}
+
+function _clearDescendantOverflow(
+  children: readonly TeaNode[],
+  buffer: TerminalBuffer,
+  nodeLeft: number,
+  nodeTop: number,
+  nodeRight: number,
+  nodeBottom: number,
+  scrollOffset: number,
+  clipBounds: ClipBounds | undefined,
+  clearBg: Color,
+): void {
+  for (const child of children) {
+    if (child.prevLayout && child.layoutChangedThisFrame) {
+      const prev = child.prevLayout
+      const prevRight = prev.x + prev.width
+      const prevBottom = prev.y - scrollOffset + prev.height
+      const prevTop = prev.y - scrollOffset
+
+      // Clear overflow to the right of the ancestor
+      if (prevRight > nodeRight) {
+        const overflowX = nodeRight
+        const overflowWidth = Math.min(prevRight, buffer.width) - overflowX
+        const overflowTop = Math.max(prevTop, clipBounds?.top ?? 0)
+        const overflowBottom = Math.min(prevBottom, clipBounds?.bottom ?? buffer.height)
+        if (overflowWidth > 0 && overflowBottom > overflowTop) {
+          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, { char: " ", bg: clearBg })
+        }
+      }
+      // Clear overflow below the ancestor
+      if (prevBottom > nodeBottom) {
+        const overflowTop = Math.max(nodeBottom, clipBounds?.top ?? 0)
+        const overflowBottom = Math.min(prevBottom, clipBounds?.bottom ?? buffer.height)
+        const overflowX = Math.max(prev.x, clipBounds?.left ?? 0)
+        const overflowWidth = Math.min(prevRight, clipBounds?.right ?? buffer.width) - overflowX
+        if (overflowWidth > 0 && overflowBottom > overflowTop) {
+          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, { char: " ", bg: clearBg })
+        }
+      }
+      // Clear overflow to the left of the ancestor
+      if (prev.x < nodeLeft) {
+        const overflowX = Math.max(prev.x, 0)
+        const overflowWidth = Math.min(nodeLeft, buffer.width) - overflowX
+        const overflowTop = Math.max(prevTop, clipBounds?.top ?? 0)
+        const overflowBottom = Math.min(prevBottom, clipBounds?.bottom ?? buffer.height)
+        if (overflowWidth > 0 && overflowBottom > overflowTop) {
+          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, { char: " ", bg: clearBg })
+        }
+      }
+      // Clear overflow above the ancestor
+      if (prevTop < nodeTop) {
+        const overflowTop = Math.max(prevTop, clipBounds?.top ?? 0)
+        const overflowBottom = Math.min(nodeTop, clipBounds?.bottom ?? buffer.height)
+        const overflowX = Math.max(prev.x, clipBounds?.left ?? 0)
+        const overflowWidth = Math.min(prevRight, clipBounds?.right ?? buffer.width) - overflowX
+        if (overflowWidth > 0 && overflowBottom > overflowTop) {
+          buffer.fill(overflowX, overflowTop, overflowWidth, overflowBottom - overflowTop, { char: " ", bg: clearBg })
+        }
+      }
+    }
+    // Recurse into subtree-dirty children to find deeper overflows
+    if (child.subtreeDirty && child.children !== undefined) {
+      _clearDescendantOverflow(child.children, buffer, nodeLeft, nodeTop, nodeRight, nodeBottom, scrollOffset, clipBounds, clearBg)
+    }
+  }
+}
+
+/**
  * Clear a node's region with inherited bg when it has no backgroundColor.
  * Also clears excess area when the node shrank (previous layout was larger).
  *
@@ -1248,9 +1431,7 @@ function clearNodeRegion(
   const parentBottom = parentRect ? parentRect.y - scrollOffset + parentRect.height : undefined
 
   const clearY = clipBounds ? Math.max(screenY, clipBounds.top) : screenY
-  let clearBottom = clipBounds
-    ? Math.min(screenY + layout.height, clipBounds.bottom)
-    : screenY + layout.height
+  let clearBottom = clipBounds ? Math.min(screenY + layout.height, clipBounds.bottom) : screenY + layout.height
   if (parentBottom !== undefined) {
     clearBottom = Math.min(clearBottom, parentBottom)
   }
@@ -1282,6 +1463,18 @@ function clearNodeRegion(
 
   const clearHeight = clearBottom - clearY
   if (clearHeight > 0 && clearWidth > 0) {
+    // Cell debug: log clearNodeRegion coverage
+    const _cellDbg2 = (globalThis as any).__silvery_cell_debug as { x: number; y: number; log: string[] } | undefined
+    if (_cellDbg2) {
+      const covers =
+        clearX <= _cellDbg2.x && clearX + clearWidth > _cellDbg2.x && clearY <= _cellDbg2.y && clearY + clearHeight > _cellDbg2.y
+      if (covers) {
+        const id = ((node.props as Record<string, unknown>).id as string) ?? node.type
+        _cellDbg2.log.push(
+          `CLEAR_REGION ${id} fill=${clearX},${clearY} ${clearWidth}x${clearHeight} bg=${String(clearBg)} COVERS TARGET`,
+        )
+      }
+    }
     buffer.fill(clearX, clearY, clearWidth, clearHeight, {
       char: " ",
       bg: clearBg,
@@ -1321,8 +1514,26 @@ function clearExcessArea(
   if (!layoutChanged || !node.prevLayout) return
   const prev = node.prevLayout
 
+  // Cell debug: log clearExcessArea decisions
+  const _cellDbg3 = (globalThis as any).__silvery_cell_debug as { x: number; y: number; log: string[] } | undefined
+  const _prevCoversCell3 =
+    _cellDbg3 &&
+    prev.x <= _cellDbg3.x &&
+    prev.x + prev.width > _cellDbg3.x &&
+    prev.y - scrollOffset <= _cellDbg3.y &&
+    prev.y - scrollOffset + prev.height > _cellDbg3.y
+
   // Only clear if the node actually shrank in at least one dimension
-  if (prev.width <= layout.width && prev.height <= layout.height) return
+  if (prev.width <= layout.width && prev.height <= layout.height) {
+    if (_cellDbg3 && _prevCoversCell3) {
+      const id = ((node.props as Record<string, unknown>).id as string) ?? node.type
+      _cellDbg3.log.push(
+        `EXCESS_SKIP_NO_SHRINK ${id} prev=${prev.x},${prev.y - scrollOffset} ${prev.width}x${prev.height}` +
+          ` now=${layout.x},${layout.y - scrollOffset} ${layout.width}x${layout.height}`,
+      )
+    }
+    return
+  }
 
   // Skip excess clearing when the node MOVED (changed x or y position).
   // The right/bottom excess formulas use new-x + old-y coordinates, which
@@ -1333,7 +1544,17 @@ function clearExcessArea(
   // When the node moved, the parent handles old-pixel cleanup:
   // - Parent's clearNodeRegion covers old pixels within parent's current rect
   // - Parent's clearExcessArea covers old pixels outside parent's rect
-  if (prev.x !== layout.x || prev.y !== layout.y) return
+  if (prev.x !== layout.x || prev.y !== layout.y) {
+    if (_cellDbg3 && _prevCoversCell3) {
+      const id = ((node.props as Record<string, unknown>).id as string) ?? node.type
+      _cellDbg3.log.push(
+        `EXCESS_SKIP_MOVED ${id} prev=${prev.x},${prev.y - scrollOffset} ${prev.width}x${prev.height}` +
+          ` now=${layout.x},${layout.y - scrollOffset} ${layout.width}x${layout.height}` +
+          ` (dx=${layout.x - prev.x} dy=${layout.y - prev.y})`,
+      )
+    }
+    return
+  }
 
   if (!inherited) inherited = findInheritedBg(node)
   const clearBg = inherited.color
@@ -1362,14 +1583,9 @@ function clearExcessArea(
     const parentProps = parent.props as BoxProps
     const border = getBorderSize(parentProps)
     const padding = getPadding(parentProps)
-    const parentRight =
-      parent.contentRect.x + parent.contentRect.width - border.right - padding.right
+    const parentRight = parent.contentRect.x + parent.contentRect.width - border.right - padding.right
     const parentBottom =
-      parent.contentRect.y -
-      scrollOffset +
-      parent.contentRect.height -
-      border.bottom -
-      padding.bottom
+      parent.contentRect.y - scrollOffset + parent.contentRect.height - border.bottom - padding.bottom
     clipRectRight = Math.min(clipRectRight, parentRight)
     clipRectBottom = Math.min(clipRectBottom, parentBottom)
   }
@@ -1430,10 +1646,7 @@ function clippedFill(
   bg: Color,
 ): void {
   const clippedTop = clipBounds ? Math.max(top, clipBounds.top) : top
-  const clippedBottom = Math.min(
-    clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom,
-    outerBottom,
-  )
+  const clippedBottom = Math.min(clipBounds ? Math.min(bottom, clipBounds.bottom) : bottom, outerBottom)
   let clippedX = x
   let clippedWidth = width
   if (clipBounds?.left !== undefined && clipBounds.right !== undefined) {

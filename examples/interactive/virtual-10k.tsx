@@ -22,16 +22,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from "react"
-import {
-  Box,
-  Text,
-  Strong,
-  Kbd,
-  Muted,
-  Divider,
-  VirtualList,
-  useContentRect,
-} from "../../src/index.js"
+import { Box, Text, Strong, Kbd, Muted, Divider, VirtualList, useContentRect } from "../../src/index.js"
 import { run, useInput, type Key } from "@silvery/term/runtime"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
@@ -177,13 +168,7 @@ const STATUS_COLORS: Record<Item["status"], string> = {
   blocked: "$error",
 }
 
-function ProgressBar({
-  percent,
-  width: barWidth,
-}: {
-  percent: number
-  width: number
-}): JSX.Element {
+function ProgressBar({ percent, width: barWidth }: { percent: number; width: number }): JSX.Element {
   const effectiveWidth = Math.max(5, barWidth)
   const filled = Math.round((percent / 100) * effectiveWidth)
   const empty = effectiveWidth - filled
@@ -237,15 +222,7 @@ function ItemRow({
   )
 }
 
-function ScrollIndicator({
-  current,
-  total,
-  width,
-}: {
-  current: number
-  total: number
-  width: number
-}): JSX.Element {
+function ScrollIndicator({ current, total, width }: { current: number; total: number; width: number }): JSX.Element {
   const percent = total > 0 ? Math.round(((current + 1) / total) * 100) : 0
 
   // Progress bar
@@ -410,8 +387,8 @@ function VirtualBenchmark(): JSX.Element {
       {/* Help */}
       <Box paddingX={1} justifyContent="center">
         <Muted>
-          <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>Enter</Kbd>{" "}
-          detail <Kbd>Esc/q</Kbd> quit
+          <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>Enter</Kbd> detail{" "}
+          <Kbd>Esc/q</Kbd> quit
         </Muted>
       </Box>
     </Box>
@@ -424,10 +401,7 @@ function VirtualBenchmark(): JSX.Element {
 
 async function main() {
   const handle = await run(
-    <ExampleBanner
-      meta={meta}
-      controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit"
-    >
+    <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit">
       <VirtualBenchmark />
     </ExampleBanner>,
   )

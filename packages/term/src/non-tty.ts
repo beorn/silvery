@@ -195,9 +195,7 @@ export function toPlainOutput(content: string, _prevLineCount: number): string {
  * @param mode The resolved non-TTY mode
  * @returns A function that transforms output based on the mode
  */
-export function createOutputTransformer(
-  mode: ResolvedNonTTYMode,
-): (content: string, prevLineCount: number) => string {
+export function createOutputTransformer(mode: ResolvedNonTTYMode): (content: string, prevLineCount: number) => string {
   switch (mode) {
     case "tty":
       // Pass through unchanged

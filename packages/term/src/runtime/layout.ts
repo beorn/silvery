@@ -11,12 +11,7 @@ import { bufferToStyledText, bufferToText } from "../buffer"
 import { StdoutContext, StderrContext, TermContext } from "@silvery/react/context"
 import { ensureDefaultLayoutEngine, isLayoutEngineInitialized } from "../layout-engine"
 import { executeRender } from "../pipeline"
-import {
-  createContainer,
-  createFiberRoot,
-  getContainerRoot,
-  reconciler,
-} from "@silvery/react/reconciler"
+import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/react/reconciler"
 import type { Buffer, Dims } from "./types"
 
 /**

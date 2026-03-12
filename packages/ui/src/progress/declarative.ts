@@ -6,19 +6,8 @@
  */
 
 import { MultiProgress, type TaskHandle } from "../cli/multi-progress"
-import {
-  step as getStepContext,
-  createStepContext,
-  runWithStepContext,
-  type InternalStepContext,
-} from "./als-context"
-import {
-  parseStepsDef,
-  flattenStepNodes,
-  getLeafNodes,
-  type StepNode,
-  type StepsDef,
-} from "./step-node"
+import { step as getStepContext, createStepContext, runWithStepContext, type InternalStepContext } from "./als-context"
+import { parseStepsDef, flattenStepNodes, getLeafNodes, type StepNode, type StepsDef } from "./step-node"
 
 // Re-export step() for convenience
 export { step } from "./als-context"
@@ -39,11 +28,7 @@ export interface ExecuteOptions {
  * Extract the return type from a generator or async generator
  */
 type GeneratorReturn<T> =
-  T extends Generator<unknown, infer R, unknown>
-    ? R
-    : T extends AsyncGenerator<unknown, infer R, unknown>
-      ? R
-      : T
+  T extends Generator<unknown, infer R, unknown> ? R : T extends AsyncGenerator<unknown, infer R, unknown> ? R : T
 
 /**
  * Unwrap the result type, handling generators specially
@@ -250,11 +235,7 @@ export function stepsDeclarative<T extends StepsDef>(def: T): StepsRunner<T> {
 /**
  * Register all steps with MultiProgress upfront
  */
-function registerAllSteps(
-  nodes: StepNode[],
-  multi: MultiProgress,
-  handles: Map<StepNode, TaskHandle>,
-): void {
+function registerAllSteps(nodes: StepNode[], multi: MultiProgress, handles: Map<StepNode, TaskHandle>): void {
   // Register in order without insertAfter - simpler and correct
   for (const node of nodes) {
     const isGroup = node.children && !node.work
@@ -527,18 +508,12 @@ interface DeclareSteps {
 
 function isProgressUpdate(value: unknown): value is ProgressUpdate {
   return (
-    value !== null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    ("current" in value || "total" in value)
+    value !== null && typeof value === "object" && !Array.isArray(value) && ("current" in value || "total" in value)
   )
 }
 
 function isDeclareSteps(value: unknown): value is DeclareSteps {
   return (
-    value !== null &&
-    typeof value === "object" &&
-    "declare" in value &&
-    Array.isArray((value as DeclareSteps).declare)
+    value !== null && typeof value === "object" && "declare" in value && Array.isArray((value as DeclareSteps).declare)
   )
 }

@@ -107,10 +107,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
       // Should always have at least the status bar with "context"
       expect(term.screen).toContainText("ctx")
       // Should have substantial content — not just 1-2 lines
-      expect(
-        nonBlankLines,
-        `Too few non-blank lines after Enter press ${i + 1}: ${nonBlankLines}`,
-      ).toBeGreaterThan(2)
+      expect(nonBlankLines, `Too few non-blank lines after Enter press ${i + 1}: ${nonBlankLines}`).toBeGreaterThan(2)
     }
   })
 
@@ -125,10 +122,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
       await handle.press("Enter")
       const hasContent = screenHasContent(term.screen!)
       const screenText = term.screen!.getText()
-      expect(
-        hasContent,
-        `Screen blank after Enter press ${i + 1}. Screen text:\n${screenText}`,
-      ).toBe(true)
+      expect(hasContent, `Screen blank after Enter press ${i + 1}. Screen text:\n${screenText}`).toBe(true)
       expect(term.screen).toContainText("ctx")
     }
   })
@@ -155,9 +149,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
           nonBlankLines,
           `Content dropped from ${prevNonBlank} to ${nonBlankLines} non-blank lines ` +
             `after Enter ${i + 1} (possible blank screen bug)\n` +
-            lines
-              .map((l: string, idx: number) => `  ${idx}: "${l.trimEnd().slice(0, 80)}"`)
-              .join("\n"),
+            lines.map((l: string, idx: number) => `  ${idx}: "${l.trimEnd().slice(0, 80)}"`).join("\n"),
         ).toBeGreaterThanOrEqual(Math.floor(prevNonBlank / 3))
       }
       prevNonBlank = nonBlankLines
@@ -184,9 +176,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
       expect(
         nonBlankLines,
         `After Enter ${i + 1}: only ${nonBlankLines}/${lines.length} non-blank lines\n` +
-          lines
-            .map((l: string, idx: number) => `  ${idx}: "${l.trimEnd().slice(0, 80)}"`)
-            .join("\n"),
+          lines.map((l: string, idx: number) => `  ${idx}: "${l.trimEnd().slice(0, 80)}"`).join("\n"),
       ).toBeGreaterThan(2)
     }
   })
@@ -202,11 +192,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
       const nonBlank = lines.filter((l: string) => l.trim().length > 0).length
       snapshots.push(
         `\n=== ${label} (${nonBlank}/${lines.length} non-blank, scrollback=${scrollback.length} chars) ===\n` +
-          lines
-            .map(
-              (l: string, i: number) => `  ${String(i).padStart(2)}: "${l.trimEnd().slice(0, 75)}"`,
-            )
-            .join("\n"),
+          lines.map((l: string, i: number) => `  ${String(i).padStart(2)}: "${l.trimEnd().slice(0, 75)}"`).join("\n"),
       )
     }
 

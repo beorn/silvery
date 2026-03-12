@@ -33,14 +33,7 @@ describe("border text overflow", () => {
     function App() {
       return (
         <Box flexDirection="row">
-          <Box
-            width={5}
-            height={5}
-            borderStyle="single"
-            overflow="scroll"
-            overflowIndicator
-            scrollOffset={900}
-          >
+          <Box width={5} height={5} borderStyle="single" overflow="scroll" overflowIndicator scrollOffset={900}>
             {Array.from({ length: 1000 }, (_, i) => (
               <Text key={i}>Item {i}</Text>
             ))}
@@ -78,14 +71,7 @@ describe("border text overflow", () => {
     function App() {
       return (
         <Box flexDirection="row">
-          <Box
-            width={5}
-            height={5}
-            borderStyle="single"
-            overflow="scroll"
-            overflowIndicator
-            scrollOffset={0}
-          >
+          <Box width={5} height={5} borderStyle="single" overflow="scroll" overflowIndicator scrollOffset={0}>
             {Array.from({ length: 1000 }, (_, i) => (
               <Text key={i}>Item {i}</Text>
             ))}
@@ -153,14 +139,7 @@ describe("border text overflow", () => {
     function App() {
       return (
         <Box flexDirection="row">
-          <Box
-            width={4}
-            height={6}
-            borderStyle="single"
-            overflow="scroll"
-            overflowIndicator
-            scrollOffset={500}
-          >
+          <Box width={4} height={6} borderStyle="single" overflow="scroll" overflowIndicator scrollOffset={500}>
             {Array.from({ length: 1000 }, (_, i) => (
               <Text key={i}>Z{i}</Text>
             ))}

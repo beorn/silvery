@@ -174,13 +174,7 @@ function KeyDetails({ event }: { event: KeyEvent }): JSX.Element {
   const { parsed, raw } = event
 
   // Determine which modifiers are active
-  const modActive: boolean[] = [
-    parsed.ctrl,
-    parsed.shift,
-    parsed.meta || parsed.option,
-    parsed.super,
-    parsed.hyper,
-  ]
+  const modActive: boolean[] = [parsed.ctrl, parsed.shift, parsed.meta || parsed.option, parsed.super, parsed.hyper]
 
   return (
     <Box flexDirection="column">
@@ -262,13 +256,7 @@ function ModBadge({ mod, active }: { mod: ModDef; active: boolean }): JSX.Elemen
   )
 }
 
-function KeyField({
-  label,
-  value,
-}: {
-  label: string
-  value: string | boolean | undefined
-}): JSX.Element {
+function KeyField({ label, value }: { label: string; value: string | boolean | undefined }): JSX.Element {
   if (value === undefined) {
     return <Text dim>{label}: --</Text>
   }

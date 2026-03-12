@@ -1293,8 +1293,7 @@ export function bufferToText(
       // Smart trim: use content edge to preserve styled trailing spaces
       // while removing unstyled buffer padding.
       const trimmed = line.trimEnd()
-      line =
-        trimmed.length >= contentEdgeStrOffset ? trimmed : line.substring(0, contentEdgeStrOffset)
+      line = trimmed.length >= contentEdgeStrOffset ? trimmed : line.substring(0, contentEdgeStrOffset)
     }
     lines.push(line)
   }
@@ -1513,27 +1512,9 @@ const XTERM_256_PALETTE: string[] = (() => {
   const palette: string[] = new Array(256)
 
   // Colors 0-7: standard colors
-  const standard = [
-    "#000000",
-    "#cd0000",
-    "#00cd00",
-    "#cdcd00",
-    "#0000ee",
-    "#cd00cd",
-    "#00cdcd",
-    "#e5e5e5",
-  ]
+  const standard = ["#000000", "#cd0000", "#00cd00", "#cdcd00", "#0000ee", "#cd00cd", "#00cdcd", "#e5e5e5"]
   // Colors 8-15: bright colors
-  const bright = [
-    "#7f7f7f",
-    "#ff0000",
-    "#00ff00",
-    "#ffff00",
-    "#5c5cff",
-    "#ff00ff",
-    "#00ffff",
-    "#ffffff",
-  ]
+  const bright = ["#7f7f7f", "#ff0000", "#00ff00", "#ffff00", "#5c5cff", "#ff00ff", "#00ffff", "#ffffff"]
   for (let i = 0; i < 8; i++) {
     palette[i] = standard[i]!
     palette[i + 8] = bright[i]!
@@ -1546,10 +1527,7 @@ const XTERM_256_PALETTE: string[] = (() => {
     const g = cubeValues[Math.floor((i % 36) / 6)]!
     const b = cubeValues[i % 6]!
     palette[16 + i] =
-      "#" +
-      r.toString(16).padStart(2, "0") +
-      g.toString(16).padStart(2, "0") +
-      b.toString(16).padStart(2, "0")
+      "#" + r.toString(16).padStart(2, "0") + g.toString(16).padStart(2, "0") + b.toString(16).padStart(2, "0")
   }
 
   // Colors 232-255: grayscale ramp
@@ -1730,11 +1708,7 @@ function styleToCSSProperties(style: Style, defaultFg: string, defaultBg: string
 /** Escape special HTML characters. */
 function escapeHTML(str: string): string {
   if (str === " " || str.length === 0) return str
-  return str
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
+  return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;")
 }
 
 /**

@@ -19,21 +19,11 @@ import { createContext, useContext, useEffect, useRef } from "react"
 import type { Rect } from "@silvery/tea/types"
 
 // Re-export everything from core
-export {
-  HitRegistry,
-  generateHitRegionId,
-  resetHitRegionIdCounter,
-  Z_INDEX,
-} from "./hit-registry-core"
+export { HitRegistry, generateHitRegionId, resetHitRegionIdCounter, Z_INDEX } from "./hit-registry-core"
 export type { HitTarget, HitRegion } from "./hit-registry-core"
 
 // Import for local use
-import {
-  type HitTarget,
-  type HitRegion,
-  HitRegistry,
-  generateHitRegionId,
-} from "./hit-registry-core"
+import { type HitTarget, type HitRegion, HitRegistry, generateHitRegionId } from "./hit-registry-core"
 
 // ============================================================================
 // React Context
@@ -84,12 +74,7 @@ export function useHitRegistry(): HitRegistry | null {
  * }
  * ```
  */
-export function useHitRegion(
-  target: HitTarget,
-  rect: Rect | null,
-  zIndex = 0,
-  enabled = true,
-): void {
+export function useHitRegion(target: HitTarget, rect: Rect | null, zIndex = 0, enabled = true): void {
   const registry = useContext(HitRegistryContext)
   const idRef = useRef<string | null>(null)
 
@@ -151,11 +136,7 @@ export function useHitRegion(
  * }
  * ```
  */
-export function useHitRegionCallback(
-  target: HitTarget,
-  zIndex = 0,
-  enabled = true,
-): (rect: Rect) => void {
+export function useHitRegionCallback(target: HitTarget, zIndex = 0, enabled = true): (rect: Rect) => void {
   const registry = useContext(HitRegistryContext)
   const idRef = useRef<string | null>(null)
 

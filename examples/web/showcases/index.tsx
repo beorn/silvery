@@ -37,13 +37,7 @@ import { ThemeExplorerShowcase } from "./theme-explorer.js"
 // Placeholder for examples not yet implemented — renders a coming-soon message
 function Placeholder({ name }: { name: string }) {
   return (
-    <Box
-      flexDirection="column"
-      padding={1}
-      justifyContent="center"
-      alignItems="center"
-      flexGrow={1}
-    >
+    <Box flexDirection="column" padding={1} justifyContent="center" alignItems="center" flexGrow={1}>
       <Text bold color="$muted">
         {name}
       </Text>

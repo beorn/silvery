@@ -85,11 +85,7 @@ export type {
 // =============================================================================
 
 export { withKeybindings } from "./with-keybindings"
-export type {
-  WithKeybindingsOptions,
-  KeybindingContext,
-  ExtendedKeybindingDef,
-} from "./with-keybindings"
+export type { WithKeybindingsOptions, KeybindingContext, ExtendedKeybindingDef } from "./with-keybindings"
 
 // =============================================================================
 // withDiagnostics — Testing invariants

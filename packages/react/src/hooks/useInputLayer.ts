@@ -29,8 +29,4 @@
  */
 
 // Re-export from context for convenience
-export {
-  useInputLayer,
-  useInputLayerContext,
-  type InputLayerHandler,
-} from "../contexts/InputLayerContext"
+export { useInputLayer, useInputLayerContext, type InputLayerHandler } from "../contexts/InputLayerContext"

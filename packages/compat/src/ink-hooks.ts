@@ -3,15 +3,7 @@
  * @internal
  */
 
-import {
-  useContext,
-  useEffect,
-  useLayoutEffect,
-  useCallback,
-  useState,
-  useMemo,
-  useRef,
-} from "react"
+import { useContext, useEffect, useLayoutEffect, useCallback, useState, useMemo, useRef } from "react"
 import { StdoutContext } from "@silvery/react/context"
 import { RuntimeContext } from "@silvery/react/context"
 import { InkCursorStoreCtx } from "./with-ink-cursor"
@@ -106,10 +98,7 @@ export function useStdin() {
  * Enables bracketed paste mode and calls the handler when the user pastes text.
  * Paste content is delivered as a single string, not forwarded to useInput handlers.
  */
-export function usePaste(
-  handler: (text: string) => void,
-  options: { isActive?: boolean } = {},
-): void {
+export function usePaste(handler: (text: string) => void, options: { isActive?: boolean } = {}): void {
   const ctx = useContext(InkStdinCtx)
   const rt = useContext(RuntimeContext)
 
@@ -346,12 +335,7 @@ export function useBoxMetrics(ref: import("react").RefObject<any>) {
 // Re-exported hooks
 // =============================================================================
 
-export {
-  useInput,
-  type Key,
-  type InputHandler,
-  type UseInputOptions,
-} from "@silvery/react/hooks/useInput"
+export { useInput, type Key, type InputHandler, type UseInputOptions } from "@silvery/react/hooks/useInput"
 export { useApp } from "@silvery/react/hooks/useApp"
 export type { UseAppResult } from "@silvery/react/hooks/useApp"
 export { useStdout } from "@silvery/react/hooks/useStdout"

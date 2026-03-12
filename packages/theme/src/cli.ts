@@ -100,12 +100,8 @@ function showTheme(name: string): void {
 
   // Special colors
   console.log(`\n  Special:`)
-  console.log(
-    `  ${swatch(palette.background)} background  ${swatch(palette.foreground)} foreground`,
-  )
-  console.log(
-    `  ${swatch(palette.cursorColor)} cursor      ${swatch(palette.selectionBackground)} selection`,
-  )
+  console.log(`  ${swatch(palette.background)} background  ${swatch(palette.foreground)} foreground`)
+  console.log(`  ${swatch(palette.cursorColor)} cursor      ${swatch(palette.selectionBackground)} selection`)
 
   // Semantic tokens
   console.log(`\n  Semantic tokens:`)

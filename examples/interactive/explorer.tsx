@@ -75,18 +75,7 @@ interface LogEntry {
   message: string
 }
 
-const SERVICES = [
-  "api",
-  "auth",
-  "db",
-  "cache",
-  "worker",
-  "gateway",
-  "scheduler",
-  "metrics",
-  "queue",
-  "ws",
-]
+const SERVICES = ["api", "auth", "db", "cache", "worker", "gateway", "scheduler", "metrics", "queue", "ws"]
 
 const LOG_TEMPLATES: Record<LogLevel, string[]> = {
   DEBUG: [
@@ -258,8 +247,7 @@ function generateProcesses(count: number): ProcessInfo[] {
   for (let i = 0; i < count; i++) {
     const nameBase = PROCESS_NAMES[Math.floor(rng() * PROCESS_NAMES.length)]!
     const hasInstance = rng() > 0.7
-    const status =
-      rng() < 0.65 ? "running" : PROCESS_STATUSES[Math.floor(rng() * PROCESS_STATUSES.length)]!
+    const status = rng() < 0.65 ? "running" : PROCESS_STATUSES[Math.floor(rng() * PROCESS_STATUSES.length)]!
 
     procs.push({
       pid: 1000 + Math.floor(rng() * 60000),
@@ -318,9 +306,7 @@ function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number 
       itemHeight={1}
       scrollTo={cursor}
       overscan={5}
-      renderItem={(entry, index) => (
-        <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />
-      )}
+      renderItem={(entry, index) => <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />}
     />
   )
 }
@@ -342,12 +328,7 @@ function LevelToggles({
             <Text color="$muted" dim>
               {i + 1}:
             </Text>
-            <Text
-              color={active ? LEVEL_COLORS[level] : "$muted"}
-              bold={active}
-              dim={!active}
-              strikethrough={!active}
-            >
+            <Text color={active ? LEVEL_COLORS[level] : "$muted"} bold={active} dim={!active} strikethrough={!active}>
               {LEVEL_BADGES[level]}
             </Text>
           </Box>
@@ -400,17 +381,14 @@ function ProcessRow({
 }): JSX.Element {
   const cols = useColumns(width)
   const cpuColor = proc.cpu > 80 ? "$error" : proc.cpu > 40 ? "$warning" : "$success"
-  const displayName =
-    proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\u2026" : proc.name
+  const displayName = proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\u2026" : proc.name
 
   return (
     <Box paddingX={1} backgroundColor={isSelected ? "$mutedbg" : undefined}>
       <Text color="$muted">{String(proc.pid).padEnd(cols.pidW)}</Text>
       <Text bold={isSelected}>{displayName.padEnd(cols.nameW)}</Text>
       <Text color={cpuColor}>{proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%</Text>
-      <Text color={proc.mem > 40 ? "$warning" : "$muted"}>
-        {proc.mem.toFixed(1).padStart(cols.memW - 1)}%
-      </Text>
+      <Text color={proc.mem > 40 ? "$warning" : "$muted"}>{proc.mem.toFixed(1).padStart(cols.memW - 1)}%</Text>
       <Text>{"  "}</Text>
       <Text color={STATUS_COLORS[proc.status]}>
         {STATUS_ICONS[proc.status]} {proc.status.padEnd(cols.statusW - 2)}
@@ -517,10 +495,7 @@ export function Explorer(): JSX.Element {
     let procs = processes
     if (deferredQuery) {
       const q = deferredQuery.toLowerCase()
-      procs = procs.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) || p.status.includes(q) || String(p.pid).includes(q),
-      )
+      procs = procs.filter((p) => p.name.toLowerCase().includes(q) || p.status.includes(q) || String(p.pid).includes(q))
     }
     return [...procs].sort((a, b) => {
       switch (sortCol) {
@@ -721,11 +696,7 @@ export function Explorer(): JSX.Element {
           </Box>
           <Box flexGrow={1} flexDirection="column">
             {filteredProcesses.length > 0 ? (
-              <ProcessListArea
-                processes={filteredProcesses}
-                cursor={effectiveProcCursor}
-                width={width}
-              />
+              <ProcessListArea processes={filteredProcesses} cursor={effectiveProcCursor} width={width} />
             ) : (
               <Box paddingX={1} justifyContent="center">
                 <Muted>No processes match the current filter</Muted>
@@ -763,10 +734,7 @@ export function Explorer(): JSX.Element {
 export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner
-      meta={meta}
-      controls="h/l tab  j/k navigate  d/u page  / search  1-4 levels  s sort  q quit"
-    >
+    <ExampleBanner meta={meta} controls="h/l tab  j/k navigate  d/u page  / search  1-4 levels  s sort  q quit">
       <Explorer />
     </ExampleBanner>,
     term,

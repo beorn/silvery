@@ -89,8 +89,7 @@ function TodoApp() {
       <TodoList />
       <Text> </Text>
       <Muted>
-        <Kbd>j/k</Kbd> move <Kbd>x</Kbd> toggle <Kbd>a</Kbd> add <Kbd>d</Kbd> delete{" "}
-        <Kbd>Esc/q</Kbd> quit
+        <Kbd>j/k</Kbd> move <Kbd>x</Kbd> toggle <Kbd>a</Kbd> add <Kbd>d</Kbd> delete <Kbd>Esc/q</Kbd> quit
       </Muted>
     </Box>
   )

@@ -36,16 +36,7 @@ export const meta: ExampleMeta = {
 const CHUNK_SIZE = 4096
 
 /** Image file extensions we recognize */
-const IMAGE_EXTENSIONS = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".gif",
-  ".bmp",
-  ".webp",
-  ".tiff",
-  ".tif",
-])
+const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp", ".tiff", ".tif"])
 
 /** Build Kitty graphics escape sequences for a PNG image. */
 function kittyDisplayPng(pngData: Buffer, cols: number, rows: number): string {
@@ -68,13 +59,7 @@ function kittyDisplayPng(pngData: Buffer, cols: number, rows: number): string {
 }
 
 /** Build Kitty graphics escape sequences for raw RGBA pixel data. */
-function kittyDisplayRgba(
-  rgbaData: Buffer,
-  srcWidth: number,
-  srcHeight: number,
-  cols: number,
-  rows: number,
-): string {
+function kittyDisplayRgba(rgbaData: Buffer, srcWidth: number, srcHeight: number, cols: number, rows: number): string {
   const b64 = rgbaData.toString("base64")
   const chunks: string[] = []
 
@@ -84,9 +69,7 @@ function kittyDisplayRgba(
     const more = isLast ? 0 : 1
 
     if (i === 0) {
-      chunks.push(
-        `\x1b_Ga=T,f=32,t=d,s=${srcWidth},v=${srcHeight},c=${cols},r=${rows},m=${more};${chunk}\x1b\\`,
-      )
+      chunks.push(`\x1b_Ga=T,f=32,t=d,s=${srcWidth},v=${srcHeight},c=${cols},r=${rows},m=${more};${chunk}\x1b\\`)
     } else {
       chunks.push(`\x1b_Gm=${more};${chunk}\x1b\\`)
     }

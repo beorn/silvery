@@ -95,9 +95,7 @@ export function SelectList({
 }: SelectListProps): React.ReactElement {
   const isControlled = controlledIndex !== undefined
 
-  const [uncontrolledIndex, setUncontrolledIndex] = useState(
-    initialIndex ?? findFirstEnabled(items),
-  )
+  const [uncontrolledIndex, setUncontrolledIndex] = useState(initialIndex ?? findFirstEnabled(items))
 
   const currentIndex = isControlled ? controlledIndex : uncontrolledIndex
 

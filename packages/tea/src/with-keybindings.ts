@@ -130,14 +130,9 @@ function resolveKeybinding(
  * ```
  */
 // Curried form: withKeybindings(options) => plugin
-export function withKeybindings(
-  options: WithKeybindingsOptions,
-): <T extends AppWithCommands>(app: T) => T
+export function withKeybindings(options: WithKeybindingsOptions): <T extends AppWithCommands>(app: T) => T
 // Direct form: withKeybindings(app, options) => enhancedApp
-export function withKeybindings<T extends AppWithCommands>(
-  app: T,
-  options: WithKeybindingsOptions,
-): T
+export function withKeybindings<T extends AppWithCommands>(app: T, options: WithKeybindingsOptions): T
 export function withKeybindings<T extends AppWithCommands>(
   appOrOptions: T | WithKeybindingsOptions,
   maybeOptions?: WithKeybindingsOptions,
@@ -164,12 +159,7 @@ function applyKeybindings<T extends AppWithCommands>(app: T, options: WithKeybin
           const ctx = getKeyContext()
 
           // Try to resolve to a command
-          const commandId = resolveKeybinding(
-            key,
-            modifiers,
-            bindings as ExtendedKeybindingDef[],
-            ctx,
-          )
+          const commandId = resolveKeybinding(key, modifiers, bindings as ExtendedKeybindingDef[], ctx)
 
           if (commandId) {
             const cmd = target.cmd[commandId]

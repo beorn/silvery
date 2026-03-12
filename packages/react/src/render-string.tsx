@@ -148,10 +148,7 @@ async function ensureLayoutEngine(): Promise<void> {
  * console.log(output)
  * ```
  */
-export async function renderString(
-  element: ReactElement,
-  options: RenderStringOptions = {},
-): Promise<string> {
+export async function renderString(element: ReactElement, options: RenderStringOptions = {}): Promise<string> {
   await ensureLayoutEngine()
   return renderStringSync(element, options)
 }
@@ -175,9 +172,7 @@ export async function renderString(
  */
 export function renderStringSync(element: ReactElement, options: RenderStringOptions = {}): string {
   if (!isLayoutEngineInitialized()) {
-    throw new Error(
-      "Layout engine not initialized. Use renderString() (async) or initialize with setLayoutEngine().",
-    )
+    throw new Error("Layout engine not initialized. Use renderString() (async) or initialize with setLayoutEngine().")
   }
 
   const {
@@ -307,11 +302,7 @@ export function renderStringSync(element: ReactElement, options: RenderStringOpt
       if (child.contentRect) {
         hasChildren = true
         const props = child.props as Record<string, unknown>
-        const mb =
-          (props.marginBottom as number) ??
-          (props.marginY as number) ??
-          (props.margin as number) ??
-          0
+        const mb = (props.marginBottom as number) ?? (props.marginY as number) ?? (props.margin as number) ?? 0
         const childBottom = child.contentRect.y + child.contentRect.height + mb
         if (childBottom > maxBottom) maxBottom = childBottom
       }

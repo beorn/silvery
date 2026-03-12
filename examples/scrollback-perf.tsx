@@ -145,10 +145,7 @@ function TestApp({ itemCount }: { itemCount: number }) {
   useEffect(() => {
     if (!useTimers) return
     const t1 = setInterval(() => setPulse((p) => !p), 800)
-    const t2 = setInterval(
-      () => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)),
-      1000,
-    )
+    const t2 = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000)
     return () => {
       clearInterval(t1)
       clearInterval(t2)
@@ -179,11 +176,7 @@ function TestApp({ itemCount }: { itemCount: number }) {
       >
         {(item, index) => {
           const isLatest = index === items.length - 1
-          return useSimple ? (
-            <SimpleItem item={item} isLatest={isLatest} />
-          ) : (
-            <ComplexItem item={item} />
-          )
+          return useSimple ? <SimpleItem item={item} isLatest={isLatest} /> : <ComplexItem item={item} />
         }}
       </ScrollbackList>
     </Box>

@@ -68,8 +68,7 @@ export { Chalk, type ChalkInstance }
  * Color support detection for stdout.
  * Returns false if no color, or an object with the chalk level.
  */
-export const supportsColor: false | { level: ChalkLevel } =
-  detectedLevel === 0 ? false : { level: detectedLevel }
+export const supportsColor: false | { level: ChalkLevel } = detectedLevel === 0 ? false : { level: detectedLevel }
 
 /**
  * Color support detection for stderr.

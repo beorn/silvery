@@ -238,9 +238,7 @@ export function setLayoutEngine(engine: LayoutEngine): void {
  */
 export function getLayoutEngine(): LayoutEngine {
   if (!layoutEngine) {
-    throw new Error(
-      "Layout engine not initialized. Call setLayoutEngine() or initYoga()/initFlexily() first.",
-    )
+    throw new Error("Layout engine not initialized. Call setLayoutEngine() or initYoga()/initFlexily() first.")
   }
   return layoutEngine
 }
@@ -285,8 +283,7 @@ export async function ensureDefaultLayoutEngine(engineType?: LayoutEngineType): 
   }
 
   // Resolve engine type: option → env → 'flexily'
-  const resolved =
-    engineType ?? (process.env.SILVERY_ENGINE?.toLowerCase() as LayoutEngineType) ?? "flexily"
+  const resolved = engineType ?? (process.env.SILVERY_ENGINE?.toLowerCase() as LayoutEngineType) ?? "flexily"
 
   if (resolved === "yoga") {
     const { initYogaEngine } = await import("./adapters/yoga-adapter.js")

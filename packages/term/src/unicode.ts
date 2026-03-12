@@ -14,13 +14,7 @@
 import { BG_OVERRIDE_CODE } from "./ansi/index"
 import sliceAnsi from "slice-ansi"
 import stringWidth from "string-width"
-import {
-  type Cell,
-  type Style,
-  type TerminalBuffer,
-  type UnderlineStyle,
-  createMutableCell,
-} from "./buffer"
+import { type Cell, type Style, type TerminalBuffer, type UnderlineStyle, createMutableCell } from "./buffer"
 import { isPrivateUseArea } from "./text-sizing"
 
 // Re-export for consumers of silvery
@@ -184,9 +178,7 @@ function stripOsc8ForSlice(text: string): string {
  * Create a width measurer scoped to terminal capabilities.
  * Each measurer has its own caches (no shared global state).
  */
-export function createWidthMeasurer(
-  caps: { textEmojiWide?: boolean; textSizingEnabled?: boolean } = {},
-): Measurer {
+export function createWidthMeasurer(caps: { textEmojiWide?: boolean; textSizingEnabled?: boolean } = {}): Measurer {
   const textEmojiWide = caps.textEmojiWide ?? true
   const textSizingEnabled = caps.textSizingEnabled ?? false
   const cache = new DisplayWidthCache(10000)
@@ -207,8 +199,7 @@ export function createWidthMeasurer(
     if (cached !== undefined) return cached
 
     let width: number
-    const needsSlowPath =
-      MAY_CONTAIN_TEXT_EMOJI.test(text) || (textSizingEnabled && MAY_CONTAIN_PUA.test(text))
+    const needsSlowPath = MAY_CONTAIN_TEXT_EMOJI.test(text) || (textSizingEnabled && MAY_CONTAIN_PUA.test(text))
     if (!needsSlowPath) {
       width = stringWidth(text)
     } else {
@@ -468,8 +459,7 @@ export function displayWidth(text: string): number {
   let width: number
   // Fast path: if text cannot contain text-presentation emoji, use string-width directly.
   // Default measurer does not enable text sizing, so PUA check uses the constant default.
-  const needsSlowPath =
-    MAY_CONTAIN_TEXT_EMOJI.test(text) || (DEFAULT_TEXT_SIZING_ENABLED && MAY_CONTAIN_PUA.test(text))
+  const needsSlowPath = MAY_CONTAIN_TEXT_EMOJI.test(text) || (DEFAULT_TEXT_SIZING_ENABLED && MAY_CONTAIN_PUA.test(text))
   if (!needsSlowPath) {
     width = stringWidth(text)
   } else {
@@ -683,11 +673,7 @@ function isWordBoundary(grapheme: string): boolean {
  * Accepts an explicit graphemeWidth function so it works with both the
  * module-level default and per-measurer instances.
  */
-function isBreakBeforeOperatorWith(
-  graphemes: string[],
-  spaceIndex: number,
-  gWidthFn: (g: string) => number,
-): boolean {
+function isBreakBeforeOperatorWith(graphemes: string[], spaceIndex: number, gWidthFn: (g: string) => number): boolean {
   // Look for pattern: [current space] [operator] [space]
   // spaceIndex is the index of the current space in the graphemes array
   let j = spaceIndex + 1
@@ -786,20 +772,8 @@ function splitGraphemesAnsiAware(text: string): string[] {
  * @param trim - Trim trailing spaces on broken lines and skip leading spaces on continuation lines (useful for rendering)
  * @returns Array of wrapped lines
  */
-export function wrapText(
-  text: string,
-  width: number,
-  preserveNewlines = true,
-  trim = false,
-): string[] {
-  return wrapTextWithMeasurer(
-    text,
-    width,
-    _scopedMeasurer ?? undefined,
-    trim,
-    false,
-    preserveNewlines,
-  )
+export function wrapText(text: string, width: number, preserveNewlines = true, trim = false): string[] {
+  return wrapTextWithMeasurer(text, width, _scopedMeasurer ?? undefined, trim, false, preserveNewlines)
 }
 
 /**
@@ -856,13 +830,7 @@ function wrapTextWithMeasurer(
       }
 
       // In trim mode, skip leading spaces on continuation lines
-      if (
-        trim &&
-        !isFirstLineOfParagraph &&
-        currentWidth === 0 &&
-        isWordBoundary(grapheme) &&
-        grapheme !== "-"
-      ) {
+      if (trim && !isFirstLineOfParagraph && currentWidth === 0 && isWordBoundary(grapheme) && grapheme !== "-") {
         continue
       }
 
@@ -1289,9 +1257,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
   // Handles both ESC-based CSI (\x1b[) and C1 CSI (\x9b).
   // This must happen BEFORE OSC 8 processing so hyperlink position tracking
   // is based on the cleaned text (no position drift from stripped sequences).
-  const sanitizedText = text
-    .replace(/\x1b\[[0-9;:]*[A-LN-Za-ln-z@`]/g, "")
-    .replace(/\x9b[0-9;:]*[A-LN-Za-ln-z@`]/g, "")
+  const sanitizedText = text.replace(/\x1b\[[0-9;:]*[A-LN-Za-ln-z@`]/g, "").replace(/\x9b[0-9;:]*[A-LN-Za-ln-z@`]/g, "")
 
   // Step 2: Strip OSC 8 hyperlink sequences and build a position-to-URL map.
   // OSC 8 format: \x1b]8;;URL(\x1b\\ | \x07) for open, \x1b]8;;(\x1b\\ | \x07) for close.
@@ -1455,8 +1421,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
             const r = subparts[3] ?? subparts[2] ?? 0
             const g = subparts[4] ?? subparts[3] ?? 0
             const b = subparts[5] ?? subparts[4] ?? 0
-            currentStyle.underlineColor =
-              0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
+            currentStyle.underlineColor = 0x1000000 | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff)
           }
         } else if (mainCode === 38) {
           // SGR 38:2::r:g:b or 38:5:N format (colon-separated)
@@ -1546,10 +1511,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
           } else if (nextParams[0] === 2 && nextParams[3] !== undefined) {
             // True color - store as RGB values packed
             currentStyle.fg =
-              0x1000000 |
-              ((nextParams[1]! & 0xff) << 16) |
-              ((nextParams[2]! & 0xff) << 8) |
-              (nextParams[3]! & 0xff)
+              0x1000000 | ((nextParams[1]! & 0xff) << 16) | ((nextParams[2]! & 0xff) << 8) | (nextParams[3]! & 0xff)
             i += 4
           }
           break
@@ -1578,10 +1540,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
           } else if (nextParams[0] === 2 && nextParams[3] !== undefined) {
             // True color - store as RGB values packed
             currentStyle.bg =
-              0x1000000 |
-              ((nextParams[1]! & 0xff) << 16) |
-              ((nextParams[2]! & 0xff) << 8) |
-              (nextParams[3]! & 0xff)
+              0x1000000 | ((nextParams[1]! & 0xff) << 16) | ((nextParams[2]! & 0xff) << 8) | (nextParams[3]! & 0xff)
             i += 4
           }
           break
@@ -1598,10 +1557,7 @@ export function parseAnsiText(text: string): StyledSegment[] {
           } else if (nextParams[0] === 2 && nextParams[3] !== undefined) {
             // True color - store as RGB values packed
             currentStyle.underlineColor =
-              0x1000000 |
-              ((nextParams[1]! & 0xff) << 16) |
-              ((nextParams[2]! & 0xff) << 8) |
-              (nextParams[3]! & 0xff)
+              0x1000000 | ((nextParams[1]! & 0xff) << 16) | ((nextParams[2]! & 0xff) << 8) | (nextParams[3]! & 0xff)
             i += 4
           }
           break

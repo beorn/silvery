@@ -3,11 +3,7 @@
  * @internal
  */
 
-import {
-  tokenizeAnsi as tokenizeAnsiEsc,
-  isCSISGR,
-  createColonSGRTracker,
-} from "@silvery/term/ansi-sanitize"
+import { tokenizeAnsi as tokenizeAnsiEsc, isCSISGR, createColonSGRTracker } from "@silvery/term/ansi-sanitize"
 
 // =============================================================================
 // Colon-format SGR tracking (delegated to @silvery/term)

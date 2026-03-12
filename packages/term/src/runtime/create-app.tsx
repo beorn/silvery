@@ -62,12 +62,7 @@ import { executeRender } from "../pipeline"
 import { createPipeline } from "../measurer"
 import { isTextSizingLikelySupported } from "../text-sizing"
 import { IncrementalRenderMismatchError } from "../scheduler"
-import {
-  createContainer,
-  createFiberRoot,
-  getContainerRoot,
-  reconciler,
-} from "@silvery/react/reconciler"
+import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/react/reconciler"
 import { map, merge, takeUntil } from "@silvery/tea/streams"
 import { createBuffer } from "./create-buffer"
 import { createRuntime } from "./create-runtime"
@@ -82,13 +77,7 @@ import { keyToAnsi, keyToKittyAnsi } from "@silvery/tea/keys"
 import { parseKey, type Key } from "./keys"
 import { ensureLayoutEngine } from "./layout"
 import { createMouseEventProcessor } from "../mouse-events"
-import {
-  enableKittyKeyboard,
-  disableKittyKeyboard,
-  KittyFlags,
-  enableMouse,
-  disableMouse,
-} from "../output"
+import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output"
 import { enableFocusReporting, disableFocusReporting } from "../focus-reporting"
 import { detectKittyFromStdio } from "../kitty-detect"
 import { captureTerminalState, performSuspend } from "./terminal-lifecycle"
@@ -493,8 +482,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     ...injectValues
   } = options
 
-  const headless =
-    (explicitCols != null && explicitRows != null && !explicitStdout) || explicitWritable != null
+  const headless = (explicitCols != null && explicitRows != null && !explicitStdout) || explicitWritable != null
   const cols = explicitCols ?? process.stdout.columns ?? 80
   const rows = explicitRows ?? process.stdout.rows ?? 24
   const stdout = explicitStdout ?? process.stdout
@@ -691,9 +679,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       const decoded = symbolize(str)
       // Truncate for readability but keep enough to identify content
       const preview =
-        decoded.length > 400
-          ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100)
-          : decoded
+        decoded.length > 400 ? decoded.slice(0, 200) + ` ...[${decoded.length}ch]... ` + decoded.slice(-100) : decoded
       fs.appendFileSync(
         "/tmp/silvery-trace.log",
         `[${String(seq).padStart(4, "0")}] +${ms}ms (${str.length}b): ${preview}\n`,
@@ -746,8 +732,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   // Resolve textSizing from caps + option (matches run.tsx gate)
   const textSizingEnabled =
     textSizingOption === true ||
-    (textSizingOption === "auto" &&
-      (capsOption?.textSizingSupported ?? isTextSizingLikelySupported()))
+    (textSizingOption === "auto" && (capsOption?.textSizingSupported ?? isTextSizingLikelySupported()))
 
   // Create pipeline config from caps (scoped width measurer + output phase)
   const pipelineConfig = capsOption
@@ -950,8 +935,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               stdout: mockStdout,
               write: () => {},
               notifyScrollback: (lines: number) => runtime.addScrollbackLines(lines),
-              promoteScrollback: (content: string, lines: number) =>
-                runtime.promoteScrollback(content, lines),
+              promoteScrollback: (content: string, lines: number) => runtime.promoteScrollback(content, lines),
               resetInlineCursor: () => runtime.resetInlineCursor(),
               getInlineCursorRow: () => runtime.getInlineCursorRow(),
             }}
@@ -967,9 +951,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
               <FocusManagerContext.Provider value={focusManager}>
                 <RuntimeContext.Provider value={runtimeContextValue}>
                   <Root>
-                    <StoreContext.Provider value={store as StoreApi<unknown>}>
-                      {element}
-                    </StoreContext.Provider>
+                    <StoreContext.Provider value={store as StoreApi<unknown>}>{element}</StoreContext.Provider>
                   </Root>
                 </RuntimeContext.Provider>
               </FocusManagerContext.Provider>
@@ -1036,6 +1018,17 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // Clear diagnostic arrays before the render so we capture only this render's data
     ;(globalThis as any).__silvery_content_all = undefined
     ;(globalThis as any).__silvery_node_trace = undefined
+    // Cell debug: enable during real incremental render for SILVERY_STRICT diagnosis.
+    // Set SILVERY_CELL_DEBUG=x,y to trace which nodes cover a specific cell.
+    // The log is captured during the render and included in any mismatch error.
+    ;(globalThis as any).__silvery_cell_debug = undefined
+    const _cellDebugVal = typeof process !== "undefined" ? process.env?.SILVERY_CELL_DEBUG : undefined
+    if (_cellDebugVal && _cellDebugVal.includes(",")) {
+      const [cx, cy] = _cellDebugVal.split(",").map(Number)
+      if (Number.isFinite(cx) && Number.isFinite(cy)) {
+        ;(globalThis as any).__silvery_cell_debug = { x: cx, y: cy, log: [] as string[] }
+      }
+    }
 
     // Early return: if reconciliation produced no dirty flags on the tree,
     // skip the pipeline entirely. This avoids cloning _prevTermBuffer (which
@@ -1073,8 +1066,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     // createApp bypasses Scheduler/Renderer which have this check built-in,
     // so we add it here to catch incremental rendering bugs at runtime.
     const strictEnv =
-      typeof process !== "undefined" &&
-      (process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL)
+      typeof process !== "undefined" && (process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL)
     if (strictEnv && strictEnv !== "0" && strictEnv !== "false" && wasIncremental) {
       const { buffer: freshBuffer } = executeRender(
         rootNode,
@@ -1095,6 +1087,19 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
           const a = termBuffer.getCell(x, y)
           const b = freshBuffer.getCell(x, y)
           if (!cellEquals(a, b)) {
+            // Use cell debug log collected during the real incremental render
+            let cellDebugInfo = ""
+            const savedCellDbg = (globalThis as any).__silvery_cell_debug as
+              | { x: number; y: number; log: string[] }
+              | undefined
+            if (savedCellDbg && savedCellDbg.x === x && savedCellDbg.y === y && savedCellDbg.log.length > 0) {
+              cellDebugInfo = `\nCELL DEBUG (${savedCellDbg.log.length} entries for (${x},${y})):\n${savedCellDbg.log.join("\n")}\n`
+            } else if (savedCellDbg && savedCellDbg.x === x && savedCellDbg.y === y) {
+              cellDebugInfo = `\nCELL DEBUG: No nodes cover (${x},${y}) during incremental render\n`
+            } else {
+              cellDebugInfo = `\nCELL DEBUG: Target cell (${x},${y}) differs from debug cell (${savedCellDbg?.x},${savedCellDbg?.y})\n`
+            }
+
             // Re-run fresh render with write trap to capture what writes to the mismatched cell
             let trapInfo = ""
             const trap = { x, y, log: [] as string[] }
@@ -1165,6 +1170,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                 }
                 return out
               })() +
+              cellDebugInfo +
               trapInfo +
               `\n--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
             // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -1258,10 +1264,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
   if (_ansiTrace) {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require("node:fs").appendFileSync(
-      "/tmp/silvery-trace.log",
-      "=== RUNTIME.RENDER (initial) ===\n",
-    )
+    require("node:fs").appendFileSync("/tmp/silvery-trace.log", "=== RUNTIME.RENDER (initial) ===\n")
   }
   runtime.render(currentBuffer)
   if (_perfLog) {

@@ -182,11 +182,7 @@ export const TextInput = forwardRef<TextInputHandle, TextInputProps>(function Te
   // Always show visual cursor (inverse/underline). When active, the hardware
   // cursor is also positioned via useCursor() for terminal blink support.
   const cursorEl =
-    cursorStyle === "underline" ? (
-      <Text underline>{displayAtCursor}</Text>
-    ) : (
-      <Text inverse>{displayAtCursor}</Text>
-    )
+    cursorStyle === "underline" ? <Text underline>{displayAtCursor}</Text> : <Text inverse>{displayAtCursor}</Text>
   useCursor({
     col: prompt.length + displayBeforeCursor.length,
     row: 0,

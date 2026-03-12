@@ -31,14 +31,7 @@
  * ```
  */
 
-import React, {
-  type JSX,
-  type ReactNode,
-  useMemo,
-  Children,
-  isValidElement,
-  cloneElement,
-} from "react"
+import React, { type JSX, type ReactNode, useMemo, Children, isValidElement, cloneElement } from "react"
 import { type Measurer, displayWidth } from "@silvery/term/unicode"
 
 /** Maximum fill width in columns. Covers ultrawide terminals (8K at 5px font ≈ 1500 cols). */

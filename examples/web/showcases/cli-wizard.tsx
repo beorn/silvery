@@ -81,8 +81,7 @@ export function CLIWizardShowcase(): JSX.Element {
     if (currentStep.type === "select") {
       const opts = currentStep.options!
       if (key.upArrow) setState((s) => ({ ...s, cursor: Math.max(0, s.cursor - 1) }))
-      if (key.downArrow)
-        setState((s) => ({ ...s, cursor: Math.min(opts.length - 1, s.cursor + 1) }))
+      if (key.downArrow) setState((s) => ({ ...s, cursor: Math.min(opts.length - 1, s.cursor + 1) }))
     }
 
     if (currentStep.type === "text") {
@@ -302,13 +301,7 @@ export function CLIWizardShowcase(): JSX.Element {
           </Text>
           <GradientPipe index={pipeLineIdx++} total={totalPipeLines} />
           {/* Summary box with colored labels */}
-          <Box
-            flexDirection="column"
-            marginLeft={1}
-            borderStyle="round"
-            borderColor="#45475a"
-            paddingX={1}
-          >
+          <Box flexDirection="column" marginLeft={1} borderStyle="round" borderColor="#45475a" paddingX={1}>
             <Text>
               <Text color="#cba6f7" bold>
                 Project{"   "}

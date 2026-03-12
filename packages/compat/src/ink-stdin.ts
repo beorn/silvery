@@ -40,10 +40,7 @@ export const InkStdinCtx = createContext<InkStdinState>({
  * - Last subscriber disables raw mode + unrefs stdin
  * - Throws if raw mode is not supported (stdin.isTTY is false)
  */
-export function createInkStdinState(
-  stdin: NodeJS.ReadStream,
-  stdout?: NodeJS.WriteStream,
-): InkStdinState {
+export function createInkStdinState(stdin: NodeJS.ReadStream, stdout?: NodeJS.WriteStream): InkStdinState {
   const isRawModeSupported = stdin.isTTY ?? false
   let rawModeCount = 0
   let bracketedPasteModeEnabledCount = 0

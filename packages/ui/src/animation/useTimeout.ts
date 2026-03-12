@@ -24,11 +24,7 @@ import { useCallback, useEffect, useRef } from "react"
  * @param ms - Delay in milliseconds
  * @param enabled - Whether the timer is active (default: true)
  */
-export function useTimeout(
-  callback: () => void,
-  ms: number,
-  enabled = true,
-): { reset: () => void; clear: () => void } {
+export function useTimeout(callback: () => void, ms: number, enabled = true): { reset: () => void; clear: () => void } {
   const callbackRef = useRef(callback)
   callbackRef.current = callback
 

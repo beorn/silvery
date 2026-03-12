@@ -250,10 +250,7 @@ export function withCommands<TContext, TAction>(
   return applyCommands(appOrOptions as App, maybeOptions)
 }
 
-function applyCommands<TContext, TAction>(
-  app: App,
-  options: WithCommandsOptions<TContext, TAction>,
-): AppWithCommands {
+function applyCommands<TContext, TAction>(app: App, options: WithCommandsOptions<TContext, TAction>): AppWithCommands {
   const { registry, getContext, handleAction, getKeybindings } = options
 
   const cmd = new Proxy({} as Cmd, {

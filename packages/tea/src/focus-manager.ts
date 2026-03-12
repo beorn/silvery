@@ -30,11 +30,7 @@ export type FocusOrigin = "keyboard" | "mouse" | "programmatic"
  * @param newNode - The node gaining focus (null on blur)
  * @param origin - How focus was acquired
  */
-export type FocusChangeCallback = (
-  oldNode: TeaNode | null,
-  newNode: TeaNode | null,
-  origin: FocusOrigin | null,
-) => void
+export type FocusChangeCallback = (oldNode: TeaNode | null, newNode: TeaNode | null, origin: FocusOrigin | null) => void
 
 export interface FocusSnapshot {
   activeId: string | null

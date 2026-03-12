@@ -45,11 +45,7 @@ import {
 } from "@silvery/react/reconciler"
 import type { RenderBuffer } from "../render-adapter"
 import { setRenderAdapter } from "../render-adapter"
-import {
-  RuntimeContext,
-  FocusManagerContext,
-  type RuntimeContextValue,
-} from "@silvery/react/context"
+import { RuntimeContext, FocusManagerContext, type RuntimeContextValue } from "@silvery/react/context"
 import { createFocusManager } from "@silvery/tea/focus-manager"
 import { parseKey, splitRawInput } from "@silvery/tea/keys"
 import { parseBracketedPaste } from "../bracketed-paste"
@@ -59,20 +55,11 @@ import { createXtermProvider, type XtermProvider } from "./xterm-provider"
 export { Box, type BoxProps } from "@silvery/react/components/Box"
 export { Text, type TextProps } from "@silvery/react/components/Text"
 export { Divider, type DividerProps } from "@silvery/ui/components/Divider"
-export {
-  TextInput,
-  type TextInputProps,
-  type TextInputHandle,
-} from "@silvery/ui/components/TextInput"
+export { TextInput, type TextInputProps, type TextInputHandle } from "@silvery/ui/components/TextInput"
 export { Spinner, type SpinnerProps } from "@silvery/ui/components/Spinner"
 export { useContentRect, useScreenRect } from "@silvery/react/hooks/useLayout"
 export { useApp } from "@silvery/react/hooks/useApp"
-export {
-  useInput,
-  type Key,
-  type InputHandler,
-  type UseInputOptions,
-} from "@silvery/react/hooks/useInput"
+export { useInput, type Key, type InputHandler, type UseInputOptions } from "@silvery/react/hooks/useInput"
 
 // Re-export adapter utilities
 export { terminalAdapter } from "../adapters/terminal-adapter"
@@ -265,8 +252,7 @@ export function renderToXterm(
   // ---- Input / Runtime setup ----
   const inputOpts = options.input
   const inputEnabled = inputOpts === true || (typeof inputOpts === "object" && inputOpts !== null)
-  const inputCallbacks: XtermInputOptions =
-    typeof inputOpts === "object" && inputOpts !== null ? inputOpts : {}
+  const inputCallbacks: XtermInputOptions = typeof inputOpts === "object" && inputOpts !== null ? inputOpts : {}
   const exitOnCtrlC = options.exitOnCtrlC ?? inputEnabled
   const handleFocusCycling = options.handleFocusCycling ?? inputEnabled
 

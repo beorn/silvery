@@ -34,9 +34,7 @@ export function exportBase16(palette: ColorPalette): string {
   const base04 = blend(palette.white, palette.foreground, 0.33)
 
   // base06: light foreground — between fg and the inverse extreme
-  const base06 = dark
-    ? blend(palette.foreground, "#FFFFFF", 0.15)
-    : blend(palette.foreground, "#000000", 0.15)
+  const base06 = dark ? blend(palette.foreground, "#FFFFFF", 0.15) : blend(palette.foreground, "#000000", 0.15)
 
   // base07: lightest background — use black (the deepest bg extreme)
   const base07 = palette.black

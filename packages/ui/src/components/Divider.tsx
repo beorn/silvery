@@ -39,11 +39,7 @@ const DEFAULT_WIDTH = 40
 // Component
 // =============================================================================
 
-export function Divider({
-  char = DEFAULT_CHAR,
-  title,
-  width: widthProp,
-}: DividerProps): React.ReactElement {
+export function Divider({ char = DEFAULT_CHAR, title, width: widthProp }: DividerProps): React.ReactElement {
   const { width: contentWidth } = useContentRect()
   const totalWidth = widthProp ?? (contentWidth > 0 ? contentWidth : DEFAULT_WIDTH)
 

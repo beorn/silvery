@@ -155,11 +155,7 @@ function mergeStyleContext(parent: StyleContext, childProps: TextProps): StyleCo
  * @param childStyle - The merged style for this child (child overrides parent)
  * @param parentStyle - The parent's style context to restore after
  */
-function applyTextStyleAnsi(
-  text: string,
-  childStyle: StyleContext,
-  parentStyle: StyleContext,
-): string {
+function applyTextStyleAnsi(text: string, childStyle: StyleContext, parentStyle: StyleContext): string {
   if (!text) {
     return text
   }
@@ -328,8 +324,7 @@ function collectTextWithBg(
     if (maxDisplayWidth !== undefined && displayWidthCollected >= maxDisplayWidth) break
 
     // Compute remaining budget for this child
-    const childBudget =
-      maxDisplayWidth !== undefined ? maxDisplayWidth - displayWidthCollected : undefined
+    const childBudget = maxDisplayWidth !== undefined ? maxDisplayWidth - displayWidthCollected : undefined
 
     if (child.type === "silvery-text" && child.props && !child.layoutNode) {
       const childProps = child.props as TextProps
@@ -494,10 +489,7 @@ function stripAnsiForBg(text: string): string {
  * @param formattedLines - The wrapped/truncated output lines
  * @returns Array of { start, end } character offsets for each formatted line
  */
-function mapLinesToCharOffsets(
-  originalText: string,
-  formattedLines: string[],
-): Array<{ start: number; end: number }> {
+function mapLinesToCharOffsets(originalText: string, formattedLines: string[]): Array<{ start: number; end: number }> {
   // Strip ANSI from the original to get the plain text character sequence
   const plainOriginal = hasAnsi(originalText) ? stripAnsiForBg(originalText) : originalText
   // Normalize tabs to match formatTextLines behavior
@@ -765,12 +757,7 @@ function renderGraphemes(
     // Using inherited bg instead of getCellBg decouples text rendering from buffer state,
     // which is critical for incremental rendering: the cloned buffer may have stale bg
     // at positions outside the parent's bg-filled region (e.g., overflow text).
-    const existingBg =
-      style.bg !== null
-        ? style.bg
-        : inheritedBg !== undefined
-          ? inheritedBg
-          : buffer.getCellBg(col, y)
+    const existingBg = style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : buffer.getCellBg(col, y)
 
     // Wide character at the boundary: the continuation cell would overflow
     // into an adjacent container. Replace with a space to match terminal
@@ -810,11 +797,7 @@ function renderGraphemes(
 
     if (width === 2 && col + 1 < buffer.width) {
       const existingBg2 =
-        style.bg !== null
-          ? style.bg
-          : inheritedBg !== undefined
-            ? inheritedBg
-            : buffer.getCellBg(col + 1, y)
+        style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : buffer.getCellBg(col + 1, y)
       buffer.setCell(col + 1, y, {
         char: "",
         fg: style.fg,
@@ -902,16 +885,7 @@ function renderAnsiTextLineReturn(
       }
     }
 
-    col = renderGraphemes(
-      buffer,
-      splitGraphemes(segment.text),
-      col,
-      y,
-      style,
-      maxCol,
-      inheritedBg,
-      ctx,
-    )
+    col = renderGraphemes(buffer, splitGraphemes(segment.text), col, y, style, maxCol, inheritedBg, ctx)
   }
   return col
 }
@@ -952,11 +926,7 @@ export interface MergeStylesOptions {
  * @param overlay - The overlay style (from child/content)
  * @param options - Merge behavior options
  */
-export function mergeStyles(
-  base: Style,
-  overlay: Partial<Style>,
-  options: MergeStylesOptions = {},
-): Style {
+export function mergeStyles(base: Style, overlay: Partial<Style>, options: MergeStylesOptions = {}): Style {
   const { preserveDecorations = true, preserveEmphasis = true } = options
 
   const baseAttrs = base.attrs ?? {}
@@ -1016,11 +986,7 @@ export function mergeStyles(
  * Merge ANSI segment style with base style.
  * Uses category-based merging to preserve decorations and emphasis.
  */
-function mergeAnsiStyle(
-  base: Style,
-  segment: StyledSegment,
-  options: MergeStylesOptions = {},
-): Style {
+function mergeAnsiStyle(base: Style, segment: StyledSegment, options: MergeStylesOptions = {}): Style {
   const { preserveDecorations = true, preserveEmphasis = true } = options
 
   // Convert ANSI SGR codes to overlay style
@@ -1185,10 +1151,7 @@ export function renderText(
   // text wider than the container and adds the ellipsis character.
   let maxDisplayWidth: number | undefined
   const isTruncateEnd =
-    props.wrap === false ||
-    props.wrap === "truncate-end" ||
-    props.wrap === "truncate" ||
-    props.wrap === "clip"
+    props.wrap === false || props.wrap === "truncate-end" || props.wrap === "truncate" || props.wrap === "clip"
   if (isTruncateEnd && width > 0) {
     const plainText = collectPlainText(node)
     const lineCount = (plainText.match(/\n/g)?.length ?? 0) + 1
@@ -1212,10 +1175,7 @@ export function renderText(
   // When text has background color (from own prop, nested children, or inherited
   // from parent Box), preserve trailing spaces on wrapped lines so the background
   // color covers them. Ink preserves these spaces for the same reason.
-  const hasBg =
-    style.bg !== null ||
-    bgSegments.length > 0 ||
-    (inheritedBg !== undefined && inheritedBg !== null)
+  const hasBg = style.bg !== null || bgSegments.length > 0 || (inheritedBg !== undefined && inheritedBg !== null)
   let lines = formatTextLines(text, width, props.wrap, ctx, !hasBg)
 
   // Apply internal_transform if present (used by Transform component).

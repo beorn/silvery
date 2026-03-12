@@ -12,15 +12,7 @@ import React from "react"
 import { bench, describe } from "vitest"
 import { createRenderer } from "@silvery/test"
 // @silvery/test initializes the layout engine via top-level await
-import {
-  SimpleItem,
-  FlatList,
-  KanbanBoard,
-  Dashboard,
-  DeepTree,
-  CounterApp,
-  CursorList,
-} from "./fixtures"
+import { SimpleItem, FlatList, KanbanBoard, Dashboard, DeepTree, CounterApp, CursorList } from "./fixtures"
 
 // ============================================================================
 // Initial Render (cold — includes React tree creation + full pipeline)

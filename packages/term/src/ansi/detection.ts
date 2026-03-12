@@ -54,15 +54,7 @@ export function detectInput(stdin: NodeJS.ReadStream): boolean {
 /**
  * Known CI environments that may not support colors well.
  */
-const CI_ENVS = [
-  "CI",
-  "GITHUB_ACTIONS",
-  "GITLAB_CI",
-  "JENKINS_URL",
-  "BUILDKITE",
-  "CIRCLECI",
-  "TRAVIS",
-]
+const CI_ENVS = ["CI", "GITHUB_ACTIONS", "GITLAB_CI", "JENKINS_URL", "BUILDKITE", "CIRCLECI", "TRAVIS"]
 
 /**
  * Detect color level supported by terminal.
@@ -202,12 +194,7 @@ export function detectUnicode(): boolean {
 
   // Check TERM for modern terminals
   const term = process.env.TERM ?? ""
-  if (
-    term.includes("xterm") ||
-    term.includes("rxvt") ||
-    term.includes("screen") ||
-    term.includes("tmux")
-  ) {
+  if (term.includes("xterm") || term.includes("rxvt") || term.includes("screen") || term.includes("tmux")) {
     return true
   }
 

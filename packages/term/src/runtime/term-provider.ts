@@ -23,11 +23,7 @@
 
 import { type Key, parseKey } from "./keys"
 import { isMouseSequence, parseMouseSequence, type ParsedMouse } from "../mouse"
-import {
-  parseBracketedPaste,
-  enableBracketedPaste,
-  disableBracketedPaste,
-} from "../bracketed-paste"
+import { parseBracketedPaste, enableBracketedPaste, disableBracketedPaste } from "../bracketed-paste"
 import { enableFocusReporting, disableFocusReporting, parseFocusEvent } from "../focus-reporting"
 import type { Dims, Provider, ProviderEvent } from "./types"
 

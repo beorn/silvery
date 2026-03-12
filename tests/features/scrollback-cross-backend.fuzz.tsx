@@ -161,8 +161,7 @@ async function setupCrossBackendApp(
   }))
 
   const emulators = terms.map(
-    ({ term }) =>
-      (term as unknown as Record<string, unknown>)._emulator as { feed(data: string): void },
+    ({ term }) => (term as unknown as Record<string, unknown>)._emulator as { feed(data: string): void },
   )
 
   const handle = await run(<TestApp initialItems={items} />, {
@@ -308,9 +307,7 @@ describe("cross-backend scrollback promotion", () => {
           const nonBlank = lines.filter((l: string) => l.trim().length > 0).length
 
           expect(nonBlank, `[${i}] xterm: empty screen after "${action}"`).toBeGreaterThan(0)
-          expect(screenText, `[${i}] xterm: footer missing after "${action}"`).toContain(
-            "Input here",
-          )
+          expect(screenText, `[${i}] xterm: footer missing after "${action}"`).toContain("Input here")
           expect(screenText, `[${i}] xterm: error after "${action}"`).not.toContain("TypeError")
 
           i++

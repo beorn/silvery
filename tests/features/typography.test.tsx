@@ -8,25 +8,7 @@
 
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
-import {
-  H1,
-  H2,
-  H3,
-  P,
-  Lead,
-  Muted,
-  Strong,
-  Em,
-  Code,
-  Kbd,
-  Blockquote,
-  CodeBlock,
-  HR,
-  UL,
-  OL,
-  LI,
-  Box,
-} from "silvery"
+import { H1, H2, H3, P, Lead, Muted, Strong, Em, Code, Kbd, Blockquote, CodeBlock, HR, UL, OL, LI, Box } from "silvery"
 
 const render = createRenderer({ cols: 80, rows: 10 })
 

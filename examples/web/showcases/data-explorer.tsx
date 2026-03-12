@@ -49,16 +49,11 @@ export function DataExplorerShowcase(): JSX.Element {
 
   const rows = PROCESS_DATA.map((row) => ({
     ...row,
-    cpu:
-      row.status === "running"
-        ? Math.max(1, Math.min(99, row.cpu + ((tick * 7 + row.cpu) % 13) - 6))
-        : row.cpu,
+    cpu: row.status === "running" ? Math.max(1, Math.min(99, row.cpu + ((tick * 7 + row.cpu) % 13) - 6)) : row.cpu,
   })).sort((a, b) => b.cpu - a.cpu)
 
-  const statusIcon = (s: string) =>
-    s === "running" ? "\u25CF" : s === "idle" ? "\u25D0" : "\u25CB"
-  const statusColor = (s: string) =>
-    s === "running" ? "#a6e3a1" : s === "idle" ? "#f9e2af" : "#f38ba8"
+  const statusIcon = (s: string) => (s === "running" ? "\u25CF" : s === "idle" ? "\u25D0" : "\u25CB")
+  const statusColor = (s: string) => (s === "running" ? "#a6e3a1" : s === "idle" ? "#f9e2af" : "#f38ba8")
   const cpuColor = (v: number) => (v > 50 ? "#f38ba8" : v > 20 ? "#f9e2af" : "#a6e3a1")
 
   const colW = { id: 6, name: 14, status: 3, cpu: 14, mem: 8 }

@@ -29,12 +29,7 @@
  */
 import { useCallback, useRef, useState } from "react"
 import { useInput } from "@silvery/react/hooks"
-import {
-  killRing,
-  addToKillRing,
-  handleReadlineKey,
-  type YankState,
-} from "@silvery/react/hooks/readline-ops"
+import { killRing, addToKillRing, handleReadlineKey, type YankState } from "@silvery/react/hooks/readline-ops"
 
 // =============================================================================
 // Types

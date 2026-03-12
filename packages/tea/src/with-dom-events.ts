@@ -97,11 +97,7 @@ export function withDomEvents(options: WithDomEventsOptions = {}): <T extends Ap
     return new Proxy(app, {
       get(target, prop, receiver) {
         if (prop === "click") {
-          return async function enhancedClick(
-            x: number,
-            y: number,
-            clickOptions?: { button?: number },
-          ): Promise<T> {
+          return async function enhancedClick(x: number, y: number, clickOptions?: { button?: number }): Promise<T> {
             const button = clickOptions?.button ?? 0
             const root = target.getContainer()
             processMouseEvent(
@@ -109,11 +105,7 @@ export function withDomEvents(options: WithDomEventsOptions = {}): <T extends Ap
               { button, x, y, action: "down", shift: false, meta: false, ctrl: false },
               root,
             )
-            processMouseEvent(
-              mouseState,
-              { button, x, y, action: "up", shift: false, meta: false, ctrl: false },
-              root,
-            )
+            processMouseEvent(mouseState, { button, x, y, action: "up", shift: false, meta: false, ctrl: false }, root)
             await Promise.resolve()
             return receiver as T
           }

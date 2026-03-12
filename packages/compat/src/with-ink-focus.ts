@@ -64,10 +64,7 @@ export function InkFocusProvider({
   const focusablesCountRef = React.useRef(0)
 
   const findNextFocusable = useCallback(
-    (
-      currentFocusables: Focusable[],
-      currentActiveFocusId: string | undefined,
-    ): string | undefined => {
+    (currentFocusables: Focusable[], currentActiveFocusId: string | undefined): string | undefined => {
       const activeIndex = currentFocusables.findIndex((f) => f.id === currentActiveFocusId)
       for (let i = activeIndex + 1; i < currentFocusables.length; i++) {
         if (currentFocusables[i]?.isActive) return currentFocusables[i]!.id
@@ -78,10 +75,7 @@ export function InkFocusProvider({
   )
 
   const findPreviousFocusable = useCallback(
-    (
-      currentFocusables: Focusable[],
-      currentActiveFocusId: string | undefined,
-    ): string | undefined => {
+    (currentFocusables: Focusable[], currentActiveFocusId: string | undefined): string | undefined => {
       const activeIndex = currentFocusables.findIndex((f) => f.id === currentActiveFocusId)
       for (let i = activeIndex - 1; i >= 0; i--) {
         if (currentFocusables[i]?.isActive) return currentFocusables[i]!.id
@@ -159,9 +153,7 @@ export function InkFocusProvider({
   }, [])
 
   const activateFocusable = useCallback((id: string): void => {
-    setFocusables((currentFocusables) =>
-      currentFocusables.map((f) => (f.id === id ? { ...f, isActive: true } : f)),
-    )
+    setFocusables((currentFocusables) => currentFocusables.map((f) => (f.id === id ? { ...f, isActive: true } : f)))
   }, [])
 
   const deactivateFocusable = useCallback((id: string): void => {
@@ -169,9 +161,7 @@ export function InkFocusProvider({
       if (currentActiveFocusId === id) return undefined
       return currentActiveFocusId
     })
-    setFocusables((currentFocusables) =>
-      currentFocusables.map((f) => (f.id === id ? { ...f, isActive: false } : f)),
-    )
+    setFocusables((currentFocusables) => currentFocusables.map((f) => (f.id === id ? { ...f, isActive: false } : f)))
   }, [])
 
   // Tab/Shift+Tab/Esc focus navigation via inputEmitter (raw escape sequences)

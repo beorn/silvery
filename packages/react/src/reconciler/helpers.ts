@@ -63,10 +63,7 @@ export const LAYOUT_PROPS = new Set([
 /**
  * Check if layout-affecting props changed.
  */
-export function layoutPropsChanged(
-  oldProps: Record<string, unknown>,
-  newProps: Record<string, unknown>,
-): boolean {
+export function layoutPropsChanged(oldProps: Record<string, unknown>, newProps: Record<string, unknown>): boolean {
   for (const prop of LAYOUT_PROPS) {
     if (oldProps[prop] !== newProps[prop]) {
       return true

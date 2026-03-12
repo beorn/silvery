@@ -256,10 +256,7 @@ export class CanvasRenderBuffer implements RenderBuffer {
     const textWidth = metrics.width
     const underlineY = py + this.config.fontSize * 0.9
 
-    const underlineColor = resolveColor(
-      attrs.underlineColor ?? style.fg,
-      this.config.foregroundColor,
-    )
+    const underlineColor = resolveColor(attrs.underlineColor ?? style.fg, this.config.foregroundColor)
 
     this.ctx.strokeStyle = underlineColor
     this.ctx.lineWidth = 1
@@ -284,12 +281,7 @@ export class CanvasRenderBuffer implements RenderBuffer {
         const waveLength = 4
         const amplitude = 2
         for (let wx = 0; wx < textWidth; wx += waveLength * 2) {
-          this.ctx.quadraticCurveTo(
-            px + wx + waveLength / 2,
-            underlineY - amplitude,
-            px + wx + waveLength,
-            underlineY,
-          )
+          this.ctx.quadraticCurveTo(px + wx + waveLength / 2, underlineY - amplitude, px + wx + waveLength, underlineY)
           this.ctx.quadraticCurveTo(
             px + wx + (waveLength * 3) / 2,
             underlineY + amplitude,

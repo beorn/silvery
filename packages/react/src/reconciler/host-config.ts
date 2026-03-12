@@ -7,11 +7,7 @@
  */
 
 import { createContext } from "react"
-import {
-  DefaultEventPriority,
-  DiscreteEventPriority,
-  NoEventPriority,
-} from "react-reconciler/constants.js"
+import { DefaultEventPriority, DiscreteEventPriority, NoEventPriority } from "react-reconciler/constants.js"
 import type { BoxProps, TeaNode, TeaNodeType, TextProps } from "@silvery/tea/types"
 import { contentPropsChanged, layoutPropsChanged, propsEqual } from "./helpers"
 import { applyBoxProps, createNode, createVirtualTextNode } from "./nodes"
@@ -198,9 +194,7 @@ export const hostConfig = {
       }
       if (process.env.NODE_ENV !== "production" && !hasWarnedBoxInsideText) {
         hasWarnedBoxInsideText = true
-        console.warn(
-          "Warning: <Box> cannot be nested inside <Text>. This produces undefined layout behavior.",
-        )
+        console.warn("Warning: <Box> cannot be nested inside <Text>. This produces undefined layout behavior.")
       }
     }
 
@@ -352,9 +346,7 @@ export const hostConfig = {
       parentInstance.children.splice(beforeIndex, 0, child)
       if (parentInstance.layoutNode && child.layoutNode) {
         // Count non-raw-text children before this position for proper layout index
-        const layoutIndex = parentInstance.children
-          .slice(0, beforeIndex)
-          .filter((c) => c.layoutNode !== null).length
+        const layoutIndex = parentInstance.children.slice(0, beforeIndex).filter((c) => c.layoutNode !== null).length
         parentInstance.layoutNode.insertChild(child.layoutNode, layoutIndex)
       }
       parentInstance.childrenDirty = true
@@ -380,9 +372,7 @@ export const hostConfig = {
       child.parent = container.root
       container.root.children.splice(beforeIndex, 0, child)
       if (container.root.layoutNode && child.layoutNode) {
-        const layoutIndex = container.root.children
-          .slice(0, beforeIndex)
-          .filter((c) => c.layoutNode !== null).length
+        const layoutIndex = container.root.children.slice(0, beforeIndex).filter((c) => c.layoutNode !== null).length
         container.root.layoutNode.insertChild(child.layoutNode, layoutIndex)
       }
       container.root.childrenDirty = true
@@ -428,9 +418,7 @@ export const hostConfig = {
     }
 
     // Check if layout-affecting props changed
-    if (
-      layoutPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
-    ) {
+    if (layoutPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)) {
       if (instance.layoutNode) {
         applyBoxProps(instance.layoutNode, newProps as BoxProps, oldProps as BoxProps)
         instance.layoutNode.markDirty()
@@ -441,10 +429,7 @@ export const hostConfig = {
     // Check if content changed (text children, style props like backgroundColor)
     // Returns "text" for text content changes (affect layout) or "style" for
     // style-only changes (borderColor, color, etc. — don't affect layout).
-    const contentChanged = contentPropsChanged(
-      oldProps as Record<string, unknown>,
-      newProps as Record<string, unknown>,
-    )
+    const contentChanged = contentPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
     if (contentChanged) {
       // paintDirty: always set for any visual change. Content phase uses this
       // to know the node needs re-rendering (border, text style, bg, etc.).
@@ -463,8 +448,7 @@ export const hostConfig = {
       // Content phase uses this to cascade re-renders only when the content area
       // was actually affected (not for border-only paint changes).
       if (
-        (oldProps as Record<string, unknown>).backgroundColor !==
-        (newProps as Record<string, unknown>).backgroundColor
+        (oldProps as Record<string, unknown>).backgroundColor !== (newProps as Record<string, unknown>).backgroundColor
       ) {
         instance.bgDirty = true
       }
@@ -473,25 +457,17 @@ export const hostConfig = {
       // draw anything at those positions. Setting bgDirty makes contentAreaAffected
       // true, triggering clearNodeRegion to fill the area with inherited bg.
       // Border *addition* doesn't need this — renderBorder overwrites the old cells.
-      if (
-        (oldProps as Record<string, unknown>).borderStyle &&
-        !(newProps as Record<string, unknown>).borderStyle
-      ) {
+      if ((oldProps as Record<string, unknown>).borderStyle && !(newProps as Record<string, unknown>).borderStyle) {
         instance.bgDirty = true
       }
       // Outline removal: same issue — stale outline characters persist in the clone.
-      if (
-        (oldProps as Record<string, unknown>).outlineStyle &&
-        !(newProps as Record<string, unknown>).outlineStyle
-      ) {
+      if ((oldProps as Record<string, unknown>).outlineStyle && !(newProps as Record<string, unknown>).outlineStyle) {
         instance.bgDirty = true
       }
       // Theme change: all descendants need re-rendering with new token values.
       // bgDirty makes contentAreaAffected=true, cascading parentRegionChanged
       // to force children to re-render with the new theme context.
-      if (
-        (oldProps as Record<string, unknown>).theme !== (newProps as Record<string, unknown>).theme
-      ) {
+      if ((oldProps as Record<string, unknown>).theme !== (newProps as Record<string, unknown>).theme) {
         instance.bgDirty = true
       }
     }
@@ -509,11 +485,9 @@ export const hostConfig = {
     // the scroll container, never reaching the container to re-render at the
     // new scroll position.
     const scrollToChanged =
-      (oldProps as Record<string, unknown>).scrollTo !==
-      (newProps as Record<string, unknown>).scrollTo
+      (oldProps as Record<string, unknown>).scrollTo !== (newProps as Record<string, unknown>).scrollTo
     const scrollOffsetChanged =
-      (oldProps as Record<string, unknown>).scrollOffset !==
-      (newProps as Record<string, unknown>).scrollOffset
+      (oldProps as Record<string, unknown>).scrollOffset !== (newProps as Record<string, unknown>).scrollOffset
     if (instance.layoutDirty || contentChanged || scrollToChanged || scrollOffsetChanged) {
       markLayoutAncestorDirty(instance)
       markSubtreeDirty(instance)

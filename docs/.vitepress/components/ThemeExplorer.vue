@@ -1520,29 +1520,11 @@ function selectPalette(name) {
     <div v-if="activeTab === 'gallery'" class="gallery-panel">
       <!-- Filters -->
       <div class="filter-bar">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search palettes..."
-          class="search-input"
-        />
+        <input v-model="searchQuery" type="text" placeholder="Search palettes..." class="search-input" />
         <div class="filter-buttons">
-          <button
-            :class="['filter-btn', { active: filterMode === 'all' }]"
-            @click="filterMode = 'all'"
-          >
-            All
-          </button>
-          <button
-            :class="['filter-btn', { active: filterMode === 'dark' }]"
-            @click="filterMode = 'dark'"
-          >
-            Dark
-          </button>
-          <button
-            :class="['filter-btn', { active: filterMode === 'light' }]"
-            @click="filterMode = 'light'"
-          >
+          <button :class="['filter-btn', { active: filterMode === 'all' }]" @click="filterMode = 'all'">All</button>
+          <button :class="['filter-btn', { active: filterMode === 'dark' }]" @click="filterMode = 'dark'">Dark</button>
+          <button :class="['filter-btn', { active: filterMode === 'light' }]" @click="filterMode = 'light'">
             Light
           </button>
         </div>
@@ -1707,11 +1689,7 @@ function selectPalette(name) {
               </div>
             </div>
             <div class="strip-group">
-              <div
-                class="strip-item"
-                v-for="tok in ['error', 'warning', 'success', 'info']"
-                :key="tok"
-              >
+              <div class="strip-item" v-for="tok in ['error', 'warning', 'success', 'info']" :key="tok">
                 <span class="strip-swatch" :style="{ background: activeTheme[tok] }"></span>
                 <span class="strip-label">{{ "$" + tok }}</span>
               </div>
@@ -1728,37 +1706,24 @@ function selectPalette(name) {
           <label class="control-label">Primary Color</label>
           <div class="color-input-row">
             <input type="color" v-model="customHex" class="color-picker" />
-            <input
-              type="text"
-              v-model="customHex"
-              class="hex-input"
-              placeholder="#5E81AC"
-              maxlength="7"
-            />
+            <input type="text" v-model="customHex" class="hex-input" placeholder="#5E81AC" maxlength="7" />
           </div>
         </div>
         <div class="control-group">
           <label class="control-label">Mode</label>
           <div class="filter-buttons">
-            <button
-              :class="['filter-btn', { active: customMode === 'dark' }]"
-              @click="customMode = 'dark'"
-            >
+            <button :class="['filter-btn', { active: customMode === 'dark' }]" @click="customMode = 'dark'">
               Dark
             </button>
-            <button
-              :class="['filter-btn', { active: customMode === 'light' }]"
-              @click="customMode = 'light'"
-            >
+            <button :class="['filter-btn', { active: customMode === 'light' }]" @click="customMode = 'light'">
               Light
             </button>
           </div>
         </div>
       </div>
       <p class="custom-description">
-        Enter any hex color to auto-generate a complete theme. The system derives all 22 palette
-        colors using HSL color manipulation &mdash; background, foreground, accents, and status
-        colors all flow from your single input.
+        Enter any hex color to auto-generate a complete theme. The system derives all 22 palette colors using HSL color
+        manipulation &mdash; background, foreground, accents, and status colors all flow from your single input.
       </p>
     </div>
 
@@ -1773,16 +1738,10 @@ function selectPalette(name) {
         >
           Preview
         </button>
-        <button
-          :class="['detail-tab', { active: detailTab === 'tokens' }]"
-          @click="detailTab = 'tokens'"
-        >
+        <button :class="['detail-tab', { active: detailTab === 'tokens' }]" @click="detailTab = 'tokens'">
           Design Tokens
         </button>
-        <button
-          :class="['detail-tab', { active: detailTab === 'palette' }]"
-          @click="detailTab = 'palette'"
-        >
+        <button :class="['detail-tab', { active: detailTab === 'palette' }]" @click="detailTab = 'palette'">
           Palette Colors
         </button>
       </div>
@@ -1925,11 +1884,7 @@ function selectPalette(name) {
             </div>
           </div>
           <div class="strip-group">
-            <div
-              class="strip-item"
-              v-for="tok in ['error', 'warning', 'success', 'info']"
-              :key="tok"
-            >
+            <div class="strip-item" v-for="tok in ['error', 'warning', 'success', 'info']" :key="tok">
               <span class="strip-swatch" :style="{ background: activeTheme[tok] }"></span>
               <span class="strip-label">{{ "$" + tok }}</span>
             </div>
@@ -1946,9 +1901,8 @@ function selectPalette(name) {
       <!-- Semantic tokens detail -->
       <div v-if="detailTab === 'tokens'" class="tokens-pane">
         <p class="tokens-intro">
-          These 33 design tokens are derived from the palette via <code>deriveTheme()</code>.
-          Components reference them with a <code>$</code> prefix (e.g.
-          <code>color="$primary"</code>).
+          These 33 design tokens are derived from the palette via <code>deriveTheme()</code>. Components reference them
+          with a <code>$</code> prefix (e.g. <code>color="$primary"</code>).
         </p>
         <div v-for="group in semanticGroups" :key="group.label" class="token-group">
           <h4 class="token-group-heading">{{ group.label }}</h4>
@@ -1988,8 +1942,8 @@ function selectPalette(name) {
       <!-- Palette colors detail -->
       <div v-if="detailTab === 'palette'" class="palette-pane">
         <p class="tokens-intro">
-          The 22 colors in the <code>ColorPalette</code>: 16 ANSI colors + 6 special colors. These
-          are the raw inputs that <code>deriveTheme()</code> transforms into semantic tokens.
+          The 22 colors in the <code>ColorPalette</code>: 16 ANSI colors + 6 special colors. These are the raw inputs
+          that <code>deriveTheme()</code> transforms into semantic tokens.
         </p>
 
         <h4 class="token-group-heading">Special Colors</h4>
@@ -2006,10 +1960,7 @@ function selectPalette(name) {
             ]"
             :key="f.key"
           >
-            <span
-              class="palette-detail-swatch"
-              :style="{ background: activePalette[f.key] }"
-            ></span>
+            <span class="palette-detail-swatch" :style="{ background: activePalette[f.key] }"></span>
             <span class="palette-detail-label">{{ f.label }}</span>
             <code class="palette-detail-hex">{{ activePalette[f.key] }}</code>
           </div>

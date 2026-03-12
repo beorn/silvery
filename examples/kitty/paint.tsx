@@ -22,13 +22,7 @@
 import { readFileSync, existsSync, readdirSync } from "node:fs"
 import { basename, resolve, dirname, extname } from "node:path"
 import { fileURLToPath } from "node:url"
-import {
-  createTerm,
-  enableMouse,
-  disableMouse,
-  parseMouseSequence,
-  isMouseSequence,
-} from "../../src/index.js"
+import { createTerm, enableMouse, disableMouse, parseMouseSequence, isMouseSequence } from "../../src/index.js"
 import type { ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -440,9 +434,7 @@ function renderHeader(state: PhotoCanvasState, term: ReturnType<typeof createTer
   const modeTag = state.mode === "draw" ? term.bold.green(" DRAW ") : term.bold.blue(" VIEW ")
 
   const toolTag =
-    state.tool === "pen"
-      ? term.rgb(...state.currentColor)(`[Pen ${state.brushSize}px]`)
-      : term.dim("[Eraser]")
+    state.tool === "pen" ? term.rgb(...state.currentColor)(`[Pen ${state.brushSize}px]`) : term.dim("[Eraser]")
 
   const zoomPct = Math.round(state.zoom * 100)
 
@@ -786,10 +778,7 @@ async function main() {
 
       // Scroll wheel: change brush size
       if (parsed.action === "wheel") {
-        state.brushSize = Math.max(
-          MIN_BRUSH,
-          Math.min(MAX_BRUSH, state.brushSize + (parsed.delta ?? 0)),
-        )
+        state.brushSize = Math.max(MIN_BRUSH, Math.min(MAX_BRUSH, state.brushSize + (parsed.delta ?? 0)))
         redraw()
         return
       }

@@ -75,13 +75,7 @@ function MiniSwatch({ palette }: { palette: ColorPalette }): JSX.Element {
 /** Left panel: theme list with color swatches */
 function ThemeList({ selectedIndex }: { selectedIndex: number }): JSX.Element {
   return (
-    <Box
-      flexDirection="column"
-      width={30}
-      borderStyle="single"
-      overflow="scroll"
-      scrollTo={selectedIndex}
-    >
+    <Box flexDirection="column" width={30} borderStyle="single" overflow="scroll" scrollTo={selectedIndex}>
       <Box paddingX={1}>
         <Text bold color="$primary">
           Palettes
@@ -266,13 +260,7 @@ function SurfacePairs(): JSX.Element {
 function ThemePreview({ entry }: { entry: (typeof paletteEntries)[number] }): JSX.Element {
   return (
     <ThemeProvider theme={entry.theme}>
-      <Box
-        flexDirection="column"
-        flexGrow={1}
-        borderStyle="single"
-        overflow="scroll"
-        backgroundColor="$bg"
-      >
+      <Box flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll" backgroundColor="$bg">
         <Box paddingX={1} gap={1}>
           <H1>{entry.name}</H1>
           <Muted>{entry.palette.dark === false ? "(light)" : "(dark)"}</Muted>

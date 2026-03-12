@@ -232,11 +232,7 @@ Silvery implements SGR mouse protocol (mode 1006) with DOM-style event handling:
 
 ```tsx
 // Silvery: DOM-style mouse events
-<Box
-  onClick={(e) => selectItem(e.target)}
-  onMouseDown={(e) => startDrag(e)}
-  onWheel={(e) => scroll(e.deltaY)}
->
+<Box onClick={(e) => selectItem(e.target)} onMouseDown={(e) => startDrag(e)} onWheel={(e) => scroll(e.deltaY)}>
   <Text>Click me</Text>
 </Box>
 ```

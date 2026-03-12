@@ -87,9 +87,7 @@ export async function detectTextSizingSupport(
   try {
     const response = await Promise.race([
       read(),
-      new Promise<string>((_resolve, reject) =>
-        setTimeout(() => reject(new Error("timeout")), timeout),
-      ),
+      new Promise<string>((_resolve, reject) => setTimeout(() => reject(new Error("timeout")), timeout)),
     ])
 
     // Parse CPR response: ESC [ row ; col R

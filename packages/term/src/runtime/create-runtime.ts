@@ -219,10 +219,7 @@ export function createRuntime(options: RuntimeOptions): Runtime {
           }
 
           // Check for abort by name (handles DOMException, AbortError, etc.)
-          if (
-            error instanceof Error &&
-            (error.message === "Effect aborted" || error.name === "AbortError")
-          ) {
+          if (error instanceof Error && (error.message === "Effect aborted" || error.name === "AbortError")) {
             // Silently ignore aborted effects
             return
           }

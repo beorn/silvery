@@ -55,10 +55,7 @@ export function cursorToRowCol(
 }
 
 /** Internal: compute row/col from pre-computed wrapped lines. */
-function cursorToRowColFromLines(
-  lines: WrappedLine[],
-  cursor: number,
-): { row: number; col: number } {
+function cursorToRowColFromLines(lines: WrappedLine[], cursor: number): { row: number; col: number } {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!
     const lineEnd = line.startOffset + line.line.length
@@ -80,11 +77,7 @@ function cursorToRowColFromLines(
  * used to convert a (row, col) back to a flat cursor position:
  * `flatOffset = lines[row].startOffset + col`
  */
-export function getWrappedLines(
-  text: string,
-  wrapWidth: number,
-  measurer?: Measurer,
-): WrappedLine[] {
+export function getWrappedLines(text: string, wrapWidth: number, measurer?: Measurer): WrappedLine[] {
   if (wrapWidth <= 0) return [{ line: "", startOffset: 0 }]
 
   const logicalLines = text.split("\n")
@@ -105,12 +98,7 @@ export function getWrappedLines(
       // Skip whitespace in the original text that was trimmed:
       // - Leading spaces on continuation lines (trimmed by renderer)
       // - Trailing space at break point (consumed as separator by renderer)
-      while (
-        offset < text.length &&
-        text[offset] === " " &&
-        wLine.length > 0 &&
-        text[offset] !== wLine[0]
-      ) {
+      while (offset < text.length && text[offset] === " " && wLine.length > 0 && text[offset] !== wLine[0]) {
         offset++
       }
       result.push({ line: wLine, startOffset: offset })
@@ -132,13 +120,7 @@ export function getWrappedLines(
  * Clamps col to the line length if the target column exceeds it
  * (important for stickyX behavior on short lines).
  */
-export function rowColToCursor(
-  text: string,
-  row: number,
-  col: number,
-  wrapWidth: number,
-  measurer?: Measurer,
-): number {
+export function rowColToCursor(text: string, row: number, col: number, wrapWidth: number, measurer?: Measurer): number {
   const lines = getWrappedLines(text, wrapWidth, measurer)
   if (row < 0) return 0
   if (row >= lines.length) return text.length

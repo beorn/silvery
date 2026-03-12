@@ -20,11 +20,7 @@ describe("Static", () => {
   })
 
   test("renders items in order", () => {
-    const app = render(
-      <Static items={["first", "second", "third"]}>
-        {(item) => <Text key={item}>{item}</Text>}
-      </Static>,
-    )
+    const app = render(<Static items={["first", "second", "third"]}>{(item) => <Text key={item}>{item}</Text>}</Static>)
     expect(app.text).toBe("first\nsecond\nthird")
   })
 

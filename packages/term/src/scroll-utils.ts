@@ -89,10 +89,7 @@ export function calcEdgeBasedScrollOffset(
   } else if (selectedIndex > paddedEnd) {
     // Scrolling DOWN/RIGHT: place item `effectivePadding` rows from bottom
     // The +1 converts from 0-indexed offset to correct position
-    newOffset = Math.min(
-      totalCount - visibleCount,
-      selectedIndex - visibleCount + effectivePadding + 1,
-    )
+    newOffset = Math.min(totalCount - visibleCount, selectedIndex - visibleCount + effectivePadding + 1)
   }
 
   // Clamp to valid range

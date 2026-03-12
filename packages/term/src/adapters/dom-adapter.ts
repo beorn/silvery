@@ -313,9 +313,7 @@ export class DOMRenderBuffer implements RenderBuffer {
           styles.push(`color: ${resolveColor(run.style.fg, this.config.foregroundColor)}`)
         }
         if (run.style.bg) {
-          styles.push(
-            `background-color: ${resolveColor(run.style.bg, this.config.backgroundColor)}`,
-          )
+          styles.push(`background-color: ${resolveColor(run.style.bg, this.config.backgroundColor)}`)
         }
 
         const attrs = run.style.attrs

@@ -39,15 +39,7 @@ export interface SilveryMouseEvent {
   /** Node whose handler is currently firing (changes during bubble) */
   currentTarget: TeaNode
   /** Event type */
-  type:
-    | "click"
-    | "dblclick"
-    | "mousedown"
-    | "mouseup"
-    | "mousemove"
-    | "mouseenter"
-    | "mouseleave"
-    | "wheel"
+  type: "click" | "dblclick" | "mousedown" | "mouseup" | "mousemove" | "mouseenter" | "mouseleave" | "wheel"
   /** Stop event from bubbling to parent nodes */
   stopPropagation(): void
   /** Prevent default behavior */
@@ -132,12 +124,7 @@ export function createMouseEvent(
 /**
  * Create a synthetic wheel event.
  */
-export function createWheelEvent(
-  x: number,
-  y: number,
-  target: TeaNode,
-  parsed: ParsedMouse,
-): SilveryWheelEvent {
+export function createWheelEvent(x: number, y: number, target: TeaNode, parsed: ParsedMouse): SilveryWheelEvent {
   const base = createMouseEvent("wheel", x, y, target, parsed) as SilveryWheelEvent
   base.deltaY = parsed.delta ?? 0
   base.deltaX = 0
@@ -233,9 +220,7 @@ export function dispatchMouseEvent(event: SilveryMouseEvent): void {
   for (const node of path) {
     if (event.propagationStopped) break
 
-    const handler = (node.props as Record<string, unknown>)[handlerProp] as
-      | ((e: SilveryMouseEvent) => void)
-      | undefined
+    const handler = (node.props as Record<string, unknown>)[handlerProp] as ((e: SilveryMouseEvent) => void) | undefined
     if (handler) {
       const mutableEvent = event as { currentTarget: TeaNode }
       mutableEvent.currentTarget = node
@@ -285,10 +270,7 @@ export function checkDoubleClick(
   const sameButton = button === state.lastClickButton
 
   const isDouble =
-    sameButton &&
-    timeDelta <= DOUBLE_CLICK_TIME_MS &&
-    dx <= DOUBLE_CLICK_DISTANCE &&
-    dy <= DOUBLE_CLICK_DISTANCE
+    sameButton && timeDelta <= DOUBLE_CLICK_TIME_MS && dx <= DOUBLE_CLICK_DISTANCE && dy <= DOUBLE_CLICK_DISTANCE
 
   // Update state
   state.lastClickTime = now
@@ -315,10 +297,7 @@ export function checkDoubleClick(
  * Mirrors the DOM spec: fire mouseleave on nodes in prevPath not in nextPath,
  * and mouseenter on nodes in nextPath not in prevPath.
  */
-export function computeEnterLeave(
-  prevPath: TeaNode[],
-  nextPath: TeaNode[],
-): { entered: TeaNode[]; left: TeaNode[] } {
+export function computeEnterLeave(prevPath: TeaNode[], nextPath: TeaNode[]): { entered: TeaNode[]; left: TeaNode[] } {
   const prevSet = new Set(prevPath)
   const nextSet = new Set(nextPath)
 
@@ -354,9 +333,7 @@ export interface MouseEventProcessorState {
   focusManager?: FocusManager
 }
 
-export function createMouseEventProcessor(
-  options?: MouseEventProcessorOptions,
-): MouseEventProcessorState {
+export function createMouseEventProcessor(options?: MouseEventProcessorOptions): MouseEventProcessorState {
   return {
     doubleClick: createDoubleClickState(),
     hoverPath: [],
@@ -375,11 +352,7 @@ export function createMouseEventProcessor(
  * - mousemove + mouseenter/mouseleave
  * - wheel
  */
-export function processMouseEvent(
-  state: MouseEventProcessorState,
-  parsed: ParsedMouse,
-  root: TeaNode,
-): void {
+export function processMouseEvent(state: MouseEventProcessorState, parsed: ParsedMouse, root: TeaNode): void {
   const { x, y, action } = parsed
   const target = hitTest(root, x, y)
   if (!target) return

@@ -50,10 +50,7 @@ export function writeLine(text: string, stream: NodeJS.WriteStream = process.std
  * Wrap a function to handle cursor visibility
  * Hides cursor on start, shows on completion/error
  */
-export function withCursor<T>(
-  fn: () => T | Promise<T>,
-  stream: NodeJS.WriteStream = process.stdout,
-): Promise<T> {
+export function withCursor<T>(fn: () => T | Promise<T>, stream: NodeJS.WriteStream = process.stdout): Promise<T> {
   stream.write(CURSOR_HIDE)
 
   const restore = () => stream.write(CURSOR_SHOW)

@@ -23,10 +23,7 @@ import {
   resolveNonTTYMode,
   stripAnsi,
 } from "./non-tty"
-import {
-  getCursorState as globalGetCursorState,
-  type CursorAccessors,
-} from "@silvery/react/hooks/useCursor"
+import { getCursorState as globalGetCursorState, type CursorAccessors } from "@silvery/react/hooks/useCursor"
 import { copyToClipboard as copyToClipboardImpl } from "./clipboard"
 import { ANSI, notify as notifyTerminal, setCursorStyle, resetCursorStyle } from "./output"
 import { executeRender, type PipelineConfig } from "./pipeline"
@@ -46,8 +43,7 @@ const log = createLogger("silvery:scheduler")
  * TODO: Re-enable by default once the Ghostty bug is fixed.
  * See: https://github.com/ghostty-org/ghostty/discussions/11002
  */
-const SYNC_UPDATE_ENABLED =
-  process.env.SILVERY_SYNC_UPDATE === "1" || process.env.SILVERY_SYNC_UPDATE === "true"
+const SYNC_UPDATE_ENABLED = process.env.SILVERY_SYNC_UPDATE === "1" || process.env.SILVERY_SYNC_UPDATE === "true"
 
 // ============================================================================
 // Errors
@@ -460,9 +456,7 @@ export class RenderScheduler {
       // Fullscreen mode: use terminal rows as the constraint.
       const height = this.mode === "inline" ? NaN : (this.stdout.rows ?? 24)
 
-      log.debug?.(
-        `render #${this.stats.renderCount + 1}: ${width}x${height}, nonTTYMode=${this.nonTTYMode}`,
-      )
+      log.debug?.(`render #${this.stats.renderCount + 1}: ${width}x${height}, nonTTYMode=${this.nonTTYMode}`)
 
       // Run render pipeline
       const scrollbackOffset = this.scrollbackOffset
@@ -596,10 +590,7 @@ export class RenderScheduler {
           }
         }
         if (!found && process.env.DEBUG_LOG) {
-          appendFileSync(
-            process.env.DEBUG_LOG,
-            `SILVERY_CHECK_INCREMENTAL: render #${renderNum} OK\n`,
-          )
+          appendFileSync(process.env.DEBUG_LOG, `SILVERY_CHECK_INCREMENTAL: render #${renderNum} OK\n`)
         }
       }
 
@@ -608,8 +599,7 @@ export class RenderScheduler {
       this.stats.renderCount++
       this.stats.lastRenderTime = renderTime
       this.stats.avgRenderTime =
-        (this.stats.avgRenderTime * (this.stats.renderCount - 1) + renderTime) /
-        this.stats.renderCount
+        (this.stats.avgRenderTime * (this.stats.renderCount - 1) + renderTime) / this.stats.renderCount
       this.lastRenderTime = Date.now()
 
       // Record span data
@@ -622,8 +612,7 @@ export class RenderScheduler {
       )
 
       // First render is always slow (initialization); use 5x threshold for it
-      const threshold =
-        this.stats.renderCount <= 1 ? this.slowFrameThreshold * 5 : this.slowFrameThreshold
+      const threshold = this.stats.renderCount <= 1 ? this.slowFrameThreshold * 5 : this.slowFrameThreshold
       if (threshold > 0 && renderTime > threshold) {
         log.warn?.(
           `slow frame: render #${this.stats.renderCount} took ${renderTime}ms (threshold: ${this.slowFrameThreshold}ms, bytes: ${transformedOutput.length})`,

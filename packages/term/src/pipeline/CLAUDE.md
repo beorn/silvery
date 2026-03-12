@@ -98,18 +98,20 @@ layoutChanged = node.layoutChangedThisFrame
 // Did the CONTENT AREA change? (excludes border-only paint changes)
 // absoluteChildMutated: absolute child had children mount/unmount/reorder, layout change,
 // or child position shift. Forces parent to clear (removes stale overlay pixels in gap areas).
+// descendantOverflowChanged: a descendant's prevLayout extended beyond THIS node's rect
+// and its layout changed. Recursive check (follows subtreeDirty paths).
 contentAreaAffected =
   node.contentDirty ||
   layoutChanged ||
   childPositionChanged ||
   node.childrenDirty ||
   node.bgDirty ||
-  absoluteChildMutated
+  absoluteChildMutated ||
+  descendantOverflowChanged
 
 // Should we clear this node's region with inherited bg?
 // Only when: buffer has stale pixels AND content area changed AND no own bg fill
-parentRegionCleared =
-  (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
+parentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !props.backgroundColor
 
 // Can we skip the bg fill? Only when clone has correct bg already
 skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected
@@ -189,8 +191,7 @@ const textInheritedBg = findInheritedBg(node).color
 renderText(node, buffer, layout, props, scrollOffset, clipBounds, textInheritedBg)
 
 // render-text.ts → renderGraphemes: use inherited bg instead of buffer read
-const existingBg =
-  style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : buffer.getCellBg(col, y) // legacy fallback for external callers
+const existingBg = style.bg !== null ? style.bg : inheritedBg !== undefined ? inheritedBg : buffer.getCellBg(col, y) // legacy fallback for external callers
 ```
 
 **Why not getCellBg?** The old approach read bg from the buffer (`getCellBg`), creating a coupling between text rendering and buffer state. On incremental renders, the cloned buffer could have stale bg at positions outside the parent's bg-filled region (e.g., overflow text, moved nodes). Using `inheritedBg` from the render tree is deterministic regardless of buffer state.
@@ -220,6 +221,16 @@ When a node's content area changed but it has no `backgroundColor`, stale pixels
 When a node shrinks, the excess area (old bounds minus new bounds) is also cleared via `clearExcessArea()`. This excess clearing clips to the colored ancestor's bounds to prevent inherited bg from bleeding into sibling areas.
 
 **Important:** Excess area clearing runs independently of `parentRegionCleared`. Even when `parentRegionCleared=false` (e.g., absolute children with `forceRepaint=true` where `hasPrevBuffer=false` + `ancestorCleared=false`), the cloned buffer still has stale pixels in the old-but-not-new area that must be cleared. This also applies to nodes WITH `backgroundColor` — `renderBox` fills only the new (smaller) region.
+
+### Descendant Overflow Clearing
+
+When a child overflows its parent (e.g., text content extending beyond the parent's rect with `overflow:visible`), `clearExcessArea` on the child clips to the immediate parent's content area (inside border/padding). This leaves stale pixels in ancestor border/padding areas and beyond ancestor rects.
+
+`hasDescendantOverflowChanged()` recursively checks if any descendant's `prevLayout` extended beyond THIS node's rect and had `layoutChangedThisFrame`. When detected, `contentAreaAffected=true` triggers the node to clear its own region (restoring borders) and `clearDescendantOverflowRegions()` clears overflow beyond the node's rect.
+
+**Why recursive?** A grandchild overflowing a child AND the grandparent must be detected at the grandparent level. If only the child detected it, clearing at the child level would overwrite the grandparent's border (parent-first rendering order: grandparent draws border → child clears overflow → border gone). By detecting at the grandparent, the grandparent clears its region, redraws its border, and the child gets `hasPrevBuffer=false` (renders fresh, no overflow clearing needed).
+
+**Performance:** Only runs when `hasPrevBuffer && subtreeDirty`. Follows only `subtreeDirty` paths. Returns early on first match. Overflow is rare, so typically returns false after checking a few direct children.
 
 ## prevLayout and layoutChangedThisFrame
 
@@ -257,6 +268,8 @@ When a node shrinks, the excess area (old bounds minus new bounds) is also clear
 
 7. **getCellBg coupling (mostly resolved).** Text bg inheritance now uses explicit `inheritedBg` from `findInheritedBg()` instead of reading the buffer via `getCellBg()`. This decouples text rendering from buffer state, fixing mismatches where overflow text read stale bg from the cloned buffer. The `getCellBg` fallback is still used by external callers of `renderTextLine` that don't pass `inheritedBg` (e.g., scroll indicators in render-box.ts).
 
+8. **Descendant overflow must be detected recursively.** When a child overflows its parent and shrinks, `clearExcessArea` clips to the immediate parent's content area. If the overflow extends into a grandparent's border/padding, the grandparent must detect and handle it — otherwise a child-level clear overwrites the grandparent's border (parent-first render order). Use `hasDescendantOverflowChanged()` which follows `subtreeDirty` paths.
+
 ## Debugging
 
 ```bash
@@ -268,6 +281,9 @@ DEBUG=silvery:* DEBUG_LOG=/tmp/silvery.log bun km view /path
 
 # Enable instrumentation counters (exposed on globalThis.__silvery_content_detail)
 SILVERY_INSTRUMENT=1 bun km view /path
+
+# Trace which nodes cover a specific cell during incremental rendering
+SILVERY_CELL_DEBUG=77,85 bun km view /path
 ```
 
 The content phase has extensive instrumentation gated on `_instrumentEnabled` -- node visit/skip/render counts, cascade diagnostics, scroll container tier decisions, and per-node trace entries.
@@ -402,6 +418,16 @@ ANSI-embedded backgrounds (`chalk.bgBlack("text")`) inside a Box with `backgroun
 
 Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content and tracks bg ranges separately. Each line's bg is applied independently. The `bgOverride` utility from ansi allows intentional bg override where needed.
 
+### Descendant Overflow Clearing (2026-03-12)
+
+`IncrementalRenderMismatchError` in AI chat status bar: a TextInput node's content shrank from width=91 to width=2, where the old layout overflowed its parent (a `flexGrow` box) and its grandparent (a bordered input box). `clearExcessArea` on the TextInput clipped to the immediate parent's content area, leaving stale pixels in the grandparent's border and padding area.
+
+**First attempt (failed):** `hasChildOverflowChanged` checking only direct children at each level. The immediate parent detected the overflow and ran `clearChildOverflowRegions`, which cleared beyond its rect — including the grandparent's border column. But the grandparent had already drawn its border in parent-first order, so the border was overwritten.
+
+**Fix:** Made overflow detection recursive (`hasDescendantOverflowChanged`). The bordered grandparent now detects the grandchild's overflow directly, clears its own region (restoring borders), and clears overflow beyond its rect. The immediate parent gets `hasPrevBuffer=false` from the grandparent's cascade, so it renders fresh without needing its own overflow clearing.
+
+**Key insight:** Overflow clearing must happen at the level of the ancestor whose border/padding is affected, not at the immediate parent. Parent-first render order means clearing at a child level will overwrite borders that were already drawn by ancestors.
+
 ## Common Blind Paths
 
 | Blind Path                                    | Why It Doesn't Work                                                            | What to Do Instead                                                                          |
@@ -415,6 +441,7 @@ Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content a
 | Hand-rolling VirtualTerminal tests            | Too simple to catch real app complexity                                        | Use `withDiagnostics(createBoardDriver(...))`                                               |
 | Reading code paths without a failing test     | Wastes 20+ turns on theorizing                                                 | Write failing test first, THEN trace code                                                   |
 | Row pre-check: only packed metadata + chars   | Misses true-color Map diffs (fgColors/bgColors) when both cells have TC flag   | Always include `rowExtrasEquals()` in the row pre-check                                     |
+| Clearing overflow at immediate parent only    | Child-level clear overwrites grandparent's border (parent-first render order)  | Use recursive `hasDescendantOverflowChanged` so the bordered ancestor detects and handles it |
 
 ## Effective Strategies (Priority Order)
 
@@ -447,6 +474,7 @@ Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content a
 | Flickering on every render                        | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of content phase           |
 | Stale overlay pixels after shrink (black area)    | `clearExcessArea` not called; check `parentRegionCleared` + `forceRepaint` interaction              |
 | CJK/wide char garble, text shifts right           | `bufferToAnsi` cursor drift: wide char without continuation at col+1. Run `SILVERY_STRICT_OUTPUT=1` |
+| Stale chars in ancestor border/padding after child shrinks | Descendant overflow: `clearExcessArea` clips to immediate parent. Use `hasDescendantOverflowChanged()` for recursive detection |
 
 ## Quick Regression Test Template
 
@@ -501,11 +529,7 @@ import { item } from "@km/tui/tests/helpers/board-test.ts"
 
 describe("regression: <brief description>", () => {
   test("repro from fuzz/user report", async () => {
-    const nodes = item.root(
-      "board",
-      item("Column 1", item("Task A"), item("Task B")),
-      item("Column 2", item("Task C")),
-    )
+    const nodes = item.root("board", item("Column 1", item("Task A"), item("Task B")), item("Column 2", item("Task C")))
     const driver = withDiagnostics(createBoardDriver(createFakeRepo({ nodes }), "board"), {
       checkIncremental: true,
       checkReplay: true,

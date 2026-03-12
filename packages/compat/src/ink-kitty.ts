@@ -61,9 +61,7 @@ export type KittyKeyboardOptions = {
 // =============================================================================
 
 /** Convert Ink-compatible KittyKeyboardOptions to @silvery/term KittyManagerOptions. */
-export function resolveKittyManagerOptions(
-  opts: KittyKeyboardOptions | undefined,
-): KittyManagerOptions | undefined {
+export function resolveKittyManagerOptions(opts: KittyKeyboardOptions | undefined): KittyManagerOptions | undefined {
   if (!opts) return undefined
   return {
     mode: opts.mode,

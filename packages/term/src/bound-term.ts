@@ -42,11 +42,7 @@ export interface BoundTerm {
 /**
  * Create a BoundTerm from a buffer and root node getter
  */
-export function createBoundTerm(
-  buffer: TerminalBuffer,
-  getRoot: () => TeaNode,
-  getText: () => string,
-): BoundTerm {
+export function createBoundTerm(buffer: TerminalBuffer, getRoot: () => TeaNode, getText: () => string): BoundTerm {
   return {
     cell(x: number, y: number): Cell {
       return buffer.getCell(x, y)

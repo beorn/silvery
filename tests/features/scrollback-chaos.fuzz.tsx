@@ -222,15 +222,12 @@ function checkScrollbackContentInvariants(term: Term, action: string, iteration:
 
   // 5. Border chars should be valid (not corrupted multi-byte)
   // Look for common corruption patterns: ██ inside border lines
-  const borderLines = allText
-    .split("\n")
-    .filter((l) => l.includes("╭") || l.includes("╰") || l.includes("─"))
+  const borderLines = allText.split("\n").filter((l) => l.includes("╭") || l.includes("╰") || l.includes("─"))
   for (const line of borderLines) {
     // A border line with ██ (full block) mixed in indicates multi-byte corruption
-    expect(
-      line,
-      `[${iteration}] Corrupted border chars after ${action}: ${line.slice(0, 40)}`,
-    ).not.toMatch(/[╭╰─│╮╯].*█.*[╭╰─│╮╯]/)
+    expect(line, `[${iteration}] Corrupted border chars after ${action}: ${line.slice(0, 40)}`).not.toMatch(
+      /[╭╰─│╮╯].*█.*[╭╰─│╮╯]/,
+    )
   }
 
   // 6. No orphaned content between box closings and box openings
@@ -419,10 +416,7 @@ describe("AIChat scrollback fuzz", () => {
     handle?.unmount()
   })
 
-  async function setupAIChat(
-    dims: { cols: number; rows: number } = { cols: 100, rows: 25 },
-    shellLines: number = 3,
-  ) {
+  async function setupAIChat(dims: { cols: number; rows: number } = { cols: 100, rows: 25 }, shellLines: number = 3) {
     const { AIChat, SCRIPT } = await import("../../examples/interactive/aichat/index")
     term = createTermless(dims)
     const emulator = (term as unknown as Record<string, unknown>)._emulator as {
@@ -482,10 +476,7 @@ describe("AIChat scrollback fuzz", () => {
 
           // No duplication of specific content
           const fixLoginCount = lines.filter((l: string) => l.includes("Fix the login")).length
-          expect(
-            fixLoginCount,
-            `[${i}] "Fix the login" duplicated ${fixLoginCount} times`,
-          ).toBeLessThanOrEqual(1)
+          expect(fixLoginCount, `[${i}] "Fix the login" duplicated ${fixLoginCount} times`).toBeLessThanOrEqual(1)
 
           i++
         }
