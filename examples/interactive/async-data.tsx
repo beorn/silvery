@@ -12,6 +12,7 @@ import {
   render,
   Box,
   Text,
+  H1,
   Kbd,
   Muted,
   useInput,
@@ -67,9 +68,7 @@ function UserProfile() {
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="$success" padding={1}>
-      <Text bold color="$success">
-        User Profile
-      </Text>
+      <H1 color="$success">User Profile</H1>
       <Text>Name: {user.name}</Text>
       <Text>Email: {user.email}</Text>
       <Text>Role: {user.role}</Text>
@@ -94,9 +93,7 @@ function Statistics() {
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="$primary" padding={1}>
-      <Text bold color="$primary">
-        Statistics
-      </Text>
+      <H1>Statistics</H1>
       <Text>Projects: {stats.projects}</Text>
       <Text>Commits: {stats.commits}</Text>
       <Text>Reviews: {stats.reviews}</Text>
@@ -121,9 +118,7 @@ function RecentActivity() {
 
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="$warning" padding={1}>
-      <Text bold color="$warning">
-        Recent Activity
-      </Text>
+      <H1 color="$warning">Recent Activity</H1>
       {activities.map((a) => (
         <Text key={a.id}>
           <Text dim>{a.time}</Text> {a.action}

@@ -288,17 +288,17 @@ function SummaryBar({ processes, query }: { processes: ProcessInfo[]; query: str
   return (
     <Box paddingX={1} gap={2}>
       <Text bold>{processes.length}</Text>
-      <Text color="$muted">processes</Text>
+      <Muted>processes</Muted>
       <Text color="$success" bold>
         {stats.running}
       </Text>
-      <Text color="$muted">running</Text>
-      <Text color="$muted">|</Text>
+      <Muted>running</Muted>
+      <Muted>|</Muted>
       <Text color="$primary">CPU: {stats.totalCpu}%</Text>
       <Text color="$warning">MEM: {stats.totalMem}%</Text>
       {query && (
         <>
-          <Text color="$muted">|</Text>
+          <Muted>|</Muted>
           <Text dim>filter: &quot;{query}&quot;</Text>
         </>
       )}
@@ -445,9 +445,9 @@ export function DataExplorer(): JSX.Element {
             />
           </Box>
         ) : query ? (
-          <Text color="$muted">
+          <Muted>
             filter: <Text bold>{query}</Text> (backspace to clear, / to edit)
-          </Text>
+          </Muted>
         ) : (
           <Muted>
             Press <Kbd>/</Kbd> to search
@@ -478,9 +478,9 @@ export function DataExplorer(): JSX.Element {
           <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>/</Kbd> search <Kbd>Esc/q</Kbd>{" "}
           quit
         </Muted>
-        <Text color="$muted">
+        <Muted>
           {effectiveCursor + 1}/{filtered.length}
-        </Text>
+        </Muted>
       </Box>
     </Box>
   )

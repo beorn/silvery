@@ -106,6 +106,11 @@ const sharedOptions = {
 
 // =============================================================================
 // Registry Generation — scan examples and write viewer-registry.ts
+//
+// Showcase metadata is auto-discovered from:
+//   1. Terminal example `meta` exports (ExampleMeta) — the single source of truth
+//   2. SHOWCASES registry keys in web/showcases/index.ts
+// No hardcoded metadata arrays — everything flows from the examples themselves.
 // =============================================================================
 
 const skipFiles = new Set([
@@ -135,88 +140,67 @@ interface RegistryEntry {
   type: "showcase" | "example"
 }
 
+/** Extract ExampleMeta from source text via regex (avoids importing modules at build time). */
+function extractMeta(source: string): { name?: string; description?: string; features: string[] } {
+  const metaMatch = source.match(/export const meta:\s*ExampleMeta\s*=\s*\{([^}]+)\}/)
+  if (!metaMatch) return { features: [] }
+  const metaStr = metaMatch[1]!
+  const nameMatch = metaStr.match(/name:\s*"([^"]+)"/)
+  const descMatch = metaStr.match(/description:\s*"([^"]+)"/)
+  const featMatch = metaStr.match(/features:\s*\[([^\]]*)\]/)
+  return {
+    name: nameMatch?.[1],
+    description: descMatch?.[1],
+    features: featMatch?.[1]?.match(/"([^"]+)"/g)?.map((s) => s.replace(/"/g, "")) ?? [],
+  }
+}
+
+/** Map from SHOWCASES registry keys to their terminal example source paths.
+ *  Flagship showcases and their legacy aliases both map to the same source. */
+const SHOWCASE_SOURCE_MAP: Record<string, string> = {
+  // Flagship keys
+  aichat: "interactive/aichat/index.tsx",
+  kanban: "interactive/kanban.tsx",
+  wizard: "interactive/cli-wizard.tsx",
+  dashboard: "layout/dashboard.tsx",
+  // gallery, explorer, terminal, components, theme — NEW, no source yet
+
+  // Legacy / additional keys
+  "ai-chat": "interactive/aichat/index.tsx",
+  "cli-wizard": "interactive/cli-wizard.tsx",
+  "dev-tools": "interactive/dev-tools.tsx",
+  "data-explorer": "interactive/data-explorer.tsx",
+  scroll: "interactive/scroll.tsx",
+  "search-filter": "interactive/search-filter.tsx",
+  transform: "interactive/transform.tsx",
+  textarea: "interactive/textarea.tsx",
+}
+
 async function generateRegistry(): Promise<void> {
   const entries: RegistryEntry[] = []
 
-  // Showcase entries (from showcases/ directory — each showcase in its own file)
-  const showcaseKeys = [
-    "dashboard",
-    "coding-agent",
-    "kanban",
-    "cli-wizard",
-    "dev-tools",
-    "data-explorer",
-    "scroll",
-    "layout-feedback",
-    "focus",
-    "text-input",
-    "theme-explorer",
-  ]
-  const showcaseMeta: Record<string, { name: string; description: string; features: string[] }> = {
-    dashboard: {
-      name: "System Dashboard",
-      description: "Real-time metrics, service status, and event feed with live updating data.",
-      features: ["Box", "Text", "borderStyle", "flexDirection", "useInput", "useEffect", "setInterval"],
-    },
-    "coding-agent": {
-      name: "Coding Agent",
-      description: "Claude Code-style coding agent with tool calls, code diffs, and streaming output.",
-      features: ["Box", "Text", "outlineStyle", "flexDirection", "wrap"],
-    },
-    kanban: {
-      name: "Kanban Board",
-      description: "Three-column kanban with selectable cards and tag badges.",
-      features: ["Box", "Text", "borderStyle", "flexGrow", "useInput", "useState"],
-    },
-    "cli-wizard": {
-      name: "CLI Wizard",
-      description: "Clack-style interactive setup wizard with step-by-step progression.",
-      features: ["Box", "Text", "useInput", "useState", "Fragment"],
-    },
-    "dev-tools": {
-      name: "Log Viewer",
-      description: "Filterable log viewer with TextInput search, scroll, and level coloring.",
-      features: ["Box", "Text", "TextInput", "borderStyle", "useInput", "wrap"],
-    },
-    "data-explorer": {
-      name: "Process Explorer",
-      description: "Sortable data table with live CPU jitter and row selection.",
-      features: ["Box", "Text", "backgroundColor", "flexDirection", "useInput", "useEffect"],
-    },
-    scroll: {
-      name: "Scroll List",
-      description: "Basic scrollable list with keyboard navigation.",
-      features: ["Box", "Text", "borderStyle", "useInput"],
-    },
-    "layout-feedback": {
-      name: "Layout Feedback",
-      description: "Live display of content dimensions via useContentRect().",
-      features: ["Box", "Text", "useContentRect", "justifyContent", "alignItems"],
-    },
-    focus: {
-      name: "Focus Panels",
-      description: "Tab-cycling focus across three panels.",
-      features: ["Box", "Text", "borderStyle", "useInput"],
-    },
-    "text-input": {
-      name: "Text Input",
-      description: "Full readline-style editing with kill ring, word movement, and focus ring.",
-      features: ["Box", "Text", "TextInput", "borderStyle", "outlineStyle"],
-    },
-    "theme-explorer": {
-      name: "Theme Explorer",
-      description: "Browse 14 built-in color palettes with ANSI swatches and sample text.",
-      features: ["Box", "Text", "backgroundColor", "useInput", "useContentRect", "@silvery/theme"],
-    },
-  }
+  // --- Showcase entries: auto-discover from SHOWCASES keys + terminal meta ---
+  const { SHOWCASES } = await import("./showcases/index.js")
+  for (const key of Object.keys(SHOWCASES)) {
+    const sourcePath = SHOWCASE_SOURCE_MAP[key]
+    let name = key
+    let description = ""
+    let features: string[] = []
 
-  for (const key of showcaseKeys) {
-    const meta = showcaseMeta[key]!
+    if (sourcePath) {
+      // Read meta from the terminal example source
+      const source = await Bun.file(join(__dirname, "..", sourcePath)).text()
+      const meta = extractMeta(source)
+      if (meta.name) name = meta.name
+      if (meta.description) description = meta.description
+      features = meta.features
+    }
+
     entries.push({
       key: `showcase-${key}`,
-      name: meta.name,
-      description: meta.description,
-      features: meta.features,
+      name,
+      description,
+      features,
       category: "Showcases",
       categoryColor: "#f9e2af",
       source: "",
@@ -224,7 +208,7 @@ async function generateRegistry(): Promise<void> {
     })
   }
 
-  // Scan example directories
+  // --- Scan example directories ---
   for (const cat of categories) {
     const dir = join(__dirname, "..", cat.dir)
     const files = (await readdir(dir)).filter((f) => f.endsWith(".tsx") && !skipFiles.has(`${cat.dir}/${f}`))
@@ -232,27 +216,13 @@ async function generateRegistry(): Promise<void> {
     for (const file of files.sort()) {
       const source = await Bun.file(join(dir, file)).text()
       const key = file.replace(".tsx", "")
-
-      // Extract meta from ExampleMeta export
-      const metaMatch = source.match(/export const meta:\s*ExampleMeta\s*=\s*\{([^}]+)\}/)
-      let name = key,
-        description = "",
-        features: string[] = []
-      if (metaMatch) {
-        const metaStr = metaMatch[1]!
-        const nameMatch = metaStr.match(/name:\s*"([^"]+)"/)
-        const descMatch = metaStr.match(/description:\s*"([^"]+)"/)
-        const featMatch = metaStr.match(/features:\s*\[([^\]]*)\]/)
-        if (nameMatch) name = nameMatch[1]!
-        if (descMatch) description = descMatch[1]!
-        if (featMatch) features = featMatch[1]!.match(/"([^"]+)"/g)?.map((s) => s.replace(/"/g, "")) ?? []
-      }
+      const meta = extractMeta(source)
 
       entries.push({
         key,
-        name,
-        description,
-        features,
+        name: meta.name ?? key,
+        description: meta.description ?? "",
+        features: meta.features,
         category: cat.label,
         categoryColor: cat.color,
         source,

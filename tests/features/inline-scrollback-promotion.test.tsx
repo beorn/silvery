@@ -19,7 +19,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
-import { CodingAgent, SCRIPT } from "../../examples/interactive/ai-chat"
+import { AIChat, SCRIPT } from "../../examples/interactive/aichat/index"
 
 // ============================================================================
 // Helper: simulate a real terminal with pre-existing content
@@ -28,7 +28,7 @@ import { CodingAgent, SCRIPT } from "../../examples/interactive/ai-chat"
 /**
  * Feed "shell prompt" content into the termless emulator before starting the app.
  * This simulates what a real terminal looks like: shell prompt, direnv output,
- * then `bun run examples/interactive/ai-chat.tsx`, then the app starts.
+ * then `bun run examples/interactive/aichat/index.tsx`, then the app starts.
  */
 function feedShellPrompt(term: Term, lines: number = 5) {
   const emulator = (term as unknown as Record<string, unknown>)._emulator as {
@@ -41,7 +41,7 @@ function feedShellPrompt(term: Term, lines: number = 5) {
   for (let i = 3; i < lines; i++) {
     emulator.feed(`shell-line-${i}\r\n`)
   }
-  emulator.feed("$ bun run examples/interactive/ai-chat.tsx\r\n")
+  emulator.feed("$ bun run examples/interactive/aichat/index.tsx\r\n")
 }
 
 /**
@@ -88,26 +88,26 @@ describe("inline mode with pre-existing terminal content", () => {
   })
 
   test("shell prompt survives initial render", async () => {
-    ;({ term, handle } = await runInlineWithShellPrompt(
-      <CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />,
-      { cols: 120, rows: 40 },
-    ))
+    ;({ term, handle } = await runInlineWithShellPrompt(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
+      cols: 120,
+      rows: 40,
+    }))
 
     // The shell prompt should still be visible on screen (or in scrollback)
     const screenText = term.screen!.getText()
     const scrollbackText = term.scrollback!.getText()
     const allText = scrollbackText + screenText
 
-    expect(allText).toContain("bun run examples/interactive/ai-chat.tsx")
+    expect(allText).toContain("bun run examples/interactive/aichat/index.tsx")
     // App content should be visible (header hidden since exchanges auto-load on mount)
     expect(term.screen).toContainText("ctx")
   })
 
   test("shell prompt survives after first Enter press", async () => {
-    ;({ term, handle } = await runInlineWithShellPrompt(
-      <CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />,
-      { cols: 120, rows: 40 },
-    ))
+    ;({ term, handle } = await runInlineWithShellPrompt(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
+      cols: 120,
+      rows: 40,
+    }))
 
     await handle.press("Enter")
 
@@ -118,16 +118,16 @@ describe("inline mode with pre-existing terminal content", () => {
     const allText = scrollbackText + screenText
 
     // Shell prompt content should be preserved somewhere
-    expect(allText).toContain("bun run examples/interactive/ai-chat.tsx")
+    expect(allText).toContain("bun run examples/interactive/aichat/index.tsx")
     // App content should be visible
     expect(term.screen).toContainText("ctx")
   })
 
   test("cursor-up does not overshoot into shell prompt area", async () => {
-    ;({ term, handle } = await runInlineWithShellPrompt(
-      <CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />,
-      { cols: 120, rows: 40 },
-    ))
+    ;({ term, handle } = await runInlineWithShellPrompt(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
+      cols: 120,
+      rows: 40,
+    }))
 
     // Record which lines have shell content before first Enter
     const screenBefore = term.screen!.getLines()
@@ -151,7 +151,7 @@ describe("inline mode with pre-existing terminal content", () => {
 
   test("repeated Enter presses accumulate content correctly", async () => {
     ;({ term, handle } = await runInlineWithShellPrompt(
-      <CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />,
+      <AIChat script={SCRIPT} autoStart={false} fastMode={true} />,
       { cols: 120, rows: 30 },
       3,
     ))
@@ -175,7 +175,7 @@ describe("inline mode with pre-existing terminal content", () => {
 
   test("frozen content enters terminal scrollback", async () => {
     ;({ term, handle } = await runInlineWithShellPrompt(
-      <CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />,
+      <AIChat script={SCRIPT} autoStart={false} fastMode={true} />,
       { cols: 120, rows: 20 },
       3,
     ))
@@ -199,16 +199,14 @@ describe("inline mode with pre-existing terminal content", () => {
   test("content does not jump up — render region stays at bottom", async () => {
     // With a 40-row terminal and 5 shell lines, the app starts at ~row 6.
     // After Enter, content should stay in the same region, not jump to row 0.
-    ;({ term, handle } = await runInlineWithShellPrompt(
-      <CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />,
-      { cols: 120, rows: 40 },
-    ))
+    ;({ term, handle } = await runInlineWithShellPrompt(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
+      cols: 120,
+      rows: 40,
+    }))
 
     // Find where app content starts
     const linesBefore = term.screen!.getLines()
-    const appStartBefore = linesBefore.findIndex(
-      (l: string) => l.includes("AI Chat") || l.includes("Fix the login"),
-    )
+    const appStartBefore = linesBefore.findIndex((l: string) => l.includes("AI Chat") || l.includes("Fix the login"))
 
     await handle.press("Enter")
 
@@ -253,7 +251,7 @@ describe("clean screen baseline (no shell prompt)", () => {
       feed(data: string): void
     }
 
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, {
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
       mode: "inline",
       writable: { write: (s: string) => emulator.feed(s) },
       cols: 120,

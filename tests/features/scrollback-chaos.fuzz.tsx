@@ -405,10 +405,10 @@ describe("scrollback promotion fuzz", () => {
 })
 
 // ============================================================================
-// CodingAgent real-world fuzz (with shell prompt pre-population)
+// AIChat real-world fuzz (with shell prompt pre-population)
 // ============================================================================
 
-describe("CodingAgent scrollback fuzz", () => {
+describe("AIChat scrollback fuzz", () => {
   let term: Term
   let handle: RunHandle
 
@@ -416,11 +416,8 @@ describe("CodingAgent scrollback fuzz", () => {
     handle?.unmount()
   })
 
-  async function setupCodingAgent(
-    dims: { cols: number; rows: number } = { cols: 100, rows: 25 },
-    shellLines: number = 3,
-  ) {
-    const { CodingAgent, SCRIPT } = await import("../../examples/interactive/ai-chat")
+  async function setupAIChat(dims: { cols: number; rows: number } = { cols: 100, rows: 25 }, shellLines: number = 3) {
+    const { AIChat, SCRIPT } = await import("../../examples/interactive/aichat/index")
     term = createTermless(dims)
     const emulator = (term as unknown as Record<string, unknown>)._emulator as {
       feed(data: string): void
@@ -430,9 +427,9 @@ describe("CodingAgent scrollback fuzz", () => {
     for (let i = 0; i < shellLines; i++) {
       emulator.feed(`shell-line-${i}\r\n`)
     }
-    emulator.feed("$ bun run examples/interactive/ai-chat.tsx\r\n")
+    emulator.feed("$ bun run examples/interactive/aichat/index.tsx\r\n")
 
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, {
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
       mode: "inline",
       writable: { write: (s: string) => emulator.feed(s) },
       cols: dims.cols,
@@ -442,7 +439,7 @@ describe("CodingAgent scrollback fuzz", () => {
   }
 
   /**
-   * CodingAgent with randomized Enter presses at various terminal sizes.
+   * AIChat with randomized Enter presses at various terminal sizes.
    */
   for (const size of [
     { cols: 100, rows: 25, name: "standard" },
@@ -450,11 +447,11 @@ describe("CodingAgent scrollback fuzz", () => {
     { cols: 100, rows: 40, name: "tall" },
   ] as const) {
     test.fuzz(
-      `CodingAgent promotion stability — ${size.name}`,
+      `AIChat promotion stability — ${size.name}`,
       async () => {
-        await setupCodingAgent({ cols: size.cols, rows: size.rows })
+        await setupAIChat({ cols: size.cols, rows: size.rows })
 
-        // CodingAgent only responds to Enter (advance demo)
+        // AIChat only responds to Enter (advance demo)
         let i = 0
         for await (const _ of take(gen(["Enter"]), 12)) {
           await handle.press("Enter")

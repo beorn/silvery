@@ -48,7 +48,7 @@ examples/
 
 | Example         | File                            | Description                                    |
 | --------------- | ------------------------------- | ---------------------------------------------- |
-| AI Coding Agent | `interactive/ai-chat.tsx`       | Coding agent with streaming, tool calls        |
+| AI Coding Agent | `interactive/aichat/`           | Coding agent with streaming, tool calls        |
 | Todo App        | `interactive/app-todo.tsx`      | Layer 3: `createApp()` with Zustand store      |
 | Async Data      | `interactive/async-data.tsx`    | Suspense boundaries with `use()` hook          |
 | Kanban          | `interactive/kanban.tsx`        | Multi-column kanban with card movement         |

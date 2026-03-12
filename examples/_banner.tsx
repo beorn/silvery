@@ -6,6 +6,8 @@ export interface ExampleMeta {
   description: string
   /** API features showcased, e.g. ["VirtualList", "useContentRect()"] */
   features?: string[]
+  /** Curated demo — shown in CLI viewer (`bun examples`) and web showcase */
+  demo?: boolean
 }
 
 interface Props {

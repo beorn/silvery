@@ -10,7 +10,7 @@
  */
 
 import React from "react"
-import { Box, Text } from "../../src/index.js"
+import { Box, Text, H3, Muted } from "../../src/index.js"
 import {
   layout,
   diff,
@@ -76,13 +76,13 @@ function reducer(state: State, event: Event): State {
 function view(state: State): React.ReactElement {
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold>Elm Counter Example</Text>
+      <H3>Elm Counter Example</H3>
       <Text> </Text>
       <Text>
         Count: <Text color="green">{state.count}</Text>
       </Text>
       <Text> </Text>
-      <Text dimColor>Press 'r' to reset, 'q' to quit</Text>
+      <Muted>Press 'r' to reset, 'q' to quit</Muted>
     </Box>
   )
 }

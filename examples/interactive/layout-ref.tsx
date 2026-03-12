@@ -12,6 +12,7 @@ import {
   render,
   Box,
   Text,
+  H1,
   Kbd,
   Muted,
   useInput,
@@ -60,9 +61,7 @@ function ResizablePane({
       padding={1}
       onLayout={(layout) => onLayoutChange(layout)}
     >
-      <Text bold color={color}>
-        {title}
-      </Text>
+      <H1 color={color}>{title}</H1>
     </Box>
   )
 }
@@ -90,9 +89,7 @@ function ImperativeAccessDemo() {
 
   return (
     <Box ref={boxRef} flexDirection="column" borderStyle="double" borderColor="magenta" padding={1}>
-      <Text bold color="magenta">
-        Imperative Access (BoxHandle)
-      </Text>
+      <H1 color="magenta">Imperative Access (BoxHandle)</H1>
       <Muted>Press 'i' to inspect this box</Muted>
       <Box marginTop={1}>
         <Text>{info}</Text>

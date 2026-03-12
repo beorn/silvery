@@ -58,8 +58,18 @@ export type DemoResult = TeaResult<DemoState, DemoEffect>
 /** How many live turns to keep in the dynamic area before freezing to scrollback. */
 export const MAX_LIVE_TURNS = 3
 
+const INTRO_TEXT = [
+  "Coding agent simulation showcasing ScrollbackList:",
+  " • ScrollbackList — declarative list with automatic scrollback",
+  " • useScrollbackItem() — imperative freeze() from within items",
+  " • isFrozen prop — data-driven freezing for completed items",
+  " • OSC 8 hyperlinks — clickable file paths and URLs",
+  " • OSC 133 markers — Cmd+↑/↓ to jump between exchanges",
+  " • $token theme colors — semantic color tokens",
+].join("\n")
+
 export const INIT_STATE: DemoState = {
-  exchanges: [],
+  exchanges: [{ id: 0, role: "system", content: INTRO_TEXT, frozen: false }],
   scriptIdx: 0,
   streamPhase: "done",
   revealFraction: 1,
@@ -69,7 +79,7 @@ export const INIT_STATE: DemoState = {
   ctrlDPending: false,
   contextBaseline: 0,
   offScript: false,
-  nextId: 0,
+  nextId: 1,
   autoTyping: null,
 }
 
@@ -258,16 +268,21 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
       }
 
       case "submit": {
-        if (state.streamPhase !== "done") {
-          return [
-            { ...state, streamPhase: "done", revealFraction: 1, autoTyping: null },
-            [fx.cancel("reveal"), fx.cancel("typing")],
-          ]
-        }
-        if (state.done || !msg.text.trim()) return state
+        // Fast-forward streaming if still animating
+        const base =
+          state.streamPhase !== "done"
+            ? { ...state, streamPhase: "done" as StreamPhase, revealFraction: 1, autoTyping: null }
+            : state.autoTyping
+              ? { ...state, autoTyping: null }
+              : state
+        const cancelEffects: DemoEffect[] =
+          state.streamPhase !== "done" ? [fx.cancel("reveal"), fx.cancel("typing")] : [fx.cancel("typing")]
 
-        const cleared = state.autoTyping ? { ...state, autoTyping: null } : state
-        const s = addExchange(cleared, {
+        // Empty submit just fast-forwards (no text to queue)
+        if (!msg.text.trim()) return [base, cancelEffects]
+        if (base.done) return base
+
+        const s = addExchange(base, {
           role: "user",
           content: msg.text,
           tokens: { input: msg.text.length * 4, output: 0 },
@@ -276,10 +291,10 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
         if (s.scriptIdx < script.length) {
           let nextIdx = s.scriptIdx
           while (nextIdx < script.length && script[nextIdx]!.role === "user") nextIdx++
-          return [{ ...s, scriptIdx: nextIdx }, [fx.cancel("typing"), fx.delay(150, { type: "autoAdvance" })]]
+          return [{ ...s, scriptIdx: nextIdx }, [...cancelEffects, fx.delay(150, { type: "autoAdvance" })]]
         }
 
-        return [{ ...s, offScript: true }, [fx.cancel("typing"), fx.delay(150, { type: "respondRandom" })]]
+        return [{ ...s, offScript: true }, [...cancelEffects, fx.delay(150, { type: "respondRandom" })]]
       }
 
       case "respondRandom": {

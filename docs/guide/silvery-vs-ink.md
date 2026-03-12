@@ -22,18 +22,18 @@ See [migration guide](/getting-started/migrate-from-ink) for switching from Ink.
 
 ## Compatibility at a Glance
 
-Silvery passes **188/262 of Ink's own test suite** (72%) when tested with the Flexily layout engine. Chalk compatibility is **32/32 (100%)**. These numbers come from cloning the real Ink and Chalk repos and running their original test suites against silvery's compat layer (`bun run compat`).
+Silvery passes **804/813 of Ink's own test suite (98.9%)** when tested with the Flexily layout engine. Chalk compatibility is **32/32 (100%)**. These numbers come from cloning the real Ink and Chalk repos and running their original test suites against silvery's compat layer (`bun run compat`).
 
-The 74 Ink test failures break down as:
+The 9 remaining Ink test failures break down as:
 
-| Category                  | Failures | Why                                                        |
-| ------------------------- | -------- | ---------------------------------------------------------- |
-| PTY/process-spawn tests   | ~43      | Test infrastructure, not runtime behavior                  |
-| Layout engine differences | ~10      | [Flexily vs Yoga divergences](#flexily-vs-yoga-philosophy) |
-| Screen reader / ARIA      | ~8       | Not yet implemented                                        |
-| Compat layer gaps         | ~13      | Rendering edge cases, cursor management                    |
+| Category                   | Failures | Why                                                                                        |
+| -------------------------- | -------- | ------------------------------------------------------------------------------------------ |
+| Flexily layout differences | 4        | [flex-wrap (2), aspect ratio (2)](#flexily-vs-yoga-philosophy) — W3C spec vs Yoga behavior |
+| Overflow edge cases        | 3        | overflowX clipping differences                                                             |
+| measure-element            | 1        | Post-state-change re-measurement timing                                                    |
+| render-to-string           | 1        | Effect timing in synchronous render                                                        |
 
-**Most failures won't affect your app.** The largest category (~43) is PTY/process-spawn test infrastructure that doesn't reflect runtime behavior. Layout differences come from Flexily following the W3C CSS spec where Yoga diverges — if you prefer browser-standard behavior, these are features, not bugs. If you need exact Yoga layout parity, Silvery supports Yoga as a pluggable layout engine.
+**These are edge cases, not migration blockers.** The layout differences come from Flexily following the W3C CSS spec where Yoga diverges — if you prefer browser-standard behavior, these are features, not bugs. If you need exact Yoga layout parity, Silvery supports Yoga as a pluggable layout engine.
 
 The compat layer is built as thin adapters (~50 lines each) that bridge Ink's APIs to silvery-native systems. `withInk()` composes `withInkCursor()` + `withInkFocus()` — you can use them individually or drop them as you adopt silvery-native APIs. See [compatibility reference](/reference/compatibility) for the full API mapping and [compat layer architecture](/reference/compatibility#compat-layer-architecture) for how the bridge works.
 

@@ -24,7 +24,7 @@
  */
 
 import React from "react"
-import { Box, Text } from "../../src/index.js"
+import { Box, Text, H3, Muted, Small } from "../../src/index.js"
 import { createApp, useApp } from "@silvery/term/runtime"
 import { pipe, withReact, withTerminal } from "@silvery/tea/plugins"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
@@ -75,18 +75,18 @@ function SelectableList() {
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold>Select items:</Text>
+      <H3>Select items:</H3>
       <Text> </Text>
       {items.map((item, i) => (
         <Item key={item.id} item={item} isCursor={i === cursor} />
       ))}
-      {items.length === 0 && <Text dimColor>No items. Press 'a' to add one.</Text>}
+      {items.length === 0 && <Muted>No items. Press 'a' to add one.</Muted>}
       <Text> </Text>
-      <Text color="$muted">
+      <Muted>
         {selectedCount}/{items.length} selected
-      </Text>
+      </Muted>
       <Text> </Text>
-      <Text dimColor>j/k: move • space/x: toggle • a: add • Esc/q: quit</Text>
+      <Small>j/k: move • space/x: toggle • a: add • Esc/q: quit</Small>
     </Box>
   )
 }

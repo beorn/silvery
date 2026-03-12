@@ -1,7 +1,7 @@
 /**
  * AI-chat example tested with Termless — in-process terminal emulation.
  *
- * Uses createTermless() + run() to render the real CodingAgent component
+ * Uses createTermless() + run() to render the real AIChat component
  * into an xterm.js emulator. No PTY subprocess — faster, deterministic,
  * same ANSI fidelity.
  *
@@ -16,7 +16,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term, TermScreen } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
-import { CodingAgent, SCRIPT } from "../../examples/interactive/ai-chat"
+import { AIChat, SCRIPT } from "../../examples/interactive/aichat/index"
 
 // ============================================================================
 // Helpers
@@ -60,7 +60,7 @@ describe("ai-chat example (in-process termless)", { timeout: 15000 }, () => {
 
   beforeAll(async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
     // Wait for mount advance + fastMode auto-chain to settle
     await settle()
   })

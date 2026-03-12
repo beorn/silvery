@@ -8,7 +8,7 @@
  */
 
 import React from "react"
-import { Box, Text } from "../../src/index.js"
+import { Box, Text, H1, Muted } from "../../src/index.js"
 import { createRuntime, ensureLayoutEngine, layout, type Dims, type RenderTarget } from "@silvery/term/runtime"
 import type { ExampleMeta } from "../_banner.js"
 
@@ -31,10 +31,8 @@ const termTarget: RenderTarget = {
 function HelloView({ name }: { name: string }): React.ReactElement {
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold color="green">
-        Hello, {name}!
-      </Text>
-      <Text dimColor>Welcome to silvery-loop</Text>
+      <H1 color="green">Hello, {name}!</H1>
+      <Muted>Welcome to silvery-loop</Muted>
     </Box>
   )
 }

@@ -10,7 +10,19 @@
  */
 
 import React, { useState } from "react"
-import { render, Box, Text, Muted, TextArea, useInput, useApp, createTerm, type Key } from "../../src/index.js"
+import {
+  render,
+  Box,
+  Text,
+  H1,
+  Strong,
+  Muted,
+  TextArea,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -44,21 +56,16 @@ export function NoteEditor(): JSX.Element {
           {notes.map((note, i) => (
             <Box key={i} borderStyle="round" borderColor="gray" paddingX={1}>
               <Text>
-                <Text bold color="green">
-                  #{i + 1}
-                </Text>{" "}
-                {note}
+                <Strong color="$success">#{i + 1}</Strong> {note}
               </Text>
             </Box>
           ))}
         </Box>
       )}
 
-      <Box borderStyle="single" borderColor="cyan" flexDirection="column">
+      <Box borderStyle="single" borderColor="$primary" flexDirection="column">
         <Box paddingX={1}>
-          <Text bold color="cyan">
-            New Note
-          </Text>
+          <H1>New Note</H1>
         </Box>
         <Box paddingX={1}>
           <TextArea

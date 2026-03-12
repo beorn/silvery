@@ -13,7 +13,7 @@
  */
 
 import React from "react"
-import { Box, Text } from "../../src/index.js"
+import { Box, Text, H3, Small } from "../../src/index.js"
 import {
   createRuntime,
   ensureLayoutEngine,
@@ -67,16 +67,16 @@ function reducer(state: State, event: Event): State {
 function view(state: State, dims: Dims): React.ReactElement {
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold>Runtime Counter Example</Text>
+      <H3>Runtime Counter Example</H3>
       <Text> </Text>
       <Text>
         Count: <Text color="green">{state.count}</Text>
       </Text>
       <Text> </Text>
-      <Text dimColor>
+      <Small>
         Terminal: {dims.cols}x{dims.rows}
-      </Text>
-      <Text dimColor>Press Ctrl+C to quit</Text>
+      </Small>
+      <Small>Press Ctrl+C to quit</Small>
     </Box>
   )
 }

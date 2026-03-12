@@ -21,6 +21,20 @@ export interface FooterControl {
 }
 
 // ============================================================================
+// Internal Helpers
+// ============================================================================
+
+/** Split content into a short title (first sentence) and the remaining body.
+ * Title must be ≤40 chars to fit on the header line with metadata. */
+function splitTitleBody(content: string): { title: string; body: string } {
+  const match = content.match(/^(.+?[.!?])\s+(.+)$/s)
+  if (match && match[1]!.length <= 40) return { title: match[1]!, body: match[2]! }
+  // No sentence break or sentence too long — short content goes entirely to title
+  if (content.length <= 40) return { title: content, body: "" }
+  return { title: "", body: content }
+}
+
+// ============================================================================
 // Internal Components
 // ============================================================================
 
@@ -64,33 +78,24 @@ function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; colo
   return <Text>{parts}</Text>
 }
 
-/** Thinking block — shows with spinner before agent response. */
+/** Thinking block — shows thinking text preview in the body. */
 function ThinkingBlock({ text, done }: { text: string; done: boolean }): JSX.Element {
-  return (
-    <Box flexDirection="column" paddingLeft={2}>
+  if (done)
+    return (
       <Text color="$muted" italic>
-        {done ? (
-          "▸ "
-        ) : (
-          <>
-            <Spinner type="dots" />{" "}
-          </>
-        )}
-        thinking
+        {"▸ thought"}
       </Text>
-      {!done && (
-        <Text color="$muted" wrap="truncate">
-          {"    "}
-          {text}
-        </Text>
-      )}
-    </Box>
+    )
+  return (
+    <Text color="$muted" wrap="truncate" italic>
+      {text}
+    </Text>
   )
 }
 
 /** Tool call with lifecycle: spinner -> output -> checkmark. */
 function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "running" | "done" }): JSX.Element {
-  const color = TOOL_COLORS[call.tool] ?? "gray"
+  const color = TOOL_COLORS[call.tool] ?? "$muted"
   const icon = TOOL_ICONS[call.tool] ?? "▸"
 
   return (
@@ -194,10 +199,12 @@ export function ExchangeItem({
 
   if (exchange.role === "system") {
     return (
-      <Box borderStyle="round" borderColor="$warning" paddingX={1}>
-        <Text color="$warning" italic>
-          {exchange.content}
-        </Text>
+      <Box flexDirection="column">
+        <Text> </Text>
+        <Text bold>AI Chat</Text>
+        <Text> </Text>
+        <Text color="$muted">{exchange.content}</Text>
+        <Text> </Text>
       </Box>
     )
   }
@@ -211,40 +218,54 @@ export function ExchangeItem({
           {"❯"}{" "}
         </Text>
         <Box flexShrink={1}>
-          <Text>{exchange.content}</Text>
+          <Text backgroundColor="$muted-bg">{exchange.content}</Text>
         </Box>
       </Box>
     )
   }
 
-  const outlineColor = "$border"
-  const icon = "◆"
-  const name = "Agent"
   const phase = isLatest ? streamPhase : "done"
   const fraction = isLatest ? revealFraction : 1
 
-  const tokenBadge = exchange.tokens && phase === "done" ? `${formatTokens(exchange.tokens.output)} tokens` : ""
-
   const toolCalls = exchange.toolCalls ?? []
   const toolRevealCount = phase === "tools" || phase === "done" ? toolCalls.length : 0
+  const hasOperations = toolCalls.length > 0 || !!exchange.thinking
+
+  // Metadata: token count + thought indicator
+  const metaParts: string[] = []
+  if (exchange.tokens && phase === "done") metaParts.push(`${formatTokens(exchange.tokens.output)} tokens`)
+  if (exchange.thinking && (phase === "done" || phase === "streaming")) metaParts.push("thought for 1s")
+  const metaStr = metaParts.length > 0 ? ` (${metaParts.join(" · ")})` : ""
+
+  // Split content into title (first sentence) and body (rest)
+  const { title, body } = splitTitleBody(exchange.content)
+
+  const bulletColor = hasOperations ? "$success" : "$muted"
+  const contentText = hasOperations ? body : exchange.content
 
   return (
     <Box flexDirection="column">
       <Text>
-        <Text bold color="$success" dimColor={!pulse && phase !== "done"}>
-          {icon}
+        <Text bold color={bulletColor} dimColor={hasOperations && !pulse && phase !== "done"}>
+          {"●"}
         </Text>
-        <Text bold color="$success">
-          {" "}
-          {name}
-          {tokenBadge ? ` · ${tokenBadge}` : ""}
-        </Text>
+        {phase === "thinking" ? (
+          <Text color="$muted" italic>
+            {" "}
+            <Spinner type="dots" /> thinking
+          </Text>
+        ) : (
+          <>
+            {hasOperations && title && <Text> {title}</Text>}
+            <Text color="$muted">{metaStr}</Text>
+          </>
+        )}
       </Text>
 
       <Box
         flexDirection="column"
         borderStyle="bold"
-        borderColor={outlineColor}
+        borderColor="$border"
         borderLeft
         borderRight={false}
         borderTop={false}
@@ -255,9 +276,9 @@ export function ExchangeItem({
           <ThinkingBlock text={exchange.thinking} done={phase !== "thinking"} />
         )}
 
-        {(phase === "streaming" || phase === "tools" || phase === "done") && (
+        {(phase === "streaming" || phase === "tools" || phase === "done") && contentText && (
           <StreamingText
-            fullText={exchange.content}
+            fullText={contentText}
             revealFraction={phase === "streaming" ? fraction : 1}
             showCursor={phase === "streaming" && fraction < 1}
           />

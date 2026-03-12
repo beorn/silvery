@@ -12,6 +12,8 @@
  *
  * Controls:
  *   j/k or arrows  - Navigate examples
+ *   Ctrl+K          - Command palette (switch examples)
+ *   s               - Settings (theme picker)
  *   Tab             - Toggle View / Source tab
  *   Enter           - Run selected example standalone
  *   q/Escape        - Quit
@@ -27,16 +29,19 @@ import {
   Text,
   Spacer,
   ThemeProvider,
-  useTheme,
-  ansi16DarkTheme,
   builtinThemes,
   useInput,
   useApp,
   useContentRect,
   createTerm,
+  PickerDialog,
   type Key,
   type Theme,
 } from "../src/index.js"
+
+// Ctrl+K is the universal command palette shortcut in terminals
+// (Cmd+K requires Kitty protocol which isn't always available)
+const MOD_KEY = "Ctrl"
 
 // =============================================================================
 // Auto-Discovery
@@ -79,13 +84,16 @@ async function discoverExamples(): Promise<Example[]> {
 
   for (const dir of CATEGORY_DIRS) {
     const category = CATEGORY_DISPLAY[dir] ?? dir.charAt(0).toUpperCase() + dir.slice(1)
-    const glob = new Bun.Glob("*.tsx")
     const dirPath = resolve(baseDir, dir)
+    const files = [
+      ...new Bun.Glob("*.tsx").scanSync({ cwd: dirPath }),
+      ...new Bun.Glob("*/index.tsx").scanSync({ cwd: dirPath }),
+    ]
 
-    for (const file of glob.scanSync({ cwd: dirPath })) {
+    for (const file of files) {
       try {
         const mod = await import(resolve(dirPath, file))
-        if (!mod.meta?.name) continue
+        if (!mod.meta?.name || !mod.meta?.demo) continue
 
         // Find first exported function that isn't meta or default
         let component: string | undefined
@@ -395,12 +403,17 @@ function SourceCode({ example }: { example: Example }) {
 
 const THEME_NAMES = Object.keys(builtinThemes)
 
+type Dialog = "none" | "command-palette" | "settings"
+
 function Viewer({ examples }: { examples: Example[] }) {
   const { exit } = useApp()
   const [cursor, setCursor] = useState(0)
   const [tab, setTab] = useState<"view" | "source">("view")
   const [running, setRunning] = useState<string | null>(null)
   const [themeIdx, setThemeIdx] = useState(THEME_NAMES.indexOf("ansi16-dark"))
+  const [dialog, setDialog] = useState<Dialog>("none")
+  const [paletteQuery, setPaletteQuery] = useState("")
+  const [themeQuery, setThemeQuery] = useState("")
 
   const theme = builtinThemes[THEME_NAMES[themeIdx]!]!
   const maxCursor = examples.length - 1
@@ -423,11 +436,32 @@ function Viewer({ examples }: { examples: Example[] }) {
     [examples, exit, theme.name],
   )
 
+  // --- Command palette items ---
+  const paletteItems = useMemo(() => {
+    const q = paletteQuery.toLowerCase()
+    return examples
+      .map((ex, idx) => ({ ...ex, idx }))
+      .filter((ex) => !q || ex.name.toLowerCase().includes(q) || ex.category.toLowerCase().includes(q))
+  }, [examples, paletteQuery])
+
+  // --- Theme picker items ---
+  const themeItems = useMemo(() => {
+    const q = themeQuery.toLowerCase()
+    return THEME_NAMES.filter((name) => !q || name.toLowerCase().includes(q))
+  }, [themeQuery])
+
   useInput((input: string, key: Key) => {
-    if (running) return
+    if (running || dialog !== "none") return
 
     if (input === "q" || key.escape) {
       exit()
+      return
+    }
+
+    // Ctrl+K — command palette
+    if (input === "k" && key.ctrl) {
+      setPaletteQuery("")
+      setDialog("command-palette")
       return
     }
 
@@ -451,8 +485,9 @@ function Viewer({ examples }: { examples: Example[] }) {
     if (key.return) {
       runExample(cursor)
     }
-    if (input === "t") {
-      setThemeIdx((i) => (i + 1) % THEME_NAMES.length)
+    if (input === "s") {
+      setThemeQuery("")
+      setDialog("settings")
     }
   })
 
@@ -466,7 +501,8 @@ function Viewer({ examples }: { examples: Example[] }) {
     )
   }
 
-  const runLabel = selected.category === "Inline" || selected.category === "Runtime" ? "run" : "run interactive"
+  // Derive URL key from file path (e.g., "interactive/kanban.tsx" → "kanban")
+  const exampleKey = selected.file.replace(/^.*\//, "").replace(/\.tsx$/, "")
 
   return (
     <ThemeProvider theme={theme}>
@@ -508,6 +544,9 @@ function Viewer({ examples }: { examples: Example[] }) {
                   {selected.features.join(" · ")}
                 </Text>
               )}
+              <Text color="$muted" dim wrap="truncate">
+                silvery.dev/examples/{exampleKey}
+              </Text>
             </Box>
 
             {/* Tab bar */}
@@ -516,7 +555,7 @@ function Viewer({ examples }: { examples: Example[] }) {
                 <Text bold={tab === "view"} color={tab === "view" ? "$primary" : "$muted"}>
                   View
                 </Text>
-                <Text color="$border"> │ </Text>
+                <Text color="$border"> | </Text>
                 <Text bold={tab === "source"} color={tab === "source" ? "$primary" : "$muted"}>
                   Source
                 </Text>
@@ -537,10 +576,64 @@ function Viewer({ examples }: { examples: Example[] }) {
         {/* Bottom bar */}
         <Box paddingX={1}>
           <Text color="$muted">
-            <Text bold>j</Text>/<Text bold>k</Text> navigate <Text bold>Tab</Text> {tab === "view" ? "source" : "view"}{" "}
-            <Text bold>Enter</Text> {runLabel} <Text bold>t</Text> theme <Text bold>q</Text> quit
+            <Text bold>{MOD_KEY}-K</Text> switch <Text bold>s</Text> settings <Text bold>Tab</Text>{" "}
+            {tab === "view" ? "source" : "view"} <Text bold>Enter</Text> run <Text bold>q</Text> quit
           </Text>
         </Box>
+
+        {/* Command palette (Cmd-K) */}
+        {dialog === "command-palette" && (
+          <PickerDialog
+            title="Switch Example"
+            placeholder="Type to search..."
+            items={paletteItems}
+            renderItem={(item, sel) => (
+              <Text color={sel ? "$primary" : "$text"} bold={sel}>
+                <Text color="$muted" dim>
+                  {item.category}
+                  {" / "}
+                </Text>
+                {item.name}
+              </Text>
+            )}
+            keyExtractor={(item) => item.file}
+            onSelect={(item) => {
+              setCursor(item.idx)
+              setDialog("none")
+            }}
+            onCancel={() => setDialog("none")}
+            onChange={setPaletteQuery}
+          />
+        )}
+
+        {/* Settings / theme picker (s key) */}
+        {dialog === "settings" && (
+          <PickerDialog
+            title="Theme"
+            placeholder="Type to filter themes..."
+            items={themeItems}
+            renderItem={(name, sel) => {
+              const t = builtinThemes[name]!
+              return (
+                <Text color={sel ? "$primary" : "$text"} bold={sel}>
+                  {name === THEME_NAMES[themeIdx] ? "* " : "  "}
+                  {name}
+                  <Text color="$muted" dim>
+                    {" "}
+                    {t.dark ? "dark" : "light"}
+                  </Text>
+                </Text>
+              )
+            }}
+            keyExtractor={(name) => name}
+            onSelect={(name) => {
+              setThemeIdx(THEME_NAMES.indexOf(name))
+              setDialog("none")
+            }}
+            onCancel={() => setDialog("none")}
+            onChange={setThemeQuery}
+          />
+        )}
       </Box>
     </ThemeProvider>
   )

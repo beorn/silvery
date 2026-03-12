@@ -22,7 +22,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from "react"
-import { Box, Text, Kbd, Muted, Divider, VirtualList, useContentRect } from "../../src/index.js"
+import { Box, Text, Strong, Kbd, Muted, Divider, VirtualList, useContentRect } from "../../src/index.js"
 import { run, useInput, type Key } from "@silvery/term/runtime"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
@@ -232,18 +232,14 @@ function ScrollIndicator({ current, total, width }: { current: number; total: nu
 
   return (
     <Box gap={2} paddingX={1}>
-      <Text bold color="$primary">
-        {(current + 1).toLocaleString()}
-      </Text>
+      <Strong color="$primary">{(current + 1).toLocaleString()}</Strong>
       <Text dim>of</Text>
-      <Text bold>{total.toLocaleString()}</Text>
+      <Strong>{total.toLocaleString()}</Strong>
       <Text>
         <Text color="$primary">{"█".repeat(filled)}</Text>
         <Text dim>{"░".repeat(empty)}</Text>
       </Text>
-      <Text bold color="$primary">
-        {percent}%
-      </Text>
+      <Strong color="$primary">{percent}%</Strong>
     </Box>
   )
 }
@@ -273,12 +269,8 @@ function StatsBar({ items }: { items: Item[] }): JSX.Element {
 
   return (
     <Box gap={2} paddingX={1}>
-      <Text color="$error" bold>
-        P0:{stats.p0}
-      </Text>
-      <Text color="$warning" bold>
-        P1:{stats.p1}
-      </Text>
+      <Strong color="$error">P0:{stats.p0}</Strong>
+      <Strong color="$warning">P1:{stats.p1}</Strong>
       <Text color="$info">P2:{stats.p2}</Text>
       <Text dim>P3:{stats.p3}</Text>
       <Text dim>|</Text>

@@ -9,7 +9,7 @@ import React from "react"
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
 import { renderToXterm } from "@silvery/term/xterm/index.ts"
-import { SHOWCASES, emitMouse, setTermFocused } from "./showcases/index.js"
+import { SHOWCASES } from "./showcases/index.js"
 
 // Read demo name from URL params
 const params = new URLSearchParams(window.location.search)
@@ -64,10 +64,7 @@ if (!ShowcaseComponent) {
     fitAddon.fit()
 
     const instance = renderToXterm(<ShowcaseComponent />, term, {
-      input: {
-        onMouse: ({ x, y, button }) => emitMouse(x, y, button),
-        onFocus: (focused) => setTermFocused(focused),
-      },
+      input: true, // enables useInput, useMouse, useTerminalFocused
       handleFocusCycling: false, // showcases handle Tab/Escape themselves
     })
 

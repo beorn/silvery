@@ -15,7 +15,20 @@
  */
 
 import React, { useState } from "react"
-import { render, Box, Text, Kbd, Muted, Lead, useInput, useApp, createTerm, type Key } from "../../src/index.js"
+import {
+  render,
+  Box,
+  Text,
+  H1,
+  Small,
+  Kbd,
+  Muted,
+  Lead,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -68,18 +81,16 @@ function PasteEventCard({ event, isLatest }: { event: PasteEvent; isLatest: bool
       marginBottom={0}
     >
       <Box justifyContent="space-between">
-        <Text bold color={isLatest ? "$primary" : "white"}>
-          Paste #{event.id}
-        </Text>
-        <Text dim>{event.timestamp}</Text>
+        <H1 color={isLatest ? "$primary" : "white"}>Paste #{event.id}</H1>
+        <Small>{event.timestamp}</Small>
       </Box>
       <Box gap={2}>
-        <Text dim>
+        <Small>
           {event.charCount} char{event.charCount !== 1 ? "s" : ""}
-        </Text>
-        <Text dim>
+        </Small>
+        <Small>
           {event.lineCount} line{event.lineCount !== 1 ? "s" : ""}
-        </Text>
+        </Small>
       </Box>
       <Box marginTop={1}>
         <Text color="yellow">{displayText}</Text>
@@ -141,13 +152,11 @@ export function PasteDemo(): JSX.Element {
 
       <Box flexDirection="column" borderStyle="round" borderColor="$primary" paddingX={1}>
         <Box marginBottom={1}>
-          <Text bold color="$primary">
-            Paste History
-          </Text>
-          <Text dim>
+          <H1>Paste History</H1>
+          <Small>
             {" "}
             — {pasteHistory.length} event{pasteHistory.length !== 1 ? "s" : ""}
-          </Text>
+          </Small>
         </Box>
 
         {pasteHistory.length === 0 ? (

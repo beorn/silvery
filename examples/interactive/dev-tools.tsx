@@ -33,6 +33,7 @@ import {
   useApp,
   createTerm,
   H1,
+  Strong,
   Kbd,
   Muted,
   type Key,
@@ -181,11 +182,9 @@ function LogRow({ entry, isSelected }: { entry: LogEntry; isSelected: boolean })
 
   return (
     <Box paddingX={1} backgroundColor={isSelected ? "$primary" : undefined}>
-      <Text color="$muted">{formatTime(entry.timestamp)} </Text>
-      <Text color={color} bold>
-        {badge}
-      </Text>
-      <Text color="$muted"> [{entry.source.padEnd(9)}] </Text>
+      <Muted>{formatTime(entry.timestamp)} </Muted>
+      <Strong color={color}>{badge}</Strong>
+      <Muted> [{entry.source.padEnd(9)}] </Muted>
       <Text>{entry.message}</Text>
     </Box>
   )
@@ -200,18 +199,18 @@ function LevelCounts({ entries }: { entries: LogEntry[] }): JSX.Element {
 
   return (
     <Box gap={2}>
-      <Text color="$muted" bold>
+      <Strong color="$muted">
         {LEVEL_BADGES.DEBUG}:{counts.DEBUG}
-      </Text>
-      <Text color="$primary" bold>
+      </Strong>
+      <Strong color="$primary">
         {LEVEL_BADGES.INFO}:{counts.INFO}
-      </Text>
-      <Text color="$warning" bold>
+      </Strong>
+      <Strong color="$warning">
         {LEVEL_BADGES.WARN}:{counts.WARN}
-      </Text>
-      <Text color="$error" bold>
+      </Strong>
+      <Strong color="$error">
         {LEVEL_BADGES.ERROR}:{counts.ERROR}
-      </Text>
+      </Strong>
     </Box>
   )
 }
@@ -329,10 +328,8 @@ export function DevTools(): JSX.Element {
           <LevelCounts entries={entries} />
         </Box>
         <Box gap={1}>
-          <Text bold color="$primary">
-            {cursor + 1}
-          </Text>
-          <Text color="$muted">/ {entries.length}</Text>
+          <Strong color="$primary">{cursor + 1}</Strong>
+          <Muted>/ {entries.length}</Muted>
           {autoScroll && (
             <Text color="$success" bold>
               {" "}

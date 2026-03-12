@@ -19,7 +19,7 @@
  */
 
 import React from "react"
-import { Box, Text, Kbd, Muted, useContentRect } from "../../src/index.js"
+import { Box, Text, H1, H3, Kbd, Muted, Small, useContentRect } from "../../src/index.js"
 import { run, useInput, type Key } from "@silvery/term/runtime"
 import { useCallback } from "react"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
@@ -107,10 +107,8 @@ function MetricCard({ card, compact }: { card: CardData; compact: boolean }): JS
     // Minimal: single-line card for narrow terminals
     return (
       <Box borderStyle="round" borderColor={card.color} paddingX={1} flexDirection="row" justifyContent="space-between">
-        <Text bold color={card.color}>
-          {card.title}
-        </Text>
-        <Text bold>{card.value}</Text>
+        <H1 color={card.color}>{card.title}</H1>
+        <H3>{card.value}</H3>
       </Box>
     )
   }
@@ -119,15 +117,11 @@ function MetricCard({ card, compact }: { card: CardData; compact: boolean }): JS
   return (
     <Box borderStyle="round" borderColor={card.color} paddingX={1} flexDirection="column" flexGrow={1}>
       <Box justifyContent="space-between">
-        <Text bold color={card.color}>
-          {card.title}
-        </Text>
-        <Text bold color={card.color}>
-          {card.value}
-        </Text>
+        <H1 color={card.color}>{card.title}</H1>
+        <H1 color={card.color}>{card.value}</H1>
       </Box>
       <Text color={card.color}>{card.sparkline}</Text>
-      <Text dim>{card.detail}</Text>
+      <Small>{card.detail}</Small>
     </Box>
   )
 }
@@ -218,9 +212,7 @@ function CodeSnippet({ width }: { width: number }): JSX.Element {
 
   return (
     <Box flexDirection="column" borderStyle="single" borderColor="$border" paddingX={1}>
-      <Text bold color="yellow">
-        How it works:
-      </Text>
+      <H1 color="yellow">How it works:</H1>
       <Text color="gray">
         {"  "}
         <Text color="magenta">const</Text> {"{"} width {"}"} = <Text color="cyan">useContentRect</Text>()

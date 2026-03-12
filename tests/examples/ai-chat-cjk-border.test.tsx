@@ -15,7 +15,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
-import { CodingAgent, type ScriptEntry } from "../../examples/interactive/ai-chat"
+import { AIChat, type ScriptEntry } from "../../examples/interactive/aichat/index"
 
 const settle = (ms = 300) => new Promise((r) => setTimeout(r, ms))
 
@@ -73,7 +73,7 @@ describe("CJK + emoji border integrity", () => {
   test("user message with CJK text does not crop agent box border", async () => {
     // Use a width where the CJK message wraps to 2 lines
     term = createTermless({ cols: 100, rows: 30 })
-    handle = await run(<CodingAgent script={CJK_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={CJK_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
 
     const screen = term.screen!
@@ -93,7 +93,7 @@ describe("CJK + emoji border integrity", () => {
   test("agent box border after CJK user message at narrow width", async () => {
     // Narrow width forces more wrapping
     term = createTermless({ cols: 80, rows: 30 })
-    handle = await run(<CodingAgent script={CJK_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={CJK_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
 
     const text = term.screen!.getText()
@@ -103,7 +103,7 @@ describe("CJK + emoji border integrity", () => {
   test("after Enter, boxes remain intact with inline mode", async () => {
     // Run in inline-like conditions (narrower width, more content)
     term = createTermless({ cols: 100, rows: 30 })
-    handle = await run(<CodingAgent script={CJK_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={CJK_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
 
     // Press Enter to advance past the CJK user message

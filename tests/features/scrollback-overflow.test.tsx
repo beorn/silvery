@@ -362,10 +362,10 @@ describe("scrollback chaos invariants", () => {
 })
 
 // ============================================================================
-// Real CodingAgent tests with shell prompt pre-population
+// Real AIChat tests with shell prompt pre-population
 // ============================================================================
 
-describe("CodingAgent inline scrollback with shell prompt", () => {
+describe("AIChat inline scrollback with shell prompt", () => {
   let term: Term
   let handle: RunHandle
 
@@ -377,7 +377,7 @@ describe("CodingAgent inline scrollback with shell prompt", () => {
     dims: { cols: number; rows: number } = { cols: 120, rows: 40 },
     shellLines: number = 5,
   ) {
-    const { CodingAgent, SCRIPT } = await import("../../examples/interactive/ai-chat")
+    const { AIChat, SCRIPT } = await import("../../examples/interactive/aichat/index")
     term = createTermless(dims)
     const emulator = (term as unknown as Record<string, unknown>)._emulator as {
       feed(data: string): void
@@ -387,9 +387,9 @@ describe("CodingAgent inline scrollback with shell prompt", () => {
     for (let i = 0; i < shellLines; i++) {
       emulator.feed(`shell-line-${i}\r\n`)
     }
-    emulator.feed("$ bun run examples/interactive/ai-chat.tsx\r\n")
+    emulator.feed("$ bun run examples/interactive/aichat/index.tsx\r\n")
 
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, {
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, {
       mode: "inline",
       writable: { write: (s: string) => emulator.feed(s) },
       cols: dims.cols,

@@ -136,7 +136,7 @@ import { H1, H2, H3, Muted, Small, Lead, Code, Blockquote, P, LI } from "silvery
 Zero color props — the presets handle it. This is the easiest way to get correct hierarchy.
 :::
 
-→ [Text reference](/api/text) · [Theme tokens](/reference/theming#token-reference)
+→ [Typography reference](/components/typography) · [Text reference](/api/text) · [Theme tokens](/reference/theming#token-reference)
 
 ## 3. Use Tokens for Meaning, Not Decoration
 

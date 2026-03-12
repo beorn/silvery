@@ -15,6 +15,7 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 export const meta: ExampleMeta = {
   name: "Kanban Board",
   description: "3-column kanban with card movement and independent scroll",
+  demo: true,
   features: ["Box flexDirection", "useInput", "backgroundColor", "multi-column layout"],
 }
 

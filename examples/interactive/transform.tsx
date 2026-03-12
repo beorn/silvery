@@ -14,7 +14,20 @@
  */
 
 import React, { useState } from "react"
-import { render, Box, Text, Kbd, Muted, Transform, useInput, useApp, createTerm, type Key } from "../../src/index.js"
+import {
+  render,
+  Box,
+  Text,
+  H1,
+  Small,
+  Kbd,
+  Muted,
+  Transform,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -158,9 +171,7 @@ function TextPanel({
   return (
     <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1}>
       <Box marginBottom={1}>
-        <Text bold color={titleColor}>
-          {title}
-        </Text>
+        <H1 color={titleColor}>{title}</H1>
       </Box>
       {children}
     </Box>
@@ -192,12 +203,10 @@ export function TransformDemo(): JSX.Element {
       {/* Transform selector */}
       <Box flexDirection="column" borderStyle="round" borderColor="$primary" paddingX={1}>
         <Box marginBottom={1} gap={1}>
-          <Text bold color="$primary">
-            Transform
-          </Text>
-          <Text dim>
+          <H1>Transform</H1>
+          <Small>
             — {current.name}: {current.description}
-          </Text>
+          </Small>
         </Box>
         <TransformSelector current={currentIndex} transforms={transforms} />
       </Box>

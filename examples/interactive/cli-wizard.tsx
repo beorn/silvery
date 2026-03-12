@@ -41,6 +41,7 @@ import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 export const meta: ExampleMeta = {
   name: "CLI Wizard",
   description: "Multi-step project scaffolding wizard with selection, input, and progress",
+  demo: true,
   features: ["SelectList", "TextInput", "ProgressBar", "Spinner", "useInput()"],
 }
 
@@ -170,7 +171,7 @@ function InstallStep({ progress, stepIndex }: { progress: number; stepIndex: num
         <ProgressBar value={progress} color="$primary" label="" />
       </Box>
 
-      <Text color="$muted">{currentStep}</Text>
+      <Muted>{currentStep}</Muted>
     </Box>
   )
 }

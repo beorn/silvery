@@ -17,7 +17,7 @@ import "@termless/test/matchers"
 import type { Term } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
 import { Box, Text } from "../../packages/react/src/index"
-import { CodingAgent, SCRIPT, type ScriptEntry } from "../../examples/interactive/ai-chat"
+import { AIChat, SCRIPT, type ScriptEntry } from "../../examples/interactive/aichat/index"
 
 const settle = (ms = 200) => new Promise((r) => setTimeout(r, ms))
 
@@ -72,7 +72,7 @@ describe("bug 1: timer renders without keypress", () => {
     ]
 
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(300)
 
     // Status bar should show 0:00 initially
@@ -101,7 +101,7 @@ describe("bug 2: intro text visible at start", () => {
   test("header/intro text is visible before first advance", async () => {
     term = createTermless({ cols: 120, rows: 40 })
     // Don't use fastMode to see the initial state more clearly
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={false} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={false} />, term)
 
     // The header should be visible in the first frame
     // (advance() runs on mount via useEffect, but the initial render should show the header)
@@ -146,7 +146,7 @@ describe("bug 3: session complete behavior", () => {
     ]
 
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={TINY_SCRIPT} autoStart={true} fastMode={true} />, term)
+    handle = await run(<AIChat script={TINY_SCRIPT} autoStart={true} fastMode={true} />, term)
 
     // Fast+auto mode chains through everything immediately and sets done
     await settle(500)

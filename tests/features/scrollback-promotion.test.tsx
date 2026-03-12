@@ -2,7 +2,7 @@
  * Scrollback promotion — verifies box borders survive promotion to terminal scrollback
  * and that the screen is never blank after Enter presses.
  *
- * Uses the CodingAgent example to trigger scrollback promotion via repeated Enter presses.
+ * Uses the AIChat example to trigger scrollback promotion via repeated Enter presses.
  * Tests the km-7dfxf bug: last promoted box's ╰ bottom border gets truncated.
  * Tests blank-screen-on-Enter bug: screen goes blank after promotion.
  */
@@ -13,7 +13,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
-import { CodingAgent, SCRIPT } from "../../examples/interactive/ai-chat"
+import { AIChat, SCRIPT } from "../../examples/interactive/aichat/index"
 
 describe("scrollback promotion: border preservation", () => {
   let term: Term
@@ -25,7 +25,7 @@ describe("scrollback promotion: border preservation", () => {
 
   test("fully promoted boxes retain all border characters", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     // With fastMode chaining, each Enter advances through an entire user turn
     // plus all following agent entries. Need enough presses to overflow 40 rows.
@@ -46,7 +46,7 @@ describe("scrollback promotion: border preservation", () => {
 
   test("promoted boxes on screen retain ╰ bottom border before entering scrollback", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     // 4 presses: promoted boxes may still be on-screen (not yet scrolled into scrollback).
     // Whether on-screen or in scrollback, ╰ must be present.
@@ -85,7 +85,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
     // Use a small terminal (24 rows) to trigger the issue sooner —
     // content fills the screen faster, making promotion happen earlier.
     term = createTermless({ cols: 120, rows: 24 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     // Initial render should have content
     expect(screenHasContent(term.screen!)).toBe(true)
@@ -114,7 +114,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
   test("screen is never blank after Enter presses (very small terminal)", async () => {
     // Even smaller terminal to exacerbate the issue
     term = createTermless({ cols: 80, rows: 16 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     expect(screenHasContent(term.screen!)).toBe(true)
 
@@ -131,7 +131,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
     // Track non-blank line count across presses.
     // A "blank screen" manifests as a sudden drop in non-blank lines.
     term = createTermless({ cols: 120, rows: 24 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     let prevNonBlank = 0
     const lines0 = term.screen!.getLines()
@@ -161,7 +161,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
     // The bug manifests as live content being pushed off-screen or the cursor
     // being at the wrong position, leaving visible area blank.
     term = createTermless({ cols: 120, rows: 20 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     for (let i = 0; i < 10; i++) {
       await handle.press("Enter")
@@ -183,7 +183,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
 
   test("dump screen state at each step for debugging", async () => {
     term = createTermless({ cols: 80, rows: 12 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     const snapshots: string[] = []
     const snapshot = (label: string) => {
@@ -217,7 +217,7 @@ describe("scrollback promotion: no blank screen on Enter", () => {
     // The screen should not show content crammed into just 2-3 lines with
     // the rest blank. Verify that the non-blank content area is reasonable.
     term = createTermless({ cols: 120, rows: 24 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     // Advance to a point where promotion has happened
     for (let i = 0; i < 4; i++) {

@@ -19,7 +19,7 @@ import { createTermless } from "@silvery/test"
 import "@termless/test/matchers"
 import type { Term } from "../../packages/term/src/ansi/term"
 import { run, type RunHandle } from "../../packages/term/src/runtime/run"
-import { CodingAgent, SCRIPT, type ScriptEntry } from "../../examples/interactive/ai-chat"
+import { AIChat, SCRIPT, type ScriptEntry } from "../../examples/interactive/aichat/index"
 
 // ============================================================================
 // Short script for testing — structured to test advancement behavior
@@ -63,7 +63,7 @@ describe("bug 1: input box position stability", () => {
 
   test("header persists after first exchange appears", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
 
     // After mount + auto-advance, both header and first exchange visible
     await settle()
@@ -76,7 +76,7 @@ describe("bug 1: input box position stability", () => {
   test("header and exchanges coexist", async () => {
     term = createTermless({ cols: 120, rows: 40 })
 
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle()
 
     const text = term.screen!.getText()
@@ -86,7 +86,7 @@ describe("bug 1: input box position stability", () => {
 
   test("exchanges work after header", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle()
 
     // After first advance, both header and first exchange should be visible
@@ -109,7 +109,7 @@ describe("bug 2: ctrl-d exit feedback", () => {
 
   test("first ctrl-d shows exit hint in placeholder", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle()
 
     // First Ctrl-D — should show exit hint
@@ -122,7 +122,7 @@ describe("bug 2: ctrl-d exit feedback", () => {
 
   test("double ctrl-d exits the app", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle()
 
     await handle.press("ctrl+d")
@@ -137,7 +137,7 @@ describe("bug 2: ctrl-d exit feedback", () => {
 
   test("exit hint clears on next non-ctrl-d keypress", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle()
 
     // First Ctrl-D — show hint
@@ -167,7 +167,7 @@ describe("bug 3: unintuitive advancement", () => {
 
   test("agent turns auto-advance until next user turn", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
 
     // Wait for auto-advance to chain through agent entries
     await settle(1500)
@@ -181,7 +181,7 @@ describe("bug 3: unintuitive advancement", () => {
 
   test("Enter on empty input submits placeholder (next scripted message)", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
 
     // Get screen state before — should show entries up to "Fixed it."
@@ -200,7 +200,7 @@ describe("bug 3: unintuitive advancement", () => {
 
   test("submitting typed text adds user message to exchanges", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
 
     // At user turn -- "Fixed it." should be visible from agent chain
@@ -220,7 +220,7 @@ describe("bug 3: unintuitive advancement", () => {
 
   test("right-arrow does not advance script", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
 
     // At user turn, should show "Fixed it" from agent
@@ -237,7 +237,7 @@ describe("bug 3: unintuitive advancement", () => {
 
   test("ctrl-d does not advance script", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
 
     const before = term.screen!.getText()
@@ -266,7 +266,7 @@ describe("bug 4: agent turn box bottom border", () => {
 
   test("agent box has complete border (top and bottom)", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(300)
 
     const lines = term.screen!.getLines()
@@ -287,7 +287,7 @@ describe("bug 4: agent turn box bottom border", () => {
   test("agent box bottom border is not cropped by terminal height", async () => {
     // Use a smaller terminal to force content near the bottom
     term = createTermless({ cols: 100, rows: 25 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
 
     const lines = term.screen!.getLines()
@@ -309,7 +309,7 @@ describe("bug 4: agent turn box bottom border", () => {
 
   test("visible agent boxes always have matching top and bottom borders", async () => {
     term = createTermless({ cols: 100, rows: 30 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(300)
 
     const lines = term.screen!.getLines()
@@ -338,7 +338,7 @@ describe("bug 5: status bar text", () => {
 
   test("scrollbackcontext never appears as concatenated text", async () => {
     term = createTermless({ cols: 120, rows: 30 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     // Advance several times to trigger frozen items
     for (let i = 0; i < 4; i++) {
@@ -357,7 +357,7 @@ describe("bug 5: status bar text", () => {
 
   test("status bar uses visual separator between scrollback count and context bar", async () => {
     term = createTermless({ cols: 120, rows: 30 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     // Advance to trigger frozen items
     for (let i = 0; i < 4; i++) {
@@ -381,7 +381,7 @@ describe("bug 5: status bar text", () => {
 
   test("status bar with frozen items at narrow width", async () => {
     term = createTermless({ cols: 80, rows: 25 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
 
     // Advance to trigger frozen items
     for (let i = 0; i < 6; i++) {
@@ -413,7 +413,7 @@ describe("bug 6: compaction does not end session prematurely", () => {
   test("ctrl-l compaction in manual mode does not set done", async () => {
     term = createTermless({ cols: 120, rows: 40 })
     // fastMode uses 300ms compaction timeout instead of 3000ms
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
 
     // Advance a few times to create content
@@ -438,7 +438,7 @@ describe("bug 6: compaction does not end session prematurely", () => {
 
   test("ctrl-l compaction continues advancing after completion", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
 
     // Advance to create some content
@@ -478,7 +478,7 @@ describe("bug 7: intro text visibility", () => {
   test("intro text is visible immediately on mount (before auto-advance)", async () => {
     // Use non-fast mode so the intro has time to show (1500ms delay)
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={false} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={false} />, term)
 
     // Check immediately (before the 1500ms auto-advance fires)
     await settle(100)
@@ -489,7 +489,7 @@ describe("bug 7: intro text visibility", () => {
 
   test("intro text persists after first exchange appears", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SCRIPT} autoStart={false} fastMode={false} />, term)
+    handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={false} />, term)
 
     // Wait for auto-advance to fire (1500ms delay + render)
     await settle(2000)
@@ -516,7 +516,7 @@ describe("bug 8: focus border color", () => {
 
   test("input box has a visible border", async () => {
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<AIChat script={SHORT_SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle()
 
     const lines = term.screen!.getLines()

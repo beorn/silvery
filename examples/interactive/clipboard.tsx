@@ -19,6 +19,8 @@ import {
   render,
   Box,
   Text,
+  H1,
+  Small,
   Kbd,
   Muted,
   Lead,
@@ -69,10 +71,7 @@ function ListItem({ item, isSelected }: { item: (typeof allItems)[0]; isSelected
         {isSelected ? " > " : "   "}
         {item.value}
       </Text>
-      <Text dim color="$muted">
-        {" "}
-        ({item.category})
-      </Text>
+      <Small> ({item.category})</Small>
     </Box>
   )
 }
@@ -141,13 +140,11 @@ export function ClipboardDemo(): JSX.Element {
     <Box flexDirection="column" padding={1} gap={1}>
       <Box flexDirection="column" borderStyle="round" borderColor="$primary" paddingX={1}>
         <Box marginBottom={1}>
-          <Text bold color="$primary">
-            Items
-          </Text>
-          <Text dim>
+          <H1>Items</H1>
+          <Small>
             {" "}
             — {selectedIndex + 1}/{allItems.length}
-          </Text>
+          </Small>
         </Box>
         <Box flexDirection="column" overflow="scroll" scrollTo={selectedIndex} height={10}>
           {allItems.map((item, index) => (
