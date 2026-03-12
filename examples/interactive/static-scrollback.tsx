@@ -46,6 +46,7 @@ import {
   useScrollbackItem,
   TextInput,
   useTerminalFocused,
+  useTerm,
 } from "../../src/index.js"
 import { run, useInput, useExit, type Key } from "@silvery/term/runtime"
 import type { ExampleMeta } from "../_banner.js"
@@ -818,49 +819,54 @@ function ExchangeItem({
   const toolCalls = exchange.toolCalls ?? []
   const toolRevealCount = phase === "tools" || phase === "done" ? toolCalls.length : 0
 
+  // Border title line: ╭─ ◆ Agent · 624 tokens ─────────╮
+  const cols = useTerm((t) => t.cols)
+  const labelPad = ` ${borderTitle} `
+  const fillLen = Math.max(0, cols - labelPad.length - 4) // 4 = ╭─ + ─╮
+  const fill = "\u2500".repeat(fillLen)
+
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} paddingX={1}>
-      {/* Header: agent name + token badge — compact label style */}
-      <Text>
+    <Box flexDirection="column">
+      {/* Custom border-top with embedded label */}
+      <Text color={outlineColor}>
+        {"\u256D\u2500"}
         <Text bold color="$success" dimColor={!pulse && phase !== "done"}>
-          {borderTitle}
+          {labelPad}
         </Text>
+        <Text color={outlineColor}>{fill}{"\u256E"}</Text>
       </Text>
 
-      {/* Thinking block */}
-      {exchange.thinking && (phase === "thinking" || phase === "streaming") && (
-        <>
-          <Text> </Text>
+      <Box flexDirection="column" borderStyle="round" borderColor={outlineColor} borderTop={false} paddingX={1}>
+        {/* Thinking block */}
+        {exchange.thinking && (phase === "thinking" || phase === "streaming") && (
           <ThinkingBlock text={exchange.thinking} done={phase !== "thinking"} />
-        </>
-      )}
+        )}
 
-      {/* Agent content */}
-      {(phase === "streaming" || phase === "tools" || phase === "done") && (
-        <>
-          {/* Blank line before content (only when content exists) */}
-          {!exchange.thinking && <Text> </Text>}
-          <StreamingText
-            fullText={exchange.content}
-            revealFraction={phase === "streaming" ? fraction : 1}
-            showCursor={phase === "streaming" && fraction < 1}
-          />
-          <Text> </Text>
-        </>
-      )}
-
-      {/* Tool calls */}
-      {toolRevealCount > 0 && (
-        <Box flexDirection="column">
-          {toolCalls.map((call, i) => (
-            <ToolCallBlock
-              key={i}
-              call={call}
-              phase={phase === "done" ? "done" : i < toolRevealCount - 1 ? "done" : "running"}
+        {/* Agent content */}
+        {(phase === "streaming" || phase === "tools" || phase === "done") && (
+          <>
+            <StreamingText
+              fullText={exchange.content}
+              revealFraction={phase === "streaming" ? fraction : 1}
+              showCursor={phase === "streaming" && fraction < 1}
             />
-          ))}
-        </Box>
-      )}
+            <Text> </Text>
+          </>
+        )}
+
+        {/* Tool calls */}
+        {toolRevealCount > 0 && (
+          <Box flexDirection="column">
+            {toolCalls.map((call, i) => (
+              <ToolCallBlock
+                key={i}
+                call={call}
+                phase={phase === "done" ? "done" : i < toolRevealCount - 1 ? "done" : "running"}
+              />
+            ))}
+          </Box>
+        )}
+      </Box>
     </Box>
   )
 }
@@ -1478,16 +1484,22 @@ export function CodingAgent({
     }
     if (key.tab) {
       if (done || compacting) return
-      offScriptRef.current = true
       const currentText = footerControlRef.current.getText()
       if (currentText.trim()) {
         // Non-empty input: Tab acts like Enter — submit the text
         handleSubmit(currentText)
         footerControlRef.current.setText("")
       } else {
-        // Empty input: fill with random text for the user to review/submit
-        const cmd = RANDOM_USER_COMMANDS[Math.floor(Math.random() * RANDOM_USER_COMMANDS.length)]!
-        footerControlRef.current.setText(cmd)
+        // Empty input + placeholder: submit the placeholder (same as Enter)
+        // Empty input + no placeholder: fill with random text
+        if (nextUserMessage) {
+          handleSubmit(nextUserMessage)
+          footerControlRef.current.setText("")
+        } else {
+          offScriptRef.current = true
+          const cmd = RANDOM_USER_COMMANDS[Math.floor(Math.random() * RANDOM_USER_COMMANDS.length)]!
+          footerControlRef.current.setText(cmd)
+        }
       }
       return
     }
