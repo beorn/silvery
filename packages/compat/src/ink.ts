@@ -92,10 +92,12 @@ function resolveTerminalRows(): number {
 }
 
 /**
- * Context that signals style props should always be passed to silvery's Text,
- * even when chalk has no colors. This ensures buffer cells are styled so that
- * getContentEdge() can detect styled trailing spaces during trimming.
- * The render() path enables this; renderToString() does not.
+ * Context that signals style props should be passed to silvery's Text.
+ * When true (chalk has colors), Text passes all style props so buffer cells
+ * are styled for correct content edge detection and ANSI output.
+ * When false (chalk has no colors), Text strips style props to match Ink's
+ * behavior, while user-provided embedded ANSI sequences pass through.
+ * The render() path sets this to `chalkHasColors`; renderToString() does not use it.
  */
 const ForceStylesCtx = React.createContext(false)
 
@@ -249,9 +251,8 @@ export const Text = React.forwardRef<SilveryTextHandle, SilveryTextProps>(functi
   // Ink behavior. Ink uses chalk to apply styles, so chalk.level=0 means no
   // styles are applied. But embedded ANSI sequences in text content are preserved.
   //
-  // Exception: when ForceStylesCtx is true (render() path with buffer-based output),
-  // always pass style props so buffer cells are styled for content edge detection.
-  // processBuffer strips ANSI codes when chalk has no colors.
+  // ForceStylesCtx is true only when chalk has colors (render() path), so the
+  // forceStyles check here only forces style props when colors are active.
   const hasColors = currentChalkLevel() > 0
   const forceStyles = React.useContext(ForceStylesCtx)
   const passProps =
@@ -975,9 +976,10 @@ export function render(element: import("react").ReactNode, options?: Record<stri
   if (stdout) {
     // Always render with ANSI codes (plain=false) so that bufferToStyledText can
     // detect styled trailing spaces via content edge detection and ANSI reset codes.
-    // When ForceStylesCtx is true, the Text component passes style props even when
-    // chalk has no colors, so buffer cells are styled for correct trimming.
-    // processBuffer strips ANSI codes when chalk has no color support.
+    // When chalk has colors, ForceStylesCtx is true so Text passes style props for
+    // content edge detection. When chalk has no colors, ForceStylesCtx is false so
+    // Text strips its style props (matching Ink behavior), but user-provided embedded
+    // ANSI sequences are still preserved in the buffer and output.
     const plain = false
     const chalkHasColors = currentChalkLevel() > 0
 
@@ -1042,12 +1044,12 @@ export function render(element: import("react").ReactNode, options?: Record<stri
       // silvery's pipeline converts colon-format (38:2::R:G:B) to semicolon-format
       // (38;2;R;G;B) during rendering. This converts them back to match Ink's behavior.
       output = restoreColonFormatSGR(output)
-      // Strip ANSI when plain mode or when chalk has no colors. In no-color mode,
-      // ForceStylesCtx causes Text to pass style props for content edge detection,
-      // but the final output should not contain those ANSI codes.
-      // Note: this also strips embedded user ANSI sequences, which matches Ink's
-      // behavior — when chalk.level=0, Ink's chalk-based rendering strips all ANSI.
-      if (plain || !chalkHasColors) output = stripAnsi(output)
+      // Strip ANSI only when plain mode is forced. When chalk has no colors,
+      // Ink still preserves user-provided embedded ANSI sequences (SGR, OSC 8
+      // hyperlinks) in text content — only chalk-applied style props are stripped.
+      // ForceStylesCtx is false when !chalkHasColors, so the Text component
+      // already strips its own style props; the buffer only contains user ANSI.
+      if (plain) output = stripAnsi(output)
 
       // Trim buffer padding: keep only lines up to the root's layout content height.
       // The buffer is sized to the terminal (e.g., 24 rows), but layout content may
@@ -1151,7 +1153,7 @@ export function render(element: import("react").ReactNode, options?: Record<stri
 
       return React.createElement(
         ForceStylesCtx.Provider,
-        { value: true },
+        { value: chalkHasColors },
         React.createElement(
           SilveryErrorBoundary,
           null,
