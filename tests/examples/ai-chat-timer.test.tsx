@@ -146,18 +146,13 @@ describe("bug 3: session complete behavior", () => {
     ]
 
     term = createTermless({ cols: 120, rows: 40 })
-    handle = await run(<CodingAgent script={TINY_SCRIPT} autoStart={false} fastMode={true} />, term)
+    handle = await run(<CodingAgent script={TINY_SCRIPT} autoStart={true} fastMode={true} />, term)
 
-    // Fast mode chains through everything immediately
+    // Fast+auto mode chains through everything immediately and sets done
     await settle(500)
 
-    // After all entries consumed + compaction, "Session complete" should appear
-    // In manual mode, the auto-advance effect chains agent turns automatically
-    // and triggers final compaction
-    await settle(2000)
-
     const text = term.screen!.getText()
-    // Script is exhausted — should show done state
+    // Script is exhausted in auto mode — should show done state
     expect(text).toContain("Session complete")
   })
 })

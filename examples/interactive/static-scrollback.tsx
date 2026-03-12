@@ -124,12 +124,12 @@ const RANDOM_USER_COMMANDS = [
   "Refactor the database queries to use prepared statements.",
   "Add TypeScript strict mode and fix any errors.",
   "Set up CI/CD with GitHub Actions.",
-  "The search feature is slow \u2014 can you optimize it?",
+  "The search feature is slow — can you optimize it?",
   "Add dark mode support to the UI.",
   "We need input validation on the registration form.",
   "Create a migration script for the new schema.",
   "Add WebSocket support for real-time updates.",
-  "The CSV export is broken \u2014 dates are wrong.",
+  "The CSV export is broken — dates are wrong.",
 ]
 
 /** Random agent responses for Tab-injected turns. */
@@ -161,7 +161,7 @@ const URL_RE = /https?:\/\/[^\s)]+/g
 export const SCRIPT: ScriptEntry[] = [
   {
     role: "user",
-    content: "Fix the login bug in auth.ts \u2014 expired tokens throw instead of refreshing.",
+    content: "Fix the login bug in auth.ts — expired tokens throw instead of refreshing.",
     tokens: { input: 84, output: 0 },
   },
   {
@@ -189,7 +189,7 @@ export const SCRIPT: ScriptEntry[] = [
   {
     role: "agent",
     thinking:
-      "Found it \u2014 decoded.exp is in seconds (Unix timestamp) but Date.now() returns milliseconds. Every token appears expired because exp (e.g. 1700000000) is always less than Date.now() (e.g. 1700000000000). I need to divide Date.now() by 1000, and change the throw to a refresh call.",
+      "Found it — decoded.exp is in seconds (Unix timestamp) but Date.now() returns milliseconds. Every token appears expired because exp (e.g. 1700000000) is always less than Date.now() (e.g. 1700000000000). I need to divide Date.now() by 1000, and change the throw to a refresh call.",
     content: "Found it. The expiry check compares seconds (jwt.exp) to milliseconds (Date.now()). Fixing now.",
     toolCalls: [
       {
@@ -216,9 +216,9 @@ export const SCRIPT: ScriptEntry[] = [
         args: "bun test src/auth.test.ts",
         output: [
           "auth.test.ts",
-          "  \u2713 login with valid token (2ms)",
-          "  \u2713 login with expired token refreshes (3ms)",
-          "  \u2713 login with invalid token rejects (1ms)",
+          "  ✓ login with valid token (2ms)",
+          "  ✓ login with expired token refreshes (3ms)",
+          "  ✓ login with invalid token rejects (1ms)",
           "",
           "3 passed | 0 failed",
         ],
@@ -269,7 +269,7 @@ export const SCRIPT: ScriptEntry[] = [
   {
     role: "agent",
     thinking:
-      "Good \u2014 there's already a RateLimiter abstraction. I just need to create an instance with appropriate settings (5 attempts per 60s window seems reasonable for login) and wire it into the auth route as middleware.",
+      "Good — there's already a RateLimiter abstraction. I just need to create an instance with appropriate settings (5 attempts per 60s window seems reasonable for login) and wire it into the auth route as middleware.",
     content: "Good, there's already a rate limiter. I'll wire it into the auth route.",
     toolCalls: [
       {
@@ -314,14 +314,13 @@ export const SCRIPT: ScriptEntry[] = [
   },
   {
     role: "user",
-    content:
-      "Now add i18n support for error messages. We need \u65E5\u672C\u8A9E (Japanese) and Deutsch (German). \u{1F30D}",
+    content: "Now add i18n support for error messages. We need 日本語 (Japanese) and Deutsch (German). 🌍",
     tokens: { input: 146, output: 0 },
   },
   {
     role: "agent",
     thinking:
-      "i18n for error messages \u2014 I need to create translation JSON files for ja and de, then build a simple t() function that resolves message keys by locale. I'll also need to update the error responses in auth.ts to use t() with the request's locale.",
+      "i18n for error messages — I need to create translation JSON files for ja and de, then build a simple t() function that resolves message keys by locale. I'll also need to update the error responses in auth.ts to use t() with the request's locale.",
     content: "I'll create the translation files and update the error handling.",
     toolCalls: [
       {
@@ -329,10 +328,10 @@ export const SCRIPT: ScriptEntry[] = [
         args: "src/i18n/ja.json",
         output: [
           "{",
-          '  "token_expired": "\u30C8\u30FC\u30AF\u30F3\u306E\u6709\u52B9\u671F\u9650\u304C\u5207\u308C\u307E\u3057\u305F \u{1F527}",',
-          '  "rate_limited": "\u30EA\u30AF\u30A8\u30B9\u30C8\u304C\u591A\u3059\u304E\u307E\u3059\u3002\u5F8C\u3067\u3082\u3046\u4E00\u5EA6\u304A\u8A66\u3057\u304F\u3060\u3055\u3044",',
-          '  "invalid_token": "\u7121\u52B9\u306A\u30C8\u30FC\u30AF\u30F3\u3067\u3059 \u{1F41B}",',
-          '  "login_success": "\u30ED\u30B0\u30A4\u30F3\u6210\u529F \u2705"',
+          '  "token_expired": "トークンの有効期限が切れました 🔧",',
+          '  "rate_limited": "リクエストが多すぎます。後でもう一度お試しください",',
+          '  "invalid_token": "無効なトークンです 🐛",',
+          '  "login_success": "ログイン成功 ✅"',
           "}",
         ],
       },
@@ -342,8 +341,8 @@ export const SCRIPT: ScriptEntry[] = [
         output: [
           "{",
           '  "token_expired": "Token abgelaufen",',
-          '  "rate_limited": "Zu viele Anfragen. Bitte versuchen Sie es sp\u00E4ter",',
-          '  "invalid_token": "Ung\u00FCltiges Token",',
+          '  "rate_limited": "Zu viele Anfragen. Bitte versuchen Sie es später",',
+          '  "invalid_token": "Ungültiges Token",',
           '  "login_success": "Anmeldung erfolgreich"',
           "}",
         ],
@@ -393,10 +392,10 @@ export const SCRIPT: ScriptEntry[] = [
         args: "bun test src/i18n/",
         output: [
           "i18n.test.ts",
-          "  \u2713 English fallback for unknown key",
-          "  \u2713 Japanese: \u30C8\u30FC\u30AF\u30F3\u306E\u6709\u52B9\u671F\u9650\u304C\u5207\u308C\u307E\u3057\u305F \u{1F527}",
-          "  \u2713 German: Token abgelaufen",
-          "  \u2713 Emoji preserved in translations \u{1F41B}\u2705",
+          "  ✓ English fallback for unknown key",
+          "  ✓ Japanese: トークンの有効期限が切れました 🔧",
+          "  ✓ German: Token abgelaufen",
+          "  ✓ Emoji preserved in translations 🐛✅",
           "",
           "4 passed | 0 failed",
         ],
@@ -407,7 +406,7 @@ export const SCRIPT: ScriptEntry[] = [
   {
     role: "agent",
     content:
-      "i18n support added with Japanese (\u65E5\u672C\u8A9E) and German (Deutsch) translations. Error messages are now locale-aware. \u{1F30D}\u2705",
+      "i18n support added with Japanese (日本語) and German (Deutsch) translations. Error messages are now locale-aware. 🌍✅",
     tokens: { input: 20802, output: 134 },
   },
   {
@@ -418,8 +417,8 @@ export const SCRIPT: ScriptEntry[] = [
   {
     role: "agent",
     thinking:
-      "Simple task \u2014 read the version from package.json and expose it on GET /health alongside uptime. Quick implementation.",
-    content: "Simple addition \u2014 reading package.json for the version, then adding the route.",
+      "Simple task — read the version from package.json and expose it on GET /health alongside uptime. Quick implementation.",
+    content: "Simple addition — reading package.json for the version, then adding the route.",
     toolCalls: [
       {
         tool: "Read",
@@ -463,7 +462,7 @@ export const SCRIPT: ScriptEntry[] = [
   {
     role: "agent",
     content:
-      "All done! Summary of changes:\n\u2022 Fixed token expiry bug (seconds vs milliseconds)\n\u2022 Added rate limiting (5 req/min per IP)\n\u2022 Added i18n support (\u65E5\u672C\u8A9E + Deutsch) \u{1F30D}\n\u2022 Added /health endpoint (v2.4.1)\n\nAll 21 tests pass. Ready to commit?",
+      "All done! Summary of changes:\n• Fixed token expiry bug (seconds vs milliseconds)\n• Added rate limiting (5 req/min per IP)\n• Added i18n support (日本語 + Deutsch) 🌍\n• Added /health endpoint (v2.4.1)\n\nAll 21 tests pass. Ready to commit?",
     tokens: { input: 22468, output: 224 },
   },
 ]
@@ -483,7 +482,7 @@ function generateStressScript(): ScriptEntry[] {
     "src/utils/crypto.ts",
     "src/config.ts",
     "tests/integration.test.ts",
-    "src/i18n/\u65E5\u672C\u8A9E.json",
+    "src/i18n/日本語.json",
   ]
 
   let cumulativeInput = 4000
@@ -492,10 +491,10 @@ function generateStressScript(): ScriptEntry[] {
     if (i % 5 === 0) {
       const prompts = [
         `Fix bug #${100 + i} in ${files[i % files.length]}`,
-        `Add feature: ${["caching", "logging", "retry", "batching", "\u30D0\u30EA\u30C7\u30FC\u30B7\u30E7\u30F3"][i % 5]}`,
-        `Refactor ${files[i % files.length]} \u2014 it's too complex \u{1F527}`,
-        `Why is test #${i} failing? \u{1F41B}`,
-        `Add \u65E5\u672C\u8A9E translations for module ${i}`,
+        `Add feature: ${["caching", "logging", "retry", "batching", "バリデーション"][i % 5]}`,
+        `Refactor ${files[i % files.length]} — it's too complex 🔧`,
+        `Why is test #${i} failing? 🐛`,
+        `Add 日本語 translations for module ${i}`,
       ]
       exchanges.push({
         role: "user",
@@ -505,7 +504,7 @@ function generateStressScript(): ScriptEntry[] {
     } else if (i % 5 === 4) {
       exchanges.push({
         role: "agent",
-        content: `Done with batch ${Math.floor(i / 5) + 1}. ${3 + (i % 7)} tests pass. \u2705`,
+        content: `Done with batch ${Math.floor(i / 5) + 1}. ${3 + (i % 7)} tests pass. ✅`,
         tokens: { input: cumulativeInput, output: 45 + (i % 60) },
       })
     } else {
@@ -525,7 +524,7 @@ function generateStressScript(): ScriptEntry[] {
               `line ${i * 10 + 1}: processing...`,
               tool === "Edit" ? `- old code at line ${i}` : `  existing line ${i}`,
               tool === "Edit" ? `+ new code at line ${i}` : `  result: ok`,
-              i % 10 === 0 ? `\u2713 \u30C6\u30B9\u30C8\u5408\u683C \u{1F389}` : `\u2713 done`,
+              i % 10 === 0 ? `✓ テスト合格 🎉` : `✓ done`,
             ],
           },
         ],
@@ -536,7 +535,7 @@ function generateStressScript(): ScriptEntry[] {
     if (i === 80 || i === 160) {
       exchanges.push({
         role: "system",
-        content: `\u{1F4E6} Compaction #${i === 80 ? 1 : 2}: context cleared. Scrollback preserved above.`,
+        content: `📦 Compaction #${i === 80 ? 1 : 2}: context cleared. Scrollback preserved above.`,
       })
     }
   }
@@ -637,7 +636,7 @@ function ThinkingBlock({ text, done }: { text: string; done: boolean }): JSX.Ele
     <Box flexDirection="column" paddingLeft={2}>
       <Text color="$muted" italic>
         {done ? (
-          "\u25B8 "
+          "▸ "
         ) : (
           <>
             <Spinner type="dots" />{" "}
@@ -658,7 +657,7 @@ function ThinkingBlock({ text, done }: { text: string; done: boolean }): JSX.Ele
 /** Tool call with lifecycle: spinner -> output -> checkmark. */
 function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "running" | "done" }): JSX.Element {
   const color = TOOL_COLORS[call.tool] ?? "gray"
-  const icon = TOOL_ICONS[call.tool] ?? "\u25B8"
+  const icon = TOOL_ICONS[call.tool] ?? "▸"
 
   return (
     <Box flexDirection="column" marginTop={0}>
@@ -668,9 +667,9 @@ function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "ru
             <Spinner type="dots" />{" "}
           </>
         ) : phase === "done" ? (
-          <Text color="$success">{"\u2713 "}</Text>
+          <Text color="$success">{"✓ "}</Text>
         ) : (
-          <Text color="$muted">{"\u25CB "}</Text>
+          <Text color="$muted">{"○ "}</Text>
         )}
         <Text color={color} bold>
           {call.tool}
@@ -725,7 +724,7 @@ function StreamingText({
   return (
     <Text>
       {revealedText}
-      {showCursor && <Text color="$primary">{"\u258C"}</Text>}
+      {showCursor && <Text color="$primary">{"▌"}</Text>}
     </Text>
   )
 }
@@ -783,7 +782,7 @@ function ExchangeItem({
     return (
       <Box paddingX={1} flexDirection="row">
         <Text bold color="$focusring">
-          {"\u276F"}{" "}
+          {"❯"}{" "}
         </Text>
         <Box flexShrink={1}>
           <Text>{exchange.content}</Text>
@@ -793,16 +792,13 @@ function ExchangeItem({
   }
 
   const outlineColor = "$border"
-  const icon = "\u25C6"
+  const icon = "◆"
   const name = "Agent"
   const phase = isLatest ? streamPhase : "done"
   const fraction = isLatest ? revealFraction : 1
 
   // Token badge for agent exchanges
   const tokenBadge = exchange.tokens && phase === "done" ? `${formatTokens(exchange.tokens.output)} tokens` : ""
-
-  // Build border title: "◆ Agent · 624 tokens"
-  const borderTitle = tokenBadge ? `${icon} ${name} \u00B7 ${tokenBadge}` : `${icon} ${name}`
 
   // Tool call phases
   const toolCalls = exchange.toolCalls ?? []
@@ -813,7 +809,12 @@ function ExchangeItem({
       {/* Agent label */}
       <Text>
         <Text bold color="$success" dimColor={!pulse && phase !== "done"}>
-          {borderTitle}
+          {icon}
+        </Text>
+        <Text bold color="$success">
+          {" "}
+          {name}
+          {tokenBadge ? ` · ${tokenBadge}` : ""}
         </Text>
       </Text>
 
@@ -889,7 +890,7 @@ function StatusBar({
   const ctxFilled = Math.round(Math.min(ctxFrac, 1) * CTX_W)
   const ctxPct = Math.round(ctxFrac * 100)
   const ctxColor = ctxPct > 100 ? "$error" : ctxPct > 80 ? "$warning" : "$primary"
-  const ctxBar = "\u2588".repeat(ctxFilled) + "\u2591".repeat(CTX_W - ctxFilled)
+  const ctxBar = "█".repeat(ctxFilled) + "░".repeat(CTX_W - ctxFilled)
 
   // Build key hints — minimal, obvious keys omitted
   let keys: string
@@ -908,7 +909,7 @@ function StatusBar({
       <Text color="$muted" wrap="truncate">
         {frozenCount > 0 && (
           <>
-            {"\u2191"}
+            {"↑"}
             {frozenCount} in scrollback{"  "}
           </>
         )}
@@ -1004,8 +1005,8 @@ function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoMode: bo
   function autoAdvanceEffects(state: DemoState): DemoEffect[] {
     if (state.done || state.compacting || state.streamPhase !== "done") return []
     const next = script[state.scriptIdx]
-    if (!next) return []
-    if (next.role !== "user") return [fx.delay(fastMode ? 100 : 400, { type: "autoAdvance" })]
+    if (!next) return autoMode ? [fx.delay(0, { type: "autoAdvance" })] : []
+    if (autoMode || next.role !== "user") return [fx.delay(fastMode ? 100 : 400, { type: "autoAdvance" })]
     return []
   }
 
@@ -1017,7 +1018,11 @@ function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoMode: bo
     }
 
     const entry = script[state.scriptIdx]!
-    let s: DemoState = { ...state, exchanges: freezeOld(state.exchanges), scriptIdx: state.scriptIdx + 1 }
+    let s: DemoState = {
+      ...state,
+      exchanges: freezeOld(state.exchanges),
+      scriptIdx: state.scriptIdx + 1,
+    }
     let effects = [...extraEffects]
     let streamFx: DemoEffect[]
 
@@ -1045,7 +1050,7 @@ function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoMode: bo
   return function update(state: DemoState, msg: DemoMsg): DemoResult {
     switch (msg.type) {
       case "mount":
-        return doAdvance(state, [fx.interval(800, { type: "pulse" }, "pulse")])
+        return doAdvance(state, [fx.interval(400, { type: "pulse" }, "pulse")])
 
       case "advance":
       case "autoAdvance": {
@@ -1070,7 +1075,10 @@ function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoMode: bo
         const next = state.autoTyping.revealed + 1
         if (next >= state.autoTyping.full.length) {
           return [
-            { ...state, autoTyping: { ...state.autoTyping, revealed: state.autoTyping.full.length } },
+            {
+              ...state,
+              autoTyping: { ...state.autoTyping, revealed: state.autoTyping.full.length },
+            },
             [fx.cancel("typing"), fx.delay(300, { type: "autoTypingDone" })],
           ]
         }
@@ -1223,9 +1231,8 @@ function DemoFooter({
     return () => clearInterval(timer)
   }, [])
 
-  const [randomPlaceholder] = useState(
-    () => RANDOM_USER_COMMANDS[Math.floor(Math.random() * RANDOM_USER_COMMANDS.length)]!,
-  )
+  const [randomIdx, setRandomIdx] = useState(() => Math.floor(Math.random() * RANDOM_USER_COMMANDS.length))
+  const randomPlaceholder = RANDOM_USER_COMMANDS[randomIdx % RANDOM_USER_COMMANDS.length]!
   const effectiveMessage = nextMessage || randomPlaceholder
   const placeholder = ctrlDPending ? "Press Ctrl-D again to exit" : effectiveMessage
 
@@ -1244,11 +1251,11 @@ function DemoFooter({
     (text: string) => {
       if (!text.trim() && effectiveMessage) {
         onSubmit(effectiveMessage)
-        setInputText("")
-        return
+      } else {
+        onSubmit(text)
       }
-      onSubmit(text)
       setInputText("")
+      setRandomIdx((i) => i + 1)
     },
     [onSubmit, effectiveMessage],
   )
@@ -1265,9 +1272,9 @@ function DemoFooter({
         paddingX={1}
       >
         <Text bold color="$focusring">
-          {"\u276F"}{" "}
+          {"❯"}{" "}
         </Text>
-        <Box flexShrink={1}>
+        <Box flexShrink={1} flexGrow={1} overflow="hidden">
           <TextInput
             value={displayText}
             onChange={autoTypingText ? () => {} : setInputText}
@@ -1378,15 +1385,15 @@ export function CodingAgent({
         <Text bold>Static Scrollback</Text>
         <Text> </Text>
         <Text>Coding agent simulation showcasing ScrollbackList:</Text>
-        <Text> {"\u2022"} ScrollbackList — declarative list with automatic scrollback</Text>
-        <Text> {"\u2022"} useScrollbackItem() — imperative freeze() from within items</Text>
-        <Text> {"\u2022"} isFrozen prop — data-driven freezing for completed items</Text>
-        <Text> {"\u2022"} OSC 8 hyperlinks — clickable file paths and URLs</Text>
+        <Text> {"•"} ScrollbackList — declarative list with automatic scrollback</Text>
+        <Text> {"•"} useScrollbackItem() — imperative freeze() from within items</Text>
+        <Text> {"•"} isFrozen prop — data-driven freezing for completed items</Text>
+        <Text> {"•"} OSC 8 hyperlinks — clickable file paths and URLs</Text>
         <Text>
           {" "}
-          {"\u2022"} OSC 133 markers — Cmd+{"\u2191"}/{"\u2193"} to jump between exchanges
+          {"•"} OSC 133 markers — Cmd+{"↑"}/{"↓"} to jump between exchanges
         </Text>
-        <Text> {"\u2022"} $token theme colors — semantic color tokens</Text>
+        <Text> {"•"} $token theme colors — semantic color tokens</Text>
         <Text> </Text>
       </Box>
 
@@ -1433,7 +1440,7 @@ export function CodingAgent({
               {state.done && autoStart && isLatest && (
                 <Box flexDirection="column" borderStyle="round" borderColor="$success" paddingX={1}>
                   <Text color="$success" bold>
-                    {"\u2713"} Session complete
+                    {"✓"} Session complete
                   </Text>
                   <Text color="$muted">
                     Scroll up to review — colors, borders, and hyperlinks preserved in scrollback.

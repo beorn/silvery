@@ -19,12 +19,7 @@ type State = {
   count: number
 }
 
-type Msg =
-  | { type: "start" }
-  | { type: "tick" }
-  | { type: "stop" }
-  | { type: "delayedAction" }
-  | { type: "delayFired" }
+type Msg = { type: "start" } | { type: "tick" } | { type: "stop" } | { type: "delayedAction" } | { type: "delayFired" }
 
 type Effect = TimerEffect<Msg>
 
@@ -93,7 +88,12 @@ describe("collect() — pure state machine testing", () => {
 
 describe("fx constructors produce correct shapes", () => {
   test("fx.delay", () => {
-    expect(fx.delay(100, { type: "x" })).toEqual({ type: "delay", ms: 100, msg: { type: "x" }, id: undefined })
+    expect(fx.delay(100, { type: "x" })).toEqual({
+      type: "delay",
+      ms: 100,
+      msg: { type: "x" },
+      id: undefined,
+    })
     expect(fx.delay(100, { type: "x" }, "myTimer")).toEqual({
       type: "delay",
       ms: 100,
@@ -126,7 +126,11 @@ describe("useTea hook", () => {
   test("renders initial state", () => {
     function App() {
       const [state] = useTea(init, update)
-      return <Text>phase:{state.phase} count:{state.count}</Text>
+      return (
+        <Text>
+          phase:{state.phase} count:{state.count}
+        </Text>
+      )
     }
 
     const render = createRenderer({ cols: 40, rows: 3 })
@@ -155,7 +159,7 @@ describe("useTea hook", () => {
   test("delay effect fires callback after timeout", async () => {
     const fn = vi.fn()
     function App() {
-      const [state, send] = useTea(init, (s: State, msg: Msg) => {
+      const [state, send] = useTea(init, (s: State, msg: Msg): TeaResult<State, Effect> => {
         if (msg.type === "delayedAction") return [s, [fx.delay(30, { type: "delayFired" })]]
         if (msg.type === "delayFired") {
           fn()
@@ -218,7 +222,7 @@ describe("useTea hook", () => {
   test("cancel effect stops interval", async () => {
     const ticks: number[] = []
     function App() {
-      const [state, send] = useTea(init, (s: State, msg: Msg) => {
+      const [state, send] = useTea(init, (s: State, msg: Msg): TeaResult<State, Effect> => {
         if (msg.type === "start")
           return [{ ...s, phase: "counting" as const }, [fx.interval(15, { type: "tick" }, "t")]]
         if (msg.type === "tick") {
@@ -253,8 +257,7 @@ describe("useTea hook", () => {
     const fn = vi.fn()
     function App() {
       const [state, send] = useTea(init, (s: State, msg: Msg) => {
-        if (msg.type === "start")
-          return [s, [fx.interval(10, { type: "tick" }, "t")]]
+        if (msg.type === "start") return [s, [fx.interval(10, { type: "tick" }, "t")]]
         if (msg.type === "tick") {
           fn()
           return s
