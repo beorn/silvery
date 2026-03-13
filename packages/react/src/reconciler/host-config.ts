@@ -566,6 +566,14 @@ export const hostConfig = {
       }
     }
     container.root.children = []
+    // Must invalidate dirty flags — same as removeChildFromContainer.
+    // Without this, the pipeline can skip re-rendering after a root clear,
+    // leaving stale buffer content (tree/buffer mismatch).
+    container.root.childrenDirty = true
+    container.root.contentDirty = true
+    container.root.layoutDirty = true
+    container.root.layoutNode?.markDirty()
+    markSubtreeDirty(container.root)
   },
 
   preparePortalMount() {

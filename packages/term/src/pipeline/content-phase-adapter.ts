@@ -36,8 +36,8 @@
  *   - No instrumentation, STRICT mode, or diagnostic support
  *   - No ANSI-aware text rendering (collectTextContent is plain string
  *     concatenation, not the segment-based BgSegment approach)
- *   - No absolute/sticky two-pass paint order in renderNormalChildren
- *     (sticky is handled but absolute children render inline with normal flow)
+ *   - No absolute/sticky incremental rendering optimizations in renderNormalChildren
+ *     (three-pass paint order is implemented but without hasPrevBuffer/ancestorCleared cascading)
  *
  * Future direction:
  *   The xterm-unification design (docs/design/xterm-unification.md) proposes
@@ -432,6 +432,147 @@ function findAncestorBg(node: TeaNode): string | undefined {
   return undefined
 }
 
+/** A segment of text with its resolved style. */
+interface StyledSegment {
+  text: string
+  style: RenderStyle
+}
+
+/** Style context for nested Text style inheritance (mirrors render-text.ts StyleContext). */
+interface AdapterStyleContext {
+  color?: string
+  bold?: boolean
+  dim?: boolean
+  italic?: boolean
+  underline?: boolean
+  underlineStyle?: "single" | "double" | "curly" | "dotted" | "dashed"
+  underlineColor?: string
+  inverse?: boolean
+  strikethrough?: boolean
+}
+
+/** Merge child TextProps into parent style context. Child values override parent. */
+function mergeAdapterStyleContext(parent: AdapterStyleContext, childProps: TextProps): AdapterStyleContext {
+  return {
+    color: childProps.color ?? parent.color,
+    bold: childProps.bold ?? parent.bold,
+    dim: childProps.dim ?? (childProps as any).dimColor ?? parent.dim,
+    italic: childProps.italic ?? parent.italic,
+    underline: childProps.underline ?? parent.underline,
+    underlineStyle: (childProps.underlineStyle as AdapterStyleContext["underlineStyle"]) ?? parent.underlineStyle,
+    underlineColor: childProps.underlineColor ?? parent.underlineColor,
+    inverse: childProps.inverse ?? parent.inverse,
+    strikethrough: childProps.strikethrough ?? parent.strikethrough,
+  }
+}
+
+/** Build a RenderStyle from a style context and inherited bg. */
+function contextToRenderStyle(ctx: AdapterStyleContext, bg?: string): RenderStyle {
+  return {
+    fg: ctx.color ?? undefined,
+    bg: bg ?? undefined,
+    attrs: {
+      bold: ctx.bold,
+      dim: ctx.dim,
+      italic: ctx.italic,
+      underline: ctx.underline,
+      underlineStyle: ctx.underlineStyle,
+      underlineColor: ctx.underlineColor,
+      strikethrough: ctx.strikethrough,
+      inverse: ctx.inverse,
+    },
+  }
+}
+
+/**
+ * Collect styled text segments from a node tree.
+ *
+ * Walks the tree like render-text.ts collectTextContent but instead of embedding
+ * ANSI codes, returns an array of { text, style } segments. The adapter renders
+ * each segment with its own RenderStyle via drawText — no ANSI parsing needed.
+ *
+ * Handles: nested Text style push/pop, internal_transform, display="none" skipping.
+ */
+function collectStyledSegments(
+  node: TeaNode,
+  parentContext: AdapterStyleContext,
+  inheritedBg: string | undefined,
+  segments: StyledSegment[],
+): void {
+  // Raw text nodes — emit a segment with the current style
+  if (node.textContent !== undefined) {
+    if (node.textContent.length > 0) {
+      segments.push({
+        text: node.textContent,
+        style: contextToRenderStyle(parentContext, inheritedBg),
+      })
+    }
+    return
+  }
+
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i]!
+    const childProps = child.props as TextProps & BoxProps
+
+    // Skip display="none" children
+    if (childProps?.display === "none") continue
+
+    // Skip hidden children (Suspense)
+    if (child.hidden) continue
+
+    // Nested virtual Text node with style props
+    if (child.type === "silvery-text" && child.props && !child.layoutNode) {
+      const childContext = mergeAdapterStyleContext(parentContext, childProps)
+
+      // Check for internal_transform
+      const childTransform = (childProps as any).internal_transform as
+        | ((text: string, index: number) => string)
+        | undefined
+
+      if (childTransform) {
+        // Collect child's plain text first, apply transform, then emit as styled segment
+        const plainText = collectPlainTextAdapter(child)
+        if (plainText.length > 0) {
+          const transformed = childTransform(plainText, i)
+          if (transformed.length > 0) {
+            segments.push({
+              text: transformed,
+              style: contextToRenderStyle(childContext, inheritedBg),
+            })
+          }
+        }
+      } else {
+        // Recurse into children with merged style context
+        collectStyledSegments(child, childContext, inheritedBg, segments)
+      }
+    } else {
+      // Not a styled Text node — recurse with parent context
+      collectStyledSegments(child, parentContext, inheritedBg, segments)
+    }
+  }
+}
+
+/**
+ * Collect plain text from a node tree (no styles). Used for internal_transform
+ * application which needs the full concatenated text before transformation.
+ */
+function collectPlainTextAdapter(node: TeaNode): string {
+  if (node.textContent !== undefined) return node.textContent
+  let result = ""
+  for (let i = 0; i < node.children.length; i++) {
+    const child = node.children[i]!
+    const childProps = child.props as TextProps & BoxProps
+    if (childProps?.display === "none") continue
+    if (child.hidden) continue
+    let childText = collectPlainTextAdapter(child)
+    if (childText.length > 0 && (child.props as any)?.internal_transform) {
+      childText = (child.props as any).internal_transform(childText, i)
+    }
+    result += childText
+  }
+  return result
+}
+
 /**
  * Render a Text node.
  */
@@ -446,31 +587,29 @@ function renderText(
   const { x, width: layoutWidth } = layout
   const y = layout.y - scrollOffset
 
-  // Collect text content from children
-  const text = collectTextContent(node)
-  if (!text) return
-
-  // Map underline style to supported values
-  const underlineStyle = props.underlineStyle as "single" | "double" | "curly" | "dotted" | "dashed" | undefined
+  // Build root style context from the Text node's own props
+  const rootContext: AdapterStyleContext = {
+    color: props.color ?? undefined,
+    bold: props.bold,
+    dim: props.dim,
+    italic: props.italic,
+    underline: props.underline,
+    underlineStyle: props.underlineStyle as AdapterStyleContext["underlineStyle"],
+    underlineColor: props.underlineColor ?? undefined,
+    inverse: props.inverse,
+    strikethrough: props.strikethrough,
+  }
 
   // Inherit bg from nearest ancestor Box with backgroundColor
   const inheritedBg = props.backgroundColor ?? findAncestorBg(node)
 
-  // Build style from props
-  const style: RenderStyle = {
-    fg: props.color ?? undefined,
-    bg: inheritedBg ?? undefined,
-    attrs: {
-      bold: props.bold,
-      dim: props.dim,
-      italic: props.italic,
-      underline: props.underline,
-      underlineStyle,
-      underlineColor: props.underlineColor ?? undefined,
-      strikethrough: props.strikethrough,
-      inverse: props.inverse,
-    },
-  }
+  // Collect styled segments from all children
+  const segments: StyledSegment[] = []
+  collectStyledSegments(node, rootContext, inheritedBg, segments)
+
+  // Build flat text for formatTextLines (wrapping/truncation)
+  const text = segments.map((s) => s.text).join("")
+  if (!text) return
 
   // Skip if outside vertical clip bounds
   if (clipBounds && (y < clipBounds.top || y >= clipBounds.bottom)) {
@@ -478,7 +617,6 @@ function renderText(
   }
 
   // Determine the maximum column for text rendering.
-  // Clip to: (1) the node's own layout width, and (2) any horizontal clip bounds from overflow="hidden" ancestors.
   let maxCol = x + layoutWidth
   if (clipBounds?.right !== undefined) {
     maxCol = Math.min(maxCol, clipBounds.right)
@@ -497,18 +635,110 @@ function renderText(
   const availableWidth = maxCol - x
   const lines = formatTextLines(text, availableWidth, props.wrap)
 
-  // Render each line
-  for (let i = 0; i < lines.length; i++) {
-    const lineY = y + i
-    // Skip lines outside vertical clip bounds
-    if (clipBounds && (lineY < clipBounds.top || lineY >= clipBounds.bottom)) continue
-    if (!buffer.inBounds(0, lineY)) continue
+  // If all segments have the same style (common case), use fast path
+  if (segments.length <= 1) {
+    const style = segments.length === 1 ? segments[0]!.style : contextToRenderStyle(rootContext, inheritedBg)
+    for (let i = 0; i < lines.length; i++) {
+      const lineY = y + i
+      if (clipBounds && (lineY < clipBounds.top || lineY >= clipBounds.bottom)) continue
+      if (!buffer.inBounds(0, lineY)) continue
+      const truncated = truncateToWidth(lines[i]!, availableWidth)
+      if (truncated) {
+        buffer.drawText(x, lineY, truncated, style)
+      }
+    }
+    return
+  }
 
-    const truncated = truncateToWidth(lines[i]!, availableWidth)
-    if (truncated) {
-      buffer.drawText(x, lineY, truncated, style)
+  // Multi-segment path: render each line with per-character style lookup.
+  // Build a character-to-segment index for the flat text.
+  const segmentForChar: number[] = new Array(text.length)
+  let charIdx = 0
+  for (let s = 0; s < segments.length; s++) {
+    const segText = segments[s]!.text
+    for (let j = 0; j < segText.length; j++) {
+      segmentForChar[charIdx++] = s
     }
   }
+
+  // Track how far we've consumed in the flat text across lines
+  let flatOffset = 0
+
+  for (let i = 0; i < lines.length; i++) {
+    const lineY = y + i
+    if (clipBounds && (lineY < clipBounds.top || lineY >= clipBounds.bottom)) {
+      // Still advance flatOffset past this line
+      flatOffset = advanceFlatOffset(text, flatOffset, lines[i]!)
+      continue
+    }
+    if (!buffer.inBounds(0, lineY)) {
+      flatOffset = advanceFlatOffset(text, flatOffset, lines[i]!)
+      continue
+    }
+
+    const line = lines[i]!
+    const truncated = truncateToWidth(line, availableWidth)
+    if (!truncated) {
+      flatOffset = advanceFlatOffset(text, flatOffset, line)
+      continue
+    }
+
+    // Render truncated line character by character with per-segment styles
+    let col = x
+    const lineStartOffset = flatOffset
+    let lineCharIdx = 0
+    for (const char of truncated) {
+      if (col >= maxCol) break
+      const srcIdx = lineStartOffset + lineCharIdx
+      const segIdx = srcIdx < segmentForChar.length ? segmentForChar[srcIdx]! : 0
+      const style = segments[segIdx]!.style
+      const charWidth = displayWidth(char)
+      if (col + charWidth <= maxCol) {
+        buffer.drawChar(col, lineY, char, style)
+        // Mark continuation cells for wide characters
+        for (let w = 1; w < charWidth; w++) {
+          if (buffer.inBounds(col + w, lineY)) {
+            buffer.drawChar(col + w, lineY, "", style)
+          }
+        }
+      }
+      col += charWidth
+      lineCharIdx += char.length
+    }
+
+    flatOffset = advanceFlatOffset(text, flatOffset, line)
+  }
+}
+
+/**
+ * Advance the flat text offset past a formatted line.
+ * formatTextLines may split on whitespace or add ellipsis — we need to find
+ * where this line's content came from in the original flat text.
+ */
+function advanceFlatOffset(flatText: string, offset: number, line: string): number {
+  // Skip leading whitespace that formatTextLines may have trimmed
+  while (offset < flatText.length && (flatText[offset] === " " || flatText[offset] === "\n")) {
+    // Check if the line starts with this whitespace — if so, don't skip it
+    if (line.length > 0 && line[0] === flatText[offset]) break
+    offset++
+  }
+  // Advance past the line's characters in the flat text
+  let lineIdx = 0
+  while (lineIdx < line.length && offset < flatText.length) {
+    // Handle ellipsis in truncated text — the ellipsis char isn't in the source
+    if (line[lineIdx] === "\u2026") {
+      lineIdx++
+      continue
+    }
+    if (line[lineIdx] === flatText[offset]) {
+      lineIdx++
+      offset++
+    } else {
+      // Mismatch — skip source char (may have been trimmed by wrapping)
+      offset++
+    }
+  }
+  return offset
 }
 
 /**
@@ -533,7 +763,8 @@ function truncateToWidth(text: string, maxWidth: number): string {
 }
 
 /**
- * Collect text content from a node and its children.
+ * Collect text content from a node and its children (flat string, no styles).
+ * Used by external callers that only need the plain text.
  */
 function collectTextContent(node: TeaNode): string {
   // Raw text nodes have textContent set directly
@@ -543,6 +774,11 @@ function collectTextContent(node: TeaNode): string {
 
   let result = ""
   for (const child of node.children) {
+    const childProps = child.props as TextProps & BoxProps
+    // Skip display="none" children
+    if (childProps?.display === "none") continue
+    // Skip hidden children (Suspense)
+    if (child.hidden) continue
     result += collectTextContent(child)
   }
   return result
@@ -702,9 +938,19 @@ function renderNormalChildren(
 
   const hasStickyChildren = !!(node.stickyChildren && node.stickyChildren.length > 0)
 
-  // First pass: render non-sticky children
+  // Multi-pass rendering to match CSS paint order (and content-phase.ts):
+  // 1. Normal-flow children (skip sticky and absolute)
+  // 2. Sticky children at computed positions
+  // 3. Absolute children on top of everything
+
+  // First pass: render normal-flow children (skip sticky + absolute)
+  let hasAbsoluteChildren = false
   for (const child of node.children) {
     const childProps = child.props as BoxProps
+    if (childProps.position === "absolute") {
+      hasAbsoluteChildren = true
+      continue // Skip — rendered in third pass
+    }
     if (hasStickyChildren && childProps.position === "sticky") continue
     renderNodeToBuffer(child, buffer, scrollOffset, effectiveClipBounds)
   }
@@ -716,6 +962,15 @@ function renderNormalChildren(
       if (!child?.contentRect) continue
       const stickyScrollOffset = sticky.naturalTop - sticky.renderOffset
       renderNodeToBuffer(child, buffer, stickyScrollOffset, effectiveClipBounds)
+    }
+  }
+
+  // Third pass: render absolute children on top (CSS paint order)
+  if (hasAbsoluteChildren) {
+    for (const child of node.children) {
+      const childProps = child.props as BoxProps
+      if (childProps.position !== "absolute") continue
+      renderNodeToBuffer(child, buffer, scrollOffset, effectiveClipBounds)
     }
   }
 }

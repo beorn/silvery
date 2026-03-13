@@ -256,6 +256,14 @@ export function createRuntime(options: RuntimeOptions): Runtime {
       }
       prevBuffer = buffer
 
+      // Debug: capture raw ANSI output that's actually written to the terminal
+      if (process.env.SILVERY_CAPTURE_RAW) {
+        try {
+          const fs = require("fs")
+          fs.appendFileSync("/tmp/silvery-runtime-raw.ansi", patch)
+        } catch {}
+      }
+
       // Write to target
       target.write(patch)
     },
