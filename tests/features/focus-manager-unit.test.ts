@@ -4,10 +4,12 @@
  * Tests for focus-manager.ts correctness:
  * - activateScope should not double-notify subscribers
  * - scopeStack getter should not leak mutable reference
+ * - focus cleanup on node removal (handleSubtreeRemoved)
+ * - hidden nodes excluded from focus queries
  */
 
 import { describe, test, expect, vi } from "vitest"
-import { createFocusManager } from "@silvery/tea"
+import { createFocusManager, getTabOrder } from "@silvery/tea"
 import type { TeaNode, BoxProps } from "@silvery/tea/types"
 
 // ============================================================================
@@ -124,5 +126,202 @@ describe("scopeStack getter leaks mutable reference", () => {
     expect(fm.scopeStack).toEqual(["scope-a", "scope-b"])
     expect(fm.scopeStack).not.toContain("scope-injected")
     expect(fm.scopeStack).not.toContain("scope-tampered")
+  })
+})
+
+// ============================================================================
+// Focus cleanup on node removal (P0: focus-unmount)
+// ============================================================================
+
+describe("handleSubtreeRemoved", () => {
+  test("blurs when the focused node itself is removed", () => {
+    const fm = createFocusManager()
+    const child = stubNode("child", { focusable: true })
+    const root = stubNode("root", { focusable: false, children: [child] })
+
+    fm.focus(child)
+    expect(fm.activeElement).toBe(child)
+    expect(fm.activeId).toBe("child")
+
+    // Simulate removal: detach child from tree and notify focus manager
+    root.children = []
+    child.parent = null
+    fm.handleSubtreeRemoved(child)
+
+    expect(fm.activeElement).toBeNull()
+    expect(fm.activeId).toBeNull()
+  })
+
+  test("blurs when an ancestor of the focused node is removed", () => {
+    const fm = createFocusManager()
+    const leaf = stubNode("leaf", { focusable: true })
+    const middle = stubNode("middle", { focusable: false, children: [leaf] })
+    const root = stubNode("root", { focusable: false, children: [middle] })
+
+    fm.focus(leaf)
+    expect(fm.activeElement).toBe(leaf)
+
+    // Remove the middle subtree (which contains the focused leaf)
+    root.children = []
+    middle.parent = null
+    fm.handleSubtreeRemoved(middle)
+
+    expect(fm.activeElement).toBeNull()
+    expect(fm.activeId).toBeNull()
+  })
+
+  test("does not blur when the removed subtree does not contain the focused node", () => {
+    const fm = createFocusManager()
+    const focused = stubNode("focused", { focusable: true })
+    const other = stubNode("other", { focusable: true })
+    const root = stubNode("root", { focusable: false, children: [focused, other] })
+
+    fm.focus(focused)
+
+    // Remove the other node (not the focused one)
+    root.children = [focused]
+    other.parent = null
+    fm.handleSubtreeRemoved(other)
+
+    // Focus should be unchanged
+    expect(fm.activeElement).toBe(focused)
+    expect(fm.activeId).toBe("focused")
+  })
+
+  test("clears previousElement when the removed subtree contains it", () => {
+    const fm = createFocusManager()
+    const nodeA = stubNode("node-a", { focusable: true })
+    const nodeB = stubNode("node-b", { focusable: true })
+    const root = stubNode("root", { focusable: false, children: [nodeA, nodeB] })
+
+    // Focus A, then B → A becomes previousElement
+    fm.focus(nodeA)
+    fm.focus(nodeB)
+    expect(fm.previousElement).toBe(nodeA)
+
+    // Remove A (the previous element)
+    root.children = [nodeB]
+    nodeA.parent = null
+    fm.handleSubtreeRemoved(nodeA)
+
+    // previousElement should be cleared, but activeElement should remain
+    expect(fm.previousElement).toBeNull()
+    expect(fm.activeElement).toBe(nodeB)
+  })
+
+  test("focusNext works correctly after focused node is removed (no indexOf -1)", () => {
+    const fm = createFocusManager()
+    const nodeA = stubNode("node-a", { focusable: true })
+    const nodeB = stubNode("node-b", { focusable: true })
+    const nodeC = stubNode("node-c", { focusable: true })
+    const root = stubNode("root", { focusable: false, children: [nodeA, nodeB, nodeC] })
+
+    fm.focus(nodeB)
+
+    // Remove nodeB → focus is cleared
+    root.children = [nodeA, nodeC]
+    nodeB.parent = null
+    fm.handleSubtreeRemoved(nodeB)
+
+    expect(fm.activeElement).toBeNull()
+
+    // focusNext should focus the first item (not jump erratically)
+    fm.focusNext(root)
+    expect(fm.activeElement).toBe(nodeA)
+  })
+
+  test("hasFocusWithin returns false after focused node is removed", () => {
+    const fm = createFocusManager()
+    const child = stubNode("child", { focusable: true })
+    const container = stubNode("container", { focusable: false, children: [child] })
+    const root = stubNode("root", { focusable: false, children: [container] })
+
+    fm.focus(child)
+    expect(fm.hasFocusWithin(root, "container")).toBe(true)
+
+    // Remove the container subtree
+    root.children = []
+    container.parent = null
+    fm.handleSubtreeRemoved(container)
+
+    expect(fm.hasFocusWithin(root, "container")).toBe(false)
+  })
+
+  test("notifies subscribers when focus is cleared due to removal", () => {
+    const fm = createFocusManager()
+    const child = stubNode("child", { focusable: true })
+    const root = stubNode("root", { focusable: false, children: [child] })
+
+    fm.focus(child)
+
+    const listener = vi.fn()
+    fm.subscribe(listener)
+
+    root.children = []
+    child.parent = null
+    fm.handleSubtreeRemoved(child)
+
+    expect(listener).toHaveBeenCalled()
+  })
+
+  test("does not notify when removal does not affect focus", () => {
+    const fm = createFocusManager()
+    const focused = stubNode("focused", { focusable: true })
+    const other = stubNode("other", { focusable: true })
+    const root = stubNode("root", { focusable: false, children: [focused, other] })
+
+    fm.focus(focused)
+
+    const listener = vi.fn()
+    fm.subscribe(listener)
+
+    root.children = [focused]
+    other.parent = null
+    fm.handleSubtreeRemoved(other)
+
+    expect(listener).not.toHaveBeenCalled()
+  })
+})
+
+// ============================================================================
+// Hidden nodes excluded from focus (P1: hidden-focusable)
+// ============================================================================
+
+describe("hidden nodes and focus", () => {
+  test("hidden nodes are excluded from getTabOrder", () => {
+    const visible = stubNode("visible", { focusable: true })
+    const hidden = stubNode("hidden", { focusable: true })
+    hidden.hidden = true
+    const root = stubNode("root", { focusable: false, children: [visible, hidden] })
+
+    const order = getTabOrder(root)
+    expect(order).toEqual([visible])
+    expect(order).not.toContain(hidden)
+  })
+
+  test("children of hidden nodes are excluded from getTabOrder", () => {
+    const child = stubNode("child", { focusable: true })
+    const hiddenParent = stubNode("hidden-parent", { focusable: false, children: [child] })
+    hiddenParent.hidden = true
+    const visible = stubNode("visible", { focusable: true })
+    const root = stubNode("root", { focusable: false, children: [hiddenParent, visible] })
+
+    const order = getTabOrder(root)
+    expect(order).toEqual([visible])
+  })
+
+  test("focusNext skips hidden nodes", () => {
+    const fm = createFocusManager()
+    const nodeA = stubNode("node-a", { focusable: true })
+    const nodeB = stubNode("node-b", { focusable: true })
+    nodeB.hidden = true
+    const nodeC = stubNode("node-c", { focusable: true })
+    const root = stubNode("root", { focusable: false, children: [nodeA, nodeB, nodeC] })
+
+    fm.focus(nodeA)
+    fm.focusNext(root)
+
+    // Should skip hidden nodeB and land on nodeC
+    expect(fm.activeElement).toBe(nodeC)
   })
 })

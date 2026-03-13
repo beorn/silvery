@@ -272,9 +272,19 @@ export function createTermEditContext(options?: TermEditContextOptions): TermEdi
   // ---------------------------------------------------------------------------
 
   function moveCursor(direction: "up" | "down" | "left" | "right"): boolean {
+    const hasSelection = _selectionStart !== _selectionEnd
+
     switch (direction) {
       case "left": {
         _stickyX = null
+        if (hasSelection) {
+          // Collapse to the left edge of the selection
+          const left = Math.min(_selectionStart, _selectionEnd)
+          _selectionStart = left
+          _selectionEnd = left
+          fireSelectionChange()
+          return true
+        }
         if (_selectionStart === 0) return false
         _selectionStart = _selectionStart - 1
         _selectionEnd = _selectionStart
@@ -283,6 +293,14 @@ export function createTermEditContext(options?: TermEditContextOptions): TermEdi
       }
       case "right": {
         _stickyX = null
+        if (hasSelection) {
+          // Collapse to the right edge of the selection
+          const right = Math.max(_selectionStart, _selectionEnd)
+          _selectionStart = right
+          _selectionEnd = right
+          fireSelectionChange()
+          return true
+        }
         if (_selectionStart >= _text.length) return false
         _selectionStart = _selectionStart + 1
         _selectionEnd = _selectionStart
@@ -290,24 +308,42 @@ export function createTermEditContext(options?: TermEditContextOptions): TermEdi
         return true
       }
       case "up": {
+        // Collapse selection first, then move up
+        if (hasSelection) {
+          const left = Math.min(_selectionStart, _selectionEnd)
+          _selectionStart = left
+          _selectionEnd = left
+        }
         if (_stickyX === null) {
           const { col } = cursorToRowCol(_text, _selectionStart, _wrapWidth)
           _stickyX = col
         }
         const next = cursorMoveUp(_text, _selectionStart, _wrapWidth, _stickyX)
-        if (next === null) return false
+        if (next === null) {
+          if (hasSelection) fireSelectionChange()
+          return false
+        }
         _selectionStart = next
         _selectionEnd = next
         fireSelectionChange()
         return true
       }
       case "down": {
+        // Collapse selection first, then move down
+        if (hasSelection) {
+          const right = Math.max(_selectionStart, _selectionEnd)
+          _selectionStart = right
+          _selectionEnd = right
+        }
         if (_stickyX === null) {
           const { col } = cursorToRowCol(_text, _selectionStart, _wrapWidth)
           _stickyX = col
         }
         const next = cursorMoveDown(_text, _selectionStart, _wrapWidth, _stickyX)
-        if (next === null) return false
+        if (next === null) {
+          if (hasSelection) fireSelectionChange()
+          return false
+        }
         _selectionStart = next
         _selectionEnd = next
         fireSelectionChange()

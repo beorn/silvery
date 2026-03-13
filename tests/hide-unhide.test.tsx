@@ -14,6 +14,8 @@ import React, { Suspense, useState, use } from "react"
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "@silvery/react"
+import { hostConfig } from "@silvery/react/reconciler/host-config"
+import { createNode } from "@silvery/react/reconciler/nodes"
 
 /**
  * Create a controllable promise for testing Suspense.
@@ -208,6 +210,119 @@ describe("hide/unhide instances (Suspense)", () => {
         expect(incCell.char).toBe(freshCell.char)
       }
     }
+  })
+
+  test("hideInstance sets paintDirty on the instance", () => {
+    // Without paintDirty, the content phase fast-path can skip the node on the
+    // next render after unhide. The skip condition is:
+    //   !contentDirty && !paintDirty && !layoutChanged && !subtreeDirty && !childrenDirty
+    // contentDirty alone is consumed by the measure phase (cleared in measure func),
+    // so paintDirty is the surviving flag that ensures content phase re-renders the node.
+    const node = createNode("silvery-box", {})
+    // Clear all flags (simulate post-render state)
+    node.contentDirty = false
+    node.paintDirty = false
+    node.layoutDirty = false
+    node.subtreeDirty = false
+
+    hostConfig.hideInstance(node)
+
+    expect(node.hidden).toBe(true)
+    expect(node.contentDirty).toBe(true)
+    // This is the missing flag — paintDirty must be set
+    expect(node.paintDirty).toBe(true)
+  })
+
+  test("unhideInstance sets paintDirty on the instance", () => {
+    const node = createNode("silvery-box", {})
+    node.hidden = true
+    node.contentDirty = false
+    node.paintDirty = false
+    node.layoutDirty = false
+    node.subtreeDirty = false
+
+    hostConfig.unhideInstance(node, {})
+
+    expect(node.hidden).toBe(false)
+    expect(node.contentDirty).toBe(true)
+    expect(node.paintDirty).toBe(true)
+  })
+
+  test("hideInstance sets layoutDirty and marks layout node dirty", () => {
+    // When a node is hidden, its measured content changes (collectNodeTextContent
+    // skips hidden children). The layout engine must recalculate dimensions.
+    // Without layoutDirty + layoutNode.markDirty(), layout uses stale cache.
+    const node = createNode("silvery-box", {})
+    node.contentDirty = false
+    node.paintDirty = false
+    node.layoutDirty = false
+    node.subtreeDirty = false
+
+    hostConfig.hideInstance(node)
+
+    expect(node.layoutDirty).toBe(true)
+    // layoutNode.markDirty() should have been called to invalidate the layout cache
+  })
+
+  test("unhideInstance sets layoutDirty and marks layout node dirty", () => {
+    const node = createNode("silvery-box", {})
+    node.hidden = true
+    node.contentDirty = false
+    node.paintDirty = false
+    node.layoutDirty = false
+    node.subtreeDirty = false
+
+    hostConfig.unhideInstance(node, {})
+
+    expect(node.layoutDirty).toBe(true)
+    // layoutNode.markDirty() should have been called to invalidate the layout cache
+  })
+
+  test("hideTextInstance sets paintDirty and propagates layout dirty to ancestor", () => {
+    // Text instances don't have layout nodes. markLayoutAncestorDirty must walk
+    // up to the nearest layout ancestor and mark it dirty.
+    const parent = createNode("silvery-text", {})
+    const textNode = hostConfig.createTextInstance("hello", null, { isInsideText: true })
+    textNode.parent = parent
+    parent.children.push(textNode)
+    // Clear flags
+    textNode.contentDirty = false
+    textNode.paintDirty = false
+    parent.contentDirty = false
+    parent.paintDirty = false
+    parent.layoutDirty = false
+
+    hostConfig.hideTextInstance(textNode)
+
+    expect(textNode.hidden).toBe(true)
+    expect(textNode.contentDirty).toBe(true)
+    expect(textNode.paintDirty).toBe(true)
+    // Parent (nearest layout ancestor) should be marked dirty
+    expect(parent.contentDirty).toBe(true)
+    expect(parent.layoutDirty).toBe(true)
+    // parent's layoutNode.markDirty() should have been called via markLayoutAncestorDirty
+  })
+
+  test("unhideTextInstance sets paintDirty and propagates layout dirty to ancestor", () => {
+    const parent = createNode("silvery-text", {})
+    const textNode = hostConfig.createTextInstance("hello", null, { isInsideText: true })
+    textNode.parent = parent
+    parent.children.push(textNode)
+    textNode.hidden = true
+    textNode.contentDirty = false
+    textNode.paintDirty = false
+    parent.contentDirty = false
+    parent.paintDirty = false
+    parent.layoutDirty = false
+
+    hostConfig.unhideTextInstance(textNode, "hello")
+
+    expect(textNode.hidden).toBe(false)
+    expect(textNode.contentDirty).toBe(true)
+    expect(textNode.paintDirty).toBe(true)
+    expect(parent.contentDirty).toBe(true)
+    expect(parent.layoutDirty).toBe(true)
+    // parent's layoutNode.markDirty() should have been called via markLayoutAncestorDirty
   })
 
   test("hidden node with backgroundColor does not render its bg", () => {

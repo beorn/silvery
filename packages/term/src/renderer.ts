@@ -28,7 +28,7 @@ import {
   setLayoutEngine,
 } from "./layout-engine.js"
 import { executeRender } from "./pipeline.js"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/react/reconciler"
+import { createContainer, createFiberRoot, getContainerRoot, reconciler, setOnNodeRemoved } from "@silvery/react/reconciler"
 
 import { createTerm } from "./ansi/index"
 import { bufferToText } from "./buffer.js"
@@ -442,6 +442,9 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
 
   // Focus manager (tree-based focus system)
   const focusManager = createFocusManager()
+
+  // Wire up focus cleanup on node removal
+  setOnNodeRemoved((removedNode) => focusManager.handleSubtreeRemoved(removedNode))
 
   // Per-instance cursor state (replaces module-level globals)
   const cursorStore = createCursorStore()
@@ -922,6 +925,9 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
     if (stdinStream && stdinOnReadable) {
       stdinStream.removeListener("readable", stdinOnReadable)
     }
+
+    // Unregister node removal hook
+    setOnNodeRemoved(null)
 
     // Untrack this render
     activeRenders.delete(renderRef)

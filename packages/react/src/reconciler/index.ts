@@ -17,7 +17,7 @@ import { createRootNode } from "./nodes"
 
 // Re-export only what's needed by render.tsx and testing/index.tsx
 export type { Container } from "./host-config"
-export { runWithDiscreteEvent, _resetBoxInsideTextWarning, setInkStrictValidation } from "./host-config"
+export { runWithDiscreteEvent, _resetBoxInsideTextWarning, setInkStrictValidation, setOnNodeRemoved } from "./host-config"
 
 // ============================================================================
 // Reconciler Export

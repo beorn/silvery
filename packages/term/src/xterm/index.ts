@@ -42,6 +42,7 @@ import {
   getContainerRoot,
   reconciler,
   runWithDiscreteEvent,
+  setOnNodeRemoved,
 } from "@silvery/react/reconciler"
 import type { RenderBuffer } from "../render-adapter"
 import { setRenderAdapter } from "../render-adapter"
@@ -276,6 +277,9 @@ export function renderToXterm(
     provider = createXtermProvider(terminal)
     focusManager = createFocusManager()
 
+    // Wire up focus cleanup on node removal
+    setOnNodeRemoved((removedNode) => focusManager!.handleSubtreeRemoved(removedNode))
+
     // Wire provider input to RuntimeContext subscribers + user callbacks
     provider.onInput((chunk: string) => {
       if (unmounted) return
@@ -446,6 +450,8 @@ export function renderToXterm(
     // before returning, preventing stale renders to the same terminal.
     reconciler.updateContainerSync(null, fiberRoot, null, null)
     reconciler.flushSyncWork()
+    // Unregister node removal hook
+    setOnNodeRemoved(null)
     // Clean up subscriber lists
     inputHandlers.clear()
     pasteHandlers.clear()

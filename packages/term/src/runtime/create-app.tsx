@@ -62,7 +62,7 @@ import { executeRender } from "../pipeline"
 import { createPipeline } from "../measurer"
 import { isTextSizingLikelySupported } from "../text-sizing"
 import { IncrementalRenderMismatchError } from "../scheduler"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler } from "@silvery/react/reconciler"
+import { createContainer, createFiberRoot, getContainerRoot, reconciler, setOnNodeRemoved } from "@silvery/react/reconciler"
 import { map, merge, takeUntil } from "@silvery/tea/streams"
 import { createBuffer } from "./create-buffer"
 import { createRuntime } from "./create-runtime"
@@ -774,6 +774,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     },
   })
 
+  // Wire up focus cleanup on node removal — when React unmounts a subtree,
+  // the host-config calls this to clear focus if the active element was removed.
+  setOnNodeRemoved((removedNode) => focusManager.handleSubtreeRemoved(removedNode))
+
   // Per-instance cursor state (replaces module-level globals)
   const cursorStore = createCursorStore()
 
@@ -793,6 +797,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     } catch {
       // Ignore — component tree may already be partially torn down
     }
+
+    // Unregister node removal hook
+    setOnNodeRemoved(null)
 
     // Unsubscribe from store
     if (storeUnsubscribeFn) {

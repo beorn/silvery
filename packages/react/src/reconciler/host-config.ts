@@ -24,6 +24,26 @@ function normalizeNodeType(type: string): TeaNodeType {
 }
 
 // ============================================================================
+// Node Removal Hook
+// ============================================================================
+
+/**
+ * Callback invoked when a node is removed from the tree.
+ * Used by the app layer to coordinate focus cleanup — if the focused element
+ * is within a removed subtree, focus must be cleared to prevent dangling
+ * references and broken navigation (indexOf → -1, hasFocusWithin lies).
+ */
+let onNodeRemovedCallback: ((removedNode: TeaNode) => void) | null = null
+
+/**
+ * Register a callback to be called when any node is removed from the tree.
+ * Returns a cleanup function to unregister. Only one callback at a time.
+ */
+export function setOnNodeRemoved(callback: ((removedNode: TeaNode) => void) | null): void {
+  onNodeRemovedCallback = callback
+}
+
+// ============================================================================
 // Subtree Dirty Propagation
 // ============================================================================
 
@@ -300,6 +320,8 @@ export const hostConfig = {
   removeChild(parentInstance: TeaNode, child: TeaNode) {
     const index = parentInstance.children.indexOf(child)
     if (index !== -1) {
+      // Notify focus manager before detaching (needs parent chain intact for subtree check)
+      onNodeRemovedCallback?.(child)
       parentInstance.children.splice(index, 1)
       if (parentInstance.layoutNode && child.layoutNode) {
         parentInstance.layoutNode.removeChild(child.layoutNode)
@@ -318,6 +340,8 @@ export const hostConfig = {
   removeChildFromContainer(container: Container, child: TeaNode) {
     const index = container.root.children.indexOf(child)
     if (index !== -1) {
+      // Notify focus manager before detaching
+      onNodeRemovedCallback?.(child)
       container.root.children.splice(index, 1)
       if (container.root.layoutNode && child.layoutNode) {
         container.root.layoutNode.removeChild(child.layoutNode)
@@ -531,6 +555,10 @@ export const hostConfig = {
   },
 
   clearContainer(container: Container) {
+    // Notify focus manager before clearing — any child subtree may contain focus
+    for (const child of container.root.children) {
+      onNodeRemovedCallback?.(child)
+    }
     for (const child of container.root.children) {
       if (container.root.layoutNode && child.layoutNode) {
         container.root.layoutNode.removeChild(child.layoutNode)
@@ -645,52 +673,83 @@ export const hostConfig = {
   /**
    * Hide an instance during Suspense.
    * Called when React needs to hide content while showing a fallback.
+   *
+   * Must set paintDirty (content phase fast-path skip includes paintDirty check),
+   * layoutDirty + layoutNode.markDirty() (hiding changes measured content — the
+   * layout engine must recalculate dimensions), and markLayoutAncestorDirty
+   * (virtual text nodes without layoutNode need the nearest layout ancestor dirty).
    */
   hideInstance(instance: TeaNode) {
     instance.hidden = true
     instance.contentDirty = true
+    instance.paintDirty = true
+    instance.layoutDirty = true
+    if (instance.layoutNode) {
+      instance.layoutNode.markDirty()
+    }
     // Mark parent dirty to trigger re-render
     if (instance.parent) {
       instance.parent.contentDirty = true
     }
+    markLayoutAncestorDirty(instance)
     markSubtreeDirty(instance)
   },
 
   /**
    * Unhide an instance after Suspense resolves.
    * Called when the suspended content is ready to show.
+   *
+   * Same invalidation as hideInstance — the node's visibility change affects
+   * layout (measured content changes) and paint (content must be re-rendered).
    */
   unhideInstance(instance: TeaNode, _props: BoxProps | TextProps) {
     instance.hidden = false
     instance.contentDirty = true
+    instance.paintDirty = true
+    instance.layoutDirty = true
+    if (instance.layoutNode) {
+      instance.layoutNode.markDirty()
+    }
     // Mark parent dirty to trigger re-render
     if (instance.parent) {
       instance.parent.contentDirty = true
     }
+    markLayoutAncestorDirty(instance)
     markSubtreeDirty(instance)
   },
 
   /**
    * Hide a text instance during Suspense.
+   *
+   * Text instances don't have layout nodes. markLayoutAncestorDirty walks up
+   * to the nearest layout ancestor and marks it dirty so the measure function
+   * re-collects descendant text (collectNodeTextContent skips hidden children).
    */
   hideTextInstance(textInstance: TeaNode) {
     textInstance.hidden = true
     textInstance.contentDirty = true
+    textInstance.paintDirty = true
     if (textInstance.parent) {
       textInstance.parent.contentDirty = true
     }
+    markLayoutAncestorDirty(textInstance)
     markSubtreeDirty(textInstance)
   },
 
   /**
    * Unhide a text instance after Suspense resolves.
+   *
+   * Same invalidation as hideTextInstance — the text content changes when
+   * hidden children become visible again.
    */
   unhideTextInstance(textInstance: TeaNode, _text: string) {
     textInstance.hidden = false
     textInstance.contentDirty = true
+    textInstance.paintDirty = true
     if (textInstance.parent) {
       textInstance.parent.contentDirty = true
     }
+    markLayoutAncestorDirty(textInstance)
     markSubtreeDirty(textInstance)
   },
 }

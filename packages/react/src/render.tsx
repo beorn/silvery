@@ -38,7 +38,7 @@ import {
   disableKittyKeyboard,
   resetWindowTitle,
 } from "@silvery/term/output"
-import { createContainer, createFiberRoot, getContainerRoot, reconciler, runWithDiscreteEvent } from "./reconciler"
+import { createContainer, createFiberRoot, getContainerRoot, reconciler, runWithDiscreteEvent, setOnNodeRemoved } from "./reconciler"
 import { renderStringSync } from "./render-string"
 import { RenderScheduler } from "@silvery/term/scheduler"
 import { type ResolvedTermDef, isTerm, isTermDef, resolveFromTerm, resolveTermDef } from "@silvery/term/term-def"
@@ -433,6 +433,12 @@ function SilveryApp({
   const focusManager = useMemo(() => createFocusManager(), [])
   // Store in ref so the stable input handler closure can access it
   focusManagerRef.current = focusManager
+
+  // Wire up focus cleanup on node removal
+  useEffect(() => {
+    setOnNodeRemoved((removedNode) => focusManager.handleSubtreeRemoved(removedNode))
+    return () => setOnNodeRemoved(null)
+  }, [focusManager])
 
   return (
     <StdoutContext.Provider value={stdoutContextValue}>

@@ -69,6 +69,13 @@ export interface FocusManager {
   /** Clear focus */
   blur(): void
 
+  /**
+   * Handle a subtree being removed from the tree.
+   * If the focused node (or previous node) is within the removed subtree,
+   * clear the reference to prevent dead node retention and broken navigation.
+   */
+  handleSubtreeRemoved(removedRoot: TeaNode): void
+
   /** Push a focus scope onto the stack */
   enterScope(scopeId: string): void
   /** Pop the current focus scope */
@@ -211,6 +218,49 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
 
     // Fire focus change callback (after state is updated)
     onFocusChange?.(oldElement, null, null)
+  }
+
+  // ---- Subtree removal ----
+
+  /**
+   * Check if a node is the given target or contains it as a descendant.
+   */
+  function subtreeContains(subtreeRoot: TeaNode, target: TeaNode): boolean {
+    if (subtreeRoot === target) return true
+    for (const child of subtreeRoot.children) {
+      if (subtreeContains(child, target)) return true
+    }
+    return false
+  }
+
+  /**
+   * Handle a subtree being removed from the tree. If the active or previous
+   * element lives within the removed subtree, clear the dangling reference.
+   * This prevents dead node retention and broken navigation (indexOf → -1).
+   */
+  function handleSubtreeRemoved(removedRoot: TeaNode): void {
+    let changed = false
+
+    if (activeElement && subtreeContains(removedRoot, activeElement)) {
+      const oldElement = activeElement
+      previousElement = activeElement
+      previousId = activeId
+      activeElement = null
+      activeId = null
+      focusOrigin = null
+      changed = true
+      onFocusChange?.(oldElement, null, null)
+    }
+
+    if (previousElement && subtreeContains(removedRoot, previousElement)) {
+      previousElement = null
+      previousId = null
+      changed = true
+    }
+
+    if (changed) {
+      notify()
+    }
   }
 
   // ---- Scope management ----
@@ -422,6 +472,7 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     focus,
     focusById,
     blur,
+    handleSubtreeRemoved,
 
     enterScope,
     exitScope,

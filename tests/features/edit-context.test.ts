@@ -139,6 +139,116 @@ describe("deleteToEnd respects active selection", () => {
 })
 
 // ============================================================================
+// Selection collapse on arrow keys
+// ============================================================================
+
+describe("moveCursor collapses selection on arrow keys", () => {
+  // "hello world" with selection [2,8) = "llo wo"
+
+  test("arrow left collapses to left edge of selection", () => {
+    using ctx = createTermEditContext({ text: "hello world", selectionStart: 2, selectionEnd: 8 })
+
+    const moved = ctx.moveCursor("left")
+    expect(moved).toBe(true)
+    expect(ctx.selectionStart).toBe(2) // min(2, 8)
+    expect(ctx.selectionEnd).toBe(2)
+  })
+
+  test("arrow right collapses to right edge of selection", () => {
+    using ctx = createTermEditContext({ text: "hello world", selectionStart: 2, selectionEnd: 8 })
+
+    const moved = ctx.moveCursor("right")
+    expect(moved).toBe(true)
+    expect(ctx.selectionStart).toBe(8) // max(2, 8)
+    expect(ctx.selectionEnd).toBe(8)
+  })
+
+  test("arrow left collapses reversed selection (start > end) to left edge", () => {
+    // Reversed selection: start=8, end=2
+    using ctx = createTermEditContext({ text: "hello world", selectionStart: 8, selectionEnd: 2 })
+
+    const moved = ctx.moveCursor("left")
+    expect(moved).toBe(true)
+    expect(ctx.selectionStart).toBe(2) // min(8, 2)
+    expect(ctx.selectionEnd).toBe(2)
+  })
+
+  test("arrow right collapses reversed selection (start > end) to right edge", () => {
+    // Reversed selection: start=8, end=2
+    using ctx = createTermEditContext({ text: "hello world", selectionStart: 8, selectionEnd: 2 })
+
+    const moved = ctx.moveCursor("right")
+    expect(moved).toBe(true)
+    expect(ctx.selectionStart).toBe(8) // max(8, 2)
+    expect(ctx.selectionEnd).toBe(8)
+  })
+
+  test("arrow left with selection at position 0 collapses to 0", () => {
+    // Selection from 0 to 5
+    using ctx = createTermEditContext({ text: "hello world", selectionStart: 0, selectionEnd: 5 })
+
+    const moved = ctx.moveCursor("left")
+    expect(moved).toBe(true)
+    expect(ctx.selectionStart).toBe(0)
+    expect(ctx.selectionEnd).toBe(0)
+  })
+
+  test("arrow right with selection at end collapses to end", () => {
+    // Selection from 5 to 11 (end of "hello world")
+    using ctx = createTermEditContext({ text: "hello world", selectionStart: 5, selectionEnd: 11 })
+
+    const moved = ctx.moveCursor("right")
+    expect(moved).toBe(true)
+    expect(ctx.selectionStart).toBe(11)
+    expect(ctx.selectionEnd).toBe(11)
+  })
+
+  test("arrow up with selection collapses then moves up", () => {
+    // Multi-line text, selection in the second visual line
+    // wrapWidth=10, "abcdefghij" wraps: line0="abcdefghij", line1="klmno"
+    using ctx = createTermEditContext({
+      text: "abcdefghijklmno",
+      selectionStart: 3,
+      selectionEnd: 12,
+      wrapWidth: 10,
+    })
+
+    const moved = ctx.moveCursor("up")
+    // With selection, should collapse first, then attempt up movement
+    // After collapse to min(3,12)=3, cursor is at col 3 of row 0 — already top row
+    expect(moved).toBe(false)
+    expect(ctx.selectionStart).toBe(ctx.selectionEnd) // selection collapsed
+  })
+
+  test("arrow down with selection collapses then moves down", () => {
+    // wrapWidth=10: "abcdefghij" (row0), "klmno" (row1)
+    using ctx = createTermEditContext({
+      text: "abcdefghijklmno",
+      selectionStart: 3,
+      selectionEnd: 12,
+      wrapWidth: 10,
+    })
+
+    const moved = ctx.moveCursor("down")
+    // After collapse to max(3,12)=12, cursor at row 1 col 2 — already last row
+    expect(moved).toBe(false)
+    expect(ctx.selectionStart).toBe(ctx.selectionEnd) // selection collapsed
+  })
+
+  test("no-op without selection: left/right behave normally", () => {
+    using ctx = createTermEditContext({ text: "hello", selectionStart: 3 })
+
+    ctx.moveCursor("left")
+    expect(ctx.selectionStart).toBe(2)
+    expect(ctx.selectionEnd).toBe(2)
+
+    ctx.moveCursor("right")
+    expect(ctx.selectionStart).toBe(3)
+    expect(ctx.selectionEnd).toBe(3)
+  })
+})
+
+// ============================================================================
 // text-ops: replace type
 // ============================================================================
 

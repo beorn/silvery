@@ -14,6 +14,7 @@ import type { TeaNode, Rect } from "./types"
 
 /** Check if a node has the focusable prop set to true (or truthy). */
 function isFocusable(node: TeaNode): boolean {
+  if (node.hidden) return false
   const props = node.props as Record<string, unknown>
   return Boolean(props.focusable) && props.display !== "none"
 }
@@ -54,7 +55,8 @@ export function getTabOrder(root: TeaNode, scope?: TeaNode): TeaNode[] {
   const walkRoot = scope ?? root
 
   function walk(node: TeaNode): void {
-    // Skip nodes with display: none
+    // Skip hidden nodes (Suspense) and display: none — entire subtree is excluded
+    if (node.hidden) return
     const props = node.props as Record<string, unknown>
     if (props.display === "none") return
 
