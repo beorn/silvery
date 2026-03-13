@@ -139,20 +139,20 @@ function calcActualVisibleCount<T>(
   itemWidth: number | ((item: T, index: number) => number),
   gap: number,
 ): number {
-  // Use ceil to include items that partially overflow the viewport.
-  // HVL's rendering loop includes such items (clipped by overflow="hidden"),
-  // so the visible count should match for accurate overflow indicators.
+  // Count items that FULLY fit within the viewport (floor semantics).
+  // Overflow indicators use this count for accurate "hidden items" reporting.
+  // The rendering loop separately limits items to the viewport boundary.
   if (typeof itemWidth === "number") {
-    return Math.max(1, Math.ceil(viewport / (itemWidth + gap)))
+    return Math.max(1, Math.floor((viewport + gap) / (itemWidth + gap)))
   }
   let usedSize = 0
   let count = 0
   for (let i = startFrom; i < items.length; i++) {
     const size = itemWidth(items[i], i)
     const sizeWithGap = size + (count > 0 ? gap : 0)
+    if (usedSize + sizeWithGap > viewport) break
     usedSize += sizeWithGap
     count++
-    if (usedSize >= viewport) break
   }
   return Math.max(1, count)
 }
@@ -284,17 +284,18 @@ function HorizontalVirtualListInner<T>(
 
   // Viewport-based item window: render items from displayScrollOffset that fit in the
   // viewport, intersected with useVirtualization's render window (respects maxRendered).
-  // No overscan beyond the viewport edge — terminal UI doesn't benefit from pre-rendering
-  // off-screen items, and they'd appear in the DOM tree despite being visually clipped.
+  // Only render items that fully fit — partial items at the edge add no visual value
+  // in terminal UI and can cause layout issues when flexShrink=0 items overflow.
   const vpStart = Math.max(startIndex, displayScrollOffset)
   const rawVpEnd = Math.min(endIndex, displayScrollOffset + visibleCount + overscan)
   let vpEnd = vpStart
   let usedWidth = 0
   for (let i = vpStart; i < rawVpEnd; i++) {
     const w = typeof itemWidth === "number" ? itemWidth : itemWidth(items[i]!, i)
-    usedWidth += w + (vpEnd > vpStart ? gap : 0)
+    const gapWidth = vpEnd > vpStart ? gap : 0
+    if (usedWidth > 0 && usedWidth + gapWidth + w > effectiveViewport) break
+    usedWidth += w + gapWidth
     vpEnd = i + 1
-    if (usedWidth >= effectiveViewport) break // This item fills/exceeds viewport, include but stop
   }
   const visibleItems = items.slice(vpStart, vpEnd)
 
