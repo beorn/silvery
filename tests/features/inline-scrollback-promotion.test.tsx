@@ -182,35 +182,12 @@ describe("inline mode with pre-existing terminal content", () => {
 
     for (let i = 0; i < 6; i++) {
       await handle.press("Enter")
-      await new Promise((r) => setTimeout(r, 500))
     }
 
     // After 6 Enter presses on a 20-row terminal, content should overflow.
-    // Check screen + scrollback for app content with box chars.
-    // Use a retry loop since inline rendering timing varies.
-    let allText = ""
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const screenText = term.screen!.getText()
-      const scrollbackText = term.scrollback!.getText()
-      allText = scrollbackText + screenText
-      if (
-        allText.includes("Agent") ||
-        allText.includes("auth") ||
-        allText.includes("Fix the login") ||
-        allText.includes("ctx")
-      ) {
-        break
-      }
-      await new Promise((r) => setTimeout(r, 200))
-    }
-
-    // App content should be present in screen or scrollback
-    const hasAppContent =
-      allText.includes("Agent") ||
-      allText.includes("auth") ||
-      allText.includes("Fix the login") ||
-      allText.includes("ctx")
-    expect(hasAppContent, `No app content found in ${allText.length} chars`).toBe(true)
+    // Status bar ("ctx") should always be visible on screen.
+    // Auto-retry handles timing — views are lazy evaluators (Playwright-style).
+    await expect(term.screen!).toContainText("ctx")
   })
 
   test("content does not jump up — render region stays at bottom", async () => {
