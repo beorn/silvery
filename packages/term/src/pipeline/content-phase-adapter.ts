@@ -53,6 +53,7 @@ import { type RenderBuffer, type RenderStyle, getRenderAdapter, hasRenderAdapter
 import type { BoxProps, TeaNode, Rect, TextProps } from "@silvery/tea/types"
 import { getBorderSize, getPadding } from "./helpers"
 import { displayWidth } from "../unicode"
+import { formatTextLines } from "./render-text"
 
 // ============================================================================
 // Main Entry Point
@@ -349,18 +350,23 @@ function renderOutlineAdapter(
   if (props.outlineColor) style.fg = props.outlineColor
   if (props.outlineDimColor) style.attrs = { dim: true }
 
+  const showTop = props.outlineTop !== false
+  const showBottom = props.outlineBottom !== false
+  const showLeft = props.outlineLeft !== false
+  const showRight = props.outlineRight !== false
+
   const isRowVisible = (row: number): boolean =>
     clipBounds ? row >= clipBounds.top && row < clipBounds.bottom && buffer.inBounds(0, row) : buffer.inBounds(0, row)
 
   // Top border
-  if (isRowVisible(y)) {
+  if (showTop && isRowVisible(y)) {
     renderHorizontalBorder(
       buffer,
       x,
       y,
       width,
-      true,
-      true,
+      showLeft,
+      showRight,
       chars.topLeft,
       chars.topRight,
       chars.horizontal,
@@ -369,16 +375,18 @@ function renderOutlineAdapter(
     )
   }
 
-  // Side borders
+  // Side borders — extend range when top/bottom are hidden
   const outRightVertical = chars.rightVertical ?? chars.vertical
+  const sideStart = showTop ? y + 1 : y
+  const sideEnd = showBottom ? y + height - 1 : y + height
   renderSideBorders(
     buffer,
     x,
     width,
-    y + 1,
-    y + height - 1,
-    true,
-    true,
+    sideStart,
+    sideEnd,
+    showLeft,
+    showRight,
     chars.vertical,
     outRightVertical,
     style,
@@ -389,14 +397,14 @@ function renderOutlineAdapter(
   // Bottom border
   const outBottomHorizontal = chars.bottomHorizontal ?? chars.horizontal
   const bottomY = y + height - 1
-  if (isRowVisible(bottomY)) {
+  if (showBottom && isRowVisible(bottomY)) {
     renderHorizontalBorder(
       buffer,
       x,
       bottomY,
       width,
-      true,
-      true,
+      showLeft,
+      showRight,
       chars.bottomLeft,
       chars.bottomRight,
       outBottomHorizontal,
@@ -485,11 +493,22 @@ function renderText(
   // Skip if entirely clipped horizontally
   if (startCol >= maxCol) return
 
-  // Truncate text to fit within the available width
-  const truncated = truncateToWidth(text, maxCol - x)
-  if (!truncated) return
+  // Format text into lines (handles wrapping, truncation, newlines)
+  const availableWidth = maxCol - x
+  const lines = formatTextLines(text, availableWidth, props.wrap)
 
-  buffer.drawText(x, y, truncated, style)
+  // Render each line
+  for (let i = 0; i < lines.length; i++) {
+    const lineY = y + i
+    // Skip lines outside vertical clip bounds
+    if (clipBounds && (lineY < clipBounds.top || lineY >= clipBounds.bottom)) continue
+    if (!buffer.inBounds(0, lineY)) continue
+
+    const truncated = truncateToWidth(lines[i]!, availableWidth)
+    if (truncated) {
+      buffer.drawText(x, lineY, truncated, style)
+    }
+  }
 }
 
 /**

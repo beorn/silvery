@@ -172,3 +172,150 @@ describe("content-phase-adapter text clipping", () => {
     }
   })
 })
+
+describe("content-phase-adapter outline side flags", () => {
+  test("outlineTop=false hides top border", () => {
+    const buffer = renderViaAdapter(
+      <Box outlineStyle="single" outlineTop={false} width={10} height={4}>
+        <Text>Hi</Text>
+      </Box>,
+      20,
+      6,
+    )
+
+    const tb = buffer.getTerminalBuffer()
+    // Row 0 should NOT have outline chars (top border hidden)
+    const topRow = rowText(buffer, 0)
+    expect(topRow).not.toContain("┌")
+    expect(topRow).not.toContain("┐")
+    expect(topRow).not.toContain("─")
+
+    // But left side should still render at row 0 (extends up when top hidden)
+    const cell00 = tb.getCell(0, 0)
+    expect(cell00.char).toBe("│")
+  })
+
+  test("outlineBottom=false hides bottom border", () => {
+    const buffer = renderViaAdapter(
+      <Box outlineStyle="single" outlineBottom={false} width={10} height={4}>
+        <Text>Hi</Text>
+      </Box>,
+      20,
+      6,
+    )
+
+    const tb = buffer.getTerminalBuffer()
+    // Row 3 (bottom) should NOT have outline chars
+    const bottomRow = rowText(buffer, 3)
+    expect(bottomRow).not.toContain("└")
+    expect(bottomRow).not.toContain("┘")
+    // But left side should extend to row 3
+    const cell03 = tb.getCell(0, 3)
+    expect(cell03.char).toBe("│")
+  })
+
+  test("outlineLeft=false hides left border", () => {
+    const buffer = renderViaAdapter(
+      <Box outlineStyle="single" outlineLeft={false} width={10} height={4}>
+        <Text>Hi</Text>
+      </Box>,
+      20,
+      6,
+    )
+
+    const tb = buffer.getTerminalBuffer()
+    // Left column should not have vertical border chars
+    for (let row = 1; row < 3; row++) {
+      const cell = tb.getCell(0, row)
+      expect(cell.char, `row ${row} col 0 should not be │`).not.toBe("│")
+    }
+    // Corners should not render
+    expect(tb.getCell(0, 0).char).not.toBe("┌")
+    expect(tb.getCell(0, 3).char).not.toBe("└")
+  })
+
+  test("outlineRight=false hides right border", () => {
+    const buffer = renderViaAdapter(
+      <Box outlineStyle="single" outlineRight={false} width={10} height={4}>
+        <Text>Hi</Text>
+      </Box>,
+      20,
+      6,
+    )
+
+    const tb = buffer.getTerminalBuffer()
+    // Right column (col 9) should not have vertical border chars
+    for (let row = 1; row < 3; row++) {
+      const cell = tb.getCell(9, row)
+      expect(cell.char, `row ${row} col 9 should not be │`).not.toBe("│")
+    }
+    // Right corners should not render
+    expect(tb.getCell(9, 0).char).not.toBe("┐")
+    expect(tb.getCell(9, 3).char).not.toBe("┘")
+  })
+})
+
+describe("content-phase-adapter text wrapping", () => {
+  test("text wraps to multiple lines when wrap='wrap'", () => {
+    const buffer = renderViaAdapter(
+      <Box width={10} height={5}>
+        <Text wrap="wrap">Hello world this wraps</Text>
+      </Box>,
+      20,
+      8,
+    )
+
+    // With width=10 and wrap, "Hello world this wraps" should be split across lines
+    const row0 = rowText(buffer, 0)
+    const row1 = rowText(buffer, 1)
+    expect(row0.length).toBeLessThanOrEqual(10)
+    expect(row1.length).toBeGreaterThan(0) // text should continue on line 2
+  })
+
+  test("text wraps with wrap={true}", () => {
+    const buffer = renderViaAdapter(
+      <Box width={10} height={5}>
+        <Text wrap={true}>Hello world this wraps</Text>
+      </Box>,
+      20,
+      8,
+    )
+
+    const row0 = rowText(buffer, 0)
+    const row1 = rowText(buffer, 1)
+    expect(row0.length).toBeLessThanOrEqual(10)
+    expect(row1.length).toBeGreaterThan(0)
+  })
+
+  test("text truncates with wrap='truncate'", () => {
+    const buffer = renderViaAdapter(
+      <Box width={10} height={3}>
+        <Text wrap="truncate">Hello world this is long</Text>
+      </Box>,
+      20,
+      5,
+    )
+
+    const row0 = rowText(buffer, 0)
+    expect(row0.length).toBeLessThanOrEqual(10)
+    // Should have ellipsis at end
+    expect(row0).toContain("\u2026")
+    // No text on row 1
+    const row1 = rowText(buffer, 1)
+    expect(row1).toBe("")
+  })
+
+  test("text with newlines renders multiple lines", () => {
+    const buffer = renderViaAdapter(
+      <Box width={20} height={5}>
+        <Text>{"Line one\nLine two\nLine three"}</Text>
+      </Box>,
+      30,
+      8,
+    )
+
+    expect(rowText(buffer, 0)).toContain("Line one")
+    expect(rowText(buffer, 1)).toContain("Line two")
+    expect(rowText(buffer, 2)).toContain("Line three")
+  })
+})

@@ -28,6 +28,14 @@
       "types": "./src/reconciler/index.ts",
       "import": "./src/reconciler/index.ts"
     },
+    "./reconciler/host-config": {
+      "types": "./src/reconciler/host-config.ts",
+      "import": "./src/reconciler/host-config.ts"
+    },
+    "./reconciler/nodes": {
+      "types": "./src/reconciler/nodes.ts",
+      "import": "./src/reconciler/nodes.ts"
+    },
     "./*": {
       "types": "./src/*",
       "import": "./src/*"
