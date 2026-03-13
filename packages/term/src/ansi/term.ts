@@ -360,7 +360,11 @@ export function createTerm(
 ): Term {
   // Two-arg: createTerm(backend, { cols, rows }) — raw backend + dims
   if (second && first && isTermBackend(first)) {
-    const { createTerminal } = require("@termless/core") as {
+    // Lazy require — @termless/core is an optional dependency, only needed
+    // for emulator backends. Using a variable prevents static analysis from
+    // trying to resolve it at bundle/parse time.
+    const mod = "@termless/core"
+    const { createTerminal } = require(mod) as {
       createTerminal: (opts: { backend: TermEmulatorBackend; cols: number; rows: number }) => TermEmulator
     }
     const emulator = createTerminal({ backend: first as TermEmulatorBackend, ...second })

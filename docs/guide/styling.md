@@ -371,7 +371,7 @@ Set `borderStyle` and let the component pick the right token. Interactive compon
 Manual focus switching with hardcoded colors — breaks on every theme. Overriding input borders with `$primary` fights the three-tier system. Using `$success` on a structural border implies status meaning where there is none.
 :::
 
-→ [TextInput reference](/api/text-input) · [Box reference](/api/box)
+→ [Box reference](/api/box)
 
 ## 8. Keep Palette Colors for Data
 

@@ -73,6 +73,7 @@ const nodeStubPlugin: import("bun").BunPlugin = {
   setup(build) {
     const stubs: Record<string, string> = {
       child_process: "export function spawnSync() { return { status: 1, stdout: '', stderr: '' } }",
+      "node:process": "export default globalThis.process",
     }
     for (const mod of Object.keys(stubs)) {
       build.onResolve({ filter: new RegExp(`^${mod}$`) }, (args) => ({
@@ -100,7 +101,7 @@ const sharedOptions = {
   sourcemap: "external" as const,
   define: browserDefines,
   banner: processShim,
-  external: ["yoga-wasm-web", "ws"],
+  external: ["yoga-wasm-web", "ws", "@termless/core"],
   plugins: [nodeStubPlugin],
 }
 
