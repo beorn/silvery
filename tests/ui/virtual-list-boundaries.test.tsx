@@ -320,9 +320,7 @@ describe("VirtualList — gap handling", () => {
       <VirtualList items={items} height={5} itemHeight={1} gap={0} scrollTo={0} renderItem={renderItem} />,
     )
     const r2 = createRenderer({ cols: 40, rows: 7 })
-    const app2 = r2(
-      <VirtualList items={items} height={5} itemHeight={1} scrollTo={0} renderItem={renderItem} />,
-    )
+    const app2 = r2(<VirtualList items={items} height={5} itemHeight={1} scrollTo={0} renderItem={renderItem} />)
     expect(stripAnsi(app1.text)).toBe(stripAnsi(app2.text))
   })
 })

@@ -1066,26 +1066,8 @@ function ansiColorToColor(code: number): Color {
 
   // 256 color palette index (0-255)
   if (code < 30 || (code >= 38 && code < 40) || (code >= 48 && code < 90)) {
-    // Direct palette index - map common ones
-    const paletteMap: Record<number, number> = {
-      0: 0, // black
-      1: 1, // red
-      2: 2, // green
-      3: 3, // yellow
-      4: 4, // blue
-      5: 5, // magenta
-      6: 6, // cyan
-      7: 7, // white
-      8: 8, // gray
-      9: 9, // redBright
-      10: 10, // greenBright
-      11: 11, // yellowBright
-      12: 12, // blueBright
-      13: 13, // magentaBright
-      14: 14, // cyanBright
-      15: 15, // whiteBright
-    }
-    return paletteMap[code] ?? code
+    // Direct palette index (0-255) — return as-is
+    return code
   }
 
   // Standard foreground colors (30-37) map to palette 0-7

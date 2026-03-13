@@ -226,26 +226,16 @@ export function createTermEditContext(options?: TermEditContextOptions): TermEdi
     const deletedText = _text.slice(start, end)
     _text = _text.slice(0, start) + newText + _text.slice(end)
 
-    // Build the TextOp. If we both deleted and inserted, model as a delete
-    // followed by insert. For simplicity, if there's deleted text we emit
-    // a delete op; if there's inserted text we emit an insert op. When both
-    // happen (replace), we emit the insert (the deleted text is captured so
-    // inversion works). The caller gets a single op.
+    // Build the TextOp describing this mutation (for undo).
     let op: TextOp
     if (deletedText.length > 0 && newText.length === 0) {
       op = { type: "delete", offset: start, text: deletedText }
     } else if (deletedText.length === 0 && newText.length > 0) {
       op = { type: "insert", offset: start, text: newText }
     } else {
-      // Replace: model as delete then insert. Return the insert op;
-      // the delete information is embedded (the caller can reconstruct
-      // the full inverse from the delete + insert pair, but for the
-      // simple undo case we emit the insert so invertTextOp gives a
-      // delete that removes the new text).
-      // Actually, for correct undo of replacements we need both ops.
-      // For now, emit a delete op -- undo will re-insert the deleted text.
-      // The insert portion is handled by tracking the cursor position.
-      op = { type: "delete", offset: start, text: deletedText }
+      // Replace: both deletion and insertion. Use a replace op so that
+      // invertTextOp can produce the correct inverse (swap deleted/text).
+      op = { type: "replace", offset: start, text: newText, deleted: deletedText }
     }
 
     // Adjust selection: place cursor at end of inserted text
@@ -365,6 +355,11 @@ export function createTermEditContext(options?: TermEditContextOptions): TermEdi
 
   function deleteWord(): TextOp | null {
     _stickyX = null
+    if (_selectionStart !== _selectionEnd) {
+      const start = Math.min(_selectionStart, _selectionEnd)
+      const end = Math.max(_selectionStart, _selectionEnd)
+      return updateText(start, end, "")
+    }
     if (_selectionStart === 0) return null
     const start = wordDeleteStart(_selectionStart)
     if (start === _selectionStart) return null
@@ -373,6 +368,11 @@ export function createTermEditContext(options?: TermEditContextOptions): TermEdi
 
   function deleteToStart(): TextOp | null {
     _stickyX = null
+    if (_selectionStart !== _selectionEnd) {
+      const start = Math.min(_selectionStart, _selectionEnd)
+      const end = Math.max(_selectionStart, _selectionEnd)
+      return updateText(start, end, "")
+    }
     const lineStart = visualLineStart(_selectionStart)
     if (lineStart === _selectionStart) return null
     return updateText(lineStart, _selectionStart, "")
@@ -380,6 +380,11 @@ export function createTermEditContext(options?: TermEditContextOptions): TermEdi
 
   function deleteToEnd(): TextOp | null {
     _stickyX = null
+    if (_selectionStart !== _selectionEnd) {
+      const start = Math.min(_selectionStart, _selectionEnd)
+      const end = Math.max(_selectionStart, _selectionEnd)
+      return updateText(start, end, "")
+    }
     const lineEnd = visualLineEnd(_selectionStart)
     if (lineEnd === _selectionStart) return null
     return updateText(_selectionStart, lineEnd, "")

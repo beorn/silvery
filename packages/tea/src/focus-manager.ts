@@ -125,9 +125,12 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
   // Subscriber management
   const listeners = new Set<() => void>()
   let snapshot: FocusSnapshot | null = null
+  /** Counter incremented on every notify(); used by activateScope to detect inner notifications. */
+  let notifyCount = 0
 
   function notify(): void {
     snapshot = null // Invalidate cached snapshot
+    notifyCount++
     for (const listener of listeners) {
       listener()
     }
@@ -237,7 +240,9 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
     // Switch scope
     activeScopeId = scopeId
 
-    // Restore focus: remembered element, or first focusable in scope
+    // Restore focus: remembered element, or first focusable in scope.
+    // Track whether notify() fired during focus/focusById to avoid double-notify.
+    const countBefore = notifyCount
     const remembered = scopeMemory[scopeId]
     if (remembered) {
       focusById(remembered, root, "programmatic")
@@ -251,7 +256,10 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
       }
     }
 
-    notify()
+    // Only notify if focus/focusById didn't already notify.
+    if (notifyCount === countBefore) {
+      notify()
+    }
   }
 
   // ---- Tree queries ----
@@ -402,7 +410,7 @@ export function createFocusManager(options?: FocusManagerOptions): FocusManager 
       return focusOrigin
     },
     get scopeStack() {
-      return scopeStack as readonly string[]
+      return [...scopeStack] as readonly string[]
     },
     get scopeMemory() {
       return scopeMemory as Readonly<Record<string, string>>

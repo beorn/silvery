@@ -127,4 +127,51 @@ describe("prop removal on rerender", () => {
     )
     expect(stripAnsi(app.text)).toBe("X")
   })
+
+  test("maxWidth removal only resets when prop was previously set", () => {
+    const r = createRenderer({ cols: 20, rows: 5 })
+    // First render without maxWidth — should not trigger unconditional reset
+    const app = r(
+      <Box flexDirection="column">
+        <Box maxWidth={5}>
+          <Text>ABCDEFGHIJ</Text>
+        </Box>
+      </Box>,
+    )
+    // Text should be constrained to 5 chars
+    expect(stripAnsi(app.text)).toContain("ABCDE")
+
+    // Remove maxWidth — should reset to unconstrained
+    app.rerender(
+      <Box flexDirection="column">
+        <Box>
+          <Text>ABCDEFGHIJ</Text>
+        </Box>
+      </Box>,
+    )
+    expect(stripAnsi(app.text)).toContain("ABCDEFGHIJ")
+  })
+
+  test("maxHeight removal only resets when prop was previously set", () => {
+    const r = createRenderer({ cols: 20, rows: 10 })
+    const app = r(
+      <Box flexDirection="column">
+        <Box maxHeight={1} flexDirection="column">
+          <Text>Line1</Text>
+          <Text>Line2</Text>
+        </Box>
+      </Box>,
+    )
+
+    // Remove maxHeight — should reset to unconstrained
+    app.rerender(
+      <Box flexDirection="column">
+        <Box flexDirection="column">
+          <Text>Line1</Text>
+          <Text>Line2</Text>
+        </Box>
+      </Box>,
+    )
+    expect(stripAnsi(app.text)).toContain("Line2")
+  })
 })

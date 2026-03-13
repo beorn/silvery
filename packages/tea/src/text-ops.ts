@@ -27,8 +27,13 @@
  * - `insert`: text was inserted at `offset`
  * - `delete`: text was deleted starting at `offset` (the deleted content is
  *   stored in `text` so the operation can be inverted)
+ * - `replace`: text at `offset` was replaced — `deleted` holds the old text,
+ *   `text` holds the new text. The inverse swaps them.
  */
-export type TextOp = { type: "insert"; offset: number; text: string } | { type: "delete"; offset: number; text: string }
+export type TextOp =
+  | { type: "insert"; offset: number; text: string }
+  | { type: "delete"; offset: number; text: string }
+  | { type: "replace"; offset: number; text: string; deleted: string }
 
 // =============================================================================
 // Core Functions
@@ -47,6 +52,22 @@ export function applyTextOp(text: string, op: TextOp): string {
 
   if (op.type === "insert") {
     return text.slice(0, op.offset) + op.text + text.slice(op.offset)
+  }
+
+  if (op.type === "replace") {
+    const end = op.offset + op.deleted.length
+    if (end > text.length) {
+      throw new RangeError(
+        `TextOp replace extends past end: offset=${op.offset}, deleteLen=${op.deleted.length}, textLen=${text.length}`,
+      )
+    }
+    const actual = text.slice(op.offset, end)
+    if (actual !== op.deleted) {
+      throw new Error(
+        `TextOp replace mismatch at offset ${op.offset}: expected ${JSON.stringify(op.deleted)}, got ${JSON.stringify(actual)}`,
+      )
+    }
+    return text.slice(0, op.offset) + op.text + text.slice(end)
   }
 
   // delete
@@ -74,6 +95,9 @@ export function applyTextOp(text: string, op: TextOp): string {
 export function invertTextOp(op: TextOp): TextOp {
   if (op.type === "insert") {
     return { type: "delete", offset: op.offset, text: op.text }
+  }
+  if (op.type === "replace") {
+    return { type: "replace", offset: op.offset, text: op.deleted, deleted: op.text }
   }
   return { type: "insert", offset: op.offset, text: op.text }
 }

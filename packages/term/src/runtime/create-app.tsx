@@ -1581,16 +1581,15 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       flushCount++
     }
 
-    // When multiple doRender() calls happened (layout feedback, effects),
-    // the final buffer's dirty rows only cover the LAST doRender's changes.
-    // But runtime.render() diffs against its own prevBuffer (from the previous
-    // event batch), which may be older. Rows changed in earlier doRender calls
-    // but not the last one would be invisible to diffBuffers' dirty row scan,
-    // causing those rows to be skipped → garbled terminal output.
-    // Fix: mark all rows dirty so diffBuffers does a full scan.
-    if (flushCount > 0) {
-      currentBuffer._buffer.markAllRowsDirty()
-    }
+    // The content phase's dirty rows are relative to _prevTermBuffer (pipeline's
+    // prev buffer). But runtime.render() diffs against its own prevBuffer, which
+    // may differ when: (a) multiple doRender calls shifted _prevTermBuffer ahead,
+    // or (b) the Z chord timeout causes the zoom render to arrive as a deferred
+    // event where intermediate renders have updated _prevTermBuffer.
+    // Always mark all rows dirty to ensure runtime.render() does a full diff.
+    // The cost is negligible (diffBuffers still skips identical rows via
+    // rowMetadataEquals/rowCharsEquals pre-check), but correctness is guaranteed.
+    currentBuffer._buffer.markAllRowsDirty()
 
     inEventHandler = false
     const runtimeStart = performance.now()

@@ -199,6 +199,8 @@ function collectNodeTextContent(node: TeaNode): string {
   let result = ""
   for (let i = 0; i < node.children.length; i++) {
     const child = node.children[i]!
+    // Skip hidden children (e.g., React Suspense hides the primary tree while showing fallback)
+    if (child.hidden) continue
     let childText = collectNodeTextContent(child)
     // Apply internal_transform from virtual text nodes (nested Transform components),
     // matching Ink's squashTextNodes which calls childNode.internal_transform(nodeText, index)
@@ -317,8 +319,7 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?
     } else if (typeof props.maxWidth === "number") {
       layoutNode.setMaxWidth(props.maxWidth)
     }
-  } else {
-    // Reset maxWidth when prop is removed (e.g., rerender without maxWidth)
+  } else if (wasRemoved("maxWidth")) {
     layoutNode.setMaxWidth(Number.POSITIVE_INFINITY)
   }
 
@@ -328,8 +329,7 @@ export function applyBoxProps(layoutNode: LayoutNode, props: BoxProps, oldProps?
     } else if (typeof props.maxHeight === "number") {
       layoutNode.setMaxHeight(props.maxHeight)
     }
-  } else {
-    // Reset maxHeight when prop is removed (e.g., rerender without maxHeight)
+  } else if (wasRemoved("maxHeight")) {
     layoutNode.setMaxHeight(Number.POSITIVE_INFINITY)
   }
 
