@@ -444,6 +444,20 @@ Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content a
 
 **Key insight:** Overflow clearing must happen at the level of the ancestor whose border/padding is affected, not at the immediate parent. Parent-first render order means clearing at a child level will overwrite borders that were already drawn by ancestors.
 
+### Output Phase: Flag Emoji Cursor Drift (2026-03-12)
+
+Flag emoji (🇨🇦) are regional indicator sequences (U+1F1E6..U+1F1FF pairs). Some terminals (xterm.js headless, older terminals) treat them as two width-1 chars instead of one width-2 char. The buffer models them correctly as one wide cell + one continuation cell, but the terminal cursor advances differently.
+
+**Symptom**: After j+l navigation at 200+ cols on a board with flag emoji in the title, the first column shows duplicate card content, stale border fragments, and overlapping cards. Only manifests at wide terminals because the title bar (with flag emoji) is on the same row as the garbled content.
+
+**Why SILVERY_STRICT didn't catch it**: STRICT compares buffer content (content phase), which is correct. The bug is in the output phase — ANSI generation creates terminal state that diverges from the buffer. SILVERY_STRICT_OUTPUT uses `replayAnsiWithStyles` which has the same width assumption as the buffer (returns 2 for flag emoji), so it agrees with the buffer. Only feeding ANSI through a real xterm.js terminal emulator (`@termless/xtermjs`) reveals the divergence.
+
+**Fix**: Two complementary changes to `output-phase.ts`:
+1. `isFlagSequence()` added to `wrapTextSizing` — wraps flag emoji in OSC 66 to force width 2 (for terminals supporting text sizing protocol).
+2. Cursor re-sync added to `bufferToAnsi` after every wide char — emits explicit CUP to re-sync the terminal cursor, matching the existing re-sync in `changesToAnsi`. After `x++` (skip continuation), CUP targets `x + 2` (1-indexed) = next cell position.
+
+**Key insight**: `bufferToAnsi` (full render) creates the initial terminal state. If that state diverges from the buffer due to width disagreement, subsequent `changesToAnsi` (incremental) renders use CUP for changed cells (correct), but unchanged cells retain the shifted positions from the full render — creating visible garble where old and new content overlap.
+
 ## Common Blind Paths
 
 | Blind Path                                    | Why It Doesn't Work                                                            | What to Do Instead                                                                           |
@@ -490,6 +504,7 @@ Fix: `BgSegment` tracking in `render-text.ts` strips ANSI bg from text content a
 | Flickering on every render                                 | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of content phase                                      |
 | Stale overlay pixels after shrink (black area)             | `clearExcessArea` not called; check `parentRegionCleared` + `forceRepaint` interaction                                         |
 | CJK/wide char garble, text shifts right                    | `bufferToAnsi` cursor drift: wide char without continuation at col+1. Run `SILVERY_STRICT_OUTPUT=1`                            |
+| Flag emoji garble at wide terminals (200+ cols)            | `bufferToAnsi`/`changesToAnsi` cursor re-sync after wide chars; `wrapTextSizing` must include flag emoji (`isFlagSequence`)    |
 | Stale chars in ancestor border/padding after child shrinks | Descendant overflow: `clearExcessArea` clips to immediate parent. Use `hasDescendantOverflowChanged()` for recursive detection |
 
 ## Quick Regression Test Template
