@@ -2290,9 +2290,7 @@ function verifyTerminalEquivalence(
         if (ours.bold !== theirs.bold) diffs.push(`bold: ${ours.bold} vs ${theirs.bold}`)
         if (ours.dim !== theirs.dim) diffs.push(`dim: ${ours.dim} vs ${theirs.dim}`)
         if (ours.italic !== theirs.italic) diffs.push(`italic: ${ours.italic} vs ${theirs.italic}`)
-        // Underline: buffer may store boolean, terminal returns style string
-        const oursUl = ours.underline === true ? "single" : ours.underline
-        if (oursUl !== theirs.underline) diffs.push(`underline: ${ours.underline} vs ${theirs.underline}`)
+        if (ours.underline !== theirs.underline) diffs.push(`underline: ${ours.underline} vs ${theirs.underline}`)
         if (ours.inverse !== theirs.inverse) diffs.push(`inverse: ${ours.inverse} vs ${theirs.inverse}`)
         if (ours.strikethrough !== theirs.strikethrough)
           diffs.push(`strikethrough: ${ours.strikethrough} vs ${theirs.strikethrough}`)
