@@ -518,8 +518,9 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
   // With IS_REACT_ACT_ENVIRONMENT=true (set by silvery/testing), state updates
   // outside act() boundaries may be dropped.
   // Max iterations for singlePassLayout mode. Normally 1-2 passes, but resize
-  // can need 3 (pass 0 stale zustand + pass 1 updated dims + pass 2 layout feedback).
-  const MAX_SINGLE_PASS_ITERATIONS = 3
+  // can need 3+ (pass 0 stale zustand + pass 1 updated dims + pass 2+ layout
+  // feedback stabilization). Matches classic path's cap of 5.
+  const MAX_SINGLE_PASS_ITERATIONS = 5
 
   function doRender(): string {
     let output: string
@@ -570,6 +571,15 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           }
         })
         if (!hadReactCommit) break
+      }
+
+      if (hadReactCommit && singlePassCount >= MAX_SINGLE_PASS_ITERATIONS) {
+        if (process.env.SILVERY_STRICT) {
+          console.warn(
+            `[SILVERY] singlePassLayout exhausted ${MAX_SINGLE_PASS_ITERATIONS} iterations ` +
+            `with pending React commit — output may be stale`
+          )
+        }
       }
 
       // When multiple passes ran, the final buffer's dirty rows only cover

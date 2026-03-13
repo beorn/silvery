@@ -796,14 +796,17 @@ export function outputPhase(
 }
 
 /**
- * Check if a line has any non-space content.
+ * Check if a line has any non-space content or styling.
+ * A row with only spaces but with background color or other styling
+ * (bold, inverse, underline, etc.) is visually meaningful.
  */
 function lineHasContent(buffer: TerminalBuffer, y: number): boolean {
   for (let x = 0; x < buffer.width; x++) {
     const ch = buffer.getCellChar(x, y)
-    if (ch !== " " && ch !== "") {
-      return true
-    }
+    if (ch !== " " && ch !== "") return true
+    // Styled blank cells (background color, inverse, etc.) are visually meaningful
+    const bg = buffer.getCellBg(x, y)
+    if (bg !== null) return true
   }
   return false
 }
@@ -925,7 +928,13 @@ function inlineIncrementalRender(
 
   // Diff buffers
   const { pool, count } = diffBuffers(prev, next)
-  if (count === 0 && nextContentLines === prevContentLines) return ""
+  if (count === 0 && nextContentLines === prevContentLines) {
+    // No buffer changes, but cursor position may have changed.
+    // Emit cursor suffix to update the terminal cursor.
+    const suffix = inlineCursorSuffix(cursorPos ?? null, next, termRows)
+    updateInlineCursorRow(state, cursorPos, maxOutputLines, startLine)
+    return suffix
+  }
 
   // Move cursor from tracked row to row 0 of render region
   let output = ""

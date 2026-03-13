@@ -264,7 +264,8 @@ describe("inline: incremental rendering", () => {
     const buf2 = bufferWithLines(COLS, ROWS, ["Static", "Content"])
     const output = op(buf1, buf2, "inline", 0, ROWS)
 
-    expect(output).toBe("")
+    // When content is identical, only cursor suffix is emitted (hide cursor)
+    expect(output).toBe("\x1b[?25l")
   })
 
   test("updates first line only", () => {

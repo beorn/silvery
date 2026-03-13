@@ -224,13 +224,19 @@ function renderNodeToBuffer(
 
   // Skip hidden nodes (Suspense support)
   // When a Suspense boundary shows a fallback, the hidden subtree is not rendered
-  if (node.hidden) return
+  if (node.hidden) {
+    clearDirtyFlags(node)
+    return
+  }
 
   const props = node.props as BoxProps & TextProps
 
   // Skip display="none" nodes - they have 0x0 dimensions and shouldn't render
   // Also skip their children since the entire subtree is hidden
-  if (props.display === "none") return
+  if (props.display === "none") {
+    clearDirtyFlags(node)
+    return
+  }
 
   // Skip nodes entirely off-screen (viewport clipping).
   // The scroll container's VirtualList already handles most culling, but this
@@ -354,6 +360,7 @@ function renderNodeToBuffer(
   // actual rendering. Popped at the end of this function after all child passes.
   const nodeTheme = (props as BoxProps).theme as Theme | undefined
   if (nodeTheme) pushContextTheme(nodeTheme)
+  try {
 
   // Check if this is a scrollable container
   const isScrollContainer = props.overflow === "scroll" && node.scrollState
@@ -490,7 +497,7 @@ function renderNodeToBuffer(
         .join(",")
       const childrenNeedRepaint_ = node.childrenDirty || childPositionChanged || parentRegionChanged
       const childHasPrev_ = childrenNeedRepaint_ ? false : hasPrevBuffer
-      const childAncestorCleared_ = parentRegionCleared || ancestorCleared
+      const childAncestorCleared_ = parentRegionCleared || (ancestorCleared && !props.backgroundColor)
       nodeTrace.push({
         id: _nodeId,
         type: node.type,
@@ -644,8 +651,10 @@ function renderNodeToBuffer(
   node.childrenDirty = false
   node.layoutChangedThisFrame = false
 
-  // Pop per-subtree theme override (after ALL child passes including absolute/sticky)
-  if (nodeTheme) popContextTheme()
+  } finally {
+    // Pop per-subtree theme override (after ALL child passes including absolute/sticky)
+    if (nodeTheme) popContextTheme()
+  }
 }
 
 /**
@@ -973,11 +982,32 @@ function renderNormalChildren(
   if (stickyForceRefresh) {
     const border = props.borderStyle ? getBorderSize(props) : { top: 0, bottom: 0, left: 0, right: 0 }
     const padding = getPadding(props)
-    const contentX = layout.x + border.left + padding.left
-    const contentY = layout.y + border.top + padding.top
-    const contentWidth = layout.width - border.left - border.right - padding.left - padding.right
-    const contentHeight = layout.height - border.top - border.bottom - padding.top - padding.bottom
-    buffer.fill(contentX, contentY, contentWidth, contentHeight, { char: " ", bg: null })
+    let clearX = layout.x + border.left + padding.left
+    let clearY = layout.y - scrollOffset + border.top + padding.top
+    let clearW = layout.width - border.left - border.right - padding.left - padding.right
+    let clearH = layout.height - border.top - border.bottom - padding.top - padding.bottom
+    // Clip to clipBounds (same discipline as scroll container clear)
+    if (clipBounds) {
+      const clipTop = clipBounds.top
+      const clipBottom = clipBounds.bottom
+      if (clearY < clipTop) {
+        clearH -= clipTop - clearY
+        clearY = clipTop
+      }
+      if (clearY + clearH > clipBottom) {
+        clearH = clipBottom - clearY
+      }
+      if (clipBounds.left !== undefined && clearX < clipBounds.left) {
+        clearW -= clipBounds.left - clearX
+        clearX = clipBounds.left
+      }
+      if (clipBounds.right !== undefined && clearX + clearW > clipBounds.right) {
+        clearW = clipBounds.right - clearX
+      }
+    }
+    if (clearW > 0 && clearH > 0) {
+      buffer.fill(clearX, clearY, clearW, clearH, { char: " ", bg: null })
+    }
   }
 
   // Force children to re-render when parent's region was modified on a clone,
