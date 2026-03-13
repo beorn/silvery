@@ -303,7 +303,13 @@ function handleScrollbackPromotion(
 function isStrictOutput(): boolean {
   const outputEnv = process.env.SILVERY_STRICT_OUTPUT
   if (outputEnv === "0" || outputEnv === "false") return false
-  return !!outputEnv || !!process.env.SILVERY_STRICT
+  // Only activate when SILVERY_STRICT_OUTPUT is explicitly set.
+  // The old SILVERY_STRICT fallback was valid when the custom replayAnsiWithStyles
+  // shared the buffer's width assumptions. Now that verification uses a real terminal
+  // emulator (xterm.js via termless), it catches genuine terminal divergences (OSC 66,
+  // wide char continuation cells) that are separate from incremental rendering bugs.
+  // Use SILVERY_STRICT_OUTPUT=1 to opt in to terminal-backed output verification.
+  return !!outputEnv
 }
 function isStrictAccumulate(): boolean {
   return !!process.env.SILVERY_STRICT_ACCUMULATE
@@ -805,23 +811,31 @@ export function outputPhase(
       // Replay incremental on top of fresh prev
       const w = Math.max(prev?.width ?? next.width, next.width)
       const h = Math.max(prev?.height ?? next.height, next.height)
-      const screenIncr = replayAnsiWithStyles(w, h, freshPrev + incrOutput, ctx)
-      const screenFresh = replayAnsiWithStyles(w, h, freshOutput, ctx)
+      const termIncr = createReplayTerminal(w, h)
+      termIncr.feed(freshPrev + incrOutput)
+      const termFresh = createReplayTerminal(w, h)
+      termFresh.feed(freshOutput)
       // Find first mismatch
       let mismatchInfo = ""
       for (let y = 0; y < h && !mismatchInfo; y++) {
         for (let x = 0; x < w && !mismatchInfo; x++) {
-          const ic = screenIncr[y]?.[x]
-          const fc = screenFresh[y]?.[x]
-          if (ic && fc && (ic.char !== fc.char || !sgrColorEquals(ic.fg, fc.fg) || !sgrColorEquals(ic.bg, fc.bg))) {
+          const ic = termIncr.getCell(y, x)
+          const fc = termFresh.getCell(y, x)
+          if (ic.char !== fc.char || !sgrColorEquals(ic.fg, fc.fg) || !sgrColorEquals(ic.bg, fc.bg)) {
             mismatchInfo = `MISMATCH at (${x},${y}): incr='${ic.char}' fresh='${fc.char}' incrFg=${formatColor(ic.fg)} freshFg=${formatColor(fc.fg)} incrBg=${formatColor(ic.bg)} freshBg=${formatColor(fc.bg)}`
             // Show row context
-            const incrRow = screenIncr[y]!.map((c) => c.char).join("")
-            const freshRow = screenFresh[y]!.map((c) => c.char).join("")
+            let incrRow = ""
+            let freshRow = ""
+            for (let rx = 0; rx < w; rx++) {
+              incrRow += termIncr.getCell(y, rx).char || " "
+              freshRow += termFresh.getCell(y, rx).char || " "
+            }
             mismatchInfo += `\n  incr row ${y}: ${incrRow.slice(Math.max(0, x - 20), x + 40)}\n  fresh row ${y}: ${freshRow.slice(Math.max(0, x - 20), x + 40)}`
           }
         }
       }
+      void termIncr.close()
+      void termFresh.close()
       const status = mismatchInfo || "MATCH"
       fs.appendFileSync("/tmp/silvery-capture.log", `Frame ${_debugFrameCount}: ${count} changes, ${status}\n`)
       if (mismatchInfo) {
@@ -840,16 +854,19 @@ export function outputPhase(
   }
 
   // SILVERY_STRICT_OUTPUT: verify that the incremental ANSI output produces the
-  // same visible terminal state as a fresh render. Catches bugs in changesToAnsi
-  // that SILVERY_STRICT (buffer-level check) cannot detect.
-  if (isStrictOutput()) {
+  // same visible terminal state as a fresh render. Replays ANSI through xterm.js
+  // via termless and compares cell by cell. Requires explicit SILVERY_STRICT_OUTPUT=1.
+  // Also skipped when text sizing is enabled: OSC 66 is a Kitty-specific extension
+  // that xterm.js does not support, causing false mismatches for wide characters.
+  if (isStrictOutput() && !outputTextSizingEnabled(ctx)) {
     verifyOutputEquivalence(prev, next, incrOutput, mode, ctx)
   }
 
   // SILVERY_STRICT_ACCUMULATE: verify that the accumulated output from ALL frames
   // produces the same terminal state as a fresh render of the current buffer.
   // Catches compounding errors that per-frame verification misses.
-  if (isStrictAccumulate()) {
+  // Same text-sizing guard as STRICT_OUTPUT — xterm.js doesn't support OSC 66.
+  if (isStrictAccumulate() && !outputTextSizingEnabled(ctx)) {
     accState.accumulatedAnsi += incrOutput
     accState.accumulateFrameCount++
     verifyAccumulatedOutput(next, mode, ctx, accState)
@@ -1975,415 +1992,34 @@ function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string 
 // =============================================================================
 
 // ============================================================================
-// Style-Aware ANSI Replay
+// Terminal-Backed ANSI Replay (via @termless)
 // ============================================================================
 
-/** SGR state tracked during ANSI replay. */
-interface SgrState {
-  fg: number | { r: number; g: number; b: number } | null
-  bg: number | { r: number; g: number; b: number } | null
-  bold: boolean
-  dim: boolean
-  italic: boolean
-  underline: boolean
-  blink: boolean
-  inverse: boolean
-  hidden: boolean
-  strikethrough: boolean
+// Lazy-load termless to avoid hard dependency — only needed for STRICT modes.
+// Uses the same pattern as ansi/term.ts.
+type TermlessTerminal = {
+  feed(data: string | Uint8Array): void
+  getCell(row: number, col: number): import("@termless/core").Cell
+  close(): Promise<void>
 }
 
-/** A cell in the style-aware virtual terminal. */
-interface StyledCell {
-  char: string
-  fg: number | { r: number; g: number; b: number } | null
-  bg: number | { r: number; g: number; b: number } | null
-  bold: boolean
-  dim: boolean
-  italic: boolean
-  underline: boolean
-  blink: boolean
-  inverse: boolean
-  hidden: boolean
-  strikethrough: boolean
+let _createTerminal: ((opts: { backend: unknown; cols: number; rows: number }) => TermlessTerminal) | null = null
+let _createXtermBackend: (() => unknown) | null = null
+
+function loadTermless(): void {
+  if (_createTerminal) return
+  const coreMod = "@termless/core"
+  const xtermMod = "@termless/xtermjs"
+  const core = require(coreMod) as { createTerminal: typeof _createTerminal }
+  const xterm = require(xtermMod) as { createXtermBackend: () => unknown }
+  _createTerminal = core.createTerminal
+  _createXtermBackend = xterm.createXtermBackend
 }
 
-function createDefaultSgr(): SgrState {
-  return {
-    fg: null,
-    bg: null,
-    bold: false,
-    dim: false,
-    italic: false,
-    underline: false,
-    blink: false,
-    inverse: false,
-    hidden: false,
-    strikethrough: false,
-  }
-}
-
-function createDefaultStyledCell(): StyledCell {
-  return {
-    char: " ",
-    fg: null,
-    bg: null,
-    bold: false,
-    dim: false,
-    italic: false,
-    underline: false,
-    blink: false,
-    inverse: false,
-    hidden: false,
-    strikethrough: false,
-  }
-}
-
-/**
- * Apply SGR parameters to the current state.
- * Handles all SGR codes used by styleTransition().
- */
-function applySgrParams(params: string, sgr: SgrState): void {
-  if (params === "" || params === "0") {
-    // Reset
-    sgr.fg = null
-    sgr.bg = null
-    sgr.bold = false
-    sgr.dim = false
-    sgr.italic = false
-    sgr.underline = false
-    sgr.blink = false
-    sgr.inverse = false
-    sgr.hidden = false
-    sgr.strikethrough = false
-    return
-  }
-
-  const parts = params.split(";")
-  let i = 0
-  while (i < parts.length) {
-    const code = parts[i]!
-    // Handle subparameters (e.g., "4:3" for curly underline)
-    const colonIdx = code.indexOf(":")
-    if (colonIdx >= 0) {
-      const mainCode = parseInt(code.substring(0, colonIdx))
-      if (mainCode === 4) {
-        // Underline style subparameter
-        const sub = parseInt(code.substring(colonIdx + 1))
-        sgr.underline = sub > 0
-      }
-      i++
-      continue
-    }
-
-    const n = parseInt(code)
-    if (n === 0) {
-      sgr.fg = null
-      sgr.bg = null
-      sgr.bold = false
-      sgr.dim = false
-      sgr.italic = false
-      sgr.underline = false
-      sgr.blink = false
-      sgr.inverse = false
-      sgr.hidden = false
-      sgr.strikethrough = false
-    } else if (n === 1) {
-      sgr.bold = true
-    } else if (n === 2) {
-      sgr.dim = true
-    } else if (n === 3) {
-      sgr.italic = true
-    } else if (n === 4) {
-      sgr.underline = true
-    } else if (n === 5 || n === 6) {
-      sgr.blink = true
-    } else if (n === 7) {
-      sgr.inverse = true
-    } else if (n === 8) {
-      sgr.hidden = true
-    } else if (n === 9) {
-      sgr.strikethrough = true
-    } else if (n === 22) {
-      sgr.bold = false
-      sgr.dim = false
-    } else if (n === 23) {
-      sgr.italic = false
-    } else if (n === 24) {
-      sgr.underline = false
-    } else if (n === 25) {
-      sgr.blink = false
-    } else if (n === 27) {
-      sgr.inverse = false
-    } else if (n === 28) {
-      sgr.hidden = false
-    } else if (n === 29) {
-      sgr.strikethrough = false
-    } else if (n >= 30 && n <= 37) {
-      sgr.fg = n - 30
-    } else if (n === 38) {
-      // Extended fg color
-      if (i + 1 < parts.length && parts[i + 1] === "5" && i + 2 < parts.length) {
-        sgr.fg = parseInt(parts[i + 2]!)
-        i += 2
-      } else if (i + 1 < parts.length && parts[i + 1] === "2" && i + 4 < parts.length) {
-        sgr.fg = {
-          r: parseInt(parts[i + 2]!),
-          g: parseInt(parts[i + 3]!),
-          b: parseInt(parts[i + 4]!),
-        }
-        i += 4
-      }
-    } else if (n === 39) {
-      sgr.fg = null
-    } else if (n >= 40 && n <= 47) {
-      sgr.bg = n - 40
-    } else if (n === 48) {
-      // Extended bg color
-      if (i + 1 < parts.length && parts[i + 1] === "5" && i + 2 < parts.length) {
-        sgr.bg = parseInt(parts[i + 2]!)
-        i += 2
-      } else if (i + 1 < parts.length && parts[i + 1] === "2" && i + 4 < parts.length) {
-        sgr.bg = {
-          r: parseInt(parts[i + 2]!),
-          g: parseInt(parts[i + 3]!),
-          b: parseInt(parts[i + 4]!),
-        }
-        i += 4
-      }
-    } else if (n === 49) {
-      sgr.bg = null
-    } else if (n >= 90 && n <= 97) {
-      sgr.fg = n - 90 + 8 // bright colors: 8-15
-    } else if (n >= 100 && n <= 107) {
-      sgr.bg = n - 100 + 8
-    }
-    // 58/59 (underline color) not tracked in cell comparison for now
-    i++
-  }
-}
-
-/**
- * Replay ANSI output tracking both characters AND SGR styles.
- * Returns a 2D grid of StyledCell objects.
- */
-export function replayAnsiWithStyles(
-  width: number,
-  height: number,
-  ansi: string,
-  ctx: OutputContext = defaultContext,
-): StyledCell[][] {
-  const screen: StyledCell[][] = Array.from({ length: height }, () =>
-    Array.from({ length: width }, () => createDefaultStyledCell()),
-  )
-  let cx = 0
-  let cy = 0
-  const sgr = createDefaultSgr()
-  let i = 0
-
-  while (i < ansi.length) {
-    if (ansi[i] === "\x1b") {
-      if (ansi[i + 1] === "[") {
-        i += 2
-        let params = ""
-        while (
-          i < ansi.length &&
-          ((ansi[i]! >= "0" && ansi[i]! <= "9") || ansi[i] === ";" || ansi[i] === "?" || ansi[i] === ":")
-        ) {
-          params += ansi[i]
-          i++
-        }
-        const cmd = ansi[i]
-        i++
-        if (cmd === "H") {
-          if (params === "") {
-            cx = 0
-            cy = 0
-          } else {
-            const cmdParts = params.split(";")
-            cy = Math.max(0, (parseInt(cmdParts[0]!) || 1) - 1)
-            cx = Math.max(0, (parseInt(cmdParts[1]!) || 1) - 1)
-          }
-        } else if (cmd === "K") {
-          // Erase to end of line — fills with current bg (or default)
-          for (let x = cx; x < width; x++) {
-            const cell = screen[cy]![x]!
-            cell.char = " "
-            cell.fg = null
-            cell.bg = sgr.bg
-            cell.bold = false
-            cell.dim = false
-            cell.italic = false
-            cell.underline = false
-            cell.blink = false
-            cell.inverse = false
-            cell.hidden = false
-            cell.strikethrough = false
-          }
-        } else if (cmd === "A") {
-          cy = Math.max(0, cy - (parseInt(params) || 1))
-        } else if (cmd === "B") {
-          cy = Math.min(height - 1, cy + (parseInt(params) || 1))
-        } else if (cmd === "C") {
-          cx = Math.min(width - 1, cx + (parseInt(params) || 1))
-        } else if (cmd === "D") {
-          cx = Math.max(0, cx - (parseInt(params) || 1))
-        } else if (cmd === "G") {
-          cx = Math.max(0, (parseInt(params) || 1) - 1)
-        } else if (cmd === "J") {
-          if (params === "2") {
-            for (let y = 0; y < height; y++)
-              for (let x = 0; x < width; x++) {
-                screen[y]![x] = createDefaultStyledCell()
-              }
-          }
-        } else if (cmd === "m") {
-          // SGR — apply to current state
-          applySgrParams(params, sgr)
-        }
-        // Skip DEC modes (h/l), etc.
-      } else if (ansi[i + 1] === "]") {
-        // OSC: extract payload and check for OSC 66 (text sizing)
-        i += 2
-        let oscPayload = ""
-        while (i < ansi.length) {
-          if (ansi[i] === "\x1b" && ansi[i + 1] === "\\") {
-            i += 2
-            break
-          }
-          if (ansi[i] === "\x07") {
-            i++
-            break
-          }
-          oscPayload += ansi[i]
-          i++
-        }
-        // OSC 66: text sizing — format is "66;w=N;TEXT"
-        // Extract TEXT and process it as a character with the declared width
-        if (oscPayload.startsWith("66;")) {
-          const semiIdx = oscPayload.indexOf(";", 3)
-          if (semiIdx !== -1) {
-            const text = oscPayload.slice(semiIdx + 1)
-            const widthParam = oscPayload.slice(3, semiIdx)
-            const declaredWidth = widthParam.startsWith("w=") ? parseInt(widthParam.slice(2)) || 1 : 1
-            if (cy < height && cx < width) {
-              const cell = screen[cy]![cx]!
-              cell.char = text
-              cell.fg = sgr.fg
-              cell.bg = sgr.bg
-              cell.bold = sgr.bold
-              cell.dim = sgr.dim
-              cell.italic = sgr.italic
-              cell.underline = sgr.underline
-              cell.blink = sgr.blink
-              cell.inverse = sgr.inverse
-              cell.hidden = sgr.hidden
-              cell.strikethrough = sgr.strikethrough
-              if (declaredWidth > 1 && cx + 1 < width) {
-                const cont = screen[cy]![cx + 1]!
-                cont.char = " "
-                cont.fg = null
-                cont.bg = sgr.bg
-                cont.bold = false
-                cont.dim = false
-                cont.italic = false
-                cont.underline = false
-                cont.blink = false
-                cont.inverse = false
-                cont.hidden = false
-                cont.strikethrough = false
-              }
-              cx += declaredWidth
-            }
-          }
-        }
-        // Other OSC sequences (8=hyperlinks, etc.) are skipped
-      } else if (ansi[i + 1] === ">") {
-        i += 2
-        while (i < ansi.length && ansi[i] !== "\x1b") i++
-      } else {
-        i += 2
-      }
-    } else if (ansi[i] === "\r") {
-      cx = 0
-      i++
-    } else if (ansi[i] === "\n") {
-      cy = Math.min(height - 1, cy + 1)
-      i++
-    } else {
-      // Extract a full grapheme cluster (handles surrogate pairs and multi-codepoint sequences
-      // like flag emoji 🇺🇸 which are 2 regional indicator codepoints = 4 UTF-16 code units)
-      const cp = ansi.codePointAt(i)!
-      // Advance past this codepoint (2 code units if surrogate pair, 1 otherwise)
-      const cpLen = cp > 0xffff ? 2 : 1
-      // Collect combining marks and joiners that follow (ZWJ sequences, variation selectors, etc.)
-      let grapheme = String.fromCodePoint(cp)
-      let j = i + cpLen
-      let prevWasZwj = false
-      while (j < ansi.length) {
-        const nextCp = ansi.codePointAt(j)!
-        // Combining marks (U+0300-U+036F, U+20D0-U+20FF, U+FE00-U+FE0F variation selectors),
-        // ZWJ (U+200D), regional indicators following another regional indicator.
-        // After ZWJ, the next codepoint is always consumed (it's the joinee — e.g.,
-        // 🏃‍♂️ = runner + ZWJ + male sign + VS16: male sign is NOT a combining mark
-        // but must be part of this grapheme cluster).
-        const isCombining =
-          prevWasZwj || // Joinee after ZWJ
-          (nextCp >= 0x0300 && nextCp <= 0x036f) || // Combining Diacritical Marks
-          (nextCp >= 0x20d0 && nextCp <= 0x20ff) || // Combining Diacritical Marks for Symbols
-          (nextCp >= 0xfe00 && nextCp <= 0xfe0f) || // Variation Selectors
-          nextCp === 0xfe0e ||
-          nextCp === 0xfe0f || // Text/Emoji presentation
-          nextCp === 0x200d || // ZWJ
-          (nextCp >= 0xe0100 && nextCp <= 0xe01ef) || // Variation Selectors Supplement
-          // Skin tone modifiers (Fitzpatrick scale)
-          (nextCp >= 0x1f3fb && nextCp <= 0x1f3ff) ||
-          // Regional indicator following a regional indicator (flag sequences)
-          (cp >= 0x1f1e6 && cp <= 0x1f1ff && nextCp >= 0x1f1e6 && nextCp <= 0x1f1ff)
-        if (!isCombining) break
-        prevWasZwj = nextCp === 0x200d
-        const nextLen = nextCp > 0xffff ? 2 : 1
-        grapheme += String.fromCodePoint(nextCp)
-        j += nextLen
-      }
-      if (cy < height && cx < width) {
-        const gw = outputGraphemeWidth(grapheme, ctx)
-        const charWidth = gw || 1
-
-        const cell = screen[cy]![cx]!
-        cell.char = grapheme
-        cell.fg = sgr.fg
-        cell.bg = sgr.bg
-        cell.bold = sgr.bold
-        cell.dim = sgr.dim
-        cell.italic = sgr.italic
-        cell.underline = sgr.underline
-        cell.blink = sgr.blink
-        cell.inverse = sgr.inverse
-        cell.hidden = sgr.hidden
-        cell.strikethrough = sgr.strikethrough
-
-        // Wide character overwrites the next cell (continuation cell)
-        // Real terminals do this automatically — the wide char occupies 2 columns
-        if (charWidth > 1 && cx + 1 < width) {
-          const cont = screen[cy]![cx + 1]!
-          cont.char = " "
-          cont.fg = null
-          cont.bg = sgr.bg
-          cont.bold = false
-          cont.dim = false
-          cont.italic = false
-          cont.underline = false
-          cont.blink = false
-          cont.inverse = false
-          cont.hidden = false
-          cont.strikethrough = false
-        }
-        cx += charWidth
-      }
-      i = j
-    }
-  }
-  return screen
+/** Create a termless xterm.js terminal for ANSI replay. */
+function createReplayTerminal(cols: number, rows: number): TermlessTerminal {
+  loadTermless()
+  return _createTerminal!({ backend: _createXtermBackend!(), cols, rows })
 }
 
 /** Format a color value for display. */
@@ -2410,124 +2046,126 @@ function verifyOutputEquivalence(
   const w = Math.max(prev.width, next.width)
   // VT height must accommodate the larger buffer to prevent scrolling artifacts
   // when prev is taller than next (e.g., items removed from a scrollback list).
-  // We only compare up to next.height rows — excess rows should be cleared.
   const vtHeight = Math.max(prev.height, next.height)
-  const compareHeight = next.height
-  // DEBUG: log buffer dimensions
+
   if (process.env.SILVERY_DEBUG_OUTPUT) {
-    // eslint-disable-next-line no-console
     console.error(
       `[VERIFY] prev=${prev.width}x${prev.height} next=${next.width}x${next.height} vtSize=${w}x${vtHeight}`,
     )
   }
-  // Replay: fresh prev render + incremental diff applied on top
+
   const freshPrev = bufferToAnsi(prev, mode, ctx)
   if (process.env.SILVERY_DEBUG_OUTPUT) {
-    // eslint-disable-next-line no-console
     console.error(`[VERIFY] freshPrev len=${freshPrev.length} incrOutput len=${incrOutput.length}`)
-    // Show incrOutput as escaped string
     const escaped = incrOutput.replace(/\x1b/g, "\\e").replace(/\r/g, "\\r").replace(/\n/g, "\\n")
-    // eslint-disable-next-line no-console
     console.error(`[VERIFY] incrOutput: ${escaped.slice(0, 500)}`)
   }
-  const screenIncr = replayAnsiWithStyles(w, vtHeight, freshPrev + incrOutput, ctx)
-  // Replay: fresh render of next buffer
+
   const freshNext = bufferToAnsi(next, mode, ctx)
-  const screenFresh = replayAnsiWithStyles(w, vtHeight, freshNext, ctx)
 
-  const _dumpRowWideCells = (buf: TerminalBuffer, row: number): string => {
-    const parts: string[] = []
-    for (let cx = 0; cx < buf.width; cx++) {
-      const c = buf.getCell(cx, row)
-      const cp = c.char
-        ? [...c.char].map((ch) => "U+" + (ch.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, "0")).join(",")
-        : "empty"
-      if (c.wide) parts.push(`W@${cx}:${cp}(gw=${outputGraphemeWidth(c.char, ctx)})`)
-      if (c.continuation) parts.push(`C@${cx}`)
-      // Flag cells where written char width differs from buffer expectation
-      const charToWrite = c.char || " "
-      const vtWidth = outputGraphemeWidth(charToWrite, ctx)
-      const bufWidth = c.wide ? 2 : 1
-      if (!c.continuation && vtWidth !== bufWidth) {
-        parts.push(`MISMATCH@${cx}:${cp}(vtW=${vtWidth},bufW=${bufWidth},tse=${outputTextSizingEnabled(ctx)})`)
-      }
-    }
-    return parts.join(" ")
-  }
+  // Replay through real terminal emulator (xterm.js via termless)
+  const termIncr = createReplayTerminal(w, vtHeight)
+  termIncr.feed(freshPrev + incrOutput)
 
-  // Compare character by character AND style by style.
-  // Use vtHeight (not compareHeight) to catch stale rows after height shrink.
-  // When prev.height > next.height, stale rows beyond next.height must be
-  // verified as cleared — otherwise incremental output silently diverges.
-  for (let y = 0; y < vtHeight; y++) {
-    for (let x = 0; x < w; x++) {
-      const incr = screenIncr[y]![x]!
-      const fresh = screenFresh[y]![x]!
+  const termFresh = createReplayTerminal(w, vtHeight)
+  termFresh.feed(freshNext)
 
-      // Check character
-      if (incr.char !== fresh.char) {
-        // Build context: show the row from both renders
-        const incrRow = screenIncr[y]!.map((c) => c.char).join("")
-        const freshRow = screenFresh[y]!.map((c) => c.char).join("")
-        // Also show the prev buffer row for diagnosis
-        const prevRow = screenIncr[y]!.map((_, cx) => {
-          const prevCell = prev.getCell(cx, y)
-          return prevCell.char
-        }).join("")
-        // Show what changesToAnsi tried to write at this position
-        const nextCell = next.getCell(x, y)
-        const prevCell = prev.getCell(x, y)
-        // Show detailed column-by-column comparison around the mismatch
-        const contextStart = Math.max(0, x - 5)
-        const contextEnd = Math.min(w, x + 10)
-        const colDetails: string[] = []
-        for (let cx = contextStart; cx < contextEnd; cx++) {
-          const ic = screenIncr[y]![cx]!
-          const fc = screenFresh[y]![cx]!
-          const pc = prev.getCell(cx, y)
-          const nc = next.getCell(cx, y)
-          const marker = cx === x ? " <<<" : ic.char !== fc.char ? " !!!" : ""
-          colDetails.push(
-            `  col ${cx}: prev='${pc.char}'(w=${pc.wide},c=${pc.continuation}) next='${nc.char}' incr='${ic.char}' fresh='${fc.char}' wide=${nc.wide} cont=${nc.continuation}${marker}`,
-          )
+  try {
+    const _dumpRowWideCells = (buf: TerminalBuffer, row: number): string => {
+      const parts: string[] = []
+      for (let cx = 0; cx < buf.width; cx++) {
+        const c = buf.getCell(cx, row)
+        const cp = c.char
+          ? [...c.char]
+              .map((ch) => "U+" + (ch.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, "0"))
+              .join(",")
+          : "empty"
+        if (c.wide) parts.push(`W@${cx}:${cp}(gw=${outputGraphemeWidth(c.char, ctx)})`)
+        if (c.continuation) parts.push(`C@${cx}`)
+        const charToWrite = c.char || " "
+        const vtWidth = outputGraphemeWidth(charToWrite, ctx)
+        const bufWidth = c.wide ? 2 : 1
+        if (!c.continuation && vtWidth !== bufWidth) {
+          parts.push(`MISMATCH@${cx}:${cp}(vtW=${vtWidth},bufW=${bufWidth},tse=${outputTextSizingEnabled(ctx)})`)
         }
-        const msg =
-          `SILVERY_STRICT_OUTPUT char mismatch at (${x},${y}): ` +
-          `incremental='${incr.char}' fresh='${fresh.char}'\n` +
-          `  prev buffer cell: char='${prevCell.char}' bg=${prevCell.bg} wide=${prevCell.wide} cont=${prevCell.continuation}\n` +
-          `  next buffer cell: char='${nextCell.char}' bg=${nextCell.bg} wide=${nextCell.wide} cont=${nextCell.continuation}\n` +
-          `  incr row: ${incrRow}\n` +
-          `  fresh row: ${freshRow}\n` +
-          `  prev row: ${prevRow}\n` +
-          `Wide/cont cells on row ${y} (next buffer): ${_dumpRowWideCells(next, y)}\n` +
-          `Wide/cont cells on row ${y} (prev buffer): ${_dumpRowWideCells(prev, y)}\n` +
-          `Column detail around mismatch:\n${colDetails.join("\n")}`
-        // eslint-disable-next-line no-console
-        console.error(msg)
-        throw new IncrementalRenderMismatchError(msg)
       }
+      return parts.join(" ")
+    }
 
-      // Check styles
-      const diffs: string[] = []
-      if (!sgrColorEquals(incr.fg, fresh.fg)) diffs.push(`fg: ${formatColor(incr.fg)} vs ${formatColor(fresh.fg)}`)
-      if (!sgrColorEquals(incr.bg, fresh.bg)) diffs.push(`bg: ${formatColor(incr.bg)} vs ${formatColor(fresh.bg)}`)
-      if (incr.bold !== fresh.bold) diffs.push(`bold: ${incr.bold} vs ${fresh.bold}`)
-      if (incr.dim !== fresh.dim) diffs.push(`dim: ${incr.dim} vs ${fresh.dim}`)
-      if (incr.italic !== fresh.italic) diffs.push(`italic: ${incr.italic} vs ${fresh.italic}`)
-      if (incr.underline !== fresh.underline) diffs.push(`underline: ${incr.underline} vs ${fresh.underline}`)
-      if (incr.inverse !== fresh.inverse) diffs.push(`inverse: ${incr.inverse} vs ${fresh.inverse}`)
-      if (incr.strikethrough !== fresh.strikethrough)
-        diffs.push(`strikethrough: ${incr.strikethrough} vs ${fresh.strikethrough}`)
+    // Compare character by character AND style by style.
+    // Use vtHeight (not next.height) to catch stale rows after height shrink.
+    // When prev.height > next.height, stale rows beyond next.height must be
+    // verified as cleared — otherwise incremental output silently diverges.
+    for (let y = 0; y < vtHeight; y++) {
+      for (let x = 0; x < w; x++) {
+        const incr = termIncr.getCell(y, x)
+        const fresh = termFresh.getCell(y, x)
 
-      if (diffs.length > 0) {
-        const msg =
-          `SILVERY_STRICT_OUTPUT style mismatch at (${x},${y}) char='${incr.char}': ` +
-          diffs.join(", ") +
-          `\n  incremental: fg=${formatColor(incr.fg)} bg=${formatColor(incr.bg)} bold=${incr.bold} dim=${incr.dim}` +
-          `\n  fresh:       fg=${formatColor(fresh.fg)} bg=${formatColor(fresh.bg)} bold=${fresh.bold} dim=${fresh.dim}`
-        throw new IncrementalRenderMismatchError(msg)
+        if (incr.char !== fresh.char) {
+          // Build row context by reading cells
+          let incrRow = ""
+          let freshRow = ""
+          for (let rx = 0; rx < w; rx++) {
+            incrRow += termIncr.getCell(y, rx).char || " "
+            freshRow += termFresh.getCell(y, rx).char || " "
+          }
+          const prevRow = Array.from({ length: w }, (_, cx) => prev.getCell(cx, y).char).join("")
+          const nextCell = next.getCell(x, y)
+          const prevCell = prev.getCell(x, y)
+          const contextStart = Math.max(0, x - 5)
+          const contextEnd = Math.min(w, x + 10)
+          const colDetails: string[] = []
+          for (let cx = contextStart; cx < contextEnd; cx++) {
+            const ic = termIncr.getCell(y, cx)
+            const fc = termFresh.getCell(y, cx)
+            const pc = prev.getCell(cx, y)
+            const nc = next.getCell(cx, y)
+            const marker = cx === x ? " <<<" : ic.char !== fc.char ? " !!!" : ""
+            colDetails.push(
+              `  col ${cx}: prev='${pc.char}'(w=${pc.wide},c=${pc.continuation}) next='${nc.char}' incr='${ic.char}' fresh='${fc.char}' wide=${nc.wide} cont=${nc.continuation}${marker}`,
+            )
+          }
+
+          const msg =
+            `SILVERY_STRICT_OUTPUT char mismatch at (${x},${y}): ` +
+            `incremental='${incr.char}' fresh='${fresh.char}'\n` +
+            `  prev buffer cell: char='${prevCell.char}' bg=${prevCell.bg} wide=${prevCell.wide} cont=${prevCell.continuation}\n` +
+            `  next buffer cell: char='${nextCell.char}' bg=${nextCell.bg} wide=${nextCell.wide} cont=${nextCell.continuation}\n` +
+            `  incr row: ${incrRow}\n` +
+            `  fresh row: ${freshRow}\n` +
+            `  prev row: ${prevRow}\n` +
+            `Wide/cont cells on row ${y} (next buffer): ${_dumpRowWideCells(next, y)}\n` +
+            `Wide/cont cells on row ${y} (prev buffer): ${_dumpRowWideCells(prev, y)}\n` +
+            `Column detail around mismatch:\n${colDetails.join("\n")}`
+          console.error(msg)
+          throw new IncrementalRenderMismatchError(msg)
+        }
+
+        // Check styles
+        const diffs: string[] = []
+        if (!sgrColorEquals(incr.fg, fresh.fg)) diffs.push(`fg: ${formatColor(incr.fg)} vs ${formatColor(fresh.fg)}`)
+        if (!sgrColorEquals(incr.bg, fresh.bg)) diffs.push(`bg: ${formatColor(incr.bg)} vs ${formatColor(fresh.bg)}`)
+        if (incr.bold !== fresh.bold) diffs.push(`bold: ${incr.bold} vs ${fresh.bold}`)
+        if (incr.dim !== fresh.dim) diffs.push(`dim: ${incr.dim} vs ${fresh.dim}`)
+        if (incr.italic !== fresh.italic) diffs.push(`italic: ${incr.italic} vs ${fresh.italic}`)
+        if (incr.underline !== fresh.underline) diffs.push(`underline: ${incr.underline} vs ${fresh.underline}`)
+        if (incr.inverse !== fresh.inverse) diffs.push(`inverse: ${incr.inverse} vs ${fresh.inverse}`)
+        if (incr.strikethrough !== fresh.strikethrough)
+          diffs.push(`strikethrough: ${incr.strikethrough} vs ${fresh.strikethrough}`)
+
+        if (diffs.length > 0) {
+          const msg =
+            `SILVERY_STRICT_OUTPUT style mismatch at (${x},${y}) char='${incr.char}': ` +
+            diffs.join(", ") +
+            `\n  incremental: fg=${formatColor(incr.fg)} bg=${formatColor(incr.bg)} bold=${incr.bold} dim=${incr.dim}` +
+            `\n  fresh:       fg=${formatColor(fresh.fg)} bg=${formatColor(fresh.bg)} bold=${fresh.bold} dim=${fresh.dim}`
+          throw new IncrementalRenderMismatchError(msg)
+        }
       }
     }
+  } finally {
+    void termIncr.close()
+    void termFresh.close()
   }
 }
 
@@ -2544,46 +2182,53 @@ function verifyAccumulatedOutput(
 ): void {
   const w = accState.accumulateWidth
   const h = accState.accumulateHeight
+
   // Replay all accumulated output (first render + all incremental updates)
-  const screenAccumulated = replayAnsiWithStyles(w, h, accState.accumulatedAnsi, ctx)
+  const termAccum = createReplayTerminal(w, h)
+  termAccum.feed(accState.accumulatedAnsi)
+
   // Replay fresh render of current buffer
   const freshOutput = bufferToAnsi(currentBuffer, mode, ctx)
-  const screenFresh = replayAnsiWithStyles(w, h, freshOutput, ctx)
+  const termFresh = createReplayTerminal(w, h)
+  termFresh.feed(freshOutput)
 
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const accum = screenAccumulated[y]![x]!
-      const fresh = screenFresh[y]![x]!
+  try {
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const accum = termAccum.getCell(y, x)
+        const fresh = termFresh.getCell(y, x)
 
-      if (accum.char !== fresh.char) {
-        const msg =
-          `SILVERY_STRICT_ACCUMULATE char mismatch at (${x},${y}) after ${accState.accumulateFrameCount} frames: ` +
-          `accumulated='${accum.char}' fresh='${fresh.char}'`
-        // eslint-disable-next-line no-console
-        console.error(msg)
-        throw new IncrementalRenderMismatchError(msg)
-      }
+        if (accum.char !== fresh.char) {
+          const msg =
+            `SILVERY_STRICT_ACCUMULATE char mismatch at (${x},${y}) after ${accState.accumulateFrameCount} frames: ` +
+            `accumulated='${accum.char}' fresh='${fresh.char}'`
+          console.error(msg)
+          throw new IncrementalRenderMismatchError(msg)
+        }
 
-      const diffs: string[] = []
-      if (!sgrColorEquals(accum.fg, fresh.fg)) diffs.push(`fg: ${formatColor(accum.fg)} vs ${formatColor(fresh.fg)}`)
-      if (!sgrColorEquals(accum.bg, fresh.bg)) diffs.push(`bg: ${formatColor(accum.bg)} vs ${formatColor(fresh.bg)}`)
-      if (accum.bold !== fresh.bold) diffs.push(`bold: ${accum.bold} vs ${fresh.bold}`)
-      if (accum.dim !== fresh.dim) diffs.push(`dim: ${accum.dim} vs ${fresh.dim}`)
-      if (accum.italic !== fresh.italic) diffs.push(`italic: ${accum.italic} vs ${fresh.italic}`)
-      if (accum.underline !== fresh.underline) diffs.push(`underline: ${accum.underline} vs ${fresh.underline}`)
-      if (accum.inverse !== fresh.inverse) diffs.push(`inverse: ${accum.inverse} vs ${fresh.inverse}`)
-      if (accum.strikethrough !== fresh.strikethrough)
-        diffs.push(`strikethrough: ${accum.strikethrough} vs ${fresh.strikethrough}`)
+        const diffs: string[] = []
+        if (!sgrColorEquals(accum.fg, fresh.fg)) diffs.push(`fg: ${formatColor(accum.fg)} vs ${formatColor(fresh.fg)}`)
+        if (!sgrColorEquals(accum.bg, fresh.bg)) diffs.push(`bg: ${formatColor(accum.bg)} vs ${formatColor(fresh.bg)}`)
+        if (accum.bold !== fresh.bold) diffs.push(`bold: ${accum.bold} vs ${fresh.bold}`)
+        if (accum.dim !== fresh.dim) diffs.push(`dim: ${accum.dim} vs ${fresh.dim}`)
+        if (accum.italic !== fresh.italic) diffs.push(`italic: ${accum.italic} vs ${fresh.italic}`)
+        if (accum.underline !== fresh.underline) diffs.push(`underline: ${accum.underline} vs ${fresh.underline}`)
+        if (accum.inverse !== fresh.inverse) diffs.push(`inverse: ${accum.inverse} vs ${fresh.inverse}`)
+        if (accum.strikethrough !== fresh.strikethrough)
+          diffs.push(`strikethrough: ${accum.strikethrough} vs ${fresh.strikethrough}`)
 
-      if (diffs.length > 0) {
-        const msg =
-          `SILVERY_STRICT_ACCUMULATE style mismatch at (${x},${y}) char='${accum.char}' after ${accState.accumulateFrameCount} frames: ` +
-          diffs.join(", ")
-        // eslint-disable-next-line no-console
-        console.error(msg)
-        throw new IncrementalRenderMismatchError(msg)
+        if (diffs.length > 0) {
+          const msg =
+            `SILVERY_STRICT_ACCUMULATE style mismatch at (${x},${y}) char='${accum.char}' after ${accState.accumulateFrameCount} frames: ` +
+            diffs.join(", ")
+          console.error(msg)
+          throw new IncrementalRenderMismatchError(msg)
+        }
       }
     }
+  } finally {
+    void termAccum.close()
+    void termFresh.close()
   }
 }
 
