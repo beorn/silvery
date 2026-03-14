@@ -2,7 +2,7 @@
 
 **Polished Terminal UIs in React.**
 
-Responsive layouts, scrollable containers, ~169μs incremental updates, and full support for modern terminal capabilities. 30+ components from TextInput to VirtualList. Pure TypeScript, no WASM.
+Responsive layouts, scrollable containers, 100x+ faster incremental updates, and full support for modern terminal capabilities. 30+ components from TextInput to VirtualList. Pure TypeScript, no WASM.
 
 ```
 npm install silvery react
