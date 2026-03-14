@@ -76,6 +76,7 @@ export interface ContentPhaseStats {
   flagSubtreeDirty: number
   flagChildrenDirty: number
   flagChildPositionChanged: number
+  flagAncestorLayoutChanged: number
   // Scroll container diagnostics
   scrollContainerCount: number
   scrollViewportCleared: number
@@ -125,6 +126,13 @@ export interface NodeRenderState {
    * this is constant for the entire render pass. Used to prevent clearExcessArea
    * from writing inherited bg into a fresh buffer — no stale pixels to clear. */
   bufferIsCloned: boolean
+  /** True when any ancestor had layoutChangedThisFrame = true.
+   * Propagated top-down to prevent descendants from being skipped when their
+   * own dirty flags are clean but their pixels are at wrong positions in the
+   * cloned buffer (because an ancestor moved/resized). Without this, the
+   * hasPrevBuffer cascade handles most cases, but this adds a direct safety
+   * net in the skip condition itself. */
+  ancestorLayoutChanged?: boolean
 }
 
 /**

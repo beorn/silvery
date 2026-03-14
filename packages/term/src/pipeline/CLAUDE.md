@@ -58,7 +58,8 @@ The fast-path skip condition (all must be false to skip):
   !layoutChanged && // node.layoutChangedThisFrame
   !node.subtreeDirty &&
   !node.childrenDirty &&
-  !childPositionChanged // any child's x/y differs from prevLayout
+  !childPositionChanged && // any child's x/y differs from prevLayout
+  !ancestorLayoutChanged // any ancestor had layoutChangedThisFrame
 ```
 
 If `hasPrevBuffer` is false (first render or dimension change), nothing is skipped.
@@ -67,9 +68,9 @@ If `hasPrevBuffer` is false (first render or dimension change), nothing is skipp
 
 **Incremental render must produce identical output to a fresh render.** `SILVERY_STRICT=1` verifies this by running both and comparing cell-by-cell. Every content-phase change must be validated against this invariant.
 
-## The hasPrevBuffer / ancestorCleared Cascade
+## The hasPrevBuffer / ancestorCleared / ancestorLayoutChanged Cascade
 
-These two flags propagate down through `renderNodeToBuffer` calls and control whether children treat the buffer as containing valid previous pixels or stale/cleared pixels.
+These three flags propagate down through `renderNodeToBuffer` calls and control whether children treat the buffer as containing valid previous pixels or stale/cleared pixels.
 
 ### hasPrevBuffer
 
@@ -84,6 +85,10 @@ A parent sets `childHasPrev = false` when:
 ### ancestorCleared
 
 Tells descendants that an ancestor erased the buffer at their position. This is separate from `hasPrevBuffer` because scroll containers may pass `childHasPrev=false` while the buffer still has stale pixels from the clone -- the parent cleared its own region but descendants may need to clear sub-regions.
+
+### ancestorLayoutChanged
+
+Tells descendants that an ancestor's layout position/size changed this frame. Propagated as `childAncestorLayoutChanged = node.layoutChangedThisFrame || ancestorLayoutChanged`. When true, the descendant's pixels in the cloned buffer may be at wrong coordinates even if its own dirty flags are clean. This is a safety net in the skip condition -- normally the `hasPrevBuffer=false` cascade handles re-rendering, but `ancestorLayoutChanged` catches edge cases where the cascade doesn't fully propagate (e.g., a parent with `backgroundColor` that breaks the `ancestorCleared` chain without setting `parentRegionChanged`).
 
 ### The Critical Formulas
 
@@ -138,9 +143,12 @@ parentRegionChanged = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected
 // Normal containers:
 childHasPrev = childrenDirty || childPositionChanged || parentRegionChanged ? false : hasPrevBuffer
 childAncestorCleared = parentRegionCleared || (ancestorCleared && !props.backgroundColor)
+childAncestorLayoutChanged = node.layoutChangedThisFrame || ancestorLayoutChanged
 ```
 
 Key insight: a Box with `backgroundColor` **breaks** the ancestorCleared cascade. Its `renderBox` fill covers stale pixels, so children don't need to know about ancestor clears. Without this, border cells at boundaries get overwritten.
+
+Key insight: `ancestorLayoutChanged` does NOT break at `backgroundColor` boundaries. Unlike `ancestorCleared` (which a bg fill can satisfy), an ancestor layout change means descendants' absolute positions in the cloned buffer are wrong regardless of bg fills.
 
 ### Why contentAreaAffected is NOT needsOwnRepaint
 

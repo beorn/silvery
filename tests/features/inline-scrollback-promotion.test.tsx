@@ -191,9 +191,14 @@ describe("inline mode with pre-existing terminal content", () => {
     const scrollbackText = term.scrollback!.getText()
     const allText = scrollbackText + screenText
 
-    const hasAppContent = allText.includes("Agent") || allText.includes("auth") || allText.includes("Fix the login")
-    expect(hasAppContent, "No app content found").toBe(true)
-    expect(allText).toContain("│")
+    // App content must be visible: exchange items render with box-drawing border
+    // chars (┃ from borderStyle="bold") and the status bar always shows "ctx".
+    // Earlier assertions checked for "Agent"/"auth"/"Fix the login" but those
+    // scripted strings get pushed out of both screen and scrollback once off-script
+    // random exchanges (RANDOM_USER_COMMANDS / RANDOM_AGENT_RESPONSES) fill the
+    // 20-row terminal.
+    expect(allText).toContain("ctx")
+    expect(allText).toContain("┃")
   })
 
   test("content does not jump up — render region stays at bottom", async () => {

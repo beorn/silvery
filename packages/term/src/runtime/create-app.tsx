@@ -1152,7 +1152,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                       `  #${i}: visited=${s.nodesVisited} rendered=${s.nodesRendered} skipped=${s.nodesSkipped} ` +
                       `clearOps=${s.clearOps} cascade="${s.cascadeNodes}" ` +
                       `flags={C=${s.flagContentDirty} P=${s.flagPaintDirty} L=${s.flagLayoutChanged} ` +
-                      `S=${s.flagSubtreeDirty} Ch=${s.flagChildrenDirty} CP=${s.flagChildPositionChanged} noPrev=${s.noPrevBuffer}} ` +
+                      `S=${s.flagSubtreeDirty} Ch=${s.flagChildrenDirty} CP=${s.flagChildPositionChanged} AL=${s.flagAncestorLayoutChanged} noPrev=${s.noPrevBuffer}} ` +
                       `scroll={containers=${s.scrollContainerCount} cleared=${s.scrollViewportCleared} reason="${s.scrollClearReason}"} ` +
                       `normalRepaint="${s.normalRepaintReason}" ` +
                       `prevBuf={null=${s._prevBufferNull} dimMismatch=${s._prevBufferDimMismatch} hasPrev=${s._hasPrevBuffer} ` +

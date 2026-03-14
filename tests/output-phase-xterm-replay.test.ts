@@ -40,9 +40,9 @@ describe("output-phase xterm.js replay", () => {
         const fresh = termFresh.getCell(y, x)
         if (!incr || !fresh) continue
 
-        if (incr.text !== fresh.text) {
+        if (incr.char !== fresh.char) {
           if (mismatches.length < 30) {
-            mismatches.push(`(${x},${y}): incr='${incr.text}' fresh='${fresh.text}'`)
+            mismatches.push(`(${x},${y}): incr='${incr.char}' fresh='${fresh.char}'`)
           }
         }
       }
@@ -56,8 +56,8 @@ describe("output-phase xterm.js replay", () => {
         let incrRow = ""
         let freshRow = ""
         for (let x = 0; x < COLS; x++) {
-          incrRow += termIncr.getCell(y, x)?.text || " "
-          freshRow += termFresh.getCell(y, x)?.text || " "
+          incrRow += termIncr.getCell(y, x)?.char || " "
+          freshRow += termFresh.getCell(y, x)?.char || " "
         }
         context.push(`incr  row ${y}: ${incrRow.trimEnd()}`)
         context.push(`fresh row ${y}: ${freshRow.trimEnd()}`)
@@ -95,9 +95,9 @@ describe("output-phase xterm.js replay", () => {
     for (let x = 40; x < 70; x++) {
       const ic = termIncr.getCell(0, x)
       const fc = termFresh.getCell(0, x)
-      const match = ic?.text === fc?.text ? " " : "!"
+      const match = ic?.char === fc?.char ? " " : "!"
       console.log(
-        `  col ${x.toString().padStart(3)}: incr='${(ic?.text ?? " ").padEnd(4)}' fresh='${(fc?.text ?? " ").padEnd(4)}' ${match}`,
+        `  col ${x.toString().padStart(3)}: incr='${(ic?.char ?? " ").padEnd(4)}' fresh='${(fc?.char ?? " ").padEnd(4)}' ${match}`,
       )
     }
 
@@ -108,7 +108,7 @@ describe("output-phase xterm.js replay", () => {
       for (let x = 0; x < COLS; x++) {
         const ic = termIncr.getCell(y, x)
         const fc = termFresh.getCell(y, x)
-        if (ic?.text !== fc?.text) {
+        if (ic?.char !== fc?.char) {
           count++
           if (firstMismatch === -1) firstMismatch = x
         }

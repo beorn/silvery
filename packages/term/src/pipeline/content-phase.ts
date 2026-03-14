@@ -72,6 +72,7 @@ export function contentPhase(root: TeaNode, prevBuffer?: TerminalBuffer | null, 
       hasPrevBuffer: !!hasPrevBuffer,
       ancestorCleared: false,
       bufferIsCloned: !!hasPrevBuffer,
+      ancestorLayoutChanged: false,
     },
     ctx,
   )
@@ -150,6 +151,7 @@ const _contentPhaseStats: ContentPhaseStats = {
   flagSubtreeDirty: 0,
   flagChildrenDirty: 0,
   flagChildPositionChanged: 0,
+  flagAncestorLayoutChanged: 0,
   scrollContainerCount: 0,
   scrollViewportCleared: 0,
   scrollClearReason: "",
@@ -201,7 +203,7 @@ function renderNodeToBuffer(
   nodeState: NodeRenderState,
   ctx?: PipelineContext,
 ): void {
-  const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned } = nodeState
+  const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned, ancestorLayoutChanged } = nodeState
   // Resolve instrumentation from ctx or module globals
   const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
   const stats = ctx?.stats ?? _contentPhaseStats
@@ -282,6 +284,14 @@ function renderNodeToBuffer(
   // FAST PATH: Skip unchanged subtrees when we have a valid previous buffer.
   // The cloned buffer already has correct pixels for clean nodes.
   // SILVERY_STRICT=1 verifies this by comparing incremental vs fresh renders.
+  //
+  // ancestorLayoutChanged: an ancestor's layout position/size changed this frame.
+  // Even if this node's own flags are clean, its pixels in the cloned buffer are
+  // at coordinates relative to the old ancestor layout. The node must re-render
+  // at its new absolute position. This is a safety net — normally the parent's
+  // parentRegionChanged cascade sets childHasPrev=false which prevents skipping,
+  // but ancestorLayoutChanged catches cases where the cascade doesn't propagate
+  // (e.g., ancestor with backgroundColor that breaks the ancestorCleared chain).
   const skipFastPath =
     hasPrevBuffer &&
     !node.contentDirty &&
@@ -289,7 +299,8 @@ function renderNodeToBuffer(
     !layoutChanged &&
     !node.subtreeDirty &&
     !node.childrenDirty &&
-    !childPositionChanged
+    !childPositionChanged &&
+    !ancestorLayoutChanged
 
   // Node ID for tracing (only trace named nodes to keep compact)
   const _nodeId = instrumentEnabled ? ((props.id as string | undefined) ?? "") : ""
@@ -353,6 +364,7 @@ function renderNodeToBuffer(
     if (node.subtreeDirty) stats.flagSubtreeDirty++
     if (node.childrenDirty) stats.flagChildrenDirty++
     if (childPositionChanged) stats.flagChildPositionChanged++
+    if (ancestorLayoutChanged) stats.flagAncestorLayoutChanged++
   }
 
   // Push per-subtree theme override (if this Box has a theme prop).
@@ -663,7 +675,7 @@ function renderScrollContainerChildren(
   parentRegionChanged = false,
   ctx?: PipelineContext,
 ): void {
-  const { clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned } = nodeState
+  const { clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned, ancestorLayoutChanged } = nodeState
   // Resolve instrumentation from ctx or module globals
   const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
   const stats = ctx?.stats ?? _contentPhaseStats
@@ -812,6 +824,9 @@ function renderScrollContainerChildren(
   const defaultChildHasPrev = needsViewportClear ? false : hasPrevBuffer
   const defaultChildAncestorCleared = needsViewportClear ? true : ancestorCleared || parentRegionCleared
 
+  // Propagate ancestor layout change to scroll container children.
+  const childAncestorLayoutChanged = node.layoutChangedThisFrame || !!ancestorLayoutChanged
+
   // For buffer shift: children that were fully visible in BOTH the previous
   // and current frames have correct pixels after the shift (childHasPrev=true).
   // Newly visible children need full rendering (childHasPrev=false).
@@ -895,6 +910,7 @@ function renderScrollContainerChildren(
         hasPrevBuffer: thisChildHasPrev,
         ancestorCleared: thisChildAncestorCleared,
         bufferIsCloned,
+        ancestorLayoutChanged: childAncestorLayoutChanged,
       },
       ctx,
     )
@@ -934,6 +950,7 @@ function renderScrollContainerChildren(
           hasPrevBuffer: false,
           ancestorCleared: false,
           bufferIsCloned,
+          ancestorLayoutChanged: childAncestorLayoutChanged,
         },
         ctx,
       )
@@ -954,7 +971,7 @@ function renderNormalChildren(
   parentRegionChanged = false,
   ctx?: PipelineContext,
 ): void {
-  const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned } = nodeState
+  const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned, ancestorLayoutChanged } = nodeState
   // Resolve instrumentation from ctx or module globals
   const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
   const stats = ctx?.stats ?? _contentPhaseStats
@@ -1037,6 +1054,11 @@ function renderNormalChildren(
   // pixels from ancestor clears — so children don't need ancestorCleared.
   let childAncestorCleared = parentRegionCleared || (ancestorCleared && !props.backgroundColor)
 
+  // Propagate ancestor layout change to children: if this node or any ancestor
+  // had layoutChangedThisFrame, children must not be skipped even if their own
+  // flags are clean — their pixels in the cloned buffer are at wrong positions.
+  const childAncestorLayoutChanged = node.layoutChangedThisFrame || !!ancestorLayoutChanged
+
   // Override child flags when sticky force refresh is active — all first-pass
   // children must re-render fresh (matching the scroll container pattern).
   if (stickyForceRefresh) {
@@ -1077,6 +1099,7 @@ function renderNormalChildren(
         hasPrevBuffer: childHasPrev,
         ancestorCleared: childAncestorCleared,
         bufferIsCloned,
+        ancestorLayoutChanged: childAncestorLayoutChanged,
       },
       ctx,
     )
@@ -1101,6 +1124,8 @@ function renderNormalChildren(
       // the buffer at sticky positions has first-pass content (not "cleared").
       // Using ancestorCleared=true would cause transparent spacer Boxes to clear
       // their region, wiping overlapping sticky headers rendered earlier in this pass.
+      //
+      // ancestorLayoutChanged propagated so descendants know to re-render.
       renderNodeToBuffer(
         child,
         buffer,
@@ -1110,6 +1135,7 @@ function renderNormalChildren(
           hasPrevBuffer: false,
           ancestorCleared: false,
           bufferIsCloned,
+          ancestorLayoutChanged: childAncestorLayoutChanged,
         },
         ctx,
       )
@@ -1144,6 +1170,7 @@ function renderNormalChildren(
           hasPrevBuffer: false,
           ancestorCleared: false,
           bufferIsCloned,
+          ancestorLayoutChanged: childAncestorLayoutChanged,
         },
         ctx,
       )

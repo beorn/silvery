@@ -19,16 +19,16 @@ bun add yoga-wasm-web  # optional: exact Ink layout parity
 
 Most imports are a direct find-and-replace:
 
-| Ink                                   | Silvery                               |
-| ------------------------------------- | ------------------------------------- |
-| `import { Box, Text } from 'ink'`     | `import { Box, Text } from 'silvery'` |
-| `import { render } from 'ink'`        | `import { render } from 'silvery'`    |
-| `import { useInput } from 'ink'`      | `import { useInput } from 'silvery'`  |
-| `import { useApp } from 'ink'`        | `import { useApp } from 'silvery'`    |
-| `import { useStdout } from 'ink'`     | `import { useStdout } from 'silvery'` |
-| `import { Static } from 'ink'`        | `import { Static } from 'silvery'`    |
-| `import { Newline } from 'ink'`       | `import { Newline } from 'silvery'`   |
-| `import { Spacer } from 'ink'`        | `import { Spacer } from 'silvery'`    |
+| Ink                                            | Silvery                                  |
+| ---------------------------------------------- | ---------------------------------------- |
+| `import { Box, Text } from 'ink'`              | `import { Box, Text } from 'silvery'`    |
+| `import { render } from 'ink'`                 | `import { render } from 'silvery'`       |
+| `import { useInput } from 'ink'`               | `import { useInput } from 'silvery'`     |
+| `import { useApp } from 'ink'`                 | `import { useApp } from 'silvery'`       |
+| `import { useStdout } from 'ink'`              | `import { useStdout } from 'silvery'`    |
+| `import { Static } from 'ink'`                 | `import { Static } from 'silvery'`       |
+| `import { Newline } from 'ink'`                | `import { Newline } from 'silvery'`      |
+| `import { Spacer } from 'ink'`                 | `import { Spacer } from 'silvery'`       |
 | `import { render } from 'ink-testing-library'` | `import { render } from '@silvery/test'` |
 
 Everything from `ink` maps to `silvery`. The API surface is the same.
@@ -144,7 +144,9 @@ Ink supports `overflow: "visible" | "hidden"`. Silvery adds `overflow: "scroll"`
 ```tsx
 // Replace manual virtualization with:
 <Box overflow="scroll" scrollTo={selectedIndex}>
-  {items.map(item => <Item key={item.id} item={item} />)}
+  {items.map((item) => (
+    <Item key={item.id} item={item} />
+  ))}
 </Box>
 ```
 

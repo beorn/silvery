@@ -168,8 +168,8 @@ describe("output-phase wide char matrix", () => {
       const term = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
       term.feed(ansi)
 
-      expect(term.getCell(0, 0)?.text).toBe("A")
-      expect(term.getCell(0, 3)?.text).toBe("B")
+      expect(term.getCell(0, 0)?.char).toBe("A")
+      expect(term.getCell(0, 3)?.char).toBe("B")
       term.close()
     })
 
@@ -181,13 +181,13 @@ describe("output-phase wide char matrix", () => {
       const term = createTerminal({ backend: createXtermBackend(), cols: COLS, rows: ROWS })
       term.feed(ansi)
 
-      expect(term.getCell(0, 0)?.text).toBe("A")
+      expect(term.getCell(0, 0)?.char).toBe("A")
       // flag at 1-2, B at 3
-      expect(term.getCell(0, 3)?.text).toBe("B")
+      expect(term.getCell(0, 3)?.char).toBe("B")
       // han at 4-5, C at 6
-      expect(term.getCell(0, 6)?.text).toBe("C")
+      expect(term.getCell(0, 6)?.char).toBe("C")
       // hangul at 7-8, D at 9
-      expect(term.getCell(0, 9)?.text).toBe("D")
+      expect(term.getCell(0, 9)?.char).toBe("D")
 
       term.close()
     })
@@ -214,7 +214,7 @@ describe("output-phase wide char matrix", () => {
       termFresh.feed(freshAnsi)
 
       for (let x = 0; x < 20; x++) {
-        expect(termIncr.getCell(0, x)?.text, `col ${x}`).toBe(termFresh.getCell(0, x)?.text)
+        expect(termIncr.getCell(0, x)?.char, `col ${x}`).toBe(termFresh.getCell(0, x)?.char)
       }
 
       termIncr.close()
