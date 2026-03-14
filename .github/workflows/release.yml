@@ -22,7 +22,7 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
 
-      - run: bun test
+      - run: bun run test
 
       # Publish root silvery package
       - run: npm publish --access public
