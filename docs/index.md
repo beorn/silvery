@@ -3,39 +3,32 @@ layout: home
 
 hero:
   name: "Silvery"
-  text: "React Terminal UI for Complex Interactive Apps"
-  tagline: "Components know their size during render. That one change makes scrolling, truncation, and responsive layouts just work."
+  text: "Polished Terminal UIs in React"
+  tagline: "A React renderer for terminal applications — responsive layouts, scrollable containers, per-node incremental rendering, and comprehensive terminal protocol support. Optional framework layers add 30+ components, theming, and TEA state machines."
   actions:
     - theme: brand
       text: Get Started
       link: /getting-started/quick-start
     - theme: alt
-      text: Coming from Ink?
-      link: /guide/migration-from-ink
+      text: The Silvery Way
+      link: /guide/the-silvery-way
+    - theme: alt
+      text: View on GitHub
+      link: https://github.com/beorn/silvery
 
 features:
-  - title: Components Know Their Size
-    details: "useContentRect() returns actual dimensions during render — not after. No width prop drilling, no post-render effects, no 0x0 first frame workarounds. Scrolling, truncation, and responsive layouts follow naturally."
-    link: /guide/silvery-vs-ink#responsive-layout
-    linkText: See how it works
-  - title: Proven in Production
-    details: "km — a full kanban board, text editor, and calendar TUI — is built entirely on Silvery. Multi-column scrolling, spatial focus navigation, inline editing, and 1000+ node trees at interactive speeds."
-  - title: Choose Your Layer
-    details: "Renderer only (Box, Text, useInput) — drop-in Ink replacement. Add @silvery/ui for 30+ components. Add @silvery/tea for Elm Architecture state machines. Use as much or as little as you need."
-    link: /reference/packages
-    linkText: See packages
   - title: Familiar React API
     details: "Same Box/Text/useInput patterns you already know. If you've used Ink, most code works with just an import change."
-    link: /guide/migration-from-ink
-    linkText: Migration guide
+    link: /guide/silvery-vs-ink
+    linkText: Ink compatibility guide
+  - title: Pure TypeScript
+    details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. No memory leaks in long-running sessions."
   - title: 100x+ Faster Updates
     details: "Per-node dirty tracking with 7 independent flags. Only changed nodes re-render. Typical interactive updates in ~169us for 1000 nodes."
     link: /guide/silvery-vs-ink#performance
     linkText: See benchmarks
-  - title: Pure TypeScript
-    details: "No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno. No memory leaks in long-running sessions."
   - title: Responsive Layout
-    details: 'Full CSS Flexbox layout via Flexily (pure JS, Yoga-compatible). Native scrollable containers with overflow="scroll". Automatic ANSI-aware text truncation.'
+    details: 'Full CSS Flexbox layout via Flexily (pure JS, Yoga-compatible). Components query their own dimensions via useContentRect() — no width prop drilling. Native scrollable containers with overflow="scroll".'
   - title: 30+ Components
     details: "VirtualList, TextArea, SelectList, Table, CommandPalette, ModalDialog, Tabs, TreeView, Image, Toast, Spinner, ProgressBar, SplitView, and more."
     link: /guides/components
