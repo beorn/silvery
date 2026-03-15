@@ -1,3 +1,6 @@
+> **See [RENDERING.md](RENDERING.md) for the complete step-by-step rendering algorithm and test coverage map.**
+> This file (CLAUDE.md) covers the content phase internals. RENDERING.md covers the full pipeline end-to-end.
+
 # Pipeline Internals
 
 Read this before modifying content-phase.ts, render-text.ts, render-box.ts, or layout-phase.ts. These files implement incremental rendering -- the most complex and bug-prone part of Silvery.

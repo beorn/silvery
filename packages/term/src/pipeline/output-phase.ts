@@ -859,44 +859,24 @@ export function outputPhase(
     return "" // No changes
   }
 
-  // Large-change fallback: when most of the screen changed (e.g., zoom out/in),
-  // use a full render wrapped with synchronized update mode (DEC 2026).
-  // This prevents visual tearing in terminals like Ghostty where large incremental
-  // diffs generate many cursor-positioned updates that can be rendered mid-stream.
-  // Full renders write sequentially (no cursor jumps) and are safe with sync mode
-  // even in Ghostty — only incremental cursor-positioned updates inside sync regions
-  // cause progressive visual corruption (Ghostty bug).
-  const effectiveRows = termRows ?? next.height
-  const dirtyRowCount = countDirtyRows(pool, count)
-  const useSyncFullRender = dirtyRowCount > effectiveRows * 0.3
-
-  let incrOutput: string
-  if (useSyncFullRender) {
-    incrOutput = bufferToAnsi(next, ctx, termRows)
-  } else {
-    // Wide characters are handled atomically in changesToAnsi():
-    // - Wide char main cells emit the character and advance cursor by 2
-    // - Continuation cells are skipped (handled with their main cell)
-    // - Orphaned continuation cells (main cell unchanged) trigger a
-    //   re-emit of the main cell from the buffer
-    incrOutput = changesToAnsi(pool, count, ctx, next).output
-  }
+  // Wide characters are handled atomically in changesToAnsi():
+  // - Wide char main cells emit the character and advance cursor by 2
+  // - Continuation cells are skipped (handled with their main cell)
+  // - Orphaned continuation cells (main cell unchanged) trigger a
+  //   re-emit of the main cell from the buffer
+  const incrOutput = changesToAnsi(pool, count, ctx, next).output
 
   // Log output sizes when debug or strict-accumulate is enabled
   if (DEBUG_OUTPUT || isStrictAccumulate()) {
     const bytes = Buffer.byteLength(incrOutput)
     try {
       const fs = require("fs")
-      fs.appendFileSync(
-        "/tmp/silvery-sizes.log",
-        `${useSyncFullRender ? "bufferToAnsi (sync fallback)" : "changesToAnsi"}: ${count} changes, ${bytes} bytes\n`,
-      )
+      fs.appendFileSync("/tmp/silvery-sizes.log", `changesToAnsi: ${count} changes, ${bytes} bytes\n`)
     } catch {}
   }
 
   // Debug capture: write both incremental and fresh ANSI to files for comparison.
-  // (Skip when using full render fallback — output IS the fresh render.)
-  if (DEBUG_CAPTURE && !useSyncFullRender) {
+  if (DEBUG_CAPTURE) {
     _debugFrameCount++
     try {
       const fs = require("fs")
@@ -942,8 +922,7 @@ export function outputPhase(
   // SILVERY_STRICT_OUTPUT: verify that the incremental ANSI output produces the
   // same visible terminal state as a fresh render. Catches bugs in changesToAnsi
   // that SILVERY_STRICT (buffer-level check) cannot detect.
-  // (Skip when using full render fallback — output IS the fresh render.)
-  if (isStrictOutput() && !useSyncFullRender) {
+  if (isStrictOutput()) {
     verifyOutputEquivalence(prev, next, incrOutput, ctx)
   }
 
@@ -975,15 +954,13 @@ export function outputPhase(
       // Append output to cumulative ANSI file
       fs.appendFileSync("/tmp/silvery-raw.ansi", incrOutput)
       // Also save the fresh render of this frame for comparison
-      if (!useSyncFullRender) {
-        const freshOutput = bufferToAnsi(next, ctx)
-        fs.writeFileSync(`/tmp/silvery-raw-fresh-${_captureRawFrameCount}.ansi`, freshOutput)
-      }
+      const freshOutput = bufferToAnsi(next, ctx)
+      fs.writeFileSync(`/tmp/silvery-raw-fresh-${_captureRawFrameCount}.ansi`, freshOutput)
       fs.appendFileSync(
         "/tmp/silvery-raw-frames.jsonl",
         JSON.stringify({
           frame: _captureRawFrameCount,
-          type: useSyncFullRender ? "full-sync-fallback" : "incremental",
+          type: "incremental",
           changes: count,
           bytes: incrOutput.length,
           width: next.width,
@@ -991,12 +968,6 @@ export function outputPhase(
         }) + "\n",
       )
     } catch {}
-  }
-
-  // Wrap with synchronized update mode for large-change full renders.
-  // This tells the terminal to batch the output and paint atomically.
-  if (useSyncFullRender) {
-    return `\x1b[?2026h${incrOutput}\x1b[?2026l`
   }
 
   return incrOutput
@@ -1500,13 +1471,18 @@ function bufferToAnsi(buffer: TerminalBuffer, ctx: OutputContext = defaultContex
 
     // Move to next line (except for last line)
     if (y < maxLine) {
-      // In inline mode, use \r\n instead of bare \n to cancel DECAWM
-      // pending-wrap state. When the line fills exactly `cols` characters,
-      // the cursor enters pending-wrap at position cols. A bare \n in that
-      // state causes a double line advance in some terminals (Ghostty, iTerm2).
-      // The \r first moves to column 0 (canceling pending-wrap), then \n
-      // advances one row cleanly.
-      output += mode === "inline" ? "\r\n" : "\n"
+      if (mode === "inline") {
+        // In inline mode, use \r\n to cancel DECAWM pending-wrap state.
+        // When the line fills exactly `cols` characters, the cursor enters
+        // pending-wrap. A bare \n in that state causes a double line advance
+        // in some terminals (Ghostty, iTerm2). The \r first moves to column 0
+        // (canceling pending-wrap), then \n advances one row cleanly.
+        output += "\r\n"
+      }
+      // Fullscreen: no \n needed — CUP at the start of the next row handles
+      // positioning. Bare \n in pending-wrap state is terminal-dependent
+      // (some terminals double-advance, potentially causing scroll at the
+      // bottom of the alternate screen).
     }
   }
 
@@ -1619,24 +1595,6 @@ const diffResult: DiffResult = { pool: diffPool, count: 0 }
  * zero-allocation cell reads. The pool grows as needed but is reused
  * between frames. Returns a pool+count pair instead of slicing the array.
  */
-/** Count unique dirty rows in a change pool. Used to decide full render fallback. */
-function countDirtyRows(pool: CellChange[], count: number): number {
-  if (count === 0) return 0
-  // Bit set for dirty rows (up to 256 rows in a Uint32Array = 8192 rows)
-  const bits = new Uint32Array(256)
-  let dirtyRows = 0
-  for (let i = 0; i < count; i++) {
-    const y = pool[i]!.y
-    const word = y >>> 5
-    const bit = 1 << (y & 31)
-    if (word < 256 && !(bits[word]! & bit)) {
-      bits[word]! |= bit
-      dirtyRows++
-    }
-  }
-  return dirtyRows
-}
-
 function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
   // Ensure pool is large enough for worst case (all cells changed).
   // Wide→narrow transitions emit an extra change for the continuation cell,
