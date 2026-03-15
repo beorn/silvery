@@ -503,21 +503,7 @@ Flag emoji (🇨🇦) are regional indicator sequences (U+1F1E6..U+1F1FF pairs).
 
 ## Symptom → Check Cross-Reference
 
-| Symptom                                                    | Check First                                                                                                                    |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Stale background color persists                            | `bgDirty` flag; `inheritedBg` from `findInheritedBg`; is region being cleared?                                                 |
-| Border artifacts after color change                        | `paintDirty` vs `contentAreaAffected` distinction; border-only change should NOT cascade                                       |
-| Scroll glitch (content jumps/disappears)                   | Scroll tier selection; Tier 1 unsafe with sticky; Tier 3 needs `stickyForceRefresh`                                            |
-| Children blank after parent changes                        | `parentRegionChanged` → `childHasPrev=false`; is viewport clear setting `childHasPrev` correctly?                              |
-| Absolute child disappears                                  | Two-pass rendering order; absolute children need `ancestorCleared=false` in second pass                                        |
-| Content correct initially, wrong after navigation          | Incremental rendering bug; `SILVERY_STRICT=1` will catch it                                                                    |
-| Colors wrong but characters correct (garble)               | Output phase: `diffBuffers` row pre-check skipping true-color Map diffs; check `rowExtrasEquals`                               |
-| Text bg different from parent Box bg                       | `inheritedBg` from `findInheritedBg`; check if ancestor Box has `backgroundColor`; check region clearing                       |
-| Flickering on every render                                 | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of content phase                                      |
-| Stale overlay pixels after shrink (black area)             | `clearExcessArea` not called; check `parentRegionCleared` + `forceRepaint` interaction                                         |
-| CJK/wide char garble, text shifts right                    | `bufferToAnsi` cursor drift: wide char without continuation at col+1. Run `SILVERY_STRICT_OUTPUT=1`                            |
-| Flag emoji garble at wide terminals (200+ cols)            | `bufferToAnsi`/`changesToAnsi` cursor re-sync after wide chars; `wrapTextSizing` must include flag emoji (`isFlagSequence`)    |
-| Stale chars in ancestor border/padding after child shrinks | Descendant overflow: `clearExcessArea` clips to immediate parent. Use `hasDescendantOverflowChanged()` for recursive detection |
+See **[debugging.md](../../../docs/guide/debugging.md#symptom--check-cross-reference)** for the full symptom→check table (13 entries covering bg, borders, scroll, absolute, overflow, wide chars, etc.).
 
 ## Quick Regression Test Template
 

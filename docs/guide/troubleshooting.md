@@ -92,22 +92,12 @@ VirtualList shows blank rows when:
 
 ### Runtime Debug
 
+See **[debugging.md](./debugging.md)** for the full reference: STRICT verification modes, diagnostic workflow, and symptom→check cross-reference.
+
 ```bash
-# Enable incremental vs fresh render comparison (buffer-level)
-SILVERY_STRICT=1 bun run app.ts
-
-# Verify ANSI output correctness (fast internal VT parser)
-SILVERY_STRICT_TERMINAL=vt100 bun run app.ts
-
-# Verify via independent xterm.js emulator (catches real terminal divergence)
-SILVERY_STRICT_TERMINAL=xterm bun run app.ts
-
-# All backends (vt100 + xterm + ghostty)
-SILVERY_STRICT_TERMINAL=all bun run app.ts
-
-# Write debug output to file
-DEBUG=silvery:* DEBUG_LOG=/tmp/silvery.log bun run app.ts
-tail -f /tmp/silvery.log
+SILVERY_STRICT=1 bun run app.ts              # Buffer-level (includes vt100 output check)
+SILVERY_STRICT_TERMINAL=xterm bun run app.ts # Independent terminal verification
+DEBUG=silvery:* DEBUG_LOG=/tmp/silvery.log bun run app.ts  # Pipeline traces
 ```
 
 ### Test Debug
