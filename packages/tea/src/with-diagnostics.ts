@@ -10,7 +10,7 @@
  *
  * The two approaches are complementary:
  *
- * 1. **`sendInput()` level** (in renderer.ts) — Already has `SILVERY_CHECK_INCREMENTAL`
+ * 1. **`sendInput()` level** (in renderer.ts) — Already has `SILVERY_STRICT`
  *    which catches ALL inputs regardless of how they arrive (raw key presses,
  *    type(), press(), etc.). This is the right place for incremental render checks.
  *

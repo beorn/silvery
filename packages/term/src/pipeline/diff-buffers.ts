@@ -29,6 +29,7 @@ function createEmptyCellChange(): CellChange {
       attrs: {},
       wide: false,
       continuation: false,
+      hyperlink: undefined,
     },
   }
 }
@@ -86,6 +87,7 @@ function writeEmptyCellChange(change: CellChange, x: number, y: number): void {
   attrs.strikethrough = undefined
   cell.wide = false
   cell.continuation = false
+  cell.hyperlink = undefined
 }
 
 /**

@@ -75,7 +75,7 @@ function markLayoutAncestorDirty(node: TeaNode): void {
   }
   if (ancestor?.layoutNode) {
     ancestor.contentDirty = true
-    ancestor.paintDirty = true
+    ancestor.stylePropsDirty = true
     ancestor.layoutDirty = true
     ancestor.layoutNode.markDirty()
   }
@@ -247,7 +247,7 @@ export const hostConfig = {
       layoutChangedThisFrame: false,
       layoutDirty: false,
       contentDirty: true,
-      paintDirty: true,
+      stylePropsDirty: true,
       bgDirty: true,
       subtreeDirty: true,
       childrenDirty: false,
@@ -457,11 +457,11 @@ export const hostConfig = {
     // style-only changes (borderColor, color, etc. — don't affect layout).
     const contentChanged = contentPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
     if (contentChanged) {
-      // paintDirty: always set for any visual change. Content phase uses this
+      // stylePropsDirty: always set for any visual change. Content phase uses this
       // to know the node needs re-rendering (border, text style, bg, etc.).
-      instance.paintDirty = true
+      instance.stylePropsDirty = true
       // contentDirty: only for text content changes (not style-only changes).
-      // Style-only changes (borderColor, color, bold) set paintDirty but NOT
+      // Style-only changes (borderColor, color, bold) set stylePropsDirty but NOT
       // contentDirty, so content phase won't cascade to children for border-only
       // changes where the content area is unchanged.
       if (contentChanged === "text") {
@@ -491,7 +491,7 @@ export const hostConfig = {
         instance.bgDirty = true
       }
       // Theme change: all descendants need re-rendering with new token values.
-      // bgDirty makes contentAreaAffected=true, cascading parentRegionChanged
+      // bgDirty makes contentAreaAffected=true, cascading childrenNeedFreshRender
       // to force children to re-render with the new theme context.
       if ((oldProps as Record<string, unknown>).theme !== (newProps as Record<string, unknown>).theme) {
         instance.bgDirty = true
@@ -524,7 +524,7 @@ export const hostConfig = {
     textInstance.textContent = newText
     textInstance.props = { children: newText } as TextProps
     textInstance.contentDirty = true
-    textInstance.paintDirty = true
+    textInstance.stylePropsDirty = true
     // Text content change affects layout (measure function will return different size)
     // Walk up to the nearest layout ancestor so its measure cache is invalidated
     markLayoutAncestorDirty(textInstance)
@@ -682,7 +682,7 @@ export const hostConfig = {
    * Hide an instance during Suspense.
    * Called when React needs to hide content while showing a fallback.
    *
-   * Must set paintDirty (content phase fast-path skip includes paintDirty check),
+   * Must set stylePropsDirty (content phase fast-path skip includes stylePropsDirty check),
    * layoutDirty + layoutNode.markDirty() (hiding changes measured content — the
    * layout engine must recalculate dimensions), and markLayoutAncestorDirty
    * (virtual text nodes without layoutNode need the nearest layout ancestor dirty).
@@ -690,7 +690,7 @@ export const hostConfig = {
   hideInstance(instance: TeaNode) {
     instance.hidden = true
     instance.contentDirty = true
-    instance.paintDirty = true
+    instance.stylePropsDirty = true
     instance.layoutDirty = true
     if (instance.layoutNode) {
       instance.layoutNode.markDirty()
@@ -713,7 +713,7 @@ export const hostConfig = {
   unhideInstance(instance: TeaNode, _props: BoxProps | TextProps) {
     instance.hidden = false
     instance.contentDirty = true
-    instance.paintDirty = true
+    instance.stylePropsDirty = true
     instance.layoutDirty = true
     if (instance.layoutNode) {
       instance.layoutNode.markDirty()
@@ -736,7 +736,7 @@ export const hostConfig = {
   hideTextInstance(textInstance: TeaNode) {
     textInstance.hidden = true
     textInstance.contentDirty = true
-    textInstance.paintDirty = true
+    textInstance.stylePropsDirty = true
     if (textInstance.parent) {
       textInstance.parent.contentDirty = true
     }
@@ -753,7 +753,7 @@ export const hostConfig = {
   unhideTextInstance(textInstance: TeaNode, _text: string) {
     textInstance.hidden = false
     textInstance.contentDirty = true
-    textInstance.paintDirty = true
+    textInstance.stylePropsDirty = true
     if (textInstance.parent) {
       textInstance.parent.contentDirty = true
     }

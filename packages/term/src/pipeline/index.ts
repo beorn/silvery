@@ -274,7 +274,7 @@ function executeRenderCore(
     try {
       output = outputFn(prevBuffer, buffer, mode, scrollbackOffset, termRows, cursorPos)
     } catch (e) {
-      // Output phase (SILVERY_STRICT_OUTPUT) may throw a diagnostic error.
+      // Output phase (STRICT output verification) may throw a diagnostic error.
       // Attach the content-phase buffer so callers can still save it for
       // incremental rendering continuity — the buffer is correct even when
       // the ANSI output verification fails.

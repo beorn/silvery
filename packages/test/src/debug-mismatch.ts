@@ -30,7 +30,7 @@ export interface NodeDebugInfo {
   /** Dirty flags at time of mismatch */
   dirtyFlags: {
     contentDirty: boolean
-    paintDirty: boolean
+    stylePropsDirty: boolean
     subtreeDirty: boolean
     childrenDirty: boolean
     layoutDirty: boolean
@@ -186,7 +186,7 @@ export function getNodeDebugInfo(node: TeaNode): NodeDebugInfo {
     childIndex,
     dirtyFlags: {
       contentDirty: node.contentDirty,
-      paintDirty: node.paintDirty,
+      stylePropsDirty: node.stylePropsDirty,
       subtreeDirty: node.subtreeDirty,
       childrenDirty: node.childrenDirty,
       layoutDirty: node.layoutDirty,
@@ -246,7 +246,7 @@ function analyzeFastPath(node: TeaNode | null, scrollAncestors: TeaNode[]): stri
 
   const flags = node
   const allClean =
-    !flags.contentDirty && !flags.paintDirty && !flags.subtreeDirty && !flags.childrenDirty && !flags.layoutDirty
+    !flags.contentDirty && !flags.stylePropsDirty && !flags.subtreeDirty && !flags.childrenDirty && !flags.layoutDirty
 
   if (allClean) {
     analysis.push("⚠ ALL DIRTY FLAGS FALSE - fast-path likely skipped this node")
@@ -358,9 +358,7 @@ export function formatMismatchContext(ctx: MismatchDebugContext, contentPhaseSta
   const lines: string[] = []
 
   // Header
-  lines.push(
-    `SILVERY_CHECK_INCREMENTAL: MISMATCH at (${ctx.position.x}, ${ctx.position.y}) on render #${ctx.renderNum}`,
-  )
+  lines.push(`SILVERY_STRICT: MISMATCH at (${ctx.position.x}, ${ctx.position.y}) on render #${ctx.renderNum}`)
   lines.push("")
 
   // Cell values
@@ -396,7 +394,7 @@ export function formatMismatchContext(ctx: MismatchDebugContext, contentPhaseSta
       lines.push("  active: (none - node was clean)")
     }
     lines.push(
-      `  all: contentDirty=${flags.contentDirty} paintDirty=${flags.paintDirty} subtreeDirty=${flags.subtreeDirty} childrenDirty=${flags.childrenDirty} layoutDirty=${flags.layoutDirty}`,
+      `  all: contentDirty=${flags.contentDirty} stylePropsDirty=${flags.stylePropsDirty} subtreeDirty=${flags.subtreeDirty} childrenDirty=${flags.childrenDirty} layoutDirty=${flags.layoutDirty}`,
     )
     lines.push("")
 
@@ -471,7 +469,7 @@ export function formatMismatchContext(ctx: MismatchDebugContext, contentPhaseSta
     const flagLines: string[] = []
     if (s.noPrevBuffer) flagLines.push(`noPrevBuffer=${s.noPrevBuffer}`)
     if (s.flagContentDirty) flagLines.push(`contentDirty=${s.flagContentDirty}`)
-    if (s.flagPaintDirty) flagLines.push(`paintDirty=${s.flagPaintDirty}`)
+    if (s.flagStylePropsDirty) flagLines.push(`stylePropsDirty=${s.flagStylePropsDirty}`)
     if (s.flagLayoutChanged) flagLines.push(`layoutChanged=${s.flagLayoutChanged}`)
     if (s.flagSubtreeDirty) flagLines.push(`subtreeDirty=${s.flagSubtreeDirty}`)
     if (s.flagChildrenDirty) flagLines.push(`childrenDirty=${s.flagChildrenDirty}`)

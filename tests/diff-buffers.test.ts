@@ -7,7 +7,7 @@
  * produces a buffer matching next.
  */
 import { describe, test, expect } from "vitest"
-import { TerminalBuffer, type Cell, type Color } from "@silvery/term/buffer"
+import { TerminalBuffer, type Cell, type CellAttrs, type Color, attrsEquals } from "@silvery/term/buffer"
 import { diffBuffers } from "@silvery/term/pipeline/diff-buffers"
 
 // ============================================================================
@@ -344,6 +344,37 @@ describe("diffBuffers", () => {
     expect(result.count).toBe(0)
   })
 
+  test("pooled clear after hyperlink cell does not retain hyperlink", () => {
+    // Prev buffer has hyperlinks in cells that will be in the shrink region
+    const prev = new TerminalBuffer(8, 2)
+    for (let x = 0; x < 8; x++) {
+      prev.setCell(x, 0, { char: "L", fg: 4, hyperlink: `https://example.com/${x}` })
+      prev.setCell(x, 1, { char: "M", fg: 5, hyperlink: "https://example.com/row1" })
+    }
+
+    // Next buffer is smaller — shrink region must emit empty cells
+    const next = new TerminalBuffer(4, 1)
+    for (let x = 0; x < 4; x++) {
+      next.setCell(x, 0, { char: "N", fg: 6 })
+    }
+
+    const result = diffBuffers(prev, next)
+
+    // Verify cleared cells in shrink region have no hyperlink
+    for (let i = 0; i < result.count; i++) {
+      const c = result.pool[i]!
+      // Cells in the shrink region (outside next's bounds) should have no hyperlink
+      const inShrinkRegion = c.x >= next.width || c.y >= next.height
+      if (inShrinkRegion) {
+        expect(c.cell.char).toBe(" ")
+        expect(c.cell.fg).toBeNull()
+        expect(c.cell.bg).toBeNull()
+        expect(c.cell.hyperlink).toBeUndefined()
+        expect(c.cell.underlineColor).toBeNull()
+      }
+    }
+  })
+
   test("mixed changes — some rows changed, various cell types", () => {
     const prev = new TerminalBuffer(8, 5)
     const next = new TerminalBuffer(8, 5)
@@ -396,46 +427,102 @@ describe("diffBuffers property tests", () => {
     }
   }
 
-  /** Create a random buffer with varied cell content. */
+  /** Generate random attrs with all possible fields. */
+  function randomAttrs(rng: ReturnType<typeof createRng>): CellAttrs {
+    const attrs: CellAttrs = {}
+    if (rng.next() > 0.5) attrs.bold = true
+    if (rng.next() > 0.7) attrs.italic = true
+    if (rng.next() > 0.8) attrs.dim = true
+    if (rng.next() > 0.7) attrs.underline = true
+    if (rng.next() > 0.8) {
+      const styles = ["single", "double", "curly", "dotted", "dashed"] as const
+      attrs.underlineStyle = styles[rng.nextInt(styles.length)]
+    }
+    if (rng.next() > 0.9) attrs.strikethrough = true
+    if (rng.next() > 0.9) attrs.blink = true
+    if (rng.next() > 0.9) attrs.inverse = true
+    if (rng.next() > 0.95) attrs.hidden = true
+    return attrs
+  }
+
+  /** Generate a random underlineColor (null or true-color). */
+  function randomUnderlineColor(rng: ReturnType<typeof createRng>): Color {
+    if (rng.next() > 0.7) {
+      return { r: rng.nextInt(256), g: rng.nextInt(256), b: rng.nextInt(256) }
+    }
+    return null
+  }
+
+  /** Generate a random hyperlink URL or undefined. */
+  function randomHyperlink(rng: ReturnType<typeof createRng>): string | undefined {
+    if (rng.next() > 0.7) {
+      return `https://example.com/${rng.nextInt(1000)}`
+    }
+    return undefined
+  }
+
+  /** Create a random buffer with varied cell content including attrs, underlineColor, hyperlink. */
   function randomBuffer(width: number, height: number, rng: ReturnType<typeof createRng>): TerminalBuffer {
     const buf = new TerminalBuffer(width, height)
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 "
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const kind = rng.nextInt(10)
-        if (kind < 3) {
+        const kind = rng.nextInt(12)
+        if (kind < 2) {
           // Plain char
           buf.setCell(x, y, { char: chars[rng.nextInt(chars.length)]! })
-        } else if (kind < 5) {
+        } else if (kind < 4) {
           // Char with 256-color fg
           buf.setCell(x, y, { char: chars[rng.nextInt(chars.length)]!, fg: rng.nextInt(256) })
-        } else if (kind < 7) {
+        } else if (kind < 6) {
           // Char with true-color fg
           buf.setCell(x, y, {
             char: chars[rng.nextInt(chars.length)]!,
             fg: { r: rng.nextInt(256), g: rng.nextInt(256), b: rng.nextInt(256) },
           })
-        } else if (kind < 8) {
+        } else if (kind < 7) {
           // Char with true-color bg
           buf.setCell(x, y, {
             char: chars[rng.nextInt(chars.length)]!,
             bg: { r: rng.nextInt(256), g: rng.nextInt(256), b: rng.nextInt(256) },
           })
-        } else if (kind < 9 && x + 1 < width) {
+        } else if (kind < 8 && x + 1 < width) {
           // Wide char (skip next cell for continuation)
           buf.setCell(x, y, { char: "\u6f22", wide: true, fg: rng.nextInt(256) })
           buf.setCell(x + 1, y, { char: " ", continuation: true })
           x++ // skip continuation cell
-        } else {
-          // Char with attrs
+        } else if (kind < 9) {
+          // Char with full attrs (bold, italic, underline, strikethrough, etc.)
           buf.setCell(x, y, {
             char: chars[rng.nextInt(chars.length)]!,
             fg: rng.nextInt(16),
-            attrs: {
-              bold: rng.next() > 0.5 ? true : undefined,
-              italic: rng.next() > 0.7 ? true : undefined,
-              dim: rng.next() > 0.8 ? true : undefined,
-            },
+            attrs: randomAttrs(rng),
+          })
+        } else if (kind < 10) {
+          // Char with underlineColor
+          buf.setCell(x, y, {
+            char: chars[rng.nextInt(chars.length)]!,
+            fg: rng.nextInt(256),
+            underlineColor: randomUnderlineColor(rng),
+            attrs: randomAttrs(rng),
+          })
+        } else if (kind < 11) {
+          // Char with hyperlink
+          buf.setCell(x, y, {
+            char: chars[rng.nextInt(chars.length)]!,
+            fg: rng.nextInt(256),
+            hyperlink: randomHyperlink(rng),
+            attrs: randomAttrs(rng),
+          })
+        } else {
+          // Char with all extras: attrs + underlineColor + hyperlink
+          buf.setCell(x, y, {
+            char: chars[rng.nextInt(chars.length)]!,
+            fg: rng.nextInt(256),
+            bg: rng.next() > 0.5 ? { r: rng.nextInt(256), g: rng.nextInt(256), b: rng.nextInt(256) } : null,
+            underlineColor: randomUnderlineColor(rng),
+            hyperlink: randomHyperlink(rng),
+            attrs: randomAttrs(rng),
           })
         }
       }
@@ -473,7 +560,7 @@ describe("diffBuffers property tests", () => {
     // Apply diff changes
     applyChanges(patched, result)
 
-    // Verify: patched matches next within next's bounds
+    // Verify: patched matches next within next's bounds (all cell fields)
     for (let y = 0; y < nextH; y++) {
       for (let x = 0; x < nextW; x++) {
         const patchedCell = patched.getCell(x, y)
@@ -482,27 +569,41 @@ describe("diffBuffers property tests", () => {
           patchedCell.char !== nextCell.char ||
           !colorEqual(patchedCell.fg, nextCell.fg) ||
           !colorEqual(patchedCell.bg, nextCell.bg) ||
+          !colorEqual(patchedCell.underlineColor ?? null, nextCell.underlineColor ?? null) ||
           patchedCell.wide !== nextCell.wide ||
-          patchedCell.continuation !== nextCell.continuation
+          patchedCell.continuation !== nextCell.continuation ||
+          !attrsEquals(patchedCell.attrs, nextCell.attrs) ||
+          (patchedCell.hyperlink ?? undefined) !== (nextCell.hyperlink ?? undefined)
         ) {
           throw new Error(
             `Soundness failure at (${x},${y}) with seed=${seed} ` +
               `prev=${prevW}x${prevH} next=${nextW}x${nextH}:\n` +
-              `  patched: char=${JSON.stringify(patchedCell.char)} fg=${JSON.stringify(patchedCell.fg)} bg=${JSON.stringify(patchedCell.bg)}\n` +
-              `  next:    char=${JSON.stringify(nextCell.char)} fg=${JSON.stringify(nextCell.fg)} bg=${JSON.stringify(nextCell.bg)}`,
+              `  patched: char=${JSON.stringify(patchedCell.char)} fg=${JSON.stringify(patchedCell.fg)} ` +
+              `bg=${JSON.stringify(patchedCell.bg)} underlineColor=${JSON.stringify(patchedCell.underlineColor)} ` +
+              `attrs=${JSON.stringify(patchedCell.attrs)} hyperlink=${JSON.stringify(patchedCell.hyperlink)}\n` +
+              `  next:    char=${JSON.stringify(nextCell.char)} fg=${JSON.stringify(nextCell.fg)} ` +
+              `bg=${JSON.stringify(nextCell.bg)} underlineColor=${JSON.stringify(nextCell.underlineColor)} ` +
+              `attrs=${JSON.stringify(nextCell.attrs)} hyperlink=${JSON.stringify(nextCell.hyperlink)}`,
           )
         }
       }
     }
 
-    // Verify: cells outside next's bounds (shrink region) are empty
+    // Verify: cells outside next's bounds (shrink region) are fully empty
     for (let y = nextH; y < prevH; y++) {
       for (let x = 0; x < prevW; x++) {
         const patchedCell = patched.getCell(x, y)
-        if (patchedCell.char !== " " || patchedCell.fg !== null || patchedCell.bg !== null) {
+        if (
+          patchedCell.char !== " " ||
+          patchedCell.fg !== null ||
+          patchedCell.bg !== null ||
+          (patchedCell.underlineColor ?? null) !== null ||
+          (patchedCell.hyperlink ?? undefined) !== undefined
+        ) {
           throw new Error(
             `Shrink region not cleared at (${x},${y}) with seed=${seed}: ` +
-              `char=${JSON.stringify(patchedCell.char)} fg=${JSON.stringify(patchedCell.fg)}`,
+              `char=${JSON.stringify(patchedCell.char)} fg=${JSON.stringify(patchedCell.fg)} ` +
+              `hyperlink=${JSON.stringify(patchedCell.hyperlink)}`,
           )
         }
       }
@@ -511,10 +612,17 @@ describe("diffBuffers property tests", () => {
       for (let y = 0; y < Math.min(prevH, nextH); y++) {
         for (let x = nextW; x < prevW; x++) {
           const patchedCell = patched.getCell(x, y)
-          if (patchedCell.char !== " " || patchedCell.fg !== null || patchedCell.bg !== null) {
+          if (
+            patchedCell.char !== " " ||
+            patchedCell.fg !== null ||
+            patchedCell.bg !== null ||
+            (patchedCell.underlineColor ?? null) !== null ||
+            (patchedCell.hyperlink ?? undefined) !== undefined
+          ) {
             throw new Error(
               `Width shrink region not cleared at (${x},${y}) with seed=${seed}: ` +
-                `char=${JSON.stringify(patchedCell.char)}`,
+                `char=${JSON.stringify(patchedCell.char)} ` +
+                `hyperlink=${JSON.stringify(patchedCell.hyperlink)}`,
             )
           }
         }

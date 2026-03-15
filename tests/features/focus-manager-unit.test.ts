@@ -34,7 +34,7 @@ function stubNode(testID: string, opts?: { focusable?: boolean; children?: TeaNo
     layoutChangedThisFrame: false,
     layoutDirty: false,
     contentDirty: false,
-    paintDirty: false,
+    stylePropsDirty: false,
     bgDirty: false,
     subtreeDirty: false,
     childrenDirty: false,

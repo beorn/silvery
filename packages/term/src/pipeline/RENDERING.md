@@ -14,13 +14,13 @@ State change → React reconciler → dirty flags → scheduler → pipeline →
 
 React state change fires. Reconciler walks the fiber tree and sets dirty flags on SilveryNode instances:
 
-| Flag            | Meaning                                         | Set by     |
-| --------------- | ----------------------------------------------- | ---------- |
-| `contentDirty`  | Text content or content-affecting props changed | Reconciler |
-| `paintDirty`    | Visual props changed (color, bg, border)        | Reconciler |
-| `bgDirty`       | `backgroundColor` specifically changed          | Reconciler |
-| `layoutDirty`   | Layout-affecting props changed                  | Reconciler |
-| `childrenDirty` | Direct children added, removed, or reordered    | Reconciler |
+| Flag              | Meaning                                         | Set by     |
+| ----------------- | ----------------------------------------------- | ---------- |
+| `contentDirty`    | Text content or content-affecting props changed | Reconciler |
+| `stylePropsDirty` | Visual props changed (color, bg, border)        | Reconciler |
+| `bgDirty`         | `backgroundColor` specifically changed          | Reconciler |
+| `layoutDirty`     | Layout-affecting props changed                  | Reconciler |
+| `childrenDirty`   | Direct children added, removed, or reordered    | Reconciler |
 
 Reconciler calls `scheduler.scheduleRender()`.
 
@@ -88,26 +88,26 @@ Output: `TerminalBuffer` — the correct pixel state for this frame.
 **Cascade predicates** — 6 computed outputs from 14 boolean inputs control the entire incremental cascade. Pure logic extracted to `cascade-predicates.ts` for exhaustive testing (2^14 = 16,384 cases). See `CLAUDE.md` "The Critical Formulas" for detailed semantics.
 
 ```
-skipFastPath          = hasPrevBuffer && !contentDirty && !paintDirty && !layoutChanged
+canSkipEntireSubtree          = hasPrevBuffer && !contentDirty && !stylePropsDirty && !layoutChanged
                         && !subtreeDirty && !childrenDirty && !childPositionChanged
                         && !ancestorLayoutChanged
 
-textPaintDirty        = isTextNode && paintDirty                                        (intermediate)
+textPaintDirty        = isTextNode && stylePropsDirty                                        (intermediate)
 
 contentAreaAffected   = contentDirty || layoutChanged || childPositionChanged
                         || childrenDirty || bgDirty || textPaintDirty
                         || absoluteChildMutated || descendantOverflowChanged
 
-subtreeDirtyWithBg    = hasPrevBuffer && !contentAreaAffected && subtreeDirty && hasBgColor
+bgRefillNeeded    = hasPrevBuffer && !contentAreaAffected && subtreeDirty && hasBgColor
 
-parentRegionCleared   = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !hasBgColor
+contentRegionCleared   = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !hasBgColor
 
-skipBgFill            = hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !subtreeDirtyWithBg
+skipBgFill            = hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !bgRefillNeeded
 
-parentRegionChanged   = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || subtreeDirtyWithBg)
+childrenNeedFreshRender   = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || bgRefillNeeded)
 ```
 
-Invariants: (1) contentAreaAffected ∧ subtreeDirtyWithBg → ⊥, (2) parentRegionCleared ∧ skipBgFill → ⊥, (3-4) ¬hasPrevBuffer ∧ ¬ancestorCleared → parentRegionCleared=⊥ ∧ parentRegionChanged=⊥, (5) skipFastPath → hasPrevBuffer.
+Invariants: (1) contentAreaAffected ∧ bgRefillNeeded → ⊥, (2) contentRegionCleared ∧ skipBgFill → ⊥, (3-4) ¬hasPrevBuffer ∧ ¬ancestorCleared → contentRegionCleared=⊥ ∧ childrenNeedFreshRender=⊥, (5) canSkipEntireSubtree → hasPrevBuffer.
 
 #### Phase 4: Output (`output-phase.ts`)
 

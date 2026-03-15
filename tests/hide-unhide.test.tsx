@@ -212,16 +212,16 @@ describe("hide/unhide instances (Suspense)", () => {
     }
   })
 
-  test("hideInstance sets paintDirty on the instance", () => {
-    // Without paintDirty, the content phase fast-path can skip the node on the
+  test("hideInstance sets stylePropsDirty on the instance", () => {
+    // Without stylePropsDirty, the content phase fast-path can skip the node on the
     // next render after unhide. The skip condition is:
-    //   !contentDirty && !paintDirty && !layoutChanged && !subtreeDirty && !childrenDirty
+    //   !contentDirty && !stylePropsDirty && !layoutChanged && !subtreeDirty && !childrenDirty
     // contentDirty alone is consumed by the measure phase (cleared in measure func),
-    // so paintDirty is the surviving flag that ensures content phase re-renders the node.
+    // so stylePropsDirty is the surviving flag that ensures content phase re-renders the node.
     const node = createNode("silvery-box", {})
     // Clear all flags (simulate post-render state)
     node.contentDirty = false
-    node.paintDirty = false
+    node.stylePropsDirty = false
     node.layoutDirty = false
     node.subtreeDirty = false
 
@@ -229,15 +229,15 @@ describe("hide/unhide instances (Suspense)", () => {
 
     expect(node.hidden).toBe(true)
     expect(node.contentDirty).toBe(true)
-    // This is the missing flag — paintDirty must be set
-    expect(node.paintDirty).toBe(true)
+    // This is the missing flag — stylePropsDirty must be set
+    expect(node.stylePropsDirty).toBe(true)
   })
 
-  test("unhideInstance sets paintDirty on the instance", () => {
+  test("unhideInstance sets stylePropsDirty on the instance", () => {
     const node = createNode("silvery-box", {})
     node.hidden = true
     node.contentDirty = false
-    node.paintDirty = false
+    node.stylePropsDirty = false
     node.layoutDirty = false
     node.subtreeDirty = false
 
@@ -245,7 +245,7 @@ describe("hide/unhide instances (Suspense)", () => {
 
     expect(node.hidden).toBe(false)
     expect(node.contentDirty).toBe(true)
-    expect(node.paintDirty).toBe(true)
+    expect(node.stylePropsDirty).toBe(true)
   })
 
   test("hideInstance sets layoutDirty and marks layout node dirty", () => {
@@ -254,7 +254,7 @@ describe("hide/unhide instances (Suspense)", () => {
     // Without layoutDirty + layoutNode.markDirty(), layout uses stale cache.
     const node = createNode("silvery-box", {})
     node.contentDirty = false
-    node.paintDirty = false
+    node.stylePropsDirty = false
     node.layoutDirty = false
     node.subtreeDirty = false
 
@@ -268,7 +268,7 @@ describe("hide/unhide instances (Suspense)", () => {
     const node = createNode("silvery-box", {})
     node.hidden = true
     node.contentDirty = false
-    node.paintDirty = false
+    node.stylePropsDirty = false
     node.layoutDirty = false
     node.subtreeDirty = false
 
@@ -278,7 +278,7 @@ describe("hide/unhide instances (Suspense)", () => {
     // layoutNode.markDirty() should have been called to invalidate the layout cache
   })
 
-  test("hideTextInstance sets paintDirty and propagates layout dirty to ancestor", () => {
+  test("hideTextInstance sets stylePropsDirty and propagates layout dirty to ancestor", () => {
     // Text instances don't have layout nodes. markLayoutAncestorDirty must walk
     // up to the nearest layout ancestor and mark it dirty.
     const parent = createNode("silvery-text", {})
@@ -287,39 +287,39 @@ describe("hide/unhide instances (Suspense)", () => {
     parent.children.push(textNode)
     // Clear flags
     textNode.contentDirty = false
-    textNode.paintDirty = false
+    textNode.stylePropsDirty = false
     parent.contentDirty = false
-    parent.paintDirty = false
+    parent.stylePropsDirty = false
     parent.layoutDirty = false
 
     hostConfig.hideTextInstance(textNode)
 
     expect(textNode.hidden).toBe(true)
     expect(textNode.contentDirty).toBe(true)
-    expect(textNode.paintDirty).toBe(true)
+    expect(textNode.stylePropsDirty).toBe(true)
     // Parent (nearest layout ancestor) should be marked dirty
     expect(parent.contentDirty).toBe(true)
     expect(parent.layoutDirty).toBe(true)
     // parent's layoutNode.markDirty() should have been called via markLayoutAncestorDirty
   })
 
-  test("unhideTextInstance sets paintDirty and propagates layout dirty to ancestor", () => {
+  test("unhideTextInstance sets stylePropsDirty and propagates layout dirty to ancestor", () => {
     const parent = createNode("silvery-text", {})
     const textNode = hostConfig.createTextInstance("hello", null, { isInsideText: true })
     textNode.parent = parent
     parent.children.push(textNode)
     textNode.hidden = true
     textNode.contentDirty = false
-    textNode.paintDirty = false
+    textNode.stylePropsDirty = false
     parent.contentDirty = false
-    parent.paintDirty = false
+    parent.stylePropsDirty = false
     parent.layoutDirty = false
 
     hostConfig.unhideTextInstance(textNode, "hello")
 
     expect(textNode.hidden).toBe(false)
     expect(textNode.contentDirty).toBe(true)
-    expect(textNode.paintDirty).toBe(true)
+    expect(textNode.stylePropsDirty).toBe(true)
     expect(parent.contentDirty).toBe(true)
     expect(parent.layoutDirty).toBe(true)
     // parent's layoutNode.markDirty() should have been called via markLayoutAncestorDirty

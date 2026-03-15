@@ -11,16 +11,16 @@
  * TRUTH TABLE (key invariants):
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ skipFastPath                                                               │
- * │   = hasPrevBuffer && !contentDirty && !paintDirty && !layoutChanged        │
+ * │ canSkipEntireSubtree                                                               │
+ * │   = hasPrevBuffer && !contentDirty && !stylePropsDirty && !layoutChanged        │
  * │     && !subtreeDirty && !childrenDirty && !childPositionChanged            │
  * │     && !ancestorLayoutChanged                                              │
  * │   True only when hasPrevBuffer=true AND all 7 dirty flags are false.       │
  * │   When true, the node is skipped entirely (clone has correct pixels).      │
  * ├─────────────────────────────────────────────────────────────────────────────┤
  * │ textPaintDirty (intermediate)                                              │
- * │   = isTextNode && paintDirty                                               │
- * │   For TEXT nodes, paintDirty IS a content area change (no borders).        │
+ * │   = isTextNode && stylePropsDirty                                               │
+ * │   For TEXT nodes, stylePropsDirty IS a content area change (no borders).        │
  * ├─────────────────────────────────────────────────────────────────────────────┤
  * │ contentAreaAffected                                                        │
  * │   = contentDirty || layoutChanged || childPositionChanged                  │
@@ -29,12 +29,12 @@
  * │   True when anything changed that affects the node's content area.         │
  * │   Excludes border-only paint changes for BOX nodes.                        │
  * ├─────────────────────────────────────────────────────────────────────────────┤
- * │ subtreeDirtyWithBg                                                         │
+ * │ bgRefillNeeded                                                         │
  * │   = hasPrevBuffer && !contentAreaAffected && subtreeDirty && hasBgColor    │
  * │   Descendant changed inside a bg-bearing Box. Forces bg refill.           │
  * │   Mutually exclusive with contentAreaAffected (gated on !contentAreaAffected).│
  * ├─────────────────────────────────────────────────────────────────────────────┤
- * │ parentRegionCleared                                                        │
+ * │ contentRegionCleared                                                        │
  * │   = (hasPrevBuffer || ancestorCleared) && contentAreaAffected              │
  * │     && !hasBgColor                                                         │
  * │   Clear region with inherited bg when content changed but no own bg fill.  │
@@ -42,31 +42,31 @@
  * ├─────────────────────────────────────────────────────────────────────────────┤
  * │ skipBgFill                                                                 │
  * │   = hasPrevBuffer && !ancestorCleared && !contentAreaAffected              │
- * │     && !subtreeDirtyWithBg                                                 │
+ * │     && !bgRefillNeeded                                                 │
  * │   Clone already has correct bg. Skip redundant fill.                       │
  * ├─────────────────────────────────────────────────────────────────────────────┤
- * │ parentRegionChanged                                                        │
+ * │ childrenNeedFreshRender                                                        │
  * │   = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected             │
- * │     || subtreeDirtyWithBg)                                                 │
+ * │     || bgRefillNeeded)                                                 │
  * │   Children must re-render (childHasPrev=false).                            │
  * │   False when hasPrevBuffer=false AND ancestorCleared=false (fresh buffer). │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * KEY INVARIANTS:
- *   1. contentAreaAffected && subtreeDirtyWithBg can never both be true
- *      (subtreeDirtyWithBg is gated on !contentAreaAffected)
- *   2. parentRegionCleared && skipBgFill can never both be true
- *      (parentRegionCleared requires contentAreaAffected; skipBgFill requires !contentAreaAffected)
- *   3. When !hasPrevBuffer && !ancestorCleared: parentRegionCleared=false, parentRegionChanged=false
+ *   1. contentAreaAffected && bgRefillNeeded can never both be true
+ *      (bgRefillNeeded is gated on !contentAreaAffected)
+ *   2. contentRegionCleared && skipBgFill can never both be true
+ *      (contentRegionCleared requires contentAreaAffected; skipBgFill requires !contentAreaAffected)
+ *   3. When !hasPrevBuffer && !ancestorCleared: contentRegionCleared=false, childrenNeedFreshRender=false
  *      (both gated on hasPrevBuffer || ancestorCleared)
- *   4. skipFastPath requires hasPrevBuffer=true
+ *   4. canSkipEntireSubtree requires hasPrevBuffer=true
  */
 
 /** Inputs to the cascade predicates (all boolean flags from renderNodeToBuffer) */
 export interface CascadeInputs {
   hasPrevBuffer: boolean
   contentDirty: boolean
-  paintDirty: boolean
+  stylePropsDirty: boolean
   layoutChanged: boolean
   subtreeDirty: boolean
   childrenDirty: boolean
@@ -82,12 +82,12 @@ export interface CascadeInputs {
 
 /** Outputs of the cascade predicates */
 export interface CascadeOutputs {
-  skipFastPath: boolean
+  canSkipEntireSubtree: boolean
   contentAreaAffected: boolean
-  subtreeDirtyWithBg: boolean
-  parentRegionCleared: boolean
+  bgRefillNeeded: boolean
+  contentRegionCleared: boolean
   skipBgFill: boolean
-  parentRegionChanged: boolean
+  childrenNeedFreshRender: boolean
 }
 
 /**
@@ -100,7 +100,7 @@ export function computeCascade(inputs: CascadeInputs): CascadeOutputs {
   const {
     hasPrevBuffer,
     contentDirty,
-    paintDirty,
+    stylePropsDirty,
     layoutChanged,
     subtreeDirty,
     childrenDirty,
@@ -115,18 +115,18 @@ export function computeCascade(inputs: CascadeInputs): CascadeOutputs {
   } = inputs
 
   // FAST PATH: Skip unchanged subtrees when we have a valid previous buffer.
-  const skipFastPath =
+  const canSkipEntireSubtree =
     hasPrevBuffer &&
     !contentDirty &&
-    !paintDirty &&
+    !stylePropsDirty &&
     !layoutChanged &&
     !subtreeDirty &&
     !childrenDirty &&
     !childPositionChanged &&
     !ancestorLayoutChanged
 
-  // Intermediate: for TEXT nodes, paintDirty IS a content area change (no borders).
-  const textPaintDirty = isTextNode && paintDirty
+  // Intermediate: for TEXT nodes, stylePropsDirty IS a content area change (no borders).
+  const textPaintDirty = isTextNode && stylePropsDirty
 
   // Did this node's CONTENT AREA change?
   const contentAreaAffected =
@@ -140,23 +140,23 @@ export function computeCascade(inputs: CascadeInputs): CascadeOutputs {
     descendantOverflowChanged
 
   // Descendant changed inside a bg-bearing Box (forces bg refill).
-  const subtreeDirtyWithBg = hasPrevBuffer && !contentAreaAffected && subtreeDirty && hasBgColor
+  const bgRefillNeeded = hasPrevBuffer && !contentAreaAffected && subtreeDirty && hasBgColor
 
   // Clear region with inherited bg when content changed but no own bg fill.
-  const parentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !hasBgColor
+  const contentRegionCleared = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !hasBgColor
 
   // Skip bg fill when clone already has correct bg at this position.
-  const skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !subtreeDirtyWithBg
+  const skipBgFill = hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !bgRefillNeeded
 
   // Children must re-render (content area modified OR bg needs refresh).
-  const parentRegionChanged = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || subtreeDirtyWithBg)
+  const childrenNeedFreshRender = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || bgRefillNeeded)
 
   return {
-    skipFastPath,
+    canSkipEntireSubtree,
     contentAreaAffected,
-    subtreeDirtyWithBg,
-    parentRegionCleared,
+    bgRefillNeeded,
+    contentRegionCleared,
     skipBgFill,
-    parentRegionChanged,
+    childrenNeedFreshRender,
   }
 }

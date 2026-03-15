@@ -20,7 +20,7 @@ A feature comparison of major terminal UI frameworks across languages and ecosys
 | Wide character support (CJK)              | ⚡ Built-in wcwidth + grapheme splitting + atomic diff | 🔶 Third-party `string-width` | ✅               | ✅                    | ⚡ Built-in wcwidth       | ✅              | 🔶        |
 | Frame rate limiting                       | ✅ Scheduler coalescing                                | ❌                            | 🔶 Manual `tick` | ✅ Configurable FPS   | ✅                        | ✅              | ❌        |
 
-[^1]: Silvery tracks 7 independent dirty flags per node (`contentDirty`, `layoutDirty`, `paintDirty`, `subtreeDirty`, `childrenDirty`, `childPositionChanged`, `hasPrevBuffer`), enabling style-only changes to skip layout and content changes to skip paint.
+[^1]: Silvery tracks 7 independent dirty flags per node (`contentDirty`, `layoutDirty`, `stylePropsDirty`, `subtreeDirty`, `childrenDirty`, `childPositionChanged`, `hasPrevBuffer`), enabling style-only changes to skip layout and content changes to skip paint.
 
 [^2]: With ~15-50 unique styles per TUI, Silvery caches all (oldStyle, newStyle) SGR transition strings (~2,500 possible pairs), eliminating per-cell string building.
 

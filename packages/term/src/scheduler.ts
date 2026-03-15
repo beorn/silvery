@@ -548,8 +548,8 @@ export class RenderScheduler {
       // Save buffer for next diff
       this.prevBuffer = buffer
 
-      // SILVERY_STRICT or SILVERY_CHECK_INCREMENTAL: compare incremental render against fresh render
-      const strictEnv = process.env.SILVERY_STRICT || process.env.SILVERY_CHECK_INCREMENTAL
+      // SILVERY_STRICT: compare incremental render against fresh render
+      const strictEnv = process.env.SILVERY_STRICT
       const strictMode = strictEnv && strictEnv !== "0" && strictEnv !== "false"
       if (strictMode && this.stats.renderCount > 0) {
         const renderNum = this.stats.renderCount + 1
@@ -600,7 +600,7 @@ export class RenderScheduler {
           }
         }
         if (!found && process.env.DEBUG_LOG) {
-          appendFileSync(process.env.DEBUG_LOG, `SILVERY_CHECK_INCREMENTAL: render #${renderNum} OK\n`)
+          appendFileSync(process.env.DEBUG_LOG, `SILVERY_STRICT: render #${renderNum} OK\n`)
         }
       }
 

@@ -110,26 +110,25 @@ STRICT mode is the safety net. If our workarounds are incomplete, or if a new te
 
 #### Existing STRICT levels
 
-| Flag                    | What it checks                                                            | Cost                   |
-| ----------------------- | ------------------------------------------------------------------------- | ---------------------- |
-| `SILVERY_STRICT`        | Incremental buffer == fresh buffer (content phase)                        | ~2x render time        |
-| `SILVERY_STRICT_OUTPUT` | Incremental ANSI == fresh ANSI (compat alias for `STRICT_TERMINAL=vt100`) | ~2x + VT parser replay |
+| Flag             | What it checks                                                                 | Cost            |
+| ---------------- | ------------------------------------------------------------------------------ | --------------- |
+| `SILVERY_STRICT` | Incremental buffer == fresh buffer (content phase) + vt100 output verification | ~2x render time |
 
 #### `SILVERY_STRICT_TERMINAL` (implemented)
 
-**Full buffer-vs-backend comparison.** Feeds our ANSI output through each termless backend and compares the resulting terminal state against our `TerminalBuffer`, cell by cell. Accepts comma-separated backend list: `vt100` (fast internal parser), `xterm` (xterm.js headless), `ghostty` (Ghostty WASM). Aliases: `all` = vt100,xterm,ghostty; `both` = xterm,ghostty; `1`/`true` = xterm.
+**Full buffer-vs-backend comparison.** Feeds our ANSI output through each termless backend and compares the resulting terminal state against our `TerminalBuffer`, cell by cell. Accepts comma-separated backend list: `vt100` (fast internal parser), `xterm` (xterm.js headless), `ghostty` (Ghostty WASM). Alias: `all` = vt100,xterm,ghostty.
 
-What it catches that STRICT/STRICT_OUTPUT can't:
+What it catches that STRICT can't:
 
-| Issue                                | STRICT | STRICT_OUTPUT | STRICT_TERMINAL |
-| ------------------------------------ | ------ | ------------- | --------------- |
-| Incremental != fresh (content)       | Yes    | -             | -               |
-| Incremental != fresh (output)        | -      | Yes           | -               |
-| Width disagreement (flag emoji, PUA) | -      | -             | **Yes**         |
-| SGR interpretation bugs              | -      | -             | **Yes**         |
-| Style reset scope issues             | -      | -             | **Yes**         |
-| Background bleed                     | -      | -             | **Yes**         |
-| Hyperlink parsing differences        | -      | -             | **Yes**         |
+| Issue                                | STRICT | STRICT_TERMINAL |
+| ------------------------------------ | ------ | --------------- | ------- |
+| Incremental != fresh (content)       | Yes    | -               |
+| Incremental != fresh (output)        | Yes    | -               |
+| Width disagreement (flag emoji, PUA) | -      | -               | **Yes** |
+| SGR interpretation bugs              | -      | -               | **Yes** |
+| Style reset scope issues             | -      | -               | **Yes** |
+| Background bleed                     | -      | -               | **Yes** |
+| Hyperlink parsing differences        | -      | -               | **Yes** |
 
 **Cell comparison covers:**
 

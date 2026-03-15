@@ -120,7 +120,7 @@ export function inspectTree(rootNode: TeaNode, options?: { depth?: number; showL
     const dirtyFlags: string[] = []
     if (node.layoutDirty) dirtyFlags.push("layout")
     if (node.contentDirty) dirtyFlags.push("content")
-    if (node.paintDirty) dirtyFlags.push("paint")
+    if (node.stylePropsDirty) dirtyFlags.push("paint")
     if (node.bgDirty) dirtyFlags.push("bg")
     if (node.subtreeDirty) dirtyFlags.push("subtree")
     if (node.childrenDirty) dirtyFlags.push("children")

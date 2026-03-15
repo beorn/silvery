@@ -49,8 +49,8 @@ export interface NodeTraceEntry {
   decision: string
   layoutChanged: boolean
   contentAreaAffected?: boolean
-  parentRegionCleared?: boolean
-  parentRegionChanged?: boolean
+  contentRegionCleared?: boolean
+  childrenNeedFreshRender?: boolean
   childHasPrev?: boolean
   childAncestorCleared?: boolean
   skipBgFill?: boolean
@@ -71,7 +71,7 @@ export interface ContentPhaseStats {
   // Per-flag breakdown: why nodes weren't skipped
   noPrevBuffer: number
   flagContentDirty: number
-  flagPaintDirty: number
+  flagStylePropsDirty: number
   flagLayoutChanged: number
   flagSubtreeDirty: number
   flagChildrenDirty: number

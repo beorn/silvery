@@ -311,23 +311,18 @@ function handleScrollbackPromotion(
 }
 
 // These use getters so they can be set after module load (e.g., in test files).
-// SILVERY_STRICT enables buffer + output checks (per-frame).
-// SILVERY_STRICT_OUTPUT=0 explicitly disables output checking even when SILVERY_STRICT is set.
+// SILVERY_STRICT enables buffer + output checks (per-frame), including vt100 output verification.
 // SILVERY_STRICT_ACCUMULATE is separate — it replays ALL frames (O(N²)) and is opt-in only.
 function isStrictOutput(): boolean {
-  const outputEnv = process.env.SILVERY_STRICT_OUTPUT
-  if (outputEnv === "0" || outputEnv === "false") return false
-  return !!outputEnv || !!process.env.SILVERY_STRICT
+  return !!process.env.SILVERY_STRICT
 }
 function isStrictAccumulate(): boolean {
   return !!process.env.SILVERY_STRICT_ACCUMULATE
 }
 /** Parse SILVERY_STRICT_TERMINAL into a list of backends.
  *
- * Accepts comma-separated lists (`vt100,xterm`) and aliases:
- * - `all` = `vt100,xterm,ghostty`
- * - `both` = `xterm,ghostty` (backwards compat)
- * - `1` / `true` = `xterm` (backwards compat)
+ * Accepts `all` (= `vt100,xterm,ghostty`) or a comma-separated list of
+ * backend names (e.g., `vt100,xterm`).
  *
  * The `vt100` backend uses the internal `replayAnsiWithStyles` parser (stateless).
  * `xterm` and `ghostty` use persistent terminal emulators (stateful).
@@ -335,10 +330,7 @@ function isStrictAccumulate(): boolean {
 function strictTerminalBackends(): Array<"vt100" | "xterm" | "ghostty"> {
   const val = (process.env.SILVERY_STRICT_TERMINAL ?? "").toLowerCase().trim()
   if (!val) return []
-  // Aliases
   if (val === "all") return ["vt100", "xterm", "ghostty"]
-  if (val === "both") return ["xterm", "ghostty"] // backwards compat
-  if (val === "1" || val === "true") return ["xterm"] // backwards compat
   // Comma-separated list
   const backends = val
     .split(",")
@@ -777,7 +769,7 @@ export function outputPhase(
       if (stored.width === next.width && stored.height === next.height) {
         // Dimensions match — use incremental rendering (skip clear entirely)
         inlineState.prevBuffer = next
-        return inlineIncrementalRender(inlineState, stored, next, scrollbackOffset, cursorPos, ctx)
+        return inlineIncrementalRender(inlineState, stored, next, scrollbackOffset, cursorPos, ctx, tvState)
       }
     }
 
@@ -844,7 +836,7 @@ export function outputPhase(
   // Inline mode: use incremental rendering when safe, fall back to full render.
   if (mode === "inline") {
     inlineState.prevBuffer = next
-    return inlineIncrementalRender(inlineState, prev, next, scrollbackOffset, cursorPos, ctx)
+    return inlineIncrementalRender(inlineState, prev, next, scrollbackOffset, cursorPos, ctx, tvState)
   }
 
   // SILVERY_FULL_RENDER: bypass incremental diff, always render full buffer.
@@ -951,10 +943,10 @@ export function outputPhase(
     }
   }
 
-  // SILVERY_STRICT_OUTPUT → vt100 backend (backwards compat): verify that the
-  // incremental ANSI output produces the same visible terminal state as a fresh
-  // render. Uses the internal replayAnsiWithStyles parser (stateless).
-  // Also runs when SILVERY_STRICT_TERMINAL includes "vt100".
+  // vt100 output verification: verify that the incremental ANSI output produces
+  // the same visible terminal state as a fresh render. Uses the internal
+  // replayAnsiWithStyles parser (stateless). Enabled by SILVERY_STRICT or
+  // SILVERY_STRICT_TERMINAL containing "vt100".
   if (isStrictOutput() || tvState.hasVt100) {
     verifyOutputEquivalence(prev, next, incrOutput, ctx)
   }
@@ -1115,6 +1107,7 @@ function inlineIncrementalRender(
   scrollbackOffset: number,
   cursorPos?: CursorState | null,
   ctx: OutputContext = defaultContext,
+  tvState?: TerminalVerifyState,
 ): string {
   const { termRows } = ctx
   // Guard: fall back to full render for complex cases
@@ -1237,6 +1230,28 @@ function inlineIncrementalRender(
   }
 
   output += inlineCursorSuffix(cursorPos ?? null, next, ctx)
+
+  // STRICT verification for inline incremental renders.
+  // Inline mode uses relative cursor positioning (CUU/CUD/CR) instead of
+  // absolute CUP, so we can't pass the inline output directly to
+  // verifyOutputEquivalence (which replays freshPrev + incrOutput — the cursor
+  // position after freshPrev differs from the tracked prevCursorRow). Instead,
+  // re-diff in fullscreen mode for vt100 verification. This verifies the buffer
+  // diff logic produces correct ANSI output, even though it doesn't test the
+  // inline cursor positioning specifically.
+  if (isStrictOutput() || tvState?.hasVt100) {
+    const savedMode = ctx.mode
+    ctx.mode = "fullscreen"
+    const fsIncrOutput = changesToAnsi(pool, count, ctx, next).output
+    verifyOutputEquivalence(prev, next, fsIncrOutput, ctx)
+    ctx.mode = savedMode
+  }
+  // TODO: verifyTerminalEquivalence (xterm/ghostty) is skipped for inline mode.
+  // The persistent terminal emulators track cumulative state across frames, but
+  // inline mode's cursor management (relative positioning, scrollback promotion,
+  // cursor tracking via prevCursorRow) is incompatible with this model.
+  // verifyAccumulatedOutput is also skipped — inline has a different accumulation
+  // model (scrollback promotion, frozen content).
 
   // Update tracking
   updateInlineCursorRow(state, cursorPos, maxOutputLines, startLine)
@@ -1879,7 +1894,7 @@ function styleToAnsi(style: Style, ctx: OutputContext = defaultContext): string 
 }
 
 // =============================================================================
-// SILVERY_STRICT_OUTPUT: ANSI output verification via virtual terminal replay
+// ANSI output verification via virtual terminal replay (vt100 backend)
 // =============================================================================
 
 // ============================================================================
@@ -2495,7 +2510,7 @@ function verifyOutputEquivalence(
           )
         }
         const msg =
-          `SILVERY_STRICT_OUTPUT char mismatch at (${x},${y}): ` +
+          `STRICT_OUTPUT char mismatch at (${x},${y}): ` +
           `incremental='${incr.char}' fresh='${fresh.char}'\n` +
           `  prev buffer cell: char='${prevCell.char}' bg=${prevCell.bg} wide=${prevCell.wide} cont=${prevCell.continuation}\n` +
           `  next buffer cell: char='${nextCell.char}' bg=${nextCell.bg} wide=${nextCell.wide} cont=${nextCell.continuation}\n` +
@@ -2534,7 +2549,7 @@ function verifyOutputEquivalence(
 
       if (diffs.length > 0) {
         const msg =
-          `SILVERY_STRICT_OUTPUT style mismatch at (${x},${y}) char='${incr.char}': ` +
+          `STRICT_OUTPUT style mismatch at (${x},${y}) char='${incr.char}': ` +
           diffs.join(", ") +
           `\n  incremental: fg=${formatColor(incr.fg)} bg=${formatColor(incr.bg)} bold=${incr.bold} dim=${incr.dim}` +
           `\n  fresh:       fg=${formatColor(fresh.fg)} bg=${formatColor(fresh.bg)} bold=${fresh.bold} dim=${fresh.dim}`

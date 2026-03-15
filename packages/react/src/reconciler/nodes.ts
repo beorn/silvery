@@ -43,7 +43,7 @@ export function createNode(
     layoutChangedThisFrame: false,
     layoutDirty: true,
     contentDirty: true,
-    paintDirty: true,
+    stylePropsDirty: true,
     bgDirty: true,
     subtreeDirty: true,
     childrenDirty: true,
@@ -103,7 +103,7 @@ export function createNode(
         cachedText = text
         // Clear contentDirty so subsequent measure calls in same layout pass use cache.
         // NOTE: This means the content phase won't see contentDirty=true for text nodes
-        // whose content changed. The content phase uses paintDirty (which survives the
+        // whose content changed. The content phase uses stylePropsDirty (which survives the
         // measure phase) combined with the node type check to correctly identify text
         // nodes that need region clearing. See contentAreaAffected in content-phase.ts.
         node.contentDirty = false
@@ -222,7 +222,7 @@ export function createVirtualTextNode(props: TextProps): TeaNode {
     layoutChangedThisFrame: false,
     layoutDirty: false,
     contentDirty: true,
-    paintDirty: true,
+    stylePropsDirty: true,
     bgDirty: true,
     subtreeDirty: true,
     childrenDirty: false,

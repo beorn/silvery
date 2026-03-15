@@ -317,14 +317,14 @@ export interface TeaNode {
   /** True if content changed but layout didn't (e.g., text content update).
    *  Set by reconciler. Cleared by content phase after rendering.
    *  NOTE: measure phase may clear this for its text-collection cache —
-   *  paintDirty acts as the surviving witness for style changes. */
+   *  stylePropsDirty acts as the surviving witness for style changes. */
   contentDirty: boolean
 
   /** True if visual props changed (color, backgroundColor, borderStyle, etc.).
    *  Set by reconciler alongside contentDirty. Survives measure phase clearing
    *  of contentDirty, ensuring content phase still detects style changes.
    *  Cleared by content phase after rendering. */
-  paintDirty: boolean
+  stylePropsDirty: boolean
 
   /** True if backgroundColor specifically changed (added, modified, or removed).
    *  Set by reconciler when backgroundColor prop changes. Used by content phase

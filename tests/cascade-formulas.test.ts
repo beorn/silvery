@@ -14,7 +14,7 @@ import type { CascadeInputs, CascadeOutputs } from "@silvery/term/pipeline/casca
 const INPUT_FIELDS: (keyof CascadeInputs)[] = [
   "hasPrevBuffer",
   "contentDirty",
-  "paintDirty",
+  "stylePropsDirty",
   "layoutChanged",
   "subtreeDirty",
   "childrenDirty",
@@ -43,17 +43,17 @@ function bitsToInputs(bits: number): CascadeInputs {
  * an independent oracle.
  */
 function expectedOutputs(i: CascadeInputs): CascadeOutputs {
-  const skipFastPath =
+  const canSkipEntireSubtree =
     i.hasPrevBuffer &&
     !i.contentDirty &&
-    !i.paintDirty &&
+    !i.stylePropsDirty &&
     !i.layoutChanged &&
     !i.subtreeDirty &&
     !i.childrenDirty &&
     !i.childPositionChanged &&
     !i.ancestorLayoutChanged
 
-  const textPaintDirty = i.isTextNode && i.paintDirty
+  const textPaintDirty = i.isTextNode && i.stylePropsDirty
 
   const contentAreaAffected =
     i.contentDirty ||
@@ -65,15 +65,22 @@ function expectedOutputs(i: CascadeInputs): CascadeOutputs {
     i.absoluteChildMutated ||
     i.descendantOverflowChanged
 
-  const subtreeDirtyWithBg = i.hasPrevBuffer && !contentAreaAffected && i.subtreeDirty && i.hasBgColor
+  const bgRefillNeeded = i.hasPrevBuffer && !contentAreaAffected && i.subtreeDirty && i.hasBgColor
 
-  const parentRegionCleared = (i.hasPrevBuffer || i.ancestorCleared) && contentAreaAffected && !i.hasBgColor
+  const contentRegionCleared = (i.hasPrevBuffer || i.ancestorCleared) && contentAreaAffected && !i.hasBgColor
 
-  const skipBgFill = i.hasPrevBuffer && !i.ancestorCleared && !contentAreaAffected && !subtreeDirtyWithBg
+  const skipBgFill = i.hasPrevBuffer && !i.ancestorCleared && !contentAreaAffected && !bgRefillNeeded
 
-  const parentRegionChanged = (i.hasPrevBuffer || i.ancestorCleared) && (contentAreaAffected || subtreeDirtyWithBg)
+  const childrenNeedFreshRender = (i.hasPrevBuffer || i.ancestorCleared) && (contentAreaAffected || bgRefillNeeded)
 
-  return { skipFastPath, contentAreaAffected, subtreeDirtyWithBg, parentRegionCleared, skipBgFill, parentRegionChanged }
+  return {
+    canSkipEntireSubtree,
+    contentAreaAffected,
+    bgRefillNeeded,
+    contentRegionCleared,
+    skipBgFill,
+    childrenNeedFreshRender,
+  }
 }
 
 /** Format inputs for readable error messages */
@@ -113,37 +120,37 @@ describe("cascade predicates — exhaustive (2^14 = 16384 cases)", () => {
 describe("cascade predicates — structural invariants (2^14 = 16384 cases)", () => {
   const TOTAL = 1 << INPUT_FIELDS.length
 
-  test("contentAreaAffected and subtreeDirtyWithBg are mutually exclusive", () => {
+  test("contentAreaAffected and bgRefillNeeded are mutually exclusive", () => {
     const violations: string[] = []
     for (let bits = 0; bits < TOTAL; bits++) {
       const inputs = bitsToInputs(bits)
       const out = computeCascade(inputs)
-      if (out.contentAreaAffected && out.subtreeDirtyWithBg) {
+      if (out.contentAreaAffected && out.bgRefillNeeded) {
         violations.push(`bits=${bits} [${formatInputs(inputs)}]`)
       }
     }
     expect(violations).toEqual([])
   })
 
-  test("parentRegionCleared and skipBgFill are never both true", () => {
+  test("contentRegionCleared and skipBgFill are never both true", () => {
     const violations: string[] = []
     for (let bits = 0; bits < TOTAL; bits++) {
       const inputs = bitsToInputs(bits)
       const out = computeCascade(inputs)
-      if (out.parentRegionCleared && out.skipBgFill) {
+      if (out.contentRegionCleared && out.skipBgFill) {
         violations.push(`bits=${bits} [${formatInputs(inputs)}]`)
       }
     }
     expect(violations).toEqual([])
   })
 
-  test("when !hasPrevBuffer && !ancestorCleared: parentRegionCleared is false", () => {
+  test("when !hasPrevBuffer && !ancestorCleared: contentRegionCleared is false", () => {
     const violations: string[] = []
     for (let bits = 0; bits < TOTAL; bits++) {
       const inputs = bitsToInputs(bits)
       if (!inputs.hasPrevBuffer && !inputs.ancestorCleared) {
         const out = computeCascade(inputs)
-        if (out.parentRegionCleared) {
+        if (out.contentRegionCleared) {
           violations.push(`bits=${bits} [${formatInputs(inputs)}]`)
         }
       }
@@ -151,13 +158,13 @@ describe("cascade predicates — structural invariants (2^14 = 16384 cases)", ()
     expect(violations).toEqual([])
   })
 
-  test("when !hasPrevBuffer && !ancestorCleared: parentRegionChanged is false", () => {
+  test("when !hasPrevBuffer && !ancestorCleared: childrenNeedFreshRender is false", () => {
     const violations: string[] = []
     for (let bits = 0; bits < TOTAL; bits++) {
       const inputs = bitsToInputs(bits)
       if (!inputs.hasPrevBuffer && !inputs.ancestorCleared) {
         const out = computeCascade(inputs)
-        if (out.parentRegionChanged) {
+        if (out.childrenNeedFreshRender) {
           violations.push(`bits=${bits} [${formatInputs(inputs)}]`)
         }
       }
@@ -165,22 +172,22 @@ describe("cascade predicates — structural invariants (2^14 = 16384 cases)", ()
     expect(violations).toEqual([])
   })
 
-  test("skipFastPath requires hasPrevBuffer", () => {
+  test("canSkipEntireSubtree requires hasPrevBuffer", () => {
     const violations: string[] = []
     for (let bits = 0; bits < TOTAL; bits++) {
       const inputs = bitsToInputs(bits)
       const out = computeCascade(inputs)
-      if (out.skipFastPath && !inputs.hasPrevBuffer) {
+      if (out.canSkipEntireSubtree && !inputs.hasPrevBuffer) {
         violations.push(`bits=${bits} [${formatInputs(inputs)}]`)
       }
     }
     expect(violations).toEqual([])
   })
 
-  test("skipFastPath implies all dirty flags are false", () => {
+  test("canSkipEntireSubtree implies all dirty flags are false", () => {
     const dirtyFlags: (keyof CascadeInputs)[] = [
       "contentDirty",
-      "paintDirty",
+      "stylePropsDirty",
       "layoutChanged",
       "subtreeDirty",
       "childrenDirty",
@@ -191,10 +198,10 @@ describe("cascade predicates — structural invariants (2^14 = 16384 cases)", ()
     for (let bits = 0; bits < TOTAL; bits++) {
       const inputs = bitsToInputs(bits)
       const out = computeCascade(inputs)
-      if (out.skipFastPath) {
+      if (out.canSkipEntireSubtree) {
         for (const flag of dirtyFlags) {
           if (inputs[flag]) {
-            violations.push(`bits=${bits} [${formatInputs(inputs)}]: ${flag} is true but skipFastPath is true`)
+            violations.push(`bits=${bits} [${formatInputs(inputs)}]: ${flag} is true but canSkipEntireSubtree is true`)
           }
         }
       }
@@ -202,12 +209,12 @@ describe("cascade predicates — structural invariants (2^14 = 16384 cases)", ()
     expect(violations).toEqual([])
   })
 
-  test("subtreeDirtyWithBg requires hasPrevBuffer, subtreeDirty, and hasBgColor", () => {
+  test("bgRefillNeeded requires hasPrevBuffer, subtreeDirty, and hasBgColor", () => {
     const violations: string[] = []
     for (let bits = 0; bits < TOTAL; bits++) {
       const inputs = bitsToInputs(bits)
       const out = computeCascade(inputs)
-      if (out.subtreeDirtyWithBg) {
+      if (out.bgRefillNeeded) {
         if (!inputs.hasPrevBuffer || !inputs.subtreeDirty || !inputs.hasBgColor) {
           violations.push(`bits=${bits} [${formatInputs(inputs)}]`)
         }
@@ -216,24 +223,24 @@ describe("cascade predicates — structural invariants (2^14 = 16384 cases)", ()
     expect(violations).toEqual([])
   })
 
-  test("parentRegionChanged implies contentAreaAffected or subtreeDirtyWithBg", () => {
+  test("childrenNeedFreshRender implies contentAreaAffected or bgRefillNeeded", () => {
     const violations: string[] = []
     for (let bits = 0; bits < TOTAL; bits++) {
       const inputs = bitsToInputs(bits)
       const out = computeCascade(inputs)
-      if (out.parentRegionChanged && !out.contentAreaAffected && !out.subtreeDirtyWithBg) {
+      if (out.childrenNeedFreshRender && !out.contentAreaAffected && !out.bgRefillNeeded) {
         violations.push(`bits=${bits} [${formatInputs(inputs)}]`)
       }
     }
     expect(violations).toEqual([])
   })
 
-  test("parentRegionCleared implies contentAreaAffected and !hasBgColor", () => {
+  test("contentRegionCleared implies contentAreaAffected and !hasBgColor", () => {
     const violations: string[] = []
     for (let bits = 0; bits < TOTAL; bits++) {
       const inputs = bitsToInputs(bits)
       const out = computeCascade(inputs)
-      if (out.parentRegionCleared) {
+      if (out.contentRegionCleared) {
         if (!out.contentAreaAffected || inputs.hasBgColor) {
           violations.push(`bits=${bits} [${formatInputs(inputs)}]`)
         }
@@ -263,7 +270,7 @@ describe("cascade predicates — named scenarios", () => {
     return {
       hasPrevBuffer: false,
       contentDirty: false,
-      paintDirty: false,
+      stylePropsDirty: false,
       layoutChanged: false,
       subtreeDirty: false,
       childrenDirty: false,
@@ -280,25 +287,25 @@ describe("cascade predicates — named scenarios", () => {
 
   test("fresh render (no prev buffer, nothing dirty) — no skip, no clear, no region changed", () => {
     const out = computeCascade(allFalse())
-    expect(out.skipFastPath).toBe(false)
+    expect(out.canSkipEntireSubtree).toBe(false)
     expect(out.contentAreaAffected).toBe(false)
-    expect(out.subtreeDirtyWithBg).toBe(false)
-    expect(out.parentRegionCleared).toBe(false)
+    expect(out.bgRefillNeeded).toBe(false)
+    expect(out.contentRegionCleared).toBe(false)
     expect(out.skipBgFill).toBe(false)
-    expect(out.parentRegionChanged).toBe(false)
+    expect(out.childrenNeedFreshRender).toBe(false)
   })
 
   test("clean node with prev buffer — skip fast path", () => {
     const out = computeCascade({ ...allFalse(), hasPrevBuffer: true })
-    expect(out.skipFastPath).toBe(true)
+    expect(out.canSkipEntireSubtree).toBe(true)
     expect(out.skipBgFill).toBe(true)
   })
 
   test("content dirty with prev buffer — no skip, content affected, region changed", () => {
     const out = computeCascade({ ...allFalse(), hasPrevBuffer: true, contentDirty: true })
-    expect(out.skipFastPath).toBe(false)
+    expect(out.canSkipEntireSubtree).toBe(false)
     expect(out.contentAreaAffected).toBe(true)
-    expect(out.parentRegionChanged).toBe(true)
+    expect(out.childrenNeedFreshRender).toBe(true)
     expect(out.skipBgFill).toBe(false)
   })
 
@@ -309,8 +316,8 @@ describe("cascade predicates — named scenarios", () => {
       contentDirty: true,
       hasBgColor: true,
     })
-    expect(out.parentRegionCleared).toBe(false) // has bg, so renderBox fills instead
-    expect(out.parentRegionChanged).toBe(true)
+    expect(out.contentRegionCleared).toBe(false) // has bg, so renderBox fills instead
+    expect(out.childrenNeedFreshRender).toBe(true)
     expect(out.contentAreaAffected).toBe(true)
   })
 
@@ -321,30 +328,30 @@ describe("cascade predicates — named scenarios", () => {
       contentDirty: true,
       hasBgColor: false,
     })
-    expect(out.parentRegionCleared).toBe(true)
-    expect(out.parentRegionChanged).toBe(true)
+    expect(out.contentRegionCleared).toBe(true)
+    expect(out.childrenNeedFreshRender).toBe(true)
   })
 
   test("paint dirty on text node — content area affected (text has no borders)", () => {
     const out = computeCascade({
       ...allFalse(),
       hasPrevBuffer: true,
-      paintDirty: true,
+      stylePropsDirty: true,
       isTextNode: true,
     })
     expect(out.contentAreaAffected).toBe(true) // textPaintDirty kicks in
-    expect(out.skipFastPath).toBe(false)
+    expect(out.canSkipEntireSubtree).toBe(false)
   })
 
   test("paint dirty on box node — content area NOT affected (border-only change)", () => {
     const out = computeCascade({
       ...allFalse(),
       hasPrevBuffer: true,
-      paintDirty: true,
+      stylePropsDirty: true,
       isTextNode: false,
     })
     expect(out.contentAreaAffected).toBe(false) // border-only, not content
-    expect(out.skipFastPath).toBe(false) // still not skipped (paintDirty)
+    expect(out.canSkipEntireSubtree).toBe(false) // still not skipped (stylePropsDirty)
   })
 
   test("subtree dirty with bg color — forces bg refill, children re-render", () => {
@@ -355,8 +362,8 @@ describe("cascade predicates — named scenarios", () => {
       hasBgColor: true,
     })
     expect(out.contentAreaAffected).toBe(false)
-    expect(out.subtreeDirtyWithBg).toBe(true)
-    expect(out.parentRegionChanged).toBe(true)
+    expect(out.bgRefillNeeded).toBe(true)
+    expect(out.childrenNeedFreshRender).toBe(true)
     expect(out.skipBgFill).toBe(false)
   })
 
@@ -367,8 +374,8 @@ describe("cascade predicates — named scenarios", () => {
       subtreeDirty: true,
       hasBgColor: false,
     })
-    expect(out.subtreeDirtyWithBg).toBe(false)
-    expect(out.parentRegionChanged).toBe(false)
+    expect(out.bgRefillNeeded).toBe(false)
+    expect(out.childrenNeedFreshRender).toBe(false)
     expect(out.skipBgFill).toBe(true) // clone has correct bg
   })
 
@@ -380,14 +387,14 @@ describe("cascade predicates — named scenarios", () => {
       hasBgColor: false,
     })
     // hasPrevBuffer=false but ancestorCleared=true
-    expect(out.parentRegionCleared).toBe(true)
-    expect(out.parentRegionChanged).toBe(true)
+    expect(out.contentRegionCleared).toBe(true)
+    expect(out.childrenNeedFreshRender).toBe(true)
   })
 
   test("ancestor cleared, nothing dirty — no region changes", () => {
     const out = computeCascade({ ...allFalse(), ancestorCleared: true })
-    expect(out.parentRegionCleared).toBe(false)
-    expect(out.parentRegionChanged).toBe(false)
+    expect(out.contentRegionCleared).toBe(false)
+    expect(out.childrenNeedFreshRender).toBe(false)
     expect(out.skipBgFill).toBe(false) // ancestorCleared prevents skip
   })
 
@@ -407,9 +414,9 @@ describe("cascade predicates — named scenarios", () => {
       hasPrevBuffer: true,
       layoutChanged: true,
     })
-    expect(out.skipFastPath).toBe(false)
+    expect(out.canSkipEntireSubtree).toBe(false)
     expect(out.contentAreaAffected).toBe(true)
-    expect(out.parentRegionChanged).toBe(true)
+    expect(out.childrenNeedFreshRender).toBe(true)
   })
 
   test("ancestor layout changed only — no skip (safety net), but no content area change", () => {
@@ -418,7 +425,7 @@ describe("cascade predicates — named scenarios", () => {
       hasPrevBuffer: true,
       ancestorLayoutChanged: true,
     })
-    expect(out.skipFastPath).toBe(false) // ancestorLayoutChanged prevents skip
+    expect(out.canSkipEntireSubtree).toBe(false) // ancestorLayoutChanged prevents skip
     expect(out.contentAreaAffected).toBe(false) // own content area not affected
     expect(out.skipBgFill).toBe(true) // clone bg still valid
   })
@@ -430,7 +437,7 @@ describe("cascade predicates — named scenarios", () => {
       absoluteChildMutated: true,
     })
     expect(out.contentAreaAffected).toBe(true)
-    expect(out.parentRegionChanged).toBe(true)
+    expect(out.childrenNeedFreshRender).toBe(true)
   })
 
   test("descendant overflow changed — content area affected", () => {
@@ -440,6 +447,6 @@ describe("cascade predicates — named scenarios", () => {
       descendantOverflowChanged: true,
     })
     expect(out.contentAreaAffected).toBe(true)
-    expect(out.parentRegionChanged).toBe(true)
+    expect(out.childrenNeedFreshRender).toBe(true)
   })
 })

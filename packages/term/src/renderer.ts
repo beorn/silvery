@@ -506,7 +506,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
 
   // Check SILVERY_STRICT for automatic incremental checking (like scheduler does)
   // Note: "0" and "false" are treated as disabled
-  const strictEnv = process.env.SILVERY_STRICT || process.env.SILVERY_CHECK_INCREMENTAL
+  const strictEnv = process.env.SILVERY_STRICT
   const strictMode = incremental && strictEnv && strictEnv !== "0" && strictEnv !== "false"
 
   // Render function that executes the pipeline.
@@ -572,7 +572,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
               output = result.output
               buffer = result.buffer
             } catch (e) {
-              // SILVERY_STRICT_OUTPUT may throw from the output phase.
+              // STRICT output verification may throw from the output phase.
               // The content phase buffer is still valid and attached to the
               // error by executeRenderCore — extract it so lastBuffer()
               // returns the correct frame, not a stale one.
@@ -599,7 +599,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
           }
         })
         // Re-throw non-diagnostic errors. IncrementalRenderMismatchError from
-        // SILVERY_STRICT_OUTPUT is diagnostic — the buffer was saved above, and
+        // STRICT output verification is diagnostic — the buffer was saved above, and
         // the content-phase STRICT check below will detect real mismatches.
         // Propagating diagnostic throws would crash sendInput() callers.
         if (renderError) {

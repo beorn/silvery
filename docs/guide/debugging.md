@@ -29,12 +29,10 @@ SILVERY_STRICT_TERMINAL=all bun run app          # vt100 + xterm + ghostty
 SILVERY_STRICT_ACCUMULATE=1 bun run app
 ```
 
-**Aliases for backwards compatibility:**
+**Notes:**
 
-- `SILVERY_STRICT_TERMINAL=1` or `=true` → xterm
-- `SILVERY_STRICT_TERMINAL=both` → xterm + ghostty
-- `SILVERY_STRICT_OUTPUT=1` → equivalent to `SILVERY_STRICT_TERMINAL=vt100`
-- `SILVERY_STRICT=1` → enables buffer-level check AND `SILVERY_STRICT_TERMINAL=vt100`
+- `SILVERY_STRICT=1` → enables buffer-level check AND vt100 output verification
+- `SILVERY_STRICT_TERMINAL=all` → shorthand for `vt100,xterm,ghostty`
 
 ### Diagnostics
 
@@ -88,7 +86,7 @@ The scheduler auto-enables instrumentation for the STRICT comparison render. No 
 
 4. **Check instrumentation**: `SILVERY_INSTRUMENT=1` exposes skip/render counts, cascade depth, scroll tier decisions on `globalThis.__silvery_content_detail`. Useful for understanding whether too many or too few nodes rendered.
 
-5. **Check the five critical formulas**: `layoutChanged`, `contentAreaAffected`, `parentRegionCleared`, `skipBgFill`, `parentRegionChanged` in `renderNodeToBuffer` (content-phase.ts). If any is wrong, the cascade propagates errors to the entire subtree.
+5. **Check the five critical formulas**: `layoutChanged`, `contentAreaAffected`, `contentRegionCleared`, `skipBgFill`, `childrenNeedFreshRender` in `renderNodeToBuffer` (content-phase.ts). If any is wrong, the cascade propagates errors to the entire subtree.
 
 6. **Text bg inheritance**: Text nodes inherit bg via `inheritedBg` (from `findInheritedBg`), not buffer reads. Viewport clears and region clears still affect buffer state, which matters for the `getCellBg` legacy fallback (used by scroll indicators). If your fix clears a region, verify it clears to the correct bg (usually `null` to match fresh render state).
 
@@ -97,15 +95,15 @@ The scheduler auto-enables instrumentation for the STRICT comparison render. No 
 | Symptom                                                    | Check First                                                                                                                    |
 | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | Stale background color persists                            | `bgDirty` flag; `inheritedBg` from `findInheritedBg`; is region being cleared?                                                 |
-| Border artifacts after color change                        | `paintDirty` vs `contentAreaAffected` distinction; border-only change should NOT cascade                                       |
+| Border artifacts after color change                        | `stylePropsDirty` vs `contentAreaAffected` distinction; border-only change should NOT cascade                                  |
 | Scroll glitch (content jumps/disappears)                   | Scroll tier selection; Tier 1 unsafe with sticky; Tier 3 needs `stickyForceRefresh`                                            |
-| Children blank after parent changes                        | `parentRegionChanged` → `childHasPrev=false`; is viewport clear setting `childHasPrev` correctly?                              |
+| Children blank after parent changes                        | `childrenNeedFreshRender` → `childHasPrev=false`; is viewport clear setting `childHasPrev` correctly?                          |
 | Absolute child disappears                                  | Two-pass rendering order; absolute children need `ancestorCleared=false` in second pass                                        |
 | Content correct initially, wrong after navigation          | Incremental rendering bug; `SILVERY_STRICT=1` will catch it                                                                    |
 | Colors wrong but characters correct (garble)               | Output phase: `diffBuffers` row pre-check skipping true-color Map diffs; check `rowExtrasEquals`                               |
 | Text bg different from parent Box bg                       | `inheritedBg` from `findInheritedBg`; check if ancestor Box has `backgroundColor`; check region clearing                       |
 | Flickering on every render                                 | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of content phase                                      |
-| Stale overlay pixels after shrink (black area)             | `clearExcessArea` not called; check `parentRegionCleared` + `forceRepaint` interaction                                         |
+| Stale overlay pixels after shrink (black area)             | `clearExcessArea` not called; check `contentRegionCleared` + `forceRepaint` interaction                                        |
 | CJK/wide char garble, text shifts right                    | `bufferToAnsi` cursor drift: wide char without continuation at col+1. Run `SILVERY_STRICT_TERMINAL=xterm`                      |
 | Flag emoji garble at wide terminals (200+ cols)            | `bufferToAnsi`/`changesToAnsi` cursor re-sync after wide chars; `wrapTextSizing`                                               |
 | Stale chars in ancestor border/padding after child shrinks | Descendant overflow: `clearExcessArea` clips to immediate parent. Use `hasDescendantOverflowChanged()` for recursive detection |

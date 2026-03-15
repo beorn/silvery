@@ -16,7 +16,7 @@ export interface MismatchErrorData {
 }
 
 /**
- * Error thrown when SILVERY_CHECK_INCREMENTAL detects a mismatch.
+ * Error thrown when SILVERY_STRICT detects a mismatch.
  * This error should NOT be caught by general error handlers - it indicates
  * a bug in incremental rendering that needs to be fixed.
  *

@@ -1076,7 +1076,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     const rootHasDirty =
       rootNode.layoutDirty ||
       rootNode.contentDirty ||
-      rootNode.paintDirty ||
+      rootNode.stylePropsDirty ||
       rootNode.bgDirty ||
       rootNode.subtreeDirty ||
       rootNode.childrenDirty
@@ -1101,11 +1101,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     if (!_noIncremental) _prevTermBuffer = termBuffer
     const pipelineMs = performance.now() - pipelineStart
 
-    // SILVERY_CHECK_INCREMENTAL: compare incremental render against fresh render.
+    // SILVERY_STRICT: compare incremental render against fresh render.
     // createApp bypasses Scheduler/Renderer which have this check built-in,
     // so we add it here to catch incremental rendering bugs at runtime.
-    const strictEnv =
-      typeof process !== "undefined" && (process.env?.SILVERY_STRICT || process.env?.SILVERY_CHECK_INCREMENTAL)
+    const strictEnv = typeof process !== "undefined" && process.env?.SILVERY_STRICT
     if (strictEnv && strictEnv !== "0" && strictEnv !== "false" && wasIncremental) {
       const { buffer: freshBuffer } = executeRender(
         rootNode,
@@ -1177,7 +1176,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                     (s: any, i: number) =>
                       `  #${i}: visited=${s.nodesVisited} rendered=${s.nodesRendered} skipped=${s.nodesSkipped} ` +
                       `clearOps=${s.clearOps} cascade="${s.cascadeNodes}" ` +
-                      `flags={C=${s.flagContentDirty} P=${s.flagPaintDirty} L=${s.flagLayoutChanged} ` +
+                      `flags={C=${s.flagContentDirty} P=${s.flagStylePropsDirty} L=${s.flagLayoutChanged} ` +
                       `S=${s.flagSubtreeDirty} Ch=${s.flagChildrenDirty} CP=${s.flagChildPositionChanged} AL=${s.flagAncestorLayoutChanged} noPrev=${s.noPrevBuffer}} ` +
                       `scroll={containers=${s.scrollContainerCount} cleared=${s.scrollViewportCleared} reason="${s.scrollClearReason}"} ` +
                       `normalRepaint="${s.normalRepaintReason}" ` +
@@ -1187,7 +1186,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                   .join("\n")
               : ""
             const msg =
-              `SILVERY_CHECK_INCREMENTAL (createApp): MISMATCH at (${x}, ${y}) on render #${_renderCount}\n` +
+              `SILVERY_STRICT (createApp): MISMATCH at (${x}, ${y}) on render #${_renderCount}\n` +
               `  incremental: ${cellStr(a)}\n` +
               `  fresh:       ${cellStr(b)}` +
               statsStr +
@@ -1202,7 +1201,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                     out += `\n    ${t.decision} ${t.id}(${t.type})@${t.depth} rect=${t.rect} prev=${t.prevLayout}`
                     out += ` hasPrev=${t.hasPrev} ancClr=${t.ancestorCleared} flags=[${t.flags}] layout∆=${t.layoutChanged}`
                     if (t.decision === "RENDER") {
-                      out += ` caa=${t.contentAreaAffected} prc=${t.parentRegionCleared} prm=${t.parentRegionChanged}`
+                      out += ` caa=${t.contentAreaAffected} crc=${t.contentRegionCleared} cnfr=${t.childrenNeedFreshRender}`
                       out += ` childPrev=${t.childHasPrev} childAnc=${t.childAncestorCleared} skipBg=${t.skipBgFill} bg=${t.bgColor ?? "none"}`
                     }
                   }
@@ -1223,7 +1222,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         require("node:fs").appendFileSync(
           "/tmp/silvery-perf.log",
-          `SILVERY_CHECK_INCREMENTAL (createApp): render #${_renderCount} OK\n`,
+          `SILVERY_STRICT (createApp): render #${_renderCount} OK\n`,
         )
       }
     }
@@ -1237,7 +1236,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         ? ` [measure=${phases.measure.toFixed(1)} layout=${phases.layout.toFixed(1)} content=${phases.content.toFixed(1)} output=${phases.output.toFixed(1)}]`
         : ""
       const detailStr = detail
-        ? ` {visited=${detail.nodesVisited} rendered=${detail.nodesRendered} skipped=${detail.nodesSkipped} noPrev=${detail.noPrevBuffer ?? 0} dirty=${detail.flagContentDirty ?? 0} paint=${detail.flagPaintDirty ?? 0} layoutChg=${detail.flagLayoutChanged ?? 0} subtree=${detail.flagSubtreeDirty ?? 0} children=${detail.flagChildrenDirty ?? 0} childPos=${detail.flagChildPositionChanged ?? 0} scroll=${detail.scrollContainerCount ?? 0}/${detail.scrollViewportCleared ?? 0}${detail.scrollClearReason ? `(${detail.scrollClearReason})` : ""}}${detail.cascadeNodes ? ` CASCADE[minDepth=${detail.cascadeMinDepth} ${detail.cascadeNodes}]` : ""}`
+        ? ` {visited=${detail.nodesVisited} rendered=${detail.nodesRendered} skipped=${detail.nodesSkipped} noPrev=${detail.noPrevBuffer ?? 0} dirty=${detail.flagContentDirty ?? 0} paint=${detail.flagStylePropsDirty ?? 0} layoutChg=${detail.flagLayoutChanged ?? 0} subtree=${detail.flagSubtreeDirty ?? 0} children=${detail.flagChildrenDirty ?? 0} childPos=${detail.flagChildPositionChanged ?? 0} scroll=${detail.scrollContainerCount ?? 0}/${detail.scrollViewportCleared ?? 0}${detail.scrollClearReason ? `(${detail.scrollClearReason})` : ""}}${detail.cascadeNodes ? ` CASCADE[minDepth=${detail.cascadeMinDepth} ${detail.cascadeNodes}]` : ""}`
         : ""
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("node:fs").appendFileSync(

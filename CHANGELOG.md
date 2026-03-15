@@ -57,13 +57,13 @@ The inkx era. Initial development as a high-performance Ink alternative with inc
 
 ### Added — Rendering Engine
 
-- **Incremental content phase**: per-node dirty tracking with 7 independent flags (`contentDirty`, `paintDirty`, `bgDirty`, `subtreeDirty`, `childrenDirty`, `layoutDirty`, `layoutChangedThisFrame`). Only changed nodes re-render, producing 28-192x fewer bytes on typical incremental updates.
+- **Incremental content phase**: per-node dirty tracking with 7 independent flags (`contentDirty`, `stylePropsDirty`, `bgDirty`, `subtreeDirty`, `childrenDirty`, `layoutDirty`, `layoutChangedThisFrame`). Only changed nodes re-render, producing 28-192x fewer bytes on typical incremental updates.
 - **Three-tier scroll optimization**: buffer shift (Tier 1, scroll-only changes), full viewport clear (Tier 2, structural changes), and subtree-dirty-only (Tier 3, targeted re-render).
 - **Sticky children**: `position="sticky"` with two-pass rendering (normal flow first, then sticky headers on top). Works inside and outside scroll containers.
 - **Inline incremental rendering**: `createOutputPhase()` with instance-scoped cursor tracking. Relative cursor positioning for inline mode achieves parity with fullscreen incremental rendering.
 - **Text background inheritance**: explicit `inheritedBg` parameter through the render tree, decoupling text rendering from buffer state. Eliminates `getCellBg` mismatches on incremental renders.
 - **BgSegment tracking**: strips ANSI background from text content and tracks bg ranges per-segment, preventing background bleed across wrapped lines.
-- **SILVERY_STRICT mode**: verifies incremental render produces identical output to fresh render, cell-by-cell. SILVERY_STRICT_OUTPUT verifies output-phase ANSI generation.
+- **SILVERY_STRICT mode**: verifies incremental render produces identical output to fresh render, cell-by-cell, including vt100 ANSI output verification.
 - **CJK/wide character support**: correct cursor advancement, continuation cells, and boundary handling for double-width characters.
 - **True color row pre-check**: `rowExtrasEquals()` for Map-based data (true colors, underline colors, hyperlinks) prevents stale color artifacts.
 
