@@ -10,6 +10,8 @@ npm install silvery react
 
 > **Status:** Alpha — under active development. APIs may change. Early adopters and feedback welcome.
 
+**Runtimes:** Library works with Bun >= 1.0 and Node.js >= 18. CLI (`silvery` command) requires Bun.
+
 ```tsx
 import { useState } from "react"
 import { render, Box, Text, useInput, useContentRect, createTerm } from "silvery"
