@@ -143,9 +143,11 @@ Diff the current buffer against the previous buffer and emit minimal ANSI escape
 
 **Verification** (during incremental render):
 
-- STRICT_OUTPUT: Replay output through internal ANSI parser, compare against fresh render replay
+- STRICT (buffer): Compare incremental buffer cell-by-cell against fresh render buffer
+- STRICT_TERMINAL=vt100: Replay output through internal ANSI parser, compare against fresh render replay
+- STRICT_TERMINAL=xterm: Feed output to xterm.js terminal emulator, compare cell-by-cell
+- STRICT_TERMINAL=ghostty: Feed output to Ghostty WASM emulator, compare cell-by-cell
 - STRICT_ACCUMULATE: Replay ALL accumulated output (O(N²)) against fresh render
-- STRICT_TERMINAL: Feed output to real xterm.js terminal emulator, compare cell-by-cell
 
 ### 4. Scheduler Output
 

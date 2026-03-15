@@ -27,7 +27,7 @@ afterEach(() => {
 
 describe("SILVERY_STRICT_TERMINAL", () => {
   test("passes when incremental rendering matches fresh (simple text change)", async () => {
-    process.env.SILVERY_STRICT_TERMINAL = "1"
+    process.env.SILVERY_STRICT_TERMINAL = "vt100"
 
     const render = createRenderer({ cols: 40, rows: 10 })
 
@@ -54,7 +54,7 @@ describe("SILVERY_STRICT_TERMINAL", () => {
   })
 
   test("passes with styled text changes", async () => {
-    process.env.SILVERY_STRICT_TERMINAL = "1"
+    process.env.SILVERY_STRICT_TERMINAL = "vt100"
 
     const render = createRenderer({ cols: 40, rows: 10 })
 
@@ -84,7 +84,7 @@ describe("SILVERY_STRICT_TERMINAL", () => {
   })
 
   test("passes with content growth and shrinkage", async () => {
-    process.env.SILVERY_STRICT_TERMINAL = "1"
+    process.env.SILVERY_STRICT_TERMINAL = "vt100"
 
     const render = createRenderer({ cols: 40, rows: 15 })
 
@@ -128,7 +128,7 @@ describe("SILVERY_STRICT_TERMINAL", () => {
   })
 
   test("passes with background color changes", async () => {
-    process.env.SILVERY_STRICT_TERMINAL = "1"
+    process.env.SILVERY_STRICT_TERMINAL = "vt100"
 
     const render = createRenderer({ cols: 30, rows: 8 })
 
@@ -156,7 +156,7 @@ describe("SILVERY_STRICT_TERMINAL", () => {
   })
 
   test("passes with border rendering", async () => {
-    process.env.SILVERY_STRICT_TERMINAL = "1"
+    process.env.SILVERY_STRICT_TERMINAL = "vt100"
 
     const render = createRenderer({ cols: 30, rows: 10 })
 

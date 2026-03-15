@@ -584,7 +584,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             }
             // Always update prevBuffer when a new buffer was produced,
             // even if the output phase threw. The buffer from contentPhase
-            // is correct; the STRICT_OUTPUT exception is a diagnostic that
+            // is correct; the STRICT verification exception is a diagnostic that
             // should not corrupt incremental rendering state.
             if (buffer) {
               instance.prevBuffer = buffer
