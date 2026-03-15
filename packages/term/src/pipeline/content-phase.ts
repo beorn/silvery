@@ -264,6 +264,50 @@ function renderNodeToBuffer(
     return
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CASCADE PREDICATES — 6 computed outputs from 14 boolean inputs.
+  // Pure logic extracted to cascade-predicates.ts for exhaustive testing
+  // (2^14 = 16,384 cases). Formulas here are authoritative.
+  //
+  // TRUTH TABLE:
+  //
+  // skipFastPath
+  //   = hasPrevBuffer && !contentDirty && !paintDirty && !layoutChanged
+  //     && !subtreeDirty && !childrenDirty && !childPositionChanged
+  //     && !ancestorLayoutChanged
+  //   True only when hasPrevBuffer AND all 7 dirty flags are false.
+  //
+  // textPaintDirty (intermediate)
+  //   = isTextNode && paintDirty
+  //
+  // contentAreaAffected
+  //   = contentDirty || layoutChanged || childPositionChanged
+  //     || childrenDirty || bgDirty || textPaintDirty
+  //     || absoluteChildMutated || descendantOverflowChanged
+  //
+  // subtreeDirtyWithBg
+  //   = hasPrevBuffer && !contentAreaAffected && subtreeDirty && hasBgColor
+  //   Mutually exclusive with contentAreaAffected.
+  //
+  // parentRegionCleared
+  //   = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !hasBgColor
+  //
+  // skipBgFill
+  //   = hasPrevBuffer && !ancestorCleared && !contentAreaAffected
+  //     && !subtreeDirtyWithBg
+  //
+  // parentRegionChanged
+  //   = (hasPrevBuffer || ancestorCleared)
+  //     && (contentAreaAffected || subtreeDirtyWithBg)
+  //
+  // INVARIANTS:
+  //   1. contentAreaAffected && subtreeDirtyWithBg → never both true
+  //   2. parentRegionCleared && skipBgFill → never both true
+  //   3. !hasPrevBuffer && !ancestorCleared → parentRegionCleared=false
+  //   4. !hasPrevBuffer && !ancestorCleared → parentRegionChanged=false
+  //   5. skipFastPath → hasPrevBuffer=true
+  // ═══════════════════════════════════════════════════════════════════════════
+
   // FAST PATH: Skip entire subtree if unchanged and we have a previous buffer
   // The buffer was cloned from prevBuffer, so skipped nodes keep their rendered output
   //

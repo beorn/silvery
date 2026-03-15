@@ -85,6 +85,30 @@ Render the node tree to a `TerminalBuffer` (2D grid of cells).
 
 Output: `TerminalBuffer` — the correct pixel state for this frame.
 
+**Cascade predicates** — 6 computed outputs from 14 boolean inputs control the entire incremental cascade. Pure logic extracted to `cascade-predicates.ts` for exhaustive testing (2^14 = 16,384 cases). See `CLAUDE.md` "The Critical Formulas" for detailed semantics.
+
+```
+skipFastPath          = hasPrevBuffer && !contentDirty && !paintDirty && !layoutChanged
+                        && !subtreeDirty && !childrenDirty && !childPositionChanged
+                        && !ancestorLayoutChanged
+
+textPaintDirty        = isTextNode && paintDirty                                        (intermediate)
+
+contentAreaAffected   = contentDirty || layoutChanged || childPositionChanged
+                        || childrenDirty || bgDirty || textPaintDirty
+                        || absoluteChildMutated || descendantOverflowChanged
+
+subtreeDirtyWithBg    = hasPrevBuffer && !contentAreaAffected && subtreeDirty && hasBgColor
+
+parentRegionCleared   = (hasPrevBuffer || ancestorCleared) && contentAreaAffected && !hasBgColor
+
+skipBgFill            = hasPrevBuffer && !ancestorCleared && !contentAreaAffected && !subtreeDirtyWithBg
+
+parentRegionChanged   = (hasPrevBuffer || ancestorCleared) && (contentAreaAffected || subtreeDirtyWithBg)
+```
+
+Invariants: (1) contentAreaAffected ∧ subtreeDirtyWithBg → ⊥, (2) parentRegionCleared ∧ skipBgFill → ⊥, (3-4) ¬hasPrevBuffer ∧ ¬ancestorCleared → parentRegionCleared=⊥ ∧ parentRegionChanged=⊥, (5) skipFastPath → hasPrevBuffer.
+
 #### Phase 4: Output (`output-phase.ts`)
 
 Diff the current buffer against the previous buffer and emit minimal ANSI escape sequences.
@@ -157,24 +181,9 @@ The terminal process (Ghostty, iTerm2, etc.) receives the ANSI byte stream and:
 | stdout delivery                    | **NONE**                        | -                                         | No pipe buffer split detection                      |
 | DEC 2026 sync interaction          | N/A (removed)                   | -                                         | Sync fallback removed; scheduler sync also disabled |
 
-### Critical Gaps
+### STRICT Modes: What Each Catches (and Misses)
 
-1. **STRICT_OUTPUT is self-referential**: Uses `replayAnsiWithStyles` — the same ANSI parser that the output generator is based on. If both have the same bug (e.g., both handle pending-wrap the same non-standard way), the test passes but real terminals disagree.
-
-2. **STRICT_TERMINAL is xterm.js only, not default**: The one non-self-referential check is optional and only tests xterm.js. The actual target terminal (Ghostty) is never verified in the runtime loop.
-
-3. **No stdout delivery verification**: If output exceeds the pipe buffer (16KB on macOS), writes may be split mid-sequence. No detection or mitigation.
-
-4. **DEC 2026 sync removed**: The sync fallback (wrapping output in DEC 2026 markers when >30% rows dirty) was removed — it caused garble in Ghostty. The scheduler's sync support is also disabled. No sync markers are emitted.
-
-### What Each STRICT Mode Catches (and Misses)
-
-| Mode                | Catches                                                                                                    | Misses                                                                                                              |
-| ------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `STRICT`            | Content phase bugs (wrong dirty flag evaluation, skipped nodes, wrong region clearing, scroll tier errors) | Output phase bugs, terminal interpretation bugs                                                                     |
-| `STRICT_OUTPUT`     | changesToAnsi bugs where our parser disagrees with our generator (style transitions, cursor arithmetic)    | Bugs where parser and generator agree but real terminals disagree (pending-wrap, `\x1b[K]` in wrap state, DEC 2026) |
-| `STRICT_TERMINAL`   | Terminal interpretation bugs (xterm.js-specific: OSC 66, wide char cursor, buffer overflow)                | Ghostty-specific bugs, bugs that only appear with accumulated state across many frames                              |
-| `STRICT_ACCUMULATE` | Compounding errors across multiple frames                                                                  | Same self-referential limitation as STRICT_OUTPUT                                                                   |
+See **[debugging.md](../../../docs/guide/debugging.md)** for the full table, diagnostic workflow, and symptom→check cross-reference.
 
 ## Key ANSI Sequences
 

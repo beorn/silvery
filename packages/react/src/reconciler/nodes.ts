@@ -5,6 +5,7 @@
  */
 
 import { type LayoutNode, getConstants, getLayoutEngine } from "@silvery/term/layout-engine"
+import { collectPlainTextSkipHidden as collectNodeTextContent } from "@silvery/term/pipeline/collect-text"
 import { type BoxProps, type TeaNode, type TeaNodeType, type TextProps, rectEqual } from "@silvery/tea/types"
 import { type Measurer, displayWidth, wrapText } from "@silvery/term/unicode"
 
@@ -184,33 +185,9 @@ export function createNode(
   return node
 }
 
-/**
- * Collect text content from a node and its children (for measure function).
- *
- * Matches Ink's squashTextNodes behavior: applies internal_transform on
- * virtual child nodes so that layout measurement accounts for the width
- * of transformed text. This ensures layout allocates enough space for
- * the transform's output (e.g., adding brackets or indices).
- */
-function collectNodeTextContent(node: TeaNode): string {
-  if (node.textContent !== undefined) {
-    return node.textContent
-  }
-  let result = ""
-  for (let i = 0; i < node.children.length; i++) {
-    const child = node.children[i]!
-    // Skip hidden children (e.g., React Suspense hides the primary tree while showing fallback)
-    if (child.hidden) continue
-    let childText = collectNodeTextContent(child)
-    // Apply internal_transform from virtual text nodes (nested Transform components),
-    // matching Ink's squashTextNodes which calls childNode.internal_transform(nodeText, index)
-    if (childText.length > 0 && (child.props as any).internal_transform) {
-      childText = (child.props as any).internal_transform(childText, i)
-    }
-    result += childText
-  }
-  return result
-}
+// collectNodeTextContent is imported from @silvery/term/pipeline/collect-text
+// as collectPlainTextSkipHidden. Previously duplicated here; now shared with
+// measure-phase.ts and render-text.ts via the shared collect-text module.
 
 /**
  * Create the root node for the Silvery tree.

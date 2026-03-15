@@ -322,15 +322,36 @@ function isStrictOutput(): boolean {
 function isStrictAccumulate(): boolean {
   return !!process.env.SILVERY_STRICT_ACCUMULATE
 }
-function isStrictTerminal(): boolean {
-  return !!process.env.SILVERY_STRICT_TERMINAL
-}
-/** Get the strict terminal backend name: "xterm" (default), "ghostty", or "both" */
-function strictTerminalBackend(): "xterm" | "ghostty" | "both" {
-  const val = (process.env.SILVERY_STRICT_TERMINAL ?? "").toLowerCase()
-  if (val === "ghostty") return "ghostty"
-  if (val === "both") return "both"
-  return "xterm"
+/** Parse SILVERY_STRICT_TERMINAL into a list of backends.
+ *
+ * Accepts comma-separated lists (`vt100,xterm`) and aliases:
+ * - `all` = `vt100,xterm,ghostty`
+ * - `both` = `xterm,ghostty` (backwards compat)
+ * - `1` / `true` = `xterm` (backwards compat)
+ *
+ * The `vt100` backend uses the internal `replayAnsiWithStyles` parser (stateless).
+ * `xterm` and `ghostty` use persistent terminal emulators (stateful).
+ */
+function strictTerminalBackends(): Array<"vt100" | "xterm" | "ghostty"> {
+  const val = (process.env.SILVERY_STRICT_TERMINAL ?? "").toLowerCase().trim()
+  if (!val) return []
+  // Aliases
+  if (val === "all") return ["vt100", "xterm", "ghostty"]
+  if (val === "both") return ["xterm", "ghostty"] // backwards compat
+  if (val === "1" || val === "true") return ["xterm"] // backwards compat
+  // Comma-separated list
+  const backends = val
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+  const valid = new Set(["vt100", "xterm", "ghostty"])
+  for (const b of backends) {
+    if (!valid.has(b)) {
+      // eslint-disable-next-line no-console
+      console.warn(`SILVERY_STRICT_TERMINAL: unknown backend '${b}', ignoring`)
+    }
+  }
+  return backends.filter((b) => valid.has(b)) as Array<"vt100" | "xterm" | "ghostty">
 }
 
 /** Per-instance state for SILVERY_STRICT_ACCUMULATE verification. */
@@ -363,13 +384,24 @@ interface TerminalVerifyState {
   height: number
   /** Frame count for diagnostics */
   frameCount: number
-  /** Which backend(s) to verify */
-  backend: "xterm" | "ghostty" | "both"
+  /** Which emulator backends to verify (xterm, ghostty — vt100 handled separately) */
+  backends: Array<"xterm" | "ghostty">
+  /** Whether the vt100 (replayAnsiWithStyles) backend is enabled */
+  hasVt100: boolean
 }
 
 /** Create fresh terminal verify state. */
 function createTerminalVerifyState(): TerminalVerifyState {
-  return { terminal: null, ghosttyTerminal: null, width: 0, height: 0, frameCount: 0, backend: strictTerminalBackend() }
+  const allBackends = strictTerminalBackends()
+  return {
+    terminal: null,
+    ghosttyTerminal: null,
+    width: 0,
+    height: 0,
+    frameCount: 0,
+    backends: allBackends.filter((b) => b !== "vt100") as Array<"xterm" | "ghostty">,
+    hasVt100: allBackends.includes("vt100"),
+  }
 }
 
 /** Default terminal verify state used by bare outputPhase() calls. */
@@ -785,7 +817,7 @@ export function outputPhase(
       accState.accumulateHeight = next.height
       accState.accumulateFrameCount = 0
     }
-    if (isStrictTerminal()) {
+    if (tvState.backends.length > 0) {
       initTerminalVerifyState(tvState, next.width, next.height, firstOutput)
     }
     if (CAPTURE_RAW) {
@@ -919,10 +951,11 @@ export function outputPhase(
     }
   }
 
-  // SILVERY_STRICT_OUTPUT: verify that the incremental ANSI output produces the
-  // same visible terminal state as a fresh render. Catches bugs in changesToAnsi
-  // that SILVERY_STRICT (buffer-level check) cannot detect.
-  if (isStrictOutput()) {
+  // SILVERY_STRICT_OUTPUT → vt100 backend (backwards compat): verify that the
+  // incremental ANSI output produces the same visible terminal state as a fresh
+  // render. Uses the internal replayAnsiWithStyles parser (stateless).
+  // Also runs when SILVERY_STRICT_TERMINAL includes "vt100".
+  if (isStrictOutput() || tvState.hasVt100) {
     verifyOutputEquivalence(prev, next, incrOutput, ctx)
   }
 
@@ -935,14 +968,14 @@ export function outputPhase(
     verifyAccumulatedOutput(next, ctx, accState)
   }
 
-  // SILVERY_STRICT_TERMINAL: verify via independent xterm.js emulator that the
-  // cumulative incremental ANSI output produces the same terminal state as a
-  // fresh full render. Unlike STRICT_OUTPUT (which uses replayAnsiWithStyles —
-  // the same ANSI parser as the output generator), this feeds output through a
-  // real xterm.js terminal emulator, catching bugs where our ANSI parser and
-  // generator agree but a real terminal disagrees (e.g., OSC 66, wide char
-  // cursor drift, buffer overflow scrolling).
-  if (isStrictTerminal() && (tvState.terminal || tvState.ghosttyTerminal)) {
+  // SILVERY_STRICT_TERMINAL (xterm/ghostty backends): verify via independent
+  // terminal emulators that the cumulative incremental ANSI output produces the
+  // same terminal state as a fresh full render. Unlike the vt100 backend (which
+  // uses replayAnsiWithStyles — the same ANSI parser as the output generator),
+  // these feed output through real terminal emulators, catching bugs where our
+  // parser and generator agree but a real terminal disagrees (e.g., OSC 66, wide
+  // char cursor drift, buffer overflow scrolling).
+  if (tvState.backends.length > 0 && (tvState.terminal || tvState.ghosttyTerminal)) {
     tvState.frameCount++
     verifyTerminalEquivalence(tvState, incrOutput, next, ctx)
   }
@@ -1498,216 +1531,10 @@ function bufferToAnsi(buffer: TerminalBuffer, ctx: OutputContext = defaultContex
 }
 
 // ============================================================================
-// Pre-allocated diff pool
+// Buffer diffing (extracted to diff-buffers.ts)
 // ============================================================================
 
-/**
- * Create a fresh CellChange with empty cell data.
- * Used to populate the pre-allocated pool.
- */
-function createEmptyCellChange(): CellChange {
-  return {
-    x: 0,
-    y: 0,
-    cell: {
-      char: " ",
-      fg: null,
-      bg: null,
-      underlineColor: null,
-      attrs: {},
-      wide: false,
-      continuation: false,
-    },
-  }
-}
-
-/** Pre-allocated pool of CellChange objects, reused across frames. */
-const diffPool: CellChange[] = []
-
-/** Current pool capacity. */
-let diffPoolCapacity = 0
-
-/**
- * Ensure the diff pool has at least `capacity` entries.
- * Grows the pool if needed; never shrinks.
- */
-function ensureDiffPoolCapacity(capacity: number): void {
-  if (capacity <= diffPoolCapacity) return
-  for (let i = diffPoolCapacity; i < capacity; i++) {
-    diffPool.push(createEmptyCellChange())
-  }
-  diffPoolCapacity = capacity
-}
-
-/**
- * Write cell data from a buffer into a pre-allocated CellChange entry.
- * Uses readCellInto for zero-allocation reads.
- */
-function writeCellChange(change: CellChange, x: number, y: number, buffer: TerminalBuffer): void {
-  change.x = x
-  change.y = y
-  buffer.readCellInto(x, y, change.cell)
-}
-
-/**
- * Write empty cell data into a pre-allocated CellChange entry.
- * Used for shrink regions where cells need to be cleared.
- */
-function writeEmptyCellChange(change: CellChange, x: number, y: number): void {
-  change.x = x
-  change.y = y
-  const cell = change.cell
-  cell.char = " "
-  cell.fg = null
-  cell.bg = null
-  cell.underlineColor = null
-  // Reset attrs fields
-  const attrs = cell.attrs
-  attrs.bold = undefined
-  attrs.dim = undefined
-  attrs.italic = undefined
-  attrs.underline = undefined
-  attrs.underlineStyle = undefined
-  attrs.blink = undefined
-  attrs.inverse = undefined
-  attrs.hidden = undefined
-  attrs.strikethrough = undefined
-  cell.wide = false
-  cell.continuation = false
-}
-
-/**
- * Diff result: pool reference + count (avoids per-frame array allocation).
- */
-interface DiffResult {
-  pool: CellChange[]
-  count: number
-}
-
-/** Reusable diff result object (avoids allocating a new one per frame). */
-const diffResult: DiffResult = { pool: diffPool, count: 0 }
-
-/**
- * Diff two buffers and return changes via pre-allocated pool.
- *
- * Optimization: Uses a pre-allocated pool of CellChange objects to avoid
- * allocating new objects per changed cell. Uses readCellInto for
- * zero-allocation cell reads. The pool grows as needed but is reused
- * between frames. Returns a pool+count pair instead of slicing the array.
- */
-function diffBuffers(prev: TerminalBuffer, next: TerminalBuffer): DiffResult {
-  // Ensure pool is large enough for worst case (all cells changed).
-  // Wide→narrow transitions emit an extra change for the continuation cell,
-  // so worst case is 1.5x (every other cell could be a wide→narrow transition).
-  const cells = Math.max(prev.width, next.width) * Math.max(prev.height, next.height)
-  const maxChanges = cells + (cells >> 1) // 1.5x
-  ensureDiffPoolCapacity(maxChanges)
-
-  let changeCount = 0
-
-  // Dimension mismatch means we need to re-render everything visible
-  const height = Math.min(prev.height, next.height)
-  const width = Math.min(prev.width, next.width)
-
-  // Use dirty row bounding box to narrow the scan range.
-  // If no rows are dirty, minDirtyRow is -1 and the loop body is skipped.
-  const startRow = next.minDirtyRow === -1 ? 0 : next.minDirtyRow
-  const endRow = next.maxDirtyRow === -1 ? -1 : Math.min(next.maxDirtyRow, height - 1)
-
-  for (let y = startRow; y <= endRow; y++) {
-    // Skip individual clean rows within the bounding box
-    if (!next.isRowDirty(y)) continue
-
-    // Fast row-level pre-check: if all packed metadata, chars, AND Map-based
-    // extras (true colors, underline colors, hyperlinks) match, skip per-cell
-    // comparison entirely. This catches rows marked dirty by fill() or
-    // scrollRegion() that didn't actually change content.
-    // NOTE: rowExtrasEquals is essential — rowMetadataEquals only checks packed
-    // flags (e.g., "has true color fg"), not the actual RGB values in the Maps.
-    if (next.rowMetadataEquals(y, prev) && next.rowCharsEquals(y, prev) && next.rowExtrasEquals(y, prev)) continue
-
-    for (let x = 0; x < width; x++) {
-      // Use buffer's optimized cellEquals which compares packed metadata first
-      if (!next.cellEquals(x, y, prev)) {
-        writeCellChange(diffPool[changeCount]!, x, y, next)
-        changeCount++
-
-        // Wide char transition: when prev had a wide char and next doesn't,
-        // we must also emit the continuation position (x+1) as a change.
-        // The terminal's state at x+1 contains the second half of the wide
-        // char, but the buffer may show x+1 as "unchanged" (both prev and
-        // next are ' '). Without this explicit change, changesToAnsi skips
-        // x+1 and the terminal retains the wide char remnant, causing
-        // cursor drift.
-        if (x + 1 < width && prev.isCellWide(x, y) && !next.isCellWide(x, y)) {
-          writeCellChange(diffPool[changeCount]!, x + 1, y, next)
-          changeCount++
-        }
-      }
-    }
-  }
-
-  // Handle size growth: add all cells in new areas.
-  // Width growth covers the right strip (x >= prev.width) for ALL rows.
-  // Height growth covers the bottom strip (y >= prev.height) but only up to
-  // prev.width to avoid double-counting the corner with width growth.
-  const widthGrew = next.width > prev.width
-  if (widthGrew) {
-    for (let y = 0; y < next.height; y++) {
-      for (let x = prev.width; x < next.width; x++) {
-        writeCellChange(diffPool[changeCount]!, x, y, next)
-        changeCount++
-      }
-    }
-  }
-  if (next.height > prev.height) {
-    // When width also grew, only iterate x=0..prev.width (the rest was
-    // already covered by width growth above). Otherwise iterate full width.
-    const xEnd = widthGrew ? prev.width : next.width
-    for (let y = prev.height; y < next.height; y++) {
-      for (let x = 0; x < xEnd; x++) {
-        writeCellChange(diffPool[changeCount]!, x, y, next)
-        changeCount++
-      }
-    }
-  }
-
-  // Handle size shrink: clear cells in old-but-not-new areas.
-  // Width shrink covers x >= next.width for the shared height.
-  // Height shrink covers y >= next.height but only up to next.width when
-  // width also shrank, to avoid double-counting the corner.
-  const widthShrank = prev.width > next.width
-  if (widthShrank) {
-    for (let y = 0; y < height; y++) {
-      for (let x = next.width; x < prev.width; x++) {
-        writeEmptyCellChange(diffPool[changeCount]!, x, y)
-        changeCount++
-      }
-    }
-  }
-  if (prev.height > next.height) {
-    // When width also shrank, the corner (x >= next.width, y >= next.height)
-    // was NOT covered by width shrink (which only iterates y < height =
-    // min(prev.height, next.height) = next.height). So iterate full prev.width.
-    for (let y = next.height; y < prev.height; y++) {
-      for (let x = 0; x < prev.width; x++) {
-        writeEmptyCellChange(diffPool[changeCount]!, x, y)
-        changeCount++
-      }
-    }
-  }
-
-  if (changeCount > maxChanges) {
-    throw new Error(
-      `diffBuffers: changeCount ${changeCount} exceeds pool capacity ${maxChanges} ` +
-        `(prev ${prev.width}x${prev.height}, next ${next.width}x${next.height})`,
-    )
-  }
-
-  diffResult.pool = diffPool
-  diffResult.count = changeCount
-  return diffResult
-}
+import { diffBuffers } from "./diff-buffers"
 
 /** Result from changesToAnsi: ANSI output string and final cursor position. */
 interface ChangesResult {
@@ -2246,6 +2073,10 @@ function applySgrParams(params: string, sgr: SgrState): void {
 /**
  * Replay ANSI output tracking both characters AND SGR styles.
  * Returns a 2D grid of StyledCell objects.
+ *
+ * @deprecated Use `SILVERY_STRICT_TERMINAL=vt100` instead. This function is now
+ * the internal implementation of the `vt100` backend for STRICT_TERMINAL verification.
+ * Direct usage is discouraged — prefer the unified STRICT_TERMINAL env var interface.
  */
 export function replayAnsiWithStyles(
   width: number,
@@ -2481,6 +2312,97 @@ function formatColor(c: number | { r: number; g: number; b: number } | null): st
  *
  * This catches SGR style bugs that character-only verification misses.
  */
+
+// =============================================================================
+// STRICT failure artifact capture
+// =============================================================================
+
+/**
+ * Capture debug artifacts to disk when a STRICT verification fails.
+ * Saves prev/next buffer snapshots, ANSI sequences, terminal size, and test context
+ * to /tmp/silvery-strict-failure-<timestamp>/.
+ *
+ * Returns the artifact directory path (included in the error message).
+ */
+function captureStrictFailureArtifacts(opts: {
+  source: string
+  errorMessage: string
+  prev?: TerminalBuffer | null
+  next?: TerminalBuffer | null
+  incrOutput?: string
+  freshOutput?: string
+  ctx?: OutputContext
+  frameCount?: number
+}): string {
+  try {
+    const fs = require("fs")
+    const path = require("path")
+    const timestamp = Date.now()
+    const dir = `/tmp/silvery-strict-failure-${timestamp}`
+    fs.mkdirSync(dir, { recursive: true })
+
+    // Metadata
+    const meta: Record<string, unknown> = {
+      source: opts.source,
+      timestamp: new Date().toISOString(),
+      frameCount: opts.frameCount,
+      prevSize: opts.prev ? { width: opts.prev.width, height: opts.prev.height } : null,
+      nextSize: opts.next ? { width: opts.next.width, height: opts.next.height } : null,
+      incrOutputLength: opts.incrOutput?.length,
+      freshOutputLength: opts.freshOutput?.length,
+      testName: (globalThis as any).__vitest_worker__?.current?.name as string | undefined,
+    }
+    fs.writeFileSync(path.join(dir, "meta.json"), JSON.stringify(meta, null, 2))
+
+    // Error message
+    fs.writeFileSync(path.join(dir, "error.txt"), opts.errorMessage)
+
+    // ANSI sequences
+    if (opts.incrOutput) {
+      fs.writeFileSync(path.join(dir, "incremental.ansi"), opts.incrOutput)
+    }
+    if (opts.freshOutput) {
+      fs.writeFileSync(path.join(dir, "fresh.ansi"), opts.freshOutput)
+    }
+
+    // Buffer snapshots (text representation)
+    if (opts.prev) {
+      const rows: string[] = []
+      for (let y = 0; y < opts.prev.height; y++) {
+        let row = ""
+        for (let x = 0; x < opts.prev.width; x++) {
+          const cell = opts.prev.getCell(x, y)
+          row += cell.char || " "
+        }
+        rows.push(row.trimEnd())
+      }
+      fs.writeFileSync(path.join(dir, "prev-buffer.txt"), rows.join("\n"))
+    }
+    if (opts.next) {
+      const rows: string[] = []
+      for (let y = 0; y < opts.next.height; y++) {
+        let row = ""
+        for (let x = 0; x < opts.next.width; x++) {
+          const cell = opts.next.getCell(x, y)
+          row += cell.char || " "
+        }
+        rows.push(row.trimEnd())
+      }
+      fs.writeFileSync(path.join(dir, "next-buffer.txt"), rows.join("\n"))
+    }
+
+    // Fresh prev ANSI (for replay)
+    if (opts.prev && opts.ctx) {
+      const freshPrev = bufferToAnsi(opts.prev, opts.ctx)
+      fs.writeFileSync(path.join(dir, "fresh-prev.ansi"), freshPrev)
+    }
+
+    return dir
+  } catch {
+    return "(artifact capture failed)"
+  }
+}
+
 function verifyOutputEquivalence(
   prev: TerminalBuffer,
   next: TerminalBuffer,
@@ -2583,9 +2505,19 @@ function verifyOutputEquivalence(
           `Wide/cont cells on row ${y} (next buffer): ${_dumpRowWideCells(next, y)}\n` +
           `Wide/cont cells on row ${y} (prev buffer): ${_dumpRowWideCells(prev, y)}\n` +
           `Column detail around mismatch:\n${colDetails.join("\n")}`
+        const artifactDir = captureStrictFailureArtifacts({
+          source: "STRICT_OUTPUT",
+          errorMessage: msg,
+          prev,
+          next,
+          incrOutput,
+          freshOutput: freshNext,
+          ctx,
+        })
+        const fullMsg = `${msg}\n  Artifacts: ${artifactDir}`
         // eslint-disable-next-line no-console
-        console.error(msg)
-        throw new IncrementalRenderMismatchError(msg)
+        console.error(fullMsg)
+        throw new IncrementalRenderMismatchError(fullMsg)
       }
 
       // Check styles
@@ -2606,7 +2538,16 @@ function verifyOutputEquivalence(
           diffs.join(", ") +
           `\n  incremental: fg=${formatColor(incr.fg)} bg=${formatColor(incr.bg)} bold=${incr.bold} dim=${incr.dim}` +
           `\n  fresh:       fg=${formatColor(fresh.fg)} bg=${formatColor(fresh.bg)} bold=${fresh.bold} dim=${fresh.dim}`
-        throw new IncrementalRenderMismatchError(msg)
+        const artifactDir2 = captureStrictFailureArtifacts({
+          source: "STRICT_OUTPUT",
+          errorMessage: msg,
+          prev,
+          next,
+          incrOutput,
+          freshOutput: freshNext,
+          ctx,
+        })
+        throw new IncrementalRenderMismatchError(`${msg}\n  Artifacts: ${artifactDir2}`)
       }
     }
   }
@@ -2640,9 +2581,18 @@ function verifyAccumulatedOutput(
         const msg =
           `SILVERY_STRICT_ACCUMULATE char mismatch at (${x},${y}) after ${accState.accumulateFrameCount} frames: ` +
           `accumulated='${accum.char}' fresh='${fresh.char}'`
+        const dir = captureStrictFailureArtifacts({
+          source: "STRICT_ACCUMULATE",
+          errorMessage: msg,
+          next: currentBuffer,
+          incrOutput: accState.accumulatedAnsi,
+          freshOutput,
+          ctx,
+          frameCount: accState.accumulateFrameCount,
+        })
         // eslint-disable-next-line no-console
-        console.error(msg)
-        throw new IncrementalRenderMismatchError(msg)
+        console.error(`${msg}\n  Artifacts: ${dir}`)
+        throw new IncrementalRenderMismatchError(`${msg}\n  Artifacts: ${dir}`)
       }
 
       const diffs: string[] = []
@@ -2660,9 +2610,17 @@ function verifyAccumulatedOutput(
         const msg =
           `SILVERY_STRICT_ACCUMULATE style mismatch at (${x},${y}) char='${accum.char}' after ${accState.accumulateFrameCount} frames: ` +
           diffs.join(", ")
+        const dir2 = captureStrictFailureArtifacts({
+          source: "STRICT_ACCUMULATE",
+          errorMessage: msg,
+          next: currentBuffer,
+          freshOutput,
+          ctx,
+          frameCount: accState.accumulateFrameCount,
+        })
         // eslint-disable-next-line no-console
-        console.error(msg)
-        throw new IncrementalRenderMismatchError(msg)
+        console.error(`${msg}\n  Artifacts: ${dir2}`)
+        throw new IncrementalRenderMismatchError(`${msg}\n  Artifacts: ${dir2}`)
       }
     }
   }
@@ -2702,7 +2660,7 @@ function loadGhosttyBackend(): typeof import("@termless/ghostty").createGhosttyB
 }
 
 /**
- * Initialize the terminal verify state: create a persistent xterm.js terminal
+ * Initialize the terminal verify state: create persistent terminal emulators
  * and feed the initial full render ANSI output.
  */
 function initTerminalVerifyState(state: TerminalVerifyState, width: number, height: number, initialAnsi: string): void {
@@ -2710,19 +2668,18 @@ function initTerminalVerifyState(state: TerminalVerifyState, width: number, heig
   if (state.terminal) void state.terminal.close()
   if (state.ghosttyTerminal) void state.ghosttyTerminal.close()
 
-  const { createTerminal, createXtermBackend } = loadTermless()
-  const backend = state.backend
-
-  // Create xterm.js terminal (default or "both")
-  if (backend === "xterm" || backend === "both") {
+  // Create xterm.js terminal if requested
+  if (state.backends.includes("xterm")) {
+    const { createTerminal, createXtermBackend } = loadTermless()
     state.terminal = createTerminal({ backend: createXtermBackend(), cols: width, rows: height })
     state.terminal.feed(initialAnsi)
   } else {
     state.terminal = null
   }
 
-  // Create Ghostty terminal ("ghostty" or "both")
-  if (backend === "ghostty" || backend === "both") {
+  // Create Ghostty terminal if requested
+  if (state.backends.includes("ghostty")) {
+    const { createTerminal } = loadTermless()
     const createGhostty = loadGhosttyBackend()
     state.ghosttyTerminal = createTerminal({ backend: createGhostty(), cols: width, rows: height })
     state.ghosttyTerminal.feed(initialAnsi)
@@ -2772,6 +2729,20 @@ function verifyTerminalEquivalence(
     freshTerm.feed(freshAnsi)
     try {
       compareTerminals(state.terminal, freshTerm, state, "xterm")
+    } catch (e) {
+      if (e instanceof IncrementalRenderMismatchError) {
+        const dir = captureStrictFailureArtifacts({
+          source: "STRICT_TERMINAL[xterm]",
+          errorMessage: e.message,
+          next: nextBuffer,
+          incrOutput,
+          freshOutput: freshAnsi,
+          ctx,
+          frameCount: state.frameCount,
+        })
+        throw new IncrementalRenderMismatchError(`${e.message}\n  Artifacts: ${dir}`)
+      }
+      throw e
     } finally {
       void freshTerm.close()
     }
@@ -2786,6 +2757,20 @@ function verifyTerminalEquivalence(
     freshTerm.feed(freshAnsi)
     try {
       compareTerminals(state.ghosttyTerminal, freshTerm, state, "ghostty")
+    } catch (e) {
+      if (e instanceof IncrementalRenderMismatchError) {
+        const dir = captureStrictFailureArtifacts({
+          source: "STRICT_TERMINAL[ghostty]",
+          errorMessage: e.message,
+          next: nextBuffer,
+          incrOutput,
+          freshOutput: freshAnsi,
+          ctx,
+          frameCount: state.frameCount,
+        })
+        throw new IncrementalRenderMismatchError(`${e.message}\n  Artifacts: ${dir}`)
+      }
+      throw e
     } finally {
       void freshTerm.close()
     }

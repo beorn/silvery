@@ -29,6 +29,7 @@ import {
   splitGraphemes,
   wrapText,
 } from "../unicode"
+import { collectPlainText } from "./collect-text"
 import { getTextStyle, getTextWidth, parseColor } from "./render-helpers"
 import type { BgConflictMode, NodeRenderState, PipelineContext } from "./types"
 
@@ -252,24 +253,9 @@ interface TextWithBg {
   plainLen: number
 }
 
-/**
- * Collect plain text content from a node tree (no ANSI codes).
- * Used to compute DOM-level truncation budget before ANSI serialization.
- * Applies internal_transform on child nodes to match Ink's squashTextNodes.
- */
-function collectPlainText(node: TeaNode): string {
-  if (node.textContent !== undefined) return node.textContent
-  let result = ""
-  for (let i = 0; i < node.children.length; i++) {
-    const child = node.children[i]!
-    let childText = collectPlainText(child)
-    if (childText.length > 0 && (child.props as any).internal_transform) {
-      childText = (child.props as any).internal_transform(childText, i)
-    }
-    result += childText
-  }
-  return result
-}
+// collectPlainText is imported from ./collect-text.
+// Previously duplicated here; now shared across measure-phase, render-text,
+// and the reconciler's measure function.
 
 /**
  * Collect text content and background color segments from a node tree.

@@ -110,21 +110,18 @@ Use `@silvery/test` + `createRenderer()` for fast stripped-text tests; use `crea
 
 ## Debugging
 
+See **[Debugging Guide](docs/guide/debugging.md)** for the canonical reference: env vars, STRICT mode hierarchy, diagnostic workflow, and symptom→check cross-reference.
+
+Quick start:
+
 ```bash
 SILVERY_STRICT=1 bun run app              # Verify incremental vs fresh render
-SILVERY_STRICT_OUTPUT=1 bun run app       # Verify ANSI output correctness
-SILVERY_STRICT_TERMINAL=1 bun run app     # Verify via xterm.js emulator (=ghostty for Ghostty WASM, =both for both)
+SILVERY_STRICT_TERMINAL=vt100 bun run app # Verify ANSI output (fast, internal parser)
+SILVERY_STRICT_TERMINAL=xterm bun run app # Verify via xterm.js emulator
+SILVERY_STRICT_TERMINAL=all bun run app   # All backends (vt100 + xterm + ghostty)
 SILVERY_INSTRUMENT=1 bun run app          # Expose skip/render counts
 DEBUG=silvery:* DEBUG_LOG=/tmp/silvery.log bun run app  # Pipeline debug output
 ```
-
-**STRICT modes hierarchy**:
-
-- `SILVERY_STRICT` — buffer-level: incremental content phase produces same buffer as fresh render
-- `SILVERY_STRICT_OUTPUT` — ANSI-level: replays output through `replayAnsiWithStyles` (same parser as generator)
-- `SILVERY_STRICT_TERMINAL` — terminal-level: feeds output through independent terminal emulator. Values: `1`/`xterm` (xterm.js), `ghostty` (Ghostty WASM), `both` (both backends). Catches bugs where our ANSI parser agrees with the generator but a real terminal disagrees (e.g., OSC 66, wide char cursor drift, buffer overflow)
-
-**Enriched STRICT errors**: `IncrementalRenderMismatchError` auto-includes content-phase stats (nodes visited/rendered/skipped, per-flag breakdown) and cell attribution (mismatch debug context). No need for separate `SILVERY_INSTRUMENT` or `SILVERY_CELL_DEBUG` when diagnosing a STRICT failure.
 
 ## Fuzz Tests
 

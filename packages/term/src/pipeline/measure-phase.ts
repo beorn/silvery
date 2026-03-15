@@ -6,6 +6,7 @@
 
 import type { BoxProps, TeaNode, TextProps } from "@silvery/tea/types"
 import { displayWidthAnsi, wrapText } from "../unicode"
+import { collectPlainText as collectTextContent } from "./collect-text"
 import { getBorderSize, getPadding } from "./helpers"
 import type { PipelineContext } from "./types"
 
@@ -172,27 +173,6 @@ function getTextWidth(text: string, ctx?: PipelineContext): number {
   return displayWidthAnsi(text)
 }
 
-/**
- * Collect text content from a node and its children.
- * Used for measuring Text nodes that have nested Text children.
- * Applies internal_transform from child nodes to match render-text.ts behavior.
- */
-function collectTextContent(node: TeaNode): string {
-  if (node.textContent !== undefined) {
-    return node.textContent
-  }
-  let result = ""
-  for (let i = 0; i < node.children.length; i++) {
-    const child = node.children[i]!
-    let childText = collectTextContent(child)
-    // Apply internal_transform from virtual text nodes (nested Transform components).
-    // Matches render-text.ts collectPlainText: transform is applied to the full
-    // concatenated text of the child, with index = child position in parent's children array.
-    const childTransform = (child.props as TextProps).internal_transform
-    if (childTransform && childText.length > 0) {
-      childText = childTransform(childText, i)
-    }
-    result += childText
-  }
-  return result
-}
+// collectTextContent is imported from ./collect-text as collectPlainText.
+// Previously duplicated here; now shared across measure-phase, render-text,
+// and the reconciler's measure function.
