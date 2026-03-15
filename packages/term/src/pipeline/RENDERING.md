@@ -167,19 +167,19 @@ The terminal process (Ghostty, iTerm2, etc.) receives the ANSI byte stream and:
 
 ## Test Coverage Map
 
-| Step                               | Test System                     | What It Verifies                          | Limitations                                         |
-| ---------------------------------- | ------------------------------- | ----------------------------------------- | --------------------------------------------------- |
-| Dirty flags → content              | **STRICT** (buffer comparison)  | Incremental buffer === fresh buffer       | Only buffer state, not ANSI output                  |
-| Measure/Layout                     | Flexily tests, STRICT           | Yoga constraints and computed rects       | -                                                   |
-| Scroll/Sticky                      | Fuzz tests, STRICT              | Scroll tier selection, sticky positioning | -                                                   |
-| Content phase                      | **STRICT**                      | Buffer correctness                        | Excellent — catches ALL content bugs                |
-| diffBuffers                        | STRICT_OUTPUT (implicit)        | Change detection completeness             | No isolated unit tests                              |
-| bufferToAnsi                       | STRICT_OUTPUT                   | Full render ANSI correctness              | **Self-referential** (same parser as generator)     |
-| changesToAnsi                      | STRICT_OUTPUT, wide char matrix | Incremental ANSI correctness              | **Self-referential**                                |
-| Terminal interpretation (xterm.js) | **STRICT_TERMINAL**             | xterm.js agrees with buffer               | Only xterm.js, not Ghostty; not enabled by default  |
-| Terminal interpretation (Ghostty)  | Cross-backend tests (manual)    | Ghostty agrees with xterm.js              | Not in STRICT loop; test-only, not runtime          |
-| stdout delivery                    | **NONE**                        | -                                         | No pipe buffer split detection                      |
-| DEC 2026 sync interaction          | N/A (removed)                   | -                                         | Sync fallback removed; scheduler sync also disabled |
+| Step                               | Test System                             | What It Verifies                          | Limitations                                            |
+| ---------------------------------- | --------------------------------------- | ----------------------------------------- | ------------------------------------------------------ |
+| Dirty flags → content              | **STRICT** (buffer comparison)          | Incremental buffer === fresh buffer       | Only buffer state, not ANSI output                     |
+| Measure/Layout                     | Flexily tests, STRICT                   | Yoga constraints and computed rects       | -                                                      |
+| Scroll/Sticky                      | Fuzz tests, STRICT                      | Scroll tier selection, sticky positioning | -                                                      |
+| Content phase                      | **STRICT**                              | Buffer correctness                        | Excellent — catches ALL content bugs                   |
+| diffBuffers                        | diff-buffers.test.ts, STRICT_TERMINAL   | Change detection completeness             | -                                                      |
+| bufferToAnsi                       | STRICT_TERMINAL=vt100                   | Full render ANSI correctness              | vt100 uses internal parser; use =xterm for independent |
+| changesToAnsi                      | STRICT_TERMINAL=vt100, wide char matrix | Incremental ANSI correctness              | vt100 uses internal parser; use =xterm for independent |
+| Terminal interpretation (xterm.js) | **STRICT_TERMINAL=xterm**               | xterm.js agrees with buffer               | Only xterm.js, not Ghostty                             |
+| Terminal interpretation (Ghostty)  | **STRICT_TERMINAL=ghostty**             | Ghostty agrees with buffer                | Known grapheme bugs; allow-fail in CI                  |
+| stdout delivery                    | **NONE**                                | -                                         | No pipe buffer split detection                         |
+| DEC 2026 sync interaction          | N/A (removed)                           | -                                         | Sync fallback removed; scheduler sync also disabled    |
 
 ### STRICT Modes: What Each Catches (and Misses)
 

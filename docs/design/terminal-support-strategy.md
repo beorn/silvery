@@ -110,14 +110,14 @@ STRICT mode is the safety net. If our workarounds are incomplete, or if a new te
 
 #### Existing STRICT levels
 
-| Flag                    | What it checks                                     | Cost                  |
-| ----------------------- | -------------------------------------------------- | --------------------- |
-| `SILVERY_STRICT`        | Incremental buffer == fresh buffer (content phase) | ~2x render time       |
-| `SILVERY_STRICT_OUTPUT` | Incremental ANSI == fresh ANSI (output phase)      | ~2x + xterm.js replay |
+| Flag                    | What it checks                                                            | Cost                   |
+| ----------------------- | ------------------------------------------------------------------------- | ---------------------- |
+| `SILVERY_STRICT`        | Incremental buffer == fresh buffer (content phase)                        | ~2x render time        |
+| `SILVERY_STRICT_OUTPUT` | Incremental ANSI == fresh ANSI (compat alias for `STRICT_TERMINAL=vt100`) | ~2x + VT parser replay |
 
-#### Proposed: `SILVERY_STRICT_TERMINAL`
+#### `SILVERY_STRICT_TERMINAL` (implemented)
 
-**Full buffer-vs-backend comparison.** Feed our ANSI output through each termless backend and compare the resulting terminal state against our `TerminalBuffer`, cell by cell.
+**Full buffer-vs-backend comparison.** Feeds our ANSI output through each termless backend and compares the resulting terminal state against our `TerminalBuffer`, cell by cell. Accepts comma-separated backend list: `vt100` (fast internal parser), `xterm` (xterm.js headless), `ghostty` (Ghostty WASM). Aliases: `all` = vt100,xterm,ghostty; `both` = xterm,ghostty; `1`/`true` = xterm.
 
 What it catches that STRICT/STRICT_OUTPUT can't:
 
