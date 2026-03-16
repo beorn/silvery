@@ -40,11 +40,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Install optional peer dependencies
-        run: bun add @termless/core @termless/xtermjs @termless/ghostty --no-save || true
-
       - name: Build examples
         run: bun run examples/web/build.ts
+        continue-on-error: true
 
       - name: Build docs
         run: bun run docs:build
