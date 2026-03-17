@@ -11,20 +11,14 @@
  * ## Color inheritance
  *
  * Body-text components (P, Strong, Em, H3) inherit foreground color from
- * the nearest ancestor Box with a `color` prop — just like CSS. They do NOT
- * hardcode `$fg`, so `<Box color="$error"><P>red text</P></Box>` works.
+ * the nearest ancestor Box with a `color` or `theme` prop — just like CSS.
+ * They do NOT hardcode `$fg`, so `<Box color="$error"><P>red text</P></Box>` works.
  *
- * When using ThemeProvider with a different theme mode than the terminal
- * (e.g., previewing a light theme in a dark terminal), set `color="$fg"`
- * on the container Box alongside `backgroundColor="$bg"` to establish
- * the correct default foreground for the subtree:
- *
+ * `Box theme={}` auto-inherits `$fg` for all text and auto-fills `$bg`:
  * ```tsx
- * <ThemeProvider theme={lightTheme}>
- *   <Box backgroundColor="$bg" color="$fg">
- *     <P>This text uses the light theme's fg</P>
- *   </Box>
- * </ThemeProvider>
+ * <Box theme={lightTheme}>
+ *   <P>This text uses the light theme's fg on its bg</P>
+ * </Box>
  * ```
  *
  * Lists support nesting via UL/OL containers:

@@ -115,19 +115,21 @@ function LayoutNodeView(props: LayoutNodeViewProps): React.ReactElement {
   }
 
   // Split node: render two children with flex proportions
-  // Use integer flex values to express the ratio without floating point issues.
-  // ratio=0.5 => flexGrow 50:50, ratio=0.3 => flexGrow 30:70, etc.
+  // For horizontal splits, use percentage widths (flexGrow doesn't constrain
+  // bordered content correctly in Flexily). For vertical splits, use flexGrow.
+  const isHorizontal = node.direction === "horizontal"
+  const firstPercent = `${Math.round(node.ratio * 100)}%`
+  const secondPercent = `${100 - Math.round(node.ratio * 100)}%`
   const firstFlex = Math.round(node.ratio * 100)
   const secondFlex = 100 - firstFlex
 
   return (
-    <Box flexGrow={1} width="100%" flexDirection={node.direction === "horizontal" ? "row" : "column"}>
+    <Box flexGrow={1} flexDirection={isHorizontal ? "row" : "column"}>
       <Box
-        flexGrow={firstFlex}
+        width={isHorizontal ? firstPercent : undefined}
+        flexGrow={isHorizontal ? undefined : firstFlex}
         flexShrink={1}
-        flexBasis={0}
-        minWidth={node.direction === "horizontal" ? 0 : undefined}
-        minHeight={node.direction === "vertical" ? MIN_PANE_HEIGHT : undefined}
+        minHeight={!isHorizontal ? MIN_PANE_HEIGHT : undefined}
         overflow="hidden"
       >
         <LayoutNodeView
@@ -141,11 +143,10 @@ function LayoutNodeView(props: LayoutNodeViewProps): React.ReactElement {
         />
       </Box>
       <Box
-        flexGrow={secondFlex}
+        width={isHorizontal ? secondPercent : undefined}
+        flexGrow={isHorizontal ? undefined : secondFlex}
         flexShrink={1}
-        flexBasis={0}
-        minWidth={node.direction === "horizontal" ? 0 : undefined}
-        minHeight={node.direction === "vertical" ? MIN_PANE_HEIGHT : undefined}
+        minHeight={!isHorizontal ? MIN_PANE_HEIGHT : undefined}
         overflow="hidden"
       >
         <LayoutNodeView
@@ -186,6 +187,8 @@ function LeafPane(props: LeafPaneProps): React.ReactElement {
   return (
     <Box
       flexGrow={1}
+      flexBasis={0}
+      overflow="hidden"
       borderStyle="single"
       borderColor={isFocused ? focusedBorderColor : unfocusedBorderColor}
       testID={`pane-${id}`}

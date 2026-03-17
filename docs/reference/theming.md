@@ -23,15 +23,16 @@ function App() {
 }
 ```
 
-`ThemeProvider` automatically wraps children in a `<Box color="$fg" backgroundColor="$bg">`, establishing the theme's foreground and background for the entire subtree. This is essential when the theme differs from the terminal (e.g., previewing a light theme in a dark terminal).
-
-Pass `root={false}` to opt out of the wrapper Box (useful for tests or nested ThemeProviders):
+For themed subtrees (where the theme differs from the terminal), use `Box theme={}`:
 
 ```tsx
-<ThemeProvider theme={theme} root={false}>
-  {/* No wrapper Box — children inherit terminal default colors */}
-</ThemeProvider>
+<Box theme={lightTheme} borderStyle="single">
+  {/* All text auto-inherits $fg, bg auto-fills from theme.bg */}
+  <Text color="$primary">Themed content</Text>
+</Box>
 ```
+
+`Box theme={}` handles everything: `$token` resolution, fg inheritance, bg fill, and pipeline context. No explicit `color="$fg"` or `backgroundColor="$bg"` needed.
 
 ## $token Shorthand
 

@@ -187,8 +187,8 @@ When status colors are used for decoration, actual status signals get lost in th
 
 Every surface background has a matching text token. Set both or set neither — never gamble on contrast.
 
-::: info ThemeProvider handles foreground automatically
-`<ThemeProvider theme={t}>` wraps children in a `<Box color="$fg">` by default, so all text inherits the theme's foreground. You still need to set `backgroundColor="$bg"` on your own root Box (where you set border, overflow, etc.). Pass `root={false}` to opt out of the wrapper (useful for tests).
+::: info Box theme={} handles pairing automatically
+`<Box theme={t}>` auto-inherits `$fg` for all descendant text AND auto-fills `$bg` as the background. No explicit `color` or `backgroundColor` props needed — just set `theme` and layout props on the same Box.
 :::
 
 | Background   | Text       | Use for                 |

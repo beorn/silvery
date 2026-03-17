@@ -1,20 +1,16 @@
 /**
- * ThemeProvider — delivers a Theme to the component tree.
+ * ThemeProvider — delivers a Theme to the React component tree.
  *
- * Sets React context (useTheme()) so components can read the active theme.
- * For $token resolution in the render pipeline, use `color="$fg"` and
- * `backgroundColor="$bg"` on your root Box alongside `theme={theme}`:
+ * Sets React context so `useTheme()` returns the active theme.
+ * For pipeline $token resolution and automatic fg/bg, use `Box theme={}`:
  *
  * ```tsx
- * <ThemeProvider theme={lightTheme}>
- *   <Box theme={lightTheme} color="$fg" backgroundColor="$bg">
- *     <Text color="$primary">Uses light theme</Text>
- *   </Box>
- * </ThemeProvider>
- * ```
+ * // Themed subtree — Box theme handles fg, bg, and $tokens automatically
+ * <Box theme={lightTheme} borderStyle="single">
+ *   <Text color="$primary">Uses light theme</Text>
+ * </Box>
  *
- * For the root app where the theme matches the terminal, no Box props needed:
- * ```tsx
+ * // Root app — ThemeProvider for useTheme(), terminal matches detected theme
  * <ThemeProvider theme={detectedTheme}>
  *   <App />
  * </ThemeProvider>
