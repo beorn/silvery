@@ -165,8 +165,8 @@ export function dispatchMouseEventToTree(
   event: NamespacedEvent,
   mouseEventState: MouseEventProcessorState,
   root: TeaNode,
-): void {
-  if (event.event !== "mouse" || !event.data) return
+): boolean {
+  if (event.event !== "mouse" || !event.data) return false
 
   const mouseData = event.data as {
     button: number
@@ -179,7 +179,7 @@ export function dispatchMouseEventToTree(
     ctrl: boolean
   }
 
-  processMouseEvent(
+  return processMouseEvent(
     mouseEventState,
     {
       button: mouseData.button,
@@ -212,6 +212,14 @@ export function invokeEventHandler<S>(
   mouseEventState: MouseEventProcessorState,
   container: Container,
 ): boolean | "flush" {
+  // DOM-level mouse event dispatch FIRST — component handlers (onClick, etc.)
+  // can call preventDefault() to suppress the app-level handler.
+  const root = getContainerRoot(container)
+  const prevented = dispatchMouseEventToTree(event, mouseEventState, root)
+
+  // Skip app handler if a component called preventDefault()
+  if (prevented) return true
+
   const namespacedHandler = handlers?.[event.type as keyof typeof handlers]
 
   if (namespacedHandler && typeof namespacedHandler === "function") {
@@ -219,10 +227,6 @@ export function invokeEventHandler<S>(
     if (result === "exit") return false
     if (result === "flush") return "flush"
   }
-
-  // DOM-level mouse event dispatch
-  const root = getContainerRoot(container)
-  dispatchMouseEventToTree(event, mouseEventState, root)
 
   return true
 }

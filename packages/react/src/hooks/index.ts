@@ -41,3 +41,7 @@ export { useTerminalFocused } from "./useTerminalFocused"
 // Scroll Region Optimization
 export { useScrollRegion } from "./useScrollRegion"
 export type { UseScrollRegionOptions, UseScrollRegionResult } from "./useScrollRegion"
+
+// Selection
+export { useSelection, useSelectionContext, SelectionProvider } from "./useSelection"
+export type { UseSelectionResult } from "./useSelection"

@@ -89,6 +89,10 @@ import { detectKittyFromStdio } from "../kitty-detect"
 import { captureTerminalState, performSuspend } from "./terminal-lifecycle"
 import { type TermProvider, createTermProvider } from "./term-provider"
 import type { Buffer, Dims, Provider, RenderTarget } from "./types"
+import { createSelectionState, selectionUpdate, extractText } from "../selection"
+import { renderSelectionOverlay } from "../selection-renderer"
+import { createVirtualScrollback } from "../virtual-scrollback"
+import { createSearchState, searchUpdate, renderSearchBar, type SearchMatch } from "../search-overlay"
 
 // ============================================================================
 // Types
@@ -212,6 +216,12 @@ export interface AppRunOptions {
    */
   mouse?: boolean
   /**
+   * Enable virtual inline mode: alt screen with virtual scrollback buffer.
+   * Provides scrollable history + search (Ctrl+F) while using fullscreen rendering.
+   * Default: false
+   */
+  virtualInline?: boolean
+  /**
    * Handle Ctrl+Z by suspending the process (save terminal state,
    * send SIGTSTP, restore on SIGCONT). Default: true
    */
@@ -245,6 +255,13 @@ export interface AppRunOptions {
    * Default: false
    */
   focusReporting?: boolean
+  /**
+   * Enable buffer-level text selection via mouse drag.
+   * When enabled, left mouse drag selects text, and mouse up copies
+   * selected text to clipboard via OSC 52.
+   * Default: true when mouse is enabled
+   */
+  selection?: boolean
   /**
    * Terminal capabilities for width measurement and output suppression.
    * When provided, configures the render pipeline to use these caps
@@ -475,6 +492,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     kittyMode: useKittyMode = false,
     kitty: kittyOption,
     mouse: mouseOption = false,
+    virtualInline: virtualInlineOption = false,
     suspendOnCtrlZ: suspendOption = true,
     exitOnCtrlC: exitOnCtrlCOption = true,
     onSuspend: onSuspendHook,
@@ -482,6 +500,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     onInterrupt: onInterruptHook,
     textSizing: textSizingOption,
     focusReporting: focusReportingOption = false,
+    selection: selectionOption,
     caps: capsOption,
     Root: RootComponent,
     writable: explicitWritable,
@@ -786,9 +805,18 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   let storeUnsubscribeFn: (() => void) | null = null
   // Track protocol state for cleanup and suspend/resume
   let kittyEnabled = false
-  let kittyFlags: number = KittyFlags.DISAMBIGUATE
+  const defaultKittyFlags = KittyFlags.DISAMBIGUATE | KittyFlags.REPORT_EVENTS | KittyFlags.REPORT_ALL_KEYS
+  let kittyFlags: number = defaultKittyFlags
   let mouseEnabled = false
   let focusReportingEnabled = false
+  // Selection state — enabled by default when mouse is enabled
+  const selectionEnabled = selectionOption ?? mouseOption
+  let selectionState = createSelectionState()
+
+  // Virtual inline mode state
+  const scrollback = virtualInlineOption ? createVirtualScrollback() : null
+  let virtualScrollOffset = 0 // 0 = live (bottom), >0 = scrolled up
+  let searchState = createSearchState()
 
   // Focus manager (tree-based focus system) with event dispatch wiring
   const focusManager = createFocusManager({
@@ -1272,9 +1300,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         // Auto-detect: probe terminal, enable if supported
         const result = await detectKittyFromStdio(stdout, stdin as NodeJS.ReadStream)
         if (result.supported) {
-          stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE))
+          stdout.write(enableKittyKeyboard(defaultKittyFlags))
           kittyEnabled = true
-          kittyFlags = KittyFlags.DISAMBIGUATE
+          kittyFlags = defaultKittyFlags
         }
       } else {
         // Explicit flags — enable directly without detection
@@ -1283,10 +1311,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
         kittyFlags = kittyOption as number
       }
     } else {
-      // Legacy behavior: always enable Kitty DISAMBIGUATE
-      stdout.write(enableKittyKeyboard(KittyFlags.DISAMBIGUATE))
+      // Legacy behavior: always enable Kitty with full fidelity
+      stdout.write(enableKittyKeyboard(defaultKittyFlags))
       kittyEnabled = true
-      kittyFlags = KittyFlags.DISAMBIGUATE
+      kittyFlags = defaultKittyFlags
     }
 
     // Mouse tracking
@@ -1455,10 +1483,272 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
   }
 
   /**
+   * Write selection overlay to stdout after a render.
+   * Appends inverse-video ANSI sequences over selected cells.
+   */
+  function writeSelectionOverlay(): void {
+    if (!selectionEnabled || !selectionState.range || !currentBuffer) return
+    const mode = alternateScreen ? "fullscreen" : "inline"
+    const overlay = renderSelectionOverlay(selectionState.range, currentBuffer._buffer, mode)
+    if (overlay) target.write(overlay)
+  }
+
+  /**
+   * Push the current rendered frame to the virtual scrollback buffer.
+   */
+  function pushToScrollback(): void {
+    if (!scrollback || !currentBuffer) return
+    const lines = currentBuffer.text.split("\n")
+    scrollback.push(lines)
+  }
+
+  /**
+   * Render the virtual scrollback view (historical content) to the terminal.
+   * When scrolled up, replaces the live app content with historical rows.
+   */
+  function renderVirtualScrollbackView(): void {
+    if (!scrollback || virtualScrollOffset <= 0) return
+    const dims = target.getDims()
+    const rows = scrollback.getVisibleRows(virtualScrollOffset, dims.rows)
+
+    // Clear screen and write rows using absolute positioning
+    let out = ""
+    for (let row = 0; row < rows.length; row++) {
+      out += `\x1b[${row + 1};1H\x1b[2K${rows[row] ?? ""}`
+    }
+
+    // Scroll indicator at top-right
+    const indicator = ` ↑ ${virtualScrollOffset} lines `
+    const indicatorCol = Math.max(1, dims.cols - indicator.length + 1)
+    out += `\x1b[1;${indicatorCol}H\x1b[7m${indicator}\x1b[27m`
+
+    target.write(out)
+  }
+
+  /**
+   * Render search highlights for the current match with inverse video.
+   */
+  function renderSearchHighlights(): void {
+    if (!searchState.active || searchState.currentMatch < 0) return
+    const match = searchState.matches[searchState.currentMatch]
+    if (!match) return
+
+    const dims = target.getDims()
+    // Calculate the screen row of the current match
+    let screenRow: number
+    if (scrollback && virtualScrollOffset > 0) {
+      // In scrollback view: calculate relative position
+      const totalLines = scrollback.totalLines
+      const firstVisibleLine = totalLines - virtualScrollOffset - dims.rows
+      screenRow = match.row - firstVisibleLine
+    } else {
+      screenRow = match.row
+    }
+
+    if (screenRow < 0 || screenRow >= dims.rows) return
+
+    // Move to match position and render with inverse
+    let out = `\x1b[${screenRow + 1};${match.startCol + 1}H\x1b[7m`
+    // Emit the match text (we know the query length)
+    for (let col = match.startCol; col <= match.endCol; col++) {
+      if (currentBuffer && virtualScrollOffset <= 0) {
+        out += currentBuffer._buffer.getCell(col, screenRow).char
+      } else {
+        out += searchState.query[col - match.startCol] ?? " "
+      }
+    }
+    out += "\x1b[27m"
+    target.write(out)
+  }
+
+  /**
+   * Render the search bar at the bottom of the screen.
+   */
+  function renderSearchBarOverlay(): void {
+    if (!searchState.active) return
+    const dims = target.getDims()
+    const bar = renderSearchBar(searchState, dims.cols)
+    // Position at the last row
+    target.write(`\x1b[${dims.rows};1H${bar}`)
+  }
+
+  /**
+   * Search function for virtual scrollback — converts line matches to SearchMatch[].
+   */
+  function searchScrollback(query: string): SearchMatch[] {
+    if (!scrollback || !query) return []
+    const matchingLines = scrollback.search(query)
+    const lowerQuery = query.toLowerCase()
+    const matches: SearchMatch[] = []
+    for (const lineIdx of matchingLines) {
+      // Find exact column positions by getting the line text
+      const rows = scrollback.getVisibleRows(scrollback.totalLines - lineIdx - 1, 1)
+      const line = rows[0] ?? ""
+      // Strip ANSI for column matching
+      const plain = line.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, "")
+      let col = plain.toLowerCase().indexOf(lowerQuery)
+      while (col !== -1) {
+        matches.push({ row: lineIdx, startCol: col, endCol: col + query.length - 1 })
+        col = plain.toLowerCase().indexOf(lowerQuery, col + 1)
+      }
+    }
+    return matches
+  }
+
+  /**
    * Run a single event's handler (state mutation only, no render).
    * Returns true if processing should continue, false if app should exit.
+   *
+   * Intercepts mouse events for selection and virtual inline mode.
    */
   function runEventHandler(event: NamespacedEvent): boolean | "flush" {
+    // Virtual inline: intercept search key events
+    if (scrollback && searchState.active && event.type === "term:key") {
+      const data = event.data as { input: string; key: Key }
+      if (data.key.escape) {
+        const [next] = searchUpdate({ type: "close" }, searchState)
+        searchState = next
+        virtualScrollOffset = 0 // Return to live view
+        return true // Consume
+      }
+      if (data.key.return && !data.key.shift) {
+        const [next, effects] = searchUpdate({ type: "nextMatch" }, searchState, searchScrollback)
+        searchState = next
+        for (const eff of effects) {
+          if (eff.type === "scrollTo") {
+            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+          }
+        }
+        return true
+      }
+      if (data.key.return && data.key.shift) {
+        const [next, effects] = searchUpdate({ type: "prevMatch" }, searchState, searchScrollback)
+        searchState = next
+        for (const eff of effects) {
+          if (eff.type === "scrollTo") {
+            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+          }
+        }
+        return true
+      }
+      if (data.key.backspace) {
+        const [next, effects] = searchUpdate({ type: "backspace" }, searchState, searchScrollback)
+        searchState = next
+        for (const eff of effects) {
+          if (eff.type === "scrollTo") {
+            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+          }
+        }
+        return true
+      }
+      if (data.key.leftArrow) {
+        const [next] = searchUpdate({ type: "cursorLeft" }, searchState)
+        searchState = next
+        return true
+      }
+      if (data.key.rightArrow) {
+        const [next] = searchUpdate({ type: "cursorRight" }, searchState)
+        searchState = next
+        return true
+      }
+      if (data.input && !data.key.ctrl && !data.key.meta) {
+        const [next, effects] = searchUpdate({ type: "input", char: data.input }, searchState, searchScrollback)
+        searchState = next
+        for (const eff of effects) {
+          if (eff.type === "scrollTo") {
+            virtualScrollOffset = Math.max(0, scrollback.totalLines - eff.row - target.getDims().rows)
+          }
+        }
+        return true
+      }
+    }
+
+    // Virtual inline: Ctrl+F opens search
+    if (scrollback && event.type === "term:key") {
+      const data = event.data as { input: string; key: Key }
+      if (data.input === "f" && data.key.ctrl) {
+        const [next] = searchUpdate({ type: "open" }, searchState)
+        searchState = next
+        return true
+      }
+    }
+
+    // Virtual inline: intercept wheel events for scrolling
+    if (scrollback && event.event === "mouse" && event.data) {
+      const mouseData = event.data as {
+        button: number
+        x: number
+        y: number
+        action: string
+        delta?: number
+      }
+      if (mouseData.action === "wheel") {
+        const scrollLines = 3
+        if (mouseData.delta && mouseData.delta < 0) {
+          // Scroll up (into history)
+          virtualScrollOffset = Math.min(
+            virtualScrollOffset + scrollLines,
+            Math.max(0, scrollback.totalLines - target.getDims().rows),
+          )
+        } else {
+          // Scroll down (toward live)
+          virtualScrollOffset = Math.max(0, virtualScrollOffset - scrollLines)
+        }
+        return true // Consume wheel events
+      }
+    }
+
+    // Selection: intercept mouse events
+    if (selectionEnabled && event.event === "mouse" && event.data) {
+      const mouseData = event.data as {
+        button: number
+        x: number
+        y: number
+        action: string
+      }
+
+      // Left button (button 0) drag for selection
+      if (mouseData.button === 0) {
+        if (mouseData.action === "down") {
+          const [next] = selectionUpdate({ type: "start", col: mouseData.x, row: mouseData.y }, selectionState)
+          selectionState = next
+          // Don't consume — let the component tree also handle mousedown (for click-to-focus etc.)
+        } else if (mouseData.action === "move" && selectionState.selecting) {
+          const [next] = selectionUpdate({ type: "extend", col: mouseData.x, row: mouseData.y }, selectionState)
+          selectionState = next
+          // Consume move events during selection — don't dispatch to component tree
+          return true
+        } else if (mouseData.action === "up" && selectionState.selecting) {
+          const [next] = selectionUpdate({ type: "finish" }, selectionState)
+          selectionState = next
+
+          // Copy selected text via OSC 52
+          if (next.range && currentBuffer) {
+            const text = extractText(currentBuffer._buffer, next.range)
+            if (text.length > 0) {
+              const base64 = globalThis.Buffer.from(text).toString("base64")
+              target.write(`\x1b]52;c;${base64}\x07`)
+            }
+          }
+          // Don't consume — let click handler run
+        }
+      }
+    }
+
+    // Selection: clear on any keypress
+    if (selectionEnabled && event.type === "term:key" && selectionState.range) {
+      const [next] = selectionUpdate({ type: "clear" }, selectionState)
+      selectionState = next
+    }
+
+    // When scrolled up in virtual inline mode, don't dispatch events to component tree
+    // (except for search which is handled above)
+    if (scrollback && virtualScrollOffset > 0 && event.type === "term:key") {
+      // Any non-search keypress returns to live view
+      virtualScrollOffset = 0
+      return true
+    }
+
     const ctx = createHandlerContext(store, focusManager, container)
     return invokeEventHandler(event, handlers, ctx, mouseEventState, container)
   }
@@ -1529,9 +1819,9 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     inEventHandler = true
     isRendering = true
 
-    // Run all handlers — state mutations batch naturally in Zustand
+    // Bridge ALL key events to RuntimeContext listeners first (useModifierKeys
+    // needs modifier-only and release events). Then filter events for app handlers.
     for (const event of events) {
-      // Bridge key/paste/focus events to RuntimeContext listeners (useInput consumers)
       if (event.type === "term:key") {
         const { input, key: parsedKey } = event.data as { input: string; key: Key }
         for (const listener of runtimeInputListeners) {
@@ -1554,6 +1844,32 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       if (shouldExit) {
         inEventHandler = false
         return null
+      }
+
+      // Skip modifier-only and release key events for app handlers.
+      // These are already bridged to RuntimeContext listeners above (useModifierKeys).
+      // App handlers (e.g., board-app handleKey) expect press-only, non-modifier semantics.
+      if (event.type === "term:key") {
+        const { input, key: k } = event.data as { input: string; key: Key }
+        if (k.eventType === "release") continue
+        // Modifier-only: empty input + no actionable flags
+        if (
+          input === "" &&
+          !k.upArrow &&
+          !k.downArrow &&
+          !k.leftArrow &&
+          !k.rightArrow &&
+          !k.pageDown &&
+          !k.pageUp &&
+          !k.home &&
+          !k.end &&
+          !k.return &&
+          !k.escape &&
+          !k.tab &&
+          !k.backspace &&
+          !k.delete
+        )
+          continue
       }
 
       const result = runEventHandler(event)
@@ -1632,6 +1948,14 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     inEventHandler = false
     const runtimeStart = performance.now()
     runtime.render(currentBuffer)
+    // Post-render: push to scrollback, overlay selection/search
+    pushToScrollback()
+    if (virtualScrollOffset > 0) {
+      renderVirtualScrollbackView()
+    }
+    writeSelectionOverlay()
+    renderSearchHighlights()
+    renderSearchBarOverlay()
     const runtimeMs = performance.now() - runtimeStart
     if (_perfLog) {
       const totalMs = performance.now() - _eventStart

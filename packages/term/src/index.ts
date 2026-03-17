@@ -456,3 +456,41 @@ export {
 
 // Background override
 export { BG_OVERRIDE_CODE, bgOverride } from "./ansi/index"
+
+// =============================================================================
+// Selection
+// =============================================================================
+
+export {
+  selectionUpdate,
+  createSelectionState,
+  normalizeRange,
+  extractText,
+  type SelectionState,
+  type SelectionRange,
+  type SelectionPosition,
+  type SelectionAction,
+  type SelectionEffect,
+} from "./selection"
+
+export { renderSelectionOverlay } from "./selection-renderer"
+
+// =============================================================================
+// Virtual Scrollback
+// =============================================================================
+
+export { createVirtualScrollback, type VirtualScrollback, type VirtualScrollbackOptions } from "./virtual-scrollback"
+
+// =============================================================================
+// Search Overlay
+// =============================================================================
+
+export {
+  createSearchState,
+  searchUpdate,
+  renderSearchBar,
+  type SearchState,
+  type SearchMatch,
+  type SearchAction,
+  type SearchEffect,
+} from "./search-overlay"

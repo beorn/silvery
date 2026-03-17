@@ -89,9 +89,12 @@ export interface RunOptions {
    */
   mouse?: boolean
   /**
-   * Render mode: fullscreen (alt screen, default) or inline (scrollback-compatible).
+   * Render mode:
+   * - `"fullscreen"` — alt screen buffer (default)
+   * - `"inline"` — scrollback-compatible, no alt screen
+   * - `"virtualInline"` — alt screen with virtual scrollback (scrollable history + search)
    */
-  mode?: "fullscreen" | "inline"
+  mode?: "fullscreen" | "inline" | "virtualInline"
   /**
    * Enable Kitty text sizing protocol (OSC 66) for PUA characters.
    * Ensures nerdfont/powerline icons are measured and rendered at the correct width.
@@ -282,6 +285,7 @@ export async function run(element: ReactElement, optionsOrTerm: RunOptions | Ter
     ...rest,
     caps,
     alternateScreen: mode !== "inline",
+    virtualInline: mode === "virtualInline",
     kitty: rest.kitty ?? caps.kittyKeyboard,
     mouse: rest.mouse ?? mode !== "inline",
     focusReporting: rest.focusReporting ?? mode !== "inline",

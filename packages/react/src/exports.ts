@@ -358,6 +358,13 @@ export { useFocusWithin } from "./hooks/useFocusWithin"
 // Terminal focus state
 export { useTerminalFocused } from "./hooks/useTerminalFocused"
 
+// Modifier key tracking
+export { useModifierKeys } from "./hooks/useModifierKeys"
+export type { ModifierState, UseModifierKeysOptions } from "./hooks/useModifierKeys"
+
+// Mouse cursor shape
+export { useMouseCursor } from "./hooks/useMouseCursor"
+
 export { useTerm, shallow } from "./hooks/useTerm"
 export { useWindowSize } from "./hooks/useWindowSize"
 export { useConsole } from "./hooks/useConsole"
@@ -370,6 +377,8 @@ export {
   CursorProvider,
 } from "./hooks/useCursor"
 export type { CursorPosition, CursorState, CursorAccessors, CursorStore } from "./hooks/useCursor"
+export { useSelection, useSelectionContext, SelectionProvider } from "./hooks/useSelection"
+export type { UseSelectionResult } from "./hooks/useSelection"
 export { useScrollback } from "./hooks/useScrollback"
 export type { UseScrollbackOptions, ScrollbackMarkerCallbacks } from "./hooks/useScrollback"
 export { useVirtualizer } from "./hooks/useVirtualizer"
