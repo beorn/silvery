@@ -116,7 +116,7 @@ function ThemeList({ entries, selectedIndex }: { entries: ThemeEntry[]; selected
           return (
             <Box key={entry.name}>
               <Text inverse={isSelected}>
-                {isSelected ? "▸" : " "} {entry.name.padEnd(20)}
+                {isSelected ? "▸" : " "} {entry.name.padEnd(18)}
               </Text>
               <Text> </Text>
               {entry.palette ? <MiniSwatch palette={entry.palette} /> : <ThemeMiniSwatch theme={entry.theme} />}
@@ -408,8 +408,8 @@ function ThemePreview({ entry }: { entry: ThemeEntry }): JSX.Element {
   const label = entry.detected ? "(detected)" : entry.palette?.dark === false ? "(light)" : "(dark)"
 
   return (
-    <ThemeProvider theme={entry.theme} root={false}>
-      <Box flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll" backgroundColor="$bg" color="$fg">
+    <ThemeProvider theme={entry.theme}>
+      <Box flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll" backgroundColor="$bg">
         <Box paddingX={1} gap={1}>
           <H1>{entry.name}</H1>
           <Muted>{label}</Muted>

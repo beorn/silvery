@@ -7,9 +7,14 @@
  * which breaks when the theme differs from the terminal (e.g., light theme
  * in a dark terminal).
  *
+ * The wrapper only sets `color` (not `backgroundColor`) because:
+ * - fg needs explicit propagation (terminal default won't match the theme)
+ * - bg is the app's responsibility (often paired with border/scroll/overflow)
+ * - double bg painting causes incremental rendering artifacts
+ *
  * The `root` prop (default: true) controls whether the wrapper Box is rendered.
- * Set `root={false}` for test environments or nested ThemeProviders where an
- * extra flex container would interfere with layout.
+ * Set `root={false}` for test environments where an extra flex container
+ * would interfere with layout assertions.
  */
 
 import React from "react"
@@ -23,7 +28,7 @@ export function ThemeProvider({ theme, children, root = true }: ThemeProviderPro
   }
   return (
     <BaseThemeProvider theme={theme}>
-      <Box color="$fg" backgroundColor="$bg" flexDirection="column" flexGrow={1}>
+      <Box color="$fg" flexDirection="column" flexGrow={1}>
         {children}
       </Box>
     </BaseThemeProvider>
