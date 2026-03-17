@@ -1,17 +1,15 @@
 /**
  * Panes — tmux-style split pane demo.
  *
- * Two AI chat panes with SplitView, tab focus switching, Ctrl+F search.
- * Showcases: SplitView, ListView, SearchProvider, SurfaceRegistry.
+ * Two AI chat panes running independently, Tab to switch focus, Esc to quit.
+ * Showcases: ListView, side-by-side flex layout, border focus indication.
  *
  * Run: bun examples/interactive/panes/index.tsx [--fast]
  */
 
 import React, { useState, useEffect, useMemo } from "react"
-import { Box, Text, SplitView, ListView } from "silvery"
-import { SurfaceRegistryProvider, SearchProvider, useSearch, SearchBar } from "@silvery/react"
+import { Box, Text, ListView } from "silvery"
 import { run, useInput, type Key } from "@silvery/term/runtime"
-import { createLeaf, splitPane } from "@silvery/term/pane-manager"
 import type { ExampleMeta } from "../../_banner.js"
 import { SCRIPT } from "../aichat/script.js"
 import type { ScriptEntry } from "../aichat/types.js"
@@ -21,9 +19,9 @@ import type { ListItemMeta } from "@silvery/ui/components/ListView"
 
 export const meta: ExampleMeta = {
   name: "Panes",
-  description: "tmux-style split panes — SplitView + ListView + SearchProvider",
+  description: "tmux-style split panes — ListView + focus switching",
   demo: true,
-  features: ["SplitView", "ListView", "SearchProvider", "Tab focus"],
+  features: ["ListView", "split panes", "Tab focus"],
 }
 
 // ============================================================================
@@ -49,16 +47,50 @@ function usePaneContent(script: ScriptEntry[], fastMode: boolean): Exchange[] {
 }
 
 // ============================================================================
+// Pane wrapper — border + title + content
+// ============================================================================
+
+function Pane({
+  title,
+  isFocused,
+  children,
+}: {
+  title: string
+  isFocused: boolean
+  children: React.ReactNode
+}) {
+  const borderColor = isFocused ? "$primary" : "$border"
+  return (
+    <Box
+      width="50%"
+      flexDirection="column"
+      borderStyle="single"
+      borderColor={borderColor}
+      overflow="hidden"
+    >
+      <Box paddingX={1}>
+        <Text color={borderColor} bold={isFocused}>
+          {title}
+        </Text>
+      </Box>
+      {children}
+    </Box>
+  )
+}
+
+// ============================================================================
 // Chat pane — renders exchanges in a ListView
 // ============================================================================
 
-function ChatPane({ script, fastMode, height }: { script: ScriptEntry[]; fastMode: boolean; height: number }) {
+function ChatPane({ script, fastMode, height: maxHeight }: { script: ScriptEntry[]; fastMode: boolean; height: number }) {
+  // Use maxHeight but cap to actual items (avoid over-allocation)
+  const height = maxHeight
   const exchanges = usePaneContent(script, fastMode)
 
   if (exchanges.length === 0) {
     return (
-      <Box paddingX={1} paddingY={1}>
-        <Text color="$muted">Waiting for messages...</Text>
+      <Box paddingX={1}>
+        <Text color="$muted">Waiting...</Text>
       </Box>
     )
   }
@@ -90,70 +122,37 @@ function ChatPane({ script, fastMode, height }: { script: ScriptEntry[]; fastMod
 
 function PanesApp({ fastMode, rows }: { fastMode: boolean; rows: number }) {
   const [focusedPane, setFocusedPane] = useState<"left" | "right">("left")
-  const search = useSearch()
 
   // Split script: first half left, second half right
   const midpoint = Math.ceil(SCRIPT.length / 2)
   const leftScript = useMemo(() => SCRIPT.slice(0, midpoint), [midpoint])
   const rightScript = useMemo(() => SCRIPT.slice(midpoint), [midpoint])
 
-  // Layout: horizontal split 50/50
-  const layout = useMemo(() => splitPane(createLeaf("left"), createLeaf("right"), "vertical", 0.5), [])
-
-  // Key bindings
   useInput((input: string, key: Key) => {
-    if (key.escape && !search.isActive) return "exit"
+    if (key.escape) return "exit"
     if (key.tab) {
       setFocusedPane((p) => (p === "left" ? "right" : "left"))
-      return
-    }
-    if (key.ctrl && input === "f") {
-      search.open()
-      return
-    }
-    if (search.isActive) {
-      if (key.escape) {
-        search.close()
-        return
-      }
-      if (key.return && !key.shift) {
-        search.next()
-        return
-      }
-      if (key.return && key.shift) {
-        search.prev()
-        return
-      }
-      if (key.backspace) {
-        search.backspace()
-        return
-      }
-      if (key.leftArrow) {
-        search.cursorLeft()
-        return
-      }
-      if (key.rightArrow) {
-        search.cursorRight()
-        return
-      }
-      if (input && !key.ctrl && !key.meta) {
-        search.input(input)
-        return
-      }
     }
   })
 
-  // Reserve 2 rows: 1 for search bar, 1 for status
-  // SplitView borders take 2 rows per pane (top + bottom)
-  const paneInnerHeight = Math.max(5, rows - 4)
+  // rows = terminal height
+  // Each pane: border top(1) + title(1) + content + border bottom(1) = content + 3
+  // Plus status bar(1). So content = rows - 3 - 1 = rows - 4.
+  // Use overflow="scroll" on the ListView Box for safety.
+  const listHeight = Math.max(5, rows - 5)
 
   return (
-    <Box flexDirection="row" height={rows - 2}>
-      <Box width="50%" borderStyle="single" borderColor={focusedPane === "left" ? "$primary" : "$border"}>
-        <ChatPane script={leftScript} fastMode={fastMode} height={rows - 4} />
+    <Box flexDirection="column" height={rows}>
+      <Box flexDirection="row" flexGrow={1}>
+        <Pane title="Agent A" isFocused={focusedPane === "left"}>
+          <ChatPane script={leftScript} fastMode={fastMode} height={listHeight} />
+        </Pane>
+        <Pane title="Agent B" isFocused={focusedPane === "right"}>
+          <ChatPane script={rightScript} fastMode={fastMode} height={listHeight} />
+        </Pane>
       </Box>
-      <Box width="50%" borderStyle="single" borderColor={focusedPane === "right" ? "$primary" : "$border"}>
-        <ChatPane script={rightScript} fastMode={fastMode} height={rows - 4} />
+      <Box paddingX={1}>
+        <Text color="$muted">Tab: switch pane · Esc: quit</Text>
       </Box>
     </Box>
   )
@@ -163,22 +162,12 @@ function PanesApp({ fastMode, rows }: { fastMode: boolean; rows: number }) {
 // Entry
 // ============================================================================
 
-function App({ fastMode, rows }: { fastMode: boolean; rows: number }) {
-  return (
-    <SurfaceRegistryProvider>
-      <SearchProvider>
-        <PanesApp fastMode={fastMode} rows={rows} />
-      </SearchProvider>
-    </SurfaceRegistryProvider>
-  )
-}
-
 export async function main() {
   const args = process.argv.slice(2)
   const fastMode = args.includes("--fast")
   const rows = process.stdout.rows ?? 40
 
-  using handle = await run(<App fastMode={fastMode} rows={rows} />, {
+  using handle = await run(<PanesApp fastMode={fastMode} rows={rows} />, {
     mode: "fullscreen",
     kitty: false,
     textSizing: false,
