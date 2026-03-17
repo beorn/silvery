@@ -16,7 +16,10 @@ import { SCRIPT } from "../aichat/script.js"
 import type { ScriptEntry } from "../aichat/types.js"
 import type { Exchange } from "../aichat/types.js"
 import { ExchangeItem } from "../aichat/components.js"
-import type { ListItemMeta } from "@silvery/ui/components/ListView"
+// ListItemMeta type from ListView — inline to avoid tsconfig path issues
+interface ListItemMeta {
+  isCursor: boolean
+}
 
 export const meta: ExampleMeta = {
   name: "Panes",
@@ -76,7 +79,7 @@ function ChatPane({
     <ListView
       items={exchanges}
       height={height}
-      getKey={(ex) => ex.id}
+      getKey={(ex: Exchange) => ex.id}
       scrollTo={exchanges.length - 1}
       active={active}
       renderItem={(exchange: Exchange, _index: number, _meta: ListItemMeta) => (
