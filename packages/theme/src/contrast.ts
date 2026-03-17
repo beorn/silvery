@@ -66,13 +66,14 @@ export function checkContrast(fg: string, bg: string): ContrastResult | null {
   const darker = Math.min(fgLum, bgLum)
   const ratio = (lighter + 0.05) / (darker + 0.05)
 
-  // Round to 2 decimal places for practical use
-  const roundedRatio = Math.round(ratio * 100) / 100
+  // Use exact ratio for conformance decisions (WCAG: don't round up).
+  // Round for display only.
+  const displayRatio = Math.round(ratio * 100) / 100
 
   return {
-    ratio: roundedRatio,
-    aa: roundedRatio >= 4.5,
-    aaa: roundedRatio >= 7,
+    ratio: displayRatio,
+    aa: ratio >= 4.5,
+    aaa: ratio >= 7,
   }
 }
 
@@ -88,6 +89,9 @@ export function checkContrast(fg: string, bg: string): ContrastResult | null {
  * @param minRatio - Minimum contrast ratio to achieve (e.g. 4.5 for AA)
  * @returns Adjusted hex color meeting the target, or original if already OK
  *
+ * For impossible targets (e.g. 21:1 against mid-gray), returns the
+ * best achievable color (near-black or near-white in the same hue).
+ *
  * @example
  * ```typescript
  * // Yellow on white — too low contrast, gets darkened
@@ -99,7 +103,8 @@ export function checkContrast(fg: string, bg: string): ContrastResult | null {
  */
 export function ensureContrast(color: string, against: string, minRatio: number): string {
   const current = checkContrast(color, against)
-  if (current && current.ratio >= minRatio) return color
+  if (!current) return color // non-hex input — return unchanged
+  if (current.ratio >= minRatio) return color
 
   const hsl = hexToHsl(color)
   if (!hsl) return color

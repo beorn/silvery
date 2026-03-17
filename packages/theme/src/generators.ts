@@ -152,6 +152,7 @@ export function fromColors(opts: FromColorsOptions): ColorPalette {
   return {
     name: opts.name ?? (dark ? "generated-dark" : "generated-light"),
     dark,
+    primary: opts.primary,
     black,
     red: accents.red,
     green: accents.green,

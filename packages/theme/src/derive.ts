@@ -21,7 +21,7 @@
  * | muted / bg      | 4.5:1  | Secondary text, WCAG AA             |
  * | disabled-fg / bg| 3.0:1  | Intentionally dim but visible       |
  * | border / bg     | 1.5:1  | Faint structural divider            |
- * | inputborder / bg| 2.0:1  | Subtle control boundary             |
+ * | inputborder / bg| 3.0:1  | WCAG 1.4.11 non-text minimum        |
  * | accent as text  | 4.5:1  | Colored text on root background     |
  * | selection pair  | 4.5:1  | Selected text readable              |
  *
@@ -58,8 +58,8 @@ const AA = 4.5
 const DIM = 3.0
 /** Faint structural element — borders, dividers */
 const FAINT = 1.5
-/** Subtle but clear control boundary — input/button borders */
-const SUBTLE = 2.0
+/** WCAG 1.4.11 non-text minimum — interactive control boundaries */
+const CONTROL = 3.0
 
 function deriveTruecolorTheme(p: ColorPalette): Theme {
   const dark = p.dark ?? true
@@ -67,8 +67,8 @@ function deriveTruecolorTheme(p: ColorPalette): Theme {
   const fg = p.foreground
 
   // ── Accent colors — ensure readability as text on root bg ────────
-  // Preserves hue, only adjusts lightness when needed.
-  const primary = ensureContrast(dark ? p.yellow : p.blue, bg, AA)
+  // Use explicit primary seed if provided, else infer from ANSI slots.
+  const primary = ensureContrast(p.primary ?? (dark ? p.yellow : p.blue), bg, AA)
   const secondary = ensureContrast(desaturate(primary, 0.4), bg, AA)
   const accent = ensureContrast(complement(primary), bg, AA)
   const error = ensureContrast(p.red, bg, AA)
@@ -83,7 +83,7 @@ function deriveTruecolorTheme(p: ColorPalette): Theme {
   const muted = ensureContrast(blend(fg, bg, 0.4), mutedbg, AA)
   const disabledfg = ensureContrast(blend(fg, bg, 0.5), bg, DIM)
   const border = ensureContrast(blend(bg, fg, 0.15), bg, FAINT)
-  const inputborder = ensureContrast(blend(bg, fg, 0.25), bg, SUBTLE)
+  const inputborder = ensureContrast(blend(bg, fg, 0.25), bg, CONTROL)
 
   // ── Selection — palette-sourced, ensure the pair is readable ─────
   const selection = ensureContrast(p.selectionForeground, p.selectionBackground, AA)

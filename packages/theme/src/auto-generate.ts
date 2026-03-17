@@ -5,7 +5,7 @@
  * for the full palette from one input color.
  */
 
-import { hexToHsl, hslToHex, blend, contrastFg } from "./color"
+import { hexToHsl, hslToHex, blend } from "./color"
 import { fromColors } from "./generators"
 import { deriveTheme } from "./derive"
 import type { Theme } from "./types"
@@ -90,6 +90,7 @@ export function autoGenerateTheme(primaryColor: string, mode: "dark" | "light"):
   const palette = {
     name: `generated-${mode}`,
     dark,
+    primary: primaryColor,
     black,
     red,
     green,
@@ -114,13 +115,7 @@ export function autoGenerateTheme(primaryColor: string, mode: "dark" | "light"):
     selectionForeground: fg,
   }
 
-  // Derive the full theme, then override primary with the input color
-  const theme = deriveTheme(palette)
-
-  // Override primary to be exactly the input color
-  return {
-    ...theme,
-    primary: primaryColor,
-    primaryfg: contrastFg(primaryColor),
-  }
+  // Primary seed is on the palette — deriveTheme() uses it directly,
+  // ensuring contrast and deriving secondary/accent consistently.
+  return deriveTheme(palette)
 }

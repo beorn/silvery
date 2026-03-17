@@ -123,7 +123,9 @@ export function createTheme(): ThemeBuilder {
         if (state.bgColor) palette.background = state.bgColor
         if (state.fgColor) palette.foreground = state.fgColor
         if (state.primaryColor) {
-          // Override the appropriate color slot
+          // Set semantic primary seed so deriveTheme() uses it
+          palette.primary = state.primaryColor
+          // Also place in the appropriate ANSI slot for accent derivation
           const slot = assignPrimaryToSlot(state.primaryColor)
           const ansiName = hueToAnsiField(slot)
           ;(palette as unknown as Record<string, string>)[ansiName] = state.primaryColor

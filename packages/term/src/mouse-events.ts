@@ -9,11 +9,14 @@
  * - mouseenter/mouseleave tracking (no bubble, like DOM spec)
  */
 
+import { createLogger } from "loggily"
 import type { FocusManager } from "@silvery/tea/focus-manager"
 import { findFocusableAncestor } from "@silvery/tea/focus-queries"
 import type { ParsedMouse } from "./mouse"
 import { getAncestorPath, pointInRect } from "@silvery/tea/tree-utils"
 import type { TeaNode } from "@silvery/tea/types"
+
+const mouseLog = createLogger("silvery:mouse")
 
 // ============================================================================
 // Event Types
@@ -355,6 +358,27 @@ export function createMouseEventProcessor(options?: MouseEventProcessorOptions):
 export function processMouseEvent(state: MouseEventProcessorState, parsed: ParsedMouse, root: TeaNode): boolean {
   const { x, y, action } = parsed
   const target = hitTest(root, x, y)
+  if (action === "move") {
+    const nodeType = target?.type ?? "null"
+    const nodeId = target ? ((target.props as Record<string, unknown>).id ?? "") : ""
+    // Check entire ancestor path for onMouseEnter
+    let enterAncestor = ""
+    if (target) {
+      let n: TeaNode | null = target
+      while (n) {
+        if ("onMouseEnter" in (n.props as Record<string, unknown>)) {
+          enterAncestor = `${n.type}#${(n.props as Record<string, unknown>).id ?? ""}`
+          break
+        }
+        n = n.parent
+      }
+    }
+    const newPath = target ? getAncestorPath(target) : []
+    const { entered } = computeEnterLeave(state.hoverPath, newPath)
+    mouseLog.debug?.(
+      `move x=${x} y=${y} target=${nodeType}#${nodeId} enterAncestor=${enterAncestor || "none"} entered=${entered.length} prevPath=${state.hoverPath.length}`,
+    )
+  }
   if (!target) return false
   let defaultPrevented = false
 

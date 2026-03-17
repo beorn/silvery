@@ -22,6 +22,17 @@
 export interface ColorPalette {
   name?: string
   dark?: boolean
+  /**
+   * Semantic primary accent color (optional).
+   *
+   * When set, `deriveTheme()` uses this as the primary instead of inferring
+   * from ANSI slots (yellow for dark, blue for light). Set by builder APIs
+   * (`createTheme().primary()`, `quickTheme()`, `autoGenerateTheme()`) and
+   * by `fromColors({ primary })`.
+   *
+   * Built-in palettes don't set this — they use the default ANSI slot mapping.
+   */
+  primary?: string
 
   // ── 16 ANSI palette ────────────────────────────────────────────
   /** ANSI 0 — normal black */
