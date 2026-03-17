@@ -1520,25 +1520,16 @@ interface InheritedBgResult {
  * color can bleed into sibling areas that should have different backgrounds.
  */
 function findInheritedBg(node: TeaNode): InheritedBgResult {
-  let themeOverrideNode: TeaNode | null = null
   let current = node.parent
   while (current) {
-    const props = current.props as BoxProps
-    if (props.backgroundColor) {
+    const bg = (current.props as BoxProps).backgroundColor
+    if (bg) {
       return {
-        color: parseColor(props.backgroundColor),
+        color: parseColor(bg),
         ancestorRect: current.contentRect,
       }
     }
-    if (props.theme && !themeOverrideNode) themeOverrideNode = current
     current = current.parent
-  }
-  // Inside a theme override subtree: use theme's $bg for clearing/inheritance
-  if (themeOverrideNode) {
-    return {
-      color: parseColor("$bg"),
-      ancestorRect: themeOverrideNode.contentRect,
-    }
   }
   return { color: null, ancestorRect: null }
 }
@@ -1548,26 +1539,16 @@ function findInheritedBg(node: TeaNode): InheritedBgResult {
  * Implements CSS-style foreground color inheritance: Text children without an
  * explicit `color` prop inherit from the nearest Box ancestor that sets one.
  *
- * When a per-subtree theme override exists (Box with `theme` prop), falls back
- * to that theme's `$fg`. This ensures text inside a themed subtree uses the
- * subtree theme's fg (not the terminal default) — essential when the subtree
- * theme differs from the terminal (e.g., light theme panel in a dark terminal).
- *
- * Returns null when no ancestor sets color and no theme override exists —
- * text uses the terminal default (matches the root theme).
+ * Returns null when no ancestor sets a color — text uses the terminal default.
  */
 function findInheritedFg(node: TeaNode): Color {
-  let hasThemeOverride = false
   let current = node.parent
   while (current) {
-    const props = current.props as BoxProps
-    if (props.color) return parseColor(props.color)
-    if (props.theme) hasThemeOverride = true
+    const fg = (current.props as BoxProps).color
+    if (fg) return parseColor(fg)
     current = current.parent
   }
-  // Only apply $fg when inside a theme override subtree.
-  // Root theme matches terminal default — no explicit fg needed.
-  return hasThemeOverride ? parseColor("$fg") : null
+  return null
 }
 
 /**

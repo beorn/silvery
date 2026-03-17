@@ -98,7 +98,7 @@ function PanesApp({ fastMode, rows }: { fastMode: boolean; rows: number }) {
   const rightScript = useMemo(() => SCRIPT.slice(midpoint), [midpoint])
 
   // Layout: horizontal split 50/50
-  const layout = useMemo(() => splitPane(createLeaf("left"), createLeaf("right"), "horizontal", 0.5), [])
+  const layout = useMemo(() => splitPane(createLeaf("left"), createLeaf("right"), "vertical", 0.5), [])
 
   // Key bindings
   useInput((input: string, key: Key) => {
@@ -148,19 +148,13 @@ function PanesApp({ fastMode, rows }: { fastMode: boolean; rows: number }) {
   const paneInnerHeight = Math.max(5, rows - 4)
 
   return (
-    <Box flexDirection="column">
-      <SplitView
-        layout={layout}
-        focusedPaneId={focusedPane}
-        focusedBorderColor="$primary"
-        unfocusedBorderColor="$border"
-        renderPaneTitle={(id) => (id === "left" ? " Agent A " : " Agent B ")}
-        renderPane={(id) => (
-          <ChatPane script={id === "left" ? leftScript : rightScript} fastMode={fastMode} height={paneInnerHeight} />
-        )}
-      />
-      <SearchBar />
-      <Text color="$muted"> Tab: switch pane · Ctrl+F: search · Esc: {search.isActive ? "close search" : "quit"}</Text>
+    <Box flexDirection="row" height={rows - 2}>
+      <Box width="50%" borderStyle="single" borderColor={focusedPane === "left" ? "$primary" : "$border"}>
+        <ChatPane script={leftScript} fastMode={fastMode} height={rows - 4} />
+      </Box>
+      <Box width="50%" borderStyle="single" borderColor={focusedPane === "right" ? "$primary" : "$border"}>
+        <ChatPane script={rightScript} fastMode={fastMode} height={rows - 4} />
+      </Box>
     </Box>
   )
 }

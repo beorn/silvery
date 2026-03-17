@@ -408,14 +408,8 @@ function ThemePreview({ entry }: { entry: ThemeEntry }): JSX.Element {
   const label = entry.detected ? "(detected)" : entry.palette?.dark === false ? "(light)" : "(dark)"
 
   return (
-    <ThemeProvider
-      theme={entry.theme}
-      backgroundColor="$bg"
-      flexDirection="column"
-      flexGrow={1}
-      borderStyle="single"
-      overflow="scroll"
-    >
+    <ThemeProvider theme={entry.theme}>
+      <Box theme={entry.theme} color="$fg" backgroundColor="$bg" flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll">
       <Box paddingX={1} gap={1}>
         <H1>{entry.name}</H1>
         <Muted>{label}</Muted>
@@ -433,6 +427,7 @@ function ThemePreview({ entry }: { entry: ThemeEntry }): JSX.Element {
         <TypographySamples />
         <AdjustmentLog adjustments={entry.adjustments} />
       </Box>
+    </Box>
     </ThemeProvider>
   )
 }

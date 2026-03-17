@@ -1,45 +1,35 @@
 /**
  * ThemeProvider — delivers a Theme to the component tree.
  *
- * Renders as a Box, so it accepts all Box props (backgroundColor, flexDirection,
- * etc.). Sets both React context (useTheme()) and Box `theme` prop (pipeline
- * $token resolution via pushContextTheme/popContextTheme).
+ * Sets React context (useTheme()) so components can read the active theme.
+ * For $token resolution in the render pipeline, use `color="$fg"` and
+ * `backgroundColor="$bg"` on your root Box alongside `theme={theme}`:
  *
- * Does NOT call setActiveTheme() — that's only done by run()/render() for the
- * root theme. Nested ThemeProviders use the Box `theme` prop which is properly
- * scoped via the content phase's push/pop stack.
- *
- * @example
  * ```tsx
- * // Root app — no layout props needed
+ * <ThemeProvider theme={lightTheme}>
+ *   <Box theme={lightTheme} color="$fg" backgroundColor="$bg">
+ *     <Text color="$primary">Uses light theme</Text>
+ *   </Box>
+ * </ThemeProvider>
+ * ```
+ *
+ * For the root app where the theme matches the terminal, no Box props needed:
+ * ```tsx
  * <ThemeProvider theme={detectedTheme}>
  *   <App />
- * </ThemeProvider>
- *
- * // Themed panel — layout props on ThemeProvider itself
- * <ThemeProvider theme={lightTheme} backgroundColor="$bg" borderStyle="single">
- *   <Text>Uses light theme colors</Text>
  * </ThemeProvider>
  * ```
  */
 
 import React from "react"
 import { ThemeContext } from "@silvery/theme/ThemeContext"
-import { Box } from "./components/Box"
-import type { BoxProps } from "./components/Box"
 import type { Theme } from "@silvery/theme/types"
 
-export interface ThemeProviderProps extends Omit<BoxProps, "theme"> {
-  /** The theme to provide to the subtree. */
+export interface ThemeProviderProps {
   theme: Theme
+  children: React.ReactNode
 }
 
-export function ThemeProvider({ theme, children, ...boxProps }: ThemeProviderProps): React.ReactElement {
-  return (
-    <ThemeContext.Provider value={theme}>
-      <Box theme={theme} {...boxProps}>
-        {children}
-      </Box>
-    </ThemeContext.Provider>
-  )
+export function ThemeProvider({ theme, children }: ThemeProviderProps): React.ReactElement {
+  return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>
 }
