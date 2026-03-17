@@ -154,7 +154,11 @@ Nested `<Text>` elements (virtual text nodes) support mouse event handlers (`onC
 
 ```tsx
 <Text>
-  Click <Text onClick={handleClick} color="blue">here</Text> to continue
+  Click{" "}
+  <Text onClick={handleClick} color="blue">
+    here
+  </Text>{" "}
+  to continue
 </Text>
 ```
 

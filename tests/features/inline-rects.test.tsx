@@ -13,7 +13,10 @@ describe("inline rects", () => {
     const render = createRenderer({ cols: 40, rows: 5 })
     const app = render(
       <Text>
-        Hello <Text testID="inner" color="blue">world</Text>
+        Hello{" "}
+        <Text testID="inner" color="blue">
+          world
+        </Text>
       </Text>,
     )
     const inner = app.getByTestId("inner").resolve()
@@ -29,7 +32,10 @@ describe("inline rects", () => {
     const render = createRenderer({ cols: 40, rows: 5 })
     const app = render(
       <Text>
-        Hello <Text testID="link" color="blue">world</Text>
+        Hello{" "}
+        <Text testID="link" color="blue">
+          world
+        </Text>
       </Text>,
     )
     const hit = app.term.nodeAt(6, 0) // "world" at col 6

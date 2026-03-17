@@ -359,7 +359,7 @@ export { useFocusWithin } from "./hooks/useFocusWithin"
 export { useTerminalFocused } from "./hooks/useTerminalFocused"
 
 // Modifier key tracking
-export { useModifierKeys } from "./hooks/useModifierKeys"
+export { useModifierKeys, getModifierState, lastModifierState } from "./hooks/useModifierKeys"
 export type { ModifierState, UseModifierKeysOptions } from "./hooks/useModifierKeys"
 
 // Mouse cursor shape

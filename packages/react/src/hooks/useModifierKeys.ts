@@ -58,6 +58,13 @@ export interface UseModifierKeysOptions {
 
 const INITIAL: ModifierState = { super: false, ctrl: false, alt: false, shift: false }
 
+/**
+ * Last known modifier state (global, updated by any runtime's modifier store).
+ * Read this from imperative code (event handlers, TEA update functions)
+ * that can't use the useModifierKeys React hook.
+ */
+export let lastModifierState: Readonly<ModifierState> = INITIAL
+
 interface ModifierStore {
   subscribe: (cb: () => void) => () => void
   getSnapshot: () => ModifierState
@@ -91,6 +98,7 @@ function getOrCreateStore(rt: RuntimeContextValue): ModifierStore {
       next.shift !== state.shift
     ) {
       state = next
+      lastModifierState = next
       notify()
     }
   })
@@ -99,6 +107,7 @@ function getOrCreateStore(rt: RuntimeContextValue): ModifierStore {
   rt.on("focus", (focused: boolean) => {
     if (!focused && (state.super || state.ctrl || state.alt || state.shift)) {
       state = INITIAL
+      lastModifierState = INITIAL
       notify()
     }
   })
@@ -112,6 +121,15 @@ function getOrCreateStore(rt: RuntimeContextValue): ModifierStore {
   }
   stores.set(rt, store)
   return store
+}
+
+/**
+ * Read the current modifier state imperatively (outside React).
+ * For use in event handlers, TEA update functions, etc.
+ */
+export function getModifierState(rt: RuntimeContextValue): ModifierState {
+  const store = stores.get(rt)
+  return store ? store.getSnapshot() : INITIAL
 }
 
 // ============================================================================

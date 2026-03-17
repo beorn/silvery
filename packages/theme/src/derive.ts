@@ -16,14 +16,16 @@
  *
  * Instead of fixed blend factors, derived tokens use contrast targets:
  *
- * | Token           | Target | Rationale                           |
- * |-----------------|--------|-------------------------------------|
- * | muted / bg      | 4.5:1  | Secondary text, WCAG AA             |
- * | disabled-fg / bg| 3.0:1  | Intentionally dim but visible       |
- * | border / bg     | 1.5:1  | Faint structural divider            |
- * | inputborder / bg| 3.0:1  | WCAG 1.4.11 non-text minimum        |
- * | accent as text  | 4.5:1  | Colored text on root background     |
- * | selection pair  | 4.5:1  | Selected text readable              |
+ * | Token             | Target | Rationale                           |
+ * |-------------------|--------|-------------------------------------|
+ * | fg / surfaces     | 4.5:1  | Body text on all surface backgrounds|
+ * | muted / bg        | 4.5:1  | Secondary text, WCAG AA             |
+ * | disabled-fg / bg  | 3.0:1  | Intentionally dim but visible       |
+ * | border / bg       | 1.5:1  | Faint structural divider            |
+ * | inputborder / bg  | 3.0:1  | WCAG 1.4.11 non-text minimum        |
+ * | accent as text    | 4.5:1  | Colored text on root background     |
+ * | selection pair    | 4.5:1  | Selected text readable              |
+ * | cursor pair       | 4.5:1  | Text under cursor readable          |
  *
  * The blend-first-then-ensure pattern preserves the palette's aesthetic:
  * the initial blend sets the color's character, ensureContrast only
@@ -64,7 +66,13 @@ const CONTROL = 3.0
 function deriveTruecolorTheme(p: ColorPalette): Theme {
   const dark = p.dark ?? true
   const bg = p.background
-  const fg = p.foreground
+
+  // ── Body text — ensure readability on all surfaces ──────────────
+  // Surface backgrounds blend bg toward fg by 4-8%. popoverbg (8%) is the
+  // hardest case — if fg meets AA there, it meets AA on all surfaces.
+  const surfacebg = blend(bg, p.foreground, 0.05)
+  const popoverbg = blend(bg, p.foreground, 0.08)
+  const fg = ensureContrast(p.foreground, popoverbg, AA)
 
   // ── Accent colors — ensure readability as text on root bg ────────
   // Use explicit primary seed if provided, else infer from ANSI slots.
@@ -79,14 +87,15 @@ function deriveTruecolorTheme(p: ColorPalette): Theme {
 
   // ── Blended tokens — blend first, then ensure contrast ───────────
   // Muted targets mutedbg (the harder case) so it passes on both bg and mutedbg.
-  const mutedbg = blend(bg, fg, 0.04)
+  const mutedbg = blend(bg, p.foreground, 0.04)
   const muted = ensureContrast(blend(fg, bg, 0.4), mutedbg, AA)
   const disabledfg = ensureContrast(blend(fg, bg, 0.5), bg, DIM)
-  const border = ensureContrast(blend(bg, fg, 0.15), bg, FAINT)
-  const inputborder = ensureContrast(blend(bg, fg, 0.25), bg, CONTROL)
+  const border = ensureContrast(blend(bg, p.foreground, 0.15), bg, FAINT)
+  const inputborder = ensureContrast(blend(bg, p.foreground, 0.25), bg, CONTROL)
 
-  // ── Selection — palette-sourced, ensure the pair is readable ─────
+  // ── Selection & cursor — ensure pairs are readable ─────────────
   const selection = ensureContrast(p.selectionForeground, p.selectionBackground, AA)
+  const cursor = ensureContrast(p.cursorText, p.cursorColor, AA)
 
   return {
     name: p.name ?? (dark ? "derived-dark" : "derived-light"),
@@ -99,12 +108,12 @@ function deriveTruecolorTheme(p: ColorPalette): Theme {
     muted,
     mutedbg,
     surface: fg,
-    surfacebg: blend(bg, fg, 0.05),
+    surfacebg,
     popover: fg,
-    popoverbg: blend(bg, fg, 0.08),
+    popoverbg,
     inverse: contrastFg(blend(fg, bg, 0.1)),
     inversebg: blend(fg, bg, 0.1),
-    cursor: p.cursorText,
+    cursor,
     cursorbg: p.cursorColor,
     selection,
     selectionbg: p.selectionBackground,

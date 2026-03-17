@@ -504,16 +504,18 @@ In truecolor mode, each theme curates the 16 palette colors for visual harmony �
 
 | Token class                                                                              | Target ratio | Rationale                                          |
 | ---------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------- |
+| Body text (`$fg`) on all surfaces (`$bg`, `$surface-bg`, `$popover-bg`)                  | 4.5:1 (AA)   | Primary text must be readable everywhere           |
 | Muted text (`$muted`) on `$bg` and `$muted-bg`                                           | 4.5:1 (AA)   | Secondary text must be readable                    |
 | Disabled text (`$disabled-fg`) on `$bg`                                                  | 3.0:1        | Intentionally dim but visible                      |
 | Accent-as-text (`$primary`, `$error`, `$warning`, `$success`, `$info`, `$link`) on `$bg` | 4.5:1 (AA)   | Colored text on root background                    |
 | Selection text on selection background                                                   | 4.5:1 (AA)   | Selected text must be readable                     |
+| Cursor text on cursor background                                                         | 4.5:1 (AA)   | Text under cursor must be readable                 |
 | Borders (`$border`) on `$bg`                                                             | 1.5:1        | Faint structural dividers — visible, not prominent |
 | Input borders (`$inputborder`) on `$bg`                                                  | 3.0:1        | WCAG 1.4.11 non-text minimum for controls          |
 
 **How it works**: Tokens start from their aesthetic blend or palette color. If the resulting contrast against the background is below the target, `ensureContrast()` shifts lightness in HSL space (darken for light backgrounds, lighten for dark) using binary search to find the minimum adjustment. The color stays recognizable — only lightness changes.
 
-**What it doesn't fix**: Root `$fg`/`$bg` come directly from the palette — if a palette has low fg/bg contrast (like Tokyo Night Day at 4.0:1), that's the palette author's design choice. Surface/popover text inherits from `$fg`, so those also reflect the palette's base contrast.
+**What it adjusts**: Body text (`$fg`) is ensured against `$popover-bg` (the hardest surface, since it's the most shifted from `$bg`). This guarantees readability on `$bg`, `$surface-bg`, and `$popover-bg` simultaneously. For palettes with low fg/bg contrast (like Tokyo Night Day), `$fg` gets a minimal lightness shift to reach AA.
 
 ### Terminal Notes
 

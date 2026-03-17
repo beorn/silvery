@@ -9,6 +9,9 @@
  * holding Cmd (Super), the link shows an underline. Only the hovered link
  * subscribes to modifier state, so this is O(1) regardless of link count.
  *
+ * On Cmd+click, emits a `"link:open"` event via RuntimeContext. The app
+ * handles the actual URL opening (keeps silvery runtime-agnostic).
+ *
  * @example
  * ```tsx
  * <Link href="https://example.com">Visit Example</Link>
@@ -17,25 +20,13 @@
  * ```
  */
 
-import { type ReactNode, useCallback, useState } from "react"
+import { type ReactNode, useCallback, useContext, useState } from "react"
 import type { TextProps } from "./Text"
 import type { SilveryMouseEvent } from "@silvery/term/mouse-events"
 import { Text } from "./Text"
 import { useModifierKeys } from "../hooks/useModifierKeys"
 import { useMouseCursor } from "../hooks/useMouseCursor"
-
-/** Open a URL using the OS default handler. */
-function openUrl(href: string): void {
-  try {
-    // Only open http/https URLs automatically (not internal schemes like km://)
-    if (href.startsWith("http://") || href.startsWith("https://")) {
-      const cmd = process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open"
-      Bun.spawn([cmd, href], { stdout: "ignore", stderr: "ignore" })
-    }
-  } catch {
-    // Silently ignore spawn failures
-  }
-}
+import { RuntimeContext } from "../context"
 
 // ============================================================================
 // OSC 8 Escape Sequences
@@ -76,6 +67,7 @@ export interface LinkProps extends Omit<TextProps, "children"> {
  */
 export function Link({ href, children, color = "$link", onClick, onMouseEnter, onMouseLeave, ...rest }: LinkProps) {
   const [hovered, setHovered] = useState(false)
+  const rt = useContext(RuntimeContext)
   // Only subscribe to modifiers when hovered — zero cost for non-hovered links
   const { super: cmdHeld } = useModifierKeys({ enabled: hovered })
   // Cmd+hover → underline as hover feedback (overrides even explicit underline={false})
@@ -84,17 +76,16 @@ export function Link({ href, children, color = "$link", onClick, onMouseEnter, o
   // Pointer cursor when armed (Cmd+hover)
   useMouseCursor(armed ? "pointer" : null)
 
-  // Cmd+click opens the URL (SGR mouse tracking intercepts clicks,
-  // preventing the terminal from handling OSC 8 links natively)
+  // Cmd+click emits "link:open" event for the app to handle (keeps silvery runtime-agnostic)
   const handleClick = useCallback(
     (e: SilveryMouseEvent) => {
       if (armed) {
-        openUrl(href)
+        rt?.emit("link:open", href)
         e.preventDefault()
       }
       onClick?.(e)
     },
-    [armed, href, onClick],
+    [armed, href, onClick, rt],
   )
 
   return (

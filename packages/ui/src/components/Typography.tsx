@@ -55,7 +55,7 @@ export function H2({ children, color, ...rest }: TypographyProps) {
 /** Group heading — bold only. Stands out without accent color. */
 export function H3({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text bold color={color} {...rest}>
+    <Text bold color={color ?? "$fg"} {...rest}>
       {children}
     </Text>
   )
@@ -68,7 +68,7 @@ export function H3({ children, color, ...rest }: TypographyProps) {
 /** Paragraph — plain body text. Semantic wrapper for readability. */
 export function P({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text color={color} {...rest}>
+    <Text color={color ?? "$fg"} {...rest}>
       {children}
     </Text>
   )
@@ -104,7 +104,7 @@ export function Small({ children, color, ...rest }: TypographyProps) {
 /** Bold emphasis — inline strong text. */
 export function Strong({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text bold color={color} {...rest}>
+    <Text bold color={color ?? "$fg"} {...rest}>
       {children}
     </Text>
   )
@@ -113,7 +113,7 @@ export function Strong({ children, color, ...rest }: TypographyProps) {
 /** Italic emphasis — inline emphasized text. */
 export function Em({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text italic color={color} {...rest}>
+    <Text italic color={color ?? "$fg"} {...rest}>
       {children}
     </Text>
   )
@@ -126,7 +126,7 @@ export function Em({ children, color, ...rest }: TypographyProps) {
 /** Inline code — $mutedbg background with padding. */
 export function Code({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text backgroundColor="$mutedbg" color={color} {...rest}>
+    <Text backgroundColor="$mutedbg" color={color ?? "$fg"} {...rest}>
       {` ${children} `}
     </Text>
   )
@@ -135,7 +135,7 @@ export function Code({ children, color, ...rest }: TypographyProps) {
 /** Keyboard shortcut badge — $mutedbg background + bold. */
 export function Kbd({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text backgroundColor="$mutedbg" bold color={color} {...rest}>
+    <Text backgroundColor="$mutedbg" bold color={color ?? "$fg"} {...rest}>
       {` ${children} `}
     </Text>
   )
@@ -151,7 +151,9 @@ export function Blockquote({ children, color }: TypographyProps) {
     <Box>
       <Text color={color ?? "$muted"}>│ </Text>
       <Box flexShrink={1}>
-        <Text italic>{children}</Text>
+        <Text italic color="$fg">
+          {children}
+        </Text>
       </Box>
     </Box>
   )
@@ -234,7 +236,7 @@ export function LI({ children, color, _index }: TypographyProps & { _index?: num
         {marker}
       </Text>
       <Box flexShrink={1}>
-        <Text color={color}>{children}</Text>
+        <Text color={color ?? "$fg"}>{children}</Text>
       </Box>
     </Box>
   )

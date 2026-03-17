@@ -164,6 +164,19 @@ describe("deriveTheme contrast guarantees", () => {
   describe.each(palettes)("%s", (_name, palette) => {
     const theme = deriveTheme(palette)
 
+    // Body text on all surfaces
+    it("fg / bg >= AA (4.5:1)", () => {
+      expect(ratio(theme.fg, theme.bg)).toBeGreaterThanOrEqual(AA - 0.01)
+    })
+
+    it("fg (surface) / surface-bg >= AA (4.5:1)", () => {
+      expect(ratio(theme.surface, theme.surfacebg)).toBeGreaterThanOrEqual(AA - 0.01)
+    })
+
+    it("fg (popover) / popover-bg >= AA (4.5:1)", () => {
+      expect(ratio(theme.popover, theme.popoverbg)).toBeGreaterThanOrEqual(AA - 0.01)
+    })
+
     it("muted / bg >= AA (4.5:1)", () => {
       expect(ratio(theme.muted, theme.bg)).toBeGreaterThanOrEqual(AA - 0.01)
     })
@@ -194,14 +207,18 @@ describe("deriveTheme contrast guarantees", () => {
     // Accent fg text on accent bg (badge readability)
     for (const token of ["primary", "secondary", "accent", "error", "warning", "success", "info"] as const) {
       it(`${token}-fg / ${token} >= AA (4.5:1)`, () => {
-        const fg = theme[`${token}fg` as keyof Theme] as string
-        const bg = theme[token] as string
-        expect(ratio(fg, bg)).toBeGreaterThanOrEqual(AA - 0.01)
+        const fgColor = theme[`${token}fg` as keyof Theme] as string
+        const bgColor = theme[token] as string
+        expect(ratio(fgColor, bgColor)).toBeGreaterThanOrEqual(AA - 0.01)
       })
     }
 
     it("selection / selection-bg >= AA (4.5:1)", () => {
       expect(ratio(theme.selection, theme.selectionbg)).toBeGreaterThanOrEqual(AA - 0.01)
+    })
+
+    it("cursor / cursor-bg >= AA (4.5:1)", () => {
+      expect(ratio(theme.cursor, theme.cursorbg)).toBeGreaterThanOrEqual(AA - 0.01)
     })
   })
 })

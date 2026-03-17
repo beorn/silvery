@@ -392,16 +392,16 @@ Virtual text nodes (nested `<Text>` inside `<Text>`) don't have layout nodes or 
 
 ## File Map
 
-| File              | Responsibility                                                                                               |
-| ----------------- | ------------------------------------------------------------------------------------------------------------ |
-| content-phase.ts  | Tree traversal, dirty-flag evaluation, incremental cascade logic, scroll container tiers, region clearing    |
-| render-box.ts     | Box bg fill (`skipBgFill` aware), border rendering, scroll indicators                                        |
+| File              | Responsibility                                                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| content-phase.ts  | Tree traversal, dirty-flag evaluation, incremental cascade logic, scroll container tiers, region clearing                  |
+| render-box.ts     | Box bg fill (`skipBgFill` aware), border rendering, scroll indicators                                                      |
 | render-text.ts    | Text content collection, ANSI parsing, bg segment tracking, `inheritedBg` inheritance, bg conflict detection, inline rects |
-| layout-phase.ts   | Layout calculation, scroll state, screen rects, layout subscriber notification                               |
-| measure-phase.ts  | Intrinsic size measurement for fit-content nodes                                                             |
-| output-phase.ts   | Buffer diff, dirty row tracking, minimal ANSI output generation, inline incremental rendering                |
-| render-helpers.ts | Color parsing, text width, border chars, style computation                                                   |
-| helpers.ts        | Border/padding size calculation                                                                              |
+| layout-phase.ts   | Layout calculation, scroll state, screen rects, layout subscriber notification                                             |
+| measure-phase.ts  | Intrinsic size measurement for fit-content nodes                                                                           |
+| output-phase.ts   | Buffer diff, dirty row tracking, minimal ANSI output generation, inline incremental rendering                              |
+| render-helpers.ts | Color parsing, text width, border chars, style computation                                                                 |
+| helpers.ts        | Border/padding size calculation                                                                                            |
 
 ## Lessons & Postmortems
 
