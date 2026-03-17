@@ -482,6 +482,24 @@ export { renderSelectionOverlay } from "./selection-renderer"
 export { createVirtualScrollback, type VirtualScrollback, type VirtualScrollbackOptions } from "./virtual-scrollback"
 
 // =============================================================================
+// History Buffer
+// =============================================================================
+
+export { createHistoryBuffer, createHistoryItem, type HistoryItem, type HistoryBuffer } from "./history-buffer"
+
+// =============================================================================
+// List Document
+// =============================================================================
+
+export { createListDocument, type ListDocument, type DocumentSource } from "./list-document"
+
+// =============================================================================
+// Text Surface
+// =============================================================================
+
+export { createTextSurface, type TextSurface, type SurfaceCapabilities } from "./text-surface"
+
+// =============================================================================
 // Search Overlay
 // =============================================================================
 
