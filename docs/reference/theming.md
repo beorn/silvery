@@ -9,18 +9,28 @@ full 24-bit truecolor — using the same token vocabulary.
 Wrap your app in `ThemeProvider` with a theme object:
 
 ```tsx
-import { ThemeProvider, ansi16DarkTheme, Box, Text } from "@silvery/term"
+import { ThemeProvider, defaultDarkTheme, Box, Text } from "silvery"
 
 function App() {
   return (
-    <ThemeProvider theme={ansi16DarkTheme}>
+    <ThemeProvider theme={defaultDarkTheme}>
       <Box borderStyle="single">
         <Text color="$primary">Hello</Text>
-        <Text color="$text2">world</Text>
+        <Text color="$muted">world</Text>
       </Box>
     </ThemeProvider>
   )
 }
+```
+
+`ThemeProvider` automatically wraps children in a `<Box color="$fg" backgroundColor="$bg">`, establishing the theme's foreground and background for the entire subtree. This is essential when the theme differs from the terminal (e.g., previewing a light theme in a dark terminal).
+
+Pass `root={false}` to opt out of the wrapper Box (useful for tests or nested ThemeProviders):
+
+```tsx
+<ThemeProvider theme={theme} root={false}>
+  {/* No wrapper Box — children inherit terminal default colors */}
+</ThemeProvider>
 ```
 
 ## $token Shorthand
@@ -117,19 +127,23 @@ Tokens can use the 216-color cube (indices 16–231) and the 24-shade gray ramp
 
 ### Truecolor (24-bit)
 
-Full derivation from a single primary hue. The token relationships become
-mathematical:
+Full derivation with contrast-aware adjustment. `deriveTheme()` starts from
+aesthetic blends/palette colors, then `ensureContrast()` adjusts lightness
+(preserving hue/saturation) when the result falls below the target ratio:
 
-- `link` = primary lightened 5%
-- `control` = primary at 70% lightness
-- `selected` = contrasting hue at 30% opacity over bg
-- `text2` = text at 85% opacity
-- `text3` = text at 50% opacity
-- `text4` = text at 30% opacity
-- `surface` = bg lightened 5% (dark mode) or darkened 3% (light mode)
-- `separator` = text at 20% opacity
-- `chromebg` = text color (inverted for use as background on title bars)
-- `chromefg` = bg color (inverted for use as text on title bars)
+- `fg` = foreground ensured ≥ 4.5:1 against `popoverbg` (hardest surface)
+- `muted` = fg blended 40% toward bg, ensured ≥ 4.5:1 against `mutedbg`
+- `disabledfg` = fg blended 50% toward bg, ensured ≥ 3.0:1
+- `primary` = palette primary (or explicit seed), ensured ≥ 4.5:1 against bg
+- `secondary` = desaturated primary, ensured ≥ 4.5:1
+- `accent` = complement of primary, ensured ≥ 4.5:1
+- `error/warning/success/info` = palette accents, each ensured ≥ 4.5:1
+- `border` = bg blended 15% toward fg, ensured ≥ 1.5:1 (faint)
+- `inputborder` = bg blended 25% toward fg, ensured ≥ 3.0:1 (WCAG 1.4.11)
+- `selection` = palette selection fg, ensured ≥ 4.5:1 against selection bg
+- `cursor` = palette cursor text, ensured ≥ 4.5:1 against cursor bg
+- `inverse` = contrastFg (black or white) on blended inversebg
+- `surfacebg` / `popoverbg` = bg blended 5%/8% toward fg
 
 ## generateTheme()
 

@@ -23,7 +23,7 @@ export function ThemeProvider({ theme, children, root = true }: ThemeProviderPro
   }
   return (
     <BaseThemeProvider theme={theme}>
-      <Box color="$fg" backgroundColor="$bg" flexDirection="column" height="100%" width="100%">
+      <Box color="$fg" backgroundColor="$bg" flexDirection="column" flexGrow={1}>
         {children}
       </Box>
     </BaseThemeProvider>

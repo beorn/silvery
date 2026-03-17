@@ -187,6 +187,10 @@ When status colors are used for decoration, actual status signals get lost in th
 
 Every surface background has a matching text token. Set both or set neither — never gamble on contrast.
 
+::: info ThemeProvider handles the root pair automatically
+`<ThemeProvider theme={t}>` wraps children in a `<Box color="$fg" backgroundColor="$bg">` by default, so the root bg/fg pairing is automatic. You only need to pair explicitly for *elevated* surfaces (dialogs, popovers, status bars). Pass `root={false}` to opt out (useful for tests or nested ThemeProviders).
+:::
+
 | Background   | Text       | Use for                 |
 | ------------ | ---------- | ----------------------- |
 | `$bg`        | `$fg`      | Default app background  |
