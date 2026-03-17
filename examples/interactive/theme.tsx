@@ -38,7 +38,7 @@ import {
   type Key,
   type Theme,
 } from "../../src/index.js"
-import { builtinPalettes, deriveTheme, type ColorPalette } from "@silvery/theme"
+import { builtinPalettes, deriveTheme, type ColorPalette, type ThemeAdjustment } from "@silvery/theme"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -56,6 +56,7 @@ export interface ThemeEntry {
   name: string
   palette: ColorPalette | null // null for detected theme
   theme: Theme
+  adjustments: ThemeAdjustment[]
   detected?: boolean
 }
 
@@ -369,13 +370,46 @@ function SurfacePairs(): JSX.Element {
   )
 }
 
+/** Contrast adjustments made during derivation */
+function AdjustmentLog({ adjustments }: { adjustments: ThemeAdjustment[] }): JSX.Element {
+  if (adjustments.length === 0) {
+    return (
+      <Box flexDirection="column">
+        <H2>Contrast Adjustments</H2>
+        <Box paddingX={1}>
+          <Text color="$success">✓ No adjustments needed — all tokens meet contrast targets</Text>
+        </Box>
+      </Box>
+    )
+  }
+
+  return (
+    <Box flexDirection="column">
+      <H2>Contrast Adjustments ({adjustments.length})</H2>
+      <Box flexDirection="column" paddingX={1}>
+        {adjustments.map((adj, i) => (
+          <Box key={i} gap={1}>
+            <Text bold>{adj.token.padEnd(12)}</Text>
+            <Text color={adj.from}>{"██"}</Text>
+            <Muted>→</Muted>
+            <Text color={adj.to}>{"██"}</Text>
+            <Muted>
+              {adj.ratioBefore.toFixed(1)}→{adj.ratioAfter.toFixed(1)}:1 (target {adj.target}:1)
+            </Muted>
+          </Box>
+        ))}
+      </Box>
+    </Box>
+  )
+}
+
 /** Right panel: live preview wrapped in selected ThemeProvider */
 function ThemePreview({ entry }: { entry: ThemeEntry }): JSX.Element {
   const label = entry.detected ? "(detected)" : entry.palette?.dark === false ? "(light)" : "(dark)"
 
   return (
-    <ThemeProvider theme={entry.theme}>
-      <Box flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll">
+    <ThemeProvider theme={entry.theme} root={false}>
+      <Box flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll" backgroundColor="$bg" color="$fg">
         <Box paddingX={1} gap={1}>
           <H1>{entry.name}</H1>
           <Muted>{label}</Muted>
@@ -391,6 +425,7 @@ function ThemePreview({ entry }: { entry: ThemeEntry }): JSX.Element {
           <SurfacePairs />
           <ComponentShowcase />
           <TypographySamples />
+          <AdjustmentLog adjustments={entry.adjustments} />
         </Box>
       </Box>
     </ThemeProvider>
@@ -443,13 +478,16 @@ async function main() {
   // Detect terminal theme BEFORE entering alternate screen
   const detectedTheme = await detectTheme()
 
-  const builtinEntries: ThemeEntry[] = Object.entries(builtinPalettes).map(([name, palette]) => ({
-    name,
-    palette,
-    theme: deriveTheme(palette),
-  }))
+  const builtinEntries: ThemeEntry[] = Object.entries(builtinPalettes).map(([name, palette]) => {
+    const adjustments: ThemeAdjustment[] = []
+    const theme = deriveTheme(palette, "truecolor", adjustments)
+    return { name, palette, theme, adjustments }
+  })
 
-  allEntries = [{ name: "Detected", palette: null, theme: detectedTheme, detected: true }, ...builtinEntries]
+  allEntries = [
+    { name: "Detected", palette: null, theme: detectedTheme, adjustments: [], detected: true },
+    ...builtinEntries,
+  ]
 
   using term = createTerm()
   const { waitUntilExit } = await render(
