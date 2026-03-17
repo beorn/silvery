@@ -9,7 +9,7 @@
 
 import React, { useState, useEffect, useMemo } from "react"
 import { Box, Text, ListView } from "silvery"
-import { SurfaceRegistryProvider, SearchProvider, SearchBar } from "@silvery/react"
+import { SurfaceRegistryProvider, SearchProvider, SearchBar, useSearch } from "@silvery/react"
 import { run, useInput, type Key } from "@silvery/term/runtime"
 import type { ExampleMeta } from "../../_banner.js"
 import { SCRIPT } from "../aichat/script.js"
@@ -100,14 +100,16 @@ function ChatPane({
 
 function PanesApp({ fastMode, rows }: { fastMode: boolean; rows: number }) {
   const [focusedPane, setFocusedPane] = useState<"left" | "right">("left")
+  const search = useSearch()
 
   const midpoint = Math.ceil(SCRIPT.length / 2)
   const leftScript = useMemo(() => SCRIPT.slice(0, midpoint), [midpoint])
   const rightScript = useMemo(() => SCRIPT.slice(midpoint), [midpoint])
 
   useInput((input: string, key: Key) => {
-    if (key.escape) return "exit"
-    if (key.tab) {
+    // Don't exit while search is active — Escape closes search first
+    if (key.escape && !search.isActive) return "exit"
+    if (key.tab && !search.isActive) {
       setFocusedPane((p) => (p === "left" ? "right" : "left"))
     }
   })
