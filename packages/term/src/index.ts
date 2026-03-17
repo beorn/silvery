@@ -485,6 +485,8 @@ export { createListNavigator, isListNavigator, resolveListNavigator } from "./li
 export type { ListNavigator, ListNavigatorConfig } from "./list-navigator"
 export { createListSearch, isListSearch, resolveListSearch } from "./list-search"
 export type { ListSearch, ListSearchConfig, ListSearchMatch } from "./list-search"
+export { createTerminalCache } from "./terminal-cache"
+export type { TerminalCacheConfig, TerminalCacheMarkers } from "./terminal-cache"
 
 // =============================================================================
 // History Buffer

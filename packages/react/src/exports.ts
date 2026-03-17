@@ -86,6 +86,8 @@ export { createListNavigator, isListNavigator, resolveListNavigator } from "@sil
 export type { ListNavigator, ListNavigatorConfig } from "@silvery/term/list-navigator"
 export { createListSearch, isListSearch, resolveListSearch } from "@silvery/term/list-search"
 export type { ListSearch, ListSearchConfig, ListSearchMatch } from "@silvery/term/list-search"
+export { createTerminalCache } from "@silvery/term/terminal-cache"
+export type { TerminalCacheConfig, TerminalCacheMarkers } from "@silvery/term/terminal-cache"
 export { VirtualList } from "@silvery/ui/components/VirtualList"
 export type { VirtualListProps, VirtualListHandle, ItemMeta } from "@silvery/ui/components/VirtualList"
 export { HorizontalVirtualList } from "@silvery/ui/components/HorizontalVirtualList"
