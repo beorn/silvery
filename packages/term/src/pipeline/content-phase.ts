@@ -1520,16 +1520,25 @@ interface InheritedBgResult {
  * color can bleed into sibling areas that should have different backgrounds.
  */
 function findInheritedBg(node: TeaNode): InheritedBgResult {
+  let themeOverrideNode: TeaNode | null = null
   let current = node.parent
   while (current) {
-    const bg = (current.props as BoxProps).backgroundColor
-    if (bg) {
+    const props = current.props as BoxProps
+    if (props.backgroundColor) {
       return {
-        color: parseColor(bg),
+        color: parseColor(props.backgroundColor),
         ancestorRect: current.contentRect,
       }
     }
+    if (props.theme && !themeOverrideNode) themeOverrideNode = current
     current = current.parent
+  }
+  // Inside a theme override subtree: use theme's $bg for clearing/inheritance
+  if (themeOverrideNode) {
+    return {
+      color: parseColor("$bg"),
+      ancestorRect: themeOverrideNode.contentRect,
+    }
   }
   return { color: null, ancestorRect: null }
 }
