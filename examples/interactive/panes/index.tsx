@@ -8,8 +8,9 @@
  */
 
 import React, { useState, useEffect, useMemo } from "react"
-import { Box, Text, ListView } from "silvery"
+import { Box, Text, ListView, SplitView } from "silvery"
 import { run, useInput, type Key } from "@silvery/term/runtime"
+import { createLeaf, splitPane } from "@silvery/term/pane-manager"
 import type { ExampleMeta } from "../../_banner.js"
 import { SCRIPT } from "../aichat/script.js"
 import type { ScriptEntry } from "../aichat/types.js"
@@ -47,42 +48,18 @@ function usePaneContent(script: ScriptEntry[], fastMode: boolean): Exchange[] {
 }
 
 // ============================================================================
-// Pane wrapper — border + title + content
-// ============================================================================
-
-function Pane({
-  title,
-  isFocused,
-  children,
-}: {
-  title: string
-  isFocused: boolean
-  children: React.ReactNode
-}) {
-  const borderColor = isFocused ? "$primary" : "$border"
-  return (
-    <Box
-      width="50%"
-      flexDirection="column"
-      borderStyle="single"
-      borderColor={borderColor}
-      overflow="hidden"
-    >
-      <Box paddingX={1}>
-        <Text color={borderColor} bold={isFocused}>
-          {title}
-        </Text>
-      </Box>
-      {children}
-    </Box>
-  )
-}
-
-// ============================================================================
 // Chat pane — renders exchanges in a ListView
 // ============================================================================
 
-function ChatPane({ script, fastMode, height: maxHeight }: { script: ScriptEntry[]; fastMode: boolean; height: number }) {
+function ChatPane({
+  script,
+  fastMode,
+  height: maxHeight,
+}: {
+  script: ScriptEntry[]
+  fastMode: boolean
+  height: number
+}) {
   // Use maxHeight but cap to actual items (avoid over-allocation)
   const height = maxHeight
   const exchanges = usePaneContent(script, fastMode)
@@ -127,6 +104,7 @@ function PanesApp({ fastMode, rows }: { fastMode: boolean; rows: number }) {
   const midpoint = Math.ceil(SCRIPT.length / 2)
   const leftScript = useMemo(() => SCRIPT.slice(0, midpoint), [midpoint])
   const rightScript = useMemo(() => SCRIPT.slice(midpoint), [midpoint])
+  const layout = useMemo(() => splitPane(createLeaf("left"), createLeaf("right"), "horizontal", 0.5), [])
 
   useInput((input: string, key: Key) => {
     if (key.escape) return "exit"
@@ -138,19 +116,20 @@ function PanesApp({ fastMode, rows }: { fastMode: boolean; rows: number }) {
   // rows = terminal height
   // Each pane: border top(1) + title(1) + content + border bottom(1) = content + 3
   // Plus status bar(1). So content = rows - 3 - 1 = rows - 4.
-  // Use overflow="scroll" on the ListView Box for safety.
   const listHeight = Math.max(5, rows - 5)
 
   return (
     <Box flexDirection="column" height={rows}>
-      <Box flexDirection="row" flexGrow={1}>
-        <Pane title="Agent A" isFocused={focusedPane === "left"}>
-          <ChatPane script={leftScript} fastMode={fastMode} height={listHeight} />
-        </Pane>
-        <Pane title="Agent B" isFocused={focusedPane === "right"}>
-          <ChatPane script={rightScript} fastMode={fastMode} height={listHeight} />
-        </Pane>
-      </Box>
+      <SplitView
+        layout={layout}
+        focusedPaneId={focusedPane}
+        focusedBorderColor="$primary"
+        unfocusedBorderColor="$border"
+        renderPaneTitle={(id) => (id === "left" ? " Agent A " : " Agent B ")}
+        renderPane={(id) => (
+          <ChatPane script={id === "left" ? leftScript : rightScript} fastMode={fastMode} height={listHeight} />
+        )}
+      />
       <Box paddingX={1}>
         <Text color="$muted">Tab: switch pane · Esc: quit</Text>
       </Box>

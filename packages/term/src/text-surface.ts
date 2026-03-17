@@ -23,6 +23,8 @@ export interface TextSurface {
   search(query: string): SearchMatch[]
   hitTest(viewportRow: number, viewportCol: number): { row: number; col: number } | null
   reveal(row: number): void
+  /** Notify subscribers that content has changed (search results may be stale) */
+  notifyContentChange(): void
   subscribe(listener: () => void): () => void
   readonly capabilities: SurfaceCapabilities
 }
@@ -80,6 +82,10 @@ export function createTextSurface(config: {
 
     reveal(row: number): void {
       config.onReveal(row)
+      notify()
+    },
+
+    notifyContentChange(): void {
       notify()
     },
 

@@ -9,10 +9,22 @@
 
 import type { Color, Style, TerminalBuffer } from "../buffer"
 import type { BoxProps, TeaNode, Rect } from "@silvery/tea/types"
+import type { Theme } from "@silvery/theme/types"
 import { getPadding } from "./helpers"
 import { getBorderChars, getBorderSize, parseColor } from "./render-helpers"
 import { renderTextLine } from "./render-text"
 import type { NodeRenderState, PipelineContext } from "./types"
+
+/**
+ * Get the effective background color string for a Box.
+ * Returns explicit backgroundColor if set, otherwise theme.bg if theme is set.
+ * Used by both renderBox (paint fill) and content-phase (cascade logic).
+ */
+export function getEffectiveBg(props: BoxProps): string | undefined {
+  if (props.backgroundColor) return props.backgroundColor as string
+  if (props.theme) return (props.theme as Theme).bg
+  return undefined
+}
 
 // ============================================================================
 // Box Rendering
@@ -43,12 +55,13 @@ export function renderBox(
     }
   }
 
-  // Fill background if set.
+  // Fill background if set (explicit backgroundColor or theme.bg).
   // In incremental mode, skipBgFill=true when the box itself hasn't changed
   // (only subtreeDirty). The cloned buffer already has the correct bg fill,
   // and re-filling would destroy child pixels that won't be repainted.
-  if (props.backgroundColor && !skipBgFill) {
-    const bg = parseColor(props.backgroundColor)
+  const effectiveBgStr = getEffectiveBg(props)
+  if (effectiveBgStr && !skipBgFill) {
+    const bg = parseColor(effectiveBgStr)
     // Clip background fill to bounds
     if (clipBounds) {
       const clippedY = Math.max(y, clipBounds.top)

@@ -1,5 +1,8 @@
 /**
  * Tests for viewport compositor - merges frozen history + live viewport.
+ *
+ * scrollOffset uses bottom-origin semantics: scrollOffset=N means
+ * "show rows starting at totalHistory - N from the tail".
  */
 
 import { describe, test, expect } from "vitest"
@@ -11,7 +14,7 @@ function pushRow(history: ReturnType<typeof createHistoryBuffer>, key: string, t
 }
 
 describe("composeViewport", () => {
-  test("at tail (scrollOffset=0) returns no history rows", () => {
+  test("at tail (scrollOffset=0) returns no overlay rows", () => {
     const history = createHistoryBuffer()
     pushRow(history, "a", "row-1")
     pushRow(history, "b", "row-2")
@@ -23,18 +26,21 @@ describe("composeViewport", () => {
     })
 
     expect(result.isScrolledUp).toBe(false)
-    expect(result.historyRows).toEqual([])
-    expect(result.historyRowCount).toBe(0)
+    expect(result.overlayRows).toEqual([])
+    expect(result.overlayRowCount).toBe(0)
+    expect(result.liveRowsVisible).toBe(10)
     expect(result.totalHeight).toBe(12) // 2 history + 10 viewport
   })
 
-  test("scrolled up shows history rows", () => {
+  test("scrolled up shows history rows from bottom-origin offset", () => {
     const history = createHistoryBuffer()
     pushRow(history, "a", "row-1")
     pushRow(history, "b", "row-2")
     pushRow(history, "c", "row-3")
 
-    // scrollOffset=3 means scrolled back 3 from tail, viewportHeight=2
+    // scrollOffset=3 from tail of 3 items, viewport=2:
+    // startRow = 3-3 = 0, rowsToShow = min(2, 3) = 2
+    // shows rows 0..1 = ["row-1", "row-2"]
     const result = composeViewport({
       history,
       viewportHeight: 2,
@@ -42,9 +48,9 @@ describe("composeViewport", () => {
     })
 
     expect(result.isScrolledUp).toBe(true)
-    expect(result.historyRowCount).toBe(2)
-    // scrollOffset=3 from tail of 3 items, viewport=2: shows rows at offset 1..2
-    expect(result.historyRows).toEqual(["row-2", "row-3"])
+    expect(result.overlayRowCount).toBe(2)
+    expect(result.overlayRows).toEqual(["row-1", "row-2"])
+    expect(result.liveRowsVisible).toBe(0)
   })
 
   test("scrollOffset clamped to available history", () => {
@@ -58,8 +64,9 @@ describe("composeViewport", () => {
     })
 
     expect(result.isScrolledUp).toBe(true)
-    expect(result.historyRowCount).toBe(1)
-    expect(result.historyRows).toEqual(["row-1"])
+    expect(result.overlayRowCount).toBe(1)
+    expect(result.overlayRows).toEqual(["row-1"])
+    expect(result.liveRowsVisible).toBe(4)
   })
 
   test("empty history returns no rows", () => {
@@ -72,8 +79,9 @@ describe("composeViewport", () => {
     })
 
     expect(result.isScrolledUp).toBe(false)
-    expect(result.historyRows).toEqual([])
-    expect(result.historyRowCount).toBe(0)
+    expect(result.overlayRows).toEqual([])
+    expect(result.overlayRowCount).toBe(0)
+    expect(result.liveRowsVisible).toBe(10)
   })
 
   test("totalHeight is history rows + viewport", () => {
@@ -89,12 +97,14 @@ describe("composeViewport", () => {
     expect(result.totalHeight).toBe(23) // 3 history + 20 viewport
   })
 
-  test("partial viewport fill when scrolled up near top", () => {
+  test("partial viewport fill when scrolled up near tail", () => {
     const history = createHistoryBuffer()
     pushRow(history, "a", "row-1")
     pushRow(history, "b", "row-2")
 
-    // scrollOffset=1, viewport=5 → only 1 row of history visible
+    // scrollOffset=1, viewport=5:
+    // startRow = 2-1 = 1, rowsToShow = min(5, 2-1) = 1
+    // shows row at index 1 = ["row-2"]
     const result = composeViewport({
       history,
       viewportHeight: 5,
@@ -102,8 +112,28 @@ describe("composeViewport", () => {
     })
 
     expect(result.isScrolledUp).toBe(true)
-    expect(result.historyRowCount).toBe(1)
-    // scrollOffset=1, 2 items: shows the last row (row-2 is at index 1)
-    expect(result.historyRows).toEqual(["row-1"])
+    expect(result.overlayRowCount).toBe(1)
+    expect(result.overlayRows).toEqual(["row-2"])
+    expect(result.liveRowsVisible).toBe(4)
+  })
+
+  test("scrollOffset=2 with 3 items and viewport=2 shows middle rows", () => {
+    const history = createHistoryBuffer()
+    pushRow(history, "a", "row-1")
+    pushRow(history, "b", "row-2")
+    pushRow(history, "c", "row-3")
+
+    // scrollOffset=2: startRow = 3-2 = 1, rowsToShow = min(2, 2) = 2
+    // shows rows 1..2 = ["row-2", "row-3"]
+    const result = composeViewport({
+      history,
+      viewportHeight: 2,
+      scrollOffset: 2,
+    })
+
+    expect(result.isScrolledUp).toBe(true)
+    expect(result.overlayRowCount).toBe(2)
+    expect(result.overlayRows).toEqual(["row-2", "row-3"])
+    expect(result.liveRowsVisible).toBe(0)
   })
 })

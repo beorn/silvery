@@ -9,6 +9,13 @@
 import type { HistoryBuffer } from "./history-buffer"
 import type { SearchMatch } from "./search-overlay"
 
+export interface LiveItemBlock {
+  key: string | number
+  itemIndex: number
+  rows: string[]
+  plainTextRows: string[]
+}
+
 export interface DocumentSource {
   type: "frozen" | "live"
   itemKey?: string | number
@@ -26,14 +33,18 @@ export interface ListDocument {
   search(query: string): SearchMatch[]
 }
 
-export function createListDocument(
-  history: HistoryBuffer,
-  getLiveRows: () => string[],
-  getLivePlainTextRows: () => string[],
-): ListDocument {
+export function createListDocument(history: HistoryBuffer, getLiveItems: () => LiveItemBlock[]): ListDocument {
+  function liveRowCount(): number {
+    let total = 0
+    for (const block of getLiveItems()) {
+      total += block.rows.length
+    }
+    return total
+  }
+
   return {
     get totalRows(): number {
-      return history.totalRows + getLiveRows().length
+      return history.totalRows + liveRowCount()
     },
 
     get frozenRows(): number {
@@ -41,7 +52,7 @@ export function createListDocument(
     },
 
     get liveRows(): number {
-      return getLiveRows().length
+      return liveRowCount()
     },
 
     getRows(startRow: number, count: number): string[] {
@@ -53,9 +64,17 @@ export function createListDocument(
         } else if (r < frozen) {
           result.push(...history.getRows(r, 1))
         } else {
-          const live = getLiveRows()
-          const liveIdx = r - frozen
-          result.push(liveIdx < live.length ? live[liveIdx]! : "")
+          let liveRow = r - frozen
+          let found = false
+          for (const block of getLiveItems()) {
+            if (liveRow < block.rows.length) {
+              result.push(block.rows[liveRow]!)
+              found = true
+              break
+            }
+            liveRow -= block.rows.length
+          }
+          if (!found) result.push("")
         }
       }
       return result
@@ -70,9 +89,17 @@ export function createListDocument(
         } else if (r < frozen) {
           result.push(...history.getPlainTextRows(r, 1))
         } else {
-          const live = getLivePlainTextRows()
-          const liveIdx = r - frozen
-          result.push(liveIdx < live.length ? live[liveIdx]! : "")
+          let liveRow = r - frozen
+          let found = false
+          for (const block of getLiveItems()) {
+            if (liveRow < block.plainTextRows.length) {
+              result.push(block.plainTextRows[liveRow]!)
+              found = true
+              break
+            }
+            liveRow -= block.plainTextRows.length
+          }
+          if (!found) result.push("")
         }
       }
       return result
@@ -90,11 +117,16 @@ export function createListDocument(
           localRow: hit.localRow,
         }
       }
-      return {
-        type: "live",
-        itemIndex: row - frozen,
-        localRow: row - frozen,
+      // Live: walk item blocks
+      const liveItems = getLiveItems()
+      let liveRow = row - frozen
+      for (const block of liveItems) {
+        if (liveRow < block.rows.length) {
+          return { type: "live", itemIndex: block.itemIndex, localRow: liveRow }
+        }
+        liveRow -= block.rows.length
       }
+      return null
     },
 
     search(query: string): SearchMatch[] {
@@ -108,23 +140,25 @@ export function createListDocument(
       for (const row of frozenRowMatches) {
         const plainRows = history.getPlainTextRows(row, 1)
         const line = plainRows[0]!.toLowerCase()
-        let col = 0
-        let pos = line.indexOf(lowerQuery, col)
+        let pos = line.indexOf(lowerQuery)
         while (pos !== -1) {
           matches.push({ row, startCol: pos, endCol: pos + query.length })
           pos = line.indexOf(lowerQuery, pos + 1)
         }
       }
 
-      // Search live rows
-      const livePlain = getLivePlainTextRows()
-      for (let i = 0; i < livePlain.length; i++) {
-        const line = livePlain[i]!.toLowerCase()
-        let pos = line.indexOf(lowerQuery)
-        while (pos !== -1) {
-          matches.push({ row: frozen + i, startCol: pos, endCol: pos + query.length })
-          pos = line.indexOf(lowerQuery, pos + 1)
+      // Search live rows (walk item blocks)
+      let rowOffset = 0
+      for (const block of getLiveItems()) {
+        for (let i = 0; i < block.plainTextRows.length; i++) {
+          const line = block.plainTextRows[i]!.toLowerCase()
+          let pos = line.indexOf(lowerQuery)
+          while (pos !== -1) {
+            matches.push({ row: frozen + rowOffset + i, startCol: pos, endCol: pos + query.length })
+            pos = line.indexOf(lowerQuery, pos + 1)
+          }
         }
+        rowOffset += block.plainTextRows.length
       }
 
       return matches

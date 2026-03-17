@@ -14,9 +14,16 @@ import type { ReactNode, ReactElement } from "react"
 // Types
 // ============================================================================
 
+export type SurfaceRect = { x: number; y: number; width: number; height: number }
+
+interface RegisteredSurface {
+  surface: TextSurface
+  getRect?: () => SurfaceRect | null
+}
+
 export interface SurfaceRegistryValue {
-  /** Register a surface. Call on mount. */
-  register(surface: TextSurface): void
+  /** Register a surface with optional screen geometry. Call on mount. */
+  register(surface: TextSurface, getRect?: () => SurfaceRect | null): void
   /** Unregister a surface by id. Call on unmount. */
   unregister(id: string): void
   /** Get a surface by id, or null if not registered. */
@@ -27,6 +34,10 @@ export interface SurfaceRegistryValue {
   getAllSurfaces(): TextSurface[]
   /** Set the focused surface by id (null to clear). */
   setFocused(id: string | null): void
+  /** Subscribe to registry changes (register/unregister/focus). Returns unsubscribe fn. */
+  subscribe(listener: () => void): () => void
+  /** Hit-test: find the surface at screen coordinates, or null. */
+  getSurfaceAt(x: number, y: number): TextSurface | null
 }
 
 // ============================================================================
@@ -40,40 +51,85 @@ const SurfaceRegistryContext = createContext<SurfaceRegistryValue | null>(null)
 // ============================================================================
 
 export function SurfaceRegistryProvider({ children }: { children: ReactNode }): ReactElement {
-  const surfacesRef = useRef(new Map<string, TextSurface>())
+  const surfacesRef = useRef(new Map<string, RegisteredSurface>())
   const focusedRef = useRef<string | null>(null)
+  const listenersRef = useRef(new Set<() => void>())
 
-  const register = useCallback((surface: TextSurface) => {
-    surfacesRef.current.set(surface.id, surface)
-  }, [])
-
-  const unregister = useCallback((id: string) => {
-    surfacesRef.current.delete(id)
-    if (focusedRef.current === id) {
-      focusedRef.current = null
+  const notify = useCallback(() => {
+    for (const listener of listenersRef.current) {
+      listener()
     }
   }, [])
 
+  const register = useCallback(
+    (surface: TextSurface, getRect?: () => SurfaceRect | null) => {
+      surfacesRef.current.set(surface.id, { surface, getRect })
+      notify()
+    },
+    [notify],
+  )
+
+  const unregister = useCallback(
+    (id: string) => {
+      surfacesRef.current.delete(id)
+      if (focusedRef.current === id) {
+        focusedRef.current = null
+      }
+      notify()
+    },
+    [notify],
+  )
+
   const getSurface = useCallback((id: string): TextSurface | null => {
-    return surfacesRef.current.get(id) ?? null
+    return surfacesRef.current.get(id)?.surface ?? null
   }, [])
 
   const getFocusedSurface = useCallback((): TextSurface | null => {
     if (!focusedRef.current) return null
-    return surfacesRef.current.get(focusedRef.current) ?? null
+    return surfacesRef.current.get(focusedRef.current)?.surface ?? null
   }, [])
 
   const getAllSurfaces = useCallback((): TextSurface[] => {
-    return Array.from(surfacesRef.current.values())
+    return Array.from(surfacesRef.current.values()).map((entry) => entry.surface)
   }, [])
 
-  const setFocused = useCallback((id: string | null) => {
-    focusedRef.current = id
+  const setFocused = useCallback(
+    (id: string | null) => {
+      focusedRef.current = id
+      notify()
+    },
+    [notify],
+  )
+
+  const subscribe = useCallback((listener: () => void): (() => void) => {
+    listenersRef.current.add(listener)
+    return () => {
+      listenersRef.current.delete(listener)
+    }
+  }, [])
+
+  const getSurfaceAt = useCallback((x: number, y: number): TextSurface | null => {
+    for (const entry of surfacesRef.current.values()) {
+      const rect = entry.getRect?.()
+      if (rect && x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height) {
+        return entry.surface
+      }
+    }
+    return null
   }, [])
 
   const value = useMemo<SurfaceRegistryValue>(
-    () => ({ register, unregister, getSurface, getFocusedSurface, getAllSurfaces, setFocused }),
-    [register, unregister, getSurface, getFocusedSurface, getAllSurfaces, setFocused],
+    () => ({
+      register,
+      unregister,
+      getSurface,
+      getFocusedSurface,
+      getAllSurfaces,
+      setFocused,
+      subscribe,
+      getSurfaceAt,
+    }),
+    [register, unregister, getSurface, getFocusedSurface, getAllSurfaces, setFocused, subscribe, getSurfaceAt],
   )
 
   return React.createElement(SurfaceRegistryContext.Provider, { value }, children)

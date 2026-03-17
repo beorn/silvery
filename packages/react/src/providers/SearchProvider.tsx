@@ -17,6 +17,7 @@
 
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react"
 import { type SearchState, type SearchMatch, createSearchState, searchUpdate } from "@silvery/term/search-overlay"
+import { useInput } from "../hooks/useInput"
 import { useSurfaceRegistry } from "./SurfaceRegistry"
 import type { ReactNode, ReactElement } from "react"
 
@@ -65,17 +66,18 @@ const SearchContext = createContext<SearchContextValue | null>(null)
 
 export function SearchProvider({ children }: { children: ReactNode }): ReactElement {
   const [state, setState] = useState<SearchState>(createSearchState)
+  const [activeSurfaceId, setActiveSurfaceId] = useState<string | null>(null)
   const registry = useSurfaceRegistry()
 
   const getSearchFn = useCallback(() => {
-    const surface = registry.getFocusedSurface()
+    const surface = activeSurfaceId ? registry.getSurface(activeSurfaceId) : registry.getFocusedSurface()
     if (!surface) return undefined
     return (query: string) => surface.search(query)
-  }, [registry])
+  }, [registry, activeSurfaceId])
 
   const handleEffects = useCallback(
     (effects: Array<{ type: string; row?: number }>) => {
-      const surface = registry.getFocusedSurface()
+      const surface = activeSurfaceId ? registry.getSurface(activeSurfaceId) : registry.getFocusedSurface()
       if (!surface) return
       for (const eff of effects) {
         if (eff.type === "scrollTo" && eff.row !== undefined) {
@@ -83,17 +85,20 @@ export function SearchProvider({ children }: { children: ReactNode }): ReactElem
         }
       }
     },
-    [registry],
+    [registry, activeSurfaceId],
   )
 
   const open = useCallback(() => {
+    const surface = registry.getFocusedSurface()
+    if (surface) setActiveSurfaceId(surface.id)
     setState((prev) => {
       const [next] = searchUpdate({ type: "open" }, prev)
       return next
     })
-  }, [])
+  }, [registry])
 
   const close = useCallback(() => {
+    setActiveSurfaceId(null)
     setState((prev) => {
       const [next] = searchUpdate({ type: "close" }, prev)
       return next
@@ -172,7 +177,60 @@ export function SearchProvider({ children }: { children: ReactNode }): ReactElem
     [state, open, close, next, prev, input, backspace, cursorLeft, cursorRight],
   )
 
-  return React.createElement(SearchContext.Provider, { value }, children)
+  return React.createElement(
+    SearchContext.Provider,
+    { value },
+    React.createElement(SearchBindings, { ctx: value }),
+    children,
+  )
+}
+
+// ============================================================================
+// Input Bindings
+// ============================================================================
+
+function SearchBindings({ ctx }: { ctx: SearchContextValue }) {
+  useInput(
+    (input, key) => {
+      if (!ctx.isActive) {
+        if (key.ctrl && input === "f") {
+          ctx.open()
+          return
+        }
+        return
+      }
+      if (key.escape) {
+        ctx.close()
+        return
+      }
+      if (key.return && !key.shift) {
+        ctx.next()
+        return
+      }
+      if (key.return && key.shift) {
+        ctx.prev()
+        return
+      }
+      if (key.backspace) {
+        ctx.backspace()
+        return
+      }
+      if (key.leftArrow) {
+        ctx.cursorLeft()
+        return
+      }
+      if (key.rightArrow) {
+        ctx.cursorRight()
+        return
+      }
+      if (input && !key.ctrl && !key.meta) {
+        ctx.input(input)
+        return
+      }
+    },
+    { isActive: true },
+  )
+  return null
 }
 
 // ============================================================================

@@ -3,9 +3,14 @@ import { createHistoryBuffer } from "@silvery/term/history-buffer"
 import { createListDocument } from "@silvery/term/list-document"
 import { createTextSurface } from "@silvery/term/text-surface"
 import type { HistoryItem } from "@silvery/term/history-buffer"
+import type { LiveItemBlock } from "@silvery/term/list-document"
 
 function item(key: string, lines: string[]): HistoryItem {
   return { key, ansi: lines.join("\n"), rows: lines, plainTextRows: lines, width: 80 }
+}
+
+function liveBlock(key: string, rows: string[], itemIndex = 0): LiveItemBlock {
+  return { key, itemIndex, rows, plainTextRows: rows }
 }
 
 function setup(frozenLines: string[] = [], liveLines: string[] = []) {
@@ -13,11 +18,8 @@ function setup(frozenLines: string[] = [], liveLines: string[] = []) {
   if (frozenLines.length > 0) {
     history.push(item("frozen", frozenLines))
   }
-  const doc = createListDocument(
-    history,
-    () => liveLines,
-    () => liveLines,
-  )
+  const liveItems = liveLines.length > 0 ? [liveBlock("live", liveLines, 0)] : []
+  const doc = createListDocument(history, () => liveItems)
   const revealedRows: number[] = []
   const surface = createTextSurface({
     id: "test-surface",
@@ -58,11 +60,7 @@ describe("TextSurface", () => {
   it("getText strips ANSI codes", () => {
     const history = createHistoryBuffer()
     history.push(item("a", ["\x1b[31mred text\x1b[0m"]))
-    const doc = createListDocument(
-      history,
-      () => [],
-      () => [],
-    )
+    const doc = createListDocument(history, () => [])
     const surface = createTextSurface({
       id: "ansi-test",
       document: doc,
@@ -93,11 +91,7 @@ describe("TextSurface", () => {
 
   it("hitTest with offset viewport mapping", () => {
     const history = createHistoryBuffer()
-    const doc = createListDocument(
-      history,
-      () => ["a", "b", "c"],
-      () => ["a", "b", "c"],
-    )
+    const doc = createListDocument(history, () => [liveBlock("a", ["a", "b", "c"], 0)])
     const surface = createTextSurface({
       id: "offset",
       document: doc,
@@ -129,6 +123,31 @@ describe("TextSurface", () => {
 
     unsub()
     surface.reveal(1)
+    expect(listener).toHaveBeenCalledTimes(1) // not called again
+  })
+
+  it("notifyContentChange notifies subscribers", () => {
+    const { surface } = setup([], ["some content"])
+    const listener = vi.fn()
+    surface.subscribe(listener)
+
+    surface.notifyContentChange()
+    expect(listener).toHaveBeenCalledTimes(1)
+
+    surface.notifyContentChange()
+    expect(listener).toHaveBeenCalledTimes(2)
+  })
+
+  it("notifyContentChange does not call unsubscribed listeners", () => {
+    const { surface } = setup()
+    const listener = vi.fn()
+    const unsub = surface.subscribe(listener)
+
+    surface.notifyContentChange()
+    expect(listener).toHaveBeenCalledTimes(1)
+
+    unsub()
+    surface.notifyContentChange()
     expect(listener).toHaveBeenCalledTimes(1) // not called again
   })
 })

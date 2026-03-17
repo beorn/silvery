@@ -497,7 +497,7 @@ export { composeViewport, type ViewportCompositorConfig, type ComposedViewport }
 // List Document
 // =============================================================================
 
-export { createListDocument, type ListDocument, type DocumentSource } from "./list-document"
+export { createListDocument, type ListDocument, type DocumentSource, type LiveItemBlock } from "./list-document"
 
 // =============================================================================
 // Text Surface

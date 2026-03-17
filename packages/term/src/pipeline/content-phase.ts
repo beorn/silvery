@@ -21,7 +21,7 @@ import type { Color } from "../buffer"
 import { TerminalBuffer } from "../buffer"
 import type { BoxProps, TeaNode, TextProps } from "@silvery/tea/types"
 import { getBorderSize, getPadding } from "./helpers"
-import { renderBox, renderOutline, renderScrollIndicators } from "./render-box"
+import { renderBox, renderOutline, renderScrollIndicators, getEffectiveBg } from "./render-box"
 import { parseColor } from "./render-helpers"
 import { clearBgConflictWarnings, renderText, setBgConflictMode } from "./render-text"
 import { pushContextTheme, popContextTheme } from "@silvery/theme/state"
@@ -416,7 +416,7 @@ function renderNodeToBuffer(
       ancestorCleared,
       bgDirty: node.bgDirty,
       isTextNode: node.type === "silvery-text",
-      hasBgColor: !!props.backgroundColor,
+      hasBgColor: !!getEffectiveBg(props),
       absoluteChildMutated,
       descendantOverflowChanged,
     })
@@ -478,7 +478,7 @@ function renderNodeToBuffer(
     // Compute boxInheritedBg even when skipping own repaint — it's needed by
     // outline rendering (after children) and may be needed by child rendering.
     const boxInheritedBg =
-      node.type === "silvery-box" && !props.backgroundColor ? findInheritedBg(node).color : undefined
+      node.type === "silvery-box" && !getEffectiveBg(props) ? findInheritedBg(node).color : undefined
     if (needsOwnRepaint) {
       renderOwnContent(node, buffer, layout, props, nodeState, skipBgFill, instrumentEnabled, stats, ctx)
     }
@@ -604,7 +604,7 @@ function traceRenderDecision(
         .join(",")
       const childrenNeedRepaint_ = node.childrenDirty || childPositionChanged || childrenNeedFreshRender
       const childHasPrev_ = childrenNeedRepaint_ ? false : hasPrevBuffer
-      const childAncestorCleared_ = contentRegionCleared || (ancestorCleared && !props.backgroundColor)
+      const childAncestorCleared_ = contentRegionCleared || (ancestorCleared && !getEffectiveBg(props))
       nodeTrace.push({
         id: _nodeId,
         type: node.type,
@@ -756,7 +756,7 @@ function renderOwnContent(
 ): Color | undefined {
   // Compute inherited bg once for boxes -- used by border and outline rendering
   // to preserve parent backgrounds on border cells (prevents transparent holes).
-  const boxInheritedBg = node.type === "silvery-box" && !props.backgroundColor ? findInheritedBg(node).color : undefined
+  const boxInheritedBg = node.type === "silvery-box" && !getEffectiveBg(props) ? findInheritedBg(node).color : undefined
 
   if (node.type === "silvery-box") {
     if (instrumentEnabled) stats.boxNodes++
@@ -942,8 +942,8 @@ function renderScrollContainerChildren(
   // Compute scroll bg eagerly -- planScrollRender needs it and it's cheap
   const scrollBg =
     scrollOffsetChanged || node.childrenDirty || childrenNeedFreshRender || visibleRangeChanged
-      ? props.backgroundColor
-        ? parseColor(props.backgroundColor)
+      ? getEffectiveBg(props)
+        ? parseColor(getEffectiveBg(props)!)
         : findInheritedBg(node).color
       : null
 
@@ -1217,7 +1217,7 @@ function renderNormalChildren(
   // there would cause children to re-fill, overwriting border cells at boundaries.
   // When this node has backgroundColor, its renderBox fill covers any stale
   // pixels from ancestor clears — so children don't need ancestorCleared.
-  let childAncestorCleared = contentRegionCleared || (ancestorCleared && !props.backgroundColor)
+  let childAncestorCleared = contentRegionCleared || (ancestorCleared && !getEffectiveBg(props))
 
   // Propagate ancestor layout change to children: if this node or any ancestor
   // had layoutChangedThisFrame, children must not be skipped even if their own

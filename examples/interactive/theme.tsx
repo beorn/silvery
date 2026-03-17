@@ -409,25 +409,25 @@ function ThemePreview({ entry }: { entry: ThemeEntry }): JSX.Element {
 
   return (
     <ThemeProvider theme={entry.theme}>
-      <Box theme={entry.theme} backgroundColor="$bg" flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll">
-      <Box paddingX={1} gap={1}>
-        <H1>{entry.name}</H1>
-        <Muted>{label}</Muted>
+      <Box theme={entry.theme} flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll">
+        <Box paddingX={1} gap={1}>
+          <H1>{entry.name}</H1>
+          <Muted>{label}</Muted>
+        </Box>
+        <Divider />
+        <Box flexDirection="column" gap={1}>
+          <SemanticTokens />
+          {entry.palette ? (
+            <AnsiColorTable palette={entry.palette} />
+          ) : (
+            <ThemeAnsiColorTable palette={entry.theme.palette} />
+          )}
+          <SurfacePairs />
+          <ComponentShowcase />
+          <TypographySamples />
+          <AdjustmentLog adjustments={entry.adjustments} />
+        </Box>
       </Box>
-      <Divider />
-      <Box flexDirection="column" gap={1}>
-        <SemanticTokens />
-        {entry.palette ? (
-          <AnsiColorTable palette={entry.palette} />
-        ) : (
-          <ThemeAnsiColorTable palette={entry.theme.palette} />
-        )}
-        <SurfacePairs />
-        <ComponentShowcase />
-        <TypographySamples />
-        <AdjustmentLog adjustments={entry.adjustments} />
-      </Box>
-    </Box>
     </ThemeProvider>
   )
 }

@@ -5,6 +5,9 @@
  * history rows that should be shown. When at the tail (scrollOffset=0),
  * the live React-rendered content is shown instead.
  *
+ * scrollOffset uses bottom-origin semantics: scrollOffset=N means
+ * "show rows starting at totalHistory - N from the tail".
+ *
  * This does NOT replace the React rendering pipeline. It provides
  * overlay data that the rendering layer can use when scrolled up.
  */
@@ -25,13 +28,15 @@ export interface ViewportCompositorConfig {
 }
 
 export interface ComposedViewport {
-  /** Rows from history to display (when scrolled up) */
-  historyRows: string[]
-  /** How many rows of history are visible */
-  historyRowCount: number
-  /** Whether we're showing any history (scrolled up) */
+  /** History rows to overlay at top of viewport */
+  overlayRows: string[]
+  /** Number of top rows occupied by history */
+  overlayRowCount: number
+  /** Number of bottom rows for live content */
+  liveRowsVisible: number
+  /** Whether viewing history */
   isScrolledUp: boolean
-  /** Total scrollable height (history rows + viewport) */
+  /** Total scrollable height */
   totalHeight: number
 }
 
@@ -43,26 +48,28 @@ export function composeViewport(config: ViewportCompositorConfig): ComposedViewp
   const { history, viewportHeight, scrollOffset } = config
 
   const totalHistory = history.totalRows
-  const isScrolledUp = scrollOffset > 0
 
-  if (!isScrolledUp || totalHistory === 0) {
+  if (scrollOffset <= 0 || totalHistory === 0) {
     return {
-      historyRows: [],
-      historyRowCount: 0,
+      overlayRows: [],
+      overlayRowCount: 0,
+      liveRowsVisible: viewportHeight,
       isScrolledUp: false,
       totalHeight: totalHistory + viewportHeight,
     }
   }
 
-  // Clamp scroll offset to available history
+  // scrollOffset from tail: show rows starting at (totalHistory - clampedOffset)
   const clampedOffset = Math.min(scrollOffset, totalHistory)
-  const rowsToShow = Math.min(viewportHeight, clampedOffset)
-
-  const historyRows = history.getRows(clampedOffset - rowsToShow, rowsToShow)
+  const startRow = Math.max(0, totalHistory - clampedOffset)
+  const rowsToShow = Math.min(viewportHeight, totalHistory - startRow)
+  const overlayRows = history.getRows(startRow, rowsToShow)
+  const liveRowsVisible = viewportHeight - rowsToShow
 
   return {
-    historyRows,
-    historyRowCount: historyRows.length,
+    overlayRows,
+    overlayRowCount: rowsToShow,
+    liveRowsVisible,
     isScrolledUp: true,
     totalHeight: totalHistory + viewportHeight,
   }

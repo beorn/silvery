@@ -42,7 +42,6 @@ export interface SplitViewProps {
 // Constants
 // ============================================================================
 
-const MIN_PANE_WIDTH = 20
 const MIN_PANE_HEIGHT = 5
 const DEFAULT_FOCUSED_COLOR = "green"
 const DEFAULT_UNFOCUSED_COLOR = "gray"
@@ -122,12 +121,14 @@ function LayoutNodeView(props: LayoutNodeViewProps): React.ReactElement {
   const secondFlex = 100 - firstFlex
 
   return (
-    <Box flexGrow={1} flexDirection={node.direction === "horizontal" ? "row" : "column"}>
+    <Box flexGrow={1} width="100%" flexDirection={node.direction === "horizontal" ? "row" : "column"}>
       <Box
         flexGrow={firstFlex}
         flexShrink={1}
-        minWidth={node.direction === "horizontal" ? MIN_PANE_WIDTH : undefined}
+        flexBasis={0}
+        minWidth={node.direction === "horizontal" ? 0 : undefined}
         minHeight={node.direction === "vertical" ? MIN_PANE_HEIGHT : undefined}
+        overflow="hidden"
       >
         <LayoutNodeView
           node={node.first}
@@ -142,8 +143,10 @@ function LayoutNodeView(props: LayoutNodeViewProps): React.ReactElement {
       <Box
         flexGrow={secondFlex}
         flexShrink={1}
-        minWidth={node.direction === "horizontal" ? MIN_PANE_WIDTH : undefined}
+        flexBasis={0}
+        minWidth={node.direction === "horizontal" ? 0 : undefined}
         minHeight={node.direction === "vertical" ? MIN_PANE_HEIGHT : undefined}
+        overflow="hidden"
       >
         <LayoutNodeView
           node={node.second}

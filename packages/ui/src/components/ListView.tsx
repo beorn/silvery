@@ -28,7 +28,7 @@
  * ```
  */
 
-import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef, useState } from "react"
+import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from "react"
 import { useVirtualizer } from "@silvery/react/hooks/useVirtualizer"
 import { useInput } from "@silvery/react/hooks/useInput"
 import { Box } from "@silvery/react/components/Box"
@@ -111,6 +111,10 @@ export interface ListViewProps<T> {
 
   /** Called when Enter is pressed on the cursor item */
   onSelect?: (index: number) => void
+
+  /** Whether this ListView is active for keyboard input. Default: true.
+   * Set to false when another pane has focus in multi-pane layouts. */
+  active?: boolean
 }
 
 export interface ListViewHandle {
@@ -157,27 +161,22 @@ function ListViewInner<T>(
     cursorIndex: cursorIndexProp,
     onCursorIndexChange,
     onSelect,
+    active,
   }: ListViewProps<T>,
   ref: React.ForwardedRef<ListViewHandle>,
 ): React.ReactElement {
-  // ── Navigable mode: internal cursor state ────────────────────
-  // Semi-controlled: internal state is the source of truth.
-  // Prop syncs initial value and external updates.
-  const [internalIndex, setInternalIndex] = useState(cursorIndexProp ?? 0)
-  const lastPropRef = useRef(cursorIndexProp)
-  if (cursorIndexProp !== undefined && cursorIndexProp !== lastPropRef.current) {
-    lastPropRef.current = cursorIndexProp
-    setInternalIndex(cursorIndexProp)
-  }
-  const activeCursor = navigable ? internalIndex : -1
+  // ── Navigable mode: controlled/uncontrolled cursor ─────────
+  const isControlled = cursorIndexProp !== undefined
+  const [uncontrolledCursor, setUncontrolledCursor] = useState(0)
+  const activeCursor = navigable ? (isControlled ? cursorIndexProp! : uncontrolledCursor) : -1
 
   const moveTo = useCallback(
     (next: number) => {
       const clamped = Math.max(0, Math.min(next, items.length - 1))
-      setInternalIndex(clamped)
+      if (!isControlled) setUncontrolledCursor(clamped)
       onCursorIndexChange?.(clamped)
     },
-    [items.length, onCursorIndexChange],
+    [isControlled, items.length, onCursorIndexChange],
   )
 
   // Keyboard input for navigable mode
@@ -193,7 +192,7 @@ function ListViewInner<T>(
       else if (key.pageUp || (input === "u" && key.ctrl)) moveTo(cur - Math.floor(height / 2))
       else if (key.return) onSelect?.(cur)
     },
-    { isActive: navigable },
+    { isActive: navigable && active !== false },
   )
 
   // In navigable mode, scrollTo is derived from cursor
@@ -258,14 +257,14 @@ function ListViewInner<T>(
 
   // ── Mouse wheel handler ─────────────────────────────────────────
   const onWheel = useMemo(() => {
-    if (navigable) {
+    if (navigable && active !== false) {
       return (e: { deltaY: number }) => {
         const delta = e.deltaY > 0 ? WHEEL_STEP : -WHEEL_STEP
         moveTo(activeCursor + delta)
       }
     }
     return onWheelProp
-  }, [navigable, activeCursor, moveTo, onWheelProp])
+  }, [navigable, active, activeCursor, moveTo, onWheelProp])
 
   // ── Empty state ─────────────────────────────────────────────────
   if (activeItems.length === 0) {
