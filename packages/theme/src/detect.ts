@@ -17,6 +17,7 @@ import type { ColorPalette, Theme } from "./types"
 import { deriveTheme } from "./derive"
 import { nord } from "./palettes/nord"
 import { catppuccinLatte } from "./palettes/catppuccin"
+import { ansi16DarkTheme, ansi16LightTheme } from "./palettes/index"
 
 // silvery is an optional peer dependency — lazy-import to avoid breaking
 // standalone consumers that don't have silvery installed.
@@ -218,6 +219,10 @@ export interface DetectThemeOptions {
   fallback?: ColorPalette
   /** Timeout per OSC query in ms (default 150). */
   timeoutMs?: number
+  /** Terminal capabilities (from detectTerminalCaps). When provided:
+   * - colorLevel "none"/"basic" skips OSC detection and returns ANSI 16 theme
+   * - darkBackground informs fallback selection when detection fails */
+  caps?: { colorLevel?: string; darkBackground?: boolean }
 }
 
 /**
@@ -228,10 +233,20 @@ export interface DetectThemeOptions {
  *
  * Falls back entirely to the fallback palette (or Nord dark) if
  * detection fails (e.g., not a TTY, tmux, CI).
+ *
+ * When `caps` is provided with a low colorLevel, returns the appropriate
+ * ANSI 16 theme directly (no OSC queries needed).
  */
 export async function detectTheme(opts: DetectThemeOptions = {}): Promise<Theme> {
+  // For terminals that can't display truecolor, use ANSI 16 theme directly
+  const colorLevel = opts.caps?.colorLevel
+  if (colorLevel === "none" || colorLevel === "basic") {
+    const isDark = opts.caps?.darkBackground ?? true
+    return isDark ? ansi16DarkTheme : ansi16LightTheme
+  }
+
   const detected = await detectTerminalPalette(opts.timeoutMs)
-  const isDark = detected?.dark ?? true
+  const isDark = detected?.dark ?? opts.caps?.darkBackground ?? true
   const fallback = opts.fallback ?? (isDark ? nord : catppuccinLatte)
 
   if (!detected) {

@@ -304,6 +304,15 @@ function renderNodeToBuffer(
   // Gap space between children belongs to this container, so must re-render.
   const childPositionChanged = !!(hasPrevBuffer && !layoutChanged && hasChildPositionChanged(node))
 
+  // Check if this node is a scroll container whose offset changed.
+  // The scroll phase (layout-phase.ts) sets subtreeDirty on the scroll container
+  // when offset changes, and the reconciler propagates subtreeDirty to ancestors
+  // when scrollTo/scrollOffset props change. However, this defensive check
+  // catches edge cases where scroll offset changes without proper dirty
+  // propagation — e.g., layout feedback loops that alter scroll state between
+  // render passes without a reconciler commit.
+  const scrollOffsetChanged = !!(node.scrollState && node.scrollState.offset !== node.scrollState.prevOffset)
+
   // FAST PATH: Skip unchanged subtrees when we have a valid previous buffer.
   // The cloned buffer already has correct pixels for clean nodes.
   // SILVERY_STRICT=1 verifies this by comparing incremental vs fresh renders.
@@ -323,7 +332,8 @@ function renderNodeToBuffer(
     !node.subtreeDirty &&
     !node.childrenDirty &&
     !childPositionChanged &&
-    !ancestorLayoutChanged
+    !ancestorLayoutChanged &&
+    !scrollOffsetChanged
 
   // Node ID for tracing (only trace named nodes to keep compact)
   const _nodeId = instrumentEnabled ? ((props.id as string | undefined) ?? "") : ""

@@ -17,6 +17,8 @@
  * │     && !ancestorLayoutChanged                                              │
  * │   True only when hasPrevBuffer=true AND all 7 dirty flags are false.       │
  * │   When true, the node is skipped entirely (clone has correct pixels).      │
+ * │   NOTE: content-phase.ts also checks !scrollOffsetChanged (node-level      │
+ * │   defensive check for scroll containers — not modeled here).               │
  * ├─────────────────────────────────────────────────────────────────────────────┤
  * │ textPaintDirty (intermediate)                                              │
  * │   = isTextNode && stylePropsDirty                                               │

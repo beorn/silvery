@@ -158,4 +158,53 @@ describe("inline mode mouse default", () => {
     expect(stdout.output).not.toContain(MOUSE_ENABLE)
     handle.unmount()
   })
+
+  test("mouse tracking is disabled before raw mode on exit", async () => {
+    // Track ordering: mouse disable must happen before setRawMode(false)
+    const events: string[] = []
+    const stdout = createMockStdout()
+    const stdin = createMockStdin()
+
+    // Use fd: -1 to force writeSync fallback (so mock captures output)
+    ;(stdout.stream as unknown as { fd: number }).fd = -1
+
+    // Patch write to record mouse-disable events
+    const origWrite = stdout.stream.write.bind(stdout.stream)
+    stdout.stream.write = function (data: string | Uint8Array) {
+      const str = typeof data === "string" ? data : new TextDecoder().decode(data)
+      if (str.includes(MOUSE_DISABLE)) events.push("mouse-disable")
+      return origWrite(data)
+    } as typeof stdout.stream.write
+
+    // Patch setRawMode to record raw-mode-off
+    const origSetRaw = stdin.setRawMode.bind(stdin)
+    stdin.setRawMode = function (mode: boolean) {
+      if (!mode) events.push("raw-mode-off")
+      return origSetRaw(mode)
+    }
+
+    const handle = await run(<Text>hello</Text>, {
+      stdout: stdout.stream,
+      stdin,
+      cols: 40,
+      rows: 10,
+      mouse: true,
+      kitty: false,
+      focusReporting: false,
+    })
+
+    // Mouse should be enabled
+    expect(stdout.output).toContain(MOUSE_ENABLE)
+
+    // Unmount and verify ordering
+    handle.unmount()
+
+    expect(events).toContain("mouse-disable")
+    expect(events).toContain("raw-mode-off")
+    const mouseIdx = events.indexOf("mouse-disable")
+    const rawIdx = events.indexOf("raw-mode-off")
+    expect(mouseIdx).toBeLessThan(rawIdx)
+  })
 })
+
+const MOUSE_DISABLE = "?1006l"

@@ -65,10 +65,10 @@ export function H2({ children, color, ...rest }: TypographyProps) {
   )
 }
 
-/** Group heading — bold only. Inherits foreground from parent. */
+/** Group heading — $primary, not bold. Same hue as H1 but lighter weight. */
 export function H3({ children, color, ...rest }: TypographyProps) {
   return (
-    <Text bold color={color} {...rest}>
+    <Text color={color ?? "$primary"} {...rest}>
       {children}
     </Text>
   )

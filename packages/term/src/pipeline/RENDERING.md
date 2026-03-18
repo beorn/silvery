@@ -90,7 +90,7 @@ Output: `TerminalBuffer` — the correct pixel state for this frame.
 ```
 canSkipEntireSubtree          = hasPrevBuffer && !contentDirty && !stylePropsDirty && !layoutChanged
                         && !subtreeDirty && !childrenDirty && !childPositionChanged
-                        && !ancestorLayoutChanged
+                        && !ancestorLayoutChanged && !scrollOffsetChanged
 
 textPaintDirty        = isTextNode && stylePropsDirty                                        (intermediate)
 

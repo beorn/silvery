@@ -118,12 +118,12 @@ function deriveTruecolorTheme(p: ColorPalette, adjustments?: ThemeAdjustment[]):
   // ── Accent colors — ensure readability as text on root bg ────────
   // Use explicit primary seed if provided, else infer from ANSI slots.
   const primary = ensure("primary", p.primary ?? (dark ? p.yellow : p.blue), bg, AA)
-  const secondary = ensure("secondary", desaturate(primary, 0.4), bg, AA)
   const accent = ensure("accent", complement(primary), bg, AA)
+  const secondary = ensure("secondary", blend(primary, accent, 0.35), bg, AA)
   const error = ensure("error", p.red, bg, AA)
   const warning = ensure("warning", p.yellow, bg, AA)
   const success = ensure("success", p.green, bg, AA)
-  const info = ensure("info", p.cyan, bg, AA)
+  const info = ensure("info", blend(fg, accent, 0.5), bg, AA)
   const link = ensure("link", dark ? p.brightBlue : p.blue, bg, AA)
 
   // ── Blended tokens — blend first, then ensure contrast ───────────

@@ -62,7 +62,8 @@ The fast-path skip condition (all must be false to skip):
   !node.subtreeDirty &&
   !node.childrenDirty &&
   !childPositionChanged && // any child's x/y differs from prevLayout
-  !ancestorLayoutChanged // any ancestor had layoutChangedThisFrame
+  !ancestorLayoutChanged && // any ancestor had layoutChangedThisFrame
+  !scrollOffsetChanged // scroll container offset !== prevOffset (defensive)
 ```
 
 If `hasPrevBuffer` is false (first render or dimension change), nothing is skipped.

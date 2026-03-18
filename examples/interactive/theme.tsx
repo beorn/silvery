@@ -38,7 +38,14 @@ import {
   type Key,
   type Theme,
 } from "../../src/index.js"
-import { builtinPalettes, deriveTheme, type ColorPalette, type ThemeAdjustment } from "@silvery/theme"
+import {
+  builtinPalettes,
+  deriveTheme,
+  ansi16DarkTheme,
+  ansi16LightTheme,
+  type ColorPalette,
+  type ThemeAdjustment,
+} from "@silvery/theme"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -319,6 +326,11 @@ function TypographySamples(): JSX.Element {
         <P>Normal paragraph text</P>
         <Muted>Muted text</Muted>
         <Small>Small text</Small>
+        <Box gap={1}>
+          <Kbd>Kbd</Kbd>
+          <Kbd>⌘K</Kbd>
+          <Kbd>Enter</Kbd>
+        </Box>
         <Code>inline code</Code>
         <Blockquote>Blockquote text</Blockquote>
       </Box>
@@ -486,6 +498,8 @@ async function main() {
 
   allEntries = [
     { name: "Detected", palette: null, theme: detectedTheme, adjustments: [], detected: true },
+    { name: "ANSI 16 Dark", palette: null, theme: ansi16DarkTheme, adjustments: [] },
+    { name: "ANSI 16 Light", palette: null, theme: ansi16LightTheme, adjustments: [] },
     ...builtinEntries,
   ]
 

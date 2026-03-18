@@ -41,6 +41,7 @@
  * ```
  */
 
+import { writeSync } from "node:fs"
 import process from "node:process"
 import React, { createContext, useContext, useEffect, useRef, type ReactElement } from "react"
 import { type StateCreator, type StoreApi, createStore } from "zustand"
@@ -881,7 +882,33 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       }
     })
 
-    // Cleanup providers (including termProvider)
+    // Disable terminal protocols BEFORE provider cleanup (which disables raw mode).
+    // If raw mode is disabled first, the shell takes over stdin while mouse tracking
+    // is still active — pending mouse events appear as garbled text on the prompt.
+    // Use writeSync for reliability during shutdown (async write may not flush in time).
+    if (!headless) {
+      const fd = (stdout as unknown as { fd: number }).fd
+      const sequences = [
+        focusReportingEnabled ? "\x1b[?1004l" : "",
+        mouseEnabled ? disableMouse() : "",
+        kittyEnabled ? disableKittyKeyboard() : "",
+        "\x1b[?25h", // Show cursor
+        "\x1b[0m", // Reset SGR
+        "\n",
+        alternateScreen ? "\x1b[?1049l" : "",
+      ].join("")
+      try {
+        writeSync(fd, sequences)
+      } catch {
+        try {
+          stdout.write(sequences)
+        } catch {
+          /* terminal may be gone */
+        }
+      }
+    }
+
+    // Cleanup providers (including termProvider — disables raw mode on stdin)
     providerCleanups.forEach((fn) => {
       try {
         fn()
@@ -892,18 +919,6 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     // Dispose runtime
     runtime[Symbol.dispose]()
-
-    // Restore cursor and leave alternate screen
-    if (!headless) {
-      // Disable focus reporting before restoring terminal
-      if (focusReportingEnabled) disableFocusReporting((s) => stdout.write(s))
-      // Disable mouse tracking before restoring terminal
-      if (mouseEnabled) stdout.write(disableMouse())
-      // Disable Kitty keyboard protocol before restoring terminal
-      if (kittyEnabled) stdout.write(disableKittyKeyboard())
-      stdout.write("\x1b[?25h\x1b[0m\n")
-      if (alternateScreen) stdout.write("\x1b[?1049l")
-    }
   }
 
   let exit: () => void
