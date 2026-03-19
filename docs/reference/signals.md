@@ -2,9 +2,9 @@
 
 As your app grows, selectors show their cost. Zustand runs _every_ selector on _every_ store update — 100 `<Row>` components each with `useApp(s => s.rows.get(id))` means 100 selector calls when the cursor moves, even though only 2 rows changed.
 
-[Signals](https://github.com/tc39/proposal-signals) (TC39 proposal, stage 1) flip this. Components read `.value` and automatically subscribe to exactly what they touched — no diffing, no linear scan. Same model as [SolidJS](https://www.solidjs.com/) and [Vue 3](https://vuejs.org/). We use [alien-signals](https://github.com/stackblitz/alien-signals) — the fastest signals implementation (~1KB, push-pull, proven by Vue 3.6 adoption).
+[Signals](https://github.com/tc39/proposal-signals) (TC39 proposal, stage 1) flip this. Components call signal accessors and automatically subscribe to exactly what they touched — no diffing, no linear scan. Same model as [SolidJS](https://www.solidjs.com/) and [Angular](https://angular.dev/guide/signals). We use [alien-signals](https://github.com/stackblitz/alien-signals) — the fastest signals implementation (~1KB, push-pull, proven by Vue 3.6 adoption).
 
-With signals, the factory returns a plain object — signals _are_ the reactive state, so you don't need Zustand's `set()`:
+With signals, the factory returns a plain object — signals _are_ the reactive state, so you don't need Zustand's `set()`. Read with `sig()`, write with `sig(newValue)`:
 
 ```tsx
 import { signal, computed, batch } from "@silvery/signal"
@@ -17,18 +17,18 @@ const app = createApp(
       { id: "2", text: "Write docs", done: true },
       { id: "3", text: "Fix bug", done: false },
     ])
-    const doneCount = computed(() => items.value.filter((i) => i.done).length)
+    const doneCount = computed(() => items().filter((i) => i.done).length)
 
     return {
       cursor,
       items,
       doneCount,
       moveCursor(delta: number) {
-        cursor.value = clamp(cursor.value + delta, 0, items.value.length - 1)
+        cursor(clamp(cursor() + delta, 0, items().length - 1))
       },
       toggleDone() {
-        const i = cursor.value
-        items.value = items.value.map((item, j) => (j === i ? { ...item, done: !item.done } : item))
+        const i = cursor()
+        items(items().map((item, j) => (j === i ? { ...item, done: !item.done } : item)))
       },
     }
   },
@@ -43,20 +43,20 @@ const app = createApp(
 )
 ```
 
-`signal()` creates reactive state. `computed()` derives from signals — `doneCount` recomputes only when `items` changes, not on cursor moves. `batch()` groups multiple signal writes into a single notification:
+`signal()` creates reactive state — call it to read, call with a value to write. `computed()` derives from signals — `doneCount` recomputes only when `items` changes, not on cursor moves. `batch()` groups multiple signal writes into a single notification:
 
 ```tsx
 batch(() => {
-  cursor.value = 0
-  items.value = newItems
-  filter.value = ""
+  cursor(0)
+  items(newItems)
+  filter("")
 })
 // → one notification, one re-render
 ```
 
 Signals are orthogonal to the levels — you can use them at Level 2 or Level 5. They're a performance optimization, not a conceptual shift. If your app doesn't have performance issues with selectors, skip them.
 
-> **Silvery:** `@silvery/signal` provides the reactive core (alien-signals) plus `createStore()` for deep objects, `createResource()` for async, and `/react` bindings (`useSignal`). The bridge handles React integration via `useSyncExternalStore`.
+> **Silvery:** `@silvery/signal` provides the reactive core (alien-signals) plus `createStore()` for deep objects, `createResource()` for async, and `/react` bindings (`useSignal`). React integration via `useSyncExternalStore`.
 
 ## Scaling to Thousands of Items
 
@@ -71,10 +71,10 @@ const items = new Map<string, Signal<ItemData>>()
 return {
   cursor,
   items,
-  currentItem: computed(() => items.get(cursor.value)?.value),
+  currentItem: computed(() => items.get(cursor())?.()),
   updateItem(id: string, data: ItemData) {
     const s = items.get(id)
-    if (s) s.value = data // only this item's subscribers re-render
+    if (s) s(data) // only this item's subscribers re-render
   },
   removeItem(id: string) {
     items.delete(id) // clean up — stale signals leak memory
