@@ -846,6 +846,17 @@ export function outputPhase(
     return bufferToAnsi(next, ctx, termRows)
   }
 
+  // Dimension change: fall back to full render.
+  // When prev and next buffers have different dimensions (e.g., terminal resize
+  // without prevBuffer invalidation, or test renderer dimension changes),
+  // incremental diff produces CUP sequences targeting positions beyond the
+  // current terminal bounds. Terminals clamp out-of-bounds CUP to the last
+  // valid row/column, causing stale cells from the diff's shrink-region clears
+  // to overwrite valid content at the terminal edge.
+  if (prev.width !== next.width || prev.height !== next.height) {
+    return bufferToAnsi(next, ctx, termRows)
+  }
+
   // Fullscreen mode: diff and emit only changes
   const { pool, count: rawCount } = diffBuffers(prev, next)
 
@@ -2127,11 +2138,13 @@ export function replayAnsiWithStyles(
             cy = 0
           } else {
             const cmdParts = params.split(";")
-            cy = Math.max(0, (parseInt(cmdParts[0]!) || 1) - 1)
-            cx = Math.max(0, (parseInt(cmdParts[1]!) || 1) - 1)
+            // Clamp to screen bounds (real terminals clamp CUP to valid range)
+            cy = Math.min(height - 1, Math.max(0, (parseInt(cmdParts[0]!) || 1) - 1))
+            cx = Math.min(width - 1, Math.max(0, (parseInt(cmdParts[1]!) || 1) - 1))
           }
         } else if (cmd === "K") {
           // Erase to end of line — fills with current bg (or default)
+          if (cy >= height) continue // out of bounds — skip
           for (let x = cx; x < width; x++) {
             const cell = screen[cy]![x]!
             cell.char = " "
