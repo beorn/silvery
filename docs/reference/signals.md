@@ -7,7 +7,7 @@ As your app grows, selectors show their cost. Zustand runs _every_ selector on _
 With signals, the factory returns a plain object — signals _are_ the reactive state, so you don't need Zustand's `set()`. Read with `sig()`, write with `sig(newValue)`:
 
 ```tsx
-import { signal, computed, batch } from "@silvery/signal"
+import { signal, computed, batch } from "@silvery/signals"
 
 const app = createApp(
   () => {
@@ -56,7 +56,7 @@ batch(() => {
 
 Signals are orthogonal to the levels — you can use them at Level 2 or Level 5. They're a performance optimization, not a conceptual shift. If your app doesn't have performance issues with selectors, skip them.
 
-> **Silvery:** `@silvery/signal` provides the reactive core (alien-signals) plus `createStore()` for deep objects, `createResource()` for async, and `/react` bindings (`useSignal`). React integration via `useSyncExternalStore`.
+> **Silvery:** `@silvery/signals` provides the reactive core (alien-signals) plus `createStore()` for deep objects, `createResource()` for async, and `/react` bindings (`useSignal`). React integration via `useSyncExternalStore`.
 
 ## Scaling to Thousands of Items
 
