@@ -410,7 +410,7 @@ describe("bug 6: compaction does not end session prematurely", () => {
     handle?.unmount()
   })
 
-  test("ctrl-l compaction in manual mode does not set done", async () => {
+  test("ctrl-l compaction in manual mode does not set done", { timeout: 10_000 }, async () => {
     term = createTermless({ cols: 120, rows: 40 })
     // fastMode uses 300ms compaction timeout instead of 3000ms
     handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
@@ -434,9 +434,9 @@ describe("bug 6: compaction does not end session prematurely", () => {
 
     // The input should still be active (user can type)
     expect(text).toContain("\u276F")
-  }, 10000)
+  })
 
-  test("ctrl-l compaction continues advancing after completion", async () => {
+  test("ctrl-l compaction continues advancing after completion", { timeout: 10_000 }, async () => {
     term = createTermless({ cols: 120, rows: 40 })
     handle = await run(<AIChat script={SCRIPT} autoStart={false} fastMode={true} />, term)
     await settle(500)
@@ -460,7 +460,7 @@ describe("bug 6: compaction does not end session prematurely", () => {
     const text = term.screen!.getText()
     // User message should appear
     expect(text).toContain("hi")
-  }, 10000)
+  })
 })
 
 // ============================================================================
