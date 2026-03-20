@@ -78,12 +78,12 @@ let allEntries: ThemeEntry[] = []
 // ============================================================================
 
 /** Small color swatch: 2 colored block chars */
-function Swatch({ color }: { color: string }): JSX.Element {
+function Swatch({ color }: { color: string }) {
   return <Text color={color}>{"██"}</Text>
 }
 
 /** Mini swatch: 4 colored blocks showing palette character */
-function MiniSwatch({ palette }: { palette: ColorPalette }): JSX.Element {
+function MiniSwatch({ palette }: { palette: ColorPalette }) {
   return (
     <Text>
       <Text color={palette.red}>{"█"}</Text>
@@ -95,7 +95,7 @@ function MiniSwatch({ palette }: { palette: ColorPalette }): JSX.Element {
 }
 
 /** Mini swatch from theme tokens (for detected theme without a palette) */
-function ThemeMiniSwatch({ theme }: { theme: Theme }): JSX.Element {
+function ThemeMiniSwatch({ theme }: { theme: Theme }) {
   return (
     <Text>
       <Text color={theme.error}>{"█"}</Text>
@@ -107,7 +107,7 @@ function ThemeMiniSwatch({ theme }: { theme: Theme }): JSX.Element {
 }
 
 /** Left panel: theme list with color swatches */
-function ThemeList({ entries, selectedIndex }: { entries: ThemeEntry[]; selectedIndex: number }): JSX.Element {
+function ThemeList({ entries, selectedIndex }: { entries: ThemeEntry[]; selectedIndex: number }) {
   return (
     <Box flexDirection="column" width={30} borderStyle="single" overflow="scroll" scrollTo={selectedIndex}>
       <Box paddingX={1}>
@@ -136,7 +136,7 @@ function ThemeList({ entries, selectedIndex }: { entries: ThemeEntry[]; selected
 }
 
 /** Semantic token showcase row */
-function SemanticTokens(): JSX.Element {
+function SemanticTokens() {
   const tokens: Array<{ name: string; token: string; icon: string }> = [
     { name: "primary", token: "$primary", icon: "●" },
     { name: "success", token: "$success", icon: "✓" },
@@ -163,7 +163,7 @@ function SemanticTokens(): JSX.Element {
 }
 
 /** ANSI 16-color table */
-function AnsiColorTable({ palette }: { palette: ColorPalette }): JSX.Element {
+function AnsiColorTable({ palette }: { palette: ColorPalette }) {
   const normal = [
     palette.black,
     palette.red,
@@ -209,7 +209,7 @@ function AnsiColorTable({ palette }: { palette: ColorPalette }): JSX.Element {
 }
 
 /** ANSI 16-color table from theme palette array (for detected theme) */
-function ThemeAnsiColorTable({ palette }: { palette: string[] }): JSX.Element {
+function ThemeAnsiColorTable({ palette }: { palette: string[] }) {
   const normal = palette.slice(0, 8)
   const bright = palette.slice(8, 16)
 
@@ -237,7 +237,7 @@ function ThemeAnsiColorTable({ palette }: { palette: string[] }): JSX.Element {
 }
 
 /** Component showcase — real silvery components using theme tokens */
-function ComponentShowcase(): JSX.Element {
+function ComponentShowcase() {
   return (
     <Box flexDirection="column">
       <H2>Components</H2>
@@ -313,7 +313,7 @@ function ComponentShowcase(): JSX.Element {
 }
 
 /** Typography samples */
-function TypographySamples(): JSX.Element {
+function TypographySamples() {
   return (
     <Box flexDirection="column">
       <H2>Typography</H2>
@@ -339,7 +339,7 @@ function TypographySamples(): JSX.Element {
 }
 
 /** Surface pairs showcase */
-function SurfacePairs(): JSX.Element {
+function SurfacePairs() {
   return (
     <Box flexDirection="column">
       <H2>Surfaces</H2>
@@ -383,7 +383,7 @@ function SurfacePairs(): JSX.Element {
 }
 
 /** Contrast adjustments made during derivation */
-function AdjustmentLog({ adjustments }: { adjustments: ThemeAdjustment[] }): JSX.Element {
+function AdjustmentLog({ adjustments = [] }: { adjustments?: ThemeAdjustment[] }) {
   if (adjustments.length === 0) {
     return (
       <Box flexDirection="column">
@@ -416,7 +416,7 @@ function AdjustmentLog({ adjustments }: { adjustments: ThemeAdjustment[] }): JSX
 }
 
 /** Right panel: live preview wrapped in selected ThemeProvider */
-function ThemePreview({ entry }: { entry: ThemeEntry }): JSX.Element {
+function ThemePreview({ entry }: { entry: ThemeEntry }) {
   const label = entry.detected ? "(detected)" : entry.palette?.dark === false ? "(light)" : "(dark)"
 
   return (
@@ -444,7 +444,7 @@ function ThemePreview({ entry }: { entry: ThemeEntry }): JSX.Element {
   )
 }
 
-function HelpBar(): JSX.Element {
+function HelpBar() {
   return (
     <Muted>
       {" "}
@@ -453,7 +453,7 @@ function HelpBar(): JSX.Element {
   )
 }
 
-export function ThemeExplorer({ entries }: { entries: ThemeEntry[] }): JSX.Element {
+export function ThemeExplorer({ entries }: { entries: ThemeEntry[] }) {
   const { exit } = useApp()
   const [selectedIndex, setSelectedIndex] = useState(0)
 

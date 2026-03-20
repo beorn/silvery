@@ -60,13 +60,13 @@ describe("Headings", () => {
     expect(app.text).toContain("Group")
   })
 
-  test("H3 is bold without accent color", () => {
+  test("H3 uses $primary color without bold (lighter weight than H1)", () => {
     const app = render(<H3>Group</H3>)
     const cell = app.term.buffer.getCell(0, 0)
     expect(cell.char).toBe("G")
-    expect(cell.attrs.bold).toBe(true)
-    // H3 has no default color — fg should be null (inherits default)
-    expect(cell.fg).toBeNull()
+    expect(cell.attrs.bold).toBeFalsy()
+    // H3 defaults to $primary (same hue as H1, lighter weight — no bold)
+    expect(cell.fg).not.toBeNull()
   })
 
   test("headings accept color override", () => {
