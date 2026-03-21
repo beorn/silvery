@@ -115,7 +115,7 @@ function now(): string {
 // Keys Tab
 // ============================================================================
 
-function KeysTab({ kittySupported }: { kittySupported: boolean }): JSX.Element {
+function KeysTab({ kittySupported }: { kittySupported: boolean }) {
   const [events, setEvents] = useState<KeyEvent[]>([])
   const [latest, setLatest] = useState<KeyEvent | null>(null)
   const counterRef = useRef(0)
@@ -154,6 +154,8 @@ function KeysTab({ kittySupported }: { kittySupported: boolean }): JSX.Element {
         meta: parsed.meta || parsed.option,
         super: parsed.super,
         hyper: parsed.hyper,
+        capsLock: parsed.capsLock ?? false,
+        numLock: parsed.numLock ?? false,
         eventType: parsed.eventType,
       }
       const input = parsed.name.length === 1 ? parsed.name : ""
@@ -202,7 +204,7 @@ function KeysTab({ kittySupported }: { kittySupported: boolean }): JSX.Element {
   )
 }
 
-function KeyPlaceholder({ kittySupported }: { kittySupported: boolean }): JSX.Element {
+function KeyPlaceholder({ kittySupported }: { kittySupported: boolean }) {
   return (
     <Box flexDirection="column">
       <Text>Try pressing some key combinations:</Text>
@@ -215,7 +217,7 @@ function KeyPlaceholder({ kittySupported }: { kittySupported: boolean }): JSX.El
   )
 }
 
-function KeyDetails({ event }: { event: KeyEvent }): JSX.Element {
+function KeyDetails({ event }: { event: KeyEvent }) {
   const { parsed, raw } = event
   const modActive: boolean[] = [parsed.ctrl, parsed.shift, parsed.meta || parsed.option, parsed.super, parsed.hyper]
 
@@ -278,7 +280,7 @@ function KeyDetails({ event }: { event: KeyEvent }): JSX.Element {
   )
 }
 
-function ModBadge({ mod, active }: { mod: ModDef; active: boolean }): JSX.Element {
+function ModBadge({ mod, active }: { mod: ModDef; active: boolean }) {
   if (active) {
     return (
       <Text backgroundColor={mod.color} color="$inversebg" bold>
@@ -289,7 +291,7 @@ function ModBadge({ mod, active }: { mod: ModDef; active: boolean }): JSX.Elemen
   return <Text color="$muted">{`  ${mod.symbol}  `}</Text>
 }
 
-function KittyField({ label, value }: { label: string; value: string | boolean | undefined }): JSX.Element {
+function KittyField({ label, value }: { label: string; value: string | boolean | undefined }) {
   if (value === undefined) {
     return (
       <Muted>
@@ -321,7 +323,7 @@ function formatKeyEventSummary(event: KeyEvent): string {
 // Mouse Tab
 // ============================================================================
 
-function MouseTab(): JSX.Element {
+function MouseTab() {
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null)
   const [events, setEvents] = useState<MouseLogEntry[]>([])
   const [clicks, setClicks] = useState({ left: 0, middle: 0, right: 0 })
@@ -469,7 +471,7 @@ function MouseTab(): JSX.Element {
 // Clipboard Tab
 // ============================================================================
 
-function ClipboardTab(): JSX.Element {
+function ClipboardTab() {
   const { stdout } = useStdout()
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [lastCopied, setLastCopied] = useState<string | null>(null)
@@ -590,7 +592,7 @@ function ClipboardTab(): JSX.Element {
 // Focus Tab
 // ============================================================================
 
-function FocusTab(): JSX.Element {
+function FocusTab() {
   const [focused, setFocused] = useState(true)
   const [events, setEvents] = useState<FocusEvent[]>([])
   const counterRef = useRef(0)
@@ -681,7 +683,7 @@ function FocusTab(): JSX.Element {
 // Main App
 // ============================================================================
 
-export function TerminalDemo({ kittySupported }: { kittySupported: boolean }): JSX.Element {
+export function TerminalDemo({ kittySupported }: { kittySupported: boolean }) {
   const { exit } = useApp()
 
   useInput((input: string, key: Key) => {

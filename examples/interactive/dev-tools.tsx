@@ -176,7 +176,7 @@ function formatTime(date: Date): string {
   })
 }
 
-function LogRow({ entry, isSelected }: { entry: LogEntry; isSelected: boolean }): JSX.Element {
+function LogRow({ entry, isSelected }: { entry: LogEntry; isSelected: boolean }) {
   const badge = LEVEL_BADGES[entry.level]
   const color = LEVEL_COLORS[entry.level]
 
@@ -190,7 +190,7 @@ function LogRow({ entry, isSelected }: { entry: LogEntry; isSelected: boolean })
   )
 }
 
-function LevelCounts({ entries }: { entries: LogEntry[] }): JSX.Element {
+function LevelCounts({ entries }: { entries: LogEntry[] }) {
   const counts = useMemo(() => {
     const c = { DEBUG: 0, INFO: 0, WARN: 0, ERROR: 0 }
     for (const e of entries) c[e.level]++
@@ -216,7 +216,7 @@ function LevelCounts({ entries }: { entries: LogEntry[] }): JSX.Element {
 }
 
 /** Inner component that reads the flex container's height via useContentRect */
-function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number }): JSX.Element {
+function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number }) {
   const { height } = useContentRect()
 
   return (
@@ -238,7 +238,7 @@ function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number 
 const INITIAL_COUNT = 200
 const rng = seededRandom(12345)
 
-export function DevTools(): JSX.Element {
+export function DevTools() {
   const { exit } = useApp()
   const { width } = useContentRect()
   const [entries, setEntries] = useState<LogEntry[]>(() => generateInitialLogs(INITIAL_COUNT))

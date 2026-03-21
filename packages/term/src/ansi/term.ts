@@ -695,12 +695,6 @@ function createChainProxy(currentChalk: ChalkInstance, termBase: object): Term {
       return currentChalk(String(args[0] ?? ""))
     },
 
-    // Support `in` operator — check termBase first, then chalk
-    has(_target, prop) {
-      if (prop in termBase) return true
-      return prop in currentChalk
-    },
-
     // Handle property access for chaining
     get(target, prop, receiver) {
       // Check termBase first for term-specific methods/properties

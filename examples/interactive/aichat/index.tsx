@@ -49,7 +49,7 @@ export function AIChat({
   script: ScriptEntry[]
   autoStart: boolean
   fastMode: boolean
-}): JSX.Element {
+}) {
   const exit = useExit()
   const update = useMemo(() => createDemoUpdate(script, fastMode, autoStart), [script, fastMode, autoStart])
   const [state, send] = useTea(INIT_STATE, update)
@@ -183,7 +183,7 @@ function useKeyBindings(
 // Inline UI fragments
 // ============================================================================
 
-function CompactingOverlay(): JSX.Element {
+function CompactingOverlay() {
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="$warning" paddingX={1} overflow="hidden">
       <Text color="$warning" bold>
@@ -195,7 +195,7 @@ function CompactingOverlay(): JSX.Element {
   )
 }
 
-function SessionComplete(): JSX.Element {
+function SessionComplete() {
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="$success" paddingX={1}>
       <Text color="$success" bold>

@@ -251,7 +251,7 @@ export const KittyFlags = {
  *
  * @param flags Bitfield of KittyFlags (default: DISAMBIGUATE)
  */
-export function enableKittyKeyboard(flags = KittyFlags.DISAMBIGUATE): string {
+export function enableKittyKeyboard(flags: number = KittyFlags.DISAMBIGUATE): string {
   return `${CSI}>${flags}u`
 }
 

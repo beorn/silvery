@@ -102,7 +102,7 @@ const CARDS: CardData[] = [
 // Components
 // ============================================================================
 
-function MetricCard({ card, compact }: { card: CardData; compact: boolean }): JSX.Element {
+function MetricCard({ card, compact }: { card: CardData; compact: boolean }) {
   if (compact) {
     // Minimal: single-line card for narrow terminals
     return (
@@ -126,7 +126,7 @@ function MetricCard({ card, compact }: { card: CardData; compact: boolean }): JS
   )
 }
 
-function BreakpointIndicator({ width, columns }: { width: number; columns: number }): JSX.Element {
+function BreakpointIndicator({ width, columns }: { width: number; columns: number }) {
   const breakpoints = [
     { threshold: 0, cols: 1, label: "< 60" },
     { threshold: 60, cols: 2, label: "60-99" },
@@ -152,15 +152,7 @@ function BreakpointIndicator({ width, columns }: { width: number; columns: numbe
   )
 }
 
-function GridLayout({
-  cards,
-  columns,
-  compact,
-}: {
-  cards: CardData[]
-  columns: number
-  compact: boolean
-}): JSX.Element {
+function GridLayout({ cards, columns, compact }: { cards: CardData[]; columns: number; compact: boolean }) {
   if (columns === 1) {
     return (
       <Box flexDirection="column" gap={compact ? 0 : 1} flexGrow={1}>
@@ -197,7 +189,7 @@ function GridLayout({
   )
 }
 
-function CodeSnippet({ width }: { width: number }): JSX.Element {
+function CodeSnippet({ width }: { width: number }) {
   const showSnippet = width >= 60
 
   if (!showSnippet) {
@@ -233,7 +225,7 @@ function CodeSnippet({ width }: { width: number }): JSX.Element {
 // Main App
 // ============================================================================
 
-function LiveResize(): JSX.Element {
+function LiveResize() {
   const { width, height } = useContentRect()
 
   // Responsive breakpoints

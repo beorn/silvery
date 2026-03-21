@@ -89,7 +89,7 @@ const INSTALL_STEPS = [
 // ============================================================================
 
 /** Step indicator showing current position in the wizard */
-function StepIndicator({ current, total }: { current: number; total: number }): JSX.Element {
+function StepIndicator({ current, total }: { current: number; total: number }) {
   return (
     <Box paddingX={1} marginBottom={1}>
       {Array.from({ length: total }, (_, i) => {
@@ -109,7 +109,7 @@ function StepIndicator({ current, total }: { current: number; total: number }): 
 }
 
 /** Step 1: Framework selection */
-function FrameworkStep({ onSelect }: { onSelect: (option: SelectOption) => void }): JSX.Element {
+function FrameworkStep({ onSelect }: { onSelect: (option: SelectOption) => void }) {
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box marginBottom={1}>
@@ -134,7 +134,7 @@ function NameStep({
   onChange: (v: string) => void
   onSubmit: (v: string) => void
   framework: string
-}): JSX.Element {
+}) {
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box marginBottom={1}>
@@ -154,7 +154,7 @@ function NameStep({
 }
 
 /** Step 3: Installation progress */
-function InstallStep({ progress, stepIndex }: { progress: number; stepIndex: number }): JSX.Element {
+function InstallStep({ progress, stepIndex }: { progress: number; stepIndex: number }) {
   const currentStep = INSTALL_STEPS[Math.min(stepIndex, INSTALL_STEPS.length - 1)]!
 
   return (
@@ -177,7 +177,7 @@ function InstallStep({ progress, stepIndex }: { progress: number; stepIndex: num
 }
 
 /** Step 4: Completion summary */
-function DoneStep({ framework, projectName }: { framework: string; projectName: string }): JSX.Element {
+function DoneStep({ framework, projectName }: { framework: string; projectName: string }) {
   return (
     <Box flexDirection="column" paddingX={1}>
       <Box marginBottom={1}>
@@ -221,7 +221,7 @@ function DoneStep({ framework, projectName }: { framework: string; projectName: 
 // Main App
 // ============================================================================
 
-export function CliWizard(): JSX.Element {
+export function CliWizard() {
   const { exit } = useApp()
   const [state, setState] = useState<WizardState>({
     step: "framework",

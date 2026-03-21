@@ -399,7 +399,7 @@ export { IncrementalRenderMismatchError } from "./errors"
 
 // Term factory and lazy instance
 export { createTerm, term } from "./ansi/index"
-export type { Term, StyleChain } from "./ansi/index"
+export type { Term, StyleChain, TermEmulatorBackend } from "./ansi/index"
 
 // Console patching
 export { patchConsole } from "./ansi/index"

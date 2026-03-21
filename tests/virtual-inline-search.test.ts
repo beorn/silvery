@@ -33,7 +33,7 @@ describe("searchUpdate", () => {
       if (query === "h") return [{ row: 0, startCol: 0, endCol: 0 }]
       return []
     }
-    let [state] = searchUpdate({ type: "open" }, createSearchState())
+    const [state] = searchUpdate({ type: "open" }, createSearchState())
     const [next, effects] = searchUpdate({ type: "input", char: "h" }, state, mockSearch)
     expect(next.query).toBe("h")
     expect(next.cursorPosition).toBe(1)
@@ -54,7 +54,7 @@ describe("searchUpdate", () => {
   })
 
   test("backspace at start is no-op", () => {
-    let [state] = searchUpdate({ type: "open" }, createSearchState())
+    const [state] = searchUpdate({ type: "open" }, createSearchState())
     const [next, effects] = searchUpdate({ type: "backspace" }, state)
     expect(next.query).toBe("")
     expect(effects).toEqual([])
@@ -86,7 +86,7 @@ describe("searchUpdate", () => {
   })
 
   test("nextMatch/prevMatch with no matches is no-op", () => {
-    let [state] = searchUpdate({ type: "open" }, createSearchState())
+    const [state] = searchUpdate({ type: "open" }, createSearchState())
     const [next1, effects1] = searchUpdate({ type: "nextMatch" }, state)
     expect(next1.currentMatch).toBe(-1)
     expect(effects1).toEqual([])
@@ -110,7 +110,7 @@ describe("searchUpdate", () => {
     ;[left] = searchUpdate({ type: "cursorLeft" }, left)
     expect(left.cursorPosition).toBe(0)
 
-    let [right] = searchUpdate({ type: "cursorRight" }, state)
+    const [right] = searchUpdate({ type: "cursorRight" }, state)
     // Can't go past query length
     expect(right.cursorPosition).toBe(2)
   })

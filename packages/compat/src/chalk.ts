@@ -47,6 +47,7 @@ function fromChalkLevel(level: ChalkLevel): ColorLevel | null {
 // =============================================================================
 
 const detectedLevel = toChalkLevel(
+  // eslint-disable-next-line @typescript-eslint/prefer-optional-chain -- typeof guard prevents ReferenceError in environments without process global
   typeof process !== "undefined" && process.stdout ? detectColor(process.stdout) : null,
 )
 

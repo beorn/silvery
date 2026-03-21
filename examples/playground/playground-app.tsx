@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react"
-import { renderToCanvas, Box, Text, useContentRect } from "../../src/canvas/index.js"
+import { renderToCanvas, Box, Text, useContentRect } from "../../packages/ui/src/canvas/index.js"
 
 // ============================================================================
 // Shared components
@@ -143,9 +143,9 @@ function FlexboxLayout() {
       </Text>
       <Divider />
 
-      <Text color="$muted" marginTop={1}>
-        Row (gap=1):
-      </Text>
+      <Box marginTop={1}>
+        <Text color="$muted">Row (gap=1):</Text>
+      </Box>
       <Box flexDirection="row" gap={1}>
         <Box borderStyle="single" borderColor="$error" padding={1} flexGrow={1}>
           <Text color="$error">Col 1</Text>
@@ -158,9 +158,9 @@ function FlexboxLayout() {
         </Box>
       </Box>
 
-      <Text color="$muted" marginTop={1}>
-        Nested columns:
-      </Text>
+      <Box marginTop={1}>
+        <Text color="$muted">Nested columns:</Text>
+      </Box>
       <Box flexDirection="row" gap={1}>
         <Box borderStyle="round" borderColor="$accent" padding={1} flexGrow={1} flexDirection="column">
           <Text bold color="$accent">

@@ -239,7 +239,7 @@ export async function run(
   // Term path: pass Term as provider + its streams, auto-enable from Term caps
   if (isTerm(optionsOrTerm)) {
     const term = optionsOrTerm as Term
-    const emulator = (term as Record<string, unknown>)._emulator as { feed(data: string): void } | undefined
+    const emulator = (term as unknown as Record<string, unknown>)._emulator as { feed(data: string): void } | undefined
 
     // Emulator-backed term: headless mode with writable routing to emulator.
     // Create a mock stdin that forwards sendInput() data to the term provider's

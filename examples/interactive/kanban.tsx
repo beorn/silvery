@@ -91,7 +91,7 @@ const tagColors: Record<string, string> = {
   security: "$error",
 }
 
-function Tag({ name }: { name: string }): JSX.Element {
+function Tag({ name }: { name: string }) {
   const color = tagColors[name] ?? "$muted"
   return (
     <Text color={color} dim>
@@ -100,7 +100,7 @@ function Tag({ name }: { name: string }): JSX.Element {
   )
 }
 
-function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }): JSX.Element {
+function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }) {
   return (
     <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "$primary" : "$border"} paddingX={1}>
       {isSelected ? (
@@ -127,7 +127,7 @@ function ColumnComponent({
   column: Column
   isSelected: boolean
   selectedCardIndex: number
-}): JSX.Element {
+}) {
   return (
     <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor={isSelected ? "$primary" : "$border"}>
       <Box backgroundColor={isSelected ? "$primary" : undefined} paddingX={1}>
@@ -159,7 +159,7 @@ function ColumnComponent({
   )
 }
 
-function HelpBar(): JSX.Element {
+function HelpBar() {
   return (
     <Muted>
       {" "}
@@ -168,7 +168,7 @@ function HelpBar(): JSX.Element {
   )
 }
 
-export function KanbanBoard(): JSX.Element {
+export function KanbanBoard() {
   const { exit } = useApp()
   const [columns, setColumns] = useState<Column[]>(initialColumns)
   const [selectedColumn, setSelectedColumn] = useState(0)

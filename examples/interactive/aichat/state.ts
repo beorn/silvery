@@ -169,7 +169,7 @@ export function createDemoUpdate(script: ScriptEntry[], fastMode: boolean, autoM
       ...state,
       scriptIdx: state.scriptIdx + 1,
     }
-    let effects = [...extraEffects]
+    const effects = [...extraEffects]
     let streamFx: DemoEffect[]
 
     ;[s, streamFx] = startStreaming(s, entry)

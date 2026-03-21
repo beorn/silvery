@@ -107,7 +107,7 @@ interface ErrorBoundaryState {
  * ```
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  state: ErrorBoundaryState = {
+  override state: ErrorBoundaryState = {
     hasError: false,
     error: null,
     errorInfo: null,
@@ -117,12 +117,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return { hasError: true, error }
   }
 
-  componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  override componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ errorInfo })
     this.props.onError?.(error, errorInfo)
   }
 
-  componentDidUpdate(prevProps: ErrorBoundaryProps): void {
+  override componentDidUpdate(prevProps: ErrorBoundaryProps): void {
     if (!this.state.hasError) return
 
     // Reset error state when resetKey changes
@@ -140,7 +140,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
   }
 
-  render(): ReactNode {
+  override render(): ReactNode {
     if (this.state.hasError) {
       const { fallback } = this.props
       const { error, errorInfo } = this.state

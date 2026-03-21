@@ -60,7 +60,7 @@ const allItems = items.flatMap((group) => group.values.map((value) => ({ categor
 // Components
 // ============================================================================
 
-function ListItem({ item, isSelected }: { item: (typeof allItems)[0]; isSelected: boolean }): JSX.Element {
+function ListItem({ item, isSelected }: { item: (typeof allItems)[0]; isSelected: boolean }) {
   return (
     <Box paddingX={1}>
       <Text
@@ -76,7 +76,7 @@ function ListItem({ item, isSelected }: { item: (typeof allItems)[0]; isSelected
   )
 }
 
-function StatusBar({ lastCopied, lastPasted }: { lastCopied: string | null; lastPasted: string | null }): JSX.Element {
+function StatusBar({ lastCopied, lastPasted }: { lastCopied: string | null; lastPasted: string | null }) {
   return (
     <Box flexDirection="column" borderStyle="round" borderColor="$border" paddingX={1}>
       <Box gap={1}>
@@ -91,7 +91,7 @@ function StatusBar({ lastCopied, lastPasted }: { lastCopied: string | null; last
   )
 }
 
-export function ClipboardDemo(): JSX.Element {
+export function ClipboardDemo() {
   const { exit } = useApp()
   const { stdout } = useStdout()
   const [selectedIndex, setSelectedIndex] = useState(0)

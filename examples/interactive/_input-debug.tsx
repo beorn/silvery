@@ -10,7 +10,7 @@
 import React, { useState, useRef } from "react"
 import { render, Box, Text, TextArea, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 
-function InputDebug(): JSX.Element {
+function InputDebug() {
   const { exit } = useApp()
 
   // Track raw useInput events

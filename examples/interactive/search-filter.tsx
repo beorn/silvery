@@ -170,7 +170,7 @@ function FilteredList({ query, isPending }: { query: string; isPending: boolean 
   )
 }
 
-export function SearchApp(): JSX.Element {
+export function SearchApp() {
   const { exit } = useApp()
   const [query, setQuery] = useState("")
 

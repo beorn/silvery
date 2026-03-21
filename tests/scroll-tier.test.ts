@@ -197,7 +197,7 @@ describe("scroll tier planner — child propagation", () => {
 
 describe("scroll tier planner — clearBg", () => {
   test("shift tier passes scrollBg as clearBg", () => {
-    const bg = [0, 128, 255] as [number, number, number]
+    const bg = { r: 0, g: 128, b: 255 }
     const plan = planScrollRender({
       ...defaults(),
       hasPrevBuffer: true,
@@ -208,7 +208,7 @@ describe("scroll tier planner — clearBg", () => {
   })
 
   test("clear tier passes scrollBg as clearBg", () => {
-    const bg = [0, 128, 255] as [number, number, number]
+    const bg = { r: 0, g: 128, b: 255 }
     const plan = planScrollRender({
       ...defaults(),
       hasPrevBuffer: true,

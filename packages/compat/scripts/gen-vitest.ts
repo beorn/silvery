@@ -524,7 +524,7 @@ function transformFixture(source: string, fixtureName: string): string {
 
   // Extract render options and component JSX from the top-level render() call
   // before removing it. Handle both single-line and multi-line render calls.
-  let renderOptions: Record<string, string> = {}
+  const renderOptions: Record<string, string> = {}
   let componentJSX = ""
 
   // Try single-line first: render(<Component prop={val} />)
@@ -624,7 +624,7 @@ function transformFixture(source: string, fixtureName: string): string {
   let createFixtureBody = ""
   if (componentJSX) {
     // Replace process.argv refs in the JSX
-    let jsx = componentJSX.replace(/process\.argv\[2\]/g, "args[0]").replace(/process\.argv\[3\]/g, "args[1]")
+    const jsx = componentJSX.replace(/process\.argv\[2\]/g, "args[0]").replace(/process\.argv\[3\]/g, "args[1]")
     // Also replace local `test` variable references with args[0] for conditional render patterns
     // e.g., test === 'multipleHooks' ? <A /> : <B test={test} />
     if (jsx.includes("test ===") || jsx.includes("{test}")) {

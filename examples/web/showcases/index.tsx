@@ -12,6 +12,7 @@
  *   aichat, gallery, kanban, explorer, wizard, dashboard, terminal, components, theme
  */
 
+import type { JSX } from "react"
 import React from "react"
 
 // Import components from terminal examples (the single source of truth)
@@ -42,7 +43,7 @@ export const SHOWCASES: Record<string, () => JSX.Element> = {
   dashboard: Dashboard,
   terminal: () => <TerminalDemo kittySupported={false} />,
   components: ComponentsApp,
-  theme: ThemeExplorer,
+  theme: () => <ThemeExplorer entries={[]} />,
 
   // --- Additional terminal examples ---
   "ai-chat": () => <AIChat script={SCRIPT} autoStart={false} fastMode={false} />,

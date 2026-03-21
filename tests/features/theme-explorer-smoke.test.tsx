@@ -13,7 +13,7 @@ import { ThemeExplorer, type ThemeEntry } from "../../examples/interactive/theme
 import { builtinPalettes, deriveTheme, type ThemeAdjustment } from "@silvery/theme"
 
 // Smoke test — disable strict mode (not testing rendering correctness)
-const render = createRenderer({ cols: 120, rows: 40, strict: false })
+const render = createRenderer({ cols: 120, rows: 40 })
 
 // Build entries from all built-in palettes (same as the real demo, minus detectTheme)
 const entries: ThemeEntry[] = Object.entries(builtinPalettes).map(([name, palette]) => {

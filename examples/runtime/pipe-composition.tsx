@@ -25,7 +25,7 @@
 
 import React from "react"
 import { Box, Text, H3, Muted, Small } from "../../src/index.js"
-import { createApp, useApp } from "@silvery/term/runtime"
+import { createApp, useApp, type AppHandle } from "@silvery/term/runtime"
 import { pipe, withReact, withTerminal } from "@silvery/tea/plugins"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
@@ -39,13 +39,13 @@ export const meta: ExampleMeta = {
 // Types
 // ============================================================================
 
-interface ListItem {
+type ListItem = {
   id: number
   label: string
   selected: boolean
 }
 
-interface State {
+type State = {
   items: ListItem[]
   cursor: number
   nextId: number
@@ -114,12 +114,10 @@ const baseApp = createApp<Record<string, unknown>, State>(
 
   // Event handlers: 'provider:event' → handler
   {
-    "term:key": (
-      data: unknown,
-      { get, set }: { get: () => State; set: (fn: (s: State) => Partial<State>) => void },
-    ) => {
+    "term:key": (data, ctx) => {
       const { input: k, key } = data as { input: string; key: { escape: boolean } }
-      const { items, cursor, nextId } = get()
+      const { items, cursor, nextId } = ctx.get() as State
+      const set = ctx.set as (fn: (s: State) => Partial<State>) => void
 
       if (key.escape || k === "q") return "exit"
 
@@ -154,14 +152,17 @@ const baseApp = createApp<Record<string, unknown>, State>(
 //   - withTerminal(process) → binds stdin/stdout, so run() needs no options
 //
 // The result is an app where run() takes no arguments.
+// Note: pipe() type composition requires casts at plugin boundaries
+// because AppDefinition's typed run() doesn't structurally match
+// the generic RunnableApp constraint used by plugins.
 const app = pipe(
-  baseApp,
+  baseApp as any,
   withReact(
     <ExampleBanner meta={meta} controls="j/k move  space/x toggle  a add  Esc/q quit">
       <SelectableList />
     </ExampleBanner>,
   ),
-  withTerminal(process),
+  withTerminal(process as any),
 )
 
 // ============================================================================
@@ -170,13 +171,13 @@ const app = pipe(
 
 async function main() {
   // Step 3: Run — no arguments needed, everything is composed
-  const handle = await app.run()
+  const handle = (await app.run()) as AppHandle<State>
 
   await handle.waitUntilExit()
 
   const { items } = handle.store.getState()
-  const selected = items.filter((i) => i.selected)
-  console.log(`\nSelected ${selected.length} items:`, selected.map((i) => i.label).join(", "))
+  const selected = items.filter((i: ListItem) => i.selected)
+  console.log(`\nSelected ${selected.length} items:`, selected.map((i: ListItem) => i.label).join(", "))
 }
 
 if (import.meta.main) {

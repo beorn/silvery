@@ -47,7 +47,7 @@ const STYLES: StyleVariant[] = ["single", "double", "round", "bold"]
 // Components
 // ============================================================================
 
-function ContentWithSize({ label }: { label: string }): JSX.Element {
+function ContentWithSize({ label }: { label: string }) {
   const { width, height } = useContentRect()
 
   return (
@@ -70,7 +70,7 @@ function ContentWithSize({ label }: { label: string }): JSX.Element {
   )
 }
 
-function BorderPanel({ style, highlight }: { style: StyleVariant; highlight: boolean }): JSX.Element {
+function BorderPanel({ style, highlight }: { style: StyleVariant; highlight: boolean }) {
   return (
     <Box flexDirection="column" flexGrow={1} gap={1}>
       <Text bold color={highlight ? "$primary" : undefined}>
@@ -85,7 +85,7 @@ function BorderPanel({ style, highlight }: { style: StyleVariant; highlight: boo
   )
 }
 
-function OutlinePanel({ style, highlight }: { style: StyleVariant; highlight: boolean }): JSX.Element {
+function OutlinePanel({ style, highlight }: { style: StyleVariant; highlight: boolean }) {
   return (
     <Box flexDirection="column" flexGrow={1} gap={1}>
       <Text bold color={highlight ? "$warning" : undefined}>
@@ -100,7 +100,7 @@ function OutlinePanel({ style, highlight }: { style: StyleVariant; highlight: bo
   )
 }
 
-export function OutlineDemo(): JSX.Element {
+export function OutlineDemo() {
   const { exit } = useApp()
   const [styleIndex, setStyleIndex] = useState(0)
   const [focusedSide, setFocusedSide] = useState<"border" | "outline">("border")

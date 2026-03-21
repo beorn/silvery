@@ -339,7 +339,6 @@ export function graphemeCount(text: string): number {
  */
 const TEXT_PRESENTATION_EMOJI_REGEX = /^\p{Extended_Pictographic}$/u
 const EMOJI_PRESENTATION_REGEX = /^\p{Emoji_Presentation}$/u
-// @ts-expect-error -- RGI_Emoji v flag needs es2024 target but works at runtime
 const RGI_EMOJI_REGEX = /^\p{RGI_Emoji}$/v
 
 /**

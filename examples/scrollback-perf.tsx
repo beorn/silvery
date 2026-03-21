@@ -10,7 +10,7 @@
  *   --timers   Add pulse/elapsed timers like the real demo
  */
 import React, { useState, useEffect, useRef } from "react"
-import { createRenderer } from "../src/testing/index.js"
+import { createRenderer } from "@silvery/test"
 import { Box, Text, ScrollbackList, TextInput, Spinner } from "../src/index.js"
 
 interface Item {

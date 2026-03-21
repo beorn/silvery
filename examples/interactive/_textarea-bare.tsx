@@ -11,7 +11,7 @@
 import React, { useState } from "react"
 import { render, Box, Text, TextArea, createTerm } from "../../src/index.js"
 
-function BareTextArea(): JSX.Element {
+function BareTextArea() {
   const [value, setValue] = useState("")
 
   // NO parent useInput — only TextArea's internal one

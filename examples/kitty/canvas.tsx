@@ -184,8 +184,9 @@ function renderFrame(state: CanvasState, term: ReturnType<typeof createTerm>): s
   for (let row = 0; row < canvasRows; row++) {
     let line = ""
     for (let col = 0; col < state.width; col++) {
-      const topPixel = state.pixels[row * 2]![col]
-      const bottomPixel = state.pixels[row * 2 + 1]![col]
+      // Pixels are pre-allocated with fill(null), so col access is always in-bounds
+      const topPixel = state.pixels[row * 2]![col] ?? null
+      const bottomPixel = state.pixels[row * 2 + 1]![col] ?? null
 
       if (topPixel === null && bottomPixel === null) {
         line += " "
@@ -198,8 +199,8 @@ function renderFrame(state: CanvasState, term: ReturnType<typeof createTerm>): s
       } else if (
         topPixel !== null &&
         topPixel[0] === bottomPixel?.[0] &&
-        topPixel[1] === bottomPixel[1] &&
-        topPixel[2] === bottomPixel[2]
+        topPixel[1] === bottomPixel?.[1] &&
+        topPixel[2] === bottomPixel?.[2]
       ) {
         const [r, g, b] = topPixel
         line += term.rgb(r, g, b)(FULL_BLOCK)

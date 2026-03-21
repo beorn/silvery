@@ -216,7 +216,7 @@ export function useVirtualizer(config: VirtualizerConfig): VirtualizerResult {
     const viewportCenter = selectedIndexRef.current
     const halfWindow = Math.floor(renderCount / 2)
     let start = Math.max(0, viewportCenter - halfWindow)
-    let end = Math.min(count, start + renderCount)
+    const end = Math.min(count, start + renderCount)
 
     // Adjust start if we hit the end
     if (end === count) {

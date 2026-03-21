@@ -67,7 +67,7 @@ const KEYBINDINGS = [
 
 const ITEMS = ["Inbox", "Today", "Upcoming", "Projects", "Archive", "Trash"]
 
-function RichInputDemo({ kittySupported }: { kittySupported: boolean }): JSX.Element {
+function RichInputDemo({ kittySupported }: { kittySupported: boolean }) {
   const { exit } = useApp()
   const stdin = process.stdin
   const [mode, setMode] = useState<Mode>("normal")

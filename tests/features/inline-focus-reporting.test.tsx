@@ -166,7 +166,7 @@ describe("inline mode focus reporting default", () => {
     const origOn = stdin.on.bind(stdin)
     stdin.on = function (event: string, ...args: any[]) {
       if (event === "data" && !stdinListenerTime) stdinListenerTime = Date.now()
-      return origOn(event, ...args)
+      return origOn(event, ...(args as [any]))
     } as any
 
     const origWrite = stdout.stream.write.bind(stdout.stream)
@@ -201,7 +201,7 @@ describe("inline mode focus reporting default", () => {
 // ============================================================================
 
 /** Test component that renders focused state as text. */
-function FocusDisplay(): JSX.Element {
+function FocusDisplay() {
   const focused = useTerminalFocused()
   return (
     <Box>

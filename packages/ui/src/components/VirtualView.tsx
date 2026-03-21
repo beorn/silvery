@@ -138,7 +138,7 @@ function VirtualViewInner<T>(
 
   return (
     <ListView
-      ref={ref}
+      ref={ref as any}
       items={items}
       height={height}
       estimateHeight={estimateHeight}

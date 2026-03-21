@@ -5,6 +5,7 @@
  * Internal: LinkifiedLine, ThinkingBlock, ToolCallBlock, StreamingText
  */
 
+import type { JSX } from "react"
 import React, { useState, useEffect, useCallback, useRef } from "react"
 import { Box, Text, Link, Spinner, TextInput, useTerminalFocused } from "silvery"
 import type { Exchange, ToolCall } from "./types.js"
@@ -39,7 +40,7 @@ function splitTitleBody(content: string): { title: string; body: string } {
 // ============================================================================
 
 /** Render a line with auto-linked URLs. */
-function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; color?: string }): JSX.Element {
+function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; color?: string }) {
   const parts: JSX.Element[] = []
   let lastIndex = 0
   let match: RegExpExecArray | null
@@ -79,7 +80,7 @@ function LinkifiedLine({ text, dim, color }: { text: string; dim?: boolean; colo
 }
 
 /** Thinking block — shows thinking text preview in the body. */
-function ThinkingBlock({ text, done }: { text: string; done: boolean }): JSX.Element {
+function ThinkingBlock({ text, done }: { text: string; done: boolean }) {
   if (done)
     return (
       <Text color="$muted" italic>
@@ -94,7 +95,7 @@ function ThinkingBlock({ text, done }: { text: string; done: boolean }): JSX.Ele
 }
 
 /** Tool call with lifecycle: spinner -> output -> checkmark. */
-function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "running" | "done" }): JSX.Element {
+function ToolCallBlock({ call, phase }: { call: ToolCall; phase: "pending" | "running" | "done" }) {
   const color = TOOL_COLORS[call.tool] ?? "$muted"
 
   return (
@@ -140,7 +141,7 @@ function StreamingText({
   fullText: string
   revealFraction: number
   showCursor: boolean
-}): JSX.Element {
+}) {
   if (revealFraction >= 1) {
     return <Text>{fullText}</Text>
   }
@@ -187,7 +188,7 @@ export function ExchangeItem({
   isLatest: boolean
   isFirstInGroup: boolean
   isLastInGroup: boolean
-}): JSX.Element {
+}) {
   if (exchange.role === "system") {
     return (
       <Box flexDirection="column">
@@ -309,7 +310,7 @@ export function StatusBar({
   elapsed: number
   contextBaseline?: number
   ctrlDPending?: boolean
-}): JSX.Element {
+}) {
   const cumulative = computeCumulativeTokens(exchanges)
   const cost = formatCost(cumulative.input, cumulative.output)
   const minutes = Math.floor(elapsed / 60)
@@ -369,7 +370,7 @@ export function DemoFooter({
   ctrlDPending?: boolean
   nextMessage?: string
   autoTypingText?: string | null
-}): JSX.Element {
+}) {
   const terminalFocused = useTerminalFocused()
   const [inputText, setInputText] = useState("")
   const inputTextRef = useRef(inputText)

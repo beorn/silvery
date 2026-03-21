@@ -335,10 +335,13 @@ function Preview({ example, theme }: { example: Example; theme: Theme }) {
         // Render in sandboxed static mode — useInput becomes a no-op,
         // useApp gets a stub exit(), no terminal needed.
         // Wrap in ThemeProvider so previews pick up the active theme.
-        const output = await renderStatic(React.createElement(ThemeProvider, { theme }, React.createElement(Comp)), {
-          width,
-          height,
-        })
+        const output = await renderStatic(
+          React.createElement(ThemeProvider, { theme, children: React.createElement(Comp) }),
+          {
+            width,
+            height,
+          },
+        )
         if (!cancelled) setLines(output.split("\n"))
         return undefined
       })
@@ -620,7 +623,7 @@ function Viewer({ examples }: { examples: Example[] }) {
                   {name}
                   <Text color="$muted" dim>
                     {" "}
-                    {t.dark ? "dark" : "light"}
+                    {name.includes("light") ? "light" : "dark"}
                   </Text>
                 </Text>
               )

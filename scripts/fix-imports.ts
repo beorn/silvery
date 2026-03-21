@@ -83,7 +83,7 @@ function getOldSrcPath(entry: FileEntry): string {
 // Resolve a relative import from a file to its target old src path
 function resolveOldImport(fromOldPath: string, importPath: string): string | null {
   // Strip .js extension from import path (ESM convention: import from "./foo.js" → ./foo.ts)
-  let cleanImport = importPath.replace(/\.js$/, "")
+  const cleanImport = importPath.replace(/\.js$/, "")
 
   const fromDir = dirname(fromOldPath)
   let resolved = resolve("/fake-src", fromDir, cleanImport)

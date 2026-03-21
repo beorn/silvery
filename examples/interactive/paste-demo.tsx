@@ -53,7 +53,7 @@ interface PasteEvent {
 // Components
 // ============================================================================
 
-function PasteIndicator(): JSX.Element {
+function PasteIndicator() {
   return (
     <Box gap={1} paddingX={1}>
       <Text color="$success" bold>
@@ -68,7 +68,7 @@ function PasteIndicator(): JSX.Element {
   )
 }
 
-function PasteEventCard({ event, isLatest }: { event: PasteEvent; isLatest: boolean }): JSX.Element {
+function PasteEventCard({ event, isLatest }: { event: PasteEvent; isLatest: boolean }) {
   const preview = event.text.length > 60 ? event.text.slice(0, 57) + "..." : event.text
   const displayText = preview.replace(/\n/g, "\\n").replace(/\t/g, "\\t")
 
@@ -99,7 +99,7 @@ function PasteEventCard({ event, isLatest }: { event: PasteEvent; isLatest: bool
   )
 }
 
-function EmptyState(): JSX.Element {
+function EmptyState() {
   return (
     <Box flexDirection="column" padding={2} alignItems="center">
       <Muted>No paste events yet.</Muted>
@@ -109,7 +109,7 @@ function EmptyState(): JSX.Element {
   )
 }
 
-export function PasteDemo(): JSX.Element {
+export function PasteDemo() {
   const { exit } = useApp()
   const [pasteHistory, setPasteHistory] = useState<PasteEvent[]>([])
   const [nextId, setNextId] = useState(1)

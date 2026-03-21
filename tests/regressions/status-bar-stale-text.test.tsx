@@ -74,8 +74,6 @@ describe("regression: status bar stale text (km-silvery.aichat-incr)", () => {
 
   // Full pipeline test using run() + termless (matches ai-chat-bugs.test.tsx)
   test("status bar in scrollable content — full pipeline", async () => {
-    let handle: RunHandle
-
     function App() {
       const [count, setCount] = useState(0)
       const countRef = useRef(0)
@@ -111,7 +109,7 @@ describe("regression: status bar stale text (km-silvery.aichat-incr)", () => {
     }
 
     const term = createTermless({ cols: 80, rows: 25 })
-    handle = await run(<App />, term)
+    const handle = await run(<App />, term)
     await settle(100)
 
     // Trigger several re-renders with changing cost string

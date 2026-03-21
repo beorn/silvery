@@ -215,7 +215,7 @@ function useColumns(totalWidth: number) {
   }, [totalWidth])
 }
 
-function TableHeader({ width }: { width: number }): JSX.Element {
+function TableHeader({ width }: { width: number }) {
   const cols = useColumns(width)
 
   return (
@@ -236,15 +236,7 @@ function TableHeader({ width }: { width: number }): JSX.Element {
   )
 }
 
-function ProcessRow({
-  proc,
-  isSelected,
-  width,
-}: {
-  proc: ProcessInfo
-  isSelected: boolean
-  width: number
-}): JSX.Element {
+function ProcessRow({ proc, isSelected, width }: { proc: ProcessInfo; isSelected: boolean; width: number }) {
   const cols = useColumns(width)
   const cpuColor = proc.cpu > 80 ? "$error" : proc.cpu > 40 ? "$warning" : "$success"
   const memColor = proc.mem > 40 ? "$warning" : "$muted"
@@ -272,7 +264,7 @@ function ProcessRow({
   )
 }
 
-function SummaryBar({ processes, query }: { processes: ProcessInfo[]; query: string }): JSX.Element {
+function SummaryBar({ processes, query }: { processes: ProcessInfo[]; query: string }) {
   const stats = useMemo(() => {
     let running = 0
     let totalCpu = 0
@@ -307,15 +299,7 @@ function SummaryBar({ processes, query }: { processes: ProcessInfo[]; query: str
 }
 
 /** Inner component that reads the flex container's height */
-function ProcessListArea({
-  processes,
-  cursor,
-  width,
-}: {
-  processes: ProcessInfo[]
-  cursor: number
-  width: number
-}): JSX.Element {
+function ProcessListArea({ processes, cursor, width }: { processes: ProcessInfo[]; cursor: number; width: number }) {
   const { height } = useContentRect()
 
   return (
@@ -336,7 +320,7 @@ function ProcessListArea({
 // Main App
 // ============================================================================
 
-export function DataExplorer(): JSX.Element {
+export function DataExplorer() {
   const { exit } = useApp()
   const { width } = useContentRect()
   const [cursor, setCursor] = useState(0)

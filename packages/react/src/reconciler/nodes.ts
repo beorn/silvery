@@ -192,7 +192,7 @@ export function createNode(
 export function createRootNode(): TeaNode {
   const node = createNode("silvery-root", {})
   const c = getConstants()
-  node.layoutNode.setFlexDirection(c.FLEX_DIRECTION_COLUMN)
+  node.layoutNode!.setFlexDirection(c.FLEX_DIRECTION_COLUMN)
   return node
 }
 

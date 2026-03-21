@@ -192,11 +192,11 @@ function tickState(prev: ReturnType<typeof createInitialState>) {
 // Components
 // ============================================================================
 
-function SectionHeader({ children }: { children: React.ReactNode }): JSX.Element {
+function SectionHeader({ children }: { children: React.ReactNode }) {
   return <H2>{children}</H2>
 }
 
-function LabelValue({ label, value, color }: { label: string; value: string; color?: string }): JSX.Element {
+function LabelValue({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
     <Box gap={1}>
       <Muted>{label}</Muted>
@@ -209,7 +209,7 @@ function LabelValue({ label, value, color }: { label: string; value: string; col
 
 // --- CPU Tab ---
 
-function CpuCore({ index, core }: { index: number; core: CoreMetrics }): JSX.Element {
+function CpuCore({ index, core }: { index: number; core: CoreMetrics }) {
   const pct = Math.round(core.usage)
   const color = severityColor(pct)
   return (
@@ -228,7 +228,7 @@ function CpuCore({ index, core }: { index: number; core: CoreMetrics }): JSX.Ele
   )
 }
 
-function CpuPane({ cores }: { cores: CoreMetrics[] }): JSX.Element {
+function CpuPane({ cores }: { cores: CoreMetrics[] }) {
   const avgCpu = cores.reduce((sum, c) => sum + c.usage, 0) / cores.length
   const maxCpu = Math.max(...cores.map((c) => c.usage))
   const load1 = ((avgCpu / 100) * 8 * 0.8 + Math.random() * 0.5).toFixed(2)
@@ -252,7 +252,7 @@ function CpuPane({ cores }: { cores: CoreMetrics[] }): JSX.Element {
 
 // --- Memory Tab ---
 
-function StackedBar({ segments }: { segments: { value: number; color: string; char?: string }[] }): JSX.Element {
+function StackedBar({ segments }: { segments: { value: number; color: string; char?: string }[] }) {
   return (
     <Box>
       {segments.map((seg, i) => (
@@ -264,7 +264,7 @@ function StackedBar({ segments }: { segments: { value: number; color: string; ch
   )
 }
 
-function MemoryPane({ memory }: { memory: MemoryMetrics }): JSX.Element {
+function MemoryPane({ memory }: { memory: MemoryMetrics }) {
   const total = memory.used + memory.cached + memory.buffers + memory.free
   const usedPct = (memory.used / total) * 100
   const swapPct = (memory.swap / memory.swapTotal) * 100
@@ -331,7 +331,7 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }): JSX.Element {
 
 // --- Network Tab ---
 
-function NetworkPane({ network }: { network: NetworkMetrics }): JSX.Element {
+function NetworkPane({ network }: { network: NetworkMetrics }) {
   return (
     <Box flexDirection="column" gap={1} flexGrow={1}>
       <SectionHeader>Network</SectionHeader>
@@ -372,7 +372,7 @@ function NetworkPane({ network }: { network: NetworkMetrics }): JSX.Element {
 
 // --- Processes Tab ---
 
-function ProcessRow({ proc, isTop }: { proc: ProcessInfo; isTop: boolean }): JSX.Element {
+function ProcessRow({ proc, isTop }: { proc: ProcessInfo; isTop: boolean }) {
   const cpuColor = severityColor(proc.cpu)
   return (
     <Box gap={1}>
@@ -385,7 +385,7 @@ function ProcessRow({ proc, isTop }: { proc: ProcessInfo; isTop: boolean }): JSX
   )
 }
 
-function ProcessPane({ processes }: { processes: ProcessInfo[] }): JSX.Element {
+function ProcessPane({ processes }: { processes: ProcessInfo[] }) {
   const sorted = [...processes].sort((a, b) => b.cpu - a.cpu)
 
   return (
@@ -430,7 +430,7 @@ function WideLayout({
   memory: MemoryMetrics
   network: NetworkMetrics
   processes: ProcessInfo[]
-}): JSX.Element {
+}) {
   return (
     <Box flexDirection="column" flexGrow={1} gap={1}>
       <Box flexDirection="row" gap={1} flexGrow={1}>
@@ -457,7 +457,7 @@ function WideLayout({
 // Dashboard
 // ============================================================================
 
-export function Dashboard(): JSX.Element {
+export function Dashboard() {
   const { exit } = useApp()
   const { width } = useContentRect()
   const [state, setState] = useState(createInitialState)

@@ -13,10 +13,16 @@
 // =============================================================================
 
 export { ListView } from "./components/ListView"
-export type { ListViewProps, ListViewHandle, ListItemMeta } from "./components/ListView"
+export type {
+  ListViewProps,
+  ListViewHandle,
+  ListItemMeta,
+  ListViewHistoryConfig,
+  ListTextAdapter,
+} from "./components/ListView"
 
 export { VirtualList } from "./components/VirtualList"
-export type { VirtualListProps, VirtualListHandle } from "./components/VirtualList"
+export type { VirtualListProps, VirtualListHandle, ItemMeta } from "./components/VirtualList"
 
 export { HorizontalVirtualList } from "./components/HorizontalVirtualList"
 export type { HorizontalVirtualListProps, HorizontalVirtualListHandle } from "./components/HorizontalVirtualList"
@@ -46,6 +52,17 @@ export type { ErrorBoundaryProps } from "./components/ErrorBoundary"
 
 export { Console } from "./components/Console"
 
+export { ScrollbackList } from "./components/ScrollbackList"
+export type { ScrollbackListProps } from "./components/ScrollbackList"
+
+// Viewport Architecture (Phase 2)
+export { Screen } from "./components/Screen"
+export type { ScreenProps } from "./components/Screen"
+export { ScrollbackView } from "./components/ScrollbackView"
+export type { ScrollbackViewProps } from "./components/ScrollbackView"
+export { VirtualView } from "./components/VirtualView"
+export type { VirtualViewProps, VirtualViewHandle } from "./components/VirtualView"
+
 // =============================================================================
 // Input Components
 // =============================================================================
@@ -72,6 +89,9 @@ export type { ModalDialogProps } from "./components/ModalDialog"
 
 export { PickerDialog } from "./components/PickerDialog"
 export type { PickerDialogProps } from "./components/PickerDialog"
+
+export { PickerList } from "./components/PickerList"
+export type { PickerListProps } from "./components/PickerList"
 
 // Focusable Controls
 export { Toggle } from "./components/Toggle"
@@ -106,6 +126,67 @@ export { Divider } from "./components/Divider"
 export type { DividerProps } from "./components/Divider"
 
 export { SearchBar } from "./components/SearchBar"
+
+// Typography Presets
+export {
+  H1,
+  H2,
+  H3,
+  P,
+  Lead,
+  Muted,
+  Small,
+  Strong,
+  Em,
+  Code,
+  Kbd,
+  Blockquote,
+  CodeBlock,
+  HR,
+  UL,
+  OL,
+  LI,
+} from "./components/Typography"
+export type { TypographyProps } from "./components/Typography"
+
+// Form Components
+export { Form, FormField } from "./components/Form"
+export type { FormProps, FormFieldProps } from "./components/Form"
+
+// Toast / Notification
+export { useToast, ToastContainer, ToastItem } from "./components/Toast"
+export type {
+  ToastData,
+  ToastOptions,
+  ToastVariant,
+  UseToastResult,
+  ToastContainerProps,
+  ToastItemProps,
+} from "./components/Toast"
+
+// Command Palette
+export { CommandPalette } from "./components/CommandPalette"
+export type { CommandPaletteProps, CommandItem } from "./components/CommandPalette"
+
+// Tree View
+export { TreeView } from "./components/TreeView"
+export type { TreeViewProps, TreeNode } from "./components/TreeView"
+
+// Breadcrumb
+export { Breadcrumb } from "./components/Breadcrumb"
+export type { BreadcrumbProps, BreadcrumbItem } from "./components/Breadcrumb"
+
+// Tabs
+export { Tabs, TabList, Tab, TabPanel } from "./components/Tabs"
+export type { TabsProps, TabListProps, TabProps, TabPanelProps } from "./components/Tabs"
+
+// Tooltip
+export { Tooltip } from "./components/Tooltip"
+export type { TooltipProps } from "./components/Tooltip"
+
+// Skeleton
+export { Skeleton } from "./components/Skeleton"
+export type { SkeletonProps } from "./components/Skeleton"
 
 // =============================================================================
 // Position Registry (2D Grid Virtualization)

@@ -36,6 +36,142 @@
       "types": "./src/reconciler/nodes.ts",
       "import": "./src/reconciler/nodes.ts"
     },
+    "./accessibility": {
+      "types": "./src/accessibility.ts",
+      "import": "./src/accessibility.ts"
+    },
+    "./context": {
+      "types": "./src/context.ts",
+      "import": "./src/context.ts"
+    },
+    "./error-boundary": {
+      "types": "./src/error-boundary.tsx",
+      "import": "./src/error-boundary.tsx"
+    },
+    "./measureElement": {
+      "types": "./src/measureElement.ts",
+      "import": "./src/measureElement.ts"
+    },
+    "./render": {
+      "types": "./src/render.tsx",
+      "import": "./src/render.tsx"
+    },
+    "./render-string": {
+      "types": "./src/render-string.tsx",
+      "import": "./src/render-string.tsx"
+    },
+    "./components/Box": {
+      "types": "./src/components/Box.tsx",
+      "import": "./src/components/Box.tsx"
+    },
+    "./components/Fill": {
+      "types": "./src/components/Fill.tsx",
+      "import": "./src/components/Fill.tsx"
+    },
+    "./components/Link": {
+      "types": "./src/components/Link.tsx",
+      "import": "./src/components/Link.tsx"
+    },
+    "./components/Newline": {
+      "types": "./src/components/Newline.tsx",
+      "import": "./src/components/Newline.tsx"
+    },
+    "./components/Spacer": {
+      "types": "./src/components/Spacer.tsx",
+      "import": "./src/components/Spacer.tsx"
+    },
+    "./components/Static": {
+      "types": "./src/components/Static.tsx",
+      "import": "./src/components/Static.tsx"
+    },
+    "./components/Text": {
+      "types": "./src/components/Text.tsx",
+      "import": "./src/components/Text.tsx"
+    },
+    "./components/Transform": {
+      "types": "./src/components/Transform.tsx",
+      "import": "./src/components/Transform.tsx"
+    },
+    "./hooks/readline-ops": {
+      "types": "./src/hooks/readline-ops.ts",
+      "import": "./src/hooks/readline-ops.ts"
+    },
+    "./hooks/use-edit-context": {
+      "types": "./src/hooks/use-edit-context.ts",
+      "import": "./src/hooks/use-edit-context.ts"
+    },
+    "./hooks/useApp": {
+      "types": "./src/hooks/useApp.ts",
+      "import": "./src/hooks/useApp.ts"
+    },
+    "./hooks/useConsole": {
+      "types": "./src/hooks/useConsole.ts",
+      "import": "./src/hooks/useConsole.ts"
+    },
+    "./hooks/useCursor": {
+      "types": "./src/hooks/useCursor.ts",
+      "import": "./src/hooks/useCursor.ts"
+    },
+    "./hooks/useFocusable": {
+      "types": "./src/hooks/useFocusable.ts",
+      "import": "./src/hooks/useFocusable.ts"
+    },
+    "./hooks/useGridPosition": {
+      "types": "./src/hooks/useGridPosition.ts",
+      "import": "./src/hooks/useGridPosition.ts"
+    },
+    "./hooks/useInput": {
+      "types": "./src/hooks/useInput.ts",
+      "import": "./src/hooks/useInput.ts"
+    },
+    "./hooks/useLayout": {
+      "types": "./src/hooks/useLayout.ts",
+      "import": "./src/hooks/useLayout.ts"
+    },
+    "./hooks/usePositionRegistry": {
+      "types": "./src/hooks/usePositionRegistry.tsx",
+      "import": "./src/hooks/usePositionRegistry.tsx"
+    },
+    "./hooks/useScrollback": {
+      "types": "./src/hooks/useScrollback.ts",
+      "import": "./src/hooks/useScrollback.ts"
+    },
+    "./hooks/useScrollbackItem": {
+      "types": "./src/hooks/useScrollbackItem.tsx",
+      "import": "./src/hooks/useScrollbackItem.tsx"
+    },
+    "./hooks/useStderr": {
+      "types": "./src/hooks/useStderr.ts",
+      "import": "./src/hooks/useStderr.ts"
+    },
+    "./hooks/useStdout": {
+      "types": "./src/hooks/useStdout.ts",
+      "import": "./src/hooks/useStdout.ts"
+    },
+    "./hooks/useVirtualization": {
+      "types": "./src/hooks/useVirtualization.ts",
+      "import": "./src/hooks/useVirtualization.ts"
+    },
+    "./hooks/useVirtualizer": {
+      "types": "./src/hooks/useVirtualizer.ts",
+      "import": "./src/hooks/useVirtualizer.ts"
+    },
+    "./hooks/useWindowSize": {
+      "types": "./src/hooks/useWindowSize.ts",
+      "import": "./src/hooks/useWindowSize.ts"
+    },
+    "./providers/SearchProvider": {
+      "types": "./src/providers/SearchProvider.tsx",
+      "import": "./src/providers/SearchProvider.tsx"
+    },
+    "./providers/SurfaceRegistry": {
+      "types": "./src/providers/SurfaceRegistry.tsx",
+      "import": "./src/providers/SurfaceRegistry.tsx"
+    },
+    "./reconciler/helpers": {
+      "types": "./src/reconciler/helpers.ts",
+      "import": "./src/reconciler/helpers.ts"
+    },
     "./*": {
       "types": "./src/*",
       "import": "./src/*"

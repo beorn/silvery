@@ -52,6 +52,7 @@ const SYNC_UPDATE_ENABLED = process.env.SILVERY_SYNC_UPDATE === "1" || process.e
 
 // Re-export from errors.ts (kept separate for React-free barrel imports)
 export { IncrementalRenderMismatchError } from "./errors"
+import { IncrementalRenderMismatchError } from "./errors"
 
 // ============================================================================
 // Types

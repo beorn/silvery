@@ -17,12 +17,13 @@
  *   docs/images/layout-feedback.png - Layout feedback with useContentRect() values
  */
 
+import type { JSX } from "react"
 import { mkdir } from "node:fs/promises"
 import { dirname, resolve } from "node:path"
 import React, { useState } from "react"
-import { render, createRenderer, ensureEngine, bufferToHTML } from "../../src/testing/index.tsx"
+import { render, createRenderer, ensureEngine, bufferToHTML } from "@silvery/test"
 import { Box, Text, Divider, useContentRect, useApp } from "../../src/index.js"
-import { createScreenshotter } from "../../src/screenshot.js"
+import { createScreenshotter } from "@silvery/term/screenshot"
 
 // ============================================================================
 // Output directory
@@ -38,7 +39,7 @@ const OUTPUT_DIR = resolve(dirname(import.meta.path), "../../docs/images")
 
 // --- 1. Dashboard -----------------------------------------------------------
 
-function ProgressBar({ percent, width = 24 }: { percent: number; width?: number }): JSX.Element {
+function ProgressBar({ percent, width = 24 }: { percent: number; width?: number }) {
   const filled = Math.round((percent / 100) * width)
   const empty = width - filled
   const dot = filled < width ? "╸" : ""
@@ -53,7 +54,7 @@ function ProgressBar({ percent, width = 24 }: { percent: number; width?: number 
   )
 }
 
-function DashboardScreenshot(): JSX.Element {
+function DashboardScreenshot() {
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
@@ -165,7 +166,7 @@ function DashboardScreenshot(): JSX.Element {
 
 // --- 2. Task List -----------------------------------------------------------
 
-function TaskListScreenshot(): JSX.Element {
+function TaskListScreenshot() {
   const tasks = [
     { id: 1, title: "Review authentication refactor", completed: false, priority: "high" as const },
     { id: 2, title: "Update API documentation", completed: true, priority: "medium" as const },
@@ -285,7 +286,7 @@ function TaskListScreenshot(): JSX.Element {
 
 // --- 3. Kanban Board --------------------------------------------------------
 
-function KanbanScreenshot(): JSX.Element {
+function KanbanScreenshot() {
   const columns = [
     {
       id: "todo",
@@ -421,7 +422,7 @@ function KanbanScreenshot(): JSX.Element {
 
 // --- 4. Layout Feedback -----------------------------------------------------
 
-function LayoutPane({ title, color, grow = 1 }: { title: string; color: string; grow?: number }): JSX.Element {
+function LayoutPane({ title, color, grow = 1 }: { title: string; color: string; grow?: number }) {
   const rect = useContentRect()
   return (
     <Box flexGrow={grow} borderStyle="round" borderColor={color} padding={1} flexDirection="column">
@@ -437,7 +438,7 @@ function LayoutPane({ title, color, grow = 1 }: { title: string; color: string; 
   )
 }
 
-function LayoutFeedbackScreenshot(): JSX.Element {
+function LayoutFeedbackScreenshot() {
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>

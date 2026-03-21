@@ -3,14 +3,14 @@ import { vi } from "vitest"
 
 export const createStdin = (): NodeJS.WriteStream => {
   const stdin = new EventEmitter() as unknown as NodeJS.WriteStream
-  stdin.isTTY = true
-  stdin.setRawMode = vi.fn()
-  stdin.setEncoding = () => {}
+  ;(stdin as any).isTTY = true
+  ;(stdin as any).setRawMode = vi.fn()
+  ;(stdin as any).setEncoding = () => {}
 
-  let nextReads: (string | null)[] = []
+  const nextReads: (string | null)[] = []
   stdin.read = vi.fn(() => nextReads.shift() ?? null) as unknown as typeof stdin.read
-  stdin.unref = () => {}
-  stdin.ref = () => {}
+  ;(stdin as any).unref = () => {}
+  ;(stdin as any).ref = () => {}
 
   return stdin
 }

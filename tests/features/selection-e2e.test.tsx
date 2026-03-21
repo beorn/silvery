@@ -29,15 +29,15 @@ const settle = (ms = 300) => new Promise((r) => setTimeout(r, ms))
  * x,y are 1-indexed.
  */
 function mouseDown(term: Term, x: number, y: number, button = 0) {
-  term.sendInput!(`\x1b[<${button};${x + 1};${y + 1}M`)
+  ;(term as any).sendInput(`\x1b[<${button};${x + 1};${y + 1}M`)
 }
 
 function mouseMove(term: Term, x: number, y: number, button = 0) {
-  term.sendInput!(`\x1b[<${button + 32};${x + 1};${y + 1}M`)
+  ;(term as any).sendInput(`\x1b[<${button + 32};${x + 1};${y + 1}M`)
 }
 
 function mouseUp(term: Term, x: number, y: number, button = 0) {
-  term.sendInput!(`\x1b[<${button};${x + 1};${y + 1}m`)
+  ;(term as any).sendInput(`\x1b[<${button};${x + 1};${y + 1}m`)
 }
 
 // ============================================================================

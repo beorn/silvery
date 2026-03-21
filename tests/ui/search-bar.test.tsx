@@ -77,11 +77,14 @@ describe("SearchBar", () => {
     ]
     const surface: TextSurface = {
       id: "test",
+      document: { getRows: () => [], totalRows: 0 } as any,
       getText: () => "test content",
       search: () => matches,
-      hitTest: () => false,
+      hitTest: () => null,
+      notifyContentChange: () => {},
       reveal: vi.fn(),
       subscribe: () => () => {},
+      capabilities: { searchableHistory: false, selectableHistory: false, overlayHistory: false, paneSafe: false },
     }
 
     function TestApp() {

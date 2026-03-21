@@ -31,7 +31,7 @@ export const meta: ExampleMeta = {
   features: ["TextArea", "useContentRect()", "Ctrl+Enter submit"],
 }
 
-export function NoteEditor(): JSX.Element {
+export function NoteEditor() {
   const { exit } = useApp()
   const [notes, setNotes] = useState<string[]>([])
   const [value, setValue] = useState("")

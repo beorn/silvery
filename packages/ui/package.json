@@ -53,12 +53,40 @@
       "import": "./src/input/index.ts"
     },
     "./animation": {
-      "types": "./src/animation/index.ts",
-      "import": "./src/animation/index.ts"
+      "types": "./src/animation.ts",
+      "import": "./src/animation.ts"
+    },
+    "./image": {
+      "types": "./src/image/index.ts",
+      "import": "./src/image/index.ts"
+    },
+    "./components/CursorLine": {
+      "types": "./src/components/CursorLine.tsx",
+      "import": "./src/components/CursorLine.tsx"
+    },
+    "./components/Divider": {
+      "types": "./src/components/Divider.tsx",
+      "import": "./src/components/Divider.tsx"
+    },
+    "./components/EditContextDisplay": {
+      "types": "./src/components/EditContextDisplay.tsx",
+      "import": "./src/components/EditContextDisplay.tsx"
+    },
+    "./components/Spinner": {
+      "types": "./src/components/Spinner.tsx",
+      "import": "./src/components/Spinner.tsx"
+    },
+    "./components/TextArea": {
+      "types": "./src/components/TextArea.tsx",
+      "import": "./src/components/TextArea.tsx"
+    },
+    "./components/TextInput": {
+      "types": "./src/components/TextInput.tsx",
+      "import": "./src/components/TextInput.tsx"
     },
     "./*": {
-      "types": "./src/*",
-      "import": "./src/*"
+      "types": "./src/*.ts",
+      "import": "./src/*.ts"
     }
   },
   "publishConfig": {

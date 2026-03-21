@@ -255,12 +255,11 @@ function ComponentShowcase() {
 
         {/* Badges */}
         <Box gap={1} flexWrap="wrap">
-          <Badge variant="default">default</Badge>
-          <Badge variant="success">success</Badge>
-          <Badge variant="error">error</Badge>
-          <Badge variant="warning">warning</Badge>
-          <Badge variant="info">info</Badge>
-          <Badge variant="secondary">secondary</Badge>
+          <Badge label="default" variant="default" />
+          <Badge label="success" variant="success" />
+          <Badge label="error" variant="error" />
+          <Badge label="warning" variant="warning" />
+          <Badge label="primary" variant="primary" />
         </Box>
 
         {/* Progress + Spinner */}
@@ -280,12 +279,10 @@ function ComponentShowcase() {
         {/* Toggle */}
         <Box gap={2}>
           <Box gap={1}>
-            <Toggle checked={true} />
-            <Text>Enabled</Text>
+            <Toggle value={true} onChange={() => {}} label="Enabled" />
           </Box>
           <Box gap={1}>
-            <Toggle checked={false} />
-            <Muted>Disabled</Muted>
+            <Toggle value={false} onChange={() => {}} label="Disabled" />
           </Box>
         </Box>
 

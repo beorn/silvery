@@ -141,7 +141,7 @@ function LoadingBox({ label, color }: { label: string; color: string }) {
 // Main App
 // ============================================================================
 
-export function AsyncDataApp(): JSX.Element {
+export function AsyncDataApp() {
   const { exit } = useApp()
   const [refreshKey, setRefreshKey] = useState(0)
 

@@ -111,7 +111,7 @@ export function sanitizeChildren(children: import("react").ReactNode): import("r
     return sanitizeAnsi(children)
   }
   if (Array.isArray(children)) {
-    return children.map((child, i) => sanitizeChildren(child))
+    return children.map((child, i) => sanitizeChildren(child as import("react").ReactNode))
   }
   return children
 }

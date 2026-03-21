@@ -1902,7 +1902,7 @@ function clearExcessArea(
 
   // Clear right margin (old was wider than new)
   if (prev.width > layout.width) {
-    let excessX = layout.x + layout.width
+    const excessX = layout.x + layout.width
     let excessWidth = prev.width - layout.width
     // Clip horizontally to parent's content area (inside border/padding).
     // Without this, excess clearing of a child that previously filled a wider

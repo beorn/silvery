@@ -74,7 +74,7 @@ function generateTasks(count: number): Task[] {
 // Components
 // ============================================================================
 
-function PriorityBadge({ priority }: { priority: "high" | "medium" | "low" }): JSX.Element {
+function PriorityBadge({ priority }: { priority: "high" | "medium" | "low" }) {
   const colors = {
     high: "$error",
     medium: "$warning",
@@ -93,15 +93,7 @@ function PriorityBadge({ priority }: { priority: "high" | "medium" | "low" }): J
   )
 }
 
-function TaskItem({
-  task,
-  isSelected,
-  isExpanded,
-}: {
-  task: Task
-  isSelected: boolean
-  isExpanded: boolean
-}): JSX.Element {
+function TaskItem({ task, isSelected, isExpanded }: { task: Task; isSelected: boolean; isExpanded: boolean }) {
   const checkbox = task.completed ? "[x]" : "[ ]"
   const hasSubtasks = task.subtasks && task.subtasks.length > 0
 
@@ -144,7 +136,7 @@ function StatusBar({
   cursor: number
   scrollOffset: number
   visibleCount: number
-}): JSX.Element {
+}) {
   const completed = tasks.filter((t) => t.completed).length
   const total = tasks.length
   const percent = Math.round((completed / total) * 100)
@@ -163,7 +155,7 @@ function StatusBar({
   )
 }
 
-export function TaskList(): JSX.Element {
+export function TaskList() {
   const { exit } = useApp()
   const [tasks, setTasks] = useState(() => generateTasks(60))
   const [cursor, setCursor] = useState(0)

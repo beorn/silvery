@@ -18,9 +18,18 @@
 
 import { deflateSync } from "node:zlib"
 import React, { useState, useMemo } from "react"
-import { render, Box, Text, Image, useInput, useApp, createTerm, type Key } from "../../src/index.js"
-import { isKittyGraphicsSupported } from "../../src/image/kitty-graphics.js"
-import { isSixelSupported } from "../../src/image/sixel-encoder.js"
+import {
+  render,
+  Box,
+  Text,
+  Image,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+  isKittyGraphicsSupported,
+  isSixelSupported,
+} from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -138,7 +147,7 @@ function crc32(data: Buffer): number {
 // Components
 // ============================================================================
 
-function ProtocolStatus(): JSX.Element {
+function ProtocolStatus() {
   const kitty = isKittyGraphicsSupported()
   const sixel = isSixelSupported()
 
@@ -158,7 +167,7 @@ function ProtocolStatus(): JSX.Element {
   )
 }
 
-export function ImageComponentDemo(): JSX.Element {
+export function ImageComponentDemo() {
   const { exit } = useApp()
   const [imageWidth, setImageWidth] = useState(40)
   const [imageHeight, setImageHeight] = useState(15)

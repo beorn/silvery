@@ -53,9 +53,10 @@ export const Box = React.forwardRef<BoxHandle, BoxProps>(function InkBox(props, 
     color: hasColors ? (props as any).color : undefined,
     backgroundColor: hasColors ? (props as any).backgroundColor : undefined,
     borderColor: hasColors ? (props as any).borderColor : undefined,
+    // borderDimColor is an Ink-specific prop not in silvery's BoxProps
     borderDimColor: hasColors ? (props as any).borderDimColor : undefined,
     ref,
-  })
+  } as any)
 })
 
 // =============================================================================
@@ -139,7 +140,7 @@ function extractTextFromElement(node: React.ReactNode): string {
   if (node == null || typeof node === "boolean") return ""
   if (typeof node === "string") return node
   if (typeof node === "number") return String(node)
-  if (Array.isArray(node)) return node.map(extractTextFromElement).join("")
+  if (Array.isArray(node)) return (node as React.ReactNode[]).map(extractTextFromElement).join("")
   if (React.isValidElement(node)) {
     const props = node.props as Record<string, any>
     return extractTextFromElement(props.children)
@@ -172,7 +173,7 @@ export function Static<T>({
   // delegate to silvery's native Static component which handles both inline
   // (scrollback promotion) and fullscreen (render in tree) modes.
   if (!store) {
-    return React.createElement(SilveryStatic, { items, children: renderItem, style })
+    return React.createElement(SilveryStatic, { items, children: renderItem, style } as any)
   }
 
   // Compute new items since last render

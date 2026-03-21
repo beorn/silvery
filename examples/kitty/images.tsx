@@ -396,7 +396,7 @@ async function main() {
 
   // Gather images from CLI arguments
   const args = process.argv.slice(2)
-  let images: ImageEntry[]
+  let images: ImageEntry[] = []
 
   if (args.length === 0) {
     // No arguments: try samples/ directory first, fall back to test pattern
@@ -404,7 +404,7 @@ async function main() {
     if (existsSync(samplesDir)) {
       images = discoverImages([samplesDir])
     }
-    if (!images || images.length === 0) {
+    if (images.length === 0) {
       images = [createTestPatternEntry()]
     }
   } else {

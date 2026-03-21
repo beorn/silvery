@@ -90,6 +90,10 @@ export interface BorderChars {
   bottomRight: string
   horizontal: string
   vertical: string
+  /** Bottom horizontal character. When absent, falls back to `horizontal`. */
+  bottomHorizontal?: string
+  /** Right vertical character. When absent, falls back to `vertical`. */
+  rightVertical?: string
 }
 
 // ============================================================================

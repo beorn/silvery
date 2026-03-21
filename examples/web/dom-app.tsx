@@ -42,7 +42,7 @@ function App() {
           <Box flexDirection="row" gap={2}>
             <Text underline>Underline</Text>
             <Text strikethrough>Strike</Text>
-            <Text underlineStyle="wavy" underlineColor="red">
+            <Text underlineStyle="curly" underlineColor="red">
               Wavy
             </Text>
           </Box>

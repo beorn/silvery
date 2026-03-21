@@ -131,13 +131,7 @@ const sampleLines = [
 // Components
 // ============================================================================
 
-function TransformSelector({
-  current,
-  transforms: items,
-}: {
-  current: number
-  transforms: TransformDef[]
-}): JSX.Element {
+function TransformSelector({ current, transforms: items }: { current: number; transforms: TransformDef[] }) {
   return (
     <Box flexDirection="column" overflow="scroll" scrollTo={current} height={7}>
       {items.map((t, index) => {
@@ -159,15 +153,7 @@ function TransformSelector({
   )
 }
 
-function TextPanel({
-  title,
-  titleColor,
-  children,
-}: {
-  title: string
-  titleColor: string
-  children: React.ReactNode
-}): JSX.Element {
+function TextPanel({ title, titleColor, children }: { title: string; titleColor: string; children: React.ReactNode }) {
   return (
     <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1}>
       <Box marginBottom={1}>
@@ -178,7 +164,7 @@ function TextPanel({
   )
 }
 
-export function TransformDemo(): JSX.Element {
+export function TransformDemo() {
   const { exit } = useApp()
   const [currentIndex, setCurrentIndex] = useState(0)
 

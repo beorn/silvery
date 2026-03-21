@@ -15,7 +15,7 @@ import { run, useInput, type RunHandle } from "../../packages/term/src/runtime/r
 import { Box, Text, ScrollbackList } from "../../src/index"
 
 /** Minimal app with ScrollbackList and footer, short content. */
-function ShortContentApp(): JSX.Element {
+function ShortContentApp() {
   const [items, setItems] = useState([
     { id: 1, text: "Item one", done: false },
     { id: 2, text: "Item two", done: false },

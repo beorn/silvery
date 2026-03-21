@@ -40,7 +40,7 @@ describe("output-phase xterm.js replay", () => {
         const fresh = termFresh.getCell(y, x)
         if (!incr || !fresh) continue
 
-        if (incr.text !== fresh.text) {
+        if (incr.char !== fresh.char) {
           if (mismatches.length < 30) {
             mismatches.push(`(${x},${y}): incr='${incr.char}' fresh='${fresh.char}'`)
           }

@@ -67,24 +67,21 @@
  * ```
  */
 export { Box } from "./components/Box"
-export { Console } from "@silvery/ui/components/Console"
-export { ListView } from "@silvery/ui/components/ListView"
+export { Console } from "@silvery/ui/components"
+export { ListView } from "@silvery/ui/components"
 export type {
   ListViewProps,
   ListViewHandle,
   ListItemMeta,
   ListViewHistoryConfig,
   ListTextAdapter,
-} from "@silvery/ui/components/ListView"
-export { VirtualList } from "@silvery/ui/components/VirtualList"
-export type { VirtualListProps, VirtualListHandle, ItemMeta } from "@silvery/ui/components/VirtualList"
-export { HorizontalVirtualList } from "@silvery/ui/components/HorizontalVirtualList"
-export type {
-  HorizontalVirtualListProps,
-  HorizontalVirtualListHandle,
-} from "@silvery/ui/components/HorizontalVirtualList"
-export { SplitView } from "@silvery/ui/components/SplitView"
-export type { SplitViewProps } from "@silvery/ui/components/SplitView"
+} from "@silvery/ui/components"
+export { VirtualList } from "@silvery/ui/components"
+export type { VirtualListProps, VirtualListHandle, ItemMeta } from "@silvery/ui/components"
+export { HorizontalVirtualList } from "@silvery/ui/components"
+export type { HorizontalVirtualListProps, HorizontalVirtualListHandle } from "@silvery/ui/components"
+export { SplitView } from "@silvery/ui/components"
+export type { SplitViewProps } from "@silvery/ui/components"
 export type { LayoutNode as SplitLayoutNode } from "@silvery/term/pane-manager"
 export {
   createLeaf,
@@ -121,16 +118,16 @@ export type { FillProps } from "./components/Fill"
 export { Newline } from "./components/Newline"
 export { Spacer } from "./components/Spacer"
 export { Static } from "./components/Static"
-export { ScrollbackList } from "@silvery/ui/components/ScrollbackList"
-export type { ScrollbackListProps } from "@silvery/ui/components/ScrollbackList"
+export { ScrollbackList } from "@silvery/ui/components"
+export type { ScrollbackListProps } from "@silvery/ui/components"
 
 // Viewport Architecture (Phase 2)
-export { Screen } from "@silvery/ui/components/Screen"
-export type { ScreenProps } from "@silvery/ui/components/Screen"
-export { ScrollbackView } from "@silvery/ui/components/ScrollbackView"
-export type { ScrollbackViewProps } from "@silvery/ui/components/ScrollbackView"
-export { VirtualView } from "@silvery/ui/components/VirtualView"
-export type { VirtualViewProps, VirtualViewHandle } from "@silvery/ui/components/VirtualView"
+export { Screen } from "@silvery/ui/components"
+export type { ScreenProps } from "@silvery/ui/components"
+export { ScrollbackView } from "@silvery/ui/components"
+export type { ScrollbackViewProps } from "@silvery/ui/components"
+export { VirtualView } from "@silvery/ui/components"
+export type { VirtualViewProps, VirtualViewHandle } from "@silvery/ui/components"
 
 /**
  * Re-export ErrorBoundary component - catches render errors in children.
@@ -144,39 +141,39 @@ export type { VirtualViewProps, VirtualViewHandle } from "@silvery/ui/components
  * </ErrorBoundary>
  * ```
  */
-export { ErrorBoundary } from "@silvery/ui/components/ErrorBoundary"
-export type { ErrorBoundaryProps } from "@silvery/ui/components/ErrorBoundary"
+export { ErrorBoundary } from "@silvery/ui/components"
+export type { ErrorBoundaryProps } from "@silvery/ui/components"
 
 // Lightweight runtime-level error boundary (used as default root in createApp/run)
 export { SilveryErrorBoundary } from "./error-boundary"
 export type { SilveryErrorBoundaryProps } from "./error-boundary"
 
 // Input Components
-export { TextInput } from "@silvery/ui/components/TextInput"
-export type { TextInputProps, TextInputHandle } from "@silvery/ui/components/TextInput"
+export { TextInput } from "@silvery/ui/components"
+export type { TextInputProps, TextInputHandle } from "@silvery/ui/components"
 
-export { TextArea } from "@silvery/ui/components/TextArea"
-export type { TextAreaProps, TextAreaHandle, TextAreaSelection } from "@silvery/ui/components/TextArea"
+export { TextArea } from "@silvery/ui/components"
+export type { TextAreaProps, TextAreaHandle, TextAreaSelection } from "@silvery/ui/components"
 
-export { useTextArea, clampScroll } from "@silvery/ui/components/useTextArea"
-export type { UseTextAreaOptions, UseTextAreaResult } from "@silvery/ui/components/useTextArea"
+export { useTextArea, clampScroll } from "@silvery/ui/components"
+export type { UseTextAreaOptions, UseTextAreaResult } from "@silvery/ui/components"
 
-export { EditContextDisplay } from "@silvery/ui/components/EditContextDisplay"
-export type { EditContextDisplayProps } from "@silvery/ui/components/EditContextDisplay"
+export { EditContextDisplay } from "@silvery/ui/components"
+export type { EditContextDisplayProps } from "@silvery/ui/components"
 
 // Display Components
-export { CursorLine } from "@silvery/ui/components/CursorLine"
-export type { CursorLineProps } from "@silvery/ui/components/CursorLine"
+export { CursorLine } from "@silvery/ui/components"
+export type { CursorLineProps } from "@silvery/ui/components"
 
 // Dialog Components
-export { ModalDialog, formatTitleWithHotkey } from "@silvery/ui/components/ModalDialog"
-export type { ModalDialogProps } from "@silvery/ui/components/ModalDialog"
+export { ModalDialog, formatTitleWithHotkey } from "@silvery/ui/components"
+export type { ModalDialogProps } from "@silvery/ui/components"
 
-export { PickerDialog } from "@silvery/ui/components/PickerDialog"
-export type { PickerDialogProps } from "@silvery/ui/components/PickerDialog"
+export { PickerDialog } from "@silvery/ui/components"
+export type { PickerDialogProps } from "@silvery/ui/components"
 
-export { PickerList } from "@silvery/ui/components/PickerList"
-export type { PickerListProps } from "@silvery/ui/components/PickerList"
+export { PickerList } from "@silvery/ui/components"
+export type { PickerListProps } from "@silvery/ui/components"
 
 // Typography Presets
 export {
@@ -197,45 +194,45 @@ export {
   UL,
   OL,
   LI,
-} from "@silvery/ui/components/Typography"
-export type { TypographyProps } from "@silvery/ui/components/Typography"
+} from "@silvery/ui/components"
+export type { TypographyProps } from "@silvery/ui/components"
 
 // Focusable Controls
-export { Toggle } from "@silvery/ui/components/Toggle"
-export type { ToggleProps } from "@silvery/ui/components/Toggle"
+export { Toggle } from "@silvery/ui/components"
+export type { ToggleProps } from "@silvery/ui/components"
 
-export { Button } from "@silvery/ui/components/Button"
-export type { ButtonProps } from "@silvery/ui/components/Button"
+export { Button } from "@silvery/ui/components"
+export type { ButtonProps } from "@silvery/ui/components"
 
 // Input Hooks
-export { useReadline } from "@silvery/ui/components/useReadline"
-export type { ReadlineState, UseReadlineOptions, UseReadlineResult } from "@silvery/ui/components/useReadline"
+export { useReadline } from "@silvery/ui/components"
+export type { ReadlineState, UseReadlineOptions, UseReadlineResult } from "@silvery/ui/components"
 
 // Widget Components
-export { Spinner } from "@silvery/ui/components/Spinner"
-export type { SpinnerProps } from "@silvery/ui/components/Spinner"
+export { Spinner } from "@silvery/ui/components"
+export type { SpinnerProps } from "@silvery/ui/components"
 
-export { ProgressBar } from "@silvery/ui/components/ProgressBar"
-export type { ProgressBarProps } from "@silvery/ui/components/ProgressBar"
+export { ProgressBar } from "@silvery/ui/components"
+export type { ProgressBarProps } from "@silvery/ui/components"
 
-export { SelectList } from "@silvery/ui/components/SelectList"
-export type { SelectListProps, SelectOption } from "@silvery/ui/components/SelectList"
+export { SelectList } from "@silvery/ui/components"
+export type { SelectListProps, SelectOption } from "@silvery/ui/components"
 
-export { Table } from "@silvery/ui/components/Table"
-export type { TableProps, TableColumn } from "@silvery/ui/components/Table"
+export { Table } from "@silvery/ui/components"
+export type { TableProps, TableColumn } from "@silvery/ui/components"
 
-export { Badge } from "@silvery/ui/components/Badge"
-export type { BadgeProps } from "@silvery/ui/components/Badge"
+export { Badge } from "@silvery/ui/components"
+export type { BadgeProps } from "@silvery/ui/components"
 
-export { Divider } from "@silvery/ui/components/Divider"
-export type { DividerProps } from "@silvery/ui/components/Divider"
+export { Divider } from "@silvery/ui/components"
+export type { DividerProps } from "@silvery/ui/components"
 
 // Form Components
-export { Form, FormField } from "@silvery/ui/components/Form"
-export type { FormProps, FormFieldProps } from "@silvery/ui/components/Form"
+export { Form, FormField } from "@silvery/ui/components"
+export type { FormProps, FormFieldProps } from "@silvery/ui/components"
 
 // Toast / Notification
-export { useToast, ToastContainer, ToastItem } from "@silvery/ui/components/Toast"
+export { useToast, ToastContainer, ToastItem } from "@silvery/ui/components"
 export type {
   ToastData,
   ToastOptions,
@@ -243,41 +240,41 @@ export type {
   UseToastResult,
   ToastContainerProps,
   ToastItemProps,
-} from "@silvery/ui/components/Toast"
+} from "@silvery/ui/components"
 
 // Command Palette
-export { CommandPalette } from "@silvery/ui/components/CommandPalette"
-export type { CommandPaletteProps, CommandItem } from "@silvery/ui/components/CommandPalette"
+export { CommandPalette } from "@silvery/ui/components"
+export type { CommandPaletteProps, CommandItem } from "@silvery/ui/components"
 
 // Tree View
-export { TreeView } from "@silvery/ui/components/TreeView"
-export type { TreeViewProps, TreeNode } from "@silvery/ui/components/TreeView"
+export { TreeView } from "@silvery/ui/components"
+export type { TreeViewProps, TreeNode } from "@silvery/ui/components"
 
 // Breadcrumb
-export { Breadcrumb } from "@silvery/ui/components/Breadcrumb"
-export type { BreadcrumbProps, BreadcrumbItem } from "@silvery/ui/components/Breadcrumb"
+export { Breadcrumb } from "@silvery/ui/components"
+export type { BreadcrumbProps, BreadcrumbItem } from "@silvery/ui/components"
 
 // Tabs
-export { Tabs, TabList, Tab, TabPanel } from "@silvery/ui/components/Tabs"
-export type { TabsProps, TabListProps, TabProps, TabPanelProps } from "@silvery/ui/components/Tabs"
+export { Tabs, TabList, Tab, TabPanel } from "@silvery/ui/components"
+export type { TabsProps, TabListProps, TabProps, TabPanelProps } from "@silvery/ui/components"
 
 // Tooltip
-export { Tooltip } from "@silvery/ui/components/Tooltip"
-export type { TooltipProps } from "@silvery/ui/components/Tooltip"
+export { Tooltip } from "@silvery/ui/components"
+export type { TooltipProps } from "@silvery/ui/components"
 
 // Skeleton
-export { Skeleton } from "@silvery/ui/components/Skeleton"
-export type { SkeletonProps } from "@silvery/ui/components/Skeleton"
+export { Skeleton } from "@silvery/ui/components"
+export type { SkeletonProps } from "@silvery/ui/components"
 
 // Image Component
-export { Image } from "@silvery/ui/image/Image"
-export type { ImageProps } from "@silvery/ui/image/Image"
+export { Image } from "@silvery/ui/image"
+export type { ImageProps } from "@silvery/ui/image"
 
 // Image Protocol Encoders
-export { encodeKittyImage, deleteKittyImage, isKittyGraphicsSupported } from "@silvery/ui/image/kitty-graphics"
-export type { KittyImageOptions } from "@silvery/ui/image/kitty-graphics"
-export { encodeSixel, isSixelSupported } from "@silvery/ui/image/sixel-encoder"
-export type { SixelImageData } from "@silvery/ui/image/sixel-encoder"
+export { encodeKittyImage, deleteKittyImage, isKittyGraphicsSupported } from "@silvery/ui/image"
+export type { KittyImageOptions } from "@silvery/ui/image"
+export { encodeSixel, isSixelSupported } from "@silvery/ui/image"
+export type { SixelImageData } from "@silvery/ui/image"
 
 // =============================================================================
 // Hooks
@@ -399,7 +396,7 @@ export type { ListItemContext } from "./hooks/useListItem"
 // App-level Providers (Phase 4)
 export { SurfaceRegistryProvider, useSurfaceRegistry, useSurfaceRegistryOptional } from "./providers/SurfaceRegistry"
 export { SearchProvider, useSearch } from "./providers/SearchProvider"
-export { SearchBar } from "@silvery/ui/components/SearchBar"
+export { SearchBar } from "@silvery/ui/components"
 
 /**
  * Re-export React concurrent features for TUI responsiveness.
@@ -1092,8 +1089,8 @@ export type { InputBoundaryProps } from "./contexts/InputBoundary"
 export { PositionRegistryProvider, usePositionRegistry, createPositionRegistry } from "./hooks/usePositionRegistry"
 export type { PositionRegistry, ScreenRect } from "./hooks/usePositionRegistry"
 export { useGridPosition } from "./hooks/useGridPosition"
-export { GridCell } from "@silvery/ui/components/GridCell"
-export type { GridCellProps } from "@silvery/ui/components/GridCell"
+export { GridCell } from "@silvery/ui/components"
+export type { GridCellProps } from "@silvery/ui/components"
 
 // =============================================================================
 // Animation
@@ -1116,7 +1113,7 @@ export type { GridCellProps } from "@silvery/ui/components/GridCell"
  * React's `useTransition` (concurrent mode) is exported separately above.
  */
 export { easings, resolveEasing, useAnimation, useInterval, useTimeout, useLatest } from "@silvery/ui/animation"
-export { useTransition as useAnimatedTransition } from "@silvery/ui/animation/index"
+export { useTransition as useAnimatedTransition } from "@silvery/ui/animation"
 export type {
   EasingFn,
   EasingName,

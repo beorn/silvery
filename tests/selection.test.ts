@@ -23,7 +23,7 @@ describe("selectionUpdate", () => {
   })
 
   test("extend updates head while selecting", () => {
-    let [state] = selectionUpdate({ type: "start", col: 0, row: 0 }, createSelectionState())
+    const [state] = selectionUpdate({ type: "start", col: 0, row: 0 }, createSelectionState())
     const [next, effects] = selectionUpdate({ type: "extend", col: 10, row: 2 }, state)
 
     expect(next.range!.anchor).toEqual({ col: 0, row: 0 })
@@ -60,7 +60,7 @@ describe("selectionUpdate", () => {
   })
 
   test("clear resets to initial state, emits render if had range", () => {
-    let [state] = selectionUpdate({ type: "start", col: 0, row: 0 }, createSelectionState())
+    const [state] = selectionUpdate({ type: "start", col: 0, row: 0 }, createSelectionState())
     const [next, effects] = selectionUpdate({ type: "clear" }, state)
 
     expect(next.range).toBeNull()

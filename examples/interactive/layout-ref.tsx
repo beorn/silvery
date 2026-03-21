@@ -110,7 +110,7 @@ function InspectTrigger({ onInspect }: { onInspect: () => void }) {
   return null
 }
 
-export function LayoutRefApp(): JSX.Element {
+export function LayoutRefApp() {
   const { exit } = useApp()
   const [layouts, setLayouts] = useState<Record<string, LayoutInfo>>({})
 

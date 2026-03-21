@@ -27,11 +27,14 @@ function createMockSurface(
   const matches = opts?.searchResults ?? []
   return {
     id,
+    document: { getRows: () => [], totalRows: 0 } as any,
     getText: () => "mock text",
     search: () => matches,
-    hitTest: () => false,
-    reveal: opts?.reveal ?? vi.fn(),
+    hitTest: () => null,
+    notifyContentChange: () => {},
+    reveal: opts?.reveal ?? (vi.fn() as any),
     subscribe: () => () => {},
+    capabilities: { searchableHistory: false, selectableHistory: false, overlayHistory: false, paneSafe: false },
   }
 }
 

@@ -66,7 +66,7 @@ const MODIFIER_DEFS: ModDef[] = [
   { symbol: "✦", label: "Hyper", color: "magenta" },
 ]
 
-function KeyExplorer({ kittySupported }: { kittySupported: boolean }): JSX.Element {
+function KeyExplorer({ kittySupported }: { kittySupported: boolean }) {
   const { exit } = useApp()
   const [events, setEvents] = useState<KeyEvent[]>([])
   const [latest, setLatest] = useState<KeyEvent | null>(null)
@@ -170,7 +170,7 @@ function KeyExplorer({ kittySupported }: { kittySupported: boolean }): JSX.Eleme
   )
 }
 
-function KeyDetails({ event }: { event: KeyEvent }): JSX.Element {
+function KeyDetails({ event }: { event: KeyEvent }) {
   const { parsed, raw } = event
 
   // Determine which modifiers are active
@@ -241,7 +241,7 @@ function KeyDetails({ event }: { event: KeyEvent }): JSX.Element {
   )
 }
 
-function ModBadge({ mod, active }: { mod: ModDef; active: boolean }): JSX.Element {
+function ModBadge({ mod, active }: { mod: ModDef; active: boolean }) {
   if (active) {
     return (
       <Text backgroundColor={mod.color as any} color="white" bold>
@@ -256,7 +256,7 @@ function ModBadge({ mod, active }: { mod: ModDef; active: boolean }): JSX.Elemen
   )
 }
 
-function KeyField({ label, value }: { label: string; value: string | boolean | undefined }): JSX.Element {
+function KeyField({ label, value }: { label: string; value: string | boolean | undefined }) {
   if (value === undefined) {
     return <Text dim>{label}: --</Text>
   }
@@ -302,6 +302,8 @@ function parseInputKey(raw: string): [string, Key] {
     meta: parsed.meta || parsed.option,
     super: parsed.super,
     hyper: parsed.hyper,
+    capsLock: parsed.capsLock ?? false,
+    numLock: parsed.numLock ?? false,
     eventType: parsed.eventType,
   }
 

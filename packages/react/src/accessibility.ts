@@ -15,7 +15,7 @@
  * - Plain text content (no ANSI codes)
  */
 
-import React from "react"
+import React, { type ReactNode } from "react"
 
 // =============================================================================
 // Types
@@ -72,7 +72,7 @@ function walkNode(node: React.ReactNode, parentDirection: "row" | "column"): str
 
   // Arrays/fragments → join children
   if (Array.isArray(node)) {
-    const parts = node.map((child) => walkNode(child, parentDirection)).filter((s) => s !== "")
+    const parts = node.map((child) => walkNode(child as ReactNode, parentDirection)).filter((s) => s !== "")
     const sep = parentDirection === "column" ? "\n" : " "
     return parts.join(sep)
   }
@@ -146,7 +146,7 @@ function walkChildren(children: React.ReactNode, direction: "row" | "column"): s
   }
 
   // Array of children
-  const parts = children.map((child) => walkNode(child, direction)).filter((s) => s !== "")
+  const parts = children.map((child) => walkNode(child as ReactNode, direction)).filter((s) => s !== "")
   const sep = direction === "column" ? "\n" : " "
   return parts.join(sep)
 }

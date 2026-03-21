@@ -8,7 +8,7 @@
 import React from "react"
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
-import { renderToXterm } from "@silvery/term/xterm/index.ts"
+import { renderToXterm } from "@silvery/term/xterm/index"
 import { SHOWCASES } from "./showcases/index.js"
 
 // Read demo name from URL params

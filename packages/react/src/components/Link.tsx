@@ -80,7 +80,7 @@ export function Link({ href, children, color = "$link", onClick, onMouseEnter, o
   const handleClick = useCallback(
     (e: SilveryMouseEvent) => {
       if (armed) {
-        rt?.emit("link:open", href)
+        ;(rt as any)?.emit("link:open", href)
         e.preventDefault()
       }
       onClick?.(e)

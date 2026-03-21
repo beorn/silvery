@@ -921,7 +921,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
     runtime[Symbol.dispose]()
   }
 
-  let exit: () => void
+  let exit: () => void // eslint-disable-line prefer-const -- forward declaration, assigned once at L1403
 
   // Create SilveryNode container.
   // onRender fires during React's resetAfterCommit — inside the commit phase.

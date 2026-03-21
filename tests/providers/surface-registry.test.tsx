@@ -23,11 +23,14 @@ import type { TextSurface } from "../../packages/term/src/text-surface"
 function createMockSurface(id: string): TextSurface {
   return {
     id,
+    document: { getRows: () => [], totalRows: 0 } as any,
     getText: () => `text-${id}`,
     search: () => [],
-    hitTest: () => false,
+    hitTest: () => null,
+    notifyContentChange: () => {},
     reveal: vi.fn(),
     subscribe: () => () => {},
+    capabilities: { searchableHistory: false, selectableHistory: false, overlayHistory: false, paneSafe: false },
   }
 }
 

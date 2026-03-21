@@ -286,7 +286,7 @@ export class YogaLayoutEngine implements LayoutEngine {
       ALIGN_BASELINE: yoga.ALIGN_BASELINE as unknown as AlignValue,
       ALIGN_SPACE_BETWEEN: yoga.ALIGN_SPACE_BETWEEN as unknown as AlignValue,
       ALIGN_SPACE_AROUND: yoga.ALIGN_SPACE_AROUND as unknown as AlignValue,
-      ALIGN_SPACE_EVENLY: yoga.ALIGN_SPACE_EVENLY as unknown as AlignValue,
+      ALIGN_SPACE_EVENLY: (yoga as any).ALIGN_SPACE_EVENLY as unknown as AlignValue,
 
       // Justify
       JUSTIFY_FLEX_START: yoga.JUSTIFY_FLEX_START as unknown as JustifyValue,

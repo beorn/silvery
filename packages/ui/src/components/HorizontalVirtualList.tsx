@@ -123,7 +123,7 @@ function calcTotalItemsWidth<T>(
   if (typeof itemWidth === "number") return items.length * itemWidth + (items.length - 1) * gap
   let total = 0
   for (let i = 0; i < items.length; i++) {
-    total += itemWidth(items[i], i) + (i > 0 ? gap : 0)
+    total += itemWidth(items[i]!, i) + (i > 0 ? gap : 0)
   }
   return total
 }
@@ -148,7 +148,7 @@ function calcActualVisibleCount<T>(
   let usedSize = 0
   let count = 0
   for (let i = startFrom; i < items.length; i++) {
-    const size = itemWidth(items[i], i)
+    const size = itemWidth(items[i]!, i)
     const sizeWithGap = size + (count > 0 ? gap : 0)
     if (usedSize + sizeWithGap > viewport) break
     usedSize += sizeWithGap

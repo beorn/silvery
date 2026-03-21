@@ -168,7 +168,7 @@ const STATUS_COLORS: Record<Item["status"], string> = {
   blocked: "$error",
 }
 
-function ProgressBar({ percent, width: barWidth }: { percent: number; width: number }): JSX.Element {
+function ProgressBar({ percent, width: barWidth }: { percent: number; width: number }) {
   const effectiveWidth = Math.max(5, barWidth)
   const filled = Math.round((percent / 100) * effectiveWidth)
   const empty = effectiveWidth - filled
@@ -181,15 +181,7 @@ function ProgressBar({ percent, width: barWidth }: { percent: number; width: num
   )
 }
 
-function ItemRow({
-  item,
-  isSelected,
-  showDetail,
-}: {
-  item: Item
-  isSelected: boolean
-  showDetail: boolean
-}): JSX.Element {
+function ItemRow({ item, isSelected, showDetail }: { item: Item; isSelected: boolean; showDetail: boolean }) {
   const idStr = String(item.id).padStart(5, " ")
 
   return (
@@ -222,7 +214,7 @@ function ItemRow({
   )
 }
 
-function ScrollIndicator({ current, total, width }: { current: number; total: number; width: number }): JSX.Element {
+function ScrollIndicator({ current, total, width }: { current: number; total: number; width: number }) {
   const percent = total > 0 ? Math.round(((current + 1) / total) * 100) : 0
 
   // Progress bar
@@ -244,7 +236,7 @@ function ScrollIndicator({ current, total, width }: { current: number; total: nu
   )
 }
 
-function StatsBar({ items }: { items: Item[] }): JSX.Element {
+function StatsBar({ items }: { items: Item[] }) {
   const stats = useMemo(() => {
     let p0 = 0,
       p1 = 0,
@@ -294,7 +286,7 @@ function StatsBar({ items }: { items: Item[] }): JSX.Element {
 // Main App
 // ============================================================================
 
-function VirtualBenchmark(): JSX.Element {
+function VirtualBenchmark() {
   const { width, height } = useContentRect()
   const [cursor, setCursor] = useState(0)
   const [showDetail, setShowDetail] = useState(false)

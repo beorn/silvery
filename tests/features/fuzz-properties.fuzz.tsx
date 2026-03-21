@@ -72,9 +72,9 @@ function assertTextEqual(textA: string, textB: string, label: string): void {
  */
 function extractCellContent(buf: TerminalBuffer): string[][] {
   const result: string[][] = []
-  for (let row = 0; row < buf.rows; row++) {
+  for (let row = 0; row < buf.height; row++) {
     const rowChars: string[] = []
-    for (let col = 0; col < buf.cols; col++) {
+    for (let col = 0; col < buf.width; col++) {
       const cell = buf.getCell(row, col)
       rowChars.push(cell?.char ?? " ")
     }

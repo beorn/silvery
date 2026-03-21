@@ -24,7 +24,7 @@
 
 import React from "react"
 import { Box, Text, Muted, Kbd } from "../../src/index.js"
-import { createApp, useApp } from "@silvery/term/runtime"
+import { createApp, useApp, type AppHandle } from "@silvery/term/runtime"
 import { pipe, withReact, withTerminal } from "@silvery/tea/plugins"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
@@ -38,13 +38,13 @@ export const meta: ExampleMeta = {
 // Types
 // ============================================================================
 
-interface Todo {
+type Todo = {
   id: number
   text: string
   completed: boolean
 }
 
-interface State {
+type State = {
   todos: Todo[]
   cursor: number
   nextId: number
@@ -137,12 +137,12 @@ const baseApp = createApp<Record<string, unknown>, State>(
   }),
 
   {
-    "term:key": (data: unknown, { get }: { get: () => State }) => {
+    "term:key": (data, ctx) => {
       const { input: k, key } = data as {
         input: string
         key: { escape: boolean }
       }
-      const state = get()
+      const state = ctx.get() as State
       if (key.escape) return "exit"
       switch (k) {
         case "j":
@@ -170,14 +170,17 @@ const baseApp = createApp<Record<string, unknown>, State>(
 // 2. pipe() composes plugins left-to-right:
 //    - withReact() binds the element, so run() needs no JSX argument
 //    - withTerminal() binds stdin/stdout, so run() needs no options
+// Note: pipe() type composition requires casts at plugin boundaries
+// because AppDefinition's typed run() doesn't structurally match
+// the generic RunnableApp constraint used by plugins.
 const app = pipe(
-  baseApp,
+  baseApp as any,
   withReact(
     <ExampleBanner meta={meta} controls="j/k move  x toggle  a add  d delete  Esc/q quit">
       <TodoApp />
     </ExampleBanner>,
   ),
-  withTerminal(process),
+  withTerminal(process as any),
 )
 
 // ============================================================================
@@ -186,7 +189,7 @@ const app = pipe(
 
 async function main() {
   // 3. run() needs no arguments — element and terminal are already bound
-  const handle = await app.run()
+  const handle = (await app.run()) as AppHandle<State>
 
   await handle.waitUntilExit()
 

@@ -114,11 +114,11 @@ describe("tokenizeAnsi", () => {
     const input = "hello\x1b[31m world\x1b[0m!"
     const tokens = tokenizeAnsi(input)
     expect(types(tokens)).toEqual(["text", "csi", "text", "csi", "text"])
-    expect(tokens[0].value).toBe("hello")
-    expect(tokens[1].value).toBe("\x1b[31m")
-    expect(tokens[2].value).toBe(" world")
-    expect(tokens[3].value).toBe("\x1b[0m")
-    expect(tokens[4].value).toBe("!")
+    expect(tokens[0]!.value).toBe("hello")
+    expect(tokens[1]!.value).toBe("\x1b[31m")
+    expect(tokens[2]!.value).toBe(" world")
+    expect(tokens[3]!.value).toBe("\x1b[0m")
+    expect(tokens[4]!.value).toBe("!")
   })
 
   test("multiple CSI sequences", () => {

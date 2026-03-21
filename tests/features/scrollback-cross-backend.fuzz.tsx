@@ -299,7 +299,7 @@ describe("cross-backend scrollback promotion", () => {
         const xterm = setup.terms.find((t) => t.name === "xterm")!
 
         let i = 0
-        for await (const action of take(gen(SCROLLBACK_ACTIONS), 30)) {
+        for await (const action of take(gen<string>(SCROLLBACK_ACTIONS), 30)) {
           await setup.handle.press(action)
 
           const screenText = xterm.term.screen!.getText()
@@ -336,7 +336,7 @@ describe("cross-backend scrollback promotion", () => {
         const stats = createStats()
 
         let i = 0
-        for await (const action of take(gen(SCROLLBACK_ACTIONS), 30)) {
+        for await (const action of take(gen<string>(SCROLLBACK_ACTIONS), 30)) {
           await setup.handle.press(action)
           checkDivergences(setup.terms, stats)
           i++

@@ -64,7 +64,7 @@ export const meta: ExampleMeta = {
 // Typography Tab
 // ============================================================================
 
-function TypographyTab(): JSX.Element {
+function TypographyTab() {
   return (
     <Box flexDirection="column" gap={1} paddingX={1} overflow="scroll" flexGrow={1}>
       <H1>Getting Started with Silvery</H1>
@@ -154,7 +154,7 @@ const frameworkItems = [
   { label: "React Curse", value: "react-curse" },
 ]
 
-function InputsTab(): JSX.Element {
+function InputsTab() {
   const [textValue, setTextValue] = useState("")
   const [areaValue, setAreaValue] = useState("")
   const [selectedFramework, setSelectedFramework] = useState(0)
@@ -275,7 +275,7 @@ function InputsTab(): JSX.Element {
 // Display Tab
 // ============================================================================
 
-function DisplayTab(): JSX.Element {
+function DisplayTab() {
   const [showModal, setShowModal] = useState(false)
   const [selectedBorder, setSelectedBorder] = useState(0)
 
@@ -407,7 +407,7 @@ function DisplayTab(): JSX.Element {
 // App
 // ============================================================================
 
-export function ComponentsApp(): JSX.Element {
+export function ComponentsApp() {
   const { exit } = useApp()
   const [activeTab, setActiveTab] = useState("typography")
 

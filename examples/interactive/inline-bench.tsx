@@ -9,8 +9,8 @@
  *   bun examples/interactive/inline-bench.tsx
  */
 
-import { TerminalBuffer } from "../../src/buffer.js"
-import { createOutputPhase, outputPhase } from "../../src/pipeline/output-phase.js"
+import { TerminalBuffer } from "@silvery/term/buffer"
+import { createOutputPhase, outputPhase } from "@silvery/term/pipeline/output-phase"
 
 const RUNS = 500
 

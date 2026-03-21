@@ -40,13 +40,16 @@ export async function renderAsync(node: React.ReactNode, options: TestRenderOpti
     })
   })
 
+  const inst = instance!
   return {
-    ...instance!,
     stdout,
     getOutput: () => stdout.get(),
+    rerender: (node: React.ReactNode) => inst.rerender(node),
+    unmount: () => inst.unmount(),
+    waitUntilExit: () => inst.waitUntilExit(),
     async rerenderAsync(newNode: React.ReactNode) {
       await act(async () => {
-        instance!.rerender(newNode)
+        inst.rerender(newNode)
       })
     },
   }

@@ -9,6 +9,7 @@
  * Run: bun vendor/silvery/examples/interactive/gallery.tsx
  */
 
+import type { JSX } from "react"
 import { deflateSync } from "node:zlib"
 import React, { useState, useMemo } from "react"
 import {
@@ -220,7 +221,7 @@ function generateCheckerPattern(w: number, h: number): Buffer {
 // Tab 1: Images — Browse gallery of generated images
 // ============================================================================
 
-function ImagesTab(): JSX.Element {
+function ImagesTab() {
   const rect = useContentRect()
   const w = Math.max(20, rect.width - 4)
   const imgH = Math.max(5, rect.height - 6)
@@ -309,7 +310,7 @@ const PAINT_PRESETS: { name: string; color: RGB }[] = [
   { name: "black", color: [30, 30, 30] },
 ]
 
-function PaintTab(): JSX.Element {
+function PaintTab() {
   const rect = useContentRect()
   const canvasW = Math.max(10, rect.width - 2)
   const canvasTermH = Math.max(4, rect.height - 7)
@@ -455,7 +456,7 @@ function PaintTab(): JSX.Element {
 // Tab 3: Truecolor — Spectrum display
 // ============================================================================
 
-function TruecolorTab(): JSX.Element {
+function TruecolorTab() {
   const rect = useContentRect()
   const w = Math.max(20, rect.width - 4)
   const availH = Math.max(10, rect.height - 3)
@@ -601,7 +602,7 @@ function ansi256toRgb(idx: number): RGB {
 // Main Gallery App
 // ============================================================================
 
-export function Gallery(): JSX.Element {
+export function Gallery() {
   const { exit } = useApp()
   const [activeTab, setActiveTab] = useState("images")
 

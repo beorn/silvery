@@ -10,6 +10,7 @@ import { describe, test, expect, beforeAll } from "vitest"
 import { createTerminal } from "@termless/core"
 import { createXtermBackend } from "@termless/xtermjs"
 import { createGhosttyBackend, initGhostty } from "@termless/ghostty"
+// @ts-expect-error ghostty-web is an optional dependency (only available when installed)
 import type { Ghostty } from "ghostty-web"
 import { TerminalBuffer } from "@silvery/term/buffer"
 import { createOutputPhase, outputPhase } from "@silvery/term/pipeline/output-phase"

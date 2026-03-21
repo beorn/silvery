@@ -8,6 +8,7 @@
  *   Sidebar (220px) | Demo pane (flex) | Source pane (380px, collapsible)
  */
 
+import type { JSX } from "react"
 import { Terminal } from "@xterm/xterm"
 import { FitAddon } from "@xterm/addon-fit"
 import { renderToXterm } from "../../packages/term/src/xterm/index.js"

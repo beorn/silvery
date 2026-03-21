@@ -283,7 +283,7 @@ const SORT_COLUMNS: SortColumn[] = ["cpu", "mem", "pid", "name", "status"]
 // Log Components
 // ============================================================================
 
-function LogRow({ entry, isSelected }: { entry: LogEntry; isSelected: boolean }): JSX.Element {
+function LogRow({ entry, isSelected }: { entry: LogEntry; isSelected: boolean }) {
   return (
     <Box paddingX={1} backgroundColor={isSelected ? "$mutedbg" : undefined}>
       <Muted>{entry.timestamp} </Muted>
@@ -296,7 +296,7 @@ function LogRow({ entry, isSelected }: { entry: LogEntry; isSelected: boolean })
   )
 }
 
-function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number }): JSX.Element {
+function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number }) {
   const { height } = useContentRect()
 
   return (
@@ -317,7 +317,7 @@ function LevelToggles({
 }: {
   levels: Record<LogLevel, boolean>
   onToggle: (level: LogLevel) => void
-}): JSX.Element {
+}) {
   const allLevels: LogLevel[] = ["DEBUG", "INFO", "WARN", "ERROR"]
   return (
     <Box gap={1}>
@@ -354,7 +354,7 @@ function useColumns(totalWidth: number) {
   }, [totalWidth])
 }
 
-function ProcessHeader({ width }: { width: number }): JSX.Element {
+function ProcessHeader({ width }: { width: number }) {
   const cols = useColumns(width)
   return (
     <Box paddingX={1}>
@@ -370,15 +370,7 @@ function ProcessHeader({ width }: { width: number }): JSX.Element {
   )
 }
 
-function ProcessRow({
-  proc,
-  isSelected,
-  width,
-}: {
-  proc: ProcessInfo
-  isSelected: boolean
-  width: number
-}): JSX.Element {
+function ProcessRow({ proc, isSelected, width }: { proc: ProcessInfo; isSelected: boolean; width: number }) {
   const cols = useColumns(width)
   const cpuColor = proc.cpu > 80 ? "$error" : proc.cpu > 40 ? "$warning" : "$success"
   const displayName = proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\u2026" : proc.name
@@ -397,15 +389,7 @@ function ProcessRow({
   )
 }
 
-function ProcessListArea({
-  processes,
-  cursor,
-  width,
-}: {
-  processes: ProcessInfo[]
-  cursor: number
-  width: number
-}): JSX.Element {
+function ProcessListArea({ processes, cursor, width }: { processes: ProcessInfo[]; cursor: number; width: number }) {
   const { height } = useContentRect()
 
   return (
@@ -426,7 +410,7 @@ function ProcessListArea({
 // Main App
 // ============================================================================
 
-export function Explorer(): JSX.Element {
+export function Explorer() {
   const { exit } = useApp()
   const { width } = useContentRect()
 

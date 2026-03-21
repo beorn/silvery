@@ -107,7 +107,7 @@ export function tokenizeAnsi(text: string): AnsiToken[] {
         tokens.push({ type: "osc", value: text.slice(start, i) })
       } else {
         // Other C1 control character
-        tokens.push({ type: "c1", value: text[i] })
+        tokens.push({ type: "c1", value: text[i]! })
         i++
       }
       textStart = i
@@ -120,7 +120,7 @@ export function tokenizeAnsi(text: string): AnsiToken[] {
 
       if (i + 1 >= len) {
         // Incomplete escape at end of string — treat as malformed
-        tokens.push({ type: "esc", value: text[i] })
+        tokens.push({ type: "esc", value: text[i]! })
         i++
         textStart = i
         continue
@@ -204,7 +204,7 @@ export function tokenizeAnsi(text: string): AnsiToken[] {
       }
 
       // Unknown/malformed escape — emit just ESC as an esc token
-      tokens.push({ type: "esc", value: text[i] })
+      tokens.push({ type: "esc", value: text[i]! })
       i++
       textStart = i
       continue

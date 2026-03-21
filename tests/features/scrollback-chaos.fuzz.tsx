@@ -329,7 +329,7 @@ describe("scrollback promotion fuzz", () => {
           ;({ term, handle } = await setupInlineApp(items, { cols: size.cols, rows: size.rows }))
 
           let i = 0
-          for await (const action of take(gen(SCROLLBACK_ACTIONS), 50)) {
+          for await (const action of take(gen<string>(SCROLLBACK_ACTIONS), 50)) {
             await handle.press(action)
             checkScrollbackInvariants(term, action, i)
             i++
@@ -348,7 +348,7 @@ describe("scrollback promotion fuzz", () => {
           ;({ term, handle } = await setupInlineApp(items, { cols: size.cols, rows: size.rows }))
 
           let i = 0
-          for await (const action of take(gen(PROMOTION_HEAVY_ACTIONS), 40)) {
+          for await (const action of take(gen<string>(PROMOTION_HEAVY_ACTIONS), 40)) {
             await handle.press(action)
             checkScrollbackContentInvariants(term, action, i)
             i++
@@ -369,7 +369,7 @@ describe("scrollback promotion fuzz", () => {
       ;({ term, handle } = await setupInlineApp(items, { cols: 60, rows: 8 }))
 
       let i = 0
-      for await (const action of take(gen(PROMOTION_HEAVY_ACTIONS), 30)) {
+      for await (const action of take(gen<string>(PROMOTION_HEAVY_ACTIONS), 30)) {
         await handle.press(action)
         checkScrollbackInvariants(term, action, i)
         i++
@@ -394,7 +394,7 @@ describe("scrollback promotion fuzz", () => {
       ]
 
       let i = 0
-      for await (const action of take(gen(alternating), 40)) {
+      for await (const action of take(gen<string>(alternating), 40)) {
         await handle.press(action)
         checkScrollbackInvariants(term, action, i)
         i++

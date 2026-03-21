@@ -1,7 +1,6 @@
 import { describe, test, expect, vi, beforeEach } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
-// @ts-expect-error - deep import for internal testing
 import { _resetBoxInsideTextWarning } from "@silvery/react/reconciler/host-config"
 
 const render = createRenderer({ cols: 40, rows: 10 })
