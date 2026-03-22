@@ -13,7 +13,7 @@
  *   bun packages/compat/scripts/gen-vitest.ts components   # generate specific file(s)
  *
  * The generated tests live in tests/compat/ink/generated/ and are gitignored.
- * Run: bun vitest run --project vendor vendor/silvery/tests/compat/ink/generated/
+ * Run: bun vitest run --project vendor tests/compat/ink/generated/
  */
 
 import { existsSync, readdirSync, mkdirSync } from "node:fs"
@@ -868,5 +868,5 @@ if (skippedFiles.length > 0) {
 
 if (!dryRun && generated > 0) {
   console.log(`\nOutput: ${OUT_DIR}`)
-  console.log(`Run: bun vitest run --project vendor vendor/silvery/tests/compat/ink/generated/`)
+  console.log(`Run: bun vitest run --project vendor tests/compat/ink/generated/`)
 }
