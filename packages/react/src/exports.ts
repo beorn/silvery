@@ -1113,7 +1113,7 @@ export type { GridCellProps } from "@silvery/ui/components"
  * React's `useTransition` (concurrent mode) is exported separately above.
  */
 export { easings, resolveEasing, useAnimation, useInterval, useTimeout, useLatest } from "@silvery/ui/animation"
-export { useTransition as useAnimatedTransition } from "@silvery/ui/animation"
+export { useAnimatedTransition } from "@silvery/ui/animation"
 export type {
   EasingFn,
   EasingName,
