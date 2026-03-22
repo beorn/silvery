@@ -142,10 +142,15 @@ export function contentPhase(root: TeaNode, prevBuffer?: TerminalBuffer | null, 
  *    has null/stale prevLayout while fresh has synced prevLayout, causing
  *    different cascade behavior (layoutChanged true vs false).
  */
-function syncPrevLayout(node: TeaNode): void {
-  node.prevLayout = node.contentRect
-  for (const child of node.children) {
-    syncPrevLayout(child)
+function syncPrevLayout(root: TeaNode): void {
+  const stack: TeaNode[] = [root]
+  while (stack.length > 0) {
+    const node = stack.pop()!
+    node.prevLayout = node.contentRect
+    const children = node.children
+    for (let i = children.length - 1; i >= 0; i--) {
+      stack.push(children[i]!)
+    }
   }
 }
 
