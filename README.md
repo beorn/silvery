@@ -65,6 +65,12 @@ await render(<Counter />, term).run()
 | [Flexily](https://beorn.github.io/flexily) | Pure JS flexbox layout engine (Yoga-compatible, zero WASM) |
 | [Loggily](https://beorn.github.io/loggily) | Debug + structured logging + tracing |
 
+## Coming
+
+- **Renderers** — Canvas 2D, Web DOM (experimental today, production later)
+- **Frameworks** — Svelte, Solid.js, Vue adapters
+- **@silvery/tea** — structured state management with commands, keybindings, effects-as-data
+
 **Runtimes:** Bun >= 1.0 and Node.js >= 18. CLI (`silvery` command) requires Bun.
 
 ## License
