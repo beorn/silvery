@@ -6,7 +6,7 @@
  */
 import React, { useState } from "react"
 import { describe, test, expect, beforeAll } from "vitest"
-import { Box, Text, render, useInput, useCursor } from "../../packages/compat/src/ink"
+import { Box, Text, render, useInput, useCursor } from "../../packages/ink/src/ink"
 import createStdout from "../compat/ink/helpers/create-stdout"
 import { createStdin, emitReadable } from "../compat/ink/helpers/create-stdin"
 import { isLayoutEngineInitialized, setLayoutEngine } from "@silvery/term/layout-engine"

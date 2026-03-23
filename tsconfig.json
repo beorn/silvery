@@ -22,7 +22,7 @@
       "@silvery/tea/*": ["./packages/tea/src/*"],
       "@silvery/ui/*": ["./packages/ui/src/*"],
       "@silvery/test/*": ["./packages/test/src/*"],
-      "@silvery/compat/*": ["./packages/compat/src/*"]
+      "@silvery/ink/*": ["./packages/ink/src/*"]
     }
   },
   "include": ["src", "packages/*/src"],

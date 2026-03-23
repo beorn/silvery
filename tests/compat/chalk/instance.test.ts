@@ -2,7 +2,7 @@
  * Chalk compat test: instance (from chalk/test/instance.js)
  */
 import { test, expect } from "vitest"
-import chalk, { Chalk } from "../../../packages/compat/src/chalk"
+import chalk, { Chalk } from "../../../packages/ink/src/chalk"
 
 chalk.level = 1
 

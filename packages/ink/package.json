@@ -1,5 +1,5 @@
 {
-  "name": "@silvery/compat",
+  "name": "@silvery/ink",
   "version": "0.3.0",
   "private": true,
   "description": "Ink and Chalk API compatibility layer (not published separately)",

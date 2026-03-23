@@ -4,12 +4,12 @@ Most apps only need `silvery` — it re-exports everything you need from the int
 
 ## Public Packages
 
-| Package         | npm               | Description                                                 |
-| --------------- | ----------------- | ----------------------------------------------------------- |
-| `silvery`       | `silvery`         | Components, hooks, renderer — the one package you need      |
-| `@silvery/test` | `@silvery/test`   | Testing utilities (virtual renderer, Playwright-style locators) |
-| `@silvery/ink`  | `@silvery/ink`    | Ink compatibility layer for migration                       |
-| `@silvery/tea`  | `@silvery/tea`    | Optional TEA state machine store for complex apps           |
+| Package         | npm             | Description                                                     |
+| --------------- | --------------- | --------------------------------------------------------------- |
+| `silvery`       | `silvery`       | Components, hooks, renderer — the one package you need          |
+| `@silvery/test` | `@silvery/test` | Testing utilities (virtual renderer, Playwright-style locators) |
+| `@silvery/ink`  | `@silvery/ink`  | Ink compatibility layer for migration                           |
+| `@silvery/tea`  | `@silvery/tea`  | Optional TEA state machine store for complex apps               |
 
 ## Internal Packages
 
@@ -21,7 +21,7 @@ These are implementation details — you'll only need them for advanced use case
 | `@silvery/term`   | `@silvery/term`   | Terminal runtime, ANSI output, rendering pipeline           |
 | `@silvery/ui`     | `@silvery/ui`     | Component library (30+ components) + CLI progress utilities |
 | `@silvery/theme`  | `@silvery/theme`  | Theme tokens, 38 palettes, theme CLI                        |
-| `@silvery/compat` | `@silvery/compat` | Legacy Ink/Chalk compatibility (use `@silvery/ink` instead) |
+| `@silvery/ink`    | `@silvery/ink`    | Legacy Ink/Chalk compatibility                              |
 
 ## Import Conventions
 
@@ -130,7 +130,7 @@ const app = render(<App />)
 expect(app.text).toContain("Hello")
 ```
 
-## `@silvery/compat`
+## `@silvery/ink`
 
 Ink and Chalk compatibility layers. Usually accessed via `silvery/ink` and `silvery/chalk` entry points rather than directly.
 
@@ -142,7 +142,7 @@ The Ink compat layer is decomposed into composable plugins:
 | `withInkFocus()`  | Provides Ink's flat-list focus system (`useFocus`/`useFocusManager`) (~45 lines) |
 | `withInk()`       | Convenience: composes both adapters (~10 lines)                                  |
 
-Import from `@silvery/compat/with-ink`, `@silvery/compat/with-ink-cursor`, or `@silvery/compat/with-ink-focus`. Also re-exported from `@silvery/tea/plugins`.
+Import from `@silvery/ink/with-ink`, `@silvery/ink/with-ink-cursor`, or `@silvery/ink/with-ink-focus`. Also re-exported from `@silvery/tea/plugins`.
 
 See [Compat Layer Architecture](/reference/compatibility#compat-layer-architecture) for how the adapters bridge Ink APIs to silvery-native systems.
 

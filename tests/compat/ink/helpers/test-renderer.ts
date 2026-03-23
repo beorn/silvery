@@ -6,7 +6,7 @@
  * and returns an instance with getOutput() and rerenderAsync().
  */
 import { act } from "react"
-import { render } from "../../../../packages/compat/src/ink"
+import { render } from "../../../../packages/ink/src/ink"
 import createStdout from "./create-stdout"
 
 type TestRenderOptions = {

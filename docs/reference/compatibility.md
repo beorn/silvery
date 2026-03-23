@@ -141,7 +141,7 @@ import { Text } from "silvery"
 
 ## Compat Layer Architecture
 
-The Ink compatibility layer (`@silvery/compat`) is built as thin adapters that bridge Ink's APIs to silvery-native systems. Understanding the architecture helps you decide when to use Ink-compat hooks vs silvery-native ones.
+The Ink compatibility layer (`@silvery/ink`) is built as thin adapters that bridge Ink's APIs to silvery-native systems. Understanding the architecture helps you decide when to use Ink-compat hooks vs silvery-native ones.
 
 ### How It Works
 

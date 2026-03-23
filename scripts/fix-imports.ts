@@ -179,7 +179,7 @@ function rewriteFile(entry: FileEntry, map: Map<string, FileEntry>): { changed: 
         canvas: "@silvery/ui/canvas",
         dom: "@silvery/term/dom",
         xterm: "@silvery/term/xterm",
-        ink: "@silvery/compat/ink",
+        ink: "@silvery/ink/ink",
         layout: "@silvery/react/layout",
         components: "@silvery/ui/components",
         focus: "@silvery/react/focus",

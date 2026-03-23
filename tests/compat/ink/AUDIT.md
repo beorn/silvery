@@ -4,7 +4,7 @@
 
 ## Executive Summary
 
-The Ink compat layer (`packages/compat/src/ink.ts` + supporting files) totals ~2,935 lines across 7 files. Roughly **40-50% of this code is genuinely necessary** Ink-specific translation. The rest falls into three categories: (1) logic that could be eliminated by aligning silvery's defaults and API shape closer to Ink's, (2) entire subsystems reimplemented in the compat layer that duplicate silvery functionality with slightly different interfaces, and (3) infrastructure for the test-mode `render()` path that could be simplified if silvery's test renderer exposed a few more hooks. A realistic target is **~800-1000 lines** for a mature compat layer, achievable through a combination of silvery core changes and compat refactoring.
+The Ink compat layer (`packages/ink/src/ink.ts` + supporting files) totals ~2,935 lines across 7 files. Roughly **40-50% of this code is genuinely necessary** Ink-specific translation. The rest falls into three categories: (1) logic that could be eliminated by aligning silvery's defaults and API shape closer to Ink's, (2) entire subsystems reimplemented in the compat layer that duplicate silvery functionality with slightly different interfaces, and (3) infrastructure for the test-mode `render()` path that could be simplified if silvery's test renderer exposed a few more hooks. A realistic target is **~800-1000 lines** for a mature compat layer, achievable through a combination of silvery core changes and compat refactoring.
 
 ## Phase 2: Alignment Opportunities
 

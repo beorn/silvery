@@ -11,7 +11,7 @@
 import { EventEmitter } from "node:events"
 import React from "react"
 import createStdout from "./create-stdout"
-import { render } from "../../../../packages/compat/src/ink"
+import { render } from "../../../../packages/ink/src/ink"
 
 // =============================================================================
 // Mock stdin — emulates a TTY for raw mode support

@@ -11,7 +11,7 @@ import { describe, test, expect } from "vitest"
 import { createRenderer, stripAnsi } from "@silvery/test"
 import { Box, Text } from "@silvery/react"
 import chalk from "chalk"
-import { Box as InkBox, Text as InkText } from "../../packages/compat/src/ink"
+import { Box as InkBox, Text as InkText } from "../../packages/ink/src/ink"
 import { renderToString, initLayoutEngine } from "../compat/ink/helpers/render-to-string"
 
 describe("background inheritance", () => {

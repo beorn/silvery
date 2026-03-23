@@ -18,7 +18,7 @@ The Silvery release. Complete rename from hightea to silvery, monorepo restructu
 ### Added
 
 - `silvery/ink` and `silvery/chalk` compatibility subpaths for zero-effort migration from Ink/Chalk.
-- `@silvery/compat` package for ink/chalk API compatibility layer.
+- `@silvery/ink` package for ink/chalk API compatibility layer.
 - `@silvery/theme` package (absorbed from standalone swatch project) with 45 built-in color palettes and 33 semantic design tokens.
 - `@silvery/test` package with unified `createRenderer()` API, auto-refreshing locators, and Playwright-style assertions.
 - `@silvery/tea` package for optional TEA (The Elm Architecture) state machines with `zustand-tea` middleware.
@@ -32,7 +32,7 @@ The Silvery release. Complete rename from hightea to silvery, monorepo restructu
 - **Renamed**: decant -> loggily (logging library).
 - **Renamed**: flexture -> flexily (layout engine).
 - **Renamed**: swatch -> @silvery/theme (absorbed into monorepo).
-- Package structure: monolith split into `@silvery/react`, `@silvery/term`, `@silvery/tea`, `@silvery/ansi`, `@silvery/ui`, `@silvery/theme`, `@silvery/test`, `@silvery/compat`.
+- Package structure: monolith split into `@silvery/react`, `@silvery/term`, `@silvery/tea`, `@silvery/ansi`, `@silvery/ui`, `@silvery/theme`, `@silvery/test`, `@silvery/ink`.
 - GitHub repositories renamed: beorn/hightea -> beorn/silvery, beorn/decant -> beorn/loggily, beorn/flexture -> beorn/flexily.
 
 ## [0.1.0] - 2026-03-05

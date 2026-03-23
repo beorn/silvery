@@ -29,7 +29,7 @@ Two-layer testing approach:
 
 | Step               | What                                                          |
 | ------------------ | ------------------------------------------------------------- |
-| Import rewrite     | `ink` → `@silvery/compat/ink`, ava → ava-shim                 |
+| Import rewrite     | `ink` → `@silvery/ink/ink`, ava → ava-shim                 |
 | Sinon replacement  | Inline `_createSpy()`/`stub()` functions                      |
 | PTY conversion     | `term('fixture')` → `termFixture(fixtureFactory([]))`         |
 | Fixture generation | Ink fixture scripts → importable `createFixture()` modules    |

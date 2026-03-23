@@ -3,7 +3,7 @@
  * Skips tests that require `execa` (subprocess testing)
  */
 import { test, expect } from "vitest"
-import chalk from "../../../packages/compat/src/chalk"
+import chalk from "../../../packages/ink/src/chalk"
 
 chalk.level = 1
 

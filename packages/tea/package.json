@@ -46,7 +46,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@silvery/compat": "workspace:*",
+    "@silvery/ink": "workspace:*",
     "@silvery/react": "workspace:*",
     "@silvery/term": "workspace:*",
     "@silvery/test": "workspace:*"

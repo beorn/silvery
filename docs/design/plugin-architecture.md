@@ -59,7 +59,7 @@ Later plugins wrap earlier ones — `withInk()` wraps `withTerminal()` which wra
 | `withKeybindings(opts)`  | Configurable keybinding resolution                      | `@silvery/tea` |
 | `withDiagnostics()`      | Render invariant checking                               | `@silvery/tea` |
 
-### Ink Compatibility (`@silvery/compat`)
+### Ink Compatibility (`@silvery/ink`)
 
 The Ink compat layer is decomposed into composable plugins:
 

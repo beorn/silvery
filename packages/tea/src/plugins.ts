@@ -102,25 +102,25 @@ export { withDiagnostics, VirtualTerminal } from "./with-diagnostics"
 export type { DiagnosticOptions } from "./with-diagnostics"
 
 // =============================================================================
-// withInk — Ink compatibility layer (from @silvery/compat)
+// withInk — Ink compatibility layer (from @silvery/ink)
 // =============================================================================
 
-export { withInk } from "@silvery/compat/with-ink"
-export type { WithInkOptions, AppWithInk } from "@silvery/compat/with-ink"
+export { withInk } from "@silvery/ink/with-ink"
+export type { WithInkOptions, AppWithInk } from "@silvery/ink/with-ink"
 
 // =============================================================================
-// withInkCursor — Ink cursor compatibility adapter (from @silvery/compat)
+// withInkCursor — Ink cursor compatibility adapter (from @silvery/ink)
 // =============================================================================
 
-export { withInkCursor } from "@silvery/compat/with-ink-cursor"
-export type { WithInkCursorOptions, AppWithInkCursor } from "@silvery/compat/with-ink-cursor"
+export { withInkCursor } from "@silvery/ink/with-ink-cursor"
+export type { WithInkCursorOptions, AppWithInkCursor } from "@silvery/ink/with-ink-cursor"
 
 // =============================================================================
-// withInkFocus — Ink focus compatibility adapter (from @silvery/compat)
+// withInkFocus — Ink focus compatibility adapter (from @silvery/ink)
 // =============================================================================
 
-export { withInkFocus } from "@silvery/compat/with-ink-focus"
-export type { WithInkFocusOptions, AppWithInkFocus } from "@silvery/compat/with-ink-focus"
+export { withInkFocus } from "@silvery/ink/with-ink-focus"
+export type { WithInkFocusOptions, AppWithInkFocus } from "@silvery/ink/with-ink-focus"
 
 // Scheduler errors (for catching incremental render mismatches)
 export { IncrementalRenderMismatchError } from "@silvery/term/scheduler"

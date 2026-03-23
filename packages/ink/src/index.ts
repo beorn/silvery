@@ -1,5 +1,5 @@
 /**
- * @silvery/compat — API compatibility layers for ink and chalk.
+ * @silvery/ink — API compatibility layers for ink and chalk.
  *
  * Not published as a separate package. Exported via the root `silvery` package:
  * - `silvery/ink` → ink-compatible API

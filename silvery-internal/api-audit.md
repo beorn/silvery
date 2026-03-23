@@ -9,8 +9,8 @@ Catalog of every export from every entry point. Last updated 2026-03-09.
 | Specifier       | Resolves To                    | Purpose                                 |
 | --------------- | ------------------------------ | --------------------------------------- |
 | `silvery` (`.`) | `src/index.ts`                 | Re-exports `@silvery/react` + `VERSION` |
-| `silvery/ink`   | `packages/compat/src/ink.ts`   | Drop-in Ink replacement                 |
-| `silvery/chalk` | `packages/compat/src/chalk.ts` | Drop-in chalk replacement               |
+| `silvery/ink`   | `packages/ink/src/ink.ts`   | Drop-in Ink replacement                 |
+| `silvery/chalk` | `packages/ink/src/chalk.ts` | Drop-in chalk replacement               |
 
 ### `silvery` (root)
 
@@ -434,7 +434,7 @@ Exposes all `src/` files. Notable via-wildcard-only files:
 
 ---
 
-## `@silvery/compat` (private)
+## `@silvery/ink` (private)
 
 Marked `"private": true`. Not published separately. Exposed only via root `silvery/ink` and `silvery/chalk`.
 

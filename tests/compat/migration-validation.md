@@ -9,7 +9,7 @@ Validates the Silvery migration guide (`docs/guide/migration.md`) against real-w
 - Selected 3 popular, production Ink CLI apps with diverse API usage patterns
 - Searched each codebase (via `gh search code`) for all `from 'ink'` imports
 - Cataloged every Ink API used: components, hooks, types, functions
-- Checked each against `silvery/ink` (`packages/compat/src/ink.ts`) and `@silvery/react` exports
+- Checked each against `silvery/ink` (`packages/ink/src/ink.ts`) and `@silvery/react` exports
 
 ---
 

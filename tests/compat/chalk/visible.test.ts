@@ -2,7 +2,7 @@
  * Chalk compat test: visible (from chalk/test/visible.js)
  */
 import { test, expect } from "vitest"
-import { Chalk } from "../../../packages/compat/src/chalk"
+import { Chalk } from "../../../packages/ink/src/chalk"
 
 test("visible: normal output when level > 0", () => {
   const instance = new Chalk({ level: 3 })

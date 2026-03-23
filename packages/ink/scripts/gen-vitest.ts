@@ -7,10 +7,10 @@
  * stay as-is: t.is, t.true, etc.), and writes to tests/compat/ink/generated/.
  *
  * Usage:
- *   bun packages/compat/scripts/gen-vitest.ts              # generate all
- *   bun packages/compat/scripts/gen-vitest.ts --dry-run    # preview changes
- *   bun packages/compat/scripts/gen-vitest.ts --list       # list available test files
- *   bun packages/compat/scripts/gen-vitest.ts components   # generate specific file(s)
+ *   bun packages/ink/scripts/gen-vitest.ts              # generate all
+ *   bun packages/ink/scripts/gen-vitest.ts --dry-run    # preview changes
+ *   bun packages/ink/scripts/gen-vitest.ts --list       # list available test files
+ *   bun packages/ink/scripts/gen-vitest.ts components   # generate specific file(s)
  *
  * The generated tests live in tests/compat/ink/generated/ and are gitignored.
  * Run: bun vitest run --project vendor tests/compat/ink/generated/
@@ -37,7 +37,7 @@ const fileFilters = args.filter((a) => !a.startsWith("--"))
 
 if (!existsSync(INK_TEST_DIR)) {
   console.error(`Ink test directory not found: ${INK_TEST_DIR}`)
-  console.error(`Run 'bun packages/compat/scripts/compat-check.ts ink' first to clone.`)
+  console.error(`Run 'bun packages/ink/scripts/compat-check.ts ink' first to clone.`)
   process.exit(1)
 }
 
@@ -286,8 +286,8 @@ function transform(code: string, fileName: string): string {
   // 3. Replace ink source imports with compat layer
   out = replaceImportsBySource(out, {
     "../src/index":
-      'import { Box, Text, Newline, Spacer, Static, Transform, render, measureElement, useApp, useInput, useStdin, useFocus, useFocusManager, useCursor } from "../../../../packages/compat/src/ink"',
-    "../../src/index": 'import { Box, Text, render } from "../../../../packages/compat/src/ink"',
+      'import { Box, Text, Newline, Spacer, Static, Transform, render, measureElement, useApp, useInput, useStdin, useFocus, useFocusManager, useCursor } from "../../../../packages/ink/src/ink"',
+    "../../src/index": 'import { Box, Text, render } from "../../../../packages/ink/src/ink"',
   })
 
   // 4. Replace helper imports
@@ -346,7 +346,7 @@ function transform(code: string, fileName: string): string {
   // Rewrite measure-text import to compat layer
   out = out.replace(
     /^import\s+(\w+)\s+from\s*['"]\.\.\/src\/measure-text(?:\.js)?['"];?/gm,
-    'import { measureText } from "../../../../packages/compat/src/ink-measure-text"',
+    'import { measureText } from "../../../../packages/ink/src/ink-measure-text"',
   )
 
   // Handle internal ink imports (non-index, e.g. ../src/measure-text.js)
@@ -437,7 +437,7 @@ function transform(code: string, fileName: string): string {
 
   // 9. Header + cleanup
   out =
-    `/**\n * Auto-generated from ink/test/${fileName}.tsx\n * DO NOT EDIT — regenerate with: bun packages/compat/scripts/gen-vitest.ts\n */\n` +
+    `/**\n * Auto-generated from ink/test/${fileName}.tsx\n * DO NOT EDIT — regenerate with: bun packages/ink/scripts/gen-vitest.ts\n */\n` +
     out
 
   // Remove triple+ blank lines
@@ -516,7 +516,7 @@ function transformFixture(source: string, fixtureName: string): string {
   // Replace ink source imports with compat layer
   out = replaceImportsBySource(out, {
     "../../src/index":
-      'import { Box, Text, Static, render as _inkRender, useApp, useInput, useStdin, useStdout, usePaste } from "../../../../../packages/compat/src/ink"',
+      'import { Box, Text, Static, render as _inkRender, useApp, useInput, useStdin, useStdout, usePaste } from "../../../../../packages/ink/src/ink"',
   })
 
   // Remove process.stdout.write('__READY__') calls
@@ -655,7 +655,7 @@ function transformFixture(source: string, fixtureName: string): string {
 
   // Header
   out =
-    `/**\n * Auto-generated fixture from ink/test/fixtures/${fixtureName}.tsx\n * DO NOT EDIT — regenerate with: bun packages/compat/scripts/gen-vitest.ts\n */\n` +
+    `/**\n * Auto-generated fixture from ink/test/fixtures/${fixtureName}.tsx\n * DO NOT EDIT — regenerate with: bun packages/ink/scripts/gen-vitest.ts\n */\n` +
     out
 
   // Cleanup
@@ -758,7 +758,7 @@ function transformPtyTest(source: string, fileName: string, fixtureRefs: string[
 
   // Header + cleanup
   out =
-    `/**\n * Auto-generated from ink/test/${fileName}.tsx\n * DO NOT EDIT — regenerate with: bun packages/compat/scripts/gen-vitest.ts\n */\n` +
+    `/**\n * Auto-generated from ink/test/${fileName}.tsx\n * DO NOT EDIT — regenerate with: bun packages/ink/scripts/gen-vitest.ts\n */\n` +
     out
 
   out = out.replace(/\n{3,}/g, "\n\n")

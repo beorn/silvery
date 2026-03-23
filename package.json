@@ -49,12 +49,12 @@
       "import": "./src/index.ts"
     },
     "./ink": {
-      "types": "./packages/compat/src/ink.ts",
-      "import": "./packages/compat/src/ink.ts"
+      "types": "./packages/ink/src/ink.ts",
+      "import": "./packages/ink/src/ink.ts"
     },
     "./chalk": {
-      "types": "./packages/compat/src/chalk.ts",
-      "import": "./packages/compat/src/chalk.ts"
+      "types": "./packages/ink/src/chalk.ts",
+      "import": "./packages/ink/src/chalk.ts"
     }
   },
   "publishConfig": {
@@ -75,9 +75,9 @@
     "release": "changeset publish",
     "theme": "bun packages/theme/src/cli.ts",
     "demo": "bun examples/cli.ts",
-    "compat": "bun packages/compat/scripts/compat-check.ts",
-    "compat:ink": "bun packages/compat/scripts/compat-check.ts ink",
-    "compat:chalk": "bun packages/compat/scripts/compat-check.ts chalk"
+    "compat": "bun packages/ink/scripts/compat-check.ts",
+    "compat:ink": "bun packages/ink/scripts/compat-check.ts ink",
+    "compat:chalk": "bun packages/ink/scripts/compat-check.ts chalk"
   },
   "dependencies": {
     "chalk": "^5.6.2",

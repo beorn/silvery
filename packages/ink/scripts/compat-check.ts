@@ -7,9 +7,9 @@
  * deps, and runs each project's own test runner (ava) to measure compat.
  *
  * Usage:
- *   bun packages/compat/scripts/compat-check.ts          # run all
- *   bun packages/compat/scripts/compat-check.ts ink      # ink only
- *   bun packages/compat/scripts/compat-check.ts chalk    # chalk only
+ *   bun packages/ink/scripts/compat-check.ts          # run all
+ *   bun packages/ink/scripts/compat-check.ts ink      # ink only
+ *   bun packages/ink/scripts/compat-check.ts chalk    # chalk only
  *
  * Cached clones live at /tmp/silvery-compat/. Delete to re-clone.
  */

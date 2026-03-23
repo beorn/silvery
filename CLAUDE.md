@@ -39,7 +39,7 @@ bun run compat            # Run Ink/Chalk compatibility checks
 | `packages/react`  | `@silvery/react`  | React reconciler and hooks                     |
 | `packages/ui`     | `@silvery/ui`     | Component library (30+ components)             |
 | `packages/tea`    | `@silvery/tea`    | TEA state machine store (zustand-based)        |
-| `packages/compat` | `@silvery/compat` | Ink/Chalk compatibility layers                 |
+| `packages/ink`    | `@silvery/ink`    | Ink/Chalk compatibility layers                 |
 | `packages/test`   | `@silvery/test`   | Testing utilities (virtual renderer, locators) |
 | `packages/theme`  | `@silvery/theme`  | Theme tokens, 38 palettes, theme CLI           |
 

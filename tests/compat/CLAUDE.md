@@ -21,7 +21,7 @@ need node-pty which is a native dependency. So we use a two-layer approach:
 
 1. Delete `/tmp/silvery-compat/` to re-clone
 2. Run `bun run compat` to see what changed in the upstream ava suite
-3. Run `bun packages/compat/scripts/gen-vitest.ts` to regenerate vitest tests
+3. Run `bun packages/ink/scripts/gen-vitest.ts` to regenerate vitest tests
 4. Fix any new failures, update EXPECTED_FAILURES/RENDER_MODE_FAILURES in gen-vitest.ts
 5. Run both layers to verify
 
@@ -37,7 +37,7 @@ bun run compat:chalk     # Chalk only
 
 From km: `bun run test:compat`.
 
-Cached clones at `/tmp/silvery-compat/`. Delete to re-clone. See `packages/compat/scripts/compat-check.ts`.
+Cached clones at `/tmp/silvery-compat/`. Delete to re-clone. See `packages/ink/scripts/compat-check.ts`.
 
 ## 2. Auto-Generated Vitest Tests (Layer 2 — fast, CI)
 
@@ -46,7 +46,7 @@ Auto-generated from Ink's upstream ava test suite via a codemod. Generated tests
 
 ```bash
 # Generate (clones ink if not cached, transforms tests, writes to generated/)
-bun packages/compat/scripts/gen-vitest.ts
+bun packages/ink/scripts/gen-vitest.ts
 
 # Run
 bun vitest run --project vendor vendor/silvery/tests/compat/ink/generated/
@@ -58,7 +58,7 @@ bun vitest run --project vendor vendor/silvery/tests/compat/chalk/
 The codemod (`gen-vitest.ts`) transforms ink's ava-based tests to vitest:
 
 - **Ava → vitest**: Wraps tests with an ava-shim (`t.is` → `expect().toBe()`, etc.)
-- **Import rewrites**: `ink` → `@silvery/compat/ink`, third-party deps → inline equivalents
+- **Import rewrites**: `ink` → `@silvery/ink/ink`, third-party deps → inline equivalents
 - **PTY → in-process**: Converts node-pty interactive tests to run in-process using
   `termFixture()`/`runFixture()` (MockStdin + createStdout mocks). No native deps needed.
 - **Fixture conversion**: Transforms ink fixture files (standalone TSX scripts with `render()`
@@ -111,7 +111,7 @@ rm -rf /tmp/silvery-compat/
 bun run compat:ink
 
 # 3. Regenerate Layer 2
-bun packages/compat/scripts/gen-vitest.ts
+bun packages/ink/scripts/gen-vitest.ts
 
 # 4. Run Layer 2 and fix failures
 bun vitest run --project vendor vendor/silvery/tests/compat/ink/generated/

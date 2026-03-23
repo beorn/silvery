@@ -18,8 +18,8 @@ All three `exports` entry points resolve to files that would be in the tarball:
 | Entry Point | File                           | In Tarball? |
 | ----------- | ------------------------------ | ----------- |
 | `.`         | `src/index.ts`                 | Yes         |
-| `./ink`     | `packages/compat/src/ink.ts`   | Yes         |
-| `./chalk`   | `packages/compat/src/chalk.ts` | Yes         |
+| `./ink`     | `packages/ink/src/ink.ts`   | Yes         |
+| `./chalk`   | `packages/ink/src/chalk.ts` | Yes         |
 
 All workspace package source files are included (they live under `packages/*/src/`).
 

@@ -3,7 +3,7 @@
  * Tests silvery/chalk as a drop-in for chalk
  */
 import { test, expect } from "vitest"
-import chalk, { Chalk } from "../../../packages/compat/src/chalk"
+import chalk, { Chalk } from "../../../packages/ink/src/chalk"
 
 // Force full color support for tests
 chalk.level = 3

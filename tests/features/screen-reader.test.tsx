@@ -8,7 +8,7 @@
  */
 import React from "react"
 import { test, expect } from "vitest"
-import { Box, Text, renderToString } from "../../packages/compat/src/ink"
+import { Box, Text, renderToString } from "../../packages/ink/src/ink"
 
 // Helper to render with screen reader mode
 function sr(node: React.JSX.Element): string {

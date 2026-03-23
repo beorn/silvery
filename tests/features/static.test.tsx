@@ -4,7 +4,7 @@
 import { describe, test, expect } from "vitest"
 import { createRenderer } from "@silvery/test"
 import { Box, Text } from "silvery"
-import { Static } from "../../packages/compat/src/ink"
+import { Static } from "../../packages/ink/src/ink"
 
 const render = createRenderer({ cols: 80, rows: 10 })
 
