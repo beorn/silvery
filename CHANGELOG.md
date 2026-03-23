@@ -7,9 +7,36 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-03-23
+
+### Breaking Changes
+
+- **Era2 package renames** — `@silvery/react` → `@silvery/ag-react`, `@silvery/term` → `@silvery/ag-term`, `@silvery/ui` merged into `@silvery/ag-react/ui`, `@silvery/compat` → `@silvery/ink`
+- **TeaNode → AgNode** — core node type renamed across the entire codebase
+- **createApp moved to @silvery/tea** — canonical import is now `@silvery/tea/create-app` (ag-term re-exports for backwards compat)
+
+### Added
+
+- **`@silvery/ag` package** — core types (AgNode, BoxProps, keys, focus) extracted from tea
+- **`render()` beginner API** — zero-ceremony entry point: `await render(<App />).run()`
+- **Component-tier examples** — 7 simple examples using `run()` + React hooks (no TEA required)
+- **Subpath exports** — `silvery/runtime`, `silvery/theme`, `silvery/ui` for targeted imports
+- **Build script** — `bun run build` produces pre-built JS bundles via Bun.build()
+
+### Changed
+
+- **3 public packages** — `silvery`, `@silvery/tea`, `@silvery/test`. Internal packages (`@silvery/ag`, `@silvery/ag-react`, `@silvery/ag-term`, `@silvery/theme`, `@silvery/ink`) are published but not user-facing.
+- **Examples reorganized** — `examples/components/` (no TEA) and `examples/apps/` (with TEA)
+- **Docs rewritten** — rendering-first positioning, TEA is optional, Ink-compatible messaging
+
 ### Fixed
 
-- Border text overflow: scroll indicator text (`padCenter`) now truncates when the box is narrower than the indicator text, and `renderTextLine` receives a `maxCol` bound to prevent writes beyond the content area.
+- Border text overflow: scroll indicator text now truncates when box is narrower than indicator text
+- Package export resolution in vitest (dist/ vs src/ conditions)
+
+## [0.3.0] - 2026-03-20
+
+README rewrite, website positioning, docs site restructuring. No code changes.
 
 ## [0.2.0] - 2026-03-09
 

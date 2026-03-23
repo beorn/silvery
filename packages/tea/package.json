@@ -1,6 +1,6 @@
 {
   "name": "@silvery/tea",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "TEA (The Elm Architecture) state machine store for silvery",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",

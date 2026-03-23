@@ -1,7 +1,6 @@
 {
   "name": "@silvery/ag",
-  "version": "0.3.0",
-  "private": true,
+  "version": "0.4.0",
   "description": "Core types and infrastructure for silvery (internal — use silvery instead)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -46,5 +45,6 @@
   "dependencies": {
     "@silvery/ag-term": "workspace:*",
     "@silvery/tea": "workspace:*"
-  }
+  },
+  "private": true
 }

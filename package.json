@@ -1,6 +1,6 @@
 {
   "name": "silvery",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "React terminal UI renderer for complex interactive apps — layout-aware rendering, flexbox, scrolling, and incremental updates",
   "keywords": [
     "ansi",

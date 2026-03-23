@@ -1,7 +1,6 @@
 {
   "name": "@silvery/ag-term",
-  "version": "0.3.0",
-  "private": true,
+  "version": "0.4.0",
   "description": "Terminal rendering target for silvery (internal — use silvery instead)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
@@ -49,5 +48,6 @@
     "@silvery/test": "workspace:*",
     "@silvery/theme": "workspace:*",
     "flexily": "github:beorn/flexily"
-  }
+  },
+  "private": true
 }
