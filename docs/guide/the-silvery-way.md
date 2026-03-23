@@ -354,37 +354,24 @@ try {
 
 → [render()](/api/render) · [Lifecycle](/reference/lifecycle)
 
-## 9. Start Simple, Scale Architecture
+## 9. Bring Your Own State Management
 
-Silvery works at every level of complexity. Pick the level that fits your app:
+Silvery is a renderer. Use whatever state management you like — React hooks, zustand, jotai, mobx, or `@silvery/tea` for commands and effects-as-data. They all work.
 
-::: tip ✨ Shiny — pick your level
+::: tip ✨ Shiny
 
 ```tsx
-// Level 1: local hooks — quick scripts, simple tools
-function Counter() {
-  const [count, setCount] = useState(0)
-  useInput((input) => {
-    if (input === "j") setCount((c) => c + 1)
-  })
-  return <Text>Count: {count}</Text>
-}
+// React hooks — just works
+const [count, setCount] = useState(0)
 
-// Level 2: useReducer/context — shared state across components
-const reducer = (state, action) => {
-  switch (action.type) {
-    case "increment":
-      return { ...state, count: state.count + 1 }
-    case "decrement":
-      return { ...state, count: state.count - 1 }
-  }
-}
+// Zustand — just works
+const count = useStore((s) => s.count)
 
-// Level 3: external store (zustand, jotai, etc.) — subscriptions, middleware
-// Level 4: @silvery/tea — commands, keybindings, effects-as-data, plugin composition
+// @silvery/tea — commands, keybindings, plugin composition
+const app = pipe(createApp(), withCommands(opts))
 ```
 
-Each level is independently useful. Some people start with `@silvery/tea` from day one because they like the structure — that's fine too. The point is you're never forced into more architecture than you want.
+Silvery doesn't impose a state management opinion. The rendering layer is independent.
 :::
 
 → [Application Architecture](/guides/state-management) — when and how to graduate from hooks to structured state management
@@ -452,7 +439,7 @@ Manual visual testing is slow, unrepeatable, and doesn't catch regressions. If y
 6. **Use semantic theme colors** — `$tokens`, not hardcoded values
 7. **Compose with factory functions** — `pipe()`, not class hierarchies
 8. **Clean up with `using`** — one keyword, zero leaks
-9. **Start simple, scale architecture** — useState → useReducer → external store → @silvery/tea, one step at a time
+9. **Bring your own state management** — React hooks, zustand, jotai, @silvery/tea — the renderer doesn't care
 10. **Test what the user sees** — render the buffer, not just the state
 
 Keep it shiny. ✨
