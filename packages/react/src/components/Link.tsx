@@ -49,6 +49,12 @@ export interface LinkProps extends Omit<TextProps, "children"> {
   href: string
   /** Link text content */
   children?: ReactNode
+  /**
+   * How the link arms (shows underline + pointer cursor):
+   * - `'arm-on-cmd-hover'` (default): Arms when hovered while holding Cmd/Super
+   * - `'arm-on-hover'`: Arms on plain hover (no modifier needed)
+   */
+  variant?: "arm-on-cmd-hover" | "arm-on-hover"
 }
 
 // ============================================================================
@@ -65,13 +71,23 @@ export interface LinkProps extends Omit<TextProps, "children"> {
  * Supports Cmd+hover armed state: when hovered and Cmd is held, shows underline.
  * Only the hovered link subscribes to modifier keys — zero cost for others.
  */
-export function Link({ href, children, color = "$link", onClick, onMouseEnter, onMouseLeave, ...rest }: LinkProps) {
+export function Link({
+  href,
+  children,
+  color = "$link",
+  variant = "arm-on-cmd-hover",
+  onClick,
+  onMouseEnter,
+  onMouseLeave,
+  ...rest
+}: LinkProps) {
   const [hovered, setHovered] = useState(false)
   const rt = useContext(RuntimeContext)
-  // Only subscribe to modifiers when hovered — zero cost for non-hovered links
-  const { super: cmdHeld } = useModifierKeys({ enabled: hovered })
-  // Cmd+hover → underline as hover feedback (overrides even explicit underline={false})
-  const armed = hovered && cmdHeld
+  // Only subscribe to modifiers when hovered and variant needs it — zero cost for non-hovered links
+  const needsModifier = variant === "arm-on-cmd-hover"
+  const { super: cmdHeld } = useModifierKeys({ enabled: hovered && needsModifier })
+  // Determine armed state based on variant
+  const armed = hovered && (needsModifier ? cmdHeld : true)
   if (armed) rest.underline = true
   // Pointer cursor when armed (Cmd+hover)
   useMouseCursor(armed ? "pointer" : null)

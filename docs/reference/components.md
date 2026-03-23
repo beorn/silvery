@@ -381,14 +381,15 @@ import { Link } from "@silvery/term"
 <Link href="km://node/abc123" onClick={(e) => navigate(e)}>Internal Link</Link>
 ```
 
-| Prop        | Type                                 | Description                                       |
-| ----------- | ------------------------------------ | ------------------------------------------------- |
-| `href`      | `string`                             | URL (http/https, or custom scheme)                |
-| `children`  | `ReactNode`                          | Link text content                                 |
-| `color`     | `string`                             | Text color (default: `"blue"`)                    |
-| `underline` | `boolean`                            | Underline the link (default: `true`)              |
-| `onClick`   | `(event: SilveryMouseEvent) => void` | Click handler (preventDefault to skip navigation) |
-| `testID`    | `string`                             | Test ID for locator queries                       |
+| Prop        | Type                                   | Description                                       |
+| ----------- | -------------------------------------- | ------------------------------------------------- |
+| `href`      | `string`                               | URL (http/https, or custom scheme)                |
+| `children`  | `ReactNode`                            | Link text content                                 |
+| `variant`   | `"arm-on-cmd-hover" \| "arm-on-hover"` | How the link arms (default: `"arm-on-cmd-hover"`) |
+| `color`     | `string`                               | Text color (default: `"$link"`)                   |
+| `underline` | `boolean`                              | Underline the link (default: `true`)              |
+| `onClick`   | `(event: SilveryMouseEvent) => void`   | Click handler (preventDefault to skip navigation) |
+| `testID`    | `string`                               | Test ID for locator queries                       |
 
 ## Transform
 

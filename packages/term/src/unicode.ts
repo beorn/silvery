@@ -915,7 +915,46 @@ function wrapTextWithMeasurer(
     }
   }
 
+  // Fix OSC 8 hyperlink state across wrapped lines — each line must be self-contained
+  if (text.includes("\x1b]8;;")) {
+    fixOsc8AcrossWrappedLines(lines)
+  }
+
   return lines
+}
+
+/**
+ * Post-process wrapped lines to ensure OSC 8 hyperlink sequences are self-contained per line.
+ * When wrapping splits text containing OSC 8 sequences across lines, the open/close sequences
+ * may end up on different lines. This closes unclosed hyperlinks at line ends and re-opens
+ * them on continuation lines. Mutates the array in place.
+ */
+function fixOsc8AcrossWrappedLines(lines: string[]): void {
+  let activeHref: string | null = null
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i]!
+
+    // Re-open hyperlink from previous line
+    if (activeHref !== null) {
+      line = `\x1b]8;;${activeHref}\x1b\\` + line
+    }
+
+    // Scan line for OSC 8 sequences to determine end-of-line state
+    let lineHref: string | null = activeHref
+    const osc8Matches = line.matchAll(/\x1b\]8;;([^\x07\x1b]*)(?:\x07|\x1b\\)/g)
+    for (const m of osc8Matches) {
+      lineHref = m[1] === "" ? null : m[1]!
+    }
+
+    // Close unclosed hyperlink at line end
+    if (lineHref !== null) {
+      line += "\x1b]8;;\x1b\\"
+    }
+
+    lines[i] = line
+    activeHref = lineHref
+  }
 }
 
 /**
