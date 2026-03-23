@@ -8,7 +8,7 @@ Each principle is something people get wrong. If you're coming from Ink, Blessed
 
 ## 1. Use the Built-in Components
 
-[`@silvery/ag-react/ui`](/reference/packages) ships 30+ components. They handle keyboard navigation, theming, mouse support, kill ring, word movement, scroll indicators, and dozens of edge cases you haven't thought of yet. When you reimplement them, you lose all of that.
+[`silvery/ui`](/reference/packages) ships 30+ components. They handle keyboard navigation, theming, mouse support, kill ring, word movement, scroll indicators, and dozens of edge cases you haven't thought of yet. When you reimplement them, you lose all of that.
 
 ::: tip ✨ Shiny
 
@@ -136,7 +136,7 @@ Manual scroll offset tracking is the #1 source of off-by-one bugs in terminal ap
 
 ## 4. Focus Control
 
-[`@silvery/ag-react`](/reference/packages) provides tree-based focus with spatial navigation. Focus determines which component receives input. Without focus management, overlapping key handlers create chaos — a modal opens but the background still handles keys.
+[`silvery`](/reference/packages) provides tree-based focus with spatial navigation. Focus determines which component receives input. Without focus management, overlapping key handlers create chaos — a modal opens but the background still handles keys.
 
 ::: tip ✨ Shiny
 
@@ -448,7 +448,7 @@ Manual visual testing is slow, unrepeatable, and doesn't catch regressions. If y
 
 ## The Silvery Way, at a Glance
 
-1. **Use the built-in components** — don't reimplement what [`@silvery/ag-react/ui`](/reference/packages) already handles
+1. **Use the built-in components** — don't reimplement what [`silvery/ui`](/reference/packages) already handles
 2. **Think in flexbox** — let the layout engine do the math
 3. **Let the framework scroll** — `overflow="scroll"`, not manual slicing
 4. **Control focus** — use the focus tree, not guard clauses

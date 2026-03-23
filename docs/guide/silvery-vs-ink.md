@@ -14,7 +14,7 @@ Addressing it required a different rendering pipeline -- layout first, then rend
 
 [Ink](https://github.com/vadimdemedes/ink) (2017) brought React to the terminal. ~1.3M npm weekly downloads, 50+ community components, used by Gatsby, Prisma, Terraform CDK, Shopify CLI, Claude Code, and many more. Mature, stable, actively maintained, and battle-tested across thousands of production CLIs. Ink is a focused, reliable React renderer.
 
-[Silvery](https://github.com/beorn/silvery) (2025) is a ground-up reimplementation with a different rendering architecture. At its core, it's a renderer -- `Box`, `Text`, `useInput`, `render()` work the same as Ink. Optional framework layers (`@silvery/ag-react/ui` for 30+ components, `@silvery/tea` for state machines, `@silvery/theme` for theming) extend it when you need them. Silvery is newer and has a smaller community.
+[Silvery](https://github.com/beorn/silvery) (2025) is a ground-up reimplementation with a different rendering architecture. At its core, it's a renderer -- `Box`, `Text`, `useInput`, `render()` work the same as Ink. Optional layers (`silvery/ui` for 30+ components, `@silvery/tea` for state machines, `silvery/theme` for theming) extend it when you need them. Silvery is newer and has a smaller community.
 
 > For how Silvery compares to terminal UI frameworks beyond Ink (BubbleTea, Textual, Notcurses, FTXUI, blessed), see [comparison.md](comparison.md).
 
