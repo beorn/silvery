@@ -267,6 +267,8 @@ export {
   type MouseEventProps,
   type MouseEventProcessorOptions,
   type MouseEventProcessorState,
+  type KeyboardModifierState,
+  updateKeyboardModifiers,
 } from "./mouse-events"
 
 // =============================================================================

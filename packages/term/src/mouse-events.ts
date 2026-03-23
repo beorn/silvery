@@ -86,6 +86,12 @@ export interface MouseEventProps {
 
 /**
  * Create a synthetic mouse event.
+ *
+ * Modifier keys are merged from two sources:
+ * - SGR mouse protocol: reports Ctrl, Alt/Meta, Shift (reliable)
+ * - Keyboard tracking: reports Super/Cmd, Hyper, CapsLock, NumLock (via Kitty protocol)
+ *
+ * `metaKey` = keyboard-tracked Super (Cmd on macOS). SGR "meta" maps to `altKey`.
  */
 export function createMouseEvent(
   type: SilveryMouseEvent["type"],
@@ -93,6 +99,7 @@ export function createMouseEvent(
   y: number,
   target: TeaNode,
   parsed: ParsedMouse,
+  keyboardMods?: KeyboardModifierState,
 ): SilveryMouseEvent {
   let propagationStopped = false
   let defaultPrevented = false
@@ -104,7 +111,7 @@ export function createMouseEvent(
     button: parsed.button,
     altKey: parsed.meta,
     ctrlKey: parsed.ctrl,
-    metaKey: false,
+    metaKey: keyboardMods?.super ?? false,
     shiftKey: parsed.shift,
     target,
     currentTarget: target,
@@ -127,8 +134,14 @@ export function createMouseEvent(
 /**
  * Create a synthetic wheel event.
  */
-export function createWheelEvent(x: number, y: number, target: TeaNode, parsed: ParsedMouse): SilveryWheelEvent {
-  const base = createMouseEvent("wheel", x, y, target, parsed) as SilveryWheelEvent
+export function createWheelEvent(
+  x: number,
+  y: number,
+  target: TeaNode,
+  parsed: ParsedMouse,
+  keyboardMods?: KeyboardModifierState,
+): SilveryWheelEvent {
+  const base = createMouseEvent("wheel", x, y, target, parsed, keyboardMods) as SilveryWheelEvent
   base.deltaY = parsed.delta ?? 0
   base.deltaX = 0
   return base
@@ -339,6 +352,18 @@ export interface MouseEventProcessorOptions {
 /**
  * State for the mouse event processor.
  */
+/**
+ * Keyboard modifier state tracked from Kitty protocol key events.
+ * Merged into mouse events to provide accurate modifier detection
+ * (SGR mouse protocol reports Ctrl/Alt/Shift but NOT Cmd/Super).
+ */
+export interface KeyboardModifierState {
+  super: boolean
+  hyper: boolean
+  capsLock: boolean
+  numLock: boolean
+}
+
 export interface MouseEventProcessorState {
   doubleClick: DoubleClickState
   /** Previous hover path (for enter/leave tracking) */
@@ -347,6 +372,8 @@ export interface MouseEventProcessorState {
   mouseDownTarget: TeaNode | null
   /** Optional focus manager for click-to-focus */
   focusManager?: FocusManager
+  /** Modifier state from Kitty keyboard events, merged into mouse events */
+  keyboardModifiers: KeyboardModifierState
 }
 
 export function createMouseEventProcessor(options?: MouseEventProcessorOptions): MouseEventProcessorState {
@@ -355,7 +382,24 @@ export function createMouseEventProcessor(options?: MouseEventProcessorOptions):
     hoverPath: [],
     mouseDownTarget: null,
     focusManager: options?.focusManager,
+    keyboardModifiers: { super: false, hyper: false, capsLock: false, numLock: false },
   }
+}
+
+/**
+ * Update keyboard modifier state from a parsed key event.
+ * Call this for every keyboard event so mouse events can include accurate modifiers.
+ */
+export function updateKeyboardModifiers(
+  state: MouseEventProcessorState,
+  key: { super?: boolean; hyper?: boolean; capsLock?: boolean; numLock?: boolean; eventType?: string },
+): void {
+  // On key release events, clear the modifier. On press/repeat, set it.
+  const isRelease = key.eventType === "release"
+  if (key.super !== undefined) state.keyboardModifiers.super = isRelease ? false : key.super
+  if (key.hyper !== undefined) state.keyboardModifiers.hyper = isRelease ? false : key.hyper
+  if (key.capsLock !== undefined) state.keyboardModifiers.capsLock = key.capsLock
+  if (key.numLock !== undefined) state.keyboardModifiers.numLock = key.numLock
 }
 
 /**
@@ -406,10 +450,10 @@ export function processMouseEvent(state: MouseEventProcessorState, parsed: Parse
       }
     }
 
-    const event = createMouseEvent("mousedown", x, y, target, parsed)
+    const event = createMouseEvent("mousedown", x, y, target, parsed, state.keyboardModifiers)
     dispatchMouseEvent(event)
   } else if (action === "up") {
-    const event = createMouseEvent("mouseup", x, y, target, parsed)
+    const event = createMouseEvent("mouseup", x, y, target, parsed, state.keyboardModifiers)
     dispatchMouseEvent(event)
 
     // Click = mouseup on the same node (or ancestor) where mousedown happened
@@ -417,14 +461,14 @@ export function processMouseEvent(state: MouseEventProcessorState, parsed: Parse
     // is the nearest common ancestor. For simplicity, we fire click on the up target
     // if mousedown was on the same target or a descendant.
     if (state.mouseDownTarget) {
-      const clickEvent = createMouseEvent("click", x, y, target, parsed)
+      const clickEvent = createMouseEvent("click", x, y, target, parsed, state.keyboardModifiers)
       dispatchMouseEvent(clickEvent)
       if (clickEvent.defaultPrevented) defaultPrevented = true
 
       // Check for double-click
       const isDouble = checkDoubleClick(state.doubleClick, x, y, parsed.button)
       if (isDouble) {
-        const dblEvent = createMouseEvent("dblclick", x, y, target, parsed)
+        const dblEvent = createMouseEvent("dblclick", x, y, target, parsed, state.keyboardModifiers)
         dispatchMouseEvent(dblEvent)
         if (dblEvent.defaultPrevented) defaultPrevented = true
       }
@@ -432,7 +476,7 @@ export function processMouseEvent(state: MouseEventProcessorState, parsed: Parse
 
     state.mouseDownTarget = null
   } else if (action === "move") {
-    const event = createMouseEvent("mousemove", x, y, target, parsed)
+    const event = createMouseEvent("mousemove", x, y, target, parsed, state.keyboardModifiers)
     dispatchMouseEvent(event)
 
     // Compute enter/leave transitions
@@ -441,19 +485,19 @@ export function processMouseEvent(state: MouseEventProcessorState, parsed: Parse
 
     // Fire mouseleave on nodes that were left (reverse order = deepest first)
     for (const node of left) {
-      const leaveEvent = createMouseEvent("mouseleave", x, y, node, parsed)
+      const leaveEvent = createMouseEvent("mouseleave", x, y, node, parsed, state.keyboardModifiers)
       dispatchMouseEvent(leaveEvent)
     }
 
     // Fire mouseenter on newly entered nodes (forward order = shallowest first)
     for (const node of entered.reverse()) {
-      const enterEvent = createMouseEvent("mouseenter", x, y, node, parsed)
+      const enterEvent = createMouseEvent("mouseenter", x, y, node, parsed, state.keyboardModifiers)
       dispatchMouseEvent(enterEvent)
     }
 
     state.hoverPath = newPath
   } else if (action === "wheel") {
-    const event = createWheelEvent(x, y, target, parsed)
+    const event = createWheelEvent(x, y, target, parsed, state.keyboardModifiers)
     dispatchMouseEvent(event)
     if (event.defaultPrevented) defaultPrevented = true
   }

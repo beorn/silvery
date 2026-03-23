@@ -92,11 +92,11 @@ export function Link({
   // Pointer cursor when armed
   useMouseCursor(armed ? "pointer" : null)
 
-  // Click emits "link:open" when armed. For arm-on-cmd-hover, also check e.ctrlKey
-  // since SGR mouse protocol reports Ctrl but NOT Cmd/Super (metaKey is always false).
+  // Click emits "link:open" when armed. For arm-on-cmd-hover, e.metaKey is accurate
+  // thanks to keyboard modifier tracking merged into mouse events by silvery's runtime.
   const handleClick = useCallback(
     (e: SilveryMouseEvent) => {
-      const isArmed = armed || (needsModifier && hovered && e.ctrlKey)
+      const isArmed = armed || (needsModifier && hovered && e.metaKey)
       if (isArmed) {
         ;(rt as any)?.emit("link:open", href)
         e.preventDefault()

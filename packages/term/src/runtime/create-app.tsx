@@ -83,7 +83,7 @@ import {
 import { keyToAnsi, keyToKittyAnsi } from "@silvery/tea/keys"
 import { parseKey, type Key } from "./keys"
 import { ensureLayoutEngine } from "./layout"
-import { createMouseEventProcessor } from "../mouse-events"
+import { createMouseEventProcessor, updateKeyboardModifiers } from "../mouse-events"
 import { enableKittyKeyboard, disableKittyKeyboard, KittyFlags, enableMouse, disableMouse } from "../output"
 import { enableFocusReporting, disableFocusReporting } from "../focus-reporting"
 import { detectKittyFromStdio } from "../kitty-detect"
@@ -1842,9 +1842,13 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
 
     // Bridge ALL key events to RuntimeContext listeners first (useModifierKeys
     // needs modifier-only and release events). Then filter events for app handlers.
+    // Also update keyboard modifier state for mouse event enrichment.
     for (const event of events) {
       if (event.type === "term:key") {
         const { input, key: parsedKey } = event.data as { input: string; key: Key }
+        // Track keyboard modifier state (Super/Cmd, Hyper) for mouse events.
+        // SGR mouse protocol can't report these — Kitty keyboard events fill the gap.
+        updateKeyboardModifiers(mouseEventState, parsedKey)
         for (const listener of runtimeInputListeners) {
           listener(input, parsedKey)
         }
