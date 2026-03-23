@@ -279,14 +279,11 @@ If you hardcode a color, you've married one theme. Semantic tokens marry them al
 
 ## 7. Compose with Factory Functions
 
-Classes encourage hidden state and rigid hierarchies. Factory functions return plain objects with explicit deps — composable, testable, swappable. The `@silvery/tea` plugin system is built on this: `pipe()` chains plugins together, each adding a capability.
+Classes encourage hidden state and rigid hierarchies. Factory functions return plain objects with explicit deps — composable, testable, swappable.
 
 ::: tip ✨ Shiny
 
 ```tsx
-// Composable plugins via pipe() — no inheritance hierarchy
-const app = pipe(baseApp, withFocus(), withDomEvents(), withCommands(opts))
-
 // Explicit dependencies — no hidden globals
 function createEditor({ storage, parser }) {
   return { open, save, close }
@@ -294,6 +291,13 @@ function createEditor({ storage, parser }) {
 
 // Easy to test — just pass mock deps
 const editor = createEditor({ storage: mockStorage, parser: mockParser })
+```
+
+With `@silvery/tea`, this pattern extends to app-level composition via `pipe()`:
+
+```tsx
+// TEA plugin composition — each function adds a capability
+const app = pipe(createApp(), withFocus(), withDomEvents(), withCommands(opts))
 ```
 
 :::
