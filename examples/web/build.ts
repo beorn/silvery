@@ -102,7 +102,7 @@ const sharedOptions = {
   sourcemap: "external" as const,
   define: browserDefines,
   banner: processShim,
-  external: ["yoga-wasm-web", "ws", "@termless/core", "@termless/xtermjs"],
+  external: ["yoga-wasm-web", "ws", "@termless/core", "@termless/xtermjs", "@termless/ghostty"],
   plugins: [nodeStubPlugin],
 }
 
