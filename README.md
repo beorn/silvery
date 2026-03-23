@@ -4,7 +4,7 @@
 
 Ink-compatible React renderer for terminals — same `Box`, `Text`, `useInput` API you know. Plus everything you wish Ink had.
 
-> **Status:** Alpha — under active development. APIs may change. Early adopters and feedback welcome.
+> **Note:** Under active development. APIs may change. Feedback welcome.
 
 ```console
 $ npm install silvery react
@@ -38,33 +38,32 @@ await render(<Counter />, term).run()
 
 ### Better
 
-- **Smaller install** — ~177 KB gzipped with 30+ components, theme engine, and layout included. Ink pulls 16MB into node_modules
-- **Pure TypeScript, zero native deps** — no WASM, no build steps. Works on Alpine, CI, Docker, everywhere
+- **Smaller install** — ~177 KB gzipped all included (Ink pulls 16MB into node_modules)
+- **Pure TypeScript, zero native deps** — no WASM, no build steps — works on Alpine, CI, Docker, everywhere
 - **Incremental rendering** — per-node dirty tracking, ~100x faster interactive updates
 - **Responsive layout** — `useContentRect()` returns actual dimensions synchronously during render
 - **Scrollable containers** — `overflow="scroll"` with automatic measurement and clipping
-- **Theme system** — 38 palettes, semantic tokens (`$primary`, `$error`), auto-detects terminal colors
+- **Theme system** — 38 palettes, semantic design/color tokens (`$primary`, `$error`), auto-detects terminal colors
 - **30+ components** — TextInput, TextArea, SelectList, VirtualList, Table, Tabs, CommandPalette, ModalDialog, Toast, and more
 - **Focus system** — scoped focus, arrow-key directional nav, click-to-focus
-- **Mouse support** — full SGR mouse protocol — click, drag, scroll, hit testing
-- **Kitty keyboard protocol** — unambiguous key IDs, modifier keys, key release events
+- **Modern terminal protocols** — Kitty keyboard, SGR mouse, bracketed paste, focus reporting, OSC 8 hyperlinks, OSC 52 clipboard, text sizing, theme detection — all auto-negotiated
 
 ## Packages
 
-| Package | Description |
-|---|---|
-| `silvery` | Components, hooks, renderer — the one package you need |
-| `@silvery/test` | Testing utilities and locators |
-| `@silvery/ink` | Ink compatibility layer |
-| `@silvery/tea` | Optional [TEA](https://guide.elm-lang.org/architecture/) state management for complex apps |
+| Package         | Description                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------ |
+| `silvery`       | Components, hooks, renderer — the one package you need                                     |
+| `@silvery/test` | Testing utilities and locators                                                             |
+| `@silvery/ink`  | Ink compatibility layer                                                                    |
+| `@silvery/tea`  | Optional [TEA](https://guide.elm-lang.org/architecture/) state management for complex apps |
 
 ## Ecosystem
 
-| Project | What |
-|---|---|
-| [Termless](https://termless.dev) | Headless terminal testing — like Playwright for terminal apps |
-| [Flexily](https://beorn.github.io/flexily) | Pure JS flexbox layout engine (Yoga-compatible, zero WASM) |
-| [Loggily](https://beorn.github.io/loggily) | Debug + structured logging + tracing |
+| Project                                    | What                                                          |
+| ------------------------------------------ | ------------------------------------------------------------- |
+| [Termless](https://termless.dev)           | Headless terminal testing — like Playwright for terminal apps |
+| [Flexily](https://beorn.github.io/flexily) | Pure JS flexbox layout engine (Yoga-compatible, zero WASM)    |
+| [Loggily](https://beorn.github.io/loggily) | Debug + structured logging + tracing                          |
 
 ## Coming
 
