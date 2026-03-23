@@ -454,7 +454,7 @@ Manual visual testing is slow, unrepeatable, and doesn't catch regressions. If y
 6. **Use semantic theme colors** — `$tokens`, not hardcoded values
 7. **Compose with factory functions** — `pipe()`, not class hierarchies
 8. **Clean up with `using`** — one keyword, zero leaks
-9. **Adopt TEA gradually** — useState → createSlice → effects as data, one step at a time
+9. **Start simple, scale architecture** — useState → useReducer → external store → @silvery/tea, one step at a time
 10. **Test what the user sees** — render the buffer, not just the state
 
 Keep it shiny. ✨

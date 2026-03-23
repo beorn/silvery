@@ -12,7 +12,11 @@ The app evolves: Counter → Todo list → Board. At each level, both state mana
 | **4 — Pure Functions**                | Board + I/O             | Effects as data (return `[state, effects]`) | Custom plugins (vim modes, file watchers)   | Side effects + event processing |
 | **5 — Composable Machines**           | Board + Dialog + Search | Multiple slices, dispatch effects           | Plugin composition (`pipe()`)               | Cross-module communication      |
 
-Most web apps stop at Level 2. TUI apps with keyboard-driven interaction, undo, and multi-pane layouts often reach Level 3. The patterns are general — ops as data, effects as data, composable state machines work in any React framework. You arrive there incrementally — one sip at a time.
+::: tip Start at Level 1
+Most apps only need Levels 1-2. Levels 3-5 are for apps that need undo, AI automation, or multi-pane composition — most apps never need them. Start simple and advance only when you feel a specific pain.
+:::
+
+The patterns are general — ops as data, effects as data, composable state machines work in any React framework. You arrive there incrementally — one step at a time.
 
 ## Level 1: Starting Simple
 

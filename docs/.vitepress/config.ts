@@ -35,7 +35,7 @@ export default defineConfig({
     nav: [
       { text: "Getting Started", link: "/getting-started/quick-start" },
       { text: "The Silvery Way", link: "/guide/the-silvery-way" },
-      { text: "Guides", link: "/guides/terminal-apps" },
+      { text: "Guides", link: "/guides/components" },
       { text: "Reference", link: "/reference/components-hooks" },
       {
         text: "Examples",
@@ -79,15 +79,21 @@ export default defineConfig({
         text: "Guides",
         collapsed: false,
         items: [
-          { text: "Terminal Apps", link: "/guides/terminal-apps" },
-          { text: "Styling", link: "/guide/styling" },
           { text: "Components", link: "/guides/components" },
+          { text: "Styling", link: "/guide/styling" },
           { text: "Theming", link: "/guides/theming" },
-          { text: "State Management", link: "/guides/state-management" },
           { text: "Silvery vs Ink", link: "/guide/silvery-vs-ink" },
           { text: "From Ink to Silvery", link: "/guide/migration-from-ink" },
           { text: "Why Silvery?", link: "/guide/why-silvery" },
           { text: "Comparison", link: "/guide/comparison" },
+        ],
+      },
+      {
+        text: "Building Apps",
+        collapsed: false,
+        items: [
+          { text: "Terminal Apps", link: "/guides/terminal-apps" },
+          { text: "State Management", link: "/guides/state-management" },
         ],
       },
       {

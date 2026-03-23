@@ -1,19 +1,27 @@
 # Packages
 
-Silvery is organized as a monorepo of focused packages. Most apps only need the umbrella `silvery` package, which re-exports `@silvery/react`.
+Most apps only need `silvery` — it re-exports everything you need from the internal packages.
 
-## Package Overview
+## Public Packages
+
+| Package         | npm               | Description                                                 |
+| --------------- | ----------------- | ----------------------------------------------------------- |
+| `silvery`       | `silvery`         | Components, hooks, renderer — the one package you need      |
+| `@silvery/test` | `@silvery/test`   | Testing utilities (virtual renderer, Playwright-style locators) |
+| `@silvery/ink`  | `@silvery/ink`    | Ink compatibility layer for migration                       |
+| `@silvery/tea`  | `@silvery/tea`    | Optional TEA state machine store for complex apps           |
+
+## Internal Packages
+
+These are implementation details — you'll only need them for advanced use cases like custom renderers or direct pipeline access.
 
 | Package           | npm               | Description                                                 |
 | ----------------- | ----------------- | ----------------------------------------------------------- |
-| `silvery`         | `silvery`         | Umbrella package (re-exports `@silvery/react`)              |
-| `packages/term`   | `@silvery/term`   | Terminal runtime, ANSI output, rendering pipeline           |
-| `packages/react`  | `@silvery/react`  | React reconciler, components, and hooks                     |
-| `packages/ui`     | `@silvery/ui`     | Component library (30+ components) + CLI progress utilities |
-| `packages/tea`    | `@silvery/tea`    | TEA state machine store (zustand-based)                     |
-| `packages/compat` | `@silvery/compat` | Ink/Chalk compatibility layers                              |
-| `packages/test`   | `@silvery/test`   | Testing utilities (virtual renderer, locators)              |
-| `packages/theme`  | `@silvery/theme`  | Theme tokens, 38 palettes, theme CLI                        |
+| `@silvery/react`  | `@silvery/react`  | React reconciler, components, and hooks                     |
+| `@silvery/term`   | `@silvery/term`   | Terminal runtime, ANSI output, rendering pipeline           |
+| `@silvery/ui`     | `@silvery/ui`     | Component library (30+ components) + CLI progress utilities |
+| `@silvery/theme`  | `@silvery/theme`  | Theme tokens, 38 palettes, theme CLI                        |
+| `@silvery/compat` | `@silvery/compat` | Legacy Ink/Chalk compatibility (use `@silvery/ink` instead) |
 
 ## Import Conventions
 

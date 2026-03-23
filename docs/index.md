@@ -41,10 +41,10 @@ features:
     details: "Terminal today, Canvas 2D and DOM experimental. Same React components, different rendering backends. ~30% of the codebase is target-independent."
     link: /guides/future-targets
     linkText: See the roadmap
-  - title: TEA State Machines
-    details: "Optional Elm Architecture (TEA) reducers alongside React hooks. Pure (action, state) -> [state, effects] functions for testing, replay, and undo."
-    link: /guides/state-management
-    linkText: Learn more
+  - title: Terminal Protocol Support
+    details: "100+ escape sequences, all auto-negotiated: Kitty keyboard, SGR mouse, OSC 8 hyperlinks, OSC 52 clipboard, bracketed paste, focus reporting, text sizing, synchronized output, and more."
+    link: /guide/comparison
+    linkText: See comparison
 ---
 
 ## Explore the Examples
@@ -74,21 +74,18 @@ features:
 - **Responsive layout** -- `useContentRect()` returns actual dimensions during render. No prop drilling, no post-render effects.
 - **Scrollable containers** -- `overflow="scroll"` with `scrollTo` just works. No manual virtualization.
 - **Incremental rendering** -- Per-node dirty tracking. Only changed nodes re-render. Cell-level ANSI-aware compositing.
-- **Pure TypeScript** -- No WASM, no C++, no native dependencies. Runs on Node, Bun, and Deno.
+- **Pure TypeScript** -- No WASM, no C++, no native dependencies. ~177 KB gzipped all-in. Runs on Node, Bun, and Deno.
 
 </div>
 
-## Optional Framework Layers
+## Packages
 
-<div class="framework-layers">
-
-- **`@silvery/ui`** — 30+ components -- TextArea, SelectList, Table, VirtualList, CommandPalette, ModalDialog, Tabs, TreeView, Toast, ProgressBar, and more
-- **`@silvery/term`** — Input system -- Input layer stack (DOM-style event bubbling), tree-based focus with spatial navigation, mouse support, command system
-- **`@silvery/tea`** — TEA state machines -- Pure `(action, state) → [state, effects]` reducers for testing, replay, and undo
-- **`@silvery/theme`** — Theming -- 38 palettes, semantic color tokens, auto-detection
-- **`@silvery/test`** — [Testing](/examples/testing) -- Headless renderer, Playwright-style locators, press() simulation, programmatic screenshots
-
-</div>
+| Package | Description |
+|---|---|
+| `silvery` | Components, hooks, renderer -- the one package you need |
+| `@silvery/test` | [Testing](/examples/testing) utilities and Playwright-style locators |
+| `@silvery/ink` | [Ink compatibility](/guide/silvery-vs-ink) layer for migration |
+| `@silvery/tea` | Optional [TEA](https://guide.elm-lang.org/architecture/) state management for complex apps |
 
 ## Quick Start
 
@@ -114,28 +111,21 @@ yarn add silvery react
 
 ```tsx
 import { useState } from "react"
-import { Box, Text, useContentRect, useInput, render, createTerm } from "silvery"
+import { render, Box, Text, useInput } from "silvery"
 
-function App() {
-  const { width } = useContentRect() // Components know their size!
+function Counter() {
   const [count, setCount] = useState(0)
-
-  useInput((input, key) => {
-    if (input === "j" || key.downArrow) setCount((c) => c + 1)
-    if (input === "k" || key.upArrow) setCount((c) => c - 1)
-    if (input === "q") return "exit"
+  useInput((input) => {
+    if (input === "j") setCount((c) => c + 1)
   })
-
   return (
-    <Box flexDirection="column">
-      <Text>Terminal width: {width}</Text>
+    <Box borderStyle="round" padding={1}>
       <Text>Count: {count}</Text>
     </Box>
   )
 }
 
-using term = createTerm()
-await render(<App />, term)
+await render(<Counter />).run()
 ```
 
 ## Ecosystem
@@ -145,6 +135,12 @@ Silvery is part of a family of terminal-focused libraries:
 - **[Termless](https://termless.dev)** -- Headless terminal testing, like Playwright for terminal apps
 - **[Flexily](https://beorn.github.io/flexily)** -- Pure JS flexbox layout engine (Yoga-compatible, 2.5x faster, zero WASM)
 - **[Loggily](https://beorn.github.io/loggily)** -- Debug + structured logging + tracing in one library
+
+## Coming
+
+- **Renderers** -- Canvas 2D, Web DOM (experimental today, production later)
+- **Frameworks** -- Svelte, Solid.js, Vue adapters
+- **@silvery/tea** -- Structured state management with commands, keybindings, effects-as-data
 
 <style>
 .viewer-wrapper {
@@ -172,15 +168,5 @@ Silvery is part of a family of terminal-focused libraries:
 .features-list li {
   margin: 0.35rem 0;
   line-height: 1.5;
-}
-.framework-layers {
-  margin: 0.5rem 0 1.5rem;
-}
-.framework-layers li {
-  margin: 0.35rem 0;
-  line-height: 1.5;
-}
-.framework-layers code {
-  font-size: 0.85em;
 }
 </style>
