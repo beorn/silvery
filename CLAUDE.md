@@ -35,13 +35,14 @@ bun run compat            # Run Ink/Chalk compatibility checks
 
 Users install and import from these packages only:
 
-| Package          | What                                                     |
-| ---------------- | -------------------------------------------------------- |
-| `silvery`        | Main barrel — components, hooks, render, types, runtime  |
-| `@silvery/tea`   | TEA state machine store, createApp (optional)            |
-| `@silvery/test`  | Testing utilities — virtual renderer, locators (optional)|
+| Package         | What                                                      |
+| --------------- | --------------------------------------------------------- |
+| `silvery`       | Main barrel — components, hooks, render, types, runtime   |
+| `@silvery/tea`  | TEA state machine store, createApp (optional)             |
+| `@silvery/test` | Testing utilities — virtual renderer, locators (optional) |
 
 Subpath imports available from `silvery`:
+
 - `silvery` — components, hooks, render, types (re-exports @silvery/ag-react)
 - `silvery/runtime` — run(), useInput, createRuntime (re-exports @silvery/ag-term/runtime)
 - `silvery/theme` — ThemeProvider, useTheme, palettes, color utilities (re-exports @silvery/theme)
@@ -54,24 +55,24 @@ Subpath imports available from `silvery`:
 
 These are workspace packages for development. Users do not import from them directly — the `silvery` barrel re-exports their public APIs. All marked `"private": true`.
 
-| Package              | What                                           |
-| -------------------- | ---------------------------------------------- |
-| `@silvery/ag`        | Core types (AgNode, BoxProps, keys, focus)      |
-| `@silvery/ag-react`  | React reconciler, hooks, and UI components      |
-| `@silvery/ag-term`   | Terminal runtime, ANSI output, pipeline         |
-| `@silvery/theme`     | Theme tokens, 38 palettes, theme CLI            |
-| `@silvery/ink`       | Ink/Chalk compatibility layers                  |
+| Package             | What                                       |
+| ------------------- | ------------------------------------------ |
+| `@silvery/ag`       | Core types (AgNode, BoxProps, keys, focus) |
+| `@silvery/ag-react` | React reconciler, hooks, and UI components |
+| `@silvery/ag-term`  | Terminal runtime, ANSI output, pipeline    |
+| `@silvery/theme`    | Theme tokens, 38 palettes, theme CLI       |
+| `@silvery/ink`      | Ink/Chalk compatibility layers             |
 
 ## Structure
 
-| Directory   | What                                                              |
-| ----------- | ----------------------------------------------------------------- |
-| `packages/` | Internal workspace packages (ag, ag-react, ag-term, tea, test, theme, ink) |
-| `src/`      | Public barrel + subpath re-exports (index.ts, runtime.ts, theme.ts, ui.ts, ui/*) |
-| `docs/`     | VitePress documentation site (silvery.dev)                        |
-| `examples/` | Interactive demos, web showcases, playground                      |
-| `tests/`    | Test suites (compat, perf, tree-shaking, features)                |
-| `scripts/`  | Build and maintenance scripts                                     |
+| Directory   | What                                                                              |
+| ----------- | --------------------------------------------------------------------------------- |
+| `packages/` | Internal workspace packages (ag, ag-react, ag-term, tea, test, theme, ink)        |
+| `src/`      | Public barrel + subpath re-exports (index.ts, runtime.ts, theme.ts, ui.ts, ui/\*) |
+| `docs/`     | VitePress documentation site (silvery.dev)                                        |
+| `examples/` | Interactive demos, web showcases, playground                                      |
+| `tests/`    | Test suites (compat, perf, tree-shaking, features)                                |
+| `scripts/`  | Build and maintenance scripts                                                     |
 
 ## Key Internals
 

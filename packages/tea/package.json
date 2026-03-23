@@ -10,48 +10,19 @@
     "directory": "packages/tea"
   },
   "files": [
-    "src",
-    "dist"
+    "src"
   ],
   "type": "module",
-  "main": "dist/index.js",
+  "main": "src/index.ts",
   "types": "src/index.ts",
   "exports": {
-    ".": {
-      "bun": "./src/index.ts",
-      "types": "./src/index.ts",
-      "import": "./dist/index.js"
-    },
-    "./core": {
-      "bun": "./src/core/index.ts",
-      "types": "./src/core/index.ts",
-      "import": "./dist/core.js"
-    },
-    "./store": {
-      "bun": "./src/store/index.ts",
-      "types": "./src/store/index.ts",
-      "import": "./dist/store.js"
-    },
-    "./tea": {
-      "bun": "./src/tea/index.ts",
-      "types": "./src/tea/index.ts",
-      "import": "./dist/tea.js"
-    },
-    "./streams": {
-      "bun": "./src/streams/index.ts",
-      "types": "./src/streams/index.ts",
-      "import": "./dist/streams.js"
-    },
-    "./plugins": {
-      "bun": "./src/plugins.ts",
-      "types": "./src/plugins.ts",
-      "import": "./dist/plugins.js"
-    },
-    "./create-app": {
-      "bun": "./src/create-app.tsx",
-      "types": "./src/create-app.tsx",
-      "import": "./dist/create-app.js"
-    },
+    ".": { "types": "./src/index.ts", "import": "./src/index.ts" },
+    "./core": { "types": "./src/core/index.ts", "import": "./src/core/index.ts" },
+    "./store": { "types": "./src/store/index.ts", "import": "./src/store/index.ts" },
+    "./tea": { "types": "./src/tea/index.ts", "import": "./src/tea/index.ts" },
+    "./streams": { "types": "./src/streams/index.ts", "import": "./src/streams/index.ts" },
+    "./plugins": { "types": "./src/plugins.ts", "import": "./src/plugins.ts" },
+    "./create-app": { "types": "./src/create-app.tsx", "import": "./src/create-app.tsx" },
     "./*": "./src/*.ts"
   },
   "publishConfig": {
