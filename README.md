@@ -38,7 +38,8 @@ await render(<Counter />, term).run()
 
 ### Better
 
-- **Pure TypeScript, zero native deps** — no yoga binary, no WASM. Works on Alpine, CI, Docker, everywhere
+- **Smaller install** — Ink pulls 16MB into node_modules. Silvery has fewer deps and no yoga binary
+- **Pure TypeScript, zero native deps** — no WASM, no build steps. Works on Alpine, CI, Docker, everywhere
 - **Incremental rendering** — per-node dirty tracking, ~100x faster interactive updates
 - **Responsive layout** — `useContentRect()` returns actual dimensions synchronously during render
 - **Scrollable containers** — `overflow="scroll"` with automatic measurement and clipping
@@ -69,7 +70,7 @@ await render(<Counter />, term).run()
 
 - **Renderers** — Canvas 2D, Web DOM (experimental today, production later)
 - **Frameworks** — Svelte, Solid.js, Vue adapters
-- **@silvery/tea** — structured state management with commands, keybindings, effects-as-data
+- **@silvery/tea** — Structured state management with commands, keybindings, effects-as-data
 
 **Runtimes:** Bun >= 1.0 and Node.js >= 18. CLI (`silvery` command) requires Bun.
 
