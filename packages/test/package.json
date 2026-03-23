@@ -10,15 +10,17 @@
     "directory": "packages/test"
   },
   "files": [
-    "src"
+    "src",
+    "dist"
   ],
   "type": "module",
-  "main": "src/index.tsx",
+  "main": "dist/index.js",
   "types": "src/index.tsx",
   "exports": {
     ".": {
+      "bun": "./src/index.tsx",
       "types": "./src/index.tsx",
-      "import": "./src/index.tsx"
+      "import": "./dist/index.js"
     },
     "./*": {
       "types": "./src/*.ts",

@@ -38,82 +38,99 @@
   ],
   "files": [
     "src",
+    "dist",
     "bin"
   ],
   "type": "module",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "types": "src/index.ts",
   "exports": {
     ".": {
+      "bun": "./src/index.ts",
       "types": "./src/index.ts",
-      "import": "./src/index.ts"
+      "import": "./dist/index.js"
     },
     "./runtime": {
+      "bun": "./src/runtime.ts",
       "types": "./src/runtime.ts",
-      "import": "./src/runtime.ts"
+      "import": "./dist/runtime.js"
     },
     "./theme": {
+      "bun": "./src/theme.ts",
       "types": "./src/theme.ts",
-      "import": "./src/theme.ts"
+      "import": "./dist/theme.js"
     },
     "./ui": {
+      "bun": "./src/ui.ts",
       "types": "./src/ui.ts",
-      "import": "./src/ui.ts"
+      "import": "./dist/ui.js"
     },
     "./ui/cli": {
+      "bun": "./src/ui/cli.ts",
       "types": "./src/ui/cli.ts",
-      "import": "./src/ui/cli.ts"
+      "import": "./dist/ui/cli.js"
     },
     "./ui/react": {
+      "bun": "./src/ui/react.ts",
       "types": "./src/ui/react.ts",
-      "import": "./src/ui/react.ts"
+      "import": "./dist/ui/react.js"
     },
     "./ui/progress": {
+      "bun": "./src/ui/progress.ts",
       "types": "./src/ui/progress.ts",
-      "import": "./src/ui/progress.ts"
+      "import": "./dist/ui/progress.js"
     },
     "./ui/wrappers": {
+      "bun": "./src/ui/wrappers.ts",
       "types": "./src/ui/wrappers.ts",
-      "import": "./src/ui/wrappers.ts"
+      "import": "./dist/ui/wrappers.js"
     },
     "./ui/ansi": {
+      "bun": "./src/ui/ansi.ts",
       "types": "./src/ui/ansi.ts",
-      "import": "./src/ui/ansi.ts"
+      "import": "./dist/ui/ansi.js"
     },
     "./ui/display": {
+      "bun": "./src/ui/display.ts",
       "types": "./src/ui/display.ts",
-      "import": "./src/ui/display.ts"
+      "import": "./dist/ui/display.js"
     },
     "./ui/input": {
+      "bun": "./src/ui/input.ts",
       "types": "./src/ui/input.ts",
-      "import": "./src/ui/input.ts"
+      "import": "./dist/ui/input.js"
     },
     "./ui/animation": {
+      "bun": "./src/ui/animation.ts",
       "types": "./src/ui/animation.ts",
-      "import": "./src/ui/animation.ts"
+      "import": "./dist/ui/animation.js"
     },
     "./ui/image": {
+      "bun": "./src/ui/image.ts",
       "types": "./src/ui/image.ts",
-      "import": "./src/ui/image.ts"
+      "import": "./dist/ui/image.js"
     },
     "./ui/utils": {
+      "bun": "./src/ui/utils.ts",
       "types": "./src/ui/utils.ts",
-      "import": "./src/ui/utils.ts"
+      "import": "./dist/ui/utils.js"
     },
     "./ink": {
+      "bun": "./packages/ink/src/ink.ts",
       "types": "./packages/ink/src/ink.ts",
-      "import": "./packages/ink/src/ink.ts"
+      "import": "./dist/ink.js"
     },
     "./chalk": {
+      "bun": "./packages/ink/src/chalk.ts",
       "types": "./packages/ink/src/chalk.ts",
-      "import": "./packages/ink/src/chalk.ts"
+      "import": "./dist/chalk.js"
     }
   },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "bun build src/index.ts --outdir dist --target node",
+    "build": "bun run scripts/build.ts",
     "test": "bunx --bun vitest run",
     "test:fast": "bunx --bun vitest run --reporter=dot",
     "typecheck": "tsc --noEmit",
