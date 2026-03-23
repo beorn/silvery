@@ -1,8 +1,8 @@
 # Silvery
 
-**React for terminals.** Start as simply as Ink. Scale into real terminal apps.
+**Polished Terminal UIs in React.**
 
-Responsive layouts, scrollable containers, 30+ production components, 38 themes, and 100x faster incremental updates. Pure TypeScript — no native dependencies, no WASM.
+Responsive layouts, scrollable containers, 100x+ faster incremental updates, and full support for modern terminal capabilities. 30+ components from TextInput to VirtualList. Pure TypeScript, no WASM.
 
 ```
 npm install silvery react
@@ -39,123 +39,31 @@ using term = createTerm()
 await render(<App />, term).run()
 ```
 
-## Why Silvery
+## What You Get
 
-### Start familiar
+- **30+ components** — TextInput, TextArea, SelectList, VirtualList, Table, Tabs, CommandPalette, ModalDialog, SplitView, Toast, and more. All with keyboard navigation, focus, and scrolling built in.
+- **Responsive layout** — `useContentRect()` returns actual dimensions synchronously. Components adapt to their space immediately.
+- **Scrollable containers** — `overflow="scroll"` with automatic measurement and clipping. No manual virtualization.
+- **Theme system** — 38 palettes with semantic tokens (`$primary`, `$error`, `$border`). Auto-detects your terminal's colors.
+- **Focus navigation** — scoped focus, arrow-key directional movement, click-to-focus, `useFocusWithin`.
+- **Mouse support** — full SGR protocol with `onClick`, `onMouseDown`, `onWheel`, hit testing, drag.
+- **Per-node incremental rendering** — only changed nodes update. ~170us for interactive updates in a 1000-node tree.
+- **Zero native dependencies** — pure JS layout engine ([Flexily](https://beorn.github.io/flexily)), no yoga binary, no WASM. Works everywhere.
 
-Same React you know — components, hooks, JSX. `useState` and `useInput` for simple apps. No new paradigm to learn.
+## Compared to Ink
 
-### Scale without switching
+[Ink](https://github.com/vadimdemedes/ink) pioneered React in the terminal and remains a great choice for many apps. Silvery builds on that foundation with additional capabilities for complex interactive UIs — focus management, scrollable containers, mouse support, text editing, virtual lists, theming, and incremental rendering.
 
-When your app grows, silvery grows with it: TextInput, SelectList, VirtualList, focus scopes, command palette, split panes, scrollback search — all built in. No "you've outgrown the framework" moment.
-
-### Works everywhere
-
-Zero native dependencies. No yoga binary, no WASM, no build steps. Works on macOS, Linux, Windows, Alpine, CI, Docker, SSH — anywhere Node.js or Bun runs. Bundle into a single file with esbuild.
-
-## Renderer
-
-### Responsive layout
-
-`useContentRect()` returns actual dimensions synchronously — no post-layout effect, no `{width: 0, height: 0}` on first render.
-
-```tsx
-function Responsive() {
-  const { width } = useContentRect()
-  return width > 80 ? <FullDashboard /> : <CompactView />
-}
-```
-
-### Scrollable containers
-
-`overflow="scroll"` with `scrollTo` — measurement, clipping, and scroll position handled automatically.
-
-```tsx
-<Box height={20} overflow="scroll" scrollTo={selectedIndex}>
-  {items.map((item) => <Card key={item.id} item={item} />)}
-</Box>
-```
-
-### Per-node dirty tracking
-
-Seven independent dirty flags per node. Interactive updates complete in ~170 microseconds for 1000 nodes (vs 20+ ms for full-tree re-renders). Only changed nodes update.
-
-### Multi-target rendering
-
-Terminal today, Canvas 2D and DOM experimental. Same React components, different rendering backends.
-
-## Components
-
-### 30+ built-in components
-
-TextInput, TextArea, SelectList, VirtualList, Table, CommandPalette, ModalDialog, Tabs, TreeView, SplitView, Toast, ProgressBar, Spinner, Image, and more — all with built-in scrolling, focus, and keyboard handling.
-
-### Multi-line text editing
-
-Built-in `TextArea` with word wrap, scrolling, cursor movement, selection, and undo/redo.
-
-### Theme system
-
-38 built-in palettes with semantic color tokens (`$primary`, `$error`, `$border`, etc.) that auto-detect your terminal's colors and adapt.
-
-## Terminal Features
-
-### Mouse support
-
-SGR mouse protocol with DOM-style event props — `onClick`, `onMouseDown`, `onWheel`, hit testing, drag support.
-
-### Spatial focus navigation
-
-Tree-based focus with scopes, arrow-key directional movement, click-to-focus, and `useFocusWithin`. Beyond tab-order.
-
-### Input layer stack
-
-DOM-style event bubbling with modal isolation. Opening a dialog automatically captures input — no manual guard checks in every handler.
-
-```tsx
-<InputLayerProvider>
-  <Board />
-  {isOpen && <Dialog />} {/* Dialog captures input; Board doesn't see it */}
-</InputLayerProvider>
-```
-
-## Optional: Application Architecture
-
-For complex apps with commands, keybindings, and structured state management, `@silvery/tea` adds an optional [Elm Architecture](https://guide.elm-lang.org/architecture/) layer. Pure `(action, state) -> [state, effects]` functions for testable, replayable, undoable logic.
-
-```
-npm install @silvery/tea
-```
-
-Most apps don't need this — `useState` and `useReducer` work great. Reach for TEA when your app has command palettes, configurable keybindings, or undo/redo.
+If you're already using Ink, `silvery/ink` provides a compatibility layer for gradual migration.
 
 ## Packages
 
 | Package | Description |
 |---|---|
-| [`silvery`](packages/) | Components, hooks, renderer — the one package you need |
-| [`@silvery/tea`](packages/tea) | Optional TEA state machine store |
-| [`@silvery/test`](packages/test) | Testing utilities and locators |
-| [`@silvery/compat`](packages/compat) | Ink/Chalk compatibility layers |
-
-Internal packages (you rarely import these directly):
-
-| Package | Description |
-|---|---|
-| [`@silvery/react`](packages/react) | React reconciler |
-| [`@silvery/term`](packages/term) | Terminal rendering pipeline |
-| [`@silvery/ui`](packages/ui) | Component library |
-| [`@silvery/theme`](packages/theme) | Theme engine and palettes |
-
-## Compatibility
-
-`silvery/ink` and `silvery/chalk` provide compatibility layers for existing React terminal apps. The core API (`Box`, `Text`, `useInput`, `render`) is intentionally familiar — most existing code works with minimal changes. See the [migration guide](docs/guide/migration.md) for details.
-
-## When to Use Silvery
-
-**Use silvery when your CLI stops being a prompt and starts becoming an app.** Dashboards, editors, kanban boards, chat interfaces, log viewers — anything with scrollable containers, keyboard navigation, focus management, or components that adapt to their size.
-
-For one-shot prompts or spinners, a prompt library may be simpler. But if you find yourself reaching for "just one more feature," silvery is designed so you never outgrow it.
+| `silvery` | Components, hooks, renderer — the one package you need |
+| `@silvery/tea` | Optional [TEA](https://guide.elm-lang.org/architecture/) state management for complex apps |
+| `@silvery/test` | Testing utilities and locators |
+| `@silvery/compat` | Ink/Chalk compatibility layers |
 
 ## Ecosystem
 
@@ -164,40 +72,6 @@ For one-shot prompts or spinners, a prompt library may be simpler. But if you fi
 | [Termless](https://termless.dev) | Headless terminal testing — like Playwright for terminal apps |
 | [Flexily](https://beorn.github.io/flexily) | Pure JS flexbox layout engine (Yoga-compatible, zero WASM) |
 | [Loggily](https://beorn.github.io/loggily) | Debug + structured logging + tracing |
-
-## Compared to Ink
-
-[Ink](https://github.com/vadimdemedes/ink) pioneered React in the terminal and remains a great choice for many apps. Silvery builds on that foundation with additional capabilities for complex interactive UIs:
-
-|  | Silvery | Ink 5 |
-|---|---|---|
-| **Layout engine** | [Flexily](https://beorn.github.io/flexily) (pure JS, yoga-compatible) | yoga-layout |
-| **Native deps** | None | yoga-layout |
-| **Built-in components** | 30+ (TextInput, SelectList, VirtualList, Tabs, ...) | Core primitives (Box, Text, Static, ...) |
-| **Theme system** | 38 palettes, semantic tokens, auto-detect | chalk |
-| **Focus system** | Scoped focus, directional nav, click-to-focus | Community packages |
-| **Scrolling** | Built-in `overflow="scroll"` | Community packages |
-| **Mouse** | Full SGR protocol | Community packages |
-| **Incremental render** | Per-node dirty tracking | Full re-render |
-| **Responsive layout** | `useContentRect()` | — |
-| **React** | 18 + 19 | 18 |
-| **Ink compat** | `silvery/ink` compatibility layer | — |
-
-Silvery's incremental renderer is significantly faster for interactive updates (cursor, scroll, toggle) since only changed nodes re-render. Cold renders are comparable.
-
-If you're already using Ink, `silvery/ink` provides a compatibility layer for gradual migration.
-
-## Documentation
-
-Docs at [github.com/beorn/silvery](https://github.com/beorn/silvery) — README, guides in `docs/guide/`, and the [getting started guide](docs/guide/getting-started.md).
-
-## Development
-
-```bash
-bun install
-bun test
-bun run lint
-```
 
 ## License
 
