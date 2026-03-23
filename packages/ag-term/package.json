@@ -1,7 +1,8 @@
 {
   "name": "@silvery/ag-term",
   "version": "0.3.0",
-  "description": "Terminal rendering target for silvery",
+  "private": true,
+  "description": "Terminal rendering target for silvery (internal — use silvery instead)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
   "repository": {
@@ -40,9 +41,6 @@
       "types": "./src/*.ts",
       "import": "./src/*.ts"
     }
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "dependencies": {
     "@silvery/ag": "workspace:*",

@@ -31,26 +31,43 @@ bun run theme             # Theme CLI (list/preview palettes)
 bun run compat            # Run Ink/Chalk compatibility checks
 ```
 
-## Packages
+## Public Packages (3)
 
-| Package                    | npm                    | What                                           |
-| -------------------------- | ---------------------- | ---------------------------------------------- |
-| `packages/ag-term`         | `@silvery/ag-term`     | Terminal runtime, ANSI output, pipeline        |
-| `packages/ag-react`        | `@silvery/ag-react`    | React reconciler, hooks, and UI components     |
-| `packages/ag-react/src/ui` | `@silvery/ag-react/ui` | Component library (30+ components)             |
-| `packages/tea`             | `@silvery/tea`         | TEA state machine store (zustand-based)        |
-| `packages/ink`             | `@silvery/ink`         | Ink/Chalk compatibility layers                 |
-| `packages/test`            | `@silvery/test`        | Testing utilities (virtual renderer, locators) |
-| `packages/theme`           | `@silvery/theme`       | Theme tokens, 38 palettes, theme CLI           |
+Users install and import from these packages only:
 
-The main `silvery` package re-exports `@silvery/ag-react`. Users import from `silvery`, not the scoped packages.
+| Package          | What                                                     |
+| ---------------- | -------------------------------------------------------- |
+| `silvery`        | Main barrel — components, hooks, render, types, runtime  |
+| `@silvery/tea`   | TEA state machine store, createApp (optional)            |
+| `@silvery/test`  | Testing utilities — virtual renderer, locators (optional)|
+
+Subpath imports available from `silvery`:
+- `silvery` — components, hooks, render, types (re-exports @silvery/ag-react)
+- `silvery/runtime` — run(), useInput, createRuntime (re-exports @silvery/ag-term/runtime)
+- `silvery/theme` — ThemeProvider, useTheme, palettes, color utilities (re-exports @silvery/theme)
+- `silvery/ui` — component library (re-exports @silvery/ag-react/ui)
+- `silvery/ui/cli` — CLI progress indicators (no React)
+- `silvery/ui/react` — React progress components
+- `silvery/ink`, `silvery/chalk` — Ink/Chalk compatibility layers
+
+## Internal Packages
+
+These are workspace packages for development. Users do not import from them directly — the `silvery` barrel re-exports their public APIs. All marked `"private": true`.
+
+| Package              | What                                           |
+| -------------------- | ---------------------------------------------- |
+| `@silvery/ag`        | Core types (AgNode, BoxProps, keys, focus)      |
+| `@silvery/ag-react`  | React reconciler, hooks, and UI components      |
+| `@silvery/ag-term`   | Terminal runtime, ANSI output, pipeline         |
+| `@silvery/theme`     | Theme tokens, 38 palettes, theme CLI            |
+| `@silvery/ink`       | Ink/Chalk compatibility layers                  |
 
 ## Structure
 
 | Directory   | What                                                              |
 | ----------- | ----------------------------------------------------------------- |
-| `packages/` | Published packages (@silvery/ag-term, @silvery/ag-react/ui, etc.) |
-| `src/`      | Root index.ts (re-exports @silvery/ag-react)                      |
+| `packages/` | Internal workspace packages (ag, ag-react, ag-term, tea, test, theme, ink) |
+| `src/`      | Public barrel + subpath re-exports (index.ts, runtime.ts, theme.ts, ui.ts, ui/*) |
 | `docs/`     | VitePress documentation site (silvery.dev)                        |
 | `examples/` | Interactive demos, web showcases, playground                      |
 | `tests/`    | Test suites (compat, perf, tree-shaking, features)                |
@@ -87,7 +104,7 @@ Factory functions, `using` cleanup, no classes, no globals. ESM imports only. Ty
 
 ```tsx
 import { createTermless } from "@silvery/test"
-import { run } from "@silvery/ag-term/runtime"
+import { run } from "silvery/runtime"
 import "@termless/test/matchers"
 
 using term = createTermless({ cols: 80, rows: 24 })

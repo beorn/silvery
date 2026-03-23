@@ -1,7 +1,8 @@
 {
   "name": "@silvery/ag",
   "version": "0.3.0",
-  "description": "Core types and infrastructure for silvery",
+  "private": true,
+  "description": "Core types and infrastructure for silvery (internal — use silvery instead)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
   "repository": {
@@ -41,9 +42,6 @@
       "import": "./src/tree-utils.ts"
     },
     "./*": "./src/*.ts"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "dependencies": {
     "@silvery/ag-term": "workspace:*",

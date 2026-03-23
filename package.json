@@ -48,6 +48,58 @@
       "types": "./src/index.ts",
       "import": "./src/index.ts"
     },
+    "./runtime": {
+      "types": "./src/runtime.ts",
+      "import": "./src/runtime.ts"
+    },
+    "./theme": {
+      "types": "./src/theme.ts",
+      "import": "./src/theme.ts"
+    },
+    "./ui": {
+      "types": "./src/ui.ts",
+      "import": "./src/ui.ts"
+    },
+    "./ui/cli": {
+      "types": "./src/ui/cli.ts",
+      "import": "./src/ui/cli.ts"
+    },
+    "./ui/react": {
+      "types": "./src/ui/react.ts",
+      "import": "./src/ui/react.ts"
+    },
+    "./ui/progress": {
+      "types": "./src/ui/progress.ts",
+      "import": "./src/ui/progress.ts"
+    },
+    "./ui/wrappers": {
+      "types": "./src/ui/wrappers.ts",
+      "import": "./src/ui/wrappers.ts"
+    },
+    "./ui/ansi": {
+      "types": "./src/ui/ansi.ts",
+      "import": "./src/ui/ansi.ts"
+    },
+    "./ui/display": {
+      "types": "./src/ui/display.ts",
+      "import": "./src/ui/display.ts"
+    },
+    "./ui/input": {
+      "types": "./src/ui/input.ts",
+      "import": "./src/ui/input.ts"
+    },
+    "./ui/animation": {
+      "types": "./src/ui/animation.ts",
+      "import": "./src/ui/animation.ts"
+    },
+    "./ui/image": {
+      "types": "./src/ui/image.ts",
+      "import": "./src/ui/image.ts"
+    },
+    "./ui/utils": {
+      "types": "./src/ui/utils.ts",
+      "import": "./src/ui/utils.ts"
+    },
     "./ink": {
       "types": "./packages/ink/src/ink.ts",
       "import": "./packages/ink/src/ink.ts"

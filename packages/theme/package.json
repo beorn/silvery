@@ -1,7 +1,8 @@
 {
   "name": "@silvery/theme",
   "version": "0.3.0",
-  "description": "Theming system with semantic color tokens for silvery",
+  "private": true,
+  "description": "Theming system with semantic color tokens for silvery (internal — use silvery/theme instead)",
   "license": "MIT",
   "author": "Bjørn Stabell <bjorn@stabell.org>",
   "repository": {
@@ -28,9 +29,6 @@
       "types": "./src/*.ts",
       "import": "./src/*.ts"
     }
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "dependencies": {}
 }
