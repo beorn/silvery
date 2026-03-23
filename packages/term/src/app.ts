@@ -30,7 +30,8 @@ import { type BoundTerm, createBoundTerm } from "./bound-term"
 import type { TerminalBuffer } from "./buffer"
 import { bufferToHTML, bufferToStyledText, bufferToText } from "./buffer"
 import { type Screenshotter, createScreenshotter } from "./screenshot"
-import { keyToAnsi, keyToKittyAnsi } from "@silvery/tea/keys"
+import { keyToAnsi, keyToKittyAnsi, parseHotkey } from "@silvery/tea/keys"
+import { updateKeyboardModifiers } from "./mouse-events"
 import type { ParsedMouse } from "./mouse"
 import { createMouseEventProcessor, processMouseEvent } from "./mouse-events"
 import type { FocusManager } from "@silvery/tea/focus-manager"
@@ -315,6 +316,13 @@ export function buildApp(options: AppOptions): App {
     // === Actions ===
 
     async press(key: string): Promise<App> {
+      // Update keyboard modifier state so subsequent mouse events have accurate metaKey etc.
+      const hotkey = parseHotkey(key)
+      updateKeyboardModifiers(mouseState, {
+        super: hotkey.super,
+        hyper: hotkey.hyper,
+        eventType: "press",
+      })
       const sequence = kittyMode ? keyToKittyAnsi(key) : keyToAnsi(key)
       sendInput(sequence)
       // Allow microtask to flush for test synchronization
