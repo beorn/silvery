@@ -12,7 +12,7 @@ $ npm install silvery react
 
 ```tsx
 import { useState } from "react"
-import { render, Box, Text, useInput, createTerm } from "silvery"
+import { render, Box, Text, useInput } from "silvery"
 
 function Counter() {
   const [count, setCount] = useState(0)
@@ -26,8 +26,7 @@ function Counter() {
   )
 }
 
-using term = createTerm()
-await render(<Counter />, term).run()
+await render(<Counter />).run()
 ```
 
 ### Familiar
@@ -42,11 +41,12 @@ await render(<Counter />, term).run()
 - **Pure TypeScript, zero native deps** — no WASM, no build steps — works on Alpine, CI, Docker, everywhere
 - **Incremental rendering** — per-node dirty tracking, [~100x faster interactive updates](tests/perf/render.bench.ts)
 - **Responsive layout** — `useContentRect()` returns actual dimensions synchronously during render
+- **Dynamic scrollback** — renders into the terminal's scroll history, not just alternate screen
 - **Scrollable containers** — `overflow="scroll"` with automatic measurement and clipping
 - **Theme system** — 38 palettes, semantic design/color tokens (`$primary`, `$error`), auto-detects terminal colors
 - **30+ components** — TextInput, TextArea, SelectList, VirtualList, Table, Tabs, CommandPalette, ModalDialog, Toast, and more
 - **Focus system** — scoped focus, arrow-key directional nav, click-to-focus
-- **Modern terminal protocols** — Kitty keyboard, SGR mouse, bracketed paste, focus reporting, OSC 8 hyperlinks, OSC 52 clipboard, text sizing, theme detection — all auto-negotiated
+- **Most complete terminal protocol support** — Kitty keyboard (all 5 flags), SGR mouse (any-event + drag + wheel), bracketed paste, focus reporting, OSC 8 hyperlinks, OSC 52 clipboard, OSC 4/10/11 palette and theme detection, OSC 66 text sizing, OSC 133 semantic prompts, synchronized output, extended underlines (curly, dotted, dashed), underline colors, cursor shapes, device attribute queries — all auto-negotiated
 
 ## Packages
 
