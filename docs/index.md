@@ -37,10 +37,10 @@ features:
     details: "Headless rendering, auto-refreshing locators, getByText/getByTestId queries, bounding box assertions, and press() input. Test terminal UIs like you test web apps."
     link: /guide/testing
     linkText: Testing guide
-  - title: Beyond the Terminal
-    details: "Terminal today, Canvas 2D and DOM experimental. Same React components, different rendering backends. ~30% of the codebase is target-independent."
-    link: /guides/future-targets
-    linkText: See the roadmap
+  - title: Flexible Rendering
+    details: "Three modes: render once (static output), run() with React's event loop (hooks + useInput), or createApp() with your own event loop (commands, keybindings, TEA). Same renderer, pick your level."
+    link: /guide/the-silvery-way#_9-gradually-sip-tea
+    linkText: Gradually sip TEA
   - title: Terminal Protocol Support
     details: "100+ escape sequences, all auto-negotiated: Kitty keyboard, SGR mouse, OSC 8 hyperlinks, OSC 52 clipboard, bracketed paste, focus reporting, text sizing, synchronized output, and more."
     link: /guide/comparison
