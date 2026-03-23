@@ -20,7 +20,7 @@ import { Text } from "silvery"
 
 | Prop              | Type                                                                              | Default      | Description                    |
 | ----------------- | --------------------------------------------------------------------------------- | ------------ | ------------------------------ |
-| `color`           | `string`                                                                          | -            | Text color (named or hex)      |
+| `color`           | `string`                                                                          | -            | Text color (named, hex, `$token`, or `"inherit"`) |
 | `backgroundColor` | `string`                                                                          | -            | Background color               |
 | `bold`            | `boolean`                                                                         | `false`      | Bold text                      |
 | `italic`          | `boolean`                                                                         | `false`      | Italic text                    |
@@ -50,6 +50,21 @@ import { Text } from "silvery"
 ```tsx
 <Text color="#ff6600">Orange text</Text>
 <Text color="#663399">Purple text</Text>
+```
+
+### Inherit
+
+Use `"inherit"` to skip color override and inherit from the parent:
+
+```tsx
+<Text color="red">
+  Parent is red. <Text color="inherit">This inherits red.</Text>
+</Text>
+
+{/* Useful for Link inside colored containers */}
+<Text color="$selection">
+  <Link href="..." color="inherit">Inherits selection color</Link>
+</Text>
 ```
 
 ### Background Colors
