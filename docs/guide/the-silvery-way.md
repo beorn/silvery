@@ -233,7 +233,7 @@ Keybindings are a UI detail. Commands are the API. Build on commands; bind keys 
 
 ## 6. Semantic Theme Colors
 
-[`@silvery/theme`](/reference/packages) auto-detects your terminal's palette via OSC queries — no configuration needed. Use semantic tokens and your app looks right in every terminal theme. 38 built-in palettes (Catppuccin, Nord, Dracula, Tokyo Night, Solarized, and more) work automatically.
+[`silvery/theme`](/reference/packages) auto-detects your terminal's palette via OSC queries — no configuration needed. Use semantic tokens and your app looks right in every terminal theme. 38 built-in palettes (Catppuccin, Nord, Dracula, Tokyo Night, Solarized, and more) work automatically.
 
 ::: tip ✨ Shiny
 
@@ -395,7 +395,7 @@ Architecture is a response to complexity, not a starting point. If `useState` so
 
 ## 10. Test Against What the User Sees
 
-[`@silvery/test`](/reference/packages) gives you headless rendering with Playwright-style locators. State assertions pass while the screen is garbled — `selectedIndex === 2` doesn't catch the selection rendering on the wrong row, or the border overlapping content, or the scroll indicator showing the wrong count. Test what the user actually sees.
+[`@silvery/test`](/reference/packages) (optional package) gives you headless rendering with Playwright-style locators. State assertions pass while the screen is garbled — `selectedIndex === 2` doesn't catch the selection rendering on the wrong row, or the border overlapping content, or the scroll indicator showing the wrong count. Test what the user actually sees.
 
 ::: tip ✨ Shiny
 
