@@ -6,6 +6,8 @@
  */
 
 import { type Color, TerminalBuffer } from "../buffer"
+import { getActiveTheme } from "@silvery/theme/state"
+import { resolveThemeColor } from "@silvery/theme/resolve"
 import { outputPhase } from "../pipeline/output-phase"
 import type {
   BorderChars,
@@ -219,6 +221,13 @@ export class TerminalRenderBuffer implements RenderBuffer {
    */
   private parseColor(color: string | undefined): Color {
     if (!color) return null
+
+    // Resolve $token colors against the active theme
+    if (color.startsWith("$")) {
+      const resolved = resolveThemeColor(color, getActiveTheme())
+      if (resolved && resolved !== color) return this.parseColor(resolved)
+      return null // Unknown token
+    }
 
     // Hex color
     if (color.startsWith("#")) {
