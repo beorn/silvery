@@ -3,12 +3,11 @@
  * silvery CLI
  *
  * Usage:
- *   silvery example              — list all available examples
- *   silvery example <name>       — run an example by name (fuzzy match)
- *   silvery example --list       — list all available examples
- *   silvery --help               — show usage help
- *
- * Designed for: bunx silvery example <name>
+ *   bunx silvery                     — show help
+ *   bunx silvery <name>              — run an example by name (fuzzy match)
+ *   bunx silvery examples            — list all available examples
+ *   bunx silvery doctor              — check terminal capabilities
+ *   bunx silvery --help              — show usage help
  */
 
 // =============================================================================
@@ -39,27 +38,29 @@ interface Example {
 }
 
 // =============================================================================
-// Auto-Discovery (mirrors examples/cli.ts)
+// Auto-Discovery
 // =============================================================================
 
-const CATEGORY_DIRS = ["layout", "interactive", "runtime", "inline", "kitty"] as const
+const CATEGORY_DIRS = ["components", "apps", "layout", "runtime", "inline", "kitty"] as const
 
 const CATEGORY_DISPLAY: Record<string, string> = {
   kitty: "Kitty Protocol",
 }
 
 const CATEGORY_ORDER: Record<string, number> = {
-  Layout: 0,
-  Interactive: 1,
-  Runtime: 2,
-  Inline: 3,
-  "Kitty Protocol": 4,
+  Components: 0,
+  Apps: 1,
+  Layout: 2,
+  Runtime: 3,
+  Inline: 4,
+  "Kitty Protocol": 5,
 }
 
 const CATEGORY_COLOR: Record<string, string> = {
+  Components: GREEN,
+  Apps: CYAN,
   Layout: MAGENTA,
-  Interactive: CYAN,
-  Runtime: GREEN,
+  Runtime: BLUE,
   Inline: YELLOW,
   "Kitty Protocol": BLUE,
 }
@@ -74,24 +75,38 @@ async function discoverExamples(): Promise<Example[]> {
     const glob = new Bun.Glob("*.tsx")
     const dirPath = resolve(examplesDir, dir)
 
-    for (const file of glob.scanSync({ cwd: dirPath })) {
-      if (file.startsWith("_")) continue
+    try {
+      for (const file of glob.scanSync({ cwd: dirPath })) {
+        if (file.startsWith("_")) continue
 
-      try {
-        const mod = await import(resolve(dirPath, file))
-        if (!mod.meta?.name) continue
-
+        // Try to get meta from export, fall back to filename
+        const name = file.replace(/\.tsx$/, "").replace(/-/g, " ")
         results.push({
-          name: mod.meta.name,
-          description: mod.meta.description ?? "",
+          name,
+          description: "",
           file: resolve(dirPath, file),
           category,
-          features: mod.meta.features,
         })
-      } catch {
-        // Skip files that fail to import
       }
+    } catch {
+      // Directory doesn't exist — skip
     }
+  }
+
+  // Also scan aichat subdirectory
+  const aichatDir = resolve(examplesDir, "apps/aichat")
+  try {
+    const indexFile = resolve(aichatDir, "index.tsx")
+    const { stat } = await import("node:fs/promises")
+    await stat(indexFile)
+    results.push({
+      name: "aichat",
+      description: "AI Coding Agent demo",
+      file: indexFile,
+      category: "Apps",
+    })
+  } catch {
+    // No aichat
   }
 
   results.sort((a, b) => {
@@ -112,16 +127,17 @@ function printHelp(): void {
 ${BOLD}${YELLOW}silvery${RESET} — React framework for modern terminal UIs
 
 ${BOLD}Usage:${RESET}
-  silvery example              List all available examples
-  silvery example ${DIM}<name>${RESET}       Run an example by name (fuzzy match)
-  silvery example --list       List all available examples
-  silvery --help               Show this help
-  silvery --version            Show version
+  bunx silvery ${DIM}<name>${RESET}             Run an example by name (fuzzy match)
+  bunx silvery examples            List all available examples
+  bunx silvery doctor              Check terminal capabilities
+  bunx silvery --help              Show this help
+  bunx silvery --version           Show version
 
-${BOLD}Examples:${RESET}
-  bunx silvery example todo        Run the Todo App example
-  bunx silvery example kanban      Run the Kanban Board example
-  bunx silvery example dashboard   Run the Dashboard example
+${BOLD}Quick start:${RESET}
+  bunx silvery dashboard           Responsive layout demo
+  bunx silvery kanban              Kanban board with keyboard nav
+  bunx silvery counter             Simple counter (Hello World)
+  bunx silvery textarea            Rich text editor
 
 ${DIM}Documentation: https://silvery.dev${RESET}
 `)
@@ -140,15 +156,15 @@ function printExampleList(examples: Example[]): void {
     }
 
     const nameStr = `${BOLD}${WHITE}${ex.name}${RESET}`
-    const descStr = `${DIM}${ex.description}${RESET}`
+    const descStr = ex.description ? `${DIM}${ex.description}${RESET}` : ""
     console.log(`    ${nameStr}  ${descStr}`)
   }
 
-  console.log(`\n  ${DIM}Run an example: bunx silvery example <name>${RESET}\n`)
+  console.log(`\n  ${DIM}Run: bunx silvery <name>${RESET}\n`)
 }
 
 function findExample(examples: Example[], query: string): Example | undefined {
-  const q = query.toLowerCase()
+  const q = query.toLowerCase().replace(/-/g, " ")
 
   const exact = examples.find((ex) => ex.name.toLowerCase() === q)
   if (exact) return exact
@@ -170,7 +186,7 @@ function printNoMatch(query: string, examples: Example[]): void {
     console.error(`  ${WHITE}${ex.name}${RESET}`)
   }
 
-  console.error(`\n${DIM}Run ${BOLD}bunx silvery example${RESET}${DIM} for full list with descriptions.${RESET}\n`)
+  console.error(`\n${DIM}Run ${BOLD}bunx silvery examples${RESET}${DIM} for full list.${RESET}\n`)
 }
 
 // =============================================================================
@@ -178,11 +194,6 @@ function printNoMatch(query: string, examples: Example[]): void {
 // =============================================================================
 
 async function exampleCommand(args: string[]): Promise<void> {
-  if (args.includes("--help") || args.includes("-h")) {
-    printHelp()
-    return
-  }
-
   const examples = await discoverExamples()
 
   if (args.length === 0 || args[0] === "--list" || args[0] === "-l") {
@@ -209,6 +220,24 @@ async function exampleCommand(args: string[]): Promise<void> {
   })
   const exitCode = await proc.exited
   process.exit(exitCode)
+}
+
+async function doctorCommand(): Promise<void> {
+  // Run the built-in termtest diagnostic
+  const { resolve } = await import("node:path")
+  const termtestPath = resolve(new URL(".", import.meta.url).pathname, "../packages/ag-term/src/termtest.ts")
+
+  try {
+    const proc = Bun.spawn(["bun", "run", termtestPath], {
+      stdio: ["inherit", "inherit", "inherit"],
+    })
+    const exitCode = await proc.exited
+    process.exit(exitCode)
+  } catch {
+    console.error(`${RED}Error:${RESET} Could not run terminal diagnostics.`)
+    console.error(`${DIM}Try: bun run ${termtestPath}${RESET}`)
+    process.exit(1)
+  }
 }
 
 // =============================================================================
@@ -243,10 +272,16 @@ async function main(): Promise<void> {
     case "example":
     case "examples":
     case "demo":
+    case "list":
       await exampleCommand(subArgs)
       break
+    case "doctor":
+    case "diag":
+    case "check":
+      await doctorCommand()
+      break
     default:
-      // If user types "silvery todo", treat it as "silvery example todo"
+      // "bunx silvery dashboard" → treat as "bunx silvery example dashboard"
       await exampleCommand(args)
       break
   }

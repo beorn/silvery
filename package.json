@@ -39,7 +39,9 @@
   "files": [
     "src",
     "dist",
-    "bin"
+    "bin",
+    "examples/components",
+    "examples/apps"
   ],
   "type": "module",
   "main": "src/index.ts",
