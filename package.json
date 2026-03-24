@@ -35,8 +35,7 @@
     "!packages/examples"
   ],
   "files": [
-    "src",
-    "packages/ink/src"
+    "src"
   ],
   "type": "module",
   "exports": {
@@ -54,8 +53,8 @@
     "./ui/animation": "./src/ui/animation.ts",
     "./ui/image": "./src/ui/image.ts",
     "./ui/utils": "./src/ui/utils.ts",
-    "./ink": "./packages/ink/src/ink.ts",
-    "./chalk": "./packages/ink/src/chalk.ts"
+    "./ink": "@silvery/ink",
+    "./chalk": "@silvery/ink/chalk"
   },
   "publishConfig": {
     "access": "public"
