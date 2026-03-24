@@ -31,7 +31,8 @@
     "url": "https://github.com/beorn/silvery.git"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "!packages/cli"
   ],
   "files": [
     "src"
