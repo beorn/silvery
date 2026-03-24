@@ -77,7 +77,7 @@ function TypographyTab() {
         Install silvery and its peer dependencies. The framework uses <Strong>React 19</Strong> with a custom reconciler
         — no DOM required.
       </P>
-      <CodeBlock>{"bun add silvery @silvery/ag-react @silvery/ag-react/ui"}</CodeBlock>
+      <CodeBlock>{"bun add silvery"}</CodeBlock>
 
       <H2>Core Concepts</H2>
       <P>
@@ -87,7 +87,7 @@ function TypographyTab() {
 
       <H3>Use Built-in Components</H3>
       <P>
-        The <Code>@silvery/ag-react/ui</Code> package ships 30+ components. They handle keyboard navigation, theming,
+        <Code>silvery/ui</Code> ships 30+ components. They handle keyboard navigation, theming,
         mouse support, and dozens of edge cases.
       </P>
       <UL>

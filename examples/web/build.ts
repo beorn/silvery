@@ -161,25 +161,10 @@ function extractMeta(source: string): { name?: string; description?: string; fea
 /** Map from SHOWCASES registry keys to their terminal example source paths.
  *  Flagship showcases and their legacy aliases both map to the same source. */
 const SHOWCASE_SOURCE_MAP: Record<string, string> = {
-  // Flagship keys
-  aichat: "apps/aichat/index.tsx",
-  gallery: "apps/gallery.tsx",
-  kanban: "apps/kanban.tsx",
-  explorer: "apps/explorer.tsx",
-  wizard: "apps/cli-wizard.tsx",
   dashboard: "layout/dashboard.tsx",
-  terminal: "apps/terminal.tsx",
+  kanban: "apps/kanban.tsx",
   components: "apps/components.tsx",
-  theme: "apps/theme.tsx",
-
-  // Legacy / additional keys
-  "ai-chat": "apps/aichat/index.tsx",
-  "cli-wizard": "apps/cli-wizard.tsx",
   "dev-tools": "apps/dev-tools.tsx",
-  "data-explorer": "apps/data-explorer.tsx",
-  scroll: "apps/scroll.tsx",
-  "search-filter": "apps/search-filter.tsx",
-  transform: "apps/transform.tsx",
   textarea: "apps/textarea.tsx",
 }
 
