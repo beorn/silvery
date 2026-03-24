@@ -17,7 +17,7 @@ An Silvery React component rendered in the browser via xterm.js — the same ANS
 import LiveDemo from '../.vitepress/components/LiveDemo.vue'
 </script>
 
-<LiveDemo />
+<LiveDemo xtermSrc="/examples/showcase.html?demo=dashboard" :height="500" />
 
 ## How It Works
 

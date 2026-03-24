@@ -227,13 +227,7 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
 
   if (showPlaceholder) {
     return (
-      <Box
-        focusable
-        testID={testID}
-        flexDirection="column"
-        height={height}
-        {...borderProps}
-      >
+      <Box focusable testID={testID} flexDirection="column" height={height} {...borderProps}>
         <Text dimColor>{placeholder}</Text>
       </Box>
     )
