@@ -232,8 +232,6 @@ export const TextArea = forwardRef<TextAreaHandle, TextAreaProps>(function TextA
         testID={testID}
         flexDirection="column"
         height={height}
-        justifyContent="center"
-        alignItems="center"
         {...borderProps}
       >
         <Text dimColor>{placeholder}</Text>
