@@ -11,6 +11,14 @@ import { FitAddon } from "@xterm/addon-fit"
 import { renderToXterm } from "@silvery/ag-term/xterm/index"
 import { SHOWCASES } from "./showcases/index.js"
 
+// Set theme at the earliest possible point — before any silvery rendering.
+// Must use the same module path as the pipeline (render-helpers.ts imports from @silvery/theme/state)
+// so the browser bundle resolves to the same module instance.
+import { setActiveTheme } from "@silvery/theme/state"
+import { catppuccinMocha } from "@silvery/theme/palettes"
+import { deriveTheme } from "@silvery/theme"
+setActiveTheme(deriveTheme(catppuccinMocha))
+
 // Read demo name from URL params
 const params = new URLSearchParams(window.location.search)
 const demoName = params.get("demo") || "dashboard"
