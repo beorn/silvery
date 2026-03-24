@@ -40,6 +40,7 @@ const packages = [
   { dir: "packages/tea", name: "@silvery/tea" },
   { dir: "packages/test", name: "@silvery/test" },
   { dir: ".", name: "silvery" },
+  { dir: "packages/cli", name: "@silvery/cli" },
 ]
 
 // Step 1: Read all package.json files and store originals

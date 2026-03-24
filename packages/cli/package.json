@@ -1,0 +1,27 @@
+{
+  "name": "@silvery/cli",
+  "version": "0.4.1",
+  "description": "Silvery CLI — run examples, check terminal capabilities, and more",
+  "license": "MIT",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beorn/silvery.git",
+    "directory": "packages/cli"
+  },
+  "files": [
+    "bin",
+    "examples"
+  ],
+  "type": "module",
+  "bin": {
+    "silvery": "./bin/cli.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "silvery": "workspace:*",
+    "@silvery/tea": "workspace:*"
+  }
+}

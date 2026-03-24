@@ -30,18 +30,11 @@
     "type": "git",
     "url": "https://github.com/beorn/silvery.git"
   },
-  "bin": {
-    "silvery": "./bin/silvery.ts"
-  },
   "workspaces": [
     "packages/*"
   ],
   "files": [
-    "src",
-    "dist",
-    "bin",
-    "examples/components",
-    "examples/apps"
+    "src"
   ],
   "type": "module",
   "main": "src/index.ts",
