@@ -80,13 +80,7 @@ describe("withTest", () => {
 describe("full pipeline", () => {
   test("create + withAg + withTerm + withReact + withTest end-to-end", () => {
     const term = createTerm({ cols: 80, rows: 24 })
-    const app = pipe(
-      create(),
-      withAg(),
-      withTerm(term),
-      withReact(<SimpleApp />),
-      withTest(),
-    )
+    const app = pipe(create(), withAg(), withTerm(term), withReact(<SimpleApp />), withTest())
 
     // All compose layers present
     expect(app.ag).toBeDefined()
