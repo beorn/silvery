@@ -9,7 +9,7 @@
  */
 
 import React, { useState } from "react"
-import { render, Box, Text, Muted, useInput, useApp, createTerm, type Key } from "../../src/index.js"
+import { render, Box, Text, Kbd, Muted, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -29,8 +29,6 @@ interface Card {
   id: number
   title: string
   tags: string[]
-  priority?: "high" | "medium" | "low"
-  assignee?: string
 }
 
 interface Column {
@@ -48,31 +46,33 @@ const initialColumns: Column[] = [
     id: "todo",
     title: "To Do",
     cards: [
-      { id: 1, title: "Design landing page", tags: ["design"], priority: "high", assignee: "Alice" },
-      { id: 2, title: "Write API docs", tags: ["docs"], priority: "medium" },
-      { id: 3, title: "Monitoring alerts", tags: ["devops"], priority: "high", assignee: "Carlos" },
-      { id: 4, title: "Onboarding flow", tags: ["ux"], priority: "medium", assignee: "Alice" },
-      { id: 5, title: "DB optimization", tags: ["backend"], priority: "low" },
-      { id: 6, title: "Mobile fixes", tags: ["frontend"], priority: "medium", assignee: "Bob" },
+      { id: 1, title: "Design new landing page", tags: ["design"] },
+      { id: 2, title: "Write API documentation", tags: ["docs"] },
+      { id: 3, title: "Set up monitoring", tags: ["devops"] },
+      { id: 4, title: "Create onboarding flow", tags: ["ux"] },
+      { id: 5, title: "Database optimization", tags: ["backend"] },
+      { id: 6, title: "Mobile responsive fixes", tags: ["frontend"] },
+      { id: 7, title: "Add dark mode", tags: ["frontend", "ux"] },
+      { id: 8, title: "Implement caching", tags: ["backend"] },
     ],
   },
   {
     id: "inProgress",
     title: "In Progress",
     cards: [
-      { id: 9, title: "OAuth login", tags: ["security"], priority: "high", assignee: "Carlos" },
-      { id: 10, title: "Dashboard v2", tags: ["frontend"], priority: "medium", assignee: "Alice" },
-      { id: 11, title: "Rate limiting", tags: ["backend"], priority: "high", assignee: "Bob" },
+      { id: 9, title: "User authentication", tags: ["backend", "security"] },
+      { id: 10, title: "Dashboard redesign", tags: ["frontend", "design"] },
+      { id: 11, title: "API rate limiting", tags: ["backend"] },
     ],
   },
   {
     id: "done",
     title: "Done",
     cards: [
-      { id: 12, title: "Project setup", tags: ["devops"], assignee: "Carlos" },
-      { id: 13, title: "CI/CD pipeline", tags: ["devops"], assignee: "Carlos" },
-      { id: 14, title: "Wireframes", tags: ["design"], assignee: "Alice" },
-      { id: 15, title: "Schema design", tags: ["backend"], assignee: "Bob" },
+      { id: 12, title: "Project setup", tags: ["devops"] },
+      { id: 13, title: "CI/CD pipeline", tags: ["devops"] },
+      { id: 14, title: "Initial wireframes", tags: ["design"] },
+      { id: 15, title: "Database schema", tags: ["backend"] },
     ],
   },
 ]
@@ -94,52 +94,29 @@ const tagColors: Record<string, string> = {
 function Tag({ name }: { name: string }) {
   const color = tagColors[name] ?? "$muted"
   return (
-    <Text backgroundColor={color} color="$bg" bold>
-      {` ${name} `}
+    <Text color={color} dim>
+      #{name}
     </Text>
   )
 }
 
-const priorityIndicators: Record<string, { symbol: string; color: string }> = {
-  high: { symbol: "!", color: "$error" },
-  medium: { symbol: "-", color: "$warning" },
-  low: { symbol: " ", color: "$muted" },
-}
-
 function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }) {
-  const pri = card.priority ? priorityIndicators[card.priority] : undefined
   return (
-    <Box flexDirection="column">
-      <Box>
-        {pri && (
-          <Text color={pri.color} bold>
-            {pri.symbol === " " ? "  " : pri.symbol + " "}
-          </Text>
-        )}
-        {!pri && <Text>{"  "}</Text>}
-        {isSelected ? (
-          <Text backgroundColor="$primary" color="$primary-fg" bold>
-            {card.title}
-          </Text>
-        ) : (
-          <Text>{card.title}</Text>
-        )}
-      </Box>
+    <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "$primary" : "$border"} paddingX={1}>
+      {isSelected ? (
+        <Text backgroundColor="$primary" color="$primary-fg" bold>
+          {card.title}
+        </Text>
+      ) : (
+        <Text>{card.title}</Text>
+      )}
       <Box gap={1}>
-        <Text>{"  "}</Text>
         {card.tags.map((tag) => (
           <Tag key={tag} name={tag} />
         ))}
-        {card.assignee && <Muted>@{card.assignee}</Muted>}
       </Box>
     </Box>
   )
-}
-
-const columnIcons: Record<ColumnId, string> = {
-  todo: "○",
-  inProgress: "◐",
-  done: "●",
 }
 
 function ColumnComponent({
@@ -151,17 +128,23 @@ function ColumnComponent({
   isSelected: boolean
   selectedCardIndex: number
 }) {
-  const icon = columnIcons[column.id]
   return (
     <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor={isSelected ? "$primary" : "$border"}>
       <Box backgroundColor={isSelected ? "$primary" : undefined} paddingX={1}>
         <Text bold color={isSelected ? "$primary-fg" : "$text"}>
-          {icon} {column.title}
+          {column.title}
         </Text>
         <Text color={isSelected ? "$primary-fg" : "$muted"}> ({column.cards.length})</Text>
       </Box>
 
-      <Box flexDirection="column" overflow="scroll" scrollTo={isSelected ? selectedCardIndex : undefined} flexGrow={1}>
+      <Box
+        flexDirection="column"
+        paddingX={1}
+        overflow="scroll"
+        scrollTo={isSelected ? selectedCardIndex : undefined}
+        flexGrow={1}
+        gap={1}
+      >
         {column.cards.map((card, cardIndex) => (
           <CardComponent key={card.id} card={card} isSelected={isSelected && cardIndex === selectedCardIndex} />
         ))}
@@ -173,6 +156,15 @@ function ColumnComponent({
         )}
       </Box>
     </Box>
+  )
+}
+
+function HelpBar() {
+  return (
+    <Muted>
+      {" "}
+      <Kbd>h/l</Kbd> column <Kbd>j/k</Kbd> card <Kbd>{"</"}</Kbd> move <Kbd>Esc/q</Kbd> quit
+    </Muted>
   )
 }
 
@@ -238,7 +230,7 @@ export function KanbanBoard() {
   }
 
   return (
-    <Box flexDirection="column" height="100%">
+    <Box flexDirection="column" padding={1} height="100%">
       <Box flexGrow={1} flexDirection="row" gap={1} overflow="hidden">
         {columns.map((column, colIndex) => (
           <ColumnComponent
@@ -249,6 +241,7 @@ export function KanbanBoard() {
           />
         ))}
       </Box>
+
     </Box>
   )
 }

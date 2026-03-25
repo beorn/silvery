@@ -359,45 +359,44 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
   })
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
-      <H2>Progress Bars</H2>
+    <Box flexDirection="column" gap={1} paddingX={1} flexGrow={1}>
+      {/* Progress Bars */}
       <Box flexDirection="column">
-        <Box>
-          <Text color="$muted">{"Build  "}</Text>
-          <Box flexGrow={1}>
-            <ProgressBar value={1.0} label="✓" emptyChar="█" />
+        <Text bold color="$accent">Progress Bars</Text>
+        <Box flexDirection="column" marginTop={1}>
+          <Box>
+            <Text color="$muted">{"Build   "}</Text>
+            <Box flexGrow={1}><ProgressBar value={1.0} label="✓" /></Box>
           </Box>
-        </Box>
-        <Box>
-          <Text color="$muted">{"Test   "}</Text>
-          <Box flexGrow={1}>
-            <ProgressBar value={0.73} emptyChar="█" />
+          <Box>
+            <Text color="$muted">{"Test    "}</Text>
+            <Box flexGrow={1}><ProgressBar value={0.73} /></Box>
           </Box>
-        </Box>
-        <Box>
-          <Text color="$muted">{"Deploy "}</Text>
-          <Box flexGrow={1}>
-            <ProgressBar value={0.35} emptyChar="█" />
+          <Box>
+            <Text color="$muted">{"Deploy  "}</Text>
+            <Box flexGrow={1}><ProgressBar value={0.35} /></Box>
           </Box>
-        </Box>
-        <Box>
-          <Text color="$muted">{"Upload "}</Text>
-          <Box flexGrow={1}>
-            <ProgressBar emptyChar="█" />
+          <Box>
+            <Text color="$muted">{"Install "}</Text>
+            <Box flexGrow={1}><ProgressBar /></Box>
           </Box>
         </Box>
       </Box>
-      <H2>Spinners</H2>
-      <Box gap={2}>
-        <Spinner type="dots" label="Loading..." />
-        <Spinner type="line" label="Compiling..." />
-        <Spinner type="arc" label="Optimizing..." />
-        <Spinner type="bounce" label="Connecting..." />
-      </Box>
-      <Box flexDirection="row" gap={2}>
-        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
-          <H2>Badges</H2>
-          <Box gap={1} flexWrap="wrap">
+
+      {/* Spinners + Badges row */}
+      <Box flexDirection="row" gap={4}>
+        <Box flexDirection="column">
+          <Text bold color="$accent">Spinners</Text>
+          <Box flexDirection="column" marginTop={1}>
+            <Spinner type="dots" label="Loading packages..." />
+            <Spinner type="line" label="Compiling..." />
+            <Spinner type="arc" label="Optimizing bundle..." />
+            <Spinner type="bounce" label="Connecting..." />
+          </Box>
+        </Box>
+        <Box flexDirection="column">
+          <Text bold color="$accent">Badges</Text>
+          <Box gap={1} flexWrap="wrap" marginTop={1}>
             <Badge label="Stable" variant="success" />
             <Badge label="Beta" variant="warning" />
             <Badge label="Deprecated" variant="error" />
@@ -405,30 +404,40 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             <Badge label="MIT" />
           </Box>
         </Box>
-        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
+      </Box>
+
+      {/* Status + Border Styles row */}
+      <Box flexDirection="row" gap={4}>
+        <Box flexDirection="column">
           <Divider title="Status" />
           <Box flexDirection="column">
             <Text color="$success">{"✓ All checks passed"}</Text>
-            <Text color="$warning">{"⚠ 2 deprecations"}</Text>
-            <Text color="$error">{"✗ 1 vulnerability"}</Text>
+            <Text color="$warning">{"⚠ 2 deprecation warnings"}</Text>
+            <Text color="$error">{"✗ 1 vulnerability found"}</Text>
             <Text color="$info">{"ℹ 47 packages installed"}</Text>
           </Box>
         </Box>
-      </Box>
-      <H2>Border Styles</H2>
-      <Box flexDirection="row" gap={1}>
-        {borderStyles.map((style, i) => (
-          <Box
-            key={style}
-            borderStyle={style as any}
-            borderColor={i === selectedBorder ? "$primary" : "$border"}
-            paddingX={1}
-            flexGrow={1}
-            flexBasis={0}
-          >
-            <Text bold={i === selectedBorder}>{style}</Text>
+        <Box flexDirection="column" flexGrow={1}>
+          <Text bold color="$accent">Border Styles</Text>
+          <Box flexDirection="column" marginTop={1} gap={0}>
+            {borderStyles.map((style, i) => (
+              <Box
+                key={style}
+                borderStyle={style as any}
+                borderColor={i === selectedBorder ? "$primary" : "$border"}
+                borderLeft={true}
+                borderRight={true}
+                borderTop={i === 0}
+                borderBottom={true}
+                paddingX={1}
+              >
+                <Text bold={i === selectedBorder}>
+                  {i === selectedBorder ? "▸ " : "  "}{style}
+                </Text>
+              </Box>
+            ))}
           </Box>
-        ))}
+        </Box>
       </Box>
 
       {showModal && (
