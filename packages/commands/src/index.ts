@@ -10,10 +10,7 @@
  */
 
 // Command registry
-export {
-  createCommandRegistry,
-  type CommandRegistryEntry,
-} from "./create-command-registry"
+export { createCommandRegistry, type CommandRegistryEntry } from "./create-command-registry"
 
 // withCommands plugin
 export {
@@ -26,10 +23,7 @@ export {
 } from "./with-commands"
 
 // withKeybindings plugin
-export {
-  withKeybindings,
-  type WithKeybindingsOptions,
-} from "./with-keybindings"
+export { withKeybindings, type WithKeybindingsOptions } from "./with-keybindings"
 
 // Key parsing
 export { parseHotkey } from "./keys"

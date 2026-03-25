@@ -96,7 +96,9 @@ describe("withApp()", () => {
       },
       clear: {
         title: "Clear",
-        fn: () => { items.length = 0 },
+        fn: () => {
+          items.length = 0
+        },
       },
     }
     app.keymap({

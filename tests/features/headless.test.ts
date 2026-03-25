@@ -7,7 +7,12 @@
  * Run: bun vitest run vendor/silvery-internal/prototype/headless/
  */
 import { describe, expect, test } from "vitest"
-import { createSelectListState, selectListUpdate, type SelectListAction, type SelectListState } from "@silvery/headless/select-list"
+import {
+  createSelectListState,
+  selectListUpdate,
+  type SelectListAction,
+  type SelectListState,
+} from "@silvery/headless/select-list"
 import {
   createReadlineContext,
   createReadlineState,

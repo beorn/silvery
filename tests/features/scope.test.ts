@@ -50,7 +50,9 @@ describe("createScope", () => {
     let disposed = false
     {
       using scope = createScope()
-      scope.defer(() => { disposed = true })
+      scope.defer(() => {
+        disposed = true
+      })
     }
     expect(disposed).toBe(true)
   })
@@ -116,8 +118,10 @@ describe("timeout", () => {
   test("runs function after delay", async () => {
     const scope = createScope()
     let called = false
-    scope.timeout(50, () => { called = true })
-    await new Promise(r => setTimeout(r, 100))
+    scope.timeout(50, () => {
+      called = true
+    })
+    await new Promise((r) => setTimeout(r, 100))
     expect(called).toBe(true)
     scope[Symbol.dispose]()
   })
@@ -125,9 +129,11 @@ describe("timeout", () => {
   test("cancel prevents execution", async () => {
     const scope = createScope()
     let called = false
-    const cancel = scope.timeout(100, () => { called = true })
+    const cancel = scope.timeout(100, () => {
+      called = true
+    })
     cancel()
-    await new Promise(r => setTimeout(r, 150))
+    await new Promise((r) => setTimeout(r, 150))
     expect(called).toBe(false)
     scope[Symbol.dispose]()
   })
@@ -135,9 +141,11 @@ describe("timeout", () => {
   test("scope disposal cancels pending timeouts", async () => {
     const scope = createScope()
     let called = false
-    scope.timeout(100, () => { called = true })
+    scope.timeout(100, () => {
+      called = true
+    })
     scope[Symbol.dispose]()
-    await new Promise(r => setTimeout(r, 150))
+    await new Promise((r) => setTimeout(r, 150))
     expect(called).toBe(false)
   })
 })
@@ -157,7 +165,9 @@ describe("withScope plugin", () => {
   test("scope disposed when app disposes", () => {
     const deferred: (() => void)[] = []
     const app = {
-      defer(fn: () => void) { deferred.push(fn) },
+      defer(fn: () => void) {
+        deferred.push(fn)
+      },
       [Symbol.dispose]() {
         for (const fn of deferred) fn()
       },
