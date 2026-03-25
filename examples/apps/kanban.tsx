@@ -29,6 +29,8 @@ interface Card {
   id: number
   title: string
   tags: string[]
+  priority?: "high" | "medium" | "low"
+  assignee?: string
 }
 
 interface Column {
@@ -46,33 +48,33 @@ const initialColumns: Column[] = [
     id: "todo",
     title: "To Do",
     cards: [
-      { id: 1, title: "Design new landing page", tags: ["design"] },
-      { id: 2, title: "Write API documentation", tags: ["docs"] },
-      { id: 3, title: "Set up monitoring", tags: ["devops"] },
-      { id: 4, title: "Create onboarding flow", tags: ["ux"] },
-      { id: 5, title: "Database optimization", tags: ["backend"] },
-      { id: 6, title: "Mobile responsive fixes", tags: ["frontend"] },
-      { id: 7, title: "Add dark mode", tags: ["frontend", "ux"] },
-      { id: 8, title: "Implement caching", tags: ["backend"] },
+      { id: 1, title: "Design new landing page", tags: ["design"], priority: "high", assignee: "Alice" },
+      { id: 2, title: "Write API documentation", tags: ["docs"], priority: "medium" },
+      { id: 3, title: "Set up monitoring alerts", tags: ["devops"], priority: "high", assignee: "Carlos" },
+      { id: 4, title: "Create onboarding flow", tags: ["ux", "design"], priority: "medium", assignee: "Alice" },
+      { id: 5, title: "Database query optimization", tags: ["backend"], priority: "low" },
+      { id: 6, title: "Mobile responsive fixes", tags: ["frontend"], priority: "medium", assignee: "Bob" },
+      { id: 7, title: "Add dark mode support", tags: ["frontend", "ux"], priority: "low" },
+      { id: 8, title: "Implement Redis caching", tags: ["backend", "devops"], priority: "high" },
     ],
   },
   {
     id: "inProgress",
     title: "In Progress",
     cards: [
-      { id: 9, title: "User authentication", tags: ["backend", "security"] },
-      { id: 10, title: "Dashboard redesign", tags: ["frontend", "design"] },
-      { id: 11, title: "API rate limiting", tags: ["backend"] },
+      { id: 9, title: "User authentication (OAuth)", tags: ["backend", "security"], priority: "high", assignee: "Carlos" },
+      { id: 10, title: "Dashboard redesign v2", tags: ["frontend", "design"], priority: "medium", assignee: "Alice" },
+      { id: 11, title: "API rate limiting", tags: ["backend"], priority: "high", assignee: "Bob" },
     ],
   },
   {
     id: "done",
     title: "Done",
     cards: [
-      { id: 12, title: "Project setup", tags: ["devops"] },
-      { id: 13, title: "CI/CD pipeline", tags: ["devops"] },
-      { id: 14, title: "Initial wireframes", tags: ["design"] },
-      { id: 15, title: "Database schema", tags: ["backend"] },
+      { id: 12, title: "Project setup & tooling", tags: ["devops"], assignee: "Carlos" },
+      { id: 13, title: "CI/CD pipeline (GitHub)", tags: ["devops"], assignee: "Carlos" },
+      { id: 14, title: "Initial wireframes", tags: ["design"], assignee: "Alice" },
+      { id: 15, title: "Database schema design", tags: ["backend"], assignee: "Bob" },
     ],
   },
 ]
@@ -94,29 +96,50 @@ const tagColors: Record<string, string> = {
 function Tag({ name }: { name: string }) {
   const color = tagColors[name] ?? "$muted"
   return (
-    <Text color={color} dim>
-      #{name}
+    <Text backgroundColor={color} color="$bg" bold>
+      {` ${name} `}
     </Text>
   )
 }
 
+const priorityIndicators: Record<string, { symbol: string; color: string }> = {
+  high: { symbol: "!", color: "$error" },
+  medium: { symbol: "-", color: "$warning" },
+  low: { symbol: " ", color: "$muted" },
+}
+
 function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }) {
+  const pri = card.priority ? priorityIndicators[card.priority] : undefined
   return (
     <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "$primary" : "$border"} paddingX={1}>
-      {isSelected ? (
-        <Text backgroundColor="$primary" color="$primary-fg" bold>
-          {card.title}
-        </Text>
-      ) : (
-        <Text>{card.title}</Text>
-      )}
+      <Box>
+        {pri && (
+          <Text color={pri.color} bold>
+            {pri.symbol === " " ? "" : pri.symbol + " "}
+          </Text>
+        )}
+        {isSelected ? (
+          <Text backgroundColor="$primary" color="$primary-fg" bold>
+            {card.title}
+          </Text>
+        ) : (
+          <Text>{card.title}</Text>
+        )}
+      </Box>
       <Box gap={1}>
         {card.tags.map((tag) => (
           <Tag key={tag} name={tag} />
         ))}
+        {card.assignee && <Muted>@{card.assignee}</Muted>}
       </Box>
     </Box>
   )
+}
+
+const columnIcons: Record<ColumnId, string> = {
+  todo: "○",
+  inProgress: "◐",
+  done: "●",
 }
 
 function ColumnComponent({
@@ -128,11 +151,12 @@ function ColumnComponent({
   isSelected: boolean
   selectedCardIndex: number
 }) {
+  const icon = columnIcons[column.id]
   return (
     <Box flexDirection="column" flexGrow={1} borderStyle="single" borderColor={isSelected ? "$primary" : "$border"}>
       <Box backgroundColor={isSelected ? "$primary" : undefined} paddingX={1}>
         <Text bold color={isSelected ? "$primary-fg" : "$text"}>
-          {column.title}
+          {icon} {column.title}
         </Text>
         <Text color={isSelected ? "$primary-fg" : "$muted"}> ({column.cards.length})</Text>
       </Box>

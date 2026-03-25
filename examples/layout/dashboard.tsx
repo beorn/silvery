@@ -273,36 +273,33 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
   const swapPct = (memory.swap / memory.swapTotal) * 100
 
   return (
-    <Box flexDirection="column" gap={1} flexGrow={1}>
-      <SectionHeader>Memory</SectionHeader>
+    <Box flexDirection="column" flexGrow={1}>
       <Box gap={2}>
+        <SectionHeader>Memory</SectionHeader>
         <LabelValue label="Total:" value={`${total.toFixed(1)} GB`} />
         <LabelValue label="Used:" value={`${memory.used.toFixed(1)} GB`} color={severityColor(usedPct)} />
       </Box>
-      <Box flexDirection="column">
-        <Muted>Memory Breakdown</Muted>
-        <StackedBar
-          segments={[
-            { value: memory.used / total, color: severityColor(usedPct) },
-            { value: memory.cached / total, color: "$info" },
-            { value: memory.buffers / total, color: "$primary" },
-            { value: memory.free / total, color: "$muted", char: "░" },
-          ]}
-        />
-        <Box gap={2}>
-          <Text color={severityColor(usedPct)}>
-            {"█"} Used {memory.used.toFixed(1)}G
-          </Text>
-          <Text color="$info">
-            {"█"} Cache {memory.cached.toFixed(1)}G
-          </Text>
-          <Text color="$primary">
-            {"█"} Buf {memory.buffers.toFixed(1)}G
-          </Text>
-          <Muted>
-            {"░"} Free {memory.free.toFixed(1)}G
-          </Muted>
-        </Box>
+      <StackedBar
+        segments={[
+          { value: memory.used / total, color: severityColor(usedPct) },
+          { value: memory.cached / total, color: "$info" },
+          { value: memory.buffers / total, color: "$primary" },
+          { value: memory.free / total, color: "$muted", char: "░" },
+        ]}
+      />
+      <Box gap={2}>
+        <Text color={severityColor(usedPct)}>
+          {"█"} Used {memory.used.toFixed(1)}G
+        </Text>
+        <Text color="$info">
+          {"█"} Cache {memory.cached.toFixed(1)}G
+        </Text>
+        <Text color="$primary">
+          {"█"} Buf {memory.buffers.toFixed(1)}G
+        </Text>
+        <Muted>
+          {"░"} Free {memory.free.toFixed(1)}G
+        </Muted>
       </Box>
       <Box flexDirection="column">
         <Muted>
@@ -310,22 +307,20 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
         </Muted>
         <ProgressBar value={swapPct / 100} color={severityColor(swapPct)} showPercentage />
       </Box>
-      <Box flexDirection="column">
-        <Muted>Top Consumers</Muted>
-        <Box gap={2}>
-          <Text>
-            chrome <Strong color="$warning">12.1G</Strong>
-          </Text>
-          <Text>
-            vscode <Strong color="$primary">8.4G</Strong>
-          </Text>
-          <Text>
-            docker <Strong color="$primary">5.1G</Strong>
-          </Text>
-        </Box>
+      <Box gap={2}>
+        <Muted>Top:</Muted>
+        <Text>
+          chrome <Strong color="$warning">12.1G</Strong>
+        </Text>
+        <Text>
+          vscode <Strong color="$primary">8.4G</Strong>
+        </Text>
+        <Text>
+          docker <Strong color="$primary">5.1G</Strong>
+        </Text>
       </Box>
-      <Box flexDirection="column">
-        <Muted>History</Muted>
+      <Box>
+        <Muted>History </Muted>
         <Text color="$primary">{sparkline(memory.history, 100)}</Text>
       </Box>
     </Box>
@@ -336,7 +331,7 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
 
 function NetworkPane({ network }: { network: NetworkMetrics }) {
   return (
-    <Box flexDirection="column" gap={1} flexGrow={1}>
+    <Box flexDirection="column" flexGrow={1}>
       <SectionHeader>Network</SectionHeader>
       <Box flexDirection="column">
         <Box justifyContent="space-between">
@@ -392,20 +387,10 @@ function ProcessPane({ processes }: { processes: ProcessInfo[] }) {
   const sorted = [...processes].sort((a, b) => b.cpu - a.cpu)
 
   return (
-    <Box flexDirection="column" gap={1} flexGrow={1}>
-      <SectionHeader>Processes</SectionHeader>
-      <Box gap={1}>
-        <Muted>{"  PID".padStart(5)}</Muted>
-        <Muted>{"Name".padEnd(12)}</Muted>
-        <Muted>{"  CPU".padStart(5)}</Muted>
-        <Muted>{"  MEM".padStart(5)}</Muted>
-        <Muted>Status</Muted>
-      </Box>
-      {sorted.map((proc, i) => (
-        <ProcessRow key={proc.pid} proc={proc} isTop={i === 0} />
-      ))}
-      <Box gap={2} paddingTop={1}>
-        <LabelValue label="Total:" value={`${processes.length} processes`} />
+    <Box flexDirection="column" flexGrow={1}>
+      <Box gap={2}>
+        <SectionHeader>Processes</SectionHeader>
+        <LabelValue label="Total:" value={`${processes.length}`} />
         <LabelValue
           label="Running:"
           value={String(processes.filter((p) => p.status === "running").length)}
@@ -417,6 +402,16 @@ function ProcessPane({ processes }: { processes: ProcessInfo[] }) {
           color="$muted"
         />
       </Box>
+      <Box gap={1}>
+        <Muted>{"  PID".padStart(5)}</Muted>
+        <Muted>{"Name".padEnd(12)}</Muted>
+        <Muted>{"  CPU".padStart(5)}</Muted>
+        <Muted>{"  MEM".padStart(5)}</Muted>
+        <Muted>Status</Muted>
+      </Box>
+      {sorted.map((proc, i) => (
+        <ProcessRow key={proc.pid} proc={proc} isTop={i === 0} />
+      ))}
     </Box>
   )
 }
@@ -435,20 +430,20 @@ function WideLayout({
   processes: ProcessInfo[]
 }) {
   return (
-    <Box flexDirection="column" flexGrow={1} gap={1}>
+    <Box flexDirection="column" flexGrow={1}>
       <Box flexDirection="row" gap={1} flexGrow={1}>
-        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexDirection="column">
+        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} flexDirection="column">
           <CpuPane cores={cores} />
         </Box>
-        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexDirection="column">
+        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} flexDirection="column">
           <MemoryPane memory={memory} />
         </Box>
       </Box>
       <Box flexDirection="row" gap={1} flexGrow={1}>
-        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexDirection="column">
+        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} flexDirection="column">
           <NetworkPane network={network} />
         </Box>
-        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexDirection="column">
+        <Box flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1} flexDirection="column">
           <ProcessPane processes={processes} />
         </Box>
       </Box>
@@ -477,17 +472,28 @@ export function Dashboard() {
   })
 
   if (isWide) {
+    const avgCpu = state.cores.reduce((sum, c) => sum + c.usage, 0) / state.cores.length
     return (
       <Box flexDirection="column" flexGrow={1}>
         <Box justifyContent="space-between" paddingX={1}>
           <Text>
-            <Strong>System Monitor</Strong> <Small>Tick #{tick}</Small>
+            <Strong>System Monitor</Strong> <Muted>uptime 14d 3h 27m</Muted>
           </Text>
           <Muted>
-            <Kbd>q</Kbd> quit
+            Tick #{tick} <Kbd>q</Kbd> quit
           </Muted>
         </Box>
         <WideLayout cores={state.cores} memory={state.memory} network={state.network} processes={state.processes} />
+        <Box justifyContent="space-between" paddingX={1}>
+          <Muted>
+            CPU {Math.round(avgCpu)}% | MEM {state.memory.used.toFixed(1)}G /{" "}
+            {(state.memory.used + state.memory.cached + state.memory.buffers + state.memory.free).toFixed(1)}G | NET{" "}
+            {"↓"}
+            {state.network.downloadRate.toFixed(0)} {"↑"}
+            {state.network.uploadRate.toFixed(0)} MB/s
+          </Muted>
+          <Muted>{state.processes.length} processes</Muted>
+        </Box>
       </Box>
     )
   }
@@ -506,22 +512,22 @@ export function Dashboard() {
         </Box>
 
         <TabPanel value="cpu">
-          <Box borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexGrow={1}>
+          <Box borderStyle="round" borderColor="$border" paddingX={1} flexGrow={1}>
             <CpuPane cores={state.cores} />
           </Box>
         </TabPanel>
         <TabPanel value="memory">
-          <Box borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexGrow={1}>
+          <Box borderStyle="round" borderColor="$border" paddingX={1} flexGrow={1}>
             <MemoryPane memory={state.memory} />
           </Box>
         </TabPanel>
         <TabPanel value="network">
-          <Box borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexGrow={1}>
+          <Box borderStyle="round" borderColor="$border" paddingX={1} flexGrow={1}>
             <NetworkPane network={state.network} />
           </Box>
         </TabPanel>
         <TabPanel value="processes">
-          <Box borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexGrow={1}>
+          <Box borderStyle="round" borderColor="$border" paddingX={1} flexGrow={1}>
             <ProcessPane processes={state.processes} />
           </Box>
         </TabPanel>

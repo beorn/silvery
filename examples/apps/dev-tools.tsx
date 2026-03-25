@@ -339,21 +339,28 @@ export function DevTools() {
   return (
     <Box flexDirection="column" flexGrow={1}>
       {/* Header */}
-      <Box paddingX={1} justifyContent="space-between">
+      <Box paddingX={1} justifyContent="space-between" backgroundColor="$surfacebg">
         <Box gap={2}>
-          <H1>Log Viewer</H1>
+          <Text bold color="$primary">{"▸"} Log Viewer</Text>
           <LevelCounts entries={entries} />
         </Box>
         <Box gap={1}>
-          <Strong color="$primary">{cursor + 1}</Strong>
-          <Muted>/ {entries.length}</Muted>
           {autoScroll && (
-            <Text color="$success" bold>
-              {" "}
-              LIVE
+            <Text backgroundColor="$success" color="$success-fg" bold>
+              {" LIVE "}
             </Text>
           )}
+          <Strong color="$primary">{cursor + 1}</Strong>
+          <Muted>/ {entries.length}</Muted>
         </Box>
+      </Box>
+
+      {/* Column headers */}
+      <Box paddingX={1}>
+        <Muted>{"Time     "} </Muted>
+        <Muted>{"Lvl"} </Muted>
+        <Muted>{"[Source   ]"} </Muted>
+        <Muted>Message</Muted>
       </Box>
 
       <Box paddingX={1}>

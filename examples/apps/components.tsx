@@ -67,77 +67,92 @@ export const meta: ExampleMeta = {
 function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
   return (
     <Box flexDirection="column" gap={1} paddingX={1} overflow="scroll" scrollOffset={scrollOffset} flexGrow={1}>
-      <H1>Getting Started with Silvery</H1>
-      <Lead>Build modern terminal UIs with React — layout feedback, semantic theming, and 30+ components.</Lead>
+      <Box flexDirection="column">
+        <H1>Getting Started with Silvery</H1>
+        <Lead>Build modern terminal UIs with React — layout feedback, semantic theming, and 30+ components.</Lead>
+      </Box>
 
       <HR />
 
-      <H2>Installation</H2>
-      <P>
-        Install silvery and its peer dependencies. The framework uses <Strong>React 19</Strong> with a custom reconciler
-        — no DOM required.
-      </P>
-      <CodeBlock>{"bun add silvery"}</CodeBlock>
+      <Box flexDirection="row" gap={2}>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
+          <H2>Typography</H2>
+          <Box flexDirection="column">
+            <Text bold color="$primary">H1 — Page Title (bold, $primary)</Text>
+            <Text bold color="$accent">H2 — Section Heading (bold, $accent)</Text>
+            <Text color="$primary">H3 — Group Heading ($primary)</Text>
+            <P>P — Body paragraph text</P>
+            <Lead>Lead — Introductory italic text</Lead>
+            <Muted>Muted — Secondary information</Muted>
+            <Small>Small — Fine print and captions</Small>
+          </Box>
+        </Box>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
+          <H2>Inline Styles</H2>
+          <Box flexDirection="column">
+            <Text><Strong>Strong</Strong> — bold emphasis</Text>
+            <Text><Em>Em</Em> — italic emphasis</Text>
+            <Text><Strong><Em>Strong + Em</Em></Strong> — bold italic</Text>
+            <Text><Text underline>Underline</Text> — underlined text</Text>
+            <Text><Text strikethrough>Strikethrough</Text> — deleted text</Text>
+            <Text><Code>Code</Code> — inline code span</Text>
+            <Text><Kbd>Kbd</Kbd> — keyboard shortcut</Text>
+          </Box>
+        </Box>
+      </Box>
 
-      <H2>Core Concepts</H2>
-      <P>
-        Silvery follows <Em>The Silvery Way</Em> — 10 principles that keep your TUI apps shiny. Here are the most
-        important ones:
-      </P>
+      <HR />
 
-      <H3>Use Built-in Components</H3>
-      <P>
-        <Code>silvery/ui</Code> ships 30+ components. They handle keyboard navigation, theming, mouse support, and
-        dozens of edge cases.
-      </P>
-      <UL>
-        <LI>
-          <Strong>SelectList</Strong> — keyboard-navigable single-select with j/k, wrapping, and scroll
-        </LI>
-        <LI>
-          <Strong>TextInput</Strong> — full readline: Ctrl+A/E/K/U, Alt+B/F, kill ring, clipboard
-        </LI>
-        <LI>
-          <Strong>ModalDialog</Strong> — double-border dialog with title, footer, and input blocking
-        </LI>
-        <LI>
-          <Strong>ProgressBar</Strong> — determinate and indeterminate modes with auto-width
-        </LI>
-      </UL>
+      <H2>Semantic Colors</H2>
+      <Box flexDirection="column">
+        <Box gap={1}>
+          <Text backgroundColor="$primary" color="$primary-fg" bold>{" $primary "}</Text>
+          <Text backgroundColor="$accent" color="$accent-fg" bold>{" $accent  "}</Text>
+          <Text backgroundColor="$success" color="$success-fg" bold>{" $success "}</Text>
+          <Text backgroundColor="$warning" color="$warning-fg" bold>{" $warning "}</Text>
+          <Text backgroundColor="$error" color="$error-fg" bold>{" $error   "}</Text>
+        </Box>
+        <Box gap={1} marginTop={1}>
+          <Text color="$primary">{"████"} primary</Text>
+          <Text color="$accent">{"████"} accent</Text>
+          <Text color="$success">{"████"} success</Text>
+          <Text color="$warning">{"████"} warning</Text>
+          <Text color="$error">{"████"} error</Text>
+          <Text color="$muted">{"████"} muted</Text>
+        </Box>
+      </Box>
 
-      <H3>Semantic Theme Colors</H3>
-      <P>
-        Use <Code>$tokens</Code> instead of hardcoded colors. Your app adapts to 38 built-in palettes automatically:
-      </P>
-      <OL>
-        <LI>
-          <Text color="$primary">$primary</Text> — brand emphasis, active elements
-        </LI>
-        <LI>
-          <Text color="$accent">$accent</Text> — contrasting hue for attention
-        </LI>
-        <LI>
-          <Text color="$success">$success</Text> — completion, checkmarks
-        </LI>
-        <LI>
-          <Text color="$warning">$warning</Text> — caution signals
-        </LI>
-        <LI>
-          <Text color="$error">$error</Text> — failures, destructive actions
-        </LI>
-      </OL>
+      <HR />
 
+      <H2>Block Elements</H2>
       <Blockquote>
-        Less is more. The best color code is no color code — most components already use the right tokens.
+        The best color code is no color code — most components already use the right semantic tokens.
       </Blockquote>
+      <CodeBlock>{"bun add silvery      # install\nbun run dev          # start dev server"}</CodeBlock>
 
-      <H3>Think in Flexbox</H3>
-      <P>
-        Silvery uses CSS flexbox via Flexily. Components know their size via <Code>useContentRect()</Code> —
-        synchronous, during render. No effects, no flash.
-      </P>
+      <H2>Lists</H2>
+      <Box flexDirection="row" gap={4}>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
+          <H3>Unordered</H3>
+          <UL>
+            <LI><Strong>SelectList</Strong> — j/k navigation, scroll</LI>
+            <LI><Strong>TextInput</Strong> — full readline support</LI>
+            <LI><Strong>ModalDialog</Strong> — overlay with input blocking</LI>
+            <LI><Strong>ProgressBar</Strong> — determinate + indeterminate</LI>
+          </UL>
+        </Box>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
+          <H3>Ordered</H3>
+          <OL>
+            <LI>Install with <Code>bun add silvery</Code></LI>
+            <LI>Use <Code>$tokens</Code> for semantic colors</LI>
+            <LI>Layout with <Code>flexbox</Code> via Flexily</LI>
+            <LI>Test with <Code>createTermless()</Code></LI>
+          </OL>
+        </Box>
+      </Box>
 
-      <Small>Last updated: silvery v0.0.1 — see silvery.dev for full documentation</Small>
+      <Small>silvery v0.0.1 — 38 palettes, 30+ components — silvery.dev</Small>
     </Box>
   )
 }
@@ -409,7 +424,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
 
 export function ComponentsApp() {
   const { exit } = useApp()
-  const [activeTab, setActiveTab] = useState("typography")
+  const [activeTab, setActiveTab] = useState("display")
   const [scrollOffset, setScrollOffset] = useState(0)
 
   // Reset scroll when switching tabs
@@ -452,22 +467,24 @@ export function ComponentsApp() {
 
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Tabs defaultValue="typography" onChange={handleTabChange}>
-        <TabList>
-          <Tab value="typography">Typography</Tab>
-          <Tab value="inputs">Inputs</Tab>
-          <Tab value="display">Display</Tab>
-        </TabList>
-        <TabPanel value="typography">
-          <TypographyTab scrollOffset={scrollOffset} />
-        </TabPanel>
-        <TabPanel value="inputs">
-          <InputsTab />
-        </TabPanel>
-        <TabPanel value="display">
-          <DisplayTab scrollOffset={scrollOffset} />
-        </TabPanel>
-      </Tabs>
+      <Box paddingX={1}>
+        <Tabs defaultValue="display" onChange={handleTabChange}>
+          <TabList>
+            <Tab value="display">Display</Tab>
+            <Tab value="inputs">Inputs</Tab>
+            <Tab value="typography">Typography</Tab>
+          </TabList>
+          <TabPanel value="display">
+            <DisplayTab scrollOffset={scrollOffset} />
+          </TabPanel>
+          <TabPanel value="inputs">
+            <InputsTab />
+          </TabPanel>
+          <TabPanel value="typography">
+            <TypographyTab scrollOffset={scrollOffset} />
+          </TabPanel>
+        </Tabs>
+      </Box>
     </Box>
   )
 }
