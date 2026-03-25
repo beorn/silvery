@@ -33,46 +33,46 @@ import { Tabs, TabList, Tab, TabPanel } from "silvery"
 
 ### Tabs (Root)
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `defaultValue` | `string` | — | Default active tab (uncontrolled) |
-| `value` | `string` | — | Active tab (controlled) |
-| `onChange` | `(value: string) => void` | — | Called when active tab changes |
-| `isActive` | `boolean` | `true` | Whether keyboard input is captured |
-| `children` | `ReactNode` | *required* | TabList + TabPanel components |
+| Prop           | Type                      | Default    | Description                        |
+| -------------- | ------------------------- | ---------- | ---------------------------------- |
+| `defaultValue` | `string`                  | —          | Default active tab (uncontrolled)  |
+| `value`        | `string`                  | —          | Active tab (controlled)            |
+| `onChange`     | `(value: string) => void` | —          | Called when active tab changes     |
+| `isActive`     | `boolean`                 | `true`     | Whether keyboard input is captured |
+| `children`     | `ReactNode`               | _required_ | TabList + TabPanel components      |
 
 ### TabList
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `children` | `ReactNode` | *required* | Tab components |
+| Prop       | Type        | Default    | Description    |
+| ---------- | ----------- | ---------- | -------------- |
+| `children` | `ReactNode` | _required_ | Tab components |
 
 Renders tabs in a horizontal row with a bottom border.
 
 ### Tab
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `value` | `string` | *required* | Unique tab identifier |
-| `children` | `ReactNode` | *required* | Tab label content |
+| Prop       | Type        | Default    | Description           |
+| ---------- | ----------- | ---------- | --------------------- |
+| `value`    | `string`    | _required_ | Unique tab identifier |
+| `children` | `ReactNode` | _required_ | Tab label content     |
 
 Active tab is bold with `$primary` color; inactive tabs use `$muted`.
 
 ### TabPanel
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `value` | `string` | *required* | Tab value this panel corresponds to |
-| `children` | `ReactNode` | *required* | Panel content |
+| Prop       | Type        | Default    | Description                         |
+| ---------- | ----------- | ---------- | ----------------------------------- |
+| `value`    | `string`    | _required_ | Tab value this panel corresponds to |
+| `children` | `ReactNode` | _required_ | Panel content                       |
 
 Only renders its children when the corresponding tab is active.
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-| --- | --- |
-| `Right` / `l` | Next tab (wraps around) |
-| `Left` / `h` | Previous tab (wraps around) |
+| Key           | Action                      |
+| ------------- | --------------------------- |
+| `Right` / `l` | Next tab (wraps around)     |
+| `Left` / `h`  | Previous tab (wraps around) |
 
 ## Examples
 

@@ -27,11 +27,11 @@ const data = [
 
 ## Props
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `columns` | `TableColumn[]` | *required* | Column definitions |
-| `data` | `Array<Record<string, unknown>>` | *required* | Data rows to display |
-| `border` | `boolean` | `false` | Show box-drawing borders around cells |
+| Prop      | Type                             | Default    | Description                           |
+| --------- | -------------------------------- | ---------- | ------------------------------------- |
+| `columns` | `TableColumn[]`                  | _required_ | Column definitions                    |
+| `data`    | `Array<Record<string, unknown>>` | _required_ | Data rows to display                  |
+| `border`  | `boolean`                        | `false`    | Show box-drawing borders around cells |
 
 ### TableColumn
 
@@ -51,6 +51,7 @@ interface TableColumn {
 ## Output
 
 Without borders:
+
 ```
 Name                Status      Count
 Item 1              active         42
@@ -58,6 +59,7 @@ Item 2              pending         7
 ```
 
 With `border`:
+
 ```
 ┌──────────────────────┬────────────┬──────────┐
 │ Name                 │   Status   │    Count │

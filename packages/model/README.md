@@ -21,7 +21,9 @@ const todoModel = defineModel({
   name: "todo",
   create: () => ({
     items: [] as string[],
-    add(text: string) { this.items.push(text) },
+    add(text: string) {
+      this.items.push(text)
+    },
   }),
 })
 

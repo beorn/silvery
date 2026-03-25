@@ -18,7 +18,6 @@ import {
   Strong,
   Small,
   Muted,
-  Kbd,
   Tabs,
   TabList,
   Tab,
@@ -218,12 +217,12 @@ function CpuCore({ index, core, barWidth }: { index: number; core: CoreMetrics; 
     <Box>
       <Muted>{`${index} `}</Muted>
       <Text color={color}>{"█".repeat(filled)}</Text>
-      <Text dimColor>{"░".repeat(empty)}</Text>
+      <Text dimColor>{"█".repeat(empty)}</Text>
       <Text color={color}>
         <Strong>{` ${String(pct).padStart(3)}%`}</Strong>
       </Text>
       <Muted> </Muted>
-      <Small>{sparkline(core.history.slice(-10), 100)}</Small>
+      <Text color="$muted">{sparkline(core.history.slice(-8), 100)}</Text>
     </Box>
   )
 }
@@ -235,7 +234,7 @@ function CpuPane({ cores }: { cores: CoreMetrics[] }) {
   const load1 = ((avgCpu / 100) * 8 * 0.8 + Math.random() * 0.5).toFixed(2)
   const load5 = ((avgCpu / 100) * 8 * 0.7 + Math.random() * 0.3).toFixed(2)
   const load15 = ((avgCpu / 100) * 8 * 0.6 + Math.random() * 0.2).toFixed(2)
-  // 2 (core label) + bar + 5 (pct) + 1 (space) + 10 (sparkline) = need ~18 besides bar
+  // 2 (core label "N ") + bar + 5 (pct " XXX%") + 1 (space) + 8 (sparkline) = 16 besides bar + 2 safety
   const barWidth = Math.max(8, width - 18)
 
   return (
@@ -255,12 +254,12 @@ function CpuPane({ cores }: { cores: CoreMetrics[] }) {
 
 // --- Memory Tab ---
 
-function StackedBar({ segments }: { segments: { value: number; color: string; char?: string }[] }) {
+function StackedBar({ segments }: { segments: { value: number; color: string }[] }) {
   return (
     <Box>
       {segments.map((seg, i) => (
         <Box key={i} flexGrow={Math.max(1, Math.round(seg.value * 100))}>
-          <Text color={seg.color}>{(seg.char ?? "█").repeat(80)}</Text>
+          <Text color={seg.color}>{"█".repeat(80)}</Text>
         </Box>
       ))}
     </Box>
@@ -284,7 +283,7 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
           { value: memory.used / total, color: severityColor(usedPct) },
           { value: memory.cached / total, color: "$info" },
           { value: memory.buffers / total, color: "$primary" },
-          { value: memory.free / total, color: "$muted", char: "░" },
+          { value: memory.free / total, color: "$muted" },
         ]}
       />
       <Box gap={2}>
@@ -298,14 +297,14 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
           {"█"} Buf {memory.buffers.toFixed(1)}G
         </Text>
         <Muted>
-          {"░"} Free {memory.free.toFixed(1)}G
+          {"█"} Free {memory.free.toFixed(1)}G
         </Muted>
       </Box>
       <Box flexDirection="column">
         <Muted>
           Swap: {memory.swap.toFixed(1)}G / {memory.swapTotal.toFixed(1)}G
         </Muted>
-        <ProgressBar value={swapPct / 100} color={severityColor(swapPct)} showPercentage />
+        <ProgressBar value={swapPct / 100} color={severityColor(swapPct)} showPercentage emptyChar="█" />
       </Box>
       <Box gap={2}>
         <Muted>Top:</Muted>
@@ -340,7 +339,7 @@ function NetworkPane({ network }: { network: NetworkMetrics }) {
           </Text>
           <Small>{sparkline(network.downloadHistory, 100)}</Small>
         </Box>
-        <ProgressBar value={network.downloadRate / 100} color="$success" showPercentage={false} />
+        <ProgressBar value={network.downloadRate / 100} color="$success" showPercentage={false} emptyChar="█" />
       </Box>
       <Box flexDirection="column">
         <Box justifyContent="space-between">
@@ -349,7 +348,7 @@ function NetworkPane({ network }: { network: NetworkMetrics }) {
           </Text>
           <Small>{sparkline(network.uploadHistory, 40)}</Small>
         </Box>
-        <ProgressBar value={network.uploadRate / 40} color="$info" showPercentage={false} />
+        <ProgressBar value={network.uploadRate / 40} color="$info" showPercentage={false} emptyChar="█" />
       </Box>
       <Box borderStyle="round" borderColor="$border" paddingX={1} flexDirection="column">
         <Muted>Connection Stats</Muted>
@@ -479,9 +478,7 @@ export function Dashboard() {
           <Text>
             <Strong>System Monitor</Strong> <Muted>uptime 14d 3h 27m</Muted>
           </Text>
-          <Muted>
-            Tick #{tick} <Kbd>q</Kbd> quit
-          </Muted>
+          <Muted>Tick #{tick}</Muted>
         </Box>
         <WideLayout cores={state.cores} memory={state.memory} network={state.network} processes={state.processes} />
         <Box justifyContent="space-between" paddingX={1}>
@@ -508,7 +505,7 @@ export function Dashboard() {
             <Tab value="network">Network</Tab>
             <Tab value="processes">Processes</Tab>
           </TabList>
-          <Small>Tick #{tick}</Small>
+          <Muted>uptime 14d 3h</Muted>
         </Box>
 
         <TabPanel value="cpu">
@@ -532,10 +529,6 @@ export function Dashboard() {
           </Box>
         </TabPanel>
       </Tabs>
-      <Muted>
-        {" "}
-        <Kbd>h/l</Kbd> tabs <Kbd>Esc/q</Kbd> quit
-      </Muted>
     </Box>
   )
 }

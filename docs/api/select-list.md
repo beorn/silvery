@@ -22,15 +22,15 @@ const items = [
 
 ## Props
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `items` | `SelectOption[]` | *required* | List of options to display |
-| `highlightedIndex` | `number` | — | Controlled: current highlighted index |
-| `onHighlight` | `(index: number) => void` | — | Called when highlight changes |
-| `onSelect` | `(option: SelectOption, index: number) => void` | — | Called when Enter is pressed on an item |
-| `initialIndex` | `number` | first enabled | Starting index for uncontrolled mode |
-| `maxVisible` | `number` | — | Max visible items before scrolling |
-| `isActive` | `boolean` | `true` | Whether this list captures keyboard input |
+| Prop               | Type                                            | Default       | Description                               |
+| ------------------ | ----------------------------------------------- | ------------- | ----------------------------------------- |
+| `items`            | `SelectOption[]`                                | _required_    | List of options to display                |
+| `highlightedIndex` | `number`                                        | —             | Controlled: current highlighted index     |
+| `onHighlight`      | `(index: number) => void`                       | —             | Called when highlight changes             |
+| `onSelect`         | `(option: SelectOption, index: number) => void` | —             | Called when Enter is pressed on an item   |
+| `initialIndex`     | `number`                                        | first enabled | Starting index for uncontrolled mode      |
+| `maxVisible`       | `number`                                        | —             | Max visible items before scrolling        |
+| `isActive`         | `boolean`                                       | `true`        | Whether this list captures keyboard input |
 
 ### SelectOption
 
@@ -44,13 +44,13 @@ interface SelectOption {
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-| --- | --- |
-| `j` / `Down` | Move highlight down |
-| `k` / `Up` | Move highlight up |
-| `Enter` | Select the highlighted item |
-| `Ctrl+A` | Jump to first enabled item |
-| `Ctrl+E` | Jump to last enabled item |
+| Key          | Action                      |
+| ------------ | --------------------------- |
+| `j` / `Down` | Move highlight down         |
+| `k` / `Up`   | Move highlight up           |
+| `Enter`      | Select the highlighted item |
+| `Ctrl+A`     | Jump to first enabled item  |
+| `Ctrl+E`     | Jump to last enabled item   |
 
 Disabled items are automatically skipped during navigation.
 
@@ -85,11 +85,7 @@ const [index, setIndex] = useState(0)
 ### Scrollable with Max Visible
 
 ```tsx
-<SelectList
-  items={longList}
-  maxVisible={5}
-  onSelect={(opt) => console.log(opt.value)}
-/>
+<SelectList items={longList} maxVisible={5} onSelect={(opt) => console.log(opt.value)} />
 ```
 
 The visible window auto-centers around the highlighted item.

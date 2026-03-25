@@ -9,7 +9,7 @@
  */
 
 import React, { useState } from "react"
-import { render, Box, Text, Kbd, Muted, useInput, useApp, createTerm, type Key } from "../../src/index.js"
+import { render, Box, Text, Muted, useInput, useApp, createTerm, type Key } from "../../src/index.js"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
@@ -48,33 +48,31 @@ const initialColumns: Column[] = [
     id: "todo",
     title: "To Do",
     cards: [
-      { id: 1, title: "Design new landing page", tags: ["design"], priority: "high", assignee: "Alice" },
-      { id: 2, title: "Write API documentation", tags: ["docs"], priority: "medium" },
-      { id: 3, title: "Set up monitoring alerts", tags: ["devops"], priority: "high", assignee: "Carlos" },
-      { id: 4, title: "Create onboarding flow", tags: ["ux", "design"], priority: "medium", assignee: "Alice" },
-      { id: 5, title: "Database query optimization", tags: ["backend"], priority: "low" },
-      { id: 6, title: "Mobile responsive fixes", tags: ["frontend"], priority: "medium", assignee: "Bob" },
-      { id: 7, title: "Add dark mode support", tags: ["frontend", "ux"], priority: "low" },
-      { id: 8, title: "Implement Redis caching", tags: ["backend", "devops"], priority: "high" },
+      { id: 1, title: "Design landing page", tags: ["design"], priority: "high", assignee: "Alice" },
+      { id: 2, title: "Write API docs", tags: ["docs"], priority: "medium" },
+      { id: 3, title: "Monitoring alerts", tags: ["devops"], priority: "high", assignee: "Carlos" },
+      { id: 4, title: "Onboarding flow", tags: ["ux"], priority: "medium", assignee: "Alice" },
+      { id: 5, title: "DB optimization", tags: ["backend"], priority: "low" },
+      { id: 6, title: "Mobile fixes", tags: ["frontend"], priority: "medium", assignee: "Bob" },
     ],
   },
   {
     id: "inProgress",
     title: "In Progress",
     cards: [
-      { id: 9, title: "User authentication (OAuth)", tags: ["backend", "security"], priority: "high", assignee: "Carlos" },
-      { id: 10, title: "Dashboard redesign v2", tags: ["frontend", "design"], priority: "medium", assignee: "Alice" },
-      { id: 11, title: "API rate limiting", tags: ["backend"], priority: "high", assignee: "Bob" },
+      { id: 9, title: "OAuth login", tags: ["security"], priority: "high", assignee: "Carlos" },
+      { id: 10, title: "Dashboard v2", tags: ["frontend"], priority: "medium", assignee: "Alice" },
+      { id: 11, title: "Rate limiting", tags: ["backend"], priority: "high", assignee: "Bob" },
     ],
   },
   {
     id: "done",
     title: "Done",
     cards: [
-      { id: 12, title: "Project setup & tooling", tags: ["devops"], assignee: "Carlos" },
-      { id: 13, title: "CI/CD pipeline (GitHub)", tags: ["devops"], assignee: "Carlos" },
-      { id: 14, title: "Initial wireframes", tags: ["design"], assignee: "Alice" },
-      { id: 15, title: "Database schema design", tags: ["backend"], assignee: "Bob" },
+      { id: 12, title: "Project setup", tags: ["devops"], assignee: "Carlos" },
+      { id: 13, title: "CI/CD pipeline", tags: ["devops"], assignee: "Carlos" },
+      { id: 14, title: "Wireframes", tags: ["design"], assignee: "Alice" },
+      { id: 15, title: "Schema design", tags: ["backend"], assignee: "Bob" },
     ],
   },
 ]
@@ -111,13 +109,14 @@ const priorityIndicators: Record<string, { symbol: string; color: string }> = {
 function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }) {
   const pri = card.priority ? priorityIndicators[card.priority] : undefined
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "$primary" : "$border"} paddingX={1}>
+    <Box flexDirection="column">
       <Box>
         {pri && (
           <Text color={pri.color} bold>
-            {pri.symbol === " " ? "" : pri.symbol + " "}
+            {pri.symbol === " " ? "  " : pri.symbol + " "}
           </Text>
         )}
+        {!pri && <Text>{"  "}</Text>}
         {isSelected ? (
           <Text backgroundColor="$primary" color="$primary-fg" bold>
             {card.title}
@@ -127,6 +126,7 @@ function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }
         )}
       </Box>
       <Box gap={1}>
+        <Text>{"  "}</Text>
         {card.tags.map((tag) => (
           <Tag key={tag} name={tag} />
         ))}
@@ -161,14 +161,7 @@ function ColumnComponent({
         <Text color={isSelected ? "$primary-fg" : "$muted"}> ({column.cards.length})</Text>
       </Box>
 
-      <Box
-        flexDirection="column"
-        paddingX={1}
-        overflow="scroll"
-        scrollTo={isSelected ? selectedCardIndex : undefined}
-        flexGrow={1}
-        gap={1}
-      >
+      <Box flexDirection="column" overflow="scroll" scrollTo={isSelected ? selectedCardIndex : undefined} flexGrow={1}>
         {column.cards.map((card, cardIndex) => (
           <CardComponent key={card.id} card={card} isSelected={isSelected && cardIndex === selectedCardIndex} />
         ))}
@@ -180,15 +173,6 @@ function ColumnComponent({
         )}
       </Box>
     </Box>
-  )
-}
-
-function HelpBar() {
-  return (
-    <Muted>
-      {" "}
-      <Kbd>h/l</Kbd> column <Kbd>j/k</Kbd> card <Kbd>{"</"}</Kbd> move <Kbd>Esc/q</Kbd> quit
-    </Muted>
   )
 }
 
@@ -254,7 +238,7 @@ export function KanbanBoard() {
   }
 
   return (
-    <Box flexDirection="column" padding={1} height="100%">
+    <Box flexDirection="column" height="100%">
       <Box flexGrow={1} flexDirection="row" gap={1} overflow="hidden">
         {columns.map((column, colIndex) => (
           <ColumnComponent
@@ -265,8 +249,6 @@ export function KanbanBoard() {
           />
         ))}
       </Box>
-
-      <HelpBar />
     </Box>
   )
 }

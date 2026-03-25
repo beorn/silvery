@@ -23,15 +23,15 @@ import { ProgressBar } from "silvery"
 
 ## Props
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `value` | `number` | — | Progress 0-1 (omit for indeterminate animation) |
-| `width` | `number` | available width | Width in columns |
-| `fillChar` | `string` | `"█"` | Character for the filled portion |
-| `emptyChar` | `string` | `"░"` | Character for the empty portion |
-| `showPercentage` | `boolean` | `true` for determinate | Show percentage label |
-| `label` | `string` | — | Label text before the bar |
-| `color` | `string` | — | Color of the filled portion |
+| Prop             | Type      | Default                | Description                                     |
+| ---------------- | --------- | ---------------------- | ----------------------------------------------- |
+| `value`          | `number`  | —                      | Progress 0-1 (omit for indeterminate animation) |
+| `width`          | `number`  | available width        | Width in columns                                |
+| `fillChar`       | `string`  | `"█"`                  | Character for the filled portion                |
+| `emptyChar`      | `string`  | `"░"`                  | Character for the empty portion                 |
+| `showPercentage` | `boolean` | `true` for determinate | Show percentage label                           |
+| `label`          | `string`  | —                      | Label text before the bar                       |
+| `color`          | `string`  | —                      | Color of the filled portion                     |
 
 ## Modes
 
@@ -56,18 +56,16 @@ Loading... ░░░░░░████░░░░░░░░░░░░░
 ### Download Progress
 
 ```tsx
-<ProgressBar
-  value={bytesReceived / totalBytes}
-  label="Downloading..."
-  color="$primary"
-/>
+<ProgressBar value={bytesReceived / totalBytes} label="Downloading..." color="$primary" />
 ```
 
 ### File Processing
 
 ```tsx
 <Box flexDirection="column" gap={1}>
-  <Text>Processing files ({processed}/{total})</Text>
+  <Text>
+    Processing files ({processed}/{total})
+  </Text>
   <ProgressBar value={processed / total} />
 </Box>
 ```
@@ -81,12 +79,7 @@ Loading... ░░░░░░████░░░░░░░░░░░░░
 ### Custom Characters
 
 ```tsx
-<ProgressBar
-  value={0.6}
-  fillChar="="
-  emptyChar="-"
-  showPercentage={false}
-/>
+<ProgressBar value={0.6} fillChar="=" emptyChar="-" showPercentage={false} />
 ```
 
 Output: `============------------------`

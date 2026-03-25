@@ -34,45 +34,45 @@ import { ListView } from "silvery"
 
 ### Core
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `items` | `T[]` | *required* | Array of items to render |
-| `height` | `number` | *required* | Viewport height in rows |
-| `renderItem` | `(item: T, index: number, meta: ListItemMeta) => ReactNode` | *required* | Render function for each item |
-| `estimateHeight` | `number \| (index: number) => number` | `1` | Estimated height per item in rows |
-| `getKey` | `(item: T, index: number) => string \| number` | index | Key extractor |
-| `width` | `number` | — | Viewport width (uses parent width if omitted) |
+| Prop             | Type                                                        | Default    | Description                                   |
+| ---------------- | ----------------------------------------------------------- | ---------- | --------------------------------------------- |
+| `items`          | `T[]`                                                       | _required_ | Array of items to render                      |
+| `height`         | `number`                                                    | _required_ | Viewport height in rows                       |
+| `renderItem`     | `(item: T, index: number, meta: ListItemMeta) => ReactNode` | _required_ | Render function for each item                 |
+| `estimateHeight` | `number \| (index: number) => number`                       | `1`        | Estimated height per item in rows             |
+| `getKey`         | `(item: T, index: number) => string \| number`              | index      | Key extractor                                 |
+| `width`          | `number`                                                    | —          | Viewport width (uses parent width if omitted) |
 
 ### Scrolling
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `scrollTo` | `number` | — | Index to scroll to (ignored when navigable) |
-| `overscan` | `number` | `5` | Extra items rendered beyond viewport |
-| `maxRendered` | `number` | `100` | Maximum items rendered at once |
-| `scrollPadding` | `number` | `2` | Padding from edge before scrolling (in items) |
-| `overflowIndicator` | `boolean` | `false` | Show overflow indicators |
-| `gap` | `number` | `0` | Gap between items in rows |
-| `renderSeparator` | `() => ReactNode` | — | Custom separator between items |
-| `listFooter` | `ReactNode` | — | Content after all items in scroll container |
-| `virtualized` | `(item: T, index: number) => boolean` | — | Predicate for already-virtualized prefix items |
+| Prop                | Type                                  | Default | Description                                    |
+| ------------------- | ------------------------------------- | ------- | ---------------------------------------------- |
+| `scrollTo`          | `number`                              | —       | Index to scroll to (ignored when navigable)    |
+| `overscan`          | `number`                              | `5`     | Extra items rendered beyond viewport           |
+| `maxRendered`       | `number`                              | `100`   | Maximum items rendered at once                 |
+| `scrollPadding`     | `number`                              | `2`     | Padding from edge before scrolling (in items)  |
+| `overflowIndicator` | `boolean`                             | `false` | Show overflow indicators                       |
+| `gap`               | `number`                              | `0`     | Gap between items in rows                      |
+| `renderSeparator`   | `() => ReactNode`                     | —       | Custom separator between items                 |
+| `listFooter`        | `ReactNode`                           | —       | Content after all items in scroll container    |
+| `virtualized`       | `(item: T, index: number) => boolean` | —       | Predicate for already-virtualized prefix items |
 
 ### Navigable Mode
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `navigable` | `boolean` | — | Enable built-in keyboard and mouse navigation |
-| `cursorIndex` | `number` | — | Controlled cursor position |
-| `onCursorIndexChange` | `(index: number) => void` | — | Called when cursor moves |
-| `onSelect` | `(index: number) => void` | — | Called when Enter is pressed |
-| `active` | `boolean` | `true` | Whether keyboard input is captured |
+| Prop                  | Type                      | Default | Description                                   |
+| --------------------- | ------------------------- | ------- | --------------------------------------------- |
+| `navigable`           | `boolean`                 | —       | Enable built-in keyboard and mouse navigation |
+| `cursorIndex`         | `number`                  | —       | Controlled cursor position                    |
+| `onCursorIndexChange` | `(index: number) => void` | —       | Called when cursor moves                      |
+| `onSelect`            | `(index: number) => void` | —       | Called when Enter is pressed                  |
+| `active`              | `boolean`                 | `true`  | Whether keyboard input is captured            |
 
 ### Infinite Scroll
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `onEndReached` | `() => void` | — | Called when near the end of the list |
-| `onEndReachedThreshold` | `number` | `5` | Items from end to trigger onEndReached |
+| Prop                    | Type         | Default | Description                            |
+| ----------------------- | ------------ | ------- | -------------------------------------- |
+| `onEndReached`          | `() => void` | —       | Called when near the end of the list   |
+| `onEndReachedThreshold` | `number`     | `5`     | Items from end to trigger onEndReached |
 
 ### ListItemMeta
 
@@ -85,21 +85,21 @@ interface ListItemMeta {
 
 ### Ref Handle (ListViewHandle)
 
-| Method | Type | Description |
-| --- | --- | --- |
+| Method                | Type                      | Description                    |
+| --------------------- | ------------------------- | ------------------------------ |
 | `scrollToItem(index)` | `(index: number) => void` | Imperatively scroll to an item |
 
 ## Keyboard Shortcuts (navigable mode)
 
-| Key | Action |
-| --- | --- |
-| `j` / `Down` | Move cursor down |
-| `k` / `Up` | Move cursor up |
-| `G` / `End` | Jump to last item |
-| `Home` | Jump to first item |
+| Key               | Action                    |
+| ----------------- | ------------------------- |
+| `j` / `Down`      | Move cursor down          |
+| `k` / `Up`        | Move cursor up            |
+| `G` / `End`       | Jump to last item         |
+| `Home`            | Jump to first item        |
 | `PgDn` / `Ctrl+D` | Page down (half viewport) |
-| `PgUp` / `Ctrl+U` | Page up (half viewport) |
-| `Enter` | Select item at cursor |
+| `PgUp` / `Ctrl+U` | Page up (half viewport)   |
+| `Enter`           | Select item at cursor     |
 
 ## Examples
 
@@ -122,9 +122,7 @@ interface ListItemMeta {
   items={sections}
   height={15}
   navigable
-  renderItem={(item, i, meta) => (
-    <Text inverse={meta.isCursor}>{item.title}</Text>
-  )}
+  renderItem={(item, i, meta) => <Text inverse={meta.isCursor}>{item.title}</Text>}
   renderSeparator={() => <Text color="$border">{"─".repeat(40)}</Text>}
 />
 ```

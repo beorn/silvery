@@ -20,20 +20,20 @@ import { Spinner } from "silvery"
 
 All [`Text` props](./text) are supported (color, bold, dim, etc.) in addition to:
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `type` | `"dots" \| "line" \| "arc" \| "bounce"` | `"dots"` | Animation style |
-| `label` | `string` | — | Label text shown after spinner |
-| `interval` | `number` | `80` | Animation interval in milliseconds |
+| Prop       | Type                                    | Default  | Description                        |
+| ---------- | --------------------------------------- | -------- | ---------------------------------- |
+| `type`     | `"dots" \| "line" \| "arc" \| "bounce"` | `"dots"` | Animation style                    |
+| `label`    | `string`                                | —        | Label text shown after spinner     |
+| `interval` | `number`                                | `80`     | Animation interval in milliseconds |
 
 ## Animation Styles
 
-| Type | Frames | Description |
-| --- | --- | --- |
-| `dots` | `⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏` | Braille dot spinner (default) |
-| `line` | `\| / — \` | Classic line spinner |
-| `arc` | `◜ ◠ ◝ ◞ ◡ ◟` | Arc rotation |
-| `bounce` | `⠁ ⠂ ⠄ ⡀ ⢀ ⠠ ⠐ ⠈` | Bouncing braille dot |
+| Type     | Frames                | Description                   |
+| -------- | --------------------- | ----------------------------- |
+| `dots`   | `⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏` | Braille dot spinner (default) |
+| `line`   | `\| / — \`            | Classic line spinner          |
+| `arc`    | `◜ ◠ ◝ ◞ ◡ ◟`         | Arc rotation                  |
+| `bounce` | `⠁ ⠂ ⠄ ⡀ ⢀ ⠠ ⠐ ⠈`     | Bouncing braille dot          |
 
 ## Examples
 

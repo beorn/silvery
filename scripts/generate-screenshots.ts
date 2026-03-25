@@ -44,9 +44,7 @@ const { values } = parseArgs({
 const baseUrl = values["base-url"]!
 const singleDemo = values["demo"]
 
-const demos = singleDemo
-  ? ALL_DEMOS.filter((d) => d.id === singleDemo)
-  : ALL_DEMOS
+const demos = singleDemo ? ALL_DEMOS.filter((d) => d.id === singleDemo) : ALL_DEMOS
 
 if (demos.length === 0) {
   console.error(`Unknown demo: ${singleDemo}`)

@@ -13,17 +13,11 @@ const src = `/screenshots/${props.demo}.png`
   <div class="demo-screenshot">
     <div class="demo-screenshot-header">
       <span class="demo-screenshot-label">{{ label }}</span>
-      <span class="demo-screenshot-hint">
-        Run locally: <code>bun run docs:dev</code>
-      </span>
+      <span class="demo-screenshot-hint"> Run locally: <code>bun run docs:dev</code> </span>
     </div>
 
     <div class="demo-screenshot-viewport" :style="{ height: height + 'px' }">
-      <img
-        :src="src"
-        :alt="`Screenshot of ${label} demo`"
-        class="demo-screenshot-img"
-      />
+      <img :src="src" :alt="`Screenshot of ${label} demo`" class="demo-screenshot-img" />
     </div>
   </div>
 </template>

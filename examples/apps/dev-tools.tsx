@@ -32,7 +32,6 @@ import {
   useInput,
   useApp,
   createTerm,
-  H1,
   Strong,
   Kbd,
   Muted,
@@ -257,7 +256,6 @@ const rng = seededRandom(12345)
 
 export function DevTools() {
   const { exit } = useApp()
-  const { width } = useContentRect()
   const [entries, setEntries] = useState<LogEntry[]>(() => generateInitialLogs(INITIAL_COUNT))
   const [cursor, setCursor] = useState(INITIAL_COUNT - 1)
   const [autoScroll, setAutoScroll] = useState(true)
@@ -341,7 +339,9 @@ export function DevTools() {
       {/* Header */}
       <Box paddingX={1} justifyContent="space-between" backgroundColor="$surfacebg">
         <Box gap={2}>
-          <Text bold color="$primary">{"▸"} Log Viewer</Text>
+          <Text bold color="$primary">
+            {"▸"} Log Viewer
+          </Text>
           <LevelCounts entries={entries} />
         </Box>
         <Box gap={1}>

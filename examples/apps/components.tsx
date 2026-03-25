@@ -78,8 +78,12 @@ function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
         <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <H2>Typography</H2>
           <Box flexDirection="column">
-            <Text bold color="$primary">H1 — Page Title (bold, $primary)</Text>
-            <Text bold color="$accent">H2 — Section Heading (bold, $accent)</Text>
+            <Text bold color="$primary">
+              H1 — Page Title (bold, $primary)
+            </Text>
+            <Text bold color="$accent">
+              H2 — Section Heading (bold, $accent)
+            </Text>
             <Text color="$primary">H3 — Group Heading ($primary)</Text>
             <P>P — Body paragraph text</P>
             <Lead>Lead — Introductory italic text</Lead>
@@ -90,13 +94,30 @@ function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
         <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <H2>Inline Styles</H2>
           <Box flexDirection="column">
-            <Text><Strong>Strong</Strong> — bold emphasis</Text>
-            <Text><Em>Em</Em> — italic emphasis</Text>
-            <Text><Strong><Em>Strong + Em</Em></Strong> — bold italic</Text>
-            <Text><Text underline>Underline</Text> — underlined text</Text>
-            <Text><Text strikethrough>Strikethrough</Text> — deleted text</Text>
-            <Text><Code>Code</Code> — inline code span</Text>
-            <Text><Kbd>Kbd</Kbd> — keyboard shortcut</Text>
+            <Text>
+              <Strong>Strong</Strong> — bold emphasis
+            </Text>
+            <Text>
+              <Em>Em</Em> — italic emphasis
+            </Text>
+            <Text>
+              <Strong>
+                <Em>Strong + Em</Em>
+              </Strong>{" "}
+              — bold italic
+            </Text>
+            <Text>
+              <Text underline>Underline</Text> — underlined text
+            </Text>
+            <Text>
+              <Text strikethrough>Strikethrough</Text> — deleted text
+            </Text>
+            <Text>
+              <Code>Code</Code> — inline code span
+            </Text>
+            <Text>
+              <Kbd>Kbd</Kbd> — keyboard shortcut
+            </Text>
           </Box>
         </Box>
       </Box>
@@ -106,11 +127,21 @@ function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
       <H2>Semantic Colors</H2>
       <Box flexDirection="column">
         <Box gap={1}>
-          <Text backgroundColor="$primary" color="$primary-fg" bold>{" $primary "}</Text>
-          <Text backgroundColor="$accent" color="$accent-fg" bold>{" $accent  "}</Text>
-          <Text backgroundColor="$success" color="$success-fg" bold>{" $success "}</Text>
-          <Text backgroundColor="$warning" color="$warning-fg" bold>{" $warning "}</Text>
-          <Text backgroundColor="$error" color="$error-fg" bold>{" $error   "}</Text>
+          <Text backgroundColor="$primary" color="$primary-fg" bold>
+            {" $primary "}
+          </Text>
+          <Text backgroundColor="$accent" color="$accent-fg" bold>
+            {" $accent  "}
+          </Text>
+          <Text backgroundColor="$success" color="$success-fg" bold>
+            {" $success "}
+          </Text>
+          <Text backgroundColor="$warning" color="$warning-fg" bold>
+            {" $warning "}
+          </Text>
+          <Text backgroundColor="$error" color="$error-fg" bold>
+            {" $error   "}
+          </Text>
         </Box>
         <Box gap={1} marginTop={1}>
           <Text color="$primary">{"████"} primary</Text>
@@ -135,19 +166,35 @@ function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
         <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <H3>Unordered</H3>
           <UL>
-            <LI><Strong>SelectList</Strong> — j/k navigation, scroll</LI>
-            <LI><Strong>TextInput</Strong> — full readline support</LI>
-            <LI><Strong>ModalDialog</Strong> — overlay with input blocking</LI>
-            <LI><Strong>ProgressBar</Strong> — determinate + indeterminate</LI>
+            <LI>
+              <Strong>SelectList</Strong> — j/k navigation, scroll
+            </LI>
+            <LI>
+              <Strong>TextInput</Strong> — full readline support
+            </LI>
+            <LI>
+              <Strong>ModalDialog</Strong> — overlay with input blocking
+            </LI>
+            <LI>
+              <Strong>ProgressBar</Strong> — determinate + indeterminate
+            </LI>
           </UL>
         </Box>
         <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <H3>Ordered</H3>
           <OL>
-            <LI>Install with <Code>bun add silvery</Code></LI>
-            <LI>Use <Code>$tokens</Code> for semantic colors</LI>
-            <LI>Layout with <Code>flexbox</Code> via Flexily</LI>
-            <LI>Test with <Code>createTermless()</Code></LI>
+            <LI>
+              Install with <Code>bun add silvery</Code>
+            </LI>
+            <LI>
+              Use <Code>$tokens</Code> for semantic colors
+            </LI>
+            <LI>
+              Layout with <Code>flexbox</Code> via Flexily
+            </LI>
+            <LI>
+              Test with <Code>createTermless()</Code>
+            </LI>
           </OL>
         </Box>
       </Box>
@@ -281,7 +328,7 @@ function InputsTab() {
         </Box>
       </Box>
 
-      <Small>Tab/Shift+Tab to cycle focus — Space toggles — Enter submits</Small>
+      {/* keyboard hints removed for static screenshots */}
     </Box>
   )
 }
@@ -312,46 +359,43 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
   })
 
   return (
-    <Box flexDirection="column" gap={1} paddingX={1} overflow="scroll" scrollOffset={scrollOffset} flexGrow={1}>
-      <Box flexDirection="row" gap={2} flexGrow={1}>
-        {/* Left column */}
-        <Box flexDirection="column" gap={1} flexGrow={1} flexBasis={0}>
-          <H2>Progress Bars</H2>
-          <Box flexDirection="column" gap={1}>
-            <Box>
-              <Text color="$muted">{"Build   "}</Text>
-              <Box flexGrow={1}>
-                <ProgressBar value={1.0} label="✓" />
-              </Box>
-            </Box>
-            <Box>
-              <Text color="$muted">{"Test    "}</Text>
-              <Box flexGrow={1}>
-                <ProgressBar value={0.73} />
-              </Box>
-            </Box>
-            <Box>
-              <Text color="$muted">{"Deploy  "}</Text>
-              <Box flexGrow={1}>
-                <ProgressBar value={0.35} />
-              </Box>
-            </Box>
-            <Box>
-              <Text color="$muted">{"Install "}</Text>
-              <Box flexGrow={1}>
-                <ProgressBar />
-              </Box>
-            </Box>
+    <Box flexDirection="column" flexGrow={1}>
+      <H2>Progress Bars</H2>
+      <Box flexDirection="column">
+        <Box>
+          <Text color="$muted">{"Build  "}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={1.0} label="✓" emptyChar="█" />
           </Box>
-
-          <H2>Spinners</H2>
-          <Box flexDirection="column">
-            <Spinner type="dots" label="Loading packages..." />
-            <Spinner type="line" label="Compiling..." />
-            <Spinner type="arc" label="Optimizing bundle..." />
-            <Spinner type="bounce" label="Connecting..." />
+        </Box>
+        <Box>
+          <Text color="$muted">{"Test   "}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={0.73} emptyChar="█" />
           </Box>
-
+        </Box>
+        <Box>
+          <Text color="$muted">{"Deploy "}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={0.35} emptyChar="█" />
+          </Box>
+        </Box>
+        <Box>
+          <Text color="$muted">{"Upload "}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar emptyChar="█" />
+          </Box>
+        </Box>
+      </Box>
+      <H2>Spinners</H2>
+      <Box gap={2}>
+        <Spinner type="dots" label="Loading..." />
+        <Spinner type="line" label="Compiling..." />
+        <Spinner type="arc" label="Optimizing..." />
+        <Spinner type="bounce" label="Connecting..." />
+      </Box>
+      <Box flexDirection="row" gap={2}>
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <H2>Badges</H2>
           <Box gap={1} flexWrap="wrap">
             <Badge label="Stable" variant="success" />
@@ -361,37 +405,30 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             <Badge label="MIT" />
           </Box>
         </Box>
-
-        {/* Right column */}
-        <Box flexDirection="column" gap={1} flexGrow={1} flexBasis={0}>
-          <H2>Border Styles</H2>
-          <Box flexDirection="column" gap={1}>
-            {borderStyles.map((style, i) => (
-              <Box
-                key={style}
-                borderStyle={style as any}
-                borderColor={i === selectedBorder ? "$primary" : "$border"}
-                paddingX={1}
-              >
-                <Text bold={i === selectedBorder}>
-                  {i === selectedBorder ? "▸ " : "  "}
-                  {style}
-                </Text>
-              </Box>
-            ))}
-          </Box>
-
+        <Box flexDirection="column" flexGrow={1} flexBasis={0}>
           <Divider title="Status" />
-
           <Box flexDirection="column">
-            <Text color="$success">✓ All checks passed</Text>
-            <Text color="$warning">⚠ 2 deprecation warnings</Text>
-            <Text color="$error">✗ 1 vulnerability found</Text>
-            <Text color="$info">ℹ 47 packages installed</Text>
+            <Text color="$success">{"✓ All checks passed"}</Text>
+            <Text color="$warning">{"⚠ 2 deprecations"}</Text>
+            <Text color="$error">{"✗ 1 vulnerability"}</Text>
+            <Text color="$info">{"ℹ 47 packages installed"}</Text>
           </Box>
-
-          <Small>j/k select border — Enter opens modal — q quits</Small>
         </Box>
+      </Box>
+      <H2>Border Styles</H2>
+      <Box flexDirection="row" gap={1}>
+        {borderStyles.map((style, i) => (
+          <Box
+            key={style}
+            borderStyle={style as any}
+            borderColor={i === selectedBorder ? "$primary" : "$border"}
+            paddingX={1}
+            flexGrow={1}
+            flexBasis={0}
+          >
+            <Text bold={i === selectedBorder}>{style}</Text>
+          </Box>
+        ))}
       </Box>
 
       {showModal && (
@@ -404,11 +441,11 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
               </P>
               <HR />
               <Box flexDirection="column">
-                <Text color="$success">✓ Typography presets (H1-H3, Lead, Muted, Code)</Text>
-                <Text color="$success">✓ Input components (TextInput, TextArea, SelectList)</Text>
-                <Text color="$success">✓ Display widgets (ProgressBar, Spinner, Badge)</Text>
-                <Text color="$success">✓ Layout primitives (Box, Divider, border styles)</Text>
-                <Text color="$success">✓ Dialog system (ModalDialog with input blocking)</Text>
+                <Text color="$success">{"✓ Typography presets (H1-H3, Lead, Muted, Code)"}</Text>
+                <Text color="$success">{"✓ Input components (TextInput, TextArea, SelectList)"}</Text>
+                <Text color="$success">{"✓ Display widgets (ProgressBar, Spinner, Badge)"}</Text>
+                <Text color="$success">{"✓ Layout primitives (Box, Divider, border styles)"}</Text>
+                <Text color="$success">{"✓ Dialog system (ModalDialog with input blocking)"}</Text>
               </Box>
             </Box>
           </ModalDialog>

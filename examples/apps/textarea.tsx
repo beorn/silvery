@@ -91,10 +91,18 @@ export function NoteEditor() {
     <Box flexDirection="column" padding={1} flexGrow={1}>
       <Box flexDirection="row" gap={1} flexGrow={1}>
         {/* Main editor */}
-        <Box borderStyle="round" borderColor={focusIndex === 0 ? "$primary" : "$border"} flexDirection="column" flexGrow={2} flexBasis={0}>
+        <Box
+          borderStyle="round"
+          borderColor={focusIndex === 0 ? "$primary" : "$border"}
+          flexDirection="column"
+          flexGrow={2}
+          flexBasis={0}
+        >
           <Box paddingX={1} justifyContent="space-between">
             <H1>Editor</H1>
-            <Muted>{lines} lines, {words} words, {chars} chars</Muted>
+            <Muted>
+              {lines} lines, {words} words, {chars} chars
+            </Muted>
           </Box>
           <Box paddingX={1} flexGrow={1}>
             <TextArea
@@ -108,7 +116,13 @@ export function NoteEditor() {
         </Box>
 
         {/* Saved notes sidebar */}
-        <Box borderStyle="round" borderColor={focusIndex === 1 ? "$primary" : "$border"} flexDirection="column" flexGrow={1} flexBasis={0}>
+        <Box
+          borderStyle="round"
+          borderColor={focusIndex === 1 ? "$primary" : "$border"}
+          flexDirection="column"
+          flexGrow={1}
+          flexBasis={0}
+        >
           <Box paddingX={1}>
             <H1>Notes</H1>
             <Muted> ({notes.length})</Muted>
@@ -123,8 +137,7 @@ export function NoteEditor() {
               notes.map((note, i) => (
                 <Box key={i} flexDirection="column" marginBottom={1}>
                   <Text>
-                    <Strong color="$success">#{i + 1}</Strong>{" "}
-                    {note.split("\n")[0]?.slice(0, 40)}
+                    <Strong color="$success">#{i + 1}</Strong> {note.split("\n")[0]?.slice(0, 40)}
                     {(note.split("\n")[0]?.length ?? 0) > 40 ? "..." : ""}
                   </Text>
                   <Muted>
@@ -138,9 +151,7 @@ export function NoteEditor() {
       </Box>
 
       <Box justifyContent="space-between" paddingX={1}>
-        <Muted>
-          Tab switch pane | Ctrl+Enter submit | Ctrl+K kill line | Ctrl+A/E home/end | Esc quit
-        </Muted>
+        <Muted>Tab switch pane | Ctrl+Enter submit | Ctrl+K kill line | Ctrl+A/E home/end | Esc quit</Muted>
       </Box>
     </Box>
   )

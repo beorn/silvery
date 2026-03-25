@@ -26,14 +26,14 @@ const commands = [
 
 ## Props
 
-| Prop | Type | Default | Description |
-| --- | --- | --- | --- |
-| `commands` | `CommandItem[]` | *required* | Available commands |
-| `onSelect` | `(command: CommandItem) => void` | — | Called when Enter is pressed on a command |
-| `onClose` | `() => void` | — | Called when Escape is pressed |
-| `placeholder` | `string` | `"Search commands..."` | Placeholder for the filter input |
-| `maxVisible` | `number` | `10` | Maximum visible results |
-| `isActive` | `boolean` | `true` | Whether keyboard input is captured |
+| Prop          | Type                             | Default                | Description                               |
+| ------------- | -------------------------------- | ---------------------- | ----------------------------------------- |
+| `commands`    | `CommandItem[]`                  | _required_             | Available commands                        |
+| `onSelect`    | `(command: CommandItem) => void` | —                      | Called when Enter is pressed on a command |
+| `onClose`     | `() => void`                     | —                      | Called when Escape is pressed             |
+| `placeholder` | `string`                         | `"Search commands..."` | Placeholder for the filter input          |
+| `maxVisible`  | `number`                         | `10`                   | Maximum visible results                   |
+| `isActive`    | `boolean`                        | `true`                 | Whether keyboard input is captured        |
 
 ### CommandItem
 
@@ -50,14 +50,14 @@ interface CommandItem {
 
 ## Keyboard Shortcuts
 
-| Key | Action |
-| --- | --- |
-| `Up` | Move selection up |
-| `Down` | Move selection down |
-| `Enter` | Execute selected command |
-| `Escape` | Close the palette |
-| `Backspace` | Delete last filter character |
-| Any printable key | Append to filter |
+| Key               | Action                       |
+| ----------------- | ---------------------------- |
+| `Up`              | Move selection up            |
+| `Down`            | Move selection down          |
+| `Enter`           | Execute selected command     |
+| `Escape`          | Close the palette            |
+| `Backspace`       | Delete last filter character |
+| Any printable key | Append to filter             |
 
 ## Filtering
 
@@ -82,11 +82,7 @@ function App() {
     <Box flexDirection="column">
       <MainContent />
       {showPalette && (
-        <CommandPalette
-          commands={commands}
-          onSelect={handleCommand}
-          onClose={() => setShowPalette(false)}
-        />
+        <CommandPalette commands={commands} onSelect={handleCommand} onClose={() => setShowPalette(false)} />
       )}
     </Box>
   )

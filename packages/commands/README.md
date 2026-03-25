@@ -23,9 +23,13 @@ const registry = createCommandRegistry({
 })
 
 // Compose as app plugins
-const app = pipe(createApp(), withCommands({ registry }), withKeybindings({
-  bindings: { "ctrl+s": "file.save", "ctrl+o": "file.open" },
-}))
+const app = pipe(
+  createApp(),
+  withCommands({ registry }),
+  withKeybindings({
+    bindings: { "ctrl+s": "file.save", "ctrl+o": "file.open" },
+  }),
+)
 ```
 
 ## API
