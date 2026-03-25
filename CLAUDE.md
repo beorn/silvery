@@ -90,15 +90,20 @@ bun run theme             # Theme CLI (list/preview palettes)
 bun run compat            # Run Ink/Chalk compatibility checks
 ```
 
-## Public Packages (3)
+## Public Packages
 
-Users install and import from these packages only:
+Users install and import from these packages:
 
-| Package           | What                                                      |
-| ----------------- | --------------------------------------------------------- |
-| `silvery`         | Main barrel — components, hooks, render, types, runtime   |
-| `@silvery/create` | TEA state machine store, createApp (optional)             |
-| `@silvery/test`   | Testing utilities — virtual renderer, locators (optional) |
+| Package              | What                                                          |
+| -------------------- | ------------------------------------------------------------- |
+| `silvery`            | Main barrel — components, hooks, render, types, runtime       |
+| `@silvery/create`    | App composition — createApp, pipe, withApp, TEA store         |
+| `@silvery/test`      | Testing utilities — virtual renderer, locators                |
+| `@silvery/headless`  | Pure state machines — SelectList, Readline (no React)         |
+| `@silvery/commands`  | Command registry, keymaps, invocation                         |
+| `@silvery/scope`     | Structured concurrency — createScope, withScope               |
+| `@silvery/signals`   | Reactive signals — thin wrapper around alien-signals          |
+| `@silvery/model`     | Optional DI model factories                                   |
 
 Subpath imports available from `silvery`:
 
