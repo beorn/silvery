@@ -317,9 +317,11 @@ function ResponsiveBoard({ items }) {
     <Box>
       {Array.from({ length: columns }, (_, i) => (
         <Box key={i} flexGrow={1} flexDirection="column">
-          {items.filter((_, j) => j % columns === i).map(item => (
-            <Card key={item.id} item={item} />
-          ))}
+          {items
+            .filter((_, j) => j % columns === i)
+            .map((item) => (
+              <Card key={item.id} item={item} />
+            ))}
         </Box>
       ))}
     </Box>
@@ -347,12 +349,12 @@ function Card({ item }) {
 
 ## Summary
 
-| Need                 | Solution                                          |
-| -------------------- | ------------------------------------------------- |
-| Fixed-height element | `height={n}` + `flexShrink={0}`                   |
-| Fill remaining space | `flexGrow={1}`                                    |
-| Scrollable list      | `overflow="scroll"` + `scrollTo={index}`          |
-| Responsive columns   | `useContentRect()` + conditional rendering         |
+| Need                 | Solution                                              |
+| -------------------- | ----------------------------------------------------- |
+| Fixed-height element | `height={n}` + `flexShrink={0}`                       |
+| Fill remaining space | `flexGrow={1}`                                        |
+| Scrollable list      | `overflow="scroll"` + `scrollTo={index}`              |
+| Responsive columns   | `useContentRect()` + conditional rendering            |
 | Adaptive content     | `useContentRect()` + truncation / hide at breakpoints |
-| Filled background    | `backgroundColor="color"` on Box                  |
-| Centered content     | `justifyContent="center"` + `alignItems="center"` |
+| Filled background    | `backgroundColor="color"` on Box                      |
+| Centered content     | `justifyContent="center"` + `alignItems="center"`     |

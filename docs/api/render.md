@@ -37,10 +37,10 @@ Returns a `RenderHandle` synchronously. The handle is thenable (implements `Prom
 
 **RenderHandle methods:**
 
-| Method | Type                | Description                                                      |
-| ------ | ------------------- | ---------------------------------------------------------------- |
-| `run`  | `() => Promise<void>` | Start the event loop and wait until the app exits              |
-| `then` | `PromiseLike<Instance>` | Thenable — `await render(...)` resolves to an `Instance`     |
+| Method | Type                    | Description                                              |
+| ------ | ----------------------- | -------------------------------------------------------- |
+| `run`  | `() => Promise<void>`   | Start the event loop and wait until the app exits        |
+| `then` | `PromiseLike<Instance>` | Thenable — `await render(...)` resolves to an `Instance` |
 
 **Instance methods** (returned by `await render(...)` or inside `.then()`):
 

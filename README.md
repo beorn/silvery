@@ -51,11 +51,11 @@ await render(<Counter />).run()
 
 ## Packages
 
-| Package                                                                         | Description                                                              |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [`silvery`](https://github.com/beorn/silvery)                                   | Components, hooks, renderer — the one package you need                   |
-| [`@silvery/test`](https://github.com/beorn/silvery/tree/main/packages/test)     | Testing utilities and locators                                           |
-| [`@silvery/ink`](https://github.com/beorn/silvery/tree/main/packages/ink)       | Ink compatibility layer — migrate existing Ink apps with minimal changes |
+| Package                                                                     | Description                                                              |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [`silvery`](https://github.com/beorn/silvery)                               | Components, hooks, renderer — the one package you need                   |
+| [`@silvery/test`](https://github.com/beorn/silvery/tree/main/packages/test) | Testing utilities and locators                                           |
+| [`@silvery/ink`](https://github.com/beorn/silvery/tree/main/packages/ink)   | Ink compatibility layer — migrate existing Ink apps with minimal changes |
 
 ## Ecosystem
 

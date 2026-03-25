@@ -332,7 +332,7 @@ Silvery uses factory functions that return disposable objects. `using` (TC39 Exp
 // Compose resources — each one is automatically cleaned up on any exit
 using term = createTerm()
 using app = render(<App />, term)
-using console = patchConsole(term)  // redirect console.log through term
+using console = patchConsole(term) // redirect console.log through term
 await app.run()
 // On exit (success, error, Ctrl+C):
 // 1. console restored  2. app unmounted  3. terminal restored
@@ -352,7 +352,7 @@ try {
   await app.run()
 } finally {
   console.dispose() // Did you remember both?
-  term.dispose()    // In the right order?
+  term.dispose() // In the right order?
 }
 ```
 
@@ -361,15 +361,15 @@ try {
 
 Silvery objects that support `using`:
 
-| Object | What it cleans up |
-|---|---|
-| `createTerm()` | Restores terminal mode, cursor, alternate screen |
-| `render()` / `app.run()` | Unmounts React tree, stops event loop |
-| `createScope()` | Cancels child tasks, clears timers |
-| `createEditContext()` | Releases input layer bindings |
-| `patchConsole()` | Restores original console methods |
-| `Spinner` / `ProgressBar` / `MultiProgress` | Stops animation, clears interval |
-| `createScreenshot()` | Closes screenshot file handle |
+| Object                                      | What it cleans up                                |
+| ------------------------------------------- | ------------------------------------------------ |
+| `createTerm()`                              | Restores terminal mode, cursor, alternate screen |
+| `render()` / `app.run()`                    | Unmounts React tree, stops event loop            |
+| `createScope()`                             | Cancels child tasks, clears timers               |
+| `createEditContext()`                       | Releases input layer bindings                    |
+| `patchConsole()`                            | Restores original console methods                |
+| `Spinner` / `ProgressBar` / `MultiProgress` | Stops animation, clears interval                 |
+| `createScreenshot()`                        | Closes screenshot file handle                    |
 
 The pattern extends to your own code — any factory that returns `{ [Symbol.dispose]() { ... } }` works with `using`. Silvery's plugin composition (`pipe()`, `withScope()`) uses the same mechanism internally.
 
@@ -402,6 +402,7 @@ Each level works independently. Some apps never need more than `useState`. Other
 :::
 
 **When to graduate:**
+
 - **Need undo/redo?** → actions as data (Level 2+)
 - **Need customizable keybindings?** → named commands (Level 4)
 - **Need a command palette?** → discoverable command registry (Level 4)
