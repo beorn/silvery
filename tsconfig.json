@@ -22,6 +22,7 @@
       "@silvery/ansi/*": ["./packages/ag-term/src/ansi/*"],
       "@silvery/theme/*": ["./packages/theme/src/*"],
       "@silvery/create/*": ["./packages/create/src/*"],
+      "@silvery/headless/*": ["./packages/headless/src/*"],
       "@silvery/test/*": ["./packages/test/src/*"],
       "@silvery/ink/*": ["./packages/ink/src/*"]
     }

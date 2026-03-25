@@ -1,0 +1,28 @@
+{
+  "name": "@silvery/headless",
+  "version": "0.1.0",
+  "description": "Pure state machines for UI components — no React, no rendering, no side effects",
+  "license": "MIT",
+  "author": "Bjørn Stabell <bjorn@stabell.org>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beorn/silvery.git",
+    "directory": "packages/headless"
+  },
+  "files": [
+    "src"
+  ],
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./*": "./src/*.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
