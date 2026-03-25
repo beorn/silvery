@@ -24,6 +24,8 @@ measure -> layout -> scroll -> sticky -> screenRect -> [notify] -> content -> ou
 | **content** | **render-phase.ts** | **Render nodes to a TerminalBuffer (this is the complex part)**                            |
 | output      | output-phase.ts     | Diff current buffer against previous, emit minimal ANSI escape sequences                   |
 
+> **Note:** TerminalBuffer is the internal mutable representation. The public read API is `TextFrame` (created via `createTextFrame(buffer)` in `buffer.ts`), which provides an immutable snapshot with resolved RGB colors. App structurally implements TextFrame.
+
 Orchestrated by `executeRender()` in `pipeline/index.ts`. The scheduler (`scheduler.ts`) calls `executeRender()` and passes the previous frame's buffer for incremental rendering.
 
 ## Dirty Flags

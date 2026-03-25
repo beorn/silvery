@@ -215,28 +215,28 @@ function withTerm(term) {
   return (app) => {
     let prev: TextFrame | undefined
     app.render = () => {
-      app.ag.layout(term.dims)                   // 1. positions/sizes
-      const frame = app.ag.render()              // 2. tree → TextFrame
-      term.paint?.(frame, prev)                  // 3. TextFrame → output
+      app.ag.layout(term.dims) // 1. positions/sizes
+      const frame = app.ag.render() // 2. tree → TextFrame
+      term.paint?.(frame, prev) // 3. TextFrame → output
       prev = frame
-      term.screen = frame                        // always set after render
+      term.screen = frame // always set after render
     }
     if (term.events) {
       const { run } = app
       app.run = async () => {
-        app.render()                             // initial render
+        app.render() // initial render
         for await (const event of term.events(app.scope?.signal)) {
           if (event.type === "resize") {
-            prev = undefined                     // reset diffing
-            term.dims = event.dims               // update dimensions
+            prev = undefined // reset diffing
+            term.dims = event.dims // update dimensions
           }
           app.dispatch(event)
           if (event.type === "resize") {
-            app.render()                         // resize always re-renders
+            app.render() // resize always re-renders
           }
           // For non-resize: React commit calls app.render() if state changed
         }
-        await run?.()                            // inner plugins (teardown)
+        await run?.() // inner plugins (teardown)
       }
     }
     // Terminal cleanup: createTerm registers process exit hooks
