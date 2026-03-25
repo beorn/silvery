@@ -7,8 +7,8 @@
  */
 
 import { describe, test, expect } from "vitest"
-import { planScrollRender } from "@silvery/ag-term/pipeline/content-phase"
-import type { ScrollPlanInputs, ScrollPlan } from "@silvery/ag-term/pipeline/content-phase"
+import { planScrollRender } from "@silvery/ag-term/pipeline/render-phase"
+import type { ScrollPlanInputs, ScrollPlan } from "@silvery/ag-term/pipeline/render-phase"
 
 /** All-false inputs (fresh render, nothing changed). */
 function defaults(): ScrollPlanInputs {

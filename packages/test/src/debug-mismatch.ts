@@ -11,7 +11,7 @@
 
 import type { Cell } from "@silvery/ag-term/buffer"
 import type { BoxProps, AgNode, Rect, TextProps } from "@silvery/ag/types"
-import type { ContentPhaseStats } from "@silvery/ag-term/pipeline/types"
+import type { RenderPhaseStats } from "@silvery/ag-term/pipeline/types"
 
 // ============================================================================
 // Types
@@ -352,9 +352,9 @@ export function buildMismatchContext(
  * Format mismatch context as a human-readable string.
  *
  * @param ctx - The mismatch debug context (node attribution, dirty flags, scroll, fast-path)
- * @param contentPhaseStats - Optional content-phase instrumentation snapshot (auto-included by SILVERY_STRICT)
+ * @param renderPhaseStats - Optional render-phase instrumentation snapshot (auto-included by SILVERY_STRICT)
  */
-export function formatMismatchContext(ctx: MismatchDebugContext, contentPhaseStats?: ContentPhaseStats): string {
+export function formatMismatchContext(ctx: MismatchDebugContext, renderPhaseStats?: RenderPhaseStats): string {
   const lines: string[] = []
 
   // Header
@@ -459,10 +459,10 @@ export function formatMismatchContext(ctx: MismatchDebugContext, contentPhaseSta
     lines.push("")
   }
 
-  // Content-phase instrumentation stats
-  if (contentPhaseStats) {
-    const s = contentPhaseStats
-    lines.push("CONTENT PHASE STATS:")
+  // Render-phase instrumentation stats
+  if (renderPhaseStats) {
+    const s = renderPhaseStats
+    lines.push("RENDER PHASE STATS:")
     lines.push(`  nodesVisited: ${s.nodesVisited}  nodesRendered: ${s.nodesRendered}  nodesSkipped: ${s.nodesSkipped}`)
     lines.push(`  textNodes: ${s.textNodes}  boxNodes: ${s.boxNodes}  clearOps: ${s.clearOps}`)
     // Per-flag breakdown (why nodes weren't skipped)

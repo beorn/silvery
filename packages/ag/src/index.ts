@@ -69,5 +69,8 @@ export type {
 export { createKeyEvent, createFocusEvent, dispatchKeyEvent, dispatchFocusEvent } from "./focus-events"
 export type { SilveryKeyEvent, SilveryFocusEvent, FocusEventProps } from "./focus-events"
 
+// TextFrame
+export type { TextFrame, FrameCell, RGB } from "./text-frame"
+
 // Tree Utilities
 export { getAncestorPath, pointInRect } from "./tree-utils"

@@ -2,9 +2,9 @@
 
 Postmortems and strategies from past debugging sessions. Read [CLAUDE.md](CLAUDE.md) for the normative pipeline reference first.
 
-## The Big 4 Content-Phase Bugs
+## The Big 4 Render-Phase Bugs
 
-`SILVERY_STRICT=1` revealed 402 mismatches across the content phase. Reduced to 47 (88%) by fixing four categories:
+`SILVERY_STRICT=1` revealed 402 mismatches across the render phase. Reduced to 47 (88%) by fixing four categories:
 
 1. **Dirty flag propagation failures** — Layout-phase changes weren't propagating `subtreeDirty` to ancestors. Added `markLayoutAncestorDirty()` helper. Without it, ~200 nodes would re-render on every border color change due to misusing `needsOwnRepaint` where `contentAreaAffected` was needed.
 
@@ -38,7 +38,7 @@ Fix: Added `rowExtrasEquals()` to buffer.ts that checks all Map-based data (true
 
 Also fixed latent width-indexing bug: `rowMetadataEquals`/`rowCharsEquals` used `this.width`-based indexing for both buffers, wrong when widths differ (e.g., during resize). Now uses separate `otherStart = y * other.width`.
 
-**Key insight**: `SILVERY_STRICT` verifies both buffer content (content phase) and ANSI output (vt100 backend). It cannot detect bugs where our internal parser agrees with our generator but a real terminal disagrees. Use `SILVERY_STRICT_TERMINAL=xterm` or `SILVERY_STRICT_ACCUMULATE` for those.
+**Key insight**: `SILVERY_STRICT` verifies both buffer content (render phase) and ANSI output (vt100 backend). It cannot detect bugs where our internal parser agrees with our generator but a real terminal disagrees. Use `SILVERY_STRICT_TERMINAL=xterm` or `SILVERY_STRICT_ACCUMULATE` for those.
 
 ## Output Phase: CJK Wide Char Cursor Drift (2026-02-25)
 
@@ -76,7 +76,7 @@ Flag emoji are regional indicator sequences (U+1F1E6..U+1F1FF pairs). Some termi
 
 **Symptom**: After j+l navigation at 200+ cols on a board with flag emoji in the title, the first column shows duplicate card content, stale border fragments, and overlapping cards. Only manifests at wide terminals because the title bar (with flag emoji) is on the same row as the garbled content.
 
-**Why SILVERY_STRICT didn't catch it**: STRICT compares buffer content (content phase) and ANSI output via vt100 backend, which is correct. The vt100 backend uses `replayAnsiWithStyles` which has the same width assumption as the buffer (returns 2 for flag emoji), so it agrees with the buffer. Only feeding ANSI through a real xterm.js terminal emulator (`@termless/xtermjs`) reveals the divergence.
+**Why SILVERY_STRICT didn't catch it**: STRICT compares buffer content (render phase) and ANSI output via vt100 backend, which is correct. The vt100 backend uses `replayAnsiWithStyles` which has the same width assumption as the buffer (returns 2 for flag emoji), so it agrees with the buffer. Only feeding ANSI through a real xterm.js terminal emulator (`@termless/xtermjs`) reveals the divergence.
 
 **Fix**: Two complementary changes to `output-phase.ts`:
 

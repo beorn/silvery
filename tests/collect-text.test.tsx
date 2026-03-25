@@ -11,9 +11,9 @@
  * 2. render-text.ts collectTextContent (EXPORTED) — ANSI-styled text for rendering
  * 3. render-text.ts collectPlainText — plain text for DOM-level truncation budget
  * 4. render-text.ts collectTextWithBg — ANSI-styled text + bg segments for rendering
- * 5. content-phase-adapter.ts collectTextContent — plain text (adapter path)
- * 6. content-phase-adapter.ts collectStyledSegments — styled segments (adapter path)
- * 7. content-phase-adapter.ts collectPlainTextAdapter — plain text for transform
+ * 5. render-phase-adapter.ts collectTextContent — plain text (adapter path)
+ * 6. render-phase-adapter.ts collectStyledSegments — styled segments (adapter path)
+ * 7. render-phase-adapter.ts collectPlainTextAdapter — plain text for transform
  * 8. reconciler/nodes.ts collectNodeTextContent — plain text for measure function
  *
  * Key behavioral differences documented by these tests:
@@ -495,7 +495,7 @@ describe("behavioral differences between implementations", () => {
       // When the full pipeline runs, hidden nodes are excluded because
       // the reconciler's collectNodeTextContent (used for measure) DOES
       // skip hidden nodes, so hidden text gets 0 size in layout.
-      // The content-phase-adapter also skips hidden nodes.
+      // The render-phase-adapter also skips hidden nodes.
       // This means layout won't allocate space, even though render-text
       // would include the text if it were called directly.
       const render = createRenderer({ cols: 40, rows: 5 })
@@ -591,7 +591,7 @@ describe("behavioral differences between implementations", () => {
       expect(result).toBe("has-text-content")
     })
 
-    test("content-phase-adapter requires isRawText for leaf text", () => {
+    test("render-phase-adapter requires isRawText for leaf text", () => {
       // The adapter's collectTextContent checks `isRawText && textContent !== undefined`
       // This is tested indirectly through the full pipeline when using the adapter path.
       // Here we document the difference: a node with textContent but isRawText=false
@@ -655,7 +655,7 @@ describe("cross-implementation consistency", () => {
   /**
    * These tests verify that the different text collection implementations
    * produce consistent results when exercised through the full pipeline.
-   * Layout (measure) and rendering (content phase) must agree on text
+   * Layout (measure) and rendering (render phase) must agree on text
    * content for correct output.
    */
 

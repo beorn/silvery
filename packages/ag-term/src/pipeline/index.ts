@@ -44,7 +44,7 @@ export type {
   PipelineContext,
   NodeRenderState,
   ClipBounds,
-  ContentPhaseStats,
+  RenderPhaseStats,
   NodeTraceEntry,
   BgConflictMode,
 } from "./types"
@@ -59,12 +59,12 @@ export {
   screenRectPhase,
   notifyLayoutSubscribers,
 } from "./layout-phase"
-export { contentPhase, clearBgConflictWarnings, setBgConflictMode } from "./content-phase"
-export { contentPhaseAdapter } from "./content-phase-adapter"
+export { renderPhase, clearBgConflictWarnings, setBgConflictMode } from "./render-phase"
+export { renderPhaseAdapter } from "./render-phase-adapter"
 export { outputPhase } from "./output-phase"
 
-import { contentPhaseAdapter } from "./content-phase-adapter"
-import { clearBgConflictWarnings, contentPhase } from "./content-phase"
+import { renderPhaseAdapter } from "./render-phase-adapter"
+import { clearBgConflictWarnings, renderPhase } from "./render-phase"
 import { layoutPhase, notifyLayoutSubscribers, screenRectPhase, scrollPhase, stickyPhase } from "./layout-phase"
 // Import for orchestration
 import { measurePhase } from "./measure-phase"
@@ -259,7 +259,7 @@ function executeRenderCore(
   {
     using _content = render.span("content")
     const t3 = performance.now()
-    buffer = contentPhase(root, prevBuffer, ctx)
+    buffer = renderPhase(root, prevBuffer, ctx)
     tContent = performance.now() - t3
     log.debug?.(`content: ${tContent.toFixed(2)}ms`)
   }
@@ -275,7 +275,7 @@ function executeRenderCore(
       output = outputFn(prevBuffer, buffer, mode, scrollbackOffset, termRows, cursorPos)
     } catch (e) {
       // Output phase (STRICT output verification) may throw a diagnostic error.
-      // Attach the content-phase buffer so callers can still save it for
+      // Attach the render-phase buffer so callers can still save it for
       // incremental rendering continuity — the buffer is correct even when
       // the ANSI output verification fails.
       if (e instanceof Error) {
@@ -400,7 +400,7 @@ export function executeRenderAdapter(
   {
     using _content = render.span("content")
     const t3 = Date.now()
-    buffer = contentPhaseAdapter(root)
+    buffer = renderPhaseAdapter(root)
     log.debug?.(`content: ${Date.now() - t3}ms`)
   }
 

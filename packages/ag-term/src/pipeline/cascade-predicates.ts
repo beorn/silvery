@@ -4,7 +4,7 @@
  * These 6 computed values (plus 1 intermediate: textPaintDirty) control the
  * entire incremental rendering cascade. Extracted here for exhaustive testing.
  *
- * The actual rendering code in content-phase.ts computes some inputs inline
+ * The actual rendering code in render-phase.ts computes some inputs inline
  * (absoluteChildMutated, descendantOverflowChanged require node tree access),
  * but the boolean algebra is identical.
  *
@@ -17,7 +17,7 @@
  * │     && !ancestorLayoutChanged                                              │
  * │   True only when hasPrevBuffer=true AND all 7 dirty flags are false.       │
  * │   When true, the node is skipped entirely (clone has correct pixels).      │
- * │   NOTE: content-phase.ts also checks !scrollOffsetChanged (node-level      │
+ * │   NOTE: render-phase.ts also checks !scrollOffsetChanged (node-level      │
  * │   defensive check for scroll containers — not modeled here).               │
  * ├─────────────────────────────────────────────────────────────────────────────┤
  * │ textPaintDirty (intermediate)                                              │
@@ -96,7 +96,7 @@ export interface CascadeOutputs {
  * Compute all cascade predicate values from boolean inputs.
  *
  * This is a pure function — no side effects, no node dependencies.
- * The formulas exactly match those in content-phase.ts renderNodeToBuffer.
+ * The formulas exactly match those in render-phase.ts renderNodeToBuffer.
  */
 export function computeCascade(inputs: CascadeInputs): CascadeOutputs {
   const {

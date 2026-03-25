@@ -220,7 +220,7 @@ Follow [Conventional Commits](https://conventionalcommits.org):
 ```
 feat(hooks): add useContentRect for dimension feedback
 fix(output): correct wide character diffing in buffer
-refactor(pipeline): extract content phase into separate module
+refactor(pipeline): extract render phase into separate module
 docs: update components reference
 test: add VirtualList edge case coverage
 perf(buffer): reduce allocations in cell comparison

@@ -1,13 +1,13 @@
 /**
- * Phase 3: Content Phase (Adapter-aware) -- DIVERGENT RENDERER
+ * Phase 3: Render Phase (Adapter-aware) -- DIVERGENT RENDERER
  *
  * A simplified, adapter-agnostic content renderer that renders the full node
  * tree to a RenderBuffer every frame. Used by `executeRenderAdapter()` for
  * non-terminal targets (xterm.js web showcases, canvas, etc.) where the main
- * terminal-optimized content phase cannot be used.
+ * terminal-optimized render phase cannot be used.
  *
- * Relationship to content-phase.ts:
- *   content-phase.ts is the primary renderer for terminal output. It has
+ * Relationship to render-phase.ts:
+ *   render-phase.ts is the primary renderer for terminal output. It has
  *   incremental rendering (dirty flags, buffer cloning, fast-path skips),
  *   bg inheritance via findInheritedBg(), ANSI-aware text rendering, theme
  *   context propagation, region clearing, excess area cleanup, descendant
@@ -20,12 +20,12 @@
  * Why it exists:
  *   The RenderAdapter abstraction (see render-adapter.ts) allows silvery to
  *   target different backends -- terminal, xterm.js, canvas. The main
- *   content-phase.ts is tightly coupled to TerminalBuffer (cell-level access,
+ *   render-phase.ts is tightly coupled to TerminalBuffer (cell-level access,
  *   getCellBg, scrollRegion, packed metadata). This adapter version works with
  *   any RenderBuffer implementation, making it usable for web showcases and
  *   future non-terminal targets.
  *
- * Known divergences from content-phase.ts:
+ * Known divergences from render-phase.ts:
  *   - No incremental rendering: full re-render every frame (no dirty flag
  *     evaluation, no buffer cloning, no fast-path skips)
  *   - No bg inheritance via findInheritedBg() for text -- uses a simpler
@@ -43,9 +43,9 @@
  *   The xterm-unification design (docs/design/xterm-unification.md) proposes
  *   eliminating this file by making xterm.js use the main terminal pipeline
  *   via createXtermProvider(). Since xterm.js is a terminal emulator that
- *   accepts ANSI output, it can use the real content-phase.ts + output-phase.ts
+ *   accepts ANSI output, it can use the real render-phase.ts + output-phase.ts
  *   and benefit from incremental rendering. Until then, this file must be
- *   maintained in parallel -- any rendering feature added to content-phase.ts
+ *   maintained in parallel -- any rendering feature added to render-phase.ts
  *   may need a corresponding (simplified) implementation here.
  */
 
@@ -65,14 +65,14 @@ import { formatTextLines } from "./render-text"
  * @param root The root SilveryNode
  * @returns A RenderBuffer with the rendered content
  */
-export function contentPhaseAdapter(root: AgNode): RenderBuffer {
+export function renderPhaseAdapter(root: AgNode): RenderBuffer {
   if (!hasRenderAdapter()) {
-    throw new Error("contentPhaseAdapter called without a render adapter set")
+    throw new Error("renderPhaseAdapter called without a render adapter set")
   }
 
   const layout = root.contentRect
   if (!layout) {
-    throw new Error("contentPhaseAdapter called before layout phase")
+    throw new Error("renderPhaseAdapter called before layout phase")
   }
 
   const adapter = getRenderAdapter()
@@ -420,7 +420,7 @@ function renderOutlineAdapter(
 
 /**
  * Walk the parent chain to find the nearest ancestor Box with backgroundColor.
- * Mirrors findInheritedBg() in content-phase.ts.
+ * Mirrors findInheritedBg() in render-phase.ts.
  */
 function findAncestorBg(node: AgNode): string | undefined {
   let current = node.parent
@@ -938,7 +938,7 @@ function renderNormalChildren(
 
   const hasStickyChildren = !!(node.stickyChildren && node.stickyChildren.length > 0)
 
-  // Multi-pass rendering to match CSS paint order (and content-phase.ts):
+  // Multi-pass rendering to match CSS paint order (and render-phase.ts):
   // 1. Normal-flow children (skip sticky and absolute)
   // 2. Sticky children at computed positions
   // 3. Absolute children on top of everything

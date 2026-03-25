@@ -7,7 +7,7 @@ Canonical reference for debugging rendering issues. All other docs link here ins
 ### Verification Modes
 
 ```bash
-# Buffer-level: incremental content phase must produce same buffer as fresh render
+# Buffer-level: incremental render phase must produce same buffer as fresh render
 SILVERY_STRICT=1 bun run app
 
 # ANSI-level: verify output via internal VT100 parser (fast, same process)
@@ -42,7 +42,7 @@ All diagnostic output is routed through [loggily](https://github.com/beorn/loggi
 # All silvery diagnostic output (file-based to avoid stdout corruption)
 DEBUG=silvery:* DEBUG_LOG=/tmp/silvery.log bun run app
 
-# Content phase stats only (nodes visited/rendered/skipped per frame)
+# Render phase stats only (nodes visited/rendered/skipped per frame)
 DEBUG=silvery:content DEBUG_LOG=/tmp/silvery.log bun run app
 
 # Per-node trace entries (requires SILVERY_STRICT for trace collection)
@@ -63,20 +63,20 @@ SILVERY_INSTRUMENT=1 bun run app
 
 #### Loggily Namespace Reference
 
-| Namespace               | What                                               |
-| ----------------------- | -------------------------------------------------- |
-| `silvery:pipeline`      | Frame-level spans with per-phase timing            |
-| `silvery:content`       | Content phase stats per frame (render/skip counts) |
-| `silvery:content:trace` | Per-node trace entries (skip/render decisions)     |
-| `silvery:content:cell`  | Per-cell debug (node coverage at target coords)    |
-| `silvery:measure`       | Measure phase debug (text measurement calls)       |
-| `@silvery/ag-react`     | React reconciler pipeline spans                    |
+| Namespace               | What                                              |
+| ----------------------- | ------------------------------------------------- |
+| `silvery:pipeline`      | Frame-level spans with per-phase timing           |
+| `silvery:content`       | Render phase stats per frame (render/skip counts) |
+| `silvery:content:trace` | Per-node trace entries (skip/render decisions)    |
+| `silvery:content:cell`  | Per-cell debug (node coverage at target coords)   |
+| `silvery:measure`       | Measure phase debug (text measurement calls)      |
+| `@silvery/ag-react`     | React reconciler pipeline spans                   |
 
 ### Enriched STRICT Errors
 
 When `SILVERY_STRICT` detects a mismatch, the `IncrementalRenderMismatchError` automatically captures:
 
-- Content-phase stats (nodes visited/rendered/skipped, per-flag breakdown)
+- Render-phase stats (nodes visited/rendered/skipped, per-flag breakdown)
 - Cell attribution (mismatch debug context)
 - Dirty flags, scroll state, fast-path analysis
 
@@ -84,13 +84,13 @@ The scheduler auto-enables instrumentation for the STRICT comparison render. No 
 
 ## What Each Mode Catches (and Misses)
 
-| Mode                      | Catches                                                                                                    | Misses                                                                                                   |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `STRICT`                  | Content phase bugs (wrong dirty flag evaluation, skipped nodes, wrong region clearing, scroll tier errors) | Output phase bugs, terminal interpretation bugs                                                          |
-| `STRICT_TERMINAL=vt100`   | changesToAnsi bugs where our parser disagrees with our generator (style transitions, cursor arithmetic)    | Bugs where parser and generator agree but real terminals disagree (pending-wrap, `\x1b[K` in wrap state) |
-| `STRICT_TERMINAL=xterm`   | Terminal interpretation bugs (xterm.js-specific: OSC 66, wide char cursor, buffer overflow)                | Ghostty-specific bugs, bugs requiring accumulated state                                                  |
-| `STRICT_TERMINAL=ghostty` | Ghostty-specific terminal interpretation bugs                                                              | xterm.js-specific bugs                                                                                   |
-| `STRICT_ACCUMULATE`       | Compounding errors across multiple frames                                                                  | Same limitation as vt100 (self-referential parser)                                                       |
+| Mode                      | Catches                                                                                                   | Misses                                                                                                   |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `STRICT`                  | Render phase bugs (wrong dirty flag evaluation, skipped nodes, wrong region clearing, scroll tier errors) | Output phase bugs, terminal interpretation bugs                                                          |
+| `STRICT_TERMINAL=vt100`   | changesToAnsi bugs where our parser disagrees with our generator (style transitions, cursor arithmetic)   | Bugs where parser and generator agree but real terminals disagree (pending-wrap, `\x1b[K` in wrap state) |
+| `STRICT_TERMINAL=xterm`   | Terminal interpretation bugs (xterm.js-specific: OSC 66, wide char cursor, buffer overflow)               | Ghostty-specific bugs, bugs requiring accumulated state                                                  |
+| `STRICT_TERMINAL=ghostty` | Ghostty-specific terminal interpretation bugs                                                             | xterm.js-specific bugs                                                                                   |
+| `STRICT_ACCUMULATE`       | Compounding errors across multiple frames                                                                 | Same limitation as vt100 (self-referential parser)                                                       |
 
 **Hierarchy**: `STRICT` (buffer) → `STRICT_TERMINAL=vt100` (ANSI) → `STRICT_TERMINAL=xterm` (terminal) → `STRICT_TERMINAL=all` (cross-backend).
 
@@ -111,7 +111,7 @@ The scheduler auto-enables instrumentation for the STRICT comparison render. No 
 
 4. **Check instrumentation**: `SILVERY_INSTRUMENT=1` enables stats collection. View with `DEBUG=silvery:content DEBUG_LOG=/tmp/silvery.log` (loggily output) or programmatically via `globalThis.__silvery_content_detail`. Useful for understanding whether too many or too few nodes rendered.
 
-5. **Check the five critical formulas**: `layoutChanged`, `contentAreaAffected`, `contentRegionCleared`, `skipBgFill`, `childrenNeedFreshRender` in `renderNodeToBuffer` (content-phase.ts). If any is wrong, the cascade propagates errors to the entire subtree.
+5. **Check the five critical formulas**: `layoutChanged`, `contentAreaAffected`, `contentRegionCleared`, `skipBgFill`, `childrenNeedFreshRender` in `renderNodeToBuffer` (render-phase.ts). If any is wrong, the cascade propagates errors to the entire subtree.
 
 6. **Text bg inheritance**: Text nodes inherit bg via `inheritedBg` (from `findInheritedBg`), not buffer reads. Viewport clears and region clears still affect buffer state, which matters for the `getCellBg` legacy fallback (used by scroll indicators). If your fix clears a region, verify it clears to the correct bg (usually `null` to match fresh render state).
 
@@ -127,7 +127,7 @@ The scheduler auto-enables instrumentation for the STRICT comparison render. No 
 | Content correct initially, wrong after navigation          | Incremental rendering bug; `SILVERY_STRICT=1` will catch it                                                                    |
 | Colors wrong but characters correct (garble)               | Output phase: `diffBuffers` row pre-check skipping true-color Map diffs; check `rowExtrasEquals`                               |
 | Text bg different from parent Box bg                       | `inheritedBg` from `findInheritedBg`; check if ancestor Box has `backgroundColor`; check region clearing                       |
-| Flickering on every render                                 | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of content phase                                      |
+| Flickering on every render                                 | Check `layoutChangedThisFrame` flag; verify `syncPrevLayout` runs at end of render phase                                       |
 | Stale overlay pixels after shrink (black area)             | `clearExcessArea` not called; check `contentRegionCleared` + `forceRepaint` interaction                                        |
 | CJK/wide char garble, text shifts right                    | `bufferToAnsi` cursor drift: wide char without continuation at col+1. Run `SILVERY_STRICT_TERMINAL=xterm`                      |
 | Flag emoji garble at wide terminals (200+ cols)            | `bufferToAnsi`/`changesToAnsi` cursor re-sync after wide chars; `wrapTextSizing`                                               |

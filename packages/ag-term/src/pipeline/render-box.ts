@@ -18,7 +18,7 @@ import type { NodeRenderState, PipelineContext } from "./types"
 /**
  * Get the effective background color string for a Box.
  * Returns explicit backgroundColor if set, otherwise theme.bg if theme is set.
- * Used by both renderBox (paint fill) and content-phase (cascade logic).
+ * Used by both renderBox (paint fill) and render-phase (cascade logic).
  */
 export function getEffectiveBg(props: BoxProps): string | undefined {
   if (props.backgroundColor) return props.backgroundColor as string

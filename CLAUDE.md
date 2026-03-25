@@ -76,16 +76,16 @@ These are workspace packages for development. Users do not import from them dire
 
 ## Key Internals
 
-| File                                             | What                                                 |
-| ------------------------------------------------ | ---------------------------------------------------- |
-| `packages/ag-term/src/ansi/term.ts`              | Term type and createTerm() — the central abstraction |
-| `packages/ag-term/src/runtime/term-provider.ts`  | Terminal as Provider (state, events, input parsing)  |
-| `packages/ag-term/src/runtime/run.tsx`           | Layer 2 entry point — run(<App />, term)             |
-| `packages/ag-term/src/runtime/create-app.tsx`    | Layer 3 — multi-provider apps with zustand store     |
-| `packages/ag-term/src/pipeline/content-phase.ts` | Incremental rendering (most complex)                 |
-| `packages/ag-term/src/pipeline/output-phase.ts`  | Buffer diff, ANSI output generation                  |
-| `packages/ag-term/src/pipeline/layout-phase.ts`  | Layout, scroll, sticky, screen rects                 |
-| `packages/ag-term/src/pipeline/CLAUDE.md`        | Pipeline internals docs (read before editing)        |
+| File                                            | What                                                 |
+| ----------------------------------------------- | ---------------------------------------------------- |
+| `packages/ag-term/src/ansi/term.ts`             | Term type and createTerm() — the central abstraction |
+| `packages/ag-term/src/runtime/term-provider.ts` | Terminal as Provider (state, events, input parsing)  |
+| `packages/ag-term/src/runtime/run.tsx`          | Layer 2 entry point — run(<App />, term)             |
+| `packages/ag-term/src/runtime/create-app.tsx`   | Layer 3 — multi-provider apps with zustand store     |
+| `packages/ag-term/src/pipeline/render-phase.ts` | Incremental rendering (most complex)                 |
+| `packages/ag-term/src/pipeline/output-phase.ts` | Buffer diff, ANSI output generation                  |
+| `packages/ag-term/src/pipeline/layout-phase.ts` | Layout, scroll, sticky, screen rects                 |
+| `packages/ag-term/src/pipeline/CLAUDE.md`       | Pipeline internals docs (read before editing)        |
 
 ## Documentation Site
 

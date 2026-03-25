@@ -12,7 +12,7 @@
  *
  * ## What This Tests
  *
- * The content phase incremental path:
+ * The render phase incremental path:
  *   executeRender(root, cols, rows, prevBuffer) vs executeRender(root, cols, rows, null)
  *
  * Bugs targeted:

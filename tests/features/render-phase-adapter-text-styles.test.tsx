@@ -1,17 +1,17 @@
 /**
- * Content Phase Adapter — Text Style Tests
+ * Render Phase Adapter — Text Style Tests
  *
  * Tests that the adapter-path (used by renderToXterm) correctly handles
  * nested text styles, internal_transform, and hidden child skipping.
  *
  * Bug: km-silvery.adapter-text-styles — collectTextContent() in
- * content-phase-adapter.ts just concatenates raw textContent recursively,
+ * render-phase-adapter.ts just concatenates raw textContent recursively,
  * losing nested styles, transforms, and hidden-child skipping.
  */
 import React from "react"
 import { describe, test, expect } from "vitest"
 import { Box, Text } from "@silvery/ag-react"
-import { contentPhaseAdapter } from "@silvery/ag-term/pipeline/content-phase-adapter"
+import { renderPhaseAdapter } from "@silvery/ag-term/pipeline/render-phase-adapter"
 import { setRenderAdapter, hasRenderAdapter } from "@silvery/ag-term/render-adapter"
 import { terminalAdapter, TerminalRenderBuffer } from "@silvery/ag-term/adapters/terminal-adapter"
 import { setLayoutEngine } from "@silvery/ag-term/layout-engine"
@@ -61,7 +61,7 @@ function renderViaAdapter(element: React.ReactElement, cols: number, rows: numbe
   screenRectPhase(root)
   notifyLayoutSubscribers(root)
 
-  return contentPhaseAdapter(root) as TerminalRenderBuffer
+  return renderPhaseAdapter(root) as TerminalRenderBuffer
 }
 
 /** Extract visible text from a buffer row. */
@@ -80,7 +80,7 @@ function rowText(buffer: TerminalRenderBuffer, row: number): string {
 // Test 1: Nested styled Text
 // ============================================================================
 
-describe("content-phase-adapter nested text styles", () => {
+describe("render-phase-adapter nested text styles", () => {
   test("nested bold Text applies bold attribute to buffer cells", () => {
     const buffer = renderViaAdapter(
       <Box width={30}>
@@ -199,7 +199,7 @@ describe("content-phase-adapter nested text styles", () => {
 // Test 2: internal_transform
 // ============================================================================
 
-describe("content-phase-adapter internal_transform", () => {
+describe("render-phase-adapter internal_transform", () => {
   test("internal_transform is applied to nested Text content", () => {
     // internal_transform is set by the Transform component internally.
     // We simulate it by using it on a Text props directly.
@@ -245,7 +245,7 @@ describe("content-phase-adapter internal_transform", () => {
 // Test 3: Hidden child skipping
 // ============================================================================
 
-describe("content-phase-adapter hidden child skipping", () => {
+describe("render-phase-adapter hidden child skipping", () => {
   test("display='none' Text children are excluded from collected text", () => {
     const buffer = renderViaAdapter(
       <Box width={30}>

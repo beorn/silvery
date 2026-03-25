@@ -1,5 +1,5 @@
 /**
- * Phase 3: Content Phase
+ * Phase 3: Render Phase
  *
  * Render all nodes to a terminal buffer.
  *
@@ -7,7 +7,7 @@
  * and delegating to specialized rendering functions for boxes and text.
  *
  * Layout (top-down):
- *   contentPhase → renderNodeToBuffer → buildCascadeInputs + computeCascade
+ *   renderPhase → renderNodeToBuffer → buildCascadeInputs + computeCascade
  *                                     → traceRenderDecision (diagnostics)
  *                                     → executeRegionClearing
  *                                     → renderOwnContent
@@ -28,7 +28,7 @@ import { pushContextTheme, popContextTheme } from "@silvery/theme/state"
 import type { Theme } from "@silvery/theme/types"
 import { computeCascade } from "./cascade-predicates"
 import type { CascadeOutputs } from "./cascade-predicates"
-import type { ClipBounds, ContentPhaseStats, NodeRenderState, NodeTraceEntry, PipelineContext } from "./types"
+import type { ClipBounds, RenderPhaseStats, NodeRenderState, NodeTraceEntry, PipelineContext } from "./types"
 
 const contentLog = createLogger("silvery:content")
 const traceLog = createLogger("silvery:content:trace")
@@ -41,15 +41,15 @@ const cellLog = createLogger("silvery:content:cell")
  * @param prevBuffer Previous buffer for incremental rendering (optional)
  * @returns A TerminalBuffer with the rendered content
  */
-export function contentPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ctx?: PipelineContext): TerminalBuffer {
+export function renderPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, ctx?: PipelineContext): TerminalBuffer {
   const layout = root.contentRect
   if (!layout) {
-    throw new Error("contentPhase called before layout phase")
+    throw new Error("renderPhase called before layout phase")
   }
 
   // Resolve instrumentation from ctx (if provided) or module-level globals
   const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
-  const stats = ctx?.stats ?? _contentPhaseStats
+  const stats = ctx?.stats ?? _renderPhaseStats
   const nodeTrace = ctx?.nodeTrace ?? _nodeTrace
   const nodeTraceEnabled = ctx?.nodeTraceEnabled ?? _nodeTraceEnabled
 
@@ -57,7 +57,7 @@ export function contentPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, c
   const hasPrevBuffer = prevBuffer && prevBuffer.width === layout.width && prevBuffer.height === layout.height
 
   if (instrumentEnabled) {
-    _contentPhaseCallCount++
+    _renderPhaseCallCount++
     stats._prevBufferNull = prevBuffer == null ? 1 : 0
     stats._prevBufferDimMismatch = prevBuffer && !hasPrevBuffer ? 1 : 0
     stats._hasPrevBuffer = hasPrevBuffer ? 1 : 0
@@ -65,7 +65,7 @@ export function contentPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, c
     stats._layoutH = layout.height
     stats._prevW = prevBuffer?.width ?? 0
     stats._prevH = prevBuffer?.height ?? 0
-    stats._callCount = _contentPhaseCallCount
+    stats._callCount = _renderPhaseCallCount
   }
 
   const t0 = instrumentEnabled ? performance.now() : 0
@@ -103,7 +103,7 @@ export function contentPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, c
     contentLog.debug?.(
       `frame ${snap._callCount}: ${snap.nodesRendered}/${snap.nodesVisited} rendered, ${snap.nodesSkipped} skipped (${tClone.toFixed(1)}ms clone, ${tRender.toFixed(1)}ms render)`,
     )
-    for (const key of Object.keys(stats) as (keyof ContentPhaseStats)[]) {
+    for (const key of Object.keys(stats) as (keyof RenderPhaseStats)[]) {
       ;(stats as any)[key] = 0
     }
     stats.cascadeMinDepth = 999
@@ -122,7 +122,7 @@ export function contentPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, c
     nodeTrace.length = 0
   }
 
-  // Sync prevLayout after content phase to prevent staleness on subsequent frames.
+  // Sync prevLayout after render phase to prevent staleness on subsequent frames.
   // Without this, prevLayout stays at the old value from propagateLayout, causing
   // hasChildPositionChanged and clearExcessArea to use stale coordinates.
   syncPrevLayout(root)
@@ -133,7 +133,7 @@ export function contentPhase(root: AgNode, prevBuffer?: TerminalBuffer | null, c
 /**
  * Sync prevLayout to contentRect for all nodes in the tree.
  *
- * Called at the end of each contentPhase pass. This prevents:
+ * Called at the end of each renderPhase pass. This prevents:
  * 1. The O(N) staleness bug where prevLayout drifts from contentRect
  *    causing !rectEqual to always be true on subsequent frames.
  * 2. Stale old-bounds references in clearExcessArea on doRender iteration 2+.
@@ -158,8 +158,8 @@ function syncPrevLayout(root: AgNode): void {
 const _instrumentEnabled =
   typeof process !== "undefined" && !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_INSTRUMENT)
 
-/** Mutable stats counters — reset after each contentPhase call */
-const _contentPhaseStats: ContentPhaseStats = {
+/** Mutable stats counters — reset after each renderPhase call */
+const _renderPhaseStats: RenderPhaseStats = {
   nodesVisited: 0,
   nodesRendered: 0,
   nodesSkipped: 0,
@@ -191,7 +191,7 @@ const _contentPhaseStats: ContentPhaseStats = {
   _callCount: 0,
 }
 
-let _contentPhaseCallCount = 0
+let _renderPhaseCallCount = 0
 
 /** Module-level node trace (fallback when ctx.nodeTrace is not provided) */
 const _nodeTrace: NodeTraceEntry[] = []
@@ -234,7 +234,7 @@ function renderNodeToBuffer(
   } = nodeState
   // Resolve instrumentation from ctx or module globals
   const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
-  const stats = ctx?.stats ?? _contentPhaseStats
+  const stats = ctx?.stats ?? _renderPhaseStats
   const nodeTrace = ctx?.nodeTrace ?? _nodeTrace
   const nodeTraceEnabled = ctx?.nodeTraceEnabled ?? _nodeTraceEnabled
   if (instrumentEnabled) stats.nodesVisited++
@@ -599,7 +599,7 @@ function traceRenderDecision(
   _coversCellNow: boolean | undefined,
   _coversCellPrev: boolean | null | undefined,
   instrumentEnabled: boolean,
-  stats: ContentPhaseStats,
+  stats: RenderPhaseStats,
   nodeTrace: NodeTraceEntry[],
 ): void {
   const { contentAreaAffected, contentRegionCleared, skipBgFill, childrenNeedFreshRender } = cascade
@@ -715,7 +715,7 @@ function executeRegionClearing(
   contentRegionCleared: boolean,
   descendantOverflowChanged: boolean,
   instrumentEnabled: boolean,
-  stats: ContentPhaseStats,
+  stats: RenderPhaseStats,
 ): void {
   if (contentRegionCleared) {
     if (instrumentEnabled) stats.clearOps++
@@ -766,7 +766,7 @@ function renderOwnContent(
   nodeState: NodeRenderState,
   skipBgFill: boolean,
   instrumentEnabled: boolean,
-  stats: ContentPhaseStats,
+  stats: RenderPhaseStats,
   ctx?: PipelineContext,
 ): Color | undefined {
   // Compute inherited bg once for boxes -- used by border and outline rendering
@@ -924,7 +924,7 @@ function renderScrollContainerChildren(
   const { clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned, ancestorLayoutChanged } = nodeState
   // Resolve instrumentation from ctx or module globals
   const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
-  const stats = ctx?.stats ?? _contentPhaseStats
+  const stats = ctx?.stats ?? _renderPhaseStats
   const layout = node.contentRect
   const ss = node.scrollState
   if (!layout || !ss) return
@@ -1154,7 +1154,7 @@ function renderNormalChildren(
   const { scrollOffset, clipBounds, hasPrevBuffer, ancestorCleared, bufferIsCloned, ancestorLayoutChanged } = nodeState
   // Resolve instrumentation from ctx or module globals
   const instrumentEnabled = ctx?.instrumentEnabled ?? _instrumentEnabled
-  const stats = ctx?.stats ?? _contentPhaseStats
+  const stats = ctx?.stats ?? _renderPhaseStats
   const layout = node.contentRect
   if (!layout) return
 

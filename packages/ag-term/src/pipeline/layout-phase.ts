@@ -118,7 +118,7 @@ function propagateLayout(node: AgNode, parentX: number, parentY: number): void {
   // Set authoritative "layout changed this frame" flag.
   // Unlike !rectEqual(prevLayout, contentRect) which becomes stale when
   // layout phase skips on subsequent frames, this flag is explicitly set
-  // each time propagateLayout runs and cleared by the content phase.
+  // each time propagateLayout runs and cleared by the render phase.
   node.layoutChangedThisFrame = !!(node.prevLayout && !rectEqual(node.prevLayout, node.contentRect))
 
   // STRICT invariant: if layoutChangedThisFrame is true, prevLayout must differ from contentRect.
@@ -134,7 +134,7 @@ function propagateLayout(node: AgNode, parentX: number, parentY: number): void {
     }
   }
 
-  // When layout changes, mark ancestors subtreeDirty so contentPhase doesn't
+  // When layout changes, mark ancestors subtreeDirty so renderPhase doesn't
   // fast-path skip them. Without this, a deeply nested node whose dimensions
   // change (e.g., width 3→4) would never be re-rendered because all ancestors
   // appear clean — their own layout didn't change, just a descendant's did.
@@ -435,7 +435,7 @@ function calculateScrollState(node: AgNode, props: BoxProps, skipStateUpdates: b
   const prevLastVisible = node.scrollState?.lastVisibleChild ?? lastVisible
 
   // Mark node dirty if scroll offset or visible range changed (for incremental rendering)
-  // Without this, contentPhase would skip the container and children would
+  // Without this, renderPhase would skip the container and children would
   // remain at their old pixel positions in the cloned buffer
   if (scrollOffset !== prevOffset || firstVisible !== prevFirstVisible || lastVisible !== prevLastVisible) {
     node.subtreeDirty = true

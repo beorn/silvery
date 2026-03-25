@@ -1,5 +1,5 @@
 /**
- * Content Phase Adapter — Text Clipping Tests
+ * Render Phase Adapter — Text Clipping Tests
  *
  * Tests that the adapter-path (used by renderToXterm) correctly clips
  * text to Box bounds and overflow="hidden" containers.
@@ -7,7 +7,7 @@
 import React from "react"
 import { describe, test, expect } from "vitest"
 import { Box, Text } from "@silvery/ag-react"
-import { contentPhaseAdapter } from "@silvery/ag-term/pipeline/content-phase-adapter"
+import { renderPhaseAdapter } from "@silvery/ag-term/pipeline/render-phase-adapter"
 import { setRenderAdapter, hasRenderAdapter } from "@silvery/ag-term/render-adapter"
 import { terminalAdapter, TerminalRenderBuffer } from "@silvery/ag-term/adapters/terminal-adapter"
 import { setLayoutEngine } from "@silvery/ag-term/layout-engine"
@@ -57,7 +57,7 @@ function renderViaAdapter(element: React.ReactElement, cols: number, rows: numbe
   screenRectPhase(root)
   notifyLayoutSubscribers(root)
 
-  return contentPhaseAdapter(root) as TerminalRenderBuffer
+  return renderPhaseAdapter(root) as TerminalRenderBuffer
 }
 
 /** Extract visible text from a buffer row. */
@@ -72,7 +72,7 @@ function rowText(buffer: TerminalRenderBuffer, row: number): string {
   return text.replace(/ +$/, "") // trim trailing spaces
 }
 
-describe("content-phase-adapter border clipping", () => {
+describe("render-phase-adapter border clipping", () => {
   test("horizontal border is clipped by overflow=hidden parent", () => {
     // A bordered Box wider than its overflow=hidden parent — border chars
     // should not extend past the parent's clip bounds
@@ -118,7 +118,7 @@ describe("content-phase-adapter border clipping", () => {
   })
 })
 
-describe("content-phase-adapter text clipping", () => {
+describe("render-phase-adapter text clipping", () => {
   test("text is clipped to its layout width", () => {
     // A Text node inside a narrow Box — text should not extend past the Box
     const buffer = renderViaAdapter(
@@ -173,7 +173,7 @@ describe("content-phase-adapter text clipping", () => {
   })
 })
 
-describe("content-phase-adapter outline side flags", () => {
+describe("render-phase-adapter outline side flags", () => {
   test("outlineTop=false hides top border", () => {
     const buffer = renderViaAdapter(
       <Box outlineStyle="single" outlineTop={false} width={10} height={4}>
@@ -255,7 +255,7 @@ describe("content-phase-adapter outline side flags", () => {
   })
 })
 
-describe("content-phase-adapter text wrapping", () => {
+describe("render-phase-adapter text wrapping", () => {
   test("text wraps to multiple lines when wrap='wrap'", () => {
     const buffer = renderViaAdapter(
       <Box width={10} height={5}>

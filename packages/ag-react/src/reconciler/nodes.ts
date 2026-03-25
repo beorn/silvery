@@ -97,10 +97,10 @@ export function createNode(
         text = newText
         cachedText = text
         // Clear contentDirty so subsequent measure calls in same layout pass use cache.
-        // NOTE: This means the content phase won't see contentDirty=true for text nodes
-        // whose content changed. The content phase uses stylePropsDirty (which survives the
+        // NOTE: This means the render phase won't see contentDirty=true for text nodes
+        // whose content changed. The render phase uses stylePropsDirty (which survives the
         // measure phase) combined with the node type check to correctly identify text
-        // nodes that need region clearing. See contentAreaAffected in content-phase.ts.
+        // nodes that need region clearing. See contentAreaAffected in render-phase.ts.
         node.contentDirty = false
       }
       if (!text) {

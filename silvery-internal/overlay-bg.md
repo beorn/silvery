@@ -15,7 +15,7 @@ Overlay elements (modal dialogs, dropdowns, tooltips) need opaque backgrounds to
 - `ModalDialog` uses `backgroundColor="$surface-bg"` (hardcoded in the component).
 - `$bg` and `$surface` are theme tokens resolved via `resolveThemeColor()`.
 - The terminal's true background is the ANSI "default background" — `\x1b[49m`. This is special: it means "whatever the terminal's configured background is", which might be transparent, an image, or a gradient. No hex color can replicate this.
-- The rendering pipeline uses `backgroundColor` in the content phase to fill cells with a specific color. An empty/undefined `backgroundColor` means "transparent" (inherit from parent or terminal default).
+- The rendering pipeline uses `backgroundColor` in the render phase to fill cells with a specific color. An empty/undefined `backgroundColor` means "transparent" (inherit from parent or terminal default).
 
 ## Proposed API
 
@@ -72,9 +72,9 @@ Add `elevation={0|1|2|3}` to Box, which maps to theme tokens (`$bg`, `$surface`,
 
 1. **Add `$default` to the theme color resolver**:
    - In `resolveThemeColor()`, if token is `$default`, return a sentinel value (e.g., `"\x1b[49m"` or a special string like `__DEFAULT_BG__`).
-   - The content phase already handles `backgroundColor` — it would need to recognize the sentinel and emit `\x1b[49m` instead of a 24-bit color sequence.
+   - The render phase already handles `backgroundColor` — it would need to recognize the sentinel and emit `\x1b[49m` instead of a 24-bit color sequence.
 
-2. **Update the content phase** (`pipeline/render-text.ts` and `pipeline/content-phase.ts`):
+2. **Update the render phase** (`pipeline/render-text.ts` and `pipeline/render-phase.ts`):
    - When a cell's `bg` is the sentinel, emit `\x1b[49m` (SGR 49 = default background) instead of `\x1b[48;2;R;G;Bm`.
    - This is different from "no background" (transparent) — it actively resets to default.
 
@@ -86,7 +86,7 @@ Add `elevation={0|1|2|3}` to Box, which maps to theme tokens (`$bg`, `$surface`,
 
 - **Diff algorithm**: The incremental diff compares cell backgrounds. A "default bg" sentinel must compare correctly — two cells with `$default` are the same, but `$default` differs from any specific color. The sentinel needs a stable identity.
 - **Cell storage**: The buffer stores colors as numbers (or undefined for transparent). Default-bg would need a distinct representation from both "transparent" and "specific color".
-- **Inheritance**: Children of a `$default` bg parent should inherit the default bg, not transparent. This may already work if the cell is filled during the content phase.
+- **Inheritance**: Children of a `$default` bg parent should inherit the default bg, not transparent. This may already work if the cell is filled during the render phase.
 
 ### Effort Estimate
 

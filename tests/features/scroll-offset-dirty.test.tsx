@@ -1,8 +1,8 @@
 /**
- * Regression: Scroll offset change not dirtying content phase (km-rpv0n)
+ * Regression: Scroll offset change not dirtying render phase (km-rpv0n)
  *
  * When scrollTo prop changes on a scroll container but layout rect stays the
- * same, the content phase must re-render the scroll container's children at
+ * same, the render phase must re-render the scroll container's children at
  * their new positions. Without proper dirty flag propagation, the fast-path
  * skip in canSkipEntireSubtree would keep stale pixels from the cloned buffer.
  */

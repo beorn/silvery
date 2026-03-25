@@ -17,7 +17,7 @@ export {
   rectEqual,
   scrollPhase,
   screenRectPhase,
-  contentPhase,
+  renderPhase,
   outputPhase,
   // Utilities
   clearBgConflictWarnings,

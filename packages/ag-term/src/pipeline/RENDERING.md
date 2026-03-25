@@ -60,7 +60,7 @@ Compute screen-relative positions for each node (content position minus ancestor
 
 Fire `useContentRect()` and `useScreenRect()` subscriber callbacks. Skipped for STRICT comparison renders to avoid side effects.
 
-#### Phase 3: Content (`content-phase.ts`)
+#### Phase 3: Content (`render-phase.ts`)
 
 Render the node tree to a `TerminalBuffer` (2D grid of cells).
 
@@ -174,7 +174,7 @@ The terminal process (Ghostty, iTerm2, etc.) receives the ANSI byte stream and:
 | Dirty flags → content              | **STRICT** (buffer comparison)          | Incremental buffer === fresh buffer       | Only buffer state, not ANSI output                     |
 | Measure/Layout                     | Flexily tests, STRICT                   | Yoga constraints and computed rects       | -                                                      |
 | Scroll/Sticky                      | Fuzz tests, STRICT                      | Scroll tier selection, sticky positioning | -                                                      |
-| Content phase                      | **STRICT**                              | Buffer correctness                        | Excellent — catches ALL content bugs                   |
+| Render phase                       | **STRICT**                              | Buffer correctness                        | Excellent — catches ALL content bugs                   |
 | diffBuffers                        | diff-buffers.test.ts, STRICT_TERMINAL   | Change detection completeness             | -                                                      |
 | bufferToAnsi                       | STRICT_TERMINAL=vt100                   | Full render ANSI correctness              | vt100 uses internal parser; use =xterm for independent |
 | changesToAnsi                      | STRICT_TERMINAL=vt100, wide char matrix | Incremental ANSI correctness              | vt100 uses internal parser; use =xterm for independent |
@@ -209,5 +209,5 @@ See **[debugging.md](../../../docs/guide/debugging.md)** for the full table, dia
 | `pipeline/index.ts`         | ~417   | Phase orchestration (measure → layout → scroll → content → output) |
 | `pipeline/measure-phase.ts` | -      | Intrinsic size measurement                                         |
 | `pipeline/layout-phase.ts`  | -      | Yoga layout, scroll, sticky, screen rects                          |
-| `pipeline/content-phase.ts` | -      | Node→buffer rendering (the complex part)                           |
+| `pipeline/render-phase.ts`  | -      | Node→buffer rendering (the complex part)                           |
 | `pipeline/output-phase.ts`  | ~2900+ | Buffer diff, ANSI generation, all verification modes               |

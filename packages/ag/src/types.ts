@@ -209,7 +209,7 @@ export interface BoxProps extends FlexboxProps, StyleProps, TestProps, MouseEven
 
   /**
    * Override theme for this subtree — $token colors resolve against this theme.
-   * Pushed onto the context theme stack during content phase tree walk.
+   * Pushed onto the context theme stack during render phase tree walk.
    */
   theme?: import("@silvery/theme").Theme
 
@@ -304,7 +304,7 @@ export interface AgNode {
   prevRenderRect: Rect | null
 
   /** True if layout changed THIS frame (position or size).
-   *  Set by propagateLayout in layout phase. Cleared by content phase.
+   *  Set by propagateLayout in layout phase. Cleared by render phase.
    *  This is the authoritative signal for "did layout change?" — unlike
    *  !rectEqual(prevLayout, contentRect) which becomes stale when layout
    *  phase skips (no dirty nodes). */
@@ -315,33 +315,33 @@ export interface AgNode {
   layoutDirty: boolean
 
   /** True if content changed but layout didn't (e.g., text content update).
-   *  Set by reconciler. Cleared by content phase after rendering.
+   *  Set by reconciler. Cleared by render phase after rendering.
    *  NOTE: measure phase may clear this for its text-collection cache —
    *  stylePropsDirty acts as the surviving witness for style changes. */
   contentDirty: boolean
 
   /** True if visual props changed (color, backgroundColor, borderStyle, etc.).
    *  Set by reconciler alongside contentDirty. Survives measure phase clearing
-   *  of contentDirty, ensuring content phase still detects style changes.
-   *  Cleared by content phase after rendering. */
+   *  of contentDirty, ensuring render phase still detects style changes.
+   *  Cleared by render phase after rendering. */
   stylePropsDirty: boolean
 
   /** True if backgroundColor specifically changed (added, modified, or removed).
-   *  Set by reconciler when backgroundColor prop changes. Used by content phase
+   *  Set by reconciler when backgroundColor prop changes. Used by render phase
    *  to avoid cascading re-renders for border-only paint changes (borderColor
-   *  doesn't affect the content area). Cleared by content phase. */
+   *  doesn't affect the content area). Cleared by render phase. */
   bgDirty: boolean
 
   /** True if this node or any descendant has dirty content/layout.
    *  Propagated upward by reconciler when any descendant is dirtied.
    *  When only subtreeDirty (no other flags), the node's OWN rendering is
-   *  skipped — only descendants are traversed. Cleared by content phase. */
+   *  skipped — only descendants are traversed. Cleared by render phase. */
   subtreeDirty: boolean
 
   /** True if direct children were added, removed, or reordered.
    *  Set by reconciler on child list changes. Triggers own repaint
    *  (gap regions may need clearing) and forces child re-render.
-   *  Cleared by content phase. */
+   *  Cleared by render phase. */
   childrenDirty: boolean
 
   /** Callbacks subscribed to layout changes (used by useContentRect) */

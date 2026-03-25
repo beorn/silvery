@@ -49,7 +49,7 @@ export function setOnNodeRemoved(callback: ((removedNode: AgNode) => void) | nul
 
 /**
  * Mark this node and all ancestors as having dirty content/layout.
- * Used to enable fast-path subtree skipping in contentPhase.
+ * Used to enable fast-path subtree skipping in renderPhase.
  */
 function markSubtreeDirty(node: AgNode | null): void {
   while (node && !node.subtreeDirty) {
@@ -63,7 +63,7 @@ function markSubtreeDirty(node: AgNode | null): void {
  * virtual text subtree (no layoutNode), the nearest layout ancestor must be
  * notified so its measure function re-collects descendant text and the layout
  * engine recalculates dimensions. Without this, the measure cache stays stale
- * and contentPhase renders at the wrong size / doesn't clear old content.
+ * and renderPhase renders at the wrong size / doesn't clear old content.
  *
  * No-op when the node already has a layoutNode (normal path handles it).
  */
@@ -457,12 +457,12 @@ export const hostConfig = {
     // style-only changes (borderColor, color, etc. — don't affect layout).
     const contentChanged = contentPropsChanged(oldProps as Record<string, unknown>, newProps as Record<string, unknown>)
     if (contentChanged) {
-      // stylePropsDirty: always set for any visual change. Content phase uses this
+      // stylePropsDirty: always set for any visual change. Render phase uses this
       // to know the node needs re-rendering (border, text style, bg, etc.).
       instance.stylePropsDirty = true
       // contentDirty: only for text content changes (not style-only changes).
       // Style-only changes (borderColor, color, bold) set stylePropsDirty but NOT
-      // contentDirty, so content phase won't cascade to children for border-only
+      // contentDirty, so render phase won't cascade to children for border-only
       // changes where the content area is unchanged.
       if (contentChanged === "text") {
         instance.contentDirty = true
@@ -471,7 +471,7 @@ export const hostConfig = {
         }
       }
       // bgDirty: specifically track backgroundColor changes (added/changed/removed).
-      // Content phase uses this to cascade re-renders only when the content area
+      // Render phase uses this to cascade re-renders only when the content area
       // was actually affected (not for border-only paint changes).
       if (
         (oldProps as Record<string, unknown>).backgroundColor !== (newProps as Record<string, unknown>).backgroundColor
@@ -502,12 +502,12 @@ export const hostConfig = {
 
     // Only mark subtree/ancestor dirty when visual changes were detected.
     // Data attributes (data-*), event handlers, and other non-visual props
-    // don't affect rendering, so propagating dirty flags wastes content phase
+    // don't affect rendering, so propagating dirty flags wastes render phase
     // time traversing unchanged subtrees.
     //
     // scrollTo/scrollOffset changes affect rendering via scroll phase (children
-    // shift position), so they must propagate subtreeDirty for content phase
-    // traversal. Without this, the content phase fast-path skips ancestors of
+    // shift position), so they must propagate subtreeDirty for render phase
+    // traversal. Without this, the render phase fast-path skips ancestors of
     // the scroll container, never reaching the container to re-render at the
     // new scroll position.
     const scrollToChanged =
@@ -682,7 +682,7 @@ export const hostConfig = {
    * Hide an instance during Suspense.
    * Called when React needs to hide content while showing a fallback.
    *
-   * Must set stylePropsDirty (content phase fast-path skip includes stylePropsDirty check),
+   * Must set stylePropsDirty (render phase fast-path skip includes stylePropsDirty check),
    * layoutDirty + layoutNode.markDirty() (hiding changes measured content — the
    * layout engine must recalculate dimensions), and markLayoutAncestorDirty
    * (virtual text nodes without layoutNode need the nearest layout ancestor dirty).

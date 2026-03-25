@@ -1,14 +1,14 @@
 /**
- * Content Phase Adapter — Absolute Paint Order Tests
+ * Render Phase Adapter — Absolute Paint Order Tests
  *
  * Tests that the adapter renders absolute children AFTER normal-flow children,
- * matching CSS paint order (and the main content-phase.ts behavior).
+ * matching CSS paint order (and the main render-phase.ts behavior).
  *
- * Bug: renderNormalChildren() in content-phase-adapter.ts has only two passes:
+ * Bug: renderNormalChildren() in render-phase-adapter.ts has only two passes:
  *   1. Non-sticky children (includes absolute — should NOT)
  *   2. Sticky children
  *
- * Expected: three passes (matching content-phase.ts):
+ * Expected: three passes (matching render-phase.ts):
  *   1. Normal-flow children (skip sticky AND absolute)
  *   2. Sticky children
  *   3. Absolute children (painted on top)
@@ -16,7 +16,7 @@
 import React from "react"
 import { describe, test, expect } from "vitest"
 import { Box, Text } from "@silvery/ag-react"
-import { contentPhaseAdapter } from "@silvery/ag-term/pipeline/content-phase-adapter"
+import { renderPhaseAdapter } from "@silvery/ag-term/pipeline/render-phase-adapter"
 import { setRenderAdapter, hasRenderAdapter } from "@silvery/ag-term/render-adapter"
 import { terminalAdapter, TerminalRenderBuffer } from "@silvery/ag-term/adapters/terminal-adapter"
 import { setLayoutEngine } from "@silvery/ag-term/layout-engine"
@@ -66,7 +66,7 @@ function renderViaAdapter(element: React.ReactElement, cols: number, rows: numbe
   screenRectPhase(root)
   notifyLayoutSubscribers(root)
 
-  return contentPhaseAdapter(root) as TerminalRenderBuffer
+  return renderPhaseAdapter(root) as TerminalRenderBuffer
 }
 
 /** Extract visible text from a buffer row. */
@@ -81,7 +81,7 @@ function rowText(buffer: TerminalRenderBuffer, row: number): string {
   return text.replace(/ +$/, "") // trim trailing spaces
 }
 
-describe("content-phase-adapter absolute paint order", () => {
+describe("render-phase-adapter absolute paint order", () => {
   test("absolute child paints on top even when declared before normal-flow sibling", () => {
     // The absolute child is declared FIRST in DOM order, but should still paint
     // ON TOP of the normal-flow sibling (which overlaps at the same position).

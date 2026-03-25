@@ -33,11 +33,11 @@ export function getActiveTheme(): Theme {
 }
 
 // ============================================================================
-// Context Theme Stack (per-subtree overrides during content phase)
+// Context Theme Stack (per-subtree overrides during render phase)
 // ============================================================================
 
 /**
- * Stack of per-subtree theme overrides, pushed/popped during content phase
+ * Stack of per-subtree theme overrides, pushed/popped during render phase
  * tree walk. When a Box has a `theme` prop, its theme is pushed before
  * rendering children and popped after. getActiveTheme() checks this stack
  * first, falling back to _activeTheme.
@@ -47,12 +47,12 @@ export function getActiveTheme(): Theme {
  */
 const _contextStack: Theme[] = []
 
-/** Push a context theme (called by content phase for Box nodes with theme prop). */
+/** Push a context theme (called by render phase for Box nodes with theme prop). */
 export function pushContextTheme(theme: Theme): void {
   _contextStack.push(theme)
 }
 
-/** Pop a context theme (called by content phase after processing Box subtree). */
+/** Pop a context theme (called by render phase after processing Box subtree). */
 export function popContextTheme(): void {
   _contextStack.pop()
 }

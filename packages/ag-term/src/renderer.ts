@@ -43,7 +43,7 @@ import { createCursorStore, CursorProvider } from "@silvery/ag-react/hooks/useCu
 import { keyToAnsi, parseKey, splitRawInput } from "@silvery/ag/keys"
 import { parseBracketedPaste } from "./bracketed-paste"
 import { IncrementalRenderMismatchError } from "./scheduler.js"
-import type { ContentPhaseStats } from "./pipeline/types"
+import type { RenderPhaseStats } from "./pipeline/types"
 import { debugTree } from "@silvery/test/debug"
 
 // ============================================================================
@@ -573,7 +573,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
               buffer = result.buffer
             } catch (e) {
               // STRICT output verification may throw from the output phase.
-              // The content phase buffer is still valid and attached to the
+              // The render phase buffer is still valid and attached to the
               // error by executeRenderCore — extract it so lastBuffer()
               // returns the correct frame, not a stale one.
               renderError = e as Error
@@ -583,7 +583,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
               }
             }
             // Always update prevBuffer when a new buffer was produced,
-            // even if the output phase threw. The buffer from contentPhase
+            // even if the output phase threw. The buffer from renderPhase
             // is correct; the STRICT verification exception is a diagnostic that
             // should not corrupt incremental rendering state.
             if (buffer) {
@@ -600,7 +600,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
         })
         // Re-throw non-diagnostic errors. IncrementalRenderMismatchError from
         // STRICT output verification is diagnostic — the buffer was saved above, and
-        // the content-phase STRICT check below will detect real mismatches.
+        // the render-phase STRICT check below will detect real mismatches.
         // Propagating diagnostic throws would crash sendInput() callers.
         if (renderError) {
           if (!((renderError as Error) instanceof IncrementalRenderMismatchError)) {
@@ -620,7 +620,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       }
 
       // When multiple passes ran, the final buffer's dirty rows only cover
-      // the LAST pass's content phase writes. Mark all rows dirty so the
+      // the LAST pass's render phase writes. Mark all rows dirty so the
       // output phase does a full diff scan.
       if (incremental && buffer && singlePassCount > 1) {
         buffer.markAllRowsDirty()
@@ -694,7 +694,7 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
       }
 
       // When multiple iterations ran, the final buffer's dirty rows only cover
-      // the LAST iteration's content phase writes. Rows changed in earlier
+      // the LAST iteration's render phase writes. Rows changed in earlier
       // iterations but not the last are invisible to diffBuffers' dirty row
       // scan, causing those rows to be skipped → garbled output. Mark all rows
       // dirty so the output phase does a full diff scan.
@@ -732,19 +732,19 @@ export function render(element: ReactElement, optsOrStore: RenderOptions | Store
             // Build rich debug context
             const ctx = buildMismatchContext(root, x, y, a, b, instance.renderCount)
 
-            // Capture content-phase instrumentation snapshot
-            const contentPhaseStats: ContentPhaseStats | undefined = (globalThis as any).__silvery_content_detail
+            // Capture render-phase instrumentation snapshot
+            const renderPhaseStats: RenderPhaseStats | undefined = (globalThis as any).__silvery_content_detail
               ? structuredClone((globalThis as any).__silvery_content_detail)
               : undefined
 
-            const debugInfo = formatMismatchContext(ctx, contentPhaseStats)
+            const debugInfo = formatMismatchContext(ctx, renderPhaseStats)
 
             // Include text output for full picture
             const incText = bufferToText(buffer!)
             const freshText = bufferToText(freshBuffer)
             const msg = debugInfo + trapInfo + `--- incremental ---\n${incText}\n--- fresh ---\n${freshText}`
             throw new IncrementalRenderMismatchError(msg, {
-              contentPhaseStats,
+              renderPhaseStats,
               mismatchContext: ctx,
             })
           }

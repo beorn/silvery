@@ -1,5 +1,5 @@
 /**
- * Exhaustive tests for the cascade predicates in content-phase.ts.
+ * Exhaustive tests for the cascade predicates in render-phase.ts.
  *
  * 14 boolean inputs = 2^14 = 16,384 combinations.
  * Each combination is tested against the expected output computed from the formulas.

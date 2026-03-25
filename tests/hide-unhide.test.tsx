@@ -213,11 +213,11 @@ describe("hide/unhide instances (Suspense)", () => {
   })
 
   test("hideInstance sets stylePropsDirty on the instance", () => {
-    // Without stylePropsDirty, the content phase fast-path can skip the node on the
+    // Without stylePropsDirty, the render phase fast-path can skip the node on the
     // next render after unhide. The skip condition is:
     //   !contentDirty && !stylePropsDirty && !layoutChanged && !subtreeDirty && !childrenDirty
     // contentDirty alone is consumed by the measure phase (cleared in measure func),
-    // so stylePropsDirty is the surviving flag that ensures content phase re-renders the node.
+    // so stylePropsDirty is the surviving flag that ensures render phase re-renders the node.
     const node = createNode("silvery-box", {})
     // Clear all flags (simulate post-render state)
     node.contentDirty = false

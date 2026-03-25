@@ -1,9 +1,9 @@
 > **See [RENDERING.md](RENDERING.md) for the complete step-by-step rendering algorithm and test coverage map.**
-> This file (CLAUDE.md) covers the content phase internals. RENDERING.md covers the full pipeline end-to-end.
+> This file (CLAUDE.md) covers the render phase internals. RENDERING.md covers the full pipeline end-to-end.
 
 # Pipeline Internals
 
-Read this before modifying content-phase.ts, render-text.ts, render-box.ts, or layout-phase.ts. These files implement incremental rendering -- the most complex and bug-prone part of Silvery.
+Read this before modifying render-phase.ts, render-text.ts, render-box.ts, or layout-phase.ts. These files implement incremental rendering -- the most complex and bug-prone part of Silvery.
 
 ## Pipeline Overview
 
@@ -13,22 +13,22 @@ The render pipeline runs on every frame. Phases execute in strict order:
 measure -> layout -> scroll -> sticky -> screenRect -> [notify] -> content -> output
 ```
 
-| Phase       | File                 | What it does                                                                               |
-| ----------- | -------------------- | ------------------------------------------------------------------------------------------ |
-| measure     | measure-phase.ts     | Set Yoga constraints for fit-content nodes                                                 |
-| layout      | layout-phase.ts      | Run `calculateLayout()`, propagate rects, set `prevLayout` and `subtreeDirty`              |
-| scroll      | layout-phase.ts      | Calculate scroll offset, visible children, sticky positions for overflow=scroll containers |
-| sticky      | layout-phase.ts      | Calculate sticky render offsets for non-scroll parents with sticky children                |
-| screenRect  | layout-phase.ts      | Compute screen-relative positions (content position minus ancestor scroll offsets)         |
-| notify      | layout-phase.ts      | Fire `layoutSubscribers` callbacks (drives `useContentRect`/`useScreenRect`)               |
-| **content** | **content-phase.ts** | **Render nodes to a TerminalBuffer (this is the complex part)**                            |
-| output      | output-phase.ts      | Diff current buffer against previous, emit minimal ANSI escape sequences                   |
+| Phase       | File                | What it does                                                                               |
+| ----------- | ------------------- | ------------------------------------------------------------------------------------------ |
+| measure     | measure-phase.ts    | Set Yoga constraints for fit-content nodes                                                 |
+| layout      | layout-phase.ts     | Run `calculateLayout()`, propagate rects, set `prevLayout` and `subtreeDirty`              |
+| scroll      | layout-phase.ts     | Calculate scroll offset, visible children, sticky positions for overflow=scroll containers |
+| sticky      | layout-phase.ts     | Calculate sticky render offsets for non-scroll parents with sticky children                |
+| screenRect  | layout-phase.ts     | Compute screen-relative positions (content position minus ancestor scroll offsets)         |
+| notify      | layout-phase.ts     | Fire `layoutSubscribers` callbacks (drives `useContentRect`/`useScreenRect`)               |
+| **content** | **render-phase.ts** | **Render nodes to a TerminalBuffer (this is the complex part)**                            |
+| output      | output-phase.ts     | Diff current buffer against previous, emit minimal ANSI escape sequences                   |
 
 Orchestrated by `executeRender()` in `pipeline/index.ts`. The scheduler (`scheduler.ts`) calls `executeRender()` and passes the previous frame's buffer for incremental rendering.
 
 ## Dirty Flags
 
-The reconciler sets flags on nodes when props/children change. The content phase reads them to decide what to re-render. All are cleared by the content phase after processing.
+The reconciler sets flags on nodes when props/children change. The render phase reads them to decide what to re-render. All are cleared by the render phase after processing.
 
 | Flag              | Set by                    | Meaning                                                                                  |
 | ----------------- | ------------------------- | ---------------------------------------------------------------------------------------- |
@@ -41,13 +41,13 @@ The reconciler sets flags on nodes when props/children change. The content phase
 
 The layout phase also sets `subtreeDirty` upward when a descendant's `contentRect` changes via `layoutChangedThisFrame`.
 
-| Flag                     | Set by       | Meaning                                                                          |
-| ------------------------ | ------------ | -------------------------------------------------------------------------------- |
-| `layoutChangedThisFrame` | Layout phase | Node's contentRect changed this frame; cleared by content phase after processing |
+| Flag                     | Set by       | Meaning                                                                         |
+| ------------------------ | ------------ | ------------------------------------------------------------------------------- |
+| `layoutChangedThisFrame` | Layout phase | Node's contentRect changed this frame; cleared by render phase after processing |
 
 ## Incremental Rendering Model
 
-This is the core optimization. Instead of rendering every node every frame, the content phase:
+This is the core optimization. Instead of rendering every node every frame, the render phase:
 
 1. **Clones** the previous frame's buffer (the buffer the output phase already diffed)
 2. **Skips** subtrees where nothing changed (their pixels are already correct in the clone)
@@ -70,7 +70,7 @@ If `hasPrevBuffer` is false (first render or dimension change), nothing is skipp
 
 ### Key Invariant
 
-**Incremental render must produce identical output to a fresh render.** `SILVERY_STRICT=1` verifies this by running both and comparing cell-by-cell. Every content-phase change must be validated against this invariant.
+**Incremental render must produce identical output to a fresh render.** `SILVERY_STRICT=1` verifies this by running both and comparing cell-by-cell. Every render-phase change must be validated against this invariant.
 
 ## The hasPrevBuffer / ancestorCleared / ancestorLayoutChanged Cascade
 
@@ -207,10 +207,10 @@ Sticky children use `ancestorCleared=false` to match fresh render semantics. On 
 
 ## Text Background Inheritance (inheritedBg)
 
-Text nodes with no explicit background inherit bg from their nearest ancestor Box with `backgroundColor`. This is now done via explicit `inheritedBg` parameter passed through the render tree, computed by `findInheritedBg()` in content-phase.ts.
+Text nodes with no explicit background inherit bg from their nearest ancestor Box with `backgroundColor`. This is now done via explicit `inheritedBg` parameter passed through the render tree, computed by `findInheritedBg()` in render-phase.ts.
 
 ```typescript
-// content-phase.ts: compute and pass inherited bg
+// render-phase.ts: compute and pass inherited bg
 const textInheritedBg = findInheritedBg(node).color
 const textInheritedFg = findInheritedFg(node)
 renderText(node, buffer, layout, props, nodeState, textInheritedBg, textInheritedFg, ctx)
@@ -260,13 +260,13 @@ When a child overflows its parent (e.g., text content extending beyond the paren
 
 ## prevLayout and layoutChangedThisFrame
 
-`layoutChanged` is now driven by the `layoutChangedThisFrame` flag (set by `propagateLayout` in layout phase, cleared by content phase after processing). This replaces the old `!rectEqual(prevLayout, contentRect)` which was permanently stale when layout phase skipped (no dirty nodes), causing O(N) content phase every frame.
+`layoutChanged` is now driven by the `layoutChangedThisFrame` flag (set by `propagateLayout` in layout phase, cleared by render phase after processing). This replaces the old `!rectEqual(prevLayout, contentRect)` which was permanently stale when layout phase skipped (no dirty nodes), causing O(N) render phase every frame.
 
 **How it works:**
 
 1. Layout phase: `propagateLayout` saves `node.prevLayout = node.contentRect`, recomputes rect, sets `node.layoutChangedThisFrame = !rectEqual(old, new)`
-2. Content phase: reads `node.layoutChangedThisFrame` for skip decisions, clears it after processing
-3. End of content phase: `syncPrevLayout` sets `prevLayout = contentRect` for all nodes, ensuring `clearExcessArea` and `hasChildPositionChanged` use correct coordinates on multi-pass doRender iterations
+2. Render phase: reads `node.layoutChangedThisFrame` for skip decisions, clears it after processing
+3. End of render phase: `syncPrevLayout` sets `prevLayout = contentRect` for all nodes, ensuring `clearExcessArea` and `hasChildPositionChanged` use correct coordinates on multi-pass doRender iterations
 
 `prevLayout` is still used by `clearExcessArea` (old bounds for excess clearing) and `hasChildPositionChanged` (sibling position shift detection), but NOT for the primary `layoutChanged` decision.
 
@@ -308,13 +308,13 @@ SILVERY_STRICT_TERMINAL=vt100 bun km view /path           # ANSI-level (fast int
 SILVERY_STRICT_TERMINAL=xterm bun km view /path           # Terminal-level (xterm.js emulator)
 SILVERY_STRICT_TERMINAL=all bun km view /path             # All backends
 DEBUG=silvery:* DEBUG_LOG=/tmp/silvery.log bun km view /path  # All silvery diagnostic output
-DEBUG=silvery:content DEBUG_LOG=/tmp/silvery.log bun km view /path  # Content phase stats
+DEBUG=silvery:content DEBUG_LOG=/tmp/silvery.log bun km view /path  # Render phase stats
 DEBUG=silvery:content:cell SILVERY_CELL_DEBUG=77,85 DEBUG_LOG=/tmp/silvery.log bun km view /path  # Per-cell trace
 TRACE=silvery:pipeline DEBUG_LOG=/tmp/silvery.log bun km view /path  # Pipeline phase timing
 SILVERY_INSTRUMENT=1 bun km view /path                    # Enable stats collection
 ```
 
-All diagnostic output is routed through loggily structured logging. The content phase has extensive instrumentation gated on `_instrumentEnabled` -- node visit/skip/render counts, cascade diagnostics, scroll container tier decisions, and per-node trace entries. Stats are also exposed on `globalThis.__silvery_content_detail` for programmatic access (STRICT diagnostics, perf profiling).
+All diagnostic output is routed through loggily structured logging. The render phase has extensive instrumentation gated on `_instrumentEnabled` -- node visit/skip/render counts, cascade diagnostics, scroll container tier decisions, and per-node trace entries. Stats are also exposed on `globalThis.__silvery_content_detail` for programmatic access (STRICT diagnostics, perf profiling).
 
 ## Inline Incremental Rendering
 
@@ -395,7 +395,7 @@ Virtual text nodes (nested `<Text>` inside `<Text>`) don't have layout nodes or 
 
 | File              | Responsibility                                                                                                             |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| content-phase.ts  | Tree traversal, dirty-flag evaluation, incremental cascade logic, scroll container tiers, region clearing                  |
+| render-phase.ts   | Tree traversal, dirty-flag evaluation, incremental cascade logic, scroll container tiers, region clearing                  |
 | render-box.ts     | Box bg fill (`skipBgFill` aware), border rendering, scroll indicators                                                      |
 | render-text.ts    | Text content collection, ANSI parsing, bg segment tracking, `inheritedBg` inheritance, bg conflict detection, inline rects |
 | layout-phase.ts   | Layout calculation, scroll state, screen rects, layout subscriber notification                                             |

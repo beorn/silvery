@@ -27,7 +27,7 @@ import { getCursorState as globalGetCursorState, type CursorAccessors } from "@s
 import { copyToClipboard as copyToClipboardImpl } from "./clipboard"
 import { ANSI, notify as notifyTerminal, setCursorStyle, resetCursorStyle } from "./output"
 import { executeRender, type PipelineConfig } from "./pipeline"
-import type { ContentPhaseStats } from "./pipeline/types"
+import type { RenderPhaseStats } from "./pipeline/types"
 import type { AgNode } from "@silvery/ag/types"
 
 const log = createLogger("silvery:scheduler")
@@ -576,12 +576,12 @@ export class RenderScheduler {
               // Build rich debug context
               const ctx = buildMismatchContext(this.root, x, y, a, b, renderNum)
 
-              // Capture content-phase instrumentation snapshot
-              const contentPhaseStats: ContentPhaseStats | undefined = (globalThis as any).__silvery_content_detail
+              // Capture render-phase instrumentation snapshot
+              const renderPhaseStats: RenderPhaseStats | undefined = (globalThis as any).__silvery_content_detail
                 ? structuredClone((globalThis as any).__silvery_content_detail)
                 : undefined
 
-              const debugInfo = formatMismatchContext(ctx, contentPhaseStats)
+              const debugInfo = formatMismatchContext(ctx, renderPhaseStats)
 
               // Include text output for full picture
               const incText = bufferToText(buffer)
@@ -594,7 +594,7 @@ export class RenderScheduler {
               log.error?.(msg)
               // Throw special error that won't be caught by general error handler
               throw new IncrementalRenderMismatchError(msg, {
-                contentPhaseStats,
+                renderPhaseStats,
                 mismatchContext: ctx,
               })
             }

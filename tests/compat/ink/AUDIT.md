@@ -193,7 +193,7 @@ These sections CANNOT move to silvery core because they implement Ink-specific s
 
 ### Strategic (> 3 days, architectural)
 
-10. **Add per-side border colors and dimColor to silvery.** `borderTopColor`, `borderBottomColor`, `borderLeftColor`, `borderRightColor`, `borderDimColor`. Closes a feature gap with Ink. Requires content-phase rendering changes.
+10. **Add per-side border colors and dimColor to silvery.** `borderTopColor`, `borderBottomColor`, `borderLeftColor`, `borderRightColor`, `borderDimColor`. Closes a feature gap with Ink. Requires render-phase rendering changes.
 
 11. **Consider a unified compat render path.** Currently the compat `render()` has two massive branches: test-mode (silveryTestRender) and interactive (renderSync). If silvery's test renderer and runtime exposed a few more lifecycle hooks (onFrame, wrapRoot, stdin bridging), the compat render could be significantly thinner.
 

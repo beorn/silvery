@@ -294,7 +294,7 @@ This works like CSS custom properties — the nearest ancestor `Box` with a `the
 determines token resolution for its descendants. Nested `theme` props cascade (innermost wins).
 When `theme` is `undefined`, tokens resolve against the root `ThemeProvider` theme.
 
-The override happens during the content phase tree walk (no React re-renders). Cost is ~2ns
+The override happens during the render phase tree walk (no React re-renders). Cost is ~2ns
 per `getActiveTheme()` call — negligible.
 
 ## useTheme() Hook

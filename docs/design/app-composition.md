@@ -47,14 +47,14 @@ term.screen.text                                           // TextFrame everywhe
 await app.run()                                            // event loop (if term has events)
 ```
 
-| Problem | Solution |
-|---------|----------|
-| 6+ types for styled text | **TextFrame** everywhere |
-| 3 return types | **One app** from `render()`, capabilities depend on term |
-| Testing inconsistency | **`render(element, term)`** — one function, term varies |
-| Monolithic App | **ag** (tree), **term** (I/O), **TextFrame** (output) |
-| Opaque pipeline | **layout → render → paint** — three independent phases |
-| No shared type | silvery + termless both produce **TextFrame** |
+| Problem                  | Solution                                                 |
+| ------------------------ | -------------------------------------------------------- |
+| 6+ types for styled text | **TextFrame** everywhere                                 |
+| 3 return types           | **One app** from `render()`, capabilities depend on term |
+| Testing inconsistency    | **`render(element, term)`** — one function, term varies  |
+| Monolithic App           | **ag** (tree), **term** (I/O), **TextFrame** (output)    |
+| Opaque pipeline          | **layout → render → paint** — three independent phases   |
+| No shared type           | silvery + termless both produce **TextFrame**            |
 
 ### Scope
 
@@ -126,9 +126,9 @@ createCanvas(canvasEl)                   // browser canvas
 Three phases, each independently useful:
 
 ```ts
-ag.layout(term.dims)           // 1. flexbox → positions/sizes
-const frame = ag.render()      // 2. positioned tree → TextFrame
-term.paint(frame)              // 3. TextFrame → output
+ag.layout(term.dims) // 1. flexbox → positions/sizes
+const frame = ag.render() // 2. positioned tree → TextFrame
+term.paint(frame) // 3. TextFrame → output
 ```
 
 Use any phase alone: layout without render (inspect sizes), render without paint (headless testing), paint without the others (re-present a saved frame).
@@ -136,6 +136,7 @@ Use any phase alone: layout without render (inspect sizes), render without paint
 `ag.render()` requires a prior `ag.layout()`. On resize, discard the previous frame (paint diffing assumes same dimensions). `toFrame(ag, dims)` combines 1+2 as convenience.
 
 **Invariants:**
+
 - `ag.render()` requires prior `ag.layout()` — calling render without layout is an error
 - Mounting triggers one immediate render (withReact calls `app.render()` on first commit)
 - `term.screen` is populated after first render, undefined before
@@ -156,14 +157,15 @@ mountSvelte(ag, Counter, { props })          // same pattern
 Adapters use ag's tree mutation API — never touch layout nodes directly. Ag keeps tree and layout nodes in sync internally:
 
 ```ts
-ag.createNode(kind, props)                   // create AgNode + LayoutNode together
-ag.insertChild(parent, child, index)         // insert in both trees
-ag.removeChild(parent, child)                // remove from both trees
-ag.updateNode(node, props)                   // update props, mark dirty
-ag.setText(node, text)                       // update text content
+ag.createNode(kind, props) // create AgNode + LayoutNode together
+ag.insertChild(parent, child, index) // insert in both trees
+ag.removeChild(parent, child) // remove from both trees
+ag.updateNode(node, props) // update props, mark dirty
+ag.setText(node, text) // update text content
 ```
 
 The adapter owns both directions:
+
 - **Rendering**: reconciler populates ag nodes from component state
 - **Input**: `useInput` registers handlers on ag nodes, events reach them via the apply chain
 
@@ -208,18 +210,18 @@ function withTerm(term) {
   return (app) => {
     let prev: TextFrame | undefined
     app.render = () => {
-      app.ag.layout(term.dims)                   // 1. positions/sizes
-      const frame = app.ag.render()              // 2. tree → TextFrame
-      term.paint?.(frame, prev)                  // 3. TextFrame → output
+      app.ag.layout(term.dims) // 1. positions/sizes
+      const frame = app.ag.render() // 2. tree → TextFrame
+      term.paint?.(frame, prev) // 3. TextFrame → output
       prev = frame
-      term.screen = frame                        // always set after render
+      term.screen = frame // always set after render
     }
     if (term.events) {
       const { run } = app
       app.run = async () => {
         app.render()
         for await (const event of term.events(app.scope?.signal)) {
-          if (event.type === "resize") prev = undefined  // reset diffing
+          if (event.type === "resize") prev = undefined // reset diffing
           app.dispatch(event)
           // No render here — React commit calls app.render() if state changed
         }
@@ -236,7 +238,7 @@ function withReact({ view }) {
   return (app) => {
     app.render ??= () => {}
     const reconciler = createReconciler(app.ag.root, app.render)
-    reconciler.render(view)  // mount immediately — stays alive until dispose
+    reconciler.render(view) // mount immediately — stays alive until dispose
     app.defer(reconciler.unmount)
     return app
   }
@@ -244,6 +246,7 @@ function withReact({ view }) {
 ```
 
 **Key decisions:**
+
 - **withReact mounts immediately** — headless testing works without `run()`.
 - **No double-render** — event loop only dispatches; rendering happens via reconciler commit.
 - **Scope integration** — `term.events(app.scope?.signal)` terminates on scope cancel.
@@ -342,8 +345,8 @@ term.screen.text
 **Locators** query the ag tree (structural). **TextFrame assertions** query rendered output (visual):
 
 ```ts
-app.getByText("Task 1").textContent()          // ag tree query
-expect(term.screen).toContainText("Hello")     // TextFrame assertion (vitest matcher)
+app.getByText("Task 1").textContent() // ag tree query
+expect(term.screen).toContainText("Hello") // TextFrame assertion (vitest matcher)
 ```
 
 ## Relationship to Existing Code

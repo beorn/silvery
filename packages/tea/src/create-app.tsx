@@ -1227,10 +1227,10 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
             const freshText = bufferToText(freshBuffer)
             const cellStr = (c: typeof a) =>
               `char=${JSON.stringify(c.char)} fg=${c.fg} bg=${c.bg} ulColor=${c.underlineColor} wide=${c.wide} cont=${c.continuation} attrs={bold=${c.attrs.bold},dim=${c.attrs.dim},italic=${c.attrs.italic},ul=${c.attrs.underline},ulStyle=${c.attrs.underlineStyle},blink=${c.attrs.blink},inv=${c.attrs.inverse},hidden=${c.attrs.hidden},strike=${c.attrs.strikethrough}}`
-            // Dump content phase stats for diagnosis
+            // Dump render phase stats for diagnosis
             const contentAll = (globalThis as any).__silvery_content_all as unknown[]
             const statsStr = contentAll
-              ? `\n--- content phase stats (${contentAll.length} calls) ---\n` +
+              ? `\n--- render phase stats (${contentAll.length} calls) ---\n` +
                 contentAll
                   .map(
                     (s: any, i: number) =>
@@ -1256,7 +1256,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
                 if (!traces || traces.length === 0) return ""
                 let out = "\n--- node trace ---"
                 for (let ti = 0; ti < traces.length; ti++) {
-                  out += `\n  contentPhase #${ti}:`
+                  out += `\n  renderPhase #${ti}:`
                   for (const t of traces[ti] as any[]) {
                     out += `\n    ${t.decision} ${t.id}(${t.type})@${t.depth} rect=${t.rect} prev=${t.prevLayout}`
                     out += ` hasPrev=${t.hasPrev} ancClr=${t.ancestorCleared} flags=[${t.flags}] layout∆=${t.layoutChanged}`
@@ -1971,7 +1971,7 @@ async function initApp<I extends Record<string, unknown>, S extends Record<strin
       flushCount++
     }
 
-    // The content phase's dirty rows are relative to _prevTermBuffer (pipeline's
+    // The render phase's dirty rows are relative to _prevTermBuffer (pipeline's
     // prev buffer). But runtime.render() diffs against its own prevBuffer, which
     // may differ when: (a) multiple doRender calls shifted _prevTermBuffer ahead,
     // or (b) the Z chord timeout causes the zoom render to arrive as a deferred

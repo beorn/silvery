@@ -1014,7 +1014,7 @@ export class TerminalBuffer {
     copy.bgColors = new Map(this.bgColors)
     copy.underlineColors = new Map(this.underlineColors)
     copy.hyperlinks = new Map(this.hyperlinks)
-    // Clone starts with all rows CLEAN. The content phase will mark only
+    // Clone starts with all rows CLEAN. The render phase will mark only
     // the rows it modifies as dirty. diffBuffers() then skips clean rows,
     // which are guaranteed identical to the prev buffer (since this is a clone).
     copy._dirtyRows.fill(0)

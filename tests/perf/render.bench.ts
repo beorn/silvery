@@ -2,7 +2,7 @@
  * Silvery Render Benchmarks
  *
  * Measures full render pipeline performance: React reconciliation + layout +
- * content phase + output phase. Tests both initial renders and re-renders
+ * render phase + output phase. Tests both initial renders and re-renders
  * (dirty-tracking updates).
  *
  * Run: bun vitest bench vendor/silvery/tests/perf/render.bench.ts

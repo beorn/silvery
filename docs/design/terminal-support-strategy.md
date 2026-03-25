@@ -94,7 +94,7 @@ createOutputPhase(caps)  → apply workarounds during ANSI generation
 createMeasurer(caps)     → adjust width calculations
 ```
 
-The compat layer is **transparent to the pipeline.** The content phase writes to a `TerminalBuffer` using `graphemeWidth()`. The output phase generates ANSI with workarounds applied. The pipeline never knows that terminals disagree.
+The compat layer is **transparent to the pipeline.** The render phase writes to a `TerminalBuffer` using `graphemeWidth()`. The output phase generates ANSI with workarounds applied. The pipeline never knows that terminals disagree.
 
 **When can we remove a workaround?** When:
 
@@ -110,9 +110,9 @@ STRICT mode is the safety net. If our workarounds are incomplete, or if a new te
 
 #### Existing STRICT levels
 
-| Flag             | What it checks                                                                 | Cost            |
-| ---------------- | ------------------------------------------------------------------------------ | --------------- |
-| `SILVERY_STRICT` | Incremental buffer == fresh buffer (content phase) + vt100 output verification | ~2x render time |
+| Flag             | What it checks                                                                | Cost            |
+| ---------------- | ----------------------------------------------------------------------------- | --------------- |
+| `SILVERY_STRICT` | Incremental buffer == fresh buffer (render phase) + vt100 output verification | ~2x render time |
 
 #### `SILVERY_STRICT_TERMINAL` (implemented)
 

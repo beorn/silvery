@@ -44,7 +44,7 @@ export interface ThemeProviderProps {
  */
 export function ThemeProvider({ theme, children }: ThemeProviderProps): React.ReactElement {
   // Set module-level active theme so parseColor() can resolve $token strings
-  // during the content phase without needing React context access.
+  // during the render phase without needing React context access.
   setActiveTheme(theme)
   return React.createElement(ThemeContext.Provider, { value: theme }, children)
 }

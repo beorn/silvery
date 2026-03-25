@@ -12,7 +12,7 @@
  * the render phases don't because hidden nodes are already laid out with 0 size).
  *
  * The ANSI-styled variants (collectTextContent in render-text.ts) and the
- * styled-segment variants (collectStyledSegments in content-phase-adapter.ts)
+ * styled-segment variants (collectStyledSegments in render-phase-adapter.ts)
  * have fundamentally different output shapes and child processing logic,
  * so they remain separate.
  */

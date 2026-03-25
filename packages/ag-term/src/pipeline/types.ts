@@ -21,7 +21,7 @@ export interface PipelineContext {
   readonly measurer: Measurer
   // Phase 3: instrumentation (all optional for backward compat)
   readonly instrumentEnabled?: boolean
-  readonly stats?: ContentPhaseStats
+  readonly stats?: RenderPhaseStats
   readonly nodeTrace?: NodeTraceEntry[]
   readonly nodeTraceEnabled?: boolean
   readonly bgConflictMode?: BgConflictMode
@@ -58,10 +58,10 @@ export interface NodeTraceEntry {
 }
 
 /**
- * Mutable stats counters for content phase instrumentation.
- * Reset after each contentPhase call.
+ * Mutable stats counters for render phase instrumentation.
+ * Reset after each renderPhase call.
  */
-export interface ContentPhaseStats {
+export interface RenderPhaseStats {
   nodesVisited: number
   nodesRendered: number
   nodesSkipped: number

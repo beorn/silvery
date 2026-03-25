@@ -265,7 +265,7 @@ Diagnostic utilities: `withDiagnostics`, `checkLayoutInvariants`, `VirtualTermin
 
 ### `@silvery/ag-term/pipeline`
 
-Render pipeline internals: `executeRender`, `executeRenderAdapter`, phase functions (`measurePhase`, `layoutPhase`, `contentPhase`, `outputPhase`, `scrollPhase`, `stickyPhase`, `screenRectPhase`, `contentPhaseAdapter`).
+Render pipeline internals: `executeRender`, `executeRenderAdapter`, phase functions (`measurePhase`, `layoutPhase`, `renderPhase`, `outputPhase`, `scrollPhase`, `stickyPhase`, `screenRectPhase`, `renderPhaseAdapter`).
 
 ### `@silvery/ag-term/ansi`
 

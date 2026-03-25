@@ -7,15 +7,15 @@
 `renderToXterm()` is a parallel render path that duplicates core runtime logic:
 
 1. **Own reconciler management** — creates container, fiber root, schedules renders via `requestAnimationFrame`
-2. **Own render pipeline** — uses `executeRenderAdapter` (adapter-aware path with `contentPhaseAdapter`) instead of `executeRender` (terminal-optimized with incremental `contentPhase`)
+2. **Own render pipeline** — uses `executeRenderAdapter` (adapter-aware path with `renderPhaseAdapter`) instead of `executeRender` (terminal-optimized with incremental `renderPhase`)
 3. **No runtime features** — no `useInput`, no focus management, no `RuntimeContext`, no event loop, no store
 4. **Input handled externally** — showcases wire their own key/mouse handlers via callbacks instead of using the standard `useInput`/`useMouse` hooks
 
 This means:
 
 - Web showcases can't use `useInput`, `useFocusManager`, or any runtime hook
-- The adapter content phase (`contentPhaseAdapter`) lacks incremental rendering (full re-render every frame)
-- Two content phases must be maintained in parallel
+- The adapter render phase (`renderPhaseAdapter`) lacks incremental rendering (full re-render every frame)
+- Two render phases must be maintained in parallel
 - Bug fixes to the main pipeline don't benefit xterm.js renders
 
 ## Proposed Solution: `createXtermProvider()`
@@ -177,10 +177,10 @@ window.addEventListener("resize", () => {
 
 ## Key Decisions
 
-### Content Phase: Adapter vs Terminal
+### Render Phase: Adapter vs Terminal
 
-Currently xterm.js uses `contentPhaseAdapter` (adapter-aware, no incremental rendering).
-After unification, it would use the main `contentPhase` (terminal-optimized, incremental).
+Currently xterm.js uses `renderPhaseAdapter` (adapter-aware, no incremental rendering).
+After unification, it would use the main `renderPhase` (terminal-optimized, incremental).
 
 This is correct because:
 
@@ -222,5 +222,5 @@ Create `createTerm(xtermTerminal)` overload. Rejected because:
 Leave it as a separate lightweight path. Rejected because:
 
 - Showcases can't demonstrate runtime features (useInput, focus management)
-- Two parallel content phases is a maintenance burden
+- Two parallel render phases is a maintenance burden
 - No incremental rendering in browser = worse performance
