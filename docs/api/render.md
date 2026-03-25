@@ -186,17 +186,19 @@ import { render, renderSync, Text, createTerm } from "silvery"
 
 using term = createTerm()
 
-// Initialize layout engine with first render
-await render(<Text>Loading...</Text>, term)
+// Initialize layout engine with first render (await the thenable)
+const instance = await render(<Text>Loading...</Text>, term)
 
 // Subsequent renders can be synchronous
-const instance = renderSync(<Text>Ready!</Text>, term)
+const instance2 = renderSync(<Text>Ready!</Text>, term)
 ```
 
 ## Notes
 
-- `render()` is async because it initializes the layout engine (Flexily by default) on first call
-- The `term` parameter is required - use `createTerm()` to create one
+- `render()` is synchronous — it returns a `RenderHandle`, not a Promise
+- `RenderHandle` is thenable (`PromiseLike<Instance>`), so `await render(...)` works to get the `Instance`
+- `.run()` on the handle starts the event loop and waits for exit — the common case for interactive apps
+- The `term` parameter is optional — without it, Silvery creates a default term internally
 - Use `using term = createTerm()` for automatic cleanup with explicit resource management
 - Use `alternateScreen: true` for full-screen apps to restore terminal state on exit
 - The `patchConsole` option prevents console output from corrupting the UI

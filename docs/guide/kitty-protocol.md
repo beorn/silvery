@@ -268,7 +268,8 @@ function App() {
 
 // Enable Kitty protocol (falls back gracefully)
 using term = createTerm()
-await render(<App />, { kittyKeyboard: true })
+const app = render(<App />, term, { kittyKeyboard: true })
+await app.run()
 ```
 
 ### Key Release Events
@@ -291,9 +292,10 @@ function Game() {
 }
 
 using term = createTerm()
-await render(<Game />, {
+const app = render(<Game />, term, {
   kittyKeyboard: { reportRelease: true },
 })
+await app.run()
 ```
 
 ### Checking Protocol Support
