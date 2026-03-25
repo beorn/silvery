@@ -247,30 +247,15 @@ function Header() {
 
 **Migration**: Replace virtualization components with `overflow="scroll"`.
 
-### 6. measureElement() -> useContentRect()
+### 6. measureElement() / useLayout() -> useContentRect()
 
-**Ink**: Use `measureElement()` after render.
-
-```tsx
-const ref = useRef()
-const { width } = measureElement(ref.current)
-// Need manual re-render to use width
-```
-
-**Silvery**: `measureElement()` works for compatibility, but `useContentRect()` is simpler.
-
-```tsx
-const { width } = useContentRect()
-// Automatically re-renders with correct values
-```
-
-### 7. Hook Naming
-
-**Ink**: `useLayout` (if available)
-
-**Silvery**: `useContentRect()` is preferred. `useLayout` is a deprecated alias.
+Replace `measureElement()` and `useLayout()` with `useContentRect()` — see [section 1](#_1-components-know-their-size-the-big-win) above for why this is a significant upgrade, not just a rename.
 
 ```diff
+- const ref = useRef()
+- const { width } = measureElement(ref.current)
++ const { width } = useContentRect()
+
 - const { width } = useLayout()
 + const { width } = useContentRect()
 ```
