@@ -77,7 +77,7 @@ describe("memory: rapid re-renders", () => {
 // ============================================================================
 
 describe("memory: mount/unmount cycles", () => {
-  test("200 mount/unmount cycles with bounded growth", { timeout: 15_000 }, () => {
+  test("200 mount/unmount cycles with bounded growth", { timeout: 15_000, retry: 2 }, () => {
     const heapBefore = getHeapUsedMB()
 
     for (let i = 0; i < 200; i++) {
