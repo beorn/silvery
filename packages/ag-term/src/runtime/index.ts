@@ -52,13 +52,15 @@ export { createBuffer } from "./create-buffer"
 export { createRuntime } from "./create-runtime"
 
 // Layer 2: React integration
+// NOTE: RunHandle intentionally NOT re-exported from barrel.
+// Use pipe(create(), withAg(), withTerm()) for new apps.
+// Tests that need RunHandle import directly from "./run".
 export {
   run,
   useInput,
   useExit,
   usePaste,
   type RunOptions,
-  type RunHandle,
   type InputHandler,
   type PasteHandler,
   type Key,
