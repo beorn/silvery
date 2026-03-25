@@ -89,7 +89,7 @@ ag.render()          // positioned tree → cell grid → TextFrame
 ag.toString()        // structural text (no layout — NOT render().text)
 
 // Term — output target (dims + optional capabilities)
-type TermDef = { cols: number; rows: number }   // accepted anywhere a Term is
+// { cols: number; rows: number } accepted structurally anywhere a Term is needed
 term.dims            // { cols, rows } — always present
 term.screen?         // TextFrame — last painted frame
 term.scrollback?     // TextFrame — scroll history (emulator only)
@@ -211,7 +211,7 @@ Plugins wire the primitives together via `pipe()`. Each adds capabilities by wra
 
 ```ts
 function withTerm(term) {
-  // Normalizes TermDef → Term: { cols, rows } gets wrapped with dims, screen, etc.
+  // Normalizes bare { cols, rows } → full Term shape (dims, screen, etc.)
   return (app) => {
     let prev: TextFrame | undefined
     app.render = () => {
@@ -261,7 +261,7 @@ function withReact({ view }) {
 - **withReact mounts immediately** — headless testing works without `run()`.
 - **No double-render** — event loop only dispatches; rendering happens via reconciler commit.
 - **Scope integration** — `term.events(app.scope?.signal)` terminates on scope cancel.
-- **TermDef normalization** — `withTerm` accepts `Term | TermDef`. A bare `{ cols, rows }` works immediately (headless); a full Term adds paint/events/screen.
+- **Structural term acceptance** — `withTerm` accepts a full Term or a bare `{ cols, rows }` (no separate TermDef type). A bare dims object works immediately (headless); a full Term adds paint/events/screen.
 - **Resize triggers render unconditionally** — layout depends on dims, not just React state.
 - **`run()` wrapper semantics** — inner `run` is called after the event loop exits (teardown). Plugins that need setup-before-loop do it in the plugin body, not in `run()`.
 - **Terminal lifetime** — you dispose what you create. Pre-created Term: caller disposes. Process exit hooks are the safety net.
@@ -286,7 +286,7 @@ app = { ...app,
 
 // + withTerm(term)
 app = { ...app,
-  term,                      // Term or resolved TermDef
+  term,                      // Term (or resolved from bare { cols, rows })
   render(),                  // layout → TextFrame → paint → term.screen
   run(),                     // event loop (if term has events)
 }
@@ -298,7 +298,7 @@ app = { ...app,
 **What gets wired depends on the term:**
 
 ```
-TermDef (just dims)      → app.render (layout → TextFrame, no paint)
+{ cols, rows } (dims)    → app.render (layout → TextFrame, no paint)
 Term with paint          → app.render (layout → TextFrame → paint)
 Term with paint + events → app.render + app.run (event loop)
 ```
