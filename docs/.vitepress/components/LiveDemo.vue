@@ -120,19 +120,16 @@ onUnmounted(() => {
 
 .live-demo-viewport {
   position: relative;
-  background: #0f0f1a;
+  background: #1e1e2e;
   border: 1px solid var(--vp-c-divider);
-  border-top: none;
   border-radius: 0 0 8px 8px;
   overflow: hidden;
-  padding: 12px;
 }
 
 .live-demo-iframe {
   width: 100%;
   height: 100%;
   border: none;
-  border-radius: 4px;
   background: #0f0f1a;
 }
 
