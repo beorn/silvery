@@ -51,8 +51,8 @@ onUnmounted(() => {
   <ClientOnly>
     <div class="live-demo">
       <div class="live-demo-header">
-        <span class="live-demo-label">Terminal</span>
-        <span class="live-demo-note">ANSI escape sequences rendered via xterm.js</span>
+        <span class="live-demo-label">Live Demo</span>
+        <span class="live-demo-note">Click inside to interact</span>
         <transition name="fade">
           <span v-if="showBuildHint" class="live-demo-build-hint"
             >Blank? Run <code>bun run examples/web/build.ts</code></span
@@ -120,18 +120,20 @@ onUnmounted(() => {
 
 .live-demo-viewport {
   position: relative;
-  background: #1e1e1e;
+  background: #0f0f1a;
   border: 1px solid var(--vp-c-divider);
   border-top: none;
   border-radius: 0 0 8px 8px;
   overflow: hidden;
+  padding: 12px;
 }
 
 .live-demo-iframe {
   width: 100%;
   height: 100%;
   border: none;
-  background: #1e1e1e;
+  border-radius: 4px;
+  background: #0f0f1a;
 }
 
 .fade-enter-active {
