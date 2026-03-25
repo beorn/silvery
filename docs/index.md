@@ -150,11 +150,15 @@ Silvery is part of a family of terminal-focused libraries:
   overflow: hidden;
   background: #0f0f1a;
 }
+.viewer-wrapper {
+  padding: 8px;
+}
 .viewer-iframe {
   width: 100%;
   height: 640px;
   border: none;
   display: block;
+  border-radius: 8px;
 }
 .use-cases {
   margin: 0.5rem 0 1.5rem;

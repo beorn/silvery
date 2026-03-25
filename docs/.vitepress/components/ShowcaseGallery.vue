@@ -3,15 +3,10 @@ import { ref, computed } from "vue"
 
 const demos = [
   { id: "dashboard", name: "Dashboard", height: 500 },
-  { id: "scroll", name: "Task List", height: 400 },
   { id: "kanban", name: "Kanban Board", height: 500 },
-  { id: "coding-agent", name: "AI Coding Agent", height: 500 },
-  { id: "cli-wizard", name: "CLI Wizard", height: 400 },
+  { id: "components", name: "Components", height: 500 },
   { id: "dev-tools", name: "Dev Tools", height: 500 },
-  { id: "data-explorer", name: "Data Explorer", height: 500 },
-  { id: "text-input", name: "Text Input", height: 300 },
-  { id: "focus", name: "Focus Panels", height: 400 },
-  { id: "layout-feedback", name: "Layout Feedback", height: 400 },
+  { id: "textarea", name: "Text Editor", height: 400 },
 ]
 
 const active = ref(demos[0])
@@ -131,13 +126,15 @@ const iframeSrc = computed(() => `/examples/showcase.html?demo=${active.value.id
   border-top: none;
   border-radius: 0 0 8px 8px;
   overflow: hidden;
+  padding: 8px;
 }
 
 .gallery-iframe {
   width: 100%;
   height: 100%;
   border: none;
-  background: #1e1e1e;
+  border-radius: 4px;
+  background: #0f0f1a;
 }
 
 @media (max-width: 768px) {
