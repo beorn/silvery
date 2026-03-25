@@ -102,15 +102,15 @@ function Tag({ name }: { name: string }) {
 
 function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }) {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "$primary" : "$border"} paddingX={1}>
+    <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "$primary" : "$border"}>
       {isSelected ? (
-        <Box backgroundColor="$primary">
+        <Box backgroundColor="$primary" paddingX={1}>
           <Text color="$primary-fg" bold>{card.title}</Text>
         </Box>
       ) : (
-        <Text>{card.title}</Text>
+        <Box paddingX={1}><Text>{card.title}</Text></Box>
       )}
-      <Box gap={1}>
+      <Box gap={1} paddingX={1}>
         {card.tags.map((tag) => (
           <Tag key={tag} name={tag} />
         ))}
@@ -143,7 +143,6 @@ function ColumnComponent({
         overflow="scroll"
         scrollTo={isSelected ? selectedCardIndex : undefined}
         flexGrow={1}
-        gap={1}
       >
         {column.cards.map((card, cardIndex) => (
           <CardComponent key={card.id} card={card} isSelected={isSelected && cardIndex === selectedCardIndex} />
@@ -230,7 +229,7 @@ export function KanbanBoard() {
   }
 
   return (
-    <Box flexDirection="column" paddingY={1} height="100%">
+    <Box flexDirection="column" padding={1} height="100%">
       <Box flexGrow={1} flexDirection="row" gap={1} overflow="hidden">
         {columns.map((column, colIndex) => (
           <ColumnComponent

@@ -512,7 +512,7 @@ export function ComponentsApp() {
   })
 
   return (
-    <Box flexDirection="column" flexGrow={1} paddingX={1}>
+    <Box flexDirection="column" flexGrow={1} padding={1}>
       {activeTab === "display" && <DisplayTab scrollOffset={scrollOffset} />}
       {activeTab === "inputs" && <InputsTab />}
       {activeTab === "typography" && <TypographyTab scrollOffset={scrollOffset} />}

@@ -335,9 +335,9 @@ export function DevTools() {
   )
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
+    <Box flexDirection="column" flexGrow={1} padding={1}>
       {/* Header */}
-      <Box paddingX={1} justifyContent="space-between" backgroundColor="$surfacebg">
+      <Box justifyContent="space-between" backgroundColor="$surfacebg">
         <Box gap={2}>
           <Text bold color="$primary">
             {"▸"} Log Viewer
@@ -372,13 +372,6 @@ export function DevTools() {
         <LogListArea entries={entries} cursor={cursor} />
       </Box>
 
-      {/* Help bar */}
-      <Box paddingX={1} justifyContent="space-between">
-        <Muted>
-          <Kbd>j/k</Kbd> navigate <Kbd>g/G</Kbd> start/end <Kbd>d/i/w/e</Kbd> add log <Kbd>c</Kbd> clear{" "}
-          <Kbd>Esc/q</Kbd> quit
-        </Muted>
-      </Box>
     </Box>
   )
 }

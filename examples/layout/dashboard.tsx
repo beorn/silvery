@@ -465,7 +465,7 @@ export function Dashboard() {
   const { width } = useContentRect()
   const [state, setState] = useState(createInitialState)
   const [tick, setTick] = useState(0)
-  const isWide = width > 120
+  const isWide = width > 100
 
   useInterval(() => {
     setState((prev) => tickState(prev))
@@ -478,12 +478,12 @@ export function Dashboard() {
 
   if (isWide) {
     return (
-      <Box flexDirection="column" flexGrow={1}>
-        <Box justifyContent="space-between" paddingX={1}>
+      <Box flexDirection="column" flexGrow={1} padding={1}>
+        <Box justifyContent="space-between">
           <Text>
             <Strong>System Monitor</Strong> <Small>Tick #{tick}</Small>
           </Text>
-          <Muted>Tick #{tick}</Muted>
+          <Small>Tick #{tick}</Small>
         </Box>
         <WideLayout cores={state.cores} memory={state.memory} network={state.network} processes={state.processes} />
       </Box>
@@ -491,10 +491,39 @@ export function Dashboard() {
   }
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
-      <Box borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexGrow={1}>
-        <CpuPane cores={state.cores} />
-      </Box>
+    <Box flexDirection="column" flexGrow={1} padding={1}>
+      <Tabs defaultValue="cpu">
+        <Box justifyContent="space-between">
+          <TabList>
+            <Tab value="cpu">CPU</Tab>
+            <Tab value="memory">Memory</Tab>
+            <Tab value="network">Network</Tab>
+            <Tab value="processes">Processes</Tab>
+          </TabList>
+          <Small>Tick #{tick}</Small>
+        </Box>
+
+        <TabPanel value="cpu">
+          <Box borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexGrow={1}>
+            <CpuPane cores={state.cores} />
+          </Box>
+        </TabPanel>
+        <TabPanel value="memory">
+          <Box borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexGrow={1}>
+            <MemoryPane memory={state.memory} />
+          </Box>
+        </TabPanel>
+        <TabPanel value="network">
+          <Box borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexGrow={1}>
+            <NetworkPane network={state.network} />
+          </Box>
+        </TabPanel>
+        <TabPanel value="processes">
+          <Box borderStyle="round" borderColor="$border" paddingX={1} paddingY={1} flexGrow={1}>
+            <ProcessPane processes={state.processes} />
+          </Box>
+        </TabPanel>
+      </Tabs>
     </Box>
   )
 }
