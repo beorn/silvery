@@ -16,7 +16,12 @@ describe("createModelRegistry", () => {
     const registry = createModelRegistry()
     const def = defineModel({
       name: "counter",
-      create: () => ({ count: 0, increment() { this.count++ } }),
+      create: () => ({
+        count: 0,
+        increment() {
+          this.count++
+        },
+      }),
     })
     const model = registry.register(def)
     expect(model.count).toBe(0)

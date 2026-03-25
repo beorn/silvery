@@ -24,3 +24,6 @@ export { selectListUpdate, createSelectListState, type SelectListState, type Sel
 
 // Readline — text editing with cursor, kill ring, history
 export { readlineUpdate, createReadlineState, type ReadlineState, type ReadlineAction } from "./readline"
+
+// React integration
+export { useSelectList, useReadline } from "./react"

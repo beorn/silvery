@@ -12,30 +12,30 @@
  */
 
 export {
-	signal,
-	computed,
-	effect,
-	effectScope,
-	startBatch,
-	endBatch,
-	trigger,
-	isSignal,
-	isComputed,
-	isEffect,
-	isEffectScope,
-	getActiveSub,
-	setActiveSub,
-	getBatchDepth,
+  signal,
+  computed,
+  effect,
+  effectScope,
+  startBatch,
+  endBatch,
+  trigger,
+  isSignal,
+  isComputed,
+  isEffect,
+  isEffectScope,
+  getActiveSub,
+  setActiveSub,
+  getBatchDepth,
 } from "alien-signals"
 
 import { startBatch, endBatch } from "alien-signals"
 
 /** Batch multiple signal updates, notifying subscribers once at the end. */
 export function batch(fn: () => void): void {
-	startBatch()
-	try {
-		fn()
-	} finally {
-		endBatch()
-	}
+  startBatch()
+  try {
+    fn()
+  } finally {
+    endBatch()
+  }
 }
