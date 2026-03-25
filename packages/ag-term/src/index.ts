@@ -15,6 +15,13 @@ export { createAg } from "./ag"
 export type { Ag, CreateAgOptions, AgLayoutOptions, AgRenderOptions, AgRenderResult } from "./ag"
 
 // =============================================================================
+// Plugin Composition (era2a)
+// =============================================================================
+
+export { create, pipe, withAg, withTerm } from "./compose"
+export type { AppBase, AppWithAg, AppWithTerm } from "./compose"
+
+// =============================================================================
 // Buffer
 // =============================================================================
 
