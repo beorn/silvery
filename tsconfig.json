@@ -24,6 +24,8 @@
       "@silvery/create/*": ["./packages/create/src/*"],
       "@silvery/headless/*": ["./packages/headless/src/*"],
       "@silvery/commands/*": ["./packages/commands/src/*"],
+      "@silvery/scope": ["./packages/scope/src/index.ts"],
+      "@silvery/scope/*": ["./packages/scope/src/*"],
       "@silvery/test/*": ["./packages/test/src/*"],
       "@silvery/ink/*": ["./packages/ink/src/*"]
     }
