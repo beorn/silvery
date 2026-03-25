@@ -2068,8 +2068,30 @@ function resolveColor(color: Color): RGB | null {
   return color
 }
 
+/** Convert a buffer Cell to an immutable FrameCell with resolved RGB colors. */
+export function cellToFrameCell(c: Cell): FrameCell {
+  const ulStyle = c.attrs.underlineStyle ?? (c.attrs.underline ? ("single" as const) : (false as const))
+  return {
+    char: c.char,
+    fg: resolveColor(c.fg),
+    bg: resolveColor(c.bg),
+    bold: c.attrs.bold ?? false,
+    dim: c.attrs.dim ?? false,
+    italic: c.attrs.italic ?? false,
+    underline: ulStyle,
+    underlineColor: resolveColor(c.underlineColor ?? null),
+    strikethrough: c.attrs.strikethrough ?? false,
+    inverse: c.attrs.inverse ?? false,
+    blink: c.attrs.blink ?? false,
+    hidden: c.attrs.hidden ?? false,
+    wide: c.wide,
+    continuation: c.continuation,
+    hyperlink: c.hyperlink ?? null,
+  }
+}
+
 /** Empty FrameCell returned for out-of-bounds access. */
-const EMPTY_FRAME_CELL: FrameCell = Object.freeze({
+export const EMPTY_FRAME_CELL: FrameCell = Object.freeze({
   char: " ",
   fg: null,
   bg: null,
@@ -2141,25 +2163,7 @@ export function createTextFrame(buffer: TerminalBuffer): TextFrame {
       if (col < 0 || col >= width || row < 0 || row >= height) {
         return EMPTY_FRAME_CELL
       }
-      const c = cellData[row * width + col]!
-      const ulStyle = c.attrs.underlineStyle ?? (c.attrs.underline ? ("single" as const) : (false as const))
-      return {
-        char: c.char,
-        fg: resolveColor(c.fg),
-        bg: resolveColor(c.bg),
-        bold: c.attrs.bold ?? false,
-        dim: c.attrs.dim ?? false,
-        italic: c.attrs.italic ?? false,
-        underline: ulStyle,
-        underlineColor: resolveColor(c.underlineColor ?? null),
-        strikethrough: c.attrs.strikethrough ?? false,
-        inverse: c.attrs.inverse ?? false,
-        blink: c.attrs.blink ?? false,
-        hidden: c.attrs.hidden ?? false,
-        wide: c.wide,
-        continuation: c.continuation,
-        hyperlink: c.hyperlink ?? null,
-      }
+      return cellToFrameCell(cellData[row * width + col]!)
     },
 
     containsText(text: string): boolean {

@@ -28,7 +28,7 @@ import type { ReactNode } from "react"
 import { type AutoLocator, createAutoLocator } from "@silvery/test/auto-locator"
 import { type BoundTerm, createBoundTerm } from "./bound-term"
 import type { TerminalBuffer } from "./buffer"
-import { bufferToHTML, bufferToStyledText, bufferToText } from "./buffer"
+import { bufferToHTML, bufferToStyledText, bufferToText, cellToFrameCell, EMPTY_FRAME_CELL } from "./buffer"
 import { type Screenshotter, createScreenshotter } from "./screenshot"
 import { keyToAnsi, keyToKittyAnsi, parseHotkey } from "@silvery/ag/keys"
 import { updateKeyboardModifiers } from "./mouse-events"
@@ -37,6 +37,7 @@ import { createMouseEventProcessor, processMouseEvent } from "./mouse-events"
 import type { FocusManager } from "@silvery/ag/focus-manager"
 import { pointInRect } from "@silvery/ag/tree-utils"
 import type { AgNode } from "@silvery/ag/types"
+import type { FrameCell } from "@silvery/ag/text-frame"
 
 /**
  * App interface - unified return type from render()
@@ -49,6 +50,21 @@ export interface App {
 
   /** Full rendered text with ANSI styling */
   readonly ansi: string
+
+  /** Per-line plain text array (no ANSI codes) */
+  readonly lines: string[]
+
+  /** Frame width in terminal columns */
+  readonly width: number
+
+  /** Frame height in terminal rows */
+  readonly height: number
+
+  /** Get the cell at the given column and row (resolved styling) */
+  cell(col: number, row: number): FrameCell
+
+  /** Check whether the plain text contains the given substring */
+  containsText(text: string): boolean
 
   /** Get node at content coordinates */
   nodeAt(x: number, y: number): AgNode | null
@@ -294,6 +310,28 @@ export function buildApp(options: AppOptions): App {
     get ansi(): string {
       const buffer = getBuffer()
       return buffer ? bufferToStyledText(buffer) : ""
+    },
+
+    get lines(): string[] {
+      return getText().split("\n")
+    },
+
+    get width(): number {
+      return getBuffer()?.width ?? columns
+    },
+
+    get height(): number {
+      return getBuffer()?.height ?? rows
+    },
+
+    cell(col: number, row: number): FrameCell {
+      const buffer = getBuffer()
+      if (!buffer) return EMPTY_FRAME_CELL as FrameCell
+      return cellToFrameCell(buffer.getCell(col, row))
+    },
+
+    containsText(text: string): boolean {
+      return getText().includes(text)
     },
 
     nodeAt(x: number, y: number): AgNode | null {
