@@ -9,15 +9,9 @@ next:
   link: /examples/testing
 ---
 
-<script setup>
-import LiveDemo from '../.vitepress/components/LiveDemo.vue'
-</script>
-
 # AI Coding Agent
 
 Terminal-based AI coding agents have unique UI requirements: streaming output that grows unpredictably, tool call rendering with diff-style output, long conversation history that must scroll, and the ability for AI agents to discover and invoke actions programmatically. Silvery handles all of these out of the box.
-
-<LiveDemo xtermSrc="/examples/showcase.html?demo=textarea" :height="400" />
 
 ## Key Benefits
 

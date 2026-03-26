@@ -9,15 +9,9 @@ next:
   link: /examples/scrollback
 ---
 
-<script setup>
-import DemoScreenshot from '../.vitepress/components/DemoScreenshot.vue'
-</script>
-
 # Tables & Data
 
 Terminal data explorers need to handle thousands of rows, resize gracefully across terminal widths, and respond instantly to search queries. Silvery provides the primitives: a `Table` component with column alignment, `VirtualList` for constant-memory rendering of massive datasets, `useContentRect()` for responsive column sizing, and `TextInput` for real-time filtering.
-
-<DemoScreenshot demo="dashboard" name="Dashboard with data tables" />
 
 ## Key Benefits
 

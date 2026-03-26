@@ -36820,18 +36820,15 @@ var jsx_runtime52 = __toESM(require_jsx_runtime(), 1);
 // vendor/silvery/examples/layout/dashboard.tsx
 var jsx_runtime53 = __toESM(require_jsx_runtime(), 1);
 var SPARK_CHARS = "▁▂▃▄▅▆▇█";
-function sparkline(values, max) {
-  return values.map((v2) => SPARK_CHARS[Math.round(v2 / max * 7)] ?? SPARK_CHARS[0]).join("");
+function sparkline(values) {
+  return values.map((v2) => SPARK_CHARS[Math.max(0, Math.min(7, v2))] ?? SPARK_CHARS[0]).join("");
 }
 function jitter(base, range) {
   return Math.max(0, Math.min(100, base + (Math.random() - 0.5) * range));
 }
-function initHistory(base, range, len = 20) {
-  return Array.from({ length: len }, () => jitter(base, range));
-}
-function pushHistory(history2, value) {
+function pushHistory(history2, value, max = 20) {
   const next = [...history2];
-  if (next.length >= 20)
+  if (next.length >= max)
     next.shift();
   next.push(value);
   return next;
@@ -36843,176 +36840,351 @@ function severityColor(pct) {
     return "$warning";
   return "$success";
 }
+function heatColor(temp) {
+  if (temp >= 75)
+    return "$error";
+  if (temp >= 60)
+    return "$warning";
+  return "$success";
+}
 function createInitialState() {
-  const coreUsages = [72, 45, 88, 35, 61, 93, 28, 52];
-  const cores = coreUsages.map((usage) => ({
-    usage,
-    history: initHistory(usage, 15, 20)
-  }));
+  const cores = [
+    { label: "cpu00", pct: 12, freq: "3.62", temp: 39, mode: "idle" },
+    { label: "cpu01", pct: 28, freq: "3.79", temp: 42, mode: "balanced" },
+    { label: "cpu02", pct: 44, freq: "4.02", temp: 47, mode: "steady" },
+    { label: "cpu03", pct: 57, freq: "4.18", temp: 53, mode: "steady" },
+    { label: "cpu04", pct: 63, freq: "4.31", temp: 61, mode: "warm" },
+    { label: "cpu05", pct: 71, freq: "4.47", temp: 68, mode: "boost" },
+    { label: "cpu06", pct: 79, freq: "4.62", temp: 72, mode: "boost" },
+    { label: "cpu07", pct: 83, freq: "4.84", temp: 75, mode: "boost" },
+    { label: "cpu08", pct: 88, freq: "5.02", temp: 77, mode: "turbo" },
+    { label: "cpu09", pct: 94, freq: "5.21", temp: 81, mode: "turbo" }
+  ];
+  const cpuHistory = [
+    1,
+    2,
+    2,
+    3,
+    2,
+    4,
+    5,
+    4,
+    6,
+    5,
+    4,
+    6,
+    7,
+    6,
+    5,
+    6,
+    7,
+    6,
+    5,
+    4,
+    5,
+    6,
+    5,
+    7,
+    6,
+    5,
+    6,
+    7,
+    7,
+    6,
+    5,
+    4,
+    5,
+    6,
+    5,
+    4
+  ];
+  const memHistory = [4, 4, 5, 5, 4, 5, 6, 5, 5, 6, 6, 5, 6, 6, 7, 6, 6, 5, 6, 6, 5, 5, 6, 5];
   const memory = {
-    used: 22.7,
-    cached: 6.8,
-    buffers: 1.2,
-    free: 9.3,
-    swap: 5.76,
-    swapTotal: 32,
-    history: initHistory(71, 10, 20)
+    ramUsed: 23.7,
+    ramTotal: 32,
+    cached: 5.9,
+    free: 2.4,
+    slab: 1.1,
+    apps: 17.4,
+    wired: 1.8,
+    buffers: 0.612,
+    dirty: 0.212,
+    shared: 1.3,
+    reclaim: 0.8,
+    swapUsed: 2.1,
+    swapTotal: 8,
+    history: memHistory
   };
+  const dlHistory = [1, 2, 3, 5, 4, 6, 5, 7, 6, 4, 3, 5, 6, 7, 5, 4, 6, 7, 6, 5, 4, 6, 5, 4];
+  const ulHistory = [0, 1, 1, 2, 2, 3, 2, 4, 3, 2, 1, 2, 3, 4, 3, 2, 1, 2, 3, 2, 2, 3, 2, 1];
   const network = {
-    downloadRate: 42.5,
-    uploadRate: 12.3,
-    downloadHistory: initHistory(40, 30, 20),
-    uploadHistory: initHistory(12, 10, 20),
-    connections: 147,
-    packetsIn: 1842,
-    packetsOut: 923
+    dlRate: 428,
+    dlPeak: 612,
+    ulRate: 86,
+    ulPeak: 143,
+    connEst: 184,
+    listen: 23,
+    syn: 2,
+    drops: 0,
+    rxPps: "61.2kpps",
+    txPps: "19.4kpps",
+    retrans: "0.08%",
+    rtt: "18ms",
+    dlHistory,
+    ulHistory
   };
   const processes = [
-    { pid: 1201, name: "node", cpu: 24.3, mem: 4.2, memMB: 1344, status: "running", time: "2:14:33" },
-    { pid: 892, name: "chrome", cpu: 18.7, mem: 12.1, memMB: 3872, status: "running", time: "5:42:11" },
-    { pid: 3456, name: "vscode", cpu: 12.1, mem: 8.4, memMB: 2688, status: "running", time: "3:21:05" },
-    { pid: 2103, name: "postgres", cpu: 8.9, mem: 3.7, memMB: 1184, status: "sleeping", time: "12:05:44" },
-    { pid: 4521, name: "docker", cpu: 6.2, mem: 5.1, memMB: 1632, status: "running", time: "8:33:22" },
-    { pid: 1893, name: "nginx", cpu: 3.4, mem: 1.2, memMB: 384, status: "sleeping", time: "24:11:03" },
-    { pid: 7234, name: "redis", cpu: 2.1, mem: 0.8, memMB: 256, status: "sleeping", time: "24:10:59" },
-    { pid: 5612, name: "bun", cpu: 1.8, mem: 2.3, memMB: 736, status: "running", time: "0:45:12" },
-    { pid: 3891, name: "webpack", cpu: 1.5, mem: 1.9, memMB: 608, status: "running", time: "0:32:41" },
-    { pid: 6742, name: "eslint", cpu: 0.9, mem: 0.6, memMB: 192, status: "sleeping", time: "0:12:08" },
-    { pid: 8123, name: "ssh-agent", cpu: 0.3, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
-    { pid: 9001, name: "cron", cpu: 0.1, mem: 0.2, memMB: 64, status: "sleeping", time: "24:11:03" },
-    { pid: 4102, name: "gpg-agent", cpu: 0.1, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
-    { pid: 7801, name: "fswatch", cpu: 0.2, mem: 0.3, memMB: 96, status: "running", time: "3:14:22" },
-    { pid: 2045, name: "dnsmasq", cpu: 0, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
-    { pid: 6234, name: "tmux", cpu: 0.4, mem: 0.5, memMB: 160, status: "running", time: "12:05:44" }
+    { pid: 31842, name: "bun dev --hot src/server.ts", cpu: 94.2, memp: 3.8, mem: "1.22G", status: "Running", time: "01:42:17", io: "24M/s", thr: 18 },
+    { pid: 27114, name: "node /usr/bin/vite --host", cpu: 71.4, memp: 2.2, mem: "716M", status: "Running", time: "00:18:09", io: "12M/s", thr: 26 },
+    { pid: 918, name: "postgres: checkpointer", cpu: 12.8, memp: 1.4, mem: "448M", status: "Sleep", time: "19:22:41", io: "3.1M/s", thr: 27 },
+    { pid: 1023, name: "Code Helper (Renderer)", cpu: 9.6, memp: 4.8, mem: "1.53G", status: "Sleep", time: "07:13:51", io: "1.2M/s", thr: 44 },
+    { pid: 2241, name: "docker-desktop", cpu: 8.9, memp: 6.3, mem: "2.01G", status: "Running", time: "11:08:04", io: "9.4M/s", thr: 61 },
+    { pid: 1542, name: "redis-server *:6379", cpu: 6.7, memp: 0.9, mem: "289M", status: "Sleep", time: "02:51:17", io: "642K/s", thr: 8 },
+    { pid: 612, name: "tailscaled --tun=userspace-networking", cpu: 5.4, memp: 0.4, mem: "132M", status: "Sleep", time: "05:44:22", io: "218K/s", thr: 19 },
+    { pid: 33210, name: "bun test --watch", cpu: 4.2, memp: 1.1, mem: "356M", status: "Running", time: "00:06:38", io: "4.6M/s", thr: 12 },
+    { pid: 1804, name: "nginx: worker process", cpu: 3.7, memp: 0.2, mem: "72M", status: "Sleep", time: "03:17:09", io: "118K/s", thr: 5 },
+    { pid: 2877, name: "Chrome Helper (GPU)", cpu: 3.2, memp: 2.7, mem: "864M", status: "Sleep", time: "06:29:33", io: "2.3M/s", thr: 23 },
+    { pid: 451, name: "kernel_task", cpu: 2.8, memp: 0.1, mem: "42M", status: "Running", time: "22:54:48", io: "0", thr: 179 },
+    { pid: 1942, name: "syncthing serve --no-browser", cpu: 2.1, memp: 0.8, mem: "258M", status: "Sleep", time: "14:05:14", io: "884K/s", thr: 16 },
+    { pid: 7621, name: "python scripts/indexer.py --incremental", cpu: 1.9, memp: 1.9, mem: "604M", status: "I/O wait", time: "00:43:58", io: "14M/s", thr: 9 },
+    { pid: 266, name: "systemd-journald", cpu: 1.2, memp: 0.1, mem: "38M", status: "Sleep", time: "09:12:44", io: "96K/s", thr: 3 },
+    { pid: 74, name: "zsh - bun gen-mockup.ts", cpu: 0.2, memp: 0, mem: "6M", status: "Running", time: "00:00:03", io: "0", thr: 1 }
   ];
-  return { cores, memory, network, processes };
+  return {
+    cores,
+    totalCpu: 67,
+    userCpu: 38,
+    sysCpu: 12,
+    waitCpu: 14,
+    load: [4.21, 3.88, 3.11],
+    avgTemp: 71,
+    tasks: 287,
+    avgFreq: "4.31",
+    ctxPerSec: "128k",
+    uptime: "12d 06h",
+    pkgPct: 67,
+    power: 84,
+    fan: 1460,
+    boostOn: true,
+    cpuHistory,
+    memory,
+    network,
+    processes
+  };
 }
 function tickState(prev) {
   const cores = prev.cores.map((core) => {
-    const usage = jitter(core.usage, 15);
-    return { usage, history: pushHistory(core.history, usage) };
+    const pct = Math.max(0, Math.min(100, Math.round(jitter(core.pct, 10))));
+    return { ...core, pct };
   });
-  const totalMem = prev.memory.used + prev.memory.cached + prev.memory.buffers + prev.memory.free;
-  const usedJitter = jitter(prev.memory.used / totalMem * 100, 3) / 100 * totalMem;
-  const memory = {
-    ...prev.memory,
-    used: Math.max(4, usedJitter),
-    swap: jitter(prev.memory.swap / prev.memory.swapTotal * 100, 5) / 100 * prev.memory.swapTotal,
-    history: pushHistory(prev.memory.history, usedJitter / totalMem * 100)
-  };
-  const downloadRate = jitter(prev.network.downloadRate, 20);
-  const uploadRate = jitter(prev.network.uploadRate, 8);
-  const network = {
-    downloadRate,
-    uploadRate,
-    downloadHistory: pushHistory(prev.network.downloadHistory, downloadRate),
-    uploadHistory: pushHistory(prev.network.uploadHistory, uploadRate),
-    connections: Math.max(50, Math.round(jitter(prev.network.connections, 20))),
-    packetsIn: Math.max(100, Math.round(jitter(prev.network.packetsIn, 200))),
-    packetsOut: Math.max(50, Math.round(jitter(prev.network.packetsOut, 100)))
-  };
+  const totalCpu = Math.round(jitter(prev.totalCpu, 8));
+  const cpuHistory = pushHistory(prev.cpuHistory, Math.max(0, Math.min(7, Math.round(totalCpu / 14))), 36);
+  const ramPct = Math.round(prev.memory.ramUsed / prev.memory.ramTotal * 100);
+  const memHistory = pushHistory(prev.memory.history, Math.max(0, Math.min(7, Math.round(ramPct / 14))), 24);
+  const memory = { ...prev.memory, history: memHistory };
+  const dlVal = Math.max(0, Math.min(7, Math.round(jitter(5, 4))));
+  const ulVal = Math.max(0, Math.min(7, Math.round(jitter(2, 3))));
+  const dlHistory = pushHistory(prev.network.dlHistory, dlVal, 24);
+  const ulHistory = pushHistory(prev.network.ulHistory, ulVal, 24);
+  const network = { ...prev.network, dlHistory, ulHistory };
   const processes = prev.processes.map((p) => ({
     ...p,
-    cpu: Math.max(0, jitter(p.cpu, 4)),
-    mem: Math.max(0.1, jitter(p.mem, 1))
+    cpu: Math.max(0, Number(jitter(p.cpu, 4).toFixed(1)))
   }));
-  return { cores, memory, network, processes };
+  return { ...prev, cores, totalCpu, cpuHistory, memory, network, processes };
 }
 function Sep() {
   return /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
     children: "┄".repeat(50)
   });
 }
-function LabelValue({ label, value, color }) {
-  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-    gap: 1,
-    children: [
-      /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-        children: label
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-        color,
-        children: value
-      })
-    ]
-  });
-}
-function CpuCore({ index, core }) {
-  const pct = Math.round(core.usage);
-  const color = severityColor(pct);
-  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+function LR({ children }) {
+  return /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+    justifyContent: "space-between",
     wrap: "truncate",
-    children: [
-      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-        color: "$muted",
-        children: `C${index}`.padEnd(4)
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-        flexGrow: 1,
-        children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
-          value: pct / 100,
-          color,
-          showPercentage: true
-        })
-      })
-    ]
+    children
   });
 }
-function CpuPanel({ cores }) {
-  const avgCpu = cores.reduce((sum, c) => sum + c.usage, 0) / cores.length;
-  const maxCpu = Math.max(...cores.map((c) => c.usage));
-  const load1 = (avgCpu / 100 * 8 * 0.8 + Math.random() * 0.5).toFixed(2);
-  const load5 = (avgCpu / 100 * 8 * 0.7 + Math.random() * 0.3).toFixed(2);
-  const load15 = (avgCpu / 100 * 8 * 0.6 + Math.random() * 0.2).toFixed(2);
-  const avgHistory = cores[0]?.history.map((_2, i) => cores.reduce((s15, c) => s15 + (c.history[i] ?? 0), 0) / cores.length) ?? [];
-  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-    flexDirection: "column",
-    flexGrow: 1,
+function CpuSummary({ state }) {
+  return /* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        gap: 2,
-        wrap: "truncate",
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            bold: true,
-            color: "$primary",
-            children: "CPU"
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "Total"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: severityColor(state.totalCpu),
+                children: `${state.totalCpu}%`
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+                flexGrow: 1,
+                children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+                  value: state.totalCpu / 100,
+                  color: severityColor(state.totalCpu),
+                  showPercentage: false
+                })
+              })
+            ]
           }),
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Avg:",
-            value: `${Math.round(avgCpu)}%`,
-            color: severityColor(avgCpu)
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Max:",
-            value: `${Math.round(maxCpu)}%`,
-            color: severityColor(maxCpu)
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Load:",
-            value: `${load1} ${load5} ${load15}`
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Load"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${state.load[0].toFixed(2)} ${state.load[1].toFixed(2)} ${state.load[2].toFixed(2)}`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Temp"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    color: heatColor(state.avgTemp),
+                    children: `${state.avgTemp}°C`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Tasks"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${state.tasks}`
+                  })
+                ]
+              })
+            ]
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
-      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-        flexDirection: "column",
-        children: cores.map((core, i) => /* @__PURE__ */ jsx_runtime53.jsx(CpuCore, {
-          index: i,
-          core
-        }, i))
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "User"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    color: severityColor(state.userCpu),
+                    children: `${state.userCpu}%`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Sys"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    color: severityColor(state.sysCpu),
+                    children: `${state.sysCpu}%`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Wait"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    color: severityColor(state.waitCpu),
+                    children: `${state.waitCpu}%`
+                  })
+                ]
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Avg"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${state.avgFreq}GHz`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Ctx/s"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: state.ctxPerSec
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Uptime"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: state.uptime
+                  })
+                ]
+              })
+            ]
+          })
+        ]
+      })
+    ]
+  });
+}
+function CpuCore({ core }) {
+  return /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+    children: [
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
         gap: 1,
         wrap: "truncate",
         children: [
           /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-            children: "Avg CPU:"
+            children: core.label
           }),
           /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            color: severityColor(avgCpu),
-            children: sparkline(avgHistory, 100)
+            color: severityColor(core.pct),
+            children: `${core.pct}%`.padStart(4)
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+            flexGrow: 1,
+            children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+              value: core.pct / 100,
+              color: severityColor(core.pct),
+              showPercentage: false
+            })
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+            children: `${core.freq}GHz`
           })
         ]
       }),
@@ -37020,134 +37192,391 @@ function CpuPanel({ cores }) {
         gap: 2,
         wrap: "truncate",
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Freq:",
-            value: "4.5GHz"
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "temp"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: heatColor(core.temp),
+                children: `${core.temp}°C`
+              })
+            ]
           }),
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Temp:",
-            value: "72°C",
-            color: severityColor(72)
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Uptime:",
-            value: "3d 14h"
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            color: severityColor(core.pct),
+            children: core.mode
           })
         ]
+      })
+    ]
+  });
+}
+function CpuFooter({ state }) {
+  return /* @__PURE__ */ jsx_runtime53.jsxs(jsx_runtime53.Fragment, {
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "Pkg"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: severityColor(state.pkgPct),
+                children: `${state.pkgPct}%`
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+                flexGrow: 1,
+                children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+                  value: state.pkgPct / 100,
+                  color: severityColor(state.pkgPct),
+                  showPercentage: false
+                })
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Power"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${state.power}W`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Fan"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${state.fan}RPM`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Boost"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    color: "$success",
+                    children: "on"
+                  })
+                ]
+              })
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "History"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: "$primary",
+                children: sparkline(state.cpuHistory)
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+            children: "60s"
+          })
+        ]
+      })
+    ]
+  });
+}
+function CpuPanel({ state }) {
+  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+    flexDirection: "column",
+    flexGrow: 1,
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsx(CpuSummary, {
+        state
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
+      state.cores.map((core) => /* @__PURE__ */ jsx_runtime53.jsx(CpuCore, {
+        core
+      }, core.label)),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
+      /* @__PURE__ */ jsx_runtime53.jsx(CpuFooter, {
+        state
       })
     ]
   });
 }
 function MemoryPanel({ memory }) {
-  const total = memory.used + memory.cached + memory.buffers + memory.free;
-  const usedPct = memory.used / total * 100;
-  const swapPct = memory.swap / memory.swapTotal * 100;
+  const ramPct = Math.round(memory.ramUsed / memory.ramTotal * 100);
+  const swapPct = Math.round(memory.swapUsed / memory.swapTotal * 100);
+  const avail = (memory.ramTotal - memory.ramUsed).toFixed(1);
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
     children: [
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        gap: 2,
-        wrap: "truncate",
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            bold: true,
-            color: "$primary",
-            children: "Memory"
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
             children: [
-              memory.used.toFixed(1),
-              " / ",
-              total.toFixed(1),
-              " GiB"
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "RAM"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                children: `${memory.ramUsed.toFixed(1)} / ${memory.ramTotal.toFixed(1)} GiB`
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: severityColor(ramPct),
+                children: `${ramPct}%`
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+                flexGrow: 1,
+                children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+                  value: ramPct / 100,
+                  color: severityColor(ramPct),
+                  showPercentage: false
+                })
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "avail"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                children: `${avail}G`
+              })
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Used"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${memory.ramUsed.toFixed(1)}G`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Cache"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${memory.cached.toFixed(1)}G`
+                  })
+                ]
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Free"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${memory.free.toFixed(1)}G`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Slab"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${memory.slab.toFixed(1)}G`
+                  })
+                ]
+              })
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "Swap"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                children: `${memory.swapUsed.toFixed(1)} / ${memory.swapTotal.toFixed(1)} GiB`
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: severityColor(swapPct),
+                children: `${swapPct}%`
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+                flexGrow: 1,
+                children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+                  value: swapPct / 100,
+                  color: severityColor(swapPct),
+                  showPercentage: false
+                })
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "zram"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                children: "off"
+              })
             ]
           })
         ]
       }),
       /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        wrap: "truncate",
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            color: "$muted",
-            children: "RAM  "
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            flexGrow: 1,
-            children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
-              value: usedPct / 100,
-              color: severityColor(usedPct),
-              showPercentage: true
-            })
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        wrap: "truncate",
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            color: "$muted",
-            children: "Swap "
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            flexGrow: 1,
-            children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
-              value: swapPct / 100,
-              color: severityColor(swapPct),
-              showPercentage: true
-            })
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        gap: 2,
-        wrap: "truncate",
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-            color: "$warning",
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
             children: [
-              "Used ",
-              memory.used.toFixed(1),
-              "G"
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Apps"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${memory.apps.toFixed(1)}G`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Wired"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${memory.wired.toFixed(1)}G`
+                  })
+                ]
+              })
             ]
           }),
-          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-            color: "$info",
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
             children: [
-              "Cache ",
-              memory.cached.toFixed(1),
-              "G"
-            ]
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-            color: "$primary",
-            children: [
-              "Buf ",
-              memory.buffers.toFixed(1),
-              "G"
-            ]
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
-            children: [
-              "Free ",
-              memory.free.toFixed(1),
-              "G"
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "Buffers"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                children: "612M"
+              })
             ]
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        gap: 1,
-        wrap: "truncate",
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
         children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Dirty"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: "212M"
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Shared"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${memory.shared.toFixed(1)}G`
+                  })
+                ]
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "Reclaim"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                children: `${memory.reclaim.toFixed(1)}G`
+              })
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "Trend"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: "$primary",
+                children: sparkline(memory.history)
+              })
+            ]
+          }),
           /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-            children: "History:"
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            color: severityColor(usedPct),
-            children: sparkline(memory.history, 100)
+            children: "30m"
           })
         ]
       })
@@ -37155,207 +37584,442 @@ function MemoryPanel({ memory }) {
   });
 }
 function NetworkPanel({ network }) {
+  const dlPct = Math.round(network.dlRate / 630 * 100);
+  const ulPct = Math.round(network.ulRate / 400 * 100);
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
     children: [
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        gap: 2,
-        wrap: "truncate",
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            bold: true,
-            color: "$primary",
-            children: "Network"
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-            children: "en0 / 1 Gbps"
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        wrap: "truncate",
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            color: "$success",
-            children: "↓ DL "
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            flexGrow: 1,
-            children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
-              value: Math.min(1, network.downloadRate / 100),
-              color: "$success",
-              showPercentage: false
-            })
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-            color: "$success",
-            children: [
-              " ",
-              network.downloadRate.toFixed(1).padStart(5),
-              " MB/s"
-            ]
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        wrap: "truncate",
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            color: "$info",
-            children: "↑ UL "
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            flexGrow: 1,
-            children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
-              value: Math.min(1, network.uploadRate / 40),
-              color: "$info",
-              showPercentage: false
-            })
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-            color: "$info",
-            children: [
-              " ",
-              network.uploadRate.toFixed(1).padStart(5),
-              " MB/s"
-            ]
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        gap: 2,
-        wrap: "truncate",
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Active:",
-            value: String(network.connections)
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "In:",
-            value: `${network.packetsIn} pkts`
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Out:",
-            value: `${network.packetsOut} pkts`
-          })
-        ]
-      })
-    ]
-  });
-}
-var COL = { pid: 7, name: 14, cpu: 7, mem: 7, memMB: 9, status: 10, time: 10 };
-function ProcessRow({ proc, isTop }) {
-  const cpuColor = severityColor(proc.cpu);
-  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-    wrap: "truncate",
-    children: [
-      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-        color: "$muted",
-        children: String(proc.pid).padStart(COL.pid)
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-        bold: isTop,
-        children: ("  " + proc.name).padEnd(COL.name)
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-        color: cpuColor,
-        children: (proc.cpu.toFixed(1) + "%").padStart(COL.cpu)
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-        children: (proc.mem.toFixed(1) + "%").padStart(COL.mem)
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-        children: (proc.memMB + " MB").padStart(COL.memMB)
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-        color: proc.status === "running" ? "$success" : "$muted",
-        children: "  " + proc.status.padEnd(COL.status - 2)
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-        color: "$muted",
-        children: proc.time.padStart(COL.time)
-      })
-    ]
-  });
-}
-function ProcessPanel({ processes }) {
-  const sorted = [...processes].sort((a, b2) => b2.cpu - a.cpu);
-  const running = processes.filter((p) => p.status === "running").length;
-  const sleeping = processes.filter((p) => p.status === "sleeping").length;
-  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-    flexDirection: "column",
-    flexGrow: 1,
-    children: [
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        justifyContent: "space-between",
-        wrap: "truncate",
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            bold: true,
-            color: "$primary",
-            children: "Processes"
-          }),
           /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-            gap: 2,
+            gap: 1,
+            wrap: "truncate",
             children: [
               /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-                children: "Sort: CPU%▼"
+                children: "DL"
               }),
-              /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
-                children: [
-                  "Total: ",
-                  processes.length
-                ]
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                children: `${network.dlRate} Mb/s`
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: severityColor(dlPct),
+                children: `${dlPct}%`
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+                flexGrow: 1,
+                children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+                  value: dlPct / 100,
+                  color: severityColor(dlPct),
+                  showPercentage: false
+                })
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "peak"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                children: `${network.dlPeak}`
+              })
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "UL"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: "$info",
+                children: `${network.ulRate} Mb/s`
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: "$info",
+                children: `${ulPct}%`
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+                flexGrow: 1,
+                children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+                  value: ulPct / 100,
+                  color: "$info",
+                  showPercentage: false
+                })
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "peak"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                children: `${network.ulPeak}`
               })
             ]
           })
         ]
       }),
       /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
-      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-        wrap: "truncate",
-        children: /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
-          children: [
-            "PID".padStart(COL.pid),
-            "  Name".padEnd(COL.name),
-            "CPU%".padStart(COL.cpu),
-            "MEM%".padStart(COL.mem),
-            "MEM".padStart(COL.memMB),
-            "  STATUS".padEnd(COL.status),
-            "TIME+".padStart(COL.time)
-          ]
-        })
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Conn"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${network.connEst} est`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Listen"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${network.listen}`
+                  })
+                ]
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "SYN"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${network.syn}`
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Drops"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: `${network.drops}`
+                  })
+                ]
+              })
+            ]
+          })
+        ]
       }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
-      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-        flexDirection: "column",
-        flexGrow: 1,
-        children: sorted.map((proc, i) => /* @__PURE__ */ jsx_runtime53.jsx(ProcessRow, {
-          proc,
-          isTop: i === 0
-        }, proc.pid))
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Rx"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: network.rxPps
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Tx"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: network.txPps
+                  })
+                ]
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "Retrans"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: network.retrans
+                  })
+                ]
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+                gap: 1,
+                children: [
+                  /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                    children: "RTT"
+                  }),
+                  /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                    children: network.rtt
+                  })
+                ]
+              })
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "DL"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: "$primary",
+                children: sparkline(network.dlHistory)
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+            children: "60s"
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "UL"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: "$info",
+                children: sparkline(network.ulHistory)
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+            children: "60s"
+          })
+        ]
+      })
+    ]
+  });
+}
+var COL = { pid: 6, name: 62, cpu: 6, memp: 6, mem: 9, status: 10, time: 10, io: 11, thr: 5 };
+function statusColor(status) {
+  switch (status) {
+    case "Running":
+      return "$success";
+    case "I/O wait":
+      return "$warning";
+    case "Sleep":
+    default:
+      return "$muted";
+  }
+}
+function ProcessHeader() {
+  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+    wrap: "truncate",
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+        children: `${"PID".padStart(COL.pid)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+        children: `${"NAME".padEnd(COL.name)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        bold: true,
+        color: "$primary",
+        children: `${"CPU%↓".padStart(COL.cpu)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+        children: `${"MEM%".padStart(COL.memp)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+        children: `${"MEM".padStart(COL.mem)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+        children: `${"STATUS".padEnd(COL.status)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+        children: `${"TIME".padStart(COL.time)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+        children: `${"IO".padStart(COL.io)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+        children: `${"THR".padStart(COL.thr)}`
+      })
+    ]
+  });
+}
+function ProcessRow({ proc, isTop }) {
+  const cpuColor = severityColor(proc.cpu);
+  const ioColor = proc.io === "0" ? "$muted" : "$primary";
+  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+    wrap: "truncate",
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        children: `${String(proc.pid).padStart(COL.pid)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        bold: isTop,
+        children: `${proc.name.padEnd(COL.name).slice(0, COL.name)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        bold: isTop,
+        color: cpuColor,
+        children: `${proc.cpu.toFixed(1).padStart(5)}% `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        color: severityColor(proc.memp * 10),
+        children: `${proc.memp.toFixed(1).padStart(5)}% `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        children: `${proc.mem.padStart(COL.mem)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        color: statusColor(proc.status),
+        children: `${proc.status.padEnd(COL.status)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        children: `${proc.time.padStart(COL.time)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        color: ioColor,
+        children: `${proc.io.padStart(COL.io)} `
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        children: `${String(proc.thr).padStart(COL.thr)}`
+      })
+    ]
+  });
+}
+function ProcessFooter({ processes, state }) {
+  const running = processes.filter((p) => p.status === "Running").length;
+  const sleeping = processes.filter((p) => p.status === "Sleep").length;
+  const iowait = processes.filter((p) => p.status === "I/O wait").length;
+  const ramPct = Math.round(state.memory.ramUsed / state.memory.ramTotal * 100);
+  return /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+        gap: 2,
+        wrap: "truncate",
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+            children: "184 processes"
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            color: "$success",
+            children: `${running} running`
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+            children: `${sleeping + iowait + (184 - running - sleeping - iowait)} sleeping`
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            color: "$warning",
+            children: `${iowait > 0 ? iowait : 2} iowait`
+          })
+        ]
       }),
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
         gap: 2,
         wrap: "truncate",
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Total:",
-            value: `${processes.length}`
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "Threads"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                children: "1,942"
+              })
+            ]
           }),
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Running:",
-            value: String(running),
-            color: "$success"
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "CPU"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: severityColor(state.totalCpu),
+                children: `${state.totalCpu}%`
+              })
+            ]
           }),
-          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Sleeping:",
-            value: String(sleeping),
-            color: "$muted"
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "MEM"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: severityColor(ramPct),
+                children: `${ramPct}%`
+              })
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            color: "$primary",
+            children: `428↓`
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            color: "$info",
+            children: `86↑`
           })
         ]
+      })
+    ]
+  });
+}
+function ProcessPanel({ state }) {
+  const sorted = [...state.processes].sort((a, b2) => b2.cpu - a.cpu);
+  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+    flexDirection: "column",
+    flexGrow: 1,
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsx(ProcessHeader, {}),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
+      sorted.map((proc, i) => /* @__PURE__ */ jsx_runtime53.jsx(ProcessRow, {
+        proc,
+        isTop: i === 0
+      }, proc.pid)),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
+      /* @__PURE__ */ jsx_runtime53.jsx(ProcessFooter, {
+        processes: state.processes,
+        state
       })
     ]
   });
@@ -37367,25 +38031,21 @@ var pane = {
   paddingY: 0,
   flexDirection: "column"
 };
-function WideLayout({
-  cores,
-  memory,
-  network,
-  processes
-}) {
+function WideLayout({ state }) {
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
     children: [
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
         flexDirection: "row",
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime53.jsx(Box, {
             ...pane,
             flexGrow: 3,
             flexBasis: 0,
             children: /* @__PURE__ */ jsx_runtime53.jsx(CpuPanel, {
-              cores
+              state
             })
           }),
           /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
@@ -37397,14 +38057,14 @@ function WideLayout({
                 ...pane,
                 flexGrow: 1,
                 children: /* @__PURE__ */ jsx_runtime53.jsx(MemoryPanel, {
-                  memory
+                  memory: state.memory
                 })
               }),
               /* @__PURE__ */ jsx_runtime53.jsx(Box, {
                 ...pane,
                 flexGrow: 1,
                 children: /* @__PURE__ */ jsx_runtime53.jsx(NetworkPanel, {
-                  network
+                  network: state.network
                 })
               })
             ]
@@ -37415,18 +38075,13 @@ function WideLayout({
         ...pane,
         flexGrow: 1,
         children: /* @__PURE__ */ jsx_runtime53.jsx(ProcessPanel, {
-          processes
+          state
         })
       })
     ]
   });
 }
-function NarrowLayout({
-  cores,
-  memory,
-  network,
-  processes
-}) {
+function NarrowLayout({ state }) {
   return /* @__PURE__ */ jsx_runtime53.jsx(Box, {
     flexDirection: "column",
     flexGrow: 1,
@@ -37464,7 +38119,7 @@ function NarrowLayout({
             paddingY: 1,
             flexGrow: 1,
             children: /* @__PURE__ */ jsx_runtime53.jsx(CpuPanel, {
-              cores
+              state
             })
           })
         }),
@@ -37475,7 +38130,7 @@ function NarrowLayout({
             paddingY: 1,
             flexGrow: 1,
             children: /* @__PURE__ */ jsx_runtime53.jsx(MemoryPanel, {
-              memory
+              memory: state.memory
             })
           })
         }),
@@ -37486,7 +38141,7 @@ function NarrowLayout({
             paddingY: 1,
             flexGrow: 1,
             children: /* @__PURE__ */ jsx_runtime53.jsx(NetworkPanel, {
-              network
+              network: state.network
             })
           })
         }),
@@ -37497,7 +38152,7 @@ function NarrowLayout({
             paddingY: 1,
             flexGrow: 1,
             children: /* @__PURE__ */ jsx_runtime53.jsx(ProcessPanel, {
-              processes
+              state
             })
           })
         })
@@ -37519,36 +38174,40 @@ function Dashboard() {
   });
   if (isNarrow) {
     return /* @__PURE__ */ jsx_runtime53.jsx(NarrowLayout, {
-      cores: state.cores,
-      memory: state.memory,
-      network: state.network,
-      processes: state.processes
+      state
     });
   }
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
     children: [
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        paddingX: 1,
-        justifyContent: "space-between",
-        wrap: "truncate",
+      /* @__PURE__ */ jsx_runtime53.jsxs(LR, {
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            bold: true,
-            color: "$primary",
-            children: "System Monitor"
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 1,
+            wrap: "truncate",
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                bold: true,
+                color: "$primary",
+                children: "Silvery TUI"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "system monitor showcase"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+                color: "$primary",
+                children: "devbox-01"
+              })
+            ]
           }),
           /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-            children: "↑↓ scroll  F1 help  F5 tree  F6 sort  q quit"
+            children: "14:27 UTC  [h]help  [1]cpu  [2]mem  [3]net  [p]proc  [/]filter  [q]quit"
           })
         ]
       }),
       /* @__PURE__ */ jsx_runtime53.jsx(WideLayout, {
-        cores: state.cores,
-        memory: state.memory,
-        network: state.network,
-        processes: state.processes
+        state
       })
     ]
   });
@@ -39479,9 +40138,6 @@ import {
   render,
   Box,
   Text,
-  H2,
-  Strong,
-  Small,
   Muted,
   Tabs,
   TabList,
@@ -39508,8 +40164,8 @@ export const meta: ExampleMeta = {
 
 const SPARK_CHARS = "▁▂▃▄▅▆▇█"
 
-function sparkline(values: number[], max: number): string {
-  return values.map((v) => SPARK_CHARS[Math.round((v / max) * 7)] ?? SPARK_CHARS[0]).join("")
+function sparkline(values: number[]): string {
+  return values.map((v) => SPARK_CHARS[Math.max(0, Math.min(7, v))] ?? SPARK_CHARS[0]).join("")
 }
 
 // ============================================================================
@@ -39520,13 +40176,9 @@ function jitter(base: number, range: number): number {
   return Math.max(0, Math.min(100, base + (Math.random() - 0.5) * range))
 }
 
-function initHistory(base: number, range: number, len: number = 20): number[] {
-  return Array.from({ length: len }, () => jitter(base, range))
-}
-
-function pushHistory(history: number[], value: number): number[] {
+function pushHistory(history: number[], value: number, max = 20): number[] {
   const next = [...history]
-  if (next.length >= 20) next.shift()
+  if (next.length >= max) next.shift()
   next.push(value)
   return next
 }
@@ -39537,128 +40189,215 @@ function severityColor(pct: number): string {
   return "$success"
 }
 
+function heatColor(temp: number): string {
+  if (temp >= 75) return "$error"
+  if (temp >= 60) return "$warning"
+  return "$success"
+}
+
 // ============================================================================
 // State
 // ============================================================================
 
-interface CoreMetrics {
-  usage: number
-  history: number[]
+interface CoreRow {
+  label: string
+  pct: number
+  freq: string
+  temp: number
+  mode: string
 }
 
 interface MemoryMetrics {
-  used: number
+  ramUsed: number
+  ramTotal: number
   cached: number
-  buffers: number
   free: number
-  swap: number
+  slab: number
+  apps: number
+  wired: number
+  buffers: number
+  dirty: number
+  shared: number
+  reclaim: number
+  swapUsed: number
   swapTotal: number
   history: number[]
 }
 
 interface NetworkMetrics {
-  downloadRate: number
-  uploadRate: number
-  downloadHistory: number[]
-  uploadHistory: number[]
-  connections: number
-  packetsIn: number
-  packetsOut: number
+  dlRate: number
+  dlPeak: number
+  ulRate: number
+  ulPeak: number
+  connEst: number
+  listen: number
+  syn: number
+  drops: number
+  rxPps: string
+  txPps: string
+  retrans: string
+  rtt: string
+  dlHistory: number[]
+  ulHistory: number[]
 }
 
 interface ProcessInfo {
   pid: number
   name: string
   cpu: number
-  mem: number
-  memMB: number
-  status: string
+  memp: number
+  mem: string
+  status: "Running" | "Sleep" | "I/O wait"
   time: string
+  io: string
+  thr: number
 }
 
-function createInitialState() {
-  const coreUsages = [72, 45, 88, 35, 61, 93, 28, 52]
-  const cores: CoreMetrics[] = coreUsages.map((usage) => ({
-    usage,
-    history: initHistory(usage, 15, 20),
-  }))
+interface DashboardState {
+  cores: CoreRow[]
+  totalCpu: number
+  userCpu: number
+  sysCpu: number
+  waitCpu: number
+  load: [number, number, number]
+  avgTemp: number
+  tasks: number
+  avgFreq: string
+  ctxPerSec: string
+  uptime: string
+  pkgPct: number
+  power: number
+  fan: number
+  boostOn: boolean
+  cpuHistory: number[]
+  memory: MemoryMetrics
+  network: NetworkMetrics
+  processes: ProcessInfo[]
+}
+
+function createInitialState(): DashboardState {
+  const cores: CoreRow[] = [
+    { label: "cpu00", pct: 12, freq: "3.62", temp: 39, mode: "idle" },
+    { label: "cpu01", pct: 28, freq: "3.79", temp: 42, mode: "balanced" },
+    { label: "cpu02", pct: 44, freq: "4.02", temp: 47, mode: "steady" },
+    { label: "cpu03", pct: 57, freq: "4.18", temp: 53, mode: "steady" },
+    { label: "cpu04", pct: 63, freq: "4.31", temp: 61, mode: "warm" },
+    { label: "cpu05", pct: 71, freq: "4.47", temp: 68, mode: "boost" },
+    { label: "cpu06", pct: 79, freq: "4.62", temp: 72, mode: "boost" },
+    { label: "cpu07", pct: 83, freq: "4.84", temp: 75, mode: "boost" },
+    { label: "cpu08", pct: 88, freq: "5.02", temp: 77, mode: "turbo" },
+    { label: "cpu09", pct: 94, freq: "5.21", temp: 81, mode: "turbo" },
+  ]
+
+  const cpuHistory = [
+    1, 2, 2, 3, 2, 4, 5, 4, 6, 5, 4, 6, 7, 6, 5, 6, 7, 6, 5, 4, 5, 6, 5, 7, 6, 5, 6, 7, 7, 6, 5, 4, 5, 6, 5, 4,
+  ]
+
+  const memHistory = [4, 4, 5, 5, 4, 5, 6, 5, 5, 6, 6, 5, 6, 6, 7, 6, 6, 5, 6, 6, 5, 5, 6, 5]
 
   const memory: MemoryMetrics = {
-    used: 22.7,
-    cached: 6.8,
-    buffers: 1.2,
-    free: 9.3,
-    swap: 5.76,
-    swapTotal: 32.0,
-    history: initHistory(71, 10, 20),
+    ramUsed: 23.7,
+    ramTotal: 32.0,
+    cached: 5.9,
+    free: 2.4,
+    slab: 1.1,
+    apps: 17.4,
+    wired: 1.8,
+    buffers: 0.612,
+    dirty: 0.212,
+    shared: 1.3,
+    reclaim: 0.8,
+    swapUsed: 2.1,
+    swapTotal: 8.0,
+    history: memHistory,
   }
 
+  const dlHistory = [1, 2, 3, 5, 4, 6, 5, 7, 6, 4, 3, 5, 6, 7, 5, 4, 6, 7, 6, 5, 4, 6, 5, 4]
+  const ulHistory = [0, 1, 1, 2, 2, 3, 2, 4, 3, 2, 1, 2, 3, 4, 3, 2, 1, 2, 3, 2, 2, 3, 2, 1]
+
   const network: NetworkMetrics = {
-    downloadRate: 42.5,
-    uploadRate: 12.3,
-    downloadHistory: initHistory(40, 30, 20),
-    uploadHistory: initHistory(12, 10, 20),
-    connections: 147,
-    packetsIn: 1842,
-    packetsOut: 923,
+    dlRate: 428,
+    dlPeak: 612,
+    ulRate: 86,
+    ulPeak: 143,
+    connEst: 184,
+    listen: 23,
+    syn: 2,
+    drops: 0,
+    rxPps: "61.2kpps",
+    txPps: "19.4kpps",
+    retrans: "0.08%",
+    rtt: "18ms",
+    dlHistory,
+    ulHistory,
   }
 
   const processes: ProcessInfo[] = [
-    { pid: 1201, name: "node", cpu: 24.3, mem: 4.2, memMB: 1344, status: "running", time: "2:14:33" },
-    { pid: 892, name: "chrome", cpu: 18.7, mem: 12.1, memMB: 3872, status: "running", time: "5:42:11" },
-    { pid: 3456, name: "vscode", cpu: 12.1, mem: 8.4, memMB: 2688, status: "running", time: "3:21:05" },
-    { pid: 2103, name: "postgres", cpu: 8.9, mem: 3.7, memMB: 1184, status: "sleeping", time: "12:05:44" },
-    { pid: 4521, name: "docker", cpu: 6.2, mem: 5.1, memMB: 1632, status: "running", time: "8:33:22" },
-    { pid: 1893, name: "nginx", cpu: 3.4, mem: 1.2, memMB: 384, status: "sleeping", time: "24:11:03" },
-    { pid: 7234, name: "redis", cpu: 2.1, mem: 0.8, memMB: 256, status: "sleeping", time: "24:10:59" },
-    { pid: 5612, name: "bun", cpu: 1.8, mem: 2.3, memMB: 736, status: "running", time: "0:45:12" },
-    { pid: 3891, name: "webpack", cpu: 1.5, mem: 1.9, memMB: 608, status: "running", time: "0:32:41" },
-    { pid: 6742, name: "eslint", cpu: 0.9, mem: 0.6, memMB: 192, status: "sleeping", time: "0:12:08" },
-    { pid: 8123, name: "ssh-agent", cpu: 0.3, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
-    { pid: 9001, name: "cron", cpu: 0.1, mem: 0.2, memMB: 64, status: "sleeping", time: "24:11:03" },
-    { pid: 4102, name: "gpg-agent", cpu: 0.1, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
-    { pid: 7801, name: "fswatch", cpu: 0.2, mem: 0.3, memMB: 96, status: "running", time: "3:14:22" },
-    { pid: 2045, name: "dnsmasq", cpu: 0.0, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
-    { pid: 6234, name: "tmux", cpu: 0.4, mem: 0.5, memMB: 160, status: "running", time: "12:05:44" },
+    { pid: 31842, name: "bun dev --hot src/server.ts", cpu: 94.2, memp: 3.8, mem: "1.22G", status: "Running", time: "01:42:17", io: "24M/s", thr: 18 },
+    { pid: 27114, name: "node /usr/bin/vite --host", cpu: 71.4, memp: 2.2, mem: "716M", status: "Running", time: "00:18:09", io: "12M/s", thr: 26 },
+    { pid: 918, name: "postgres: checkpointer", cpu: 12.8, memp: 1.4, mem: "448M", status: "Sleep", time: "19:22:41", io: "3.1M/s", thr: 27 },
+    { pid: 1023, name: "Code Helper (Renderer)", cpu: 9.6, memp: 4.8, mem: "1.53G", status: "Sleep", time: "07:13:51", io: "1.2M/s", thr: 44 },
+    { pid: 2241, name: "docker-desktop", cpu: 8.9, memp: 6.3, mem: "2.01G", status: "Running", time: "11:08:04", io: "9.4M/s", thr: 61 },
+    { pid: 1542, name: "redis-server *:6379", cpu: 6.7, memp: 0.9, mem: "289M", status: "Sleep", time: "02:51:17", io: "642K/s", thr: 8 },
+    { pid: 612, name: "tailscaled --tun=userspace-networking", cpu: 5.4, memp: 0.4, mem: "132M", status: "Sleep", time: "05:44:22", io: "218K/s", thr: 19 },
+    { pid: 33210, name: "bun test --watch", cpu: 4.2, memp: 1.1, mem: "356M", status: "Running", time: "00:06:38", io: "4.6M/s", thr: 12 },
+    { pid: 1804, name: "nginx: worker process", cpu: 3.7, memp: 0.2, mem: "72M", status: "Sleep", time: "03:17:09", io: "118K/s", thr: 5 },
+    { pid: 2877, name: "Chrome Helper (GPU)", cpu: 3.2, memp: 2.7, mem: "864M", status: "Sleep", time: "06:29:33", io: "2.3M/s", thr: 23 },
+    { pid: 451, name: "kernel_task", cpu: 2.8, memp: 0.1, mem: "42M", status: "Running", time: "22:54:48", io: "0", thr: 179 },
+    { pid: 1942, name: "syncthing serve --no-browser", cpu: 2.1, memp: 0.8, mem: "258M", status: "Sleep", time: "14:05:14", io: "884K/s", thr: 16 },
+    { pid: 7621, name: "python scripts/indexer.py --incremental", cpu: 1.9, memp: 1.9, mem: "604M", status: "I/O wait", time: "00:43:58", io: "14M/s", thr: 9 },
+    { pid: 266, name: "systemd-journald", cpu: 1.2, memp: 0.1, mem: "38M", status: "Sleep", time: "09:12:44", io: "96K/s", thr: 3 },
+    { pid: 74, name: "zsh - bun gen-mockup.ts", cpu: 0.2, memp: 0.0, mem: "6M", status: "Running", time: "00:00:03", io: "0", thr: 1 },
   ]
 
-  return { cores, memory, network, processes }
+  return {
+    cores,
+    totalCpu: 67,
+    userCpu: 38,
+    sysCpu: 12,
+    waitCpu: 14,
+    load: [4.21, 3.88, 3.11],
+    avgTemp: 71,
+    tasks: 287,
+    avgFreq: "4.31",
+    ctxPerSec: "128k",
+    uptime: "12d 06h",
+    pkgPct: 67,
+    power: 84,
+    fan: 1460,
+    boostOn: true,
+    cpuHistory,
+    memory,
+    network,
+    processes,
+  }
 }
 
-function tickState(prev: ReturnType<typeof createInitialState>) {
+function tickState(prev: DashboardState): DashboardState {
   const cores = prev.cores.map((core) => {
-    const usage = jitter(core.usage, 15)
-    return { usage, history: pushHistory(core.history, usage) }
+    const pct = Math.max(0, Math.min(100, Math.round(jitter(core.pct, 10))))
+    return { ...core, pct }
   })
 
-  const totalMem = prev.memory.used + prev.memory.cached + prev.memory.buffers + prev.memory.free
-  const usedJitter = (jitter((prev.memory.used / totalMem) * 100, 3) / 100) * totalMem
-  const memory: MemoryMetrics = {
-    ...prev.memory,
-    used: Math.max(4, usedJitter),
-    swap: (jitter((prev.memory.swap / prev.memory.swapTotal) * 100, 5) / 100) * prev.memory.swapTotal,
-    history: pushHistory(prev.memory.history, (usedJitter / totalMem) * 100),
-  }
+  const totalCpu = Math.round(jitter(prev.totalCpu, 8))
+  const cpuHistory = pushHistory(prev.cpuHistory, Math.max(0, Math.min(7, Math.round(totalCpu / 14))), 36)
 
-  const downloadRate = jitter(prev.network.downloadRate, 20)
-  const uploadRate = jitter(prev.network.uploadRate, 8)
-  const network: NetworkMetrics = {
-    downloadRate,
-    uploadRate,
-    downloadHistory: pushHistory(prev.network.downloadHistory, downloadRate),
-    uploadHistory: pushHistory(prev.network.uploadHistory, uploadRate),
-    connections: Math.max(50, Math.round(jitter(prev.network.connections, 20))),
-    packetsIn: Math.max(100, Math.round(jitter(prev.network.packetsIn, 200))),
-    packetsOut: Math.max(50, Math.round(jitter(prev.network.packetsOut, 100))),
-  }
+  const ramPct = Math.round((prev.memory.ramUsed / prev.memory.ramTotal) * 100)
+  const memHistory = pushHistory(prev.memory.history, Math.max(0, Math.min(7, Math.round(ramPct / 14))), 24)
+  const memory: MemoryMetrics = { ...prev.memory, history: memHistory }
+
+  const dlVal = Math.max(0, Math.min(7, Math.round(jitter(5, 4))))
+  const ulVal = Math.max(0, Math.min(7, Math.round(jitter(2, 3))))
+  const dlHistory = pushHistory(prev.network.dlHistory, dlVal, 24)
+  const ulHistory = pushHistory(prev.network.ulHistory, ulVal, 24)
+  const network: NetworkMetrics = { ...prev.network, dlHistory, ulHistory }
 
   const processes = prev.processes.map((p) => ({
     ...p,
-    cpu: Math.max(0.0, jitter(p.cpu, 4)),
-    mem: Math.max(0.1, jitter(p.mem, 1)),
+    cpu: Math.max(0, Number(jitter(p.cpu, 4).toFixed(1))),
   }))
 
-  return { cores, memory, network, processes }
+  return { ...prev, cores, totalCpu, cpuHistory, memory, network, processes }
 }
 
 // ============================================================================
@@ -39669,11 +40408,10 @@ function Sep() {
   return <Muted>{"┄".repeat(50)}</Muted>
 }
 
-function LabelValue({ label, value, color }: { label: string; value: string; color?: string }) {
+function LR({ children }: { children: React.ReactNode }) {
   return (
-    <Box gap={1}>
-      <Muted>{label}</Muted>
-      <Text color={color}>{value}</Text>
+    <Box justifyContent="space-between" wrap="truncate">
+      {children}
     </Box>
   )
 }
@@ -39682,52 +40420,135 @@ function LabelValue({ label, value, color }: { label: string; value: string; col
 // CPU Panel
 // ============================================================================
 
-function CpuCore({ index, core }: { index: number; core: CoreMetrics }) {
-  const pct = Math.round(core.usage)
-  const color = severityColor(pct)
+function CpuSummary({ state }: { state: DashboardState }) {
   return (
-    <Box wrap="truncate">
-      <Text color="$muted">{\`C\${index}\`.padEnd(4)}</Text>
-      <Box flexGrow={1}>
-        <ProgressBar value={pct / 100} color={color} showPercentage />
-      </Box>
-    </Box>
+    <>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>Total</Muted>
+          <Text color={severityColor(state.totalCpu)}>{\`\${state.totalCpu}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={state.totalCpu / 100} color={severityColor(state.totalCpu)} showPercentage={false} />
+          </Box>
+        </Box>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Load</Muted>
+            <Text>{\`\${state.load[0].toFixed(2)} \${state.load[1].toFixed(2)} \${state.load[2].toFixed(2)}\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Temp</Muted>
+            <Text color={heatColor(state.avgTemp)}>{\`\${state.avgTemp}\\u00B0C\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Tasks</Muted>
+            <Text>{\`\${state.tasks}\`}</Text>
+          </Box>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>User</Muted>
+            <Text color={severityColor(state.userCpu)}>{\`\${state.userCpu}%\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Sys</Muted>
+            <Text color={severityColor(state.sysCpu)}>{\`\${state.sysCpu}%\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Wait</Muted>
+            <Text color={severityColor(state.waitCpu)}>{\`\${state.waitCpu}%\`}</Text>
+          </Box>
+        </Box>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Avg</Muted>
+            <Text>{\`\${state.avgFreq}GHz\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Ctx/s</Muted>
+            <Text>{state.ctxPerSec}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Uptime</Muted>
+            <Text>{state.uptime}</Text>
+          </Box>
+        </Box>
+      </LR>
+    </>
   )
 }
 
-function CpuPanel({ cores }: { cores: CoreMetrics[] }) {
-  const avgCpu = cores.reduce((sum, c) => sum + c.usage, 0) / cores.length
-  const maxCpu = Math.max(...cores.map((c) => c.usage))
-  const load1 = ((avgCpu / 100) * 8 * 0.8 + Math.random() * 0.5).toFixed(2)
-  const load5 = ((avgCpu / 100) * 8 * 0.7 + Math.random() * 0.3).toFixed(2)
-  const load15 = ((avgCpu / 100) * 8 * 0.6 + Math.random() * 0.2).toFixed(2)
-  const avgHistory =
-    cores[0]?.history.map((_, i) => cores.reduce((s, c) => s + (c.history[i] ?? 0), 0) / cores.length) ?? []
+function CpuCore({ core }: { core: CoreRow }) {
+  return (
+    <LR>
+      <Box gap={1} wrap="truncate">
+        <Muted>{core.label}</Muted>
+        <Text color={severityColor(core.pct)}>{\`\${core.pct}%\`.padStart(4)}</Text>
+        <Box flexGrow={1}>
+          <ProgressBar value={core.pct / 100} color={severityColor(core.pct)} showPercentage={false} />
+        </Box>
+        <Muted>{\`\${core.freq}GHz\`}</Muted>
+      </Box>
+      <Box gap={2} wrap="truncate">
+        <Box gap={1}>
+          <Muted>temp</Muted>
+          <Text color={heatColor(core.temp)}>{\`\${core.temp}\\u00B0C\`}</Text>
+        </Box>
+        <Text color={severityColor(core.pct)}>{core.mode}</Text>
+      </Box>
+    </LR>
+  )
+}
 
+function CpuFooter({ state }: { state: DashboardState }) {
+  return (
+    <>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>Pkg</Muted>
+          <Text color={severityColor(state.pkgPct)}>{\`\${state.pkgPct}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={state.pkgPct / 100} color={severityColor(state.pkgPct)} showPercentage={false} />
+          </Box>
+        </Box>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Power</Muted>
+            <Text>{\`\${state.power}W\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Fan</Muted>
+            <Text>{\`\${state.fan}RPM\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Boost</Muted>
+            <Text color="$success">on</Text>
+          </Box>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>History</Muted>
+          <Text color="$primary">{sparkline(state.cpuHistory)}</Text>
+        </Box>
+        <Muted>60s</Muted>
+      </LR>
+    </>
+  )
+}
+
+function CpuPanel({ state }: { state: DashboardState }) {
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Box gap={2} wrap="truncate">
-        <Text bold color="$primary">CPU</Text>
-        <LabelValue label="Avg:" value={\`\${Math.round(avgCpu)}%\`} color={severityColor(avgCpu)} />
-        <LabelValue label="Max:" value={\`\${Math.round(maxCpu)}%\`} color={severityColor(maxCpu)} />
-        <LabelValue label="Load:" value={\`\${load1} \${load5} \${load15}\`} />
-      </Box>
+      <CpuSummary state={state} />
       <Sep />
-      <Box flexDirection="column">
-        {cores.map((core, i) => (
-          <CpuCore key={i} index={i} core={core} />
-        ))}
-      </Box>
+      {state.cores.map((core) => (
+        <CpuCore key={core.label} core={core} />
+      ))}
       <Sep />
-      <Box gap={1} wrap="truncate">
-        <Muted>Avg CPU:</Muted>
-        <Text color={severityColor(avgCpu)}>{sparkline(avgHistory, 100)}</Text>
-      </Box>
-      <Box gap={2} wrap="truncate">
-        <LabelValue label="Freq:" value="4.5GHz" />
-        <LabelValue label="Temp:" value="72°C" color={severityColor(72)} />
-        <LabelValue label="Uptime:" value="3d 14h" />
-      </Box>
+      <CpuFooter state={state} />
     </Box>
   )
 }
@@ -39737,40 +40558,102 @@ function CpuPanel({ cores }: { cores: CoreMetrics[] }) {
 // ============================================================================
 
 function MemoryPanel({ memory }: { memory: MemoryMetrics }) {
-  const total = memory.used + memory.cached + memory.buffers + memory.free
-  const usedPct = (memory.used / total) * 100
-  const swapPct = (memory.swap / memory.swapTotal) * 100
+  const ramPct = Math.round((memory.ramUsed / memory.ramTotal) * 100)
+  const swapPct = Math.round((memory.swapUsed / memory.swapTotal) * 100)
+  const avail = (memory.ramTotal - memory.ramUsed).toFixed(1)
 
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Box gap={2} wrap="truncate">
-        <Text bold color="$primary">Memory</Text>
-        <Text>{memory.used.toFixed(1)} / {total.toFixed(1)} GiB</Text>
-      </Box>
-      <Sep />
-      <Box wrap="truncate">
-        <Text color="$muted">{"RAM  "}</Text>
-        <Box flexGrow={1}>
-          <ProgressBar value={usedPct / 100} color={severityColor(usedPct)} showPercentage />
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>RAM</Muted>
+          <Text>{\`\${memory.ramUsed.toFixed(1)} / \${memory.ramTotal.toFixed(1)} GiB\`}</Text>
+          <Text color={severityColor(ramPct)}>{\`\${ramPct}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={ramPct / 100} color={severityColor(ramPct)} showPercentage={false} />
+          </Box>
         </Box>
-      </Box>
-      <Box wrap="truncate">
-        <Text color="$muted">{"Swap "}</Text>
-        <Box flexGrow={1}>
-          <ProgressBar value={swapPct / 100} color={severityColor(swapPct)} showPercentage />
+        <Box gap={1} wrap="truncate">
+          <Muted>avail</Muted>
+          <Text>{\`\${avail}G\`}</Text>
         </Box>
-      </Box>
+      </LR>
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Used</Muted>
+            <Text>{\`\${memory.ramUsed.toFixed(1)}G\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Cache</Muted>
+            <Text>{\`\${memory.cached.toFixed(1)}G\`}</Text>
+          </Box>
+        </Box>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Free</Muted>
+            <Text>{\`\${memory.free.toFixed(1)}G\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Slab</Muted>
+            <Text>{\`\${memory.slab.toFixed(1)}G\`}</Text>
+          </Box>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>Swap</Muted>
+          <Text>{\`\${memory.swapUsed.toFixed(1)} / \${memory.swapTotal.toFixed(1)} GiB\`}</Text>
+          <Text color={severityColor(swapPct)}>{\`\${swapPct}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={swapPct / 100} color={severityColor(swapPct)} showPercentage={false} />
+          </Box>
+        </Box>
+        <Box gap={1} wrap="truncate">
+          <Muted>zram</Muted>
+          <Text>off</Text>
+        </Box>
+      </LR>
       <Sep />
-      <Box gap={2} wrap="truncate">
-        <Text color="$warning">Used {memory.used.toFixed(1)}G</Text>
-        <Text color="$info">Cache {memory.cached.toFixed(1)}G</Text>
-        <Text color="$primary">Buf {memory.buffers.toFixed(1)}G</Text>
-        <Muted>Free {memory.free.toFixed(1)}G</Muted>
-      </Box>
-      <Box gap={1} wrap="truncate">
-        <Muted>History:</Muted>
-        <Text color={severityColor(usedPct)}>{sparkline(memory.history, 100)}</Text>
-      </Box>
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Apps</Muted>
+            <Text>{\`\${memory.apps.toFixed(1)}G\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Wired</Muted>
+            <Text>{\`\${memory.wired.toFixed(1)}G\`}</Text>
+          </Box>
+        </Box>
+        <Box gap={1} wrap="truncate">
+          <Muted>Buffers</Muted>
+          <Text>612M</Text>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Dirty</Muted>
+            <Text>212M</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Shared</Muted>
+            <Text>{\`\${memory.shared.toFixed(1)}G\`}</Text>
+          </Box>
+        </Box>
+        <Box gap={1} wrap="truncate">
+          <Muted>Reclaim</Muted>
+          <Text>{\`\${memory.reclaim.toFixed(1)}G\`}</Text>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>Trend</Muted>
+          <Text color="$primary">{sparkline(memory.history)}</Text>
+        </Box>
+        <Muted>30m</Muted>
+      </LR>
     </Box>
   )
 }
@@ -39780,32 +40663,98 @@ function MemoryPanel({ memory }: { memory: MemoryMetrics }) {
 // ============================================================================
 
 function NetworkPanel({ network }: { network: NetworkMetrics }) {
+  const dlPct = Math.round((network.dlRate / 630) * 100)
+  const ulPct = Math.round((network.ulRate / 400) * 100)
+
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Box gap={2} wrap="truncate">
-        <Text bold color="$primary">Network</Text>
-        <Muted>en0 / 1 Gbps</Muted>
-      </Box>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>DL</Muted>
+          <Text>{\`\${network.dlRate} Mb/s\`}</Text>
+          <Text color={severityColor(dlPct)}>{\`\${dlPct}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={dlPct / 100} color={severityColor(dlPct)} showPercentage={false} />
+          </Box>
+        </Box>
+        <Box gap={1} wrap="truncate">
+          <Muted>peak</Muted>
+          <Text>{\`\${network.dlPeak}\`}</Text>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>UL</Muted>
+          <Text color="$info">{\`\${network.ulRate} Mb/s\`}</Text>
+          <Text color="$info">{\`\${ulPct}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={ulPct / 100} color="$info" showPercentage={false} />
+          </Box>
+        </Box>
+        <Box gap={1} wrap="truncate">
+          <Muted>peak</Muted>
+          <Text>{\`\${network.ulPeak}\`}</Text>
+        </Box>
+      </LR>
       <Sep />
-      <Box wrap="truncate">
-        <Text color="$success">{"↓ DL "}</Text>
-        <Box flexGrow={1}>
-          <ProgressBar value={Math.min(1, network.downloadRate / 100)} color="$success" showPercentage={false} />
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Conn</Muted>
+            <Text>{\`\${network.connEst} est\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Listen</Muted>
+            <Text>{\`\${network.listen}\`}</Text>
+          </Box>
         </Box>
-        <Text color="$success">{" "}{network.downloadRate.toFixed(1).padStart(5)} MB/s</Text>
-      </Box>
-      <Box wrap="truncate">
-        <Text color="$info">{"↑ UL "}</Text>
-        <Box flexGrow={1}>
-          <ProgressBar value={Math.min(1, network.uploadRate / 40)} color="$info" showPercentage={false} />
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>SYN</Muted>
+            <Text>{\`\${network.syn}\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Drops</Muted>
+            <Text>{\`\${network.drops}\`}</Text>
+          </Box>
         </Box>
-        <Text color="$info">{" "}{network.uploadRate.toFixed(1).padStart(5)} MB/s</Text>
-      </Box>
-      <Box gap={2} wrap="truncate">
-        <LabelValue label="Active:" value={String(network.connections)} />
-        <LabelValue label="In:" value={\`\${network.packetsIn} pkts\`} />
-        <LabelValue label="Out:" value={\`\${network.packetsOut} pkts\`} />
-      </Box>
+      </LR>
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Rx</Muted>
+            <Text>{network.rxPps}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Tx</Muted>
+            <Text>{network.txPps}</Text>
+          </Box>
+        </Box>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Retrans</Muted>
+            <Text>{network.retrans}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>RTT</Muted>
+            <Text>{network.rtt}</Text>
+          </Box>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>DL</Muted>
+          <Text color="$primary">{sparkline(network.dlHistory)}</Text>
+        </Box>
+        <Muted>60s</Muted>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>UL</Muted>
+          <Text color="$info">{sparkline(network.ulHistory)}</Text>
+        </Box>
+        <Muted>60s</Muted>
+      </LR>
     </Box>
   )
 }
@@ -39814,60 +40763,101 @@ function NetworkPanel({ network }: { network: NetworkMetrics }) {
 // Process Table
 // ============================================================================
 
-const COL = { pid: 7, name: 14, cpu: 7, mem: 7, memMB: 9, status: 10, time: 10 }
+const COL = { pid: 6, name: 62, cpu: 6, memp: 6, mem: 9, status: 10, time: 10, io: 11, thr: 5 }
 
-function ProcessRow({ proc, isTop }: { proc: ProcessInfo; isTop: boolean }) {
-  const cpuColor = severityColor(proc.cpu)
+function statusColor(status: ProcessInfo["status"]): string | undefined {
+  switch (status) {
+    case "Running":
+      return "$success"
+    case "I/O wait":
+      return "$warning"
+    case "Sleep":
+    default:
+      return "$muted"
+  }
+}
+
+function ProcessHeader() {
   return (
     <Box wrap="truncate">
-      <Text color="$muted">{String(proc.pid).padStart(COL.pid)}</Text>
-      <Text bold={isTop}>{("  " + proc.name).padEnd(COL.name)}</Text>
-      <Text color={cpuColor}>{(proc.cpu.toFixed(1) + "%").padStart(COL.cpu)}</Text>
-      <Text>{(proc.mem.toFixed(1) + "%").padStart(COL.mem)}</Text>
-      <Text>{(proc.memMB + " MB").padStart(COL.memMB)}</Text>
-      <Text color={proc.status === "running" ? "$success" : "$muted"}>{"  " + proc.status.padEnd(COL.status - 2)}</Text>
-      <Text color="$muted">{proc.time.padStart(COL.time)}</Text>
+      <Muted>{\`\${"PID".padStart(COL.pid)} \`}</Muted>
+      <Muted>{\`\${"NAME".padEnd(COL.name)} \`}</Muted>
+      <Text bold color="$primary">{\`\${"CPU%\\u2193".padStart(COL.cpu)} \`}</Text>
+      <Muted>{\`\${"MEM%".padStart(COL.memp)} \`}</Muted>
+      <Muted>{\`\${"MEM".padStart(COL.mem)} \`}</Muted>
+      <Muted>{\`\${"STATUS".padEnd(COL.status)} \`}</Muted>
+      <Muted>{\`\${"TIME".padStart(COL.time)} \`}</Muted>
+      <Muted>{\`\${"IO".padStart(COL.io)} \`}</Muted>
+      <Muted>{\`\${"THR".padStart(COL.thr)}\`}</Muted>
     </Box>
   )
 }
 
-function ProcessPanel({ processes }: { processes: ProcessInfo[] }) {
-  const sorted = [...processes].sort((a, b) => b.cpu - a.cpu)
-  const running = processes.filter((p) => p.status === "running").length
-  const sleeping = processes.filter((p) => p.status === "sleeping").length
+function ProcessRow({ proc, isTop }: { proc: ProcessInfo; isTop: boolean }) {
+  const cpuColor = severityColor(proc.cpu)
+  const ioColor = proc.io === "0" ? "$muted" : "$primary"
+
+  return (
+    <Box wrap="truncate">
+      <Text>{\`\${String(proc.pid).padStart(COL.pid)} \`}</Text>
+      <Text bold={isTop}>{\`\${proc.name.padEnd(COL.name).slice(0, COL.name)} \`}</Text>
+      <Text bold={isTop} color={cpuColor}>{\`\${proc.cpu.toFixed(1).padStart(5)}% \`}</Text>
+      <Text color={severityColor(proc.memp * 10)}>{\`\${proc.memp.toFixed(1).padStart(5)}% \`}</Text>
+      <Text>{\`\${proc.mem.padStart(COL.mem)} \`}</Text>
+      <Text color={statusColor(proc.status)}>{\`\${proc.status.padEnd(COL.status)} \`}</Text>
+      <Text>{\`\${proc.time.padStart(COL.time)} \`}</Text>
+      <Text color={ioColor}>{\`\${proc.io.padStart(COL.io)} \`}</Text>
+      <Text>{\`\${String(proc.thr).padStart(COL.thr)}\`}</Text>
+    </Box>
+  )
+}
+
+function ProcessFooter({ processes, state }: { processes: ProcessInfo[]; state: DashboardState }) {
+  const running = processes.filter((p) => p.status === "Running").length
+  const sleeping = processes.filter((p) => p.status === "Sleep").length
+  const iowait = processes.filter((p) => p.status === "I/O wait").length
+  const ramPct = Math.round((state.memory.ramUsed / state.memory.ramTotal) * 100)
+
+  return (
+    <LR>
+      <Box gap={2} wrap="truncate">
+        <Muted>184 processes</Muted>
+        <Text color="$success">{\`\${running} running\`}</Text>
+        <Muted>{\`\${sleeping + iowait + (184 - running - sleeping - iowait)} sleeping\`}</Muted>
+        <Text color="$warning">{\`\${iowait > 0 ? iowait : 2} iowait\`}</Text>
+      </Box>
+      <Box gap={2} wrap="truncate">
+        <Box gap={1}>
+          <Muted>Threads</Muted>
+          <Text>1,942</Text>
+        </Box>
+        <Box gap={1}>
+          <Muted>CPU</Muted>
+          <Text color={severityColor(state.totalCpu)}>{\`\${state.totalCpu}%\`}</Text>
+        </Box>
+        <Box gap={1}>
+          <Muted>MEM</Muted>
+          <Text color={severityColor(ramPct)}>{\`\${ramPct}%\`}</Text>
+        </Box>
+        <Text color="$primary">{\`428\\u2193\`}</Text>
+        <Text color="$info">{\`86\\u2191\`}</Text>
+      </Box>
+    </LR>
+  )
+}
+
+function ProcessPanel({ state }: { state: DashboardState }) {
+  const sorted = [...state.processes].sort((a, b) => b.cpu - a.cpu)
 
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Box justifyContent="space-between" wrap="truncate">
-        <Text bold color="$primary">Processes</Text>
-        <Box gap={2}>
-          <Muted>Sort: CPU%▼</Muted>
-          <Muted>Total: {processes.length}</Muted>
-        </Box>
-      </Box>
+      <ProcessHeader />
       <Sep />
-      <Box wrap="truncate">
-        <Muted>
-          {"PID".padStart(COL.pid)}
-          {"  Name".padEnd(COL.name)}
-          {"CPU%".padStart(COL.cpu)}
-          {"MEM%".padStart(COL.mem)}
-          {"MEM".padStart(COL.memMB)}
-          {"  STATUS".padEnd(COL.status)}
-          {"TIME+".padStart(COL.time)}
-        </Muted>
-      </Box>
+      {sorted.map((proc, i) => (
+        <ProcessRow key={proc.pid} proc={proc} isTop={i === 0} />
+      ))}
       <Sep />
-      <Box flexDirection="column" flexGrow={1}>
-        {sorted.map((proc, i) => (
-          <ProcessRow key={proc.pid} proc={proc} isTop={i === 0} />
-        ))}
-      </Box>
-      <Box gap={2} wrap="truncate">
-        <LabelValue label="Total:" value={\`\${processes.length}\`} />
-        <LabelValue label="Running:" value={String(running)} color="$success" />
-        <LabelValue label="Sleeping:" value={String(sleeping)} color="$muted" />
-      </Box>
+      <ProcessFooter processes={state.processes} state={state} />
     </Box>
   )
 }
@@ -39884,52 +40874,32 @@ const pane = {
   flexDirection: "column" as const,
 }
 
-function WideLayout({
-  cores,
-  memory,
-  network,
-  processes,
-}: {
-  cores: CoreMetrics[]
-  memory: MemoryMetrics
-  network: NetworkMetrics
-  processes: ProcessInfo[]
-}) {
+function WideLayout({ state }: { state: DashboardState }) {
   return (
     <Box flexDirection="column" flexGrow={1}>
-      {/* Top row: CPU (65%) | Memory + Network stacked (35%) */}
-      <Box flexDirection="row">
+      {/* Top row: CPU (left ~60%) | Memory + Network stacked (right ~40%) */}
+      <Box flexDirection="row" gap={1}>
         <Box {...pane} flexGrow={3} flexBasis={0}>
-          <CpuPanel cores={cores} />
+          <CpuPanel state={state} />
         </Box>
         <Box flexDirection="column" flexGrow={2} flexBasis={0}>
           <Box {...pane} flexGrow={1}>
-            <MemoryPanel memory={memory} />
+            <MemoryPanel memory={state.memory} />
           </Box>
           <Box {...pane} flexGrow={1}>
-            <NetworkPanel network={network} />
+            <NetworkPanel network={state.network} />
           </Box>
         </Box>
       </Box>
-      {/* Bottom: Process table (full width, fills remaining space) */}
+      {/* Bottom: Process table (full width) */}
       <Box {...pane} flexGrow={1}>
-        <ProcessPanel processes={processes} />
+        <ProcessPanel state={state} />
       </Box>
     </Box>
   )
 }
 
-function NarrowLayout({
-  cores,
-  memory,
-  network,
-  processes,
-}: {
-  cores: CoreMetrics[]
-  memory: MemoryMetrics
-  network: NetworkMetrics
-  processes: ProcessInfo[]
-}) {
+function NarrowLayout({ state }: { state: DashboardState }) {
   return (
     <Box flexDirection="column" flexGrow={1}>
       <Tabs defaultValue="cpu">
@@ -39944,22 +40914,22 @@ function NarrowLayout({
 
         <TabPanel value="cpu">
           <Box {...pane} paddingY={1} flexGrow={1}>
-            <CpuPanel cores={cores} />
+            <CpuPanel state={state} />
           </Box>
         </TabPanel>
         <TabPanel value="memory">
           <Box {...pane} paddingY={1} flexGrow={1}>
-            <MemoryPanel memory={memory} />
+            <MemoryPanel memory={state.memory} />
           </Box>
         </TabPanel>
         <TabPanel value="network">
           <Box {...pane} paddingY={1} flexGrow={1}>
-            <NetworkPanel network={network} />
+            <NetworkPanel network={state.network} />
           </Box>
         </TabPanel>
         <TabPanel value="processes">
           <Box {...pane} paddingY={1} flexGrow={1}>
-            <ProcessPanel processes={processes} />
+            <ProcessPanel state={state} />
           </Box>
         </TabPanel>
       </Tabs>
@@ -39986,23 +40956,22 @@ export function Dashboard() {
   })
 
   if (isNarrow) {
-    return (
-      <NarrowLayout
-        cores={state.cores}
-        memory={state.memory}
-        network={state.network}
-        processes={state.processes}
-      />
-    )
+    return <NarrowLayout state={state} />
   }
 
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Box paddingX={1} justifyContent="space-between" wrap="truncate">
-        <Text bold color="$primary">System Monitor</Text>
-        <Muted>↑↓ scroll  F1 help  F5 tree  F6 sort  q quit</Muted>
-      </Box>
-      <WideLayout cores={state.cores} memory={state.memory} network={state.network} processes={state.processes} />
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Text bold color="$primary">
+            Silvery TUI
+          </Text>
+          <Muted>system monitor showcase</Muted>
+          <Text color="$primary">devbox-01</Text>
+        </Box>
+        <Muted>14:27 UTC  [h]help  [1]cpu  [2]mem  [3]net  [p]proc  [/]filter  [q]quit</Muted>
+      </LR>
+      <WideLayout state={state} />
     </Box>
   )
 }
@@ -41596,9 +42565,6 @@ import {
   render,
   Box,
   Text,
-  H2,
-  Strong,
-  Small,
   Muted,
   Tabs,
   TabList,
@@ -41625,8 +42591,8 @@ export const meta: ExampleMeta = {
 
 const SPARK_CHARS = "▁▂▃▄▅▆▇█"
 
-function sparkline(values: number[], max: number): string {
-  return values.map((v) => SPARK_CHARS[Math.round((v / max) * 7)] ?? SPARK_CHARS[0]).join("")
+function sparkline(values: number[]): string {
+  return values.map((v) => SPARK_CHARS[Math.max(0, Math.min(7, v))] ?? SPARK_CHARS[0]).join("")
 }
 
 // ============================================================================
@@ -41637,13 +42603,9 @@ function jitter(base: number, range: number): number {
   return Math.max(0, Math.min(100, base + (Math.random() - 0.5) * range))
 }
 
-function initHistory(base: number, range: number, len: number = 20): number[] {
-  return Array.from({ length: len }, () => jitter(base, range))
-}
-
-function pushHistory(history: number[], value: number): number[] {
+function pushHistory(history: number[], value: number, max = 20): number[] {
   const next = [...history]
-  if (next.length >= 20) next.shift()
+  if (next.length >= max) next.shift()
   next.push(value)
   return next
 }
@@ -41654,128 +42616,215 @@ function severityColor(pct: number): string {
   return "$success"
 }
 
+function heatColor(temp: number): string {
+  if (temp >= 75) return "$error"
+  if (temp >= 60) return "$warning"
+  return "$success"
+}
+
 // ============================================================================
 // State
 // ============================================================================
 
-interface CoreMetrics {
-  usage: number
-  history: number[]
+interface CoreRow {
+  label: string
+  pct: number
+  freq: string
+  temp: number
+  mode: string
 }
 
 interface MemoryMetrics {
-  used: number
+  ramUsed: number
+  ramTotal: number
   cached: number
-  buffers: number
   free: number
-  swap: number
+  slab: number
+  apps: number
+  wired: number
+  buffers: number
+  dirty: number
+  shared: number
+  reclaim: number
+  swapUsed: number
   swapTotal: number
   history: number[]
 }
 
 interface NetworkMetrics {
-  downloadRate: number
-  uploadRate: number
-  downloadHistory: number[]
-  uploadHistory: number[]
-  connections: number
-  packetsIn: number
-  packetsOut: number
+  dlRate: number
+  dlPeak: number
+  ulRate: number
+  ulPeak: number
+  connEst: number
+  listen: number
+  syn: number
+  drops: number
+  rxPps: string
+  txPps: string
+  retrans: string
+  rtt: string
+  dlHistory: number[]
+  ulHistory: number[]
 }
 
 interface ProcessInfo {
   pid: number
   name: string
   cpu: number
-  mem: number
-  memMB: number
-  status: string
+  memp: number
+  mem: string
+  status: "Running" | "Sleep" | "I/O wait"
   time: string
+  io: string
+  thr: number
 }
 
-function createInitialState() {
-  const coreUsages = [72, 45, 88, 35, 61, 93, 28, 52]
-  const cores: CoreMetrics[] = coreUsages.map((usage) => ({
-    usage,
-    history: initHistory(usage, 15, 20),
-  }))
+interface DashboardState {
+  cores: CoreRow[]
+  totalCpu: number
+  userCpu: number
+  sysCpu: number
+  waitCpu: number
+  load: [number, number, number]
+  avgTemp: number
+  tasks: number
+  avgFreq: string
+  ctxPerSec: string
+  uptime: string
+  pkgPct: number
+  power: number
+  fan: number
+  boostOn: boolean
+  cpuHistory: number[]
+  memory: MemoryMetrics
+  network: NetworkMetrics
+  processes: ProcessInfo[]
+}
+
+function createInitialState(): DashboardState {
+  const cores: CoreRow[] = [
+    { label: "cpu00", pct: 12, freq: "3.62", temp: 39, mode: "idle" },
+    { label: "cpu01", pct: 28, freq: "3.79", temp: 42, mode: "balanced" },
+    { label: "cpu02", pct: 44, freq: "4.02", temp: 47, mode: "steady" },
+    { label: "cpu03", pct: 57, freq: "4.18", temp: 53, mode: "steady" },
+    { label: "cpu04", pct: 63, freq: "4.31", temp: 61, mode: "warm" },
+    { label: "cpu05", pct: 71, freq: "4.47", temp: 68, mode: "boost" },
+    { label: "cpu06", pct: 79, freq: "4.62", temp: 72, mode: "boost" },
+    { label: "cpu07", pct: 83, freq: "4.84", temp: 75, mode: "boost" },
+    { label: "cpu08", pct: 88, freq: "5.02", temp: 77, mode: "turbo" },
+    { label: "cpu09", pct: 94, freq: "5.21", temp: 81, mode: "turbo" },
+  ]
+
+  const cpuHistory = [
+    1, 2, 2, 3, 2, 4, 5, 4, 6, 5, 4, 6, 7, 6, 5, 6, 7, 6, 5, 4, 5, 6, 5, 7, 6, 5, 6, 7, 7, 6, 5, 4, 5, 6, 5, 4,
+  ]
+
+  const memHistory = [4, 4, 5, 5, 4, 5, 6, 5, 5, 6, 6, 5, 6, 6, 7, 6, 6, 5, 6, 6, 5, 5, 6, 5]
 
   const memory: MemoryMetrics = {
-    used: 22.7,
-    cached: 6.8,
-    buffers: 1.2,
-    free: 9.3,
-    swap: 5.76,
-    swapTotal: 32.0,
-    history: initHistory(71, 10, 20),
+    ramUsed: 23.7,
+    ramTotal: 32.0,
+    cached: 5.9,
+    free: 2.4,
+    slab: 1.1,
+    apps: 17.4,
+    wired: 1.8,
+    buffers: 0.612,
+    dirty: 0.212,
+    shared: 1.3,
+    reclaim: 0.8,
+    swapUsed: 2.1,
+    swapTotal: 8.0,
+    history: memHistory,
   }
 
+  const dlHistory = [1, 2, 3, 5, 4, 6, 5, 7, 6, 4, 3, 5, 6, 7, 5, 4, 6, 7, 6, 5, 4, 6, 5, 4]
+  const ulHistory = [0, 1, 1, 2, 2, 3, 2, 4, 3, 2, 1, 2, 3, 4, 3, 2, 1, 2, 3, 2, 2, 3, 2, 1]
+
   const network: NetworkMetrics = {
-    downloadRate: 42.5,
-    uploadRate: 12.3,
-    downloadHistory: initHistory(40, 30, 20),
-    uploadHistory: initHistory(12, 10, 20),
-    connections: 147,
-    packetsIn: 1842,
-    packetsOut: 923,
+    dlRate: 428,
+    dlPeak: 612,
+    ulRate: 86,
+    ulPeak: 143,
+    connEst: 184,
+    listen: 23,
+    syn: 2,
+    drops: 0,
+    rxPps: "61.2kpps",
+    txPps: "19.4kpps",
+    retrans: "0.08%",
+    rtt: "18ms",
+    dlHistory,
+    ulHistory,
   }
 
   const processes: ProcessInfo[] = [
-    { pid: 1201, name: "node", cpu: 24.3, mem: 4.2, memMB: 1344, status: "running", time: "2:14:33" },
-    { pid: 892, name: "chrome", cpu: 18.7, mem: 12.1, memMB: 3872, status: "running", time: "5:42:11" },
-    { pid: 3456, name: "vscode", cpu: 12.1, mem: 8.4, memMB: 2688, status: "running", time: "3:21:05" },
-    { pid: 2103, name: "postgres", cpu: 8.9, mem: 3.7, memMB: 1184, status: "sleeping", time: "12:05:44" },
-    { pid: 4521, name: "docker", cpu: 6.2, mem: 5.1, memMB: 1632, status: "running", time: "8:33:22" },
-    { pid: 1893, name: "nginx", cpu: 3.4, mem: 1.2, memMB: 384, status: "sleeping", time: "24:11:03" },
-    { pid: 7234, name: "redis", cpu: 2.1, mem: 0.8, memMB: 256, status: "sleeping", time: "24:10:59" },
-    { pid: 5612, name: "bun", cpu: 1.8, mem: 2.3, memMB: 736, status: "running", time: "0:45:12" },
-    { pid: 3891, name: "webpack", cpu: 1.5, mem: 1.9, memMB: 608, status: "running", time: "0:32:41" },
-    { pid: 6742, name: "eslint", cpu: 0.9, mem: 0.6, memMB: 192, status: "sleeping", time: "0:12:08" },
-    { pid: 8123, name: "ssh-agent", cpu: 0.3, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
-    { pid: 9001, name: "cron", cpu: 0.1, mem: 0.2, memMB: 64, status: "sleeping", time: "24:11:03" },
-    { pid: 4102, name: "gpg-agent", cpu: 0.1, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
-    { pid: 7801, name: "fswatch", cpu: 0.2, mem: 0.3, memMB: 96, status: "running", time: "3:14:22" },
-    { pid: 2045, name: "dnsmasq", cpu: 0.0, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
-    { pid: 6234, name: "tmux", cpu: 0.4, mem: 0.5, memMB: 160, status: "running", time: "12:05:44" },
+    { pid: 31842, name: "bun dev --hot src/server.ts", cpu: 94.2, memp: 3.8, mem: "1.22G", status: "Running", time: "01:42:17", io: "24M/s", thr: 18 },
+    { pid: 27114, name: "node /usr/bin/vite --host", cpu: 71.4, memp: 2.2, mem: "716M", status: "Running", time: "00:18:09", io: "12M/s", thr: 26 },
+    { pid: 918, name: "postgres: checkpointer", cpu: 12.8, memp: 1.4, mem: "448M", status: "Sleep", time: "19:22:41", io: "3.1M/s", thr: 27 },
+    { pid: 1023, name: "Code Helper (Renderer)", cpu: 9.6, memp: 4.8, mem: "1.53G", status: "Sleep", time: "07:13:51", io: "1.2M/s", thr: 44 },
+    { pid: 2241, name: "docker-desktop", cpu: 8.9, memp: 6.3, mem: "2.01G", status: "Running", time: "11:08:04", io: "9.4M/s", thr: 61 },
+    { pid: 1542, name: "redis-server *:6379", cpu: 6.7, memp: 0.9, mem: "289M", status: "Sleep", time: "02:51:17", io: "642K/s", thr: 8 },
+    { pid: 612, name: "tailscaled --tun=userspace-networking", cpu: 5.4, memp: 0.4, mem: "132M", status: "Sleep", time: "05:44:22", io: "218K/s", thr: 19 },
+    { pid: 33210, name: "bun test --watch", cpu: 4.2, memp: 1.1, mem: "356M", status: "Running", time: "00:06:38", io: "4.6M/s", thr: 12 },
+    { pid: 1804, name: "nginx: worker process", cpu: 3.7, memp: 0.2, mem: "72M", status: "Sleep", time: "03:17:09", io: "118K/s", thr: 5 },
+    { pid: 2877, name: "Chrome Helper (GPU)", cpu: 3.2, memp: 2.7, mem: "864M", status: "Sleep", time: "06:29:33", io: "2.3M/s", thr: 23 },
+    { pid: 451, name: "kernel_task", cpu: 2.8, memp: 0.1, mem: "42M", status: "Running", time: "22:54:48", io: "0", thr: 179 },
+    { pid: 1942, name: "syncthing serve --no-browser", cpu: 2.1, memp: 0.8, mem: "258M", status: "Sleep", time: "14:05:14", io: "884K/s", thr: 16 },
+    { pid: 7621, name: "python scripts/indexer.py --incremental", cpu: 1.9, memp: 1.9, mem: "604M", status: "I/O wait", time: "00:43:58", io: "14M/s", thr: 9 },
+    { pid: 266, name: "systemd-journald", cpu: 1.2, memp: 0.1, mem: "38M", status: "Sleep", time: "09:12:44", io: "96K/s", thr: 3 },
+    { pid: 74, name: "zsh - bun gen-mockup.ts", cpu: 0.2, memp: 0.0, mem: "6M", status: "Running", time: "00:00:03", io: "0", thr: 1 },
   ]
 
-  return { cores, memory, network, processes }
+  return {
+    cores,
+    totalCpu: 67,
+    userCpu: 38,
+    sysCpu: 12,
+    waitCpu: 14,
+    load: [4.21, 3.88, 3.11],
+    avgTemp: 71,
+    tasks: 287,
+    avgFreq: "4.31",
+    ctxPerSec: "128k",
+    uptime: "12d 06h",
+    pkgPct: 67,
+    power: 84,
+    fan: 1460,
+    boostOn: true,
+    cpuHistory,
+    memory,
+    network,
+    processes,
+  }
 }
 
-function tickState(prev: ReturnType<typeof createInitialState>) {
+function tickState(prev: DashboardState): DashboardState {
   const cores = prev.cores.map((core) => {
-    const usage = jitter(core.usage, 15)
-    return { usage, history: pushHistory(core.history, usage) }
+    const pct = Math.max(0, Math.min(100, Math.round(jitter(core.pct, 10))))
+    return { ...core, pct }
   })
 
-  const totalMem = prev.memory.used + prev.memory.cached + prev.memory.buffers + prev.memory.free
-  const usedJitter = (jitter((prev.memory.used / totalMem) * 100, 3) / 100) * totalMem
-  const memory: MemoryMetrics = {
-    ...prev.memory,
-    used: Math.max(4, usedJitter),
-    swap: (jitter((prev.memory.swap / prev.memory.swapTotal) * 100, 5) / 100) * prev.memory.swapTotal,
-    history: pushHistory(prev.memory.history, (usedJitter / totalMem) * 100),
-  }
+  const totalCpu = Math.round(jitter(prev.totalCpu, 8))
+  const cpuHistory = pushHistory(prev.cpuHistory, Math.max(0, Math.min(7, Math.round(totalCpu / 14))), 36)
 
-  const downloadRate = jitter(prev.network.downloadRate, 20)
-  const uploadRate = jitter(prev.network.uploadRate, 8)
-  const network: NetworkMetrics = {
-    downloadRate,
-    uploadRate,
-    downloadHistory: pushHistory(prev.network.downloadHistory, downloadRate),
-    uploadHistory: pushHistory(prev.network.uploadHistory, uploadRate),
-    connections: Math.max(50, Math.round(jitter(prev.network.connections, 20))),
-    packetsIn: Math.max(100, Math.round(jitter(prev.network.packetsIn, 200))),
-    packetsOut: Math.max(50, Math.round(jitter(prev.network.packetsOut, 100))),
-  }
+  const ramPct = Math.round((prev.memory.ramUsed / prev.memory.ramTotal) * 100)
+  const memHistory = pushHistory(prev.memory.history, Math.max(0, Math.min(7, Math.round(ramPct / 14))), 24)
+  const memory: MemoryMetrics = { ...prev.memory, history: memHistory }
+
+  const dlVal = Math.max(0, Math.min(7, Math.round(jitter(5, 4))))
+  const ulVal = Math.max(0, Math.min(7, Math.round(jitter(2, 3))))
+  const dlHistory = pushHistory(prev.network.dlHistory, dlVal, 24)
+  const ulHistory = pushHistory(prev.network.ulHistory, ulVal, 24)
+  const network: NetworkMetrics = { ...prev.network, dlHistory, ulHistory }
 
   const processes = prev.processes.map((p) => ({
     ...p,
-    cpu: Math.max(0.0, jitter(p.cpu, 4)),
-    mem: Math.max(0.1, jitter(p.mem, 1)),
+    cpu: Math.max(0, Number(jitter(p.cpu, 4).toFixed(1))),
   }))
 
-  return { cores, memory, network, processes }
+  return { ...prev, cores, totalCpu, cpuHistory, memory, network, processes }
 }
 
 // ============================================================================
@@ -41786,11 +42835,10 @@ function Sep() {
   return <Muted>{"┄".repeat(50)}</Muted>
 }
 
-function LabelValue({ label, value, color }: { label: string; value: string; color?: string }) {
+function LR({ children }: { children: React.ReactNode }) {
   return (
-    <Box gap={1}>
-      <Muted>{label}</Muted>
-      <Text color={color}>{value}</Text>
+    <Box justifyContent="space-between" wrap="truncate">
+      {children}
     </Box>
   )
 }
@@ -41799,52 +42847,135 @@ function LabelValue({ label, value, color }: { label: string; value: string; col
 // CPU Panel
 // ============================================================================
 
-function CpuCore({ index, core }: { index: number; core: CoreMetrics }) {
-  const pct = Math.round(core.usage)
-  const color = severityColor(pct)
+function CpuSummary({ state }: { state: DashboardState }) {
   return (
-    <Box wrap="truncate">
-      <Text color="$muted">{\`C\${index}\`.padEnd(4)}</Text>
-      <Box flexGrow={1}>
-        <ProgressBar value={pct / 100} color={color} showPercentage />
-      </Box>
-    </Box>
+    <>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>Total</Muted>
+          <Text color={severityColor(state.totalCpu)}>{\`\${state.totalCpu}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={state.totalCpu / 100} color={severityColor(state.totalCpu)} showPercentage={false} />
+          </Box>
+        </Box>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Load</Muted>
+            <Text>{\`\${state.load[0].toFixed(2)} \${state.load[1].toFixed(2)} \${state.load[2].toFixed(2)}\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Temp</Muted>
+            <Text color={heatColor(state.avgTemp)}>{\`\${state.avgTemp}\\u00B0C\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Tasks</Muted>
+            <Text>{\`\${state.tasks}\`}</Text>
+          </Box>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>User</Muted>
+            <Text color={severityColor(state.userCpu)}>{\`\${state.userCpu}%\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Sys</Muted>
+            <Text color={severityColor(state.sysCpu)}>{\`\${state.sysCpu}%\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Wait</Muted>
+            <Text color={severityColor(state.waitCpu)}>{\`\${state.waitCpu}%\`}</Text>
+          </Box>
+        </Box>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Avg</Muted>
+            <Text>{\`\${state.avgFreq}GHz\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Ctx/s</Muted>
+            <Text>{state.ctxPerSec}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Uptime</Muted>
+            <Text>{state.uptime}</Text>
+          </Box>
+        </Box>
+      </LR>
+    </>
   )
 }
 
-function CpuPanel({ cores }: { cores: CoreMetrics[] }) {
-  const avgCpu = cores.reduce((sum, c) => sum + c.usage, 0) / cores.length
-  const maxCpu = Math.max(...cores.map((c) => c.usage))
-  const load1 = ((avgCpu / 100) * 8 * 0.8 + Math.random() * 0.5).toFixed(2)
-  const load5 = ((avgCpu / 100) * 8 * 0.7 + Math.random() * 0.3).toFixed(2)
-  const load15 = ((avgCpu / 100) * 8 * 0.6 + Math.random() * 0.2).toFixed(2)
-  const avgHistory =
-    cores[0]?.history.map((_, i) => cores.reduce((s, c) => s + (c.history[i] ?? 0), 0) / cores.length) ?? []
+function CpuCore({ core }: { core: CoreRow }) {
+  return (
+    <LR>
+      <Box gap={1} wrap="truncate">
+        <Muted>{core.label}</Muted>
+        <Text color={severityColor(core.pct)}>{\`\${core.pct}%\`.padStart(4)}</Text>
+        <Box flexGrow={1}>
+          <ProgressBar value={core.pct / 100} color={severityColor(core.pct)} showPercentage={false} />
+        </Box>
+        <Muted>{\`\${core.freq}GHz\`}</Muted>
+      </Box>
+      <Box gap={2} wrap="truncate">
+        <Box gap={1}>
+          <Muted>temp</Muted>
+          <Text color={heatColor(core.temp)}>{\`\${core.temp}\\u00B0C\`}</Text>
+        </Box>
+        <Text color={severityColor(core.pct)}>{core.mode}</Text>
+      </Box>
+    </LR>
+  )
+}
 
+function CpuFooter({ state }: { state: DashboardState }) {
+  return (
+    <>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>Pkg</Muted>
+          <Text color={severityColor(state.pkgPct)}>{\`\${state.pkgPct}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={state.pkgPct / 100} color={severityColor(state.pkgPct)} showPercentage={false} />
+          </Box>
+        </Box>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Power</Muted>
+            <Text>{\`\${state.power}W\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Fan</Muted>
+            <Text>{\`\${state.fan}RPM\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Boost</Muted>
+            <Text color="$success">on</Text>
+          </Box>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>History</Muted>
+          <Text color="$primary">{sparkline(state.cpuHistory)}</Text>
+        </Box>
+        <Muted>60s</Muted>
+      </LR>
+    </>
+  )
+}
+
+function CpuPanel({ state }: { state: DashboardState }) {
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Box gap={2} wrap="truncate">
-        <Text bold color="$primary">CPU</Text>
-        <LabelValue label="Avg:" value={\`\${Math.round(avgCpu)}%\`} color={severityColor(avgCpu)} />
-        <LabelValue label="Max:" value={\`\${Math.round(maxCpu)}%\`} color={severityColor(maxCpu)} />
-        <LabelValue label="Load:" value={\`\${load1} \${load5} \${load15}\`} />
-      </Box>
+      <CpuSummary state={state} />
       <Sep />
-      <Box flexDirection="column">
-        {cores.map((core, i) => (
-          <CpuCore key={i} index={i} core={core} />
-        ))}
-      </Box>
+      {state.cores.map((core) => (
+        <CpuCore key={core.label} core={core} />
+      ))}
       <Sep />
-      <Box gap={1} wrap="truncate">
-        <Muted>Avg CPU:</Muted>
-        <Text color={severityColor(avgCpu)}>{sparkline(avgHistory, 100)}</Text>
-      </Box>
-      <Box gap={2} wrap="truncate">
-        <LabelValue label="Freq:" value="4.5GHz" />
-        <LabelValue label="Temp:" value="72°C" color={severityColor(72)} />
-        <LabelValue label="Uptime:" value="3d 14h" />
-      </Box>
+      <CpuFooter state={state} />
     </Box>
   )
 }
@@ -41854,40 +42985,102 @@ function CpuPanel({ cores }: { cores: CoreMetrics[] }) {
 // ============================================================================
 
 function MemoryPanel({ memory }: { memory: MemoryMetrics }) {
-  const total = memory.used + memory.cached + memory.buffers + memory.free
-  const usedPct = (memory.used / total) * 100
-  const swapPct = (memory.swap / memory.swapTotal) * 100
+  const ramPct = Math.round((memory.ramUsed / memory.ramTotal) * 100)
+  const swapPct = Math.round((memory.swapUsed / memory.swapTotal) * 100)
+  const avail = (memory.ramTotal - memory.ramUsed).toFixed(1)
 
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Box gap={2} wrap="truncate">
-        <Text bold color="$primary">Memory</Text>
-        <Text>{memory.used.toFixed(1)} / {total.toFixed(1)} GiB</Text>
-      </Box>
-      <Sep />
-      <Box wrap="truncate">
-        <Text color="$muted">{"RAM  "}</Text>
-        <Box flexGrow={1}>
-          <ProgressBar value={usedPct / 100} color={severityColor(usedPct)} showPercentage />
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>RAM</Muted>
+          <Text>{\`\${memory.ramUsed.toFixed(1)} / \${memory.ramTotal.toFixed(1)} GiB\`}</Text>
+          <Text color={severityColor(ramPct)}>{\`\${ramPct}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={ramPct / 100} color={severityColor(ramPct)} showPercentage={false} />
+          </Box>
         </Box>
-      </Box>
-      <Box wrap="truncate">
-        <Text color="$muted">{"Swap "}</Text>
-        <Box flexGrow={1}>
-          <ProgressBar value={swapPct / 100} color={severityColor(swapPct)} showPercentage />
+        <Box gap={1} wrap="truncate">
+          <Muted>avail</Muted>
+          <Text>{\`\${avail}G\`}</Text>
         </Box>
-      </Box>
+      </LR>
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Used</Muted>
+            <Text>{\`\${memory.ramUsed.toFixed(1)}G\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Cache</Muted>
+            <Text>{\`\${memory.cached.toFixed(1)}G\`}</Text>
+          </Box>
+        </Box>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Free</Muted>
+            <Text>{\`\${memory.free.toFixed(1)}G\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Slab</Muted>
+            <Text>{\`\${memory.slab.toFixed(1)}G\`}</Text>
+          </Box>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>Swap</Muted>
+          <Text>{\`\${memory.swapUsed.toFixed(1)} / \${memory.swapTotal.toFixed(1)} GiB\`}</Text>
+          <Text color={severityColor(swapPct)}>{\`\${swapPct}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={swapPct / 100} color={severityColor(swapPct)} showPercentage={false} />
+          </Box>
+        </Box>
+        <Box gap={1} wrap="truncate">
+          <Muted>zram</Muted>
+          <Text>off</Text>
+        </Box>
+      </LR>
       <Sep />
-      <Box gap={2} wrap="truncate">
-        <Text color="$warning">Used {memory.used.toFixed(1)}G</Text>
-        <Text color="$info">Cache {memory.cached.toFixed(1)}G</Text>
-        <Text color="$primary">Buf {memory.buffers.toFixed(1)}G</Text>
-        <Muted>Free {memory.free.toFixed(1)}G</Muted>
-      </Box>
-      <Box gap={1} wrap="truncate">
-        <Muted>History:</Muted>
-        <Text color={severityColor(usedPct)}>{sparkline(memory.history, 100)}</Text>
-      </Box>
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Apps</Muted>
+            <Text>{\`\${memory.apps.toFixed(1)}G\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Wired</Muted>
+            <Text>{\`\${memory.wired.toFixed(1)}G\`}</Text>
+          </Box>
+        </Box>
+        <Box gap={1} wrap="truncate">
+          <Muted>Buffers</Muted>
+          <Text>612M</Text>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Dirty</Muted>
+            <Text>212M</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Shared</Muted>
+            <Text>{\`\${memory.shared.toFixed(1)}G\`}</Text>
+          </Box>
+        </Box>
+        <Box gap={1} wrap="truncate">
+          <Muted>Reclaim</Muted>
+          <Text>{\`\${memory.reclaim.toFixed(1)}G\`}</Text>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>Trend</Muted>
+          <Text color="$primary">{sparkline(memory.history)}</Text>
+        </Box>
+        <Muted>30m</Muted>
+      </LR>
     </Box>
   )
 }
@@ -41897,32 +43090,98 @@ function MemoryPanel({ memory }: { memory: MemoryMetrics }) {
 // ============================================================================
 
 function NetworkPanel({ network }: { network: NetworkMetrics }) {
+  const dlPct = Math.round((network.dlRate / 630) * 100)
+  const ulPct = Math.round((network.ulRate / 400) * 100)
+
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Box gap={2} wrap="truncate">
-        <Text bold color="$primary">Network</Text>
-        <Muted>en0 / 1 Gbps</Muted>
-      </Box>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>DL</Muted>
+          <Text>{\`\${network.dlRate} Mb/s\`}</Text>
+          <Text color={severityColor(dlPct)}>{\`\${dlPct}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={dlPct / 100} color={severityColor(dlPct)} showPercentage={false} />
+          </Box>
+        </Box>
+        <Box gap={1} wrap="truncate">
+          <Muted>peak</Muted>
+          <Text>{\`\${network.dlPeak}\`}</Text>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>UL</Muted>
+          <Text color="$info">{\`\${network.ulRate} Mb/s\`}</Text>
+          <Text color="$info">{\`\${ulPct}%\`}</Text>
+          <Box flexGrow={1}>
+            <ProgressBar value={ulPct / 100} color="$info" showPercentage={false} />
+          </Box>
+        </Box>
+        <Box gap={1} wrap="truncate">
+          <Muted>peak</Muted>
+          <Text>{\`\${network.ulPeak}\`}</Text>
+        </Box>
+      </LR>
       <Sep />
-      <Box wrap="truncate">
-        <Text color="$success">{"↓ DL "}</Text>
-        <Box flexGrow={1}>
-          <ProgressBar value={Math.min(1, network.downloadRate / 100)} color="$success" showPercentage={false} />
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Conn</Muted>
+            <Text>{\`\${network.connEst} est\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Listen</Muted>
+            <Text>{\`\${network.listen}\`}</Text>
+          </Box>
         </Box>
-        <Text color="$success">{" "}{network.downloadRate.toFixed(1).padStart(5)} MB/s</Text>
-      </Box>
-      <Box wrap="truncate">
-        <Text color="$info">{"↑ UL "}</Text>
-        <Box flexGrow={1}>
-          <ProgressBar value={Math.min(1, network.uploadRate / 40)} color="$info" showPercentage={false} />
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>SYN</Muted>
+            <Text>{\`\${network.syn}\`}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Drops</Muted>
+            <Text>{\`\${network.drops}\`}</Text>
+          </Box>
         </Box>
-        <Text color="$info">{" "}{network.uploadRate.toFixed(1).padStart(5)} MB/s</Text>
-      </Box>
-      <Box gap={2} wrap="truncate">
-        <LabelValue label="Active:" value={String(network.connections)} />
-        <LabelValue label="In:" value={\`\${network.packetsIn} pkts\`} />
-        <LabelValue label="Out:" value={\`\${network.packetsOut} pkts\`} />
-      </Box>
+      </LR>
+      <LR>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Rx</Muted>
+            <Text>{network.rxPps}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>Tx</Muted>
+            <Text>{network.txPps}</Text>
+          </Box>
+        </Box>
+        <Box gap={2} wrap="truncate">
+          <Box gap={1}>
+            <Muted>Retrans</Muted>
+            <Text>{network.retrans}</Text>
+          </Box>
+          <Box gap={1}>
+            <Muted>RTT</Muted>
+            <Text>{network.rtt}</Text>
+          </Box>
+        </Box>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>DL</Muted>
+          <Text color="$primary">{sparkline(network.dlHistory)}</Text>
+        </Box>
+        <Muted>60s</Muted>
+      </LR>
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Muted>UL</Muted>
+          <Text color="$info">{sparkline(network.ulHistory)}</Text>
+        </Box>
+        <Muted>60s</Muted>
+      </LR>
     </Box>
   )
 }
@@ -41931,60 +43190,101 @@ function NetworkPanel({ network }: { network: NetworkMetrics }) {
 // Process Table
 // ============================================================================
 
-const COL = { pid: 7, name: 14, cpu: 7, mem: 7, memMB: 9, status: 10, time: 10 }
+const COL = { pid: 6, name: 62, cpu: 6, memp: 6, mem: 9, status: 10, time: 10, io: 11, thr: 5 }
 
-function ProcessRow({ proc, isTop }: { proc: ProcessInfo; isTop: boolean }) {
-  const cpuColor = severityColor(proc.cpu)
+function statusColor(status: ProcessInfo["status"]): string | undefined {
+  switch (status) {
+    case "Running":
+      return "$success"
+    case "I/O wait":
+      return "$warning"
+    case "Sleep":
+    default:
+      return "$muted"
+  }
+}
+
+function ProcessHeader() {
   return (
     <Box wrap="truncate">
-      <Text color="$muted">{String(proc.pid).padStart(COL.pid)}</Text>
-      <Text bold={isTop}>{("  " + proc.name).padEnd(COL.name)}</Text>
-      <Text color={cpuColor}>{(proc.cpu.toFixed(1) + "%").padStart(COL.cpu)}</Text>
-      <Text>{(proc.mem.toFixed(1) + "%").padStart(COL.mem)}</Text>
-      <Text>{(proc.memMB + " MB").padStart(COL.memMB)}</Text>
-      <Text color={proc.status === "running" ? "$success" : "$muted"}>{"  " + proc.status.padEnd(COL.status - 2)}</Text>
-      <Text color="$muted">{proc.time.padStart(COL.time)}</Text>
+      <Muted>{\`\${"PID".padStart(COL.pid)} \`}</Muted>
+      <Muted>{\`\${"NAME".padEnd(COL.name)} \`}</Muted>
+      <Text bold color="$primary">{\`\${"CPU%\\u2193".padStart(COL.cpu)} \`}</Text>
+      <Muted>{\`\${"MEM%".padStart(COL.memp)} \`}</Muted>
+      <Muted>{\`\${"MEM".padStart(COL.mem)} \`}</Muted>
+      <Muted>{\`\${"STATUS".padEnd(COL.status)} \`}</Muted>
+      <Muted>{\`\${"TIME".padStart(COL.time)} \`}</Muted>
+      <Muted>{\`\${"IO".padStart(COL.io)} \`}</Muted>
+      <Muted>{\`\${"THR".padStart(COL.thr)}\`}</Muted>
     </Box>
   )
 }
 
-function ProcessPanel({ processes }: { processes: ProcessInfo[] }) {
-  const sorted = [...processes].sort((a, b) => b.cpu - a.cpu)
-  const running = processes.filter((p) => p.status === "running").length
-  const sleeping = processes.filter((p) => p.status === "sleeping").length
+function ProcessRow({ proc, isTop }: { proc: ProcessInfo; isTop: boolean }) {
+  const cpuColor = severityColor(proc.cpu)
+  const ioColor = proc.io === "0" ? "$muted" : "$primary"
+
+  return (
+    <Box wrap="truncate">
+      <Text>{\`\${String(proc.pid).padStart(COL.pid)} \`}</Text>
+      <Text bold={isTop}>{\`\${proc.name.padEnd(COL.name).slice(0, COL.name)} \`}</Text>
+      <Text bold={isTop} color={cpuColor}>{\`\${proc.cpu.toFixed(1).padStart(5)}% \`}</Text>
+      <Text color={severityColor(proc.memp * 10)}>{\`\${proc.memp.toFixed(1).padStart(5)}% \`}</Text>
+      <Text>{\`\${proc.mem.padStart(COL.mem)} \`}</Text>
+      <Text color={statusColor(proc.status)}>{\`\${proc.status.padEnd(COL.status)} \`}</Text>
+      <Text>{\`\${proc.time.padStart(COL.time)} \`}</Text>
+      <Text color={ioColor}>{\`\${proc.io.padStart(COL.io)} \`}</Text>
+      <Text>{\`\${String(proc.thr).padStart(COL.thr)}\`}</Text>
+    </Box>
+  )
+}
+
+function ProcessFooter({ processes, state }: { processes: ProcessInfo[]; state: DashboardState }) {
+  const running = processes.filter((p) => p.status === "Running").length
+  const sleeping = processes.filter((p) => p.status === "Sleep").length
+  const iowait = processes.filter((p) => p.status === "I/O wait").length
+  const ramPct = Math.round((state.memory.ramUsed / state.memory.ramTotal) * 100)
+
+  return (
+    <LR>
+      <Box gap={2} wrap="truncate">
+        <Muted>184 processes</Muted>
+        <Text color="$success">{\`\${running} running\`}</Text>
+        <Muted>{\`\${sleeping + iowait + (184 - running - sleeping - iowait)} sleeping\`}</Muted>
+        <Text color="$warning">{\`\${iowait > 0 ? iowait : 2} iowait\`}</Text>
+      </Box>
+      <Box gap={2} wrap="truncate">
+        <Box gap={1}>
+          <Muted>Threads</Muted>
+          <Text>1,942</Text>
+        </Box>
+        <Box gap={1}>
+          <Muted>CPU</Muted>
+          <Text color={severityColor(state.totalCpu)}>{\`\${state.totalCpu}%\`}</Text>
+        </Box>
+        <Box gap={1}>
+          <Muted>MEM</Muted>
+          <Text color={severityColor(ramPct)}>{\`\${ramPct}%\`}</Text>
+        </Box>
+        <Text color="$primary">{\`428\\u2193\`}</Text>
+        <Text color="$info">{\`86\\u2191\`}</Text>
+      </Box>
+    </LR>
+  )
+}
+
+function ProcessPanel({ state }: { state: DashboardState }) {
+  const sorted = [...state.processes].sort((a, b) => b.cpu - a.cpu)
 
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Box justifyContent="space-between" wrap="truncate">
-        <Text bold color="$primary">Processes</Text>
-        <Box gap={2}>
-          <Muted>Sort: CPU%▼</Muted>
-          <Muted>Total: {processes.length}</Muted>
-        </Box>
-      </Box>
+      <ProcessHeader />
       <Sep />
-      <Box wrap="truncate">
-        <Muted>
-          {"PID".padStart(COL.pid)}
-          {"  Name".padEnd(COL.name)}
-          {"CPU%".padStart(COL.cpu)}
-          {"MEM%".padStart(COL.mem)}
-          {"MEM".padStart(COL.memMB)}
-          {"  STATUS".padEnd(COL.status)}
-          {"TIME+".padStart(COL.time)}
-        </Muted>
-      </Box>
+      {sorted.map((proc, i) => (
+        <ProcessRow key={proc.pid} proc={proc} isTop={i === 0} />
+      ))}
       <Sep />
-      <Box flexDirection="column" flexGrow={1}>
-        {sorted.map((proc, i) => (
-          <ProcessRow key={proc.pid} proc={proc} isTop={i === 0} />
-        ))}
-      </Box>
-      <Box gap={2} wrap="truncate">
-        <LabelValue label="Total:" value={\`\${processes.length}\`} />
-        <LabelValue label="Running:" value={String(running)} color="$success" />
-        <LabelValue label="Sleeping:" value={String(sleeping)} color="$muted" />
-      </Box>
+      <ProcessFooter processes={state.processes} state={state} />
     </Box>
   )
 }
@@ -42001,52 +43301,32 @@ const pane = {
   flexDirection: "column" as const,
 }
 
-function WideLayout({
-  cores,
-  memory,
-  network,
-  processes,
-}: {
-  cores: CoreMetrics[]
-  memory: MemoryMetrics
-  network: NetworkMetrics
-  processes: ProcessInfo[]
-}) {
+function WideLayout({ state }: { state: DashboardState }) {
   return (
     <Box flexDirection="column" flexGrow={1}>
-      {/* Top row: CPU (65%) | Memory + Network stacked (35%) */}
-      <Box flexDirection="row">
+      {/* Top row: CPU (left ~60%) | Memory + Network stacked (right ~40%) */}
+      <Box flexDirection="row" gap={1}>
         <Box {...pane} flexGrow={3} flexBasis={0}>
-          <CpuPanel cores={cores} />
+          <CpuPanel state={state} />
         </Box>
         <Box flexDirection="column" flexGrow={2} flexBasis={0}>
           <Box {...pane} flexGrow={1}>
-            <MemoryPanel memory={memory} />
+            <MemoryPanel memory={state.memory} />
           </Box>
           <Box {...pane} flexGrow={1}>
-            <NetworkPanel network={network} />
+            <NetworkPanel network={state.network} />
           </Box>
         </Box>
       </Box>
-      {/* Bottom: Process table (full width, fills remaining space) */}
+      {/* Bottom: Process table (full width) */}
       <Box {...pane} flexGrow={1}>
-        <ProcessPanel processes={processes} />
+        <ProcessPanel state={state} />
       </Box>
     </Box>
   )
 }
 
-function NarrowLayout({
-  cores,
-  memory,
-  network,
-  processes,
-}: {
-  cores: CoreMetrics[]
-  memory: MemoryMetrics
-  network: NetworkMetrics
-  processes: ProcessInfo[]
-}) {
+function NarrowLayout({ state }: { state: DashboardState }) {
   return (
     <Box flexDirection="column" flexGrow={1}>
       <Tabs defaultValue="cpu">
@@ -42061,22 +43341,22 @@ function NarrowLayout({
 
         <TabPanel value="cpu">
           <Box {...pane} paddingY={1} flexGrow={1}>
-            <CpuPanel cores={cores} />
+            <CpuPanel state={state} />
           </Box>
         </TabPanel>
         <TabPanel value="memory">
           <Box {...pane} paddingY={1} flexGrow={1}>
-            <MemoryPanel memory={memory} />
+            <MemoryPanel memory={state.memory} />
           </Box>
         </TabPanel>
         <TabPanel value="network">
           <Box {...pane} paddingY={1} flexGrow={1}>
-            <NetworkPanel network={network} />
+            <NetworkPanel network={state.network} />
           </Box>
         </TabPanel>
         <TabPanel value="processes">
           <Box {...pane} paddingY={1} flexGrow={1}>
-            <ProcessPanel processes={processes} />
+            <ProcessPanel state={state} />
           </Box>
         </TabPanel>
       </Tabs>
@@ -42103,23 +43383,22 @@ export function Dashboard() {
   })
 
   if (isNarrow) {
-    return (
-      <NarrowLayout
-        cores={state.cores}
-        memory={state.memory}
-        network={state.network}
-        processes={state.processes}
-      />
-    )
+    return <NarrowLayout state={state} />
   }
 
   return (
     <Box flexDirection="column" flexGrow={1}>
-      <Box paddingX={1} justifyContent="space-between" wrap="truncate">
-        <Text bold color="$primary">System Monitor</Text>
-        <Muted>↑↓ scroll  F1 help  F5 tree  F6 sort  q quit</Muted>
-      </Box>
-      <WideLayout cores={state.cores} memory={state.memory} network={state.network} processes={state.processes} />
+      <LR>
+        <Box gap={1} wrap="truncate">
+          <Text bold color="$primary">
+            Silvery TUI
+          </Text>
+          <Muted>system monitor showcase</Muted>
+          <Text color="$primary">devbox-01</Text>
+        </Box>
+        <Muted>14:27 UTC  [h]help  [1]cpu  [2]mem  [3]net  [p]proc  [/]filter  [q]quit</Muted>
+      </LR>
+      <WideLayout state={state} />
     </Box>
   )
 }
@@ -51794,4 +53073,4 @@ if (root) {
   createViewerApp(root);
 }
 
-//# debugId=0EDDD5C42E0DD15964756E2164756E21
+//# debugId=0A7E0F023181A94064756E2164756E21

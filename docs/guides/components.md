@@ -1,12 +1,6 @@
-<script setup>
-import LiveDemo from '../.vitepress/components/LiveDemo.vue'
-</script>
-
 # Components
 
 Silvery provides layout, text, input, and display components for building terminal UIs.
-
-<LiveDemo xtermSrc="/examples/showcase.html?demo=components" :height="400" />
 
 ## Box
 

@@ -13,12 +13,6 @@ next:
 
 A Silvery React component rendered to the terminal — the same ANSI output you'd see in a real terminal.
 
-<script setup>
-import DemoScreenshot from '../.vitepress/components/DemoScreenshot.vue'
-</script>
-
-<DemoScreenshot demo="dashboard" name="Dashboard" />
-
 ## How It Works
 
 Silvery's `RenderAdapter` interface abstracts the rendering target. The same component tree runs through the same layout engine (Flexily) and render pipeline. The xterm adapter writes ANSI escape sequences to an xterm.js terminal emulator running in the browser.

@@ -1,7 +1,3 @@
-<script setup>
-import LiveDemo from '../.vitepress/components/LiveDemo.vue'
-</script>
-
 # Quick Start
 
 Silvery is a React renderer for terminal applications — use it as just a renderer, or add optional packages for a complete framework. The core API (`Box`, `Text`, `useInput`) works like other React terminal renderers. What's different: responsive layout, native scrolling, and per-node incremental rendering.
@@ -29,8 +25,6 @@ pnpm add silvery
 :::
 
 > **One package is all you need.** `silvery` includes everything to build terminal apps — components, hooks, and rendering. The `@silvery/*` scoped packages exist for advanced users who want finer-grained imports.
-
-<LiveDemo xtermSrc="/examples/showcase.html?demo=dashboard" :height="400" />
 
 ## Your First App
 

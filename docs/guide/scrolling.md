@@ -1,12 +1,6 @@
-<script setup>
-import LiveDemo from '../.vitepress/components/LiveDemo.vue'
-</script>
-
 # Scrolling
 
 Silvery makes scrolling effortless. Just render your content and let Silvery handle the rest.
-
-<LiveDemo xtermSrc="/examples/showcase.html?demo=kanban" :height="400" />
 
 ## Basic Usage
 
