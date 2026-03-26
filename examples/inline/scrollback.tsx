@@ -10,7 +10,15 @@
  */
 
 import React, { useState, useCallback } from "react"
-import { Box, Text, Divider, VirtualList, useInput, type Key, useScrollback } from "../../src/index.js"
+import {
+  Box,
+  Text,
+  Divider,
+  VirtualList,
+  useInput,
+  type Key,
+  useScrollback,
+} from "../../src/index.js"
 import { run, useExit } from "@silvery/ag-term/runtime"
 import { ExampleBanner, type ExampleMeta } from "../_banner.js"
 
@@ -66,7 +74,10 @@ export function Repl() {
     const id = nextId++
 
     // Mark all existing results as frozen, add new one unfrozen
-    setResults((prev) => [...prev.map((r) => ({ ...r, frozen: true })), { id, expr, value, frozen: false }])
+    setResults((prev) => [
+      ...prev.map((r) => ({ ...r, frozen: true })),
+      { id, expr, value, frozen: false },
+    ])
     setInput("")
     setCursor(0)
   }, [input])

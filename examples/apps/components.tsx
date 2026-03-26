@@ -62,10 +62,20 @@ export const meta: ExampleMeta = {
 
 function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
   return (
-    <Box flexDirection="column" gap={1} paddingX={1} overflow="scroll" scrollOffset={scrollOffset} flexGrow={1}>
+    <Box
+      flexDirection="column"
+      gap={1}
+      paddingX={1}
+      overflow="scroll"
+      scrollOffset={scrollOffset}
+      flexGrow={1}
+    >
       <Box flexDirection="column">
         <H1>Getting Started with Silvery</H1>
-        <Lead>Build modern terminal UIs with React — layout feedback, semantic theming, and 30+ components.</Lead>
+        <Lead>
+          Build modern terminal UIs with React — layout feedback, semantic theming, and 30+
+          components.
+        </Lead>
       </Box>
 
       <HR />
@@ -153,9 +163,12 @@ function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
 
       <H2>Block Elements</H2>
       <Blockquote>
-        The best color code is no color code — most components already use the right semantic tokens.
+        The best color code is no color code — most components already use the right semantic
+        tokens.
       </Blockquote>
-      <CodeBlock>{"bun add silvery      # install\nbun run dev          # start dev server"}</CodeBlock>
+      <CodeBlock>
+        {"bun add silvery      # install\nbun run dev          # start dev server"}
+      </CodeBlock>
 
       <H2>Lists</H2>
       <Box flexDirection="row" gap={4}>
@@ -268,7 +281,11 @@ function InputsTab() {
           />
 
           <H2>Select List</H2>
-          <Box borderStyle="round" borderColor={focusIndex === 2 ? "$focusborder" : "$border"} paddingX={1}>
+          <Box
+            borderStyle="round"
+            borderColor={focusIndex === 2 ? "$focusborder" : "$border"}
+            paddingX={1}
+          >
             <SelectList
               items={frameworkItems}
               highlightedIndex={selectedFramework}
@@ -289,8 +306,18 @@ function InputsTab() {
             paddingY={1}
             gap={1}
           >
-            <Toggle value={darkMode} onChange={setDarkMode} label="Dark mode" isActive={focusIndex === 3} />
-            <Toggle value={notifications} onChange={setNotifications} label="Notifications" isActive={false} />
+            <Toggle
+              value={darkMode}
+              onChange={setDarkMode}
+              label="Dark mode"
+              isActive={focusIndex === 3}
+            />
+            <Toggle
+              value={notifications}
+              onChange={setNotifications}
+              label="Notifications"
+              isActive={false}
+            />
             <Toggle value={autoSave} onChange={setAutoSave} label="Auto-save" isActive={false} />
           </Box>
 
@@ -300,13 +327,23 @@ function InputsTab() {
           <HR />
 
           <H2>Current Values</H2>
-          <Box flexDirection="column" backgroundColor="$surfacebg" paddingX={1} paddingY={1} borderStyle="round">
+          <Box
+            flexDirection="column"
+            backgroundColor="$surfacebg"
+            paddingX={1}
+            paddingY={1}
+            borderStyle="round"
+          >
             <Text color="$surface">
               <Strong>Text:</Strong> {textValue || <Muted>(empty)</Muted>}
             </Text>
             <Text color="$surface">
               <Strong>Area:</Strong>{" "}
-              {areaValue ? areaValue.split("\n")[0] + (areaValue.includes("\n") ? "..." : "") : <Muted>(empty)</Muted>}
+              {areaValue ? (
+                areaValue.split("\n")[0] + (areaValue.includes("\n") ? "..." : "")
+              ) : (
+                <Muted>(empty)</Muted>
+              )}
             </Text>
             <Text color="$surface">
               <Strong>Framework:</Strong> {frameworkItems[selectedFramework]?.label}
@@ -354,52 +391,58 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
     }
   })
 
+  const gridCell = {
+    flexGrow: 1,
+    flexBasis: 0,
+    borderStyle: "round" as const,
+    borderColor: "$border",
+    paddingX: 1,
+    paddingY: 1,
+    flexDirection: "column" as const,
+    gap: 1,
+  }
+
   return (
     <Box flexDirection="column" gap={1} paddingX={1}>
-      {/* Progress Bars */}
-      <Box flexDirection="column" gap={1}>
-        <Divider title="Progress Bars" />
-        <Box flexDirection="column">
-          <Box>
-            <Text color="$muted">{"Build   "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar value={1.0} label="✓" />
+      {/* Row 1: Progress Bars | Spinners */}
+      <Box flexDirection="row" gap={1}>
+        <Box {...gridCell}>
+          <H2>Progress Bars</H2>
+          <Box flexDirection="column">
+            <Box>
+              <Text color="$muted">{"Build   "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar value={1.0} label="✓" />
+              </Box>
             </Box>
-          </Box>
-          <Box>
-            <Text color="$muted">{"Test    "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar value={0.73} />
+            <Box>
+              <Text color="$muted">{"Test    "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar value={0.73} />
+              </Box>
             </Box>
-          </Box>
-          <Box>
-            <Text color="$muted">{"Deploy  "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar value={0.35} />
+            <Box>
+              <Text color="$muted">{"Deploy  "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar value={0.35} />
+              </Box>
             </Box>
-          </Box>
-          <Box>
-            <Text color="$muted">{"Install "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar />
+            <Box>
+              <Text color="$muted">{"Install "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar />
+              </Box>
             </Box>
           </Box>
         </Box>
-      </Box>
-
-      {/* Spinners + Badges row */}
-      <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Spinners" />
+        <Box {...gridCell}>
+          <H2>Spinners + Badges</H2>
           <Box flexDirection="column">
             <Spinner type="dots" label="Loading packages..." />
             <Spinner type="line" label="Compiling..." />
             <Spinner type="arc" label="Optimizing bundle..." />
             <Spinner type="bounce" label="Connecting..." />
           </Box>
-        </Box>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Badges" />
           <Box gap={1} flexWrap="wrap">
             <Badge label="Stable" variant="success" />
             <Badge label="Beta" variant="warning" />
@@ -410,27 +453,25 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
         </Box>
       </Box>
 
-      {/* Status + Border Styles row */}
-      <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Status" />
-          <Box flexDirection="column">
-            <Text>
-              <Text color="$success">{"✓"}</Text> All checks passed
-            </Text>
-            <Text>
-              <Text color="$warning">{"⚠"}</Text> 2 deprecation warnings
-            </Text>
-            <Text>
-              <Text color="$error">{"✗"}</Text> 1 vulnerability found
-            </Text>
-            <Text>
-              <Text color="$info">{"ℹ"}</Text> 47 packages installed
-            </Text>
+      {/* Row 2: Input Controls | Border Styles */}
+      <Box flexDirection="row" gap={1}>
+        <Box {...gridCell}>
+          <H2>Input Controls</H2>
+          <Box flexDirection="column" gap={1}>
+            <Box gap={1}>
+              <Muted>Search:</Muted>
+              <Box flexGrow={1}>
+                <TextInput value="flutter widgets" onChange={() => {}} />
+              </Box>
+            </Box>
+            <Box gap={2} wrap="truncate">
+              <Toggle label="Dark mode" value={true} onChange={() => {}} />
+              <Toggle label="Notifications" value={false} onChange={() => {}} />
+            </Box>
           </Box>
         </Box>
-        <Box flexDirection="column" flexGrow={1} gap={1}>
-          <Divider title="Border Styles" />
+        <Box {...gridCell}>
+          <H2>Border Styles</H2>
           <Box flexDirection="column" gap={0}>
             {borderStyles.map((style, i) => (
               <Box
@@ -453,64 +494,63 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
         </Box>
       </Box>
 
-      {/* Keyboard Shortcuts + Dividers row */}
-      <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Keyboard Shortcuts" />
-          <Box flexDirection="column" gap={1}>
-            <Box gap={1}>
-              <Kbd>Ctrl</Kbd>
-              <Text>+</Text>
-              <Kbd>S</Kbd>
-              <Muted>Save</Muted>
-            </Box>
-            <Box gap={1}>
-              <Kbd>Ctrl</Kbd>
-              <Text>+</Text>
-              <Kbd>Z</Kbd>
-              <Muted>Undo</Muted>
-            </Box>
-            <Box gap={1}>
-              <Kbd>⌘</Kbd>
-              <Text>+</Text>
-              <Kbd>P</Kbd>
-              <Muted>Command palette</Muted>
-            </Box>
-            <Box gap={1}>
-              <Kbd>Esc</Kbd>
-              <Muted>Close dialog</Muted>
-            </Box>
-          </Box>
+      {/* Row 3: Select List | Dialog Preview */}
+      <Box flexDirection="row" gap={1}>
+        <Box {...gridCell}>
+          <H2>Select List</H2>
+          <SelectList
+            items={[
+              { label: "React", value: "react" },
+              { label: "Vue", value: "vue" },
+              { label: "Svelte", value: "svelte" },
+              { label: "Angular", value: "angular" },
+              { label: "Solid", value: "solid" },
+            ]}
+            highlightedIndex={0}
+            onHighlight={() => {}}
+            isActive={false}
+          />
         </Box>
-        <Box flexDirection="column" flexGrow={1} gap={1}>
-          <Divider title="Color Tokens" />
+        <Box {...gridCell}>
+          <H2>Typography</H2>
           <Box flexDirection="column">
-            <Box gap={2}>
-              <Text color="$primary">{"●"} primary</Text>
-              <Text color="$success">{"●"} success</Text>
-              <Text color="$warning">{"●"} warning</Text>
-            </Box>
-            <Box gap={2}>
-              <Text color="$error">{"●"} error</Text>
-              <Text color="$info">{"●"} info</Text>
-              <Muted>{"●"} muted</Muted>
-            </Box>
+            <Text>
+              <Strong>Silvery</Strong> is a <Em>React framework</Em> for terminal UIs.
+            </Text>
+            <Text>
+              Use <Code>{"useContentRect()"}</Code> for responsive layout.
+            </Text>
+            <Text>
+              Supports <Text color="$success">semantic colors</Text>, <Text bold>bold</Text>,{" "}
+              <Text dimColor>dim</Text>, and <Text underline>underline</Text>.
+            </Text>
+            <Muted>38 built-in color palettes — adapts automatically.</Muted>
           </Box>
         </Box>
       </Box>
 
       {showModal && (
-        <Box position="absolute" display="flex" justifyContent="center" alignItems="center" width="100%" height="100%">
+        <Box
+          position="absolute"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          width="100%"
+          height="100%"
+        >
           <ModalDialog title="Component Gallery" width={50} footer="ESC or q to close">
             <Box flexDirection="column" gap={1}>
               <P>
-                This gallery demonstrates <Strong>silvery</Strong>'s built-in UI components. Every component uses
-                semantic theme tokens — they adapt to any of the 38 built-in palettes automatically.
+                This gallery demonstrates <Strong>silvery</Strong>'s built-in UI components. Every
+                component uses semantic theme tokens — they adapt to any of the 38 built-in palettes
+                automatically.
               </P>
               <HR />
               <Box flexDirection="column">
                 <Text color="$success">{"✓ Typography presets (H1-H3, Lead, Muted, Code)"}</Text>
-                <Text color="$success">{"✓ Input components (TextInput, TextArea, SelectList)"}</Text>
+                <Text color="$success">
+                  {"✓ Input components (TextInput, TextArea, SelectList)"}
+                </Text>
                 <Text color="$success">{"✓ Display widgets (ProgressBar, Spinner, Badge)"}</Text>
                 <Text color="$success">{"✓ Layout primitives (Box, Divider, border styles)"}</Text>
                 <Text color="$success">{"✓ Dialog system (ModalDialog with input blocking)"}</Text>
@@ -600,7 +640,10 @@ export function ComponentsApp() {
 export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="h/l tab  Tab cycle inputs  j/k navigate  Enter modal  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="h/l tab  Tab cycle inputs  j/k navigate  Enter modal  Esc/q quit"
+    >
       <ComponentsApp />
     </ExampleBanner>,
     term,

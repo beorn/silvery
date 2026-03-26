@@ -14,13 +14,25 @@
  * Run: bun vendor/silvery/examples/kitty/terminal-canvas.tsx
  */
 
-import { createTerm, enableMouse, disableMouse, parseMouseSequence, isMouseSequence } from "../../src/index.js"
+import {
+  createTerm,
+  enableMouse,
+  disableMouse,
+  parseMouseSequence,
+  isMouseSequence,
+} from "../../src/index.js"
 import type { ExampleMeta } from "../_banner.js"
 
 export const meta: ExampleMeta = {
   name: "Char Draw",
   description: "Click-drag to draw with half-block pixel art, RGB color picker",
-  features: ["parseMouseSequence()", "enableMouse()", "half-block rendering", "drag tracking", "HSL color picker"],
+  features: [
+    "parseMouseSequence()",
+    "enableMouse()",
+    "half-block rendering",
+    "drag tracking",
+    "HSL color picker",
+  ],
 }
 
 // Half-block characters for 2x vertical resolution
@@ -249,7 +261,8 @@ function renderFrame(state: CanvasState, term: ReturnType<typeof createTerm>): s
   for (let col = 0; col < state.width - halfWidth - 1; col++) {
     const lit = col / (state.width - halfWidth - 2)
     const [r, g, b] = hslToRgb(state.hue, state.saturation, lit)
-    const isSelected = Math.abs(lit - state.lightness) < 1 / (state.width - halfWidth - 2) / 2 + 0.01
+    const isSelected =
+      Math.abs(lit - state.lightness) < 1 / (state.width - halfWidth - 2) / 2 + 0.01
     if (isSelected) {
       satLine += term.bgRgb(r, g, b)(r + g + b > 384 ? term.black("◆") : term.white("◆"))
     } else {

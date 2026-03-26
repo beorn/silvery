@@ -8,7 +8,16 @@
  */
 
 import React, { useState, useRef } from "react"
-import { render, Box, Text, TextArea, useInput, useApp, createTerm, type Key } from "../../src/index.js"
+import {
+  render,
+  Box,
+  Text,
+  TextArea,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "../../src/index.js"
 
 function InputDebug() {
   const { exit } = useApp()
@@ -43,7 +52,9 @@ function InputDebug() {
       <Text bold color="cyan">
         Input Pipeline Diagnostic
       </Text>
-      <Text dim>Type slowly (1 char/2sec). Compare left (raw events) vs right (TextArea value).</Text>
+      <Text dim>
+        Type slowly (1 char/2sec). Compare left (raw events) vs right (TextArea value).
+      </Text>
       <Text dim>Press Esc to quit.</Text>
       <Box height={1} />
 
@@ -67,7 +78,12 @@ function InputDebug() {
           </Text>
           <Box borderStyle="single" borderColor="green">
             <Box paddingX={1}>
-              <TextArea value={textValue} onChange={handleChange} height={4} placeholder="Type here..." />
+              <TextArea
+                value={textValue}
+                onChange={handleChange}
+                height={4}
+                placeholder="Type here..."
+              />
             </Box>
           </Box>
           <Box marginTop={1}>

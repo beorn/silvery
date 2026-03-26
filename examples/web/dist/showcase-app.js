@@ -5629,8 +5629,26 @@ var init_buffer = __esm(() => {
   EMPTY_ATTRS = Object.freeze({});
   XTERM_256_PALETTE = (() => {
     const palette = new Array(256);
-    const standard = ["#000000", "#cd0000", "#00cd00", "#cdcd00", "#0000ee", "#cd00cd", "#00cdcd", "#e5e5e5"];
-    const bright = ["#7f7f7f", "#ff0000", "#00ff00", "#ffff00", "#5c5cff", "#ff00ff", "#00ffff", "#ffffff"];
+    const standard = [
+      "#000000",
+      "#cd0000",
+      "#00cd00",
+      "#cdcd00",
+      "#0000ee",
+      "#cd00cd",
+      "#00cdcd",
+      "#e5e5e5"
+    ];
+    const bright = [
+      "#7f7f7f",
+      "#ff0000",
+      "#00ff00",
+      "#ffff00",
+      "#5c5cff",
+      "#ff00ff",
+      "#00ffff",
+      "#ffffff"
+    ];
     for (let i = 0;i < 8; i++) {
       palette[i] = standard[i];
       palette[i + 8] = bright[i];
@@ -7954,7 +7972,15 @@ function detectTerminalCaps() {
 }
 var CI_ENVS, cachedMacOSDarkMode;
 var init_detection = __esm(() => {
-  CI_ENVS = ["CI", "GITHUB_ACTIONS", "GITLAB_CI", "JENKINS_URL", "BUILDKITE", "CIRCLECI", "TRAVIS"];
+  CI_ENVS = [
+    "CI",
+    "GITHUB_ACTIONS",
+    "GITLAB_CI",
+    "JENKINS_URL",
+    "BUILDKITE",
+    "CIRCLECI",
+    "TRAVIS"
+  ];
 });
 
 // packages/ag/src/keys.ts
@@ -8405,7 +8431,20 @@ var init_keys = __esm(() => {
     "tab",
     "delete"
   ];
-  SHIFT_CODES = new Set(["[a", "[b", "[c", "[d", "[e", "[2$", "[3$", "[5$", "[6$", "[7$", "[8$", "[Z"]);
+  SHIFT_CODES = new Set([
+    "[a",
+    "[b",
+    "[c",
+    "[d",
+    "[e",
+    "[2$",
+    "[3$",
+    "[5$",
+    "[6$",
+    "[7$",
+    "[8$",
+    "[Z"
+  ]);
   CTRL_CODES = new Set(["Oa", "Ob", "Oc", "Od", "Oe", "[2^", "[3^", "[5^", "[6^", "[7^", "[8^"]);
   META_KEY_CODE_RE = /^(?:\x1b)([a-zA-Z0-9])$/;
   FN_KEY_RE = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+)?([a-zA-Z]))/;
@@ -33255,7 +33294,11 @@ var Text2 = import_react7.forwardRef(function Text3(props, ref) {
 var jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
 var DEFAULT_CHAR = "─";
 var DEFAULT_WIDTH = 40;
-function Divider({ char = DEFAULT_CHAR, title, width: widthProp }) {
+function Divider({
+  char = DEFAULT_CHAR,
+  title,
+  width: widthProp
+}) {
   const { width: contentWidth } = useContentRect();
   const totalWidth = widthProp ?? (contentWidth > 0 ? contentWidth : DEFAULT_WIDTH);
   if (!title) {
@@ -33857,7 +33900,12 @@ var FRAMES = {
   arc: ["◜", "◠", "◝", "◞", "◡", "◟"],
   bounce: ["⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈"]
 };
-function Spinner({ type = "dots", label, interval = 80, ...rest }) {
+function Spinner({
+  type = "dots",
+  label,
+  interval = 80,
+  ...rest
+}) {
   const [frameIndex, setFrameIndex] = import_react23.useState(0);
   const frames = FRAMES[type];
   import_react23.useEffect(() => {
@@ -34022,7 +34070,10 @@ function renderToXterm(element, terminal, options = {}) {
   }
   function wrapElement(el2) {
     const withCursor = import_react24.default.createElement(CursorProvider, { store: cursorStore }, el2);
-    const themed = import_react24.default.createElement(ThemeProvider, { theme: deriveThemeFromXterm(terminal), children: withCursor });
+    const themed = import_react24.default.createElement(ThemeProvider, {
+      theme: deriveThemeFromXterm(terminal),
+      children: withCursor
+    });
     if (!inputEnabled || !runtimeContextValue || !focusManager)
       return themed;
     return import_react24.default.createElement(FocusManagerContext.Provider, { value: focusManager }, import_react24.default.createElement(RuntimeContext.Provider, { value: runtimeContextValue }, themed));
@@ -35977,7 +36028,13 @@ var jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 var jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
 // packages/ag-react/src/ui/components/Toggle.tsx
 var jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
-function Toggle({ value, onChange, label, isActive, ...rest }) {
+function Toggle({
+  value,
+  onChange,
+  label,
+  isActive,
+  ...rest
+}) {
   const { focused } = useFocusable();
   const active = isActive ?? focused;
   useInput((_input, key) => {
@@ -36005,7 +36062,13 @@ function Toggle({ value, onChange, label, isActive, ...rest }) {
 }
 // packages/ag-react/src/ui/components/Button.tsx
 var jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
-function Button({ label, onPress, isActive, color, ...rest }) {
+function Button({
+  label,
+  onPress,
+  isActive,
+  color,
+  ...rest
+}) {
   const { focused } = useFocusable();
   const active = isActive ?? focused;
   useInput((_input, key) => {
@@ -36229,7 +36292,12 @@ var VARIANT_COLORS = {
   warning: "$warning",
   error: "$error"
 };
-function Badge({ label, variant = "default", color, ...rest }) {
+function Badge({
+  label,
+  variant = "default",
+  color,
+  ...rest
+}) {
   const resolvedColor = color ?? VARIANT_COLORS[variant];
   return /* @__PURE__ */ jsx_runtime31.jsxs(Text2, {
     color: resolvedColor,
@@ -36948,7 +37016,11 @@ function LabelValue({ label, value, color }) {
     ]
   });
 }
-function CpuCore({ index, core, barWidth }) {
+function CpuCore({
+  index,
+  core,
+  barWidth
+}) {
   const pct = Math.round(core.usage);
   const color = severityColor(pct);
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
@@ -37804,7 +37876,18 @@ if (false) {}
 // examples/apps/dev-tools.tsx
 var import_react82 = __toESM(require_react(), 1);
 var jsx_runtime55 = __toESM(require_jsx_runtime(), 1);
-var SOURCES = ["http", "db", "auth", "cache", "worker", "api", "scheduler", "queue", "metrics", "ws"];
+var SOURCES = [
+  "http",
+  "db",
+  "auth",
+  "cache",
+  "worker",
+  "api",
+  "scheduler",
+  "queue",
+  "metrics",
+  "ws"
+];
 var LOG_TEMPLATES = {
   DEBUG: [
     "Cache miss for key user:session:{{id}}",
@@ -38763,90 +38846,98 @@ function DisplayTab({ scrollOffset }) {
       setSelectedBorder((prev) => Math.max(prev - 1, 0));
     }
   });
+  const gridCell = {
+    flexGrow: 1,
+    flexBasis: 0,
+    borderStyle: "round",
+    borderColor: "$border",
+    paddingX: 1,
+    paddingY: 1,
+    flexDirection: "column",
+    gap: 1
+  };
   return /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
     flexDirection: "column",
     gap: 1,
     paddingX: 1,
     children: [
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-        flexDirection: "column",
+        flexDirection: "row",
         gap: 1,
         children: [
-          /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-            title: "Progress Bars"
-          }),
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                children: [
-                  /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                    color: "$muted",
-                    children: "Build   "
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                    flexGrow: 1,
-                    children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
-                      value: 1,
-                      label: "✓"
-                    })
-                  })
-                ]
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Progress Bars"
               }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                flexDirection: "column",
                 children: [
-                  /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                    color: "$muted",
-                    children: "Test    "
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    children: [
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        color: "$muted",
+                        children: "Build   "
+                      }),
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        flexGrow: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
+                          value: 1,
+                          label: "✓"
+                        })
+                      })
+                    ]
                   }),
-                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                    flexGrow: 1,
-                    children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
-                      value: 0.73
-                    })
-                  })
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                children: [
-                  /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                    color: "$muted",
-                    children: "Deploy  "
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    children: [
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        color: "$muted",
+                        children: "Test    "
+                      }),
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        flexGrow: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
+                          value: 0.73
+                        })
+                      })
+                    ]
                   }),
-                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                    flexGrow: 1,
-                    children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
-                      value: 0.35
-                    })
-                  })
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                children: [
-                  /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                    color: "$muted",
-                    children: "Install "
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    children: [
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        color: "$muted",
+                        children: "Deploy  "
+                      }),
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        flexGrow: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
+                          value: 0.35
+                        })
+                      })
+                    ]
                   }),
-                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                    flexGrow: 1,
-                    children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {})
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    children: [
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        color: "$muted",
+                        children: "Install "
+                      }),
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        flexGrow: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {})
+                      })
+                    ]
                   })
                 ]
               })
             ]
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-        flexDirection: "row",
-        gap: 4,
-        children: [
+          }),
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            gap: 1,
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Spinners"
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Spinners + Badges"
               }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                 flexDirection: "column",
@@ -38868,15 +38959,6 @@ function DisplayTab({ scrollOffset }) {
                     label: "Connecting..."
                   })
                 ]
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            gap: 1,
-            children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Badges"
               }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                 gap: 1,
@@ -38909,52 +38991,47 @@ function DisplayTab({ scrollOffset }) {
       }),
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
         flexDirection: "row",
-        gap: 4,
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            gap: 1,
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Status"
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Input Controls"
               }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                 flexDirection: "column",
+                gap: 1,
                 children: [
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    gap: 1,
                     children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        color: "$success",
-                        children: "✓"
+                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
+                        children: "Search:"
                       }),
-                      " All checks passed"
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        flexGrow: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(TextInput, {
+                          value: "flutter widgets",
+                          onChange: () => {}
+                        })
+                      })
                     ]
                   }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    gap: 2,
+                    wrap: "truncate",
                     children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        color: "$warning",
-                        children: "⚠"
+                      /* @__PURE__ */ jsx_runtime56.jsx(Toggle, {
+                        label: "Dark mode",
+                        value: true,
+                        onChange: () => {}
                       }),
-                      " 2 deprecation warnings"
-                    ]
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        color: "$error",
-                        children: "✗"
-                      }),
-                      " 1 vulnerability found"
-                    ]
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        color: "$info",
-                        children: "ℹ"
-                      }),
-                      " 47 packages installed"
+                      /* @__PURE__ */ jsx_runtime56.jsx(Toggle, {
+                        label: "Notifications",
+                        value: false,
+                        onChange: () => {}
+                      })
                     ]
                   })
                 ]
@@ -38962,12 +39039,10 @@ function DisplayTab({ scrollOffset }) {
             ]
           }),
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            flexGrow: 1,
-            gap: 1,
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Border Styles"
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Border Styles"
               }),
               /* @__PURE__ */ jsx_runtime56.jsx(Box, {
                 flexDirection: "column",
@@ -38995,146 +39070,86 @@ function DisplayTab({ scrollOffset }) {
       }),
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
         flexDirection: "row",
-        gap: 4,
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            gap: 1,
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Keyboard Shortcuts"
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Select List"
               }),
-              /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                flexDirection: "column",
-                gap: 1,
-                children: [
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 1,
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "Ctrl"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        children: "+"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "S"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
-                        children: "Save"
-                      })
-                    ]
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 1,
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "Ctrl"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        children: "+"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "Z"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
-                        children: "Undo"
-                      })
-                    ]
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 1,
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "⌘"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        children: "+"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "P"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
-                        children: "Command palette"
-                      })
-                    ]
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 1,
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "Esc"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
-                        children: "Close dialog"
-                      })
-                    ]
-                  })
-                ]
+              /* @__PURE__ */ jsx_runtime56.jsx(SelectList, {
+                items: [
+                  { label: "React", value: "react" },
+                  { label: "Vue", value: "vue" },
+                  { label: "Svelte", value: "svelte" },
+                  { label: "Angular", value: "angular" },
+                  { label: "Solid", value: "solid" }
+                ],
+                highlightedIndex: 0,
+                onHighlight: () => {},
+                isActive: false
               })
             ]
           }),
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            flexGrow: 1,
-            gap: 1,
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Color Tokens"
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Typography"
               }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                 flexDirection: "column",
                 children: [
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 2,
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
                     children: [
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$primary",
-                        children: [
-                          "●",
-                          " primary"
-                        ]
+                      /* @__PURE__ */ jsx_runtime56.jsx(Strong, {
+                        children: "Silvery"
                       }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$success",
-                        children: [
-                          "●",
-                          " success"
-                        ]
+                      " is a ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Em, {
+                        children: "React framework"
                       }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$warning",
-                        children: [
-                          "●",
-                          " warning"
-                        ]
-                      })
+                      " for terminal UIs."
                     ]
                   }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 2,
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
                     children: [
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$error",
-                        children: [
-                          "●",
-                          " error"
-                        ]
+                      "Use ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Code, {
+                        children: "useContentRect()"
                       }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$info",
-                        children: [
-                          "●",
-                          " info"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Muted, {
-                        children: [
-                          "●",
-                          " muted"
-                        ]
-                      })
+                      " for responsive layout."
                     ]
+                  }),
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                    children: [
+                      "Supports ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        color: "$success",
+                        children: "semantic colors"
+                      }),
+                      ", ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        bold: true,
+                        children: "bold"
+                      }),
+                      ",",
+                      " ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        dimColor: true,
+                        children: "dim"
+                      }),
+                      ", and ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        underline: true,
+                        children: "underline"
+                      }),
+                      "."
+                    ]
+                  }),
+                  /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
+                    children: "38 built-in color palettes — adapts automatically."
                   })
                 ]
               })
@@ -39532,4 +39547,4 @@ if (!ShowcaseComponent) {
   }
 }
 
-//# debugId=4007374A5FB87B2064756E2164756E21
+//# debugId=8BE78451B5ADE8D364756E2164756E21

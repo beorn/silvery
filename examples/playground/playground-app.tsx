@@ -6,7 +6,12 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react"
-import { renderToCanvas, Box, Text, useContentRect } from "../../packages/ag-react/src/ui/canvas/index.js"
+import {
+  renderToCanvas,
+  Box,
+  Text,
+  useContentRect,
+} from "../../packages/ag-react/src/ui/canvas/index.js"
 
 // ============================================================================
 // Shared components
@@ -162,7 +167,13 @@ function FlexboxLayout() {
         <Text color="$muted">Nested columns:</Text>
       </Box>
       <Box flexDirection="row" gap={1}>
-        <Box borderStyle="round" borderColor="$accent" padding={1} flexGrow={1} flexDirection="column">
+        <Box
+          borderStyle="round"
+          borderColor="$accent"
+          padding={1}
+          flexGrow={1}
+          flexDirection="column"
+        >
           <Text bold color="$accent">
             Panel A
           </Text>
@@ -170,7 +181,13 @@ function FlexboxLayout() {
           <Text>Item 2</Text>
           <Text>Item 3</Text>
         </Box>
-        <Box borderStyle="round" borderColor="$info" padding={1} flexGrow={1} flexDirection="column">
+        <Box
+          borderStyle="round"
+          borderColor="$info"
+          padding={1}
+          flexGrow={1}
+          flexDirection="column"
+        >
           <Text bold color="$info">
             Panel B
           </Text>
@@ -229,21 +246,39 @@ function Dashboard() {
         </Text>
       </Box>
       <Box flexDirection="row" gap={1} marginTop={1}>
-        <Box borderStyle="round" borderColor="$success" padding={1} flexGrow={1} flexDirection="column">
+        <Box
+          borderStyle="round"
+          borderColor="$success"
+          padding={1}
+          flexGrow={1}
+          flexDirection="column"
+        >
           <Text bold color="$success">
             CPU
           </Text>
           <Text color="$success">|||||||....</Text>
           <Text>65%</Text>
         </Box>
-        <Box borderStyle="round" borderColor="$warning" padding={1} flexGrow={1} flexDirection="column">
+        <Box
+          borderStyle="round"
+          borderColor="$warning"
+          padding={1}
+          flexGrow={1}
+          flexDirection="column"
+        >
           <Text bold color="$warning">
             Memory
           </Text>
           <Text color="$warning">|||||||||..</Text>
           <Text>82%</Text>
         </Box>
-        <Box borderStyle="round" borderColor="$error" padding={1} flexGrow={1} flexDirection="column">
+        <Box
+          borderStyle="round"
+          borderColor="$error"
+          padding={1}
+          flexGrow={1}
+          flexDirection="column"
+        >
           <Text bold color="$error">
             Disk
           </Text>
@@ -251,7 +286,13 @@ function Dashboard() {
           <Text>91%</Text>
         </Box>
       </Box>
-      <Box borderStyle="single" borderColor="$muted" padding={1} marginTop={1} flexDirection="column">
+      <Box
+        borderStyle="single"
+        borderColor="$muted"
+        padding={1}
+        marginTop={1}
+        flexDirection="column"
+      >
         <Text bold>Recent Events</Text>
         <Text color="$success"> OK api-server healthy</Text>
         <Text color="$success"> OK database connected</Text>
@@ -278,7 +319,13 @@ function Responsive() {
       <Text color="$muted">Resize the canvas to see layout adapt ({Math.round(width)}px wide)</Text>
       <Divider />
       <Box flexDirection={isWide ? "row" : "column"} gap={1} marginTop={1}>
-        <Box borderStyle="single" borderColor="$info" padding={1} flexGrow={1} flexDirection="column">
+        <Box
+          borderStyle="single"
+          borderColor="$info"
+          padding={1}
+          flexGrow={1}
+          flexDirection="column"
+        >
           <Text bold color="$info">
             Main Content
           </Text>
@@ -385,7 +432,9 @@ if (canvas) {
       instance.unmount()
       const container = canvas.parentElement
       const w = container ? Math.floor(container.getBoundingClientRect().width) : canvas.width
-      const h = container ? Math.max(300, Math.floor(container.getBoundingClientRect().height)) : canvas.height
+      const h = container
+        ? Math.max(300, Math.floor(container.getBoundingClientRect().height))
+        : canvas.height
       canvas.width = w
       canvas.height = h
       instance = renderToCanvas(<App preset={e.data.preset} />, canvas, {

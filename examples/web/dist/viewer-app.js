@@ -5629,8 +5629,26 @@ var init_buffer = __esm(() => {
   EMPTY_ATTRS = Object.freeze({});
   XTERM_256_PALETTE = (() => {
     const palette = new Array(256);
-    const standard = ["#000000", "#cd0000", "#00cd00", "#cdcd00", "#0000ee", "#cd00cd", "#00cdcd", "#e5e5e5"];
-    const bright = ["#7f7f7f", "#ff0000", "#00ff00", "#ffff00", "#5c5cff", "#ff00ff", "#00ffff", "#ffffff"];
+    const standard = [
+      "#000000",
+      "#cd0000",
+      "#00cd00",
+      "#cdcd00",
+      "#0000ee",
+      "#cd00cd",
+      "#00cdcd",
+      "#e5e5e5"
+    ];
+    const bright = [
+      "#7f7f7f",
+      "#ff0000",
+      "#00ff00",
+      "#ffff00",
+      "#5c5cff",
+      "#ff00ff",
+      "#00ffff",
+      "#ffffff"
+    ];
     for (let i = 0;i < 8; i++) {
       palette[i] = standard[i];
       palette[i + 8] = bright[i];
@@ -7954,7 +7972,15 @@ function detectTerminalCaps() {
 }
 var CI_ENVS, cachedMacOSDarkMode;
 var init_detection = __esm(() => {
-  CI_ENVS = ["CI", "GITHUB_ACTIONS", "GITLAB_CI", "JENKINS_URL", "BUILDKITE", "CIRCLECI", "TRAVIS"];
+  CI_ENVS = [
+    "CI",
+    "GITHUB_ACTIONS",
+    "GITLAB_CI",
+    "JENKINS_URL",
+    "BUILDKITE",
+    "CIRCLECI",
+    "TRAVIS"
+  ];
 });
 
 // packages/ag/src/keys.ts
@@ -8405,7 +8431,20 @@ var init_keys = __esm(() => {
     "tab",
     "delete"
   ];
-  SHIFT_CODES = new Set(["[a", "[b", "[c", "[d", "[e", "[2$", "[3$", "[5$", "[6$", "[7$", "[8$", "[Z"]);
+  SHIFT_CODES = new Set([
+    "[a",
+    "[b",
+    "[c",
+    "[d",
+    "[e",
+    "[2$",
+    "[3$",
+    "[5$",
+    "[6$",
+    "[7$",
+    "[8$",
+    "[Z"
+  ]);
   CTRL_CODES = new Set(["Oa", "Ob", "Oc", "Od", "Oe", "[2^", "[3^", "[5^", "[6^", "[7^", "[8^"]);
   META_KEY_CODE_RE = /^(?:\x1b)([a-zA-Z0-9])$/;
   FN_KEY_RE = /^(?:\x1b+)(O|N|\[|\[\[)(?:(\d+)(?:;(\d+))?([~^$])|(?:1;)?(\d+)?([a-zA-Z]))/;
@@ -33255,7 +33294,11 @@ var Text2 = import_react7.forwardRef(function Text3(props, ref) {
 var jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
 var DEFAULT_CHAR = "─";
 var DEFAULT_WIDTH = 40;
-function Divider({ char = DEFAULT_CHAR, title, width: widthProp }) {
+function Divider({
+  char = DEFAULT_CHAR,
+  title,
+  width: widthProp
+}) {
   const { width: contentWidth } = useContentRect();
   const totalWidth = widthProp ?? (contentWidth > 0 ? contentWidth : DEFAULT_WIDTH);
   if (!title) {
@@ -33857,7 +33900,12 @@ var FRAMES = {
   arc: ["◜", "◠", "◝", "◞", "◡", "◟"],
   bounce: ["⠁", "⠂", "⠄", "⡀", "⢀", "⠠", "⠐", "⠈"]
 };
-function Spinner({ type = "dots", label, interval = 80, ...rest }) {
+function Spinner({
+  type = "dots",
+  label,
+  interval = 80,
+  ...rest
+}) {
   const [frameIndex, setFrameIndex] = import_react23.useState(0);
   const frames = FRAMES[type];
   import_react23.useEffect(() => {
@@ -34022,7 +34070,10 @@ function renderToXterm(element, terminal, options = {}) {
   }
   function wrapElement(el2) {
     const withCursor = import_react24.default.createElement(CursorProvider, { store: cursorStore }, el2);
-    const themed = import_react24.default.createElement(ThemeProvider, { theme: deriveThemeFromXterm(terminal), children: withCursor });
+    const themed = import_react24.default.createElement(ThemeProvider, {
+      theme: deriveThemeFromXterm(terminal),
+      children: withCursor
+    });
     if (!inputEnabled || !runtimeContextValue || !focusManager)
       return themed;
     return import_react24.default.createElement(FocusManagerContext.Provider, { value: focusManager }, import_react24.default.createElement(RuntimeContext.Provider, { value: runtimeContextValue }, themed));
@@ -35977,7 +36028,13 @@ var jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 var jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
 // packages/ag-react/src/ui/components/Toggle.tsx
 var jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
-function Toggle({ value, onChange, label, isActive, ...rest }) {
+function Toggle({
+  value,
+  onChange,
+  label,
+  isActive,
+  ...rest
+}) {
   const { focused } = useFocusable();
   const active = isActive ?? focused;
   useInput((_input, key) => {
@@ -36005,7 +36062,13 @@ function Toggle({ value, onChange, label, isActive, ...rest }) {
 }
 // packages/ag-react/src/ui/components/Button.tsx
 var jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
-function Button({ label, onPress, isActive, color, ...rest }) {
+function Button({
+  label,
+  onPress,
+  isActive,
+  color,
+  ...rest
+}) {
   const { focused } = useFocusable();
   const active = isActive ?? focused;
   useInput((_input, key) => {
@@ -36229,7 +36292,12 @@ var VARIANT_COLORS = {
   warning: "$warning",
   error: "$error"
 };
-function Badge({ label, variant = "default", color, ...rest }) {
+function Badge({
+  label,
+  variant = "default",
+  color,
+  ...rest
+}) {
   const resolvedColor = color ?? VARIANT_COLORS[variant];
   return /* @__PURE__ */ jsx_runtime31.jsxs(Text2, {
     color: resolvedColor,
@@ -36948,7 +37016,11 @@ function LabelValue({ label, value, color }) {
     ]
   });
 }
-function CpuCore({ index, core, barWidth }) {
+function CpuCore({
+  index,
+  core,
+  barWidth
+}) {
   const pct = Math.round(core.usage);
   const color = severityColor(pct);
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
@@ -37804,7 +37876,18 @@ if (false) {}
 // examples/apps/dev-tools.tsx
 var import_react82 = __toESM(require_react(), 1);
 var jsx_runtime55 = __toESM(require_jsx_runtime(), 1);
-var SOURCES = ["http", "db", "auth", "cache", "worker", "api", "scheduler", "queue", "metrics", "ws"];
+var SOURCES = [
+  "http",
+  "db",
+  "auth",
+  "cache",
+  "worker",
+  "api",
+  "scheduler",
+  "queue",
+  "metrics",
+  "ws"
+];
 var LOG_TEMPLATES = {
   DEBUG: [
     "Cache miss for key user:session:{{id}}",
@@ -38763,90 +38846,98 @@ function DisplayTab({ scrollOffset }) {
       setSelectedBorder((prev) => Math.max(prev - 1, 0));
     }
   });
+  const gridCell = {
+    flexGrow: 1,
+    flexBasis: 0,
+    borderStyle: "round",
+    borderColor: "$border",
+    paddingX: 1,
+    paddingY: 1,
+    flexDirection: "column",
+    gap: 1
+  };
   return /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
     flexDirection: "column",
     gap: 1,
     paddingX: 1,
     children: [
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-        flexDirection: "column",
+        flexDirection: "row",
         gap: 1,
         children: [
-          /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-            title: "Progress Bars"
-          }),
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                children: [
-                  /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                    color: "$muted",
-                    children: "Build   "
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                    flexGrow: 1,
-                    children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
-                      value: 1,
-                      label: "✓"
-                    })
-                  })
-                ]
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Progress Bars"
               }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                flexDirection: "column",
                 children: [
-                  /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                    color: "$muted",
-                    children: "Test    "
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    children: [
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        color: "$muted",
+                        children: "Build   "
+                      }),
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        flexGrow: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
+                          value: 1,
+                          label: "✓"
+                        })
+                      })
+                    ]
                   }),
-                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                    flexGrow: 1,
-                    children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
-                      value: 0.73
-                    })
-                  })
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                children: [
-                  /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                    color: "$muted",
-                    children: "Deploy  "
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    children: [
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        color: "$muted",
+                        children: "Test    "
+                      }),
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        flexGrow: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
+                          value: 0.73
+                        })
+                      })
+                    ]
                   }),
-                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                    flexGrow: 1,
-                    children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
-                      value: 0.35
-                    })
-                  })
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                children: [
-                  /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                    color: "$muted",
-                    children: "Install "
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    children: [
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        color: "$muted",
+                        children: "Deploy  "
+                      }),
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        flexGrow: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {
+                          value: 0.35
+                        })
+                      })
+                    ]
                   }),
-                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                    flexGrow: 1,
-                    children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {})
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    children: [
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        color: "$muted",
+                        children: "Install "
+                      }),
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        flexGrow: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(ProgressBar, {})
+                      })
+                    ]
                   })
                 ]
               })
             ]
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-        flexDirection: "row",
-        gap: 4,
-        children: [
+          }),
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            gap: 1,
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Spinners"
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Spinners + Badges"
               }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                 flexDirection: "column",
@@ -38868,15 +38959,6 @@ function DisplayTab({ scrollOffset }) {
                     label: "Connecting..."
                   })
                 ]
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            gap: 1,
-            children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Badges"
               }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                 gap: 1,
@@ -38909,52 +38991,47 @@ function DisplayTab({ scrollOffset }) {
       }),
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
         flexDirection: "row",
-        gap: 4,
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            gap: 1,
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Status"
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Input Controls"
               }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                 flexDirection: "column",
+                gap: 1,
                 children: [
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    gap: 1,
                     children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        color: "$success",
-                        children: "✓"
+                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
+                        children: "Search:"
                       }),
-                      " All checks passed"
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        flexGrow: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(TextInput, {
+                          value: "flutter widgets",
+                          onChange: () => {}
+                        })
+                      })
                     ]
                   }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    gap: 2,
+                    wrap: "truncate",
                     children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        color: "$warning",
-                        children: "⚠"
+                      /* @__PURE__ */ jsx_runtime56.jsx(Toggle, {
+                        label: "Dark mode",
+                        value: true,
+                        onChange: () => {}
                       }),
-                      " 2 deprecation warnings"
-                    ]
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        color: "$error",
-                        children: "✗"
-                      }),
-                      " 1 vulnerability found"
-                    ]
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        color: "$info",
-                        children: "ℹ"
-                      }),
-                      " 47 packages installed"
+                      /* @__PURE__ */ jsx_runtime56.jsx(Toggle, {
+                        label: "Notifications",
+                        value: false,
+                        onChange: () => {}
+                      })
                     ]
                   })
                 ]
@@ -38962,12 +39039,10 @@ function DisplayTab({ scrollOffset }) {
             ]
           }),
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            flexGrow: 1,
-            gap: 1,
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Border Styles"
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Border Styles"
               }),
               /* @__PURE__ */ jsx_runtime56.jsx(Box, {
                 flexDirection: "column",
@@ -38995,146 +39070,86 @@ function DisplayTab({ scrollOffset }) {
       }),
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
         flexDirection: "row",
-        gap: 4,
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            gap: 1,
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Keyboard Shortcuts"
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Select List"
               }),
-              /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                flexDirection: "column",
-                gap: 1,
-                children: [
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 1,
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "Ctrl"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        children: "+"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "S"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
-                        children: "Save"
-                      })
-                    ]
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 1,
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "Ctrl"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        children: "+"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "Z"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
-                        children: "Undo"
-                      })
-                    ]
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 1,
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "⌘"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                        children: "+"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "P"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
-                        children: "Command palette"
-                      })
-                    ]
-                  }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 1,
-                    children: [
-                      /* @__PURE__ */ jsx_runtime56.jsx(Kbd, {
-                        children: "Esc"
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
-                        children: "Close dialog"
-                      })
-                    ]
-                  })
-                ]
+              /* @__PURE__ */ jsx_runtime56.jsx(SelectList, {
+                items: [
+                  { label: "React", value: "react" },
+                  { label: "Vue", value: "vue" },
+                  { label: "Svelte", value: "svelte" },
+                  { label: "Angular", value: "angular" },
+                  { label: "Solid", value: "solid" }
+                ],
+                highlightedIndex: 0,
+                onHighlight: () => {},
+                isActive: false
               })
             ]
           }),
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-            flexDirection: "column",
-            flexGrow: 1,
-            gap: 1,
+            ...gridCell,
             children: [
-              /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
-                title: "Color Tokens"
+              /* @__PURE__ */ jsx_runtime56.jsx(H2, {
+                children: "Typography"
               }),
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                 flexDirection: "column",
                 children: [
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 2,
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
                     children: [
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$primary",
-                        children: [
-                          "●",
-                          " primary"
-                        ]
+                      /* @__PURE__ */ jsx_runtime56.jsx(Strong, {
+                        children: "Silvery"
                       }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$success",
-                        children: [
-                          "●",
-                          " success"
-                        ]
+                      " is a ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Em, {
+                        children: "React framework"
                       }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$warning",
-                        children: [
-                          "●",
-                          " warning"
-                        ]
-                      })
+                      " for terminal UIs."
                     ]
                   }),
-                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
-                    gap: 2,
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
                     children: [
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$error",
-                        children: [
-                          "●",
-                          " error"
-                        ]
+                      "Use ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Code, {
+                        children: "useContentRect()"
                       }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
-                        color: "$info",
-                        children: [
-                          "●",
-                          " info"
-                        ]
-                      }),
-                      /* @__PURE__ */ jsx_runtime56.jsxs(Muted, {
-                        children: [
-                          "●",
-                          " muted"
-                        ]
-                      })
+                      " for responsive layout."
                     ]
+                  }),
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
+                    children: [
+                      "Supports ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        color: "$success",
+                        children: "semantic colors"
+                      }),
+                      ", ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        bold: true,
+                        children: "bold"
+                      }),
+                      ",",
+                      " ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        dimColor: true,
+                        children: "dim"
+                      }),
+                      ", and ",
+                      /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                        underline: true,
+                        children: "underline"
+                      }),
+                      "."
+                    ]
+                  }),
+                  /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
+                    children: "38 built-in color palettes — adapts automatically."
                   })
                 ]
               })
@@ -39624,7 +39639,8 @@ function tickState(prev: ReturnType<typeof createInitialState>) {
   const memory: MemoryMetrics = {
     ...prev.memory,
     used: Math.max(4, usedJitter),
-    swap: (jitter((prev.memory.swap / prev.memory.swapTotal) * 100, 5) / 100) * prev.memory.swapTotal,
+    swap:
+      (jitter((prev.memory.swap / prev.memory.swapTotal) * 100, 5) / 100) * prev.memory.swapTotal,
     history: pushHistory(prev.memory.history, (usedJitter / totalMem) * 100),
   }
 
@@ -39670,7 +39686,15 @@ function LabelValue({ label, value, color }: { label: string; value: string; col
 
 // --- CPU Tab ---
 
-function CpuCore({ index, core, barWidth }: { index: number; core: CoreMetrics; barWidth: number }) {
+function CpuCore({
+  index,
+  core,
+  barWidth,
+}: {
+  index: number
+  core: CoreMetrics
+  barWidth: number
+}) {
   const pct = Math.round(core.usage)
   const color = severityColor(pct)
   return (
@@ -39723,7 +39747,11 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
       <SectionHeader>Memory</SectionHeader>
       <Box gap={2} wrap="truncate">
         <LabelValue label="Total:" value={\`\${total.toFixed(1)} GB\`} />
-        <LabelValue label="Used:" value={\`\${memory.used.toFixed(1)} GB\`} color={severityColor(usedPct)} />
+        <LabelValue
+          label="Used:"
+          value={\`\${memory.used.toFixed(1)} GB\`}
+          color={severityColor(usedPct)}
+        />
       </Box>
       <Box flexDirection="column">
         <Box gap={1} wrap="truncate">
@@ -39790,7 +39818,12 @@ function NetworkRow({
   return (
     <Box>
       <Text color={color}>{label} </Text>
-      <ProgressBar value={Math.min(1, rate / max)} color={color} showPercentage={false} width={barWidth} />
+      <ProgressBar
+        value={Math.min(1, rate / max)}
+        color={color}
+        showPercentage={false}
+        width={barWidth}
+      />
       <Text color={color}>
         <Strong>{\` \${rate.toFixed(1).padStart(5)}\`}</Strong>
       </Text>
@@ -40024,7 +40057,12 @@ export function Dashboard() {
           <Strong>System Monitor</Strong>
         </Text>
       </Box>
-      <WideLayout cores={state.cores} memory={state.memory} network={state.network} processes={state.processes} />
+      <WideLayout
+        cores={state.cores}
+        memory={state.memory}
+        network={state.network}
+        processes={state.processes}
+      />
     </Box>
   )
 }
@@ -40164,7 +40202,11 @@ function Tag({ name }: { name: string }) {
 
 function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }) {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "$primary" : "$border"}>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={isSelected ? "$primary" : "$border"}
+    >
       {isSelected ? (
         <Box backgroundColor="$primary" paddingX={1}>
           <Text color="$primary-fg" bold wrap="truncate">
@@ -40217,7 +40259,11 @@ function ColumnComponent({
         flexGrow={1}
       >
         {column.cards.map((card, cardIndex) => (
-          <CardComponent key={card.id} card={card} isSelected={isSelected && cardIndex === selectedCardIndex} />
+          <CardComponent
+            key={card.id}
+            card={card}
+            isSelected={isSelected && cardIndex === selectedCardIndex}
+          />
         ))}
 
         {column.cards.length === 0 && (
@@ -40404,10 +40450,20 @@ export const meta: ExampleMeta = {
 
 function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
   return (
-    <Box flexDirection="column" gap={1} paddingX={1} overflow="scroll" scrollOffset={scrollOffset} flexGrow={1}>
+    <Box
+      flexDirection="column"
+      gap={1}
+      paddingX={1}
+      overflow="scroll"
+      scrollOffset={scrollOffset}
+      flexGrow={1}
+    >
       <Box flexDirection="column">
         <H1>Getting Started with Silvery</H1>
-        <Lead>Build modern terminal UIs with React — layout feedback, semantic theming, and 30+ components.</Lead>
+        <Lead>
+          Build modern terminal UIs with React — layout feedback, semantic theming, and 30+
+          components.
+        </Lead>
       </Box>
 
       <HR />
@@ -40495,9 +40551,12 @@ function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
 
       <H2>Block Elements</H2>
       <Blockquote>
-        The best color code is no color code — most components already use the right semantic tokens.
+        The best color code is no color code — most components already use the right semantic
+        tokens.
       </Blockquote>
-      <CodeBlock>{"bun add silvery      # install\\nbun run dev          # start dev server"}</CodeBlock>
+      <CodeBlock>
+        {"bun add silvery      # install\\nbun run dev          # start dev server"}
+      </CodeBlock>
 
       <H2>Lists</H2>
       <Box flexDirection="row" gap={4}>
@@ -40610,7 +40669,11 @@ function InputsTab() {
           />
 
           <H2>Select List</H2>
-          <Box borderStyle="round" borderColor={focusIndex === 2 ? "$focusborder" : "$border"} paddingX={1}>
+          <Box
+            borderStyle="round"
+            borderColor={focusIndex === 2 ? "$focusborder" : "$border"}
+            paddingX={1}
+          >
             <SelectList
               items={frameworkItems}
               highlightedIndex={selectedFramework}
@@ -40631,8 +40694,18 @@ function InputsTab() {
             paddingY={1}
             gap={1}
           >
-            <Toggle value={darkMode} onChange={setDarkMode} label="Dark mode" isActive={focusIndex === 3} />
-            <Toggle value={notifications} onChange={setNotifications} label="Notifications" isActive={false} />
+            <Toggle
+              value={darkMode}
+              onChange={setDarkMode}
+              label="Dark mode"
+              isActive={focusIndex === 3}
+            />
+            <Toggle
+              value={notifications}
+              onChange={setNotifications}
+              label="Notifications"
+              isActive={false}
+            />
             <Toggle value={autoSave} onChange={setAutoSave} label="Auto-save" isActive={false} />
           </Box>
 
@@ -40642,13 +40715,23 @@ function InputsTab() {
           <HR />
 
           <H2>Current Values</H2>
-          <Box flexDirection="column" backgroundColor="$surfacebg" paddingX={1} paddingY={1} borderStyle="round">
+          <Box
+            flexDirection="column"
+            backgroundColor="$surfacebg"
+            paddingX={1}
+            paddingY={1}
+            borderStyle="round"
+          >
             <Text color="$surface">
               <Strong>Text:</Strong> {textValue || <Muted>(empty)</Muted>}
             </Text>
             <Text color="$surface">
               <Strong>Area:</Strong>{" "}
-              {areaValue ? areaValue.split("\\n")[0] + (areaValue.includes("\\n") ? "..." : "") : <Muted>(empty)</Muted>}
+              {areaValue ? (
+                areaValue.split("\\n")[0] + (areaValue.includes("\\n") ? "..." : "")
+              ) : (
+                <Muted>(empty)</Muted>
+              )}
             </Text>
             <Text color="$surface">
               <Strong>Framework:</Strong> {frameworkItems[selectedFramework]?.label}
@@ -40696,52 +40779,58 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
     }
   })
 
+  const gridCell = {
+    flexGrow: 1,
+    flexBasis: 0,
+    borderStyle: "round" as const,
+    borderColor: "$border",
+    paddingX: 1,
+    paddingY: 1,
+    flexDirection: "column" as const,
+    gap: 1,
+  }
+
   return (
     <Box flexDirection="column" gap={1} paddingX={1}>
-      {/* Progress Bars */}
-      <Box flexDirection="column" gap={1}>
-        <Divider title="Progress Bars" />
-        <Box flexDirection="column">
-          <Box>
-            <Text color="$muted">{"Build   "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar value={1.0} label="✓" />
+      {/* Row 1: Progress Bars | Spinners */}
+      <Box flexDirection="row" gap={1}>
+        <Box {...gridCell}>
+          <H2>Progress Bars</H2>
+          <Box flexDirection="column">
+            <Box>
+              <Text color="$muted">{"Build   "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar value={1.0} label="✓" />
+              </Box>
             </Box>
-          </Box>
-          <Box>
-            <Text color="$muted">{"Test    "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar value={0.73} />
+            <Box>
+              <Text color="$muted">{"Test    "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar value={0.73} />
+              </Box>
             </Box>
-          </Box>
-          <Box>
-            <Text color="$muted">{"Deploy  "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar value={0.35} />
+            <Box>
+              <Text color="$muted">{"Deploy  "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar value={0.35} />
+              </Box>
             </Box>
-          </Box>
-          <Box>
-            <Text color="$muted">{"Install "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar />
+            <Box>
+              <Text color="$muted">{"Install "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar />
+              </Box>
             </Box>
           </Box>
         </Box>
-      </Box>
-
-      {/* Spinners + Badges row */}
-      <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Spinners" />
+        <Box {...gridCell}>
+          <H2>Spinners + Badges</H2>
           <Box flexDirection="column">
             <Spinner type="dots" label="Loading packages..." />
             <Spinner type="line" label="Compiling..." />
             <Spinner type="arc" label="Optimizing bundle..." />
             <Spinner type="bounce" label="Connecting..." />
           </Box>
-        </Box>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Badges" />
           <Box gap={1} flexWrap="wrap">
             <Badge label="Stable" variant="success" />
             <Badge label="Beta" variant="warning" />
@@ -40752,27 +40841,25 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
         </Box>
       </Box>
 
-      {/* Status + Border Styles row */}
-      <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Status" />
-          <Box flexDirection="column">
-            <Text>
-              <Text color="$success">{"✓"}</Text> All checks passed
-            </Text>
-            <Text>
-              <Text color="$warning">{"⚠"}</Text> 2 deprecation warnings
-            </Text>
-            <Text>
-              <Text color="$error">{"✗"}</Text> 1 vulnerability found
-            </Text>
-            <Text>
-              <Text color="$info">{"ℹ"}</Text> 47 packages installed
-            </Text>
+      {/* Row 2: Input Controls | Border Styles */}
+      <Box flexDirection="row" gap={1}>
+        <Box {...gridCell}>
+          <H2>Input Controls</H2>
+          <Box flexDirection="column" gap={1}>
+            <Box gap={1}>
+              <Muted>Search:</Muted>
+              <Box flexGrow={1}>
+                <TextInput value="flutter widgets" onChange={() => {}} />
+              </Box>
+            </Box>
+            <Box gap={2} wrap="truncate">
+              <Toggle label="Dark mode" value={true} onChange={() => {}} />
+              <Toggle label="Notifications" value={false} onChange={() => {}} />
+            </Box>
           </Box>
         </Box>
-        <Box flexDirection="column" flexGrow={1} gap={1}>
-          <Divider title="Border Styles" />
+        <Box {...gridCell}>
+          <H2>Border Styles</H2>
           <Box flexDirection="column" gap={0}>
             {borderStyles.map((style, i) => (
               <Box
@@ -40795,64 +40882,63 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
         </Box>
       </Box>
 
-      {/* Keyboard Shortcuts + Dividers row */}
-      <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Keyboard Shortcuts" />
-          <Box flexDirection="column" gap={1}>
-            <Box gap={1}>
-              <Kbd>Ctrl</Kbd>
-              <Text>+</Text>
-              <Kbd>S</Kbd>
-              <Muted>Save</Muted>
-            </Box>
-            <Box gap={1}>
-              <Kbd>Ctrl</Kbd>
-              <Text>+</Text>
-              <Kbd>Z</Kbd>
-              <Muted>Undo</Muted>
-            </Box>
-            <Box gap={1}>
-              <Kbd>⌘</Kbd>
-              <Text>+</Text>
-              <Kbd>P</Kbd>
-              <Muted>Command palette</Muted>
-            </Box>
-            <Box gap={1}>
-              <Kbd>Esc</Kbd>
-              <Muted>Close dialog</Muted>
-            </Box>
-          </Box>
+      {/* Row 3: Select List | Dialog Preview */}
+      <Box flexDirection="row" gap={1}>
+        <Box {...gridCell}>
+          <H2>Select List</H2>
+          <SelectList
+            items={[
+              { label: "React", value: "react" },
+              { label: "Vue", value: "vue" },
+              { label: "Svelte", value: "svelte" },
+              { label: "Angular", value: "angular" },
+              { label: "Solid", value: "solid" },
+            ]}
+            highlightedIndex={0}
+            onHighlight={() => {}}
+            isActive={false}
+          />
         </Box>
-        <Box flexDirection="column" flexGrow={1} gap={1}>
-          <Divider title="Color Tokens" />
+        <Box {...gridCell}>
+          <H2>Typography</H2>
           <Box flexDirection="column">
-            <Box gap={2}>
-              <Text color="$primary">{"●"} primary</Text>
-              <Text color="$success">{"●"} success</Text>
-              <Text color="$warning">{"●"} warning</Text>
-            </Box>
-            <Box gap={2}>
-              <Text color="$error">{"●"} error</Text>
-              <Text color="$info">{"●"} info</Text>
-              <Muted>{"●"} muted</Muted>
-            </Box>
+            <Text>
+              <Strong>Silvery</Strong> is a <Em>React framework</Em> for terminal UIs.
+            </Text>
+            <Text>
+              Use <Code>{"useContentRect()"}</Code> for responsive layout.
+            </Text>
+            <Text>
+              Supports <Text color="$success">semantic colors</Text>, <Text bold>bold</Text>,{" "}
+              <Text dimColor>dim</Text>, and <Text underline>underline</Text>.
+            </Text>
+            <Muted>38 built-in color palettes — adapts automatically.</Muted>
           </Box>
         </Box>
       </Box>
 
       {showModal && (
-        <Box position="absolute" display="flex" justifyContent="center" alignItems="center" width="100%" height="100%">
+        <Box
+          position="absolute"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          width="100%"
+          height="100%"
+        >
           <ModalDialog title="Component Gallery" width={50} footer="ESC or q to close">
             <Box flexDirection="column" gap={1}>
               <P>
-                This gallery demonstrates <Strong>silvery</Strong>'s built-in UI components. Every component uses
-                semantic theme tokens — they adapt to any of the 38 built-in palettes automatically.
+                This gallery demonstrates <Strong>silvery</Strong>'s built-in UI components. Every
+                component uses semantic theme tokens — they adapt to any of the 38 built-in palettes
+                automatically.
               </P>
               <HR />
               <Box flexDirection="column">
                 <Text color="$success">{"✓ Typography presets (H1-H3, Lead, Muted, Code)"}</Text>
-                <Text color="$success">{"✓ Input components (TextInput, TextArea, SelectList)"}</Text>
+                <Text color="$success">
+                  {"✓ Input components (TextInput, TextArea, SelectList)"}
+                </Text>
                 <Text color="$success">{"✓ Display widgets (ProgressBar, Spinner, Badge)"}</Text>
                 <Text color="$success">{"✓ Layout primitives (Box, Divider, border styles)"}</Text>
                 <Text color="$success">{"✓ Dialog system (ModalDialog with input blocking)"}</Text>
@@ -40942,7 +41028,10 @@ export function ComponentsApp() {
 export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="h/l tab  Tab cycle inputs  j/k navigate  Enter modal  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="h/l tab  Tab cycle inputs  j/k navigate  Enter modal  Esc/q quit"
+    >
       <ComponentsApp />
     </ExampleBanner>,
     term,
@@ -41031,7 +41120,18 @@ interface LogEntry {
 // Data Generation
 // ============================================================================
 
-const SOURCES = ["http", "db", "auth", "cache", "worker", "api", "scheduler", "queue", "metrics", "ws"]
+const SOURCES = [
+  "http",
+  "db",
+  "auth",
+  "cache",
+  "worker",
+  "api",
+  "scheduler",
+  "queue",
+  "metrics",
+  "ws",
+]
 
 const LOG_TEMPLATES: Record<LogLevel, string[]> = {
   DEBUG: [
@@ -41210,7 +41310,9 @@ function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number 
       itemHeight={1}
       scrollTo={cursor}
       overscan={5}
-      renderItem={(entry, index) => <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />}
+      renderItem={(entry, index) => (
+        <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />
+      )}
     />
   )
 }
@@ -41350,7 +41452,10 @@ export function DevTools() {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="j/k navigate  g/G start/end  d/i/w/e add log  c clear  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="j/k navigate  g/G start/end  d/i/w/e add log  c clear  Esc/q quit"
+    >
       <DevTools />
     </ExampleBanner>,
     term,
@@ -41719,7 +41824,8 @@ function tickState(prev: ReturnType<typeof createInitialState>) {
   const memory: MemoryMetrics = {
     ...prev.memory,
     used: Math.max(4, usedJitter),
-    swap: (jitter((prev.memory.swap / prev.memory.swapTotal) * 100, 5) / 100) * prev.memory.swapTotal,
+    swap:
+      (jitter((prev.memory.swap / prev.memory.swapTotal) * 100, 5) / 100) * prev.memory.swapTotal,
     history: pushHistory(prev.memory.history, (usedJitter / totalMem) * 100),
   }
 
@@ -41765,7 +41871,15 @@ function LabelValue({ label, value, color }: { label: string; value: string; col
 
 // --- CPU Tab ---
 
-function CpuCore({ index, core, barWidth }: { index: number; core: CoreMetrics; barWidth: number }) {
+function CpuCore({
+  index,
+  core,
+  barWidth,
+}: {
+  index: number
+  core: CoreMetrics
+  barWidth: number
+}) {
   const pct = Math.round(core.usage)
   const color = severityColor(pct)
   return (
@@ -41818,7 +41932,11 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
       <SectionHeader>Memory</SectionHeader>
       <Box gap={2} wrap="truncate">
         <LabelValue label="Total:" value={\`\${total.toFixed(1)} GB\`} />
-        <LabelValue label="Used:" value={\`\${memory.used.toFixed(1)} GB\`} color={severityColor(usedPct)} />
+        <LabelValue
+          label="Used:"
+          value={\`\${memory.used.toFixed(1)} GB\`}
+          color={severityColor(usedPct)}
+        />
       </Box>
       <Box flexDirection="column">
         <Box gap={1} wrap="truncate">
@@ -41885,7 +42003,12 @@ function NetworkRow({
   return (
     <Box>
       <Text color={color}>{label} </Text>
-      <ProgressBar value={Math.min(1, rate / max)} color={color} showPercentage={false} width={barWidth} />
+      <ProgressBar
+        value={Math.min(1, rate / max)}
+        color={color}
+        showPercentage={false}
+        width={barWidth}
+      />
       <Text color={color}>
         <Strong>{\` \${rate.toFixed(1).padStart(5)}\`}</Strong>
       </Text>
@@ -42119,7 +42242,12 @@ export function Dashboard() {
           <Strong>System Monitor</Strong>
         </Text>
       </Box>
-      <WideLayout cores={state.cores} memory={state.memory} network={state.network} processes={state.processes} />
+      <WideLayout
+        cores={state.cores}
+        memory={state.memory}
+        network={state.network}
+        processes={state.processes}
+      />
     </Box>
   )
 }
@@ -42210,7 +42338,8 @@ const CARDS: CardData[] = [
     value: "42%",
     detail: "4 cores, 2.4 GHz base",
     color: "green",
-    sparkline: "\\u2582\\u2583\\u2585\\u2587\\u2586\\u2584\\u2583\\u2585\\u2587\\u2588\\u2586\\u2584\\u2583\\u2582\\u2583\\u2585",
+    sparkline:
+      "\\u2582\\u2583\\u2585\\u2587\\u2586\\u2584\\u2583\\u2585\\u2587\\u2588\\u2586\\u2584\\u2583\\u2582\\u2583\\u2585",
   },
   {
     title: "Memory",
@@ -42218,7 +42347,8 @@ const CARDS: CardData[] = [
     value: "8.2 GB",
     detail: "of 16 GB (51% used)",
     color: "cyan",
-    sparkline: "\\u2584\\u2584\\u2585\\u2585\\u2585\\u2586\\u2586\\u2586\\u2585\\u2585\\u2586\\u2586\\u2587\\u2587\\u2586\\u2586",
+    sparkline:
+      "\\u2584\\u2584\\u2585\\u2585\\u2585\\u2586\\u2586\\u2586\\u2585\\u2585\\u2586\\u2586\\u2587\\u2587\\u2586\\u2586",
   },
   {
     title: "Disk I/O",
@@ -42226,7 +42356,8 @@ const CARDS: CardData[] = [
     value: "234 MB/s",
     detail: "Read: 180 MB/s Write: 54 MB/s",
     color: "yellow",
-    sparkline: "\\u2581\\u2582\\u2583\\u2587\\u2588\\u2587\\u2584\\u2582\\u2581\\u2582\\u2585\\u2587\\u2586\\u2583\\u2582\\u2581",
+    sparkline:
+      "\\u2581\\u2582\\u2583\\u2587\\u2588\\u2587\\u2584\\u2582\\u2581\\u2582\\u2585\\u2587\\u2586\\u2583\\u2582\\u2581",
   },
   {
     title: "Network",
@@ -42234,7 +42365,8 @@ const CARDS: CardData[] = [
     value: "1.2 Gb/s",
     detail: "In: 800 Mb/s Out: 400 Mb/s",
     color: "magenta",
-    sparkline: "\\u2583\\u2584\\u2585\\u2586\\u2587\\u2586\\u2585\\u2584\\u2585\\u2586\\u2587\\u2588\\u2587\\u2586\\u2585\\u2584",
+    sparkline:
+      "\\u2583\\u2584\\u2585\\u2586\\u2587\\u2586\\u2585\\u2584\\u2585\\u2586\\u2587\\u2588\\u2587\\u2586\\u2585\\u2584",
   },
   {
     title: "Processes",
@@ -42242,7 +42374,8 @@ const CARDS: CardData[] = [
     value: "247",
     detail: "12 running, 235 sleeping",
     color: "blue",
-    sparkline: "\\u2585\\u2585\\u2585\\u2586\\u2585\\u2585\\u2585\\u2585\\u2586\\u2585\\u2585\\u2585\\u2586\\u2585\\u2585\\u2585",
+    sparkline:
+      "\\u2585\\u2585\\u2585\\u2586\\u2585\\u2585\\u2585\\u2585\\u2586\\u2585\\u2585\\u2585\\u2586\\u2585\\u2585\\u2585",
   },
   {
     title: "Temperature",
@@ -42250,7 +42383,8 @@ const CARDS: CardData[] = [
     value: "62 C",
     detail: "Max: 85 C (safe range)",
     color: "red",
-    sparkline: "\\u2583\\u2583\\u2584\\u2584\\u2585\\u2585\\u2586\\u2586\\u2585\\u2585\\u2584\\u2584\\u2583\\u2584\\u2585\\u2585",
+    sparkline:
+      "\\u2583\\u2583\\u2584\\u2584\\u2585\\u2585\\u2586\\u2586\\u2585\\u2585\\u2584\\u2584\\u2583\\u2584\\u2585\\u2585",
   },
 ]
 
@@ -42262,7 +42396,13 @@ function MetricCard({ card, compact }: { card: CardData; compact: boolean }) {
   if (compact) {
     // Minimal: single-line card for narrow terminals
     return (
-      <Box borderStyle="round" borderColor={card.color} paddingX={1} flexDirection="row" justifyContent="space-between">
+      <Box
+        borderStyle="round"
+        borderColor={card.color}
+        paddingX={1}
+        flexDirection="row"
+        justifyContent="space-between"
+      >
         <H1 color={card.color}>{card.title}</H1>
         <H3>{card.value}</H3>
       </Box>
@@ -42271,7 +42411,13 @@ function MetricCard({ card, compact }: { card: CardData; compact: boolean }) {
 
   // Full card with sparkline and details
   return (
-    <Box borderStyle="round" borderColor={card.color} paddingX={1} flexDirection="column" flexGrow={1}>
+    <Box
+      borderStyle="round"
+      borderColor={card.color}
+      paddingX={1}
+      flexDirection="column"
+      flexGrow={1}
+    >
       <Box justifyContent="space-between">
         <H1 color={card.color}>{card.title}</H1>
         <H1 color={card.color}>{card.value}</H1>
@@ -42308,7 +42454,15 @@ function BreakpointIndicator({ width, columns }: { width: number; columns: numbe
   )
 }
 
-function GridLayout({ cards, columns, compact }: { cards: CardData[]; columns: number; compact: boolean }) {
+function GridLayout({
+  cards,
+  columns,
+  compact,
+}: {
+  cards: CardData[]
+  columns: number
+  compact: boolean
+}) {
   if (columns === 1) {
     return (
       <Box flexDirection="column" gap={compact ? 0 : 1} flexGrow={1}>
@@ -42363,12 +42517,13 @@ function CodeSnippet({ width }: { width: number }) {
       <H1 color="yellow">How it works:</H1>
       <Text color="gray">
         {"  "}
-        <Text color="magenta">const</Text> {"{"} width {"}"} = <Text color="cyan">useContentRect</Text>()
+        <Text color="magenta">const</Text> {"{"} width {"}"} ={" "}
+        <Text color="cyan">useContentRect</Text>()
       </Text>
       <Text color="gray">
         {"  "}
-        <Text color="magenta">const</Text> columns = width {">"} 100 ? <Text color="green">3</Text> : width {">"} 60 ?{" "}
-        <Text color="green">2</Text> : <Text color="green">1</Text>
+        <Text color="magenta">const</Text> columns = width {">"} 100 ? <Text color="green">3</Text>{" "}
+        : width {">"} 60 ? <Text color="green">2</Text> : <Text color="green">1</Text>
       </Text>
       <Text dim italic>
         {"  "}// No useEffect, no layout thrashing. Synchronous.
@@ -42602,7 +42757,8 @@ function TodoApp() {
       <TodoList />
       <Text> </Text>
       <Muted>
-        <Kbd>j/k</Kbd> move <Kbd>x</Kbd> toggle <Kbd>a</Kbd> add <Kbd>d</Kbd> delete <Kbd>Esc/q</Kbd> quit
+        <Kbd>j/k</Kbd> move <Kbd>x</Kbd> toggle <Kbd>a</Kbd> add <Kbd>d</Kbd> delete{" "}
+        <Kbd>Esc/q</Kbd> quit
       </Muted>
     </Box>
   )
@@ -43132,7 +43288,13 @@ function DoneStep({ framework, projectName }: { framework: string; projectName: 
         <H1 color="$success">{"\\u2714"} Project created successfully!</H1>
       </Box>
 
-      <Box flexDirection="column" borderStyle="round" borderColor="$success" paddingX={2} paddingY={1}>
+      <Box
+        flexDirection="column"
+        borderStyle="round"
+        borderColor="$success"
+        paddingX={2}
+        paddingY={1}
+      >
         <Box>
           <Muted>Framework: </Muted>
           <Text bold>{framework}</Text>
@@ -43229,7 +43391,8 @@ export function CliWizard() {
   // Map progress to step index for display
   const installStepIndex = Math.floor(state.progress * (INSTALL_STEPS.length - 1))
 
-  const stepNumber = state.step === "framework" ? 0 : state.step === "name" ? 1 : state.step === "installing" ? 2 : 3
+  const stepNumber =
+    state.step === "framework" ? 0 : state.step === "name" ? 1 : state.step === "installing" ? 2 : 3
 
   return (
     <Box flexDirection="column" flexGrow={1}>
@@ -43251,7 +43414,9 @@ export function CliWizard() {
         />
       )}
 
-      {state.step === "installing" && <InstallStep progress={state.progress} stepIndex={installStepIndex} />}
+      {state.step === "installing" && (
+        <InstallStep progress={state.progress} stepIndex={installStepIndex} />
+      )}
 
       {state.step === "done" && state.framework && (
         <DoneStep framework={state.framework} projectName={state.projectName} />
@@ -43357,10 +43522,20 @@ export const meta: ExampleMeta = {
 
 function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
   return (
-    <Box flexDirection="column" gap={1} paddingX={1} overflow="scroll" scrollOffset={scrollOffset} flexGrow={1}>
+    <Box
+      flexDirection="column"
+      gap={1}
+      paddingX={1}
+      overflow="scroll"
+      scrollOffset={scrollOffset}
+      flexGrow={1}
+    >
       <Box flexDirection="column">
         <H1>Getting Started with Silvery</H1>
-        <Lead>Build modern terminal UIs with React — layout feedback, semantic theming, and 30+ components.</Lead>
+        <Lead>
+          Build modern terminal UIs with React — layout feedback, semantic theming, and 30+
+          components.
+        </Lead>
       </Box>
 
       <HR />
@@ -43448,9 +43623,12 @@ function TypographyTab({ scrollOffset }: { scrollOffset?: number }) {
 
       <H2>Block Elements</H2>
       <Blockquote>
-        The best color code is no color code — most components already use the right semantic tokens.
+        The best color code is no color code — most components already use the right semantic
+        tokens.
       </Blockquote>
-      <CodeBlock>{"bun add silvery      # install\\nbun run dev          # start dev server"}</CodeBlock>
+      <CodeBlock>
+        {"bun add silvery      # install\\nbun run dev          # start dev server"}
+      </CodeBlock>
 
       <H2>Lists</H2>
       <Box flexDirection="row" gap={4}>
@@ -43563,7 +43741,11 @@ function InputsTab() {
           />
 
           <H2>Select List</H2>
-          <Box borderStyle="round" borderColor={focusIndex === 2 ? "$focusborder" : "$border"} paddingX={1}>
+          <Box
+            borderStyle="round"
+            borderColor={focusIndex === 2 ? "$focusborder" : "$border"}
+            paddingX={1}
+          >
             <SelectList
               items={frameworkItems}
               highlightedIndex={selectedFramework}
@@ -43584,8 +43766,18 @@ function InputsTab() {
             paddingY={1}
             gap={1}
           >
-            <Toggle value={darkMode} onChange={setDarkMode} label="Dark mode" isActive={focusIndex === 3} />
-            <Toggle value={notifications} onChange={setNotifications} label="Notifications" isActive={false} />
+            <Toggle
+              value={darkMode}
+              onChange={setDarkMode}
+              label="Dark mode"
+              isActive={focusIndex === 3}
+            />
+            <Toggle
+              value={notifications}
+              onChange={setNotifications}
+              label="Notifications"
+              isActive={false}
+            />
             <Toggle value={autoSave} onChange={setAutoSave} label="Auto-save" isActive={false} />
           </Box>
 
@@ -43595,13 +43787,23 @@ function InputsTab() {
           <HR />
 
           <H2>Current Values</H2>
-          <Box flexDirection="column" backgroundColor="$surfacebg" paddingX={1} paddingY={1} borderStyle="round">
+          <Box
+            flexDirection="column"
+            backgroundColor="$surfacebg"
+            paddingX={1}
+            paddingY={1}
+            borderStyle="round"
+          >
             <Text color="$surface">
               <Strong>Text:</Strong> {textValue || <Muted>(empty)</Muted>}
             </Text>
             <Text color="$surface">
               <Strong>Area:</Strong>{" "}
-              {areaValue ? areaValue.split("\\n")[0] + (areaValue.includes("\\n") ? "..." : "") : <Muted>(empty)</Muted>}
+              {areaValue ? (
+                areaValue.split("\\n")[0] + (areaValue.includes("\\n") ? "..." : "")
+              ) : (
+                <Muted>(empty)</Muted>
+              )}
             </Text>
             <Text color="$surface">
               <Strong>Framework:</Strong> {frameworkItems[selectedFramework]?.label}
@@ -43649,52 +43851,58 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
     }
   })
 
+  const gridCell = {
+    flexGrow: 1,
+    flexBasis: 0,
+    borderStyle: "round" as const,
+    borderColor: "$border",
+    paddingX: 1,
+    paddingY: 1,
+    flexDirection: "column" as const,
+    gap: 1,
+  }
+
   return (
     <Box flexDirection="column" gap={1} paddingX={1}>
-      {/* Progress Bars */}
-      <Box flexDirection="column" gap={1}>
-        <Divider title="Progress Bars" />
-        <Box flexDirection="column">
-          <Box>
-            <Text color="$muted">{"Build   "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar value={1.0} label="✓" />
+      {/* Row 1: Progress Bars | Spinners */}
+      <Box flexDirection="row" gap={1}>
+        <Box {...gridCell}>
+          <H2>Progress Bars</H2>
+          <Box flexDirection="column">
+            <Box>
+              <Text color="$muted">{"Build   "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar value={1.0} label="✓" />
+              </Box>
             </Box>
-          </Box>
-          <Box>
-            <Text color="$muted">{"Test    "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar value={0.73} />
+            <Box>
+              <Text color="$muted">{"Test    "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar value={0.73} />
+              </Box>
             </Box>
-          </Box>
-          <Box>
-            <Text color="$muted">{"Deploy  "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar value={0.35} />
+            <Box>
+              <Text color="$muted">{"Deploy  "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar value={0.35} />
+              </Box>
             </Box>
-          </Box>
-          <Box>
-            <Text color="$muted">{"Install "}</Text>
-            <Box flexGrow={1}>
-              <ProgressBar />
+            <Box>
+              <Text color="$muted">{"Install "}</Text>
+              <Box flexGrow={1}>
+                <ProgressBar />
+              </Box>
             </Box>
           </Box>
         </Box>
-      </Box>
-
-      {/* Spinners + Badges row */}
-      <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Spinners" />
+        <Box {...gridCell}>
+          <H2>Spinners + Badges</H2>
           <Box flexDirection="column">
             <Spinner type="dots" label="Loading packages..." />
             <Spinner type="line" label="Compiling..." />
             <Spinner type="arc" label="Optimizing bundle..." />
             <Spinner type="bounce" label="Connecting..." />
           </Box>
-        </Box>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Badges" />
           <Box gap={1} flexWrap="wrap">
             <Badge label="Stable" variant="success" />
             <Badge label="Beta" variant="warning" />
@@ -43705,27 +43913,25 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
         </Box>
       </Box>
 
-      {/* Status + Border Styles row */}
-      <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Status" />
-          <Box flexDirection="column">
-            <Text>
-              <Text color="$success">{"✓"}</Text> All checks passed
-            </Text>
-            <Text>
-              <Text color="$warning">{"⚠"}</Text> 2 deprecation warnings
-            </Text>
-            <Text>
-              <Text color="$error">{"✗"}</Text> 1 vulnerability found
-            </Text>
-            <Text>
-              <Text color="$info">{"ℹ"}</Text> 47 packages installed
-            </Text>
+      {/* Row 2: Input Controls | Border Styles */}
+      <Box flexDirection="row" gap={1}>
+        <Box {...gridCell}>
+          <H2>Input Controls</H2>
+          <Box flexDirection="column" gap={1}>
+            <Box gap={1}>
+              <Muted>Search:</Muted>
+              <Box flexGrow={1}>
+                <TextInput value="flutter widgets" onChange={() => {}} />
+              </Box>
+            </Box>
+            <Box gap={2} wrap="truncate">
+              <Toggle label="Dark mode" value={true} onChange={() => {}} />
+              <Toggle label="Notifications" value={false} onChange={() => {}} />
+            </Box>
           </Box>
         </Box>
-        <Box flexDirection="column" flexGrow={1} gap={1}>
-          <Divider title="Border Styles" />
+        <Box {...gridCell}>
+          <H2>Border Styles</H2>
           <Box flexDirection="column" gap={0}>
             {borderStyles.map((style, i) => (
               <Box
@@ -43748,64 +43954,63 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
         </Box>
       </Box>
 
-      {/* Keyboard Shortcuts + Dividers row */}
-      <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column" gap={1}>
-          <Divider title="Keyboard Shortcuts" />
-          <Box flexDirection="column" gap={1}>
-            <Box gap={1}>
-              <Kbd>Ctrl</Kbd>
-              <Text>+</Text>
-              <Kbd>S</Kbd>
-              <Muted>Save</Muted>
-            </Box>
-            <Box gap={1}>
-              <Kbd>Ctrl</Kbd>
-              <Text>+</Text>
-              <Kbd>Z</Kbd>
-              <Muted>Undo</Muted>
-            </Box>
-            <Box gap={1}>
-              <Kbd>⌘</Kbd>
-              <Text>+</Text>
-              <Kbd>P</Kbd>
-              <Muted>Command palette</Muted>
-            </Box>
-            <Box gap={1}>
-              <Kbd>Esc</Kbd>
-              <Muted>Close dialog</Muted>
-            </Box>
-          </Box>
+      {/* Row 3: Select List | Dialog Preview */}
+      <Box flexDirection="row" gap={1}>
+        <Box {...gridCell}>
+          <H2>Select List</H2>
+          <SelectList
+            items={[
+              { label: "React", value: "react" },
+              { label: "Vue", value: "vue" },
+              { label: "Svelte", value: "svelte" },
+              { label: "Angular", value: "angular" },
+              { label: "Solid", value: "solid" },
+            ]}
+            highlightedIndex={0}
+            onHighlight={() => {}}
+            isActive={false}
+          />
         </Box>
-        <Box flexDirection="column" flexGrow={1} gap={1}>
-          <Divider title="Color Tokens" />
+        <Box {...gridCell}>
+          <H2>Typography</H2>
           <Box flexDirection="column">
-            <Box gap={2}>
-              <Text color="$primary">{"●"} primary</Text>
-              <Text color="$success">{"●"} success</Text>
-              <Text color="$warning">{"●"} warning</Text>
-            </Box>
-            <Box gap={2}>
-              <Text color="$error">{"●"} error</Text>
-              <Text color="$info">{"●"} info</Text>
-              <Muted>{"●"} muted</Muted>
-            </Box>
+            <Text>
+              <Strong>Silvery</Strong> is a <Em>React framework</Em> for terminal UIs.
+            </Text>
+            <Text>
+              Use <Code>{"useContentRect()"}</Code> for responsive layout.
+            </Text>
+            <Text>
+              Supports <Text color="$success">semantic colors</Text>, <Text bold>bold</Text>,{" "}
+              <Text dimColor>dim</Text>, and <Text underline>underline</Text>.
+            </Text>
+            <Muted>38 built-in color palettes — adapts automatically.</Muted>
           </Box>
         </Box>
       </Box>
 
       {showModal && (
-        <Box position="absolute" display="flex" justifyContent="center" alignItems="center" width="100%" height="100%">
+        <Box
+          position="absolute"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          width="100%"
+          height="100%"
+        >
           <ModalDialog title="Component Gallery" width={50} footer="ESC or q to close">
             <Box flexDirection="column" gap={1}>
               <P>
-                This gallery demonstrates <Strong>silvery</Strong>'s built-in UI components. Every component uses
-                semantic theme tokens — they adapt to any of the 38 built-in palettes automatically.
+                This gallery demonstrates <Strong>silvery</Strong>'s built-in UI components. Every
+                component uses semantic theme tokens — they adapt to any of the 38 built-in palettes
+                automatically.
               </P>
               <HR />
               <Box flexDirection="column">
                 <Text color="$success">{"✓ Typography presets (H1-H3, Lead, Muted, Code)"}</Text>
-                <Text color="$success">{"✓ Input components (TextInput, TextArea, SelectList)"}</Text>
+                <Text color="$success">
+                  {"✓ Input components (TextInput, TextArea, SelectList)"}
+                </Text>
                 <Text color="$success">{"✓ Display widgets (ProgressBar, Spinner, Badge)"}</Text>
                 <Text color="$success">{"✓ Layout primitives (Box, Divider, border styles)"}</Text>
                 <Text color="$success">{"✓ Dialog system (ModalDialog with input blocking)"}</Text>
@@ -43895,7 +44100,10 @@ export function ComponentsApp() {
 export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="h/l tab  Tab cycle inputs  j/k navigate  Enter modal  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="h/l tab  Tab cycle inputs  j/k navigate  Enter modal  Esc/q quit"
+    >
       <ComponentsApp />
     </ExampleBanner>,
     term,
@@ -43963,7 +44171,13 @@ import {
 export const meta: ExampleMeta = {
   name: "Data Explorer",
   description: "Process explorer table with search, VirtualList, and responsive column widths",
-  features: ["useContentRect()", "TextInput", "useInput()", "responsive layout", "useDeferredValue"],
+  features: [
+    "useContentRect()",
+    "TextInput",
+    "useInput()",
+    "responsive layout",
+    "useDeferredValue",
+  ],
 }
 
 // ============================================================================
@@ -44158,30 +44372,49 @@ function TableHeader({ width }: { width: number }) {
   )
 }
 
-function ProcessRow({ proc, isSelected, width }: { proc: ProcessInfo; isSelected: boolean; width: number }) {
+function ProcessRow({
+  proc,
+  isSelected,
+  width,
+}: {
+  proc: ProcessInfo
+  isSelected: boolean
+  width: number
+}) {
   const cols = useColumns(width)
   const cpuColor = proc.cpu > 80 ? "$error" : proc.cpu > 40 ? "$warning" : "$success"
   const memColor = proc.mem > 40 ? "$warning" : "$muted"
 
   // Truncate name to fit column
-  const displayName = proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\\u2026" : proc.name
+  const displayName =
+    proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\\u2026" : proc.name
 
   return (
     <Box paddingX={1} backgroundColor={isSelected ? "$primary" : undefined}>
-      <Text color={isSelected ? "$primary-fg" : "$muted"}>{String(proc.pid).padEnd(cols.pidW)}</Text>
+      <Text color={isSelected ? "$primary-fg" : "$muted"}>
+        {String(proc.pid).padEnd(cols.pidW)}
+      </Text>
       <Text bold={isSelected} color={isSelected ? "$primary-fg" : undefined}>
         {displayName.padEnd(cols.nameW)}
       </Text>
-      <Text color={isSelected ? "$primary-fg" : cpuColor}>{proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%</Text>
-      <Text color={isSelected ? "$primary-fg" : memColor}>{proc.mem.toFixed(1).padStart(cols.memW - 1)}%</Text>
+      <Text color={isSelected ? "$primary-fg" : cpuColor}>
+        {proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%
+      </Text>
+      <Text color={isSelected ? "$primary-fg" : memColor}>
+        {proc.mem.toFixed(1).padStart(cols.memW - 1)}%
+      </Text>
       <Text>{"  "}</Text>
       <Text color={isSelected ? "$primary-fg" : STATUS_COLORS[proc.status]}>
         {STATUS_ICONS[proc.status]} {proc.status.padEnd(cols.statusW - 2)}
       </Text>
       <Text color={isSelected ? "$primary-fg" : "$muted"}>{proc.user.padEnd(cols.userW)}</Text>
-      <Text color={isSelected ? "$primary-fg" : "$muted"}>{String(proc.threads).padStart(cols.threadsW)}</Text>
+      <Text color={isSelected ? "$primary-fg" : "$muted"}>
+        {String(proc.threads).padStart(cols.threadsW)}
+      </Text>
       <Text>{"  "}</Text>
-      <Text color={isSelected ? "$primary-fg" : "$muted"}>{proc.uptime.padStart(cols.uptimeW)}</Text>
+      <Text color={isSelected ? "$primary-fg" : "$muted"}>
+        {proc.uptime.padStart(cols.uptimeW)}
+      </Text>
     </Box>
   )
 }
@@ -44221,7 +44454,15 @@ function SummaryBar({ processes, query }: { processes: ProcessInfo[]; query: str
 }
 
 /** Inner component that reads the flex container's height */
-function ProcessListArea({ processes, cursor, width }: { processes: ProcessInfo[]; cursor: number; width: number }) {
+function ProcessListArea({
+  processes,
+  cursor,
+  width,
+}: {
+  processes: ProcessInfo[]
+  cursor: number
+  width: number
+}) {
   const { height } = useContentRect()
 
   return (
@@ -44381,8 +44622,8 @@ export function DataExplorer() {
       {/* Scroll indicator + help */}
       <Box paddingX={1} justifyContent="space-between">
         <Muted>
-          <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>/</Kbd> search <Kbd>Esc/q</Kbd>{" "}
-          quit
+          <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>/</Kbd>{" "}
+          search <Kbd>Esc/q</Kbd> quit
         </Muted>
         <Muted>
           {effectiveCursor + 1}/{filtered.length}
@@ -44399,7 +44640,10 @@ export function DataExplorer() {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  / search  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="j/k navigate  d/u half-page  g/G start/end  / search  Esc/q quit"
+    >
       <DataExplorer />
     </ExampleBanner>,
     term,
@@ -44488,7 +44732,18 @@ interface LogEntry {
 // Data Generation
 // ============================================================================
 
-const SOURCES = ["http", "db", "auth", "cache", "worker", "api", "scheduler", "queue", "metrics", "ws"]
+const SOURCES = [
+  "http",
+  "db",
+  "auth",
+  "cache",
+  "worker",
+  "api",
+  "scheduler",
+  "queue",
+  "metrics",
+  "ws",
+]
 
 const LOG_TEMPLATES: Record<LogLevel, string[]> = {
   DEBUG: [
@@ -44667,7 +44922,9 @@ function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number 
       itemHeight={1}
       scrollTo={cursor}
       overscan={5}
-      renderItem={(entry, index) => <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />}
+      renderItem={(entry, index) => (
+        <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />
+      )}
     />
   )
 }
@@ -44807,7 +45064,10 @@ export function DevTools() {
 async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="j/k navigate  g/G start/end  d/i/w/e add log  c clear  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="j/k navigate  g/G start/end  d/i/w/e add log  c clear  Esc/q quit"
+    >
       <DevTools />
     </ExampleBanner>,
     term,
@@ -44909,7 +45169,18 @@ interface LogEntry {
   message: string
 }
 
-const SERVICES = ["api", "auth", "db", "cache", "worker", "gateway", "scheduler", "metrics", "queue", "ws"]
+const SERVICES = [
+  "api",
+  "auth",
+  "db",
+  "cache",
+  "worker",
+  "gateway",
+  "scheduler",
+  "metrics",
+  "queue",
+  "ws",
+]
 
 const LOG_TEMPLATES: Record<LogLevel, string[]> = {
   DEBUG: [
@@ -45081,7 +45352,8 @@ function generateProcesses(count: number): ProcessInfo[] {
   for (let i = 0; i < count; i++) {
     const nameBase = PROCESS_NAMES[Math.floor(rng() * PROCESS_NAMES.length)]!
     const hasInstance = rng() > 0.7
-    const status = rng() < 0.65 ? "running" : PROCESS_STATUSES[Math.floor(rng() * PROCESS_STATUSES.length)]!
+    const status =
+      rng() < 0.65 ? "running" : PROCESS_STATUSES[Math.floor(rng() * PROCESS_STATUSES.length)]!
 
     procs.push({
       pid: 1000 + Math.floor(rng() * 60000),
@@ -45140,7 +45412,9 @@ function LogListArea({ entries, cursor }: { entries: LogEntry[]; cursor: number 
       itemHeight={1}
       scrollTo={cursor}
       overscan={5}
-      renderItem={(entry, index) => <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />}
+      renderItem={(entry, index) => (
+        <LogRow key={entry.id} entry={entry} isSelected={index === cursor} />
+      )}
     />
   )
 }
@@ -45162,7 +45436,12 @@ function LevelToggles({
             <Text color="$muted" dim>
               {i + 1}:
             </Text>
-            <Text color={active ? LEVEL_COLORS[level] : "$muted"} bold={active} dim={!active} strikethrough={!active}>
+            <Text
+              color={active ? LEVEL_COLORS[level] : "$muted"}
+              bold={active}
+              dim={!active}
+              strikethrough={!active}
+            >
               {LEVEL_BADGES[level]}
             </Text>
           </Box>
@@ -45204,17 +45483,28 @@ function ProcessHeader({ width }: { width: number }) {
   )
 }
 
-function ProcessRow({ proc, isSelected, width }: { proc: ProcessInfo; isSelected: boolean; width: number }) {
+function ProcessRow({
+  proc,
+  isSelected,
+  width,
+}: {
+  proc: ProcessInfo
+  isSelected: boolean
+  width: number
+}) {
   const cols = useColumns(width)
   const cpuColor = proc.cpu > 80 ? "$error" : proc.cpu > 40 ? "$warning" : "$success"
-  const displayName = proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\\u2026" : proc.name
+  const displayName =
+    proc.name.length > cols.nameW - 1 ? proc.name.slice(0, cols.nameW - 2) + "\\u2026" : proc.name
 
   return (
     <Box paddingX={1} backgroundColor={isSelected ? "$mutedbg" : undefined}>
       <Text color="$muted">{String(proc.pid).padEnd(cols.pidW)}</Text>
       <Text bold={isSelected}>{displayName.padEnd(cols.nameW)}</Text>
       <Text color={cpuColor}>{proc.cpu.toFixed(1).padStart(cols.cpuW - 1)}%</Text>
-      <Text color={proc.mem > 40 ? "$warning" : "$muted"}>{proc.mem.toFixed(1).padStart(cols.memW - 1)}%</Text>
+      <Text color={proc.mem > 40 ? "$warning" : "$muted"}>
+        {proc.mem.toFixed(1).padStart(cols.memW - 1)}%
+      </Text>
       <Text>{"  "}</Text>
       <Text color={STATUS_COLORS[proc.status]}>
         {STATUS_ICONS[proc.status]} {proc.status.padEnd(cols.statusW - 2)}
@@ -45223,7 +45513,15 @@ function ProcessRow({ proc, isSelected, width }: { proc: ProcessInfo; isSelected
   )
 }
 
-function ProcessListArea({ processes, cursor, width }: { processes: ProcessInfo[]; cursor: number; width: number }) {
+function ProcessListArea({
+  processes,
+  cursor,
+  width,
+}: {
+  processes: ProcessInfo[]
+  cursor: number
+  width: number
+}) {
   const { height } = useContentRect()
 
   return (
@@ -45313,7 +45611,10 @@ export function Explorer() {
     let procs = processes
     if (deferredQuery) {
       const q = deferredQuery.toLowerCase()
-      procs = procs.filter((p) => p.name.toLowerCase().includes(q) || p.status.includes(q) || String(p.pid).includes(q))
+      procs = procs.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) || p.status.includes(q) || String(p.pid).includes(q),
+      )
     }
     return [...procs].sort((a, b) => {
       switch (sortCol) {
@@ -45514,7 +45815,11 @@ export function Explorer() {
           </Box>
           <Box flexGrow={1} flexDirection="column">
             {filteredProcesses.length > 0 ? (
-              <ProcessListArea processes={filteredProcesses} cursor={effectiveProcCursor} width={width} />
+              <ProcessListArea
+                processes={filteredProcesses}
+                cursor={effectiveProcCursor}
+                width={width}
+              />
             ) : (
               <Box paddingX={1} justifyContent="center">
                 <Muted>No processes match the current filter</Muted>
@@ -45552,7 +45857,10 @@ export function Explorer() {
 export async function main() {
   using term = createTerm()
   const { waitUntilExit } = await render(
-    <ExampleBanner meta={meta} controls="h/l tab  j/k navigate  d/u page  / search  1-4 levels  s sort  q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="h/l tab  j/k navigate  d/u page  / search  1-4 levels  s sort  q quit"
+    >
       <Explorer />
     </ExampleBanner>,
     term,
@@ -46025,7 +46333,8 @@ function PaintTab() {
 
       <Muted>
         {" "}
-        <Kbd>1-0</Kbd> color <Kbd>e</Kbd> eraser <Kbd>c</Kbd> clear (click canvas in Kitty/Ghostty for mouse paint)
+        <Kbd>1-0</Kbd> color <Kbd>e</Kbd> eraser <Kbd>c</Kbd> clear (click canvas in Kitty/Ghostty
+        for mouse paint)
       </Muted>
     </Box>
   )
@@ -46495,7 +46804,11 @@ function Tag({ name }: { name: string }) {
 
 function CardComponent({ card, isSelected }: { card: Card; isSelected: boolean }) {
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={isSelected ? "$primary" : "$border"}>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={isSelected ? "$primary" : "$border"}
+    >
       {isSelected ? (
         <Box backgroundColor="$primary" paddingX={1}>
           <Text color="$primary-fg" bold wrap="truncate">
@@ -46548,7 +46861,11 @@ function ColumnComponent({
         flexGrow={1}
       >
         {column.cards.map((card, cardIndex) => (
-          <CardComponent key={card.id} card={card} isSelected={isSelected && cardIndex === selectedCardIndex} />
+          <CardComponent
+            key={card.id}
+            card={card}
+            isSelected={isSelected && cardIndex === selectedCardIndex}
+          />
         ))}
 
         {column.cards.length === 0 && (
@@ -46945,7 +47262,12 @@ function BorderPanel({ style, highlight }: { style: StyleVariant; highlight: boo
       <Text bold color={highlight ? "$primary" : undefined}>
         borderStyle="{style}"
       </Text>
-      <Box borderStyle={style} borderColor={highlight ? "$primary" : "$border"} width={30} height={9}>
+      <Box
+        borderStyle={style}
+        borderColor={highlight ? "$primary" : "$border"}
+        width={30}
+        height={9}
+      >
         <ContentWithSize label="Border Box" />
       </Box>
       <Muted>Border adds to layout.</Muted>
@@ -46960,7 +47282,12 @@ function OutlinePanel({ style, highlight }: { style: StyleVariant; highlight: bo
       <Text bold color={highlight ? "$warning" : undefined}>
         outlineStyle="{style}"
       </Text>
-      <Box outlineStyle={style} outlineColor={highlight ? "$warning" : "$border"} width={30} height={9}>
+      <Box
+        outlineStyle={style}
+        outlineColor={highlight ? "$warning" : "$border"}
+        width={30}
+        height={9}
+      >
         <ContentWithSize label="Outline Box" />
       </Box>
       <Muted>Outline overlaps content.</Muted>
@@ -47269,7 +47596,17 @@ if (import.meta.main) {
  */
 
 import React, { useState } from "react"
-import { Box, Text, Kbd, Muted, render, useInput, useApp, createTerm, type Key } from "silvery"
+import {
+  Box,
+  Text,
+  Kbd,
+  Muted,
+  render,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "silvery"
 export const meta: ExampleMeta = {
   name: "Scroll",
   description: 'Native overflow="scroll" with automatic scroll-to-selected',
@@ -47311,8 +47648,15 @@ export function ScrollExample() {
         height={10}
       >
         {items.map((item, index) => (
-          <Box key={item.id} paddingX={1} backgroundColor={index === selectedIndex ? "$primary" : undefined}>
-            <Text color={index === selectedIndex ? "$primary-fg" : undefined} bold={index === selectedIndex}>
+          <Box
+            key={item.id}
+            paddingX={1}
+            backgroundColor={index === selectedIndex ? "$primary" : undefined}
+          >
+            <Text
+              color={index === selectedIndex ? "$primary-fg" : undefined}
+              bold={index === selectedIndex}
+            >
               {item.title}
             </Text>
           </Box>
@@ -47361,7 +47705,19 @@ if (import.meta.main) {
  */
 
 import React, { useState, useDeferredValue, useTransition } from "react"
-import { render, Box, Text, Kbd, Muted, Strong, Lead, useInput, useApp, createTerm, type Key } from "silvery"
+import {
+  render,
+  Box,
+  Text,
+  Kbd,
+  Muted,
+  Strong,
+  Lead,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "silvery"
 export const meta: ExampleMeta = {
   name: "Search Filter",
   description: "useTransition + useDeferredValue for responsive concurrent search",
@@ -47614,7 +47970,17 @@ if (import.meta.main) {
  */
 
 import React, { useState, useMemo } from "react"
-import { render, Box, Text, Kbd, Muted, useInput, useApp, createTerm, type Key } from "silvery"
+import {
+  render,
+  Box,
+  Text,
+  Kbd,
+  Muted,
+  useInput,
+  useApp,
+  createTerm,
+  type Key,
+} from "silvery"
 export const meta: ExampleMeta = {
   name: "Task List",
   description: "Scrollable list with priority badges, toggles, and expandable subtasks",
@@ -47696,7 +48062,15 @@ function PriorityBadge({ priority }: { priority: "high" | "medium" | "low" }) {
   )
 }
 
-function TaskItem({ task, isSelected, isExpanded }: { task: Task; isSelected: boolean; isExpanded: boolean }) {
+function TaskItem({
+  task,
+  isSelected,
+  isExpanded,
+}: {
+  task: Task
+  isSelected: boolean
+  isExpanded: boolean
+}) {
   const checkbox = task.completed ? "[x]" : "[ ]"
   const hasSubtasks = task.subtasks && task.subtasks.length > 0
 
@@ -47748,7 +48122,8 @@ function StatusBar({
     <Box justifyContent="space-between">
       <Muted>
         {" "}
-        <Kbd>j/k</Kbd> navigate <Kbd>space</Kbd> toggle <Kbd>enter</Kbd> expand <Kbd>Esc/q</Kbd> quit
+        <Kbd>j/k</Kbd> navigate <Kbd>space</Kbd> toggle <Kbd>enter</Kbd> expand <Kbd>Esc/q</Kbd>{" "}
+        quit
       </Muted>
       <Muted>
         {" "}
@@ -47807,7 +48182,9 @@ export function TaskList() {
     }
     if (input === " ") {
       // Toggle completion
-      setTasks((prev) => prev.map((task, idx) => (idx === cursor ? { ...task, completed: !task.completed } : task)))
+      setTasks((prev) =>
+        prev.map((task, idx) => (idx === cursor ? { ...task, completed: !task.completed } : task)),
+      )
     }
     if (key.return || input === "e") {
       // Toggle expand/collapse subtasks
@@ -47849,7 +48226,12 @@ export function TaskList() {
         })}
       </Box>
 
-      <StatusBar tasks={tasks} cursor={cursor} scrollOffset={scrollOffset} visibleCount={visibleCount} />
+      <StatusBar
+        tasks={tasks}
+        cursor={cursor}
+        scrollOffset={scrollOffset}
+        visibleCount={visibleCount}
+      />
     </Box>
   )
 }
@@ -48064,7 +48446,11 @@ function KeysTab({ kittySupported }: { kittySupported: boolean }) {
       <Box flexDirection="column" width={46}>
         <H2>Last Key Pressed</H2>
         <Box height={1} />
-        {latest ? <KeyDetails event={latest} /> : <KeyPlaceholder kittySupported={kittySupported} />}
+        {latest ? (
+          <KeyDetails event={latest} />
+        ) : (
+          <KeyPlaceholder kittySupported={kittySupported} />
+        )}
       </Box>
 
       {/* Right: Event log */}
@@ -48082,7 +48468,8 @@ function KeysTab({ kittySupported }: { kittySupported: boolean }) {
           <Box flexDirection="column" overflow="scroll" scrollTo={events.length - 1}>
             {events.map((e, i) => (
               <Text key={e.index} dimColor={i < events.length - 1}>
-                <Text color="$muted">#{String(e.index).padStart(3)}</Text> {formatKeyEventSummary(e)}
+                <Text color="$muted">#{String(e.index).padStart(3)}</Text>{" "}
+                {formatKeyEventSummary(e)}
               </Text>
             ))}
           </Box>
@@ -48107,7 +48494,13 @@ function KeyPlaceholder({ kittySupported }: { kittySupported: boolean }) {
 
 function KeyDetails({ event }: { event: KeyEvent }) {
   const { parsed, raw } = event
-  const modActive: boolean[] = [parsed.ctrl, parsed.shift, parsed.meta || parsed.option, parsed.super, parsed.hyper]
+  const modActive: boolean[] = [
+    parsed.ctrl,
+    parsed.shift,
+    parsed.meta || parsed.option,
+    parsed.super,
+    parsed.hyper,
+  ]
 
   return (
     <Box flexDirection="column">
@@ -48395,7 +48788,10 @@ function ClipboardTab() {
     // Request clipboard
     if (input === "v") {
       requestClipboard(stdout)
-      setHistory((h) => [...h.slice(-7), { action: "request", text: "(paste requested)", time: now() }])
+      setHistory((h) => [
+        ...h.slice(-7),
+        { action: "request", text: "(paste requested)", time: now() },
+      ])
     }
 
     // Parse clipboard response from raw input
@@ -48459,7 +48855,12 @@ function ClipboardTab() {
             {history.map((h, i) => (
               <Text key={i} dimColor={i < history.length - 1}>
                 <Small>{h.time}</Small>{" "}
-                <Text color={h.action === "copy" ? "$success" : h.action === "paste" ? "$warning" : "$muted"} bold>
+                <Text
+                  color={
+                    h.action === "copy" ? "$success" : h.action === "paste" ? "$warning" : "$muted"
+                  }
+                  bold
+                >
                   {h.action}
                 </Text>{" "}
                 <Text>{h.text.length > 40 ? h.text.slice(0, 37) + "..." : h.text}</Text>
@@ -48528,7 +48929,8 @@ function FocusTab() {
 
         <Box marginTop={2} flexDirection="column">
           <Muted>
-            Switch to another window and back to see focus events. Uses CSI I/O terminal focus reporting protocol.
+            Switch to another window and back to see focus events. Uses CSI I/O terminal focus
+            reporting protocol.
           </Muted>
         </Box>
 
@@ -48586,7 +48988,11 @@ export function TerminalDemo({ kittySupported }: { kittySupported: boolean }) {
       <Box paddingX={1} gap={2}>
         <Text>
           <Text bold>Kitty:</Text>{" "}
-          {kittySupported ? <Text color="$success">enabled</Text> : <Text color="$warning">legacy mode</Text>}
+          {kittySupported ? (
+            <Text color="$success">enabled</Text>
+          ) : (
+            <Text color="$warning">legacy mode</Text>
+          )}
         </Text>
       </Box>
 
@@ -48991,7 +49397,13 @@ function ThemeMiniSwatch({ theme }: { theme: Theme }) {
 /** Left panel: theme list with color swatches */
 function ThemeList({ entries, selectedIndex }: { entries: ThemeEntry[]; selectedIndex: number }) {
   return (
-    <Box flexDirection="column" width={30} borderStyle="single" overflow="scroll" scrollTo={selectedIndex}>
+    <Box
+      flexDirection="column"
+      width={30}
+      borderStyle="single"
+      overflow="scroll"
+      scrollTo={selectedIndex}
+    >
       <Box paddingX={1}>
         <Text bold color="$primary">
           Palettes
@@ -49008,7 +49420,11 @@ function ThemeList({ entries, selectedIndex }: { entries: ThemeEntry[]; selected
                 {isSelected ? "▸" : " "} {entry.name.padEnd(18)}
               </Text>
               <Text> </Text>
-              {entry.palette ? <MiniSwatch palette={entry.palette} /> : <ThemeMiniSwatch theme={entry.theme} />}
+              {entry.palette ? (
+                <MiniSwatch palette={entry.palette} />
+              ) : (
+                <ThemeMiniSwatch theme={entry.theme} />
+              )}
             </Box>
           )
         })}
@@ -49300,7 +49716,13 @@ function ThemePreview({ entry }: { entry: ThemeEntry }) {
 
   return (
     <ThemeProvider theme={entry.theme}>
-      <Box theme={entry.theme} flexDirection="column" flexGrow={1} borderStyle="single" overflow="scroll">
+      <Box
+        theme={entry.theme}
+        flexDirection="column"
+        flexGrow={1}
+        borderStyle="single"
+        overflow="scroll"
+      >
         <Box paddingX={1} gap={1}>
           <H1>{entry.name}</H1>
           <Muted>{label}</Muted>
@@ -49540,7 +49962,13 @@ const sampleLines = [
 // Components
 // ============================================================================
 
-function TransformSelector({ current, transforms: items }: { current: number; transforms: TransformDef[] }) {
+function TransformSelector({
+  current,
+  transforms: items,
+}: {
+  current: number
+  transforms: TransformDef[]
+}) {
   return (
     <Box flexDirection="column" overflow="scroll" scrollTo={current} height={7}>
       {items.map((t, index) => {
@@ -49562,7 +49990,15 @@ function TransformSelector({ current, transforms: items }: { current: number; tr
   )
 }
 
-function TextPanel({ title, titleColor, children }: { title: string; titleColor: string; children: React.ReactNode }) {
+function TextPanel({
+  title,
+  titleColor,
+  children,
+}: {
+  title: string
+  titleColor: string
+  children: React.ReactNode
+}) {
   return (
     <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" paddingX={1}>
       <Box marginBottom={1}>
@@ -49688,7 +50124,16 @@ if (import.meta.main) {
  */
 
 import React, { useState, useCallback, useMemo } from "react"
-import { Box, Text, Strong, Kbd, Muted, Divider, VirtualList, useContentRect } from "silvery"
+import {
+  Box,
+  Text,
+  Strong,
+  Kbd,
+  Muted,
+  Divider,
+  VirtualList,
+  useContentRect,
+} from "silvery"
 import { run, useInput, type Key } from "silvery/runtime"
 export const meta: ExampleMeta = {
   name: "Virtual 10K",
@@ -49845,7 +50290,15 @@ function ProgressBar({ percent, width: barWidth }: { percent: number; width: num
   )
 }
 
-function ItemRow({ item, isSelected, showDetail }: { item: Item; isSelected: boolean; showDetail: boolean }) {
+function ItemRow({
+  item,
+  isSelected,
+  showDetail,
+}: {
+  item: Item
+  isSelected: boolean
+  showDetail: boolean
+}) {
   const idStr = String(item.id).padStart(5, " ")
 
   return (
@@ -49878,7 +50331,15 @@ function ItemRow({ item, isSelected, showDetail }: { item: Item; isSelected: boo
   )
 }
 
-function ScrollIndicator({ current, total, width }: { current: number; total: number; width: number }) {
+function ScrollIndicator({
+  current,
+  total,
+  width,
+}: {
+  current: number
+  total: number
+  width: number
+}) {
   const percent = total > 0 ? Math.round(((current + 1) / total) * 100) : 0
 
   // Progress bar
@@ -50043,8 +50504,8 @@ function VirtualBenchmark() {
       {/* Help */}
       <Box paddingX={1} justifyContent="center">
         <Muted>
-          <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>Enter</Kbd> detail{" "}
-          <Kbd>Esc/q</Kbd> quit
+          <Kbd>j/k</Kbd> navigate <Kbd>d/u</Kbd> half-page <Kbd>g/G</Kbd> start/end <Kbd>Enter</Kbd>{" "}
+          detail <Kbd>Esc/q</Kbd> quit
         </Muted>
       </Box>
     </Box>
@@ -50057,7 +50518,10 @@ function VirtualBenchmark() {
 
 async function main() {
   const handle = await run(
-    <ExampleBanner meta={meta} controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit">
+    <ExampleBanner
+      meta={meta}
+      controls="j/k navigate  d/u half-page  g/G start/end  Enter detail  Esc/q quit"
+    >
       <VirtualBenchmark />
     </ExampleBanner>,
   )
@@ -50443,7 +50907,11 @@ function VirtualListDemo() {
         itemHeight={1}
         interactive
         renderItem={(item, _index, meta) => (
-          <Text key={item.id} color={meta?.isSelected ? "$primary" : undefined} bold={meta?.isSelected}>
+          <Text
+            key={item.id}
+            color={meta?.isSelected ? "$primary" : undefined}
+            bold={meta?.isSelected}
+          >
             {meta?.isSelected ? "> " : "  "}
             {item.name}
           </Text>
@@ -50827,7 +51295,9 @@ const baseApp = createApp<Record<string, unknown>, State>(
         case " ":
         case "x":
           set(() => ({
-            items: items.map((item, i) => (i === cursor ? { ...item, selected: !item.selected } : item)),
+            items: items.map((item, i) =>
+              i === cursor ? { ...item, selected: !item.selected } : item,
+            ),
           }))
           break
         case "a":
@@ -50873,7 +51343,10 @@ async function main() {
 
   const { items } = handle.store.getState()
   const selected = items.filter((i: ListItem) => i.selected)
-  console.log(\`\\nSelected \${selected.length} items:\`, selected.map((i: ListItem) => i.label).join(", "))
+  console.log(
+    \`\\nSelected \${selected.length} items:\`,
+    selected.map((i: ListItem) => i.label).join(", "),
+  )
 }
 
 if (import.meta.main) {
@@ -51749,4 +52222,4 @@ if (root) {
   createViewerApp(root);
 }
 
-//# debugId=F4EA7F1EEFFD567864756E2164756E21
+//# debugId=9F9FD8B639EBE1A564756E2164756E21

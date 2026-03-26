@@ -1,5 +1,13 @@
 import React from "react"
-import { Box, Text, Strong, Muted, ThemeProvider, getThemeByName, type Theme } from "../src/index.js"
+import {
+  Box,
+  Text,
+  Strong,
+  Muted,
+  ThemeProvider,
+  getThemeByName,
+  type Theme,
+} from "../src/index.js"
 
 export interface ExampleMeta {
   name: string

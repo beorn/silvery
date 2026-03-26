@@ -225,8 +225,10 @@ export function ExchangeItem({
 
   // Metadata: token count + thought indicator
   const metaParts: string[] = []
-  if (exchange.tokens && phase === "done") metaParts.push(`${formatTokens(exchange.tokens.output)} tokens`)
-  if (exchange.thinking && (phase === "done" || phase === "streaming")) metaParts.push("thought for 1s")
+  if (exchange.tokens && phase === "done")
+    metaParts.push(`${formatTokens(exchange.tokens.output)} tokens`)
+  if (exchange.thinking && (phase === "done" || phase === "streaming"))
+    metaParts.push("thought for 1s")
   const metaStr = metaParts.length > 0 ? ` (${metaParts.join(" · ")})` : ""
 
   // Split content into title (first sentence) and body (rest)
@@ -379,11 +381,16 @@ export function DemoFooter({
   const startRef = useRef(Date.now())
   const [elapsed, setElapsed] = useState(0)
   useEffect(() => {
-    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000)
+    const timer = setInterval(
+      () => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)),
+      1000,
+    )
     return () => clearInterval(timer)
   }, [])
 
-  const [randomIdx, setRandomIdx] = useState(() => Math.floor(Math.random() * RANDOM_USER_COMMANDS.length))
+  const [randomIdx, setRandomIdx] = useState(() =>
+    Math.floor(Math.random() * RANDOM_USER_COMMANDS.length),
+  )
   const randomPlaceholder = RANDOM_USER_COMMANDS[randomIdx % RANDOM_USER_COMMANDS.length]!
   const effectiveMessage = nextMessage || randomPlaceholder
   const placeholder = !terminalFocused

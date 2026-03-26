@@ -162,7 +162,8 @@ function tickState(prev: ReturnType<typeof createInitialState>) {
   const memory: MemoryMetrics = {
     ...prev.memory,
     used: Math.max(4, usedJitter),
-    swap: (jitter((prev.memory.swap / prev.memory.swapTotal) * 100, 5) / 100) * prev.memory.swapTotal,
+    swap:
+      (jitter((prev.memory.swap / prev.memory.swapTotal) * 100, 5) / 100) * prev.memory.swapTotal,
     history: pushHistory(prev.memory.history, (usedJitter / totalMem) * 100),
   }
 
@@ -208,7 +209,15 @@ function LabelValue({ label, value, color }: { label: string; value: string; col
 
 // --- CPU Tab ---
 
-function CpuCore({ index, core, barWidth }: { index: number; core: CoreMetrics; barWidth: number }) {
+function CpuCore({
+  index,
+  core,
+  barWidth,
+}: {
+  index: number
+  core: CoreMetrics
+  barWidth: number
+}) {
   const pct = Math.round(core.usage)
   const color = severityColor(pct)
   return (
@@ -261,7 +270,11 @@ function MemoryPane({ memory }: { memory: MemoryMetrics }) {
       <SectionHeader>Memory</SectionHeader>
       <Box gap={2} wrap="truncate">
         <LabelValue label="Total:" value={`${total.toFixed(1)} GB`} />
-        <LabelValue label="Used:" value={`${memory.used.toFixed(1)} GB`} color={severityColor(usedPct)} />
+        <LabelValue
+          label="Used:"
+          value={`${memory.used.toFixed(1)} GB`}
+          color={severityColor(usedPct)}
+        />
       </Box>
       <Box flexDirection="column">
         <Box gap={1} wrap="truncate">
@@ -328,7 +341,12 @@ function NetworkRow({
   return (
     <Box>
       <Text color={color}>{label} </Text>
-      <ProgressBar value={Math.min(1, rate / max)} color={color} showPercentage={false} width={barWidth} />
+      <ProgressBar
+        value={Math.min(1, rate / max)}
+        color={color}
+        showPercentage={false}
+        width={barWidth}
+      />
       <Text color={color}>
         <Strong>{` ${rate.toFixed(1).padStart(5)}`}</Strong>
       </Text>
@@ -562,7 +580,12 @@ export function Dashboard() {
           <Strong>System Monitor</Strong>
         </Text>
       </Box>
-      <WideLayout cores={state.cores} memory={state.memory} network={state.network} processes={state.processes} />
+      <WideLayout
+        cores={state.cores}
+        memory={state.memory}
+        network={state.network}
+        processes={state.processes}
+      />
     </Box>
   )
 }

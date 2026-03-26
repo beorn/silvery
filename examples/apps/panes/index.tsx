@@ -139,7 +139,10 @@ function PanesApp({ fastMode, rows }: { fastMode: boolean; rows: number }) {
           overflow="hidden"
         >
           <Box paddingX={1}>
-            <Text color={focusedPane === "left" ? "$primary" : "$border"} bold={focusedPane === "left"}>
+            <Text
+              color={focusedPane === "left" ? "$primary" : "$border"}
+              bold={focusedPane === "left"}
+            >
               Agent A
             </Text>
           </Box>
@@ -159,7 +162,10 @@ function PanesApp({ fastMode, rows }: { fastMode: boolean; rows: number }) {
           overflow="hidden"
         >
           <Box paddingX={1}>
-            <Text color={focusedPane === "right" ? "$primary" : "$border"} bold={focusedPane === "right"}>
+            <Text
+              color={focusedPane === "right" ? "$primary" : "$border"}
+              bold={focusedPane === "right"}
+            >
               Agent B
             </Text>
           </Box>

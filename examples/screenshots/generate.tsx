@@ -65,7 +65,13 @@ function DashboardScreenshot() {
 
       <Box flexGrow={1} flexDirection="row" gap={1}>
         {/* System Stats pane (selected) */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$primary" padding={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$primary"
+          padding={1}
+        >
           <Box marginBottom={1}>
             <Text bold color="$primary">
               System Stats
@@ -109,7 +115,13 @@ function DashboardScreenshot() {
         </Box>
 
         {/* Recent Activity pane */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" padding={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$border"
+          padding={1}
+        >
           <Box marginBottom={1}>
             <Text bold>Recent Activity</Text>
           </Box>
@@ -123,7 +135,13 @@ function DashboardScreenshot() {
         </Box>
 
         {/* Project Progress pane */}
-        <Box flexDirection="column" flexGrow={1} borderStyle="round" borderColor="$border" padding={1}>
+        <Box
+          flexDirection="column"
+          flexGrow={1}
+          borderStyle="round"
+          borderColor="$border"
+          padding={1}
+        >
           <Box marginBottom={1}>
             <Text bold>Project Progress</Text>
           </Box>
