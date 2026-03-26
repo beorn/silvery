@@ -453,13 +453,42 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
         </Box>
       </Box>
 
-      {/* Dividers showcase */}
-      <Box flexDirection="column">
-        <Divider title="Divider Styles" />
-        <Box flexDirection="column" gap={1}>
-          <Divider />
-          <Divider title="Section" />
-          <Divider title="Decorative" titleAlignment="left" />
+      {/* Keyboard Shortcuts + Dividers row */}
+      <Box flexDirection="row" gap={4}>
+        <Box flexDirection="column">
+          <Divider title="Keyboard Shortcuts" />
+          <Box flexDirection="column" gap={1}>
+            <Box gap={1}>
+              <Kbd>Ctrl</Kbd>
+              <Text>+</Text>
+              <Kbd>S</Kbd>
+              <Muted>Save</Muted>
+            </Box>
+            <Box gap={1}>
+              <Kbd>Ctrl</Kbd>
+              <Text>+</Text>
+              <Kbd>Z</Kbd>
+              <Muted>Undo</Muted>
+            </Box>
+            <Box gap={1}>
+              <Kbd>⌘</Kbd>
+              <Text>+</Text>
+              <Kbd>P</Kbd>
+              <Muted>Command palette</Muted>
+            </Box>
+            <Box gap={1}>
+              <Kbd>Esc</Kbd>
+              <Muted>Close dialog</Muted>
+            </Box>
+          </Box>
+        </Box>
+        <Box flexDirection="column" flexGrow={1}>
+          <Divider title="Divider Styles" />
+          <Box flexDirection="column" gap={1}>
+            <Divider />
+            <Divider title="Section" />
+            <Divider title="Decorative" titleAlignment="left" />
+          </Box>
         </Box>
       </Box>
 
