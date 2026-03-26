@@ -413,7 +413,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             <Box gap={1}>
               <Muted>Search:</Muted>
               <Box flexGrow={1}>
-                <TextInput value="flutter widgets" onChange={() => {}} showUnderline underlineWidth={30} />
+                <TextInput value="flutter widgets" onChange={() => {}} showUnderline underlineWidth={25} />
               </Box>
             </Box>
             <Box gap={2} wrap="truncate">
@@ -468,23 +468,35 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
               <Strong>Design Tokens</Strong>
             </Text>
             <Box flexDirection="row" gap={2}>
-              <Box flexDirection="column">
-                <Text color="$success">{"●"} $success</Text>
-                <Text color="$warning">{"●"} $warning</Text>
-                <Text color="$error">{"●"} $error</Text>
-                <Text color="$info">{"●"} $info</Text>
-                <Text color="$primary">{"●"} $primary</Text>
-                <Muted>{"●"} $muted</Muted>
+              <Box flexDirection="column" width={14}>
+                <Text color="$success">
+                  {"●"} {"$success".padEnd(10)}
+                </Text>
+                <Text color="$warning">
+                  {"●"} {"$warning".padEnd(10)}
+                </Text>
+                <Text color="$error">
+                  {"●"} {"$error".padEnd(10)}
+                </Text>
+                <Text color="$info">
+                  {"●"} {"$info".padEnd(10)}
+                </Text>
+                <Text color="$primary">
+                  {"●"} {"$primary".padEnd(10)}
+                </Text>
+                <Muted>
+                  {"●"} {"$muted".padEnd(10)}
+                </Muted>
               </Box>
               <Box flexDirection="column">
                 <Text backgroundColor="$primary" color="$primary-fg">
-                  {" $primary  "}
+                  {" $primary   "}
                 </Text>
                 <Text backgroundColor="$fg" color="$bg">
-                  {" $inverse  "}
+                  {" $inverse   "}
                 </Text>
                 <Text backgroundColor="$muted-bg" color="$fg">
-                  {" $surface  "}
+                  {" $surface   "}
                 </Text>
                 <Text backgroundColor="$surfacebg" color="$surface">
                   {" $surfacebg "}
@@ -494,7 +506,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
           </Box>
         </Box>
         {/* Right half: Modal Dialog */}
-        <Box {...cell} backgroundColor="$surfacebg">
+        <Box {...cell} backgroundColor="$surfacebg" paddingRight={2}>
           <Box justifyContent="space-between" paddingBottom={1}>
             <Text color="$primary">
               <Strong>Modal Dialog</Strong>
@@ -517,7 +529,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
                 <Text color="$warning">{"⚠"}</Text> 2 deprecation warnings
               </Text>
               <Text>
-                <Text color="$info">{"ℹ"}</Text> Deploy target: us-east-1
+                <Text color="$muted">{"ℹ"}</Text> Deploy target: us-east-1
               </Text>
             </Box>
             <Box gap={2}>

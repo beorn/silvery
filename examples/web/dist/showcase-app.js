@@ -36111,8 +36111,7 @@ function ProgressBar({
       }),
       showPct && /* @__PURE__ */ jsx_runtime28.jsxs(Text2, {
         children: [
-          " ",
-          pct,
+          String(pct).padStart(4),
           "%"
         ]
       })
@@ -36820,34 +36819,14 @@ var jsx_runtime52 = __toESM(require_jsx_runtime(), 1);
 
 // vendor/silvery/examples/layout/dashboard.tsx
 var jsx_runtime53 = __toESM(require_jsx_runtime(), 1);
-function multiRowChart(values, max, rows, width) {
-  const resampled = [];
-  for (let i = 0;i < width; i++) {
-    const idx = Math.floor(i / width * values.length);
-    resampled.push(values[Math.min(idx, values.length - 1)] ?? 0);
-  }
-  const lines = [];
-  for (let row = rows - 1;row >= 0; row--) {
-    const threshold = row / rows * max;
-    let line = "";
-    for (const val of resampled) {
-      if (val >= threshold + max / rows)
-        line += "█";
-      else if (val >= threshold + max / rows * 0.5)
-        line += "▄";
-      else if (val >= threshold)
-        line += "▁";
-      else
-        line += " ";
-    }
-    lines.push(line);
-  }
-  return lines;
+var SPARK_CHARS = "▁▂▃▄▅▆▇█";
+function sparkline(values, max) {
+  return values.map((v2) => SPARK_CHARS[Math.round(v2 / max * 7)] ?? SPARK_CHARS[0]).join("");
 }
 function jitter(base, range) {
   return Math.max(0, Math.min(100, base + (Math.random() - 0.5) * range));
 }
-function initHistory(base, range, len) {
+function initHistory(base, range, len = 20) {
   return Array.from({ length: len }, () => jitter(base, range));
 }
 function pushHistory(history, value) {
@@ -36858,26 +36837,26 @@ function pushHistory(history, value) {
   return next;
 }
 function severityColor(pct) {
-  if (pct > 80)
+  if (pct >= 80)
     return "$error";
-  if (pct > 60)
+  if (pct >= 60)
     return "$warning";
   return "$success";
 }
 function createInitialState() {
-  const coreUsages = [35, 52, 88, 45, 72, 93, 28, 61];
-  const cores = coreUsages.map((usage, i) => ({
+  const coreUsages = [72, 45, 88, 35, 61, 93, 28, 52];
+  const cores = coreUsages.map((usage) => ({
     usage,
     history: initHistory(usage, 15, 20)
   }));
   const memory = {
-    used: 8.2,
-    cached: 3.1,
-    buffers: 1.4,
-    free: 3.3,
-    swap: 0.8,
-    swapTotal: 4,
-    history: initHistory(55, 10, 20)
+    used: 22.7,
+    cached: 6.8,
+    buffers: 1.2,
+    free: 9.3,
+    swap: 5.76,
+    swapTotal: 32,
+    history: initHistory(71, 10, 20)
   };
   const network = {
     downloadRate: 42.5,
@@ -36889,18 +36868,22 @@ function createInitialState() {
     packetsOut: 923
   };
   const processes = [
-    { pid: 1201, name: "node", cpu: 24.3, mem: 4.2, status: "running" },
-    { pid: 892, name: "chrome", cpu: 18.7, mem: 12.1, status: "running" },
-    { pid: 3456, name: "vscode", cpu: 12.1, mem: 8.4, status: "running" },
-    { pid: 2103, name: "postgres", cpu: 8.9, mem: 3.7, status: "sleeping" },
-    { pid: 4521, name: "docker", cpu: 6.2, mem: 5.1, status: "running" },
-    { pid: 1893, name: "nginx", cpu: 3.4, mem: 1.2, status: "sleeping" },
-    { pid: 7234, name: "redis", cpu: 2.1, mem: 0.8, status: "sleeping" },
-    { pid: 5612, name: "bun", cpu: 1.8, mem: 2.3, status: "running" },
-    { pid: 3891, name: "webpack", cpu: 1.5, mem: 1.9, status: "running" },
-    { pid: 6742, name: "eslint", cpu: 0.9, mem: 0.6, status: "sleeping" },
-    { pid: 8123, name: "ssh-agent", cpu: 0.3, mem: 0.1, status: "sleeping" },
-    { pid: 9001, name: "cron", cpu: 0.1, mem: 0.2, status: "sleeping" }
+    { pid: 1201, name: "node", cpu: 24.3, mem: 4.2, memMB: 1344, status: "running", time: "2:14:33" },
+    { pid: 892, name: "chrome", cpu: 18.7, mem: 12.1, memMB: 3872, status: "running", time: "5:42:11" },
+    { pid: 3456, name: "vscode", cpu: 12.1, mem: 8.4, memMB: 2688, status: "running", time: "3:21:05" },
+    { pid: 2103, name: "postgres", cpu: 8.9, mem: 3.7, memMB: 1184, status: "sleeping", time: "12:05:44" },
+    { pid: 4521, name: "docker", cpu: 6.2, mem: 5.1, memMB: 1632, status: "running", time: "8:33:22" },
+    { pid: 1893, name: "nginx", cpu: 3.4, mem: 1.2, memMB: 384, status: "sleeping", time: "24:11:03" },
+    { pid: 7234, name: "redis", cpu: 2.1, mem: 0.8, memMB: 256, status: "sleeping", time: "24:10:59" },
+    { pid: 5612, name: "bun", cpu: 1.8, mem: 2.3, memMB: 736, status: "running", time: "0:45:12" },
+    { pid: 3891, name: "webpack", cpu: 1.5, mem: 1.9, memMB: 608, status: "running", time: "0:32:41" },
+    { pid: 6742, name: "eslint", cpu: 0.9, mem: 0.6, memMB: 192, status: "sleeping", time: "0:12:08" },
+    { pid: 8123, name: "ssh-agent", cpu: 0.3, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
+    { pid: 9001, name: "cron", cpu: 0.1, mem: 0.2, memMB: 64, status: "sleeping", time: "24:11:03" },
+    { pid: 4102, name: "gpg-agent", cpu: 0.1, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
+    { pid: 7801, name: "fswatch", cpu: 0.2, mem: 0.3, memMB: 96, status: "running", time: "3:14:22" },
+    { pid: 2045, name: "dnsmasq", cpu: 0, mem: 0.1, memMB: 32, status: "sleeping", time: "24:11:03" },
+    { pid: 6234, name: "tmux", cpu: 0.4, mem: 0.5, memMB: 160, status: "running", time: "12:05:44" }
   ];
   return { cores, memory, network, processes };
 }
@@ -36930,14 +36913,14 @@ function tickState(prev) {
   };
   const processes = prev.processes.map((p) => ({
     ...p,
-    cpu: Math.max(0.1, jitter(p.cpu, 4)),
+    cpu: Math.max(0, jitter(p.cpu, 4)),
     mem: Math.max(0.1, jitter(p.mem, 1))
   }));
   return { cores, memory, network, processes };
 }
-function SectionHeader({ children }) {
-  return /* @__PURE__ */ jsx_runtime53.jsx(H2, {
-    children
+function Sep() {
+  return /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+    children: "┄".repeat(50)
   });
 }
 function LabelValue({ label, value, color }) {
@@ -36958,9 +36941,11 @@ function CpuCore({ index, core }) {
   const pct = Math.round(core.usage);
   const color = severityColor(pct);
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+    wrap: "truncate",
     children: [
-      /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-        children: `${index} `
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        color: "$muted",
+        children: `C${index}`.padEnd(4)
       }),
       /* @__PURE__ */ jsx_runtime53.jsx(Box, {
         flexGrow: 1,
@@ -36973,26 +36958,24 @@ function CpuCore({ index, core }) {
     ]
   });
 }
-function CpuPane({ cores }) {
-  const { width: paneWidth } = useContentRect();
+function CpuPanel({ cores }) {
   const avgCpu = cores.reduce((sum, c) => sum + c.usage, 0) / cores.length;
   const maxCpu = Math.max(...cores.map((c) => c.usage));
   const load1 = (avgCpu / 100 * 8 * 0.8 + Math.random() * 0.5).toFixed(2);
   const load5 = (avgCpu / 100 * 8 * 0.7 + Math.random() * 0.3).toFixed(2);
   const load15 = (avgCpu / 100 * 8 * 0.6 + Math.random() * 0.2).toFixed(2);
   const avgHistory = cores[0]?.history.map((_2, i) => cores.reduce((s15, c) => s15 + (c.history[i] ?? 0), 0) / cores.length) ?? [];
-  const chartWidth = Math.max(20, paneWidth > 0 ? paneWidth : 50);
-  const chartLines = multiRowChart(avgHistory, 100, 4, chartWidth);
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
-    gap: 1,
     children: [
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
         gap: 2,
         wrap: "truncate",
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(SectionHeader, {
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            bold: true,
+            color: "$primary",
             children: "CPU"
           }),
           /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
@@ -37011,6 +36994,7 @@ function CpuPane({ cores }) {
           })
         ]
       }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
       /* @__PURE__ */ jsx_runtime53.jsx(Box, {
         flexDirection: "column",
         children: cores.map((core, i) => /* @__PURE__ */ jsx_runtime53.jsx(CpuCore, {
@@ -37018,297 +37002,250 @@ function CpuPane({ cores }) {
           core
         }, i))
       }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        flexDirection: "column",
-        flexGrow: 1,
+        gap: 1,
+        wrap: "truncate",
         children: [
           /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-            children: "CPU Usage History"
+            children: "Avg CPU:"
           }),
-          chartLines.map((line, i) => /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            color: "$primary",
-            children: line
-          }, i))
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            color: severityColor(avgCpu),
+            children: sparkline(avgHistory, 100)
+          })
         ]
-      })
-    ]
-  });
-}
-function MemoryPane({ memory }) {
-  const { width: paneWidth } = useContentRect();
-  const total = memory.used + memory.cached + memory.buffers + memory.free;
-  const usedPct = memory.used / total * 100;
-  const swapPct = memory.swap / memory.swapTotal;
-  const chartWidth = Math.max(20, paneWidth > 0 ? paneWidth : 50);
-  const chartLines = multiRowChart(memory.history, 100, 4, chartWidth);
-  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-    flexDirection: "column",
-    gap: 1,
-    flexGrow: 1,
-    children: [
-      /* @__PURE__ */ jsx_runtime53.jsx(SectionHeader, {
-        children: "Memory"
       }),
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
         gap: 2,
         wrap: "truncate",
         children: [
           /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Total:",
-            value: `${total.toFixed(1)} GB`
+            label: "Freq:",
+            value: "4.5GHz"
           }),
           /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-            label: "Used:",
-            value: `${memory.used.toFixed(1)} GB`,
-            color: severityColor(usedPct)
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        flexDirection: "column",
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-            gap: 2,
-            wrap: "truncate",
-            children: [
-              /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-                color: severityColor(usedPct),
-                children: [
-                  "█",
-                  " Used ",
-                  memory.used.toFixed(1),
-                  "G"
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-                color: "$info",
-                children: [
-                  "█",
-                  " Cache ",
-                  memory.cached.toFixed(1),
-                  "G"
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-                color: "$primary",
-                children: [
-                  "█",
-                  " Buf ",
-                  memory.buffers.toFixed(1),
-                  "G"
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
-                children: [
-                  "░",
-                  " Free ",
-                  memory.free.toFixed(1),
-                  "G"
-                ]
-              })
-            ]
+            label: "Temp:",
+            value: "72°C",
+            color: severityColor(72)
           }),
-          /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
-            value: usedPct / 100,
-            color: severityColor(usedPct),
-            showPercentage: true
+          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
+            label: "Uptime:",
+            value: "3d 14h"
+          })
+        ]
+      })
+    ]
+  });
+}
+function MemoryPanel({ memory }) {
+  const total = memory.used + memory.cached + memory.buffers + memory.free;
+  const usedPct = memory.used / total * 100;
+  const swapPct = memory.swap / memory.swapTotal * 100;
+  return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+    flexDirection: "column",
+    flexGrow: 1,
+    children: [
+      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+        gap: 2,
+        wrap: "truncate",
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            bold: true,
+            color: "$primary",
+            children: "Memory"
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
+            children: [
+              memory.used.toFixed(1),
+              " / ",
+              total.toFixed(1),
+              " GiB"
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
+      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+        wrap: "truncate",
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            color: "$muted",
+            children: "RAM  "
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+            flexGrow: 1,
+            children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+              value: usedPct / 100,
+              color: severityColor(usedPct),
+              showPercentage: true
+            })
           })
         ]
       }),
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        flexDirection: "column",
+        wrap: "truncate",
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            color: "$muted",
+            children: "Swap "
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+            flexGrow: 1,
+            children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+              value: swapPct / 100,
+              color: severityColor(swapPct),
+              showPercentage: true
+            })
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
+      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+        gap: 2,
+        wrap: "truncate",
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
+            color: "$warning",
             children: [
-              "Swap: ",
-              memory.swap.toFixed(1),
-              "G / ",
-              memory.swapTotal.toFixed(1),
+              "Used ",
+              memory.used.toFixed(1),
               "G"
             ]
           }),
-          /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
-            value: swapPct,
-            color: severityColor(swapPct * 100),
-            showPercentage: true
+          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
+            color: "$info",
+            children: [
+              "Cache ",
+              memory.cached.toFixed(1),
+              "G"
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
+            color: "$primary",
+            children: [
+              "Buf ",
+              memory.buffers.toFixed(1),
+              "G"
+            ]
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
+            children: [
+              "Free ",
+              memory.free.toFixed(1),
+              "G"
+            ]
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-        flexDirection: "column",
-        children: /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-          gap: 2,
-          wrap: "truncate",
-          children: [
-            /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-              children: "Top:"
-            }),
-            /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-              children: [
-                "chrome ",
-                /* @__PURE__ */ jsx_runtime53.jsx(Strong, {
-                  color: "$warning",
-                  children: "12.1G"
-                })
-              ]
-            }),
-            /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-              children: [
-                "vscode ",
-                /* @__PURE__ */ jsx_runtime53.jsx(Strong, {
-                  color: "$primary",
-                  children: "8.4G"
-                })
-              ]
-            }),
-            /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-              children: [
-                "docker ",
-                /* @__PURE__ */ jsx_runtime53.jsx(Strong, {
-                  color: "$primary",
-                  children: "5.1G"
-                })
-              ]
-            })
-          ]
-        })
-      }),
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        flexDirection: "column",
-        flexGrow: 1,
+        gap: 1,
+        wrap: "truncate",
         children: [
           /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-            children: "Memory Usage History"
+            children: "History:"
           }),
-          chartLines.map((line, i) => /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            color: "$success",
-            children: line
-          }, i))
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            color: severityColor(usedPct),
+            children: sparkline(memory.history, 100)
+          })
         ]
       })
     ]
   });
 }
-function NetworkPane({ network }) {
-  const { width: paneWidth } = useContentRect();
-  const chartWidth = Math.max(20, paneWidth > 0 ? paneWidth : 50);
-  const dlChart = multiRowChart(network.downloadHistory, 100, 3, chartWidth);
-  const ulChart = multiRowChart(network.uploadHistory, 40, 3, chartWidth);
+function NetworkPanel({ network }) {
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
-    gap: 1,
     flexGrow: 1,
     children: [
-      /* @__PURE__ */ jsx_runtime53.jsx(SectionHeader, {
-        children: "Network"
-      }),
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        flexDirection: "column",
+        gap: 2,
+        wrap: "truncate",
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-            justifyContent: "space-between",
-            wrap: "truncate",
-            children: [
-              /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-                color: "$success",
-                children: [
-                  "↓",
-                  " Download"
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-                color: "$success",
-                children: [
-                  network.downloadRate.toFixed(1).padStart(6),
-                  " MB/s"
-                ]
-              })
-            ]
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            bold: true,
+            color: "$primary",
+            children: "Network"
           }),
-          /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
-            value: Math.min(1, network.downloadRate / 100),
-            color: "$success",
-            showPercentage: false
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        flexDirection: "column",
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-            justifyContent: "space-between",
-            wrap: "truncate",
-            children: [
-              /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-                color: "$info",
-                children: [
-                  "↑",
-                  " Upload"
-                ]
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
-                color: "$info",
-                children: [
-                  network.uploadRate.toFixed(1).padStart(6),
-                  " MB/s"
-                ]
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
-            value: Math.min(1, network.uploadRate / 40),
-            color: "$info",
-            showPercentage: false
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        flexDirection: "column",
-        children: [
           /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-            children: "Connections"
+            children: "en0 / 1 Gbps"
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
+      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+        wrap: "truncate",
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            color: "$success",
+            children: "↓ DL "
           }),
-          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-            gap: 2,
-            wrap: "truncate",
+          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+            flexGrow: 1,
+            children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+              value: Math.min(1, network.downloadRate / 100),
+              color: "$success",
+              showPercentage: false
+            })
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
+            color: "$success",
             children: [
-              /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-                label: "Active:",
-                value: String(network.connections).padStart(4)
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-                label: "In:",
-                value: `${String(network.packetsIn).padStart(5)} pkts`
-              }),
-              /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
-                label: "Out:",
-                value: `${String(network.packetsOut).padStart(5)} pkts`
-              })
+              " ",
+              network.downloadRate.toFixed(1).padStart(5),
+              " MB/s"
             ]
           })
         ]
       }),
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        flexDirection: "column",
-        flexGrow: 1,
+        wrap: "truncate",
         children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-            children: "Traffic History"
-          }),
-          dlChart.map((line, i) => /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-            color: "$success",
-            children: line
-          }, `dl-${i}`)),
-          ulChart.map((line, i) => /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
             color: "$info",
-            children: line
-          }, `ul-${i}`))
+            children: "↑ UL "
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+            flexGrow: 1,
+            children: /* @__PURE__ */ jsx_runtime53.jsx(ProgressBar, {
+              value: Math.min(1, network.uploadRate / 40),
+              color: "$info",
+              showPercentage: false
+            })
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Text2, {
+            color: "$info",
+            children: [
+              " ",
+              network.uploadRate.toFixed(1).padStart(5),
+              " MB/s"
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+        gap: 2,
+        wrap: "truncate",
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
+            label: "Active:",
+            value: String(network.connections)
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
+            label: "In:",
+            value: `${network.packetsIn} pkts`
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
+            label: "Out:",
+            value: `${network.packetsOut} pkts`
+          })
         ]
       })
     ]
   });
 }
-var COL = { pid: 6, name: 11, cpu: 7, mem: 7, status: 9 };
+var COL = { pid: 7, name: 14, cpu: 7, mem: 7, memMB: 9, status: 10, time: 10 };
 function ProcessRow({ proc, isTop }) {
   const cpuColor = severityColor(proc.cpu);
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
@@ -37320,7 +37257,7 @@ function ProcessRow({ proc, isTop }) {
       }),
       /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
         bold: isTop,
-        children: (" " + proc.name).padEnd(COL.name)
+        children: ("  " + proc.name).padEnd(COL.name)
       }),
       /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
         color: cpuColor,
@@ -37330,49 +37267,75 @@ function ProcessRow({ proc, isTop }) {
         children: (proc.mem.toFixed(1) + "%").padStart(COL.mem)
       }),
       /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        children: (proc.memMB + " MB").padStart(COL.memMB)
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
         color: proc.status === "running" ? "$success" : "$muted",
-        children: (" " + proc.status).padEnd(COL.status)
+        children: "  " + proc.status.padEnd(COL.status - 2)
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+        color: "$muted",
+        children: proc.time.padStart(COL.time)
       })
     ]
   });
 }
-function ProcessPane({ processes }) {
+function ProcessPanel({ processes }) {
   const sorted = [...processes].sort((a, b2) => b2.cpu - a.cpu);
+  const running = processes.filter((p) => p.status === "running").length;
+  const sleeping = processes.filter((p) => p.status === "sleeping").length;
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
-    gap: 1,
     children: [
-      /* @__PURE__ */ jsx_runtime53.jsx(SectionHeader, {
-        children: "Processes"
-      }),
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+        justifyContent: "space-between",
+        wrap: "truncate",
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            bold: true,
+            color: "$primary",
+            children: "Processes"
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
+            gap: 2,
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+                children: "Sort: CPU%▼"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
+                children: [
+                  "Total: ",
+                  processes.length
+                ]
+              })
+            ]
+          })
+        ]
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
+      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+        wrap: "truncate",
+        children: /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
+          children: [
+            "PID".padStart(COL.pid),
+            "  Name".padEnd(COL.name),
+            "CPU%".padStart(COL.cpu),
+            "MEM%".padStart(COL.mem),
+            "MEM".padStart(COL.memMB),
+            "  STATUS".padEnd(COL.status),
+            "TIME+".padStart(COL.time)
+          ]
+        })
+      }),
+      /* @__PURE__ */ jsx_runtime53.jsx(Sep, {}),
+      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
         flexDirection: "column",
         flexGrow: 1,
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            wrap: "truncate",
-            children: /* @__PURE__ */ jsx_runtime53.jsxs(Muted, {
-              children: [
-                "PID".padStart(COL.pid),
-                " Name".padEnd(COL.name),
-                "CPU%".padStart(COL.cpu),
-                "MEM%".padStart(COL.mem),
-                " Status".padEnd(COL.status)
-              ]
-            })
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            wrap: "truncate",
-            children: /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
-              children: "─".repeat(COL.pid + COL.name + COL.cpu + COL.mem + COL.status)
-            })
-          }),
-          sorted.map((proc, i) => /* @__PURE__ */ jsx_runtime53.jsx(ProcessRow, {
-            proc,
-            isTop: i === 0
-          }, proc.pid))
-        ]
+        children: sorted.map((proc, i) => /* @__PURE__ */ jsx_runtime53.jsx(ProcessRow, {
+          proc,
+          isTop: i === 0
+        }, proc.pid))
       }),
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
         gap: 2,
@@ -37380,16 +37343,16 @@ function ProcessPane({ processes }) {
         children: [
           /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
             label: "Total:",
-            value: `${processes.length} processes`
+            value: `${processes.length}`
           }),
           /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
             label: "Running:",
-            value: String(processes.filter((p) => p.status === "running").length),
+            value: String(running),
             color: "$success"
           }),
           /* @__PURE__ */ jsx_runtime53.jsx(LabelValue, {
             label: "Sleeping:",
-            value: String(processes.filter((p) => p.status === "sleeping").length),
+            value: String(sleeping),
             color: "$muted"
           })
         ]
@@ -37397,6 +37360,13 @@ function ProcessPane({ processes }) {
     ]
   });
 }
+var pane = {
+  borderStyle: "round",
+  borderColor: "$primary",
+  paddingX: 1,
+  paddingY: 0,
+  flexDirection: "column"
+};
 function WideLayout({
   cores,
   memory,
@@ -37406,71 +37376,133 @@ function WideLayout({
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
-    gap: 1,
     children: [
       /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
         flexDirection: "row",
-        gap: 1,
-        flexGrow: 1,
         children: [
           /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            flexGrow: 1,
+            ...pane,
+            flexGrow: 3,
             flexBasis: 0,
-            borderStyle: "round",
-            borderColor: "$border",
-            paddingX: 1,
-            paddingY: 1,
-            flexDirection: "column",
-            children: /* @__PURE__ */ jsx_runtime53.jsx(CpuPane, {
+            children: /* @__PURE__ */ jsx_runtime53.jsx(CpuPanel, {
               cores
             })
           }),
-          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            flexGrow: 1,
-            flexBasis: 0,
-            borderStyle: "round",
-            borderColor: "$border",
-            paddingX: 1,
-            paddingY: 1,
+          /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
             flexDirection: "column",
-            children: /* @__PURE__ */ jsx_runtime53.jsx(MemoryPane, {
-              memory
-            })
+            flexGrow: 2,
+            flexBasis: 0,
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+                ...pane,
+                flexGrow: 1,
+                children: /* @__PURE__ */ jsx_runtime53.jsx(MemoryPanel, {
+                  memory
+                })
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+                ...pane,
+                flexGrow: 1,
+                children: /* @__PURE__ */ jsx_runtime53.jsx(NetworkPanel, {
+                  network
+                })
+              })
+            ]
           })
         ]
       }),
-      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
-        flexDirection: "row",
-        gap: 1,
+      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+        ...pane,
         flexGrow: 1,
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            flexGrow: 1,
-            flexBasis: 0,
-            borderStyle: "round",
-            borderColor: "$border",
-            paddingX: 1,
+        children: /* @__PURE__ */ jsx_runtime53.jsx(ProcessPanel, {
+          processes
+        })
+      })
+    ]
+  });
+}
+function NarrowLayout({
+  cores,
+  memory,
+  network,
+  processes
+}) {
+  return /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+    flexDirection: "column",
+    flexGrow: 1,
+    children: /* @__PURE__ */ jsx_runtime53.jsxs(Tabs, {
+      defaultValue: "cpu",
+      children: [
+        /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+          justifyContent: "space-between",
+          paddingX: 1,
+          children: /* @__PURE__ */ jsx_runtime53.jsxs(TabList, {
+            children: [
+              /* @__PURE__ */ jsx_runtime53.jsx(Tab, {
+                value: "cpu",
+                children: "CPU"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Tab, {
+                value: "memory",
+                children: "Memory"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Tab, {
+                value: "network",
+                children: "Network"
+              }),
+              /* @__PURE__ */ jsx_runtime53.jsx(Tab, {
+                value: "processes",
+                children: "Processes"
+              })
+            ]
+          })
+        }),
+        /* @__PURE__ */ jsx_runtime53.jsx(TabPanel, {
+          value: "cpu",
+          children: /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+            ...pane,
             paddingY: 1,
-            flexDirection: "column",
-            children: /* @__PURE__ */ jsx_runtime53.jsx(NetworkPane, {
+            flexGrow: 1,
+            children: /* @__PURE__ */ jsx_runtime53.jsx(CpuPanel, {
+              cores
+            })
+          })
+        }),
+        /* @__PURE__ */ jsx_runtime53.jsx(TabPanel, {
+          value: "memory",
+          children: /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+            ...pane,
+            paddingY: 1,
+            flexGrow: 1,
+            children: /* @__PURE__ */ jsx_runtime53.jsx(MemoryPanel, {
+              memory
+            })
+          })
+        }),
+        /* @__PURE__ */ jsx_runtime53.jsx(TabPanel, {
+          value: "network",
+          children: /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+            ...pane,
+            paddingY: 1,
+            flexGrow: 1,
+            children: /* @__PURE__ */ jsx_runtime53.jsx(NetworkPanel, {
               network
             })
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            flexGrow: 1,
-            flexBasis: 0,
-            borderStyle: "round",
-            borderColor: "$border",
-            paddingX: 1,
+          })
+        }),
+        /* @__PURE__ */ jsx_runtime53.jsx(TabPanel, {
+          value: "processes",
+          children: /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+            ...pane,
             paddingY: 1,
-            flexDirection: "column",
-            children: /* @__PURE__ */ jsx_runtime53.jsx(ProcessPane, {
+            flexGrow: 1,
+            children: /* @__PURE__ */ jsx_runtime53.jsx(ProcessPanel, {
               processes
             })
           })
-        ]
-      })
-    ]
+        })
+      ]
+    })
   });
 }
 function Dashboard() {
@@ -37486,103 +37518,31 @@ function Dashboard() {
       exit();
   });
   if (isNarrow) {
-    return /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-      flexDirection: "column",
-      flexGrow: 1,
-      children: /* @__PURE__ */ jsx_runtime53.jsxs(Tabs, {
-        defaultValue: "cpu",
-        children: [
-          /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-            justifyContent: "space-between",
-            paddingX: 1,
-            children: /* @__PURE__ */ jsx_runtime53.jsxs(TabList, {
-              children: [
-                /* @__PURE__ */ jsx_runtime53.jsx(Tab, {
-                  value: "cpu",
-                  children: "CPU"
-                }),
-                /* @__PURE__ */ jsx_runtime53.jsx(Tab, {
-                  value: "memory",
-                  children: "Memory"
-                }),
-                /* @__PURE__ */ jsx_runtime53.jsx(Tab, {
-                  value: "network",
-                  children: "Network"
-                }),
-                /* @__PURE__ */ jsx_runtime53.jsx(Tab, {
-                  value: "processes",
-                  children: "Processes"
-                })
-              ]
-            })
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(TabPanel, {
-            value: "cpu",
-            children: /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-              borderStyle: "round",
-              borderColor: "$border",
-              paddingX: 1,
-              paddingY: 1,
-              flexGrow: 1,
-              children: /* @__PURE__ */ jsx_runtime53.jsx(CpuPane, {
-                cores: state.cores
-              })
-            })
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(TabPanel, {
-            value: "memory",
-            children: /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-              borderStyle: "round",
-              borderColor: "$border",
-              paddingX: 1,
-              paddingY: 1,
-              flexGrow: 1,
-              children: /* @__PURE__ */ jsx_runtime53.jsx(MemoryPane, {
-                memory: state.memory
-              })
-            })
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(TabPanel, {
-            value: "network",
-            children: /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-              borderStyle: "round",
-              borderColor: "$border",
-              paddingX: 1,
-              paddingY: 1,
-              flexGrow: 1,
-              children: /* @__PURE__ */ jsx_runtime53.jsx(NetworkPane, {
-                network: state.network
-              })
-            })
-          }),
-          /* @__PURE__ */ jsx_runtime53.jsx(TabPanel, {
-            value: "processes",
-            children: /* @__PURE__ */ jsx_runtime53.jsx(Box, {
-              borderStyle: "round",
-              borderColor: "$border",
-              paddingX: 1,
-              paddingY: 1,
-              flexGrow: 1,
-              children: /* @__PURE__ */ jsx_runtime53.jsx(ProcessPane, {
-                processes: state.processes
-              })
-            })
-          })
-        ]
-      })
+    return /* @__PURE__ */ jsx_runtime53.jsx(NarrowLayout, {
+      cores: state.cores,
+      memory: state.memory,
+      network: state.network,
+      processes: state.processes
     });
   }
   return /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
     flexDirection: "column",
     flexGrow: 1,
     children: [
-      /* @__PURE__ */ jsx_runtime53.jsx(Box, {
+      /* @__PURE__ */ jsx_runtime53.jsxs(Box, {
         paddingX: 1,
-        children: /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
-          children: /* @__PURE__ */ jsx_runtime53.jsx(Strong, {
+        justifyContent: "space-between",
+        wrap: "truncate",
+        children: [
+          /* @__PURE__ */ jsx_runtime53.jsx(Text2, {
+            bold: true,
+            color: "$primary",
             children: "System Monitor"
+          }),
+          /* @__PURE__ */ jsx_runtime53.jsx(Muted, {
+            children: "↑↓ scroll  F1 help  F5 tree  F6 sort  q quit"
           })
-        })
+        ]
       }),
       /* @__PURE__ */ jsx_runtime53.jsx(WideLayout, {
         cores: state.cores,
@@ -38901,7 +38861,7 @@ function DisplayTab({ scrollOffset }) {
                           value: "flutter widgets",
                           onChange: () => {},
                           showUnderline: true,
-                          underlineWidth: 30
+                          underlineWidth: 25
                         })
                       })
                     ]
@@ -38999,46 +38959,53 @@ function DisplayTab({ scrollOffset }) {
                     children: [
                       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                         flexDirection: "column",
+                        width: 14,
                         children: [
                           /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
                             color: "$success",
                             children: [
                               "●",
-                              " $success"
+                              " ",
+                              "$success".padEnd(10)
                             ]
                           }),
                           /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
                             color: "$warning",
                             children: [
                               "●",
-                              " $warning"
+                              " ",
+                              "$warning".padEnd(10)
                             ]
                           }),
                           /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
                             color: "$error",
                             children: [
                               "●",
-                              " $error"
+                              " ",
+                              "$error".padEnd(10)
                             ]
                           }),
                           /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
                             color: "$info",
                             children: [
                               "●",
-                              " $info"
+                              " ",
+                              "$info".padEnd(10)
                             ]
                           }),
                           /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
                             color: "$primary",
                             children: [
                               "●",
-                              " $primary"
+                              " ",
+                              "$primary".padEnd(10)
                             ]
                           }),
                           /* @__PURE__ */ jsx_runtime56.jsxs(Muted, {
                             children: [
                               "●",
-                              " $muted"
+                              " ",
+                              "$muted".padEnd(10)
                             ]
                           })
                         ]
@@ -39049,17 +39016,17 @@ function DisplayTab({ scrollOffset }) {
                           /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
                             backgroundColor: "$primary",
                             color: "$primary-fg",
-                            children: " $primary  "
+                            children: " $primary   "
                           }),
                           /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
                             backgroundColor: "$fg",
                             color: "$bg",
-                            children: " $inverse  "
+                            children: " $inverse   "
                           }),
                           /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
                             backgroundColor: "$muted-bg",
                             color: "$fg",
-                            children: " $surface  "
+                            children: " $surface   "
                           }),
                           /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
                             backgroundColor: "$surfacebg",
@@ -39077,6 +39044,7 @@ function DisplayTab({ scrollOffset }) {
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             ...cell,
             backgroundColor: "$surfacebg",
+            paddingRight: 2,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                 justifyContent: "space-between",
@@ -39146,7 +39114,7 @@ function DisplayTab({ scrollOffset }) {
                       /* @__PURE__ */ jsx_runtime56.jsxs(Text2, {
                         children: [
                           /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                            color: "$info",
+                            color: "$muted",
                             children: "ℹ"
                           }),
                           " Deploy target: us-east-1"
@@ -39562,4 +39530,4 @@ if (!ShowcaseComponent) {
   }
 }
 
-//# debugId=83C6DF2B3D73F72164756E2164756E21
+//# debugId=9B8E11C419DE59FF64756E2164756E21
