@@ -493,8 +493,11 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             <Muted>Esc to close</Muted>
           </Box>
           <Box flexDirection="column" gap={1}>
-            <Box borderStyle="round" borderColor="$focusborder" paddingX={1}>
-              <Text>main</Text>
+            <Box flexDirection="column">
+              <Muted>Branch</Muted>
+              <Box borderStyle="round" borderColor="$focusborder" backgroundColor="$surfacebg" paddingX={1}>
+                <Text>main</Text>
+              </Box>
             </Box>
             <Box flexDirection="column">
               <Text>

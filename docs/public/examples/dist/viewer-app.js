@@ -39056,13 +39056,22 @@ function DisplayTab({ scrollOffset }) {
                 flexDirection: "column",
                 gap: 1,
                 children: [
-                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                    borderStyle: "round",
-                    borderColor: "$focusborder",
-                    paddingX: 1,
-                    children: /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                      children: "main"
-                    })
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    flexDirection: "column",
+                    children: [
+                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
+                        children: "Branch"
+                      }),
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        borderStyle: "round",
+                        borderColor: "$focusborder",
+                        backgroundColor: "$surfacebg",
+                        paddingX: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                          children: "main"
+                        })
+                      })
+                    ]
                   }),
                   /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                     flexDirection: "column",
@@ -40820,8 +40829,11 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             <Muted>Esc to close</Muted>
           </Box>
           <Box flexDirection="column" gap={1}>
-            <Box borderStyle="round" borderColor="$focusborder" paddingX={1}>
-              <Text>main</Text>
+            <Box flexDirection="column">
+              <Muted>Branch</Muted>
+              <Box borderStyle="round" borderColor="$focusborder" backgroundColor="$surfacebg" paddingX={1}>
+                <Text>main</Text>
+              </Box>
             </Box>
             <Box flexDirection="column">
               <Text>
@@ -43796,8 +43808,11 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             <Muted>Esc to close</Muted>
           </Box>
           <Box flexDirection="column" gap={1}>
-            <Box borderStyle="round" borderColor="$focusborder" paddingX={1}>
-              <Text>main</Text>
+            <Box flexDirection="column">
+              <Muted>Branch</Muted>
+              <Box borderStyle="round" borderColor="$focusborder" backgroundColor="$surfacebg" paddingX={1}>
+                <Text>main</Text>
+              </Box>
             </Box>
             <Box flexDirection="column">
               <Text>
@@ -51780,4 +51795,4 @@ if (root) {
   createViewerApp(root);
 }
 
-//# debugId=B8A851D9096867A464756E2164756E21
+//# debugId=19F25FF2C57809CC64756E2164756E21

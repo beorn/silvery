@@ -39056,13 +39056,22 @@ function DisplayTab({ scrollOffset }) {
                 flexDirection: "column",
                 gap: 1,
                 children: [
-                  /* @__PURE__ */ jsx_runtime56.jsx(Box, {
-                    borderStyle: "round",
-                    borderColor: "$focusborder",
-                    paddingX: 1,
-                    children: /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
-                      children: "main"
-                    })
+                  /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
+                    flexDirection: "column",
+                    children: [
+                      /* @__PURE__ */ jsx_runtime56.jsx(Muted, {
+                        children: "Branch"
+                      }),
+                      /* @__PURE__ */ jsx_runtime56.jsx(Box, {
+                        borderStyle: "round",
+                        borderColor: "$focusborder",
+                        backgroundColor: "$surfacebg",
+                        paddingX: 1,
+                        children: /* @__PURE__ */ jsx_runtime56.jsx(Text2, {
+                          children: "main"
+                        })
+                      })
+                    ]
                   }),
                   /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
                     flexDirection: "column",
@@ -39517,4 +39526,4 @@ if (!ShowcaseComponent) {
   }
 }
 
-//# debugId=36EC8C38297BADBF64756E2164756E21
+//# debugId=11ACE0848E9FC52A64756E2164756E21
