@@ -38763,16 +38763,12 @@ function DisplayTab({ scrollOffset }) {
   };
   return /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
     flexDirection: "column",
-    flexGrow: 1,
     gap: 1,
-    paddingX: 2,
-    paddingY: 1,
+    paddingX: 1,
     children: [
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
         flexDirection: "row",
-        gap: 2,
-        flexGrow: 1,
-        flexBasis: 0,
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             ...cell,
@@ -38927,9 +38923,7 @@ function DisplayTab({ scrollOffset }) {
       }),
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
         flexDirection: "row",
-        gap: 2,
-        flexGrow: 1,
-        flexBasis: 0,
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
@@ -39554,4 +39548,4 @@ if (!ShowcaseComponent) {
   }
 }
 
-//# debugId=F8EEAC443F92907864756E2164756E21
+//# debugId=8BCCFBCC5E2B2DFF64756E2164756E21

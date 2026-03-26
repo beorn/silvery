@@ -366,9 +366,9 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
   }
 
   return (
-    <Box flexDirection="column" flexGrow={1} gap={1} paddingX={2} paddingY={1}>
+    <Box flexDirection="column" gap={1} paddingX={1}>
       {/* Row 1 */}
-      <Box flexDirection="row" gap={2} flexGrow={1} flexBasis={0}>
+      <Box flexDirection="row" gap={1}>
         <Box {...cell}>
           <Text color="$primary">
             <Strong>Progress & Spinners</Strong>
@@ -436,7 +436,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
       </Box>
 
       {/* Row 2: Border Styles | Design Tokens | Modal Dialog */}
-      <Box flexDirection="row" gap={2} flexGrow={1} flexBasis={0}>
+      <Box flexDirection="row" gap={1}>
         {/* Left half: two stacked boxes */}
         <Box flexDirection="column" gap={1} flexGrow={1} flexBasis={0}>
           <Box {...cell} flexGrow={1} flexBasis={0}>

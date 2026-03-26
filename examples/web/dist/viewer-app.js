@@ -38763,16 +38763,12 @@ function DisplayTab({ scrollOffset }) {
   };
   return /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
     flexDirection: "column",
-    flexGrow: 1,
     gap: 1,
-    paddingX: 2,
-    paddingY: 1,
+    paddingX: 1,
     children: [
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
         flexDirection: "row",
-        gap: 2,
-        flexGrow: 1,
-        flexBasis: 0,
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             ...cell,
@@ -38927,9 +38923,7 @@ function DisplayTab({ scrollOffset }) {
       }),
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
         flexDirection: "row",
-        gap: 2,
-        flexGrow: 1,
-        flexBasis: 0,
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
@@ -40732,9 +40726,9 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
   }
 
   return (
-    <Box flexDirection="column" flexGrow={1} gap={1} paddingX={2} paddingY={1}>
+    <Box flexDirection="column" gap={1} paddingX={1}>
       {/* Row 1 */}
-      <Box flexDirection="row" gap={2} flexGrow={1} flexBasis={0}>
+      <Box flexDirection="row" gap={1}>
         <Box {...cell}>
           <Text color="$primary">
             <Strong>Progress & Spinners</Strong>
@@ -40802,7 +40796,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
       </Box>
 
       {/* Row 2: Border Styles | Design Tokens | Modal Dialog */}
-      <Box flexDirection="row" gap={2} flexGrow={1} flexBasis={0}>
+      <Box flexDirection="row" gap={1}>
         {/* Left half: two stacked boxes */}
         <Box flexDirection="column" gap={1} flexGrow={1} flexBasis={0}>
           <Box {...cell} flexGrow={1} flexBasis={0}>
@@ -43719,9 +43713,9 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
   }
 
   return (
-    <Box flexDirection="column" flexGrow={1} gap={1} paddingX={2} paddingY={1}>
+    <Box flexDirection="column" gap={1} paddingX={1}>
       {/* Row 1 */}
-      <Box flexDirection="row" gap={2} flexGrow={1} flexBasis={0}>
+      <Box flexDirection="row" gap={1}>
         <Box {...cell}>
           <Text color="$primary">
             <Strong>Progress & Spinners</Strong>
@@ -43789,7 +43783,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
       </Box>
 
       {/* Row 2: Border Styles | Design Tokens | Modal Dialog */}
-      <Box flexDirection="row" gap={2} flexGrow={1} flexBasis={0}>
+      <Box flexDirection="row" gap={1}>
         {/* Left half: two stacked boxes */}
         <Box flexDirection="column" gap={1} flexGrow={1} flexBasis={0}>
           <Box {...cell} flexGrow={1} flexBasis={0}>
@@ -51839,4 +51833,4 @@ if (root) {
   createViewerApp(root);
 }
 
-//# debugId=2F9DE925F5488E7864756E2164756E21
+//# debugId=ACB46AC6CC217E7964756E2164756E21
