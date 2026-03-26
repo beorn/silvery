@@ -38770,6 +38770,7 @@ function DisplayTab({ scrollOffset }) {
     children: [
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
         flexDirection: "column",
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
             title: "Progress Bars"
@@ -38842,6 +38843,7 @@ function DisplayTab({ scrollOffset }) {
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Spinners"
@@ -38871,6 +38873,7 @@ function DisplayTab({ scrollOffset }) {
           }),
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Badges"
@@ -38910,6 +38913,7 @@ function DisplayTab({ scrollOffset }) {
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Status"
@@ -38960,6 +38964,7 @@ function DisplayTab({ scrollOffset }) {
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
             flexGrow: 1,
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Border Styles"
@@ -38994,6 +38999,7 @@ function DisplayTab({ scrollOffset }) {
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Keyboard Shortcuts"
@@ -39071,6 +39077,7 @@ function DisplayTab({ scrollOffset }) {
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
             flexGrow: 1,
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Color Tokens"
@@ -39525,4 +39532,4 @@ if (!ShowcaseComponent) {
   }
 }
 
-//# debugId=E3953B7A0041AF6364756E2164756E21
+//# debugId=4007374A5FB87B2064756E2164756E21

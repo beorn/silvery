@@ -38770,6 +38770,7 @@ function DisplayTab({ scrollOffset }) {
     children: [
       /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
         flexDirection: "column",
+        gap: 1,
         children: [
           /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
             title: "Progress Bars"
@@ -38842,6 +38843,7 @@ function DisplayTab({ scrollOffset }) {
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Spinners"
@@ -38871,6 +38873,7 @@ function DisplayTab({ scrollOffset }) {
           }),
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Badges"
@@ -38910,6 +38913,7 @@ function DisplayTab({ scrollOffset }) {
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Status"
@@ -38960,6 +38964,7 @@ function DisplayTab({ scrollOffset }) {
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
             flexGrow: 1,
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Border Styles"
@@ -38994,6 +38999,7 @@ function DisplayTab({ scrollOffset }) {
         children: [
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Keyboard Shortcuts"
@@ -39071,6 +39077,7 @@ function DisplayTab({ scrollOffset }) {
           /* @__PURE__ */ jsx_runtime56.jsxs(Box, {
             flexDirection: "column",
             flexGrow: 1,
+            gap: 1,
             children: [
               /* @__PURE__ */ jsx_runtime56.jsx(Divider, {
                 title: "Color Tokens"
@@ -40692,7 +40699,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
   return (
     <Box flexDirection="column" gap={1} paddingX={1}>
       {/* Progress Bars */}
-      <Box flexDirection="column">
+      <Box flexDirection="column" gap={1}>
         <Divider title="Progress Bars" />
         <Box flexDirection="column">
           <Box>
@@ -40724,7 +40731,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
 
       {/* Spinners + Badges row */}
       <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column">
+        <Box flexDirection="column" gap={1}>
           <Divider title="Spinners" />
           <Box flexDirection="column">
             <Spinner type="dots" label="Loading packages..." />
@@ -40733,7 +40740,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             <Spinner type="bounce" label="Connecting..." />
           </Box>
         </Box>
-        <Box flexDirection="column">
+        <Box flexDirection="column" gap={1}>
           <Divider title="Badges" />
           <Box gap={1} flexWrap="wrap">
             <Badge label="Stable" variant="success" />
@@ -40747,7 +40754,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
 
       {/* Status + Border Styles row */}
       <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column">
+        <Box flexDirection="column" gap={1}>
           <Divider title="Status" />
           <Box flexDirection="column">
             <Text>
@@ -40764,7 +40771,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             </Text>
           </Box>
         </Box>
-        <Box flexDirection="column" flexGrow={1}>
+        <Box flexDirection="column" flexGrow={1} gap={1}>
           <Divider title="Border Styles" />
           <Box flexDirection="column" gap={0}>
             {borderStyles.map((style, i) => (
@@ -40790,7 +40797,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
 
       {/* Keyboard Shortcuts + Dividers row */}
       <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column">
+        <Box flexDirection="column" gap={1}>
           <Divider title="Keyboard Shortcuts" />
           <Box flexDirection="column" gap={1}>
             <Box gap={1}>
@@ -40817,7 +40824,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             </Box>
           </Box>
         </Box>
-        <Box flexDirection="column" flexGrow={1}>
+        <Box flexDirection="column" flexGrow={1} gap={1}>
           <Divider title="Color Tokens" />
           <Box flexDirection="column">
             <Box gap={2}>
@@ -43645,7 +43652,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
   return (
     <Box flexDirection="column" gap={1} paddingX={1}>
       {/* Progress Bars */}
-      <Box flexDirection="column">
+      <Box flexDirection="column" gap={1}>
         <Divider title="Progress Bars" />
         <Box flexDirection="column">
           <Box>
@@ -43677,7 +43684,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
 
       {/* Spinners + Badges row */}
       <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column">
+        <Box flexDirection="column" gap={1}>
           <Divider title="Spinners" />
           <Box flexDirection="column">
             <Spinner type="dots" label="Loading packages..." />
@@ -43686,7 +43693,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             <Spinner type="bounce" label="Connecting..." />
           </Box>
         </Box>
-        <Box flexDirection="column">
+        <Box flexDirection="column" gap={1}>
           <Divider title="Badges" />
           <Box gap={1} flexWrap="wrap">
             <Badge label="Stable" variant="success" />
@@ -43700,7 +43707,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
 
       {/* Status + Border Styles row */}
       <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column">
+        <Box flexDirection="column" gap={1}>
           <Divider title="Status" />
           <Box flexDirection="column">
             <Text>
@@ -43717,7 +43724,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             </Text>
           </Box>
         </Box>
-        <Box flexDirection="column" flexGrow={1}>
+        <Box flexDirection="column" flexGrow={1} gap={1}>
           <Divider title="Border Styles" />
           <Box flexDirection="column" gap={0}>
             {borderStyles.map((style, i) => (
@@ -43743,7 +43750,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
 
       {/* Keyboard Shortcuts + Dividers row */}
       <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column">
+        <Box flexDirection="column" gap={1}>
           <Divider title="Keyboard Shortcuts" />
           <Box flexDirection="column" gap={1}>
             <Box gap={1}>
@@ -43770,7 +43777,7 @@ function DisplayTab({ scrollOffset }: { scrollOffset?: number }) {
             </Box>
           </Box>
         </Box>
-        <Box flexDirection="column" flexGrow={1}>
+        <Box flexDirection="column" flexGrow={1} gap={1}>
           <Divider title="Color Tokens" />
           <Box flexDirection="column">
             <Box gap={2}>
@@ -51742,4 +51749,4 @@ if (root) {
   createViewerApp(root);
 }
 
-//# debugId=51A7DC770A18B2B364756E2164756E21
+//# debugId=F4EA7F1EEFFD567864756E2164756E21
