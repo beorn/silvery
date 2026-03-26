@@ -223,7 +223,10 @@ export function withTerm(term: Term) {
             prev = undefined
             app.ag.resetBuffer()
           }
-          app.dispatch({ type: `input:${event.type}`, ...(event.data as Record<string, unknown>) } as any)
+          app.dispatch({
+            type: `input:${event.type}`,
+            ...(event.data as Record<string, unknown>),
+          } as any)
           if (event.type === "resize") {
             render() // Resize always re-renders
           }

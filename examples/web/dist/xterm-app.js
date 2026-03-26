@@ -125,7 +125,7 @@ var __callDispose = (stack, error, hasError) => {
   return next();
 };
 
-// ../../node_modules/.bun/react@19.2.4/node_modules/react/cjs/react.production.js
+// node_modules/.bun/react@19.2.4/node_modules/react/cjs/react.production.js
 var exports_react_production = {};
 __export(exports_react_production, {
   version: () => $version,
@@ -528,7 +528,7 @@ var init_react_production = __esm(() => {
   $isValidElement = isValidElement;
 });
 
-// ../../node_modules/.bun/react@19.2.4/node_modules/react/index.js
+// node_modules/.bun/react@19.2.4/node_modules/react/index.js
 var require_react = __commonJS((exports, module) => {
   init_react_production();
   if (true) {
@@ -536,10 +536,10 @@ var require_react = __commonJS((exports, module) => {
   } else {}
 });
 
-// ../flexily/src/constants.ts
+// vendor/flexily/src/constants.ts
 var FLEX_DIRECTION_COLUMN = 0, FLEX_DIRECTION_COLUMN_REVERSE = 1, FLEX_DIRECTION_ROW = 2, FLEX_DIRECTION_ROW_REVERSE = 3, WRAP_NO_WRAP = 0, WRAP_WRAP = 1, WRAP_WRAP_REVERSE = 2, ALIGN_AUTO = 0, ALIGN_FLEX_START = 1, ALIGN_CENTER = 2, ALIGN_FLEX_END = 3, ALIGN_STRETCH = 4, ALIGN_BASELINE = 5, ALIGN_SPACE_BETWEEN = 6, ALIGN_SPACE_AROUND = 7, ALIGN_SPACE_EVENLY = 8, JUSTIFY_FLEX_START = 0, JUSTIFY_CENTER = 1, JUSTIFY_FLEX_END = 2, JUSTIFY_SPACE_BETWEEN = 3, JUSTIFY_SPACE_AROUND = 4, JUSTIFY_SPACE_EVENLY = 5, EDGE_LEFT = 0, EDGE_TOP = 1, EDGE_RIGHT = 2, EDGE_BOTTOM = 3, EDGE_START = 4, EDGE_END = 5, EDGE_HORIZONTAL = 6, EDGE_VERTICAL = 7, EDGE_ALL = 8, GUTTER_COLUMN = 0, GUTTER_ROW = 1, GUTTER_ALL = 2, DISPLAY_FLEX = 0, DISPLAY_NONE = 1, POSITION_TYPE_STATIC = 0, POSITION_TYPE_RELATIVE = 1, POSITION_TYPE_ABSOLUTE = 2, OVERFLOW_VISIBLE = 0, OVERFLOW_HIDDEN = 1, OVERFLOW_SCROLL = 2, DIRECTION_LTR = 1, DIRECTION_RTL = 2, MEASURE_MODE_UNDEFINED = 0, MEASURE_MODE_EXACTLY = 1, MEASURE_MODE_AT_MOST = 2, UNIT_UNDEFINED = 0, UNIT_POINT = 1, UNIT_PERCENT = 2, UNIT_AUTO = 3;
 
-// ../flexily/src/utils.ts
+// vendor/flexily/src/utils.ts
 function setEdgeValue(arr, edge, value, unit) {
   const v2 = { value, unit };
   switch (edge) {
@@ -695,7 +695,7 @@ var init_utils = __esm(() => {
   traversalStack = [];
 });
 
-// ../../node_modules/.bun/ms@2.1.3/node_modules/ms/index.js
+// node_modules/.bun/ms@2.1.3/node_modules/ms/index.js
 var require_ms = __commonJS((exports, module) => {
   var s15 = 1000;
   var m = s15 * 60;
@@ -805,7 +805,7 @@ var require_ms = __commonJS((exports, module) => {
   }
 });
 
-// ../../node_modules/.bun/debug@4.4.3/node_modules/debug/src/common.js
+// node_modules/.bun/debug@4.4.3/node_modules/debug/src/common.js
 var require_common = __commonJS((exports, module) => {
   function setup(env) {
     createDebug.debug = createDebug;
@@ -980,7 +980,7 @@ var require_common = __commonJS((exports, module) => {
   module.exports = setup;
 });
 
-// ../../node_modules/.bun/debug@4.4.3/node_modules/debug/src/browser.js
+// node_modules/.bun/debug@4.4.3/node_modules/debug/src/browser.js
 var require_browser = __commonJS((exports, module) => {
   exports.formatArgs = formatArgs;
   exports.save = save;
@@ -1140,7 +1140,7 @@ var require_browser = __commonJS((exports, module) => {
   };
 });
 
-// ../loggily/src/colors.ts
+// vendor/loggily/src/colors.ts
 function wrap(open, close) {
   if (!enabled)
     return (str) => str;
@@ -1160,7 +1160,7 @@ var init_colors = __esm(() => {
   };
 });
 
-// ../loggily/src/tracing.ts
+// vendor/loggily/src/tracing.ts
 function setIdFormat(format) {
   currentIdFormat = format;
 }
@@ -1221,7 +1221,7 @@ function shouldSample() {
 }
 var currentIdFormat = "simple", simpleSpanCounter = 0, simpleTraceCounter = 0, sampleRate = 1;
 
-// ../loggily/src/core.ts
+// vendor/loggily/src/core.ts
 function getEnv(key) {
   return _process2?.env?.[key];
 }
@@ -1658,7 +1658,7 @@ var init_core = __esm(() => {
   collectedSpans = [];
 });
 
-// ../loggily/src/index.browser.ts
+// vendor/loggily/src/index.browser.ts
 var exports_index_browser = {};
 __export(exports_index_browser, {
   traceparent: () => traceparent,
@@ -1696,7 +1696,7 @@ var init_index_browser = __esm(() => {
   init_core();
 });
 
-// ../flexily/src/logger.ts
+// vendor/flexily/src/logger.ts
 function createFallbackLogger(namespace) {
   try {
     const createDebug = require_browser();
@@ -1744,13 +1744,13 @@ var init_logger = __esm(async () => {
   };
 });
 
-// ../flexily/src/trace.ts
+// vendor/flexily/src/trace.ts
 function getTrace() {
   return _trace;
 }
 var _trace = null;
 
-// ../flexily/src/layout-helpers.ts
+// vendor/flexily/src/layout-helpers.ts
 function isRowDirection(flexDirection) {
   return flexDirection === FLEX_DIRECTION_ROW || flexDirection === FLEX_DIRECTION_ROW_REVERSE;
 }
@@ -1803,7 +1803,7 @@ var init_layout_helpers = __esm(() => {
   init_utils();
 });
 
-// ../flexily/src/layout-traversal.ts
+// vendor/flexily/src/layout-traversal.ts
 function markSubtreeLayoutSeen(node) {
   traversalStack.length = 0;
   traversalStack.push(node);
@@ -1847,7 +1847,7 @@ var init_layout_traversal = __esm(() => {
   init_utils();
 });
 
-// ../flexily/src/layout-stats.ts
+// vendor/flexily/src/layout-stats.ts
 function resetLayoutStats() {
   layoutNodeCalls = 0;
   measureNodeCalls = 0;
@@ -1872,7 +1872,7 @@ function incLayoutCacheHits() {
 }
 var layoutNodeCalls = 0, measureNodeCalls = 0, layoutSizingCalls = 0, layoutPositioningCalls = 0, layoutCacheHits = 0;
 
-// ../flexily/src/layout-measure.ts
+// vendor/flexily/src/layout-measure.ts
 function measureNode(node, availableWidth, availableHeight, direction = DIRECTION_LTR) {
   incMeasureNodeCalls();
   const style = node.style;
@@ -2044,7 +2044,7 @@ var init_layout_measure = __esm(() => {
   init_layout_helpers();
 });
 
-// ../flexily/src/layout-flex-lines.ts
+// vendor/flexily/src/layout-flex-lines.ts
 function growLineArrays(needed) {
   const newSize = Math.max(needed, MAX_FLEX_LINES * 2);
   MAX_FLEX_LINES = newSize;
@@ -2280,7 +2280,7 @@ var init_layout_flex_lines = __esm(() => {
   _lineItemSpacings = new Float64Array(MAX_FLEX_LINES);
 });
 
-// ../flexily/src/layout-zero.ts
+// vendor/flexily/src/layout-zero.ts
 function computeLayout(root, availableWidth, availableHeight, direction = DIRECTION_LTR) {
   const saved = enterLayout();
   try {
@@ -3483,7 +3483,7 @@ var init_layout_zero = __esm(async () => {
   await init_logger();
 });
 
-// ../flexily/src/types.ts
+// vendor/flexily/src/types.ts
 function createValue(value = 0, unit = 0) {
   return { value, unit };
 }
@@ -3516,7 +3516,7 @@ function createDefaultStyle() {
   };
 }
 
-// ../flexily/src/node-zero.ts
+// vendor/flexily/src/node-zero.ts
 var Node2;
 var init_node_zero = __esm(async () => {
   init_utils();
@@ -4147,7 +4147,7 @@ var init_node_zero = __esm(async () => {
   };
 });
 
-// ../flexily/src/index.ts
+// vendor/flexily/src/index.ts
 var init_src = __esm(async () => {
   await __promiseAll([
     init_node_zero(),
@@ -4155,7 +4155,7 @@ var init_src = __esm(async () => {
   ]);
 });
 
-// packages/ag-term/src/adapters/flexily-zero-adapter.ts
+// vendor/silvery/packages/ag-term/src/adapters/flexily-zero-adapter.ts
 class FlexilyZeroNodeAdapter {
   node;
   constructor(node) {
@@ -4378,7 +4378,7 @@ var init_flexily_zero_adapter = __esm(async () => {
   await init_src();
 });
 
-// packages/ag-term/src/ansi/sgr-codes.ts
+// vendor/silvery/packages/ag-term/src/ansi/sgr-codes.ts
 function fgColorCode(color) {
   if (typeof color === "number") {
     if (color >= 0 && color <= 7)
@@ -4396,7 +4396,7 @@ function bgColorCode(color) {
   return `48;2;${color.r};${color.g};${color.b}`;
 }
 
-// packages/ag-term/src/buffer.ts
+// vendor/silvery/packages/ag-term/src/buffer.ts
 function isDefaultBg(color) {
   return color !== null && typeof color === "object" && color.r === -1;
 }
@@ -5668,7 +5668,7 @@ var init_buffer = __esm(() => {
   });
 });
 
-// packages/theme/src/color.ts
+// vendor/silvery/packages/theme/src/color.ts
 function hexToRgb(hex) {
   const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
   if (!match)
@@ -5742,7 +5742,7 @@ function complement(color) {
   return hslToHex(h2 + 180, s15, l);
 }
 
-// packages/theme/src/contrast.ts
+// vendor/silvery/packages/theme/src/contrast.ts
 function channelLuminance(c) {
   const s15 = c / 255;
   return s15 <= 0.03928 ? s15 / 12.92 : Math.pow((s15 + 0.055) / 1.055, 2.4);
@@ -5808,7 +5808,7 @@ function ensureContrast(color, against, minRatio) {
 }
 var init_contrast = () => {};
 
-// packages/theme/src/derive.ts
+// vendor/silvery/packages/theme/src/derive.ts
 function deriveTheme(palette, mode = "truecolor", adjustments) {
   if (mode === "ansi16")
     return deriveAnsi16Theme(palette);
@@ -5970,7 +5970,7 @@ var init_derive = __esm(() => {
   init_contrast();
 });
 
-// packages/theme/src/palettes/catppuccin.ts
+// vendor/silvery/packages/theme/src/palettes/catppuccin.ts
 var catppuccinMocha, catppuccinFrappe, catppuccinMacchiato, catppuccinLatte;
 var init_catppuccin = __esm(() => {
   catppuccinMocha = {
@@ -6079,7 +6079,7 @@ var init_catppuccin = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/nord.ts
+// vendor/silvery/packages/theme/src/palettes/nord.ts
 var nord;
 var init_nord = __esm(() => {
   nord = {
@@ -6110,7 +6110,7 @@ var init_nord = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/dracula.ts
+// vendor/silvery/packages/theme/src/palettes/dracula.ts
 var dracula;
 var init_dracula = __esm(() => {
   dracula = {
@@ -6141,7 +6141,7 @@ var init_dracula = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/solarized.ts
+// vendor/silvery/packages/theme/src/palettes/solarized.ts
 var solarizedDark, solarizedLight;
 var init_solarized = __esm(() => {
   solarizedDark = {
@@ -6198,7 +6198,7 @@ var init_solarized = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/tokyo-night.ts
+// vendor/silvery/packages/theme/src/palettes/tokyo-night.ts
 var tokyoNight, tokyoNightStorm, tokyoNightDay;
 var init_tokyo_night = __esm(() => {
   tokyoNight = {
@@ -6281,7 +6281,7 @@ var init_tokyo_night = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/one-dark.ts
+// vendor/silvery/packages/theme/src/palettes/one-dark.ts
 var oneDark;
 var init_one_dark = __esm(() => {
   oneDark = {
@@ -6312,7 +6312,7 @@ var init_one_dark = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/gruvbox.ts
+// vendor/silvery/packages/theme/src/palettes/gruvbox.ts
 var gruvboxDark, gruvboxLight;
 var init_gruvbox = __esm(() => {
   gruvboxDark = {
@@ -6369,7 +6369,7 @@ var init_gruvbox = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/rose-pine.ts
+// vendor/silvery/packages/theme/src/palettes/rose-pine.ts
 var rosePine, rosePineMoon, rosePineDawn;
 var init_rose_pine = __esm(() => {
   rosePine = {
@@ -6452,7 +6452,7 @@ var init_rose_pine = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/kanagawa.ts
+// vendor/silvery/packages/theme/src/palettes/kanagawa.ts
 var kanagawaWave, kanagawaDragon, kanagawaLotus;
 var init_kanagawa = __esm(() => {
   kanagawaWave = {
@@ -6535,7 +6535,7 @@ var init_kanagawa = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/everforest.ts
+// vendor/silvery/packages/theme/src/palettes/everforest.ts
 var everforestDark, everforestLight;
 var init_everforest = __esm(() => {
   everforestDark = {
@@ -6592,7 +6592,7 @@ var init_everforest = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/monokai.ts
+// vendor/silvery/packages/theme/src/palettes/monokai.ts
 var monokai, monokaiPro;
 var init_monokai = __esm(() => {
   monokai = {
@@ -6649,7 +6649,7 @@ var init_monokai = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/snazzy.ts
+// vendor/silvery/packages/theme/src/palettes/snazzy.ts
 var snazzy;
 var init_snazzy = __esm(() => {
   snazzy = {
@@ -6680,7 +6680,7 @@ var init_snazzy = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/material.ts
+// vendor/silvery/packages/theme/src/palettes/material.ts
 var materialDark, materialLight;
 var init_material = __esm(() => {
   materialDark = {
@@ -6737,7 +6737,7 @@ var init_material = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/palenight.ts
+// vendor/silvery/packages/theme/src/palettes/palenight.ts
 var palenight;
 var init_palenight = __esm(() => {
   palenight = {
@@ -6768,7 +6768,7 @@ var init_palenight = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/ayu.ts
+// vendor/silvery/packages/theme/src/palettes/ayu.ts
 var ayuDark, ayuMirage, ayuLight;
 var init_ayu = __esm(() => {
   ayuDark = {
@@ -6851,7 +6851,7 @@ var init_ayu = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/nightfox.ts
+// vendor/silvery/packages/theme/src/palettes/nightfox.ts
 var nightfox, dawnfox;
 var init_nightfox = __esm(() => {
   nightfox = {
@@ -6908,7 +6908,7 @@ var init_nightfox = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/horizon.ts
+// vendor/silvery/packages/theme/src/palettes/horizon.ts
 var horizon;
 var init_horizon = __esm(() => {
   horizon = {
@@ -6939,7 +6939,7 @@ var init_horizon = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/moonfly.ts
+// vendor/silvery/packages/theme/src/palettes/moonfly.ts
 var moonfly;
 var init_moonfly = __esm(() => {
   moonfly = {
@@ -6970,7 +6970,7 @@ var init_moonfly = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/nightfly.ts
+// vendor/silvery/packages/theme/src/palettes/nightfly.ts
 var nightfly;
 var init_nightfly = __esm(() => {
   nightfly = {
@@ -7001,7 +7001,7 @@ var init_nightfly = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/oxocarbon.ts
+// vendor/silvery/packages/theme/src/palettes/oxocarbon.ts
 var oxocarbonDark, oxocarbonLight;
 var init_oxocarbon = __esm(() => {
   oxocarbonDark = {
@@ -7058,7 +7058,7 @@ var init_oxocarbon = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/sonokai.ts
+// vendor/silvery/packages/theme/src/palettes/sonokai.ts
 var sonokai;
 var init_sonokai = __esm(() => {
   sonokai = {
@@ -7089,7 +7089,7 @@ var init_sonokai = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/edge.ts
+// vendor/silvery/packages/theme/src/palettes/edge.ts
 var edgeDark, edgeLight;
 var init_edge = __esm(() => {
   edgeDark = {
@@ -7146,7 +7146,7 @@ var init_edge = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/modus.ts
+// vendor/silvery/packages/theme/src/palettes/modus.ts
 var modusVivendi, modusOperandi;
 var init_modus = __esm(() => {
   modusVivendi = {
@@ -7203,7 +7203,7 @@ var init_modus = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/index.ts
+// vendor/silvery/packages/theme/src/palettes/index.ts
 var ansi16DarkTheme, defaultDarkTheme, defaultLightTheme;
 var init_palettes = __esm(() => {
   init_derive();
@@ -7311,7 +7311,7 @@ var init_palettes = __esm(() => {
   defaultLightTheme = deriveTheme(catppuccinLatte);
 });
 
-// packages/theme/src/state.ts
+// vendor/silvery/packages/theme/src/state.ts
 function setActiveTheme(theme) {
   _activeTheme = theme;
 }
@@ -7325,7 +7325,7 @@ var init_state = __esm(() => {
   _contextStack = [];
 });
 
-// packages/theme/src/resolve.ts
+// vendor/silvery/packages/theme/src/resolve.ts
 function resolveThemeColor(color, theme) {
   if (!color)
     return;
@@ -7343,7 +7343,7 @@ function resolveThemeColor(color, theme) {
   return typeof val === "string" ? val : color;
 }
 
-// packages/ag-term/src/errors.ts
+// vendor/silvery/packages/ag-term/src/errors.ts
 var IncrementalRenderMismatchError;
 var init_errors = __esm(() => {
   IncrementalRenderMismatchError = class IncrementalRenderMismatchError extends Error {
@@ -7358,7 +7358,7 @@ var init_errors = __esm(() => {
   };
 });
 
-// packages/ag-term/src/text-sizing.ts
+// vendor/silvery/packages/ag-term/src/text-sizing.ts
 function textSized(text, width) {
   return `${OSC}66;w=${width};${text}${ST}`;
 }
@@ -7370,7 +7370,7 @@ var init_text_sizing = __esm(() => {
   probeCache = new Map;
 });
 
-// ../../node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/vendor/ansi-styles/index.js
+// node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/vendor/ansi-styles/index.js
 function assembleStyles() {
   const codes = new Map;
   for (const [groupName, group] of Object.entries(styles)) {
@@ -7546,7 +7546,7 @@ var init_ansi_styles = __esm(() => {
   ansi_styles_default = ansiStyles;
 });
 
-// ../../node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/vendor/supports-color/browser.js
+// node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/vendor/supports-color/browser.js
 var level, colorSupport, supportsColor, browser_default;
 var init_browser = __esm(() => {
   level = (() => {
@@ -7577,7 +7577,7 @@ var init_browser = __esm(() => {
   browser_default = supportsColor;
 });
 
-// ../../node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/utilities.js
+// node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/utilities.js
 function stringReplaceAll(string, substring, replacer) {
   let index = string.indexOf(substring);
   if (index === -1) {
@@ -7610,7 +7610,7 @@ function stringEncaseCRLFWithFirstIndex(string, prefix, postfix, index) {
   return returnValue;
 }
 
-// ../../node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/index.js
+// node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/index.js
 class Chalk {
   constructor(options) {
     return chalkFactory(options);
@@ -7765,7 +7765,7 @@ function spawnSync() {
   return { status: 1, stdout: "", stderr: "" };
 }
 
-// packages/ag-term/src/ansi/detection.ts
+// vendor/silvery/packages/ag-term/src/ansi/detection.ts
 function detectCursor(stdout) {
   if (!stdout.isTTY)
     return false;
@@ -7957,7 +7957,7 @@ var init_detection = __esm(() => {
   CI_ENVS = ["CI", "GITHUB_ACTIONS", "GITLAB_CI", "JENKINS_URL", "BUILDKITE", "CIRCLECI", "TRAVIS"];
 });
 
-// packages/ag/src/keys.ts
+// vendor/silvery/packages/ag/src/keys.ts
 function isValidCodepoint(cp) {
   return cp >= 0 && cp <= 1114111 && !(cp >= 55296 && cp <= 57343);
 }
@@ -8544,12 +8544,12 @@ var init_keys = __esm(() => {
   graphemeSegmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
 });
 
-// packages/ag-term/src/runtime/keys.ts
+// vendor/silvery/packages/ag-term/src/runtime/keys.ts
 var init_keys2 = __esm(() => {
   init_keys();
 });
 
-// packages/ag-term/src/mouse.ts
+// vendor/silvery/packages/ag-term/src/mouse.ts
 function parseMouseSequence(input) {
   const m = SGR_MOUSE_RE.exec(input);
   if (!m)
@@ -8589,7 +8589,7 @@ var init_mouse = __esm(() => {
   SGR_MOUSE_TEST_RE = /^\x1b\[<\d+;\d+;\d+[Mm]$/;
 });
 
-// packages/ag-term/src/bracketed-paste.ts
+// vendor/silvery/packages/ag-term/src/bracketed-paste.ts
 function enableBracketedPaste(stdout) {
   stdout.write("\x1B[?2004h");
 }
@@ -8611,7 +8611,7 @@ function parseBracketedPaste(input) {
 }
 var PASTE_START = "\x1B[200~", PASTE_END = "\x1B[201~";
 
-// packages/ag-term/src/focus-reporting.ts
+// vendor/silvery/packages/ag-term/src/focus-reporting.ts
 function parseFocusEvent(input) {
   if (input.includes(`${CSI}I`)) {
     return { type: "focus-in" };
@@ -8623,7 +8623,7 @@ function parseFocusEvent(input) {
 }
 var CSI = "\x1B[";
 
-// packages/ag-term/src/runtime/term-provider.ts
+// vendor/silvery/packages/ag-term/src/runtime/term-provider.ts
 function splitRawInput2(raw) {
   const sequences = [];
   let i = 0;
@@ -8835,7 +8835,7 @@ var init_term_provider = __esm(() => {
   init_mouse();
 });
 
-// packages/ag-term/src/ansi/term.ts
+// vendor/silvery/packages/ag-term/src/ansi/term.ts
 function stripAnsi(text) {
   return text.replace(ANSI_REGEX, "");
 }
@@ -9164,13 +9164,13 @@ var init_term = __esm(() => {
   ANSI_REGEX = /\x1b\[[0-9;:]*m|\x9b[0-9;:]*m|\x1b\]8;;[^\x07\x1b]*(?:\x07|\x1b\\)|\x9d8;;[^\x07\x1b\x9c]*(?:\x07|\x1b\\|\x9c)/g;
 });
 
-// packages/ag-term/src/ansi/patch-console.ts
+// vendor/silvery/packages/ag-term/src/ansi/patch-console.ts
 var STDERR_METHODS;
 var init_patch_console = __esm(() => {
   STDERR_METHODS = new Set(["error", "warn"]);
 });
 
-// ../../node_modules/.bun/ansi-regex@6.2.2/node_modules/ansi-regex/index.js
+// node_modules/.bun/ansi-regex@6.2.2/node_modules/ansi-regex/index.js
 function ansiRegex({ onlyFirst = false } = {}) {
   const ST2 = "(?:\\u0007|\\u001B\\u005C|\\u009C)";
   const osc = `(?:\\u001B\\][\\s\\S]*?${ST2})`;
@@ -9179,7 +9179,7 @@ function ansiRegex({ onlyFirst = false } = {}) {
   return new RegExp(pattern, onlyFirst ? undefined : "g");
 }
 
-// ../../node_modules/.bun/strip-ansi@7.2.0/node_modules/strip-ansi/index.js
+// node_modules/.bun/strip-ansi@7.2.0/node_modules/strip-ansi/index.js
 function stripAnsi2(string) {
   if (typeof string !== "string") {
     throw new TypeError(`Expected a \`string\`, got \`${typeof string}\``);
@@ -9194,7 +9194,7 @@ var init_strip_ansi = __esm(() => {
   regex = ansiRegex();
 });
 
-// ../../node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/lookup-data.js
+// node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/lookup-data.js
 var ambiguousRanges, fullwidthRanges, halfwidthRanges, narrowRanges, wideRanges;
 var init_lookup_data = __esm(() => {
   ambiguousRanges = [161, 161, 164, 164, 167, 168, 170, 170, 173, 174, 176, 180, 182, 186, 188, 191, 198, 198, 208, 208, 215, 216, 222, 225, 230, 230, 232, 234, 236, 237, 240, 240, 242, 243, 247, 250, 252, 252, 254, 254, 257, 257, 273, 273, 275, 275, 283, 283, 294, 295, 299, 299, 305, 307, 312, 312, 319, 322, 324, 324, 328, 331, 333, 333, 338, 339, 358, 359, 363, 363, 462, 462, 464, 464, 466, 466, 468, 468, 470, 470, 472, 472, 474, 474, 476, 476, 593, 593, 609, 609, 708, 708, 711, 711, 713, 715, 717, 717, 720, 720, 728, 731, 733, 733, 735, 735, 768, 879, 913, 929, 931, 937, 945, 961, 963, 969, 1025, 1025, 1040, 1103, 1105, 1105, 8208, 8208, 8211, 8214, 8216, 8217, 8220, 8221, 8224, 8226, 8228, 8231, 8240, 8240, 8242, 8243, 8245, 8245, 8251, 8251, 8254, 8254, 8308, 8308, 8319, 8319, 8321, 8324, 8364, 8364, 8451, 8451, 8453, 8453, 8457, 8457, 8467, 8467, 8470, 8470, 8481, 8482, 8486, 8486, 8491, 8491, 8531, 8532, 8539, 8542, 8544, 8555, 8560, 8569, 8585, 8585, 8592, 8601, 8632, 8633, 8658, 8658, 8660, 8660, 8679, 8679, 8704, 8704, 8706, 8707, 8711, 8712, 8715, 8715, 8719, 8719, 8721, 8721, 8725, 8725, 8730, 8730, 8733, 8736, 8739, 8739, 8741, 8741, 8743, 8748, 8750, 8750, 8756, 8759, 8764, 8765, 8776, 8776, 8780, 8780, 8786, 8786, 8800, 8801, 8804, 8807, 8810, 8811, 8814, 8815, 8834, 8835, 8838, 8839, 8853, 8853, 8857, 8857, 8869, 8869, 8895, 8895, 8978, 8978, 9312, 9449, 9451, 9547, 9552, 9587, 9600, 9615, 9618, 9621, 9632, 9633, 9635, 9641, 9650, 9651, 9654, 9655, 9660, 9661, 9664, 9665, 9670, 9672, 9675, 9675, 9678, 9681, 9698, 9701, 9711, 9711, 9733, 9734, 9737, 9737, 9742, 9743, 9756, 9756, 9758, 9758, 9792, 9792, 9794, 9794, 9824, 9825, 9827, 9829, 9831, 9834, 9836, 9837, 9839, 9839, 9886, 9887, 9919, 9919, 9926, 9933, 9935, 9939, 9941, 9953, 9955, 9955, 9960, 9961, 9963, 9969, 9972, 9972, 9974, 9977, 9979, 9980, 9982, 9983, 10045, 10045, 10102, 10111, 11094, 11097, 12872, 12879, 57344, 63743, 65024, 65039, 65533, 65533, 127232, 127242, 127248, 127277, 127280, 127337, 127344, 127373, 127375, 127376, 127387, 127404, 917760, 917999, 983040, 1048573, 1048576, 1114109];
@@ -9204,7 +9204,7 @@ var init_lookup_data = __esm(() => {
   wideRanges = [4352, 4447, 8986, 8987, 9001, 9002, 9193, 9196, 9200, 9200, 9203, 9203, 9725, 9726, 9748, 9749, 9776, 9783, 9800, 9811, 9855, 9855, 9866, 9871, 9875, 9875, 9889, 9889, 9898, 9899, 9917, 9918, 9924, 9925, 9934, 9934, 9940, 9940, 9962, 9962, 9970, 9971, 9973, 9973, 9978, 9978, 9981, 9981, 9989, 9989, 9994, 9995, 10024, 10024, 10060, 10060, 10062, 10062, 10067, 10069, 10071, 10071, 10133, 10135, 10160, 10160, 10175, 10175, 11035, 11036, 11088, 11088, 11093, 11093, 11904, 11929, 11931, 12019, 12032, 12245, 12272, 12287, 12289, 12350, 12353, 12438, 12441, 12543, 12549, 12591, 12593, 12686, 12688, 12773, 12783, 12830, 12832, 12871, 12880, 42124, 42128, 42182, 43360, 43388, 44032, 55203, 63744, 64255, 65040, 65049, 65072, 65106, 65108, 65126, 65128, 65131, 94176, 94180, 94192, 94198, 94208, 101589, 101631, 101662, 101760, 101874, 110576, 110579, 110581, 110587, 110589, 110590, 110592, 110882, 110898, 110898, 110928, 110930, 110933, 110933, 110948, 110951, 110960, 111355, 119552, 119638, 119648, 119670, 126980, 126980, 127183, 127183, 127374, 127374, 127377, 127386, 127488, 127490, 127504, 127547, 127552, 127560, 127568, 127569, 127584, 127589, 127744, 127776, 127789, 127797, 127799, 127868, 127870, 127891, 127904, 127946, 127951, 127955, 127968, 127984, 127988, 127988, 127992, 128062, 128064, 128064, 128066, 128252, 128255, 128317, 128331, 128334, 128336, 128359, 128378, 128378, 128405, 128406, 128420, 128420, 128507, 128591, 128640, 128709, 128716, 128716, 128720, 128722, 128725, 128728, 128732, 128735, 128747, 128748, 128756, 128764, 128992, 129003, 129008, 129008, 129292, 129338, 129340, 129349, 129351, 129535, 129648, 129660, 129664, 129674, 129678, 129734, 129736, 129736, 129741, 129756, 129759, 129770, 129775, 129784, 131072, 196605, 196608, 262141];
 });
 
-// ../../node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/utilities.js
+// node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/utilities.js
 var isInRange = (ranges, codePoint) => {
   let low = 0;
   let high = Math.floor(ranges.length / 2) - 1;
@@ -9222,7 +9222,7 @@ var isInRange = (ranges, codePoint) => {
   return false;
 };
 
-// ../../node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/lookup.js
+// node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/lookup.js
 function findWideFastPathRange(ranges) {
   let fastPathStart = ranges[0];
   let fastPathEnd = ranges[1];
@@ -9273,7 +9273,7 @@ var init_lookup = __esm(() => {
   [wideFastPathStart, wideFastPathEnd] = findWideFastPathRange(wideRanges);
 });
 
-// ../../node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/index.js
+// node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/index.js
 function validate(codePoint) {
   if (!Number.isSafeInteger(codePoint)) {
     throw new TypeError(`Expected a code point, got \`${typeof codePoint}\`.`);
@@ -9291,7 +9291,7 @@ var init_get_east_asian_width = __esm(() => {
   init_lookup();
 });
 
-// ../../node_modules/.bun/string-width@8.2.0/node_modules/string-width/index.js
+// node_modules/.bun/string-width@8.2.0/node_modules/string-width/index.js
 function isDoubleWidthNonRgiEmojiSequence(segment) {
   if (segment.length > 50) {
     return false;
@@ -9368,31 +9368,31 @@ var init_string_width = __esm(() => {
   extendedPictographicRegex = /\p{Extended_Pictographic}/gu;
 });
 
-// packages/ag-term/src/ansi/utils.ts
+// vendor/silvery/packages/ag-term/src/ansi/utils.ts
 var init_utils2 = () => {};
 
-// packages/ag-term/src/ansi/constants.ts
+// vendor/silvery/packages/ag-term/src/ansi/constants.ts
 var init_constants = () => {};
 
-// packages/ag-term/src/ansi/underline.ts
+// vendor/silvery/packages/ag-term/src/ansi/underline.ts
 var init_underline = __esm(() => {
   init_constants();
   init_detection();
 });
 
-// packages/ag-term/src/ansi/hyperlink.ts
+// vendor/silvery/packages/ag-term/src/ansi/hyperlink.ts
 var init_hyperlink = __esm(() => {
   init_constants();
 });
 
-// packages/ag-term/src/ansi/ansi.ts
+// vendor/silvery/packages/ag-term/src/ansi/ansi.ts
 var ESC = "\x1B", CSI2, OSC2;
 var init_ansi = __esm(() => {
   CSI2 = `${ESC}[`;
   OSC2 = `${ESC}]`;
 });
 
-// packages/ag-term/src/ansi/index.ts
+// vendor/silvery/packages/ag-term/src/ansi/index.ts
 var _lazyTerm, term;
 var init_ansi2 = __esm(() => {
   init_term();
@@ -9422,7 +9422,7 @@ var init_ansi2 = __esm(() => {
   });
 });
 
-// ../../node_modules/.bun/ansi-styles@6.2.3/node_modules/ansi-styles/index.js
+// node_modules/.bun/ansi-styles@6.2.3/node_modules/ansi-styles/index.js
 function assembleStyles2() {
   const codes = new Map;
   for (const [groupName, group] of Object.entries(styles3)) {
@@ -9598,7 +9598,7 @@ var init_ansi_styles2 = __esm(() => {
   ansi_styles_default2 = ansiStyles2;
 });
 
-// ../../node_modules/.bun/is-fullwidth-code-point@5.1.0/node_modules/is-fullwidth-code-point/index.js
+// node_modules/.bun/is-fullwidth-code-point@5.1.0/node_modules/is-fullwidth-code-point/index.js
 function isFullwidthCodePoint(codePoint) {
   if (!Number.isInteger(codePoint)) {
     return false;
@@ -9609,7 +9609,7 @@ var init_is_fullwidth_code_point = __esm(() => {
   init_get_east_asian_width();
 });
 
-// ../../node_modules/.bun/slice-ansi@8.0.0/node_modules/slice-ansi/tokenize-ansi.js
+// node_modules/.bun/slice-ansi@8.0.0/node_modules/slice-ansi/tokenize-ansi.js
 function isSgrParameterCharacter(codePoint) {
   return codePoint >= CODE_POINT_0 && codePoint <= CODE_POINT_9 || codePoint === CODE_POINT_SEMICOLON || codePoint === CODE_POINT_COLON;
 }
@@ -10184,7 +10184,7 @@ var init_tokenize_ansi = __esm(() => {
   }
 });
 
-// ../../node_modules/.bun/slice-ansi@8.0.0/node_modules/slice-ansi/index.js
+// node_modules/.bun/slice-ansi@8.0.0/node_modules/slice-ansi/index.js
 function applySgrFragments(activeStyles, fragments) {
   for (const fragment of fragments) {
     switch (fragment.type) {
@@ -10391,7 +10391,7 @@ var init_slice_ansi = __esm(() => {
   };
 });
 
-// packages/ag-term/src/unicode.ts
+// vendor/silvery/packages/ag-term/src/unicode.ts
 class DisplayWidthCache {
   cache = new Map;
   maxSize;
@@ -10822,7 +10822,7 @@ var init_unicode = __esm(() => {
   };
 });
 
-// packages/ag-term/src/pipeline/diff-buffers.ts
+// vendor/silvery/packages/ag-term/src/pipeline/diff-buffers.ts
 function createEmptyCellChange() {
   return {
     x: 0,
@@ -11287,7 +11287,7 @@ var init_path = __esm(() => {
   path_default = posix;
 });
 
-// packages/ag-term/src/pipeline/output-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/output-phase.ts
 function outputGraphemeWidth(g, ctx) {
   return ctx.measurer ? ctx.measurer.graphemeWidth(g) : graphemeWidth(g);
 }
@@ -12981,7 +12981,7 @@ var init_output_phase = __esm(() => {
   wideCharLookupCell = createMutableCell();
 });
 
-// packages/ag-term/src/adapters/terminal-adapter.ts
+// vendor/silvery/packages/ag-term/src/adapters/terminal-adapter.ts
 function createTerminalMeasurer(measurer) {
   const dw = measurer ? measurer.displayWidth.bind(measurer) : displayWidth;
   return {
@@ -13218,7 +13218,7 @@ var init_terminal_adapter = __esm(() => {
   };
 });
 
-// ../../node_modules/.bun/scheduler@0.27.0/node_modules/scheduler/cjs/scheduler.production.js
+// node_modules/.bun/scheduler@0.27.0/node_modules/scheduler/cjs/scheduler.production.js
 var exports_scheduler_production = {};
 __export(exports_scheduler_production, {
   unstable_wrapCallback: () => $unstable_wrapCallback,
@@ -13478,7 +13478,7 @@ var init_scheduler_production = __esm(() => {
   $unstable_shouldYield = shouldYieldToHost;
 });
 
-// ../../node_modules/.bun/scheduler@0.27.0/node_modules/scheduler/index.js
+// node_modules/.bun/scheduler@0.27.0/node_modules/scheduler/index.js
 var require_scheduler = __commonJS((exports, module) => {
   init_scheduler_production();
   if (true) {
@@ -13486,7 +13486,7 @@ var require_scheduler = __commonJS((exports, module) => {
   } else {}
 });
 
-// ../../node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/cjs/react-reconciler.production.js
+// node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/cjs/react-reconciler.production.js
 var require_react_reconciler_production = __commonJS((exports, module) => {
   var React = __toESM(require_react());
   var Scheduler = __toESM(require_scheduler());
@@ -20239,14 +20239,14 @@ No matching component was found for:
   Object.defineProperty(module.exports, "__esModule", { value: true });
 });
 
-// ../../node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/index.js
+// node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/index.js
 var require_react_reconciler = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_react_reconciler_production();
   } else {}
 });
 
-// ../../node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/cjs/react-reconciler-constants.production.js
+// node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/cjs/react-reconciler-constants.production.js
 var require_react_reconciler_constants_production = __commonJS((exports) => {
   exports.ConcurrentRoot = 1;
   exports.ContinuousEventPriority = 8;
@@ -20257,14 +20257,14 @@ var require_react_reconciler_constants_production = __commonJS((exports) => {
   exports.NoEventPriority = 0;
 });
 
-// ../../node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/constants.js
+// node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/constants.js
 var require_constants = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_react_reconciler_constants_production();
   } else {}
 });
 
-// ../../node_modules/.bun/react@19.2.4/node_modules/react/cjs/react-jsx-runtime.production.js
+// node_modules/.bun/react@19.2.4/node_modules/react/cjs/react-jsx-runtime.production.js
 var exports_react_jsx_runtime_production = {};
 __export(exports_react_jsx_runtime_production, {
   jsxs: () => $jsxs,
@@ -20299,7 +20299,7 @@ var init_react_jsx_runtime_production = __esm(() => {
   $jsxs = jsxProd;
 });
 
-// ../../node_modules/.bun/react@19.2.4/node_modules/react/jsx-runtime.js
+// node_modules/.bun/react@19.2.4/node_modules/react/jsx-runtime.js
 var require_jsx_runtime = __commonJS((exports, module) => {
   init_react_jsx_runtime_production();
   if (true) {
@@ -20307,7 +20307,7 @@ var require_jsx_runtime = __commonJS((exports, module) => {
   } else {}
 });
 
-// ../../node_modules/.bun/@xterm+xterm@6.0.0/node_modules/@xterm/xterm/lib/xterm.mjs
+// node_modules/.bun/@xterm+xterm@6.0.0/node_modules/@xterm/xterm/lib/xterm.mjs
 var zs = Object.defineProperty;
 var Rl = Object.getOwnPropertyDescriptor;
 var Ll = (s, t) => {
@@ -30008,7 +30008,7 @@ var Dl = class extends D {
   }
 };
 
-// ../../node_modules/.bun/@xterm+addon-fit@0.11.0/node_modules/@xterm/addon-fit/lib/addon-fit.mjs
+// node_modules/.bun/@xterm+addon-fit@0.11.0/node_modules/@xterm/addon-fit/lib/addon-fit.mjs
 var h = 2;
 var _ = 1;
 var o = class {
@@ -30034,12 +30034,12 @@ var o = class {
   }
 };
 
-// packages/ag-term/src/xterm/index.ts
+// vendor/silvery/packages/ag-term/src/xterm/index.ts
 init_terminal_adapter();
 await init_flexily_zero_adapter();
 var import_react24 = __toESM(require_react(), 1);
 
-// packages/ag-term/src/layout-engine.ts
+// vendor/silvery/packages/ag-term/src/layout-engine.ts
 var layoutEngine = null;
 function setLayoutEngine(engine) {
   layoutEngine = engine;
@@ -30054,19 +30054,19 @@ function getConstants() {
   return getLayoutEngine().constants;
 }
 
-// packages/ag-term/src/pipeline/index.ts
+// vendor/silvery/packages/ag-term/src/pipeline/index.ts
 init_index_browser();
 init_unicode();
 
-// packages/ag-term/src/ag.ts
+// vendor/silvery/packages/ag-term/src/ag.ts
 init_index_browser();
 init_buffer();
 init_unicode();
 
-// packages/ag-term/src/pipeline/measure-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/measure-phase.ts
 init_unicode();
 
-// packages/ag-term/src/pipeline/collect-text.ts
+// vendor/silvery/packages/ag-term/src/pipeline/collect-text.ts
 function collectPlainText(node) {
   if (node.textContent !== undefined)
     return node.textContent;
@@ -30098,7 +30098,7 @@ function collectPlainTextSkipHidden(node) {
   return result;
 }
 
-// packages/ag-term/src/pipeline/helpers.ts
+// vendor/silvery/packages/ag-term/src/pipeline/helpers.ts
 function getPadding(props) {
   return {
     top: props.paddingTop ?? props.paddingY ?? props.padding ?? 0,
@@ -30119,7 +30119,7 @@ function getBorderSize(props) {
   };
 }
 
-// packages/ag-term/src/pipeline/measure-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/measure-phase.ts
 function measurePhase(root, ctx) {
   traverseTree(root, (node) => {
     if (!node.layoutNode)
@@ -30221,10 +30221,10 @@ function getTextWidth(text, ctx) {
   return displayWidthAnsi(text);
 }
 
-// packages/ag-term/src/pipeline/layout-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/layout-phase.ts
 init_index_browser();
 
-// packages/ag-term/src/pipeline/measure-stats.ts
+// vendor/silvery/packages/ag-term/src/pipeline/measure-stats.ts
 var measureStats = {
   calls: 0,
   cacheHits: 0,
@@ -30238,7 +30238,7 @@ var measureStats = {
   }
 };
 
-// packages/ag/src/types.ts
+// vendor/silvery/packages/ag/src/types.ts
 function rectEqual(a, b2) {
   if (a === b2)
     return true;
@@ -30247,7 +30247,7 @@ function rectEqual(a, b2) {
   return a.x === b2.x && a.y === b2.y && a.width === b2.width && a.height === b2.height;
 }
 
-// packages/ag-term/src/pipeline/layout-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/layout-phase.ts
 var log2 = createLogger("silvery:layout");
 function layoutPhase(root, width, height) {
   const prevLayout = root.contentRect;
@@ -30624,11 +30624,11 @@ function computeStickyRenderRects(parent) {
   }
 }
 
-// packages/ag-term/src/pipeline/render-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/render-phase.ts
 init_index_browser();
 init_buffer();
 
-// packages/ag-term/src/pipeline/render-helpers.ts
+// vendor/silvery/packages/ag-term/src/pipeline/render-helpers.ts
 init_buffer();
 init_state();
 init_unicode();
@@ -30638,7 +30638,7 @@ function getTextWidth2(text, ctx) {
   return displayWidthAnsi(text);
 }
 
-// packages/ag-term/src/pipeline/render-text.ts
+// vendor/silvery/packages/ag-term/src/pipeline/render-text.ts
 init_buffer();
 init_unicode();
 var bgConflictMode = (() => {
@@ -30702,7 +30702,7 @@ function truncateText(text, width, mode, ctx) {
   return startPart + ellipsis + endPart;
 }
 
-// packages/ag-term/src/pipeline/render-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/render-phase.ts
 init_state();
 var contentLog = createLogger("silvery:content");
 var traceLog = createLogger("silvery:content:trace");
@@ -30710,10 +30710,10 @@ var cellLog = createLogger("silvery:content:cell");
 var _instrumentEnabled = typeof process !== "undefined" && !!(process.env?.SILVERY_STRICT || process.env?.SILVERY_INSTRUMENT);
 var _nodeTraceEnabled = typeof process !== "undefined" && !!process.env?.SILVERY_STRICT;
 
-// packages/ag-term/src/ag.ts
+// vendor/silvery/packages/ag-term/src/ag.ts
 var log3 = createLogger("silvery:pipeline");
 var baseLog = createLogger("@silvery/ag-react");
-// packages/ag-term/src/render-adapter.ts
+// vendor/silvery/packages/ag-term/src/render-adapter.ts
 var currentAdapter = null;
 function setRenderAdapter(adapter) {
   currentAdapter = adapter;
@@ -30728,7 +30728,7 @@ function hasRenderAdapter() {
   return currentAdapter !== null;
 }
 
-// packages/ag-term/src/pipeline/render-phase-adapter.ts
+// vendor/silvery/packages/ag-term/src/pipeline/render-phase-adapter.ts
 init_unicode();
 function renderPhaseAdapter(root) {
   if (!hasRenderAdapter()) {
@@ -31230,7 +31230,7 @@ function renderNormalChildren(node, buffer, scrollOffset, props, clipBounds) {
   }
 }
 
-// packages/ag-term/src/pipeline/index.ts
+// vendor/silvery/packages/ag-term/src/pipeline/index.ts
 init_output_phase();
 init_output_phase();
 var log4 = createLogger("silvery:pipeline");
@@ -31350,14 +31350,14 @@ function executeRenderAdapter(root, width, height, prevBuffer, options = "fullsc
     __callDispose(__stack8, _err8, _hasErr8);
   }
 }
-// packages/ag-react/src/reconciler/index.ts
+// vendor/silvery/packages/ag-react/src/reconciler/index.ts
 var import_react_reconciler = __toESM(require_react_reconciler(), 1);
 
-// packages/ag-react/src/reconciler/host-config.ts
+// vendor/silvery/packages/ag-react/src/reconciler/host-config.ts
 var import_react = __toESM(require_react(), 1);
 var import_constants5 = __toESM(require_constants(), 1);
 
-// packages/ag-react/src/reconciler/helpers.ts
+// vendor/silvery/packages/ag-react/src/reconciler/helpers.ts
 var LAYOUT_PROPS = new Set([
   "width",
   "height",
@@ -31475,7 +31475,7 @@ function propsEqual(a, b2) {
   return true;
 }
 
-// packages/ag-react/src/reconciler/nodes.ts
+// vendor/silvery/packages/ag-react/src/reconciler/nodes.ts
 init_index_browser();
 init_unicode();
 var measureLog = createLogger("silvery:measure");
@@ -31873,7 +31873,7 @@ function justifyToConstant(justify) {
   return map[justify] ?? c.JUSTIFY_FLEX_START;
 }
 
-// packages/ag-react/src/reconciler/host-config.ts
+// vendor/silvery/packages/ag-react/src/reconciler/host-config.ts
 function normalizeNodeType(type) {
   if (type === "ink-box")
     return "silvery-box";
@@ -32310,7 +32310,7 @@ var hostConfig = {
   }
 };
 
-// packages/ag-react/src/reconciler/index.ts
+// vendor/silvery/packages/ag-react/src/reconciler/index.ts
 var reconciler = import_react_reconciler.default(hostConfig);
 function createContainer(onRender) {
   const root = createRootNode();
@@ -32323,7 +32323,7 @@ function getContainerRoot(container) {
   return container.root;
 }
 
-// packages/ag-react/src/context.ts
+// vendor/silvery/packages/ag-react/src/context.ts
 var import_react2 = __toESM(require_react(), 1);
 var TermContext = import_react2.createContext(null);
 var NodeContext = import_react2.createContext(null);
@@ -32332,7 +32332,7 @@ var StderrContext = import_react2.createContext(null);
 var RuntimeContext = import_react2.createContext(null);
 var FocusManagerContext = import_react2.createContext(null);
 
-// packages/create/src/focus-queries.ts
+// vendor/silvery/packages/create/src/focus-queries.ts
 function isFocusable(node) {
   if (node.hidden)
     return false;
@@ -32452,7 +32452,7 @@ function getExplicitFocusLink(node, direction) {
   return typeof value === "string" ? value : null;
 }
 
-// packages/ag/src/focus-manager.ts
+// vendor/silvery/packages/ag/src/focus-manager.ts
 function createFocusManager(options) {
   const onFocusChange = options?.onFocusChange;
   let activeElement = null;
@@ -32728,10 +32728,10 @@ function createFocusManager(options) {
   };
 }
 
-// packages/ag-term/src/xterm/index.ts
+// vendor/silvery/packages/ag-term/src/xterm/index.ts
 init_keys();
 
-// packages/ag-term/src/xterm/xterm-provider.ts
+// vendor/silvery/packages/ag-term/src/xterm/xterm-provider.ts
 var SGR_MOUSE_RE2 = /\x1b\[<(\d+);(\d+);(\d+)([Mm])/g;
 var MOUSE_ENABLE = "\x1B[?1000h\x1B[?1006h";
 var MOUSE_DISABLE = "\x1B[?1000l\x1B[?1006l";
@@ -32837,7 +32837,7 @@ function createXtermProvider(terminal) {
   };
 }
 
-// packages/theme/src/ThemeContext.tsx
+// vendor/silvery/packages/theme/src/ThemeContext.tsx
 init_state();
 init_palettes();
 var import_react3 = __toESM(require_react(), 1);
@@ -32847,22 +32847,22 @@ function ThemeProvider({ theme, children }) {
   return import_react3.default.createElement(ThemeContext.Provider, { value: theme }, children);
 }
 
-// packages/ag-term/src/xterm/index.ts
+// vendor/silvery/packages/ag-term/src/xterm/index.ts
 init_palettes();
-// packages/theme/src/theme.ts
+// vendor/silvery/packages/theme/src/theme.ts
 init_derive();
 
-// packages/theme/src/builder.ts
+// vendor/silvery/packages/theme/src/builder.ts
 init_derive();
-// packages/theme/src/generators.ts
+// vendor/silvery/packages/theme/src/generators.ts
 init_palettes();
 
-// packages/theme/src/builder.ts
+// vendor/silvery/packages/theme/src/builder.ts
 init_palettes();
 
-// packages/theme/src/theme.ts
+// vendor/silvery/packages/theme/src/theme.ts
 init_state();
-// packages/theme/src/validate-theme.ts
+// vendor/silvery/packages/theme/src/validate-theme.ts
 var THEME_TOKEN_KEYS = [
   "bg",
   "fg",
@@ -32900,26 +32900,26 @@ var THEME_TOKEN_KEYS = [
 ];
 var ALL_KNOWN_KEYS = new Set([...THEME_TOKEN_KEYS, "name", "palette"]);
 
-// packages/theme/src/theme.ts
+// vendor/silvery/packages/theme/src/theme.ts
 init_contrast();
-// packages/theme/src/auto-generate.ts
+// vendor/silvery/packages/theme/src/auto-generate.ts
 init_derive();
-// packages/theme/src/detect.ts
+// vendor/silvery/packages/theme/src/detect.ts
 init_derive();
 init_nord();
 init_catppuccin();
 init_palettes();
 
-// packages/theme/src/theme.ts
+// vendor/silvery/packages/theme/src/theme.ts
 init_palettes();
 init_palettes();
-// packages/ag-term/src/xterm/index.ts
+// vendor/silvery/packages/ag-term/src/xterm/index.ts
 init_state();
 
-// packages/ag-react/src/hooks/useCursor.ts
+// vendor/silvery/packages/ag-react/src/hooks/useCursor.ts
 var import_react5 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/hooks/useLayout.ts
+// vendor/silvery/packages/ag-react/src/hooks/useLayout.ts
 var import_react4 = __toESM(require_react(), 1);
 function getInnerRect(node) {
   const rect = node.contentRect;
@@ -32991,7 +32991,7 @@ function useScreenRectCallback(callback) {
   }, [node]);
 }
 
-// packages/ag-react/src/hooks/useCursor.ts
+// vendor/silvery/packages/ag-react/src/hooks/useCursor.ts
 function createCursorStore() {
   const store = {
     state: null,
@@ -33094,7 +33094,7 @@ function useCursor(position) {
   }, [visible]);
 }
 
-// packages/ag-react/src/components/Box.tsx
+// vendor/silvery/packages/ag-react/src/components/Box.tsx
 var import_react6 = __toESM(require_react(), 1);
 var jsx_runtime = __toESM(require_jsx_runtime(), 1);
 var Box = import_react6.forwardRef(function Box2(props, ref) {
@@ -33142,7 +33142,7 @@ var Box = import_react6.forwardRef(function Box2(props, ref) {
     })
   });
 });
-// packages/ag-react/src/components/Text.tsx
+// vendor/silvery/packages/ag-react/src/components/Text.tsx
 var import_react7 = __toESM(require_react(), 1);
 var jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
 var Text2 = import_react7.forwardRef(function Text3(props, ref) {
@@ -33159,14 +33159,14 @@ var Text2 = import_react7.forwardRef(function Text3(props, ref) {
     children
   });
 });
-// packages/ag-react/src/ui/components/Divider.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Divider.tsx
 var jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/TextInput.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/TextInput.tsx
 var import_react22 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/ui/components/useReadline.ts
+// vendor/silvery/packages/ag-react/src/ui/components/useReadline.ts
 var import_react21 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useInput.ts
+// vendor/silvery/packages/ag-react/src/hooks/useInput.ts
 var import_react8 = __toESM(require_react(), 1);
 function isModifierOnlyEvent(input, key) {
   if (input !== "")
@@ -33208,15 +33208,15 @@ function useInput(inputHandler, options = {}) {
     });
   }, [isActive, rt2]);
 }
-// packages/ag-react/src/hooks/useRuntime.ts
+// vendor/silvery/packages/ag-react/src/hooks/useRuntime.ts
 var import_react9 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useApp.ts
+// vendor/silvery/packages/ag-react/src/hooks/useApp.ts
 var import_react10 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useStdout.ts
+// vendor/silvery/packages/ag-react/src/hooks/useStdout.ts
 var import_react11 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useStderr.ts
+// vendor/silvery/packages/ag-react/src/hooks/useStderr.ts
 var import_react12 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useFocusable.ts
+// vendor/silvery/packages/ag-react/src/hooks/useFocusable.ts
 var import_react13 = __toESM(require_react(), 1);
 function useFocusable() {
   const fm = import_react13.useContext(FocusManagerContext);
@@ -33269,32 +33269,32 @@ function useFocusable() {
     focusOrigin
   };
 }
-// packages/ag-react/src/hooks/useFocusWithin.ts
+// vendor/silvery/packages/ag-react/src/hooks/useFocusWithin.ts
 var import_react14 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useFocusManager.ts
+// vendor/silvery/packages/ag-react/src/hooks/useFocusManager.ts
 var import_react15 = __toESM(require_react(), 1);
-// packages/ag-react/src/contexts/InputLayerContext.tsx
+// vendor/silvery/packages/ag-react/src/contexts/InputLayerContext.tsx
 var import_react16 = __toESM(require_react(), 1);
 var jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
 var InputLayerContext = import_react16.createContext(null);
-// packages/ag-react/src/hooks/useTerminalFocused.ts
+// vendor/silvery/packages/ag-react/src/hooks/useTerminalFocused.ts
 var import_react17 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useScrollRegion.ts
+// vendor/silvery/packages/ag-react/src/hooks/useScrollRegion.ts
 var import_react18 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useSelection.tsx
+// vendor/silvery/packages/ag-react/src/hooks/useSelection.tsx
 var import_react19 = __toESM(require_react(), 1);
 
-// packages/ag-term/src/clipboard.ts
+// vendor/silvery/packages/ag-term/src/clipboard.ts
 var ESC2 = "\x1B";
 var OSC52_PREFIX = `${ESC2}]52;c;`;
 
-// packages/ag-react/src/hooks/useSelection.tsx
+// vendor/silvery/packages/ag-react/src/hooks/useSelection.tsx
 var SelectionCtx = import_react19.createContext(null);
-// packages/ag-react/src/hooks/useScrollbackItem.tsx
+// vendor/silvery/packages/ag-react/src/hooks/useScrollbackItem.tsx
 var import_react20 = __toESM(require_react(), 1);
 var jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
 var ScrollbackItemCtx = import_react20.createContext(null);
-// packages/ag-react/src/hooks/readline-ops.ts
+// vendor/silvery/packages/ag-react/src/hooks/readline-ops.ts
 var MAX_KILL_RING_SIZE = 10;
 var killRing = [];
 function addToKillRing(text) {
@@ -33432,7 +33432,7 @@ function handleReadlineKey(input, key, value, cursor, yankState) {
   return null;
 }
 
-// packages/ag-react/src/ui/components/useReadline.ts
+// vendor/silvery/packages/ag-react/src/ui/components/useReadline.ts
 function useReadline({
   initialValue = "",
   onChange,
@@ -33535,7 +33535,7 @@ function useReadline({
   };
 }
 
-// packages/ag-react/src/ui/components/TextInput.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/TextInput.tsx
 var jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
 var TextInput = import_react22.forwardRef(function TextInput2({
   value: controlledValue,
@@ -33687,11 +33687,11 @@ var TextInput = import_react22.forwardRef(function TextInput2({
     ]
   });
 });
-// packages/ag-react/src/ui/components/Spinner.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Spinner.tsx
 var import_react23 = __toESM(require_react(), 1);
 var jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
 
-// packages/ag-term/src/xterm/index.ts
+// vendor/silvery/packages/ag-term/src/xterm/index.ts
 init_terminal_adapter();
 var cachedXtermTheme = null;
 function deriveThemeFromXterm(_terminal) {
@@ -33922,7 +33922,7 @@ function renderToXterm(element, terminal, options = {}) {
   };
 }
 
-// examples/web/xterm-app.tsx
+// vendor/silvery/examples/web/xterm-app.tsx
 var jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
 function SizeDisplay() {
   const { width, height } = useContentRect();
@@ -34076,4 +34076,4 @@ if (termContainer) {
   window.xtermTerminal = term2;
 }
 
-//# debugId=51A58E7DF0AFAF8D64756E2164756E21
+//# debugId=A4655D7C3DFE0A6264756E2164756E21

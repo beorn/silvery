@@ -396,7 +396,13 @@ export function createMouseEventProcessor(options?: MouseEventProcessorOptions):
  */
 export function updateKeyboardModifiers(
   state: MouseEventProcessorState,
-  key: { super?: boolean; hyper?: boolean; capsLock?: boolean; numLock?: boolean; eventType?: string },
+  key: {
+    super?: boolean
+    hyper?: boolean
+    capsLock?: boolean
+    numLock?: boolean
+    eventType?: string
+  },
 ): void {
   // On key release events, clear the modifier. On press/repeat, set it.
   const isRelease = key.eventType === "release"

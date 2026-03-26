@@ -201,7 +201,11 @@ describe("cellToFrameCell", () => {
     { label: "index 1 (red) → RGB", input: 1, expected: { r: 128, g: 0, b: 0 } },
     { label: "index 15 (bright white) → RGB", input: 15, expected: { r: 255, g: 255, b: 255 } },
     { label: "index 232 (gray) → RGB", input: 232, expected: { r: 8, g: 8, b: 8 } },
-    { label: "true color RGB → passthrough", input: { r: 42, g: 84, b: 126 }, expected: { r: 42, g: 84, b: 126 } },
+    {
+      label: "true color RGB → passthrough",
+      input: { r: 42, g: 84, b: 126 },
+      expected: { r: 42, g: 84, b: 126 },
+    },
     { label: "DEFAULT_BG sentinel → null", input: DEFAULT_BG, expected: null },
   ])("fg color: $label", ({ input, expected }) => {
     const cell: Cell = { ...baseCell, fg: input }
@@ -216,7 +220,11 @@ describe("cellToFrameCell", () => {
   test.each<{ label: string; input: Color; expected: { r: number; g: number; b: number } | null }>([
     { label: "null → null", input: null, expected: null },
     { label: "index 4 (blue) → RGB", input: 4, expected: { r: 0, g: 0, b: 128 } },
-    { label: "true color RGB → passthrough", input: { r: 1, g: 2, b: 3 }, expected: { r: 1, g: 2, b: 3 } },
+    {
+      label: "true color RGB → passthrough",
+      input: { r: 1, g: 2, b: 3 },
+      expected: { r: 1, g: 2, b: 3 },
+    },
     { label: "DEFAULT_BG sentinel → null", input: DEFAULT_BG, expected: null },
   ])("bg color: $label", ({ input, expected }) => {
     const cell: Cell = { ...baseCell, bg: input }

@@ -10,11 +10,11 @@ import { GridCell } from "silvery"
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `sectionIndex` | `number` | **required** | Section index (e.g., column index in a kanban board) |
-| `itemIndex` | `number` | **required** | Item index within the section |
-| `children` | `ReactNode` | **required** | Child content to render |
+| Prop           | Type        | Default      | Description                                          |
+| -------------- | ----------- | ------------ | ---------------------------------------------------- |
+| `sectionIndex` | `number`    | **required** | Section index (e.g., column index in a kanban board) |
+| `itemIndex`    | `number`    | **required** | Item index within the section                        |
+| `children`     | `ReactNode` | **required** | Child content to render                              |
 
 ## Usage
 

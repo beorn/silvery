@@ -410,7 +410,10 @@ export function renderToXterm(
   function wrapElement(el: ReactElement): ReactElement {
     // Always wrap with ThemeProvider + CursorProvider
     const withCursor = React.createElement(CursorProvider, { store: cursorStore }, el)
-    const themed = React.createElement(ThemeProvider, { theme: deriveThemeFromXterm(terminal), children: withCursor })
+    const themed = React.createElement(ThemeProvider, {
+      theme: deriveThemeFromXterm(terminal),
+      children: withCursor,
+    })
 
     if (!inputEnabled || !runtimeContextValue || !focusManager) return themed
     return React.createElement(

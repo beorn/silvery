@@ -34,7 +34,12 @@ function createMockSurface(
     notifyContentChange: () => {},
     reveal: opts?.reveal ?? (vi.fn() as any),
     subscribe: () => () => {},
-    capabilities: { searchableHistory: false, selectableHistory: false, overlayHistory: false, paneSafe: false },
+    capabilities: {
+      searchableHistory: false,
+      selectableHistory: false,
+      overlayHistory: false,
+      paneSafe: false,
+    },
   }
 }
 

@@ -24,6 +24,7 @@ None. All state comes from `SearchProvider` context.
 ## Rendering
 
 When search is active, renders a single line with inverse styling showing:
+
 - The search query prefixed with `/`
 - Match count `[N/M]` or `[no matches]`
 

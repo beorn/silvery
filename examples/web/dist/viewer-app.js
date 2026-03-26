@@ -125,7 +125,7 @@ var __callDispose = (stack, error, hasError) => {
   return next();
 };
 
-// ../../node_modules/.bun/react@19.2.4/node_modules/react/cjs/react.production.js
+// node_modules/.bun/react@19.2.4/node_modules/react/cjs/react.production.js
 var exports_react_production = {};
 __export(exports_react_production, {
   version: () => $version,
@@ -528,7 +528,7 @@ var init_react_production = __esm(() => {
   $isValidElement = isValidElement;
 });
 
-// ../../node_modules/.bun/react@19.2.4/node_modules/react/index.js
+// node_modules/.bun/react@19.2.4/node_modules/react/index.js
 var require_react = __commonJS((exports, module) => {
   init_react_production();
   if (true) {
@@ -536,10 +536,10 @@ var require_react = __commonJS((exports, module) => {
   } else {}
 });
 
-// ../flexily/src/constants.ts
+// vendor/flexily/src/constants.ts
 var FLEX_DIRECTION_COLUMN = 0, FLEX_DIRECTION_COLUMN_REVERSE = 1, FLEX_DIRECTION_ROW = 2, FLEX_DIRECTION_ROW_REVERSE = 3, WRAP_NO_WRAP = 0, WRAP_WRAP = 1, WRAP_WRAP_REVERSE = 2, ALIGN_AUTO = 0, ALIGN_FLEX_START = 1, ALIGN_CENTER = 2, ALIGN_FLEX_END = 3, ALIGN_STRETCH = 4, ALIGN_BASELINE = 5, ALIGN_SPACE_BETWEEN = 6, ALIGN_SPACE_AROUND = 7, ALIGN_SPACE_EVENLY = 8, JUSTIFY_FLEX_START = 0, JUSTIFY_CENTER = 1, JUSTIFY_FLEX_END = 2, JUSTIFY_SPACE_BETWEEN = 3, JUSTIFY_SPACE_AROUND = 4, JUSTIFY_SPACE_EVENLY = 5, EDGE_LEFT = 0, EDGE_TOP = 1, EDGE_RIGHT = 2, EDGE_BOTTOM = 3, EDGE_START = 4, EDGE_END = 5, EDGE_HORIZONTAL = 6, EDGE_VERTICAL = 7, EDGE_ALL = 8, GUTTER_COLUMN = 0, GUTTER_ROW = 1, GUTTER_ALL = 2, DISPLAY_FLEX = 0, DISPLAY_NONE = 1, POSITION_TYPE_STATIC = 0, POSITION_TYPE_RELATIVE = 1, POSITION_TYPE_ABSOLUTE = 2, OVERFLOW_VISIBLE = 0, OVERFLOW_HIDDEN = 1, OVERFLOW_SCROLL = 2, DIRECTION_LTR = 1, DIRECTION_RTL = 2, MEASURE_MODE_UNDEFINED = 0, MEASURE_MODE_EXACTLY = 1, MEASURE_MODE_AT_MOST = 2, UNIT_UNDEFINED = 0, UNIT_POINT = 1, UNIT_PERCENT = 2, UNIT_AUTO = 3;
 
-// ../flexily/src/utils.ts
+// vendor/flexily/src/utils.ts
 function setEdgeValue(arr, edge, value, unit) {
   const v2 = { value, unit };
   switch (edge) {
@@ -695,7 +695,7 @@ var init_utils = __esm(() => {
   traversalStack = [];
 });
 
-// ../../node_modules/.bun/ms@2.1.3/node_modules/ms/index.js
+// node_modules/.bun/ms@2.1.3/node_modules/ms/index.js
 var require_ms = __commonJS((exports, module) => {
   var s15 = 1000;
   var m = s15 * 60;
@@ -805,7 +805,7 @@ var require_ms = __commonJS((exports, module) => {
   }
 });
 
-// ../../node_modules/.bun/debug@4.4.3/node_modules/debug/src/common.js
+// node_modules/.bun/debug@4.4.3/node_modules/debug/src/common.js
 var require_common = __commonJS((exports, module) => {
   function setup(env) {
     createDebug.debug = createDebug;
@@ -980,7 +980,7 @@ var require_common = __commonJS((exports, module) => {
   module.exports = setup;
 });
 
-// ../../node_modules/.bun/debug@4.4.3/node_modules/debug/src/browser.js
+// node_modules/.bun/debug@4.4.3/node_modules/debug/src/browser.js
 var require_browser = __commonJS((exports, module) => {
   exports.formatArgs = formatArgs;
   exports.save = save;
@@ -1140,7 +1140,7 @@ var require_browser = __commonJS((exports, module) => {
   };
 });
 
-// ../loggily/src/colors.ts
+// vendor/loggily/src/colors.ts
 function wrap(open, close) {
   if (!enabled)
     return (str) => str;
@@ -1160,7 +1160,7 @@ var init_colors = __esm(() => {
   };
 });
 
-// ../loggily/src/tracing.ts
+// vendor/loggily/src/tracing.ts
 function setIdFormat(format) {
   currentIdFormat = format;
 }
@@ -1221,7 +1221,7 @@ function shouldSample() {
 }
 var currentIdFormat = "simple", simpleSpanCounter = 0, simpleTraceCounter = 0, sampleRate = 1;
 
-// ../loggily/src/core.ts
+// vendor/loggily/src/core.ts
 function getEnv(key) {
   return _process2?.env?.[key];
 }
@@ -1658,7 +1658,7 @@ var init_core = __esm(() => {
   collectedSpans = [];
 });
 
-// ../loggily/src/index.browser.ts
+// vendor/loggily/src/index.browser.ts
 var exports_index_browser = {};
 __export(exports_index_browser, {
   traceparent: () => traceparent,
@@ -1696,7 +1696,7 @@ var init_index_browser = __esm(() => {
   init_core();
 });
 
-// ../flexily/src/logger.ts
+// vendor/flexily/src/logger.ts
 function createFallbackLogger(namespace) {
   try {
     const createDebug = require_browser();
@@ -1744,13 +1744,13 @@ var init_logger = __esm(async () => {
   };
 });
 
-// ../flexily/src/trace.ts
+// vendor/flexily/src/trace.ts
 function getTrace() {
   return _trace;
 }
 var _trace = null;
 
-// ../flexily/src/layout-helpers.ts
+// vendor/flexily/src/layout-helpers.ts
 function isRowDirection(flexDirection) {
   return flexDirection === FLEX_DIRECTION_ROW || flexDirection === FLEX_DIRECTION_ROW_REVERSE;
 }
@@ -1803,7 +1803,7 @@ var init_layout_helpers = __esm(() => {
   init_utils();
 });
 
-// ../flexily/src/layout-traversal.ts
+// vendor/flexily/src/layout-traversal.ts
 function markSubtreeLayoutSeen(node) {
   traversalStack.length = 0;
   traversalStack.push(node);
@@ -1847,7 +1847,7 @@ var init_layout_traversal = __esm(() => {
   init_utils();
 });
 
-// ../flexily/src/layout-stats.ts
+// vendor/flexily/src/layout-stats.ts
 function resetLayoutStats() {
   layoutNodeCalls = 0;
   measureNodeCalls = 0;
@@ -1872,7 +1872,7 @@ function incLayoutCacheHits() {
 }
 var layoutNodeCalls = 0, measureNodeCalls = 0, layoutSizingCalls = 0, layoutPositioningCalls = 0, layoutCacheHits = 0;
 
-// ../flexily/src/layout-measure.ts
+// vendor/flexily/src/layout-measure.ts
 function measureNode(node, availableWidth, availableHeight, direction = DIRECTION_LTR) {
   incMeasureNodeCalls();
   const style = node.style;
@@ -2044,7 +2044,7 @@ var init_layout_measure = __esm(() => {
   init_layout_helpers();
 });
 
-// ../flexily/src/layout-flex-lines.ts
+// vendor/flexily/src/layout-flex-lines.ts
 function growLineArrays(needed) {
   const newSize = Math.max(needed, MAX_FLEX_LINES * 2);
   MAX_FLEX_LINES = newSize;
@@ -2280,7 +2280,7 @@ var init_layout_flex_lines = __esm(() => {
   _lineItemSpacings = new Float64Array(MAX_FLEX_LINES);
 });
 
-// ../flexily/src/layout-zero.ts
+// vendor/flexily/src/layout-zero.ts
 function computeLayout(root, availableWidth, availableHeight, direction = DIRECTION_LTR) {
   const saved = enterLayout();
   try {
@@ -3483,7 +3483,7 @@ var init_layout_zero = __esm(async () => {
   await init_logger();
 });
 
-// ../flexily/src/types.ts
+// vendor/flexily/src/types.ts
 function createValue(value = 0, unit = 0) {
   return { value, unit };
 }
@@ -3516,7 +3516,7 @@ function createDefaultStyle() {
   };
 }
 
-// ../flexily/src/node-zero.ts
+// vendor/flexily/src/node-zero.ts
 var Node2;
 var init_node_zero = __esm(async () => {
   init_utils();
@@ -4147,7 +4147,7 @@ var init_node_zero = __esm(async () => {
   };
 });
 
-// ../flexily/src/index.ts
+// vendor/flexily/src/index.ts
 var init_src = __esm(async () => {
   await __promiseAll([
     init_node_zero(),
@@ -4155,7 +4155,7 @@ var init_src = __esm(async () => {
   ]);
 });
 
-// packages/ag-term/src/adapters/flexily-zero-adapter.ts
+// vendor/silvery/packages/ag-term/src/adapters/flexily-zero-adapter.ts
 class FlexilyZeroNodeAdapter {
   node;
   constructor(node) {
@@ -4378,7 +4378,7 @@ var init_flexily_zero_adapter = __esm(async () => {
   await init_src();
 });
 
-// packages/ag-term/src/ansi/sgr-codes.ts
+// vendor/silvery/packages/ag-term/src/ansi/sgr-codes.ts
 function fgColorCode(color) {
   if (typeof color === "number") {
     if (color >= 0 && color <= 7)
@@ -4396,7 +4396,7 @@ function bgColorCode(color) {
   return `48;2;${color.r};${color.g};${color.b}`;
 }
 
-// packages/ag-term/src/buffer.ts
+// vendor/silvery/packages/ag-term/src/buffer.ts
 function isDefaultBg(color) {
   return color !== null && typeof color === "object" && color.r === -1;
 }
@@ -5668,7 +5668,7 @@ var init_buffer = __esm(() => {
   });
 });
 
-// packages/theme/src/color.ts
+// vendor/silvery/packages/theme/src/color.ts
 function hexToRgb(hex) {
   const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
   if (!match)
@@ -5742,7 +5742,7 @@ function complement(color) {
   return hslToHex(h2 + 180, s15, l);
 }
 
-// packages/theme/src/contrast.ts
+// vendor/silvery/packages/theme/src/contrast.ts
 function channelLuminance(c) {
   const s15 = c / 255;
   return s15 <= 0.03928 ? s15 / 12.92 : Math.pow((s15 + 0.055) / 1.055, 2.4);
@@ -5808,7 +5808,7 @@ function ensureContrast(color, against, minRatio) {
 }
 var init_contrast = () => {};
 
-// packages/theme/src/derive.ts
+// vendor/silvery/packages/theme/src/derive.ts
 function deriveTheme(palette, mode = "truecolor", adjustments) {
   if (mode === "ansi16")
     return deriveAnsi16Theme(palette);
@@ -5970,7 +5970,7 @@ var init_derive = __esm(() => {
   init_contrast();
 });
 
-// packages/theme/src/palettes/catppuccin.ts
+// vendor/silvery/packages/theme/src/palettes/catppuccin.ts
 var catppuccinMocha, catppuccinFrappe, catppuccinMacchiato, catppuccinLatte;
 var init_catppuccin = __esm(() => {
   catppuccinMocha = {
@@ -6079,7 +6079,7 @@ var init_catppuccin = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/nord.ts
+// vendor/silvery/packages/theme/src/palettes/nord.ts
 var nord;
 var init_nord = __esm(() => {
   nord = {
@@ -6110,7 +6110,7 @@ var init_nord = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/dracula.ts
+// vendor/silvery/packages/theme/src/palettes/dracula.ts
 var dracula;
 var init_dracula = __esm(() => {
   dracula = {
@@ -6141,7 +6141,7 @@ var init_dracula = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/solarized.ts
+// vendor/silvery/packages/theme/src/palettes/solarized.ts
 var solarizedDark, solarizedLight;
 var init_solarized = __esm(() => {
   solarizedDark = {
@@ -6198,7 +6198,7 @@ var init_solarized = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/tokyo-night.ts
+// vendor/silvery/packages/theme/src/palettes/tokyo-night.ts
 var tokyoNight, tokyoNightStorm, tokyoNightDay;
 var init_tokyo_night = __esm(() => {
   tokyoNight = {
@@ -6281,7 +6281,7 @@ var init_tokyo_night = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/one-dark.ts
+// vendor/silvery/packages/theme/src/palettes/one-dark.ts
 var oneDark;
 var init_one_dark = __esm(() => {
   oneDark = {
@@ -6312,7 +6312,7 @@ var init_one_dark = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/gruvbox.ts
+// vendor/silvery/packages/theme/src/palettes/gruvbox.ts
 var gruvboxDark, gruvboxLight;
 var init_gruvbox = __esm(() => {
   gruvboxDark = {
@@ -6369,7 +6369,7 @@ var init_gruvbox = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/rose-pine.ts
+// vendor/silvery/packages/theme/src/palettes/rose-pine.ts
 var rosePine, rosePineMoon, rosePineDawn;
 var init_rose_pine = __esm(() => {
   rosePine = {
@@ -6452,7 +6452,7 @@ var init_rose_pine = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/kanagawa.ts
+// vendor/silvery/packages/theme/src/palettes/kanagawa.ts
 var kanagawaWave, kanagawaDragon, kanagawaLotus;
 var init_kanagawa = __esm(() => {
   kanagawaWave = {
@@ -6535,7 +6535,7 @@ var init_kanagawa = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/everforest.ts
+// vendor/silvery/packages/theme/src/palettes/everforest.ts
 var everforestDark, everforestLight;
 var init_everforest = __esm(() => {
   everforestDark = {
@@ -6592,7 +6592,7 @@ var init_everforest = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/monokai.ts
+// vendor/silvery/packages/theme/src/palettes/monokai.ts
 var monokai, monokaiPro;
 var init_monokai = __esm(() => {
   monokai = {
@@ -6649,7 +6649,7 @@ var init_monokai = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/snazzy.ts
+// vendor/silvery/packages/theme/src/palettes/snazzy.ts
 var snazzy;
 var init_snazzy = __esm(() => {
   snazzy = {
@@ -6680,7 +6680,7 @@ var init_snazzy = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/material.ts
+// vendor/silvery/packages/theme/src/palettes/material.ts
 var materialDark, materialLight;
 var init_material = __esm(() => {
   materialDark = {
@@ -6737,7 +6737,7 @@ var init_material = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/palenight.ts
+// vendor/silvery/packages/theme/src/palettes/palenight.ts
 var palenight;
 var init_palenight = __esm(() => {
   palenight = {
@@ -6768,7 +6768,7 @@ var init_palenight = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/ayu.ts
+// vendor/silvery/packages/theme/src/palettes/ayu.ts
 var ayuDark, ayuMirage, ayuLight;
 var init_ayu = __esm(() => {
   ayuDark = {
@@ -6851,7 +6851,7 @@ var init_ayu = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/nightfox.ts
+// vendor/silvery/packages/theme/src/palettes/nightfox.ts
 var nightfox, dawnfox;
 var init_nightfox = __esm(() => {
   nightfox = {
@@ -6908,7 +6908,7 @@ var init_nightfox = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/horizon.ts
+// vendor/silvery/packages/theme/src/palettes/horizon.ts
 var horizon;
 var init_horizon = __esm(() => {
   horizon = {
@@ -6939,7 +6939,7 @@ var init_horizon = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/moonfly.ts
+// vendor/silvery/packages/theme/src/palettes/moonfly.ts
 var moonfly;
 var init_moonfly = __esm(() => {
   moonfly = {
@@ -6970,7 +6970,7 @@ var init_moonfly = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/nightfly.ts
+// vendor/silvery/packages/theme/src/palettes/nightfly.ts
 var nightfly;
 var init_nightfly = __esm(() => {
   nightfly = {
@@ -7001,7 +7001,7 @@ var init_nightfly = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/oxocarbon.ts
+// vendor/silvery/packages/theme/src/palettes/oxocarbon.ts
 var oxocarbonDark, oxocarbonLight;
 var init_oxocarbon = __esm(() => {
   oxocarbonDark = {
@@ -7058,7 +7058,7 @@ var init_oxocarbon = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/sonokai.ts
+// vendor/silvery/packages/theme/src/palettes/sonokai.ts
 var sonokai;
 var init_sonokai = __esm(() => {
   sonokai = {
@@ -7089,7 +7089,7 @@ var init_sonokai = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/edge.ts
+// vendor/silvery/packages/theme/src/palettes/edge.ts
 var edgeDark, edgeLight;
 var init_edge = __esm(() => {
   edgeDark = {
@@ -7146,7 +7146,7 @@ var init_edge = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/modus.ts
+// vendor/silvery/packages/theme/src/palettes/modus.ts
 var modusVivendi, modusOperandi;
 var init_modus = __esm(() => {
   modusVivendi = {
@@ -7203,7 +7203,7 @@ var init_modus = __esm(() => {
   };
 });
 
-// packages/theme/src/palettes/index.ts
+// vendor/silvery/packages/theme/src/palettes/index.ts
 var ansi16DarkTheme, defaultDarkTheme, defaultLightTheme;
 var init_palettes = __esm(() => {
   init_derive();
@@ -7311,7 +7311,7 @@ var init_palettes = __esm(() => {
   defaultLightTheme = deriveTheme(catppuccinLatte);
 });
 
-// packages/theme/src/state.ts
+// vendor/silvery/packages/theme/src/state.ts
 function setActiveTheme(theme) {
   _activeTheme = theme;
 }
@@ -7325,7 +7325,7 @@ var init_state = __esm(() => {
   _contextStack = [];
 });
 
-// packages/theme/src/resolve.ts
+// vendor/silvery/packages/theme/src/resolve.ts
 function resolveThemeColor(color, theme) {
   if (!color)
     return;
@@ -7343,7 +7343,7 @@ function resolveThemeColor(color, theme) {
   return typeof val === "string" ? val : color;
 }
 
-// packages/ag-term/src/errors.ts
+// vendor/silvery/packages/ag-term/src/errors.ts
 var IncrementalRenderMismatchError;
 var init_errors = __esm(() => {
   IncrementalRenderMismatchError = class IncrementalRenderMismatchError extends Error {
@@ -7358,7 +7358,7 @@ var init_errors = __esm(() => {
   };
 });
 
-// packages/ag-term/src/text-sizing.ts
+// vendor/silvery/packages/ag-term/src/text-sizing.ts
 function textSized(text, width) {
   return `${OSC}66;w=${width};${text}${ST}`;
 }
@@ -7370,7 +7370,7 @@ var init_text_sizing = __esm(() => {
   probeCache = new Map;
 });
 
-// ../../node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/vendor/ansi-styles/index.js
+// node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/vendor/ansi-styles/index.js
 function assembleStyles() {
   const codes = new Map;
   for (const [groupName, group] of Object.entries(styles)) {
@@ -7546,7 +7546,7 @@ var init_ansi_styles = __esm(() => {
   ansi_styles_default = ansiStyles;
 });
 
-// ../../node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/vendor/supports-color/browser.js
+// node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/vendor/supports-color/browser.js
 var level, colorSupport, supportsColor, browser_default;
 var init_browser = __esm(() => {
   level = (() => {
@@ -7577,7 +7577,7 @@ var init_browser = __esm(() => {
   browser_default = supportsColor;
 });
 
-// ../../node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/utilities.js
+// node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/utilities.js
 function stringReplaceAll(string, substring, replacer) {
   let index = string.indexOf(substring);
   if (index === -1) {
@@ -7610,7 +7610,7 @@ function stringEncaseCRLFWithFirstIndex(string, prefix, postfix, index) {
   return returnValue;
 }
 
-// ../../node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/index.js
+// node_modules/.bun/chalk@5.6.2/node_modules/chalk/source/index.js
 class Chalk {
   constructor(options) {
     return chalkFactory(options);
@@ -7765,7 +7765,7 @@ function spawnSync() {
   return { status: 1, stdout: "", stderr: "" };
 }
 
-// packages/ag-term/src/ansi/detection.ts
+// vendor/silvery/packages/ag-term/src/ansi/detection.ts
 function detectCursor(stdout) {
   if (!stdout.isTTY)
     return false;
@@ -7957,7 +7957,7 @@ var init_detection = __esm(() => {
   CI_ENVS = ["CI", "GITHUB_ACTIONS", "GITLAB_CI", "JENKINS_URL", "BUILDKITE", "CIRCLECI", "TRAVIS"];
 });
 
-// packages/ag/src/keys.ts
+// vendor/silvery/packages/ag/src/keys.ts
 function isValidCodepoint(cp) {
   return cp >= 0 && cp <= 1114111 && !(cp >= 55296 && cp <= 57343);
 }
@@ -8544,12 +8544,12 @@ var init_keys = __esm(() => {
   graphemeSegmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
 });
 
-// packages/ag-term/src/runtime/keys.ts
+// vendor/silvery/packages/ag-term/src/runtime/keys.ts
 var init_keys2 = __esm(() => {
   init_keys();
 });
 
-// packages/ag-term/src/mouse.ts
+// vendor/silvery/packages/ag-term/src/mouse.ts
 function parseMouseSequence(input) {
   const m = SGR_MOUSE_RE.exec(input);
   if (!m)
@@ -8589,7 +8589,7 @@ var init_mouse = __esm(() => {
   SGR_MOUSE_TEST_RE = /^\x1b\[<\d+;\d+;\d+[Mm]$/;
 });
 
-// packages/ag-term/src/bracketed-paste.ts
+// vendor/silvery/packages/ag-term/src/bracketed-paste.ts
 function enableBracketedPaste(stdout) {
   stdout.write("\x1B[?2004h");
 }
@@ -8611,7 +8611,7 @@ function parseBracketedPaste(input) {
 }
 var PASTE_START = "\x1B[200~", PASTE_END = "\x1B[201~";
 
-// packages/ag-term/src/focus-reporting.ts
+// vendor/silvery/packages/ag-term/src/focus-reporting.ts
 function parseFocusEvent(input) {
   if (input.includes(`${CSI}I`)) {
     return { type: "focus-in" };
@@ -8623,7 +8623,7 @@ function parseFocusEvent(input) {
 }
 var CSI = "\x1B[";
 
-// packages/ag-term/src/runtime/term-provider.ts
+// vendor/silvery/packages/ag-term/src/runtime/term-provider.ts
 function splitRawInput2(raw) {
   const sequences = [];
   let i = 0;
@@ -8835,7 +8835,7 @@ var init_term_provider = __esm(() => {
   init_mouse();
 });
 
-// packages/ag-term/src/ansi/term.ts
+// vendor/silvery/packages/ag-term/src/ansi/term.ts
 function stripAnsi(text) {
   return text.replace(ANSI_REGEX, "");
 }
@@ -9164,13 +9164,13 @@ var init_term = __esm(() => {
   ANSI_REGEX = /\x1b\[[0-9;:]*m|\x9b[0-9;:]*m|\x1b\]8;;[^\x07\x1b]*(?:\x07|\x1b\\)|\x9d8;;[^\x07\x1b\x9c]*(?:\x07|\x1b\\|\x9c)/g;
 });
 
-// packages/ag-term/src/ansi/patch-console.ts
+// vendor/silvery/packages/ag-term/src/ansi/patch-console.ts
 var STDERR_METHODS;
 var init_patch_console = __esm(() => {
   STDERR_METHODS = new Set(["error", "warn"]);
 });
 
-// ../../node_modules/.bun/ansi-regex@6.2.2/node_modules/ansi-regex/index.js
+// node_modules/.bun/ansi-regex@6.2.2/node_modules/ansi-regex/index.js
 function ansiRegex({ onlyFirst = false } = {}) {
   const ST2 = "(?:\\u0007|\\u001B\\u005C|\\u009C)";
   const osc = `(?:\\u001B\\][\\s\\S]*?${ST2})`;
@@ -9179,7 +9179,7 @@ function ansiRegex({ onlyFirst = false } = {}) {
   return new RegExp(pattern, onlyFirst ? undefined : "g");
 }
 
-// ../../node_modules/.bun/strip-ansi@7.2.0/node_modules/strip-ansi/index.js
+// node_modules/.bun/strip-ansi@7.2.0/node_modules/strip-ansi/index.js
 function stripAnsi2(string) {
   if (typeof string !== "string") {
     throw new TypeError(`Expected a \`string\`, got \`${typeof string}\``);
@@ -9194,7 +9194,7 @@ var init_strip_ansi = __esm(() => {
   regex = ansiRegex();
 });
 
-// ../../node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/lookup-data.js
+// node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/lookup-data.js
 var ambiguousRanges, fullwidthRanges, halfwidthRanges, narrowRanges, wideRanges;
 var init_lookup_data = __esm(() => {
   ambiguousRanges = [161, 161, 164, 164, 167, 168, 170, 170, 173, 174, 176, 180, 182, 186, 188, 191, 198, 198, 208, 208, 215, 216, 222, 225, 230, 230, 232, 234, 236, 237, 240, 240, 242, 243, 247, 250, 252, 252, 254, 254, 257, 257, 273, 273, 275, 275, 283, 283, 294, 295, 299, 299, 305, 307, 312, 312, 319, 322, 324, 324, 328, 331, 333, 333, 338, 339, 358, 359, 363, 363, 462, 462, 464, 464, 466, 466, 468, 468, 470, 470, 472, 472, 474, 474, 476, 476, 593, 593, 609, 609, 708, 708, 711, 711, 713, 715, 717, 717, 720, 720, 728, 731, 733, 733, 735, 735, 768, 879, 913, 929, 931, 937, 945, 961, 963, 969, 1025, 1025, 1040, 1103, 1105, 1105, 8208, 8208, 8211, 8214, 8216, 8217, 8220, 8221, 8224, 8226, 8228, 8231, 8240, 8240, 8242, 8243, 8245, 8245, 8251, 8251, 8254, 8254, 8308, 8308, 8319, 8319, 8321, 8324, 8364, 8364, 8451, 8451, 8453, 8453, 8457, 8457, 8467, 8467, 8470, 8470, 8481, 8482, 8486, 8486, 8491, 8491, 8531, 8532, 8539, 8542, 8544, 8555, 8560, 8569, 8585, 8585, 8592, 8601, 8632, 8633, 8658, 8658, 8660, 8660, 8679, 8679, 8704, 8704, 8706, 8707, 8711, 8712, 8715, 8715, 8719, 8719, 8721, 8721, 8725, 8725, 8730, 8730, 8733, 8736, 8739, 8739, 8741, 8741, 8743, 8748, 8750, 8750, 8756, 8759, 8764, 8765, 8776, 8776, 8780, 8780, 8786, 8786, 8800, 8801, 8804, 8807, 8810, 8811, 8814, 8815, 8834, 8835, 8838, 8839, 8853, 8853, 8857, 8857, 8869, 8869, 8895, 8895, 8978, 8978, 9312, 9449, 9451, 9547, 9552, 9587, 9600, 9615, 9618, 9621, 9632, 9633, 9635, 9641, 9650, 9651, 9654, 9655, 9660, 9661, 9664, 9665, 9670, 9672, 9675, 9675, 9678, 9681, 9698, 9701, 9711, 9711, 9733, 9734, 9737, 9737, 9742, 9743, 9756, 9756, 9758, 9758, 9792, 9792, 9794, 9794, 9824, 9825, 9827, 9829, 9831, 9834, 9836, 9837, 9839, 9839, 9886, 9887, 9919, 9919, 9926, 9933, 9935, 9939, 9941, 9953, 9955, 9955, 9960, 9961, 9963, 9969, 9972, 9972, 9974, 9977, 9979, 9980, 9982, 9983, 10045, 10045, 10102, 10111, 11094, 11097, 12872, 12879, 57344, 63743, 65024, 65039, 65533, 65533, 127232, 127242, 127248, 127277, 127280, 127337, 127344, 127373, 127375, 127376, 127387, 127404, 917760, 917999, 983040, 1048573, 1048576, 1114109];
@@ -9204,7 +9204,7 @@ var init_lookup_data = __esm(() => {
   wideRanges = [4352, 4447, 8986, 8987, 9001, 9002, 9193, 9196, 9200, 9200, 9203, 9203, 9725, 9726, 9748, 9749, 9776, 9783, 9800, 9811, 9855, 9855, 9866, 9871, 9875, 9875, 9889, 9889, 9898, 9899, 9917, 9918, 9924, 9925, 9934, 9934, 9940, 9940, 9962, 9962, 9970, 9971, 9973, 9973, 9978, 9978, 9981, 9981, 9989, 9989, 9994, 9995, 10024, 10024, 10060, 10060, 10062, 10062, 10067, 10069, 10071, 10071, 10133, 10135, 10160, 10160, 10175, 10175, 11035, 11036, 11088, 11088, 11093, 11093, 11904, 11929, 11931, 12019, 12032, 12245, 12272, 12287, 12289, 12350, 12353, 12438, 12441, 12543, 12549, 12591, 12593, 12686, 12688, 12773, 12783, 12830, 12832, 12871, 12880, 42124, 42128, 42182, 43360, 43388, 44032, 55203, 63744, 64255, 65040, 65049, 65072, 65106, 65108, 65126, 65128, 65131, 94176, 94180, 94192, 94198, 94208, 101589, 101631, 101662, 101760, 101874, 110576, 110579, 110581, 110587, 110589, 110590, 110592, 110882, 110898, 110898, 110928, 110930, 110933, 110933, 110948, 110951, 110960, 111355, 119552, 119638, 119648, 119670, 126980, 126980, 127183, 127183, 127374, 127374, 127377, 127386, 127488, 127490, 127504, 127547, 127552, 127560, 127568, 127569, 127584, 127589, 127744, 127776, 127789, 127797, 127799, 127868, 127870, 127891, 127904, 127946, 127951, 127955, 127968, 127984, 127988, 127988, 127992, 128062, 128064, 128064, 128066, 128252, 128255, 128317, 128331, 128334, 128336, 128359, 128378, 128378, 128405, 128406, 128420, 128420, 128507, 128591, 128640, 128709, 128716, 128716, 128720, 128722, 128725, 128728, 128732, 128735, 128747, 128748, 128756, 128764, 128992, 129003, 129008, 129008, 129292, 129338, 129340, 129349, 129351, 129535, 129648, 129660, 129664, 129674, 129678, 129734, 129736, 129736, 129741, 129756, 129759, 129770, 129775, 129784, 131072, 196605, 196608, 262141];
 });
 
-// ../../node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/utilities.js
+// node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/utilities.js
 var isInRange = (ranges, codePoint) => {
   let low = 0;
   let high = Math.floor(ranges.length / 2) - 1;
@@ -9222,7 +9222,7 @@ var isInRange = (ranges, codePoint) => {
   return false;
 };
 
-// ../../node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/lookup.js
+// node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/lookup.js
 function findWideFastPathRange(ranges) {
   let fastPathStart = ranges[0];
   let fastPathEnd = ranges[1];
@@ -9273,7 +9273,7 @@ var init_lookup = __esm(() => {
   [wideFastPathStart, wideFastPathEnd] = findWideFastPathRange(wideRanges);
 });
 
-// ../../node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/index.js
+// node_modules/.bun/get-east-asian-width@1.5.0/node_modules/get-east-asian-width/index.js
 function validate(codePoint) {
   if (!Number.isSafeInteger(codePoint)) {
     throw new TypeError(`Expected a code point, got \`${typeof codePoint}\`.`);
@@ -9291,7 +9291,7 @@ var init_get_east_asian_width = __esm(() => {
   init_lookup();
 });
 
-// ../../node_modules/.bun/string-width@8.2.0/node_modules/string-width/index.js
+// node_modules/.bun/string-width@8.2.0/node_modules/string-width/index.js
 function isDoubleWidthNonRgiEmojiSequence(segment) {
   if (segment.length > 50) {
     return false;
@@ -9368,31 +9368,31 @@ var init_string_width = __esm(() => {
   extendedPictographicRegex = /\p{Extended_Pictographic}/gu;
 });
 
-// packages/ag-term/src/ansi/utils.ts
+// vendor/silvery/packages/ag-term/src/ansi/utils.ts
 var init_utils2 = () => {};
 
-// packages/ag-term/src/ansi/constants.ts
+// vendor/silvery/packages/ag-term/src/ansi/constants.ts
 var init_constants = () => {};
 
-// packages/ag-term/src/ansi/underline.ts
+// vendor/silvery/packages/ag-term/src/ansi/underline.ts
 var init_underline = __esm(() => {
   init_constants();
   init_detection();
 });
 
-// packages/ag-term/src/ansi/hyperlink.ts
+// vendor/silvery/packages/ag-term/src/ansi/hyperlink.ts
 var init_hyperlink = __esm(() => {
   init_constants();
 });
 
-// packages/ag-term/src/ansi/ansi.ts
+// vendor/silvery/packages/ag-term/src/ansi/ansi.ts
 var ESC = "\x1B", CSI2, OSC2;
 var init_ansi = __esm(() => {
   CSI2 = `${ESC}[`;
   OSC2 = `${ESC}]`;
 });
 
-// packages/ag-term/src/ansi/index.ts
+// vendor/silvery/packages/ag-term/src/ansi/index.ts
 var _lazyTerm, term;
 var init_ansi2 = __esm(() => {
   init_term();
@@ -9422,7 +9422,7 @@ var init_ansi2 = __esm(() => {
   });
 });
 
-// ../../node_modules/.bun/ansi-styles@6.2.3/node_modules/ansi-styles/index.js
+// node_modules/.bun/ansi-styles@6.2.3/node_modules/ansi-styles/index.js
 function assembleStyles2() {
   const codes = new Map;
   for (const [groupName, group] of Object.entries(styles3)) {
@@ -9598,7 +9598,7 @@ var init_ansi_styles2 = __esm(() => {
   ansi_styles_default2 = ansiStyles2;
 });
 
-// ../../node_modules/.bun/is-fullwidth-code-point@5.1.0/node_modules/is-fullwidth-code-point/index.js
+// node_modules/.bun/is-fullwidth-code-point@5.1.0/node_modules/is-fullwidth-code-point/index.js
 function isFullwidthCodePoint(codePoint) {
   if (!Number.isInteger(codePoint)) {
     return false;
@@ -9609,7 +9609,7 @@ var init_is_fullwidth_code_point = __esm(() => {
   init_get_east_asian_width();
 });
 
-// ../../node_modules/.bun/slice-ansi@8.0.0/node_modules/slice-ansi/tokenize-ansi.js
+// node_modules/.bun/slice-ansi@8.0.0/node_modules/slice-ansi/tokenize-ansi.js
 function isSgrParameterCharacter(codePoint) {
   return codePoint >= CODE_POINT_0 && codePoint <= CODE_POINT_9 || codePoint === CODE_POINT_SEMICOLON || codePoint === CODE_POINT_COLON;
 }
@@ -10184,7 +10184,7 @@ var init_tokenize_ansi = __esm(() => {
   }
 });
 
-// ../../node_modules/.bun/slice-ansi@8.0.0/node_modules/slice-ansi/index.js
+// node_modules/.bun/slice-ansi@8.0.0/node_modules/slice-ansi/index.js
 function applySgrFragments(activeStyles, fragments) {
   for (const fragment of fragments) {
     switch (fragment.type) {
@@ -10391,7 +10391,7 @@ var init_slice_ansi = __esm(() => {
   };
 });
 
-// packages/ag-term/src/unicode.ts
+// vendor/silvery/packages/ag-term/src/unicode.ts
 class DisplayWidthCache {
   cache = new Map;
   maxSize;
@@ -10822,7 +10822,7 @@ var init_unicode = __esm(() => {
   };
 });
 
-// packages/ag-term/src/pipeline/diff-buffers.ts
+// vendor/silvery/packages/ag-term/src/pipeline/diff-buffers.ts
 function createEmptyCellChange() {
   return {
     x: 0,
@@ -11287,7 +11287,7 @@ var init_path = __esm(() => {
   path_default = posix;
 });
 
-// packages/ag-term/src/pipeline/output-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/output-phase.ts
 function outputGraphemeWidth(g, ctx) {
   return ctx.measurer ? ctx.measurer.graphemeWidth(g) : graphemeWidth(g);
 }
@@ -12981,7 +12981,7 @@ var init_output_phase = __esm(() => {
   wideCharLookupCell = createMutableCell();
 });
 
-// packages/ag-term/src/adapters/terminal-adapter.ts
+// vendor/silvery/packages/ag-term/src/adapters/terminal-adapter.ts
 function createTerminalMeasurer(measurer) {
   const dw = measurer ? measurer.displayWidth.bind(measurer) : displayWidth;
   return {
@@ -13218,7 +13218,7 @@ var init_terminal_adapter = __esm(() => {
   };
 });
 
-// packages/ag-term/src/layout-engine.ts
+// vendor/silvery/packages/ag-term/src/layout-engine.ts
 function setLayoutEngine(engine) {
   layoutEngine = engine;
 }
@@ -13233,7 +13233,7 @@ function getConstants() {
 }
 var layoutEngine = null;
 
-// packages/ag-term/src/pipeline/collect-text.ts
+// vendor/silvery/packages/ag-term/src/pipeline/collect-text.ts
 function collectPlainText(node) {
   if (node.textContent !== undefined)
     return node.textContent;
@@ -13265,7 +13265,7 @@ function collectPlainTextSkipHidden(node) {
   return result;
 }
 
-// packages/ag-term/src/pipeline/helpers.ts
+// vendor/silvery/packages/ag-term/src/pipeline/helpers.ts
 function getPadding(props) {
   return {
     top: props.paddingTop ?? props.paddingY ?? props.padding ?? 0,
@@ -13286,7 +13286,7 @@ function getBorderSize(props) {
   };
 }
 
-// packages/ag-term/src/pipeline/measure-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/measure-phase.ts
 function measurePhase(root, ctx) {
   traverseTree(root, (node) => {
     if (!node.layoutNode)
@@ -13391,7 +13391,7 @@ var init_measure_phase = __esm(() => {
   init_unicode();
 });
 
-// packages/ag-term/src/pipeline/measure-stats.ts
+// vendor/silvery/packages/ag-term/src/pipeline/measure-stats.ts
 var measureStats;
 var init_measure_stats = __esm(() => {
   measureStats = {
@@ -13408,7 +13408,7 @@ var init_measure_stats = __esm(() => {
   };
 });
 
-// packages/ag/src/types.ts
+// vendor/silvery/packages/ag/src/types.ts
 function rectEqual(a, b2) {
   if (a === b2)
     return true;
@@ -13417,7 +13417,7 @@ function rectEqual(a, b2) {
   return a.x === b2.x && a.y === b2.y && a.width === b2.width && a.height === b2.height;
 }
 
-// packages/ag-term/src/pipeline/layout-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/layout-phase.ts
 function layoutPhase(root, width, height) {
   const prevLayout = root.contentRect;
   const dimensionsChanged = prevLayout && (prevLayout.width !== width || prevLayout.height !== height);
@@ -13799,7 +13799,7 @@ var init_layout_phase = __esm(() => {
   log2 = createLogger("silvery:layout");
 });
 
-// packages/ag-term/src/pipeline/render-helpers.ts
+// vendor/silvery/packages/ag-term/src/pipeline/render-helpers.ts
 function getTextWidth2(text, ctx) {
   if (ctx)
     return ctx.measurer.displayWidthAnsi(text);
@@ -13811,7 +13811,7 @@ var init_render_helpers = __esm(() => {
   init_unicode();
 });
 
-// packages/ag-term/src/pipeline/render-text.ts
+// vendor/silvery/packages/ag-term/src/pipeline/render-text.ts
 function clearBgConflictWarnings() {
   warnedBgConflicts.clear();
 }
@@ -13879,12 +13879,12 @@ var init_render_text = __esm(() => {
   warnedBgConflicts = new Set;
 });
 
-// packages/ag-term/src/pipeline/render-box.ts
+// vendor/silvery/packages/ag-term/src/pipeline/render-box.ts
 var init_render_box = __esm(() => {
   init_render_helpers();
   init_render_text();
 });
-// packages/ag-term/src/pipeline/render-phase.ts
+// vendor/silvery/packages/ag-term/src/pipeline/render-phase.ts
 var contentLog, traceLog, cellLog, _instrumentEnabled, _nodeTraceEnabled;
 var init_render_phase = __esm(() => {
   init_index_browser();
@@ -13900,7 +13900,7 @@ var init_render_phase = __esm(() => {
   _nodeTraceEnabled = typeof process !== "undefined" && !!process.env?.SILVERY_STRICT;
 });
 
-// packages/ag-term/src/ag.ts
+// vendor/silvery/packages/ag-term/src/ag.ts
 var log3, baseLog;
 var init_ag = __esm(() => {
   init_index_browser();
@@ -13913,7 +13913,7 @@ var init_ag = __esm(() => {
   baseLog = createLogger("@silvery/ag-react");
 });
 
-// packages/ag-term/src/render-adapter.ts
+// vendor/silvery/packages/ag-term/src/render-adapter.ts
 function setRenderAdapter(adapter) {
   currentAdapter = adapter;
 }
@@ -13928,7 +13928,7 @@ function hasRenderAdapter() {
 }
 var currentAdapter = null;
 
-// packages/ag-term/src/pipeline/render-phase-adapter.ts
+// vendor/silvery/packages/ag-term/src/pipeline/render-phase-adapter.ts
 function renderPhaseAdapter(root) {
   if (!hasRenderAdapter()) {
     throw new Error("renderPhaseAdapter called without a render adapter set");
@@ -14433,7 +14433,7 @@ var init_render_phase_adapter = __esm(() => {
   init_render_text();
 });
 
-// packages/ag-term/src/pipeline/index.ts
+// vendor/silvery/packages/ag-term/src/pipeline/index.ts
 function executeRenderAdapter(root, width, height, prevBuffer, options = "fullscreen") {
   let __stack8 = [];
   try {
@@ -14568,12 +14568,12 @@ var init_pipeline = __esm(() => {
   baseLog2 = createLogger("@silvery/ag-react");
 });
 
-// packages/ag-term/src/pipeline.ts
+// vendor/silvery/packages/ag-term/src/pipeline.ts
 var init_pipeline2 = __esm(() => {
   init_pipeline();
 });
 
-// ../../node_modules/.bun/scheduler@0.27.0/node_modules/scheduler/cjs/scheduler.production.js
+// node_modules/.bun/scheduler@0.27.0/node_modules/scheduler/cjs/scheduler.production.js
 var exports_scheduler_production = {};
 __export(exports_scheduler_production, {
   unstable_wrapCallback: () => $unstable_wrapCallback,
@@ -14833,7 +14833,7 @@ var init_scheduler_production = __esm(() => {
   $unstable_shouldYield = shouldYieldToHost;
 });
 
-// ../../node_modules/.bun/scheduler@0.27.0/node_modules/scheduler/index.js
+// node_modules/.bun/scheduler@0.27.0/node_modules/scheduler/index.js
 var require_scheduler = __commonJS((exports, module) => {
   init_scheduler_production();
   if (true) {
@@ -14841,7 +14841,7 @@ var require_scheduler = __commonJS((exports, module) => {
   } else {}
 });
 
-// ../../node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/cjs/react-reconciler.production.js
+// node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/cjs/react-reconciler.production.js
 var require_react_reconciler_production = __commonJS((exports, module) => {
   var React = __toESM(require_react());
   var Scheduler = __toESM(require_scheduler());
@@ -21594,14 +21594,14 @@ No matching component was found for:
   Object.defineProperty(module.exports, "__esModule", { value: true });
 });
 
-// ../../node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/index.js
+// node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/index.js
 var require_react_reconciler = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_react_reconciler_production();
   } else {}
 });
 
-// ../../node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/cjs/react-reconciler-constants.production.js
+// node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/cjs/react-reconciler-constants.production.js
 var require_react_reconciler_constants_production = __commonJS((exports) => {
   exports.ConcurrentRoot = 1;
   exports.ContinuousEventPriority = 8;
@@ -21612,14 +21612,14 @@ var require_react_reconciler_constants_production = __commonJS((exports) => {
   exports.NoEventPriority = 0;
 });
 
-// ../../node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/constants.js
+// node_modules/.bun/react-reconciler@0.33.0+b1ab299f0a400331/node_modules/react-reconciler/constants.js
 var require_constants = __commonJS((exports, module) => {
   if (true) {
     module.exports = require_react_reconciler_constants_production();
   } else {}
 });
 
-// packages/ag-react/src/reconciler/helpers.ts
+// vendor/silvery/packages/ag-react/src/reconciler/helpers.ts
 function layoutPropsChanged(oldProps, newProps) {
   for (const prop of LAYOUT_PROPS) {
     if (oldProps[prop] !== newProps[prop]) {
@@ -21740,7 +21740,7 @@ var init_helpers = __esm(() => {
   ]);
 });
 
-// packages/ag-react/src/reconciler/nodes.ts
+// vendor/silvery/packages/ag-react/src/reconciler/nodes.ts
 function createNode(type, props, measurer) {
   const layoutNode2 = getLayoutEngine().createNode();
   const node = {
@@ -22142,7 +22142,7 @@ var init_nodes = __esm(() => {
   measureLog = createLogger("silvery:measure");
 });
 
-// packages/ag-react/src/reconciler/host-config.ts
+// vendor/silvery/packages/ag-react/src/reconciler/host-config.ts
 function normalizeNodeType(type) {
   if (type === "ink-box")
     return "silvery-box";
@@ -22584,7 +22584,7 @@ var init_host_config = __esm(() => {
   };
 });
 
-// packages/ag-react/src/reconciler/index.ts
+// vendor/silvery/packages/ag-react/src/reconciler/index.ts
 function createContainer(onRender) {
   const root = createRootNode();
   return { root, onRender };
@@ -22604,7 +22604,7 @@ var init_reconciler = __esm(() => {
   reconciler = import_react_reconciler.default(hostConfig);
 });
 
-// packages/ag-react/src/context.ts
+// vendor/silvery/packages/ag-react/src/context.ts
 var import_react2, TermContext, NodeContext, StdoutContext, StderrContext, RuntimeContext, FocusManagerContext;
 var init_context = __esm(() => {
   import_react2 = __toESM(require_react(), 1);
@@ -22616,7 +22616,7 @@ var init_context = __esm(() => {
   FocusManagerContext = import_react2.createContext(null);
 });
 
-// ../../node_modules/.bun/react@19.2.4/node_modules/react/cjs/react-jsx-runtime.production.js
+// node_modules/.bun/react@19.2.4/node_modules/react/cjs/react-jsx-runtime.production.js
 var exports_react_jsx_runtime_production = {};
 __export(exports_react_jsx_runtime_production, {
   jsxs: () => $jsxs,
@@ -22651,7 +22651,7 @@ var init_react_jsx_runtime_production = __esm(() => {
   $jsxs = jsxProd;
 });
 
-// ../../node_modules/.bun/react@19.2.4/node_modules/react/jsx-runtime.js
+// node_modules/.bun/react@19.2.4/node_modules/react/jsx-runtime.js
 var require_jsx_runtime = __commonJS((exports, module) => {
   init_react_jsx_runtime_production();
   if (true) {
@@ -22659,7 +22659,7 @@ var require_jsx_runtime = __commonJS((exports, module) => {
   } else {}
 });
 
-// packages/ag-react/src/reconciler/string-reconciler.ts
+// vendor/silvery/packages/ag-react/src/reconciler/string-reconciler.ts
 var import_react_reconciler2, stringReconciler;
 var init_string_reconciler = __esm(() => {
   init_host_config();
@@ -22670,7 +22670,7 @@ var init_string_reconciler = __esm(() => {
   });
 });
 
-// packages/ag-react/src/render-string.tsx
+// vendor/silvery/packages/ag-react/src/render-string.tsx
 var import_react38;
 var init_render_string = __esm(() => {
   init_ansi2();
@@ -22681,12 +22681,12 @@ var init_render_string = __esm(() => {
   init_string_reconciler();
   import_react38 = __toESM(require_react(), 1);
 });
-// packages/ag-term/src/devtools.ts
+// vendor/silvery/packages/ag-term/src/devtools.ts
 var init_devtools = __esm(() => {
   init_reconciler();
 });
 
-// ../../node_modules/.bun/@xterm+xterm@6.0.0/node_modules/@xterm/xterm/lib/xterm.mjs
+// node_modules/.bun/@xterm+xterm@6.0.0/node_modules/@xterm/xterm/lib/xterm.mjs
 var zs = Object.defineProperty;
 var Rl = Object.getOwnPropertyDescriptor;
 var Ll = (s, t) => {
@@ -32387,7 +32387,7 @@ var Dl = class extends D {
   }
 };
 
-// ../../node_modules/.bun/@xterm+addon-fit@0.11.0/node_modules/@xterm/addon-fit/lib/addon-fit.mjs
+// node_modules/.bun/@xterm+addon-fit@0.11.0/node_modules/@xterm/addon-fit/lib/addon-fit.mjs
 var h = 2;
 var _ = 1;
 var o = class {
@@ -32413,7 +32413,7 @@ var o = class {
   }
 };
 
-// packages/ag-term/src/xterm/index.ts
+// vendor/silvery/packages/ag-term/src/xterm/index.ts
 init_terminal_adapter();
 init_pipeline2();
 init_reconciler();
@@ -32421,7 +32421,7 @@ init_context();
 await init_flexily_zero_adapter();
 var import_react24 = __toESM(require_react(), 1);
 
-// packages/create/src/focus-queries.ts
+// vendor/silvery/packages/create/src/focus-queries.ts
 function isFocusable(node) {
   if (node.hidden)
     return false;
@@ -32541,7 +32541,7 @@ function getExplicitFocusLink(node, direction) {
   return typeof value === "string" ? value : null;
 }
 
-// packages/ag/src/focus-manager.ts
+// vendor/silvery/packages/ag/src/focus-manager.ts
 function createFocusManager(options) {
   const onFocusChange = options?.onFocusChange;
   let activeElement = null;
@@ -32817,10 +32817,10 @@ function createFocusManager(options) {
   };
 }
 
-// packages/ag-term/src/xterm/index.ts
+// vendor/silvery/packages/ag-term/src/xterm/index.ts
 init_keys();
 
-// packages/ag-term/src/xterm/xterm-provider.ts
+// vendor/silvery/packages/ag-term/src/xterm/xterm-provider.ts
 var SGR_MOUSE_RE2 = /\x1b\[<(\d+);(\d+);(\d+)([Mm])/g;
 var MOUSE_ENABLE = "\x1B[?1000h\x1B[?1006h";
 var MOUSE_DISABLE = "\x1B[?1000l\x1B[?1006l";
@@ -32926,7 +32926,7 @@ function createXtermProvider(terminal) {
   };
 }
 
-// packages/theme/src/ThemeContext.tsx
+// vendor/silvery/packages/theme/src/ThemeContext.tsx
 init_state();
 init_palettes();
 var import_react3 = __toESM(require_react(), 1);
@@ -32936,22 +32936,22 @@ function ThemeProvider({ theme, children }) {
   return import_react3.default.createElement(ThemeContext.Provider, { value: theme }, children);
 }
 
-// packages/ag-term/src/xterm/index.ts
+// vendor/silvery/packages/ag-term/src/xterm/index.ts
 init_palettes();
-// packages/theme/src/theme.ts
+// vendor/silvery/packages/theme/src/theme.ts
 init_derive();
 
-// packages/theme/src/builder.ts
+// vendor/silvery/packages/theme/src/builder.ts
 init_derive();
-// packages/theme/src/generators.ts
+// vendor/silvery/packages/theme/src/generators.ts
 init_palettes();
 
-// packages/theme/src/builder.ts
+// vendor/silvery/packages/theme/src/builder.ts
 init_palettes();
 
-// packages/theme/src/theme.ts
+// vendor/silvery/packages/theme/src/theme.ts
 init_state();
-// packages/theme/src/validate-theme.ts
+// vendor/silvery/packages/theme/src/validate-theme.ts
 var THEME_TOKEN_KEYS = [
   "bg",
   "fg",
@@ -32989,27 +32989,27 @@ var THEME_TOKEN_KEYS = [
 ];
 var ALL_KNOWN_KEYS = new Set([...THEME_TOKEN_KEYS, "name", "palette"]);
 
-// packages/theme/src/theme.ts
+// vendor/silvery/packages/theme/src/theme.ts
 init_contrast();
-// packages/theme/src/auto-generate.ts
+// vendor/silvery/packages/theme/src/auto-generate.ts
 init_derive();
-// packages/theme/src/detect.ts
+// vendor/silvery/packages/theme/src/detect.ts
 init_derive();
 init_nord();
 init_catppuccin();
 init_palettes();
 
-// packages/theme/src/theme.ts
+// vendor/silvery/packages/theme/src/theme.ts
 init_palettes();
 init_palettes();
-// packages/ag-term/src/xterm/index.ts
+// vendor/silvery/packages/ag-term/src/xterm/index.ts
 init_state();
 
-// packages/ag-react/src/hooks/useCursor.ts
+// vendor/silvery/packages/ag-react/src/hooks/useCursor.ts
 init_context();
 var import_react5 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/hooks/useLayout.ts
+// vendor/silvery/packages/ag-react/src/hooks/useLayout.ts
 init_context();
 var import_react4 = __toESM(require_react(), 1);
 function getInnerRect(node) {
@@ -33082,7 +33082,7 @@ function useScreenRectCallback(callback) {
   }, [node]);
 }
 
-// packages/ag-react/src/hooks/useCursor.ts
+// vendor/silvery/packages/ag-react/src/hooks/useCursor.ts
 function createCursorStore() {
   const store = {
     state: null,
@@ -33185,7 +33185,7 @@ function useCursor(position) {
   }, [visible]);
 }
 
-// packages/ag-react/src/components/Box.tsx
+// vendor/silvery/packages/ag-react/src/components/Box.tsx
 init_context();
 var import_react6 = __toESM(require_react(), 1);
 var jsx_runtime = __toESM(require_jsx_runtime(), 1);
@@ -33234,7 +33234,7 @@ var Box = import_react6.forwardRef(function Box2(props, ref) {
     })
   });
 });
-// packages/ag-react/src/components/Text.tsx
+// vendor/silvery/packages/ag-react/src/components/Text.tsx
 var import_react7 = __toESM(require_react(), 1);
 var jsx_runtime2 = __toESM(require_jsx_runtime(), 1);
 var Text2 = import_react7.forwardRef(function Text3(props, ref) {
@@ -33251,7 +33251,7 @@ var Text2 = import_react7.forwardRef(function Text3(props, ref) {
     children
   });
 });
-// packages/ag-react/src/ui/components/Divider.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Divider.tsx
 var jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
 var DEFAULT_CHAR = "─";
 var DEFAULT_WIDTH = 40;
@@ -33287,12 +33287,12 @@ function Divider({ char = DEFAULT_CHAR, title, width: widthProp }) {
     ]
   });
 }
-// packages/ag-react/src/ui/components/TextInput.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/TextInput.tsx
 var import_react22 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/ui/components/useReadline.ts
+// vendor/silvery/packages/ag-react/src/ui/components/useReadline.ts
 var import_react21 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useInput.ts
+// vendor/silvery/packages/ag-react/src/hooks/useInput.ts
 init_context();
 var import_react8 = __toESM(require_react(), 1);
 function isModifierOnlyEvent(input, key) {
@@ -33335,10 +33335,10 @@ function useInput(inputHandler, options = {}) {
     });
   }, [isActive, rt2]);
 }
-// packages/ag-react/src/hooks/useRuntime.ts
+// vendor/silvery/packages/ag-react/src/hooks/useRuntime.ts
 init_context();
 var import_react9 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useApp.ts
+// vendor/silvery/packages/ag-react/src/hooks/useApp.ts
 init_context();
 var import_react10 = __toESM(require_react(), 1);
 var staticResult = {
@@ -33355,13 +33355,13 @@ function useApp() {
     resume: rt2.resume
   };
 }
-// packages/ag-react/src/hooks/useStdout.ts
+// vendor/silvery/packages/ag-react/src/hooks/useStdout.ts
 init_context();
 var import_react11 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useStderr.ts
+// vendor/silvery/packages/ag-react/src/hooks/useStderr.ts
 init_context();
 var import_react12 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useFocusable.ts
+// vendor/silvery/packages/ag-react/src/hooks/useFocusable.ts
 init_context();
 var import_react13 = __toESM(require_react(), 1);
 function useFocusable() {
@@ -33415,30 +33415,30 @@ function useFocusable() {
     focusOrigin
   };
 }
-// packages/ag-react/src/hooks/useFocusWithin.ts
+// vendor/silvery/packages/ag-react/src/hooks/useFocusWithin.ts
 init_context();
 var import_react14 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useFocusManager.ts
+// vendor/silvery/packages/ag-react/src/hooks/useFocusManager.ts
 init_context();
 var import_react15 = __toESM(require_react(), 1);
-// packages/ag-react/src/contexts/InputLayerContext.tsx
+// vendor/silvery/packages/ag-react/src/contexts/InputLayerContext.tsx
 var import_react16 = __toESM(require_react(), 1);
 var jsx_runtime4 = __toESM(require_jsx_runtime(), 1);
 var InputLayerContext = import_react16.createContext(null);
-// packages/ag-react/src/hooks/useTerminalFocused.ts
+// vendor/silvery/packages/ag-react/src/hooks/useTerminalFocused.ts
 var import_react17 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useScrollRegion.ts
+// vendor/silvery/packages/ag-react/src/hooks/useScrollRegion.ts
 var import_react18 = __toESM(require_react(), 1);
-// packages/ag-react/src/hooks/useSelection.tsx
+// vendor/silvery/packages/ag-react/src/hooks/useSelection.tsx
 var import_react19 = __toESM(require_react(), 1);
 
-// packages/ag-term/src/clipboard.ts
+// vendor/silvery/packages/ag-term/src/clipboard.ts
 var ESC2 = "\x1B";
 var OSC52_PREFIX = `${ESC2}]52;c;`;
 
-// packages/ag-react/src/hooks/useSelection.tsx
+// vendor/silvery/packages/ag-react/src/hooks/useSelection.tsx
 var SelectionCtx = import_react19.createContext(null);
-// packages/ag-react/src/hooks/useScrollbackItem.tsx
+// vendor/silvery/packages/ag-react/src/hooks/useScrollbackItem.tsx
 var import_react20 = __toESM(require_react(), 1);
 var jsx_runtime5 = __toESM(require_jsx_runtime(), 1);
 var ScrollbackItemCtx = import_react20.createContext(null);
@@ -33455,7 +33455,7 @@ function ScrollbackItemProvider({
     children
   });
 }
-// packages/ag-react/src/hooks/readline-ops.ts
+// vendor/silvery/packages/ag-react/src/hooks/readline-ops.ts
 var MAX_KILL_RING_SIZE = 10;
 var killRing = [];
 function addToKillRing(text) {
@@ -33593,7 +33593,7 @@ function handleReadlineKey(input, key, value, cursor, yankState) {
   return null;
 }
 
-// packages/ag-react/src/ui/components/useReadline.ts
+// vendor/silvery/packages/ag-react/src/ui/components/useReadline.ts
 function useReadline({
   initialValue = "",
   onChange,
@@ -33696,7 +33696,7 @@ function useReadline({
   };
 }
 
-// packages/ag-react/src/ui/components/TextInput.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/TextInput.tsx
 var jsx_runtime6 = __toESM(require_jsx_runtime(), 1);
 var TextInput = import_react22.forwardRef(function TextInput2({
   value: controlledValue,
@@ -33848,7 +33848,7 @@ var TextInput = import_react22.forwardRef(function TextInput2({
     ]
   });
 });
-// packages/ag-react/src/ui/components/Spinner.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Spinner.tsx
 var import_react23 = __toESM(require_react(), 1);
 var jsx_runtime7 = __toESM(require_jsx_runtime(), 1);
 var FRAMES = {
@@ -33876,7 +33876,7 @@ function Spinner({ type = "dots", label, interval = 80, ...rest }) {
   });
 }
 
-// packages/ag-term/src/xterm/index.ts
+// vendor/silvery/packages/ag-term/src/xterm/index.ts
 init_terminal_adapter();
 var cachedXtermTheme = null;
 function deriveThemeFromXterm(_terminal) {
@@ -34107,15 +34107,15 @@ function renderToXterm(element, terminal, options = {}) {
   };
 }
 
-// examples/layout/dashboard.tsx
+// vendor/silvery/examples/layout/dashboard.tsx
 var import_react80 = __toESM(require_react(), 1);
-// packages/ag-react/src/ui/components/ListView.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/ListView.tsx
 var import_react27 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/hooks/useVirtualizer.ts
+// vendor/silvery/packages/ag-react/src/hooks/useVirtualizer.ts
 var import_react25 = __toESM(require_react(), 1);
 
-// packages/ag-term/src/scroll-utils.ts
+// vendor/silvery/packages/ag-term/src/scroll-utils.ts
 function calcEdgeBasedScrollOffset(selectedIndex, currentOffset, visibleCount, totalCount, padding = 1) {
   if (totalCount <= visibleCount)
     return 0;
@@ -34135,7 +34135,7 @@ function calcEdgeBasedScrollOffset(selectedIndex, currentOffset, visibleCount, t
   return Math.max(0, Math.min(newOffset, totalCount - visibleCount));
 }
 
-// packages/ag-react/src/hooks/useVirtualizer.ts
+// vendor/silvery/packages/ag-react/src/hooks/useVirtualizer.ts
 var DEFAULT_SCROLL_PADDING = 1;
 var DEFAULT_OVERSCAN = 5;
 var DEFAULT_MAX_RENDERED = 100;
@@ -34254,7 +34254,7 @@ function useVirtualizer(config) {
   };
 }
 
-// packages/ag-term/src/history-buffer.ts
+// vendor/silvery/packages/ag-term/src/history-buffer.ts
 init_unicode();
 function createHistoryItem(key, ansi, width) {
   const rows = ansi.split(`
@@ -34352,7 +34352,7 @@ function createHistoryBuffer(maxRows = 1e4) {
   };
 }
 
-// packages/ag-term/src/list-document.ts
+// vendor/silvery/packages/ag-term/src/list-document.ts
 function createListDocument(history2, getLiveItems) {
   function liveRowCount() {
     let total = 0;
@@ -34478,7 +34478,7 @@ function createListDocument(history2, getLiveItems) {
   };
 }
 
-// packages/ag-term/src/text-surface.ts
+// vendor/silvery/packages/ag-term/src/text-surface.ts
 init_unicode();
 function createTextSurface(config) {
   const listeners = new Set;
@@ -34540,7 +34540,7 @@ function createTextSurface(config) {
   };
 }
 
-// packages/ag-term/src/viewport-compositor.ts
+// vendor/silvery/packages/ag-term/src/viewport-compositor.ts
 function composeViewport(config) {
   const { history: history2, viewportHeight, scrollOffset } = config;
   const totalHistory = history2.totalRows;
@@ -34567,17 +34567,17 @@ function composeViewport(config) {
   };
 }
 
-// packages/ag-react/src/ui/components/ListView.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/ListView.tsx
 init_unicode();
 
-// packages/ag-react/src/providers/SurfaceRegistry.tsx
+// vendor/silvery/packages/ag-react/src/providers/SurfaceRegistry.tsx
 var import_react26 = __toESM(require_react(), 1);
 var SurfaceRegistryContext = import_react26.createContext(null);
 function useSurfaceRegistryOptional() {
   return import_react26.useContext(SurfaceRegistryContext);
 }
 
-// packages/ag-react/src/ui/components/ListView.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/ListView.tsx
 var jsx_runtime8 = __toESM(require_jsx_runtime(), 1);
 var DEFAULT_ESTIMATE_HEIGHT = 1;
 var DEFAULT_OVERSCAN2 = 5;
@@ -34853,7 +34853,7 @@ function ListViewInner({
   });
 }
 var ListView = import_react27.forwardRef(ListViewInner);
-// packages/ag-react/src/ui/components/VirtualList.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/VirtualList.tsx
 var import_react28 = __toESM(require_react(), 1);
 var jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
 function VirtualListInner({
@@ -34912,10 +34912,10 @@ function VirtualListInner({
   });
 }
 var VirtualList = import_react28.forwardRef(VirtualListInner);
-// packages/ag-react/src/ui/components/HorizontalVirtualList.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/HorizontalVirtualList.tsx
 var import_react30 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/hooks/useVirtualization.ts
+// vendor/silvery/packages/ag-react/src/hooks/useVirtualization.ts
 var import_react29 = __toESM(require_react(), 1);
 function useVirtualization(config) {
   const { items, viewportSize, itemSize, scrollTo, scrollPadding, overscan, maxRendered, gap } = config;
@@ -34948,7 +34948,7 @@ function useVirtualization(config) {
   };
 }
 
-// packages/ag-react/src/ui/components/HorizontalVirtualList.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/HorizontalVirtualList.tsx
 var jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
 var DEFAULT_OVERSCAN3 = 1;
 var DEFAULT_MAX_RENDERED3 = 20;
@@ -35124,25 +35124,25 @@ function HorizontalVirtualListInner({
   });
 }
 var HorizontalVirtualList = import_react30.forwardRef(HorizontalVirtualListInner);
-// packages/ag-react/src/ui/components/SplitView.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/SplitView.tsx
 var jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/components/Fill.tsx
+// vendor/silvery/packages/ag-react/src/components/Fill.tsx
 init_unicode();
 var import_react31 = __toESM(require_react(), 1);
 var jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/components/Link.tsx
+// vendor/silvery/packages/ag-react/src/components/Link.tsx
 var import_react34 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/hooks/useModifierKeys.ts
+// vendor/silvery/packages/ag-react/src/hooks/useModifierKeys.ts
 init_context();
 var import_react32 = __toESM(require_react(), 1);
 var stores = new WeakMap;
 
-// packages/ag-react/src/hooks/useMouseCursor.ts
+// vendor/silvery/packages/ag-react/src/hooks/useMouseCursor.ts
 init_context();
 var import_react33 = __toESM(require_react(), 1);
 
-// packages/ag-term/src/output.ts
+// vendor/silvery/packages/ag-term/src/output.ts
 var ESC3 = "\x1B";
 var CSI3 = `${ESC3}[`;
 var CURSOR_HIDE2 = `${CSI3}?25l`;
@@ -35152,25 +35152,25 @@ var SYNC_BEGIN = `${CSI3}?2026h`;
 var SYNC_END = `${CSI3}?2026l`;
 var RESET = `${CSI3}0m`;
 
-// packages/ag-react/src/components/Link.tsx
+// vendor/silvery/packages/ag-react/src/components/Link.tsx
 init_context();
 var jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/ErrorBoundary.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/ErrorBoundary.tsx
 var import_react35 = __toESM(require_react(), 1);
 var jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/hooks/useConsole.ts
+// vendor/silvery/packages/ag-react/src/hooks/useConsole.ts
 var import_react36 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/ui/components/Console.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Console.tsx
 var jsx_runtime15 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/ScrollbackView.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/ScrollbackView.tsx
 var import_react39 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/hooks/useScrollback.ts
+// vendor/silvery/packages/ag-react/src/hooks/useScrollback.ts
 init_context();
 var import_react37 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/ui/components/ScrollbackView.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/ScrollbackView.tsx
 init_render_string();
 var jsx_runtime16 = __toESM(require_jsx_runtime(), 1);
 var MemoItem = import_react39.memo(function MemoItem2({ item, index, freeze, renderFn }) {
@@ -35183,12 +35183,12 @@ var MemoItem = import_react39.memo(function MemoItem2({ item, index, freeze, ren
   });
 });
 
-// packages/ag-react/src/ui/components/ScrollbackList.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/ScrollbackList.tsx
 var jsx_runtime17 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/Screen.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Screen.tsx
 var import_react40 = __toESM(require_react(), 1);
 var jsx_runtime18 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/VirtualView.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/VirtualView.tsx
 var import_react41 = __toESM(require_react(), 1);
 var jsx_runtime19 = __toESM(require_jsx_runtime(), 1);
 function VirtualViewInner({
@@ -35235,13 +35235,13 @@ function VirtualViewInner({
   });
 }
 var VirtualView = import_react41.forwardRef(VirtualViewInner);
-// packages/ag-react/src/ui/components/TextArea.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/TextArea.tsx
 var import_react43 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/ui/components/useTextArea.ts
+// vendor/silvery/packages/ag-react/src/ui/components/useTextArea.ts
 var import_react42 = __toESM(require_react(), 1);
 
-// packages/create/src/text-cursor.ts
+// vendor/silvery/packages/create/src/text-cursor.ts
 init_unicode();
 function cursorToRowCol(text, cursor, wrapWidth, measurer) {
   if (wrapWidth <= 0)
@@ -35287,7 +35287,7 @@ function getWrappedLines(text, wrapWidth, measurer) {
   return result;
 }
 
-// packages/ag-react/src/ui/components/useTextArea.ts
+// vendor/silvery/packages/ag-react/src/ui/components/useTextArea.ts
 function clampScroll(cursorRow, currentScroll, viewportHeight, totalLines, margin) {
   if (viewportHeight <= 0)
     return 0;
@@ -35684,7 +35684,7 @@ function useTextArea({
   };
 }
 
-// packages/ag-react/src/ui/components/TextArea.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/TextArea.tsx
 var jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
 var TextArea = import_react43.forwardRef(function TextArea2({
   value: controlledValue,
@@ -35839,13 +35839,13 @@ var TextArea = import_react43.forwardRef(function TextArea2({
     })
   }, ta2.scrollOffset);
 });
-// packages/ag-react/src/ui/components/EditContextDisplay.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/EditContextDisplay.tsx
 var import_react44 = __toESM(require_react(), 1);
 var jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/CursorLine.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/CursorLine.tsx
 var import_react45 = __toESM(require_react(), 1);
 var jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/ModalDialog.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/ModalDialog.tsx
 var jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
 function formatTitleWithHotkey(title, hotkey, color) {
   const idx = title.toLowerCase().indexOf(hotkey.toLowerCase());
@@ -35969,16 +35969,16 @@ function ModalDialog({
     ]
   });
 }
-// packages/ag-react/src/ui/components/PickerDialog.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/PickerDialog.tsx
 var import_react47 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/ui/components/PickerList.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/PickerList.tsx
 var import_react46 = __toESM(require_react(), 1);
 var jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
 
-// packages/ag-react/src/ui/components/PickerDialog.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/PickerDialog.tsx
 var jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/Toggle.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Toggle.tsx
 var jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
 function Toggle({ value, onChange, label, isActive, ...rest }) {
   const { focused } = useFocusable();
@@ -36006,7 +36006,7 @@ function Toggle({ value, onChange, label, isActive, ...rest }) {
     ]
   });
 }
-// packages/ag-react/src/ui/components/Button.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Button.tsx
 var jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
 function Button({ label, onPress, isActive, color, ...rest }) {
   const { focused } = useFocusable();
@@ -36030,7 +36030,7 @@ function Button({ label, onPress, isActive, color, ...rest }) {
     })
   });
 }
-// packages/ag-react/src/ui/components/ProgressBar.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/ProgressBar.tsx
 var import_react48 = __toESM(require_react(), 1);
 var jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
 var DEFAULT_FILL = "█";
@@ -36119,7 +36119,7 @@ function ProgressBar({
     ]
   });
 }
-// packages/ag-react/src/ui/components/SelectList.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/SelectList.tsx
 var import_react49 = __toESM(require_react(), 1);
 var jsx_runtime29 = __toESM(require_jsx_runtime(), 1);
 function findNextEnabled(items, current, direction) {
@@ -36221,17 +36221,17 @@ function SelectList({
     })
   });
 }
-// packages/ag-react/src/ui/components/Table.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Table.tsx
 var jsx_runtime30 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/Badge.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Badge.tsx
 var jsx_runtime31 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/SearchBar.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/SearchBar.tsx
 var import_react51 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/providers/SearchProvider.tsx
+// vendor/silvery/packages/ag-react/src/providers/SearchProvider.tsx
 var import_react50 = __toESM(require_react(), 1);
 var SearchContext = import_react50.createContext(null);
-// packages/ag-react/src/ui/components/Typography.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Typography.tsx
 var import_react52 = __toESM(require_react(), 1);
 var jsx_runtime32 = __toESM(require_jsx_runtime(), 1);
 function H1({ children, color, ...rest }) {
@@ -36416,21 +36416,21 @@ function LI({ children, color, _index }) {
     ]
   });
 }
-// packages/ag-react/src/ui/components/Form.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Form.tsx
 var jsx_runtime33 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/Toast.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Toast.tsx
 var import_react53 = __toESM(require_react(), 1);
 var jsx_runtime34 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/CommandPalette.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/CommandPalette.tsx
 var import_react54 = __toESM(require_react(), 1);
 var jsx_runtime35 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/TreeView.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/TreeView.tsx
 var import_react55 = __toESM(require_react(), 1);
 var jsx_runtime36 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/Breadcrumb.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Breadcrumb.tsx
 var import_react56 = __toESM(require_react(), 1);
 var jsx_runtime37 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/Tabs.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Tabs.tsx
 var import_react57 = __toESM(require_react(), 1);
 var jsx_runtime38 = __toESM(require_jsx_runtime(), 1);
 var TabsContext = import_react57.createContext({
@@ -36522,57 +36522,57 @@ function TabPanel({ value, children }) {
     children
   });
 }
-// packages/ag-react/src/ui/components/Tooltip.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Tooltip.tsx
 var jsx_runtime39 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/components/Skeleton.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/Skeleton.tsx
 var jsx_runtime40 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/hooks/usePositionRegistry.tsx
+// vendor/silvery/packages/ag-react/src/hooks/usePositionRegistry.tsx
 init_index_browser();
 var import_react58 = __toESM(require_react(), 1);
 var jsx_runtime41 = __toESM(require_jsx_runtime(), 1);
 var log5 = createLogger("silvery:position-registry");
 var PositionRegistryContext = import_react58.createContext(null);
-// packages/ag-react/src/hooks/useGridPosition.ts
+// vendor/silvery/packages/ag-react/src/hooks/useGridPosition.ts
 var import_react59 = __toESM(require_react(), 1);
-// packages/ag-react/src/ui/components/GridCell.tsx
+// vendor/silvery/packages/ag-react/src/ui/components/GridCell.tsx
 var jsx_runtime42 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/components/Transform.tsx
+// vendor/silvery/packages/ag-react/src/components/Transform.tsx
 var jsx_runtime43 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/components/Newline.tsx
+// vendor/silvery/packages/ag-react/src/components/Newline.tsx
 var jsx_runtime44 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/components/Spacer.tsx
+// vendor/silvery/packages/ag-react/src/components/Spacer.tsx
 var jsx_runtime45 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/components/Static.tsx
+// vendor/silvery/packages/ag-react/src/components/Static.tsx
 init_context();
 var import_react60 = __toESM(require_react(), 1);
 init_render_string();
 var jsx_runtime46 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/error-boundary.tsx
+// vendor/silvery/packages/ag-react/src/error-boundary.tsx
 var import_react61 = __toESM(require_react(), 1);
 var fs2 = (() => ({}));
-// packages/ag-react/src/ui/image/Image.tsx
+// vendor/silvery/packages/ag-react/src/ui/image/Image.tsx
 init_context();
 var import_react62 = __toESM(require_react(), 1);
 var {readFileSync: readFileSync2} = (() => ({}));
 var jsx_runtime47 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/hooks/useTerm.ts
+// vendor/silvery/packages/ag-react/src/hooks/useTerm.ts
 init_context();
 var import_react63 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/exports.ts
+// vendor/silvery/packages/ag-react/src/exports.ts
 init_context();
 var import_react79 = __toESM(require_react(), 1);
 
-// packages/ag-react/src/ThemeProvider.tsx
+// vendor/silvery/packages/ag-react/src/ThemeProvider.tsx
 var jsx_runtime48 = __toESM(require_jsx_runtime(), 1);
 
-// packages/ag-react/src/exports.ts
+// vendor/silvery/packages/ag-react/src/exports.ts
 init_ansi2();
 
-// packages/ag-term/src/hit-registry.ts
+// vendor/silvery/packages/ag-term/src/hit-registry.ts
 var import_react64 = __toESM(require_react(), 1);
 
-// packages/ag-term/src/hit-registry-core.ts
+// vendor/silvery/packages/ag-term/src/hit-registry-core.ts
 class HitRegistry {
   regions = new Map;
   register(id, region) {
@@ -36611,12 +36611,12 @@ class HitRegistry {
     return new Map(this.regions);
   }
 }
-// packages/ag-term/src/hit-registry.ts
+// vendor/silvery/packages/ag-term/src/hit-registry.ts
 var HitRegistryContext = import_react64.createContext(null);
 // node-stub:node:process
 var node_process_default = globalThis.process;
 
-// packages/ag-react/src/render.tsx
+// vendor/silvery/packages/ag-react/src/render.tsx
 init_index_browser();
 init_ansi2();
 init_context();
@@ -36625,87 +36625,87 @@ init_keys();
 init_reconciler();
 init_render_string();
 
-// packages/ag-term/src/scheduler.ts
+// vendor/silvery/packages/ag-term/src/scheduler.ts
 init_index_browser();
 init_buffer();
 var {appendFileSync} = (() => ({}));
 
-// packages/ag-term/src/non-tty.ts
+// vendor/silvery/packages/ag-term/src/non-tty.ts
 init_unicode();
 init_unicode();
 
-// packages/ag-term/src/scheduler.ts
+// vendor/silvery/packages/ag-term/src/scheduler.ts
 init_pipeline2();
 init_errors();
 init_errors();
 var log6 = createLogger("silvery:scheduler");
 var SYNC_UPDATE_ENABLED = process.env.SILVERY_SYNC_UPDATE === "1" || process.env.SILVERY_SYNC_UPDATE === "true";
 
-// packages/ag-react/src/render.tsx
+// vendor/silvery/packages/ag-react/src/render.tsx
 init_keys();
 await init_flexily_zero_adapter();
 var jsx_runtime49 = __toESM(require_jsx_runtime(), 1);
 var log7 = createLogger("silvery:render");
 var instances = new Map;
 
-// packages/ag-react/src/exports.ts
+// vendor/silvery/packages/ag-react/src/exports.ts
 init_render_string();
 
-// packages/ag-react/src/accessibility.ts
+// vendor/silvery/packages/ag-react/src/accessibility.ts
 var import_react66 = __toESM(require_react(), 1);
-// packages/ag-term/src/osc-palette.ts
+// vendor/silvery/packages/ag-term/src/osc-palette.ts
 var ESC4 = "\x1B";
 var OSC4_PREFIX = `${ESC4}]4;`;
-// packages/ag-term/src/terminal-caps.ts
+// vendor/silvery/packages/ag-term/src/terminal-caps.ts
 init_detection();
-// packages/ag-term/src/termtest.ts
+// vendor/silvery/packages/ag-term/src/termtest.ts
 var ESC5 = "\x1B";
 var CSI4 = `${ESC5}[`;
 var RESET2 = `${CSI4}0m`;
 
-// packages/ag-react/src/exports.ts
+// vendor/silvery/packages/ag-react/src/exports.ts
 init_output_phase();
 
-// packages/ag-term/src/measurer.ts
+// vendor/silvery/packages/ag-term/src/measurer.ts
 init_unicode();
 init_output_phase();
 
-// packages/create/src/with-render.ts
+// vendor/silvery/packages/create/src/with-render.ts
 init_pipeline2();
 
-// packages/ag-react/src/exports.ts
+// vendor/silvery/packages/ag-react/src/exports.ts
 init_text_sizing();
 init_keys();
 init_mouse();
 
-// packages/ag-term/src/mouse-events.ts
+// vendor/silvery/packages/ag-term/src/mouse-events.ts
 init_index_browser();
 var mouseLog = createLogger("silvery:mouse");
 
-// packages/ag-react/src/exports.ts
+// vendor/silvery/packages/ag-react/src/exports.ts
 init_devtools();
 
-// packages/ag-term/src/inspector.ts
+// vendor/silvery/packages/ag-term/src/inspector.ts
 var inspectorOutput = process.stderr;
 
-// packages/ag-react/src/exports.ts
+// vendor/silvery/packages/ag-react/src/exports.ts
 init_unicode();
 init_unicode();
 
-// packages/ag-react/src/hooks/use-edit-context.ts
+// vendor/silvery/packages/ag-react/src/hooks/use-edit-context.ts
 var import_react67 = __toESM(require_react(), 1);
-// packages/commands/src/keys.ts
+// vendor/silvery/packages/commands/src/keys.ts
 init_keys();
-// packages/create/src/with-diagnostics.ts
+// vendor/silvery/packages/create/src/with-diagnostics.ts
 init_path();
 init_buffer();
 init_pipeline2();
 var {mkdir} = (() => ({}));
 
-// packages/test/src/compare-buffers.ts
+// vendor/silvery/packages/test/src/compare-buffers.ts
 init_buffer();
 
-// packages/create/src/with-diagnostics.ts
+// vendor/silvery/packages/create/src/with-diagnostics.ts
 var CURSOR_COMMANDS = new Set([
   "cursor_up",
   "cursor_down",
@@ -36716,16 +36716,16 @@ var CURSOR_COMMANDS = new Set([
   "left",
   "right"
 ]);
-// packages/ag-react/src/contexts/InputBoundary.tsx
+// vendor/silvery/packages/ag-react/src/contexts/InputBoundary.tsx
 init_context();
 init_keys();
 var import_react68 = __toESM(require_react(), 1);
 var jsx_runtime50 = __toESM(require_jsx_runtime(), 1);
-// packages/ag-react/src/ui/animation/useAnimation.ts
+// vendor/silvery/packages/ag-react/src/ui/animation/useAnimation.ts
 var import_react69 = __toESM(require_react(), 1);
-// packages/ag-react/src/ui/animation/useTransition.ts
+// vendor/silvery/packages/ag-react/src/ui/animation/useTransition.ts
 var import_react70 = __toESM(require_react(), 1);
-// packages/ag-react/src/ui/animation/useInterval.ts
+// vendor/silvery/packages/ag-react/src/ui/animation/useInterval.ts
 var import_react71 = __toESM(require_react(), 1);
 function useInterval(callback, ms2, enabled2 = true) {
   const callbackRef = import_react71.useRef(callback);
@@ -36741,21 +36741,21 @@ function useInterval(callback, ms2, enabled2 = true) {
     };
   }, [ms2, enabled2]);
 }
-// packages/ag-react/src/ui/animation/useTimeout.ts
+// vendor/silvery/packages/ag-react/src/ui/animation/useTimeout.ts
 var import_react72 = __toESM(require_react(), 1);
-// packages/ag-react/src/ui/animation/useLatest.ts
+// vendor/silvery/packages/ag-react/src/ui/animation/useLatest.ts
 var import_react73 = __toESM(require_react(), 1);
-// packages/ag-react/src/ui/hooks/useTea.ts
+// vendor/silvery/packages/ag-react/src/ui/hooks/useTea.ts
 var import_react74 = __toESM(require_react(), 1);
-// packages/create/src/index.ts
+// vendor/silvery/packages/create/src/index.ts
 init_keys();
-// packages/create/src/with-focus.ts
+// vendor/silvery/packages/create/src/with-focus.ts
 init_keys();
-// packages/ink/src/with-ink-cursor.ts
+// vendor/silvery/packages/ink/src/with-ink-cursor.ts
 var import_react75 = __toESM(require_react(), 1);
 var InkCursorStoreCtx = import_react75.createContext(null);
 
-// packages/ink/src/with-ink-focus.ts
+// vendor/silvery/packages/ink/src/with-ink-focus.ts
 var import_react76 = __toESM(require_react(), 1);
 var InkFocusContext = import_react76.createContext({
   activeId: undefined,
@@ -36771,7 +36771,7 @@ var InkFocusContext = import_react76.createContext({
   focus() {},
   blur() {}
 });
-// packages/create/src/create-app.tsx
+// vendor/silvery/packages/create/src/create-app.tsx
 var {writeSync: writeSync2} = (() => ({}));
 var import_react78 = __toESM(require_react(), 1);
 init_ansi2();
@@ -36780,45 +36780,45 @@ init_pipeline2();
 init_text_sizing();
 init_reconciler();
 
-// packages/ag-term/src/runtime/create-buffer.ts
+// vendor/silvery/packages/ag-term/src/runtime/create-buffer.ts
 init_buffer();
 
-// packages/ag-term/src/runtime/create-runtime.ts
+// vendor/silvery/packages/ag-term/src/runtime/create-runtime.ts
 init_output_phase();
 
-// packages/ag-term/src/runtime/diff.ts
+// vendor/silvery/packages/ag-term/src/runtime/diff.ts
 init_pipeline2();
 
-// packages/ag-term/src/runtime/event-handlers.ts
+// vendor/silvery/packages/ag-term/src/runtime/event-handlers.ts
 init_reconciler();
 
-// packages/create/src/create-app.tsx
+// vendor/silvery/packages/create/src/create-app.tsx
 init_keys();
 init_keys2();
 
-// packages/ag-term/src/runtime/layout.ts
+// vendor/silvery/packages/ag-term/src/runtime/layout.ts
 init_ansi2();
 init_buffer();
 init_context();
 init_pipeline2();
 init_reconciler();
 var import_react77 = __toESM(require_react(), 1);
-// packages/ag-term/src/runtime/terminal-lifecycle.ts
+// vendor/silvery/packages/ag-term/src/runtime/terminal-lifecycle.ts
 var {writeSync} = (() => ({}));
 
-// packages/create/src/create-app.tsx
+// vendor/silvery/packages/create/src/create-app.tsx
 init_term_provider();
 
-// packages/ag-term/src/virtual-scrollback.ts
+// vendor/silvery/packages/ag-term/src/virtual-scrollback.ts
 init_unicode();
 
-// packages/create/src/create-app.tsx
+// vendor/silvery/packages/create/src/create-app.tsx
 var jsx_runtime51 = __toESM(require_jsx_runtime(), 1);
 var StoreContext = import_react78.createContext(null);
-// examples/_banner.tsx
+// vendor/silvery/examples/_banner.tsx
 var jsx_runtime52 = __toESM(require_jsx_runtime(), 1);
 
-// examples/layout/dashboard.tsx
+// vendor/silvery/examples/layout/dashboard.tsx
 var jsx_runtime53 = __toESM(require_jsx_runtime(), 1);
 var SPARK_CHARS = "▁▂▃▄▅▆▇█";
 function sparkline(values, max) {
@@ -37541,7 +37541,7 @@ function Dashboard() {
 }
 if (false) {}
 
-// examples/apps/kanban.tsx
+// vendor/silvery/examples/apps/kanban.tsx
 var import_react81 = __toESM(require_react(), 1);
 var jsx_runtime54 = __toESM(require_jsx_runtime(), 1);
 var initialColumns = [
@@ -37753,7 +37753,7 @@ function KanbanBoard() {
 }
 if (false) {}
 
-// examples/apps/dev-tools.tsx
+// vendor/silvery/examples/apps/dev-tools.tsx
 var import_react82 = __toESM(require_react(), 1);
 var jsx_runtime55 = __toESM(require_jsx_runtime(), 1);
 var SOURCES = ["http", "db", "auth", "cache", "worker", "api", "scheduler", "queue", "metrics", "ws"];
@@ -38120,7 +38120,7 @@ function DevTools() {
 }
 if (false) {}
 
-// examples/apps/components.tsx
+// vendor/silvery/examples/apps/components.tsx
 var import_react83 = __toESM(require_react(), 1);
 var jsx_runtime56 = __toESM(require_jsx_runtime(), 1);
 function TypographyTab({ scrollOffset }) {
@@ -39240,7 +39240,7 @@ function ComponentsApp() {
 }
 if (false) {}
 
-// examples/apps/textarea.tsx
+// vendor/silvery/examples/apps/textarea.tsx
 var import_react84 = __toESM(require_react(), 1);
 var jsx_runtime57 = __toESM(require_jsx_runtime(), 1);
 var INITIAL_CONTENT = `# Release Notes — Silvery v0.1
@@ -39415,7 +39415,7 @@ function NoteEditor() {
 }
 if (false) {}
 
-// examples/web/showcases/index.tsx
+// vendor/silvery/examples/web/showcases/index.tsx
 var SHOWCASES = {
   dashboard: Dashboard,
   kanban: KanbanBoard,
@@ -39424,7 +39424,7 @@ var SHOWCASES = {
   textarea: NoteEditor
 };
 
-// examples/web/viewer-registry.ts
+// vendor/silvery/examples/web/viewer-registry.ts
 var REGISTRY = [
   {
     key: "showcase-dashboard",
@@ -51308,7 +51308,7 @@ if (import.meta.main) {
   }
 ];
 
-// examples/web/viewer-app.tsx
+// vendor/silvery/examples/web/viewer-app.tsx
 var import_react85 = __toESM(require_react(), 1);
 var CATEGORY_CONFIG = {
   Showcases: { color: "#f9e2af", order: 0 },
@@ -51710,4 +51710,4 @@ if (root) {
   createViewerApp(root);
 }
 
-//# debugId=37E7BB616A6FEE4064756E2164756E21
+//# debugId=B51C44536634666864756E2164756E21

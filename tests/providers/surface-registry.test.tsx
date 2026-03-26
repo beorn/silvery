@@ -30,7 +30,12 @@ function createMockSurface(id: string): TextSurface {
     notifyContentChange: () => {},
     reveal: vi.fn(),
     subscribe: () => () => {},
-    capabilities: { searchableHistory: false, selectableHistory: false, overlayHistory: false, paneSafe: false },
+    capabilities: {
+      searchableHistory: false,
+      selectableHistory: false,
+      overlayHistory: false,
+      paneSafe: false,
+    },
   }
 }
 

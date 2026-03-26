@@ -66,7 +66,12 @@ describe("TextSurface", () => {
       document: doc,
       viewportToDocument: (vr) => vr,
       onReveal: () => {},
-      capabilities: { paneSafe: false, searchableHistory: false, selectableHistory: false, overlayHistory: false },
+      capabilities: {
+        paneSafe: false,
+        searchableHistory: false,
+        selectableHistory: false,
+        overlayHistory: false,
+      },
     })
     expect(surface.getText(0, 0, 0, 8)).toBe("red text")
   })
@@ -97,7 +102,12 @@ describe("TextSurface", () => {
       document: doc,
       viewportToDocument: (vr) => vr + 10, // viewport offset
       onReveal: () => {},
-      capabilities: { paneSafe: false, searchableHistory: false, selectableHistory: false, overlayHistory: false },
+      capabilities: {
+        paneSafe: false,
+        searchableHistory: false,
+        selectableHistory: false,
+        overlayHistory: false,
+      },
     })
     // row 10 is out of range for 3-row doc
     expect(surface.hitTest(0, 0)).toBeNull()

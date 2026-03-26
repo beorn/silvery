@@ -12,10 +12,10 @@ import { ThemeProvider } from "silvery"
 
 ## Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `theme` | `Theme` | **required** | Theme object to provide |
-| `children` | `ReactNode` | **required** | Child components |
+| Prop       | Type        | Default      | Description             |
+| ---------- | ----------- | ------------ | ----------------------- |
+| `theme`    | `Theme`     | **required** | Theme object to provide |
+| `children` | `ReactNode` | **required** | Child components        |
 
 ## Usage
 
@@ -36,7 +36,7 @@ import { ThemeProvider } from "silvery"
 ```tsx
 import { useTheme, defaultDarkTheme, defaultLightTheme, detectTheme } from "silvery"
 
-const theme = useTheme()  // Access current theme in components
+const theme = useTheme() // Access current theme in components
 ```
 
 ## See Also
